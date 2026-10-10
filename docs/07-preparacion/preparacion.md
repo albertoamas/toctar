@@ -13,13 +13,14 @@
 - [x] `.env.example`, `.gitignore`, `.dockerignore`.
 - [x] `CLAUDE.md` con contexto, reglas del negocio, comandos y convenciones.
 - [x] Repositorio Git local (rama `main`) con `.gitattributes` para saltos de línea LF.
-- [ ] Primer commit y rama `develop`.
+- [x] Primer commit y rama `develop`.
+- [x] Repositorio privado en GitHub (`albertoamas/toctar`) con `main`, `develop` y convenciones de ramas y commits en `CLAUDE.md`.
 
 ## Pendiente
 
 | # | Tarea | Necesita | Responsable |
 |---|---|---|---|
-| 1 | Instalar `gh` y crear el repositorio privado en GitHub | `winget install GitHub.cli` + `gh auth login` | YankoSoft |
+| 1 | Instalar `gh` (para Pull Requests desde la terminal) y proteger `main` y `develop` en GitHub | `winget install GitHub.cli` + `gh auth login` | YankoSoft |
 | 2 | Elegir proveedor del VPS (Hetzner o DigitalOcean) y contratarlo | Decisión + tarjeta | YankoSoft (1er mes regalado) |
 | 3 | Instalar Coolify en el VPS y conectarlo al repositorio | VPS | YankoSoft |
 | 4 | Comprar el dominio y apuntarlo al VPS (`<dominio>` y `pruebas.<dominio>`) | Nombre elegido por el dueño | YankoSoft (1er año regalado) |
