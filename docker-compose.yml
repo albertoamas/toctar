@@ -19,5 +19,25 @@ services:
       timeout: 3s
       retries: 10
 
+  almacenamiento:
+    # Imita a Cloudflare R2 (API S3) para fotos y PDF. Consola: http://localhost:9001
+    image: rustfs/rustfs:1.0.1
+    restart: unless-stopped
+    environment:
+      RUSTFS_ACCESS_KEY: toctar-dev
+      RUSTFS_SECRET_KEY: toctar-dev-secreto
+      RUSTFS_CONSOLE_ENABLE: "true"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - almacenamiento-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:9000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
 volumes:
   db-data:
+  almacenamiento-data:

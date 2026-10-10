@@ -105,7 +105,7 @@ Se verifica el precio real al contratar y se le informa al dueño antes (acuerdo
 
 | Entorno | Dónde | Para qué | Se actualiza |
 |---|---|---|---|
-| Desarrollo | PC de YankoSoft: la app corre con `npm run dev` y PostgreSQL y MinIO (imita a R2) en `docker compose` | Programar | Siempre |
+| Desarrollo | PC de YankoSoft: la app corre con `npm run dev` y PostgreSQL y RustFS (imita a R2) en `docker compose` | Programar | Siempre |
 | Pruebas | `pruebas.<dominio>` en el mismo VPS, con su propia base | Revisión semanal del dueño | Push a la rama `develop` |
 | Producción | `<dominio>` | Uso real | Push a la rama `main` |
 
@@ -115,7 +115,7 @@ El entorno de pruebas no se indexa en Google y tiene datos ficticios.
 
 | Dónde | Qué corre en Docker | Cómo |
 |---|---|---|
-| Desarrollo | PostgreSQL y MinIO | `docker compose up -d`. La app corre fuera de Docker para que la recarga en caliente sea rápida en Windows |
+| Desarrollo | PostgreSQL y RustFS | `docker compose up -d`. La app corre fuera de Docker para que la recarga en caliente sea rápida en Windows |
 | Pruebas y producción | La app y PostgreSQL | Coolify construye la imagen con el `Dockerfile` del repositorio en cada push y levanta PostgreSQL como servicio con su volumen y sus respaldos |
 
 - **`Dockerfile` en varias etapas:** instala dependencias, compila con la salida `standalone` de Next.js y deja una imagen final chica (solo lo necesario para correr), con usuario sin privilegios.
@@ -130,7 +130,7 @@ El entorno de pruebas no se indexa en Google y tiene datos ficticios.
 toctar/
 ├── CLAUDE.md                 contexto, convenciones y comandos para Claude Code
 ├── Dockerfile                imagen de la app para pruebas y producción
-├── docker-compose.yml        PostgreSQL y MinIO para desarrollo
+├── docker-compose.yml        PostgreSQL y RustFS para desarrollo
 ├── .env.example              variables de entorno necesarias
 ├── docs/                     esta documentación
 ├── src/

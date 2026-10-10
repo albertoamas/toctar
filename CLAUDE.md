@@ -33,11 +33,14 @@ Docker (imagen `standalone`) desplegada con Coolify en un VPS.
 ## Comandos
 
 ```bash
-docker compose up -d      # PostgreSQL de desarrollo (puerto 5432)
+docker compose up -d      # PostgreSQL (5432) y RustFS, imitación de R2 (API 9000, consola 9001)
+npm run almacenamiento:preparar   # crea el bucket de desarrollo (una vez)
 npm run dev               # app en http://localhost:3000
 npm run build             # build de producción
 npm run lint
 npm run typecheck         # genera tipos de rutas y corre tsc
+npm test                  # pruebas unitarias (Vitest, tests/unit)
+npm run test:e2e          # pruebas de punta a punta (Playwright, tests/e2e; compila y levanta en :3200)
 npm run db:generate       # crea una migración desde src/db/esquema.ts
 npm run db:migrate        # aplica migraciones pendientes
 npm run db:studio         # explorador de la base
@@ -49,16 +52,35 @@ Copiar `.env.example` a `.env` la primera vez.
 ## Convenciones
 
 - Código, nombres de archivos, tablas y mensajes en **español** (sin tildes ni ñ en identificadores: `cotizacion`, `anio`). Librerías y APIs de terceros quedan como son.
+- Componentes de shadcn/ui en `src/componentes/ui/` (se agregan con `npx shadcn@latest add <nombre>`); componentes propios del sitio y del panel en `src/componentes/sitio/` y `src/componentes/panel/`.
+- Rutas: sitio público en `src/app/(sitio)/`, panel en `src/app/panel/`.
+- En Windows, Playwright usa el Google Chrome instalado: Control de aplicaciones bloquea el Chromium de Playwright.
 - Estructura por módulo en `src/modulos/<modulo>/`: `acciones.ts` (server actions), `consultas.ts`, `esquemas.ts` (Zod), `componentes/`.
 - Toda acción del servidor verifica sesión y rol con `src/lib/permisos.ts` antes de tocar datos.
 - Validación con Zod, el mismo esquema en el formulario y en el servidor.
-- Cada historia de usuario: rama propia → plan → implementación → pruebas → revisión → merge a `develop`.
+- Cada historia de usuario: rama propia → plan → implementación → pruebas → Pull Request revisado → merge a `develop` (ver "Control de versiones").
 - Las reglas de negocio (RN) llevan prueba en `tests/unit/`; los flujos críticos, en `tests/e2e/`.
 
-## Ramas y entornos
+## Control de versiones
 
-- `develop` → entorno de pruebas (`pruebas.<dominio>`), revisión semanal del dueño.
-- `main` → producción.
+Repositorio privado: `github.com/albertoamas/toctar`.
+
+| Rama | Para qué | Se despliega en |
+|---|---|---|
+| `main` | Lo que está en producción. Solo recibe merges desde `develop` al aceptarse una entrega o una corrección | `<dominio>` |
+| `develop` | Integración; lo que ve el dueño en la revisión semanal | `pruebas.<dominio>` |
+| `hu-XX-descripcion` | Una historia de usuario (ej. `hu-01-iniciar-sesion`). Sale de `develop` y vuelve por Pull Request | — |
+| `arreglo/descripcion` | Corrección urgente en producción. Sale de `main` y se une a `main` y a `develop` | — |
+
+- Nunca se hace commit directo en `main` ni en `develop`: todo entra por Pull Request, revisado por el desarrollador antes del merge.
+- Merge con **squash** desde las ramas de historia (un commit por historia en `develop`); merge normal de `develop` a `main`.
+- Commits en español, en imperativo y con el tipo adelante: `feat: agrega inicio de sesión con usuario y contraseña (HU-01)`. Tipos: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `build`.
+- Un commit = un cambio con sentido propio. No mezclar formato, refactor y funcionalidad.
+- Cada entrega aceptada se marca con una etiqueta: `v1.0.0` (entrega 1, Web), `v2.0.0` (entrega 2, Gestión); correcciones posteriores `v1.0.1`, etc.
+- Nunca se versionan secretos. Si una clave llega a un commit, se cambia la clave (borrarla del historial no basta).
+
+## Entornos
+
 - La verificación de estado es `GET /api/salud` (la usan Docker, Coolify y UptimeRobot).
 
 ## Plugins de Claude Code del proyecto

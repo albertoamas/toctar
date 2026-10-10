@@ -13,13 +13,14 @@
 - [x] `.env.example`, `.gitignore`, `.dockerignore`.
 - [x] `CLAUDE.md` con contexto, reglas del negocio, comandos y convenciones.
 - [x] Repositorio Git local (rama `main`) con `.gitattributes` para saltos de línea LF.
-- [ ] Primer commit y rama `develop`.
+- [x] Primer commit y rama `develop`.
+- [x] Repositorio privado en GitHub (`albertoamas/toctar`) con `main`, `develop` y convenciones de ramas y commits en `CLAUDE.md`.
 
 ## Pendiente
 
 | # | Tarea | Necesita | Responsable |
 |---|---|---|---|
-| 1 | Instalar `gh` y crear el repositorio privado en GitHub | `winget install GitHub.cli` + `gh auth login` | YankoSoft |
+| 1 | Instalar `gh` (para Pull Requests desde la terminal) y proteger `main` y `develop` en GitHub | `winget install GitHub.cli` + `gh auth login` | YankoSoft |
 | 2 | Elegir proveedor del VPS (Hetzner o DigitalOcean) y contratarlo | Decisión + tarjeta | YankoSoft (1er mes regalado) |
 | 3 | Instalar Coolify en el VPS y conectarlo al repositorio | VPS | YankoSoft |
 | 4 | Comprar el dominio y apuntarlo al VPS (`<dominio>` y `pruebas.<dominio>`) | Nombre elegido por el dueño | YankoSoft (1er año regalado) |
@@ -32,5 +33,5 @@
 ## Decisiones tomadas en esta etapa
 
 - **Node 24 LTS en la imagen.** Es la versión con soporte largo. En la PC de desarrollo está Node 26; no hay diferencias que afecten al proyecto.
-- **Almacenamiento de fotos en desarrollo:** la arquitectura preveía MinIO, pero dejó de publicar imágenes de Docker. Se decide cuando se programe la subida de fotos (etapa 8). Opciones: un bucket R2 de desarrollo (gratis, igual a producción) o un emulador S3 en Docker (RustFS, Garage o SeaweedFS).
+- **Almacenamiento de fotos en desarrollo: RustFS 1.0.1** en `docker-compose.yml` (la arquitectura preveía MinIO, que dejó de publicar imágenes de Docker). Habla la misma API S3 que R2, así que `src/lib/almacenamiento.ts` funciona igual en los tres entornos; solo cambian las variables `S3_*`. Se descartó un bucket R2 de desarrollo porque depende de la cuenta de Cloudflare de TocTar y del internet.
 - **Verificación de Meta Business: no hace falta.** La API de WhatsApp está fuera del alcance; el sistema usa enlaces `wa.me` y la función de compartir del celular.
