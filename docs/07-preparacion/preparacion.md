@@ -33,5 +33,5 @@
 ## Decisiones tomadas en esta etapa
 
 - **Node 24 LTS en la imagen.** Es la versión con soporte largo. En la PC de desarrollo está Node 26; no hay diferencias que afecten al proyecto.
-- **Almacenamiento de fotos en desarrollo:** la arquitectura preveía MinIO, pero dejó de publicar imágenes de Docker. Se decide cuando se programe la subida de fotos (etapa 8). Opciones: un bucket R2 de desarrollo (gratis, igual a producción) o un emulador S3 en Docker (RustFS, Garage o SeaweedFS).
+- **Almacenamiento de fotos en desarrollo: RustFS 1.0.1** en `docker-compose.yml` (la arquitectura preveía MinIO, que dejó de publicar imágenes de Docker). Habla la misma API S3 que R2, así que `src/lib/almacenamiento.ts` funciona igual en los tres entornos; solo cambian las variables `S3_*`. Se descartó un bucket R2 de desarrollo porque depende de la cuenta de Cloudflare de TocTar y del internet.
 - **Verificación de Meta Business: no hace falta.** La API de WhatsApp está fuera del alcance; el sistema usa enlaces `wa.me` y la función de compartir del celular.

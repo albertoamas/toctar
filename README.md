@@ -8,6 +8,7 @@ Sitio web y sistema de gestión para TocTar Detailing (Tarija, Bolivia). Desarro
 cp .env.example .env
 docker compose up -d
 npm install
+npm run almacenamiento:preparar
 npm run dev
 ```
 

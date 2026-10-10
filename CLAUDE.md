@@ -33,7 +33,8 @@ Docker (imagen `standalone`) desplegada con Coolify en un VPS.
 ## Comandos
 
 ```bash
-docker compose up -d      # PostgreSQL de desarrollo (puerto 5432)
+docker compose up -d      # PostgreSQL (5432) y RustFS, imitación de R2 (API 9000, consola 9001)
+npm run almacenamiento:preparar   # crea el bucket de desarrollo (una vez)
 npm run dev               # app en http://localhost:3000
 npm run build             # build de producción
 npm run lint
