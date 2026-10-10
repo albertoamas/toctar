@@ -1,0 +1,23 @@
+# Servicios para desarrollo. La app corre fuera de Docker (npm run dev).
+# Uso: docker compose up -d
+services:
+  db:
+    image: postgres:18-alpine # misma versión que en Coolify
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: toctar
+      POSTGRES_PASSWORD: toctar
+      POSTGRES_DB: toctar
+    ports:
+      - "5432:5432"
+    volumes:
+      # Desde PostgreSQL 18 el volumen se monta en /var/lib/postgresql
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U toctar -d toctar"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  db-data:

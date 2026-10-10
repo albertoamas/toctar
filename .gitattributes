@@ -1,0 +1,6 @@
+# Saltos de línea LF en el repositorio (Docker y el VPS son Linux)
+* text=auto eol=lf
+*.ico binary
+*.png binary
+*.jpg binary
+*.webp binary

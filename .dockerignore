@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.claude
+docs
+tests
+.env*
+!.env.example
+npm-debug.log*
+Dockerfile
+docker-compose.yml
+README.md
+CLAUDE.md
+AGENTS.md
