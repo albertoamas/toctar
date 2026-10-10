@@ -38,6 +38,8 @@ npm run dev               # app en http://localhost:3000
 npm run build             # build de producción
 npm run lint
 npm run typecheck         # genera tipos de rutas y corre tsc
+npm test                  # pruebas unitarias (Vitest, tests/unit)
+npm run test:e2e          # pruebas de punta a punta (Playwright, tests/e2e; compila y levanta en :3200)
 npm run db:generate       # crea una migración desde src/db/esquema.ts
 npm run db:migrate        # aplica migraciones pendientes
 npm run db:studio         # explorador de la base
@@ -49,6 +51,9 @@ Copiar `.env.example` a `.env` la primera vez.
 ## Convenciones
 
 - Código, nombres de archivos, tablas y mensajes en **español** (sin tildes ni ñ en identificadores: `cotizacion`, `anio`). Librerías y APIs de terceros quedan como son.
+- Componentes de shadcn/ui en `src/componentes/ui/` (se agregan con `npx shadcn@latest add <nombre>`); componentes propios del sitio y del panel en `src/componentes/sitio/` y `src/componentes/panel/`.
+- Rutas: sitio público en `src/app/(sitio)/`, panel en `src/app/panel/`.
+- En Windows, Playwright usa el Google Chrome instalado: Control de aplicaciones bloquea el Chromium de Playwright.
 - Estructura por módulo en `src/modulos/<modulo>/`: `acciones.ts` (server actions), `consultas.ts`, `esquemas.ts` (Zod), `componentes/`.
 - Toda acción del servidor verifica sesión y rol con `src/lib/permisos.ts` antes de tocar datos.
 - Validación con Zod, el mismo esquema en el formulario y en el servidor.
