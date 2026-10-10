@@ -1,48 +1,59 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Regla general: se versiona el código, la configuración compartida y la documentación.
+# No se versiona nada generado, nada personal y ningún secreto.
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+# ── Dependencias ──────────────────────────────────────────
+/node_modules/
 
-# testing
-/coverage
-/test-results/
-/playwright-report/
-/playwright/.cache/
-
-# next.js
+# ── Build y archivos generados ────────────────────────────
 /.next/
 /out/
+/build/
+next-env.d.ts
+*.tsbuildinfo
 
-# production
-/build
+# ── Pruebas ───────────────────────────────────────────────
+/coverage/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
 
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
+# ── Secretos y variables de entorno ───────────────────────
+# Solo .env.example (sin valores reales) va al repositorio.
 .env*
 !.env.example
+*.pem
+*.key
+*.p12
+*.pfx
 
-# claude code (configuración personal; .claude/settings.json sí se versiona)
+# ── Datos locales ─────────────────────────────────────────
+# Respaldos o volcados de la base hechos a mano: pueden tener datos reales de clientes.
+*.sql.gz
+*.dump
+/respaldos/
+
+# ── Claude Code ───────────────────────────────────────────
+# .claude/settings.json (plugins del proyecto) sí se versiona.
 .claude/settings.local.json
+CLAUDE.local.md
 
-# vercel
+# ── Editores ──────────────────────────────────────────────
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+
+# ── Sistema operativo ─────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ── Registros ─────────────────────────────────────────────
+*.log
+npm-debug.log*
+
+# ── Plataformas que no usamos (por si alguien las prueba) ─
 .vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
