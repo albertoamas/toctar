@@ -25,6 +25,15 @@ La documentación vive en `docs/` y manda sobre cualquier supuesto:
 - Todo es configurable desde el panel (servicios, precios, montos, tarifas, intervalos, espacios del taller). Nada de valores del negocio fijos en el código.
 - Todo se guarda en UTC y se muestra en hora de Bolivia (`America/La_Paz`).
 
+## Identidad visual
+
+Manual de marca, tokens y componentes en el Design System https://claude.ai/artifact/FcABnS1tF3WgZMz9v3e5BT (resumen en `docs/06-diseno/identidad-visual.md`). En el código:
+
+- Usa los tokens de `src/app/globals.css` (`bg-rojo`, `text-rojo-texto`, `text-tinta-suave`, `bg-superficie`…), nunca colores sueltos.
+- Sitio público y pantalla de ingreso siempre en oscuro (`data-theme="oscuro"`); panel en claro.
+- El rojo de marca no va como texto chico: para eso existe `rojo-texto`. Los titulares van en `font-heading italic`.
+- El único ángulo diagonal es 60°. Los logos están en `public/marca/`: no se recolorean, se elige la variante.
+
 ## Stack
 
 Next.js 16 (App Router, Cache Components) + TypeScript · PostgreSQL 18 + Drizzle ORM · Better Auth · Zod ·

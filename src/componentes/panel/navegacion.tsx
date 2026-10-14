@@ -27,8 +27,8 @@ export function NavegacionPanel() {
             href={m.href}
             aria-current={activo ? "page" : undefined}
             className={cn(
-              "rounded-md px-3 py-2 text-sm hover:bg-muted",
-              activo && "bg-muted font-medium",
+              "rounded-sm px-3 py-2 text-sm text-tinta-suave hover:bg-superficie hover:text-tinta",
+              activo && "bg-superficie-alta font-semibold text-tinta",
             )}
           >
             {m.texto}

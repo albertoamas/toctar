@@ -5,7 +5,7 @@ import { exigirSesion } from "@/lib/sesion";
 export default function InicioPanel() {
   return (
     <section className="flex flex-col gap-2">
-      <h1 className="text-2xl font-semibold">Inicio</h1>
+      <h1 className="font-heading text-4xl font-extrabold italic">Inicio</h1>
       <Suspense fallback={<p className="text-muted-foreground">Cargando…</p>}>
         <Bienvenida />
       </Suspense>
