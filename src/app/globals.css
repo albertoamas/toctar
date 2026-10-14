@@ -72,7 +72,7 @@
   --borde-control: #8a8a8a;
   --tinta: #1a1a1a;
   --tinta-suave: #595959;
-  --rojo: #e40613;
+  --rojo: #e30613;
   --rojo-presionado: #c40511;
   --rojo-texto: #c40511;
   --sobre-rojo: #ffffff;
@@ -81,7 +81,7 @@
   --foco: #1a1a1a;
   --exito: #1b6e43;
   --aviso: #7a4f00;
-  --brillo-led: 0 0 12px rgba(228, 6, 19, 0.65), 0 0 2px rgba(255, 51, 64, 0.9);
+  --brillo-led: 0 0 12px rgba(227, 6, 19, 0.65), 0 0 2px rgba(255, 51, 64, 0.9);
   --elevacion: 0 8px 24px rgba(26, 26, 26, 0.16);
   --radius: 2px; /* radio-1: el panel. El sitio va con esquinas rectas (radio-0). */
 }
