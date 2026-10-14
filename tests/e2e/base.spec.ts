@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { ingresarComoDueno } from "./apoyo";
 
 // Pruebas de humo de la iteración 0: la app arranca, conecta con la base y
 // las dos áreas (sitio y panel) cargan con su navegación.
@@ -22,8 +23,10 @@ test("el menú del sitio funciona en celular y en computadora", async ({ page, i
     .toBeVisible();
 });
 
-test("el panel no se indexa en Google", async ({ page }) => {
-  await page.goto("/panel");
+test("el panel y el ingreso no se indexan en Google", async ({ page }) => {
+  await page.goto("/ingresar");
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex, nofollow");
+  await ingresarComoDueno(page);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Inicio");
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex, nofollow");
 });

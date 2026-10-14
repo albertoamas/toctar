@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { MenuIcon } from "lucide-react";
 import { NavegacionPanel } from "@/componentes/panel/navegacion";
+import { UsuarioSesion } from "@/componentes/panel/usuario-sesion";
 import { Button } from "@/componentes/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/componentes/ui/sheet";
 
@@ -11,13 +13,20 @@ export const metadata: Metadata = {
 };
 
 // Diseño del panel: barra lateral en la computadora, menú desplegable en el celular.
-// La verificación de sesión se agrega con HU-01.
+// Este layout NO protege a las páginas: cada página valida la sesión (src/lib/sesion.ts).
 export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
+  const sesion = (
+    <Suspense fallback={<div className="h-10" />}>
+      <UsuarioSesion />
+    </Suspense>
+  );
+
   return (
     <div className="flex flex-1">
-      <aside className="hidden w-60 shrink-0 border-r p-4 md:block">
+      <aside className="hidden w-60 shrink-0 flex-col border-r p-4 md:flex">
         <p className="mb-4 px-3 font-semibold">TocTar</p>
         <NavegacionPanel />
+        <div className="mt-auto border-t pt-4">{sesion}</div>
       </aside>
 
       <div className="flex flex-1 flex-col">
@@ -32,6 +41,7 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
               <div className="px-1">
                 <NavegacionPanel />
               </div>
+              <div className="mt-auto border-t p-4">{sesion}</div>
             </SheetContent>
           </Sheet>
           <span className="font-semibold">TocTar</span>

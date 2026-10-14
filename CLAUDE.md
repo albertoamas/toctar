@@ -40,14 +40,14 @@ npm run build             # build de producción
 npm run lint
 npm run typecheck         # genera tipos de rutas y corre tsc
 npm test                  # pruebas unitarias (Vitest, tests/unit)
-npm run test:e2e          # pruebas de punta a punta (Playwright, tests/e2e; compila y levanta en :3200)
-npm run db:generate       # crea una migración desde src/db/esquema.ts
+npm run test:e2e          # pruebas de punta a punta (Playwright, tests/e2e; recrea la base toctar_e2e, compila y levanta en :3200)
+npm run db:generate -- --name <nombre>   # crea una migración desde src/db/esquema/
 npm run db:migrate        # aplica migraciones pendientes
 npm run db:studio         # explorador de la base
 docker build -t toctar:local .   # imagen igual a la de producción
 ```
 
-Copiar `.env.example` a `.env` la primera vez.
+Copiar `.env.example` a `.env` la primera vez y completar `BETTER_AUTH_SECRET` y `DUENO_INICIAL_CONTRASENA`. Al arrancar, la app crea el primer dueño si la base no tiene usuarios (`src/lib/arranque.ts`); en producción también aplica las migraciones.
 
 ## Convenciones
 
@@ -56,7 +56,9 @@ Copiar `.env.example` a `.env` la primera vez.
 - Rutas: sitio público en `src/app/(sitio)/`, panel en `src/app/panel/`.
 - En Windows, Playwright usa el Google Chrome instalado: Control de aplicaciones bloquea el Chromium de Playwright.
 - Estructura por módulo en `src/modulos/<modulo>/`: `acciones.ts` (server actions), `consultas.ts`, `esquemas.ts` (Zod), `componentes/`.
-- Toda acción del servidor verifica sesión y rol con `src/lib/permisos.ts` antes de tocar datos.
+- Toda página y acción del panel verifica la sesión con `src/lib/sesion.ts` (`exigirSesion`) y el rol o módulo con `src/lib/permisos.ts`. El layout del panel NO protege a sus páginas y `src/proxy.ts` solo redirige rápido.
+- La sesión se lee siempre dentro de `<Suspense>` (Cache Components): leerla fuera rompe el build.
+- **Seguridad:** las funciones de `auth.api.*` del plugin admin (`createUser`, `banUser`, `setUserPassword`…) solo verifican permisos si reciben `headers: await headers()`. Sin headers actúan como el sistema: solo se usan así en `src/lib/arranque.ts`.
 - Validación con Zod, el mismo esquema en el formulario y en el servidor.
 - Cada historia de usuario: rama propia → plan → implementación → pruebas → Pull Request revisado → merge a `develop` (ver "Control de versiones").
 - Las reglas de negocio (RN) llevan prueba en `tests/unit/`; los flujos críticos, en `tests/e2e/`.
