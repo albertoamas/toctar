@@ -1,16 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Barlow_Condensed, Montserrat } from "next/font/google";
 import { Toaster } from "@/componentes/ui/sonner";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-sans",
+// Tipografías de la identidad visual: Montserrat (la del lema del logo) para todo el texto,
+// Barlow Condensed en itálica para los titulares.
+const texto = Montserrat({
+  variable: "--font-texto",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const titular = Barlow_Condensed({
+  variable: "--font-titular",
   subsets: ["latin"],
+  weight: ["600", "700", "800"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -23,10 +28,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="es" className={`${texto.variable} ${titular.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         {children}
         <Toaster />
