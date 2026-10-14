@@ -79,7 +79,7 @@ Se verifica el precio real al contratar y se le informa al dueño antes (acuerdo
 
 ### Permisos
 - Cada acción del servidor verifica la sesión y el rol antes de tocar datos (RNF-05). Un solo módulo `permisos.ts` define qué puede hacer cada rol y qué módulos tiene el encargado.
-- Las reglas sensibles se prueban automáticamente: solo el dueño cotiza (RN-01), el técnico no ve precios (RN-12), la entrega con saldo requiere al dueño (RN-13).
+- Las reglas sensibles se prueban automáticamente: solo el dueño cotiza (RN-01), el técnico no ve precios (RN-12), la entrega con saldo requiere al dueño o un encargado autorizado (RN-13).
 
 ### WhatsApp
 - **Botón del sitio y avisos:** enlaces `https://wa.me/591XXXXXXXX?text=...` con el mensaje armado desde la plantilla. Abren la app con el texto escrito; la persona envía.

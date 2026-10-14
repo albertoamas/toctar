@@ -57,3 +57,7 @@ npm-debug.log*
 
 # ── Plataformas que no usamos (por si alguien las prueba) ─
 .vercel
+
+# -- Material del cliente ----------------------------------
+# Logo, fotos y videos de TocTar: se cargan desde el panel, nunca se versionan.
+/material/

@@ -128,7 +128,7 @@ sequenceDiagram
     else Queda saldo
         D->>A: Autorizar entrega con saldo
         A->>S: Marcar entregado
-        Note over S: Verifica rol dueño (RN-13)
+        Note over S: Verifica dueño o permiso de encargado (RN-13)
     end
     opt El servicio genera mantenimiento
         S->>S: Próximo mantenimiento = entrega + intervalo (RN-08)

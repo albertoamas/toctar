@@ -159,8 +159,8 @@ Cada requisito tiene un código para rastrearlo hasta su historia de usuario y s
 | RN-09 | El mantenimiento es un servicio cobrado del catálogo. | Enc-8 |
 | RN-10 | El sitio público no muestra precios ni testimonios. | Enc-20, Acl-3 |
 | RN-11 | El cliente no tiene cuenta ni reserva por su cuenta; el personal registra consultas y reservas. | Acl-5 |
-| RN-12 | El técnico no ve precios, pagos ni datos de otros módulos; solo sus órdenes. | Prop (a confirmar) |
-| RN-13 | Una orden con saldo pendiente solo se marca como entregada si el dueño lo autoriza. | — (a confirmar) |
+| RN-12 | El técnico no ve precios, pagos ni datos de otros módulos; solo sus órdenes. | Prop; confirmado 14/10 |
+| RN-13 | Una orden con saldo pendiente solo se marca como entregada si la autoriza el dueño o un encargado con el permiso "autorizar entrega con saldo". | Confirmado 14/10 ("el dueño o la persona a cargo del taller") |
 | RN-14 | Los registros con historial (clientes, servicios, usuarios) se desactivan, no se borran. | Prop |
 
 ## 5. Fuera de alcance
@@ -176,14 +176,14 @@ Cada requisito tiene un código para rastrearlo hasta su historia de usuario y s
 
 ## 6. Preguntas abiertas para el dueño
 
-- [ ] Lista de precios por servicio, variante y tamaño (para la carga inicial).
-- [ ] Días que ocupa cada servicio en el taller.
-- [ ] Precio y contenido del mantenimiento del cerámico.
+- [ ] Lista de precios por servicio, variante y tamaño (para la carga inicial). Los tamaños ya están: 5 (`01-descubrimiento/material-recibido.md`).
+- [x] Días que ocupa cada servicio en el taller: cerámico 1,5 días; varios servicios, 2 a 3.
+- [x] Precio y contenido del mantenimiento del cerámico: contenido recibido; el precio varía según tamaño, tratamiento y estado (se carga como "según evaluación").
 - [ ] Variantes de inyección y succión y de pulido de vidrios.
-- [ ] ¿Cuántos días de validez lleva la cotización por defecto?
-- [ ] ¿El técnico debe ver los precios? (RN-12)
-- [ ] ¿Se puede entregar un vehículo con saldo pendiente? (RN-13)
-- [ ] ¿Cada técnico ve solo sus órdenes o todas las del taller?
-- [ ] ¿La agenda se maneja solo por día o también por hora de ingreso?
-- [ ] ¿A quién se avisa cuando llega un reclamo y cómo (panel, correo)?
-- [ ] Horarios de atención y dirección exacta para Google Maps.
+- [x] ¿Cuántos días de validez lleva la cotización? Varía según el caso: se define en cada cotización (con un valor sugerido configurable).
+- [x] ¿El técnico debe ver los precios? No (RN-12).
+- [x] ¿Se puede entregar un vehículo con saldo pendiente? Sí, autorizado por el dueño o el encargado del taller (RN-13).
+- [x] ¿Cada técnico ve solo sus órdenes o todas las del taller? Solo las suyas.
+- [x] ¿La agenda se maneja solo por día o también por hora de ingreso? Solo por día y espacio.
+- [x] ¿A quién se avisa cuando llega un reclamo y cómo? En el panel, al dueño y al encargado con el módulo de reclamos.
+- [ ] Horarios de atención (pendiente de confirmar) y dirección exacta para Google Maps (recibida).

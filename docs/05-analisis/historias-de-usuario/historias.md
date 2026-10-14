@@ -75,7 +75,7 @@ Como dueño, quiero crear usuarios con su rol, para que cada persona tenga su ac
 
 ### HU-03 Permisos del encargado
 Como dueño, quiero elegir qué módulos ve el encargado, para darle acceso sin mostrarle todo.
-- Marco o desmarco módulos (clientes, consultas, agenda, órdenes, pagos, mantenimientos, sitio).
+- Marco o desmarco módulos (clientes, consultas, agenda, órdenes, pagos, mantenimientos, sitio, reclamos) y el permiso "autorizar entrega con saldo" (RN-13).
 - El encargado nunca puede cotizar (RN-01) ni cambiar la configuración.
 - El permiso se valida en el servidor: entrar por la URL de un módulo no habilitado muestra "sin acceso".
 
@@ -99,6 +99,7 @@ Como usuario del panel, quiero instalar el sistema en mi celular, para abrirlo c
 ### HU-07 Servicios del sitio
 Como dueño, quiero crear y editar los servicios que muestra el sitio, para mantenerlo al día.
 - Cada servicio tiene nombre, resumen, descripción, beneficios, pasos del proceso, foto principal y orden.
+- La foto principal es opcional: mientras no se cargue, el sitio muestra una imagen de reemplazo con la marca de TocTar.
 - Puedo ocultar un servicio sin borrarlo.
 - El servicio del sitio es el mismo registro que el del catálogo de la entrega 2 (se le suman precios después).
 
@@ -154,7 +155,7 @@ Como cliente, quiero dejar un reclamo o pedido de garantía, para que TocTar lo 
 - Tiene protección contra envíos automáticos (spam).
 
 ### HU-17 Atender reclamos
-Como dueño, quiero ver los reclamos recibidos, para responderlos a tiempo.
+Como dueño o encargado con el módulo de reclamos, quiero ver los reclamos recibidos, para responderlos a tiempo.
 - Veo la lista con los pendientes primero.
 - Abro uno, veo sus datos y fotos, y lo marco como atendido con una nota.
 - Desde el reclamo puedo abrir WhatsApp con ese cliente.
@@ -207,6 +208,7 @@ Como dueño, quiero armar una cotización con precios sugeridos, para cotizar r�
 - Agrego servicios y variantes; el precio se sugiere según el tamaño del vehículo y lo puedo cambiar.
 - Agrego descuento; el sistema calcula total y adelanto sugerido.
 - Indico si es un estimado por fotos (RN-03).
+- Defino la validez de la cotización; el sistema sugiere la de la configuración (S-5).
 - Solo el dueño ve el botón "Cotizar" y el servidor rechaza a otros roles (RN-01).
 - Modificar una cotización enviada crea una versión nueva; la anterior no cambia (RN-02).
 
@@ -268,7 +270,7 @@ Como personal, quiero avisar al cliente con un toque, para no escribir el mismo 
 ### HU-36 Entregar vehículo
 Como personal, quiero cerrar la orden al entregar, para que todo quede registrado.
 - Veo precio final, pagos y saldo; el dueño puede sumar servicios adicionales.
-- Con saldo pendiente, solo el dueño puede confirmar la entrega (RN-13).
+- Con saldo pendiente, solo el dueño o un encargado con el permiso "autorizar entrega con saldo" puede confirmar la entrega (RN-13).
 - Si el servicio genera mantenimiento, se calcula la fecha del próximo (RN-08).
 
 ### HU-37 Saldos pendientes

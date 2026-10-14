@@ -73,7 +73,7 @@ Convenciones: `id` es `bigint` autoincremental; todas las tablas tienen `created
 | `tamano_vehiculo` | nombre, descripcion, orden, activo | Hoy 5, de compactos a extra grandes; `descripcion` lleva modelos de ejemplo para clasificar el vehículo |
 | `espacio_taller` | sucursal_id, nombre, orden, activo | Hoy 3 |
 | `usuario` | nombre, username (único), password_hash, rol (`dueno`, `encargado`, `tecnico`), activo | Las tablas de sesión las maneja la librería de autenticación |
-| `usuario_permiso` | usuario_id, modulo | Solo para encargado (RF-16) |
+| `usuario_permiso` | usuario_id, permiso | Solo para encargado (RF-16): un módulo (`clientes`, `consultas`, `agenda`, `ordenes`, `pagos`, `mantenimientos`, `sitio`, `reclamos`) o el permiso `entrega_con_saldo` (RN-13) |
 | `plantilla_mensaje` | clave (pk), texto | "Listo" y "mantenimiento" (HU-40) |
 | `auditoria` | usuario_id, entidad, entidad_id, accion, datos (jsonb) | Cambios en cotizaciones, pagos y precios (RNF-10) |
 | `archivo` | clave_almacenamiento, tipo_mime, bytes, ancho, alto | Fotos, videos, logo y PDF |
@@ -109,7 +109,7 @@ Convenciones: `id` es `bigint` autoincremental; todas las tablas tienen `created
 |---|---|---|
 | `consulta` | cliente_id, vehiculo_id, servicio_id, canal (`whatsapp`, `taller`), estado (`consulto`, `cotizado`, `confirmado`, `perdido`), motivo_perdida, nota, ultimo_movimiento_at | RF-35 ordena por `ultimo_movimiento_at` |
 | `consulta_archivo` | consulta_id, archivo_id | Fotos y videos |
-| `cotizacion` | consulta_id, numero, version, es_estimado, subtotal, descuento, total, adelanto_sugerido, valida_hasta, condiciones (texto copiado), estado (`enviada`, `reemplazada`, `aceptada`), pdf_archivo_id | Único (numero, version); número correlativo por año, ej. `2026-0042` |
+| `cotizacion` | consulta_id, numero, version, es_estimado, subtotal, descuento, total, adelanto_sugerido, valida_hasta (se define en cada cotización, S-5), condiciones (texto copiado), estado (`enviada`, `reemplazada`, `aceptada`), pdf_archivo_id | Único (numero, version); número correlativo por año, ej. `2026-0042` |
 | `cotizacion_linea` | cotizacion_id, variante_id, tamano_id, descripcion, precio_sugerido, precio, orden | D-4 |
 | `cotizacion_foto` | cotizacion_id, archivo_id, orden | Fotos que van en el PDF |
 
