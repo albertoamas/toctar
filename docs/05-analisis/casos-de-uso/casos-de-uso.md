@@ -4,17 +4,15 @@
 - **Base:** `04-requerimientos/requerimientos.md` (aprobado)
 - **Estado:** pendiente de validación del dueño
 
-## Supuestos mientras el dueño responde las preguntas abiertas
+## Supuestos respondidos por el dueño (14 de octubre de 2026)
 
-Estos supuestos salen de las preguntas abiertas de los requerimientos. Si el dueño responde distinto, se ajustan los casos afectados.
-
-| # | Supuesto | Casos afectados |
-|---|---|---|
-| S-1 | El técnico ve solo las órdenes asignadas a él y no ve precios ni pagos. | CU-16 |
-| S-2 | Un vehículo con saldo pendiente solo se entrega con autorización del dueño. | CU-19 |
-| S-3 | La agenda se maneja por día (no por hora); la hora de ingreso es solo una nota. | CU-13 |
-| S-4 | Los reclamos llegan al panel; el dueño los ve en la pantalla de inicio. | CU-03, CU-05 |
-| S-5 | La validez por defecto de la cotización es 15 días, editable en la configuración. | CU-11 |
+| # | Supuesto | Respuesta | Casos afectados |
+|---|---|---|---|
+| S-1 | El técnico ve solo las órdenes asignadas a él y no ve precios ni pagos. | Confirmado | CU-16 |
+| S-2 | Un vehículo con saldo pendiente solo se entrega con autorización del dueño. | **Ajustado:** el dueño o "la persona a cargo del taller". Se implementa como permiso del encargado: "autorizar entrega con saldo" | CU-19 |
+| S-3 | La agenda se maneja por día (no por hora); la hora de ingreso es solo una nota. | Confirmado: por día y espacio | CU-13 |
+| S-4 | Los reclamos llegan al panel; el dueño los ve en la pantalla de inicio. | **Ajustado:** también los ve el encargado que tenga el módulo de reclamos | CU-03, CU-05 |
+| S-5 | La validez por defecto de la cotización es 15 días, editable en la configuración. | **Ajustado:** la validez se define en cada cotización; la configuración solo da el valor sugerido | CU-11 |
 
 ## Actores
 
@@ -124,7 +122,7 @@ Todos los usuarios del panel inician sesión (CU-00). El dueño también puede h
     1. El dueño abre la consulta y elige "Cotizar".
     2. Agrega servicios y variantes; el sistema sugiere el precio según el tamaño del vehículo.
     3. Ajusta precios o descuento si quiere; el sistema calcula el total y sugiere el adelanto.
-    4. Elige fotos del vehículo para el PDF y revisa la validez.
+    4. Elige fotos del vehículo para el PDF y define la validez (sugerida por la configuración, S-5).
     5. Guarda; el sistema genera el PDF y la consulta pasa a "cotizado".
     6. Comparte el PDF: en el celular abre el menú de compartir (WhatsApp, correo); en la PC lo descarga o imprime.
 - **Alternativos:**
@@ -182,7 +180,7 @@ Todos los usuarios del panel inician sesión (CU-00). El dueño también puede h
     4. Si el servicio genera mantenimiento, el sistema calcula la fecha del próximo (RN-08).
 - **Alternativos:**
     - 1a. Hubo trabajos adicionales: el dueño los suma y el precio final cambia (RF-43).
-    - 2a. El cliente no paga todo: solo el dueño puede marcar la entrega con saldo pendiente (RN-13, S-2).
+    - 2a. El cliente no paga todo: solo el dueño o un encargado con el permiso "autorizar entrega con saldo" puede marcar la entrega con saldo pendiente (RN-13, S-2).
     - 4a. Deseable: el dueño elige fotos de la orden para la galería del sitio (RF-44).
 - **Postcondición:** orden cerrada; el saldo queda en cero o en la lista de saldos pendientes.
 
