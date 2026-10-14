@@ -1,7 +1,7 @@
 # B1 Acceso — especificación
 
 - **Fase y semana:** B. Entrega 1 · semana 1 (14 al 20 de octubre)
-- **Estado:** en curso. HU-01 y HU-02 terminadas y en revisión; HU-03 tiene el control hecho y suma sus casillas a medida que existen los módulos
+- **Estado:** ✅ cerrada el 14 de octubre de 2026. HU-01, HU-02 y HU-03 en `develop`. Las casillas de los módulos del encargado se suman en la etapa de cada módulo (Sitio web en B3, Reclamos en B5)
 - **Historias:** HU-01 Iniciar sesión · HU-02 Gestionar usuarios y roles · HU-03 Permisos del encargado
 - **Base:**
   - Requisitos: RF-14, RF-15, RF-16, RNF-04 y RNF-05.
@@ -199,10 +199,22 @@ HU-02 lleva la tabla y el módulo central porque sin ellos no puede negar el acc
 
 ## 12. Criterio de salida
 
-- [ ] Las pruebas unitarias de la matriz y las 6 pruebas E2E pasan.
-- [ ] Ninguna página ni acción del panel sale sin `exigirModulo` o `exigirRol` (revisión con `grep` en el PR).
-- [ ] Toda llamada a `auth.api.*` del panel lleva `headers`.
-- [ ] Para la demo: crear un técnico y un encargado, entrar con cada uno desde el celular y mostrar lo que ve cada rol.
+- [x] Las pruebas unitarias de la matriz y las pruebas E2E pasan: 73 unitarias y 38 E2E (celular y escritorio), estables en 3 corridas seguidas.
+- [x] Ninguna página ni acción del panel sale sin `exigirModulo`, `exigirRol` o `exigirSesion`: revisadas las 5 páginas y las 5 acciones (14/10).
+- [x] Toda llamada a `auth.api.*` del panel lleva `headers`: revisadas las 12. La única sin sesión es la del primer dueño en `src/lib/arranque.ts`, a propósito.
+- [ ] Demo del viernes 23 (guion abajo).
+
+### Guion de la demo (10 minutos, desde el celular del dueño)
+
+1. Entrar al panel con su usuario. Mostrar que un error de contraseña no dice qué falló.
+2. **Usuarios → Crear usuario:** crear a su técnico real. Mostrar la descripción de cada rol.
+3. Crear un encargado y marcarle "Autorizar entrega con saldo". Contarle que Sitio web y Reclamos aparecerán como casillas cuando existan esos módulos.
+4. En otro celular, entrar como el técnico: solo ve Inicio, y si escribe `/panel/usuarios` ve "Sin acceso".
+5. Restablecerle la contraseña al técnico y desactivarlo: su sesión se cierra en el acto.
+6. **Confirmar con el dueño:**
+   - Nadie puede desactivarse a sí mismo.
+   - Los usuarios no cambian su propia contraseña (lo hace el dueño).
+   - "La persona a cargo del taller" (S-2) es el rol encargado.
 
 ## 13. Lo que cambió al programar
 
