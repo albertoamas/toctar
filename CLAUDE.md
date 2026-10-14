@@ -33,6 +33,7 @@ Manual de marca, tokens y componentes en el Design System https://claude.ai/arti
 - Sitio público y pantalla de ingreso siempre en oscuro (`data-theme="oscuro"`); panel en claro.
 - El rojo de marca no va como texto chico: para eso existe `rojo-texto`. Los titulares van en `font-heading italic`.
 - El único ángulo diagonal es 60°. Los logos están en `public/marca/`: no se recolorean, se elige la variante.
+- Logo con lema solo desde 360 px de ancho (horizontal) o 320 px (vertical); más chico, la variante `-sin-lema` y el lema como texto (`<p className="tt-lema">`).
 
 ## Stack
 

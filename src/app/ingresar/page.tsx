@@ -11,14 +11,18 @@ export const metadata: Metadata = {
 export default function PaginaIngreso() {
   return (
     <main data-theme="oscuro" className="flex flex-1 flex-col items-center justify-center gap-10 bg-fondo px-4 py-12 text-tinta">
-      <Image
-        src="/marca/toctar-vertical-sobre-oscuro.svg"
-        alt="TocTar"
-        width={168}
-        height={158}
-        priority
-        unoptimized
-      />
+      {/* Logo sin lema: a este tamaño el lema del dibujo no se lee. El lema va como texto, nítido. */}
+      <div className="flex flex-col items-center gap-4">
+        <Image
+          src="/marca/toctar-vertical-sin-lema-sobre-oscuro.svg"
+          alt="TocTar"
+          width={200}
+          height={169}
+          priority
+          unoptimized
+        />
+        <p className="tt-lema text-tinta">Como ven tu auto, te ven a ti</p>
+      </div>
       <div className="flex w-full max-w-sm flex-col gap-6">
         <div className="flex flex-col gap-1">
           <h1 className="font-heading text-3xl font-extrabold italic">Panel del taller</h1>

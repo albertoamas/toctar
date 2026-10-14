@@ -13,15 +13,16 @@ const enlaces = [
 ];
 
 // Componente EncabezadoSitio del Design System: logo horizontal sobre oscuro, navegación y línea LED.
+// A 32 px de alto el lema del logo no se lee: va la versión sin lema.
 export function Encabezado() {
   return (
     <header className="bg-fondo">
       <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-6 px-4">
         <Link href="/" aria-label="TocTar, inicio" className="shrink-0">
           <Image
-            src="/marca/toctar-horizontal-sobre-oscuro.svg"
+            src="/marca/toctar-horizontal-sin-lema-sobre-oscuro.svg"
             alt="TocTar"
-            width={129}
+            width={127}
             height={32}
             priority
             unoptimized
