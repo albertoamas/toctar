@@ -13,7 +13,8 @@
 | Recurso gráfico | Corte diagonal a 60° (botón principal, tarjetas, franjas) y línea LED roja con brillo | Trazos del monograma a 60°; fachada del manual, pág. 6 |
 | Tipografía | Montserrat para el texto, Barlow Condensed itálica para los titulares | El lema del logo está en Montserrat; el logotipo es condensado, pesado e itálico |
 | Temas | Sitio público siempre oscuro; panel claro por defecto, con barra lateral negra; ingreso en oscuro | Versión principal del logo sobre negro; lectura al sol en el taller |
-| Logos | 13 SVG trazados del original (horizontal, vertical, monograma, en 4 tintas, más el ícono de la app) en `public/marca/` | Horizontal y monograma: hoja de logos. Vertical: el PNG |
+| Logos | 21 SVG trazados del original en `public/marca/`: horizontal y vertical con y sin lema, y monograma, cada uno en 4 tintas, más el ícono de la app | Horizontal y monograma: hoja de logos. Vertical: el PDF del manual renderizado a alta resolución |
+| Logo en tamaños chicos | **Con lema solo desde 360 px de ancho (horizontal) o 320 px (vertical).** Por debajo, la versión `-sin-lema` y el lema como texto con la clase `tt-lema`, que se ve nítido a cualquier tamaño | El lema dibujado queda de 2 a 5 px y se ve borroso (encontrado el 14/10 en la pantalla de ingreso) |
 | Servicios sin foto | Imagen de reemplazo con el monograma y una banda a 60° | Decisión del 14/10 (`01-descubrimiento/material-recibido.md`) |
 
 ## En el código
