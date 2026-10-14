@@ -28,7 +28,7 @@
 | 6 | Cuenta de Cloudflare a nombre de TocTar: bucket R2 de fotos y bucket de respaldos | Correo del dueño | Dueño + YankoSoft |
 | 7 | Respaldos diarios de PostgreSQL en Coolify hacia R2 (30 días) | Pasos 5 y 6 | YankoSoft |
 | 8 | UptimeRobot vigilando `/api/salud` de producción | Paso 5 | YankoSoft |
-| 9 | Aplicar las migraciones al arrancar el contenedor | La primera migración (etapa 8) | YankoSoft |
+| 9 | ~~Aplicar las migraciones al arrancar el contenedor~~ Hecho en HU-01 (`src/instrumentation.ts`) | — | — |
 
 ## Decisiones tomadas en esta etapa
 

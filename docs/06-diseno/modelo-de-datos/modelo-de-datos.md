@@ -72,7 +72,7 @@ Convenciones: `id` es `bigint` autoincremental; todas las tablas tienen `created
 | `parametro` | clave (pk), valor (jsonb) | Adelanto sugerido, validez de cotización, intervalo de mantenimiento, condiciones del PDF, etc. |
 | `tamano_vehiculo` | nombre, descripcion, orden, activo | Hoy 5, de compactos a extra grandes; `descripcion` lleva modelos de ejemplo para clasificar el vehículo |
 | `espacio_taller` | sucursal_id, nombre, orden, activo | Hoy 3 |
-| `usuario` | nombre, username (único), password_hash, rol (`dueno`, `encargado`, `tecnico`), activo | Las tablas de sesión las maneja la librería de autenticación |
+| `usuario` | nombre, nombre_usuario (único), correo (interno), rol (`dueno`, `encargado`, `tecnico`, con CHECK), desactivado | Tabla de Better Auth. La contraseña (hash) va en `cuenta`; `correo` es interno (`<usuario>@usuarios.toctar.local`) porque la librería lo exige; "desactivar" usa el bloqueo de la librería, que cierra las sesiones. Tablas propias de la librería: `sesion`, `cuenta`, `verificacion` (HU-01) |
 | `usuario_permiso` | usuario_id, permiso | Solo para encargado (RF-16): un módulo (`clientes`, `consultas`, `agenda`, `ordenes`, `pagos`, `mantenimientos`, `sitio`, `reclamos`) o el permiso `entrega_con_saldo` (RN-13) |
 | `plantilla_mensaje` | clave (pk), texto | "Listo" y "mantenimiento" (HU-40) |
 | `auditoria` | usuario_id, entidad, entidad_id, accion, datos (jsonb) | Cambios en cotizaciones, pagos y precios (RNF-10) |
