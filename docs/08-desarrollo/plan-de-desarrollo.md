@@ -20,8 +20,8 @@
 | Etapa 6 (diseño) | ✅ Modelo de datos, arquitectura e identidad visual |
 | Etapa 7 (preparación) | 🟡 Local y GitHub listos; faltan dominio, VPS, Coolify, R2 y respaldos |
 | Iteración 0 (cimientos) | ✅ En `develop` (PR #1) |
-| HU-01 Iniciar sesión | 🔵 Terminada, en revisión (rama `hu-01-iniciar-sesion`) |
-| Identidad visual aplicada a la app | 🔵 Terminada, en revisión (rama `identidad-visual`, apilada sobre HU-01) |
+| Etapa B1 Acceso (HU-01, HU-02, HU-03) | ✅ Cerrada el 14/10, en `develop` (PR #4, #7 y el de HU-03) |
+| Identidad visual aplicada a la app | ✅ En `develop` (PR #5 y #9, logos nítidos en tamaños chicos) |
 | Día D (inicio del plazo) | 14 de octubre de 2026 |
 
 ## Calendario
@@ -51,7 +51,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 
 | Etapa | Especificación | Estado |
 |---|---|---|
-| B1 Acceso | `etapas/B1-acceso.md` | En curso |
+| B1 Acceso | `etapas/B1-acceso.md` | ✅ Cerrada (14/10) |
 | B2 Configuración y app | `etapas/B2-configuracion.md` | Se escribe al cerrar B1 |
 | B3 a C5 | Una por etapa | Al empezar cada una |
 
@@ -72,7 +72,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 - Next.js 16, PostgreSQL 18, Drizzle, RustFS, Docker, shadcn/ui, Vitest, Playwright y layouts (PR #1).
 - Repositorio en GitHub con convenciones de ramas, commits y PR (`CLAUDE.md`).
 
-### A2. Identidad visual 🔵
+### A2. Identidad visual ✅
 - **Entregable:**
   - Design System (https://claude.ai/artifact/FcABnS1tF3WgZMz9v3e5BT).
   - Tokens, tipografías y logos aplicados a la app (rama `identidad-visual`).

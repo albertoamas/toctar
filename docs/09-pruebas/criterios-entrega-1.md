@@ -17,7 +17,7 @@
 |---|---|---|
 | HU-01 Iniciar sesión | B1 | ✅ Terminada |
 | HU-02 Gestionar usuarios y roles | B1 | ✅ Terminada (un criterio ajustado) |
-| HU-03 Permisos del encargado | B1 | ⏳ En curso: el control ya funciona; faltan los módulos que se asignan |
+| HU-03 Permisos del encargado | B1 | ✅ Terminada con los módulos que existen hoy; cada módulo nuevo suma su casilla (se verifica en su etapa) |
 | HU-04 a HU-06 | B2 | ⏳ |
 | HU-07 a HU-09 | B3 | ⏳ |
 | HU-10 a HU-15 | B4 | ⏳ |
@@ -56,9 +56,9 @@
 
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
-| 3.1 | Marco o desmarco módulos (clientes, consultas, agenda, órdenes, pagos, mantenimientos, sitio, reclamos) y el permiso "autorizar entrega con saldo" | Las casillas aparecen al elegir el rol Encargado. **Hoy solo está "Autorizar entrega con saldo"**: cada módulo suma su casilla cuando existe su pantalla (Sitio web en B3, Reclamos en B5, el resto en la entrega 2) | ⏳ |
+| 3.1 | Marco o desmarco módulos (clientes, consultas, agenda, órdenes, pagos, mantenimientos, sitio, reclamos) y el permiso "autorizar entrega con saldo" | E2E `hu-03` "el permiso del encargado se guarda y se borra al cambiarle el rol". Las casillas aparecen solo para el encargado. **Hoy existe "Autorizar entrega con saldo"**; cada módulo suma su casilla cuando existe su pantalla (Sitio web en B3, Reclamos en B5, el resto en la entrega 2), y su etapa lo prueba | ✅ con lo existente |
 | 3.2 | El encargado nunca puede cotizar ni cambiar la configuración | Unitarias `permisos` "nunca ve cotizaciones, usuarios, configuración, catálogo, aunque tenga todos los permisos" | ✅ |
-| 3.3 | El permiso se valida en el servidor: entrar por la URL de un módulo no habilitado muestra "sin acceso" | E2E `hu-02` (el técnico en `/panel/usuarios`). La prueba del encargado en un módulo no habilitado se agrega con el primer módulo asignable (B3) | 🟢 parcial |
+| 3.3 | El permiso se valida en el servidor: entrar por la URL de un módulo no habilitado muestra "sin acceso" | E2E `hu-03` "el encargado sin módulos solo ve el inicio y no entra a Usuarios" y `hu-02` (el técnico). Unitarias: matriz completa. Revisión del código: las 5 páginas y 5 acciones del panel verifican el acceso, y las 12 llamadas a la autenticación llevan la sesión (14/10) | ✅ |
 
 ## HU-04 a HU-18
 
@@ -81,4 +81,5 @@ Se completan al cerrar cada etapa, con los criterios de `historias.md` y los de 
 | Fecha | Historia | Error | Corrección | Prueba que lo cubre |
 |---|---|---|---|---|
 | 14/10/2026 | HU-02 | Un usuario con guion en el nombre (por ejemplo, `ana-maria`) se creaba bien, pero no podía ingresar: la librería de autenticación validaba con un patrón distinto al del formulario | Un solo patrón compartido (`PATRON_NOMBRE_USUARIO`) | Unitaria `usuarios` "todo usuario que acepta el formulario también puede ingresar"; E2E con `tecnico-c` |
+| 14/10/2026 | Identidad | Los logos se veían borrosos en la pantalla de ingreso y en el encabezado: a ese tamaño el lema dibujado quedaba de 2 a 5 px | Versiones sin lema para tamaños chicos y el lema como texto; vertical retrazado desde el PDF (PR #9) | Revisión visual en monitor común y celular |
 | 14/10/2026 | HU-02 | Al desactivar o reactivar no aparecía el aviso de confirmación | El aviso se muestra desde la acción, no desde la pantalla que se reemplaza | E2E "desactivar a alguien…" (espera el aviso) |
