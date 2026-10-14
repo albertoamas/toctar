@@ -70,7 +70,7 @@ Convenciones: `id` es `bigint` autoincremental; todas las tablas tienen `created
 | `negocio` | nombre, logo_archivo_id, correo, redes (json), nit, razon_social | Una sola fila |
 | `sucursal` | nombre, direccion, lat, lng, horarios (json), telefono_whatsapp, activo | Hoy una fila |
 | `parametro` | clave (pk), valor (jsonb) | Adelanto sugerido, validez de cotización, intervalo de mantenimiento, condiciones del PDF, etc. |
-| `tamano_vehiculo` | nombre, orden, activo | Auto/sedán, camioneta, vagoneta |
+| `tamano_vehiculo` | nombre, descripcion, orden, activo | Hoy 5, de compactos a extra grandes; `descripcion` lleva modelos de ejemplo para clasificar el vehículo |
 | `espacio_taller` | sucursal_id, nombre, orden, activo | Hoy 3 |
 | `usuario` | nombre, username (único), password_hash, rol (`dueno`, `encargado`, `tecnico`), activo | Las tablas de sesión las maneja la librería de autenticación |
 | `usuario_permiso` | usuario_id, modulo | Solo para encargado (RF-16) |

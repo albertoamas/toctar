@@ -154,7 +154,7 @@ Cada requisito tiene un código para rastrearlo hasta su historia de usuario y s
 | RN-04 | El adelanto sugerido es configurable (hoy Bs 200) y se puede cambiar en cada reserva; el cliente puede dar más. | Enc-4, Enc-5 |
 | RN-05 | Si el cliente cancela, el adelanto no se devuelve y queda como ingreso. | Enc-6 |
 | RN-06 | Un espacio del taller no puede tener dos vehículos en el mismo día. La cantidad de espacios es configurable (hoy 3). | Enc-3, Acl-9 |
-| RN-07 | Los precios se dan por tamaño de vehículo; los tamaños son configurables (hoy auto/sedán, camioneta y vagoneta). | Enc-16 |
+| RN-07 | Los precios se dan por tamaño de vehículo; los tamaños son configurables (hoy 5: compactos, sedanes y hatchbacks medianos, vagonetas medianas, vagonetas grandes y camionetas, extra grandes; ver `01-descubrimiento/material-recibido.md`). | Enc-16 |
 | RN-08 | El recordatorio de mantenimiento solo aplica a los servicios marcados (hoy nano cerámico y nano grafeno), con intervalo configurable (hoy 3 meses) contado desde la entrega. | Enc-7 |
 | RN-09 | El mantenimiento es un servicio cobrado del catálogo. | Enc-8 |
 | RN-10 | El sitio público no muestra precios ni testimonios. | Enc-20, Acl-3 |

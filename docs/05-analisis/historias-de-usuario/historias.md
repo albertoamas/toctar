@@ -176,7 +176,7 @@ Como dueño, quiero definir variantes de cada servicio, para cotizar con opcione
 
 ### HU-20 Precios por tamaño y duración
 Como dueño, quiero cargar precios por tamaño de vehículo y la duración de cada servicio, para que el sistema me sugiera precios y fechas.
-- Cada variante tiene un precio por tamaño (auto/sedán, camioneta, vagoneta); puede quedar vacío ("según evaluación").
+- Cada variante tiene un precio por tamaño de vehículo (hoy 5 tamaños, de compactos a extra grandes); puede quedar vacío ("según evaluación").
 - Cada servicio o variante tiene duración en días.
 - Cada cambio de precio queda registrado con fecha y usuario.
 
