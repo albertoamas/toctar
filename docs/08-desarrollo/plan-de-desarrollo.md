@@ -41,6 +41,20 @@
 | Entrega 1: Web publicada y aceptada | 3 de noviembre | Bs 700 |
 | Entrega 2: Gestión aceptada | 1 de diciembre (meta: 24 de noviembre) | Bs 2.000 |
 
+## Especificación de cada etapa
+
+Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para programar está en una especificación por etapa**, en `08-desarrollo/etapas/`, con la plantilla `_plantilla.md`. Incluye reglas, tablas columna por columna, pantallas, acciones del servidor, textos, pruebas, orden de ramas y decisiones abiertas.
+
+- Cada especificación se escribe **al empezar su etapa**, no antes, para que use lo aprendido en las anteriores.
+- No se programa una historia sin la especificación de su etapa.
+- Si algo cambia durante la etapa, se corrige primero la especificación.
+
+| Etapa | Especificación | Estado |
+|---|---|---|
+| B1 Acceso | `etapas/B1-acceso.md` | En curso |
+| B2 Configuración y app | `etapas/B2-configuracion.md` | Se escribe al cerrar B1 |
+| B3 a C5 | Una por etapa | Al empezar cada una |
+
 ## Resumen de fases
 
 | Fase | Qué cierra | Etapas |
@@ -237,7 +251,7 @@
 
 1. Mover el issue a "En curso" (máximo 2 a la vez).
 2. Crear la rama `hu-XX-descripcion` desde `develop` actualizado.
-3. Plan con Claude Code: criterios de la historia, tablas del modelo, reglas RN que toca y pantallas.
+3. Leer la especificación de la etapa (`etapas/<código>.md`) y planificar con Claude Code a partir de ella.
 4. Implementación siguiendo `CLAUDE.md` (tokens de marca, `exigirSesion`, permisos, Zod).
 5. Pruebas: unitarias para cada regla RN y E2E para los criterios. Si cambia el esquema, la migración se genera con nombre (`npm run db:generate -- --name …`).
 6. `lint`, `typecheck`, `test` y `test:e2e` pasan.

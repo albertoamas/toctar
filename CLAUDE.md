@@ -10,6 +10,7 @@ Una sola app Next.js sirve el sitio público y el panel interno (PWA instalable,
 La documentación vive en `docs/` y manda sobre cualquier supuesto:
 
 - `docs/flujo-de-trabajo.md`: etapas del proyecto y estado actual.
+- `docs/08-desarrollo/plan-de-desarrollo.md`: fases, calendario y estado. **Antes de programar una historia, lee la especificación de su etapa en `docs/08-desarrollo/etapas/`** (reglas, tablas, pantallas, acciones, textos y pruebas). Si no existe, escríbela primero con `_plantilla.md`.
 - `docs/04-requerimientos/requerimientos.md`: requisitos RF, RNF y reglas de negocio RN.
 - `docs/05-analisis/`: casos de uso, historias de usuario (backlog) y flujos críticos.
 - `docs/06-diseno/modelo-de-datos/modelo-de-datos.md`: modelo de datos (decisiones D-n).
