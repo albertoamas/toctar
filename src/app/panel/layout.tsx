@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { Suspense } from "react";
 import { MenuIcon } from "lucide-react";
-import { NavegacionPanel } from "@/componentes/panel/navegacion";
+import { MenuPanel } from "@/componentes/panel/menu-panel";
 import { UsuarioSesion } from "@/componentes/panel/usuario-sesion";
 import { Button } from "@/componentes/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/componentes/ui/sheet";
@@ -17,6 +17,11 @@ export const metadata: Metadata = {
 // tema claro, que se lee mejor al sol en el taller. En el celular, barra superior y menú desplegable.
 // Este layout NO protege a las páginas: cada página valida la sesión (src/lib/sesion.ts).
 export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
+  const menu = (
+    <Suspense fallback={<div className="h-40" />}>
+      <MenuPanel />
+    </Suspense>
+  );
   const sesion = (
     <Suspense fallback={<div className="h-10" />}>
       <UsuarioSesion />
@@ -29,7 +34,7 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
         <div className="mb-6">
           <Marca />
         </div>
-        <NavegacionPanel />
+        {menu}
         <div className="mt-auto border-t border-border pt-4">{sesion}</div>
       </aside>
 
@@ -45,7 +50,7 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
                 <Marca />
               </SheetTitle>
               <div className="px-1">
-                <NavegacionPanel />
+                {menu}
               </div>
               <div className="mt-auto border-t border-border p-4">{sesion}</div>
             </SheetContent>

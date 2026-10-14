@@ -1,5 +1,7 @@
 import { relations, sql } from "drizzle-orm";
-import { boolean, check, index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, check, index, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+// Ruta relativa: drizzle-kit también carga este archivo y no conoce el alias "@/".
+import { PERMISOS } from "../../lib/permisos";
 
 // Tablas de Better Auth (usuarios, sesiones y credenciales). Los nombres de las
 // propiedades son los que espera Better Auth; las columnas están en español.
@@ -93,9 +95,35 @@ export const verificacion = pgTable(
   (t) => [index("verificacion_identificador_idx").on(t.identifier)],
 );
 
+// Permisos del encargado (HU-03, RF-16): módulos habilitados y "autorizar entrega con saldo" (RN-13).
+// Dueño y técnico no usan esta tabla: su acceso sale del rol (src/lib/permisos.ts).
+
+
+export const usuarioPermiso = pgTable(
+  "usuario_permiso",
+  {
+    id: integer("id").generatedByDefaultAsIdentity().primaryKey(),
+    usuarioId: integer("usuario_id")
+      .notNull()
+      .references(() => usuario.id, { onDelete: "cascade" }),
+    permiso: text("permiso", { enum: PERMISOS }).notNull(),
+    createdAt: momento("created_at").defaultNow().notNull(),
+    createdBy: integer("created_by").references(() => usuario.id),
+  },
+  (t) => [
+    uniqueIndex("usuario_permiso_unico").on(t.usuarioId, t.permiso),
+    check("usuario_permiso_valido", sql.raw(`permiso in (${PERMISOS.map((p) => `'${p}'`).join(", ")})`)),
+  ],
+);
+
 export const usuarioRelaciones = relations(usuario, ({ many }) => ({
   sesiones: many(sesion),
   cuentas: many(cuenta),
+  permisos: many(usuarioPermiso, { relationName: "permisos" }),
+}));
+
+export const usuarioPermisoRelaciones = relations(usuarioPermiso, ({ one }) => ({
+  usuario: one(usuario, { fields: [usuarioPermiso.usuarioId], references: [usuario.id], relationName: "permisos" }),
 }));
 
 export const sesionRelaciones = relations(sesion, ({ one }) => ({

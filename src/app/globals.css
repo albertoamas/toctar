@@ -194,6 +194,37 @@
     background: currentColor;
   }
 
+  /* Insignia de estado del panel: la palabra lleva el significado; el color y la marca a 60° lo refuerzan. */
+  .tt-insignia {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    border: 1px solid currentColor;
+    border-radius: var(--radius);
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 600;
+    color: var(--tinta-suave);
+    white-space: nowrap;
+  }
+  .tt-insignia::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    background: currentColor;
+    transform: skewX(-30deg);
+  }
+  .tt-insignia--exito {
+    color: var(--exito);
+  }
+  .tt-insignia--aviso {
+    color: var(--aviso);
+  }
+  .tt-insignia--error {
+    color: var(--rojo-texto);
+  }
+
   /* Botón principal del sitio: rojo con la esquina inferior derecha cortada a 60°.
      El corte va en una capa de fondo para que el anillo de foco no se recorte. */
   .tt-boton-marca {
