@@ -5,6 +5,8 @@ import { alertaDeIngreso, crearUsuario, ingresar, ingresarComoDueno } from "./ap
 // Los nombres llevan el proyecto (celular o escritorio) porque ambos corren a la vez sobre la misma base.
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "c" : "e");
+/** Nombre visible único por proyecto: con nombres repetidos, un proyecto podía tocar al usuario del otro. */
+const nombreUnico = (nombre: string, info: TestInfo) => `${nombre} ${sufijo(info).toUpperCase()}`;
 
 async function crearPorPantalla(page: Page, d: { nombre: string; usuario: string; contrasena: string; rol: string }) {
   await page.goto("/panel/usuarios/nuevo");
@@ -24,8 +26,9 @@ async function otraPersona(browser: Browser, info: TestInfo) {
 test("el dueño crea un técnico (usuario con guion), que ingresa sin ver Usuarios y no entra por URL", async ({ page, browser }, info) => {
   const usuario = `tecnico-${sufijo(info)}`;
   await ingresarComoDueno(page);
-  await crearPorPantalla(page, { nombre: "Técnico de prueba", usuario, contrasena: "tecnico-123", rol: "Técnico" });
-  await expect(page.getByRole("status")).toContainText("Usuario Técnico de prueba creado");
+  const nombre = nombreUnico("Técnico de prueba", info);
+  await crearPorPantalla(page, { nombre, usuario, contrasena: "tecnico-123", rol: "Técnico" });
+  await expect(page.getByRole("status")).toContainText(`Usuario ${nombre} creado`);
 
   const { ctx, page: tecnico } = await otraPersona(browser, info);
   await ingresar(tecnico, usuario, "tecnico-123");
@@ -41,10 +44,11 @@ test("el dueño crea un técnico (usuario con guion), que ingresa sin ver Usuari
 
 test("restablecer la contraseña: la anterior deja de servir y la nueva funciona", async ({ page, browser }, info) => {
   const usuario = `olvido-${sufijo(info)}`;
-  await crearUsuario({ usuario, nombre: "Encargado olvidadizo", contrasena: "vieja-1234", rol: "encargado" });
+  const nombre = nombreUnico("Encargado olvidadizo", info);
+  await crearUsuario({ usuario, nombre, contrasena: "vieja-1234", rol: "encargado" });
   await ingresarComoDueno(page);
   await page.goto("/panel/usuarios");
-  await page.getByRole("link", { name: "Encargado olvidadizo" }).first().click();
+  await page.getByRole("link", { name: nombre }).first().click();
   await page.getByRole("button", { name: "Restablecer contraseña" }).click();
   await page.getByLabel("Contraseña nueva").fill("nueva-1234");
   await page.getByRole("button", { name: "Guardar", exact: true }).click();
@@ -60,7 +64,8 @@ test("restablecer la contraseña: la anterior deja de servir y la nueva funciona
 
 test("desactivar a alguien con la sesión abierta lo saca del panel", async ({ page, browser }, info) => {
   const usuario = `saliente-${sufijo(info)}`;
-  await crearUsuario({ usuario, nombre: "Técnico saliente", contrasena: "saliente-123", rol: "tecnico" });
+  const nombre = nombreUnico("Técnico saliente", info);
+  await crearUsuario({ usuario, nombre, contrasena: "saliente-123", rol: "tecnico" });
 
   const { ctx, page: tecnico } = await otraPersona(browser, info);
   await ingresar(tecnico, usuario, "saliente-123");
@@ -68,7 +73,7 @@ test("desactivar a alguien con la sesión abierta lo saca del panel", async ({ p
 
   await ingresarComoDueno(page);
   await page.goto("/panel/usuarios");
-  await page.getByRole("link", { name: "Técnico saliente" }).first().click();
+  await page.getByRole("link", { name: nombre }).first().click();
   await page.getByRole("button", { name: "Desactivar usuario" }).click();
   await page.getByRole("button", { name: "Sí, desactivar" }).click();
   await expect(page.getByText("Usuario desactivado")).toBeVisible();
