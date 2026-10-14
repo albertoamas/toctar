@@ -118,7 +118,8 @@ docs/
 - [x] 2. Propuesta
 - [x] 3. Cierre comercial: Web + Gestión (Bs 3.900), firmado y primer pago recibido (`acuerdo.md`)
 - [x] 4. Requerimientos: aprobados por el dueño
-- [ ] 5. Análisis: casos de uso, historias y secuencias en borrador, pendientes de validación del dueño
-- [x] 6. Diseño: modelo de datos y arquitectura (stack aprobado, con Docker); sin prototipo por decisión del usuario
-- [ ] 7. Preparación ← en curso: base local lista; faltan GitHub, VPS, Coolify y dominio (`07-preparacion/preparacion.md`)
-- [ ] 8–11. Desarrollo, pruebas, lanzamiento y soporte (por fase)
+- [ ] 5. Análisis: supuestos S-1 a S-5 respondidos (14/10); criterios de HU-01 a HU-18 se validan en la demo del 23/10 y HU-19 a HU-41 antes del 3/11
+- [x] 6. Diseño: modelo de datos, arquitectura (stack aprobado, con Docker) e identidad visual (`06-diseno/identidad-visual.md`); sin prototipo por decisión del usuario
+- [ ] 7. Preparación: local y GitHub listos; faltan dominio, VPS, Coolify y R2 (etapa A3 del plan, hasta el 21/10)
+- [ ] 8. Desarrollo iterativo ← en curso: entrega 1, semana 1 (`08-desarrollo/plan-de-desarrollo.md`)
+- [ ] 9–11. Pruebas, lanzamiento y soporte (por entrega)

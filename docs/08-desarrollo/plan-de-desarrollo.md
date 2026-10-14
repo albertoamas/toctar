@@ -1,90 +1,286 @@
 # Plan de desarrollo — TocTar Detailing (Web + Gestión)
 
-- **Versión:** 3 · 14 de octubre de 2026 (fechas reales desde el día D)
-- **Base:** backlog de `05-analisis/historias-de-usuario/historias.md` y plazos de `03-cierre-comercial/acuerdo.md`
+- **Versión:** 4 · 14 de octubre de 2026
+- **Base:**
+  - Backlog: `05-analisis/historias-de-usuario/historias.md`.
+  - Plazos y pagos: `03-cierre-comercial/acuerdo.md`.
+  - Tablas: `06-diseno/modelo-de-datos/modelo-de-datos.md`.
+  - Pendientes de infraestructura: `07-preparacion/preparacion.md`.
+- **Cómo se usa:**
+  - Cada etapa tiene un criterio de salida; no se pasa a la siguiente sin cumplirlo.
+  - Al cerrar una etapa, se marca aquí y en `flujo-de-trabajo.md`.
+  - Si una fecha se mueve, se cambia aquí y se avisa al dueño en la revisión del viernes.
 
-## Cuándo empieza a correr el plazo
+## Dónde estamos (14 de octubre)
 
-Según el acuerdo, los plazos cuentan desde que se cumplen el primer pago y la entrega del material. **Día D = miércoles 14 de octubre de 2026**: llegaron el logo, las fotos y los datos de contacto (`01-descubrimiento/material-recibido.md`). Lo que falta se completa durante el desarrollo.
-
-| Semana | Fechas |
+| Qué | Estado |
 |---|---|
-| 1 | 14 al 20 de octubre |
-| 2 | 21 al 27 de octubre |
-| 3 | 28 de octubre al 3 de noviembre |
-| 4 | 4 al 10 de noviembre |
-| 5 | 11 al 17 de noviembre |
-| 6 | 18 al 24 de noviembre |
-| 7 | 25 de noviembre al 1 de diciembre |
+| Etapas 1 a 4 (descubrimiento, propuesta, cierre comercial, requerimientos) | ✅ Cerradas |
+| Etapa 5 (análisis) | 🟡 Supuestos S-1 a S-5 respondidos; falta que el dueño valide los criterios de las historias |
+| Etapa 6 (diseño) | ✅ Modelo de datos, arquitectura e identidad visual |
+| Etapa 7 (preparación) | 🟡 Local y GitHub listos; faltan dominio, VPS, Coolify, R2 y respaldos |
+| Iteración 0 (cimientos) | ✅ En `develop` (PR #1) |
+| HU-01 Iniciar sesión | 🔵 Terminada, en revisión (rama `hu-01-iniciar-sesion`) |
+| Identidad visual aplicada a la app | 🔵 Terminada, en revisión (rama `identidad-visual`, apilada sobre HU-01) |
+| Día D (inicio del plazo) | 14 de octubre de 2026 |
 
-| Entrega | Plazo del acuerdo | Fecha límite | Plan | Cobro al aceptarse |
-|---|---|---|---|---|
-| 1. Web | 2 a 3 semanas | **3 de noviembre** | Semanas 1 a 3 | Bs 700 |
-| 2. Gestión | 3 a 4 semanas más | **1 de diciembre** | Semanas 4 a 6 | Bs 2.000 |
-| Margen | | | Semana 7 | |
+## Calendario
 
-El material llegó antes de terminar la iteración 1 (acceso), así que esa iteración entra en la semana 1 y la entrega 1 usa sus 3 semanas. La entrega 2 apunta al 24 de noviembre y deja la semana 7 de margen antes del límite.
+| Semana | Fechas | Fase | Revisión con el dueño |
+|---|---|---|---|
+| 1 | 14 al 20 de octubre | B. Entrega 1: acceso y configuración | — |
+| 2 | 21 al 27 de octubre | B. Entrega 1: contenido y sitio | **Viernes 23**: primera demo |
+| 3 | 28 de octubre al 3 de noviembre | B. Entrega 1: cierre | **Viernes 30**: demo; acta antes del **3/11** |
+| 4 | 4 al 10 de noviembre | C. Entrega 2: catálogo y clientes | Viernes 6 |
+| 5 | 11 al 17 de noviembre | C. Entrega 2: cotizaciones y agenda | Viernes 13 |
+| 6 | 18 al 24 de noviembre | C. Entrega 2: taller y cierre | **Viernes 20**: demo; acta |
+| 7 | 25 de noviembre al 1 de diciembre | Margen | Límite del acuerdo: **1/12** |
 
-## Estimación con Claude Code
-
-Los tamaños del backlog (S = medio día, M = 1,5 días, L = 3 días) son de desarrollo sin asistencia. Con Claude Code, el tiempo de **programar** baja, pero no todo baja igual:
-
-| Tipo de trabajo | Efecto de Claude Code | Ejemplos |
+| Hito | Fecha límite | Pago al aceptarse |
 |---|---|---|
-| Pantallas de alta, edición y listado; páginas del sitio | Mucho: un 50 a 60 % menos | Usuarios, servicios, textos, clientes, catálogo, portada |
-| Lógica con reglas del negocio | Medio: un 30 % menos (hay que verificar cada regla con pruebas) | Permisos, cotización con versiones, saldos, mantenimiento |
-| Interfaz delicada y documentos | Poco: se itera mirando el resultado en el celular | Tablero de la agenda, PDF de la cotización, subida de fotos |
-| Revisar el código antes de cada merge | No baja: lo hace el desarrollador | Todas |
-| Respuestas del dueño, material, revisiones semanales, aceptación | No baja: depende de TocTar | Todas |
+| Entrega 1: Web publicada y aceptada | 3 de noviembre | Bs 700 |
+| Entrega 2: Gestión aceptada | 1 de diciembre (meta: 24 de noviembre) | Bs 2.000 |
 
-| Entrega | Sin asistencia | Con Claude Code | Semanas |
-|---|---|---|---|
-| 1. Web (HU-01 a HU-18) | unos 16 días | unos 9 días | 3 (con la revisión del dueño) |
-| 2. Gestión (HU-19 a HU-38) | unos 27 días | unos 15 días | 3, más 1 de margen |
+## Resumen de fases
 
-**Conclusión:** el cuello de botella deja de ser programar y pasa a ser el dueño (material, respuestas en 3 días hábiles, 5 días para aceptar cada entrega). Por eso **no se promete menos que el plazo del acuerdo**: el tiempo ganado se usa como margen y para hacer las historias deseables, no para adelantar fechas comprometidas.
+| Fase | Qué cierra | Etapas |
+|---|---|---|
+| **A. Cimientos y preparación** | Etapas 6 y 7 del flujo: base técnica, identidad e infraestructura | A1 Base técnica ✅ · A2 Identidad visual 🔵 · A3 Entornos en la nube |
+| **B. Entrega 1: Web** | Sitio público, panel de contenido, usuarios y configuración, en producción | B1 Acceso · B2 Configuración y app · B3 Contenido del panel · B4 Sitio público · B5 Reclamos y Google · B6 Cierre |
+| **C. Entrega 2: Gestión** | Clientes, cotizaciones, agenda, órdenes, pagos y mantenimiento | C1 Catálogo y clientes · C2 Consultas y cotizaciones · C3 Agenda y pagos · C4 Taller y entrega · C5 Cierre |
+| **D. Lanzamiento y soporte** | Etapas 10 y 11: uso real, respaldos probados, 3 meses de mantenimiento | D1 Lanzamiento · D2 Soporte |
 
-## Antes del día D
+---
 
-- [x] Iteración 0, cimientos: Next.js, PostgreSQL, RustFS, Docker, shadcn/ui, Vitest, Playwright, layouts (PR #1, 14 de octubre).
+## Fase A. Cimientos y preparación
 
-## Entrega 1: Web (semanas 1 a 3)
+### A1. Base técnica ✅
+- Next.js 16, PostgreSQL 18, Drizzle, RustFS, Docker, shadcn/ui, Vitest, Playwright y layouts (PR #1).
+- Repositorio en GitHub con convenciones de ramas, commits y PR (`CLAUDE.md`).
 
-| Semana | Contenido | Historias | Material que necesita |
-|---|---|---|---|
-| 1 (14–20 oct) | Iteración 1, acceso: inicio de sesión, usuarios, permisos del encargado. Datos del negocio, parámetros, app instalable. **Se levanta el entorno de pruebas** (VPS, Coolify, dominio) | HU-01 a HU-06 | Dominio y titular, horario |
-| 2 (21–27 oct) | Servicios, textos y galería del panel; portada, páginas de servicio, galería, nosotros y preguntas frecuentes. **Primera revisión del dueño: viernes 23** | HU-07 a HU-13 | Textos por servicio, fotos (las principales de cada servicio pueden llegar después: el sitio usa una imagen de reemplazo) |
-| 3 (28 oct–3 nov) | Contacto, WhatsApp, reclamos y Google (SEO); carga del contenido real; capacitación. **Acta de aceptación de la entrega 1 → producción** | HU-14 a HU-18 | Condiciones y garantía |
+### A2. Identidad visual 🔵
+- **Entregable:**
+  - Design System (https://claude.ai/artifact/FcABnS1tF3WgZMz9v3e5BT).
+  - Tokens, tipografías y logos aplicados a la app (rama `identidad-visual`).
+- **Criterio de salida:** la rama está unida a `develop`.
+- **Queda pendiente, sin bloquear:** el vectorial original del logo del diseñador, y la validación del dueño el viernes 23.
 
-## Entrega 2: Gestión (semanas 4 a 6, margen en la 7)
+### A3. Entornos en la nube
+- **Cuándo:** semana 1, a más tardar el **miércoles 21**, para tener dos días de margen antes de la demo del 23.
+- **Necesita del dueño (pedir hoy):** el dominio exacto (basado en `toctardetailingcar`) y el nombre y CI o NIT del titular.
+- **Tareas** (detalle en `07-preparacion/preparacion.md`):
+  1. Instalar `gh` y proteger `main` y `develop` en GitHub.
+  2. Contratar el VPS (Hetzner o DigitalOcean, 2 GB) e instalar Coolify.
+  3. Comprar el dominio y apuntar `<dominio>` y `pruebas.<dominio>` al VPS.
+  4. En Coolify: `develop` → pruebas y `main` → producción, cada uno con su PostgreSQL 18 y sus variables (`BETTER_AUTH_SECRET` distinto, `DUENO_INICIAL_*`).
+  5. Cuenta de Cloudflare a nombre de TocTar: un bucket R2 para fotos y otro para respaldos.
+  6. Respaldo diario de PostgreSQL hacia R2, conservando 30 días.
+  7. UptimeRobot vigilando `/api/salud`.
+- **Entregable:** `pruebas.<dominio>` muestra el último `develop` y el dueño de prueba puede ingresar.
+- **Criterio de salida:** un push a `develop` se despliega solo, y `/api/salud` responde 200 en pruebas.
 
-La entrega 2 empieza sin esperar el acta de la 1 (el dueño tiene 5 días hábiles para aceptarla).
+---
 
-| Semana | Contenido | Historias | Material que necesita |
-|---|---|---|---|
-| 4 (4–10 nov) | Catálogo con variantes y precios; clientes, vehículos, búsqueda y ficha; consultas | HU-19 a HU-24 | Lista de precios, variantes de inyección y succión y de vidrios |
-| 5 (11–17 nov) | Cotización con versiones, PDF y compartir; seguimiento; agenda | HU-25 a HU-31 | Condiciones del PDF |
-| 6 (18–24 nov) | Pagos, recepción, órdenes del técnico, aviso, entrega, saldos, mantenimiento; capacitación. **Acta de aceptación de la entrega 2** | HU-32 a HU-38 | — |
+## Fase B. Entrega 1: Web (14 de octubre al 3 de noviembre)
 
-**Semana 7 (25 nov–1 dic): margen** antes del límite del acuerdo. Absorbe material atrasado, ajustes de las revisiones y las historias deseables (HU-39 a HU-41) que no hayan entrado.
+**Objetivo:** que el dueño publique y mantenga su sitio sin depender de YankoSoft, y que los clientes lo encuentren y escriban por WhatsApp.
 
-## Riesgos del calendario
+### B1. Acceso (semana 1)
 
-- **Material atrasado.** Es el riesgo principal. Si falta algo, la semana avanza con datos de prueba y el contenido real se carga después; si falta el logo o los datos de contacto, la primera revisión pierde valor.
-- **Respuestas lentas del dueño.** Una revisión sin respuesta en 3 días hábiles corre el calendario. Se le recuerda en el mismo día de la demo qué se necesita.
-- **Interfaces difíciles** (agenda y PDF). Son las que menos acelera Claude Code; se muestran al dueño temprano, aunque estén incompletas.
-- **Entrega 1 sin margen.** Usa las 3 semanas del acuerdo. Si algo se atrasa, se avisa al dueño en la revisión semanal; las historias deseables y los ajustes menores se mueven, no se recorta la calidad.
-- **Validación pendiente.** Ver la sección siguiente.
+| | |
+|---|---|
+| Historias | HU-01 Iniciar sesión 🔵 · HU-02 Gestionar usuarios y roles · HU-03 Permisos del encargado |
+| Tablas nuevas | `usuario`, `sesion`, `cuenta`, `verificacion` (hechas en HU-01) · `usuario_permiso` |
+| Reglas | RN-01 (solo el dueño cotiza), RN-12 (el técnico no ve precios), RN-14 (desactivar, no borrar), S-2 y S-4 (permisos `entrega_con_saldo` y módulo `reclamos`) |
+| Clave técnica | `src/lib/permisos.ts`: qué módulo ve cada rol y cada encargado. Toda acción pasa `headers` a `auth.api.*` |
+| Pruebas | Unitarias: la matriz de permisos completa. E2E: el dueño crea un técnico y ese técnico entra; un encargado sin el módulo ve "sin acceso" |
+| Entregable | El dueño crea usuarios, les asigna rol y módulos, restablece contraseñas y los desactiva |
+| Criterio de salida | Ningún rol accede por URL a un módulo que no le corresponde (probado) |
 
-## Validación pendiente del dueño
+### B2. Configuración y app instalable (semana 1)
 
-1. [x] Los supuestos S-1 a S-5: respondidos el 14 de octubre (S-2, S-4 y S-5 con ajustes).
-2. [ ] Los criterios de aceptación de HU-01 a HU-18: en la primera revisión (viernes 23 de octubre), con lo ya construido a la vista. Son la lista con la que se firma el acta de la entrega 1.
-3. [ ] Las historias HU-19 a HU-41: antes de la semana 4.
+| | |
+|---|---|
+| Historias | HU-04 Datos del negocio · HU-05 Parámetros del sistema · HU-06 App instalable |
+| Tablas nuevas | `negocio`, `sucursal`, `parametro`, `tamano_vehiculo` (con `descripcion`), `espacio_taller`, `archivo` |
+| Datos iniciales | 5 tamaños de vehículo, 3 espacios del taller, adelanto sugerido Bs 200, validez sugerida, intervalo de mantenimiento de 3 meses (`material-recibido.md`) |
+| Clave técnica | Subida del logo a R2/RustFS (`src/lib/almacenamiento.ts`, compresión con `sharp`). Manifest y service worker mínimo; aviso claro sin conexión |
+| Material | Dirección, ubicación, WhatsApp, correo y redes (recibidos). **Horario pendiente**: se carga después desde el panel |
+| Entregable | Todo dato del negocio y todo parámetro se edita desde el panel. La app se instala en Android y iPhone con el ícono de TocTar |
+| Criterio de salida | Ningún valor del negocio fijo en el código (RNF-11). Parámetros vacíos o negativos rechazados |
 
-## Ritmo de cada semana
+### B3. Contenido del panel (semana 2)
 
-- Lunes: elegir las historias de la semana.
-- Cada historia: rama → plan → código → pruebas → revisión → merge a `develop` (se despliega en pruebas).
-- Viernes: demo al dueño en el entorno de pruebas; él responde en máximo 3 días hábiles.
-- Los pedidos nuevos van a `03-cierre-comercial/registro-de-cambios.md` (bolsa de 8 horas).
+| | |
+|---|---|
+| Historias | HU-07 Servicios del sitio · HU-08 Textos del sitio · HU-09 Galería en el panel |
+| Tablas nuevas | `servicio` (los campos del sitio; los precios llegan en C1), `contenido_pagina`, `faq`, `galeria_item` |
+| Clave técnica | Fotos: el lado mayor a 1600 px, WebP y miniatura. Al guardar se regenera solo la página afectada del sitio (Cache Components, `updateTag`) |
+| Material | Textos por servicio (pendiente: se cargan con datos de prueba si no llegan). Fotos de antes y después (recibidas). Fotos principales (pendientes: se usa la imagen de reemplazo) |
+| Entregable | El dueño crea servicios, edita textos y sube fotos de antes y después |
+| Criterio de salida | Un cambio en el panel se ve en el sitio sin volver a desplegar |
+
+### B4. Sitio público (semana 2)
+
+| | |
+|---|---|
+| Historias | HU-10 Portada · HU-11 Página de cada servicio · HU-12 Galería pública · HU-13 Nosotros y preguntas frecuentes · HU-14 Contacto y mapa · HU-15 Botón de WhatsApp |
+| Componentes del Design System | EncabezadoSitio, TarjetaServicio (con imagen de reemplazo), BotonWhatsApp, Lema, LineaLed, botón principal con corte a 60° |
+| Reglas | RN-10: sin precios ni testimonios |
+| Clave técnica | Páginas pre-generadas, imágenes optimizadas, enlaces `wa.me` armados con el número de HU-04 |
+| Entregable | El sitio completo con contenido de prueba o real, en `pruebas.<dominio>` |
+| Criterio de salida | Lighthouse móvil ≥ 90 en rendimiento, SEO y accesibilidad (RNF-02, RNF-14). Se ve bien desde 360 px |
+| **Demo viernes 23** | Sitio y panel de contenido. **El dueño valida los criterios de HU-01 a HU-18** (los del acta) |
+
+### B5. Reclamos y Google (semana 3)
+
+| | |
+|---|---|
+| Historias | HU-16 Formulario de reclamo · HU-17 Atender reclamos · HU-18 Sitio preparado para Google |
+| Tablas nuevas | `reclamo`, `reclamo_archivo` |
+| Clave técnica | Protección contra spam (campo trampa y límite por IP), hasta 3 fotos, `sitemap.xml`, `robots.txt` sin `/panel`, datos de negocio local (JSON-LD) |
+| Fuera del software | El dueño da de alta su Perfil de Empresa en Google Maps; YankoSoft lo guía |
+| Entregable | Los reclamos llegan al panel, el dueño o el encargado con el módulo los atienden, y el sitio es indexable |
+| Criterio de salida | El reclamo de prueba aparece en el inicio del panel (S-4) |
+
+### B6. Cierre de la entrega 1 (semana 3, hasta el 3 de noviembre)
+
+1. Prueba completa en `pruebas.<dominio>` con la lista de criterios de HU-01 a HU-18. Las correcciones entran por PR.
+2. Carga del contenido real: servicios, textos, fotos, datos del negocio y horario.
+3. Capacitación del dueño y del encargado: videos cortos (cómo editar un servicio, subir fotos, crear un usuario, atender un reclamo).
+4. Demo del viernes 30 y **acta de aceptación** firmada o confirmada por WhatsApp (`09-pruebas/actas-de-aceptacion/entrega-1.md`). Si en 5 días hábiles no hay observaciones, se considera aceptada.
+5. Merge de `develop` a `main`, despliegue a producción, etiqueta `v1.0.0`.
+6. Cobro de Bs 700. Empieza el mantenimiento incluido (3 meses desde la publicación).
+
+**Criterio de salida de la fase B:** el sitio está publicado en `<dominio>`, el acta está firmada y el pago recibido.
+
+---
+
+## Fase C. Entrega 2: Gestión (4 al 24 de noviembre; margen hasta el 1 de diciembre)
+
+**Objetivo:** que el taller deje el cuaderno. Toda consulta, cotización, reserva, orden y pago queda registrada.
+
+**Antes de empezar (a más tardar el 3 de noviembre):** el dueño valida las historias HU-19 a HU-41 y entrega la lista de precios, las variantes de inyección y succión y de pulido de vidrios, y las condiciones del PDF.
+
+### C1. Catálogo y clientes (semana 4)
+
+| | |
+|---|---|
+| Historias | HU-19 Catálogo con variantes · HU-20 Precios por tamaño y duración · HU-21 Registrar clientes y vehículos · HU-22 Buscar clientes · HU-23 Ficha del cliente |
+| Tablas nuevas | `variante`, `precio` (historial, D-3), `cliente`, `vehiculo`, `auditoria` |
+| Reglas | D-2 (todo servicio tiene al menos una variante), RN-07 (precio por tamaño; vacío = "según evaluación", como el mantenimiento del cerámico), RNF-10 (registro de cambios de precio) |
+| Entregable | Catálogo con precios cargados; clientes y vehículos con búsqueda por nombre, teléfono o placa |
+| Criterio de salida | Un cambio de precio no altera nada ya guardado y queda en el historial |
+
+### C2. Consultas y cotizaciones (semanas 4 y 5)
+
+| | |
+|---|---|
+| Historias | HU-24 Registrar consulta · HU-25 Armar cotización · HU-26 PDF de la cotización · HU-27 Compartir el PDF · HU-28 Seguimiento de consultas |
+| Tablas nuevas | `consulta`, `consulta_archivo`, `cotizacion`, `cotizacion_linea`, `cotizacion_foto` |
+| Reglas | RN-01 (solo el dueño), RN-02 (una cotización enviada no cambia: modificarla crea otra versión), RN-03 (estimado por fotos), S-5 (validez definida en cada cotización) |
+| Clave técnica | HU-25 y HU-26 son grandes: se parten. PDF con `@react-pdf/renderer` en la identidad visual (logo sobre claro), guardado en R2 y nunca regenerado. Web Share API con archivo |
+| Flujo crítico | Consulta → cotización (diagrama 1 de `flujos-criticos.md`): prueba E2E |
+| Entregable | El dueño cotiza desde el celular y manda el PDF por WhatsApp |
+| Criterio de salida | El técnico y el encargado reciben "sin acceso" al intentar cotizar, también por URL y por la acción del servidor |
+
+### C3. Agenda y pagos (semana 5)
+
+| | |
+|---|---|
+| Historias | HU-29 Tablero de la agenda · HU-30 Agendar reserva · HU-31 Reprogramar o cancelar · HU-32 Registrar pagos y saldo |
+| Tablas nuevas | `trabajo` (reserva y orden en una tabla, D-1), `trabajo_linea`, `pago` |
+| Reglas | RN-06 (un espacio no puede tener dos vehículos el mismo día: restricción de exclusión en la base, D-5), RN-04 (adelanto sugerido editable), RN-05 (el adelanto no se devuelve) |
+| Clave técnica | Agenda por día y espacio (S-3). El cerámico de 1,5 días ocupa 2. La duración se sugiere y se puede editar. El tablero se muestra temprano al dueño, porque es de las interfaces que menos acelera Claude Code |
+| Flujo crítico | Cotización → reserva sin cruces, con dos personas reservando a la vez: prueba E2E |
+| Entregable | La agenda reemplaza al cuaderno |
+| Criterio de salida | La base rechaza un cruce aunque el código fallara (prueba directa contra la restricción) |
+
+### C4. Taller y entrega (semana 6)
+
+| | |
+|---|---|
+| Historias | HU-33 Recibir vehículo · HU-34 Órdenes del técnico · HU-35 Avisar vehículo listo · HU-36 Entregar vehículo · HU-37 Saldos pendientes · HU-38 Recordatorios de mantenimiento |
+| Tablas nuevas | `trabajo_foto`, `trabajo_avance`, `recordatorio_mantenimiento` |
+| Reglas | RN-12 (el técnico ve solo sus órdenes, sin precios), RN-13 (entrega con saldo solo por el dueño o un encargado con el permiso `entrega_con_saldo`), RN-08 (mantenimiento a 3 meses desde la entrega, solo en los servicios marcados) |
+| Flujo crítico | Recepción → orden → aviso → entrega con saldo → mantenimiento: prueba E2E |
+| Entregable | El ciclo completo de un vehículo en el sistema, de la consulta al recordatorio |
+| Criterio de salida | Los 5 flujos de `flujos-criticos.md` tienen su prueba E2E y pasan |
+
+### C5. Cierre de la entrega 2 (semana 6; margen en la 7)
+
+1. Historias deseables, solo si hay tiempo: HU-39 Pantalla del día · HU-40 Plantillas de WhatsApp (`plantilla_mensaje`) · HU-41 Fotos de órdenes a la galería.
+2. Prueba completa con la lista de criterios de HU-19 a HU-38.
+3. Capacitación por rol: dueño (cotizar, agenda, saldos), encargado y técnico (sus órdenes desde el celular).
+4. Demo del viernes 20 y acta de la entrega 2 (`09-pruebas/actas-de-aceptacion/entrega-2.md`).
+5. Merge a `main`, etiqueta `v2.0.0`, cobro de Bs 2.000. Al completar el pago, TocTar recibe una copia del código.
+
+**Criterio de salida de la fase C:** acta firmada antes del 1 de diciembre y pago recibido.
+
+---
+
+## Fase D. Lanzamiento y soporte
+
+### D1. Lanzamiento
+- **Antes de publicar la entrega 1:** restauración de prueba de un respaldo, documentada en `10-lanzamiento/` (RNF-06).
+- **Carga de datos reales:** los clientes del cuaderno, si el dueño quiere (se coordina en la semana 6).
+- **Primera semana de uso:** acompañamiento. Las correcciones entran como `arreglo/…` desde `main`.
+
+### D2. Soporte y mejora
+- Garantía de 30 días desde cada entrega: los errores no se cobran.
+- Mantenimiento incluido los 3 primeros meses; desde el mes 4, Bs 120 por mes.
+- Pedidos nuevos: `03-cierre-comercial/registro-de-cambios.md` (bolsa de 8 h; después Bs 40 por hora). Inventario, asistencia, planilla, caja y reportes son el Sistema completo (Bs 2.000 dentro de los 90 días).
+
+---
+
+## Cómo se trabaja cada historia
+
+1. Mover el issue a "En curso" (máximo 2 a la vez).
+2. Crear la rama `hu-XX-descripcion` desde `develop` actualizado.
+3. Plan con Claude Code: criterios de la historia, tablas del modelo, reglas RN que toca y pantallas.
+4. Implementación siguiendo `CLAUDE.md` (tokens de marca, `exigirSesion`, permisos, Zod).
+5. Pruebas: unitarias para cada regla RN y E2E para los criterios. Si cambia el esquema, la migración se genera con nombre (`npm run db:generate -- --name …`).
+6. `lint`, `typecheck`, `test` y `test:e2e` pasan.
+7. PR con la plantilla y `Closes #N`; revisión propia del diff completo (y `/code-review` como segunda mirada).
+8. Merge con squash a `develop`: se despliega en pruebas.
+9. La historia queda **terminada** cuando la ve el dueño en la revisión del viernes.
+
+## Ritmo de la semana
+
+| Día | Qué |
+|---|---|
+| Lunes | Elegir las historias de la semana en el tablero |
+| Martes a jueves | Desarrollo |
+| Viernes | Demo de 20 minutos al dueño en pruebas; lista corta de lo que se necesita de él. Responde en máximo 3 días hábiles |
+| Viernes después de la demo | Mensaje de avance por WhatsApp y actualización de este plan |
+
+## Seguimiento
+
+- **GitHub:** un issue por historia con sus criterios como casillas; milestones "Entrega 1 · Web" (3/11) y "Entrega 2 · Gestión" (1/12); tablero con las columnas Backlog, Esta semana, En curso, En revisión, En pruebas y Aceptado. Se arma cuando esté instalado `gh`.
+- **Este documento:** la columna de estado de "Dónde estamos" se actualiza cada viernes.
+
+## Decisiones y material pendientes
+
+| # | Qué | De quién | Para cuándo | Bloquea |
+|---|---|---|---|---|
+| 1 | Dominio exacto y titular (nombre y CI o NIT) | Dueño | Lunes 19 de octubre | A3 (entorno de pruebas) |
+| 2 | Proveedor del VPS: Hetzner o DigitalOcean | YankoSoft | Lunes 19 de octubre | A3 |
+| 3 | Horario de atención confirmado, con los días | Dueño | Viernes 23 de octubre | Nada (se carga desde el panel) |
+| 4 | Textos por servicio y preguntas frecuentes | Dueño | Viernes 23 de octubre | B6 (contenido real) |
+| 5 | Fotos principales de cada servicio | Dueño | Antes del 3 de noviembre | Nada (imagen de reemplazo) |
+| 6 | Validación de criterios HU-01 a HU-18 | Dueño | Demo del viernes 23 | B6 (acta) |
+| 7 | Condiciones y garantía del PDF | Dueño | 3 de noviembre | C2 |
+| 8 | Lista de precios, variantes de inyección y succión y de vidrios | Dueño | 3 de noviembre | C1 |
+| 9 | Validación de HU-19 a HU-41 | Dueño | 3 de noviembre | Fase C |
+| 10 | Vectorial original del logo | Diseñador del dueño | Sin fecha | Nada (hay trazado fiel) |
+
+## Riesgos
+
+| Riesgo | Efecto | Qué se hace |
+|---|---|---|
+| El dominio o el titular no llegan a tiempo | Sin entorno de pruebas para la demo del 23 | Pedirlo hoy. Si no llega el 19, el VPS se levanta con un subdominio temporal de Coolify y la demo se hace igual |
+| Material atrasado (textos, fotos, precios) | Contenido de prueba en las demos | Datos de prueba realistas; el contenido real se carga en B6 y en C1 |
+| El dueño tarda en responder o en aceptar | El calendario se corre | Pedidos concretos en cada demo; el acta se considera aceptada a los 5 días hábiles sin observaciones |
+| Entrega 1 sin margen | Atraso en el primer cobro | Las historias deseables y los ajustes menores se mueven; la calidad no se recorta |
+| Agenda y PDF, las interfaces más difíciles | Rehacerlas al final | Mostrarlas incompletas en la demo de su semana |
+| Pedidos nuevos en las demos | Alcance que crece | Todo pedido va al registro de cambios antes de hacerse |
