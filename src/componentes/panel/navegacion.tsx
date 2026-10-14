@@ -4,17 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "cn";
 
-// Módulos del panel de la entrega 1. Desde HU-03 la lista se filtra según el rol
-// y los permisos del encargado (src/lib/permisos.ts).
-const modulos = [
-  { href: "/panel", texto: "Inicio" },
-  { href: "/panel/sitio", texto: "Sitio web" },
-  { href: "/panel/reclamos", texto: "Reclamos" },
-  { href: "/panel/usuarios", texto: "Usuarios" },
-  { href: "/panel/configuracion", texto: "Configuración" },
-];
+// Los módulos llegan ya filtrados por rol y permisos desde MenuPanel (src/lib/permisos.ts).
+export type EnlaceModulo = { href: string; texto: string };
 
-export function NavegacionPanel() {
+export function NavegacionPanel({ modulos }: { modulos: EnlaceModulo[] }) {
   const ruta = usePathname();
 
   return (

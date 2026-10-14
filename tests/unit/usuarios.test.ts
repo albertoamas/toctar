@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { correoInterno, esquemaContrasena, esquemaNombreUsuario } from "@/lib/usuarios";
+import { PATRON_NOMBRE_USUARIO, correoInterno, esquemaContrasena, esquemaNombreUsuario } from "@/lib/usuarios";
 
 describe("esquemaNombreUsuario", () => {
   test("normaliza a minúsculas y quita espacios", () => {
@@ -13,6 +13,15 @@ describe("esquemaNombreUsuario", () => {
   test.each(["dueno", "tecnico_1", "ana-maria", "j.p"])("acepta %s", (valor) => {
     expect(esquemaNombreUsuario.safeParse(valor).success).toBe(true);
   });
+});
+
+test("todo usuario que acepta el formulario también puede ingresar (mismo patrón que Better Auth)", () => {
+  // Error real encontrado en HU-02: el validador por defecto del plugin rechazaba los guiones.
+  for (const valor of ["ana-maria", "tecnico_1", "j.p", "dueno"]) {
+    const usuario = esquemaNombreUsuario.parse(valor);
+    expect(PATRON_NOMBRE_USUARIO.test(usuario)).toBe(true);
+    expect(PATRON_NOMBRE_USUARIO.test(usuario.toUpperCase())).toBe(true); // se escribe con mayúsculas al ingresar
+  }
 });
 
 test("el correo interno se arma con el nombre de usuario", () => {

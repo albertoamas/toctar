@@ -1,7 +1,7 @@
 # B1 Acceso — especificación
 
 - **Fase y semana:** B. Entrega 1 · semana 1 (14 al 20 de octubre)
-- **Estado:** en curso (HU-01 terminada y en revisión)
+- **Estado:** en curso. HU-01 y HU-02 terminadas y en revisión; HU-03 tiene el control hecho y suma sus casillas a medida que existen los módulos
 - **Historias:** HU-01 Iniciar sesión · HU-02 Gestionar usuarios y roles · HU-03 Permisos del encargado
 - **Base:**
   - Requisitos: RF-14, RF-15, RF-16, RNF-04 y RNF-05.
@@ -39,7 +39,7 @@ El dueño da acceso al panel a cada persona del taller, con el rol que le corres
 | RN-12 | El técnico no ve precios ni pagos; solo sus órdenes | El técnico tiene únicamente el módulo `ordenes` (el filtro "solo las suyas" se aplica en C4) |
 | RN-13 | Entrega con saldo: el dueño o un encargado autorizado | Permiso `entrega_con_saldo` (se usa en C4; aquí solo se asigna) |
 | RN-14 | Los usuarios se desactivan, no se borran | No hay acción de borrar. Desactivar usa el bloqueo de Better Auth: impide ingresar y **cierra sus sesiones al instante** |
-| **Regla nueva (HU-02)** | Siempre queda al menos un dueño activo | Antes de desactivar a un dueño o de cambiarle el rol, el servidor cuenta los dueños activos. Si es el último, rechaza la acción |
+| **Regla nueva (HU-02)** | Siempre queda al menos un dueño activo | Nadie puede desactivarse a sí mismo (lo impone Better Auth), así que quien desactiva siempre es otro dueño activo. Al cambiar el rol, el servidor cuenta los dueños activos y rechaza si es el último (`cambioDeRolDejaSinDueno`) |
 | Seguridad (Better Auth) | Las funciones de administración no verifican permisos sin la sesión | Toda llamada a `auth.api.*` desde el panel pasa `headers: await headers()` |
 
 ## 4. Datos
@@ -124,11 +124,11 @@ Todas están dentro del panel (tema claro) y en cada una la primera línea es `e
 - **Acceso:**
   - Si el usuario está activo, el botón es "Desactivar usuario", con una confirmación dentro de la página: "<Nombre> no podrá ingresar y se cerrarán sus sesiones abiertas. Su historial se conserva."
   - Si está desactivado, el botón es "Reactivar usuario".
-  - **Último dueño activo:** el botón aparece deshabilitado, con la explicación "Es el único dueño activo: crea otro dueño antes de desactivarlo." El servidor también lo rechaza.
+  - **El propio usuario del dueño:** en lugar del botón dice "No puedes desactivar tu propio usuario. Si hace falta, pídeselo a otro dueño." El servidor también lo rechaza.
 
 ### `/panel/sin-acceso`
 - Título "Sin acceso" y el texto "Tu usuario no tiene habilitado este módulo. Si lo necesitas, pídeselo al dueño.", con el botón "Volver al inicio".
-- Responde con estado 403 (`forbidden()` de Next.js si está disponible en esta versión; si no, una página propia).
+- Es una página propia a la que redirigen `exigirModulo` y `exigirRol`. `forbidden()` de Next.js sigue experimental en la versión 16.
 
 ### Menú del panel
 `NavegacionPanel` recibe los módulos de `modulosDelMenu(usuario)`. Como depende de la sesión, se arma dentro de `<Suspense>`.
@@ -143,7 +143,7 @@ Van en `src/modulos/usuarios/acciones.ts`, con sus esquemas en `esquemas.ts`. To
 | `actualizarUsuario` | id, nombre, rol | `auth.api.adminUpdateUser` (nombre) y `auth.api.setRole` (rol), con headers. Si deja de ser encargado, borra sus permisos | Regla del último dueño: "Es el único dueño activo: crea otro dueño antes de cambiarle el rol." |
 | `guardarPermisos` | id, permisos[] | Reemplaza los permisos del encargado en una transacción | "Solo los encargados tienen módulos." |
 | `restablecerContrasena` | id, contraseña | `auth.api.setUserPassword` con headers | — |
-| `desactivarUsuario` | id | `auth.api.banUser` con headers (sin vencimiento): bloquea el ingreso y cierra sus sesiones | Regla del último dueño |
+| `desactivarUsuario` | id | `auth.api.banUser` con headers (sin vencimiento): bloquea el ingreso y cierra sus sesiones | "No puedes desactivar tu propio usuario. Pídeselo a otro dueño." |
 | `reactivarUsuario` | id | `auth.api.unbanUser` con headers | — |
 
 Después de cada acción: `revalidatePath("/panel/usuarios")` y la respuesta para el aviso (Sonner).
@@ -204,7 +204,17 @@ HU-02 lleva la tabla y el módulo central porque sin ellos no puede negar el acc
 - [ ] Toda llamada a `auth.api.*` del panel lleva `headers`.
 - [ ] Para la demo: crear un técnico y un encargado, entrar con cada uno desde el celular y mostrar lo que ve cada rol.
 
-## 13. Decisiones abiertas
+## 13. Lo que cambió al programar
+
+| Qué | Por qué |
+|---|---|
+| Nadie se desactiva a sí mismo (antes: solo el último dueño) | Better Auth no permite bloquearse a uno mismo. Es más seguro y garantiza igual que quede un dueño activo |
+| "Sin acceso" es una página propia, no `forbidden()` | `forbidden()` sigue experimental en Next.js 16 |
+| Las casillas del encargado muestran solo módulos ya construidos | Así no se habilita un módulo que todavía no existe. Hoy solo aparece "Autorizar entrega con saldo"; la prueba E2E 2 (encargado con Reclamos) pasa a B3 o B5, cuando exista el primer módulo asignable |
+| Al restablecer la contraseña también se cierran las sesiones de esa persona | Si alguien conocía la contraseña anterior, queda afuera |
+| Un patrón único para los nombres de usuario (`PATRON_NOMBRE_USUARIO`) | Error encontrado: los usuarios con guion no podían ingresar (`09-pruebas/criterios-entrega-1.md`) |
+
+## 14. Decisiones abiertas
 
 | Decisión | Propuesta | Quién decide |
 |---|---|---|

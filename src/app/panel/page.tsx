@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { exigirSesion } from "@/lib/sesion";
+import { exigirModulo } from "@/lib/sesion";
 
 // Inicio del panel provisional. Desde HU-17 muestra los reclamos pendientes (S-4).
 export default function InicioPanel() {
@@ -14,6 +14,6 @@ export default function InicioPanel() {
 }
 
 async function Bienvenida() {
-  const usuario = await exigirSesion();
+  const usuario = await exigirModulo("inicio");
   return <p className="text-muted-foreground">Hola, {usuario.nombre}.</p>;
 }
