@@ -7,6 +7,7 @@ import sharp from "sharp";
 import { db } from "@/db";
 import { archivo, espacioTaller, negocio, parametro, sucursal, tamanoVehiculo } from "@/db/esquema";
 import { subirArchivo } from "@/lib/almacenamiento";
+import { reordenar } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
 import { whatsAppLocal } from "@/lib/whatsapp";
 import { ETIQUETA_NEGOCIO, ETIQUETA_PARAMETROS, listarElementos, obtenerConfiguracionNegocio, sucursalPrincipal } from "./consultas";
@@ -26,7 +27,6 @@ import {
   mensajeUltimoActivo,
   nombreRepetido,
   puedeDesactivar,
-  reordenar,
   type Lista,
 } from "./listas";
 import { CLAVES_PARAMETRO, esquemaParametros } from "./parametros";

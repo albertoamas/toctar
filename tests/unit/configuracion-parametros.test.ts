@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { erroresDe } from "@/modulos/configuracion/esquemas";
-import { esquemaElemento, nombreRepetido, puedeDesactivar, reordenar, type Elemento } from "@/modulos/configuracion/listas";
+import { reordenar } from "@/lib/orden";
+import { esquemaElemento, nombreRepetido, puedeDesactivar, type Elemento } from "@/modulos/configuracion/listas";
 import { CLAVES_PARAMETRO, esquemaParametros, leerParametros } from "@/modulos/configuracion/parametros";
 
 // HU-05 Parámetros del sistema. Criterios: docs/09-pruebas/criterios-entrega-1.md (5.x).
