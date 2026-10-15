@@ -57,6 +57,20 @@
       "when": 1792029647587,
       "tag": "0007_datos_servicios",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792032520286,
+      "tag": "0008_contenido",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792032521228,
+      "tag": "0009_datos_contenido",
+      "breakpoints": true
     }
   ]
 }

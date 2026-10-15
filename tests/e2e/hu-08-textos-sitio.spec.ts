@@ -1,0 +1,79 @@
+import { expect, test, type TestInfo } from "@playwright/test";
+import { ingresarComoDueno } from "./apoyo";
+
+// HU-08 Textos del sitio. Criterios: docs/09-pruebas/criterios-entrega-1.md (8.1 a 8.4).
+// Los textos y las preguntas son compartidos: las pruebas que guardan corren solo en escritorio.
+
+const soloEscritorio = (info: TestInfo) => test.skip(info.project.name !== "escritorio", "Cambia textos compartidos");
+
+test("un texto vacío da error junto al campo y no se guarda", async ({ page }) => {
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio");
+  await page.getByRole("navigation", { name: "Secciones del sitio web" }).getByRole("link", { name: "Textos" }).click();
+
+  const portada = page.getByRole("form", { name: "Portada" });
+  await portada.getByLabel("Lema").fill("");
+  await portada.getByRole("button", { name: "Guardar portada" }).click();
+  await expect(portada.getByText("Escribe el lema.")).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole("form", { name: "Portada" }).getByLabel("Lema")).toHaveValue("Como ven tu auto, te ven a ti");
+});
+
+test("el dueño edita la portada y los motivos de Nosotros, y quedan guardados", async ({ page }, info) => {
+  soloEscritorio(info);
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio/textos");
+
+  const portada = page.getByRole("form", { name: "Portada" });
+  await portada.getByLabel("Presentación").fill("Taller de detailing en Tarija. Texto de prueba.");
+  await portada.getByRole("button", { name: "Guardar portada" }).click();
+  await expect(page.getByText("Portada: cambios guardados.")).toBeVisible();
+
+  const nosotros = page.getByRole("form", { name: "Nosotros" });
+  await nosotros.getByRole("button", { name: "Agregar motivo" }).click();
+  await nosotros.getByLabel("Motivo 5", { exact: true }).fill("Atención por WhatsApp");
+  await nosotros.getByRole("button", { name: "Subir motivo 5" }).click();
+  await nosotros.getByRole("button", { name: "Guardar nosotros" }).click();
+  await expect(page.getByText("Nosotros: cambios guardados.")).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole("form", { name: "Portada" }).getByLabel("Presentación")).toHaveValue("Taller de detailing en Tarija. Texto de prueba.");
+  await expect(page.getByRole("form", { name: "Nosotros" }).getByLabel("Motivo 4", { exact: true })).toHaveValue("Atención por WhatsApp");
+});
+
+test("preguntas frecuentes: agregar, editar, ordenar, ocultar y eliminar", async ({ page }, info) => {
+  soloEscritorio(info);
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio/preguntas");
+  const lista = page.getByRole("list", { name: "Preguntas frecuentes" });
+  await expect(lista.getByRole("listitem")).toHaveCount(5);
+
+  // Agregar: vacía da error
+  await page.getByRole("button", { name: "Agregar pregunta" }).click();
+  await page.getByRole("button", { name: "Agregar", exact: true }).click();
+  await expect(page.getByText("Escribe la pregunta.")).toBeVisible();
+  await page.getByLabel("Pregunta", { exact: true }).fill("¿Atienden los domingos?");
+  await page.getByLabel("Respuesta").fill("No, de lunes a sábado.");
+  await page.getByRole("button", { name: "Agregar", exact: true }).click();
+  await expect(page.getByText("Pregunta agregada.")).toBeVisible();
+  await expect(lista.getByRole("listitem")).toHaveCount(6);
+
+  // Editar y subir
+  await page.getByRole("button", { name: "Editar: ¿Atienden los domingos?" }).click();
+  await page.getByLabel("Respuesta").fill("No. Atendemos de lunes a sábado.");
+  await page.getByRole("button", { name: "Guardar", exact: true }).click();
+  await expect(lista).toContainText("No. Atendemos de lunes a sábado.");
+  await page.getByRole("button", { name: "Subir: ¿Atienden los domingos?" }).click();
+  await expect(lista.getByRole("listitem").nth(4)).toContainText("¿Atienden los domingos?");
+
+  // Ocultar
+  await page.getByRole("button", { name: "Ocultar: ¿Atienden los domingos?" }).click();
+  await expect(lista.getByRole("listitem").nth(4)).toContainText("Oculta");
+
+  // Eliminar, con confirmación
+  await page.getByRole("button", { name: "Eliminar: ¿Atienden los domingos?" }).click();
+  await page.getByRole("button", { name: "Eliminar pregunta" }).click();
+  await expect(page.getByText("Pregunta eliminada.")).toBeVisible();
+  await expect(lista.getByRole("listitem")).toHaveCount(5);
+});

@@ -4,16 +4,17 @@ import { and, eq, max, ne } from "drizzle-orm";
 import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { servicio, variante } from "@/db/esquema";
+import { contenidoPagina, faq, servicio, variante } from "@/db/esquema";
 import { erroresDe, type EstadoFormulario } from "@/lib/formularios";
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { nombreRepetido, puedeDesactivar, reordenar } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
 import { crearSlug } from "@/lib/slug";
-import { ETIQUETA_SERVICIOS, listarServicios, listarVariantes } from "./consultas";
+import { CLAVES_PAGINA, PAGINAS, datosDelFormulario, esquemaPagina, esquemaPregunta, type Pagina } from "./contenido";
+import { ETIQUETA_CONTENIDO, ETIQUETA_SERVICIOS, listarPreguntas, listarServicios, listarVariantes } from "./consultas";
 import { esquemaCrearServicio, esquemaMover, esquemaServicio, esquemaVariante } from "./esquemas";
 
-// Servicios del sitio (HU-07, RF-11). Entra el dueño o un encargado con el permiso "sitio".
+// Servicios del sitio (HU-07, RF-11) y textos (HU-08, RF-10). Entra el dueño o un encargado con el permiso "sitio".
 // Al guardar se invalida la etiqueta "servicios": el sitio muestra los cambios sin volver a desplegar (B4).
 
 const RUTA = "/panel/sitio";
@@ -233,4 +234,80 @@ export async function cambiarEstadoVariante(datos: { servicioId: number; id: num
     .where(and(eq(variante.id, datos.id), eq(variante.servicioId, datos.servicioId)));
   despuesDeCambiar(datos.servicioId);
   return { ok: true, mensaje: datos.activo ? `${elegida.nombre} reactivada.` : `${elegida.nombre} desactivada.` };
+}
+
+// ---------------------------------------------------------------------------------------------
+// HU-08 Textos del sitio y preguntas frecuentes. Al guardar se invalida la etiqueta "contenido".
+
+function despuesDeCambiarContenido(ruta: "textos" | "preguntas") {
+  updateTag(ETIQUETA_CONTENIDO);
+  revalidatePath(`${RUTA}/${ruta}`);
+}
+
+export async function guardarContenido(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  const autor = await exigirModulo("sitio");
+  const pagina = String(datos.get("pagina")) as Pagina;
+  if (!CLAVES_PAGINA.includes(pagina)) return { mensaje: "Página desconocida. Recarga la página." };
+
+  const valores = Object.fromEntries(PAGINAS[pagina].campos.map((c) => [c.clave, String(datos.get(c.clave) ?? "")]));
+  const entrada = esquemaPagina(pagina).safeParse(datosDelFormulario(pagina, valores));
+  if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
+
+  const fila = { clave: pagina, datos: entrada.data, updatedAt: new Date(), updatedBy: Number(autor.id) };
+  await db.insert(contenidoPagina).values(fila).onConflictDoUpdate({ target: contenidoPagina.clave, set: fila });
+
+  despuesDeCambiarContenido("textos");
+  return { ok: true, mensaje: `${PAGINAS[pagina].titulo}: cambios guardados.` };
+}
+
+/** Agrega (sin id) o edita (con id) una pregunta frecuente. */
+export async function guardarPregunta(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  await exigirModulo("sitio");
+  const valores = { pregunta: String(datos.get("pregunta") ?? ""), respuesta: String(datos.get("respuesta") ?? "") };
+  const entrada = esquemaPregunta.safeParse({ ...valores, id: datos.get("id") || undefined });
+  if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
+  const { id, pregunta, respuesta } = entrada.data;
+
+  if (id) {
+    const [editada] = await db.update(faq).set({ pregunta, respuesta }).where(eq(faq.id, id)).returning({ id: faq.id });
+    if (!editada) return { mensaje: "Esa pregunta ya no existe. Recarga la página." };
+  } else {
+    const [{ ultimo }] = await db.select({ ultimo: max(faq.orden) }).from(faq);
+    await db.insert(faq).values({ pregunta, respuesta, orden: (ultimo ?? 0) + 1 });
+  }
+
+  despuesDeCambiarContenido("preguntas");
+  return { ok: true, mensaje: id ? "Cambios guardados." : "Pregunta agregada." };
+}
+
+export async function moverPregunta(datos: { id: number; direccion: "subir" | "bajar" }): Promise<EstadoFormulario> {
+  await exigirModulo("sitio");
+  const entrada = esquemaMover.safeParse(datos);
+  if (!entrada.success) return { mensaje: "No se pudo mover." };
+  // Las ocultas también se ordenan: se pueden volver a mostrar en su lugar.
+  const preguntas = (await listarPreguntas()).map((p) => ({ ...p, activo: true }));
+  const nuevoOrden = reordenar(preguntas, entrada.data.id, entrada.data.direccion);
+  if (!nuevoOrden) return { ok: true };
+  await db.transaction(async (tx) => {
+    for (const o of nuevoOrden) await tx.update(faq).set({ orden: o.orden }).where(eq(faq.id, o.id));
+  });
+  despuesDeCambiarContenido("preguntas");
+  return { ok: true };
+}
+
+export async function cambiarVisibilidadPregunta(datos: { id: number; visible: boolean }): Promise<EstadoFormulario> {
+  await exigirModulo("sitio");
+  const [fila] = await db.update(faq).set({ visible: datos.visible === true }).where(eq(faq.id, Number(datos.id))).returning({ id: faq.id });
+  if (!fila) return { mensaje: "Esa pregunta ya no existe. Recarga la página." };
+  despuesDeCambiarContenido("preguntas");
+  return { ok: true, mensaje: datos.visible ? "La pregunta se ve en el sitio." : "Pregunta oculta: no se ve en el sitio." };
+}
+
+/** Las preguntas frecuentes no tienen historial: se eliminan de verdad. */
+export async function eliminarPregunta(id: number): Promise<EstadoFormulario> {
+  await exigirModulo("sitio");
+  const [fila] = await db.delete(faq).where(eq(faq.id, Number(id))).returning({ id: faq.id });
+  if (!fila) return { mensaje: "Esa pregunta ya no existe. Recarga la página." };
+  despuesDeCambiarContenido("preguntas");
+  return { ok: true, mensaje: "Pregunta eliminada." };
 }
