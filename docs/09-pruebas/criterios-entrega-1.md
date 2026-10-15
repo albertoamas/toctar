@@ -30,8 +30,9 @@
 | HU-12 Galería pública | B4 | ✅ Terminada |
 | HU-13 Nosotros y preguntas frecuentes | B4 | ✅ Terminada |
 | HU-14 Contacto y mapa | B4 | ✅ Terminada |
-| HU-16 Formulario de reclamo | B5 | ✅ Formulario terminado; el reclamo en el panel se ve en HU-17 |
-| HU-17 y HU-18 | B5 | ⏳ |
+| HU-16 Formulario de reclamo | B5 | ✅ Terminada |
+| HU-17 Atender reclamos | B5 | ✅ Terminada |
+| HU-18 Sitio preparado para Google | B5 | ⏳ |
 
 **Revisión manual de YankoSoft (14/10/2026):** B1 y B2 probadas a mano en el entorno local, con todos los roles, en escritorio y en vista de celular. Sin observaciones. Lo que falta revisar a mano es instalar la app en celulares reales, que necesita https (A3).
 
@@ -215,13 +216,24 @@
 |---|---|---|---|
 | 16.1 | Pide nombre, WhatsApp, placa, servicio, fecha aproximada, descripción y hasta 3 fotos | E2E `hu-16` "se envía un reclamo con fotos y se ve la confirmación" (2 fotos, se guardan las 2). Las fotos se achican en el navegador antes de subir. Unitarias "placa" y "esquema del reclamo" | ✅ |
 | 16.2 | Los obligatorios se validan antes de enviar | E2E "los obligatorios vacíos muestran su error" (el error queda junto a cada campo). La fecha no puede ser futura (unitaria) | ✅ |
-| 16.3 | Al enviar se ve una confirmación y el reclamo queda pendiente | Mismo E2E del 16.1: "Recibimos tu reclamo" y el reclamo guardado en la base. Que aparezca en el panel se prueba en HU-17 | ✅ (panel en HU-17) |
+| 16.3 | Al enviar se ve una confirmación y el reclamo queda pendiente | Mismo E2E del 16.1: "Recibimos tu reclamo" y el reclamo guardado en la base. Que aparezca pendiente en el panel: E2E `hu-17` | ✅ |
 | 16.4 | Protección contra envíos automáticos | Unitarias "protección contra spam" (trampa, menos de 3 segundos, 5 por hora). E2E "con la trampa llena se ve la confirmación pero no se guarda" | ✅ |
 | 16.5 | Se llega desde el pie y desde Contacto | E2E "el pie y la página de contacto llevan a garantía y reclamos" | ✅ |
 
-## HU-17 y HU-18
+## HU-17 Atender reclamos
 
-Se completan al cerrar cada historia, con los criterios de `historias.md` y los de su especificación.
+> Como dueño o encargado con el módulo de reclamos, quiero ver los reclamos recibidos, para responderlos a tiempo.
+
+| # | Criterio | Cómo se comprueba | Estado |
+|---|---|---|---|
+| 17.1 | Veo la lista con los pendientes primero | E2E `hu-17` "el dueño ve el reclamo pendiente…": el reclamo dejado en el sitio aparece en el inicio ("Reclamos pendientes: N") y en el filtro Pendientes. La consulta ordena pendientes primero y los más nuevos arriba | ✅ |
+| 17.2 | Abro uno, veo sus datos y fotos, y lo marco como atendido con una nota | Mismo E2E: datos, 2 fotos que se amplían, la nota es obligatoria, el aviso "Reclamo marcado como atendido." y la nota con quién y cuándo. Unitaria "marcar como atendido" | ✅ |
+| 17.3 | Desde el reclamo abro WhatsApp con ese cliente | Mismo E2E: el enlace va a `wa.me/591…` con el saludo y la fecha del reclamo. Unitaria "mensaje de WhatsApp al cliente" | ✅ |
+| 17.4 | Solo el dueño y el encargado con el módulo | E2E "el encargado entra a reclamos solo con el permiso; el técnico nunca" (va a "sin acceso" aunque escriba la dirección). Unitarias `permisos` | ✅ |
+
+## HU-18
+
+Se completa al cerrar la historia, con los criterios de `historias.md` y los de su especificación.
 
 ## Requisitos no funcionales que se revisan en esta entrega
 
