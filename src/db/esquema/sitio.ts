@@ -48,3 +48,20 @@ export const variante = pgTable(
   },
   (t) => [uniqueIndex("variante_nombre_unico").on(t.servicioId, sql`lower(${t.nombre})`)],
 );
+
+/** Textos editables de las páginas del sitio (RF-10): una fila por página, validada en src/modulos/sitio/contenido.ts. */
+export const contenidoPagina = pgTable("contenido_pagina", {
+  clave: text("clave").primaryKey(),
+  datos: jsonb("datos").$type<Record<string, unknown>>().notNull(),
+  updatedAt: momento("updated_at").defaultNow().notNull(),
+  updatedBy: integer("updated_by").references(() => usuario.id),
+});
+
+/** Preguntas frecuentes (RF-05, RF-10). Se pueden eliminar: no tienen historial. */
+export const faq = pgTable("faq", {
+  id: integer("id").generatedByDefaultAsIdentity().primaryKey(),
+  pregunta: text("pregunta").notNull(),
+  respuesta: text("respuesta").notNull(),
+  orden: integer("orden").notNull(),
+  visible: boolean("visible").default(true).notNull(),
+});

@@ -1,14 +1,16 @@
 import "server-only";
 import { asc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { archivo, servicio, variante, type Paso } from "@/db/esquema";
+import { archivo, contenidoPagina, faq, servicio, variante, type Paso } from "@/db/esquema";
 import type { ElementoLista } from "@/componentes/panel/lista-editable";
 import { urlsFoto, type UrlsFoto } from "@/lib/fotos";
+import { CLAVES_PAGINA, leerContenido, type ContenidoPagina, type Pagina } from "./contenido";
 
 // Lecturas del módulo Sitio web para el panel. Quien las llama ya pasó por exigirModulo("sitio").
-// Las lecturas para el sitio público (en caché, etiqueta "servicios") se agregan en B4.
+// Las lecturas para el sitio público (en caché, etiquetas "servicios" y "contenido") se agregan en B4.
 
 export const ETIQUETA_SERVICIOS = "servicios";
+export const ETIQUETA_CONTENIDO = "contenido";
 
 export type FilaServicio = {
   id: number;
@@ -84,4 +86,18 @@ export async function listarVariantes(servicioId: number): Promise<ElementoLista
     .where(eq(variante.servicioId, servicioId))
     .orderBy(sql`${variante.activo} desc`, asc(variante.orden), asc(variante.id));
   return filas;
+}
+
+/** Textos de todas las páginas (HU-08). */
+export async function obtenerContenidos(): Promise<Record<Pagina, ContenidoPagina>> {
+  const filas = await db.select().from(contenidoPagina);
+  const porClave = new Map(filas.map((f) => [f.clave, f.datos]));
+  return Object.fromEntries(CLAVES_PAGINA.map((c) => [c, leerContenido(c, porClave.get(c))])) as Record<Pagina, ContenidoPagina>;
+}
+
+export type FilaPregunta = { id: number; pregunta: string; respuesta: string; orden: number; visible: boolean };
+
+/** Preguntas frecuentes en su orden (las ocultas también: se ven marcadas en el panel). */
+export async function listarPreguntas(): Promise<FilaPregunta[]> {
+  return db.select().from(faq).orderBy(asc(faq.orden), asc(faq.id));
 }

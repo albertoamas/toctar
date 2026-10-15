@@ -22,7 +22,8 @@
 | HU-05 Parámetros del sistema | B2 | ✅ Terminada |
 | HU-06 App instalable | B2 | ✅ Terminada (falta probar la instalación real con https, en A3) |
 | HU-07 Servicios del sitio | B3 | ✅ Panel terminado; la página pública de cada servicio se hace en B4 (HU-11) |
-| HU-08 y HU-09 | B3 | ⏳ |
+| HU-08 Textos del sitio | B3 | ✅ Panel terminado; las páginas públicas se hacen en B4 (HU-10, HU-13, HU-14) |
+| HU-09 Galería en el panel | B3 | ⏳ |
 | HU-10 a HU-15 | B4 | ⏳ |
 | HU-16 a HU-18 | B5 | ⏳ |
 
@@ -116,7 +117,18 @@
 | 7.5 | Nombres y direcciones no se repiten; la dirección es legible para Google | E2E "una dirección repetida da error junto al campo" y el nombre repetido del E2E de alta. Unitarias "dirección de la página (slug)" | ✅ |
 | 7.6 | Entra el dueño o un encargado con el permiso "Sitio web"; nadie más | E2E "el encargado con el permiso Sitio web entra; sin el permiso o como técnico, no" | ✅ |
 
-## HU-08 a HU-18
+## HU-08 Textos del sitio
+
+> Como dueño, quiero editar los textos de portada, nosotros, preguntas frecuentes y contacto.
+
+| # | Criterio | Cómo se comprueba | Estado |
+|---|---|---|---|
+| 8.1 | Edito el lema y la presentación de la portada, el texto de nosotros y el de contacto | E2E `hu-08` "el dueño edita la portada y los motivos de Nosotros, y quedan guardados". Nosotros incluye historia, cómo trabajamos y por qué elegirnos (RF-02) | ✅ |
+| 8.2 | Ningún texto queda vacío | E2E "un texto vacío da error junto al campo y no se guarda". Unitarias "textos de las páginas" | ✅ |
+| 8.3 | Puedo agregar, ordenar y quitar preguntas frecuentes | E2E "preguntas frecuentes: agregar, editar, ordenar, ocultar y eliminar" (eliminar pide confirmación; también se pueden ocultar sin borrar) | ✅ |
+| 8.4 | Los textos iniciales están cargados para que el dueño los corrija | Migración `0009_datos_contenido`: borradores con su historia, su garantía y la entrevista, sin precios | ✅ (los valida el dueño en la demo) |
+
+## HU-09 a HU-18
 
 Se completan al cerrar cada etapa, con los criterios de `historias.md` y los de su especificación.
 
