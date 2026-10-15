@@ -1,9 +1,10 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { archivo } from "@/db/esquema";
-import { subirArchivo } from "@/lib/almacenamiento";
+import { borrarArchivo, subirArchivo, urlArchivo } from "@/lib/almacenamiento";
 import { BYTES_MAXIMOS_FOTO, TIPOS_FOTO } from "@/lib/formato-fotos";
 
 // Fotos subidas desde el panel (logo, servicios, galería). El tipo que dice el navegador no basta:
@@ -19,7 +20,11 @@ type Opciones = {
   autorId: number;
   /** Lado mayor en píxeles. */
   ladoMayor?: number;
+  /** Guarda además una versión de 640 px para tarjetas y grillas (`archivo.miniatura_clave`). */
+  miniatura?: boolean;
 };
+
+export const LADO_MINIATURA = 640;
 
 /** Convierte y sube una foto, y la registra en `archivo`. */
 export async function guardarFoto(entrada: FormDataEntryValue | null, opciones: Opciones): Promise<ResultadoFoto> {
@@ -32,7 +37,13 @@ export async function guardarFoto(entrada: FormDataEntryValue | null, opciones: 
   const imagen = await convertir(original, opciones.ladoMayor ?? 1600);
   if (!imagen) return { ok: false, motivo: "invalida" };
 
-  const clave = await subirArchivo(`${opciones.carpeta}/${opciones.prefijo ?? ""}${randomUUID()}.webp`, imagen.data, "image/webp");
+  const base = `${opciones.carpeta}/${opciones.prefijo ?? ""}${randomUUID()}`;
+  const clave = await subirArchivo(`${base}.webp`, imagen.data, "image/webp");
+  let miniaturaClave: string | null = null;
+  if (opciones.miniatura) {
+    const chica = await convertir(original, LADO_MINIATURA);
+    if (chica) miniaturaClave = await subirArchivo(`${base}-${LADO_MINIATURA}.webp`, chica.data, "image/webp");
+  }
   const [fila] = await db
     .insert(archivo)
     .values({
@@ -41,6 +52,7 @@ export async function guardarFoto(entrada: FormDataEntryValue | null, opciones: 
       bytes: imagen.info.size,
       ancho: imagen.info.width,
       alto: imagen.info.height,
+      miniaturaClave,
       createdBy: opciones.autorId,
     })
     .returning({ id: archivo.id });
@@ -60,4 +72,23 @@ async function convertir(original: Buffer, ladoMayor: number) {
   } catch {
     return null;
   }
+}
+
+/** Borra una foto que ya no usa nadie: la fila de `archivo` y sus versiones en el almacenamiento. */
+export async function eliminarFoto(archivoId: number): Promise<void> {
+  const [fila] = await db.delete(archivo).where(eq(archivo.id, archivoId)).returning();
+  if (!fila) return;
+  await Promise.all([fila.clave, fila.miniaturaClave].filter((c): c is string => !!c).map((c) => borrarArchivo(c)));
+}
+
+export type UrlsFoto = { url: string; miniatura: string; ancho: number | null; alto: number | null };
+
+/** Direcciones públicas de una foto; sin miniatura, se usa la grande. */
+export function urlsFoto(fila: { clave: string; miniaturaClave: string | null; ancho: number | null; alto: number | null }): UrlsFoto {
+  return {
+    url: urlArchivo(fila.clave),
+    miniatura: urlArchivo(fila.miniaturaClave ?? fila.clave),
+    ancho: fila.ancho,
+    alto: fila.alto,
+  };
 }

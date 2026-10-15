@@ -1,5 +1,3 @@
-"use client";
-
 import { useActionState, useState, useTransition } from "react";
 import { ArrowDownIcon, ArrowUpIcon, PencilIcon, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -7,6 +5,7 @@ import { Campo } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 
+// Componente de cliente: se usa dentro de otros componentes de cliente (recibe funciones como props).
 // Lista editable del panel: agregar, renombrar, subir y bajar, desactivar y reactivar; nunca se borra (D-6).
 // La usan los espacios del taller, los tamaños de vehículo (HU-05) y las variantes de un servicio (HU-07).
 

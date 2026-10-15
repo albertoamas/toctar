@@ -21,7 +21,8 @@
 | HU-04 Datos del negocio | B2 | ✅ Terminada |
 | HU-05 Parámetros del sistema | B2 | ✅ Terminada |
 | HU-06 App instalable | B2 | ✅ Terminada (falta probar la instalación real con https, en A3) |
-| HU-07 a HU-09 | B3 | ⏳ |
+| HU-07 Servicios del sitio | B3 | ✅ Panel terminado; la página pública de cada servicio se hace en B4 (HU-11) |
+| HU-08 y HU-09 | B3 | ⏳ |
 | HU-10 a HU-15 | B4 | ⏳ |
 | HU-16 a HU-18 | B5 | ⏳ |
 
@@ -102,7 +103,20 @@
 | 6.3 | Sin conexión se muestra un aviso claro | E2E "sin internet, el panel muestra el aviso y una página nueva muestra «Sin conexión»": franja en el panel y página propia con "Reintentar" | ✅ |
 | 6.4 | Sin modo sin conexión (acuerdo): no se guarda nada para usar sin internet | Revisión del código: el service worker (`public/sw.js`) solo guarda la página de aviso | ✅ |
 
-## HU-07 a HU-18
+## HU-07 Servicios del sitio
+
+> Como dueño, quiero crear y editar los servicios que muestra el sitio, para mantenerlo al día.
+
+| # | Criterio | Cómo se comprueba | Estado |
+|---|---|---|---|
+| 7.1 | Cada servicio tiene nombre, resumen, descripción, beneficios, pasos del proceso, foto principal y orden | E2E `hu-07` "el dueño crea un servicio con beneficios, pasos y variantes, y lo oculta" (vuelve a abrirlo y todo sigue ahí). Unitarias "esquema del servicio" (límites de cada campo) | ✅ |
+| 7.2 | La foto principal es opcional; sin foto, el sitio muestra una imagen de reemplazo | E2E "la foto principal se sube y se ve…" (sube, ve la miniatura, la quita). La imagen de reemplazo en el sitio se prueba en B4 | ✅ en el panel · ⏳ sitio (B4) |
+| 7.3 | Puedo ocultar un servicio sin borrarlo | Mismo E2E de alta: queda "Oculto" en la lista y se puede volver a mostrar | ✅ |
+| 7.4 | El servicio del sitio es el mismo registro que el del catálogo de la entrega 2 | Una sola tabla `servicio`, con variantes (D-2) ya creadas; C1 le suma precios y duración | ✅ (revisión del diseño) |
+| 7.5 | Nombres y direcciones no se repiten; la dirección es legible para Google | E2E "una dirección repetida da error junto al campo" y el nombre repetido del E2E de alta. Unitarias "dirección de la página (slug)" | ✅ |
+| 7.6 | Entra el dueño o un encargado con el permiso "Sitio web"; nadie más | E2E "el encargado con el permiso Sitio web entra; sin el permiso o como técnico, no" | ✅ |
+
+## HU-08 a HU-18
 
 Se completan al cerrar cada etapa, con los criterios de `historias.md` y los de su especificación.
 
@@ -127,3 +141,4 @@ Se completan al cerrar cada etapa, con los criterios de `historias.md` y los de 
 | 14/10/2026 | HU-02 | Al desactivar o reactivar no aparecía el aviso de confirmación | El aviso se muestra desde la acción, no desde la pantalla que se reemplaza | E2E "desactivar a alguien…" (espera el aviso) |
 | 14/10/2026 | Entorno local | El nombre del dueño de prueba salía "Due�o": el archivo `.env` estaba guardado en Latin-1 y no en UTF-8 | `.env` pasado a UTF-8 y nombre corregido en la base local. No afecta a pruebas ni a producción, que no usan ese archivo | — (aviso en `.env.example`) |
 | 14/10/2026 | HU-04 | Si se elegía el logo apenas abría la pantalla (antes de que terminara de cargar), no se subía y no avisaba nada | El botón "Subir logo" se habilita recién cuando la pantalla está lista | E2E "el logo para documentos…" (espera el botón habilitado) |
+| 14/10/2026 | Panel | En el celular, al tocar una opción del menú, el menú lateral quedaba abierto tapando la pantalla nueva | El menú se cierra al tocar un enlace | E2E `hu-07` en celular (navega desde el menú) |
