@@ -1,0 +1,179 @@
+"use client";
+
+import { useActionState, useState, useTransition } from "react";
+import { ArrowDownIcon, ArrowUpIcon, PencilIcon, PlusIcon } from "lucide-react";
+import { toast } from "sonner";
+import { Campo } from "@/componentes/panel/campo";
+import { Button } from "@/componentes/ui/button";
+import { Input } from "@/componentes/ui/input";
+
+// Lista editable del panel: agregar, renombrar, subir y bajar, desactivar y reactivar; nunca se borra (D-6).
+// La usan los espacios del taller, los tamaños de vehículo (HU-05) y las variantes de un servicio (HU-07).
+
+export type ElementoLista = { id: number; nombre: string; descripcion: string | null; orden: number; activo: boolean };
+
+/** Lo que devuelven las acciones (mismo formato que EstadoFormulario de cada módulo). */
+type Resultado = { ok?: boolean; mensaje?: string; errores?: Partial<Record<string, string>>; valores?: Record<string, string> };
+
+export type AccionesLista = {
+  /** Agrega (sin "id") o renombra (con "id"). Recibe "nombre", "descripcion" y los campos ocultos. */
+  guardar: (previo: Resultado, datos: FormData) => Promise<Resultado>;
+  mover: (id: number, direccion: "subir" | "bajar") => Promise<Resultado>;
+  cambiarEstado: (id: number, activo: boolean) => Promise<Resultado>;
+};
+
+type Props = {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  /** "espacio", "tamaño", "variante": para los botones y la etiqueta del nombre. */
+  singular: string;
+  /** Si tiene un segundo campo (por ejemplo, los modelos de ejemplo de un tamaño). */
+  campoDescripcion?: { etiqueta: string; ayuda: string; ejemplo: string };
+  /** Campos que viajan en cada formulario (por ejemplo, la lista o el servicio). */
+  camposOcultos: Record<string, string | number>;
+  elementos: ElementoLista[];
+  acciones: AccionesLista;
+  /** Título de nivel 2 o 3, según dónde va la lista. */
+  nivel?: 2 | 3;
+};
+
+function avisar(r: Resultado) {
+  if (r.ok && r.mensaje) toast.success(r.mensaje);
+  else if (r.mensaje) toast.error(r.mensaje);
+}
+
+export function ListaEditable(props: Props) {
+  const { id, titulo, singular, elementos, acciones } = props;
+  const activos = elementos.filter((e) => e.activo);
+  const inactivos = elementos.filter((e) => !e.activo);
+  const [editando, setEditando] = useState<number | "nuevo" | null>(null);
+  const [pendiente, iniciar] = useTransition();
+  const Titulo = props.nivel === 3 ? "h3" : "h2";
+
+  const ejecutar = (accion: () => Promise<Resultado>) => iniciar(async () => avisar(await accion()));
+
+  return (
+    <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <Titulo id={`${id}-titulo`} className="font-heading text-2xl font-bold italic">{titulo}</Titulo>
+        <p className="text-sm text-tinta-suave">{props.descripcion}</p>
+      </div>
+
+      {activos.length === 0 && <p className="text-sm font-semibold text-rojo-texto">Agrega al menos un {singular}.</p>}
+
+      <ol className="flex flex-col divide-y divide-border rounded-sm border border-border" aria-label={`${titulo} activos`}>
+        {activos.map((e, i) =>
+          editando === e.id ? (
+            <li key={e.id} className="p-3">
+              <FormularioElemento {...props} elemento={e} alTerminar={() => setEditando(null)} />
+            </li>
+          ) : (
+            <li key={e.id} className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 p-3">
+              <span className="flex min-w-48 flex-1 flex-col">
+                <span className="font-semibold">{e.nombre}</span>
+                {e.descripcion && <span className="text-sm text-tinta-suave">{e.descripcion}</span>}
+              </span>
+              <span className="flex shrink-0 items-center gap-0.5">
+                <Button type="button" variant="ghost" size="icon" disabled={pendiente || i === 0} aria-label={`Subir ${e.nombre}`} onClick={() => ejecutar(() => acciones.mover(e.id, "subir"))}>
+                  <ArrowUpIcon />
+                </Button>
+                <Button type="button" variant="ghost" size="icon" disabled={pendiente || i === activos.length - 1} aria-label={`Bajar ${e.nombre}`} onClick={() => ejecutar(() => acciones.mover(e.id, "bajar"))}>
+                  <ArrowDownIcon />
+                </Button>
+                <Button type="button" variant="ghost" size="icon" aria-label={`Editar ${e.nombre}`} onClick={() => setEditando(e.id)}>
+                  <PencilIcon />
+                </Button>
+                <Button type="button" variant="ghost" size="sm" disabled={pendiente} onClick={() => ejecutar(() => acciones.cambiarEstado(e.id, false))} aria-label={`Desactivar ${e.nombre}`}>
+                  Desactivar
+                </Button>
+              </span>
+            </li>
+          ),
+        )}
+      </ol>
+
+      {editando === "nuevo" ? (
+        <div className="rounded-sm border border-border p-3">
+          <FormularioElemento {...props} alTerminar={() => setEditando(null)} />
+        </div>
+      ) : (
+        <div>
+          <Button type="button" variant="outline" onClick={() => setEditando("nuevo")}>
+            <PlusIcon />
+            Agregar {singular}
+          </Button>
+        </div>
+      )}
+
+      {inactivos.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-semibold text-tinta-suave">Desactivados</p>
+          <ul className="flex flex-col divide-y divide-border rounded-sm border border-dashed border-border" aria-label={`${titulo} desactivados`}>
+            {inactivos.map((e) => (
+              <li key={e.id} className="flex items-center gap-3 p-3 text-tinta-suave">
+                <span className="flex-1">{e.nombre}</span>
+                <Button type="button" variant="ghost" size="sm" disabled={pendiente} onClick={() => ejecutar(() => acciones.cambiarEstado(e.id, true))} aria-label={`Reactivar ${e.nombre}`}>
+                  Reactivar
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function FormularioElemento(props: Props & { elemento?: ElementoLista; alTerminar: () => void }) {
+  const { id, singular, campoDescripcion, camposOcultos, elemento, alTerminar } = props;
+  const [estado, accion, enviando] = useActionState<Resultado, FormData>(async (previo, datos) => {
+    const r = await props.acciones.guardar(previo, datos);
+    avisar(r);
+    if (r.ok) alTerminar();
+    return r;
+  }, {});
+  const v = estado.valores;
+  const e = estado.errores ?? {};
+  const prefijo = `${id}-${elemento?.id ?? "nuevo"}`;
+
+  return (
+    <form action={accion} className="flex flex-col gap-4" noValidate>
+      {Object.entries(camposOcultos).map(([nombre, valor]) => (
+        <input key={nombre} type="hidden" name={nombre} value={valor} />
+      ))}
+      {elemento && <input type="hidden" name="id" value={elemento.id} />}
+      <Campo id={`${prefijo}-nombre`} etiqueta={`Nombre del ${singular}`} error={e.nombre}>
+        <Input
+          id={`${prefijo}-nombre`}
+          name="nombre"
+          autoFocus
+          autoComplete="off"
+          defaultValue={v?.nombre ?? elemento?.nombre}
+          aria-invalid={!!e.nombre}
+          aria-describedby={e.nombre ? `${prefijo}-nombre-error` : undefined}
+        />
+      </Campo>
+      {campoDescripcion && (
+        <Campo id={`${prefijo}-descripcion`} etiqueta={campoDescripcion.etiqueta} error={e.descripcion} ayuda={campoDescripcion.ayuda}>
+          <Input
+            id={`${prefijo}-descripcion`}
+            name="descripcion"
+            autoComplete="off"
+            placeholder={campoDescripcion.ejemplo}
+            defaultValue={v?.descripcion ?? elemento?.descripcion ?? ""}
+            aria-describedby={e.descripcion ? `${prefijo}-descripcion-error` : `${prefijo}-descripcion-ayuda`}
+          />
+        </Campo>
+      )}
+      <div className="flex gap-2">
+        <Button type="submit" disabled={enviando}>
+          {enviando ? "Guardando…" : elemento ? "Guardar" : "Agregar"}
+        </Button>
+        <Button type="button" variant="ghost" onClick={alTerminar}>
+          Cancelar
+        </Button>
+      </div>
+    </form>
+  );
+}
