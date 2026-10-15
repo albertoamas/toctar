@@ -1,6 +1,6 @@
 # Plan de desarrollo — TocTar Detailing (Web + Gestión)
 
-- **Versión:** 4 · 14 de octubre de 2026
+- **Versión:** 5 · 15 de octubre de 2026 (antes: v4 del 14/10)
 - **Base:**
   - Backlog: `05-analisis/historias-de-usuario/historias.md`.
   - Plazos y pagos: `03-cierre-comercial/acuerdo.md`.
@@ -11,7 +11,15 @@
   - Al cerrar una etapa, se marca aquí y en `flujo-de-trabajo.md`.
   - Si una fecha se mueve, se cambia aquí y se avisa al dueño en la revisión del viernes.
 
-## Dónde estamos (14 de octubre)
+## Qué cambió en la versión 5
+
+- **El desarrollo va más rápido de lo previsto.** B1 a B4 (15 historias, con pruebas y documentación) se programaron en dos días; el plan v4 les daba dos semanas. Lo lento del proyecto fueron las reuniones y la recolección de requisitos, no el código.
+- **El calendario se adelanta una semana** para la Entrega 2 (meta 13/11 en vez de 20/11). **Las fechas del acuerdo no cambian** (3/11 y 1/12): el adelanto queda como margen.
+- **No se adelanta más** porque la Entrega 2 tiene las partes más difíciles (PDF, versiones de cotización, agenda sin cruces, ciclo de la orden) y porque necesita uso real del taller y al menos una vuelta de ajustes antes del acta.
+- **El adelanto depende del dueño:** la lista de precios y las variantes pasan a pedirse para el viernes 23 (antes, 3/11), y el dominio sigue siendo urgente.
+- **Lunes 19:** reunión de avance con el dueño, con una presentación y sin mostrar todavía la app. La primera demo sigue siendo el viernes 23.
+
+## Dónde estamos (15 de octubre)
 
 | Qué | Estado |
 |---|---|
@@ -31,18 +39,17 @@
 
 | Semana | Fechas | Fase | Revisión con el dueño |
 |---|---|---|---|
-| 1 | 14 al 20 de octubre | B. Entrega 1: acceso y configuración | — |
-| 2 | 21 al 27 de octubre | B. Entrega 1: contenido y sitio | **Viernes 23**: primera demo |
-| 3 | 28 de octubre al 3 de noviembre | B. Entrega 1: cierre | **Viernes 30**: demo; acta antes del **3/11** |
-| 4 | 4 al 10 de noviembre | C. Entrega 2: catálogo y clientes | Viernes 6 |
-| 5 | 11 al 17 de noviembre | C. Entrega 2: cotizaciones y agenda | Viernes 13 |
-| 6 | 18 al 24 de noviembre | C. Entrega 2: taller y cierre | **Viernes 20**: demo; acta |
-| 7 | 25 de noviembre al 1 de diciembre | Margen | Límite del acuerdo: **1/12** |
+| 1 | 14 al 20 de octubre | B1 a B4 ✅ · B5 Reclamos y Google | **Lunes 19**: reunión de avance (presentación, sin demo) |
+| 2 | 21 al 27 de octubre | A3 entorno en la nube · B6 contenido real · C1 Catálogo y clientes (si llegaron los precios) | **Viernes 23**: primera demo, la web completa |
+| 3 | 28 de octubre al 3 de noviembre | B6 cierre de la Entrega 1 · C2 Consultas y cotizaciones | **Viernes 30**: acta de la Entrega 1 y publicación (límite **3/11**) |
+| 4 | 4 al 10 de noviembre | C3 Agenda y pagos · C4 Taller y entrega | **Viernes 6**: demo de cotización con PDF y agenda |
+| 5 | 11 al 17 de noviembre | C4 y C5 cierre de la Entrega 2 | **Viernes 13**: ciclo completo y acta de la Entrega 2 (meta) |
+| 6 y 7 | 18 de noviembre al 1 de diciembre | Margen: ajustes del uso real, historias deseables (HU-39 a HU-41) | Límite del acuerdo: **1/12** |
 
 | Hito | Fecha límite | Pago al aceptarse |
 |---|---|---|
 | Entrega 1: Web publicada y aceptada | 3 de noviembre | Bs 700 |
-| Entrega 2: Gestión aceptada | 1 de diciembre (meta: 24 de noviembre) | Bs 2.000 |
+| Entrega 2: Gestión aceptada | 1 de diciembre (meta: 13 de noviembre) | Bs 2.000 |
 
 ## Especificación de cada etapa
 
@@ -151,7 +158,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | Criterio de salida | Lighthouse móvil ≥ 90 en rendimiento, SEO y accesibilidad (RNF-02, RNF-14). Se ve bien desde 360 px |
 | **Demo viernes 23** | Sitio y panel de contenido. **El dueño valida los criterios de HU-01 a HU-18** (los del acta) |
 
-### B5. Reclamos y Google (semana 3)
+### B5. Reclamos y Google (semana 1)
 
 | | |
 |---|---|
@@ -162,7 +169,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | Entregable | Los reclamos llegan al panel, el dueño o el encargado con el módulo los atienden, y el sitio es indexable |
 | Criterio de salida | El reclamo de prueba aparece en el inicio del panel (S-4) |
 
-### B6. Cierre de la entrega 1 (semana 3, hasta el 3 de noviembre)
+### B6. Cierre de la entrega 1 (semanas 2 y 3, hasta el 3 de noviembre)
 
 1. Prueba completa en `pruebas.<dominio>` con la lista de criterios de HU-01 a HU-18. Las correcciones entran por PR.
 2. Carga del contenido real: servicios, textos, fotos, datos del negocio y horario.
@@ -175,13 +182,13 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 
 ---
 
-## Fase C. Entrega 2: Gestión (4 al 24 de noviembre; margen hasta el 1 de diciembre)
+## Fase C. Entrega 2: Gestión (21 de octubre al 13 de noviembre; margen hasta el 1 de diciembre)
 
 **Objetivo:** que el taller deje el cuaderno. Toda consulta, cotización, reserva, orden y pago queda registrada.
 
-**Antes de empezar (a más tardar el 3 de noviembre):** el dueño valida las historias HU-19 a HU-41 y entrega la lista de precios, las variantes de inyección y succión y de pulido de vidrios, y las condiciones del PDF.
+**Antes de empezar:** el dueño entrega la lista de precios y las variantes de inyección y succión y de pulido de vidrios (viernes 23), y valida las historias HU-19 a HU-41 y las condiciones del PDF (viernes 30). Sin la lista de precios, C1 se programa con precios de prueba y C2 se atrasa.
 
-### C1. Catálogo y clientes (semana 4)
+### C1. Catálogo y clientes (semana 2)
 
 | | |
 |---|---|
@@ -191,7 +198,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | Entregable | Catálogo con precios cargados; clientes y vehículos con búsqueda por nombre, teléfono o placa |
 | Criterio de salida | Un cambio de precio no altera nada ya guardado y queda en el historial |
 
-### C2. Consultas y cotizaciones (semanas 4 y 5)
+### C2. Consultas y cotizaciones (semana 3)
 
 | | |
 |---|---|
@@ -203,7 +210,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | Entregable | El dueño cotiza desde el celular y manda el PDF por WhatsApp |
 | Criterio de salida | El técnico y el encargado reciben "sin acceso" al intentar cotizar, también por URL y por la acción del servidor |
 
-### C3. Agenda y pagos (semana 5)
+### C3. Agenda y pagos (semana 4)
 
 | | |
 |---|---|
@@ -215,7 +222,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | Entregable | La agenda reemplaza al cuaderno |
 | Criterio de salida | La base rechaza un cruce aunque el código fallara (prueba directa contra la restricción) |
 
-### C4. Taller y entrega (semana 6)
+### C4. Taller y entrega (semanas 4 y 5)
 
 | | |
 |---|---|
@@ -226,12 +233,12 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | Entregable | El ciclo completo de un vehículo en el sistema, de la consulta al recordatorio |
 | Criterio de salida | Los 5 flujos de `flujos-criticos.md` tienen su prueba E2E y pasan |
 
-### C5. Cierre de la entrega 2 (semana 6; margen en la 7)
+### C5. Cierre de la entrega 2 (semana 5; margen en la 6 y la 7)
 
 1. Historias deseables, solo si hay tiempo: HU-39 Pantalla del día · HU-40 Plantillas de WhatsApp (`plantilla_mensaje`) · HU-41 Fotos de órdenes a la galería.
 2. Prueba completa con la lista de criterios de HU-19 a HU-38.
 3. Capacitación por rol: dueño (cotizar, agenda, saldos), encargado y técnico (sus órdenes desde el celular).
-4. Demo del viernes 20 y acta de la entrega 2 (`09-pruebas/actas-de-aceptacion/entrega-2.md`).
+4. Demo del viernes 13 y acta de la entrega 2 (`09-pruebas/actas-de-aceptacion/entrega-2.md`).
 5. Merge a `main`, etiqueta `v2.0.0`, cobro de Bs 2.000. Al completar el pago, TocTar recibe una copia del código.
 
 **Criterio de salida de la fase C:** acta firmada antes del 1 de diciembre y pago recibido.
@@ -242,7 +249,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 
 ### D1. Lanzamiento
 - **Antes de publicar la entrega 1:** restauración de prueba de un respaldo, documentada en `10-lanzamiento/` (RNF-06).
-- **Carga de datos reales:** los clientes del cuaderno, si el dueño quiere (se coordina en la semana 6).
+- **Carga de datos reales:** los clientes del cuaderno, si el dueño quiere (se coordina en la semana 5).
 - **Primera semana de uso:** acompañamiento. Las correcciones entran como `arreglo/…` desde `main`.
 
 ### D2. Soporte y mejora
@@ -285,12 +292,12 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | 1 | Dominio exacto y titular (nombre y CI o NIT) | Dueño | Lunes 19 de octubre | A3 (entorno de pruebas) |
 | 2 | Proveedor del VPS: Hetzner o DigitalOcean | YankoSoft | Lunes 19 de octubre | A3 |
 | 3 | Horario de atención confirmado, con los días | Dueño | Viernes 23 de octubre | Nada (se carga desde el panel) |
-| 4 | Textos por servicio y preguntas frecuentes | Dueño | Viernes 23 de octubre | B6 (contenido real) |
+| 4 | Textos por servicio y preguntas frecuentes (hay borradores cargados) | Dueño | Viernes 23 de octubre | B6 (contenido real) |
 | 5 | Fotos principales de cada servicio | Dueño | Antes del 3 de noviembre | Nada (imagen de reemplazo) |
 | 6 | Validación de criterios HU-01 a HU-18 | Dueño | Demo del viernes 23 | B6 (acta) |
-| 7 | Condiciones y garantía del PDF (hay un borrador cargado en el panel, B2) | Dueño | 3 de noviembre | C2 |
-| 8 | Lista de precios, variantes de inyección y succión y de vidrios | Dueño | 3 de noviembre | C1 |
-| 9 | Validación de HU-19 a HU-41 | Dueño | 3 de noviembre | Fase C |
+| 7 | Condiciones y garantía del PDF (hay un borrador cargado en el panel, B2) | Dueño | Viernes 30 de octubre | C2 |
+| 8 | Lista de precios, variantes de inyección y succión y de vidrios | Dueño | **Viernes 23 de octubre** (se pide el lunes 19) | C1 y C2 |
+| 9 | Validación de HU-19 a HU-41 | Dueño | Viernes 30 de octubre | Fase C |
 | 10 | Vectorial original del logo | Diseñador del dueño | Sin fecha | Nada (hay trazado fiel) |
 
 ## Riesgos
