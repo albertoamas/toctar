@@ -48,7 +48,7 @@ El dueño cambia desde el panel todo dato del negocio y todo valor que el sistem
 
 ## 4. Datos
 
-Una migración de tablas y otra de datos iniciales por historia: `0002_negocio` y `0003_datos_negocio` (HU-04), y las de HU-05 después. Los datos iniciales son SQL propio que no pisa lo existente (`on conflict do nothing` o `where not exists`): se pueden aplicar en cualquier entorno sin duplicar.
+Una migración de tablas y otra de datos iniciales por historia: `0002_negocio` y `0003_datos_negocio` (HU-04); `0004_parametros` y `0005_datos_parametros` (HU-05). Los datos iniciales son SQL propio que no pisa lo existente (`on conflict do nothing` o `where not exists`): se pueden aplicar en cualquier entorno sin duplicar.
 
 ### `archivo`
 | Columna | Tipo | Nulo | Notas |
@@ -146,9 +146,11 @@ Van en `src/modulos/configuracion/acciones.ts`. Todas empiezan con `exigirModulo
 | `guardarNegocio` | Datos del negocio y de la sucursal | "Escribe los 8 dígitos del celular." · "No encontramos coordenadas en ese enlace…" · "Revisa el enlace de Instagram." · "El turno debe terminar después de empezar." |
 | `subirLogo` | Archivo | "El logo debe ser PNG, JPG o WebP de hasta 5 MB." |
 | `guardarParametros` | Los 5 parámetros | Por campo: "Escribe un monto mayor a cero." · "Entre 1 y 365 días." |
-| `guardarEspacio`, `guardarTamano` | id (opcional), nombre, descripción | "Escribe un nombre." · "Ya existe un espacio con ese nombre." |
-| `moverEspacio`, `moverTamano` | id, dirección | — |
-| `cambiarEstadoEspacio`, `cambiarEstadoTamano` | id, activo | "Debe quedar al menos un espacio activo." (igual para los tamaños) |
+| `guardarElemento` | lista (`espacios` o `tamanos`), id (opcional), nombre, descripción | "Escribe un nombre." · "Ya existe un espacio con ese nombre." |
+| `moverElemento` | lista, id, dirección | — |
+| `cambiarEstadoElemento` | lista, id, activo | "Debe quedar al menos un espacio activo." (igual para los tamaños) |
+
+Las tres acciones de listas son las mismas para espacios y tamaños (reglas en `src/modulos/configuracion/listas.ts`).
 
 ## 7. Componentes y diseño
 

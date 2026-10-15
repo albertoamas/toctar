@@ -1,15 +1,15 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { eq, max } from "drizzle-orm";
 import { revalidatePath, updateTag } from "next/cache";
 import sharp from "sharp";
 import { db } from "@/db";
-import { archivo, negocio, sucursal } from "@/db/esquema";
+import { archivo, espacioTaller, negocio, parametro, sucursal, tamanoVehiculo } from "@/db/esquema";
 import { subirArchivo } from "@/lib/almacenamiento";
 import { exigirModulo } from "@/lib/sesion";
 import { whatsAppLocal } from "@/lib/whatsapp";
-import { ETIQUETA_NEGOCIO, obtenerConfiguracionNegocio } from "./consultas";
+import { ETIQUETA_NEGOCIO, ETIQUETA_PARAMETROS, listarElementos, obtenerConfiguracionNegocio, sucursalPrincipal } from "./consultas";
 import {
   BYTES_MAXIMOS_LOGO,
   CAMPOS_NEGOCIO,
@@ -18,8 +18,20 @@ import {
   TIPOS_LOGO,
   type EstadoFormulario,
 } from "./esquemas";
+import {
+  esquemaElemento,
+  esquemaEstado,
+  esquemaMover,
+  mensajeRepetido,
+  mensajeUltimoActivo,
+  nombreRepetido,
+  puedeDesactivar,
+  reordenar,
+  type Lista,
+} from "./listas";
+import { CLAVES_PARAMETRO, esquemaParametros } from "./parametros";
 
-// Configuración del negocio (HU-04). Solo el dueño entra al módulo "configuracion".
+// Configuración del negocio (HU-04) y parámetros (HU-05). Solo el dueño entra al módulo "configuracion".
 // Al guardar se invalida la etiqueta "negocio": el sitio muestra los datos nuevos sin volver a desplegar.
 
 const RUTA = "/panel/configuracion";
@@ -136,4 +148,124 @@ async function convertirLogo(original: Buffer) {
   } catch {
     return null;
   }
+}
+
+// ---------------------------------------------------------------------------------------------
+// HU-05 Parámetros
+
+export async function guardarParametros(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  const autor = await exigirModulo("configuracion");
+  const valores = Object.fromEntries(CLAVES_PARAMETRO.map((c) => [c, String(datos.get(c) ?? "")]));
+  const entrada = esquemaParametros.safeParse(valores);
+  if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
+
+  const ahora = new Date();
+  await db.transaction(async (tx) => {
+    for (const clave of CLAVES_PARAMETRO) {
+      const fila = { clave, valor: entrada.data[clave], updatedAt: ahora, updatedBy: Number(autor.id) };
+      await tx.insert(parametro).values(fila).onConflictDoUpdate({ target: parametro.clave, set: fila });
+    }
+  });
+
+  updateTag(ETIQUETA_PARAMETROS);
+  revalidatePath(`${RUTA}/cotizaciones`);
+  return { ok: true, mensaje: "Cambios guardados.", valores: Object.fromEntries(CLAVES_PARAMETRO.map((c) => [c, String(entrada.data[c])])) };
+}
+
+/** El índice único de la base también frena nombres repetidos (por si dos personas guardan a la vez). */
+function esNombreRepetido(error: unknown): boolean {
+  const e = error as { code?: string; cause?: { code?: string } };
+  return e?.code === "23505" || e?.cause?.code === "23505";
+}
+
+function despuesDeCambiarLista() {
+  updateTag(ETIQUETA_PARAMETROS);
+  revalidatePath(`${RUTA}/taller`);
+}
+
+/** Agrega (sin id) o renombra (con id) un espacio del taller o un tamaño de vehículo. */
+export async function guardarElemento(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  await exigirModulo("configuracion");
+  const valores = { nombre: String(datos.get("nombre") ?? ""), descripcion: String(datos.get("descripcion") ?? "") };
+  const entrada = esquemaElemento.safeParse({
+    lista: datos.get("lista"),
+    id: datos.get("id") || undefined,
+    nombre: valores.nombre,
+    descripcion: datos.get("descripcion") ?? undefined,
+  });
+  if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
+  const { lista, id, nombre, descripcion } = entrada.data;
+
+  const elementos = await listarElementos(lista);
+  if (nombreRepetido(elementos, nombre, id)) return { errores: { nombre: mensajeRepetido(lista) }, valores };
+  if (id && !elementos.some((e) => e.id === id)) return { mensaje: "Ese elemento ya no existe. Recarga la página." };
+
+  try {
+    if (lista === "tamanos") {
+      if (id) await db.update(tamanoVehiculo).set({ nombre, descripcion }).where(eq(tamanoVehiculo.id, id));
+      else {
+        const [{ ultimo }] = await db.select({ ultimo: max(tamanoVehiculo.orden) }).from(tamanoVehiculo);
+        await db.insert(tamanoVehiculo).values({ nombre, descripcion, orden: (ultimo ?? 0) + 1 });
+      }
+    } else {
+      if (id) await db.update(espacioTaller).set({ nombre }).where(eq(espacioTaller.id, id));
+      else {
+        const { id: sucursalId } = await sucursalPrincipal();
+        const [{ ultimo }] = await db
+          .select({ ultimo: max(espacioTaller.orden) })
+          .from(espacioTaller)
+          .where(eq(espacioTaller.sucursalId, sucursalId));
+        await db.insert(espacioTaller).values({ sucursalId, nombre, orden: (ultimo ?? 0) + 1 });
+      }
+    }
+  } catch (error) {
+    if (esNombreRepetido(error)) return { errores: { nombre: mensajeRepetido(lista) }, valores };
+    throw error;
+  }
+
+  despuesDeCambiarLista();
+  return { ok: true, mensaje: id ? "Cambios guardados." : `${nombre} agregado.` };
+}
+
+async function actualizarOrden(lista: Lista, orden: { id: number; orden: number }[]) {
+  await db.transaction(async (tx) => {
+    for (const o of orden) {
+      if (lista === "tamanos") await tx.update(tamanoVehiculo).set({ orden: o.orden }).where(eq(tamanoVehiculo.id, o.id));
+      else await tx.update(espacioTaller).set({ orden: o.orden }).where(eq(espacioTaller.id, o.id));
+    }
+  });
+}
+
+export async function moverElemento(datos: { lista: Lista; id: number; direccion: "subir" | "bajar" }): Promise<EstadoFormulario> {
+  await exigirModulo("configuracion");
+  const entrada = esquemaMover.safeParse(datos);
+  if (!entrada.success) return { mensaje: "No se pudo mover." };
+  const { lista, id, direccion } = entrada.data;
+
+  const nuevoOrden = reordenar(await listarElementos(lista), id, direccion);
+  if (!nuevoOrden) return { ok: true };
+  await actualizarOrden(lista, nuevoOrden);
+  despuesDeCambiarLista();
+  return { ok: true };
+}
+
+/** Desactivar no borra (D-6): lo ya registrado con ese espacio o tamaño lo sigue mostrando. */
+export async function cambiarEstadoElemento(datos: { lista: Lista; id: number; activo: boolean }): Promise<EstadoFormulario> {
+  await exigirModulo("configuracion");
+  const entrada = esquemaEstado.safeParse(datos);
+  if (!entrada.success) return { mensaje: "No se pudo cambiar el estado." };
+  const { lista, id, activo } = entrada.data;
+
+  const elementos = await listarElementos(lista);
+  const elemento = elementos.find((e) => e.id === id);
+  if (!elemento) return { mensaje: "Ese elemento ya no existe. Recarga la página." };
+  if (!activo && !puedeDesactivar(elementos, id)) return { mensaje: mensajeUltimoActivo(lista) };
+
+  // Al reactivarlo, vuelve al final de la lista.
+  const orden = activo ? Math.max(0, ...elementos.filter((e) => e.activo).map((e) => e.orden)) + 1 : elemento.orden;
+  if (lista === "tamanos") await db.update(tamanoVehiculo).set({ activo, orden }).where(eq(tamanoVehiculo.id, id));
+  else await db.update(espacioTaller).set({ activo, orden }).where(eq(espacioTaller.id, id));
+
+  despuesDeCambiarLista();
+  return { ok: true, mensaje: activo ? `${elemento.nombre} reactivado.` : `${elemento.nombre} desactivado.` };
 }

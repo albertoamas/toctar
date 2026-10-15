@@ -19,7 +19,8 @@
 | HU-02 Gestionar usuarios y roles | B1 | ✅ Terminada (un criterio ajustado) |
 | HU-03 Permisos del encargado | B1 | ✅ Terminada con los módulos que existen hoy; cada módulo nuevo suma su casilla (se verifica en su etapa) |
 | HU-04 Datos del negocio | B2 | ✅ Terminada |
-| HU-05 y HU-06 | B2 | ⏳ |
+| HU-05 Parámetros del sistema | B2 | ✅ Terminada |
+| HU-06 App instalable | B2 | ⏳ |
 | HU-07 a HU-09 | B3 | ⏳ |
 | HU-10 a HU-15 | B4 | ⏳ |
 | HU-16 a HU-18 | B5 | ⏳ |
@@ -75,7 +76,20 @@
 | 4.6 | El logo para los documentos se sube (PNG, JPG o WebP de hasta 5 MB) y se ve; un archivo que no es imagen se rechaza | E2E "el logo para documentos se sube y se ve…" (comprueba que el archivo guardado es WebP) | ⚠️ ✅ El logo del sitio y del panel es el de la marca (`public/marca/`); el que se sube aquí es el del PDF (especificación B2 §2) |
 | 4.7 | Solo el dueño entra a la configuración | E2E "el encargado y el técnico no entran a la configuración"; unitarias `permisos` | ✅ |
 
-## HU-05 a HU-18
+## HU-05 Parámetros del sistema
+
+> Como dueño, quiero cambiar los parámetros del negocio, para no depender de un programador cuando algo cambia.
+
+| # | Criterio | Cómo se comprueba | Estado |
+|---|---|---|---|
+| 5.1 | Configuro espacios del taller y tamaños de vehículo: agregar, renombrar, ordenar, desactivar y reactivar (nunca se borran) | E2E `hu-05` "espacios del taller: agregar, renombrar, ordenar y desactivar…". Los tamaños usan la misma pantalla y las mismas acciones. Unitarias "listas del taller" | ✅ |
+| 5.2 | Configuro adelanto sugerido, validez de la cotización, intervalo de mantenimiento, condiciones y garantía del PDF | E2E "el dueño cambia el adelanto y los textos del PDF, y quedan guardados" | ✅ |
+| 5.3 | Ningún parámetro puede quedar vacío o negativo | Unitarias "parámetros: ninguno vacío ni negativo" (vacío, negativo, cero, decimales, fuera de rango). E2E "los parámetros vacíos o negativos muestran el error y no se guardan" | ✅ |
+| 5.4 | No puede quedar sin espacios ni sin tamaños activos, ni con nombres repetidos | Mismo E2E de espacios (el último activo no se desactiva; "espacio 1" repetido se rechaza). Unitarias. Índice único en la base | ✅ |
+| 5.5 | Cambiar un parámetro no altera cotizaciones ni reservas ya guardadas | Esta etapa solo guarda el valor vigente; las cotizaciones (C2) y reservas (C3) copian el valor al crearse y lo prueban en su etapa | ⏳ se verifica en C2 y C3 |
+| 5.6 | Ningún valor del negocio fijo en el código (RNF-11) | Los valores iniciales entran por migración (`0005_datos_parametros`); si falta uno, el sistema avisa en vez de inventarlo (unitaria "si falta un parámetro…") | ✅ |
+
+## HU-06 a HU-18
 
 Se completan al cerrar cada etapa, con los criterios de `historias.md` y los de su especificación.
 
