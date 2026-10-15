@@ -17,7 +17,8 @@ type Opciones = {
   carpeta: string;
   /** Inicio del nombre del archivo, por ejemplo "logo-". */
   prefijo?: string;
-  autorId: number;
+  /** Quién la sube; null si viene del sitio público (por ejemplo, las fotos de un reclamo). */
+  autorId: number | null;
   /** Lado mayor en píxeles. */
   ladoMayor?: number;
   /** Guarda además una versión de 640 px para tarjetas y grillas (`archivo.miniatura_clave`). */
