@@ -52,7 +52,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | Etapa | Especificación | Estado |
 |---|---|---|
 | B1 Acceso | `etapas/B1-acceso.md` | ✅ Cerrada (14/10) |
-| B2 Configuración y app | `etapas/B2-configuracion.md` | Se escribe al cerrar B1 |
+| B2 Configuración y app | `etapas/B2-configuracion.md` | En curso (14/10) |
 | B3 a C5 | Una por etapa | Al empezar cada una |
 
 ## Resumen de fases
