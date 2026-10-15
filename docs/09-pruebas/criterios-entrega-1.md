@@ -26,7 +26,8 @@
 | HU-09 Galería en el panel | B3 | ✅ Panel terminado; la galería pública se hace en B4 (HU-12) |
 | HU-10 Portada | B4 | ✅ Terminada (falta medir con Lighthouse al cerrar B4) |
 | HU-15 Botón de WhatsApp | B4 | ✅ En la portada y en Servicios; se suma a cada página nueva de B4 |
-| HU-11 a HU-14 | B4 | ⏳ |
+| HU-11 Página de cada servicio | B4 | ✅ Terminada |
+| HU-12 a HU-14 | B4 | ⏳ |
 | HU-16 a HU-18 | B5 | ⏳ |
 
 **Revisión manual de YankoSoft (14/10/2026):** B1 y B2 probadas a mano en el entorno local, con todos los roles, en escritorio y en vista de celular. Sin observaciones. Lo que falta revisar a mano es instalar la app en celulares reales, que necesita https (A3).
@@ -160,10 +161,22 @@
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
 | 15.1 | El botón se ve en todas las páginas | Botón fijo en cada página del sitio; E2E de cada página (portada hoy, el resto al construirlas) | 🔵 en curso |
-| 15.2 | En la página de un servicio, el mensaje empieza con ese servicio escrito | HU-11 | ⏳ |
+| 15.2 | En la página de un servicio, el mensaje empieza con ese servicio escrito | E2E `hu-11` "la página de un servicio muestra el proceso y abre WhatsApp con ese servicio escrito" (botón del cierre y botón fijo). Unitaria "mensaje de WhatsApp del sitio" | ✅ |
 | 15.3 | Usa el número configurado en los datos del negocio | E2E `hu-10`: el enlace usa el número cargado por el panel. Sin número cargado, el botón no aparece y el principal lleva a Contacto | ✅ |
 
-## HU-11 a HU-14, HU-16 a HU-18
+## HU-11 Página de cada servicio
+
+> Como visitante, quiero entender un servicio antes de preguntar, para saber si es lo que necesito.
+
+| # | Criterio | Cómo se comprueba | Estado |
+|---|---|---|---|
+| 11.1 | Muestra descripción, beneficios, proceso paso a paso, variantes y fotos de ese servicio | E2E `hu-11` "la página de un servicio muestra el proceso…" y "las variantes se muestran sin precio". Las secciones vacías no se muestran; un servicio sin opciones (variante "Única") no muestra "Opciones" | ✅ |
+| 11.2 | No muestra precios (RN-10) | Mismos E2E: la página no contiene "Bs" | ✅ |
+| 11.3 | Termina con una invitación a escribir por WhatsApp sobre ese servicio | Mismo E2E: "Consultar por este servicio" abre el chat con el servicio escrito | ✅ |
+| 11.4 | Un servicio oculto no tiene página | E2E "un servicio oculto o inexistente muestra la página no encontrada" | ✅ |
+| 11.5 | Título y descripción propios para Google y WhatsApp (RF-09) | Mismo E2E: título "<servicio> · TocTar Detailing"; la descripción es el resumen | ✅ |
+
+## HU-12 a HU-14, HU-16 a HU-18
 
 Se completan al cerrar cada etapa, con los criterios de `historias.md` y los de su especificación.
 
