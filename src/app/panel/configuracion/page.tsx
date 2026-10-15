@@ -8,18 +8,12 @@ import { obtenerConfiguracionNegocio } from "@/modulos/configuracion/consultas";
 
 export const metadata: Metadata = { title: "Configuración" };
 
-// HU-04: datos del negocio. Solo el dueño (módulo "configuracion").
+// HU-04: datos del negocio (pestaña Negocio). Solo el dueño (módulo "configuracion").
 export default function PaginaConfiguracion() {
   return (
-    <section className="flex flex-col gap-8">
-      <div className="flex flex-col gap-1">
-        <h1 className="font-heading text-4xl font-extrabold italic">Configuración</h1>
-        <p className="text-tinta-suave">Datos del negocio que se muestran en la página y en los documentos.</p>
-      </div>
-      <Suspense fallback={<p className="text-tinta-suave">Cargando…</p>}>
-        <Contenido />
-      </Suspense>
-    </section>
+    <Suspense fallback={<p className="text-tinta-suave">Cargando…</p>}>
+      <Contenido />
+    </Suspense>
   );
 }
 
@@ -41,6 +35,7 @@ async function Contenido() {
 
   return (
     <div className="grid gap-12 lg:grid-cols-[minmax(0,42rem)_minmax(0,20rem)]">
+      <p className="text-tinta-suave lg:col-span-2">Datos del negocio que se muestran en la página y en los documentos.</p>
       <FormularioNegocio valores={valores} horarios={c.horarios} />
       <aside className="lg:sticky lg:top-8 lg:self-start">
         <LogoDocumentos logo={c.logo} />
