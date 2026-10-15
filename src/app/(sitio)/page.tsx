@@ -23,13 +23,9 @@ export default function Portada() {
   return (
     <>
       <section className="relative overflow-hidden">
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 pt-10 pb-12 md:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] md:items-end md:pt-20 md:pb-16">
-          <PortadaArte className="order-first h-auto w-full max-w-72 justify-self-end md:order-last md:max-w-none" />
-          <Suspense fallback={<div className="min-h-64" />}>
-            <Presentacion />
-          </Suspense>
-        </div>
-        <hr className="tt-led tt-led--encender" />
+        <Suspense fallback={<Cabecera />}>
+          <CabeceraConTexto />
+        </Suspense>
       </section>
 
       <section aria-labelledby="servicios-titulo" className="mx-auto w-full max-w-6xl px-4 py-12 md:py-24">
@@ -57,15 +53,41 @@ export default function Portada() {
   );
 }
 
-async function Presentacion() {
+/**
+ * Cabecera de la portada: arte de marca, lema y presentación, y la línea LED.
+ * Mientras llegan los textos se muestra sin ellos y SIN la línea, con el alto que ocupa el texto
+ * (medido: 296 px en computadora, 364 a 392 px en el celular). La línea llega junto con el texto,
+ * así se enciende una sola vez y ya en su lugar: antes se encendía arriba y el texto la empujaba a mitad del efecto.
+ */
+function Cabecera({ children }: { children?: React.ReactNode }) {
+  return (
+    <>
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 pt-10 pb-12 md:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] md:items-end md:pt-20 md:pb-16">
+        <PortadaArte className="order-first h-auto w-full max-w-72 justify-self-end md:order-last md:max-w-none" />
+        {children ?? <div aria-hidden className="min-h-[23rem] md:min-h-[18.5rem]" />}
+      </div>
+      {children ? <hr className="tt-led tt-led--encender" /> : <div aria-hidden className="h-[3px]" />}
+    </>
+  );
+}
+
+async function CabeceraConTexto() {
   await connection();
   const inicio = await contenidoPublico("inicio");
   return (
+    <Cabecera>
+      <Presentacion lema={inicio.lema as string} presentacion={inicio.presentacion as string} />
+    </Cabecera>
+  );
+}
+
+function Presentacion({ lema, presentacion }: { lema: string; presentacion: string }) {
+  return (
     <div className="flex flex-col items-start gap-6">
       <h1 className="max-w-2xl font-heading text-[40px] leading-[38px] md:leading-[60px] font-extrabold tracking-[-0.01em] text-balance uppercase italic md:text-[64px]">
-        {inicio.lema as string}
+        {lema}
       </h1>
-      <p className="max-w-xl text-lg leading-7 text-tinta-suave">{inicio.presentacion as string}</p>
+      <p className="max-w-xl text-lg leading-7 text-tinta-suave">{presentacion}</p>
       <div className="flex flex-wrap gap-3">
         <BotonWhatsApp />
         <Link href="/servicios" className="tt-boton tt-boton--contorno">
