@@ -27,7 +27,8 @@
 | HU-10 Portada | B4 | ✅ Terminada (falta medir con Lighthouse al cerrar B4) |
 | HU-15 Botón de WhatsApp | B4 | ✅ En la portada y en Servicios; se suma a cada página nueva de B4 |
 | HU-11 Página de cada servicio | B4 | ✅ Terminada |
-| HU-12 a HU-14 | B4 | ⏳ |
+| HU-12 Galería pública | B4 | ✅ Terminada |
+| HU-13 y HU-14 | B4 | ⏳ |
 | HU-16 a HU-18 | B5 | ⏳ |
 
 **Revisión manual de YankoSoft (14/10/2026):** B1 y B2 probadas a mano en el entorno local, con todos los roles, en escritorio y en vista de celular. Sin observaciones. Lo que falta revisar a mano es instalar la app en celulares reales, que necesita https (A3).
@@ -176,7 +177,17 @@
 | 11.4 | Un servicio oculto no tiene página | E2E "un servicio oculto o inexistente muestra la página no encontrada" | ✅ |
 | 11.5 | Título y descripción propios para Google y WhatsApp (RF-09) | Mismo E2E: título "<servicio> · TocTar Detailing"; la descripción es el resumen | ✅ |
 
-## HU-12 a HU-14, HU-16 a HU-18
+## HU-12 Galería pública
+
+> Como visitante, quiero ver trabajos reales, para confiar en el resultado.
+
+| # | Criterio | Cómo se comprueba | Estado |
+|---|---|---|---|
+| 12.1 | Muestra los pares antes y después visibles, filtrables por servicio | E2E `hu-12` "la galería muestra las fotos visibles, se filtra por servicio y se amplían". El filtro son enlaces (`?servicio=`) y funciona sin JavaScript. Unitarias "filtro de la galería" | ✅ |
+| 12.2 | Las fotos se ven bien en el celular y se pueden ampliar | Mismo E2E: el visor muestra el antes y el después en grande; se cierra con Escape o con la X. Revisión visual en celular | ✅ |
+| 12.3 | Solo se ven fotos visibles de servicios visibles | Consulta `galeriaPublica()`; las fotos ocultas del panel (HU-09) no aparecen | ✅ |
+
+## HU-13, HU-14, HU-16 a HU-18
 
 Se completan al cerrar cada etapa, con los criterios de `historias.md` y los de su especificación.
 

@@ -46,20 +46,25 @@ test("sube un par antes y después y una foto sola; los ordena, oculta, edita y 
   await page.getByLabel("Archivo: Después").setInputFiles(foto("vidrio.png"));
   await page.getByRole("button", { name: "Guardar en la galería" }).click();
   await expect(page.getByText("Foto guardada.")).toBeVisible();
-  await expect(galeria.getByRole("listitem")).toHaveCount(2);
+  // Otras pruebas suben fotos al mismo tiempo: se miran solo las de esta prueba, por su descripción.
+  const item = (texto: string) => galeria.getByRole("listitem").filter({ hasText: texto });
+  await expect(item("Vidrios sin manchas de ácido")).toHaveCount(1);
+  await expect(item("Pulido y nano cerámico en una Hilux")).toHaveCount(1);
 
-  // Ordenar: la foto sola pasa primero
+  // Ordenar: la foto sola pasa antes que el par
+  const posicion = async (texto: string) => (await galeria.getByRole("listitem").allTextContents()).findIndex((t) => t.includes(texto));
   await page.getByRole("button", { name: "Subir: Vidrios sin manchas de ácido" }).click();
-  await expect(galeria.getByRole("listitem").first()).toContainText("Vidrios sin manchas de ácido");
+  await expect.poll(async () => (await posicion("Vidrios sin manchas de ácido")) < (await posicion("Pulido y nano cerámico en una Hilux"))).toBe(true);
 
   // Filtrar por servicio
   await page.getByLabel("Ver fotos de").selectOption({ label: "Pulido de vidrios" });
-  await expect(galeria.getByRole("listitem")).toHaveCount(1);
+  await expect(item("Vidrios sin manchas de ácido")).toHaveCount(1);
+  await expect(item("Pulido y nano cerámico en una Hilux")).toHaveCount(0);
   await page.getByLabel("Ver fotos de").selectOption({ label: "Todos los servicios" });
 
   // Ocultar y editar
   await page.getByRole("button", { name: "Ocultar: Vidrios sin manchas de ácido" }).click();
-  await expect(galeria.getByRole("listitem").first()).toContainText("Oculta");
+  await expect(item("Vidrios sin manchas de ácido")).toContainText("Oculta");
   await page.getByRole("button", { name: "Editar: Vidrios sin manchas de ácido" }).click();
   await galeria.getByLabel("Descripción").fill("Parabrisas sin manchas de ácido");
   await galeria.getByRole("button", { name: "Guardar" }).click();
@@ -70,6 +75,6 @@ test("sube un par antes y después y una foto sola; los ordena, oculta, edita y 
   await page.getByRole("button", { name: "Eliminar: Parabrisas sin manchas de ácido" }).click();
   await page.getByRole("button", { name: "Eliminar foto" }).click();
   await expect(page.getByText("Foto eliminada.")).toBeVisible();
-  await expect(galeria.getByRole("listitem")).toHaveCount(1);
+  await expect(item("Parabrisas sin manchas de ácido")).toHaveCount(0);
   expect((await page.request.get(src!)).status()).toBe(404);
 });
