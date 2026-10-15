@@ -35,17 +35,6 @@ export const esquemaEstado = z.object({
 
 export type Elemento = { id: number; nombre: string; descripcion: string | null; orden: number; activo: boolean };
 
-/** Nombre repetido sin importar mayúsculas (otro elemento, activo o no). */
-export function nombreRepetido(elementos: Pick<Elemento, "id" | "nombre">[], nombre: string, id?: number): boolean {
-  const buscado = nombre.trim().toLocaleLowerCase("es");
-  return elementos.some((e) => e.id !== id && e.nombre.trim().toLocaleLowerCase("es") === buscado);
-}
-
-/** No se puede desactivar el último activo: sin espacios no hay agenda y sin tamaños no hay precios. */
-export function puedeDesactivar(elementos: Pick<Elemento, "id" | "activo">[], id: number): boolean {
-  return elementos.some((e) => e.activo && e.id !== id);
-}
-
 export function mensajeUltimoActivo(lista: Lista): string {
   return lista === "espacios" ? "Debe quedar al menos un espacio activo." : "Debe quedar al menos un tamaño activo.";
 }

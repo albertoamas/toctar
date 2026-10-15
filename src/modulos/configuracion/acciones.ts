@@ -5,7 +5,7 @@ import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/db";
 import { espacioTaller, negocio, parametro, sucursal, tamanoVehiculo } from "@/db/esquema";
 import { guardarFoto } from "@/lib/fotos";
-import { reordenar } from "@/lib/orden";
+import { nombreRepetido, puedeDesactivar, reordenar } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
 import { whatsAppLocal } from "@/lib/whatsapp";
 import { ETIQUETA_NEGOCIO, ETIQUETA_PARAMETROS, listarElementos, obtenerConfiguracionNegocio, sucursalPrincipal } from "./consultas";
@@ -21,8 +21,6 @@ import {
   esquemaMover,
   mensajeRepetido,
   mensajeUltimoActivo,
-  nombreRepetido,
-  puedeDesactivar,
   type Lista,
 } from "./listas";
 import { CLAVES_PARAMETRO, esquemaParametros } from "./parametros";

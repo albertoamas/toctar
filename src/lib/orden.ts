@@ -1,4 +1,5 @@
-// Orden manual de listas (subir y bajar): espacios, tamaños, servicios, variantes, preguntas y galería.
+// Reglas de las listas del panel (espacios, tamaños, servicios, variantes, preguntas y galería):
+// orden manual (subir y bajar), nombres sin repetir y al menos un elemento activo.
 
 type Ordenable = { id: number; orden: number; activo: boolean };
 
@@ -13,4 +14,15 @@ export function reordenar(elementos: Ordenable[], id: number, direccion: "subir"
   if (i < 0 || j < 0 || j >= activos.length) return null;
   [activos[i], activos[j]] = [activos[j], activos[i]];
   return activos.map((e, k) => ({ id: e.id, orden: k + 1 }));
+}
+
+/** Nombre repetido sin importar mayúsculas (otro elemento, activo o no). */
+export function nombreRepetido(elementos: { id: number; nombre: string }[], nombre: string, id?: number): boolean {
+  const buscado = nombre.trim().toLocaleLowerCase("es");
+  return elementos.some((e) => e.id !== id && e.nombre.trim().toLocaleLowerCase("es") === buscado);
+}
+
+/** No se puede desactivar el último activo (sin espacios no hay agenda; sin variantes no hay qué cotizar). */
+export function puedeDesactivar(elementos: { id: number; activo: boolean }[], id: number): boolean {
+  return elementos.some((e) => e.activo && e.id !== id);
 }
