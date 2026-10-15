@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { MapPinIcon } from "lucide-react";
@@ -69,6 +70,14 @@ async function Datos() {
               </div>
             ))}
           </dl>
+        </section>
+
+        <section aria-labelledby="garantia-titulo" className="flex flex-col gap-2">
+          <h2 id="garantia-titulo" className={TITULO}>¿Algo no quedó bien?</h2>
+          <p className="text-tinta-suave">Cuéntanos en el formulario de garantía y te respondemos por WhatsApp.</p>
+          <Link href="/garantia" className="text-sm font-semibold text-rojo-texto hover:underline">
+            Garantía y reclamos
+          </Link>
         </section>
 
         {(d.correo || redes.length > 0) && (

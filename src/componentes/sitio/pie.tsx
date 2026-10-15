@@ -19,6 +19,7 @@ const ENLACES = [
   { href: "/nosotros", texto: "Nosotros" },
   { href: "/preguntas-frecuentes", texto: "Preguntas frecuentes" },
   { href: "/contacto", texto: "Contacto" },
+  { href: "/garantia", texto: "Garantía y reclamos" },
 ];
 
 export function Pie() {
