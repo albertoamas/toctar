@@ -1,7 +1,7 @@
 # B2 Configuración y app — especificación
 
 - **Fase y semana:** B. Entrega 1 · semana 1 (14 al 20 de octubre)
-- **Estado:** programada (14 de octubre de 2026): HU-04 (#14), HU-05 (#15) y HU-06. Faltan la instalación real en celulares (necesita https, A3) y la demo
+- **Estado:** programada y probada a mano por YankoSoft (14 de octubre de 2026): HU-04 (#14), HU-05 (#15) y HU-06 (#16). Faltan la instalación real en celulares (necesita https, A3) y la demo
 - **Historias:** HU-04 Datos del negocio · HU-05 Parámetros del sistema · HU-06 App instalable
 - **Base:**
   - Requisitos: RF-17, RF-18, RF-19, RNF-03 y RNF-11.
