@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { esquemaHorarios, resumirHorarios, semanaCerrada, type DiaHorario } from "@/lib/horarios";
 import { ERROR_ENLACE_CORTO, ERROR_SIN_COORDENADAS, enlaceMapa, leerUbicacion } from "@/lib/ubicacion";
-import { enlaceWhatsApp, formatearWhatsApp, normalizarWhatsApp, whatsAppLocal } from "@/lib/whatsapp";
+import { enlaceWhatsApp, formatearWhatsApp, mensajeWhatsApp, normalizarWhatsApp, whatsAppLocal } from "@/lib/whatsapp";
 import { erroresDe, esquemaNegocio, normalizarEnlaceRed } from "@/modulos/configuracion/esquemas";
 
 // HU-04 Datos del negocio. Criterios: docs/09-pruebas/criterios-entrega-1.md (4.x).
@@ -163,5 +163,15 @@ describe("esquema del negocio", () => {
   test("rechaza NIT con letras y correo mal escrito", () => {
     const r = esquemaNegocio.safeParse({ ...valido, nit: "12A45", correo: "toctar@" });
     expect(Object.keys(erroresDe(r.error!)).sort()).toEqual(["correo", "nit"]);
+  });
+});
+
+describe("mensaje de WhatsApp del sitio (HU-15)", () => {
+  test("general o con el servicio escrito", () => {
+    expect(mensajeWhatsApp()).toBe("Hola, quiero consultar por un servicio.");
+    expect(mensajeWhatsApp("Pulido y nano cerámico")).toBe("Hola, quiero consultar por Pulido y nano cerámico.");
+    expect(enlaceWhatsApp("59171234567", mensajeWhatsApp("Pulido de vidrios"))).toBe(
+      "https://wa.me/59171234567?text=Hola%2C%20quiero%20consultar%20por%20Pulido%20de%20vidrios.",
+    );
   });
 });
