@@ -2,8 +2,8 @@ import { expect, test, type TestInfo } from "@playwright/test";
 import { ingresar, ingresarComoDueno } from "./apoyo";
 
 // HU-03 Permisos del encargado. Criterios: docs/09-pruebas/criterios-entrega-1.md (3.1 a 3.3).
-// Hoy la única casilla asignable es "Autorizar entrega con saldo": cada módulo suma la suya
-// cuando existe su pantalla (Sitio web en B3, Reclamos en B5).
+// Cada módulo suma su casilla cuando existe su pantalla (Sitio web en B3, Reclamos en B5);
+// esta prueba usa "Autorizar entrega con saldo". El acceso a Reclamos se prueba en hu-17.
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "C" : "E");
 

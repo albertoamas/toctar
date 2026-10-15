@@ -64,3 +64,9 @@ export const esquemaReclamo = z.object({
 
 export type DatosReclamo = z.output<typeof esquemaReclamo>;
 export const CAMPOS_RECLAMO = Object.keys(esquemaReclamo.shape) as (keyof typeof esquemaReclamo.shape)[];
+
+/** Marcar como atendido (HU-17): la nota queda en el registro. */
+export const esquemaAtender = z.object({
+  id: z.coerce.number().int().positive(),
+  nota: z.string().trim().min(3, "Escribe qué se hizo, para el registro.").max(1000, "Hasta 1000 caracteres."),
+});

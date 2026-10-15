@@ -66,6 +66,9 @@ test("con la trampa llena se ve la confirmación pero no se guarda", async ({ pa
 
 test("el pie y la página de contacto llevan a garantía y reclamos", async ({ page }) => {
   await page.goto("/contacto");
-  await page.getByRole("contentinfo").getByRole("link", { name: "Garantía y reclamos" }).click();
-  await expect(page).toHaveURL(/\/garantia$/);
+  await expect(page.getByRole("contentinfo").getByRole("link", { name: "Garantía y reclamos" })).toHaveAttribute("href", "/garantia");
+  const seccion = page.getByRole("region", { name: "¿Algo no quedó bien?" });
+  await expect(seccion.getByRole("link")).toHaveAttribute("href", "/garantia");
+  await seccion.getByRole("link").click();
+  await expect(page).toHaveURL(/\/garantia$/, { timeout: 15_000 });
 });

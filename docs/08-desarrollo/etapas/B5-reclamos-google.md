@@ -152,7 +152,7 @@ En `src/modulos/reclamos/acciones.ts`.
 ## 11. Criterio de salida
 
 - [ ] Las pruebas pasan, en celular y en escritorio.
-- [ ] El reclamo de prueba aparece en el inicio del panel (S-4).
+- [x] El reclamo de prueba aparece en el inicio del panel (S-4) (E2E `hu-17`, 15/10).
 - [ ] La herramienta de prueba de resultados enriquecidos de Google valida el JSON-LD (en el entorno de pruebas, con https).
 - [ ] Revisión manual de YankoSoft.
 

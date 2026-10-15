@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
-import { esquemaReclamo, normalizarPlaca } from "@/modulos/reclamos/esquemas";
+import { formatearFecha } from "@/lib/fechas";
+import { esquemaAtender, esquemaReclamo, normalizarPlaca } from "@/modulos/reclamos/esquemas";
 import { LIMITE_POR_HORA, MILISEGUNDOS_MINIMOS, evaluarEnvio, mensajeAlCliente } from "@/modulos/reclamos/reglas";
 
 // HU-16 Formulario de reclamo y HU-17. Criterios: docs/09-pruebas/criterios-entrega-1.md (16.x, 17.x).
@@ -54,4 +55,15 @@ describe("protección contra spam", () => {
 
 test("mensaje de WhatsApp al cliente", () => {
   expect(mensajeAlCliente("Juan", "15/10/2026")).toBe("Hola Juan, te escribimos de TocTar Detailing por el reclamo que nos dejaste el 15/10/2026.");
+});
+
+describe("marcar como atendido", () => {
+  test("pide una nota de al menos 3 caracteres", () => {
+    expect(erroresDe(esquemaAtender.safeParse({ id: "4", nota: " ok " }).error!)).toEqual({ nota: "Escribe qué se hizo, para el registro." });
+    expect(esquemaAtender.parse({ id: "4", nota: "Se repasó el capó con pulido." })).toEqual({ id: 4, nota: "Se repasó el capó con pulido." });
+  });
+});
+
+test("fecha calendario para mostrar", () => {
+  expect(formatearFecha("2026-10-05")).toBe("05/10/2026");
 });
