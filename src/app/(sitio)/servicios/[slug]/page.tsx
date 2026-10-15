@@ -46,8 +46,8 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
             <ChevronLeftIcon className="size-4" aria-hidden />
             Servicios
           </Link>
-          <h1 className="font-heading text-[40px] leading-[0.95] font-extrabold tracking-[-0.01em] text-balance uppercase italic md:text-[64px]">{s.nombre}</h1>
-          <p className="max-w-xl text-lg leading-relaxed text-tinta-suave">{s.resumen}</p>
+          <h1 className="font-heading text-[40px] leading-[38px] md:leading-[60px] font-extrabold tracking-[-0.01em] text-balance uppercase italic md:text-[64px]">{s.nombre}</h1>
+          <p className="max-w-xl text-lg leading-7 text-tinta-suave">{s.resumen}</p>
           <BotonWhatsApp texto="Consultar por este servicio" servicio={s.nombre} />
         </div>
         <div className="relative order-first aspect-[4/3] overflow-hidden bg-superficie md:order-last">
@@ -117,7 +117,7 @@ function Proceso({ pasos }: { pasos: DetalleServicioPublico["pasos"] }) {
             <span aria-hidden className="font-heading text-[40px] leading-none font-extrabold text-rojo italic">{i + 1}</span>
             <div className="flex flex-col gap-1">
               <h3 className="font-semibold">{p.titulo}</h3>
-              {p.detalle && <p className="text-sm leading-relaxed text-tinta-suave">{p.detalle}</p>}
+              {p.detalle && <p className="text-sm leading-[22px] text-tinta-suave">{p.detalle}</p>}
             </div>
           </li>
         ))}
