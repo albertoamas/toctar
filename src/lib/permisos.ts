@@ -31,7 +31,7 @@ type DefinicionModulo = {
 export const MODULOS = {
   inicio: { ruta: "/panel", nombre: "Inicio", permisoEncargado: null, tecnico: true, construido: true },
   sitio: { ruta: "/panel/sitio", nombre: "Sitio web", permisoEncargado: "sitio", tecnico: false, construido: true },
-  reclamos: { ruta: "/panel/reclamos", nombre: "Reclamos", permisoEncargado: "reclamos", tecnico: false, construido: false },
+  reclamos: { ruta: "/panel/reclamos", nombre: "Reclamos", permisoEncargado: "reclamos", tecnico: false, construido: true },
   clientes: { ruta: "/panel/clientes", nombre: "Clientes", permisoEncargado: "clientes", tecnico: false, construido: false },
   consultas: { ruta: "/panel/consultas", nombre: "Consultas", permisoEncargado: "consultas", tecnico: false, construido: false },
   cotizaciones: { ruta: "/panel/cotizaciones", nombre: "Cotizaciones", permisoEncargado: null, tecnico: false, construido: false },

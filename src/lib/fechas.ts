@@ -35,3 +35,9 @@ export function formatearFechaHora(instante: Date): string {
     timeStyle: "short",
   }).format(instante);
 }
+
+/** Fecha calendario para mostrar: "2026-10-15" → "15/10/2026". */
+export function formatearFecha(fecha: string): string {
+  const [anio, mes, dia] = fecha.split("-");
+  return `${dia}/${mes}/${anio}`;
+}

@@ -2,16 +2,18 @@
 
 import { createHash } from "node:crypto";
 import { and, count, eq, gt, sql } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { reclamo, reclamoArchivo, servicio } from "@/db/esquema";
 import { erroresDe, type EstadoFormulario } from "@/lib/formularios";
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
-import { CAMPOS_RECLAMO, MAXIMO_FOTOS, esquemaReclamo } from "./esquemas";
+import { exigirModulo } from "@/lib/sesion";
+import { CAMPOS_RECLAMO, MAXIMO_FOTOS, esquemaAtender, esquemaReclamo } from "./esquemas";
 import { LIMITE_POR_HORA, evaluarEnvio } from "./reglas";
 
-// Reclamos (HU-16): la acción pública del formulario de garantía y reclamos.
-// No pide sesión: la protegen el esquema, el campo trampa, el tiempo mínimo y el límite por conexión.
+// Reclamos. HU-16: la acción pública del formulario de garantía y reclamos; no pide sesión: la protegen el
+// esquema, el campo trampa, el tiempo mínimo y el límite por conexión. HU-17: atenderlos desde el panel.
 
 const ERROR_FOTO = "Cada foto debe ser JPG, PNG o WebP de hasta 5 MB.";
 const MENSAJE_LIMITE = "Recibimos varios reclamos desde tu conexión. Escríbenos por WhatsApp.";
@@ -105,4 +107,25 @@ export async function enviarReclamo(_previo: EstadoFormulario, datos: FormData):
   }
 
   return { ok: true };
+}
+
+export async function marcarAtendido(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  const autor = await exigirModulo("reclamos");
+  const valores = { nota: String(datos.get("nota") ?? "") };
+  const entrada = esquemaAtender.safeParse({ id: datos.get("id"), ...valores });
+  if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
+  const { id, nota } = entrada.data;
+
+  // Solo un pendiente pasa a atendido: si dos personas lo atienden a la vez, queda la nota de la primera.
+  const [actualizado] = await db
+    .update(reclamo)
+    .set({ estado: "atendido", notaAtencion: nota, atendidoPor: Number(autor.id), atendidoAt: new Date() })
+    .where(and(eq(reclamo.id, id), eq(reclamo.estado, "pendiente")))
+    .returning({ id: reclamo.id });
+  if (!actualizado) return { mensaje: "Este reclamo ya estaba atendido." };
+
+  revalidatePath("/panel");
+  revalidatePath("/panel/reclamos");
+  revalidatePath(`/panel/reclamos/${id}`);
+  return { ok: true, mensaje: "Reclamo marcado como atendido." };
 }
