@@ -30,7 +30,8 @@
 | HU-12 Galería pública | B4 | ✅ Terminada |
 | HU-13 Nosotros y preguntas frecuentes | B4 | ✅ Terminada |
 | HU-14 Contacto y mapa | B4 | ✅ Terminada |
-| HU-16 a HU-18 | B5 | ⏳ |
+| HU-16 Formulario de reclamo | B5 | ✅ Formulario terminado; el reclamo en el panel se ve en HU-17 |
+| HU-17 y HU-18 | B5 | ⏳ |
 
 **Revisión manual de YankoSoft (14/10/2026):** B1 y B2 probadas a mano en el entorno local, con todos los roles, en escritorio y en vista de celular. Sin observaciones. Lo que falta revisar a mano es instalar la app en celulares reales, que necesita https (A3).
 
@@ -206,9 +207,21 @@
 | 14.1 | Muestra dirección, mapa de Google Maps, horarios, WhatsApp, correo y redes | E2E "Contacto muestra la dirección con el mapa, el horario y el WhatsApp". El mapa embebido aparece cuando hay ubicación cargada (HU-04) y se carga diferido | ✅ |
 | 14.2 | Tocar la dirección en el celular abre la app de mapas | La dirección y "Cómo llegar" enlazan a Google Maps (mismo E2E); en el celular, el sistema abre la app | ✅ (probar en el celular en la demo) |
 
-## HU-16 a HU-18
+## HU-16 Formulario de reclamo
 
-Se completan al cerrar cada etapa, con los criterios de `historias.md` y los de su especificación.
+> Como cliente, quiero dejar un reclamo o pedido de garantía, para que TocTar lo atienda.
+
+| # | Criterio | Cómo se comprueba | Estado |
+|---|---|---|---|
+| 16.1 | Pide nombre, WhatsApp, placa, servicio, fecha aproximada, descripción y hasta 3 fotos | E2E `hu-16` "se envía un reclamo con fotos y se ve la confirmación" (2 fotos, se guardan las 2). Las fotos se achican en el navegador antes de subir. Unitarias "placa" y "esquema del reclamo" | ✅ |
+| 16.2 | Los obligatorios se validan antes de enviar | E2E "los obligatorios vacíos muestran su error" (el error queda junto a cada campo). La fecha no puede ser futura (unitaria) | ✅ |
+| 16.3 | Al enviar se ve una confirmación y el reclamo queda pendiente | Mismo E2E del 16.1: "Recibimos tu reclamo" y el reclamo guardado en la base. Que aparezca en el panel se prueba en HU-17 | ✅ (panel en HU-17) |
+| 16.4 | Protección contra envíos automáticos | Unitarias "protección contra spam" (trampa, menos de 3 segundos, 5 por hora). E2E "con la trampa llena se ve la confirmación pero no se guarda" | ✅ |
+| 16.5 | Se llega desde el pie y desde Contacto | E2E "el pie y la página de contacto llevan a garantía y reclamos" | ✅ |
+
+## HU-17 y HU-18
+
+Se completan al cerrar cada historia, con los criterios de `historias.md` y los de su especificación.
 
 ## Requisitos no funcionales que se revisan en esta entrega
 
@@ -237,3 +250,5 @@ Se completan al cerrar cada etapa, con los criterios de `historias.md` y los de 
 | 14/10/2026 | HU-14 | La página de Contacto "saltaba" al cargar los datos (Lighthouse: CLS 0,19, rendimiento 82) | El espacio reservado mientras cargan los datos ocupa una pantalla: el pie no aparece y luego se corre | Lighthouse: CLS 0, rendimiento 91 |
 | 15/10/2026 | Identidad | El botón "Escribir por WhatsApp" se veía con ruido en el corte y algo borroso, sobre todo en pantallas al 125 % | Corte a 60° con degradado en vez de `clip-path` (botón y tarjetas); interlineados en píxeles enteros en la cabecera de la portada y del servicio. El logo del encabezado se deja como estaba (ver `06-diseno/identidad-visual.md`) | Revisión visual con capturas ampliadas al 100, 125, 150 y 200 % (detalle en `06-diseno/identidad-visual.md`) |
 | 15/10/2026 | HU-10 | Al cargar la portada, la línea LED se encendía antes de que llegara el lema y, a mitad del efecto, el texto la empujaba hacia abajo (40 px en computadora, 108 px en el celular) | La línea llega junto con el texto y se enciende una sola vez en su lugar; el espacio reservado mientras carga tiene el alto del texto | Medición de la posición de la línea cuadro a cuadro con red 4G simulada; Lighthouse: CLS 0, rendimiento 92 |
+| 15/10/2026 | HU-16 | Quien enviaba el formulario vacío en menos de 3 segundos veía "Recibimos tu reclamo" sin que se guardara nada: el control de tiempo contra robots iba antes que la validación | Primero se validan los campos y después el tiempo mínimo; con la trampa llena no se muestran errores | E2E "los obligatorios vacíos muestran su error" (envía al instante) |
+| 15/10/2026 | HU-16 | El límite de 5 reclamos por hora tomaba la IP del primer valor de `x-forwarded-for`, que el visitante puede inventar para saltarse el límite | Se usa `x-real-ip` o el último valor de esa lista, que pone el proxy del servidor | Revisión de código |
