@@ -121,6 +121,7 @@ El entorno de pruebas no se indexa en Google y tiene datos ficticios.
 - **`Dockerfile` en varias etapas:** instala dependencias, compila con la salida `standalone` de Next.js y deja una imagen final chica (solo lo necesario para correr), con usuario sin privilegios.
 - **Las migraciones** de la base se aplican al arrancar el contenedor, antes de aceptar tráfico.
 - **Configuración por variables de entorno** (`DATABASE_URL`, claves de R2, secreto de sesión); nunca en el código ni en la imagen. Un `.env.example` documenta cuáles hacen falta.
+- **`SITIO_URL` y `SITIO_INDEXABLE`** (HU-18) van también como variables de build en Coolify: el build fija con ellas `metadataBase` y el `noindex`. `SITIO_INDEXABLE=true` solo en producción.
 - **Misma versión de PostgreSQL** en desarrollo y producción, fijada en `docker-compose.yml` y en Coolify.
 - **A la app solo se llega por el proxy de Coolify (Traefik).** El puerto 3000 del contenedor no se publica en el VPS. El límite de reclamos por conexión (HU-16) toma la IP de `x-real-ip`, que pone Traefik; si la app quedara expuesta directo, un visitante podría inventarse ese encabezado y saltarse el límite. Se verifica al configurar A3.
 - No hace falta Kubernetes ni nada más complejo: un solo servidor con Docker alcanza de sobra para este volumen.

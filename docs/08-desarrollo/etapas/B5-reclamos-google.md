@@ -1,7 +1,7 @@
 # B5 Reclamos y Google — especificación
 
 - **Fase y semana:** B. Entrega 1 · semana 1 (se adelanta desde el 15 de octubre; plan v5)
-- **Estado:** aprobada para programar (15 de octubre de 2026)
+- **Estado:** programada (15 de octubre de 2026); falta validar el JSON-LD en Google con https (A3) y la revisión manual
 - **Historias:** HU-16 Formulario de reclamo · HU-17 Atender reclamos · HU-18 Sitio preparado para Google
 - **Base:**
   - Requisitos: RF-07, RF-09, RF-13; RNF-05, RNF-07, RNF-08, RNF-12.
@@ -75,7 +75,10 @@ Migración `0011_reclamos`.
 ### `reclamo_archivo`
 `id`, `reclamo_id` (FK), `archivo_id` (FK), `orden`. Hasta 3 por reclamo.
 
-**Variable nueva:** `SITIO_URL`, la dirección pública del sitio (`http://localhost:3000` en desarrollo, el dominio en producción). Se usa para el sitemap, el `robots.txt`, las URL canónicas y las imágenes de Open Graph.
+**Variables nuevas:**
+- `SITIO_URL`, la dirección pública del sitio (`http://localhost:3000` en desarrollo, el dominio en producción). Se usa para el sitemap, el `robots.txt`, los datos de negocio local y `metadataBase` (imágenes de Open Graph).
+- `SITIO_INDEXABLE`: `true` solo en producción. Con otro valor, `robots.txt` bloquea todo y las páginas llevan `noindex` (el entorno de pruebas no se indexa).
+- Las dos se marcan en Coolify también como variables de build: `metadataBase` y el `noindex` se fijan al compilar. El sitemap y el `robots.txt` las leen al atender el pedido.
 
 ## 5. Pantallas y rutas
 
@@ -151,7 +154,7 @@ En `src/modulos/reclamos/acciones.ts`.
 
 ## 11. Criterio de salida
 
-- [ ] Las pruebas pasan, en celular y en escritorio.
+- [x] Las pruebas pasan, en celular y en escritorio (15/10: 192 unitarias y 108 E2E).
 - [x] El reclamo de prueba aparece en el inicio del panel (S-4) (E2E `hu-17`, 15/10).
 - [ ] La herramienta de prueba de resultados enriquecidos de Google valida el JSON-LD (en el entorno de pruebas, con https).
 - [ ] Revisión manual de YankoSoft.

@@ -4,14 +4,16 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { resumirHorarios } from "@/lib/horarios";
 import { enlaceMapa } from "@/lib/ubicacion";
+import { urlSitio } from "@/lib/sitio";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { NOMBRE_RED, REDES } from "@/modulos/configuracion/esquemas";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
+import { datosNegocioLocal, jsonLd } from "@/modulos/sitio/negocio-local";
 
 // Pie del sitio (componente PieSitio del Design System). Los datos salen de la configuración
 // (HU-04, RF-17): el dueño los cambia en el panel y se ven al guardar.
 // El build no tiene base de datos: los datos se leen al atender el pedido (connection) y quedan
-// en caché con la etiqueta "negocio" hasta que se editen.
+// en caché con la etiqueta "negocio" hasta que se editen. Los mismos datos van a Google como JSON-LD (HU-18).
 
 const ENLACES = [
   { href: "/servicios", texto: "Servicios" },
@@ -53,6 +55,7 @@ async function DatosDelNegocio() {
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(datosNegocioLocal(d, urlSitio())) }} />
       <Bloque titulo="Dónde estamos">
         <address className="not-italic">{d.direccion}</address>
         {d.coordenadas && (

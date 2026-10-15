@@ -32,7 +32,7 @@
 | HU-14 Contacto y mapa | B4 | ✅ Terminada |
 | HU-16 Formulario de reclamo | B5 | ✅ Terminada |
 | HU-17 Atender reclamos | B5 | ✅ Terminada |
-| HU-18 Sitio preparado para Google | B5 | ⏳ |
+| HU-18 Sitio preparado para Google | B5 | ✅ Terminada en el software; falta validar en Google con https (A3) y el Perfil de Empresa del dueño |
 
 **Revisión manual de YankoSoft (14/10/2026):** B1 y B2 probadas a mano en el entorno local, con todos los roles, en escritorio y en vista de celular. Sin observaciones. Lo que falta revisar a mano es instalar la app en celulares reales, que necesita https (A3).
 
@@ -231,9 +231,16 @@
 | 17.3 | Desde el reclamo abro WhatsApp con ese cliente | Mismo E2E: el enlace va a `wa.me/591…` con el saludo y la fecha del reclamo. Unitaria "mensaje de WhatsApp al cliente" | ✅ |
 | 17.4 | Solo el dueño y el encargado con el módulo | E2E "el encargado entra a reclamos solo con el permiso; el técnico nunca" (va a "sin acceso" aunque escriba la dirección). Unitarias `permisos` | ✅ |
 
-## HU-18
+## HU-18 Sitio preparado para Google
 
-Se completa al cerrar la historia, con los criterios de `historias.md` y los de su especificación.
+> Como dueño, quiero que TocTar aparezca al buscar en Tarija, para recibir clientes nuevos.
+
+| # | Criterio | Cómo se comprueba | Estado |
+|---|---|---|---|
+| 18.1 | Cada página tiene título y descripción propios; las URL son legibles | Metadatos de cada página del sitio; los servicios usan su nombre y resumen (`/servicios/<slug>`) | ✅ |
+| 18.2 | El sitio publica `sitemap.xml` y datos de negocio local | E2E `hu-18` "el sitemap lista las páginas y los servicios visibles, no los ocultos" y "la portada lleva los datos de negocio local…". Unitarias `negocio-local` (horarios, redes, datos que faltan, JSON seguro) | ✅ (falta la prueba de resultados enriquecidos de Google, con https, en A3) |
+| 18.3 | El panel no se indexa (RNF-12) | E2E `base` (`noindex`) y `hu-18` "robots.txt deja fuera el panel, el ingreso y la API". El entorno de pruebas entero no se indexa (`SITIO_INDEXABLE=false`) | ✅ |
+| 18.4 | Fuera del software: alta del Perfil de Empresa en Google Maps | Guía `docs/10-lanzamiento/perfil-de-google.md`; la hace el dueño con YankoSoft | ⏳ (después de publicar) |
 
 ## Requisitos no funcionales que se revisan en esta entrega
 
