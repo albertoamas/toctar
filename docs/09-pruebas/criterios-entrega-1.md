@@ -20,7 +20,7 @@
 | HU-03 Permisos del encargado | B1 | ✅ Terminada con los módulos que existen hoy; cada módulo nuevo suma su casilla (se verifica en su etapa) |
 | HU-04 Datos del negocio | B2 | ✅ Terminada |
 | HU-05 Parámetros del sistema | B2 | ✅ Terminada |
-| HU-06 App instalable | B2 | ⏳ |
+| HU-06 App instalable | B2 | ✅ Terminada (falta probar la instalación real con https, en A3) |
 | HU-07 a HU-09 | B3 | ⏳ |
 | HU-10 a HU-15 | B4 | ⏳ |
 | HU-16 a HU-18 | B5 | ⏳ |
@@ -89,7 +89,18 @@
 | 5.5 | Cambiar un parámetro no altera cotizaciones ni reservas ya guardadas | Esta etapa solo guarda el valor vigente; las cotizaciones (C2) y reservas (C3) copian el valor al crearse y lo prueban en su etapa | ⏳ se verifica en C2 y C3 |
 | 5.6 | Ningún valor del negocio fijo en el código (RNF-11) | Los valores iniciales entran por migración (`0005_datos_parametros`); si falta uno, el sistema avisa en vez de inventarlo (unitaria "si falta un parámetro…") | ✅ |
 
-## HU-06 a HU-18
+## HU-06 App instalable
+
+> Como usuario del panel, quiero instalar el sistema en mi celular, para abrirlo como una app.
+
+| # | Criterio | Cómo se comprueba | Estado |
+|---|---|---|---|
+| 6.1 | El sistema se puede instalar: tiene nombre, ícono de TocTar y abre en el panel como app | E2E `hu-06` "el manifiesto tiene nombre, abre en el panel como app y sus íconos existen" y "las páginas enlazan el manifiesto…" (incluye el ícono para iPhone) | ✅ |
+| 6.2 | Se instala de verdad en Android (Chrome) y en iPhone (Safari, "Agregar a inicio") | A mano en el entorno de pruebas: la instalación exige https | ⏳ con A3 (dominio) |
+| 6.3 | Sin conexión se muestra un aviso claro | E2E "sin internet, el panel muestra el aviso y una página nueva muestra «Sin conexión»": franja en el panel y página propia con "Reintentar" | ✅ |
+| 6.4 | Sin modo sin conexión (acuerdo): no se guarda nada para usar sin internet | Revisión del código: el service worker (`public/sw.js`) solo guarda la página de aviso | ✅ |
+
+## HU-07 a HU-18
 
 Se completan al cerrar cada etapa, con los criterios de `historias.md` y los de su especificación.
 
@@ -99,7 +110,7 @@ Se completan al cerrar cada etapa, con los criterios de `historias.md` y los de 
 |---|---|---|
 | RNF-01 Celular desde 360 px y computadora | Todas las pruebas E2E corren en celular (Pixel 7) y en escritorio; revisión visual en cada etapa | 🟢 al día |
 | RNF-02 Sitio rápido en 4G (Lighthouse ≥ 90) | Medición en B4 | ⏳ |
-| RNF-03 Instalable; aviso claro sin conexión | B2 (HU-06) | ⏳ |
+| RNF-03 Instalable; aviso claro sin conexión | E2E `hu-06`; instalación real con https en A3 | ✅ (falta la prueba en el celular) |
 | RNF-04 https, contraseñas con hash, sesión que vence | Hash scrypt de Better Auth; sesión de 7 días; https en el entorno de pruebas (A3) | 🟢 parcial |
 | RNF-05 Permisos validados en el servidor | Unitarias `permisos` (matriz completa) y E2E de acceso por URL | ✅ |
 | RNF-12 El panel no aparece en buscadores | E2E `base` "el panel y el ingreso no se indexan en Google" | ✅ |

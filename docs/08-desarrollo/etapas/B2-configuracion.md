@@ -1,7 +1,7 @@
 # B2 Configuración y app — especificación
 
 - **Fase y semana:** B. Entrega 1 · semana 1 (14 al 20 de octubre)
-- **Estado:** aprobada para programar (14 de octubre de 2026)
+- **Estado:** programada (14 de octubre de 2026): HU-04 (#14), HU-05 (#15) y HU-06. Faltan la instalación real en celulares (necesita https, A3) y la demo
 - **Historias:** HU-04 Datos del negocio · HU-05 Parámetros del sistema · HU-06 App instalable
 - **Base:**
   - Requisitos: RF-17, RF-18, RF-19, RNF-03 y RNF-11.
@@ -134,7 +134,7 @@ Todas dentro de `/panel/configuracion`, con `exigirModulo("configuracion")` (sol
 **Pie del sitio:** muestra la dirección, el horario resumido ("Lunes a sábado: 8:00–12:00 y 14:00–18:00"), un enlace a WhatsApp si hay número y los íconos de las redes cargadas. Va siempre en tema oscuro.
 
 **Sin conexión:**
-- `/sin-conexion`: página estática con el monograma, el título "Sin conexión" y el texto "El panel necesita internet. Revisa tu conexión y vuelve a intentar.", más el botón "Reintentar".
+- `/sin-conexion.html` (en `public/`, con estilos y logo adentro para que funcione sin red): página estática con el monograma, el título "Sin conexión" y el texto "El panel necesita internet. Revisa tu conexión y vuelve a intentar.", más el botón "Reintentar".
 - En el panel aparece una franja arriba con el texto "Sin conexión. Los cambios no se guardarán hasta que vuelva internet.".
 
 ## 6. Acciones del servidor
@@ -202,8 +202,8 @@ Una rama a la vez; cada una se une antes de empezar la siguiente.
 
 ## 11. Criterio de salida
 
-- [ ] Las pruebas unitarias y las 7 E2E pasan, en celular y en escritorio.
-- [ ] Revisión del código: ningún valor del negocio fijo en el código (RNF-11).
+- [x] Las pruebas unitarias y las E2E pasan, en celular y en escritorio (14/10).
+- [x] Revisión del código: ningún valor del negocio fijo en el código (RNF-11). Los valores iniciales entran por migración (14/10).
 - [ ] La app se instala en Android (Chrome) y en iPhone (Safari, "Agregar a inicio") con el ícono de TocTar. Se prueba en el entorno de pruebas, porque la instalación necesita https.
 - [ ] Demo del viernes 23: el dueño carga su WhatsApp, su ubicación y sus redes, y los ve en el sitio.
 
@@ -214,3 +214,13 @@ Una rama a la vez; cada una se une antes de empezar la siguiente.
 | Texto de condiciones y garantía del PDF | Borrador a partir del texto de garantía que mandó; el dueño lo ajusta | Dueño (antes de C2) |
 | Horario definitivo y días | Lunes a sábado, 8–12 y 14–18, hasta que lo confirme | Dueño |
 | ¿La app instalada abre en el panel o en el sitio? | En el panel (`/panel`): la instala el personal | YankoSoft (confirmar en la demo) |
+
+## 13. Guion de la demo (viernes 23)
+
+1. **Configuración → Negocio:** el dueño escribe su WhatsApp y pega el enlace de Google Maps del taller (o las coordenadas, si el enlace es corto). Carga Facebook, Instagram y TikTok, y revisa el horario.
+2. Abre la página: el pie muestra la dirección, "Cómo llegar", el horario, el WhatsApp y las redes. Toca el WhatsApp y se abre el chat.
+3. **Logo para documentos:** sube el logo que va a salir en las cotizaciones en PDF.
+4. **Taller:** revisa los 3 espacios y los 5 tamaños con sus ejemplos. Prueba agregar y desactivar uno.
+5. **Cotizaciones y mantenimiento:** confirma el adelanto (Bs 200), la validez (15 días) y el aviso de mantenimiento (3 meses). Lee el borrador de condiciones y garantía y lo ajusta.
+6. **App:** si el entorno de pruebas ya tiene https, instala el panel en su celular ("Agregar a la pantalla de inicio") y lo abre desde el ícono. Con el modo avión, ve el aviso "Sin conexión".
+7. **Preguntas para el dueño:** ¿el horario y los días son correctos? ¿El texto de garantía dice lo que él quiere?

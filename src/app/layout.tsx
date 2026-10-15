@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, Montserrat } from "next/font/google";
 import { Toaster } from "@/componentes/ui/sonner";
 import "./globals.css";
@@ -25,6 +25,9 @@ export const metadata: Metadata = {
   },
   description: "Detailing automotriz en Tarija, Bolivia",
 };
+
+// Barra del navegador y de la app instalada en negro, como la marca.
+export const viewport: Viewport = { themeColor: "#000000" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
