@@ -1,12 +1,12 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { CircleAlertIcon, EyeIcon, EyeOffIcon } from "lucide-react";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { toast } from "sonner";
+import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
-import { Label } from "@/componentes/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import type { Permiso } from "@/lib/permisos";
 import { ROLES, type Rol } from "@/lib/roles";
@@ -107,28 +107,5 @@ export function FormularioUsuario(props: Props) {
         </Button>
       </div>
     </form>
-  );
-}
-
-function Campo(props: { id: string; etiqueta: string; error?: string; ayuda?: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-2">
-      <Label htmlFor={props.id}>{props.etiqueta}</Label>
-      {props.children}
-      {props.error ? (
-        <MensajeError id={`${props.id}-error`}>{props.error}</MensajeError>
-      ) : (
-        props.ayuda && <p id={`${props.id}-ayuda`} className="text-sm text-tinta-suave">{props.ayuda}</p>
-      )}
-    </div>
-  );
-}
-
-function MensajeError({ id, children }: { id: string; children: React.ReactNode }) {
-  return (
-    <p id={id} className="flex items-center gap-1 text-sm font-semibold text-rojo-texto">
-      <CircleAlertIcon className="size-4 shrink-0" aria-hidden />
-      {children}
-    </p>
   );
 }
