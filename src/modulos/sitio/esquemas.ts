@@ -71,3 +71,14 @@ export const esquemaVariante = z.object({
 });
 
 export const esquemaMover = z.object({ id: z.number().int().positive(), direccion: z.enum(["subir", "bajar"]) });
+
+// Galería (HU-09)
+const descripcionGaleria = z
+  .string()
+  .trim()
+  .min(1, "Escribe una descripción corta: también la leen los buscadores.")
+  .max(140, "Hasta 140 caracteres.");
+const servicioGaleria = z.coerce.number({ error: "Elige el servicio." }).int().positive("Elige el servicio.");
+
+export const esquemaGaleria = z.object({ servicioId: servicioGaleria, descripcion: descripcionGaleria });
+export const esquemaEditarGaleria = z.object({ id: z.coerce.number().int().positive(), servicioId: servicioGaleria, descripcion: descripcionGaleria });

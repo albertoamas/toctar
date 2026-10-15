@@ -23,7 +23,7 @@
 | HU-06 App instalable | B2 | ✅ Terminada (falta probar la instalación real con https, en A3) |
 | HU-07 Servicios del sitio | B3 | ✅ Panel terminado; la página pública de cada servicio se hace en B4 (HU-11) |
 | HU-08 Textos del sitio | B3 | ✅ Panel terminado; las páginas públicas se hacen en B4 (HU-10, HU-13, HU-14) |
-| HU-09 Galería en el panel | B3 | ⏳ |
+| HU-09 Galería en el panel | B3 | ✅ Panel terminado; la galería pública se hace en B4 (HU-12) |
 | HU-10 a HU-15 | B4 | ⏳ |
 | HU-16 a HU-18 | B5 | ⏳ |
 
@@ -128,7 +128,18 @@
 | 8.3 | Puedo agregar, ordenar y quitar preguntas frecuentes | E2E "preguntas frecuentes: agregar, editar, ordenar, ocultar y eliminar" (eliminar pide confirmación; también se pueden ocultar sin borrar) | ✅ |
 | 8.4 | Los textos iniciales están cargados para que el dueño los corrija | Migración `0009_datos_contenido`: borradores con su historia, su garantía y la entrevista, sin precios | ✅ (los valida el dueño en la demo) |
 
-## HU-09 a HU-18
+## HU-09 Galería en el panel
+
+> Como dueño, quiero subir fotos de antes y después, para mostrar el trabajo.
+
+| # | Criterio | Cómo se comprueba | Estado |
+|---|---|---|---|
+| 9.1 | Subo un par antes y después, o una foto sola, la asocio a un servicio y le pongo una descripción corta | E2E `hu-09` "sube un par antes y después y una foto sola…" y "sin servicio ni descripción no se sube" | ✅ |
+| 9.2 | Las fotos se comprimen al subirlas | Se achican en el celular antes de enviar (2400 px, JPEG) y el servidor guarda WebP de 1600 px más una miniatura de 640 px (mismo E2E: la miniatura es `-640.webp`) | ✅ |
+| 9.3 | Puedo ordenar y ocultar fotos | Mismo E2E: sube una foto, la oculta y filtra por servicio. También se edita la descripción o el servicio | ✅ |
+| 9.4 | Eliminar una foto la borra también del almacenamiento | Mismo E2E: después de eliminar, la dirección de la foto da 404 | ✅ |
+
+## HU-10 a HU-18
 
 Se completan al cerrar cada etapa, con los criterios de `historias.md` y los de su especificación.
 
@@ -154,3 +165,5 @@ Se completan al cerrar cada etapa, con los criterios de `historias.md` y los de 
 | 14/10/2026 | Entorno local | El nombre del dueño de prueba salía "Due�o": el archivo `.env` estaba guardado en Latin-1 y no en UTF-8 | `.env` pasado a UTF-8 y nombre corregido en la base local. No afecta a pruebas ni a producción, que no usan ese archivo | — (aviso en `.env.example`) |
 | 14/10/2026 | HU-04 | Si se elegía el logo apenas abría la pantalla (antes de que terminara de cargar), no se subía y no avisaba nada | El botón "Subir logo" se habilita recién cuando la pantalla está lista | E2E "el logo para documentos…" (espera el botón habilitado) |
 | 14/10/2026 | Panel | En el celular, al tocar una opción del menú, el menú lateral quedaba abierto tapando la pantalla nueva | El menú se cierra al tocar un enlace | E2E `hu-07` en celular (navega desde el menú) |
+| 14/10/2026 | Panel | En el celular, la barra fija de "Guardar cambios" al pie de los formularios tapaba botones que quedaban justo encima (por ejemplo, "Agregar beneficio") | Se quitó la barra fija: el botón queda al final del formulario | E2E `hu-07` en celular |
+| 14/10/2026 | HU-07 | Al crear un servicio, la pantalla de alta queda oculta en la página y su campo "Nombre" tenía el mismo id que el de la edición | Los campos del alta tienen id propios | E2E `hu-07` (el campo se encuentra por su nombre exacto) |

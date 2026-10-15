@@ -10,6 +10,7 @@ const soloEscritorio = (info: TestInfo) => test.skip(info.project.name !== "escr
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
 
 test("el dueño crea un servicio con beneficios, pasos y variantes, y lo oculta", async ({ page }, info) => {
+  test.setTimeout(60_000); // recorre todo el formulario y recarga
   const nombre = `Encerado de prueba ${sufijo(info)}`;
   await ingresarComoDueno(page);
   if (info.project.name === "celular") await page.getByRole("button", { name: "Abrir menú" }).click();
@@ -28,6 +29,8 @@ test("el dueño crea un servicio con beneficios, pasos y variantes, y lo oculta"
   await page.getByLabel("Resumen").fill("Encerado a mano que protege la pintura.");
   await page.getByRole("button", { name: "Crear servicio" }).click();
   await expect(page.getByText("Servicio creado.")).toBeVisible();
+  // La pantalla de alta queda oculta en la página: su campo no debe confundirse con el de la edición
+  await expect(page.getByRole("textbox", { name: "Nombre del servicio", exact: true })).toHaveValue(nombre);
   await expect(page.getByLabel("Dirección de la página")).toHaveValue(`encerado-de-prueba-${sufijo(info)}`);
   // D-2: nace con la variante "Única"
   await expect(page.getByRole("list", { name: "Variantes activos" })).toContainText("Única");

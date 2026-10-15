@@ -65,3 +65,21 @@ export const faq = pgTable("faq", {
   orden: integer("orden").notNull(),
   visible: boolean("visible").default(true).notNull(),
 });
+
+/** Fotos de antes y después de la galería (RF-12). La foto sola va en `foto_despues_id`. */
+export const galeriaItem = pgTable("galeria_item", {
+  id: integer("id").generatedByDefaultAsIdentity().primaryKey(),
+  servicioId: integer("servicio_id")
+    .notNull()
+    .references(() => servicio.id),
+  fotoAntesId: integer("foto_antes_id").references(() => archivo.id),
+  fotoDespuesId: integer("foto_despues_id")
+    .notNull()
+    .references(() => archivo.id),
+  /** También es el texto alternativo de las fotos (RNF-14). */
+  descripcion: text("descripcion").notNull(),
+  orden: integer("orden").notNull(),
+  visible: boolean("visible").default(true).notNull(),
+  createdAt: momento("created_at").defaultNow().notNull(),
+  createdBy: integer("created_by").references(() => usuario.id),
+});

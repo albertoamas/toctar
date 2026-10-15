@@ -22,7 +22,7 @@
 | Iteración 0 (cimientos) | ✅ En `develop` (PR #1) |
 | Etapa B1 Acceso (HU-01, HU-02, HU-03) | ✅ Cerrada el 14/10, en `develop` (PR #4, #7 y #10) |
 | Etapa B2 Configuración y app (HU-04, HU-05, HU-06) | ✅ Programada y probada a mano el 14/10, en `develop` (PR #14, #15 y #16). Falta instalar en celulares (necesita https, A3) y mostrarla en la demo del 23 |
-| Etapa B3 Contenido del panel (HU-07, HU-08, HU-09) | 🔵 Especificación escrita (14/10), en programación |
+| Etapa B3 Contenido del panel (HU-07, HU-08, HU-09) | ✅ Programada el 14/10 (PR #19, #20 y el de HU-09). Falta la revisión manual y mostrarla con B4 |
 | Identidad visual aplicada a la app | ✅ En `develop` (PR #5 y #9, logos nítidos en tamaños chicos) |
 | Día D (inicio del plazo) | 14 de octubre de 2026 |
 
@@ -55,7 +55,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 |---|---|---|
 | B1 Acceso | `etapas/B1-acceso.md` | ✅ Cerrada (14/10) |
 | B2 Configuración y app | `etapas/B2-configuracion.md` | ✅ Programada y probada a mano (14/10); falta instalar en celulares con https (A3) y la demo |
-| B3 Contenido del panel | `etapas/B3-contenido.md` | En curso (14/10) |
+| B3 Contenido del panel | `etapas/B3-contenido.md` | ✅ Programada (14/10); falta la revisión manual |
 | B4 a C5 | Una por etapa | Al empezar cada una |
 
 ## Resumen de fases
