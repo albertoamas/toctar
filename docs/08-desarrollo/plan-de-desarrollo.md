@@ -66,7 +66,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | B2 Configuración y app | `etapas/B2-configuracion.md` | ✅ Programada y probada a mano (14/10); falta instalar en celulares con https (A3) y la demo |
 | B3 Contenido del panel | `etapas/B3-contenido.md` | ✅ Programada (14/10); falta la revisión manual |
 | B4 Sitio público | `etapas/B4-sitio-publico.md` | ✅ Programada (14/10); falta la revisión manual |
-| B5 Reclamos y Google | `etapas/B5-reclamos-google.md` | En curso (15/10) |
+| B5 Reclamos y Google | `etapas/B5-reclamos-google.md` | En curso: HU-16 lista (15/10); siguen HU-17 y HU-18 |
 | B6 a C5 | Una por etapa | Al empezar cada una |
 
 ## Resumen de fases

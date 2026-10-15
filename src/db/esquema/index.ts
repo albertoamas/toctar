@@ -3,3 +3,4 @@
 export * from "./acceso";
 export * from "./configuracion";
 export * from "./sitio";
+export * from "./reclamos";

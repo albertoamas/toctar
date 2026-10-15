@@ -12,7 +12,7 @@ import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, ETIQUETA_SERVICIOS } from "./cons
 // de B3 invalidan estas etiquetas (updateTag). Solo devuelven lo visible.
 // Quien las usa llama antes a connection(): el build no tiene base de datos.
 
-export type ServicioPublico = { nombre: string; slug: string; resumen: string; foto: UrlsFoto | null };
+export type ServicioPublico = { id: number; nombre: string; slug: string; resumen: string; foto: UrlsFoto | null };
 
 export async function serviciosPublicos(): Promise<ServicioPublico[]> {
   "use cache";
@@ -24,7 +24,7 @@ export async function serviciosPublicos(): Promise<ServicioPublico[]> {
     .leftJoin(archivo, eq(servicio.fotoArchivoId, archivo.id))
     .where(and(eq(servicio.activo, true), eq(servicio.visibleSitio, true)))
     .orderBy(asc(servicio.orden), asc(servicio.id));
-  return filas.map(({ servicio: s, foto }) => ({ nombre: s.nombre, slug: s.slug, resumen: s.resumen, foto: foto ? urlsFoto(foto) : null }));
+  return filas.map(({ servicio: s, foto }) => ({ id: s.id, nombre: s.nombre, slug: s.slug, resumen: s.resumen, foto: foto ? urlsFoto(foto) : null }));
 }
 
 export type FotoGaleria = {
@@ -87,6 +87,7 @@ export async function servicioPublico(slug: string): Promise<DetalleServicioPubl
     .orderBy(asc(variante.orden), asc(variante.id));
   const fotos = (await galeriaPublica()).filter((g) => g.servicio.slug === s.slug);
   return {
+    id: s.id,
     nombre: s.nombre,
     slug: s.slug,
     resumen: s.resumen,

@@ -1,0 +1,66 @@
+import { z } from "zod";
+import { fechaEnBolivia } from "@/lib/fechas";
+import { normalizarWhatsApp } from "@/lib/whatsapp";
+
+// Formulario público de garantía y reclamos (HU-16): el mismo esquema en el navegador y en el servidor.
+
+export const MAXIMO_FOTOS = 3;
+
+/** "2849 xkt" o "2849-XKT" → "2849XKT". Sin letras ni números en otro lugar: el formato varía (autos, motos, antiguas). */
+export function normalizarPlaca(texto: string): string {
+  return texto.toUpperCase().replace(/[\s.-]/g, "");
+}
+
+export const esquemaReclamo = z.object({
+  nombre: z.string().trim().min(2, "Escribe tu nombre.").max(80, "Hasta 80 caracteres."),
+  telefono: z
+    .string()
+    .trim()
+    .transform((v, ctx) => {
+      const numero = normalizarWhatsApp(v);
+      if (!numero) {
+        ctx.addIssue({ code: "custom", message: "Escribe los 8 dígitos de tu celular." });
+        return z.NEVER;
+      }
+      return numero;
+    }),
+  placa: z
+    .string()
+    .transform(normalizarPlaca)
+    .pipe(z.string().regex(/^[A-Z0-9]{4,8}$/, "Escribe la placa del vehículo, por ejemplo 2849XKT.")),
+  servicioId: z
+    .string()
+    .trim()
+    .transform((v, ctx) => {
+      if (!v) return null;
+      const n = Number(v);
+      if (!Number.isInteger(n) || n <= 0) {
+        ctx.addIssue({ code: "custom", message: "Elige un servicio de la lista." });
+        return z.NEVER;
+      }
+      return n;
+    }),
+  fechaAproximada: z
+    .string()
+    .trim()
+    .transform((v, ctx) => {
+      if (!v) return null;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isNaN(Date.parse(v))) {
+        ctx.addIssue({ code: "custom", message: "Revisa la fecha." });
+        return z.NEVER;
+      }
+      if (v > fechaEnBolivia()) {
+        ctx.addIssue({ code: "custom", message: "La fecha no puede ser futura." });
+        return z.NEVER;
+      }
+      return v;
+    }),
+  descripcion: z
+    .string()
+    .trim()
+    .min(10, "Cuéntanos qué pasó (al menos 10 caracteres).")
+    .max(2000, "Hasta 2000 caracteres."),
+});
+
+export type DatosReclamo = z.output<typeof esquemaReclamo>;
+export const CAMPOS_RECLAMO = Object.keys(esquemaReclamo.shape) as (keyof typeof esquemaReclamo.shape)[];

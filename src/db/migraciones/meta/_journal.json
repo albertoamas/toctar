@@ -78,6 +78,13 @@
       "when": 1792032782201,
       "tag": "0010_galeria",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792046810065,
+      "tag": "0011_reclamos",
+      "breakpoints": true
     }
   ]
 }

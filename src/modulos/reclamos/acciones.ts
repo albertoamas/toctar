@@ -1,0 +1,93 @@
+"use server";
+
+import { createHash } from "node:crypto";
+import { and, count, eq, gt } from "drizzle-orm";
+import { headers } from "next/headers";
+import { db } from "@/db";
+import { reclamo, reclamoArchivo, servicio } from "@/db/esquema";
+import { erroresDe, type EstadoFormulario } from "@/lib/formularios";
+import { eliminarFoto, guardarFoto } from "@/lib/fotos";
+import { CAMPOS_RECLAMO, MAXIMO_FOTOS, esquemaReclamo } from "./esquemas";
+import { evaluarEnvio } from "./reglas";
+
+// Reclamos (HU-16): la acción pública del formulario de garantía y reclamos.
+// No pide sesión: la protegen el esquema, el campo trampa, el tiempo mínimo y el límite por conexión.
+
+const ERROR_FOTO = "Cada foto debe ser JPG, PNG o WebP de hasta 5 MB.";
+
+/**
+ * Código de la conexión para el límite por hora. No se guarda la IP.
+ * En producción el proxy (Traefik, de Coolify) pone la IP real en x-real-ip y la agrega al FINAL de
+ * x-forwarded-for: el primer valor de esa lista lo puede inventar el visitante, por eso no se usa.
+ */
+async function codigoDeConexion(): Promise<string> {
+  const h = await headers();
+  const ip = h.get("x-real-ip")?.trim() || h.get("x-forwarded-for")?.split(",").at(-1)?.trim() || "desconocida";
+  return createHash("sha256").update(`${process.env.BETTER_AUTH_SECRET ?? ""}:${ip}`).digest("hex");
+}
+
+export async function enviarReclamo(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  const valores = Object.fromEntries(CAMPOS_RECLAMO.map((c) => [c, String(datos.get(c) ?? "")]));
+  const trampa = String(datos.get("sitio_web") ?? "");
+  const entrada = esquemaReclamo.safeParse(valores);
+  // Los errores van antes que el tiempo mínimo: quien envía el formulario vacío al instante debe verlos,
+  // no una confirmación falsa. Con la trampa llena no se dan pistas.
+  if (!entrada.success && trampa.trim() === "") return { errores: erroresDe(entrada.error), valores };
+
+  const ipHash = await codigoDeConexion();
+  const haceUnaHora = new Date(Date.now() - 3_600_000);
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(reclamo)
+    .where(and(eq(reclamo.ipHash, ipHash), gt(reclamo.createdAt, haceUnaHora)));
+
+  const veredicto = evaluarEnvio({
+    trampa,
+    abiertoEn: datos.get("abierto_en") ? Number(datos.get("abierto_en")) : null,
+    ahora: Date.now(),
+    enLaUltimaHora: total,
+  });
+  // A un robot se le responde igual que a una persona: no se le da ninguna pista.
+  if (veredicto === "descartar" || !entrada.success) return { ok: true };
+  if (veredicto === "limite") return { mensaje: "Recibimos varios reclamos desde tu conexión. Escríbenos por WhatsApp.", valores };
+  const d = entrada.data;
+
+  if (d.servicioId) {
+    const [existe] = await db.select({ id: servicio.id }).from(servicio).where(eq(servicio.id, d.servicioId));
+    if (!existe) return { errores: { servicioId: "Elige un servicio de la lista." }, valores };
+  }
+
+  const fotos = datos.getAll("fotos").filter((f): f is File => f instanceof File && f.size > 0);
+  if (fotos.length > MAXIMO_FOTOS) return { errores: { fotos: `Hasta ${MAXIMO_FOTOS} fotos.` }, valores };
+
+  const guardadas: number[] = [];
+  for (const f of fotos) {
+    const r = await guardarFoto(f, { carpeta: "reclamos", miniatura: true, autorId: null });
+    if (!r.ok) {
+      // Si una foto falla, no queda nada a medias.
+      for (const id of guardadas) await eliminarFoto(id);
+      return { errores: { fotos: ERROR_FOTO }, valores };
+    }
+    guardadas.push(r.archivoId);
+  }
+
+  await db.transaction(async (tx) => {
+    const [nuevo] = await tx
+      .insert(reclamo)
+      .values({
+        nombre: d.nombre,
+        telefono: d.telefono,
+        placa: d.placa,
+        servicioId: d.servicioId,
+        fechaAproximada: d.fechaAproximada,
+        descripcion: d.descripcion,
+        ipHash,
+      })
+      .returning({ id: reclamo.id });
+    if (guardadas.length > 0) {
+      await tx.insert(reclamoArchivo).values(guardadas.map((archivoId, orden) => ({ reclamoId: nuevo.id, archivoId, orden })));
+    }
+  });
+
+  return { ok: true };
+}

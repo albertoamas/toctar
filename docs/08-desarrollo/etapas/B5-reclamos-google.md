@@ -41,7 +41,7 @@ Un cliente deja un reclamo o pedido de garantía desde el sitio, con fotos, sin 
 | Regla | Qué dice | Dónde se garantiza |
 |---|---|---|
 | RF-07 | El visitante envía un reclamo; queda registrado en el panel | Acción pública `enviarReclamo`, validada con Zod en el servidor; estado inicial `pendiente` |
-| HU-16 | Protección contra spam | Tres capas: campo trampa invisible (si viene lleno, se descarta sin avisar); envío en menos de 3 segundos desde que se abrió el formulario = rechazado; como máximo 5 reclamos por hora desde la misma IP (se guarda un código derivado de la IP, no la IP) |
+| HU-16 | Protección contra spam | Tres capas: campo trampa invisible (si viene lleno, se descarta sin avisar); envío en menos de 3 segundos desde que se abrió el formulario = rechazado; como máximo 5 reclamos por hora desde la misma IP (se guarda un código derivado de la IP, no la IP). Los campos se validan antes que el tiempo mínimo, para que una persona apurada vea sus errores. La IP sale de `x-real-ip` (o del último valor de `x-forwarded-for`), que pone el proxy, no el visitante |
 | RF-13, S-4 | El dueño ve los reclamos y los marca atendidos con nota; también el encargado con el módulo | Módulo `reclamos` (matriz de B1): dueño siempre; encargado con el permiso `reclamos`; técnico nunca |
 | RNF-05 | Permisos en el servidor | `exigirModulo("reclamos")` en cada página y acción del panel |
 | RNF-07 | Fotos comprimidas al subir | Se achican en el navegador y se guardan en WebP de 1600 px, más una miniatura de 640 (`src/lib/fotos.ts`) |
