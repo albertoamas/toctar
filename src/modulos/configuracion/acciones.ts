@@ -1,22 +1,18 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
 import { eq, max } from "drizzle-orm";
 import { revalidatePath, updateTag } from "next/cache";
-import sharp from "sharp";
 import { db } from "@/db";
-import { archivo, espacioTaller, negocio, parametro, sucursal, tamanoVehiculo } from "@/db/esquema";
-import { subirArchivo } from "@/lib/almacenamiento";
+import { espacioTaller, negocio, parametro, sucursal, tamanoVehiculo } from "@/db/esquema";
+import { guardarFoto } from "@/lib/fotos";
 import { reordenar } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
 import { whatsAppLocal } from "@/lib/whatsapp";
 import { ETIQUETA_NEGOCIO, ETIQUETA_PARAMETROS, listarElementos, obtenerConfiguracionNegocio, sucursalPrincipal } from "./consultas";
 import {
-  BYTES_MAXIMOS_LOGO,
   CAMPOS_NEGOCIO,
   erroresDe,
   esquemaNegocio,
-  TIPOS_LOGO,
   type EstadoFormulario,
 } from "./esquemas";
 import {
@@ -102,52 +98,17 @@ const ERROR_LOGO = "El logo debe ser PNG, JPG o WebP de hasta 5 MB.";
 /** Logo para el PDF de cotización y otros documentos. Se guarda en WebP de hasta 1600 px, con transparencia. */
 export async function subirLogo(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const autor = await exigirModulo("configuracion");
-  const archivoSubido = datos.get("logo");
-  if (!(archivoSubido instanceof File) || archivoSubido.size === 0) return { errores: { logo: "Elige una imagen." } };
-  if (archivoSubido.size > BYTES_MAXIMOS_LOGO || !(TIPOS_LOGO as readonly string[]).includes(archivoSubido.type)) {
-    return { errores: { logo: ERROR_LOGO } };
-  }
+  const foto = await guardarFoto(datos.get("logo"), { carpeta: "negocio", prefijo: "logo-", autorId: Number(autor.id) });
+  if (!foto.ok) return { errores: { logo: foto.motivo === "vacia" ? "Elige una imagen." : ERROR_LOGO } };
 
-  const imagen = await convertirLogo(Buffer.from(await archivoSubido.arrayBuffer()));
-  if (!imagen) return { errores: { logo: ERROR_LOGO } };
-
-  const clave = await subirArchivo(`negocio/logo-${randomUUID()}.webp`, imagen.data, "image/webp");
-  await db.transaction(async (tx) => {
-    const [nuevo] = await tx
-      .insert(archivo)
-      .values({
-        clave,
-        tipoMime: "image/webp",
-        bytes: imagen.info.size,
-        ancho: imagen.info.width,
-        alto: imagen.info.height,
-        createdBy: Number(autor.id),
-      })
-      .returning({ id: archivo.id });
-    await tx
-      .update(negocio)
-      .set({ logoArchivoId: nuevo.id, updatedAt: new Date(), updatedBy: Number(autor.id) })
-      .where(eq(negocio.id, 1));
-  });
+  await db
+    .update(negocio)
+    .set({ logoArchivoId: foto.archivoId, updatedAt: new Date(), updatedBy: Number(autor.id) })
+    .where(eq(negocio.id, 1));
 
   updateTag(ETIQUETA_NEGOCIO);
   revalidatePath(RUTA);
   return { ok: true, mensaje: "Logo actualizado." };
-}
-
-/** WebP de hasta 1600 px, o null si el archivo no es de verdad PNG, JPG o WebP (el tipo que dice el navegador no basta). */
-async function convertirLogo(original: Buffer) {
-  try {
-    const { format } = await sharp(original).metadata();
-    if (!format || !["png", "jpeg", "webp"].includes(format)) return null;
-    return await sharp(original)
-      .rotate()
-      .resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true })
-      .webp({ quality: 90 })
-      .toBuffer({ resolveWithObject: true });
-  } catch {
-    return null;
-  }
 }
 
 // ---------------------------------------------------------------------------------------------

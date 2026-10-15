@@ -124,9 +124,6 @@ export type DatosNegocio = z.output<typeof esquemaNegocio>;
 
 export const CAMPOS_NEGOCIO = Object.keys(esquemaNegocio.shape) as (keyof typeof esquemaNegocio.shape)[];
 
-export const TIPOS_LOGO = ["image/png", "image/jpeg", "image/webp"] as const;
-export const BYTES_MAXIMOS_LOGO = 5 * 1024 * 1024;
-
 /** Respuesta de toda acción del formulario: errores por campo o un mensaje general. */
 export type EstadoFormulario = {
   ok?: boolean;
