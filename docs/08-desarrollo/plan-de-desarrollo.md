@@ -13,7 +13,7 @@
 
 ## Qué cambió en la versión 5
 
-- **El desarrollo va más rápido de lo previsto.** B1 a B4 (15 historias, con pruebas y documentación) se programaron en dos días; el plan v4 les daba dos semanas. Lo lento del proyecto fueron las reuniones y la recolección de requisitos, no el código.
+- **El desarrollo va más rápido de lo previsto.** El trabajo empezó el 9/10 con la firma y el primer pago (base técnica el 10/10). Apenas llegó el material, el 14/10, B1 a B4 (15 historias, con pruebas y documentación) se programaron en dos días; el plan v4 les daba dos semanas. Lo lento del proyecto fueron las reuniones y la recolección de requisitos, no el código. Los plazos del contrato cuentan desde el 14/10, porque el acuerdo los hace empezar con el pago y el material.
 - **El calendario se adelanta una semana** para la Entrega 2 (meta 13/11 en vez de 20/11). **Las fechas del acuerdo no cambian** (3/11 y 1/12): el adelanto queda como margen.
 - **No se adelanta más** porque la Entrega 2 tiene las partes más difíciles (PDF, versiones de cotización, agenda sin cruces, ciclo de la orden) y porque necesita uso real del taller y al menos una vuelta de ajustes antes del acta.
 - **El adelanto depende del dueño:** la lista de precios y las variantes pasan a pedirse para el viernes 23 (antes, 3/11), y el dominio sigue siendo urgente.
@@ -33,7 +33,8 @@
 | Etapa B3 Contenido del panel (HU-07, HU-08, HU-09) | ✅ Programada el 14/10 (PR #19, #20 y #21). Falta la revisión manual y mostrarla con B4 |
 | Etapa B4 Sitio público (HU-10 a HU-15) | ✅ Programada el 14/10 (PR #23 a #26). Lighthouse móvil ≥ 90. Falta la revisión manual y la demo del 23 |
 | Identidad visual aplicada a la app | ✅ En `develop` (PR #5 y #9, logos nítidos en tamaños chicos) |
-| Día D (inicio del plazo) | 14 de octubre de 2026 |
+| Inicio del trabajo | 9 de octubre de 2026 (firma y primer pago) |
+| Día D (inicio del plazo del contrato) | 14 de octubre de 2026 (llegó el material) |
 
 ## Calendario
 
