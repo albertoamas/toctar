@@ -48,13 +48,13 @@ El dueño cambia desde el panel todo dato del negocio y todo valor que el sistem
 
 ## 4. Datos
 
-Migración `0002_configuracion` (tablas) y `0003_datos_iniciales` (SQL propio con `on conflict do nothing`: se puede aplicar en cualquier entorno sin duplicar).
+Una migración de tablas y otra de datos iniciales por historia: `0002_negocio` y `0003_datos_negocio` (HU-04), y las de HU-05 después. Los datos iniciales son SQL propio que no pisa lo existente (`on conflict do nothing` o `where not exists`): se pueden aplicar en cualquier entorno sin duplicar.
 
 ### `archivo`
 | Columna | Tipo | Nulo | Notas |
 |---|---|---|---|
 | `id` | `integer` identidad | no | |
-| `clave` | `text` | no | Única. Ruta en el almacenamiento: `negocio/logo-<id>.webp` |
+| `clave` | `text` | no | Única. Ruta en el almacenamiento: `negocio/logo-<uuid>.webp` |
 | `tipo_mime` | `text` | no | |
 | `bytes` | `integer` | no | |
 | `ancho`, `alto` | `integer` | sí | Solo imágenes |

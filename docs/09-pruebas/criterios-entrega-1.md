@@ -18,7 +18,8 @@
 | HU-01 Iniciar sesión | B1 | ✅ Terminada |
 | HU-02 Gestionar usuarios y roles | B1 | ✅ Terminada (un criterio ajustado) |
 | HU-03 Permisos del encargado | B1 | ✅ Terminada con los módulos que existen hoy; cada módulo nuevo suma su casilla (se verifica en su etapa) |
-| HU-04 a HU-06 | B2 | ⏳ |
+| HU-04 Datos del negocio | B2 | ✅ Terminada |
+| HU-05 y HU-06 | B2 | ⏳ |
 | HU-07 a HU-09 | B3 | ⏳ |
 | HU-10 a HU-15 | B4 | ⏳ |
 | HU-16 a HU-18 | B5 | ⏳ |
@@ -60,7 +61,21 @@
 | 3.2 | El encargado nunca puede cotizar ni cambiar la configuración | Unitarias `permisos` "nunca ve cotizaciones, usuarios, configuración, catálogo, aunque tenga todos los permisos" | ✅ |
 | 3.3 | El permiso se valida en el servidor: entrar por la URL de un módulo no habilitado muestra "sin acceso" | E2E `hu-03` "el encargado sin módulos solo ve el inicio y no entra a Usuarios" y `hu-02` (el técnico). Unitarias: matriz completa. Revisión del código: las 5 páginas y 5 acciones del panel verifican el acceso, y las 12 llamadas a la autenticación llevan la sesión (14/10) | ✅ |
 
-## HU-04 a HU-18
+## HU-04 Datos del negocio
+
+> Como dueño, quiero editar los datos del negocio, para que el sitio y el PDF estén siempre al día.
+
+| # | Criterio | Cómo se comprueba | Estado |
+|---|---|---|---|
+| 4.1 | Edito nombre, WhatsApp, correo, dirección, ubicación en el mapa, horarios, redes, NIT y razón social | E2E `hu-04` "el dueño cambia los datos y el pie del sitio los muestra al guardar" (vuelve a abrir la pantalla y los datos siguen ahí) | ✅ |
+| 4.2 | Los cambios se ven en el sitio sin intervención de YankoSoft ni volver a desplegar | Mismo E2E: el pie del sitio muestra la dirección, el horario, el WhatsApp, "Cómo llegar" y la red cargada; las redes vacías no aparecen | ✅ |
+| 4.3 | El WhatsApp se escribe como lo escribe la gente (con o sin +591, espacios o guiones) y se guarda en un solo formato | Unitarias `configuracion-negocio` "WhatsApp" (formatos válidos e inválidos) | ✅ |
+| 4.4 | La ubicación se carga pegando las coordenadas o el enlace de Google Maps; si no se puede leer, el error explica cómo copiarlas | Unitarias "ubicación" (6 formatos, enlace corto, rangos). E2E "los datos mal escritos muestran el error junto al campo y no se guardan" | ✅ |
+| 4.5 | Los horarios admiten días cerrados y hasta dos turnos; un turno al revés se marca en el día | Unitarias "horarios" y "esquema del negocio". Mismo E2E de errores | ✅ |
+| 4.6 | El logo para los documentos se sube (PNG, JPG o WebP de hasta 5 MB) y se ve; un archivo que no es imagen se rechaza | E2E "el logo para documentos se sube y se ve…" (comprueba que el archivo guardado es WebP) | ⚠️ ✅ El logo del sitio y del panel es el de la marca (`public/marca/`); el que se sube aquí es el del PDF (especificación B2 §2) |
+| 4.7 | Solo el dueño entra a la configuración | E2E "el encargado y el técnico no entran a la configuración"; unitarias `permisos` | ✅ |
+
+## HU-05 a HU-18
 
 Se completan al cerrar cada etapa, con los criterios de `historias.md` y los de su especificación.
 
@@ -83,3 +98,4 @@ Se completan al cerrar cada etapa, con los criterios de `historias.md` y los de 
 | 14/10/2026 | HU-02 | Un usuario con guion en el nombre (por ejemplo, `ana-maria`) se creaba bien, pero no podía ingresar: la librería de autenticación validaba con un patrón distinto al del formulario | Un solo patrón compartido (`PATRON_NOMBRE_USUARIO`) | Unitaria `usuarios` "todo usuario que acepta el formulario también puede ingresar"; E2E con `tecnico-c` |
 | 14/10/2026 | Identidad | Los logos se veían borrosos en la pantalla de ingreso y en el encabezado: a ese tamaño el lema dibujado quedaba de 2 a 5 px | Versiones sin lema para tamaños chicos y el lema como texto; vertical retrazado desde el PDF (PR #9) | Revisión visual en monitor común y celular |
 | 14/10/2026 | HU-02 | Al desactivar o reactivar no aparecía el aviso de confirmación | El aviso se muestra desde la acción, no desde la pantalla que se reemplaza | E2E "desactivar a alguien…" (espera el aviso) |
+| 14/10/2026 | HU-04 | Si se elegía el logo apenas abría la pantalla (antes de que terminara de cargar), no se subía y no avisaba nada | El botón "Subir logo" se habilita recién cuando la pantalla está lista | E2E "el logo para documentos…" (espera el botón habilitado) |

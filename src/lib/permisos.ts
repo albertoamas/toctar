@@ -41,7 +41,7 @@ export const MODULOS = {
   mantenimientos: { ruta: "/panel/mantenimientos", nombre: "Mantenimientos", permisoEncargado: "mantenimientos", tecnico: false, construido: false },
   catalogo: { ruta: "/panel/catalogo", nombre: "Catálogo y precios", permisoEncargado: null, tecnico: false, construido: false },
   usuarios: { ruta: "/panel/usuarios", nombre: "Usuarios", permisoEncargado: null, tecnico: false, construido: true },
-  configuracion: { ruta: "/panel/configuracion", nombre: "Configuración", permisoEncargado: null, tecnico: false, construido: false },
+  configuracion: { ruta: "/panel/configuracion", nombre: "Configuración", permisoEncargado: null, tecnico: false, construido: true },
 } as const satisfies Record<string, DefinicionModulo>;
 export type Modulo = keyof typeof MODULOS;
 

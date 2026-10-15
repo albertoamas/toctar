@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
   output: "standalone",
   cacheComponents: true,
   partialPrefetching: true,
+  experimental: {
+    // Fotos y logo suben por Server Actions: hasta 5 MB por imagen, más lo que agrega el formulario.
+    serverActions: { bodySizeLimit: "6mb" },
+  },
   turbopack: {
     rules: {
       "*.css": {
