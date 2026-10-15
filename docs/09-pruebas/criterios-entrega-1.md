@@ -24,11 +24,12 @@
 | HU-07 Servicios del sitio | B3 | ✅ Panel terminado; la página pública de cada servicio se hace en B4 (HU-11) |
 | HU-08 Textos del sitio | B3 | ✅ Panel terminado; las páginas públicas se hacen en B4 (HU-10, HU-13, HU-14) |
 | HU-09 Galería en el panel | B3 | ✅ Panel terminado; la galería pública se hace en B4 (HU-12) |
-| HU-10 Portada | B4 | ✅ Terminada (falta medir con Lighthouse al cerrar B4) |
-| HU-15 Botón de WhatsApp | B4 | ✅ En la portada y en Servicios; se suma a cada página nueva de B4 |
+| HU-10 Portada | B4 | ✅ Terminada |
+| HU-15 Botón de WhatsApp | B4 | ✅ Terminada |
 | HU-11 Página de cada servicio | B4 | ✅ Terminada |
 | HU-12 Galería pública | B4 | ✅ Terminada |
-| HU-13 y HU-14 | B4 | ⏳ |
+| HU-13 Nosotros y preguntas frecuentes | B4 | ✅ Terminada |
+| HU-14 Contacto y mapa | B4 | ✅ Terminada |
 | HU-16 a HU-18 | B5 | ⏳ |
 
 **Revisión manual de YankoSoft (14/10/2026):** B1 y B2 probadas a mano en el entorno local, con todos los roles, en escritorio y en vista de celular. Sin observaciones. Lo que falta revisar a mano es instalar la app en celulares reales, que necesita https (A3).
@@ -151,7 +152,7 @@
 |---|---|---|---|
 | 10.1 | Muestra lema, imagen principal, servicios destacados y algunas fotos de la galería | E2E `hu-10` "la portada muestra el lema, los servicios y el botón de WhatsApp". La imagen principal es el arte de la marca hasta tener una foto propia del taller (decisión abierta de B4). Las fotos de la galería aparecen cuando hay fotos visibles | ⚠️ ✅ |
 | 10.2 | El botón principal abre WhatsApp | Mismo E2E: abre `wa.me` con el número cargado en el panel | ✅ |
-| 10.3 | Carga rápido en el celular (RNF-02) | Lighthouse móvil al cerrar B4 | ⏳ |
+| 10.3 | Carga rápido en el celular (RNF-02) | Lighthouse móvil (14/10): portada 91 de rendimiento, 100 de accesibilidad y 100 de SEO | ✅ |
 | 10.4 | Sin precios (RN-10) y servicios sin foto con la imagen de reemplazo | E2E "los servicios sin foto muestran la imagen de reemplazo y ninguna página pública muestra precios" | ✅ |
 | 10.5 | Un cambio en el panel se ve sin volver a desplegar | E2E "ocultar un servicio en el panel lo saca del sitio sin volver a desplegar" | ✅ |
 
@@ -161,7 +162,7 @@
 
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
-| 15.1 | El botón se ve en todas las páginas | Botón fijo en cada página del sitio; E2E de cada página (portada hoy, el resto al construirlas) | 🔵 en curso |
+| 15.1 | El botón se ve en todas las páginas | E2E `hu-13-14` "ninguna página pública muestra precios y todas tienen el botón de WhatsApp" (las 7 páginas) | ✅ |
 | 15.2 | En la página de un servicio, el mensaje empieza con ese servicio escrito | E2E `hu-11` "la página de un servicio muestra el proceso y abre WhatsApp con ese servicio escrito" (botón del cierre y botón fijo). Unitaria "mensaje de WhatsApp del sitio" | ✅ |
 | 15.3 | Usa el número configurado en los datos del negocio | E2E `hu-10`: el enlace usa el número cargado por el panel. Sin número cargado, el botón no aparece y el principal lleva a Contacto | ✅ |
 
@@ -187,7 +188,25 @@
 | 12.2 | Las fotos se ven bien en el celular y se pueden ampliar | Mismo E2E: el visor muestra el antes y el después en grande; se cierra con Escape o con la X. Revisión visual en celular | ✅ |
 | 12.3 | Solo se ven fotos visibles de servicios visibles | Consulta `galeriaPublica()`; las fotos ocultas del panel (HU-09) no aparecen | ✅ |
 
-## HU-13, HU-14, HU-16 a HU-18
+## HU-13 Nosotros y preguntas frecuentes
+
+> Como visitante, quiero conocer al negocio y resolver dudas comunes, para no tener que preguntar todo.
+
+| # | Criterio | Cómo se comprueba | Estado |
+|---|---|---|---|
+| 13.1 | "Nosotros" muestra el texto cargado en el panel | E2E `hu-13-14` "Nosotros muestra la historia, cómo trabajan y por qué elegirlos" | ✅ |
+| 13.2 | Las preguntas frecuentes se abren y cierran una por una | E2E "las preguntas frecuentes se abren y se cierran una por una" (`<details>`, funciona sin JavaScript) | ✅ |
+
+## HU-14 Contacto y mapa
+
+> Como visitante, quiero saber dónde está el taller y cuándo atiende, para ir o escribir.
+
+| # | Criterio | Cómo se comprueba | Estado |
+|---|---|---|---|
+| 14.1 | Muestra dirección, mapa de Google Maps, horarios, WhatsApp, correo y redes | E2E "Contacto muestra la dirección con el mapa, el horario y el WhatsApp". El mapa embebido aparece cuando hay ubicación cargada (HU-04) y se carga diferido | ✅ |
+| 14.2 | Tocar la dirección en el celular abre la app de mapas | La dirección y "Cómo llegar" enlazan a Google Maps (mismo E2E); en el celular, el sistema abre la app | ✅ (probar en el celular en la demo) |
+
+## HU-16 a HU-18
 
 Se completan al cerrar cada etapa, con los criterios de `historias.md` y los de su especificación.
 
@@ -196,12 +215,12 @@ Se completan al cerrar cada etapa, con los criterios de `historias.md` y los de 
 | Requisito | Cómo se comprueba | Estado |
 |---|---|---|
 | RNF-01 Celular desde 360 px y computadora | Todas las pruebas E2E corren en celular (Pixel 7) y en escritorio; revisión visual en cada etapa | 🟢 al día |
-| RNF-02 Sitio rápido en 4G (Lighthouse ≥ 90) | Medición en B4 | ⏳ |
+| RNF-02 Sitio rápido en 4G (Lighthouse ≥ 90) | Lighthouse móvil local (14/10): portada, servicio, galería, nosotros y contacto con 91 de rendimiento. Se repite en el entorno de pruebas (A3) | ✅ (local) |
 | RNF-03 Instalable; aviso claro sin conexión | E2E `hu-06`; instalación real con https en A3 | ✅ (falta la prueba en el celular) |
 | RNF-04 https, contraseñas con hash, sesión que vence | Hash scrypt de Better Auth; sesión de 7 días; https en el entorno de pruebas (A3) | 🟢 parcial |
 | RNF-05 Permisos validados en el servidor | Unitarias `permisos` (matriz completa) y E2E de acceso por URL | ✅ |
 | RNF-12 El panel no aparece en buscadores | E2E `base` "el panel y el ingreso no se indexan en Google" | ✅ |
-| RNF-14 Texto alternativo y contraste legible | Contrastes de la identidad verificados (54 pares); Lighthouse en B4 | 🟢 parcial |
+| RNF-14 Texto alternativo y contraste legible | Contrastes de la identidad verificados (54 pares); Lighthouse móvil: 100 de accesibilidad en todas las páginas medidas (14/10) | ✅ |
 
 ## Errores encontrados y corregidos durante el desarrollo
 
@@ -215,3 +234,4 @@ Se completan al cerrar cada etapa, con los criterios de `historias.md` y los de 
 | 14/10/2026 | Panel | En el celular, al tocar una opción del menú, el menú lateral quedaba abierto tapando la pantalla nueva | El menú se cierra al tocar un enlace | E2E `hu-07` en celular (navega desde el menú) |
 | 14/10/2026 | Panel | En el celular, la barra fija de "Guardar cambios" al pie de los formularios tapaba botones que quedaban justo encima (por ejemplo, "Agregar beneficio") | Se quitó la barra fija: el botón queda al final del formulario | E2E `hu-07` en celular |
 | 14/10/2026 | HU-07 | Al crear un servicio, la pantalla de alta queda oculta en la página y su campo "Nombre" tenía el mismo id que el de la edición | Los campos del alta tienen id propios | E2E `hu-07` (el campo se encuentra por su nombre exacto) |
+| 14/10/2026 | HU-14 | La página de Contacto "saltaba" al cargar los datos (Lighthouse: CLS 0,19, rendimiento 82) | El espacio reservado mientras cargan los datos ocupa una pantalla: el pie no aparece y luego se corre | Lighthouse: CLS 0, rendimiento 91 |

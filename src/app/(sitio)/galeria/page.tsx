@@ -20,7 +20,7 @@ export default function PaginaGaleria({ searchParams }: PageProps<"/galeria">) {
     <section className="mx-auto w-full max-w-6xl px-4 py-12 md:py-20">
       <h1 className="font-heading text-[40px] leading-[44px] font-extrabold italic">Galería</h1>
       <p className="mt-3 max-w-2xl text-tinta-suave">Trabajos reales del taller. Toca una foto para verla en grande.</p>
-      <Suspense fallback={<div className="min-h-96" />}>
+      <Suspense fallback={<div className="min-h-screen" />}>
         <Fotos searchParams={searchParams} />
       </Suspense>
       <WhatsAppFijo />
