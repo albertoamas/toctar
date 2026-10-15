@@ -30,3 +30,8 @@ export function enlaceWhatsApp(numero: string, mensaje?: string): string {
   const base = `https://wa.me/${numero}`;
   return mensaje ? `${base}?text=${encodeURIComponent(mensaje)}` : base;
 }
+
+/** Mensaje inicial del chat: general o con el servicio ya escrito (HU-15). */
+export function mensajeWhatsApp(servicio?: string): string {
+  return servicio ? `Hola, quiero consultar por ${servicio}.` : "Hola, quiero consultar por un servicio.";
+}
