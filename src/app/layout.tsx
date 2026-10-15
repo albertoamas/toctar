@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, Montserrat } from "next/font/google";
 import { Toaster } from "@/componentes/ui/sonner";
+import { sitioIndexable, urlSitio } from "@/lib/sitio";
 import "./globals.css";
 
 // Tipografías de la identidad visual: Montserrat (la del lema del logo) para todo el texto,
@@ -24,6 +25,9 @@ export const metadata: Metadata = {
     template: "%s · TocTar Detailing",
   },
   description: "Detailing automotriz en Tarija, Bolivia",
+  // SITIO_URL y SITIO_INDEXABLE se leen en el build: en Coolify van marcadas como variables de build.
+  metadataBase: new URL(urlSitio()),
+  ...(!sitioIndexable() && { robots: { index: false, follow: false } }),
 };
 
 // Barra del navegador y de la app instalada en negro, como la marca.
