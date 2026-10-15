@@ -24,7 +24,9 @@
 | HU-07 Servicios del sitio | B3 | ✅ Panel terminado; la página pública de cada servicio se hace en B4 (HU-11) |
 | HU-08 Textos del sitio | B3 | ✅ Panel terminado; las páginas públicas se hacen en B4 (HU-10, HU-13, HU-14) |
 | HU-09 Galería en el panel | B3 | ✅ Panel terminado; la galería pública se hace en B4 (HU-12) |
-| HU-10 a HU-15 | B4 | ⏳ |
+| HU-10 Portada | B4 | ✅ Terminada (falta medir con Lighthouse al cerrar B4) |
+| HU-15 Botón de WhatsApp | B4 | ✅ En la portada y en Servicios; se suma a cada página nueva de B4 |
+| HU-11 a HU-14 | B4 | ⏳ |
 | HU-16 a HU-18 | B5 | ⏳ |
 
 **Revisión manual de YankoSoft (14/10/2026):** B1 y B2 probadas a mano en el entorno local, con todos los roles, en escritorio y en vista de celular. Sin observaciones. Lo que falta revisar a mano es instalar la app en celulares reales, que necesita https (A3).
@@ -139,7 +141,29 @@
 | 9.3 | Puedo ordenar y ocultar fotos | Mismo E2E: sube una foto, la oculta y filtra por servicio. También se edita la descripción o el servicio | ✅ |
 | 9.4 | Eliminar una foto la borra también del almacenamiento | Mismo E2E: después de eliminar, la dirección de la foto da 404 | ✅ |
 
-## HU-10 a HU-18
+## HU-10 Portada
+
+> Como visitante, quiero ver de un vistazo qué hace TocTar, para decidir si escribir.
+
+| # | Criterio | Cómo se comprueba | Estado |
+|---|---|---|---|
+| 10.1 | Muestra lema, imagen principal, servicios destacados y algunas fotos de la galería | E2E `hu-10` "la portada muestra el lema, los servicios y el botón de WhatsApp". La imagen principal es el arte de la marca hasta tener una foto propia del taller (decisión abierta de B4). Las fotos de la galería aparecen cuando hay fotos visibles | ⚠️ ✅ |
+| 10.2 | El botón principal abre WhatsApp | Mismo E2E: abre `wa.me` con el número cargado en el panel | ✅ |
+| 10.3 | Carga rápido en el celular (RNF-02) | Lighthouse móvil al cerrar B4 | ⏳ |
+| 10.4 | Sin precios (RN-10) y servicios sin foto con la imagen de reemplazo | E2E "los servicios sin foto muestran la imagen de reemplazo y ninguna página pública muestra precios" | ✅ |
+| 10.5 | Un cambio en el panel se ve sin volver a desplegar | E2E "ocultar un servicio en el panel lo saca del sitio sin volver a desplegar" | ✅ |
+
+## HU-15 Botón de WhatsApp
+
+> Como visitante, quiero escribir por WhatsApp desde cualquier página, para consultar sin buscar el número.
+
+| # | Criterio | Cómo se comprueba | Estado |
+|---|---|---|---|
+| 15.1 | El botón se ve en todas las páginas | Botón fijo en cada página del sitio; E2E de cada página (portada hoy, el resto al construirlas) | 🔵 en curso |
+| 15.2 | En la página de un servicio, el mensaje empieza con ese servicio escrito | HU-11 | ⏳ |
+| 15.3 | Usa el número configurado en los datos del negocio | E2E `hu-10`: el enlace usa el número cargado por el panel. Sin número cargado, el botón no aparece y el principal lleva a Contacto | ✅ |
+
+## HU-11 a HU-14, HU-16 a HU-18
 
 Se completan al cerrar cada etapa, con los criterios de `historias.md` y los de su especificación.
 

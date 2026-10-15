@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { resumirHorarios } from "@/lib/horarios";
@@ -12,10 +13,18 @@ import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
 // El build no tiene base de datos: los datos se leen al atender el pedido (connection) y quedan
 // en caché con la etiqueta "negocio" hasta que se editen.
 
+const ENLACES = [
+  { href: "/servicios", texto: "Servicios" },
+  { href: "/galeria", texto: "Galería" },
+  { href: "/nosotros", texto: "Nosotros" },
+  { href: "/preguntas-frecuentes", texto: "Preguntas frecuentes" },
+  { href: "/contacto", texto: "Contacto" },
+];
+
 export function Pie() {
+  // Sin línea LED: el encabezado y la portada ya la usan (máximo dos por página).
   return (
-    <footer className="bg-fondo">
-      <hr className="tt-led" />
+    <footer className="border-t border-border bg-fondo">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 md:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr]">
         <div className="flex flex-col items-start gap-4">
           <Image src="/marca/toctar-monograma-sobre-oscuro.svg" alt="" width={48} height={36} unoptimized />
@@ -25,6 +34,13 @@ export function Pie() {
           <DatosDelNegocio />
         </Suspense>
       </div>
+      <nav aria-label="Pie" className="mx-auto flex max-w-6xl flex-wrap gap-x-6 gap-y-2 border-t border-border px-4 py-6 pb-24 text-sm text-tinta-suave md:pb-6">
+        {ENLACES.map((e) => (
+          <Link key={e.href} href={e.href} className="hover:text-tinta hover:underline">
+            {e.texto}
+          </Link>
+        ))}
+      </nav>
     </footer>
   );
 }

@@ -46,6 +46,8 @@ Un visitante entiende qué hace TocTar, ve trabajos reales, resuelve sus dudas y
 | RNF-02 | Lighthouse móvil ≥ 90 | Sin JavaScript extra en el sitio salvo el visor de la galería. Miniaturas de 640 px, `loading="lazy"`, ancho y alto en cada imagen, mapa embebido diferido |
 | RNF-14 | Texto alternativo y contraste | Fotos con su descripción o el nombre del servicio; tokens de color verificados (B2) |
 
+**Pruebas de punta a punta:** el WhatsApp del negocio se carga por el panel en un paso previo (`tests/e2e/preparar.setup.ts`), para que la caché del sitio se actualice como en el uso real.
+
 **Cómo se leen los datos:**
 - El build no tiene base de datos. Las partes con datos van dentro de `<Suspense>`, llaman a `connection()` y leen con funciones `'use cache'` con `cacheTag`.
 - La estructura de cada página (encabezado y títulos fijos) se genera en el build. Los datos salen de la caché en memoria y se renuevan cuando el panel guarda.
@@ -57,7 +59,7 @@ Sin tablas nuevas. Las lecturas públicas van en `src/modulos/sitio/publico.ts` 
 | Función | Devuelve | Etiquetas |
 |---|---|---|
 | `serviciosPublicos()` | Servicios visibles en orden: nombre, slug, resumen, foto | `servicios` |
-| `servicioPublico(slug)` | Un servicio visible con descripción, beneficios, pasos, variantes activas y sus fotos de galería visibles | `servicios`, `galeria` |
+| `servicioPublico(slug)` | Un servicio visible con descripción, beneficios, pasos, variantes activas y sus fotos de galería visibles. Si la única variante es "Única" (servicio sin opciones, D-2), no se muestran variantes | `servicios`, `galeria` |
 | `contenidoPublico(pagina)` | Los textos de la página | `contenido` |
 | `preguntasPublicas()` | Preguntas visibles en orden | `contenido` |
 | `galeriaPublica()` | Fotos visibles de servicios visibles, con el nombre y el slug del servicio | `galeria`, `servicios` |

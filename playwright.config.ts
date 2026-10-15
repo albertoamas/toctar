@@ -20,9 +20,11 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   projects: [
+    // Datos que el sitio necesita y que se cargan por el panel (tests/e2e/preparar.setup.ts)
+    { name: "preparar", testMatch: /preparar\.setup\.ts/, use: { ...devices["Desktop Chrome"], channel: canal } },
     // La mayoría usa el sistema desde el celular
-    { name: "celular", use: { ...devices["Pixel 7"], channel: canal } },
-    { name: "escritorio", use: { ...devices["Desktop Chrome"], channel: canal } },
+    { name: "celular", use: { ...devices["Pixel 7"], channel: canal }, dependencies: ["preparar"] },
+    { name: "escritorio", use: { ...devices["Desktop Chrome"], channel: canal }, dependencies: ["preparar"] },
   ],
   webServer: {
     command: `node scripts/reiniciar-base-e2e.mjs && npm run build && npx next start -p ${puerto}`,

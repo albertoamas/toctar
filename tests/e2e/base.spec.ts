@@ -12,8 +12,9 @@ test("la verificación de estado responde ok", async ({ request }) => {
 
 test("la portada carga con el nombre del negocio", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("TocTar Detailing");
-  await expect(page).toHaveTitle("TocTar Detailing");
+  // El titular es el lema que carga el dueño (HU-08); el nombre va en el título de la pestaña.
+  await expect(page.getByRole("heading", { level: 1 })).not.toBeEmpty();
+  await expect(page).toHaveTitle("TocTar Detailing · Detailing automotriz en Tarija");
 });
 
 test("el menú del sitio funciona en celular y en computadora", async ({ page, isMobile }) => {
