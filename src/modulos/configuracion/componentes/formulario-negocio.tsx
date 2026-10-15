@@ -115,7 +115,7 @@ export function FormularioNegocio(props: Props) {
         </Campo>
       </Seccion>
 
-      <div className="sticky bottom-0 -mx-4 border-t border-border bg-fondo/95 px-4 py-3 backdrop-blur md:static md:mx-0 md:border-0 md:bg-transparent md:p-0">
+      <div>
         <Button type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : "Guardar cambios"}
         </Button>
