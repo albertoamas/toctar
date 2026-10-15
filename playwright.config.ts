@@ -38,6 +38,9 @@ export default defineConfig({
       DUENO_INICIAL_USUARIO: "dueno",
       DUENO_INICIAL_NOMBRE: "Dueño de prueba",
       DUENO_INICIAL_CONTRASENA: "dueno-e2e-123",
+      // Como en producción: el sitio se indexa (HU-18)
+      SITIO_URL: `http://localhost:${puerto}`,
+      SITIO_INDEXABLE: "true",
     },
   },
 });

@@ -1,0 +1,49 @@
+import { expect, test } from "@playwright/test";
+import pg from "pg";
+import { URL_BASE_E2E } from "./apoyo";
+
+// HU-18 Sitio preparado para Google. Criterios: docs/09-pruebas/criterios-entrega-1.md (18.x).
+// El servidor de pruebas corre como producción: SITIO_INDEXABLE=true (playwright.config.ts).
+
+test("el sitemap lista las páginas y los servicios visibles, no los ocultos", async ({ request }, info) => {
+  const slugOculto = `servicio-oculto-${info.project.name}`;
+  const cliente = new pg.Client({ connectionString: URL_BASE_E2E });
+  await cliente.connect();
+  try {
+    await cliente.query(
+      `insert into servicio (nombre, slug, resumen, orden, visible_sitio) values ($1, $2, 'Oculto', 99, false) on conflict (slug) do nothing`,
+      [`Servicio oculto ${info.project.name}`, slugOculto],
+    );
+  } finally {
+    await cliente.end();
+  }
+
+  const respuesta = await request.get("/sitemap.xml");
+  expect(respuesta.ok()).toBe(true);
+  const xml = await respuesta.text();
+  for (const ruta of ["/servicios", "/galeria", "/nosotros", "/preguntas-frecuentes", "/contacto", "/garantia"]) {
+    expect(xml).toContain(`<loc>http://localhost:3200${ruta}</loc>`);
+  }
+  expect(xml).toContain("<loc>http://localhost:3200/servicios/polarizado-de-vidrios</loc>");
+  expect(xml).not.toContain(slugOculto);
+  expect(xml).not.toContain("/panel");
+});
+
+test("robots.txt deja fuera el panel, el ingreso y la API", async ({ request }) => {
+  const texto = await (await request.get("/robots.txt")).text();
+  for (const ruta of ["/panel", "/ingresar", "/api"]) expect(texto).toContain(`Disallow: ${ruta}`);
+  expect(texto).toContain("Sitemap: http://localhost:3200/sitemap.xml");
+});
+
+test("la portada lleva los datos de negocio local con el nombre y la dirección", async ({ page }) => {
+  await page.goto("/");
+  const script = page.locator('script[type="application/ld+json"]');
+  await expect(script).toHaveCount(1);
+  const datos = JSON.parse((await script.textContent()) ?? "{}");
+  expect(datos["@type"]).toBe("AutomotiveBusiness");
+  expect(datos.name).toBeTruthy();
+  expect(datos.address.streetAddress).toBeTruthy();
+  expect(datos.telephone).toBe("+59171234567");
+  // El sitio público sí se indexa (el panel no: prueba "base")
+  await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
+});
