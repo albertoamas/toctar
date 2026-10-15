@@ -22,7 +22,7 @@
 | Iteración 0 (cimientos) | ✅ En `develop` (PR #1) |
 | Etapa B1 Acceso (HU-01, HU-02, HU-03) | ✅ Cerrada el 14/10, en `develop` (PR #4, #7 y #10) |
 | Etapa B2 Configuración y app (HU-04, HU-05, HU-06) | ✅ Programada y probada a mano el 14/10, en `develop` (PR #14, #15 y #16). Falta instalar en celulares (necesita https, A3) y mostrarla en la demo del 23 |
-| Etapa B3 Contenido del panel (HU-07, HU-08, HU-09) | 🔵 Especificación en curso |
+| Etapa B3 Contenido del panel (HU-07, HU-08, HU-09) | 🔵 Especificación escrita (14/10), en programación |
 | Identidad visual aplicada a la app | ✅ En `develop` (PR #5 y #9, logos nítidos en tamaños chicos) |
 | Día D (inicio del plazo) | 14 de octubre de 2026 |
 
@@ -55,7 +55,8 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 |---|---|---|
 | B1 Acceso | `etapas/B1-acceso.md` | ✅ Cerrada (14/10) |
 | B2 Configuración y app | `etapas/B2-configuracion.md` | ✅ Programada y probada a mano (14/10); falta instalar en celulares con https (A3) y la demo |
-| B3 a C5 | Una por etapa | Al empezar cada una |
+| B3 Contenido del panel | `etapas/B3-contenido.md` | En curso (14/10) |
+| B4 a C5 | Una por etapa | Al empezar cada una |
 
 ## Resumen de fases
 
@@ -130,7 +131,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | | |
 |---|---|
 | Historias | HU-07 Servicios del sitio · HU-08 Textos del sitio · HU-09 Galería en el panel |
-| Tablas nuevas | `servicio` (los campos del sitio; los precios llegan en C1), `contenido_pagina`, `faq`, `galeria_item` |
+| Tablas nuevas | `servicio` (los campos del sitio; los precios llegan en C1), `variante` (nombre y descripción, para mostrarlas en el sitio; adelantada desde C1), `contenido_pagina`, `faq`, `galeria_item` |
 | Clave técnica | Fotos: el lado mayor a 1600 px, WebP y miniatura. Al guardar se regenera solo la página afectada del sitio (Cache Components, `updateTag`) |
 | Material | Textos por servicio (pendiente: se cargan con datos de prueba si no llegan). Fotos de antes y después (recibidas). Fotos principales (pendientes: se usa la imagen de reemplazo) |
 | Entregable | El dueño crea servicios, edita textos y sube fotos de antes y después |
@@ -183,7 +184,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | | |
 |---|---|
 | Historias | HU-19 Catálogo con variantes · HU-20 Precios por tamaño y duración · HU-21 Registrar clientes y vehículos · HU-22 Buscar clientes · HU-23 Ficha del cliente |
-| Tablas nuevas | `variante`, `precio` (historial, D-3), `cliente`, `vehiculo`, `auditoria` |
+| Tablas nuevas | `precio` (historial, D-3), `cliente`, `vehiculo`, `auditoria`. Columnas nuevas en `servicio` y `variante` (duración, genera mantenimiento); `variante` se crea en B3 |
 | Reglas | D-2 (todo servicio tiene al menos una variante), RN-07 (precio por tamaño; vacío = "según evaluación", como el mantenimiento del cerámico), RNF-10 (registro de cambios de precio) |
 | Entregable | Catálogo con precios cargados; clientes y vehículos con búsqueda por nombre, teléfono o placa |
 | Criterio de salida | Un cambio de precio no altera nada ya guardado y queda en el historial |
