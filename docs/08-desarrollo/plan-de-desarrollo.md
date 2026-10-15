@@ -52,7 +52,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | Etapa | Especificación | Estado |
 |---|---|---|
 | B1 Acceso | `etapas/B1-acceso.md` | ✅ Cerrada (14/10) |
-| B2 Configuración y app | `etapas/B2-configuracion.md` | En curso (14/10) |
+| B2 Configuración y app | `etapas/B2-configuracion.md` | Programada (14/10); falta instalar en celulares con https (A3) y la demo |
 | B3 a C5 | Una por etapa | Al empezar cada una |
 
 ## Resumen de fases
