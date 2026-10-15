@@ -32,6 +32,7 @@
 | Etapa B2 Configuración y app (HU-04, HU-05, HU-06) | ✅ Programada y probada a mano el 14/10, en `develop` (PR #14, #15 y #16). Falta instalar en celulares (necesita https, A3) y mostrarla en la demo del 23 |
 | Etapa B3 Contenido del panel (HU-07, HU-08, HU-09) | ✅ Programada el 14/10 (PR #19, #20 y #21). Falta la revisión manual y mostrarla con B4 |
 | Etapa B4 Sitio público (HU-10 a HU-15) | ✅ Programada el 14/10 (PR #23 a #26). Lighthouse móvil ≥ 90. Falta la revisión manual y la demo del 23 |
+| Etapa B5 Reclamos y Google (HU-16, HU-17, HU-18) | ✅ Programada el 15/10 (PR #33 a #36). Falta la revisión manual, validar el JSON-LD en Google con https (A3) y que el dueño cree su Perfil de Empresa (`10-lanzamiento/perfil-de-google.md`) |
 | Identidad visual aplicada a la app | ✅ En `develop` (PR #5 y #9, logos nítidos en tamaños chicos) |
 | Inicio del trabajo | 9 de octubre de 2026 (firma y primer pago) |
 | Día D (inicio del plazo del contrato) | 14 de octubre de 2026 (llegó el material) |
@@ -40,7 +41,7 @@
 
 | Semana | Fechas | Fase | Revisión con el dueño |
 |---|---|---|---|
-| 1 | 14 al 20 de octubre | B1 a B4 ✅ · B5 Reclamos y Google | **Lunes 19**: reunión de avance (presentación, sin demo) |
+| 1 | 14 al 20 de octubre | B1 a B5 ✅ | **Lunes 19**: reunión de avance (presentación, sin demo) |
 | 2 | 21 al 27 de octubre | A3 entorno en la nube · B6 contenido real · C1 Catálogo y clientes (si llegaron los precios) | **Viernes 23**: primera demo, la web completa |
 | 3 | 28 de octubre al 3 de noviembre | B6 cierre de la Entrega 1 · C2 Consultas y cotizaciones | **Viernes 30**: acta de la Entrega 1 y publicación (límite **3/11**) |
 | 4 | 4 al 10 de noviembre | C3 Agenda y pagos · C4 Taller y entrega | **Viernes 6**: demo de cotización con PDF y agenda |
@@ -66,7 +67,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | B2 Configuración y app | `etapas/B2-configuracion.md` | ✅ Programada y probada a mano (14/10); falta instalar en celulares con https (A3) y la demo |
 | B3 Contenido del panel | `etapas/B3-contenido.md` | ✅ Programada (14/10); falta la revisión manual |
 | B4 Sitio público | `etapas/B4-sitio-publico.md` | ✅ Programada (14/10); falta la revisión manual |
-| B5 Reclamos y Google | `etapas/B5-reclamos-google.md` | En curso: HU-16 y HU-17 listas (15/10); sigue HU-18 |
+| B5 Reclamos y Google | `etapas/B5-reclamos-google.md` | ✅ Programada (15/10, PR #33 a #36). Falta validar el JSON-LD en Google (A3) y la revisión manual |
 | B6 a C5 | Una por etapa | Al empezar cada una |
 
 ## Resumen de fases
