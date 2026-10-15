@@ -23,7 +23,7 @@
 | Etapa B1 Acceso (HU-01, HU-02, HU-03) | ✅ Cerrada el 14/10, en `develop` (PR #4, #7 y #10) |
 | Etapa B2 Configuración y app (HU-04, HU-05, HU-06) | ✅ Programada y probada a mano el 14/10, en `develop` (PR #14, #15 y #16). Falta instalar en celulares (necesita https, A3) y mostrarla en la demo del 23 |
 | Etapa B3 Contenido del panel (HU-07, HU-08, HU-09) | ✅ Programada el 14/10 (PR #19, #20 y #21). Falta la revisión manual y mostrarla con B4 |
-| Etapa B4 Sitio público (HU-10 a HU-15) | 🔵 Especificación unida (#22); en programación |
+| Etapa B4 Sitio público (HU-10 a HU-15) | ✅ Programada el 14/10 (PR #23 a #26). Lighthouse móvil ≥ 90. Falta la revisión manual y la demo del 23 |
 | Identidad visual aplicada a la app | ✅ En `develop` (PR #5 y #9, logos nítidos en tamaños chicos) |
 | Día D (inicio del plazo) | 14 de octubre de 2026 |
 
@@ -57,7 +57,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | B1 Acceso | `etapas/B1-acceso.md` | ✅ Cerrada (14/10) |
 | B2 Configuración y app | `etapas/B2-configuracion.md` | ✅ Programada y probada a mano (14/10); falta instalar en celulares con https (A3) y la demo |
 | B3 Contenido del panel | `etapas/B3-contenido.md` | ✅ Programada (14/10); falta la revisión manual |
-| B4 Sitio público | `etapas/B4-sitio-publico.md` | En curso (14/10) |
+| B4 Sitio público | `etapas/B4-sitio-publico.md` | ✅ Programada (14/10); falta la revisión manual |
 | B5 a C5 | Una por etapa | Al empezar cada una |
 
 ## Resumen de fases

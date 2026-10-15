@@ -1,7 +1,7 @@
 # B4 Sitio público — especificación
 
 - **Fase y semana:** B. Entrega 1 · semana 2 (21 al 27 de octubre; se adelanta desde el 14)
-- **Estado:** aprobada para programar (14 de octubre de 2026)
+- **Estado:** programada (14 de octubre de 2026): HU-10 y HU-15 (#23), HU-11 (#24), HU-12 (#25), HU-13 y HU-14. Faltan la revisión manual y la demo
 - **Historias:** HU-10 Portada · HU-11 Página de cada servicio · HU-12 Galería pública · HU-13 Nosotros y preguntas frecuentes · HU-14 Contacto y mapa · HU-15 Botón de WhatsApp
 - **Base:**
   - Requisitos: RF-01 a RF-06, RF-08 y RF-09 (título y descripción de cada página; el mapa del sitio y los datos para Google van en B5).
@@ -147,9 +147,19 @@ Ninguna nueva. Las acciones del panel (B2 y B3) ya invalidan las etiquetas que l
 
 ## 11. Criterio de salida
 
-- [ ] Las pruebas pasan en celular y en escritorio.
-- [ ] Lighthouse móvil ≥ 90 en rendimiento, accesibilidad y SEO (RNF-02, RNF-14).
-- [ ] Se ve bien desde 360 px (revisión con capturas).
+- [x] Las pruebas pasan en celular y en escritorio (14/10).
+- [x] Lighthouse móvil ≥ 90 en rendimiento, accesibilidad y SEO (RNF-02, RNF-14), medido en local el 14/10:
+
+  | Página | Rendimiento | Accesibilidad | SEO |
+  |---|---|---|---|
+  | Portada | 91 | 100 | 100 |
+  | Servicio | 91 | 100 | 91 (*) |
+  | Galería | 91 | 100 | 100 |
+  | Nosotros | 91 | 100 | 100 |
+  | Contacto | 91 | 100 | 100 |
+
+  (*) Next.js manda el título y la descripción de las páginas dinámicas en el encabezado solo a los buscadores y a las vistas previas (Google, WhatsApp, Facebook, verificado con `curl`). A un navegador común se los manda más tarde, y Lighthouse 12 se presenta como un navegador común. Para Google y WhatsApp no hay diferencia.
+- [x] Se ve bien desde 360 px (revisión con capturas, 14/10).
 - [ ] Revisión manual de YankoSoft.
 - [ ] **Demo del viernes 23:** el sitio con el contenido cargado. El dueño valida los criterios de HU-01 a HU-18.
 
