@@ -35,30 +35,6 @@ export const esquemaEstado = z.object({
 
 export type Elemento = { id: number; nombre: string; descripcion: string | null; orden: number; activo: boolean };
 
-/** Nombre repetido sin importar mayúsculas (otro elemento, activo o no). */
-export function nombreRepetido(elementos: Pick<Elemento, "id" | "nombre">[], nombre: string, id?: number): boolean {
-  const buscado = nombre.trim().toLocaleLowerCase("es");
-  return elementos.some((e) => e.id !== id && e.nombre.trim().toLocaleLowerCase("es") === buscado);
-}
-
-/**
- * Nuevo orden de los activos al subir o bajar uno: [{ id, orden }] numerados desde 1.
- * null si no se puede mover (ya está primero o último, o no está activo).
- */
-export function reordenar(elementos: Elemento[], id: number, direccion: "subir" | "bajar"): { id: number; orden: number }[] | null {
-  const activos = elementos.filter((e) => e.activo).sort((a, b) => a.orden - b.orden || a.id - b.id);
-  const i = activos.findIndex((e) => e.id === id);
-  const j = direccion === "subir" ? i - 1 : i + 1;
-  if (i < 0 || j < 0 || j >= activos.length) return null;
-  [activos[i], activos[j]] = [activos[j], activos[i]];
-  return activos.map((e, k) => ({ id: e.id, orden: k + 1 }));
-}
-
-/** No se puede desactivar el último activo: sin espacios no hay agenda y sin tamaños no hay precios. */
-export function puedeDesactivar(elementos: Pick<Elemento, "id" | "activo">[], id: number): boolean {
-  return elementos.some((e) => e.activo && e.id !== id);
-}
-
 export function mensajeUltimoActivo(lista: Lista): string {
   return lista === "espacios" ? "Debe quedar al menos un espacio activo." : "Debe quedar al menos un tamaño activo.";
 }

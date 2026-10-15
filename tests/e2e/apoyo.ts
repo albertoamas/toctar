@@ -15,6 +15,8 @@ export async function crearUsuario(datos: {
   contrasena: string;
   rol: "dueno" | "encargado" | "tecnico";
   desactivado?: boolean;
+  /** Permisos del encargado (src/lib/permisos.ts), por ejemplo ["sitio"]. */
+  permisos?: string[];
 }) {
   const cliente = new pg.Client({ connectionString: URL_BASE_E2E });
   await cliente.connect();
@@ -31,6 +33,9 @@ export async function crearUsuario(datos: {
        values ($1, 'credential', $2, $3, now())`,
       [String(id), id, await hashPassword(datos.contrasena)],
     );
+    for (const permiso of datos.permisos ?? []) {
+      await cliente.query("insert into usuario_permiso (usuario_id, permiso) values ($1, $2)", [id, permiso]);
+    }
   } finally {
     await cliente.end();
   }

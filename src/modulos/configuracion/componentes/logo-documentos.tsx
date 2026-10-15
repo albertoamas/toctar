@@ -7,7 +7,8 @@ import { toast } from "sonner";
 import { MensajeError } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 import { subirLogo } from "../acciones";
-import { TIPOS_LOGO, type EstadoFormulario } from "../esquemas";
+import { TIPOS_FOTO } from "@/lib/formato-fotos";
+import type { EstadoFormulario } from "../esquemas";
 
 type Props = { logo: { url: string; ancho: number | null; alto: number | null } | null };
 
@@ -57,7 +58,7 @@ export function LogoDocumentos({ logo }: Props) {
         id="logo"
         name="logo"
         type="file"
-        accept={TIPOS_LOGO.join(",")}
+        accept={TIPOS_FOTO.join(",")}
         className="sr-only"
         tabIndex={-1}
         aria-label="Archivo del logo"

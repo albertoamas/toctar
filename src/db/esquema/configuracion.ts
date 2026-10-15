@@ -17,6 +17,8 @@ export const archivo = pgTable("archivo", {
   bytes: integer("bytes").notNull(),
   ancho: integer("ancho"),
   alto: integer("alto"),
+  /** Versión de 640 px de una foto (tarjetas y grillas del sitio). */
+  miniaturaClave: text("miniatura_clave").unique(),
   createdAt: momento("created_at").defaultNow().notNull(),
   createdBy: integer("created_by").references(() => usuario.id),
 });

@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Suspense } from "react";
-import { MenuIcon } from "lucide-react";
 import { AvisoConexion } from "@/componentes/panel/aviso-conexion";
+import { MenuMovil } from "@/componentes/panel/menu-movil";
 import { MenuPanel } from "@/componentes/panel/menu-panel";
 import { RegistrarServiceWorker } from "@/componentes/panel/registrar-service-worker";
 import { UsuarioSesion } from "@/componentes/panel/usuario-sesion";
-import { Button } from "@/componentes/ui/button";
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/componentes/ui/sheet";
 
 // El panel nunca se indexa en Google (RNF-12). Instalado en el iPhone se abre como app (HU-06).
 export const metadata: Metadata = {
@@ -44,21 +42,7 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
       <div className="flex flex-1 flex-col">
         <RegistrarServiceWorker />
         <header data-theme="oscuro" className="flex h-14 items-center gap-2 bg-fondo px-4 text-tinta md:hidden">
-          <Sheet>
-            <SheetTrigger render={<Button variant="ghost" size="icon" />}>
-              <MenuIcon />
-              <span className="sr-only">Abrir menú</span>
-            </SheetTrigger>
-            <SheetContent side="left" data-theme="oscuro" className="bg-fondo text-tinta">
-              <SheetTitle className="px-4 pt-4">
-                <Marca />
-              </SheetTitle>
-              <div className="px-1">
-                {menu}
-              </div>
-              <div className="mt-auto border-t border-border p-4">{sesion}</div>
-            </SheetContent>
-          </Sheet>
+          <MenuMovil marca={<Marca />} menu={menu} sesion={sesion} />
           <Marca />
         </header>
 
