@@ -17,6 +17,7 @@
 | Logos | 21 SVG en `public/marca/`: horizontal y vertical con y sin lema, y monograma, cada uno en 4 tintas, más el ícono de la app | Piezas trazadas una vez desde el PNG sin compresión de la pág. 4 del PDF: el **monograma como polígono** (14 esquinas, rectas exactas) y **TOCTAR y el lema con curvas**. El vertical se arma con esas piezas ubicadas como en el PNG de Illustrator (coincidencia 99,4 % y 98,7 %); su lema se traza aparte porque tiene otro espaciado |
 | Logo en tamaños chicos | **Con lema solo desde 360 px de ancho (horizontal) o 320 px (vertical).** Por debajo, la versión `-sin-lema` y el lema como texto con la clase `tt-lema`, que se ve nítido a cualquier tamaño | El lema dibujado queda de 2 a 5 px y se ve borroso (encontrado el 14/10 en la pantalla de ingreso) |
 | Servicios sin foto | Imagen de reemplazo con el monograma y una banda a 60° | Decisión del 14/10 (`01-descubrimiento/material-recibido.md`) |
+| Nitidez en pantalla | **El corte a 60° de botones y tarjetas se pinta con un degradado anclado a la esquina, no con `clip-path`.** Los logos horizontales sin lema tienen el `viewBox` ajustado al dibujo (sin las 6 unidades de margen), y el del encabezado mide 32 px exactos | Encontrado el 15/10: el botón principal y el logo del encabezado se veían con ruido. Un `clip-path` no se alinea a los píxeles y deja los bordes rectos difusos; el margen del SVG hacía caer el borde del logo entre dos píxeles. El Design System publicado todavía usa `clip-path` en `bundle.css`: actualizarlo en su próxima versión |
 
 ## En el código
 

@@ -36,7 +36,7 @@ function Parrafos({ texto }: { texto: string }) {
     .split(/\n\s*\n/)
     .filter(Boolean)
     .map((p, i) => (
-      <p key={i} className="max-w-prose text-lg leading-relaxed whitespace-pre-line text-tinta-suave">
+      <p key={i} className="max-w-prose text-lg leading-7 whitespace-pre-line text-tinta-suave">
         {p}
       </p>
     ));

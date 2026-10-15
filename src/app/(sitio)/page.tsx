@@ -62,10 +62,10 @@ async function Presentacion() {
   const inicio = await contenidoPublico("inicio");
   return (
     <div className="flex flex-col items-start gap-6">
-      <h1 className="max-w-2xl font-heading text-[40px] leading-[0.95] font-extrabold tracking-[-0.01em] text-balance uppercase italic md:text-[64px]">
+      <h1 className="max-w-2xl font-heading text-[40px] leading-[38px] md:leading-[60px] font-extrabold tracking-[-0.01em] text-balance uppercase italic md:text-[64px]">
         {inicio.lema as string}
       </h1>
-      <p className="max-w-xl text-lg leading-relaxed text-tinta-suave">{inicio.presentacion as string}</p>
+      <p className="max-w-xl text-lg leading-7 text-tinta-suave">{inicio.presentacion as string}</p>
       <div className="flex flex-wrap gap-3">
         <BotonWhatsApp />
         <Link href="/servicios" className="tt-boton tt-boton--contorno">

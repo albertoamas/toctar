@@ -22,8 +22,10 @@ export function Encabezado() {
           <Image
             src="/marca/toctar-horizontal-sin-lema-sobre-oscuro.svg"
             alt="TocTar"
-            width={127}
+            width={131}
             height={32}
+            // 32 px exactos: el viewBox de los logos sin lema va justo al dibujo, así sus bordes caen en píxeles enteros.
+            className="h-8 w-auto"
             priority
             unoptimized
           />

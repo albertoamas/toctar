@@ -262,8 +262,11 @@
     padding-right: 28px;
     color: var(--sobre-rojo);
   }
+  /* El corte a 60° (14 px de alto, 8 de ancho) se pinta con un degradado anclado a la esquina, no con clip-path:
+     un recorte no se alinea a los píxeles de la pantalla y deja los bordes rectos difusos (se notaba al 100 % y al 125 %).
+     119.74deg es la perpendicular al corte; 6,95 px es la distancia del corte a la esquina; 1 px de transición lo suaviza. */
   .tt-boton--principal::before {
-    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 8px) 100%, 0 100%);
+    background: linear-gradient(119.74deg, var(--tt-relleno) calc(100% - 7.45px), transparent calc(100% - 6.45px));
   }
   .tt-boton--principal:hover {
     --tt-relleno: var(--rojo-presionado);
@@ -303,9 +306,9 @@
   .tt-tarjeta {
     display: grid;
     grid-template-rows: auto 1fr;
-    background: var(--superficie);
     color: var(--tinta);
-    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 28px), calc(100% - 16px) 100%, 0 100%);
+    /* Corte a 60° de 28 × 16 px pintado con un degradado (ver .tt-boton--principal): 13,89 px del corte a la esquina. */
+    background: linear-gradient(119.74deg, var(--superficie) calc(100% - 14.39px), transparent calc(100% - 13.39px));
   }
   .tt-tarjeta__media {
     position: relative;
