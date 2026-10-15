@@ -4,17 +4,17 @@ import { and, eq, max, ne } from "drizzle-orm";
 import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { contenidoPagina, faq, servicio, variante } from "@/db/esquema";
+import { contenidoPagina, faq, galeriaItem, servicio, variante } from "@/db/esquema";
 import { erroresDe, type EstadoFormulario } from "@/lib/formularios";
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { nombreRepetido, puedeDesactivar, reordenar } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
 import { crearSlug } from "@/lib/slug";
 import { CLAVES_PAGINA, PAGINAS, datosDelFormulario, esquemaPagina, esquemaPregunta, type Pagina } from "./contenido";
-import { ETIQUETA_CONTENIDO, ETIQUETA_SERVICIOS, listarPreguntas, listarServicios, listarVariantes } from "./consultas";
-import { esquemaCrearServicio, esquemaMover, esquemaServicio, esquemaVariante } from "./esquemas";
+import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, ETIQUETA_SERVICIOS, listarGaleria, listarPreguntas, listarServicios, listarVariantes } from "./consultas";
+import { esquemaCrearServicio, esquemaEditarGaleria, esquemaGaleria, esquemaMover, esquemaServicio, esquemaVariante } from "./esquemas";
 
-// Servicios del sitio (HU-07, RF-11) y textos (HU-08, RF-10). Entra el dueño o un encargado con el permiso "sitio".
+// Servicios del sitio (HU-07, RF-11), textos (HU-08, RF-10) y galería (HU-09, RF-12). Entra el dueño o un encargado con el permiso "sitio".
 // Al guardar se invalida la etiqueta "servicios": el sitio muestra los cambios sin volver a desplegar (B4).
 
 const RUTA = "/panel/sitio";
@@ -310,4 +310,106 @@ export async function eliminarPregunta(id: number): Promise<EstadoFormulario> {
   if (!fila) return { mensaje: "Esa pregunta ya no existe. Recarga la página." };
   despuesDeCambiarContenido("preguntas");
   return { ok: true, mensaje: "Pregunta eliminada." };
+}
+
+// ---------------------------------------------------------------------------------------------
+// HU-09 Galería. Al guardar se invalida la etiqueta "galeria".
+
+function despuesDeCambiarGaleria() {
+  updateTag(ETIQUETA_GALERIA);
+  revalidatePath(`${RUTA}/galeria`);
+}
+
+async function servicioExiste(id: number): Promise<boolean> {
+  const [fila] = await db.select({ id: servicio.id }).from(servicio).where(eq(servicio.id, id));
+  return !!fila;
+}
+
+/** Sube un par antes y después, o una foto sola (va como "después"). */
+export async function subirGaleria(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  const autor = await exigirModulo("sitio");
+  const valores = { servicioId: String(datos.get("servicioId") ?? ""), descripcion: String(datos.get("descripcion") ?? "") };
+  const entrada = esquemaGaleria.safeParse(valores);
+  if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
+  if (!(await servicioExiste(entrada.data.servicioId))) return { errores: { servicioId: "Elige el servicio." }, valores };
+
+  const opciones = { carpeta: "galeria", miniatura: true, autorId: Number(autor.id) };
+  const despues = await guardarFoto(datos.get("despues"), opciones);
+  if (!despues.ok) {
+    return { errores: { despues: despues.motivo === "vacia" ? "Elige la foto del resultado." : ERROR_FOTO }, valores };
+  }
+  const entradaAntes = datos.get("antes");
+  const conAntes = entradaAntes instanceof File && entradaAntes.size > 0;
+  const antes = conAntes ? await guardarFoto(entradaAntes, opciones) : null;
+  if (antes && !antes.ok) {
+    await eliminarFoto(despues.archivoId);
+    return { errores: { antes: ERROR_FOTO }, valores };
+  }
+
+  const [{ ultimo }] = await db.select({ ultimo: max(galeriaItem.orden) }).from(galeriaItem);
+  await db.insert(galeriaItem).values({
+    servicioId: entrada.data.servicioId,
+    descripcion: entrada.data.descripcion,
+    fotoDespuesId: despues.archivoId,
+    fotoAntesId: antes?.ok ? antes.archivoId : null,
+    orden: (ultimo ?? 0) + 1,
+    createdBy: Number(autor.id),
+  });
+
+  despuesDeCambiarGaleria();
+  return { ok: true, mensaje: antes ? "Fotos guardadas." : "Foto guardada." };
+}
+
+export async function guardarGaleriaItem(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  await exigirModulo("sitio");
+  const valores = { servicioId: String(datos.get("servicioId") ?? ""), descripcion: String(datos.get("descripcion") ?? "") };
+  const entrada = esquemaEditarGaleria.safeParse({ ...valores, id: datos.get("id") });
+  if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
+  if (!(await servicioExiste(entrada.data.servicioId))) return { errores: { servicioId: "Elige el servicio." }, valores };
+
+  const [fila] = await db
+    .update(galeriaItem)
+    .set({ servicioId: entrada.data.servicioId, descripcion: entrada.data.descripcion })
+    .where(eq(galeriaItem.id, entrada.data.id))
+    .returning({ id: galeriaItem.id });
+  if (!fila) return { mensaje: "Esa foto ya no existe. Recarga la página." };
+  despuesDeCambiarGaleria();
+  return { ok: true, mensaje: "Cambios guardados." };
+}
+
+export async function moverGaleriaItem(datos: { id: number; direccion: "subir" | "bajar" }): Promise<EstadoFormulario> {
+  await exigirModulo("sitio");
+  const entrada = esquemaMover.safeParse(datos);
+  if (!entrada.success) return { mensaje: "No se pudo mover." };
+  const items = (await listarGaleria()).map((g) => ({ id: g.id, orden: g.orden, activo: true }));
+  const nuevoOrden = reordenar(items, entrada.data.id, entrada.data.direccion);
+  if (!nuevoOrden) return { ok: true };
+  await db.transaction(async (tx) => {
+    for (const o of nuevoOrden) await tx.update(galeriaItem).set({ orden: o.orden }).where(eq(galeriaItem.id, o.id));
+  });
+  despuesDeCambiarGaleria();
+  return { ok: true };
+}
+
+export async function cambiarVisibilidadGaleria(datos: { id: number; visible: boolean }): Promise<EstadoFormulario> {
+  await exigirModulo("sitio");
+  const [fila] = await db
+    .update(galeriaItem)
+    .set({ visible: datos.visible === true })
+    .where(eq(galeriaItem.id, Number(datos.id)))
+    .returning({ id: galeriaItem.id });
+  if (!fila) return { mensaje: "Esa foto ya no existe. Recarga la página." };
+  despuesDeCambiarGaleria();
+  return { ok: true, mensaje: datos.visible ? "La foto se ve en el sitio." : "Foto oculta: no se ve en el sitio." };
+}
+
+/** Las fotos de la galería no tienen historial: se borran, también del almacenamiento. */
+export async function eliminarGaleriaItem(id: number): Promise<EstadoFormulario> {
+  await exigirModulo("sitio");
+  const [fila] = await db.delete(galeriaItem).where(eq(galeriaItem.id, Number(id))).returning();
+  if (!fila) return { mensaje: "Esa foto ya no existe. Recarga la página." };
+  await eliminarFoto(fila.fotoDespuesId);
+  if (fila.fotoAntesId) await eliminarFoto(fila.fotoAntesId);
+  despuesDeCambiarGaleria();
+  return { ok: true, mensaje: "Foto eliminada." };
 }

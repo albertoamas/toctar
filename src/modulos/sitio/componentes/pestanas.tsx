@@ -1,6 +1,6 @@
 import { Pestanas } from "@/componentes/panel/pestanas";
 
-// Pestañas del módulo Sitio web (especificación B3 §5). Galería se suma en HU-09.
+// Pestañas del módulo Sitio web (especificación B3 §5).
 export function PestanasSitio() {
   return (
     <Pestanas
@@ -9,6 +9,7 @@ export function PestanasSitio() {
         { href: "/panel/sitio", texto: "Servicios", incluye: "/panel/sitio/servicios" },
         { href: "/panel/sitio/textos", texto: "Textos" },
         { href: "/panel/sitio/preguntas", texto: "Preguntas frecuentes" },
+        { href: "/panel/sitio/galeria", texto: "Galería" },
       ]}
     />
   );

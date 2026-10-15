@@ -71,6 +71,13 @@
       "when": 1792032521228,
       "tag": "0009_datos_contenido",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792032782201,
+      "tag": "0010_galeria",
+      "breakpoints": true
     }
   ]
 }

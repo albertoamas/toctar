@@ -1,16 +1,18 @@
 import "server-only";
 import { asc, eq, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
-import { archivo, contenidoPagina, faq, servicio, variante, type Paso } from "@/db/esquema";
+import { archivo, contenidoPagina, faq, galeriaItem, servicio, variante, type Paso } from "@/db/esquema";
 import type { ElementoLista } from "@/componentes/panel/lista-editable";
 import { urlsFoto, type UrlsFoto } from "@/lib/fotos";
 import { CLAVES_PAGINA, leerContenido, type ContenidoPagina, type Pagina } from "./contenido";
 
 // Lecturas del módulo Sitio web para el panel. Quien las llama ya pasó por exigirModulo("sitio").
-// Las lecturas para el sitio público (en caché, etiquetas "servicios" y "contenido") se agregan en B4.
+// Las lecturas para el sitio público (en caché, etiquetas "servicios", "contenido" y "galeria") se agregan en B4.
 
 export const ETIQUETA_SERVICIOS = "servicios";
 export const ETIQUETA_CONTENIDO = "contenido";
+export const ETIQUETA_GALERIA = "galeria";
 
 export type FilaServicio = {
   id: number;
@@ -100,4 +102,48 @@ export type FilaPregunta = { id: number; pregunta: string; respuesta: string; or
 /** Preguntas frecuentes en su orden (las ocultas también: se ven marcadas en el panel). */
 export async function listarPreguntas(): Promise<FilaPregunta[]> {
   return db.select().from(faq).orderBy(asc(faq.orden), asc(faq.id));
+}
+
+/** Servicios para elegir en la galería (también los ocultos: se puede preparar la galería antes de mostrarlos). */
+export async function opcionesServicio(): Promise<{ id: number; nombre: string }[]> {
+  return db
+    .select({ id: servicio.id, nombre: servicio.nombre })
+    .from(servicio)
+    .where(eq(servicio.activo, true))
+    .orderBy(asc(servicio.orden), asc(servicio.id));
+}
+
+export type FilaGaleria = {
+  id: number;
+  servicioId: number;
+  servicio: string;
+  descripcion: string;
+  visible: boolean;
+  orden: number;
+  antes: UrlsFoto | null;
+  despues: UrlsFoto;
+};
+
+const fotoAntes = alias(archivo, "foto_antes");
+const fotoDespues = alias(archivo, "foto_despues");
+
+/** Fotos de la galería en su orden (las ocultas también: se ven marcadas en el panel). */
+export async function listarGaleria(): Promise<FilaGaleria[]> {
+  const filas = await db
+    .select({ item: galeriaItem, servicio: servicio.nombre, antes: fotoAntes, despues: fotoDespues })
+    .from(galeriaItem)
+    .innerJoin(servicio, eq(galeriaItem.servicioId, servicio.id))
+    .innerJoin(fotoDespues, eq(galeriaItem.fotoDespuesId, fotoDespues.id))
+    .leftJoin(fotoAntes, eq(galeriaItem.fotoAntesId, fotoAntes.id))
+    .orderBy(asc(galeriaItem.orden), asc(galeriaItem.id));
+  return filas.map((f) => ({
+    id: f.item.id,
+    servicioId: f.item.servicioId,
+    servicio: f.servicio,
+    descripcion: f.item.descripcion,
+    visible: f.item.visible,
+    orden: f.item.orden,
+    antes: f.antes ? urlsFoto(f.antes) : null,
+    despues: urlsFoto(f.despues),
+  }));
 }

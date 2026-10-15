@@ -1,7 +1,7 @@
 # B3 Contenido del panel — especificación
 
 - **Fase y semana:** B. Entrega 1 · semana 2 (21 al 27 de octubre; se adelanta desde el 14)
-- **Estado:** aprobada para programar (14 de octubre de 2026)
+- **Estado:** programada (14 de octubre de 2026): HU-07 (#19), HU-08 (#20) y HU-09. Falta la revisión manual y la demo con B4
 - **Historias:** HU-07 Servicios del sitio · HU-08 Textos del sitio · HU-09 Galería en el panel
 - **Base:**
   - Requisitos: RF-10, RF-11, RF-12; RF-03 y RF-04 (los usa B4); RNF-02, RNF-11, RNF-14.
@@ -185,7 +185,7 @@ En `src/modulos/sitio/acciones.ts`. Todas empiezan con `exigirModulo("sitio")`, 
 | `guardarContenido` | página, campos | Por campo: "Escribe el lema." · "Hasta 400 caracteres." |
 | `guardarPregunta`, `moverPregunta`, `cambiarVisibilidadPregunta`, `eliminarPregunta` | id, pregunta, respuesta / dirección / visible | "Escribe la pregunta." · "Escribe la respuesta." |
 | `subirGaleria` | servicio, descripción, foto después, foto antes (opcional) | "Elige el servicio." · "Escribe una descripción corta: también la leen los buscadores." · el error de la foto |
-| `guardarGaleriaItem`, `moverGaleriaItem`, `eliminarGaleriaItem` | id, servicio, descripción, visible / dirección / id | Eliminar borra también los archivos del almacenamiento |
+| `guardarGaleriaItem`, `moverGaleriaItem`, `cambiarVisibilidadGaleria`, `eliminarGaleriaItem` | id, servicio, descripción / dirección / visible / id | Eliminar borra también los archivos del almacenamiento |
 
 **Fotos (`src/lib/fotos.ts`):**
 - Valida el formato con `sharp` y endereza la foto según la orientación de la cámara.
@@ -194,7 +194,7 @@ En `src/modulos/sitio/acciones.ts`. Todas empiezan con `exigirModulo("sitio")`, 
 
 ## 7. Componentes y diseño
 
-- **shadcn/ui:** `textarea`, `checkbox`, `dialog` (confirmar eliminar) y `select` (servicio de la galería; se agrega).
+- **shadcn/ui:** `textarea`, `checkbox` y `dialog` (confirmar eliminar). Para elegir el servicio se usa la lista nativa del navegador (`src/componentes/panel/selector.tsx`), no el `select` de shadcn: en el celular abre el selector propio del teléfono.
 - **Componentes nuevos:**
   - `SubidaFoto`: elige, achica en el navegador, muestra la vista previa y el progreso.
   - `EditorLista`: beneficios, pasos y "por qué elegirnos": agregar, quitar y ordenar filas.
@@ -244,9 +244,9 @@ En `src/modulos/sitio/acciones.ts`. Todas empiezan con `exigirModulo("sitio")`, 
 
 ## 11. Criterio de salida
 
-- [ ] Las pruebas unitarias y E2E pasan, en celular y en escritorio.
+- [x] Las pruebas unitarias y E2E pasan, en celular y en escritorio (14/10).
 - [ ] Una foto de celular de 8 MB se sube en 4G simulado (Chrome, "Fast 4G") en menos de 10 segundos.
-- [ ] El encargado con "Sitio web" edita contenido; sin el permiso, no entra.
+- [x] El encargado con "Sitio web" edita contenido; sin el permiso, no entra (E2E `hu-07`).
 - [ ] Revisión manual de YankoSoft en el celular.
 - [ ] Demo del viernes 23, junto con B4: el dueño corrige los borradores de textos y servicios, y sube 3 fotos de la galería.
 
