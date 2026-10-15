@@ -1,24 +1,37 @@
 "use server";
 
 import { createHash } from "node:crypto";
-import { and, count, eq, gt } from "drizzle-orm";
+import { and, count, eq, gt, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { reclamo, reclamoArchivo, servicio } from "@/db/esquema";
 import { erroresDe, type EstadoFormulario } from "@/lib/formularios";
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { CAMPOS_RECLAMO, MAXIMO_FOTOS, esquemaReclamo } from "./esquemas";
-import { evaluarEnvio } from "./reglas";
+import { LIMITE_POR_HORA, evaluarEnvio } from "./reglas";
 
 // Reclamos (HU-16): la acción pública del formulario de garantía y reclamos.
 // No pide sesión: la protegen el esquema, el campo trampa, el tiempo mínimo y el límite por conexión.
 
 const ERROR_FOTO = "Cada foto debe ser JPG, PNG o WebP de hasta 5 MB.";
+const MENSAJE_LIMITE = "Recibimos varios reclamos desde tu conexión. Escríbenos por WhatsApp.";
+
+type Conexion = Pick<typeof db, "select">;
+
+async function reclamosEnLaUltimaHora(base: Conexion, ipHash: string): Promise<number> {
+  const haceUnaHora = new Date(Date.now() - 3_600_000);
+  const [{ total }] = await base
+    .select({ total: count() })
+    .from(reclamo)
+    .where(and(eq(reclamo.ipHash, ipHash), gt(reclamo.createdAt, haceUnaHora)));
+  return total;
+}
 
 /**
  * Código de la conexión para el límite por hora. No se guarda la IP.
  * En producción el proxy (Traefik, de Coolify) pone la IP real en x-real-ip y la agrega al FINAL de
  * x-forwarded-for: el primer valor de esa lista lo puede inventar el visitante, por eso no se usa.
+ * Supone que a la app solo se llega por el proxy (el puerto 3000 no se publica): ver arquitectura, "Entornos".
  */
 async function codigoDeConexion(): Promise<string> {
   const h = await headers();
@@ -35,21 +48,15 @@ export async function enviarReclamo(_previo: EstadoFormulario, datos: FormData):
   if (!entrada.success && trampa.trim() === "") return { errores: erroresDe(entrada.error), valores };
 
   const ipHash = await codigoDeConexion();
-  const haceUnaHora = new Date(Date.now() - 3_600_000);
-  const [{ total }] = await db
-    .select({ total: count() })
-    .from(reclamo)
-    .where(and(eq(reclamo.ipHash, ipHash), gt(reclamo.createdAt, haceUnaHora)));
-
   const veredicto = evaluarEnvio({
     trampa,
     abiertoEn: datos.get("abierto_en") ? Number(datos.get("abierto_en")) : null,
     ahora: Date.now(),
-    enLaUltimaHora: total,
+    enLaUltimaHora: await reclamosEnLaUltimaHora(db, ipHash),
   });
   // A un robot se le responde igual que a una persona: no se le da ninguna pista.
   if (veredicto === "descartar" || !entrada.success) return { ok: true };
-  if (veredicto === "limite") return { mensaje: "Recibimos varios reclamos desde tu conexión. Escríbenos por WhatsApp.", valores };
+  if (veredicto === "limite") return { mensaje: MENSAJE_LIMITE, valores };
   const d = entrada.data;
 
   if (d.servicioId) {
@@ -71,7 +78,10 @@ export async function enviarReclamo(_previo: EstadoFormulario, datos: FormData):
     guardadas.push(r.archivoId);
   }
 
-  await db.transaction(async (tx) => {
+  const guardado = await db.transaction(async (tx) => {
+    // Se vuelve a contar con un candado por conexión: así varios envíos al mismo tiempo no pasan juntos el límite.
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${ipHash}, 0))`);
+    if ((await reclamosEnLaUltimaHora(tx, ipHash)) >= LIMITE_POR_HORA) return false;
     const [nuevo] = await tx
       .insert(reclamo)
       .values({
@@ -87,7 +97,12 @@ export async function enviarReclamo(_previo: EstadoFormulario, datos: FormData):
     if (guardadas.length > 0) {
       await tx.insert(reclamoArchivo).values(guardadas.map((archivoId, orden) => ({ reclamoId: nuevo.id, archivoId, orden })));
     }
+    return true;
   });
+  if (!guardado) {
+    for (const id of guardadas) await eliminarFoto(id);
+    return { mensaje: MENSAJE_LIMITE, valores };
+  }
 
   return { ok: true };
 }
