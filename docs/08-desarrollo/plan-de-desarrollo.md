@@ -20,7 +20,9 @@
 | Etapa 6 (diseño) | ✅ Modelo de datos, arquitectura e identidad visual |
 | Etapa 7 (preparación) | 🟡 Local y GitHub listos; faltan dominio, VPS, Coolify, R2 y respaldos |
 | Iteración 0 (cimientos) | ✅ En `develop` (PR #1) |
-| Etapa B1 Acceso (HU-01, HU-02, HU-03) | ✅ Cerrada el 14/10, en `develop` (PR #4, #7 y el de HU-03) |
+| Etapa B1 Acceso (HU-01, HU-02, HU-03) | ✅ Cerrada el 14/10, en `develop` (PR #4, #7 y #10) |
+| Etapa B2 Configuración y app (HU-04, HU-05, HU-06) | ✅ Programada y probada a mano el 14/10, en `develop` (PR #14, #15 y #16). Falta instalar en celulares (necesita https, A3) y mostrarla en la demo del 23 |
+| Etapa B3 Contenido del panel (HU-07, HU-08, HU-09) | 🔵 Especificación en curso |
 | Identidad visual aplicada a la app | ✅ En `develop` (PR #5 y #9, logos nítidos en tamaños chicos) |
 | Día D (inicio del plazo) | 14 de octubre de 2026 |
 
@@ -52,7 +54,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | Etapa | Especificación | Estado |
 |---|---|---|
 | B1 Acceso | `etapas/B1-acceso.md` | ✅ Cerrada (14/10) |
-| B2 Configuración y app | `etapas/B2-configuracion.md` | Programada (14/10); falta instalar en celulares con https (A3) y la demo |
+| B2 Configuración y app | `etapas/B2-configuracion.md` | ✅ Programada y probada a mano (14/10); falta instalar en celulares con https (A3) y la demo |
 | B3 a C5 | Una por etapa | Al empezar cada una |
 
 ## Resumen de fases
@@ -283,7 +285,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | 4 | Textos por servicio y preguntas frecuentes | Dueño | Viernes 23 de octubre | B6 (contenido real) |
 | 5 | Fotos principales de cada servicio | Dueño | Antes del 3 de noviembre | Nada (imagen de reemplazo) |
 | 6 | Validación de criterios HU-01 a HU-18 | Dueño | Demo del viernes 23 | B6 (acta) |
-| 7 | Condiciones y garantía del PDF | Dueño | 3 de noviembre | C2 |
+| 7 | Condiciones y garantía del PDF (hay un borrador cargado en el panel, B2) | Dueño | 3 de noviembre | C2 |
 | 8 | Lista de precios, variantes de inyección y succión y de vidrios | Dueño | 3 de noviembre | C1 |
 | 9 | Validación de HU-19 a HU-41 | Dueño | 3 de noviembre | Fase C |
 | 10 | Vectorial original del logo | Diseñador del dueño | Sin fecha | Nada (hay trazado fiel) |
