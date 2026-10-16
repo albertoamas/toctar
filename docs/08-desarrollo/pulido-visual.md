@@ -72,7 +72,7 @@ Estados: ⏳ pendiente · 🔵 en curso · ✅ terminada.
 - [ ] Capturas del después en todos los tamaños, revisadas.
 - [ ] `npm run lint`, `npm run typecheck` y `npm test` sin errores.
 - [ ] Las E2E de la pantalla pasan, en celular y en escritorio. Si cambió un texto o un rol, la prueba se actualiza; nunca se borra para que pase.
-- [ ] Sin código muerto ni duplicado: `npx -y knip@5` no muestra nada nuevo (los avisos ya conocidos están en el registro de la revisión del 16/10).
+- [ ] Sin código muerto ni duplicado: `npx -y knip@5` no muestra nada nuevo. Avisos ya conocidos, que no son errores: `public/sw.js`, los scripts, `src/lib/utils.ts` (lo usa la herramienta de shadcn), `tests/e2e/preparar.setup.ts`, `@tailwindcss/turbopack`, partes sin usar de componentes de shadcn y tipos exportados.
 - [ ] Lighthouse móvil, si la pantalla es del sitio.
 - [ ] Registro de la pantalla completo y estado en ✅.
 
@@ -93,7 +93,7 @@ Se hacen primero: aparecen en todas las pantallas.
 
 | # | Pantalla | Estado |
 |---|---|---|
-| 1.1 | Encabezado y menú del sitio (con el menú del celular) | ⏳ |
+| 1.1 | Encabezado y menú del sitio (con el menú del celular) | ✅ 16/10 |
 | 1.2 | Pie del sitio | ⏳ |
 | 1.3 | Botón fijo de WhatsApp | ⏳ |
 | 1.4 | Estructura del panel: barra lateral, menú del celular y usuario | ⏳ |
@@ -155,6 +155,32 @@ Antes de la demo del viernes 23.
 ## Registro por pantalla
 
 Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (con el commit o el PR) y lo que quedó pendiente o se descartó, con el motivo.
+
+### 1.1 Encabezado y menú del sitio (16/10/2026)
+- **Encontrado:**
+  - En el celular, el menú no se cerraba al elegir una página: quedaba abierto tapando la página nueva (comprobado con una prueba).
+  - El botón del menú medía 32 × 32 px; el mínimo es 44.
+  - No se marcaba la página actual, ni a la vista ni para lectores de pantalla (`aria-current`).
+  - El menú del celular era el panel gris por defecto de shadcn: sin nada de la marca y sin la acción principal del sitio (WhatsApp).
+  - "Preguntas frecuentes" y "Garantía y reclamos" solo estaban en el pie, adonde en el celular casi nadie llega.
+  - Al bajar en una página larga, el encabezado desaparecía.
+  - La lista de páginas estaba escrita tres veces (encabezado, pie y sitemap), y la lógica de "cerrar el menú al navegar" estaba solo en el panel.
+- **Cambios:**
+  - Componente común `src/componentes/menu-desplegable.tsx`, usado por el sitio y el panel: se cierra al tocar un enlace, y abrir y cerrar miden 44 px. Reemplaza al `MenuMovil` del panel.
+  - Menú del celular a pantalla completa y en negro: logo, línea LED, páginas principales grandes en Barlow itálica, páginas de consulta más chicas, el botón "Escribir por WhatsApp" a todo lo ancho y el lema.
+  - Página actual: en la computadora, un tramo más grueso de la línea LED bajo el enlace, con extremos a 60° (`.tt-enlace-actual`); en el celular, el enlace en rojo; en los dos, `aria-current`. Va dentro de `<Suspense>` porque, con Cache Components, la ruta se conoce recién al atender el pedido.
+  - Encabezado fijo arriba (`sticky`).
+  - Una sola lista de páginas en `src/lib/sitio.ts` (`PAGINAS_PRINCIPALES`, `PAGINAS_SECUNDARIAS`) para el encabezado, el pie y el sitemap.
+  - `BotonWhatsApp` acepta `className`.
+- **Descartado o pendiente:**
+  - Botón de WhatsApp en la barra de la computadora: descartado, ya está el botón flotante.
+  - Encabezado que se esconde al bajar: descartado; el fijo simple alcanza para un sitio corto y no agrega movimiento.
+  - Pendiente para 2.1 (Portada): Lighthouse marca CLS 0,023. Con los datos de la base de pruebas, la sección de servicios se corre al cargar el bloque de arriba; no viene del encabezado (en Servicios, CLS 0).
+- **Verificación:**
+  - Capturas a 360, 390 y 1280 px, y ampliadas al 300 % del tramo LED.
+  - E2E `base`: el menú marca la página actual, se cierra al elegir una página, el botón mide 44 px y en el celular están las páginas de consulta y el WhatsApp. Otra prueba confirma que el encabezado sigue a la vista al bajar.
+  - E2E completo: 120 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse móvil: portada y Servicios con rendimiento 91 y 100 en accesibilidad, buenas prácticas y SEO.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
