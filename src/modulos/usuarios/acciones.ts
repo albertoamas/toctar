@@ -41,6 +41,16 @@ function valoresDe(datos: FormData): Record<string, string> {
   return v;
 }
 
+/**
+ * Better Auth avisa así que el usuario ya existe (el correo interno sale del nombre de usuario).
+ * Cualquier otro error no se disfraza de "ya existe": se deja subir para verlo en los registros.
+ */
+function usuarioRepetido(error: unknown): boolean {
+  if (!(error instanceof APIError)) return false;
+  const codigo = (error.body as { code?: string } | undefined)?.code ?? "";
+  return codigo === "USERNAME_IS_ALREADY_TAKEN" || codigo.startsWith("USER_ALREADY_EXISTS");
+}
+
 /** Reemplaza los permisos de un usuario: solo los encargados guardan permisos. */
 async function guardarPermisos(usuarioId: number, rol: Rol, permisos: Permiso[], autorId: number) {
   await db.transaction(async (tx) => {
@@ -71,9 +81,7 @@ export async function crearUsuario(_previo: EstadoFormulario, datos: FormData): 
     });
     id = Number(user.id);
   } catch (error) {
-    if (error instanceof APIError && error.statusCode === 400) {
-      return { errores: { usuario: "Ese usuario ya existe. Elige otro." }, valores: valoresDe(datos) };
-    }
+    if (usuarioRepetido(error)) return { errores: { usuario: "Ese usuario ya existe. Elige otro." }, valores: valoresDe(datos) };
     throw error;
   }
 
