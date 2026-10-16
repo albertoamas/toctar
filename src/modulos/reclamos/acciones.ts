@@ -58,7 +58,7 @@ export async function enviarReclamo(_previo: EstadoFormulario, datos: FormData):
 
   const guardadas: number[] = [];
   for (const f of fotos) {
-    const r = await guardarFoto(f, { carpeta: "reclamos", miniatura: true, autorId: null });
+    const r = await guardarFoto(f, { carpeta: "reclamos", miniatura: true, autorId: null, privado: true });
     if (!r.ok) {
       // Si una foto falla, no queda nada a medias.
       for (const id of guardadas) await eliminarFoto(id);

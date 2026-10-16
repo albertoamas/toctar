@@ -15,6 +15,7 @@ VPS (Hetzner CX23, Alemania) ── Coolify (Traefik + https automático)
 Cloudflare (cuenta de TocTar)
         ├── DNS y dominio (Registrar)
         ├── R2: toctar-fotos, toctar-fotos-pruebas (públicos con dominio propio)
+        ├── R2: toctar-privado, toctar-privado-pruebas (privados: fotos de reclamos)
         └── R2: toctar-respaldos (privado)
 UptimeRobot → https://<dominio>/api/salud
 ```
@@ -87,13 +88,14 @@ En cada entorno: + New → Database → **PostgreSQL**, con la imagen `postgres:
 
 ## 6. Almacenamiento R2 (en Cloudflare, 20 minutos)
 
-1. R2 → crear tres buckets:
-   - **`toctar-fotos`** para producción;
-   - **`toctar-fotos-pruebas`**, para que lo que se pruebe no mezcle fotos con producción;
+1. R2 → crear cinco buckets:
+   - **`toctar-fotos`** para producción, público: lo que muestra el sitio (servicios, galería, logo);
+   - **`toctar-fotos-pruebas`**, igual para pruebas, para que lo que se pruebe no mezcle fotos con producción;
+   - **`toctar-privado`** y **`toctar-privado-pruebas`**, **privados**: datos de clientes, como las fotos de los reclamos. Sin dominio propio ni acceso público: el panel las muestra con enlaces firmados que vencen a los 15 minutos;
    - **`toctar-respaldos`**, privado, para los respaldos de la base.
 2. En cada bucket de fotos: Settings → **Custom Domains** → `fotos.<dominio>` y `fotos-pruebas.<dominio>`. Cloudflare crea el registro DNS. No usar la dirección `r2.dev`: está limitada y no es para producción.
 3. R2 → Manage API Tokens → crear **dos tokens** con "Object Read & Write":
-   - uno para la app, limitado a los dos buckets de fotos;
+   - uno para la app, limitado a los buckets de fotos y los privados (los cuatro);
    - otro para los respaldos, limitado a `toctar-respaldos`.
    Copiar el Access Key ID y el Secret apenas se crean: el secret se muestra una sola vez.
 4. El endpoint es `https://<id-de-cuenta>.r2.cloudflarestorage.com`. El id de la cuenta aparece en la página de R2.
@@ -128,6 +130,7 @@ En cada entorno: + New → Application → el repositorio desde la GitHub App.
 | `S3_REGION` | `auto` | `auto` |
 | `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` | token de la app | ídem |
 | `S3_BUCKET` | `toctar-fotos-pruebas` | `toctar-fotos` |
+| `S3_BUCKET_PRIVADO` | `toctar-privado-pruebas` | `toctar-privado` |
 | `S3_URL_PUBLICA` | `https://fotos-pruebas.<dominio>` | `https://fotos.<dominio>` |
 
 - **Secreto nuevo:** `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.

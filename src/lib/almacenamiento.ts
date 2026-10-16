@@ -1,14 +1,25 @@
 import "server-only";
-import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // Fotos y PDF en almacenamiento compatible con S3: Cloudflare R2 en pruebas y producción,
 // RustFS (docker-compose.yml) en desarrollo. El código es el mismo; solo cambian las variables.
+//
+// Dos buckets:
+// - público (S3_BUCKET): lo que muestra el sitio (servicios, galería, logo). Se sirve desde S3_URL_PUBLICA.
+// - privado (S3_BUCKET_PRIVADO): datos de clientes, como las fotos de los reclamos. Sin acceso público:
+//   el panel las muestra con enlaces firmados que vencen.
 
 function variable(nombre: string): string {
   const valor = process.env[nombre];
   if (!valor) throw new Error(`Falta la variable de entorno ${nombre}`);
   return valor;
 }
+
+export type Visibilidad = "publico" | "privado";
+
+/** Cuánto dura un enlace firmado a un archivo privado. */
+const SEGUNDOS_ENLACE_PRIVADO = 15 * 60;
 
 let cliente: S3Client | undefined;
 
@@ -26,24 +37,26 @@ function obtenerCliente(): S3Client {
   return cliente;
 }
 
+function bucket(visibilidad: Visibilidad): string {
+  return variable(visibilidad === "privado" ? "S3_BUCKET_PRIVADO" : "S3_BUCKET");
+}
+
 /** Guarda un archivo y devuelve su clave. Una clave nunca se reutiliza: los PDF enviados no cambian (RN-02). */
-export async function subirArchivo(clave: string, contenido: Uint8Array, tipo: string): Promise<string> {
-  await obtenerCliente().send(
-    new PutObjectCommand({
-      Bucket: variable("S3_BUCKET"),
-      Key: clave,
-      Body: contenido,
-      ContentType: tipo,
-    }),
-  );
+export async function subirArchivo(clave: string, contenido: Uint8Array, tipo: string, visibilidad: Visibilidad = "publico"): Promise<string> {
+  await obtenerCliente().send(new PutObjectCommand({ Bucket: bucket(visibilidad), Key: clave, Body: contenido, ContentType: tipo }));
   return clave;
 }
 
-export async function borrarArchivo(clave: string): Promise<void> {
-  await obtenerCliente().send(new DeleteObjectCommand({ Bucket: variable("S3_BUCKET"), Key: clave }));
+export async function borrarArchivo(clave: string, visibilidad: Visibilidad = "publico"): Promise<void> {
+  await obtenerCliente().send(new DeleteObjectCommand({ Bucket: bucket(visibilidad), Key: clave }));
 }
 
-/** URL pública de un archivo (fotos del sitio). */
+/** URL pública de un archivo del bucket público (fotos del sitio). */
 export function urlArchivo(clave: string): string {
   return `${variable("S3_URL_PUBLICA").replace(/\/$/, "")}/${clave}`;
+}
+
+/** Enlace firmado y temporal a un archivo del bucket privado. Solo se genera después de verificar permisos. */
+export async function urlArchivoPrivado(clave: string): Promise<string> {
+  return getSignedUrl(obtenerCliente(), new GetObjectCommand({ Bucket: bucket("privado"), Key: clave }), { expiresIn: SEGUNDOS_ENLACE_PRIVADO });
 }
