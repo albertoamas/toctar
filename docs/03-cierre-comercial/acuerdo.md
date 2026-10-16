@@ -80,5 +80,5 @@ YankoSoft será flexible con pedidos nuevos, con estas reglas:
 - [ ] Variantes de limpieza por inyección y succión y de pulido de vidrios
 - [ ] Textos base: historia del negocio, cómo trabajan, garantías, preguntas frecuentes
 - [ ] Dirección, horarios, número de WhatsApp, correo y redes sociales
-- [ ] Nombre de dominio preferido y datos del titular (nombre y CI o NIT)
+- [x] Nombre de dominio preferido y datos del titular (nombre y CI o NIT): toctardetailing.com, recibido el 15/10
 - [ ] Condiciones y garantía que deben ir en el PDF de cotización

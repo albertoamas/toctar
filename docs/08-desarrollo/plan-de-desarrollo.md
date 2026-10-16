@@ -96,7 +96,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 
 ### A3. Entornos en la nube
 - **Cuándo:** semana 1, a más tardar el **miércoles 21**, para tener dos días de margen antes de la demo del 23.
-- **Necesita del dueño (pedir hoy):** el dominio exacto (basado en `toctardetailingcar`) y el nombre y CI o NIT del titular.
+- **Necesita del dueño:** ✅ dominio `toctardetailing.com` y datos del titular (recibidos el 15/10).
 - **Tareas** (paso a paso en `07-preparacion/guia-de-despliegue.md`):
   1. Instalar `gh` y proteger `main` y `develop` en GitHub.
   2. Contratar el VPS (Hetzner o DigitalOcean, 4 GB: con 2 GB la compilación de dos entornos se queda corta) e instalar Coolify.
@@ -292,7 +292,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 
 | # | Qué | De quién | Para cuándo | Bloquea |
 |---|---|---|---|---|
-| 1 | Dominio exacto y titular (nombre y CI o NIT) | Dueño | Lunes 19 de octubre | A3 (entorno de pruebas) |
+| 1 | ~~Dominio exacto y titular~~ ✅ `toctardetailing.com` (15/10) | Dueño | — | — |
 | 2 | Proveedor del VPS: Hetzner o DigitalOcean | YankoSoft | Lunes 19 de octubre | A3 |
 | 3 | Horario de atención confirmado, con los días | Dueño | Viernes 23 de octubre | Nada (se carga desde el panel) |
 | 4 | Textos por servicio y preguntas frecuentes (hay borradores cargados) | Dueño | Viernes 23 de octubre | B6 (contenido real) |
