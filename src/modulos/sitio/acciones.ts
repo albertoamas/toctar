@@ -12,7 +12,19 @@ import { exigirModulo } from "@/lib/sesion";
 import { crearSlug } from "@/lib/slug";
 import { CLAVES_PAGINA, PAGINAS, datosDelFormulario, esquemaPagina, esquemaPregunta, type Pagina } from "./contenido";
 import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, ETIQUETA_SERVICIOS, listarGaleria, listarPreguntas, listarServicios, listarVariantes } from "./consultas";
-import { esquemaCrearServicio, esquemaEditarGaleria, esquemaGaleria, esquemaMover, esquemaServicio, esquemaVariante } from "./esquemas";
+import {
+  esquemaCrearServicio,
+  esquemaEditarGaleria,
+  esquemaEstadoVariante,
+  esquemaGaleria,
+  esquemaId,
+  esquemaIdFormulario,
+  esquemaMover,
+  esquemaMoverVariante,
+  esquemaServicio,
+  esquemaVariante,
+  esquemaVisibilidad,
+} from "./esquemas";
 
 // Servicios del sitio (HU-07, RF-11), textos (HU-08, RF-10) y galería (HU-09, RF-12). Entra el dueño o un encargado con el permiso "sitio".
 // Al guardar se invalida la etiqueta "servicios": el sitio muestra los cambios sin volver a desplegar (B4).
@@ -130,7 +142,9 @@ const ERROR_FOTO = "La foto debe ser JPG, PNG o WebP de hasta 5 MB.";
 /** Foto principal del servicio. La anterior se borra: ningún otro registro la usa. */
 export async function subirFotoServicio(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const autor = await exigirModulo("sitio");
-  const id = Number(datos.get("servicioId"));
+  const entrada = esquemaIdFormulario.safeParse(datos.get("servicioId"));
+  if (!entrada.success) return { mensaje: "Ese servicio ya no existe." };
+  const id = entrada.data;
   const [actual] = await db.select({ fotoArchivoId: servicio.fotoArchivoId }).from(servicio).where(eq(servicio.id, id));
   if (!actual) return { mensaje: "Ese servicio ya no existe." };
 
@@ -144,8 +158,11 @@ export async function subirFotoServicio(_previo: EstadoFormulario, datos: FormDa
   return { ok: true, mensaje: "Foto guardada." };
 }
 
-export async function quitarFotoServicio(id: number): Promise<EstadoFormulario> {
+export async function quitarFotoServicio(datoId: number): Promise<EstadoFormulario> {
   const autor = await exigirModulo("sitio");
+  const entrada = esquemaId.safeParse(datoId);
+  if (!entrada.success) return { mensaje: "Ese servicio ya no existe." };
+  const id = entrada.data;
   const [actual] = await db.select({ fotoArchivoId: servicio.fotoArchivoId }).from(servicio).where(eq(servicio.id, id));
   if (!actual?.fotoArchivoId) return { ok: true };
   await db.update(servicio).set({ fotoArchivoId: null, updatedAt: new Date(), updatedBy: Number(autor.id) }).where(eq(servicio.id, id));
@@ -205,35 +222,39 @@ export async function guardarVariante(_previo: EstadoFormulario, datos: FormData
 
 export async function moverVariante(datos: { servicioId: number; id: number; direccion: "subir" | "bajar" }): Promise<EstadoFormulario> {
   await exigirModulo("sitio");
-  const entrada = esquemaMover.safeParse({ id: datos.id, direccion: datos.direccion });
-  if (!entrada.success || !Number.isInteger(datos.servicioId)) return { mensaje: "No se pudo mover." };
-  const nuevoOrden = reordenar(await listarVariantes(datos.servicioId), datos.id, datos.direccion);
+  const entrada = esquemaMoverVariante.safeParse(datos);
+  if (!entrada.success) return { mensaje: "No se pudo mover." };
+  const { servicioId, id, direccion } = entrada.data;
+  const nuevoOrden = reordenar(await listarVariantes(servicioId), id, direccion);
   if (!nuevoOrden) return { ok: true };
   await db.transaction(async (tx) => {
     for (const o of nuevoOrden) {
-      await tx.update(variante).set({ orden: o.orden }).where(and(eq(variante.id, o.id), eq(variante.servicioId, datos.servicioId)));
+      await tx.update(variante).set({ orden: o.orden }).where(and(eq(variante.id, o.id), eq(variante.servicioId, servicioId)));
     }
   });
-  despuesDeCambiar(datos.servicioId);
+  despuesDeCambiar(servicioId);
   return { ok: true };
 }
 
 /** Desactivar no borra (D-6): las cotizaciones de C2 la siguen mostrando. */
 export async function cambiarEstadoVariante(datos: { servicioId: number; id: number; activo: boolean }): Promise<EstadoFormulario> {
   await exigirModulo("sitio");
-  const variantes = await listarVariantes(datos.servicioId);
-  const elegida = variantes.find((v) => v.id === datos.id);
+  const entrada = esquemaEstadoVariante.safeParse(datos);
+  if (!entrada.success) return { mensaje: "No se pudo cambiar el estado." };
+  const { servicioId, id, activo } = entrada.data;
+  const variantes = await listarVariantes(servicioId);
+  const elegida = variantes.find((v) => v.id === id);
   if (!elegida) return { mensaje: "Esa variante ya no existe. Recarga la página." };
-  if (!datos.activo && !puedeDesactivar(variantes, datos.id)) {
+  if (!activo && !puedeDesactivar(variantes, id)) {
     return { mensaje: "Debe quedar al menos una variante activa. Si el servicio no tiene opciones, deja una llamada Única." };
   }
-  const orden = datos.activo ? Math.max(0, ...variantes.filter((v) => v.activo).map((v) => v.orden)) + 1 : elegida.orden;
+  const orden = activo ? Math.max(0, ...variantes.filter((v) => v.activo).map((v) => v.orden)) + 1 : elegida.orden;
   await db
     .update(variante)
-    .set({ activo: datos.activo, orden })
-    .where(and(eq(variante.id, datos.id), eq(variante.servicioId, datos.servicioId)));
-  despuesDeCambiar(datos.servicioId);
-  return { ok: true, mensaje: datos.activo ? `${elegida.nombre} reactivada.` : `${elegida.nombre} desactivada.` };
+    .set({ activo, orden })
+    .where(and(eq(variante.id, id), eq(variante.servicioId, servicioId)));
+  despuesDeCambiar(servicioId);
+  return { ok: true, mensaje: activo ? `${elegida.nombre} reactivada.` : `${elegida.nombre} desactivada.` };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -297,16 +318,21 @@ export async function moverPregunta(datos: { id: number; direccion: "subir" | "b
 
 export async function cambiarVisibilidadPregunta(datos: { id: number; visible: boolean }): Promise<EstadoFormulario> {
   await exigirModulo("sitio");
-  const [fila] = await db.update(faq).set({ visible: datos.visible === true }).where(eq(faq.id, Number(datos.id))).returning({ id: faq.id });
+  const entrada = esquemaVisibilidad.safeParse(datos);
+  if (!entrada.success) return { mensaje: "Esa pregunta ya no existe. Recarga la página." };
+  const { id, visible } = entrada.data;
+  const [fila] = await db.update(faq).set({ visible }).where(eq(faq.id, id)).returning({ id: faq.id });
   if (!fila) return { mensaje: "Esa pregunta ya no existe. Recarga la página." };
   despuesDeCambiarContenido("preguntas");
-  return { ok: true, mensaje: datos.visible ? "La pregunta se ve en el sitio." : "Pregunta oculta: no se ve en el sitio." };
+  return { ok: true, mensaje: visible ? "La pregunta se ve en el sitio." : "Pregunta oculta: no se ve en el sitio." };
 }
 
 /** Las preguntas frecuentes no tienen historial: se eliminan de verdad. */
-export async function eliminarPregunta(id: number): Promise<EstadoFormulario> {
+export async function eliminarPregunta(datoId: number): Promise<EstadoFormulario> {
   await exigirModulo("sitio");
-  const [fila] = await db.delete(faq).where(eq(faq.id, Number(id))).returning({ id: faq.id });
+  const entrada = esquemaId.safeParse(datoId);
+  if (!entrada.success) return { mensaje: "Esa pregunta ya no existe. Recarga la página." };
+  const [fila] = await db.delete(faq).where(eq(faq.id, entrada.data)).returning({ id: faq.id });
   if (!fila) return { mensaje: "Esa pregunta ya no existe. Recarga la página." };
   despuesDeCambiarContenido("preguntas");
   return { ok: true, mensaje: "Pregunta eliminada." };
@@ -393,20 +419,21 @@ export async function moverGaleriaItem(datos: { id: number; direccion: "subir" |
 
 export async function cambiarVisibilidadGaleria(datos: { id: number; visible: boolean }): Promise<EstadoFormulario> {
   await exigirModulo("sitio");
-  const [fila] = await db
-    .update(galeriaItem)
-    .set({ visible: datos.visible === true })
-    .where(eq(galeriaItem.id, Number(datos.id)))
-    .returning({ id: galeriaItem.id });
+  const entrada = esquemaVisibilidad.safeParse(datos);
+  if (!entrada.success) return { mensaje: "Esa foto ya no existe. Recarga la página." };
+  const { id, visible } = entrada.data;
+  const [fila] = await db.update(galeriaItem).set({ visible }).where(eq(galeriaItem.id, id)).returning({ id: galeriaItem.id });
   if (!fila) return { mensaje: "Esa foto ya no existe. Recarga la página." };
   despuesDeCambiarGaleria();
-  return { ok: true, mensaje: datos.visible ? "La foto se ve en el sitio." : "Foto oculta: no se ve en el sitio." };
+  return { ok: true, mensaje: visible ? "La foto se ve en el sitio." : "Foto oculta: no se ve en el sitio." };
 }
 
 /** Las fotos de la galería no tienen historial: se borran, también del almacenamiento. */
-export async function eliminarGaleriaItem(id: number): Promise<EstadoFormulario> {
+export async function eliminarGaleriaItem(datoId: number): Promise<EstadoFormulario> {
   await exigirModulo("sitio");
-  const [fila] = await db.delete(galeriaItem).where(eq(galeriaItem.id, Number(id))).returning();
+  const entrada = esquemaId.safeParse(datoId);
+  if (!entrada.success) return { mensaje: "Esa foto ya no existe. Recarga la página." };
+  const [fila] = await db.delete(galeriaItem).where(eq(galeriaItem.id, entrada.data)).returning();
   if (!fila) return { mensaje: "Esa foto ya no existe. Recarga la página." };
   await eliminarFoto(fila.fotoDespuesId);
   if (fila.fotoAntesId) await eliminarFoto(fila.fotoAntesId);
