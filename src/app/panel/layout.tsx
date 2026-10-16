@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Suspense } from "react";
+import { MenuDesplegable } from "@/componentes/menu-desplegable";
 import { AvisoConexion } from "@/componentes/panel/aviso-conexion";
-import { MenuMovil } from "@/componentes/panel/menu-movil";
 import { MenuPanel } from "@/componentes/panel/menu-panel";
 import { RegistrarServiceWorker } from "@/componentes/panel/registrar-service-worker";
 import { UsuarioSesion } from "@/componentes/panel/usuario-sesion";
@@ -42,7 +42,10 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
       <div className="flex flex-1 flex-col">
         <RegistrarServiceWorker />
         <header data-theme="oscuro" className="flex h-14 items-center gap-2 bg-fondo px-4 text-tinta md:hidden">
-          <MenuMovil marca={<Marca />} menu={menu} sesion={sesion} />
+          <MenuDesplegable lado="left" cabecera={<Marca />}>
+            <div className="px-1">{menu}</div>
+            <div className="mt-auto border-t border-border p-4">{sesion}</div>
+          </MenuDesplegable>
           <Marca />
         </header>
 
