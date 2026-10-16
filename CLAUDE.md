@@ -46,7 +46,7 @@ Docker (imagen `standalone`) desplegada con Coolify en un VPS.
 ```bash
 docker compose up -d      # PostgreSQL (5432) y RustFS, imitación de R2 (API 9000, consola 9001)
 npm run almacenamiento:preparar   # crea los buckets de desarrollo, público y privado (una vez)
-npm run dev               # app en http://localhost:3000
+npm run dev               # app en http://localhost:3000; desde el celular, en la misma red: http://<IP de la PC>:3000
 npm run build             # build de producción
 npm run lint
 npm run typecheck         # genera tipos de rutas y corre tsc

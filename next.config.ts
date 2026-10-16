@@ -19,6 +19,10 @@ const nextConfig: NextConfig = {
   output: "standalone",
   // No anunciar la tecnología del servidor.
   poweredByHeader: false,
+  // Solo en desarrollo (npm run dev): permite probar desde el celular por la red local (http://192.168.x.x:3000).
+  // Sin esto, el servidor de desarrollo no le entrega el JavaScript a otra dirección que localhost y nada
+  // interactivo funciona (menú, formularios, visor). No afecta a pruebas ni a producción.
+  allowedDevOrigins: ["192.168.*.*", "10.*.*.*"],
   cacheComponents: true,
   partialPrefetching: true,
   experimental: {
