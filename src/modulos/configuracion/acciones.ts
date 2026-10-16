@@ -4,7 +4,7 @@ import { eq, max } from "drizzle-orm";
 import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/db";
 import { espacioTaller, negocio, parametro, sucursal, tamanoVehiculo } from "@/db/esquema";
-import { guardarFoto } from "@/lib/fotos";
+import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { nombreRepetido, puedeDesactivar, reordenar } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
 import { whatsAppLocal } from "@/lib/whatsapp";
@@ -99,10 +99,13 @@ export async function subirLogo(_previo: EstadoFormulario, datos: FormData): Pro
   const foto = await guardarFoto(datos.get("logo"), { carpeta: "negocio", prefijo: "logo-", autorId: Number(autor.id) });
   if (!foto.ok) return { errores: { logo: foto.motivo === "vacia" ? "Elige una imagen." : ERROR_LOGO } };
 
+  const [anterior] = await db.select({ logoArchivoId: negocio.logoArchivoId }).from(negocio).where(eq(negocio.id, 1));
   await db
     .update(negocio)
     .set({ logoArchivoId: foto.archivoId, updatedAt: new Date(), updatedBy: Number(autor.id) })
     .where(eq(negocio.id, 1));
+  // El logo anterior no lo usa nadie más: se borra, también del almacenamiento.
+  if (anterior?.logoArchivoId) await eliminarFoto(anterior.logoArchivoId);
 
   updateTag(ETIQUETA_NEGOCIO);
   revalidatePath(RUTA);

@@ -95,4 +95,10 @@ test("el logo para documentos se sube y se ve; un archivo que no es imagen se re
   const respuesta = await page.request.get((await logo.getAttribute("src"))!);
   expect(respuesta.ok()).toBe(true);
   expect(respuesta.headers()["content-type"]).toBe("image/webp");
+
+  // Al cambiar el logo, el anterior se borra del almacenamiento (no queda un archivo suelto)
+  const anterior = (await logo.getAttribute("src"))!;
+  await page.getByLabel("Archivo del logo").setInputFiles({ name: "logo-nuevo.png", mimeType: "image/png", buffer: PNG });
+  await expect(logo).not.toHaveAttribute("src", anterior);
+  expect((await page.request.get(anterior)).status()).toBe(404);
 });
