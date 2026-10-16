@@ -97,9 +97,9 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 ### A3. Entornos en la nube
 - **Cuándo:** semana 1, a más tardar el **miércoles 21**, para tener dos días de margen antes de la demo del 23.
 - **Necesita del dueño (pedir hoy):** el dominio exacto (basado en `toctardetailingcar`) y el nombre y CI o NIT del titular.
-- **Tareas** (detalle en `07-preparacion/preparacion.md`):
+- **Tareas** (paso a paso en `07-preparacion/guia-de-despliegue.md`):
   1. Instalar `gh` y proteger `main` y `develop` en GitHub.
-  2. Contratar el VPS (Hetzner o DigitalOcean, 2 GB) e instalar Coolify.
+  2. Contratar el VPS (Hetzner o DigitalOcean, 4 GB: con 2 GB la compilación de dos entornos se queda corta) e instalar Coolify.
   3. Comprar el dominio y apuntar `<dominio>` y `pruebas.<dominio>` al VPS.
   4. En Coolify: `develop` → pruebas y `main` → producción, cada uno con su PostgreSQL 18 y sus variables (`BETTER_AUTH_SECRET` distinto, `DUENO_INICIAL_*`).
   5. Cuenta de Cloudflare a nombre de TocTar: un bucket R2 para fotos y otro para respaldos.

@@ -18,14 +18,16 @@
 
 ## Pendiente
 
+Paso a paso completo, con cuentas, variables y comprobaciones: `guia-de-despliegue.md`.
+
 | # | Tarea | Necesita | Responsable |
 |---|---|---|---|
 | 1 | Instalar `gh` (para Pull Requests desde la terminal) y proteger `main` y `develop` en GitHub | `winget install GitHub.cli` + `gh auth login` | YankoSoft |
-| 2 | Elegir proveedor del VPS (Hetzner o DigitalOcean) y contratarlo | Decisión + tarjeta | YankoSoft (1er mes regalado) |
+| 2 | Elegir proveedor del VPS (Hetzner o DigitalOcean, 4 GB) y contratarlo | Decisión + tarjeta | YankoSoft (1er mes regalado) |
 | 3 | Instalar Coolify en el VPS y conectarlo al repositorio | VPS | YankoSoft |
 | 4 | Comprar el dominio y apuntarlo al VPS (`<dominio>` y `pruebas.<dominio>`) | Nombre elegido por el dueño | YankoSoft (1er año regalado) |
 | 5 | Crear en Coolify los dos entornos: `develop` → pruebas, `main` → producción, cada uno con su PostgreSQL 18 | Pasos 1 a 4 | YankoSoft |
-| 6 | Cuenta de Cloudflare a nombre de TocTar: bucket R2 de fotos y bucket de respaldos | Correo del dueño | Dueño + YankoSoft |
+| 6 | Cuenta de Cloudflare a nombre de TocTar: buckets R2 de fotos (producción y pruebas) y de respaldos | Correo del dueño | Dueño + YankoSoft |
 | 7 | Respaldos diarios de PostgreSQL en Coolify hacia R2 (30 días) | Pasos 5 y 6 | YankoSoft |
 | 8 | UptimeRobot vigilando `/api/salud` de producción | Paso 5 | YankoSoft |
 | 9 | ~~Aplicar las migraciones al arrancar el contenedor~~ Hecho en HU-01 (`src/instrumentation.ts`) | — | — |
