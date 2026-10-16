@@ -22,7 +22,7 @@ export type UsuarioActual = {
 };
 
 /** Usuario de la sesión, o null. Una sola lectura por pedido. Leerla va dentro de <Suspense>. */
-export const obtenerUsuarioActual = cache(async (): Promise<UsuarioActual | null> => {
+const obtenerUsuarioActual = cache(async (): Promise<UsuarioActual | null> => {
   const sesion = await auth.api.getSession({ headers: await headers() });
   if (!sesion || sesion.user.banned) return null;
   const rol = sesion.user.role as Rol;
@@ -55,12 +55,5 @@ export async function exigirSesion(): Promise<UsuarioActual> {
 export async function exigirModulo(modulo: Modulo): Promise<UsuarioActual> {
   const usuario = await exigirSesion();
   if (!puedeVerModulo(usuario, modulo)) redirect("/panel/sin-acceso");
-  return usuario;
-}
-
-/** Para lo que solo puede hacer un rol (por ejemplo, gestionar usuarios: solo el dueño). */
-export async function exigirRol(rol: Rol): Promise<UsuarioActual> {
-  const usuario = await exigirSesion();
-  if (usuario.rol !== rol) redirect("/panel/sin-acceso");
   return usuario;
 }

@@ -7,7 +7,7 @@ export const NOMBRE_DIA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes",
 
 const esquemaHora = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Escribe la hora como 08:00.");
 
-export const esquemaTurno = z
+const esquemaTurno = z
   .object({ desde: esquemaHora, hasta: esquemaHora })
   .refine((t) => t.desde < t.hasta, "El turno debe terminar después de empezar.");
 

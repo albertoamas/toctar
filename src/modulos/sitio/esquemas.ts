@@ -27,11 +27,11 @@ function listaJson<T extends z.ZodType>(esquema: T) {
     .pipe(esquema);
 }
 
-export const esquemaBeneficios = z
+const esquemaBeneficios = z
   .array(z.string().trim().min(1, "Escribe el beneficio o quita la fila.").max(LIMITES.beneficio, `Hasta ${LIMITES.beneficio} caracteres.`))
   .max(LIMITES.beneficios, `Hasta ${LIMITES.beneficios} beneficios.`);
 
-export const esquemaPasos = z
+const esquemaPasos = z
   .array(
     z.object({
       titulo: z.string().trim().min(1, "Cada paso necesita un título.").max(LIMITES.tituloPaso, `El título va hasta ${LIMITES.tituloPaso} caracteres.`),

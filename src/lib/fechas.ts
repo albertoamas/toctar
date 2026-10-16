@@ -1,7 +1,7 @@
 // Todo se guarda en UTC y se muestra en hora de Bolivia (arquitectura, "Fechas y zona horaria").
 // Las fechas de agenda son fechas sin hora, en formato AAAA-MM-DD (modelo de datos, D-9).
 
-export const ZONA_HORARIA = "America/La_Paz";
+const ZONA_HORARIA = "America/La_Paz";
 
 /** Fecha calendario (AAAA-MM-DD) que corresponde a un instante, en hora de Bolivia. */
 export function fechaEnBolivia(instante: Date = new Date()): string {
