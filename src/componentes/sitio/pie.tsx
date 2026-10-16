@@ -19,7 +19,7 @@ import { datosNegocioLocal, jsonLd } from "@/modulos/sitio/negocio-local";
 const ENLACES = [...PAGINAS_PRINCIPALES, ...PAGINAS_SECUNDARIAS];
 
 export function Pie() {
-  // Sin línea LED: el encabezado y la portada ya la usan (máximo dos por página).
+  // Sin línea LED: es el recurso de la portada.
   return (
     <footer className="border-t border-border bg-fondo">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 md:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr]">

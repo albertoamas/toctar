@@ -174,16 +174,16 @@
     }
   }
 
-  /* Página actual en la barra del sitio: un tramo más grueso de la línea LED, bajo el enlace y encima de la línea.
-     Los extremos van a 60° (skew de 30°), el ángulo de la marca. El encabezado no debe recortar lo que sobresale. */
+  /* Página actual en la barra del sitio: una barra roja sobre la línea gris del encabezado, bajo el enlace.
+     Los extremos van a 60° (skew de 30°), el ángulo de la marca. Baja 1 px para tapar la línea gris. */
   .tt-enlace-actual::after {
     content: "";
     position: absolute;
     right: 0;
-    bottom: -4px;
+    bottom: -1px;
     left: 0;
     z-index: 1;
-    height: 5px;
+    height: 3px;
     background: var(--rojo);
     transform: skewX(-30deg);
   }
