@@ -116,6 +116,25 @@ export const usuarioPermiso = pgTable(
   ],
 );
 
+// Intentos de ingreso fallidos, para frenar a quien prueba contraseñas (RNF-04). Better Auth trae su propio
+// límite, pero solo para pedidos por HTTP: el ingreso del panel lo llama desde una acción del servidor.
+// No se guarda la IP: solo un código derivado de ella (src/lib/conexion.ts). Se borran a las 24 horas.
+export const intentoIngreso = pgTable(
+  "intento_ingreso",
+  {
+    id: integer("id").generatedByDefaultAsIdentity().primaryKey(),
+    /** El usuario tal como lo escribieron (en minúsculas), exista o no. */
+    usuario: text("usuario").notNull(),
+    ipHash: text("ip_hash").notNull(),
+    createdAt: momento("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("intento_ingreso_usuario_idx").on(t.usuario, t.createdAt),
+    index("intento_ingreso_ip_idx").on(t.ipHash, t.createdAt),
+    index("intento_ingreso_fecha_idx").on(t.createdAt),
+  ],
+);
+
 export const usuarioRelaciones = relations(usuario, ({ many }) => ({
   sesiones: many(sesion),
   cuentas: many(cuenta),
