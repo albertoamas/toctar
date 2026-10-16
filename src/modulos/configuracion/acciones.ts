@@ -4,17 +4,13 @@ import { eq, max } from "drizzle-orm";
 import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/db";
 import { espacioTaller, negocio, parametro, sucursal, tamanoVehiculo } from "@/db/esquema";
-import { guardarFoto } from "@/lib/fotos";
+import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
+import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { nombreRepetido, puedeDesactivar, reordenar } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
 import { whatsAppLocal } from "@/lib/whatsapp";
 import { ETIQUETA_NEGOCIO, ETIQUETA_PARAMETROS, listarElementos, obtenerConfiguracionNegocio, sucursalPrincipal } from "./consultas";
-import {
-  CAMPOS_NEGOCIO,
-  erroresDe,
-  esquemaNegocio,
-  type EstadoFormulario,
-} from "./esquemas";
+import { CAMPOS_NEGOCIO, esquemaNegocio } from "./esquemas";
 import {
   esquemaElemento,
   esquemaEstado,
@@ -99,10 +95,13 @@ export async function subirLogo(_previo: EstadoFormulario, datos: FormData): Pro
   const foto = await guardarFoto(datos.get("logo"), { carpeta: "negocio", prefijo: "logo-", autorId: Number(autor.id) });
   if (!foto.ok) return { errores: { logo: foto.motivo === "vacia" ? "Elige una imagen." : ERROR_LOGO } };
 
+  const [anterior] = await db.select({ logoArchivoId: negocio.logoArchivoId }).from(negocio).where(eq(negocio.id, 1));
   await db
     .update(negocio)
     .set({ logoArchivoId: foto.archivoId, updatedAt: new Date(), updatedBy: Number(autor.id) })
     .where(eq(negocio.id, 1));
+  // El logo anterior no lo usa nadie más: se borra, también del almacenamiento.
+  if (anterior?.logoArchivoId) await eliminarFoto(anterior.logoArchivoId);
 
   updateTag(ETIQUETA_NEGOCIO);
   revalidatePath(RUTA);
@@ -129,12 +128,6 @@ export async function guardarParametros(_previo: EstadoFormulario, datos: FormDa
   updateTag(ETIQUETA_PARAMETROS);
   revalidatePath(`${RUTA}/cotizaciones`);
   return { ok: true, mensaje: "Cambios guardados.", valores: Object.fromEntries(CLAVES_PARAMETRO.map((c) => [c, String(entrada.data[c])])) };
-}
-
-/** El índice único de la base también frena nombres repetidos (por si dos personas guardan a la vez). */
-function esNombreRepetido(error: unknown): boolean {
-  const e = error as { code?: string; cause?: { code?: string } };
-  return e?.code === "23505" || e?.cause?.code === "23505";
 }
 
 function despuesDeCambiarLista() {
@@ -178,7 +171,7 @@ export async function guardarElemento(_previo: EstadoFormulario, datos: FormData
       }
     }
   } catch (error) {
-    if (esNombreRepetido(error)) return { errores: { nombre: mensajeRepetido(lista) }, valores };
+    if (indiceUnicoViolado(error) !== null) return { errores: { nombre: mensajeRepetido(lista) }, valores };
     throw error;
   }
 

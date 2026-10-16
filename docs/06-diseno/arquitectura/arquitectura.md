@@ -87,7 +87,8 @@ Se verifica el precio real al contratar y se le informa al dueño antes (acuerdo
 - La API de WhatsApp queda fuera del alcance; el diseño la permite después sin cambiar las plantillas.
 
 ### Fotos
-- El celular sube la foto; el servidor la redimensiona (lado mayor 1600 px), la convierte a WebP y la guarda en R2. Se guarda también una miniatura.
+- El celular sube la foto; el servidor la redimensiona (lado mayor 1600 px), la convierte a WebP y la guarda en R2. Se guarda también una miniatura. El servidor rechaza imágenes de más de 70 megapíxeles (`src/lib/imagen.ts`).
+- Dos buckets por entorno. **Público** (`S3_BUCKET`): lo que muestra el sitio, servido desde `S3_URL_PUBLICA`. **Privado** (`S3_BUCKET_PRIVADO`): datos de clientes, como las fotos de los reclamos; sin acceso público, el panel las muestra con enlaces firmados que vencen a los 15 minutos (`src/lib/almacenamiento.ts`). `archivo.privado` dice en cuál está cada archivo.
 - Videos de consultas: hasta 50 MB y 60 segundos, sin procesar (RNF-07). Se revisa si el espacio de R2 crece demasiado.
 
 ### PDF de cotización

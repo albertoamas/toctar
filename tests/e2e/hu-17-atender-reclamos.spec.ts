@@ -41,7 +41,12 @@ test("el dueño ve el reclamo pendiente, le escribe por WhatsApp y lo marca aten
   const fotos = page.getByRole("list", { name: "Fotos del reclamo" }).getByRole("button");
   await expect(fotos).toHaveCount(2);
   await fotos.first().click();
-  await expect(page.getByRole("dialog").getByRole("img", { name: "Foto 1 del reclamo" })).toHaveAttribute("src", /reclamos\/[\w-]+\.webp$/);
+  const grande = page.getByRole("dialog").getByRole("img", { name: "Foto 1 del reclamo" });
+  // Las fotos de reclamos son privadas: se ven con un enlace firmado que vence; sin la firma, no se pueden abrir.
+  await expect(grande).toHaveAttribute("src", /toctar-privado\/reclamos\/[\w-]+\.webp\?.*X-Amz-Signature=/);
+  const firmada = (await grande.getAttribute("src"))!;
+  expect((await page.request.get(firmada)).status()).toBe(200);
+  expect((await page.request.get(firmada.split("?")[0])).status()).toBe(403);
   await page.keyboard.press("Escape");
 
   const whatsapp = page.getByRole("link", { name: "Escribir por WhatsApp" });

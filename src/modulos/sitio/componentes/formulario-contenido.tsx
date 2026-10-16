@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { toast } from "sonner";
+import { conAviso } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { EditorLista } from "@/componentes/panel/editor-lista";
 import { Button } from "@/componentes/ui/button";
@@ -13,13 +13,7 @@ import { PAGINAS, type CampoContenido, type ContenidoPagina, type Pagina } from 
 
 // HU-08: textos de una página del sitio. Los campos salen del registro (src/modulos/sitio/contenido.ts).
 
-async function guardarConAviso(previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
-  const r = await guardarContenido(previo, datos);
-  if (r.ok && r.mensaje) toast.success(r.mensaje);
-  else if (r.errores) toast.error("Revisa los campos marcados.");
-  else if (r.mensaje) toast.error(r.mensaje);
-  return r;
-}
+const guardarConAviso = conAviso(guardarContenido);
 
 export function FormularioContenido({ pagina, contenido }: { pagina: Pagina; contenido: ContenidoPagina }) {
   const def = PAGINAS[pagina];

@@ -10,7 +10,7 @@ import { galeriaPublica } from "@/modulos/sitio/publico";
 
 export const metadata: Metadata = {
   title: "Galería",
-  description: "Trabajos reales de TocTar Detailing en Tarija: fotos de antes y después de pulido, nano cerámico, interiores, vidrios y faroles.",
+  description: "Trabajos reales de TocTar Detailing en Tarija: fotos de antes y después de cada servicio.",
 };
 
 // HU-12 Galería pública (RF-04): fotos visibles de servicios visibles, filtrables por servicio.

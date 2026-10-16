@@ -7,7 +7,7 @@ import { serviciosPublicos } from "@/modulos/sitio/publico";
 
 export const metadata: Metadata = {
   title: "Servicios",
-  description: "Pulido y nano cerámico, lavado de interior, limpieza de asientos, pulido de vidrios, faroles, polarizado y PPF en Tarija.",
+  description: "Los servicios de detailing de TocTar Detailing en Tarija: en qué consiste cada uno y cómo lo hacemos. Escríbenos por WhatsApp para cotizar.",
 };
 
 // Todos los servicios visibles del sitio (HU-10, HU-11).

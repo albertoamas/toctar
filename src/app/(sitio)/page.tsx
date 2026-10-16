@@ -9,9 +9,11 @@ import { TarjetaServicio } from "@/componentes/sitio/tarjeta-servicio";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import { contenidoPublico, galeriaPublica, serviciosPublicos } from "@/modulos/sitio/publico";
 
+// Las descripciones para Google van fijas (dentro del <head>, que es donde las lee Google) y sin nombrar
+// servicios concretos: así no quedan desactualizadas cuando el dueño agrega o quita uno.
 export const metadata: Metadata = {
   title: { absolute: "TocTar Detailing · Detailing automotriz en Tarija" },
-  description: "Pulido y nano cerámico, lavado de interior, pulido de vidrios, faroles y más, en Tarija. Escríbenos por WhatsApp y te cotizamos.",
+  description: "Detailing automotriz en Tarija: cuidamos la pintura, el interior y los detalles de tu vehículo. Escríbenos por WhatsApp y te cotizamos.",
 };
 
 const SERVICIOS_EN_PORTADA = 6;

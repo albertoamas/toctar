@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { toast } from "sonner";
+import { conAviso } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 import { Textarea } from "@/componentes/ui/textarea";
@@ -11,15 +11,10 @@ import { marcarAtendido } from "../acciones";
 // HU-17: marcar un reclamo como atendido, con la nota de qué se hizo.
 // El aviso sale desde la acción: al guardar, la página se recarga y este bloque desaparece.
 
-async function conAviso(previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
-  const resultado = await marcarAtendido(previo, datos);
-  if (resultado.ok && resultado.mensaje) toast.success(resultado.mensaje);
-  else if (resultado.mensaje) toast.error(resultado.mensaje);
-  return resultado;
-}
+const marcarConAviso = conAviso(marcarAtendido);
 
 export function AtenderReclamo({ id }: { id: number }) {
-  const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(conAviso, {});
+  const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(marcarConAviso, {});
   const error = estado.errores?.nota;
 
   return (

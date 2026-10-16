@@ -19,6 +19,8 @@ export const archivo = pgTable("archivo", {
   alto: integer("alto"),
   /** Versión de 640 px de una foto (tarjetas y grillas del sitio). */
   miniaturaClave: text("miniatura_clave").unique(),
+  /** En el bucket privado (datos de clientes, como las fotos de reclamos): se ve solo con enlace firmado. */
+  privado: boolean("privado").default(false).notNull(),
   createdAt: momento("created_at").defaultNow().notNull(),
   createdBy: integer("created_by").references(() => usuario.id),
 });

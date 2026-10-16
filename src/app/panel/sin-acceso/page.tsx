@@ -6,7 +6,7 @@ import { exigirSesion } from "@/lib/sesion";
 
 export const metadata: Metadata = { title: "Sin acceso" };
 
-// A donde llevan exigirModulo y exigirRol cuando el usuario no tiene el módulo (RNF-05).
+// A donde lleva exigirModulo cuando el usuario no tiene el módulo (RNF-05).
 // forbidden() de Next.js sigue experimental en la versión 16, por eso es una página propia.
 export default function SinAcceso() {
   return (

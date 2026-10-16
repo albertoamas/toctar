@@ -2,7 +2,7 @@ import type { Rol } from "@/lib/roles";
 
 // Única fuente de verdad sobre qué puede hacer cada usuario (RNF-05).
 // La matriz está en docs/08-desarrollo/etapas/B1-acceso.md §5 y tests/unit/permisos.test.ts la recorre entera.
-// Estas funciones son puras: el control en el servidor está en src/lib/sesion.ts (exigirModulo, exigirRol).
+// Estas funciones son puras: el control en el servidor está en src/lib/sesion.ts (exigirModulo).
 
 export const PERMISOS = [
   "sitio",

@@ -5,10 +5,10 @@ import { APIError } from "better-auth/api";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import type { z } from "zod";
 import { db } from "@/db";
 import { usuarioPermiso } from "@/db/esquema";
 import { auth } from "@/lib/auth";
+import { erroresDe, type EstadoFormulario } from "@/lib/formularios";
 import type { Permiso } from "@/lib/permisos";
 import type { Rol } from "@/lib/roles";
 import { exigirModulo } from "@/lib/sesion";
@@ -19,7 +19,6 @@ import {
   esquemaCrearUsuario,
   esquemaIdUsuario,
   esquemaRestablecer,
-  type EstadoFormulario,
 } from "./esquemas";
 import { cambioDeRolDejaSinDueno } from "./reglas";
 
@@ -28,17 +27,21 @@ import { cambioDeRolDejaSinDueno } from "./reglas";
 
 const RUTA = "/panel/usuarios";
 
-function erroresDe(error: z.ZodError): EstadoFormulario["errores"] {
-  const errores: Record<string, string> = {};
-  for (const i of error.issues) errores[String(i.path[0])] ??= i.message;
-  return errores;
-}
-
 function valoresDe(datos: FormData): Record<string, string> {
   const v: Record<string, string> = {};
   for (const clave of ["nombre", "usuario", "rol"]) v[clave] = String(datos.get(clave) ?? "");
   v.permisos = datos.getAll("permisos").join(",");
   return v;
+}
+
+/**
+ * Better Auth avisa así que el usuario ya existe (el correo interno sale del nombre de usuario).
+ * Cualquier otro error no se disfraza de "ya existe": se deja subir para verlo en los registros.
+ */
+function usuarioRepetido(error: unknown): boolean {
+  if (!(error instanceof APIError)) return false;
+  const codigo = (error.body as { code?: string } | undefined)?.code ?? "";
+  return codigo === "USERNAME_IS_ALREADY_TAKEN" || codigo.startsWith("USER_ALREADY_EXISTS");
 }
 
 /** Reemplaza los permisos de un usuario: solo los encargados guardan permisos. */
@@ -71,9 +74,7 @@ export async function crearUsuario(_previo: EstadoFormulario, datos: FormData): 
     });
     id = Number(user.id);
   } catch (error) {
-    if (error instanceof APIError && error.statusCode === 400) {
-      return { errores: { usuario: "Ese usuario ya existe. Elige otro." }, valores: valoresDe(datos) };
-    }
+    if (usuarioRepetido(error)) return { errores: { usuario: "Ese usuario ya existe. Elige otro." }, valores: valoresDe(datos) };
     throw error;
   }
 

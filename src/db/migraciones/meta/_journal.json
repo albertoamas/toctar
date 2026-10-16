@@ -85,6 +85,20 @@
       "when": 1792046810065,
       "tag": "0011_reclamos",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792181740319,
+      "tag": "0012_intentos_ingreso",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792182612761,
+      "tag": "0013_archivo_privado",
+      "breakpoints": true
     }
   ]
 }

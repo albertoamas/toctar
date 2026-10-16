@@ -27,11 +27,11 @@ function listaJson<T extends z.ZodType>(esquema: T) {
     .pipe(esquema);
 }
 
-export const esquemaBeneficios = z
+const esquemaBeneficios = z
   .array(z.string().trim().min(1, "Escribe el beneficio o quita la fila.").max(LIMITES.beneficio, `Hasta ${LIMITES.beneficio} caracteres.`))
   .max(LIMITES.beneficios, `Hasta ${LIMITES.beneficios} beneficios.`);
 
-export const esquemaPasos = z
+const esquemaPasos = z
   .array(
     z.object({
       titulo: z.string().trim().min(1, "Cada paso necesita un título.").max(LIMITES.tituloPaso, `El título va hasta ${LIMITES.tituloPaso} caracteres.`),
@@ -70,7 +70,14 @@ export const esquemaVariante = z.object({
     .transform((v) => v || null),
 });
 
-export const esquemaMover = z.object({ id: z.number().int().positive(), direccion: z.enum(["subir", "bajar"]) });
+// Acciones que reciben datos sueltos (no un formulario): también se validan, porque cualquiera puede llamarlas.
+const idRegistro = z.number().int().positive();
+export const esquemaId = idRegistro;
+export const esquemaIdFormulario = z.coerce.number().int().positive();
+export const esquemaMover = z.object({ id: idRegistro, direccion: z.enum(["subir", "bajar"]) });
+export const esquemaMoverVariante = esquemaMover.extend({ servicioId: idRegistro });
+export const esquemaEstadoVariante = z.object({ servicioId: idRegistro, id: idRegistro, activo: z.boolean() });
+export const esquemaVisibilidad = z.object({ id: idRegistro, visible: z.boolean() });
 
 // Galería (HU-09)
 const descripcionGaleria = z

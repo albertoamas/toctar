@@ -47,3 +47,16 @@ test("la portada lleva los datos de negocio local con el nombre y la dirección"
   // El sitio público sí se indexa (el panel no: prueba "base")
   await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
 });
+
+test("cada página pública lleva su título y su descripción dentro del head, donde los lee Google", async ({ request }) => {
+  const descripciones = new Set<string>();
+  for (const ruta of ["/", "/servicios", "/galeria", "/nosotros", "/preguntas-frecuentes", "/contacto", "/garantia"]) {
+    const html = await (await request.get(ruta)).text();
+    const head = html.slice(0, html.indexOf("</head>"));
+    const descripcion = head.match(/<meta name="description" content="([^"]+)"/)?.[1];
+    expect(descripcion, ruta).toBeTruthy();
+    expect(head, ruta).toMatch(/<title>[^<]+<\/title>/);
+    descripciones.add(descripcion!);
+  }
+  expect(descripciones.size).toBe(7); // ninguna repetida
+});

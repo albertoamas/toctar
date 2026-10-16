@@ -27,11 +27,3 @@ export const esquemaActualizarUsuario = z.object({
 
 export const esquemaRestablecer = z.object({ id: esquemaId, contrasena: esquemaContrasena });
 export const esquemaIdUsuario = z.object({ id: esquemaId });
-
-/** Respuesta de toda acción del formulario: errores por campo o un mensaje general. */
-export type EstadoFormulario = {
-  ok?: boolean;
-  mensaje?: string;
-  errores?: Partial<Record<string, string>>;
-  valores?: Record<string, string>;
-};

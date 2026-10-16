@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { erroresDe } from "@/modulos/configuracion/esquemas";
+import { erroresDe } from "@/lib/formularios";
 import { nombreRepetido, puedeDesactivar, reordenar } from "@/lib/orden";
 import { esquemaElemento, type Elemento } from "@/modulos/configuracion/listas";
 import { CLAVES_PARAMETRO, esquemaParametros, leerParametros } from "@/modulos/configuracion/parametros";

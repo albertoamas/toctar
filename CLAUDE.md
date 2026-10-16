@@ -45,7 +45,7 @@ Docker (imagen `standalone`) desplegada con Coolify en un VPS.
 
 ```bash
 docker compose up -d      # PostgreSQL (5432) y RustFS, imitación de R2 (API 9000, consola 9001)
-npm run almacenamiento:preparar   # crea el bucket de desarrollo (una vez)
+npm run almacenamiento:preparar   # crea los buckets de desarrollo, público y privado (una vez)
 npm run dev               # app en http://localhost:3000
 npm run build             # build de producción
 npm run lint
@@ -70,6 +70,9 @@ Copiar `.env.example` a `.env` la primera vez y completar `BETTER_AUTH_SECRET` y
 - Toda página y acción del panel verifica la sesión con `src/lib/sesion.ts` (`exigirSesion`) y el rol o módulo con `src/lib/permisos.ts`. El layout del panel NO protege a sus páginas y `src/proxy.ts` solo redirige rápido.
 - La sesión se lee siempre dentro de `<Suspense>` (Cache Components): leerla fuera rompe el build.
 - **Seguridad:** las funciones de `auth.api.*` del plugin admin (`createUser`, `banUser`, `setUserPassword`…) solo verifican permisos si reciben `headers: await headers()`. Sin headers actúan como el sistema: solo se usan así en `src/lib/arranque.ts`.
+- **Seguridad:** Better Auth se usa solo desde el servidor; no hay ruta `/api/auth` (expondría su API pública). Su límite de intentos no cubre el ingreso del panel: el límite es propio (`src/modulos/acceso/`).
+- Las acciones que reciben datos sueltos (no un formulario) también los validan con Zod: cualquiera puede llamarlas.
+- Datos de clientes (fotos de reclamos y, más adelante, documentos) van al bucket privado (`guardarFoto(..., { privado: true })`) y se muestran con `urlsFotoPrivada`. El público es solo para lo que muestra el sitio.
 - Validación con Zod, el mismo esquema en el formulario y en el servidor.
 - Cada historia de usuario: rama propia → plan → implementación → pruebas → Pull Request revisado → merge a `develop` (ver "Control de versiones").
 - Las reglas de negocio (RN) llevan prueba en `tests/unit/`; los flujos críticos, en `tests/e2e/`.

@@ -124,20 +124,3 @@ export type DatosNegocio = z.output<typeof esquemaNegocio>;
 
 export const CAMPOS_NEGOCIO = Object.keys(esquemaNegocio.shape) as (keyof typeof esquemaNegocio.shape)[];
 
-/** Respuesta de toda acción del formulario: errores por campo o un mensaje general. */
-export type EstadoFormulario = {
-  ok?: boolean;
-  mensaje?: string;
-  errores?: Partial<Record<string, string>>;
-  valores?: Record<string, string>;
-};
-
-/** Errores por campo. Los del horario van por día: "horarios.0" es el lunes. */
-export function erroresDe(error: z.ZodError): Record<string, string> {
-  const errores: Record<string, string> = {};
-  for (const i of error.issues) {
-    const clave = i.path[0] === "horarios" && typeof i.path[1] === "number" ? `horarios.${i.path[1]}` : String(i.path[0]);
-    errores[clave] ??= i.message;
-  }
-  return errores;
-}

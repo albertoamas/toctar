@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { toast } from "sonner";
+import { conAviso } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { EditorLista } from "@/componentes/panel/editor-lista";
 import { Button } from "@/componentes/ui/button";
@@ -19,13 +19,7 @@ type Props = {
   servicio: { id: number; nombre: string; slug: string; resumen: string; descripcion: string; beneficios: string[]; pasos: Paso[]; visible: boolean };
 };
 
-async function guardarConAviso(previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
-  const r = await guardarServicio(previo, datos);
-  if (r.ok && r.mensaje) toast.success(r.mensaje);
-  else if (r.errores) toast.error("Revisa los campos marcados.");
-  else if (r.mensaje) toast.error(r.mensaje);
-  return r;
-}
+const guardarConAviso = conAviso(guardarServicio);
 
 export function FormularioServicio({ servicio: s }: Props) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(guardarConAviso, {});

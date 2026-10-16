@@ -2,7 +2,7 @@ import "server-only";
 import { asc, count, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { archivo, reclamo, reclamoArchivo, servicio, usuario, type EstadoReclamo } from "@/db/esquema";
-import { urlsFoto, type UrlsFoto } from "@/lib/fotos";
+import { urlsFoto, urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 
 // Lecturas del módulo de reclamos (HU-17). Quien las llama ya pasó por exigirModulo("reclamos").
 
@@ -80,10 +80,12 @@ export async function obtenerReclamo(id: number): Promise<DetalleReclamo | null>
   if (!fila) return null;
 
   const fotos = await db
-    .select({ clave: archivo.clave, miniaturaClave: archivo.miniaturaClave, ancho: archivo.ancho, alto: archivo.alto })
+    .select({ clave: archivo.clave, miniaturaClave: archivo.miniaturaClave, ancho: archivo.ancho, alto: archivo.alto, privado: archivo.privado })
     .from(reclamoArchivo)
     .innerJoin(archivo, eq(reclamoArchivo.archivoId, archivo.id))
     .where(eq(reclamoArchivo.reclamoId, id))
     .orderBy(asc(reclamoArchivo.orden));
-  return { ...fila, fotos: fotos.map(urlsFoto) };
+  // Las fotos de reclamos son privadas: enlaces firmados que vencen (quien llama ya verificó el permiso).
+  // Las subidas antes de existir el bucket privado siguen en el público.
+  return { ...fila, fotos: await Promise.all(fotos.map((f) => (f.privado ? urlsFotoPrivada(f) : urlsFoto(f)))) };
 }
