@@ -6,12 +6,15 @@ import { cn } from "cn";
 import { VisorGaleria } from "@/componentes/sitio/visor-galeria";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import { filtrarPorServicio, serviciosConFotos } from "@/modulos/sitio/galeria";
+import { descripcionGaleria } from "@/modulos/sitio/metadatos";
 import { galeriaPublica } from "@/modulos/sitio/publico";
 
-export const metadata: Metadata = {
-  title: "Galería",
-  description: "Trabajos reales de TocTar Detailing en Tarija: fotos de antes y después de pulido, nano cerámico, interiores, vidrios y faroles.",
-};
+// La descripción para Google nombra los servicios que tienen fotos.
+export async function generateMetadata(): Promise<Metadata> {
+  await connection();
+  const fotos = await galeriaPublica();
+  return { title: "Galería", description: descripcionGaleria(serviciosConFotos(fotos).map((s) => s.nombre)) };
+}
 
 // HU-12 Galería pública (RF-04): fotos visibles de servicios visibles, filtrables por servicio.
 // El filtro son enlaces (?servicio=<slug>): funciona sin JavaScript.

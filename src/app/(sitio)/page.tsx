@@ -7,12 +7,18 @@ import { Monograma } from "@/componentes/sitio/iconos-marca";
 import { PortadaArte } from "@/componentes/sitio/portada-arte";
 import { TarjetaServicio } from "@/componentes/sitio/tarjeta-servicio";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
+import { recortarDescripcion } from "@/modulos/sitio/metadatos";
 import { contenidoPublico, galeriaPublica, serviciosPublicos } from "@/modulos/sitio/publico";
 
-export const metadata: Metadata = {
-  title: { absolute: "TocTar Detailing · Detailing automotriz en Tarija" },
-  description: "Pulido y nano cerámico, lavado de interior, pulido de vidrios, faroles y más, en Tarija. Escríbenos por WhatsApp y te cotizamos.",
-};
+// La descripción para Google es la presentación que escribe el dueño (HU-08): se lee al pedir la página.
+export async function generateMetadata(): Promise<Metadata> {
+  await connection();
+  const { presentacion } = await contenidoPublico("inicio");
+  return {
+    title: { absolute: "TocTar Detailing · Detailing automotriz en Tarija" },
+    description: recortarDescripcion(presentacion as string),
+  };
+}
 
 const SERVICIOS_EN_PORTADA = 6;
 const FOTOS_EN_PORTADA = 6;
