@@ -10,8 +10,24 @@ export function sitioIndexable(): boolean {
   return process.env.SITIO_INDEXABLE === "true";
 }
 
-/** Páginas fijas del sitio público, en el orden del menú. */
-export const PAGINAS_SITIO = ["/", "/servicios", "/galeria", "/nosotros", "/preguntas-frecuentes", "/contacto", "/garantia"] as const;
+export type EnlaceSitio = { href: string; texto: string };
+
+/** Páginas principales del sitio: la barra del encabezado y la primera parte del menú del celular. */
+export const PAGINAS_PRINCIPALES: EnlaceSitio[] = [
+  { href: "/servicios", texto: "Servicios" },
+  { href: "/galeria", texto: "Galería" },
+  { href: "/nosotros", texto: "Nosotros" },
+  { href: "/contacto", texto: "Contacto" },
+];
+
+/** Páginas de consulta: en la computadora van solo en el pie; en el celular, también en el menú. */
+export const PAGINAS_SECUNDARIAS: EnlaceSitio[] = [
+  { href: "/preguntas-frecuentes", texto: "Preguntas frecuentes" },
+  { href: "/garantia", texto: "Garantía y reclamos" },
+];
+
+/** Todas las páginas fijas del sitio público (para el mapa del sitio). */
+export const PAGINAS_SITIO = ["/", ...PAGINAS_PRINCIPALES.map((p) => p.href), ...PAGINAS_SECUNDARIAS.map((p) => p.href)];
 
 /** Lo que nunca va a Google: el panel, el ingreso y la API. */
 export const RUTAS_PRIVADAS = ["/panel", "/ingresar", "/api"] as const;

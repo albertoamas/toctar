@@ -43,8 +43,18 @@ async function BotonFijo({ servicio }: { servicio?: string }) {
  * Botón con texto que abre WhatsApp (por defecto, el principal de la pantalla).
  * Si todavía no hay número cargado, lleva a la página de contacto.
  */
-export function BotonWhatsApp({ texto = "Escribir por WhatsApp", servicio, variante = "principal" }: { texto?: string; servicio?: string; variante?: "principal" | "contorno" }) {
-  const clase = cn("tt-boton", variante === "principal" ? "tt-boton--principal" : "tt-boton--contorno");
+export function BotonWhatsApp({
+  texto = "Escribir por WhatsApp",
+  servicio,
+  variante = "principal",
+  className,
+}: {
+  texto?: string;
+  servicio?: string;
+  variante?: "principal" | "contorno";
+  className?: string;
+}) {
+  const clase = cn("tt-boton", variante === "principal" ? "tt-boton--principal" : "tt-boton--contorno", className);
   return (
     <Suspense
       fallback={

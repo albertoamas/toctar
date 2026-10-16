@@ -3,6 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { resumirHorarios } from "@/lib/horarios";
+import { PAGINAS_PRINCIPALES, PAGINAS_SECUNDARIAS } from "@/lib/sitio";
 import { enlaceMapa } from "@/lib/ubicacion";
 import { urlSitio } from "@/lib/sitio";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
@@ -15,14 +16,7 @@ import { datosNegocioLocal, jsonLd } from "@/modulos/sitio/negocio-local";
 // El build no tiene base de datos: los datos se leen al atender el pedido (connection) y quedan
 // en caché con la etiqueta "negocio" hasta que se editen. Los mismos datos van a Google como JSON-LD (HU-18).
 
-const ENLACES = [
-  { href: "/servicios", texto: "Servicios" },
-  { href: "/galeria", texto: "Galería" },
-  { href: "/nosotros", texto: "Nosotros" },
-  { href: "/preguntas-frecuentes", texto: "Preguntas frecuentes" },
-  { href: "/contacto", texto: "Contacto" },
-  { href: "/garantia", texto: "Garantía y reclamos" },
-];
+const ENLACES = [...PAGINAS_PRINCIPALES, ...PAGINAS_SECUNDARIAS];
 
 export function Pie() {
   // Sin línea LED: el encabezado y la portada ya la usan (máximo dos por página).
