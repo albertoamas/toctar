@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useActionState, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { ArrowDownIcon, ArrowUpIcon, CameraIcon, EyeIcon, EyeOffIcon, PencilIcon, TrashIcon, UploadIcon, XIcon } from "lucide-react";
-import { toast } from "sonner";
+import { avisarResultado } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { Selector } from "@/componentes/panel/selector";
 import { achicarFoto } from "@/componentes/panel/subida-foto";
@@ -28,11 +28,6 @@ import { cambiarVisibilidadGaleria, eliminarGaleriaItem, guardarGaleriaItem, mov
 type Foto = { miniatura: string; ancho: number | null; alto: number | null };
 export type ItemGaleria = { id: number; servicioId: number; servicio: string; descripcion: string; visible: boolean; antes: Foto | null; despues: Foto };
 type Servicio = { id: number; nombre: string };
-
-function avisar(r: EstadoFormulario) {
-  if (r.ok && r.mensaje) toast.success(r.mensaje);
-  else if (r.mensaje) toast.error(r.mensaje);
-}
 
 export function GaleriaPanel({ items, servicios }: { items: ItemGaleria[]; servicios: Servicio[] }) {
   const [filtro, setFiltro] = useState("");
@@ -90,7 +85,7 @@ function Miniatura({ foto, alt, etiqueta }: { foto: Foto; alt: string; etiqueta?
 function Tarjeta({ item, servicios, primero, ultimo, ordenable }: { item: ItemGaleria; servicios: Servicio[]; primero: boolean; ultimo: boolean; ordenable: boolean }) {
   const [editando, setEditando] = useState(false);
   const [pendiente, iniciar] = useTransition();
-  const ejecutar = (accion: () => Promise<EstadoFormulario>) => iniciar(async () => avisar(await accion()));
+  const ejecutar = (accion: () => Promise<EstadoFormulario>) => iniciar(async () => avisarResultado(await accion()));
 
   return (
     <li className={`flex flex-col overflow-hidden rounded-sm border border-border ${item.visible ? "" : "opacity-70"}`}>
@@ -144,7 +139,7 @@ function Tarjeta({ item, servicios, primero, ultimo, ordenable }: { item: ItemGa
 function EditarItem({ item, servicios, alTerminar }: { item: ItemGaleria; servicios: Servicio[]; alTerminar: () => void }) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(async (previo, datos) => {
     const r = await guardarGaleriaItem(previo, datos);
-    avisar(r);
+    avisarResultado(r);
     if (r.ok) alTerminar();
     return r;
   }, {});
@@ -193,7 +188,7 @@ function Eliminar({ item }: { item: ItemGaleria }) {
             onClick={() =>
               iniciar(async () => {
                 const r = await eliminarGaleriaItem(item.id);
-                avisar(r);
+                avisarResultado(r);
                 if (r.ok) setAbierto(false);
               })
             }
@@ -229,7 +224,7 @@ function SubirFotos({ servicios, alTerminar }: { servicios: Servicio[]; alTermin
       try {
         const r = await subirGaleria({}, datos);
         setEstado(r);
-        avisar(r);
+        avisarResultado(r);
         if (r.ok) alTerminar();
       } catch {
         setEstado({ mensaje: "No se pudieron subir las fotos. Revisa tu conexión y vuelve a intentar." });

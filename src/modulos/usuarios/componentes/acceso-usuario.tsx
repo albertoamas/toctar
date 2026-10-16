@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { CircleAlertIcon } from "lucide-react";
-import { toast } from "sonner";
+import { conAviso } from "@/componentes/panel/avisos";
 import { Button } from "@/componentes/ui/button";
 import {
   Dialog,
@@ -16,8 +16,8 @@ import {
 } from "@/componentes/ui/dialog";
 import { Input } from "@/componentes/ui/input";
 import { Label } from "@/componentes/ui/label";
+import type { EstadoFormulario } from "@/lib/formularios";
 import { desactivarUsuario, reactivarUsuario, restablecerContrasena } from "../acciones";
-import type { EstadoFormulario } from "../esquemas";
 
 type Props = {
   id: number;
@@ -27,21 +27,6 @@ type Props = {
   esUnoMismo: boolean;
 };
 
-type Accion = (previo: EstadoFormulario, datos: FormData) => Promise<EstadoFormulario>;
-
-/**
- * Muestra el aviso desde la acción misma, no desde un efecto: al desactivar o reactivar,
- * la página se recarga y el bloque se reemplaza antes de que un efecto alcance a correr.
- */
-function conAviso(accion: Accion, alTerminar?: (r: EstadoFormulario) => void): Accion {
-  return async (previo, datos) => {
-    const resultado = await accion(previo, datos);
-    if (resultado.ok && resultado.mensaje) toast.success(resultado.mensaje);
-    else if (resultado.mensaje) toast.error(resultado.mensaje);
-    alTerminar?.(resultado);
-    return resultado;
-  };
-}
 
 export function AccesoUsuario({ id, nombre, desactivado, esUnoMismo }: Props) {
   return (

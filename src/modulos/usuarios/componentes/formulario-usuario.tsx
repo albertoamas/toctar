@@ -1,18 +1,21 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
-import { toast } from "sonner";
+import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
+import type { EstadoFormulario } from "@/lib/formularios";
 import type { Permiso } from "@/lib/permisos";
 import { ROLES, type Rol } from "@/lib/roles";
 import { actualizarUsuario, crearUsuario } from "../acciones";
-import type { EstadoFormulario } from "../esquemas";
 import { DESCRIPCION_PERMISO, DESCRIPCION_ROL, NOMBRE_ROL } from "../textos";
+
+const crearConAviso = conAviso(crearUsuario);
+const actualizarConAviso = conAviso(actualizarUsuario);
 
 type Props =
   | { modo: "crear"; asignables: { permiso: Permiso; nombre: string }[] }
@@ -25,7 +28,7 @@ type Props =
 export function FormularioUsuario(props: Props) {
   const editar = props.modo === "editar" ? props.usuario : null;
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
-    editar ? actualizarUsuario : crearUsuario,
+    editar ? actualizarConAviso : crearConAviso,
     {},
   );
   const valores = estado.valores;
@@ -33,11 +36,6 @@ export function FormularioUsuario(props: Props) {
   const [verContrasena, setVerContrasena] = useState(false);
   const permisosMarcados = valores ? (valores.permisos ?? "").split(",") : (editar?.permisos ?? []);
   const e = estado.errores ?? {};
-
-  useEffect(() => {
-    if (estado.ok && estado.mensaje) toast.success(estado.mensaje);
-    else if (estado.mensaje) toast.error(estado.mensaje);
-  }, [estado]);
 
   return (
     <form action={accion} className="flex max-w-xl flex-col gap-6" noValidate>

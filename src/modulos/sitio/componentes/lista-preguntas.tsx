@@ -2,7 +2,7 @@
 
 import { useActionState, useState, useTransition } from "react";
 import { ArrowDownIcon, ArrowUpIcon, EyeIcon, EyeOffIcon, PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
-import { toast } from "sonner";
+import { avisarResultado } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 import {
@@ -24,15 +24,10 @@ import { cambiarVisibilidadPregunta, eliminarPregunta, guardarPregunta, moverPre
 
 type Pregunta = { id: number; pregunta: string; respuesta: string; visible: boolean };
 
-function avisar(r: EstadoFormulario) {
-  if (r.ok && r.mensaje) toast.success(r.mensaje);
-  else if (r.mensaje) toast.error(r.mensaje);
-}
-
 export function ListaPreguntas({ preguntas }: { preguntas: Pregunta[] }) {
   const [editando, setEditando] = useState<number | "nueva" | null>(null);
   const [pendiente, iniciar] = useTransition();
-  const ejecutar = (accion: () => Promise<EstadoFormulario>) => iniciar(async () => avisar(await accion()));
+  const ejecutar = (accion: () => Promise<EstadoFormulario>) => iniciar(async () => avisarResultado(await accion()));
 
   return (
     <div className="flex max-w-3xl flex-col gap-4">
@@ -102,7 +97,7 @@ export function ListaPreguntas({ preguntas }: { preguntas: Pregunta[] }) {
 function FormularioPregunta({ pregunta, alTerminar }: { pregunta?: Pregunta; alTerminar: () => void }) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(async (previo, datos) => {
     const r = await guardarPregunta(previo, datos);
-    avisar(r);
+    avisarResultado(r);
     if (r.ok) alTerminar();
     return r;
   }, {});
@@ -153,7 +148,7 @@ function Eliminar({ pregunta }: { pregunta: Pregunta }) {
             onClick={() =>
               iniciar(async () => {
                 const r = await eliminarPregunta(pregunta.id);
-                avisar(r);
+                avisarResultado(r);
                 if (r.ok) setAbierto(false);
               })
             }

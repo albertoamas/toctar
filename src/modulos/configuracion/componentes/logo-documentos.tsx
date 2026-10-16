@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useActionState, useRef, useSyncExternalStore } from "react";
 import { ImageIcon, UploadIcon } from "lucide-react";
-import { toast } from "sonner";
+import { conAviso } from "@/componentes/panel/avisos";
 import { MensajeError } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 import { subirLogo } from "../acciones";
@@ -14,11 +14,7 @@ type Props = { logo: { url: string; ancho: number | null; alto: number | null } 
 
 const sinSuscripcion = () => () => {};
 
-async function subirConAviso(previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
-  const resultado = await subirLogo(previo, datos);
-  if (resultado.ok && resultado.mensaje) toast.success(resultado.mensaje);
-  return resultado;
-}
+const subirConAviso = conAviso(subirLogo);
 
 // Logo para el PDF de cotización y otros documentos (no cambia el logo del sitio, que es el de la marca).
 // Se sube apenas se elige el archivo.

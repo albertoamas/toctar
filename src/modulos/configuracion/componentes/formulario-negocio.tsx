@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { ExternalLinkIcon } from "lucide-react";
-import { toast } from "sonner";
+import { conAviso } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
@@ -19,14 +19,8 @@ type Props = {
   horarios: DiaHorario[];
 };
 
-/** Muestra el aviso desde la acción: el formulario se vuelve a pintar con los datos guardados. */
-async function guardarConAviso(previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
-  const resultado = await guardarNegocio(previo, datos);
-  if (resultado.ok && resultado.mensaje) toast.success(resultado.mensaje);
-  else if (resultado.errores) toast.error("Revisa los campos marcados.");
-  else if (resultado.mensaje) toast.error(resultado.mensaje);
-  return resultado;
-}
+// El aviso sale desde la acción: el formulario se vuelve a pintar con los datos guardados.
+const guardarConAviso = conAviso(guardarNegocio);
 
 export function FormularioNegocio(props: Props) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(guardarConAviso, {});

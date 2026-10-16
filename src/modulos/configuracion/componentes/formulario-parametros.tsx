@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { toast } from "sonner";
+import { conAviso } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
@@ -10,12 +10,7 @@ import { guardarParametros } from "../acciones";
 import type { EstadoFormulario } from "../esquemas";
 import { PARAMETROS, type ClaveParametro } from "../parametros";
 
-async function guardarConAviso(previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
-  const resultado = await guardarParametros(previo, datos);
-  if (resultado.ok && resultado.mensaje) toast.success(resultado.mensaje);
-  else if (resultado.errores) toast.error("Revisa los campos marcados.");
-  return resultado;
-}
+const guardarConAviso = conAviso(guardarParametros);
 
 const NUMEROS: ClaveParametro[] = ["adelanto_sugerido", "validez_cotizacion_dias", "intervalo_mantenimiento_meses"];
 const TEXTOS: ClaveParametro[] = ["condiciones_cotizacion", "garantia_cotizacion"];

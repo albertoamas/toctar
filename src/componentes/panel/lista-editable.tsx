@@ -1,9 +1,10 @@
 import { useActionState, useState, useTransition } from "react";
 import { ArrowDownIcon, ArrowUpIcon, PencilIcon, PlusIcon } from "lucide-react";
-import { toast } from "sonner";
+import { avisarResultado } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
+import type { EstadoFormulario } from "@/lib/formularios";
 
 // Componente de cliente: se usa dentro de otros componentes de cliente (recibe funciones como props).
 // Lista editable del panel: agregar, renombrar, subir y bajar, desactivar y reactivar; nunca se borra (D-6).
@@ -11,14 +12,12 @@ import { Input } from "@/componentes/ui/input";
 
 export type ElementoLista = { id: number; nombre: string; descripcion: string | null; orden: number; activo: boolean };
 
-/** Lo que devuelven las acciones (mismo formato que EstadoFormulario de cada módulo). */
-type Resultado = { ok?: boolean; mensaje?: string; errores?: Partial<Record<string, string>>; valores?: Record<string, string> };
 
 export type AccionesLista = {
   /** Agrega (sin "id") o renombra (con "id"). Recibe "nombre", "descripcion" y los campos ocultos. */
-  guardar: (previo: Resultado, datos: FormData) => Promise<Resultado>;
-  mover: (id: number, direccion: "subir" | "bajar") => Promise<Resultado>;
-  cambiarEstado: (id: number, activo: boolean) => Promise<Resultado>;
+  guardar: (previo: EstadoFormulario, datos: FormData) => Promise<EstadoFormulario>;
+  mover: (id: number, direccion: "subir" | "bajar") => Promise<EstadoFormulario>;
+  cambiarEstado: (id: number, activo: boolean) => Promise<EstadoFormulario>;
 };
 
 type Props = {
@@ -37,11 +36,6 @@ type Props = {
   nivel?: 2 | 3;
 };
 
-function avisar(r: Resultado) {
-  if (r.ok && r.mensaje) toast.success(r.mensaje);
-  else if (r.mensaje) toast.error(r.mensaje);
-}
-
 export function ListaEditable(props: Props) {
   const { id, titulo, singular, elementos, acciones } = props;
   const activos = elementos.filter((e) => e.activo);
@@ -50,7 +44,7 @@ export function ListaEditable(props: Props) {
   const [pendiente, iniciar] = useTransition();
   const Titulo = props.nivel === 3 ? "h3" : "h2";
 
-  const ejecutar = (accion: () => Promise<Resultado>) => iniciar(async () => avisar(await accion()));
+  const ejecutar = (accion: () => Promise<EstadoFormulario>) => iniciar(async () => avisarResultado(await accion()));
 
   return (
     <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-4">
@@ -126,9 +120,9 @@ export function ListaEditable(props: Props) {
 
 function FormularioElemento(props: Props & { elemento?: ElementoLista; alTerminar: () => void }) {
   const { id, singular, campoDescripcion, camposOcultos, elemento, alTerminar } = props;
-  const [estado, accion, enviando] = useActionState<Resultado, FormData>(async (previo, datos) => {
+  const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(async (previo, datos) => {
     const r = await props.acciones.guardar(previo, datos);
-    avisar(r);
+    avisarResultado(r);
     if (r.ok) alTerminar();
     return r;
   }, {});

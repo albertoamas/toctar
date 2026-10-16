@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useTransition } from "react";
 import { ArrowDownIcon, ArrowUpIcon, ImageOffIcon } from "lucide-react";
-import { toast } from "sonner";
+import { avisarResultado } from "@/componentes/panel/avisos";
 import { Button } from "@/componentes/ui/button";
 import { moverServicio } from "../acciones";
 
@@ -16,8 +16,7 @@ export function ListaServicios({ servicios }: { servicios: Fila[] }) {
   const [pendiente, iniciar] = useTransition();
   const mover = (id: number, direccion: "subir" | "bajar") =>
     iniciar(async () => {
-      const r = await moverServicio({ id, direccion });
-      if (r.mensaje && !r.ok) toast.error(r.mensaje);
+      avisarResultado(await moverServicio({ id, direccion }));
     });
 
   if (servicios.length === 0) return <p className="text-tinta-suave">Todavía no hay servicios. Agrega el primero.</p>;

@@ -2,6 +2,7 @@ import Image from "next/image";
 import { useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { CameraIcon, ImageIcon, TrashIcon } from "lucide-react";
 import { toast } from "sonner";
+import { avisarResultado } from "@/componentes/panel/avisos";
 import { MensajeError } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 import { TIPOS_FOTO } from "@/lib/formato-fotos";
@@ -121,8 +122,7 @@ export function SubidaFoto({ id, accion, camposOcultos, actual, textoVacio, quit
             disabled={ocupado}
             onClick={() =>
               iniciar(async () => {
-                const r = await quitar();
-                if (r.mensaje) toast.success(r.mensaje);
+                avisarResultado(await quitar());
               })
             }
           >
