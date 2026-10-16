@@ -58,3 +58,13 @@ test("el panel y el ingreso no se indexan en Google", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Inicio");
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex, nofollow");
 });
+
+// Pulido visual 1.2
+test("los enlaces del pie tienen 44 px para el dedo", async ({ page }) => {
+  await page.goto("/nosotros");
+  const enlaces = page.getByRole("navigation", { name: "Pie" }).getByRole("link");
+  await expect(enlaces).toHaveCount(6);
+  for (const caja of await enlaces.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height))) {
+    expect(caja).toBeGreaterThanOrEqual(44);
+  }
+});

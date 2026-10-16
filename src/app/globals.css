@@ -188,6 +188,21 @@
     transform: skewX(-30deg);
   }
 
+  /* Área táctil de 44 px de alto para enlaces de texto sueltos, sin cambiar el diseño: una capa invisible
+     centrada en el enlace recibe el toque. Para listas de enlaces, mejor una fila de 44 px (min-h-11). */
+  .tt-area-toque {
+    position: relative;
+  }
+  .tt-area-toque::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 0;
+    left: 0;
+    height: 44px;
+    transform: translateY(-50%);
+  }
+
   /* El lema entre guiones cortos, como en el logo. */
   .tt-lema {
     display: inline-flex;
