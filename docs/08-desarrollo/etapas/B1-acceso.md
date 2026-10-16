@@ -31,10 +31,10 @@ El dueño da acceso al panel a cada persona del taller, con el rol que le corres
 
 | Regla | Qué dice | Dónde se garantiza |
 |---|---|---|
-| RF-14, RNF-04 | Ingreso con usuario y contraseña, cierre de sesión, vence a los 7 días sin uso | Better Auth (`src/lib/auth.ts`). Hecho en HU-01 |
+| RF-14, RNF-04 | Ingreso con usuario y contraseña, cierre de sesión, vence a los 7 días sin uso | Better Auth (`src/lib/auth.ts`), usado solo desde el servidor: no hay ruta `/api/auth`. Límite propio de intentos de ingreso (`src/modulos/acceso/`), agregado en la revisión de seguridad del 16/10. Hecho en HU-01 |
 | RF-15 | El dueño crea usuarios, asigna rol, restablece la contraseña y desactiva | Acciones de `src/modulos/usuarios/`, solo para el rol `dueno` |
 | RF-16, S-2, S-4 | El dueño define los módulos del encargado y si puede autorizar entregas con saldo | Tabla `usuario_permiso`, leída por `src/lib/permisos.ts` |
-| RNF-05 | Los permisos se validan en el servidor | Toda página y acción llama a `exigirModulo` o `exigirRol` **antes** de leer o escribir. Ocultar el menú no cuenta como control |
+| RNF-05 | Los permisos se validan en el servidor | Toda página y acción llama a `exigirModulo` **antes** de leer o escribir. Ocultar el menú no cuenta como control |
 | RN-01 | Solo el dueño cotiza | El módulo `cotizaciones` no es asignable al encargado: no existe la casilla y `permisos.ts` lo rechaza aunque esté en la base |
 | RN-12 | El técnico no ve precios ni pagos; solo sus órdenes | El técnico tiene únicamente el módulo `ordenes` (el filtro "solo las suyas" se aplica en C4) |
 | RN-13 | Entrega con saldo: el dueño o un encargado autorizado | Permiso `entrega_con_saldo` (se usa en C4; aquí solo se asigna) |
@@ -93,7 +93,6 @@ puedeVerModulo(usuario, modulo): boolean           // función pura: rol + permi
 puede(usuario, "entrega_con_saldo"): boolean
 modulosDelMenu(usuario): Modulo[]                   // solo los módulos ya construidos
 exigirModulo(modulo): Promise<UsuarioActual>        // páginas y acciones: sin sesión → /ingresar; sin permiso → /panel/sin-acceso
-exigirRol("dueno"): Promise<UsuarioActual>
 ```
 
 - `UsuarioActual` (de `src/lib/sesion.ts`) suma sus `permisos`, leídos de la base una sola vez por pedido.
@@ -128,14 +127,14 @@ Todas están dentro del panel (tema claro) y en cada una la primera línea es `e
 
 ### `/panel/sin-acceso`
 - Título "Sin acceso" y el texto "Tu usuario no tiene habilitado este módulo. Si lo necesitas, pídeselo al dueño.", con el botón "Volver al inicio".
-- Es una página propia a la que redirigen `exigirModulo` y `exigirRol`. `forbidden()` de Next.js sigue experimental en la versión 16.
+- Es una página propia a la que redirige `exigirModulo`. `forbidden()` de Next.js sigue experimental en la versión 16.
 
 ### Menú del panel
 `NavegacionPanel` recibe los módulos de `modulosDelMenu(usuario)`. Como depende de la sesión, se arma dentro de `<Suspense>`.
 
 ## 7. Acciones del servidor
 
-Van en `src/modulos/usuarios/acciones.ts`, con sus esquemas en `esquemas.ts`. Todas empiezan con `exigirRol("dueno")` y validan con Zod.
+Van en `src/modulos/usuarios/acciones.ts`, con sus esquemas en `esquemas.ts`. Todas empiezan con `exigirModulo("usuarios")` (solo el dueño tiene ese módulo) y validan con Zod. `exigirRol` se quitó en la revisión de seguridad del 16/10: nadie la usaba.
 
 | Acción | Entrada | Qué hace | Errores |
 |---|---|---|---|
@@ -200,7 +199,7 @@ HU-02 lleva la tabla y el módulo central porque sin ellos no puede negar el acc
 ## 12. Criterio de salida
 
 - [x] Las pruebas unitarias de la matriz y las pruebas E2E pasan: 73 unitarias y 38 E2E (celular y escritorio), estables en 3 corridas seguidas.
-- [x] Ninguna página ni acción del panel sale sin `exigirModulo`, `exigirRol` o `exigirSesion`: revisadas las 5 páginas y las 5 acciones (14/10).
+- [x] Ninguna página ni acción del panel sale sin `exigirModulo` o `exigirSesion`: revisadas las 5 páginas y las 5 acciones (14/10). Revisado de nuevo el 16/10 con toda la Entrega 1: 16 páginas y 30 acciones del panel; las 3 públicas (ingresar, salir y enviar un reclamo) lo son a propósito.
 - [x] Toda llamada a `auth.api.*` del panel lleva `headers`: revisadas las 12. La única sin sesión es la del primer dueño en `src/lib/arranque.ts`, a propósito.
 - [ ] Demo del viernes 23 (guion abajo).
 
