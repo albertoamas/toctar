@@ -2,7 +2,15 @@ import { describe, expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
 import { nombreRepetido, puedeDesactivar } from "@/lib/orden";
 import { PATRON_SLUG, crearSlug } from "@/lib/slug";
-import { esquemaServicio, esquemaVariante } from "@/modulos/sitio/esquemas";
+import {
+  esquemaEstadoVariante,
+  esquemaId,
+  esquemaIdFormulario,
+  esquemaMoverVariante,
+  esquemaServicio,
+  esquemaVariante,
+  esquemaVisibilidad,
+} from "@/modulos/sitio/esquemas";
 
 // HU-07 Servicios del sitio. Criterios: docs/09-pruebas/criterios-entrega-1.md (7.x).
 
@@ -84,5 +92,21 @@ describe("variantes (D-2)", () => {
 
   test("la descripción es opcional", () => {
     expect(esquemaVariante.parse({ servicioId: "1", nombre: "Premium", descripcion: "" })).toEqual({ servicioId: 1, nombre: "Premium", descripcion: null });
+  });
+});
+
+describe("datos sueltos de las acciones (revisión de seguridad)", () => {
+  test("los ids deben ser enteros positivos", () => {
+    expect(esquemaId.safeParse(3).success).toBe(true);
+    for (const malo of [0, -1, 1.5, Number.NaN, "3", null]) expect(esquemaId.safeParse(malo).success).toBe(false);
+    expect(esquemaIdFormulario.parse("7")).toBe(7);
+    expect(esquemaIdFormulario.safeParse("abc").success).toBe(false);
+  });
+
+  test("mostrar, ocultar y activar piden un sí o no de verdad", () => {
+    expect(esquemaVisibilidad.safeParse({ id: 1, visible: "true" }).success).toBe(false);
+    expect(esquemaEstadoVariante.safeParse({ servicioId: 1, id: 2, activo: 1 }).success).toBe(false);
+    expect(esquemaMoverVariante.safeParse({ servicioId: 1, id: 2, direccion: "subir" }).success).toBe(true);
+    expect(esquemaMoverVariante.safeParse({ id: 2, direccion: "subir" }).success).toBe(false);
   });
 });
