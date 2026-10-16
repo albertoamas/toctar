@@ -5,10 +5,10 @@ import { APIError } from "better-auth/api";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import type { z } from "zod";
 import { db } from "@/db";
 import { usuarioPermiso } from "@/db/esquema";
 import { auth } from "@/lib/auth";
+import { erroresDe, type EstadoFormulario } from "@/lib/formularios";
 import type { Permiso } from "@/lib/permisos";
 import type { Rol } from "@/lib/roles";
 import { exigirModulo } from "@/lib/sesion";
@@ -19,7 +19,6 @@ import {
   esquemaCrearUsuario,
   esquemaIdUsuario,
   esquemaRestablecer,
-  type EstadoFormulario,
 } from "./esquemas";
 import { cambioDeRolDejaSinDueno } from "./reglas";
 
@@ -27,12 +26,6 @@ import { cambioDeRolDejaSinDueno } from "./reglas";
 // Toda llamada a auth.api.* lleva los headers de la sesión: sin ellos, Better Auth no verifica permisos.
 
 const RUTA = "/panel/usuarios";
-
-function erroresDe(error: z.ZodError): EstadoFormulario["errores"] {
-  const errores: Record<string, string> = {};
-  for (const i of error.issues) errores[String(i.path[0])] ??= i.message;
-  return errores;
-}
 
 function valoresDe(datos: FormData): Record<string, string> {
   const v: Record<string, string> = {};

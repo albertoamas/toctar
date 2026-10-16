@@ -9,8 +9,9 @@ import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { DiaHorario } from "@/lib/horarios";
 import { enlaceMapa, leerUbicacion } from "@/lib/ubicacion";
+import type { EstadoFormulario } from "@/lib/formularios";
 import { guardarNegocio } from "../acciones";
-import { NOMBRE_RED, REDES, type EstadoFormulario } from "../esquemas";
+import { NOMBRE_RED, REDES } from "../esquemas";
 import { EditorHorarios } from "./editor-horarios";
 
 type Props = {

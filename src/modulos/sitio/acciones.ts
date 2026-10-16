@@ -5,7 +5,7 @@ import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { contenidoPagina, faq, galeriaItem, servicio, variante } from "@/db/esquema";
-import { erroresDe, type EstadoFormulario } from "@/lib/formularios";
+import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { nombreRepetido, puedeDesactivar, reordenar } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
@@ -35,14 +35,6 @@ function despuesDeCambiar(id?: number) {
   updateTag(ETIQUETA_SERVICIOS);
   revalidatePath(RUTA);
   if (id) revalidatePath(`${RUTA}/servicios/${id}`);
-}
-
-/** El índice único de la base también frena repetidos (por si dos personas guardan a la vez). */
-function esRepetido(error: unknown): string | null {
-  const e = error as { code?: string; constraint?: string; cause?: { code?: string; constraint?: string } };
-  const causa = e?.cause ?? e;
-  if (causa?.code !== "23505") return null;
-  return causa.constraint ?? "";
 }
 
 /** Dirección libre a partir del nombre: si ya existe, le agrega -2, -3… */
@@ -84,7 +76,7 @@ export async function crearServicio(_previo: EstadoFormulario, datos: FormData):
       return nuevo.id;
     });
   } catch (error) {
-    if (esRepetido(error) !== null) return { errores: { nombre: "Ya existe un servicio con ese nombre." }, valores };
+    if (indiceUnicoViolado(error) !== null) return { errores: { nombre: "Ya existe un servicio con ese nombre." }, valores };
     throw error;
   }
 
@@ -125,7 +117,7 @@ export async function guardarServicio(_previo: EstadoFormulario, datos: FormData
       })
       .where(eq(servicio.id, d.id));
   } catch (error) {
-    const restriccion = esRepetido(error);
+    const restriccion = indiceUnicoViolado(error);
     if (restriccion !== null) {
       const campo = restriccion.includes("slug") ? { slug: "Ya hay otra página con esa dirección." } : { nombre: "Ya existe un servicio con ese nombre." };
       return { errores: campo, valores: { ...valores, visible: visible ? "on" : "" } };
@@ -212,7 +204,7 @@ export async function guardarVariante(_previo: EstadoFormulario, datos: FormData
       await db.insert(variante).values({ servicioId, nombre, descripcion, orden });
     }
   } catch (error) {
-    if (esRepetido(error) !== null) return { errores: { nombre: "Ya existe una variante con ese nombre." }, valores };
+    if (indiceUnicoViolado(error) !== null) return { errores: { nombre: "Ya existe una variante con ese nombre." }, valores };
     throw error;
   }
 

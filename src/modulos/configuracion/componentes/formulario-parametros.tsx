@@ -6,8 +6,8 @@ import { Campo } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
+import type { EstadoFormulario } from "@/lib/formularios";
 import { guardarParametros } from "../acciones";
-import type { EstadoFormulario } from "../esquemas";
 import { PARAMETROS, type ClaveParametro } from "../parametros";
 
 const guardarConAviso = conAviso(guardarParametros);

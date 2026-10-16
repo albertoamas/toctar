@@ -6,9 +6,9 @@ import { ImageIcon, UploadIcon } from "lucide-react";
 import { conAviso } from "@/componentes/panel/avisos";
 import { MensajeError } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
+import type { EstadoFormulario } from "@/lib/formularios";
 import { subirLogo } from "../acciones";
 import { TIPOS_FOTO } from "@/lib/formato-fotos";
-import type { EstadoFormulario } from "../esquemas";
 
 type Props = { logo: { url: string; ancho: number | null; alto: number | null } | null };
 

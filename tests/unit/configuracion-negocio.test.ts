@@ -2,7 +2,8 @@ import { describe, expect, test } from "vitest";
 import { esquemaHorarios, resumirHorarios, semanaCerrada, type DiaHorario } from "@/lib/horarios";
 import { ERROR_ENLACE_CORTO, ERROR_SIN_COORDENADAS, enlaceMapa, leerUbicacion } from "@/lib/ubicacion";
 import { enlaceWhatsApp, formatearWhatsApp, mensajeWhatsApp, normalizarWhatsApp, whatsAppLocal } from "@/lib/whatsapp";
-import { erroresDe, esquemaNegocio, normalizarEnlaceRed } from "@/modulos/configuracion/esquemas";
+import { erroresDe } from "@/lib/formularios";
+import { esquemaNegocio, normalizarEnlaceRed } from "@/modulos/configuracion/esquemas";
 
 // HU-04 Datos del negocio. Criterios: docs/09-pruebas/criterios-entrega-1.md (4.x).
 

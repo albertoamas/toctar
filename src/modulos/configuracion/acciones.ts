@@ -4,17 +4,13 @@ import { eq, max } from "drizzle-orm";
 import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/db";
 import { espacioTaller, negocio, parametro, sucursal, tamanoVehiculo } from "@/db/esquema";
+import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { nombreRepetido, puedeDesactivar, reordenar } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
 import { whatsAppLocal } from "@/lib/whatsapp";
 import { ETIQUETA_NEGOCIO, ETIQUETA_PARAMETROS, listarElementos, obtenerConfiguracionNegocio, sucursalPrincipal } from "./consultas";
-import {
-  CAMPOS_NEGOCIO,
-  erroresDe,
-  esquemaNegocio,
-  type EstadoFormulario,
-} from "./esquemas";
+import { CAMPOS_NEGOCIO, esquemaNegocio } from "./esquemas";
 import {
   esquemaElemento,
   esquemaEstado,
@@ -134,12 +130,6 @@ export async function guardarParametros(_previo: EstadoFormulario, datos: FormDa
   return { ok: true, mensaje: "Cambios guardados.", valores: Object.fromEntries(CLAVES_PARAMETRO.map((c) => [c, String(entrada.data[c])])) };
 }
 
-/** El índice único de la base también frena nombres repetidos (por si dos personas guardan a la vez). */
-function esNombreRepetido(error: unknown): boolean {
-  const e = error as { code?: string; cause?: { code?: string } };
-  return e?.code === "23505" || e?.cause?.code === "23505";
-}
-
 function despuesDeCambiarLista() {
   updateTag(ETIQUETA_PARAMETROS);
   revalidatePath(`${RUTA}/taller`);
@@ -181,7 +171,7 @@ export async function guardarElemento(_previo: EstadoFormulario, datos: FormData
       }
     }
   } catch (error) {
-    if (esNombreRepetido(error)) return { errores: { nombre: mensajeRepetido(lista) }, valores };
+    if (indiceUnicoViolado(error) !== null) return { errores: { nombre: mensajeRepetido(lista) }, valores };
     throw error;
   }
 
