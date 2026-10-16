@@ -9,7 +9,7 @@
 GitHub (develop / main)
         │ push
         ▼
-VPS (Hetzner o DigitalOcean) ── Coolify (Traefik + https automático)
+VPS (Hetzner CX23, Alemania) ── Coolify (Traefik + https automático)
         ├── app "pruebas"     ← rama develop  → https://pruebas.<dominio>  + PostgreSQL 18 propio
         └── app "producción"  ← rama main     → https://<dominio>          + PostgreSQL 18 propio
 Cloudflare (cuenta de TocTar)
@@ -38,15 +38,15 @@ UptimeRobot → https://<dominio>/api/salud
 ## 2. VPS (unos 20 minutos)
 
 1. Crear la cuenta con el correo del negocio:
-   - **Hetzner** (recomendado): es el único que da 4 GB dentro de lo que se le dijo al dueño (USD 5 a 8 al mes). A veces pide verificar identidad al abrir la cuenta, y puede tardar un día: crear la cuenta apenas haya correo y tarjeta.
-   - **DigitalOcean**: más simple de abrir, pero 4 GB cuesta bastante más que lo presupuestado. Si se usa, conviene el de 2 GB más 2 GB de memoria swap en el disco.
+   - **Hetzner** (recomendado): el plan **CX23** (2 vCPU, 4 GB, 40 GB) en Alemania es el único con 4 GB dentro de lo que se le dijo al dueño. A veces pide verificar identidad al abrir la cuenta, y puede tardar un día: crear la cuenta apenas haya correo y tarjeta. Comparación completa en "Costos y proveedor" al final.
+   - **Si el CX23 figura como no disponible:** Contabo Cloud VPS 10 en EE. UU., con un precio parecido y más memoria, pero más lento y con peor soporte. Antes de pagar, confirmar el precio final y si cobra instalación.
    Revisar el precio vigente antes de contratar.
-   Activar la verificación en dos pasos e invitar a YankoSoft como miembro (Hetzner: Security → Members; DigitalOcean: Team).
+   Activar la verificación en dos pasos e invitar a YankoSoft como miembro (Hetzner: Security → Members).
 2. Crear el servidor:
-   - **Ubuntu 24.04**, en la región más cercana a Bolivia (Hetzner: Ashburn, EE. UU. Este; DigitalOcean: Nueva York).
-   - **4 GB de RAM y 2 vCPU** (Hetzner, el plan compartido más chico con 4 GB). Con 2 GB, compilar Next.js para dos entornos en la misma máquina se queda corto de memoria.
+   - **Ubuntu 24.04**, en **Nuremberg** (216 ms desde Tarija, la mejor de Hetzner en Europa). Los planes de Hetzner en EE. UU. subieron en 2026: 4 GB en Ashburn cuesta unos USD 37 al mes.
+   - **4 GB de RAM y 2 vCPU** (CX23). Con 2 GB, compilar Next.js para dos entornos en la misma máquina se queda corto de memoria.
    - **Acceso con clave SSH** de la PC de YankoSoft, no con contraseña: `ssh-keygen -t ed25519` y pegar el contenido de `~/.ssh/id_ed25519.pub`.
-   - **Copias del servidor activadas** (Hetzner Backups o DigitalOcean Backups): un extra chico que salva el servidor entero.
+   - **Copias del servidor activadas** (Hetzner Backups, 20 % del precio del servidor): salvan el servidor entero.
 3. **Firewall del proveedor:** permitir solo 22 (SSH), 80 y 443. Abrir el 8000 (panel de Coolify) solo mientras se configura y cerrarlo en el paso 4.8. **El 3000 nunca se abre:** la app solo se alcanza por el proxy (arquitectura, "Docker").
 4. Anotar la **IP pública** del servidor.
 
@@ -174,3 +174,34 @@ En el gestor de contraseñas de YankoSoft, en una entrada "TocTar":
 - las contraseñas iniciales.
 
 Al dueño se le entrega una hoja con sus cuentas: Cloudflare, VPS y UptimeRobot, todas con su correo.
+
+## Costos y proveedor (investigado el 15/10/2026)
+
+### Dominio `toctardetailing.com` (Cloudflare Registrar)
+
+- **Precio:** Cloudflare cobra lo que cobra el registro, sin recargo. Hoy son unos **USD 10,46 al año**, y la renovación cuesta lo mismo.
+- **Desde el 1/11/2026** Verisign sube el precio mayorista y el total pasa a unos **USD 11,15 al año**. Conviene comprar antes.
+- **Se paga una vez al año** y se renueva solo. Se pueden pagar varios años juntos, hasta 10.
+- **Primer año:** lo regala YankoSoft. Desde el segundo, lo paga TocTar.
+
+### Servidor: opciones medidas desde Tarija
+
+Latencia medida desde la PC de YankoSoft en Tarija (ping, 15/10). Precios por mes, sin impuestos.
+
+| Opción | Plan | Precio aprox. | Latencia | Comentario |
+|---|---|---|---|---|
+| **Hetzner Alemania** (recomendado) | CX23: 2 vCPU, 4 GB, 40 GB, 20 TB de tráfico | **€5,49 + IPv4 (unos USD 7)** | 216 ms | Confiable, se cobra por hora, sin permanencia. A veces el plan figura como no disponible |
+| Hetzner EE. UU. | CPX21: 3 vCPU, 4 GB | unos USD 37 | 118 ms | Subió en 2026: fuera de presupuesto |
+| Contabo EE. UU. | Cloud VPS 10: 4 vCPU, 8 GB | unos USD 5 a 6 (confirmar) | ~120 ms (estimada) | Barato y con mucha memoria; más lento y soporte flojo. Plan B |
+| Hostinger | KVM 1 / KVM 2 | USD 6,49 / 8,99 en promoción | — | La promoción exige pagar 24 meses adelantados; renueva a USD 11,99 / 14,99 |
+| Vultr Santiago | 2 vCPU, 4 GB | unos USD 24 a 30 | **71 ms** | La más rápida desde Bolivia, pero cuesta 3 o 4 veces lo presupuestado |
+| Vultr São Paulo | 2 vCPU, 4 GB | unos USD 30 | 111 ms | Ídem |
+| DigitalOcean Nueva York | 2 vCPU, 4 GB | USD 24 | sin respuesta al ping | Sin centros en Sudamérica; fuera de presupuesto |
+
+**Por qué Hetzner Alemania a pesar de la distancia:**
+- Es la única opción confiable dentro de USD 5 a 8.
+- La latencia pesa menos de lo que parece. Las páginas del sitio salen de la caché. Las fotos se sirven desde Cloudflare (R2), que está cerca del visitante. Al servidor solo va el HTML y el uso del panel.
+- Si el uso del panel en el taller se siente lento, se puede migrar a Vultr Santiago con el dueño de acuerdo en pagar más. Es mover la base y repetir esta guía.
+
+**Pago desde Bolivia:** antes de contratar, probar que la tarjeta acepte compras internacionales en dólares o euros. Algunos bancos las limitan.
+

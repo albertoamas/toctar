@@ -53,7 +53,7 @@ flowchart LR
 | PWA | Manifest + service worker mínimo (sin caché de datos) | Instalable, sin modo sin conexión (Acl-10) | — |
 | Pruebas | Vitest (reglas de negocio) + Playwright (flujos críticos) | Las reglas RN y los 5 flujos de secuencia quedan probados | — |
 | Contenedores | **Docker**: `Dockerfile` propio de la app y `docker-compose.yml` para desarrollo | La app se construye igual en la PC, en pruebas y en producción; no depende de lo instalado en el servidor y se puede mudar de proveedor en minutos | Instalar Node y PostgreSQL a mano en el servidor: cada servidor queda distinto |
-| Hosting | VPS (Hetzner, 4 GB RAM; con DigitalOcean, 2 GB más swap para no pasar el presupuesto) con **Coolify** | Despliegue automático al hacer push, https automático, respaldos de PostgreSQL programados. Unos USD 5 a 8/mes | Vercel: el plan gratis no permite uso comercial y el Pro cuesta USD 20/mes; Railway: costo variable |
+| Hosting | VPS Hetzner CX23 (4 GB, Alemania; comparación en `07-preparacion/guia-de-despliegue.md`) con **Coolify** | Despliegue automático al hacer push, https automático, respaldos de PostgreSQL programados. Unos USD 5 a 8/mes | Vercel: el plan gratis no permite uso comercial y el Pro cuesta USD 20/mes; Railway: costo variable |
 | Monitoreo | UptimeRobot (gratis) | Aviso por correo si el sitio se cae | — |
 
 Las versiones exactas de cada librería se fijan en la etapa 7, al crear el proyecto, usando la última estable de ese momento.
@@ -64,9 +64,9 @@ Según el acuerdo, TocTar paga dominio y hosting al costo del proveedor; YankoSo
 
 | Concepto | Costo aproximado | Quién paga |
 |---|---|---|
-| VPS con 4 GB de RAM (Hetzner) | USD 5 a 8/mes | TocTar desde el mes 2 |
+| VPS Hetzner CX23 (4 GB, Alemania) | unos USD 7/mes (€5,49 + IPv4) | TocTar desde el mes 2 |
 | Cloudflare R2 | Gratis hasta 10 GB | — |
-| Dominio .com | USD 10 a 15/año | TocTar desde el año 2 |
+| Dominio toctardetailing.com (Cloudflare, al costo) | USD 10,46/año; USD 11,15 desde el 1/11/2026 | TocTar desde el año 2 |
 | UptimeRobot, Coolify | Gratis | — |
 
 Se verifica el precio real al contratar y se le informa al dueño antes (acuerdo).
