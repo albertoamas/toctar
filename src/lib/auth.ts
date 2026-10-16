@@ -10,6 +10,11 @@ import { PATRON_NOMBRE_USUARIO } from "@/lib/usuarios";
 // Autenticación con usuario y contraseña (HU-01). Nadie se registra solo: los usuarios
 // los crea el dueño desde el panel (HU-02) o el script del primer dueño.
 //
+// Sin ruta HTTP (/api/auth) a propósito: la app usa Better Auth solo desde el servidor (acciones y páginas),
+// así que su API pública no se expone. Con ella, cualquiera podía averiguar qué usuarios existen
+// (/is-username-available) y cada usuario cambiarse el nombre de usuario (/update-user). El límite de intentos
+// de ingreso es propio (src/modulos/acceso/acciones.ts): el de Better Auth solo cubre los pedidos por HTTP.
+//
 // IMPORTANTE: las funciones de auth.api.* del plugin admin (createUser, banUser,
 // setUserPassword...) solo verifican permisos si reciben los headers de la sesión.
 // En acciones del panel, pasar SIEMPRE `headers: await headers()`.
