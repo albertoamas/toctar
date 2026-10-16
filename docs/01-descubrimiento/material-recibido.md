@@ -13,7 +13,7 @@
 | 2 | Fotos de antes y después por servicio | Recibidas por correo. **Faltan las fotos principales de cada servicio:** el dueño graba videos y sacará fotos; el sitio usa una imagen de reemplazo mientras tanto | Parcial |
 | 3 | Textos base | Historia y garantía recibidas (abajo). Faltan "cómo trabajan" y preguntas frecuentes | Parcial |
 | 4 | Contacto | Dirección, ubicación en Google Maps, WhatsApp, correo y enlaces de redes recibidos. **Falta confirmar el horario** | Parcial |
-| 5 | Dominio y titular | El dominio se basará en `toctardetailingcar` (como el correo). Faltan el dominio exacto y el nombre y CI o NIT del titular | Pendiente (antes de la semana 1, para levantar pruebas) |
+| 5 | Dominio y titular | Dominio elegido: **toctardetailing.com** (libre al 15/10). Titular: Yerko Tejerina Aparicio, con su NIT (guardado fuera del repositorio). Correo de las cuentas: toctartarija@gmail.com | Recibido (15/10) |
 | 6 | Precios por servicio, variante y tamaño | Mandó la **clasificación de vehículos (5 tamaños)**; los precios no | Parcial |
 | 7 | Días por servicio | Solo cerámico: 1 día y medio. Más de un servicio: 2 a 3 días | Recibido |
 | 8 | Mantenimiento del cerámico | Contenido recibido. El precio varía según tamaño, tratamiento y estado: se carga como "según evaluación" | Recibido |

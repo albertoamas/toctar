@@ -1,7 +1,7 @@
 # Guía de despliegue (etapa A3) — TocTar Detailing
 
 > Paso a paso para dejar `pruebas.<dominio>` y `<dominio>` funcionando con despliegue automático. Meta: listo el **miércoles 21/10**, dos días antes de la demo del viernes 23.
-> Reemplazar `<dominio>` por el dominio elegido (por ejemplo `toctardetailing.com`).
+> `<dominio>` = **`toctardetailing.com`** (elegido por el dueño el 15/10). Por ejemplo, `pruebas.<dominio>` es `pruebas.toctardetailing.com`.
 
 ## Resumen
 
