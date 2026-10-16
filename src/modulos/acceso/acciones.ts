@@ -15,13 +15,11 @@ import { MENSAJE_BLOQUEO, VENTANA_MINUTOS, ingresoBloqueado, type Fallos } from 
 // no revela cuál de los datos falló (HU-01).
 const ERROR_GENERICO = "Usuario o contraseña incorrectos.";
 
-type Transaccion = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-async function contarFallos(tx: Transaccion, usuario: string, ipHash: string): Promise<Fallos> {
+async function contarIntentos(usuario: string, ipHash: string): Promise<Fallos> {
   const desde = new Date(Date.now() - VENTANA_MINUTOS * 60_000);
   const delUsuario = eq(intentoIngreso.usuario, usuario);
   const deLaConexion = eq(intentoIngreso.ipHash, ipHash);
-  const [f] = await tx
+  const [f] = await db
     .select({
       usuarioYConexion: sql<number>`count(*) filter (where ${and(delUsuario, deLaConexion)})`.mapWith(Number),
       conexion: sql<number>`count(*) filter (where ${deLaConexion})`.mapWith(Number),
@@ -38,26 +36,33 @@ export async function iniciarSesion(_previo: EstadoIngreso, datos: FormData): Pr
   if (!entrada.success) return { error: entrada.error.issues[0].message, usuario: escrito };
   const { usuario, contrasena } = entrada.data;
   const ipHash = await codigoDeConexion();
-  const h = await headers();
 
-  // Un candado por usuario: varios intentos al mismo tiempo se cuentan de a uno y no pasan juntos el límite.
-  const resultado = await db.transaction(async (tx) => {
-    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`ingreso:${usuario}`}, 0))`);
-    if (ingresoBloqueado(await contarFallos(tx, usuario, ipHash))) return "bloqueado" as const;
-    try {
-      await auth.api.signInUsername({ body: { username: usuario, password: contrasena }, headers: h });
-    } catch (error) {
-      if (!(error instanceof APIError)) throw error;
-      await tx.insert(intentoIngreso).values({ usuario, ipHash });
-      await tx.delete(intentoIngreso).where(lt(intentoIngreso.createdAt, new Date(Date.now() - 24 * 3_600_000)));
-      return "incorrecto" as const;
+  // Se anota el intento ANTES de probar la contraseña y recién después se cuenta (incluido este).
+  // Así varios intentos al mismo tiempo se ven entre sí y no pasan juntos el límite, sin candados
+  // ni transacciones abiertas mientras Better Auth verifica la contraseña.
+  const [intento] = await db.insert(intentoIngreso).values({ usuario, ipHash }).returning({ id: intentoIngreso.id });
+  const quitarIntento = () => db.delete(intentoIngreso).where(eq(intentoIngreso.id, intento.id));
+  const f = await contarIntentos(usuario, ipHash);
+  if (ingresoBloqueado({ usuarioYConexion: f.usuarioYConexion - 1, conexion: f.conexion - 1, usuario: f.usuario - 1 })) {
+    // Un intento rechazado no cuenta: la espera no se alarga mientras alguien sigue probando.
+    await quitarIntento();
+    return { error: MENSAJE_BLOQUEO, usuario };
+  }
+
+  try {
+    await auth.api.signInUsername({ body: { username: usuario, password: contrasena }, headers: await headers() });
+  } catch (error) {
+    if (!(error instanceof APIError)) {
+      await quitarIntento();
+      throw error;
     }
-    await tx.delete(intentoIngreso).where(eq(intentoIngreso.usuario, usuario));
-    return "ok" as const;
-  });
+    // El intento queda anotado como fallido. Los de más de un día ya no sirven.
+    await db.delete(intentoIngreso).where(lt(intentoIngreso.createdAt, new Date(Date.now() - 24 * 3_600_000)));
+    return { error: ERROR_GENERICO, usuario };
+  }
 
-  if (resultado === "bloqueado") return { error: MENSAJE_BLOQUEO, usuario };
-  if (resultado === "incorrecto") return { error: ERROR_GENERICO, usuario };
+  // Ingresó: sus fallos (y este intento) se borran.
+  await db.delete(intentoIngreso).where(eq(intentoIngreso.usuario, usuario));
   redirect("/panel");
 }
 
