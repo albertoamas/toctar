@@ -33,6 +33,8 @@
 | Etapa B3 Contenido del panel (HU-07, HU-08, HU-09) | ✅ Programada el 14/10 (PR #19, #20 y #21). Falta la revisión manual y mostrarla con B4 |
 | Etapa B4 Sitio público (HU-10 a HU-15) | ✅ Programada el 14/10 (PR #23 a #26). Lighthouse móvil ≥ 90. Falta la revisión manual y la demo del 23 |
 | Etapa B5 Reclamos y Google (HU-16, HU-17, HU-18) | ✅ Programada el 15/10 (PR #33 a #36). Falta la revisión manual, validar el JSON-LD en Google con https (A3) y que el dueño cree su Perfil de Empresa (`10-lanzamiento/perfil-de-google.md`) |
+| Revisión de seguridad y calidad de la Entrega 1 | ✅ 16/10 (PR #40) |
+| Pulido visual de la Entrega 1 | ⏳ Plan en `pulido-visual.md`: pantalla por pantalla, antes de la demo del 23 (sitio) y del acta del 30 (panel) |
 | Identidad visual aplicada a la app | ✅ En `develop` (PR #5 y #9, logos nítidos en tamaños chicos) |
 | Inicio del trabajo | 9 de octubre de 2026 (firma y primer pago) |
 | Día D (inicio del plazo del contrato) | 14 de octubre de 2026 (llegó el material) |
@@ -174,6 +176,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 
 ### B6. Cierre de la entrega 1 (semanas 2 y 3, hasta el 3 de noviembre)
 
+0. Pulido visual pantalla por pantalla (`pulido-visual.md`): el sitio antes de la demo del 23, el panel antes del acta del 30.
 1. Prueba completa en `pruebas.<dominio>` con la lista de criterios de HU-01 a HU-18. Las correcciones entran por PR.
 2. Carga del contenido real: servicios, textos, fotos, datos del negocio y horario.
 3. Capacitación del dueño y del encargado: videos cortos (cómo editar un servicio, subir fotos, crear un usuario, atender un reclamo).
