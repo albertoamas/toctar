@@ -3,15 +3,12 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { TarjetaServicio } from "@/componentes/sitio/tarjeta-servicio";
 import { WhatsAppFijo } from "@/componentes/sitio/whatsapp";
-import { descripcionServicios } from "@/modulos/sitio/metadatos";
 import { serviciosPublicos } from "@/modulos/sitio/publico";
 
-// La descripción para Google nombra los servicios visibles: cambia sola si el dueño agrega o quita uno.
-export async function generateMetadata(): Promise<Metadata> {
-  await connection();
-  const servicios = await serviciosPublicos();
-  return { title: "Servicios", description: descripcionServicios(servicios.map((s) => s.nombre)) };
-}
+export const metadata: Metadata = {
+  title: "Servicios",
+  description: "Pulido y nano cerámico, lavado de interior, limpieza de asientos, pulido de vidrios, faroles, polarizado y PPF en Tarija.",
+};
 
 // Todos los servicios visibles del sitio (HU-10, HU-11).
 export default function PaginaServicios() {
