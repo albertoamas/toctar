@@ -1,8 +1,24 @@
 import type { NextConfig } from "next";
 
+// Encabezados de seguridad de todas las respuestas (revisión de seguridad de la Entrega 1).
+// - Nadie puede meter el sitio ni el panel dentro de otra página para engañar al usuario (clickjacking).
+// - La política de contenido no limita los scripts: Next.js usa scripts en línea y exigir un "nonce"
+//   volvería dinámicas todas las páginas. Solo cierra lo que no se usa (objetos, <base>, formularios a otros sitios).
+// - HSTS: el navegador solo usa https (lo ignora mientras se trabaja con http en desarrollo).
+const ENCABEZADOS_SEGURIDAD = [
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Content-Security-Policy", value: "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
+];
+
 const nextConfig: NextConfig = {
   // Imagen de Docker chica: solo los archivos necesarios para correr (ver Dockerfile)
   output: "standalone",
+  // No anunciar la tecnología del servidor.
+  poweredByHeader: false,
   cacheComponents: true,
   partialPrefetching: true,
   experimental: {
@@ -11,6 +27,7 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      { source: "/:path*", headers: ENCABEZADOS_SEGURIDAD },
       {
         // El service worker siempre se pide de nuevo: así un cambio llega a todos (HU-06).
         source: "/sw.js",
