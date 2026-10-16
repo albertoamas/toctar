@@ -94,7 +94,7 @@ Se hacen primero: aparecen en todas las pantallas.
 | # | Pantalla | Estado |
 |---|---|---|
 | 1.1 | Encabezado y menú del sitio (con el menú del celular) | ✅ 16/10 |
-| 1.2 | Pie del sitio | ⏳ |
+| 1.2 | Pie del sitio | ✅ 16/10 |
 | 1.3 | Botón fijo de WhatsApp | ⏳ |
 | 1.4 | Estructura del panel: barra lateral, menú del celular y usuario | ⏳ |
 | 1.5 | Avisos, estados vacíos y de carga del panel | ⏳ |
@@ -182,6 +182,29 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - E2E `base`: el menú marca la página actual, se cierra al elegir una página, el botón mide 44 px y en el celular están las páginas de consulta y el WhatsApp. Otra prueba confirma que el encabezado sigue a la vista al bajar.
   - E2E completo: 120 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
   - Lighthouse móvil: portada y Servicios con rendimiento 91 y 100 en accesibilidad, buenas prácticas y SEO.
+
+### 1.2 Pie del sitio (16/10/2026)
+- **Encontrado:**
+  - Todos los enlaces del pie medían de 18 a 20 px de alto; el mínimo es 44.
+  - Las redes sociales iban como texto ("Facebook  TikTok") y pasaban desapercibidas.
+  - En tableta (768 px), el logo con el lema ocupaba una celda entera de una grilla de dos columnas: quedaba desparejo y con mucho espacio vacío.
+  - En el celular, el pie medía casi dos pantallas de alto.
+  - La fila de enlaces de abajo se cortaba donde caía.
+- **Cambios:**
+  - Redes con íconos en una sola tinta (Simple Icons 13.21, CC0, en `iconos-marca.tsx`). Componente común `src/componentes/sitio/redes-sociales.tsx`: en el pie, solo íconos de 44 px con su nombre para lectores de pantalla ("TocTar en Facebook"); en Contacto, ícono y nombre.
+  - Clase `.tt-area-toque`: 44 px de área táctil invisible para enlaces de texto sueltos, sin cambiar el espaciado. El WhatsApp y el correo quedan a 24 px entre sí para que sus áreas no se pisen; antes del ajuste, el WhatsApp tenía unos 36 px.
+  - Grilla: una columna en el celular, dos desde 640 px, la marca arriba y tres columnas en tableta, y cuatro columnas en la computadora, como antes.
+  - Enlaces de abajo en filas de 44 px: dos columnas ordenadas en el celular y una fila en la computadora.
+  - El pie del celular pasó de unos 990 a 866 px de alto (a 360 px de ancho).
+- **Descartado o pendiente:**
+  - Línea "© año TocTar Detailing": descartada. Para que el año cambie solo habría que generarla en cada visita, con un costo de rendimiento en todas las páginas.
+  - Crédito de YankoSoft: no acordado con el dueño.
+  - Aviso para el desarrollo: una vez, el servidor de desarrollo (`npm run dev`) no tomó un cambio de `globals.css` aunque el archivo estaba bien y el build sí lo incluía. Si un estilo nuevo no aparece, conviene reiniciar `npm run dev` antes de buscar el error.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px; Contacto a 360 px.
+  - Área táctil medida tocando 18 px arriba y abajo del centro de cada enlace.
+  - E2E `base` "los enlaces del pie tienen 44 px para el dedo". E2E completo: 122 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse móvil: Nosotros y Contacto con rendimiento 91 y 90, 100 en lo demás y CLS 0.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
