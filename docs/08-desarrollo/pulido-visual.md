@@ -104,7 +104,7 @@ Antes de la demo del viernes 23.
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 2.1 | Portada | `/` | 🔵 |
+| 2.1 | Portada | `/` | ✅ 18/10 |
 | 2.2 | Servicios | `/servicios` | ⏳ |
 | 2.3 | Página de un servicio | `/servicios/[slug]` | ⏳ |
 | 2.4 | Galería y visor de fotos | `/galeria` | ⏳ |
@@ -273,6 +273,25 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Capturas de los avisos en celular y computadora, con el sistema en claro y en oscuro.
   - La carga y la pantalla vacía, insertadas en una página: a los 100 ms la carga todavía no se ve; a los 800 ms aparecen las siluetas.
   - E2E `base` "el aviso de guardado no tapa el botón de guardar". E2E completo: 127 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 2.1 Portada (18/10/2026)
+- **Encontrado:**
+  - El pendiente del CLS 0,024: mientras llega el texto de la portada se reservaba un alto fijo que no coincidía con el texto real. Con el texto actual, a 360 px el texto medía 392 y se reservaban 368: lo de abajo bajaba 24 px. Con una presentación corta subía 88 px. En cuatro corridas de Lighthouse del 18/10 el CLS dio 0 porque el servidor responde rápido, pero el salto aparece en cuanto la base tarda.
+  - Al llegar al cierre ("Cuéntanos qué necesita tu vehículo") se veían dos botones de WhatsApp: el del cierre era de contorno y no contaba como principal, así que el fijo aparecía al lado.
+  - En el celular la portada medía unos 5050 px (a 390 de ancho): cada servicio era una tarjeta de unos 620 px.
+  - Lo que estaba bien: la cabecera (arte, lema, LED que llega con el texto), las tarjetas en la computadora y el cierre con el monograma.
+- **Cambios:**
+  - El bloque de texto de la cabecera tiene el mismo alto mínimo cargando y cargado (24,5rem en el celular, 18,5rem en la computadora): un texto más corto ya no hace subir la página. Medido: diferencia 0 a 360, 412 y 1280 px.
+  - El cierre usa el botón de WhatsApp principal (rojo): mientras se ve, el fijo se esconde.
+  - En el celular (menos de 640 px), `TarjetaServicio` pasa a fila compacta: foto de 7rem a la izquierda, título de 22 px, resumen de 2 renglones y "Ver el servicio". Toda la fila se toca y conserva el corte a 60°. La portada del celular bajó a 2975 px. Como es el mismo componente, la página Servicios también lo tiene (se revisa en 2.2).
+- **Descartado o pendiente:**
+  - Mostrar solo 3 servicios en el celular: descartado. El cliente no se enteraría de los otros.
+  - Riesgo que queda: si el dueño escribe una presentación más larga que la actual, el texto todavía empuja lo de abajo. El panel ya pide "dos o tres frases" (máximo 400 caracteres).
+  - Al pasar la portada a las filas compactas, la prueba de 1.3 bajaba 1600 px y caía en el cierre, donde el fijo se esconde. Ahora baja hasta la mitad de los servicios.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px. Comparativa en `pulido-visual/2.1-portada-celular-completa.jpg`.
+  - Saltos medidos con red lenta en los cuatro anchos: 0. Lighthouse móvil: portada con rendimiento 90 y 91 en dos corridas, Servicios con 91; 100 en accesibilidad, buenas prácticas y SEO; CLS 0.
+  - E2E `hu-10` "en el celular los servicios van en filas compactas…" y "al llegar al cierre de la portada se ve un solo botón de WhatsApp". E2E completo: 131 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
