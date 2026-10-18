@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ChevronLeftIcon } from "lucide-react";
+import { Cargando } from "@/componentes/panel/cargando";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioNuevoServicio } from "@/modulos/sitio/componentes/formulario-nuevo-servicio";
 
@@ -16,7 +17,7 @@ export default function PaginaNuevoServicio() {
         Servicios
       </Link>
       <h2 className="font-heading text-3xl font-bold italic">Nuevo servicio</h2>
-      <Suspense fallback={null}>
+      <Suspense fallback={<Cargando filas={1} />}>
         <Formulario />
       </Suspense>
     </div>

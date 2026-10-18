@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { Cargando } from "@/componentes/panel/cargando";
 import { exigirModulo } from "@/lib/sesion";
 import { ListaEditable } from "@/modulos/configuracion/componentes/lista-editable";
 import { listarElementos } from "@/modulos/configuracion/consultas";
@@ -9,7 +10,7 @@ export const metadata: Metadata = { title: "Configuración del taller" };
 // HU-05: espacios del taller (RN-06) y tamaños de vehículo (RN-07). Solo el dueño.
 export default function PaginaTaller() {
   return (
-    <Suspense fallback={<p className="text-tinta-suave">Cargando…</p>}>
+    <Suspense fallback={<Cargando />}>
       <Contenido />
     </Suspense>
   );

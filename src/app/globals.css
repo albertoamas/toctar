@@ -153,6 +153,15 @@
   }
 }
 
+/* Avisos flotantes (sonner, pulido 1.5). Fuera de capas a propósito: sonner trae su propio CSS sin capa,
+   que le ganaría a cualquier regla dentro de @layer. El error lleva un borde rojo a la izquierda. */
+[data-sonner-toaster] [data-sonner-toast][data-type="error"] {
+  border-left: 4px solid var(--rojo);
+}
+[data-sonner-toaster] [data-sonner-toast][data-type="success"] {
+  border-left: 4px solid var(--exito);
+}
+
 /* Recursos gráficos de la marca (componentes del Design System). */
 @layer components {
   /* Línea LED roja del frente del taller. Solo sobre fondo oscuro. */
@@ -200,6 +209,21 @@
     height: 18px;
     background: var(--rojo);
     transform: translateY(-50%) skewX(-30deg);
+  }
+
+  /* Siluetas de carga del panel (Cargando): aparecen recién a los 0,3 s, para que una carga rápida no parpadee. */
+  .tt-cargando {
+    animation: tt-aparecer 150ms ease-out 300ms both;
+  }
+  .tt-cargando__bloque {
+    border-radius: var(--radius-sm, 4px);
+    background: var(--superficie);
+    animation: tt-latido 1.4s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tt-cargando__bloque {
+      animation: none;
+    }
   }
 
   /* Área táctil de 44 px de alto para enlaces de texto sueltos, sin cambiar el diseño: una capa invisible
@@ -467,5 +491,20 @@
   }
   to {
     transform: scaleX(1);
+  }
+}
+
+@keyframes tt-aparecer {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes tt-latido {
+  50% {
+    opacity: 0.55;
   }
 }

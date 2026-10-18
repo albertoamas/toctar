@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ImageIcon } from "lucide-react";
 import { cn } from "cn";
+import { EstadoVacio } from "@/componentes/panel/estado-vacio";
+import { Cargando } from "@/componentes/panel/cargando";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/componentes/ui/table";
 import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { exigirModulo } from "@/lib/sesion";
@@ -16,7 +18,7 @@ export default function PaginaReclamos({ searchParams }: PageProps<"/panel/recla
   return (
     <section className="flex flex-col gap-6">
       <h1 className="font-heading text-4xl font-extrabold italic">Reclamos</h1>
-      <Suspense fallback={<p className="text-tinta-suave">Cargando reclamos…</p>}>
+      <Suspense fallback={<Cargando />}>
         <Lista searchParams={searchParams} />
       </Suspense>
     </section>
@@ -56,11 +58,11 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/reclamos">, "searc
       </nav>
 
       {reclamos.length === 0 && (
-        <p className="text-tinta-suave">
+        <EstadoVacio>
           {soloPendientes
             ? "No hay reclamos pendientes."
             : "Todavía no llegó ningún reclamo. Llegan desde la página Garantía y reclamos del sitio."}
-        </p>
+        </EstadoVacio>
       )}
 
       {/* Celular: tarjetas */}

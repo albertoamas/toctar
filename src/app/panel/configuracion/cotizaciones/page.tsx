@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { Cargando } from "@/componentes/panel/cargando";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioParametros } from "@/modulos/configuracion/componentes/formulario-parametros";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
@@ -10,7 +11,7 @@ export const metadata: Metadata = { title: "Cotizaciones y mantenimiento" };
 // HU-05: adelanto, validez, intervalo de mantenimiento y textos del PDF. Solo el dueño.
 export default function PaginaParametros() {
   return (
-    <Suspense fallback={<p className="text-tinta-suave">Cargando…</p>}>
+    <Suspense fallback={<Cargando />}>
       <Contenido />
     </Suspense>
   );

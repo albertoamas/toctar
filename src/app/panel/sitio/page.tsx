@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { PlusIcon } from "lucide-react";
+import { Cargando } from "@/componentes/panel/cargando";
 import { Button } from "@/componentes/ui/button";
 import { exigirModulo } from "@/lib/sesion";
 import { ListaServicios } from "@/modulos/sitio/componentes/lista-servicios";
@@ -20,7 +21,7 @@ export default function PaginaServicios() {
           Agregar servicio
         </Button>
       </div>
-      <Suspense fallback={<p className="text-tinta-suave">Cargando servicios…</p>}>
+      <Suspense fallback={<Cargando />}>
         <Lista />
       </Suspense>
     </div>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { Cargando } from "@/componentes/panel/cargando";
 import { exigirModulo } from "@/lib/sesion";
 import { whatsAppLocal } from "@/lib/whatsapp";
 import { FormularioNegocio } from "@/modulos/configuracion/componentes/formulario-negocio";
@@ -11,7 +12,7 @@ export const metadata: Metadata = { title: "Configuración" };
 // HU-04: datos del negocio (pestaña Negocio). Solo el dueño (módulo "configuracion").
 export default function PaginaConfiguracion() {
   return (
-    <Suspense fallback={<p className="text-tinta-suave">Cargando…</p>}>
+    <Suspense fallback={<Cargando />}>
       <Contenido />
     </Suspense>
   );

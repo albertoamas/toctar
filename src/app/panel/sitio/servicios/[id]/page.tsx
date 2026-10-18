@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { CheckCircle2Icon, ChevronLeftIcon } from "lucide-react";
+import { ChevronLeftIcon } from "lucide-react";
+import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
+import { Cargando } from "@/componentes/panel/cargando";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioServicio } from "@/modulos/sitio/componentes/formulario-servicio";
 import { FotoYVariantes } from "@/modulos/sitio/componentes/foto-y-variantes";
@@ -18,7 +20,7 @@ export default function PaginaServicio({ params, searchParams }: PageProps<"/pan
         <ChevronLeftIcon className="size-4" aria-hidden />
         Servicios
       </Link>
-      <Suspense fallback={<p className="text-tinta-suave">Cargando…</p>}>
+      <Suspense fallback={<Cargando />}>
         <Detalle params={params} searchParams={searchParams} />
       </Suspense>
     </div>
@@ -40,10 +42,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/sitio/se
         {!s.visible && <span className="tt-insignia">Oculto</span>}
       </div>
       {creado && (
-        <p role="status" className="flex items-center gap-2 rounded-sm border border-border bg-superficie p-3 text-sm">
-          <CheckCircle2Icon className="size-4 shrink-0 text-exito" aria-hidden />
-          Servicio creado. Completa la descripción, los beneficios, los pasos y la foto.
-        </p>
+        <AvisoEnPagina>Servicio creado. Completa la descripción, los beneficios, los pasos y la foto.</AvisoEnPagina>
       )}
       <div className="grid gap-12 lg:grid-cols-[minmax(0,40rem)_minmax(0,22rem)]">
         <FormularioServicio

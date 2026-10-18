@@ -108,3 +108,18 @@ test("el panel no se sale de la pantalla en el celular y su menú queda a mano",
     expect(alto).toBeGreaterThanOrEqual(44);
   }
 });
+
+// Pulido visual 1.5
+test("el aviso de guardado no tapa el botón de guardar", async ({ page }, info) => {
+  test.skip(info.project.name !== "celular", "En el celular es donde tapaba");
+  await ingresarComoDueno(page);
+  await page.goto("/panel/configuracion/cotizaciones");
+  const guardar = page.getByRole("button", { name: "Guardar cambios" });
+  await guardar.scrollIntoViewIfNeeded();
+  await guardar.click();
+  const aviso = page.locator("[data-sonner-toast]").first();
+  await expect(aviso).toContainText("Cambios guardados.");
+  const [a, b] = [(await aviso.boundingBox())!, (await guardar.boundingBox())!];
+  const sePisan = a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+  expect(sePisan).toBe(false);
+});

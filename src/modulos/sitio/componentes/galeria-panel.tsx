@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useActionState, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { ArrowDownIcon, ArrowUpIcon, CameraIcon, EyeIcon, EyeOffIcon, PencilIcon, TrashIcon, UploadIcon, XIcon } from "lucide-react";
+import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { Selector } from "@/componentes/panel/selector";
@@ -58,8 +59,8 @@ export function GaleriaPanel({ items, servicios }: { items: ItemGaleria[]; servi
         </div>
       )}
 
-      {items.length === 0 && !subiendo && <p className="text-tinta-suave">Sube la primera foto de un trabajo terminado.</p>}
-      {items.length > 0 && visibles.length === 0 && <p className="text-tinta-suave">No hay fotos de ese servicio todavía.</p>}
+      {items.length === 0 && !subiendo && <EstadoVacio>Todavía no hay fotos. Sube la primera de un trabajo terminado.</EstadoVacio>}
+      {items.length > 0 && visibles.length === 0 && <EstadoVacio>No hay fotos de ese servicio todavía.</EstadoVacio>}
       {filtro && visibles.length > 1 && <p className="text-sm text-tinta-suave">Para cambiar el orden, mira todos los servicios.</p>}
 
       {visibles.length > 0 && (

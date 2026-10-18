@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { CheckCircle2Icon, PlusIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
+import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
+import { EstadoVacio } from "@/componentes/panel/estado-vacio";
+import { Cargando } from "@/componentes/panel/cargando";
 import { Button } from "@/componentes/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/componentes/ui/table";
 import { exigirModulo } from "@/lib/sesion";
@@ -21,7 +24,7 @@ export default function PaginaUsuarios({ searchParams }: PageProps<"/panel/usuar
           Crear usuario
         </Button>
       </div>
-      <Suspense fallback={<p className="text-tinta-suave">Cargando usuarios…</p>}>
+      <Suspense fallback={<Cargando />}>
         <Lista searchParams={searchParams} />
       </Suspense>
     </section>
@@ -36,14 +39,11 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/usuarios">, "searc
   return (
     <>
       {typeof creado === "string" && (
-        <p role="status" className="flex items-center gap-2 rounded-sm border border-border bg-superficie p-3 text-sm">
-          <CheckCircle2Icon className="size-4 shrink-0 text-exito" aria-hidden />
-          Usuario {creado} creado. Pásale su usuario y contraseña.
-        </p>
+        <AvisoEnPagina>Usuario {creado} creado. Pásale su usuario y contraseña.</AvisoEnPagina>
       )}
 
       {otros.length === 0 && (
-        <p className="text-tinta-suave">Todavía no hay otros usuarios. Crea uno para cada persona del taller.</p>
+        <EstadoVacio>Todavía no hay otros usuarios. Crea uno para cada persona del taller.</EstadoVacio>
       )}
 
       {/* Celular: tarjetas */}

@@ -2,6 +2,7 @@
 
 import { useActionState, useState, useTransition } from "react";
 import { ArrowDownIcon, ArrowUpIcon, EyeIcon, EyeOffIcon, PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
@@ -32,7 +33,7 @@ export function ListaPreguntas({ preguntas }: { preguntas: Pregunta[] }) {
   return (
     <div className="flex max-w-3xl flex-col gap-4">
       <p className="text-tinta-suave">Se abren y cierran una por una en el sitio. Sin precios.</p>
-      {preguntas.length === 0 && <p className="text-tinta-suave">Agrega las preguntas que más te hacen los clientes.</p>}
+      {preguntas.length === 0 && <EstadoVacio>Todavía no hay preguntas. Agrega las que más te hacen los clientes.</EstadoVacio>}
 
       {preguntas.length > 0 && (
         <ol aria-label="Preguntas frecuentes" className="flex flex-col divide-y divide-border rounded-sm border border-border">

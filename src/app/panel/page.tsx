@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { ChevronRightIcon, MessageSquareWarningIcon } from "lucide-react";
+import { Cargando } from "@/componentes/panel/cargando";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { contarPendientes } from "@/modulos/reclamos/consultas";
@@ -10,7 +11,7 @@ export default function InicioPanel() {
   return (
     <section className="flex flex-col gap-6">
       <h1 className="font-heading text-4xl font-extrabold italic">Inicio</h1>
-      <Suspense fallback={<p className="text-muted-foreground">Cargando…</p>}>
+      <Suspense fallback={<Cargando />}>
         <Contenido />
       </Suspense>
     </section>
@@ -24,7 +25,7 @@ async function Contenido() {
 
   return (
     <>
-      <p className="text-muted-foreground">Hola, {usuario.nombre}.</p>
+      <p className="text-tinta-suave">Hola, {usuario.nombre}.</p>
       {verReclamos && (
         <Link
           href={pendientes > 0 ? "/panel/reclamos?ver=pendientes" : "/panel/reclamos"}

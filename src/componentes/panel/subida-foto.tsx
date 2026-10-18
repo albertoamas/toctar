@@ -1,7 +1,6 @@
 import Image from "next/image";
 import { useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { CameraIcon, ImageIcon, TrashIcon } from "lucide-react";
-import { toast } from "sonner";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { MensajeError } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
@@ -65,7 +64,7 @@ export function SubidaFoto({ id, accion, camposOcultos, actual, textoVacio, quit
     iniciar(async () => {
       try {
         const r = await accion({}, datos);
-        if (r.ok) toast.success(r.mensaje ?? "Foto guardada.");
+        if (r.ok) avisarResultado({ ok: true, mensaje: r.mensaje ?? "Foto guardada." });
         else setError(r.errores?.foto ?? r.mensaje ?? "No se pudo subir la foto. Vuelve a intentar.");
       } catch {
         setError("No se pudo subir la foto. Revisa tu conexión y vuelve a intentar.");
