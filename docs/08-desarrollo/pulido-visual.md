@@ -97,7 +97,7 @@ Se hacen primero: aparecen en todas las pantallas.
 | 1.2 | Pie del sitio | ✅ 16/10 |
 | 1.3 | Botón fijo de WhatsApp | ✅ 18/10 |
 | 1.4 | Estructura del panel: barra lateral, menú del celular y usuario | ✅ 18/10 |
-| 1.5 | Avisos, estados vacíos y de carga del panel | ⏳ |
+| 1.5 | Avisos, estados vacíos y de carga del panel | ✅ 18/10 |
 
 ### 2. Sitio público
 Antes de la demo del viernes 23.
@@ -251,6 +251,26 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Capturas a 360, 768, 1280 y 1600 px, con el menú del celular abierto y ampliada al 300 % del trazo.
   - Medición del desborde en 12 pantallas del panel a 360 px: antes se salían 8, ahora solo Configuración, por 3 px.
   - E2E `base` "el panel no se sale de la pantalla en el celular y su menú queda a mano". E2E completo: 126 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 1.5 Avisos, estados vacíos y de carga del panel (18/10/2026)
+- **Encontrado:**
+  - En el celular, los avisos aparecían abajo y tapaban "Guardar cambios" y el último campo durante unos 4 s.
+  - El aviso de error se veía igual que el de éxito (el mismo cartel blanco, solo cambiaba un ícono chico).
+  - El aviso preguntaba el tema a `next-themes`, que nunca se configuró: código muerto y una dependencia de más.
+  - Había 15 versiones de "Cargando…" (textos distintos, uno con otro color y dos vacíos), y el texto aparecía un instante antes de la pantalla.
+  - Las pantallas vacías no tenían un estilo común. El aviso de "Usuario creado" y el de "Servicio creado" estaban copiados.
+- **Cambios:**
+  - Avisos arriba, a 64 px (debajo de la barra del panel en el celular y la tableta), siempre en claro. Error con borde e ícono rojos y 6 s; éxito con borde e ícono verdes y 3 s. El CSS de los bordes va fuera de capas, porque el CSS de sonner, sin capa, le ganaría. Se quitó `next-themes`.
+  - `src/componentes/panel/cargando.tsx`: siluetas grises que aparecen recién a los 0,3 s (sin parpadeo si la carga es rápida), con latido suave salvo que se pida reducir el movimiento, y "Cargando…" para lectores de pantalla. Reemplaza las 15 versiones.
+  - `src/componentes/panel/estado-vacio.tsx`: recuadro punteado que dice qué pasa y qué hacer. Usado en servicios, preguntas, galería, reclamos y usuarios. No repite el botón de acción: cada pantalla ya lo tiene arriba.
+  - `src/componentes/panel/aviso-en-pagina.tsx` para "Usuario creado" y "Servicio creado". La subida de fotos usa también `avisarResultado`.
+  - Inicio: `text-muted-foreground` pasó a `text-tinta-suave` (tokens del proyecto).
+- **Descartado o pendiente:**
+  - Botón de acción dentro de las pantallas vacías: descartado por ahora, porque repetiría el de arriba. Si una pantalla no tiene acción visible, se agrega al revisarla.
+- **Verificación:**
+  - Capturas de los avisos en celular y computadora, con el sistema en claro y en oscuro.
+  - La carga y la pantalla vacía, insertadas en una página: a los 100 ms la carga todavía no se ve; a los 800 ms aparecen las siluetas.
+  - E2E `base` "el aviso de guardado no tapa el botón de guardar". E2E completo: 127 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
