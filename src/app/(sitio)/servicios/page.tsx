@@ -29,7 +29,7 @@ async function Lista() {
   const servicios = await serviciosPublicos();
   if (servicios.length === 0) return <p className="mt-8 text-tinta-suave">Pronto vas a ver aquí nuestros servicios.</p>;
   return (
-    <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className="mt-10 grid gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
       {servicios.map((s) => (
         <li key={s.slug} className="grid">
           <TarjetaServicio servicio={s} nivel={2} />

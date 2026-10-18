@@ -111,7 +111,7 @@ async function Servicios() {
   const servicios = await serviciosPublicos();
   return (
     <>
-      <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="mt-8 grid gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
         {servicios.slice(0, SERVICIOS_EN_PORTADA).map((s) => (
           <li key={s.slug} className="grid">
             <TarjetaServicio servicio={s} />
