@@ -288,8 +288,18 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Mostrar solo 3 servicios en el celular: descartado. El cliente no se enteraría de los otros.
   - Riesgo que queda: si el dueño escribe una presentación más larga que la actual, el texto todavía empuja lo de abajo. El panel ya pide "dos o tres frases" (máximo 400 caracteres).
   - Al pasar la portada a las filas compactas, la prueba de 1.3 bajaba 1600 px y caía en el cierre, donde el fijo se esconde. Ahora baja hasta la mitad de los servicios.
+- **Segunda revisión de YankoSoft (18/10):**
+  - *"Al dar F5 hay cosas que cargan antes, por ejemplo la palabra Servicios."* Grabado con red lenta, cuadro a cuadro. A los 0,5 s se veía el encabezado sin el logo, el arte y el título "Servicios" suelto; el resto llegaba unos 0,2 s después. Los títulos de sección y el cierre estaban fijos en la página (primer envío) y su contenido sale de la base (segundo envío). El logo era un archivo aparte y llegaba último.
+    - **Cambio:** toda la portada va en un solo `<Suspense>` (`PortadaConDatos`). Mientras tanto se ve solo el arte, con una pantalla reservada (`min-h-screen`), para que el pie no salte. Regla para el resto del sitio: **un título de sección nunca aparece antes que su contenido**; el título principal de la página sí puede, porque orienta.
+    - **Cambio:** el logo del encabezado va dentro de la página. Se lee al armarla de `public/marca/toctar-horizontal-sin-lema-sobre-oscuro.svg`, que sigue siendo el único original.
+    - **Resultado:** el primer cuadro muestra el encabezado con el logo y el arte, sin títulos sueltos; el siguiente, todo junto.
+  - *"Se repite mucho WhatsApp."* Contado: en la portada, 4 veces al recorrerla (cabecera, botón fijo, cierre y pie), dos con el mismo texto "Escribir por WhatsApp".
+    - **Cambio:** los botones dicen lo que gana el cliente y el ícono dice el canal. En la cabecera, "Pedir cotización"; en el cierre, "Mandar fotos de mi vehículo". El nombre accesible empieza igual y suma "por WhatsApp" (WCAG 2.5.3). Se quedan como estaban el botón fijo (solo ícono), "WhatsApp +591…" del pie (es un dato de contacto) y "Consultar por este servicio".
+    - **Pendiente:** Galería, Nosotros, Preguntas frecuentes y Contacto siguen con "Escribir por WhatsApp" en su botón principal. Se decide al revisar cada una (2.4 a 2.7), con el mismo criterio.
+  - Las capturas de antes de esta revisión quedaron en la conversación, no en `pulido-visual/` (se borraron al volver a grabar).
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px. Comparativa en `pulido-visual/2.1-portada-celular-completa.jpg`.
+  - Tras la segunda revisión: E2E `hu-10` "al recargar, los títulos de la portada no aparecen antes que su contenido" (con red lenta, cuando se ve "Servicios" ya están sus tarjetas). E2E completo: 133 pasan. Lighthouse móvil: portada con rendimiento 90 y 92, Servicios y Contacto con 92; 100 en lo demás; CLS 0.
   - Saltos medidos con red lenta en los cuatro anchos: 0. Lighthouse móvil: portada con rendimiento 90 y 91 en dos corridas, Servicios con 91; 100 en accesibilidad, buenas prácticas y SEO; CLS 0.
   - E2E `hu-10` "en el celular los servicios van en filas compactas…" y "al llegar al cierre de la portada se ve un solo botón de WhatsApp". E2E completo: 131 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
