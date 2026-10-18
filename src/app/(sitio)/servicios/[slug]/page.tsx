@@ -129,17 +129,20 @@ function Proceso({ pasos }: { pasos: DetalleServicioPublico["pasos"] }) {
 }
 
 function Variantes({ variantes }: { variantes: DetalleServicioPublico["variantes"] }) {
+  // Si alguna tiene descripción, todas van del mismo ancho; si no, la que tiene texto quedaba ancha y las demás
+  // chicas, en renglones disparejos (pulido 2.3).
+  const conDescripcion = variantes.some((v) => v.descripcion);
   return (
     <section aria-labelledby="variantes-titulo" className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         <h2 id="variantes-titulo" className={TITULO_SECCION}>Opciones</h2>
         <p className="max-w-xl text-tinta-suave">Te ayudamos a elegir la que conviene a tu vehículo.</p>
       </div>
-      <ul className="flex flex-wrap gap-3">
+      <ul className={conDescripcion ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3" : "flex flex-wrap gap-3"}>
         {variantes.map((v) => (
           <li key={v.nombre} className="flex min-w-36 flex-col gap-1 border border-border px-4 py-3">
             <span className="font-heading text-2xl font-bold italic">{v.nombre}</span>
-            {v.descripcion && <span className="max-w-xs text-sm text-tinta-suave">{v.descripcion}</span>}
+            {v.descripcion && <span className="text-sm text-tinta-suave">{v.descripcion}</span>}
           </li>
         ))}
       </ul>
