@@ -46,7 +46,8 @@ export default function Portada() {
         <div className="relative mx-auto flex max-w-6xl flex-col items-start gap-6 px-4 py-12 md:py-24">
           <h2 className="max-w-xl font-heading text-[28px] leading-8 font-bold italic md:text-[40px] md:leading-[44px]">Cuéntanos qué necesita tu vehículo</h2>
           <p className="max-w-xl text-tinta-suave">Mándanos una foto o pasa por el taller: lo revisamos y te decimos qué conviene hacer.</p>
-          <BotonWhatsApp variante="contorno" />
+          {/* Principal: mientras se ve, el botón fijo se esconde y queda un solo WhatsApp en pantalla (pulido 1.3). */}
+          <BotonWhatsApp />
         </div>
       </section>
 
