@@ -104,7 +104,7 @@ Antes de la demo del viernes 23.
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 2.1 | Portada | `/` | ⏳ |
+| 2.1 | Portada | `/` | 🔵 |
 | 2.2 | Servicios | `/servicios` | ⏳ |
 | 2.3 | Página de un servicio | `/servicios/[slug]` | ⏳ |
 | 2.4 | Galería y visor de fotos | `/galeria` | ⏳ |
