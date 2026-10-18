@@ -84,3 +84,27 @@ test("el botón fijo de WhatsApp se esconde mientras el principal está a la vis
   await page.goto("/servicios");
   await expect(fijo).toBeVisible();
 });
+
+// Pulido visual 1.4
+test("el panel no se sale de la pantalla en el celular y su menú queda a mano", async ({ page, isMobile }) => {
+  await ingresarComoDueno(page);
+  // Configuración (/panel/configuracion) todavía se pasa 3 px: pendiente de la pantalla 6.1
+  for (const ruta of ["/panel", "/panel/sitio", "/panel/sitio/galeria", "/panel/reclamos", "/panel/configuracion/taller"]) {
+    await page.goto(ruta);
+    const anchos = await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.clientWidth]);
+    expect(anchos[0], ruta).toBeLessThanOrEqual(anchos[1]);
+  }
+  await page.mouse.wheel(0, 1500);
+  if (isMobile) {
+    const abrir = page.getByRole("button", { name: "Abrir menú" });
+    await expect(abrir).toBeInViewport();
+    await abrir.click();
+  } else {
+    await expect(page.getByRole("button", { name: "Cerrar sesión" })).toBeInViewport();
+  }
+  const menu = page.getByRole("navigation", { name: "Panel" });
+  await expect(menu.getByRole("link", { name: "Configuración" })).toHaveAttribute("aria-current", "page");
+  for (const alto of await menu.getByRole("link").evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height))) {
+    expect(alto).toBeGreaterThanOrEqual(44);
+  }
+});

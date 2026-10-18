@@ -2,8 +2,7 @@ import { LogOutIcon } from "lucide-react";
 import { Button } from "@/componentes/ui/button";
 import { exigirSesion } from "@/lib/sesion";
 import { cerrarSesion } from "@/modulos/acceso/acciones";
-
-const NOMBRE_ROL = { dueno: "Dueño", encargado: "Encargado", tecnico: "Técnico" } as const;
+import { NOMBRE_ROL } from "@/modulos/usuarios/textos";
 
 // Lee la sesión: va dentro de <Suspense>.
 export async function UsuarioSesion() {
@@ -15,7 +14,7 @@ export async function UsuarioSesion() {
         <p className="text-xs text-muted-foreground">{NOMBRE_ROL[usuario.rol]}</p>
       </div>
       <form action={cerrarSesion}>
-        <Button type="submit" variant="ghost" size="icon" aria-label="Cerrar sesión">
+        <Button type="submit" variant="ghost" size="icon" className="size-11" aria-label="Cerrar sesión">
           <LogOutIcon />
         </Button>
       </form>

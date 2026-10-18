@@ -188,6 +188,20 @@
     transform: skewX(-30deg);
   }
 
+  /* Módulo actual en el menú del panel: un trazo rojo a 60° a la izquierda (skew de 30° de un trazo vertical),
+     como los del monograma. Es lo único rojo del menú. */
+  /* Inclinado, el trazo ocupa de 5 a 18 px desde el borde: el texto empieza en 28 px (pl-7). */
+  .tt-modulo-actual::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 10px;
+    width: 3px;
+    height: 18px;
+    background: var(--rojo);
+    transform: translateY(-50%) skewX(-30deg);
+  }
+
   /* Área táctil de 44 px de alto para enlaces de texto sueltos, sin cambiar el diseño: una capa invisible
      centrada en el enlace recibe el toque. Para listas de enlaces, mejor una fila de 44 px (min-h-11). */
   .tt-area-toque {
