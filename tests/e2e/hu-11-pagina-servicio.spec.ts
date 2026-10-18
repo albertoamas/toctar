@@ -54,3 +54,21 @@ test("un servicio oculto o inexistente muestra la página no encontrada", async 
   await page.goto("/servicios/servicio-oculto-con-pagina");
   await expect(page.getByRole("heading", { name: "No encontramos esta página" })).toBeVisible();
 });
+
+test("la lista de servicios termina con una invitación a mandar fotos, con un solo WhatsApp a la vista", async ({ page }) => {
+  await page.goto("/servicios");
+  await page.getByRole("heading", { name: "¿No sabes cuál elegir?" }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole("link", { name: "Mandar fotos de mi vehículo por WhatsApp" })).toBeInViewport();
+  await expect(page.getByRole("link", { name: "Escribir a TocTar por WhatsApp" })).toBeHidden();
+});
+
+test("con el teclado se enmarca toda la tarjeta del servicio", async ({ page, isMobile }) => {
+  test.skip(isMobile, "El teclado se prueba en la computadora");
+  await page.goto("/servicios");
+  const enlace = page.locator(".tt-tarjeta__enlace").first();
+  await enlace.focus();
+  await page.keyboard.press("Shift+Tab");
+  await page.keyboard.press("Tab");
+  await expect(enlace).toBeFocused();
+  await expect(page.locator(".tt-tarjeta").first()).toHaveCSS("outline-style", "solid");
+});
