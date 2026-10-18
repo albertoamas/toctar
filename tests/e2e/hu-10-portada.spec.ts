@@ -62,3 +62,20 @@ test("una dirección que no existe muestra la página no encontrada", async ({ p
   await expect(page.getByRole("heading", { name: "No encontramos esta página" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Ver los servicios" })).toHaveAttribute("href", "/servicios");
 });
+
+// Pulido visual 2.1
+test("en el celular los servicios van en filas compactas; en la computadora, en tarjetas", async ({ page, isMobile }) => {
+  await page.goto("/");
+  const tarjeta = page.getByRole("region", { name: "Servicios" }).locator(".tt-tarjeta").first();
+  const caja = (await tarjeta.boundingBox())!;
+  if (isMobile) expect(caja.height).toBeLessThan(220);
+  else expect(caja.height).toBeGreaterThan(300);
+});
+
+test("al llegar al cierre de la portada se ve un solo botón de WhatsApp", async ({ page }) => {
+  await page.goto("/");
+  const cierre = page.getByRole("heading", { name: "Cuéntanos qué necesita tu vehículo" });
+  await cierre.scrollIntoViewIfNeeded();
+  await expect(page.getByRole("main").getByRole("link", { name: "Escribir por WhatsApp" }).last()).toBeInViewport();
+  await expect(page.getByRole("link", { name: "Escribir a TocTar por WhatsApp" })).toBeHidden();
+});

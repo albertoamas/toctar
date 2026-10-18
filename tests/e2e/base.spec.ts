@@ -77,7 +77,8 @@ test("el botón fijo de WhatsApp se esconde mientras el principal está a la vis
   await expect(principal).toBeInViewport();
   await expect(fijo).toBeHidden();
   // Al bajar y dejar atrás el principal, aparece
-  await page.mouse.wheel(0, 1600);
+  // Hasta la mitad de los servicios: lejos del principal de arriba y del de cierre (pulido 2.1 acortó la portada)
+  await page.getByRole("region", { name: "Servicios" }).locator(".tt-tarjeta").nth(3).evaluate((e) => e.scrollIntoView({ block: "center" }));
   await expect(principal).not.toBeInViewport();
   await expect(fijo).toBeVisible();
   // En una página sin botón principal, se ve desde el inicio
