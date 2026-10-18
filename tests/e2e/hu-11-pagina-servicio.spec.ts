@@ -21,7 +21,8 @@ test("la página de un servicio muestra el proceso y abre WhatsApp con ese servi
 
   const mensaje = "?text=Hola%2C%20quiero%20consultar%20por%20Mantenimiento%20del%20nano%20cer%C3%A1mico.";
   await expect(page.getByRole("link", { name: "Consultar por este servicio" }).first()).toHaveAttribute("href", `https://wa.me/59171234567${mensaje}`);
-  await expect(page.getByRole("link", { name: "Escribir a TocTar por WhatsApp" })).toHaveAttribute("href", `https://wa.me/59171234567${mensaje}`);
+  // Por su enlace: al navegar dentro del sitio, Next.js guarda oculta la página anterior con su propio botón fijo.
+  await expect(page.locator(`.tt-whatsapp--fijo[href="https://wa.me/59171234567${mensaje}"]`)).toHaveCount(1);
   await expect(page.locator("main")).not.toContainText(/\bBs\b/);
 });
 

@@ -316,6 +316,8 @@
     border-radius: 9999px;
     background: var(--rojo);
     color: var(--sobre-rojo);
+    /* Borde negro fino: se distingue sobre fotos y fondos rojos, sin la sombra gris genérica. */
+    box-shadow: 0 0 0 2px var(--negro);
   }
   .tt-whatsapp svg {
     width: 28px;
@@ -329,6 +331,31 @@
     right: calc(16px + env(safe-area-inset-right, 0px));
     bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     z-index: 40;
+    /* Escondido hasta saber si el botón principal está a la vista (whatsapp-flotante.tsx).
+       visibility lo saca también del teclado y de los lectores de pantalla mientras no se ve. */
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(8px) scale(0.9);
+    transition:
+      opacity 180ms ease-out,
+      transform 180ms ease-out,
+      visibility 0s linear 180ms;
+  }
+  .tt-whatsapp--fijo[data-visible="true"] {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 180ms ease-out,
+      transform 180ms ease-out,
+      visibility 0s;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tt-whatsapp--fijo,
+    .tt-whatsapp--fijo[data-visible="true"] {
+      transform: none;
+      transition: none;
+    }
   }
 
   /* Tarjeta de servicio (componente TarjetaServicio): esquina inferior derecha cortada a 60°, sin sombra ni radio. */

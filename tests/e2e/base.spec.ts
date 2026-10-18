@@ -68,3 +68,19 @@ test("los enlaces del pie tienen 44 px para el dedo", async ({ page }) => {
     expect(caja).toBeGreaterThanOrEqual(44);
   }
 });
+
+// Pulido visual 1.3
+test("el botón fijo de WhatsApp se esconde mientras el principal está a la vista", async ({ page }) => {
+  await page.goto("/");
+  const fijo = page.getByRole("link", { name: "Escribir a TocTar por WhatsApp" });
+  const principal = page.getByRole("main").getByRole("link", { name: "Escribir por WhatsApp" }).first();
+  await expect(principal).toBeInViewport();
+  await expect(fijo).toBeHidden();
+  // Al bajar y dejar atrás el principal, aparece
+  await page.mouse.wheel(0, 1600);
+  await expect(principal).not.toBeInViewport();
+  await expect(fijo).toBeVisible();
+  // En una página sin botón principal, se ve desde el inicio
+  await page.goto("/servicios");
+  await expect(fijo).toBeVisible();
+});

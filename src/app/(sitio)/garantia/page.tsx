@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import { FormularioReclamo } from "@/modulos/reclamos/componentes/formulario-reclamo";
 import { serviciosPublicos } from "@/modulos/sitio/publico";
 
@@ -19,7 +18,6 @@ export default function PaginaGarantia() {
       <Suspense fallback={<div className="min-h-screen" />}>
         <Formulario />
       </Suspense>
-      <WhatsAppFijo />
     </section>
   );
 }

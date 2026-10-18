@@ -45,6 +45,10 @@ test("ninguna página pública muestra precios (RN-10) y todas tienen el botón 
   for (const ruta of ["/", "/servicios", "/servicios/pulido-y-nano-ceramico", "/galeria", "/nosotros", "/preguntas-frecuentes", "/contacto"]) {
     await page.goto(ruta);
     await expect(page.getByRole("main"), ruta).not.toContainText(/\bBs\.?\s?\d|\bprecio:/i);
-    await expect(page.getByRole("link", { name: "Escribir a TocTar por WhatsApp" }), ruta).toHaveCount(1);
+    // El fijo puede estar escondido si el principal está a la vista (pulido 1.3): se cuenta por su clase.
+    await expect(page.locator(".tt-whatsapp--fijo"), ruta).toHaveCount(1);
   }
+  // Garantía y reclamos no lo lleva: tapaba el formulario
+  await page.goto("/garantia");
+  await expect(page.locator(".tt-whatsapp--fijo")).toHaveCount(0);
 });
