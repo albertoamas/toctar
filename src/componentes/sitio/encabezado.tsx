@@ -1,4 +1,5 @@
-import Image from "next/image";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import Link from "next/link";
 import { MenuDesplegable } from "@/componentes/menu-desplegable";
 import { PAGINAS_PRINCIPALES, PAGINAS_SECUNDARIAS } from "@/lib/sitio";
@@ -11,11 +12,17 @@ import { BotonWhatsApp } from "./whatsapp";
 // Se separa del contenido con una línea gris fina, sin brillo: está en todas las páginas y no debe competir
 // con ellas. El rojo queda para el logo y la página actual; la línea LED con brillo es de la portada.
 
+// El logo va dentro de la página y no como archivo aparte: así aparece en el primer cuadro, junto con el
+// encabezado (como archivo, con una red lenta llegaba último; pulido 2.1). El original sigue siendo el de
+// public/marca: se lee de ahí al armar la página, sin copiarlo ni recolorearlo. Es decorativo dentro del enlace,
+// que ya se llama "TocTar, inicio".
+const LOGO = readFileSync(path.join(process.cwd(), "public/marca/toctar-horizontal-sin-lema-sobre-oscuro.svg"), "utf8")
+  .replace(' role="img" aria-label="TocTar"', "")
+  .replace("<svg ", '<svg width="127" height="32" aria-hidden="true" focusable="false" ');
+
 function Logo() {
   return (
-    <Link href="/" aria-label="TocTar, inicio" className="flex min-h-11 shrink-0 items-center">
-      <Image src="/marca/toctar-horizontal-sin-lema-sobre-oscuro.svg" alt="TocTar" width={127} height={32} priority unoptimized />
-    </Link>
+    <Link href="/" aria-label="TocTar, inicio" className="flex min-h-11 shrink-0 items-center" dangerouslySetInnerHTML={{ __html: LOGO }} />
   );
 }
 
