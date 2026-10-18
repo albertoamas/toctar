@@ -57,16 +57,21 @@ export default function Portada() {
 
 /**
  * Cabecera de la portada: arte de marca, lema y presentación, y la línea LED.
- * Mientras llegan los textos se muestra sin ellos y SIN la línea, con el alto que ocupa el texto
- * (medido: 296 px en computadora, 364 a 392 px en el celular). La línea llega junto con el texto,
- * así se enciende una sola vez y ya en su lugar: antes se encendía arriba y el texto la empujaba a mitad del efecto.
+ * Mientras llegan los textos se muestra sin ellos y SIN la línea. El bloque del texto tiene el MISMO alto mínimo
+ * cargando y cargado: así un texto más corto no hace subir la página al llegar (medido el 18/10: con una
+ * presentación corta subía 88 px). El mínimo es lo que ocupa el texto actual (392 px a 360 de ancho, 296 en
+ * computadora); un texto más largo que eso todavía empuja lo de abajo, por eso conviene que la presentación
+ * sean "dos o tres frases", como pide el panel.
+ * La línea llega junto con el texto: así se enciende una sola vez y ya en su lugar.
  */
 function Cabecera({ children }: { children?: React.ReactNode }) {
   return (
     <>
       <div className="mx-auto grid max-w-6xl gap-8 px-4 pt-10 pb-12 md:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] md:items-end md:pt-20 md:pb-16">
         <PortadaArte className="order-first h-auto w-full max-w-72 justify-self-end md:order-last md:max-w-none" />
-        {children ?? <div aria-hidden className="min-h-[23rem] md:min-h-[18.5rem]" />}
+        <div aria-hidden={children ? undefined : true} className="min-h-[24.5rem] md:min-h-[18.5rem]">
+          {children}
+        </div>
       </div>
       {children ? <hr className="tt-led tt-led--encender" /> : <div aria-hidden className="h-[3px]" />}
     </>
