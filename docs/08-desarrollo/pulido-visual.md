@@ -96,7 +96,7 @@ Se hacen primero: aparecen en todas las pantallas.
 | 1.1 | Encabezado y menú del sitio (con el menú del celular) | ✅ 16/10 |
 | 1.2 | Pie del sitio | ✅ 16/10 |
 | 1.3 | Botón fijo de WhatsApp | ✅ 18/10 |
-| 1.4 | Estructura del panel: barra lateral, menú del celular y usuario | ⏳ |
+| 1.4 | Estructura del panel: barra lateral, menú del celular y usuario | ✅ 18/10 |
 | 1.5 | Avisos, estados vacíos y de carga del panel | ⏳ |
 
 ### 2. Sitio público
@@ -148,7 +148,7 @@ Antes de la demo del viernes 23.
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 6.1 | Datos del negocio y logo | `/panel/configuracion` | ⏳ |
+| 6.1 | Datos del negocio y logo | `/panel/configuracion` | ⏳ (pendiente de 1.4: a 360 px la pantalla se pasa 3 px de ancho) |
 | 6.2 | Taller (espacios y tamaños de vehículo) | `/panel/configuracion/taller` | ⏳ |
 | 6.3 | Cotizaciones y mantenimiento | `/panel/configuracion/cotizaciones` | ⏳ |
 
@@ -229,6 +229,28 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - E2E completo: 124 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
   - Lighthouse móvil: portada y Servicios con rendimiento 91 y 100 en lo demás.
 - **Incidente de entorno:** con la PC suspendida, el reloj de Docker quedó adelantado y el almacenamiento rechazaba las subidas (`RequestTimeTooSkewed`): fallaban las pruebas de galería y reclamos. Se arregla con `docker compose restart almacenamiento`.
+
+### 1.4 Estructura del panel (18/10/2026)
+- **Encontrado:**
+  - En el celular, las pantallas con pestañas (Sitio web y Configuración) se salían por la derecha: 420 px de ancho en una pantalla de 360, con texto cortado. La causa era la columna del contenido, que no podía achicarse (`min-width` automático de un elemento flex) y la estiraba la tira de pestañas.
+  - En el celular, la barra de arriba no quedaba fija. En la computadora, la barra lateral se iba con la página, así que en las páginas largas el menú y "Cerrar sesión" quedaban lejos.
+  - Los enlaces del menú medían 36 px y "Cerrar sesión", 32.
+  - El módulo actual solo se marcaba con un fondo gris oscuro, sin el lenguaje de la página actual del sitio.
+  - En tableta (768 px), la barra lateral se llevaba casi un tercio de la pantalla y el contenido quedaba apretado.
+  - Los nombres de los roles estaban escritos dos veces (`usuario-sesion.tsx` y `modulos/usuarios/textos.ts`).
+- **Cambios:**
+  - `min-w-0` en la columna del contenido (`src/app/panel/layout.tsx`): arregla el desborde en todas las pantallas a la vez.
+  - Barra de arriba fija (`sticky`) y el aviso sin conexión justo debajo. La barra lateral queda fija y a la altura de la pantalla, con su propio desplazamiento si hace falta.
+  - Barra lateral recién desde 1024 px (`lg`). En el celular y la tableta, la barra de arriba con el menú desplegable.
+  - Enlaces del menú de 44 px y "Cerrar sesión" de 44 × 44.
+  - Módulo actual: fondo gris más un trazo rojo inclinado a 60°, como los del monograma (`.tt-modulo-actual`). Es lo único rojo del menú.
+  - `UsuarioSesion` usa `NOMBRE_ROL` de `modulos/usuarios/textos.ts`.
+- **Descartado o pendiente:**
+  - Pendiente para 6.1: a 360 px, `/panel/configuracion` todavía se pasa 3 px. No viene de la estructura: el formulario del negocio tiene algo que no se achica.
+- **Verificación:**
+  - Capturas a 360, 768, 1280 y 1600 px, con el menú del celular abierto y ampliada al 300 % del trazo.
+  - Medición del desborde en 12 pantallas del panel a 360 px: antes se salían 8, ahora solo Configuración, por 3 px.
+  - E2E `base` "el panel no se sale de la pantalla en el celular y su menú queda a mano". E2E completo: 126 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
