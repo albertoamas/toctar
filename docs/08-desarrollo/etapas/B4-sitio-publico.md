@@ -167,6 +167,6 @@ Ninguna nueva. Las acciones del panel (B2 y B3) ya invalidan las etiquetas que l
 
 | Decisión | Propuesta | Quién decide |
 |---|---|---|
-| Imagen principal de la portada | Arte de marca del Design System (sin foto) hasta tener una foto propia del taller con buena luz | Dueño (demo del 23) |
+| Imagen principal de la portada | **Resuelto en el pulido 2.1 (18/10):** la foto del taller se carga desde el panel (Textos → Portada) y va detrás del lema, oscurecida; sin foto se ve el arte de marca. Falta la foto propia del taller, horizontal y con buena luz | Dueño (manda la foto antes de la demo del 23) |
 | Mensaje inicial de WhatsApp | "Hola, quiero consultar por…" | Dueño |
 | Mapa embebido o solo el enlace | Embebido y diferido; si Lighthouse baja de 90, solo el enlace | YankoSoft, según la medición |

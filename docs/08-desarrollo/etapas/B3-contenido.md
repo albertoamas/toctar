@@ -21,7 +21,7 @@ El dueño (o un encargado con el módulo "Sitio web") carga desde el panel todo 
   - Mostrar u ocultar en el sitio.
   - Variantes con nombre y descripción, sin precios: por ejemplo, los años del cerámico.
 - **Textos (HU-08):**
-  - Portada: lema y presentación.
+  - Portada: lema, presentación y, opcional, la foto del taller que va detrás del lema (agregada en el pulido 2.1, 18/10).
   - Nosotros: historia, cómo trabajamos y por qué elegirnos.
   - Contacto: texto de bienvenida.
   - Preguntas frecuentes: agregar, editar, ordenar y quitar.
@@ -95,6 +95,7 @@ Una migración de tablas y otra de datos iniciales por historia: `0006_servicios
 |---|---|---|---|
 | `clave` | `text` | no | Clave primaria: `inicio`, `nosotros`, `contacto` |
 | `datos` | `jsonb` | no | Validado por el registro `src/modulos/sitio/contenido.ts` |
+| `foto_archivo_id` | `integer` → `archivo` | sí | Foto de la página. Hoy solo `inicio`: la foto del taller de la portada (migración `0014_foto_portada`) |
 | `updated_at`, `updated_by` | | | |
 
 | Página | Campos (texto, todos obligatorios) |
@@ -154,7 +155,7 @@ Todas con `exigirModulo("sitio")`: el dueño, o un encargado con el permiso `sit
 | `/panel/sitio` | Servicios | Lista en orden: nombre, si se ve en el sitio, miniatura o "Sin foto", y subir o bajar. Botón "Agregar servicio" |
 | `/panel/sitio/servicios/nuevo` | — | Nombre y resumen. Al crear, lleva a la edición completa |
 | `/panel/sitio/servicios/[id]` | — | Datos, foto principal, beneficios, pasos, variantes y "Mostrar en el sitio" |
-| `/panel/sitio/textos` | Textos | Portada, Nosotros y Contacto: un formulario por página |
+| `/panel/sitio/textos` | Textos | Portada, Nosotros y Contacto: un formulario por página. Debajo de Portada, "Foto del taller": subir, cambiar o quitar (sin foto, la portada muestra el arte de la marca) |
 | `/panel/sitio/preguntas` | Preguntas frecuentes | Lista editable: agregar, editar, subir o bajar, ocultar y eliminar (pide confirmación) |
 | `/panel/sitio/galeria` | Galería | Botón "Subir fotos"; grilla de miniaturas con su servicio, descripción, si está visible, orden y eliminar. Filtro por servicio |
 

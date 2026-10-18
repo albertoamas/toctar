@@ -135,6 +135,7 @@
 | 8.2 | Ningún texto queda vacío | E2E "un texto vacío da error junto al campo y no se guarda". Unitarias "textos de las páginas" | ✅ |
 | 8.3 | Puedo agregar, ordenar y quitar preguntas frecuentes | E2E "preguntas frecuentes: agregar, editar, ordenar, ocultar y eliminar" (eliminar pide confirmación; también se pueden ocultar sin borrar) | ✅ |
 | 8.4 | Los textos iniciales están cargados para que el dueño los corrija | Migración `0009_datos_contenido`: borradores con su historia, su garantía y la entrevista, sin precios | ✅ (los valida el dueño en la demo) |
+| 8.5 | Subo, cambio o quito la foto del taller de la portada; sin foto se ve el arte de la marca | E2E `hu-08` "la foto del taller va detrás del lema de la portada; sin foto vuelve el arte" | ✅ (agregado en el pulido 2.1; falta la foto propia del taller) |
 
 ## HU-09 Galería en el panel
 
