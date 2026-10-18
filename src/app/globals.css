@@ -474,6 +474,14 @@
     text-decoration: underline;
     text-underline-offset: 4px;
   }
+  /* Con el teclado se enmarca toda la tarjeta, que es lo que se abre, y no solo el enlace (pulido 2.2). */
+  .tt-tarjeta:has(.tt-tarjeta__enlace:focus-visible) {
+    outline: 2px solid var(--foco);
+    outline-offset: 2px;
+  }
+  .tt-tarjeta__enlace:focus-visible {
+    outline: none;
+  }
   /* Toda la tarjeta se toca: el enlace la cubre (la tarjeta tiene un solo destino). */
   .tt-tarjeta__enlace::after {
     content: "";
