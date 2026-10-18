@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { ChevronLeftIcon } from "lucide-react";
+import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { FotoOReemplazo } from "@/componentes/sitio/foto-o-reemplazo";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import { servicioPublico, type DetalleServicioPublico } from "@/modulos/sitio/publico";
@@ -62,13 +63,11 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
         {s.fotos.length > 0 && <Fotos servicio={s} />}
       </div>
 
-      <section className="border-t border-border bg-superficie">
-        <div className="mx-auto flex max-w-6xl flex-col items-start gap-5 px-4 py-12 md:py-20">
-          <h2 className="font-heading text-[28px] leading-8 font-bold italic md:text-[40px] md:leading-[44px]">¿Quieres saber cuánto sale en tu vehículo?</h2>
-          <p className="max-w-xl text-tinta-suave">El precio depende del tamaño y del estado de tu vehículo. Escríbenos con una foto y te damos una cotización.</p>
-          <BotonWhatsApp texto="Consultar por este servicio" servicio={s.nombre} />
-        </div>
-      </section>
+      <CierreWhatsApp
+        titulo="¿Quieres saber cuánto sale en tu vehículo?"
+        texto="El precio depende del tamaño y del estado de tu vehículo. Escríbenos con una foto y te damos una cotización."
+        servicio={s.nombre}
+      />
 
       <WhatsAppFijo servicio={s.nombre} />
     </article>
