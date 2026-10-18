@@ -3,6 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { cn } from "cn";
+import { TituloPagina } from "@/componentes/sitio/titulo-pagina";
 import { VisorGaleria } from "@/componentes/sitio/visor-galeria";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import { filtrarPorServicio, serviciosConFotos } from "@/modulos/sitio/galeria";
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
 export default function PaginaGaleria({ searchParams }: PageProps<"/galeria">) {
   return (
     <section className="mx-auto w-full max-w-6xl px-4 py-12 md:py-20">
-      <h1 className="font-heading text-[40px] leading-[44px] font-extrabold italic">Galería</h1>
+      <TituloPagina>Galería</TituloPagina>
       <p className="mt-3 max-w-2xl text-tinta-suave">Trabajos reales del taller. Toca una foto para verla en grande.</p>
       <Suspense fallback={<div className="min-h-screen" />}>
         <Fotos searchParams={searchParams} />

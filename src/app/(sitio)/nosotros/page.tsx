@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { TituloPagina } from "@/componentes/sitio/titulo-pagina";
 import { Monograma } from "@/componentes/sitio/iconos-marca";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import { contenidoPublico } from "@/modulos/sitio/publico";
@@ -20,7 +21,7 @@ export default function PaginaNosotros() {
       <section className="relative overflow-hidden">
         <Monograma className="pointer-events-none absolute -top-10 -right-24 w-[26rem] fill-superficie md:-right-12 md:w-[34rem]" />
         <div className="relative mx-auto max-w-6xl px-4 py-12 md:py-20">
-          <h1 className="font-heading text-[40px] leading-[44px] font-extrabold italic">Nosotros</h1>
+          <TituloPagina>Nosotros</TituloPagina>
           <Suspense fallback={<div className="min-h-screen" />}>
             <Contenido />
           </Suspense>

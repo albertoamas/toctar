@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { ChevronDownIcon } from "lucide-react";
+import { TituloPagina } from "@/componentes/sitio/titulo-pagina";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import { preguntasPublicas } from "@/modulos/sitio/publico";
 
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 export default function PaginaPreguntas() {
   return (
     <section className="mx-auto w-full max-w-3xl px-4 py-12 md:py-20">
-      <h1 className="font-heading text-[40px] leading-[44px] font-extrabold italic">Preguntas frecuentes</h1>
+      <TituloPagina>Preguntas frecuentes</TituloPagina>
       <Suspense fallback={<div className="min-h-screen" />}>
         <Lista />
       </Suspense>

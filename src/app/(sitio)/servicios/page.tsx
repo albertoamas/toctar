@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { TituloPagina } from "@/componentes/sitio/titulo-pagina";
 import { TarjetaServicio } from "@/componentes/sitio/tarjeta-servicio";
 import { WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import { serviciosPublicos } from "@/modulos/sitio/publico";
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 export default function PaginaServicios() {
   return (
     <section className="mx-auto w-full max-w-6xl px-4 py-12 md:py-20">
-      <h1 className="font-heading text-[40px] leading-[44px] font-extrabold italic">Servicios</h1>
+      <TituloPagina>Servicios</TituloPagina>
       <p className="mt-3 max-w-2xl text-tinta-suave">Elige uno para ver en qué consiste y cómo lo hacemos. Para el precio, escríbenos: depende del tamaño y del estado del vehículo.</p>
       <Suspense fallback={<div className="min-h-screen" />}>
         <Lista />
