@@ -154,6 +154,8 @@ Antes de la demo del viernes 23.
 
 ## Registro por pantalla
 
+Las comparativas de antes y después de cada grupo (antes a la izquierda) están en `docs/08-desarrollo/pulido-visual/`.
+
 Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (con el commit o el PR) y lo que quedó pendiente o se descartó, con el motivo.
 
 ### 1.1 Encabezado y menú del sitio (16/10/2026)
