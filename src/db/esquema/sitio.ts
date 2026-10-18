@@ -53,6 +53,8 @@ export const variante = pgTable(
 export const contenidoPagina = pgTable("contenido_pagina", {
   clave: text("clave").primaryKey(),
   datos: jsonb("datos").$type<Record<string, unknown>>().notNull(),
+  /** Foto de la página, opcional. Hoy solo la portada: la foto del taller detrás del lema. */
+  fotoArchivoId: integer("foto_archivo_id").references(() => archivo.id),
   updatedAt: momento("updated_at").defaultNow().notNull(),
   updatedBy: integer("updated_by").references(() => usuario.id),
 });

@@ -90,6 +90,16 @@ export async function listarVariantes(servicioId: number): Promise<ElementoLista
   return filas;
 }
 
+/** Foto del taller de la portada, o null si no tiene (HU-08). */
+export async function obtenerFotoPortada(): Promise<UrlsFoto | null> {
+  const [fila] = await db
+    .select({ foto: archivo })
+    .from(contenidoPagina)
+    .innerJoin(archivo, eq(contenidoPagina.fotoArchivoId, archivo.id))
+    .where(eq(contenidoPagina.clave, "inicio"));
+  return fila ? urlsFoto(fila.foto) : null;
+}
+
 /** Textos de todas las páginas (HU-08). */
 export async function obtenerContenidos(): Promise<Record<Pagina, ContenidoPagina>> {
   const filas = await db.select().from(contenidoPagina);

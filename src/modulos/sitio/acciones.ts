@@ -273,6 +273,35 @@ export async function guardarContenido(_previo: EstadoFormulario, datos: FormDat
   return { ok: true, mensaje: `${PAGINAS[pagina].titulo}: cambios guardados.` };
 }
 
+/** Foto del taller detrás del lema de la portada (opcional). La anterior se borra: ningún otro registro la usa. */
+export async function subirFotoPortada(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  const autor = await exigirModulo("sitio");
+  const [actual] = await db.select({ fotoArchivoId: contenidoPagina.fotoArchivoId }).from(contenidoPagina).where(eq(contenidoPagina.clave, "inicio"));
+  if (!actual) return { mensaje: "Faltan los textos de la portada: aplica las migraciones." };
+
+  const foto = await guardarFoto(datos.get("foto"), { carpeta: "portada", miniatura: true, autorId: Number(autor.id) });
+  if (!foto.ok) return { errores: { foto: foto.motivo === "vacia" ? "Elige una foto." : ERROR_FOTO } };
+
+  await db
+    .update(contenidoPagina)
+    .set({ fotoArchivoId: foto.archivoId, updatedAt: new Date(), updatedBy: Number(autor.id) })
+    .where(eq(contenidoPagina.clave, "inicio"));
+  if (actual.fotoArchivoId) await eliminarFoto(actual.fotoArchivoId);
+
+  despuesDeCambiarContenido("textos");
+  return { ok: true, mensaje: "Foto guardada." };
+}
+
+export async function quitarFotoPortada(): Promise<EstadoFormulario> {
+  const autor = await exigirModulo("sitio");
+  const [actual] = await db.select({ fotoArchivoId: contenidoPagina.fotoArchivoId }).from(contenidoPagina).where(eq(contenidoPagina.clave, "inicio"));
+  if (!actual?.fotoArchivoId) return { ok: true };
+  await db.update(contenidoPagina).set({ fotoArchivoId: null, updatedAt: new Date(), updatedBy: Number(autor.id) }).where(eq(contenidoPagina.clave, "inicio"));
+  await eliminarFoto(actual.fotoArchivoId);
+  despuesDeCambiarContenido("textos");
+  return { ok: true, mensaje: "Foto quitada. La portada muestra el arte de TocTar." };
+}
+
 /** Agrega (sin id) o edita (con id) una pregunta frecuente. */
 export async function guardarPregunta(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   await exigirModulo("sitio");
