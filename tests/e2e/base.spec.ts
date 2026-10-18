@@ -73,7 +73,7 @@ test("los enlaces del pie tienen 44 px para el dedo", async ({ page }) => {
 test("el botón fijo de WhatsApp se esconde mientras el principal está a la vista", async ({ page }) => {
   await page.goto("/");
   const fijo = page.getByRole("link", { name: "Escribir a TocTar por WhatsApp" });
-  const principal = page.getByRole("main").getByRole("link", { name: "Escribir por WhatsApp" }).first();
+  const principal = page.getByRole("main").getByRole("link", { name: "Pedir cotización por WhatsApp" });
   await expect(principal).toBeInViewport();
   await expect(fijo).toBeHidden();
   // Al bajar y dejar atrás el principal, aparece
