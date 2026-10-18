@@ -105,7 +105,7 @@ Antes de la demo del viernes 23.
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
 | 2.1 | Portada | `/` | ✅ 18/10 |
-| 2.2 | Servicios | `/servicios` | ⏳ |
+| 2.2 | Servicios | `/servicios` | ✅ 18/10 |
 | 2.3 | Página de un servicio | `/servicios/[slug]` | ⏳ |
 | 2.4 | Galería y visor de fotos | `/galeria` | ⏳ |
 | 2.5 | Nosotros | `/nosotros` | ⏳ |
@@ -302,6 +302,24 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Tras la segunda revisión: E2E `hu-10` "al recargar, los títulos de la portada no aparecen antes que su contenido" (con red lenta, cuando se ve "Servicios" ya están sus tarjetas). E2E completo: 133 pasan. Lighthouse móvil: portada con rendimiento 90 y 92, Servicios y Contacto con 92; 100 en lo demás; CLS 0.
   - Saltos medidos con red lenta en los cuatro anchos: 0. Lighthouse móvil: portada con rendimiento 90 y 91 en dos corridas, Servicios con 91; 100 en accesibilidad, buenas prácticas y SEO; CLS 0.
   - E2E `hu-10` "en el celular los servicios van en filas compactas…" y "al llegar al cierre de la portada se ve un solo botón de WhatsApp". E2E completo: 131 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 2.2 Servicios (18/10/2026)
+- **Encontrado:**
+  - Con el teclado, el marco del foco rodeaba solo "Ver el servicio", pero lo que se abre es toda la tarjeta (el enlace la cubre).
+  - La página terminaba con la última tarjeta y pasaba al pie. Quien no sabía qué servicio elegir solo tenía el botón fijo, sin nada que lo invitara a escribir.
+  - El estilo del título principal (`font-heading text-[40px] leading-[44px] font-extrabold italic`) estaba copiado en las 6 páginas interiores.
+  - Lo que estaba bien: las filas compactas en el celular (de 2.1), las tres columnas en la computadora, el texto que explica por qué no hay precios y el CLS 0.
+- **Cambios:**
+  - Con el teclado se enmarca toda la tarjeta (`.tt-tarjeta:has(.tt-tarjeta__enlace:focus-visible)`) y el enlace ya no lleva su propio marco.
+  - Al final de la lista va un cierre: "¿No sabes cuál elegir?", "Mándanos fotos de tu vehículo y te decimos qué conviene hacer." y el botón principal "Mandar fotos de mi vehículo". Mientras se ve, el botón fijo se esconde. Es el mismo componente que el cierre de la portada (`src/componentes/sitio/cierre-whatsapp.tsx`), que ahora solo cambia el título y el texto.
+  - El cierre llega junto con la lista (un solo `<Suspense>`), según la regla de 2.1. El título de la página y la bajada siguen llegando primero.
+  - `TituloPagina` (`src/componentes/sitio/titulo-pagina.tsx`) es el título de las 6 páginas interiores. Se ven igual que antes (revisado en el HTML de cada una).
+- **Descartado o pendiente:**
+  - Filtros o categorías en la lista: descartado. Son 8 servicios y se ven de un vistazo.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, sin desborde. Comparativas en `pulido-visual/2.2-servicios-celular.jpg` y `pulido-visual/2.2-foco-tarjeta.jpg`.
+  - E2E `hu-11` "la lista de servicios termina con una invitación a mandar fotos, con un solo WhatsApp a la vista" y "con el teclado se enmarca toda la tarjeta del servicio". E2E completo: 136 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse de Servicios: en el celular, 93 de rendimiento; en la computadora, 99. 100 en accesibilidad, buenas prácticas y SEO; CLS 0.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
