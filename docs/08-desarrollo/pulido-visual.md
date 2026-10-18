@@ -106,7 +106,7 @@ Antes de la demo del viernes 23.
 |---|---|---|---|
 | 2.1 | Portada | `/` | ✅ 18/10 |
 | 2.2 | Servicios | `/servicios` | ✅ 18/10 |
-| 2.3 | Página de un servicio | `/servicios/[slug]` | ⏳ |
+| 2.3 | Página de un servicio | `/servicios/[slug]` | ✅ 18/10 |
 | 2.4 | Galería y visor de fotos | `/galeria` | ⏳ |
 | 2.5 | Nosotros | `/nosotros` | ⏳ |
 | 2.6 | Preguntas frecuentes | `/preguntas-frecuentes` | ⏳ |
@@ -320,6 +320,26 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Capturas a 360, 390, 768 y 1280 px, sin desborde. Comparativas en `pulido-visual/2.2-servicios-celular.jpg` y `pulido-visual/2.2-foco-tarjeta.jpg`.
   - E2E `hu-11` "la lista de servicios termina con una invitación a mandar fotos, con un solo WhatsApp a la vista" y "con el teclado se enmarca toda la tarjeta del servicio". E2E completo: 136 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
   - Lighthouse de Servicios: en el celular, 93 de rendimiento; en la computadora, 99. 100 en accesibilidad, buenas prácticas y SEO; CLS 0.
+
+### 2.3 Página de un servicio (18/10/2026)
+- **Encontrado:**
+  - En la base de desarrollo los servicios casi no tienen descripción, beneficios, pasos ni fotos. Para ver la página completa se cargó un servicio con todo en `toctar_e2e`, que se recrea en cada E2E (no en la base del dueño).
+  - En el celular, "‹ Servicios" (para volver) quedaba debajo de la foto, entre la foto y el título, y medía 81 × 20 px.
+  - Los dos botones de WhatsApp (arriba y en el cierre) decían lo mismo: "Consultar por este servicio". El cierre no era el de la portada y Servicios (sin el monograma).
+  - Opciones: si una tenía descripción, salía ancha y las demás chicas, en renglones disparejos.
+  - Lo que estaba bien: el titular, los pasos numerados (son una secuencia), las viñetas a 60°, la página que llega toda junta, sin precios y con CLS 0.
+- **Cambios:**
+  - "‹ Servicios" es lo primero de la página en todos los anchos, con 44 px de alto.
+  - El cierre es el componente común (`CierreWhatsApp`), que ahora acepta el servicio para el mensaje. Su botón dice "Mandar fotos de mi vehículo" y manda el servicio escrito; el de arriba sigue como "Consultar por este servicio".
+  - Opciones: si alguna tiene descripción, grilla pareja (2 columnas en tableta, 3 en computadora); si no, cajitas en fila como antes.
+- **Descartado o pendiente:**
+  - Abrir en grande las fotos de "Trabajos de…": sería una función nueva; está "Ver la galería".
+  - **Meta descripción (SEO 92 en Lighthouse).** En esta página, que lee la base, Next manda la metadata en streaming: el navegador la recibe en el `<body>`. Los bots que solo leen el `<head>` (WhatsApp, Facebook, Bing, los rastreadores de Google con guion) la reciben en el `<head>`, y Googlebot ejecuta JavaScript. Lighthouse 12 ya no se identifica como bot, por eso la marca como faltante. Se probó `htmlLimitedBots: /.*/` (todo bloqueante): dejaba colgadas las precargas de enlaces. Se descartó y se dejó el comportamiento de Next, con una prueba de que WhatsApp, Bing y Facebook la reciben en el `<head>`.
+  - Para 2.9: una dirección de servicio inexistente responde con estado 200 (la página no encontrada se ve igual).
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, con datos reales y con un servicio completo, sin desborde. Comparativas en `pulido-visual/2.3-cabecera-celular.jpg`, `2.3-servicio-celular.jpg` y `2.3-servicio-computadora.jpg`.
+  - E2E `hu-11` "volver a Servicios es lo primero y se toca con el dedo" y el botón del cierre con el servicio escrito; `hu-18` "la página de un servicio entrega título, descripción y vista previa dentro del head a WhatsApp y a los buscadores". E2E completo: 140 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse de un servicio: en el celular, 92 de rendimiento (91 con el servicio completo); en la computadora, 100. 100 en accesibilidad y buenas prácticas; SEO 92 por lo de arriba; CLS 0.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
