@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { Monograma } from "@/componentes/sitio/iconos-marca";
+import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { PortadaArte } from "@/componentes/sitio/portada-arte";
 import { TarjetaServicio } from "@/componentes/sitio/tarjeta-servicio";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
@@ -62,16 +62,10 @@ async function PortadaConDatos() {
 
       <Galeria fotos={fotos.slice(0, FOTOS_EN_PORTADA)} />
 
-      <section className="relative overflow-hidden bg-superficie">
-        <Monograma className="pointer-events-none absolute -right-16 -bottom-24 w-[28rem] fill-fondo md:-right-10 md:w-[36rem]" />
-        <div className="relative mx-auto flex max-w-6xl flex-col items-start gap-6 px-4 py-12 md:py-24">
-          <h2 className="max-w-xl font-heading text-[28px] leading-8 font-bold italic md:text-[40px] md:leading-[44px]">Cuéntanos qué necesita tu vehículo</h2>
-          <p className="max-w-xl text-tinta-suave">Mándanos una foto o pasa por el taller: lo revisamos y te decimos qué conviene hacer.</p>
-          {/* Principal: mientras se ve, el botón fijo se esconde y queda un solo WhatsApp en pantalla (pulido 1.3).
-              El texto dice lo que gana el cliente; el ícono y el nombre accesible dicen que es WhatsApp. */}
-          <BotonWhatsApp texto="Mandar fotos de mi vehículo" />
-        </div>
-      </section>
+      <CierreWhatsApp
+        titulo="Cuéntanos qué necesita tu vehículo"
+        texto="Mándanos una foto o pasa por el taller: lo revisamos y te decimos qué conviene hacer."
+      />
     </>
   );
 }
