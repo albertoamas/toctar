@@ -7,7 +7,7 @@ import { Monograma } from "@/componentes/sitio/iconos-marca";
 import { PortadaArte } from "@/componentes/sitio/portada-arte";
 import { TarjetaServicio } from "@/componentes/sitio/tarjeta-servicio";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
-import { contenidoPublico, galeriaPublica, serviciosPublicos } from "@/modulos/sitio/publico";
+import { contenidoPublico, galeriaPublica, serviciosPublicos, type FotoGaleria, type ServicioPublico } from "@/modulos/sitio/publico";
 
 // Las descripciones para Google van fijas (dentro del <head>, que es donde las lee Google) y sin nombrar
 // servicios concretos: así no quedan desactualizadas cuando el dueño agrega o quita uno.
@@ -21,37 +21,57 @@ const FOTOS_EN_PORTADA = 6;
 
 // HU-10 Portada: lema, presentación y WhatsApp; servicios; algunas fotos de la galería; cierre.
 // Los textos y las listas salen del panel (B3) y se leen al atender la visita (el build no tiene base).
+// Toda la portada aparece de una vez (pulido 2.1): antes, los títulos fijos ("Servicios", el cierre) salían
+// en el primer envío y su contenido después, y se veían títulos sueltos. Mientras llegan los datos se ve
+// solo el arte de la cabecera, con el espacio reservado de una pantalla (nada salta al llegar).
 export default function Portada() {
   return (
     <>
+      <Suspense
+        fallback={
+          <>
+            <section className="relative overflow-hidden">
+              <Cabecera />
+            </section>
+            <div aria-hidden className="min-h-screen" />
+          </>
+        }
+      >
+        <PortadaConDatos />
+      </Suspense>
+      <WhatsAppFijo />
+    </>
+  );
+}
+
+async function PortadaConDatos() {
+  await connection();
+  const [inicio, servicios, fotos] = await Promise.all([contenidoPublico("inicio"), serviciosPublicos(), galeriaPublica()]);
+  return (
+    <>
       <section className="relative overflow-hidden">
-        <Suspense fallback={<Cabecera />}>
-          <CabeceraConTexto />
-        </Suspense>
+        <Cabecera>
+          <Presentacion lema={inicio.lema as string} presentacion={inicio.presentacion as string} />
+        </Cabecera>
       </section>
 
       <section aria-labelledby="servicios-titulo" className="mx-auto w-full max-w-6xl px-4 py-12 md:py-24">
         <h2 id="servicios-titulo" className="font-heading text-[28px] leading-8 font-bold italic md:text-[40px] md:leading-[44px]">Servicios</h2>
-        <Suspense fallback={<div className="min-h-96" />}>
-          <Servicios />
-        </Suspense>
+        <Servicios servicios={servicios} />
       </section>
 
-      <Suspense fallback={null}>
-        <Galeria />
-      </Suspense>
+      <Galeria fotos={fotos.slice(0, FOTOS_EN_PORTADA)} />
 
       <section className="relative overflow-hidden bg-superficie">
         <Monograma className="pointer-events-none absolute -right-16 -bottom-24 w-[28rem] fill-fondo md:-right-10 md:w-[36rem]" />
         <div className="relative mx-auto flex max-w-6xl flex-col items-start gap-6 px-4 py-12 md:py-24">
           <h2 className="max-w-xl font-heading text-[28px] leading-8 font-bold italic md:text-[40px] md:leading-[44px]">Cuéntanos qué necesita tu vehículo</h2>
           <p className="max-w-xl text-tinta-suave">Mándanos una foto o pasa por el taller: lo revisamos y te decimos qué conviene hacer.</p>
-          {/* Principal: mientras se ve, el botón fijo se esconde y queda un solo WhatsApp en pantalla (pulido 1.3). */}
-          <BotonWhatsApp />
+          {/* Principal: mientras se ve, el botón fijo se esconde y queda un solo WhatsApp en pantalla (pulido 1.3).
+              El texto dice lo que gana el cliente; el ícono y el nombre accesible dicen que es WhatsApp. */}
+          <BotonWhatsApp texto="Mandar fotos de mi vehículo" />
         </div>
       </section>
-
-      <WhatsAppFijo />
     </>
   );
 }
@@ -79,16 +99,6 @@ function Cabecera({ children }: { children?: React.ReactNode }) {
   );
 }
 
-async function CabeceraConTexto() {
-  await connection();
-  const inicio = await contenidoPublico("inicio");
-  return (
-    <Cabecera>
-      <Presentacion lema={inicio.lema as string} presentacion={inicio.presentacion as string} />
-    </Cabecera>
-  );
-}
-
 function Presentacion({ lema, presentacion }: { lema: string; presentacion: string }) {
   return (
     <div className="flex flex-col items-start gap-6">
@@ -97,7 +107,7 @@ function Presentacion({ lema, presentacion }: { lema: string; presentacion: stri
       </h1>
       <p className="max-w-xl text-lg leading-7 text-tinta-suave">{presentacion}</p>
       <div className="flex flex-wrap gap-3">
-        <BotonWhatsApp />
+        <BotonWhatsApp texto="Pedir cotización" />
         <Link href="/servicios" className="tt-boton tt-boton--contorno">
           Ver los servicios
         </Link>
@@ -106,9 +116,7 @@ function Presentacion({ lema, presentacion }: { lema: string; presentacion: stri
   );
 }
 
-async function Servicios() {
-  await connection();
-  const servicios = await serviciosPublicos();
+function Servicios({ servicios }: { servicios: ServicioPublico[] }) {
   return (
     <>
       <ul className="mt-8 grid gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
@@ -127,9 +135,7 @@ async function Servicios() {
   );
 }
 
-async function Galeria() {
-  await connection();
-  const fotos = (await galeriaPublica()).slice(0, FOTOS_EN_PORTADA);
+function Galeria({ fotos }: { fotos: FotoGaleria[] }) {
   if (fotos.length === 0) return null;
   return (
     <section aria-labelledby="galeria-titulo" className="mx-auto w-full max-w-6xl px-4 pb-12 md:pb-24">
