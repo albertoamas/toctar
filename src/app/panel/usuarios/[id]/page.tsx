@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ChevronLeftIcon } from "lucide-react";
+import { Cargando } from "@/componentes/panel/cargando";
 import { permisosAsignables } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { AccesoUsuario } from "@/modulos/usuarios/componentes/acceso-usuario";
@@ -19,7 +20,7 @@ export default function PaginaUsuario({ params }: PageProps<"/panel/usuarios/[id
         <ChevronLeftIcon className="size-4" aria-hidden />
         Usuarios
       </Link>
-      <Suspense fallback={<p className="text-tinta-suave">Cargando…</p>}>
+      <Suspense fallback={<Cargando />}>
         <Detalle params={params} />
       </Suspense>
     </section>

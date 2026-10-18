@@ -17,7 +17,8 @@ test("la portada muestra el lema, los servicios y el botón de WhatsApp", async 
 
   // El botón principal y el fijo abren WhatsApp con el número cargado en el panel
   await expect(page.getByRole("link", { name: "Escribir por WhatsApp" }).first()).toHaveAttribute("href", /^https:\/\/wa\.me\/59171234567\?text=Hola/);
-  await expect(page.getByRole("link", { name: "Escribir a TocTar por WhatsApp" })).toHaveAttribute(
+  // El fijo se esconde mientras el principal está a la vista: se lo busca por su clase (pulido 1.3)
+  await expect(page.locator(".tt-whatsapp--fijo")).toHaveAttribute(
     "href",
     "https://wa.me/59171234567?text=Hola%2C%20quiero%20consultar%20por%20un%20servicio.",
   );

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { Cargando } from "@/componentes/panel/cargando";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioContenido } from "@/modulos/sitio/componentes/formulario-contenido";
 import { CLAVES_PAGINA } from "@/modulos/sitio/contenido";
@@ -10,7 +11,7 @@ export const metadata: Metadata = { title: "Textos del sitio" };
 // HU-08: textos de portada, nosotros y contacto. Dueño o encargado con el permiso "sitio".
 export default function PaginaTextos() {
   return (
-    <Suspense fallback={<p className="text-tinta-suave">Cargando…</p>}>
+    <Suspense fallback={<Cargando />}>
       <Contenido />
     </Suspense>
   );

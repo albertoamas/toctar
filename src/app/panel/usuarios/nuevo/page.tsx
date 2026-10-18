@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ChevronLeftIcon } from "lucide-react";
+import { Cargando } from "@/componentes/panel/cargando";
 import { permisosAsignables } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioUsuario } from "@/modulos/usuarios/componentes/formulario-usuario";
@@ -17,7 +18,7 @@ export default function PaginaNuevoUsuario() {
         Usuarios
       </Link>
       <h1 className="font-heading text-4xl font-extrabold italic">Crear usuario</h1>
-      <Suspense fallback={<p className="text-tinta-suave">Cargando…</p>}>
+      <Suspense fallback={<Cargando />}>
         <Formulario />
       </Suspense>
     </section>

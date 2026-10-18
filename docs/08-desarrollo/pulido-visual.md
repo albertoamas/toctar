@@ -14,11 +14,12 @@ Cada pantalla se revisa como lo haría un **desarrollador frontend senior y un d
 - **Todos los estados.** Vacío, cargando, con error, con muchos datos, con textos largos, sin foto, sin permiso. No solo el caso feliz.
 - **Decisiones con fundamento.** Cada cambio se justifica (accesibilidad, legibilidad, uso con el pulgar, marca, rendimiento) y se mide cuando se puede (contraste, Lighthouse, capturas). Si algo no mejora, no se cambia.
 - **Sin atajos.** Nada de parches de estilo sueltos, `!important`, valores mágicos ni duplicar un bloque para "salir del paso": se arregla en el componente o en el token que corresponde.
+- **Con las skills de diseño.** Antes de analizar cada pantalla se carga la skill de diseño del proyecto (`frontend-design`, activada en `.claude/settings.json`) y se siguen sus criterios: plan de diseño revisado contra el encargo antes de programar, tipografía y jerarquía intencionales, sin los rasgos de "plantilla genérica", movimiento con medida y autocrítica con capturas. Sus reglas no pasan por encima de la identidad visual de TocTar: donde la marca ya decidió (colores, tipografías, corte a 60°), manda la marca.
 - **Restricción.** La marca ya tiene su recurso fuerte (rojo, corte a 60°, línea LED); se usa con medida. Pulir es quitar ruido antes que agregar decoración.
 
 ## Cómo se trabaja cada pantalla
 
-1. **Antes:** capturas en celular (360 y 390 px) y computadora (1280 px). En el panel, también la tableta (768 px).
+1. **Antes:** se carga la skill `frontend-design`. Capturas en celular (360 y 390 px) y computadora (1280 px). En el panel, también la tableta (768 px).
 2. **Análisis:** se revisa la pantalla contra los estándares de abajo y se anota en su registro qué se encontró.
 3. **Propuesta:** se acuerdan los cambios con YankoSoft antes de programarlos.
 4. **Cambios:** en la rama del grupo (ver "Ramas"), con commits chicos y separados (estilo, texto, estructura).
@@ -71,7 +72,7 @@ Estados: ⏳ pendiente · 🔵 en curso · ✅ terminada.
 - [ ] Capturas del después en todos los tamaños, revisadas.
 - [ ] `npm run lint`, `npm run typecheck` y `npm test` sin errores.
 - [ ] Las E2E de la pantalla pasan, en celular y en escritorio. Si cambió un texto o un rol, la prueba se actualiza; nunca se borra para que pase.
-- [ ] Sin código muerto ni duplicado: `npx -y knip@5` no muestra nada nuevo (los avisos ya conocidos están en el registro de la revisión del 16/10).
+- [ ] Sin código muerto ni duplicado: `npx -y knip@5` no muestra nada nuevo. Avisos ya conocidos, que no son errores: `public/sw.js`, los scripts, `src/lib/utils.ts` (lo usa la herramienta de shadcn), `tests/e2e/preparar.setup.ts`, `@tailwindcss/turbopack`, partes sin usar de componentes de shadcn y tipos exportados.
 - [ ] Lighthouse móvil, si la pantalla es del sitio.
 - [ ] Registro de la pantalla completo y estado en ✅.
 
@@ -92,11 +93,11 @@ Se hacen primero: aparecen en todas las pantallas.
 
 | # | Pantalla | Estado |
 |---|---|---|
-| 1.1 | Encabezado y menú del sitio (con el menú del celular) | ⏳ |
-| 1.2 | Pie del sitio | ⏳ |
-| 1.3 | Botón fijo de WhatsApp | ⏳ |
-| 1.4 | Estructura del panel: barra lateral, menú del celular y usuario | ⏳ |
-| 1.5 | Avisos, estados vacíos y de carga del panel | ⏳ |
+| 1.1 | Encabezado y menú del sitio (con el menú del celular) | ✅ 16/10 |
+| 1.2 | Pie del sitio | ✅ 16/10 |
+| 1.3 | Botón fijo de WhatsApp | ✅ 18/10 |
+| 1.4 | Estructura del panel: barra lateral, menú del celular y usuario | ✅ 18/10 |
+| 1.5 | Avisos, estados vacíos y de carga del panel | ✅ 18/10 |
 
 ### 2. Sitio público
 Antes de la demo del viernes 23.
@@ -147,13 +148,131 @@ Antes de la demo del viernes 23.
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 6.1 | Datos del negocio y logo | `/panel/configuracion` | ⏳ |
+| 6.1 | Datos del negocio y logo | `/panel/configuracion` | ⏳ (pendiente de 1.4: a 360 px la pantalla se pasa 3 px de ancho) |
 | 6.2 | Taller (espacios y tamaños de vehículo) | `/panel/configuracion/taller` | ⏳ |
 | 6.3 | Cotizaciones y mantenimiento | `/panel/configuracion/cotizaciones` | ⏳ |
 
 ## Registro por pantalla
 
+Las comparativas de antes y después de cada grupo (antes a la izquierda) están en `docs/08-desarrollo/pulido-visual/`.
+
 Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (con el commit o el PR) y lo que quedó pendiente o se descartó, con el motivo.
+
+### 1.1 Encabezado y menú del sitio (16/10/2026)
+- **Encontrado:**
+  - En el celular, el menú no se cerraba al elegir una página: quedaba abierto tapando la página nueva (comprobado con una prueba).
+  - El botón del menú medía 32 × 32 px; el mínimo es 44.
+  - No se marcaba la página actual, ni a la vista ni para lectores de pantalla (`aria-current`).
+  - El menú del celular era el panel gris por defecto de shadcn: sin nada de la marca y sin la acción principal del sitio (WhatsApp).
+  - "Preguntas frecuentes" y "Garantía y reclamos" solo estaban en el pie, adonde en el celular casi nadie llega.
+  - Al bajar en una página larga, el encabezado desaparecía.
+  - La lista de páginas estaba escrita tres veces (encabezado, pie y sitemap), y la lógica de "cerrar el menú al navegar" estaba solo en el panel.
+- **Cambios:**
+  - Componente común `src/componentes/menu-desplegable.tsx`, usado por el sitio y el panel: se cierra al tocar un enlace, y abrir y cerrar miden 44 px. Reemplaza al `MenuMovil` del panel.
+  - Menú del celular a pantalla completa y en negro: logo, línea LED, páginas principales grandes en Barlow itálica, páginas de consulta más chicas, el botón "Escribir por WhatsApp" a todo lo ancho y el lema.
+  - Página actual: en la computadora, una barra roja bajo el enlace, con extremos a 60° (`.tt-enlace-actual`); en el celular, el enlace en rojo; en los dos, `aria-current`. Va dentro de `<Suspense>` porque, con Cache Components, la ruta se conoce recién al atender el pedido.
+  - Encabezado fijo arriba (`sticky`).
+  - Revisión de YankoSoft (16/10): la línea LED con brillo bajo el encabezado molestaba, y el marcador rojo se perdía sobre ella. Ahora el encabezado se separa con una línea gris de 1 px sin brillo y el marcador rojo va encima (opción A; la B era una línea roja fina con el marcador blanco). La LED queda para la portada. Anotado en `06-diseno/identidad-visual.md`.
+  - Una sola lista de páginas en `src/lib/sitio.ts` (`PAGINAS_PRINCIPALES`, `PAGINAS_SECUNDARIAS`) para el encabezado, el pie y el sitemap.
+  - `BotonWhatsApp` acepta `className`.
+- **Descartado o pendiente:**
+  - Botón de WhatsApp en la barra de la computadora: descartado, ya está el botón flotante.
+  - Encabezado que se esconde al bajar: descartado; el fijo simple alcanza para un sitio corto y no agrega movimiento.
+  - Pendiente para 2.1 (Portada): Lighthouse marca CLS 0,023. Con los datos de la base de pruebas, la sección de servicios se corre al cargar el bloque de arriba; no viene del encabezado (en Servicios, CLS 0).
+- **Verificación:**
+  - Capturas a 360, 390 y 1280 px, y ampliadas al 300 % del tramo LED.
+  - E2E `base`: el menú marca la página actual, se cierra al elegir una página, el botón mide 44 px y en el celular están las páginas de consulta y el WhatsApp. Otra prueba confirma que el encabezado sigue a la vista al bajar.
+  - E2E completo: 120 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse móvil: portada y Servicios con rendimiento 91 y 100 en accesibilidad, buenas prácticas y SEO.
+
+### 1.2 Pie del sitio (16/10/2026)
+- **Encontrado:**
+  - Todos los enlaces del pie medían de 18 a 20 px de alto; el mínimo es 44.
+  - Las redes sociales iban como texto ("Facebook  TikTok") y pasaban desapercibidas.
+  - En tableta (768 px), el logo con el lema ocupaba una celda entera de una grilla de dos columnas: quedaba desparejo y con mucho espacio vacío.
+  - En el celular, el pie medía casi dos pantallas de alto.
+  - La fila de enlaces de abajo se cortaba donde caía.
+- **Cambios:**
+  - Redes con íconos en una sola tinta (Simple Icons 13.21, CC0, en `iconos-marca.tsx`). Componente común `src/componentes/sitio/redes-sociales.tsx`: en el pie, solo íconos de 44 px con su nombre para lectores de pantalla ("TocTar en Facebook"); en Contacto, ícono y nombre.
+  - Clase `.tt-area-toque`: 44 px de área táctil invisible para enlaces de texto sueltos, sin cambiar el espaciado. El WhatsApp y el correo quedan a 24 px entre sí para que sus áreas no se pisen; antes del ajuste, el WhatsApp tenía unos 36 px.
+  - Grilla: una columna en el celular, dos desde 640 px, la marca arriba y tres columnas en tableta, y cuatro columnas en la computadora, como antes.
+  - Enlaces de abajo en filas de 44 px: dos columnas ordenadas en el celular y una fila en la computadora.
+  - El pie del celular pasó de unos 990 a 866 px de alto (a 360 px de ancho).
+- **Descartado o pendiente:**
+  - Línea "© año TocTar Detailing": descartada. Para que el año cambie solo habría que generarla en cada visita, con un costo de rendimiento en todas las páginas.
+  - Crédito de YankoSoft: no acordado con el dueño.
+  - Aviso para el desarrollo: una vez, el servidor de desarrollo (`npm run dev`) no tomó un cambio de `globals.css` aunque el archivo estaba bien y el build sí lo incluía. Si un estilo nuevo no aparece, conviene reiniciar `npm run dev` antes de buscar el error.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px; Contacto a 360 px.
+  - Área táctil medida tocando 18 px arriba y abajo del centro de cada enlace.
+  - E2E `base` "los enlaces del pie tienen 44 px para el dedo". E2E completo: 122 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse móvil: Nosotros y Contacto con rendimiento 91 y 90, 100 en lo demás y CLS 0.
+
+### 1.3 Botón fijo de WhatsApp (18/10/2026)
+- **Encontrado:**
+  - Se veían dos botones de WhatsApp a la vez: el principal de la página y el fijo, en la primera pantalla de la portada, y también en Contacto, Nosotros y cada servicio mientras su botón principal está a la vista.
+  - En Garantía y reclamos tapaba el selector "Servicio" del formulario (medido) y, en el iPhone, sube con el teclado y puede tapar el campo que se escribe.
+  - El círculo rojo sin borde se confundía sobre fotos de autos rojos y sobre los bloques rojos de la portada.
+  - Lo que estaba bien: no tapa nada de forma permanente en otras páginas, mide 56 px, respeta la muesca del iPhone y tiene nombre para lectores de pantalla.
+- **Cambios:**
+  - `src/componentes/sitio/whatsapp-flotante.tsx`: el botón fijo se esconde mientras un botón principal de WhatsApp (`data-whatsapp-principal`) está a la vista, y aparece con una entrada corta cuando sale. Sin animación si se pidió reducir el movimiento. Mientras está escondido no se puede enfocar ni lo leen los lectores de pantalla (`visibility`).
+  - Botones principales que se reemplazan al terminar de cargar: se olvidan los que salen de la página, y el fijo no decide hasta medir los nuevos. Así no queda escondido para siempre ni parpadea.
+  - La constante del atributo va en `whatsapp-comun.ts`. Si viene de un archivo "use client", el servidor recibe una referencia y no el texto: el atributo salía vacío.
+  - Garantía y reclamos ya no lleva el botón fijo.
+  - Borde negro de 2 px alrededor del círculo.
+  - Queda redondo: es la forma que la gente reconoce como "chat de WhatsApp".
+- **Descartado o pendiente:**
+  - Versión sin JavaScript (`<noscript>`): descartada. Sin JavaScript, el sitio entero queda casi vacío, porque Next.js 16 transmite el contenido que depende de la base y lo inserta con JavaScript (verificado en portada, Servicios y Contacto). Es una limitación de todo el sitio, no de este botón.
+  - `scroll-padding-top` para que el encabezado fijo no tape el foco: descartado. Se probó y Chrome ya centra el elemento enfocado, así que no hay nada que corregir; tampoco hay enlaces a secciones. Si se agregan, revisarlo.
+  - Probar en el iPhone que el botón no tape campos con el teclado abierto en los formularios que lo llevan (hoy ninguno).
+- **Verificación:**
+  - Superposición medida en las 8 páginas a 360 y 1280 px, arriba y al final. Capturas de la portada a 390 px, arriba (solo el botón principal) y abajo (el fijo con su borde).
+  - E2E `base` "el botón fijo de WhatsApp se esconde mientras el principal está a la vista". `hu-13-14` confirma que Garantía no lo lleva. `hu-10` y `hu-11` lo buscan por su clase o su enlace.
+  - E2E completo: 124 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse móvil: portada y Servicios con rendimiento 91 y 100 en lo demás.
+- **Incidente de entorno:** con la PC suspendida, el reloj de Docker quedó adelantado y el almacenamiento rechazaba las subidas (`RequestTimeTooSkewed`): fallaban las pruebas de galería y reclamos. Se arregla con `docker compose restart almacenamiento`.
+
+### 1.4 Estructura del panel (18/10/2026)
+- **Encontrado:**
+  - En el celular, las pantallas con pestañas (Sitio web y Configuración) se salían por la derecha: 420 px de ancho en una pantalla de 360, con texto cortado. La causa era la columna del contenido, que no podía achicarse (`min-width` automático de un elemento flex) y la estiraba la tira de pestañas.
+  - En el celular, la barra de arriba no quedaba fija. En la computadora, la barra lateral se iba con la página, así que en las páginas largas el menú y "Cerrar sesión" quedaban lejos.
+  - Los enlaces del menú medían 36 px y "Cerrar sesión", 32.
+  - El módulo actual solo se marcaba con un fondo gris oscuro, sin el lenguaje de la página actual del sitio.
+  - En tableta (768 px), la barra lateral se llevaba casi un tercio de la pantalla y el contenido quedaba apretado.
+  - Los nombres de los roles estaban escritos dos veces (`usuario-sesion.tsx` y `modulos/usuarios/textos.ts`).
+- **Cambios:**
+  - `min-w-0` en la columna del contenido (`src/app/panel/layout.tsx`): arregla el desborde en todas las pantallas a la vez.
+  - Barra de arriba fija (`sticky`) y el aviso sin conexión justo debajo. La barra lateral queda fija y a la altura de la pantalla, con su propio desplazamiento si hace falta.
+  - Barra lateral recién desde 1024 px (`lg`). En el celular y la tableta, la barra de arriba con el menú desplegable.
+  - Enlaces del menú de 44 px y "Cerrar sesión" de 44 × 44.
+  - Módulo actual: fondo gris más un trazo rojo inclinado a 60°, como los del monograma (`.tt-modulo-actual`). Es lo único rojo del menú.
+  - `UsuarioSesion` usa `NOMBRE_ROL` de `modulos/usuarios/textos.ts`.
+- **Descartado o pendiente:**
+  - Pendiente para 6.1: a 360 px, `/panel/configuracion` todavía se pasa 3 px. No viene de la estructura: el formulario del negocio tiene algo que no se achica.
+- **Verificación:**
+  - Capturas a 360, 768, 1280 y 1600 px, con el menú del celular abierto y ampliada al 300 % del trazo.
+  - Medición del desborde en 12 pantallas del panel a 360 px: antes se salían 8, ahora solo Configuración, por 3 px.
+  - E2E `base` "el panel no se sale de la pantalla en el celular y su menú queda a mano". E2E completo: 126 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 1.5 Avisos, estados vacíos y de carga del panel (18/10/2026)
+- **Encontrado:**
+  - En el celular, los avisos aparecían abajo y tapaban "Guardar cambios" y el último campo durante unos 4 s.
+  - El aviso de error se veía igual que el de éxito (el mismo cartel blanco, solo cambiaba un ícono chico).
+  - El aviso preguntaba el tema a `next-themes`, que nunca se configuró: código muerto y una dependencia de más.
+  - Había 15 versiones de "Cargando…" (textos distintos, uno con otro color y dos vacíos), y el texto aparecía un instante antes de la pantalla.
+  - Las pantallas vacías no tenían un estilo común. El aviso de "Usuario creado" y el de "Servicio creado" estaban copiados.
+- **Cambios:**
+  - Avisos arriba, a 64 px (debajo de la barra del panel en el celular y la tableta), siempre en claro. Error con borde e ícono rojos y 6 s; éxito con borde e ícono verdes y 3 s. El CSS de los bordes va fuera de capas, porque el CSS de sonner, sin capa, le ganaría. Se quitó `next-themes`.
+  - `src/componentes/panel/cargando.tsx`: siluetas grises que aparecen recién a los 0,3 s (sin parpadeo si la carga es rápida), con latido suave salvo que se pida reducir el movimiento, y "Cargando…" para lectores de pantalla. Reemplaza las 15 versiones.
+  - `src/componentes/panel/estado-vacio.tsx`: recuadro punteado que dice qué pasa y qué hacer. Usado en servicios, preguntas, galería, reclamos y usuarios. No repite el botón de acción: cada pantalla ya lo tiene arriba.
+  - `src/componentes/panel/aviso-en-pagina.tsx` para "Usuario creado" y "Servicio creado". La subida de fotos usa también `avisarResultado`.
+  - Inicio: `text-muted-foreground` pasó a `text-tinta-suave` (tokens del proyecto).
+- **Descartado o pendiente:**
+  - Botón de acción dentro de las pantallas vacías: descartado por ahora, porque repetiría el de arriba. Si una pantalla no tiene acción visible, se agrega al revisarla.
+- **Verificación:**
+  - Capturas de los avisos en celular y computadora, con el sistema en claro y en oscuro.
+  - La carga y la pantalla vacía, insertadas en una página: a los 100 ms la carga todavía no se ve; a los 800 ms aparecen las siluetas.
+  - E2E `base` "el aviso de guardado no tapa el botón de guardar". E2E completo: 127 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)

@@ -3,12 +3,13 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { MapPinIcon } from "lucide-react";
+import { RedesSociales } from "@/componentes/sitio/redes-sociales";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import { resumirHorarios } from "@/lib/horarios";
 import { enlaceMapa } from "@/lib/ubicacion";
 import { formatearWhatsApp } from "@/lib/whatsapp";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
-import { NOMBRE_RED, REDES } from "@/modulos/configuracion/esquemas";
+import { REDES } from "@/modulos/configuracion/esquemas";
 import { contenidoPublico } from "@/modulos/sitio/publico";
 
 export const metadata: Metadata = {
@@ -36,7 +37,7 @@ async function Datos() {
   await connection();
   const [d, contacto] = await Promise.all([obtenerDatosPublicos(), contenidoPublico("contacto")]);
   const mapa = d.coordenadas ? enlaceMapa(d.coordenadas) : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.direccion)}`;
-  const redes = REDES.filter((r) => d.redes[r]);
+  const hayRedes = REDES.some((r) => d.redes[r]);
 
   return (
     <div className="mt-4 grid gap-10 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
@@ -80,7 +81,7 @@ async function Datos() {
           </Link>
         </section>
 
-        {(d.correo || redes.length > 0) && (
+        {(d.correo || hayRedes) && (
           <section aria-labelledby="tambien-titulo" className="flex flex-col gap-2">
             <h2 id="tambien-titulo" className={TITULO}>También estamos en</h2>
             {d.correo && (
@@ -88,17 +89,7 @@ async function Datos() {
                 {d.correo}
               </a>
             )}
-            {redes.length > 0 && (
-              <ul aria-label="Redes sociales" className="flex flex-wrap gap-x-5 gap-y-1">
-                {redes.map((r) => (
-                  <li key={r}>
-                    <a href={d.redes[r]} target="_blank" rel="noreferrer" className="font-semibold hover:underline">
-                      {NOMBRE_RED[r]}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <RedesSociales redes={d.redes} variante="con-nombre" />
           </section>
         )}
       </div>

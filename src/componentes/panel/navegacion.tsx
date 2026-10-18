@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "cn";
 
 // Los módulos llegan ya filtrados por rol y permisos desde MenuPanel (src/lib/permisos.ts).
+// El módulo actual lleva un trazo rojo a 60° a la izquierda: el mismo lenguaje que la página actual del sitio.
 export type EnlaceModulo = { href: string; texto: string };
 
 export function NavegacionPanel({ modulos }: { modulos: EnlaceModulo[] }) {
@@ -20,8 +21,8 @@ export function NavegacionPanel({ modulos }: { modulos: EnlaceModulo[] }) {
             href={m.href}
             aria-current={activo ? "page" : undefined}
             className={cn(
-              "rounded-sm px-3 py-2 text-sm text-tinta-suave hover:bg-superficie hover:text-tinta",
-              activo && "bg-superficie-alta font-semibold text-tinta",
+              "relative flex min-h-11 items-center rounded-sm pr-4 pl-7 text-sm text-tinta-suave hover:bg-superficie hover:text-tinta",
+              activo && "tt-modulo-actual bg-superficie-alta font-semibold text-tinta",
             )}
           >
             {m.texto}

@@ -3,33 +3,28 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { resumirHorarios } from "@/lib/horarios";
+import { PAGINAS_PRINCIPALES, PAGINAS_SECUNDARIAS } from "@/lib/sitio";
 import { enlaceMapa } from "@/lib/ubicacion";
 import { urlSitio } from "@/lib/sitio";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
-import { NOMBRE_RED, REDES } from "@/modulos/configuracion/esquemas";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
 import { datosNegocioLocal, jsonLd } from "@/modulos/sitio/negocio-local";
+import { RedesSociales } from "./redes-sociales";
 
 // Pie del sitio (componente PieSitio del Design System). Los datos salen de la configuración
 // (HU-04, RF-17): el dueño los cambia en el panel y se ven al guardar.
 // El build no tiene base de datos: los datos se leen al atender el pedido (connection) y quedan
 // en caché con la etiqueta "negocio" hasta que se editen. Los mismos datos van a Google como JSON-LD (HU-18).
 
-const ENLACES = [
-  { href: "/servicios", texto: "Servicios" },
-  { href: "/galeria", texto: "Galería" },
-  { href: "/nosotros", texto: "Nosotros" },
-  { href: "/preguntas-frecuentes", texto: "Preguntas frecuentes" },
-  { href: "/contacto", texto: "Contacto" },
-  { href: "/garantia", texto: "Garantía y reclamos" },
-];
+const ENLACES = [...PAGINAS_PRINCIPALES, ...PAGINAS_SECUNDARIAS];
 
 export function Pie() {
-  // Sin línea LED: el encabezado y la portada ya la usan (máximo dos por página).
+  // Sin línea LED: es el recurso de la portada.
   return (
     <footer className="border-t border-border bg-fondo">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 md:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr]">
-        <div className="flex flex-col items-start gap-4">
+      {/* Celular: una columna. Tableta: la marca arriba y tres columnas. Computadora: cuatro columnas. */}
+      <div className="mx-auto grid max-w-6xl gap-x-6 gap-y-8 px-4 py-10 sm:grid-cols-2 md:grid-cols-3 md:gap-y-10 md:py-12 lg:grid-cols-[1.3fr_1fr_1fr_1fr]">
+        <div className="col-span-full flex flex-col items-start gap-4 lg:col-span-1">
           <Image src="/marca/toctar-monograma-sobre-oscuro.svg" alt="" width={48} height={36} unoptimized />
           <p className="tt-lema whitespace-nowrap text-tinta-suave">Como ven tu auto, te ven a ti</p>
         </div>
@@ -37,12 +32,17 @@ export function Pie() {
           <DatosDelNegocio />
         </Suspense>
       </div>
-      <nav aria-label="Pie" className="mx-auto flex max-w-6xl flex-wrap gap-x-6 gap-y-2 border-t border-border px-4 py-6 pb-24 text-sm text-tinta-suave md:pb-6">
-        {ENLACES.map((e) => (
-          <Link key={e.href} href={e.href} className="hover:text-tinta hover:underline">
-            {e.texto}
-          </Link>
-        ))}
+      {/* pb-24 en el celular: que el botón fijo de WhatsApp no tape el último enlace. */}
+      <nav aria-label="Pie" className="border-t border-border">
+        <ul className="mx-auto grid max-w-6xl grid-cols-2 gap-x-6 px-4 pt-3 pb-24 text-sm text-tinta-suave sm:flex sm:flex-wrap md:pb-3">
+          {ENLACES.map((e) => (
+            <li key={e.href}>
+              <Link href={e.href} className="flex min-h-11 items-center hover:text-tinta hover:underline">
+                {e.texto}
+              </Link>
+            </li>
+          ))}
+        </ul>
       </nav>
     </footer>
   );
@@ -51,7 +51,6 @@ export function Pie() {
 async function DatosDelNegocio() {
   await connection();
   const d = await obtenerDatosPublicos();
-  const redes = REDES.filter((r) => d.redes[r]);
 
   return (
     <>
@@ -59,7 +58,7 @@ async function DatosDelNegocio() {
       <Bloque titulo="Dónde estamos">
         <address className="not-italic">{d.direccion}</address>
         {d.coordenadas && (
-          <a href={enlaceMapa(d.coordenadas)} target="_blank" rel="noreferrer" className="font-semibold text-tinta underline-offset-4 hover:underline">
+          <a href={enlaceMapa(d.coordenadas)} target="_blank" rel="noreferrer" className={ENLACE_DESTACADO}>
             Cómo llegar
           </a>
         )}
@@ -77,31 +76,27 @@ async function DatosDelNegocio() {
       </Bloque>
 
       <Bloque titulo="Contacto">
-        {d.whatsapp && (
-          <a href={enlaceWhatsApp(d.whatsapp)} target="_blank" rel="noreferrer" className="font-semibold text-tinta underline-offset-4 hover:underline">
-            WhatsApp {formatearWhatsApp(d.whatsapp)}
-          </a>
-        )}
-        {d.correo && (
-          <a href={`mailto:${d.correo}`} className="underline-offset-4 hover:text-tinta hover:underline">
-            {d.correo}
-          </a>
-        )}
-        {redes.length > 0 && (
-          <ul aria-label="Redes sociales" className="flex flex-wrap gap-x-4 gap-y-1">
-            {redes.map((r) => (
-              <li key={r}>
-                <a href={d.redes[r]} target="_blank" rel="noreferrer" className="underline-offset-4 hover:text-tinta hover:underline">
-                  {NOMBRE_RED[r]}
-                </a>
-              </li>
-            ))}
-          </ul>
-        )}
+        {/* 24 px entre enlaces: así el área táctil de 44 px de cada uno no pisa la del otro. */}
+        <div className="flex flex-col gap-6">
+          {d.whatsapp && (
+            <a href={enlaceWhatsApp(d.whatsapp)} target="_blank" rel="noreferrer" className={ENLACE_DESTACADO}>
+              WhatsApp {formatearWhatsApp(d.whatsapp)}
+            </a>
+          )}
+          {d.correo && (
+            <a href={`mailto:${d.correo}`} className="tt-area-toque self-start break-words underline-offset-4 hover:text-tinta hover:underline">
+              {d.correo}
+            </a>
+          )}
+        </div>
+        <RedesSociales redes={d.redes} variante="iconos" className="mt-1" />
       </Bloque>
     </>
   );
 }
+
+/** Enlaces sueltos del pie: 44 px de área táctil sin cambiar el espaciado (tt-area-toque). */
+const ENLACE_DESTACADO = "tt-area-toque self-start font-semibold text-tinta underline-offset-4 hover:underline";
 
 function Bloque({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (

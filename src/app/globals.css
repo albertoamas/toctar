@@ -153,6 +153,15 @@
   }
 }
 
+/* Avisos flotantes (sonner, pulido 1.5). Fuera de capas a propósito: sonner trae su propio CSS sin capa,
+   que le ganaría a cualquier regla dentro de @layer. El error lleva un borde rojo a la izquierda. */
+[data-sonner-toaster] [data-sonner-toast][data-type="error"] {
+  border-left: 4px solid var(--rojo);
+}
+[data-sonner-toaster] [data-sonner-toast][data-type="success"] {
+  border-left: 4px solid var(--exito);
+}
+
 /* Recursos gráficos de la marca (componentes del Design System). */
 @layer components {
   /* Línea LED roja del frente del taller. Solo sobre fondo oscuro. */
@@ -172,6 +181,64 @@
     .tt-led--encender {
       animation: none;
     }
+  }
+
+  /* Página actual en la barra del sitio: una barra roja sobre la línea gris del encabezado, bajo el enlace.
+     Los extremos van a 60° (skew de 30°), el ángulo de la marca. Baja 1 px para tapar la línea gris. */
+  .tt-enlace-actual::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    z-index: 1;
+    height: 3px;
+    background: var(--rojo);
+    transform: skewX(-30deg);
+  }
+
+  /* Módulo actual en el menú del panel: un trazo rojo a 60° a la izquierda (skew de 30° de un trazo vertical),
+     como los del monograma. Es lo único rojo del menú. */
+  /* Inclinado, el trazo ocupa de 5 a 18 px desde el borde: el texto empieza en 28 px (pl-7). */
+  .tt-modulo-actual::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 10px;
+    width: 3px;
+    height: 18px;
+    background: var(--rojo);
+    transform: translateY(-50%) skewX(-30deg);
+  }
+
+  /* Siluetas de carga del panel (Cargando): aparecen recién a los 0,3 s, para que una carga rápida no parpadee. */
+  .tt-cargando {
+    animation: tt-aparecer 150ms ease-out 300ms both;
+  }
+  .tt-cargando__bloque {
+    border-radius: var(--radius-sm, 4px);
+    background: var(--superficie);
+    animation: tt-latido 1.4s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tt-cargando__bloque {
+      animation: none;
+    }
+  }
+
+  /* Área táctil de 44 px de alto para enlaces de texto sueltos, sin cambiar el diseño: una capa invisible
+     centrada en el enlace recibe el toque. Para listas de enlaces, mejor una fila de 44 px (min-h-11). */
+  .tt-area-toque {
+    position: relative;
+  }
+  .tt-area-toque::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 0;
+    left: 0;
+    height: 44px;
+    transform: translateY(-50%);
   }
 
   /* El lema entre guiones cortos, como en el logo. */
@@ -287,6 +354,8 @@
     border-radius: 9999px;
     background: var(--rojo);
     color: var(--sobre-rojo);
+    /* Borde negro fino: se distingue sobre fotos y fondos rojos, sin la sombra gris genérica. */
+    box-shadow: 0 0 0 2px var(--negro);
   }
   .tt-whatsapp svg {
     width: 28px;
@@ -300,6 +369,31 @@
     right: calc(16px + env(safe-area-inset-right, 0px));
     bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     z-index: 40;
+    /* Escondido hasta saber si el botón principal está a la vista (whatsapp-flotante.tsx).
+       visibility lo saca también del teclado y de los lectores de pantalla mientras no se ve. */
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(8px) scale(0.9);
+    transition:
+      opacity 180ms ease-out,
+      transform 180ms ease-out,
+      visibility 0s linear 180ms;
+  }
+  .tt-whatsapp--fijo[data-visible="true"] {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 180ms ease-out,
+      transform 180ms ease-out,
+      visibility 0s;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tt-whatsapp--fijo,
+    .tt-whatsapp--fijo[data-visible="true"] {
+      transform: none;
+      transition: none;
+    }
   }
 
   /* Tarjeta de servicio (componente TarjetaServicio): esquina inferior derecha cortada a 60°, sin sombra ni radio. */
@@ -397,5 +491,20 @@
   }
   to {
     transform: scaleX(1);
+  }
+}
+
+@keyframes tt-aparecer {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes tt-latido {
+  50% {
+    opacity: 0.55;
   }
 }

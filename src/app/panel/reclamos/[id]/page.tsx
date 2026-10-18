@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ChevronLeftIcon } from "lucide-react";
+import { Cargando } from "@/componentes/panel/cargando";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/lib/fechas";
@@ -24,7 +25,7 @@ export default function PaginaReclamo({ params }: PageProps<"/panel/reclamos/[id
         <ChevronLeftIcon className="size-4" aria-hidden />
         Reclamos
       </Link>
-      <Suspense fallback={<p className="text-tinta-suave">Cargando…</p>}>
+      <Suspense fallback={<Cargando />}>
         <Detalle params={params} />
       </Suspense>
     </section>

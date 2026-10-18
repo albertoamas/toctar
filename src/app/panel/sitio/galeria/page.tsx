@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { Cargando } from "@/componentes/panel/cargando";
 import { exigirModulo } from "@/lib/sesion";
 import { GaleriaPanel } from "@/modulos/sitio/componentes/galeria-panel";
 import { listarGaleria, opcionesServicio } from "@/modulos/sitio/consultas";
@@ -9,7 +10,7 @@ export const metadata: Metadata = { title: "Galería" };
 // HU-09: galería de antes y después. Dueño o encargado con el permiso "sitio".
 export default function PaginaGaleria() {
   return (
-    <Suspense fallback={<p className="text-tinta-suave">Cargando…</p>}>
+    <Suspense fallback={<Cargando />}>
       <Contenido />
     </Suspense>
   );

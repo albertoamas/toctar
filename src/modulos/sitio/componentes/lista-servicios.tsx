@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useTransition } from "react";
 import { ArrowDownIcon, ArrowUpIcon, ImageOffIcon } from "lucide-react";
+import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { Button } from "@/componentes/ui/button";
 import { moverServicio } from "../acciones";
@@ -19,7 +20,7 @@ export function ListaServicios({ servicios }: { servicios: Fila[] }) {
       avisarResultado(await moverServicio({ id, direccion }));
     });
 
-  if (servicios.length === 0) return <p className="text-tinta-suave">Todavía no hay servicios. Agrega el primero.</p>;
+  if (servicios.length === 0) return <EstadoVacio>Todavía no hay servicios. Agrega el primero con “Agregar servicio”.</EstadoVacio>;
 
   return (
     <ol aria-label="Servicios del sitio" className="flex flex-col divide-y divide-border rounded-sm border border-border">
