@@ -177,8 +177,13 @@
   .tt-led--encender {
     animation: tt-encender 600ms ease-out both;
   }
+  /* La foto del taller de la portada entra junto con la línea, sin aparecer de golpe. */
+  .tt-portada-foto {
+    animation: tt-aparecer 600ms ease-out both;
+  }
   @media (prefers-reduced-motion: reduce) {
-    .tt-led--encender {
+    .tt-led--encender,
+    .tt-portada-foto {
       animation: none;
     }
   }
