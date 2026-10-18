@@ -95,7 +95,7 @@ Se hacen primero: aparecen en todas las pantallas.
 |---|---|---|
 | 1.1 | Encabezado y menú del sitio (con el menú del celular) | ✅ 16/10 |
 | 1.2 | Pie del sitio | ✅ 16/10 |
-| 1.3 | Botón fijo de WhatsApp | ⏳ |
+| 1.3 | Botón fijo de WhatsApp | ✅ 18/10 |
 | 1.4 | Estructura del panel: barra lateral, menú del celular y usuario | ⏳ |
 | 1.5 | Avisos, estados vacíos y de carga del panel | ⏳ |
 
@@ -205,6 +205,30 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Área táctil medida tocando 18 px arriba y abajo del centro de cada enlace.
   - E2E `base` "los enlaces del pie tienen 44 px para el dedo". E2E completo: 122 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
   - Lighthouse móvil: Nosotros y Contacto con rendimiento 91 y 90, 100 en lo demás y CLS 0.
+
+### 1.3 Botón fijo de WhatsApp (18/10/2026)
+- **Encontrado:**
+  - Se veían dos botones de WhatsApp a la vez: el principal de la página y el fijo, en la primera pantalla de la portada, y también en Contacto, Nosotros y cada servicio mientras su botón principal está a la vista.
+  - En Garantía y reclamos tapaba el selector "Servicio" del formulario (medido) y, en el iPhone, sube con el teclado y puede tapar el campo que se escribe.
+  - El círculo rojo sin borde se confundía sobre fotos de autos rojos y sobre los bloques rojos de la portada.
+  - Lo que estaba bien: no tapa nada de forma permanente en otras páginas, mide 56 px, respeta la muesca del iPhone y tiene nombre para lectores de pantalla.
+- **Cambios:**
+  - `src/componentes/sitio/whatsapp-flotante.tsx`: el botón fijo se esconde mientras un botón principal de WhatsApp (`data-whatsapp-principal`) está a la vista, y aparece con una entrada corta cuando sale. Sin animación si se pidió reducir el movimiento. Mientras está escondido no se puede enfocar ni lo leen los lectores de pantalla (`visibility`).
+  - Botones principales que se reemplazan al terminar de cargar: se olvidan los que salen de la página, y el fijo no decide hasta medir los nuevos. Así no queda escondido para siempre ni parpadea.
+  - La constante del atributo va en `whatsapp-comun.ts`. Si viene de un archivo "use client", el servidor recibe una referencia y no el texto: el atributo salía vacío.
+  - Garantía y reclamos ya no lleva el botón fijo.
+  - Borde negro de 2 px alrededor del círculo.
+  - Queda redondo: es la forma que la gente reconoce como "chat de WhatsApp".
+- **Descartado o pendiente:**
+  - Versión sin JavaScript (`<noscript>`): descartada. Sin JavaScript, el sitio entero queda casi vacío, porque Next.js 16 transmite el contenido que depende de la base y lo inserta con JavaScript (verificado en portada, Servicios y Contacto). Es una limitación de todo el sitio, no de este botón.
+  - `scroll-padding-top` para que el encabezado fijo no tape el foco: descartado. Se probó y Chrome ya centra el elemento enfocado, así que no hay nada que corregir; tampoco hay enlaces a secciones. Si se agregan, revisarlo.
+  - Probar en el iPhone que el botón no tape campos con el teclado abierto en los formularios que lo llevan (hoy ninguno).
+- **Verificación:**
+  - Superposición medida en las 8 páginas a 360 y 1280 px, arriba y al final. Capturas de la portada a 390 px, arriba (solo el botón principal) y abajo (el fijo con su borde).
+  - E2E `base` "el botón fijo de WhatsApp se esconde mientras el principal está a la vista". `hu-13-14` confirma que Garantía no lo lleva. `hu-10` y `hu-11` lo buscan por su clase o su enlace.
+  - E2E completo: 124 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse móvil: portada y Servicios con rendimiento 91 y 100 en lo demás.
+- **Incidente de entorno:** con la PC suspendida, el reloj de Docker quedó adelantado y el almacenamiento rechazaba las subidas (`RequestTimeTooSkewed`): fallaban las pruebas de galería y reclamos. Se arregla con `docker compose restart almacenamiento`.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
