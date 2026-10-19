@@ -50,6 +50,9 @@ test("restablecer la contraseña: la anterior deja de servir y la nueva funciona
   await page.goto("/panel/usuarios");
   await page.getByRole("link", { name: nombre }).first().click();
   await page.getByRole("button", { name: "Restablecer contraseña" }).click();
+  // Sin contraseña: el error y el foco van al campo (pulido 5.5)
+  await page.getByRole("button", { name: "Guardar", exact: true }).click();
+  await expect(page.getByLabel("Contraseña nueva")).toBeFocused();
   await page.getByLabel("Contraseña nueva").fill("nueva-1234");
   await page.getByRole("button", { name: "Guardar", exact: true }).click();
   await expect(page.getByText("Contraseña cambiada")).toBeVisible();
@@ -74,6 +77,11 @@ test("desactivar a alguien con la sesión abierta lo saca del panel", async ({ p
   await ingresarComoDueno(page);
   await page.goto("/panel/usuarios");
   await page.getByRole("link", { name: nombre }).first().click();
+  // El foco va a la confirmación y, al cancelar, vuelve al botón (pulido 5.5)
+  await page.getByRole("button", { name: "Desactivar usuario" }).click();
+  await expect(page.getByText("no podrá ingresar")).toBeFocused();
+  await page.getByRole("button", { name: "Cancelar" }).click();
+  await expect(page.getByRole("button", { name: "Desactivar usuario" })).toBeFocused();
   await page.getByRole("button", { name: "Desactivar usuario" }).click();
   await page.getByRole("button", { name: "Sí, desactivar" }).click();
   await expect(page.getByText("Usuario desactivado")).toBeVisible();
