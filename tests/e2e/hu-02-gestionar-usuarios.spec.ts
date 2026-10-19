@@ -111,3 +111,19 @@ test("los errores del formulario se muestran junto a cada campo", async ({ page 
   await expect(page.getByText("Escribe el nombre completo.")).toBeVisible();
   await expect(page.getByText("La contraseña debe tener al menos 8 caracteres.")).toBeVisible();
 });
+
+// Pulido 5.3: "Agregar usuario" en la lista, "(tú)" en el propio y, en la computadora, toda la fila abre el usuario.
+test("la lista de usuarios: Agregar usuario, (tú) y la fila que abre el usuario", async ({ page }, info) => {
+  await ingresarComoDueno(page);
+  await page.goto("/panel/usuarios");
+  await page.getByRole("button", { name: "Agregar usuario" }).click();
+  await expect(page).toHaveURL(/\/panel\/usuarios\/nuevo$/);
+  await page.goto("/panel/usuarios");
+  await expect(page.getByText("(tú)").locator("visible=true")).toBeVisible();
+  if (info.project.name !== "escritorio") return;
+  // Se toca la celda del rol, no el nombre (con el mouse: el enlace de la fila la cubre)
+  const rol = (await page.getByRole("row").filter({ hasText: "(tú)" }).getByRole("cell").nth(2).boundingBox())!;
+  await page.mouse.click(rol.x + rol.width / 2, rol.y + rol.height / 2);
+  await expect(page).toHaveURL(/\/panel\/usuarios\/\d+$/);
+});
+
