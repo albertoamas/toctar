@@ -16,21 +16,15 @@ export const metadata: Metadata = {
 const TITULO_SECCION = "font-heading text-[28px] leading-8 font-bold italic md:text-[40px] md:leading-[44px]";
 
 // HU-13 Nosotros (RF-02): historia, cómo trabajan y por qué elegirlos. Los textos salen del panel (HU-08).
+// Llega entera, con el título: nada aparece suelto antes que el resto (pulido 2.1 y 2.5, revisión de YankoSoft).
 export default function PaginaNosotros() {
   return (
-    // El monograma va detrás del título y del texto: el envoltorio recorta solo lo que sale por los costados, y el
-    // texto (relative) se pinta encima. En el celular va chico y arriba, solo detrás del título: más grande, sus
-    // franjas cortaban los renglones de la historia (pulido 2.5).
-    <div className="relative overflow-x-clip">
-      <Monograma className="pointer-events-none absolute -top-14 -right-12 w-[12rem] fill-superficie md:-top-10 md:-right-12 md:w-[34rem]" />
-      <div className="relative mx-auto w-full max-w-6xl px-4 pt-12 md:pt-20">
-        <TituloPagina>Nosotros</TituloPagina>
-      </div>
+    <>
       <Suspense fallback={<div className="min-h-screen" />}>
-        <ContenidoYCierre />
+        <Contenido />
       </Suspense>
       <WhatsAppFijo />
-    </div>
+    </>
   );
 }
 
@@ -52,36 +46,42 @@ function Parrafos({ texto, entrada = false }: { texto: string; entrada?: boolean
     ));
 }
 
-// El texto y el cierre llegan juntos: un título de sección no aparece antes que su contenido (pulido 2.1).
-async function ContenidoYCierre() {
+async function Contenido() {
   await connection();
   const n = await contenidoPublico("nosotros");
   const motivos = n.por_que_elegirnos as string[];
   return (
     <>
-      <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pt-8 pb-12 md:gap-20 md:pb-20">
-        <div className="flex flex-col gap-4">
-          <Parrafos texto={n.historia as string} entrada />
+      {/* El monograma detrás del título y del texto le da su toque a la página: se queda así (revisión de YankoSoft) */}
+      <section className="relative overflow-hidden">
+        <Monograma className="pointer-events-none absolute -top-10 -right-24 w-[26rem] fill-superficie md:-right-12 md:w-[34rem]" />
+        <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 py-12 md:gap-20 md:py-20">
+          <div className="flex flex-col gap-8">
+            <TituloPagina>Nosotros</TituloPagina>
+            <div className="flex flex-col gap-4">
+              <Parrafos texto={n.historia as string} entrada />
+            </div>
+          </div>
+
+          <section aria-labelledby="como-trabajamos" className="flex flex-col gap-4">
+            <h2 id="como-trabajamos" className={TITULO_SECCION}>Cómo trabajamos</h2>
+            <Parrafos texto={n.como_trabajamos as string} />
+          </section>
+
+          <section aria-labelledby="por-que" className="flex flex-col gap-6">
+            <h2 id="por-que" className={TITULO_SECCION}>Por qué elegirnos</h2>
+            <ul className="grid gap-x-10 gap-y-4 md:grid-cols-2">
+              {motivos.map((m) => (
+                <li key={m} className="flex items-baseline gap-3 border-t border-border pt-4 text-lg">
+                  {/* Marca a 60°, el único ángulo de la marca */}
+                  <span aria-hidden className="inline-block h-3 w-2 shrink-0 -skew-x-[30deg] bg-rojo" />
+                  {m}
+                </li>
+              ))}
+            </ul>
+          </section>
         </div>
-
-        <section aria-labelledby="como-trabajamos" className="flex flex-col gap-4">
-          <h2 id="como-trabajamos" className={TITULO_SECCION}>Cómo trabajamos</h2>
-          <Parrafos texto={n.como_trabajamos as string} />
-        </section>
-
-        <section aria-labelledby="por-que" className="flex flex-col gap-6">
-          <h2 id="por-que" className={TITULO_SECCION}>Por qué elegirnos</h2>
-          <ul className="grid gap-x-10 gap-y-4 md:grid-cols-2">
-            {motivos.map((m) => (
-              <li key={m} className="flex items-baseline gap-3 border-t border-border pt-4 text-lg">
-                {/* Marca a 60°, el único ángulo de la marca */}
-                <span aria-hidden className="inline-block h-3 w-2 shrink-0 -skew-x-[30deg] bg-rojo" />
-                {m}
-              </li>
-            ))}
-          </ul>
-        </section>
-      </div>
+      </section>
       <CierreWhatsApp
         titulo="¿Hablamos de tu vehículo?"
         texto="Mándanos fotos o pasa por el taller: lo revisamos y te decimos qué conviene hacer."
