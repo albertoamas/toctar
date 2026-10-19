@@ -224,3 +224,21 @@ test("en Textos del sitio un motivo largo se lee entero, y Enter envía sin salt
   await expect(nuevo).toHaveAttribute("aria-invalid", "true");
   await expect(nuevo).toHaveValue("");
 });
+
+test("en Preguntas, Agregar va arriba y en rojo, el error recibe el foco y tocar una pregunta la abre", async ({ page }) => {
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio/preguntas");
+  const agregar = page.getByRole("button", { name: "Agregar pregunta" });
+  const lista = page.getByRole("list", { name: "Preguntas frecuentes" });
+  expect((await agregar.boundingBox())!.y).toBeLessThan((await lista.boundingBox())!.y);
+  await expect(agregar).toHaveCSS("background-color", "rgb(227, 6, 19)");
+  await agregar.click();
+  await page.getByRole("button", { name: "Agregar", exact: true }).click();
+  await expect(page.getByLabel("Pregunta", { exact: true })).toBeFocused();
+  await page.getByRole("button", { name: "Cancelar" }).click();
+  // Tocar el texto de la primera pregunta abre su edición
+  const primera = lista.getByRole("listitem").first();
+  const texto = (await primera.locator(".font-semibold").first().textContent())!.trim();
+  await primera.locator(".font-semibold").first().click();
+  await expect(page.getByLabel("Pregunta", { exact: true })).toHaveValue(texto);
+});
