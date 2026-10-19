@@ -110,6 +110,7 @@ test("los errores del formulario se muestran junto a cada campo", async ({ page 
   await page.getByRole("button", { name: "Crear usuario" }).click();
   await expect(page.getByText("Escribe el nombre completo.")).toBeVisible();
   await expect(page.getByText("La contraseña debe tener al menos 8 caracteres.")).toBeVisible();
+  await expect(page.getByLabel("Nombre")).toBeFocused(); // pulido 5.4
 });
 
 // Pulido 5.3: "Agregar usuario" en la lista, "(tú)" en el propio y, en la computadora, toda la fila abre el usuario.
