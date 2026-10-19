@@ -15,7 +15,7 @@ test("el dueño crea un servicio con beneficios, pasos y variantes, y lo oculta"
   // Los servicios iniciales (datos de la migración)
   await expect(page.getByRole("list", { name: "Servicios del sitio" })).toContainText("Pulido y nano cerámico");
 
-  await page.getByRole("button", { name: "Agregar servicio" }).click();
+  await page.getByRole("link", { name: "Agregar servicio" }).click();
   // Un nombre repetido se rechaza sin importar mayúsculas
   await page.getByLabel("Nombre del servicio").fill("pulido y nano CERÁMICO");
   await page.getByLabel("Resumen").fill("Resumen de prueba.");

@@ -38,6 +38,8 @@ test("el dueño crea un técnico (usuario con guion), que ingresa sin ver Usuari
 
   await tecnico.goto("/panel/usuarios");
   await expect(tecnico).toHaveURL(/\/panel\/sin-acceso$/);
+  // Lleva a otra pantalla: se anuncia como enlace, no como botón (pulido 5.6)
+  await expect(tecnico.getByRole("link", { name: "Volver al inicio" })).toBeVisible();
   await expect(tecnico.getByRole("heading", { name: "Sin acceso" })).toBeVisible();
   await ctx.close();
 });
@@ -125,7 +127,7 @@ test("los errores del formulario se muestran junto a cada campo", async ({ page 
 test("la lista de usuarios: Agregar usuario, (tú) y la fila que abre el usuario", async ({ page }, info) => {
   await ingresarComoDueno(page);
   await page.goto("/panel/usuarios");
-  await page.getByRole("button", { name: "Agregar usuario" }).click();
+  await page.getByRole("link", { name: "Agregar usuario" }).click();
   await expect(page).toHaveURL(/\/panel\/usuarios\/nuevo$/);
   await page.goto("/panel/usuarios");
   await expect(page.getByText("(tú)").locator("visible=true")).toBeVisible();
