@@ -124,3 +124,14 @@ test("el aviso de guardado no tapa el botón de guardar", async ({ page }, info)
   const sePisan = a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
   expect(sePisan).toBe(false);
 });
+
+test("las páginas interiores llegan enteras: el título no aparece antes que el resto", async ({ page }) => {
+  // Con red lenta: cuando ya está el título de la página, también está el cierre del final (pulido 2.5)
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Network.emulateNetworkConditions", { offline: false, latency: 300, downloadThroughput: 150000, uploadThroughput: 75000 });
+  for (const ruta of ["/servicios", "/galeria", "/nosotros"]) {
+    await page.goto(ruta, { waitUntil: "commit" });
+    await page.getByRole("heading", { level: 1 }).waitFor({ state: "attached" });
+    expect(await page.locator("main [data-whatsapp-principal]").count(), ruta).toBeGreaterThan(0);
+  }
+});
