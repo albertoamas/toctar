@@ -129,7 +129,7 @@ test("las páginas interiores llegan enteras: el título no aparece antes que el
   // Con red lenta: cuando ya está el título de la página, también está el cierre del final (pulido 2.5)
   const cdp = await page.context().newCDPSession(page);
   await cdp.send("Network.emulateNetworkConditions", { offline: false, latency: 300, downloadThroughput: 150000, uploadThroughput: 75000 });
-  for (const ruta of ["/servicios", "/galeria", "/nosotros", "/preguntas-frecuentes"]) {
+  for (const ruta of ["/servicios", "/galeria", "/nosotros", "/preguntas-frecuentes", "/contacto"]) {
     await page.goto(ruta, { waitUntil: "commit" });
     await page.getByRole("heading", { level: 1 }).waitFor({ state: "attached" });
     expect(await page.locator("main [data-whatsapp-principal]").count(), ruta).toBeGreaterThan(0);
