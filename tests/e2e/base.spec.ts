@@ -160,6 +160,23 @@ test("los botones del panel miden 44 px con pantalla táctil y 36 con mouse", as
   await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+$/);
 });
 
+// Estándar de botones del panel: ninguno usa los tamaños chicos (antes, 28 px con mouse en variantes, galería y horarios).
+// El campo oculto para elegir una foto también tiene rol de botón: no se cuenta.
+test("ningún botón del panel mide menos que el tamaño normal", async ({ page, isMobile }) => {
+  await ingresarComoDueno(page);
+  const minimo = isMobile ? 44 : 36;
+  for (const ruta of ["/panel/sitio", "/panel/sitio/textos", "/panel/sitio/preguntas", "/panel/sitio/galeria", "/panel/configuracion"]) {
+    await page.goto(ruta, { waitUntil: "networkidle" });
+    if (ruta === "/panel/sitio") await page.getByRole("list", { name: "Servicios del sitio" }).getByRole("link").first().click();
+    await expect(page.getByRole("main").getByRole("button").first()).toBeVisible();
+    const chicos = await page.getByRole("main").getByRole("button").evaluateAll(
+      (botones, min) => botones.filter((b) => b.tagName !== "INPUT" && (b as HTMLElement).offsetParent && b.getBoundingClientRect().height < min).map((b) => b.getAttribute("aria-label") || b.textContent?.trim()),
+      minimo,
+    );
+    expect(chicos, ruta).toEqual([]);
+  }
+});
+
 test("al enviar con errores el foco va al campo, y el enlace para volver mide 44 px", async ({ page }) => {
   await ingresarComoDueno(page);
   await page.goto("/panel/sitio/servicios/nuevo");
