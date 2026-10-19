@@ -36,9 +36,19 @@ test("se envía un reclamo con fotos y se ve la confirmación", async ({ page },
   await llenar(page, placa.toLowerCase());
   await page.getByLabel("Archivos de las fotos").setInputFiles([foto("uno.png"), foto("dos.png")]);
   await expect(page.getByRole("list", { name: "Fotos elegidas" }).getByRole("listitem")).toHaveCount(2);
+  // Campos y "quitar foto" de 44 px para el dedo (pulido 2.8)
+  for (const etiqueta of ["Nombre", "Placa del vehículo", "Servicio (opcional)"]) {
+    expect((await page.getByLabel(etiqueta).boundingBox())!.height, etiqueta).toBeGreaterThanOrEqual(44);
+  }
+  const quitar = (await page.getByRole("button", { name: "Quitar la foto 1" }).boundingBox())!;
+  expect(Math.min(quitar.width, quitar.height)).toBeGreaterThanOrEqual(44);
   await page.waitForTimeout(3000); // tiempo mínimo para llenar el formulario
   await page.getByRole("button", { name: "Enviar reclamo" }).click();
-  await expect(page.getByRole("status").getByRole("heading", { name: "Recibimos tu reclamo" })).toBeVisible();
+  const confirmacion = page.getByRole("status").filter({ hasText: "Recibimos tu reclamo" });
+  await expect(confirmacion.getByRole("heading", { name: "Recibimos tu reclamo" })).toBeVisible();
+  // La pantalla sube a la confirmación y el foco va a ella: antes quedaba tapada por el encabezado (pulido 2.8)
+  await expect(confirmacion.getByRole("heading", { name: "Recibimos tu reclamo" })).toBeInViewport({ ratio: 1 });
+  await expect(confirmacion).toBeFocused();
   expect(await reclamosConPlaca(placa)).toEqual([{ fotos: 2 }]);
 });
 
@@ -50,6 +60,12 @@ test("los obligatorios vacíos muestran su error", async ({ page }) => {
   await expect(page.getByText(/Escribe la placa del vehículo/)).toBeVisible();
   await expect(page.getByText(/Cuéntanos qué pasó/)).toBeVisible();
   await expect(page.getByLabel("Nombre")).toHaveAttribute("aria-invalid", "true");
+  // El foco va al primer campo con error, y al corregirlo y volver a enviar, al siguiente (pulido 2.8)
+  await expect(page.getByLabel("Nombre")).toBeFocused();
+  await page.getByLabel("Nombre").fill("Cliente de prueba");
+  await page.getByRole("button", { name: "Enviar reclamo" }).click();
+  await expect(page.getByLabel("WhatsApp", { exact: true })).toBeFocused();
+  await expect(page.getByLabel("WhatsApp", { exact: true })).toBeInViewport();
 });
 
 test("con la trampa llena se ve la confirmación pero no se guarda", async ({ page }, info) => {

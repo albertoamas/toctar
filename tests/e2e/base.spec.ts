@@ -134,4 +134,8 @@ test("las páginas interiores llegan enteras: el título no aparece antes que el
     await page.getByRole("heading", { level: 1 }).waitFor({ state: "attached" });
     expect(await page.locator("main [data-whatsapp-principal]").count(), ruta).toBeGreaterThan(0);
   }
+  // Garantía no tiene WhatsApp (el formulario es la acción): cuando está el título, ya está el formulario
+  await page.goto("/garantia", { waitUntil: "commit" });
+  await page.getByRole("heading", { level: 1 }).waitFor({ state: "attached" });
+  expect(await page.getByRole("form", { name: "Garantía y reclamos" }).count()).toBe(1);
 });
