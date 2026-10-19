@@ -130,7 +130,7 @@ Antes de la demo del viernes 23.
 | 4.1 | Inicio | `/panel` | ✅ 19/10 |
 | 4.2 | Servicios del sitio | `/panel/sitio` | ✅ 19/10 |
 | 4.3 | Nuevo servicio | `/panel/sitio/servicios/nuevo` | ✅ 19/10 |
-| 4.4 | Editar servicio (datos, foto y variantes) | `/panel/sitio/servicios/[id]` | ⏳ |
+| 4.4 | Editar servicio (datos, foto y variantes) | `/panel/sitio/servicios/[id]` | ✅ 19/10 |
 | 4.5 | Textos del sitio | `/panel/sitio/textos` | ⏳ |
 | 4.6 | Preguntas frecuentes | `/panel/sitio/preguntas` | ⏳ |
 | 4.7 | Galería | `/panel/sitio/galeria` | ⏳ |
@@ -572,6 +572,26 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px, vacío y con errores. Comparativa en `pulido-visual/4.3-nuevo-servicio-errores-celular.jpg`.
   - E2E `base` "al enviar con errores el foco va al campo, y el enlace para volver mide 44 px". E2E completo: 155 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 4.4 Editar servicio (19/10/2026)
+- **Encontrado:**
+  - En el celular, cada fila de Beneficios y Pasos dejaba el campo en 160 px (a 360 px): los 3 botones de 44 px ocupaban 132. "Brillo que dura años" se cortaba y el detalle del paso entraba en 3 palabras por renglón.
+  - Tras un error, el foco no iba al campo, y las filas de Beneficios y Pasos con error no se marcaban (el lector de pantalla no lo anunciaba).
+  - El número de cada fila quedaba más arriba que el centro del campo de 44 px.
+  - La Descripción, el texto más largo, empezaba con un campo de 2 renglones, más bajo que el del Resumen.
+  - En el celular, "Guardar cambios" queda a mitad de página, y debajo vienen Foto y Variantes, que se guardan solas: no quedaba claro si el botón también las guardaba.
+  - Lo que estaba bien: el orden (Datos, Beneficios, Pasos, Guardar; Foto y Variantes aparte en la computadora), la ayuda de cada campo dice dónde se ve, controles de 44 px con pantalla táctil, "Mostrar en el sitio" se toca en toda la frase, sin desborde.
+- **Cambios:**
+  - `EditorLista` (`src/componentes/panel/editor-lista.tsx`): en el celular los botones de la fila van debajo de sus campos, que usan todo el ancho (300 px a 360); desde 640 px siguen al costado. El número se alinea con el primer campo. `fila` recibe `marca` para marcar con error los campos de la fila y enlazarlos a su mensaje. Textos del sitio (4.5) hereda el diseño de las filas.
+  - `useFocoEnError` en el formulario del servicio.
+  - Descripción con 8 renglones de alto al empezar (`min-h-32`); sigue creciendo con el texto.
+  - Foto principal y Variantes dicen "Se guarda(n) al momento, sin el botón Guardar cambios".
+- **Descartado o pendiente:**
+  - Barra fija de "Guardar cambios" en el celular: taparía contenido, y con las filas más cortas el botón queda justo después de los pasos.
+  - Para 6.x: en `ListaEditable` (variantes, y también espacios y tamaños de Configuración) el nombre queda solo en un renglón y los botones en otro, aun con lugar. Se ve con Configuración para no cambiarla desde aquí.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, y las filas con datos a 360 y 1280. Comparativa en `pulido-visual/4.4-editar-servicio-filas-celular.jpg`.
+  - E2E `base` "en Editar servicio una fila vacía recibe el foco con su error, y en el celular sus botones van debajo". E2E completo: 157 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
