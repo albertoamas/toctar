@@ -45,8 +45,10 @@ Estados: ⏳ pendiente · 🔵 en curso · ✅ terminada.
 - **Panel (desde 4.2):** botones y campos de 44 px con pantalla táctil y 36 px con mouse. Se decide por el tipo de puntero (`pointer-coarse:`), no por el ancho, en los componentes comunes (`Button`, `Input`, `Selector`). Las pantallas nuevas lo heredan.
 - **Botones del panel (desde 4.5):** todos salen de `Button` (`src/componentes/ui/button.tsx`); el sitio, el ingreso y el formulario de garantía usan `tt-boton`, el de la marca.
   - **Rojo (`default`):** guarda o crea. Uno por formulario, o la acción principal de una lista ("Agregar servicio").
-  - **Blanco con borde (`outline`):** agregar una fila dentro de un formulario ("Agregar beneficio") y acciones secundarias ("Subir foto", "Cambiar logo").
-  - **Sin fondo (`ghost`):** las acciones de cada fila (íconos, "Desactivar", "Cancelar").
+  - **Blanco con borde (`outline`):** agregar una fila dentro de un formulario ("Agregar beneficio"), acciones secundarias ("Subir foto", "Cambiar logo") y "Cancelar", en la página y en los diálogos.
+  - **Rosado con letra roja (`destructive`):** confirmar lo que no se deshace ("Eliminar pregunta", "Sí, desactivar").
+  - **Sin fondo (`ghost`):** las acciones de cada fila (íconos, "Desactivar").
+  - Un enlace con forma de botón que debe seguir siendo enlace (abre otra página o WhatsApp) lleva `cn(buttonVariants(...))`: sin `cn` el borde del contorno no se ve.
   - **Tamaño:** siempre el normal (`default` o `icon`): 36 px con mouse y 44 con pantalla táctil. Los tamaños chicos (`sm`, `xs`, `icon-sm`, `icon-xs`) no se usan en el panel.
 - **Capturas del celular:** la captura `fullPage` de Playwright apaga la emulación táctil. Para la página completa se agranda la ventana (`setViewportSize`) y se mide antes de capturar.
 - Instalada como app: respeta la muesca y la barra inferior del teléfono (`safe-area`), y el aviso sin conexión se sigue viendo bien.
@@ -625,13 +627,16 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Cambios:**
   - La regla de color y tamaño, en los estándares de arriba.
   - Esos botones pasan al tamaño normal (36 px con mouse, 44 con pantalla táctil). En el celular ya medían 44.
+  - Revisión de todas las pantallas del panel hechas (inicio, sitio, reclamos, usuarios, configuración), con los formularios, diálogos y el menú del celular abiertos, con mouse y con pantalla táctil: ningún botón bajo el tamaño. Además:
+    - "Escribir por WhatsApp" (detalle de un reclamo) no mostraba el borde: sin `cn`, `border-transparent` le ganaba a `border-border`. Ahora se ve como botón y sigue siendo enlace.
+    - "Cancelar" era sin fondo en los formularios de la página (variantes, espacios, preguntas, galería) y con borde en los diálogos: ahora con borde en todos.
 - **Pendiente:**
   - 4.6: "Agregar pregunta" en rojo.
   - 4.7: en el celular, los 5 íconos de cada foto de la galería se reparten en dos renglones.
   - 5.x: en la lista de usuarios, "Crear usuario" pasa a "Agregar usuario" (el formulario sigue diciendo "Crear usuario").
 - **Verificación:**
   - Capturas de Galería, Configuración y Editar servicio a 360 y 1280 px, sin desborde.
-  - E2E `base` "ningún botón del panel mide menos que el tamaño normal" (servicio, textos, preguntas, galería, configuración). E2E completo: 161 pasan. Lint y typecheck sin errores.
+  - E2E `base` "ningún botón del panel mide menos que el tamaño normal" (servicio, textos, preguntas, galería, configuración) y `hu-17` (el enlace de WhatsApp con borde). E2E completo: 161 pasan. Lint y typecheck sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
