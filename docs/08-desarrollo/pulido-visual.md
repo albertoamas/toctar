@@ -522,6 +522,10 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Capturas a 360, 390, 768 y 1280 px (vacío, con error y bloqueado). Comparativa en `pulido-visual/3.1-ingreso-error-celular.jpg`.
   - E2E `hu-01` "tras un error el foco va a la contraseña; los campos son de 44 px y la contraseña se puede ver". Como el nombre del botón contiene "contraseña", las pruebas buscan el campo por su etiqueta exacta (`apoyo.ts`). E2E completo: 149 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
   - Lighthouse móvil: rendimiento 95, accesibilidad y buenas prácticas 100, CLS 0 (SEO 66: el ingreso no se indexa a propósito).
+- **Revisión de YankoSoft (19/10):**
+  - *"No hay botón para volver a la portada o salir de aquí."* **Cambio:** "‹ Volver al sitio" arriba a la izquierda, de 44 px (como "‹ Servicios" en la página de un servicio).
+  - *"La barra roja me gusta, pero ese brillo neón no."* Elegido quitarlo en todas: **cambio** en `.tt-led` (se borra el token `--brillo-led`) y en `public/sin-conexion.html`. La línea queda lisa en la portada, el ingreso y la página sin conexión; `identidad-visual.md` actualizado.
+  - E2E `hu-01`: el enlace al sitio, con 44 px. E2E completo: 149 pasan.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
