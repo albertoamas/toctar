@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { EditorLista } from "@/componentes/panel/editor-lista";
+import { TextoCorto } from "@/componentes/panel/texto-corto";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
@@ -52,7 +53,7 @@ export function FormularioContenido({ pagina, contenido }: { pagina: Pagina; con
                 maximo={c.maxItems}
                 textoAgregar={c.agregar}
                 errores={e}
-                fila={(texto, cambiar, i) => <Input value={texto} onChange={(ev) => cambiar(ev.target.value)} aria-label={`Motivo ${i + 1}`} />}
+                fila={(texto, cambiar, i) => <TextoCorto value={texto} onChange={(ev) => cambiar(ev.target.value)} aria-label={`Motivo ${i + 1}`} />}
               />
             </fieldset>
           );

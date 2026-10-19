@@ -5,6 +5,7 @@ import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { EditorLista } from "@/componentes/panel/editor-lista";
+import { TextoCorto } from "@/componentes/panel/texto-corto";
 import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
@@ -70,7 +71,7 @@ export function FormularioServicio({ servicio: s }: Props) {
           textoAgregar="Agregar beneficio"
           errores={e}
           fila={(texto, cambiar, i, marca) => (
-            <Input value={texto} onChange={(ev) => cambiar(ev.target.value)} aria-label={`Beneficio ${i + 1}`} placeholder="Brillo que dura años" {...marca} />
+            <TextoCorto value={texto} onChange={(ev) => cambiar(ev.target.value)} aria-label={`Beneficio ${i + 1}`} placeholder="Brillo que dura años" {...marca} />
           )}
         />
       </Seccion>
