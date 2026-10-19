@@ -110,7 +110,7 @@ Antes de la demo del viernes 23.
 | 2.4 | Galería y visor de fotos | `/galeria` | ✅ 18/10 |
 | 2.5 | Nosotros | `/nosotros` | ✅ 18/10 |
 | 2.6 | Preguntas frecuentes | `/preguntas-frecuentes` | ✅ 18/10 |
-| 2.7 | Contacto | `/contacto` | ⏳ |
+| 2.7 | Contacto | `/contacto` | ✅ 18/10 |
 | 2.8 | Garantía y reclamos | `/garantia` | ⏳ |
 | 2.9 | Página no encontrada | cualquier ruta inexistente | ⏳ |
 | 2.10 | Sin conexión | `public/sin-conexion.html` | ⏳ |
@@ -413,6 +413,26 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Capturas a 360, 390, 768 y 1280 px (cerradas, una abierta, foco), sin desborde. Grabación con red lenta: primero solo el encabezado, después la página entera. Comparativa en `pulido-visual/2.6-preguntas-computadora.jpg`.
   - E2E `hu-13-14` "las preguntas frecuentes se abren y se cierran una por una" (termina con el cierre, un solo WhatsApp a la vista) y `base` "las páginas interiores llegan enteras…" (ahora también esta página). Las pruebas del cierre bajan hasta el botón y no hasta el título: en el celular el título podía quedar a la vista y el botón justo debajo. E2E completo: 143 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
   - Lighthouse: celular 92, computadora 100; 100 en accesibilidad, buenas prácticas y SEO; CLS 0.
+
+### 2.7 Contacto (18/10/2026)
+- **Encontrado:**
+  - El título "Contacto" estaba fuera del `<Suspense>` y aparecía solo, antes que el resto.
+  - En el celular el mapa quedaba al final de todo (y = 997 a 390 px), después del horario, la garantía y las redes, lejos de "Dónde estamos".
+  - "Cómo llegar" y "Garantía y reclamos" medían 20 px de alto y el correo 24.
+  - El botón seguía con "Escribir por WhatsApp" (pendiente de 2.1).
+  - Lo que estaba bien: datos de Configuración y bienvenida del panel; la dirección abre Google Maps (14.2); mapa diferido; horario agrupado; redes de 44 px; sin desborde. El mapa vacío de la primera captura era de la captura: con tiempo se dibuja.
+- **Cambios:**
+  - La página llega entera, con el título.
+  - Una sola grilla: el mapa va en el DOM justo después de "Dónde estamos" (en el celular queda debajo, y = 541) y en la computadora ocupa la columna derecha a lo alto (`md:col-start-2 md:row-span-5`). No se duplica.
+  - Área táctil de 44 px (`.tt-area-toque`) en "Cómo llegar", "Garantía y reclamos" y el correo, sin cambiar el aspecto.
+  - El botón dice "Pedir cotización", como en la portada; el número sigue debajo.
+- **Descartado o pendiente:**
+  - Cierre común: toda la página es el contacto; repetiría el botón de arriba.
+  - Mapa en colores oscuros: el mapa de Google sin clave no se estiliza, y filtrar sus colores cambiaría el agua y los parques.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, sin desborde. Grabación con red lenta: primero el encabezado, después la página entera. Comparativa en `pulido-visual/2.7-contacto-celular.jpg`.
+  - E2E `hu-13-14` "en Contacto el mapa va junto a la dirección y los enlaces sueltos tienen 44 px para el dedo" y el botón por su nombre nuevo; `base` "las páginas interiores llegan enteras…" (ahora también Contacto). La prueba nueva falló en el celular: la base de pruebas arrancaba sin ubicación y el mapa aparecía recién cuando `hu-04` la guardaba (en la computadora ya había corrido). `preparar.setup.ts` carga ahora también la ubicación, con los mismos datos que `hu-04`. E2E completo: 145 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse: celular 92, computadora 99; 100 en accesibilidad, buenas prácticas y SEO; CLS 0.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
