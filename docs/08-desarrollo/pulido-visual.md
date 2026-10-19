@@ -366,7 +366,7 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Descartado o pendiente:**
   - Pasar de una foto a otra dentro del visor y un deslizador para comparar: funciones nuevas.
   - Si se entra con el filtro ya elegido (un enlace compartido) y el servicio está al final de la fila, en el celular su botón queda fuera de la vista hasta deslizar.
-  - **Rendimiento móvil del sitio (pendiente común):** la galería da 87 en tres corridas (antes de estos cambios, 85, 86 y 91 con los mismos datos: no empeoró). Como en la portada (88 a 92) y en un servicio (91 y 92), la mayor parte del LCP es "render delay" de 2 a 3,5 s, que es igual en todas las páginas. Se investiga aparte, antes de cerrar el grupo 2.
+  - **Rendimiento móvil del sitio (pendiente común, resuelto al cerrar el grupo 2: ver "Rendimiento del sitio"):** la galería da 87 en tres corridas (antes de estos cambios, 85, 86 y 91 con los mismos datos: no empeoró). Como en la portada (88 a 92) y en un servicio (91 y 92), la mayor parte del LCP es "render delay" de 2 a 3,5 s, que es igual en todas las páginas. Se investiga aparte, antes de cerrar el grupo 2.
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px (grilla, filtro activo, visor con par y con foto sola, foco), sin desborde. Comparativas en `pulido-visual/2.4-galeria-celular.jpg`, `2.4-visor-celular.jpg` y `2.4-visor-computadora.jpg`.
   - E2E `hu-12`: filtro de una fila en el celular; antes y después a la vista a la vez; "Cerrar" de 44 px que cierra (también con Escape); cierre con un solo WhatsApp. E2E completo: 141 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
@@ -489,6 +489,20 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px. Comparativa en `pulido-visual/2.10-sin-conexion-celular.jpg`.
   - E2E `hu-06` "sin internet, el panel muestra el aviso…": ahora comprueba que, sin red, la página tiene Barlow Condensed y Montserrat cargadas (las saca el service worker de su caché). E2E completo: 147 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### Rendimiento del sitio (cierre del grupo 2, 18/10/2026)
+- **Encontrado** (Lighthouse móvil, tres corridas por página): portada 86, Servicios 88, Galería 89, Nosotros 90. El LCP simulado coincidía con el momento en que la página queda interactiva: el simulador cuenta como dependencias del LCP todo lo pedido antes de pintarlo, y la portada pedía 218 KB comprimidos de JavaScript y 7 fuentes (unos 130 KB) de entrada.
+  - Los avisos del panel (`Toaster`, sonner: 38 KB) estaban en el diseño raíz: se descargaban en cada página del sitio, que no los usa.
+  - Barlow Condensed cargaba 6 variantes (600, 700 y 800, normal e itálica); los titulares usan solo la itálica 700 y 800. Las normales las usaban únicamente los títulos de los diálogos y del menú de shadcn, contra la regla de la marca (titulares en itálica).
+  - El menú del celular (Sheet de base-ui, 26 KB comprimidos) se descargaba con la página, también en la computadora.
+- **Cambios:**
+  - `Toaster` en el diseño del panel (`src/app/panel/layout.tsx`), donde están todos los avisos.
+  - Barlow Condensed: solo itálica 700 y 800 (de 6 archivos a 2). Los títulos de `Dialog` y `Sheet` pasan a `font-bold italic`, como el resto de los titulares.
+  - Menú desplegable en dos partes: el botón (`menu-desplegable.tsx`) y la hoja (`menu-desplegable-hoja.tsx`), que se carga con `lazy()` cuando la página terminó de cargar (en un momento libre) o antes si se apunta al botón; lo común va en `menu-desplegable-comun.ts` para no tener una importación circular. El foco vuelve al botón al cerrar, con `aria-expanded` y `aria-haspopup`.
+- **Descartado:**
+  - `experimental.inlineCss`: empeoró (84 a 86). Next manda el CSS dos veces (en el `<style>` y en los datos de React) y el HTML comprimido pasó de 41 a 110 KB.
+- **Resultado** (tres corridas, promedio): portada 90, Servicios 93, Galería 90, Nosotros 95. La primera corrida con el servidor recién arrancado puede dar menos (83 en la portada): la caché está vacía.
+- **Verificación:** E2E `base` "el menú marca la página actual…": al cerrar con Escape, el foco vuelve a "Abrir menú" y `aria-expanded` es `false`. La prueba de los colores del selector (2.8) leía los colores antes de que React pusiera el contenido en su lugar (llega en un contenedor oculto, fuera del tema oscuro) y fallaba a veces en el celular: ahora espera a que el campo se vea. E2E completo: 147 pasan. Lint, typecheck y 205 unitarias sin errores. knip: solo `SheetTrigger` sin usar, parte de shadcn (aviso conocido).
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
