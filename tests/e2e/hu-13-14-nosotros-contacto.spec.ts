@@ -11,6 +11,10 @@ test("Nosotros muestra la historia, cómo trabajan y por qué elegirlos", async 
   await expect(page.getByRole("main")).toContainText("TocTar Detailing empezó el 22 de junio de 2024");
   await expect(page.getByRole("region", { name: "Cómo trabajamos" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Por qué elegirnos" })).toContainText("Revisamos tu vehículo antes de darte un precio.");
+  // Termina con el cierre común: un solo WhatsApp a la vista y, al lado, las preguntas frecuentes (pulido 2.5)
+  await page.getByRole("heading", { name: "¿Hablamos de tu vehículo?" }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole("link", { name: "Mandar fotos de mi vehículo por WhatsApp" })).toBeInViewport();
+  await expect(page.getByRole("link", { name: "Escribir a TocTar por WhatsApp" })).toBeHidden();
   await page.getByRole("link", { name: "Ver las preguntas frecuentes" }).click();
   await expect(page).toHaveURL(/\/preguntas-frecuentes$/);
 });
