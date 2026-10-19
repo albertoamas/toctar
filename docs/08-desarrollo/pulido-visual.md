@@ -456,6 +456,7 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Capturas a 360, 390, 768 y 1280 px (vacío, con errores, con fotos y la confirmación), sin desborde. Comparativas en `pulido-visual/2.8-errores-celular.jpg` y `2.8-confirmacion-celular.jpg`.
   - E2E `hu-16`: campos y "quitar foto" de 44 px; la confirmación a la vista y con el foco; el foco al primer error y, al corregirlo, al siguiente. `base` "las páginas interiores llegan enteras…" (Garantía: con el título ya está el formulario). E2E completo: 145 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
   - Lighthouse: celular 89, computadora 100; 100 en accesibilidad, buenas prácticas y SEO; CLS 0. El celular queda en el pendiente común de rendimiento (2.4).
+- **Revisión de YankoSoft (18/10):** *"El campo de servicio, donde se despliega una lista, sale blanco y no se ve lo escrito."* El `Selector` tenía el fondo transparente: Chrome en Windows dibuja la lista con el fondo del `<select>` y, transparente, la pintaba blanca con el texto blanco del sitio oscuro. Las capturas no lo mostraban porque la lista nativa no sale en ellas. **Cambio** en `src/componentes/panel/selector.tsx` (lo usan el sitio y el panel): las opciones llevan fondo y tinta del tema, y el selector el mismo fondo que `Input` en oscuro (antes se veía más oscuro que los otros campos). E2E `hu-16` "las opciones de la lista de servicios se leen sobre el fondo oscuro". E2E completo: 147 pasan.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
