@@ -43,6 +43,11 @@ Estados: ⏳ pendiente · 🔵 en curso · ✅ terminada.
 - Se diseña primero para 360 px y después se agranda. Sin desplazamiento horizontal en ningún ancho.
 - Áreas táctiles de 44 × 44 px como mínimo; nada importante pegado al borde de la pantalla.
 - **Panel (desde 4.2):** botones y campos de 44 px con pantalla táctil y 36 px con mouse. Se decide por el tipo de puntero (`pointer-coarse:`), no por el ancho, en los componentes comunes (`Button`, `Input`, `Selector`). Las pantallas nuevas lo heredan.
+- **Botones del panel (desde 4.5):** todos salen de `Button` (`src/componentes/ui/button.tsx`); el sitio, el ingreso y el formulario de garantía usan `tt-boton`, el de la marca.
+  - **Rojo (`default`):** guarda o crea. Uno por formulario, o la acción principal de una lista ("Agregar servicio").
+  - **Blanco con borde (`outline`):** agregar una fila dentro de un formulario ("Agregar beneficio") y acciones secundarias ("Subir foto", "Cambiar logo").
+  - **Sin fondo (`ghost`):** las acciones de cada fila (íconos, "Desactivar", "Cancelar").
+  - **Tamaño:** siempre el normal (`default` o `icon`): 36 px con mouse y 44 con pantalla táctil. Los tamaños chicos (`sm`, `xs`, `icon-sm`, `icon-xs`) no se usan en el panel.
 - **Capturas del celular:** la captura `fullPage` de Playwright apaga la emulación táctil. Para la página completa se agranda la ventana (`setViewportSize`) y se mide antes de capturar.
 - Instalada como app: respeta la muesca y la barra inferior del teléfono (`safe-area`), y el aviso sin conexión se sigue viendo bien.
 - Formularios cómodos en el celular: el teclado que corresponde (`inputMode`, `type`), autocompletado y botones que no queden tapados por el teclado.
@@ -612,6 +617,21 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px. Comparativa en `pulido-visual/4.5-textos-motivos-celular.jpg`.
   - E2E `base` "en Textos del sitio un motivo largo se lee entero, y Enter envía sin saltar de renglón" (también mide "Agregar motivo"). E2E completo: 159 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### Botones del panel (19/10/2026)
+- **Encontrado (lo vio YankoSoft, tras la 4.5):**
+  - Todos los botones del panel usan el mismo componente, pero no había regla escrita para el color: "Agregar servicio" es rojo y "Agregar pregunta", la acción principal de su pantalla, es blanco con borde. "Crear usuario" y "Agregar servicio" hacen lo mismo con nombres distintos.
+  - Quedaban botones del tamaño chico (28 px y letra de 12,8 px con mouse): "Desactivar" y "Reactivar" de las listas (variantes y Configuración), "Segundo turno" y "Copiar el lunes…" de los horarios, y en Galería los íconos de cada foto y "Guardar"/"Cancelar" al editarla.
+- **Cambios:**
+  - La regla de color y tamaño, en los estándares de arriba.
+  - Esos botones pasan al tamaño normal (36 px con mouse, 44 con pantalla táctil). En el celular ya medían 44.
+- **Pendiente:**
+  - 4.6: "Agregar pregunta" en rojo.
+  - 4.7: en el celular, los 5 íconos de cada foto de la galería se reparten en dos renglones.
+  - 5.x: en la lista de usuarios, "Crear usuario" pasa a "Agregar usuario" (el formulario sigue diciendo "Crear usuario").
+- **Verificación:**
+  - Capturas de Galería, Configuración y Editar servicio a 360 y 1280 px, sin desborde.
+  - E2E `base` "ningún botón del panel mide menos que el tamaño normal" (servicio, textos, preguntas, galería, configuración). E2E completo: 161 pasan. Lint y typecheck sin errores.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
