@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { CameraIcon, CheckCircle2Icon, XIcon } from "lucide-react";
+import { useFocoEnError } from "@/componentes/foco-en-error";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { Selector } from "@/componentes/panel/selector";
 import { achicarFoto } from "@/componentes/panel/subida-foto";
@@ -39,17 +40,11 @@ export function FormularioReclamo({ servicios }: { servicios: { id: number; nomb
   // Después de enviar, la pantalla va al resultado y el foco también, para que lo anuncie el lector de pantalla
   // (pulido 2.8): antes el foco quedaba en la página y la confirmación salía tapada por el encabezado.
   useEffect(() => {
-    if (estado.ok) {
-      confirmacion.current?.scrollIntoView({ block: "start" });
-      confirmacion.current?.focus({ preventScroll: true });
-      return;
-    }
-    // El primer campo con error, al centro de la pantalla (así no queda debajo del encabezado fijo).
-    const conError = formulario.current?.querySelector<HTMLElement>('[aria-invalid="true"]');
-    if (!conError) return;
-    conError.scrollIntoView({ block: "center" });
-    conError.focus({ preventScroll: true });
+    if (!estado.ok) return;
+    confirmacion.current?.scrollIntoView({ block: "start" });
+    confirmacion.current?.focus({ preventScroll: true });
   }, [estado]);
+  useFocoEnError(formulario, estado);
 
   if (estado.ok) {
     return (
