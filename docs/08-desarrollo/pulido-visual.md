@@ -48,7 +48,7 @@ Estados: ⏳ pendiente · 🔵 en curso · ✅ terminada.
   - **Blanco con borde (`outline`):** agregar una fila dentro de un formulario ("Agregar beneficio"), acciones secundarias ("Subir foto", "Cambiar logo") y "Cancelar", en la página y en los diálogos.
   - **Rosado con letra roja (`destructive`):** confirmar lo que no se deshace ("Eliminar pregunta", "Sí, desactivar").
   - **Sin fondo (`ghost`):** las acciones de cada fila (íconos, "Desactivar").
-  - Un enlace con forma de botón que debe seguir siendo enlace (abre otra página o WhatsApp) lleva `cn(buttonVariants(...))`: sin `cn` el borde del contorno no se ve.
+  - Lo que lleva a otra pantalla es un enlace con forma de botón: `<Link className={cn(buttonVariants(...))}>`. Sin `cn` el borde del contorno no se ve. No `<Button render={<Link />}>`: base-ui le pone rol de botón y el lector de pantalla lo anuncia como botón (5.6).
   - **Tamaño:** siempre el normal (`default` o `icon`): 36 px con mouse y 44 con pantalla táctil. Los tamaños chicos (`sm`, `xs`, `icon-sm`, `icon-xs`) no se usan en el panel.
 - **Capturas del celular:** la captura `fullPage` de Playwright apaga la emulación táctil. Para la página completa se agranda la ventana (`setViewportSize`) y se mide antes de capturar.
 - Instalada como app: respeta la muesca y la barra inferior del teléfono (`safe-area`), y el aviso sin conexión se sigue viendo bien.
@@ -151,7 +151,7 @@ Antes de la demo del viernes 23.
 | 5.3 | Usuarios | `/panel/usuarios` | ✅ 19/10 |
 | 5.4 | Nuevo usuario | `/panel/usuarios/nuevo` | ✅ 19/10 |
 | 5.5 | Editar usuario | `/panel/usuarios/[id]` | ✅ 19/10 |
-| 5.6 | Sin acceso | `/panel/sin-acceso` | ⏳ |
+| 5.6 | Sin acceso | `/panel/sin-acceso` | ✅ 19/10 |
 
 ### 6. Panel: configuración
 
@@ -754,6 +754,18 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px de un encargado, uno desactivado y el propio, y la confirmación y el diálogo con error a 360 y 1280. Comparativa en `pulido-visual/5.5-editar-usuario-celular.jpg`.
   - E2E `hu-02` (foco en el diálogo tras el error, en la confirmación y de vuelta al cancelar). E2E completo: 167 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 5.6 Sin acceso (19/10/2026)
+- **Encontrado:**
+  - "Volver al inicio" lleva a otra página, pero se anunciaba como botón: `Button` con `render={<Link />}` (base-ui le pone `role="button"`). Lo mismo "Agregar servicio" y "Agregar usuario".
+  - Lo que estaba bien: explica qué pasa y qué hacer ("pídeselo al dueño") sin culpar; botón rojo de 44 px en el celular y 36 con mouse; el menú solo muestra lo que el usuario puede ver; sin desborde.
+- **Cambios:**
+  - Los tres pasan a `<Link className={cn(buttonVariants())}>`: se ven igual (mismo alto y color, medido) y se anuncian como enlace. La regla de botones lo dice.
+- **Descartado:**
+  - Decir a qué módulo se quiso entrar: la redirección no lo pasa y no hace falta para saber qué hacer.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px como técnico. Sin comparativa: se ve igual.
+  - E2E `hu-02` ("Volver al inicio" como enlace en la pantalla de sin acceso); `base`, `hu-02` y `hu-07` buscan "Agregar servicio" y "Agregar usuario" como enlaces. E2E completo: 167 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
