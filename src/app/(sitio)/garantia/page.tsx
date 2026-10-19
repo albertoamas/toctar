@@ -11,21 +11,24 @@ export const metadata: Metadata = {
 };
 
 // HU-16 Formulario de reclamo (RF-07). El reclamo queda pendiente en el panel (HU-17).
+// Llega entera, con el título: nada aparece suelto antes que el resto (pulido 2.1 y 2.5, revisión de YankoSoft).
 export default function PaginaGarantia() {
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <Contenido />
+    </Suspense>
+  );
+}
+
+async function Contenido() {
+  await connection();
+  // Los servicios visibles del sitio, para elegir a cuál corresponde el reclamo.
+  const servicios = (await serviciosPublicos()).map((s) => ({ id: s.id, nombre: s.nombre }));
   return (
     <section className="mx-auto w-full max-w-6xl px-4 py-12 md:py-20">
       <TituloPagina>Garantía y reclamos</TituloPagina>
       <p className="mt-3 mb-10 max-w-2xl text-lg leading-7 text-tinta-suave">Si algo no quedó como esperabas, cuéntanos y te respondemos por WhatsApp.</p>
-      <Suspense fallback={<div className="min-h-screen" />}>
-        <Formulario />
-      </Suspense>
+      <FormularioReclamo servicios={servicios} />
     </section>
   );
-}
-
-async function Formulario() {
-  await connection();
-  // Los servicios visibles del sitio, para elegir a cuál corresponde el reclamo.
-  const servicios = (await serviciosPublicos()).map((s) => ({ id: s.id, nombre: s.nombre }));
-  return <FormularioReclamo servicios={servicios} />;
 }
