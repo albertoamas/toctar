@@ -20,7 +20,9 @@ test("la página de un servicio muestra el proceso y abre WhatsApp con ese servi
   await expect(page.getByRole("region", { name: "Opciones" })).toHaveCount(0);
 
   const mensaje = "?text=Hola%2C%20quiero%20consultar%20por%20Mantenimiento%20del%20nano%20cer%C3%A1mico.";
-  await expect(page.getByRole("link", { name: "Consultar por este servicio" }).first()).toHaveAttribute("href", `https://wa.me/59171234567${mensaje}`);
+  await expect(page.getByRole("link", { name: "Consultar por este servicio por WhatsApp" })).toHaveAttribute("href", `https://wa.me/59171234567${mensaje}`);
+  // El cierre dice lo que gana el cliente y también manda el servicio escrito (pulido 2.3)
+  await expect(page.getByRole("link", { name: "Mandar fotos de mi vehículo por WhatsApp" })).toHaveAttribute("href", `https://wa.me/59171234567${mensaje}`);
   // Por su enlace: al navegar dentro del sitio, Next.js guarda oculta la página anterior con su propio botón fijo.
   await expect(page.locator(`.tt-whatsapp--fijo[href="https://wa.me/59171234567${mensaje}"]`)).toHaveCount(1);
   await expect(page.locator("main")).not.toContainText(/\bBs\b/);
@@ -36,6 +38,8 @@ test("las variantes se muestran sin precio", async ({ page }) => {
 test("un servicio oculto o inexistente muestra la página no encontrada", async ({ page }, info) => {
   await page.goto("/servicios/no-existe");
   await expect(page.getByRole("heading", { name: "No encontramos esta página" })).toBeVisible();
+  // Responde 200 porque la página empieza a enviarse antes de saber si el servicio existe; Google no la indexa (pulido 2.9)
+  await expect(page.locator('meta[name="robots"][content*="noindex"]').first()).toBeAttached();
 
   soloEscritorio(info);
   await ingresarComoDueno(page);
@@ -53,4 +57,33 @@ test("un servicio oculto o inexistente muestra la página no encontrada", async 
   await expect(page.getByText("Cambios guardados.")).toBeVisible();
   await page.goto("/servicios/servicio-oculto-con-pagina");
   await expect(page.getByRole("heading", { name: "No encontramos esta página" })).toBeVisible();
+});
+
+test("la lista de servicios termina con una invitación a mandar fotos, con un solo WhatsApp a la vista", async ({ page }) => {
+  await page.goto("/servicios");
+  await page.getByRole("heading", { name: "¿No sabes cuál elegir?" }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole("link", { name: "Mandar fotos de mi vehículo por WhatsApp" })).toBeInViewport();
+  await expect(page.getByRole("link", { name: "Escribir a TocTar por WhatsApp" })).toBeHidden();
+});
+
+test("con el teclado se enmarca toda la tarjeta del servicio", async ({ page, isMobile }) => {
+  test.skip(isMobile, "El teclado se prueba en la computadora");
+  // Solo con el teclado y con la página ya hidratada: desde el último enlace del menú, Tab llega a la primera tarjeta
+  await page.goto("/servicios", { waitUntil: "networkidle" });
+  const enlace = page.locator(".tt-tarjeta__enlace").first();
+  await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Contacto" }).focus();
+  await page.keyboard.press("Tab");
+  await expect(enlace).toBeFocused();
+  await expect(page.locator(".tt-tarjeta").first()).toHaveCSS("outline-style", "solid");
+});
+
+test("en la página de un servicio, volver a Servicios es lo primero y se toca con el dedo", async ({ page }) => {
+  await page.goto("/servicios/pulido-y-nano-ceramico");
+  const volver = page.getByRole("main").getByRole("link", { name: "Servicios", exact: true });
+  const caja = (await volver.boundingBox())!;
+  expect(caja.height).toBeGreaterThanOrEqual(44);
+  // Antes que la foto y el título: en el celular la foto va arriba del título y el enlace, antes que los dos
+  const foto = (await page.locator('main header [class*="aspect-[4/3]"]').boundingBox())!;
+  const titulo = (await page.getByRole("heading", { level: 1 }).boundingBox())!;
+  expect(caja.y + caja.height).toBeLessThanOrEqual(Math.min(foto.y, titulo.y));
 });

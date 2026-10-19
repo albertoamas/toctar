@@ -177,8 +177,13 @@
   .tt-led--encender {
     animation: tt-encender 600ms ease-out both;
   }
+  /* La foto del taller de la portada entra junto con la línea, sin aparecer de golpe. */
+  .tt-portada-foto {
+    animation: tt-aparecer 600ms ease-out both;
+  }
   @media (prefers-reduced-motion: reduce) {
-    .tt-led--encender {
+    .tt-led--encender,
+    .tt-portada-foto {
       animation: none;
     }
   }
@@ -474,6 +479,14 @@
     text-decoration: underline;
     text-underline-offset: 4px;
   }
+  /* Con el teclado se enmarca toda la tarjeta, que es lo que se abre, y no solo el enlace (pulido 2.2). */
+  .tt-tarjeta:has(.tt-tarjeta__enlace:focus-visible) {
+    outline: 2px solid var(--foco);
+    outline-offset: 2px;
+  }
+  .tt-tarjeta__enlace:focus-visible {
+    outline: none;
+  }
   /* Toda la tarjeta se toca: el enlace la cubre (la tarjeta tiene un solo destino). */
   .tt-tarjeta__enlace::after {
     content: "";
@@ -482,6 +495,37 @@
   }
   .tt-tarjeta {
     position: relative;
+  }
+  /* Celular (menos de 640 px, el sm de Tailwind): fila compacta, foto chica a la izquierda y el texto a la derecha.
+     Así se ven todos los servicios de un vistazo; con la tarjeta grande, 6 servicios eran casi 4000 px (pulido 2.1).
+     Mismo componente y mismo corte a 60°: solo cambia la disposición. */
+  @media (width < 40rem) {
+    .tt-tarjeta {
+      grid-template-rows: none;
+      grid-template-columns: 7rem minmax(0, 1fr);
+      align-items: start;
+    }
+    .tt-tarjeta__media {
+      margin: 12px 0 12px 12px;
+    }
+    .tt-tarjeta__cuerpo {
+      gap: 4px;
+      padding: 12px 20px 16px 16px;
+    }
+    .tt-tarjeta__titulo {
+      font-size: 22px;
+      line-height: 24px;
+    }
+    .tt-tarjeta__resumen {
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      line-height: 20px;
+    }
+    .tt-tarjeta__enlace {
+      margin-top: 4px;
+    }
   }
 }
 

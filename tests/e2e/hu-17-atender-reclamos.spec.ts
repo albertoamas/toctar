@@ -1,10 +1,9 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
+import { crearUsuario, ingresar, ingresarComoDueno, PNG } from "./apoyo";
 
 // HU-17 Atender reclamos. Criterios: docs/09-pruebas/criterios-entrega-1.md (17.x).
 // Cada proyecto deja su propio reclamo por el sitio, con una IP inventada para no tocar el límite por hora de HU-16.
 
-const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
 const foto = (nombre: string) => ({ name: nombre, mimeType: "image/png", buffer: PNG });
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "C" : "E");
 

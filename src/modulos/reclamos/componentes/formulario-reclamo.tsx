@@ -16,6 +16,8 @@ import { MAXIMO_FOTOS } from "../esquemas";
 
 type Foto = { archivo: File; vista: string };
 const sinSuscripcion = () => () => {};
+/** Campos de 44 px de alto: en el sitio se llenan con el dedo (pulido 2.8). */
+const CAMPO = "h-11";
 
 export function FormularioReclamo({ servicios }: { servicios: { id: number; nombre: string }[] }) {
   const [estado, setEstado] = useState<EstadoFormulario>({});
@@ -24,6 +26,8 @@ export function FormularioReclamo({ servicios }: { servicios: { id: number; nomb
   const [, iniciar] = useTransition();
   const abiertoEn = useRef<number | null>(null);
   const entradaFotos = useRef<HTMLInputElement>(null);
+  const formulario = useRef<HTMLFormElement>(null);
+  const confirmacion = useRef<HTMLDivElement>(null);
   const listo = useSyncExternalStore(sinSuscripcion, () => true, () => false);
   const e = estado.errores ?? {};
   const v = estado.valores;
@@ -32,9 +36,24 @@ export function FormularioReclamo({ servicios }: { servicios: { id: number; nomb
     abiertoEn.current = Date.now();
   }, []);
 
+  // Después de enviar, la pantalla va al resultado y el foco también, para que lo anuncie el lector de pantalla
+  // (pulido 2.8): antes el foco quedaba en la página y la confirmación salía tapada por el encabezado.
+  useEffect(() => {
+    if (estado.ok) {
+      confirmacion.current?.scrollIntoView({ block: "start" });
+      confirmacion.current?.focus({ preventScroll: true });
+      return;
+    }
+    // El primer campo con error, al centro de la pantalla (así no queda debajo del encabezado fijo).
+    const conError = formulario.current?.querySelector<HTMLElement>('[aria-invalid="true"]');
+    if (!conError) return;
+    conError.scrollIntoView({ block: "center" });
+    conError.focus({ preventScroll: true });
+  }, [estado]);
+
   if (estado.ok) {
     return (
-      <div role="status" className="flex flex-col items-start gap-4 bg-superficie p-8">
+      <div ref={confirmacion} role="status" tabIndex={-1} className="flex scroll-mt-24 flex-col items-start gap-4 bg-superficie p-8 outline-none">
         <CheckCircle2Icon className="size-10 text-exito" aria-hidden />
         <h2 className="font-heading text-[28px] leading-8 font-bold italic">Recibimos tu reclamo</h2>
         <p className="max-w-prose text-tinta-suave">Te escribiremos al WhatsApp que dejaste.</p>
@@ -71,7 +90,7 @@ export function FormularioReclamo({ servicios }: { servicios: { id: number; nomb
   const describir = (c: string, ayuda = false) => (e[c] ? `${c}-error` : ayuda ? `${c}-ayuda` : undefined);
 
   return (
-    <form onSubmit={enviar} className="flex max-w-2xl flex-col gap-6" noValidate aria-label="Garantía y reclamos">
+    <form ref={formulario} onSubmit={enviar} className="flex max-w-2xl flex-col gap-6" noValidate aria-label="Garantía y reclamos">
       {/* Trampa para robots: una persona no la ve ni la llena. */}
       <div aria-hidden className="absolute -left-[9999px] h-px w-px overflow-hidden">
         <label htmlFor="sitio_web">No completar</label>
@@ -80,21 +99,22 @@ export function FormularioReclamo({ servicios }: { servicios: { id: number; nomb
 
       <div className="grid gap-6 md:grid-cols-2">
         <Campo id="nombre" etiqueta="Nombre" error={e.nombre}>
-          <Input id="nombre" name="nombre" autoComplete="name" defaultValue={v?.nombre} aria-invalid={!!e.nombre} aria-describedby={describir("nombre")} />
+          <Input id="nombre" name="nombre" autoComplete="name" className={CAMPO} defaultValue={v?.nombre} aria-invalid={!!e.nombre} aria-describedby={describir("nombre")} />
         </Campo>
-        <Campo id="telefono" etiqueta="WhatsApp" error={e.telefono} ayuda="Te respondemos por aquí.">
-          <Input id="telefono" name="telefono" type="tel" inputMode="tel" autoComplete="tel" placeholder="71234567" defaultValue={v?.telefono} aria-invalid={!!e.telefono} aria-describedby={describir("telefono", true)} />
+        {/* Los ejemplos van en la ayuda y no como texto dentro del campo: vacío, parecía ya escrito (pulido 2.8) */}
+        <Campo id="telefono" etiqueta="WhatsApp" error={e.telefono} ayuda="Te respondemos por aquí. Ejemplo: 71234567">
+          <Input id="telefono" name="telefono" type="tel" inputMode="tel" autoComplete="tel" className={CAMPO} defaultValue={v?.telefono} aria-invalid={!!e.telefono} aria-describedby={describir("telefono", true)} />
         </Campo>
-        <Campo id="placa" etiqueta="Placa del vehículo" error={e.placa}>
-          <Input id="placa" name="placa" autoCapitalize="characters" autoComplete="off" placeholder="2849XKT" defaultValue={v?.placa} aria-invalid={!!e.placa} aria-describedby={describir("placa")} />
+        <Campo id="placa" etiqueta="Placa del vehículo" error={e.placa} ayuda="Por ejemplo, 2849XKT.">
+          <Input id="placa" name="placa" autoCapitalize="characters" autoComplete="off" className={CAMPO} defaultValue={v?.placa} aria-invalid={!!e.placa} aria-describedby={describir("placa", true)} />
         </Campo>
         <Campo id="fechaAproximada" etiqueta="Fecha aproximada del trabajo (opcional)" error={e.fechaAproximada}>
-          <Input id="fechaAproximada" name="fechaAproximada" type="date" defaultValue={v?.fechaAproximada} aria-invalid={!!e.fechaAproximada} aria-describedby={describir("fechaAproximada")} />
+          <Input id="fechaAproximada" name="fechaAproximada" type="date" className={CAMPO} defaultValue={v?.fechaAproximada} aria-invalid={!!e.fechaAproximada} aria-describedby={describir("fechaAproximada")} />
         </Campo>
       </div>
 
       <Campo id="servicioId" etiqueta="Servicio (opcional)" error={e.servicioId}>
-        <Selector id="servicioId" name="servicioId" defaultValue={v?.servicioId ?? ""} aria-invalid={!!e.servicioId} aria-describedby={describir("servicioId")}>
+        <Selector id="servicioId" name="servicioId" className={CAMPO} defaultValue={v?.servicioId ?? ""} aria-invalid={!!e.servicioId} aria-describedby={describir("servicioId")}>
           <option value="">No sé o es otro</option>
           {servicios.map((s) => (
             <option key={s.id} value={s.id}>{s.nombre}</option>
@@ -120,10 +140,13 @@ export function FormularioReclamo({ servicios }: { servicios: { id: number; nomb
                     URL.revokeObjectURL(f.vista);
                     setFotos((todas) => todas.filter((x) => x !== f));
                   }}
-                  className="absolute top-1 right-1 grid size-7 place-items-center bg-negro/80 text-blanco"
+                  className="absolute top-0 right-0 flex size-11 items-start justify-end p-1"
                   aria-label={`Quitar la foto ${i + 1}`}
                 >
-                  <XIcon className="size-4" aria-hidden />
+                  {/* Se ve de 28 px y se toca en 44 × 44 (pulido 2.8) */}
+                  <span className="grid size-7 place-items-center bg-negro/80 text-blanco">
+                    <XIcon className="size-4" aria-hidden />
+                  </span>
                 </button>
               </li>
             ))}

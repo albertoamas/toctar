@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
+import { crearUsuario, ingresar, ingresarComoDueno, PNG } from "./apoyo";
 
 // HU-04 Datos del negocio. Criterios: docs/09-pruebas/criterios-entrega-1.md (4.1 a 4.6).
 // Los datos del negocio son una sola fila: las pruebas que guardan corren solo en escritorio,
@@ -7,9 +7,6 @@ import { crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "c" : "e");
 const soloEscritorio = (info: TestInfo) => test.skip(info.project.name !== "escritorio", "Guarda la fila única del negocio");
-
-// PNG de 1 × 1 píxel
-const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
 
 test("el dueño cambia los datos y el pie del sitio los muestra al guardar", async ({ page }, info) => {
   soloEscritorio(info);

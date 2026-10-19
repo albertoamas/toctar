@@ -36,6 +36,12 @@ test("el menú marca la página actual y, en el celular, se cierra al elegir una
     // En el celular también están las páginas de consulta y el WhatsApp
     await expect(menu().getByRole("link", { name: "Garantía y reclamos" })).toBeVisible();
     await expect(page.getByRole("dialog").getByRole("link", { name: /WhatsApp/ })).toBeVisible();
+    // Al cerrarlo con Escape, el foco vuelve al botón que lo abrió (la hoja se carga aparte: pulido 2, rendimiento)
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(abrir).toBeFocused();
+    await expect(abrir).toHaveAttribute("aria-expanded", "false");
+    await abrir.click();
   }
   await expect(menu().getByRole("link", { name: "Servicios" })).toHaveAttribute("aria-current", "page");
   await menu().getByRole("link", { name: "Galería", exact: true }).click();
@@ -73,11 +79,12 @@ test("los enlaces del pie tienen 44 px para el dedo", async ({ page }) => {
 test("el botón fijo de WhatsApp se esconde mientras el principal está a la vista", async ({ page }) => {
   await page.goto("/");
   const fijo = page.getByRole("link", { name: "Escribir a TocTar por WhatsApp" });
-  const principal = page.getByRole("main").getByRole("link", { name: "Escribir por WhatsApp" }).first();
+  const principal = page.getByRole("main").getByRole("link", { name: "Pedir cotización por WhatsApp" });
   await expect(principal).toBeInViewport();
   await expect(fijo).toBeHidden();
   // Al bajar y dejar atrás el principal, aparece
-  await page.mouse.wheel(0, 1600);
+  // Hasta la mitad de los servicios: lejos del principal de arriba y del de cierre (pulido 2.1 acortó la portada)
+  await page.getByRole("region", { name: "Servicios" }).locator(".tt-tarjeta").nth(3).evaluate((e) => e.scrollIntoView({ block: "center" }));
   await expect(principal).not.toBeInViewport();
   await expect(fijo).toBeVisible();
   // En una página sin botón principal, se ve desde el inicio
@@ -122,4 +129,19 @@ test("el aviso de guardado no tapa el botón de guardar", async ({ page }, info)
   const [a, b] = [(await aviso.boundingBox())!, (await guardar.boundingBox())!];
   const sePisan = a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
   expect(sePisan).toBe(false);
+});
+
+test("las páginas interiores llegan enteras: el título no aparece antes que el resto", async ({ page }) => {
+  // Con red lenta: cuando ya está el título de la página, también está el cierre del final (pulido 2.5)
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Network.emulateNetworkConditions", { offline: false, latency: 300, downloadThroughput: 150000, uploadThroughput: 75000 });
+  for (const ruta of ["/servicios", "/galeria", "/nosotros", "/preguntas-frecuentes", "/contacto"]) {
+    await page.goto(ruta, { waitUntil: "commit" });
+    await page.getByRole("heading", { level: 1 }).waitFor({ state: "attached" });
+    expect(await page.locator("main [data-whatsapp-principal]").count(), ruta).toBeGreaterThan(0);
+  }
+  // Garantía no tiene WhatsApp (el formulario es la acción): cuando está el título, ya está el formulario
+  await page.goto("/garantia", { waitUntil: "commit" });
+  await page.getByRole("heading", { level: 1 }).waitFor({ state: "attached" });
+  expect(await page.getByRole("form", { name: "Garantía y reclamos" }).count()).toBe(1);
 });

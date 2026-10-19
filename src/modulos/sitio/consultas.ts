@@ -5,7 +5,7 @@ import { db } from "@/db";
 import { archivo, contenidoPagina, faq, galeriaItem, servicio, variante, type Paso } from "@/db/esquema";
 import type { ElementoLista } from "@/componentes/panel/lista-editable";
 import { urlsFoto, type UrlsFoto } from "@/lib/fotos";
-import { CLAVES_PAGINA, leerContenido, type ContenidoPagina, type Pagina } from "./contenido";
+import { CLAVES_PAGINA, PORTADA, leerContenido, type ContenidoPagina, type Pagina } from "./contenido";
 
 // Lecturas del módulo Sitio web para el panel. Quien las llama ya pasó por exigirModulo("sitio").
 // Las lecturas para el sitio público (en caché, etiquetas "servicios", "contenido" y "galeria") se agregan en B4.
@@ -88,6 +88,19 @@ export async function listarVariantes(servicioId: number): Promise<ElementoLista
     .where(eq(variante.servicioId, servicioId))
     .orderBy(sql`${variante.activo} desc`, asc(variante.orden), asc(variante.id));
   return filas;
+}
+
+/**
+ * Foto del taller de la portada, o null si no tiene (HU-08). La usa también el sitio, sin sesión (`fotoPortadaPublica`, en
+ * caché): devuelve solo lo que la portada ya muestra a cualquiera. No agregarle datos que no sean públicos.
+ */
+export async function obtenerFotoPortada(): Promise<UrlsFoto | null> {
+  const [fila] = await db
+    .select({ foto: archivo })
+    .from(contenidoPagina)
+    .innerJoin(archivo, eq(contenidoPagina.fotoArchivoId, archivo.id))
+    .where(eq(contenidoPagina.clave, PORTADA));
+  return fila ? urlsFoto(fila.foto) : null;
 }
 
 /** Textos de todas las páginas (HU-08). */

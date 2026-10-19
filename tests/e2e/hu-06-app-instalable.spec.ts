@@ -42,6 +42,12 @@ test("sin internet, el panel muestra el aviso y una página nueva muestra «Sin 
   await page.goto("/panel/usuarios");
   await expect(page.getByRole("heading", { name: "Sin conexión" })).toBeVisible();
   await expect(page.getByText("El panel necesita internet. Revisa tu conexión y vuelve a intentar.")).toBeVisible();
+  // Con las fuentes de la marca, que el service worker guardó junto con la página (pulido 2.10)
+  const fuentes = await page.evaluate(async () => {
+    await document.fonts.ready;
+    return [...document.fonts].filter((f) => f.status === "loaded").map((f) => f.family.replaceAll('"', ""));
+  });
+  expect(fuentes).toEqual(expect.arrayContaining(["Barlow Condensed", "Montserrat"]));
 
   // Vuelve internet y "Reintentar" carga la pantalla
   await context.setOffline(false);

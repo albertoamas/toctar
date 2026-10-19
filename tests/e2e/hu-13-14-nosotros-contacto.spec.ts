@@ -11,6 +11,12 @@ test("Nosotros muestra la historia, cómo trabajan y por qué elegirlos", async 
   await expect(page.getByRole("main")).toContainText("TocTar Detailing empezó el 22 de junio de 2024");
   await expect(page.getByRole("region", { name: "Cómo trabajamos" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Por qué elegirnos" })).toContainText("Revisamos tu vehículo antes de darte un precio.");
+  // Termina con el cierre común: un solo WhatsApp a la vista y, al lado, las preguntas frecuentes (pulido 2.5)
+  await expect(page.getByRole("heading", { name: "¿Hablamos de tu vehículo?" })).toBeAttached();
+  const mandarFotos = page.getByRole("link", { name: "Mandar fotos de mi vehículo por WhatsApp" });
+  await mandarFotos.scrollIntoViewIfNeeded();
+  await expect(mandarFotos).toBeInViewport();
+  await expect(page.getByRole("link", { name: "Escribir a TocTar por WhatsApp" })).toBeHidden();
   await page.getByRole("link", { name: "Ver las preguntas frecuentes" }).click();
   await expect(page).toHaveURL(/\/preguntas-frecuentes$/);
 });
@@ -28,6 +34,13 @@ test("las preguntas frecuentes se abren y se cierran una por una", async ({ page
   await expect(segunda.getByText(/Es lo mejor/)).toBeHidden();
   await primera.locator("summary").click();
   await expect(respuesta).toBeHidden();
+
+  // Termina con el cierre común para hacer la pregunta por WhatsApp: un solo WhatsApp a la vista (pulido 2.6)
+  await expect(page.getByRole("heading", { name: "¿No encontraste tu respuesta?" })).toBeAttached();
+  const preguntar = page.getByRole("link", { name: "Hacer mi pregunta por WhatsApp" });
+  await preguntar.scrollIntoViewIfNeeded();
+  await expect(preguntar).toBeInViewport();
+  await expect(page.getByRole("link", { name: "Escribir a TocTar por WhatsApp" })).toBeHidden();
 });
 
 test("Contacto muestra la dirección con el mapa, el horario y el WhatsApp", async ({ page }) => {
@@ -37,8 +50,26 @@ test("Contacto muestra la dirección con el mapa, el horario y el WhatsApp", asy
   await expect(donde.getByRole("link").first()).toHaveAttribute("href", /^https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=/);
   await expect(donde).toContainText("Barrio Aeropuerto");
   await expect(page.getByRole("region", { name: "Horario" })).toContainText("Lunes a");
-  await expect(page.getByRole("main").getByRole("link", { name: "Escribir por WhatsApp" })).toHaveAttribute("href", /^https:\/\/wa\.me\/59171234567/);
+  await expect(page.getByRole("main").getByRole("link", { name: "Pedir cotización por WhatsApp" })).toHaveAttribute("href", /^https:\/\/wa\.me\/59171234567/);
   await expect(page.getByRole("main")).toContainText("+591 7123 4567");
+});
+
+test("en Contacto el mapa va junto a la dirección y los enlaces sueltos tienen 44 px para el dedo", async ({ page, isMobile }) => {
+  await page.goto("/contacto");
+  const donde = (await page.getByRole("region", { name: "Dónde estamos" }).boundingBox())!;
+  const mapa = (await page.getByTitle("Mapa del taller de TocTar Detailing").boundingBox())!;
+  const horario = (await page.getByRole("region", { name: "Horario" }).boundingBox())!;
+  // En el celular, justo debajo de "Dónde estamos" y antes del horario; en la computadora, en la columna de la derecha (pulido 2.7)
+  if (isMobile) {
+    expect(mapa.y).toBeGreaterThan(donde.y + donde.height - 1);
+    expect(mapa.y).toBeLessThan(horario.y);
+  } else {
+    expect(mapa.x).toBeGreaterThan(donde.x + donde.width);
+  }
+  for (const nombre of ["Cómo llegar", "Garantía y reclamos", "toctartarija@gmail.com"]) {
+    const area = await page.getByRole("main").getByRole("link", { name: nombre }).evaluate((e) => getComputedStyle(e, "::after").height);
+    expect(area, nombre).toBe("44px");
+  }
 });
 
 test("ninguna página pública muestra precios (RN-10) y todas tienen el botón de WhatsApp", async ({ page }) => {

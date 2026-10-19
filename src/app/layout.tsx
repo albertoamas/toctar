@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, Montserrat } from "next/font/google";
-import { Toaster } from "@/componentes/ui/sonner";
 import { sitioIndexable, urlSitio } from "@/lib/sitio";
 import "./globals.css";
 
 // Tipografías de la identidad visual: Montserrat (la del lema del logo) para todo el texto,
-// Barlow Condensed en itálica para los titulares.
+// Barlow Condensed en itálica para los titulares. Solo los pesos que se usan (700 y 800, en itálica): cada
+// peso y estilo es un archivo que se descarga antes de pintar; antes eran 6 y quedan 2 (pulido 2, rendimiento).
 const texto = Montserrat({
   variable: "--font-texto",
   subsets: ["latin"],
@@ -15,8 +15,8 @@ const texto = Montserrat({
 const titular = Barlow_Condensed({
   variable: "--font-titular",
   subsets: ["latin"],
-  weight: ["600", "700", "800"],
-  style: ["normal", "italic"],
+  weight: ["700", "800"],
+  style: ["italic"],
 });
 
 export const metadata: Metadata = {
@@ -38,7 +38,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="es" className={`${texto.variable} ${titular.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         {children}
-        <Toaster />
       </body>
     </html>
   );

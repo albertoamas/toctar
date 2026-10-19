@@ -10,7 +10,7 @@ import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { nombreRepetido, puedeDesactivar, reordenar } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
 import { crearSlug } from "@/lib/slug";
-import { CLAVES_PAGINA, PAGINAS, datosDelFormulario, esquemaPagina, esquemaPregunta, type Pagina } from "./contenido";
+import { CLAVES_PAGINA, PAGINAS, PORTADA, datosDelFormulario, esquemaPagina, esquemaPregunta, type Pagina } from "./contenido";
 import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, ETIQUETA_SERVICIOS, listarGaleria, listarPreguntas, listarServicios, listarVariantes } from "./consultas";
 import {
   esquemaCrearServicio,
@@ -271,6 +271,39 @@ export async function guardarContenido(_previo: EstadoFormulario, datos: FormDat
 
   despuesDeCambiarContenido("textos");
   return { ok: true, mensaje: `${PAGINAS[pagina].titulo}: cambios guardados.` };
+}
+
+/** Foto que tiene hoy la portada. Si falta su fila, es un error de datos (como en `leerContenido`): falta la migración. */
+async function fotoActualPortada(): Promise<number | null> {
+  const [fila] = await db.select({ fotoArchivoId: contenidoPagina.fotoArchivoId }).from(contenidoPagina).where(eq(contenidoPagina.clave, PORTADA));
+  if (!fila) throw new Error("Falta la fila de la portada en contenido_pagina: aplica las migraciones.");
+  return fila.fotoArchivoId;
+}
+
+async function cambiarFotoPortada(fotoArchivoId: number | null, autorId: number) {
+  await db.update(contenidoPagina).set({ fotoArchivoId, updatedAt: new Date(), updatedBy: autorId }).where(eq(contenidoPagina.clave, PORTADA));
+  despuesDeCambiarContenido("textos");
+}
+
+/** Foto del taller detrás del lema de la portada (opcional). La anterior se borra: ningún otro registro la usa. */
+export async function subirFotoPortada(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  const autor = await exigirModulo("sitio");
+  const anterior = await fotoActualPortada();
+  const foto = await guardarFoto(datos.get("foto"), { carpeta: "portada", miniatura: true, autorId: Number(autor.id) });
+  if (!foto.ok) return { errores: { foto: foto.motivo === "vacia" ? "Elige una foto." : ERROR_FOTO } };
+
+  await cambiarFotoPortada(foto.archivoId, Number(autor.id));
+  if (anterior) await eliminarFoto(anterior);
+  return { ok: true, mensaje: "Foto guardada." };
+}
+
+export async function quitarFotoPortada(): Promise<EstadoFormulario> {
+  const autor = await exigirModulo("sitio");
+  const anterior = await fotoActualPortada();
+  if (!anterior) return { ok: true };
+  await cambiarFotoPortada(null, Number(autor.id));
+  await eliminarFoto(anterior);
+  return { ok: true, mensaje: "Foto quitada. La portada muestra el arte de TocTar." };
 }
 
 /** Agrega (sin id) o edita (con id) una pregunta frecuente. */

@@ -16,7 +16,9 @@ test("la portada muestra el lema, los servicios y el botón de WhatsApp", async 
   await expect(servicios.getByRole("link", { name: "Ver el servicio: Pulido y nano cerámico" })).toHaveAttribute("href", "/servicios/pulido-y-nano-ceramico");
 
   // El botón principal y el fijo abren WhatsApp con el número cargado en el panel
-  await expect(page.getByRole("link", { name: "Escribir por WhatsApp" }).first()).toHaveAttribute("href", /^https:\/\/wa\.me\/59171234567\?text=Hola/);
+  // Los botones dicen lo que gana el cliente; su nombre accesible suma "por WhatsApp" (pulido 2.1)
+  await expect(page.getByRole("link", { name: "Pedir cotización por WhatsApp" })).toHaveAttribute("href", /^https:\/\/wa\.me\/59171234567\?text=Hola/);
+  await expect(page.getByRole("link", { name: "Mandar fotos de mi vehículo por WhatsApp" })).toHaveAttribute("href", /^https:\/\/wa\.me\/59171234567/);
   // El fijo se esconde mientras el principal está a la vista: se lo busca por su clase (pulido 1.3)
   await expect(page.locator(".tt-whatsapp--fijo")).toHaveAttribute(
     "href",
@@ -61,4 +63,35 @@ test("una dirección que no existe muestra la página no encontrada", async ({ p
   expect(respuesta?.status()).toBe(404);
   await expect(page.getByRole("heading", { name: "No encontramos esta página" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Ver los servicios" })).toHaveAttribute("href", "/servicios");
+  // Con el encabezado y el pie del sitio, y su título en la pestaña (pulido 2.9)
+  await expect(page.getByRole("link", { name: "TocTar, inicio" })).toBeVisible();
+  await expect(page.getByRole("contentinfo")).toBeVisible();
+  await expect(page).toHaveTitle("Página no encontrada · TocTar Detailing");
+});
+
+// Pulido visual 2.1
+test("en el celular los servicios van en filas compactas; en la computadora, en tarjetas", async ({ page, isMobile }) => {
+  await page.goto("/");
+  const tarjeta = page.getByRole("region", { name: "Servicios" }).locator(".tt-tarjeta").first();
+  const caja = (await tarjeta.boundingBox())!;
+  if (isMobile) expect(caja.height).toBeLessThan(220);
+  else expect(caja.height).toBeGreaterThan(300);
+});
+
+test("al llegar al cierre de la portada se ve un solo botón de WhatsApp", async ({ page }) => {
+  await page.goto("/");
+  const cierre = page.getByRole("heading", { name: "Cuéntanos qué necesita tu vehículo" });
+  await cierre.scrollIntoViewIfNeeded();
+  await expect(page.getByRole("link", { name: "Mandar fotos de mi vehículo por WhatsApp" })).toBeInViewport();
+  await expect(page.getByRole("link", { name: "Escribir a TocTar por WhatsApp" })).toBeHidden();
+});
+
+test("al recargar, los títulos de la portada no aparecen antes que su contenido", async ({ page }) => {
+  // Con red lenta, en cuanto se ve el título "Servicios" ya están sus tarjetas (llegan juntos)
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Network.emulateNetworkConditions", { offline: false, latency: 300, downloadThroughput: 150000, uploadThroughput: 75000 });
+  await page.goto("/", { waitUntil: "commit" });
+  const titulo = page.getByRole("heading", { name: "Servicios", level: 2 });
+  await titulo.waitFor({ state: "attached" });
+  expect(await page.getByRole("region", { name: "Servicios" }).locator(".tt-tarjeta").count()).toBeGreaterThan(0);
 });

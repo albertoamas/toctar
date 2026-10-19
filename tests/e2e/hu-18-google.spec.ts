@@ -60,3 +60,15 @@ test("cada página pública lleva su título y su descripción dentro del head, 
   }
   expect(descripciones.size).toBe(7); // ninguna repetida
 });
+
+test("la página de un servicio entrega título, descripción y vista previa dentro del head a WhatsApp y a los buscadores", async ({ request }) => {
+  // Lee la base: Next manda la metadata en streaming a los navegadores y bloqueando a los bots que solo leen el
+  // head (su lista incluye WhatsApp, Facebook, Bing y los rastreadores de Google). Googlebot ejecuta JavaScript y
+  // la lee de la página armada. Lighthouse 12 no se identifica como bot: marca la descripción como faltante.
+  for (const agente of ["WhatsApp/2.24.1 A", "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)", "facebookexternalhit/1.1"]) {
+    const html = await (await request.get("/servicios/pulido-y-nano-ceramico", { headers: { "user-agent": agente } })).text();
+    const head = html.slice(0, html.indexOf("</head>"));
+    expect(head, agente).toMatch(/<meta name="description" content="[^"]+"/);
+    expect(head, agente).toContain('<meta property="og:title" content="Pulido y nano cerámico · TocTar Detailing"');
+  }
+});

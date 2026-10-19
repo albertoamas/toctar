@@ -1,11 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import pg from "pg";
-import { URL_BASE_E2E } from "./apoyo";
+import { PNG, URL_BASE_E2E } from "./apoyo";
 
 // HU-16 Formulario de reclamo. Criterios: docs/09-pruebas/criterios-entrega-1.md (16.x).
 // Cada proyecto usa su propia placa y la busca en la base. El reclamo en el panel se prueba en HU-17.
 
-const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
 const foto = (nombre: string) => ({ name: nombre, mimeType: "image/png", buffer: PNG });
 
 async function reclamosConPlaca(placa: string) {
@@ -37,9 +36,19 @@ test("se envía un reclamo con fotos y se ve la confirmación", async ({ page },
   await llenar(page, placa.toLowerCase());
   await page.getByLabel("Archivos de las fotos").setInputFiles([foto("uno.png"), foto("dos.png")]);
   await expect(page.getByRole("list", { name: "Fotos elegidas" }).getByRole("listitem")).toHaveCount(2);
+  // Campos y "quitar foto" de 44 px para el dedo (pulido 2.8)
+  for (const etiqueta of ["Nombre", "Placa del vehículo", "Servicio (opcional)"]) {
+    expect((await page.getByLabel(etiqueta).boundingBox())!.height, etiqueta).toBeGreaterThanOrEqual(44);
+  }
+  const quitar = (await page.getByRole("button", { name: "Quitar la foto 1" }).boundingBox())!;
+  expect(Math.min(quitar.width, quitar.height)).toBeGreaterThanOrEqual(44);
   await page.waitForTimeout(3000); // tiempo mínimo para llenar el formulario
   await page.getByRole("button", { name: "Enviar reclamo" }).click();
-  await expect(page.getByRole("status").getByRole("heading", { name: "Recibimos tu reclamo" })).toBeVisible();
+  const confirmacion = page.getByRole("status").filter({ hasText: "Recibimos tu reclamo" });
+  await expect(confirmacion.getByRole("heading", { name: "Recibimos tu reclamo" })).toBeVisible();
+  // La pantalla sube a la confirmación y el foco va a ella: antes quedaba tapada por el encabezado (pulido 2.8)
+  await expect(confirmacion.getByRole("heading", { name: "Recibimos tu reclamo" })).toBeInViewport({ ratio: 1 });
+  await expect(confirmacion).toBeFocused();
   expect(await reclamosConPlaca(placa)).toEqual([{ fotos: 2 }]);
 });
 
@@ -51,6 +60,12 @@ test("los obligatorios vacíos muestran su error", async ({ page }) => {
   await expect(page.getByText(/Escribe la placa del vehículo/)).toBeVisible();
   await expect(page.getByText(/Cuéntanos qué pasó/)).toBeVisible();
   await expect(page.getByLabel("Nombre")).toHaveAttribute("aria-invalid", "true");
+  // El foco va al primer campo con error, y al corregirlo y volver a enviar, al siguiente (pulido 2.8)
+  await expect(page.getByLabel("Nombre")).toBeFocused();
+  await page.getByLabel("Nombre").fill("Cliente de prueba");
+  await page.getByRole("button", { name: "Enviar reclamo" }).click();
+  await expect(page.getByLabel("WhatsApp", { exact: true })).toBeFocused();
+  await expect(page.getByLabel("WhatsApp", { exact: true })).toBeInViewport();
 });
 
 test("con la trampa llena se ve la confirmación pero no se guarda", async ({ page }, info) => {
@@ -71,4 +86,17 @@ test("el pie y la página de contacto llevan a garantía y reclamos", async ({ p
   await expect(seccion.getByRole("link")).toHaveAttribute("href", "/garantia");
   await seccion.getByRole("link").click();
   await expect(page).toHaveURL(/\/garantia$/, { timeout: 15_000 });
+});
+
+test("las opciones de la lista de servicios se leen sobre el fondo oscuro", async ({ page }) => {
+  // Con el fondo transparente, Chrome en Windows dibujaba la lista en blanco con el texto blanco (pulido 2.8)
+  await page.goto("/garantia");
+  // Visible: hasta que React lo pone en su lugar, el contenido llega en un contenedor oculto fuera del tema oscuro
+  const campo = page.getByLabel("Servicio (opcional)");
+  await expect(campo).toBeVisible();
+  const colores = await campo.locator("option").first().evaluate((o) => {
+    const s = getComputedStyle(o);
+    return [s.backgroundColor, s.color];
+  });
+  expect(colores).toEqual(["rgb(0, 0, 0)", "rgb(255, 255, 255)"]);
 });

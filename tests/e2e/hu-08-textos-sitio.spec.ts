@@ -1,7 +1,7 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { ingresarComoDueno } from "./apoyo";
+import { ingresarComoDueno, PNG } from "./apoyo";
 
-// HU-08 Textos del sitio. Criterios: docs/09-pruebas/criterios-entrega-1.md (8.1 a 8.4).
+// HU-08 Textos del sitio. Criterios: docs/09-pruebas/criterios-entrega-1.md (8.1 a 8.5).
 // Los textos y las preguntas son compartidos: las pruebas que guardan corren solo en escritorio.
 
 const soloEscritorio = (info: TestInfo) => test.skip(info.project.name !== "escritorio", "Cambia textos compartidos");
@@ -76,4 +76,29 @@ test("preguntas frecuentes: agregar, editar, ordenar, ocultar y eliminar", async
   await page.getByRole("button", { name: "Eliminar pregunta" }).click();
   await expect(page.getByText("Pregunta eliminada.")).toBeVisible();
   await expect(lista.getByRole("listitem")).toHaveCount(5);
+});
+
+test("la foto del taller va detrás del lema de la portada; sin foto vuelve el arte", async ({ page }, info) => {
+  soloEscritorio(info);
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio/textos");
+  const bloque = page.getByRole("region", { name: "Foto del taller" });
+  await expect(bloque.getByText("Sin foto: la portada muestra el arte de TocTar.")).toBeVisible();
+  await expect(bloque.getByRole("button", { name: "Subir foto" })).toBeEnabled();
+  await bloque.getByLabel("Archivo de la foto").setInputFiles({ name: "taller.png", mimeType: "image/png", buffer: PNG });
+  await expect(bloque.getByRole("img", { name: "Foto del taller" })).toHaveAttribute("src", /portada\/[\w-]+-640\.webp$/);
+
+  // En el sitio: la foto detrás (decorativa) y el arte ya no
+  await page.goto("/");
+  const foto = page.locator(".tt-portada-foto img");
+  await expect(foto).toHaveAttribute("src", /portada\/[\w-]+\.webp$/);
+  await expect(foto).toHaveAttribute("alt", "");
+  await expect(page.locator("main svg[viewBox='0 0 480 288']")).toHaveCount(0);
+
+  await page.goto("/panel/sitio/textos");
+  await bloque.getByRole("button", { name: "Quitar foto" }).click();
+  await expect(bloque.getByText("Sin foto: la portada muestra el arte de TocTar.")).toBeVisible();
+  await page.goto("/");
+  await expect(page.locator(".tt-portada-foto")).toHaveCount(0);
+  await expect(page.locator("main svg[viewBox='0 0 480 288']")).toHaveCount(1);
 });

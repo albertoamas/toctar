@@ -1,6 +1,7 @@
 <!doctype html>
 <!-- Página sin conexión (HU-06, RNF-03). La guarda public/sw.js y se muestra cuando una navegación
-     falla sin internet. Todo va adentro del archivo (estilos y logo): sin red no se puede pedir nada más.
+     falla sin internet. Los estilos y el logo van adentro del archivo; las dos fuentes de la marca, en
+     public/fuentes/ con nombre fijo, las guarda el service worker junto con esta página (pulido 2.10).
      Colores: tokens del tema oscuro de src/app/globals.css. -->
 <html lang="es">
 <head>
@@ -10,6 +11,15 @@
 <meta name="robots" content="noindex">
 <title>Sin conexión · TocTar Detailing</title>
 <style>
+  /* Las de la app (next/font) cambian de nombre en cada compilación y no se pueden guardar: van copias fijas. */
+  @font-face {
+    font-family: "Barlow Condensed"; font-style: italic; font-weight: 800; font-display: swap;
+    src: url(/fuentes/barlow-condensed-800-italica-latin.woff2) format("woff2");
+  }
+  @font-face {
+    font-family: Montserrat; font-style: normal; font-weight: 400 600; font-display: swap;
+    src: url(/fuentes/montserrat-variable-latin.woff2) format("woff2");
+  }
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
   body {
@@ -24,11 +34,14 @@
   }
   p { margin: 0; color: #b3b3b3; line-height: 1.5; }
   hr { width: 100%; max-width: 16rem; height: 3px; margin: 0; border: 0; background: #e30613; box-shadow: 0 0 12px rgba(227, 6, 19, 0.65), 0 0 2px rgba(255, 51, 64, 0.9); }
+  /* Como .tt-boton--principal: el corte a 60° de la esquina se pinta con un degradado (ver src/app/globals.css). */
   button {
-    font: inherit; font-weight: 600; color: #ffffff; background: #e30613; border: 0;
-    border-radius: 2px; padding: 12px 24px; min-height: 44px; cursor: pointer;
+    --relleno: #e30613;
+    font: inherit; font-size: 14px; line-height: 20px; font-weight: 600; color: #ffffff; border: 0; border-radius: 0;
+    padding: 12px 28px 12px 24px; min-height: 44px; cursor: pointer;
+    background: linear-gradient(119.74deg, var(--relleno) calc(100% - 7.45px), transparent calc(100% - 6.45px));
   }
-  button:hover { background: #c40511; }
+  button:hover { --relleno: #c40511; }
   button:focus-visible { outline: 2px solid #ffffff; outline-offset: 3px; }
 </style>
 </head>

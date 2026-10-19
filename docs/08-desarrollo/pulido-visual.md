@@ -104,16 +104,16 @@ Antes de la demo del viernes 23.
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 2.1 | Portada | `/` | ⏳ |
-| 2.2 | Servicios | `/servicios` | ⏳ |
-| 2.3 | Página de un servicio | `/servicios/[slug]` | ⏳ |
-| 2.4 | Galería y visor de fotos | `/galeria` | ⏳ |
-| 2.5 | Nosotros | `/nosotros` | ⏳ |
-| 2.6 | Preguntas frecuentes | `/preguntas-frecuentes` | ⏳ |
-| 2.7 | Contacto | `/contacto` | ⏳ |
-| 2.8 | Garantía y reclamos | `/garantia` | ⏳ |
-| 2.9 | Página no encontrada | cualquier ruta inexistente | ⏳ |
-| 2.10 | Sin conexión | `public/sin-conexion.html` | ⏳ |
+| 2.1 | Portada | `/` | ✅ 18/10 |
+| 2.2 | Servicios | `/servicios` | ✅ 18/10 |
+| 2.3 | Página de un servicio | `/servicios/[slug]` | ✅ 18/10 |
+| 2.4 | Galería y visor de fotos | `/galeria` | ✅ 18/10 |
+| 2.5 | Nosotros | `/nosotros` | ✅ 18/10 |
+| 2.6 | Preguntas frecuentes | `/preguntas-frecuentes` | ✅ 18/10 |
+| 2.7 | Contacto | `/contacto` | ✅ 18/10 |
+| 2.8 | Garantía y reclamos | `/garantia` | ✅ 18/10 |
+| 2.9 | Página no encontrada | cualquier ruta inexistente | ✅ 18/10 |
+| 2.10 | Sin conexión | `public/sin-conexion.html` | ✅ 18/10 |
 
 ### 3. Ingreso
 
@@ -273,6 +273,236 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Capturas de los avisos en celular y computadora, con el sistema en claro y en oscuro.
   - La carga y la pantalla vacía, insertadas en una página: a los 100 ms la carga todavía no se ve; a los 800 ms aparecen las siluetas.
   - E2E `base` "el aviso de guardado no tapa el botón de guardar". E2E completo: 127 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 2.1 Portada (18/10/2026)
+- **Encontrado:**
+  - El pendiente del CLS 0,024: mientras llega el texto de la portada se reservaba un alto fijo que no coincidía con el texto real. Con el texto actual, a 360 px el texto medía 392 y se reservaban 368: lo de abajo bajaba 24 px. Con una presentación corta subía 88 px. En cuatro corridas de Lighthouse del 18/10 el CLS dio 0 porque el servidor responde rápido, pero el salto aparece en cuanto la base tarda.
+  - Al llegar al cierre ("Cuéntanos qué necesita tu vehículo") se veían dos botones de WhatsApp: el del cierre era de contorno y no contaba como principal, así que el fijo aparecía al lado.
+  - En el celular la portada medía unos 5050 px (a 390 de ancho): cada servicio era una tarjeta de unos 620 px.
+  - Lo que estaba bien: la cabecera (arte, lema, LED que llega con el texto), las tarjetas en la computadora y el cierre con el monograma.
+- **Cambios:**
+  - El bloque de texto de la cabecera tiene el mismo alto mínimo cargando y cargado (24,5rem en el celular, 18,5rem en la computadora): un texto más corto ya no hace subir la página. Medido: diferencia 0 a 360, 412 y 1280 px.
+  - El cierre usa el botón de WhatsApp principal (rojo): mientras se ve, el fijo se esconde.
+  - En el celular (menos de 640 px), `TarjetaServicio` pasa a fila compacta: foto de 7rem a la izquierda, título de 22 px, resumen de 2 renglones y "Ver el servicio". Toda la fila se toca y conserva el corte a 60°. La portada del celular bajó a 2975 px. Como es el mismo componente, la página Servicios también lo tiene (se revisa en 2.2).
+- **Descartado o pendiente:**
+  - Mostrar solo 3 servicios en el celular: descartado. El cliente no se enteraría de los otros.
+  - Riesgo que queda: si el dueño escribe una presentación más larga que la actual, el texto todavía empuja lo de abajo. El panel ya pide "dos o tres frases" (máximo 400 caracteres).
+  - Al pasar la portada a las filas compactas, la prueba de 1.3 bajaba 1600 px y caía en el cierre, donde el fijo se esconde. Ahora baja hasta la mitad de los servicios.
+- **Segunda revisión de YankoSoft (18/10):**
+  - *"Al dar F5 hay cosas que cargan antes, por ejemplo la palabra Servicios."* Grabado con red lenta, cuadro a cuadro. A los 0,5 s se veía el encabezado sin el logo, el arte y el título "Servicios" suelto; el resto llegaba unos 0,2 s después. Los títulos de sección y el cierre estaban fijos en la página (primer envío) y su contenido sale de la base (segundo envío). El logo era un archivo aparte y llegaba último.
+    - **Cambio:** toda la portada va en un solo `<Suspense>` (`PortadaConDatos`). Mientras tanto se ve solo el arte, con una pantalla reservada (`min-h-screen`), para que el pie no salte. Regla para el resto del sitio: **un título de sección nunca aparece antes que su contenido**. ~~El título principal de la página sí puede, porque orienta.~~ Corregido en la revisión de 2.5: **tampoco el título de la página**; cada página llega entera.
+    - **Cambio:** el logo del encabezado va dentro de la página. Se lee al armarla de `public/marca/toctar-horizontal-sin-lema-sobre-oscuro.svg`, que sigue siendo el único original.
+    - **Resultado:** el primer cuadro muestra el encabezado con el logo y el arte, sin títulos sueltos; el siguiente, todo junto.
+  - *"Se repite mucho WhatsApp."* Contado: en la portada, 4 veces al recorrerla (cabecera, botón fijo, cierre y pie), dos con el mismo texto "Escribir por WhatsApp".
+    - **Cambio:** los botones dicen lo que gana el cliente y el ícono dice el canal. En la cabecera, "Pedir cotización"; en el cierre, "Mandar fotos de mi vehículo". El nombre accesible empieza igual y suma "por WhatsApp" (WCAG 2.5.3). Se quedan como estaban el botón fijo (solo ícono), "WhatsApp +591…" del pie (es un dato de contacto) y "Consultar por este servicio".
+    - **Pendiente:** Galería, Nosotros, Preguntas frecuentes y Contacto siguen con "Escribir por WhatsApp" en su botón principal. Se decide al revisar cada una (2.4 a 2.7), con el mismo criterio.
+  - Las capturas de antes de esta revisión quedaron en la conversación, no en `pulido-visual/` (se borraron al volver a grabar).
+- **Tercera revisión de YankoSoft (18/10):** *"Poner en la sección del inicio una foto detrás, un poco opaca, del taller."*
+  - Se prototiparon dos opciones con una foto de ejemplo: A, foto detrás y el arte encima; B, foto detrás sin el arte. Se eligió **B**: la foto del lugar real da más confianza que un dibujo y el titular sube a la primera pantalla. La marca sigue en el rojo, el titular, el corte a 60° y la línea LED.
+  - **Cambio:** la foto se carga desde el panel (*Sitio web → Textos → Portada → Foto del taller*), opcional, con la misma subida que la foto de un servicio. Se guarda en `contenido_pagina.foto_archivo_id` (migración `0014_foto_portada`). Sin foto, la portada muestra el arte, como un servicio sin foto muestra el reemplazo. No es un cambio de alcance: es contenido del sitio editable desde el panel (Entrega 1), y estaba anotado como decisión abierta en `B4-sitio-publico.md`.
+  - **Cambio:** la foto va al 50 % y con un velo negro donde va el texto (abajo en el celular, a la izquierda en la computadora). Contraste medido en el píxel más claro detrás del texto: 6,1:1 o más en los tres anchos, también con una foto toda blanca. Entra con la línea LED (600 ms, sin animación si se pide reducir movimiento). Con foto, la cabecera es de una columna (la derecha era la del arte).
+  - **Cambio:** mientras carga, la cabecera se ve vacía (antes, con el arte): si el arte estaba y llegaba una foto, el texto subía de golpe en el celular. Saltos medidos con red lenta: 0 en los cuatro anchos.
+  - **Rendimiento:** con la foto de 1600 px y prioridad alta, Lighthouse móvil bajó de 90 a 84 (le quitaba red al texto). En el celular va la versión de 640 px con prioridad baja: 87 y 88 con foto, 88 a 92 sin foto en la misma compilación (la diferencia queda dentro de lo que varía entre corridas). Computadora 99.
+  - **Pendiente (dueño):** la foto de ejemplo es de otro taller (se lee "Detailing Club Tarragona" en la puerta): sirve para probar en la base de desarrollo y no va al repositorio ni al sitio. Hace falta una foto propia del taller, horizontal y con buena luz. Por eso no hay comparativa en `pulido-visual/`.
+  - E2E `hu-08` "la foto del taller va detrás del lema de la portada; sin foto vuelve el arte". De paso se corrigió una prueba inestable de 2.2 (el foco con el teclado se probaba antes de que la página terminara de hidratarse). E2E completo: 141 pasan.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px. Comparativa en `pulido-visual/2.1-portada-celular-completa.jpg`.
+  - Tras la segunda revisión: E2E `hu-10` "al recargar, los títulos de la portada no aparecen antes que su contenido" (con red lenta, cuando se ve "Servicios" ya están sus tarjetas). E2E completo: 133 pasan. Lighthouse móvil: portada con rendimiento 90 y 92, Servicios y Contacto con 92; 100 en lo demás; CLS 0.
+  - Saltos medidos con red lenta en los cuatro anchos: 0. Lighthouse móvil: portada con rendimiento 90 y 91 en dos corridas, Servicios con 91; 100 en accesibilidad, buenas prácticas y SEO; CLS 0.
+  - E2E `hu-10` "en el celular los servicios van en filas compactas…" y "al llegar al cierre de la portada se ve un solo botón de WhatsApp". E2E completo: 131 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 2.2 Servicios (18/10/2026)
+- **Encontrado:**
+  - Con el teclado, el marco del foco rodeaba solo "Ver el servicio", pero lo que se abre es toda la tarjeta (el enlace la cubre).
+  - La página terminaba con la última tarjeta y pasaba al pie. Quien no sabía qué servicio elegir solo tenía el botón fijo, sin nada que lo invitara a escribir.
+  - El estilo del título principal (`font-heading text-[40px] leading-[44px] font-extrabold italic`) estaba copiado en las 6 páginas interiores.
+  - Lo que estaba bien: las filas compactas en el celular (de 2.1), las tres columnas en la computadora, el texto que explica por qué no hay precios y el CLS 0.
+- **Cambios:**
+  - Con el teclado se enmarca toda la tarjeta (`.tt-tarjeta:has(.tt-tarjeta__enlace:focus-visible)`) y el enlace ya no lleva su propio marco.
+  - Al final de la lista va un cierre: "¿No sabes cuál elegir?", "Mándanos fotos de tu vehículo y te decimos qué conviene hacer." y el botón principal "Mandar fotos de mi vehículo". Mientras se ve, el botón fijo se esconde. Es el mismo componente que el cierre de la portada (`src/componentes/sitio/cierre-whatsapp.tsx`), que ahora solo cambia el título y el texto.
+  - El cierre llega junto con la lista (un solo `<Suspense>`), según la regla de 2.1. El título de la página y la bajada siguen llegando primero.
+  - `TituloPagina` (`src/componentes/sitio/titulo-pagina.tsx`) es el título de las 6 páginas interiores. Se ven igual que antes (revisado en el HTML de cada una).
+- **Descartado o pendiente:**
+  - Filtros o categorías en la lista: descartado. Son 8 servicios y se ven de un vistazo.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, sin desborde. Comparativas en `pulido-visual/2.2-servicios-celular.jpg` y `pulido-visual/2.2-foco-tarjeta.jpg`.
+  - E2E `hu-11` "la lista de servicios termina con una invitación a mandar fotos, con un solo WhatsApp a la vista" y "con el teclado se enmarca toda la tarjeta del servicio". E2E completo: 136 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse de Servicios: en el celular, 93 de rendimiento; en la computadora, 99. 100 en accesibilidad, buenas prácticas y SEO; CLS 0.
+
+### 2.3 Página de un servicio (18/10/2026)
+- **Encontrado:**
+  - En la base de desarrollo los servicios casi no tienen descripción, beneficios, pasos ni fotos. Para ver la página completa se cargó un servicio con todo en `toctar_e2e`, que se recrea en cada E2E (no en la base del dueño).
+  - En el celular, "‹ Servicios" (para volver) quedaba debajo de la foto, entre la foto y el título, y medía 81 × 20 px.
+  - Los dos botones de WhatsApp (arriba y en el cierre) decían lo mismo: "Consultar por este servicio". El cierre no era el de la portada y Servicios (sin el monograma).
+  - Opciones: si una tenía descripción, salía ancha y las demás chicas, en renglones disparejos.
+  - Lo que estaba bien: el titular, los pasos numerados (son una secuencia), las viñetas a 60°, la página que llega toda junta, sin precios y con CLS 0.
+- **Cambios:**
+  - "‹ Servicios" es lo primero de la página en todos los anchos, con 44 px de alto.
+  - El cierre es el componente común (`CierreWhatsApp`), que ahora acepta el servicio para el mensaje. Su botón dice "Mandar fotos de mi vehículo" y manda el servicio escrito; el de arriba sigue como "Consultar por este servicio".
+  - Opciones: si alguna tiene descripción, grilla pareja (2 columnas en tableta, 3 en computadora); si no, cajitas en fila como antes.
+- **Descartado o pendiente:**
+  - Abrir en grande las fotos de "Trabajos de…": sería una función nueva; está "Ver la galería".
+  - **Meta descripción (SEO 92 en Lighthouse).** En esta página, que lee la base, Next manda la metadata en streaming: el navegador la recibe en el `<body>`. Los bots que solo leen el `<head>` (WhatsApp, Facebook, Bing, los rastreadores de Google con guion) la reciben en el `<head>`, y Googlebot ejecuta JavaScript. Lighthouse 12 ya no se identifica como bot, por eso la marca como faltante. Se probó `htmlLimitedBots: /.*/` (todo bloqueante): dejaba colgadas las precargas de enlaces. Se descartó y se dejó el comportamiento de Next, con una prueba de que WhatsApp, Bing y Facebook la reciben en el `<head>`.
+  - Para 2.9: una dirección de servicio inexistente responde con estado 200 (la página no encontrada se ve igual).
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, con datos reales y con un servicio completo, sin desborde. Comparativas en `pulido-visual/2.3-cabecera-celular.jpg`, `2.3-servicio-celular.jpg` y `2.3-servicio-computadora.jpg`.
+  - E2E `hu-11` "volver a Servicios es lo primero y se toca con el dedo" y el botón del cierre con el servicio escrito; `hu-18` "la página de un servicio entrega título, descripción y vista previa dentro del head a WhatsApp y a los buscadores". E2E completo: 140 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse de un servicio: en el celular, 92 de rendimiento (91 con el servicio completo); en la computadora, 100. 100 en accesibilidad y buenas prácticas; SEO 92 por lo de arriba; CLS 0.
+
+### 2.4 Galería y visor de fotos (18/10/2026)
+- **Encontrado** (con 8 trabajos de muestra en `toctar_e2e`: 3 pares y 5 fotos solas de 4 servicios; la base de desarrollo tiene 2):
+  - En el celular el filtro ocupaba 200 px (4 renglones con 5 servicios, por los nombres largos) antes de la primera foto.
+  - Visor en el celular: el "Antes" ocupaba toda la pantalla y había que bajar para ver el "Después".
+  - Visor en la computadora: con una foto vertical y otra horizontal, una quedaba en una caja gris alta y la otra arriba, con un hueco negro abajo.
+  - El botón de cerrar de los diálogos medía unos 28 px y para los lectores de pantalla decía "Close", en inglés. Es del componente común: pasaba también en el panel.
+  - La página terminaba sin invitación, justo después de ver los trabajos; la galería vacía seguía con "Escribir por WhatsApp" (pendiente de 2.1).
+  - Lo que estaba bien: la grilla cuadrada (2, 3 y 4 columnas), la etiqueta "Antes y después", el foco con el teclado, el filtro con enlaces que funciona sin JavaScript y con 44 px, sin desborde.
+- **Cambios:**
+  - Filtro en el celular: una sola fila que se desliza de costado, de borde a borde; el último botón cortado avisa que hay más. Desde 640 px, en renglones como antes. Mide 52 px en lugar de 200.
+  - Visor: el antes y el después en cajas de la misma altura (36 % de la pantalla en el celular, uno sobre otro; lado a lado en la computadora), con la foto entera y centrada. La foto sola sigue grande.
+  - Cerrar de 44 × 44 y "Cerrar" en `src/componentes/ui/dialog.tsx`: lo toman todos los diálogos (visor, reclamos y confirmaciones del panel; revisado en "¿Eliminar esta foto?").
+  - Cierre común al final ("¿Quieres este resultado en tu vehículo?", botón "Mandar fotos de mi vehículo"), en el mismo `<Suspense>` que las fotos. La galería vacía queda con su texto y el cierre.
+  - La primera fila de la grilla (hasta 4 fotos) va sin carga diferida y la primera con prioridad alta: era el LCP del celular y el navegador la pedía tarde.
+- **Descartado o pendiente:**
+  - Pasar de una foto a otra dentro del visor y un deslizador para comparar: funciones nuevas.
+  - Si se entra con el filtro ya elegido (un enlace compartido) y el servicio está al final de la fila, en el celular su botón queda fuera de la vista hasta deslizar.
+  - **Rendimiento móvil del sitio (pendiente común, resuelto al cerrar el grupo 2: ver "Rendimiento del sitio"):** la galería da 87 en tres corridas (antes de estos cambios, 85, 86 y 91 con los mismos datos: no empeoró). Como en la portada (88 a 92) y en un servicio (91 y 92), la mayor parte del LCP es "render delay" de 2 a 3,5 s, que es igual en todas las páginas. Se investiga aparte, antes de cerrar el grupo 2.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px (grilla, filtro activo, visor con par y con foto sola, foco), sin desborde. Comparativas en `pulido-visual/2.4-galeria-celular.jpg`, `2.4-visor-celular.jpg` y `2.4-visor-computadora.jpg`.
+  - E2E `hu-12`: filtro de una fila en el celular; antes y después a la vista a la vez; "Cerrar" de 44 px que cierra (también con Escape); cierre con un solo WhatsApp. E2E completo: 141 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse de la galería: celular 87, computadora 99; 100 en accesibilidad, buenas prácticas y SEO; CLS 0.
+
+### 2.5 Nosotros (18/10/2026)
+- **Encontrado:**
+  - Toda la página era texto gris del mismo tamaño: la historia (lo que se viene a leer) pesaba lo mismo que "Cómo trabajamos".
+  - En el celular las franjas del monograma pasaban detrás de los renglones de la historia (contraste 8,3:1, se leía, pero ensuciaba).
+  - El final seguía con "Escribir por WhatsApp" (pendiente de 2.1) y dos botones sueltos, sin el cierre de las otras páginas.
+  - Lo que estaba bien: los textos del panel, sin precios ni testimonios; las viñetas a 60° en 2 columnas; todo llega junto; sin desborde.
+- **Cambios:**
+  - La historia es el texto de entrada: blanca, 20 px en el celular y 22 en la computadora. "Cómo trabajamos" sigue en gris.
+  - El monograma va detrás del título y del texto en un envoltorio que solo recorta los costados (`overflow-x-clip`), y el texto se pinta encima. En el celular, más chico (12rem) y arriba, solo detrás del título.
+  - Cierre común: "¿Hablamos de tu vehículo?", botón "Mandar fotos de mi vehículo" y, al lado, "Ver las preguntas frecuentes". `CierreWhatsApp` acepta ahora un enlace secundario opcional.
+  - Durante el cambio, el contenido quedó corrido 46 px en la computadora: le faltaba `w-full` dentro del `main` (que es flex). Corregido antes de terminar.
+- **Descartado o pendiente:**
+  - Foto del taller en Nosotros: no hay una propia todavía; la de la portada cumple ese papel.
+  - "Cómo trabajamos" como pasos numerados: es un párrafo del panel; separarlo cambiaría el formulario.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, sin desborde. Comparativas en `pulido-visual/2.5-nosotros-celular.jpg` y `2.5-nosotros-computadora.jpg`.
+  - E2E `hu-13-14` "Nosotros muestra la historia…": termina con el cierre, un solo WhatsApp a la vista y el enlace a las preguntas frecuentes. E2E completo: 141 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse de Nosotros: celular 92 (dos corridas), computadora 100; 100 en accesibilidad, buenas prácticas y SEO; CLS 0.
+- **Revisión de YankoSoft (18/10):**
+  - *"El monograma me gustaba más como estaba antes, le daba su toque a la página."* Vuelve a como estaba: grande, detrás del título y del texto, también en el celular. Se descarta el cambio B.
+  - *"La página tiene el mismo problema de carga que la portada: la palabra Nosotros carga antes que todo."* La excepción de 2.1 ("el título de la página sí puede llegar antes") se ve igual de mal. **Cambio:** el título y la bajada van dentro del mismo `<Suspense>` que el contenido, en Nosotros y también en Servicios y Galería, que tenían lo mismo; mientras tanto se ve el encabezado y el espacio reservado. La página de un servicio ya llegaba entera.
+  - E2E `base` "las páginas interiores llegan enteras: el título no aparece antes que el resto" (con red lenta, cuando está el `h1` ya está el cierre). Preguntas frecuentes, Contacto y Garantía se revisan igual en 2.6 a 2.8.
+
+### 2.6 Preguntas frecuentes (18/10/2026)
+- **Encontrado:**
+  - El título, "¿No encontraste tu respuesta?" y su botón estaban fuera del `<Suspense>`: llegaban antes que las preguntas (lo mismo que se corrigió en 2.5).
+  - En la computadora, el título y la lista iban en una columna centrada (empezaban en x = 272) y en las otras páginas en el borde izquierdo (x = 80): el título "saltaba" al pasar de una página a otra.
+  - El final seguía con "Escribir por WhatsApp" y sin el cierre común. "Mandar fotos de mi vehículo" no sirve aquí: el cliente quiere preguntar.
+  - Lo que estaba bien: `<details>` sin JavaScript, preguntas de 68 px (96 en dos renglones), foco visible, respuesta legible, sin desborde.
+- **Cambios:**
+  - La página llega entera, con el título.
+  - El título arranca en el mismo borde que en las demás páginas; la lista conserva su ancho de lectura (48rem), alineada a la izquierda.
+  - Cierre común: "¿No encontraste tu respuesta?", "Escríbenos con tu pregunta y te respondemos por WhatsApp." y el botón "Hacer mi pregunta" (nombre accesible "Hacer mi pregunta por WhatsApp"). `CierreWhatsApp` acepta ahora el texto del botón (`boton`); por omisión, "Mandar fotos de mi vehículo".
+  - Sin preguntas cargadas: "Pronto vas a ver aquí las preguntas más comunes.", como en Servicios y Galería.
+- **Descartado o pendiente:**
+  - Marcar en rojo la pregunta abierta: la flecha que gira ya lo dice.
+  - Datos estructurados de preguntas frecuentes para Google: Google casi no los muestra y sería algo nuevo.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px (cerradas, una abierta, foco), sin desborde. Grabación con red lenta: primero solo el encabezado, después la página entera. Comparativa en `pulido-visual/2.6-preguntas-computadora.jpg`.
+  - E2E `hu-13-14` "las preguntas frecuentes se abren y se cierran una por una" (termina con el cierre, un solo WhatsApp a la vista) y `base` "las páginas interiores llegan enteras…" (ahora también esta página). Las pruebas del cierre bajan hasta el botón y no hasta el título: en el celular el título podía quedar a la vista y el botón justo debajo. E2E completo: 143 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse: celular 92, computadora 100; 100 en accesibilidad, buenas prácticas y SEO; CLS 0.
+
+### 2.7 Contacto (18/10/2026)
+- **Encontrado:**
+  - El título "Contacto" estaba fuera del `<Suspense>` y aparecía solo, antes que el resto.
+  - En el celular el mapa quedaba al final de todo (y = 997 a 390 px), después del horario, la garantía y las redes, lejos de "Dónde estamos".
+  - "Cómo llegar" y "Garantía y reclamos" medían 20 px de alto y el correo 24.
+  - El botón seguía con "Escribir por WhatsApp" (pendiente de 2.1).
+  - Lo que estaba bien: datos de Configuración y bienvenida del panel; la dirección abre Google Maps (14.2); mapa diferido; horario agrupado; redes de 44 px; sin desborde. El mapa vacío de la primera captura era de la captura: con tiempo se dibuja.
+- **Cambios:**
+  - La página llega entera, con el título.
+  - Una sola grilla: el mapa va en el DOM justo después de "Dónde estamos" (en el celular queda debajo, y = 541) y en la computadora ocupa la columna derecha a lo alto (`md:col-start-2 md:row-span-5`). No se duplica.
+  - Área táctil de 44 px (`.tt-area-toque`) en "Cómo llegar", "Garantía y reclamos" y el correo, sin cambiar el aspecto.
+  - El botón dice "Pedir cotización", como en la portada; el número sigue debajo.
+- **Descartado o pendiente:**
+  - Cierre común: toda la página es el contacto; repetiría el botón de arriba.
+  - Mapa en colores oscuros: el mapa de Google sin clave no se estiliza, y filtrar sus colores cambiaría el agua y los parques.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, sin desborde. Grabación con red lenta: primero el encabezado, después la página entera. Comparativa en `pulido-visual/2.7-contacto-celular.jpg`.
+  - E2E `hu-13-14` "en Contacto el mapa va junto a la dirección y los enlaces sueltos tienen 44 px para el dedo" y el botón por su nombre nuevo; `base` "las páginas interiores llegan enteras…" (ahora también Contacto). La prueba nueva falló en el celular: la base de pruebas arrancaba sin ubicación y el mapa aparecía recién cuando `hu-04` la guardaba (en la computadora ya había corrido). `preparar.setup.ts` carga ahora también la ubicación, con los mismos datos que `hu-04`. E2E completo: 145 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse: celular 92, computadora 99; 100 en accesibilidad, buenas prácticas y SEO; CLS 0.
+
+### 2.8 Garantía y reclamos (18/10/2026)
+- **Encontrado** (reclamos de prueba en `toctar_e2e`, no en la base de desarrollo):
+  - El título y la bajada llegaban antes que el formulario.
+  - Al enviar con errores, el foco quedaba en la página: quien usa lector de pantalla, o estaba abajo, no se enteraba de qué falló.
+  - Al enviar bien, la confirmación reemplazaba al formulario arriba, pero la pantalla seguía donde estaba el botón: en el celular, el título "Recibimos tu reclamo" quedaba tapado por el encabezado.
+  - Los ejemplos ("71234567", "2849XKT") iban como texto dentro del campo y parecían ya escritos; con error se leía "Escribe los 8 dígitos…" junto a un campo que parecía tenerlos.
+  - Los campos medían 32 px de alto y la X para quitar una foto 28 × 28.
+  - Lo que estaba bien: el teclado que corresponde en cada campo, errores junto al campo y en lenguaje claro, lo escrito se conserva, la trampa antirrobots no estorba, sin botón fijo encima, sin desborde.
+- **Cambios:**
+  - La página llega entera, con el título.
+  - Al enviar con errores, la pantalla va al primer campo con error (al centro, así no queda bajo el encabezado) y el foco también; al corregirlo y volver a enviar, va al siguiente.
+  - Al enviar bien, la pantalla sube a la confirmación (`scroll-mt-24`) y el foco va a ella (`tabIndex={-1}`, `role="status"`).
+  - Los ejemplos pasan a la ayuda: "Te respondemos por aquí. Ejemplo: 71234567" y "Por ejemplo, 2849XKT.".
+  - Campos de 44 px de alto en este formulario (`CAMPO`, en un solo lugar). La X de quitar foto se ve de 28 px y se toca en 44 × 44.
+- **Descartado o pendiente:**
+  - Resumen de errores arriba del formulario: con el foco en el primer error y los mensajes junto a cada campo alcanza para 7 campos.
+  - **Panel (grupos 3 a 6):** sus campos también miden 32 px. Se decide ahí, para todas sus pantallas juntas.
+  - Al repetir las capturas se llegó al límite de reclamos por hora desde la misma conexión: la confirmación de la computadora no salió y se vio el aviso del límite. Funciona como debe.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px (vacío, con errores, con fotos y la confirmación), sin desborde. Comparativas en `pulido-visual/2.8-errores-celular.jpg` y `2.8-confirmacion-celular.jpg`.
+  - E2E `hu-16`: campos y "quitar foto" de 44 px; la confirmación a la vista y con el foco; el foco al primer error y, al corregirlo, al siguiente. `base` "las páginas interiores llegan enteras…" (Garantía: con el título ya está el formulario). E2E completo: 145 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse: celular 89, computadora 100; 100 en accesibilidad, buenas prácticas y SEO; CLS 0. El celular queda en el pendiente común de rendimiento (2.4).
+- **Revisión de YankoSoft (18/10):** *"El campo de servicio, donde se despliega una lista, sale blanco y no se ve lo escrito."* El `Selector` tenía el fondo transparente: Chrome en Windows dibuja la lista con el fondo del `<select>` y, transparente, la pintaba blanca con el texto blanco del sitio oscuro. Las capturas no lo mostraban porque la lista nativa no sale en ellas. **Cambio** en `src/componentes/panel/selector.tsx` (lo usan el sitio y el panel): las opciones llevan fondo y tinta del tema, y el selector el mismo fondo que `Input` en oscuro (antes se veía más oscuro que los otros campos). E2E `hu-16` "las opciones de la lista de servicios se leen sobre el fondo oscuro". E2E completo: 147 pasan.
+
+### 2.9 Página no encontrada (18/10/2026)
+- **Encontrado:**
+  - Una dirección que no existe (`/no-existe`) mostraba la página sin encabezado ni pie: sin menú, sin logo con enlace al inicio, sin contacto, y la pestaña decía solo "TocTar Detailing". Está en `src/app/not-found.tsx`, fuera del diseño del sitio. Un servicio inexistente sí tenía encabezado y pie (el error pasa dentro del sitio): dos versiones distintas.
+  - El pendiente de 2.3: `/servicios/no-existe` responde 200. Es lo documentado por Next con streaming: la página empieza a enviarse antes de saber si el servicio existe y el estado ya salió; Next agrega `noindex`.
+  - Lo que estaba bien: el texto dice qué pasó y da dos salidas; el monograma; sin botón fijo; sin desborde.
+- **Cambios:**
+  - `MarcoSitio` (`src/componentes/sitio/marco-sitio.tsx`): encabezado, contenido y pie del sitio en un solo lugar; lo usan el diseño del sitio y la página no encontrada general.
+  - `NoEncontrada` (`src/componentes/sitio/no-encontrada.tsx`): el contenido, compartido por la página general (con el marco) y la nueva `src/app/(sitio)/not-found.tsx` (dentro del diseño del sitio). Las dos se ven iguales.
+  - Título de la pestaña "Página no encontrada · TocTar Detailing" (un servicio inexistente sigue con "Servicio no encontrado", de su página).
+- **Descartado o pendiente:**
+  - Responder 404 en un servicio inexistente: exigiría consultar la base en el `proxy` antes de cada página de servicio (la misma consulta que ya hace la página, una vez más en cada visita) para un caso raro que Google ya no indexa por el `noindex`.
+  - Botón de WhatsApp: quien llega aquí busca una página; el inicio y los servicios alcanzan, y el pie tiene el WhatsApp.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px de los dos casos, sin desborde. Comparativa en `pulido-visual/2.9-no-encontrada-celular.jpg`.
+  - E2E `hu-10` "una dirección que no existe…" (404, encabezado, pie y título) y `hu-11` "un servicio oculto o inexistente…" (`noindex`). E2E completo: 147 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse no audita respuestas 404 (devuelve error en lugar de puntaje): sin medición en esta pantalla.
+
+### 2.10 Sin conexión (18/10/2026)
+- **Encontrado:**
+  - Sin internet no cargaba ninguna fuente: el título salía en Arial y el texto en la del sistema. Las fuentes de la app (`next/font`) cambian de nombre en cada compilación: la página no podía pedirlas ni el service worker guardarlas.
+  - "Reintentar" era un rectángulo con las puntas redondeadas, no el botón rojo con el corte a 60° del sitio.
+  - Lo que estaba bien: todo dentro del archivo; el texto dice qué pasa y qué hacer ("El panel necesita internet" es correcto: el service worker solo se registra desde el panel); botón de 44 px; colores del tema oscuro; foco visible.
+- **Cambios:**
+  - Copias fijas de las fuentes en `public/fuentes/` (Barlow Condensed ExtraBold itálica y Montserrat variable, subconjunto latino, de Google Fonts; 62 KB en total) con sus licencias OFL al lado. La página las declara con `@font-face`.
+  - `public/sw.js`: la caché pasa a `v2` y guarda la página y las dos fuentes al instalarse; al activarse borra la `v1`, así los teléfonos con la app ya instalada se actualizan. Las fuentes se sirven desde la caché.
+  - "Reintentar" con el corte a 60°, con el mismo degradado que `.tt-boton--principal`.
+- **Descartado o pendiente:**
+  - Incrustar las fuentes dentro del HTML: pesaría más y habría que regenerarlas si cambia el texto.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px. Comparativa en `pulido-visual/2.10-sin-conexion-celular.jpg`.
+  - E2E `hu-06` "sin internet, el panel muestra el aviso…": ahora comprueba que, sin red, la página tiene Barlow Condensed y Montserrat cargadas (las saca el service worker de su caché). E2E completo: 147 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### Rendimiento del sitio (cierre del grupo 2, 18/10/2026)
+- **Encontrado** (Lighthouse móvil, tres corridas por página): portada 86, Servicios 88, Galería 89, Nosotros 90. El LCP simulado coincidía con el momento en que la página queda interactiva: el simulador cuenta como dependencias del LCP todo lo pedido antes de pintarlo, y la portada pedía 218 KB comprimidos de JavaScript y 7 fuentes (unos 130 KB) de entrada.
+  - Los avisos del panel (`Toaster`, sonner: 38 KB) estaban en el diseño raíz: se descargaban en cada página del sitio, que no los usa.
+  - Barlow Condensed cargaba 6 variantes (600, 700 y 800, normal e itálica); los titulares usan solo la itálica 700 y 800. Las normales las usaban únicamente los títulos de los diálogos y del menú de shadcn, contra la regla de la marca (titulares en itálica).
+  - El menú del celular (Sheet de base-ui, 26 KB comprimidos) se descargaba con la página, también en la computadora.
+- **Cambios:**
+  - `Toaster` en el diseño del panel (`src/app/panel/layout.tsx`), donde están todos los avisos.
+  - Barlow Condensed: solo itálica 700 y 800 (de 6 archivos a 2). Los títulos de `Dialog` y `Sheet` pasan a `font-bold italic`, como el resto de los titulares.
+  - Menú desplegable en dos partes: el botón (`menu-desplegable.tsx`) y la hoja (`menu-desplegable-hoja.tsx`), que se carga con `lazy()` cuando la página terminó de cargar (en un momento libre) o antes si se apunta al botón; lo común va en `menu-desplegable-comun.ts` para no tener una importación circular. El foco vuelve al botón al cerrar, con `aria-expanded` y `aria-haspopup`.
+- **Descartado:**
+  - `experimental.inlineCss`: empeoró (84 a 86). Next manda el CSS dos veces (en el `<style>` y en los datos de React) y el HTML comprimido pasó de 41 a 110 KB.
+- **Resultado** (tres corridas, promedio): portada 90, Servicios 93, Galería 90, Nosotros 95. La primera corrida con el servidor recién arrancado puede dar menos (83 en la portada): la caché está vacía.
+- **Verificación:** E2E `base` "el menú marca la página actual…": al cerrar con Escape, el foco vuelve a "Abrir menú" y `aria-expanded` es `false`. La prueba de los colores del selector (2.8) leía los colores antes de que React pusiera el contenido en su lugar (llega en un contenedor oculto, fuera del tema oscuro) y fallaba a veces en el celular: ahora espera a que el campo se vea. E2E completo: 147 pasan. Lint, typecheck y 205 unitarias sin errores. knip: solo `SheetTrigger` sin usar, parte de shadcn (aviso conocido).
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)

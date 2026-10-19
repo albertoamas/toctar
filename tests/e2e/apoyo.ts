@@ -6,6 +6,9 @@ import pg from "pg";
 
 export const URL_BASE_E2E = "postgres://toctar:toctar@localhost:5432/toctar_e2e";
 
+/** PNG de 1 × 1 píxel, para las pruebas que suben fotos. */
+export const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
+
 export const DUENO = { usuario: "dueno", nombre: "Dueño de prueba", contrasena: "dueno-e2e-123" };
 
 /** Crea (o reemplaza) un usuario directo en la base de pruebas. */

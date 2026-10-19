@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { ChevronDownIcon } from "lucide-react";
-import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
+import { TituloPagina } from "@/componentes/sitio/titulo-pagina";
+import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
+import { WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import { preguntasPublicas } from "@/modulos/sitio/publico";
 
 export const metadata: Metadata = {
@@ -11,28 +13,40 @@ export const metadata: Metadata = {
 };
 
 // HU-13 Preguntas frecuentes (RF-05). Cada una se abre y se cierra con <details>: funciona sin JavaScript.
+// Llega entera, con el título: nada aparece suelto antes que el resto (pulido 2.1 y 2.5, revisión de YankoSoft).
 export default function PaginaPreguntas() {
   return (
-    <section className="mx-auto w-full max-w-3xl px-4 py-12 md:py-20">
-      <h1 className="font-heading text-[40px] leading-[44px] font-extrabold italic">Preguntas frecuentes</h1>
+    <>
       <Suspense fallback={<div className="min-h-screen" />}>
-        <Lista />
+        <Contenido />
       </Suspense>
-      <div className="mt-10 flex flex-col items-start gap-4">
-        <p className="text-tinta-suave">¿No encontraste tu respuesta?</p>
-        <BotonWhatsApp />
-      </div>
       <WhatsAppFijo />
-    </section>
+    </>
   );
 }
 
-async function Lista() {
+async function Contenido() {
   await connection();
   const preguntas = await preguntasPublicas();
-  if (preguntas.length === 0) return <p className="mt-8 text-tinta-suave">Escríbenos por WhatsApp y te respondemos.</p>;
   return (
-    <div className="mt-8 flex flex-col border-b border-border">
+    <>
+      {/* El título arranca en el mismo borde que en las demás páginas; la lista conserva un ancho cómodo de lectura */}
+      <div className="mx-auto w-full max-w-6xl px-4 py-12 md:py-20">
+        <TituloPagina>Preguntas frecuentes</TituloPagina>
+        {preguntas.length === 0 ? (
+          <p className="mt-8 text-tinta-suave">Pronto vas a ver aquí las preguntas más comunes.</p>
+        ) : (
+          <Lista preguntas={preguntas} />
+        )}
+      </div>
+      <CierreWhatsApp titulo="¿No encontraste tu respuesta?" texto="Escríbenos con tu pregunta y te respondemos por WhatsApp." boton="Hacer mi pregunta" />
+    </>
+  );
+}
+
+function Lista({ preguntas }: { preguntas: { pregunta: string; respuesta: string }[] }) {
+  return (
+    <div className="mt-8 flex max-w-3xl flex-col border-b border-border">
       {preguntas.map((p) => (
         <details key={p.pregunta} className="group border-t border-border">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-lg font-semibold [&::-webkit-details-marker]:hidden">

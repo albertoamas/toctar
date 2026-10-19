@@ -50,6 +50,9 @@ export function BotonWhatsApp({
   const clase = cn("tt-boton", variante === "principal" ? "tt-boton--principal" : "tt-boton--contorno", className);
   // El principal marca su lugar: mientras se ve, el botón fijo se esconde (whatsapp-flotante.tsx).
   const marca: Record<string, string> = variante === "principal" ? { [ATRIBUTO_PRINCIPAL]: "" } : {};
+  // El texto visible dice lo que gana el cliente ("Pedir cotización"); el nombre accesible empieza igual
+  // (WCAG 2.5.3) y suma el canal, para quien no ve el ícono.
+  const nombre = /whatsapp/i.test(texto) ? undefined : `${texto} por WhatsApp`;
   return (
     <Suspense
       fallback={
@@ -59,12 +62,24 @@ export function BotonWhatsApp({
         </Link>
       }
     >
-      <EnlaceConNumero texto={texto} servicio={servicio} clase={clase} marca={marca} />
+      <EnlaceConNumero texto={texto} servicio={servicio} clase={clase} marca={marca} nombre={nombre} />
     </Suspense>
   );
 }
 
-async function EnlaceConNumero({ texto, servicio, clase, marca }: { texto: string; servicio?: string; clase: string; marca: Record<string, string> }) {
+async function EnlaceConNumero({
+  texto,
+  servicio,
+  clase,
+  marca,
+  nombre,
+}: {
+  texto: string;
+  servicio?: string;
+  clase: string;
+  marca: Record<string, string>;
+  nombre?: string;
+}) {
   const n = await numero();
   if (!n) {
     return (
@@ -74,7 +89,7 @@ async function EnlaceConNumero({ texto, servicio, clase, marca }: { texto: strin
     );
   }
   return (
-    <a href={enlaceWhatsApp(n, mensajeWhatsApp(servicio))} target="_blank" rel="noreferrer" className={clase} {...marca}>
+    <a href={enlaceWhatsApp(n, mensajeWhatsApp(servicio))} target="_blank" rel="noreferrer" aria-label={nombre} className={clase} {...marca}>
       <IconoWhatsApp />
       {texto}
     </a>

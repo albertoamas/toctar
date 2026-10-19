@@ -1,13 +1,6 @@
-import { Encabezado } from "@/componentes/sitio/encabezado";
-import { Pie } from "@/componentes/sitio/pie";
+import { MarcoSitio } from "@/componentes/sitio/marco-sitio";
 
-// El sitio público va siempre en tema oscuro (identidad visual: la versión principal del logo es sobre negro).
+// El sitio público: encabezado, contenido y pie, siempre en tema oscuro (src/componentes/sitio/marco-sitio.tsx).
 export default function LayoutSitio({ children }: LayoutProps<"/">) {
-  return (
-    <div data-theme="oscuro" className="flex flex-1 flex-col bg-fondo text-tinta">
-      <Encabezado />
-      <main className="flex flex-1 flex-col">{children}</main>
-      <Pie />
-    </div>
-  );
+  return <MarcoSitio>{children}</MarcoSitio>;
 }

@@ -6,6 +6,7 @@ import { AvisoConexion } from "@/componentes/panel/aviso-conexion";
 import { MenuPanel } from "@/componentes/panel/menu-panel";
 import { RegistrarServiceWorker } from "@/componentes/panel/registrar-service-worker";
 import { UsuarioSesion } from "@/componentes/panel/usuario-sesion";
+import { Toaster } from "@/componentes/ui/sonner";
 
 // El panel nunca se indexa en Google (RNF-12). Instalado en el iPhone se abre como app (HU-06).
 export const metadata: Metadata = {
@@ -45,6 +46,9 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
           se sale por la derecha en el celular. */}
       <div className="flex min-w-0 flex-1 flex-col">
         <RegistrarServiceWorker />
+        {/* Los avisos ("Cambios guardados.") son solo del panel: en el diseño raíz, su código (sonner) se descargaba
+            también en cada página del sitio, que no los usa (pulido 2, rendimiento). */}
+        <Toaster />
         <header data-theme="oscuro" className="sticky top-0 z-40 flex h-14 items-center gap-2 bg-fondo px-4 text-tinta lg:hidden">
           <MenuDesplegable lado="left" cabecera={<Marca />}>
             <div className="px-1">{menu}</div>

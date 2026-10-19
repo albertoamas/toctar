@@ -82,7 +82,7 @@ Convenciones: `id` es `bigint` autoincremental; todas las tablas tienen `created
 
 | Tabla | Campos | Notas |
 |---|---|---|
-| `contenido_pagina` | clave (pk: `inicio`, `nosotros`, `contacto`), datos (jsonb) | Textos editables (RF-10) |
+| `contenido_pagina` | clave (pk: `inicio`, `nosotros`, `contacto`), datos (jsonb), foto_archivo_id (opcional) | Textos editables (RF-10); la foto es la del taller de la portada (D-10) |
 | `faq` | pregunta, respuesta, orden, visible | |
 | `galeria_item` | servicio_id, foto_antes_id, foto_despues_id, descripcion, orden, visible, trabajo_id (opcional) | `trabajo_id` cuando la foto viene de una orden (RF-44) |
 | `reclamo` | nombre, telefono, placa, servicio_id, fecha_aproximada, descripcion, estado (`pendiente`, `atendido`), nota_atencion, atendido_por, atendido_at | |

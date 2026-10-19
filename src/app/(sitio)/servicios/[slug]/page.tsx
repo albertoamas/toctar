@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { ChevronLeftIcon } from "lucide-react";
+import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { FotoOReemplazo } from "@/componentes/sitio/foto-o-reemplazo";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import { servicioPublico, type DetalleServicioPublico } from "@/modulos/sitio/publico";
@@ -40,18 +41,21 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
 
   return (
     <article>
-      <header className="mx-auto grid max-w-6xl gap-8 px-4 pt-8 pb-12 md:grid-cols-2 md:items-center md:pt-12 md:pb-20">
-        <div className="flex flex-col items-start gap-5">
-          <Link href="/servicios" className="flex items-center gap-1 text-sm text-tinta-suave hover:text-tinta">
-            <ChevronLeftIcon className="size-4" aria-hidden />
-            Servicios
-          </Link>
-          <h1 className="font-heading text-[40px] leading-[38px] md:leading-[60px] font-extrabold tracking-[-0.01em] text-balance uppercase italic md:text-[64px]">{s.nombre}</h1>
-          <p className="max-w-xl text-lg leading-7 text-tinta-suave">{s.resumen}</p>
-          <BotonWhatsApp texto="Consultar por este servicio" servicio={s.nombre} />
-        </div>
-        <div className="relative order-first aspect-[4/3] overflow-hidden bg-superficie md:order-last">
-          <FotoOReemplazo foto={s.foto} alt={s.nombre} prioridad />
+      <header className="mx-auto max-w-6xl px-4 pt-2 pb-12 md:pt-6 md:pb-20">
+        {/* Lo primero de la página: en el celular va antes de la foto, para saber dónde se está (pulido 2.3) */}
+        <Link href="/servicios" className="inline-flex min-h-11 items-center gap-1 text-sm text-tinta-suave hover:text-tinta">
+          <ChevronLeftIcon className="size-4" aria-hidden />
+          Servicios
+        </Link>
+        <div className="mt-2 grid gap-8 md:mt-4 md:grid-cols-2 md:items-center">
+          <div className="flex flex-col items-start gap-5">
+            <h1 className="font-heading text-[40px] leading-[38px] md:leading-[60px] font-extrabold tracking-[-0.01em] text-balance uppercase italic md:text-[64px]">{s.nombre}</h1>
+            <p className="max-w-xl text-lg leading-7 text-tinta-suave">{s.resumen}</p>
+            <BotonWhatsApp texto="Consultar por este servicio" servicio={s.nombre} />
+          </div>
+          <div className="relative order-first aspect-[4/3] overflow-hidden bg-superficie md:order-last">
+            <FotoOReemplazo foto={s.foto} alt={s.nombre} prioridad />
+          </div>
         </div>
       </header>
 
@@ -62,13 +66,11 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
         {s.fotos.length > 0 && <Fotos servicio={s} />}
       </div>
 
-      <section className="border-t border-border bg-superficie">
-        <div className="mx-auto flex max-w-6xl flex-col items-start gap-5 px-4 py-12 md:py-20">
-          <h2 className="font-heading text-[28px] leading-8 font-bold italic md:text-[40px] md:leading-[44px]">¿Quieres saber cuánto sale en tu vehículo?</h2>
-          <p className="max-w-xl text-tinta-suave">El precio depende del tamaño y del estado de tu vehículo. Escríbenos con una foto y te damos una cotización.</p>
-          <BotonWhatsApp texto="Consultar por este servicio" servicio={s.nombre} />
-        </div>
-      </section>
+      <CierreWhatsApp
+        titulo="¿Quieres saber cuánto sale en tu vehículo?"
+        texto="El precio depende del tamaño y del estado de tu vehículo. Escríbenos con una foto y te damos una cotización."
+        servicio={s.nombre}
+      />
 
       <WhatsAppFijo servicio={s.nombre} />
     </article>
@@ -127,17 +129,20 @@ function Proceso({ pasos }: { pasos: DetalleServicioPublico["pasos"] }) {
 }
 
 function Variantes({ variantes }: { variantes: DetalleServicioPublico["variantes"] }) {
+  // Si alguna tiene descripción, todas van del mismo ancho; si no, la que tiene texto quedaba ancha y las demás
+  // chicas, en renglones disparejos (pulido 2.3).
+  const conDescripcion = variantes.some((v) => v.descripcion);
   return (
     <section aria-labelledby="variantes-titulo" className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         <h2 id="variantes-titulo" className={TITULO_SECCION}>Opciones</h2>
         <p className="max-w-xl text-tinta-suave">Te ayudamos a elegir la que conviene a tu vehículo.</p>
       </div>
-      <ul className="flex flex-wrap gap-3">
+      <ul className={conDescripcion ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3" : "flex flex-wrap gap-3"}>
         {variantes.map((v) => (
           <li key={v.nombre} className="flex min-w-36 flex-col gap-1 border border-border px-4 py-3">
             <span className="font-heading text-2xl font-bold italic">{v.nombre}</span>
-            {v.descripcion && <span className="max-w-xs text-sm text-tinta-suave">{v.descripcion}</span>}
+            {v.descripcion && <span className="text-sm text-tinta-suave">{v.descripcion}</span>}
           </li>
         ))}
       </ul>
