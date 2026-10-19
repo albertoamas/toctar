@@ -42,6 +42,8 @@ Estados: ⏳ pendiente · 🔵 en curso · ✅ terminada.
 ### Celular primero y app instalable (PWA)
 - Se diseña primero para 360 px y después se agranda. Sin desplazamiento horizontal en ningún ancho.
 - Áreas táctiles de 44 × 44 px como mínimo; nada importante pegado al borde de la pantalla.
+- **Panel (desde 4.2):** botones y campos de 44 px con pantalla táctil y 36 px con mouse. Se decide por el tipo de puntero (`pointer-coarse:`), no por el ancho, en los componentes comunes (`Button`, `Input`, `Selector`). Las pantallas nuevas lo heredan.
+- **Capturas del celular:** la captura `fullPage` de Playwright apaga la emulación táctil. Para la página completa se agranda la ventana (`setViewportSize`) y se mide antes de capturar.
 - Instalada como app: respeta la muesca y la barra inferior del teléfono (`safe-area`), y el aviso sin conexión se sigue viendo bien.
 - Formularios cómodos en el celular: el teclado que corresponde (`inputMode`, `type`), autocompletado y botones que no queden tapados por el teclado.
 
@@ -126,7 +128,7 @@ Antes de la demo del viernes 23.
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
 | 4.1 | Inicio | `/panel` | ✅ 19/10 |
-| 4.2 | Servicios del sitio | `/panel/sitio` | ⏳ |
+| 4.2 | Servicios del sitio | `/panel/sitio` | ✅ 19/10 |
 | 4.3 | Nuevo servicio | `/panel/sitio/servicios/nuevo` | ⏳ |
 | 4.4 | Editar servicio (datos, foto y variantes) | `/panel/sitio/servicios/[id]` | ⏳ |
 | 4.5 | Textos del sitio | `/panel/sitio/textos` | ⏳ |
@@ -543,6 +545,21 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px (dueño) y a 390 (encargado y técnico). Comparativa en `pulido-visual/4.1-inicio-celular.jpg`.
   - E2E `hu-01` "el inicio da un acceso a cada módulo que la persona puede usar; al técnico le dice que aún no hay nada" y el saludo como título; `base` actualizada (`hu-17` pasa sin cambios). E2E completo: 151 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 4.2 Servicios del sitio (19/10/2026)
+- **Encontrado:**
+  - Los botones del panel medían 32 px ("Agregar servicio" y las flechas de subir y bajar, 32 × 32): en el celular, las flechas quedaban pegadas y era fácil tocar la otra. Venía de los componentes comunes (`Button`, `Input`, `Selector`), así que pasaba en todo el panel.
+  - En cada fila, solo el texto abría el servicio; la miniatura no.
+  - Lo que estaba bien: pestañas de 46 px que se deslizan en el celular, la lista en el orden del sitio, "Oculto" con palabra y no solo color, la flecha deshabilitada en los extremos, el resumen en 2 renglones, sin desborde, el estado vacío común.
+- **Cambios:**
+  - **Estándar del panel:** con pantalla táctil, botones y campos de 44 px (todos los tamaños, también los de ícono); con mouse, 36 px el normal. `pointer-coarse:` en `src/componentes/ui/button.tsx`, `ui/input.tsx` y `panel/selector.tsx`. Revisadas todas las pantallas del panel en 4 anchos: ninguna se sale.
+  - Toda la fila abre el servicio, también la foto; las flechas quedan aparte. "Sin foto" va al final del nombre del enlace, para que el lector de pantalla diga primero el servicio.
+- **Descartado o pendiente:**
+  - Arrastrar para ordenar: función nueva y menos precisa que las flechas en el celular.
+  - Para 6.1: a 360 px ya no aparece la barra horizontal en Configuración, pero los campos llegan al borde derecho sin margen (se corta el borde).
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px. Comparativa en `pulido-visual/4.2-servicios-panel-celular.jpg`.
+  - E2E `base` "los botones del panel miden 44 px con pantalla táctil y 36 con mouse" (también abre el servicio desde la fila). E2E completo: 151 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
