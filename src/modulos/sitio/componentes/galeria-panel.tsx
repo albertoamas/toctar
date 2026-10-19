@@ -63,8 +63,9 @@ export function GaleriaPanel({ items, servicios }: { items: ItemGaleria[]; servi
       {items.length > 0 && visibles.length === 0 && <EstadoVacio>No hay fotos de ese servicio todavía.</EstadoVacio>}
       {filtro && visibles.length > 1 && <p className="text-sm text-tinta-suave">Para cambiar el orden, mira todos los servicios.</p>}
 
+      {/* En el celular, una por renglón: así entran los 5 íconos y editar tiene lugar (pulido 4.7) */}
       {visibles.length > 0 && (
-        <ol aria-label="Fotos de la galería" className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+        <ol aria-label="Fotos de la galería" className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
           {visibles.map((item, i) => (
             <Tarjeta key={item.id} item={item} servicios={servicios} primero={i === 0} ultimo={i === visibles.length - 1} ordenable={!filtro} />
           ))}
@@ -76,8 +77,8 @@ export function GaleriaPanel({ items, servicios }: { items: ItemGaleria[]; servi
 
 function Miniatura({ foto, alt, etiqueta }: { foto: Foto; alt: string; etiqueta?: string }) {
   return (
-    <span className="relative block aspect-square overflow-hidden bg-superficie">
-      <Image src={foto.miniatura} alt={alt} width={foto.ancho ?? 640} height={foto.alto ?? 640} unoptimized className="size-full object-cover" />
+    <span className="relative block overflow-hidden bg-superficie">
+      <Image src={foto.miniatura} alt={alt} width={foto.ancho ?? 640} height={foto.alto ?? 640} unoptimized className="absolute inset-0 size-full object-cover" />
       {etiqueta && <span className="absolute bottom-1 left-1 rounded-sm bg-negro/70 px-1.5 py-0.5 text-xs font-semibold text-blanco">{etiqueta}</span>}
     </span>
   );
@@ -90,7 +91,8 @@ function Tarjeta({ item, servicios, primero, ultimo, ordenable }: { item: ItemGa
 
   return (
     <li className={`flex flex-col overflow-hidden rounded-sm border border-border ${item.visible ? "" : "opacity-70"}`}>
-      <div className={item.antes ? "grid grid-cols-2 gap-px" : ""}>
+      {/* Mismo recuadro (2:1) con par o con foto sola: las tarjetas quedan parejas. La sola se recorta solo aquí. */}
+      <div className={`grid aspect-[2/1] ${item.antes ? "grid-cols-2 gap-px" : ""}`}>
         {item.antes && <Miniatura foto={item.antes} alt={`Antes: ${item.descripcion}`} etiqueta="Antes" />}
         <Miniatura foto={item.despues} alt={item.antes ? `Después: ${item.descripcion}` : item.descripcion} etiqueta={item.antes ? "Después" : undefined} />
       </div>
@@ -104,7 +106,7 @@ function Tarjeta({ item, servicios, primero, ultimo, ordenable }: { item: ItemGa
               {!item.visible && <span className="tt-insignia">Oculta</span>}
             </span>
             <span className="line-clamp-2 text-sm">{item.descripcion}</span>
-            <span className="mt-auto flex flex-wrap justify-end">
+            <span className="-mx-2 mt-auto flex flex-wrap justify-end">
               {ordenable && (
                 <>
                   <Button type="button" variant="ghost" size="icon" disabled={pendiente || primero} aria-label={`Subir: ${item.descripcion}`} onClick={() => ejecutar(() => moverGaleriaItem({ id: item.id, direccion: "subir" }))}>
