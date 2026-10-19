@@ -26,19 +26,24 @@ export function ListaServicios({ servicios }: { servicios: Fila[] }) {
     <ol aria-label="Servicios del sitio" className="flex flex-col divide-y divide-border rounded-sm border border-border">
       {servicios.map((s, i) => (
         <li key={s.id} className="flex items-center gap-3 p-3">
-          <span className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-superficie">
-            {s.miniatura ? (
-              <Image src={s.miniatura} alt="" width={64} height={64} unoptimized className="size-full object-cover" />
-            ) : (
-              <ImageOffIcon className="size-5 text-tinta-suave" aria-label="Sin foto" />
-            )}
-          </span>
-          <Link href={`/panel/sitio/servicios/${s.id}`} className="flex min-w-0 flex-1 flex-col hover:underline">
-            <span className="flex flex-wrap items-center gap-2 font-semibold">
-              {s.nombre}
-              {!s.visible && <span className="tt-insignia">Oculto</span>}
+          {/* Toda la fila abre el servicio, también la foto (pulido 4.2); las flechas quedan aparte */}
+          <Link href={`/panel/sitio/servicios/${s.id}`} className="group flex min-w-0 flex-1 items-center gap-3">
+            <span className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-superficie">
+              {s.miniatura ? (
+                <Image src={s.miniatura} alt="" width={64} height={64} unoptimized className="size-full object-cover" />
+              ) : (
+                <ImageOffIcon className="size-5 text-tinta-suave" aria-hidden />
+              )}
             </span>
-            <span className="line-clamp-2 text-sm text-tinta-suave">{s.resumen}</span>
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="flex flex-wrap items-center gap-2 font-semibold group-hover:underline">
+                {s.nombre}
+                {!s.visible && <span className="tt-insignia">Oculto</span>}
+              </span>
+              <span className="line-clamp-2 text-sm text-tinta-suave">{s.resumen}</span>
+              {/* Al final, para que el lector de pantalla diga primero el nombre del servicio */}
+              {!s.miniatura && <span className="sr-only">Sin foto.</span>}
+            </span>
           </Link>
           <span className="flex shrink-0 flex-col sm:flex-row">
             <Button type="button" variant="ghost" size="icon" disabled={pendiente || i === 0} aria-label={`Subir ${s.nombre}`} onClick={() => mover(s.id, "subir")}>
