@@ -65,6 +65,7 @@ test("el dueño ve el reclamo pendiente, le escribe por WhatsApp y lo marca aten
   // La nota es obligatoria
   await page.getByRole("button", { name: "Marcar como atendido" }).click();
   await expect(page.getByText("Escribe qué se hizo, para el registro.")).toBeVisible();
+  await expect(page.getByLabel("Qué se hizo")).toBeFocused(); // pulido 5.2
   await page.getByLabel("Qué se hizo").fill("Se limpió el tablero sin costo.");
   await page.getByRole("button", { name: "Marcar como atendido" }).click();
   await expect(page.getByText("Reclamo marcado como atendido.")).toBeVisible();
