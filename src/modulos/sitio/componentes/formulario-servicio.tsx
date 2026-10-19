@@ -48,7 +48,7 @@ export function FormularioServicio({ servicio: s }: Props) {
           <Textarea id="resumen" name="resumen" rows={3} defaultValue={v?.resumen ?? s.resumen} aria-invalid={!!e.resumen} aria-describedby={describir("resumen", true)} />
         </Campo>
         <Campo id="descripcion" etiqueta="Descripción" error={e.descripcion} ayuda="En qué consiste el servicio y para qué sirve. Sin precios.">
-          <Textarea id="descripcion" name="descripcion" rows={6} defaultValue={v?.descripcion ?? s.descripcion} aria-invalid={!!e.descripcion} aria-describedby={describir("descripcion", true)} />
+          <Textarea id="descripcion" name="descripcion" className="min-h-32" defaultValue={v?.descripcion ?? s.descripcion} aria-invalid={!!e.descripcion} aria-describedby={describir("descripcion", true)} />
         </Campo>
         <label className="flex cursor-pointer items-start gap-3">
           <Checkbox key={String(visible)} name="visible" defaultChecked={visible} className="mt-0.5" />

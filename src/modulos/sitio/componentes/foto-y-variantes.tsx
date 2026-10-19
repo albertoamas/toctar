@@ -19,7 +19,7 @@ export function FotoYVariantes({ servicioId, nombre, foto, variantes }: Props) {
       <section aria-labelledby="foto-titulo" className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
           <h2 id="foto-titulo" className="font-heading text-2xl font-bold italic">Foto principal</h2>
-          <p className="text-sm text-tinta-suave">Se ve en la tarjeta y arriba de la página del servicio. Mejor horizontal.</p>
+          <p className="text-sm text-tinta-suave">Se ve en la tarjeta y arriba de la página del servicio. Mejor horizontal. Se guarda al momento, sin el botón Guardar cambios.</p>
         </div>
         <SubidaFoto
           id="foto-servicio"
@@ -34,7 +34,7 @@ export function FotoYVariantes({ servicioId, nombre, foto, variantes }: Props) {
       <ListaEditable
         id="variantes"
         titulo="Variantes"
-        descripcion="Las opciones que eligen los clientes, como los años del cerámico. Los precios se cargan en el catálogo."
+        descripcion="Las opciones que eligen los clientes, como los años del cerámico. Los precios se cargan en el catálogo. Se guardan al momento, sin el botón Guardar cambios."
         singular="variante"
         campoDescripcion={{ etiqueta: "Descripción", ayuda: "Opcional. Se ve en la página del servicio.", ejemplo: "Capa más densa, más años de protección" }}
         camposOcultos={{ servicioId }}
