@@ -159,3 +159,14 @@ test("los botones del panel miden 44 px con pantalla táctil y 36 con mouse", as
   await page.getByRole("list", { name: "Servicios del sitio" }).getByRole("link").first().click();
   await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+$/);
 });
+
+test("al enviar con errores el foco va al campo, y el enlace para volver mide 44 px", async ({ page }) => {
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio/servicios/nuevo");
+  // La pestaña también se llama "Servicios": el enlace para volver es el de la flecha
+  const volver = page.getByRole("main").getByRole("link", { name: "Servicios" }).filter({ has: page.locator("svg") });
+  expect(Math.round((await volver.boundingBox())!.height)).toBe(44);
+  await page.getByRole("button", { name: "Crear servicio" }).click();
+  await expect(page.getByLabel("Nombre del servicio")).toBeFocused();
+  await expect(page.getByLabel("Nombre del servicio")).toHaveAttribute("aria-invalid", "true");
+});
