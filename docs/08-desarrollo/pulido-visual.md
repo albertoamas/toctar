@@ -140,7 +140,7 @@ Antes de la demo del viernes 23.
 | 4.4 | Editar servicio (datos, foto y variantes) | `/panel/sitio/servicios/[id]` | ✅ 19/10 |
 | 4.5 | Textos del sitio | `/panel/sitio/textos` | ✅ 19/10 |
 | 4.6 | Preguntas frecuentes | `/panel/sitio/preguntas` | ✅ 19/10 |
-| 4.7 | Galería | `/panel/sitio/galeria` | ⏳ |
+| 4.7 | Galería | `/panel/sitio/galeria` | ✅ 19/10 |
 
 ### 5. Panel: reclamos y usuarios
 
@@ -632,7 +632,7 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
     - "Cancelar" era sin fondo en los formularios de la página (variantes, espacios, preguntas, galería) y con borde en los diálogos: ahora con borde en todos.
 - **Pendiente:**
   - 4.6: "Agregar pregunta" en rojo (hecho).
-  - 4.7: en el celular, los 5 íconos de cada foto de la galería se reparten en dos renglones.
+  - 4.7: en el celular, los 5 íconos de cada foto de la galería se reparten en dos renglones (hecho).
   - 5.x: en la lista de usuarios, "Crear usuario" pasa a "Agregar usuario" (el formulario sigue diciendo "Crear usuario").
 - **Verificación:**
   - Capturas de Galería, Configuración y Editar servicio a 360 y 1280 px, sin desborde.
@@ -656,6 +656,25 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px, y el formulario con errores a 360 y 1280. Comparativa en `pulido-visual/4.6-preguntas-computadora.jpg`.
   - E2E `base` "en Preguntas, Agregar va arriba y en rojo, el error recibe el foco y tocar una pregunta la abre". E2E completo: 163 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 4.7 Galería (19/10/2026)
+- **Encontrado:**
+  - En el celular y la tableta, los 5 íconos de cada foto iban en dos renglones (la papelera sola abajo): a 360 px la tarjeta medía 158 px y los íconos necesitan 220; a 768, 227 px menos el margen interno.
+  - Editar una foto en el celular no cabía en la tarjeta de 158 px: el servicio cortado, el error en 5 renglones y "Cancelar" fuera de la tarjeta.
+  - Tarjetas de alto distinto: el par ocupaba la mitad del alto de una foto sola.
+  - Sin la foto de "Después", el error salía recién en un segundo intento (el servidor revisaba antes los campos de texto).
+  - Tras un error, el foco no iba al campo, ni al subir ni al editar; el error de la descripción al editar no estaba enlazado a su campo.
+  - Lo que estaba bien: "Subir fotos" arriba y en rojo con el filtro al lado, "Antes"/"Después" sobre cada foto, "Oculta" con palabra, el aviso de que el orden se cambia con todos los servicios, recuadros grandes para elegir cada foto con vista previa, eliminar con confirmación, 44 px con pantalla táctil, sin desborde.
+- **Cambios:**
+  - En el celular, una foto por renglón (desde 640 px, la grilla de antes). Recuadro de fotos de 2:1 en todas: el par, dos cuadrados; la foto sola se recorta al centro (solo en el panel; el sitio la muestra entera). La barra de íconos usa todo el ancho de la tarjeta: los 5 en un renglón en todos los anchos.
+  - `useFocoEnError` al subir y al editar. El recuadro de foto con error se marca con `data-invalido` (borde rojo) y el hook también lo reconoce: `aria-invalid` no vale en un botón. Errores de editar enlazados a sus campos.
+  - `subirGaleria` revisa la foto de "Después" junto con los demás campos: todos los errores salen juntos.
+- **Descartado:**
+  - Un menú "Más" para ocultar y eliminar: un toque más y acciones escondidas.
+  - Arrastrar para ordenar (como en 4.2).
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, y subir y editar con errores a 360 y 1280. Con fotos reales en la base de desarrollo. Comparativa en `pulido-visual/4.7-galeria-editar-celular.jpg`.
+  - E2E `base` "en la Galería del panel, subir sin nada marca todo junto y el foco va a la foto" y `hu-09` (los íconos de una foto en un renglón). E2E completo: 165 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
