@@ -38,6 +38,8 @@ test("las variantes se muestran sin precio", async ({ page }) => {
 test("un servicio oculto o inexistente muestra la página no encontrada", async ({ page }, info) => {
   await page.goto("/servicios/no-existe");
   await expect(page.getByRole("heading", { name: "No encontramos esta página" })).toBeVisible();
+  // Responde 200 porque la página empieza a enviarse antes de saber si el servicio existe; Google no la indexa (pulido 2.9)
+  await expect(page.locator('meta[name="robots"][content*="noindex"]').first()).toBeAttached();
 
   soloEscritorio(info);
   await ingresarComoDueno(page);

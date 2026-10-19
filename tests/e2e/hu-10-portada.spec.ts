@@ -63,6 +63,10 @@ test("una dirección que no existe muestra la página no encontrada", async ({ p
   expect(respuesta?.status()).toBe(404);
   await expect(page.getByRole("heading", { name: "No encontramos esta página" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Ver los servicios" })).toHaveAttribute("href", "/servicios");
+  // Con el encabezado y el pie del sitio, y su título en la pestaña (pulido 2.9)
+  await expect(page.getByRole("link", { name: "TocTar, inicio" })).toBeVisible();
+  await expect(page.getByRole("contentinfo")).toBeVisible();
+  await expect(page).toHaveTitle("Página no encontrada · TocTar Detailing");
 });
 
 // Pulido visual 2.1
