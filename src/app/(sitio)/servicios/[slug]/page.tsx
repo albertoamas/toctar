@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { ChevronLeftIcon } from "lucide-react";
+import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { FotoOReemplazo } from "@/componentes/sitio/foto-o-reemplazo";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
@@ -43,10 +43,7 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
     <article>
       <header className="mx-auto max-w-6xl px-4 pt-2 pb-12 md:pt-6 md:pb-20">
         {/* Lo primero de la página: en el celular va antes de la foto, para saber dónde se está (pulido 2.3) */}
-        <Link href="/servicios" className="inline-flex min-h-11 items-center gap-1 text-sm text-tinta-suave hover:text-tinta">
-          <ChevronLeftIcon className="size-4" aria-hidden />
-          Servicios
-        </Link>
+        <EnlaceVolver href="/servicios">Servicios</EnlaceVolver>
         <div className="mt-2 grid gap-8 md:mt-4 md:grid-cols-2 md:items-center">
           <div className="flex flex-col items-start gap-5">
             <h1 className="font-heading text-[40px] leading-[38px] md:leading-[60px] font-extrabold tracking-[-0.01em] text-balance uppercase italic md:text-[64px]">{s.nombre}</h1>
