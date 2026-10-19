@@ -5,16 +5,19 @@ import { BotonWhatsApp } from "./whatsapp";
 
 // Cierre de una página del sitio: una invitación a escribir y el botón principal de WhatsApp, con el monograma
 // de fondo. Al ser el principal, mientras se ve el botón fijo se esconde (pulido 1.3). Lo usan la portada,
-// Servicios, cada servicio (con el servicio escrito en el mensaje), la Galería y Nosotros (pulido 2.1 a 2.5).
+// Servicios, cada servicio (con el servicio escrito en el mensaje), la Galería, Nosotros y las Preguntas frecuentes
+// (pulido 2.1 a 2.6). `boton`: lo que gana el cliente al tocarlo (en las preguntas, "Hacer mi pregunta").
 // `secundario`: un enlace opcional, con borde, al lado del WhatsApp (en Nosotros, las preguntas frecuentes).
 export function CierreWhatsApp({
   titulo,
   texto,
+  boton = "Mandar fotos de mi vehículo",
   servicio,
   secundario,
 }: {
   titulo: string;
   texto: string;
+  boton?: string;
   servicio?: string;
   secundario?: { href: Route; texto: string };
 }) {
@@ -26,7 +29,7 @@ export function CierreWhatsApp({
         <p className="max-w-xl text-tinta-suave">{texto}</p>
         <div className="flex flex-wrap gap-3">
           {/* El texto dice lo que gana el cliente; el ícono y el nombre accesible dicen que es WhatsApp. */}
-          <BotonWhatsApp texto="Mandar fotos de mi vehículo" servicio={servicio} />
+          <BotonWhatsApp texto={boton} servicio={servicio} />
           {secundario && (
             <Link href={secundario.href} className="tt-boton tt-boton--contorno">
               {secundario.texto}
