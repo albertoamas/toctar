@@ -147,7 +147,7 @@ Antes de la demo del viernes 23.
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
 | 5.1 | Reclamos | `/panel/reclamos` | ✅ 19/10 |
-| 5.2 | Detalle de un reclamo | `/panel/reclamos/[id]` | ⏳ |
+| 5.2 | Detalle de un reclamo | `/panel/reclamos/[id]` | ✅ 19/10 |
 | 5.3 | Usuarios | `/panel/usuarios` | ⏳ |
 | 5.4 | Nuevo usuario | `/panel/usuarios/nuevo` | ⏳ |
 | 5.5 | Editar usuario | `/panel/usuarios/[id]` | ⏳ |
@@ -692,6 +692,23 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px, todos y pendientes. Comparativa en `pulido-visual/5.1-reclamos-celular.jpg`.
   - E2E `hu-17` (el número en la pestaña y, en la computadora, abrir el reclamo tocando la placa). E2E completo: 165 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 5.2 Detalle de un reclamo (19/10/2026)
+- **Encontrado:**
+  - En el celular los 5 datos iban uno debajo de otro: a 360 px, "Escribir por WhatsApp" y "Marcar como atendido" quedaban a 870 y 1030 px.
+  - Los títulos de cada parte ("Qué pasó", "Fotos", "Responder", "Atención") tenían la misma letra, tamaño y negrita que los datos: en el celular no se veía dónde empezaba cada parte.
+  - Al marcar como atendido sin nota, el foco no iba al campo.
+  - Lo que estaba bien: nombre y estado arriba, datos y fotos a la izquierda y acciones a la derecha en la computadora, WhatsApp con saludo ya escrito, la nota de atención con quién y cuándo, fotos que se amplían, sin desborde.
+- **Cambios:**
+  - Datos en dos columnas también en el celular; "Recibido" (fecha y hora) a todo el ancho. Responder y Atención suben unos 100 px a 360 px.
+  - Títulos de cada parte en `font-heading` itálica, como en el resto del panel.
+  - `useFocoEnError` en "Qué se hizo".
+- **Descartado:**
+  - Responder y Atención antes de los datos en el celular: primero hay que leer qué pasó.
+  - El número de WhatsApp como enlace: el botón ya lo hace, con el saludo escrito.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px de un reclamo pendiente y uno atendido, y el error sin nota a 360 y 1280. Comparativa en `pulido-visual/5.2-reclamo-celular.jpg`.
+  - E2E `hu-17` (foco en "Qué se hizo" tras el error). E2E completo: 165 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
