@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useRef, useState, useTransition } from "react";
 import { ArrowDownIcon, ArrowUpIcon, EyeIcon, EyeOffIcon, PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { useFocoEnError } from "@/componentes/foco-en-error";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
@@ -32,7 +33,21 @@ export function ListaPreguntas({ preguntas }: { preguntas: Pregunta[] }) {
 
   return (
     <div className="flex max-w-3xl flex-col gap-4">
-      <p className="text-tinta-suave">Se abren y cierran una por una en el sitio. Sin precios.</p>
+      {/* La acción principal arriba y en rojo, como "Agregar servicio" (pulido 4.6) */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <p className="text-tinta-suave">Se abren y cierran una por una en el sitio. Sin precios.</p>
+        {editando !== "nueva" && (
+          <Button type="button" onClick={() => setEditando("nueva")}>
+            <PlusIcon />
+            Agregar pregunta
+          </Button>
+        )}
+      </div>
+      {editando === "nueva" && (
+        <div className="rounded-sm border border-border p-3">
+          <FormularioPregunta alTerminar={() => setEditando(null)} />
+        </div>
+      )}
       {preguntas.length === 0 && <EstadoVacio>Todavía no hay preguntas. Agrega las que más te hacen los clientes.</EstadoVacio>}
 
       {preguntas.length > 0 && (
@@ -44,8 +59,9 @@ export function ListaPreguntas({ preguntas }: { preguntas: Pregunta[] }) {
               </li>
             ) : (
               <li key={p.id} className={`flex flex-wrap items-start justify-end gap-x-3 gap-y-1 p-3 ${p.visible ? "" : "text-tinta-suave"}`}>
-                <div className="flex min-w-60 flex-1 flex-col gap-1">
-                  <span className="flex flex-wrap items-center gap-2 font-semibold">
+                {/* Tocar el texto abre la edición, como en Servicios (pulido 4.6). Con teclado y lector de pantalla, el lápiz. */}
+                <div className="group flex min-w-60 flex-1 cursor-pointer flex-col gap-1" onClick={() => setEditando(p.id)}>
+                  <span className="flex flex-wrap items-center gap-2 font-semibold group-hover:underline">
                     {p.pregunta}
                     {!p.visible && <span className="tt-insignia">Oculta</span>}
                   </span>
@@ -79,18 +95,6 @@ export function ListaPreguntas({ preguntas }: { preguntas: Pregunta[] }) {
         </ol>
       )}
 
-      {editando === "nueva" ? (
-        <div className="rounded-sm border border-border p-3">
-          <FormularioPregunta alTerminar={() => setEditando(null)} />
-        </div>
-      ) : (
-        <div>
-          <Button type="button" variant="outline" onClick={() => setEditando("nueva")}>
-            <PlusIcon />
-            Agregar pregunta
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
@@ -105,21 +109,23 @@ function FormularioPregunta({ pregunta, alTerminar }: { pregunta?: Pregunta; alT
   const v = estado.valores;
   const e = estado.errores ?? {};
   const prefijo = `pregunta-${pregunta?.id ?? "nueva"}`;
+  const formulario = useRef<HTMLFormElement>(null);
+  useFocoEnError(formulario, estado);
 
   return (
-    <form action={accion} className="flex flex-col gap-4" noValidate>
+    <form ref={formulario} action={accion} className="flex flex-col gap-4" noValidate>
       {pregunta && <input type="hidden" name="id" value={pregunta.id} />}
       <Campo id={`${prefijo}-pregunta`} etiqueta="Pregunta" error={e.pregunta}>
         <Input id={`${prefijo}-pregunta`} name="pregunta" autoFocus defaultValue={v?.pregunta ?? pregunta?.pregunta} aria-invalid={!!e.pregunta} aria-describedby={e.pregunta ? `${prefijo}-pregunta-error` : undefined} />
       </Campo>
       <Campo id={`${prefijo}-respuesta`} etiqueta="Respuesta" error={e.respuesta}>
-        <Textarea id={`${prefijo}-respuesta`} name="respuesta" rows={4} defaultValue={v?.respuesta ?? pregunta?.respuesta} aria-invalid={!!e.respuesta} aria-describedby={e.respuesta ? `${prefijo}-respuesta-error` : undefined} />
+        <Textarea id={`${prefijo}-respuesta`} name="respuesta" className="min-h-32" defaultValue={v?.respuesta ?? pregunta?.respuesta} aria-invalid={!!e.respuesta} aria-describedby={e.respuesta ? `${prefijo}-respuesta-error` : undefined} />
       </Campo>
       <div className="flex gap-2">
         <Button type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : pregunta ? "Guardar" : "Agregar"}
         </Button>
-        <Button type="button" variant="ghost" onClick={alTerminar}>
+        <Button type="button" variant="outline" onClick={alTerminar}>
           Cancelar
         </Button>
       </div>

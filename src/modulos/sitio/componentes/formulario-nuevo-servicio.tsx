@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
+import { useFocoEnError } from "@/componentes/foco-en-error";
 import { Campo } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
@@ -15,8 +16,10 @@ export function FormularioNuevoServicio() {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(crearServicio, {});
   const v = estado.valores;
   const e = estado.errores ?? {};
+  const formulario = useRef<HTMLFormElement>(null);
+  useFocoEnError(formulario, estado);
   return (
-    <form action={accion} className="flex max-w-xl flex-col gap-6" noValidate>
+    <form ref={formulario} action={accion} className="flex max-w-xl flex-col gap-6" noValidate>
       <Campo id="nuevo-nombre" etiqueta="Nombre del servicio" error={e.nombre}>
         <Input id="nuevo-nombre" name="nombre" autoComplete="off" defaultValue={v?.nombre} aria-invalid={!!e.nombre} aria-describedby={e.nombre ? "nuevo-nombre-error" : undefined} />
       </Campo>

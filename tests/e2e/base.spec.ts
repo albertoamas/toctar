@@ -61,7 +61,7 @@ test("el panel y el ingreso no se indexan en Google", async ({ page }) => {
   await page.goto("/ingresar");
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex, nofollow");
   await ingresarComoDueno(page);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Inicio");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Hola, /);
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex, nofollow");
 });
 
@@ -145,3 +145,112 @@ test("las páginas interiores llegan enteras: el título no aparece antes que el
   await page.getByRole("heading", { level: 1 }).waitFor({ state: "attached" });
   expect(await page.getByRole("form", { name: "Garantía y reclamos" }).count()).toBe(1);
 });
+
+// Pulido visual 4.2: con pantalla táctil los botones del panel miden 44 px; con mouse, 36
+test("los botones del panel miden 44 px con pantalla táctil y 36 con mouse", async ({ page, isMobile }) => {
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio");
+  const alto = isMobile ? 44 : 36;
+  for (const boton of [page.getByRole("button", { name: "Agregar servicio" }), page.getByRole("button", { name: /^Bajar / }).first()]) {
+    const caja = (await boton.boundingBox())!;
+    expect(Math.round(caja.height)).toBe(alto);
+  }
+  // Toda la fila abre el servicio, también la foto
+  await page.getByRole("list", { name: "Servicios del sitio" }).getByRole("link").first().click();
+  await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+$/);
+});
+
+// Estándar de botones del panel: ninguno usa los tamaños chicos (antes, 28 px con mouse en variantes, galería y horarios).
+// El campo oculto para elegir una foto también tiene rol de botón: no se cuenta.
+test("ningún botón del panel mide menos que el tamaño normal", async ({ page, isMobile }) => {
+  await ingresarComoDueno(page);
+  const minimo = isMobile ? 44 : 36;
+  for (const ruta of ["/panel/sitio", "/panel/sitio/textos", "/panel/sitio/preguntas", "/panel/sitio/galeria", "/panel/configuracion"]) {
+    await page.goto(ruta, { waitUntil: "networkidle" });
+    if (ruta === "/panel/sitio") await page.getByRole("list", { name: "Servicios del sitio" }).getByRole("link").first().click();
+    await expect(page.getByRole("main").getByRole("button").first()).toBeVisible();
+    const chicos = await page.getByRole("main").getByRole("button").evaluateAll(
+      (botones, min) => botones.filter((b) => b.tagName !== "INPUT" && (b as HTMLElement).offsetParent && b.getBoundingClientRect().height < min).map((b) => b.getAttribute("aria-label") || b.textContent?.trim()),
+      minimo,
+    );
+    expect(chicos, ruta).toEqual([]);
+  }
+});
+
+test("al enviar con errores el foco va al campo, y el enlace para volver mide 44 px", async ({ page }) => {
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio/servicios/nuevo");
+  // La pestaña también se llama "Servicios": el enlace para volver es el de la flecha
+  const volver = page.getByRole("main").getByRole("link", { name: "Servicios" }).filter({ has: page.locator("svg") });
+  expect(Math.round((await volver.boundingBox())!.height)).toBe(44);
+  await page.getByRole("button", { name: "Crear servicio" }).click();
+  await expect(page.getByLabel("Nombre del servicio")).toBeFocused();
+  await expect(page.getByLabel("Nombre del servicio")).toHaveAttribute("aria-invalid", "true");
+});
+
+test("en Editar servicio una fila vacía recibe el foco con su error, y en el celular sus botones van debajo", async ({ page, isMobile }) => {
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio");
+  await page.getByRole("list", { name: "Servicios del sitio" }).getByRole("link").first().click();
+  await page.getByRole("button", { name: "Agregar beneficio" }).click();
+  const beneficio = page.getByRole("textbox", { name: "Beneficio 1" });
+  const campo = (await beneficio.boundingBox())!;
+  const quitar = (await page.getByRole("button", { name: "Quitar beneficio 1" }).boundingBox())!;
+  // En el celular el campo usa todo el ancho y los botones van debajo; en la computadora, al costado
+  expect(quitar.y >= campo.y + campo.height).toBe(isMobile);
+  await page.getByRole("button", { name: "Guardar cambios" }).click();
+  await expect(beneficio).toBeFocused();
+  await expect(beneficio).toHaveAttribute("aria-invalid", "true");
+  await expect(beneficio).toHaveAccessibleDescription(/Escribe el beneficio o quita la fila/);
+});
+
+test("en Textos del sitio un motivo largo se lee entero, y Enter envía sin saltar de renglón", async ({ page }) => {
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio/textos");
+  const primero = page.getByRole("textbox", { name: "Motivo 1" });
+  const alto = (await primero.boundingBox())!.height;
+  await primero.fill("Revisamos tu vehículo antes de darte un precio, con buena luz, y te mostramos lo que encontramos en la pintura.");
+  // El campo crece en vez de cortar el texto
+  await expect.poll(async () => (await primero.boundingBox())!.height).toBeGreaterThan(alto);
+  // "Agregar motivo" mide lo mismo que el botón de guardar (antes, 28 px con mouse)
+  const agregar = page.getByRole("button", { name: "Agregar motivo" });
+  const guardar = page.getByRole("button", { name: "Guardar nosotros" });
+  expect((await agregar.boundingBox())!.height).toBe((await guardar.boundingBox())!.height);
+  await agregar.click();
+  const nuevo = page.getByRole("list", { name: "Motivo" }).getByRole("textbox").last();
+  await nuevo.press("Enter");
+  // Enter envió el formulario: el motivo vacío vuelve con su error y el foco
+  await expect(nuevo).toBeFocused();
+  await expect(nuevo).toHaveAttribute("aria-invalid", "true");
+  await expect(nuevo).toHaveValue("");
+});
+
+test("en Preguntas, Agregar va arriba y en rojo, el error recibe el foco y tocar una pregunta la abre", async ({ page }) => {
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio/preguntas");
+  const agregar = page.getByRole("button", { name: "Agregar pregunta" });
+  const lista = page.getByRole("list", { name: "Preguntas frecuentes" });
+  expect((await agregar.boundingBox())!.y).toBeLessThan((await lista.boundingBox())!.y);
+  await expect(agregar).toHaveCSS("background-color", "rgb(227, 6, 19)");
+  await agregar.click();
+  await page.getByRole("button", { name: "Agregar", exact: true }).click();
+  await expect(page.getByLabel("Pregunta", { exact: true })).toBeFocused();
+  await page.getByRole("button", { name: "Cancelar" }).click();
+  // Tocar el texto de la primera pregunta abre su edición
+  const primera = lista.getByRole("listitem").first();
+  const texto = (await primera.locator(".font-semibold").first().textContent())!.trim();
+  await primera.locator(".font-semibold").first().click();
+  await expect(page.getByLabel("Pregunta", { exact: true })).toHaveValue(texto);
+});
+
+test("en la Galería del panel, subir sin nada marca todo junto y el foco va a la foto", async ({ page }) => {
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio/galeria");
+  await page.getByRole("button", { name: "Subir fotos" }).click();
+  await page.getByRole("button", { name: "Guardar en la galería" }).click();
+  // La foto del resultado se pide junto con los demás campos, y el foco va a ella
+  await expect(page.getByText("Elige la foto del resultado.")).toBeVisible();
+  await expect(page.getByText("Elige el servicio.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Elegir foto: Después" })).toBeFocused();
+});
+

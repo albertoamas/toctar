@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { ChevronLeftIcon } from "lucide-react";
+import { cn } from "cn";
+import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -21,10 +21,7 @@ export const metadata: Metadata = { title: "Reclamo" };
 export default function PaginaReclamo({ params }: PageProps<"/panel/reclamos/[id]">) {
   return (
     <section className="flex flex-col gap-6">
-      <Link href="/panel/reclamos" className="flex items-center gap-1 text-sm text-tinta-suave hover:text-tinta">
-        <ChevronLeftIcon className="size-4" aria-hidden />
-        Reclamos
-      </Link>
+      <EnlaceVolver href="/panel/reclamos">Reclamos</EnlaceVolver>
       <Suspense fallback={<Cargando />}>
         <Detalle params={params} />
       </Suspense>
@@ -71,7 +68,8 @@ async function Detalle({ params }: Pick<PageProps<"/panel/reclamos/[id]">, "para
           <section className="flex flex-col items-start gap-2">
             <h2 className="font-semibold">Responder</h2>
             <p className="text-sm text-tinta-suave">Abre el chat con {r.nombre} con un saludo ya escrito.</p>
-            <a href={enlaceWhatsApp(r.telefono, mensajeAlCliente(r.nombre, recibido))} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "outline" })}>
+            {/* Con cn: sin él, el borde transparente de la base le ganaba al del contorno y no se veía (revisión de botones) */}
+            <a href={enlaceWhatsApp(r.telefono, mensajeAlCliente(r.nombre, recibido))} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
               <IconoWhatsApp />
               Escribir por WhatsApp
             </a>

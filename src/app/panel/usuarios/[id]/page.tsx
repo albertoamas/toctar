@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { ChevronLeftIcon } from "lucide-react";
+import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
 import { permisosAsignables } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
@@ -16,10 +15,7 @@ export const metadata: Metadata = { title: "Usuario" };
 export default function PaginaUsuario({ params }: PageProps<"/panel/usuarios/[id]">) {
   return (
     <section className="flex flex-col gap-6">
-      <Link href="/panel/usuarios" className="flex items-center gap-1 text-sm text-tinta-suave hover:text-tinta">
-        <ChevronLeftIcon className="size-4" aria-hidden />
-        Usuarios
-      </Link>
+      <EnlaceVolver href="/panel/usuarios">Usuarios</EnlaceVolver>
       <Suspense fallback={<Cargando />}>
         <Detalle params={params} />
       </Suspense>

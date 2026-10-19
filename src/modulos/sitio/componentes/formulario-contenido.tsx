@@ -1,9 +1,11 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
+import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { EditorLista } from "@/componentes/panel/editor-lista";
+import { TextoCorto } from "@/componentes/panel/texto-corto";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
@@ -24,9 +26,11 @@ export function FormularioContenido({ pagina, contenido }: { pagina: Pagina; con
   );
   const v = estado.valores;
   const e = estado.errores ?? {};
+  const formulario = useRef<HTMLFormElement>(null);
+  useFocoEnError(formulario, estado);
 
   return (
-    <form action={accion} className="flex flex-col gap-5" noValidate aria-labelledby={`${pagina}-titulo`}>
+    <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-labelledby={`${pagina}-titulo`}>
       <input type="hidden" name="pagina" value={pagina} />
       <div className="flex flex-col gap-1">
         <h2 id={`${pagina}-titulo`} className="font-heading text-2xl font-bold italic">{def.titulo}</h2>
@@ -52,7 +56,7 @@ export function FormularioContenido({ pagina, contenido }: { pagina: Pagina; con
                 maximo={c.maxItems}
                 textoAgregar={c.agregar}
                 errores={e}
-                fila={(texto, cambiar, i) => <Input value={texto} onChange={(ev) => cambiar(ev.target.value)} aria-label={`Motivo ${i + 1}`} />}
+                fila={(texto, cambiar, i, marca) => <TextoCorto value={texto} onChange={(ev) => cambiar(ev.target.value)} aria-label={`Motivo ${i + 1}`} {...marca} />}
               />
             </fieldset>
           );

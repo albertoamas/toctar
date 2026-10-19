@@ -87,7 +87,6 @@ export function EditorHorarios({ valor, onChange, errores }: Props) {
                       <Button
                         type="button"
                         variant="ghost"
-                        size="sm"
                         onClick={() => cambiarDia(i, { ...d, turnos: [...d.turnos, { ...TURNO_NUEVO[1] }] })}
                       >
                         <PlusIcon />
@@ -103,7 +102,7 @@ export function EditorHorarios({ valor, onChange, errores }: Props) {
         })}
       </ul>
       <div>
-        <Button type="button" variant="outline" size="sm" onClick={copiarLunes}>
+        <Button type="button" variant="outline" onClick={copiarLunes}>
           <CopyIcon />
           Copiar el lunes de martes a sábado
         </Button>

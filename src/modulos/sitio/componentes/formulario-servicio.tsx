@@ -1,9 +1,11 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
+import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { EditorLista } from "@/componentes/panel/editor-lista";
+import { TextoCorto } from "@/componentes/panel/texto-corto";
 import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
@@ -29,9 +31,11 @@ export function FormularioServicio({ servicio: s }: Props) {
   const e = estado.errores ?? {};
   const visible = v ? v.visible === "on" : s.visible;
   const describir = (c: string, ayuda = false) => (e[c] ? `${c}-error` : ayuda ? `${c}-ayuda` : undefined);
+  const formulario = useRef<HTMLFormElement>(null);
+  useFocoEnError(formulario, estado);
 
   return (
-    <form action={accion} className="flex flex-col gap-10" noValidate>
+    <form ref={formulario} action={accion} className="flex flex-col gap-10" noValidate>
       <input type="hidden" name="id" value={s.id} />
 
       <Seccion titulo="Datos">
@@ -45,7 +49,7 @@ export function FormularioServicio({ servicio: s }: Props) {
           <Textarea id="resumen" name="resumen" rows={3} defaultValue={v?.resumen ?? s.resumen} aria-invalid={!!e.resumen} aria-describedby={describir("resumen", true)} />
         </Campo>
         <Campo id="descripcion" etiqueta="Descripción" error={e.descripcion} ayuda="En qué consiste el servicio y para qué sirve. Sin precios.">
-          <Textarea id="descripcion" name="descripcion" rows={6} defaultValue={v?.descripcion ?? s.descripcion} aria-invalid={!!e.descripcion} aria-describedby={describir("descripcion", true)} />
+          <Textarea id="descripcion" name="descripcion" className="min-h-32" defaultValue={v?.descripcion ?? s.descripcion} aria-invalid={!!e.descripcion} aria-describedby={describir("descripcion", true)} />
         </Campo>
         <label className="flex cursor-pointer items-start gap-3">
           <Checkbox key={String(visible)} name="visible" defaultChecked={visible} className="mt-0.5" />
@@ -66,8 +70,8 @@ export function FormularioServicio({ servicio: s }: Props) {
           maximo={LIMITES.beneficios}
           textoAgregar="Agregar beneficio"
           errores={e}
-          fila={(texto, cambiar, i) => (
-            <Input value={texto} onChange={(ev) => cambiar(ev.target.value)} aria-label={`Beneficio ${i + 1}`} placeholder="Brillo que dura años" />
+          fila={(texto, cambiar, i, marca) => (
+            <TextoCorto value={texto} onChange={(ev) => cambiar(ev.target.value)} aria-label={`Beneficio ${i + 1}`} placeholder="Brillo que dura años" {...marca} />
           )}
         />
       </Seccion>
@@ -82,10 +86,10 @@ export function FormularioServicio({ servicio: s }: Props) {
           maximo={LIMITES.pasos}
           textoAgregar="Agregar paso"
           errores={e}
-          fila={(paso, cambiar, i) => (
+          fila={(paso, cambiar, i, marca) => (
             <>
-              <Input value={paso.titulo} onChange={(ev) => cambiar({ ...paso, titulo: ev.target.value })} aria-label={`Paso ${i + 1}, título`} placeholder="Lavado técnico" />
-              <Textarea value={paso.detalle} onChange={(ev) => cambiar({ ...paso, detalle: ev.target.value })} aria-label={`Paso ${i + 1}, detalle`} rows={2} placeholder="Qué se hace en este paso (opcional)" />
+              <Input value={paso.titulo} onChange={(ev) => cambiar({ ...paso, titulo: ev.target.value })} aria-label={`Paso ${i + 1}, título`} placeholder="Lavado técnico" {...marca} />
+              <Textarea value={paso.detalle} onChange={(ev) => cambiar({ ...paso, detalle: ev.target.value })} aria-label={`Paso ${i + 1}, detalle`} rows={2} placeholder="Qué se hace en este paso (opcional)" {...marca} />
             </>
           )}
         />

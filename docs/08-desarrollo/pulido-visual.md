@@ -42,6 +42,15 @@ Estados: ⏳ pendiente · 🔵 en curso · ✅ terminada.
 ### Celular primero y app instalable (PWA)
 - Se diseña primero para 360 px y después se agranda. Sin desplazamiento horizontal en ningún ancho.
 - Áreas táctiles de 44 × 44 px como mínimo; nada importante pegado al borde de la pantalla.
+- **Panel (desde 4.2):** botones y campos de 44 px con pantalla táctil y 36 px con mouse. Se decide por el tipo de puntero (`pointer-coarse:`), no por el ancho, en los componentes comunes (`Button`, `Input`, `Selector`). Las pantallas nuevas lo heredan.
+- **Botones del panel (desde 4.5):** todos salen de `Button` (`src/componentes/ui/button.tsx`); el sitio, el ingreso y el formulario de garantía usan `tt-boton`, el de la marca.
+  - **Rojo (`default`):** guarda o crea. Uno por formulario, o la acción principal de una lista ("Agregar servicio").
+  - **Blanco con borde (`outline`):** agregar una fila dentro de un formulario ("Agregar beneficio"), acciones secundarias ("Subir foto", "Cambiar logo") y "Cancelar", en la página y en los diálogos.
+  - **Rosado con letra roja (`destructive`):** confirmar lo que no se deshace ("Eliminar pregunta", "Sí, desactivar").
+  - **Sin fondo (`ghost`):** las acciones de cada fila (íconos, "Desactivar").
+  - Un enlace con forma de botón que debe seguir siendo enlace (abre otra página o WhatsApp) lleva `cn(buttonVariants(...))`: sin `cn` el borde del contorno no se ve.
+  - **Tamaño:** siempre el normal (`default` o `icon`): 36 px con mouse y 44 con pantalla táctil. Los tamaños chicos (`sm`, `xs`, `icon-sm`, `icon-xs`) no se usan en el panel.
+- **Capturas del celular:** la captura `fullPage` de Playwright apaga la emulación táctil. Para la página completa se agranda la ventana (`setViewportSize`) y se mide antes de capturar.
 - Instalada como app: respeta la muesca y la barra inferior del teléfono (`safe-area`), y el aviso sin conexión se sigue viendo bien.
 - Formularios cómodos en el celular: el teclado que corresponde (`inputMode`, `type`), autocompletado y botones que no queden tapados por el teclado.
 
@@ -125,13 +134,13 @@ Antes de la demo del viernes 23.
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 4.1 | Inicio | `/panel` | ⏳ |
-| 4.2 | Servicios del sitio | `/panel/sitio` | ⏳ |
-| 4.3 | Nuevo servicio | `/panel/sitio/servicios/nuevo` | ⏳ |
-| 4.4 | Editar servicio (datos, foto y variantes) | `/panel/sitio/servicios/[id]` | ⏳ |
-| 4.5 | Textos del sitio | `/panel/sitio/textos` | ⏳ |
-| 4.6 | Preguntas frecuentes | `/panel/sitio/preguntas` | ⏳ |
-| 4.7 | Galería | `/panel/sitio/galeria` | ⏳ |
+| 4.1 | Inicio | `/panel` | ✅ 19/10 |
+| 4.2 | Servicios del sitio | `/panel/sitio` | ✅ 19/10 |
+| 4.3 | Nuevo servicio | `/panel/sitio/servicios/nuevo` | ✅ 19/10 |
+| 4.4 | Editar servicio (datos, foto y variantes) | `/panel/sitio/servicios/[id]` | ✅ 19/10 |
+| 4.5 | Textos del sitio | `/panel/sitio/textos` | ✅ 19/10 |
+| 4.6 | Preguntas frecuentes | `/panel/sitio/preguntas` | ✅ 19/10 |
+| 4.7 | Galería | `/panel/sitio/galeria` | ✅ 19/10 |
 
 ### 5. Panel: reclamos y usuarios
 
@@ -526,6 +535,146 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - *"No hay botón para volver a la portada o salir de aquí."* **Cambio:** "‹ Volver al sitio" arriba a la izquierda, de 44 px (como "‹ Servicios" en la página de un servicio).
   - *"La barra roja me gusta, pero ese brillo neón no."* Elegido quitarlo en todas: **cambio** en `.tt-led` (se borra el token `--brillo-led`) y en `public/sin-conexion.html`. La línea queda lisa en la portada, el ingreso y la página sin conexión; `identidad-visual.md` actualizado.
   - E2E `hu-01`: el enlace al sitio, con 44 px. E2E completo: 149 pasan.
+
+### 4.1 Inicio del panel (19/10/2026)
+- **Encontrado** (como dueño en 4 anchos; como encargado con solo "Sitio web" y como técnico, en el celular; base `toctar_e2e`):
+  - Al técnico, y al encargado sin el módulo de reclamos, el inicio les mostraba solo "Hola, …": una pantalla en blanco que no orientaba. En la Entrega 1 el técnico no tiene otros módulos (Órdenes llega con la Gestión).
+  - En el celular, para ir a cualquier módulo había que abrir el menú.
+  - "Inicio" y el saludo en gris debajo decían poco.
+  - Lo que estaba bien: la tarjeta de reclamos pendientes (toda tocable, lleva a los pendientes, dice qué hacer), la barra lateral con el módulo actual.
+- **Cambios:**
+  - Un acceso de un toque a cada módulo que la persona puede usar, con ícono y una línea que dice para qué sirve. Salen de `modulosDelMenu` (los mismos del menú, por rol y permisos). Reclamos va primero y resaltado si hay pendientes. Una columna en el celular, dos en la computadora.
+  - Sin módulos (hoy, el técnico): estado vacío común, "Por ahora no hay nada para ti en el panel. Tus trabajos del taller van a aparecer aquí."
+  - El título es el saludo con el primer nombre ("Hola, Yerko"); la página llega entera.
+- **Descartado o pendiente:**
+  - Cifras o gráficos (trabajos del día, ingresos): son de la Gestión y hoy no hay datos. El inicio se rediseña con ella.
+  - Se consultó si pulir el panel ahora o al terminar la Gestión: se sigue el plan inicial (ahora), porque el panel de la Entrega 1 se firma en el acta.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px (dueño) y a 390 (encargado y técnico). Comparativa en `pulido-visual/4.1-inicio-celular.jpg`.
+  - E2E `hu-01` "el inicio da un acceso a cada módulo que la persona puede usar; al técnico le dice que aún no hay nada" y el saludo como título; `base` actualizada (`hu-17` pasa sin cambios). E2E completo: 151 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 4.2 Servicios del sitio (19/10/2026)
+- **Encontrado:**
+  - Los botones del panel medían 32 px ("Agregar servicio" y las flechas de subir y bajar, 32 × 32): en el celular, las flechas quedaban pegadas y era fácil tocar la otra. Venía de los componentes comunes (`Button`, `Input`, `Selector`), así que pasaba en todo el panel.
+  - En cada fila, solo el texto abría el servicio; la miniatura no.
+  - Lo que estaba bien: pestañas de 46 px que se deslizan en el celular, la lista en el orden del sitio, "Oculto" con palabra y no solo color, la flecha deshabilitada en los extremos, el resumen en 2 renglones, sin desborde, el estado vacío común.
+- **Cambios:**
+  - **Estándar del panel:** con pantalla táctil, botones y campos de 44 px (todos los tamaños, también los de ícono); con mouse, 36 px el normal. `pointer-coarse:` en `src/componentes/ui/button.tsx`, `ui/input.tsx` y `panel/selector.tsx`. Revisadas todas las pantallas del panel en 4 anchos: ninguna se sale.
+  - Toda la fila abre el servicio, también la foto; las flechas quedan aparte. "Sin foto" va al final del nombre del enlace, para que el lector de pantalla diga primero el servicio.
+- **Descartado o pendiente:**
+  - Arrastrar para ordenar: función nueva y menos precisa que las flechas en el celular.
+  - Para 6.1: a 360 px ya no aparece la barra horizontal en Configuración, pero los campos llegan al borde derecho sin margen (se corta el borde).
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px. Comparativa en `pulido-visual/4.2-servicios-panel-celular.jpg`.
+  - E2E `base` "los botones del panel miden 44 px con pantalla táctil y 36 con mouse" (también abre el servicio desde la fila). E2E completo: 151 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 4.3 Nuevo servicio (19/10/2026)
+- **Encontrado:**
+  - El enlace "‹ Servicios" medía 20 px de alto: difícil de tocar con el dedo. Estaba copiado en 7 pantallas (5 del panel, la del servicio en el sitio y el ingreso), cada una con sus propias clases.
+  - Al enviar con errores, el foco quedaba en el botón: no se notaba qué había fallado, sobre todo con lector de pantalla.
+  - Lo que estaba bien: formulario corto (nombre y resumen), etiquetas visibles, errores con ícono y texto, ayuda bajo el resumen, campos y botón de 44 px con pantalla táctil (4.2).
+- **Cambios:**
+  - `EnlaceVolver` (`src/componentes/enlace-volver.tsx`): un solo enlace para volver, de 44 px, en las 7 pantallas. Se ve igual que antes.
+  - `useFocoEnError` (`src/componentes/foco-en-error.ts`): tras enviar con errores, la pantalla y el foco van al primer campo con error. Lo usan este formulario y el de garantía (que ya lo hacía por su cuenta desde 2.8). Los demás formularios del panel lo reciben en su pantalla (4.4 a 6.x).
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, vacío y con errores. Comparativa en `pulido-visual/4.3-nuevo-servicio-errores-celular.jpg`.
+  - E2E `base` "al enviar con errores el foco va al campo, y el enlace para volver mide 44 px". E2E completo: 155 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 4.4 Editar servicio (19/10/2026)
+- **Encontrado:**
+  - En el celular, cada fila de Beneficios y Pasos dejaba el campo en 160 px (a 360 px): los 3 botones de 44 px ocupaban 132. "Brillo que dura años" se cortaba y el detalle del paso entraba en 3 palabras por renglón.
+  - Tras un error, el foco no iba al campo, y las filas de Beneficios y Pasos con error no se marcaban (el lector de pantalla no lo anunciaba).
+  - El número de cada fila quedaba más arriba que el centro del campo de 44 px.
+  - La Descripción, el texto más largo, empezaba con un campo de 2 renglones, más bajo que el del Resumen.
+  - En el celular, "Guardar cambios" queda a mitad de página, y debajo vienen Foto y Variantes, que se guardan solas: no quedaba claro si el botón también las guardaba.
+  - Lo que estaba bien: el orden (Datos, Beneficios, Pasos, Guardar; Foto y Variantes aparte en la computadora), la ayuda de cada campo dice dónde se ve, controles de 44 px con pantalla táctil, "Mostrar en el sitio" se toca en toda la frase, sin desborde.
+- **Cambios:**
+  - `EditorLista` (`src/componentes/panel/editor-lista.tsx`): en el celular los botones de la fila van debajo de sus campos, que usan todo el ancho (300 px a 360); desde 640 px siguen al costado. El número se alinea con el primer campo. `fila` recibe `marca` para marcar con error los campos de la fila y enlazarlos a su mensaje. Textos del sitio (4.5) hereda el diseño de las filas.
+  - `useFocoEnError` en el formulario del servicio.
+  - Descripción con unos 5 renglones de alto al empezar (`min-h-32`); sigue creciendo con el texto.
+  - Foto principal y Variantes dicen "Se guarda(n) al momento, sin el botón Guardar cambios".
+- **Descartado o pendiente:**
+  - Barra fija de "Guardar cambios" en el celular: taparía contenido, y con las filas más cortas el botón queda justo después de los pasos.
+  - Para 6.x: en `ListaEditable` (variantes, y también espacios y tamaños de Configuración) el nombre queda solo en un renglón y los botones en otro, aun con lugar. Se ve con Configuración para no cambiarla desde aquí.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, y las filas con datos a 360 y 1280. Comparativa en `pulido-visual/4.4-editar-servicio-filas-celular.jpg`.
+  - E2E `base` "en Editar servicio una fila vacía recibe el foco con su error, y en el celular sus botones van debajo". E2E completo: 157 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 4.5 Textos del sitio (19/10/2026)
+- **Encontrado:**
+  - En el celular, cada motivo de "Por qué elegirnos" era un campo de un renglón: las frases (hasta 160 caracteres) se cortaban y había que moverse dentro del campo para leerlas. Lo mismo, en menor medida, con los Beneficios de un servicio.
+  - En la computadora, el recuadro vacío de la foto del taller medía 596 × 447 px, lo más grande de la pantalla, y quedaba debajo de "Guardar portada" aunque se guarda al momento.
+  - Tras un error, el foco no iba al campo y los motivos con error no se marcaban.
+  - Portada, Nosotros y Contacto son tres formularios aparte, separados solo por espacio: nada decía que cada botón guarda solo su parte.
+  - Lo que estaba bien: el orden de las páginas del sitio, un botón con nombre por parte, los textos largos que crecen con el contenido, controles de 44 px con pantalla táctil, sin desborde, Contacto aclara qué sale de Configuración.
+- **Cambios:**
+  - `TextoCorto` (`src/componentes/panel/texto-corto.tsx`): se ve como un campo de un renglón y crece si la frase no entra. Enter envía el formulario y lo pegado con saltos queda en un renglón. Lo usan los motivos y los beneficios.
+  - La foto del taller, hasta 24 rem de ancho, con "Se guarda al momento, sin el botón Guardar portada".
+  - `useFocoEnError` y `marca` en el formulario de textos.
+  - "Cada parte se guarda con su botón." arriba, y una línea entre las partes.
+  - "Agregar motivo", "Agregar beneficio" y "Agregar paso" medían 28 px con mouse y letra más chica (lo vio YankoSoft): ahora el tamaño normal, como "Agregar variante" (36 px con mouse, 44 con pantalla táctil).
+- **Descartado:**
+  - Un solo botón para guardar todo: cambiaría las acciones del servidor, y lo que hay funciona.
+  - Aviso al salir con cambios sin guardar: función nueva; con la línea y la frase queda claro qué guarda cada botón.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px. Comparativa en `pulido-visual/4.5-textos-motivos-celular.jpg`.
+  - E2E `base` "en Textos del sitio un motivo largo se lee entero, y Enter envía sin saltar de renglón" (también mide "Agregar motivo"). E2E completo: 159 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### Botones del panel (19/10/2026)
+- **Encontrado (lo vio YankoSoft, tras la 4.5):**
+  - Todos los botones del panel usan el mismo componente, pero no había regla escrita para el color: "Agregar servicio" es rojo y "Agregar pregunta", la acción principal de su pantalla, es blanco con borde. "Crear usuario" y "Agregar servicio" hacen lo mismo con nombres distintos.
+  - Quedaban botones del tamaño chico (28 px y letra de 12,8 px con mouse): "Desactivar" y "Reactivar" de las listas (variantes y Configuración), "Segundo turno" y "Copiar el lunes…" de los horarios, y en Galería los íconos de cada foto y "Guardar"/"Cancelar" al editarla.
+- **Cambios:**
+  - La regla de color y tamaño, en los estándares de arriba.
+  - Esos botones pasan al tamaño normal (36 px con mouse, 44 con pantalla táctil). En el celular ya medían 44.
+  - Revisión de todas las pantallas del panel hechas (inicio, sitio, reclamos, usuarios, configuración), con los formularios, diálogos y el menú del celular abiertos, con mouse y con pantalla táctil: ningún botón bajo el tamaño. Además:
+    - "Escribir por WhatsApp" (detalle de un reclamo) no mostraba el borde: sin `cn`, `border-transparent` le ganaba a `border-border`. Ahora se ve como botón y sigue siendo enlace.
+    - "Cancelar" era sin fondo en los formularios de la página (variantes, espacios, preguntas, galería) y con borde en los diálogos: ahora con borde en todos.
+- **Pendiente:**
+  - 4.6: "Agregar pregunta" en rojo (hecho).
+  - 4.7: en el celular, los 5 íconos de cada foto de la galería se reparten en dos renglones (hecho).
+  - 5.x: en la lista de usuarios, "Crear usuario" pasa a "Agregar usuario" (el formulario sigue diciendo "Crear usuario").
+- **Verificación:**
+  - Capturas de Galería, Configuración y Editar servicio a 360 y 1280 px, sin desborde.
+  - E2E `base` "ningún botón del panel mide menos que el tamaño normal" (servicio, textos, preguntas, galería, configuración) y `hu-17` (el enlace de WhatsApp con borde). E2E completo: 161 pasan. Lint y typecheck sin errores. knip: nada nuevo.
+
+### 4.6 Preguntas frecuentes (19/10/2026)
+- **Encontrado:**
+  - "Agregar pregunta" era blanco con borde y estaba al final de la lista: con muchas preguntas quedaba fuera de la pantalla, y en Servicios la misma acción es roja y va arriba.
+  - Tras un error, el foco quedaba en la página.
+  - Solo el lápiz abría la edición; en Servicios se toca toda la fila.
+  - La Respuesta (hasta 1000 caracteres) empezaba con un campo de 2 renglones.
+  - Lo que estaba bien: pregunta en negrita y respuesta en 2 renglones, "Oculta" con palabra, los 5 íconos en un renglón también a 360 px, 44 px con pantalla táctil, sin desborde, eliminar pide confirmación y sugiere ocultar.
+- **Cambios:**
+  - "Agregar pregunta" en rojo y arriba, junto al texto de la pantalla; la pregunta nueva se escribe arriba de la lista.
+  - `useFocoEnError` en el formulario de pregunta.
+  - Tocar la pregunta o la respuesta abre la edición. Con teclado y lector de pantalla sigue siendo el lápiz (así no hay dos controles con el mismo nombre).
+  - Respuesta con unos 5 renglones al empezar (`min-h-32`).
+- **Descartado:**
+  - Arrastrar para ordenar (como en 4.2).
+  - La respuesta entera en la lista: la alarga mucho; 2 renglones alcanzan para reconocerla.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, y el formulario con errores a 360 y 1280. Comparativa en `pulido-visual/4.6-preguntas-computadora.jpg`.
+  - E2E `base` "en Preguntas, Agregar va arriba y en rojo, el error recibe el foco y tocar una pregunta la abre". E2E completo: 163 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 4.7 Galería (19/10/2026)
+- **Encontrado:**
+  - En el celular y la tableta, los 5 íconos de cada foto iban en dos renglones (la papelera sola abajo): a 360 px la tarjeta medía 158 px y los íconos necesitan 220; a 768, 227 px menos el margen interno.
+  - Editar una foto en el celular no cabía en la tarjeta de 158 px: el servicio cortado, el error en 5 renglones y "Cancelar" fuera de la tarjeta.
+  - Tarjetas de alto distinto: el par ocupaba la mitad del alto de una foto sola.
+  - Sin la foto de "Después", el error salía recién en un segundo intento (el servidor revisaba antes los campos de texto).
+  - Tras un error, el foco no iba al campo, ni al subir ni al editar; el error de la descripción al editar no estaba enlazado a su campo.
+  - Lo que estaba bien: "Subir fotos" arriba y en rojo con el filtro al lado, "Antes"/"Después" sobre cada foto, "Oculta" con palabra, el aviso de que el orden se cambia con todos los servicios, recuadros grandes para elegir cada foto con vista previa, eliminar con confirmación, 44 px con pantalla táctil, sin desborde.
+- **Cambios:**
+  - En el celular, una foto por renglón (desde 640 px, la grilla de antes). Recuadro de fotos de 2:1 en todas: el par, dos cuadrados; la foto sola se recorta al centro (solo en el panel; el sitio la muestra entera). La barra de íconos usa todo el ancho de la tarjeta: los 5 en un renglón en todos los anchos.
+  - `useFocoEnError` al subir y al editar. El recuadro de foto con error se marca con `data-invalido` (borde rojo) y el hook también lo reconoce: `aria-invalid` no vale en un botón. Errores de editar enlazados a sus campos.
+  - `subirGaleria` revisa la foto de "Después" junto con los demás campos: todos los errores salen juntos.
+- **Descartado:**
+  - Un menú "Más" para ocultar y eliminar: un toque más y acciones escondidas.
+  - Arrastrar para ordenar (como en 4.2).
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, y subir y editar con errores a 360 y 1280. Con fotos reales en la base de desarrollo. Comparativa en `pulido-visual/4.7-galeria-editar-celular.jpg`.
+  - E2E `base` "en la Galería del panel, subir sin nada marca todo junto y el foco va a la foto" y `hu-09` (los íconos de una foto en un renglón). E2E completo: 165 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)

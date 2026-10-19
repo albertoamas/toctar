@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { ChevronLeftIcon } from "lucide-react";
 import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
+import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioServicio } from "@/modulos/sitio/componentes/formulario-servicio";
@@ -16,10 +15,7 @@ export const metadata: Metadata = { title: "Servicio" };
 export default function PaginaServicio({ params, searchParams }: PageProps<"/panel/sitio/servicios/[id]">) {
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/panel/sitio" className="flex items-center gap-1 text-sm text-tinta-suave hover:text-tinta">
-        <ChevronLeftIcon className="size-4" aria-hidden />
-        Servicios
-      </Link>
+      <EnlaceVolver href="/panel/sitio">Servicios</EnlaceVolver>
       <Suspense fallback={<Cargando />}>
         <Detalle params={params} searchParams={searchParams} />
       </Suspense>

@@ -50,6 +50,8 @@ test("el dueño ve el reclamo pendiente, le escribe por WhatsApp y lo marca aten
 
   const whatsapp = page.getByRole("link", { name: "Escribir por WhatsApp" });
   await expect(whatsapp).toHaveAttribute("href", new RegExp(`^https://wa\\.me/59176543210\\?text=Hola%20${encodeURIComponent(nombre)}`));
+  // Se ve como botón con borde, no como texto suelto
+  await expect(whatsapp).not.toHaveCSS("border-top-color", "rgba(0, 0, 0, 0)");
 
   // La nota es obligatoria
   await page.getByRole("button", { name: "Marcar como atendido" }).click();
