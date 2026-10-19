@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { cn } from "cn";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
@@ -67,7 +68,8 @@ async function Detalle({ params }: Pick<PageProps<"/panel/reclamos/[id]">, "para
           <section className="flex flex-col items-start gap-2">
             <h2 className="font-semibold">Responder</h2>
             <p className="text-sm text-tinta-suave">Abre el chat con {r.nombre} con un saludo ya escrito.</p>
-            <a href={enlaceWhatsApp(r.telefono, mensajeAlCliente(r.nombre, recibido))} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "outline" })}>
+            {/* Con cn: sin él, el borde transparente de la base le ganaba al del contorno y no se veía (revisión de botones) */}
+            <a href={enlaceWhatsApp(r.telefono, mensajeAlCliente(r.nombre, recibido))} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
               <IconoWhatsApp />
               Escribir por WhatsApp
             </a>
