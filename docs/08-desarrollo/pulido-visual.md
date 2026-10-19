@@ -139,7 +139,7 @@ Antes de la demo del viernes 23.
 | 4.3 | Nuevo servicio | `/panel/sitio/servicios/nuevo` | ✅ 19/10 |
 | 4.4 | Editar servicio (datos, foto y variantes) | `/panel/sitio/servicios/[id]` | ✅ 19/10 |
 | 4.5 | Textos del sitio | `/panel/sitio/textos` | ✅ 19/10 |
-| 4.6 | Preguntas frecuentes | `/panel/sitio/preguntas` | ⏳ |
+| 4.6 | Preguntas frecuentes | `/panel/sitio/preguntas` | ✅ 19/10 |
 | 4.7 | Galería | `/panel/sitio/galeria` | ⏳ |
 
 ### 5. Panel: reclamos y usuarios
@@ -591,7 +591,7 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Cambios:**
   - `EditorLista` (`src/componentes/panel/editor-lista.tsx`): en el celular los botones de la fila van debajo de sus campos, que usan todo el ancho (300 px a 360); desde 640 px siguen al costado. El número se alinea con el primer campo. `fila` recibe `marca` para marcar con error los campos de la fila y enlazarlos a su mensaje. Textos del sitio (4.5) hereda el diseño de las filas.
   - `useFocoEnError` en el formulario del servicio.
-  - Descripción con 8 renglones de alto al empezar (`min-h-32`); sigue creciendo con el texto.
+  - Descripción con unos 5 renglones de alto al empezar (`min-h-32`); sigue creciendo con el texto.
   - Foto principal y Variantes dicen "Se guarda(n) al momento, sin el botón Guardar cambios".
 - **Descartado o pendiente:**
   - Barra fija de "Guardar cambios" en el celular: taparía contenido, y con las filas más cortas el botón queda justo después de los pasos.
@@ -631,12 +631,31 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
     - "Escribir por WhatsApp" (detalle de un reclamo) no mostraba el borde: sin `cn`, `border-transparent` le ganaba a `border-border`. Ahora se ve como botón y sigue siendo enlace.
     - "Cancelar" era sin fondo en los formularios de la página (variantes, espacios, preguntas, galería) y con borde en los diálogos: ahora con borde en todos.
 - **Pendiente:**
-  - 4.6: "Agregar pregunta" en rojo.
+  - 4.6: "Agregar pregunta" en rojo (hecho).
   - 4.7: en el celular, los 5 íconos de cada foto de la galería se reparten en dos renglones.
   - 5.x: en la lista de usuarios, "Crear usuario" pasa a "Agregar usuario" (el formulario sigue diciendo "Crear usuario").
 - **Verificación:**
   - Capturas de Galería, Configuración y Editar servicio a 360 y 1280 px, sin desborde.
   - E2E `base` "ningún botón del panel mide menos que el tamaño normal" (servicio, textos, preguntas, galería, configuración) y `hu-17` (el enlace de WhatsApp con borde). E2E completo: 161 pasan. Lint y typecheck sin errores. knip: nada nuevo.
+
+### 4.6 Preguntas frecuentes (19/10/2026)
+- **Encontrado:**
+  - "Agregar pregunta" era blanco con borde y estaba al final de la lista: con muchas preguntas quedaba fuera de la pantalla, y en Servicios la misma acción es roja y va arriba.
+  - Tras un error, el foco quedaba en la página.
+  - Solo el lápiz abría la edición; en Servicios se toca toda la fila.
+  - La Respuesta (hasta 1000 caracteres) empezaba con un campo de 2 renglones.
+  - Lo que estaba bien: pregunta en negrita y respuesta en 2 renglones, "Oculta" con palabra, los 5 íconos en un renglón también a 360 px, 44 px con pantalla táctil, sin desborde, eliminar pide confirmación y sugiere ocultar.
+- **Cambios:**
+  - "Agregar pregunta" en rojo y arriba, junto al texto de la pantalla; la pregunta nueva se escribe arriba de la lista.
+  - `useFocoEnError` en el formulario de pregunta.
+  - Tocar la pregunta o la respuesta abre la edición. Con teclado y lector de pantalla sigue siendo el lápiz (así no hay dos controles con el mismo nombre).
+  - Respuesta con unos 5 renglones al empezar (`min-h-32`).
+- **Descartado:**
+  - Arrastrar para ordenar (como en 4.2).
+  - La respuesta entera en la lista: la alarga mucho; 2 renglones alcanzan para reconocerla.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, y el formulario con errores a 360 y 1280. Comparativa en `pulido-visual/4.6-preguntas-computadora.jpg`.
+  - E2E `base` "en Preguntas, Agregar va arriba y en rojo, el error recibe el foco y tocar una pregunta la abre". E2E completo: 163 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
