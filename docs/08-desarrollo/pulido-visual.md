@@ -146,7 +146,7 @@ Antes de la demo del viernes 23.
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 5.1 | Reclamos | `/panel/reclamos` | ⏳ |
+| 5.1 | Reclamos | `/panel/reclamos` | ✅ 19/10 |
 | 5.2 | Detalle de un reclamo | `/panel/reclamos/[id]` | ⏳ |
 | 5.3 | Usuarios | `/panel/usuarios` | ⏳ |
 | 5.4 | Nuevo usuario | `/panel/usuarios/nuevo` | ⏳ |
@@ -675,6 +675,23 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px, y subir y editar con errores a 360 y 1280. Con fotos reales en la base de desarrollo. Comparativa en `pulido-visual/4.7-galeria-editar-celular.jpg`.
   - E2E `base` "en la Galería del panel, subir sin nada marca todo junto y el foco va a la foto" y `hu-09` (los íconos de una foto en un renglón). E2E completo: 165 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 5.1 Reclamos (19/10/2026)
+- **Encontrado:**
+  - En la tabla (desde 768 px) solo el nombre abría el reclamo, con 18 px de alto: en una tableta, difícil de tocar.
+  - En las tarjetas del celular los datos se partían ("· 2" en un renglón y "fotos" en el otro), y faltaba el servicio, que la tabla sí muestra.
+  - La pestaña "Pendientes" no decía cuántos había.
+  - Lo que estaba bien: tarjeta entera tocable en el celular y tabla en la computadora, estado con palabra y color, pestañas de 46 px, pendientes primero, estado vacío que dice de dónde llegan, sin desborde.
+- **Cambios:**
+  - En la tabla toda la fila abre el reclamo (el enlace del nombre la cubre con `after:absolute after:inset-0`); con teclado y lector de pantalla sigue siendo el nombre.
+  - Tarjeta del celular: nombre, servicio (o "Servicio: no indicó") y un renglón con fecha, placa y fotos, sin partir ningún dato.
+  - "Pendientes (2)": sale de la misma consulta, sin otra.
+- **Descartado:**
+  - Abrir en "Pendientes": cambia el comportamiento; con el número a la vista ya se nota si hay algo por atender.
+  - Buscador y páginas: los reclamos son pocos.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, todos y pendientes. Comparativa en `pulido-visual/5.1-reclamos-celular.jpg`.
+  - E2E `hu-17` (el número en la pestaña y, en la computadora, abrir el reclamo tocando la placa). E2E completo: 165 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
