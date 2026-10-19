@@ -1,51 +1,64 @@
 "use client";
 
-import { useState } from "react";
-import { MenuIcon, XIcon } from "lucide-react";
-import { cn } from "cn";
-import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/componentes/ui/sheet";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { MenuIcon } from "lucide-react";
+import { BOTON_MENU, type PropsMenu } from "./menu-desplegable-comun";
 
 // Menú desplegable del celular, compartido por el sitio y el panel.
 // - Se cierra al tocar cualquier enlace: si no, queda abierto tapando la pantalla nueva.
-// - Abrir y cerrar miden 44 × 44 px, el mínimo cómodo para el pulgar.
+// - Abrir y cerrar miden 44 × 44 px, el mínimo cómodo para el pulgar (BOTON_MENU).
+// - La hoja (y su librería) se descarga aparte: cuando la página terminó de cargar, o antes si la persona apunta al
+//   botón. Antes se descargaba con la página y le quitaba red a la primera pintura (pulido 2, rendimiento).
 
-type Props = {
-  lado: "left" | "right";
-  /** Lo que va arriba, junto al botón de cerrar (el logo). */
-  cabecera: React.ReactNode;
-  children: React.ReactNode;
-  className?: string;
-};
+const cargarHoja = () => import("./menu-desplegable-hoja");
+const HojaMenu = lazy(cargarHoja);
 
-const BOTON = "-mx-2 grid size-11 shrink-0 place-items-center rounded-sm text-tinta hover:bg-superficie";
-
-export function MenuDesplegable({ lado, cabecera, children, className }: Props) {
+export function MenuDesplegable(props: PropsMenu) {
   const [abierto, setAbierto] = useState(false);
+  // Se monta al abrir por primera vez y queda montada: así se ve la animación de cierre.
+  const [usado, setUsado] = useState(false);
+  const boton = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    // En un momento libre del navegador (Safari no tiene requestIdleCallback: va enseguida después de cargar).
+    const precargar = () => {
+      if ("requestIdleCallback" in window) requestIdleCallback(() => void cargarHoja());
+      else setTimeout(() => void cargarHoja(), 0);
+    };
+    if (document.readyState === "complete") precargar();
+    else window.addEventListener("load", precargar, { once: true });
+    return () => window.removeEventListener("load", precargar);
+  }, []);
+
+  function cambiar(nuevo: boolean) {
+    setAbierto(nuevo);
+    // Al cerrar, el foco vuelve al botón que lo abrió.
+    if (!nuevo) boton.current?.focus();
+  }
+
   return (
-    <Sheet open={abierto} onOpenChange={setAbierto}>
-      <SheetTrigger className={BOTON}>
-        <MenuIcon className="size-6" aria-hidden />
-        <span className="sr-only">Abrir menú</span>
-      </SheetTrigger>
-      <SheetContent
-        side={lado}
-        data-theme="oscuro"
-        showCloseButton={false}
-        className={cn("gap-0 bg-fondo pb-[env(safe-area-inset-bottom)] text-tinta", className)}
-        onClickCapture={(e) => {
-          if ((e.target as HTMLElement).closest("a")) setAbierto(false);
+    <>
+      <button
+        ref={boton}
+        type="button"
+        className={BOTON_MENU}
+        aria-haspopup="dialog"
+        aria-expanded={abierto}
+        onPointerEnter={() => void cargarHoja()}
+        onFocus={() => void cargarHoja()}
+        onClick={() => {
+          setUsado(true);
+          setAbierto(true);
         }}
       >
-        <SheetTitle className="sr-only">Menú</SheetTitle>
-        <div className="flex min-h-16 shrink-0 items-center justify-between gap-4 px-4">
-          {cabecera}
-          <SheetClose className={BOTON}>
-            <XIcon className="size-6" aria-hidden />
-            <span className="sr-only">Cerrar menú</span>
-          </SheetClose>
-        </div>
-        {children}
-      </SheetContent>
-    </Sheet>
+        <MenuIcon className="size-6" aria-hidden />
+        <span className="sr-only">Abrir menú</span>
+      </button>
+      {usado && (
+        <Suspense fallback={null}>
+          <HojaMenu {...props} abierto={abierto} cambiar={cambiar} />
+        </Suspense>
+      )}
+    </>
   );
 }

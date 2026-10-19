@@ -36,6 +36,12 @@ test("el menú marca la página actual y, en el celular, se cierra al elegir una
     // En el celular también están las páginas de consulta y el WhatsApp
     await expect(menu().getByRole("link", { name: "Garantía y reclamos" })).toBeVisible();
     await expect(page.getByRole("dialog").getByRole("link", { name: /WhatsApp/ })).toBeVisible();
+    // Al cerrarlo con Escape, el foco vuelve al botón que lo abrió (la hoja se carga aparte: pulido 2, rendimiento)
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(abrir).toBeFocused();
+    await expect(abrir).toHaveAttribute("aria-expanded", "false");
+    await abrir.click();
   }
   await expect(menu().getByRole("link", { name: "Servicios" })).toHaveAttribute("aria-current", "page");
   await menu().getByRole("link", { name: "Galería", exact: true }).click();
