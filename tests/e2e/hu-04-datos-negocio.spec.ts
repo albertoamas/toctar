@@ -55,6 +55,7 @@ test("los datos mal escritos muestran el error junto al campo y no se guardan", 
   await expect(page.getByText(/Ese enlace corto no trae la ubicación/)).toBeVisible();
   await expect(page.getByText("El turno debe terminar después de empezar.")).toBeVisible();
   await expect(page.getByLabel("WhatsApp")).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByLabel("WhatsApp")).toBeFocused(); // el primer error recibe el foco (pulido 6.1)
   // Lo escrito sigue en el formulario para corregirlo
   await expect(page.getByLabel("WhatsApp")).toHaveValue("7123");
 
@@ -99,3 +100,16 @@ test("el logo para documentos se sube y se ve; un archivo que no es imagen se re
   await expect(logo).not.toHaveAttribute("src", anterior);
   expect((await page.request.get(anterior)).status()).toBe(404);
 });
+
+// Pulido 6.1: con ancho fijo, las horas del horario ensanchaban el formulario y a 360 px todo se salía por la derecha.
+test("a 360 px ningún campo de Configuración se sale de la pantalla", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await ingresarComoDueno(page);
+  await page.goto("/panel/configuracion");
+  await expect(page.getByLabel("Lunes, turno 1, desde")).toBeVisible();
+  const fuera = await page.getByRole("main").locator("input:not([type=hidden]), textarea, button").evaluateAll((campos) =>
+    campos.filter((c) => (c as HTMLElement).offsetParent && c.getBoundingClientRect().right > window.innerWidth).map((c) => c.getAttribute("aria-label") || c.id),
+  );
+  expect(fuera).toEqual([]);
+});
+

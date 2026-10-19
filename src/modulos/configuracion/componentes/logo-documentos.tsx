@@ -29,7 +29,7 @@ export function LogoDocumentos({ logo }: Props) {
     <form ref={formulario} action={accion} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <h2 className="font-heading text-2xl font-bold italic">Logo para documentos</h2>
-        <p className="text-sm text-tinta-suave">Sale en las cotizaciones en PDF. PNG, JPG o WebP de hasta 5 MB; mejor con fondo transparente.</p>
+        <p className="text-sm text-tinta-suave">Sale en las cotizaciones en PDF. PNG, JPG o WebP de hasta 5 MB; mejor con fondo transparente. Se guarda al momento, sin el botón Guardar cambios.</p>
       </div>
 
       <div className="flex aspect-[3/2] items-center justify-center rounded-sm border border-border bg-superficie p-6">

@@ -157,9 +157,9 @@ Antes de la demo del viernes 23.
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 6.1 | Datos del negocio y logo | `/panel/configuracion` | ⏳ (pendiente de 1.4: a 360 px la pantalla se pasa 3 px de ancho) |
-| 6.2 | Taller (espacios y tamaños de vehículo) | `/panel/configuracion/taller` | ⏳ |
-| 6.3 | Cotizaciones y mantenimiento | `/panel/configuracion/cotizaciones` | ⏳ |
+| 6.1 | Datos del negocio y logo | `/panel/configuracion` | ✅ 19/10 |
+| 6.2 | Taller (espacios y tamaños de vehículo) | `/panel/configuracion/taller` | ✅ 19/10 |
+| 6.3 | Cotizaciones y mantenimiento | `/panel/configuracion/cotizaciones` | ✅ 19/10 |
 
 ## Registro por pantalla
 
@@ -257,7 +257,7 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Módulo actual: fondo gris más un trazo rojo inclinado a 60°, como los del monograma (`.tt-modulo-actual`). Es lo único rojo del menú.
   - `UsuarioSesion` usa `NOMBRE_ROL` de `modulos/usuarios/textos.ts`.
 - **Descartado o pendiente:**
-  - Pendiente para 6.1: a 360 px, `/panel/configuracion` todavía se pasa 3 px. No viene de la estructura: el formulario del negocio tiene algo que no se achica.
+  - Pendiente para 6.1: a 360 px, `/panel/configuracion` todavía se pasa 3 px. No viene de la estructura: el formulario del negocio tiene algo que no se achica (resuelto en 6.1: eran las horas del horario).
 - **Verificación:**
   - Capturas a 360, 768, 1280 y 1600 px, con el menú del celular abierto y ampliada al 300 % del trazo.
   - Medición del desborde en 12 pantallas del panel a 360 px: antes se salían 8, ahora solo Configuración, por 3 px.
@@ -563,7 +563,7 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Toda la fila abre el servicio, también la foto; las flechas quedan aparte. "Sin foto" va al final del nombre del enlace, para que el lector de pantalla diga primero el servicio.
 - **Descartado o pendiente:**
   - Arrastrar para ordenar: función nueva y menos precisa que las flechas en el celular.
-  - Para 6.1: a 360 px ya no aparece la barra horizontal en Configuración, pero los campos llegan al borde derecho sin margen (se corta el borde).
+  - Para 6.1: a 360 px ya no aparece la barra horizontal en Configuración, pero los campos llegan al borde derecho sin margen (se corta el borde) (resuelto en 6.1).
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px. Comparativa en `pulido-visual/4.2-servicios-panel-celular.jpg`.
   - E2E `base` "los botones del panel miden 44 px con pantalla táctil y 36 con mouse" (también abre el servicio desde la fila). E2E completo: 151 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
@@ -595,7 +595,7 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Foto principal y Variantes dicen "Se guarda(n) al momento, sin el botón Guardar cambios".
 - **Descartado o pendiente:**
   - Barra fija de "Guardar cambios" en el celular: taparía contenido, y con las filas más cortas el botón queda justo después de los pasos.
-  - Para 6.x: en `ListaEditable` (variantes, y también espacios y tamaños de Configuración) el nombre queda solo en un renglón y los botones en otro, aun con lugar. Se ve con Configuración para no cambiarla desde aquí.
+  - Para 6.x: en `ListaEditable` (variantes, y también espacios y tamaños de Configuración) el nombre queda solo en un renglón y los botones en otro, aun con lugar. Se ve con Configuración para no cambiarla desde aquí (resuelto en 6.2).
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px, y las filas con datos a 360 y 1280. Comparativa en `pulido-visual/4.4-editar-servicio-filas-celular.jpg`.
   - E2E `base` "en Editar servicio una fila vacía recibe el foco con su error, y en el celular sus botones van debajo". E2E completo: 157 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
@@ -766,6 +766,52 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px como técnico. Sin comparativa: se ve igual.
   - E2E `hu-02` ("Volver al inicio" como enlace en la pantalla de sin acceso); `base`, `hu-02` y `hu-07` buscan "Agregar servicio" y "Agregar usuario" como enlaces. E2E completo: 167 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 6.1 Datos del negocio y logo (19/10/2026)
+- **Encontrado:**
+  - A 360 px todo el formulario se salía 15 px por la derecha y quedaba recortado (campos, etiquetas, la descripción del horario). La causa: en el horario, cada renglón tenía dos horas de ancho fijo (128 px) más la "a" y la ✕, unos 356 px donde había 328; ese renglón ensanchaba la columna y la página recortaba lo que sobraba.
+  - El cuadro de cada día medía 32 px de alto con pantalla táctil.
+  - Tras un error, el foco quedaba en la página; el error del horario era texto suelto y no el componente común.
+  - En el celular el logo quedaba debajo de "Guardar cambios" pero se guarda solo, al momento.
+  - Lo que estaba bien: partes con título, ayuda de la ubicación con "Ver en el mapa", horario por día con segundo turno y "Copiar el lunes", el logo en columna aparte en la computadora.
+- **Cambios:**
+  - Las horas se achican si no hay lugar (hasta 128 px), y el primer turno guarda el lugar de la ✕: las horas de los dos renglones quedan alineadas.
+  - El cuadro de cada día y "Cerrado": 44 px con pantalla táctil, 36 con mouse.
+  - `useFocoEnError` en el formulario; el error del horario con `MensajeError`.
+  - El logo dice "Se guarda al momento, sin el botón Guardar cambios", con una línea arriba en el celular y la tableta.
+- **Descartado:**
+  - Otro selector de horas: el reloj del sistema funciona bien en el celular.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, y con error a 360 y 1280. Comparativa en `pulido-visual/6.1-configuracion-horario-360.jpg`.
+  - E2E `hu-04` "a 360 px ningún campo de Configuración se sale de la pantalla" y el foco en el primer error. E2E completo: 169 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 6.2 Taller: espacios y tamaños (19/10/2026)
+- **Encontrado:**
+  - En el celular las 8 filas ocupaban dos renglones (el nombre arriba, los botones abajo), aun con nombres cortos como "Espacio 1"; en la computadora, 2 de 8. El nombre pedía al menos 192 px y, a 360 px, ↑ ↓ ✎ y "Desactivar" ocupaban unos 230 de los 302 que hay. Es la lista común: lo mismo en las variantes de un servicio.
+  - Al agregar sin nombre, el foco no volvía al campo.
+  - Lo que estaba bien: cada lista con título y para qué sirve, desactivados aparte con borde punteado y "Reactivar", agregar y renombrar en la lista con el foco en el campo al abrir, 44 px con pantalla táctil, sin desborde.
+- **Cambios:**
+  - Cada fila en un renglón: el nombre (se parte si es largo) y ↑ ↓ ✎. "Desactivar" pasa a la edición (se abre con el lápiz), con borde y a la derecha de Guardar y Cancelar: se usa poco y así no se toca sin querer. Vale para espacios, tamaños y variantes.
+  - `useFocoEnError` en el formulario de la lista.
+- **Descartado:**
+  - "Desactivar" como ícono: la palabra es más clara, y el ojo ya es "ocultar" en Preguntas y Galería.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, y agregar con error a 360 y 1280; la edición con "Desactivar" a 360. Comparativa en `pulido-visual/6.2-taller-celular.jpg`.
+  - E2E `hu-05` "espacios del taller…" (desactiva desde la edición). E2E completo: 169 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 6.3 Cotizaciones y mantenimiento (19/10/2026)
+- **Encontrado:**
+  - Tras un error, el foco quedaba en la página.
+  - "Bs" iba antes del número y "días" y "meses" después: el campo del adelanto arrancaba unos 28 px más a la derecha que los otros dos.
+  - Lo que estaba bien: el aviso de que cambiar un valor no toca lo guardado, dos partes con título, ayuda y unidad en cada campo, los textos del PDF que crecen con el contenido, 44 px con pantalla táctil, sin desborde.
+- **Cambios:**
+  - `useFocoEnError` en el formulario.
+  - La unidad siempre después ("250 Bs"): los tres campos alineados.
+- **Descartado:**
+  - Vista previa del PDF con los textos: función nueva, y el PDF es de la Entrega 2.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, y con errores a 360 y 1280. Comparativa en `pulido-visual/6.3-cotizaciones-computadora.jpg`.
+  - E2E `hu-05` "los parámetros vacíos o negativos…" (y el foco en el adelanto). E2E completo: 169 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)

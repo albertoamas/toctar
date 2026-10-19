@@ -38,7 +38,8 @@ async function Contenido() {
     <div className="grid gap-12 lg:grid-cols-[minmax(0,42rem)_minmax(0,20rem)]">
       <p className="text-tinta-suave lg:col-span-2">Datos del negocio que se muestran en la página y en los documentos.</p>
       <FormularioNegocio valores={valores} horarios={c.horarios} />
-      <aside className="lg:sticky lg:top-8 lg:self-start">
+      {/* En el celular y la tableta va debajo de "Guardar cambios", que no lo guarda: una línea lo separa (pulido 6.1) */}
+      <aside className="border-t border-border pt-10 lg:sticky lg:top-8 lg:self-start lg:border-0 lg:pt-0">
         <LogoDocumentos logo={c.logo} />
       </aside>
     </div>

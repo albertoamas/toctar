@@ -36,7 +36,7 @@ export function EditorHorarios({ valor, onChange, errores }: Props) {
           return (
             <li key={d.dia} className="flex flex-col gap-2 p-3">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-4">
-                <label className="flex h-8 w-32 shrink-0 cursor-pointer items-center gap-2 font-semibold">
+                <label className="flex h-9 w-32 shrink-0 cursor-pointer items-center gap-2 font-semibold pointer-coarse:h-11">
                   <Checkbox
                     checked={abierto}
                     onCheckedChange={(marcado) =>
@@ -46,9 +46,10 @@ export function EditorHorarios({ valor, onChange, errores }: Props) {
                   />
                   {nombre}
                 </label>
-                <div className="flex flex-col gap-2">
-                  {!abierto && <span className="flex h-8 items-center text-sm text-tinta-suave">Cerrado</span>}
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                  {!abierto && <span className="flex h-9 items-center text-sm text-tinta-suave pointer-coarse:h-11">Cerrado</span>}
                   {d.turnos.map((t, k) => (
+                    // Las horas se achican si no hay lugar: con ancho fijo, a 360 px el renglón ensanchaba todo el formulario (pulido 6.1)
                     <div key={k} className="flex items-center gap-2">
                       <Input
                         type="time"
@@ -57,7 +58,7 @@ export function EditorHorarios({ valor, onChange, errores }: Props) {
                         onChange={(e) => cambiarDia(i, { ...d, turnos: d.turnos.map((x, y) => (y === k ? { ...x, desde: e.target.value } : x)) })}
                         aria-label={`${nombre}, turno ${k + 1}, desde`}
                         aria-invalid={!!error}
-                        className="w-32"
+                        className="w-full max-w-32 min-w-0"
                       />
                       <span aria-hidden className="text-tinta-suave">a</span>
                       <Input
@@ -67,7 +68,7 @@ export function EditorHorarios({ valor, onChange, errores }: Props) {
                         onChange={(e) => cambiarDia(i, { ...d, turnos: d.turnos.map((x, y) => (y === k ? { ...x, hasta: e.target.value } : x)) })}
                         aria-label={`${nombre}, turno ${k + 1}, hasta`}
                         aria-invalid={!!error}
-                        className="w-32"
+                        className="w-full max-w-32 min-w-0"
                       />
                       {k === 1 && (
                         <Button
@@ -80,6 +81,8 @@ export function EditorHorarios({ valor, onChange, errores }: Props) {
                           <XIcon />
                         </Button>
                       )}
+                      {/* El lugar de la ✕ también en el primer turno: así las horas de los dos renglones quedan alineadas */}
+                      {k === 0 && <span aria-hidden className="size-9 shrink-0 pointer-coarse:size-11" />}
                     </div>
                   ))}
                   {d.turnos.length === 1 && (

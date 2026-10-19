@@ -21,6 +21,7 @@ test("los parámetros vacíos o negativos muestran el error y no se guardan", as
   await expect(page.getByText("Entre 1 y 365 días.")).toBeVisible();
   await expect(page.getByText("Escribe las condiciones: sale en el PDF de la cotización.")).toBeVisible();
   await expect(page.getByLabel("Adelanto sugerido")).toHaveValue("-5");
+  await expect(page.getByLabel("Adelanto sugerido")).toBeFocused(); // el primer error recibe el foco (pulido 6.3)
 
   await page.reload();
   await expect(page.getByLabel("Adelanto sugerido")).not.toHaveValue("-5");
@@ -44,6 +45,13 @@ test("el dueño cambia el adelanto y los textos del PDF, y quedan guardados", as
 });
 
 const activos = (page: Page) => page.getByRole("list", { name: "Espacios del taller activos" });
+
+/** "Desactivar" está dentro de la edición (pulido 6.2): se abre con el lápiz si no está abierta. */
+async function desactivar(page: Page, nombre: string) {
+  const boton = page.getByRole("button", { name: `Desactivar ${nombre}` });
+  if (!(await boton.isVisible())) await page.getByRole("button", { name: `Editar ${nombre}` }).click();
+  await boton.click();
+}
 
 test("espacios del taller: agregar, renombrar, ordenar y desactivar; el último activo no se desactiva", async ({ page }, info) => {
   soloEscritorio(info);
@@ -76,10 +84,10 @@ test("espacios del taller: agregar, renombrar, ordenar y desactivar; el último 
 
   // Desactivar todos menos uno: el último no se puede
   for (const nombre of ["Espacio 1", "Espacio 2", "Espacio 3"]) {
-    await page.getByRole("button", { name: `Desactivar ${nombre}` }).click();
+    await desactivar(page, nombre);
     await expect(page.getByText(`${nombre} desactivado.`)).toBeVisible();
   }
-  await page.getByRole("button", { name: "Desactivar Box 4" }).click();
+  await desactivar(page, "Box 4");
   await expect(page.getByText("Debe quedar al menos un espacio activo.")).toBeVisible();
   await expect(activos(page).getByRole("listitem")).toHaveCount(1);
 
@@ -88,7 +96,7 @@ test("espacios del taller: agregar, renombrar, ordenar y desactivar; el último 
     await page.getByRole("button", { name: `Reactivar ${nombre}` }).click();
     await expect(page.getByText(`${nombre} reactivado.`)).toBeVisible();
   }
-  await page.getByRole("button", { name: "Desactivar Box 4" }).click();
+  await desactivar(page, "Box 4");
   await expect(activos(page).getByRole("listitem")).toHaveText([/Espacio 1/, /Espacio 2/, /Espacio 3/]);
   await expect(page.getByRole("list", { name: "Espacios del taller desactivados" })).toContainText("Box 4");
 });

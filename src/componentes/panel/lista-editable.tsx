@@ -1,5 +1,6 @@
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useRef, useState, useTransition } from "react";
 import { ArrowDownIcon, ArrowUpIcon, PencilIcon, PlusIcon } from "lucide-react";
+import { useFocoEnError } from "@/componentes/foco-en-error";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
@@ -62,8 +63,10 @@ export function ListaEditable(props: Props) {
               <FormularioElemento {...props} elemento={e} alTerminar={() => setEditando(null)} />
             </li>
           ) : (
-            <li key={e.id} className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 p-3">
-              <span className="flex min-w-48 flex-1 flex-col">
+            // Un solo renglón: el nombre (que se parte si es largo) y ↑ ↓ ✎. "Desactivar" va dentro de la edición: se usa poco y
+            // con él en la fila, el nombre no cabía al lado y cada fila ocupaba dos renglones (pulido 6.2)
+            <li key={e.id} className="flex items-center gap-3 p-3">
+              <span className="flex min-w-0 flex-1 flex-col">
                 <span className="font-semibold">{e.nombre}</span>
                 {e.descripcion && <span className="text-sm text-tinta-suave">{e.descripcion}</span>}
               </span>
@@ -76,9 +79,6 @@ export function ListaEditable(props: Props) {
                 </Button>
                 <Button type="button" variant="ghost" size="icon" aria-label={`Editar ${e.nombre}`} onClick={() => setEditando(e.id)}>
                   <PencilIcon />
-                </Button>
-                <Button type="button" variant="ghost" disabled={pendiente} onClick={() => ejecutar(() => acciones.cambiarEstado(e.id, false))} aria-label={`Desactivar ${e.nombre}`}>
-                  Desactivar
                 </Button>
               </span>
             </li>
@@ -129,9 +129,18 @@ function FormularioElemento(props: Props & { elemento?: ElementoLista; alTermina
   const v = estado.valores;
   const e = estado.errores ?? {};
   const prefijo = `${id}-${elemento?.id ?? "nuevo"}`;
+  const formulario = useRef<HTMLFormElement>(null);
+  useFocoEnError(formulario, estado);
+  const [desactivando, iniciar] = useTransition();
+  const desactivar = (el: ElementoLista) =>
+    iniciar(async () => {
+      const r = await props.acciones.cambiarEstado(el.id, false);
+      avisarResultado(r);
+      if (r.ok) alTerminar();
+    });
 
   return (
-    <form action={accion} className="flex flex-col gap-4" noValidate>
+    <form ref={formulario} action={accion} className="flex flex-col gap-4" noValidate>
       {Object.entries(camposOcultos).map(([nombre, valor]) => (
         <input key={nombre} type="hidden" name={nombre} value={valor} />
       ))}
@@ -159,13 +168,18 @@ function FormularioElemento(props: Props & { elemento?: ElementoLista; alTermina
           />
         </Campo>
       )}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : elemento ? "Guardar" : "Agregar"}
         </Button>
         <Button type="button" variant="outline" onClick={alTerminar}>
           Cancelar
         </Button>
+        {elemento && (
+          <Button type="button" variant="outline" className="ml-auto" disabled={desactivando} onClick={() => desactivar(elemento)} aria-label={`Desactivar ${elemento.nombre}`}>
+            Desactivar
+          </Button>
+        )}
       </div>
     </form>
   );

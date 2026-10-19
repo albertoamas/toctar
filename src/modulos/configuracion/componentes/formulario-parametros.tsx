@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
+import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
@@ -21,9 +22,11 @@ export function FormularioParametros({ valores: iniciales }: { valores: Record<C
   const v = estado.valores ?? iniciales;
   const e = estado.errores ?? {};
   const describir = (c: string) => (e[c] ? `${c}-error` : `${c}-ayuda`);
+  const formulario = useRef<HTMLFormElement>(null);
+  useFocoEnError(formulario, estado);
 
   return (
-    <form action={accion} className="flex max-w-2xl flex-col gap-10" noValidate>
+    <form ref={formulario} action={accion} className="flex max-w-2xl flex-col gap-10" noValidate>
       <p className="text-tinta-suave">
         Cambiar un valor no toca lo ya guardado: las cotizaciones y reservas hechas conservan el que tenían.
       </p>
@@ -34,8 +37,8 @@ export function FormularioParametros({ valores: iniciales }: { valores: Record<C
           const p = PARAMETROS[c];
           return (
             <Campo key={c} id={c} etiqueta={p.etiqueta} error={e[c]} ayuda={p.ayuda}>
+              {/* La unidad siempre después ("250 Bs", "15 días"): así los tres campos quedan alineados (pulido 6.3) */}
               <div className="flex items-center gap-2">
-                {p.unidad === "Bs" && <span className="text-tinta-suave">Bs</span>}
                 <Input
                   id={c}
                   name={c}
@@ -46,7 +49,7 @@ export function FormularioParametros({ valores: iniciales }: { valores: Record<C
                   aria-describedby={describir(c)}
                   className="max-w-32"
                 />
-                {p.unidad !== "Bs" && <span className="text-tinta-suave">{p.unidad}</span>}
+                <span className="text-tinta-suave">{p.unidad}</span>
               </div>
             </Campo>
           );
