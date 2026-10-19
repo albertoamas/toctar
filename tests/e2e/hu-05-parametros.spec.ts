@@ -21,6 +21,7 @@ test("los parámetros vacíos o negativos muestran el error y no se guardan", as
   await expect(page.getByText("Entre 1 y 365 días.")).toBeVisible();
   await expect(page.getByText("Escribe las condiciones: sale en el PDF de la cotización.")).toBeVisible();
   await expect(page.getByLabel("Adelanto sugerido")).toHaveValue("-5");
+  await expect(page.getByLabel("Adelanto sugerido")).toBeFocused(); // el primer error recibe el foco (pulido 6.3)
 
   await page.reload();
   await expect(page.getByLabel("Adelanto sugerido")).not.toHaveValue("-5");
