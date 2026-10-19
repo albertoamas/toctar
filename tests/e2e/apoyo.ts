@@ -47,7 +47,7 @@ export async function crearUsuario(datos: {
 export async function ingresar(page: Page, usuario: string, contrasena: string) {
   await page.goto("/ingresar");
   await page.getByLabel("Usuario").fill(usuario);
-  await page.getByLabel("Contraseña").fill(contrasena);
+  await page.getByLabel("Contraseña", { exact: true }).fill(contrasena);
   await page.getByRole("button", { name: "Ingresar" }).click();
 }
 
