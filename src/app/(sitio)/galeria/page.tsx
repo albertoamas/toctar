@@ -59,17 +59,19 @@ function Fotos({ todas, elegido }: { todas: FotoGaleria[]; elegido?: string }) {
     <div className="mt-8 flex flex-col gap-6">
       {opciones.length > 1 && (
         <nav aria-label="Filtrar por servicio">
-          <ul className="flex flex-wrap gap-2">
+          {/* En el celular, una sola fila que se desliza de costado (de borde a borde): en varios renglones el filtro
+              ocupaba 200 px antes de la primera foto (pulido 2.4). El último botón cortado avisa que hay más. */}
+          <ul className="-mx-4 flex gap-2 overflow-x-auto px-4 py-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:p-0">
             {[{ nombre: "Todos", slug: undefined }, ...opciones].map((o) => {
               const actual = o.slug === activo;
               return (
-                <li key={o.slug ?? "todos"}>
+                <li key={o.slug ?? "todos"} className="shrink-0">
                   <Link
                     href={o.slug ? `/galeria?servicio=${o.slug}` : "/galeria"}
                     aria-current={actual ? "page" : undefined}
                     scroll={false}
                     className={cn(
-                      "inline-flex min-h-11 items-center border px-4 text-sm font-semibold",
+                      "inline-flex min-h-11 items-center border px-4 text-sm font-semibold whitespace-nowrap",
                       actual ? "border-tinta bg-tinta text-fondo" : "border-input text-tinta hover:bg-superficie",
                     )}
                   >
