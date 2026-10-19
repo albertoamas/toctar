@@ -151,7 +151,7 @@ test("los botones del panel miden 44 px con pantalla táctil y 36 con mouse", as
   await ingresarComoDueno(page);
   await page.goto("/panel/sitio");
   const alto = isMobile ? 44 : 36;
-  for (const boton of [page.getByRole("button", { name: "Agregar servicio" }), page.getByRole("button", { name: /^Bajar / }).first()]) {
+  for (const boton of [page.getByRole("link", { name: "Agregar servicio" }), page.getByRole("button", { name: /^Bajar / }).first()]) {
     const caja = (await boton.boundingBox())!;
     expect(Math.round(caja.height)).toBe(alto);
   }
@@ -253,4 +253,3 @@ test("en la Galería del panel, subir sin nada marca todo junto y el foco va a l
   await expect(page.getByText("Elige el servicio.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Elegir foto: Después" })).toBeFocused();
 });
-

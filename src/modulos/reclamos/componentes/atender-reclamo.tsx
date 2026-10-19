@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
+import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
@@ -16,9 +17,11 @@ const marcarConAviso = conAviso(marcarAtendido);
 export function AtenderReclamo({ id }: { id: number }) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(marcarConAviso, {});
   const error = estado.errores?.nota;
+  const formulario = useRef<HTMLFormElement>(null);
+  useFocoEnError(formulario, estado);
 
   return (
-    <form action={accion} className="flex flex-col items-start gap-4 rounded-sm border border-border bg-superficie p-4">
+    <form ref={formulario} action={accion} className="flex flex-col items-start gap-4 rounded-sm border border-border bg-superficie p-4">
       <input type="hidden" name="id" value={id} />
       <div className="w-full">
         <Campo id="nota" etiqueta="Qué se hizo" error={error} ayuda="Queda en el registro del reclamo.">

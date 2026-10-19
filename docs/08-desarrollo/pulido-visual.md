@@ -48,7 +48,7 @@ Estados: ⏳ pendiente · 🔵 en curso · ✅ terminada.
   - **Blanco con borde (`outline`):** agregar una fila dentro de un formulario ("Agregar beneficio"), acciones secundarias ("Subir foto", "Cambiar logo") y "Cancelar", en la página y en los diálogos.
   - **Rosado con letra roja (`destructive`):** confirmar lo que no se deshace ("Eliminar pregunta", "Sí, desactivar").
   - **Sin fondo (`ghost`):** las acciones de cada fila (íconos, "Desactivar").
-  - Un enlace con forma de botón que debe seguir siendo enlace (abre otra página o WhatsApp) lleva `cn(buttonVariants(...))`: sin `cn` el borde del contorno no se ve.
+  - Lo que lleva a otra pantalla es un enlace con forma de botón: `<Link className={cn(buttonVariants(...))}>`. Sin `cn` el borde del contorno no se ve. No `<Button render={<Link />}>`: base-ui le pone rol de botón y el lector de pantalla lo anuncia como botón (5.6).
   - **Tamaño:** siempre el normal (`default` o `icon`): 36 px con mouse y 44 con pantalla táctil. Los tamaños chicos (`sm`, `xs`, `icon-sm`, `icon-xs`) no se usan en el panel.
 - **Capturas del celular:** la captura `fullPage` de Playwright apaga la emulación táctil. Para la página completa se agranda la ventana (`setViewportSize`) y se mide antes de capturar.
 - Instalada como app: respeta la muesca y la barra inferior del teléfono (`safe-area`), y el aviso sin conexión se sigue viendo bien.
@@ -146,12 +146,12 @@ Antes de la demo del viernes 23.
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 5.1 | Reclamos | `/panel/reclamos` | ⏳ |
-| 5.2 | Detalle de un reclamo | `/panel/reclamos/[id]` | ⏳ |
-| 5.3 | Usuarios | `/panel/usuarios` | ⏳ |
-| 5.4 | Nuevo usuario | `/panel/usuarios/nuevo` | ⏳ |
-| 5.5 | Editar usuario | `/panel/usuarios/[id]` | ⏳ |
-| 5.6 | Sin acceso | `/panel/sin-acceso` | ⏳ |
+| 5.1 | Reclamos | `/panel/reclamos` | ✅ 19/10 |
+| 5.2 | Detalle de un reclamo | `/panel/reclamos/[id]` | ✅ 19/10 |
+| 5.3 | Usuarios | `/panel/usuarios` | ✅ 19/10 |
+| 5.4 | Nuevo usuario | `/panel/usuarios/nuevo` | ✅ 19/10 |
+| 5.5 | Editar usuario | `/panel/usuarios/[id]` | ✅ 19/10 |
+| 5.6 | Sin acceso | `/panel/sin-acceso` | ✅ 19/10 |
 
 ### 6. Panel: configuración
 
@@ -633,7 +633,7 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Pendiente:**
   - 4.6: "Agregar pregunta" en rojo (hecho).
   - 4.7: en el celular, los 5 íconos de cada foto de la galería se reparten en dos renglones (hecho).
-  - 5.x: en la lista de usuarios, "Crear usuario" pasa a "Agregar usuario" (el formulario sigue diciendo "Crear usuario").
+  - 5.x: en la lista de usuarios, "Crear usuario" pasa a "Agregar usuario" (el formulario sigue diciendo "Crear usuario") (hecho en 5.3).
 - **Verificación:**
   - Capturas de Galería, Configuración y Editar servicio a 360 y 1280 px, sin desborde.
   - E2E `base` "ningún botón del panel mide menos que el tamaño normal" (servicio, textos, preguntas, galería, configuración) y `hu-17` (el enlace de WhatsApp con borde). E2E completo: 161 pasan. Lint y typecheck sin errores. knip: nada nuevo.
@@ -675,6 +675,97 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px, y subir y editar con errores a 360 y 1280. Con fotos reales en la base de desarrollo. Comparativa en `pulido-visual/4.7-galeria-editar-celular.jpg`.
   - E2E `base` "en la Galería del panel, subir sin nada marca todo junto y el foco va a la foto" y `hu-09` (los íconos de una foto en un renglón). E2E completo: 165 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 5.1 Reclamos (19/10/2026)
+- **Encontrado:**
+  - En la tabla (desde 768 px) solo el nombre abría el reclamo, con 18 px de alto: en una tableta, difícil de tocar.
+  - En las tarjetas del celular los datos se partían ("· 2" en un renglón y "fotos" en el otro), y faltaba el servicio, que la tabla sí muestra.
+  - La pestaña "Pendientes" no decía cuántos había.
+  - Lo que estaba bien: tarjeta entera tocable en el celular y tabla en la computadora, estado con palabra y color, pestañas de 46 px, pendientes primero, estado vacío que dice de dónde llegan, sin desborde.
+- **Cambios:**
+  - En la tabla toda la fila abre el reclamo (el enlace del nombre la cubre con `after:absolute after:inset-0`); con teclado y lector de pantalla sigue siendo el nombre.
+  - Tarjeta del celular: nombre, servicio (o "Servicio: no indicó") y un renglón con fecha, placa y fotos, sin partir ningún dato.
+  - "Pendientes (2)": sale de la misma consulta, sin otra.
+- **Descartado:**
+  - Abrir en "Pendientes": cambia el comportamiento; con el número a la vista ya se nota si hay algo por atender.
+  - Buscador y páginas: los reclamos son pocos.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, todos y pendientes. Comparativa en `pulido-visual/5.1-reclamos-celular.jpg`.
+  - E2E `hu-17` (el número en la pestaña y, en la computadora, abrir el reclamo tocando la placa). E2E completo: 165 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 5.2 Detalle de un reclamo (19/10/2026)
+- **Encontrado:**
+  - En el celular los 5 datos iban uno debajo de otro: a 360 px, "Escribir por WhatsApp" y "Marcar como atendido" quedaban a 870 y 1030 px.
+  - Los títulos de cada parte ("Qué pasó", "Fotos", "Responder", "Atención") tenían la misma letra, tamaño y negrita que los datos: en el celular no se veía dónde empezaba cada parte.
+  - Al marcar como atendido sin nota, el foco no iba al campo.
+  - Lo que estaba bien: nombre y estado arriba, datos y fotos a la izquierda y acciones a la derecha en la computadora, WhatsApp con saludo ya escrito, la nota de atención con quién y cuándo, fotos que se amplían, sin desborde.
+- **Cambios:**
+  - Datos en dos columnas también en el celular; "Recibido" (fecha y hora) a todo el ancho. Responder y Atención suben unos 100 px a 360 px.
+  - Títulos de cada parte en `font-heading` itálica, como en el resto del panel.
+  - `useFocoEnError` en "Qué se hizo".
+- **Descartado:**
+  - Responder y Atención antes de los datos en el celular: primero hay que leer qué pasó.
+  - El número de WhatsApp como enlace: el botón ya lo hace, con el saludo escrito.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px de un reclamo pendiente y uno atendido, y el error sin nota a 360 y 1280. Comparativa en `pulido-visual/5.2-reclamo-celular.jpg`.
+  - E2E `hu-17` (foco en "Qué se hizo" tras el error). E2E completo: 165 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 5.3 Usuarios (19/10/2026)
+- **Encontrado:**
+  - En la tabla solo el nombre (18 px de alto) abría el usuario, como pasaba en Reclamos.
+  - En las tarjetas del celular "usuario · rol" se partía ("encargado-permiso-c ·" y "Técnico" en otro renglón), y no decía "(tú)" en el propio, que la tabla sí.
+  - "Crear usuario" en la lista: por la regla de botones, la acción principal de una lista es "Agregar…" ("Agregar servicio").
+  - Lo que estaba bien: título y botón rojo arriba, tarjetas tocables enteras en el celular y tabla en la computadora, estado con palabra, desactivados al final, sin desborde.
+- **Cambios:**
+  - En la tabla toda la fila abre el usuario (como en 5.1).
+  - Tarjeta: nombre con "(tú)" en el propio, y usuario y rol sin partirse.
+  - "Agregar usuario" en la lista y "Agrega uno para cada persona del taller" en el estado vacío; el formulario sigue con "Crear usuario", como "Crear servicio".
+- **Descartado:**
+  - Buscador o filtro por rol: el taller tendrá pocos usuarios (la lista larga es de la base de pruebas).
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px con 35 usuarios. Comparativa en `pulido-visual/5.3-usuarios-celular.jpg`.
+  - E2E `hu-02` "la lista de usuarios: Agregar usuario, (tú) y la fila que abre el usuario". E2E completo: 167 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 5.4 Nuevo usuario (19/10/2026)
+- **Encontrado:**
+  - Tras enviar con errores, el foco quedaba en la página.
+  - Lo que estaba bien: cada rol es una tarjeta tocable entera con su descripción y el elegido con borde oscuro; los módulos del encargado aparecen solo al elegirlo, con descripción y la frase entera tocable; ayudas de usuario y contraseña; ojo de 44 px; "Crear usuario" igual que el título; 44 px con pantalla táctil; sin desborde.
+- **Cambios:**
+  - `useFocoEnError` en el formulario de usuario (el mismo de Editar usuario, 5.5).
+- **Descartado:**
+  - Avisar si un encargado queda sin módulos: hoy se permite a propósito (ve "Por ahora no hay nada para ti"); sería una regla nueva.
+  - Generar la contraseña sola: función nueva.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, vacío y con Encargado, y con errores a 360 y 1280. Sin comparativa: el cambio no se ve en la captura (el foco).
+  - E2E `hu-02` "los errores del formulario se muestran junto a cada campo" (y el foco va al nombre). E2E completo: 167 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 5.5 Editar usuario (19/10/2026)
+- **Encontrado:**
+  - En el diálogo "Nueva contraseña", tras el error el foco quedaba en la página, y el error estaba armado a mano en lugar del componente común.
+  - Al tocar "Desactivar usuario" el botón desaparece y el foco se perdía (igual al cancelar): con teclado o lector de pantalla no se notaba la confirmación.
+  - "Contraseña" y "Acceso" iban con la letra común, como los textos; en el celular quedaban justo debajo de "Guardar cambios", que no guarda eso.
+  - Lo que estaba bien: nombre y estado arriba, el usuario fijo con la razón, Contraseña y Acceso en columna aparte en la computadora, la confirmación de desactivar con los colores de la regla, la explicación cuando es el propio usuario, sin desborde. El formulario es el de 5.4: ya lleva el foco al error.
+- **Cambios:**
+  - Diálogo de contraseña con `Campo` y `useFocoEnError`.
+  - Al abrir la confirmación, el foco va a su texto (que el lector de pantalla lee); al cancelar, vuelve a "Desactivar usuario".
+  - "Contraseña" y "Acceso" en `font-heading` itálica, y una línea arriba de esa parte en el celular y la tableta.
+- **Descartado:**
+  - Mostrar u ocultar la contraseña del diálogo: va en texto a propósito, para pasársela a la persona.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px de un encargado, uno desactivado y el propio, y la confirmación y el diálogo con error a 360 y 1280. Comparativa en `pulido-visual/5.5-editar-usuario-celular.jpg`.
+  - E2E `hu-02` (foco en el diálogo tras el error, en la confirmación y de vuelta al cancelar). E2E completo: 167 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 5.6 Sin acceso (19/10/2026)
+- **Encontrado:**
+  - "Volver al inicio" lleva a otra página, pero se anunciaba como botón: `Button` con `render={<Link />}` (base-ui le pone `role="button"`). Lo mismo "Agregar servicio" y "Agregar usuario".
+  - Lo que estaba bien: explica qué pasa y qué hacer ("pídeselo al dueño") sin culpar; botón rojo de 44 px en el celular y 36 con mouse; el menú solo muestra lo que el usuario puede ver; sin desborde.
+- **Cambios:**
+  - Los tres pasan a `<Link className={cn(buttonVariants())}>`: se ven igual (mismo alto y color, medido) y se anuncian como enlace. La regla de botones lo dice.
+- **Descartado:**
+  - Decir a qué módulo se quiso entrar: la redirección no lo pasa y no hace falta para saber qué hacer.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px como técnico. Sin comparativa: se ve igual.
+  - E2E `hu-02` ("Volver al inicio" como enlace en la pantalla de sin acceso); `base`, `hu-02` y `hu-07` buscan "Agregar servicio" y "Agregar usuario" como enlaces. E2E completo: 167 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)

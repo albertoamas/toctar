@@ -38,6 +38,8 @@ test("el dueño crea un técnico (usuario con guion), que ingresa sin ver Usuari
 
   await tecnico.goto("/panel/usuarios");
   await expect(tecnico).toHaveURL(/\/panel\/sin-acceso$/);
+  // Lleva a otra pantalla: se anuncia como enlace, no como botón (pulido 5.6)
+  await expect(tecnico.getByRole("link", { name: "Volver al inicio" })).toBeVisible();
   await expect(tecnico.getByRole("heading", { name: "Sin acceso" })).toBeVisible();
   await ctx.close();
 });
@@ -50,6 +52,9 @@ test("restablecer la contraseña: la anterior deja de servir y la nueva funciona
   await page.goto("/panel/usuarios");
   await page.getByRole("link", { name: nombre }).first().click();
   await page.getByRole("button", { name: "Restablecer contraseña" }).click();
+  // Sin contraseña: el error y el foco van al campo (pulido 5.5)
+  await page.getByRole("button", { name: "Guardar", exact: true }).click();
+  await expect(page.getByLabel("Contraseña nueva")).toBeFocused();
   await page.getByLabel("Contraseña nueva").fill("nueva-1234");
   await page.getByRole("button", { name: "Guardar", exact: true }).click();
   await expect(page.getByText("Contraseña cambiada")).toBeVisible();
@@ -74,6 +79,11 @@ test("desactivar a alguien con la sesión abierta lo saca del panel", async ({ p
   await ingresarComoDueno(page);
   await page.goto("/panel/usuarios");
   await page.getByRole("link", { name: nombre }).first().click();
+  // El foco va a la confirmación y, al cancelar, vuelve al botón (pulido 5.5)
+  await page.getByRole("button", { name: "Desactivar usuario" }).click();
+  await expect(page.getByText("no podrá ingresar")).toBeFocused();
+  await page.getByRole("button", { name: "Cancelar" }).click();
+  await expect(page.getByRole("button", { name: "Desactivar usuario" })).toBeFocused();
   await page.getByRole("button", { name: "Desactivar usuario" }).click();
   await page.getByRole("button", { name: "Sí, desactivar" }).click();
   await expect(page.getByText("Usuario desactivado")).toBeVisible();
@@ -110,4 +120,21 @@ test("los errores del formulario se muestran junto a cada campo", async ({ page 
   await page.getByRole("button", { name: "Crear usuario" }).click();
   await expect(page.getByText("Escribe el nombre completo.")).toBeVisible();
   await expect(page.getByText("La contraseña debe tener al menos 8 caracteres.")).toBeVisible();
+  await expect(page.getByLabel("Nombre")).toBeFocused(); // pulido 5.4
 });
+
+// Pulido 5.3: "Agregar usuario" en la lista, "(tú)" en el propio y, en la computadora, toda la fila abre el usuario.
+test("la lista de usuarios: Agregar usuario, (tú) y la fila que abre el usuario", async ({ page }, info) => {
+  await ingresarComoDueno(page);
+  await page.goto("/panel/usuarios");
+  await page.getByRole("link", { name: "Agregar usuario" }).click();
+  await expect(page).toHaveURL(/\/panel\/usuarios\/nuevo$/);
+  await page.goto("/panel/usuarios");
+  await expect(page.getByText("(tú)").locator("visible=true")).toBeVisible();
+  if (info.project.name !== "escritorio") return;
+  // Se toca la celda del rol, no el nombre (con el mouse: el enlace de la fila la cubre)
+  const rol = (await page.getByRole("row").filter({ hasText: "(tú)" }).getByRole("cell").nth(2).boundingBox())!;
+  await page.mouse.click(rol.x + rol.width / 2, rol.y + rol.height / 2);
+  await expect(page).toHaveURL(/\/panel\/usuarios\/\d+$/);
+});
+

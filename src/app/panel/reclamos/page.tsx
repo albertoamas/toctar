@@ -31,9 +31,11 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/reclamos">, "searc
   const soloPendientes = ver === "pendientes";
   const reclamos = await listarReclamos(soloPendientes);
   const fecha = (d: Date) => formatearFecha(fechaEnBolivia(d));
+  // Cuántos hay por atender, a la vista sin entrar a la pestaña (pulido 5.1). Sale de la misma lista.
+  const pendientes = reclamos.filter((r) => r.estado === "pendiente").length;
   const filtros = [
     { href: "/panel/reclamos", texto: "Todos", activo: !soloPendientes },
-    { href: "/panel/reclamos?ver=pendientes", texto: "Pendientes", activo: soloPendientes },
+    { href: "/panel/reclamos?ver=pendientes", texto: pendientes > 0 ? `Pendientes (${pendientes})` : "Pendientes", activo: soloPendientes },
   ];
 
   return (
@@ -70,11 +72,14 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/reclamos">, "searc
         {reclamos.map((r) => (
           <li key={r.id}>
             <Link href={`/panel/reclamos/${r.id}`} className="flex items-center justify-between gap-3 rounded-sm border border-border p-4 hover:bg-superficie">
-              <span className="flex min-w-0 flex-col">
+              {/* Ningún dato se parte a la mitad, y el servicio, como en la tabla (pulido 5.1) */}
+              <span className="flex min-w-0 flex-col gap-0.5">
                 <span className="truncate font-semibold">{r.nombre}</span>
-                <span className="text-sm text-tinta-suave">
-                  {fecha(r.createdAt)} · {r.placa}
-                  {r.fotos > 0 && (r.fotos === 1 ? " · 1 foto" : ` · ${r.fotos} fotos`)}
+                <span className="truncate text-sm">{r.servicio ?? <span className="text-tinta-suave">Servicio: no indicó</span>}</span>
+                <span className="flex flex-wrap gap-x-3 text-sm text-tinta-suave">
+                  <span className="whitespace-nowrap">{fecha(r.createdAt)}</span>
+                  <span className="whitespace-nowrap">{r.placa}</span>
+                  {r.fotos > 0 && <span className="whitespace-nowrap">{r.fotos === 1 ? "1 foto" : `${r.fotos} fotos`}</span>}
                 </span>
               </span>
               <InsigniaEstado estado={r.estado} />
@@ -99,10 +104,11 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/reclamos">, "searc
             </TableHeader>
             <TableBody>
               {reclamos.map((r) => (
-                <TableRow key={r.id}>
+                <TableRow key={r.id} className="relative">
                   <TableCell>{fecha(r.createdAt)}</TableCell>
                   <TableCell>
-                    <Link href={`/panel/reclamos/${r.id}`} className="font-semibold hover:underline">
+                    {/* El enlace cubre toda la fila: en una tableta, tocar solo el nombre (18 px) era difícil (pulido 5.1) */}
+                    <Link href={`/panel/reclamos/${r.id}`} className="font-semibold after:absolute after:inset-0 hover:underline">
                       {r.nombre}
                     </Link>
                   </TableCell>

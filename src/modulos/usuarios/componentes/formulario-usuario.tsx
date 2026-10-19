@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
@@ -36,9 +37,11 @@ export function FormularioUsuario(props: Props) {
   const [verContrasena, setVerContrasena] = useState(false);
   const permisosMarcados = valores ? (valores.permisos ?? "").split(",") : (editar?.permisos ?? []);
   const e = estado.errores ?? {};
+  const formulario = useRef<HTMLFormElement>(null);
+  useFocoEnError(formulario, estado);
 
   return (
-    <form action={accion} className="flex max-w-xl flex-col gap-6" noValidate>
+    <form ref={formulario} action={accion} className="flex max-w-xl flex-col gap-6" noValidate>
       {editar && <input type="hidden" name="id" value={editar.id} />}
 
       <Campo id="nombre" etiqueta="Nombre" error={e.nombre}>

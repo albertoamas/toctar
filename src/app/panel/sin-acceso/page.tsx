@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { Button } from "@/componentes/ui/button";
+import { cn } from "cn";
+import { buttonVariants } from "@/componentes/ui/button";
 import { exigirSesion } from "@/lib/sesion";
 
 export const metadata: Metadata = { title: "Sin acceso" };
@@ -15,7 +16,8 @@ export default function SinAcceso() {
       <Suspense fallback={null}>
         <Explicacion />
       </Suspense>
-      <Button nativeButton={false} render={<Link href="/panel" />}>Volver al inicio</Button>
+      {/* Enlace con forma de botón: lleva a otra pantalla, así que se anuncia como enlace (un Button con render de Link se anunciaba como botón) */}
+      <Link href="/panel" className={cn(buttonVariants())}>Volver al inicio</Link>
     </section>
   );
 }
