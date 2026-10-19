@@ -59,8 +59,9 @@ export function ListaPreguntas({ preguntas }: { preguntas: Pregunta[] }) {
               </li>
             ) : (
               <li key={p.id} className={`flex flex-wrap items-start justify-end gap-x-3 gap-y-1 p-3 ${p.visible ? "" : "text-tinta-suave"}`}>
-                <div className="flex min-w-60 flex-1 flex-col gap-1">
-                  <span className="flex flex-wrap items-center gap-2 font-semibold">
+                {/* Tocar el texto abre la edición, como en Servicios (pulido 4.6). Con teclado y lector de pantalla, el lápiz. */}
+                <div className="group flex min-w-60 flex-1 cursor-pointer flex-col gap-1" onClick={() => setEditando(p.id)}>
+                  <span className="flex flex-wrap items-center gap-2 font-semibold group-hover:underline">
                     {p.pregunta}
                     {!p.visible && <span className="tt-insignia">Oculta</span>}
                   </span>
