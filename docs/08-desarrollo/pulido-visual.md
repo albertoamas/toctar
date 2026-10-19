@@ -605,12 +605,13 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - La foto del taller, hasta 24 rem de ancho, con "Se guarda al momento, sin el botón Guardar portada".
   - `useFocoEnError` y `marca` en el formulario de textos.
   - "Cada parte se guarda con su botón." arriba, y una línea entre las partes.
+  - "Agregar motivo", "Agregar beneficio" y "Agregar paso" medían 28 px con mouse y letra más chica (lo vio YankoSoft): ahora el tamaño normal, como "Agregar variante" (36 px con mouse, 44 con pantalla táctil).
 - **Descartado:**
   - Un solo botón para guardar todo: cambiaría las acciones del servidor, y lo que hay funciona.
   - Aviso al salir con cambios sin guardar: función nueva; con la línea y la frase queda claro qué guarda cada botón.
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px. Comparativa en `pulido-visual/4.5-textos-motivos-celular.jpg`.
-  - E2E `base` "en Textos del sitio un motivo largo se lee entero, y Enter envía sin saltar de renglón". E2E completo: 159 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - E2E `base` "en Textos del sitio un motivo largo se lee entero, y Enter envía sin saltar de renglón" (también mide "Agregar motivo"). E2E completo: 159 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
