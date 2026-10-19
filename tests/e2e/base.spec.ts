@@ -242,3 +242,15 @@ test("en Preguntas, Agregar va arriba y en rojo, el error recibe el foco y tocar
   await primera.locator(".font-semibold").first().click();
   await expect(page.getByLabel("Pregunta", { exact: true })).toHaveValue(texto);
 });
+
+test("en la Galería del panel, subir sin nada marca todo junto y el foco va a la foto", async ({ page }) => {
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio/galeria");
+  await page.getByRole("button", { name: "Subir fotos" }).click();
+  await page.getByRole("button", { name: "Guardar en la galería" }).click();
+  // La foto del resultado se pide junto con los demás campos, y el foco va a ella
+  await expect(page.getByText("Elige la foto del resultado.")).toBeVisible();
+  await expect(page.getByText("Elige el servicio.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Elegir foto: Después" })).toBeFocused();
+});
+

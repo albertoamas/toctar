@@ -48,6 +48,9 @@ test("sube un par antes y después y una foto sola; los ordena, oculta, edita y 
   const item = (texto: string) => galeria.getByRole("listitem").filter({ hasText: texto });
   await expect(item("Vidrios sin manchas de ácido")).toHaveCount(1);
   await expect(item("Pulido y nano cerámico en una Hilux")).toHaveCount(1);
+  // Los 5 íconos de la foto van en un solo renglón, también en el celular (pulido 4.7)
+  const renglones = await item("Pulido y nano cerámico en una Hilux").getByRole("button").evaluateAll((botones) => new Set(botones.map((b) => Math.round(b.getBoundingClientRect().top))).size);
+  expect(renglones).toBe(1);
 
   // Ordenar: la foto sola pasa antes que el par
   const posicion = async (texto: string) => (await galeria.getByRole("listitem").allTextContents()).findIndex((t) => t.includes(texto));
