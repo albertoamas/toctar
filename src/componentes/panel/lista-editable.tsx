@@ -77,7 +77,7 @@ export function ListaEditable(props: Props) {
                 <Button type="button" variant="ghost" size="icon" aria-label={`Editar ${e.nombre}`} onClick={() => setEditando(e.id)}>
                   <PencilIcon />
                 </Button>
-                <Button type="button" variant="ghost" size="sm" disabled={pendiente} onClick={() => ejecutar(() => acciones.cambiarEstado(e.id, false))} aria-label={`Desactivar ${e.nombre}`}>
+                <Button type="button" variant="ghost" disabled={pendiente} onClick={() => ejecutar(() => acciones.cambiarEstado(e.id, false))} aria-label={`Desactivar ${e.nombre}`}>
                   Desactivar
                 </Button>
               </span>
@@ -106,7 +106,7 @@ export function ListaEditable(props: Props) {
             {inactivos.map((e) => (
               <li key={e.id} className="flex items-center gap-3 p-3 text-tinta-suave">
                 <span className="flex-1">{e.nombre}</span>
-                <Button type="button" variant="ghost" size="sm" disabled={pendiente} onClick={() => ejecutar(() => acciones.cambiarEstado(e.id, true))} aria-label={`Reactivar ${e.nombre}`}>
+                <Button type="button" variant="ghost" disabled={pendiente} onClick={() => ejecutar(() => acciones.cambiarEstado(e.id, true))} aria-label={`Reactivar ${e.nombre}`}>
                   Reactivar
                 </Button>
               </li>

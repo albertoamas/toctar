@@ -107,21 +107,21 @@ function Tarjeta({ item, servicios, primero, ultimo, ordenable }: { item: ItemGa
             <span className="mt-auto flex flex-wrap justify-end">
               {ordenable && (
                 <>
-                  <Button type="button" variant="ghost" size="icon-sm" disabled={pendiente || primero} aria-label={`Subir: ${item.descripcion}`} onClick={() => ejecutar(() => moverGaleriaItem({ id: item.id, direccion: "subir" }))}>
+                  <Button type="button" variant="ghost" size="icon" disabled={pendiente || primero} aria-label={`Subir: ${item.descripcion}`} onClick={() => ejecutar(() => moverGaleriaItem({ id: item.id, direccion: "subir" }))}>
                     <ArrowUpIcon />
                   </Button>
-                  <Button type="button" variant="ghost" size="icon-sm" disabled={pendiente || ultimo} aria-label={`Bajar: ${item.descripcion}`} onClick={() => ejecutar(() => moverGaleriaItem({ id: item.id, direccion: "bajar" }))}>
+                  <Button type="button" variant="ghost" size="icon" disabled={pendiente || ultimo} aria-label={`Bajar: ${item.descripcion}`} onClick={() => ejecutar(() => moverGaleriaItem({ id: item.id, direccion: "bajar" }))}>
                     <ArrowDownIcon />
                   </Button>
                 </>
               )}
-              <Button type="button" variant="ghost" size="icon-sm" aria-label={`Editar: ${item.descripcion}`} onClick={() => setEditando(true)}>
+              <Button type="button" variant="ghost" size="icon" aria-label={`Editar: ${item.descripcion}`} onClick={() => setEditando(true)}>
                 <PencilIcon />
               </Button>
               <Button
                 type="button"
                 variant="ghost"
-                size="icon-sm"
+                size="icon"
                 disabled={pendiente}
                 aria-label={`${item.visible ? "Ocultar" : "Mostrar"}: ${item.descripcion}`}
                 onClick={() => ejecutar(() => cambiarVisibilidadGaleria({ id: item.id, visible: !item.visible }))}
@@ -160,8 +160,8 @@ function EditarItem({ item, servicios, alTerminar }: { item: ItemGaleria; servic
         <Input id={`${prefijo}-descripcion`} name="descripcion" defaultValue={estado.valores?.descripcion ?? item.descripcion} aria-invalid={!!e.descripcion} />
       </Campo>
       <div className="flex gap-2">
-        <Button type="submit" size="sm" disabled={enviando}>{enviando ? "Guardando…" : "Guardar"}</Button>
-        <Button type="button" size="sm" variant="ghost" onClick={alTerminar}>Cancelar</Button>
+        <Button type="submit" disabled={enviando}>{enviando ? "Guardando…" : "Guardar"}</Button>
+        <Button type="button" variant="ghost" onClick={alTerminar}>Cancelar</Button>
       </div>
     </form>
   );
@@ -172,7 +172,7 @@ function Eliminar({ item }: { item: ItemGaleria }) {
   const [pendiente, iniciar] = useTransition();
   return (
     <Dialog open={abierto} onOpenChange={setAbierto}>
-      <DialogTrigger render={<Button type="button" variant="ghost" size="icon-sm" aria-label={`Eliminar: ${item.descripcion}`} />}>
+      <DialogTrigger render={<Button type="button" variant="ghost" size="icon" aria-label={`Eliminar: ${item.descripcion}`} />}>
         <TrashIcon />
       </DialogTrigger>
       <DialogContent>
