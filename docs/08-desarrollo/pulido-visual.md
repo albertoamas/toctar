@@ -125,7 +125,7 @@ Antes de la demo del viernes 23.
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 4.1 | Inicio | `/panel` | ⏳ |
+| 4.1 | Inicio | `/panel` | ✅ 19/10 |
 | 4.2 | Servicios del sitio | `/panel/sitio` | ⏳ |
 | 4.3 | Nuevo servicio | `/panel/sitio/servicios/nuevo` | ⏳ |
 | 4.4 | Editar servicio (datos, foto y variantes) | `/panel/sitio/servicios/[id]` | ⏳ |
@@ -526,6 +526,23 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - *"No hay botón para volver a la portada o salir de aquí."* **Cambio:** "‹ Volver al sitio" arriba a la izquierda, de 44 px (como "‹ Servicios" en la página de un servicio).
   - *"La barra roja me gusta, pero ese brillo neón no."* Elegido quitarlo en todas: **cambio** en `.tt-led` (se borra el token `--brillo-led`) y en `public/sin-conexion.html`. La línea queda lisa en la portada, el ingreso y la página sin conexión; `identidad-visual.md` actualizado.
   - E2E `hu-01`: el enlace al sitio, con 44 px. E2E completo: 149 pasan.
+
+### 4.1 Inicio del panel (19/10/2026)
+- **Encontrado** (como dueño en 4 anchos; como encargado con solo "Sitio web" y como técnico, en el celular; base `toctar_e2e`):
+  - Al técnico, y al encargado sin el módulo de reclamos, el inicio les mostraba solo "Hola, …": una pantalla en blanco que no orientaba. En la Entrega 1 el técnico no tiene otros módulos (Órdenes llega con la Gestión).
+  - En el celular, para ir a cualquier módulo había que abrir el menú.
+  - "Inicio" y el saludo en gris debajo decían poco.
+  - Lo que estaba bien: la tarjeta de reclamos pendientes (toda tocable, lleva a los pendientes, dice qué hacer), la barra lateral con el módulo actual.
+- **Cambios:**
+  - Un acceso de un toque a cada módulo que la persona puede usar, con ícono y una línea que dice para qué sirve. Salen de `modulosDelMenu` (los mismos del menú, por rol y permisos). Reclamos va primero y resaltado si hay pendientes. Una columna en el celular, dos en la computadora.
+  - Sin módulos (hoy, el técnico): estado vacío común, "Por ahora no hay nada para ti en el panel. Tus trabajos del taller van a aparecer aquí."
+  - El título es el saludo con el primer nombre ("Hola, Yerko"); la página llega entera.
+- **Descartado o pendiente:**
+  - Cifras o gráficos (trabajos del día, ingresos): son de la Gestión y hoy no hay datos. El inicio se rediseña con ella.
+  - Se consultó si pulir el panel ahora o al terminar la Gestión: se sigue el plan inicial (ahora), porque el panel de la Entrega 1 se firma en el acta.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px (dueño) y a 390 (encargado y técnico). Comparativa en `pulido-visual/4.1-inicio-celular.jpg`.
+  - E2E `hu-01` "el inicio da un acceso a cada módulo que la persona puede usar; al técnico le dice que aún no hay nada" y el saludo como título; `base` y `hu-17` actualizadas. E2E completo: 151 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
