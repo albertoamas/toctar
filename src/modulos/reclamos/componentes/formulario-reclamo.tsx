@@ -24,6 +24,8 @@ export function FormularioReclamo({ servicios }: { servicios: { id: number; nomb
   const [, iniciar] = useTransition();
   const abiertoEn = useRef<number | null>(null);
   const entradaFotos = useRef<HTMLInputElement>(null);
+  const formulario = useRef<HTMLFormElement>(null);
+  const confirmacion = useRef<HTMLDivElement>(null);
   const listo = useSyncExternalStore(sinSuscripcion, () => true, () => false);
   const e = estado.errores ?? {};
   const v = estado.valores;
@@ -32,9 +34,24 @@ export function FormularioReclamo({ servicios }: { servicios: { id: number; nomb
     abiertoEn.current = Date.now();
   }, []);
 
+  // Después de enviar, la pantalla va al resultado y el foco también, para que lo anuncie el lector de pantalla
+  // (pulido 2.8): antes el foco quedaba en la página y la confirmación salía tapada por el encabezado.
+  useEffect(() => {
+    if (estado.ok) {
+      confirmacion.current?.scrollIntoView({ block: "start" });
+      confirmacion.current?.focus({ preventScroll: true });
+      return;
+    }
+    // El primer campo con error, al centro de la pantalla (así no queda debajo del encabezado fijo).
+    const conError = formulario.current?.querySelector<HTMLElement>('[aria-invalid="true"]');
+    if (!conError) return;
+    conError.scrollIntoView({ block: "center" });
+    conError.focus({ preventScroll: true });
+  }, [estado]);
+
   if (estado.ok) {
     return (
-      <div role="status" className="flex flex-col items-start gap-4 bg-superficie p-8">
+      <div ref={confirmacion} role="status" tabIndex={-1} className="flex scroll-mt-24 flex-col items-start gap-4 bg-superficie p-8 outline-none">
         <CheckCircle2Icon className="size-10 text-exito" aria-hidden />
         <h2 className="font-heading text-[28px] leading-8 font-bold italic">Recibimos tu reclamo</h2>
         <p className="max-w-prose text-tinta-suave">Te escribiremos al WhatsApp que dejaste.</p>
@@ -71,7 +88,7 @@ export function FormularioReclamo({ servicios }: { servicios: { id: number; nomb
   const describir = (c: string, ayuda = false) => (e[c] ? `${c}-error` : ayuda ? `${c}-ayuda` : undefined);
 
   return (
-    <form onSubmit={enviar} className="flex max-w-2xl flex-col gap-6" noValidate aria-label="Garantía y reclamos">
+    <form ref={formulario} onSubmit={enviar} className="flex max-w-2xl flex-col gap-6" noValidate aria-label="Garantía y reclamos">
       {/* Trampa para robots: una persona no la ve ni la llena. */}
       <div aria-hidden className="absolute -left-[9999px] h-px w-px overflow-hidden">
         <label htmlFor="sitio_web">No completar</label>
