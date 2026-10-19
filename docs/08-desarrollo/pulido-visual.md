@@ -542,7 +542,7 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Se consultó si pulir el panel ahora o al terminar la Gestión: se sigue el plan inicial (ahora), porque el panel de la Entrega 1 se firma en el acta.
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px (dueño) y a 390 (encargado y técnico). Comparativa en `pulido-visual/4.1-inicio-celular.jpg`.
-  - E2E `hu-01` "el inicio da un acceso a cada módulo que la persona puede usar; al técnico le dice que aún no hay nada" y el saludo como título; `base` y `hu-17` actualizadas. E2E completo: 151 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - E2E `hu-01` "el inicio da un acceso a cada módulo que la persona puede usar; al técnico le dice que aún no hay nada" y el saludo como título; `base` actualizada (`hu-17` pasa sin cambios). E2E completo: 151 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
