@@ -145,3 +145,17 @@ test("las páginas interiores llegan enteras: el título no aparece antes que el
   await page.getByRole("heading", { level: 1 }).waitFor({ state: "attached" });
   expect(await page.getByRole("form", { name: "Garantía y reclamos" }).count()).toBe(1);
 });
+
+// Pulido visual 4.2: con pantalla táctil los botones del panel miden 44 px; con mouse, 36
+test("los botones del panel miden 44 px con pantalla táctil y 36 con mouse", async ({ page, isMobile }) => {
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio");
+  const alto = isMobile ? 44 : 36;
+  for (const boton of [page.getByRole("button", { name: "Agregar servicio" }), page.getByRole("button", { name: /^Bajar / }).first()]) {
+    const caja = (await boton.boundingBox())!;
+    expect(Math.round(caja.height)).toBe(alto);
+  }
+  // Toda la fila abre el servicio, también la foto
+  await page.getByRole("list", { name: "Servicios del sitio" }).getByRole("link").first().click();
+  await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+$/);
+});
