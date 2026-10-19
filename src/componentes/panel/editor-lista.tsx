@@ -66,7 +66,7 @@ export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maxim
       {errores[nombre] && <MensajeError id={`${nombre}-error`}>{errores[nombre]}</MensajeError>}
       {valor.length < maximo && (
         <div>
-          <Button type="button" variant="outline" size="sm" onClick={() => onChange([...valor, nueva()])}>
+          <Button type="button" variant="outline" onClick={() => onChange([...valor, nueva()])}>
             <PlusIcon />
             {textoAgregar}
           </Button>
