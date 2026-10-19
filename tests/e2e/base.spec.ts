@@ -253,4 +253,3 @@ test("en la Galería del panel, subir sin nada marca todo junto y el foco va a l
   await expect(page.getByText("Elige el servicio.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Elegir foto: Después" })).toBeFocused();
 });
-
