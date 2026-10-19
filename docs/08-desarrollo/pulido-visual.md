@@ -157,7 +157,7 @@ Antes de la demo del viernes 23.
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 6.1 | Datos del negocio y logo | `/panel/configuracion` | ⏳ (pendiente de 1.4: a 360 px la pantalla se pasa 3 px de ancho) |
+| 6.1 | Datos del negocio y logo | `/panel/configuracion` | ✅ 19/10 |
 | 6.2 | Taller (espacios y tamaños de vehículo) | `/panel/configuracion/taller` | ⏳ |
 | 6.3 | Cotizaciones y mantenimiento | `/panel/configuracion/cotizaciones` | ⏳ |
 
@@ -257,7 +257,7 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Módulo actual: fondo gris más un trazo rojo inclinado a 60°, como los del monograma (`.tt-modulo-actual`). Es lo único rojo del menú.
   - `UsuarioSesion` usa `NOMBRE_ROL` de `modulos/usuarios/textos.ts`.
 - **Descartado o pendiente:**
-  - Pendiente para 6.1: a 360 px, `/panel/configuracion` todavía se pasa 3 px. No viene de la estructura: el formulario del negocio tiene algo que no se achica.
+  - Pendiente para 6.1: a 360 px, `/panel/configuracion` todavía se pasa 3 px. No viene de la estructura: el formulario del negocio tiene algo que no se achica (resuelto en 6.1: eran las horas del horario).
 - **Verificación:**
   - Capturas a 360, 768, 1280 y 1600 px, con el menú del celular abierto y ampliada al 300 % del trazo.
   - Medición del desborde en 12 pantallas del panel a 360 px: antes se salían 8, ahora solo Configuración, por 3 px.
@@ -563,7 +563,7 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Toda la fila abre el servicio, también la foto; las flechas quedan aparte. "Sin foto" va al final del nombre del enlace, para que el lector de pantalla diga primero el servicio.
 - **Descartado o pendiente:**
   - Arrastrar para ordenar: función nueva y menos precisa que las flechas en el celular.
-  - Para 6.1: a 360 px ya no aparece la barra horizontal en Configuración, pero los campos llegan al borde derecho sin margen (se corta el borde).
+  - Para 6.1: a 360 px ya no aparece la barra horizontal en Configuración, pero los campos llegan al borde derecho sin margen (se corta el borde) (resuelto en 6.1).
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px. Comparativa en `pulido-visual/4.2-servicios-panel-celular.jpg`.
   - E2E `base` "los botones del panel miden 44 px con pantalla táctil y 36 con mouse" (también abre el servicio desde la fila). E2E completo: 151 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
@@ -766,6 +766,24 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px como técnico. Sin comparativa: se ve igual.
   - E2E `hu-02` ("Volver al inicio" como enlace en la pantalla de sin acceso); `base`, `hu-02` y `hu-07` buscan "Agregar servicio" y "Agregar usuario" como enlaces. E2E completo: 167 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 6.1 Datos del negocio y logo (19/10/2026)
+- **Encontrado:**
+  - A 360 px todo el formulario se salía 15 px por la derecha y quedaba recortado (campos, etiquetas, la descripción del horario). La causa: en el horario, cada renglón tenía dos horas de ancho fijo (128 px) más la "a" y la ✕, unos 356 px donde había 328; ese renglón ensanchaba la columna y la página recortaba lo que sobraba.
+  - El cuadro de cada día medía 32 px de alto con pantalla táctil.
+  - Tras un error, el foco quedaba en la página; el error del horario era texto suelto y no el componente común.
+  - En el celular el logo quedaba debajo de "Guardar cambios" pero se guarda solo, al momento.
+  - Lo que estaba bien: partes con título, ayuda de la ubicación con "Ver en el mapa", horario por día con segundo turno y "Copiar el lunes", el logo en columna aparte en la computadora.
+- **Cambios:**
+  - Las horas se achican si no hay lugar (hasta 128 px), y el primer turno guarda el lugar de la ✕: las horas de los dos renglones quedan alineadas.
+  - El cuadro de cada día y "Cerrado": 44 px con pantalla táctil, 36 con mouse.
+  - `useFocoEnError` en el formulario; el error del horario con `MensajeError`.
+  - El logo dice "Se guarda al momento, sin el botón Guardar cambios", con una línea arriba en el celular y la tableta.
+- **Descartado:**
+  - Otro selector de horas: el reloj del sistema funciona bien en el celular.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, y con error a 360 y 1280. Comparativa en `pulido-visual/6.1-configuracion-horario-360.jpg`.
+  - E2E `hu-04` "a 360 px ningún campo de Configuración se sale de la pantalla" y el foco en el primer error. E2E completo: 169 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
