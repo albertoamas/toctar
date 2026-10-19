@@ -113,7 +113,7 @@ Antes de la demo del viernes 23.
 | 2.7 | Contacto | `/contacto` | ✅ 18/10 |
 | 2.8 | Garantía y reclamos | `/garantia` | ✅ 18/10 |
 | 2.9 | Página no encontrada | cualquier ruta inexistente | ✅ 18/10 |
-| 2.10 | Sin conexión | `public/sin-conexion.html` | ⏳ |
+| 2.10 | Sin conexión | `public/sin-conexion.html` | ✅ 18/10 |
 
 ### 3. Ingreso
 
@@ -474,6 +474,21 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Capturas a 360, 390, 768 y 1280 px de los dos casos, sin desborde. Comparativa en `pulido-visual/2.9-no-encontrada-celular.jpg`.
   - E2E `hu-10` "una dirección que no existe…" (404, encabezado, pie y título) y `hu-11` "un servicio oculto o inexistente…" (`noindex`). E2E completo: 147 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
   - Lighthouse no audita respuestas 404 (devuelve error en lugar de puntaje): sin medición en esta pantalla.
+
+### 2.10 Sin conexión (18/10/2026)
+- **Encontrado:**
+  - Sin internet no cargaba ninguna fuente: el título salía en Arial y el texto en la del sistema. Las fuentes de la app (`next/font`) cambian de nombre en cada compilación: la página no podía pedirlas ni el service worker guardarlas.
+  - "Reintentar" era un rectángulo con las puntas redondeadas, no el botón rojo con el corte a 60° del sitio.
+  - Lo que estaba bien: todo dentro del archivo; el texto dice qué pasa y qué hacer ("El panel necesita internet" es correcto: el service worker solo se registra desde el panel); botón de 44 px; colores del tema oscuro; foco visible.
+- **Cambios:**
+  - Copias fijas de las fuentes en `public/fuentes/` (Barlow Condensed ExtraBold itálica y Montserrat variable, subconjunto latino, de Google Fonts; 62 KB en total) con sus licencias OFL al lado. La página las declara con `@font-face`.
+  - `public/sw.js`: la caché pasa a `v2` y guarda la página y las dos fuentes al instalarse; al activarse borra la `v1`, así los teléfonos con la app ya instalada se actualizan. Las fuentes se sirven desde la caché.
+  - "Reintentar" con el corte a 60°, con el mismo degradado que `.tt-boton--principal`.
+- **Descartado o pendiente:**
+  - Incrustar las fuentes dentro del HTML: pesaría más y habría que regenerarlas si cambia el texto.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px. Comparativa en `pulido-visual/2.10-sin-conexion-celular.jpg`.
+  - E2E `hu-06` "sin internet, el panel muestra el aviso…": ahora comprueba que, sin red, la página tiene Barlow Condensed y Montserrat cargadas (las saca el service worker de su caché). E2E completo: 147 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
