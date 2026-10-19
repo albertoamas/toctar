@@ -107,7 +107,7 @@ Antes de la demo del viernes 23.
 | 2.1 | Portada | `/` | ✅ 18/10 |
 | 2.2 | Servicios | `/servicios` | ✅ 18/10 |
 | 2.3 | Página de un servicio | `/servicios/[slug]` | ✅ 18/10 |
-| 2.4 | Galería y visor de fotos | `/galeria` | ⏳ |
+| 2.4 | Galería y visor de fotos | `/galeria` | ✅ 18/10 |
 | 2.5 | Nosotros | `/nosotros` | ⏳ |
 | 2.6 | Preguntas frecuentes | `/preguntas-frecuentes` | ⏳ |
 | 2.7 | Contacto | `/contacto` | ⏳ |
@@ -348,6 +348,29 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Capturas a 360, 390, 768 y 1280 px, con datos reales y con un servicio completo, sin desborde. Comparativas en `pulido-visual/2.3-cabecera-celular.jpg`, `2.3-servicio-celular.jpg` y `2.3-servicio-computadora.jpg`.
   - E2E `hu-11` "volver a Servicios es lo primero y se toca con el dedo" y el botón del cierre con el servicio escrito; `hu-18` "la página de un servicio entrega título, descripción y vista previa dentro del head a WhatsApp y a los buscadores". E2E completo: 140 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
   - Lighthouse de un servicio: en el celular, 92 de rendimiento (91 con el servicio completo); en la computadora, 100. 100 en accesibilidad y buenas prácticas; SEO 92 por lo de arriba; CLS 0.
+
+### 2.4 Galería y visor de fotos (18/10/2026)
+- **Encontrado** (con 8 trabajos de muestra en `toctar_e2e`: 3 pares y 5 fotos solas de 4 servicios; la base de desarrollo tiene 2):
+  - En el celular el filtro ocupaba 200 px (4 renglones con 5 servicios, por los nombres largos) antes de la primera foto.
+  - Visor en el celular: el "Antes" ocupaba toda la pantalla y había que bajar para ver el "Después".
+  - Visor en la computadora: con una foto vertical y otra horizontal, una quedaba en una caja gris alta y la otra arriba, con un hueco negro abajo.
+  - El botón de cerrar de los diálogos medía unos 28 px y para los lectores de pantalla decía "Close", en inglés. Es del componente común: pasaba también en el panel.
+  - La página terminaba sin invitación, justo después de ver los trabajos; la galería vacía seguía con "Escribir por WhatsApp" (pendiente de 2.1).
+  - Lo que estaba bien: la grilla cuadrada (2, 3 y 4 columnas), la etiqueta "Antes y después", el foco con el teclado, el filtro con enlaces que funciona sin JavaScript y con 44 px, sin desborde.
+- **Cambios:**
+  - Filtro en el celular: una sola fila que se desliza de costado, de borde a borde; el último botón cortado avisa que hay más. Desde 640 px, en renglones como antes. Mide 52 px en lugar de 200.
+  - Visor: el antes y el después en cajas de la misma altura (36 % de la pantalla en el celular, uno sobre otro; lado a lado en la computadora), con la foto entera y centrada. La foto sola sigue grande.
+  - Cerrar de 44 × 44 y "Cerrar" en `src/componentes/ui/dialog.tsx`: lo toman todos los diálogos (visor, reclamos y confirmaciones del panel; revisado en "¿Eliminar esta foto?").
+  - Cierre común al final ("¿Quieres este resultado en tu vehículo?", botón "Mandar fotos de mi vehículo"), en el mismo `<Suspense>` que las fotos. La galería vacía queda con su texto y el cierre.
+  - La primera fila de la grilla (hasta 4 fotos) va sin carga diferida y la primera con prioridad alta: era el LCP del celular y el navegador la pedía tarde.
+- **Descartado o pendiente:**
+  - Pasar de una foto a otra dentro del visor y un deslizador para comparar: funciones nuevas.
+  - Si se entra con el filtro ya elegido (un enlace compartido) y el servicio está al final de la fila, en el celular su botón queda fuera de la vista hasta deslizar.
+  - **Rendimiento móvil del sitio (pendiente común):** la galería da 87 en tres corridas (antes de estos cambios, 85, 86 y 91 con los mismos datos: no empeoró). Como en la portada (88 a 92) y en un servicio (91 y 92), la mayor parte del LCP es "render delay" de 2 a 3,5 s, que es igual en todas las páginas. Se investiga aparte, antes de cerrar el grupo 2.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px (grilla, filtro activo, visor con par y con foto sola, foco), sin desborde. Comparativas en `pulido-visual/2.4-galeria-celular.jpg`, `2.4-visor-celular.jpg` y `2.4-visor-computadora.jpg`.
+  - E2E `hu-12`: filtro de una fila en el celular; antes y después a la vista a la vez; "Cerrar" de 44 px que cierra (también con Escape); cierre con un solo WhatsApp. E2E completo: 141 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse de la galería: celular 87, computadora 99; 100 en accesibilidad, buenas prácticas y SEO; CLS 0.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
