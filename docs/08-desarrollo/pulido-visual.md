@@ -119,7 +119,7 @@ Antes de la demo del viernes 23.
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 3.1 | Ingresar | `/ingresar` | ⏳ |
+| 3.1 | Ingresar | `/ingresar` | ✅ 19/10 |
 
 ### 4. Panel: inicio y sitio web
 
@@ -503,6 +503,25 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - `experimental.inlineCss`: empeoró (84 a 86). Next manda el CSS dos veces (en el `<style>` y en los datos de React) y el HTML comprimido pasó de 41 a 110 KB.
 - **Resultado** (tres corridas, promedio): portada 90, Servicios 93, Galería 90, Nosotros 95. La primera corrida con el servidor recién arrancado puede dar menos (83 en la portada): la caché está vacía.
 - **Verificación:** E2E `base` "el menú marca la página actual…": al cerrar con Escape, el foco vuelve a "Abrir menú" y `aria-expanded` es `false`. La prueba de los colores del selector (2.8) leía los colores antes de que React pusiera el contenido en su lugar (llega en un contenedor oculto, fuera del tema oscuro) y fallaba a veces en el celular: ahora espera a que el campo se vea. E2E completo: 147 pasan. Lint, typecheck y 205 unitarias sin errores. knip: solo `SheetTrigger` sin usar, parte de shadcn (aviso conocido).
+
+### 3.1 Ingresar (19/10/2026)
+- **Encontrado** (errores y bloqueo probados en `toctar_e2e`, para no sumar intentos al usuario de desarrollo):
+  - Campos y botón de 32 px de alto: la pantalla se usa sobre todo desde el celular en el taller.
+  - Tras un error, el foco quedaba en la página (había que tocar la contraseña de nuevo) y el error no estaba vinculado a los campos.
+  - El error no se veía como en los demás formularios (sin el ícono de `MensajeError`).
+  - "Ingresar" era el rectángulo de shadcn, distinto del botón rojo con el corte a 60° del sitio, aunque la pantalla está en el tema oscuro de la marca.
+  - Lo que estaba bien: logo vertical sin lema y el lema como texto; título en itálica y línea LED; autocompletado y sin mayúscula automática en el usuario; el usuario se conserva y la contraseña se vacía; mensajes claros (el del bloqueo dice qué hacer); todo entra en 360 × 740.
+- **Cambios:**
+  - Campos y botón de 44 px; el botón es `tt-boton--principal`, a todo el ancho.
+  - Tras un error, el foco va a la contraseña (vacía); el error queda vinculado a los dos campos (`aria-describedby`) y usa `MensajeError` dentro de una alerta.
+  - Botón para mostrar u ocultar la contraseña, de 44 px, dentro del campo ("Mostrar la contraseña" / "Ocultar la contraseña").
+- **Descartado o pendiente:**
+  - "Olvidé mi contraseña": función nueva; la contraseña la cambia el dueño y el mensaje del bloqueo lo dice.
+  - Centrar el título y el formulario: alineado a la izquierda se lee mejor.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px (vacío, con error y bloqueado). Comparativa en `pulido-visual/3.1-ingreso-error-celular.jpg`.
+  - E2E `hu-01` "tras un error el foco va a la contraseña; los campos son de 44 px y la contraseña se puede ver". Como el nombre del botón contiene "contraseña", las pruebas buscan el campo por su etiqueta exacta (`apoyo.ts`). E2E completo: 149 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse móvil: rendimiento 95, accesibilidad y buenas prácticas 100, CLS 0 (SEO 66: el ingreso no se indexa a propósito).
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
