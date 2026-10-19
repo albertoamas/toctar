@@ -8,10 +8,10 @@ import { quitarFotoPortada, subirFotoPortada } from "../acciones";
 
 export function FotoPortada({ foto }: { foto: UrlsFoto | null }) {
   return (
-    <section aria-labelledby="foto-portada-titulo" className="flex flex-col gap-4">
+    <section aria-labelledby="foto-portada-titulo" className="flex max-w-sm flex-col gap-4">
       <div className="flex flex-col gap-1">
         <h3 id="foto-portada-titulo" className="text-sm font-semibold">Foto del taller</h3>
-        <p className="text-sm text-tinta-suave">Va detrás del lema, oscurecida para que se lea el texto. Horizontal y con buena luz.</p>
+        <p className="text-sm text-tinta-suave">Va detrás del lema, oscurecida para que se lea el texto. Horizontal y con buena luz. Se guarda al momento, sin el botón Guardar portada.</p>
       </div>
       <SubidaFoto
         id="foto-portada"
