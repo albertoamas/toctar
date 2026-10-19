@@ -186,3 +186,20 @@ test("en Editar servicio una fila vacía recibe el foco con su error, y en el ce
   await expect(beneficio).toHaveAttribute("aria-invalid", "true");
   await expect(beneficio).toHaveAccessibleDescription(/Escribe el beneficio o quita la fila/);
 });
+
+test("en Textos del sitio un motivo largo se lee entero, y Enter envía sin saltar de renglón", async ({ page }) => {
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio/textos");
+  const primero = page.getByRole("textbox", { name: "Motivo 1" });
+  const alto = (await primero.boundingBox())!.height;
+  await primero.fill("Revisamos tu vehículo antes de darte un precio, con buena luz, y te mostramos lo que encontramos en la pintura.");
+  // El campo crece en vez de cortar el texto
+  await expect.poll(async () => (await primero.boundingBox())!.height).toBeGreaterThan(alto);
+  await page.getByRole("button", { name: "Agregar motivo" }).click();
+  const nuevo = page.getByRole("list", { name: "Motivo" }).getByRole("textbox").last();
+  await nuevo.press("Enter");
+  // Enter envió el formulario: el motivo vacío vuelve con su error y el foco
+  await expect(nuevo).toBeFocused();
+  await expect(nuevo).toHaveAttribute("aria-invalid", "true");
+  await expect(nuevo).toHaveValue("");
+});
