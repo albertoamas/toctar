@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, Montserrat } from "next/font/google";
-import { Toaster } from "@/componentes/ui/sonner";
 import { sitioIndexable, urlSitio } from "@/lib/sitio";
 import "./globals.css";
 
@@ -38,7 +37,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="es" className={`${texto.variable} ${titular.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         {children}
-        <Toaster />
       </body>
     </html>
   );
