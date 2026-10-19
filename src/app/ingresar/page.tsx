@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
+import { ChevronLeftIcon } from "lucide-react";
 import { FormularioIngreso } from "@/modulos/acceso/componentes/formulario-ingreso";
 
 export const metadata: Metadata = {
@@ -10,7 +12,12 @@ export const metadata: Metadata = {
 // Pantalla de ingreso en tema oscuro, con el logo vertical; el panel después va en claro.
 export default function PaginaIngreso() {
   return (
-    <main data-theme="oscuro" className="flex flex-1 flex-col items-center justify-center gap-10 bg-fondo px-4 py-12 text-tinta">
+    <main data-theme="oscuro" className="relative flex flex-1 flex-col items-center justify-center gap-10 bg-fondo px-4 py-12 text-tinta">
+      {/* Salida al sitio: sin ella, quien llegaba aquí por error no tenía cómo volver (pulido 3.1) */}
+      <Link href="/" className="absolute top-1 left-2 flex min-h-11 items-center gap-1 px-2 text-sm text-tinta-suave hover:text-tinta sm:left-4">
+        <ChevronLeftIcon className="size-4" aria-hidden />
+        Volver al sitio
+      </Link>
       {/* Logo sin lema: a este tamaño el lema del dibujo no se lee. El lema va como texto, nítido. */}
       <div className="flex flex-col items-center gap-4">
         <Image

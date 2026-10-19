@@ -44,3 +44,31 @@ test("cerrar sesión vuelve al ingreso y el panel queda cerrado", async ({ page,
   await page.goto("/panel");
   await expect(page).toHaveURL(/\/ingresar$/);
 });
+
+// Pulido visual 3.1
+test("tras un error el foco va a la contraseña; los campos son de 44 px y la contraseña se puede ver", async ({ page }) => {
+  await page.goto("/ingresar");
+  // Una salida al sitio, de 44 px
+  const volver = page.getByRole("link", { name: "Volver al sitio" });
+  await expect(volver).toHaveAttribute("href", "/");
+  expect((await volver.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  const contrasena = page.getByLabel("Contraseña", { exact: true });
+  for (const campo of [page.getByLabel("Usuario"), contrasena, page.getByRole("button", { name: "Ingresar" })]) {
+    expect((await campo.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  }
+
+  // Mostrar y ocultar lo escrito
+  await contrasena.fill("secreta");
+  await page.getByRole("button", { name: "Mostrar la contraseña" }).click();
+  await expect(contrasena).toHaveAttribute("type", "text");
+  await page.getByRole("button", { name: "Ocultar la contraseña" }).click();
+  await expect(contrasena).toHaveAttribute("type", "password");
+
+  // Con error: la contraseña vuelve vacía y con el foco, y el mensaje queda vinculado a los campos
+  await page.getByLabel("Usuario").fill("usuario-que-no-existe-31");
+  await page.getByRole("button", { name: "Ingresar" }).click();
+  await expect(alertaDeIngreso(page)).toHaveText("Usuario o contraseña incorrectos.");
+  await expect(contrasena).toBeFocused();
+  await expect(contrasena).toHaveValue("");
+  await expect(contrasena).toHaveAccessibleDescription("Usuario o contraseña incorrectos.");
+});

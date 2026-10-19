@@ -1,14 +1,29 @@
 "use client";
 
-import { useActionState } from "react";
-import { Button } from "@/componentes/ui/button";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { MensajeError } from "@/componentes/panel/campo";
 import { Input } from "@/componentes/ui/input";
 import { Label } from "@/componentes/ui/label";
 import { iniciarSesion } from "../acciones";
 import type { EstadoIngreso } from "../esquemas";
 
+// Se usa sobre todo desde el celular en el taller: campos y botón de 44 px, y la contraseña se puede ver para
+// no equivocarse al escribirla (pulido 3.1).
+const CAMPO = "h-11";
+const ID_ERROR = "ingreso-error";
+
 export function FormularioIngreso() {
   const [estado, accion, enviando] = useActionState<EstadoIngreso, FormData>(iniciarSesion, {});
+  const [verContrasena, setVerContrasena] = useState(false);
+  const contrasena = useRef<HTMLInputElement>(null);
+
+  // Después de un error, el foco va a la contraseña (vuelve vacía) para escribirla de nuevo sin tocar la pantalla.
+  useEffect(() => {
+    if (estado.error) contrasena.current?.focus();
+  }, [estado]);
+
+  const describir = estado.error ? ID_ERROR : undefined;
 
   return (
     <form action={accion} className="flex flex-col gap-4">
@@ -19,22 +34,44 @@ export function FormularioIngreso() {
           name="usuario"
           autoComplete="username"
           autoCapitalize="none"
+          className={CAMPO}
           defaultValue={estado.usuario}
+          aria-describedby={describir}
           required
         />
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="contrasena">Contraseña</Label>
-        <Input id="contrasena" name="contrasena" type="password" autoComplete="current-password" required />
+        <div className="relative">
+          <Input
+            ref={contrasena}
+            id="contrasena"
+            name="contrasena"
+            type={verContrasena ? "text" : "password"}
+            autoComplete="current-password"
+            className={`${CAMPO} pr-12`}
+            aria-describedby={describir}
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setVerContrasena((v) => !v)}
+            aria-label={verContrasena ? "Ocultar la contraseña" : "Mostrar la contraseña"}
+            className="absolute top-0 right-0 grid size-11 place-items-center rounded-lg text-tinta-suave hover:text-tinta focus-visible:outline-2 focus-visible:outline-[var(--foco)]"
+          >
+            {verContrasena ? <EyeOffIcon className="size-5" aria-hidden /> : <EyeIcon className="size-5" aria-hidden />}
+          </button>
+        </div>
       </div>
       {estado.error && (
-        <p role="alert" className="text-sm text-destructive">
-          {estado.error}
-        </p>
+        // El mismo mensaje que los demás formularios, anunciado como alerta
+        <div role="alert">
+          <MensajeError id={ID_ERROR}>{estado.error}</MensajeError>
+        </div>
       )}
-      <Button type="submit" disabled={enviando}>
+      <button type="submit" disabled={enviando} className="tt-boton tt-boton--principal w-full disabled:opacity-60">
         {enviando ? "Ingresando…" : "Ingresar"}
-      </Button>
+      </button>
     </form>
   );
 }
