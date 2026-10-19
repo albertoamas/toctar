@@ -148,7 +148,7 @@ Antes de la demo del viernes 23.
 |---|---|---|---|
 | 5.1 | Reclamos | `/panel/reclamos` | ✅ 19/10 |
 | 5.2 | Detalle de un reclamo | `/panel/reclamos/[id]` | ✅ 19/10 |
-| 5.3 | Usuarios | `/panel/usuarios` | ⏳ |
+| 5.3 | Usuarios | `/panel/usuarios` | ✅ 19/10 |
 | 5.4 | Nuevo usuario | `/panel/usuarios/nuevo` | ⏳ |
 | 5.5 | Editar usuario | `/panel/usuarios/[id]` | ⏳ |
 | 5.6 | Sin acceso | `/panel/sin-acceso` | ⏳ |
@@ -633,7 +633,7 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Pendiente:**
   - 4.6: "Agregar pregunta" en rojo (hecho).
   - 4.7: en el celular, los 5 íconos de cada foto de la galería se reparten en dos renglones (hecho).
-  - 5.x: en la lista de usuarios, "Crear usuario" pasa a "Agregar usuario" (el formulario sigue diciendo "Crear usuario").
+  - 5.x: en la lista de usuarios, "Crear usuario" pasa a "Agregar usuario" (el formulario sigue diciendo "Crear usuario") (hecho en 5.3).
 - **Verificación:**
   - Capturas de Galería, Configuración y Editar servicio a 360 y 1280 px, sin desborde.
   - E2E `base` "ningún botón del panel mide menos que el tamaño normal" (servicio, textos, preguntas, galería, configuración) y `hu-17` (el enlace de WhatsApp con borde). E2E completo: 161 pasan. Lint y typecheck sin errores. knip: nada nuevo.
@@ -709,6 +709,22 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px de un reclamo pendiente y uno atendido, y el error sin nota a 360 y 1280. Comparativa en `pulido-visual/5.2-reclamo-celular.jpg`.
   - E2E `hu-17` (foco en "Qué se hizo" tras el error). E2E completo: 165 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 5.3 Usuarios (19/10/2026)
+- **Encontrado:**
+  - En la tabla solo el nombre (18 px de alto) abría el usuario, como pasaba en Reclamos.
+  - En las tarjetas del celular "usuario · rol" se partía ("encargado-permiso-c ·" y "Técnico" en otro renglón), y no decía "(tú)" en el propio, que la tabla sí.
+  - "Crear usuario" en la lista: por la regla de botones, la acción principal de una lista es "Agregar…" ("Agregar servicio").
+  - Lo que estaba bien: título y botón rojo arriba, tarjetas tocables enteras en el celular y tabla en la computadora, estado con palabra, desactivados al final, sin desborde.
+- **Cambios:**
+  - En la tabla toda la fila abre el usuario (como en 5.1).
+  - Tarjeta: nombre con "(tú)" en el propio, y usuario y rol sin partirse.
+  - "Agregar usuario" en la lista y "Agrega uno para cada persona del taller" en el estado vacío; el formulario sigue con "Crear usuario", como "Crear servicio".
+- **Descartado:**
+  - Buscador o filtro por rol: el taller tendrá pocos usuarios (la lista larga es de la base de pruebas).
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px con 35 usuarios. Comparativa en `pulido-visual/5.3-usuarios-celular.jpg`.
+  - E2E `hu-02` "la lista de usuarios: Agregar usuario, (tú) y la fila que abre el usuario". E2E completo: 167 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
