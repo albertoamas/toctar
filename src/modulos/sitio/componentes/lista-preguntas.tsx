@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useRef, useState, useTransition } from "react";
 import { ArrowDownIcon, ArrowUpIcon, EyeIcon, EyeOffIcon, PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { useFocoEnError } from "@/componentes/foco-en-error";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
@@ -107,15 +108,17 @@ function FormularioPregunta({ pregunta, alTerminar }: { pregunta?: Pregunta; alT
   const v = estado.valores;
   const e = estado.errores ?? {};
   const prefijo = `pregunta-${pregunta?.id ?? "nueva"}`;
+  const formulario = useRef<HTMLFormElement>(null);
+  useFocoEnError(formulario, estado);
 
   return (
-    <form action={accion} className="flex flex-col gap-4" noValidate>
+    <form ref={formulario} action={accion} className="flex flex-col gap-4" noValidate>
       {pregunta && <input type="hidden" name="id" value={pregunta.id} />}
       <Campo id={`${prefijo}-pregunta`} etiqueta="Pregunta" error={e.pregunta}>
         <Input id={`${prefijo}-pregunta`} name="pregunta" autoFocus defaultValue={v?.pregunta ?? pregunta?.pregunta} aria-invalid={!!e.pregunta} aria-describedby={e.pregunta ? `${prefijo}-pregunta-error` : undefined} />
       </Campo>
       <Campo id={`${prefijo}-respuesta`} etiqueta="Respuesta" error={e.respuesta}>
-        <Textarea id={`${prefijo}-respuesta`} name="respuesta" rows={4} defaultValue={v?.respuesta ?? pregunta?.respuesta} aria-invalid={!!e.respuesta} aria-describedby={e.respuesta ? `${prefijo}-respuesta-error` : undefined} />
+        <Textarea id={`${prefijo}-respuesta`} name="respuesta" className="min-h-32" defaultValue={v?.respuesta ?? pregunta?.respuesta} aria-invalid={!!e.respuesta} aria-describedby={e.respuesta ? `${prefijo}-respuesta-error` : undefined} />
       </Campo>
       <div className="flex gap-2">
         <Button type="submit" disabled={enviando}>
