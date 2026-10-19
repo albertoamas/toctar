@@ -81,7 +81,6 @@
   --foco: #1a1a1a;
   --exito: #1b6e43;
   --aviso: #7a4f00;
-  --brillo-led: 0 0 12px rgba(227, 6, 19, 0.65), 0 0 2px rgba(255, 51, 64, 0.9);
   --elevacion: 0 8px 24px rgba(26, 26, 26, 0.16);
   --radius: 2px; /* radio-1: el panel. El sitio va con esquinas rectas (radio-0). */
 }
@@ -164,14 +163,14 @@
 
 /* Recursos gráficos de la marca (componentes del Design System). */
 @layer components {
-  /* Línea LED roja del frente del taller. Solo sobre fondo oscuro. */
+  /* Línea LED roja del frente del taller. Solo sobre fondo oscuro. Lisa, sin brillo: el resplandor se veía neón
+     (revisión de YankoSoft en el pulido 3.1; en el encabezado ya se había quitado en 1.1). */
   .tt-led {
     display: block;
     height: 3px;
     border: 0;
     margin: 0;
     background: var(--rojo);
-    box-shadow: var(--brillo-led);
     transform-origin: left center;
   }
   .tt-led--encender {
