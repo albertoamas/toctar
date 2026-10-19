@@ -1,6 +1,7 @@
 <!doctype html>
 <!-- Página sin conexión (HU-06, RNF-03). La guarda public/sw.js y se muestra cuando una navegación
-     falla sin internet. Todo va adentro del archivo (estilos y logo): sin red no se puede pedir nada más.
+     falla sin internet. Los estilos y el logo van adentro del archivo; las dos fuentes de la marca, en
+     public/fuentes/ con nombre fijo, las guarda el service worker junto con esta página (pulido 2.10).
      Colores: tokens del tema oscuro de src/app/globals.css. -->
 <html lang="es">
 <head>
@@ -10,6 +11,15 @@
 <meta name="robots" content="noindex">
 <title>Sin conexión · TocTar Detailing</title>
 <style>
+  /* Las de la app (next/font) cambian de nombre en cada compilación y no se pueden guardar: van copias fijas. */
+  @font-face {
+    font-family: "Barlow Condensed"; font-style: italic; font-weight: 800; font-display: swap;
+    src: url(/fuentes/barlow-condensed-800-italica-latin.woff2) format("woff2");
+  }
+  @font-face {
+    font-family: Montserrat; font-style: normal; font-weight: 400 600; font-display: swap;
+    src: url(/fuentes/montserrat-variable-latin.woff2) format("woff2");
+  }
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
   body {
