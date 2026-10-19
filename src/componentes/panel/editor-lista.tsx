@@ -4,8 +4,11 @@ import { Button } from "@/componentes/ui/button";
 
 // Componente de cliente: se usa dentro de otros componentes de cliente (recibe funciones como props).
 // Lista de filas dentro de un formulario (beneficios, pasos, "por qué elegirnos"): agregar, quitar y ordenar.
-// El valor viaja al servidor como JSON en un campo oculto. Cada fila se dibuja con `fila`.
+// El valor viaja al servidor como JSON en un campo oculto. Cada fila se dibuja con `fila`, que recibe `marca` para
+// los campos de la fila: los marca con error y los enlaza a su mensaje.
 // En el celular los botones de la fila van debajo de sus campos, para que estos usen todo el ancho (pulido 4.4).
+
+type MarcaError = { "aria-invalid": boolean; "aria-describedby": string | undefined };
 
 type Props<T> = {
   nombre: string;
@@ -18,7 +21,7 @@ type Props<T> = {
   textoAgregar: string;
   /** Errores por fila: "<nombre>.0" es la primera. */
   errores: Partial<Record<string, string>>;
-  fila: (elemento: T, cambiar: (nuevo: T) => void, indice: number) => React.ReactNode;
+  fila: (elemento: T, cambiar: (nuevo: T) => void, indice: number, marca: MarcaError) => React.ReactNode;
 };
 
 export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maximo, textoAgregar, errores, fila }: Props<T>) {
@@ -35,12 +38,13 @@ export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maxim
         <ol className="flex flex-col gap-3" aria-label={etiqueta}>
           {valor.map((elemento, i) => {
             const error = errores[`${nombre}.${i}`];
+            const marca = { "aria-invalid": !!error, "aria-describedby": error ? `${nombre}-${i}-error` : undefined };
             return (
               <li key={i} className="flex flex-col gap-1">
                 <div className="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-x-2 gap-y-1 sm:grid-cols-[1.25rem_minmax(0,1fr)_auto]">
                   {/* El número, a la altura del primer campo */}
                   <span aria-hidden className="flex h-9 items-center justify-end text-sm text-tinta-suave pointer-coarse:h-11">{i + 1}.</span>
-                  <div className="flex flex-col gap-2">{fila(elemento, (nuevo) => onChange(valor.map((e, k) => (k === i ? nuevo : e))), i)}</div>
+                  <div className="flex flex-col gap-2">{fila(elemento, (nuevo) => onChange(valor.map((e, k) => (k === i ? nuevo : e))), i, marca)}</div>
                   <div className="col-start-2 flex justify-self-end sm:col-start-auto sm:self-start">
                     <Button type="button" variant="ghost" size="icon" disabled={i === 0} onClick={() => mover(i, i - 1)} aria-label={`Subir ${etiqueta.toLowerCase()} ${i + 1}`}>
                       <ArrowUpIcon />
