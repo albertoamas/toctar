@@ -1,5 +1,6 @@
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useRef, useState, useTransition } from "react";
 import { ArrowDownIcon, ArrowUpIcon, PencilIcon, PlusIcon } from "lucide-react";
+import { useFocoEnError } from "@/componentes/foco-en-error";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
@@ -128,6 +129,8 @@ function FormularioElemento(props: Props & { elemento?: ElementoLista; alTermina
   const v = estado.valores;
   const e = estado.errores ?? {};
   const prefijo = `${id}-${elemento?.id ?? "nuevo"}`;
+  const formulario = useRef<HTMLFormElement>(null);
+  useFocoEnError(formulario, estado);
   const [desactivando, iniciar] = useTransition();
   const desactivar = (el: ElementoLista) =>
     iniciar(async () => {
@@ -137,7 +140,7 @@ function FormularioElemento(props: Props & { elemento?: ElementoLista; alTermina
     });
 
   return (
-    <form action={accion} className="flex flex-col gap-4" noValidate>
+    <form ref={formulario} action={accion} className="flex flex-col gap-4" noValidate>
       {Object.entries(camposOcultos).map(([nombre, valor]) => (
         <input key={nombre} type="hidden" name={nombre} value={valor} />
       ))}
