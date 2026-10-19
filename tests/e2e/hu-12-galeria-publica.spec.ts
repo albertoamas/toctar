@@ -1,10 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { ingresarComoDueno } from "./apoyo";
+import { ingresarComoDueno, PNG } from "./apoyo";
 
 // HU-12 Galería pública. Criterios: docs/09-pruebas/criterios-entrega-1.md (12.1 a 12.3).
 // Sube sus propias fotos por el panel (con servicios que no usa la prueba de HU-09) y las busca por su descripción.
 
-const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
 const foto = (nombre: string) => ({ name: nombre, mimeType: "image/png", buffer: PNG });
 
 test("la galería muestra las fotos visibles, se filtra por servicio y se amplían", async ({ page }, info) => {

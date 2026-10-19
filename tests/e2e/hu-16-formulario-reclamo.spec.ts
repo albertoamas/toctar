@@ -1,11 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import pg from "pg";
-import { URL_BASE_E2E } from "./apoyo";
+import { PNG, URL_BASE_E2E } from "./apoyo";
 
 // HU-16 Formulario de reclamo. Criterios: docs/09-pruebas/criterios-entrega-1.md (16.x).
 // Cada proyecto usa su propia placa y la busca en la base. El reclamo en el panel se prueba en HU-17.
 
-const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
 const foto = (nombre: string) => ({ name: nombre, mimeType: "image/png", buffer: PNG });
 
 async function reclamosConPlaca(placa: string) {

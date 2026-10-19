@@ -1,7 +1,7 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { ingresarComoDueno } from "./apoyo";
+import { ingresarComoDueno, PNG } from "./apoyo";
 
-// HU-08 Textos del sitio. Criterios: docs/09-pruebas/criterios-entrega-1.md (8.1 a 8.4).
+// HU-08 Textos del sitio. Criterios: docs/09-pruebas/criterios-entrega-1.md (8.1 a 8.5).
 // Los textos y las preguntas son compartidos: las pruebas que guardan corren solo en escritorio.
 
 const soloEscritorio = (info: TestInfo) => test.skip(info.project.name !== "escritorio", "Cambia textos compartidos");
@@ -77,9 +77,6 @@ test("preguntas frecuentes: agregar, editar, ordenar, ocultar y eliminar", async
   await expect(page.getByText("Pregunta eliminada.")).toBeVisible();
   await expect(lista.getByRole("listitem")).toHaveCount(5);
 });
-
-// PNG de 1 × 1 píxel
-const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
 
 test("la foto del taller va detrás del lema de la portada; sin foto vuelve el arte", async ({ page }, info) => {
   soloEscritorio(info);

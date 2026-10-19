@@ -1,13 +1,11 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { ingresarComoDueno } from "./apoyo";
+import { ingresarComoDueno, PNG } from "./apoyo";
 
 // HU-09 Galería en el panel. Criterios: docs/09-pruebas/criterios-entrega-1.md (9.1 a 9.4).
 // La galería es compartida: las pruebas que guardan corren solo en escritorio.
 
 const soloEscritorio = (info: TestInfo) => test.skip(info.project.name !== "escritorio", "Cambia la galería compartida");
 
-// PNG de 1 × 1 píxel
-const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
 const foto = (nombre: string) => ({ name: nombre, mimeType: "image/png", buffer: PNG });
 
 test("sin servicio ni descripción no se sube", async ({ page }) => {

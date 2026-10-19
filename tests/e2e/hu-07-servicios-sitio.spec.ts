@@ -1,13 +1,10 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
+import { crearUsuario, ingresar, ingresarComoDueno, PNG } from "./apoyo";
 
 // HU-07 Servicios del sitio. Criterios: docs/09-pruebas/criterios-entrega-1.md (7.1 a 7.6).
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "c" : "e");
 const soloEscritorio = (info: TestInfo) => test.skip(info.project.name !== "escritorio", "Cambia servicios compartidos");
-
-// PNG de 1 × 1 píxel
-const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
 
 test("el dueño crea un servicio con beneficios, pasos y variantes, y lo oculta", async ({ page }, info) => {
   test.setTimeout(60_000); // recorre todo el formulario y recarga
