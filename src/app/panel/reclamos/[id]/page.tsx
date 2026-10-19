@@ -47,26 +47,27 @@ async function Detalle({ params }: Pick<PageProps<"/panel/reclamos/[id]">, "para
 
       <div className="grid gap-10 lg:grid-cols-[minmax(0,36rem)_minmax(0,22rem)]">
         <div className="flex flex-col gap-6">
-          <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
-            <Dato termino="Recibido">{formatearFechaHora(r.createdAt)}</Dato>
+          {/* Dos columnas también en el celular: así responder y atender quedan más cerca (pulido 5.2) */}
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
+            <Dato termino="Recibido" ancho>{formatearFechaHora(r.createdAt)}</Dato>
             <Dato termino="WhatsApp">{formatearWhatsApp(r.telefono)}</Dato>
             <Dato termino="Placa">{r.placa}</Dato>
             <Dato termino="Servicio">{r.servicio ?? "No indicó"}</Dato>
             <Dato termino="Fecha aproximada del trabajo">{r.fechaAproximada ? formatearFecha(r.fechaAproximada) : "No indicó"}</Dato>
           </dl>
           <div className="flex flex-col gap-2">
-            <h2 className="font-semibold">Qué pasó</h2>
+            <h2 className="font-heading text-xl font-bold italic">Qué pasó</h2>
             <p className="whitespace-pre-line">{r.descripcion}</p>
           </div>
           <div className="flex flex-col gap-2">
-            <h2 className="font-semibold">Fotos</h2>
+            <h2 className="font-heading text-xl font-bold italic">Fotos</h2>
             {r.fotos.length > 0 ? <FotosReclamo fotos={r.fotos} /> : <p className="text-tinta-suave">No mandó fotos.</p>}
           </div>
         </div>
 
         <div className="flex flex-col gap-8">
           <section className="flex flex-col items-start gap-2">
-            <h2 className="font-semibold">Responder</h2>
+            <h2 className="font-heading text-xl font-bold italic">Responder</h2>
             <p className="text-sm text-tinta-suave">Abre el chat con {r.nombre} con un saludo ya escrito.</p>
             {/* Con cn: sin él, el borde transparente de la base le ganaba al del contorno y no se veía (revisión de botones) */}
             <a href={enlaceWhatsApp(r.telefono, mensajeAlCliente(r.nombre, recibido))} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
@@ -76,7 +77,7 @@ async function Detalle({ params }: Pick<PageProps<"/panel/reclamos/[id]">, "para
           </section>
 
           <section className="flex flex-col gap-2">
-            <h2 className="font-semibold">Atención</h2>
+            <h2 className="font-heading text-xl font-bold italic">Atención</h2>
             {r.estado === "pendiente" ? (
               <AtenderReclamo id={r.id} />
             ) : (
@@ -95,9 +96,9 @@ async function Detalle({ params }: Pick<PageProps<"/panel/reclamos/[id]">, "para
   );
 }
 
-function Dato({ termino, children }: { termino: string; children: React.ReactNode }) {
+function Dato({ termino, ancho, children }: { termino: string; ancho?: boolean; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className={cn("flex min-w-0 flex-col gap-1", ancho && "col-span-2 sm:col-span-1")}>
       <dt className="text-sm text-tinta-suave">{termino}</dt>
       <dd className="font-semibold">{children}</dd>
     </div>
