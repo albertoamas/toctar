@@ -108,7 +108,7 @@ Antes de la demo del viernes 23.
 | 2.2 | Servicios | `/servicios` | ✅ 18/10 |
 | 2.3 | Página de un servicio | `/servicios/[slug]` | ✅ 18/10 |
 | 2.4 | Galería y visor de fotos | `/galeria` | ✅ 18/10 |
-| 2.5 | Nosotros | `/nosotros` | ⏳ |
+| 2.5 | Nosotros | `/nosotros` | ✅ 18/10 |
 | 2.6 | Preguntas frecuentes | `/preguntas-frecuentes` | ⏳ |
 | 2.7 | Contacto | `/contacto` | ⏳ |
 | 2.8 | Garantía y reclamos | `/garantia` | ⏳ |
@@ -371,6 +371,25 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Capturas a 360, 390, 768 y 1280 px (grilla, filtro activo, visor con par y con foto sola, foco), sin desborde. Comparativas en `pulido-visual/2.4-galeria-celular.jpg`, `2.4-visor-celular.jpg` y `2.4-visor-computadora.jpg`.
   - E2E `hu-12`: filtro de una fila en el celular; antes y después a la vista a la vez; "Cerrar" de 44 px que cierra (también con Escape); cierre con un solo WhatsApp. E2E completo: 141 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
   - Lighthouse de la galería: celular 87, computadora 99; 100 en accesibilidad, buenas prácticas y SEO; CLS 0.
+
+### 2.5 Nosotros (18/10/2026)
+- **Encontrado:**
+  - Toda la página era texto gris del mismo tamaño: la historia (lo que se viene a leer) pesaba lo mismo que "Cómo trabajamos".
+  - En el celular las franjas del monograma pasaban detrás de los renglones de la historia (contraste 8,3:1, se leía, pero ensuciaba).
+  - El final seguía con "Escribir por WhatsApp" (pendiente de 2.1) y dos botones sueltos, sin el cierre de las otras páginas.
+  - Lo que estaba bien: los textos del panel, sin precios ni testimonios; las viñetas a 60° en 2 columnas; todo llega junto; sin desborde.
+- **Cambios:**
+  - La historia es el texto de entrada: blanca, 20 px en el celular y 22 en la computadora. "Cómo trabajamos" sigue en gris.
+  - El monograma va detrás del título y del texto en un envoltorio que solo recorta los costados (`overflow-x-clip`), y el texto se pinta encima. En el celular, más chico (12rem) y arriba, solo detrás del título.
+  - Cierre común: "¿Hablamos de tu vehículo?", botón "Mandar fotos de mi vehículo" y, al lado, "Ver las preguntas frecuentes". `CierreWhatsApp` acepta ahora un enlace secundario opcional.
+  - Durante el cambio, el contenido quedó corrido 46 px en la computadora: le faltaba `w-full` dentro del `main` (que es flex). Corregido antes de terminar.
+- **Descartado o pendiente:**
+  - Foto del taller en Nosotros: no hay una propia todavía; la de la portada cumple ese papel.
+  - "Cómo trabajamos" como pasos numerados: es un párrafo del panel; separarlo cambiaría el formulario.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, sin desborde. Comparativas en `pulido-visual/2.5-nosotros-celular.jpg` y `2.5-nosotros-computadora.jpg`.
+  - E2E `hu-13-14` "Nosotros muestra la historia…": termina con el cierre, un solo WhatsApp a la vista y el enlace a las preguntas frecuentes. E2E completo: 141 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse de Nosotros: celular 92 (dos corridas), computadora 100; 100 en accesibilidad, buenas prácticas y SEO; CLS 0.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
