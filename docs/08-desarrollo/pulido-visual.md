@@ -129,7 +129,7 @@ Antes de la demo del viernes 23.
 |---|---|---|---|
 | 4.1 | Inicio | `/panel` | ✅ 19/10 |
 | 4.2 | Servicios del sitio | `/panel/sitio` | ✅ 19/10 |
-| 4.3 | Nuevo servicio | `/panel/sitio/servicios/nuevo` | ⏳ |
+| 4.3 | Nuevo servicio | `/panel/sitio/servicios/nuevo` | ✅ 19/10 |
 | 4.4 | Editar servicio (datos, foto y variantes) | `/panel/sitio/servicios/[id]` | ⏳ |
 | 4.5 | Textos del sitio | `/panel/sitio/textos` | ⏳ |
 | 4.6 | Preguntas frecuentes | `/panel/sitio/preguntas` | ⏳ |
@@ -560,6 +560,18 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px. Comparativa en `pulido-visual/4.2-servicios-panel-celular.jpg`.
   - E2E `base` "los botones del panel miden 44 px con pantalla táctil y 36 con mouse" (también abre el servicio desde la fila). E2E completo: 151 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 4.3 Nuevo servicio (19/10/2026)
+- **Encontrado:**
+  - El enlace "‹ Servicios" medía 20 px de alto: difícil de tocar con el dedo. Estaba copiado en 7 pantallas (5 del panel, la del servicio en el sitio y el ingreso), cada una con sus propias clases.
+  - Al enviar con errores, el foco quedaba en el botón: no se notaba qué había fallado, sobre todo con lector de pantalla.
+  - Lo que estaba bien: formulario corto (nombre y resumen), etiquetas visibles, errores con ícono y texto, ayuda bajo el resumen, campos y botón de 44 px con pantalla táctil (4.2).
+- **Cambios:**
+  - `EnlaceVolver` (`src/componentes/enlace-volver.tsx`): un solo enlace para volver, de 44 px, en las 7 pantallas. Se ve igual que antes.
+  - `useFocoEnError` (`src/componentes/foco-en-error.ts`): tras enviar con errores, la pantalla y el foco van al primer campo con error. Lo usan este formulario y el de garantía (que ya lo hacía por su cuenta desde 2.8). Los demás formularios del panel lo reciben en su pantalla (4.4 a 6.x).
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, vacío y con errores. Comparativa en `pulido-visual/4.3-nuevo-servicio-errores-celular.jpg`.
+  - E2E `base` "al enviar con errores el foco va al campo, y el enlace para volver mide 44 px". E2E completo: 155 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
