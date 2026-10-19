@@ -159,7 +159,7 @@ Antes de la demo del viernes 23.
 |---|---|---|---|
 | 6.1 | Datos del negocio y logo | `/panel/configuracion` | ✅ 19/10 |
 | 6.2 | Taller (espacios y tamaños de vehículo) | `/panel/configuracion/taller` | ✅ 19/10 |
-| 6.3 | Cotizaciones y mantenimiento | `/panel/configuracion/cotizaciones` | ⏳ |
+| 6.3 | Cotizaciones y mantenimiento | `/panel/configuracion/cotizaciones` | ✅ 19/10 |
 
 ## Registro por pantalla
 
@@ -798,6 +798,20 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px, y agregar con error a 360 y 1280; la edición con "Desactivar" a 360. Comparativa en `pulido-visual/6.2-taller-celular.jpg`.
   - E2E `hu-05` "espacios del taller…" (desactiva desde la edición). E2E completo: 169 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 6.3 Cotizaciones y mantenimiento (19/10/2026)
+- **Encontrado:**
+  - Tras un error, el foco quedaba en la página.
+  - "Bs" iba antes del número y "días" y "meses" después: el campo del adelanto arrancaba unos 28 px más a la derecha que los otros dos.
+  - Lo que estaba bien: el aviso de que cambiar un valor no toca lo guardado, dos partes con título, ayuda y unidad en cada campo, los textos del PDF que crecen con el contenido, 44 px con pantalla táctil, sin desborde.
+- **Cambios:**
+  - `useFocoEnError` en el formulario.
+  - La unidad siempre después ("250 Bs"): los tres campos alineados.
+- **Descartado:**
+  - Vista previa del PDF con los textos: función nueva, y el PDF es de la Entrega 2.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, y con errores a 360 y 1280. Comparativa en `pulido-visual/6.3-cotizaciones-computadora.jpg`.
+  - E2E `hu-05` "los parámetros vacíos o negativos…" (y el foco en el adelanto). E2E completo: 169 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
