@@ -377,17 +377,22 @@ async function servicioExiste(id: number): Promise<boolean> {
 }
 
 /** Sube un par antes y después, o una foto sola (va como "después"). */
+const SIN_FOTO_DESPUES = "Elige la foto del resultado.";
+
 export async function subirGaleria(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const autor = await exigirModulo("sitio");
   const valores = { servicioId: String(datos.get("servicioId") ?? ""), descripcion: String(datos.get("descripcion") ?? "") };
+  // Si falta la foto del resultado, se avisa junto con los demás errores y no en un segundo intento (pulido 4.7)
+  const archivoDespues = datos.get("despues");
+  const sinDespues = !(archivoDespues instanceof File && archivoDespues.size > 0) ? { despues: SIN_FOTO_DESPUES } : {};
   const entrada = esquemaGaleria.safeParse(valores);
-  if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
-  if (!(await servicioExiste(entrada.data.servicioId))) return { errores: { servicioId: "Elige el servicio." }, valores };
+  if (!entrada.success) return { errores: { ...sinDespues, ...erroresDe(entrada.error) }, valores };
+  if (!(await servicioExiste(entrada.data.servicioId))) return { errores: { ...sinDespues, servicioId: "Elige el servicio." }, valores };
 
   const opciones = { carpeta: "galeria", miniatura: true, autorId: Number(autor.id) };
   const despues = await guardarFoto(datos.get("despues"), opciones);
   if (!despues.ok) {
-    return { errores: { despues: despues.motivo === "vacia" ? "Elige la foto del resultado." : ERROR_FOTO }, valores };
+    return { errores: { despues: despues.motivo === "vacia" ? SIN_FOTO_DESPUES : ERROR_FOTO }, valores };
   }
   const entradaAntes = datos.get("antes");
   const conAntes = entradaAntes instanceof File && entradaAntes.size > 0;
