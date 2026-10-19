@@ -31,7 +31,9 @@ test("la galería muestra las fotos visibles, se filtra por servicio y se amplí
   await expect(grilla.getByRole("button", { name: `Ampliar: ${conPar}` })).toBeVisible();
   await expect(grilla.getByRole("button", { name: `Ampliar: ${sola}` })).toBeVisible();
 
-  // Filtro por servicio
+  // Filtro por servicio. En el celular, en una sola fila que se desliza (pulido 2.4)
+  const filtro = page.getByRole("navigation", { name: "Filtrar por servicio" });
+  if (info.project.name === "celular") expect((await filtro.boundingBox())!.height).toBeLessThan(60);
   await page.getByRole("navigation", { name: "Filtrar por servicio" }).getByRole("link", { name: "Restauración de faroles con polímero" }).click();
   await expect(page).toHaveURL(/servicio=restauracion-de-faroles-con-polimero/);
   await expect(grilla.getByRole("button", { name: `Ampliar: ${sola}` })).toHaveCount(0);
@@ -41,7 +43,22 @@ test("la galería muestra las fotos visibles, se filtra por servicio y se amplí
   const visor = page.getByRole("dialog", { name: "Restauración de faroles con polímero" });
   await expect(visor.getByRole("img", { name: `Antes: ${conPar}` })).toBeVisible();
   await expect(visor.getByRole("img", { name: `Después: ${conPar}` })).toHaveAttribute("src", /galeria\/[\w-]+\.webp$/);
+  // El antes y el después se ven juntos, sin bajar, también en el celular (pulido 2.4)
+  await expect(visor.getByRole("img", { name: `Antes: ${conPar}` })).toBeInViewport({ ratio: 1 });
+  await expect(visor.getByRole("img", { name: `Después: ${conPar}` })).toBeInViewport({ ratio: 1 });
+  // Cerrar: en español y de 44 px; también cierra con Escape
+  const cerrar = visor.getByRole("button", { name: "Cerrar" });
+  // Se espera a que termine la animación de apertura (el diálogo entra con un leve zoom)
+  await expect.poll(async () => (await cerrar.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await cerrar.click();
+  await expect(visor).toHaveCount(0);
+  await grilla.getByRole("button", { name: `Ampliar: ${conPar}` }).click();
   await page.keyboard.press("Escape");
   await expect(visor).toHaveCount(0);
   await expect(page.locator("main")).not.toContainText(/\bBs\b/);
+
+  // Termina con la invitación a mandar fotos: un solo WhatsApp a la vista
+  await page.getByRole("heading", { name: "¿Quieres este resultado en tu vehículo?" }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole("link", { name: "Mandar fotos de mi vehículo por WhatsApp" })).toBeInViewport();
+  await expect(page.getByRole("link", { name: "Escribir a TocTar por WhatsApp" })).toBeHidden();
 });
