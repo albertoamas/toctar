@@ -131,7 +131,7 @@ Antes de la demo del viernes 23.
 | 4.2 | Servicios del sitio | `/panel/sitio` | ✅ 19/10 |
 | 4.3 | Nuevo servicio | `/panel/sitio/servicios/nuevo` | ✅ 19/10 |
 | 4.4 | Editar servicio (datos, foto y variantes) | `/panel/sitio/servicios/[id]` | ✅ 19/10 |
-| 4.5 | Textos del sitio | `/panel/sitio/textos` | ⏳ |
+| 4.5 | Textos del sitio | `/panel/sitio/textos` | ✅ 19/10 |
 | 4.6 | Preguntas frecuentes | `/panel/sitio/preguntas` | ⏳ |
 | 4.7 | Galería | `/panel/sitio/galeria` | ⏳ |
 
@@ -592,6 +592,25 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px, y las filas con datos a 360 y 1280. Comparativa en `pulido-visual/4.4-editar-servicio-filas-celular.jpg`.
   - E2E `base` "en Editar servicio una fila vacía recibe el foco con su error, y en el celular sus botones van debajo". E2E completo: 157 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 4.5 Textos del sitio (19/10/2026)
+- **Encontrado:**
+  - En el celular, cada motivo de "Por qué elegirnos" era un campo de un renglón: las frases (hasta 160 caracteres) se cortaban y había que moverse dentro del campo para leerlas. Lo mismo, en menor medida, con los Beneficios de un servicio.
+  - En la computadora, el recuadro vacío de la foto del taller medía 596 × 447 px, lo más grande de la pantalla, y quedaba debajo de "Guardar portada" aunque se guarda al momento.
+  - Tras un error, el foco no iba al campo y los motivos con error no se marcaban.
+  - Portada, Nosotros y Contacto son tres formularios aparte, separados solo por espacio: nada decía que cada botón guarda solo su parte.
+  - Lo que estaba bien: el orden de las páginas del sitio, un botón con nombre por parte, los textos largos que crecen con el contenido, controles de 44 px con pantalla táctil, sin desborde, Contacto aclara qué sale de Configuración.
+- **Cambios:**
+  - `TextoCorto` (`src/componentes/panel/texto-corto.tsx`): se ve como un campo de un renglón y crece si la frase no entra. Enter envía el formulario y lo pegado con saltos queda en un renglón. Lo usan los motivos y los beneficios.
+  - La foto del taller, hasta 24 rem de ancho, con "Se guarda al momento, sin el botón Guardar portada".
+  - `useFocoEnError` y `marca` en el formulario de textos.
+  - "Cada parte se guarda con su botón." arriba, y una línea entre las partes.
+- **Descartado:**
+  - Un solo botón para guardar todo: cambiaría las acciones del servidor, y lo que hay funciona.
+  - Aviso al salir con cambios sin guardar: función nueva; con la línea y la frase queda claro qué guarda cada botón.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px. Comparativa en `pulido-visual/4.5-textos-motivos-celular.jpg`.
+  - E2E `base` "en Textos del sitio un motivo largo se lee entero, y Enter envía sin saltar de renglón". E2E completo: 159 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
