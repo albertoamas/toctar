@@ -163,7 +163,7 @@ function FormularioElemento(props: Props & { elemento?: ElementoLista; alTermina
         <Button type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : elemento ? "Guardar" : "Agregar"}
         </Button>
-        <Button type="button" variant="ghost" onClick={alTerminar}>
+        <Button type="button" variant="outline" onClick={alTerminar}>
           Cancelar
         </Button>
       </div>

@@ -161,7 +161,7 @@ function EditarItem({ item, servicios, alTerminar }: { item: ItemGaleria; servic
       </Campo>
       <div className="flex gap-2">
         <Button type="submit" disabled={enviando}>{enviando ? "Guardando…" : "Guardar"}</Button>
-        <Button type="button" variant="ghost" onClick={alTerminar}>Cancelar</Button>
+        <Button type="button" variant="outline" onClick={alTerminar}>Cancelar</Button>
       </div>
     </form>
   );

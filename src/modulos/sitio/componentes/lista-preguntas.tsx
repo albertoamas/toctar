@@ -119,7 +119,7 @@ function FormularioPregunta({ pregunta, alTerminar }: { pregunta?: Pregunta; alT
         <Button type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : pregunta ? "Guardar" : "Agregar"}
         </Button>
-        <Button type="button" variant="ghost" onClick={alTerminar}>
+        <Button type="button" variant="outline" onClick={alTerminar}>
           Cancelar
         </Button>
       </div>
