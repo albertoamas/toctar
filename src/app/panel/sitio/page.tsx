@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { cn } from "cn";
 import { PlusIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
-import { Button } from "@/componentes/ui/button";
+import { buttonVariants } from "@/componentes/ui/button";
 import { exigirModulo } from "@/lib/sesion";
 import { ListaServicios } from "@/modulos/sitio/componentes/lista-servicios";
 import { listarServicios } from "@/modulos/sitio/consultas";
@@ -16,10 +17,11 @@ export default function PaginaServicios() {
     <div className="flex max-w-3xl flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <p className="text-tinta-suave">En este orden salen en el sitio. Toca uno para editarlo.</p>
-        <Button nativeButton={false} render={<Link href="/panel/sitio/servicios/nuevo" />}>
+        {/* Enlace con forma de botón: lleva a otra pantalla, así que se anuncia como enlace (un Button con render de Link se anunciaba como botón) */}
+        <Link href="/panel/sitio/servicios/nuevo" className={cn(buttonVariants())}>
           <PlusIcon />
           Agregar servicio
-        </Button>
+        </Link>
       </div>
       <Suspense fallback={<Cargando />}>
         <Lista />

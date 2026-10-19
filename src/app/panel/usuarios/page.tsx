@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { cn } from "cn";
 import { PlusIcon } from "lucide-react";
 import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { Cargando } from "@/componentes/panel/cargando";
-import { Button } from "@/componentes/ui/button";
+import { buttonVariants } from "@/componentes/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/componentes/ui/table";
 import { exigirModulo } from "@/lib/sesion";
 import { listarUsuarios } from "@/modulos/usuarios/consultas";
@@ -19,10 +20,11 @@ export default function PaginaUsuarios({ searchParams }: PageProps<"/panel/usuar
     <section className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-heading text-4xl font-extrabold italic">Usuarios</h1>
-        <Button nativeButton={false} render={<Link href="/panel/usuarios/nuevo" />}>
+        {/* Enlace con forma de botón: lleva a otra pantalla, así que se anuncia como enlace (un Button con render de Link se anunciaba como botón) */}
+        <Link href="/panel/usuarios/nuevo" className={cn(buttonVariants())}>
           <PlusIcon />
           Agregar usuario
-        </Button>
+        </Link>
       </div>
       <Suspense fallback={<Cargando />}>
         <Lista searchParams={searchParams} />
