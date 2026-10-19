@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useActionState, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { ArrowDownIcon, ArrowUpIcon, CameraIcon, EyeIcon, EyeOffIcon, PencilIcon, TrashIcon, UploadIcon, XIcon } from "lucide-react";
+import { useFocoEnError } from "@/componentes/foco-en-error";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
@@ -148,18 +149,20 @@ function EditarItem({ item, servicios, alTerminar }: { item: ItemGaleria; servic
   }, {});
   const e = estado.errores ?? {};
   const prefijo = `galeria-${item.id}`;
+  const formulario = useRef<HTMLFormElement>(null);
+  useFocoEnError(formulario, estado);
   return (
-    <form action={accion} className="flex flex-col gap-3" noValidate>
+    <form ref={formulario} action={accion} className="flex flex-col gap-3" noValidate>
       <input type="hidden" name="id" value={item.id} />
       <Campo id={`${prefijo}-servicio`} etiqueta="Servicio" error={e.servicioId}>
-        <Selector id={`${prefijo}-servicio`} name="servicioId" defaultValue={estado.valores?.servicioId ?? item.servicioId}>
+        <Selector id={`${prefijo}-servicio`} name="servicioId" defaultValue={estado.valores?.servicioId ?? item.servicioId} aria-invalid={!!e.servicioId} aria-describedby={e.servicioId ? `${prefijo}-servicio-error` : undefined}>
           {servicios.map((s) => (
             <option key={s.id} value={s.id}>{s.nombre}</option>
           ))}
         </Selector>
       </Campo>
       <Campo id={`${prefijo}-descripcion`} etiqueta="Descripción" error={e.descripcion}>
-        <Input id={`${prefijo}-descripcion`} name="descripcion" defaultValue={estado.valores?.descripcion ?? item.descripcion} aria-invalid={!!e.descripcion} />
+        <Input id={`${prefijo}-descripcion`} name="descripcion" defaultValue={estado.valores?.descripcion ?? item.descripcion} aria-invalid={!!e.descripcion} aria-describedby={e.descripcion ? `${prefijo}-descripcion-error` : undefined} />
       </Campo>
       <div className="flex gap-2">
         <Button type="submit" disabled={enviando}>{enviando ? "Guardando…" : "Guardar"}</Button>
@@ -215,6 +218,7 @@ function SubirFotos({ servicios, alTerminar }: { servicios: Servicio[]; alTermin
   const formulario = useRef<HTMLFormElement>(null);
   const listo = useSyncExternalStore(sinSuscripcion, () => true, () => false);
   const e = estado.errores ?? {};
+  useFocoEnError(formulario, estado);
 
   async function enviar(evento: React.SyntheticEvent<HTMLFormElement, SubmitEvent>) {
     evento.preventDefault();
@@ -285,8 +289,9 @@ function ElegirFoto({ id, etiqueta, archivo, onChange, error }: { id: string; et
       <button
         type="button"
         onClick={() => entrada.current?.click()}
-        className="flex aspect-square items-center justify-center overflow-hidden rounded-sm border border-dashed border-border bg-superficie text-sm text-tinta-suave focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+        className="flex aspect-square items-center justify-center overflow-hidden rounded-sm border border-dashed border-border bg-superficie data-invalido:border-solid data-invalido:border-destructive text-sm text-tinta-suave focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
         aria-label={`${archivo ? "Cambiar" : "Elegir"} foto: ${etiqueta}`}
+        data-invalido={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- vista previa local (blob:), no pasa por next/image */}
