@@ -9,6 +9,9 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 // Es el único componente de cliente del sitio.
 
 type Foto = { url: string; miniatura: string; ancho: number | null; alto: number | null };
+/** Columnas de la grilla en la computadora (lg:grid-cols-4): las fotos de la primera fila se ven al entrar. */
+const FOTOS_PRIMERA_FILA = 4;
+
 export type FotoVisor = { id: number; descripcion: string; servicio: string; antes: Foto | null; despues: Foto };
 
 export function VisorGaleria({ fotos }: { fotos: FotoVisor[] }) {
@@ -17,7 +20,7 @@ export function VisorGaleria({ fotos }: { fotos: FotoVisor[] }) {
   return (
     <>
       <ul aria-label="Fotos de trabajos" className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
-        {fotos.map((f) => (
+        {fotos.map((f, i) => (
           <li key={f.id}>
             <button
               type="button"
@@ -25,7 +28,18 @@ export function VisorGaleria({ fotos }: { fotos: FotoVisor[] }) {
               className="group relative block aspect-square w-full overflow-hidden bg-superficie focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]"
               aria-label={`Ampliar: ${f.descripcion}`}
             >
-              <Image src={f.despues.miniatura} alt="" width={f.despues.ancho ?? 640} height={f.despues.alto ?? 640} unoptimized loading="lazy" className="size-full object-cover" />
+              {/* La primera fila (hasta 4 fotos) se ve al entrar: va sin carga diferida, y la primera con prioridad alta
+                  porque es lo más grande de la pantalla en el celular (Lighthouse la marcaba como LCP demorado). */}
+              <Image
+                src={f.despues.miniatura}
+                alt=""
+                width={f.despues.ancho ?? 640}
+                height={f.despues.alto ?? 640}
+                unoptimized
+                loading={i < FOTOS_PRIMERA_FILA ? "eager" : "lazy"}
+                fetchPriority={i === 0 ? "high" : undefined}
+                className="size-full object-cover"
+              />
               {f.antes && <span className="absolute bottom-2 left-2 bg-negro/75 px-2 py-0.5 text-xs font-semibold text-blanco">Antes y después</span>}
             </button>
           </li>
