@@ -290,7 +290,7 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Al pasar la portada a las filas compactas, la prueba de 1.3 bajaba 1600 px y caía en el cierre, donde el fijo se esconde. Ahora baja hasta la mitad de los servicios.
 - **Segunda revisión de YankoSoft (18/10):**
   - *"Al dar F5 hay cosas que cargan antes, por ejemplo la palabra Servicios."* Grabado con red lenta, cuadro a cuadro. A los 0,5 s se veía el encabezado sin el logo, el arte y el título "Servicios" suelto; el resto llegaba unos 0,2 s después. Los títulos de sección y el cierre estaban fijos en la página (primer envío) y su contenido sale de la base (segundo envío). El logo era un archivo aparte y llegaba último.
-    - **Cambio:** toda la portada va en un solo `<Suspense>` (`PortadaConDatos`). Mientras tanto se ve solo el arte, con una pantalla reservada (`min-h-screen`), para que el pie no salte. Regla para el resto del sitio: **un título de sección nunca aparece antes que su contenido**; el título principal de la página sí puede, porque orienta.
+    - **Cambio:** toda la portada va en un solo `<Suspense>` (`PortadaConDatos`). Mientras tanto se ve solo el arte, con una pantalla reservada (`min-h-screen`), para que el pie no salte. Regla para el resto del sitio: **un título de sección nunca aparece antes que su contenido**. ~~El título principal de la página sí puede, porque orienta.~~ Corregido en la revisión de 2.5: **tampoco el título de la página**; cada página llega entera.
     - **Cambio:** el logo del encabezado va dentro de la página. Se lee al armarla de `public/marca/toctar-horizontal-sin-lema-sobre-oscuro.svg`, que sigue siendo el único original.
     - **Resultado:** el primer cuadro muestra el encabezado con el logo y el arte, sin títulos sueltos; el siguiente, todo junto.
   - *"Se repite mucho WhatsApp."* Contado: en la portada, 4 veces al recorrerla (cabecera, botón fijo, cierre y pie), dos con el mismo texto "Escribir por WhatsApp".
@@ -390,6 +390,10 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Capturas a 360, 390, 768 y 1280 px, sin desborde. Comparativas en `pulido-visual/2.5-nosotros-celular.jpg` y `2.5-nosotros-computadora.jpg`.
   - E2E `hu-13-14` "Nosotros muestra la historia…": termina con el cierre, un solo WhatsApp a la vista y el enlace a las preguntas frecuentes. E2E completo: 141 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
   - Lighthouse de Nosotros: celular 92 (dos corridas), computadora 100; 100 en accesibilidad, buenas prácticas y SEO; CLS 0.
+- **Revisión de YankoSoft (18/10):**
+  - *"El monograma me gustaba más como estaba antes, le daba su toque a la página."* Vuelve a como estaba: grande, detrás del título y del texto, también en el celular. Se descarta el cambio B.
+  - *"La página tiene el mismo problema de carga que la portada: la palabra Nosotros carga antes que todo."* La excepción de 2.1 ("el título de la página sí puede llegar antes") se ve igual de mal. **Cambio:** el título y la bajada van dentro del mismo `<Suspense>` que el contenido, en Nosotros y también en Servicios y Galería, que tenían lo mismo; mientras tanto se ve el encabezado y el espacio reservado. La página de un servicio ya llegaba entera.
+  - E2E `base` "las páginas interiores llegan enteras: el título no aparece antes que el resto" (con red lenta, cuando está el `h1` ya está el cierre). Preguntas frecuentes, Contacto y Garantía se revisan igual en 2.6 a 2.8.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
