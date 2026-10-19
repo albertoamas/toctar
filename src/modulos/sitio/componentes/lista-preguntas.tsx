@@ -32,7 +32,21 @@ export function ListaPreguntas({ preguntas }: { preguntas: Pregunta[] }) {
 
   return (
     <div className="flex max-w-3xl flex-col gap-4">
-      <p className="text-tinta-suave">Se abren y cierran una por una en el sitio. Sin precios.</p>
+      {/* La acción principal arriba y en rojo, como "Agregar servicio" (pulido 4.6) */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <p className="text-tinta-suave">Se abren y cierran una por una en el sitio. Sin precios.</p>
+        {editando !== "nueva" && (
+          <Button type="button" onClick={() => setEditando("nueva")}>
+            <PlusIcon />
+            Agregar pregunta
+          </Button>
+        )}
+      </div>
+      {editando === "nueva" && (
+        <div className="rounded-sm border border-border p-3">
+          <FormularioPregunta alTerminar={() => setEditando(null)} />
+        </div>
+      )}
       {preguntas.length === 0 && <EstadoVacio>Todavía no hay preguntas. Agrega las que más te hacen los clientes.</EstadoVacio>}
 
       {preguntas.length > 0 && (
@@ -79,18 +93,6 @@ export function ListaPreguntas({ preguntas }: { preguntas: Pregunta[] }) {
         </ol>
       )}
 
-      {editando === "nueva" ? (
-        <div className="rounded-sm border border-border p-3">
-          <FormularioPregunta alTerminar={() => setEditando(null)} />
-        </div>
-      ) : (
-        <div>
-          <Button type="button" variant="outline" onClick={() => setEditando("nueva")}>
-            <PlusIcon />
-            Agregar pregunta
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
