@@ -22,15 +22,15 @@ const TITULO = "font-heading text-2xl font-bold italic";
 
 // HU-14 Contacto y mapa (RF-06). Los datos salen de Configuración (HU-04) y la bienvenida del panel (HU-08).
 // Tocar la dirección abre Google Maps (en el celular, la app de mapas).
+// Llega entera, con el título: nada aparece suelto antes que el resto (pulido 2.1 y 2.5, revisión de YankoSoft).
 export default function PaginaContacto() {
   return (
-    <section className="mx-auto w-full max-w-6xl px-4 py-12 md:py-20">
-      <TituloPagina>Contacto</TituloPagina>
+    <>
       <Suspense fallback={<div className="min-h-screen" />}>
         <Datos />
       </Suspense>
       <WhatsAppFijo />
-    </section>
+    </>
   );
 }
 
@@ -41,15 +41,21 @@ async function Datos() {
   const hayRedes = REDES.some((r) => d.redes[r]);
 
   return (
-    <div className="mt-4 grid gap-10 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-      <div className="flex flex-col gap-8">
-        <p className="max-w-prose text-lg text-tinta-suave">{contacto.bienvenida as string}</p>
-        {d.whatsapp && (
-          <div className="flex flex-col items-start gap-2">
-            <BotonWhatsApp />
-            <span className="text-sm text-tinta-suave">{formatearWhatsApp(d.whatsapp)}</span>
-          </div>
-        )}
+    <section className="mx-auto w-full max-w-6xl px-4 py-12 md:py-20">
+      <TituloPagina>Contacto</TituloPagina>
+      {/* Una sola grilla: en el celular el mapa va justo debajo de "Dónde estamos"; en la computadora ocupa la
+          columna derecha a lo alto (pulido 2.7). Como el mapa tiene su lugar fijo, la grilla pone el resto en la primera. */}
+      <div className="mt-4 grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] md:gap-x-10">
+        <div className="flex flex-col gap-8">
+          <p className="max-w-prose text-lg text-tinta-suave">{contacto.bienvenida as string}</p>
+          {d.whatsapp && (
+            <div className="flex flex-col items-start gap-2">
+              {/* El texto dice lo que gana el cliente; el nombre accesible suma "por WhatsApp" (pulido 2.1) */}
+              <BotonWhatsApp texto="Pedir cotización" />
+              <span className="text-sm text-tinta-suave">{formatearWhatsApp(d.whatsapp)}</span>
+            </div>
+          )}
+        </div>
 
         <section aria-labelledby="direccion-titulo" className="flex flex-col gap-2">
           <h2 id="direccion-titulo" className={TITULO}>Dónde estamos</h2>
@@ -57,10 +63,23 @@ async function Datos() {
             <MapPinIcon className="mt-0.5 size-5 shrink-0 text-rojo-texto" aria-hidden />
             <address className="not-italic">{d.direccion}</address>
           </a>
-          <a href={mapa} target="_blank" rel="noreferrer" className="text-sm font-semibold text-rojo-texto hover:underline">
+          <a href={mapa} target="_blank" rel="noreferrer" className="tt-area-toque self-start text-sm font-semibold text-rojo-texto hover:underline">
             Cómo llegar
           </a>
         </section>
+
+        {d.coordenadas && (
+          // Mapa de Google sin clave. Se carga recién al acercarse (loading="lazy") para no frenar la página (RNF-02).
+          <div className="relative aspect-[4/3] w-full bg-superficie md:col-start-2 md:row-span-5 md:row-start-1 md:aspect-auto md:min-h-[28rem]">
+            <iframe
+              title="Mapa del taller de TocTar Detailing"
+              src={`https://www.google.com/maps?q=${d.coordenadas.lat},${d.coordenadas.lng}&z=16&output=embed`}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="absolute inset-0 h-full w-full border-0"
+            />
+          </div>
+        )}
 
         <section aria-labelledby="horario-titulo" className="flex flex-col gap-2">
           <h2 id="horario-titulo" className={TITULO}>Horario</h2>
@@ -77,16 +96,16 @@ async function Datos() {
         <section aria-labelledby="garantia-titulo" className="flex flex-col gap-2">
           <h2 id="garantia-titulo" className={TITULO}>¿Algo no quedó bien?</h2>
           <p className="text-tinta-suave">Cuéntanos en el formulario de garantía y te respondemos por WhatsApp.</p>
-          <Link href="/garantia" className="text-sm font-semibold text-rojo-texto hover:underline">
+          <Link href="/garantia" className="tt-area-toque self-start text-sm font-semibold text-rojo-texto hover:underline">
             Garantía y reclamos
           </Link>
         </section>
 
         {(d.correo || hayRedes) && (
-          <section aria-labelledby="tambien-titulo" className="flex flex-col gap-2">
+          <section aria-labelledby="tambien-titulo" className="flex flex-col gap-3">
             <h2 id="tambien-titulo" className={TITULO}>También estamos en</h2>
             {d.correo && (
-              <a href={`mailto:${d.correo}`} className="hover:underline">
+              <a href={`mailto:${d.correo}`} className="tt-area-toque self-start hover:underline">
                 {d.correo}
               </a>
             )}
@@ -94,19 +113,6 @@ async function Datos() {
           </section>
         )}
       </div>
-
-      {d.coordenadas && (
-        // Mapa de Google sin clave. Se carga recién al acercarse (loading="lazy") para no frenar la página (RNF-02).
-        <div className="relative aspect-[4/3] w-full bg-superficie md:aspect-auto md:min-h-[28rem]">
-          <iframe
-            title="Mapa del taller de TocTar Detailing"
-            src={`https://www.google.com/maps?q=${d.coordenadas.lat},${d.coordenadas.lng}&z=16&output=embed`}
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            className="absolute inset-0 h-full w-full border-0"
-          />
-        </div>
-      )}
-    </div>
+    </section>
   );
 }
