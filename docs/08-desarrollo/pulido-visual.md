@@ -158,7 +158,7 @@ Antes de la demo del viernes 23.
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
 | 6.1 | Datos del negocio y logo | `/panel/configuracion` | ✅ 19/10 |
-| 6.2 | Taller (espacios y tamaños de vehículo) | `/panel/configuracion/taller` | ⏳ |
+| 6.2 | Taller (espacios y tamaños de vehículo) | `/panel/configuracion/taller` | ✅ 19/10 |
 | 6.3 | Cotizaciones y mantenimiento | `/panel/configuracion/cotizaciones` | ⏳ |
 
 ## Registro por pantalla
@@ -595,7 +595,7 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Foto principal y Variantes dicen "Se guarda(n) al momento, sin el botón Guardar cambios".
 - **Descartado o pendiente:**
   - Barra fija de "Guardar cambios" en el celular: taparía contenido, y con las filas más cortas el botón queda justo después de los pasos.
-  - Para 6.x: en `ListaEditable` (variantes, y también espacios y tamaños de Configuración) el nombre queda solo en un renglón y los botones en otro, aun con lugar. Se ve con Configuración para no cambiarla desde aquí.
+  - Para 6.x: en `ListaEditable` (variantes, y también espacios y tamaños de Configuración) el nombre queda solo en un renglón y los botones en otro, aun con lugar. Se ve con Configuración para no cambiarla desde aquí (resuelto en 6.2).
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px, y las filas con datos a 360 y 1280. Comparativa en `pulido-visual/4.4-editar-servicio-filas-celular.jpg`.
   - E2E `base` "en Editar servicio una fila vacía recibe el foco con su error, y en el celular sus botones van debajo". E2E completo: 157 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
@@ -784,6 +784,20 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px, y con error a 360 y 1280. Comparativa en `pulido-visual/6.1-configuracion-horario-360.jpg`.
   - E2E `hu-04` "a 360 px ningún campo de Configuración se sale de la pantalla" y el foco en el primer error. E2E completo: 169 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 6.2 Taller: espacios y tamaños (19/10/2026)
+- **Encontrado:**
+  - En el celular las 8 filas ocupaban dos renglones (el nombre arriba, los botones abajo), aun con nombres cortos como "Espacio 1"; en la computadora, 2 de 8. El nombre pedía al menos 192 px y, a 360 px, ↑ ↓ ✎ y "Desactivar" ocupaban unos 230 de los 302 que hay. Es la lista común: lo mismo en las variantes de un servicio.
+  - Al agregar sin nombre, el foco no volvía al campo.
+  - Lo que estaba bien: cada lista con título y para qué sirve, desactivados aparte con borde punteado y "Reactivar", agregar y renombrar en la lista con el foco en el campo al abrir, 44 px con pantalla táctil, sin desborde.
+- **Cambios:**
+  - Cada fila en un renglón: el nombre (se parte si es largo) y ↑ ↓ ✎. "Desactivar" pasa a la edición (se abre con el lápiz), con borde y a la derecha de Guardar y Cancelar: se usa poco y así no se toca sin querer. Vale para espacios, tamaños y variantes.
+  - `useFocoEnError` en el formulario de la lista.
+- **Descartado:**
+  - "Desactivar" como ícono: la palabra es más clara, y el ojo ya es "ocultar" en Preguntas y Galería.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, y agregar con error a 360 y 1280; la edición con "Desactivar" a 360. Comparativa en `pulido-visual/6.2-taller-celular.jpg`.
+  - E2E `hu-05` "espacios del taller…" (desactiva desde la edición). E2E completo: 169 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
