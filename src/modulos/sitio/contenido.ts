@@ -44,6 +44,9 @@ export const PAGINAS = {
 export type Pagina = keyof typeof PAGINAS;
 export const CLAVES_PAGINA = Object.keys(PAGINAS) as Pagina[];
 
+/** La única página con foto: la portada lleva la foto del taller detrás del lema (`contenido_pagina.foto_archivo_id`). */
+export const PORTADA = "inicio" satisfies Pagina;
+
 function esquemaCampo(c: CampoContenido) {
   const texto = z.string().trim().min(1, c.vacio).max(c.max, `Hasta ${c.max} caracteres.`);
   if (c.tipo !== "lista") return texto;

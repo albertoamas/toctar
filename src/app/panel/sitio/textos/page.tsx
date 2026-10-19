@@ -4,7 +4,7 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioContenido } from "@/modulos/sitio/componentes/formulario-contenido";
 import { FotoPortada } from "@/modulos/sitio/componentes/foto-portada";
-import { CLAVES_PAGINA } from "@/modulos/sitio/contenido";
+import { CLAVES_PAGINA, PORTADA } from "@/modulos/sitio/contenido";
 import { obtenerContenidos, obtenerFotoPortada } from "@/modulos/sitio/consultas";
 
 export const metadata: Metadata = { title: "Textos del sitio" };
@@ -23,16 +23,12 @@ async function Contenido() {
   const [contenidos, fotoPortada] = await Promise.all([obtenerContenidos(), obtenerFotoPortada()]);
   return (
     <div className="flex max-w-2xl flex-col gap-14">
-      {CLAVES_PAGINA.map((pagina) =>
-        pagina === "inicio" ? (
-          <div key={pagina} className="flex flex-col gap-8">
-            <FormularioContenido pagina={pagina} contenido={contenidos[pagina]} />
-            <FotoPortada foto={fotoPortada} />
-          </div>
-        ) : (
-          <FormularioContenido key={pagina} pagina={pagina} contenido={contenidos[pagina]} />
-        ),
-      )}
+      {CLAVES_PAGINA.map((pagina) => (
+        <div key={pagina} className="flex flex-col gap-8">
+          <FormularioContenido pagina={pagina} contenido={contenidos[pagina]} />
+          {pagina === PORTADA && <FotoPortada foto={fotoPortada} />}
+        </div>
+      ))}
     </div>
   );
 }
