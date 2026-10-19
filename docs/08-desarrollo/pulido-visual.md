@@ -149,7 +149,7 @@ Antes de la demo del viernes 23.
 | 5.1 | Reclamos | `/panel/reclamos` | ✅ 19/10 |
 | 5.2 | Detalle de un reclamo | `/panel/reclamos/[id]` | ✅ 19/10 |
 | 5.3 | Usuarios | `/panel/usuarios` | ✅ 19/10 |
-| 5.4 | Nuevo usuario | `/panel/usuarios/nuevo` | ⏳ |
+| 5.4 | Nuevo usuario | `/panel/usuarios/nuevo` | ✅ 19/10 |
 | 5.5 | Editar usuario | `/panel/usuarios/[id]` | ⏳ |
 | 5.6 | Sin acceso | `/panel/sin-acceso` | ⏳ |
 
@@ -725,6 +725,19 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px con 35 usuarios. Comparativa en `pulido-visual/5.3-usuarios-celular.jpg`.
   - E2E `hu-02` "la lista de usuarios: Agregar usuario, (tú) y la fila que abre el usuario". E2E completo: 167 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 5.4 Nuevo usuario (19/10/2026)
+- **Encontrado:**
+  - Tras enviar con errores, el foco quedaba en la página.
+  - Lo que estaba bien: cada rol es una tarjeta tocable entera con su descripción y el elegido con borde oscuro; los módulos del encargado aparecen solo al elegirlo, con descripción y la frase entera tocable; ayudas de usuario y contraseña; ojo de 44 px; "Crear usuario" igual que el título; 44 px con pantalla táctil; sin desborde.
+- **Cambios:**
+  - `useFocoEnError` en el formulario de usuario (el mismo de Editar usuario, 5.5).
+- **Descartado:**
+  - Avisar si un encargado queda sin módulos: hoy se permite a propósito (ve "Por ahora no hay nada para ti"); sería una regla nueva.
+  - Generar la contraseña sola: función nueva.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px, vacío y con Encargado, y con errores a 360 y 1280. Sin comparativa: el cambio no se ve en la captura (el foco).
+  - E2E `hu-02` "los errores del formulario se muestran junto a cada campo" (y el foco va al nombre). E2E completo: 167 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
