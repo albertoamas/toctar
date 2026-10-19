@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { ExternalLinkIcon } from "lucide-react";
+import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
-import { Campo } from "@/componentes/panel/campo";
+import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
@@ -32,9 +33,11 @@ export function FormularioNegocio(props: Props) {
     e[campo] ? `${campo}-error` : conAyuda ? `${campo}-ayuda` : undefined;
 
   const ubicacion = v.ubicacion ? leerUbicacion(v.ubicacion) : null;
+  const formulario = useRef<HTMLFormElement>(null);
+  useFocoEnError(formulario, estado);
 
   return (
-    <form action={accion} className="flex max-w-2xl flex-col gap-10" noValidate>
+    <form ref={formulario} action={accion} className="flex max-w-2xl flex-col gap-10" noValidate>
       <Seccion titulo="Contacto">
         <Campo id="nombre" etiqueta="Nombre del negocio" error={e.nombre}>
           <Input id="nombre" name="nombre" defaultValue={v.nombre} aria-invalid={!!e.nombre} aria-describedby={describir("nombre")} />
@@ -90,7 +93,7 @@ export function FormularioNegocio(props: Props) {
 
       <Seccion titulo="Horario de atención" descripcion="Se muestra en la página. Marca los días que abren.">
         <EditorHorarios valor={horarios} onChange={setHorarios} errores={e} />
-        {e.horarios && <p className="text-sm font-semibold text-rojo-texto">{e.horarios}</p>}
+        {e.horarios && <MensajeError id="horarios-error">{e.horarios}</MensajeError>}
       </Seccion>
 
       <Seccion titulo="Redes sociales" descripcion="Copia el enlace desde la página del negocio en cada red. Las que queden vacías no se muestran.">
