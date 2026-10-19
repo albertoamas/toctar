@@ -111,7 +111,7 @@ Antes de la demo del viernes 23.
 | 2.5 | Nosotros | `/nosotros` | ✅ 18/10 |
 | 2.6 | Preguntas frecuentes | `/preguntas-frecuentes` | ✅ 18/10 |
 | 2.7 | Contacto | `/contacto` | ✅ 18/10 |
-| 2.8 | Garantía y reclamos | `/garantia` | ⏳ |
+| 2.8 | Garantía y reclamos | `/garantia` | ✅ 18/10 |
 | 2.9 | Página no encontrada | cualquier ruta inexistente | ⏳ |
 | 2.10 | Sin conexión | `public/sin-conexion.html` | ⏳ |
 
@@ -433,6 +433,29 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Capturas a 360, 390, 768 y 1280 px, sin desborde. Grabación con red lenta: primero el encabezado, después la página entera. Comparativa en `pulido-visual/2.7-contacto-celular.jpg`.
   - E2E `hu-13-14` "en Contacto el mapa va junto a la dirección y los enlaces sueltos tienen 44 px para el dedo" y el botón por su nombre nuevo; `base` "las páginas interiores llegan enteras…" (ahora también Contacto). La prueba nueva falló en el celular: la base de pruebas arrancaba sin ubicación y el mapa aparecía recién cuando `hu-04` la guardaba (en la computadora ya había corrido). `preparar.setup.ts` carga ahora también la ubicación, con los mismos datos que `hu-04`. E2E completo: 145 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
   - Lighthouse: celular 92, computadora 99; 100 en accesibilidad, buenas prácticas y SEO; CLS 0.
+
+### 2.8 Garantía y reclamos (18/10/2026)
+- **Encontrado** (reclamos de prueba en `toctar_e2e`, no en la base de desarrollo):
+  - El título y la bajada llegaban antes que el formulario.
+  - Al enviar con errores, el foco quedaba en la página: quien usa lector de pantalla, o estaba abajo, no se enteraba de qué falló.
+  - Al enviar bien, la confirmación reemplazaba al formulario arriba, pero la pantalla seguía donde estaba el botón: en el celular, el título "Recibimos tu reclamo" quedaba tapado por el encabezado.
+  - Los ejemplos ("71234567", "2849XKT") iban como texto dentro del campo y parecían ya escritos; con error se leía "Escribe los 8 dígitos…" junto a un campo que parecía tenerlos.
+  - Los campos medían 32 px de alto y la X para quitar una foto 28 × 28.
+  - Lo que estaba bien: el teclado que corresponde en cada campo, errores junto al campo y en lenguaje claro, lo escrito se conserva, la trampa antirrobots no estorba, sin botón fijo encima, sin desborde.
+- **Cambios:**
+  - La página llega entera, con el título.
+  - Al enviar con errores, la pantalla va al primer campo con error (al centro, así no queda bajo el encabezado) y el foco también; al corregirlo y volver a enviar, va al siguiente.
+  - Al enviar bien, la pantalla sube a la confirmación (`scroll-mt-24`) y el foco va a ella (`tabIndex={-1}`, `role="status"`).
+  - Los ejemplos pasan a la ayuda: "Te respondemos por aquí. Ejemplo: 71234567" y "Por ejemplo, 2849XKT.".
+  - Campos de 44 px de alto en este formulario (`CAMPO`, en un solo lugar). La X de quitar foto se ve de 28 px y se toca en 44 × 44.
+- **Descartado o pendiente:**
+  - Resumen de errores arriba del formulario: con el foco en el primer error y los mensajes junto a cada campo alcanza para 7 campos.
+  - **Panel (grupos 3 a 6):** sus campos también miden 32 px. Se decide ahí, para todas sus pantallas juntas.
+  - Al repetir las capturas se llegó al límite de reclamos por hora desde la misma conexión: la confirmación de la computadora no salió y se vio el aviso del límite. Funciona como debe.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px (vacío, con errores, con fotos y la confirmación), sin desborde. Comparativas en `pulido-visual/2.8-errores-celular.jpg` y `2.8-confirmacion-celular.jpg`.
+  - E2E `hu-16`: campos y "quitar foto" de 44 px; la confirmación a la vista y con el foco; el foco al primer error y, al corregirlo, al siguiente. `base` "las páginas interiores llegan enteras…" (Garantía: con el título ya está el formulario). E2E completo: 145 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse: celular 89, computadora 100; 100 en accesibilidad, buenas prácticas y SEO; CLS 0. El celular queda en el pendiente común de rendimiento (2.4).
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
