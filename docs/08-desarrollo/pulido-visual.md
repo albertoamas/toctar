@@ -112,7 +112,7 @@ Antes de la demo del viernes 23.
 | 2.6 | Preguntas frecuentes | `/preguntas-frecuentes` | ✅ 18/10 |
 | 2.7 | Contacto | `/contacto` | ✅ 18/10 |
 | 2.8 | Garantía y reclamos | `/garantia` | ✅ 18/10 |
-| 2.9 | Página no encontrada | cualquier ruta inexistente | ⏳ |
+| 2.9 | Página no encontrada | cualquier ruta inexistente | ✅ 18/10 |
 | 2.10 | Sin conexión | `public/sin-conexion.html` | ⏳ |
 
 ### 3. Ingreso
@@ -457,6 +457,23 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - E2E `hu-16`: campos y "quitar foto" de 44 px; la confirmación a la vista y con el foco; el foco al primer error y, al corregirlo, al siguiente. `base` "las páginas interiores llegan enteras…" (Garantía: con el título ya está el formulario). E2E completo: 145 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
   - Lighthouse: celular 89, computadora 100; 100 en accesibilidad, buenas prácticas y SEO; CLS 0. El celular queda en el pendiente común de rendimiento (2.4).
 - **Revisión de YankoSoft (18/10):** *"El campo de servicio, donde se despliega una lista, sale blanco y no se ve lo escrito."* El `Selector` tenía el fondo transparente: Chrome en Windows dibuja la lista con el fondo del `<select>` y, transparente, la pintaba blanca con el texto blanco del sitio oscuro. Las capturas no lo mostraban porque la lista nativa no sale en ellas. **Cambio** en `src/componentes/panel/selector.tsx` (lo usan el sitio y el panel): las opciones llevan fondo y tinta del tema, y el selector el mismo fondo que `Input` en oscuro (antes se veía más oscuro que los otros campos). E2E `hu-16` "las opciones de la lista de servicios se leen sobre el fondo oscuro". E2E completo: 147 pasan.
+
+### 2.9 Página no encontrada (18/10/2026)
+- **Encontrado:**
+  - Una dirección que no existe (`/no-existe`) mostraba la página sin encabezado ni pie: sin menú, sin logo con enlace al inicio, sin contacto, y la pestaña decía solo "TocTar Detailing". Está en `src/app/not-found.tsx`, fuera del diseño del sitio. Un servicio inexistente sí tenía encabezado y pie (el error pasa dentro del sitio): dos versiones distintas.
+  - El pendiente de 2.3: `/servicios/no-existe` responde 200. Es lo documentado por Next con streaming: la página empieza a enviarse antes de saber si el servicio existe y el estado ya salió; Next agrega `noindex`.
+  - Lo que estaba bien: el texto dice qué pasó y da dos salidas; el monograma; sin botón fijo; sin desborde.
+- **Cambios:**
+  - `MarcoSitio` (`src/componentes/sitio/marco-sitio.tsx`): encabezado, contenido y pie del sitio en un solo lugar; lo usan el diseño del sitio y la página no encontrada general.
+  - `NoEncontrada` (`src/componentes/sitio/no-encontrada.tsx`): el contenido, compartido por la página general (con el marco) y la nueva `src/app/(sitio)/not-found.tsx` (dentro del diseño del sitio). Las dos se ven iguales.
+  - Título de la pestaña "Página no encontrada · TocTar Detailing" (un servicio inexistente sigue con "Servicio no encontrado", de su página).
+- **Descartado o pendiente:**
+  - Responder 404 en un servicio inexistente: exigiría consultar la base en el `proxy` antes de cada página de servicio (la misma consulta que ya hace la página, una vez más en cada visita) para un caso raro que Google ya no indexa por el `noindex`.
+  - Botón de WhatsApp: quien llega aquí busca una página; el inicio y los servicios alcanzan, y el pie tiene el WhatsApp.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px de los dos casos, sin desborde. Comparativa en `pulido-visual/2.9-no-encontrada-celular.jpg`.
+  - E2E `hu-10` "una dirección que no existe…" (404, encabezado, pie y título) y `hu-11` "un servicio oculto o inexistente…" (`noindex`). E2E completo: 147 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse no audita respuestas 404 (devuelve error en lugar de puntaje): sin medición en esta pantalla.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
