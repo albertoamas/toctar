@@ -87,3 +87,13 @@ test("el pie y la página de contacto llevan a garantía y reclamos", async ({ p
   await seccion.getByRole("link").click();
   await expect(page).toHaveURL(/\/garantia$/, { timeout: 15_000 });
 });
+
+test("las opciones de la lista de servicios se leen sobre el fondo oscuro", async ({ page }) => {
+  // Con el fondo transparente, Chrome en Windows dibujaba la lista en blanco con el texto blanco (pulido 2.8)
+  await page.goto("/garantia");
+  const colores = await page.getByLabel("Servicio (opcional)").locator("option").first().evaluate((o) => {
+    const s = getComputedStyle(o);
+    return [s.backgroundColor, s.color];
+  });
+  expect(colores).toEqual(["rgb(0, 0, 0)", "rgb(255, 255, 255)"]);
+});
