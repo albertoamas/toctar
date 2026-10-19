@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { cn } from "cn";
 import { TituloPagina } from "@/componentes/sitio/titulo-pagina";
 import { Monograma } from "@/componentes/sitio/iconos-marca";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
@@ -32,12 +33,19 @@ export default function PaginaNosotros() {
   );
 }
 
-function Parrafos({ texto }: { texto: string }) {
+/** `entrada`: la historia, en blanco y más grande, es por donde se empieza a leer; el resto acompaña en gris (pulido 2.5). */
+function Parrafos({ texto, entrada = false }: { texto: string; entrada?: boolean }) {
   return texto
     .split(/\n\s*\n/)
     .filter(Boolean)
     .map((p, i) => (
-      <p key={i} className="max-w-prose text-lg leading-7 whitespace-pre-line text-tinta-suave">
+      <p
+        key={i}
+        className={cn(
+          "max-w-prose whitespace-pre-line",
+          entrada ? "text-xl leading-8 text-tinta md:text-[22px] md:leading-9" : "text-lg leading-7 text-tinta-suave",
+        )}
+      >
         {p}
       </p>
     ));
@@ -50,7 +58,7 @@ async function Contenido() {
   return (
     <div className="mt-8 flex flex-col gap-12 md:gap-20">
       <div className="flex flex-col gap-4">
-        <Parrafos texto={n.historia as string} />
+        <Parrafos texto={n.historia as string} entrada />
       </div>
 
       <section aria-labelledby="como-trabajamos" className="flex flex-col gap-4">
