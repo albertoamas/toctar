@@ -21,7 +21,7 @@ export default function PaginaUsuarios({ searchParams }: PageProps<"/panel/usuar
         <h1 className="font-heading text-4xl font-extrabold italic">Usuarios</h1>
         <Button nativeButton={false} render={<Link href="/panel/usuarios/nuevo" />}>
           <PlusIcon />
-          Crear usuario
+          Agregar usuario
         </Button>
       </div>
       <Suspense fallback={<Cargando />}>
@@ -43,7 +43,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/usuarios">, "searc
       )}
 
       {otros.length === 0 && (
-        <EstadoVacio>Todavía no hay otros usuarios. Crea uno para cada persona del taller.</EstadoVacio>
+        <EstadoVacio>Todavía no hay otros usuarios. Agrega uno para cada persona del taller.</EstadoVacio>
       )}
 
       {/* Celular: tarjetas */}
@@ -51,9 +51,16 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/usuarios">, "searc
         {usuarios.map((u) => (
           <li key={u.id}>
             <Link href={`/panel/usuarios/${u.id}`} className="flex items-center justify-between gap-3 rounded-sm border border-border p-4 hover:bg-superficie">
+              {/* "(tú)" como en la tabla, y el usuario y el rol sin partirse (pulido 5.3) */}
               <span className="flex min-w-0 flex-col">
-                <span className="truncate font-semibold">{u.nombre}</span>
-                <span className="text-sm text-tinta-suave">{u.usuario} · {NOMBRE_ROL[u.rol]}</span>
+                <span className="truncate font-semibold">
+                  {u.nombre}
+                  {String(u.id) === yo.id && <span className="ml-2 font-normal text-tinta-suave">(tú)</span>}
+                </span>
+                <span className="flex flex-wrap gap-x-3 text-sm text-tinta-suave">
+                  <span className="break-all">{u.usuario}</span>
+                  <span className="whitespace-nowrap">{NOMBRE_ROL[u.rol]}</span>
+                </span>
               </span>
               <Estado desactivado={u.desactivado} />
             </Link>
@@ -74,9 +81,10 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/usuarios">, "searc
           </TableHeader>
           <TableBody>
             {usuarios.map((u) => (
-              <TableRow key={u.id}>
+              <TableRow key={u.id} className="relative">
                 <TableCell>
-                  <Link href={`/panel/usuarios/${u.id}`} className="font-semibold hover:underline">
+                  {/* El enlace cubre toda la fila, como en Reclamos (pulido 5.3) */}
+                  <Link href={`/panel/usuarios/${u.id}`} className="font-semibold after:absolute after:inset-0 hover:underline">
                     {u.nombre}
                   </Link>
                   {String(u.id) === yo.id && <span className="ml-2 text-sm text-tinta-suave">(tú)</span>}
