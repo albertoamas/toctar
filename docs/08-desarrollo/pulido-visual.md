@@ -109,7 +109,7 @@ Antes de la demo del viernes 23.
 | 2.3 | Página de un servicio | `/servicios/[slug]` | ✅ 18/10 |
 | 2.4 | Galería y visor de fotos | `/galeria` | ✅ 18/10 |
 | 2.5 | Nosotros | `/nosotros` | ✅ 18/10 |
-| 2.6 | Preguntas frecuentes | `/preguntas-frecuentes` | ⏳ |
+| 2.6 | Preguntas frecuentes | `/preguntas-frecuentes` | ✅ 18/10 |
 | 2.7 | Contacto | `/contacto` | ⏳ |
 | 2.8 | Garantía y reclamos | `/garantia` | ⏳ |
 | 2.9 | Página no encontrada | cualquier ruta inexistente | ⏳ |
@@ -394,6 +394,25 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - *"El monograma me gustaba más como estaba antes, le daba su toque a la página."* Vuelve a como estaba: grande, detrás del título y del texto, también en el celular. Se descarta el cambio B.
   - *"La página tiene el mismo problema de carga que la portada: la palabra Nosotros carga antes que todo."* La excepción de 2.1 ("el título de la página sí puede llegar antes") se ve igual de mal. **Cambio:** el título y la bajada van dentro del mismo `<Suspense>` que el contenido, en Nosotros y también en Servicios y Galería, que tenían lo mismo; mientras tanto se ve el encabezado y el espacio reservado. La página de un servicio ya llegaba entera.
   - E2E `base` "las páginas interiores llegan enteras: el título no aparece antes que el resto" (con red lenta, cuando está el `h1` ya está el cierre). Preguntas frecuentes, Contacto y Garantía se revisan igual en 2.6 a 2.8.
+
+### 2.6 Preguntas frecuentes (18/10/2026)
+- **Encontrado:**
+  - El título, "¿No encontraste tu respuesta?" y su botón estaban fuera del `<Suspense>`: llegaban antes que las preguntas (lo mismo que se corrigió en 2.5).
+  - En la computadora, el título y la lista iban en una columna centrada (empezaban en x = 272) y en las otras páginas en el borde izquierdo (x = 80): el título "saltaba" al pasar de una página a otra.
+  - El final seguía con "Escribir por WhatsApp" y sin el cierre común. "Mandar fotos de mi vehículo" no sirve aquí: el cliente quiere preguntar.
+  - Lo que estaba bien: `<details>` sin JavaScript, preguntas de 68 px (96 en dos renglones), foco visible, respuesta legible, sin desborde.
+- **Cambios:**
+  - La página llega entera, con el título.
+  - El título arranca en el mismo borde que en las demás páginas; la lista conserva su ancho de lectura (48rem), alineada a la izquierda.
+  - Cierre común: "¿No encontraste tu respuesta?", "Escríbenos con tu pregunta y te respondemos por WhatsApp." y el botón "Hacer mi pregunta" (nombre accesible "Hacer mi pregunta por WhatsApp"). `CierreWhatsApp` acepta ahora el texto del botón (`boton`); por omisión, "Mandar fotos de mi vehículo".
+  - Sin preguntas cargadas: "Pronto vas a ver aquí las preguntas más comunes.", como en Servicios y Galería.
+- **Descartado o pendiente:**
+  - Marcar en rojo la pregunta abierta: la flecha que gira ya lo dice.
+  - Datos estructurados de preguntas frecuentes para Google: Google casi no los muestra y sería algo nuevo.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px (cerradas, una abierta, foco), sin desborde. Grabación con red lenta: primero solo el encabezado, después la página entera. Comparativa en `pulido-visual/2.6-preguntas-computadora.jpg`.
+  - E2E `hu-13-14` "las preguntas frecuentes se abren y se cierran una por una" (termina con el cierre, un solo WhatsApp a la vista) y `base` "las páginas interiores llegan enteras…" (ahora también esta página). Las pruebas del cierre bajan hasta el botón y no hasta el título: en el celular el título podía quedar a la vista y el botón justo debajo. E2E completo: 143 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+  - Lighthouse: celular 92, computadora 100; 100 en accesibilidad, buenas prácticas y SEO; CLS 0.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
