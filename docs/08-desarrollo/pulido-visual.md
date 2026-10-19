@@ -150,7 +150,7 @@ Antes de la demo del viernes 23.
 | 5.2 | Detalle de un reclamo | `/panel/reclamos/[id]` | ✅ 19/10 |
 | 5.3 | Usuarios | `/panel/usuarios` | ✅ 19/10 |
 | 5.4 | Nuevo usuario | `/panel/usuarios/nuevo` | ✅ 19/10 |
-| 5.5 | Editar usuario | `/panel/usuarios/[id]` | ⏳ |
+| 5.5 | Editar usuario | `/panel/usuarios/[id]` | ✅ 19/10 |
 | 5.6 | Sin acceso | `/panel/sin-acceso` | ⏳ |
 
 ### 6. Panel: configuración
@@ -738,6 +738,22 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px, vacío y con Encargado, y con errores a 360 y 1280. Sin comparativa: el cambio no se ve en la captura (el foco).
   - E2E `hu-02` "los errores del formulario se muestran junto a cada campo" (y el foco va al nombre). E2E completo: 167 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 5.5 Editar usuario (19/10/2026)
+- **Encontrado:**
+  - En el diálogo "Nueva contraseña", tras el error el foco quedaba en la página, y el error estaba armado a mano en lugar del componente común.
+  - Al tocar "Desactivar usuario" el botón desaparece y el foco se perdía (igual al cancelar): con teclado o lector de pantalla no se notaba la confirmación.
+  - "Contraseña" y "Acceso" iban con la letra común, como los textos; en el celular quedaban justo debajo de "Guardar cambios", que no guarda eso.
+  - Lo que estaba bien: nombre y estado arriba, el usuario fijo con la razón, Contraseña y Acceso en columna aparte en la computadora, la confirmación de desactivar con los colores de la regla, la explicación cuando es el propio usuario, sin desborde. El formulario es el de 5.4: ya lleva el foco al error.
+- **Cambios:**
+  - Diálogo de contraseña con `Campo` y `useFocoEnError`.
+  - Al abrir la confirmación, el foco va a su texto (que el lector de pantalla lee); al cancelar, vuelve a "Desactivar usuario".
+  - "Contraseña" y "Acceso" en `font-heading` itálica, y una línea arriba de esa parte en el celular y la tableta.
+- **Descartado:**
+  - Mostrar u ocultar la contraseña del diálogo: va en texto a propósito, para pasársela a la persona.
+- **Verificación:**
+  - Capturas a 360, 390, 768 y 1280 px de un encargado, uno desactivado y el propio, y la confirmación y el diálogo con error a 360 y 1280. Comparativa en `pulido-visual/5.5-editar-usuario-celular.jpg`.
+  - E2E `hu-02` (foco en el diálogo tras el error, en la confirmación y de vuelta al cancelar). E2E completo: 167 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
