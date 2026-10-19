@@ -195,7 +195,11 @@ test("en Textos del sitio un motivo largo se lee entero, y Enter envía sin salt
   await primero.fill("Revisamos tu vehículo antes de darte un precio, con buena luz, y te mostramos lo que encontramos en la pintura.");
   // El campo crece en vez de cortar el texto
   await expect.poll(async () => (await primero.boundingBox())!.height).toBeGreaterThan(alto);
-  await page.getByRole("button", { name: "Agregar motivo" }).click();
+  // "Agregar motivo" mide lo mismo que el botón de guardar (antes, 28 px con mouse)
+  const agregar = page.getByRole("button", { name: "Agregar motivo" });
+  const guardar = page.getByRole("button", { name: "Guardar nosotros" });
+  expect((await agregar.boundingBox())!.height).toBe((await guardar.boundingBox())!.height);
+  await agregar.click();
   const nuevo = page.getByRole("list", { name: "Motivo" }).getByRole("textbox").last();
   await nuevo.press("Enter");
   // Enter envió el formulario: el motivo vacío vuelve con su error y el foco
