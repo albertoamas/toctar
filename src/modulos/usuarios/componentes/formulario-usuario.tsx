@@ -72,7 +72,10 @@ export function FormularioUsuario(props: Props) {
 
       <fieldset className="flex flex-col gap-3">
         <legend className="mb-3 text-sm font-semibold">Rol</legend>
-        <RadioGroup name="rol" value={rol} onValueChange={(v) => setRol(v as Rol)} className="gap-3">
+        {/* El valor viaja en un campo oculto propio: React reinicia el formulario al terminar la acción y el campo interno
+            de los radios de base-ui volvía al rol inicial tras un error, aunque en pantalla siguiera marcado el elegido */}
+        <input type="hidden" name="rol" value={rol} />
+        <RadioGroup value={rol} onValueChange={(v) => setRol(v as Rol)} className="gap-3">
           {ROLES.map((r) => (
             <label key={r} htmlFor={`rol-${r}`} className="flex cursor-pointer items-start gap-3 rounded-sm border border-border p-3 has-data-checked:border-tinta">
               <RadioGroupItem id={`rol-${r}`} value={r} className="mt-0.5" />
