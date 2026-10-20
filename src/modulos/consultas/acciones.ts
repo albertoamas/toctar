@@ -240,34 +240,48 @@ export async function pedirSubidaVideo(datos: { consultaId: number; tipo: string
 
 /**
  * Segundo paso: el video ya está en el almacenamiento y se registra en la consulta. Solo con un permiso vigente de esa
- * consulta. Se mira lo que de verdad se subió (tipo y tamaño), no lo que dice el navegador. Si no entra, se borra.
+ * consulta, que se consume recién al registrar: si el video todavía no está, el permiso sigue ocupando su lugar y, al
+ * vencer, la limpieza borra lo que se haya subido. Se mira lo que de verdad se subió (tipo y tamaño), no lo que dice el
+ * navegador.
  */
 export async function registrarVideo(datos: { consultaId: number; clave: string; duracion: number }): Promise<EstadoFormulario> {
   const autor = await exigirModulo("consultas");
   const entrada = esquemaRegistrarVideo.safeParse(datos);
   if (!entrada.success) return { mensaje: PEDIDO_ILEGIBLE };
   const { consultaId, clave, duracion } = entrada.data;
+  const delPermiso = and(eq(subidaPendiente.clave, clave), eq(subidaPendiente.consultaId, consultaId), gt(subidaPendiente.expiraAt, sql`now()`));
 
-  // El permiso se usa una vez: al registrar (o al fallar) deja de ocupar lugar
-  const [permiso] = await db
-    .delete(subidaPendiente)
-    .where(and(eq(subidaPendiente.clave, clave), eq(subidaPendiente.consultaId, consultaId), gt(subidaPendiente.expiraAt, sql`now()`)))
-    .returning({ clave: subidaPendiente.clave });
+  const [permiso] = await db.select({ clave: subidaPendiente.clave }).from(subidaPendiente).where(delPermiso);
   if (!permiso) return { mensaje: "El permiso para subir el video venció. Vuelve a intentar." };
 
   const subido = await datosArchivoPrivado(clave);
   if (!subido) return { mensaje: "El video no terminó de subir. Vuelve a intentar." };
   if (!(TIPOS_VIDEO as readonly string[]).includes(subido.tipo) || subido.bytes > BYTES_MAXIMOS_VIDEO) {
+    await db.delete(subidaPendiente).where(eq(subidaPendiente.clave, clave));
     await borrarArchivo(clave, "privado");
     return { mensaje: PEDIDO_ILEGIBLE };
   }
 
-  const [{ id: archivoId }] = await db
-    .insert(archivo)
-    .values({ clave, tipoMime: subido.tipo, bytes: subido.bytes, privado: true, duracionSegundos: Math.round(duracion), createdBy: Number(autor.id) })
-    .returning({ id: archivo.id });
-  if (!(await vincularArchivo(consultaId, archivoId))) {
-    await eliminarFoto(archivoId);
+  // Todo junto: consumir el permiso, registrar el archivo y sumarlo a la consulta. Si algo falla, el permiso queda y la
+  // limpieza se encarga del archivo
+  const resultado = await db.transaction(async (tx) => {
+    await tx.select({ id: consulta.id }).from(consulta).where(eq(consulta.id, consultaId)).for("update");
+    const [consumido] = await tx.delete(subidaPendiente).where(delPermiso).returning({ clave: subidaPendiente.clave });
+    // Otro pedido con el mismo permiso ya lo registró
+    if (!consumido) return "repetido";
+    if ((await ocupados(tx, consultaId)) >= MAXIMO_ARCHIVOS) return "lleno";
+    const [{ id: archivoId }] = await tx
+      .insert(archivo)
+      .values({ clave, tipoMime: subido.tipo, bytes: subido.bytes, privado: true, duracionSegundos: Math.round(duracion), createdBy: Number(autor.id) })
+      .returning({ id: archivo.id });
+    const [{ ultimo }] = await tx.select({ ultimo: max(consultaArchivo.orden) }).from(consultaArchivo).where(eq(consultaArchivo.consultaId, consultaId));
+    await tx.insert(consultaArchivo).values({ consultaId, archivoId, orden: (ultimo ?? -1) + 1 });
+    await tx.update(consulta).set({ ultimoMovimientoAt: sql`now()` }).where(eq(consulta.id, consultaId));
+    return "agregado";
+  });
+  if (resultado === "repetido") return { mensaje: "Ese video ya está en la consulta. Recarga la página." };
+  if (resultado === "lleno") {
+    await borrarArchivo(clave, "privado");
     return { mensaje: MENSAJE_LIMITE };
   }
 
