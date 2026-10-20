@@ -19,13 +19,14 @@ export function avisarResultado(r: EstadoFormulario) {
   }
 }
 
-type Accion = (previo: EstadoFormulario, datos: FormData) => Promise<EstadoFormulario>;
+type Accion<E extends EstadoFormulario> = (previo: E, datos: FormData) => Promise<E>;
 
 /**
  * La acción con su aviso, para useActionState. El aviso sale desde la acción y no desde un efecto:
  * si la página se recarga y el formulario se reemplaza, un efecto no alcanza a correr.
+ * Genérica: conserva lo que la respuesta trae de más (por ejemplo, los clientes repetidos).
  */
-export function conAviso(accion: Accion, alTerminar?: (r: EstadoFormulario) => void): Accion {
+export function conAviso<E extends EstadoFormulario>(accion: Accion<E>, alTerminar?: (r: E) => void): Accion<E> {
   return async (previo, datos) => {
     const resultado = await accion(previo, datos);
     avisarResultado(resultado);

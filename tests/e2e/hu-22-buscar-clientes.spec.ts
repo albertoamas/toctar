@@ -1,32 +1,11 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import pg from "pg";
-import { ingresarComoDueno, URL_BASE_E2E } from "./apoyo";
+import { crearClienteEnBase as crearCliente, ingresarComoDueno } from "./apoyo";
 
 // HU-22 Buscar clientes. Especificación: docs/08-desarrollo/etapas/C1-catalogo-clientes.md §9.
 // Los clientes se crean directo en la base, con datos propios de cada proyecto (celular o escritorio).
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "C" : "E");
 const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 3 : 4}0000${n}0`;
-
-async function crearCliente(datos: { nombre: string; telefono: string; placa?: string; activo?: boolean }) {
-  const cliente = new pg.Client({ connectionString: URL_BASE_E2E });
-  await cliente.connect();
-  try {
-    const { rows: autor } = await cliente.query<{ id: number }>("select id from usuario where nombre_usuario = 'dueno'");
-    const { rows } = await cliente.query<{ id: number }>(
-      "insert into cliente (nombre, telefono, activo, created_by) values ($1, $2, $3, $4) returning id",
-      [datos.nombre, datos.telefono, datos.activo ?? true, autor[0].id],
-    );
-    if (datos.placa) {
-      await cliente.query(
-        "insert into vehiculo (cliente_id, placa, tamano_id, created_by) values ($1, $2, (select id from tamano_vehiculo order by orden limit 1), $3)",
-        [rows[0].id, datos.placa, autor[0].id],
-      );
-    }
-  } finally {
-    await cliente.end();
-  }
-}
 
 test("se busca por parte del nombre sin tildes, por teléfono parcial y por placa, mientras se escribe", async ({ page }, info) => {
   const s = sufijo(info);

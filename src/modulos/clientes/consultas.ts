@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, like, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, like, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { cliente, tamanoVehiculo, vehiculo } from "@/db/esquema";
 import { escaparLike, normalizarBusqueda } from "./reglas";
@@ -51,7 +51,7 @@ async function conPlacas<T extends { id: number }>(clientes: T[]): Promise<(T & 
   return clientes.map((c) => ({ ...c, placas: vehiculos.filter((v) => v.clienteId === c.id).map((v) => v.placa) }));
 }
 
-type VehiculoCliente = {
+export type VehiculoCliente = {
   id: number;
   placa: string;
   tamanoId: number;
@@ -110,18 +110,24 @@ export async function obtenerCliente(id: number): Promise<DetalleCliente | null>
   return { ...c, vehiculos };
 }
 
-/** Quién tiene ya ese teléfono, para avisar el duplicado (RF-23). */
-export async function clienteConTelefono(telefono: string): Promise<{ id: number; nombre: string } | null> {
-  const [c] = await db.select({ id: cliente.id, nombre: cliente.nombre }).from(cliente).where(eq(cliente.telefono, telefono));
+/** Quién tiene ya ese teléfono, para avisar el duplicado (RF-23). `excepto`: el cliente que se está editando. */
+export async function clienteConTelefono(telefono: string, excepto?: number): Promise<{ id: number; nombre: string } | null> {
+  const [c] = await db
+    .select({ id: cliente.id, nombre: cliente.nombre })
+    .from(cliente)
+    .where(and(eq(cliente.telefono, telefono), excepto ? ne(cliente.id, excepto) : undefined));
   return c ?? null;
 }
 
-/** De quién es esa placa entre los vehículos activos, para avisar el duplicado (RF-23). */
-export async function clienteConPlaca(placa: string): Promise<{ id: number; nombre: string } | null> {
+/**
+ * De quién es esa placa entre los vehículos activos, para avisar el duplicado (RF-23). `excepto`: el vehículo que se
+ * está editando o reactivando, que no choca consigo mismo.
+ */
+export async function clienteConPlaca(placa: string, excepto?: number): Promise<{ id: number; nombre: string } | null> {
   const [c] = await db
     .select({ id: cliente.id, nombre: cliente.nombre })
     .from(vehiculo)
     .innerJoin(cliente, eq(vehiculo.clienteId, cliente.id))
-    .where(and(eq(vehiculo.placa, placa), eq(vehiculo.activo, true)));
+    .where(and(eq(vehiculo.placa, placa), eq(vehiculo.activo, true), excepto ? ne(vehiculo.id, excepto) : undefined));
   return c ?? null;
 }

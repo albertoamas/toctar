@@ -67,6 +67,13 @@ test("sube un par antes y después y una foto sola; los ordena, oculta, edita y 
   await page.getByRole("button", { name: "Ocultar: Vidrios sin manchas de ácido" }).click();
   await expect(item("Vidrios sin manchas de ácido")).toContainText("Oculta");
   await page.getByRole("button", { name: "Editar: Vidrios sin manchas de ácido" }).click();
+  // Tras un error, el servicio elegido se conserva (React reinicia el formulario y el selector volvía al original)
+  await galeria.getByLabel("Servicio").selectOption({ label: "Pulido y nano cerámico" });
+  await galeria.getByLabel("Descripción").fill("");
+  await galeria.getByRole("button", { name: "Guardar" }).click();
+  await expect(galeria.getByLabel("Descripción")).toHaveAttribute("aria-invalid", "true");
+  await expect(galeria.getByLabel("Servicio").locator("option:checked")).toHaveText("Pulido y nano cerámico");
+  await galeria.getByLabel("Servicio").selectOption({ label: "Pulido de vidrios" });
   await galeria.getByLabel("Descripción").fill("Parabrisas sin manchas de ácido");
   await galeria.getByRole("button", { name: "Guardar" }).click();
   await expect(galeria).toContainText("Parabrisas sin manchas de ácido");

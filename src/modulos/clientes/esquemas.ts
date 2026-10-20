@@ -75,3 +75,12 @@ export const esquemaVehiculo = z.object(camposVehiculo);
 
 /** Campos del vehículo en el formulario de cliente nuevo: llevan el prefijo "vehiculo-". */
 export const CAMPOS_VEHICULO = ["placa", "tamanoId", "marca", "modelo", "anio", "color"] as const;
+
+/** Activar o desactivar: llega de un formulario ("true"/"false") o de una llamada directa (booleano). */
+export const esquemaEstado = z.object({
+  id: z.coerce.number().int().positive(),
+  activo: z.union([z.boolean(), z.enum(["true", "false"]).transform((v) => v === "true")]),
+});
+
+/** Para cambiarEstadoVehiculo, que recibe datos sueltos: cualquiera puede llamarla. */
+export const esquemaEstadoVehiculo = esquemaEstado.extend({ clienteId: z.coerce.number().int().positive() });

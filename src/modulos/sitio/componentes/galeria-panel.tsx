@@ -155,7 +155,15 @@ function EditarItem({ item, servicios, alTerminar }: { item: ItemGaleria; servic
     <form ref={formulario} action={accion} className="flex flex-col gap-3" noValidate>
       <input type="hidden" name="id" value={item.id} />
       <Campo id={`${prefijo}-servicio`} etiqueta="Servicio" error={e.servicioId}>
-        <Selector id={`${prefijo}-servicio`} name="servicioId" defaultValue={estado.valores?.servicioId ?? item.servicioId} aria-invalid={!!e.servicioId} aria-describedby={e.servicioId ? `${prefijo}-servicio-error` : undefined}>
+        {/* La key: React reinicia el formulario tras la acción y un <select> volvería al servicio con el que se montó */}
+        <Selector
+          key={estado.valores?.servicioId ?? item.servicioId}
+          id={`${prefijo}-servicio`}
+          name="servicioId"
+          defaultValue={estado.valores?.servicioId ?? item.servicioId}
+          aria-invalid={!!e.servicioId}
+          aria-describedby={e.servicioId ? `${prefijo}-servicio-error` : undefined}
+        >
           {servicios.map((s) => (
             <option key={s.id} value={s.id}>{s.nombre}</option>
           ))}
