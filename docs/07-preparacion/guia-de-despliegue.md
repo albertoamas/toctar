@@ -15,7 +15,7 @@ VPS (Hetzner CX23, Alemania) ── Coolify (Traefik + https automático)
 Cloudflare (cuenta de TocTar)
         ├── DNS y dominio (Registrar)
         ├── R2: toctar-fotos, toctar-fotos-pruebas (públicos con dominio propio)
-        ├── R2: toctar-privado, toctar-privado-pruebas (privados: fotos de reclamos)
+        ├── R2: toctar-privado, toctar-privado-pruebas (privados: fotos de reclamos y fotos y videos de consultas)
         └── R2: toctar-respaldos (privado)
 UptimeRobot → https://<dominio>/api/salud
 ```
@@ -99,6 +99,12 @@ En cada entorno: + New → Database → **PostgreSQL**, con la imagen `postgres:
    - otro para los respaldos, limitado a `toctar-respaldos`.
    Copiar el Access Key ID y el Secret apenas se crean: el secret se muestra una sola vez.
 4. El endpoint es `https://<id-de-cuenta>.r2.cloudflarestorage.com`. El id de la cuenta aparece en la página de R2.
+5. **CORS en los dos buckets privados:** los videos de las consultas suben directo desde el navegador (una acción del servidor acepta hasta 6 MB), con un permiso firmado de 10 minutos. Settings → **CORS Policy** → Add:
+   - `toctar-privado`: origen `https://<dominio>`; `toctar-privado-pruebas`: origen `https://pruebas.<dominio>`.
+   ```json
+   [{ "AllowedOrigins": ["https://<dominio>"], "AllowedMethods": ["PUT", "GET"], "AllowedHeaders": ["content-type"], "MaxAgeSeconds": 3600 }]
+   ```
+   Sin esto, al agregar un video a una consulta aparece "No se pudo subir el video".
 
 ## 7. Las dos apps (en Coolify, 20 minutos cada una)
 

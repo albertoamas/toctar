@@ -12,7 +12,7 @@ import { formatearFechaHora } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
-import { FotosConsulta } from "@/modulos/consultas/componentes/fotos-consulta";
+import { ArchivosConsulta } from "@/modulos/consultas/componentes/archivos-consulta";
 import { NotaConsulta } from "@/modulos/consultas/componentes/nota-consulta";
 import { obtenerConsulta } from "@/modulos/consultas/consultas";
 import { NOMBRE_CANAL, NOMBRE_ESTADO } from "@/modulos/consultas/reglas";
@@ -84,7 +84,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/consulta
         </dl>
 
         <div className="flex flex-col gap-10 lg:col-start-1 lg:row-start-1">
-          <FotosConsulta consultaId={c.id} archivos={c.archivos} />
+          <ArchivosConsulta consultaId={c.id} archivos={c.archivos} />
           <NotaConsulta id={c.id} nota={c.nota} />
         </div>
       </div>

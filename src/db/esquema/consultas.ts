@@ -68,6 +68,25 @@ export const consultaArchivo = pgTable(
   (t) => [primaryKey({ columns: [t.consultaId, t.archivoId] })],
 );
 
+/**
+ * Permisos de subida directa de videos que todavía no se registraron (HU-24). Cuentan para el límite de la consulta:
+ * sin esto, pedir permisos sin registrar los videos llenaría el almacenamiento. Al vencer, se borran con su archivo.
+ */
+export const subidaPendiente = pgTable(
+  "subida_pendiente",
+  {
+    clave: text("clave").primaryKey(),
+    consultaId: integer("consulta_id")
+      .notNull()
+      .references(() => consulta.id),
+    createdBy: integer("created_by")
+      .notNull()
+      .references(() => usuario.id),
+    expiraAt: momento("expira_at").notNull(),
+  },
+  (t) => [index("subida_pendiente_por_consulta").on(t.consultaId), index("subida_pendiente_por_vencimiento").on(t.expiraAt)],
+);
+
 /** Quién y cuándo crea o cambia cotizaciones y, en C3, pagos (RNF-10). Solo se agregan filas. */
 export const auditoria = pgTable(
   "auditoria",
