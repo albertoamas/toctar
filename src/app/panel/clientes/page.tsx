@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { cn } from "cn";
@@ -9,12 +9,13 @@ import { buttonVariants } from "@/componentes/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/componentes/ui/table";
 import { exigirModulo } from "@/lib/sesion";
 import { formatearWhatsApp } from "@/lib/whatsapp";
-import { listarClientes } from "@/modulos/clientes/consultas";
+import { BuscadorClientes } from "@/modulos/clientes/componentes/buscador-clientes";
+import { buscarClientes } from "@/modulos/clientes/consultas";
 
 export const metadata: Metadata = { title: "Clientes" };
 
-// HU-21 y HU-22: lista de clientes. Dueño o encargado con el permiso "clientes"; el técnico nunca (RN-12).
-export default function PaginaClientes() {
+// HU-21 y HU-22: lista y búsqueda de clientes. Dueño o encargado con el permiso "clientes"; el técnico nunca (RN-12).
+export default function PaginaClientes({ searchParams }: PageProps<"/panel/clientes">) {
   return (
     <section className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -25,20 +26,59 @@ export default function PaginaClientes() {
           Agregar cliente
         </Link>
       </div>
+      {/* Aparte de la lista: al buscar, el campo no se vuelve a montar y no pierde el foco */}
+      <Suspense fallback={<div className="h-9 max-w-md pointer-coarse:h-11" />}>
+        <BuscadorClientes />
+      </Suspense>
       <Suspense fallback={<Cargando />}>
-        <Lista />
+        <Lista searchParams={searchParams} />
       </Suspense>
     </section>
   );
 }
 
-async function Lista() {
+async function Lista({ searchParams }: Pick<PageProps<"/panel/clientes">, "searchParams">) {
   await exigirModulo("clientes");
-  const clientes = await listarClientes();
-  if (clientes.length === 0) return <EstadoVacio>Todavía no hay clientes. Agrega el primero con «Agregar cliente».</EstadoVacio>;
+  const parametros = await searchParams;
+  const q = typeof parametros.q === "string" ? parametros.q : "";
+  const desactivados = parametros.ver === "desactivados";
+  const { clientes, hayMas } = await buscarClientes(q, desactivados);
+  // Los enlaces conservan la búsqueda escrita: el campo la sigue mostrando
+  const conBusqueda = (ver?: string) => {
+    const p = new URLSearchParams();
+    if (q.trim()) p.set("q", q);
+    if (ver) p.set("ver", ver);
+    const consulta = p.toString();
+    return (consulta ? `/panel/clientes?${consulta}` : "/panel/clientes") as Route;
+  };
+  const cambiarVista = desactivados ? (
+    <Link href={conBusqueda()} className="inline-flex min-h-11 items-center self-start text-sm font-semibold underline">
+      Ver los activos
+    </Link>
+  ) : (
+    <Link href={conBusqueda("desactivados")} className="inline-flex min-h-11 items-center self-start text-sm text-tinta-suave underline">
+      Ver desactivados
+    </Link>
+  );
+
+  if (clientes.length === 0) {
+    return (
+      <>
+        <EstadoVacio>
+          {q
+            ? `No hay clientes${desactivados ? " desactivados" : ""} con «${q.trim()}».`
+            : desactivados
+              ? "No hay clientes desactivados."
+              : "Todavía no hay clientes. Agrega el primero con «Agregar cliente»."}
+        </EstadoVacio>
+        {cambiarVista}
+      </>
+    );
+  }
 
   return (
     <>
+      {desactivados && <p className="font-semibold">Clientes desactivados</p>}
       {/* Celular: tarjetas que se tocan enteras */}
       <ul aria-label="Clientes" className="flex flex-col gap-2 md:hidden">
         {clientes.map((c) => (
@@ -81,6 +121,8 @@ async function Lista() {
           </TableBody>
         </Table>
       </div>
+      {hayMas && <p className="text-sm text-tinta-suave">Hay más clientes: escribe algo más preciso para encontrar el que buscas.</p>}
+      {cambiarVista}
     </>
   );
 }
