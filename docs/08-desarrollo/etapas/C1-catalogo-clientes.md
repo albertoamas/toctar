@@ -1,7 +1,7 @@
 # C1 Catálogo y clientes — especificación
 
 - **Fase y semana:** C. Entrega 2 · semana 2 (desde el 20 de octubre)
-- **Estado:** aprobada (20 de octubre de 2026); HU-19 y HU-20 unidas (#49, #50); en curso: HU-21
+- **Estado:** aprobada (20 de octubre de 2026); HU-19 a HU-21 unidas (#49 a #51); en curso: HU-22
 - **Historias:** HU-19 Catálogo con variantes · HU-20 Precios por tamaño y duración · HU-21 Registrar clientes y vehículos · HU-22 Buscar clientes · HU-23 Ficha del cliente
 - **Base:**
   - Requisitos: RF-20 a RF-28; RNF-01, RNF-05, RNF-08, RNF-10, RNF-11.
@@ -141,7 +141,7 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel (44 px c
 
 ### `/panel/clientes` — Clientes (dueño y encargado con "Clientes")
 - Arriba: buscador ("Buscar por nombre, teléfono o placa") y "Agregar cliente" (enlace con forma de botón, rojo).
-- La búsqueda actualiza la dirección (`?q=`) con una pausa de 300 ms mientras se escribe; la lista se calcula en el servidor. Sin búsqueda, los 30 más recientes; con búsqueda, hasta 30 resultados y "Hay más: escribe algo más preciso" si se pasan.
+- La búsqueda actualiza la dirección (`?q=`) con una pausa de 300 ms mientras se escribe; la lista se calcula en el servidor. Una ✕ propia de 44 px borra la búsqueda y devuelve el foco al campo. "Ver desactivados" y "Ver los activos" conservan lo escrito. Sin búsqueda, los 30 más recientes; con búsqueda, hasta 30 resultados y "Hay más: escribe algo más preciso" si se pasan.
 - Celular: tarjetas (nombre, teléfono, placas) que se tocan enteras. Computadora: tabla (nombre, WhatsApp, vehículos) con la fila entera tocable.
 - Los desactivados no salen; un enlace "Ver desactivados" (`?ver=desactivados`) los lista.
 - Estados vacíos: "Todavía no hay clientes. Agrega el primero con Agregar cliente." · "No hay clientes con «<búsqueda>»."
