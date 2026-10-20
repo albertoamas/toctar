@@ -28,7 +28,7 @@ test("el personal registra un cliente con su primer vehículo; los obligatorios 
   await expect(page.getByText("Escribe la placa.")).toBeVisible();
   await expect(page.getByText("Elige el tamaño.")).toBeVisible();
 
-  await page.getByLabel("Placa").fill(`hu21 ${sufijo(info)}-01`);
+  await page.getByLabel("Placa", { exact: true }).fill(`hu21 ${sufijo(info)}-01`);
   await page.getByLabel("Tamaño").selectOption({ label: "Compactos" });
   await page.getByLabel("Modelo").fill("Yaris");
   await page.getByLabel("Año", { exact: true }).fill("2019");
@@ -50,7 +50,7 @@ test("un teléfono o una placa repetidos avisan de quién son y llevan a su fich
   await page.goto("/panel/clientes/nuevo");
   await page.getByLabel("Nombre", { exact: true }).fill(nombre);
   await page.getByLabel("WhatsApp").fill(telefono(info, 2));
-  await page.getByLabel("Placa").fill(`REP${sufijo(info)}1`);
+  await page.getByLabel("Placa", { exact: true }).fill(`REP${sufijo(info)}1`);
   await page.getByLabel("Tamaño").selectOption({ label: "Compactos" });
   await page.getByRole("button", { name: "Agregar cliente" }).click();
   await expect(page).toHaveURL(/\/panel\/clientes\/\d+\?creado=1$/);
@@ -66,7 +66,7 @@ test("un teléfono o una placa repetidos avisan de quién son y llevan a su fich
 
   // Otro número, pero la misma placa escrita distinto
   await page.getByLabel("WhatsApp").fill(telefono(info, 3));
-  await page.getByLabel("Placa").fill(`rep-${sufijo(info).toLowerCase()} 1`);
+  await page.getByLabel("Placa", { exact: true }).fill(`rep-${sufijo(info).toLowerCase()} 1`);
   await page.getByLabel("Tamaño").selectOption({ label: "Compactos" });
   await page.getByRole("button", { name: "Agregar cliente" }).click();
   await expect(page.getByText(`La placa REP${sufijo(info)}1 ya está registrada a nombre de ${nombre}.`)).toBeVisible();

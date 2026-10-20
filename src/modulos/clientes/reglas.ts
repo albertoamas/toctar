@@ -12,3 +12,27 @@ export function normalizarPlaca(texto: string): string | null {
 /** Año máximo de un vehículo: el siguiente al actual (salen modelos del año que viene). */
 export const anioMaximo = (hoy: Date = new Date()) => hoy.getFullYear() + 1;
 export const ANIO_MINIMO = 1950;
+
+export type Busqueda = {
+  /** Texto para el nombre, sin espacios de más. */
+  texto: string;
+  /** Solo los dígitos, para el teléfono: si hay al menos 3 (con menos, coincidirían casi todos). */
+  digitos: string | null;
+  /** Como se guarda una placa: mayúsculas, sin espacios ni guiones. Null si no queda nada. */
+  placa: string | null;
+};
+
+/**
+ * Lo que se escribe en el buscador de clientes (HU-22) se busca a la vez en el nombre, el teléfono y la placa:
+ * "7123" encuentra el teléfono, "1234-abc" la placa y "jose" el nombre. Null si está vacío.
+ */
+export function normalizarBusqueda(q: string): Busqueda | null {
+  const texto = q.trim().replace(/\s+/g, " ");
+  if (!texto) return null;
+  const digitos = texto.replace(/\D/g, "");
+  const placa = texto.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return { texto, digitos: digitos.length >= 3 ? digitos : null, placa: placa || null };
+}
+
+/** Escapa los comodines de LIKE (% y _) para que se busquen como texto. */
+export const escaparLike = (texto: string) => texto.replace(/[\\%_]/g, (c) => `\\${c}`);

@@ -1,22 +1,44 @@
 import "server-only";
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, like, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { cliente, tamanoVehiculo, vehiculo } from "@/db/esquema";
+import { escaparLike, normalizarBusqueda } from "./reglas";
 
 // Lecturas de clientes (C1). Quien las llama ya pasó por exigirModulo("clientes"): el dueño o un encargado con el
 // permiso; el técnico nunca (RN-12).
 
 export type FilaCliente = { id: number; nombre: string; telefono: string; placas: string[] };
 
-/** Los clientes activos más recientes, con las placas de sus vehículos activos. La búsqueda llega en HU-22. */
-export async function listarClientes(limite = 30): Promise<FilaCliente[]> {
-  const clientes = await db
+const LIMITE_RESULTADOS = 30;
+
+/**
+ * Clientes por nombre (sin importar tildes ni mayúsculas), parte del teléfono o placa (HU-22, RF-22). Sin búsqueda,
+ * los más recientes. Trae uno más del límite para saber si hay más (`hayMas`).
+ */
+export async function buscarClientes(q: string, desactivados = false): Promise<{ clientes: FilaCliente[]; hayMas: boolean }> {
+  const busqueda = normalizarBusqueda(q);
+  const coincide = busqueda
+    ? or(
+        sql`unaccent(lower(${cliente.nombre})) like unaccent(lower(${`%${escaparLike(busqueda.texto)}%`}))`,
+        busqueda.digitos ? like(cliente.telefono, `%${escaparLike(busqueda.digitos)}%`) : undefined,
+        busqueda.placa
+          ? inArray(
+              cliente.id,
+              db
+                .select({ id: vehiculo.clienteId })
+                .from(vehiculo)
+                .where(and(eq(vehiculo.activo, true), like(vehiculo.placa, `%${escaparLike(busqueda.placa)}%`))),
+            )
+          : undefined,
+      )
+    : undefined;
+  const filas = await db
     .select({ id: cliente.id, nombre: cliente.nombre, telefono: cliente.telefono })
     .from(cliente)
-    .where(eq(cliente.activo, true))
+    .where(and(eq(cliente.activo, !desactivados), coincide))
     .orderBy(desc(cliente.updatedAt), desc(cliente.id))
-    .limit(limite);
-  return conPlacas(clientes);
+    .limit(LIMITE_RESULTADOS + 1);
+  return { clientes: await conPlacas(filas.slice(0, LIMITE_RESULTADOS)), hayMas: filas.length > LIMITE_RESULTADOS };
 }
 
 async function conPlacas<T extends { id: number }>(clientes: T[]): Promise<(T & { placas: string[] })[]> {
