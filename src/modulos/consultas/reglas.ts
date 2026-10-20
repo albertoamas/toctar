@@ -1,4 +1,5 @@
-import type { Canal, EstadoConsulta } from "@/db/esquema/consultas";
+import type { Canal, EstadoConsulta, MotivoPerdida } from "@/db/esquema/consultas";
+import { diasEntre, fechaEnBolivia } from "@/lib/fechas";
 
 // Reglas puras de las consultas (C2). Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md.
 
@@ -13,6 +14,55 @@ export const NOMBRE_ESTADO: Record<EstadoConsulta, string> = {
   confirmado: "Confirmado",
   perdido: "Perdido",
 };
+
+/** Color de la insignia de cada estado (clases de globals.css). */
+export const INSIGNIA_ESTADO: Record<EstadoConsulta, string> = {
+  consulto: "tt-insignia",
+  cotizado: "tt-insignia",
+  confirmado: "tt-insignia tt-insignia--exito",
+  perdido: "tt-insignia tt-insignia--aviso",
+};
+
+export const NOMBRE_MOTIVO: Record<MotivoPerdida, string> = { precio: "Precio", no_respondio: "No respondió", otro: "Otro" };
+
+/** Pestañas de la lista (HU-28): abiertas son las que todavía se pueden ganar. */
+export const VISTAS = { abiertas: ["consulto", "cotizado"], confirmadas: ["confirmado"], perdidas: ["perdido"] } as const satisfies Record<
+  string,
+  readonly EstadoConsulta[]
+>;
+export type Vista = keyof typeof VISTAS;
+
+/**
+ * Cambios de estado permitidos (RF-30). Cotizar (HU-25) pasa a "cotizado" (también una versión nueva); confirmar es de
+ * C3, con la reserva; perder se puede mientras está abierta; reabrir devuelve una perdida a donde estaba
+ * (`estadoAlReabrir`).
+ */
+export function transicionPermitida(estado: EstadoConsulta, destino: EstadoConsulta): boolean {
+  switch (estado) {
+    case "consulto":
+      return destino === "cotizado" || destino === "perdido";
+    case "cotizado":
+      return destino === "cotizado" || destino === "confirmado" || destino === "perdido";
+    case "perdido":
+      return destino === "consulto" || destino === "cotizado";
+    case "confirmado":
+      return false;
+  }
+}
+
+/** Una consulta perdida vuelve a "cotizado" si tiene cotización; si no, a "consultó". */
+export const estadoAlReabrir = (tieneCotizacion: boolean): EstadoConsulta => (tieneCotizacion ? "cotizado" : "consulto");
+
+/** Días calendario, en hora de Bolivia, desde un instante hasta hoy: lo de anoche a las 23:00 ya es "hace 1 día". */
+export function diasDesde(instante: Date, hoy: Date = new Date()): number {
+  return Math.max(0, diasEntre(fechaEnBolivia(instante), fechaEnBolivia(hoy)));
+}
+
+export const textoDias = (dias: number) => (dias === 0 ? "hoy" : dias === 1 ? "hace 1 día" : `hace ${dias} días`);
+
+/** Una consulta abierta sin movimiento desde hace `umbral` días (Configuración) se está enfriando (RF-35). */
+export const seEnfria = (estado: EstadoConsulta, dias: number, umbral: number) =>
+  (VISTAS.abiertas as readonly EstadoConsulta[]).includes(estado) && dias >= umbral;
 
 /** Valor del selector de cliente para registrarlo ahí mismo, y del de vehículo para agregar otro. */
 export const CLIENTE_NUEVO = "nuevo";

@@ -1,10 +1,11 @@
 import "server-only";
-import { asc, desc, eq, inArray } from "drizzle-orm";
+import { asc, count, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { archivo, cliente, consulta, consultaArchivo, servicio, tamanoVehiculo, usuario, vehiculo } from "@/db/esquema";
-import type { Canal, EstadoConsulta } from "@/db/esquema/consultas";
+import type { Canal, EstadoConsulta, MotivoPerdida } from "@/db/esquema/consultas";
 import { urlArchivoPrivado } from "@/lib/almacenamiento";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
+import { VISTAS, type Vista } from "./reglas";
 
 // Lecturas de las consultas (HU-24). Quien las llama ya pasó por exigirModulo("consultas"): el dueño o un encargado
 // con el permiso; el técnico nunca (RN-12).
@@ -30,7 +31,7 @@ const columnasFila = {
 };
 
 /** Consultas en esos estados, las que llevan más tiempo sin movimiento primero (RF-35). */
-export async function listarConsultas(estados: EstadoConsulta[]): Promise<FilaConsulta[]> {
+export async function listarConsultas(estados: readonly EstadoConsulta[]): Promise<FilaConsulta[]> {
   return db
     .select(columnasFila)
     .from(consulta)
@@ -39,6 +40,13 @@ export async function listarConsultas(estados: EstadoConsulta[]): Promise<FilaCo
     .leftJoin(servicio, eq(consulta.servicioId, servicio.id))
     .where(inArray(consulta.estado, estados))
     .orderBy(asc(consulta.ultimoMovimientoAt), asc(consulta.id));
+}
+
+/** Cuántas consultas hay en cada pestaña de la lista (HU-28). */
+export async function contarPorVista(): Promise<Record<Vista, number>> {
+  const filas = await db.select({ estado: consulta.estado, total: count() }).from(consulta).groupBy(consulta.estado);
+  const de = (estados: readonly EstadoConsulta[]) => filas.filter((f) => estados.includes(f.estado)).reduce((s, f) => s + f.total, 0);
+  return { abiertas: de(VISTAS.abiertas), confirmadas: de(VISTAS.confirmadas), perdidas: de(VISTAS.perdidas) };
 }
 
 /** Las consultas de un cliente, de la más nueva a la más vieja (su ficha). */
@@ -69,6 +77,8 @@ export type DetalleConsulta = {
   servicio: string | null;
   canal: Canal;
   estado: EstadoConsulta;
+  motivoPerdida: MotivoPerdida | null;
+  detallePerdida: string | null;
   nota: string | null;
   createdAt: Date;
   registradaPor: string;
@@ -90,6 +100,8 @@ export async function obtenerConsulta(id: number): Promise<DetalleConsulta | nul
       servicio: servicio.nombre,
       canal: consulta.canal,
       estado: consulta.estado,
+      motivoPerdida: consulta.motivoPerdida,
+      detallePerdida: consulta.detallePerdida,
       nota: consulta.nota,
       createdAt: consulta.createdAt,
       registradaPor: usuario.name,

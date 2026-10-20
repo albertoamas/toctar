@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CANALES } from "@/db/esquema/consultas";
+import { CANALES, MOTIVOS_PERDIDA } from "@/db/esquema/consultas";
 import { BYTES_MAXIMOS_VIDEO, CLIENTE_NUEVO, duracionPermitida, MEGAS_MAXIMOS_VIDEO, SEGUNDOS_MAXIMOS_VIDEO, TIPOS_VIDEO, VEHICULO_OTRO } from "./reglas";
 
 // Validación de las consultas (HU-24). Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md §6 y §8.
@@ -75,3 +75,20 @@ export const esquemaRegistrarVideo = z.object({
   clave: z.string().regex(/^consultas\/[0-9a-f-]{36}\.(mp4|mov|webm)$/),
   duracion,
 });
+
+/** Marcar como perdida (con motivo) o reabrir (HU-28, RF-30). Con "Otro", el detalle dice qué pasó. */
+export const esquemaCambioEstado = z.discriminatedUnion("accion", [
+  z
+    .object({
+      id,
+      accion: z.literal("perder"),
+      motivo: z.enum(MOTIVOS_PERDIDA, { message: "Elige el motivo." }),
+      detalle: z
+        .string()
+        .trim()
+        .max(300, "Hasta 300 caracteres.")
+        .transform((v) => v || null),
+    })
+    .refine((d) => d.motivo !== "otro" || d.detalle, { path: ["detalle"], message: "Cuenta qué pasó." }),
+  z.object({ id, accion: z.literal("reabrir") }),
+]);
