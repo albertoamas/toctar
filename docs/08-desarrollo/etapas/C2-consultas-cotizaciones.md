@@ -64,7 +64,7 @@ El personal registra cada consulta (cliente, vehículo, servicio, canal, fotos o
 
 ## 4. Datos
 
-Migraciones por historia: `0020_consultas` (HU-24: `consulta`, `consulta_archivo`, `auditoria` y `archivo.duracion_segundos`), `0021_datos_seguimiento` (HU-28: parámetro `dias_consulta_fria`), `0022_cotizaciones` (HU-25: `cotizacion`, `cotizacion_linea`, `cotizacion_foto`, `correlativo`) y `0023_datos_cotizaciones` (parámetro `formas_pago_cotizacion`).
+Migraciones por historia: `0020_consultas` (HU-24: `consulta`, `consulta_archivo`, `auditoria` y `archivo.duracion_segundos`), `0021_subidas_pendientes` (HU-24, videos: `subida_pendiente`), `0022_datos_seguimiento` (HU-28: parámetro `dias_consulta_fria`), `0023_cotizaciones` (HU-25: `cotizacion`, `cotizacion_linea`, `cotizacion_foto`, `correlativo`) y `0024_datos_cotizaciones` (parámetro `formas_pago_cotizacion`).
 
 ### `consulta`
 | Columna | Tipo | Nulo | Notas |
@@ -266,7 +266,7 @@ Cada PR: lint, typecheck, unitarias, E2E completo y knip; capturas a 360 y 1280 
 |---|---|---|
 | Texto de formas de pago para el PDF | Dueño | "Efectivo, QR o transferencia bancaria.", editable en Configuración |
 | Condiciones y garantía definitivas | Dueño (viernes 30) | Los borradores de B2, editables |
-| Videos: hasta 50 MB y 60 s (arquitectura). Una acción del servidor acepta hasta 6 MB, así que el video sube directo al bucket privado con una URL firmada de 10 minutos, y después se registra; el servidor comprueba el tamaño y el tipo. La duración la mide el navegador | YankoSoft | Resuelto en `hu-24-videos`: CORS en RustFS con `npm run almacenamiento:preparar` y en R2 con el paso 6.5 de `docs/07-preparacion/guia-de-despliegue.md` (A3). Si un permiso se pide y el video nunca se registra, el archivo queda suelto en el bucket: se revisa si pasa seguido |
+| Videos: hasta 50 MB y 60 s (arquitectura). Una acción del servidor acepta hasta 6 MB, así que el video sube directo al bucket privado con una URL firmada de 10 minutos, y después se registra; el servidor comprueba el tamaño y el tipo. La duración la mide el navegador | YankoSoft | Resuelto en `hu-24-videos`: CORS en RustFS con `npm run almacenamiento:preparar` y en R2 con el paso 6.5 de `docs/07-preparacion/guia-de-despliegue.md` (A3). Cada permiso queda en `subida_pendiente` y ocupa un lugar de la consulta hasta registrarse o vencer (30 min); registrar exige un permiso vigente; los vencidos se borran con su archivo al pedir el siguiente |
 | Días para resaltar una consulta que se enfría | Dueño | 7, como parámetro nuevo `dias_consulta_fria` en Configuración |
 | ¿El encargado ve montos y PDF de las cotizaciones? | Dueño | No: ve que está cotizada y su número (RN-01 dice que solo el dueño envía). Se abre si el dueño lo pide |
 | Descuento en Bs o en porcentaje | Dueño | En Bs |

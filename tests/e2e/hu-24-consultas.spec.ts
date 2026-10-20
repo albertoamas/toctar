@@ -1,5 +1,6 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { crearClienteEnBase, crearUsuario, ingresar, PNG } from "./apoyo";
+import pg from "pg";
+import { crearClienteEnBase, crearUsuario, ingresar, PNG, URL_BASE_E2E } from "./apoyo";
 
 // HU-24 Registrar consulta. Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md §9.
 // Cada proyecto (celular o escritorio) usa sus propios teléfonos y placas.
@@ -204,6 +205,13 @@ test("los videos suben directo al almacenamiento, se ven y se quitan; uno que no
   const archivos = page.getByRole("list", { name: "Fotos y videos de la consulta" });
   await expect(archivos.getByRole("listitem")).toHaveCount(1);
   await expect(archivos).toContainText("0:02");
+  // El permiso de subida se usó y ya no ocupa lugar; el que no era video ni llegó a pedirlo
+  const consultaId = Number(new URL(page.url()).pathname.split("/").at(-1));
+  const base = new pg.Client({ connectionString: URL_BASE_E2E });
+  await base.connect();
+  const { rows } = await base.query("select count(*)::int as n from subida_pendiente where consulta_id = $1", [consultaId]);
+  await base.end();
+  expect(rows[0].n).toBe(0);
 
   // Se ve con el enlace firmado del bucket privado
   await page.getByRole("button", { name: "Ver el video 1" }).click();
