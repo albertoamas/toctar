@@ -82,6 +82,9 @@ export function CamposVehiculo({ estado, iniciales = {}, prefijo = "", tamanos }
   const e = estado.errores ?? {};
   const n = (campo: string) => prefijo + campo;
   const describir = (campo: string, ayuda = false) => (e[n(campo)] ? `${n(campo)}-error` : ayuda ? `${n(campo)}-ayuda` : undefined);
+  // El estado solo elige la ayuda (los modelos del tamaño). React reinicia el formulario al terminar la acción y un
+  // <select> vuelve a la opción de cuando se montó: la key lo vuelve a montar con lo enviado, así no queda en
+  // "Elige el tamaño" tras un error.
   const [tamanoId, setTamanoId] = useState(v[n("tamanoId")] ?? "");
   const elegido = tamanos.find((t) => String(t.id) === tamanoId);
 
@@ -105,9 +108,10 @@ export function CamposVehiculo({ estado, iniciales = {}, prefijo = "", tamanos }
       </div>
       <Campo id={n("tamanoId")} etiqueta="Tamaño" error={e[n("tamanoId")]} ayuda={elegido?.descripcion ?? "Define el precio al cotizar."}>
         <Selector
+          key={v[n("tamanoId")] ?? ""}
           id={n("tamanoId")}
           name={n("tamanoId")}
-          value={tamanoId}
+          defaultValue={v[n("tamanoId")] ?? ""}
           onChange={(ev) => setTamanoId(ev.target.value)}
           aria-invalid={!!e[n("tamanoId")]}
           aria-describedby={describir("tamanoId", true)}
