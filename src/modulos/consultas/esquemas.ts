@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { CANALES } from "@/db/esquema/consultas";
-import { CLIENTE_NUEVO, VEHICULO_OTRO } from "./reglas";
+import { BYTES_MAXIMOS_VIDEO, CLIENTE_NUEVO, duracionPermitida, MEGAS_MAXIMOS_VIDEO, SEGUNDOS_MAXIMOS_VIDEO, TIPOS_VIDEO, VEHICULO_OTRO } from "./reglas";
 
 // Validación de las consultas (HU-24). Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md §6 y §8.
 // El cliente y el vehículo nuevos se validan con los esquemas de Clientes (C1).
@@ -58,3 +58,20 @@ export const esquemaNota = z.object({
 export const esquemaArchivoConsulta = z.object({ consultaId: id, archivoId: id });
 
 export const esquemaIdConsulta = id;
+
+const duracion = z.number().refine(duracionPermitida, `El video puede durar hasta ${SEGUNDOS_MAXIMOS_VIDEO} segundos.`);
+
+/** Pedir permiso para subir un video (datos sueltos: se validan). El tamaño y el tipo quedan firmados en el permiso. */
+export const esquemaPedirSubidaVideo = z.object({
+  consultaId: id,
+  tipo: z.enum(TIPOS_VIDEO, { message: "El video debe ser MP4, MOV o WebM." }),
+  bytes: z.number().int().positive().max(BYTES_MAXIMOS_VIDEO, `El video puede pesar hasta ${MEGAS_MAXIMOS_VIDEO} MB.`),
+  duracion,
+});
+
+/** Registrar el video ya subido. La clave la dio el servidor al pedir el permiso. */
+export const esquemaRegistrarVideo = z.object({
+  consultaId: id,
+  clave: z.string().regex(/^consultas\/[0-9a-f-]{36}\.(mp4|mov|webm)$/),
+  duracion,
+});

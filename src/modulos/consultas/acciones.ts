@@ -1,11 +1,13 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { and, count, eq, max, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import type { z } from "zod";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { cliente, consulta, consultaArchivo, vehiculo } from "@/db/esquema";
+import { archivo, cliente, consulta, consultaArchivo, vehiculo } from "@/db/esquema";
+import { borrarArchivo, datosArchivoPrivado, urlSubidaPrivada } from "@/lib/almacenamiento";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { exigirModulo } from "@/lib/sesion";
@@ -20,8 +22,16 @@ import {
   type EstadoCliente,
   type Existentes,
 } from "@/modulos/clientes/servidor";
-import { esquemaArchivoConsulta, esquemaConsulta, esquemaIdConsulta, esquemaNota, esquemaVehiculoElegido } from "./esquemas";
-import { CLIENTE_NUEVO, MAXIMO_ARCHIVOS, VEHICULO_OTRO } from "./reglas";
+import {
+  esquemaArchivoConsulta,
+  esquemaConsulta,
+  esquemaIdConsulta,
+  esquemaNota,
+  esquemaPedirSubidaVideo,
+  esquemaRegistrarVideo,
+  esquemaVehiculoElegido,
+} from "./esquemas";
+import { BYTES_MAXIMOS_VIDEO, CLIENTE_NUEVO, EXTENSION_VIDEO, MAXIMO_ARCHIVOS, TIPOS_VIDEO, VEHICULO_OTRO } from "./reglas";
 
 // Consultas (HU-24). Entra el dueño o un encargado con el permiso "consultas"; el técnico nunca (RN-12).
 // Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md §6.
@@ -29,6 +39,7 @@ import { CLIENTE_NUEVO, MAXIMO_ARCHIVOS, VEHICULO_OTRO } from "./reglas";
 const ERROR_FOTO = "La foto debe ser JPG, PNG o WebP de hasta 5 MB.";
 const MENSAJE_LIMITE = `Hasta ${MAXIMO_ARCHIVOS} fotos o videos por consulta.`;
 const PEDIDO_ILEGIBLE = "No se pudo leer el pedido. Recarga la página.";
+const CONSULTA_INEXISTENTE = "Esa consulta ya no existe. Recarga la página.";
 
 function despuesDeCambiar(id: number, clienteId?: number) {
   revalidatePath("/panel/consultas");
@@ -138,27 +149,20 @@ export async function crearConsulta(_previo: EstadoCliente, datos: FormData): Pr
   redirect(`/panel/consultas/${ids.consulta}?creada=1`);
 }
 
-/** Agrega una foto a la consulta (RF-29): achicada en el navegador, WebP en el servidor y en el bucket privado. */
-export async function subirArchivoConsulta(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
-  const autor = await exigirModulo("consultas");
-  const entrada = esquemaIdConsulta.safeParse(datos.get("id"));
-  if (!entrada.success) return { mensaje: PEDIDO_ILEGIBLE };
-  const id = entrada.data;
-
-  // Antes de subir, para no procesar una foto que no va a entrar
+/** La consulta y cuántos archivos tiene: antes de subir, para no procesar algo que no va a entrar. */
+async function lugarParaArchivo(id: number): Promise<{ clienteId: number; hayLugar: boolean } | null> {
   const [actual] = await db
     .select({ clienteId: consulta.clienteId, total: count(consultaArchivo.archivoId) })
     .from(consulta)
     .leftJoin(consultaArchivo, eq(consultaArchivo.consultaId, consulta.id))
     .where(eq(consulta.id, id))
     .groupBy(consulta.id);
-  if (!actual) return { mensaje: "Esa consulta ya no existe. Recarga la página." };
-  if (actual.total >= MAXIMO_ARCHIVOS) return { errores: { foto: MENSAJE_LIMITE } };
+  return actual ? { clienteId: actual.clienteId, hayLugar: actual.total < MAXIMO_ARCHIVOS } : null;
+}
 
-  const r = await guardarFoto(datos.get("foto"), { carpeta: "consultas", miniatura: true, autorId: Number(autor.id), privado: true });
-  if (!r.ok) return { errores: { foto: r.motivo === "vacia" ? "Elige una foto." : ERROR_FOTO } };
-
-  const agregada = await db.transaction(async (tx) => {
+/** Suma a la consulta un archivo ya guardado; false si en el camino se llenó (y entonces no queda registrado). */
+async function vincularArchivo(id: number, archivoId: number): Promise<boolean> {
+  return db.transaction(async (tx) => {
     // Candado sobre la consulta: dos subidas a la vez no pasan juntas el límite
     await tx.select({ id: consulta.id }).from(consulta).where(eq(consulta.id, id)).for("update");
     const [{ total, ultimo }] = await tx
@@ -166,20 +170,92 @@ export async function subirArchivoConsulta(_previo: EstadoFormulario, datos: For
       .from(consultaArchivo)
       .where(eq(consultaArchivo.consultaId, id));
     if (total >= MAXIMO_ARCHIVOS) return false;
-    await tx.insert(consultaArchivo).values({ consultaId: id, archivoId: r.archivoId, orden: (ultimo ?? -1) + 1 });
+    await tx.insert(consultaArchivo).values({ consultaId: id, archivoId, orden: (ultimo ?? -1) + 1 });
     await tx.update(consulta).set({ ultimoMovimientoAt: sql`now()` }).where(eq(consulta.id, id));
     return true;
   });
-  if (!agregada) {
+}
+
+/** Agrega una foto a la consulta (RF-29): achicada en el navegador, WebP en el servidor y en el bucket privado. */
+export async function subirArchivoConsulta(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  const autor = await exigirModulo("consultas");
+  const entrada = esquemaIdConsulta.safeParse(datos.get("id"));
+  if (!entrada.success) return { mensaje: PEDIDO_ILEGIBLE };
+  const id = entrada.data;
+
+  const lugar = await lugarParaArchivo(id);
+  if (!lugar) return { mensaje: CONSULTA_INEXISTENTE };
+  if (!lugar.hayLugar) return { errores: { foto: MENSAJE_LIMITE } };
+
+  const r = await guardarFoto(datos.get("foto"), { carpeta: "consultas", miniatura: true, autorId: Number(autor.id), privado: true });
+  if (!r.ok) return { errores: { foto: r.motivo === "vacia" ? "Elige una foto." : ERROR_FOTO } };
+  if (!(await vincularArchivo(id, r.archivoId))) {
     await eliminarFoto(r.archivoId);
     return { errores: { foto: MENSAJE_LIMITE } };
   }
 
-  despuesDeCambiar(id, actual.clienteId);
+  despuesDeCambiar(id, lugar.clienteId);
   return { ok: true, mensaje: "Foto agregada." };
 }
 
-/** Quita una foto de la consulta y del almacenamiento. Desde HU-25, no si la usa una cotización (D-6). */
+export type PermisoSubida = { ok: true; url: string; clave: string } | { ok: false; mensaje: string };
+
+/**
+ * Primer paso para agregar un video (RF-29, RNF-07): un permiso firmado de 10 minutos para subirlo directo al bucket
+ * privado. Una acción del servidor acepta hasta 6 MB y un video llega a 50. El tipo y el tamaño quedan firmados.
+ */
+export async function pedirSubidaVideo(datos: { consultaId: number; tipo: string; bytes: number; duracion: number }): Promise<PermisoSubida> {
+  await exigirModulo("consultas");
+  const entrada = esquemaPedirSubidaVideo.safeParse(datos);
+  if (!entrada.success) return { ok: false, mensaje: entrada.error.issues[0].message };
+  const { consultaId, tipo, bytes } = entrada.data;
+
+  const lugar = await lugarParaArchivo(consultaId);
+  if (!lugar) return { ok: false, mensaje: CONSULTA_INEXISTENTE };
+  if (!lugar.hayLugar) return { ok: false, mensaje: MENSAJE_LIMITE };
+
+  const clave = `consultas/${randomUUID()}.${EXTENSION_VIDEO[tipo]}`;
+  return { ok: true, url: await urlSubidaPrivada(clave, tipo, bytes), clave };
+}
+
+/**
+ * Segundo paso: el video ya está en el almacenamiento y se registra en la consulta. Se mira lo que de verdad se subió
+ * (tipo y tamaño), no lo que dice el navegador. Si no entra, se borra: no queda nada suelto.
+ */
+export async function registrarVideo(datos: { consultaId: number; clave: string; duracion: number }): Promise<EstadoFormulario> {
+  const autor = await exigirModulo("consultas");
+  const entrada = esquemaRegistrarVideo.safeParse(datos);
+  if (!entrada.success) return { mensaje: PEDIDO_ILEGIBLE };
+  const { consultaId, clave, duracion } = entrada.data;
+
+  const subido = await datosArchivoPrivado(clave);
+  if (!subido) return { mensaje: "El video no terminó de subir. Vuelve a intentar." };
+  if (!(TIPOS_VIDEO as readonly string[]).includes(subido.tipo) || subido.bytes > BYTES_MAXIMOS_VIDEO) {
+    await borrarArchivo(clave, "privado");
+    return { mensaje: PEDIDO_ILEGIBLE };
+  }
+
+  let archivoId: number;
+  try {
+    [{ id: archivoId }] = await db
+      .insert(archivo)
+      .values({ clave, tipoMime: subido.tipo, bytes: subido.bytes, privado: true, duracionSegundos: Math.round(duracion), createdBy: Number(autor.id) })
+      .returning({ id: archivo.id });
+  } catch (error) {
+    // La misma clave dos veces (el pedido repetido): ya está registrada
+    if (indiceUnicoViolado(error)) return { mensaje: "Ese video ya está en la consulta. Recarga la página." };
+    throw error;
+  }
+  if (!(await vincularArchivo(consultaId, archivoId))) {
+    await eliminarFoto(archivoId);
+    return { mensaje: MENSAJE_LIMITE };
+  }
+
+  despuesDeCambiar(consultaId);
+  return { ok: true, mensaje: "Video agregado." };
+}
+
+/** Quita una foto o un video de la consulta y del almacenamiento. Desde HU-25, no si la usa una cotización (D-6). */
 export async function quitarArchivoConsulta(datos: { consultaId: number; archivoId: number }): Promise<EstadoFormulario> {
   await exigirModulo("consultas");
   const entrada = esquemaArchivoConsulta.safeParse(datos);
@@ -210,7 +286,7 @@ export async function guardarNota(_previo: EstadoFormulario, datos: FormData): P
     .set({ nota, ultimoMovimientoAt: sql`now()` })
     .where(eq(consulta.id, id))
     .returning({ id: consulta.id });
-  if (!actualizada) return { mensaje: "Esa consulta ya no existe. Recarga la página." };
+  if (!actualizada) return { mensaje: CONSULTA_INEXISTENTE };
 
   despuesDeCambiar(id);
   return { ok: true, mensaje: "Nota guardada." };
