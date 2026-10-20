@@ -223,7 +223,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | Historias | HU-29 Tablero de la agenda · HU-30 Agendar reserva · HU-31 Reprogramar o cancelar · HU-32 Registrar pagos y saldo |
 | Tablas nuevas | `trabajo` (reserva y orden en una tabla, D-1), `trabajo_linea`, `pago` |
 | Reglas | RN-06 (un espacio no puede tener dos vehículos el mismo día: restricción de exclusión en la base, D-5), RN-04 (adelanto sugerido editable), RN-05 (el adelanto no se devuelve) |
-| Clave técnica | Agenda por día y espacio (S-3). El cerámico de 1,5 días ocupa 2. La duración se sugiere y se puede editar. El tablero se muestra temprano al dueño, porque es de las interfaces que menos acelera Claude Code |
+| Clave técnica | Agenda por día y espacio (S-3). El cerámico de 1,5 días ocupa 2. La duración del catálogo es una estimación: solo completa la fecha de entrega, que se edita en cada reserva y se le da al cliente como aproximada (decisión del 20/10, `etapas/C1-catalogo-clientes.md` §12). El tablero se muestra temprano al dueño, porque es de las interfaces que menos acelera Claude Code |
 | Flujo crítico | Cotización → reserva sin cruces, con dos personas reservando a la vez: prueba E2E |
 | Entregable | La agenda reemplaza al cuaderno |
 | Criterio de salida | La base rechaza un cruce aunque el código fallara (prueba directa contra la restricción) |
@@ -235,6 +235,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | Historias | HU-33 Recibir vehículo · HU-34 Órdenes del técnico · HU-35 Avisar vehículo listo · HU-36 Entregar vehículo · HU-37 Saldos pendientes · HU-38 Recordatorios de mantenimiento |
 | Tablas nuevas | `trabajo_foto`, `trabajo_avance`, `recordatorio_mantenimiento` |
 | Reglas | RN-12 (el técnico ve solo sus órdenes, sin precios), RN-13 (entrega con saldo solo por el dueño o un encargado con el permiso `entrega_con_saldo`), RN-08 (mantenimiento a 3 meses desde la entrega, solo en los servicios marcados) |
+| Retrasos | "Extender la entrega" corre la fecha de fin de la orden; si el espacio ya está ocupado, avisa y propone otro libre (D-5). Si termina antes, se marca listo y el espacio se libera (decisión del 20/10, `etapas/C1-catalogo-clientes.md` §12) |
 | Flujo crítico | Recepción → orden → aviso → entrega con saldo → mantenimiento: prueba E2E |
 | Entregable | El ciclo completo de un vehículo en el sistema, de la consulta al recordatorio |
 | Criterio de salida | Los 5 flujos de `flujos-criticos.md` tienen su prueba E2E y pasan |

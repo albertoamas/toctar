@@ -131,7 +131,7 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel (44 px c
 
 ### `/panel/catalogo/[id]` — Precios de un servicio
 - `EnlaceVolver` a Catálogo. Título: nombre del servicio, con "Inactivo" si corresponde.
-- **Datos del catálogo** (formulario propio, "Guardar"): duración en días, "Genera recordatorio de mantenimiento" y "Activo en el catálogo" (desmarcado: no se cotiza ni sale en el sitio).
+- **Datos del catálogo** (formulario propio, "Guardar"): duración estimada en días, "Genera recordatorio de mantenimiento" y "Activo en el catálogo" (desmarcado: no se cotiza ni sale en el sitio).
 - **Precios por tamaño** (un formulario por variante activa, "Guardar precios de <variante>"):
   - Un campo en Bs por tamaño activo, con el nombre del tamaño y sus modelos de ejemplo en la ayuda. Vacío = según evaluación; debajo de cada vacío guardado se lee "Según evaluación"; sin fila, "Sin cargar".
   - Duración propia opcional: "Usa la del servicio (2 días)" si está vacía.
@@ -188,7 +188,7 @@ Todas validan con Zod (también las que reciben datos sueltos) y empiezan con `e
 
 - Menú: "Catálogo y precios", "Clientes".
 - Catálogo: "Los precios que carga el dueño. No salen en el sitio." · "Precios completos" · "Faltan N precios" · "Genera mantenimiento" · "Inactivo".
-- Servicio: "Duración" (ayuda: "Días que ocupa un espacio del taller. La agenda la usa para sugerir la fecha de entrega.") · "Genera recordatorio de mantenimiento" (ayuda: "Al entregar, se programa el aviso según el intervalo de Configuración.") · "Activo en el catálogo" (ayuda: "Si lo desmarcas, no se cotiza ni sale en el sitio. No se borra nada.").
+- Servicio: "Duración estimada" (ayuda: "Días que suele ocupar un espacio del taller; mejor el caso más largo habitual. Solo sugiere la fecha de entrega al agendar: en cada reserva se ajusta según el vehículo y el trabajo.") · "Genera recordatorio de mantenimiento" (ayuda: "Al entregar, se programa el aviso según el intervalo de Configuración.") · "Activo en el catálogo" (ayuda: "Si lo desmarcas, no se cotiza ni sale en el sitio. No se borra nada.").
 - Precios: "Precios por tamaño" · "Déjalo vacío si el precio depende de ver el vehículo: sale como «Según evaluación»." · "Según evaluación" · "Sin cargar" · "Duración propia" (ayuda: "Vacío: usa la del servicio (N días).") · "Ver historial" · historial vacío: "Todavía no hay cambios de precio."
 - Clientes: "Buscar por nombre, teléfono o placa" · "Agregar cliente" · "Ver desactivados".
 - Cliente: "Nombre" · "WhatsApp" (ayuda: "Celular de Bolivia, 8 dígitos.") · "Correo" · "NIT" · "Razón social" · "Notas" (ayuda: "Lo que convenga recordar: cómo prefiere que lo contacten, detalles del vehículo…").
@@ -236,5 +236,6 @@ Cada PR: lint, typecheck, unitarias, E2E completo y knip; capturas a 360 y 1280 
 |---|---|---|
 | Lista de precios real, y variantes de inyección y succión y de pulido de vidrios | Dueño | Precios de prueba solo en E2E; en la base real, "Sin cargar" |
 | Duración real de cada servicio | Dueño | 1 día por defecto, editable |
+| La duración no es exacta: varía con el vehículo y el trabajo, y hay retrasos (YankoSoft, 20/10) | Decidido | Es una **estimación que sugiere, nunca impone**. Se carga el caso más largo habitual. **C3:** al agendar, la fecha de entrega se completa con la duración y se puede cambiar; al cliente se le da como aproximada. **C4:** "Extender la entrega" corre la fecha de fin; si el espacio ya está ocupado ese día, avisa y propone otro espacio libre (D-5 impide el cruce); si termina antes, se marca listo y el espacio se libera. Descartado por ahora: rango mínimo y máximo, duración por tamaño y duración en horas (la agenda es por días, RN-06) |
 | ¿Clientes con celular extranjero? | Dueño | Solo Bolivia (8 dígitos, 6 o 7). Si hace falta, se amplía `normalizarWhatsApp` |
 | ¿Dos clientes pueden compartir un vehículo (ej. familia)? | Dueño | No: la placa es única y pertenece a un cliente. Si un vehículo cambia de dueño, el aviso de placa duplicada lleva a la ficha del anterior; ahí se desactiva y se registra con el nuevo (la placa es única solo entre los activos, así el historial queda con el dueño anterior) |
