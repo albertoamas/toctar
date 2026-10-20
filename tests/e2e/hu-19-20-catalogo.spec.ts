@@ -35,17 +35,17 @@ test("el dueño marca el mantenimiento, cambia la duración y desactiva un servi
   await expect(page).toHaveURL(new RegExp(`/panel/catalogo/${id}$`));
 
   // Una duración fuera de rango se rechaza y el foco va al campo
-  await page.getByLabel("Duración").fill("0");
+  await page.getByLabel("Duración estimada").fill("0");
   await page.getByRole("button", { name: "Guardar", exact: true }).click();
   await expect(page.getByText("Escribe los días, de 1 a 60.")).toBeVisible();
-  await expect(page.getByLabel("Duración")).toBeFocused();
+  await expect(page.getByLabel("Duración estimada")).toBeFocused();
 
-  await page.getByLabel("Duración").fill("3");
+  await page.getByLabel("Duración estimada").fill("3");
   await page.getByText("Genera recordatorio de mantenimiento").click();
   await page.getByRole("button", { name: "Guardar", exact: true }).click();
   await expect(page.getByText("Cambios guardados.")).toBeVisible();
   await page.reload();
-  await expect(page.getByLabel("Duración")).toHaveValue("3");
+  await expect(page.getByLabel("Duración estimada")).toHaveValue("3");
   await expect(page.getByRole("checkbox", { name: /Genera recordatorio/ })).toBeChecked();
 
   // Inactivo: no sale en el sitio (su página no existe) y queda marcado en el catálogo
