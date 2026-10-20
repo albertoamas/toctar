@@ -60,3 +60,25 @@ export async function ingresarComoDueno(page: Page) {
   await ingresar(page, DUENO.usuario, DUENO.contrasena);
   await expect(page).toHaveURL(/\/panel$/);
 }
+
+/** Crea un cliente (y, si se pasa la placa, su vehículo) directo en la base de pruebas. Devuelve su id. */
+export async function crearClienteEnBase(datos: { nombre: string; telefono: string; placa?: string; activo?: boolean }): Promise<number> {
+  const cliente = new pg.Client({ connectionString: URL_BASE_E2E });
+  await cliente.connect();
+  try {
+    const { rows: autor } = await cliente.query<{ id: number }>("select id from usuario where nombre_usuario = 'dueno'");
+    const { rows } = await cliente.query<{ id: number }>(
+      "insert into cliente (nombre, telefono, activo, created_by) values ($1, $2, $3, $4) returning id",
+      [datos.nombre, datos.telefono, datos.activo ?? true, autor[0].id],
+    );
+    if (datos.placa) {
+      await cliente.query(
+        "insert into vehiculo (cliente_id, placa, tamano_id, created_by) values ($1, $2, (select id from tamano_vehiculo order by orden limit 1), $3)",
+        [rows[0].id, datos.placa, autor[0].id],
+      );
+    }
+    return rows[0].id;
+  } finally {
+    await cliente.end();
+  }
+}
