@@ -1,0 +1,105 @@
+import "server-only";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { db } from "@/db";
+import { cliente, tamanoVehiculo, vehiculo } from "@/db/esquema";
+
+// Lecturas de clientes (C1). Quien las llama ya pasó por exigirModulo("clientes"): el dueño o un encargado con el
+// permiso; el técnico nunca (RN-12).
+
+export type FilaCliente = { id: number; nombre: string; telefono: string; placas: string[] };
+
+/** Los clientes activos más recientes, con las placas de sus vehículos activos. La búsqueda llega en HU-22. */
+export async function listarClientes(limite = 30): Promise<FilaCliente[]> {
+  const clientes = await db
+    .select({ id: cliente.id, nombre: cliente.nombre, telefono: cliente.telefono })
+    .from(cliente)
+    .where(eq(cliente.activo, true))
+    .orderBy(desc(cliente.updatedAt), desc(cliente.id))
+    .limit(limite);
+  return conPlacas(clientes);
+}
+
+async function conPlacas<T extends { id: number }>(clientes: T[]): Promise<(T & { placas: string[] })[]> {
+  if (clientes.length === 0) return [];
+  const vehiculos = await db
+    .select({ clienteId: vehiculo.clienteId, placa: vehiculo.placa })
+    .from(vehiculo)
+    .where(and(eq(vehiculo.activo, true), inArray(vehiculo.clienteId, clientes.map((c) => c.id))))
+    .orderBy(asc(vehiculo.id));
+  return clientes.map((c) => ({ ...c, placas: vehiculos.filter((v) => v.clienteId === c.id).map((v) => v.placa) }));
+}
+
+type VehiculoCliente = {
+  id: number;
+  placa: string;
+  tamanoId: number;
+  tamano: string;
+  marca: string | null;
+  modelo: string | null;
+  anio: number | null;
+  color: string | null;
+  activo: boolean;
+};
+
+export type DetalleCliente = {
+  id: number;
+  nombre: string;
+  telefono: string;
+  correo: string | null;
+  nit: string | null;
+  razonSocial: string | null;
+  notas: string | null;
+  activo: boolean;
+  vehiculos: VehiculoCliente[];
+};
+
+/** Un cliente con sus vehículos (los activos primero), o null si no existe. */
+export async function obtenerCliente(id: number): Promise<DetalleCliente | null> {
+  const [c] = await db
+    .select({
+      id: cliente.id,
+      nombre: cliente.nombre,
+      telefono: cliente.telefono,
+      correo: cliente.correo,
+      nit: cliente.nit,
+      razonSocial: cliente.razonSocial,
+      notas: cliente.notas,
+      activo: cliente.activo,
+    })
+    .from(cliente)
+    .where(eq(cliente.id, id));
+  if (!c) return null;
+  const vehiculos = await db
+    .select({
+      id: vehiculo.id,
+      placa: vehiculo.placa,
+      tamanoId: vehiculo.tamanoId,
+      tamano: tamanoVehiculo.nombre,
+      marca: vehiculo.marca,
+      modelo: vehiculo.modelo,
+      anio: vehiculo.anio,
+      color: vehiculo.color,
+      activo: vehiculo.activo,
+    })
+    .from(vehiculo)
+    .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
+    .where(eq(vehiculo.clienteId, id))
+    .orderBy(desc(vehiculo.activo), asc(vehiculo.id));
+  return { ...c, vehiculos };
+}
+
+/** Quién tiene ya ese teléfono, para avisar el duplicado (RF-23). */
+export async function clienteConTelefono(telefono: string): Promise<{ id: number; nombre: string } | null> {
+  const [c] = await db.select({ id: cliente.id, nombre: cliente.nombre }).from(cliente).where(eq(cliente.telefono, telefono));
+  return c ?? null;
+}
+
+/** De quién es esa placa entre los vehículos activos, para avisar el duplicado (RF-23). */
+export async function clienteConPlaca(placa: string): Promise<{ id: number; nombre: string } | null> {
+  const [c] = await db
+    .select({ id: cliente.id, nombre: cliente.nombre })
+    .from(vehiculo)
+    .innerJoin(cliente, eq(vehiculo.clienteId, cliente.id))
+    .where(and(eq(vehiculo.placa, placa), eq(vehiculo.activo, true)));
+  return c ?? null;
+}
