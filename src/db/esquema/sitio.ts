@@ -1,10 +1,11 @@
 import { sql } from "drizzle-orm";
-import { boolean, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, check, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { usuario } from "./acceso";
 import { archivo } from "./configuracion";
 
 // Contenido del sitio (B3). Especificación: docs/08-desarrollo/etapas/B3-contenido.md §4.
-// El servicio del sitio es el mismo registro que el del catálogo (C1 le suma precios y duración).
+// El servicio del sitio es el mismo registro que el del catálogo: C1 le suma duración, mantenimiento y precios
+// (docs/08-desarrollo/etapas/C1-catalogo-clientes.md §4).
 
 const momento = (nombre: string) => timestamp(nombre, { withTimezone: true });
 
@@ -24,13 +25,20 @@ export const servicio = pgTable(
     fotoArchivoId: integer("foto_archivo_id").references(() => archivo.id),
     orden: integer("orden").notNull(),
     visibleSitio: boolean("visible_sitio").default(true).notNull(),
-    /** Catálogo (C1). En B3 siempre verdadero. */
+    /** Catálogo (C1): inactivo no se cotiza ni sale en el sitio. */
     activo: boolean("activo").default(true).notNull(),
+    /** Días que ocupa un espacio del taller (RF-27). Una variante puede tener la suya. */
+    duracionDias: integer("duracion_dias").default(1).notNull(),
+    /** Al entregarlo se programa el recordatorio de mantenimiento (RN-08). */
+    generaMantenimiento: boolean("genera_mantenimiento").default(false).notNull(),
     createdAt: momento("created_at").defaultNow().notNull(),
     updatedAt: momento("updated_at").defaultNow().notNull(),
     updatedBy: integer("updated_by").references(() => usuario.id),
   },
-  (t) => [uniqueIndex("servicio_nombre_unico").on(sql`lower(${t.nombre})`)],
+  (t) => [
+    uniqueIndex("servicio_nombre_unico").on(sql`lower(${t.nombre})`),
+    check("servicio_duracion_valida", sql`${t.duracionDias} between 1 and 60`),
+  ],
 );
 
 /** Opciones de un servicio (D-2: al menos una; "Única" si no hay opciones). Los precios llegan en C1. */
