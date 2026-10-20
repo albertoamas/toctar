@@ -1,12 +1,12 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { and, count, eq, max, sql } from "drizzle-orm";
+import { and, count, eq, gt, lte, max, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import type { z } from "zod";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { archivo, cliente, consulta, consultaArchivo, vehiculo } from "@/db/esquema";
+import { archivo, cliente, consulta, consultaArchivo, subidaPendiente, vehiculo } from "@/db/esquema";
 import { borrarArchivo, datosArchivoPrivado, urlSubidaPrivada } from "@/lib/almacenamiento";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
@@ -40,6 +40,8 @@ const ERROR_FOTO = "La foto debe ser JPG, PNG o WebP de hasta 5 MB.";
 const MENSAJE_LIMITE = `Hasta ${MAXIMO_ARCHIVOS} fotos o videos por consulta.`;
 const PEDIDO_ILEGIBLE = "No se pudo leer el pedido. Recarga la página.";
 const CONSULTA_INEXISTENTE = "Esa consulta ya no existe. Recarga la página.";
+/** El permiso firmado dura 10 minutos; el lugar se guarda un rato más, lo que puede tardar en 4G una subida empezada al final. */
+const MINUTOS_SUBIDA_PENDIENTE = 30;
 
 function despuesDeCambiar(id: number, clienteId?: number) {
   revalidatePath("/panel/consultas");
@@ -149,15 +151,24 @@ export async function crearConsulta(_previo: EstadoCliente, datos: FormData): Pr
   redirect(`/panel/consultas/${ids.consulta}?creada=1`);
 }
 
-/** La consulta y cuántos archivos tiene: antes de subir, para no procesar algo que no va a entrar. */
+type Conexion = Pick<typeof db, "select">;
+
+/** Lugares ocupados: archivos de la consulta más los videos con permiso de subida vigente (todavía subiendo). */
+async function ocupados(base: Conexion, id: number): Promise<number> {
+  const [[{ archivos }], [{ pendientes }]] = await Promise.all([
+    base.select({ archivos: count() }).from(consultaArchivo).where(eq(consultaArchivo.consultaId, id)),
+    base
+      .select({ pendientes: count() })
+      .from(subidaPendiente)
+      .where(and(eq(subidaPendiente.consultaId, id), gt(subidaPendiente.expiraAt, sql`now()`))),
+  ]);
+  return archivos + pendientes;
+}
+
+/** La consulta y si le queda lugar: antes de subir, para no procesar algo que no va a entrar. */
 async function lugarParaArchivo(id: number): Promise<{ clienteId: number; hayLugar: boolean } | null> {
-  const [actual] = await db
-    .select({ clienteId: consulta.clienteId, total: count(consultaArchivo.archivoId) })
-    .from(consulta)
-    .leftJoin(consultaArchivo, eq(consultaArchivo.consultaId, consulta.id))
-    .where(eq(consulta.id, id))
-    .groupBy(consulta.id);
-  return actual ? { clienteId: actual.clienteId, hayLugar: actual.total < MAXIMO_ARCHIVOS } : null;
+  const [actual] = await db.select({ clienteId: consulta.clienteId }).from(consulta).where(eq(consulta.id, id));
+  return actual ? { clienteId: actual.clienteId, hayLugar: (await ocupados(db, id)) < MAXIMO_ARCHIVOS } : null;
 }
 
 /** Suma a la consulta un archivo ya guardado; false si en el camino se llenó (y entonces no queda registrado). */
@@ -165,15 +176,18 @@ async function vincularArchivo(id: number, archivoId: number): Promise<boolean> 
   return db.transaction(async (tx) => {
     // Candado sobre la consulta: dos subidas a la vez no pasan juntas el límite
     await tx.select({ id: consulta.id }).from(consulta).where(eq(consulta.id, id)).for("update");
-    const [{ total, ultimo }] = await tx
-      .select({ total: count(), ultimo: max(consultaArchivo.orden) })
-      .from(consultaArchivo)
-      .where(eq(consultaArchivo.consultaId, id));
-    if (total >= MAXIMO_ARCHIVOS) return false;
+    if ((await ocupados(tx, id)) >= MAXIMO_ARCHIVOS) return false;
+    const [{ ultimo }] = await tx.select({ ultimo: max(consultaArchivo.orden) }).from(consultaArchivo).where(eq(consultaArchivo.consultaId, id));
     await tx.insert(consultaArchivo).values({ consultaId: id, archivoId, orden: (ultimo ?? -1) + 1 });
     await tx.update(consulta).set({ ultimoMovimientoAt: sql`now()` }).where(eq(consulta.id, id));
     return true;
   });
+}
+
+/** Borra los permisos vencidos y lo que se haya alcanzado a subir con ellos: no queda nada suelto en el almacenamiento. */
+async function limpiarSubidasVencidas() {
+  const vencidas = await db.delete(subidaPendiente).where(lte(subidaPendiente.expiraAt, sql`now()`)).returning({ clave: subidaPendiente.clave });
+  await Promise.allSettled(vencidas.map((v) => borrarArchivo(v.clave, "privado")));
 }
 
 /** Agrega una foto a la consulta (RF-29): achicada en el navegador, WebP en el servidor y en el bucket privado. */
@@ -205,28 +219,41 @@ export type PermisoSubida = { ok: true; url: string; clave: string } | { ok: fal
  * privado. Una acción del servidor acepta hasta 6 MB y un video llega a 50. El tipo y el tamaño quedan firmados.
  */
 export async function pedirSubidaVideo(datos: { consultaId: number; tipo: string; bytes: number; duracion: number }): Promise<PermisoSubida> {
-  await exigirModulo("consultas");
+  const autor = await exigirModulo("consultas");
   const entrada = esquemaPedirSubidaVideo.safeParse(datos);
   if (!entrada.success) return { ok: false, mensaje: entrada.error.issues[0].message };
   const { consultaId, tipo, bytes } = entrada.data;
+  await limpiarSubidasVencidas();
 
-  const lugar = await lugarParaArchivo(consultaId);
-  if (!lugar) return { ok: false, mensaje: CONSULTA_INEXISTENTE };
-  if (!lugar.hayLugar) return { ok: false, mensaje: MENSAJE_LIMITE };
-
+  // El permiso queda anotado y ocupa un lugar hasta que se registra o vence: así no se pueden pedir permisos sin fin
   const clave = `consultas/${randomUUID()}.${EXTENSION_VIDEO[tipo]}`;
+  const resultado = await db.transaction(async (tx) => {
+    const [existe] = await tx.select({ id: consulta.id }).from(consulta).where(eq(consulta.id, consultaId)).for("update");
+    if (!existe) return CONSULTA_INEXISTENTE;
+    if ((await ocupados(tx, consultaId)) >= MAXIMO_ARCHIVOS) return MENSAJE_LIMITE;
+    await tx.insert(subidaPendiente).values({ clave, consultaId, createdBy: Number(autor.id), expiraAt: sql`now() + make_interval(mins => ${MINUTOS_SUBIDA_PENDIENTE})` });
+    return null;
+  });
+  if (resultado) return { ok: false, mensaje: resultado };
   return { ok: true, url: await urlSubidaPrivada(clave, tipo, bytes), clave };
 }
 
 /**
- * Segundo paso: el video ya está en el almacenamiento y se registra en la consulta. Se mira lo que de verdad se subió
- * (tipo y tamaño), no lo que dice el navegador. Si no entra, se borra: no queda nada suelto.
+ * Segundo paso: el video ya está en el almacenamiento y se registra en la consulta. Solo con un permiso vigente de esa
+ * consulta. Se mira lo que de verdad se subió (tipo y tamaño), no lo que dice el navegador. Si no entra, se borra.
  */
 export async function registrarVideo(datos: { consultaId: number; clave: string; duracion: number }): Promise<EstadoFormulario> {
   const autor = await exigirModulo("consultas");
   const entrada = esquemaRegistrarVideo.safeParse(datos);
   if (!entrada.success) return { mensaje: PEDIDO_ILEGIBLE };
   const { consultaId, clave, duracion } = entrada.data;
+
+  // El permiso se usa una vez: al registrar (o al fallar) deja de ocupar lugar
+  const [permiso] = await db
+    .delete(subidaPendiente)
+    .where(and(eq(subidaPendiente.clave, clave), eq(subidaPendiente.consultaId, consultaId), gt(subidaPendiente.expiraAt, sql`now()`)))
+    .returning({ clave: subidaPendiente.clave });
+  if (!permiso) return { mensaje: "El permiso para subir el video venció. Vuelve a intentar." };
 
   const subido = await datosArchivoPrivado(clave);
   if (!subido) return { mensaje: "El video no terminó de subir. Vuelve a intentar." };
@@ -235,17 +262,10 @@ export async function registrarVideo(datos: { consultaId: number; clave: string;
     return { mensaje: PEDIDO_ILEGIBLE };
   }
 
-  let archivoId: number;
-  try {
-    [{ id: archivoId }] = await db
-      .insert(archivo)
-      .values({ clave, tipoMime: subido.tipo, bytes: subido.bytes, privado: true, duracionSegundos: Math.round(duracion), createdBy: Number(autor.id) })
-      .returning({ id: archivo.id });
-  } catch (error) {
-    // La misma clave dos veces (el pedido repetido): ya está registrada
-    if (indiceUnicoViolado(error)) return { mensaje: "Ese video ya está en la consulta. Recarga la página." };
-    throw error;
-  }
+  const [{ id: archivoId }] = await db
+    .insert(archivo)
+    .values({ clave, tipoMime: subido.tipo, bytes: subido.bytes, privado: true, duracionSegundos: Math.round(duracion), createdBy: Number(autor.id) })
+    .returning({ id: archivo.id });
   if (!(await vincularArchivo(consultaId, archivoId))) {
     await eliminarFoto(archivoId);
     return { mensaje: MENSAJE_LIMITE };
