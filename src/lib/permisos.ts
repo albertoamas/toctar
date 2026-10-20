@@ -39,7 +39,7 @@ export const MODULOS = {
   ordenes: { ruta: "/panel/ordenes", nombre: "Órdenes", permisoEncargado: "ordenes", tecnico: true, construido: false },
   pagos: { ruta: "/panel/pagos", nombre: "Pagos", permisoEncargado: "pagos", tecnico: false, construido: false },
   mantenimientos: { ruta: "/panel/mantenimientos", nombre: "Mantenimientos", permisoEncargado: "mantenimientos", tecnico: false, construido: false },
-  catalogo: { ruta: "/panel/catalogo", nombre: "Catálogo y precios", permisoEncargado: null, tecnico: false, construido: false },
+  catalogo: { ruta: "/panel/catalogo", nombre: "Catálogo y precios", permisoEncargado: null, tecnico: false, construido: true },
   usuarios: { ruta: "/panel/usuarios", nombre: "Usuarios", permisoEncargado: null, tecnico: false, construido: true },
   configuracion: { ruta: "/panel/configuracion", nombre: "Configuración", permisoEncargado: null, tecnico: false, construido: true },
 } as const satisfies Record<string, DefinicionModulo>;
