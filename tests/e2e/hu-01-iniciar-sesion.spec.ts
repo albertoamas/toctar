@@ -18,7 +18,7 @@ test("con datos correctos entra al panel y ve su nombre", async ({ page }) => {
 test("el inicio da un acceso a cada módulo que la persona puede usar; al técnico le dice que aún no hay nada", async ({ page }, info) => {
   await ingresarComoDueno(page);
   const accesos = page.getByRole("main").getByRole("listitem").getByRole("link");
-  await expect(accesos).toHaveText([/^Reclamos/, /^Sitio web/, /^Usuarios/, /^Configuración/]);
+  await expect(accesos).toHaveText([/^Reclamos/, /^Sitio web/, /^Catálogo y precios/, /^Usuarios/, /^Configuración/]);
   await accesos.filter({ hasText: "Usuarios" }).click();
   await expect(page).toHaveURL(/\/panel\/usuarios$/);
 

@@ -22,21 +22,16 @@ export type FilaServicio = {
   visible: boolean;
   orden: number;
   foto: UrlsFoto | null;
-  variantes: number;
 };
 
 export async function listarServicios(): Promise<FilaServicio[]> {
   const filas = await db
-    .select({
-      servicio,
-      foto: archivo,
-      variantes: sql<number>`(select count(*)::int from ${variante} v where v.servicio_id = ${servicio.id} and v.activo)`,
-    })
+    .select({ servicio, foto: archivo })
     .from(servicio)
     .leftJoin(archivo, eq(servicio.fotoArchivoId, archivo.id))
     .where(eq(servicio.activo, true))
     .orderBy(asc(servicio.orden), asc(servicio.id));
-  return filas.map(({ servicio: s, foto, variantes }) => ({
+  return filas.map(({ servicio: s, foto }) => ({
     id: s.id,
     nombre: s.nombre,
     slug: s.slug,
@@ -44,7 +39,6 @@ export async function listarServicios(): Promise<FilaServicio[]> {
     visible: s.visibleSitio,
     orden: s.orden,
     foto: foto ? urlsFoto(foto) : null,
-    variantes,
   }));
 }
 
@@ -72,7 +66,6 @@ export async function obtenerServicio(id: number): Promise<DetalleServicio | nul
     visible: s.visibleSitio,
     orden: s.orden,
     foto: fila.foto ? urlsFoto(fila.foto) : null,
-    variantes: listaVariantes.filter((v) => v.activo).length,
     descripcion: s.descripcion,
     beneficios: s.beneficios,
     pasos: s.pasos,

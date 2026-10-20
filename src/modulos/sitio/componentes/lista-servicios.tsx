@@ -11,7 +11,7 @@ import { moverServicio } from "../acciones";
 
 // HU-07: servicios en el orden en que salen en el sitio. Se abren para editar.
 
-type Fila = { id: number; nombre: string; resumen: string; visible: boolean; miniatura: string | null; variantes: number };
+type Fila = { id: number; nombre: string; resumen: string; visible: boolean; miniatura: string | null };
 
 export function ListaServicios({ servicios }: { servicios: Fila[] }) {
   const [pendiente, iniciar] = useTransition();
