@@ -21,6 +21,8 @@ export const archivo = pgTable("archivo", {
   miniaturaClave: text("miniatura_clave").unique(),
   /** En el bucket privado (datos de clientes, como las fotos de reclamos): se ve solo con enlace firmado. */
   privado: boolean("privado").default(false).notNull(),
+  /** Solo videos (consultas, C2): la duración que informa el navegador al subir. */
+  duracionSegundos: integer("duracion_segundos"),
   createdAt: momento("created_at").defaultNow().notNull(),
   createdBy: integer("created_by").references(() => usuario.id),
 });
