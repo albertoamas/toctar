@@ -41,7 +41,6 @@ async function Lista() {
         resumen: s.resumen,
         visible: s.visible,
         miniatura: s.foto?.miniatura ?? null,
-        variantes: s.variantes,
       }))}
     />
   );
