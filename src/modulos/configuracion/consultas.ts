@@ -106,3 +106,17 @@ export async function listarElementos(lista: Lista): Promise<Elemento[]> {
     .orderBy(desc(espacioTaller.activo), asc(espacioTaller.orden), asc(espacioTaller.id));
   return filas.map((f) => ({ ...f, descripcion: null }));
 }
+
+export type Tamano = { id: number; nombre: string; descripcion: string | null };
+
+/**
+ * Tamaños de vehículo activos, en su orden (RN-07): las columnas de precios del catálogo y la lista para elegir el
+ * tamaño de un vehículo. No es un dato reservado: lo leen el catálogo (dueño) y los clientes (encargado con permiso).
+ */
+export async function tamanosActivos(): Promise<Tamano[]> {
+  return db
+    .select({ id: tamanoVehiculo.id, nombre: tamanoVehiculo.nombre, descripcion: tamanoVehiculo.descripcion })
+    .from(tamanoVehiculo)
+    .where(eq(tamanoVehiculo.activo, true))
+    .orderBy(asc(tamanoVehiculo.orden), asc(tamanoVehiculo.id));
+}
