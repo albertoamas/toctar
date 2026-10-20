@@ -133,7 +133,7 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel (44 px c
 - `EnlaceVolver` a Catálogo. Título: nombre del servicio, con "Inactivo" si corresponde.
 - **Datos del catálogo** (formulario propio, "Guardar"): duración estimada en días, "Genera recordatorio de mantenimiento" y "Activo en el catálogo" (desmarcado: no se cotiza ni sale en el sitio).
 - **Precios por tamaño** (un formulario por variante activa, "Guardar precios de <variante>"):
-  - Un campo en Bs por tamaño activo, con el nombre del tamaño y sus modelos de ejemplo en la ayuda. Vacío = según evaluación; debajo de cada vacío guardado se lee "Según evaluación"; sin fila, "Sin cargar".
+  - Un campo en Bs por tamaño activo, con el nombre del tamaño. Vacío = según evaluación: el campo vacío dice "Según evaluación" o, si nunca se guardó, "Sin cargar". Los modelos de ejemplo de cada tamaño van una sola vez arriba, en "Ver los modelos de cada tamaño" (en cada variante alargaban mucho la página).
   - Duración propia opcional: "Usa la del servicio (2 días)" si está vacía.
   - En el celular, un tamaño por renglón; desde 768 px, una grilla de dos o tres columnas.
   - "Ver historial" abre un diálogo con los cambios: tamaño, monto anterior → nuevo, fecha y hora de Bolivia y quién.
@@ -164,7 +164,7 @@ Todas validan con Zod (también las que reciben datos sueltos) y empiezan con `e
 | Acción | Módulo | Entrada | Qué hace | Mensajes |
 |---|---|---|---|---|
 | `guardarDatosCatalogo` | `catalogo` | `id`, `duracionDias` (1–60), `generaMantenimiento`, `activo` | Actualiza el servicio. Invalida `servicios` (el sitio deja de mostrarlo si queda inactivo) | "Cambios guardados." |
-| `guardarPreciosVariante` | `catalogo` | `varianteId`, `duracionDias` (vacío o 1–60), `precios[tamanoId]` (vacío o monto > 0 y ≤ 100 000, hasta 2 decimales) | En una transacción: actualiza la duración e inserta una fila de `precio` **solo por cada tamaño cuyo valor cambió** respecto del vigente (vacío → nulo). Si no cambió nada, no escribe | "Precios guardados." · "No había cambios." · por campo: "Escribe un monto mayor a cero, hasta Bs 100 000." |
+| `guardarPreciosVariante` | `catalogo` | `varianteId`, `duracionDias` (vacío o 1–60), `precios[tamanoId]` (vacío o monto > 0 y ≤ 100 000, hasta 2 decimales) | En una transacción: actualiza la duración e inserta una fila de `precio` **solo por cada tamaño cuyo valor cambió** respecto del vigente (vacío → nulo). Guardar confirma todo el formulario: un tamaño sin cargar que queda vacío pasa a "según evaluación". Si no cambió nada, no escribe | "Precios guardados." · "No había cambios." · por campo: "Escribe solo números, mayor a cero y hasta 100000, por ejemplo 250 o 250,50." |
 | `crearCliente` | `clientes` | Datos del cliente y, opcional, del primer vehículo | Inserta cliente (y vehículo) en una transacción. Si el teléfono o la placa existen, no guarda y devuelve el error en el campo con el registro existente | "Cliente <nombre> creado." · "Ese número ya es de <nombre>." con enlace "Abrir su ficha" · "La placa 1234ABC ya está registrada a nombre de <nombre>." con enlace |
 | `actualizarCliente` | `clientes` | `id` y datos | Actualiza; mismo control de teléfono duplicado | "Cambios guardados." |
 | `cambiarEstadoCliente` | `clientes` | `id`, `activo` | Desactiva o reactiva | "Cliente desactivado." · "Cliente reactivado." |
@@ -200,7 +200,7 @@ Todas validan con Zod (también las que reciben datos sueltos) y empiezan con `e
 - **Unitarias** (`tests/unit/`):
   - `normalizarPlaca`, `normalizarBusqueda`.
   - `duracionEfectiva`: la de la variante pisa la del servicio.
-  - `preciosCambiados`: solo los que cambian; vacío vs. nulo vigente no es cambio; un monto igual no es cambio.
+  - `preciosCambiados`: solo los que cambian; un monto igual o seguir en "según evaluación" no es cambio; un tamaño sin cargar que queda vacío pasa a "según evaluación".
   - `estadoPrecios`: cuenta los faltantes solo con variantes y tamaños activos.
   - Permisos: `catalogo` solo el dueño; `clientes` dueño y encargado con el permiso; el técnico nunca (se suma a `permisos.test.ts`).
 - **De punta a punta** (`tests/e2e/`):

@@ -37,6 +37,12 @@ async function Lista() {
               <span className="flex flex-wrap gap-x-3 text-sm text-tinta-suave">
                 <span className="whitespace-nowrap">{s.variantes === 1 ? "1 variante" : `${s.variantes} variantes`}</span>
                 <span className="whitespace-nowrap">{s.duracionDias === 1 ? "1 día" : `${s.duracionDias} días`}</span>
+                {/* Los que faltan, en tinta: es lo que hay que cargar */}
+                {!s.activo ? null : s.preciosFaltantes === 0 ? (
+                  <span className="whitespace-nowrap">Precios completos</span>
+                ) : (
+                  <span className="font-semibold whitespace-nowrap text-tinta">{s.preciosFaltantes === 1 ? "Falta 1 precio" : `Faltan ${s.preciosFaltantes} precios`}</span>
+                )}
               </span>
             </Link>
           </li>

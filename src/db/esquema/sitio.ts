@@ -41,7 +41,7 @@ export const servicio = pgTable(
   ],
 );
 
-/** Opciones de un servicio (D-2: al menos una; "Única" si no hay opciones). Los precios llegan en C1. */
+/** Opciones de un servicio (D-2: al menos una; "Única" si no hay opciones). Sus precios están en `precio` (catalogo.ts). */
 export const variante = pgTable(
   "variante",
   {
@@ -53,8 +53,13 @@ export const variante = pgTable(
     descripcion: text("descripcion"),
     orden: integer("orden").notNull(),
     activo: boolean("activo").default(true).notNull(),
+    /** Días estimados propios (C1, HU-20). Vacío: usa los del servicio. */
+    duracionDias: integer("duracion_dias"),
   },
-  (t) => [uniqueIndex("variante_nombre_unico").on(t.servicioId, sql`lower(${t.nombre})`)],
+  (t) => [
+    uniqueIndex("variante_nombre_unico").on(t.servicioId, sql`lower(${t.nombre})`),
+    check("variante_duracion_valida", sql`${t.duracionDias} between 1 and 60`),
+  ],
 );
 
 /** Textos editables de las páginas del sitio (RF-10): una fila por página, validada en src/modulos/sitio/contenido.ts. */

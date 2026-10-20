@@ -17,3 +17,14 @@ export const esquemaDatosCatalogo = z.object({
   generaMantenimiento: z.boolean(),
   activo: z.boolean(),
 });
+
+/** Duración propia de una variante: vacía usa la del servicio (HU-20). */
+const duracionOpcional = z.preprocess((v) => (v === "" || v === null || v === undefined ? null : v), duracionDias.nullable());
+
+export const esquemaVarianteCatalogo = z.object({
+  varianteId: z.coerce.number().int().positive(),
+  duracionDias: duracionOpcional,
+});
+
+/** Para las acciones que reciben un id suelto (no un formulario): cualquiera puede llamarlas. */
+export const esquemaIdVariante = z.number().int().positive();
