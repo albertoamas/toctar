@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { ChevronRightIcon, ContactIcon, GlobeIcon, MessageSquareWarningIcon, SettingsIcon, TagIcon, UsersIcon, type LucideIcon } from "lucide-react";
+import { ChevronRightIcon, ContactIcon, InboxIcon, GlobeIcon, MessageSquareWarningIcon, SettingsIcon, TagIcon, UsersIcon, type LucideIcon } from "lucide-react";
 import { cn } from "cn";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
@@ -22,6 +22,7 @@ export default function InicioPanel() {
 /** Para qué sirve cada módulo, en una línea, y su ícono. Los que todavía no están aquí se muestran solo con el nombre. */
 const ACCESOS: Partial<Record<Modulo, { icono: LucideIcon; descripcion: string }>> = {
   sitio: { icono: GlobeIcon, descripcion: "Servicios, textos, preguntas y fotos del sitio." },
+  consultas: { icono: InboxIcon, descripcion: "Lo que preguntan los clientes, con sus fotos, hasta cotizarlo." },
   clientes: { icono: ContactIcon, descripcion: "Clientes y sus vehículos, para atenderlos con su historial." },
   catalogo: { icono: TagIcon, descripcion: "Precios por tamaño, duración y mantenimiento de cada servicio." },
   usuarios: { icono: UsersIcon, descripcion: "El personal del taller, sus roles y contraseñas." },

@@ -33,7 +33,7 @@ export const MODULOS = {
   sitio: { ruta: "/panel/sitio", nombre: "Sitio web", permisoEncargado: "sitio", tecnico: false, construido: true },
   reclamos: { ruta: "/panel/reclamos", nombre: "Reclamos", permisoEncargado: "reclamos", tecnico: false, construido: true },
   clientes: { ruta: "/panel/clientes", nombre: "Clientes", permisoEncargado: "clientes", tecnico: false, construido: true },
-  consultas: { ruta: "/panel/consultas", nombre: "Consultas", permisoEncargado: "consultas", tecnico: false, construido: false },
+  consultas: { ruta: "/panel/consultas", nombre: "Consultas", permisoEncargado: "consultas", tecnico: false, construido: true },
   cotizaciones: { ruta: "/panel/cotizaciones", nombre: "Cotizaciones", permisoEncargado: null, tecnico: false, construido: false },
   agenda: { ruta: "/panel/agenda", nombre: "Agenda", permisoEncargado: "agenda", tecnico: false, construido: false },
   ordenes: { ruta: "/panel/ordenes", nombre: "Órdenes", permisoEncargado: "ordenes", tecnico: true, construido: false },
