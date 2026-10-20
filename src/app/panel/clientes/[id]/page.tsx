@@ -16,7 +16,7 @@ import { AccesoCliente } from "@/modulos/clientes/componentes/acceso-cliente";
 import { FormularioDatosCliente } from "@/modulos/clientes/componentes/formulario-datos-cliente";
 import { VehiculosCliente } from "@/modulos/clientes/componentes/vehiculos-cliente";
 import { obtenerCliente } from "@/modulos/clientes/consultas";
-import { tamanosActivos } from "@/modulos/configuracion/consultas";
+import { obtenerParametros, tamanosActivos } from "@/modulos/configuracion/consultas";
 import { ListaConsultas } from "@/modulos/consultas/componentes/lista-consultas";
 import { consultasDelCliente } from "@/modulos/consultas/consultas";
 
@@ -41,7 +41,12 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
   const numero = Number(id);
   if (!Number.isInteger(numero) || numero <= 0) notFound();
   const verConsultas = puedeVerModulo(usuario, "consultas");
-  const [c, tamanos, consultas] = await Promise.all([obtenerCliente(numero), tamanosActivos(), verConsultas ? consultasDelCliente(numero) : []]);
+  const [c, tamanos, consultas, parametros] = await Promise.all([
+    obtenerCliente(numero),
+    tamanosActivos(),
+    verConsultas ? consultasDelCliente(numero) : [],
+    obtenerParametros(),
+  ]);
   if (!c) notFound();
 
   return (
@@ -93,7 +98,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
               </Link>
             )}
           </div>
-          {consultas.length > 0 ? <ListaConsultas consultas={consultas} sinCliente /> : <p className="text-tinta-suave">Todavía no tiene consultas.</p>}
+          {consultas.length > 0 ? <ListaConsultas consultas={consultas} umbral={parametros.dias_consulta_fria} sinCliente /> : <p className="text-tinta-suave">Todavía no tiene consultas.</p>}
         </section>
       )}
     </>

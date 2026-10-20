@@ -13,13 +13,15 @@ import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { ArchivosConsulta } from "@/modulos/consultas/componentes/archivos-consulta";
+import { EstadoConsulta } from "@/modulos/consultas/componentes/estado-consulta";
 import { NotaConsulta } from "@/modulos/consultas/componentes/nota-consulta";
 import { obtenerConsulta } from "@/modulos/consultas/consultas";
-import { NOMBRE_CANAL, NOMBRE_ESTADO } from "@/modulos/consultas/reglas";
+import { INSIGNIA_ESTADO, NOMBRE_CANAL, NOMBRE_ESTADO } from "@/modulos/consultas/reglas";
 
 export const metadata: Metadata = { title: "Consulta" };
 
-// HU-24: una consulta, con sus fotos y su nota. Las cotizaciones (HU-25) y marcarla como perdida (HU-28) se suman acá.
+// HU-24: una consulta, con sus fotos y su nota. HU-28: marcarla como perdida o reabrirla. Las cotizaciones (HU-25) se
+// suman acá.
 export default function PaginaConsulta({ params, searchParams }: PageProps<"/panel/consultas/[id]">) {
   return (
     <section className="flex flex-col gap-6">
@@ -46,7 +48,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/consulta
     <>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-4">
         <h1 className="font-heading text-4xl font-extrabold italic">{c.cliente}</h1>
-        <span className="tt-insignia">{NOMBRE_ESTADO[c.estado]}</span>
+        <span className={INSIGNIA_ESTADO[c.estado]}>{NOMBRE_ESTADO[c.estado]}</span>
         <a href={enlaceWhatsApp(c.telefono)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }), "sm:ml-auto")}>
           <IconoWhatsApp />
           Escribir por WhatsApp
@@ -86,6 +88,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/consulta
         <div className="flex flex-col gap-10 lg:col-start-1 lg:row-start-1">
           <ArchivosConsulta consultaId={c.id} archivos={c.archivos} />
           <NotaConsulta id={c.id} nota={c.nota} />
+          <EstadoConsulta id={c.id} estado={c.estado} motivo={c.motivoPerdida} detalle={c.detallePerdida} />
         </div>
       </div>
     </>

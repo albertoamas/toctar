@@ -13,13 +13,14 @@ export type Pestana = {
   incluye?: string;
 };
 
-export function Pestanas({ etiqueta, pestanas }: { etiqueta: string; pestanas: Pestana[] }) {
+/** `activa`: el href de la pestaña elegida, cuando las pestañas cambian la búsqueda (?vista=) y no la ruta. */
+export function Pestanas({ etiqueta, pestanas, activa: elegida }: { etiqueta: string; pestanas: Pestana[]; activa?: string }) {
   const ruta = usePathname();
   return (
     <nav aria-label={etiqueta} className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
       <ul className="flex min-w-max gap-6 border-b border-border">
         {pestanas.map((p) => {
-          const activa = ruta === p.href || (!!p.incluye && ruta.startsWith(p.incluye));
+          const activa = elegida !== undefined ? elegida === p.href : ruta === p.href || (!!p.incluye && ruta.startsWith(p.incluye));
           return (
             <li key={p.href}>
               <Link

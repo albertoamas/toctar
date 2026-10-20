@@ -24,6 +24,7 @@ import {
 } from "@/modulos/clientes/servidor";
 import {
   esquemaArchivoConsulta,
+  esquemaCambioEstado,
   esquemaConsulta,
   esquemaIdConsulta,
   esquemaNota,
@@ -31,7 +32,17 @@ import {
   esquemaRegistrarVideo,
   esquemaVehiculoElegido,
 } from "./esquemas";
-import { BYTES_MAXIMOS_VIDEO, CLIENTE_NUEVO, EXTENSION_VIDEO, MAXIMO_ARCHIVOS, TIPOS_VIDEO, VEHICULO_OTRO } from "./reglas";
+import {
+  BYTES_MAXIMOS_VIDEO,
+  CLIENTE_NUEVO,
+  estadoAlReabrir,
+  EXTENSION_VIDEO,
+  MAXIMO_ARCHIVOS,
+  NOMBRE_ESTADO,
+  TIPOS_VIDEO,
+  transicionPermitida,
+  VEHICULO_OTRO,
+} from "./reglas";
 
 // Consultas (HU-24). Entra el dueño o un encargado con el permiso "consultas"; el técnico nunca (RN-12).
 // Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md §6.
@@ -324,4 +335,37 @@ export async function guardarNota(_previo: EstadoFormulario, datos: FormData): P
 
   despuesDeCambiar(id);
   return { ok: true, mensaje: "Nota guardada." };
+}
+
+/**
+ * Marca la consulta como perdida, con motivo, o la reabre (HU-28, RF-30). Solo si el estado lo permite
+ * (`transicionPermitida`); si dos personas la cambian a la vez, vale el primer cambio.
+ */
+export async function cambiarEstadoConsulta(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  await exigirModulo("consultas");
+  const valores = { motivo: String(datos.get("motivo") ?? ""), detalle: String(datos.get("detalle") ?? "") };
+  const entrada = esquemaCambioEstado.safeParse({ id: datos.get("id"), accion: datos.get("accion"), ...valores });
+  if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
+  const d = entrada.data;
+
+  const [actual] = await db.select({ estado: consulta.estado, clienteId: consulta.clienteId }).from(consulta).where(eq(consulta.id, d.id));
+  if (!actual) return { mensaje: CONSULTA_INEXISTENTE };
+  // HU-25: con cotización, reabrir vuelve a "cotizado"
+  const destino = d.accion === "perder" ? "perdido" : estadoAlReabrir(false);
+  if (!transicionPermitida(actual.estado, destino)) return { mensaje: `Esta consulta ya está ${NOMBRE_ESTADO[actual.estado].toLowerCase()}. Recarga la página.` };
+
+  const [cambiada] = await db
+    .update(consulta)
+    .set({
+      estado: destino,
+      motivoPerdida: d.accion === "perder" ? d.motivo : null,
+      detallePerdida: d.accion === "perder" ? d.detalle : null,
+      ultimoMovimientoAt: sql`now()`,
+    })
+    .where(and(eq(consulta.id, d.id), eq(consulta.estado, actual.estado)))
+    .returning({ id: consulta.id });
+  if (!cambiada) return { mensaje: "Alguien cambió esta consulta recién. Recarga la página." };
+
+  despuesDeCambiar(d.id, actual.clienteId);
+  return { ok: true, mensaje: d.accion === "perder" ? "Marcada como perdida." : "Consulta reabierta." };
 }

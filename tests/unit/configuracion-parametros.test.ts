@@ -10,13 +10,14 @@ const validos = {
   adelanto_sugerido: "200",
   validez_cotizacion_dias: "15",
   intervalo_mantenimiento_meses: "3",
+  dias_consulta_fria: "7",
   condiciones_cotizacion: "Precios en bolivianos.",
   garantia_cotizacion: "Cubre el trabajo si se siguen los cuidados.",
 };
 
 describe("parámetros: ninguno vacío ni negativo (HU-05)", () => {
   test("acepta los valores iniciales y los convierte a número", () => {
-    expect(esquemaParametros.parse(validos)).toEqual({ ...validos, adelanto_sugerido: 200, validez_cotizacion_dias: 15, intervalo_mantenimiento_meses: 3 });
+    expect(esquemaParametros.parse(validos)).toEqual({ ...validos, adelanto_sugerido: 200, validez_cotizacion_dias: 15, intervalo_mantenimiento_meses: 3, dias_consulta_fria: 7 });
   });
 
   test.each([
@@ -29,6 +30,8 @@ describe("parámetros: ninguno vacío ni negativo (HU-05)", () => {
     ["validez_cotizacion_dias", "366", "Entre 1 y 365 días."],
     ["intervalo_mantenimiento_meses", "25", "Entre 1 y 24 meses."],
     ["intervalo_mantenimiento_meses", "tres", "Escribe un número entero, sin decimales."],
+    ["dias_consulta_fria", "0", "Entre 1 y 90 días."],
+    ["dias_consulta_fria", "91", "Entre 1 y 90 días."],
     ["condiciones_cotizacion", "   ", "Escribe las condiciones: sale en el PDF de la cotización."],
     ["garantia_cotizacion", "x".repeat(2001), "Hasta 2000 caracteres."],
   ])("rechaza %s = %j", (clave, valor, mensaje) => {
@@ -42,6 +45,7 @@ describe("parámetros: ninguno vacío ni negativo (HU-05)", () => {
       { clave: "adelanto_sugerido", valor: 250 },
       { clave: "validez_cotizacion_dias", valor: 10 },
       { clave: "intervalo_mantenimiento_meses", valor: 6 },
+      { clave: "dias_consulta_fria", valor: 5 },
       { clave: "condiciones_cotizacion", valor: "Condiciones" },
       { clave: "garantia_cotizacion", valor: "Garantía" },
     ];
@@ -49,6 +53,7 @@ describe("parámetros: ninguno vacío ni negativo (HU-05)", () => {
       adelanto_sugerido: 250,
       validez_cotizacion_dias: 10,
       intervalo_mantenimiento_meses: 6,
+      dias_consulta_fria: 5,
       condiciones_cotizacion: "Condiciones",
       garantia_cotizacion: "Garantía",
     });

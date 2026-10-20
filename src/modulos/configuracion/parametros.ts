@@ -43,6 +43,12 @@ export const PARAMETROS = {
     unidad: "meses",
     esquema: entero(1, 24, "Entre 1 y 24 meses."),
   },
+  dias_consulta_fria: {
+    etiqueta: "Consulta que se enfría",
+    ayuda: "Días sin movimiento para resaltarla en Consultas.",
+    unidad: "días",
+    esquema: entero(1, 90, "Entre 1 y 90 días."),
+  },
   condiciones_cotizacion: {
     etiqueta: "Condiciones",
     ayuda: "Lo que el cliente acepta al confirmar la cotización.",
