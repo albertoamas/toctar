@@ -29,7 +29,12 @@ export function FormularioDatosCatalogo({ servicio: s }: Props) {
     <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate aria-labelledby="datos-catalogo-titulo">
       <h2 id="datos-catalogo-titulo" className="font-heading text-2xl font-bold italic">Datos del catálogo</h2>
       <input type="hidden" name="id" value={s.id} />
-      <Campo id="duracionDias" etiqueta="Duración" error={e.duracionDias} ayuda="Días que ocupa un espacio del taller. La agenda la usa para sugerir la fecha de entrega.">
+      <Campo
+        id="duracionDias"
+        etiqueta="Duración estimada"
+        error={e.duracionDias}
+        ayuda="Días que suele ocupar un espacio del taller; mejor el caso más largo habitual. Solo sugiere la fecha de entrega al agendar: en cada reserva se ajusta según el vehículo y el trabajo."
+      >
         <div className="flex items-center gap-2">
           <Input
             id="duracionDias"

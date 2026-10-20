@@ -27,7 +27,7 @@ export const servicio = pgTable(
     visibleSitio: boolean("visible_sitio").default(true).notNull(),
     /** Catálogo (C1): inactivo no se cotiza ni sale en el sitio. */
     activo: boolean("activo").default(true).notNull(),
-    /** Días que ocupa un espacio del taller (RF-27). Una variante puede tener la suya. */
+    /** Días estimados que ocupa un espacio del taller (RF-27): solo sugiere la fecha de entrega. Una variante puede tener la suya. */
     duracionDias: integer("duracion_dias").default(1).notNull(),
     /** Al entregarlo se programa el recordatorio de mantenimiento (RN-08). */
     generaMantenimiento: boolean("genera_mantenimiento").default(false).notNull(),
