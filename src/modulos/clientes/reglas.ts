@@ -36,3 +36,6 @@ export function normalizarBusqueda(q: string): Busqueda | null {
 
 /** Escapa los comodines de LIKE (% y _) para que se busquen como texto. */
 export const escaparLike = (texto: string) => texto.replace(/[\\%_]/g, (c) => `\\${c}`);
+
+/** Prefijo de los campos de un vehículo en la ficha: hay un formulario por vehículo y otro para agregar. */
+export const prefijoVehiculo = (id?: number) => (id ? `vehiculo-${id}-` : "vehiculo-nuevo-");
