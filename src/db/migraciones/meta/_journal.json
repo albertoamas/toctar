@@ -155,6 +155,13 @@
       "when": 1792534071470,
       "tag": "0021_subidas_pendientes",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1792534714982,
+      "tag": "0022_datos_seguimiento",
+      "breakpoints": true
     }
   ]
 }
