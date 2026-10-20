@@ -19,7 +19,7 @@
 - **El adelanto depende del dueño:** la lista de precios y las variantes pasan a pedirse para el viernes 23 (antes, 3/11), y el dominio sigue siendo urgente.
 - **Lunes 19:** reunión de avance con el dueño, con una presentación y sin mostrar todavía la app. La primera demo sigue siendo el viernes 23.
 
-## Dónde estamos (15 de octubre)
+## Dónde estamos (20 de octubre)
 
 | Qué | Estado |
 |---|---|
@@ -34,7 +34,8 @@
 | Etapa B4 Sitio público (HU-10 a HU-15) | ✅ Programada el 14/10 (PR #23 a #26). Lighthouse móvil ≥ 90. Falta la revisión manual y la demo del 23 |
 | Etapa B5 Reclamos y Google (HU-16, HU-17, HU-18) | ✅ Programada el 15/10 (PR #33 a #36). Falta la revisión manual, validar el JSON-LD en Google con https (A3) y que el dueño cree su Perfil de Empresa (`10-lanzamiento/perfil-de-google.md`) |
 | Revisión de seguridad y calidad de la Entrega 1 | ✅ 16/10 (PR #40) |
-| Pulido visual de la Entrega 1 | ⏳ Plan en `pulido-visual.md`: pantalla por pantalla, antes de la demo del 23 (sitio) y del acta del 30 (panel) |
+| Pulido visual de la Entrega 1 | ✅ Las 32 pantallas, en `develop` (PR #43 a #48). Registro y comparativas en `pulido-visual.md` |
+| Etapa C1 Catálogo y clientes (HU-19 a HU-23) | ✅ Programada el 20/10 (PR #49 a #53). Precios de prueba solo en E2E: falta la lista de precios real del dueño |
 | Identidad visual aplicada a la app | ✅ En `develop` (PR #5 y #9, logos nítidos en tamaños chicos) |
 | Inicio del trabajo | 9 de octubre de 2026 (firma y primer pago) |
 | Día D (inicio del plazo del contrato) | 14 de octubre de 2026 (llegó el material) |
@@ -70,7 +71,8 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | B3 Contenido del panel | `etapas/B3-contenido.md` | ✅ Programada (14/10); falta la revisión manual |
 | B4 Sitio público | `etapas/B4-sitio-publico.md` | ✅ Programada (14/10); falta la revisión manual |
 | B5 Reclamos y Google | `etapas/B5-reclamos-google.md` | ✅ Programada (15/10, PR #33 a #36). Falta validar el JSON-LD en Google (A3) y la revisión manual |
-| B6 a C5 | Una por etapa | Al empezar cada una |
+| C1 Catálogo y clientes | `etapas/C1-catalogo-clientes.md` | ✅ Programada (20/10, PR #49 a #53). Falta cargar los precios reales |
+| B6 y C2 a C5 | Una por etapa | Al empezar cada una |
 
 ## Resumen de fases
 
@@ -199,7 +201,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | | |
 |---|---|
 | Historias | HU-19 Catálogo con variantes · HU-20 Precios por tamaño y duración · HU-21 Registrar clientes y vehículos · HU-22 Buscar clientes · HU-23 Ficha del cliente |
-| Tablas nuevas | `precio` (historial, D-3), `cliente`, `vehiculo`, `auditoria`. Columnas nuevas en `servicio` y `variante` (duración, genera mantenimiento); `variante` se crea en B3 |
+| Tablas nuevas | `precio` (historial, D-3), `cliente`, `vehiculo`. Columnas nuevas en `servicio` y `variante` (duración, genera mantenimiento); `variante` se crea en B3. `auditoria` pasa a C2, con las cotizaciones (los precios guardan su propio historial) |
 | Reglas | D-2 (todo servicio tiene al menos una variante), RN-07 (precio por tamaño; vacío = "según evaluación", como el mantenimiento del cerámico), RNF-10 (registro de cambios de precio) |
 | Entregable | Catálogo con precios cargados; clientes y vehículos con búsqueda por nombre, teléfono o placa |
 | Criterio de salida | Un cambio de precio no altera nada ya guardado y queda en el historial |
@@ -209,7 +211,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | | |
 |---|---|
 | Historias | HU-24 Registrar consulta · HU-25 Armar cotización · HU-26 PDF de la cotización · HU-27 Compartir el PDF · HU-28 Seguimiento de consultas |
-| Tablas nuevas | `consulta`, `consulta_archivo`, `cotizacion`, `cotizacion_linea`, `cotizacion_foto` |
+| Tablas nuevas | `consulta`, `consulta_archivo`, `cotizacion`, `cotizacion_linea`, `cotizacion_foto`, `auditoria` (viene de C1: registra quién y cuándo crea o cambia cotizaciones y, después, pagos, RNF-10) |
 | Reglas | RN-01 (solo el dueño), RN-02 (una cotización enviada no cambia: modificarla crea otra versión), RN-03 (estimado por fotos), S-5 (validez definida en cada cotización) |
 | Clave técnica | HU-25 y HU-26 son grandes: se parten. PDF con `@react-pdf/renderer` en la identidad visual (logo sobre claro), guardado en R2 y nunca regenerado. Web Share API con archivo |
 | Flujo crítico | Consulta → cotización (diagrama 1 de `flujos-criticos.md`): prueba E2E |
