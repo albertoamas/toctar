@@ -61,7 +61,7 @@ El dueño carga en el panel el precio de cada variante por tamaño de vehículo,
 
 ## 4. Datos
 
-Tres migraciones, una por historia que toca la base: `0015_catalogo` (HU-19 y HU-20: columnas de `servicio` y `variante`, y la tabla `precio`), `0016_datos_catalogo` (marca de mantenimiento y duraciones iniciales) y `0017_clientes` (HU-21: `unaccent`, `cliente` y `vehiculo`).
+Migraciones por historia: `0015_catalogo` y `0016_datos_catalogo` (HU-19: duración y mantenimiento del servicio, y la marca inicial del nano cerámico), `0017_precios` (HU-20: duración de la variante y la tabla `precio`) y `0018_clientes` (HU-21: `unaccent`, `cliente` y `vehiculo`).
 
 ### `servicio` (cambio)
 | Columna | Tipo | Nulo | Notas |
@@ -69,7 +69,7 @@ Tres migraciones, una por historia que toca la base: `0015_catalogo` (HU-19 y HU
 | `duracion_dias` | `integer` | no | Por defecto 1. CHECK entre 1 y 60 |
 | `genera_mantenimiento` | `boolean` | no | Por defecto `false` (RN-08) |
 
-`activo` ya existe (B3): el catálogo ahora lo cambia. Un servicio inactivo no sale en el sitio (B4 ya filtra por `activo`) ni se podrá cotizar (C2).
+`activo` ya existe (B3): el catálogo ahora lo cambia. Un servicio inactivo no sale en el sitio (B4 ya filtra por `activo`), tampoco en la lista de Servicios del sitio del panel, ni se podrá cotizar (C2); se reactiva desde el catálogo.
 
 ### `variante` (cambio)
 | Columna | Tipo | Nulo | Notas |
