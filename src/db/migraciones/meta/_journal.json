@@ -120,6 +120,13 @@
       "when": 1792471739060,
       "tag": "0016_datos_catalogo",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792472971550,
+      "tag": "0017_precios",
+      "breakpoints": true
     }
   ]
 }
