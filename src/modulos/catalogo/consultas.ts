@@ -2,20 +2,10 @@ import "server-only";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { precio, servicio, tamanoVehiculo, usuario, variante } from "@/db/esquema";
+import { tamanosActivos, type Tamano } from "@/modulos/configuracion/consultas";
 import { clavePrecio, preciosFaltantes, type Monto } from "./reglas";
 
 // Lecturas del catálogo (C1). Quien las llama ya pasó por exigirModulo("catalogo"): solo el dueño (RN-01).
-
-export type Tamano = { id: number; nombre: string; descripcion: string | null };
-
-/** Tamaños activos, en su orden: las columnas de la grilla de precios (RN-07). */
-export async function tamanosActivos(): Promise<Tamano[]> {
-  return db
-    .select({ id: tamanoVehiculo.id, nombre: tamanoVehiculo.nombre, descripcion: tamanoVehiculo.descripcion })
-    .from(tamanoVehiculo)
-    .where(eq(tamanoVehiculo.activo, true))
-    .orderBy(asc(tamanoVehiculo.orden), asc(tamanoVehiculo.id));
-}
 
 export type FilaCatalogo = {
   id: number;

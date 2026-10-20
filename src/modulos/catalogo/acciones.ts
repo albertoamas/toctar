@@ -7,7 +7,8 @@ import { precio, servicio, variante } from "@/db/esquema";
 import { erroresDe, type EstadoFormulario } from "@/lib/formularios";
 import { exigirModulo } from "@/lib/sesion";
 import { ETIQUETA_SERVICIOS } from "@/modulos/sitio/consultas";
-import { historialPrecios, preciosVigentes, tamanosActivos, type CambioPrecio } from "./consultas";
+import { tamanosActivos } from "@/modulos/configuracion/consultas";
+import { historialPrecios, preciosVigentes, type CambioPrecio } from "./consultas";
 import { esquemaDatosCatalogo, esquemaIdVariante, esquemaVarianteCatalogo } from "./esquemas";
 import { leerMonto, MONTO_MAXIMO, preciosCambiados, type Monto } from "./reglas";
 

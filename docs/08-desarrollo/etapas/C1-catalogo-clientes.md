@@ -1,7 +1,7 @@
 # C1 Catálogo y clientes — especificación
 
 - **Fase y semana:** C. Entrega 2 · semana 2 (desde el 20 de octubre)
-- **Estado:** aprobada (20 de octubre de 2026); en curso: HU-19
+- **Estado:** aprobada (20 de octubre de 2026); HU-19 y HU-20 unidas (#49, #50); en curso: HU-21
 - **Historias:** HU-19 Catálogo con variantes · HU-20 Precios por tamaño y duración · HU-21 Registrar clientes y vehículos · HU-22 Buscar clientes · HU-23 Ficha del cliente
 - **Base:**
   - Requisitos: RF-20 a RF-28; RNF-01, RNF-05, RNF-08, RNF-10, RNF-11.
@@ -61,7 +61,7 @@ El dueño carga en el panel el precio de cada variante por tamaño de vehículo,
 
 ## 4. Datos
 
-Migraciones por historia: `0015_catalogo` y `0016_datos_catalogo` (HU-19: duración y mantenimiento del servicio, y la marca inicial del nano cerámico), `0017_precios` (HU-20: duración de la variante y la tabla `precio`) y `0018_clientes` (HU-21: `unaccent`, `cliente` y `vehiculo`).
+Migraciones por historia: `0015_catalogo` y `0016_datos_catalogo` (HU-19: duración y mantenimiento del servicio, y la marca inicial del nano cerámico), `0017_precios` (HU-20: duración de la variante y la tabla `precio`), `0018_clientes` (HU-21: `cliente` y `vehiculo`, con un índice por `cliente_id`) y la de HU-22 con la extensión `unaccent`.
 
 ### `servicio` (cambio)
 | Columna | Tipo | Nulo | Notas |
@@ -215,7 +215,7 @@ Todas validan con Zod (también las que reciben datos sueltos) y empiezan con `e
 Una rama y un PR por historia, desde `develop`:
 1. `hu-19-catalogo-variantes`: esta especificación, migración de `servicio` (duración y mantenimiento), módulo `catalogo` con la lista y la página del servicio (datos del catálogo). La duración entra aquí porque es una columna del servicio.
 2. `hu-20-precios-duracion`: tabla `precio`, `CampoMonto`, formularios de precios por variante con duración propia, historial.
-3. `hu-21-clientes-vehiculos`: tablas `cliente` y `vehiculo`, módulo `clientes`, agregar cliente con primer vehículo, duplicados.
+3. `hu-21-clientes-vehiculos`: tablas `cliente` y `vehiculo`, módulo `clientes`, agregar cliente con primer vehículo, duplicados. Trae una lista sin buscador (los 30 más recientes) y una ficha de solo lectura (datos y vehículos), para tener dónde llegar al crear; HU-22 y HU-23 las completan.
 4. `hu-22-buscar-clientes`: lista con `BuscadorClientes`, `unaccent`.
 5. `hu-23-ficha-cliente`: ficha con edición, vehículos y desactivar.
 

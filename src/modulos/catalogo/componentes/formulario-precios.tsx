@@ -12,7 +12,8 @@ import { Input } from "@/componentes/ui/input";
 import { formatearFechaHora } from "@/lib/fechas";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { guardarPreciosVariante, verHistorialPrecios } from "../acciones";
-import type { CambioPrecio, Tamano, VarianteCatalogo } from "../consultas";
+import type { Tamano } from "@/modulos/configuracion/consultas";
+import type { CambioPrecio, VarianteCatalogo } from "../consultas";
 import { mostrarMonto, type Monto } from "../reglas";
 
 // HU-20: precios de una variante por tamaño de vehículo y su duración propia. Un formulario por variante.
