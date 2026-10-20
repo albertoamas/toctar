@@ -123,6 +123,26 @@ test("los errores del formulario se muestran junto a cada campo", async ({ page 
   await expect(page.getByLabel("Nombre")).toBeFocused(); // pulido 5.4
 });
 
+// Tras un error, el rol que se ve marcado es el que se guarda: antes React reiniciaba el campo interno de los radios y
+// se enviaba el rol inicial (técnico) aunque en pantalla siguiera marcado "Encargado".
+test("tras un error, el rol elegido se conserva y es el que se guarda", async ({ page }, info) => {
+  await ingresarComoDueno(page);
+  const nombre = nombreUnico("Encargado tras error", info);
+  await page.goto("/panel/usuarios/nuevo");
+  await page.getByLabel("Nombre").fill(nombre);
+  await page.getByLabel("Usuario", { exact: true }).fill(`enc-tras-error-${sufijo(info)}`);
+  await page.getByRole("radio", { name: /Encargado/ }).check();
+  await page.getByRole("button", { name: "Crear usuario" }).click();
+  await expect(page.getByText("La contraseña debe tener al menos 8 caracteres.")).toBeVisible();
+  await expect(page.getByRole("radio", { name: /Encargado/ })).toBeChecked();
+
+  await page.getByLabel("Contraseña inicial").fill("encargado-123");
+  await page.getByRole("button", { name: "Crear usuario" }).click();
+  await expect(page.getByRole("status")).toContainText(`Usuario ${nombre} creado`);
+  // Fila de la tabla (computadora) o tarjeta (celular): la que se ve
+  await expect(page.locator("tr, li").filter({ hasText: nombre }).locator("visible=true")).toContainText("Encargado");
+});
+
 // Pulido 5.3: "Agregar usuario" en la lista, "(tú)" en el propio y, en la computadora, toda la fila abre el usuario.
 test("la lista de usuarios: Agregar usuario, (tú) y la fila que abre el usuario", async ({ page }, info) => {
   await ingresarComoDueno(page);

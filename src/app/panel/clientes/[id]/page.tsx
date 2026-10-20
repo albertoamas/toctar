@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { cn } from "cn";
+import { InboxIcon } from "lucide-react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
+import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, whatsAppLocal } from "@/lib/whatsapp";
 import { AccesoCliente } from "@/modulos/clientes/componentes/acceso-cliente";
@@ -14,11 +17,13 @@ import { FormularioDatosCliente } from "@/modulos/clientes/componentes/formulari
 import { VehiculosCliente } from "@/modulos/clientes/componentes/vehiculos-cliente";
 import { obtenerCliente } from "@/modulos/clientes/consultas";
 import { tamanosActivos } from "@/modulos/configuracion/consultas";
+import { ListaConsultas } from "@/modulos/consultas/componentes/lista-consultas";
+import { consultasDelCliente } from "@/modulos/consultas/consultas";
 
 export const metadata: Metadata = { title: "Cliente" };
 
-// HU-23: ficha del cliente: datos, vehículos, WhatsApp y desactivar. El historial de consultas, cotizaciones, órdenes
-// y pagos se suma en C2 a C4, a medida que existen sus tablas (C1 §2).
+// HU-23: ficha del cliente: datos, vehículos, WhatsApp y desactivar. HU-24: sus consultas y "Nueva consulta", si quien
+// entra tiene el módulo. Las cotizaciones, órdenes y pagos se suman en C2 a C4, a medida que existen sus tablas (C1 §2).
 export default function PaginaCliente({ params, searchParams }: PageProps<"/panel/clientes/[id]">) {
   return (
     <section className="flex flex-col gap-6">
@@ -31,11 +36,12 @@ export default function PaginaCliente({ params, searchParams }: PageProps<"/pane
 }
 
 async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[id]">, "params" | "searchParams">) {
-  await exigirModulo("clientes");
+  const usuario = await exigirModulo("clientes");
   const [{ id }, { creado }] = await Promise.all([params, searchParams]);
   const numero = Number(id);
   if (!Number.isInteger(numero) || numero <= 0) notFound();
-  const [c, tamanos] = await Promise.all([obtenerCliente(numero), tamanosActivos()]);
+  const verConsultas = puedeVerModulo(usuario, "consultas");
+  const [c, tamanos, consultas] = await Promise.all([obtenerCliente(numero), tamanosActivos(), verConsultas ? consultasDelCliente(numero) : []]);
   if (!c) notFound();
 
   return (
@@ -74,6 +80,22 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
           <AccesoCliente id={c.id} nombre={c.nombre} activo={c.activo} />
         </div>
       </div>
+
+      {verConsultas && (
+        <section aria-labelledby="consultas-titulo" className="flex max-w-5xl flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <h2 id="consultas-titulo" className="font-heading text-2xl font-bold italic">Consultas</h2>
+            {/* Un cliente desactivado no consulta: se reactiva primero */}
+            {c.activo && (
+              <Link href={`/panel/consultas/nueva?cliente=${c.id}`} className={cn(buttonVariants({ variant: "outline" }))}>
+                <InboxIcon />
+                Nueva consulta
+              </Link>
+            )}
+          </div>
+          {consultas.length > 0 ? <ListaConsultas consultas={consultas} sinCliente /> : <p className="text-tinta-suave">Todavía no tiene consultas.</p>}
+        </section>
+      )}
     </>
   );
 }

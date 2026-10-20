@@ -1,5 +1,6 @@
 "use client";
 
+import type { Route } from "next";
 import Link from "next/link";
 import { useState } from "react";
 import { Campo } from "@/componentes/panel/campo";
@@ -18,21 +19,30 @@ type PropsCampos = {
   iniciales?: Record<string, string>;
   /** Prefijo de los nombres de campo, para tener dos formularios en la misma página. */
   prefijo?: string;
+  /** Solo lo justo para atender a alguien nuevo (nombre y WhatsApp; placa y tamaño): la nueva consulta (C2). */
+  compacto?: boolean;
+  /** A dónde lleva el aviso de repetido. Por defecto, a la ficha del cliente. */
+  enlaceExistente?: EnlaceExistente;
 };
 
+type EnlaceExistente = (existente: { id: number; nombre: string }) => { href: Route; texto: string };
+
+const aLaFicha: EnlaceExistente = (e) => ({ href: `/panel/clientes/${e.id}`, texto: `Abrir la ficha de ${e.nombre}` });
+
 /** Si el dato ya es de otro cliente, el enlace a su ficha (RF-23). */
-function Existente({ estado, campo }: { estado: EstadoCliente; campo: string }) {
+function Existente({ estado, campo, enlace = aLaFicha }: { estado: EstadoCliente; campo: string; enlace?: EnlaceExistente }) {
   const existente = estado.existentes?.[campo];
   if (!existente) return null;
+  const { href, texto } = enlace(existente);
   return (
     // Va debajo del Campo, después de su error: primero se lee qué pasó y después la salida
-    <Link href={`/panel/clientes/${existente.id}`} className="-mt-4 inline-flex min-h-11 items-center self-start text-sm font-semibold underline">
-      Abrir la ficha de {existente.nombre}
+    <Link href={href} className="-mt-4 inline-flex min-h-11 items-center self-start text-sm font-semibold underline">
+      {texto}
     </Link>
   );
 }
 
-export function CamposCliente({ estado, iniciales = {} }: PropsCampos) {
+export function CamposCliente({ estado, iniciales = {}, compacto, enlaceExistente }: PropsCampos) {
   const v = estado.valores ?? iniciales;
   const e = estado.errores ?? {};
   const describir = (campo: string, ayuda = false) => (e[campo] ? `${campo}-error` : ayuda ? `${campo}-ayuda` : undefined);
@@ -58,7 +68,18 @@ export function CamposCliente({ estado, iniciales = {} }: PropsCampos) {
           />
         </div>
       </Campo>
-      <Existente estado={estado} campo="telefono" />
+      <Existente estado={estado} campo="telefono" enlace={enlaceExistente} />
+      {!compacto && <MasDatosCliente estado={estado} iniciales={iniciales} />}
+    </>
+  );
+}
+
+function MasDatosCliente({ estado, iniciales = {} }: PropsCampos) {
+  const v = estado.valores ?? iniciales;
+  const e = estado.errores ?? {};
+  const describir = (campo: string, ayuda = false) => (e[campo] ? `${campo}-error` : ayuda ? `${campo}-ayuda` : undefined);
+  return (
+    <>
       <Campo id="correo" etiqueta="Correo" error={e.correo}>
         <Input id="correo" name="correo" type="email" autoCapitalize="none" spellCheck={false} defaultValue={v.correo} aria-invalid={!!e.correo} aria-describedby={describir("correo")} />
       </Campo>
@@ -77,7 +98,7 @@ export function CamposCliente({ estado, iniciales = {} }: PropsCampos) {
   );
 }
 
-export function CamposVehiculo({ estado, iniciales = {}, prefijo = "", tamanos }: PropsCampos & { tamanos: Tamano[] }) {
+export function CamposVehiculo({ estado, iniciales = {}, prefijo = "", compacto, enlaceExistente, tamanos }: PropsCampos & { tamanos: Tamano[] }) {
   const v = estado.valores ?? iniciales;
   const e = estado.errores ?? {};
   const n = (campo: string) => prefijo + campo;
@@ -104,7 +125,7 @@ export function CamposVehiculo({ estado, iniciales = {}, prefijo = "", tamanos }
             className="uppercase"
           />
         </Campo>
-        <Existente estado={estado} campo={n("placa")} />
+        <Existente estado={estado} campo={n("placa")} enlace={enlaceExistente} />
       </div>
       <Campo id={n("tamanoId")} etiqueta="Tamaño" error={e[n("tamanoId")]} ayuda={elegido?.descripcion ?? "Define el precio al cotizar."}>
         <Selector
@@ -122,18 +143,22 @@ export function CamposVehiculo({ estado, iniciales = {}, prefijo = "", tamanos }
           ))}
         </Selector>
       </Campo>
-      <Campo id={n("marca")} etiqueta="Marca" error={e[n("marca")]}>
-        <Input id={n("marca")} name={n("marca")} autoComplete="off" defaultValue={v[n("marca")]} aria-invalid={!!e[n("marca")]} aria-describedby={describir("marca")} />
-      </Campo>
-      <Campo id={n("modelo")} etiqueta="Modelo" error={e[n("modelo")]}>
-        <Input id={n("modelo")} name={n("modelo")} autoComplete="off" defaultValue={v[n("modelo")]} aria-invalid={!!e[n("modelo")]} aria-describedby={describir("modelo")} />
-      </Campo>
-      <Campo id={n("anio")} etiqueta="Año" error={e[n("anio")]}>
-        <Input id={n("anio")} name={n("anio")} inputMode="numeric" autoComplete="off" defaultValue={v[n("anio")]} aria-invalid={!!e[n("anio")]} aria-describedby={describir("anio")} className="max-w-28" />
-      </Campo>
-      <Campo id={n("color")} etiqueta="Color" error={e[n("color")]}>
-        <Input id={n("color")} name={n("color")} autoComplete="off" defaultValue={v[n("color")]} aria-invalid={!!e[n("color")]} aria-describedby={describir("color")} />
-      </Campo>
+      {!compacto && (
+        <>
+          <Campo id={n("marca")} etiqueta="Marca" error={e[n("marca")]}>
+            <Input id={n("marca")} name={n("marca")} autoComplete="off" defaultValue={v[n("marca")]} aria-invalid={!!e[n("marca")]} aria-describedby={describir("marca")} />
+          </Campo>
+          <Campo id={n("modelo")} etiqueta="Modelo" error={e[n("modelo")]}>
+            <Input id={n("modelo")} name={n("modelo")} autoComplete="off" defaultValue={v[n("modelo")]} aria-invalid={!!e[n("modelo")]} aria-describedby={describir("modelo")} />
+          </Campo>
+          <Campo id={n("anio")} etiqueta="Año" error={e[n("anio")]}>
+            <Input id={n("anio")} name={n("anio")} inputMode="numeric" autoComplete="off" defaultValue={v[n("anio")]} aria-invalid={!!e[n("anio")]} aria-describedby={describir("anio")} className="max-w-28" />
+          </Campo>
+          <Campo id={n("color")} etiqueta="Color" error={e[n("color")]}>
+            <Input id={n("color")} name={n("color")} autoComplete="off" defaultValue={v[n("color")]} aria-invalid={!!e[n("color")]} aria-describedby={describir("color")} />
+          </Campo>
+        </>
+      )}
     </div>
   );
 }
