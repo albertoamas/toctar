@@ -1,0 +1,240 @@
+# C1 Catálogo y clientes — especificación
+
+- **Fase y semana:** C. Entrega 2 · semana 2 (desde el 20 de octubre)
+- **Estado:** aprobada (20 de octubre de 2026); en curso: HU-19
+- **Historias:** HU-19 Catálogo con variantes · HU-20 Precios por tamaño y duración · HU-21 Registrar clientes y vehículos · HU-22 Buscar clientes · HU-23 Ficha del cliente
+- **Base:**
+  - Requisitos: RF-20 a RF-28; RNF-01, RNF-05, RNF-08, RNF-10, RNF-11.
+  - Reglas: RN-01 (solo el dueño ve y cambia precios), RN-07 (precio por tamaño), RN-08 (servicios que generan mantenimiento), RN-12 (el técnico no ve precios ni clientes), RN-14 (se desactiva, no se borra).
+  - Modelo: D-2, D-3, D-6, D-9. Tablas `servicio` y `variante` (cambian), `precio`, `cliente` y `vehiculo` (nuevas).
+  - Material: clasificación de vehículos en 5 tamaños (`01-descubrimiento/material-recibido.md`). La lista de precios todavía no llegó: se cargan precios de prueba solo en la base de pruebas E2E, nunca como datos iniciales.
+
+Esta especificación se escribe al empezar la etapa, con lo aprendido en las anteriores. Se programa contra ella; si algo cambia durante la etapa, se corrige aquí primero.
+
+## 1. Objetivo
+
+El dueño carga en el panel el precio de cada variante por tamaño de vehículo, la duración de cada servicio y cuáles generan mantenimiento, y cada cambio de precio queda en un historial. El personal registra clientes y sus vehículos sin duplicarlos, los encuentra mientras el cliente escribe por WhatsApp y ve su ficha.
+
+## 2. Alcance
+
+**Incluye:**
+- **Catálogo (HU-19, HU-20), solo el dueño:**
+  - Lista de servicios con su estado en el catálogo y en el sitio, y cuántos precios faltan.
+  - Por servicio: duración en días, si genera mantenimiento y si está activo en el catálogo.
+  - Por variante: precio por cada tamaño activo (vacío = "según evaluación") y duración propia opcional, que pisa la del servicio.
+  - Historial de precios de una variante: monto, fecha y quién lo cambió.
+  - Las variantes se siguen creando, ordenando y desactivando en Editar servicio (HU-07, módulo Sitio web): el catálogo enlaza ahí y no repite ese editor.
+- **Clientes (HU-21 a HU-23), dueño y encargado con el módulo "Clientes":**
+  - Registrar un cliente: nombre y WhatsApp obligatorios; correo, NIT, razón social y notas opcionales.
+  - Registrar vehículos de un cliente: placa y tamaño obligatorios; marca, modelo, año y color opcionales.
+  - Aviso de duplicado al guardar: si el teléfono o la placa ya existen, el error ofrece abrir ese registro.
+  - Lista con búsqueda mientras se escribe, por parte del nombre (sin importar tildes ni mayúsculas), del teléfono o de la placa.
+  - Ficha: datos, vehículos, botón de WhatsApp y editar o desactivar.
+- **Módulo "Clientes" construido:** el encargado puede recibir su casilla (HU-03) y aparece en el menú.
+
+**No incluye** (y dónde queda):
+- **Historial de consultas, cotizaciones, órdenes, pagos y saldo en la ficha (HU-23):** cada sección se agrega cuando existe su tabla: consultas y cotizaciones en C2, órdenes en C3 y C4, pagos y saldo en C3. En C1 la ficha muestra datos y vehículos.
+- **"Iniciar consulta" y "Reserva directa" desde la ficha:** C2 y C3.
+- **Tabla `auditoria`:** el plan la ubicaba en C1, pero los precios ya guardan su propio historial con fecha y usuario (D-3), así que no hace falta para RNF-10 en esta etapa. Se crea en C2, con las cotizaciones (decisión de esta especificación).
+- **Precios reales:** los carga el dueño desde el panel cuando mande la lista.
+- **Clientes con teléfono de otro país:** solo celulares de Bolivia, como el WhatsApp del negocio (ver §12).
+
+## 3. Reglas que se cumplen
+
+| Regla | Qué dice | Dónde se garantiza |
+|---|---|---|
+| RF-25 | Servicios con variantes | Ya existe (HU-07). El catálogo las muestra y enlaza a su editor |
+| RF-26 | Precio por variante y tamaño; vacío = según evaluación | Tabla `precio` con `monto` nulo. Distingue "según evaluación" (fila con monto nulo) de "sin cargar" (sin fila) |
+| RF-27 | Duración en días por servicio o variante | `servicio.duracion_dias` (obligatoria) y `variante.duracion_dias` (opcional, pisa la del servicio). Función pura `duracionEfectiva` |
+| RF-28 | Desactivar sin borrar; historial de precios | `servicio.activo` y `variante.activo`. Un precio nunca se actualiza: cada cambio es una fila nueva (D-3) |
+| RNF-10 | Quién y cuándo cambia precios | `precio.created_by` y `precio.vigente_desde` |
+| RN-01, RN-12 | Precios solo para el dueño; el técnico no ve clientes | Módulo `catalogo` sin permiso de encargado; módulo `clientes` sin técnico. `exigirModulo` en cada página y acción (RNF-05) |
+| RN-07 | Precio por tamaño, tamaños configurables | La grilla sale de `tamano_vehiculo` activos (HU-05). Un tamaño desactivado conserva sus precios pero no se muestra |
+| RN-08 | Mantenimiento solo en servicios marcados | `servicio.genera_mantenimiento`. Dato inicial: verdadero en "Pulido y nano cerámico" |
+| RN-14 | Clientes y servicios se desactivan | `cliente.activo`, `vehiculo.activo`, `servicio.activo` |
+| RF-20, RF-21 | Datos del cliente y del vehículo | Esquemas Zod compartidos por formulario y servidor |
+| RF-22 | Buscar por nombre, teléfono o placa | Consulta con `unaccent` + `ilike` en el nombre, dígitos en el teléfono y placa normalizada |
+| RF-23 | Avisar duplicados | Índice único en `cliente.telefono` e índice único parcial en `vehiculo.placa` (solo activos); la acción responde con el registro existente para ofrecer abrirlo |
+| RF-24 | Ficha del cliente | Parcial en C1 (ver §2) |
+| RNF-11 | Nada fijo en el código | Precios, duraciones y tamaños se cargan desde el panel; no hay montos en el código |
+| D-2 | Toda variante válida | Sin cambios: la última variante activa no se desactiva (HU-07) |
+
+## 4. Datos
+
+Tres migraciones, una por historia que toca la base: `0015_catalogo` (HU-19 y HU-20: columnas de `servicio` y `variante`, y la tabla `precio`), `0016_datos_catalogo` (marca de mantenimiento y duraciones iniciales) y `0017_clientes` (HU-21: `unaccent`, `cliente` y `vehiculo`).
+
+### `servicio` (cambio)
+| Columna | Tipo | Nulo | Notas |
+|---|---|---|---|
+| `duracion_dias` | `integer` | no | Por defecto 1. CHECK entre 1 y 60 |
+| `genera_mantenimiento` | `boolean` | no | Por defecto `false` (RN-08) |
+
+`activo` ya existe (B3): el catálogo ahora lo cambia. Un servicio inactivo no sale en el sitio (B4 ya filtra por `activo`) ni se podrá cotizar (C2).
+
+### `variante` (cambio)
+| Columna | Tipo | Nulo | Notas |
+|---|---|---|---|
+| `duracion_dias` | `integer` | sí | Si está, pisa la del servicio. CHECK entre 1 y 60 |
+
+### `precio` (nueva, D-3)
+| Columna | Tipo | Nulo | Notas |
+|---|---|---|---|
+| `id` | `integer` identidad | no | |
+| `variante_id` | `integer` | no | FK `variante` |
+| `tamano_id` | `integer` | no | FK `tamano_vehiculo` |
+| `monto` | `numeric(10,2)` | sí | Nulo = según evaluación. CHECK `monto > 0` |
+| `vigente_desde` | `timestamptz` | no | Por defecto `now()` |
+| `created_by` | `integer` | no | FK `usuario` |
+
+Índice `precio_vigente` sobre (`variante_id`, `tamano_id`, `vigente_desde` desc, `id` desc): el vigente es la fila más reciente de cada par. Sin `updated_at`: las filas no se modifican ni se borran.
+
+### `cliente` (nueva)
+| Columna | Tipo | Nulo | Notas |
+|---|---|---|---|
+| `id` | `integer` identidad | no | |
+| `nombre` | `text` | no | Hasta 120 caracteres |
+| `telefono` | `text` | no | Único. Formato `591XXXXXXXX`, como el WhatsApp del negocio (`normalizarWhatsApp`) |
+| `correo` | `text` | sí | |
+| `nit` | `text` | sí | Solo dígitos, hasta 15 (SIAT futura) |
+| `razon_social` | `text` | sí | Hasta 120 |
+| `notas` | `text` | sí | Hasta 1000 |
+| `activo` | `boolean` | no | Por defecto `true` |
+| `created_at`, `updated_at` | `timestamptz` | no | |
+| `created_by`, `updated_by` | `integer` | `created_by` no | FK `usuario` |
+
+### `vehiculo` (nueva)
+| Columna | Tipo | Nulo | Notas |
+|---|---|---|---|
+| `id` | `integer` identidad | no | |
+| `cliente_id` | `integer` | no | FK `cliente` |
+| `placa` | `text` | no | Única entre los vehículos activos (índice parcial `WHERE activo`). Normalizada: mayúsculas, sin espacios ni guiones (`1234 abc` → `1234ABC`) |
+| `tamano_id` | `integer` | no | FK `tamano_vehiculo` |
+| `marca`, `modelo`, `color` | `text` | sí | Hasta 40 cada uno |
+| `anio` | `integer` | sí | CHECK entre 1950 y el año siguiente al actual (se valida en Zod; en la base, entre 1950 y 2100) |
+| `activo` | `boolean` | no | Por defecto `true` |
+| `created_at`, `updated_at` | `timestamptz` | no | |
+| `created_by` | `integer` | no | FK `usuario` |
+
+Extensión `unaccent` para buscar "jose" y encontrar "José". Con pocos cientos de clientes no hacen falta índices de texto; se revisa si la lista crece.
+
+**Datos iniciales (`0016_datos_catalogo`):** `genera_mantenimiento = true` en "Pulido y nano cerámico". Duración 1 día en todos (el valor por defecto): el dueño la ajusta. Sin precios.
+
+## 5. Pantallas y rutas
+
+Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel (44 px con pantalla táctil, regla de botones, `useFocoEnError`, `EnlaceVolver`) y sin desborde a 360 px.
+
+### `/panel/catalogo` — Catálogo y precios (solo el dueño)
+- Lista de servicios en el orden del sitio, los inactivos al final y atenuados.
+- Cada fila: nombre, variantes ("5 variantes"), duración ("2 días"), "Genera mantenimiento" si corresponde, y el estado de los precios: "Precios completos", "Faltan 7 precios" (pares variante y tamaño activos sin fila) o "Inactivo".
+- Toda la fila abre el servicio (como en Servicios del sitio y Reclamos).
+- Estado vacío: no ocurre (siempre hay servicios); si no hay tamaños activos, un aviso que lleva a Configuración > Taller.
+
+### `/panel/catalogo/[id]` — Precios de un servicio
+- `EnlaceVolver` a Catálogo. Título: nombre del servicio, con "Inactivo" si corresponde.
+- **Datos del catálogo** (formulario propio, "Guardar"): duración en días, "Genera recordatorio de mantenimiento" y "Activo en el catálogo" (desmarcado: no se cotiza ni sale en el sitio).
+- **Precios por tamaño** (un formulario por variante activa, "Guardar precios de <variante>"):
+  - Un campo en Bs por tamaño activo, con el nombre del tamaño y sus modelos de ejemplo en la ayuda. Vacío = según evaluación; debajo de cada vacío guardado se lee "Según evaluación"; sin fila, "Sin cargar".
+  - Duración propia opcional: "Usa la del servicio (2 días)" si está vacía.
+  - En el celular, un tamaño por renglón; desde 768 px, una grilla de dos o tres columnas.
+  - "Ver historial" abre un diálogo con los cambios: tamaño, monto anterior → nuevo, fecha y hora de Bolivia y quién.
+- **Variantes:** texto "Las variantes se agregan, ordenan y desactivan en el sitio web." con enlace a Editar servicio. Las variantes inactivas no tienen formulario de precios (conservan los suyos).
+
+### `/panel/clientes` — Clientes (dueño y encargado con "Clientes")
+- Arriba: buscador ("Buscar por nombre, teléfono o placa") y "Agregar cliente" (enlace con forma de botón, rojo).
+- La búsqueda actualiza la dirección (`?q=`) con una pausa de 300 ms mientras se escribe; la lista se calcula en el servidor. Sin búsqueda, los 30 más recientes; con búsqueda, hasta 30 resultados y "Hay más: escribe algo más preciso" si se pasan.
+- Celular: tarjetas (nombre, teléfono, placas) que se tocan enteras. Computadora: tabla (nombre, WhatsApp, vehículos) con la fila entera tocable.
+- Los desactivados no salen; un enlace "Ver desactivados" (`?ver=desactivados`) los lista.
+- Estados vacíos: "Todavía no hay clientes. Agrega el primero con Agregar cliente." · "No hay clientes con «<búsqueda>»."
+
+### `/panel/clientes/nuevo` — Agregar cliente
+- Formulario: nombre, WhatsApp (+591, 8 dígitos), correo, NIT, razón social y notas; y, opcional, el primer vehículo (placa, tamaño, marca, modelo, año, color), porque lo normal es registrar al cliente con su auto.
+- Al crear, lleva a la ficha con el aviso "Cliente <nombre> creado."
+
+### `/panel/clientes/[id]` — Ficha del cliente
+- Título: nombre, con "Desactivado" si corresponde. Botón "Escribir por WhatsApp" (enlace con forma de botón, contorno).
+- **Datos:** formulario para editar (mismos campos que al crear).
+- **Vehículos:** lista (placa, tamaño, marca y modelo, año, color) con "Agregar vehículo"; cada uno se edita en la misma lista y se desactiva desde su edición (como las listas de Configuración, 6.2).
+- **Acceso:** "Desactivar cliente" con confirmación en la página; desactivado, "Reactivar cliente".
+- Secciones de historial: no se muestran en C1 (ver §2).
+
+## 6. Acciones del servidor
+
+Todas validan con Zod (también las que reciben datos sueltos) y empiezan con `exigirModulo`. Devuelven `EstadoFormulario`.
+
+| Acción | Módulo | Entrada | Qué hace | Mensajes |
+|---|---|---|---|---|
+| `guardarDatosCatalogo` | `catalogo` | `id`, `duracionDias` (1–60), `generaMantenimiento`, `activo` | Actualiza el servicio. Invalida `servicios` (el sitio deja de mostrarlo si queda inactivo) | "Cambios guardados." |
+| `guardarPreciosVariante` | `catalogo` | `varianteId`, `duracionDias` (vacío o 1–60), `precios[tamanoId]` (vacío o monto > 0 y ≤ 100 000, hasta 2 decimales) | En una transacción: actualiza la duración e inserta una fila de `precio` **solo por cada tamaño cuyo valor cambió** respecto del vigente (vacío → nulo). Si no cambió nada, no escribe | "Precios guardados." · "No había cambios." · por campo: "Escribe un monto mayor a cero, hasta Bs 100 000." |
+| `crearCliente` | `clientes` | Datos del cliente y, opcional, del primer vehículo | Inserta cliente (y vehículo) en una transacción. Si el teléfono o la placa existen, no guarda y devuelve el error en el campo con el registro existente | "Cliente <nombre> creado." · "Ese número ya es de <nombre>." con enlace "Abrir su ficha" · "La placa 1234ABC ya está registrada a nombre de <nombre>." con enlace |
+| `actualizarCliente` | `clientes` | `id` y datos | Actualiza; mismo control de teléfono duplicado | "Cambios guardados." |
+| `cambiarEstadoCliente` | `clientes` | `id`, `activo` | Desactiva o reactiva | "Cliente desactivado." · "Cliente reactivado." |
+| `guardarVehiculo` | `clientes` | `clienteId`, `id` (al editar) y datos | Inserta o actualiza; control de placa duplicada | "Vehículo <placa> agregado." · "Cambios guardados." |
+| `cambiarEstadoVehiculo` | `clientes` | `clienteId`, `id`, `activo` | Desactiva o reactiva | "<placa> desactivado." · "<placa> reactivado." |
+
+**Consultas** (`src/modulos/catalogo/consultas.ts` y `src/modulos/clientes/consultas.ts`): `listarCatalogo`, `obtenerServicioCatalogo` (con precios vigentes por variante y tamaño), `historialPrecios(varianteId)`, `buscarClientes(q, verDesactivados)`, `obtenerCliente(id)` (con vehículos). Los precios vigentes salen con `DISTINCT ON (variante_id, tamano_id) … ORDER BY vigente_desde DESC, id DESC`.
+
+**Funciones puras** (con prueba unitaria): `normalizarPlaca`, `normalizarBusqueda` (separa dígitos para teléfono y texto para nombre y placa), `duracionEfectiva(servicio, variante)`, `preciosCambiados(vigentes, enviados)` y `estadoPrecios(variantes, tamaños, vigentes)` (cuántos faltan).
+
+## 7. Componentes y diseño
+
+- Reutiliza: `Campo`, `Input`, `Selector`, `Checkbox`, `Button`, `Dialog`, `EnlaceVolver`, `EstadoVacio`, `Cargando`, `useFocoEnError`, `conAviso`, la tabla y tarjetas de Reclamos y Usuarios, y el patrón de lista editable de 6.2 para los vehículos.
+- Nuevos:
+  - `CampoMonto` (`src/componentes/panel/campo-monto.tsx`): número con "Bs" después (como 6.3), `inputMode="decimal"`, acepta coma o punto.
+  - `BuscadorClientes` (cliente): campo de búsqueda que actualiza `?q=` con pausa, sin perder el foco ni la posición del cursor.
+- Módulos: `src/modulos/catalogo/` y `src/modulos/clientes/` (acciones, consultas, esquemas, componentes), según la estructura del proyecto.
+- `MODULOS.catalogo.construido` y `MODULOS.clientes.construido` pasan a `true`.
+
+## 8. Textos de la interfaz
+
+- Menú: "Catálogo y precios", "Clientes".
+- Catálogo: "Los precios que carga el dueño. No salen en el sitio." · "Precios completos" · "Faltan N precios" · "Genera mantenimiento" · "Inactivo".
+- Servicio: "Duración" (ayuda: "Días que ocupa un espacio del taller. La agenda la usa para sugerir la fecha de entrega.") · "Genera recordatorio de mantenimiento" (ayuda: "Al entregar, se programa el aviso según el intervalo de Configuración.") · "Activo en el catálogo" (ayuda: "Si lo desmarcas, no se cotiza ni sale en el sitio. No se borra nada.").
+- Precios: "Precios por tamaño" · "Déjalo vacío si el precio depende de ver el vehículo: sale como «Según evaluación»." · "Según evaluación" · "Sin cargar" · "Duración propia" (ayuda: "Vacío: usa la del servicio (N días).") · "Ver historial" · historial vacío: "Todavía no hay cambios de precio."
+- Clientes: "Buscar por nombre, teléfono o placa" · "Agregar cliente" · "Ver desactivados".
+- Cliente: "Nombre" · "WhatsApp" (ayuda: "Celular de Bolivia, 8 dígitos.") · "Correo" · "NIT" · "Razón social" · "Notas" (ayuda: "Lo que convenga recordar: cómo prefiere que lo contacten, detalles del vehículo…").
+- Vehículo: "Placa" · "Tamaño" (ayuda con los modelos de ejemplo del tamaño elegido) · "Marca" · "Modelo" · "Año" · "Color" · "Agregar vehículo" · "Primer vehículo (opcional)".
+- Errores: "Escribe el nombre." · "Escribe los 8 dígitos del celular." · "Escribe la placa." · "Elige el tamaño." · "Escribe un año entre 1950 y <año siguiente>." · "Escribe un correo válido." · "El NIT lleva solo números."
+
+## 9. Pruebas
+
+- **Unitarias** (`tests/unit/`):
+  - `normalizarPlaca`, `normalizarBusqueda`.
+  - `duracionEfectiva`: la de la variante pisa la del servicio.
+  - `preciosCambiados`: solo los que cambian; vacío vs. nulo vigente no es cambio; un monto igual no es cambio.
+  - `estadoPrecios`: cuenta los faltantes solo con variantes y tamaños activos.
+  - Permisos: `catalogo` solo el dueño; `clientes` dueño y encargado con el permiso; el técnico nunca (se suma a `permisos.test.ts`).
+- **De punta a punta** (`tests/e2e/`):
+  - `hu-19-20-catalogo`: el dueño carga precios y uno queda "según evaluación"; cambia uno y el historial muestra anterior, nuevo, fecha y quién; un cambio sin diferencias no crea filas; marca "genera mantenimiento" y cambia la duración; un servicio inactivo deja de salir en el sitio; el encargado y el técnico no entran al catálogo.
+  - `hu-21-clientes`: crear cliente con su primer vehículo; teléfono y placa duplicados avisan y llevan a la ficha existente; editar y desactivar.
+  - `hu-22-buscar`: encuentra por parte del nombre sin tilde, por teléfono parcial y por placa con guion; los resultados aparecen sin apretar nada.
+  - `hu-23-ficha`: datos, vehículos (agregar, editar, desactivar) y el enlace de WhatsApp; el encargado con "Clientes" entra y el técnico no.
+  - A 360 px, ninguna de las pantallas nuevas se sale de la pantalla.
+
+## 10. Orden de trabajo
+
+Una rama y un PR por historia, desde `develop`:
+1. `hu-19-catalogo-variantes`: esta especificación, migración de `servicio` (duración y mantenimiento), módulo `catalogo` con la lista y la página del servicio (datos del catálogo). La duración entra aquí porque es una columna del servicio.
+2. `hu-20-precios-duracion`: tabla `precio`, `CampoMonto`, formularios de precios por variante con duración propia, historial.
+3. `hu-21-clientes-vehiculos`: tablas `cliente` y `vehiculo`, módulo `clientes`, agregar cliente con primer vehículo, duplicados.
+4. `hu-22-buscar-clientes`: lista con `BuscadorClientes`, `unaccent`.
+5. `hu-23-ficha-cliente`: ficha con edición, vehículos y desactivar.
+
+Cada PR: lint, typecheck, unitarias, E2E completo y knip; capturas a 360 y 1280 px.
+
+## 11. Criterio de salida
+
+- El dueño carga precios de prueba de un servicio, cambia uno y ve el historial; ningún cambio altera filas anteriores.
+- Un servicio inactivo no sale en el sitio y su página responde como no encontrada.
+- Un cliente con su vehículo se registra en menos de un minuto desde el celular; los duplicados se detectan y llevan al registro existente.
+- La búsqueda encuentra por nombre sin tilde, teléfono parcial y placa.
+- Encargado sin "Clientes" y técnico: no ven ni entran a Clientes; nadie más que el dueño ve el catálogo.
+- En la demo: cargar precios de un servicio, registrar un cliente con su auto y encontrarlo por placa.
+
+## 12. Decisiones abiertas
+
+| Qué | De quién | Mientras tanto |
+|---|---|---|
+| Lista de precios real, y variantes de inyección y succión y de pulido de vidrios | Dueño | Precios de prueba solo en E2E; en la base real, "Sin cargar" |
+| Duración real de cada servicio | Dueño | 1 día por defecto, editable |
+| ¿Clientes con celular extranjero? | Dueño | Solo Bolivia (8 dígitos, 6 o 7). Si hace falta, se amplía `normalizarWhatsApp` |
+| ¿Dos clientes pueden compartir un vehículo (ej. familia)? | Dueño | No: la placa es única y pertenece a un cliente. Si un vehículo cambia de dueño, el aviso de placa duplicada lleva a la ficha del anterior; ahí se desactiva y se registra con el nuevo (la placa es única solo entre los activos, así el historial queda con el dueño anterior) |
