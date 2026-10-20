@@ -131,9 +131,9 @@ test("las fotos se suben, se ven en grande y se quitan", async ({ page }, info) 
   await registrar(page);
   await expect(page).toHaveURL(/\/panel\/consultas\/\d+\?creada=1$/);
 
-  const fotos = page.getByRole("list", { name: "Fotos de la consulta" });
-  await expect(page.getByRole("button", { name: "Agregar fotos" })).toBeEnabled();
-  await page.getByLabel("Archivos de las fotos").setInputFiles([
+  const fotos = page.getByRole("list", { name: "Fotos y videos de la consulta" });
+  await expect(page.getByRole("button", { name: "Agregar fotos o videos" })).toBeEnabled();
+  await page.getByLabel("Archivos de fotos o videos").setInputFiles([
     { name: "capo.png", mimeType: "image/png", buffer: PNG },
     { name: "puerta.png", mimeType: "image/png", buffer: PNG },
   ]);
@@ -155,6 +155,65 @@ test("las fotos se suben, se ven en grande y se quitan", async ({ page }, info) 
   await page.reload();
   await expect(page.getByLabel(/Qué pidió/)).toHaveValue("Mandó fotos del capó.");
   await expect(fotos.getByRole("listitem")).toHaveCount(1);
+});
+
+/** Un video WebM de unos 2 segundos, grabado en el navegador: como los de MediaRecorder, no dice su duración. */
+async function grabarVideo(page: Page): Promise<Buffer> {
+  const base64 = await page.evaluate(async () => {
+    const lienzo = document.createElement("canvas");
+    lienzo.width = 160;
+    lienzo.height = 120;
+    const dibujo = lienzo.getContext("2d")!;
+    const grabador = new MediaRecorder(lienzo.captureStream(10), { mimeType: "video/webm" });
+    const partes: Blob[] = [];
+    grabador.ondataavailable = (e) => partes.push(e.data);
+    const terminado = new Promise((listo) => (grabador.onstop = listo));
+    grabador.start();
+    for (let i = 0; i < 20; i++) {
+      dibujo.fillStyle = i % 2 ? "#e30613" : "#000";
+      dibujo.fillRect(0, 0, 160, 120);
+      await new Promise((listo) => setTimeout(listo, 100));
+    }
+    grabador.stop();
+    await terminado;
+    const bytes = new Uint8Array(await new Blob(partes, { type: "video/webm" }).arrayBuffer());
+    let texto = "";
+    for (const b of bytes) texto += String.fromCharCode(b);
+    return btoa(texto);
+  });
+  return Buffer.from(base64, "base64");
+}
+
+test("los videos suben directo al almacenamiento, se ven y se quitan; uno que no es video avisa", async ({ page }, info) => {
+  const s = sufijo(info);
+  const id = await crearClienteEnBase({ nombre: `Con video ${s}`, telefono: telefono(info, 7), placa: `CV24${s}1` });
+  await ingresarComoEncargado(page, info, 5);
+  await page.goto(`/panel/consultas/nueva?cliente=${id}`);
+  await page.getByRole("radio", { name: "WhatsApp" }).check();
+  await registrar(page);
+  await expect(page).toHaveURL(/\/panel\/consultas\/\d+\?creada=1$/);
+  await expect(page.getByRole("button", { name: "Agregar fotos o videos" })).toBeEnabled();
+
+  const video = await grabarVideo(page);
+  await page.getByLabel("Archivos de fotos o videos").setInputFiles([
+    { name: "rayon.webm", mimeType: "video/webm", buffer: video },
+    { name: "roto.mp4", mimeType: "video/mp4", buffer: Buffer.from("no es un video") },
+  ]);
+  await expect(page.getByText("Video agregado.")).toBeVisible();
+  await expect(page.getByText("roto.mp4: no se pudo leer el video.")).toBeVisible();
+  const archivos = page.getByRole("list", { name: "Fotos y videos de la consulta" });
+  await expect(archivos.getByRole("listitem")).toHaveCount(1);
+  await expect(archivos).toContainText("0:02");
+
+  // Se ve con el enlace firmado del bucket privado
+  await page.getByRole("button", { name: "Ver el video 1" }).click();
+  const dialogo = page.getByRole("dialog", { name: "Video 1 de 1" });
+  const reproductor = dialogo.locator("video");
+  await expect(reproductor).toHaveAttribute("src", /X-Amz-Signature=/);
+  await expect.poll(() => reproductor.evaluate((v: HTMLVideoElement) => v.readyState)).toBeGreaterThan(0);
+  await dialogo.getByRole("button", { name: "Quitar video" }).click();
+  await expect(page.getByText("Quitado.")).toBeVisible();
+  await expect(archivos).toBeHidden();
 });
 
 test("el encargado con Consultas registra sin ver fichas; el técnico no entra", async ({ page }, info) => {
