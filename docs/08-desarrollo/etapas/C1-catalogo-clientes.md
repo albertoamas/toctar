@@ -1,7 +1,7 @@
 # C1 Catálogo y clientes — especificación
 
 - **Fase y semana:** C. Entrega 2 · semana 2 (desde el 20 de octubre)
-- **Estado:** aprobada (20 de octubre de 2026); HU-19 a HU-21 unidas (#49 a #51); en curso: HU-22
+- **Estado:** aprobada (20 de octubre de 2026); HU-19 a HU-22 unidas (#49 a #52); en curso: HU-23
 - **Historias:** HU-19 Catálogo con variantes · HU-20 Precios por tamaño y duración · HU-21 Registrar clientes y vehículos · HU-22 Buscar clientes · HU-23 Ficha del cliente
 - **Base:**
   - Requisitos: RF-20 a RF-28; RNF-01, RNF-05, RNF-08, RNF-10, RNF-11.
@@ -155,6 +155,7 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel (44 px c
 - **Datos:** formulario para editar (mismos campos que al crear).
 - **Vehículos:** lista (placa, tamaño, marca y modelo, año, color) con "Agregar vehículo"; cada uno se edita en la misma lista y se desactiva desde su edición (como las listas de Configuración, 6.2).
 - **Acceso:** "Desactivar cliente" con confirmación en la página; desactivado, "Reactivar cliente".
+- En el celular, primero los vehículos (lo que más se consulta en el taller), después los datos y al final desactivar; en la computadora, los datos a la izquierda y vehículos y desactivar a la derecha.
 - Secciones de historial: no se muestran en C1 (ver §2).
 
 ## 6. Acciones del servidor
