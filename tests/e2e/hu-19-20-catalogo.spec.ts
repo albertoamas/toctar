@@ -1,5 +1,6 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
+import pg from "pg";
+import { crearUsuario, ingresar, ingresarComoDueno, URL_BASE_E2E } from "./apoyo";
 
 // HU-19 Catálogo con variantes y HU-20 Precios por tamaño y duración.
 // Especificación: docs/08-desarrollo/etapas/C1-catalogo-clientes.md §9.
@@ -89,3 +90,82 @@ test("el encargado, aun con todos sus permisos, y el técnico no entran al catá
     await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
   }
 });
+
+/** Consulta directa a la base de pruebas, para comprobar lo que quedó guardado. */
+async function consultar<T extends object>(sql: string, parametros: unknown[]): Promise<T[]> {
+  const cliente = new pg.Client({ connectionString: URL_BASE_E2E });
+  await cliente.connect();
+  try {
+    return (await cliente.query<T>(sql, parametros)).rows;
+  } finally {
+    await cliente.end();
+  }
+}
+
+/** Filas de precio de un servicio y un tamaño: para comprobar que no se pisan (D-3). */
+async function filasDePrecio(servicioId: string, tamano: string): Promise<(string | null)[]> {
+  const filas = await consultar<{ monto: string | null }>(
+    `select p.monto from precio p join variante v on v.id = p.variante_id join tamano_vehiculo t on t.id = p.tamano_id
+     where v.servicio_id = $1 and t.nombre = $2 order by p.id`,
+    [servicioId, tamano],
+  );
+  return filas.map((r) => r.monto);
+}
+
+test("el dueño carga precios por tamaño; vacío es según evaluación y cada cambio queda en el historial", async ({ page }, info) => {
+  test.setTimeout(60_000);
+  const nombre = `Precios de prueba ${sufijo(info)}`;
+  await ingresarComoDueno(page);
+  const { id } = await crearServicio(page, nombre);
+  await page.goto(`/panel/catalogo/${id}`);
+  // Un servicio nuevo tiene la variante "Única" (D-2), todavía sin precios
+  const unica = page.getByRole("form", { name: "Única" });
+  await expect(unica.getByLabel("Compactos")).toHaveAttribute("placeholder", "Sin cargar");
+
+  // Un monto con separador de miles se rechaza, con el foco en el campo
+  await unica.getByLabel("Compactos").fill("1.250");
+  await unica.getByRole("button", { name: "Guardar precios de Única" }).click();
+  await expect(unica.getByText(/Escribe solo números/)).toBeVisible();
+  await expect(unica.getByLabel("Compactos")).toBeFocused();
+
+  await unica.getByLabel("Compactos").fill("250");
+  await unica.getByLabel("Sedanes y hatchbacks medianos").fill("300,50");
+  await unica.getByRole("button", { name: "Guardar precios de Única" }).click();
+  await expect(page.getByText("Precios guardados.")).toBeVisible();
+  await page.reload();
+  await expect(unica.getByLabel("Compactos")).toHaveValue("250");
+  await expect(unica.getByLabel("Sedanes y hatchbacks medianos")).toHaveValue("300,50");
+  // Lo que quedó vacío al guardar es "según evaluación"
+  await expect(unica.getByLabel("Vagonetas medianas")).toHaveAttribute("placeholder", "Según evaluación");
+
+  // Sin cambios no se escribe nada
+  await unica.getByRole("button", { name: "Guardar precios de Única" }).click();
+  await expect(page.getByText("No había cambios.")).toBeVisible();
+
+  // Un cambio agrega una fila y no toca la anterior (D-3)
+  await unica.getByLabel("Compactos").fill("280");
+  await unica.getByRole("button", { name: "Guardar precios de Única" }).click();
+  await expect.poll(() => filasDePrecio(id, "Compactos")).toEqual(["250.00", "280.00"]);
+
+  // El historial: anterior, nuevo, fecha y quién
+  await unica.getByRole("button", { name: "Ver historial" }).click();
+  const cambios = page.getByRole("dialog").getByRole("list", { name: "Cambios de precio" });
+  await expect(cambios.getByRole("listitem").first()).toContainText("Compactos");
+  await expect(cambios.getByRole("listitem").first()).toContainText("250 Bs → 280 Bs");
+  await expect(cambios.getByRole("listitem").first()).toContainText("Dueño de prueba");
+  await expect(cambios).toContainText("Sin cargar → 250 Bs");
+  await page.keyboard.press("Escape");
+
+  // Duración propia de la variante
+  await unica.getByLabel("Duración propia").fill("2");
+  await unica.getByRole("button", { name: "Guardar precios de Única" }).click();
+  // El aviso del guardado anterior puede seguir a la vista: se espera el dato en la base
+  await expect.poll(() => consultar<{ d: number | null }>("select duracion_dias as d from variante where servicio_id = $1", [id])).toEqual([{ d: 2 }]);
+  await page.reload();
+  await expect(unica.getByLabel("Duración propia")).toHaveValue("2");
+
+  // En la lista, ya no le faltan precios
+  await page.goto("/panel/catalogo");
+  await expect(page.getByRole("list", { name: "Servicios del catálogo" }).getByRole("link", { name: new RegExp(nombre) })).toContainText("Precios completos");
+});
+
