@@ -26,6 +26,8 @@ type DefinicionModulo = {
   tecnico: boolean;
   /** Ya tiene pantalla. Un módulo no construido no aparece en el menú ni en las casillas. */
   construido: boolean;
+  /** false: construido y asignable al encargado, pero sin entrada en el menú (se trabaja desde otra pantalla). */
+  enMenu?: boolean;
 };
 
 export const MODULOS = {
@@ -35,9 +37,10 @@ export const MODULOS = {
   clientes: { ruta: "/panel/clientes", nombre: "Clientes", permisoEncargado: "clientes", tecnico: false, construido: true },
   consultas: { ruta: "/panel/consultas", nombre: "Consultas", permisoEncargado: "consultas", tecnico: false, construido: true },
   cotizaciones: { ruta: "/panel/cotizaciones", nombre: "Cotizaciones", permisoEncargado: null, tecnico: false, construido: false },
-  agenda: { ruta: "/panel/agenda", nombre: "Agenda", permisoEncargado: "agenda", tecnico: false, construido: false },
+  agenda: { ruta: "/panel/agenda", nombre: "Agenda", permisoEncargado: "agenda", tecnico: false, construido: true },
   ordenes: { ruta: "/panel/ordenes", nombre: "Órdenes", permisoEncargado: "ordenes", tecnico: true, construido: false },
-  pagos: { ruta: "/panel/pagos", nombre: "Pagos", permisoEncargado: "pagos", tecnico: false, construido: false },
+  // En C3 los pagos se registran desde cada reserva; la lista de saldos (HU-37, C4) le dará su pantalla
+  pagos: { ruta: "/panel/pagos", nombre: "Pagos", permisoEncargado: "pagos", tecnico: false, construido: true, enMenu: false },
   mantenimientos: { ruta: "/panel/mantenimientos", nombre: "Mantenimientos", permisoEncargado: "mantenimientos", tecnico: false, construido: false },
   catalogo: { ruta: "/panel/catalogo", nombre: "Catálogo y precios", permisoEncargado: null, tecnico: false, construido: true },
   usuarios: { ruta: "/panel/usuarios", nombre: "Usuarios", permisoEncargado: null, tecnico: false, construido: true },
@@ -71,7 +74,10 @@ export function puede(sujeto: SujetoPermisos, accion: "entrega_con_saldo"): bool
 
 /** Módulos del menú del panel, en orden, solo los que ya tienen pantalla. */
 export function modulosDelMenu(sujeto: SujetoPermisos): Modulo[] {
-  return (Object.keys(MODULOS) as Modulo[]).filter((m) => MODULOS[m].construido && puedeVerModulo(sujeto, m));
+  return (Object.keys(MODULOS) as Modulo[]).filter((m) => {
+    const def: DefinicionModulo = MODULOS[m];
+    return def.construido && def.enMenu !== false && puedeVerModulo(sujeto, m);
+  });
 }
 
 /** Permisos que se le pueden marcar a un encargado hoy (los de módulos ya construidos, más entrega con saldo). */

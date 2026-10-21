@@ -22,6 +22,17 @@ export function indiceUnicoViolado(error: unknown): string | null {
 }
 
 /**
+ * Nombre de la restricción de exclusión que rechazó la escritura (código 23P01), o null. La de la agenda impide que un
+ * espacio tenga dos trabajos el mismo día aunque dos personas reserven a la vez (D-5).
+ */
+export function exclusionViolada(error: unknown): string | null {
+  const e = error as { code?: string; constraint?: string; cause?: { code?: string; constraint?: string } };
+  const causa = e?.cause?.code ? e.cause : e;
+  if (causa?.code !== "23P01") return null;
+  return causa.constraint ?? "";
+}
+
+/**
  * Errores por campo: el primero de cada uno. En los campos que son listas (beneficios, pasos)
  * el error va a la fila: "pasos.2" es el tercer paso.
  */

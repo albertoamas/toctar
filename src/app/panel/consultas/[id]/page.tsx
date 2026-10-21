@@ -15,6 +15,7 @@ import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { ArchivosConsulta } from "@/modulos/consultas/componentes/archivos-consulta";
 import { EstadoConsulta } from "@/modulos/consultas/componentes/estado-consulta";
 import { NotaConsulta } from "@/modulos/consultas/componentes/nota-consulta";
+import { reservasDeConsulta } from "@/modulos/agenda/consultas";
 import { obtenerConsulta } from "@/modulos/consultas/consultas";
 import { CotizacionesConsulta } from "@/modulos/cotizaciones/componentes/cotizaciones-consulta";
 import { cotizacionesDeConsulta } from "@/modulos/cotizaciones/consultas";
@@ -41,7 +42,12 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/consulta
   const numero = Number(id);
   if (!Number.isInteger(numero) || numero <= 0) notFound();
   const esDueno = puedeVerModulo(usuario, "cotizaciones");
-  const [c, cotizaciones] = await Promise.all([obtenerConsulta(numero), cotizacionesDeConsulta(numero, esDueno)]);
+  const puedeAgendar = puedeVerModulo(usuario, "agenda");
+  const [c, cotizaciones, reservas] = await Promise.all([
+    obtenerConsulta(numero),
+    cotizacionesDeConsulta(numero, esDueno),
+    puedeAgendar ? reservasDeConsulta(numero) : [],
+  ]);
   if (!c) notFound();
   const recienGuardada = typeof cotizada === "string" ? cotizaciones.find((x) => String(x.id) === cotizada) : undefined;
   // El encargado puede tener Consultas sin Clientes: entonces el nombre no enlaza a una ficha que no puede abrir
@@ -96,7 +102,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/consulta
               <span className="text-tinta-suave">por {c.registradaPor}</span>
             </dd>
           </dl>
-          <CotizacionesConsulta consultaId={c.id} estado={c.estado} cotizaciones={cotizaciones} esDueno={esDueno} />
+          <CotizacionesConsulta consultaId={c.id} estado={c.estado} cotizaciones={cotizaciones} esDueno={esDueno} puedeAgendar={puedeAgendar} reservas={reservas} />
         </div>
 
         <div className="flex flex-col gap-10 lg:col-start-1 lg:row-start-1">
