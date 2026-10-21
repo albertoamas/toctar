@@ -81,7 +81,25 @@ export async function datosArchivoPrivado(clave: string): Promise<{ tipo: string
   }
 }
 
-/** Enlace firmado y temporal a un archivo del bucket privado. Solo se genera después de verificar permisos. */
-export async function urlArchivoPrivado(clave: string): Promise<string> {
-  return getSignedUrl(obtenerCliente(), new GetObjectCommand({ Bucket: bucket("privado"), Key: clave }), { expiresIn: SEGUNDOS_ENLACE_PRIVADO });
+/**
+ * Enlace firmado y temporal a un archivo del bucket privado. Solo se genera después de verificar permisos.
+ * `nombre`: con el que se guarda (un PDF); `descargar`: lo baja en vez de abrirlo en una pestaña.
+ */
+export async function urlArchivoPrivado(clave: string, opciones: { nombre?: string; descargar?: boolean } = {}): Promise<string> {
+  const comando = new GetObjectCommand({
+    Bucket: bucket("privado"),
+    Key: clave,
+    // El nombre, solo con letras sin tildes, números, punto, guion y guion bajo: nada que rompa el encabezado
+    ResponseContentDisposition: opciones.nombre
+      ? `${opciones.descargar ? "attachment" : "inline"}; filename="${opciones.nombre.replace(/[^A-Za-z0-9._-]/g, "_")}"`
+      : undefined,
+  });
+  return getSignedUrl(obtenerCliente(), comando, { expiresIn: SEGUNDOS_ENLACE_PRIVADO });
+}
+
+/** El contenido de un archivo, para armar documentos (el logo y las fotos del PDF de la cotización). */
+export async function leerArchivo(clave: string, visibilidad: Visibilidad): Promise<Buffer> {
+  const r = await obtenerCliente().send(new GetObjectCommand({ Bucket: bucket(visibilidad), Key: clave }));
+  if (!r.Body) throw new Error(`El archivo ${clave} está vacío.`);
+  return Buffer.from(await r.Body.transformToByteArray());
 }

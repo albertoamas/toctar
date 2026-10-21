@@ -82,7 +82,7 @@ test("el dueño cotiza con el precio del tamaño; según evaluación obliga a es
 
   await page.getByLabel("Descuento").fill("50");
   await page.getByLabel("Adelanto sugerido").fill("100");
-  await page.getByRole("button", { name: "Guardar cotización" }).click();
+  await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
   await expect(page.getByText("Escribe el precio.")).toBeVisible();
   await expect(precio(page, 2)).toBeFocused();
   // Lo elegido se conserva tras el error
@@ -94,7 +94,7 @@ test("el dueño cotiza con el precio del tamaño; según evaluación obliga a es
   await expect(totales).toContainText("650,50 Bs");
   await expect(totales).toContainText("600,50 Bs");
 
-  await page.getByRole("button", { name: "Guardar cotización" }).click();
+  await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/consultas/${id}\\?cotizada=\\d+$`));
   const [{ numero }] = await consultar<{ numero: string }>("select numero from cotizacion where consulta_id = $1", [id]);
   expect(numero).toMatch(/^\d{4}-\d{4}$/);
@@ -130,7 +130,7 @@ test("corregir crea la versión 2 con el mismo número; la 1 queda reemplazada y
   await expect(page.getByRole("checkbox", { name: "Estimado según fotos o video" })).not.toBeChecked();
   await page.getByRole("button", { name: "Agregar servicio" }).click();
   await servicio(page, 1).selectOption({ label: `${nombre} — Con precio` });
-  await page.getByRole("button", { name: "Guardar cotización" }).click();
+  await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
   await expect(page).toHaveURL(/\?cotizada=\d+$/);
 
   await page.getByRole("link", { name: "Corregir (nueva versión)" }).click();
@@ -139,7 +139,7 @@ test("corregir crea la versión 2 con el mismo número; la 1 queda reemplazada y
   // Arranca con lo de la versión 1
   await expect(precio(page, 1)).toHaveValue("450");
   await precio(page, 1).fill("400");
-  await page.getByRole("button", { name: "Guardar versión 2" }).click();
+  await page.getByRole("button", { name: "Guardar versión 2 y generar PDF" }).click();
   await expect(page).toHaveURL(/\?cotizada=\d+$/);
 
   const versiones = await consultar<{ numero: string; version: number; estado: string; total: string }>(
@@ -182,24 +182,24 @@ test("el descuento no pasa el subtotal, el adelanto no pasa el total y la valide
   const id = await crearConsulta(info, 3);
   await ingresarComoDueno(page);
   await page.goto(`/panel/consultas/${id}/cotizar`);
-  await page.getByRole("button", { name: "Guardar cotización" }).click();
+  await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
   await expect(page.getByText("Agrega al menos un servicio.")).toBeVisible();
 
   await page.getByRole("button", { name: "Agregar servicio" }).click();
   await servicio(page, 1).selectOption({ label: `${nombre} — Con precio` });
   await page.getByLabel("Descuento").fill("500");
-  await page.getByRole("button", { name: "Guardar cotización" }).click();
+  await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
   await expect(page.getByText("El descuento no puede ser mayor que el subtotal.")).toBeVisible();
   await expect(page.getByLabel("Descuento")).toBeFocused();
 
   await page.getByLabel("Descuento").fill("");
   await page.getByLabel("Adelanto sugerido").fill("451");
-  await page.getByRole("button", { name: "Guardar cotización" }).click();
+  await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
   await expect(page.getByText("El adelanto no puede ser mayor que el total.")).toBeVisible();
 
   await page.getByLabel("Adelanto sugerido").fill("100");
   await page.getByLabel("Válida hasta").fill("2020-01-01");
-  await page.getByRole("button", { name: "Guardar cotización" }).click();
+  await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
   await expect(page.getByText("La validez no puede ser anterior a hoy.")).toBeVisible();
 });
 
@@ -207,8 +207,8 @@ test("RN-01: el encargado ve que está cotizada sin montos y no entra a cotizar;
   const s = sufijo(info).toLowerCase();
   const id = await crearConsulta(info, 4);
   await consultar(
-    `insert into cotizacion (consulta_id, numero, version, es_estimado, subtotal, descuento, total, adelanto_sugerido, valida_hasta, condiciones, garantia, formas_pago, created_by)
-     select $1, '2026-9' || $2, 1, false, 300, 0, 300, 100, current_date + 15, 'c', 'g', 'f', id from usuario where nombre_usuario = 'dueno'`,
+    `insert into cotizacion (consulta_id, numero, version, es_estimado, subtotal, descuento, total, adelanto_sugerido, valida_hasta, condiciones, garantia, formas_pago, datos_documento, created_by)
+     select $1, '2026-9' || $2, 1, false, 300, 0, 300, 100, current_date + 15, 'c', 'g', 'f', '{}'::jsonb, id from usuario where nombre_usuario = 'dueno'`,
     [id, info.project.name === "celular" ? "01" : "02"],
   );
   await crearUsuario({ usuario: `enc-hu25-${s}`, nombre: "Encargado con todo", contrasena: "encargado-123", rol: "encargado", permisos: ["consultas", "clientes", "reclamos", "sitio"] });
@@ -243,7 +243,7 @@ test("las fotos elegidas para la cotización ya no se quitan de la consulta", as
   await page.getByRole("button", { name: "Agregar servicio" }).click();
   await servicio(page, 1).selectOption({ label: `${nombre} — Con precio` });
   await page.getByRole("checkbox", { name: "Foto 1 en el PDF" }).check();
-  await page.getByRole("button", { name: "Guardar cotización" }).click();
+  await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
   await expect(page).toHaveURL(/\?cotizada=\d+$/);
   const [{ n }] = await consultar<{ n: number }>(
     "select count(*)::int as n from cotizacion_foto f join cotizacion c on c.id = f.cotizacion_id where c.consulta_id = $1",

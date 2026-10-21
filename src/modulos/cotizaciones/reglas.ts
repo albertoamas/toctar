@@ -60,3 +60,6 @@ export function leerMontoOCero(texto: string): string | undefined {
   if (limpio === "" || /^0+([.,]0{1,2})?$/.test(limpio)) return "0.00";
   return leerMonto(limpio) ?? undefined;
 }
+
+/** "Cotizacion-2026-0042.pdf", "Cotizacion-2026-0042-v2.pdf": sin tildes, para cualquier teléfono o computadora. */
+export const nombreArchivoPdf = (numero: string, version: number) => `Cotizacion-${numero}${version > 1 ? `-v${version}` : ""}.pdf`;
