@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { cn } from "cn";
-import { FileTextIcon, PencilIcon } from "lucide-react";
+import { DownloadIcon, FileTextIcon, PencilIcon } from "lucide-react";
 import { buttonVariants } from "@/componentes/ui/button";
 import type { EstadoConsulta } from "@/db/esquema/consultas";
 import type { EstadoCotizacion } from "@/db/esquema/cotizaciones";
 import { formatearFecha, formatearFechaHora } from "@/lib/fechas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import type { FilaCotizacion } from "../consultas";
+import { GenerarPdf } from "./generar-pdf";
 
 // HU-25: las cotizaciones de una consulta, de la versión más nueva a la más vieja. El dueño ve montos y validez, y
-// cotiza o corrige (nueva versión). El encargado ve que está cotizada y su número, sin montos (RN-01).
+// cotiza o corrige (nueva versión). El encargado ve que está cotizada y su número, sin montos ni PDF (RN-01).
+// HU-26: cada versión tiene su PDF, que se ve o se descarga; también el de una reemplazada, tal como se envió.
 
 const NOMBRE: Record<EstadoCotizacion, string> = { enviada: "Vigente", reemplazada: "Reemplazada", aceptada: "Aceptada" };
 const INSIGNIA: Record<EstadoCotizacion, string> = {
@@ -47,6 +49,25 @@ export function CotizacionesConsulta({ consultaId, estado, cotizaciones, esDueno
                 </span>
               )}
               <span className="text-sm text-tinta-suave">{formatearFechaHora(c.createdAt)}</span>
+              {c.montos && (
+                <span className="flex flex-wrap gap-2 pt-1">
+                  {c.montos.tienePdf ? (
+                    <>
+                      {/* La ruta lleva al enlace firmado; en otra pestaña, para volver a la consulta */}
+                      <a href={`/panel/cotizaciones/${c.id}/pdf`} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+                        <FileTextIcon />
+                        Ver PDF
+                      </a>
+                      <a href={`/panel/cotizaciones/${c.id}/pdf?descargar=1`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+                        <DownloadIcon />
+                        Descargar
+                      </a>
+                    </>
+                  ) : (
+                    c.estado === "enviada" && <GenerarPdf cotizacionId={c.id} />
+                  )}
+                </span>
+              )}
             </li>
           ))}
         </ul>

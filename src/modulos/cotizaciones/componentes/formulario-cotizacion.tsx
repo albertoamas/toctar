@@ -184,7 +184,7 @@ export function FormularioCotizacion({ datos, hoy }: Props) {
 
       <div>
         <Button type="submit" disabled={enviando}>
-          {enviando ? "Guardando…" : datos.desde ? `Guardar versión ${datos.desde.version + 1}` : "Guardar cotización"}
+          {enviando ? "Guardando y generando el PDF…" : datos.desde ? `Guardar versión ${datos.desde.version + 1} y generar PDF` : "Guardar y generar PDF"}
         </Button>
       </div>
     </form>

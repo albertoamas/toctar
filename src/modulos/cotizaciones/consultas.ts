@@ -187,8 +187,8 @@ export type FilaCotizacion = {
   version: number;
   estado: EstadoCotizacion;
   createdAt: Date;
-  /** Solo para el dueño (RN-01): al encargado le llega sin montos. */
-  montos: { total: string; validaHasta: string; esEstimado: boolean } | null;
+  /** Solo para el dueño (RN-01): al encargado le llega sin montos ni PDF. */
+  montos: { total: string; validaHasta: string; esEstimado: boolean; tienePdf: boolean } | null;
 };
 
 /** Las versiones de las cotizaciones de una consulta, de la más nueva a la más vieja. */
@@ -203,11 +203,12 @@ export async function cotizacionesDeConsulta(consultaId: number, conMontos: bool
       total: cotizacion.total,
       validaHasta: cotizacion.validaHasta,
       esEstimado: cotizacion.esEstimado,
+      pdf: cotizacion.pdfArchivoId,
     })
     .from(cotizacion)
     .where(eq(cotizacion.consultaId, consultaId))
     .orderBy(desc(cotizacion.createdAt), desc(cotizacion.id));
-  return filas.map(({ total, validaHasta, esEstimado, ...f }) => ({ ...f, montos: conMontos ? { total, validaHasta, esEstimado } : null }));
+  return filas.map(({ total, validaHasta, esEstimado, pdf, ...f }) => ({ ...f, montos: conMontos ? { total, validaHasta, esEstimado, tienePdf: pdf !== null } : null }));
 }
 
 /** Si la consulta tiene alguna cotización (para reabrirla en "cotizado"). */

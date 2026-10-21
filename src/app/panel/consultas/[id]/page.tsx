@@ -37,7 +37,7 @@ export default function PaginaConsulta({ params, searchParams }: PageProps<"/pan
 
 async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/consultas/[id]">, "params" | "searchParams">) {
   const usuario = await exigirModulo("consultas");
-  const [{ id }, { creada, cotizada }] = await Promise.all([params, searchParams]);
+  const [{ id }, { creada, cotizada, sinpdf }] = await Promise.all([params, searchParams]);
   const numero = Number(id);
   if (!Number.isInteger(numero) || numero <= 0) notFound();
   const esDueno = puedeVerModulo(usuario, "cotizaciones");
@@ -62,6 +62,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/consulta
       {recienGuardada && (
         <AvisoEnPagina>
           {recienGuardada.version === 1 ? `Cotización ${recienGuardada.numero} lista.` : `Versión ${recienGuardada.version} de la cotización ${recienGuardada.numero} lista.`}
+          {sinpdf && " El PDF no se pudo generar: usa «Generar PDF» en Cotizaciones."}
         </AvisoEnPagina>
       )}
 

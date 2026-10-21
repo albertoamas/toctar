@@ -3,6 +3,7 @@
 import { and, eq, inArray, like, max, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { db } from "@/db";
 import {
   archivo,
@@ -24,6 +25,7 @@ import type { Monto } from "@/modulos/catalogo/reglas";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { NOMBRE_ESTADO, transicionPermitida } from "@/modulos/consultas/reglas";
 import { entradaCotizacion, esquemaCotizacion } from "./esquemas";
+import { generarPdf } from "./pdf/generar";
 import { anioCotizacion, calcularTotales, claveCorrelativo, descripcionLinea, numeroCotizacion, precioSugerido } from "./reglas";
 
 // Cotizaciones (HU-25). Solo el dueño (RN-01): exigirModulo("cotizaciones") no tiene permiso de encargado.
@@ -171,7 +173,42 @@ export async function guardarCotizacion(_previo: EstadoFormulario, datos: FormDa
   });
   if ("error" in resultado) return { mensaje: resultado.error };
 
+  // El PDF (HU-26), fuera de la transacción: arma imágenes y sube un archivo. Si falla, la cotización ya quedó
+  // guardada y la consulta ofrece generarlo de nuevo; no se pierde lo cargado
+  let conPdf = true;
+  try {
+    await generarPdf(resultado.id, autorId);
+  } catch (error) {
+    console.error(`No se pudo generar el PDF de la cotización ${resultado.id}:`, error);
+    conPdf = false;
+  }
+
   revalidatePath("/panel/consultas");
   revalidatePath(`/panel/consultas/${d.consultaId}`);
-  redirect(`/panel/consultas/${d.consultaId}?cotizada=${resultado.id}`);
+  redirect(`/panel/consultas/${d.consultaId}?cotizada=${resultado.id}${conPdf ? "" : "&sinpdf=1"}`);
+}
+
+/**
+ * Genera el PDF de una cotización que quedó sin él (falló al guardarla). Solo si todavía no tiene: el que ya existe no
+ * se regenera (RN-02). Recibe datos sueltos: se validan.
+ */
+export async function generarPdfPendiente(datos: { cotizacionId: number }): Promise<EstadoFormulario> {
+  const autor = await exigirModulo("cotizaciones");
+  const entrada = z.object({ cotizacionId: z.number().int().positive() }).safeParse(datos);
+  if (!entrada.success) return { mensaje: "No se pudo leer el pedido. Recarga la página." };
+  const [c] = await db
+    .select({ consultaId: cotizacion.consultaId, pdf: cotizacion.pdfArchivoId })
+    .from(cotizacion)
+    .where(eq(cotizacion.id, entrada.data.cotizacionId));
+  if (!c) return { mensaje: "Esa cotización ya no existe. Recarga la página." };
+  if (!c.pdf) {
+    try {
+      await generarPdf(entrada.data.cotizacionId, Number(autor.id));
+    } catch (error) {
+      console.error(`No se pudo generar el PDF de la cotización ${entrada.data.cotizacionId}:`, error);
+      return { mensaje: "No se pudo generar el PDF. Vuelve a intentar en un momento." };
+    }
+  }
+  revalidatePath(`/panel/consultas/${c.consultaId}`);
+  return { ok: true, mensaje: "PDF listo." };
 }
