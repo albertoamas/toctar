@@ -19,7 +19,7 @@
 - **El adelanto depende del dueño:** la lista de precios y las variantes pasan a pedirse para el viernes 23 (antes, 3/11), y el dominio sigue siendo urgente.
 - **Lunes 19:** reunión de avance con el dueño, con una presentación y sin mostrar todavía la app. La primera demo sigue siendo el viernes 23.
 
-## Dónde estamos (20 de octubre)
+## Dónde estamos (21 de octubre)
 
 | Qué | Estado |
 |---|---|
@@ -36,6 +36,7 @@
 | Revisión de seguridad y calidad de la Entrega 1 | ✅ 16/10 (PR #40) |
 | Pulido visual de la Entrega 1 | ✅ Las 32 pantallas, en `develop` (PR #43 a #48). Registro y comparativas en `pulido-visual.md` |
 | Etapa C1 Catálogo y clientes (HU-19 a HU-23) | ✅ Programada el 20/10 (PR #49 a #53). Precios de prueba solo en E2E: falta la lista de precios real del dueño |
+| Etapa C2 Consultas y cotizaciones (HU-24 a HU-28) | ✅ Programada el 21/10 (PR #55 a #60). Falta compartir el PDF desde un celular real (necesita https, A3), revisarlo impreso y que el dueño confirme formas de pago, condiciones y garantía |
 | Identidad visual aplicada a la app | ✅ En `develop` (PR #5 y #9, logos nítidos en tamaños chicos) |
 | Inicio del trabajo | 9 de octubre de 2026 (firma y primer pago) |
 | Día D (inicio del plazo del contrato) | 14 de octubre de 2026 (llegó el material) |
@@ -72,7 +73,8 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | B4 Sitio público | `etapas/B4-sitio-publico.md` | ✅ Programada (14/10); falta la revisión manual |
 | B5 Reclamos y Google | `etapas/B5-reclamos-google.md` | ✅ Programada (15/10, PR #33 a #36). Falta validar el JSON-LD en Google (A3) y la revisión manual |
 | C1 Catálogo y clientes | `etapas/C1-catalogo-clientes.md` | ✅ Programada (20/10, PR #49 a #53). Falta cargar los precios reales |
-| B6 y C2 a C5 | Una por etapa | Al empezar cada una |
+| C2 Consultas y cotizaciones | `etapas/C2-consultas-cotizaciones.md` | ✅ Programada (21/10, PR #55 a #60). Falta la prueba en celulares con https (A3) y los textos del PDF del dueño |
+| B6 y C3 a C5 | Una por etapa | Al empezar cada una |
 
 ## Cómo se trabaja cada historia
 
