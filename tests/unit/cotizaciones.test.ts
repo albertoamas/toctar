@@ -110,6 +110,9 @@ test("descuento, adelanto, validez y fotos (RN-04, S-5)", () => {
   expect(errores({ adelanto: "600.50" })).toEqual({});
   expect(errores({ validaHasta: sumarDias(hoy, -1) })).toEqual({ validaHasta: "La validez no puede ser anterior a hoy." });
   expect(errores({ validaHasta: hoy })).toEqual({});
+  // Una fecha que no existe la acepta Date.parse pero la rechaza la base
+  expect(errores({ validaHasta: "2026-02-31" })).toEqual({ validaHasta: "Elige la fecha." });
+  expect(errores({ validaHasta: sumarDias(hoy, 366) })).toEqual({ validaHasta: "La validez puede ser de hasta un año." });
   expect(errores({ fotos: ["1", "2", "3", "4", "5"] })).toEqual({ fotos: "Hasta 4 fotos." });
   expect(errores({ fotos: ["1", "1"] })).toEqual({ fotos: "Revisa las fotos elegidas." });
 });

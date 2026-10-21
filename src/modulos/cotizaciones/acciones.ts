@@ -37,9 +37,14 @@ import { anioCotizacion, calcularTotales, claveCorrelativo, descripcionLinea, nu
 export async function guardarCotizacion(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const autor = await exigirModulo("cotizaciones");
   const entrada = entradaCotizacion(datos);
-  const valores = { descuento: entrada.descuento, adelanto: entrada.adelanto, validaHasta: entrada.validaHasta };
   const r = esquemaCotizacion.safeParse(entrada);
-  if (!r.success) return { errores: erroresDe(r.error), valores };
+  if (!r.success) {
+    const errores = erroresDe(r.error);
+    // Los campos ocultos no tienen dónde mostrar su error: llegaron alterados
+    if (errores.consultaId || errores.desde) return { mensaje: "No se pudo leer el pedido. Recarga la página." };
+    // Sin `valores`: el formulario es controlado y conserva lo escrito
+    return { errores };
+  }
   const d = r.data;
 
   // La consulta, su vehículo (su tamaño da los precios) y si se puede cotizar
@@ -76,7 +81,7 @@ export async function guardarCotizacion(_previo: EstadoFormulario, datos: FormDa
     if (!opciones.some((o) => o.id === l.varianteId)) errores[`lineas.${i}`] = "Ese servicio ya no se ofrece: quítalo.";
   });
   if (fotosValidas.length !== d.fotos.length) errores.fotos = "Una de las fotos ya no está en la consulta. Recarga la página.";
-  if (Object.keys(errores).length > 0) return { errores, valores };
+  if (Object.keys(errores).length > 0) return { errores };
 
   const montosDe = (varianteId: number) => new Map<number, Monto>(vigentes.filter((p) => p.varianteId === varianteId).map((p) => [p.tamanoId, p.monto]));
   const lineas = d.lineas.map((l, orden) => {
@@ -98,8 +103,18 @@ export async function guardarCotizacion(_previo: EstadoFormulario, datos: FormDa
   const autorId = Number(autor.id);
 
   const resultado = await db.transaction(async (tx) => {
-    // Candado sobre la consulta: dos guardados a la vez no crean dos vigentes ni dos versiones con el mismo número
-    await tx.select({ id: consulta.id }).from(consulta).where(eq(consulta.id, d.consultaId)).for("update");
+    // Candado sobre la consulta: dos guardados a la vez no crean dos vigentes ni dos versiones con el mismo número. Con
+    // él tomado se vuelve a mirar lo que pudo cambiar desde la revisión de arriba: el estado (alguien la marcó perdida)
+    // y las fotos (alguien quitó una; quitarArchivoConsulta toma el mismo candado)
+    const [bloqueada] = await tx.select({ estado: consulta.estado }).from(consulta).where(eq(consulta.id, d.consultaId)).for("update");
+    if (!bloqueada || !transicionPermitida(bloqueada.estado, "cotizado")) return { error: "La consulta cambió de estado recién. Vuelve a la consulta." } as const;
+    if (d.fotos.length > 0) {
+      const siguen = await tx
+        .select({ id: consultaArchivo.archivoId })
+        .from(consultaArchivo)
+        .where(and(eq(consultaArchivo.consultaId, d.consultaId), inArray(consultaArchivo.archivoId, d.fotos)));
+      if (siguen.length !== d.fotos.length) return { error: "Una de las fotos ya no está en la consulta. Recarga la página." } as const;
+    }
     const [vigente] = await tx
       .select({ id: cotizacion.id, numero: cotizacion.numero })
       .from(cotizacion)
@@ -154,7 +169,7 @@ export async function guardarCotizacion(_previo: EstadoFormulario, datos: FormDa
     await tx.update(consulta).set({ estado: "cotizado", ultimoMovimientoAt: sql`now()` }).where(eq(consulta.id, d.consultaId));
     return { id: nueva.id } as const;
   });
-  if ("error" in resultado) return { mensaje: resultado.error, valores };
+  if ("error" in resultado) return { mensaje: resultado.error };
 
   revalidatePath("/panel/consultas");
   revalidatePath(`/panel/consultas/${d.consultaId}`);

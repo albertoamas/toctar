@@ -160,6 +160,11 @@ test("corregir crea la versión 2 con el mismo número; la 1 queda reemplazada y
   await expect(page.getByText("Esa versión ya fue corregida.")).toBeVisible();
   await page.goto(`/panel/consultas/${id}/cotizar`);
   await expect(page.getByText("Se guarda como versión 3.")).toBeVisible();
+  // Un `desde` que no es de esta consulta lleva a corregir la vigente
+  await page.goto(`/panel/consultas/${id}/cotizar?desde=999999`);
+  await expect(page).toHaveURL(/\/cotizar\?desde=\d+$/);
+  await expect(page).not.toHaveURL(/desde=999999/);
+  await expect(page.getByText("Se guarda como versión 3.")).toBeVisible();
 
   // Perdida y reabierta, vuelve a "Cotizado": ya tiene cotización
   await page.goto(`/panel/consultas/${id}`);

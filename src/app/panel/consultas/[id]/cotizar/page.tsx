@@ -31,8 +31,12 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/consul
   const desdeId = typeof desde === "string" && /^\d+$/.test(desde) ? Number(desde) : null;
   const datos = await datosParaCotizar(consultaId, desdeId);
   if (!datos) notFound();
-  // Con una vigente, cotizar es corregirla: se llega a la versión nueva
-  if (!desdeId && datos.vigenteId) redirect(`/panel/consultas/${consultaId}/cotizar?desde=${datos.vigenteId}`);
+  // Con una vigente, cotizar es corregirla; un `desde` que no es la vigente (otra consulta, un enlace viejo) lleva a
+  // corregir la vigente, o a la primera cotización si no hay
+  if (!datos.desde && !datos.desdeReemplazado) {
+    if (datos.vigenteId) redirect(`/panel/consultas/${consultaId}/cotizar?desde=${datos.vigenteId}`);
+    if (desdeId) redirect(`/panel/consultas/${consultaId}/cotizar`);
+  }
 
   const volver = `/panel/consultas/${consultaId}` as const;
   const titulo = datos.desde ? `Corregir la cotización ${datos.desde.numero}` : "Cotizar";
@@ -60,7 +64,7 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/consul
           La consulta está {NOMBRE_ESTADO[datos.estado].toLowerCase()}: {datos.estado === "perdido" ? "reábrela para cotizar" : "ya no se cotiza"}.{" "}
           <Link href={volver} className="font-semibold underline">Volver a la consulta</Link>
         </EstadoVacio>
-      ) : desdeId && !datos.desde ? (
+      ) : datos.desdeReemplazado ? (
         <EstadoVacio>
           Esa versión ya fue corregida.{" "}
           <Link href={volver} className="font-semibold underline">Ver la vigente en la consulta</Link>

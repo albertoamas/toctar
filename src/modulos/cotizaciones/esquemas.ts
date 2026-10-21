@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { fechaEnBolivia } from "@/lib/fechas";
+import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
 import { leerMonto } from "@/modulos/catalogo/reglas";
 import { calcularTotales, leerMontoOCero, MAXIMO_FOTOS_PDF, MAXIMO_LINEAS, montoNoMayor } from "./reglas";
 
@@ -64,7 +64,9 @@ export const esquemaCotizacion = z
     validaHasta: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Elige la fecha.")
-      .refine((v) => !Number.isNaN(Date.parse(v)), "Elige la fecha.")
+      // Una fecha que no existe ("2026-02-31") la acepta Date.parse, pero la rechaza la base: se compara de vuelta
+      .refine((v) => !Number.isNaN(Date.parse(v)) && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v, "Elige la fecha.")
+      .refine((v) => v <= sumarDias(fechaEnBolivia(), 365), "La validez puede ser de hasta un año.")
       .refine((v) => v >= fechaEnBolivia(), "La validez no puede ser anterior a hoy."),
     esEstimado: z.boolean(),
     fotos: z.array(id).max(MAXIMO_FOTOS_PDF, `Hasta ${MAXIMO_FOTOS_PDF} fotos.`),

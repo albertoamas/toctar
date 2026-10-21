@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, like } from "drizzle-orm";
+import { and, asc, desc, eq, like } from "drizzle-orm";
 import { db } from "@/db";
 import {
   archivo,
@@ -58,6 +58,8 @@ export type DatosParaCotizar = {
   /** La versión que se corrige (vigente), si llegó `desde`, y su id. */
   desde: BaseCotizacion | null;
   desdeId: number | null;
+  /** `desde` es una versión de esta consulta ya reemplazada: se avisa que ya fue corregida. */
+  desdeReemplazado: boolean;
   /** Ya tiene una cotización vigente: entonces solo se corrige. */
   vigenteId: number | null;
 };
@@ -81,7 +83,7 @@ export async function datosParaCotizar(consultaId: number, desdeId: number | nul
     .where(eq(consulta.id, consultaId));
   if (!c) return null;
 
-  const [variantes, fotos, parametros, [vigente]] = await Promise.all([
+  const [variantes, fotos, parametros, [vigente], desde, [reemplazado]] = await Promise.all([
     db
       .select({ varianteId: variante.id, servicio: servicio.nombre, variante: variante.nombre })
       .from(variante)
@@ -99,9 +101,19 @@ export async function datosParaCotizar(consultaId: number, desdeId: number | nul
       .select({ id: cotizacion.id })
       .from(cotizacion)
       .where(and(eq(cotizacion.consultaId, consultaId), eq(cotizacion.estado, "enviada"))),
+    desdeId ? baseDeVersion(consultaId, desdeId) : null,
+    desdeId
+      ? db
+          .select({ id: cotizacion.id })
+          .from(cotizacion)
+          .where(and(eq(cotizacion.id, desdeId), eq(cotizacion.consultaId, consultaId), eq(cotizacion.estado, "reemplazada")))
+      : [],
   ]);
 
-  const vigentes = await preciosVigentes(variantes.map((v) => v.varianteId));
+  const [vigentes, fotosFirmadas] = await Promise.all([
+    preciosVigentes(variantes.map((v) => v.varianteId)),
+    Promise.all(fotos.map(async (f) => ({ id: f.id, ...(await urlsFotoPrivada(f)) }))),
+  ]);
   const porVariante = new Map<number, Map<number, Monto>>();
   for (const p of vigentes) {
     if (!porVariante.has(p.varianteId)) porVariante.set(p.varianteId, new Map());
@@ -113,7 +125,6 @@ export async function datosParaCotizar(consultaId: number, desdeId: number | nul
     sugerencia: precioSugerido(porVariante.get(v.varianteId) ?? new Map(), c.tamanoId),
   }));
 
-  const desde = desdeId ? await baseDeVersion(consultaId, desdeId) : null;
   const inicial = desde
     ? {
         validaHasta: fechaValidez(new Date(), parametros.validez_cotizacion_dias),
@@ -137,10 +148,11 @@ export async function datosParaCotizar(consultaId: number, desdeId: number | nul
   return {
     ...c,
     opciones,
-    fotos: await Promise.all(fotos.map(async (f) => ({ id: f.id, ...(await urlsFotoPrivada(f)) }))),
+    fotos: fotosFirmadas,
     inicial,
     desde,
     desdeId: desde ? desdeId : null,
+    desdeReemplazado: !!reemplazado,
     vigenteId: vigente?.id ?? null,
   };
 }
@@ -202,11 +214,4 @@ export async function cotizacionesDeConsulta(consultaId: number, conMontos: bool
 export async function tieneCotizacion(consultaId: number): Promise<boolean> {
   const [c] = await db.select({ id: cotizacion.id }).from(cotizacion).where(eq(cotizacion.consultaId, consultaId)).limit(1);
   return !!c;
-}
-
-/** Fotos que usa alguna cotización: no se pueden quitar de la consulta (D-6, el PDF las muestra). */
-export async function fotosEnCotizaciones(archivoIds: number[]): Promise<Set<number>> {
-  if (archivoIds.length === 0) return new Set();
-  const filas = await db.selectDistinct({ id: cotizacionFoto.archivoId }).from(cotizacionFoto).where(inArray(cotizacionFoto.archivoId, archivoIds));
-  return new Set(filas.map((f) => f.id));
 }

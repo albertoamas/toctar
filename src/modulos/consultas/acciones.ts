@@ -6,13 +6,13 @@ import { revalidatePath } from "next/cache";
 import type { z } from "zod";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { archivo, cliente, consulta, consultaArchivo, subidaPendiente, vehiculo } from "@/db/esquema";
+import { archivo, cliente, consulta, consultaArchivo, cotizacionFoto, subidaPendiente, vehiculo } from "@/db/esquema";
 import { borrarArchivo, datosArchivoPrivado, urlSubidaPrivada } from "@/lib/almacenamiento";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { exigirModulo } from "@/lib/sesion";
 import { clienteConTelefono } from "@/modulos/clientes/consultas";
-import { fotosEnCotizaciones, tieneCotizacion } from "@/modulos/cotizaciones/consultas";
+import { tieneCotizacion } from "@/modulos/cotizaciones/consultas";
 import { esquemaCliente, esquemaVehiculo } from "@/modulos/clientes/esquemas";
 import {
   camposConPrefijo,
@@ -307,13 +307,20 @@ export async function quitarArchivoConsulta(datos: { consultaId: number; archivo
   const entrada = esquemaArchivoConsulta.safeParse(datos);
   if (!entrada.success) return { mensaje: PEDIDO_ILEGIBLE };
   const { consultaId, archivoId } = entrada.data;
-  if ((await fotosEnCotizaciones([archivoId])).size > 0) return { mensaje: "Esa foto está en una cotización: no se quita." };
 
-  const [quitado] = await db
-    .delete(consultaArchivo)
-    .where(and(eq(consultaArchivo.consultaId, consultaId), eq(consultaArchivo.archivoId, archivoId)))
-    .returning({ archivoId: consultaArchivo.archivoId });
-  if (!quitado) return { mensaje: "Esa foto ya no está en la consulta. Recarga la página." };
+  // Con el candado de la consulta, el mismo que toma guardarCotizacion: no se cruza con una cotización que la elige
+  const resultado = await db.transaction(async (tx) => {
+    await tx.select({ id: consulta.id }).from(consulta).where(eq(consulta.id, consultaId)).for("update");
+    const [enCotizacion] = await tx.select({ id: cotizacionFoto.archivoId }).from(cotizacionFoto).where(eq(cotizacionFoto.archivoId, archivoId)).limit(1);
+    if (enCotizacion) return "Esa foto está en una cotización: no se quita.";
+    const [quitado] = await tx
+      .delete(consultaArchivo)
+      .where(and(eq(consultaArchivo.consultaId, consultaId), eq(consultaArchivo.archivoId, archivoId)))
+      .returning({ archivoId: consultaArchivo.archivoId });
+    return quitado ? null : "Esa foto ya no está en la consulta. Recarga la página.";
+  });
+  if (resultado) return { mensaje: resultado };
+  // Ya fuera de la consulta: ninguna cotización nueva la puede elegir
   await eliminarFoto(archivoId);
 
   despuesDeCambiar(consultaId);
