@@ -18,11 +18,9 @@ const idOpcional = z
   .pipe(z.number().int().positive().nullable());
 
 /** Fecha AAAA-MM-DD que existe de verdad ("2026-02-31" no). */
-const fecha = (mensaje: string) =>
-  z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, mensaje)
-    .refine((v) => !Number.isNaN(Date.parse(v)) && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v, mensaje);
+const existe = (v: string) =>
+  /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v)) && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v;
+const fecha = (mensaje: string) => z.string().refine(existe, mensaje);
 
 const textoOpcional = (maximo: number) =>
   z
@@ -68,6 +66,8 @@ export const esquemaFechas = z
     fechaFin: fecha("Elige el día de entrega."),
   })
   .superRefine((d, ctx) => {
+    // Con una fecha que no existe ya hay un error: no se compara con ella
+    if (!existe(d.fechaInicio) || !existe(d.fechaFin)) return;
     const hoy = fechaEnBolivia();
     if (d.fechaInicio < hoy) ctx.addIssue({ code: "custom", path: ["fechaInicio"], message: "El ingreso no puede ser antes de hoy." });
     else if (d.fechaInicio > sumarDias(hoy, 365)) ctx.addIssue({ code: "custom", path: ["fechaInicio"], message: "Se agenda hasta un año adelante." });
