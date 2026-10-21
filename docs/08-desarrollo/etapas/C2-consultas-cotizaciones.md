@@ -121,6 +121,7 @@ PK (`consulta_id`, `archivo_id`). Hasta 10 por consulta (se valida en la acción
 | `adelanto_sugerido` | `numeric(10,2)` | no | CHECK entre 0 y el total |
 | `valida_hasta` | `date` | no | S-5 |
 | `condiciones`, `garantia`, `formas_pago` | `text` | no | Copiados de Configuración al guardar (D-4): un cambio después no toca el PDF |
+| `datos_documento` | `jsonb` | no | Cliente, vehículo y negocio copiados al guardar (D-4, HU-26, migración `0025_datos_documento`): el PDF sale de acá aunque se genere después ("Generar PDF") o esos datos cambien. El logo no se copia: es el de Configuración |
 | `estado` | `text` | no | CHECK `enviada`, `reemplazada`, `aceptada` (`aceptada` llega en C3) |
 | `pdf_archivo_id` | `integer` | sí | FK `archivo`, privado. Vacío solo mientras se genera; HU-26 lo llena en la misma acción |
 | `created_at` | `timestamptz` | no | |
