@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/db";
 import { archivo, cotizacion } from "@/db/esquema";
-import { leerArchivo, urlArchivoPrivado } from "@/lib/almacenamiento";
+import { disposicion, flujoArchivoPrivado, urlArchivoPrivado } from "@/lib/almacenamiento";
 import { exigirModulo } from "@/lib/sesion";
 import { nombreArchivoPdf } from "@/modulos/cotizaciones/reglas";
 
@@ -23,10 +23,13 @@ export async function GET(peticion: Request, { params }: RouteContext<"/panel/co
   const busqueda = new URL(peticion.url).searchParams;
   const nombre = nombreArchivoPdf(c.numero, c.version);
   if (busqueda.get("para") === "compartir") {
-    return new Response(new Uint8Array(await leerArchivo(c.clave, "privado")), {
+    // Como flujo: el servidor no tiene el PDF entero en memoria. Si falta en el almacenamiento, no se encuentra
+    const flujo = await flujoArchivoPrivado(c.clave);
+    if (!flujo) notFound();
+    return new Response(flujo, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="${nombre}"`,
+        "Content-Disposition": disposicion(nombre),
         // Datos de un cliente: no se guardan en cachés intermedias
         "Cache-Control": "private, no-store",
       },

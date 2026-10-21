@@ -13,51 +13,59 @@ import { Button } from "@/componentes/ui/button";
 // tarda, lo rechazan. Entonces el archivo queda listo y el botón pide un segundo toque, que lo abre al instante.
 
 type Props = { cotizacionId: number; nombre: string; titulo: string };
+type Estado = "listo" | "bajando" | "compartiendo" | "falta-tocar";
 
-const puedeCompartir = (archivo: File) => typeof navigator !== "undefined" && !!navigator.canShare?.({ files: [archivo] });
+/** Si el navegador comparte PDF, sin bajar nada todavía: se pregunta con un archivo vacío del mismo tipo. */
+const comparteArchivos = (nombre: string) => !!navigator.canShare?.({ files: [new File([], nombre, { type: "application/pdf" })] });
+
+const NO_SE_PUDO = "No se pudo compartir el PDF. Usa «Descargar» y mándalo desde WhatsApp.";
 
 export function CompartirPdf({ cotizacionId, nombre, titulo }: Props) {
+  // El PDF bajado se guarda solo para el segundo toque; después de compartir se suelta
   const archivo = useRef<File | null>(null);
-  const [estado, setEstado] = useState<"listo" | "bajando" | "falta-tocar">("listo");
+  const [estado, setEstado] = useState<Estado>("listo");
   const ruta = `/panel/cotizaciones/${cotizacionId}/pdf`;
 
-  async function bajar(): Promise<File | null> {
-    if (archivo.current) return archivo.current;
-    const respuesta = await fetch(`${ruta}?para=compartir`);
-    // Con la sesión vencida, la ruta lleva a la pantalla de ingreso y llega una página, no el PDF
-    if (!respuesta.ok || respuesta.headers.get("content-type") !== "application/pdf") return null;
-    archivo.current = new File([await respuesta.blob()], nombre, { type: "application/pdf" });
-    return archivo.current;
-  }
-
   async function compartir() {
-    setEstado("bajando");
+    if (!comparteArchivos(nombre)) {
+      // Sin menú de compartir archivos: se descarga, y se manda desde el WhatsApp de la computadora
+      window.location.assign(`${ruta}?descargar=1`);
+      return;
+    }
+    const segundoToque = estado === "falta-tocar";
+    let bajadoAhora = false;
     try {
-      const pdf = await bajar();
-      if (!pdf) {
-        avisarResultado({ mensaje: "No se pudo traer el PDF. Recarga la página; si sigue, vuelve a ingresar." });
-        return setEstado("listo");
+      if (!archivo.current) {
+        setEstado("bajando");
+        const respuesta = await fetch(`${ruta}?para=compartir`);
+        // Con la sesión vencida, la ruta lleva a la pantalla de ingreso y llega una página, no el PDF
+        if (!respuesta.ok || respuesta.headers.get("content-type") !== "application/pdf") {
+          avisarResultado({ mensaje: respuesta.status === 404 ? "Ese PDF ya no está. Usa «Generar PDF»." : "No se pudo traer el PDF. Recarga la página; si sigue, vuelve a ingresar." });
+          return setEstado("listo");
+        }
+        archivo.current = new File([await respuesta.blob()], nombre, { type: "application/pdf" });
+        bajadoAhora = true;
       }
-      if (!puedeCompartir(pdf)) {
-        // Sin menú de compartir archivos: se descarga, y se manda desde el WhatsApp de la computadora
-        window.location.assign(`${ruta}?descargar=1`);
-        return setEstado("listo");
-      }
-      await navigator.share({ files: [pdf], title: titulo });
+      setEstado("compartiendo");
+      await navigator.share({ files: [archivo.current], title: titulo });
+      archivo.current = null;
       setEstado("listo");
     } catch (error) {
       const nombreError = error instanceof DOMException ? error.name : "";
       // Cerró el menú sin elegir: no es un error
       if (nombreError === "AbortError") return setEstado("listo");
-      // Pasó demasiado tiempo desde el toque mientras bajaba: el archivo ya está, falta tocar de nuevo
-      if (nombreError === "NotAllowedError" && archivo.current) return setEstado("falta-tocar");
-      avisarResultado({ mensaje: "No se pudo compartir el PDF. Usa «Descargar» y mándalo desde WhatsApp." });
+      // Pasó demasiado tiempo desde el toque mientras bajaba: el archivo ya está y un toque nuevo lo abre al instante.
+      // Solo una vez: si también falla al instante, el navegador no lo permite
+      if (nombreError === "NotAllowedError" && bajadoAhora && !segundoToque) return setEstado("falta-tocar");
+      archivo.current = null;
+      avisarResultado({ mensaje: NO_SE_PUDO });
       setEstado("listo");
     }
   }
 
+  const ocupado = estado === "bajando" || estado === "compartiendo";
   return (
-    <Button type="button" variant="outline" size="sm" disabled={estado === "bajando"} onClick={() => void compartir()}>
+    <Button type="button" variant="outline" size="sm" disabled={ocupado} onClick={() => void compartir()}>
       <Share2Icon />
       {estado === "bajando" ? "Preparando…" : estado === "falta-tocar" ? "Compartir ahora" : "Compartir"}
     </Button>

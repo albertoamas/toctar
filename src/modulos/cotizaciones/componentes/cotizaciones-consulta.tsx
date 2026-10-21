@@ -61,7 +61,7 @@ export function CotizacionesConsulta({ consultaId, estado, cotizaciones, esDueno
                         <FileTextIcon />
                         Ver PDF
                       </a>
-                      <CompartirPdf cotizacionId={c.id} nombre={nombreArchivoPdf(c.numero, c.version)} titulo={`Cotización ${c.numero}`} />
+                      <CompartirPdf cotizacionId={c.id} nombre={nombreArchivoPdf(c.numero, c.version)} titulo={`Cotización ${c.numero}${c.version > 1 ? `, versión ${c.version}` : ""}`} />
                       <a href={`/panel/cotizaciones/${c.id}/pdf?descargar=1`} className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
                         <DownloadIcon />
                         Descargar
