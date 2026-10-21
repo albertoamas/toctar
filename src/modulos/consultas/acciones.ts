@@ -12,6 +12,7 @@ import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/form
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { exigirModulo } from "@/lib/sesion";
 import { clienteConTelefono } from "@/modulos/clientes/consultas";
+import { fotosEnCotizaciones, tieneCotizacion } from "@/modulos/cotizaciones/consultas";
 import { esquemaCliente, esquemaVehiculo } from "@/modulos/clientes/esquemas";
 import {
   camposConPrefijo,
@@ -300,12 +301,13 @@ export async function registrarVideo(datos: { consultaId: number; clave: string;
   return { ok: true, mensaje: "Video agregado." };
 }
 
-/** Quita una foto o un video de la consulta y del almacenamiento. Desde HU-25, no si la usa una cotización (D-6). */
+/** Quita una foto o un video de la consulta y del almacenamiento; no si la usa una cotización (D-6: su PDF la muestra). */
 export async function quitarArchivoConsulta(datos: { consultaId: number; archivoId: number }): Promise<EstadoFormulario> {
   await exigirModulo("consultas");
   const entrada = esquemaArchivoConsulta.safeParse(datos);
   if (!entrada.success) return { mensaje: PEDIDO_ILEGIBLE };
   const { consultaId, archivoId } = entrada.data;
+  if ((await fotosEnCotizaciones([archivoId])).size > 0) return { mensaje: "Esa foto está en una cotización: no se quita." };
 
   const [quitado] = await db
     .delete(consultaArchivo)
@@ -350,8 +352,8 @@ export async function cambiarEstadoConsulta(_previo: EstadoFormulario, datos: Fo
 
   const [actual] = await db.select({ estado: consulta.estado, clienteId: consulta.clienteId }).from(consulta).where(eq(consulta.id, d.id));
   if (!actual) return { mensaje: CONSULTA_INEXISTENTE };
-  // HU-25: con cotización, reabrir vuelve a "cotizado"
-  const destino = d.accion === "perder" ? "perdido" : estadoAlReabrir(false);
+  // Con cotización, reabrir vuelve a "cotizado"
+  const destino = d.accion === "perder" ? "perdido" : estadoAlReabrir(await tieneCotizacion(d.id));
   if (!transicionPermitida(actual.estado, destino)) return { mensaje: `Esta consulta ya está ${NOMBRE_ESTADO[actual.estado].toLowerCase()}. Recarga la página.` };
 
   const [cambiada] = await db
