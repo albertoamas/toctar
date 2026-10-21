@@ -74,6 +74,24 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | C1 Catálogo y clientes | `etapas/C1-catalogo-clientes.md` | ✅ Programada (20/10, PR #49 a #53). Falta cargar los precios reales |
 | B6 y C2 a C5 | Una por etapa | Al empezar cada una |
 
+## Cómo se trabaja cada historia
+
+Una rama `hu-XX-…` por historia, desde `develop`, con commits chicos por tipo (`CLAUDE.md`, "Control de versiones"). En cada una, además de programar:
+
+1. **Documentación vigente.** Antes de usar una librería nueva, o una API que pudo cambiar, se lee su documentación actual con `context7`; para Next.js, `node_modules/next/dist/docs/`. Así no se programa sobre una versión vieja.
+2. **Pantallas.** Una pantalla nueva o rediseñada se diseña con la skill `frontend-design`, con la identidad del Design System y el estándar del panel (44 px con pantalla táctil, regla de botones). Se revisan capturas a 360 y 1280 px y nada se sale de la pantalla.
+3. **Documentos PDF** (cotización en C2; orden y comprobantes en C4).
+   - Su diseño se trabaja con `frontend-design`. La app los genera con `@react-pdf/renderer`.
+   - El archivo generado se revisa con la skill `pdf`: texto, tamaño A4, fuentes incrustadas, imágenes y cada página convertida a imagen para mirarla como una captura.
+   - Además se revisa a mano: impreso y en el celular.
+4. **Verificación.** lint, typecheck, `npm test`, `npm run test:e2e` completo y knip sin hallazgos nuevos.
+5. **Revisión antes del PR.**
+   - `code-review` sobre el cambio de la rama, siempre.
+   - `security-review` cuando la historia toca permisos, sesiones, datos de clientes, archivos, montos o acciones que reciben datos sueltos.
+   - La revisión automática del plugin `security-guidance` corre sola al hacer commit y sus avisos se atienden igual.
+   - Cada hallazgo se corrige, o el PR explica por qué no aplica.
+6. **Pull Request** hacia `develop`, con lo que hace, lo que queda pendiente y la verificación. Se une con squash cuando el desarrollador lo aprueba.
+
 ## Resumen de fases
 
 | Fase | Qué cierra | Etapas |
