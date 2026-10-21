@@ -50,8 +50,11 @@ async function consultaCotizada(page: Page, info: TestInfo, n: number): Promise<
 
 type Compartido = { nombre: string; tipo: string; tamano: number; inicio: string; titulo: string };
 
-/** Un navigator.share que anota lo recibido. `rechazarPrimero`: como Safari cuando pasó mucho desde el toque. */
-async function simularCompartir(page: Page, rechazarPrimero = false) {
+/**
+ * Un navigator.share que anota lo recibido. `rechazar`: "primero", como Safari cuando pasó mucho desde el toque;
+ * "siempre", como un navegador que no lo permite.
+ */
+async function simularCompartir(page: Page, rechazar: "nunca" | "primero" | "siempre" = "nunca") {
   await page.addInitScript((rechazar) => {
     let intentos = 0;
     const w = window as unknown as { __compartido?: unknown };
@@ -60,13 +63,13 @@ async function simularCompartir(page: Page, rechazarPrimero = false) {
       configurable: true,
       value: async (d: ShareData) => {
         intentos++;
-        if (rechazar && intentos === 1) throw new DOMException("Requiere un toque", "NotAllowedError");
+        if (rechazar === "siempre" || (rechazar === "primero" && intentos === 1)) throw new DOMException("Requiere un toque", "NotAllowedError");
         const archivo = d.files![0];
         const inicio = new TextDecoder().decode((await archivo.arrayBuffer()).slice(0, 5));
         w.__compartido = { nombre: archivo.name, tipo: archivo.type, tamano: archivo.size, inicio, titulo: d.title };
       },
     });
-  }, rechazarPrimero);
+  }, rechazar);
 }
 
 const compartido = (page: Page) => page.evaluate(() => (window as unknown as { __compartido?: Compartido }).__compartido);
@@ -87,12 +90,22 @@ test("con el menú del teléfono, comparte el PDF con su nombre", async ({ page 
 });
 
 test("si el teléfono pide otro toque, el segundo lo comparte", async ({ page }, info) => {
-  await simularCompartir(page, true);
+  await simularCompartir(page, "primero");
   await ingresarComoDueno(page);
   const numero = await consultaCotizada(page, info, 2);
   await page.getByRole("button", { name: "Compartir" }).click();
   await page.getByRole("button", { name: "Compartir ahora" }).click();
   await expect.poll(() => compartido(page)).toMatchObject({ nombre: `Cotizacion-${numero}.pdf`, inicio: "%PDF-" });
+});
+
+test("si el teléfono no lo permite ni al segundo toque, avisa y no queda trabado", async ({ page }, info) => {
+  await simularCompartir(page, "siempre");
+  await ingresarComoDueno(page);
+  await consultaCotizada(page, info, 4);
+  await page.getByRole("button", { name: "Compartir" }).click();
+  await page.getByRole("button", { name: "Compartir ahora" }).click();
+  await expect(page.getByText("No se pudo compartir el PDF. Usa «Descargar» y mándalo desde WhatsApp.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Compartir", exact: true })).toBeEnabled();
 });
 
 test("sin menú de compartir archivos, lo descarga", async ({ page }, info) => {
