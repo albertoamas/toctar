@@ -1,5 +1,5 @@
 import "server-only";
-import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, NotFound, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, NoSuchKey, NotFound, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // Fotos y PDF en almacenamiento compatible con S3: Cloudflare R2 en pruebas y producción,
@@ -82,6 +82,14 @@ export async function datosArchivoPrivado(clave: string): Promise<{ tipo: string
 }
 
 /**
+ * Encabezado Content-Disposition: abrir o descargar, con el nombre del archivo. El nombre, solo con letras sin tildes,
+ * números, punto, guion y guion bajo: nada que rompa el encabezado.
+ */
+export function disposicion(nombre: string, descargar = false): string {
+  return `${descargar ? "attachment" : "inline"}; filename="${nombre.replace(/[^A-Za-z0-9._-]/g, "_")}"`;
+}
+
+/**
  * Enlace firmado y temporal a un archivo del bucket privado. Solo se genera después de verificar permisos.
  * `nombre`: con el que se guarda (un PDF); `descargar`: lo baja en vez de abrirlo en una pestaña.
  */
@@ -89,10 +97,7 @@ export async function urlArchivoPrivado(clave: string, opciones: { nombre?: stri
   const comando = new GetObjectCommand({
     Bucket: bucket("privado"),
     Key: clave,
-    // El nombre, solo con letras sin tildes, números, punto, guion y guion bajo: nada que rompa el encabezado
-    ResponseContentDisposition: opciones.nombre
-      ? `${opciones.descargar ? "attachment" : "inline"}; filename="${opciones.nombre.replace(/[^A-Za-z0-9._-]/g, "_")}"`
-      : undefined,
+    ResponseContentDisposition: opciones.nombre ? disposicion(opciones.nombre, opciones.descargar) : undefined,
   });
   return getSignedUrl(obtenerCliente(), comando, { expiresIn: SEGUNDOS_ENLACE_PRIVADO });
 }
@@ -102,4 +107,15 @@ export async function leerArchivo(clave: string, visibilidad: Visibilidad): Prom
   const r = await obtenerCliente().send(new GetObjectCommand({ Bucket: bucket(visibilidad), Key: clave }));
   if (!r.Body) throw new Error(`El archivo ${clave} está vacío.`);
   return Buffer.from(await r.Body.transformToByteArray());
+}
+
+/** El contenido de un archivo privado como flujo, para entregarlo sin tenerlo entero en memoria; null si no está. */
+export async function flujoArchivoPrivado(clave: string): Promise<ReadableStream | null> {
+  try {
+    const r = await obtenerCliente().send(new GetObjectCommand({ Bucket: bucket("privado"), Key: clave }));
+    return r.Body ? r.Body.transformToWebStream() : null;
+  } catch (error) {
+    if (error instanceof NoSuchKey) return null;
+    throw error;
+  }
 }
