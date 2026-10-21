@@ -61,6 +61,12 @@ export const PARAMETROS = {
     unidad: null,
     esquema: texto("la garantía"),
   },
+  formas_pago_cotizacion: {
+    etiqueta: "Formas de pago",
+    ayuda: "Cómo se puede pagar el adelanto y el saldo.",
+    unidad: null,
+    esquema: texto("las formas de pago"),
+  },
 } as const;
 
 export type ClaveParametro = keyof typeof PARAMETROS;

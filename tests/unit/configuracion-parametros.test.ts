@@ -13,6 +13,7 @@ const validos = {
   dias_consulta_fria: "7",
   condiciones_cotizacion: "Precios en bolivianos.",
   garantia_cotizacion: "Cubre el trabajo si se siguen los cuidados.",
+  formas_pago_cotizacion: "Efectivo o QR.",
 };
 
 describe("parámetros: ninguno vacío ni negativo (HU-05)", () => {
@@ -48,6 +49,7 @@ describe("parámetros: ninguno vacío ni negativo (HU-05)", () => {
       { clave: "dias_consulta_fria", valor: 5 },
       { clave: "condiciones_cotizacion", valor: "Condiciones" },
       { clave: "garantia_cotizacion", valor: "Garantía" },
+      { clave: "formas_pago_cotizacion", valor: "QR" },
     ];
     expect(leerParametros(filas)).toEqual({
       adelanto_sugerido: 250,
@@ -56,6 +58,7 @@ describe("parámetros: ninguno vacío ni negativo (HU-05)", () => {
       dias_consulta_fria: 5,
       condiciones_cotizacion: "Condiciones",
       garantia_cotizacion: "Garantía",
+      formas_pago_cotizacion: "QR",
     });
   });
 
