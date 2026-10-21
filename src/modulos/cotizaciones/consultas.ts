@@ -9,13 +9,15 @@ import {
   cotizacion,
   cotizacionFoto,
   cotizacionLinea,
+  negocio,
   servicio,
+  sucursal,
   tamanoVehiculo,
   variante,
   vehiculo,
 } from "@/db/esquema";
 import type { Canal, EstadoConsulta } from "@/db/esquema/consultas";
-import type { EstadoCotizacion } from "@/db/esquema/cotizaciones";
+import type { DatosDocumento, EstadoCotizacion } from "@/db/esquema/cotizaciones";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { preciosVigentes } from "@/modulos/catalogo/consultas";
 import type { Monto } from "@/modulos/catalogo/reglas";
@@ -215,4 +217,41 @@ export async function cotizacionesDeConsulta(consultaId: number, conMontos: bool
 export async function tieneCotizacion(consultaId: number): Promise<boolean> {
   const [c] = await db.select({ id: cotizacion.id }).from(cotizacion).where(eq(cotizacion.consultaId, consultaId)).limit(1);
   return !!c;
+}
+
+/**
+ * Cliente, vehículo y negocio como están al cotizar: se copian en la cotización (D-4) y de ahí sale su PDF, aunque se
+ * genere después o los datos cambien (RN-02).
+ */
+export async function datosDocumento(consultaId: number): Promise<DatosDocumento> {
+  const [[c], [n], [s]] = await Promise.all([
+    db
+      .select({
+        nombre: cliente.nombre,
+        telefono: cliente.telefono,
+        placa: vehiculo.placa,
+        marca: vehiculo.marca,
+        modelo: vehiculo.modelo,
+        color: vehiculo.color,
+        tamano: tamanoVehiculo.nombre,
+      })
+      .from(consulta)
+      .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
+      .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
+      .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
+      .where(eq(consulta.id, consultaId)),
+    db.select({ nombre: negocio.nombre, razonSocial: negocio.razonSocial, nit: negocio.nit }).from(negocio).where(eq(negocio.id, 1)),
+    db.select({ whatsapp: sucursal.telefonoWhatsapp, direccion: sucursal.direccion }).from(sucursal).where(eq(sucursal.activo, true)).orderBy(asc(sucursal.id)).limit(1),
+  ]);
+  if (!c) throw new Error(`No existe la consulta ${consultaId}.`);
+  if (!n) throw new Error("Faltan los datos del negocio: falta aplicar la migración 0003_datos_negocio.");
+  return {
+    cliente: { nombre: c.nombre, telefono: c.telefono },
+    vehiculo: {
+      placa: c.placa,
+      descripcion: [[c.marca, c.modelo].filter(Boolean).join(" "), c.color].filter(Boolean).join(", ") || null,
+      tamano: c.tamano,
+    },
+    negocio: { ...n, whatsapp: s?.whatsapp ?? null, direccion: s?.direccion ?? null },
+  };
 }

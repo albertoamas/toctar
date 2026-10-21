@@ -22,6 +22,8 @@ Font.registerHyphenationCallback((palabra) => [palabra]);
 const MM = 72 / 25.4;
 /** Alto de la hoja A4 en puntos. */
 const ALTO_A4 = 841.89;
+// Los colores de la marca (Design System; en el código web, los tokens de src/app/globals.css). El PDF no lee CSS:
+// van como valores, en este único lugar
 const NEGRO = "#000000";
 const ROJO = "#E30613";
 const SUAVE = "#5C5C5C";

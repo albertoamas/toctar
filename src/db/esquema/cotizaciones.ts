@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, date, index, integer, numeric, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, check, date, index, integer, jsonb, numeric, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { usuario } from "./acceso";
 import { archivo, tamanoVehiculo } from "./configuracion";
 import { consulta } from "./consultas";
@@ -11,6 +11,12 @@ import { variante } from "./sitio";
 
 const momento = (nombre: string) => timestamp(nombre, { withTimezone: true });
 const monto = (nombre: string) => numeric(nombre, { precision: 10, scale: 2 });
+
+export type DatosDocumento = {
+  cliente: { nombre: string; telefono: string };
+  vehiculo: { placa: string; descripcion: string | null; tamano: string };
+  negocio: { nombre: string; razonSocial: string | null; nit: string | null; whatsapp: string | null; direccion: string | null };
+};
 
 export const ESTADOS_COTIZACION = ["enviada", "reemplazada", "aceptada"] as const;
 export type EstadoCotizacion = (typeof ESTADOS_COTIZACION)[number];
@@ -35,6 +41,11 @@ export const cotizacion = pgTable(
     condiciones: text("condiciones").notNull(),
     garantia: text("garantia").notNull(),
     formasPago: text("formas_pago").notNull(),
+    /**
+     * Cliente, vehículo y negocio como estaban al cotizar (D-4): el PDF sale de acá, aunque se genere después
+     * ("Generar PDF") o los datos cambien. Así un PDF de esta versión siempre dice lo mismo (RN-02).
+     */
+    datosDocumento: jsonb("datos_documento").$type<DatosDocumento>().notNull(),
     estado: text("estado").$type<EstadoCotizacion>().default("enviada").notNull(),
     /** El PDF guardado (HU-26). Vacío solo mientras se genera. */
     pdfArchivoId: integer("pdf_archivo_id").references(() => archivo.id),

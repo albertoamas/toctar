@@ -64,7 +64,8 @@ export function CotizacionesConsulta({ consultaId, estado, cotizaciones, esDueno
                       </a>
                     </>
                   ) : (
-                    c.estado === "enviada" && <GenerarPdf cotizacionId={c.id} />
+                    // Cualquier versión sin PDF lo puede generar: sale de lo copiado al cotizarla
+                    <GenerarPdf cotizacionId={c.id} />
                   )}
                 </span>
               )}

@@ -89,7 +89,10 @@ export async function urlArchivoPrivado(clave: string, opciones: { nombre?: stri
   const comando = new GetObjectCommand({
     Bucket: bucket("privado"),
     Key: clave,
-    ResponseContentDisposition: opciones.nombre ? `${opciones.descargar ? "attachment" : "inline"}; filename="${opciones.nombre}"` : undefined,
+    // El nombre, solo con letras sin tildes, números, punto, guion y guion bajo: nada que rompa el encabezado
+    ResponseContentDisposition: opciones.nombre
+      ? `${opciones.descargar ? "attachment" : "inline"}; filename="${opciones.nombre.replace(/[^A-Za-z0-9._-]/g, "_")}"`
+      : undefined,
   });
   return getSignedUrl(obtenerCliente(), comando, { expiresIn: SEGUNDOS_ENLACE_PRIVADO });
 }

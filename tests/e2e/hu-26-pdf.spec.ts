@@ -102,18 +102,23 @@ test("si una cotización quedó sin PDF, la consulta lo genera", async ({ page }
   await page.getByLabel("Servicio 1", { exact: true }).selectOption({ label: servicio });
   await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
   await expect(page).toHaveURL(/\?cotizada=\d+$/);
-  // Como si hubiera fallado al guardar
+  // Como si hubiera fallado al guardar; y después le cambian el nombre al cliente
   await consultar("update cotizacion set pdf_archivo_id = null where consulta_id = $1", [consultaId]);
+  await consultar("update cliente set nombre = nombre || ' (editado)' from consulta q where q.cliente_id = cliente.id and q.id = $1", [consultaId]);
   await page.goto(`/panel/consultas/${consultaId}`);
   await expect(page.getByRole("link", { name: "Ver PDF" })).toHaveCount(0);
   await page.getByRole("button", { name: "Generar PDF" }).click();
   await expect(page.getByText("PDF listo.")).toBeVisible();
   await expect(page.getByRole("link", { name: "Ver PDF" })).toBeVisible();
+  // El PDF sale de lo copiado al cotizar (D-4): el nombre editado después no entra
+  const [{ nombre }] = await consultar<{ nombre: string }>("select datos_documento->'cliente'->>'nombre' as nombre from cotizacion where consulta_id = $1", [consultaId]);
+  expect(nombre).toBe(`Cliente PDF 2 ${sufijo(info)}`);
 });
 
 test("RN-01: el encargado y el técnico no abren el PDF", async ({ page }, info) => {
   const s = sufijo(info).toLowerCase();
-  const [c] = await consultar<{ id: number }>("select id from cotizacion where pdf_archivo_id is not null order by id desc limit 1");
+  // La ruta pide el permiso antes de buscar la cotización: no importa cuál sea
+  const c = { id: 1 };
   await crearUsuario({ usuario: `enc-hu26-${s}`, nombre: "Encargado", contrasena: "encargado-123", rol: "encargado", permisos: ["consultas", "clientes"] });
   await ingresar(page, `enc-hu26-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);

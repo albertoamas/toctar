@@ -6,18 +6,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { asc, eq } from "drizzle-orm";
 import sharp, { type SharpOptions } from "sharp";
 import { db } from "@/db";
-import {
-  archivo,
-  cliente,
-  consulta,
-  cotizacion,
-  cotizacionFoto,
-  cotizacionLinea,
-  negocio,
-  sucursal,
-  tamanoVehiculo,
-  vehiculo,
-} from "@/db/esquema";
+import { archivo, cotizacion, cotizacionFoto, cotizacionLinea, negocio } from "@/db/esquema";
 import { borrarArchivo, leerArchivo, subirArchivo } from "@/lib/almacenamiento";
 import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { formatearWhatsApp } from "@/lib/whatsapp";
@@ -48,41 +37,30 @@ async function comoJpeg(entrada: Buffer): Promise<Imagen> {
   return { data, format: "jpg", ancho: info.width, alto: info.height };
 }
 
-/** Todo lo que lleva el PDF, leído de la base. Lo de la cotización ya está copiado (D-4); el resto, como está hoy. */
+/** Todo lo que lleva el PDF: lo de la cotización y la copia de cliente, vehículo y negocio de cuando se cotizó (D-4). */
 async function datosDelPdf(cotizacionId: number): Promise<DatosPdf> {
-  const [c] = await db
-    .select({
-      numero: cotizacion.numero,
-      version: cotizacion.version,
-      createdAt: cotizacion.createdAt,
-      validaHasta: cotizacion.validaHasta,
-      subtotal: cotizacion.subtotal,
-      descuento: cotizacion.descuento,
-      total: cotizacion.total,
-      adelanto: cotizacion.adelantoSugerido,
-      esEstimado: cotizacion.esEstimado,
-      formasPago: cotizacion.formasPago,
-      condiciones: cotizacion.condiciones,
-      garantia: cotizacion.garantia,
-      cliente: cliente.nombre,
-      telefono: cliente.telefono,
-      placa: vehiculo.placa,
-      marca: vehiculo.marca,
-      modelo: vehiculo.modelo,
-      color: vehiculo.color,
-    })
-    .from(cotizacion)
-    .innerJoin(consulta, eq(cotizacion.consultaId, consulta.id))
-    .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
-    .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
-    .where(eq(cotizacion.id, cotizacionId));
-  if (!c) throw new Error(`No existe la cotización ${cotizacionId}.`);
-
-  const [lineas, fotos, [n], [s]] = await Promise.all([
+  const [[c], lineas, fotos, [logoNegocio]] = await Promise.all([
     db
-      .select({ descripcion: cotizacionLinea.descripcion, precio: cotizacionLinea.precio, tamano: tamanoVehiculo.nombre })
+      .select({
+        numero: cotizacion.numero,
+        version: cotizacion.version,
+        createdAt: cotizacion.createdAt,
+        validaHasta: cotizacion.validaHasta,
+        subtotal: cotizacion.subtotal,
+        descuento: cotizacion.descuento,
+        total: cotizacion.total,
+        adelanto: cotizacion.adelantoSugerido,
+        esEstimado: cotizacion.esEstimado,
+        formasPago: cotizacion.formasPago,
+        condiciones: cotizacion.condiciones,
+        garantia: cotizacion.garantia,
+        documento: cotizacion.datosDocumento,
+      })
+      .from(cotizacion)
+      .where(eq(cotizacion.id, cotizacionId)),
+    db
+      .select({ descripcion: cotizacionLinea.descripcion, precio: cotizacionLinea.precio })
       .from(cotizacionLinea)
-      .innerJoin(tamanoVehiculo, eq(cotizacionLinea.tamanoId, tamanoVehiculo.id))
       .where(eq(cotizacionLinea.cotizacionId, cotizacionId))
       .orderBy(asc(cotizacionLinea.orden)),
     db
@@ -91,40 +69,34 @@ async function datosDelPdf(cotizacionId: number): Promise<DatosPdf> {
       .innerJoin(archivo, eq(cotizacionFoto.archivoId, archivo.id))
       .where(eq(cotizacionFoto.cotizacionId, cotizacionId))
       .orderBy(asc(cotizacionFoto.orden)),
-    db
-      .select({ nombre: negocio.nombre, razonSocial: negocio.razonSocial, nit: negocio.nit, logo: archivo.clave })
-      .from(negocio)
-      .leftJoin(archivo, eq(negocio.logoArchivoId, archivo.id))
-      .where(eq(negocio.id, 1)),
-    db.select({ whatsapp: sucursal.telefonoWhatsapp, direccion: sucursal.direccion }).from(sucursal).where(eq(sucursal.activo, true)).orderBy(asc(sucursal.id)).limit(1),
+    // El logo es una imagen: no se copia. Es el que está cargado hoy en Configuración
+    db.select({ clave: archivo.clave, privado: archivo.privado }).from(negocio).innerJoin(archivo, eq(negocio.logoArchivoId, archivo.id)).where(eq(negocio.id, 1)),
   ]);
+  if (!c) throw new Error(`No existe la cotización ${cotizacionId}.`);
+  const { cliente, vehiculo, negocio: datosNegocio } = c.documento;
 
+  const visibilidad = (privado: boolean) => (privado ? "privado" : "publico");
   const [logo, imagenes] = await Promise.all([
-    n?.logo ? leerArchivo(n.logo, "publico").then((b) => comoPng(b)) : readFile(LOGO_MARCA).then((b) => comoPng(b, { density: 300 })),
-    Promise.all(fotos.map(async (f) => comoJpeg(await leerArchivo(f.clave, f.privado ? "privado" : "publico")))),
+    logoNegocio ? leerArchivo(logoNegocio.clave, visibilidad(logoNegocio.privado)).then((b) => comoPng(b)) : readFile(LOGO_MARCA).then((b) => comoPng(b, { density: 300 })),
+    Promise.all(fotos.map(async (f) => comoJpeg(await leerArchivo(f.clave, visibilidad(f.privado))))),
   ]);
 
   return {
     negocio: {
-      nombre: n?.nombre ?? "TocTar Detailing",
-      razonSocial: n?.razonSocial ?? null,
-      nit: n?.nit ?? null,
-      whatsapp: s?.whatsapp ? formatearWhatsApp(s.whatsapp) : null,
-      direccion: s?.direccion ?? null,
+      nombre: datosNegocio.nombre,
+      razonSocial: datosNegocio.razonSocial,
+      nit: datosNegocio.nit,
+      whatsapp: datosNegocio.whatsapp ? formatearWhatsApp(datosNegocio.whatsapp) : null,
+      direccion: datosNegocio.direccion,
       logo,
     },
     numero: c.numero,
     version: c.version,
     fecha: formatearFecha(fechaEnBolivia(c.createdAt)),
     validaHasta: formatearFecha(c.validaHasta),
-    cliente: { nombre: c.cliente, whatsapp: formatearWhatsApp(c.telefono) },
-    vehiculo: {
-      placa: c.placa,
-      descripcion: [[c.marca, c.modelo].filter(Boolean).join(" "), c.color].filter(Boolean).join(", ") || null,
-      // El tamaño con que se cotizó (D-4), no el que tenga hoy el vehículo
-      tamano: lineas[0]?.tamano ?? "",
-    },
-    lineas: lineas.map((l) => ({ descripcion: l.descripcion, precio: l.precio })),
+    cliente: { nombre: cliente.nombre, whatsapp: formatearWhatsApp(cliente.telefono) },
+    vehiculo,
+    lineas,
     subtotal: c.subtotal,
     descuento: c.descuento,
     total: c.total,
@@ -138,16 +110,15 @@ async function datosDelPdf(cotizacionId: number): Promise<DatosPdf> {
 }
 
 /**
- * Genera el PDF y lo deja en la cotización, si todavía no tiene. Devuelve false si ya tenía uno (otro pedido lo generó
- * primero): el nuevo se borra y queda el primero, que es el que pudo haberse enviado.
+ * Genera el PDF y lo deja en la cotización, si todavía no tiene. Si otro pedido lo generó primero, queda ese (el que
+ * pudo haberse enviado) y el nuevo se borra.
  */
-export async function generarPdf(cotizacionId: number, autorId: number): Promise<boolean> {
-  const [c] = await db.select({ numero: cotizacion.numero, version: cotizacion.version }).from(cotizacion).where(eq(cotizacion.id, cotizacionId));
-  if (!c) throw new Error(`No existe la cotización ${cotizacionId}.`);
-  const contenido = await renderToBuffer(PdfCotizacion({ d: await datosDelPdf(cotizacionId) }));
+export async function generarPdf(cotizacionId: number, autorId: number): Promise<void> {
+  const d = await datosDelPdf(cotizacionId);
+  const contenido = await renderToBuffer(PdfCotizacion({ d }));
 
   // La clave nunca se reutiliza: el PDF enviado no se pisa (RN-02)
-  const clave = await subirArchivo(`cotizaciones/${c.numero}-v${c.version}-${randomUUID()}.pdf`, contenido, "application/pdf", "privado");
+  const clave = await subirArchivo(`cotizaciones/${d.numero}-v${d.version}-${randomUUID()}.pdf`, contenido, "application/pdf", "privado");
   let asignado: boolean;
   try {
     asignado = await db.transaction(async (tx) => {
@@ -166,6 +137,6 @@ export async function generarPdf(cotizacionId: number, autorId: number): Promise
     await borrarArchivo(clave, "privado").catch(() => undefined);
     throw error;
   }
-  if (!asignado) await borrarArchivo(clave, "privado");
-  return asignado;
+  // Perdió la carrera: la cotización ya tiene su PDF. Si el borrado del sobrante falla, no es un error para quien pidió
+  if (!asignado) await borrarArchivo(clave, "privado").catch((error) => console.error(`No se pudo borrar el PDF sobrante ${clave}:`, error));
 }

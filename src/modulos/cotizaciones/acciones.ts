@@ -25,6 +25,7 @@ import type { Monto } from "@/modulos/catalogo/reglas";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { NOMBRE_ESTADO, transicionPermitida } from "@/modulos/consultas/reglas";
 import { entradaCotizacion, esquemaCotizacion } from "./esquemas";
+import { datosDocumento } from "./consultas";
 import { generarPdf } from "./pdf/generar";
 import { anioCotizacion, calcularTotales, claveCorrelativo, descripcionLinea, numeroCotizacion, precioSugerido } from "./reglas";
 
@@ -62,7 +63,7 @@ export async function guardarCotizacion(_previo: EstadoFormulario, datos: FormDa
 
   // Cada línea: una variante activa de un servicio activo; su precio sugerido es el vigente para ese tamaño
   const varianteIds = [...new Set(d.lineas.map((l) => l.varianteId))];
-  const [opciones, vigentes, fotosValidas, parametros] = await Promise.all([
+  const [opciones, vigentes, fotosValidas, parametros, documento] = await Promise.all([
     db
       .select({ id: variante.id, servicio: servicio.nombre, variante: variante.nombre })
       .from(variante)
@@ -77,6 +78,7 @@ export async function guardarCotizacion(_previo: EstadoFormulario, datos: FormDa
           .innerJoin(archivo, eq(consultaArchivo.archivoId, archivo.id))
           .where(and(eq(consultaArchivo.consultaId, d.consultaId), inArray(consultaArchivo.archivoId, d.fotos), like(archivo.tipoMime, "image/%"))),
     obtenerParametros(),
+    datosDocumento(d.consultaId),
   ]);
   const errores: Record<string, string> = {};
   d.lineas.forEach((l, i) => {
@@ -156,6 +158,7 @@ export async function guardarCotizacion(_previo: EstadoFormulario, datos: FormDa
         condiciones: parametros.condiciones_cotizacion,
         garantia: parametros.garantia_cotizacion,
         formasPago: parametros.formas_pago_cotizacion,
+        datosDocumento: documento,
         createdBy: autorId,
       })
       .returning({ id: cotizacion.id });

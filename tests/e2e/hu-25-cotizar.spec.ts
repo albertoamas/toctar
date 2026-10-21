@@ -207,8 +207,8 @@ test("RN-01: el encargado ve que está cotizada sin montos y no entra a cotizar;
   const s = sufijo(info).toLowerCase();
   const id = await crearConsulta(info, 4);
   await consultar(
-    `insert into cotizacion (consulta_id, numero, version, es_estimado, subtotal, descuento, total, adelanto_sugerido, valida_hasta, condiciones, garantia, formas_pago, created_by)
-     select $1, '2026-9' || $2, 1, false, 300, 0, 300, 100, current_date + 15, 'c', 'g', 'f', id from usuario where nombre_usuario = 'dueno'`,
+    `insert into cotizacion (consulta_id, numero, version, es_estimado, subtotal, descuento, total, adelanto_sugerido, valida_hasta, condiciones, garantia, formas_pago, datos_documento, created_by)
+     select $1, '2026-9' || $2, 1, false, 300, 0, 300, 100, current_date + 15, 'c', 'g', 'f', '{}'::jsonb, id from usuario where nombre_usuario = 'dueno'`,
     [id, info.project.name === "celular" ? "01" : "02"],
   );
   await crearUsuario({ usuario: `enc-hu25-${s}`, nombre: "Encargado con todo", contrasena: "encargado-123", rol: "encargado", permisos: ["consultas", "clientes", "reclamos", "sitio"] });
