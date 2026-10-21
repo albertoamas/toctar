@@ -30,8 +30,8 @@ const textoSugerencia = (s: Sugerencia) =>
       ? "Según evaluación: escribe el precio"
       : "Sin precio en el catálogo para este tamaño: escribe el precio";
 
-/** "1.250,50 Bs" para los totales. */
-const bs = (monto: string) => `${Number(monto).toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs`;
+/** "1250,50 Bs": el mismo formato que en la consulta y el catálogo (y no depende del idioma del servidor o del teléfono). */
+const bs = (monto: string) => `${mostrarMonto(monto)} Bs`;
 
 /** Agrupa las opciones por servicio para el selector (un servicio con varias variantes). */
 function porServicio(opciones: OpcionServicio[]) {
@@ -45,14 +45,13 @@ export function FormularioCotizacion({ datos, hoy }: Props) {
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
   const e = estado.errores ?? {};
-  const v = estado.valores ?? {};
 
   // Todo controlado: React reinicia el formulario al terminar la acción y así nada se pierde tras un error
   const mostrar = (monto: string) => (monto === "0.00" ? "" : mostrarMonto(monto));
   const [lineas, setLineas] = useState<Linea[]>(datos.inicial.lineas.map((l) => ({ varianteId: l.varianteId, precio: mostrarMonto(l.precio) })));
-  const [descuento, setDescuento] = useState(v.descuento ?? mostrar(datos.inicial.descuento));
-  const [adelanto, setAdelanto] = useState(v.adelanto ?? mostrarMonto(datos.inicial.adelanto));
-  const [validaHasta, setValidaHasta] = useState(v.validaHasta ?? datos.inicial.validaHasta);
+  const [descuento, setDescuento] = useState(mostrar(datos.inicial.descuento));
+  const [adelanto, setAdelanto] = useState(mostrarMonto(datos.inicial.adelanto));
+  const [validaHasta, setValidaHasta] = useState(datos.inicial.validaHasta);
   const [esEstimado, setEsEstimado] = useState(datos.inicial.esEstimado);
   const [fotos, setFotos] = useState<number[]>(datos.inicial.fotos);
 

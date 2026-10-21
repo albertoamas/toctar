@@ -1,5 +1,5 @@
 import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
-import type { Monto } from "@/modulos/catalogo/reglas";
+import { leerMonto, type Monto } from "@/modulos/catalogo/reglas";
 
 // Reglas puras de las cotizaciones (C2, HU-25). Sin base ni servidor: las prueba tests/unit/cotizaciones.test.ts.
 // Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md §3 y §6.
@@ -58,7 +58,5 @@ export const descripcionLinea = (servicio: string, variante: string) => (variant
 export function leerMontoOCero(texto: string): string | undefined {
   const limpio = texto.trim();
   if (limpio === "" || /^0+([.,]0{1,2})?$/.test(limpio)) return "0.00";
-  if (!/^\d+([.,]\d{1,2})?$/.test(limpio)) return undefined;
-  const valor = Number(limpio.replace(",", "."));
-  return valor > 100_000 ? undefined : valor.toFixed(2);
+  return leerMonto(limpio) ?? undefined;
 }
