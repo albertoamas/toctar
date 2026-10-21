@@ -7,4 +7,5 @@ export * from "./catalogo";
 export * from "./clientes";
 export * from "./consultas";
 export * from "./cotizaciones";
+export * from "./trabajos";
 export * from "./reclamos";

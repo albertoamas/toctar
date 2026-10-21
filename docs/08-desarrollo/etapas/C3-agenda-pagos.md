@@ -72,6 +72,7 @@ Migraciones por historia: `0026_trabajos` (HU-30: `btree_gist`, `trabajo`, `trab
 | `fecha_fin` | `date` | no | Entrega aproximada. CHECK `fecha_fin >= fecha_inicio` |
 | `hora_ingreso` | `text` | sí | Nota, hasta 40 ("a las 9", "en la tarde") (S-3) |
 | `tecnico_id` | `integer` | sí | FK `usuario` con rol técnico (se valida en la acción) |
+| `descuento` | `numeric(10,2)` | no | Copiado de la cotización (D-4); 0 en una reserva directa. CHECK `>= 0` |
 | `estado` | `text` | no | CHECK `agendado`, `recibido`, `en_proceso`, `listo`, `entregado`, `cancelado`. En C3: `agendado` o `cancelado` |
 | `nota` | `text` | sí | Hasta 1000 |
 | `motivo_cancelacion` | `text` | sí | Hasta 300. CHECK: obligatorio si `cancelado` |
@@ -94,7 +95,7 @@ Migraciones por historia: `0026_trabajos` (HU-30: `btree_gist`, `trabajo`, `trab
 | `es_adicional` | `boolean` | no | Por defecto `false`; los adicionales los suma el dueño en C4 (RF-43) |
 | `orden` | `integer` | no | |
 
-Total del trabajo = suma de sus líneas.
+Total del trabajo = suma de sus líneas − descuento (el de la cotización: sin él, el saldo de una reserva con descuento quedaría inflado).
 
 ### `pago`
 | Columna | Tipo | Nulo | Notas |

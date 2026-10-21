@@ -183,6 +183,13 @@
       "when": 1792585673219,
       "tag": "0025_datos_documento",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1792590184285,
+      "tag": "0026_trabajos",
+      "breakpoints": true
     }
   ]
 }
