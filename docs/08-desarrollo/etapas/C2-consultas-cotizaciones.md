@@ -153,7 +153,7 @@ PK (`consulta_id`, `archivo_id`). Hasta 10 por consulta (se valida en la acción
 
 `INSERT … ON CONFLICT (clave) DO UPDATE SET ultimo = correlativo.ultimo + 1 RETURNING ultimo`, dentro de la transacción que crea la cotización: dos cotizaciones al mismo tiempo no repiten número.
 
-**Datos iniciales:** parámetro `dias_consulta_fria` = 7 (`0021`) y `formas_pago_cotizacion` = "Efectivo, QR o transferencia bancaria." (`0023`). El dueño los corrige en Configuración > Cotizaciones.
+**Datos iniciales:** parámetro `dias_consulta_fria` = 7 (`0022`) y `formas_pago_cotizacion` = "Efectivo, QR o transferencia bancaria." (`0024`). El dueño los corrige en Configuración > Cotizaciones.
 
 ## 5. Pantallas y rutas
 

@@ -162,6 +162,20 @@
       "when": 1792534714982,
       "tag": "0022_datos_seguimiento",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1792535549103,
+      "tag": "0023_cotizaciones",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792535550122,
+      "tag": "0024_datos_cotizaciones",
+      "breakpoints": true
     }
   ]
 }

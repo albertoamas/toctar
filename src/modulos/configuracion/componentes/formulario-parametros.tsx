@@ -14,7 +14,7 @@ import { PARAMETROS, type ClaveParametro } from "../parametros";
 const guardarConAviso = conAviso(guardarParametros);
 
 const NUMEROS: ClaveParametro[] = ["adelanto_sugerido", "validez_cotizacion_dias", "intervalo_mantenimiento_meses", "dias_consulta_fria"];
-const TEXTOS: ClaveParametro[] = ["condiciones_cotizacion", "garantia_cotizacion"];
+const TEXTOS: ClaveParametro[] = ["condiciones_cotizacion", "garantia_cotizacion", "formas_pago_cotizacion"];
 
 // HU-05: valores que usan las cotizaciones, las reservas y los avisos de mantenimiento. HU-28: cuándo resaltar una
 // consulta que se enfría.
