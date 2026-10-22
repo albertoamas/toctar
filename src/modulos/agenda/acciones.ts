@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { auditoria, cliente, consulta, cotizacion, pago, servicio, trabajo, trabajoLinea, variante, vehiculo } from "@/db/esquema";
-import { fechaEnBolivia } from "@/lib/fechas";
+import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { erroresDe, exclusionViolada, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
@@ -14,7 +14,7 @@ import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { descripcionLinea, montoNoMayor } from "@/modulos/cotizaciones/reglas";
 import { calcularSaldo } from "@/modulos/pagos/reglas";
 import { datosDeCotizacion, espaciosEnFechas, tecnicosActivos, type EspacioDisponible } from "./consultas";
-import { entradaReserva, esquemaAdelanto, esquemaConsultaEspacios, esquemaFechas, esquemaReserva } from "./esquemas";
+import { entradaReserva, esquemaAdelanto, esquemaCancelar, esquemaConsultaEspacios, esquemaFechas, esquemaReprogramar, esquemaReserva } from "./esquemas";
 
 // Agenda (HU-30). Entra el dueño o un encargado con "Agenda"; el adelanto, solo con "Pagos" (o el dueño). El técnico
 // nunca (RN-12). Un espacio no tiene dos vehículos el mismo día (RN-06): la pantalla solo ofrece los libres y la base
@@ -197,3 +197,118 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
   redirect(`/panel/agenda/${resultado.id}?agendada=1`);
 }
 
+
+/** Revalida lo que muestra una reserva (y lo que depende de ella) después de cambiarla. */
+function despuesDeCambiar(id: number, clienteId: number, consultaId: number | null) {
+  revalidatePath("/panel/agenda");
+  revalidatePath(`/panel/agenda/${id}`);
+  revalidatePath(`/panel/clientes/${clienteId}`);
+  if (consultaId) {
+    revalidatePath("/panel/consultas");
+    revalidatePath(`/panel/consultas/${consultaId}`);
+  }
+}
+
+/**
+ * Mueve una reserva agendada a otras fechas o a otro espacio (HU-31, RF-39), con la misma validación que al agendar:
+ * solo un espacio libre en esos días (sin contar la propia reserva), y la base rechaza un cruce (D-5).
+ */
+export async function reprogramarReserva(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  const usuario = await exigirModulo("agenda");
+  const r = esquemaReprogramar.safeParse({ id: datos.get("id"), espacioId: datos.get("espacioId") });
+  const f = esquemaFechas.safeParse({ fechaInicio: String(datos.get("fechaInicio") ?? ""), fechaFin: String(datos.get("fechaFin") ?? "") });
+  const errores: Record<string, string> = {};
+  if (!r.success) Object.assign(errores, erroresDe(r.error));
+  if (!f.success) Object.assign(errores, erroresDe(f.error));
+  if (!r.success || !f.success) return errores.id ? { mensaje: "No se pudo leer el pedido. Recarga la página." } : { errores };
+  const { id, espacioId } = r.data;
+  const { fechaInicio, fechaFin } = f.data;
+
+  const [actual] = await db
+    .select({ estado: trabajo.estado, clienteId: trabajo.clienteId, consultaId: trabajo.consultaId, espacioId: trabajo.espacioId, fechaInicio: trabajo.fechaInicio, fechaFin: trabajo.fechaFin })
+    .from(trabajo)
+    .where(eq(trabajo.id, id));
+  if (!actual) return { mensaje: "Esa reserva ya no existe." };
+  if (actual.estado !== "agendado") return { mensaje: "Solo se reprograma una reserva agendada." };
+
+  const espacio = (await espaciosEnFechas(fechaInicio, fechaFin, id)).find((e) => e.id === espacioId);
+  if (!espacio) return { errores: { espacioId: "Elige el espacio." } };
+  if (!espacio.libre) return { errores: { espacioId: ESPACIO_OCUPADO } };
+
+  try {
+    await db.transaction(async (tx) => {
+      // Solo si sigue agendada: si otra persona la canceló recién, no se mueve
+      const [movida] = await tx
+        .update(trabajo)
+        .set({ espacioId, fechaInicio, fechaFin, updatedAt: sql`now()` })
+        .where(and(eq(trabajo.id, id), eq(trabajo.estado, "agendado")))
+        .returning({ id: trabajo.id });
+      if (!movida) throw new Conflicto("Esa reserva cambió recién. Recarga la página.");
+      await tx.insert(auditoria).values({
+        usuarioId: Number(usuario.id),
+        entidad: "trabajo",
+        entidadId: id,
+        accion: "reprogramar",
+        datos: { antes: { espacioId: actual.espacioId, fechaInicio: actual.fechaInicio, fechaFin: actual.fechaFin }, despues: { espacioId, fechaInicio, fechaFin } },
+      });
+    });
+  } catch (error) {
+    if (error instanceof Conflicto) return { mensaje: error.message };
+    if (exclusionViolada(error) === "trabajo_sin_cruces") return { errores: { espacioId: ESPACIO_OCUPADO } };
+    throw error;
+  }
+
+  despuesDeCambiar(id, actual.clienteId, actual.consultaId);
+  return { ok: true, mensaje: `Reserva movida al ${formatearFecha(fechaInicio).slice(0, 5)} en ${espacio.nombre}.` };
+}
+
+/**
+ * Cancela una reserva agendada, con motivo (HU-31, RF-39). Los pagos no se tocan: el adelanto queda como ingreso
+ * (RN-05). Si salió de una consulta, la consulta pasa a "perdido" (motivo "otro", con el de la cancelación) y la
+ * cotización vuelve a estar vigente: si el cliente vuelve, se reabre la consulta y se agenda de nuevo.
+ */
+export async function cancelarReserva(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  const usuario = await exigirModulo("agenda");
+  const valores = { motivo: String(datos.get("motivo") ?? "") };
+  const r = esquemaCancelar.safeParse({ id: datos.get("id"), ...valores });
+  if (!r.success) {
+    const errores = erroresDe(r.error);
+    return errores.id ? { mensaje: "No se pudo leer el pedido. Recarga la página." } : { errores, valores };
+  }
+  const { id, motivo } = r.data;
+  const autorId = Number(usuario.id);
+
+  const [actual] = await db
+    .select({ estado: trabajo.estado, clienteId: trabajo.clienteId, consultaId: trabajo.consultaId, cotizacionId: trabajo.cotizacionId })
+    .from(trabajo)
+    .where(eq(trabajo.id, id));
+  if (!actual) return { mensaje: "Esa reserva ya no existe." };
+  if (actual.estado !== "agendado") return { mensaje: "Solo se cancela una reserva agendada." };
+
+  try {
+    await db.transaction(async (tx) => {
+      const [cancelada] = await tx
+        .update(trabajo)
+        .set({ estado: "cancelado", motivoCancelacion: motivo, canceladoAt: sql`now()`, canceladoPor: autorId, updatedAt: sql`now()` })
+        .where(and(eq(trabajo.id, id), eq(trabajo.estado, "agendado")))
+        .returning({ id: trabajo.id });
+      if (!cancelada) throw new Conflicto("Esa reserva cambió recién. Recarga la página.");
+      if (actual.consultaId) {
+        await tx
+          .update(consulta)
+          .set({ estado: "perdido", motivoPerdida: "otro", detallePerdida: `Reserva cancelada: ${motivo}`.slice(0, 300), ultimoMovimientoAt: sql`now()` })
+          .where(and(eq(consulta.id, actual.consultaId), eq(consulta.estado, "confirmado")));
+      }
+      if (actual.cotizacionId) {
+        await tx.update(cotizacion).set({ estado: "enviada" }).where(and(eq(cotizacion.id, actual.cotizacionId), eq(cotizacion.estado, "aceptada")));
+      }
+      await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "trabajo", entidadId: id, accion: "cancelar", datos: { motivo } });
+    });
+  } catch (error) {
+    if (error instanceof Conflicto) return { mensaje: error.message };
+    throw error;
+  }
+
+  despuesDeCambiar(id, actual.clienteId, actual.consultaId);
+  return { ok: true, mensaje: "Reserva cancelada. Si hubo adelanto, queda como ingreso." };
+}

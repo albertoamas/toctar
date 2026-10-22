@@ -217,6 +217,6 @@ Cada PR: lint, typecheck, unitarias, E2E completo y knip; `code-review` y `secur
 |---|---|---|
 | Duración sugerida con varios servicios: ¿la mayor o la suma? | Dueño | La mayor (un mismo espacio, trabajos en paralelo); la entrega se edita en cada reserva |
 | ¿Los días que el taller no atiende cuentan para la duración? | Dueño | Cuentan (días de calendario); el tablero los muestra atenuados y la entrega se ajusta a mano |
-| Si se cancela una reserva que salió de una consulta, ¿la consulta queda "confirmado" o pasa a "perdido"? | Dueño | Pasa a "perdido" con motivo "otro" y el motivo de la cancelación como detalle; se puede reabrir |
+| Si se cancela una reserva que salió de una consulta, ¿la consulta queda "confirmado" o pasa a "perdido"? | Dueño | Pasa a "perdido" con motivo "otro" y el motivo de la cancelación como detalle; se puede reabrir. La cotización vuelve a "enviada" (vigente): al reabrir la consulta, queda "cotizado" y se agenda de nuevo (HU-31) |
 | ¿El encargado con "Pagos" ve el total y el saldo de la reserva? | Dueño | Sí: necesita el saldo para cobrar (RF-46). Sigue sin ver ni crear cotizaciones (RN-01) |
 | ¿Se permite un pago mayor al saldo (el cliente deja más)? | Dueño | No: evita errores de tipeo. Si deja más, se suma un adicional en C4 |
