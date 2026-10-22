@@ -93,3 +93,7 @@ test("el adelanto: un monto y su método, o sin adelanto", () => {
     metodo: "Elige cómo pagó.",
   });
 });
+
+test("si se pagó de más, el saldo queda negativo (a favor del cliente)", () => {
+  expect(calcularSaldo(["100.00"], "0", [{ monto: "150.00", anulado: false }])).toEqual({ total: "100.00", pagado: "150.00", saldo: "-50.00" });
+});

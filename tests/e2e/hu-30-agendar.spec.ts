@@ -92,12 +92,14 @@ test("desde la cotización: queda aceptada, la consulta confirmada, las líneas 
   await espacio(page).selectOption({ index: 1 });
   await page.getByRole("radio", { name: "QR" }).check();
   await page.getByLabel("Hora aproximada").fill("a las 9");
+  // El adelanto sugerido sale de Configuración (otra prueba lo cambia mientras esta corre): se usa el que trae
+  const adelanto = Number(await page.getByLabel("Monto").inputValue());
   await page.getByRole("button", { name: "Agendar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1$/);
   await expect(page.getByText(/^Reserva agendada para el/)).toBeVisible();
   const saldo = page.locator("dl").filter({ hasText: "Saldo" });
   await expect(saldo).toContainText("800 Bs");
-  await expect(saldo).toContainText("600 Bs");
+  await expect(saldo).toContainText(`${800 - adelanto} Bs`);
 
   const [r] = await consultar<{ trabajo: number; descuento: string; cot: string; con: string; lineas: number; adelanto: string; metodo: string }>(
     `select t.id as trabajo, t.descuento, c.estado as cot, q.estado as con,
@@ -106,7 +108,7 @@ test("desde la cotización: queda aceptada, la consulta confirmada, las líneas 
      from trabajo t join cotizacion c on c.id = t.cotizacion_id join consulta q on q.id = t.consulta_id where t.cotizacion_id = $1`,
     [cotizacionId],
   );
-  expect(r).toMatchObject({ descuento: "100.00", cot: "aceptada", con: "confirmado", lineas: 1, adelanto: "200.00", metodo: "qr" });
+  expect(r).toMatchObject({ descuento: "100.00", cot: "aceptada", con: "confirmado", lineas: 1, adelanto: adelanto.toFixed(2), metodo: "qr" });
   // Auditoría de la reserva y del pago (RNF-10)
   const auditoria = await consultar<{ accion: string }>(
     "select accion from auditoria where (entidad = 'trabajo' and entidad_id = $1) or (entidad = 'pago' and (datos->>'trabajoId')::int = $1) order by id",
