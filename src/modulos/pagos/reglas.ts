@@ -12,6 +12,9 @@ export const NOMBRE_TIPO_PAGO: Record<TipoPago, string> = { adelanto: "Adelanto"
 export const METODOS = Object.keys(NOMBRE_METODO) as MetodoPago[];
 export const TIPOS = Object.keys(NOMBRE_TIPO_PAGO) as TipoPago[];
 
+/** El mismo aviso en el navegador (antes de enviar) y en el servidor. */
+export const ERROR_COMPROBANTE = "El comprobante debe ser una foto JPG, PNG o WebP de hasta 5 MB.";
+
 export type Saldo = { total: string; pagado: string; saldo: string };
 
 /** Total del trabajo (líneas − descuento, la misma cuenta que la cotización), lo pagado (sin anulados) y el saldo (RF-46). */

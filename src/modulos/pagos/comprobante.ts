@@ -1,5 +1,6 @@
 import "server-only";
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
+import { ERROR_COMPROBANTE } from "./reglas";
 
 // La foto del comprobante de un pago (HU-32): al registrar un pago o con el adelanto al agendar. Va al bucket privado
 // (es un dato del cliente) y se sube antes de la transacción, para no tener la base esperando la subida.
@@ -11,12 +12,12 @@ export async function guardarComprobante(entrada: FormDataEntryValue | null, aut
   if (!(entrada instanceof File) || entrada.size === 0) return { ok: true, archivoId: null };
   try {
     const foto = await guardarFoto(entrada, { carpeta: "comprobantes", miniatura: true, autorId, privado: true });
-    if (!foto.ok) return { ok: false, error: "El comprobante debe ser una foto JPG, PNG o WebP de hasta 5 MB." };
+    if (!foto.ok) return { ok: false, error: ERROR_COMPROBANTE };
     return { ok: true, archivoId: foto.archivoId };
   } catch (error) {
     // El almacenamiento no respondió: el formulario queda como estaba y se puede reintentar
     console.error("No se pudo guardar el comprobante", error);
-    return { ok: false, error: "No se pudo subir el comprobante. Vuelve a intentar o regístralo sin la foto." };
+    return { ok: false, error: "No se pudo subir el comprobante. Vuelve a intentar o sigue sin la foto." };
   }
 }
 

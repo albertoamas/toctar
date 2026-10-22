@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useActionState, useRef, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { PlusIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
@@ -13,7 +13,7 @@ import type { MetodoPago, TipoPago } from "@/db/esquema/trabajos";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { registrarPago } from "../acciones";
-import { adjuntarComprobante, CampoComprobante } from "./campo-comprobante";
+import { CampoComprobante, useEnvioConComprobante } from "./campo-comprobante";
 import { METODOS, NOMBRE_METODO, NOMBRE_TIPO_PAGO, TIPOS } from "../reglas";
 
 // HU-32: registrar un pago (RF-45). Se cobra en el taller, con el celular en la mano: el monto viene con el saldo
@@ -73,21 +73,11 @@ function Formulario({ trabajoId, saldo, hoy, conPagos, cerrar }: Props & { cerra
   const [tipo, setTipo] = useState<TipoPago | "">(conPagos ? "saldo" : "adelanto");
   const [metodo, setMetodo] = useState<MetodoPago | "">("");
   const [fecha, setFecha] = useState(hoy);
-  const [comprobante, setComprobante] = useState<File | null>(null);
-  const [preparando, setPreparando] = useState(false);
-
-  async function enviar(ev: React.SyntheticEvent<HTMLFormElement, SubmitEvent>) {
-    ev.preventDefault();
-    const datos = new FormData(ev.currentTarget);
-    setPreparando(true);
-    await adjuntarComprobante(datos, comprobante);
-    setPreparando(false);
-    startTransition(() => accion(datos));
-  }
+  const { setComprobante, preparando, errorFoto, enviar } = useEnvioConComprobante(accion);
 
   const ocupado = enviando || preparando;
   return (
-    <form ref={formulario} onSubmit={enviar} className="flex flex-col gap-5 rounded-sm border border-border p-4" noValidate aria-labelledby="registrar-pago-titulo">
+    <form ref={formulario} action={accion} onSubmit={(ev) => enviar(ev)} className="flex flex-col gap-5 rounded-sm border border-border p-4" noValidate aria-labelledby="registrar-pago-titulo">
       <h3 id="registrar-pago-titulo" className="font-heading text-xl font-bold italic">Registrar pago</h3>
       <input type="hidden" name="trabajoId" value={trabajoId} />
       {estado.mensaje && !estado.ok && <MensajeError id="registrar-pago-error">{estado.mensaje}</MensajeError>}
@@ -102,7 +92,7 @@ function Formulario({ trabajoId, saldo, hoy, conPagos, cerrar }: Props & { cerra
       <Opciones nombre="tipo" titulo="Tipo" valores={TIPOS} etiquetas={NOMBRE_TIPO_PAGO} valor={tipo} cambiar={(v) => setTipo(v as TipoPago)} error={e.tipo} />
       <Opciones nombre="metodo" titulo="Método" valores={METODOS} etiquetas={NOMBRE_METODO} valor={metodo} cambiar={(v) => setMetodo(v as MetodoPago)} error={e.metodo} />
 
-      <CampoComprobante onChange={setComprobante} error={e.comprobante} />
+      <CampoComprobante onChange={setComprobante} error={errorFoto ?? e.comprobante} />
 
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={ocupado}>
