@@ -5,6 +5,8 @@ import { calcularTotales, restarMontos } from "@/modulos/cotizaciones/reglas";
 // cotizaciones, en centavos enteros. Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md.
 
 export const NOMBRE_METODO: Record<MetodoPago, string> = { efectivo: "Efectivo", qr: "QR", transferencia: "Transferencia" };
+/** "Adelanto por QR", "Saldo en efectivo": el método dentro de una frase. */
+export const METODO_EN_FRASE: Record<MetodoPago, string> = { efectivo: "en efectivo", qr: "por QR", transferencia: "por transferencia" };
 export const NOMBRE_TIPO_PAGO: Record<TipoPago, string> = { adelanto: "Adelanto", saldo: "Saldo" };
 
 export type Saldo = { total: string; pagado: string; saldo: string };

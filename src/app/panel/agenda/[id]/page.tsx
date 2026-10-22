@@ -15,7 +15,7 @@ import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { obtenerReserva } from "@/modulos/agenda/consultas";
 import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
-import { NOMBRE_METODO, NOMBRE_TIPO_PAGO } from "@/modulos/pagos/reglas";
+import { METODO_EN_FRASE, NOMBRE_TIPO_PAGO } from "@/modulos/pagos/reglas";
 
 export const metadata: Metadata = { title: "Reserva" };
 
@@ -155,7 +155,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
                       <li key={p.id} className={cn("flex flex-col gap-0.5 p-3", p.anulado && "text-tinta-suave")}>
                         <span className="flex justify-between gap-4">
                           <span className={cn("font-semibold", p.anulado && "line-through")}>
-                            {NOMBRE_TIPO_PAGO[p.tipo]}, {NOMBRE_METODO[p.metodo].toLowerCase()}
+                            {NOMBRE_TIPO_PAGO[p.tipo]} {METODO_EN_FRASE[p.metodo]}
                           </span>
                           <span className={cn("tabular-nums", p.anulado && "line-through")}>{bs(p.monto)}</span>
                         </span>
