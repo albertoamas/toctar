@@ -36,9 +36,18 @@ async function reserva(placa: string, espacio: number, lunes: string, desde: num
   );
 }
 
+/** Borra lo que dejó un intento anterior (un reintento en CI): reservas, vehículos y clientes de esta prueba. */
+async function limpiar(placas: string[]) {
+  await consultar("delete from trabajo_linea where trabajo_id in (select t.id from trabajo t join vehiculo v on v.id = t.vehiculo_id where v.placa = any($1))", [placas]);
+  await consultar("delete from trabajo where vehiculo_id in (select id from vehiculo where placa = any($1))", [placas]);
+  const clientes = await consultar<{ id: number }>("delete from vehiculo where placa = any($1) returning cliente_id as id", [placas]);
+  await consultar("delete from cliente where id = any($1)", [clientes.map((c) => c.id)]);
+}
+
 test("las reservas ocupan sus días en su espacio; un día libre lleva a agendar ahí", async ({ page }, info) => {
   const s = sufijo(info);
   const lunes = await lunesPropio(info);
+  await limpiar([`TB29${s}1`, `TB29${s}2`]);
   await crearClienteEnBase({ nombre: `Tablero ${s}`, telefono: `5917${s === "C" ? 3 : 4}2900010`, placa: `TB29${s}1` });
   await crearClienteEnBase({ nombre: `Tablero largo ${s}`, telefono: `5917${s === "C" ? 3 : 4}2900020`, placa: `TB29${s}2` });
   // Martes y miércoles en el primer espacio; desde el sábado hasta el martes siguiente en el segundo
