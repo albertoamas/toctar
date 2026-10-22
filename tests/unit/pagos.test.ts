@@ -2,6 +2,7 @@ import { expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
 import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
 import { esquemaAnularPago, esquemaPago } from "@/modulos/pagos/esquemas";
+import { estaPagada } from "@/modulos/pagos/reglas";
 
 // C3 Pagos (HU-32, RF-45): validación del pago y de su anulación. El saldo (calcularSaldo) se prueba en agenda.test.ts.
 
@@ -38,4 +39,10 @@ test("anular pide el motivo", () => {
   expect(!sin.success && erroresDe(sin.error)).toEqual({ motivo: "Escribe el motivo." });
   const con = esquemaAnularPago.safeParse({ id: "3", motivo: " Se cargó dos veces " });
   expect(con.success && con.data).toEqual({ id: 3, motivo: "Se cargó dos veces" });
+});
+
+test("una reserva está pagada con saldo cero o a favor del cliente", () => {
+  expect(estaPagada("0.00")).toBe(true);
+  expect(estaPagada("-50.00")).toBe(true);
+  expect(estaPagada("0.01")).toBe(false);
 });

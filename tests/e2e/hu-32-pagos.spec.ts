@@ -126,4 +126,6 @@ test("pagada por completo no ofrece más pagos; sin Pagos no se ven montos", asy
   await page.goto(`/panel/clientes/${clienteId}`);
   await expect(page.getByRole("list", { name: "Reservas" })).toBeVisible();
   await expect(page.getByText(/Saldo|Pagado/)).toHaveCount(0);
+  // La reserva directa lleva precios: sin Pagos no se ofrece
+  await expect(page.getByRole("link", { name: "Nueva reserva" })).toHaveCount(0);
 });
