@@ -314,14 +314,68 @@ export async function reservasDeConsulta(consultaId: number): Promise<ReservaCor
     .orderBy(desc(trabajo.createdAt));
 }
 
-/** Las reservas agendadas desde hoy, por fecha (la lista de la agenda hasta que llegue el tablero, HU-29). */
-export async function proximasReservas(desde: string): Promise<ReservaCorta[]> {
-  return db
-    .select(columnasCortas)
-    .from(trabajo)
-    .innerJoin(espacioTaller, eq(trabajo.espacioId, espacioTaller.id))
-    .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
-    .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
-    .where(and(inArray(trabajo.estado, ["agendado"]), gte(trabajo.fechaFin, desde)))
-    .orderBy(asc(trabajo.fechaInicio), asc(espacioTaller.orden));
+export type ReservaTablero = {
+  id: number;
+  espacioId: number;
+  inicio: string;
+  fin: string;
+  estado: EstadoTrabajo;
+  placa: string;
+  cliente: string;
+  tecnico: string | null;
+  /** El primer servicio y cuántos más lleva ("Pulido y nano cerámico — 5 años", 1). */
+  servicio: string | null;
+  masServicios: number;
+};
+
+export type SemanaDeAgenda = {
+  espacios: { id: number; nombre: string }[];
+  reservas: ReservaTablero[];
+  /** Días de la semana (1 = lunes … 7 = domingo) que el taller no atiende, según el horario de Configuración. */
+  diasCerrados: number[];
+};
+
+/** La semana del tablero (HU-29): los espacios activos y las reservas que ocupan alguno de esos días. */
+export async function semanaDeAgenda(lunes: string, domingo: string): Promise<SemanaDeAgenda> {
+  const s = await sucursalPrincipal();
+  const [espacios, reservas] = await Promise.all([
+    db
+      .select({ id: espacioTaller.id, nombre: espacioTaller.nombre })
+      .from(espacioTaller)
+      .where(and(eq(espacioTaller.sucursalId, s.id), eq(espacioTaller.activo, true)))
+      .orderBy(asc(espacioTaller.orden), asc(espacioTaller.id)),
+    db
+      .select({
+        id: trabajo.id,
+        espacioId: trabajo.espacioId,
+        inicio: trabajo.fechaInicio,
+        fin: trabajo.fechaFin,
+        estado: trabajo.estado,
+        placa: vehiculo.placa,
+        cliente: cliente.nombre,
+        tecnico: tecnico.name,
+      })
+      .from(trabajo)
+      .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
+      .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
+      .leftJoin(tecnico, eq(trabajo.tecnicoId, tecnico.id))
+      .where(and(eq(trabajo.sucursalId, s.id), notInArray(trabajo.estado, NO_OCUPAN), lte(trabajo.fechaInicio, domingo), gte(trabajo.fechaFin, lunes)))
+      .orderBy(asc(trabajo.fechaInicio)),
+  ]);
+  const lineas =
+    reservas.length === 0
+      ? []
+      : await db
+          .select({ trabajoId: trabajoLinea.trabajoId, descripcion: trabajoLinea.descripcion })
+          .from(trabajoLinea)
+          .where(inArray(trabajoLinea.trabajoId, reservas.map((r) => r.id)))
+          .orderBy(asc(trabajoLinea.orden));
+  return {
+    espacios,
+    reservas: reservas.map((r) => {
+      const suyas = lineas.filter((l) => l.trabajoId === r.id);
+      return { ...r, servicio: suyas[0]?.descripcion ?? null, masServicios: Math.max(0, suyas.length - 1) };
+    }),
+    diasCerrados: s.horarios.filter((d) => d.turnos.length === 0).map((d) => d.dia),
+  };
 }

@@ -58,3 +58,30 @@ export function bloquesDeLaSemana<T extends Rango>(trabajos: readonly T[], lunes
 
 /** Una reserva ocupa espacio en la agenda mientras no se cancela ni se entrega (como la restricción de la base). */
 export const ocupaEspacio = (estado: EstadoTrabajo) => estado !== "cancelado" && estado !== "entregado";
+
+const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+export const DIA_CORTO = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"] as const;
+
+const partes = (fecha: string) => {
+  const [anio, mes, dia] = fecha.split("-").map(Number);
+  return { anio, mes, dia };
+};
+
+/** "20 al 26 de octubre", "27 de octubre al 2 de noviembre", "29 de diciembre de 2025 al 4 de enero de 2026". */
+export function textoSemana(lunes: string): string {
+  const a = partes(lunes);
+  const b = partes(sumarDias(lunes, 6));
+  if (a.anio !== b.anio) return `${a.dia} de ${MESES[a.mes - 1]} de ${a.anio} al ${b.dia} de ${MESES[b.mes - 1]} de ${b.anio}`;
+  if (a.mes !== b.mes) return `${a.dia} de ${MESES[a.mes - 1]} al ${b.dia} de ${MESES[b.mes - 1]}`;
+  return `${a.dia} al ${b.dia} de ${MESES[b.mes - 1]}`;
+}
+
+/** "Jueves 24 de octubre": el día completo, para lectores de pantalla y el celular. */
+export function textoDia(fecha: string): string {
+  const { dia, mes } = partes(fecha);
+  const nombres = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  return `${nombres[diaDeLaSemana(fecha) - 1]} ${dia} de ${MESES[mes - 1]}`;
+}
+
+/** El número del día ("24") para la cabecera del tablero. */
+export const numeroDia = (fecha: string) => String(partes(fecha).dia);
