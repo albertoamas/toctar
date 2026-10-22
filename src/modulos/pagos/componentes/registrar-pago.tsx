@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { startTransition, useActionState, useRef, useState } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { CameraIcon, PlusIcon, XIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
@@ -15,15 +15,11 @@ import type { MetodoPago, TipoPago } from "@/db/esquema/trabajos";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { registrarPago } from "../acciones";
-import { NOMBRE_METODO, NOMBRE_TIPO_PAGO } from "../reglas";
+import { METODOS, NOMBRE_METODO, NOMBRE_TIPO_PAGO, TIPOS } from "../reglas";
 
 // HU-32: registrar un pago (RF-45). Se cobra en el taller, con el celular en la mano: el monto viene con el saldo
 // (lo que más se cobra) y el tipo, según lo que ya pagó. La foto del comprobante es opcional y se achica antes de
 // subirla. El servidor vuelve a mirar el saldo: dos pagos a la vez no lo pasan.
-
-// Aquí y no desde el esquema de la base: un componente de cliente no carga Drizzle
-const TIPOS: TipoPago[] = ["adelanto", "saldo"];
-const METODOS: MetodoPago[] = ["efectivo", "qr", "transferencia"];
 
 type Props = {
   trabajoId: number;
@@ -81,9 +77,12 @@ function Formulario({ trabajoId, saldo, hoy, conPagos, cerrar }: Props & { cerra
   const [comprobante, setComprobante] = useState<{ archivo: File; vista: string } | null>(null);
   const [preparando, setPreparando] = useState(false);
   const entradaFoto = useRef<HTMLInputElement>(null);
+  // La vista previa ocupa memoria mientras exista: se libera al cambiarla y al cerrar el formulario
+  useEffect(() => () => {
+    if (comprobante) URL.revokeObjectURL(comprobante.vista);
+  }, [comprobante]);
 
   function elegirFoto(archivo: File | undefined) {
-    if (comprobante) URL.revokeObjectURL(comprobante.vista);
     setComprobante(archivo ? { archivo, vista: URL.createObjectURL(archivo) } : null);
     if (entradaFoto.current) entradaFoto.current.value = "";
   }

@@ -10,13 +10,12 @@ import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import { Textarea } from "@/componentes/ui/textarea";
-import type { MetodoPago } from "@/db/esquema/trabajos";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { leerMonto, mostrarMonto } from "@/modulos/catalogo/reglas";
 import { calcularTotales } from "@/modulos/cotizaciones/reglas";
 import type { OpcionServicio } from "@/modulos/cotizaciones/consultas";
 import { LineasServicio, type Linea } from "@/modulos/cotizaciones/componentes/lineas-servicio";
-import { NOMBRE_METODO } from "@/modulos/pagos/reglas";
+import { METODOS, NOMBRE_METODO } from "@/modulos/pagos/reglas";
 import { agendarReserva } from "../acciones";
 import type { EspacioDisponible } from "../consultas";
 import { fechaEntregaSugerida } from "../reglas";
@@ -42,7 +41,6 @@ type Props = {
   espaciosIniciales: EspacioDisponible[];
 };
 
-const METODOS: MetodoPago[] = ["efectivo", "qr", "transferencia"];
 
 export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido, hoy, fechaInicial, espacioInicial, espaciosIniciales }: Props) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(agendarReserva, {});
