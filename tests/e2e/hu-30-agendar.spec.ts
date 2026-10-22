@@ -213,7 +213,7 @@ test("reserva directa: cliente y vehículo registrados, servicio del catálogo c
   await page.getByRole("button", { name: "Agendar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1$/);
   await expect(page.getByRole("heading", { level: 1, name: `DI30${s}6` })).toBeVisible();
-  await expect(page.getByText("Sin adelanto.")).toBeVisible();
+  await expect(page.getByText("Todavía no hay pagos.")).toBeVisible();
   await expect(page.locator("dl").filter({ hasText: "Saldo" })).toContainText("900 Bs");
 });
 
