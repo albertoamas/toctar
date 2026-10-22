@@ -78,6 +78,9 @@ test("cancelar pide motivo, deja los pagos, libera el espacio y la consulta pasa
        insert into cotizacion (consulta_id, numero, version, es_estimado, subtotal, descuento, total, adelanto_sugerido, valida_hasta,
          condiciones, garantia, formas_pago, estado, datos_documento, created_by)
        select q.id, '2031-' || $2, 1, false, 500, 0, 500, 150, current_date + 15, 'c', 'g', 'f', 'aceptada', '{}'::jsonb, q.created_by from q returning id
+     ), l as (
+       insert into cotizacion_linea (cotizacion_id, variante_id, tamano_id, descripcion, precio, orden)
+       select c.id, (select id from variante order by id limit 1), (select id from tamano_vehiculo order by id limit 1), 'Lavado', 500, 0 from c
      )
      select (select id from q) as consulta, (select id from c) as cotizacion`,
     [`CA31${s}3`, `${s === "C" ? 1 : 2}000`],
@@ -110,8 +113,22 @@ test("cancelar pide motivo, deja los pagos, libera el espacio y la consulta pasa
   await crearClienteEnBase({ nombre: `Toma el lugar ${s}`, telefono: telefono(info, 4), placa: `CA31${s}4` });
   await reserva(`CA31${s}4`, 0, d20, d20);
 
-  // Si el cliente vuelve: se reabre la consulta y se puede agendar otra vez
+  // Si el cliente vuelve: se reabre la consulta y la misma cotización se agenda otra vez (la cancelada no cuenta)
   await page.goto(`/panel/consultas/${c.consulta}`);
   await page.getByRole("button", { name: "Reabrir" }).click();
-  await expect(page.getByRole("link", { name: "Agendar" })).toBeVisible();
+  await page.getByRole("link", { name: "Agendar" }).click();
+  const d30 = await dia(info, 30);
+  await page.getByLabel("Ingresa el").fill(d30);
+  await page.getByLabel("Entrega aproximada").fill(d30);
+  const espacio = page.getByLabel("Espacio", { exact: true });
+  await expect(espacio.locator("option")).not.toHaveCount(1);
+  await espacio.selectOption({ index: 1 });
+  await page.getByText("Sin adelanto", { exact: true }).click();
+  await page.getByRole("button", { name: "Agendar" }).click();
+  await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1$/);
+  const [otra] = await consultar<{ reservas: number; cotizacion: string }>(
+    "select count(*)::int as reservas, (select estado from cotizacion where id = $1) as cotizacion from trabajo where cotizacion_id = $1",
+    [c.cotizacion],
+  );
+  expect(otra).toEqual({ reservas: 2, cotizacion: "aceptada" });
 });
