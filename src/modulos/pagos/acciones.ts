@@ -10,7 +10,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { montoNoMayor } from "@/modulos/cotizaciones/reglas";
 import { esquemaAnularPago, esquemaPago } from "./esquemas";
-import { calcularSaldo } from "./reglas";
+import { calcularSaldo, estaPagada } from "./reglas";
 
 // Pagos de una reserva (HU-32, RF-45, RF-46). Dueño o encargado con "Pagos"; el técnico nunca (RN-12). Un pago no
 // pasa el saldo pendiente y no se borra: se anula con motivo (D-6). Todo queda en la auditoría (RNF-10).
@@ -18,8 +18,16 @@ import { calcularSaldo } from "./reglas";
 const RECARGA = "No se pudo leer el pedido. Recarga la página.";
 const CAMBIO = "Esa reserva cambió recién. Recarga la página.";
 
-/** Algo cambió entre la revisión y la escritura: se lanza dentro de la transacción para deshacerla entera. */
-class Conflicto extends Error {}
+/** Algo cambió entre la revisión y la escritura: se lanza dentro de la transacción para deshacerla entera. Con
+ * `campo`, el error va junto a ese campo; sin él, arriba del formulario. */
+class Conflicto extends Error {
+  constructor(
+    mensaje: string,
+    readonly campo?: string,
+  ) {
+    super(mensaje);
+  }
+}
 
 function despuesDePagar(trabajoId: number, clienteId: number) {
   revalidatePath(`/panel/agenda/${trabajoId}`);
@@ -47,7 +55,14 @@ export async function registrarPago(_previo: EstadoFormulario, datos: FormData):
   const entrada = datos.get("comprobante");
   let comprobanteId: number | null = null;
   if (entrada instanceof File && entrada.size > 0) {
-    const foto = await guardarFoto(entrada, { carpeta: "comprobantes", miniatura: true, autorId, privado: true });
+    let foto: Awaited<ReturnType<typeof guardarFoto>>;
+    try {
+      foto = await guardarFoto(entrada, { carpeta: "comprobantes", miniatura: true, autorId, privado: true });
+    } catch (error) {
+      // El almacenamiento no respondió: el formulario queda como estaba y se puede reintentar
+      console.error("No se pudo guardar el comprobante", error);
+      return { errores: { comprobante: "No se pudo subir el comprobante. Vuelve a intentar o regístralo sin la foto." }, valores };
+    }
     if (!foto.ok) return { errores: { comprobante: "El comprobante debe ser una foto JPG, PNG o WebP de hasta 5 MB." }, valores };
     comprobanteId = foto.archivoId;
   }
@@ -72,23 +87,21 @@ export async function registrarPago(_previo: EstadoFormulario, datos: FormData):
         t.descuento,
         pagos,
       );
-      if (saldo === "0.00") throw new Conflicto("Esa reserva ya está pagada.");
-      if (!montoNoMayor(monto, saldo)) throw new Conflicto(`El pago no puede ser mayor que el saldo (${mostrarMonto(saldo)} Bs).`);
+      if (estaPagada(saldo)) throw new Conflicto("Esa reserva ya está pagada.");
+      if (!montoNoMayor(monto, saldo)) throw new Conflicto(`El pago no puede ser mayor que el saldo (${mostrarMonto(saldo)} Bs).`, "monto");
 
       const [nuevo] = await tx
         .insert(pago)
         .values({ trabajoId, monto, metodo, tipo, fecha, comprobanteArchivoId: comprobanteId, createdBy: autorId })
         .returning({ id: pago.id });
-      await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "pago", entidadId: nuevo.id, accion: "crear", datos: { trabajoId, monto, tipo, metodo, fecha } });
+      await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "pago", entidadId: nuevo.id, accion: "crear", datos: { trabajoId, monto, tipo, metodo, fecha, comprobanteArchivoId: comprobanteId } });
       const despues = calcularSaldo(lineas.map((l) => l.precio), t.descuento, [...pagos, { monto, anulado: false }]);
       return { clienteId: t.clienteId, saldo: despues.saldo };
     });
   } catch (error) {
-    if (comprobanteId) await eliminarFoto(comprobanteId);
-    if (error instanceof Conflicto) {
-      // El tope va junto al monto; lo demás, arriba del formulario
-      return error.message.startsWith("El pago no puede") ? { errores: { monto: error.message }, valores } : { mensaje: error.message };
-    }
+    // Sin pago no queda comprobante; si el borrado falla, no tapa el error de verdad
+    if (comprobanteId) await eliminarFoto(comprobanteId).catch((e) => console.error("No se pudo borrar el comprobante", e));
+    if (error instanceof Conflicto) return error.campo ? { errores: { [error.campo]: error.message }, valores } : { mensaje: error.message };
     throw error;
   }
 

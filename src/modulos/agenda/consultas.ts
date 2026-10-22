@@ -19,6 +19,7 @@ import {
   vehiculo,
 } from "@/db/esquema";
 import { ESTADOS_TRABAJO, type EstadoTrabajo, type MetodoPago, type TipoPago } from "@/db/esquema/trabajos";
+import { fechaEnBolivia } from "@/lib/fechas";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { duracionEfectiva } from "@/modulos/catalogo/reglas";
 import { sucursalPrincipal } from "@/modulos/configuracion/consultas";
@@ -335,10 +336,12 @@ export async function reservasDeConsulta(consultaId: number): Promise<ReservaCor
 export type ReservaDelCliente = ReservaCorta & { saldo: Saldo | null };
 
 /**
- * Las reservas de un cliente para su ficha (HU-32), la más reciente primero; con el saldo de cada una solo si quien
- * mira ve pagos (RN-12). Las cuentas, las mismas de la reserva (`calcularSaldo`).
+ * Las reservas de un cliente para su ficha (HU-32): primero las que vienen (la más cercana arriba), después las pasadas
+ * (la más reciente arriba). Con el saldo de cada una solo si quien mira ve pagos (RN-12); las cuentas, las mismas de la
+ * reserva (`calcularSaldo`).
  */
 export async function reservasDelCliente(clienteId: number, conMontos: boolean): Promise<ReservaDelCliente[]> {
+  const hoy = fechaEnBolivia();
   const reservas = await db
     .select({ ...columnasCortas, descuento: trabajo.descuento })
     .from(trabajo)
@@ -346,7 +349,9 @@ export async function reservasDelCliente(clienteId: number, conMontos: boolean):
     .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
     .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
     .where(eq(trabajo.clienteId, clienteId))
-    .orderBy(desc(trabajo.fechaInicio), desc(trabajo.id));
+    .orderBy(asc(trabajo.fechaInicio), asc(trabajo.id));
+  const proximas = reservas.filter((r) => r.fechaFin >= hoy);
+  const pasadas = reservas.filter((r) => r.fechaFin < hoy).reverse();
   const ids = reservas.map((r) => r.id);
   const [lineas, pagos] =
     conMontos && ids.length > 0
@@ -355,15 +360,13 @@ export async function reservasDelCliente(clienteId: number, conMontos: boolean):
           db.select({ trabajoId: pago.trabajoId, monto: pago.monto, anulado: pago.anulado }).from(pago).where(inArray(pago.trabajoId, ids)),
         ])
       : [[], []];
-  return reservas.map(({ descuento, ...r }) => ({
+  const precios = new Map<number, string[]>();
+  for (const l of lineas) precios.set(l.trabajoId, [...(precios.get(l.trabajoId) ?? []), l.precio]);
+  const pagosPor = new Map<number, { monto: string; anulado: boolean }[]>();
+  for (const p of pagos) pagosPor.set(p.trabajoId, [...(pagosPor.get(p.trabajoId) ?? []), p]);
+  return [...proximas, ...pasadas].map(({ descuento, ...r }) => ({
     ...r,
-    saldo: conMontos
-      ? calcularSaldo(
-          lineas.filter((l) => l.trabajoId === r.id).map((l) => l.precio),
-          descuento,
-          pagos.filter((p) => p.trabajoId === r.id),
-        )
-      : null,
+    saldo: conMontos ? calcularSaldo(precios.get(r.id) ?? [], descuento, pagosPor.get(r.id) ?? []) : null,
   }));
 }
 

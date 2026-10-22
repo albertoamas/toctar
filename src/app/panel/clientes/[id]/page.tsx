@@ -16,6 +16,7 @@ import { enlaceWhatsApp, whatsAppLocal } from "@/lib/whatsapp";
 import { reservasDelCliente } from "@/modulos/agenda/consultas";
 import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
+import { estaPagada } from "@/modulos/pagos/reglas";
 import { AccesoCliente } from "@/modulos/clientes/componentes/acceso-cliente";
 import { FormularioDatosCliente } from "@/modulos/clientes/componentes/formulario-datos-cliente";
 import { VehiculosCliente } from "@/modulos/clientes/componentes/vehiculos-cliente";
@@ -46,12 +47,13 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
   if (!Number.isInteger(numero) || numero <= 0) notFound();
   const verConsultas = puedeVerModulo(usuario, "consultas");
   const verAgenda = puedeVerModulo(usuario, "agenda");
+  const verPagos = puedeVerModulo(usuario, "pagos");
   const [c, tamanos, consultas, parametros, reservas] = await Promise.all([
     obtenerCliente(numero),
     tamanosActivos(),
     verConsultas ? consultasDelCliente(numero) : [],
     obtenerParametros(),
-    verAgenda ? reservasDelCliente(numero, puedeVerModulo(usuario, "pagos")) : [],
+    verAgenda ? reservasDelCliente(numero, verPagos) : [],
   ]);
   if (!c) notFound();
 
@@ -112,7 +114,8 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
         <section aria-labelledby="reservas-titulo" className="flex max-w-5xl flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <h2 id="reservas-titulo" className="font-heading text-2xl font-bold italic">Reservas</h2>
-            {c.activo && (
+            {/* La reserva directa lleva precios: la arma quien ve pagos (las demás salen de una consulta) */}
+            {c.activo && verPagos && (
               <Link href={`/panel/agenda/nueva?cliente=${c.id}`} className={cn(buttonVariants({ variant: "outline" }))}>
                 <CalendarIcon />
                 Nueva reserva
@@ -135,8 +138,8 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
                     <span className="flex flex-wrap items-center gap-3">
                       {/* El saldo de una cancelada no se cobra: no se muestra */}
                       {r.saldo && r.estado !== "cancelado" && (
-                        <span className={cn("tabular-nums", r.saldo.saldo === "0.00" ? "text-exito" : "font-semibold")}>
-                          {r.saldo.saldo === "0.00" ? "Pagado" : `Saldo: ${mostrarMonto(r.saldo.saldo)} Bs`}
+                        <span className={cn("tabular-nums", estaPagada(r.saldo.saldo) ? "text-exito" : "font-semibold")}>
+                          {estaPagada(r.saldo.saldo) ? "Pagado" : `Saldo: ${mostrarMonto(r.saldo.saldo)} Bs`}
                         </span>
                       )}
                       <span className={cn("tt-insignia", r.estado === "cancelado" && "tt-insignia--aviso")}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</span>

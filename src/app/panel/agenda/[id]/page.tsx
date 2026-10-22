@@ -19,7 +19,7 @@ import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { AnularPago } from "@/modulos/pagos/componentes/anular-pago";
 import { RegistrarPago } from "@/modulos/pagos/componentes/registrar-pago";
 import { VerComprobante } from "@/modulos/pagos/componentes/ver-comprobante";
-import { METODO_EN_FRASE, NOMBRE_TIPO_PAGO } from "@/modulos/pagos/reglas";
+import { estaPagada, METODO_EN_FRASE, NOMBRE_TIPO_PAGO } from "@/modulos/pagos/reglas";
 
 export const metadata: Metadata = { title: "Reserva" };
 
@@ -187,7 +187,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
                   </ul>
                 )}
                 {!cancelada &&
-                  (r.montos.saldo.saldo === "0.00" ? (
+                  (estaPagada(r.montos.saldo.saldo) ? (
                     <p className="font-semibold text-exito">Pagado por completo.</p>
                   ) : (
                     <RegistrarPago trabajoId={r.id} saldo={r.montos.saldo.saldo} hoy={hoy} conPagos={r.montos.pagos.some((p) => !p.anulado)} />
