@@ -56,7 +56,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
           Escribir por WhatsApp
         </a>
       </div>
-      {agendada && (
+      {/* Solo mientras siga agendada: tras cancelarla (o en un enlace viejo) ya no corresponde */}
+      {agendada && r.estado === "agendado" && (
         <AvisoEnPagina>
           Reserva agendada para el {formatearFecha(r.fechaInicio).slice(0, 5)} en {r.espacio}.
         </AvisoEnPagina>

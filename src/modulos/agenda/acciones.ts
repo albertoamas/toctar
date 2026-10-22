@@ -188,17 +188,11 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
     throw error;
   }
 
-  revalidatePath("/panel/agenda");
-  if (consultaId) {
-    revalidatePath("/panel/consultas");
-    revalidatePath(`/panel/consultas/${consultaId}`);
-  }
-  revalidatePath(`/panel/clientes/${clienteId}`);
+  despuesDeCambiar(resultado.id, clienteId, consultaId);
   redirect(`/panel/agenda/${resultado.id}?agendada=1`);
 }
 
-
-/** Revalida lo que muestra una reserva (y lo que depende de ella) después de cambiarla. */
+/** Revalida lo que muestra una reserva (y lo que depende de ella) después de agendarla o cambiarla. */
 function despuesDeCambiar(id: number, clienteId: number, consultaId: number | null) {
   revalidatePath("/panel/agenda");
   revalidatePath(`/panel/agenda/${id}`);
@@ -265,7 +259,8 @@ export async function reprogramarReserva(_previo: EstadoFormulario, datos: FormD
 /**
  * Cancela una reserva agendada, con motivo (HU-31, RF-39). Los pagos no se tocan: el adelanto queda como ingreso
  * (RN-05). Si salió de una consulta, la consulta pasa a "perdido" (motivo "otro", con el de la cancelación) y la
- * cotización vuelve a estar vigente: si el cliente vuelve, se reabre la consulta y se agenda de nuevo.
+ * cotización vuelve a estar vigente: si el cliente vuelve, se reabre la consulta y se agenda de nuevo. Las dos van
+ * juntas: si la consulta ya no estaba "confirmado" (alguien la movió a mano), ninguna se toca.
  */
 export async function cancelarReserva(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const usuario = await exigirModulo("agenda");
@@ -293,16 +288,27 @@ export async function cancelarReserva(_previo: EstadoFormulario, datos: FormData
         .where(and(eq(trabajo.id, id), eq(trabajo.estado, "agendado")))
         .returning({ id: trabajo.id });
       if (!cancelada) throw new Conflicto("Esa reserva cambió recién. Recarga la página.");
+      let consultaPerdida = false;
+      let cotizacionVigente = false;
       if (actual.consultaId) {
-        await tx
+        const [perdida] = await tx
           .update(consulta)
           .set({ estado: "perdido", motivoPerdida: "otro", detallePerdida: `Reserva cancelada: ${motivo}`.slice(0, 300), ultimoMovimientoAt: sql`now()` })
-          .where(and(eq(consulta.id, actual.consultaId), eq(consulta.estado, "confirmado")));
+          .where(and(eq(consulta.id, actual.consultaId), eq(consulta.estado, "confirmado")))
+          .returning({ id: consulta.id });
+        consultaPerdida = !!perdida;
       }
-      if (actual.cotizacionId) {
-        await tx.update(cotizacion).set({ estado: "enviada" }).where(and(eq(cotizacion.id, actual.cotizacionId), eq(cotizacion.estado, "aceptada")));
+      if (actual.cotizacionId && consultaPerdida) {
+        const [vigente] = await tx
+          .update(cotizacion)
+          .set({ estado: "enviada" })
+          .where(and(eq(cotizacion.id, actual.cotizacionId), eq(cotizacion.estado, "aceptada")))
+          .returning({ id: cotizacion.id });
+        // Una consulta perdida con su cotización todavía aceptada no se podría volver a agendar
+        if (!vigente) throw new Conflicto("Esa reserva cambió recién. Recarga la página.");
+        cotizacionVigente = true;
       }
-      await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "trabajo", entidadId: id, accion: "cancelar", datos: { motivo } });
+      await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "trabajo", entidadId: id, accion: "cancelar", datos: { motivo, consultaPerdida, cotizacionVigente } });
     });
   } catch (error) {
     if (error instanceof Conflicto) return { mensaje: error.message };
@@ -310,5 +316,6 @@ export async function cancelarReserva(_previo: EstadoFormulario, datos: FormData
   }
 
   despuesDeCambiar(id, actual.clienteId, actual.consultaId);
-  return { ok: true, mensaje: "Reserva cancelada. Si hubo adelanto, queda como ingreso." };
+  const [conPagos] = await db.select({ id: pago.id }).from(pago).where(and(eq(pago.trabajoId, id), eq(pago.anulado, false))).limit(1);
+  return { ok: true, mensaje: conPagos ? "Reserva cancelada. El adelanto queda como ingreso." : "Reserva cancelada." };
 }
