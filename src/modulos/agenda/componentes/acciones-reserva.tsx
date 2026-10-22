@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { useActionState, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { CalendarIcon, XIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
@@ -11,8 +12,8 @@ import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
-import { cancelarReserva, consultarEspacios, reprogramarReserva } from "../acciones";
-import type { EspacioDisponible } from "../consultas";
+import { cancelarReserva, reprogramarReserva } from "../acciones";
+import { useEspaciosLibres } from "./espacios-libres";
 
 // HU-31: reprogramar o cancelar una reserva agendada (RF-39). Cada una se abre aparte, como "Desactivar" en otras
 // pantallas: no se toca sin querer. Reprogramar ofrece solo los espacios libres en las nuevas fechas (sin contar la
@@ -30,8 +31,15 @@ type Props = {
 
 export function AccionesReserva(props: Props) {
   const [abierta, setAbierta] = useState<"reprogramar" | "cancelar" | null>(null);
-  if (abierta === "reprogramar") return <Reprogramar {...props} alTerminar={() => setAbierta(null)} />;
-  if (abierta === "cancelar") return <Cancelar {...props} alTerminar={() => setAbierta(null)} />;
+  const router = useRouter();
+  const ruta = usePathname();
+  // Hecho el cambio, sin "?agendada=1": el aviso de recién agendada ya no corresponde
+  const alTerminar = (hecho?: boolean) => {
+    setAbierta(null);
+    if (hecho) router.replace(ruta);
+  };
+  if (abierta === "reprogramar") return <Reprogramar {...props} alTerminar={alTerminar} />;
+  if (abierta === "cancelar") return <Cancelar {...props} alTerminar={alTerminar} />;
   return (
     <div className="flex flex-wrap gap-2">
       <Button type="button" variant="outline" onClick={() => setAbierta("reprogramar")}>
@@ -46,9 +54,9 @@ export function AccionesReserva(props: Props) {
   );
 }
 
-function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espacioId: espacioActual, hoy, alTerminar }: Props & { alTerminar: () => void }) {
+function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espacioId: espacioActual, hoy, alTerminar }: Props & { alTerminar: (hecho?: boolean) => void }) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
-    conAviso(reprogramarReserva, (r) => r.ok && alTerminar()),
+    conAviso(reprogramarReserva, (r) => r.ok && alTerminar(true)),
     {},
   );
   const formulario = useRef<HTMLFormElement>(null);
@@ -57,25 +65,10 @@ function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espac
   // Controlados: React reinicia el formulario al terminar la acción y así nada se pierde tras un error
   const [fechaInicio, setFechaInicio] = useState(inicioActual < hoy ? hoy : inicioActual);
   const [fechaFin, setFechaFin] = useState(finActual < hoy ? hoy : finActual);
-  const [espacios, setEspacios] = useState<EspacioDisponible[] | null>(null);
-  const [espacioId, setEspacioId] = useState(String(espacioActual));
-  const [buscando, iniciar] = useTransition();
-  const [fechasValidas, setFechasValidas] = useState(true);
-  // Los espacios libres en las fechas elegidas, sin contar esta reserva; solo vale la última respuesta
-  const pedido = useRef(0);
-  useEffect(() => {
-    if (!fechaInicio || !fechaFin) return;
-    const este = ++pedido.current;
-    iniciar(async () => {
-      const nuevos = await consultarEspacios({ fechaInicio, fechaFin, excepto: id });
-      if (este !== pedido.current) return;
-      // Sin lista: las fechas no valen (el servidor no busca con ellas)
-      setFechasValidas(nuevos !== null);
-      setEspacios(nuevos ?? []);
-      if (nuevos) setEspacioId((elegido) => (nuevos.some((x) => String(x.id) === elegido && x.libre) ? elegido : ""));
-    });
-  }, [fechaInicio, fechaFin, id]);
-  const libres = (espacios ?? []).filter((x) => x.libre);
+  const { libres, buscando, ayuda } = useEspaciosLibres(fechaInicio, fechaFin, { excepto: id });
+  // El elegido vale mientras siga libre en las fechas de ahora (el actual lo está: no se cuenta la propia reserva)
+  const [espacioElegido, setEspacioId] = useState(String(espacioActual));
+  const espacioId = libres.some((x) => String(x.id) === espacioElegido) ? espacioElegido : "";
 
   return (
     <form ref={formulario} action={accion} className="flex flex-col gap-5 rounded-sm border border-border p-4" noValidate aria-labelledby="reprogramar-titulo">
@@ -94,15 +87,7 @@ function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espac
         id="espacioId"
         etiqueta="Espacio"
         error={e.espacioId}
-        ayuda={
-          buscando || espacios === null
-            ? "Buscando espacios libres…"
-            : !fechasValidas
-              ? "Revisa las fechas: el ingreso desde hoy y hasta un año adelante."
-              : libres.length === 0
-                ? "No hay espacio libre en esas fechas: elige otras."
-                : "Solo los libres en esas fechas."
-        }
+        ayuda={ayuda}
       >
         <Selector
           id="espacioId"
@@ -124,7 +109,7 @@ function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espac
         <Button type="submit" disabled={enviando || buscando}>
           {enviando ? "Moviendo…" : "Mover reserva"}
         </Button>
-        <Button type="button" variant="outline" onClick={alTerminar}>
+        <Button type="button" variant="outline" onClick={() => alTerminar()}>
           Volver
         </Button>
       </div>
@@ -132,9 +117,9 @@ function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espac
   );
 }
 
-function Cancelar({ id, pagado, alTerminar }: Props & { alTerminar: () => void }) {
+function Cancelar({ id, pagado, alTerminar }: Props & { alTerminar: (hecho?: boolean) => void }) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
-    conAviso(cancelarReserva, (r) => r.ok && alTerminar()),
+    conAviso(cancelarReserva, (r) => r.ok && alTerminar(true)),
     {},
   );
   const formulario = useRef<HTMLFormElement>(null);
@@ -162,7 +147,7 @@ function Cancelar({ id, pagado, alTerminar }: Props & { alTerminar: () => void }
         <Button type="submit" variant="destructive" disabled={enviando}>
           {enviando ? "Cancelando…" : "Cancelar reserva"}
         </Button>
-        <Button type="button" variant="outline" onClick={alTerminar}>
+        <Button type="button" variant="outline" onClick={() => alTerminar()}>
           Volver
         </Button>
       </div>
