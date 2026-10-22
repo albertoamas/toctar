@@ -1,8 +1,9 @@
 import "server-only";
-import { and, asc, desc, eq, gte, isNull, lte, ne, notInArray, or } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, lte, ne, notInArray, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import {
+  archivo,
   cliente,
   consulta,
   cotizacion,
@@ -18,6 +19,8 @@ import {
   vehiculo,
 } from "@/db/esquema";
 import { ESTADOS_TRABAJO, type EstadoTrabajo, type MetodoPago, type TipoPago } from "@/db/esquema/trabajos";
+import { fechaEnBolivia } from "@/lib/fechas";
+import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { duracionEfectiva } from "@/modulos/catalogo/reglas";
 import { sucursalPrincipal } from "@/modulos/configuracion/consultas";
 import { opcionesDeServicio, type OpcionServicio } from "@/modulos/cotizaciones/consultas";
@@ -187,6 +190,8 @@ type PagoReserva = {
   anulado: boolean;
   motivoAnulacion: string | null;
   registradoPor: string;
+  /** La foto del comprobante (bucket privado), con enlaces firmados y temporales. */
+  comprobante: UrlsFoto | null;
 };
 
 export type DetalleReserva = {
@@ -256,7 +261,7 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
 
   let montos: DetalleReserva["montos"] = null;
   if (conMontos) {
-    const [lineas, pagos] = await Promise.all([
+    const [lineas, filas] = await Promise.all([
       db
         .select({ descripcion: trabajoLinea.descripcion, precio: trabajoLinea.precio })
         .from(trabajoLinea)
@@ -272,12 +277,24 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
           anulado: pago.anulado,
           motivoAnulacion: pago.motivoAnulacion,
           registradoPor: registrador.name,
+          clave: archivo.clave,
+          miniaturaClave: archivo.miniaturaClave,
+          ancho: archivo.ancho,
+          alto: archivo.alto,
         })
         .from(pago)
         .innerJoin(registrador, eq(pago.createdBy, registrador.id))
+        .leftJoin(archivo, eq(pago.comprobanteArchivoId, archivo.id))
         .where(eq(pago.trabajoId, id))
         .orderBy(asc(pago.fecha), asc(pago.id)),
     ]);
+    // Quien llega aquí ve pagos: recién ahora se firman los enlaces de los comprobantes
+    const pagos = await Promise.all(
+      filas.map(async ({ clave, miniaturaClave, ancho, alto, ...p }) => ({
+        ...p,
+        comprobante: clave ? await urlsFotoPrivada({ clave, miniaturaClave, ancho, alto }) : null,
+      })),
+    );
     montos = {
       lineas,
       descuento,
@@ -314,6 +331,43 @@ export async function reservasDeConsulta(consultaId: number): Promise<ReservaCor
     .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
     .where(eq(trabajo.consultaId, consultaId))
     .orderBy(desc(trabajo.createdAt));
+}
+
+export type ReservaDelCliente = ReservaCorta & { saldo: Saldo | null };
+
+/**
+ * Las reservas de un cliente para su ficha (HU-32): primero las que vienen (la más cercana arriba), después las pasadas
+ * (la más reciente arriba). Con el saldo de cada una solo si quien mira ve pagos (RN-12); las cuentas, las mismas de la
+ * reserva (`calcularSaldo`).
+ */
+export async function reservasDelCliente(clienteId: number, conMontos: boolean): Promise<ReservaDelCliente[]> {
+  const hoy = fechaEnBolivia();
+  const reservas = await db
+    .select({ ...columnasCortas, descuento: trabajo.descuento })
+    .from(trabajo)
+    .innerJoin(espacioTaller, eq(trabajo.espacioId, espacioTaller.id))
+    .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
+    .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
+    .where(eq(trabajo.clienteId, clienteId))
+    .orderBy(asc(trabajo.fechaInicio), asc(trabajo.id));
+  const proximas = reservas.filter((r) => r.fechaFin >= hoy);
+  const pasadas = reservas.filter((r) => r.fechaFin < hoy).reverse();
+  const ids = reservas.map((r) => r.id);
+  const [lineas, pagos] =
+    conMontos && ids.length > 0
+      ? await Promise.all([
+          db.select({ trabajoId: trabajoLinea.trabajoId, precio: trabajoLinea.precio }).from(trabajoLinea).where(inArray(trabajoLinea.trabajoId, ids)),
+          db.select({ trabajoId: pago.trabajoId, monto: pago.monto, anulado: pago.anulado }).from(pago).where(inArray(pago.trabajoId, ids)),
+        ])
+      : [[], []];
+  const precios = new Map<number, string[]>();
+  for (const l of lineas) precios.set(l.trabajoId, [...(precios.get(l.trabajoId) ?? []), l.precio]);
+  const pagosPor = new Map<number, { monto: string; anulado: boolean }[]>();
+  for (const p of pagos) pagosPor.set(p.trabajoId, [...(pagosPor.get(p.trabajoId) ?? []), p]);
+  return [...proximas, ...pasadas].map(({ descuento, ...r }) => ({
+    ...r,
+    saldo: conMontos ? calcularSaldo(precios.get(r.id) ?? [], descuento, pagosPor.get(r.id) ?? []) : null,
+  }));
 }
 
 export type ReservaTablero = {

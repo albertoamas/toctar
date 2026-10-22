@@ -154,7 +154,7 @@ Todas validan con Zod (también las de datos sueltos) y empiezan con `exigirModu
 | `agendarReserva` | `agenda` (+ `pagos` para el adelanto) | Valida fechas, espacio activo, técnico, cliente y vehículo, líneas; con cotización: que sea la vigente de una consulta "cotizado". En una transacción: trabajo, líneas, adelanto, cotización "aceptada", consulta "confirmado", auditoría. El cruce lo frena la base | "Reserva agendada para el 24/10 en Espacio 2." · "Ese espacio se ocupó recién: elige otro." · "Esa cotización ya fue agendada." |
 | `reprogramarReserva` | `agenda` | Nuevas fechas y espacio de una reserva agendada; misma validación | "Reserva movida al 28/10 en Espacio 1." |
 | `cancelarReserva` | `agenda` | Motivo obligatorio; estado "cancelado"; los pagos quedan. Si vino de una consulta "confirmado": la consulta pasa a "perdido" y la cotización vuelve a "enviada", las dos juntas | "Reserva cancelada. El adelanto queda como ingreso." (sin pagos: "Reserva cancelada.") |
-| `registrarPago` | `pagos` | Monto (> 0 y ≤ saldo), método, tipo, fecha (≤ hoy), comprobante opcional (foto privada); auditoría | "Pago de Bs 300 registrado. Saldo: Bs 1.550." · "El pago no puede ser mayor que el saldo (Bs 1.550)." |
+| `registrarPago` | `pagos` | Monto (> 0 y ≤ saldo), método, tipo, fecha (≤ hoy), comprobante opcional (foto privada); auditoría | "Pago de 300 Bs registrado. Saldo: 1550 Bs." · "El pago no puede ser mayor que el saldo (1550 Bs)." · "Esa reserva ya está pagada." |
 | `anularPago` | `pagos` | Motivo obligatorio; no se borra; auditoría | "Pago anulado." |
 
 **Consultas** (`src/modulos/agenda/consultas.ts`, `src/modulos/pagos/consultas.ts`): `semanaDeAgenda(lunes)`, `obtenerReserva(id)`, `reservasDelCliente(id)`, `reservaDeConsulta(id)`, `pagosDeTrabajo(id)`.
@@ -173,7 +173,7 @@ Todas validan con Zod (también las de datos sueltos) y empiezan con `exigirModu
 - Tablero: "Nueva reserva" · "Hoy" · "Semana anterior" · "Semana siguiente" · "Libre" · "Agendar" · "Cerrado".
 - Nueva reserva: "Ingresa el" · "Entrega aproximada" (ayuda: "Sugerida por la duración de los servicios. Se le da al cliente como aproximada.") · "Espacio" · "Técnico" (opción "Sin asignar") · "Hora aproximada" · "Nota" · "Adelanto" · "Método": "Efectivo" / "QR" / "Transferencia" · "Sin adelanto" · "Comprobante (opcional)" · "Agendar".
 - Reserva: "Reprogramar" · "Cancelar reserva" · "Motivo" · "El adelanto no se devuelve." · "Servicios" · "Total" · "Pagado" · "Saldo" · "Registrar pago" · "Adelanto" / "Saldo" · "Anular" · "Anulado: <motivo>".
-- Errores: "Elige el espacio." · "La entrega no puede ser antes del ingreso." · "No hay espacio libre en esas fechas: elige otras." · "Ese espacio se ocupó recién: elige otro." · "Escribe el motivo." · "El pago no puede ser mayor que el saldo (Bs X)." · "La fecha del pago no puede ser futura." · "Ese técnico ya no está activo.".
+- Errores: "Elige el espacio." · "La entrega no puede ser antes del ingreso." · "No hay espacio libre en esas fechas: elige otras." · "Ese espacio se ocupó recién: elige otro." · "Escribe el motivo." · "El pago no puede ser mayor que el saldo (X Bs)." · "La fecha del pago no puede ser futura." · "Ese técnico ya no está activo.".
 
 ## 9. Pruebas
 

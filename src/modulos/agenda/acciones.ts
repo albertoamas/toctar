@@ -12,6 +12,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { sucursalPrincipal } from "@/modulos/configuracion/consultas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { descripcionLinea, montoNoMayor } from "@/modulos/cotizaciones/reglas";
+import { descartarComprobante, guardarComprobante } from "@/modulos/pagos/comprobante";
 import { calcularSaldo } from "@/modulos/pagos/reglas";
 import { datosDeCotizacion, espaciosEnFechas, tecnicosActivos, type EspacioDisponible } from "./consultas";
 import { entradaReserva, esquemaAdelanto, esquemaCancelar, esquemaConsultaEspacios, esquemaFechas, esquemaReprogramar, esquemaReserva } from "./esquemas";
@@ -125,6 +126,10 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
 
   const { id: sucursalId } = await sucursalPrincipal();
   const autorId = Number(usuario.id);
+  // El comprobante del adelanto, si vino: se sube antes de la transacción y se borra si la reserva no se guarda
+  const foto = await guardarComprobante(adelanto ? datos.get("comprobante") : null, autorId);
+  if (!foto.ok) return { errores: { comprobante: foto.error } };
+  const comprobanteId = foto.archivoId;
   let resultado: { id: number };
   try {
     resultado = await db.transaction(async (tx) => {
@@ -172,15 +177,16 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
       if (adelanto) {
         const [p] = await tx
           .insert(pago)
-          .values({ trabajoId: nuevo.id, monto: adelanto.monto, metodo: adelanto.metodo, tipo: "adelanto", fecha: fechaEnBolivia(), createdBy: autorId })
+          .values({ trabajoId: nuevo.id, monto: adelanto.monto, metodo: adelanto.metodo, tipo: "adelanto", fecha: fechaEnBolivia(), comprobanteArchivoId: comprobanteId, createdBy: autorId })
           .returning({ id: pago.id });
-        await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "pago", entidadId: p.id, accion: "crear", datos: { trabajoId: nuevo.id, monto: adelanto.monto, tipo: "adelanto" } });
+        await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "pago", entidadId: p.id, accion: "crear", datos: { trabajoId: nuevo.id, monto: adelanto.monto, tipo: "adelanto", metodo: adelanto.metodo, fecha: fechaEnBolivia(), comprobanteArchivoId: comprobanteId } });
       }
       // Un cliente que reserva sube en la lista de recientes de Clientes
       await tx.update(cliente).set({ updatedAt: sql`now()` }).where(eq(cliente.id, clienteId));
       return { id: nuevo.id };
     });
   } catch (error) {
+    await descartarComprobante(comprobanteId);
     if (error instanceof Conflicto) return { mensaje: error.message };
     // Dos personas reservaron el mismo espacio a la vez: la base frenó la segunda (D-5)
     if (exclusionViolada(error) === "trabajo_sin_cruces") return { errores: { espacioId: ESPACIO_OCUPADO } };

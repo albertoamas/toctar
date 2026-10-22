@@ -10,13 +10,13 @@ import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import { Textarea } from "@/componentes/ui/textarea";
-import type { MetodoPago } from "@/db/esquema/trabajos";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { leerMonto, mostrarMonto } from "@/modulos/catalogo/reglas";
 import { calcularTotales } from "@/modulos/cotizaciones/reglas";
 import type { OpcionServicio } from "@/modulos/cotizaciones/consultas";
 import { LineasServicio, type Linea } from "@/modulos/cotizaciones/componentes/lineas-servicio";
-import { NOMBRE_METODO } from "@/modulos/pagos/reglas";
+import { CampoComprobante, useEnvioConComprobante } from "@/modulos/pagos/componentes/campo-comprobante";
+import { METODOS, NOMBRE_METODO } from "@/modulos/pagos/reglas";
 import { agendarReserva } from "../acciones";
 import type { EspacioDisponible } from "../consultas";
 import { fechaEntregaSugerida } from "../reglas";
@@ -42,7 +42,6 @@ type Props = {
   espaciosIniciales: EspacioDisponible[];
 };
 
-const METODOS: MetodoPago[] = ["efectivo", "qr", "transferencia"];
 
 export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido, hoy, fechaInicial, espacioInicial, espaciosIniciales }: Props) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(agendarReserva, {});
@@ -71,6 +70,8 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
   const [sinAdelanto, setSinAdelanto] = useState(false);
   const [adelanto, setAdelanto] = useState(mostrarMonto(adelantoSugerido));
   const [metodo, setMetodo] = useState<string>("");
+  // El comprobante del adelanto va achicado; con "Sin adelanto" no va
+  const { setComprobante, preparando, errorFoto, enviar } = useEnvioConComprobante(accion);
 
   function cambiarFechas(inicio: string, fin: string | null) {
     setFechaInicio(inicio);
@@ -87,7 +88,7 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
       : null;
 
   return (
-    <form ref={formulario} action={accion} className="flex max-w-3xl flex-col gap-10" noValidate>
+    <form ref={formulario} action={accion} onSubmit={(ev) => enviar(ev, conPagos && !sinAdelanto)} className="flex max-w-3xl flex-col gap-10" noValidate>
       <input type="hidden" name="origen" value={origen.tipo} />
       {origen.tipo === "cotizacion" ? (
         <input type="hidden" name="cotizacionId" value={origen.cotizacionId} />
@@ -182,7 +183,12 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
           <legend className="mb-5 font-heading text-2xl font-bold italic">Adelanto</legend>
           {sinAdelanto && <input type="hidden" name="sinAdelanto" value="on" />}
           <label htmlFor="sinAdelanto" className="flex min-h-11 cursor-pointer items-center gap-3">
-            <Checkbox id="sinAdelanto" checked={sinAdelanto} onCheckedChange={(si) => setSinAdelanto(si === true)} />
+            <Checkbox id="sinAdelanto" checked={sinAdelanto} onCheckedChange={(si) => {
+                setSinAdelanto(si === true);
+                // El campo de la foto se va y vuelve vacío: la elegida no queda escondida para subirse igual
+                if (si === true) setComprobante(null);
+              }}
+            />
             <span className="font-medium">Sin adelanto</span>
           </label>
           {!sinAdelanto && (
@@ -204,14 +210,15 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
                 </RadioGroup>
                 {e.metodo && <MensajeError id="metodo-error">{e.metodo}</MensajeError>}
               </div>
+              <CampoComprobante onChange={setComprobante} error={errorFoto ?? e.comprobante} />
             </>
           )}
         </fieldset>
       )}
 
       <div>
-        <Button type="submit" disabled={enviando || buscando}>
-          {enviando ? "Agendando…" : "Agendar"}
+        <Button type="submit" disabled={enviando || buscando || preparando}>
+          {preparando ? "Preparando foto…" : enviando ? "Agendando…" : "Agendar"}
         </Button>
       </div>
     </form>

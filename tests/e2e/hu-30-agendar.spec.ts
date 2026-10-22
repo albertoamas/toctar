@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page, type TestInfo } from "@playwright/test";
 import pg from "pg";
-import { crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, URL_BASE_E2E } from "./apoyo";
+import { crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PNG, URL_BASE_E2E } from "./apoyo";
 
 // HU-30 Agendar reserva (flujo crítico 2). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §9.
 // Cada prueba usa sus propios días (lejos de hoy y distintos por proyecto) para no chocar con las demás en los
@@ -92,6 +92,9 @@ test("desde la cotización: queda aceptada, la consulta confirmada, las líneas 
   await espacio(page).selectOption({ index: 1 });
   await page.getByRole("radio", { name: "QR" }).check();
   await page.getByLabel("Hora aproximada").fill("a las 9");
+  // El adelanto con la foto del comprobante (HU-32): queda privada y se ve en la reserva
+  await page.locator("#comprobante").setInputFiles({ name: "comprobante.png", mimeType: "image/png", buffer: PNG });
+  await expect(page.getByRole("img", { name: "Foto del comprobante elegida" })).toBeVisible();
   // El adelanto sugerido sale de Configuración (otra prueba lo cambia mientras esta corre): se usa el que trae
   const adelanto = Number(await page.getByLabel("Monto").inputValue());
   await page.getByRole("button", { name: "Agendar" }).click();
@@ -100,15 +103,17 @@ test("desde la cotización: queda aceptada, la consulta confirmada, las líneas 
   const saldo = page.locator("dl").filter({ hasText: "Saldo" });
   await expect(saldo).toContainText("800 Bs");
   await expect(saldo).toContainText(`${800 - adelanto} Bs`);
+  await expect(page.getByRole("button", { name: /^Ver el comprobante: Adelanto por QR/ })).toBeVisible();
 
-  const [r] = await consultar<{ trabajo: number; descuento: string; cot: string; con: string; lineas: number; adelanto: string; metodo: string }>(
+  const [r] = await consultar<{ trabajo: number; descuento: string; cot: string; con: string; lineas: number; adelanto: string; metodo: string; privado: boolean }>(
     `select t.id as trabajo, t.descuento, c.estado as cot, q.estado as con,
        (select count(*)::int from trabajo_linea l where l.trabajo_id = t.id) as lineas,
-       (select p.monto from pago p where p.trabajo_id = t.id) as adelanto, (select p.metodo from pago p where p.trabajo_id = t.id) as metodo
+       (select p.monto from pago p where p.trabajo_id = t.id) as adelanto, (select p.metodo from pago p where p.trabajo_id = t.id) as metodo,
+       (select a.privado from pago p join archivo a on a.id = p.comprobante_archivo_id where p.trabajo_id = t.id) as privado
      from trabajo t join cotizacion c on c.id = t.cotizacion_id join consulta q on q.id = t.consulta_id where t.cotizacion_id = $1`,
     [cotizacionId],
   );
-  expect(r).toMatchObject({ descuento: "100.00", cot: "aceptada", con: "confirmado", lineas: 1, adelanto: adelanto.toFixed(2), metodo: "qr" });
+  expect(r).toMatchObject({ descuento: "100.00", cot: "aceptada", con: "confirmado", lineas: 1, adelanto: adelanto.toFixed(2), metodo: "qr", privado: true });
   // Auditoría de la reserva y del pago (RNF-10)
   const auditoria = await consultar<{ accion: string }>(
     "select accion from auditoria where (entidad = 'trabajo' and entidad_id = $1) or (entidad = 'pago' and (datos->>'trabajoId')::int = $1) order by id",
@@ -213,7 +218,7 @@ test("reserva directa: cliente y vehículo registrados, servicio del catálogo c
   await page.getByRole("button", { name: "Agendar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1$/);
   await expect(page.getByRole("heading", { level: 1, name: `DI30${s}6` })).toBeVisible();
-  await expect(page.getByText("Sin adelanto.")).toBeVisible();
+  await expect(page.getByText("Todavía no hay pagos.")).toBeVisible();
   await expect(page.locator("dl").filter({ hasText: "Saldo" })).toContainText("900 Bs");
 });
 

@@ -3,15 +3,20 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { cn } from "cn";
-import { InboxIcon } from "lucide-react";
+import { CalendarIcon, InboxIcon } from "lucide-react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import { puedeVerModulo } from "@/lib/permisos";
+import { formatearFecha } from "@/lib/fechas";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, whatsAppLocal } from "@/lib/whatsapp";
+import { reservasDelCliente } from "@/modulos/agenda/consultas";
+import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
+import { mostrarMonto } from "@/modulos/catalogo/reglas";
+import { estaPagada } from "@/modulos/pagos/reglas";
 import { AccesoCliente } from "@/modulos/clientes/componentes/acceso-cliente";
 import { FormularioDatosCliente } from "@/modulos/clientes/componentes/formulario-datos-cliente";
 import { VehiculosCliente } from "@/modulos/clientes/componentes/vehiculos-cliente";
@@ -23,7 +28,7 @@ import { consultasDelCliente } from "@/modulos/consultas/consultas";
 export const metadata: Metadata = { title: "Cliente" };
 
 // HU-23: ficha del cliente: datos, vehículos, WhatsApp y desactivar. HU-24: sus consultas y "Nueva consulta", si quien
-// entra tiene el módulo. Las cotizaciones, órdenes y pagos se suman en C2 a C4, a medida que existen sus tablas (C1 §2).
+// entra tiene el módulo. HU-32: sus reservas, con el saldo de cada una para quien ve pagos. Las órdenes llegan en C4.
 export default function PaginaCliente({ params, searchParams }: PageProps<"/panel/clientes/[id]">) {
   return (
     <section className="flex flex-col gap-6">
@@ -41,11 +46,14 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
   const numero = Number(id);
   if (!Number.isInteger(numero) || numero <= 0) notFound();
   const verConsultas = puedeVerModulo(usuario, "consultas");
-  const [c, tamanos, consultas, parametros] = await Promise.all([
+  const verAgenda = puedeVerModulo(usuario, "agenda");
+  const verPagos = puedeVerModulo(usuario, "pagos");
+  const [c, tamanos, consultas, parametros, reservas] = await Promise.all([
     obtenerCliente(numero),
     tamanosActivos(),
     verConsultas ? consultasDelCliente(numero) : [],
     obtenerParametros(),
+    verAgenda ? reservasDelCliente(numero, verPagos) : [],
   ]);
   if (!c) notFound();
 
@@ -99,6 +107,48 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
             )}
           </div>
           {consultas.length > 0 ? <ListaConsultas consultas={consultas} umbral={parametros.dias_consulta_fria} sinCliente /> : <p className="text-tinta-suave">Todavía no tiene consultas.</p>}
+        </section>
+      )}
+
+      {verAgenda && (
+        <section aria-labelledby="reservas-titulo" className="flex max-w-5xl flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <h2 id="reservas-titulo" className="font-heading text-2xl font-bold italic">Reservas</h2>
+            {/* La reserva directa lleva precios: la arma quien ve pagos (las demás salen de una consulta) */}
+            {c.activo && verPagos && (
+              <Link href={`/panel/agenda/nueva?cliente=${c.id}`} className={cn(buttonVariants({ variant: "outline" }))}>
+                <CalendarIcon />
+                Nueva reserva
+              </Link>
+            )}
+          </div>
+          {reservas.length === 0 ? (
+            <p className="text-tinta-suave">Todavía no tiene reservas.</p>
+          ) : (
+            <ul aria-label="Reservas" className="flex flex-col divide-y divide-border rounded-sm border border-border">
+              {reservas.map((r) => (
+                <li key={r.id}>
+                  <Link href={`/panel/agenda/${r.id}`} className="flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-1 p-3 hover:bg-superficie">
+                    <span className="flex flex-col">
+                      <span className="font-semibold">
+                        {formatearFecha(r.fechaInicio)} en {r.espacio}
+                      </span>
+                      <span className="text-sm text-tinta-suave">{r.placa}</span>
+                    </span>
+                    <span className="flex flex-wrap items-center gap-3">
+                      {/* El saldo de una cancelada no se cobra: no se muestra */}
+                      {r.saldo && r.estado !== "cancelado" && (
+                        <span className={cn("tabular-nums", estaPagada(r.saldo.saldo) ? "text-exito" : "font-semibold")}>
+                          {estaPagada(r.saldo.saldo) ? "Pagado" : `Saldo: ${mostrarMonto(r.saldo.saldo)} Bs`}
+                        </span>
+                      )}
+                      <span className={cn("tt-insignia", r.estado === "cancelado" && "tt-insignia--aviso")}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       )}
     </>

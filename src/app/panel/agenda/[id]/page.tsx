@@ -16,12 +16,15 @@ import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { AccionesReserva } from "@/modulos/agenda/componentes/acciones-reserva";
 import { obtenerReserva } from "@/modulos/agenda/consultas";
 import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
-import { METODO_EN_FRASE, NOMBRE_TIPO_PAGO } from "@/modulos/pagos/reglas";
+import { AnularPago } from "@/modulos/pagos/componentes/anular-pago";
+import { RegistrarPago } from "@/modulos/pagos/componentes/registrar-pago";
+import { VerComprobante } from "@/modulos/pagos/componentes/ver-comprobante";
+import { estaPagada, METODO_EN_FRASE, NOMBRE_TIPO_PAGO } from "@/modulos/pagos/reglas";
 
 export const metadata: Metadata = { title: "Reserva" };
 
 // HU-30: una reserva. Con "Pagos" (o el dueño), sus servicios, el total, lo pagado y el saldo. HU-31: reprogramarla o
-// cancelarla mientras está agendada. Registrar y anular pagos llegan con HU-32.
+// cancelarla mientras está agendada. HU-32: registrar y anular pagos, con el comprobante; una cancelada, sin acciones.
 export default function PaginaReserva({ params, searchParams }: PageProps<"/panel/agenda/[id]">) {
   return (
     <section className="flex flex-col gap-6">
@@ -45,6 +48,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
   const verFicha = puedeVerModulo(usuario, "clientes");
   const verConsulta = puedeVerModulo(usuario, "consultas");
   const unDia = r.fechaInicio === r.fechaFin;
+  const hoy = fechaEnBolivia();
+  const cancelada = r.estado === "cancelado";
 
   return (
     <>
@@ -115,7 +120,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
 
         <div className="flex flex-col gap-10 lg:col-start-1 lg:row-start-1">
           {r.estado === "agendado" && (
-            <AccionesReserva id={r.id} fechaInicio={r.fechaInicio} fechaFin={r.fechaFin} espacioId={r.espacioId} hoy={fechaEnBolivia()} pagado={r.montos?.saldo.pagado ?? null} />
+            <AccionesReserva id={r.id} fechaInicio={r.fechaInicio} fechaFin={r.fechaFin} espacioId={r.espacioId} hoy={hoy} pagado={r.montos?.saldo.pagado ?? null} />
           )}
           {r.nota && (
             <section aria-labelledby="nota-titulo" className="flex flex-col gap-2">
@@ -153,25 +158,40 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
               <section aria-labelledby="pagos-titulo" className="flex flex-col gap-3">
                 <h2 id="pagos-titulo" className="font-heading text-2xl font-bold italic">Pagos</h2>
                 {r.montos.pagos.length === 0 ? (
-                  <p className="text-tinta-suave">Sin adelanto.</p>
+                  <p className="text-tinta-suave">Todavía no hay pagos.</p>
                 ) : (
                   <ul aria-label="Pagos" className="flex flex-col divide-y divide-border rounded-sm border border-border">
-                    {r.montos.pagos.map((p) => (
-                      <li key={p.id} className={cn("flex flex-col gap-0.5 p-3", p.anulado && "text-tinta-suave")}>
-                        <span className="flex justify-between gap-4">
-                          <span className={cn("font-semibold", p.anulado && "line-through")}>
-                            {NOMBRE_TIPO_PAGO[p.tipo]} {METODO_EN_FRASE[p.metodo]}
-                          </span>
-                          <span className={cn("tabular-nums", p.anulado && "line-through")}>{bs(p.monto)}</span>
-                        </span>
-                        <span className="text-sm text-tinta-suave">
-                          {formatearFecha(p.fecha)}, registrado por {p.registradoPor}
-                        </span>
-                        {p.anulado && <span className="text-sm">Anulado: {p.motivoAnulacion}</span>}
-                      </li>
-                    ))}
+                    {r.montos.pagos.map((p) => {
+                      const descripcion = `${NOMBRE_TIPO_PAGO[p.tipo]} ${METODO_EN_FRASE[p.metodo]} de ${bs(p.monto)}, ${formatearFecha(p.fecha)}`;
+                      return (
+                        <li key={p.id} className="flex flex-col gap-3 p-3">
+                          <div className="flex gap-3">
+                            {p.comprobante && <VerComprobante foto={p.comprobante} descripcion={descripcion} />}
+                            <div className={cn("flex min-w-0 flex-1 flex-col gap-0.5", p.anulado && "text-tinta-suave")}>
+                              <span className="flex justify-between gap-4">
+                                <span className={cn("font-semibold", p.anulado && "line-through")}>
+                                  {NOMBRE_TIPO_PAGO[p.tipo]} {METODO_EN_FRASE[p.metodo]}
+                                </span>
+                                <span className={cn("tabular-nums", p.anulado && "line-through")}>{bs(p.monto)}</span>
+                              </span>
+                              <span className="text-sm text-tinta-suave">
+                                {formatearFecha(p.fecha)}, registrado por {p.registradoPor}
+                              </span>
+                              {p.anulado && <span className="text-sm text-tinta">Anulado: {p.motivoAnulacion}</span>}
+                            </div>
+                          </div>
+                          {!p.anulado && !cancelada && <AnularPago id={p.id} descripcion={descripcion} />}
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
+                {!cancelada &&
+                  (estaPagada(r.montos.saldo.saldo) ? (
+                    <p className="font-semibold text-exito">Pagado por completo.</p>
+                  ) : (
+                    <RegistrarPago trabajoId={r.id} saldo={r.montos.saldo.saldo} hoy={hoy} conPagos={r.montos.pagos.some((p) => !p.anulado)} />
+                  ))}
               </section>
             </>
           )}
