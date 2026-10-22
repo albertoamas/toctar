@@ -1,7 +1,7 @@
 # C4 Taller y entrega — especificación
 
 - **Fase y semana:** C. Entrega 2 · semanas 4 y 5
-- **Estado:** borrador (22 de octubre de 2026), para aprobar
+- **Estado:** aprobada (22 de octubre de 2026); en curso: HU-33
 - **Historias:** HU-33 Recibir vehículo · HU-34 Órdenes del técnico · HU-35 Avisar vehículo listo · HU-36 Entregar vehículo · HU-37 Saldos pendientes · HU-38 Recordatorios de mantenimiento
 - **Base:**
   - Requisitos: RF-40 a RF-43, RF-46 a RF-50; RNF-01, RNF-05, RNF-07, RNF-10, RNF-11.
