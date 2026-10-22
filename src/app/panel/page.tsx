@@ -43,8 +43,8 @@ async function Contenido() {
     <section className="flex flex-col gap-6">
       <h1 className="font-heading text-4xl font-extrabold italic">Hola, {primerNombre}</h1>
       {modulos.length === 0 ? (
-        // Hoy, el técnico: sus pantallas (las órdenes de trabajo) llegan con la gestión del taller.
-        <EstadoVacio>Por ahora no hay nada para ti en el panel. Tus trabajos del taller van a aparecer aquí.</EstadoVacio>
+        // Un encargado al que todavía no le marcaron permisos (el técnico ya tiene sus órdenes, C4)
+        <EstadoVacio>Por ahora no hay nada para ti en el panel. Pídele al dueño que te dé acceso a lo que vas a usar.</EstadoVacio>
       ) : (
         <ul className="grid max-w-4xl gap-3 md:grid-cols-2">
           {modulos.map((m) =>

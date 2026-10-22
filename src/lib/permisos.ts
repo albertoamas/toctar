@@ -38,7 +38,7 @@ export const MODULOS = {
   consultas: { ruta: "/panel/consultas", nombre: "Consultas", permisoEncargado: "consultas", tecnico: false, construido: true },
   cotizaciones: { ruta: "/panel/cotizaciones", nombre: "Cotizaciones", permisoEncargado: null, tecnico: false, construido: false },
   agenda: { ruta: "/panel/agenda", nombre: "Agenda", permisoEncargado: "agenda", tecnico: false, construido: true },
-  ordenes: { ruta: "/panel/ordenes", nombre: "Órdenes", permisoEncargado: "ordenes", tecnico: true, construido: false },
+  ordenes: { ruta: "/panel/ordenes", nombre: "Órdenes", permisoEncargado: "ordenes", tecnico: true, construido: true },
   // En C3 los pagos se registran desde cada reserva; la lista de saldos (HU-37, C4) le dará su pantalla
   pagos: { ruta: "/panel/pagos", nombre: "Pagos", permisoEncargado: "pagos", tecnico: false, construido: true, enMenu: false },
   mantenimientos: { ruta: "/panel/mantenimientos", nombre: "Mantenimientos", permisoEncargado: "mantenimientos", tecnico: false, construido: false },
