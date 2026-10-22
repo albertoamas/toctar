@@ -20,7 +20,7 @@ import type { Canal, EstadoConsulta } from "@/db/esquema/consultas";
 import type { DatosDocumento, EstadoCotizacion } from "@/db/esquema/cotizaciones";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { preciosVigentes } from "@/modulos/catalogo/consultas";
-import type { Monto } from "@/modulos/catalogo/reglas";
+import { duracionEfectiva, type Monto } from "@/modulos/catalogo/reglas";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { descripcionLinea, fechaValidez, precioSugerido, type Sugerencia } from "./reglas";
 
@@ -33,7 +33,40 @@ export type OpcionServicio = {
   variante: string;
   descripcion: string;
   sugerencia: Sugerencia;
+  /** Días estimados (la de la variante o la del servicio, RF-27): sugieren la entrega en la agenda (C3). */
+  duracion: number;
 };
+
+/**
+ * Los servicios activos, por variante, con el precio vigente para ese tamaño de vehículo (RF-31). Los usan la
+ * cotización (C2) y la reserva directa (C3).
+ */
+export async function opcionesDeServicio(tamanoId: number): Promise<OpcionServicio[]> {
+  const variantes = await db
+    .select({
+      varianteId: variante.id,
+      servicio: servicio.nombre,
+      variante: variante.nombre,
+      duracionServicio: servicio.duracionDias,
+      duracionVariante: variante.duracionDias,
+    })
+    .from(variante)
+    .innerJoin(servicio, eq(variante.servicioId, servicio.id))
+    .where(and(eq(variante.activo, true), eq(servicio.activo, true)))
+    .orderBy(asc(servicio.orden), asc(servicio.id), asc(variante.orden), asc(variante.id));
+  const vigentes = await preciosVigentes(variantes.map((v) => v.varianteId));
+  const porVariante = new Map<number, Map<number, Monto>>();
+  for (const p of vigentes) {
+    if (!porVariante.has(p.varianteId)) porVariante.set(p.varianteId, new Map());
+    porVariante.get(p.varianteId)!.set(p.tamanoId, p.monto);
+  }
+  return variantes.map(({ duracionServicio, duracionVariante, ...v }) => ({
+    ...v,
+    descripcion: descripcionLinea(v.servicio, v.variante),
+    sugerencia: precioSugerido(porVariante.get(v.varianteId) ?? new Map(), tamanoId),
+    duracion: duracionEfectiva({ duracionDias: duracionServicio }, { duracionDias: duracionVariante }),
+  }));
+}
 
 type BaseCotizacion = {
   numero: string;
@@ -85,13 +118,8 @@ export async function datosParaCotizar(consultaId: number, desdeId: number | nul
     .where(eq(consulta.id, consultaId));
   if (!c) return null;
 
-  const [variantes, fotos, parametros, [vigente], desde, [reemplazado]] = await Promise.all([
-    db
-      .select({ varianteId: variante.id, servicio: servicio.nombre, variante: variante.nombre })
-      .from(variante)
-      .innerJoin(servicio, eq(variante.servicioId, servicio.id))
-      .where(and(eq(variante.activo, true), eq(servicio.activo, true)))
-      .orderBy(asc(servicio.orden), asc(servicio.id), asc(variante.orden), asc(variante.id)),
+  const [opciones, fotos, parametros, [vigente], desde, [reemplazado]] = await Promise.all([
+    opcionesDeServicio(c.tamanoId),
     db
       .select({ id: archivo.id, clave: archivo.clave, miniaturaClave: archivo.miniaturaClave, ancho: archivo.ancho, alto: archivo.alto })
       .from(consultaArchivo)
@@ -112,20 +140,7 @@ export async function datosParaCotizar(consultaId: number, desdeId: number | nul
       : [],
   ]);
 
-  const [vigentes, fotosFirmadas] = await Promise.all([
-    preciosVigentes(variantes.map((v) => v.varianteId)),
-    Promise.all(fotos.map(async (f) => ({ id: f.id, ...(await urlsFotoPrivada(f)) }))),
-  ]);
-  const porVariante = new Map<number, Map<number, Monto>>();
-  for (const p of vigentes) {
-    if (!porVariante.has(p.varianteId)) porVariante.set(p.varianteId, new Map());
-    porVariante.get(p.varianteId)!.set(p.tamanoId, p.monto);
-  }
-  const opciones = variantes.map((v) => ({
-    ...v,
-    descripcion: descripcionLinea(v.servicio, v.variante),
-    sugerencia: precioSugerido(porVariante.get(v.varianteId) ?? new Map(), c.tamanoId),
-  }));
+  const fotosFirmadas = await Promise.all(fotos.map(async (f) => ({ id: f.id, ...(await urlsFotoPrivada(f)) })));
 
   const inicial = desde
     ? {

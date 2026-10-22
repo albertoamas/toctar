@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { cn } from "cn";
-import { DownloadIcon, FileTextIcon, PencilIcon } from "lucide-react";
+import { CalendarIcon, DownloadIcon, FileTextIcon, PencilIcon } from "lucide-react";
 import { buttonVariants } from "@/componentes/ui/button";
 import type { EstadoConsulta } from "@/db/esquema/consultas";
 import type { EstadoCotizacion } from "@/db/esquema/cotizaciones";
 import { formatearFecha, formatearFechaHora } from "@/lib/fechas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
+import type { ReservaCorta } from "@/modulos/agenda/consultas";
 import type { FilaCotizacion } from "../consultas";
 import { nombreArchivoPdf } from "../reglas";
 import { CompartirPdf } from "./compartir-pdf";
@@ -23,9 +24,18 @@ const INSIGNIA: Record<EstadoCotizacion, string> = {
   aceptada: "tt-insignia tt-insignia--exito",
 };
 
-type Props = { consultaId: number; estado: EstadoConsulta; cotizaciones: FilaCotizacion[]; esDueno: boolean };
+type Props = {
+  consultaId: number;
+  estado: EstadoConsulta;
+  cotizaciones: FilaCotizacion[];
+  esDueno: boolean;
+  /** Con "Agenda": agendar la vigente (HU-30). */
+  puedeAgendar: boolean;
+  /** Las reservas que salieron de esta consulta. */
+  reservas: ReservaCorta[];
+};
 
-export function CotizacionesConsulta({ consultaId, estado, cotizaciones, esDueno }: Props) {
+export function CotizacionesConsulta({ consultaId, estado, cotizaciones, esDueno, puedeAgendar, reservas }: Props) {
   const vigente = cotizaciones.find((c) => c.estado === "enviada");
   // Se cotiza una consulta abierta; una perdida se reabre primero y una confirmada ya no cambia
   const abierta = estado === "consulto" || estado === "cotizado";
@@ -77,9 +87,28 @@ export function CotizacionesConsulta({ consultaId, estado, cotizaciones, esDueno
           ))}
         </ul>
       )}
-      {esDueno && abierta && (
-        <div>
-          {vigente ? (
+      {reservas.length > 0 && (
+        <ul aria-label="Reservas" className="flex flex-col gap-2">
+          {reservas.map((r) => (
+            <li key={r.id}>
+              <Link href={`/panel/agenda/${r.id}`} className="inline-flex min-h-11 items-center gap-2 font-semibold underline">
+                <CalendarIcon className="size-4" aria-hidden />
+                {r.estado === "cancelado" ? "Reserva cancelada" : "Reserva"} del {formatearFecha(r.fechaInicio).slice(0, 5)} en {r.espacio}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+      {(esDueno && abierta) || (puedeAgendar && vigente && estado === "cotizado") ? (
+        <div className="flex flex-wrap gap-2">
+          {/* El cliente aceptó: agendar deja la cotización aceptada y la consulta confirmada (RF-36) */}
+          {puedeAgendar && vigente && estado === "cotizado" && (
+            <Link href={`/panel/agenda/nueva?cotizacion=${vigente.id}`} className={cn(buttonVariants())}>
+              <CalendarIcon />
+              Agendar
+            </Link>
+          )}
+          {esDueno && abierta && (vigente ? (
             <Link href={`/panel/consultas/${consultaId}/cotizar?desde=${vigente.id}`} className={cn(buttonVariants({ variant: "outline" }))}>
               <PencilIcon />
               Corregir (nueva versión)
@@ -89,9 +118,9 @@ export function CotizacionesConsulta({ consultaId, estado, cotizaciones, esDueno
               <FileTextIcon />
               Cotizar
             </Link>
-          )}
+          ))}
         </div>
-      )}
+      ) : null}
     </section>
   );
 }

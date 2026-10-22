@@ -14,12 +14,21 @@ export type EstadoFormulario = {
  * si no, null. El índice frena repetidos aunque dos personas guarden a la vez: la acción lo traduce a un
  * error del campo. Drizzle envuelve el error de pg en `cause`.
  */
-export function indiceUnicoViolado(error: unknown): string | null {
+export const indiceUnicoViolado = (error: unknown) => restriccionViolada(error, "23505");
+
+/** La restricción que rechazó la escritura si el error de Postgres tiene ese código; si no, null. */
+function restriccionViolada(error: unknown, codigo: string): string | null {
   const e = error as { code?: string; constraint?: string; cause?: { code?: string; constraint?: string } };
   const causa = e?.cause?.code ? e.cause : e;
-  if (causa?.code !== "23505") return null;
+  if (causa?.code !== codigo) return null;
   return causa.constraint ?? "";
 }
+
+/**
+ * Nombre de la restricción de exclusión que rechazó la escritura (código 23P01), o null. La de la agenda impide que un
+ * espacio tenga dos trabajos el mismo día aunque dos personas reserven a la vez (D-5).
+ */
+export const exclusionViolada = (error: unknown) => restriccionViolada(error, "23P01");
 
 /**
  * Errores por campo: el primero de cada uno. En los campos que son listas (beneficios, pasos)

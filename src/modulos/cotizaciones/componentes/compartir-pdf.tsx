@@ -28,8 +28,11 @@ export function CompartirPdf({ cotizacionId, nombre, titulo }: Props) {
 
   async function compartir() {
     if (!comparteArchivos(nombre)) {
-      // Sin menú de compartir archivos: se descarga, y se manda desde el WhatsApp de la computadora
-      window.location.assign(`${ruta}?descargar=1`);
+      // Sin menú de compartir archivos: se descarga, y se manda desde el WhatsApp de la computadora. Con un enlace y no
+      // navegando: la ruta entrega un archivo, no una página
+      const enlace = document.createElement("a");
+      enlace.href = `${ruta}?descargar=1`;
+      enlace.click();
       return;
     }
     const segundoToque = estado === "falta-tocar";

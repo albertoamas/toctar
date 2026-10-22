@@ -57,7 +57,8 @@ describe("encargado", () => {
 
 describe("menú y casillas", () => {
   test("el menú solo muestra módulos construidos que el usuario puede ver", () => {
-    expect(modulosDelMenu(dueno)).toEqual(todos.filter((m) => MODULOS[m].construido));
+    const enMenu = (m: Modulo) => MODULOS[m].construido && (MODULOS[m] as { enMenu?: boolean }).enMenu !== false;
+    expect(modulosDelMenu(dueno)).toEqual(todos.filter(enMenu));
     expect(modulosDelMenu(tecnico)).toEqual(["inicio"].filter((m) => MODULOS[m as Modulo].construido));
     expect(modulosDelMenu(encargado([]))).toEqual(["inicio"]);
   });
