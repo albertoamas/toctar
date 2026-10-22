@@ -15,10 +15,10 @@ test("con datos correctos entra al panel y ve su nombre", async ({ page }) => {
 });
 
 // Pulido visual 4.1
-test("el inicio da un acceso a cada módulo que la persona puede usar; al técnico le dice que aún no hay nada", async ({ page }, info) => {
+test("el inicio da un acceso a cada módulo que la persona puede usar; al técnico, solo a sus órdenes", async ({ page }, info) => {
   await ingresarComoDueno(page);
   const accesos = page.getByRole("main").getByRole("listitem").getByRole("link");
-  await expect(accesos).toHaveText([/^Reclamos/, /^Sitio web/, /^Clientes/, /^Consultas/, /^Agenda/, /^Catálogo y precios/, /^Usuarios/, /^Configuración/]);
+  await expect(accesos).toHaveText([/^Reclamos/, /^Sitio web/, /^Clientes/, /^Consultas/, /^Agenda/, /^Órdenes/, /^Catálogo y precios/, /^Usuarios/, /^Configuración/]);
   await accesos.filter({ hasText: "Usuarios" }).click();
   await expect(page).toHaveURL(/\/panel\/usuarios$/);
 
@@ -27,8 +27,7 @@ test("el inicio da un acceso a cada módulo que la persona puede usar; al técni
   await page.context().clearCookies();
   await ingresar(page, usuario, "tecnico-inicio-1");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Hola, Técnico");
-  await expect(page.getByRole("main")).toContainText("Por ahora no hay nada para ti en el panel.");
-  await expect(page.getByRole("main").getByRole("listitem")).toHaveCount(0);
+  await expect(page.getByRole("main").getByRole("listitem").getByRole("link")).toHaveText([/^Órdenes/]);
 });
 
 test("el usuario se acepta sin importar mayúsculas", async ({ page }) => {
