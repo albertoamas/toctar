@@ -63,6 +63,7 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
   const [espacios, setEspacios] = useState(espaciosIniciales);
   const [espacioId, setEspacioId] = useState(espacioInicial && espaciosIniciales.some((x) => x.id === espacioInicial && x.libre) ? String(espacioInicial) : "");
   const [buscando, iniciar] = useTransition();
+  const [fechasValidas, setFechasValidas] = useState(true);
   const [tecnicoId, setTecnicoId] = useState("");
   const [horaIngreso, setHoraIngreso] = useState("");
   const [nota, setNota] = useState("");
@@ -81,7 +82,10 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
     const este = ++pedido.current;
     iniciar(async () => {
       const nuevos = await consultarEspacios({ fechaInicio, fechaFin });
-      if (!nuevos || este !== pedido.current) return;
+      if (este !== pedido.current) return;
+      // Sin lista: las fechas no valen (el servidor no busca con ellas)
+      setFechasValidas(nuevos !== null);
+      if (!nuevos) return setEspacios([]);
       setEspacios(nuevos);
       // El elegido sigue si sigue libre
       setEspacioId((elegido) => (nuevos.some((x) => String(x.id) === elegido && x.libre) ? elegido : ""));
@@ -156,7 +160,15 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
           id="espacioId"
           etiqueta="Espacio"
           error={e.espacioId}
-          ayuda={buscando ? "Buscando espacios libres…" : libres.length === 0 ? "No hay espacio libre en esas fechas: elige otras." : "Solo los libres en esas fechas."}
+          ayuda={
+            buscando
+              ? "Buscando espacios libres…"
+              : !fechasValidas
+                ? "Revisa las fechas: el ingreso desde hoy y hasta un año adelante."
+                : libres.length === 0
+                  ? "No hay espacio libre en esas fechas: elige otras."
+                  : "Solo los libres en esas fechas."
+          }
         >
           <Selector
             id="espacioId"

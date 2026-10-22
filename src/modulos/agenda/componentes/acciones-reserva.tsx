@@ -60,6 +60,7 @@ function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espac
   const [espacios, setEspacios] = useState<EspacioDisponible[] | null>(null);
   const [espacioId, setEspacioId] = useState(String(espacioActual));
   const [buscando, iniciar] = useTransition();
+  const [fechasValidas, setFechasValidas] = useState(true);
   // Los espacios libres en las fechas elegidas, sin contar esta reserva; solo vale la última respuesta
   const pedido = useRef(0);
   useEffect(() => {
@@ -68,6 +69,8 @@ function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espac
     iniciar(async () => {
       const nuevos = await consultarEspacios({ fechaInicio, fechaFin, excepto: id });
       if (este !== pedido.current) return;
+      // Sin lista: las fechas no valen (el servidor no busca con ellas)
+      setFechasValidas(nuevos !== null);
       setEspacios(nuevos ?? []);
       if (nuevos) setEspacioId((elegido) => (nuevos.some((x) => String(x.id) === elegido && x.libre) ? elegido : ""));
     });
@@ -91,7 +94,15 @@ function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espac
         id="espacioId"
         etiqueta="Espacio"
         error={e.espacioId}
-        ayuda={buscando || espacios === null ? "Buscando espacios libres…" : libres.length === 0 ? "No hay espacio libre en esas fechas: elige otras." : "Solo los libres en esas fechas."}
+        ayuda={
+          buscando || espacios === null
+            ? "Buscando espacios libres…"
+            : !fechasValidas
+              ? "Revisa las fechas: el ingreso desde hoy y hasta un año adelante."
+              : libres.length === 0
+                ? "No hay espacio libre en esas fechas: elige otras."
+                : "Solo los libres en esas fechas."
+        }
       >
         <Selector
           id="espacioId"
