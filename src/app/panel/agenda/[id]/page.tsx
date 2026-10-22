@@ -8,19 +8,20 @@ import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
-import { formatearFecha, formatearFechaHora } from "@/lib/fechas";
+import { fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
+import { AccionesReserva } from "@/modulos/agenda/componentes/acciones-reserva";
 import { obtenerReserva } from "@/modulos/agenda/consultas";
 import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { METODO_EN_FRASE, NOMBRE_TIPO_PAGO } from "@/modulos/pagos/reglas";
 
 export const metadata: Metadata = { title: "Reserva" };
 
-// HU-30: una reserva. Con "Pagos" (o el dueño), sus servicios, el total, lo pagado y el saldo. Reprogramar y cancelar
-// llegan con HU-31; registrar y anular pagos, con HU-32.
+// HU-30: una reserva. Con "Pagos" (o el dueño), sus servicios, el total, lo pagado y el saldo. HU-31: reprogramarla o
+// cancelarla mientras está agendada. Registrar y anular pagos llegan con HU-32.
 export default function PaginaReserva({ params, searchParams }: PageProps<"/panel/agenda/[id]">) {
   return (
     <section className="flex flex-col gap-6">
@@ -55,7 +56,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
           Escribir por WhatsApp
         </a>
       </div>
-      {agendada && (
+      {/* Solo mientras siga agendada: tras cancelarla (o en un enlace viejo) ya no corresponde */}
+      {agendada && r.estado === "agendado" && (
         <AvisoEnPagina>
           Reserva agendada para el {formatearFecha(r.fechaInicio).slice(0, 5)} en {r.espacio}.
         </AvisoEnPagina>
@@ -112,6 +114,9 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
         </dl>
 
         <div className="flex flex-col gap-10 lg:col-start-1 lg:row-start-1">
+          {r.estado === "agendado" && (
+            <AccionesReserva id={r.id} fechaInicio={r.fechaInicio} fechaFin={r.fechaFin} espacioId={r.espacioId} hoy={fechaEnBolivia()} pagado={r.montos?.saldo.pagado ?? null} />
+          )}
           {r.nota && (
             <section aria-labelledby="nota-titulo" className="flex flex-col gap-2">
               <h2 id="nota-titulo" className="font-heading text-2xl font-bold italic">Nota</h2>

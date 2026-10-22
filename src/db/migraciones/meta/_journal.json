@@ -190,6 +190,13 @@
       "when": 1792590184285,
       "tag": "0026_trabajos",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1792633977718,
+      "tag": "0027_cotizacion_reagendable",
+      "breakpoints": true
     }
   ]
 }

@@ -129,3 +129,12 @@ export const esquemaAdelanto = adelanto;
 
 /** Para consultar los espacios libres desde el formulario (datos sueltos: se validan). */
 export const esquemaConsultaEspacios = z.object({ fechaInicio: z.string(), fechaFin: z.string(), excepto: id.optional() });
+
+/** Reprogramar (HU-31): la reserva, sus nuevas fechas (las mismas reglas que al agendar) y el espacio. */
+export const esquemaReprogramar = z.object({ id, espacioId: base.espacioId });
+
+/** Cancelar (HU-31, RF-39): con motivo. */
+export const esquemaCancelar = z.object({
+  id,
+  motivo: z.string().trim().min(1, "Escribe el motivo.").max(300, "Hasta 300 caracteres."),
+});

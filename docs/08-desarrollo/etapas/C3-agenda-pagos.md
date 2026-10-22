@@ -153,7 +153,7 @@ Todas validan con Zod (también las de datos sueltos) y empiezan con `exigirModu
 | `espaciosLibres` | `agenda` | Lectura para el formulario: espacios activos sin trabajos activos que se crucen con las fechas | — |
 | `agendarReserva` | `agenda` (+ `pagos` para el adelanto) | Valida fechas, espacio activo, técnico, cliente y vehículo, líneas; con cotización: que sea la vigente de una consulta "cotizado". En una transacción: trabajo, líneas, adelanto, cotización "aceptada", consulta "confirmado", auditoría. El cruce lo frena la base | "Reserva agendada para el 24/10 en Espacio 2." · "Ese espacio se ocupó recién: elige otro." · "Esa cotización ya fue agendada." |
 | `reprogramarReserva` | `agenda` | Nuevas fechas y espacio de una reserva agendada; misma validación | "Reserva movida al 28/10 en Espacio 1." |
-| `cancelarReserva` | `agenda` | Motivo obligatorio; estado "cancelado"; los pagos quedan | "Reserva cancelada. El adelanto queda como ingreso." |
+| `cancelarReserva` | `agenda` | Motivo obligatorio; estado "cancelado"; los pagos quedan. Si vino de una consulta "confirmado": la consulta pasa a "perdido" y la cotización vuelve a "enviada", las dos juntas | "Reserva cancelada. El adelanto queda como ingreso." (sin pagos: "Reserva cancelada.") |
 | `registrarPago` | `pagos` | Monto (> 0 y ≤ saldo), método, tipo, fecha (≤ hoy), comprobante opcional (foto privada); auditoría | "Pago de Bs 300 registrado. Saldo: Bs 1.550." · "El pago no puede ser mayor que el saldo (Bs 1.550)." |
 | `anularPago` | `pagos` | Motivo obligatorio; no se borra; auditoría | "Pago anulado." |
 
@@ -217,6 +217,6 @@ Cada PR: lint, typecheck, unitarias, E2E completo y knip; `code-review` y `secur
 |---|---|---|
 | Duración sugerida con varios servicios: ¿la mayor o la suma? | Dueño | La mayor (un mismo espacio, trabajos en paralelo); la entrega se edita en cada reserva |
 | ¿Los días que el taller no atiende cuentan para la duración? | Dueño | Cuentan (días de calendario); el tablero los muestra atenuados y la entrega se ajusta a mano |
-| Si se cancela una reserva que salió de una consulta, ¿la consulta queda "confirmado" o pasa a "perdido"? | Dueño | Pasa a "perdido" con motivo "otro" y el motivo de la cancelación como detalle; se puede reabrir |
+| Si se cancela una reserva que salió de una consulta, ¿la consulta queda "confirmado" o pasa a "perdido"? | Dueño | Pasa a "perdido" con motivo "otro" y el motivo de la cancelación como detalle; se puede reabrir. La cotización vuelve a "enviada" (vigente): al reabrir la consulta, queda "cotizado" y se agenda de nuevo (HU-31) |
 | ¿El encargado con "Pagos" ve el total y el saldo de la reserva? | Dueño | Sí: necesita el saldo para cobrar (RF-46). Sigue sin ver ni crear cotizaciones (RN-01) |
 | ¿Se permite un pago mayor al saldo (el cliente deja más)? | Dueño | No: evita errores de tipeo. Si deja más, se suma un adicional en C4 |

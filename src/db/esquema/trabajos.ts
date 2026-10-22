@@ -36,7 +36,7 @@ export const trabajo = pgTable(
       .notNull()
       .references(() => vehiculo.id),
     consultaId: integer("consulta_id").references(() => consulta.id),
-    /** Una cotización se agenda una sola vez (índice único). */
+    /** Una cotización tiene a lo sumo una reserva que no esté cancelada (índice único parcial). */
     cotizacionId: integer("cotizacion_id").references(() => cotizacion.id),
     espacioId: integer("espacio_id")
       .notNull()
@@ -65,7 +65,8 @@ export const trabajo = pgTable(
     check("trabajo_fechas_validas", sql`${t.fechaFin} >= ${t.fechaInicio}`),
     check("trabajo_descuento_valido", sql`${t.descuento} >= 0`),
     check("trabajo_motivo_si_cancelado", sql`(${t.estado} = 'cancelado') = (${t.motivoCancelacion} is not null)`),
-    uniqueIndex("trabajo_cotizacion_unica").on(t.cotizacionId),
+    // Una cotización tiene a lo sumo una reserva activa: una cancelada no cuenta, así se agenda de nuevo (HU-31)
+    uniqueIndex("trabajo_cotizacion_unica").on(t.cotizacionId).where(sql`${t.estado} <> 'cancelado'`),
     index("trabajo_por_fechas").on(t.fechaInicio, t.fechaFin),
     index("trabajo_por_cliente").on(t.clienteId),
     index("trabajo_por_consulta").on(t.consultaId),

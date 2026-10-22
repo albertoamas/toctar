@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { useActionState, useRef, useState } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
@@ -17,9 +17,10 @@ import { calcularTotales } from "@/modulos/cotizaciones/reglas";
 import type { OpcionServicio } from "@/modulos/cotizaciones/consultas";
 import { LineasServicio, type Linea } from "@/modulos/cotizaciones/componentes/lineas-servicio";
 import { NOMBRE_METODO } from "@/modulos/pagos/reglas";
-import { agendarReserva, consultarEspacios } from "../acciones";
+import { agendarReserva } from "../acciones";
 import type { EspacioDisponible } from "../consultas";
 import { fechaEntregaSugerida } from "../reglas";
+import { useEspaciosLibres } from "./espacios-libres";
 
 // HU-30: agendar una reserva (RF-36, RF-37). Las fechas sugieren la entrega con la mayor duración de los servicios
 // (decisión del 20/10: es aproximada y se edita); al cambiarlas se vuelven a pedir los espacios libres (RN-06). El
@@ -60,9 +61,10 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
   // vacío mientras se escribe) no hay sugerencia: sumar días a "" fallaría
   const [fechaFinManual, setFechaFinManual] = useState<string | null>(null);
   const fechaFin = fechaFinManual ?? (fechaInicio ? fechaEntregaSugerida(fechaInicio, duraciones) : "");
-  const [espacios, setEspacios] = useState(espaciosIniciales);
-  const [espacioId, setEspacioId] = useState(espacioInicial && espaciosIniciales.some((x) => x.id === espacioInicial && x.libre) ? String(espacioInicial) : "");
-  const [buscando, iniciar] = useTransition();
+  const { libres, buscando, ayuda } = useEspaciosLibres(fechaInicio, fechaFin, { iniciales: espaciosIniciales });
+  // El elegido vale mientras siga libre en las fechas de ahora
+  const [espacioElegido, setEspacioId] = useState(espacioInicial ? String(espacioInicial) : "");
+  const espacioId = libres.some((x) => String(x.id) === espacioElegido) ? espacioElegido : "";
   const [tecnicoId, setTecnicoId] = useState("");
   const [horaIngreso, setHoraIngreso] = useState("");
   const [nota, setNota] = useState("");
@@ -70,30 +72,11 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
   const [adelanto, setAdelanto] = useState(mostrarMonto(adelantoSugerido));
   const [metodo, setMetodo] = useState<string>("");
 
-  // Los espacios libres se vuelven a pedir cuando cambian las fechas, también la entrega que mueven los servicios de
-  // una reserva directa. Solo vale la última respuesta: una vieja que llega tarde no pisa a la nueva
-  const pedido = useRef(0);
-  const yaPedido = useRef(`${fechaInicial}|${fechaFin}`);
-  useEffect(() => {
-    const clave = `${fechaInicio}|${fechaFin}`;
-    if (!fechaInicio || !fechaFin || clave === yaPedido.current) return;
-    yaPedido.current = clave;
-    const este = ++pedido.current;
-    iniciar(async () => {
-      const nuevos = await consultarEspacios({ fechaInicio, fechaFin });
-      if (!nuevos || este !== pedido.current) return;
-      setEspacios(nuevos);
-      // El elegido sigue si sigue libre
-      setEspacioId((elegido) => (nuevos.some((x) => String(x.id) === elegido && x.libre) ? elegido : ""));
-    });
-  }, [fechaInicio, fechaFin]);
-
   function cambiarFechas(inicio: string, fin: string | null) {
     setFechaInicio(inicio);
     setFechaFinManual(fin);
   }
 
-  const libres = espacios.filter((x) => x.libre);
   // La misma cuenta que el servidor (centavos), no una suma de decimales
   const total =
     origen.tipo === "directa"
@@ -156,7 +139,7 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
           id="espacioId"
           etiqueta="Espacio"
           error={e.espacioId}
-          ayuda={buscando ? "Buscando espacios libres…" : libres.length === 0 ? "No hay espacio libre en esas fechas: elige otras." : "Solo los libres en esas fechas."}
+          ayuda={ayuda}
         >
           <Selector
             id="espacioId"

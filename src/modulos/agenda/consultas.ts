@@ -198,6 +198,7 @@ export type DetalleReserva = {
   placa: string;
   tamano: string;
   espacio: string;
+  espacioId: number;
   fechaInicio: string;
   fechaFin: string;
   horaIngreso: string | null;
@@ -227,6 +228,7 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
       placa: vehiculo.placa,
       tamano: tamanoVehiculo.nombre,
       espacio: espacioTaller.nombre,
+      espacioId: trabajo.espacioId,
       fechaInicio: trabajo.fechaInicio,
       fechaFin: trabajo.fechaFin,
       horaIngreso: trabajo.horaIngreso,
