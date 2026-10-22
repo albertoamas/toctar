@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
-import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
+import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
@@ -41,7 +41,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   const numero = (clave: string) => (/^\d+$/.test(texto(clave)) ? Number(texto(clave)) : null);
   const hoy = fechaEnBolivia();
   // El día pedido (desde el tablero) si no es pasado; si no, mañana
-  const fechaInicial = /^\d{4}-\d{2}-\d{2}$/.test(texto("fecha")) && texto("fecha") >= hoy ? texto("fecha") : sumarDias(hoy, 1);
+  const fechaInicial = fechaExiste(texto("fecha")) && texto("fecha") >= hoy ? texto("fecha") : sumarDias(hoy, 1);
   const cotizacionId = numero("cotizacion");
 
   if (cotizacionId) {

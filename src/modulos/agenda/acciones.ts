@@ -10,8 +10,9 @@ import { erroresDe, exclusionViolada, indiceUnicoViolado, type EstadoFormulario 
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { sucursalPrincipal } from "@/modulos/configuracion/consultas";
-import { descripcionLinea } from "@/modulos/cotizaciones/reglas";
-import { calcularSaldo, montoNoMayor } from "@/modulos/pagos/reglas";
+import { mostrarMonto } from "@/modulos/catalogo/reglas";
+import { descripcionLinea, montoNoMayor } from "@/modulos/cotizaciones/reglas";
+import { calcularSaldo } from "@/modulos/pagos/reglas";
 import { datosDeCotizacion, espaciosEnFechas, tecnicosActivos, type EspacioDisponible } from "./consultas";
 import { entradaReserva, esquemaAdelanto, esquemaConsultaEspacios, esquemaFechas, esquemaReserva } from "./esquemas";
 
@@ -20,6 +21,10 @@ import { entradaReserva, esquemaAdelanto, esquemaConsultaEspacios, esquemaFechas
 // rechaza un cruce aunque dos personas reserven a la vez (D-5). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md.
 
 const ESPACIO_OCUPADO = "Ese espacio se ocupó recién: elige otro.";
+const COTIZACION_CAMBIO = "Esa cotización ya fue agendada o se corrigió. Vuelve a la consulta.";
+
+/** Algo cambió entre la revisión y la escritura: se lanza dentro de la transacción para deshacerla entera. */
+class Conflicto extends Error {}
 
 /** Los espacios y si están libres en esas fechas, para el formulario (datos sueltos: se validan). */
 export async function consultarEspacios(datos: { fechaInicio: string; fechaFin: string; excepto?: number }): Promise<EspacioDisponible[] | null> {
@@ -72,7 +77,8 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
   if (d.origen === "cotizacion") {
     const c = await datosDeCotizacion(d.cotizacionId);
     if (!c) return { mensaje: "Esa cotización ya no existe." };
-    if (!c.agendable) return { mensaje: "Esa cotización ya fue agendada o se corrigió. Vuelve a la consulta." };
+    if (!c.agendable) return { mensaje: COTIZACION_CAMBIO };
+    if (!c.activos) return { mensaje: "El cliente o el vehículo de esa cotización ya no está activo. Reactívalo en su ficha." };
     ({ consultaId, cotizacionId, descuento } = c);
     clienteId = c.cliente.id;
     vehiculoId = c.vehiculo.id;
@@ -114,12 +120,12 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
     [],
   );
   const adelanto = a.data.sinAdelanto ? null : a.data;
-  if (adelanto && !montoNoMayor(adelanto.monto, total)) errores.adelanto = `El adelanto no puede ser mayor que el total (${total.replace(".", ",")} Bs).`;
+  if (adelanto && !montoNoMayor(adelanto.monto, total)) errores.adelanto = `El adelanto no puede ser mayor que el total (${mostrarMonto(total)} Bs).`;
   if (Object.keys(errores).length > 0) return { errores };
 
   const { id: sucursalId } = await sucursalPrincipal();
   const autorId = Number(usuario.id);
-  let resultado: { id: number } | { error: string };
+  let resultado: { id: number };
   try {
     resultado = await db.transaction(async (tx) => {
       if (cotizacionId && consultaId) {
@@ -134,7 +140,8 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
           .set({ estado: "confirmado", ultimoMovimientoAt: sql`now()` })
           .where(and(eq(consulta.id, consultaId), eq(consulta.estado, "cotizado")))
           .returning({ id: consulta.id });
-        if (!aceptada || !confirmada) return { error: "Esa cotización ya fue agendada o se corrigió. Vuelve a la consulta." };
+        // Lanzar (y no devolver) deshace la transacción: si no, la cotización quedaría aceptada sin reserva
+        if (!aceptada || !confirmada) throw new Conflicto(COTIZACION_CAMBIO);
       }
       const [nuevo] = await tx
         .insert(trabajo)
@@ -174,12 +181,12 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
       return { id: nuevo.id };
     });
   } catch (error) {
+    if (error instanceof Conflicto) return { mensaje: error.message };
     // Dos personas reservaron el mismo espacio a la vez: la base frenó la segunda (D-5)
     if (exclusionViolada(error) === "trabajo_sin_cruces") return { errores: { espacioId: ESPACIO_OCUPADO } };
     if (indiceUnicoViolado(error) === "trabajo_cotizacion_unica") return { mensaje: "Esa cotización ya fue agendada." };
     throw error;
   }
-  if ("error" in resultado) return { mensaje: resultado.error };
 
   revalidatePath("/panel/agenda");
   if (consultaId) {

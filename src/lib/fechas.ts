@@ -14,6 +14,11 @@ export function fechaEnBolivia(instante: Date = new Date()): string {
   }).format(instante);
 }
 
+/** Si es una fecha AAAA-MM-DD que existe ("2026-02-31" no). */
+export function fechaExiste(fecha: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(fecha) && !Number.isNaN(Date.parse(fecha)) && new Date(`${fecha}T00:00:00Z`).toISOString().slice(0, 10) === fecha;
+}
+
 /** Suma días a una fecha calendario AAAA-MM-DD (puede ser negativo). */
 export function sumarDias(fecha: string, dias: number): string {
   const d = new Date(`${fecha}T00:00:00Z`);

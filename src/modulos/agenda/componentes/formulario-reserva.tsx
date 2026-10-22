@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
@@ -13,6 +13,7 @@ import { Textarea } from "@/componentes/ui/textarea";
 import type { MetodoPago } from "@/db/esquema/trabajos";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { leerMonto, mostrarMonto } from "@/modulos/catalogo/reglas";
+import { calcularTotales } from "@/modulos/cotizaciones/reglas";
 import type { OpcionServicio } from "@/modulos/cotizaciones/consultas";
 import { LineasServicio, type Linea } from "@/modulos/cotizaciones/componentes/lineas-servicio";
 import { NOMBRE_METODO } from "@/modulos/pagos/reglas";
@@ -55,34 +56,51 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
       ? origen.duraciones
       : lineas.map((l) => origen.opciones.find((o) => o.varianteId === l.varianteId)?.duracion ?? 1);
   const [fechaInicio, setFechaInicio] = useState(fechaInicial);
-  // La entrega sigue a la sugerida mientras no se toque a mano
+  // La entrega sigue a la sugerida mientras no se toque a mano. Con el ingreso borrado (el campo de fecha queda
+  // vacío mientras se escribe) no hay sugerencia: sumar días a "" fallaría
   const [fechaFinManual, setFechaFinManual] = useState<string | null>(null);
-  const fechaFin = fechaFinManual ?? fechaEntregaSugerida(fechaInicio, duraciones);
+  const fechaFin = fechaFinManual ?? (fechaInicio ? fechaEntregaSugerida(fechaInicio, duraciones) : "");
   const [espacios, setEspacios] = useState(espaciosIniciales);
   const [espacioId, setEspacioId] = useState(espacioInicial && espaciosIniciales.some((x) => x.id === espacioInicial && x.libre) ? String(espacioInicial) : "");
   const [buscando, iniciar] = useTransition();
+  const [tecnicoId, setTecnicoId] = useState("");
+  const [horaIngreso, setHoraIngreso] = useState("");
+  const [nota, setNota] = useState("");
   const [sinAdelanto, setSinAdelanto] = useState(false);
   const [adelanto, setAdelanto] = useState(mostrarMonto(adelantoSugerido));
   const [metodo, setMetodo] = useState<string>("");
 
+  // Los espacios libres se vuelven a pedir cuando cambian las fechas, también la entrega que mueven los servicios de
+  // una reserva directa. Solo vale la última respuesta: una vieja que llega tarde no pisa a la nueva
+  const pedido = useRef(0);
+  const yaPedido = useRef(`${fechaInicial}|${fechaFin}`);
+  useEffect(() => {
+    const clave = `${fechaInicio}|${fechaFin}`;
+    if (!fechaInicio || !fechaFin || clave === yaPedido.current) return;
+    yaPedido.current = clave;
+    const este = ++pedido.current;
+    iniciar(async () => {
+      const nuevos = await consultarEspacios({ fechaInicio, fechaFin });
+      if (!nuevos || este !== pedido.current) return;
+      setEspacios(nuevos);
+      // El elegido sigue si sigue libre
+      setEspacioId((elegido) => (nuevos.some((x) => String(x.id) === elegido && x.libre) ? elegido : ""));
+    });
+  }, [fechaInicio, fechaFin]);
+
   function cambiarFechas(inicio: string, fin: string | null) {
     setFechaInicio(inicio);
     setFechaFinManual(fin);
-    const hasta = fin ?? fechaEntregaSugerida(inicio, duraciones);
-    if (!inicio || !hasta) return;
-    iniciar(async () => {
-      const nuevos = await consultarEspacios({ fechaInicio: inicio, fechaFin: hasta });
-      if (!nuevos) return;
-      setEspacios(nuevos);
-      // El elegido sigue si sigue libre
-      if (!nuevos.some((x) => String(x.id) === espacioId && x.libre)) setEspacioId("");
-    });
   }
 
   const libres = espacios.filter((x) => x.libre);
+  // La misma cuenta que el servidor (centavos), no una suma de decimales
   const total =
     origen.tipo === "directa"
-      ? lineas.reduce((s, l) => s + Number(leerMonto(l.precio) ?? 0), 0)
+      ? calcularTotales(
+          lineas.map((l) => leerMonto(l.precio) ?? "0"),
+          "0",
+        ).total
       : null;
 
   return (
@@ -102,7 +120,7 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
         <fieldset className="flex flex-col gap-4">
           <legend className="mb-4 font-heading text-2xl font-bold italic">Servicios</legend>
           <LineasServicio opciones={origen.opciones} lineas={lineas} onChange={setLineas} errores={e} />
-          {total !== null && total > 0 && <p className="font-semibold">Total: {mostrarMonto(total.toFixed(2))} Bs</p>}
+          {total !== null && total !== "0.00" && <p className="font-semibold">Total: {mostrarMonto(total)} Bs</p>}
         </fieldset>
       )}
 
@@ -161,7 +179,7 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
       <fieldset className="flex flex-col gap-5">
         <legend className="mb-5 font-heading text-2xl font-bold italic">Detalles</legend>
         <Campo id="tecnicoId" etiqueta="Técnico" error={e.tecnicoId}>
-          <Selector id="tecnicoId" name="tecnicoId" defaultValue="" aria-invalid={!!e.tecnicoId} aria-describedby={e.tecnicoId ? "tecnicoId-error" : undefined} className="max-w-xs">
+          <Selector id="tecnicoId" name="tecnicoId" value={tecnicoId} onChange={(ev) => setTecnicoId(ev.target.value)} aria-invalid={!!e.tecnicoId} aria-describedby={e.tecnicoId ? "tecnicoId-error" : undefined} className="max-w-xs">
             <option value="">Sin asignar</option>
             {tecnicos.map((t) => (
               <option key={t.id} value={t.id}>{t.nombre}</option>
@@ -169,10 +187,10 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
           </Selector>
         </Campo>
         <Campo id="horaIngreso" etiqueta="Hora aproximada" error={e.horaIngreso} ayuda="Como lo dijo el cliente: «a las 9», «en la tarde».">
-          <Input id="horaIngreso" name="horaIngreso" autoComplete="off" className="max-w-xs" aria-invalid={!!e.horaIngreso} aria-describedby={e.horaIngreso ? "horaIngreso-error" : "horaIngreso-ayuda"} />
+          <Input id="horaIngreso" name="horaIngreso" autoComplete="off" value={horaIngreso} onChange={(ev) => setHoraIngreso(ev.target.value)} className="max-w-xs" aria-invalid={!!e.horaIngreso} aria-describedby={e.horaIngreso ? "horaIngreso-error" : "horaIngreso-ayuda"} />
         </Campo>
         <Campo id="nota" etiqueta="Nota" error={e.nota}>
-          <Textarea id="nota" name="nota" rows={2} aria-invalid={!!e.nota} aria-describedby={e.nota ? "nota-error" : undefined} />
+          <Textarea id="nota" name="nota" rows={2} value={nota} onChange={(ev) => setNota(ev.target.value)} aria-invalid={!!e.nota} aria-describedby={e.nota ? "nota-error" : undefined} />
         </Campo>
       </fieldset>
 

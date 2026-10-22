@@ -17,17 +17,18 @@ import {
   variante,
   vehiculo,
 } from "@/db/esquema";
-import type { EstadoTrabajo, MetodoPago, TipoPago } from "@/db/esquema/trabajos";
+import { ESTADOS_TRABAJO, type EstadoTrabajo, type MetodoPago, type TipoPago } from "@/db/esquema/trabajos";
 import { duracionEfectiva } from "@/modulos/catalogo/reglas";
 import { sucursalPrincipal } from "@/modulos/configuracion/consultas";
 import { opcionesDeServicio, type OpcionServicio } from "@/modulos/cotizaciones/consultas";
 import { calcularSaldo, type Saldo } from "@/modulos/pagos/reglas";
+import { ocupaEspacio } from "./reglas";
 
 // Lecturas de la agenda (C3). Quien las llama ya pasó por exigirModulo("agenda"); los montos y pagos solo se piden
 // para quien además ve "pagos" (o el dueño). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md.
 
-/** Estados que ocupan un espacio en la agenda (como la restricción `trabajo_sin_cruces`). */
-const NO_OCUPAN: EstadoTrabajo[] = ["cancelado", "entregado"];
+/** Estados que no ocupan un espacio en la agenda (como la restricción `trabajo_sin_cruces`): una sola regla. */
+const NO_OCUPAN = ESTADOS_TRABAJO.filter((e) => !ocupaEspacio(e));
 
 export type EspacioDisponible = { id: number; nombre: string; libre: boolean };
 
@@ -68,7 +69,7 @@ export async function tecnicosActivos(): Promise<{ id: number; nombre: string }[
     .orderBy(asc(usuario.name));
 }
 
-export type LineaReserva = { varianteId: number; descripcion: string; precio: string; duracion: number };
+type LineaReserva = { varianteId: number; descripcion: string; precio: string; duracion: number };
 
 export type DatosDeCotizacion = {
   cotizacionId: number;
@@ -77,6 +78,8 @@ export type DatosDeCotizacion = {
   consultaId: number;
   /** La consulta todavía está "cotizado" y la cotización "enviada": se puede agendar. */
   agendable: boolean;
+  /** El cliente y el vehículo siguen activos. */
+  activos: boolean;
   cliente: { id: number; nombre: string };
   vehiculo: { id: number; placa: string; tamano: string };
   lineas: LineaReserva[];
@@ -97,6 +100,8 @@ export async function datosDeCotizacion(cotizacionId: number): Promise<DatosDeCo
       estadoConsulta: consulta.estado,
       clienteId: cliente.id,
       cliente: cliente.nombre,
+      clienteActivo: cliente.activo,
+      vehiculoActivo: vehiculo.activo,
       vehiculoId: vehiculo.id,
       placa: vehiculo.placa,
       tamano: tamanoVehiculo.nombre,
@@ -127,6 +132,7 @@ export async function datosDeCotizacion(cotizacionId: number): Promise<DatosDeCo
     version: c.version,
     consultaId: c.consultaId,
     agendable: c.estado === "enviada" && c.estadoConsulta === "cotizado",
+    activos: c.clienteActivo && c.vehiculoActivo,
     cliente: { id: c.clienteId, nombre: c.cliente },
     vehiculo: { id: c.vehiculoId, placa: c.placa, tamano: c.tamano },
     lineas: lineas.map((l) => ({
@@ -172,7 +178,7 @@ export async function datosDirecta(clienteId: number, vehiculoId: number | null)
   };
 }
 
-export type PagoReserva = {
+type PagoReserva = {
   id: number;
   monto: string;
   metodo: MetodoPago;

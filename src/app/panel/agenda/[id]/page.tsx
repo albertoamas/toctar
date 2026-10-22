@@ -42,6 +42,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
   const r = await obtenerReserva(Number(id), conPagos);
   if (!r) notFound();
   const verFicha = puedeVerModulo(usuario, "clientes");
+  const verConsulta = puedeVerModulo(usuario, "consultas");
   const unDia = r.fechaInicio === r.fechaFin;
 
   return (
@@ -93,7 +94,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
             <span className="font-semibold">{r.placa}</span>
             <span className="text-tinta-suave">{r.tamano}</span>
           </dd>
-          {r.consultaId && (
+          {r.consultaId && verConsulta && (
             <>
               <dt className="text-tinta-suave">Consulta</dt>
               <dd>

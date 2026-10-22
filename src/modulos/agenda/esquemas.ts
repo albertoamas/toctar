@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { METODOS_PAGO } from "@/db/esquema/trabajos";
-import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
+import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
 import { leerMonto } from "@/modulos/catalogo/reglas";
 import { MAXIMO_LINEAS } from "@/modulos/cotizaciones/reglas";
 
@@ -17,9 +17,7 @@ const idOpcional = z
   .transform((v) => (v ? Number(v) : null))
   .pipe(z.number().int().positive().nullable());
 
-/** Fecha AAAA-MM-DD que existe de verdad ("2026-02-31" no). */
-const existe = (v: string) =>
-  /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v)) && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v;
+const existe = fechaExiste;
 const fecha = (mensaje: string) => z.string().refine(existe, mensaje);
 
 const textoOpcional = (maximo: number) =>
@@ -100,10 +98,10 @@ const base = {
 };
 
 /** Reserva desde la cotización vigente de una consulta: cliente, vehículo y líneas salen de ella. */
-export const esquemaReservaDeCotizacion = z.object({ origen: z.literal("cotizacion"), cotizacionId: id, ...base });
+const esquemaReservaDeCotizacion = z.object({ origen: z.literal("cotizacion"), cotizacionId: id, ...base });
 
 /** Reserva directa (RF-37): cliente y vehículo registrados y servicios del catálogo. */
-export const esquemaReservaDirecta = z.object({ origen: z.literal("directa"), clienteId: id, vehiculoId: id, lineas, ...base });
+const esquemaReservaDirecta = z.object({ origen: z.literal("directa"), clienteId: id, vehiculoId: id, lineas, ...base });
 
 export const esquemaReserva = z.discriminatedUnion("origen", [esquemaReservaDeCotizacion, esquemaReservaDirecta]);
 

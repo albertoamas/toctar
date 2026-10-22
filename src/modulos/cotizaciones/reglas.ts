@@ -24,6 +24,9 @@ export function calcularTotales(precios: readonly string[], descuento: string): 
 /** a ≤ b, con montos en texto. */
 export const montoNoMayor = (a: string, b: string) => aCentavos(a) <= aCentavos(b);
 
+/** a − b, con montos en texto (puede dar negativo: un saldo a favor). */
+export const restarMontos = (a: string, b: string) => deCentavos(aCentavos(a) - aCentavos(b));
+
 /** El año de una cotización es el de Bolivia: una del 31/12 a las 22:00 en La Paz es del año que termina. */
 export const anioCotizacion = (instante: Date = new Date()) => Number(fechaEnBolivia(instante).slice(0, 4));
 
