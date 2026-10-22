@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { startTransition, useActionState, useRef, useState } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
@@ -15,6 +15,7 @@ import { leerMonto, mostrarMonto } from "@/modulos/catalogo/reglas";
 import { calcularTotales } from "@/modulos/cotizaciones/reglas";
 import type { OpcionServicio } from "@/modulos/cotizaciones/consultas";
 import { LineasServicio, type Linea } from "@/modulos/cotizaciones/componentes/lineas-servicio";
+import { adjuntarComprobante, CampoComprobante } from "@/modulos/pagos/componentes/campo-comprobante";
 import { METODOS, NOMBRE_METODO } from "@/modulos/pagos/reglas";
 import { agendarReserva } from "../acciones";
 import type { EspacioDisponible } from "../consultas";
@@ -69,6 +70,20 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
   const [sinAdelanto, setSinAdelanto] = useState(false);
   const [adelanto, setAdelanto] = useState(mostrarMonto(adelantoSugerido));
   const [metodo, setMetodo] = useState<string>("");
+  const [comprobante, setComprobante] = useState<File | null>(null);
+  const [preparando, setPreparando] = useState(false);
+
+  // El comprobante va achicado: se arma el envío a mano (solo con adelanto)
+  async function enviar(ev: React.SyntheticEvent<HTMLFormElement, SubmitEvent>) {
+    ev.preventDefault();
+    const datos = new FormData(ev.currentTarget);
+    if (conPagos && !sinAdelanto) {
+      setPreparando(true);
+      await adjuntarComprobante(datos, comprobante);
+      setPreparando(false);
+    }
+    startTransition(() => accion(datos));
+  }
 
   function cambiarFechas(inicio: string, fin: string | null) {
     setFechaInicio(inicio);
@@ -85,7 +100,7 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
       : null;
 
   return (
-    <form ref={formulario} action={accion} className="flex max-w-3xl flex-col gap-10" noValidate>
+    <form ref={formulario} onSubmit={enviar} className="flex max-w-3xl flex-col gap-10" noValidate>
       <input type="hidden" name="origen" value={origen.tipo} />
       {origen.tipo === "cotizacion" ? (
         <input type="hidden" name="cotizacionId" value={origen.cotizacionId} />
@@ -202,14 +217,15 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
                 </RadioGroup>
                 {e.metodo && <MensajeError id="metodo-error">{e.metodo}</MensajeError>}
               </div>
+              <CampoComprobante onChange={setComprobante} error={e.comprobante} />
             </>
           )}
         </fieldset>
       )}
 
       <div>
-        <Button type="submit" disabled={enviando || buscando}>
-          {enviando ? "Agendando…" : "Agendar"}
+        <Button type="submit" disabled={enviando || buscando || preparando}>
+          {preparando ? "Preparando foto…" : enviando ? "Agendando…" : "Agendar"}
         </Button>
       </div>
     </form>

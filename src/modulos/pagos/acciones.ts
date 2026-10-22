@@ -4,11 +4,11 @@ import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { auditoria, pago, trabajo, trabajoLinea } from "@/db/esquema";
-import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { erroresDe, type EstadoFormulario } from "@/lib/formularios";
 import { exigirModulo } from "@/lib/sesion";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { montoNoMayor } from "@/modulos/cotizaciones/reglas";
+import { descartarComprobante, guardarComprobante } from "./comprobante";
 import { esquemaAnularPago, esquemaPago } from "./esquemas";
 import { calcularSaldo, estaPagada } from "./reglas";
 
@@ -51,21 +51,10 @@ export async function registrarPago(_previo: EstadoFormulario, datos: FormData):
   const { trabajoId, monto, tipo, metodo, fecha } = r.data;
   const autorId = Number(usuario.id);
 
-  // La foto se sube antes de la transacción (no se tiene la base esperando la subida); si algo falla, se borra
-  const entrada = datos.get("comprobante");
-  let comprobanteId: number | null = null;
-  if (entrada instanceof File && entrada.size > 0) {
-    let foto: Awaited<ReturnType<typeof guardarFoto>>;
-    try {
-      foto = await guardarFoto(entrada, { carpeta: "comprobantes", miniatura: true, autorId, privado: true });
-    } catch (error) {
-      // El almacenamiento no respondió: el formulario queda como estaba y se puede reintentar
-      console.error("No se pudo guardar el comprobante", error);
-      return { errores: { comprobante: "No se pudo subir el comprobante. Vuelve a intentar o regístralo sin la foto." }, valores };
-    }
-    if (!foto.ok) return { errores: { comprobante: "El comprobante debe ser una foto JPG, PNG o WebP de hasta 5 MB." }, valores };
-    comprobanteId = foto.archivoId;
-  }
+  // La foto se sube antes de la transacción; si el pago no se guarda, se borra
+  const foto = await guardarComprobante(datos.get("comprobante"), autorId);
+  if (!foto.ok) return { errores: { comprobante: foto.error }, valores };
+  const comprobanteId = foto.archivoId;
 
   let resultado: { clienteId: number; saldo: string };
   try {
@@ -99,8 +88,7 @@ export async function registrarPago(_previo: EstadoFormulario, datos: FormData):
       return { clienteId: t.clienteId, saldo: despues.saldo };
     });
   } catch (error) {
-    // Sin pago no queda comprobante; si el borrado falla, no tapa el error de verdad
-    if (comprobanteId) await eliminarFoto(comprobanteId).catch((e) => console.error("No se pudo borrar el comprobante", e));
+    await descartarComprobante(comprobanteId);
     if (error instanceof Conflicto) return error.campo ? { errores: { [error.campo]: error.message }, valores } : { mensaje: error.message };
     throw error;
   }

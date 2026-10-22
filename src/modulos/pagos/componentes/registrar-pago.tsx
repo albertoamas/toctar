@@ -1,13 +1,11 @@
 "use client";
 
-import Image from "next/image";
-import { startTransition, useActionState, useEffect, useRef, useState } from "react";
-import { CameraIcon, PlusIcon, XIcon } from "lucide-react";
+import { startTransition, useActionState, useRef, useState } from "react";
+import { PlusIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
-import { achicarFoto } from "@/componentes/panel/subida-foto";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
@@ -15,6 +13,7 @@ import type { MetodoPago, TipoPago } from "@/db/esquema/trabajos";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { registrarPago } from "../acciones";
+import { adjuntarComprobante, CampoComprobante } from "./campo-comprobante";
 import { METODOS, NOMBRE_METODO, NOMBRE_TIPO_PAGO, TIPOS } from "../reglas";
 
 // HU-32: registrar un pago (RF-45). Se cobra en el taller, con el celular en la mano: el monto viene con el saldo
@@ -74,28 +73,15 @@ function Formulario({ trabajoId, saldo, hoy, conPagos, cerrar }: Props & { cerra
   const [tipo, setTipo] = useState<TipoPago | "">(conPagos ? "saldo" : "adelanto");
   const [metodo, setMetodo] = useState<MetodoPago | "">("");
   const [fecha, setFecha] = useState(hoy);
-  const [comprobante, setComprobante] = useState<{ archivo: File; vista: string } | null>(null);
+  const [comprobante, setComprobante] = useState<File | null>(null);
   const [preparando, setPreparando] = useState(false);
-  const entradaFoto = useRef<HTMLInputElement>(null);
-  // La vista previa ocupa memoria mientras exista: se libera al cambiarla y al cerrar el formulario
-  useEffect(() => () => {
-    if (comprobante) URL.revokeObjectURL(comprobante.vista);
-  }, [comprobante]);
-
-  function elegirFoto(archivo: File | undefined) {
-    setComprobante(archivo ? { archivo, vista: URL.createObjectURL(archivo) } : null);
-    if (entradaFoto.current) entradaFoto.current.value = "";
-  }
 
   async function enviar(ev: React.SyntheticEvent<HTMLFormElement, SubmitEvent>) {
     ev.preventDefault();
     const datos = new FormData(ev.currentTarget);
-    if (comprobante) {
-      // Una foto de celular pesa 4–12 MB: achicada sube rápido en 4G (el servidor la vuelve a validar)
-      setPreparando(true);
-      datos.set("comprobante", await achicarFoto(comprobante.archivo));
-      setPreparando(false);
-    }
+    setPreparando(true);
+    await adjuntarComprobante(datos, comprobante);
+    setPreparando(false);
     startTransition(() => accion(datos));
   }
 
@@ -116,26 +102,7 @@ function Formulario({ trabajoId, saldo, hoy, conPagos, cerrar }: Props & { cerra
       <Opciones nombre="tipo" titulo="Tipo" valores={TIPOS} etiquetas={NOMBRE_TIPO_PAGO} valor={tipo} cambiar={(v) => setTipo(v as TipoPago)} error={e.tipo} />
       <Opciones nombre="metodo" titulo="Método" valores={METODOS} etiquetas={NOMBRE_METODO} valor={metodo} cambiar={(v) => setMetodo(v as MetodoPago)} error={e.metodo} />
 
-      <div className="flex flex-col gap-3">
-        <p className="text-sm font-medium">Comprobante <span className="font-normal text-tinta-suave">(opcional)</span></p>
-        {comprobante && (
-          <Image src={comprobante.vista} alt="Foto del comprobante elegida" width={160} height={160} unoptimized className="size-40 rounded-sm bg-superficie object-cover" />
-        )}
-        <input ref={entradaFoto} id="comprobante" type="file" accept="image/*" className="sr-only" tabIndex={-1} aria-label="Archivo del comprobante" onChange={(ev) => elegirFoto(ev.currentTarget.files?.[0])} />
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" onClick={() => entradaFoto.current?.click()} aria-describedby={e.comprobante ? "comprobante-error" : undefined}>
-            <CameraIcon />
-            {comprobante ? "Cambiar foto" : "Foto del comprobante"}
-          </Button>
-          {comprobante && (
-            <Button type="button" variant="ghost" onClick={() => elegirFoto(undefined)}>
-              <XIcon />
-              Quitar foto
-            </Button>
-          )}
-        </div>
-        {e.comprobante && <MensajeError id="comprobante-error">{e.comprobante}</MensajeError>}
-      </div>
+      <CampoComprobante onChange={setComprobante} error={e.comprobante} />
 
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={ocupado}>
