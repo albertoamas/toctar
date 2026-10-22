@@ -562,8 +562,10 @@
   background-color: var(--superficie);
 }
 
-/* La reserva como una cinta con el borde izquierdo cortado a 60°. La corrida del corte es el alto / tan 60°. */
+/* La reserva como una cinta con el borde izquierdo cortado a 60°. Se pinta con un degradado perpendicular al corte
+   (120deg), como el botón de la marca, y no con clip-path: un recorte deja los bordes difusos y tapa el anillo de foco.
+   El ángulo es siempre 60°, sea cual sea el alto; el corte pasa a 28 px de la esquina superior izquierda. */
 @utility tt-cinta {
-  clip-path: polygon(1.9rem 0, 100% 0, 100% 100%, 0 100%);
-  padding-left: 2.15rem;
+  background: linear-gradient(120deg, transparent 27px, var(--tt-cinta, var(--negro)) 28px);
+  padding-left: 2.4rem;
 }

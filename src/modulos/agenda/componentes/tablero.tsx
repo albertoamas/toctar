@@ -3,7 +3,7 @@ import Link from "next/link";
 import { cn } from "cn";
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
 import type { ReservaTablero, SemanaDeAgenda } from "../consultas";
-import { bloquesDeLaSemana, DIA_CORTO, diaDeLaSemana, numeroDia, seCruzan, textoDia } from "../reglas";
+import { bloquesDeLaSemana, DIA_CORTO, diaDeLaSemana, NOMBRE_ESTADO_TRABAJO, numeroDia, seCruzan, textoDia } from "../reglas";
 
 // HU-29: el tablero de la agenda (RF-38). Una fila por espacio y una columna por día (S-3: por día, sin horas). Cada
 // reserva es una cinta negra con el borde cortado a 60° que abarca sus días; si sigue desde la semana anterior o hacia la
@@ -26,8 +26,9 @@ function Cinta({ r, empiezaAntes, terminaDespues, className, style }: { r: Reser
       href={`/panel/agenda/${r.id}`}
       style={style}
       className={cn(
-        "relative flex min-h-14 min-w-0 flex-col justify-center gap-0.5 bg-negro py-1.5 pr-3 text-blanco hover:bg-negro/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]",
-        empiezaAntes ? "pl-3" : "tt-cinta",
+        "relative flex min-h-14 min-w-0 flex-col justify-center gap-0.5 py-1.5 pr-3 text-blanco opacity-100 hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]",
+        // Si viene de la semana anterior, el borde va recto: la cinta sigue
+        empiezaAntes ? "bg-negro pl-3" : "tt-cinta",
         className,
       )}
     >
@@ -42,9 +43,11 @@ function Cinta({ r, empiezaAntes, terminaDespues, className, style }: { r: Reser
           {r.masServicios > 0 && ` y ${r.masServicios} más`}
         </span>
       )}
-      <span className="truncate text-xs text-blanco/75">{r.tecnico ?? r.cliente}</span>
+      <span className="truncate text-xs text-blanco/75">{r.tecnico ?? "Sin técnico"}</span>
+      {/* En C3 todas están agendadas; desde C4 (recibido, en proceso, listo) el estado se ve también escrito */}
+      {r.estado !== "agendado" && <span className="truncate text-xs font-semibold">{NOMBRE_ESTADO_TRABAJO[r.estado]}</span>}
       <span className="sr-only">
-        , {textoFechas(r)}
+        , {NOMBRE_ESTADO_TRABAJO[r.estado].toLowerCase()}, {textoFechas(r)}
         {empiezaAntes && ", sigue desde la semana anterior"}
         {terminaDespues && ", sigue la semana siguiente"}
       </span>
@@ -106,11 +109,12 @@ export function TableroSemana({ semana, dias, hoy }: Props) {
           const gridRow = fila + 2;
           return (
             <section key={espacio.id} aria-label={espacio.nombre} className="contents">
-              <h2 style={{ gridRow, gridColumn: 1 }} className="flex items-center font-heading text-xl font-bold italic">
+              <h2 style={{ gridRow, gridColumn: 1 }} className="flex flex-col justify-center font-heading text-xl font-bold italic">
                 {espacio.nombre}
+                {!espacio.activo && <span className="font-sans text-xs font-normal not-italic text-tinta-suave">Desactivado</span>}
               </h2>
               {dias.map((fecha, i) =>
-                ocupado(fecha) ? null : (
+                ocupado(fecha) || !espacio.activo ? null : (
                   <DiaSinReserva
                     key={fecha}
                     fecha={fecha}
@@ -141,14 +145,17 @@ export function AgendaDelDia({ semana, dia, hoy }: { semana: SemanaDeAgenda; dia
         const r = semana.reservas.find((x) => x.espacioId === espacio.id && seCruzan({ inicio: x.inicio, fin: x.fin }, { inicio: dia, fin: dia }));
         return (
           <li key={espacio.id} className="flex flex-col gap-1">
-            <h2 className="font-heading text-lg font-bold italic">{espacio.nombre}</h2>
+            <h2 className="font-heading text-lg font-bold italic">
+              {espacio.nombre}
+              {!espacio.activo && <span className="ml-2 font-sans text-xs font-normal not-italic text-tinta-suave">Desactivado</span>}
+            </h2>
             {r ? (
               <Cinta r={r} empiezaAntes={r.inicio < dia} terminaDespues={r.fin > dia} />
             ) : cerrado ? (
               <p className="tt-cerrado flex min-h-14 items-center justify-center text-sm text-tinta-suave">
                 <span className="bg-superficie px-1.5 py-0.5">Cerrado</span>
               </p>
-            ) : dia < hoy ? (
+            ) : dia < hoy || !espacio.activo ? (
               <p className="flex min-h-14 items-center px-3 text-sm text-tinta-suave">Sin reserva</p>
             ) : (
               <Link

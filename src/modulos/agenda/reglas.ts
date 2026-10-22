@@ -1,5 +1,6 @@
 import type { EstadoTrabajo } from "@/db/esquema/trabajos";
 import { sumarDias } from "@/lib/fechas";
+import { NOMBRE_DIA } from "@/lib/horarios";
 
 // Reglas puras de la agenda (C3). Fechas de calendario AAAA-MM-DD, sin hora (S-3, D-9): la de "hoy" la pone quien
 // llama, en hora de Bolivia. Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md.
@@ -79,8 +80,7 @@ export function textoSemana(lunes: string): string {
 /** "Jueves 24 de octubre": el día completo, para lectores de pantalla y el celular. */
 export function textoDia(fecha: string): string {
   const { dia, mes } = partes(fecha);
-  const nombres = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-  return `${nombres[diaDeLaSemana(fecha) - 1]} ${dia} de ${MESES[mes - 1]}`;
+  return `${NOMBRE_DIA[diaDeLaSemana(fecha) - 1]} ${dia} de ${MESES[mes - 1]}`;
 }
 
 /** El número del día ("24") para la cabecera del tablero. */

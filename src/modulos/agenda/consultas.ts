@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, gte, inArray, isNull, lte, ne, notInArray, or } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, lte, ne, notInArray, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import {
@@ -329,20 +329,22 @@ export type ReservaTablero = {
 };
 
 export type SemanaDeAgenda = {
-  espacios: { id: number; nombre: string }[];
+  /** Los activos y, si tienen reservas esa semana, también los desactivados (`activo: false`): no se pierden de vista. */
+  espacios: { id: number; nombre: string; activo: boolean }[];
   reservas: ReservaTablero[];
   /** Días de la semana (1 = lunes … 7 = domingo) que el taller no atiende, según el horario de Configuración. */
   diasCerrados: number[];
 };
 
-/** La semana del tablero (HU-29): los espacios activos y las reservas que ocupan alguno de esos días. */
+/** La semana del tablero (HU-29): los espacios y las reservas que ocupan alguno de esos días. */
 export async function semanaDeAgenda(lunes: string, domingo: string): Promise<SemanaDeAgenda> {
   const s = await sucursalPrincipal();
-  const [espacios, reservas] = await Promise.all([
+  const enLaSemana = and(eq(trabajo.sucursalId, s.id), notInArray(trabajo.estado, NO_OCUPAN), lte(trabajo.fechaInicio, domingo), gte(trabajo.fechaFin, lunes));
+  const [espacios, reservas, lineas] = await Promise.all([
     db
-      .select({ id: espacioTaller.id, nombre: espacioTaller.nombre })
+      .select({ id: espacioTaller.id, nombre: espacioTaller.nombre, activo: espacioTaller.activo })
       .from(espacioTaller)
-      .where(and(eq(espacioTaller.sucursalId, s.id), eq(espacioTaller.activo, true)))
+      .where(eq(espacioTaller.sucursalId, s.id))
       .orderBy(asc(espacioTaller.orden), asc(espacioTaller.id)),
     db
       .select({
@@ -359,22 +361,23 @@ export async function semanaDeAgenda(lunes: string, domingo: string): Promise<Se
       .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
       .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
       .leftJoin(tecnico, eq(trabajo.tecnicoId, tecnico.id))
-      .where(and(eq(trabajo.sucursalId, s.id), notInArray(trabajo.estado, NO_OCUPAN), lte(trabajo.fechaInicio, domingo), gte(trabajo.fechaFin, lunes)))
+      .where(enLaSemana)
       .orderBy(asc(trabajo.fechaInicio)),
+    db
+      .select({ trabajoId: trabajoLinea.trabajoId, descripcion: trabajoLinea.descripcion })
+      .from(trabajoLinea)
+      .innerJoin(trabajo, eq(trabajoLinea.trabajoId, trabajo.id))
+      .where(enLaSemana)
+      .orderBy(asc(trabajoLinea.orden)),
   ]);
-  const lineas =
-    reservas.length === 0
-      ? []
-      : await db
-          .select({ trabajoId: trabajoLinea.trabajoId, descripcion: trabajoLinea.descripcion })
-          .from(trabajoLinea)
-          .where(inArray(trabajoLinea.trabajoId, reservas.map((r) => r.id)))
-          .orderBy(asc(trabajoLinea.orden));
+  const porTrabajo = new Map<number, string[]>();
+  for (const l of lineas) porTrabajo.set(l.trabajoId, [...(porTrabajo.get(l.trabajoId) ?? []), l.descripcion]);
+  const conReservas = new Set(reservas.map((r) => r.espacioId));
   return {
-    espacios,
+    espacios: espacios.filter((e) => e.activo || conReservas.has(e.id)),
     reservas: reservas.map((r) => {
-      const suyas = lineas.filter((l) => l.trabajoId === r.id);
-      return { ...r, servicio: suyas[0]?.descripcion ?? null, masServicios: Math.max(0, suyas.length - 1) };
+      const suyas = porTrabajo.get(r.id) ?? [];
+      return { ...r, servicio: suyas[0] ?? null, masServicios: Math.max(0, suyas.length - 1) };
     }),
     diasCerrados: s.horarios.filter((d) => d.turnos.length === 0).map((d) => d.dia),
   };

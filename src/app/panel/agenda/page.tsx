@@ -39,7 +39,9 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
   await exigirModulo("agenda");
   const { semana: pedida, dia: diaPedido } = await searchParams;
   const hoy = fechaEnBolivia();
-  const lunes = lunesDeLaSemana(typeof pedida === "string" && fechaExiste(pedida) ? pedida : hoy);
+  // Del 2000 al 2100: con años extremos las fechas dejan de tener cuatro cifras y la base las rechaza
+  const valida = typeof pedida === "string" && fechaExiste(pedida) && pedida >= "2000-01-01" && pedida <= "2100-12-31";
+  const lunes = lunesDeLaSemana(valida ? pedida : hoy);
   const dias = diasDeLaSemana(lunes);
   // En el celular: el día pedido si es de esta semana; si no, hoy (si cae en ella) o el lunes
   const dia = typeof diaPedido === "string" && dias.includes(diaPedido) ? diaPedido : dias.includes(hoy) ? hoy : lunes;
