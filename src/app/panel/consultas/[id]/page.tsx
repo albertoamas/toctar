@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { nombreVehiculo } from "@/modulos/clientes/reglas";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -52,7 +53,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/consulta
   const recienGuardada = typeof cotizada === "string" ? cotizaciones.find((x) => String(x.id) === cotizada) : undefined;
   // El encargado puede tener Consultas sin Clientes: entonces el nombre no enlaza a una ficha que no puede abrir
   const verFicha = puedeVerModulo(usuario, "clientes");
-  const vehiculo = [c.marca, c.modelo].filter(Boolean).join(" ");
+  const vehiculo = nombreVehiculo(c);
 
   return (
     <>

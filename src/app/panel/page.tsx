@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { primerNombre } from "@/modulos/clientes/reglas";
 import { Suspense } from "react";
 import { CalendarIcon, ChevronRightIcon, ContactIcon, InboxIcon, GlobeIcon, MessageSquareWarningIcon, SettingsIcon, TagIcon, UsersIcon, type LucideIcon } from "lucide-react";
 import { cn } from "cn";
@@ -37,11 +38,11 @@ async function Contenido() {
     .filter((m) => m !== "inicio")
     .sort((a, b) => Number(b === "reclamos") - Number(a === "reclamos"));
   const pendientes = modulos.includes("reclamos") ? await contarPendientes() : 0;
-  const primerNombre = usuario.nombre.trim().split(/\s+/)[0];
+  const nombre = primerNombre(usuario.nombre);
 
   return (
     <section className="flex flex-col gap-6">
-      <h1 className="font-heading text-4xl font-extrabold italic">Hola, {primerNombre}</h1>
+      <h1 className="font-heading text-4xl font-extrabold italic">Hola, {nombre}</h1>
       {modulos.length === 0 ? (
         // Un encargado al que todavía no le marcaron permisos (el técnico ya tiene sus órdenes, C4)
         <EstadoVacio>Por ahora no hay nada para ti en el panel. Pídele al dueño que te dé acceso a lo que vas a usar.</EstadoVacio>

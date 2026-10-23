@@ -13,7 +13,7 @@ import { exigirModulo } from "@/lib/sesion";
 import type { EstadoTrabajo, EtapaFoto } from "@/db/esquema/trabajos";
 import { espaciosEnFechas, type EspacioDisponible } from "@/modulos/agenda/consultas";
 import { DIAS_MAXIMOS_TRABAJO, NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
-import { esquemaAvance, esquemaEstadoOrden, esquemaExtender, esquemaFotoOrden, esquemaQuitarFotoOrden, esquemaRecibir } from "./esquemas";
+import { esquemaAvance, esquemaAvisoListo, esquemaEstadoOrden, esquemaExtender, esquemaFotoOrden, esquemaQuitarFotoOrden, esquemaRecibir } from "./esquemas";
 import { estaAbierta, etapaAbierta, puedeExtenderse, MAXIMO_FOTOS_ETAPA, NOMBRE_ETAPA, puedeRecibirse, transicionOrden } from "./reglas";
 
 // Órdenes (C4). Entra el dueño, el encargado con "Órdenes" y el técnico, que solo toca las suyas (RN-12). Recibir el
@@ -350,4 +350,32 @@ export async function extenderEntrega(_previo: EstadoFormulario, datos: FormData
 
   despuesDeCambiar(id, rango.clienteId);
   return { ok: true, mensaje: `Entrega movida ${destino}.` };
+}
+
+/**
+ * Registra que se avisó al cliente que su vehículo está listo (HU-35, RF-48): quién y cuándo. El mensaje lo arma la
+ * página (con el saldo solo si quien avisa lo ve) y lo envía la persona desde WhatsApp. Datos sueltos: se validan.
+ */
+export async function registrarAvisoListo(datos: { id: number }): Promise<EstadoFormulario> {
+  const usuario = await exigirModulo("ordenes");
+  if (!puede(usuario, "avisar_cliente")) return { mensaje: "Al cliente lo avisa el dueño o el encargado." };
+  const r = esquemaAvisoListo.safeParse(datos);
+  if (!r.success) return { mensaje: RECARGA };
+  const { id } = r.data;
+  const autorId = Number(usuario.id);
+
+  const clienteId = await db.transaction(async (tx) => {
+    const [avisada] = await tx
+      .update(trabajo)
+      .set({ avisadoListoAt: sql`now()`, avisadoListoPor: autorId })
+      .where(and(eq(trabajo.id, id), eq(trabajo.estado, "listo")))
+      .returning({ clienteId: trabajo.clienteId });
+    if (!avisada) return null;
+    await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "trabajo", entidadId: id, accion: "avisar_listo", datos: {} });
+    return avisada.clienteId;
+  });
+  if (clienteId === null) return { mensaje: "Esa orden ya no está lista. Recarga la página." };
+
+  despuesDeCambiar(id, clienteId);
+  return { ok: true };
 }

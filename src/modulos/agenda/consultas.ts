@@ -214,11 +214,15 @@ export type DetalleReserva = {
   cotizacion: { numero: string; version: number } | null;
   createdAt: Date;
   agendadaPor: string;
-  /** La orden (C4): quién la trabaja y cómo se recibió. */
+  marca: string | null;
+  modelo: string | null;
+  /** La orden (C4): quién la trabaja, cómo se recibió y el último aviso de "listo" (HU-35). */
   tecnicoId: number | null;
   observacionesIngreso: string | null;
   recibidoAt: Date | null;
   recibidoPor: string | null;
+  avisadoListoAt: Date | null;
+  avisadoListoPor: string | null;
   /** Solo para quien ve pagos (RN-01 y RN-12: el técnico nunca). */
   montos: { lineas: { descripcion: string; precio: string }[]; descuento: string; saldo: Saldo; pagos: PagoReserva[] } | null;
 };
@@ -226,6 +230,7 @@ export type DetalleReserva = {
 const tecnico = alias(usuario, "tecnico");
 const registrador = alias(usuario, "registrador");
 const recibio = alias(usuario, "recibio");
+const aviso = alias(usuario, "aviso");
 
 /** Una reserva, con sus montos y pagos si quien la mira los puede ver; null si no existe. */
 export async function obtenerReserva(id: number, conMontos: boolean): Promise<DetalleReserva | null> {
@@ -256,6 +261,10 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
       observacionesIngreso: trabajo.observacionesIngreso,
       recibidoAt: trabajo.recibidoAt,
       recibidoPor: recibio.name,
+      avisadoListoAt: trabajo.avisadoListoAt,
+      avisadoListoPor: aviso.name,
+      marca: vehiculo.marca,
+      modelo: vehiculo.modelo,
     })
     .from(trabajo)
     .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
@@ -265,6 +274,7 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
     .innerJoin(registrador, eq(trabajo.createdBy, registrador.id))
     .leftJoin(tecnico, eq(trabajo.tecnicoId, tecnico.id))
     .leftJoin(recibio, eq(trabajo.recibidoPor, recibio.id))
+    .leftJoin(aviso, eq(trabajo.avisadoListoPor, aviso.id))
     .leftJoin(cotizacion, eq(trabajo.cotizacionId, cotizacion.id))
     .where(eq(trabajo.id, id));
   if (!r) return null;

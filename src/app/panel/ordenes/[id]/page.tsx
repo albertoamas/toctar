@@ -8,16 +8,19 @@ import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
-import { fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/lib/fechas";
+import { diaYHora, fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/lib/fechas";
 import { puede, puedeVerModulo, puedeVerOrden } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
+import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
 import { AvancesOrden } from "@/modulos/ordenes/componentes/avances-orden";
+import { AvisarListo } from "@/modulos/ordenes/componentes/avisar-listo";
 import { EstadoOrden } from "@/modulos/ordenes/componentes/estado-orden";
 import { ExtenderEntrega } from "@/modulos/ordenes/componentes/extender-entrega";
 import { FotosOrden } from "@/modulos/ordenes/componentes/fotos-orden";
 import { avancesDeTrabajo, fotosDeTrabajo, obtenerOrden } from "@/modulos/ordenes/consultas";
+import { mensajeListo } from "@/modulos/ordenes/mensajes";
 import { esOrden, estaAbierta, estaAtrasada, puedeExtenderse } from "@/modulos/ordenes/reglas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
 
@@ -56,7 +59,13 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   const hoy = fechaEnBolivia();
   const yo = Number(usuario.id);
   // Recién ahora, con el acceso verificado, se firman los enlaces de las fotos
-  const [fotos, avances] = await Promise.all([fotosDeTrabajo(o.id), avancesDeTrabajo(o.id)]);
+  const conAviso = o.estado === "listo" && puede(usuario, "avisar_cliente");
+  const [fotos, avances, negocio] = await Promise.all([fotosDeTrabajo(o.id), avancesDeTrabajo(o.id), conAviso ? obtenerDatosPublicos() : null]);
+  // Lista: el aviso al cliente por WhatsApp (HU-35), con el saldo solo si quien avisa lo ve
+  const aviso = negocio && {
+    enlace: enlaceWhatsApp(o.telefono, mensajeListo({ negocio: negocio.nombre, cliente: o.cliente, vehiculo: o, saldo: o.montos?.saldo.saldo ?? null })),
+    avisado: o.avisadoListoAt ? `Avisado el ${diaYHora(o.avisadoListoAt)}${o.avisadoListoPor ? ` por ${o.avisadoListoPor}` : ""}` : null,
+  };
   const deEtapa = (etapa: (typeof fotos)[number]["etapa"]) =>
     fotos.filter((f) => f.etapa === etapa).map((f) => ({ ...f, puedeQuitar: etapa !== "ingreso" && (usuario.rol === "dueno" || f.subidoPor === yo) }));
 
@@ -77,6 +86,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
       {o.estado !== "entregado" && (
         <div className="flex max-w-3xl flex-col gap-4">
           <EstadoOrden id={o.id} estado={o.estado} editable={abierta} />
+          {aviso && <AvisarListo id={o.id} enlace={aviso.enlace} avisado={aviso.avisado} />}
           {puedeExtenderse(o.estado) && puede(usuario, "extender_entrega") && (
             <ExtenderEntrega id={o.id} fechaInicio={o.fechaInicio} fechaFin={o.fechaFin} espacioId={o.espacioId} espacio={o.espacio} hoy={hoy} />
           )}

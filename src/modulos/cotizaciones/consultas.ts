@@ -1,4 +1,5 @@
 import "server-only";
+import { nombreVehiculo } from "@/modulos/clientes/reglas";
 import { and, asc, desc, eq, like } from "drizzle-orm";
 import { db } from "@/db";
 import {
@@ -264,7 +265,7 @@ export async function datosDocumento(consultaId: number): Promise<DatosDocumento
     cliente: { nombre: c.nombre, telefono: c.telefono },
     vehiculo: {
       placa: c.placa,
-      descripcion: [[c.marca, c.modelo].filter(Boolean).join(" "), c.color].filter(Boolean).join(", ") || null,
+      descripcion: [nombreVehiculo(c), c.color].filter(Boolean).join(", ") || null,
       tamano: c.tamano,
     },
     negocio: { ...n, whatsapp: s?.whatsapp ?? null, direccion: s?.direccion ?? null },
