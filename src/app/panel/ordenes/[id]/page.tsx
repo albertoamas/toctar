@@ -8,7 +8,7 @@ import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
-import { fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/lib/fechas";
+import { diaYHora, fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/lib/fechas";
 import { puede, puedeVerModulo, puedeVerOrden } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
@@ -56,21 +56,16 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   }
   const verFicha = puedeVerModulo(usuario, "clientes");
   const abierta = estaAbierta(o.estado);
-  // Lista: el aviso al cliente por WhatsApp (HU-35), con el saldo solo si quien avisa lo ve
-  const aviso =
-    o.estado === "listo" && puede(usuario, "avisar_cliente")
-      ? {
-          enlace: enlaceWhatsApp(
-            o.telefono,
-            mensajeListo({ negocio: (await obtenerDatosPublicos()).nombre, cliente: o.cliente, vehiculo: o, saldo: o.montos?.saldo.saldo ?? null }),
-          ),
-          avisado: o.avisadoListoAt ? `Avisado el ${formatearFechaHora(o.avisadoListoAt)}${o.avisadoListoPor ? ` por ${o.avisadoListoPor}` : ""}` : null,
-        }
-      : null;
   const hoy = fechaEnBolivia();
   const yo = Number(usuario.id);
   // Recién ahora, con el acceso verificado, se firman los enlaces de las fotos
-  const [fotos, avances] = await Promise.all([fotosDeTrabajo(o.id), avancesDeTrabajo(o.id)]);
+  const conAviso = o.estado === "listo" && puede(usuario, "avisar_cliente");
+  const [fotos, avances, negocio] = await Promise.all([fotosDeTrabajo(o.id), avancesDeTrabajo(o.id), conAviso ? obtenerDatosPublicos() : null]);
+  // Lista: el aviso al cliente por WhatsApp (HU-35), con el saldo solo si quien avisa lo ve
+  const aviso = negocio && {
+    enlace: enlaceWhatsApp(o.telefono, mensajeListo({ negocio: negocio.nombre, cliente: o.cliente, vehiculo: o, saldo: o.montos?.saldo.saldo ?? null })),
+    avisado: o.avisadoListoAt ? `Avisado el ${diaYHora(o.avisadoListoAt)}${o.avisadoListoPor ? ` por ${o.avisadoListoPor}` : ""}` : null,
+  };
   const deEtapa = (etapa: (typeof fotos)[number]["etapa"]) =>
     fotos.filter((f) => f.etapa === etapa).map((f) => ({ ...f, puedeQuitar: etapa !== "ingreso" && (usuario.rol === "dueno" || f.subidoPor === yo) }));
 
