@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState, useSyncExternalStore, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
+import { useHidratado } from "@/componentes/hidratado";
 import { CameraIcon, PlayIcon, TrashIcon } from "lucide-react";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { MensajeError } from "@/componentes/panel/campo";
@@ -20,7 +21,6 @@ import { BYTES_MAXIMOS_VIDEO, duracionPermitida, MAXIMO_ARCHIVOS, MEGAS_MAXIMOS_
 type Props = { consultaId: number; archivos: ArchivoConsulta[] };
 type Resultado = { ok: true; tipo: "foto" | "video" } | { ok: false; error: string };
 
-const sinSuscripcion = () => () => {};
 const NO_SUBIO = "no se pudo subir. Revisa tu conexión y vuelve a intentar.";
 
 /** "0:42". */
@@ -69,7 +69,7 @@ export function ArchivosConsulta({ consultaId, archivos }: Props) {
   const [abierto, setAbierto] = useState<number | null>(null);
   const [quitando, iniciar] = useTransition();
   // Necesita JavaScript (se sube al elegir los archivos): se habilita al hidratar
-  const listo = useSyncExternalStore(sinSuscripcion, () => true, () => false);
+  const listo = useHidratado();
   const lugares = MAXIMO_ARCHIVOS - archivos.length;
   const elegido = abierto === null ? null : archivos[abierto];
 

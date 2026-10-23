@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { useRef, useState, useSyncExternalStore, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
+import { useHidratado } from "@/componentes/hidratado";
 import { CameraIcon, ImageIcon, TrashIcon } from "lucide-react";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { MensajeError } from "@/componentes/panel/campo";
@@ -24,7 +25,6 @@ type Props = {
 };
 
 const LADO_MAXIMO = 2400;
-const sinSuscripcion = () => () => {};
 
 /** Achica la foto en el navegador. Si no puede (formato raro), manda la original y decide el servidor. */
 export async function achicarFoto(archivo: File): Promise<File> {
@@ -50,7 +50,7 @@ export function SubidaFoto({ id, accion, camposOcultos, actual, textoVacio, quit
   const [error, setError] = useState<string>();
   const [pendiente, iniciar] = useTransition();
   // Necesita JavaScript (se sube al elegir el archivo): se habilita al hidratar.
-  const listo = useSyncExternalStore(sinSuscripcion, () => true, () => false);
+  const listo = useHidratado();
   const ocupado = !listo || etapa !== null || pendiente;
 
   async function subir(archivo: File) {

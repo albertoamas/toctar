@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState, useSyncExternalStore, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { CameraIcon, TrashIcon } from "lucide-react";
+import { useHidratado } from "@/componentes/hidratado";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { MensajeError } from "@/componentes/panel/campo";
 import { achicarFoto } from "@/componentes/panel/subida-foto";
@@ -31,7 +32,6 @@ type Props = {
   sinTitulo?: boolean;
 };
 
-const sinSuscripcion = () => () => {};
 const NO_SUBIO = "no se pudo subir. Revisa tu conexión y vuelve a intentar.";
 
 export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio, sinTitulo }: Props) {
@@ -42,7 +42,7 @@ export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio, sinT
   const [abierta, setAbierta] = useState<number | null>(null);
   const [quitando, iniciar] = useTransition();
   // Necesita JavaScript (se sube al elegir): se habilita al hidratar
-  const listo = useSyncExternalStore(sinSuscripcion, () => true, () => false);
+  const listo = useHidratado();
   const lugares = MAXIMO_FOTOS_ETAPA - fotos.length;
   const elegida = abierta === null ? null : fotos[abierta];
   const nombre = NOMBRE_ETAPA[etapa];
