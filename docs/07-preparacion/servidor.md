@@ -97,6 +97,27 @@ Ver `guia-de-despliegue.md`:
 
 Cada cosa que se instale se anota aquí, con su fecha.
 
+## Cloudflare R2: fotos, datos de clientes y respaldos
+
+Configurado el 23/10/2026 en la cuenta de Cloudflare del negocio (`toctartarija@gmail.com`). YankoSoft entra con su cuenta personal como **Super Administrator**; al entregar el sistema, el dueño lo puede bajar a **Administrator** (sigue manejando DNS y R2, pero no la facturación ni los miembros).
+
+- **Plan:** R2 gratuito (10 GB al mes, sin costo por descargas). La tarjeta registrada es **provisoriamente la de YankoSoft**: se cambia a la del dueño.
+- **Account ID:** `7b3b2188fdc6c23bfdb4cc84e28745f6` (no es secreto). Endpoint para `S3_ENDPOINT`: `https://7b3b2188fdc6c23bfdb4cc84e28745f6.r2.cloudflarestorage.com`.
+- **Buckets**, todos con ubicación sugerida **Eastern North America (ENAM)**, la región de Cloudflare más cercana a Bolivia, y clase **Standard**:
+
+| Bucket | Para qué | Acceso público |
+|---|---|---|
+| `toctar-fotos` | Fotos del sitio, producción | Dominio `fotos.toctardetailing.com` (**pendiente**: necesita el dominio en Cloudflare) |
+| `toctar-fotos-pruebas` | Fotos del sitio, pruebas | Dominio `fotos-pruebas.toctardetailing.com` (**pendiente**) |
+| `toctar-privado` | Datos de clientes, producción: reclamos, consultas, órdenes y comprobantes | **Nunca.** CORS: `https://toctardetailing.com`, PUT y GET |
+| `toctar-privado-pruebas` | Datos de clientes, pruebas | **Nunca.** CORS: `https://pruebas.toctardetailing.com`, PUT y GET |
+| `toctar-respaldos` | Copias de la base de datos | **Nunca** |
+
+- **Tokens** (Account API tokens, sin vencimiento), con su Access Key ID y Secret guardados **solo en el gestor de contraseñas**:
+  - `toctar-app`: Object Read & Write sobre los 4 buckets de fotos y privados. Va en `S3_ACCESS_KEY_ID` y `S3_SECRET_ACCESS_KEY` de las dos apps.
+  - `toctar-respaldos`: Object Read & Write solo sobre `toctar-respaldos`. Va en el almacenamiento S3 de Coolify, para los respaldos.
+- **Si un token se filtra:** se borra en R2 → Manage API tokens, se crea otro igual y se actualizan las variables en Coolify.
+
 ## Mantenimiento
 
 - **Actualizaciones de seguridad:** se instalan solas todos los días (unattended-upgrades), pero **no reinician** el servidor. Una vez al mes, o cuando avise la consola, entrar y revisar:
