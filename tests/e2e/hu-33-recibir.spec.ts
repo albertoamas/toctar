@@ -151,3 +151,34 @@ test("antes de su día no se recibe y sin fotos se pide confirmar", async ({ pag
   await page.goto(`/panel/ordenes/${idSinFotos}/recibir`);
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${idSinFotos}$`));
 });
+
+test("si la reserva se cancela, las fotos de ingreso que se alcanzaron a tomar se descartan", async ({ page }, info) => {
+  const s = sufijo(info);
+  const placa = `RC33${s.toUpperCase()}4`;
+  await crearClienteEnBase({ nombre: `No vino ${s}`, telefono: telefono(info, 4), placa });
+  const [{ antes }] = await consultar<{ antes: string }>("select to_char($1::date - 2, 'YYYY-MM-DD') as antes", [hoy()]);
+  const id = await reserva(info, placa, antes);
+  await crearUsuario({ usuario: `taller3-hu33-${s}`, nombre: "Encargado del taller", contrasena: "encargado-123", rol: "encargado", permisos: ["agenda", "ordenes"] });
+  await ingresar(page, `taller3-hu33-${s}`, "encargado-123");
+  await expect(page).toHaveURL(/\/panel$/);
+
+  await page.goto(`/panel/ordenes/${id}/recibir`);
+  // La subida necesita JavaScript: el botón se habilita al hidratar
+  await expect(page.getByRole("button", { name: "Tomar foto" })).toBeEnabled();
+  await page.getByLabel("Cámara para fotos de ingreso").setInputFiles({ name: "frente.png", mimeType: "image/png", buffer: PNG });
+  await expect(page.getByText("Foto guardada.")).toBeVisible();
+  const [{ archivo }] = await consultar<{ archivo: number }>("select archivo_id as archivo from trabajo_foto where trabajo_id = $1", [id]);
+
+  // Al final no lo dejó: se cancela la reserva
+  await page.goto(`/panel/agenda/${id}`);
+  await page.getByRole("button", { name: "Cancelar reserva" }).click();
+  const form = page.getByRole("form", { name: "Cancelar reserva" });
+  await form.getByLabel("Motivo").fill("No trajo el vehículo");
+  await form.getByRole("button", { name: "Cancelar reserva" }).click();
+  await expect(page.getByText(/^Reserva cancelada/)).toBeVisible();
+  const [quedan] = await consultar<{ fotos: number; archivos: number }>(
+    "select (select count(*)::int from trabajo_foto where trabajo_id = $1) as fotos, (select count(*)::int from archivo where id = $2) as archivos",
+    [id, archivo],
+  );
+  expect(quedan).toEqual({ fotos: 0, archivos: 0 });
+});
