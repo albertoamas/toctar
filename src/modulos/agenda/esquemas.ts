@@ -3,6 +3,7 @@ import { METODOS_PAGO } from "@/db/esquema/trabajos";
 import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
 import { leerMonto } from "@/modulos/catalogo/reglas";
 import { MAXIMO_LINEAS } from "@/modulos/cotizaciones/reglas";
+import { DIAS_MAXIMOS_TRABAJO } from "./reglas";
 
 // Validación de las reservas (HU-30). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §6 y §8.
 // Las líneas de una reserva directa llegan como JSON (el editor de líneas de la cotización); con cotización, se
@@ -70,7 +71,8 @@ export const esquemaFechas = z
     if (d.fechaInicio < hoy) ctx.addIssue({ code: "custom", path: ["fechaInicio"], message: "El ingreso no puede ser antes de hoy." });
     else if (d.fechaInicio > sumarDias(hoy, 365)) ctx.addIssue({ code: "custom", path: ["fechaInicio"], message: "Se agenda hasta un año adelante." });
     if (d.fechaFin < d.fechaInicio) ctx.addIssue({ code: "custom", path: ["fechaFin"], message: "La entrega no puede ser antes del ingreso." });
-    else if (d.fechaFin > sumarDias(d.fechaInicio, 60)) ctx.addIssue({ code: "custom", path: ["fechaFin"], message: "Una reserva dura hasta 60 días." });
+    else if (d.fechaFin > sumarDias(d.fechaInicio, DIAS_MAXIMOS_TRABAJO))
+      ctx.addIssue({ code: "custom", path: ["fechaFin"], message: `Una reserva dura hasta ${DIAS_MAXIMOS_TRABAJO} días.` });
   });
 
 /** Adelanto al agendar (RN-04): un monto y su método, o "sin adelanto". El tope (el total) lo mira la acción. */

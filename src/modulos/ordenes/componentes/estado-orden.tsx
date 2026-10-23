@@ -9,16 +9,13 @@ import { Button } from "@/componentes/ui/button";
 import type { EstadoTrabajo } from "@/db/esquema/trabajos";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { cambiarEstadoOrden } from "../acciones";
-import { pasosDeOrden } from "../reglas";
+import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
+import { ESTADOS_ORDEN_ABIERTA, pasosDeOrden } from "../reglas";
 
 // HU-34: el estado de la orden (RF-41). Se usa de pie en el taller, con el celular: los tres pasos a la vista y el
 // siguiente como botón grande, a todo el ancho; volver un paso atrás (por si se tocó sin querer) queda chico y aparte.
 
-const PASOS: { estado: EstadoTrabajo; nombre: string }[] = [
-  { estado: "recibido", nombre: "Recibida" },
-  { estado: "en_proceso", nombre: "En proceso" },
-  { estado: "listo", nombre: "Lista" },
-];
+const PASOS = ESTADOS_ORDEN_ABIERTA.map((estado) => ({ estado, nombre: NOMBRE_ESTADO_TRABAJO[estado] }));
 
 export function EstadoOrden({ id, estado, editable }: { id: number; estado: EstadoTrabajo; /** Quien mira la trabaja: puede cambiarla. */ editable: boolean }) {
   const [resultado, accion, enviando] = useActionState<EstadoFormulario, FormData>(conAviso(cambiarEstadoOrden), {});

@@ -5,6 +5,9 @@ import { NOMBRE_DIA } from "@/lib/horarios";
 // Reglas puras de la agenda (C3). Fechas de calendario AAAA-MM-DD, sin hora (S-3, D-9): la de "hoy" la pone quien
 // llama, en hora de Bolivia. Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md.
 
+/** Lo que dura a lo sumo un trabajo, desde el ingreso hasta la entrega: al agendar, reprogramar o extender. */
+export const DIAS_MAXIMOS_TRABAJO = 60;
+
 export const NOMBRE_ESTADO_TRABAJO: Record<EstadoTrabajo, string> = {
   agendado: "Agendada",
   recibido: "Recibida",

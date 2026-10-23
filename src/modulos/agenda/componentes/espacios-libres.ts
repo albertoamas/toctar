@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { consultarEspacios } from "../acciones";
 import type { EspacioDisponible } from "../consultas";
+import { DIAS_MAXIMOS_TRABAJO } from "../reglas";
 
 type Consulta = (datos: { fechaInicio: string; fechaFin: string; excepto?: number }) => Promise<EspacioDisponible[] | null>;
 
@@ -46,9 +47,11 @@ export function useEspaciosLibres(
     completas && (buscando || espacios === null)
       ? "Buscando espacios libres…"
       : !completas || !fechasValidas
-        ? (ayudaFechas ?? "Revisa las fechas: el ingreso desde hoy y hasta un año adelante; la entrega no antes del ingreso ni más de 60 días después.")
+        ? (ayudaFechas ?? `Revisa las fechas: el ingreso desde hoy y hasta un año adelante; la entrega no antes del ingreso ni más de ${DIAS_MAXIMOS_TRABAJO} días después.`)
         : libres.length === 0
           ? "No hay espacio libre en esas fechas: elige otras."
           : "Solo los libres en esas fechas.";
-  return { libres, buscando, ayuda };
+  /** Los activos, libres u ocupados: uno que no está aquí se desactivó. */
+  const activos = completas ? (espacios ?? []) : [];
+  return { libres, activos, buscando, ayuda };
 }
