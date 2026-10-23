@@ -1,4 +1,4 @@
-import { expect, test, type TestInfo } from "@playwright/test";
+import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import pg from "pg";
 import { crearClienteEnBase, crearUsuario, ingresar, URL_BASE_E2E } from "./apoyo";
 
@@ -34,13 +34,24 @@ async function ordenLista(info: TestInfo, placa: string, espacio: number): Promi
   return id;
 }
 
+/** Toca el botón y devuelve la dirección que abrió (WhatsApp responde la prueba), ya decodificada. */
+async function abrirWhatsApp(page: Page, boton: string): Promise<string> {
+  await page.context().route("https://wa.me/**", (ruta) => ruta.fulfill({ body: "WhatsApp" }));
+  const nueva = page.context().waitForEvent("page");
+  await page.getByRole("button", { name: boton }).click();
+  const whatsapp = await nueva;
+  await whatsapp.waitForLoadState();
+  const enlace = decodeURIComponent(whatsapp.url());
+  await whatsapp.close();
+  return enlace;
+}
+
 test("avisar abre WhatsApp con nombre, vehículo y saldo, y queda quién avisó y cuándo", async ({ page }, info) => {
   const s = sufijo(info);
   const placa = `AV35${s.toUpperCase()}1`;
   await crearClienteEnBase({ nombre: `Lucía Rojas ${s}`, telefono: telefono(info, 1), placa });
   const id = await ordenLista(info, placa, 0);
   await crearUsuario({ usuario: `aviso-hu35-${s}`, nombre: "Ana del taller", contrasena: "encargado-123", rol: "encargado", permisos: ["ordenes", "pagos"] });
-  await page.context().route("https://wa.me/**", (ruta) => ruta.fulfill({ body: "WhatsApp" }));
   await ingresar(page, `aviso-hu35-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
 
@@ -49,17 +60,12 @@ test("avisar abre WhatsApp con nombre, vehículo y saldo, y queda quién avisó 
   await expect(page.getByRole("link", { name: new RegExp(`^${placa}.*Sin avisar`) })).toBeVisible();
 
   await page.goto(`/panel/ordenes/${id}`);
-  const avisar = page.getByRole("link", { name: "Avisar por WhatsApp" });
-  const enlace = decodeURIComponent((await avisar.getAttribute("href")) ?? "");
+  const enlace = await abrirWhatsApp(page, "Avisar por WhatsApp");
   expect(enlace).toMatch(/^https:\/\/wa\.me\/591\d{8}\?text=/);
   expect(enlace).toContain(`Hola Lucía, tu vehículo (placa ${placa}) ya está listo en`);
   expect(enlace).toContain("Saldo pendiente: 350 Bs.");
-
-  const nueva = page.context().waitForEvent("page");
-  await avisar.click();
-  await (await nueva).close();
-  await expect(page.getByText(/^Avisado el .* por Ana del taller$/)).toBeVisible();
-  await expect(page.getByRole("link", { name: "Volver a avisar" })).toBeVisible();
+  await expect(page.getByText(/^Avisado el \d{2}\/\d{2} a las \d{2}:\d{2} por Ana del taller$/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Volver a avisar" })).toBeVisible();
   const [t] = await consultar<{ avisada: boolean; auditoria: string }>(
     `select avisado_listo_at is not null as avisada,
        (select accion from auditoria where entidad = 'trabajo' and entidad_id = t.id order by id desc limit 1) as auditoria
@@ -82,7 +88,7 @@ test("sin Pagos el mensaje no lleva el saldo; el técnico no avisa", async ({ pa
   await ingresar(page, `aviso2-hu35-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto(`/panel/ordenes/${id}`);
-  const enlace = decodeURIComponent((await page.getByRole("link", { name: "Avisar por WhatsApp" }).getAttribute("href")) ?? "");
+  const enlace = await abrirWhatsApp(page, "Avisar por WhatsApp");
   expect(enlace).toContain("ya está listo en");
   expect(enlace).not.toContain("Saldo");
 
@@ -91,5 +97,5 @@ test("sin Pagos el mensaje no lleva el saldo; el técnico no avisa", async ({ pa
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto(`/panel/ordenes/${id}`);
   await expect(page.getByRole("heading", { level: 1, name: placa })).toBeVisible();
-  await expect(page.getByRole("link", { name: /avisar/i })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /avisar/i })).toHaveCount(0);
 });
