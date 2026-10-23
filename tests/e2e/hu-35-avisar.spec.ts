@@ -1,0 +1,95 @@
+import { expect, test, type TestInfo } from "@playwright/test";
+import pg from "pg";
+import { crearClienteEnBase, crearUsuario, ingresar, URL_BASE_E2E } from "./apoyo";
+
+// HU-35 Avisar vehículo listo (flujo crítico 4, primera parte). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §9.
+// Las órdenes van directo a la base, en días propios lejos de hoy (800 o 900) para no chocar con otras pruebas. WhatsApp
+// no se abre de verdad: la prueba responde por wa.me.
+test.describe.configure({ mode: "serial" });
+
+const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "c" : "e");
+const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 5 : 6}3500${n}0`;
+
+async function consultar<T extends pg.QueryResultRow>(sql: string, valores: unknown[] = []): Promise<T[]> {
+  const base = new pg.Client({ connectionString: URL_BASE_E2E });
+  await base.connect();
+  try {
+    return (await base.query<T>(sql, valores)).rows;
+  } finally {
+    await base.end();
+  }
+}
+
+/** Una orden lista de 500 Bs con 150 de adelanto, en el espacio de ese orden. Devuelve su id. */
+async function ordenLista(info: TestInfo, placa: string, espacio: number): Promise<number> {
+  const desde = info.project.name === "celular" ? 800 : 900;
+  const [{ id }] = await consultar<{ id: number }>(
+    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, created_by)
+     select e.sucursal_id, v.cliente_id, v.id, e.id, current_date + $3::int, current_date + $3::int, 'listo', now(), now(), v.created_by
+     from vehiculo v, (select * from espacio_taller where activo order by orden offset $2 limit 1) e where v.placa = $1 returning id`,
+    [placa, espacio, desde],
+  );
+  await consultar("insert into trabajo_linea (trabajo_id, variante_id, descripcion, precio, orden) select $1, (select id from variante order by id limit 1), 'Lavado completo', 500, 0", [id]);
+  await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, 150, 'efectivo', 'adelanto', current_date, created_by from trabajo where id = $1", [id]);
+  return id;
+}
+
+test("avisar abre WhatsApp con nombre, vehículo y saldo, y queda quién avisó y cuándo", async ({ page }, info) => {
+  const s = sufijo(info);
+  const placa = `AV35${s.toUpperCase()}1`;
+  await crearClienteEnBase({ nombre: `Lucía Rojas ${s}`, telefono: telefono(info, 1), placa });
+  const id = await ordenLista(info, placa, 0);
+  await crearUsuario({ usuario: `aviso-hu35-${s}`, nombre: "Ana del taller", contrasena: "encargado-123", rol: "encargado", permisos: ["ordenes", "pagos"] });
+  await page.context().route("https://wa.me/**", (ruta) => ruta.fulfill({ body: "WhatsApp" }));
+  await ingresar(page, `aviso-hu35-${s}`, "encargado-123");
+  await expect(page).toHaveURL(/\/panel$/);
+
+  // En la lista, "Sin avisar"
+  await page.goto("/panel/ordenes?estado=listo");
+  await expect(page.getByRole("link", { name: new RegExp(`^${placa}.*Sin avisar`) })).toBeVisible();
+
+  await page.goto(`/panel/ordenes/${id}`);
+  const avisar = page.getByRole("link", { name: "Avisar por WhatsApp" });
+  const enlace = decodeURIComponent((await avisar.getAttribute("href")) ?? "");
+  expect(enlace).toMatch(/^https:\/\/wa\.me\/591\d{8}\?text=/);
+  expect(enlace).toContain(`Hola Lucía, tu vehículo (placa ${placa}) ya está listo en`);
+  expect(enlace).toContain("Saldo pendiente: 350 Bs.");
+
+  const nueva = page.context().waitForEvent("page");
+  await avisar.click();
+  await (await nueva).close();
+  await expect(page.getByText(/^Avisado el .* por Ana del taller$/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "Volver a avisar" })).toBeVisible();
+  const [t] = await consultar<{ avisada: boolean; auditoria: string }>(
+    `select avisado_listo_at is not null as avisada,
+       (select accion from auditoria where entidad = 'trabajo' and entidad_id = t.id order by id desc limit 1) as auditoria
+     from trabajo t where id = $1`,
+    [id],
+  );
+  expect(t).toEqual({ avisada: true, auditoria: "avisar_listo" });
+});
+
+test("sin Pagos el mensaje no lleva el saldo; el técnico no avisa", async ({ page }, info) => {
+  const s = sufijo(info);
+  const placa = `AV35${s.toUpperCase()}2`;
+  await crearClienteEnBase({ nombre: `Marco ${s}`, telefono: telefono(info, 2), placa });
+  const id = await ordenLista(info, placa, 1);
+  await crearUsuario({ usuario: `tec-hu35-${s}`, nombre: "Técnico Aviso", contrasena: "tecnico-123", rol: "tecnico" });
+  const [{ tecnico }] = await consultar<{ tecnico: number }>("select id as tecnico from usuario where nombre_usuario = $1", [`tec-hu35-${s}`]);
+  await consultar("update trabajo set tecnico_id = $2 where id = $1", [id, tecnico]);
+  await crearUsuario({ usuario: `aviso2-hu35-${s}`, nombre: "Encargado sin pagos", contrasena: "encargado-123", rol: "encargado", permisos: ["ordenes"] });
+
+  await ingresar(page, `aviso2-hu35-${s}`, "encargado-123");
+  await expect(page).toHaveURL(/\/panel$/);
+  await page.goto(`/panel/ordenes/${id}`);
+  const enlace = decodeURIComponent((await page.getByRole("link", { name: "Avisar por WhatsApp" }).getAttribute("href")) ?? "");
+  expect(enlace).toContain("ya está listo en");
+  expect(enlace).not.toContain("Saldo");
+
+  await page.context().clearCookies();
+  await ingresar(page, `tec-hu35-${s}`, "tecnico-123");
+  await expect(page).toHaveURL(/\/panel$/);
+  await page.goto(`/panel/ordenes/${id}`);
+  await expect(page.getByRole("heading", { level: 1, name: placa })).toBeVisible();
+  await expect(page.getByRole("link", { name: /avisar/i })).toHaveCount(0);
+});
