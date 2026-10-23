@@ -1,0 +1,1 @@
+ALTER TABLE "trabajo" ADD COLUMN "fecha_fin_prevista" date;

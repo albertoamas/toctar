@@ -69,7 +69,10 @@ export type OrdenEnLista = {
 
 const tecnico = alias(usuario, "tecnico");
 
-/** Las órdenes abiertas (recibidas, en proceso y listas); las de un técnico si se indica. La entrega más cercana primero. */
+/**
+ * Las órdenes abiertas; las de un técnico si se indica. Primero las que se trabajan, la entrega más cercana arriba (así
+ * las atrasadas y las de hoy quedan primero); al final, las listas que esperan al cliente.
+ */
 export async function ordenesAbiertas(tecnicoId?: number): Promise<OrdenEnLista[]> {
   const abiertas = inArray(trabajo.estado, [...ESTADOS_ORDEN_ABIERTA]);
   const ordenes = await db
@@ -93,5 +96,7 @@ export async function ordenesAbiertas(tecnicoId?: number): Promise<OrdenEnLista[
     .orderBy(asc(trabajoLinea.orden));
   const porOrden = new Map<number, string[]>();
   for (const l of lineas) porOrden.set(l.trabajoId, [...(porOrden.get(l.trabajoId) ?? []), l.descripcion]);
-  return ordenes.map(({ avisadoListoAt, ...o }) => ({ ...o, sinAvisar: o.estado === "listo" && avisadoListoAt === null, servicios: porOrden.get(o.id) ?? [] }));
+  return ordenes
+    .map(({ avisadoListoAt, ...o }) => ({ ...o, sinAvisar: o.estado === "listo" && avisadoListoAt === null, servicios: porOrden.get(o.id) ?? [] }))
+    .sort((a, b) => Number(a.estado === "listo") - Number(b.estado === "listo"));
 }

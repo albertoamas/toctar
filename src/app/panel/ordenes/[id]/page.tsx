@@ -18,7 +18,7 @@ import { EstadoOrden } from "@/modulos/ordenes/componentes/estado-orden";
 import { ExtenderEntrega } from "@/modulos/ordenes/componentes/extender-entrega";
 import { FotosOrden } from "@/modulos/ordenes/componentes/fotos-orden";
 import { avancesDeTrabajo, fotosDeTrabajo, obtenerOrden } from "@/modulos/ordenes/consultas";
-import { esOrden, estaAbierta, estaAtrasada } from "@/modulos/ordenes/reglas";
+import { esOrden, estaAbierta, estaAtrasada, puedeExtenderse } from "@/modulos/ordenes/reglas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
 
 export const metadata: Metadata = { title: "Orden" };
@@ -77,8 +77,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
       {o.estado !== "entregado" && (
         <div className="flex max-w-3xl flex-col gap-4">
           <EstadoOrden id={o.id} estado={o.estado} editable={abierta} />
-          {abierta && puede(usuario, "extender_entrega") && (
-            <ExtenderEntrega id={o.id} fechaInicio={o.fechaInicio} fechaFin={o.fechaFin} espacioId={o.espacioId} espacio={o.espacio} />
+          {puedeExtenderse(o.estado) && puede(usuario, "extender_entrega") && (
+            <ExtenderEntrega id={o.id} fechaInicio={o.fechaInicio} fechaFin={o.fechaFin} espacioId={o.espacioId} espacio={o.espacio} hoy={hoy} />
           )}
         </div>
       )}

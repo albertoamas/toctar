@@ -13,10 +13,15 @@ export const MAXIMO_FOTOS_ETAPA = 20;
 export const ESTADOS_ORDEN_ABIERTA = ["recibido", "en_proceso", "listo"] as const satisfies readonly EstadoTrabajo[];
 /** Recibida, en proceso o lista: se trabaja, se le suben fotos y avances, y se puede extender. */
 export const estaAbierta = (estado: EstadoTrabajo) => (ESTADOS_ORDEN_ABIERTA as readonly EstadoTrabajo[]).includes(estado);
-const abierta = estaAbierta;
+
+/**
+ * Se le extiende la entrega mientras se trabaja: recibida o en proceso. Una lista ya liberó su espacio (decisión del
+ * 20/10); si hace falta más, primero vuelve a en proceso.
+ */
+export const puedeExtenderse = (estado: EstadoTrabajo) => estado === "recibido" || estado === "en_proceso";
 
 /** Ya se recibió: abierta o entregada (los mismos de la restricción `trabajo_recibido_si_orden`). */
-export const esOrden = (estado: EstadoTrabajo) => abierta(estado) || estado === "entregado";
+export const esOrden = (estado: EstadoTrabajo) => estaAbierta(estado) || estado === "entregado";
 
 /** Cada estado abierto, con su paso siguiente y el de vuelta (por si se marcó por error). */
 const PASOS: Record<(typeof ESTADOS_ORDEN_ABIERTA)[number], { siguiente?: { estado: EstadoTrabajo; texto: string }; anterior?: { estado: EstadoTrabajo; texto: string } }> = {
@@ -28,7 +33,7 @@ const PASOS: Record<(typeof ESTADOS_ORDEN_ABIERTA)[number], { siguiente?: { esta
 
 /** Los botones de estado de una orden abierta: el paso siguiente y el de vuelta. Vacío si no está abierta. */
 export function pasosDeOrden(estado: EstadoTrabajo) {
-  return abierta(estado) ? PASOS[estado as keyof typeof PASOS] : {};
+  return estaAbierta(estado) ? PASOS[estado as keyof typeof PASOS] : {};
 }
 
 /** Solo un paso adelante o atrás entre recibido, en proceso y listo; "entregado" solo lo pone la entrega (HU-36). */
@@ -49,5 +54,5 @@ export const puedeRecibirse = (r: { estado: EstadoTrabajo; fechaInicio: string }
  */
 export function etapaAbierta(etapa: EtapaFoto, estado: EstadoTrabajo): boolean {
   if (etapa === "ingreso") return estado === "agendado";
-  return abierta(estado);
+  return estaAbierta(estado);
 }

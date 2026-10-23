@@ -11,12 +11,13 @@ import { Input } from "@/componentes/ui/input";
 import { sumarDias } from "@/lib/fechas";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { useEspaciosLibres } from "@/modulos/agenda/componentes/espacios-libres";
+import { DIAS_MAXIMOS_TRABAJO } from "@/modulos/agenda/reglas";
 import { espaciosParaExtender, extenderEntrega } from "../acciones";
 
 // HU-34: extender la entrega de una orden que se atrasa (decisión del 20/10). Se queda en su espacio si sigue libre en
 // los días nuevos; si no, se ofrecen los libres para todo el período, desde el ingreso. La base frena un cruce (D-5).
 
-type Props = { id: number; fechaInicio: string; fechaFin: string; espacioId: number; espacio: string };
+type Props = { id: number; fechaInicio: string; fechaFin: string; espacioId: number; espacio: string; hoy: string };
 
 export function ExtenderEntrega(props: Props) {
   const [abierto, setAbierto] = useState(false);
@@ -31,7 +32,7 @@ export function ExtenderEntrega(props: Props) {
   );
 }
 
-function Formulario({ id, fechaInicio, fechaFin: finActual, espacioId: espacioActual, espacio: nombreActual, cerrar }: Props & { cerrar: () => void }) {
+function Formulario({ id, fechaInicio, fechaFin: finActual, espacioId: espacioActual, espacio: nombreActual, hoy, cerrar }: Props & { cerrar: () => void }) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
     conAviso(extenderEntrega, (r) => r.ok && cerrar()),
     {},
@@ -39,16 +40,19 @@ function Formulario({ id, fechaInicio, fechaFin: finActual, espacioId: espacioAc
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
   const e = estado.errores ?? {};
-  const [fechaFin, setFechaFin] = useState(sumarDias(finActual, 1));
-  const { libres, buscando, ayuda } = useEspaciosLibres(fechaInicio, fechaFin, {
+  // Después de la actual y, si ya está atrasada, desde hoy: una fecha que ya pasó no sirve
+  const minima = sumarDias(finActual, 1) > hoy ? sumarDias(finActual, 1) : hoy;
+  const [fechaFin, setFechaFin] = useState(minima);
+  const { libres, activos, buscando, ayuda } = useEspaciosLibres(fechaInicio, fechaFin, {
     excepto: id,
     consultar: espaciosParaExtender,
-    ayudaFechas: "Revisa la fecha: después de la entrega actual y hasta 60 días desde el ingreso.",
+    ayudaFechas: `Revisa la fecha: después de la entrega actual, desde hoy y hasta ${DIAS_MAXIMOS_TRABAJO} días desde el ingreso.`,
   });
   // Se queda en su espacio mientras siga libre; si no, hay que elegir otro
   const [espacioElegido, setEspacioId] = useState(String(espacioActual));
   const espacioId = libres.some((x) => String(x.id) === espacioElegido) ? espacioElegido : "";
-  const suyoOcupado = !buscando && libres.length > 0 && !libres.some((x) => x.id === espacioActual);
+  // Su espacio, si ya no sirve: ocupado esos días, o desactivado (los activos no lo traen)
+  const suyo = buscando || activos.length === 0 || libres.some((x) => x.id === espacioActual) ? null : activos.some((x) => x.id === espacioActual) ? "ocupado en esas fechas" : "desactivado";
 
   return (
     <form ref={formulario} action={accion} className="flex flex-col gap-5 rounded-sm border border-border p-4" noValidate aria-labelledby="extender-titulo">
@@ -60,8 +64,8 @@ function Formulario({ id, fechaInicio, fechaFin: finActual, espacioId: espacioAc
           id="fechaFin"
           name="fechaFin"
           type="date"
-          min={sumarDias(finActual, 1)}
-          max={sumarDias(fechaInicio, 60)}
+          min={minima}
+          max={sumarDias(fechaInicio, DIAS_MAXIMOS_TRABAJO)}
           value={fechaFin}
           onChange={(ev) => setFechaFin(ev.target.value)}
           className="max-w-xs"
@@ -69,9 +73,9 @@ function Formulario({ id, fechaInicio, fechaFin: finActual, espacioId: espacioAc
           aria-describedby={e.fechaFin ? "fechaFin-error" : undefined}
         />
       </Campo>
-      {suyoOcupado && (
+      {suyo && (
         <p role="status" className="rounded-sm border border-aviso p-3 text-sm">
-          {nombreActual} está ocupado en esas fechas: muévela a un espacio libre.
+          {nombreActual} está {suyo}: muévela a un espacio libre.
         </p>
       )}
       <Campo id="espacioId" etiqueta="Espacio" error={e.espacioId} ayuda={ayuda}>
