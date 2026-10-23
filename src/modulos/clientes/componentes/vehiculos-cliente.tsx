@@ -1,5 +1,6 @@
 "use client";
 
+import { nombreVehiculo } from "@/modulos/clientes/reglas";
 import { useActionState, useRef, useState, useTransition } from "react";
 import { PencilIcon, PlusIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
@@ -17,7 +18,7 @@ import { CamposVehiculo } from "./campos";
 type Props = { clienteId: number; vehiculos: VehiculoCliente[]; tamanos: Tamano[] };
 
 /** "Toyota Yaris · 2019 · Blanco": lo que se sabe del vehículo, además de la placa y el tamaño. */
-const detalle = (v: VehiculoCliente) => [[v.marca, v.modelo].filter(Boolean).join(" "), v.anio, v.color].filter(Boolean);
+const detalle = (v: VehiculoCliente) => [nombreVehiculo(v), v.anio, v.color].filter(Boolean);
 
 export function VehiculosCliente({ clienteId, vehiculos, tamanos }: Props) {
   const [editando, setEditando] = useState<number | "nuevo" | null>(null);

@@ -41,6 +41,16 @@ export function formatearFechaHora(instante: Date): string {
   }).format(instante);
 }
 
+/** Día y hora cortos, en hora de Bolivia: "30/10 a las 15:40" (por ejemplo, "Avisado el 30/10 a las 15:40"). */
+export function diaYHora(instante: Date): string {
+  const partes = Object.fromEntries(
+    new Intl.DateTimeFormat("es-BO", { timeZone: ZONA_HORARIA, day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+      .formatToParts(instante)
+      .map((p) => [p.type, p.value]),
+  );
+  return `${partes.day}/${partes.month} a las ${partes.hour}:${partes.minute}`;
+}
+
 /** Fecha calendario para mostrar: "2026-10-15" → "15/10/2026". */
 export function formatearFecha(fecha: string): string {
   const [anio, mes, dia] = fecha.split("-");

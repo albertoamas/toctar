@@ -38,4 +38,14 @@ export function normalizarBusqueda(q: string): Busqueda | null {
 export const escaparLike = (texto: string) => texto.replace(/[\\%_]/g, (c) => `\\${c}`);
 
 /** Prefijo de los campos de un vehículo en la ficha: hay un formulario por vehículo y otro para agregar. */
+/** "  Juan  Pérez " → "Juan": el saludo. Vacío si no hay nombre. */
+export const primerNombre = (nombre: string) => nombre.trim().split(/\s+/)[0];
+
+/** "Toyota Corolla", o "" si no se cargaron marca ni modelo (los espacios sueltos no cuentan). */
+export const nombreVehiculo = (v: { marca: string | null; modelo: string | null }) =>
+  [v.marca, v.modelo]
+    .map((x) => x?.trim())
+    .filter(Boolean)
+    .join(" ");
+
 export const prefijoVehiculo = (id?: number) => (id ? `vehiculo-${id}-` : "vehiculo-nuevo-");

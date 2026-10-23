@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { nombreVehiculo } from "@/modulos/clientes/reglas";
 import Link from "next/link";
 import { Suspense } from "react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
@@ -44,7 +45,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/consultas/nuev
         nombre: c.nombre,
         vehiculos: c.vehiculos
           .filter((v) => v.activo)
-          .map((v) => ({ id: v.id, placa: v.placa, detalle: [v.tamano, [v.marca, v.modelo].filter(Boolean).join(" "), v.color ?? ""].filter(Boolean) })),
+          .map((v) => ({ id: v.id, placa: v.placa, detalle: [v.tamano, nombreVehiculo(v), v.color ?? ""].filter(Boolean) })),
       };
       return (
         <>
