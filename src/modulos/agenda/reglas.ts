@@ -7,10 +7,10 @@ import { NOMBRE_DIA } from "@/lib/horarios";
 
 export const NOMBRE_ESTADO_TRABAJO: Record<EstadoTrabajo, string> = {
   agendado: "Agendada",
-  recibido: "Recibido",
+  recibido: "Recibida",
   en_proceso: "En proceso",
-  listo: "Listo",
-  entregado: "Entregado",
+  listo: "Lista",
+  entregado: "Entregada",
   cancelado: "Cancelada",
 };
 

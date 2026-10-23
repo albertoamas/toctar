@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState, useRef, useSyncExternalStore } from "react";
+import { useActionState, useRef } from "react";
+import { useHidratado } from "@/componentes/hidratado";
 import { ImageIcon, UploadIcon } from "lucide-react";
 import { conAviso } from "@/componentes/panel/avisos";
 import { MensajeError } from "@/componentes/panel/campo";
@@ -12,7 +13,6 @@ import { TIPOS_FOTO } from "@/lib/formato-fotos";
 
 type Props = { logo: { url: string; ancho: number | null; alto: number | null } | null };
 
-const sinSuscripcion = () => () => {};
 
 const subirConAviso = conAviso(subirLogo);
 
@@ -23,7 +23,7 @@ export function LogoDocumentos({ logo }: Props) {
   const formulario = useRef<HTMLFormElement>(null);
   const error = estado.errores?.logo;
   // La subida necesita JavaScript (se envía al elegir el archivo): el botón se habilita al hidratar.
-  const listo = useSyncExternalStore(sinSuscripcion, () => true, () => false);
+  const listo = useHidratado();
 
   return (
     <form ref={formulario} action={accion} className="flex flex-col gap-4">

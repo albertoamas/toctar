@@ -9,7 +9,8 @@ import { variante } from "./sitio";
 
 // Trabajos: la reserva y, desde C4, la orden son una sola tabla (D-1). Agenda por día y espacio (S-3); un espacio no
 // tiene dos vehículos el mismo día (RN-06): lo garantiza la restricción de exclusión `trabajo_sin_cruces`, que se crea
-// en la migración 0026 (Drizzle no la describe). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §4.
+// en la migración 0026 (Drizzle no la describe). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §4 y,
+// para la orden (recepción, fotos, avances y entrega), C4-taller-entrega.md §4.
 
 const momento = (nombre: string) => timestamp(nombre, { withTimezone: true });
 const monto = (nombre: string) => numeric(nombre, { precision: 10, scale: 2 });
@@ -21,6 +22,10 @@ export const METODOS_PAGO = ["efectivo", "qr", "transferencia"] as const;
 export type MetodoPago = (typeof METODOS_PAGO)[number];
 export const TIPOS_PAGO = ["adelanto", "saldo"] as const;
 export type TipoPago = (typeof TIPOS_PAGO)[number];
+export const ETAPAS_FOTO = ["ingreso", "antes", "durante", "despues"] as const;
+export type EtapaFoto = (typeof ETAPAS_FOTO)[number];
+/** Estados de una orden: la reserva ya se recibió (C4). */
+export const ESTADOS_ORDEN = ["recibido", "en_proceso", "listo", "entregado"] as const;
 
 export const trabajo = pgTable(
   "trabajo",
@@ -54,6 +59,22 @@ export const trabajo = pgTable(
     motivoCancelacion: text("motivo_cancelacion"),
     canceladoAt: momento("cancelado_at"),
     canceladoPor: integer("cancelado_por").references(() => usuario.id),
+    // La orden (C4, HU-33 a HU-36)
+    /** Inspección de ingreso: rayones, golpes, objetos que deja el cliente (RF-40). */
+    observacionesIngreso: text("observaciones_ingreso"),
+    recibidoAt: momento("recibido_at"),
+    recibidoPor: integer("recibido_por").references(() => usuario.id),
+    /** La última vez que pasó a listo. */
+    listoAt: momento("listo_at"),
+    /** El último aviso de "listo" por WhatsApp (RF-48). */
+    avisadoListoAt: momento("avisado_listo_at"),
+    avisadoListoPor: integer("avisado_listo_por").references(() => usuario.id),
+    entregadoAt: momento("entregado_at"),
+    entregadoPor: integer("entregado_por").references(() => usuario.id),
+    /** Quién autorizó entregar con saldo pendiente (RN-13). */
+    entregaConSaldoAutorizadaPor: integer("entrega_con_saldo_autorizada_por").references(() => usuario.id),
+    /** El saldo al momento de la entrega (lista de saldos y auditoría). */
+    saldoAlEntregar: monto("saldo_al_entregar"),
     createdAt: momento("created_at").defaultNow().notNull(),
     createdBy: integer("created_by")
       .notNull()
@@ -65,11 +86,16 @@ export const trabajo = pgTable(
     check("trabajo_fechas_validas", sql`${t.fechaFin} >= ${t.fechaInicio}`),
     check("trabajo_descuento_valido", sql`${t.descuento} >= 0`),
     check("trabajo_motivo_si_cancelado", sql`(${t.estado} = 'cancelado') = (${t.motivoCancelacion} is not null)`),
+    // Una orden siempre se recibió y una entregada siempre tiene su entrega (C4)
+    check("trabajo_recibido_si_orden", sql`(${t.estado} in (${lista(ESTADOS_ORDEN)})) = (${t.recibidoAt} is not null)`),
+    check("trabajo_entregado_con_fecha", sql`(${t.estado} = 'entregado') = (${t.entregadoAt} is not null)`),
     // Una cotización tiene a lo sumo una reserva activa: una cancelada no cuenta, así se agenda de nuevo (HU-31)
     uniqueIndex("trabajo_cotizacion_unica").on(t.cotizacionId).where(sql`${t.estado} <> 'cancelado'`),
     index("trabajo_por_fechas").on(t.fechaInicio, t.fechaFin),
     index("trabajo_por_cliente").on(t.clienteId),
     index("trabajo_por_consulta").on(t.consultaId),
+    index("trabajo_por_tecnico").on(t.tecnicoId, t.estado),
+    index("trabajo_por_entrega").on(t.estado, t.entregadoAt),
   ],
 );
 
@@ -123,4 +149,45 @@ export const pago = pgTable(
     check("pago_tipo_valido", sql`${t.tipo} in (${lista(TIPOS_PAGO)})`),
     check("pago_motivo_si_anulado", sql`${t.anulado} = (${t.motivoAnulacion} is not null)`),
   ],
+);
+
+/**
+ * Fotos de la orden por etapa (RF-40, RF-42). En el bucket privado: son vehículos de clientes. Las de ingreso son la
+ * prueba de cómo llegó el vehículo: no se quitan después de recibirlo (D-6).
+ */
+export const trabajoFoto = pgTable(
+  "trabajo_foto",
+  {
+    id: integer("id").generatedByDefaultAsIdentity().primaryKey(),
+    trabajoId: integer("trabajo_id")
+      .notNull()
+      .references(() => trabajo.id),
+    archivoId: integer("archivo_id")
+      .notNull()
+      .unique()
+      .references(() => archivo.id),
+    etapa: text("etapa").$type<EtapaFoto>().notNull(),
+    subidoPor: integer("subido_por")
+      .notNull()
+      .references(() => usuario.id),
+    createdAt: momento("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("trabajo_foto_por_etapa").on(t.trabajoId, t.etapa), check("trabajo_foto_etapa_valida", sql`${t.etapa} in (${lista(ETAPAS_FOTO)})`)],
+);
+
+/** La historia de la orden: avances escritos y cambios de estado (RF-42). */
+export const trabajoAvance = pgTable(
+  "trabajo_avance",
+  {
+    id: integer("id").generatedByDefaultAsIdentity().primaryKey(),
+    trabajoId: integer("trabajo_id")
+      .notNull()
+      .references(() => trabajo.id),
+    usuarioId: integer("usuario_id")
+      .notNull()
+      .references(() => usuario.id),
+    nota: text("nota").notNull(),
+    createdAt: momento("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("trabajo_avance_por_trabajo").on(t.trabajoId)],
 );
