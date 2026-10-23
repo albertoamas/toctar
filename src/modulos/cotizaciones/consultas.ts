@@ -40,9 +40,9 @@ export type OpcionServicio = {
 
 /**
  * Los servicios activos, por variante, con el precio vigente para ese tamaño de vehículo (RF-31). Los usan la
- * cotización (C2) y la reserva directa (C3).
+ * cotización (C2), la reserva directa (C3) y los adicionales de la orden (C4, con `soloVariante`: una sola).
  */
-export async function opcionesDeServicio(tamanoId: number): Promise<OpcionServicio[]> {
+export async function opcionesDeServicio(tamanoId: number, soloVariante?: number): Promise<OpcionServicio[]> {
   const variantes = await db
     .select({
       varianteId: variante.id,
@@ -53,7 +53,7 @@ export async function opcionesDeServicio(tamanoId: number): Promise<OpcionServic
     })
     .from(variante)
     .innerJoin(servicio, eq(variante.servicioId, servicio.id))
-    .where(and(eq(variante.activo, true), eq(servicio.activo, true)))
+    .where(and(eq(variante.activo, true), eq(servicio.activo, true), soloVariante === undefined ? undefined : eq(variante.id, soloVariante)))
     .orderBy(asc(servicio.orden), asc(servicio.id), asc(variante.orden), asc(variante.id));
   const vigentes = await preciosVigentes(variantes.map((v) => v.varianteId));
   const porVariante = new Map<number, Map<number, Monto>>();

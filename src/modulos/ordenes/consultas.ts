@@ -43,9 +43,12 @@ export async function obtenerOrden(id: number, conMontos: boolean): Promise<Deta
   return { ...reserva, servicios };
 }
 
-/** Los servicios de la orden que generan mantenimiento (RN-08), uno por servicio aunque tenga varias líneas. */
-export async function serviciosConMantenimiento(trabajoId: number): Promise<{ id: number; nombre: string }[]> {
-  return db
+/**
+ * Los servicios de la orden que generan mantenimiento (RN-08), uno por servicio aunque tenga varias líneas. La misma
+ * consulta anticipa la fecha al entregar y crea los recordatorios (con `base`, dentro de la transacción).
+ */
+export async function serviciosConMantenimiento(trabajoId: number, base: Pick<typeof db, "selectDistinct"> = db): Promise<{ id: number; nombre: string }[]> {
+  return base
     .selectDistinct({ id: servicio.id, nombre: servicio.nombre })
     .from(trabajoLinea)
     .innerJoin(variante, eq(trabajoLinea.varianteId, variante.id))
