@@ -105,6 +105,17 @@ test("con saldo: el encargado sin el permiso no entrega; con el permiso sí, y q
   await expect(page.getByText("Queda saldo pendiente. La entrega con saldo la autoriza el dueño o quien tenga el permiso.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Entregar vehículo" })).toHaveCount(0);
 
+  // Puede autorizar pero no ve pagos: el aviso no dice el monto (RN-12)
+  await page.context().clearCookies();
+  await crearUsuario({ usuario: `sinpagos-hu36-${s}`, nombre: "Encargado sin pagos", contrasena: "encargado-123", rol: "encargado", permisos: ["ordenes", "entrega_con_saldo"] });
+  await ingresar(page, `sinpagos-hu36-${s}`, "encargado-123");
+  await expect(page).toHaveURL(/\/panel$/);
+  await page.goto(`/panel/ordenes/${id}/entregar`);
+  await expect(page.getByText("Queda saldo pendiente.", { exact: true })).toBeVisible();
+  await page.getByRole("form", { name: "Entregar vehículo" }).getByRole("button", { name: "Entregar vehículo" }).click();
+  await expect(page.getByText("Queda un saldo: marca «Entregar con saldo pendiente» para confirmar.")).toBeVisible();
+  await expect(page.getByText(/300 Bs/)).toHaveCount(0);
+
   await page.context().clearCookies();
   await ingresar(page, `conperm-hu36-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
