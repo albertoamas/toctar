@@ -4,11 +4,11 @@ import { and, count, eq, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { auditoria, pago, recordatorioMantenimiento, servicio, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, usuario as tablaUsuario, variante, vehiculo as tablaVehiculo } from "@/db/esquema";
+import { auditoria, pago, recordatorioMantenimiento, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, usuario as tablaUsuario, vehiculo as tablaVehiculo } from "@/db/esquema";
 import { fechaEnBolivia, formatearFecha, sumarDias, sumarMeses } from "@/lib/fechas";
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { erroresDe, exclusionViolada, type EstadoFormulario } from "@/lib/formularios";
-import { puede, puedeVerOrden } from "@/lib/permisos";
+import { puede, puedeVerModulo, puedeVerOrden } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import type { EstadoTrabajo, EtapaFoto } from "@/db/esquema/trabajos";
 import { espaciosEnFechas, type EspacioDisponible } from "@/modulos/agenda/consultas";
@@ -18,6 +18,7 @@ import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { opcionesDeServicio } from "@/modulos/cotizaciones/consultas";
 import { descripcionLinea } from "@/modulos/cotizaciones/reglas";
 import { calcularSaldo, estaPagada, precioCotizadoYFinal } from "@/modulos/pagos/reglas";
+import { serviciosConMantenimiento } from "./consultas";
 import { esquemaAdicional, esquemaAvance, esquemaAvisoListo, esquemaEntregar, esquemaEstadoOrden, esquemaExtender, esquemaFotoOrden, esquemaQuitarFotoOrden, esquemaRecibir } from "./esquemas";
 import { estaAbierta, etapaAbierta, puedeExtenderse, MAXIMO_FOTOS_ETAPA, NOMBRE_ETAPA, puedeRecibirse, transicionOrden } from "./reglas";
 
@@ -401,10 +402,15 @@ export async function agregarAdicional(_previo: EstadoFormulario, datos: FormDat
   }
   const { id, varianteId, precio } = r.data;
 
-  const [t] = await db.select({ estado: trabajo.estado, clienteId: trabajo.clienteId, vehiculoId: trabajo.vehiculoId }).from(trabajo).where(eq(trabajo.id, id));
-  if (!t || !estaAbierta(t.estado)) return { mensaje: "A una orden entregada ya no se le suman servicios." };
-  const [{ tamanoId }] = await db.select({ tamanoId: tablaVehiculo.tamanoId }).from(tablaVehiculo).where(eq(tablaVehiculo.id, t.vehiculoId));
-  const opcion = (await opcionesDeServicio(tamanoId)).find((o) => o.varianteId === varianteId);
+  const [t] = await db
+    .select({ estado: trabajo.estado, clienteId: trabajo.clienteId, tamanoId: tablaVehiculo.tamanoId })
+    .from(trabajo)
+    .innerJoin(tablaVehiculo, eq(trabajo.vehiculoId, tablaVehiculo.id))
+    .where(eq(trabajo.id, id));
+  if (!t) return { mensaje: "Esa orden ya no existe." };
+  if (!estaAbierta(t.estado)) return { mensaje: "Solo se suman servicios a una orden abierta (recibida, en proceso o lista)." };
+  // Solo esa variante, con su precio vigente para el tamaño: no hace falta el catálogo entero
+  const [opcion] = await opcionesDeServicio(t.tamanoId, varianteId);
   if (!opcion) return { errores: { varianteId: "Ese servicio ya no se ofrece: elige otro." }, valores };
   const descripcion = descripcionLinea(opcion.servicio, opcion.variante);
   const autorId = Number(usuario.id);
@@ -468,7 +474,11 @@ export async function entregarVehiculo(_previo: EstadoFormulario, datos: FormDat
       );
       const conDeuda = !estaPagada(saldo);
       if (conDeuda && !puede(usuario, "entrega_con_saldo")) throw new Conflicto(SALDO_SIN_PERMISO);
-      if (conDeuda && !conSaldo) throw new Conflicto(`Queda un saldo de ${mostrarMonto(saldo)} Bs: marca «Entregar con saldo pendiente» para confirmar.`);
+      if (conDeuda && !conSaldo) {
+        // El monto, solo a quien ve pagos (RN-12); el error va con la casilla, que así aparece aunque al abrir no hubiera saldo
+        const monto = puedeVerModulo(usuario, "pagos") ? ` de ${mostrarMonto(saldo)} Bs` : "";
+        throw new Conflicto(`Queda un saldo${monto}: marca «Entregar con saldo pendiente» para confirmar.`, "conSaldo");
+      }
 
       await tx
         .update(trabajo)
@@ -485,12 +495,7 @@ export async function entregarVehiculo(_previo: EstadoFormulario, datos: FormDat
         .where(eq(trabajo.id, id));
 
       // RN-08: un recordatorio por servicio que lo genera, para dentro de los meses de Configuración
-      const conMantenimiento = await tx
-        .selectDistinct({ id: servicio.id })
-        .from(trabajoLinea)
-        .innerJoin(variante, eq(trabajoLinea.varianteId, variante.id))
-        .innerJoin(servicio, eq(variante.servicioId, servicio.id))
-        .where(and(eq(trabajoLinea.trabajoId, id), eq(servicio.generaMantenimiento, true)));
+      const conMantenimiento = await serviciosConMantenimiento(id, tx);
       if (conMantenimiento.length > 0) {
         await tx
           .insert(recordatorioMantenimiento)
@@ -510,12 +515,10 @@ export async function entregarVehiculo(_previo: EstadoFormulario, datos: FormDat
       return { clienteId: t.clienteId, saldo: conDeuda ? saldo : null };
     });
   } catch (error) {
-    if (error instanceof Conflicto) return { mensaje: error.message };
+    if (error instanceof Conflicto) return error.campo ? { errores: { [error.campo]: error.message } } : { mensaje: error.message };
     throw error;
   }
 
   despuesDeCambiar(id, resultado.clienteId);
-  revalidatePath("/panel/pagos");
-  revalidatePath("/panel/mantenimientos");
   redirect(`/panel/ordenes/${id}?entregado=1`);
 }
