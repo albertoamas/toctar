@@ -1,8 +1,8 @@
 import "server-only";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
-import { archivo, cliente, trabajo, trabajoFoto, trabajoLinea, usuario, vehiculo } from "@/db/esquema";
+import { archivo, cliente, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, usuario, vehiculo } from "@/db/esquema";
 import type { EstadoTrabajo, EtapaFoto } from "@/db/esquema/trabajos";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { obtenerReserva, type DetalleReserva } from "@/modulos/agenda/consultas";
@@ -43,6 +43,18 @@ export async function obtenerOrden(id: number, conMontos: boolean): Promise<Deta
   return { ...reserva, servicios };
 }
 
+export type Avance = { id: number; nota: string; autor: string; createdAt: Date };
+
+/** La historia de la orden, la más nueva arriba (RF-42). */
+export async function avancesDeTrabajo(trabajoId: number): Promise<Avance[]> {
+  return db
+    .select({ id: trabajoAvance.id, nota: trabajoAvance.nota, autor: usuario.name, createdAt: trabajoAvance.createdAt })
+    .from(trabajoAvance)
+    .innerJoin(usuario, eq(trabajoAvance.usuarioId, usuario.id))
+    .where(eq(trabajoAvance.trabajoId, trabajoId))
+    .orderBy(desc(trabajoAvance.createdAt), desc(trabajoAvance.id));
+}
+
 export type OrdenEnLista = {
   id: number;
   estado: EstadoTrabajo;
@@ -50,6 +62,8 @@ export type OrdenEnLista = {
   cliente: string;
   tecnico: string | null;
   fechaFin: string;
+  /** Lista y todavía sin avisar al cliente (HU-35). */
+  sinAvisar: boolean;
   servicios: string[];
 };
 
@@ -59,7 +73,7 @@ const tecnico = alias(usuario, "tecnico");
 export async function ordenesAbiertas(tecnicoId?: number): Promise<OrdenEnLista[]> {
   const abiertas = inArray(trabajo.estado, [...ESTADOS_ORDEN_ABIERTA]);
   const ordenes = await db
-    .select({ id: trabajo.id, estado: trabajo.estado, placa: vehiculo.placa, cliente: cliente.nombre, tecnico: tecnico.name, fechaFin: trabajo.fechaFin })
+    .select({ id: trabajo.id, estado: trabajo.estado, placa: vehiculo.placa, cliente: cliente.nombre, tecnico: tecnico.name, fechaFin: trabajo.fechaFin, avisadoListoAt: trabajo.avisadoListoAt })
     .from(trabajo)
     .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
     .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
@@ -79,5 +93,5 @@ export async function ordenesAbiertas(tecnicoId?: number): Promise<OrdenEnLista[
     .orderBy(asc(trabajoLinea.orden));
   const porOrden = new Map<number, string[]>();
   for (const l of lineas) porOrden.set(l.trabajoId, [...(porOrden.get(l.trabajoId) ?? []), l.descripcion]);
-  return ordenes.map((o) => ({ ...o, servicios: porOrden.get(o.id) ?? [] }));
+  return ordenes.map(({ avisadoListoAt, ...o }) => ({ ...o, sinAvisar: o.estado === "listo" && avisadoListoAt === null, servicios: porOrden.get(o.id) ?? [] }));
 }
