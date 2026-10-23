@@ -67,10 +67,11 @@ export function puedeVerModulo(sujeto: SujetoPermisos, modulo: Modulo): boolean 
 }
 
 /**
- * Acciones que no son un módulo entero: autorizar entrega con saldo (RN-13, S-2), y recibir el vehículo y extender su
- * entrega (C4): el dueño o el encargado con "Órdenes", no el técnico (tocan la agenda, que él no ve; C4 §12).
+ * Acciones que no son un módulo entero: autorizar entrega con saldo (RN-13, S-2), y recibir el vehículo, extender su
+ * entrega y avisar al cliente (C4): el dueño o el encargado con "Órdenes", no el técnico (tocan la agenda o el trato con
+ * el cliente, que él no ve: ni su teléfono; C4 §12, RN-12).
  */
-export function puede(sujeto: SujetoPermisos, accion: "entrega_con_saldo" | "recibir_vehiculo" | "extender_entrega"): boolean {
+export function puede(sujeto: SujetoPermisos, accion: "entrega_con_saldo" | "recibir_vehiculo" | "extender_entrega" | "avisar_cliente"): boolean {
   if (sujeto.rol === "dueno") return true;
   if (sujeto.rol !== "encargado") return false;
   return sujeto.permisos.includes(accion === "entrega_con_saldo" ? accion : "ordenes");

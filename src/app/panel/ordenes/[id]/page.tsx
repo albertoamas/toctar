@@ -13,11 +13,14 @@ import { puede, puedeVerModulo, puedeVerOrden } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
+import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
 import { AvancesOrden } from "@/modulos/ordenes/componentes/avances-orden";
+import { AvisarListo } from "@/modulos/ordenes/componentes/avisar-listo";
 import { EstadoOrden } from "@/modulos/ordenes/componentes/estado-orden";
 import { ExtenderEntrega } from "@/modulos/ordenes/componentes/extender-entrega";
 import { FotosOrden } from "@/modulos/ordenes/componentes/fotos-orden";
 import { avancesDeTrabajo, fotosDeTrabajo, obtenerOrden } from "@/modulos/ordenes/consultas";
+import { mensajeListo } from "@/modulos/ordenes/mensajes";
 import { esOrden, estaAbierta, estaAtrasada, puedeExtenderse } from "@/modulos/ordenes/reglas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
 
@@ -53,6 +56,17 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   }
   const verFicha = puedeVerModulo(usuario, "clientes");
   const abierta = estaAbierta(o.estado);
+  // Lista: el aviso al cliente por WhatsApp (HU-35), con el saldo solo si quien avisa lo ve
+  const aviso =
+    o.estado === "listo" && puede(usuario, "avisar_cliente")
+      ? {
+          enlace: enlaceWhatsApp(
+            o.telefono,
+            mensajeListo({ negocio: (await obtenerDatosPublicos()).nombre, cliente: o.cliente, vehiculo: o, saldo: o.montos?.saldo.saldo ?? null }),
+          ),
+          avisado: o.avisadoListoAt ? `Avisado el ${formatearFechaHora(o.avisadoListoAt)}${o.avisadoListoPor ? ` por ${o.avisadoListoPor}` : ""}` : null,
+        }
+      : null;
   const hoy = fechaEnBolivia();
   const yo = Number(usuario.id);
   // Recién ahora, con el acceso verificado, se firman los enlaces de las fotos
@@ -77,6 +91,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
       {o.estado !== "entregado" && (
         <div className="flex max-w-3xl flex-col gap-4">
           <EstadoOrden id={o.id} estado={o.estado} editable={abierta} />
+          {aviso && <AvisarListo id={o.id} enlace={aviso.enlace} avisado={aviso.avisado} />}
           {puedeExtenderse(o.estado) && puede(usuario, "extender_entrega") && (
             <ExtenderEntrega id={o.id} fechaInicio={o.fechaInicio} fechaFin={o.fechaFin} espacioId={o.espacioId} espacio={o.espacio} hoy={hoy} />
           )}

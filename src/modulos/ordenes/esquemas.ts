@@ -37,5 +37,8 @@ export const esquemaExtender = z.object({
   espacioId: z.coerce.number({ message: "Elige el espacio." }).int().positive("Elige el espacio."),
 });
 
+/** Registrar el aviso de "listo" (datos sueltos: se validan). */
+export const esquemaAvisoListo = z.object({ id });
+
 /** Quitar una foto (datos sueltos: se validan). */
 export const esquemaQuitarFotoOrden = z.object({ trabajoId: id, fotoId: id });
