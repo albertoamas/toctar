@@ -27,5 +27,25 @@ export function calcularSaldo(precios: readonly string[], descuento: string, pag
   return { total, pagado, saldo: restarMontos(total, pagado) };
 }
 
+/**
+ * Precio cotizado (sus servicios − descuento), lo que se sumó en el taller y el precio final (RF-43). El descuento
+ * es el de la cotización: se aplica una sola vez.
+ */
+export function precioCotizadoYFinal(lineas: readonly { precio: string; esAdicional: boolean }[], descuento: string) {
+  const { total: cotizado } = calcularTotales(
+    lineas.filter((l) => !l.esAdicional).map((l) => l.precio),
+    descuento,
+  );
+  const { total: adicionales } = calcularTotales(
+    lineas.filter((l) => l.esAdicional).map((l) => l.precio),
+    "0",
+  );
+  const { total: final } = calcularTotales(
+    lineas.map((l) => l.precio),
+    descuento,
+  );
+  return { cotizado, adicionales, final };
+}
+
 /** Nada pendiente: saldo cero o a favor del cliente (negativo). Ya no recibe pagos. */
 export const estaPagada = (saldo: string) => montoNoMayor(saldo, "0");

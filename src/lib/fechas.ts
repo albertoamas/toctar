@@ -27,6 +27,18 @@ export function sumarDias(fecha: string, dias: number): string {
 }
 
 /** Días entre dos fechas calendario (hasta - desde). */
+/**
+ * Suma meses a una fecha calendario; si el día no existe en el mes de destino, el último del mes ("2027-01-31" + 1 →
+ * "2027-02-28"). Para el próximo mantenimiento (RN-08).
+ */
+export function sumarMeses(fecha: string, meses: number): string {
+  const [anio, mes, dia] = fecha.split("-").map(Number);
+  const total = anio * 12 + (mes - 1) + meses;
+  const [nuevoAnio, nuevoMes] = [Math.floor(total / 12), (total % 12) + 1];
+  const ultimo = new Date(Date.UTC(nuevoAnio, nuevoMes, 0)).getUTCDate();
+  return `${nuevoAnio}-${String(nuevoMes).padStart(2, "0")}-${String(Math.min(dia, ultimo)).padStart(2, "0")}`;
+}
+
 export function diasEntre(desde: string, hasta: string): number {
   const ms = Date.parse(`${hasta}T00:00:00Z`) - Date.parse(`${desde}T00:00:00Z`);
   return Math.round(ms / 86_400_000);

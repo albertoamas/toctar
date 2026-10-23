@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ETAPAS_FOTO } from "@/db/esquema/trabajos";
 import { fechaExiste } from "@/lib/fechas";
+import { leerMonto } from "@/modulos/catalogo/reglas";
 
 // Validación de las órdenes (C4). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §6.
 
@@ -36,6 +37,23 @@ export const esquemaExtender = z.object({
   fechaFin: z.string().refine(fechaExiste, "Elige la nueva fecha de entrega."),
   espacioId: z.coerce.number({ message: "Elige el espacio." }).int().positive("Elige el espacio."),
 });
+
+/** Un servicio adicional (RF-43): del catálogo, con su precio (el vigente del tamaño o el que ponga el dueño). */
+export const esquemaAdicional = z.object({
+  id,
+  varianteId: z.coerce.number({ message: "Elige el servicio." }).int().positive("Elige el servicio."),
+  precio: z.string().transform((v, ctx) => {
+    const m = leerMonto(v);
+    if (!m) {
+      ctx.addIssue({ code: "custom", message: v.trim() ? "Revisa el precio: un número mayor a cero, como 450 o 450,50." : "Escribe el precio." });
+      return z.NEVER;
+    }
+    return m;
+  }),
+});
+
+/** Entregar el vehículo (HU-36): con saldo pendiente, la casilla que lo confirma (RN-13). */
+export const esquemaEntregar = z.object({ id, conSaldo: z.literal("on").optional() });
 
 /** Registrar el aviso de "listo" (datos sueltos: se validan). */
 export const esquemaAvisoListo = z.object({ id });
