@@ -66,10 +66,19 @@ export function puedeVerModulo(sujeto: SujetoPermisos, modulo: Modulo): boolean 
   }
 }
 
-/** Acciones que no son un módulo entero. Hoy: autorizar entrega con saldo (RN-13, S-2). */
-export function puede(sujeto: SujetoPermisos, accion: "entrega_con_saldo"): boolean {
+/**
+ * Acciones que no son un módulo entero: autorizar entrega con saldo (RN-13, S-2) y recibir el vehículo (C4): el dueño o
+ * el encargado con "Órdenes", no el técnico (la recepción sale de la agenda, que él no ve; C4 §12).
+ */
+export function puede(sujeto: SujetoPermisos, accion: "entrega_con_saldo" | "recibir_vehiculo"): boolean {
   if (sujeto.rol === "dueno") return true;
-  return sujeto.rol === "encargado" && sujeto.permisos.includes(accion);
+  if (sujeto.rol !== "encargado") return false;
+  return sujeto.permisos.includes(accion === "recibir_vehiculo" ? "ordenes" : accion);
+}
+
+/** El técnico solo ve las órdenes asignadas a él (RN-12, S-1); el dueño y el encargado con "Órdenes", todas. */
+export function puedeVerOrden(sujeto: SujetoPermisos & { id: string }, tecnicoId: number | null): boolean {
+  return sujeto.rol !== "tecnico" || tecnicoId === Number(sujeto.id);
 }
 
 /** Módulos del menú del panel, en orden, solo los que ya tienen pantalla. */

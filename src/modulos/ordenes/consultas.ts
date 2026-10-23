@@ -6,14 +6,18 @@ import { archivo, cliente, trabajo, trabajoFoto, trabajoLinea, usuario, vehiculo
 import type { EstadoTrabajo, EtapaFoto } from "@/db/esquema/trabajos";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { obtenerReserva, type DetalleReserva } from "@/modulos/agenda/consultas";
+import { ESTADOS_ORDEN_ABIERTA } from "./reglas";
 
 // Lecturas de las órdenes (C4). Quien las llama ya pasó por exigirModulo("ordenes") y, si es técnico, por
-// `puedeVerOrden`. Los montos solo para quien ve "Pagos" (RN-12). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md.
+// `puedeVerOrden` (src/lib/permisos.ts). Los montos solo para quien ve "Pagos" (RN-12). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md.
 
-type FotoOrden = UrlsFoto & { id: number; etapa: EtapaFoto; subidoPor: number };
+export type FotoOrden = UrlsFoto & { id: number; etapa: EtapaFoto; subidoPor: number };
 
-/** Las fotos de un trabajo, por etapa y en el orden en que se subieron, con enlaces firmados (bucket privado). */
-async function fotosDeTrabajo(trabajoId: number): Promise<FotoOrden[]> {
+/**
+ * Las fotos de un trabajo, por etapa y en el orden en que se subieron, con enlaces firmados (bucket privado). Firmarlos
+ * es dar acceso: llamarla después de verificar que quien mira puede ver la orden.
+ */
+export async function fotosDeTrabajo(trabajoId: number): Promise<FotoOrden[]> {
   const filas = await db
     .select({ id: trabajoFoto.id, etapa: trabajoFoto.etapa, subidoPor: trabajoFoto.subidoPor, clave: archivo.clave, miniaturaClave: archivo.miniaturaClave, ancho: archivo.ancho, alto: archivo.alto })
     .from(trabajoFoto)
@@ -23,32 +27,20 @@ async function fotosDeTrabajo(trabajoId: number): Promise<FotoOrden[]> {
   return Promise.all(filas.map(async ({ clave, miniaturaClave, ancho, alto, ...f }) => ({ ...f, ...(await urlsFotoPrivada({ clave, miniaturaClave, ancho, alto })) })));
 }
 
-const recibio = alias(usuario, "recibio");
-
 export type DetalleOrden = DetalleReserva & {
-  tecnicoId: number | null;
-  observacionesIngreso: string | null;
-  recibidoAt: Date | null;
-  recibidoPor: string | null;
   /** Las descripciones de los servicios, para todos (el técnico las necesita para trabajar); los precios van en `montos`. */
   servicios: string[];
-  fotos: FotoOrden[];
 };
 
-/** Una reserva u orden con lo que hace falta para recibirla o trabajarla; null si no existe. */
+/** Una reserva u orden con lo que hace falta para recibirla o trabajarla (sin las fotos); null si no existe. */
 export async function obtenerOrden(id: number, conMontos: boolean): Promise<DetalleOrden | null> {
-  const [reserva, [extra], servicios, fotos] = await Promise.all([
-    obtenerReserva(id, conMontos),
-    db
-      .select({ tecnicoId: trabajo.tecnicoId, observacionesIngreso: trabajo.observacionesIngreso, recibidoAt: trabajo.recibidoAt, recibidoPor: recibio.name })
-      .from(trabajo)
-      .leftJoin(recibio, eq(trabajo.recibidoPor, recibio.id))
-      .where(eq(trabajo.id, id)),
-    db.select({ descripcion: trabajoLinea.descripcion }).from(trabajoLinea).where(eq(trabajoLinea.trabajoId, id)).orderBy(asc(trabajoLinea.orden)),
-    fotosDeTrabajo(id),
-  ]);
-  if (!reserva || !extra) return null;
-  return { ...reserva, ...extra, servicios: servicios.map((s) => s.descripcion), fotos };
+  const reserva = await obtenerReserva(id, conMontos);
+  if (!reserva) return null;
+  // Con montos, las líneas ya vinieron; sin ellos (el técnico), solo sus nombres
+  const servicios = reserva.montos
+    ? reserva.montos.lineas.map((l) => l.descripcion)
+    : (await db.select({ descripcion: trabajoLinea.descripcion }).from(trabajoLinea).where(eq(trabajoLinea.trabajoId, id)).orderBy(asc(trabajoLinea.orden))).map((s) => s.descripcion);
+  return { ...reserva, servicios };
 }
 
 export type OrdenEnLista = {
@@ -65,7 +57,7 @@ const tecnico = alias(usuario, "tecnico");
 
 /** Las órdenes abiertas (recibidas, en proceso y listas); las de un técnico si se indica. La entrega más cercana primero. */
 export async function ordenesAbiertas(tecnicoId?: number): Promise<OrdenEnLista[]> {
-  const abiertas = inArray(trabajo.estado, ["recibido", "en_proceso", "listo"]);
+  const abiertas = inArray(trabajo.estado, [...ESTADOS_ORDEN_ABIERTA]);
   const ordenes = await db
     .select({ id: trabajo.id, estado: trabajo.estado, placa: vehiculo.placa, cliente: cliente.nombre, tecnico: tecnico.name, fechaFin: trabajo.fechaFin })
     .from(trabajo)

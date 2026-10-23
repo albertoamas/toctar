@@ -10,7 +10,7 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/lib/fechas";
-import { puedeVerModulo } from "@/lib/permisos";
+import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { AccionesReserva } from "@/modulos/agenda/componentes/acciones-reserva";
@@ -128,7 +128,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
         </dl>
 
         <div className="flex flex-col gap-10 lg:col-start-1 lg:row-start-1">
-          {verOrdenes && puedeRecibirse(r, hoy) && (
+          {puede(usuario, "recibir_vehiculo") && puedeRecibirse(r, hoy) && (
             <div>
               {/* Enlace con forma de botón: lleva a la recepción, con las fotos de ingreso */}
               <Link href={`/panel/ordenes/${r.id}/recibir`} className={cn(buttonVariants())}>
@@ -146,7 +146,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
               <p className="whitespace-pre-line">{r.nota}</p>
             </section>
           )}
-          {r.montos && <MontosTrabajo trabajoId={r.id} montos={r.montos} cerrado={cancelada || r.estado === "entregado"} hoy={hoy} />}
+          {/* Solo una cancelada queda sin acciones: una entregada con saldo se sigue cobrando (RN-13) */}
+          {r.montos && <MontosTrabajo trabajoId={r.id} montos={r.montos} cerrado={cancelada} hoy={hoy} />}
         </div>
       </div>
     </>

@@ -1,5 +1,4 @@
 import type { EstadoTrabajo, EtapaFoto } from "@/db/esquema/trabajos";
-import type { Rol } from "@/lib/roles";
 
 // Reglas puras de las órdenes (C4). Una orden es una reserva ya recibida (D-1): el mismo `trabajo`.
 // Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md.
@@ -7,8 +6,15 @@ import type { Rol } from "@/lib/roles";
 export const NOMBRE_ETAPA: Record<EtapaFoto, string> = { ingreso: "Ingreso", antes: "Antes", durante: "Durante", despues: "Después" };
 export const MAXIMO_FOTOS_ETAPA = 20;
 
-/** Ya se recibió: recibido, en proceso, listo o entregado (los mismos de la restricción `trabajo_recibido_si_orden`). */
-export const esOrden = (estado: EstadoTrabajo) => estado === "recibido" || estado === "en_proceso" || estado === "listo" || estado === "entregado";
+/**
+ * Una orden abierta: recibida, en proceso o lista (se trabaja, se le suben fotos). Aquí y no desde el esquema de la
+ * base: estas reglas también corren en el navegador, que no carga Drizzle.
+ */
+export const ESTADOS_ORDEN_ABIERTA = ["recibido", "en_proceso", "listo"] as const satisfies readonly EstadoTrabajo[];
+const abierta = (estado: EstadoTrabajo) => (ESTADOS_ORDEN_ABIERTA as readonly EstadoTrabajo[]).includes(estado);
+
+/** Ya se recibió: abierta o entregada (los mismos de la restricción `trabajo_recibido_si_orden`). */
+export const esOrden = (estado: EstadoTrabajo) => abierta(estado) || estado === "entregado";
 
 /** Una reserva se recibe desde su día de ingreso (en Bolivia): si el cliente llega antes, primero se reprograma. */
 export const puedeRecibirse = (r: { estado: EstadoTrabajo; fechaInicio: string }, hoy: string) => r.estado === "agendado" && r.fechaInicio <= hoy;
@@ -19,8 +25,5 @@ export const puedeRecibirse = (r: { estado: EstadoTrabajo; fechaInicio: string }
  */
 export function etapaAbierta(etapa: EtapaFoto, estado: EstadoTrabajo): boolean {
   if (etapa === "ingreso") return estado === "agendado";
-  return estado === "recibido" || estado === "en_proceso" || estado === "listo";
+  return abierta(estado);
 }
-
-/** El técnico solo ve las órdenes asignadas a él (RN-12, S-1); el dueño y el encargado con "Órdenes", todas. */
-export const puedeVerOrden = (usuario: { id: string; rol: Rol }, tecnicoId: number | null) => usuario.rol !== "tecnico" || tecnicoId === Number(usuario.id);

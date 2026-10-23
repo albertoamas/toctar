@@ -8,7 +8,8 @@ import { VerComprobante } from "./ver-comprobante";
 import { estaPagada, METODO_EN_FRASE, NOMBRE_TIPO_PAGO } from "../reglas";
 
 // Servicios, saldo y pagos de un trabajo (C3, HU-32): en la reserva y en la orden (C4). Solo para quien ve pagos: quien
-// lo usa ya lo verificó (`montos` llega null si no). Una reserva cancelada o una orden entregada, sin acciones.
+// lo usa ya lo verificó (`montos` llega null si no). Una reserva cancelada, sin acciones; una entregada con saldo se
+// sigue cobrando (RN-13).
 
 const bs = (monto: string) => `${mostrarMonto(monto)} Bs`;
 

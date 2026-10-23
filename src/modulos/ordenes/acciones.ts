@@ -1,17 +1,18 @@
 "use server";
 
-import { and, count, eq, lte, sql } from "drizzle-orm";
+import { and, count, eq, isNull, lte, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { auditoria, trabajo, trabajoAvance, trabajoFoto } from "@/db/esquema";
+import { auditoria, trabajo, trabajoAvance, trabajoFoto, usuario as tablaUsuario } from "@/db/esquema";
 import { fechaEnBolivia } from "@/lib/fechas";
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { erroresDe, type EstadoFormulario } from "@/lib/formularios";
+import { puede, puedeVerOrden } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
-import { tecnicosActivos } from "@/modulos/agenda/consultas";
+import type { EstadoTrabajo, EtapaFoto } from "@/db/esquema/trabajos";
 import { esquemaFotoOrden, esquemaQuitarFotoOrden, esquemaRecibir } from "./esquemas";
-import { etapaAbierta, MAXIMO_FOTOS_ETAPA, NOMBRE_ETAPA, puedeVerOrden } from "./reglas";
+import { etapaAbierta, MAXIMO_FOTOS_ETAPA, NOMBRE_ETAPA, puedeRecibirse } from "./reglas";
 
 // Órdenes (C4). Entra el dueño, el encargado con "Órdenes" y el técnico, que solo toca las suyas (RN-12). Recibir el
 // vehículo es del dueño y del encargado: sale de la agenda, que el técnico no ve. Especificación:
@@ -21,8 +22,34 @@ const RECARGA = "No se pudo leer el pedido. Recarga la página.";
 const NO_ES_TUYA = "Esa orden no es tuya.";
 const ERROR_FOTO = "La foto debe ser JPG, PNG o WebP de hasta 5 MB.";
 
-/** Algo cambió entre la revisión y la escritura: se lanza dentro de la transacción para deshacerla entera. */
-class Conflicto extends Error {}
+/** Algo cambió entre la revisión y la escritura: se lanza dentro de la transacción para deshacerla entera. Con
+ * `campo`, el error va junto a ese campo; sin él, arriba del formulario. */
+class Conflicto extends Error {
+  constructor(
+    mensaje: string,
+    readonly campo?: string,
+  ) {
+    super(mensaje);
+  }
+}
+
+/**
+ * Si a esa etapa se le puede sumar una foto ahora: abierta y, las de ingreso, desde el día en que llega el vehículo (antes
+ * no prueban nada). Devuelve el motivo si no.
+ */
+function motivoSinFoto(etapa: EtapaFoto, t: { estado: EstadoTrabajo; fechaInicio: string }, fotos: number): string | null {
+  if (!etapaAbierta(etapa, t.estado)) return `Ya no se agregan fotos de ${NOMBRE_ETAPA[etapa].toLowerCase()}.`;
+  if (etapa === "ingreso" && !puedeRecibirse(t, fechaEnBolivia())) return "Las fotos de ingreso se toman el día que llega el vehículo.";
+  if (fotos >= MAXIMO_FOTOS_ETAPA) return `Hasta ${MAXIMO_FOTOS_ETAPA} fotos por etapa.`;
+  return null;
+}
+
+const contarFotos = (base: Pick<typeof db, "select">, trabajoId: number, etapa: EtapaFoto) =>
+  base
+    .select({ fotos: count() })
+    .from(trabajoFoto)
+    .where(and(eq(trabajoFoto.trabajoId, trabajoId), eq(trabajoFoto.etapa, etapa)))
+    .then(([{ fotos }]) => fotos);
 
 function despuesDeCambiar(id: number, clienteId: number) {
   revalidatePath("/panel/ordenes");
@@ -39,12 +66,17 @@ export async function subirFotoOrden(_previo: EstadoFormulario, datos: FormData)
   if (!entrada.success) return { mensaje: RECARGA };
   const { trabajoId, etapa } = entrada.data;
 
-  const [t] = await db.select({ estado: trabajo.estado, tecnicoId: trabajo.tecnicoId, clienteId: trabajo.clienteId }).from(trabajo).where(eq(trabajo.id, trabajoId));
+  const [t] = await db
+    .select({ estado: trabajo.estado, fechaInicio: trabajo.fechaInicio, tecnicoId: trabajo.tecnicoId, clienteId: trabajo.clienteId })
+    .from(trabajo)
+    .where(eq(trabajo.id, trabajoId));
   if (!t) return { mensaje: "Esa orden ya no existe." };
   if (!puedeVerOrden(usuario, t.tecnicoId)) return { mensaje: NO_ES_TUYA };
   // Las de ingreso las toma quien recibe el vehículo (dueño o encargado), no el técnico
-  if (etapa === "ingreso" && usuario.rol === "tecnico") return { mensaje: "Las fotos de ingreso las toma quien recibe el vehículo." };
-  if (!etapaAbierta(etapa, t.estado)) return { mensaje: `Ya no se agregan fotos de ${NOMBRE_ETAPA[etapa].toLowerCase()}.` };
+  if (etapa === "ingreso" && !puede(usuario, "recibir_vehiculo")) return { mensaje: "Las fotos de ingreso las toma quien recibe el vehículo." };
+  // Antes de procesar la foto: si no va a entrar, ni se convierte ni se sube
+  const antes = motivoSinFoto(etapa, t, await contarFotos(db, trabajoId, etapa));
+  if (antes) return { errores: { foto: antes } };
 
   const autorId = Number(usuario.id);
   const r = await guardarFoto(datos.get("foto"), { carpeta: "ordenes", miniatura: true, autorId, privado: true });
@@ -52,13 +84,10 @@ export async function subirFotoOrden(_previo: EstadoFormulario, datos: FormData)
   try {
     await db.transaction(async (tx) => {
       // Candado sobre la orden: dos subidas a la vez no pasan juntas el límite, y el estado no cambia en el medio
-      const [actual] = await tx.select({ estado: trabajo.estado }).from(trabajo).where(eq(trabajo.id, trabajoId)).for("update");
-      if (!actual || !etapaAbierta(etapa, actual.estado)) throw new Conflicto("Esa orden cambió recién. Recarga la página.");
-      const [{ fotos }] = await tx
-        .select({ fotos: count() })
-        .from(trabajoFoto)
-        .where(and(eq(trabajoFoto.trabajoId, trabajoId), eq(trabajoFoto.etapa, etapa)));
-      if (fotos >= MAXIMO_FOTOS_ETAPA) throw new Conflicto(`Hasta ${MAXIMO_FOTOS_ETAPA} fotos por etapa.`);
+      const [actual] = await tx.select({ estado: trabajo.estado, fechaInicio: trabajo.fechaInicio }).from(trabajo).where(eq(trabajo.id, trabajoId)).for("update");
+      if (!actual) throw new Conflicto("Esa orden ya no existe.");
+      const motivo = motivoSinFoto(etapa, actual, await contarFotos(tx, trabajoId, etapa));
+      if (motivo) throw new Conflicto(motivo);
       await tx.insert(trabajoFoto).values({ trabajoId, archivoId: r.archivoId, etapa, subidoPor: autorId });
     });
   } catch (error) {
@@ -108,7 +137,7 @@ export async function quitarFotoOrden(datos: { trabajoId: number; fotoId: number
  */
 export async function recibirVehiculo(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const usuario = await exigirModulo("ordenes");
-  if (usuario.rol === "tecnico") return { mensaje: "El vehículo lo recibe el dueño o el encargado." };
+  if (!puede(usuario, "recibir_vehiculo")) return { mensaje: "El vehículo lo recibe el dueño o el encargado." };
   const valores = { tecnicoId: String(datos.get("tecnicoId") ?? ""), observaciones: String(datos.get("observaciones") ?? "") };
   const r = esquemaRecibir.safeParse({ id: datos.get("id"), ...valores });
   if (!r.success) {
@@ -116,13 +145,21 @@ export async function recibirVehiculo(_previo: EstadoFormulario, datos: FormData
     return errores.id || errores.tecnicoId ? { mensaje: RECARGA } : { errores, valores };
   }
   const { id, tecnicoId, observaciones } = r.data;
-  if (tecnicoId && !(await tecnicosActivos()).some((t) => t.id === tecnicoId)) return { errores: { tecnicoId: "Ese técnico ya no está activo." }, valores };
 
   const autorId = Number(usuario.id);
   const hoy = fechaEnBolivia();
   let clienteId: number;
   try {
     clienteId = await db.transaction(async (tx) => {
+      // El técnico, activo: dentro de la transacción y con candado, así no se lo desactiva a mitad de camino
+      if (tecnicoId) {
+        const [activo] = await tx
+          .select({ id: tablaUsuario.id })
+          .from(tablaUsuario)
+          .where(and(eq(tablaUsuario.id, tecnicoId), eq(tablaUsuario.role, "tecnico"), or(isNull(tablaUsuario.banned), eq(tablaUsuario.banned, false))))
+          .for("update");
+        if (!activo) throw new Conflicto("Ese técnico ya no está activo.", "tecnicoId");
+      }
       // Solo una reserva agendada que ya llegó a su día: si otra persona la recibió o la canceló recién, no se toca
       const [recibida] = await tx
         .update(trabajo)
@@ -135,7 +172,7 @@ export async function recibirVehiculo(_previo: EstadoFormulario, datos: FormData
       return recibida.clienteId;
     });
   } catch (error) {
-    if (error instanceof Conflicto) return { mensaje: error.message, valores };
+    if (error instanceof Conflicto) return error.campo ? { errores: { [error.campo]: error.message }, valores } : { mensaje: error.message, valores };
     throw error;
   }
 

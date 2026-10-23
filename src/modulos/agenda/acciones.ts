@@ -12,6 +12,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { sucursalPrincipal } from "@/modulos/configuracion/consultas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { descripcionLinea, montoNoMayor } from "@/modulos/cotizaciones/reglas";
+import { borrarFotosSueltas, soltarFotosIngreso } from "@/modulos/ordenes/fotos";
 import { descartarComprobante, guardarComprobante } from "@/modulos/pagos/comprobante";
 import { calcularSaldo } from "@/modulos/pagos/reglas";
 import { datosDeCotizacion, espaciosEnFechas, tecnicosActivos, type EspacioDisponible } from "./consultas";
@@ -235,8 +236,9 @@ export async function reprogramarReserva(_previo: EstadoFormulario, datos: FormD
   if (!espacio) return { errores: { espacioId: "Elige el espacio." } };
   if (!espacio.libre) return { errores: { espacioId: ESPACIO_OCUPADO } };
 
+  let sueltas: number[];
   try {
-    await db.transaction(async (tx) => {
+    sueltas = await db.transaction(async (tx) => {
       // Solo si sigue agendada: si otra persona la canceló recién, no se mueve
       const [movida] = await tx
         .update(trabajo)
@@ -251,6 +253,8 @@ export async function reprogramarReserva(_previo: EstadoFormulario, datos: FormD
         accion: "reprogramar",
         datos: { antes: { espacioId: actual.espacioId, fechaInicio: actual.fechaInicio, fechaFin: actual.fechaFin }, despues: { espacioId, fechaInicio, fechaFin } },
       });
+      // Las fotos de ingreso que se alcanzaron a tomar no prueban cómo llega otro día
+      return soltarFotosIngreso(tx, id);
     });
   } catch (error) {
     if (error instanceof Conflicto) return { mensaje: error.message };
@@ -258,6 +262,7 @@ export async function reprogramarReserva(_previo: EstadoFormulario, datos: FormD
     throw error;
   }
 
+  await borrarFotosSueltas(sueltas);
   despuesDeCambiar(id, actual.clienteId, actual.consultaId);
   return { ok: true, mensaje: `Reserva movida al ${formatearFecha(fechaInicio).slice(0, 5)} en ${espacio.nombre}.` };
 }
@@ -286,8 +291,9 @@ export async function cancelarReserva(_previo: EstadoFormulario, datos: FormData
   if (!actual) return { mensaje: "Esa reserva ya no existe." };
   if (actual.estado !== "agendado") return { mensaje: "Solo se cancela una reserva agendada." };
 
+  let sueltas: number[];
   try {
-    await db.transaction(async (tx) => {
+    sueltas = await db.transaction(async (tx) => {
       const [cancelada] = await tx
         .update(trabajo)
         .set({ estado: "cancelado", motivoCancelacion: motivo, canceladoAt: sql`now()`, canceladoPor: autorId, updatedAt: sql`now()` })
@@ -315,12 +321,15 @@ export async function cancelarReserva(_previo: EstadoFormulario, datos: FormData
         cotizacionVigente = true;
       }
       await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "trabajo", entidadId: id, accion: "cancelar", datos: { motivo, consultaPerdida, cotizacionVigente } });
+      // Las fotos de ingreso que se alcanzaron a tomar ya no sirven: el vehículo no se recibió
+      return soltarFotosIngreso(tx, id);
     });
   } catch (error) {
     if (error instanceof Conflicto) return { mensaje: error.message };
     throw error;
   }
 
+  await borrarFotosSueltas(sueltas);
   despuesDeCambiar(id, actual.clienteId, actual.consultaId);
   const [conPagos] = await db.select({ id: pago.id }).from(pago).where(and(eq(pago.trabajoId, id), eq(pago.anulado, false))).limit(1);
   return { ok: true, mensaje: conPagos ? "Reserva cancelada. El adelanto queda como ingreso." : "Reserva cancelada." };

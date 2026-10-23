@@ -17,17 +17,19 @@ type Props = {
   trabajoId: number;
   tecnicos: { id: number; nombre: string }[];
   tecnicoInicial: number | null;
+  /** El técnico de la reserva, si ya no está activo: se avisa en vez de soltarlo sin decir nada. */
+  tecnicoInactivo: string | null;
   conFotos: boolean;
 };
 
-export function FormularioRecepcion({ trabajoId, tecnicos, tecnicoInicial, conFotos }: Props) {
+export function FormularioRecepcion({ trabajoId, tecnicos, tecnicoInicial, tecnicoInactivo, conFotos }: Props) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(recibirVehiculo, {});
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
   const e = estado.errores ?? {};
   // Controlados: React reinicia el formulario al terminar la acción y así nada se pierde tras un error
   const [observaciones, setObservaciones] = useState("");
-  const [tecnicoId, setTecnicoId] = useState(tecnicoInicial ? String(tecnicoInicial) : "");
+  const [tecnicoId, setTecnicoId] = useState(tecnicoInicial && tecnicos.some((t) => t.id === tecnicoInicial) ? String(tecnicoInicial) : "");
   const [confirmarSinFotos, setConfirmarSinFotos] = useState(false);
 
   function enviar(ev: React.SyntheticEvent<HTMLFormElement, SubmitEvent>) {
@@ -53,8 +55,16 @@ export function FormularioRecepcion({ trabajoId, tecnicos, tecnicoInicial, conFo
           aria-describedby={e.observaciones ? "observaciones-error" : "observaciones-ayuda"}
         />
       </Campo>
-      <Campo id="tecnicoId" etiqueta="Técnico" error={e.tecnicoId}>
-        <Selector id="tecnicoId" name="tecnicoId" value={tecnicoId} onChange={(ev) => setTecnicoId(ev.target.value)} aria-invalid={!!e.tecnicoId} aria-describedby={e.tecnicoId ? "tecnicoId-error" : undefined} className="max-w-xs">
+      <Campo id="tecnicoId" etiqueta="Técnico" error={e.tecnicoId} ayuda={tecnicoInactivo ? `${tecnicoInactivo} ya no está activo: elige otro técnico.` : undefined}>
+        <Selector
+          id="tecnicoId"
+          name="tecnicoId"
+          value={tecnicoId}
+          onChange={(ev) => setTecnicoId(ev.target.value)}
+          aria-invalid={!!e.tecnicoId}
+          aria-describedby={e.tecnicoId ? "tecnicoId-error" : tecnicoInactivo ? "tecnicoId-ayuda" : undefined}
+          className="max-w-xs"
+        >
           <option value="">Sin asignar</option>
           {tecnicos.map((t) => (
             <option key={t.id} value={t.id}>{t.nombre}</option>

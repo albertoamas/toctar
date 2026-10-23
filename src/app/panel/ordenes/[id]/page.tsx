@@ -9,13 +9,13 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/lib/fechas";
-import { puedeVerModulo } from "@/lib/permisos";
+import { puedeVerModulo, puedeVerOrden } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { FotosOrden } from "@/modulos/ordenes/componentes/fotos-orden";
-import { obtenerOrden } from "@/modulos/ordenes/consultas";
-import { esOrden, puedeVerOrden } from "@/modulos/ordenes/reglas";
+import { fotosDeTrabajo, obtenerOrden } from "@/modulos/ordenes/consultas";
+import { esOrden } from "@/modulos/ordenes/reglas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
 
 export const metadata: Metadata = { title: "Orden" };
@@ -41,13 +41,15 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   const o = await obtenerOrden(Number(id), puedeVerModulo(usuario, "pagos"));
   if (!o) notFound();
   if (!puedeVerOrden(usuario, o.tecnicoId)) redirect("/panel/sin-acceso");
-  // Todavía es una reserva (o se canceló): se ve en la agenda; el técnico no tiene nada que ver ahí
+  const verAgenda = puedeVerModulo(usuario, "agenda");
+  // Todavía es una reserva (o se canceló): se ve en la agenda, si quien entra la ve
   if (!esOrden(o.estado)) {
-    if (tecnico) notFound();
+    if (!verAgenda) notFound();
     redirect(`/panel/agenda/${o.id}`);
   }
   const verFicha = puedeVerModulo(usuario, "clientes");
-  const fotosIngreso = o.fotos.filter((f) => f.etapa === "ingreso").map((f) => ({ ...f, puedeQuitar: false }));
+  // Recién ahora, con el acceso verificado, se firman los enlaces de las fotos
+  const fotosIngreso = (await fotosDeTrabajo(o.id)).filter((f) => f.etapa === "ingreso").map((f) => ({ ...f, puedeQuitar: false }));
 
   return (
     <>
@@ -90,7 +92,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
           </dd>
           <dt className="text-tinta-suave">Entrega</dt>
           <dd>{formatearFecha(o.fechaFin)}, aproximada</dd>
-          {!tecnico && (
+          {verAgenda && (
             <>
               <dt className="text-tinta-suave">Reserva</dt>
               <dd>
@@ -120,7 +122,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
             <h2 id="fotos-titulo" className="font-heading text-2xl font-bold italic">Fotos</h2>
             <FotosOrden trabajoId={o.id} etapa="ingreso" fotos={fotosIngreso} editable={false} textoVacio="Se recibió sin fotos de ingreso." />
           </section>
-          {o.montos && <MontosTrabajo trabajoId={o.id} montos={o.montos} cerrado={o.estado === "entregado"} hoy={fechaEnBolivia()} />}
+          {/* Abierta también después de la entrega: una entregada con saldo se cobra aquí (RN-13, HU-37) */}
+          {o.montos && <MontosTrabajo trabajoId={o.id} montos={o.montos} cerrado={false} hoy={fechaEnBolivia()} />}
         </div>
       </div>
     </>
