@@ -11,10 +11,39 @@ export const MAXIMO_FOTOS_ETAPA = 20;
  * base: estas reglas también corren en el navegador, que no carga Drizzle.
  */
 export const ESTADOS_ORDEN_ABIERTA = ["recibido", "en_proceso", "listo"] as const satisfies readonly EstadoTrabajo[];
-const abierta = (estado: EstadoTrabajo) => (ESTADOS_ORDEN_ABIERTA as readonly EstadoTrabajo[]).includes(estado);
+/** Recibida, en proceso o lista: se trabaja, se le suben fotos y avances, y se puede extender. */
+export const estaAbierta = (estado: EstadoTrabajo) => (ESTADOS_ORDEN_ABIERTA as readonly EstadoTrabajo[]).includes(estado);
+
+/**
+ * Se le extiende la entrega mientras se trabaja: recibida o en proceso. Una lista ya liberó su espacio (decisión del
+ * 20/10); si hace falta más, primero vuelve a en proceso.
+ */
+export const puedeExtenderse = (estado: EstadoTrabajo) => estado === "recibido" || estado === "en_proceso";
 
 /** Ya se recibió: abierta o entregada (los mismos de la restricción `trabajo_recibido_si_orden`). */
-export const esOrden = (estado: EstadoTrabajo) => abierta(estado) || estado === "entregado";
+export const esOrden = (estado: EstadoTrabajo) => estaAbierta(estado) || estado === "entregado";
+
+/** Cada estado abierto, con su paso siguiente y el de vuelta (por si se marcó por error). */
+const PASOS: Record<(typeof ESTADOS_ORDEN_ABIERTA)[number], { siguiente?: { estado: EstadoTrabajo; texto: string }; anterior?: { estado: EstadoTrabajo; texto: string } }> = {
+  recibido: { siguiente: { estado: "en_proceso", texto: "Empezar trabajo" } },
+  en_proceso: { siguiente: { estado: "listo", texto: "Marcar listo" }, anterior: { estado: "recibido", texto: "Volver a recibida" } },
+  // Listo sigue con la entrega (HU-36): aquí solo se puede volver
+  listo: { anterior: { estado: "en_proceso", texto: "Volver a en proceso" } },
+};
+
+/** Los botones de estado de una orden abierta: el paso siguiente y el de vuelta. Vacío si no está abierta. */
+export function pasosDeOrden(estado: EstadoTrabajo) {
+  return estaAbierta(estado) ? PASOS[estado as keyof typeof PASOS] : {};
+}
+
+/** Solo un paso adelante o atrás entre recibido, en proceso y listo; "entregado" solo lo pone la entrega (HU-36). */
+export function transicionOrden(actual: EstadoTrabajo, nuevo: EstadoTrabajo): boolean {
+  const pasos = pasosDeOrden(actual);
+  return pasos.siguiente?.estado === nuevo || pasos.anterior?.estado === nuevo;
+}
+
+/** Una orden abierta cuya entrega aproximada ya pasó (las listas no: están esperando al cliente). */
+export const estaAtrasada = (o: { estado: EstadoTrabajo; fechaFin: string }, hoy: string) => (o.estado === "recibido" || o.estado === "en_proceso") && o.fechaFin < hoy;
 
 /** Una reserva se recibe desde su día de ingreso (en Bolivia): si el cliente llega antes, primero se reprograma. */
 export const puedeRecibirse = (r: { estado: EstadoTrabajo; fechaInicio: string }, hoy: string) => r.estado === "agendado" && r.fechaInicio <= hoy;
@@ -25,5 +54,5 @@ export const puedeRecibirse = (r: { estado: EstadoTrabajo; fechaInicio: string }
  */
 export function etapaAbierta(etapa: EtapaFoto, estado: EstadoTrabajo): boolean {
   if (etapa === "ingreso") return estado === "agendado";
-  return abierta(estado);
+  return estaAbierta(estado);
 }

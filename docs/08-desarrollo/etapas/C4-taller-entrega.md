@@ -27,7 +27,8 @@ El ciclo completo de un vehículo en el sistema. El personal lo recibe con fotos
   - El técnico ve **solo las suyas**, sin precios ni pagos (RN-12). El dueño y el encargado con "Órdenes" ven todas.
   - En la orden se cambia el estado (recibido → en proceso → listo; se puede volver un paso atrás por error), se suben fotos de antes, durante y después, y se escriben avances con fecha y autor.
   - **Extender la entrega** (dueño y encargado): corre la fecha de fin. Si el espacio está ocupado esos días, avisa y ofrece los espacios libres para moverla (D-5).
-  - **Listo antes de tiempo:** la fecha de fin pasa a hoy y el espacio queda libre desde mañana.
+  - **Listo antes de tiempo:** la fecha de fin pasa a hoy y el espacio queda libre desde mañana. Si se marcó por error y vuelve a en proceso, recupera su entrega (salvo que el espacio ya se haya tomado: entonces se extiende) y el aviso al cliente se borra.
+  - **Extender** solo mientras se trabaja (recibida o en proceso), hasta una fecha de hoy en adelante.
 - **Avisar que está listo (HU-35), dueño y encargado con "Órdenes":** en una orden lista, "Avisar por WhatsApp" abre el chat con el mensaje escrito: nombre, vehículo y, si quien avisa ve pagos, el saldo. Queda registrado quién avisó y cuándo.
 - **Entregar (HU-36), dueño y encargado con "Órdenes":**
   - Se ven el precio cotizado, los adicionales, el precio final, los pagos y el saldo (los montos, solo con "Pagos").
@@ -79,7 +80,8 @@ El ciclo completo de un vehículo en el sistema. El personal lo recibe con fotos
 
 Migraciones por historia:
 - `0028_ordenes` (HU-33): las columnas nuevas de `trabajo`, `trabajo_foto` y `trabajo_avance`.
-- `0029_mantenimientos` (HU-36): `recordatorio_mantenimiento`.
+- `0029_orden_fecha_prevista` (HU-34): `trabajo.fecha_fin_prevista`, la entrega que tenía antes de marcarla lista antes de tiempo.
+- `0030_mantenimientos` (HU-36): `recordatorio_mantenimiento`.
 
 No hay datos iniciales. El intervalo de mantenimiento (3 meses), el permiso `entrega_con_saldo` y la marca "genera mantenimiento" ya existen desde B2 y C1.
 
@@ -296,7 +298,7 @@ Una rama y un PR por historia, desde `develop`:
 1. `hu-33-recibir-vehiculo`: esta especificación; migración `0028_ordenes`; módulo "Órdenes" construido; recepción con fotos; la página de la orden, básica (datos, fotos de ingreso, servicios), y "Ver la orden" en la reserva.
 2. `hu-34-ordenes-tecnico`: "Mis órdenes" y la lista del dueño; estados, fotos por etapa, avances y extender entrega. Diseño con `frontend-design`.
 3. `hu-35-avisar-listo`.
-4. `hu-36-entregar-vehiculo`: migración `0029_mantenimientos`; adicionales, entrega con o sin saldo (RN-13) y recordatorios.
+4. `hu-36-entregar-vehiculo`: migración `0030_mantenimientos`; adicionales, entrega con o sin saldo (RN-13) y recordatorios.
 5. `hu-37-saldos-pendientes`: la pantalla de "Pagos" y su menú.
 6. `hu-38-mantenimientos`: la lista, los avisos y el agendado; "Mantenimientos" en la ficha del cliente. Prueba del flujo completo.
 

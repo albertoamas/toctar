@@ -9,19 +9,23 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/lib/fechas";
-import { puedeVerModulo, puedeVerOrden } from "@/lib/permisos";
+import { puede, puedeVerModulo, puedeVerOrden } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
+import { AvancesOrden } from "@/modulos/ordenes/componentes/avances-orden";
+import { EstadoOrden } from "@/modulos/ordenes/componentes/estado-orden";
+import { ExtenderEntrega } from "@/modulos/ordenes/componentes/extender-entrega";
 import { FotosOrden } from "@/modulos/ordenes/componentes/fotos-orden";
-import { fotosDeTrabajo, obtenerOrden } from "@/modulos/ordenes/consultas";
-import { esOrden } from "@/modulos/ordenes/reglas";
+import { avancesDeTrabajo, fotosDeTrabajo, obtenerOrden } from "@/modulos/ordenes/consultas";
+import { esOrden, estaAbierta, estaAtrasada, puedeExtenderse } from "@/modulos/ordenes/reglas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
 
 export const metadata: Metadata = { title: "Orden" };
 
-// HU-33: la orden (RF-40, RF-41). El dueño y el encargado con "Órdenes" ven todas; el técnico, solo las suyas y sin
-// precios ni pagos ni el teléfono del cliente (RN-12). Los avances, el estado y las demás fotos llegan con la HU-34.
+// HU-33 y HU-34: la orden (RF-40 a RF-42). El dueño y el encargado con "Órdenes" ven todas; el técnico, solo las suyas
+// y sin precios ni pagos ni el teléfono del cliente (RN-12). Arriba, el paso siguiente; después, cómo llegó, las fotos
+// por etapa y la historia. Extender la entrega es del dueño y del encargado.
 export default function PaginaOrden({ params, searchParams }: PageProps<"/panel/ordenes/[id]">) {
   return (
     <section className="flex flex-col gap-6">
@@ -48,14 +52,20 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
     redirect(`/panel/agenda/${o.id}`);
   }
   const verFicha = puedeVerModulo(usuario, "clientes");
+  const abierta = estaAbierta(o.estado);
+  const hoy = fechaEnBolivia();
+  const yo = Number(usuario.id);
   // Recién ahora, con el acceso verificado, se firman los enlaces de las fotos
-  const fotosIngreso = (await fotosDeTrabajo(o.id)).filter((f) => f.etapa === "ingreso").map((f) => ({ ...f, puedeQuitar: false }));
+  const [fotos, avances] = await Promise.all([fotosDeTrabajo(o.id), avancesDeTrabajo(o.id)]);
+  const deEtapa = (etapa: (typeof fotos)[number]["etapa"]) =>
+    fotos.filter((f) => f.etapa === etapa).map((f) => ({ ...f, puedeQuitar: etapa !== "ingreso" && (usuario.rol === "dueno" || f.subidoPor === yo) }));
 
   return (
     <>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-4">
         <h1 className="font-heading text-4xl font-extrabold italic">{o.placa}</h1>
         <span className="tt-insignia">{NOMBRE_ESTADO_TRABAJO[o.estado]}</span>
+        {estaAtrasada(o, hoy) && <span className="tt-insignia tt-insignia--aviso">Atrasada</span>}
         {!tecnico && (
           <a href={enlaceWhatsApp(o.telefono)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }), "sm:ml-auto")}>
             <IconoWhatsApp />
@@ -64,6 +74,14 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
         )}
       </div>
       {recibido && o.estado === "recibido" && <AvisoEnPagina>Vehículo recibido. La orden está en «Recibidas».</AvisoEnPagina>}
+      {o.estado !== "entregado" && (
+        <div className="flex max-w-3xl flex-col gap-4">
+          <EstadoOrden id={o.id} estado={o.estado} editable={abierta} />
+          {puedeExtenderse(o.estado) && puede(usuario, "extender_entrega") && (
+            <ExtenderEntrega id={o.id} fechaInicio={o.fechaInicio} fechaFin={o.fechaFin} espacioId={o.espacioId} espacio={o.espacio} hoy={hoy} />
+          )}
+        </div>
+      )}
 
       <div className="grid max-w-5xl gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3 rounded-sm border border-border p-4 text-sm lg:col-start-2 lg:row-start-1">
@@ -118,12 +136,16 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
               </ul>
             </section>
           )}
-          <section aria-labelledby="fotos-titulo" className="flex flex-col gap-4">
+          <section aria-labelledby="fotos-titulo" className="flex flex-col gap-6">
             <h2 id="fotos-titulo" className="font-heading text-2xl font-bold italic">Fotos</h2>
-            <FotosOrden trabajoId={o.id} etapa="ingreso" fotos={fotosIngreso} editable={false} textoVacio="Se recibió sin fotos de ingreso." />
+            <FotosOrden trabajoId={o.id} etapa="ingreso" fotos={deEtapa("ingreso")} editable={false} textoVacio="Se recibió sin fotos de ingreso." />
+            <FotosOrden trabajoId={o.id} etapa="antes" fotos={deEtapa("antes")} editable={abierta} textoVacio="Sin fotos de antes." />
+            <FotosOrden trabajoId={o.id} etapa="durante" fotos={deEtapa("durante")} editable={abierta} textoVacio="Sin fotos del trabajo." />
+            <FotosOrden trabajoId={o.id} etapa="despues" fotos={deEtapa("despues")} editable={abierta} textoVacio="Sin fotos de después." />
           </section>
+          <AvancesOrden id={o.id} avances={avances.map((a) => ({ id: a.id, nota: a.nota, autor: a.autor, cuando: formatearFechaHora(a.createdAt) }))} editable={abierta} />
           {/* Abierta también después de la entrega: una entregada con saldo se cobra aquí (RN-13, HU-37) */}
-          {o.montos && <MontosTrabajo trabajoId={o.id} montos={o.montos} cerrado={false} hoy={fechaEnBolivia()} />}
+          {o.montos && <MontosTrabajo trabajoId={o.id} montos={o.montos} cerrado={false} hoy={hoy} />}
         </div>
       </div>
     </>

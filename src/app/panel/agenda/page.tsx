@@ -6,6 +6,7 @@ import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
+import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { AgendaDelDia, TableroSemana } from "@/modulos/agenda/componentes/tablero";
 import { semanaDeAgenda } from "@/modulos/agenda/consultas";
@@ -36,7 +37,8 @@ export default function PaginaAgenda({ searchParams }: PageProps<"/panel/agenda"
 const enlaceSemana = (lunes: string, dia?: string) => `/panel/agenda?semana=${lunes}${dia ? `&dia=${dia}` : ""}` as Route;
 
 async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searchParams">) {
-  await exigirModulo("agenda");
+  const usuario = await exigirModulo("agenda");
+  const conOrdenes = puedeVerModulo(usuario, "ordenes");
   const { semana: pedida, dia: diaPedido } = await searchParams;
   const hoy = fechaEnBolivia();
   // Del 2000 al 2100: con años extremos las fechas dejan de tener cuatro cifras y la base las rechaza
@@ -71,7 +73,7 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
         <p className="text-tinta-suave">No hay espacios activos. Agrégalos en Configuración, «Taller».</p>
       ) : (
         <>
-          <TableroSemana semana={semana} dias={dias} hoy={hoy} />
+          <TableroSemana semana={semana} dias={dias} hoy={hoy} conOrdenes={conOrdenes} />
 
           {/* Celular: los siete días como pestañas (enlaces: el día va en la dirección) */}
           <nav aria-label="Días de la semana" className="-mx-4 overflow-x-auto px-4 md:hidden">
@@ -98,7 +100,7 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
             {textoDia(dia)}
             {dia === hoy && <span className="text-rojo-texto">, hoy</span>}
           </p>
-          <AgendaDelDia semana={semana} dia={dia} hoy={hoy} />
+          <AgendaDelDia semana={semana} dia={dia} hoy={hoy} conOrdenes={conOrdenes} />
         </>
       )}
     </>

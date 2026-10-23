@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cn } from "cn";
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
 import type { ReservaTablero, SemanaDeAgenda } from "../consultas";
+import { esOrden } from "@/modulos/ordenes/reglas";
 import { bloquesDeLaSemana, DIA_CORTO, diaDeLaSemana, NOMBRE_ESTADO_TRABAJO, numeroDia, seCruzan, textoDia } from "../reglas";
 
 // HU-29: el tablero de la agenda (RF-38). Una fila por espacio y una columna por día (S-3: por día, sin horas). Cada
@@ -11,7 +12,13 @@ import { bloquesDeLaSemana, DIA_CORTO, diaDeLaSemana, NOMBRE_ESTADO_TRABAJO, num
 // En el celular, un día a la vez (AgendaDelDia): sin desplazarse de lado.
 // Todo es texto y enlaces: se lee igual con lector de pantalla, sin depender del color.
 
-type Props = { semana: SemanaDeAgenda; dias: string[]; hoy: string };
+type Props = {
+  semana: SemanaDeAgenda;
+  dias: string[];
+  hoy: string;
+  /** Quien mira ve las órdenes: una reserva ya recibida lleva directo a su orden (C4). */
+  conOrdenes: boolean;
+};
 
 const agendarEn = (fecha: string, espacioId: number) => `/panel/agenda/nueva?fecha=${fecha}&espacio=${espacioId}` as Route;
 
@@ -20,10 +27,24 @@ function textoFechas(r: ReservaTablero) {
 }
 
 /** Placa, servicio y técnico: lo que dice la cinta. */
-function Cinta({ r, empiezaAntes, terminaDespues, className, style }: { r: ReservaTablero; empiezaAntes: boolean; terminaDespues: boolean; className?: string; style?: React.CSSProperties }) {
+function Cinta({
+  r,
+  empiezaAntes,
+  terminaDespues,
+  conOrdenes,
+  className,
+  style,
+}: {
+  r: ReservaTablero;
+  empiezaAntes: boolean;
+  terminaDespues: boolean;
+  conOrdenes: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
     <Link
-      href={`/panel/agenda/${r.id}`}
+      href={conOrdenes && esOrden(r.estado) ? `/panel/ordenes/${r.id}` : `/panel/agenda/${r.id}`}
       style={style}
       className={cn(
         "relative flex min-h-14 min-w-0 flex-col justify-center gap-0.5 py-1.5 pr-3 text-blanco opacity-100 hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]",
@@ -82,7 +103,7 @@ function DiaSinReserva({ fecha, espacio, cerrado, pasado, style }: { fecha: stri
 }
 
 /** Computadora: la semana entera. */
-export function TableroSemana({ semana, dias, hoy }: Props) {
+export function TableroSemana({ semana, dias, hoy, conOrdenes }: Props) {
   const lunes = dias[0];
   return (
     <div className="hidden md:block">
@@ -126,7 +147,7 @@ export function TableroSemana({ semana, dias, hoy }: Props) {
                 ),
               )}
               {deEspacio.map((b) => (
-                <Cinta key={b.id} r={b} empiezaAntes={b.empiezaAntes} terminaDespues={b.terminaDespues} style={{ gridRow, gridColumn: `${b.columna + 2} / span ${b.dias}` }} />
+                <Cinta key={b.id} r={b} empiezaAntes={b.empiezaAntes} terminaDespues={b.terminaDespues} conOrdenes={conOrdenes} style={{ gridRow, gridColumn: `${b.columna + 2} / span ${b.dias}` }} />
               ))}
             </section>
           );
@@ -137,7 +158,7 @@ export function TableroSemana({ semana, dias, hoy }: Props) {
 }
 
 /** Celular: un día, una tarjeta por espacio. Las pestañas de los días van en la página (son enlaces). */
-export function AgendaDelDia({ semana, dia, hoy }: { semana: SemanaDeAgenda; dia: string; hoy: string }) {
+export function AgendaDelDia({ semana, dia, hoy, conOrdenes }: { semana: SemanaDeAgenda; dia: string; hoy: string; conOrdenes: boolean }) {
   const cerrado = semana.diasCerrados.includes(diaDeLaSemana(dia));
   return (
     <ul aria-label={`Espacios el ${textoDia(dia)}`} className="flex flex-col gap-2 md:hidden">
@@ -150,7 +171,7 @@ export function AgendaDelDia({ semana, dia, hoy }: { semana: SemanaDeAgenda; dia
               {!espacio.activo && <span className="ml-2 font-sans text-xs font-normal not-italic text-tinta-suave">Desactivado</span>}
             </h2>
             {r ? (
-              <Cinta r={r} empiezaAntes={r.inicio < dia} terminaDespues={r.fin > dia} />
+              <Cinta r={r} empiezaAntes={r.inicio < dia} terminaDespues={r.fin > dia} conOrdenes={conOrdenes} />
             ) : cerrado ? (
               <p className="tt-cerrado flex min-h-14 items-center justify-center text-sm text-tinta-suave">
                 <span className="bg-superficie px-1.5 py-0.5">Cerrado</span>

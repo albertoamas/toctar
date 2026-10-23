@@ -66,6 +66,8 @@ export const trabajo = pgTable(
     recibidoPor: integer("recibido_por").references(() => usuario.id),
     /** La última vez que pasó a listo. */
     listoAt: momento("listo_at"),
+    /** La entrega aproximada antes de marcarla lista antes de tiempo: si vuelve a en proceso, se recupera (HU-34). */
+    fechaFinPrevista: date("fecha_fin_prevista"),
     /** El último aviso de "listo" por WhatsApp (RF-48). */
     avisadoListoAt: momento("avisado_listo_at"),
     avisadoListoPor: integer("avisado_listo_por").references(() => usuario.id),
