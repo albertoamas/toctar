@@ -1,8 +1,8 @@
 import { expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
-import { esquemaFotoOrden, esquemaRecibir } from "@/modulos/ordenes/esquemas";
+import { esquemaAvance, esquemaFotoOrden, esquemaRecibir } from "@/modulos/ordenes/esquemas";
 import { puede, puedeVerOrden } from "@/lib/permisos";
-import { esOrden, etapaAbierta, puedeRecibirse } from "@/modulos/ordenes/reglas";
+import { esOrden, estaAtrasada, etapaAbierta, pasosDeOrden, puedeRecibirse, transicionOrden } from "@/modulos/ordenes/reglas";
 
 // C4 Taller y entrega (HU-33): la reserva recibida es una orden (D-1), fotos por etapa (D-6) y el técnico solo con las
 // suyas (RN-12).
@@ -60,4 +60,29 @@ test("recibir: técnico opcional y observaciones de hasta 2000", () => {
 test("una foto de la orden dice su etapa", () => {
   expect(esquemaFotoOrden.safeParse({ trabajoId: "3", etapa: "antes" }).success).toBe(true);
   expect(esquemaFotoOrden.safeParse({ trabajoId: "3", etapa: "cualquiera" }).success).toBe(false);
+});
+
+test("la orden avanza o vuelve un paso; entregar es otra cosa (HU-36)", () => {
+  expect(transicionOrden("recibido", "en_proceso")).toBe(true);
+  expect(transicionOrden("en_proceso", "listo")).toBe(true);
+  expect(transicionOrden("en_proceso", "recibido")).toBe(true);
+  expect(transicionOrden("listo", "en_proceso")).toBe(true);
+  expect(transicionOrden("recibido", "listo")).toBe(false);
+  expect(transicionOrden("listo", "entregado")).toBe(false);
+  expect(transicionOrden("entregado", "listo")).toBe(false);
+  expect(transicionOrden("agendado", "recibido")).toBe(false);
+  expect(pasosDeOrden("recibido")).toEqual({ siguiente: { estado: "en_proceso", texto: "Empezar trabajo" } });
+  expect(pasosDeOrden("entregado")).toEqual({});
+});
+
+test("atrasada: abierta y con la entrega ya pasada; una lista espera al cliente", () => {
+  expect(estaAtrasada({ estado: "en_proceso", fechaFin: "2026-10-21" }, "2026-10-22")).toBe(true);
+  expect(estaAtrasada({ estado: "recibido", fechaFin: "2026-10-22" }, "2026-10-22")).toBe(false);
+  expect(estaAtrasada({ estado: "listo", fechaFin: "2026-10-01" }, "2026-10-22")).toBe(false);
+});
+
+test("extender la entrega: el dueño o el encargado con Órdenes", () => {
+  expect(puede({ rol: "encargado", permisos: ["ordenes"] }, "extender_entrega")).toBe(true);
+  expect(puede({ rol: "tecnico", permisos: [] }, "extender_entrega")).toBe(false);
+  expect(esquemaAvance.safeParse({ id: "1", nota: "  " }).success).toBe(false);
 });
