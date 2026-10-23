@@ -1,4 +1,6 @@
 import { expect, test } from "vitest";
+import { sumarMeses } from "@/lib/fechas";
+import { precioCotizadoYFinal } from "@/modulos/pagos/reglas";
 import { erroresDe } from "@/lib/formularios";
 import { esquemaAvance, esquemaFotoOrden, esquemaRecibir } from "@/modulos/ordenes/esquemas";
 import { puede, puedeVerOrden } from "@/lib/permisos";
@@ -92,4 +94,30 @@ test("se extiende mientras se trabaja; una lista ya liberó su espacio", () => {
   expect(puedeExtenderse("en_proceso")).toBe(true);
   expect(puedeExtenderse("listo")).toBe(false);
   expect(puedeExtenderse("entregado")).toBe(false);
+});
+
+test("el próximo mantenimiento: meses de calendario, al último día si el mes es más corto (RN-08)", () => {
+  expect(sumarMeses("2026-11-15", 3)).toBe("2027-02-15");
+  expect(sumarMeses("2027-01-31", 1)).toBe("2027-02-28");
+  expect(sumarMeses("2028-01-31", 1)).toBe("2028-02-29");
+  expect(sumarMeses("2026-10-31", 3)).toBe("2027-01-31");
+});
+
+test("precio cotizado, adicionales y final: el descuento de la cotización una sola vez (RF-43)", () => {
+  const lineas = [
+    { precio: "1000.00", esAdicional: false },
+    { precio: "250.50", esAdicional: true },
+  ];
+  expect(precioCotizadoYFinal(lineas, "100.00")).toEqual({ cotizado: "900.00", adicionales: "250.50", final: "1150.50" });
+  expect(precioCotizadoYFinal([lineas[0]], "0")).toEqual({ cotizado: "1000.00", adicionales: "0.00", final: "1000.00" });
+});
+
+test("entrega y adicionales: entrega el dueño o el encargado con Órdenes; los adicionales, solo el dueño", () => {
+  expect(puede({ rol: "encargado", permisos: ["ordenes"] }, "entregar_vehiculo")).toBe(true);
+  expect(puede({ rol: "tecnico", permisos: [] }, "entregar_vehiculo")).toBe(false);
+  expect(puede({ rol: "dueno", permisos: [] }, "agregar_adicional")).toBe(true);
+  expect(puede({ rol: "encargado", permisos: ["ordenes", "pagos", "entrega_con_saldo"] }, "agregar_adicional")).toBe(false);
+  // RN-13
+  expect(puede({ rol: "encargado", permisos: ["ordenes"] }, "entrega_con_saldo")).toBe(false);
+  expect(puede({ rol: "encargado", permisos: ["ordenes", "entrega_con_saldo"] }, "entrega_con_saldo")).toBe(true);
 });
