@@ -38,18 +38,22 @@ UptimeRobot → https://<dominio>/api/salud
 
 ## 2. VPS (unos 20 minutos)
 
+> **Hecho el 23/10/2026.** Qué tiene el servidor, cómo se configuró y cómo se mantiene: `servidor.md`.
+
 1. Crear la cuenta con el correo del negocio:
    - **Hetzner** (recomendado): el plan **CX23** (2 vCPU, 4 GB, 40 GB) en Alemania es el único con 4 GB dentro de lo que se le dijo al dueño. A veces pide verificar identidad al abrir la cuenta, y puede tardar un día: crear la cuenta apenas haya correo y tarjeta. Comparación completa en "Costos y proveedor" al final.
    - **Si el CX23 figura como no disponible:** Contabo Cloud VPS 10 en EE. UU., con un precio parecido y más memoria, pero más lento y con peor soporte. Antes de pagar, confirmar el precio final y si cobra instalación.
    Revisar el precio vigente antes de contratar.
    Activar la verificación en dos pasos e invitar a YankoSoft como miembro (Hetzner: Security → Members).
 2. Crear el servidor:
-   - **Ubuntu 24.04**, en **Nuremberg** (216 ms desde Tarija, la mejor de Hetzner en Europa). Los planes de Hetzner en EE. UU. subieron en 2026: 4 GB en Ashburn cuesta unos USD 37 al mes.
-   - **4 GB de RAM y 2 vCPU** (CX23). Con 2 GB, compilar Next.js para dos entornos en la misma máquina se queda corto de memoria.
-   - **Acceso con clave SSH** de la PC de YankoSoft, no con contraseña: `ssh-keygen -t ed25519` y pegar el contenido de `~/.ssh/id_ed25519.pub`.
-   - **Copias del servidor activadas** (Hetzner Backups, 20 % del precio del servidor): salvan el servidor entero.
-3. **Firewall del proveedor:** permitir solo 22 (SSH), 80 y 443. Abrir el 8000 (panel de Coolify) solo mientras se configura y cerrarlo en el paso 4.8. **El 3000 nunca se abre:** la app solo se alcanza por el proxy (arquitectura, "Docker").
-4. Anotar la **IP pública** del servidor.
+   - **Ubuntu 26.04 LTS** (o 24.04), en **Nuremberg** (216 ms desde Tarija, la mejor de Hetzner en Europa).
+   - **Type → Cost-Optimized → x86 → CX23** (2 vCPU, 4 GB). Desde el ajuste de precios del 15/06/2026, la línea "Regular Performance" (CPX) cuesta unas 3,5 veces más con la misma memoria. Con 2 GB, compilar Next.js para dos entornos se queda corto. Si el CX23 está agotado, **Arm64 → CAX11** (la app funciona igual en ARM).
+   - **Acceso con clave SSH** de la PC de YankoSoft, una **clave propia del servidor** con frase (`ssh-keygen -t ed25519 -C "toctar-hetzner" -f ~/.ssh/toctar`). La frase se crea primero en el gestor y se **pega**: escrita a mano se puede equivocar sin verse, y la clave queda inservible. Antes de usarla se prueba con `ssh-keygen -y -f ~/.ssh/toctar`.
+   - **Copias del servidor** (Hetzner Backups, 20 % del precio del servidor): salvan el servidor entero. Las decide el dueño; la base se respalda igual a R2 (paso 8).
+   - Ya creado: **Delete protection** y **Rebuild protection** en Settings.
+3. **Firewall del proveedor:** permitir solo 22 (SSH), 80 y 443. Abrir el 8000 (panel de Coolify) solo mientras se configura y cerrarlo en el paso 4.8. **El 3000 nunca se abre:** la app solo se alcanza por el proxy (arquitectura, "Docker"). **Revisar que esté la regla del 22:** el firewall nuevo no la trajo, y sin ella SSH da "Connection timed out".
+4. **Preparar el servidor** por SSH: sistema al día, actualizaciones automáticas, fail2ban, swap de 4 GB y SSH solo con clave. Los comandos exactos están en `servidor.md`.
+5. Anotar la **IP pública** del servidor, en `servidor.md`.
 
 ## 3. DNS (5 minutos, en Cloudflare)
 
