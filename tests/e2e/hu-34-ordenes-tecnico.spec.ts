@@ -90,6 +90,14 @@ test("el técnico trabaja su orden: empieza, sube fotos, escribe avances y la ma
   expect(auditoria.map((a) => a.accion)).toEqual(["estado", "estado"]);
   // El técnico no extiende la entrega
   await expect(page.getByRole("button", { name: "Extender entrega" })).toHaveCount(0);
+
+  // La marcó lista por error: al volver, recupera su entrega y deja de figurar como avisada
+  await consultar("update trabajo set avisado_listo_at = now(), avisado_listo_por = $2 where id = $1", [id, tecnicoId]);
+  await pasos.getByRole("button", { name: "Volver a en proceso" }).click();
+  // El aviso de antes puede seguir a la vista: se espera el paso, que sí cambia
+  await expect(pasos.locator('[aria-current="step"]')).toHaveText("En proceso");
+  const [vuelta] = await consultar<{ fin: string; avisada: boolean }>("select to_char(fecha_fin, 'YYYY-MM-DD') as fin, avisado_listo_at is not null as avisada from trabajo where id = $1", [id]);
+  expect(vuelta).toEqual({ fin: await dia(3), avisada: false });
 });
 
 test("extender la entrega: con el espacio ocupado se elige otro libre; las listas del dueño por estado", async ({ page }, info) => {

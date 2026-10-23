@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
 import { esquemaAvance, esquemaFotoOrden, esquemaRecibir } from "@/modulos/ordenes/esquemas";
 import { puede, puedeVerOrden } from "@/lib/permisos";
-import { esOrden, estaAtrasada, etapaAbierta, pasosDeOrden, puedeRecibirse, transicionOrden } from "@/modulos/ordenes/reglas";
+import { esOrden, estaAtrasada, etapaAbierta, pasosDeOrden, puedeExtenderse, puedeRecibirse, transicionOrden } from "@/modulos/ordenes/reglas";
 
 // C4 Taller y entrega (HU-33): la reserva recibida es una orden (D-1), fotos por etapa (D-6) y el técnico solo con las
 // suyas (RN-12).
@@ -85,4 +85,11 @@ test("extender la entrega: el dueño o el encargado con Órdenes", () => {
   expect(puede({ rol: "encargado", permisos: ["ordenes"] }, "extender_entrega")).toBe(true);
   expect(puede({ rol: "tecnico", permisos: [] }, "extender_entrega")).toBe(false);
   expect(esquemaAvance.safeParse({ id: "1", nota: "  " }).success).toBe(false);
+});
+
+test("se extiende mientras se trabaja; una lista ya liberó su espacio", () => {
+  expect(puedeExtenderse("recibido")).toBe(true);
+  expect(puedeExtenderse("en_proceso")).toBe(true);
+  expect(puedeExtenderse("listo")).toBe(false);
+  expect(puedeExtenderse("entregado")).toBe(false);
 });
