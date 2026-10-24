@@ -94,6 +94,7 @@ Estados: ⏳ pendiente · 🔵 en curso · ✅ terminada.
 ## Ramas
 
 Una rama por grupo, desde `develop`.
+- **Pedidos de la demo (2B):** una rama por pedido (`pulido/portada-comparador`, `pulido/whatsapp-nubecita`…).
 - **Parte 1:** `pulido/comunes`, `pulido/sitio`, `pulido/ingreso`, `pulido/panel-sitio`, `pulido/panel-gestion` y `pulido/panel-configuracion`.
 - **Parte 2:** `pulido/catalogo`, `pulido/clientes`, `pulido/consultas`, `pulido/agenda`, `pulido/taller`, `pulido/seguimiento` y `pulido/repaso`.
 
@@ -125,6 +126,20 @@ Antes de la demo del viernes 23.
 | 2.8 | Garantía y reclamos | `/garantia` | ✅ 18/10 |
 | 2.9 | Página no encontrada | cualquier ruta inexistente | ✅ 18/10 |
 | 2.10 | Sin conexión | `public/sin-conexion.html` | ✅ 18/10 |
+
+### 2B. Pedidos de la demo del 24/10
+El dueño vio el sitio en pruebas, con sus fotos: le gustó la estructura y pidió un sitio más simple ("para tontos": menos es más), con más imágenes. Se hacen antes de la HU-40, uno por uno, cada uno con su PR. Alcance y horas: `03-cierre-comercial/registro-de-cambios.md`, pedidos 1 a 6.
+
+| # | Pedido | Dónde | Estado |
+|---|---|---|---|
+| 2B.1 | **Comparador en la portada:** el antes y después que más le gustó, arriba, junto al lema. En la Galería del panel se elige el trabajo ("Mostrar en la portada", solo los que tienen antes); sin elegir, va el primero con antes; sin ninguno, la portada queda como hoy | `/` y `/panel/sitio/galeria` | ⏳ |
+| 2B.2 | **WhatsApp más llamativo:** una nubecita al lado del botón fijo, con un texto corto, que aparece unos segundos después y se cierra; un solo saltito al aparecer. Sin brillo ni parpadeo continuo; sin animación con "reducir movimiento" | todas las páginas públicas | ⏳ |
+| 2B.3 | **TikTok:** "Mira nuestros trabajos en TikTok" en la Galería y en la portada, si el enlace está cargado. Un enlace a su perfil, sin videos incrustados (cargarían los rastreadores de TikTok y harían lento el celular) | `/galeria` y `/` | ⏳ |
+| 2B.4 | **Página de un servicio más simple:** beneficios con ícono (elegido de una lista fija en el panel), descripción corta, las opciones como escalones (estilo del afiche del nano cerámico, en los colores de la marca) | `/servicios/[slug]` y su edición en el panel | ⏳ |
+| 2B.5 | **Fotos propias de cada servicio:** varias fotos (o afiches) por servicio, con su editor en el panel (subir, ordenar, quitar), en una tira deslizable en su página. Lo que dice un afiche va también en texto en la página (Google y el lector de pantalla no leen la imagen) | `/servicios/[slug]` y el panel | ⏳ |
+| 2B.6 | **Repaso "menos es más":** el sitio entero con la vara del dueño: textos más cortos y más foto donde haya | sitio público | ⏳ |
+
+**Del afiche del nano cerámico** (ejemplo del dueño) se toma: la fila de beneficios con ícono, la escalera de años como opciones y la idea en una línea ("a más años, más gruesa la capa"). No se copia: los colores por año (azul, verde, naranja), los brillos ni el texto todo en mayúsculas, que rompen la marca y cuestan en el celular.
 
 ### 3. Ingreso
 
