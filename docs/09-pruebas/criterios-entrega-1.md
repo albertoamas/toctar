@@ -182,6 +182,7 @@
 | 11.3 | Termina con una invitación a escribir por WhatsApp sobre ese servicio | Mismo E2E: "Consultar por este servicio" abre el chat con el servicio escrito | ✅ |
 | 11.4 | Un servicio oculto no tiene página | E2E "un servicio oculto o inexistente muestra la página no encontrada" | ✅ |
 | 11.5 | Título y descripción propios para Google y WhatsApp (RF-09) | Mismo E2E: título "<servicio> · TocTar Detailing"; la descripción es el resumen | ✅ |
+| 11.6 | Más simple (pedido de la demo del 24/10, registro de cambios 3 y 6): los beneficios van primero, cada uno con un ícono elegido de una lista fija; si las opciones van de menor a mayor (casilla en el panel), se ven como escalones con una capa más gruesa en cada una | E2E `hu-11` "los beneficios van primero, con ícono, y las opciones de menor a mayor se ven como escalones"; `hu-07` elige y guarda el ícono. Unitarias "esquema del servicio" (ícono fuera de la lista) e "íconos de los beneficios" | ✅ |
 
 ## HU-12 Galería pública
 
