@@ -3,7 +3,7 @@ import Link from "next/link";
 import { cn } from "cn";
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
 import type { ReservaTablero, SemanaDeAgenda } from "../consultas";
-import { esOrden } from "@/modulos/ordenes/reglas";
+import { rutaTrabajo } from "@/modulos/ordenes/reglas";
 import { bloquesDeLaSemana, DIA_CORTO, diaDeLaSemana, NOMBRE_ESTADO_TRABAJO, numeroDia, seCruzan, textoDia } from "../reglas";
 
 // HU-29: el tablero de la agenda (RF-38). Una fila por espacio y una columna por día (S-3: por día, sin horas). Cada
@@ -44,7 +44,7 @@ function Cinta({
 }) {
   return (
     <Link
-      href={conOrdenes && esOrden(r.estado) ? `/panel/ordenes/${r.id}` : `/panel/agenda/${r.id}`}
+      href={rutaTrabajo(r.id, r.estado, conOrdenes)}
       style={style}
       className={cn(
         "relative flex min-h-14 min-w-0 flex-col justify-center gap-0.5 py-1.5 pr-3 text-blanco opacity-100 hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]",

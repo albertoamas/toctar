@@ -4,7 +4,7 @@ import { precioCotizadoYFinal } from "@/modulos/pagos/reglas";
 import { erroresDe } from "@/lib/formularios";
 import { esquemaAvance, esquemaFotoOrden, esquemaRecibir } from "@/modulos/ordenes/esquemas";
 import { puede, puedeVerOrden } from "@/lib/permisos";
-import { esOrden, estaAtrasada, etapaAbierta, pasosDeOrden, puedeExtenderse, puedeRecibirse, transicionOrden } from "@/modulos/ordenes/reglas";
+import { esOrden, estaAtrasada, etapaAbierta, pasosDeOrden, puedeExtenderse, puedeRecibirse, rutaTrabajo, transicionOrden } from "@/modulos/ordenes/reglas";
 
 // C4 Taller y entrega (HU-33): la reserva recibida es una orden (D-1), fotos por etapa (D-6) y el técnico solo con las
 // suyas (RN-12).
@@ -120,4 +120,13 @@ test("entrega y adicionales: entrega el dueño o el encargado con Órdenes; los 
   // RN-13
   expect(puede({ rol: "encargado", permisos: ["ordenes"] }, "entrega_con_saldo")).toBe(false);
   expect(puede({ rol: "encargado", permisos: ["ordenes", "entrega_con_saldo"] }, "entrega_con_saldo")).toBe(true);
+});
+
+test("un trabajo se abre en su orden si ya se recibió y quien mira ve órdenes; si no, en su reserva (C5 §0)", () => {
+  expect(rutaTrabajo(7, "agendado", true)).toBe("/panel/agenda/7");
+  expect(rutaTrabajo(7, "cancelado", true)).toBe("/panel/agenda/7");
+  for (const estado of ["recibido", "en_proceso", "listo", "entregado"] as const) {
+    expect(rutaTrabajo(7, estado, true)).toBe("/panel/ordenes/7");
+    expect(rutaTrabajo(7, estado, false)).toBe("/panel/agenda/7");
+  }
 });

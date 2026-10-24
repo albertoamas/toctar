@@ -43,9 +43,10 @@ const idDeUsuario = async (usuario: string) => (await consultar<{ id: number }>(
 test("recibir con fotos y observaciones: la reserva pasa a orden, las fotos de ingreso quedan y el técnico la ve sin precios", async ({ page }, info) => {
   const s = sufijo(info);
   const placa = `RC33${s.toUpperCase()}1`;
-  await crearClienteEnBase({ nombre: `Recibe ${s}`, telefono: telefono(info, 1), placa });
+  const clienteId = await crearClienteEnBase({ nombre: `Recibe ${s}`, telefono: telefono(info, 1), placa });
   const id = await reserva(info, placa);
-  await crearUsuario({ usuario: `taller-hu33-${s}`, nombre: "Encargado del taller", contrasena: "encargado-123", rol: "encargado", permisos: ["agenda", "ordenes", "pagos"] });
+  // Con "Clientes": desde la ficha se comprueba a dónde lleva la reserva ya recibida
+  await crearUsuario({ usuario: `taller-hu33-${s}`, nombre: "Encargado del taller", contrasena: "encargado-123", rol: "encargado", permisos: ["agenda", "ordenes", "pagos", "clientes"] });
   await crearUsuario({ usuario: `tec-hu33-${s}`, nombre: `Técnico Uno ${s}`, contrasena: "tecnico-123", rol: "tecnico" });
   await crearUsuario({ usuario: `tec2-hu33-${s}`, nombre: `Técnico Dos ${s}`, contrasena: "tecnico-123", rol: "tecnico" });
   const tecnicoId = await idDeUsuario(`tec-hu33-${s}`);
@@ -82,6 +83,10 @@ test("recibir con fotos y observaciones: la reserva pasa a orden, las fotos de i
   expect(t).toEqual({ estado: "recibido", tecnico: tecnicoId, recibio: true, privado: true, etapa: "ingreso", avances: 1 });
   const [{ accion }] = await consultar<{ accion: string }>("select accion from auditoria where entidad = 'trabajo' and entidad_id = $1", [id]);
   expect(accion).toBe("recibir");
+
+  // En la ficha del cliente, ya recibida, lleva a la orden (C5 §0)
+  await page.goto(`/panel/clientes/${clienteId}`);
+  await expect(page.getByRole("list", { name: "Reservas" }).getByRole("link")).toHaveAttribute("href", `/panel/ordenes/${id}`);
 
   // La reserva ya es una orden: sin acciones de reserva
   await page.goto(`/panel/agenda/${id}`);

@@ -7,6 +7,7 @@ import type { EstadoCotizacion } from "@/db/esquema/cotizaciones";
 import { formatearFecha, formatearFechaHora } from "@/lib/fechas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import type { ReservaCorta } from "@/modulos/agenda/consultas";
+import { rutaTrabajo } from "@/modulos/ordenes/reglas";
 import type { FilaCotizacion } from "../consultas";
 import { nombreArchivoPdf } from "../reglas";
 import { CompartirPdf } from "./compartir-pdf";
@@ -33,9 +34,11 @@ type Props = {
   puedeAgendar: boolean;
   /** Las reservas que salieron de esta consulta. */
   reservas: ReservaCorta[];
+  /** Una reserva ya recibida se abre en su orden (si quien mira ve órdenes). */
+  verOrdenes: boolean;
 };
 
-export function CotizacionesConsulta({ consultaId, estado, cotizaciones, esDueno, puedeAgendar, reservas }: Props) {
+export function CotizacionesConsulta({ consultaId, estado, cotizaciones, esDueno, puedeAgendar, reservas, verOrdenes }: Props) {
   const vigente = cotizaciones.find((c) => c.estado === "enviada");
   // Se cotiza una consulta abierta; una perdida se reabre primero y una confirmada ya no cambia
   const abierta = estado === "consulto" || estado === "cotizado";
@@ -91,7 +94,7 @@ export function CotizacionesConsulta({ consultaId, estado, cotizaciones, esDueno
         <ul aria-label="Reservas" className="flex flex-col gap-2">
           {reservas.map((r) => (
             <li key={r.id}>
-              <Link href={`/panel/agenda/${r.id}`} className="inline-flex min-h-11 items-center gap-2 font-semibold underline">
+              <Link href={rutaTrabajo(r.id, r.estado, verOrdenes)} className="inline-flex min-h-11 items-center gap-2 font-semibold underline">
                 <CalendarIcon className="size-4" aria-hidden />
                 {r.estado === "cancelado" ? "Reserva cancelada" : "Reserva"} del {formatearFecha(r.fechaInicio).slice(0, 5)} en {r.espacio}
               </Link>

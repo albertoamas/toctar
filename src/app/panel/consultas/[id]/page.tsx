@@ -103,7 +103,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/consulta
               <span className="text-tinta-suave">por {c.registradaPor}</span>
             </dd>
           </dl>
-          <CotizacionesConsulta consultaId={c.id} estado={c.estado} cotizaciones={cotizaciones} esDueno={esDueno} puedeAgendar={puedeAgendar} reservas={reservas} />
+          <CotizacionesConsulta consultaId={c.id} estado={c.estado} cotizaciones={cotizaciones} esDueno={esDueno} puedeAgendar={puedeAgendar} reservas={reservas} verOrdenes={puedeVerModulo(usuario, "ordenes")} />
         </div>
 
         <div className="flex flex-col gap-10 lg:col-start-1 lg:row-start-1">
