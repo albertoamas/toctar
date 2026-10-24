@@ -40,7 +40,6 @@ test("el dueño crea el servicio en el catálogo y completa su página: benefici
   await expect(page.getByText("Escribe un resumen de una o dos frases.")).toBeVisible();
 
   await page.getByLabel("Resumen").fill("Encerado a mano que protege la pintura.");
-  await page.getByLabel("Descripción", { exact: true }).fill("Aplicamos cera a mano, panel por panel.");
   await page.getByRole("button", { name: "Agregar beneficio" }).click();
   await page.getByLabel("Beneficio 1", { exact: true }).fill("Brillo profundo");
   await page.getByRole("button", { name: "Agregar beneficio" }).click();
@@ -84,19 +83,20 @@ test("la foto principal se sube y se ve; un archivo que no es imagen se rechaza"
   await ingresarComoDueno(page);
   await page.goto("/panel/sitio");
   await page.getByRole("link", { name: /Polarizado de vidrios/ }).click();
-  await expect(page.getByRole("button", { name: "Subir foto" })).toBeEnabled();
+  // La foto principal: sus botones no llevan nombre de sección (las fotos de la página, sí)
+  await expect(page.getByRole("button", { name: "Subir foto", exact: true })).toBeEnabled();
 
-  await page.getByLabel("Archivo de la foto").setInputFiles({ name: "falsa.jpg", mimeType: "image/jpeg", buffer: Buffer.from("no soy una foto") });
+  await page.getByLabel("Archivo de la foto", { exact: true }).setInputFiles({ name: "falsa.jpg", mimeType: "image/jpeg", buffer: Buffer.from("no soy una foto") });
   await expect(page.getByText("La foto debe ser JPG, PNG o WebP de hasta 5 MB.")).toBeVisible();
 
-  await page.getByLabel("Archivo de la foto").setInputFiles({ name: "polarizado.png", mimeType: "image/png", buffer: PNG });
+  await page.getByLabel("Archivo de la foto", { exact: true }).setInputFiles({ name: "polarizado.png", mimeType: "image/png", buffer: PNG });
   await expect(page.getByText("Foto guardada.")).toBeVisible();
   const foto = page.getByRole("img", { name: "Polarizado de vidrios" });
   await expect(foto).toHaveAttribute("src", /servicios\/[\w-]+-640\.webp$/);
   const respuesta = await page.request.get((await foto.getAttribute("src"))!);
   expect(respuesta.headers()["content-type"]).toBe("image/webp");
 
-  await page.getByRole("button", { name: "Quitar foto" }).click();
+  await page.getByRole("button", { name: "Quitar foto", exact: true }).click();
   await expect(page.getByText("Sin foto: el sitio muestra la imagen de reemplazo de TocTar.")).toBeVisible();
 });
 

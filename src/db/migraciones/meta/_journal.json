@@ -232,6 +232,13 @@
       "when": 1792870302196,
       "tag": "0032_servicio_beneficios_con_icono",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1792883254808,
+      "tag": "0033_servicio_foto",
+      "breakpoints": true
     }
   ]
 }

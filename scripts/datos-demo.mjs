@@ -87,8 +87,6 @@ async function subirFoto(nombre, carpeta, autorId) {
 
 const SERVICIOS = {
   "lavado-de-interior": {
-    descripcion:
-      "Limpiamos a fondo el interior de tu vehículo: tablero, consola, puertas, alfombras y tapiz. Usamos productos que no dañan los plásticos ni el cuero, y cepillos que llegan a las rejillas y costuras donde se junta el polvo. En el lavado premium sumamos la limpieza profunda de los asientos y la hidratación de los plásticos.",
     beneficios: [["Sin polvo ni manchas", "limpieza"], ["Plásticos y tapiz cuidados", "interior"], ["Olor a limpio", "aire"], ["Más agradable para manejar", "vehiculo"]],
     pasos: [
       ["Aspirado completo", "Asientos, alfombras, maletero y los rincones donde se junta la arena."],
@@ -98,8 +96,6 @@ const SERVICIOS = {
     ],
   },
   "limpieza-de-asientos-por-inyeccion-y-succion": {
-    descripcion:
-      "Inyectamos un producto limpiador en el tapiz y lo succionamos con máquina: así sale la suciedad que está dentro de la espuma, no solo la de encima. Sirve para manchas, olores y el desgaste del uso diario.",
     beneficios: [["Sin manchas ni olores", "interior"], ["Limpieza profunda", "limpieza"], ["Sin marcas de agua", "agua"]],
     pasos: [
       ["Aspirado", "Sacamos el polvo y lo que está suelto."],
@@ -110,8 +106,6 @@ const SERVICIOS = {
   },
   "pulido-y-nano-ceramico": {
     escalera: true,
-    descripcion:
-      "Primero corregimos la pintura: con el pulido quitamos los rayones finos, las marcas del lavado y la opacidad. Después aplicamos una capa de nano cerámico que protege la pintura del sol, el polvo y la lluvia, y la hace más fácil de lavar. Tú eliges cuánto dura: de 1 a 10 años, según la capa.",
     beneficios: [["Protege del sol (UV)", "sol"], ["Repele agua y suciedad", "agua"], ["Resiste el excremento de aves", "aves"], ["Mantiene el brillo", "brillo"], ["Facilita el lavado", "limpieza"]],
     pasos: [
       ["Lavado técnico y descontaminación", "Quitamos el polvo, la grasa y los residuos pegados a la pintura."],
@@ -122,8 +116,6 @@ const SERVICIOS = {
     ],
   },
   "pulido-de-vidrios": {
-    descripcion:
-      "El agua dura y la lluvia dejan los vidrios opacos y con manchas que no salen con un lavado común. Los pulimos con compuestos especiales para que recuperen la transparencia y veas mejor, sobre todo de noche y con lluvia.",
     beneficios: [["Ves mejor, de día y de noche", "visibilidad"], ["Sin manchas de agua dura", "agua"], ["Más fáciles de limpiar", "limpieza"]],
     pasos: [
       ["Limpieza", "Sacamos la suciedad y la grasa de la superficie."],
@@ -132,8 +124,6 @@ const SERVICIOS = {
     ],
   },
   "restauracion-de-faroles-con-polimero": {
-    descripcion:
-      "Con el sol, los faroles se ponen opacos y amarillentos, y alumbran menos. Lijamos y pulimos la capa dañada y la sellamos con polímero, para que vuelvan a alumbrar como deben y no se opaquen pronto.",
     beneficios: [["Más luz de noche", "luz"], ["Se ve más nuevo", "vehiculo"], ["Sellado para que dure", "proteccion"]],
     pasos: [
       ["Protección", "Cubrimos la pintura alrededor del farol."],
@@ -142,8 +132,6 @@ const SERVICIOS = {
     ],
   },
   "polarizado-de-vidrios": {
-    descripcion:
-      "Instalamos lámina de polarizado para que tengas más privacidad y menos calor dentro del vehículo. La cortamos a la medida de cada vidrio y la instalamos sin burbujas.",
     beneficios: [["Menos calor adentro", "calor"], ["Más privacidad", "privacidad"], ["Protege el interior del sol", "sol"]],
     pasos: [
       ["Limpieza de los vidrios", "Sin polvo ni grasa, para que la lámina pegue bien."],
@@ -153,8 +141,6 @@ const SERVICIOS = {
     ],
   },
   "instalacion-de-ppf": {
-    descripcion:
-      "El PPF es una película transparente que se pega sobre la pintura y la protege de piedras, rayones y desgaste. Casi no se nota a la vista, y se puede poner en todo el vehículo o en las partes que más sufren, como el capó y los parachoques.",
     beneficios: [["Contra piedras y rayones", "proteccion"], ["Casi invisible", "visibilidad"], ["Se quita sin dañar la pintura", "listo"]],
     pasos: [
       ["Lavado y descontaminación", "La pintura limpia, para que la película pegue bien."],
@@ -164,8 +150,6 @@ const SERVICIOS = {
     ],
   },
   "mantenimiento-del-nano-ceramico": {
-    descripcion:
-      "Para que el nano cerámico dure lo que promete, necesita un mantenimiento cada tanto. Lavamos, descontaminamos y reforzamos la capa con un producto cerámico. Te avisamos por WhatsApp cuando te toca.",
     beneficios: [["La capa dura más", "duracion"], ["El brillo se mantiene", "brillo"], ["Revisamos el recubrimiento", "listo"]],
     // Sus pasos ya vienen de las migraciones
   },
@@ -271,9 +255,9 @@ try {
   for (const [slug, s] of Object.entries(SERVICIOS)) {
     const foto = await subirFoto(`servicio-${slug}`, "servicios", autor);
     await q(
-      `update servicio set descripcion = $2, beneficios = $3, pasos = coalesce($4, pasos), foto_archivo_id = coalesce($5, foto_archivo_id),
-         opciones_en_escalera = $7, updated_at = now(), updated_by = $6 where slug = $1`,
-      [slug, s.descripcion, JSON.stringify(s.beneficios.map(([texto, icono]) => ({ texto, icono }))), s.pasos ? JSON.stringify(s.pasos.map(([titulo, detalle]) => ({ titulo, detalle }))) : null, foto, autor, s.escalera ?? false],
+      `update servicio set beneficios = $2, pasos = coalesce($3, pasos), foto_archivo_id = coalesce($4, foto_archivo_id),
+         opciones_en_escalera = $6, updated_at = now(), updated_by = $5 where slug = $1`,
+      [slug, JSON.stringify(s.beneficios.map(([texto, icono]) => ({ texto, icono }))), s.pasos ? JSON.stringify(s.pasos.map(([titulo, detalle]) => ({ titulo, detalle }))) : null, foto, autor, s.escalera ?? false],
     );
   }
   for (const [i, g] of GALERIA.entries()) {

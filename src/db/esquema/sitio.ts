@@ -21,6 +21,7 @@ export const servicio = pgTable(
     /** Dirección de la página: /servicios/<slug>. */
     slug: text("slug").notNull().unique(),
     resumen: text("resumen").notNull(),
+    /** Sin uso desde el 24/10: repetía el resumen, que ahora dice en qué consiste (revisión de YankoSoft). Se conserva lo escrito. */
     descripcion: text("descripcion").notNull().default(""),
     beneficios: jsonb("beneficios").$type<Beneficio[]>().notNull().default([]),
     pasos: jsonb("pasos").$type<Paso[]>().notNull().default([]),
@@ -42,6 +43,31 @@ export const servicio = pgTable(
   (t) => [
     uniqueIndex("servicio_nombre_unico").on(sql`lower(${t.nombre})`),
     check("servicio_duracion_valida", sql`${t.duracionDias} between 1 and 60`),
+  ],
+);
+
+/**
+ * La foto al lado de una sección de la página de un servicio (pedido de la demo del 24/10): "Cómo lo hacemos" u
+ * "Opciones" (`SECCIONES_FOTO`). Una por sección. Decorativa: el texto de la sección dice lo mismo.
+ */
+export const servicioFoto = pgTable(
+  "servicio_foto",
+  {
+    id: integer("id").generatedByDefaultAsIdentity().primaryKey(),
+    servicioId: integer("servicio_id")
+      .notNull()
+      .references(() => servicio.id),
+    seccion: text("seccion").notNull(),
+    archivoId: integer("archivo_id")
+      .notNull()
+      .references(() => archivo.id),
+    createdAt: momento("created_at").defaultNow().notNull(),
+    createdBy: integer("created_by").references(() => usuario.id),
+  },
+  (t) => [
+    uniqueIndex("servicio_foto_una_por_seccion").on(t.servicioId, t.seccion),
+    // Las mismas claves de SECCIONES_FOTO (src/modulos/sitio/secciones-foto.ts): si se suma una, va también aquí
+    check("servicio_foto_seccion_valida", sql`${t.seccion} in ('proceso', 'opciones')`),
   ],
 );
 

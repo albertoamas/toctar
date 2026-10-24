@@ -35,7 +35,6 @@ describe("esquema del servicio", () => {
     id: "1",
     slug: "pulido-y-nano-ceramico",
     resumen: "Corregimos la pintura y la protegemos.",
-    descripcion: "",
     beneficios: JSON.stringify([
       { texto: "Brillo", icono: "brillo" },
       { texto: "Protección", icono: "proteccion" },

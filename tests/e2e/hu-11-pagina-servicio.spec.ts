@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { crearServicioPublicado, ingresarComoDueno } from "./apoyo";
+import { crearServicioPublicado, ingresarComoDueno, PNG } from "./apoyo";
 
 // HU-11 Página de cada servicio y HU-15 (mensaje con el servicio). Criterios: docs/09-pruebas/criterios-entrega-1.md (11.x).
 
@@ -125,4 +125,46 @@ test("en la página de un servicio, volver a Servicios es lo primero y se toca c
   const foto = (await page.locator('main header [class*="aspect-[4/3]"]').boundingBox())!;
   const titulo = (await page.getByRole("heading", { level: 1 }).boundingBox())!;
   expect(caja.y + caja.height).toBeLessThanOrEqual(Math.min(foto.y, titulo.y));
+});
+
+// Pedido de la demo del 24/10: una foto al lado de "Cómo lo hacemos" y de "Opciones", subida en su lugar del panel.
+// Decorativa: sin descripción y sin abrirse en grande (revisión de YankoSoft)
+test("cada sección de la página lleva su foto al lado, subida en su lugar del panel", async ({ page }, info) => {
+  test.setTimeout(60_000);
+  await ingresarComoDueno(page);
+  const { id, slug } = await crearServicioPublicado(page, `Servicio con fotos ${info.project.name}`);
+  // Recargada: el aviso del guardado anterior ya no está y el formulario no se reinicia bajo lo que se escribe
+  await page.reload();
+  await page.getByRole("button", { name: "Agregar paso" }).click();
+  await page.getByLabel("Paso 1, título", { exact: true }).fill("Lavado técnico");
+  await page.getByRole("button", { name: "Guardar cambios" }).click();
+  await expect(page.getByText("Cambios guardados.")).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel("Paso 1, título", { exact: true })).toHaveValue("Lavado técnico");
+
+  const fotos = page.getByRole("region", { name: "Fotos de la página" });
+  // Un lugar por sección; "Opciones" avisa que no se ve (el servicio no tiene opciones en el catálogo)
+  await expect(fotos.getByRole("button", { name: "Subir foto: Cómo lo hacemos" })).toBeVisible();
+  await expect(fotos.getByRole("button", { name: "Subir foto: Opciones" })).toBeVisible();
+  await expect(fotos.getByText("No se ve: el servicio no tiene opciones en el catálogo.")).toBeVisible();
+  await expect(fotos.getByText("No se ve hasta que agregues pasos.")).toHaveCount(0);
+  // Se sube al elegirla, sin descripción
+  await page.getByLabel("Archivo de la foto: Cómo lo hacemos").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
+  await expect(fotos.getByRole("img", { name: 'Foto de "Cómo lo hacemos"' })).toBeVisible();
+  await expect(fotos.getByRole("button", { name: "Cambiar foto: Cómo lo hacemos" })).toBeVisible();
+
+  // En el sitio, al lado de su sección: decorativa y sin abrirse en grande
+  await page.goto(`/servicios/${slug}`);
+  const proceso = page.getByRole("region", { name: "Cómo lo hacemos" });
+  await expect(proceso.locator("img")).toHaveAttribute("src", /servicios\/[\w-]+-640\.webp$/);
+  await expect(proceso.locator("img")).toHaveAttribute("alt", "");
+  await expect(proceso.getByRole("button")).toHaveCount(0);
+
+  // Quitada, la sección queda solo con su texto
+  await page.goto(`/panel/sitio/servicios/${id}`);
+  await fotos.getByRole("button", { name: "Quitar foto: Cómo lo hacemos" }).click();
+  await expect(fotos.getByRole("button", { name: "Subir foto: Cómo lo hacemos" })).toBeVisible();
+  await page.goto(`/servicios/${slug}`);
+  await expect(proceso).toContainText("Lavado técnico");
+  await expect(proceso.locator("img")).toHaveCount(0);
 });

@@ -92,7 +92,8 @@ Convenciones: `id` es `bigint` autoincremental; todas las tablas tienen `created
 
 | Tabla | Campos | Notas |
 |---|---|---|
-| `servicio` | nombre, slug (único), resumen, descripcion, beneficios (jsonb: texto e ícono), pasos (jsonb), opciones_en_escalera, foto_archivo_id, orden, visible_sitio, activo, genera_mantenimiento, duracion_dias | Un solo registro para el sitio y el catálogo |
+| `servicio_foto` | servicio_id, seccion (proceso u opciones; una por sección), archivo_id | La foto al lado de una sección de la página de un servicio (pedido de la demo del 24/10). Decorativa |
+| `servicio` | nombre, slug (único), resumen, descripcion (sin uso desde el 24/10: la página muestra el resumen), beneficios (jsonb: texto e ícono), pasos (jsonb), opciones_en_escalera, foto_archivo_id, orden, visible_sitio, activo, genera_mantenimiento, duracion_dias | Un solo registro para el sitio y el catálogo |
 | `variante` | servicio_id, nombre, descripcion, orden, duracion_dias (opcional, pisa la del servicio), activo | D-2 |
 | `precio` | variante_id, tamano_id, monto (nulo = según evaluación), vigente_desde | D-3; el vigente es el de fecha más reciente |
 

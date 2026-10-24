@@ -3,10 +3,10 @@ import { and, asc, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/db";
-import { archivo, contenidoPagina, faq, galeriaItem, servicio, variante, type Beneficio, type Paso } from "@/db/esquema";
+import { archivo, contenidoPagina, faq, galeriaItem, servicio, type Beneficio, type Paso } from "@/db/esquema";
 import { urlsFoto, type UrlsFoto } from "@/lib/fotos";
 import { leerContenido, type ContenidoPagina, type Pagina } from "./contenido";
-import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, ETIQUETA_SERVICIOS, obtenerFotoPortada } from "./consultas";
+import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, ETIQUETA_SERVICIOS, fotosDeSecciones, obtenerFotoPortada, opcionesDelSitio, type FotosDeSecciones } from "./consultas";
 
 // Lecturas del sitio público (B4). Van en caché hasta que el panel guarda un cambio: las acciones
 // de B3 invalidan estas etiquetas (updateTag). Solo devuelven lo visible.
@@ -64,13 +64,15 @@ export async function galeriaPublica(): Promise<FotoGaleria[]> {
 }
 
 export type DetalleServicioPublico = ServicioPublico & {
-  descripcion: string;
   beneficios: Beneficio[];
   pasos: Paso[];
   /** Las opciones van de menor a mayor: se ven como escalones. */
   opcionesEnEscalera: boolean;
   variantes: { nombre: string; descripcion: string | null }[];
-  fotos: FotoGaleria[];
+  /** La foto al lado de cada sección, si tiene. */
+  fotosSecciones: FotosDeSecciones;
+  /** Si tiene trabajos en la galería: la página enlaza a ella. */
+  tieneFotos: boolean;
 };
 
 /** Un servicio visible con todo lo que muestra su página, o null (oculto o inexistente). */
@@ -85,25 +87,23 @@ export async function servicioPublico(slug: string): Promise<DetalleServicioPubl
     .where(and(eq(servicio.slug, slug), eq(servicio.activo, true), eq(servicio.visibleSitio, true)));
   if (!fila) return null;
   const s = fila.servicio;
-  const variantes = await db
-    .select({ nombre: variante.nombre, descripcion: variante.descripcion })
-    .from(variante)
-    .where(and(eq(variante.servicioId, s.id), eq(variante.activo, true)))
-    .orderBy(asc(variante.orden), asc(variante.id));
-  const fotos = (await galeriaPublica()).filter((g) => g.servicio.slug === s.slug);
+  const [variantes, tieneFotos, fotosSecciones] = await Promise.all([
+    opcionesDelSitio(s.id),
+    galeriaPublica().then((g) => g.some((f) => f.servicio.slug === s.slug)),
+    fotosDeSecciones(s.id),
+  ]);
   return {
     id: s.id,
     nombre: s.nombre,
     slug: s.slug,
     resumen: s.resumen,
     foto: fila.foto ? urlsFoto(fila.foto) : null,
-    descripcion: s.descripcion,
     beneficios: s.beneficios,
     pasos: s.pasos,
     opcionesEnEscalera: s.opcionesEnEscalera,
-    // "Única" es la variante de un servicio sin opciones (D-2): no se muestra como opción.
-    variantes: variantes.length === 1 && variantes[0].nombre === "Única" ? [] : variantes,
-    fotos,
+    variantes,
+    fotosSecciones,
+    tieneFotos,
   };
 }
 

@@ -8,11 +8,12 @@ import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioServicio } from "@/modulos/sitio/componentes/formulario-servicio";
 import { FotoServicio } from "@/modulos/sitio/componentes/foto-servicio";
-import { obtenerServicio } from "@/modulos/sitio/consultas";
+import { FotosServicio } from "@/modulos/sitio/componentes/fotos-servicio";
+import { fotosDeSecciones, obtenerServicio, opcionesDelSitio } from "@/modulos/sitio/consultas";
 
 export const metadata: Metadata = { title: "Servicio" };
 
-// HU-07: la página del servicio en el sitio: dirección, textos, beneficios, pasos, foto y si se muestra. El nombre y
+// HU-07: la página del servicio en el sitio: dirección, textos, beneficios, pasos, fotos y si se muestra. El nombre y
 // las variantes son del catálogo: el dueño tiene el enlace.
 export default function PaginaServicio({ params }: PageProps<"/panel/sitio/servicios/[id]">) {
   return (
@@ -30,8 +31,13 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
   const { id } = await params;
   const numero = Number(id);
   if (!Number.isInteger(numero) || numero <= 0) notFound();
-  const s = await obtenerServicio(numero);
+  const [s, fotos, opciones] = await Promise.all([obtenerServicio(numero), fotosDeSecciones(numero), opcionesDelSitio(numero)]);
   if (!s) notFound();
+  // Una sección sin contenido no sale en el sitio, y su foto tampoco: el panel lo avisa en su lugar
+  const sinContenido = {
+    proceso: s.pasos.length > 0 ? undefined : "No se ve hasta que agregues pasos.",
+    opciones: opciones.length > 0 ? undefined : "No se ve: el servicio no tiene opciones en el catálogo.",
+  };
 
   return (
     <>
@@ -53,15 +59,15 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
             id: s.id,
             slug: s.slug,
             resumen: s.resumen,
-            descripcion: s.descripcion,
             beneficios: s.beneficios,
             pasos: s.pasos,
             visible: s.visible,
             opcionesEnEscalera: s.opcionesEnEscalera,
           }}
         />
-        <aside>
+        <aside className="flex flex-col gap-10">
           <FotoServicio servicioId={s.id} nombre={s.nombre} foto={s.foto} />
+          <FotosServicio servicioId={s.id} fotos={fotos} sinContenido={sinContenido} />
         </aside>
       </div>
     </>

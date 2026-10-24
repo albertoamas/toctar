@@ -3,7 +3,7 @@
 import { and, eq, inArray, isNotNull, max, TransactionRollbackError } from "drizzle-orm";
 import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/db";
-import { contenidoPagina, faq, galeriaItem, servicio } from "@/db/esquema";
+import { contenidoPagina, faq, galeriaItem, servicio, servicioFoto } from "@/db/esquema";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { reordenar, type Direccion } from "@/lib/orden";
@@ -11,7 +11,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { CLAVES_PAGINA, PAGINAS, PORTADA, datosDelFormulario, esquemaPagina, esquemaPregunta, type Pagina } from "./contenido";
 import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, listarGaleria, listarPreguntas, listarServicios, servicioEnSitio } from "./consultas";
 import { servicioCambiado } from "./servicio-cambiado";
-import { esquemaEditarGaleria, esquemaGaleria, esquemaId, esquemaIdFormulario, esquemaMover, esquemaServicio, esquemaVisibilidad } from "./esquemas";
+import { esquemaEditarGaleria, esquemaFotoSeccion, esquemaGaleria, esquemaId, esquemaIdFormulario, esquemaMover, esquemaQuitarFotoSeccion, esquemaServicio, esquemaVisibilidad } from "./esquemas";
 
 // Servicios del sitio (HU-07, RF-11), textos (HU-08, RF-10) y galería (HU-09, RF-12). Entra el dueño o un encargado con el permiso "sitio".
 // Del servicio, aquí solo su página: el alta, el nombre y las variantes son del catálogo (catalogo/acciones.ts).
@@ -21,11 +21,11 @@ const RUTA = "/panel/sitio";
 
 const SLUG_REPETIDO = "Ya hay otra página con esa dirección.";
 
-/** La página del servicio en el sitio: dirección, textos, beneficios con ícono, pasos, cómo se ven las opciones y si se muestra (HU-07). */
+/** La página del servicio en el sitio: dirección, resumen, beneficios con ícono, pasos, cómo se ven las opciones y si se muestra (HU-07). */
 export async function guardarServicio(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const autor = await exigirModulo("sitio");
   const valores = Object.fromEntries(
-    ["id", "slug", "resumen", "descripcion", "beneficios", "pasos"].map((c) => [c, String(datos.get(c) ?? "")]),
+    ["id", "slug", "resumen", "beneficios", "pasos"].map((c) => [c, String(datos.get(c) ?? "")]),
   );
   const visible = datos.get("visible") === "on";
   const opcionesEnEscalera = datos.get("opcionesEnEscalera") === "on";
@@ -47,7 +47,6 @@ export async function guardarServicio(_previo: EstadoFormulario, datos: FormData
       .set({
         slug: d.slug,
         resumen: d.resumen,
-        descripcion: d.descripcion,
         beneficios: d.beneficios,
         pasos: d.pasos,
         visibleSitio: d.visible,
@@ -98,6 +97,74 @@ export async function quitarFotoServicio(datoId: number): Promise<EstadoFormular
   await eliminarFoto(actual.fotoArchivoId);
   servicioCambiado(id);
   return { ok: true, mensaje: "Foto quitada. El sitio muestra la imagen de reemplazo." };
+}
+
+// La foto al lado de cada sección de la página de un servicio (pedido de la demo del 24/10). Una por sección: subir otra
+// la reemplaza.
+
+const BORRAR_FOTO_FALLO = "No se pudo borrar del almacenamiento la foto de una sección";
+
+export async function subirFotoDeSeccion(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  const autor = await exigirModulo("sitio");
+  const entrada = esquemaFotoSeccion.safeParse({ servicioId: datos.get("servicioId"), seccion: datos.get("seccion") });
+  if (!entrada.success) return { mensaje: "No se pudo guardar la foto en esa sección. Recarga la página." };
+  const { servicioId, seccion } = entrada.data;
+  // Antes de subir: con una pestaña vieja de un servicio que ya no está, no se sube nada
+  const [existe] = await db.select({ id: servicio.id }).from(servicio).where(eq(servicio.id, servicioId));
+  if (!existe) return { mensaje: "Ese servicio ya no existe." };
+
+  const foto = await guardarFoto(datos.get("foto"), { carpeta: "servicios", miniatura: true, autorId: Number(autor.id) });
+  if (!foto.ok) return { errores: { foto: foto.motivo === "vacia" ? "Elige una foto." : ERROR_FOTO } };
+
+  // Con el servicio bloqueado (también lo bloquea quitar): subir y quitar en la misma sección no se cruzan. Si no se
+  // guarda, la foto subida se borra para que no quede huérfana.
+  let resultado: { anterior: number | null } | null;
+  try {
+    resultado = await db.transaction(async (tx) => {
+      const [existe] = await tx.select({ id: servicio.id }).from(servicio).where(eq(servicio.id, servicioId)).for("update");
+      if (!existe) return null;
+      const donde = and(eq(servicioFoto.servicioId, servicioId), eq(servicioFoto.seccion, seccion));
+      const [anterior] = await tx.select({ archivoId: servicioFoto.archivoId }).from(servicioFoto).where(donde);
+      // Reemplazada: quién y cuándo son de la foto nueva
+      if (anterior) await tx.update(servicioFoto).set({ archivoId: foto.archivoId, createdAt: new Date(), createdBy: Number(autor.id) }).where(donde);
+      else await tx.insert(servicioFoto).values({ servicioId, seccion, archivoId: foto.archivoId, createdBy: Number(autor.id) });
+      return { anterior: anterior?.archivoId ?? null };
+    });
+  } catch (error) {
+    await eliminarFoto(foto.archivoId).catch((e) => console.error(BORRAR_FOTO_FALLO, e));
+    throw error;
+  }
+  if (!resultado) {
+    await eliminarFoto(foto.archivoId).catch((e) => console.error(BORRAR_FOTO_FALLO, e));
+    return { mensaje: "Ese servicio ya no existe." };
+  }
+
+  servicioCambiado(servicioId);
+  // La que había en esa sección se borra después: ningún otro registro la usa. Si el almacenamiento falla, la nueva ya
+  // quedó guardada: no se avisa como error.
+  if (resultado.anterior) await eliminarFoto(resultado.anterior).catch((e) => console.error(BORRAR_FOTO_FALLO, e));
+  return { ok: true, mensaje: "Foto guardada." };
+}
+
+export async function quitarFotoDeSeccion(datos: { servicioId: number; seccion: string }): Promise<EstadoFormulario> {
+  await exigirModulo("sitio");
+  const entrada = esquemaQuitarFotoSeccion.safeParse(datos);
+  if (!entrada.success) return { mensaje: "Esa foto ya no existe. Recarga la página." };
+  const { servicioId, seccion } = entrada.data;
+  // Con el mismo bloqueo que subir: no se cruza con un cambio de foto en curso
+  const fila = await db.transaction(async (tx) => {
+    await tx.select({ id: servicio.id }).from(servicio).where(eq(servicio.id, servicioId)).for("update");
+    const [borrada] = await tx
+      .delete(servicioFoto)
+      .where(and(eq(servicioFoto.servicioId, servicioId), eq(servicioFoto.seccion, seccion)))
+      .returning();
+    return borrada;
+  });
+  if (!fila) return { mensaje: "Esa foto ya no existe. Recarga la página." };
+  // Primero sale del sitio; después se borra el archivo (si el almacenamiento falla, la foto ya no se ve)
+  servicioCambiado(servicioId);
+  await eliminarFoto(fila.archivoId).catch((e) => console.error(BORRAR_FOTO_FALLO, e));
+  return { ok: true, mensaje: "Foto quitada." };
 }
 
 export async function moverServicio(datos: { id: number; direccion: Direccion }): Promise<EstadoFormulario> {

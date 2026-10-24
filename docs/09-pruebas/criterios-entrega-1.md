@@ -177,12 +177,13 @@
 
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
-| 11.1 | Muestra descripción, beneficios, proceso paso a paso, variantes y fotos de ese servicio | E2E `hu-11` "la página de un servicio muestra el proceso…" y "las variantes se muestran sin precio". Las secciones vacías no se muestran; un servicio sin opciones (variante "Única") no muestra "Opciones" | ✅ |
+| 11.1 | Muestra descripción, beneficios, proceso paso a paso, variantes y fotos de ese servicio (desde el 24/10, el resumen en lugar de la descripción y "Ver la galería" en lugar de las fotos: 11.7) | E2E `hu-11` "la página de un servicio muestra el proceso…" y "las variantes se muestran sin precio". Las secciones vacías no se muestran; un servicio sin opciones (variante "Única") no muestra "Opciones" | ✅ |
 | 11.2 | No muestra precios (RN-10) | Mismos E2E: la página no contiene "Bs" | ✅ |
 | 11.3 | Termina con una invitación a escribir por WhatsApp sobre ese servicio | Mismo E2E: "Consultar por este servicio" abre el chat con el servicio escrito | ✅ |
 | 11.4 | Un servicio oculto no tiene página | E2E "un servicio oculto o inexistente muestra la página no encontrada" | ✅ |
 | 11.5 | Título y descripción propios para Google y WhatsApp (RF-09) | Mismo E2E: título "<servicio> · TocTar Detailing"; la descripción es el resumen | ✅ |
 | 11.6 | Más simple (pedido de la demo del 24/10, registro de cambios 3 y 6): los beneficios van primero, cada uno con un ícono elegido de una lista fija; si las opciones van de menor a mayor (casilla en el panel), se ven como escalones con una capa más gruesa en cada una | E2E `hu-11` "los beneficios van primero, con ícono, y las opciones de menor a mayor se ven como escalones"; `hu-07` elige y guarda el ícono. Unitarias "esquema del servicio" (ícono fuera de la lista) e "íconos de los beneficios" | ✅ |
+| 11.7 | Una foto al lado de "Cómo lo hacemos" y de "Opciones" (pedido de la demo del 24/10, registro de cambios 5): se sube en su lugar del panel, se cambia y se quita; decorativa, sin descripción ni visor. La página muestra el resumen arriba (sin "En qué consiste") y, si hay trabajos en la galería, "Ver la galería" en vez de sus fotos | E2E `hu-11` "cada sección de la página lleva su foto al lado, subida en su lugar del panel"; `hu-12` revisa "Ver la galería" en la página del servicio | ✅ |
 
 ## HU-12 Galería pública
 

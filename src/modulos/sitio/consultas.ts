@@ -1,10 +1,11 @@
 import "server-only";
-import { asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
-import { archivo, contenidoPagina, faq, galeriaItem, servicio, type Beneficio, type Paso } from "@/db/esquema";
+import { archivo, contenidoPagina, faq, galeriaItem, servicio, servicioFoto, variante, type Beneficio, type Paso } from "@/db/esquema";
 import { urlsFoto, type UrlsFoto } from "@/lib/fotos";
 import { CLAVES_PAGINA, PORTADA, leerContenido, type ContenidoPagina, type Pagina } from "./contenido";
+import type { SeccionFoto } from "./secciones-foto";
 
 // Lecturas del módulo Sitio web para el panel. Quien las llama ya pasó por exigirModulo("sitio").
 // Las lecturas para el sitio público (en caché, etiquetas "servicios", "contenido" y "galeria") se agregan en B4.
@@ -42,7 +43,6 @@ export async function listarServicios(): Promise<FilaServicio[]> {
 }
 
 export type DetalleServicio = FilaServicio & {
-  descripcion: string;
   beneficios: Beneficio[];
   pasos: Paso[];
   opcionesEnEscalera: boolean;
@@ -64,11 +64,35 @@ export async function obtenerServicio(id: number): Promise<DetalleServicio | nul
     visible: s.visibleSitio,
     orden: s.orden,
     foto: fila.foto ? urlsFoto(fila.foto) : null,
-    descripcion: s.descripcion,
     beneficios: s.beneficios,
     pasos: s.pasos,
     opcionesEnEscalera: s.opcionesEnEscalera,
   };
+}
+
+/**
+ * Las opciones (variantes activas) que muestra la página de un servicio. "Única" es la variante de un servicio sin
+ * opciones (D-2): no se muestra. La usan el sitio y el panel (para avisar si "Opciones" no se ve).
+ */
+export async function opcionesDelSitio(servicioId: number): Promise<{ nombre: string; descripcion: string | null }[]> {
+  const filas = await db
+    .select({ nombre: variante.nombre, descripcion: variante.descripcion })
+    .from(variante)
+    .where(and(eq(variante.servicioId, servicioId), eq(variante.activo, true)))
+    .orderBy(asc(variante.orden), asc(variante.id));
+  return filas.length === 1 && filas[0].nombre === "Única" ? [] : filas;
+}
+
+export type FotosDeSecciones = Partial<Record<SeccionFoto, UrlsFoto>>;
+
+/** Las fotos al lado de las secciones de la página de un servicio (pedido de la demo del 24/10). Panel y sitio. */
+export async function fotosDeSecciones(servicioId: number): Promise<FotosDeSecciones> {
+  const filas = await db
+    .select({ seccion: servicioFoto.seccion, archivo })
+    .from(servicioFoto)
+    .innerJoin(archivo, eq(servicioFoto.archivoId, archivo.id))
+    .where(eq(servicioFoto.servicioId, servicioId));
+  return Object.fromEntries(filas.map((f) => [f.seccion, urlsFoto(f.archivo)]));
 }
 
 /**
