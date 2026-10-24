@@ -3,10 +3,10 @@ import { and, asc, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/db";
-import { archivo, contenidoPagina, faq, galeriaItem, servicio, variante, type Beneficio, type Paso } from "@/db/esquema";
+import { archivo, contenidoPagina, faq, galeriaItem, servicio, type Beneficio, type Paso } from "@/db/esquema";
 import { urlsFoto, type UrlsFoto } from "@/lib/fotos";
 import { leerContenido, type ContenidoPagina, type Pagina } from "./contenido";
-import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, ETIQUETA_SERVICIOS, fotosDeSecciones, obtenerFotoPortada, type FotosDeSecciones } from "./consultas";
+import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, ETIQUETA_SERVICIOS, fotosDeSecciones, obtenerFotoPortada, opcionesDelSitio, type FotosDeSecciones } from "./consultas";
 
 // Lecturas del sitio público (B4). Van en caché hasta que el panel guarda un cambio: las acciones
 // de B3 invalidan estas etiquetas (updateTag). Solo devuelven lo visible.
@@ -87,12 +87,11 @@ export async function servicioPublico(slug: string): Promise<DetalleServicioPubl
     .where(and(eq(servicio.slug, slug), eq(servicio.activo, true), eq(servicio.visibleSitio, true)));
   if (!fila) return null;
   const s = fila.servicio;
-  const variantes = await db
-    .select({ nombre: variante.nombre, descripcion: variante.descripcion })
-    .from(variante)
-    .where(and(eq(variante.servicioId, s.id), eq(variante.activo, true)))
-    .orderBy(asc(variante.orden), asc(variante.id));
-  const [fotos, fotosSecciones] = await Promise.all([galeriaPublica().then((g) => g.filter((f) => f.servicio.slug === s.slug)), fotosDeSecciones(s.id)]);
+  const [variantes, fotos, fotosSecciones] = await Promise.all([
+    opcionesDelSitio(s.id),
+    galeriaPublica().then((g) => g.filter((f) => f.servicio.slug === s.slug)),
+    fotosDeSecciones(s.id),
+  ]);
   return {
     id: s.id,
     nombre: s.nombre,
@@ -103,8 +102,7 @@ export async function servicioPublico(slug: string): Promise<DetalleServicioPubl
     beneficios: s.beneficios,
     pasos: s.pasos,
     opcionesEnEscalera: s.opcionesEnEscalera,
-    // "Única" es la variante de un servicio sin opciones (D-2): no se muestra como opción.
-    variantes: variantes.length === 1 && variantes[0].nombre === "Única" ? [] : variantes,
+    variantes,
     fotosSecciones,
     fotos,
   };

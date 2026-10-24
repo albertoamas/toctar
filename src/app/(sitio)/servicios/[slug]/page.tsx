@@ -10,7 +10,9 @@ import { FotoOReemplazo } from "@/componentes/sitio/foto-o-reemplazo";
 import { IconoBeneficio } from "@/componentes/sitio/icono-beneficio";
 import { FotoAmpliable } from "@/componentes/sitio/foto-ampliable";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
+import type { FotoDeSeccion } from "@/modulos/sitio/consultas";
 import { servicioPublico, type DetalleServicioPublico } from "@/modulos/sitio/publico";
+import { ladosDeFotos } from "@/modulos/sitio/secciones-foto";
 
 // HU-11 Página de cada servicio (RF-03): beneficios, descripción, proceso, variantes y fotos, sin precios (RN-10).
 // Más simple desde la demo del 24/10 ("para tontos"): los beneficios van primero, como una fila de íconos, y las
@@ -42,6 +44,11 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
   const { slug } = await params;
   const s = await servicioPublico(slug);
   if (!s) notFound();
+  const lados = ladosDeFotos({
+    descripcion: !!s.descripcion && !!s.fotosSecciones.descripcion,
+    proceso: s.pasos.length > 0 && !!s.fotosSecciones.proceso,
+    opciones: s.variantes.length > 0 && !!s.fotosSecciones.opciones,
+  });
 
   return (
     // Una columna que llena la pantalla: así el cierre queda pegado al pie aunque el servicio tenga poco contenido
@@ -64,9 +71,11 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pb-12 md:gap-24 md:pb-24">
         {s.beneficios.length > 0 && <Beneficios beneficios={s.beneficios} />}
         {/* Cada sección con su foto al lado, si tiene (pedido de la demo del 24/10), alternando de lado */}
-        {s.descripcion && <Descripcion descripcion={s.descripcion} foto={s.fotosSecciones.descripcion} />}
-        {s.pasos.length > 0 && <Proceso pasos={s.pasos} foto={s.fotosSecciones.proceso} />}
-        {s.variantes.length > 0 && <Variantes variantes={s.variantes} escalera={s.opcionesEnEscalera} foto={s.fotosSecciones.opciones} />}
+        {s.descripcion && <Descripcion descripcion={s.descripcion} foto={s.fotosSecciones.descripcion} lado={lados.descripcion} />}
+        {s.pasos.length > 0 && <Proceso pasos={s.pasos} foto={s.fotosSecciones.proceso} lado={lados.proceso} />}
+        {s.variantes.length > 0 && (
+          <Variantes variantes={s.variantes} escalera={s.opcionesEnEscalera} foto={s.fotosSecciones.opciones} lado={lados.opciones} />
+        )}
         {s.fotos.length > 0 && <Fotos servicio={s} />}
       </div>
 
@@ -104,14 +113,14 @@ function Beneficios({ beneficios }: { beneficios: DetalleServicioPublico["benefi
   );
 }
 
-type FotoSeccion = DetalleServicioPublico["fotosSecciones"][keyof DetalleServicioPublico["fotosSecciones"]];
+type Lado = "derecha" | "izquierda";
 
 /**
  * Una sección con su foto al lado, si tiene (pedido de la demo del 24/10): en la computadora, dos columnas, la foto a
- * la derecha o a la izquierda (se alternan para que la página no sea una sola columna de texto); en el celular, la foto
- * debajo del texto. Sin foto, solo el contenido.
+ * la derecha o a la izquierda (`ladosDeFotos`: se alternan entre las secciones con foto, para que la página no sea
+ * una sola columna); en el celular, la foto debajo del texto. Sin foto, solo el contenido.
  */
-function ConFoto({ foto, lado, children }: { foto?: FotoSeccion; lado: "derecha" | "izquierda"; children: React.ReactNode }) {
+function ConFoto({ foto, lado, children }: { foto?: FotoDeSeccion; lado: Lado; children: React.ReactNode }) {
   if (!foto) return children;
   return (
     <div className="grid gap-8 md:grid-cols-2 md:items-center md:gap-12">
@@ -123,10 +132,10 @@ function ConFoto({ foto, lado, children }: { foto?: FotoSeccion; lado: "derecha"
   );
 }
 
-function Descripcion({ descripcion, foto }: { descripcion: string; foto?: FotoSeccion }) {
+function Descripcion({ descripcion, foto, lado }: { descripcion: string; foto?: FotoDeSeccion; lado: Lado }) {
   return (
     <section aria-labelledby="descripcion-titulo" className="flex flex-col gap-4">
-      <ConFoto foto={foto} lado="derecha">
+      <ConFoto foto={foto} lado={lado}>
         <div className="flex flex-col gap-4">
           <h2 id="descripcion-titulo" className={TITULO_SECCION}>En qué consiste</h2>
           {descripcion
@@ -141,10 +150,10 @@ function Descripcion({ descripcion, foto }: { descripcion: string; foto?: FotoSe
   );
 }
 
-function Proceso({ pasos, foto }: { pasos: DetalleServicioPublico["pasos"]; foto?: FotoSeccion }) {
+function Proceso({ pasos, foto, lado }: { pasos: DetalleServicioPublico["pasos"]; foto?: FotoDeSeccion; lado: Lado }) {
   return (
     <section aria-labelledby="proceso-titulo" className="flex flex-col gap-8">
-      <ConFoto foto={foto} lado="izquierda">
+      <ConFoto foto={foto} lado={lado}>
         <h2 id="proceso-titulo" className={TITULO_SECCION}>Cómo lo hacemos</h2>
         {/* Con foto al lado, los pasos van en una sola columna */}
         <ol className={foto ? "grid gap-y-6" : "grid gap-x-10 gap-y-8 md:grid-cols-2 lg:grid-cols-3"}>
@@ -170,12 +179,13 @@ function Proceso({ pasos, foto }: { pasos: DetalleServicioPublico["pasos"]; foto
  * Si no, recuadros: si alguna tiene descripción, todas van del mismo ancho (si no, la que tiene texto quedaba ancha y
  * las demás chicas, en renglones disparejos, pulido 2.3).
  */
-function Variantes({ variantes, escalera, foto }: { variantes: DetalleServicioPublico["variantes"]; escalera: boolean; foto?: FotoSeccion }) {
+function Variantes(props: { variantes: DetalleServicioPublico["variantes"]; escalera: boolean; foto?: FotoDeSeccion; lado: Lado }) {
+  const { variantes, escalera, foto, lado } = props;
   const conDescripcion = variantes.some((v) => v.descripcion);
   const ultimo = Math.max(variantes.length - 1, 1);
   return (
     <section aria-labelledby="variantes-titulo" className="flex flex-col gap-6">
-      <ConFoto foto={foto} lado="derecha">
+      <ConFoto foto={foto} lado={lado}>
         <div className="flex flex-col gap-2">
           <h2 id="variantes-titulo" className={TITULO_SECCION}>Opciones</h2>
           <p className="max-w-xl text-tinta-suave">{escalera && "De menor a mayor. "}Te ayudamos a elegir la que conviene a tu vehículo.</p>

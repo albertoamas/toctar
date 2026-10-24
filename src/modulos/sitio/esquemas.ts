@@ -84,5 +84,5 @@ export const esquemaEditarGaleria = z.object({ id: z.coerce.number().int().posit
 
 // La foto de una sección de la página de un servicio (pedido de la demo del 24/10): la descripción, como en la galería
 const seccionFoto = z.enum(CLAVES_SECCION, "Esa sección no lleva foto.");
-export const esquemaFotoSeccion = z.object({ servicioId: z.coerce.number().int().positive(), seccion: seccionFoto, descripcion: descripcionGaleria });
+export const esquemaFotoSeccion = z.object({ servicioId: esquemaIdFormulario, seccion: seccionFoto, descripcion: descripcionGaleria });
 export const esquemaQuitarFotoSeccion = z.object({ servicioId: idRegistro, seccion: seccionFoto });

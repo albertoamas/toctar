@@ -66,6 +66,7 @@ export const servicioFoto = pgTable(
   },
   (t) => [
     uniqueIndex("servicio_foto_una_por_seccion").on(t.servicioId, t.seccion),
+    // Las mismas claves de SECCIONES_FOTO (src/modulos/sitio/secciones-foto.ts): si se suma una, va también aquí
     check("servicio_foto_seccion_valida", sql`${t.seccion} in ('descripcion', 'proceso', 'opciones')`),
   ],
 );

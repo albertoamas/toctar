@@ -103,6 +103,8 @@ export async function quitarFotoServicio(datoId: number): Promise<EstadoFormular
 // La foto al lado de cada sección de la página de un servicio (pedido de la demo del 24/10). Una por sección: subir otra
 // la reemplaza.
 
+const BORRAR_FOTO_FALLO = "No se pudo borrar del almacenamiento la foto de una sección";
+
 export async function subirFotoDeSeccion(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const autor = await exigirModulo("sitio");
   const valores = {
@@ -117,7 +119,8 @@ export async function subirFotoDeSeccion(_previo: EstadoFormulario, datos: FormD
   const foto = await guardarFoto(datos.get("foto"), { carpeta: "servicios", miniatura: true, autorId: Number(autor.id) });
   if (!foto.ok) return { errores: { foto: foto.motivo === "vacia" ? "Elige una foto." : ERROR_FOTO }, valores };
 
-  // Con el servicio bloqueado: dos subidas a la misma sección no chocan. Si no se guarda, la foto subida se borra.
+  // Con el servicio bloqueado (también lo bloquea quitar): subir y quitar en la misma sección no se cruzan. Si no se
+  // guarda, la foto subida se borra para que no quede huérfana.
   let resultado: { anterior: number | null } | null;
   try {
     resultado = await db.transaction(async (tx) => {
@@ -130,17 +133,18 @@ export async function subirFotoDeSeccion(_previo: EstadoFormulario, datos: FormD
       return { anterior: anterior?.archivoId ?? null };
     });
   } catch (error) {
-    await eliminarFoto(foto.archivoId);
+    await eliminarFoto(foto.archivoId).catch((e) => console.error(BORRAR_FOTO_FALLO, e));
     throw error;
   }
   if (!resultado) {
-    await eliminarFoto(foto.archivoId);
+    await eliminarFoto(foto.archivoId).catch((e) => console.error(BORRAR_FOTO_FALLO, e));
     return { mensaje: "Ese servicio ya no existe." };
   }
 
   servicioCambiado(servicioId);
-  // La que había en esa sección se borra después: ningún otro registro la usa
-  if (resultado.anterior) await eliminarFoto(resultado.anterior);
+  // La que había en esa sección se borra después: ningún otro registro la usa. Si el almacenamiento falla, la nueva ya
+  // quedó guardada: no se avisa como error.
+  if (resultado.anterior) await eliminarFoto(resultado.anterior).catch((e) => console.error(BORRAR_FOTO_FALLO, e));
   return { ok: true, mensaje: "Foto guardada." };
 }
 
@@ -149,14 +153,19 @@ export async function quitarFotoDeSeccion(datos: { servicioId: number; seccion: 
   const entrada = esquemaQuitarFotoSeccion.safeParse(datos);
   if (!entrada.success) return { mensaje: "Esa foto ya no existe. Recarga la página." };
   const { servicioId, seccion } = entrada.data;
-  const [fila] = await db
-    .delete(servicioFoto)
-    .where(and(eq(servicioFoto.servicioId, servicioId), eq(servicioFoto.seccion, seccion)))
-    .returning();
+  // Con el mismo bloqueo que subir: no se cruza con un cambio de foto en curso
+  const fila = await db.transaction(async (tx) => {
+    await tx.select({ id: servicio.id }).from(servicio).where(eq(servicio.id, servicioId)).for("update");
+    const [borrada] = await tx
+      .delete(servicioFoto)
+      .where(and(eq(servicioFoto.servicioId, servicioId), eq(servicioFoto.seccion, seccion)))
+      .returning();
+    return borrada;
+  });
   if (!fila) return { mensaje: "Esa foto ya no existe. Recarga la página." };
   // Primero sale del sitio; después se borra el archivo (si el almacenamiento falla, la foto ya no se ve)
   servicioCambiado(servicioId);
-  await eliminarFoto(fila.archivoId);
+  await eliminarFoto(fila.archivoId).catch((e) => console.error(BORRAR_FOTO_FALLO, e));
   return { ok: true, mensaje: "Foto quitada." };
 }
 

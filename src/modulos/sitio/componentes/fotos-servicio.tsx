@@ -20,7 +20,14 @@ import { SECCIONES_FOTO, type SeccionFoto } from "../secciones-foto";
 
 type Foto = { descripcion: string; foto: { miniatura: string; ancho: number | null; alto: number | null } };
 
-export function FotosServicio({ servicioId, fotos }: { servicioId: number; fotos: Partial<Record<SeccionFoto, Foto>> }) {
+type Props = {
+  servicioId: number;
+  fotos: Partial<Record<SeccionFoto, Foto>>;
+  /** Por sección, por qué no se ve en el sitio (sin descripción, sin pasos o sin opciones). */
+  sinContenido: Partial<Record<SeccionFoto, string>>;
+};
+
+export function FotosServicio({ servicioId, fotos, sinContenido }: Props) {
   // La sección a la que va la foto elegida, y su vista previa local (blob:)
   const [elegida, setElegida] = useState<{ seccion: SeccionFoto; archivo: File; vista: string } | null>(null);
   const destino = useRef<SeccionFoto>("descripcion");
@@ -54,6 +61,7 @@ export function FotosServicio({ servicioId, fotos }: { servicioId: number; fotos
           return (
             <li key={seccion} className="flex flex-col gap-2">
               <h3 className="text-sm font-semibold">{nombre}</h3>
+              {sinContenido[seccion] && <p className="text-sm text-tinta-suave">{sinContenido[seccion]}</p>}
               {actual ? (
                 <FotoActual servicioId={servicioId} seccion={seccion} nombre={nombre} foto={actual} ocupado={!listo || elegida !== null} alCambiar={() => elegir(seccion)} />
               ) : (
@@ -105,13 +113,22 @@ function FotoActual(props: { servicioId: number; seccion: SeccionFoto; nombre: s
         <Button type="button" variant="ghost" size="icon" disabled={ocupado || pendiente} aria-label={`Cambiar la foto: ${nombre}`} onClick={alCambiar}>
           <RefreshCwIcon />
         </Button>
+        {/* Mientras se elige o sube otra foto no se quita: el cambio en curso la reemplaza */}
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          disabled={pendiente}
+          disabled={ocupado || pendiente}
           aria-label={`Quitar la foto: ${nombre}`}
-          onClick={() => iniciar(async () => avisarResultado(await quitarFotoDeSeccion({ servicioId, seccion })))}
+          onClick={() =>
+            iniciar(async () => {
+              try {
+                avisarResultado(await quitarFotoDeSeccion({ servicioId, seccion }));
+              } catch {
+                avisarResultado({ mensaje: "No se pudo quitar la foto. Revisa tu conexión y vuelve a intentar." });
+              }
+            })
+          }
         >
           <TrashIcon />
         </Button>
@@ -168,6 +185,7 @@ function NuevaFoto(props: { servicioId: number; seccion: SeccionFoto; archivo: F
         />
       </Campo>
       {e.foto && <MensajeError id={`${id}-error`}>{e.foto}</MensajeError>}
+      {(e.seccion || e.servicioId) && <MensajeError id={`${id}-datos`}>No se pudo guardar en esta sección. Recarga la página.</MensajeError>}
       {estado.mensaje && !estado.ok && <MensajeError id={`${id}-mensaje`}>{estado.mensaje}</MensajeError>}
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={etapa !== null}>

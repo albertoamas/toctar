@@ -1,8 +1,8 @@
 import "server-only";
-import { asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
-import { archivo, contenidoPagina, faq, galeriaItem, servicio, servicioFoto, type Beneficio, type Paso } from "@/db/esquema";
+import { archivo, contenidoPagina, faq, galeriaItem, servicio, servicioFoto, variante, type Beneficio, type Paso } from "@/db/esquema";
 import { urlsFoto, type UrlsFoto } from "@/lib/fotos";
 import { CLAVES_PAGINA, PORTADA, leerContenido, type ContenidoPagina, type Pagina } from "./contenido";
 import type { SeccionFoto } from "./secciones-foto";
@@ -70,6 +70,19 @@ export async function obtenerServicio(id: number): Promise<DetalleServicio | nul
     pasos: s.pasos,
     opcionesEnEscalera: s.opcionesEnEscalera,
   };
+}
+
+/**
+ * Las opciones (variantes activas) que muestra la página de un servicio. "Única" es la variante de un servicio sin
+ * opciones (D-2): no se muestra. La usan el sitio y el panel (para avisar si "Opciones" no se ve).
+ */
+export async function opcionesDelSitio(servicioId: number): Promise<{ nombre: string; descripcion: string | null }[]> {
+  const filas = await db
+    .select({ nombre: variante.nombre, descripcion: variante.descripcion })
+    .from(variante)
+    .where(and(eq(variante.servicioId, servicioId), eq(variante.activo, true)))
+    .orderBy(asc(variante.orden), asc(variante.id));
+  return filas.length === 1 && filas[0].nombre === "Única" ? [] : filas;
 }
 
 export type FotoDeSeccion = { descripcion: string; foto: UrlsFoto };

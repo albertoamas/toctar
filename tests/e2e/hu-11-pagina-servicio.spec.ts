@@ -145,6 +145,10 @@ test("cada sección de la página lleva su foto al lado, subida en su lugar del 
   for (const seccion of ["En qué consiste", "Cómo lo hacemos", "Opciones"]) {
     await expect(fotos.getByRole("button", { name: `Agregar foto: ${seccion}` })).toBeVisible();
   }
+  // Una sección sin contenido no sale en el sitio, y su foto tampoco: se avisa en su lugar
+  await expect(fotos.getByText("No se ve hasta que agregues pasos.")).toBeVisible();
+  await expect(fotos.getByText("No se ve: el servicio no tiene opciones en el catálogo.")).toBeVisible();
+  await expect(fotos.getByText("No se ve hasta que escribas la descripción.")).toHaveCount(0);
   const subir = async (seccion: string, descripcion: string) => {
     await fotos.getByRole("button", { name: `Agregar foto: ${seccion}` }).click();
     // El selector de archivos no se abre en la prueba: se carga el archivo en su campo

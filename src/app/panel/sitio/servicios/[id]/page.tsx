@@ -9,7 +9,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { FormularioServicio } from "@/modulos/sitio/componentes/formulario-servicio";
 import { FotoServicio } from "@/modulos/sitio/componentes/foto-servicio";
 import { FotosServicio } from "@/modulos/sitio/componentes/fotos-servicio";
-import { fotosDeSecciones, obtenerServicio } from "@/modulos/sitio/consultas";
+import { fotosDeSecciones, obtenerServicio, opcionesDelSitio } from "@/modulos/sitio/consultas";
 
 export const metadata: Metadata = { title: "Servicio" };
 
@@ -31,8 +31,14 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
   const { id } = await params;
   const numero = Number(id);
   if (!Number.isInteger(numero) || numero <= 0) notFound();
-  const [s, fotos] = await Promise.all([obtenerServicio(numero), fotosDeSecciones(numero)]);
+  const [s, fotos, opciones] = await Promise.all([obtenerServicio(numero), fotosDeSecciones(numero), opcionesDelSitio(numero)]);
   if (!s) notFound();
+  // Una sección sin contenido no sale en el sitio, y su foto tampoco: el panel lo avisa en su lugar
+  const sinContenido = {
+    descripcion: s.descripcion.trim() ? undefined : "No se ve hasta que escribas la descripción.",
+    proceso: s.pasos.length > 0 ? undefined : "No se ve hasta que agregues pasos.",
+    opciones: opciones.length > 0 ? undefined : "No se ve: el servicio no tiene opciones en el catálogo.",
+  };
 
   return (
     <>
@@ -63,7 +69,7 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
         />
         <aside className="flex flex-col gap-10">
           <FotoServicio servicioId={s.id} nombre={s.nombre} foto={s.foto} />
-          <FotosServicio servicioId={s.id} fotos={fotos} />
+          <FotosServicio servicioId={s.id} fotos={fotos} sinContenido={sinContenido} />
         </aside>
       </div>
     </>
