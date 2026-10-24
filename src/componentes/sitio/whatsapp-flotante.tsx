@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { XIcon } from "lucide-react";
 import { IconoWhatsApp } from "./iconos-marca";
 import { ATRIBUTO_PRINCIPAL } from "./whatsapp-comun";
@@ -10,16 +10,16 @@ import { ATRIBUTO_PRINCIPAL } from "./whatsapp-comun";
 // Aparece cuando ese botón sale de la pantalla, o enseguida si la página no tiene uno.
 // No hay versión sin JavaScript: el número llega en contenido transmitido, que el navegador inserta con JavaScript.
 // La nubecita (pedido de la demo del 24/10, registro de cambios 1): unos segundos después de aparecer el botón, sale a
-// su lado con una pregunta corta y el botón da un saltito, una sola vez. Se cierra con su X y no vuelve en la visita.
-// Su texto es parte del enlace: lo que se ve es lo que lee el lector de pantalla.
+// su lado con una pregunta corta (que también abre WhatsApp) y el botón da un saltito. Una sola vez por visita: al
+// salir queda anotada, y en las páginas siguientes ya no aparece. Se cierra con su X; el foco pasa al botón.
 
-/** Segundos de espera antes de la nubecita: que primero se vea la página. */
+/** Milisegundos de espera antes de la nubecita: que primero se vea la página. */
 const ESPERA_NUBE = 3000;
-const NUBE_CERRADA = "tt-whatsapp-nube-cerrada";
+const NUBE_VISTA = "tt-whatsapp-nube-vista";
 
-function nubeCerrada(): boolean {
+function nubeVista(): boolean {
   try {
-    return sessionStorage.getItem(NUBE_CERRADA) === "1";
+    return sessionStorage.getItem(NUBE_VISTA) === "1";
   } catch {
     return false;
   }
@@ -28,21 +28,26 @@ function nubeCerrada(): boolean {
 export function WhatsAppFlotante({ href }: { href: string }) {
   const [visible, setVisible] = useState(false);
   const [nube, setNube] = useState<"esperando" | "abierta" | "cerrada">("esperando");
+  const boton = useRef<HTMLAnchorElement>(null);
 
-  // La primera vez que aparece el botón, la nubecita sale después de la espera (si no se cerró antes en la visita)
+  // La primera vez que aparece el botón en la visita, la nubecita sale después de la espera
   useEffect(() => {
-    if (!visible || nube !== "esperando") return;
-    const reloj = setTimeout(() => setNube(nubeCerrada() ? "cerrada" : "abierta"), ESPERA_NUBE);
+    if (!visible || nube !== "esperando" || nubeVista()) return;
+    const reloj = setTimeout(() => {
+      setNube("abierta");
+      try {
+        sessionStorage.setItem(NUBE_VISTA, "1");
+      } catch {
+        // Sin almacenamiento (ventana privada): saldrá también en la página siguiente
+      }
+    }, ESPERA_NUBE);
     return () => clearTimeout(reloj);
   }, [visible, nube]);
 
   function cerrarNube() {
     setNube("cerrada");
-    try {
-      sessionStorage.setItem(NUBE_CERRADA, "1");
-    } catch {
-      // Sin almacenamiento (ventana privada): se cierra igual, solo en esta página
-    }
+    // El botón de cerrar desaparece: el foco no se pierde, pasa al de WhatsApp
+    boton.current?.focus();
   }
 
   useEffect(() => {
@@ -102,18 +107,19 @@ export function WhatsAppFlotante({ href }: { href: string }) {
   const abierta = nube === "abierta";
   return (
     <div className="tt-whatsapp-fijo" data-visible={visible} data-nube={abierta}>
-      <a href={href} target="_blank" rel="noreferrer" className="tt-whatsapp--fijo">
-        {abierta && <span className="tt-nube">¿Cotizamos tu vehículo?</span>}
-        <span className="tt-whatsapp">
-          <IconoWhatsApp />
-        </span>
-        <span className="sr-only">Escribir a TocTar por WhatsApp</span>
-      </a>
       {abierta && (
-        <button type="button" onClick={cerrarNube} aria-label="Cerrar el mensaje" className="tt-nube__cerrar">
-          <XIcon aria-hidden />
-        </button>
+        <div className="tt-nube">
+          <a href={href} target="_blank" rel="noreferrer" className="tt-nube__enlace">
+            ¿Cotizamos tu vehículo?
+          </a>
+          <button type="button" onClick={cerrarNube} aria-label="Cerrar el mensaje" className="tt-nube__cerrar">
+            <XIcon aria-hidden />
+          </button>
+        </div>
       )}
+      <a ref={boton} href={href} target="_blank" rel="noreferrer" aria-label="Escribir a TocTar por WhatsApp" className="tt-whatsapp tt-whatsapp--fijo">
+        <IconoWhatsApp />
+      </a>
     </div>
   );
 }

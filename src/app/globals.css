@@ -370,6 +370,11 @@
   }
   /* Botón fijo (whatsapp-flotante.tsx): el contenedor va fijo abajo a la derecha, con la nubecita a la izquierda. */
   .tt-whatsapp-fijo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    /* El hueco entre la nubecita y el botón no tapa la página: solo sus hijos reciben toques */
+    pointer-events: none;
     position: fixed;
     right: calc(16px + env(safe-area-inset-right, 0px));
     bottom: calc(16px + env(safe-area-inset-bottom, 0px));
@@ -394,13 +399,8 @@
       transform 180ms ease-out,
       visibility 0s;
   }
-  .tt-whatsapp--fijo {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-  .tt-whatsapp--fijo:hover .tt-whatsapp {
-    background: var(--rojo-presionado);
+  .tt-whatsapp-fijo > * {
+    pointer-events: auto;
   }
   /* El saltito: una sola vez, cuando sale la nubecita. */
   .tt-whatsapp-fijo[data-nube="true"] .tt-whatsapp {
@@ -411,15 +411,26 @@
      (equilátero) que apunta al botón. */
   .tt-nube {
     position: relative;
-    max-width: 13rem;
-    padding: 10px 14px;
     background: var(--blanco);
+    box-shadow: 0 0 0 2px var(--negro);
+    animation: tt-nube-entrar 220ms ease-out 1;
+  }
+  .tt-nube__enlace {
+    display: block;
+    padding: 10px 14px;
+    /* En un renglón: una pregunta corta (unos 190 px), entra junto al botón aun a 320 px */
+    white-space: nowrap;
     color: var(--negro);
     font-size: 0.875rem;
     line-height: 1.25rem;
     font-weight: 600;
-    box-shadow: 0 0 0 2px var(--negro);
-    animation: tt-nube-entrar 220ms ease-out 1;
+  }
+  .tt-nube__enlace:hover {
+    text-decoration: underline;
+  }
+  .tt-nube__enlace:focus-visible {
+    outline-color: var(--negro);
+    outline-offset: -4px;
   }
   .tt-nube::after {
     content: "";
@@ -432,7 +443,7 @@
     background: var(--blanco);
     clip-path: polygon(0 0, 100% 50%, 0 100%);
   }
-  /* Cerrar: un círculo negro en la esquina de la nubecita; el área que se toca mide 44 px. */
+  /* Cerrar: un círculo negro sobre la esquina de la nubecita; el área que se toca mide 44 px. */
   .tt-nube__cerrar {
     position: absolute;
     top: -12px;
