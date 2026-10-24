@@ -368,7 +368,8 @@
   .tt-whatsapp:hover {
     background: var(--rojo-presionado);
   }
-  .tt-whatsapp--fijo {
+  /* Botón fijo (whatsapp-flotante.tsx): el contenedor va fijo abajo a la derecha, con la nubecita a la izquierda. */
+  .tt-whatsapp-fijo {
     position: fixed;
     right: calc(16px + env(safe-area-inset-right, 0px));
     bottom: calc(16px + env(safe-area-inset-bottom, 0px));
@@ -378,12 +379,13 @@
     visibility: hidden;
     opacity: 0;
     transform: translateY(8px) scale(0.9);
+    transform-origin: bottom right;
     transition:
       opacity 180ms ease-out,
       transform 180ms ease-out,
       visibility 0s linear 180ms;
   }
-  .tt-whatsapp--fijo[data-visible="true"] {
+  .tt-whatsapp-fijo[data-visible="true"] {
     visibility: visible;
     opacity: 1;
     transform: none;
@@ -392,11 +394,76 @@
       transform 180ms ease-out,
       visibility 0s;
   }
+  .tt-whatsapp--fijo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .tt-whatsapp--fijo:hover .tt-whatsapp {
+    background: var(--rojo-presionado);
+  }
+  /* El saltito: una sola vez, cuando sale la nubecita. */
+  .tt-whatsapp-fijo[data-nube="true"] .tt-whatsapp {
+    animation: tt-saltito 700ms ease-out 1;
+  }
+
+  /* La nubecita: blanca sobre el sitio oscuro, esquinas rectas como la marca y la punta en un triángulo de 60°
+     (equilátero) que apunta al botón. */
+  .tt-nube {
+    position: relative;
+    max-width: 13rem;
+    padding: 10px 14px;
+    background: var(--blanco);
+    color: var(--negro);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 600;
+    box-shadow: 0 0 0 2px var(--negro);
+    animation: tt-nube-entrar 220ms ease-out 1;
+  }
+  .tt-nube::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: -9px;
+    width: 9px;
+    height: 10.4px;
+    translate: 0 -50%;
+    background: var(--blanco);
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+  }
+  /* Cerrar: un círculo negro en la esquina de la nubecita; el área que se toca mide 44 px. */
+  .tt-nube__cerrar {
+    position: absolute;
+    top: -12px;
+    left: -12px;
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 9999px;
+    background: var(--negro);
+    color: var(--blanco);
+    box-shadow: 0 0 0 2px var(--blanco);
+  }
+  .tt-nube__cerrar::before {
+    content: "";
+    position: absolute;
+    inset: -9px;
+  }
+  .tt-nube__cerrar svg {
+    width: 14px;
+    height: 14px;
+  }
   @media (prefers-reduced-motion: reduce) {
-    .tt-whatsapp--fijo,
-    .tt-whatsapp--fijo[data-visible="true"] {
+    .tt-whatsapp-fijo,
+    .tt-whatsapp-fijo[data-visible="true"] {
       transform: none;
       transition: none;
+    }
+    .tt-whatsapp-fijo[data-nube="true"] .tt-whatsapp,
+    .tt-nube {
+      animation: none;
     }
   }
 
@@ -543,6 +610,29 @@
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes tt-saltito {
+  0%,
+  100% {
+    transform: none;
+  }
+  30% {
+    transform: translateY(-10px);
+  }
+  55% {
+    transform: none;
+  }
+  75% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes tt-nube-entrar {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
   }
 }
 

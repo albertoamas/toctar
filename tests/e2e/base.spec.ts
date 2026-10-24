@@ -92,6 +92,24 @@ test("el botón fijo de WhatsApp se esconde mientras el principal está a la vis
   await expect(fijo).toBeVisible();
 });
 
+// Pedido de la demo del 24/10 (registro de cambios 1): la nubecita del botón fijo
+test("el botón fijo de WhatsApp muestra una nubecita que se cierra y no vuelve en la visita", async ({ page }) => {
+  await page.goto("/servicios");
+  const fijo = page.getByRole("link", { name: "Escribir a TocTar por WhatsApp" });
+  await expect(fijo).toBeVisible();
+  // Sale unos segundos después; su texto es parte del enlace
+  const nube = fijo.getByText("¿Cotizamos tu vehículo?");
+  await expect(nube).toBeVisible({ timeout: 6000 });
+  await expect(fijo).toHaveAccessibleName(/^¿Cotizamos tu vehículo\? ?Escribir a TocTar por WhatsApp$/);
+  // Se cierra, el botón queda, y en otra página de la misma visita no vuelve
+  await page.getByRole("button", { name: "Cerrar el mensaje" }).click();
+  await expect(nube).toHaveCount(0);
+  await expect(fijo).toBeVisible();
+  await page.goto("/nosotros");
+  await page.waitForTimeout(3500);
+  await expect(page.getByText("¿Cotizamos tu vehículo?")).toHaveCount(0);
+});
+
 // Pulido visual 1.4
 test("el panel no se sale de la pantalla en el celular y su menú queda a mano", async ({ page, isMobile }) => {
   await ingresarComoDueno(page);
