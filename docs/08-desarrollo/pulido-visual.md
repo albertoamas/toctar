@@ -137,7 +137,7 @@ El dueño vio el sitio en pruebas, con sus fotos: le gustó la estructura y pidi
 | 2B.3 | **TikTok:** "Mira nuestros trabajos en TikTok" en la Galería y en la portada, si el enlace está cargado. Un enlace a su perfil, sin videos incrustados (cargarían los rastreadores de TikTok y harían lento el celular) | `/galeria` y `/` | ✅ 24/10 (PR #80) |
 | 2B.4 | **Página de un servicio más simple:** beneficios con ícono (elegido de una lista fija en el panel), descripción corta, las opciones como escalones (estilo del afiche del nano cerámico, en los colores de la marca) | `/servicios/[slug]` y su edición en el panel | ✅ 24/10 (PR #81) |
 | 2B.5 | **Fotos propias de cada servicio:** varias fotos (o afiches) por servicio, con su editor en el panel (subir, ordenar, quitar), en una tira deslizable en su página. Lo que dice un afiche va también en texto en la página (Google y el lector de pantalla no leen la imagen) | `/servicios/[slug]` y el panel | ⏳ |
-| 2B.6 | **Repaso "menos es más":** el sitio entero con la vara del dueño: textos más cortos y más foto donde haya | sitio público | ⏳ |
+| 2B.6 | **Repaso "menos es más":** el sitio entero con la vara del dueño: textos más cortos y más foto donde haya. Hecho: en el celular, las listas de servicios (Servicios y la portada) sin el resumen cortado a la vista (foto, nombre y "Ver el servicio"; el lector de pantalla lo sigue leyendo); textos fijos más cortos (intro de Servicios y los cierres). Lo que escribe el dueño en el panel no se toca desde el código: se le sugiere acortar "Cómo trabajamos" de Nosotros y la presentación de la portada | sitio público | ✅ 24/10 (PR #82) |
 
 **Del afiche del nano cerámico** (ejemplo del dueño) se toma: la fila de beneficios con ícono, la escalera de años como opciones y la idea en una línea ("a más años, más gruesa la capa"). No se copia: los colores por año (azul, verde, naranja), los brillos ni el texto todo en mayúsculas, que rompen la marca y cuestan en el celular.
 
@@ -384,7 +384,7 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Cambios:**
   - El bloque de texto de la cabecera tiene el mismo alto mínimo cargando y cargado (24,5rem en el celular, 18,5rem en la computadora): un texto más corto ya no hace subir la página. Medido: diferencia 0 a 360, 412 y 1280 px.
   - El cierre usa el botón de WhatsApp principal (rojo): mientras se ve, el fijo se esconde.
-  - En el celular (menos de 640 px), `TarjetaServicio` pasa a fila compacta: foto de 7rem a la izquierda, título de 22 px, resumen de 2 renglones y "Ver el servicio". Toda la fila se toca y conserva el corte a 60°. La portada del celular bajó a 2975 px. Como es el mismo componente, la página Servicios también lo tiene (se revisa en 2.2).
+  - En el celular (menos de 640 px), `TarjetaServicio` pasa a fila compacta: foto de 7rem a la izquierda, título de 22 px, resumen de 2 renglones y "Ver el servicio" (desde el 24/10, sin el resumen a la vista: 2B.6). Toda la fila se toca y conserva el corte a 60°. La portada del celular bajó a 2975 px. Como es el mismo componente, la página Servicios también lo tiene (se revisa en 2.2).
 - **Descartado o pendiente:**
   - Mostrar solo 3 servicios en el celular: descartado. El cliente no se enteraría de los otros.
   - Riesgo que queda: si el dueño escribe una presentación más larga que la actual, el texto todavía empuja lo de abajo. El panel ya pide "dos o tres frases" (máximo 400 caracteres).

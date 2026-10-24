@@ -84,7 +84,7 @@ async function Contenido() {
       </section>
       <CierreWhatsApp
         titulo="¿Hablamos de tu vehículo?"
-        texto="Mándanos fotos o pasa por el taller: lo revisamos y te decimos qué conviene hacer."
+        texto="Mándanos fotos o pasa por el taller y te decimos qué conviene hacer."
         secundario={{ href: "/preguntas-frecuentes", texto: "Ver las preguntas frecuentes" }}
       />
     </>

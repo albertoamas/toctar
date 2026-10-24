@@ -69,8 +69,8 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
       </div>
 
       <CierreWhatsApp
-        titulo="¿Quieres saber cuánto sale en tu vehículo?"
-        texto="El precio depende del tamaño y del estado de tu vehículo. Escríbenos con una foto y te damos una cotización."
+        titulo="¿Cuánto sale en tu vehículo?"
+        texto="Mándanos fotos y te cotizamos."
         servicio={s.nombre}
       />
 
