@@ -1,7 +1,7 @@
 # C5 Cierre de la Entrega 2 — especificación
 
 - **Fase y semana:** C. Entrega 2 · se adelanta a la semana 2 (desde el 23 de octubre); en el plan era la semana 5, con margen en la 6 y la 7
-- **Estado:** aprobada (23 de octubre de 2026); en curso: §0, la reorganización del panel
+- **Estado:** aprobada (23 de octubre de 2026). §0 terminado el 24/10 (PR #74); sigue la HU-40
 - **Historias:** HU-39 Pantalla del día · HU-40 Plantillas de WhatsApp · HU-41 Fotos de órdenes a la galería (las tres deseables) · cierre: criterios de HU-19 a HU-38, capacitación y acta
 - **Base:**
   - Requisitos: RF-44, RF-51, RF-52; RNF-01, RNF-05, RNF-11, RNF-14.
@@ -45,6 +45,12 @@ Revisión de todas las rutas y flujos del panel (24 de octubre, aprobada por el 
    - **Limpieza:** sin ese caso, la marca `construido` ya no la usa nadie (todos los módulos tienen pantalla) y se quita.
 
 Pruebas: las E2E de HU-07, HU-10, HU-11 y HU-19/20 crean el servicio en el catálogo (el ayudante `crearServicioPublicado`), y el menú y el inicio se prueban con sus grupos.
+
+**Hecho el 24/10 (PR #74).** Además de los 6 puntos, salió de las revisiones:
+- **Barra lateral pulida con `frontend-design`:** cada enlace con el ícono de su módulo (el mismo del inicio, `ICONO_MODULO`), títulos de grupo en Barlow itálica, líneas entre bloques. En una pantalla baja se desplaza solo la lista.
+- **`enlaceTrabajo`:** el enlace a un trabajo dice "Ver la orden" o "Ver la reserva" y solo aparece si quien mira puede abrir esa pantalla. Lo usan la ficha del cliente y Saldos pendientes.
+- **Redirecciones** de las direcciones viejas (`/panel/configuracion/cotizaciones` y `/panel/sitio/servicios/nuevo`), en `next.config.ts`.
+- **Una sola función renueva lo que muestra un servicio** (`servicioCambiado`) y el tipo `Transaccion` vive en `src/db`.
 
 ## 1. Objetivo
 
