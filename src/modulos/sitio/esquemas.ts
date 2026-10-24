@@ -2,10 +2,11 @@ import { z } from "zod";
 import { DIRECCIONES } from "@/lib/orden";
 import { PATRON_SLUG } from "@/lib/slug";
 import { CLAVES_ICONO } from "./beneficios";
+import { CLAVES_SECCION } from "./secciones-foto";
 
 // Validación del contenido del sitio (B3): el mismo esquema en el formulario y en el servidor.
 
-export const LIMITES = { resumen: 160, descripcion: 2000, beneficios: 8, beneficio: 120, pasos: 10, tituloPaso: 60, detallePaso: 300, fotosServicio: 12 } as const;
+export const LIMITES = { resumen: 160, descripcion: 2000, beneficios: 8, beneficio: 120, pasos: 10, tituloPaso: 60, detallePaso: 300 } as const;
 
 const resumen = z
   .string()
@@ -81,5 +82,7 @@ const servicioGaleria = z.coerce.number({ error: "Elige el servicio." }).int().p
 export const esquemaGaleria = z.object({ servicioId: servicioGaleria, descripcion: descripcionGaleria });
 export const esquemaEditarGaleria = z.object({ id: z.coerce.number().int().positive(), servicioId: servicioGaleria, descripcion: descripcionGaleria });
 
-// Fotos propias de un servicio (pedido de la demo del 24/10): la descripción, como en la galería
-export const esquemaFotoServicio = z.object({ servicioId: z.coerce.number().int().positive(), descripcion: descripcionGaleria });
+// La foto de una sección de la página de un servicio (pedido de la demo del 24/10): la descripción, como en la galería
+const seccionFoto = z.enum(CLAVES_SECCION, "Esa sección no lleva foto.");
+export const esquemaFotoSeccion = z.object({ servicioId: z.coerce.number().int().positive(), seccion: seccionFoto, descripcion: descripcionGaleria });
+export const esquemaQuitarFotoSeccion = z.object({ servicioId: idRegistro, seccion: seccionFoto });

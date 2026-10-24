@@ -1,5 +1,5 @@
 {
-  "id": "afe7b65f-3202-418f-91e4-a41d457bee4c",
+  "id": "110f16f8-6121-49dd-b18f-655ac2ecdbe8",
   "prevId": "bf213ef9-1f88-4e31-b4b8-6b6e307fda34",
   "version": "7",
   "dialect": "postgresql",
@@ -1713,6 +1713,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "seccion": {
+          "name": "seccion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "archivo_id": {
           "name": "archivo_id",
           "type": "integer",
@@ -1722,12 +1728,6 @@
         "descripcion": {
           "name": "descripcion",
           "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "orden": {
-          "name": "orden",
-          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
@@ -1745,7 +1745,29 @@
           "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "servicio_foto_una_por_seccion": {
+          "name": "servicio_foto_una_por_seccion",
+          "columns": [
+            {
+              "expression": "servicio_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "seccion",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "servicio_foto_servicio_id_servicio_id_fk": {
           "name": "servicio_foto_servicio_id_servicio_id_fk",
@@ -1790,7 +1812,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "servicio_foto_seccion_valida": {
+          "name": "servicio_foto_seccion_valida",
+          "value": "\"servicio_foto\".\"seccion\" in ('descripcion', 'proceso', 'opciones')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.variante": {

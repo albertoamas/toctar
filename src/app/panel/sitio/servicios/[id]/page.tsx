@@ -9,7 +9,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { FormularioServicio } from "@/modulos/sitio/componentes/formulario-servicio";
 import { FotoServicio } from "@/modulos/sitio/componentes/foto-servicio";
 import { FotosServicio } from "@/modulos/sitio/componentes/fotos-servicio";
-import { fotosDeServicio, obtenerServicio } from "@/modulos/sitio/consultas";
+import { fotosDeSecciones, obtenerServicio } from "@/modulos/sitio/consultas";
 
 export const metadata: Metadata = { title: "Servicio" };
 
@@ -31,7 +31,7 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
   const { id } = await params;
   const numero = Number(id);
   if (!Number.isInteger(numero) || numero <= 0) notFound();
-  const [s, fotos] = await Promise.all([obtenerServicio(numero), fotosDeServicio(numero)]);
+  const [s, fotos] = await Promise.all([obtenerServicio(numero), fotosDeSecciones(numero)]);
   if (!s) notFound();
 
   return (

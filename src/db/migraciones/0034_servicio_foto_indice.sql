@@ -1,1 +1,0 @@
-CREATE INDEX "servicio_foto_servicio_orden" ON "servicio_foto" USING btree ("servicio_id","orden");

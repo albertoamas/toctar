@@ -1,6 +1,6 @@
 "use server";
 
-import { and, asc, count, eq, inArray, isNotNull, max, TransactionRollbackError } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, max, TransactionRollbackError } from "drizzle-orm";
 import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/db";
 import { contenidoPagina, faq, galeriaItem, servicio, servicioFoto } from "@/db/esquema";
@@ -11,7 +11,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { CLAVES_PAGINA, PAGINAS, PORTADA, datosDelFormulario, esquemaPagina, esquemaPregunta, type Pagina } from "./contenido";
 import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, listarGaleria, listarPreguntas, listarServicios, servicioEnSitio } from "./consultas";
 import { servicioCambiado } from "./servicio-cambiado";
-import { LIMITES, esquemaEditarGaleria, esquemaFotoServicio, esquemaGaleria, esquemaId, esquemaIdFormulario, esquemaMover, esquemaServicio, esquemaVisibilidad } from "./esquemas";
+import { esquemaEditarGaleria, esquemaFotoSeccion, esquemaGaleria, esquemaId, esquemaIdFormulario, esquemaMover, esquemaQuitarFotoSeccion, esquemaServicio, esquemaVisibilidad } from "./esquemas";
 
 // Servicios del sitio (HU-07, RF-11), textos (HU-08, RF-10) y galería (HU-09, RF-12). Entra el dueño o un encargado con el permiso "sitio".
 // Del servicio, aquí solo su página: el alta, el nombre y las variantes son del catálogo (catalogo/acciones.ts).
@@ -100,75 +100,62 @@ export async function quitarFotoServicio(datoId: number): Promise<EstadoFormular
   return { ok: true, mensaje: "Foto quitada. El sitio muestra la imagen de reemplazo." };
 }
 
-// Fotos propias de un servicio (pedido de la demo del 24/10): fotos o afiches que se ven en una tira en su página.
+// La foto al lado de cada sección de la página de un servicio (pedido de la demo del 24/10). Una por sección: subir otra
+// la reemplaza.
 
-const MAS_FOTOS = `Hasta ${LIMITES.fotosServicio} fotos por servicio. Quita una para subir otra.`;
-
-export async function subirFotoDeServicio(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+export async function subirFotoDeSeccion(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const autor = await exigirModulo("sitio");
-  const valores = { servicioId: String(datos.get("servicioId") ?? ""), descripcion: String(datos.get("descripcion") ?? "") };
-  const entrada = esquemaFotoServicio.safeParse(valores);
+  const valores = {
+    servicioId: String(datos.get("servicioId") ?? ""),
+    seccion: String(datos.get("seccion") ?? ""),
+    descripcion: String(datos.get("descripcion") ?? ""),
+  };
+  const entrada = esquemaFotoSeccion.safeParse(valores);
   if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
-  const { servicioId, descripcion } = entrada.data;
+  const { servicioId, seccion, descripcion } = entrada.data;
 
   const foto = await guardarFoto(datos.get("foto"), { carpeta: "servicios", miniatura: true, autorId: Number(autor.id) });
   if (!foto.ok) return { errores: { foto: foto.motivo === "vacia" ? "Elige una foto." : ERROR_FOTO }, valores };
 
-  // El límite y el orden se deciden con el servicio bloqueado: dos subidas a la vez no pasan de 12 ni repiten orden.
-  // Si no se guarda (límite, servicio que ya no está o un error), la foto subida se borra: no queda huérfana.
-  let mensaje: string | null;
+  // Con el servicio bloqueado: dos subidas a la misma sección no chocan. Si no se guarda, la foto subida se borra.
+  let resultado: { anterior: number | null } | null;
   try {
-    mensaje = await db.transaction(async (tx) => {
+    resultado = await db.transaction(async (tx) => {
       const [existe] = await tx.select({ id: servicio.id }).from(servicio).where(eq(servicio.id, servicioId)).for("update");
-      if (!existe) return "Ese servicio ya no existe.";
-      const [{ cantidad, ultimo }] = await tx
-        .select({ cantidad: count(), ultimo: max(servicioFoto.orden) })
-        .from(servicioFoto)
-        .where(eq(servicioFoto.servicioId, servicioId));
-      if (cantidad >= LIMITES.fotosServicio) return MAS_FOTOS;
-      await tx.insert(servicioFoto).values({ servicioId, archivoId: foto.archivoId, descripcion, orden: (ultimo ?? 0) + 1, createdBy: Number(autor.id) });
-      return null;
+      if (!existe) return null;
+      const donde = and(eq(servicioFoto.servicioId, servicioId), eq(servicioFoto.seccion, seccion));
+      const [anterior] = await tx.select({ archivoId: servicioFoto.archivoId }).from(servicioFoto).where(donde);
+      if (anterior) await tx.update(servicioFoto).set({ archivoId: foto.archivoId, descripcion, createdBy: Number(autor.id) }).where(donde);
+      else await tx.insert(servicioFoto).values({ servicioId, seccion, archivoId: foto.archivoId, descripcion, createdBy: Number(autor.id) });
+      return { anterior: anterior?.archivoId ?? null };
     });
   } catch (error) {
     await eliminarFoto(foto.archivoId);
     throw error;
   }
-  if (mensaje) {
+  if (!resultado) {
     await eliminarFoto(foto.archivoId);
-    return { mensaje };
+    return { mensaje: "Ese servicio ya no existe." };
   }
 
   servicioCambiado(servicioId);
+  // La que había en esa sección se borra después: ningún otro registro la usa
+  if (resultado.anterior) await eliminarFoto(resultado.anterior);
   return { ok: true, mensaje: "Foto guardada." };
 }
 
-export async function moverFotoDeServicio(datos: { id: number; direccion: Direccion }): Promise<EstadoFormulario> {
+export async function quitarFotoDeSeccion(datos: { servicioId: number; seccion: string }): Promise<EstadoFormulario> {
   await exigirModulo("sitio");
-  const entrada = esquemaMover.safeParse(datos);
-  if (!entrada.success) return { mensaje: "No se pudo mover." };
-  const [fila] = await db.select({ servicioId: servicioFoto.servicioId }).from(servicioFoto).where(eq(servicioFoto.id, entrada.data.id));
-  if (!fila) return { mensaje: "Esa foto ya no existe. Recarga la página." };
-  const items = (
-    await db.select({ id: servicioFoto.id, orden: servicioFoto.orden }).from(servicioFoto).where(eq(servicioFoto.servicioId, fila.servicioId)).orderBy(asc(servicioFoto.orden), asc(servicioFoto.id))
-  ).map((f) => ({ ...f, activo: true }));
-  const nuevoOrden = reordenar(items, entrada.data.id, entrada.data.direccion);
-  if (!nuevoOrden) return { ok: true };
-  await db.transaction(async (tx) => {
-    for (const o of nuevoOrden) await tx.update(servicioFoto).set({ orden: o.orden }).where(eq(servicioFoto.id, o.id));
-  });
-  servicioCambiado(fila.servicioId);
-  return { ok: true };
-}
-
-/** Se borra también del almacenamiento: ningún otro registro la usa. */
-export async function quitarFotoDeServicio(datoId: number): Promise<EstadoFormulario> {
-  await exigirModulo("sitio");
-  const entrada = esquemaId.safeParse(datoId);
+  const entrada = esquemaQuitarFotoSeccion.safeParse(datos);
   if (!entrada.success) return { mensaje: "Esa foto ya no existe. Recarga la página." };
-  const [fila] = await db.delete(servicioFoto).where(eq(servicioFoto.id, entrada.data)).returning();
+  const { servicioId, seccion } = entrada.data;
+  const [fila] = await db
+    .delete(servicioFoto)
+    .where(and(eq(servicioFoto.servicioId, servicioId), eq(servicioFoto.seccion, seccion)))
+    .returning();
   if (!fila) return { mensaje: "Esa foto ya no existe. Recarga la página." };
   // Primero sale del sitio; después se borra el archivo (si el almacenamiento falla, la foto ya no se ve)
-  servicioCambiado(fila.servicioId);
+  servicioCambiado(servicioId);
   await eliminarFoto(fila.archivoId);
   return { ok: true, mensaje: "Foto quitada." };
 }

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, check, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { usuario } from "./acceso";
 import { archivo } from "./configuracion";
 
@@ -46,8 +46,8 @@ export const servicio = pgTable(
 );
 
 /**
- * Fotos propias de un servicio (pedido de la demo del 24/10): fotos o afiches que se ven en una tira en su página,
- * además de la foto principal y de la galería. La descripción es su texto alternativo (RNF-14).
+ * La foto al lado de una sección de la página de un servicio (pedido de la demo del 24/10): "En qué consiste", "Cómo
+ * lo hacemos" u "Opciones" (`SECCIONES_FOTO`). Una por sección. La descripción es su texto alternativo (RNF-14).
  */
 export const servicioFoto = pgTable(
   "servicio_foto",
@@ -56,16 +56,18 @@ export const servicioFoto = pgTable(
     servicioId: integer("servicio_id")
       .notNull()
       .references(() => servicio.id),
+    seccion: text("seccion").notNull(),
     archivoId: integer("archivo_id")
       .notNull()
       .references(() => archivo.id),
     descripcion: text("descripcion").notNull(),
-    orden: integer("orden").notNull(),
     createdAt: momento("created_at").defaultNow().notNull(),
     createdBy: integer("created_by").references(() => usuario.id),
   },
-  // Cada lectura es "las fotos de este servicio, en orden"
-  (t) => [index("servicio_foto_servicio_orden").on(t.servicioId, t.orden)],
+  (t) => [
+    uniqueIndex("servicio_foto_una_por_seccion").on(t.servicioId, t.seccion),
+    check("servicio_foto_seccion_valida", sql`${t.seccion} in ('descripcion', 'proceso', 'opciones')`),
+  ],
 );
 
 /** Opciones de un servicio (D-2: al menos una; "Única" si no hay opciones). Sus precios están en `precio` (catalogo.ts). */

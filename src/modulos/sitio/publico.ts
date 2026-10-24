@@ -6,7 +6,7 @@ import { db } from "@/db";
 import { archivo, contenidoPagina, faq, galeriaItem, servicio, variante, type Beneficio, type Paso } from "@/db/esquema";
 import { urlsFoto, type UrlsFoto } from "@/lib/fotos";
 import { leerContenido, type ContenidoPagina, type Pagina } from "./contenido";
-import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, ETIQUETA_SERVICIOS, fotosDeServicio, obtenerFotoPortada, type FotoDeServicio } from "./consultas";
+import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, ETIQUETA_SERVICIOS, fotosDeSecciones, obtenerFotoPortada, type FotosDeSecciones } from "./consultas";
 
 // Lecturas del sitio público (B4). Van en caché hasta que el panel guarda un cambio: las acciones
 // de B3 invalidan estas etiquetas (updateTag). Solo devuelven lo visible.
@@ -70,8 +70,8 @@ export type DetalleServicioPublico = ServicioPublico & {
   /** Las opciones van de menor a mayor: se ven como escalones. */
   opcionesEnEscalera: boolean;
   variantes: { nombre: string; descripcion: string | null }[];
-  /** Sus fotos o afiches propios (tira de su página). */
-  fotosPropias: FotoDeServicio[];
+  /** La foto al lado de cada sección, si tiene. */
+  fotosSecciones: FotosDeSecciones;
   fotos: FotoGaleria[];
 };
 
@@ -92,7 +92,7 @@ export async function servicioPublico(slug: string): Promise<DetalleServicioPubl
     .from(variante)
     .where(and(eq(variante.servicioId, s.id), eq(variante.activo, true)))
     .orderBy(asc(variante.orden), asc(variante.id));
-  const [fotos, fotosPropias] = await Promise.all([galeriaPublica().then((g) => g.filter((f) => f.servicio.slug === s.slug)), fotosDeServicio(s.id)]);
+  const [fotos, fotosSecciones] = await Promise.all([galeriaPublica().then((g) => g.filter((f) => f.servicio.slug === s.slug)), fotosDeSecciones(s.id)]);
   return {
     id: s.id,
     nombre: s.nombre,
@@ -105,7 +105,7 @@ export async function servicioPublico(slug: string): Promise<DetalleServicioPubl
     opcionesEnEscalera: s.opcionesEnEscalera,
     // "Única" es la variante de un servicio sin opciones (D-2): no se muestra como opción.
     variantes: variantes.length === 1 && variantes[0].nombre === "Única" ? [] : variantes,
-    fotosPropias,
+    fotosSecciones,
     fotos,
   };
 }

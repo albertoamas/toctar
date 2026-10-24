@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { archivo, contenidoPagina, faq, galeriaItem, servicio, servicioFoto, type Beneficio, type Paso } from "@/db/esquema";
 import { urlsFoto, type UrlsFoto } from "@/lib/fotos";
 import { CLAVES_PAGINA, PORTADA, leerContenido, type ContenidoPagina, type Pagina } from "./contenido";
+import type { SeccionFoto } from "./secciones-foto";
 
 // Lecturas del módulo Sitio web para el panel. Quien las llama ya pasó por exigirModulo("sitio").
 // Las lecturas para el sitio público (en caché, etiquetas "servicios", "contenido" y "galeria") se agregan en B4.
@@ -71,17 +72,17 @@ export async function obtenerServicio(id: number): Promise<DetalleServicio | nul
   };
 }
 
-export type FotoDeServicio = { id: number; descripcion: string; foto: UrlsFoto };
+export type FotoDeSeccion = { descripcion: string; foto: UrlsFoto };
+export type FotosDeSecciones = Partial<Record<SeccionFoto, FotoDeSeccion>>;
 
-/** Fotos propias de un servicio, en su orden (pedido de la demo del 24/10). Las usan el panel y su página pública. */
-export async function fotosDeServicio(servicioId: number): Promise<FotoDeServicio[]> {
+/** Las fotos al lado de las secciones de la página de un servicio (pedido de la demo del 24/10). Panel y sitio. */
+export async function fotosDeSecciones(servicioId: number): Promise<FotosDeSecciones> {
   const filas = await db
-    .select({ id: servicioFoto.id, descripcion: servicioFoto.descripcion, archivo })
+    .select({ seccion: servicioFoto.seccion, descripcion: servicioFoto.descripcion, archivo })
     .from(servicioFoto)
     .innerJoin(archivo, eq(servicioFoto.archivoId, archivo.id))
-    .where(eq(servicioFoto.servicioId, servicioId))
-    .orderBy(asc(servicioFoto.orden), asc(servicioFoto.id));
-  return filas.map((f) => ({ id: f.id, descripcion: f.descripcion, foto: urlsFoto(f.archivo) }));
+    .where(eq(servicioFoto.servicioId, servicioId));
+  return Object.fromEntries(filas.map((f) => [f.seccion, { descripcion: f.descripcion, foto: urlsFoto(f.archivo) }]));
 }
 
 /**

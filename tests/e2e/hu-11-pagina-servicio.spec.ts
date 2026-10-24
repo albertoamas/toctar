@@ -127,47 +127,62 @@ test("en la página de un servicio, volver a Servicios es lo primero y se toca c
   expect(caja.y + caja.height).toBeLessThanOrEqual(Math.min(foto.y, titulo.y));
 });
 
-// Pedido de la demo del 24/10: fotos o afiches propios del servicio, en una tira que se amplía
-test("las fotos propias del servicio se suben en el panel y se ven en una tira que se amplía", async ({ page }, info) => {
+// Pedido de la demo del 24/10: una foto al lado de cada sección de la página ("En qué consiste", "Cómo lo hacemos",
+// "Opciones"), subida en el panel en su lugar vacío; se toca para verla en grande
+test("cada sección de la página lleva su foto al lado, subida en su lugar del panel", async ({ page }, info) => {
   test.setTimeout(60_000);
   await ingresarComoDueno(page);
   const { id, slug } = await crearServicioPublicado(page, `Servicio con fotos ${info.project.name}`);
-  await page.goto(`/panel/sitio/servicios/${id}`);
-  const lista = page.getByRole("list", { name: "Fotos del servicio" });
-  // Lugares vacíos para subir
-  await expect(lista.getByRole("button", { name: "Agregar una foto" })).toHaveCount(4);
-  for (const descripcion of ["Afiche de las opciones", "El vehículo terminado"]) {
-    await expect(lista.getByRole("button", { name: "Agregar una foto" }).first()).toBeEnabled();
-    await page.getByLabel("Archivo de otra foto del servicio").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
-    const nueva = page.getByRole("form", { name: "Nueva foto" });
+  // Recargada: el aviso del guardado anterior ya no está y el formulario no se reinicia bajo lo que se escribe
+  await page.reload();
+  await page.getByLabel("Descripción", { exact: true }).fill("Así lo hacemos.");
+  await page.getByRole("button", { name: "Guardar cambios" }).click();
+  await expect(page.getByText("Cambios guardados.")).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel("Descripción", { exact: true })).toHaveValue("Así lo hacemos.");
+  const fotos = page.getByRole("region", { name: "Fotos de la página" });
+  // Un lugar vacío por sección
+  for (const seccion of ["En qué consiste", "Cómo lo hacemos", "Opciones"]) {
+    await expect(fotos.getByRole("button", { name: `Agregar foto: ${seccion}` })).toBeVisible();
+  }
+  const subir = async (seccion: string, descripcion: string) => {
+    await fotos.getByRole("button", { name: `Agregar foto: ${seccion}` }).click();
+    // El selector de archivos no se abre en la prueba: se carga el archivo en su campo
+    await page.getByLabel("Archivo para una sección").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
+    const nueva = page.getByRole("form", { name: `Nueva foto: ${seccion}` });
     await nueva.getByLabel("Descripción").fill(descripcion);
     await nueva.getByRole("button", { name: "Guardar foto" }).click();
-    await expect(lista.getByRole("img", { name: descripcion })).toBeVisible();
-  }
+    await expect(fotos.getByRole("img", { name: descripcion })).toBeVisible();
+  };
   // Sin descripción no se guarda
-  await page.getByLabel("Archivo de otra foto del servicio").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
-  await page.getByRole("form", { name: "Nueva foto" }).getByRole("button", { name: "Guardar foto" }).click();
+  await fotos.getByRole("button", { name: "Agregar foto: En qué consiste" }).click();
+  await page.getByLabel("Archivo para una sección").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
+  await page.getByRole("form", { name: "Nueva foto: En qué consiste" }).getByRole("button", { name: "Guardar foto" }).click();
   await expect(page.getByText("Escribe una descripción corta: también la leen los buscadores.")).toBeVisible();
-  await page.getByRole("form", { name: "Nueva foto" }).getByRole("button", { name: "Cancelar" }).click();
-  // El terminado pasa adelante
-  await page.getByRole("button", { name: "Subir: El vehículo terminado" }).click();
-  await expect(lista.getByRole("img").first()).toHaveAttribute("alt", "El vehículo terminado");
+  await page.getByRole("form", { name: "Nueva foto: En qué consiste" }).getByRole("button", { name: "Cancelar" }).click();
+  await subir("En qué consiste", "El vehículo terminado");
 
-  // En el sitio, en ese orden; al tocar una se ve en grande
+  // En el sitio, al lado de su sección; se amplía al tocarla
   await page.goto(`/servicios/${slug}`);
-  const tira = page.getByRole("region", { name: "Fotos del servicio" });
-  await expect(tira.getByRole("button", { name: /^Ampliar:/ })).toHaveText(["", ""]);
-  await expect(tira.getByRole("button").first()).toHaveAccessibleName("Ampliar: El vehículo terminado");
-  await tira.getByRole("button", { name: "Ampliar: Afiche de las opciones" }).click();
-  const visor = page.getByRole("dialog", { name: "Afiche de las opciones" });
-  await expect(visor.getByRole("img", { name: "Afiche de las opciones" })).toHaveAttribute("src", /servicios\/[\w-]+\.webp$/);
+  const seccion = page.getByRole("region", { name: "En qué consiste" });
+  await seccion.getByRole("button", { name: "Ampliar: El vehículo terminado" }).click();
+  const visor = page.getByRole("dialog", { name: "El vehículo terminado" });
+  await expect(visor.getByRole("img", { name: "El vehículo terminado" })).toHaveAttribute("src", /servicios\/[\w-]+\.webp$/);
   await page.keyboard.press("Escape");
   await expect(visor).toHaveCount(0);
 
-  // Quitada en el panel, deja el sitio
+  // Se cambia por otra y se quita; sin foto, la sección queda solo con su texto
   await page.goto(`/panel/sitio/servicios/${id}`);
-  await page.getByRole("button", { name: "Quitar: Afiche de las opciones" }).click();
-  await expect(lista.getByRole("img", { name: "Afiche de las opciones" })).toHaveCount(0);
+  await fotos.getByRole("button", { name: "Cambiar la foto: En qué consiste" }).click();
+  await page.getByLabel("Archivo para una sección").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
+  const cambio = page.getByRole("form", { name: "Nueva foto: En qué consiste" });
+  await cambio.getByLabel("Descripción").fill("El interior terminado");
+  await cambio.getByRole("button", { name: "Guardar foto" }).click();
+  await expect(fotos.getByRole("img", { name: "El interior terminado" })).toBeVisible();
+  await expect(fotos.getByRole("img", { name: "El vehículo terminado" })).toHaveCount(0);
+  await fotos.getByRole("button", { name: "Quitar la foto: En qué consiste" }).click();
+  await expect(fotos.getByRole("button", { name: "Agregar foto: En qué consiste" })).toBeVisible();
   await page.goto(`/servicios/${slug}`);
-  await expect(tira.getByRole("button")).toHaveCount(1);
+  await expect(page.getByRole("region", { name: "En qué consiste" })).toContainText("Así lo hacemos.");
+  await expect(page.getByRole("region", { name: "En qué consiste" }).getByRole("button")).toHaveCount(0);
 });

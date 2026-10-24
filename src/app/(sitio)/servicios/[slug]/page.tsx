@@ -8,7 +8,7 @@ import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { FotoOReemplazo } from "@/componentes/sitio/foto-o-reemplazo";
 import { IconoBeneficio } from "@/componentes/sitio/icono-beneficio";
-import { TiraFotos } from "@/componentes/sitio/tira-fotos";
+import { FotoAmpliable } from "@/componentes/sitio/foto-ampliable";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import { servicioPublico, type DetalleServicioPublico } from "@/modulos/sitio/publico";
 
@@ -63,16 +63,10 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
 
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pb-12 md:gap-24 md:pb-24">
         {s.beneficios.length > 0 && <Beneficios beneficios={s.beneficios} />}
-        {s.fotosPropias.length > 0 && (
-          // Sus fotos o afiches (pedido de la demo del 24/10): más imagen que texto
-          <section aria-labelledby="fotos-propias-titulo">
-            <h2 id="fotos-propias-titulo" className="sr-only">Fotos del servicio</h2>
-            <TiraFotos fotos={s.fotosPropias} />
-          </section>
-        )}
-        {s.descripcion && <Descripcion descripcion={s.descripcion} />}
-        {s.pasos.length > 0 && <Proceso pasos={s.pasos} />}
-        {s.variantes.length > 0 && <Variantes variantes={s.variantes} escalera={s.opcionesEnEscalera} />}
+        {/* Cada sección con su foto al lado, si tiene (pedido de la demo del 24/10), alternando de lado */}
+        {s.descripcion && <Descripcion descripcion={s.descripcion} foto={s.fotosSecciones.descripcion} />}
+        {s.pasos.length > 0 && <Proceso pasos={s.pasos} foto={s.fotosSecciones.proceso} />}
+        {s.variantes.length > 0 && <Variantes variantes={s.variantes} escalera={s.opcionesEnEscalera} foto={s.fotosSecciones.opciones} />}
         {s.fotos.length > 0 && <Fotos servicio={s} />}
       </div>
 
@@ -110,35 +104,61 @@ function Beneficios({ beneficios }: { beneficios: DetalleServicioPublico["benefi
   );
 }
 
-function Descripcion({ descripcion }: { descripcion: string }) {
+type FotoSeccion = DetalleServicioPublico["fotosSecciones"][keyof DetalleServicioPublico["fotosSecciones"]];
+
+/**
+ * Una sección con su foto al lado, si tiene (pedido de la demo del 24/10): en la computadora, dos columnas, la foto a
+ * la derecha o a la izquierda (se alternan para que la página no sea una sola columna de texto); en el celular, la foto
+ * debajo del texto. Sin foto, solo el contenido.
+ */
+function ConFoto({ foto, lado, children }: { foto?: FotoSeccion; lado: "derecha" | "izquierda"; children: React.ReactNode }) {
+  if (!foto) return children;
+  return (
+    <div className="grid gap-8 md:grid-cols-2 md:items-center md:gap-12">
+      <div className="flex min-w-0 flex-col gap-6">{children}</div>
+      <div className={lado === "izquierda" ? "md:order-first" : undefined}>
+        <FotoAmpliable foto={foto.foto} descripcion={foto.descripcion} />
+      </div>
+    </div>
+  );
+}
+
+function Descripcion({ descripcion, foto }: { descripcion: string; foto?: FotoSeccion }) {
   return (
     <section aria-labelledby="descripcion-titulo" className="flex flex-col gap-4">
-      <h2 id="descripcion-titulo" className={TITULO_SECCION}>En qué consiste</h2>
-      {descripcion
-        .split(/\n\s*\n/)
-        .filter(Boolean)
-        .map((parrafo, i) => (
-          <p key={i} className="max-w-prose leading-relaxed whitespace-pre-line text-tinta-suave">{parrafo}</p>
-        ))}
+      <ConFoto foto={foto} lado="derecha">
+        <div className="flex flex-col gap-4">
+          <h2 id="descripcion-titulo" className={TITULO_SECCION}>En qué consiste</h2>
+          {descripcion
+            .split(/\n\s*\n/)
+            .filter(Boolean)
+            .map((parrafo, i) => (
+              <p key={i} className="max-w-prose leading-relaxed whitespace-pre-line text-tinta-suave">{parrafo}</p>
+            ))}
+        </div>
+      </ConFoto>
     </section>
   );
 }
 
-function Proceso({ pasos }: { pasos: DetalleServicioPublico["pasos"] }) {
+function Proceso({ pasos, foto }: { pasos: DetalleServicioPublico["pasos"]; foto?: FotoSeccion }) {
   return (
     <section aria-labelledby="proceso-titulo" className="flex flex-col gap-8">
-      <h2 id="proceso-titulo" className={TITULO_SECCION}>Cómo lo hacemos</h2>
-      <ol className="grid gap-x-10 gap-y-8 md:grid-cols-2 lg:grid-cols-3">
-        {pasos.map((p, i) => (
-          <li key={i} className="flex gap-4 border-t border-border pt-4">
-            <span aria-hidden className="font-heading text-[40px] leading-none font-extrabold text-rojo italic">{i + 1}</span>
-            <div className="flex flex-col gap-1">
-              <h3 className="font-semibold">{p.titulo}</h3>
-              {p.detalle && <p className="text-sm leading-[22px] text-tinta-suave">{p.detalle}</p>}
-            </div>
-          </li>
-        ))}
-      </ol>
+      <ConFoto foto={foto} lado="izquierda">
+        <h2 id="proceso-titulo" className={TITULO_SECCION}>Cómo lo hacemos</h2>
+        {/* Con foto al lado, los pasos van en una sola columna */}
+        <ol className={foto ? "grid gap-y-6" : "grid gap-x-10 gap-y-8 md:grid-cols-2 lg:grid-cols-3"}>
+          {pasos.map((p, i) => (
+            <li key={i} className="flex gap-4 border-t border-border pt-4">
+              <span aria-hidden className="font-heading text-[40px] leading-none font-extrabold text-rojo italic">{i + 1}</span>
+              <div className="flex flex-col gap-1">
+                <h3 className="font-semibold">{p.titulo}</h3>
+                {p.detalle && <p className="text-sm leading-[22px] text-tinta-suave">{p.detalle}</p>}
+              </div>
+            </li>
+          ))}
+        </ol>
+      </ConFoto>
     </section>
   );
 }
@@ -150,37 +170,39 @@ function Proceso({ pasos }: { pasos: DetalleServicioPublico["pasos"] }) {
  * Si no, recuadros: si alguna tiene descripción, todas van del mismo ancho (si no, la que tiene texto quedaba ancha y
  * las demás chicas, en renglones disparejos, pulido 2.3).
  */
-function Variantes({ variantes, escalera }: { variantes: DetalleServicioPublico["variantes"]; escalera: boolean }) {
+function Variantes({ variantes, escalera, foto }: { variantes: DetalleServicioPublico["variantes"]; escalera: boolean; foto?: FotoSeccion }) {
   const conDescripcion = variantes.some((v) => v.descripcion);
   const ultimo = Math.max(variantes.length - 1, 1);
   return (
     <section aria-labelledby="variantes-titulo" className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <h2 id="variantes-titulo" className={TITULO_SECCION}>Opciones</h2>
-        <p className="max-w-xl text-tinta-suave">{escalera && "De menor a mayor. "}Te ayudamos a elegir la que conviene a tu vehículo.</p>
-      </div>
-      {escalera ? (
-        <ol className="grid gap-4 md:grid-flow-col md:auto-cols-fr md:items-end md:gap-3">
-          {variantes.map((v, i) => (
-            <li key={i} className="tt-escalon" style={{ "--paso": i / ultimo } as React.CSSProperties}>
-              <span className="flex flex-col gap-1">
-                <span className="font-heading text-2xl leading-7 font-bold italic">{v.nombre}</span>
+      <ConFoto foto={foto} lado="derecha">
+        <div className="flex flex-col gap-2">
+          <h2 id="variantes-titulo" className={TITULO_SECCION}>Opciones</h2>
+          <p className="max-w-xl text-tinta-suave">{escalera && "De menor a mayor. "}Te ayudamos a elegir la que conviene a tu vehículo.</p>
+        </div>
+        {escalera ? (
+          <ol className="grid gap-4 md:grid-flow-col md:auto-cols-fr md:items-end md:gap-3">
+            {variantes.map((v, i) => (
+              <li key={i} className="tt-escalon" style={{ "--paso": i / ultimo } as React.CSSProperties}>
+                <span className="flex flex-col gap-1">
+                  <span className="font-heading text-2xl leading-7 font-bold italic">{v.nombre}</span>
+                  {v.descripcion && <span className="text-sm text-tinta-suave">{v.descripcion}</span>}
+                </span>
+                <span aria-hidden className="tt-escalon__capa" />
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <ul className={conDescripcion && !foto ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3" : "flex flex-wrap gap-3"}>
+            {variantes.map((v, i) => (
+              <li key={i} className="flex min-w-36 flex-col gap-1 border border-border px-4 py-3">
+                <span className="font-heading text-2xl font-bold italic">{v.nombre}</span>
                 {v.descripcion && <span className="text-sm text-tinta-suave">{v.descripcion}</span>}
-              </span>
-              <span aria-hidden className="tt-escalon__capa" />
-            </li>
-          ))}
-        </ol>
-      ) : (
-        <ul className={conDescripcion ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3" : "flex flex-wrap gap-3"}>
-          {variantes.map((v, i) => (
-            <li key={i} className="flex min-w-36 flex-col gap-1 border border-border px-4 py-3">
-              <span className="font-heading text-2xl font-bold italic">{v.nombre}</span>
-              {v.descripcion && <span className="text-sm text-tinta-suave">{v.descripcion}</span>}
-            </li>
-          ))}
-        </ul>
-      )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </ConFoto>
     </section>
   );
 }
