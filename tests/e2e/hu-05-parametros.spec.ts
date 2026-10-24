@@ -30,6 +30,10 @@ test("los parámetros vacíos o negativos muestran el error y no se guardan", as
 
   await page.reload();
   await expect(page.getByLabel("Adelanto sugerido")).not.toHaveValue("-5");
+
+  // La dirección de antes de la reorganización (C5 §0) lleva a la nueva
+  await page.goto("/panel/configuracion/cotizaciones");
+  await expect(page).toHaveURL(/\/panel\/configuracion\/parametros$/);
 });
 
 test("el dueño cambia el adelanto y los textos del PDF, y quedan guardados", async ({ page }, info) => {

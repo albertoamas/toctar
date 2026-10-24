@@ -62,6 +62,10 @@ test("las variantes se agregan, renombran y desactivan en el catálogo; una nuev
   await expect(page.getByRole("list", { name: "Servicios del catálogo" }).getByRole("link", { name: /Pulido y nano cerámico/ })).toContainText("5 variantes");
 
   await page.getByRole("link", { name: "Agregar servicio" }).click();
+  await expect(page).toHaveURL(/\/panel\/catalogo\/nuevo$/);
+  // La dirección de antes de la reorganización (C5 §0) lleva a la misma pantalla
+  await page.goto("/panel/sitio/servicios/nuevo");
+  await expect(page).toHaveURL(/\/panel\/catalogo\/nuevo$/);
   await page.getByLabel("Nombre del servicio").fill(`Variantes de prueba ${sufijo(info)}`);
   await page.getByRole("button", { name: "Crear servicio" }).click();
   await expect(page.getByText("Servicio creado.")).toBeVisible();
