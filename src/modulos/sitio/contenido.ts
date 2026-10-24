@@ -44,8 +44,39 @@ export const PAGINAS = {
 export type Pagina = keyof typeof PAGINAS;
 export const CLAVES_PAGINA = Object.keys(PAGINAS) as Pagina[];
 
-/** La única página con foto: la portada lleva la foto del taller detrás del lema (`contenido_pagina.foto_archivo_id`). */
 export const PORTADA = "inicio" satisfies Pagina;
+
+/**
+ * Las páginas con foto (`contenido_pagina.foto_archivo_id`): la portada lleva la foto del taller detrás del lema (HU-08),
+ * y Nosotros la del equipo al lado de la historia (pedido de YankoSoft del 24/10). Sus textos en el panel.
+ */
+export const FOTOS_DE_PAGINA = {
+  inicio: {
+    titulo: "Foto del taller",
+    ayuda: "Va detrás del lema, oscurecida para que se lea el texto. Horizontal y con buena luz.",
+    vacia: "Sin foto: detrás del lema queda el fondo negro.",
+    quitada: "Foto quitada. Detrás del lema queda el fondo negro.",
+    alt: "Foto del taller",
+    carpeta: "portada",
+  },
+  nosotros: {
+    titulo: "Foto del equipo",
+    ayuda: "Va al lado de la historia (en el celular, debajo). Mejor horizontal.",
+    vacia: "Sin foto: la historia va sola.",
+    quitada: "Foto quitada. La historia va sola.",
+    alt: "El equipo de TocTar",
+    carpeta: "nosotros",
+  },
+} as const satisfies Partial<Record<Pagina, { titulo: string; ayuda: string; vacia: string; quitada: string; alt: string; carpeta: string }>>;
+
+export type PaginaConFoto = keyof typeof FOTOS_DE_PAGINA;
+export const PAGINAS_CON_FOTO = Object.keys(FOTOS_DE_PAGINA) as [PaginaConFoto, ...PaginaConFoto[]];
+/** Las acciones de la foto reciben la página suelta: se valida (cualquiera puede llamarlas). */
+export const esquemaPaginaConFoto = z.enum(PAGINAS_CON_FOTO);
+
+export function llevaFoto(pagina: Pagina): pagina is PaginaConFoto {
+  return Object.hasOwn(FOTOS_DE_PAGINA, pagina);
+}
 
 function esquemaCampo(c: CampoContenido) {
   const texto = z.string().trim().min(1, c.vacio).max(c.max, `Hasta ${c.max} caracteres.`);

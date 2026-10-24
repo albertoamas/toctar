@@ -128,7 +128,7 @@ Antes de la demo del viernes 23.
 | 2.10 | Sin conexión | `public/sin-conexion.html` | ✅ 18/10 |
 
 ### 2B. Pedidos de la demo del 24/10
-El dueño vio el sitio en pruebas, con sus fotos: le gustó la estructura y pidió un sitio más simple ("para tontos": menos es más), con más imágenes. Se hacen antes de la HU-40, uno por uno, cada uno con su PR. Alcance y horas: `03-cierre-comercial/registro-de-cambios.md`, pedidos 1 a 8.
+El dueño vio el sitio en pruebas, con sus fotos: le gustó la estructura y pidió un sitio más simple ("para tontos": menos es más), con más imágenes. Se hacen antes de la HU-40, uno por uno, cada uno con su PR. Alcance y horas: `03-cierre-comercial/registro-de-cambios.md`, pedidos 1 a 9.
 
 | # | Pedido | Dónde | Estado |
 |---|---|---|---|
@@ -140,6 +140,7 @@ El dueño vio el sitio en pruebas, con sus fotos: le gustó la estructura y pidi
 | 2B.6 | **Repaso "menos es más":** el sitio entero con la vara del dueño: textos más cortos y más foto donde haya. Hecho: en el celular, las listas de servicios (Servicios y la portada) sin el resumen cortado a la vista (foto, nombre y "Ver el servicio"; el lector de pantalla lo sigue leyendo); textos fijos más cortos (intro de Servicios y los cierres). Lo que escribe el dueño en el panel no se toca desde el código: se le sugiere acortar "Cómo trabajamos" de Nosotros y la presentación de la portada | sitio público | ✅ 24/10 (PR #82) |
 | 2B.7 | **Logo del encabezado más grande:** de 32 a 36 px de alto en el celular y 40 en la computadora (sigue sin lema: mide menos de los 360 px que pide el manual) | encabezado del sitio | ✅ 24/10 (PR #84) |
 | 2B.8 | **"Ver el servicio" a la misma altura:** en la computadora, el enlace de cada tarjeta de servicio quedaba más arriba o más abajo según el largo del resumen; ahora va al pie de la tarjeta (revisión de YankoSoft) | Servicios y portada | ✅ 24/10 (PR #84) |
+| 2B.9 | **Foto del equipo en Nosotros:** un lugar en Textos del sitio → Nosotros (como la foto del taller de la portada; `FOTOS_DE_PAGINA`); en el sitio, al lado de la historia en la computadora y debajo en el celular | `/nosotros` y `/panel/sitio/textos` | ✅ 24/10 (PR #85) |
 
 **Del afiche del nano cerámico** (ejemplo del dueño) se toma: la fila de beneficios con ícono, la escalera de años como opciones y la idea en una línea ("a más años, más gruesa la capa"). No se copia: los colores por año (azul, verde, naranja), los brillos ni el texto todo en mayúsculas, que rompen la marca y cuestan en el celular.
 

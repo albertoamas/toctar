@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { FotoOReemplazo } from "@/componentes/sitio/foto-o-reemplazo";
+import { FotoResponsiva } from "@/componentes/sitio/foto-responsiva";
 import { IconoBeneficio } from "@/componentes/sitio/icono-beneficio";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import type { UrlsFoto } from "@/lib/fotos";
@@ -127,12 +128,8 @@ function ConFoto({ foto, lado, children }: { foto?: UrlsFoto; lado: Lado; childr
     <div className="grid gap-8 md:grid-cols-2 md:items-center md:gap-12">
       <div className="flex min-w-0 flex-col gap-6">{children}</div>
       <div className={lado === "izquierda" ? "md:order-first" : undefined}>
-        {/* Decorativa: el texto de la sección dice lo mismo. La chica (640 px) en el celular, la grande desde 768 px */}
-        <picture>
-          <source media="(min-width: 768px)" srcSet={foto.url} />
-          {/* <img> a mano: next/image no arma un <picture> con dos versiones */}
-          <img src={foto.miniatura} alt="" loading="lazy" width={foto.ancho ?? undefined} height={foto.alto ?? undefined} className="mx-auto h-auto max-h-[32rem] w-auto max-w-full" />
-        </picture>
+        {/* Decorativa: el texto de la sección dice lo mismo */}
+        <FotoResponsiva foto={foto} alt="" sizes="(min-width: 768px) 50vw, 100vw" className="mx-auto h-auto max-h-[32rem] w-auto max-w-full" />
       </div>
     </div>
   );

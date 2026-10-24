@@ -3,10 +3,12 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { cn } from "cn";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
+import { FotoResponsiva } from "@/componentes/sitio/foto-responsiva";
 import { TituloPagina } from "@/componentes/sitio/titulo-pagina";
 import { Monograma } from "@/componentes/sitio/iconos-marca";
 import { WhatsAppFijo } from "@/componentes/sitio/whatsapp";
-import { contenidoPublico } from "@/modulos/sitio/publico";
+import { FOTOS_DE_PAGINA } from "@/modulos/sitio/contenido";
+import { contenidoPublico, fotoDePaginaPublica } from "@/modulos/sitio/publico";
 
 export const metadata: Metadata = {
   title: "Nosotros",
@@ -15,7 +17,8 @@ export const metadata: Metadata = {
 
 const TITULO_SECCION = "font-heading text-[28px] leading-8 font-bold italic md:text-[40px] md:leading-[44px]";
 
-// HU-13 Nosotros (RF-02): historia, cómo trabajan y por qué elegirlos. Los textos salen del panel (HU-08).
+// HU-13 Nosotros (RF-02): historia, cómo trabajan y por qué elegirlos. Los textos salen del panel (HU-08), y la foto del
+// equipo también (pedido de YankoSoft del 24/10): al lado de la historia en la computadora, debajo en el celular.
 // Llega entera, con el título: nada aparece suelto antes que el resto (pulido 2.1 y 2.5, revisión de YankoSoft).
 export default function PaginaNosotros() {
   return (
@@ -48,7 +51,7 @@ function Parrafos({ texto, entrada = false }: { texto: string; entrada?: boolean
 
 async function Contenido() {
   await connection();
-  const n = await contenidoPublico("nosotros");
+  const [n, equipo] = await Promise.all([contenidoPublico("nosotros"), fotoDePaginaPublica("nosotros")]);
   const motivos = n.por_que_elegirnos as string[];
   return (
     <>
@@ -56,11 +59,23 @@ async function Contenido() {
       <section className="relative overflow-hidden">
         <Monograma className="pointer-events-none absolute -top-10 -right-24 w-[26rem] fill-superficie md:-right-12 md:w-[34rem]" />
         <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 py-12 md:gap-20 md:py-20">
-          <div className="flex flex-col gap-8">
-            <TituloPagina>Nosotros</TituloPagina>
-            <div className="flex flex-col gap-4">
-              <Parrafos texto={n.historia as string} entrada />
+          <div className={cn("grid gap-10", equipo && "md:grid-cols-2 md:items-center md:gap-12")}>
+            <div className="flex flex-col gap-8">
+              <TituloPagina>Nosotros</TituloPagina>
+              <div className="flex flex-col gap-4">
+                <Parrafos texto={n.historia as string} entrada />
+              </div>
             </div>
+            {equipo && (
+              // Está en la primera pantalla: sin carga diferida
+              <FotoResponsiva
+                foto={equipo}
+                alt={FOTOS_DE_PAGINA.nosotros.alt}
+                sizes="(min-width: 768px) 50vw, 100vw"
+                cargaDiferida={false}
+                className="h-auto max-h-[32rem] w-full object-cover"
+              />
+            )}
           </div>
 
           <section aria-labelledby="como-trabajamos" className="flex flex-col gap-4">

@@ -126,7 +126,10 @@ test("en la computadora, Ver el servicio queda al pie de cada tarjeta, a la mism
   test.skip(isMobile, "En el celular cada servicio es una fila propia");
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/servicios");
-  const alturas = await page.locator("main .tt-tarjeta__enlace").evaluateAll((es) => es.slice(0, 3).map((e) => Math.round(e.getBoundingClientRect().top)));
+  // La lista llega con el resto de la página: se espera a la tercera tarjeta antes de medir
+  const enlaces = page.locator("main .tt-tarjeta__enlace");
+  await expect(enlaces.nth(2)).toBeVisible();
+  const alturas = await enlaces.evaluateAll((es) => es.slice(0, 3).map((e) => Math.round(e.getBoundingClientRect().top)));
   expect(new Set(alturas).size).toBe(1);
 });
 
