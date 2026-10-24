@@ -11,12 +11,19 @@ const encargado = (permisos: Permiso[] | string[]) => ({ rol: "encargado" as con
 describe("dueño", () => {
   test.each(todos)("ve %s", (m) => expect(puedeVerModulo(dueno, m)).toBe(true));
   test("autoriza entregas con saldo", () => expect(puede(dueno, "entrega_con_saldo")).toBe(true));
+  test("cotiza y suma adicionales (RN-01)", () => {
+    expect(puede(dueno, "cotizar")).toBe(true);
+    expect(puede(dueno, "agregar_adicional")).toBe(true);
+  });
 });
 
 describe("técnico (RN-12)", () => {
   const visibles: Modulo[] = ["inicio", "ordenes"];
   test.each(todos)("%s", (m) => expect(puedeVerModulo(tecnico, m)).toBe(visibles.includes(m)));
-  test("no autoriza entregas con saldo", () => expect(puede(tecnico, "entrega_con_saldo")).toBe(false));
+  test("no autoriza entregas con saldo ni cotiza", () => {
+    expect(puede(tecnico, "entrega_con_saldo")).toBe(false);
+    expect(puede(tecnico, "cotizar")).toBe(false);
+  });
 });
 
 describe("encargado", () => {
@@ -40,14 +47,17 @@ describe("encargado", () => {
     for (const m of todos) expect(puedeVerModulo(e, m)).toBe(m === "inicio" || m === modulo);
   });
 
-  test.each(["cotizaciones", "usuarios", "configuracion", "catalogo"] as Modulo[])(
-    "nunca ve %s, aunque tenga todos los permisos (RN-01)",
-    (m) => {
-      // Incluso con un valor raro guardado a la fuerza con el nombre del módulo
-      const e = encargado([...conPermiso.map(([, p]) => p), "cotizaciones", "usuarios", "configuracion", "catalogo"]);
-      expect(puedeVerModulo(e, m)).toBe(false);
-    },
-  );
+  // Incluso con un valor raro guardado a la fuerza con el nombre del módulo o de la acción
+  const conTodo = encargado([...conPermiso.map(([, p]) => p), "entrega_con_saldo", "cotizar", "cotizaciones", "usuarios", "configuracion", "catalogo"]);
+
+  test.each(["usuarios", "configuracion", "catalogo"] as Modulo[])("nunca ve %s, aunque tenga todos los permisos (RN-01)", (m) => {
+    expect(puedeVerModulo(conTodo, m)).toBe(false);
+  });
+
+  test("nunca cotiza ni suma adicionales, aunque tenga todos los permisos (RN-01)", () => {
+    expect(puede(conTodo, "cotizar")).toBe(false);
+    expect(puede(conTodo, "agregar_adicional")).toBe(false);
+  });
 
   test("autoriza entregas con saldo solo con ese permiso (RN-13, S-2)", () => {
     expect(puede(encargado([]), "entrega_con_saldo")).toBe(false);
@@ -76,20 +86,16 @@ describe("menú en grupos (C5 §0)", () => {
 });
 
 describe("menú y casillas", () => {
-  test("el menú solo muestra módulos construidos que el usuario puede ver", () => {
-    expect(modulosDelMenu(dueno)).toEqual(todos.filter((m) => MODULOS[m].construido));
+  test("el menú muestra los módulos que el usuario puede ver", () => {
+    expect(modulosDelMenu(dueno)).toEqual(todos);
     // El técnico: solo sus órdenes (RN-12)
     expect(modulosDelMenu(tecnico)).toEqual(["inicio", "ordenes"]);
     expect(modulosDelMenu(encargado([]))).toEqual(["inicio"]);
   });
 
-  test("las casillas del encargado son las de módulos construidos más la entrega con saldo", () => {
-    const asignables = permisosAsignables().map((p) => p.permiso);
-    expect(asignables.at(-1)).toBe("entrega_con_saldo");
-    for (const p of asignables.slice(0, -1)) {
-      const modulo = todos.find((m) => MODULOS[m].permisoEncargado === p)!;
-      expect(MODULOS[modulo].construido).toBe(true);
-    }
+  test("las casillas del encargado son las de sus módulos más la entrega con saldo", () => {
+    const deModulos = todos.map((m) => MODULOS[m].permisoEncargado).filter((p) => p !== null);
+    expect(permisosAsignables().map((p) => p.permiso)).toEqual([...deModulos, "entrega_con_saldo"]);
   });
 });
 

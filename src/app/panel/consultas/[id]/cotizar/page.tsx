@@ -6,15 +6,14 @@ import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { fechaEnBolivia } from "@/lib/fechas";
-import { exigirModulo } from "@/lib/sesion";
+import { exigirAccion } from "@/lib/sesion";
 import { NOMBRE_ESTADO } from "@/modulos/consultas/reglas";
 import { FormularioCotizacion } from "@/modulos/cotizaciones/componentes/formulario-cotizacion";
 import { datosParaCotizar } from "@/modulos/cotizaciones/consultas";
 
 export const metadata: Metadata = { title: "Cotizar" };
 
-// HU-25: armar la cotización de una consulta. Solo el dueño (RN-01): exigirModulo("cotizaciones") no tiene permiso de
-// encargado. `?desde=<id>` corrige la versión vigente: arranca con sus líneas, descuento y fotos, y guarda la siguiente.
+// HU-25: armar la cotización de una consulta. Solo el dueño (RN-01): exigirAccion("cotizar"). `?desde=<id>` corrige la versión vigente: arranca con sus líneas, descuento y fotos, y guarda la siguiente.
 export default function PaginaCotizar({ params, searchParams }: PageProps<"/panel/consultas/[id]/cotizar">) {
   return (
     <Suspense fallback={<Cargando />}>
@@ -24,7 +23,7 @@ export default function PaginaCotizar({ params, searchParams }: PageProps<"/pane
 }
 
 async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/consultas/[id]/cotizar">, "params" | "searchParams">) {
-  await exigirModulo("cotizaciones");
+  await exigirAccion("cotizar");
   const [{ id }, { desde }] = await Promise.all([params, searchParams]);
   const consultaId = Number(id);
   if (!Number.isInteger(consultaId) || consultaId <= 0) notFound();

@@ -19,7 +19,7 @@ import {
   vehiculo,
 } from "@/db/esquema";
 import { erroresDe, type EstadoFormulario } from "@/lib/formularios";
-import { exigirModulo } from "@/lib/sesion";
+import { exigirAccion } from "@/lib/sesion";
 import { preciosVigentes } from "@/modulos/catalogo/consultas";
 import type { Monto } from "@/modulos/catalogo/reglas";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
@@ -29,7 +29,7 @@ import { datosDocumento } from "./consultas";
 import { generarPdf } from "./pdf/generar";
 import { anioCotizacion, calcularTotales, claveCorrelativo, descripcionLinea, numeroCotizacion, precioSugerido } from "./reglas";
 
-// Cotizaciones (HU-25). Solo el dueño (RN-01): exigirModulo("cotizaciones") no tiene permiso de encargado.
+// Cotizaciones (HU-25). Solo el dueño (RN-01): exigirAccion("cotizar").
 // Una cotización enviada no cambia (RN-02, RF-34): no hay acción de editar. Corregirla crea la versión siguiente con el
 // mismo número, y la anterior queda "reemplazada". Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md §6.
 
@@ -38,7 +38,7 @@ import { anioCotizacion, calcularTotales, claveCorrelativo, descripcionLinea, nu
  * descripciones, los precios sugeridos y los textos de Configuración se copian (D-4). Todo en una transacción.
  */
 export async function guardarCotizacion(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
-  const autor = await exigirModulo("cotizaciones");
+  const autor = await exigirAccion("cotizar");
   const entrada = entradaCotizacion(datos);
   const r = esquemaCotizacion.safeParse(entrada);
   if (!r.success) {
@@ -196,7 +196,7 @@ export async function guardarCotizacion(_previo: EstadoFormulario, datos: FormDa
  * se regenera (RN-02). Recibe datos sueltos: se validan.
  */
 export async function generarPdfPendiente(datos: { cotizacionId: number }): Promise<EstadoFormulario> {
-  const autor = await exigirModulo("cotizaciones");
+  const autor = await exigirAccion("cotizar");
   const entrada = z.object({ cotizacionId: z.number().int().positive() }).safeParse(datos);
   if (!entrada.success) return { mensaje: "No se pudo leer el pedido. Recarga la página." };
   const [c] = await db

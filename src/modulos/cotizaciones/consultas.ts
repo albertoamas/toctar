@@ -25,7 +25,7 @@ import { duracionEfectiva, type Monto } from "@/modulos/catalogo/reglas";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { descripcionLinea, fechaValidez, precioSugerido, type Sugerencia } from "./reglas";
 
-// Lecturas de las cotizaciones (HU-25). Las de montos solo las llama quien pasó por exigirModulo("cotizaciones"): el
+// Lecturas de las cotizaciones (HU-25). Las de montos solo las llama quien pasó por exigirAccion("cotizar"): el
 // dueño (RN-01). `cotizacionesDeConsulta` también la usa el encargado, sin montos.
 
 export type OpcionServicio = {
