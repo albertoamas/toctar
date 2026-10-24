@@ -42,14 +42,17 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
       </div>
       {creado && <AvisoEnPagina>Servicio creado. Carga sus precios; su página en el sitio se completa en Sitio web.</AvisoEnPagina>}
       <p className="flex flex-wrap items-center gap-x-2 text-sm">
-        <span className="text-tinta-suave">{s.visibleSitio ? "Se muestra en el sitio." : "Oculto en el sitio."}</span>
+        {/* Sale en el sitio si está activo y su página se muestra (publico.ts pide las dos) */}
+        <span className="text-tinta-suave">
+          {!s.activo ? "Inactivo: no sale en el sitio." : s.visibleSitio ? "Se muestra en el sitio." : "Oculto en el sitio."}
+        </span>
         <Link href={`/panel/sitio/servicios/${s.id}`} className="inline-flex min-h-11 items-center font-semibold underline">
           Editar su página en el sitio
         </Link>
       </p>
       <div className="flex max-w-4xl flex-col gap-12">
         <div className="max-w-2xl">
-          <FormularioDatosCatalogo servicio={s} />
+          <FormularioDatosCatalogo servicio={{ id: s.id, nombre: s.nombre, duracionDias: s.duracionDias, generaMantenimiento: s.generaMantenimiento, activo: s.activo }} />
         </div>
         <section aria-labelledby="precios-titulo" className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
