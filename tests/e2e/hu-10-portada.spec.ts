@@ -123,6 +123,8 @@ test("el trabajo elegido en la galería del panel se compara arriba en la portad
   await expect(page.getByRole("img", { name: `Después: ${elegido}` })).toBeVisible();
   await expect(page.getByRole("slider", { name: "Comparar antes y después" })).toHaveValue("50");
   await expect(page.getByText(elegido, { exact: true })).toBeVisible();
+  // Junto a "Ver la galería", más trabajos en TikTok (pedido de la demo del 24/10)
+  await expect(page.getByRole("region", { name: "Trabajos recientes" }).getByRole("link", { name: "Mira nuestros trabajos en TikTok" })).toBeVisible();
 
   // Oculto, deja la portada: va otro trabajo con antes
   await page.goto("/panel/sitio/galeria");

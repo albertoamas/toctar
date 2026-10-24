@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { cn } from "cn";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { ComparadorAntesDespues } from "@/componentes/sitio/comparador-antes-despues";
+import { EnlaceTikTok } from "@/componentes/sitio/enlace-tiktok";
 import { PortadaArte } from "@/componentes/sitio/portada-arte";
 import { TarjetaServicio } from "@/componentes/sitio/tarjeta-servicio";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
@@ -197,9 +198,13 @@ function Galeria({ fotos }: { fotos: FotoGaleria[] }) {
           </li>
         ))}
       </ul>
-      <Link href="/galeria" className="tt-boton tt-boton--contorno mt-8">
-        Ver la galería
-      </Link>
+      <div className="mt-8 flex flex-wrap gap-3">
+        <Link href="/galeria" className="tt-boton tt-boton--contorno">
+          Ver la galería
+        </Link>
+        {/* Más trabajos, en video (pedido de la demo del 24/10) */}
+        <EnlaceTikTok />
+      </div>
     </section>
   );
 }

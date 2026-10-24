@@ -6,6 +6,7 @@ import { cn } from "cn";
 import { TituloPagina } from "@/componentes/sitio/titulo-pagina";
 import { VisorGaleria } from "@/componentes/sitio/visor-galeria";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
+import { EnlaceTikTok } from "@/componentes/sitio/enlace-tiktok";
 import { WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import { filtrarPorServicio, serviciosConFotos } from "@/modulos/sitio/galeria";
 import { galeriaPublica, type FotoGaleria } from "@/modulos/sitio/publico";
@@ -42,6 +43,8 @@ async function Contenido({ searchParams }: Pick<PageProps<"/galeria">, "searchPa
         ) : (
           <Fotos todas={todas} elegido={typeof servicio === "string" ? servicio : undefined} />
         )}
+        {/* Más trabajos, en video (pedido de la demo del 24/10) */}
+        <EnlaceTikTok className="mt-8" />
       </div>
       <CierreWhatsApp titulo="¿Quieres este resultado en tu vehículo?" texto="Mándanos fotos de tu vehículo y te decimos qué conviene hacer." />
     </>

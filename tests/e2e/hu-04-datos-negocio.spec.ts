@@ -38,8 +38,8 @@ test("el dueño cambia los datos y el pie del sitio los muestra al guardar", asy
   await expect(pie.getByRole("link", { name: "WhatsApp +591 7123 4567" })).toHaveAttribute("href", "https://wa.me/59171234567");
   await expect(pie.getByRole("link", { name: "Cómo llegar" })).toHaveAttribute("href", /query=-21\.5355,-64\.7296/);
   await expect(pie.getByRole("link", { name: "Instagram" })).toHaveAttribute("href", "https://instagram.com/toctar.detailing");
-  // Las redes que no están cargadas no se muestran
-  await expect(pie.getByRole("link", { name: "TikTok" })).toHaveCount(0);
+  // Las redes que no están cargadas no se muestran (TikTok lo carga preparar.setup.ts)
+  await expect(pie.getByRole("link", { name: "Facebook" })).toHaveCount(0);
 });
 
 test("los datos mal escritos muestran el error junto al campo y no se guardan", async ({ page }) => {
