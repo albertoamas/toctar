@@ -26,5 +26,5 @@ export const CLAVES_ICONO = Object.keys(ICONOS_BENEFICIO) as [IconoBeneficio, ..
 
 /** El ícono de un beneficio guardado: si la clave ya no existe en la lista, el genérico. */
 export function iconoDe(clave: string): IconoBeneficio {
-  return clave in ICONOS_BENEFICIO ? (clave as IconoBeneficio) : "listo";
+  return Object.hasOwn(ICONOS_BENEFICIO, clave) ? (clave as IconoBeneficio) : "listo";
 }

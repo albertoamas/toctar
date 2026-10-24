@@ -94,5 +94,7 @@ describe("íconos de los beneficios", () => {
   test("una clave guardada que ya no está en la lista se muestra con el ícono genérico", () => {
     expect(iconoDe("sol")).toBe("sol");
     expect(iconoDe("cohete")).toBe("listo");
+    // Ni las claves que todo objeto hereda
+    expect(iconoDe("constructor")).toBe("listo");
   });
 });

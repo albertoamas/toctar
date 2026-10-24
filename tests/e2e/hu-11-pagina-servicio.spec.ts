@@ -43,6 +43,9 @@ test("los beneficios van primero, con ícono, y las opciones de menor a mayor se
   await page.getByRole("link", { name: /Pulido y nano cerámico/ }).click();
   await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+$/);
   const panel = page.url();
+  // Empieza sin beneficios, aunque un intento anterior haya fallado a mitad de camino
+  const quitar = page.getByRole("button", { name: "Quitar beneficio 1" });
+  while (await quitar.isVisible()) await quitar.click();
   await page.getByRole("button", { name: "Agregar beneficio" }).click();
   await page.getByLabel("Beneficio 1", { exact: true }).fill("Protege del sol");
   await page.getByLabel("Beneficio 1, ícono").selectOption({ label: "Sol y rayos UV" });

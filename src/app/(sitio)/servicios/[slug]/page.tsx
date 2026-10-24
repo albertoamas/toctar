@@ -64,7 +64,7 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
         {s.beneficios.length > 0 && <Beneficios beneficios={s.beneficios} />}
         {s.descripcion && <Descripcion descripcion={s.descripcion} />}
         {s.pasos.length > 0 && <Proceso pasos={s.pasos} />}
-        {s.variantes.length > 0 && (s.opcionesEnEscalera ? <Escalera variantes={s.variantes} /> : <Variantes variantes={s.variantes} />)}
+        {s.variantes.length > 0 && <Variantes variantes={s.variantes} escalera={s.opcionesEnEscalera} />}
         {s.fotos.length > 0 && <Fotos servicio={s} />}
       </div>
 
@@ -89,12 +89,10 @@ function Beneficios({ beneficios }: { beneficios: DetalleServicioPublico["benefi
   return (
     <section aria-labelledby="beneficios-titulo">
       <h2 id="beneficios-titulo" className="sr-only">Qué gana tu vehículo</h2>
+      {/* En una fila con líneas entre cada uno desde 1024 px; más angosto, en grilla y solo con el borde de arriba y de abajo */}
       <ul className="grid grid-cols-2 border-y border-border sm:grid-cols-3 lg:grid-flow-col lg:grid-cols-none lg:auto-cols-fr">
-        {beneficios.map((b) => (
-          <li
-            key={b.texto}
-            className="flex flex-col items-center gap-2 border-border px-3 py-5 text-center md:gap-3 md:py-6 not-last:border-b odd:border-r sm:odd:border-r-0 sm:not-nth-[3n]:border-r lg:border-b-0 lg:not-last:border-r"
-          >
+        {beneficios.map((b, i) => (
+          <li key={i} className="flex flex-col items-center gap-2 border-border px-3 py-5 text-center md:gap-3 md:py-6 lg:not-first:border-l">
             <IconoBeneficio icono={b.icono} className="size-8 text-rojo-texto md:size-9" />
             <span className="max-w-48 text-sm leading-5 font-semibold text-balance">{b.texto}</span>
           </li>
@@ -137,52 +135,44 @@ function Proceso({ pasos }: { pasos: DetalleServicioPublico["pasos"] }) {
   );
 }
 
-function Variantes({ variantes }: { variantes: DetalleServicioPublico["variantes"] }) {
-  // Si alguna tiene descripción, todas van del mismo ancho; si no, la que tiene texto quedaba ancha y las demás
-  // chicas, en renglones disparejos (pulido 2.3).
-  const conDescripcion = variantes.some((v) => v.descripcion);
-  return (
-    <section aria-labelledby="variantes-titulo" className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <h2 id="variantes-titulo" className={TITULO_SECCION}>Opciones</h2>
-        <p className="max-w-xl text-tinta-suave">Te ayudamos a elegir la que conviene a tu vehículo.</p>
-      </div>
-      <ul className={conDescripcion ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3" : "flex flex-wrap gap-3"}>
-        {variantes.map((v) => (
-          <li key={v.nombre} className="flex min-w-36 flex-col gap-1 border border-border px-4 py-3">
-            <span className="font-heading text-2xl font-bold italic">{v.nombre}</span>
-            {v.descripcion && <span className="text-sm text-tinta-suave">{v.descripcion}</span>}
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
 /**
- * Opciones de menor a mayor como escalones: cada una lleva una capa (blanca, sobre la base gris del vehículo) más
- * gruesa que la anterior, la idea del afiche del nano cerámico ("a más años, más gruesa la capa"). En la computadora,
- * columnas que suben; en el celular, filas con la capa como barra que se alarga.
+ * Las opciones. Si van de menor a mayor (casilla del panel), como escalones: cada una lleva una capa (blanca, sobre la
+ * base gris del vehículo) más gruesa que la anterior, la idea del afiche del nano cerámico ("a más años, más gruesa la
+ * capa"); en la computadora, columnas que suben; en el celular, filas con la capa como barra que se alarga.
+ * Si no, recuadros: si alguna tiene descripción, todas van del mismo ancho (si no, la que tiene texto quedaba ancha y
+ * las demás chicas, en renglones disparejos, pulido 2.3).
  */
-function Escalera({ variantes }: { variantes: DetalleServicioPublico["variantes"] }) {
+function Variantes({ variantes, escalera }: { variantes: DetalleServicioPublico["variantes"]; escalera: boolean }) {
+  const conDescripcion = variantes.some((v) => v.descripcion);
   const ultimo = Math.max(variantes.length - 1, 1);
   return (
     <section aria-labelledby="variantes-titulo" className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         <h2 id="variantes-titulo" className={TITULO_SECCION}>Opciones</h2>
-        <p className="max-w-xl text-tinta-suave">De menor a mayor. Te ayudamos a elegir la que conviene a tu vehículo.</p>
+        <p className="max-w-xl text-tinta-suave">{escalera && "De menor a mayor. "}Te ayudamos a elegir la que conviene a tu vehículo.</p>
       </div>
-      <ol className="grid gap-4 md:grid-flow-col md:auto-cols-fr md:items-end md:gap-3">
-        {variantes.map((v, i) => (
-          <li key={v.nombre} className="tt-escalon" style={{ "--paso": i / ultimo } as React.CSSProperties}>
-            <span className="flex flex-col gap-1">
-              <span className="font-heading text-2xl leading-7 font-bold italic">{v.nombre}</span>
+      {escalera ? (
+        <ol className="grid gap-4 md:grid-flow-col md:auto-cols-fr md:items-end md:gap-3">
+          {variantes.map((v, i) => (
+            <li key={i} className="tt-escalon" style={{ "--paso": i / ultimo } as React.CSSProperties}>
+              <span className="flex flex-col gap-1">
+                <span className="font-heading text-2xl leading-7 font-bold italic">{v.nombre}</span>
+                {v.descripcion && <span className="text-sm text-tinta-suave">{v.descripcion}</span>}
+              </span>
+              <span aria-hidden className="tt-escalon__capa" />
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <ul className={conDescripcion ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3" : "flex flex-wrap gap-3"}>
+          {variantes.map((v, i) => (
+            <li key={i} className="flex min-w-36 flex-col gap-1 border border-border px-4 py-3">
+              <span className="font-heading text-2xl font-bold italic">{v.nombre}</span>
               {v.descripcion && <span className="text-sm text-tinta-suave">{v.descripcion}</span>}
-            </span>
-            <span aria-hidden className="tt-escalon__capa" />
-          </li>
-        ))}
-      </ol>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

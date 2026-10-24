@@ -37,7 +37,8 @@ const guardarConAviso = conAviso(guardarServicio);
 
 export function FormularioServicio({ servicio: s }: Props) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(guardarConAviso, {});
-  const [beneficios, setBeneficios] = useState(s.beneficios);
+  // Un ícono guardado que ya no está en la lista pasa al genérico: lo que se ve en el selector es lo que se guarda
+  const [beneficios, setBeneficios] = useState<Beneficio[]>(() => s.beneficios.map((b) => ({ ...b, icono: iconoDe(b.icono) })));
   const [pasos, setPasos] = useState(s.pasos);
   const v = estado.valores;
   const e = estado.errores ?? {};
@@ -86,7 +87,7 @@ export function FormularioServicio({ servicio: s }: Props) {
               <TextoCorto value={b.texto} onChange={(ev) => cambiar({ ...b, texto: ev.target.value })} aria-label={`Beneficio ${i + 1}`} placeholder="Repele el agua y la suciedad" {...marca} />
               <span className="flex items-center gap-2">
                 <IconoBeneficio icono={b.icono} className="size-6 shrink-0 text-rojo-texto" />
-                <Selector value={iconoDe(b.icono)} onChange={(ev) => cambiar({ ...b, icono: ev.target.value })} aria-label={`Beneficio ${i + 1}, ícono`}>
+                <Selector value={b.icono} onChange={(ev) => cambiar({ ...b, icono: ev.target.value })} aria-label={`Beneficio ${i + 1}, ícono`} {...marca}>
                   {Object.entries(ICONOS_BENEFICIO).map(([clave, nombre]) => (
                     <option key={clave} value={clave}>{nombre}</option>
                   ))}
