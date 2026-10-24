@@ -19,7 +19,7 @@
 - **El adelanto depende del dueño:** la lista de precios y las variantes pasan a pedirse para el viernes 23 (antes, 3/11), y el dominio sigue siendo urgente.
 - **Lunes 19:** reunión de avance con el dueño, con una presentación y sin mostrar todavía la app. La primera demo sigue siendo el viernes 23.
 
-## Dónde estamos (23 de octubre)
+## Dónde estamos (24 de octubre)
 
 | Qué | Estado |
 |---|---|
@@ -39,6 +39,9 @@
 | Etapa C2 Consultas y cotizaciones (HU-24 a HU-28) | ✅ Programada el 21/10 (PR #55 a #60). Falta compartir el PDF desde un celular real (necesita https, A3), revisarlo impreso y que el dueño confirme formas de pago, condiciones y garantía |
 | Etapa C3 Agenda y pagos (HU-29 a HU-32) | ✅ Programada el 21/10 (PR #61 a #64). Falta mostrarle el tablero al dueño y probar el cobro con comprobante en un celular real |
 | Etapa C4 Taller y entrega (HU-33 a HU-38) | ✅ Programada el 23/10 (PR #65 a #72). Los 5 flujos críticos con su prueba E2E. Falta la demo desde un celular real |
+| Etapa C5 Cierre de la Entrega 2 | 🔵 Especificación aprobada el 23/10 (PR #73). §0, la reorganización del panel, en `develop` el 24/10 (PR #74): servicios en el catálogo, menú en grupos, Parámetros por tema. Siguen la HU-40, la HU-39 y la HU-41 |
+| Datos de demostración | ✅ Scripts `db:reiniciar-local` y `datos:demo` (PR #75): el sitio con fotos y el panel con movimiento de esta semana. Falta cargarlos en pruebas |
+| Pulido visual de la Entrega 2 | ⏳ Plan en `pulido-visual.md` (grupos 7 a 13): las pantallas de C1 a C4 y lo que cambió con la reorganización |
 | Identidad visual aplicada a la app | ✅ En `develop` (PR #5 y #9, logos nítidos en tamaños chicos) |
 | Inicio del trabajo | 9 de octubre de 2026 (firma y primer pago) |
 | Día D (inicio del plazo del contrato) | 14 de octubre de 2026 (llegó el material) |
@@ -78,7 +81,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | C2 Consultas y cotizaciones | `etapas/C2-consultas-cotizaciones.md` | ✅ Programada (21/10, PR #55 a #60). Falta la prueba en celulares con https (A3) y los textos del PDF del dueño |
 | C3 Agenda y pagos | `etapas/C3-agenda-pagos.md` | ✅ Programada (21/10, PR #61 a #64). Falta mostrarle el tablero al dueño |
 | C4 Taller y entrega | `etapas/C4-taller-entrega.md` | ✅ Programada (23/10, PR #65 a #72). Falta la demo desde un celular real |
-| C5 Cierre de la Entrega 2 | `etapas/C5-cierre-entrega-2.md` | 📝 Borrador (23/10): se adelanta con las tres deseables (HU-39 a HU-41) |
+| C5 Cierre de la Entrega 2 | `etapas/C5-cierre-entrega-2.md` | 🔵 Aprobada (23/10). §0 hecho (24/10, PR #74); sigue la HU-40 |
 | B6 | `etapas/B6-…` | Al empezarla |
 
 ## Cómo se trabaja cada historia

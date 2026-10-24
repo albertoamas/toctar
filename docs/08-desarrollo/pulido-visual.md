@@ -1,7 +1,7 @@
-# Pulido visual de la Entrega 1
+# Pulido visual
 
-- **Inicio:** 16 de octubre de 2026
-- **Meta:** terminar antes de la demo del viernes 23 (sitio) y del acta del viernes 30 (panel).
+- **Parte 1, Entrega 1 (grupos 1 a 6):** del 16 al 19 de octubre de 2026, antes de la demo del 23 y del acta del 30. ✅
+- **Parte 2, Entrega 2 (grupos 7 a 13):** desde el 24 de octubre de 2026, después de la reorganización del panel (C5 §0) y antes de la demo y el acta de la Entrega 2. Mismo método, mismos estándares.
 - **Qué es:** se repasa cada pantalla de la Entrega 1, una por una, para que se vea y se use mejor. **No se agregan funciones.** Si aparece algo que el contrato no incluye, se anota en `03-cierre-comercial/registro-de-cambios.md` y no se programa.
 
 ## Con qué mirada se trabaja
@@ -93,7 +93,9 @@ Estados: ⏳ pendiente · 🔵 en curso · ✅ terminada.
 
 ## Ramas
 
-Una rama por grupo, desde `develop`: `pulido/comunes`, `pulido/sitio`, `pulido/ingreso`, `pulido/panel-sitio`, `pulido/panel-gestion`, `pulido/panel-configuracion`.
+Una rama por grupo, desde `develop`.
+- **Parte 1:** `pulido/comunes`, `pulido/sitio`, `pulido/ingreso`, `pulido/panel-sitio`, `pulido/panel-gestion` y `pulido/panel-configuracion`.
+- **Parte 2:** `pulido/catalogo`, `pulido/clientes`, `pulido/consultas`, `pulido/agenda`, `pulido/taller`, `pulido/seguimiento` y `pulido/repaso`.
 
 ## Pantallas
 
@@ -160,6 +162,81 @@ Antes de la demo del viernes 23.
 | 6.1 | Datos del negocio y logo | `/panel/configuracion` | ✅ 19/10 |
 | 6.2 | Taller (espacios y tamaños de vehículo) | `/panel/configuracion/taller` | ✅ 19/10 |
 | 6.3 | Cotizaciones y mantenimiento (desde el 24/10, Parámetros) | `/panel/configuracion/parametros` | ✅ 19/10 |
+
+### Parte 2: Entrega 2
+
+Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos estándares de arriba; además, en el panel de gestión:
+- **El dueño las usa en el taller, desde el celular**, con poco tiempo: lo que se consulta más va arriba y cada fila es un toque.
+- **Montos legibles de un vistazo:** cifras con `tabular-nums`, en Bs, y el saldo siempre dicho con palabras ("Pagado", "Saldo: 300 Bs"), no solo con color.
+- **El técnico (RN-12)** nunca ve precios, pagos ni el teléfono del cliente: se revisa también con su usuario.
+- **Estados de un trabajo** (agendada, recibida, en proceso, lista, entregada, cancelada) escritos igual en todas las pantallas.
+
+### 7. Panel: catálogo
+
+| # | Pantalla | Ruta | Estado |
+|---|---|---|---|
+| 7.1 | Catálogo y precios | `/panel/catalogo` | ⏳ |
+| 7.2 | Nuevo servicio (antes 4.3, en Sitio web) | `/panel/catalogo/nuevo` | ⏳ |
+| 7.3 | Servicio del catálogo: datos, precios por tamaño, variantes e historial | `/panel/catalogo/[id]` | ⏳ |
+
+### 8. Panel: clientes
+
+| # | Pantalla | Ruta | Estado |
+|---|---|---|---|
+| 8.1 | Clientes y búsqueda | `/panel/clientes` | ⏳ |
+| 8.2 | Agregar cliente | `/panel/clientes/nuevo` | ⏳ |
+| 8.3 | Ficha del cliente: datos, vehículos, consultas, reservas y mantenimientos | `/panel/clientes/[id]` | ⏳ |
+
+### 9. Panel: consultas y cotizaciones
+
+| # | Pantalla | Ruta | Estado |
+|---|---|---|---|
+| 9.1 | Consultas (pestañas y consultas que se enfrían) | `/panel/consultas` | ⏳ |
+| 9.2 | Nueva consulta | `/panel/consultas/nueva` | ⏳ |
+| 9.3 | Detalle de una consulta: estado, fotos, cotizaciones y reservas | `/panel/consultas/[id]` | ⏳ |
+| 9.4 | Cotizar | `/panel/consultas/[id]/cotizar` | ⏳ |
+| 9.5 | PDF de la cotización (impreso y en el celular; con la skill `pdf`) | `/panel/cotizaciones/[id]/pdf` | ⏳ |
+
+### 10. Panel: agenda y pagos
+
+| # | Pantalla | Ruta | Estado |
+|---|---|---|---|
+| 10.1 | Agenda: tablero de la semana y del día | `/panel/agenda` | ⏳ |
+| 10.2 | Nueva reserva (desde una cotización, directa y desde un mantenimiento) | `/panel/agenda/nueva` | ⏳ |
+| 10.3 | Reserva: montos, pagos, reprogramar y cancelar | `/panel/agenda/[id]` | ⏳ |
+
+### 11. Panel: taller
+
+| # | Pantalla | Ruta | Estado |
+|---|---|---|---|
+| 11.1 | Órdenes (dueño y encargado) y Mis órdenes (técnico) | `/panel/ordenes` | ⏳ |
+| 11.2 | Orden: estado, fotos, avances, montos y aviso | `/panel/ordenes/[id]` | ⏳ |
+| 11.3 | Recibir vehículo | `/panel/ordenes/[id]/recibir` | ⏳ |
+| 11.4 | Entregar vehículo | `/panel/ordenes/[id]/entregar` | ⏳ |
+
+### 12. Panel: seguimiento
+
+| # | Pantalla | Ruta | Estado |
+|---|---|---|---|
+| 12.1 | Saldos pendientes | `/panel/pagos` | ⏳ |
+| 12.2 | Mantenimientos | `/panel/mantenimientos` | ⏳ |
+
+### 13. Repaso de lo que cambió y pendientes de la parte 1
+
+| # | Pantalla | Qué se revisa | Estado |
+|---|---|---|---|
+| 13.1 | Estructura del panel (1.4) | El menú en grupos y la barra lateral pulida el 24/10 (C5 §0): se registra y se revisa con el técnico y con un encargado | ⏳ |
+| 13.2 | Servicios del sitio y su página (4.2 y 4.4) | Sin alta, nombre ni variantes desde la reorganización: que nada quede huérfano | ⏳ |
+| 13.3 | Portada (2.1) | La foto del taller es el LCP del celular: que cargue sin diferir y con prioridad (`loading="eager"`) | ⏳ |
+| 13.4 | No encontrado dentro del panel | Hoy no existe: un cliente, una orden o una cotización que ya no está (27 `notFound()` del panel) muestra la página del sitio público, con su menú y "Ver los servicios", y saca al personal del panel. Necesita la suya, dentro del panel | ⏳ |
+| 13.5 | Error inesperado (sitio y panel) | Hoy no existe: sin `error.tsx` ni `global-error.tsx`, una falla del servidor muestra la página genérica de Next, sin marca ni forma de volver | ⏳ |
+
+**Cobertura** (revisada el 24/10 contra todas las rutas de `src/app` y `public/`): cada pantalla del sitio, el ingreso y el panel está en un grupo. Lo que no tiene ruta propia se revisa dentro de su pantalla:
+- **Los diálogos:** el historial de precios va en 7.3, el visor de fotos en 11.2 y 11.3, y el comprobante en 10.3 y 11.4.
+- **Los formularios que se abren en la misma pantalla:** registrar o anular un pago, reprogramar o cancelar, extender la entrega, "No le interesa"…
+- **El inicio (4.1)** no entra: lo rehace la HU-39 (pantalla del día).
+- **Las pantallas que suma C5:** "Mensajes" (HU-40) y "Publicar en la galería" (HU-41) se diseñan con `frontend-design` en su propia historia.
+- `GET /api/salud` no es una pantalla.
 
 ## Registro por pantalla
 

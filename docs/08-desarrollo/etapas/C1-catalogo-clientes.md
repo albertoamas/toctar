@@ -2,6 +2,7 @@
 
 - **Fase y semana:** C. Entrega 2 · semana 2 (desde el 20 de octubre)
 - **Estado:** programada (20 de octubre de 2026): HU-19 a HU-23 en `develop` (PR #49 a #53). Falta cargar la lista de precios real del dueño
+- **Cambió después:** el catálogo tiene ahora el alta del servicio, su nombre y el editor de variantes; antes estaban en Sitio web. Se quitó la marca `construido` (C5 §0, 24/10).
 - **Historias:** HU-19 Catálogo con variantes · HU-20 Precios por tamaño y duración · HU-21 Registrar clientes y vehículos · HU-22 Buscar clientes · HU-23 Ficha del cliente
 - **Base:**
   - Requisitos: RF-20 a RF-28; RNF-01, RNF-05, RNF-08, RNF-10, RNF-11.

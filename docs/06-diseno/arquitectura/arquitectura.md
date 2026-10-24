@@ -136,25 +136,32 @@ toctar/
 ├── docker-compose.yml        PostgreSQL y RustFS para desarrollo
 ├── .env.example              variables de entorno necesarias
 ├── docs/                     esta documentación
+├── scripts/                  preparar el almacenamiento, reiniciar la base local o la de las E2E, datos de demostración
+├── material/                 archivos del cliente y fotos de la demo (fuera de Git)
 ├── src/
 │   ├── app/
 │   │   ├── (sitio)/          páginas públicas
-│   │   ├── panel/            panel interno (requiere sesión)
-│   │   └── api/              rutas para subir archivos y generar PDF
-│   ├── modulos/              un directorio por módulo: clientes, catalogo, cotizaciones,
-│   │                         agenda, trabajos, pagos, mantenimiento, sitio, configuracion
-│   │   └── <modulo>/         acciones.ts (servidor), consultas.ts, esquemas.ts (zod), componentes/
-│   ├── db/                   esquema de Drizzle y migraciones
-│   ├── lib/                  autenticación, permisos, almacenamiento, whatsapp, pdf, fechas
-│   └── componentes/          componentes de interfaz compartidos
+│   │   ├── ingresar/         ingreso al panel
+│   │   ├── panel/            panel interno (requiere sesión); el PDF de una cotización es una ruta de aquí
+│   │   │                     (panel/cotizaciones/[id]/pdf)
+│   │   └── api/salud/        estado de la app, para Docker, Coolify y UptimeRobot
+│   ├── modulos/              un directorio por módulo: acceso, usuarios, configuracion, sitio, reclamos,
+│   │                         catalogo, clientes, consultas, cotizaciones, agenda, ordenes, pagos, mantenimientos
+│   │   └── <modulo>/         acciones.ts (servidor), consultas.ts, esquemas.ts (zod), reglas.ts (puras), componentes/
+│   ├── db/                   esquema de Drizzle, migraciones y la conexión (src/db/index.ts)
+│   ├── lib/                  sesión y permisos, almacenamiento y fotos, fechas, WhatsApp, formularios
+│   ├── proxy.ts              redirección rápida al ingreso si no hay cookie de sesión (no protege: cada página valida)
+│   └── componentes/          compartidos: ui/ (shadcn), sitio/ y panel/ (menú, avisos, campos…)
 └── tests/
     ├── unit/                 reglas de negocio (RN)
-    └── e2e/                  flujos críticos (diagramas de secuencia)
+    └── e2e/                  flujos críticos (diagramas de secuencia) y una prueba por historia
 ```
 
 ## Decisiones a confirmar
 
 - [x] Stack: Next.js + PostgreSQL + Drizzle + Better Auth, con Docker (aprobado el 10 de octubre de 2026).
 - [x] Prototipo de pantallas: no se hace; las pantallas se validan en la revisión semanal del entorno de pruebas.
-- [ ] Proveedor del VPS: Hetzner (más barato, servidores en Europa o EE. UU.) o DigitalOcean (más conocido). La latencia desde Bolivia es aceptable en ambos para este uso.
-- [ ] Cuenta de Cloudflare a nombre de TocTar (R2 y, opcionalmente, DNS del dominio).
+- [x] Proveedor del VPS: **Hetzner**, un CX23 en Nuremberg (octubre de 2026). La latencia desde Bolivia es aceptable para este uso.
+- [x] Cuenta de Cloudflare de TocTar: DNS del dominio `toctardetailing.com` (sin proxy) y R2 para las fotos, los PDF y los respaldos.
+
+Lo instalado en el servidor, cuenta por cuenta y sin secretos, está en `07-preparacion/servidor.md`.
