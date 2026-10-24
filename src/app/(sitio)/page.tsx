@@ -11,9 +11,10 @@ import { PortadaArte } from "@/componentes/sitio/portada-arte";
 import { TarjetaServicio } from "@/componentes/sitio/tarjeta-servicio";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import type { UrlsFoto } from "@/lib/fotos";
+import { PORTADA } from "@/modulos/sitio/contenido";
 import { ladoDelLema, trabajoDePortada } from "@/modulos/sitio/galeria";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
-import { contenidoPublico, fotoPortadaPublica, galeriaPublica, serviciosPublicos, type FotoGaleria, type ServicioPublico } from "@/modulos/sitio/publico";
+import { contenidoPublico, fotoDePaginaPublica, galeriaPublica, serviciosPublicos, type FotoGaleria, type ServicioPublico } from "@/modulos/sitio/publico";
 
 // Las descripciones para Google van fijas (dentro del <head>, que es donde las lee Google) y sin nombrar
 // servicios concretos: así no quedan desactualizadas cuando el dueño agrega o quita uno.
@@ -55,7 +56,7 @@ async function PortadaConDatos() {
   await connection();
   const [inicio, foto, servicios, fotos, { redes }] = await Promise.all([
     contenidoPublico("inicio"),
-    fotoPortadaPublica(),
+    fotoDePaginaPublica(PORTADA),
     serviciosPublicos(),
     galeriaPublica(),
     obtenerDatosPublicos(),

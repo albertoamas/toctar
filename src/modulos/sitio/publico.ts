@@ -5,8 +5,8 @@ import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/db";
 import { archivo, contenidoPagina, faq, galeriaItem, servicio, type Beneficio, type Paso } from "@/db/esquema";
 import { urlsFoto, type UrlsFoto } from "@/lib/fotos";
-import { leerContenido, type ContenidoPagina, type Pagina } from "./contenido";
-import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, ETIQUETA_SERVICIOS, fotosDeSecciones, obtenerFotoPortada, opcionesDelSitio, type FotosDeSecciones } from "./consultas";
+import { leerContenido, type ContenidoPagina, type Pagina, type PaginaConFoto } from "./contenido";
+import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, ETIQUETA_SERVICIOS, fotosDeSecciones, obtenerFotoDePagina, opcionesDelSitio, type FotosDeSecciones } from "./consultas";
 
 // Lecturas del sitio público (B4). Van en caché hasta que el panel guarda un cambio: las acciones
 // de B3 invalidan estas etiquetas (updateTag). Solo devuelven lo visible.
@@ -116,11 +116,12 @@ export async function contenidoPublico(pagina: Pagina): Promise<ContenidoPagina>
 }
 
 /** Foto del taller detrás del lema de la portada, o null: entonces la portada muestra el arte de la marca. */
-export async function fotoPortadaPublica(): Promise<UrlsFoto | null> {
+/** La foto de la portada (el taller) o de Nosotros (el equipo), o null. */
+export async function fotoDePaginaPublica(pagina: PaginaConFoto): Promise<UrlsFoto | null> {
   "use cache";
   cacheTag(ETIQUETA_CONTENIDO);
   cacheLife("max");
-  return obtenerFotoPortada();
+  return obtenerFotoDePagina(pagina);
 }
 
 export async function preguntasPublicas(): Promise<{ pregunta: string; respuesta: string }[]> {

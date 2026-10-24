@@ -105,3 +105,24 @@ test("la foto del taller va detrás del lema de la portada; sin foto, al lado va
   const arte = page.locator("main svg[viewBox='0 0 480 288']");
   await expect(arte.or(page.getByRole("slider", { name: "Comparar antes y después" }))).toHaveCount(1);
 });
+
+// Pedido de YankoSoft del 24/10: la foto del equipo en Nosotros, al lado de la historia
+test("la foto del equipo se sube en Textos y va al lado de la historia de Nosotros", async ({ page }, info) => {
+  soloEscritorio(info);
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio/textos");
+  const bloque = page.getByRole("region", { name: "Foto del equipo" });
+  await expect(bloque.getByText("Sin foto: la historia va sola.")).toBeVisible();
+  await expect(bloque.getByRole("button", { name: "Subir foto" })).toBeEnabled();
+  await bloque.getByLabel("Archivo de la foto").setInputFiles({ name: "equipo.png", mimeType: "image/png", buffer: PNG });
+  await expect(bloque.getByRole("img", { name: "El equipo de TocTar" })).toHaveAttribute("src", /nosotros\/[\w-]+-640\.webp$/);
+
+  await page.goto("/nosotros");
+  await expect(page.getByRole("main").getByRole("img", { name: "El equipo de TocTar" })).toBeVisible();
+
+  await page.goto("/panel/sitio/textos");
+  await bloque.getByRole("button", { name: "Quitar foto" }).click();
+  await expect(bloque.getByText("Sin foto: la historia va sola.")).toBeVisible();
+  await page.goto("/nosotros");
+  await expect(page.getByRole("main").getByRole("img", { name: "El equipo de TocTar" })).toHaveCount(0);
+});

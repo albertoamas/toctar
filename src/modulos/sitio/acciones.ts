@@ -8,7 +8,7 @@ import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/form
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { reordenar, type Direccion } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
-import { CLAVES_PAGINA, PAGINAS, PORTADA, datosDelFormulario, esquemaPagina, esquemaPregunta, type Pagina } from "./contenido";
+import { CLAVES_PAGINA, FOTOS_DE_PAGINA, PAGINAS, datosDelFormulario, esquemaPagina, esquemaPaginaConFoto, esquemaPregunta, type Pagina, type PaginaConFoto } from "./contenido";
 import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, listarGaleria, listarPreguntas, listarServicios, servicioEnSitio } from "./consultas";
 import { servicioCambiado } from "./servicio-cambiado";
 import { esquemaEditarGaleria, esquemaFotoSeccion, esquemaGaleria, esquemaId, esquemaIdFormulario, esquemaMover, esquemaQuitarFotoSeccion, esquemaServicio, esquemaVisibilidad } from "./esquemas";
@@ -206,36 +206,46 @@ export async function guardarContenido(_previo: EstadoFormulario, datos: FormDat
 }
 
 /** Foto que tiene hoy la portada. Si falta su fila, es un error de datos (como en `leerContenido`): falta la migración. */
-async function fotoActualPortada(): Promise<number | null> {
-  const [fila] = await db.select({ fotoArchivoId: contenidoPagina.fotoArchivoId }).from(contenidoPagina).where(eq(contenidoPagina.clave, PORTADA));
-  if (!fila) throw new Error("Falta la fila de la portada en contenido_pagina: aplica las migraciones.");
+async function fotoActualDe(pagina: PaginaConFoto): Promise<number | null> {
+  const [fila] = await db.select({ fotoArchivoId: contenidoPagina.fotoArchivoId }).from(contenidoPagina).where(eq(contenidoPagina.clave, pagina));
+  if (!fila) throw new Error(`Falta la fila "${pagina}" en contenido_pagina: aplica las migraciones.`);
   return fila.fotoArchivoId;
 }
 
-async function cambiarFotoPortada(fotoArchivoId: number | null, autorId: number) {
-  await db.update(contenidoPagina).set({ fotoArchivoId, updatedAt: new Date(), updatedBy: autorId }).where(eq(contenidoPagina.clave, PORTADA));
+async function cambiarFotoDe(pagina: PaginaConFoto, fotoArchivoId: number | null, autorId: number) {
+  await db.update(contenidoPagina).set({ fotoArchivoId, updatedAt: new Date(), updatedBy: autorId }).where(eq(contenidoPagina.clave, pagina));
   despuesDeCambiarContenido("textos");
 }
 
-/** Foto del taller detrás del lema de la portada (opcional). La anterior se borra: ningún otro registro la usa. */
-export async function subirFotoPortada(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+const PAGINA_SIN_FOTO = "Esa página no lleva foto. Recarga la página.";
+
+/**
+ * La foto de una página de textos (`FOTOS_DE_PAGINA`): el taller detrás del lema de la portada (HU-08) o el equipo en
+ * Nosotros (24/10). Opcional. La anterior se borra: ningún otro registro la usa.
+ */
+export async function subirFotoDePagina(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const autor = await exigirModulo("sitio");
-  const anterior = await fotoActualPortada();
-  const foto = await guardarFoto(datos.get("foto"), { carpeta: "portada", miniatura: true, autorId: Number(autor.id) });
+  const entrada = esquemaPaginaConFoto.safeParse(datos.get("pagina"));
+  if (!entrada.success) return { mensaje: PAGINA_SIN_FOTO };
+  const pagina = entrada.data;
+  const anterior = await fotoActualDe(pagina);
+  const foto = await guardarFoto(datos.get("foto"), { carpeta: FOTOS_DE_PAGINA[pagina].carpeta, miniatura: true, autorId: Number(autor.id) });
   if (!foto.ok) return { errores: { foto: foto.motivo === "vacia" ? "Elige una foto." : ERROR_FOTO } };
 
-  await cambiarFotoPortada(foto.archivoId, Number(autor.id));
+  await cambiarFotoDe(pagina, foto.archivoId, Number(autor.id));
   if (anterior) await eliminarFoto(anterior);
   return { ok: true, mensaje: "Foto guardada." };
 }
 
-export async function quitarFotoPortada(): Promise<EstadoFormulario> {
+export async function quitarFotoDePagina(pagina: string): Promise<EstadoFormulario> {
   const autor = await exigirModulo("sitio");
-  const anterior = await fotoActualPortada();
+  const entrada = esquemaPaginaConFoto.safeParse(pagina);
+  if (!entrada.success) return { mensaje: PAGINA_SIN_FOTO };
+  const anterior = await fotoActualDe(entrada.data);
   if (!anterior) return { ok: true };
-  await cambiarFotoPortada(null, Number(autor.id));
+  await cambiarFotoDe(entrada.data, null, Number(autor.id));
   await eliminarFoto(anterior);
-  return { ok: true, mensaje: "Foto quitada. Detrás del lema queda el fondo negro." };
+  return { ok: true, mensaje: FOTOS_DE_PAGINA[entrada.data].quitada };
 }
 
 /** Agrega (sin id) o edita (con id) una pregunta frecuente. */

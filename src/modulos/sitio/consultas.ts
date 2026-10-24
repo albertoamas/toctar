@@ -4,7 +4,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { archivo, contenidoPagina, faq, galeriaItem, servicio, servicioFoto, variante, type Beneficio, type Paso } from "@/db/esquema";
 import { urlsFoto, type UrlsFoto } from "@/lib/fotos";
-import { CLAVES_PAGINA, PORTADA, leerContenido, type ContenidoPagina, type Pagina } from "./contenido";
+import { CLAVES_PAGINA, leerContenido, type ContenidoPagina, type Pagina, type PaginaConFoto } from "./contenido";
 import type { SeccionFoto } from "./secciones-foto";
 
 // Lecturas del módulo Sitio web para el panel. Quien las llama ya pasó por exigirModulo("sitio").
@@ -96,15 +96,16 @@ export async function fotosDeSecciones(servicioId: number): Promise<FotosDeSecci
 }
 
 /**
- * Foto del taller de la portada, o null si no tiene (HU-08). La usa también el sitio, sin sesión (`fotoPortadaPublica`, en
- * caché): devuelve solo lo que la portada ya muestra a cualquiera. No agregarle datos que no sean públicos.
+ * La foto de una página de textos (`FOTOS_DE_PAGINA`: el taller en la portada, el equipo en Nosotros), o null si no
+ * tiene. La usa también el sitio, sin sesión (`fotoDePaginaPublica`, en caché): devuelve solo lo que esa página ya
+ * muestra a cualquiera. No agregarle datos que no sean públicos.
  */
-export async function obtenerFotoPortada(): Promise<UrlsFoto | null> {
+export async function obtenerFotoDePagina(pagina: PaginaConFoto): Promise<UrlsFoto | null> {
   const [fila] = await db
     .select({ foto: archivo })
     .from(contenidoPagina)
     .innerJoin(archivo, eq(contenidoPagina.fotoArchivoId, archivo.id))
-    .where(eq(contenidoPagina.clave, PORTADA));
+    .where(eq(contenidoPagina.clave, pagina));
   return fila ? urlsFoto(fila.foto) : null;
 }
 
