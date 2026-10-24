@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
-import { diaYHora, textoHace } from "@/lib/fechas";
-import { nombreVehiculo, primerNombre } from "@/modulos/clientes/reglas";
+import { diaYHora, fechaCorta, textoHace } from "@/lib/fechas";
+import { nombreVehiculo, primerNombre, vehiculoEnLista } from "@/modulos/clientes/reglas";
 import { mensajeListo, mensajeSaldo, textoVehiculo } from "@/modulos/ordenes/mensajes";
 
 // C4 (HU-35, RF-48): el mensaje de "listo" lleva nombre, vehículo y, si hay y quien avisa lo ve, el saldo.
@@ -42,4 +42,11 @@ test("hace cuánto: hoy, ayer o hace N días", () => {
   expect(textoHace("2026-10-24", "2026-10-24")).toBe("hoy");
   expect(textoHace("2026-10-23", "2026-10-24")).toBe("ayer");
   expect(textoHace("2026-09-24", "2026-10-24")).toBe("hace 30 días");
+});
+
+test("fecha corta: sin el año si es de este año; el vehículo en una lista", () => {
+  expect(fechaCorta("2026-10-15", "2026-10-24")).toBe("15/10");
+  expect(fechaCorta("2025-10-15", "2026-10-24")).toBe("15/10/2025");
+  expect(vehiculoEnLista({ marca: "Toyota", modelo: "Corolla", placa: "1234ABC" })).toBe("Toyota Corolla, 1234ABC");
+  expect(vehiculoEnLista({ marca: null, modelo: null, placa: "1234ABC" })).toBe("1234ABC");
 });

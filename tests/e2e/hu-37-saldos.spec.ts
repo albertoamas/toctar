@@ -20,30 +20,35 @@ async function consultar<T extends pg.QueryResultRow>(sql: string, valores: unkn
   }
 }
 
-/** Una orden entregada hace `dias` días, con un servicio de 600 Bs y lo pagado. Devuelve su id. */
-async function ordenEntregada(placa: string, dias: number, pagado: number): Promise<number> {
+/** Una orden entregada hace `dias` días, con un servicio de 600 Bs, el descuento y lo pagado. Devuelve su id. */
+async function ordenEntregada(placa: string, dias: number, pagado: number, descuento = 0): Promise<number> {
   const [{ id }] = await consultar<{ id: number }>(
     `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at,
-       entregado_at, created_by)
+       entregado_at, descuento, created_by)
      select e.sucursal_id, v.cliente_id, v.id, e.id, current_date - $2::int, current_date - $2::int, 'entregado', now(), now(),
-       now() - make_interval(days => $2), v.created_by
+       now() - make_interval(days => $2), $3, v.created_by
      from vehiculo v, (select * from espacio_taller where activo order by orden limit 1) e where v.placa = $1 returning id`,
-    [placa, dias],
+    [placa, dias, descuento],
   );
   await consultar("insert into trabajo_linea (trabajo_id, variante_id, descripcion, precio, orden) select $1, (select id from variante order by id limit 1), 'Lavado completo', 600, 0", [id]);
   if (pagado > 0) await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, $2, 'efectivo', 'adelanto', current_date, created_by from trabajo where id = $1", [id, pagado]);
   return id;
 }
 
-test("la entregada con saldo aparece, con su WhatsApp, y se va al cobrarla", async ({ page }, info) => {
+test("la entregada con saldo aparece, con su WhatsApp, y se cobra desde la lista aunque no se vean órdenes", async ({ page }, info) => {
   const s = sufijo(info);
   const debe = `SL37${s.toUpperCase()}1`;
   const pago = `SL37${s.toUpperCase()}2`;
+  const rebaja = `SL37${s.toUpperCase()}3`;
   await crearClienteEnBase({ nombre: `Debe Saldo ${s}`, telefono: telefono(info, 1), placa: debe });
   await crearClienteEnBase({ nombre: `Pagó Todo ${s}`, telefono: telefono(info, 2), placa: pago });
-  const id = await ordenEntregada(debe, 40, 200);
+  await crearClienteEnBase({ nombre: `Descuento ${s}`, telefono: telefono(info, 3), placa: rebaja });
+  await ordenEntregada(debe, 40, 200);
   await ordenEntregada(pago, 3, 600);
-  await crearUsuario({ usuario: `caja-hu37-${s}`, nombre: "Encargado de caja", contrasena: "encargado-123", rol: "encargado", permisos: ["ordenes", "pagos"] });
+  // Un descuento mayor que el servicio deja el total en cero (calcularSaldo): no debe nada
+  await ordenEntregada(rebaja, 5, 0, 700);
+  // Solo "Pagos": cobra sin pasar por la orden
+  await crearUsuario({ usuario: `caja-hu37-${s}`, nombre: "Encargado de caja", contrasena: "encargado-123", rol: "encargado", permisos: ["pagos"] });
 
   await ingresar(page, `caja-hu37-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
@@ -56,19 +61,19 @@ test("la entregada con saldo aparece, con su WhatsApp, y se va al cobrarla", asy
   const fila = lista.getByRole("listitem").filter({ hasText: debe });
   await expect(fila).toContainText(`Debe Saldo ${s}`);
   await expect(fila).toContainText("400 Bs");
-  await expect(fila).toContainText(/Entregada el \d{2}\/\d{2}, hace 40 días/);
-  await expect(fila.getByText("Hace más de un mes")).toBeVisible();
-  // La que pagó todo no está
+  await expect(fila).toContainText(/Entregada el \d{2}\/\d{2}(\/\d{4})?, hace 40 días/);
+  // La que pagó todo y la del descuento mayor que el servicio no están
   await expect(lista.getByRole("listitem").filter({ hasText: pago })).toHaveCount(0);
+  await expect(lista.getByRole("listitem").filter({ hasText: rebaja })).toHaveCount(0);
+  // Sin "Órdenes", no se ofrece abrir la orden
+  await expect(fila.getByRole("link", { name: "Ver la orden" })).toHaveCount(0);
 
   const enlace = decodeURIComponent((await fila.getByRole("link", { name: "Escribir por WhatsApp" }).getAttribute("href")) ?? "");
   expect(enlace).toMatch(/^https:\/\/wa\.me\/591\d{8}\?text=/);
   expect(enlace).toContain(`por el saldo de 400 Bs del servicio de tu vehículo (placa ${debe})`);
 
-  // Se cobra en la orden y deja de figurar
-  await fila.getByRole("link", { name: "Ver la orden" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}$`));
-  await page.getByRole("button", { name: "Registrar pago" }).click();
+  // Se cobra ahí mismo y deja de figurar
+  await fila.getByRole("button", { name: "Registrar pago" }).click();
   const form = page.getByRole("form", { name: "Registrar pago" });
   await expect(form.getByLabel("Monto")).toHaveValue("400");
   await form.getByText("QR", { exact: true }).click();
