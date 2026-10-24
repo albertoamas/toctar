@@ -53,8 +53,9 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
         <Toaster />
         <header data-theme="oscuro" className="sticky top-0 z-40 flex h-14 items-center gap-2 bg-fondo px-4 text-tinta lg:hidden">
           <MenuDesplegable lado="left" cabecera={<Marca />}>
-            {/* Igual que la barra lateral: en un celular bajo se desplaza el menú y "Cerrar sesión" queda a la vista */}
-            <div className="min-h-0 flex-1 overflow-y-auto px-1">{menu}</div>
+            {/* Igual que la barra lateral: en un celular bajo se desplaza el menú y "Cerrar sesión" queda a la vista. Con el
+                mismo margen que la cabecera, los títulos de grupo quedan alineados con la marca */}
+            <div className="min-h-0 flex-1 overflow-y-auto px-4">{menu}</div>
             <div className="border-t border-border p-4">{sesion}</div>
           </MenuDesplegable>
           <Marca />
