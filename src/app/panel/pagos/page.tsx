@@ -14,6 +14,7 @@ import { vehiculoEnLista } from "@/modulos/clientes/reglas";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
 import { calcularTotales } from "@/modulos/cotizaciones/reglas";
 import { mensajeSaldo } from "@/modulos/ordenes/mensajes";
+import { enlaceTrabajo } from "@/modulos/ordenes/reglas";
 import { RegistrarPago } from "@/modulos/pagos/componentes/registrar-pago";
 import { saldosPendientes } from "@/modulos/pagos/consultas";
 
@@ -21,7 +22,7 @@ export const metadata: Metadata = { title: "Saldos pendientes" };
 
 // HU-37: quién debe todavía (RF-47). El dueño o el encargado con "Pagos". Las órdenes entregadas con saldo, la más
 // antigua primero; desde cada una se le escribe al cliente por WhatsApp y se registra el pago ahí mismo (quien tiene
-// "Pagos" y no "Órdenes" no podría cobrar desde la orden). "Ver la orden", para quien ve órdenes.
+// "Pagos" y no "Órdenes" no podría cobrar desde la orden). "Ver la orden" (o la reserva) para quien puede abrirla.
 export default function PaginaSaldos() {
   return (
     <section className="flex flex-col gap-6">
@@ -35,7 +36,7 @@ export default function PaginaSaldos() {
 
 async function Lista() {
   const usuario = await exigirModulo("pagos");
-  const verOrdenes = puedeVerModulo(usuario, "ordenes");
+  const ve = { ordenes: puedeVerModulo(usuario, "ordenes"), agenda: puedeVerModulo(usuario, "agenda") };
   const [saldos, negocio] = await Promise.all([saldosPendientes(), obtenerDatosPublicos()]);
   if (saldos.length === 0) return <p className="text-tinta-suave">Nadie debe nada.</p>;
   const hoy = fechaEnBolivia();
@@ -57,6 +58,7 @@ async function Lista() {
         {saldos.map((s) => {
           const entregada = fechaEnBolivia(s.entregadoAt);
           const vehiculo = { marca: s.marca, modelo: s.modelo, placa: s.placa };
+          const trabajo = enlaceTrabajo(s.id, "entregado", ve);
           return (
             <li key={s.id} className="flex flex-col gap-3 p-4">
               <div className="flex items-start justify-between gap-4">
@@ -79,9 +81,9 @@ async function Lista() {
                   <IconoWhatsApp />
                   Escribir por WhatsApp
                 </a>
-                {verOrdenes && (
-                  <Link href={`/panel/ordenes/${s.id}`} className={cn(buttonVariants({ variant: "outline" }))}>
-                    Ver la orden
+                {trabajo && (
+                  <Link href={trabajo.href} className={cn(buttonVariants({ variant: "outline" }))}>
+                    {trabajo.texto}
                   </Link>
                 )}
               </div>

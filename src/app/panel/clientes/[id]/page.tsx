@@ -26,7 +26,7 @@ import { ListaConsultas } from "@/modulos/consultas/componentes/lista-consultas"
 import { consultasDelCliente } from "@/modulos/consultas/consultas";
 import { mantenimientosDelCliente } from "@/modulos/mantenimientos/consultas";
 import { NOMBRE_ESTADO_RECORDATORIO } from "@/modulos/mantenimientos/reglas";
-import { rutaTrabajo } from "@/modulos/ordenes/reglas";
+import { enlaceTrabajo, rutaTrabajo } from "@/modulos/ordenes/reglas";
 
 export const metadata: Metadata = { title: "Cliente" };
 
@@ -167,28 +167,31 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
             <p className="text-tinta-suave">No tiene mantenimientos programados.</p>
           ) : (
             <ul aria-label="Mantenimientos" className="flex flex-col divide-y divide-border rounded-sm border border-border">
-              {mantenimientos.map((m) => (
-                <li key={m.id} className="flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-1 p-3">
-                  <span className="flex flex-col">
-                    <span className="font-semibold">
-                      {formatearFecha(m.fechaProgramada)}: {m.servicio}
+              {mantenimientos.map((m) => {
+                // Agendado: a su reserva, o a su orden si ya se recibió, si quien mira puede abrirla
+                const agendado = m.agendado && enlaceTrabajo(m.agendado.id, m.agendado.estado, { ordenes: verOrdenes, agenda: verAgenda });
+                return (
+                  <li key={m.id} className="flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-1 p-3">
+                    <span className="flex flex-col">
+                      <span className="font-semibold">
+                        {formatearFecha(m.fechaProgramada)}: {m.servicio}
+                      </span>
+                      <span className="text-sm text-tinta-suave">
+                        {m.placa}
+                        {!m.vehiculoActivo && ", vehículo desactivado: no se avisa"}
+                      </span>
                     </span>
-                    <span className="text-sm text-tinta-suave">
-                      {m.placa}
-                      {!m.vehiculoActivo && ", vehículo desactivado: no se avisa"}
+                    <span className="flex flex-wrap items-center gap-3">
+                      {agendado && (
+                        <Link href={agendado.href} className="inline-flex min-h-11 items-center text-sm font-semibold underline">
+                          {agendado.texto}
+                        </Link>
+                      )}
+                      <span className="tt-insignia">{NOMBRE_ESTADO_RECORDATORIO[m.estado]}</span>
                     </span>
-                  </span>
-                  <span className="flex flex-wrap items-center gap-3">
-                    {/* Agendado: lleva a su reserva (u orden, si ya se recibió), si quien mira ve la agenda */}
-                    {m.agendado && verAgenda && (
-                      <Link href={rutaTrabajo(m.agendado.id, m.agendado.estado, verOrdenes)} className="inline-flex min-h-11 items-center text-sm font-semibold underline">
-                        Ver la reserva
-                      </Link>
-                    )}
-                    <span className="tt-insignia">{NOMBRE_ESTADO_RECORDATORIO[m.estado]}</span>
-                  </span>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>

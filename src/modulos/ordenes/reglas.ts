@@ -31,6 +31,17 @@ export function rutaTrabajo(id: number, estado: EstadoTrabajo, verOrdenes: boole
   return verOrdenes && esOrden(estado) ? (`/panel/ordenes/${id}` as const) : (`/panel/agenda/${id}` as const);
 }
 
+/**
+ * El enlace "Ver la orden" o "Ver la reserva" a un trabajo, según a dónde lleva (rutaTrabajo), o null si quien mira no
+ * puede abrir esa pantalla (la reserva pide "Agenda"; la orden, "Órdenes").
+ */
+export function enlaceTrabajo(id: number, estado: EstadoTrabajo, ve: { ordenes: boolean; agenda: boolean }) {
+  const href = rutaTrabajo(id, estado, ve.ordenes);
+  const aLaOrden = href.startsWith("/panel/ordenes/");
+  if (!aLaOrden && !ve.agenda) return null;
+  return { href, texto: aLaOrden ? "Ver la orden" : "Ver la reserva" };
+}
+
 /** Cada estado abierto, con su paso siguiente y el de vuelta (por si se marcó por error). */
 const PASOS: Record<(typeof ESTADOS_ORDEN_ABIERTA)[number], { siguiente?: { estado: EstadoTrabajo; texto: string }; anterior?: { estado: EstadoTrabajo; texto: string } }> = {
   recibido: { siguiente: { estado: "en_proceso", texto: "Empezar trabajo" } },

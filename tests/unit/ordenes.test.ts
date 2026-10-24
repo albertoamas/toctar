@@ -4,7 +4,7 @@ import { precioCotizadoYFinal } from "@/modulos/pagos/reglas";
 import { erroresDe } from "@/lib/formularios";
 import { esquemaAvance, esquemaFotoOrden, esquemaRecibir } from "@/modulos/ordenes/esquemas";
 import { puede, puedeVerOrden } from "@/lib/permisos";
-import { esOrden, estaAtrasada, etapaAbierta, pasosDeOrden, puedeExtenderse, puedeRecibirse, rutaTrabajo, transicionOrden } from "@/modulos/ordenes/reglas";
+import { enlaceTrabajo, esOrden, estaAtrasada, etapaAbierta, pasosDeOrden, puedeExtenderse, puedeRecibirse, rutaTrabajo, transicionOrden } from "@/modulos/ordenes/reglas";
 
 // C4 Taller y entrega (HU-33): la reserva recibida es una orden (D-1), fotos por etapa (D-6) y el técnico solo con las
 // suyas (RN-12).
@@ -129,4 +129,16 @@ test("un trabajo se abre en su orden si ya se recibió y quien mira ve órdenes;
     expect(rutaTrabajo(7, estado, true)).toBe("/panel/ordenes/7");
     expect(rutaTrabajo(7, estado, false)).toBe("/panel/agenda/7");
   }
+});
+
+test("el enlace a un trabajo dice a dónde va, y no se ofrece si quien mira no puede abrirlo", () => {
+  const todo = { ordenes: true, agenda: true };
+  expect(enlaceTrabajo(7, "entregado", todo)).toEqual({ href: "/panel/ordenes/7", texto: "Ver la orden" });
+  expect(enlaceTrabajo(7, "agendado", todo)).toEqual({ href: "/panel/agenda/7", texto: "Ver la reserva" });
+  // Sin "Órdenes", la recibida se ve como reserva; sin "Agenda" tampoco, no hay enlace
+  expect(enlaceTrabajo(7, "entregado", { ordenes: false, agenda: true })).toEqual({ href: "/panel/agenda/7", texto: "Ver la reserva" });
+  expect(enlaceTrabajo(7, "entregado", { ordenes: false, agenda: false })).toBeNull();
+  // Con "Órdenes" y sin "Agenda": la orden sí, la reserva no
+  expect(enlaceTrabajo(7, "listo", { ordenes: true, agenda: false })).toEqual({ href: "/panel/ordenes/7", texto: "Ver la orden" });
+  expect(enlaceTrabajo(7, "agendado", { ordenes: true, agenda: false })).toBeNull();
 });
