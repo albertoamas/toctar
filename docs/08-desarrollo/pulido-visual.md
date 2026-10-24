@@ -228,8 +228,15 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 | 13.1 | Estructura del panel (1.4) | El menú en grupos y la barra lateral pulida el 24/10 (C5 §0): se registra y se revisa con el técnico y con un encargado | ⏳ |
 | 13.2 | Servicios del sitio y su página (4.2 y 4.4) | Sin alta, nombre ni variantes desde la reorganización: que nada quede huérfano | ⏳ |
 | 13.3 | Portada (2.1) | La foto del taller es el LCP del celular: que cargue sin diferir y con prioridad (`loading="eager"`) | ⏳ |
+| 13.4 | No encontrado dentro del panel | Hoy no existe: un cliente, una orden o una cotización que ya no está (27 `notFound()` del panel) muestra la página del sitio público, con su menú y "Ver los servicios", y saca al personal del panel. Necesita la suya, dentro del panel | ⏳ |
+| 13.5 | Error inesperado (sitio y panel) | Hoy no existe: sin `error.tsx` ni `global-error.tsx`, una falla del servidor muestra la página genérica de Next, sin marca ni forma de volver | ⏳ |
 
-El inicio (4.1) no entra: lo rehace la HU-39 (pantalla del día), con `frontend-design`.
+**Cobertura** (revisada el 24/10 contra todas las rutas de `src/app` y `public/`): cada pantalla del sitio, el ingreso y el panel está en un grupo. Lo que no tiene ruta propia se revisa dentro de su pantalla:
+- **Los diálogos:** el historial de precios va en 7.3, el visor de fotos en 11.2 y 11.3, y el comprobante en 10.3 y 11.4.
+- **Los formularios que se abren en la misma pantalla:** registrar o anular un pago, reprogramar o cancelar, extender la entrega, "No le interesa"…
+- **El inicio (4.1)** no entra: lo rehace la HU-39 (pantalla del día).
+- **Las pantallas que suma C5:** "Mensajes" (HU-40) y "Publicar en la galería" (HU-41) se diseñan con `frontend-design` en su propia historia.
+- `GET /api/salud` no es una pantalla.
 
 ## Registro por pantalla
 
