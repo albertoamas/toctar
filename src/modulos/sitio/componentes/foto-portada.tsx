@@ -18,7 +18,7 @@ export function FotoPortada({ foto }: { foto: UrlsFoto | null }) {
         accion={subirFotoPortada}
         camposOcultos={{}}
         actual={foto ? { ...foto, alt: "Foto del taller" } : null}
-        textoVacio="Sin foto: la portada muestra el arte de TocTar."
+        textoVacio="Sin foto: detrás del lema queda el fondo negro."
         quitar={quitarFotoPortada}
       />
     </section>

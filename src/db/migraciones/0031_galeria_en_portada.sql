@@ -1,0 +1,3 @@
+ALTER TABLE "galeria_item" ADD COLUMN "en_portada" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "galeria_item_una_en_portada" ON "galeria_item" USING btree ("en_portada") WHERE "galeria_item"."en_portada";--> statement-breakpoint
+ALTER TABLE "galeria_item" ADD CONSTRAINT "galeria_item_portada_con_antes" CHECK (not "galeria_item"."en_portada" or "galeria_item"."foto_antes_id" is not null);

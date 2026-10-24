@@ -166,7 +166,7 @@ export async function quitarFotoPortada(): Promise<EstadoFormulario> {
   if (!anterior) return { ok: true };
   await cambiarFotoPortada(null, Number(autor.id));
   await eliminarFoto(anterior);
-  return { ok: true, mensaje: "Foto quitada. La portada muestra el arte de TocTar." };
+  return { ok: true, mensaje: "Foto quitada. Detrás del lema queda el fondo negro." };
 }
 
 /** Agrega (sin id) o edita (con id) una pregunta frecuente. */
@@ -319,6 +319,29 @@ export async function cambiarVisibilidadGaleria(datos: { id: number; visible: bo
   if (!fila) return { mensaje: "Esa foto ya no existe. Recarga la página." };
   despuesDeCambiarGaleria();
   return { ok: true, mensaje: visible ? "La foto se ve en el sitio." : "Foto oculta: no se ve en el sitio." };
+}
+
+/** Elige el trabajo del comparador de la portada (pedido de la demo del 24/10). Uno solo, y con foto de antes. */
+export async function elegirParaPortada(datoId: number): Promise<EstadoFormulario> {
+  await exigirModulo("sitio");
+  const entrada = esquemaId.safeParse(datoId);
+  if (!entrada.success) return { mensaje: "Esa foto ya no existe. Recarga la página." };
+  const [item] = await db.select({ antes: galeriaItem.fotoAntesId }).from(galeriaItem).where(eq(galeriaItem.id, entrada.data));
+  if (!item) return { mensaje: "Esa foto ya no existe. Recarga la página." };
+  if (!item.antes) return { mensaje: "En la portada va un trabajo con foto de antes y de después." };
+  // Primero se quita la anterior: el índice único admite una sola marcada. Si otra persona eligió al mismo tiempo,
+  // el índice frena la segunda elección y se avisa.
+  try {
+    await db.transaction(async (tx) => {
+      await tx.update(galeriaItem).set({ enPortada: false }).where(eq(galeriaItem.enPortada, true));
+      await tx.update(galeriaItem).set({ enPortada: true }).where(eq(galeriaItem.id, entrada.data));
+    });
+  } catch (error) {
+    if (indiceUnicoViolado(error) !== null) return { mensaje: "Alguien más cambió la portada recién. Recarga la página." };
+    throw error;
+  }
+  despuesDeCambiarGaleria();
+  return { ok: true, mensaje: "Listo: este trabajo se ve en la portada." };
 }
 
 /** Las fotos de la galería no tienen historial: se borran, también del almacenamiento. */

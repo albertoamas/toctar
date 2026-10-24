@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { crearServicioPublicado, ingresarComoDueno } from "./apoyo";
+import { crearServicioPublicado, ingresarComoDueno, PNG } from "./apoyo";
 
 // HU-10 Portada y HU-15 Botón de WhatsApp. Criterios: docs/09-pruebas/criterios-entrega-1.md (10.x y 15.x).
 // El WhatsApp lo carga tests/e2e/preparar.setup.ts antes de todas las pruebas.
@@ -90,4 +90,45 @@ test("al recargar, los títulos de la portada no aparecen antes que su contenido
   const titulo = page.getByRole("heading", { name: "Servicios", level: 2 });
   await titulo.waitFor({ state: "attached" });
   expect(await page.getByRole("region", { name: "Servicios" }).locator(".tt-tarjeta").count()).toBeGreaterThan(0);
+});
+
+// Pedido de la demo del 24/10: el comparador de antes y después, arriba en la portada. El trabajo se elige en la
+// Galería del panel; si el elegido se oculta, va otro con antes.
+test("el trabajo elegido en la galería del panel se compara arriba en la portada", async ({ page }, info) => {
+  soloEscritorio(info);
+  test.setTimeout(60_000);
+  const [primero, elegido] = ["Portada: pulido de prueba", "Portada: faroles de prueba"];
+  const foto = (nombre: string) => ({ name: nombre, mimeType: "image/png", buffer: PNG });
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio/galeria");
+  const lista = page.getByRole("list", { name: "Fotos de la galería" });
+  for (const descripcion of [primero, elegido]) {
+    await page.getByRole("button", { name: "Subir fotos" }).click();
+    await expect(page.getByRole("button", { name: "Guardar en la galería" })).toBeEnabled();
+    await page.getByLabel("Archivo: Antes (opcional)").setInputFiles(foto("antes.png"));
+    await page.getByLabel("Archivo: Después").setInputFiles(foto("despues.png"));
+    await page.getByLabel("Servicio").selectOption({ label: "Pulido y nano cerámico" });
+    await page.getByLabel("Descripción").fill(descripcion);
+    await page.getByRole("button", { name: "Guardar en la galería" }).click();
+    await expect(lista.getByRole("listitem").filter({ hasText: descripcion })).toHaveCount(1);
+  }
+
+  await page.getByRole("button", { name: `Mostrar en la portada: ${elegido}` }).click();
+  const tarjeta = lista.getByRole("listitem").filter({ hasText: elegido });
+  await expect(tarjeta.getByText("En la portada")).toBeVisible();
+  // El que está en la portada no ofrece elegirlo otra vez
+  await expect(page.getByRole("button", { name: `Mostrar en la portada: ${elegido}` })).toHaveCount(0);
+
+  await page.goto("/");
+  await expect(page.getByRole("img", { name: `Después: ${elegido}` })).toBeVisible();
+  await expect(page.getByRole("slider", { name: "Comparar antes y después" })).toHaveValue("50");
+  await expect(page.getByText(elegido, { exact: true })).toBeVisible();
+
+  // Oculto, deja la portada: va otro trabajo con antes
+  await page.goto("/panel/sitio/galeria");
+  await page.getByRole("button", { name: `Ocultar: ${elegido}` }).click();
+  await expect(tarjeta.getByText("Oculta")).toBeVisible();
+  await page.goto("/");
+  await expect(page.getByRole("slider", { name: "Comparar antes y después" })).toBeVisible();
+  await expect(page.getByRole("img", { name: `Después: ${elegido}` })).toHaveCount(0);
 });

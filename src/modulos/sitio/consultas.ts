@@ -111,6 +111,7 @@ export type FilaGaleria = {
   servicio: string;
   descripcion: string;
   visible: boolean;
+  enPortada: boolean;
   orden: number;
   antes: UrlsFoto | null;
   despues: UrlsFoto;
@@ -134,6 +135,7 @@ export async function listarGaleria(): Promise<FilaGaleria[]> {
     servicio: f.servicio,
     descripcion: f.item.descripcion,
     visible: f.item.visible,
+    enPortada: f.item.enPortada,
     orden: f.item.orden,
     antes: f.antes ? urlsFoto(f.antes) : null,
     despues: urlsFoto(f.despues),

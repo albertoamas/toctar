@@ -10,6 +10,7 @@ import type { UrlsFoto } from "@/lib/fotos";
 //   Un gesto vertical desplaza la página y no mueve la línea (`touch-action: pan-y` y el umbral de abajo).
 // - Con el teclado y el lector de pantalla: un deslizador nativo (oculto) que mueve la misma línea con las flechas.
 // Las dos fotos se ven enteras (`object-contain`): si no tienen la misma forma, una queda con bordes, pero nunca recortada.
+// El alto máximo sale de la variable `--alto-comparador` (70dvh si nadie la pone): la portada lo achica en el celular.
 
 type Foto = Pick<UrlsFoto, "url" | "ancho" | "alto">;
 
@@ -21,13 +22,28 @@ const MARGEN_ETIQUETA = 15;
 
 type Gesto = { id: number; x: number; y: number; arrastrando: boolean };
 
-export function ComparadorAntesDespues({ antes, despues, descripcion }: { antes: Foto; despues: Foto; descripcion: string }) {
+export function ComparadorAntesDespues({
+  antes,
+  despues,
+  descripcion,
+  leyenda,
+  alFrente = false,
+}: {
+  antes: Foto;
+  despues: Foto;
+  descripcion: string;
+  /** Texto visible debajo, antes de la ayuda (la portada dice qué trabajo es; el visor ya lo dice en su título). */
+  leyenda?: string;
+  /** Va arriba de la página (la portada): las fotos cargan enseguida y con prioridad alta. */
+  alFrente?: boolean;
+}) {
   const [corte, setCorte] = useState(INICIO);
   const caja = useRef<HTMLDivElement>(null);
   const gesto = useRef<Gesto | null>(null);
   const id = useId();
-  // La caja toma la forma de la foto de después y nunca pasa del 70 % del alto de la pantalla
+  // La caja toma la forma de la foto de después y nunca pasa del alto máximo
   const proporcion = (despues.ancho ?? 4) / (despues.alto ?? 3);
+  const carga = alFrente ? ({ loading: "eager", fetchPriority: "high" } as const) : {};
 
   function moverA(x: number) {
     const r = caja.current?.getBoundingClientRect();
@@ -40,7 +56,7 @@ export function ComparadorAntesDespues({ antes, despues, descripcion }: { antes:
       <div
         ref={caja}
         className="group relative mx-auto w-full cursor-ew-resize touch-pan-y overflow-hidden bg-superficie select-none"
-        style={{ aspectRatio: proporcion, maxWidth: `calc(70dvh * ${proporcion})` }}
+        style={{ aspectRatio: proporcion, maxWidth: `calc(var(--alto-comparador, 70dvh) * ${proporcion})` }}
         onPointerDown={(e) => {
           // Solo el dedo principal o el botón izquierdo: el clic derecho (guardar la foto) o un segundo dedo no mueven nada
           if (!e.isPrimary || e.button !== 0) return;
@@ -66,7 +82,7 @@ export function ComparadorAntesDespues({ antes, despues, descripcion }: { antes:
         // El navegador tomó el gesto para desplazar la página: la línea no se toca
         onPointerCancel={() => (gesto.current = null)}
       >
-        <Image src={despues.url} alt={`Después: ${descripcion}`} fill unoptimized draggable={false} className="object-contain" />
+        <Image src={despues.url} alt={`Después: ${descripcion}`} fill unoptimized draggable={false} {...carga} className="object-contain" />
         {/* El antes encima, recortado hasta la línea */}
         <Image
           src={antes.url}
@@ -74,6 +90,7 @@ export function ComparadorAntesDespues({ antes, despues, descripcion }: { antes:
           fill
           unoptimized
           draggable={false}
+          {...carga}
           className="bg-superficie object-contain"
           style={{ clipPath: `inset(0 ${100 - corte}% 0 0)` }}
         />
@@ -110,9 +127,12 @@ export function ComparadorAntesDespues({ antes, despues, descripcion }: { antes:
           </span>
         </span>
       </div>
-      <p id={`${id}-ayuda`} className="text-center text-sm text-tinta-suave">
-        Arrastra la línea para comparar
-      </p>
+      <div className="flex flex-col items-center gap-0.5 text-center">
+        {leyenda && <p className="font-semibold">{leyenda}</p>}
+        <p id={`${id}-ayuda`} className="text-sm text-tinta-suave">
+          Arrastra la línea para comparar
+        </p>
+      </div>
     </div>
   );
 }

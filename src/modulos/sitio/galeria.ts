@@ -14,3 +14,15 @@ export function filtrarPorServicio<T extends ConServicio>(fotos: T[], slug: stri
   if (!slug || !fotos.some((f) => f.servicio.slug === slug)) return fotos;
   return fotos.filter((f) => f.servicio.slug === slug);
 }
+
+type ConAntes = { antes: unknown; enPortada: boolean };
+
+/**
+ * El trabajo del comparador de la portada (pedido de la demo del 24/10): el elegido en el panel; si no hay ninguno
+ * elegido (o quedó oculto), el primero de la galería con foto de antes; sin ninguno con antes, no hay comparador.
+ * Recibe solo lo visible del sitio, en su orden.
+ */
+export function trabajoDePortada<T extends ConAntes>(fotos: T[]): (T & { antes: NonNullable<T["antes"]> }) | null {
+  const conAntes = fotos.filter((f): f is T & { antes: NonNullable<T["antes"]> } => f.antes != null);
+  return conAntes.find((f) => f.enPortada) ?? conAntes[0] ?? null;
+}

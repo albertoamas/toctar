@@ -135,7 +135,7 @@
 | 8.2 | Ningún texto queda vacío | E2E "un texto vacío da error junto al campo y no se guarda". Unitarias "textos de las páginas" | ✅ |
 | 8.3 | Puedo agregar, ordenar y quitar preguntas frecuentes | E2E "preguntas frecuentes: agregar, editar, ordenar, ocultar y eliminar" (eliminar pide confirmación; también se pueden ocultar sin borrar) | ✅ |
 | 8.4 | Los textos iniciales están cargados para que el dueño los corrija | Migración `0009_datos_contenido`: borradores con su historia, su garantía y la entrevista, sin precios | ✅ (los valida el dueño en la demo) |
-| 8.5 | Subo, cambio o quito la foto del taller de la portada; sin foto se ve el arte de la marca | E2E `hu-08` "la foto del taller va detrás del lema de la portada; sin foto vuelve el arte" | ✅ (agregado en el pulido 2.1; falta la foto propia del taller) |
+| 8.5 | Subo, cambio o quito la foto del taller de la portada; sin foto se ve el arte de la marca | E2E `hu-08` "la foto del taller va detrás del lema de la portada; sin foto, al lado va el arte o el comparador". Desde el 24/10, el arte va solo si la galería no tiene ningún trabajo con antes (10.6) | ✅ (agregado en el pulido 2.1; falta la foto propia del taller) |
 
 ## HU-09 Galería en el panel
 
@@ -159,6 +159,7 @@
 | 10.3 | Carga rápido en el celular (RNF-02) | Lighthouse móvil (14/10): portada 91 de rendimiento, 100 de accesibilidad y 100 de SEO | ✅ |
 | 10.4 | Sin precios (RN-10) y servicios sin foto con la imagen de reemplazo | E2E "los servicios sin foto muestran la imagen de reemplazo y ninguna página pública muestra precios" | ✅ |
 | 10.5 | Un cambio en el panel se ve sin volver a desplegar | E2E "ocultar un servicio en el panel lo saca del sitio sin volver a desplegar" | ✅ |
+| 10.6 | El comparador de antes y después va arriba en la portada, con el trabajo elegido en la Galería del panel (pedido de la demo del 24/10, registro de cambios 4) | E2E `hu-10` "el trabajo elegido en la galería del panel se compara arriba en la portada": se elige, se ve y, oculto, lo reemplaza otro con antes. Unitarias "trabajo del comparador de la portada" | ✅ |
 
 ## HU-15 Botón de WhatsApp
 

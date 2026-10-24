@@ -33,6 +33,8 @@ export type FotoGaleria = {
   servicio: { nombre: string; slug: string };
   antes: UrlsFoto | null;
   despues: UrlsFoto;
+  /** Elegida en el panel para el comparador de la portada (ver `trabajoDePortada`). */
+  enPortada: boolean;
 };
 
 const fotoAntes = alias(archivo, "foto_antes");
@@ -57,6 +59,7 @@ export async function galeriaPublica(): Promise<FotoGaleria[]> {
     servicio: { nombre: f.nombre, slug: f.slug },
     antes: f.antes ? urlsFoto(f.antes) : null,
     despues: urlsFoto(f.despues),
+    enPortada: f.item.enPortada,
   }));
 }
 
