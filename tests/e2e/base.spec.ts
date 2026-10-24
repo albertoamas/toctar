@@ -120,6 +120,16 @@ test("el botón fijo de WhatsApp muestra una nubecita en cada página hasta que 
   await expect(nube).toHaveCount(0);
 });
 
+// Revisión de YankoSoft del 24/10: en la computadora, "Ver el servicio" queda a la misma altura en toda la fila de
+// tarjetas, aunque los resúmenes tengan distinto largo
+test("en la computadora, Ver el servicio queda al pie de cada tarjeta, a la misma altura en la fila", async ({ page, isMobile }) => {
+  test.skip(isMobile, "En el celular cada servicio es una fila propia");
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/servicios");
+  const alturas = await page.locator("main .tt-tarjeta__enlace").evaluateAll((es) => es.slice(0, 3).map((e) => Math.round(e.getBoundingClientRect().top)));
+  expect(new Set(alturas).size).toBe(1);
+});
+
 // Pulido visual 1.4
 test("el panel no se sale de la pantalla en el celular y su menú queda a mano", async ({ page, isMobile }) => {
   await ingresarComoDueno(page);

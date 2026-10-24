@@ -7,8 +7,9 @@ import { EnlacesMenu, NavegacionPrincipal } from "./enlaces-sitio";
 import { BotonWhatsApp } from "./whatsapp";
 
 // Encabezado del sitio (componente EncabezadoSitio del Design System): logo y navegación.
-// Queda fijo arriba al bajar, para tener el menú siempre a mano. A 32 px de alto el lema del logo
-// no se lee: va la versión sin lema.
+// Queda fijo arriba al bajar, para tener el menú siempre a mano. El logo mide 36 px de alto en el celular y 40 en la
+// computadora (más grande desde la demo del 24/10, a pedido del dueño): unos 143 y 159 px de ancho, menos que los
+// 360 que pide el manual para el lema, así que va la versión sin lema.
 // Se separa del contenido con una línea gris fina, sin brillo: está en todas las páginas y no debe competir
 // con ellas. El rojo queda para el logo y la página actual; la línea LED con brillo es de la portada.
 
@@ -18,11 +19,16 @@ import { BotonWhatsApp } from "./whatsapp";
 // que ya se llama "TocTar, inicio".
 const LOGO = readFileSync(path.join(process.cwd(), "public/marca/toctar-horizontal-sin-lema-sobre-oscuro.svg"), "utf8")
   .replace(' role="img" aria-label="TocTar"', "")
-  .replace("<svg ", '<svg width="127" height="32" aria-hidden="true" focusable="false" ');
+  .replace("<svg ", '<svg width="143" height="36" aria-hidden="true" focusable="false" ');
 
 function Logo() {
   return (
-    <Link href="/" aria-label="TocTar, inicio" className="flex min-h-11 shrink-0 items-center" dangerouslySetInnerHTML={{ __html: LOGO }} />
+    <Link
+      href="/"
+      aria-label="TocTar, inicio"
+      className="flex min-h-11 shrink-0 items-center md:[&_svg]:h-10 md:[&_svg]:w-auto"
+      dangerouslySetInnerHTML={{ __html: LOGO }}
+    />
   );
 }
 
