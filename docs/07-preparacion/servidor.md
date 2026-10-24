@@ -85,15 +85,57 @@ uname -r && free -h | grep Swap && systemctl is-active fail2ban
 # 7.0.0-38-generic · Swap: 4.0Gi · active
 ```
 
-## Lo que falta instalar
+## Coolify (24/10/2026)
 
-Ver `guia-de-despliegue.md`:
+Instalado con el instalador oficial (`curl -fsSL https://cdn.coollabs.io/coolify/install.sh | bash`), que también instaló Docker. Se usa por esto: https automático, despliegue en cada push, dos entornos, respaldos a R2 con retención, logs y rollback. Desventajas conocidas y cómo se cuidan: es software en beta (sus menús cambian), consume unos 0,5 a 1 GB de RAM y su panel está en internet. Por eso: verificación en dos pasos, actualizarlo cuando avise (no en semana de demo) y respaldos fuera del servidor.
 
-- [ ] Coolify (paso 4), después del DNS en Cloudflare (pasos 1 y 3).
-- [ ] Bases PostgreSQL 18 de pruebas y producción (paso 5).
-- [ ] Apps de pruebas y producción (paso 7).
-- [ ] Respaldos diarios de la base a R2 (paso 8).
-- [ ] Cerrar el puerto 8000 en el firewall.
+- **Panel:** `https://coolify.toctardetailing.com` (Let's Encrypt; se renueva solo). Zona horaria **UTC**. El puerto 8000 ya está cerrado: `http://5.75.168.229:8000` no responde.
+- **Usuarios:** el administrador es la cuenta de YankoSoft (correo de trabajo; contraseña en el gestor). **Pendiente:** su verificación en dos pasos, e invitar al dueño en **Team** con rol Admin u Owner y sus propios dos pasos.
+- **Servidor:** "This machine" (localhost).
+- **GitHub:** GitHub App **`toctar-github`** (en Integrations), instalada **solo** en `albertoamas/toctar`, con permisos de lectura (Contents, Metadata, Email), sin vistas previas por PR ni runners de Actions.
+- **Proyecto `TocTar`**, con dos entornos:
+
+| | Pruebas | Producción |
+|---|---|---|
+| App | `toctar-pruebas` | `toctar-produccion` |
+| Rama | `develop` | `main` |
+| Dominio | `https://pruebas.toctardetailing.com` (noindex) | `https://toctardetailing.com` (Indexable) y `https://www.toctardetailing.com`, que redirige al principal |
+| Base | `toctar-db-pruebas` | `toctar-db-produccion` |
+| Estado | **En línea desde el 24/10/2026** | Configurada, **sin desplegar**: se publica con el merge `develop` → `main` al aceptarse la entrega |
+
+- **Las dos apps:** fuente GitHub App (no "Deploy key"), build pack **Dockerfile** (no Docker Compose: `docker-compose.yml` es solo de desarrollo), puerto expuesto 3000 **sin port mappings**. La verificación de salud es la del Dockerfile (`/api/salud`).
+- **Variables de entorno** (15 por app; los valores secretos están solo en Coolify y en el gestor):
+  - `SITIO_URL` y `SITIO_INDEXABLE`: las únicas con **Build time** encendido, porque la app las lee al compilar.
+  - `BETTER_AUTH_URL`, `DUENO_INICIAL_USUARIO`, `DUENO_INICIAL_NOMBRE`, `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_BUCKET_PRIVADO`, `S3_URL_PUBLICA`.
+  - Secretas: `DATABASE_URL` (la URL interna de la base de **su** entorno), `BETTER_AUTH_SECRET` (**distinto** en cada entorno), `DUENO_INICIAL_CONTRASENA`, `S3_ACCESS_KEY_ID` y `S3_SECRET_ACCESS_KEY` (token `toctar-app`).
+  - En todas: Runtime encendido e **Interpolation apagado** (si no, un `$` en un secreto se reemplaza sin avisar).
+  - Producción: `DUENO_INICIAL_USUARIO=yerko.tejerina`. Convención de usuarios: `nombre.apellido`, en minúsculas, sin tildes ni ñ.
+- **Bases:** PostgreSQL 18 (`postgres:18-alpine`), **privadas** (sin acceso público ni port mappings). `btree_gist` viene en la imagen y la activan las migraciones.
+- **Respaldos:** almacenamiento S3 `toctar-respaldos` (bucket del mismo nombre, token de respaldos).
+
+| Base | Cuándo | Dónde | Retención |
+|---|---|---|---|
+| `toctar-db-produccion` | Todos los días, `0 4 * * *` UTC (0:00 en Bolivia) | R2 y servidor | R2: 30 copias, 30 días, 5 GB · servidor: 7 copias, 7 días, 2 GB · aviso si pasan 26 h sin respaldo |
+| `toctar-db-pruebas` | Domingos, `0 4 * * 0` UTC | Solo servidor | 4 copias, 30 días, 1 GB |
+
+  El primer respaldo de producción (24/10) llegó a R2. **Pendiente:** probar una restauración cuando haya datos reales.
+- **Limpieza de Docker:** diaria, `0 5 * * *` UTC (1:00 en Bolivia). **Conserva** los volúmenes (ahí están los datos de las bases), las redes y las imágenes retenidas (para el rollback).
+
+### Errores de la primera vez (para no repetirlos)
+- **"Permission denied (publickey)" al desplegar:** la app se creó con "Private repository / Deploy key" en vez de la GitHub App. No se puede cambiar después: se rehízo eligiendo **GitHub App → `toctar-github`**.
+- **El escaneo automático elige "Docker Compose"** porque encuentra `docker-compose.yml`. Siempre hay que cambiarlo a **Dockerfile**.
+- **Coolify agregó `www.` solo al dominio de pruebas**, y Traefik respondía con su certificado de fábrica (`TRAEFIK DEFAULT CERT`) y un 503. Se dejó el dominio sin www y se volvió a desplegar (las etiquetas de Traefik se regeneran al desplegar).
+- Los textos grises de los formularios (`3000:5432`, `--cap-add SYS_ADMIN`, `/api/v3`, `php artisan migrate`) son **ejemplos**, no valores.
+
+## GitHub (24/10/2026)
+
+`main` y `develop` están protegidas: exigen Pull Request (sin revisores obligatorios, porque hay un solo desarrollador), también para el dueño del repositorio, y prohíben el push forzado y el borrado. Un push directo a `main` publicaría en producción.
+
+## Lo que falta
+
+- [ ] Verificación en dos pasos en Coolify (YankoSoft) e invitar al dueño en **Team**.
+- [ ] Día de la publicación: comprobar que `www` redirija, UptimeRobot (cuenta del negocio con avisos también a YankoSoft; monitor de producción) y probar una restauración la semana siguiente.
+- [ ] Reunión con el dueño: sus dos pasos (Cloudflare y Hetzner), su tarjeta en las tres cuentas, decidir los backups de Hetzner y la hoja de entrega con el acceso de emergencia (consola web de Hetzner → Reset root password).
 
 Cada cosa que se instale se anota aquí, con su fecha.
 
