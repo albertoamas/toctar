@@ -239,6 +239,13 @@
       "when": 1792875652594,
       "tag": "0033_servicio_foto",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1792876402001,
+      "tag": "0034_servicio_foto_indice",
+      "breakpoints": true
     }
   ]
 }

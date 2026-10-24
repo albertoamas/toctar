@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { ArrowDownIcon, ArrowUpIcon, ImagePlusIcon, TrashIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { useHidratado } from "@/componentes/hidratado";
@@ -23,12 +23,15 @@ type Foto = { id: number; descripcion: string; foto: { miniatura: string; ancho:
 const LUGARES_A_LA_VISTA = 4;
 
 export function FotosServicio({ servicioId, fotos }: { servicioId: number; fotos: Foto[] }) {
-  // La foto elegida y su vista previa local (blob:), que se libera al guardar o cancelar
+  // La foto elegida y su vista previa local (blob:)
   const [elegida, setElegida] = useState<{ archivo: File; vista: string } | null>(null);
-  const soltar = () => {
-    if (elegida) URL.revokeObjectURL(elegida.vista);
-    setElegida(null);
-  };
+  const soltar = () => setElegida(null);
+  // La vista previa se libera al cambiar de foto, al guardar o cancelar, y también si se sale de la página sin guardar
+  useEffect(() => {
+    if (!elegida) return;
+    const { vista } = elegida;
+    return () => URL.revokeObjectURL(vista);
+  }, [elegida]);
   const entrada = useRef<HTMLInputElement>(null);
   const listo = useHidratado();
   const lugaresVacios = fotos.length >= LIMITES.fotosServicio ? 0 : Math.max(1, LUGARES_A_LA_VISTA - fotos.length);

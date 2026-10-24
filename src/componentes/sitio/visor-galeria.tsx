@@ -1,14 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/componentes/ui/dialog";
+import { useState } from "react";
 import type { UrlsFoto } from "@/lib/fotos";
 import { ComparadorAntesDespues } from "./comparador-antes-despues";
+import { DialogoFoto, FotoGrande } from "./dialogo-foto";
 
 // Galería pública (HU-12): grilla de miniaturas; al tocar una se abre en grande. Si tiene antes y después, en el
-// comparador: una sola foto partida por una línea que se arrastra (pedido del 24/10). Con el comparador, es lo único
-// de cliente del sitio.
+// comparador: una sola foto partida por una línea que se arrastra (pedido del 24/10). El diálogo es el mismo de las
+// fotos propias de un servicio (dialogo-foto.tsx).
 
 /** Columnas de la grilla en la computadora (lg:grid-cols-4): las fotos de la primera fila se ven al entrar. */
 const FOTOS_PRIMERA_FILA = 4;
@@ -17,7 +17,6 @@ export type FotoVisor = { id: number; descripcion: string; servicio: string; ant
 
 export function VisorGaleria({ fotos }: { fotos: FotoVisor[] }) {
   const [abierta, setAbierta] = useState<FotoVisor | null>(null);
-  const titulo = useRef<HTMLHeadingElement>(null);
 
   return (
     <>
@@ -48,34 +47,14 @@ export function VisorGaleria({ fotos }: { fotos: FotoVisor[] }) {
         ))}
       </ul>
 
-      <Dialog open={!!abierta} onOpenChange={(abrir) => !abrir && setAbierta(null)}>
-        {abierta && (
-          // El foco entra por el título: si no, caería en el deslizador oculto del comparador (sin nada visible enfocado)
-          <DialogContent
-            initialFocus={titulo}
-            data-theme="oscuro"
-            className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto rounded-none bg-fondo p-4 text-tinta sm:max-w-5xl"
-          >
-            <div className="flex flex-col gap-1 pr-12">
-              <DialogTitle ref={titulo} tabIndex={-1} className="font-heading text-2xl font-bold italic outline-none">{abierta.servicio}</DialogTitle>
-              <DialogDescription className="text-tinta-suave">{abierta.descripcion}</DialogDescription>
-            </div>
-            {abierta.antes ? (
-              <ComparadorAntesDespues antes={abierta.antes} despues={abierta.despues} descripcion={abierta.descripcion} />
-            ) : (
-              <FotoGrande foto={abierta.despues} alt={abierta.descripcion} />
-            )}
-          </DialogContent>
-        )}
-      </Dialog>
+      <DialogoFoto abierto={!!abierta} alCerrar={() => setAbierta(null)} titulo={abierta?.servicio ?? ""} descripcion={abierta?.descripcion}>
+        {abierta &&
+          (abierta.antes ? (
+            <ComparadorAntesDespues antes={abierta.antes} despues={abierta.despues} descripcion={abierta.descripcion} />
+          ) : (
+            <FotoGrande foto={abierta.despues} alt={abierta.descripcion} />
+          ))}
+      </DialogoFoto>
     </>
-  );
-}
-
-function FotoGrande({ foto, alt }: { foto: UrlsFoto; alt: string }) {
-  return (
-    <figure>
-      <Image src={foto.url} alt={alt} width={foto.ancho ?? 1600} height={foto.alto ?? 1200} unoptimized className="max-h-[75dvh] w-full bg-superficie object-contain" />
-    </figure>
   );
 }

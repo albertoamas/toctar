@@ -110,17 +110,33 @@ export async function subirFotoDeServicio(_previo: EstadoFormulario, datos: Form
   const entrada = esquemaFotoServicio.safeParse(valores);
   if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
   const { servicioId, descripcion } = entrada.data;
-  const [existe] = await db.select({ id: servicio.id }).from(servicio).where(eq(servicio.id, servicioId));
-  if (!existe) return { mensaje: "Ese servicio ya no existe." };
-  const [{ cantidad, ultimo }] = await db
-    .select({ cantidad: count(), ultimo: max(servicioFoto.orden) })
-    .from(servicioFoto)
-    .where(eq(servicioFoto.servicioId, servicioId));
-  if (cantidad >= LIMITES.fotosServicio) return { mensaje: MAS_FOTOS };
 
   const foto = await guardarFoto(datos.get("foto"), { carpeta: "servicios", miniatura: true, autorId: Number(autor.id) });
   if (!foto.ok) return { errores: { foto: foto.motivo === "vacia" ? "Elige una foto." : ERROR_FOTO }, valores };
-  await db.insert(servicioFoto).values({ servicioId, archivoId: foto.archivoId, descripcion, orden: (ultimo ?? 0) + 1, createdBy: Number(autor.id) });
+
+  // El límite y el orden se deciden con el servicio bloqueado: dos subidas a la vez no pasan de 12 ni repiten orden.
+  // Si no se guarda (límite, servicio que ya no está o un error), la foto subida se borra: no queda huérfana.
+  let mensaje: string | null;
+  try {
+    mensaje = await db.transaction(async (tx) => {
+      const [existe] = await tx.select({ id: servicio.id }).from(servicio).where(eq(servicio.id, servicioId)).for("update");
+      if (!existe) return "Ese servicio ya no existe.";
+      const [{ cantidad, ultimo }] = await tx
+        .select({ cantidad: count(), ultimo: max(servicioFoto.orden) })
+        .from(servicioFoto)
+        .where(eq(servicioFoto.servicioId, servicioId));
+      if (cantidad >= LIMITES.fotosServicio) return MAS_FOTOS;
+      await tx.insert(servicioFoto).values({ servicioId, archivoId: foto.archivoId, descripcion, orden: (ultimo ?? 0) + 1, createdBy: Number(autor.id) });
+      return null;
+    });
+  } catch (error) {
+    await eliminarFoto(foto.archivoId);
+    throw error;
+  }
+  if (mensaje) {
+    await eliminarFoto(foto.archivoId);
+    return { mensaje };
+  }
 
   servicioCambiado(servicioId);
   return { ok: true, mensaje: "Foto guardada." };
@@ -151,8 +167,9 @@ export async function quitarFotoDeServicio(datoId: number): Promise<EstadoFormul
   if (!entrada.success) return { mensaje: "Esa foto ya no existe. Recarga la página." };
   const [fila] = await db.delete(servicioFoto).where(eq(servicioFoto.id, entrada.data)).returning();
   if (!fila) return { mensaje: "Esa foto ya no existe. Recarga la página." };
-  await eliminarFoto(fila.archivoId);
+  // Primero sale del sitio; después se borra el archivo (si el almacenamiento falla, la foto ya no se ve)
   servicioCambiado(fila.servicioId);
+  await eliminarFoto(fila.archivoId);
   return { ok: true, mensaje: "Foto quitada." };
 }
 

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, check, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { usuario } from "./acceso";
 import { archivo } from "./configuracion";
 
@@ -49,19 +49,24 @@ export const servicio = pgTable(
  * Fotos propias de un servicio (pedido de la demo del 24/10): fotos o afiches que se ven en una tira en su página,
  * además de la foto principal y de la galería. La descripción es su texto alternativo (RNF-14).
  */
-export const servicioFoto = pgTable("servicio_foto", {
-  id: integer("id").generatedByDefaultAsIdentity().primaryKey(),
-  servicioId: integer("servicio_id")
-    .notNull()
-    .references(() => servicio.id),
-  archivoId: integer("archivo_id")
-    .notNull()
-    .references(() => archivo.id),
-  descripcion: text("descripcion").notNull(),
-  orden: integer("orden").notNull(),
-  createdAt: momento("created_at").defaultNow().notNull(),
-  createdBy: integer("created_by").references(() => usuario.id),
-});
+export const servicioFoto = pgTable(
+  "servicio_foto",
+  {
+    id: integer("id").generatedByDefaultAsIdentity().primaryKey(),
+    servicioId: integer("servicio_id")
+      .notNull()
+      .references(() => servicio.id),
+    archivoId: integer("archivo_id")
+      .notNull()
+      .references(() => archivo.id),
+    descripcion: text("descripcion").notNull(),
+    orden: integer("orden").notNull(),
+    createdAt: momento("created_at").defaultNow().notNull(),
+    createdBy: integer("created_by").references(() => usuario.id),
+  },
+  // Cada lectura es "las fotos de este servicio, en orden"
+  (t) => [index("servicio_foto_servicio_orden").on(t.servicioId, t.orden)],
+);
 
 /** Opciones de un servicio (D-2: al menos una; "Única" si no hay opciones). Sus precios están en `precio` (catalogo.ts). */
 export const variante = pgTable(

@@ -1,25 +1,25 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
-import { Dialog, DialogContent, DialogTitle } from "@/componentes/ui/dialog";
+import { useState } from "react";
 import type { UrlsFoto } from "@/lib/fotos";
+import { DialogoFoto, FotoGrande } from "./dialogo-foto";
 
 // Fotos propias de un servicio en su página (pedido de la demo del 24/10): una tira que se desliza de costado, con
 // las fotos a la misma altura y cada una con su forma (un afiche vertical, una foto horizontal). Al tocar una se ve
-// en grande: así un afiche se puede leer en el celular.
+// en grande (el mismo diálogo de la galería): así un afiche se puede leer en el celular. Va debajo de los beneficios,
+// nunca en la primera pantalla: las fotos cargan al acercarse.
 
 type FotoTira = { id: number; descripcion: string; foto: UrlsFoto };
 
 export function TiraFotos({ fotos }: { fotos: FotoTira[] }) {
   const [abierta, setAbierta] = useState<FotoTira | null>(null);
-  const titulo = useRef<HTMLHeadingElement>(null);
 
   return (
     <>
       {/* De borde a borde en el celular: la foto cortada en el borde avisa que hay más */}
       <ul aria-label="Fotos del servicio" className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-2 overflow-x-auto px-4 pb-2 md:mx-0 md:scroll-px-0 md:px-0">
-        {fotos.map((f, i) => (
+        {fotos.map((f) => (
           <li key={f.id} className="shrink-0 snap-start">
             <button
               type="button"
@@ -34,7 +34,7 @@ export function TiraFotos({ fotos }: { fotos: FotoTira[] }) {
                 width={f.foto.ancho ?? 640}
                 height={f.foto.alto ?? 480}
                 unoptimized
-                loading={i < 2 ? "eager" : "lazy"}
+                loading="lazy"
                 className="size-full object-cover"
               />
             </button>
@@ -42,27 +42,9 @@ export function TiraFotos({ fotos }: { fotos: FotoTira[] }) {
         ))}
       </ul>
 
-      <Dialog open={!!abierta} onOpenChange={(abrir) => !abrir && setAbierta(null)}>
-        {abierta && (
-          <DialogContent
-            initialFocus={titulo}
-            data-theme="oscuro"
-            className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto rounded-none bg-fondo p-4 text-tinta sm:max-w-4xl"
-          >
-            <DialogTitle ref={titulo} tabIndex={-1} className="pr-12 text-base font-semibold outline-none">
-              {abierta.descripcion}
-            </DialogTitle>
-            <Image
-              src={abierta.foto.url}
-              alt={abierta.descripcion}
-              width={abierta.foto.ancho ?? 1600}
-              height={abierta.foto.alto ?? 1200}
-              unoptimized
-              className="max-h-[80dvh] w-full bg-superficie object-contain"
-            />
-          </DialogContent>
-        )}
-      </Dialog>
+      <DialogoFoto abierto={!!abierta} alCerrar={() => setAbierta(null)} titulo={abierta?.descripcion ?? ""}>
+        {abierta && <FotoGrande foto={abierta.foto} alt={abierta.descripcion} />}
+      </DialogoFoto>
     </>
   );
 }
