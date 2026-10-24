@@ -4,7 +4,8 @@ import { ingresarComoDueno } from "./apoyo";
 // Corre una vez antes de todas las pruebas (proyecto "preparar" en playwright.config.ts).
 // Carga desde el panel lo que el sitio necesita y que los datos iniciales dejan vacío: el WhatsApp y la ubicación
 // (sin ella Contacto no muestra el mapa), y el TikTok (el botón "Mira nuestros trabajos en TikTok"). Se hace por el panel y no directo en la base para que la caché del sitio
-// se actualice. Son los mismos datos que usa la prueba de HU-04, así no se contradicen al correr en paralelo.
+// se actualice. El WhatsApp y la ubicación son los mismos que usa la prueba de HU-04, así no se contradicen al correr
+// en paralelo; HU-04 no toca el TikTok (su formulario lo guarda como está).
 
 preparar("cargar el WhatsApp, la ubicación y el TikTok del negocio", async ({ page }) => {
   await ingresarComoDueno(page);

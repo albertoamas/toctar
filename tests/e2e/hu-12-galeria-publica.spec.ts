@@ -80,9 +80,10 @@ test("la galería muestra las fotos visibles, se filtra por servicio y se amplí
   await expect(page.getByRole("link", { name: "Mira nuestros trabajos en TikTok" })).toHaveAttribute("href", "https://www.tiktok.com/@toctar.detailing");
 
   // Termina con la invitación a mandar fotos: un solo WhatsApp a la vista
-  const cierre = page.getByRole("link", { name: "Mandar fotos de mi vehículo por WhatsApp" });
-  await expect(page.getByRole("heading", { name: "¿Quieres este resultado en tu vehículo?" })).toBeVisible();
-  await cierre.scrollIntoViewIfNeeded();
-  await expect(cierre).toBeInViewport();
+  // El título del cierre arriba de la pantalla: su botón se ve con él
+  const titulo = page.getByRole("heading", { name: "¿Quieres este resultado en tu vehículo?" });
+  await titulo.evaluate((e) => e.scrollIntoView({ block: "start" }));
+  await expect(titulo).toBeInViewport();
+  await expect(page.getByRole("link", { name: "Mandar fotos de mi vehículo por WhatsApp" })).toBeInViewport();
   await expect(page.getByRole("link", { name: "Escribir a TocTar por WhatsApp" })).toBeHidden();
 });
