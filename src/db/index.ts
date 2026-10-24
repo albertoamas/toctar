@@ -20,3 +20,6 @@ const pool =
 if (process.env.NODE_ENV !== "production") globalParaDb.pool = pool;
 
 export const db = drizzle({ client: pool, schema: esquema });
+
+/** La transacción que recibe `db.transaction(async (tx) => …)`, para las funciones que escriben dentro de una. */
+export type Transaccion = Parameters<Parameters<typeof db.transaction>[0]>[0];

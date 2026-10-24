@@ -9,7 +9,8 @@ import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { reordenar, type Direccion } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
 import { CLAVES_PAGINA, PAGINAS, PORTADA, datosDelFormulario, esquemaPagina, esquemaPregunta, type Pagina } from "./contenido";
-import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, ETIQUETA_SERVICIOS, listarGaleria, listarPreguntas, listarServicios } from "./consultas";
+import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, listarGaleria, listarPreguntas, listarServicios } from "./consultas";
+import { servicioCambiado } from "./servicio-cambiado";
 import { esquemaEditarGaleria, esquemaGaleria, esquemaId, esquemaIdFormulario, esquemaMover, esquemaServicio, esquemaVisibilidad } from "./esquemas";
 
 // Servicios del sitio (HU-07, RF-11), textos (HU-08, RF-10) y galería (HU-09, RF-12). Entra el dueño o un encargado con el permiso "sitio".
@@ -17,12 +18,6 @@ import { esquemaEditarGaleria, esquemaGaleria, esquemaId, esquemaIdFormulario, e
 // Al guardar se invalida la etiqueta "servicios": el sitio muestra los cambios sin volver a desplegar (B4).
 
 const RUTA = "/panel/sitio";
-
-function despuesDeCambiar(id?: number) {
-  updateTag(ETIQUETA_SERVICIOS);
-  revalidatePath(RUTA);
-  if (id) revalidatePath(`${RUTA}/servicios/${id}`);
-}
 
 const SLUG_REPETIDO = "Ya hay otra página con esa dirección.";
 
@@ -65,7 +60,7 @@ export async function guardarServicio(_previo: EstadoFormulario, datos: FormData
     throw error;
   }
 
-  despuesDeCambiar(d.id);
+  servicioCambiado(d.id);
   return { ok: true, mensaje: "Cambios guardados." };
 }
 
@@ -86,7 +81,7 @@ export async function subirFotoServicio(_previo: EstadoFormulario, datos: FormDa
   await db.update(servicio).set({ fotoArchivoId: foto.archivoId, updatedAt: new Date(), updatedBy: Number(autor.id) }).where(eq(servicio.id, id));
   if (actual.fotoArchivoId) await eliminarFoto(actual.fotoArchivoId);
 
-  despuesDeCambiar(id);
+  servicioCambiado(id);
   return { ok: true, mensaje: "Foto guardada." };
 }
 
@@ -99,7 +94,7 @@ export async function quitarFotoServicio(datoId: number): Promise<EstadoFormular
   if (!actual?.fotoArchivoId) return { ok: true };
   await db.update(servicio).set({ fotoArchivoId: null, updatedAt: new Date(), updatedBy: Number(autor.id) }).where(eq(servicio.id, id));
   await eliminarFoto(actual.fotoArchivoId);
-  despuesDeCambiar(id);
+  servicioCambiado(id);
   return { ok: true, mensaje: "Foto quitada. El sitio muestra la imagen de reemplazo." };
 }
 
@@ -113,7 +108,7 @@ export async function moverServicio(datos: { id: number; direccion: Direccion })
   await db.transaction(async (tx) => {
     for (const o of nuevoOrden) await tx.update(servicio).set({ orden: o.orden }).where(eq(servicio.id, o.id));
   });
-  despuesDeCambiar();
+  servicioCambiado();
   return { ok: true };
 }
 

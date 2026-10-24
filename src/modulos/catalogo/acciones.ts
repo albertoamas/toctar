@@ -1,15 +1,15 @@
 "use server";
 
 import { and, eq, max, ne } from "drizzle-orm";
-import { revalidatePath, updateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { db } from "@/db";
+import { db, type Transaccion } from "@/db";
 import { precio, servicio, variante } from "@/db/esquema";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { nombreRepetido, puedeDesactivar, reordenar, type Direccion } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
 import { crearSlug } from "@/lib/slug";
-import { ETIQUETA_SERVICIOS } from "@/modulos/sitio/consultas";
+import { servicioCambiado } from "@/modulos/sitio/servicio-cambiado";
 import { tamanosActivos } from "@/modulos/configuracion/consultas";
 import { historialPrecios, listarVariantes, preciosVigentes, type CambioPrecio } from "./consultas";
 import { esquemaCrearServicio, esquemaDatosCatalogo, esquemaEstadoVariante, esquemaIdVariante, esquemaMoverVariante, esquemaVariante, esquemaVarianteCatalogo } from "./esquemas";
@@ -20,21 +20,10 @@ import { leerMonto, MONTO_MAXIMO, preciosCambiados, type Monto } from "./reglas"
 
 const NOMBRE_REPETIDO = "Ya existe un servicio con ese nombre.";
 
-/** Lo que muestra un servicio cambió: el catálogo, su página en el panel del sitio y el sitio público (su caché). */
-function despuesDeCambiarServicio(id?: number) {
-  updateTag(ETIQUETA_SERVICIOS);
-  revalidatePath("/panel/catalogo");
-  revalidatePath("/panel/sitio");
-  if (id) {
-    revalidatePath(`/panel/catalogo/${id}`);
-    revalidatePath(`/panel/sitio/servicios/${id}`);
-  }
-}
-
-/** Dirección de la página a partir del nombre: si ya existe, le agrega -2, -3… */
-async function slugLibre(nombre: string): Promise<string> {
+/** Dirección de la página a partir del nombre: si ya existe, le agrega -2, -3… Dentro de la transacción del alta. */
+async function slugLibre(tx: Transaccion, nombre: string): Promise<string> {
   const base = crearSlug(nombre) || "servicio";
-  const usados = new Set((await db.select({ slug: servicio.slug }).from(servicio)).map((s) => s.slug));
+  const usados = new Set((await tx.select({ slug: servicio.slug }).from(servicio)).map((s) => s.slug));
   let slug = base;
   for (let n = 2; usados.has(slug); n++) slug = `${base}-${n}`;
   return slug;
@@ -61,18 +50,21 @@ export async function crearServicio(_previo: EstadoFormulario, datos: FormData):
       const [{ ultimo }] = await tx.select({ ultimo: max(servicio.orden) }).from(servicio);
       const [nuevo] = await tx
         .insert(servicio)
-        .values({ nombre, resumen: "", slug: await slugLibre(nombre), orden: (ultimo ?? 0) + 1, visibleSitio: false, updatedBy: Number(autor.id) })
+        .values({ nombre, resumen: "", slug: await slugLibre(tx, nombre), orden: (ultimo ?? 0) + 1, visibleSitio: false, updatedBy: Number(autor.id) })
         .returning({ id: servicio.id });
       await tx.insert(variante).values({ servicioId: nuevo.id, nombre: "Única", orden: 1 });
       return nuevo.id;
     });
   } catch (error) {
-    // Dos altas con el mismo nombre a la vez: la base frena la segunda
-    if (indiceUnicoViolado(error) !== null) return { errores: { nombre: NOMBRE_REPETIDO }, valores };
+    // Dos altas a la vez: la base frena la segunda. Con el mismo nombre, se dice; con nombres que dan la misma
+    // dirección ("Pulido!" y "Pulido?"), basta volver a intentar: la dirección libre se calcula de nuevo
+    const restriccion = indiceUnicoViolado(error);
+    if (restriccion === "servicio_nombre_unico") return { errores: { nombre: NOMBRE_REPETIDO }, valores };
+    if (restriccion !== null) return { mensaje: "Otra persona creó un servicio parecido recién. Vuelve a intentarlo.", valores };
     throw error;
   }
 
-  despuesDeCambiarServicio();
+  servicioCambiado();
   redirect(`/panel/catalogo/${id}?creado=1`);
 }
 
@@ -109,7 +101,7 @@ export async function guardarDatosCatalogo(_previo: EstadoFormulario, datos: For
   if (!actualizado) return { mensaje: "Ese servicio ya no existe. Recarga la página." };
 
   // El nombre sale en el sitio y un servicio inactivo deja de salir: se invalida su caché
-  despuesDeCambiarServicio(id);
+  servicioCambiado(id);
   return { ok: true, mensaje: "Cambios guardados." };
 }
 
@@ -200,7 +192,7 @@ export async function guardarVariante(_previo: EstadoFormulario, datos: FormData
     throw error;
   }
 
-  despuesDeCambiarServicio(servicioId);
+  servicioCambiado(servicioId);
   return { ok: true, mensaje: id ? "Cambios guardados." : `Variante ${nombre} agregada.` };
 }
 
@@ -216,7 +208,7 @@ export async function moverVariante(datos: { servicioId: number; id: number; dir
       await tx.update(variante).set({ orden: o.orden }).where(and(eq(variante.id, o.id), eq(variante.servicioId, servicioId)));
     }
   });
-  despuesDeCambiarServicio(servicioId);
+  servicioCambiado(servicioId);
   return { ok: true };
 }
 
@@ -237,6 +229,6 @@ export async function cambiarEstadoVariante(datos: { servicioId: number; id: num
     .update(variante)
     .set({ activo, orden })
     .where(and(eq(variante.id, id), eq(variante.servicioId, servicioId)));
-  despuesDeCambiarServicio(servicioId);
+  servicioCambiado(servicioId);
   return { ok: true, mensaje: activo ? `${elegida.nombre} reactivada.` : `${elegida.nombre} desactivada.` };
 }

@@ -1,13 +1,11 @@
 import "server-only";
 import { and, eq } from "drizzle-orm";
-import type { db } from "@/db";
+import type { Transaccion } from "@/db";
 import { trabajoFoto } from "@/db/esquema";
 import { eliminarFoto } from "@/lib/fotos";
 
 // Las fotos de ingreso de una reserva que no se recibió: si se reprograma o se cancela, las de hoy no prueban cómo
 // llega el vehículo otro día (o nunca). Se quitan de la reserva dentro de la transacción y se borran después.
-
-type Transaccion = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /** Quita de la reserva sus fotos de ingreso; devuelve los archivos para borrarlos al confirmar la transacción. */
 export async function soltarFotosIngreso(tx: Transaccion, trabajoId: number): Promise<number[]> {
