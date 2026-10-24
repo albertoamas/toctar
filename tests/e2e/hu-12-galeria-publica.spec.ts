@@ -43,9 +43,20 @@ test("la galería muestra las fotos visibles, se filtra por servicio y se amplí
   const visor = page.getByRole("dialog", { name: "Restauración de faroles con polímero" });
   await expect(visor.getByRole("img", { name: `Antes: ${conPar}` })).toBeVisible();
   await expect(visor.getByRole("img", { name: `Después: ${conPar}` })).toHaveAttribute("src", /galeria\/[\w-]+\.webp$/);
-  // El antes y el después se ven juntos, sin bajar, también en el celular (pulido 2.4)
-  await expect(visor.getByRole("img", { name: `Antes: ${conPar}` })).toBeInViewport({ ratio: 1 });
+  // El antes y el después en una sola foto, partida por una línea que se arrastra (pedido del 24/10). Entera a la vista,
+  // sin bajar: lo mide el después, que ocupa toda la caja; el antes está recortado hasta la línea
   await expect(visor.getByRole("img", { name: `Después: ${conPar}` })).toBeInViewport({ ratio: 1 });
+  await expect(visor.getByRole("img", { name: `Antes: ${conPar}` })).toBeInViewport();
+  const linea = visor.getByRole("slider", { name: "Comparar antes y después" });
+  await expect(linea).toHaveValue("50");
+  // Con el teclado: las flechas mueven la línea
+  await linea.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(linea).toHaveValue("51");
+  // Con el dedo o el mouse: se arrastra sobre la foto (aquí, un toque cerca del borde izquierdo)
+  const caja = (await visor.getByRole("img", { name: `Después: ${conPar}` }).boundingBox())!;
+  await page.mouse.click(caja.x + caja.width * 0.2, caja.y + caja.height / 2);
+  await expect.poll(async () => Number(await linea.inputValue())).toBeLessThan(30);
   // Cerrar: en español y de 44 px; también cierra con Escape
   const cerrar = visor.getByRole("button", { name: "Cerrar" });
   // Se espera a que termine la animación de apertura (el diálogo entra con un leve zoom)

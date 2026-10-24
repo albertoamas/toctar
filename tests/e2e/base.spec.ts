@@ -252,3 +252,19 @@ test("en la Galería del panel, subir sin nada marca todo junto y el foco va a l
   await expect(page.getByText("Elige el servicio.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Elegir foto: Después" })).toBeFocused();
 });
+
+// Pedido del 24/10: en una página corta, la sección de cierre (la invitación a escribir) queda pegada al pie, sin un
+// hueco debajo. Se mira en una pantalla alta, donde el contenido no la llena.
+test("la sección de cierre queda pegada al pie aunque la página sea corta", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 2400 });
+  for (const ruta of ["/galeria", "/preguntas-frecuentes", "/nosotros", "/servicios/pulido-de-vidrios"]) {
+    await page.goto(ruta);
+    const cierre = page.locator("main section").filter({ has: page.locator("[data-whatsapp-principal]") }).last();
+    await expect(cierre).toBeVisible();
+    const hueco = await page.evaluate(() => {
+      const secciones = [...document.querySelectorAll("main section")].filter((s) => s.querySelector("[data-whatsapp-principal]"));
+      return Math.round(document.querySelector("footer")!.getBoundingClientRect().top - secciones.at(-1)!.getBoundingClientRect().bottom);
+    });
+    expect(hueco, ruta).toBe(0);
+  }
+});
