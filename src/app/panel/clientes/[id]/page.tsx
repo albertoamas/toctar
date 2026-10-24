@@ -24,11 +24,14 @@ import { obtenerCliente } from "@/modulos/clientes/consultas";
 import { obtenerParametros, tamanosActivos } from "@/modulos/configuracion/consultas";
 import { ListaConsultas } from "@/modulos/consultas/componentes/lista-consultas";
 import { consultasDelCliente } from "@/modulos/consultas/consultas";
+import { mantenimientosDelCliente } from "@/modulos/mantenimientos/consultas";
+import { NOMBRE_ESTADO_RECORDATORIO } from "@/modulos/mantenimientos/reglas";
 
 export const metadata: Metadata = { title: "Cliente" };
 
 // HU-23: ficha del cliente: datos, vehículos, WhatsApp y desactivar. HU-24: sus consultas y "Nueva consulta", si quien
-// entra tiene el módulo. HU-32: sus reservas, con el saldo de cada una para quien ve pagos. Las órdenes llegan en C4.
+// entra tiene el módulo. HU-32: sus reservas, con el saldo de cada una para quien ve pagos; desde C4 son también sus
+// órdenes, con su estado. HU-38: sus mantenimientos programados, para quien tiene "Mantenimientos".
 export default function PaginaCliente({ params, searchParams }: PageProps<"/panel/clientes/[id]">) {
   return (
     <section className="flex flex-col gap-6">
@@ -48,12 +51,14 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
   const verConsultas = puedeVerModulo(usuario, "consultas");
   const verAgenda = puedeVerModulo(usuario, "agenda");
   const verPagos = puedeVerModulo(usuario, "pagos");
-  const [c, tamanos, consultas, parametros, reservas] = await Promise.all([
+  const verMantenimientos = puedeVerModulo(usuario, "mantenimientos");
+  const [c, tamanos, consultas, parametros, reservas, mantenimientos] = await Promise.all([
     obtenerCliente(numero),
     tamanosActivos(),
     verConsultas ? consultasDelCliente(numero) : [],
     obtenerParametros(),
     verAgenda ? reservasDelCliente(numero, verPagos) : [],
+    verMantenimientos ? mantenimientosDelCliente(numero) : [],
   ]);
   if (!c) notFound();
 
@@ -145,6 +150,40 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
                       <span className={cn("tt-insignia", r.estado === "cancelado" && "tt-insignia--aviso")}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</span>
                     </span>
                   </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {verMantenimientos && (
+        <section aria-labelledby="mantenimientos-titulo" className="flex max-w-5xl flex-col gap-4">
+          <h2 id="mantenimientos-titulo" className="font-heading text-2xl font-bold italic">Mantenimientos</h2>
+          {mantenimientos.length === 0 ? (
+            <p className="text-tinta-suave">No tiene mantenimientos programados.</p>
+          ) : (
+            <ul aria-label="Mantenimientos" className="flex flex-col divide-y divide-border rounded-sm border border-border">
+              {mantenimientos.map((m) => (
+                <li key={m.id} className="flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-1 p-3">
+                  <span className="flex flex-col">
+                    <span className="font-semibold">
+                      {formatearFecha(m.fechaProgramada)}: {m.servicio}
+                    </span>
+                    <span className="text-sm text-tinta-suave">
+                      {m.placa}
+                      {!m.vehiculoActivo && ", vehículo desactivado: no se avisa"}
+                    </span>
+                  </span>
+                  <span className="flex flex-wrap items-center gap-3">
+                    {/* Agendado: lleva a la reserva, si quien mira ve la agenda */}
+                    {m.trabajoAgendadoId && verAgenda && (
+                      <Link href={`/panel/agenda/${m.trabajoAgendadoId}`} className="inline-flex min-h-11 items-center text-sm font-semibold underline">
+                        Ver la reserva
+                      </Link>
+                    )}
+                    <span className="tt-insignia">{NOMBRE_ESTADO_RECORDATORIO[m.estado]}</span>
+                  </span>
                 </li>
               ))}
             </ul>

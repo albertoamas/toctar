@@ -185,6 +185,7 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel (44 px t
 ### `/panel/mantenimientos` — Mantenimientos (dueño y encargado con "Mantenimientos")
 - Dos secciones, **Vencidos** y **Próximos 15 días**, ordenadas por fecha. Cada una muestra cliente, placa, servicio, fecha programada y estado ("Avisado el 2/02").
 - En cada una: "Avisar por WhatsApp", que abre el chat y marca avisado; "Agendar", que lleva a `/panel/agenda/nueva?cliente=…&vehiculo=…&recordatorio=…`; y "No le interesa", que pide una nota opcional.
+- No muestra los de un cliente o vehículo desactivado. "Agendar", solo para quien ve Agenda y Pagos (la reserva directa lleva precios).
 - Vacío: "No hay mantenimientos por avisar."
 
 ### En otras pantallas
@@ -210,7 +211,8 @@ Todas validan con Zod (también las de datos sueltos) y empiezan con `exigirModu
 | `entregarVehiculo` | `ordenes` (+ `entrega_con_saldo` si hay saldo) | Orden lista. En una transacción con la orden bloqueada: saldo; si > 0, exige el permiso y la casilla marcada; estado "entregado", sellos, `saldo_al_entregar`, recordatorios de mantenimiento, auditoría | "Vehículo entregado." · "Vehículo entregado con saldo de 300 Bs." · "Queda saldo pendiente: la entrega con saldo la autoriza el dueño o quien tenga el permiso." |
 | `avisarMantenimiento` | `mantenimientos` | Pendiente o avisado → avisado; guarda quién y cuándo | — |
 | `cerrarMantenimiento` | `mantenimientos` | → no interesado, con nota opcional | "Listo: no se le volverá a avisar." |
-| `agendarReserva` (cambia) | `agenda` | Con `recordatorioId`: en la misma transacción, el recordatorio pasa a "agendado" con `trabajo_agendado_id` | El mensaje de siempre |
+| `agendarReserva` (cambia) | `agenda` (+ `mantenimientos` si trae `recordatorioId`) | Con `recordatorioId`: en la misma transacción, el recordatorio (abierto, del mismo cliente y vehículo) pasa a "agendado" con `trabajo_agendado_id`; si otra persona lo agendó o lo cerró recién, no se reserva | El mensaje de siempre · "Ese mantenimiento ya se agendó o se cerró. Vuelve a Mantenimientos." |
+| `cancelarReserva` (cambia) | `agenda` | El mantenimiento agendado con esa reserva vuelve a la lista como estaba ("avisado" si se le avisó; si no, "pendiente") | El mensaje de siempre |
 
 **Consultas:**
 - `src/modulos/ordenes/consultas.ts`:
@@ -226,7 +228,7 @@ Todas validan con Zod (también las de datos sueltos) y empiezan con `exigirModu
 - `mensajeListo({ nombre, vehiculo, saldo })`, `mensajeSaldo(...)` y `mensajeMantenimiento(...)`;
 - `precioCotizadoYFinal(lineas, descuento)`;
 - `diasDesde(fecha, hoy)`;
-- `seccionMantenimiento(fecha, hoy)`, que devuelve vencido, próximo o ninguno.
+- `seccionMantenimiento(fecha, hoy)`, que devuelve vencido (ya pasó), próximo (de hoy a 15 días) o ninguno.
 
 ## 7. Componentes y diseño
 

@@ -41,7 +41,7 @@ export const MODULOS = {
   ordenes: { ruta: "/panel/ordenes", nombre: "Órdenes", permisoEncargado: "ordenes", tecnico: true, construido: true },
   // HU-37: su pantalla es la lista de saldos; en el menú se llama por lo que muestra
   pagos: { ruta: "/panel/pagos", nombre: "Pagos", nombreMenu: "Saldos pendientes", permisoEncargado: "pagos", tecnico: false, construido: true },
-  mantenimientos: { ruta: "/panel/mantenimientos", nombre: "Mantenimientos", permisoEncargado: "mantenimientos", tecnico: false, construido: false },
+  mantenimientos: { ruta: "/panel/mantenimientos", nombre: "Mantenimientos", permisoEncargado: "mantenimientos", tecnico: false, construido: true },
   catalogo: { ruta: "/panel/catalogo", nombre: "Catálogo y precios", permisoEncargado: null, tecnico: false, construido: true },
   usuarios: { ruta: "/panel/usuarios", nombre: "Usuarios", permisoEncargado: null, tecnico: false, construido: true },
   configuracion: { ruta: "/panel/configuracion", nombre: "Configuración", permisoEncargado: null, tecnico: false, construido: true },

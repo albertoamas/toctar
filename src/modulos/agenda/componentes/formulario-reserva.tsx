@@ -28,7 +28,7 @@ import { useEspaciosLibres } from "./espacios-libres";
 
 type Origen =
   | { tipo: "cotizacion"; cotizacionId: number; duraciones: number[] }
-  | { tipo: "directa"; clienteId: number; vehiculoId: number; opciones: OpcionServicio[] };
+  | { tipo: "directa"; clienteId: number; vehiculoId: number; opciones: OpcionServicio[]; recordatorioId?: number | null };
 
 type Props = {
   origen: Origen;
@@ -96,6 +96,7 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
         <>
           <input type="hidden" name="clienteId" value={origen.clienteId} />
           <input type="hidden" name="vehiculoId" value={origen.vehiculoId} />
+          {origen.recordatorioId && <input type="hidden" name="recordatorioId" value={origen.recordatorioId} />}
         </>
       )}
       {estado.mensaje && !estado.ok && <MensajeError id="reserva-error">{estado.mensaje}</MensajeError>}

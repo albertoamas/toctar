@@ -453,7 +453,7 @@ export async function entregarVehiculo(_previo: EstadoFormulario, datos: FormDat
   const hoy = fechaEnBolivia();
   const { intervalo_mantenimiento_meses: meses } = await obtenerParametros();
 
-  let resultado: { clienteId: number; saldo: string | null };
+  let resultado: { clienteId: number; saldo: string | null; conMantenimiento: boolean };
   try {
     resultado = await db.transaction(async (tx) => {
       const [t] = await tx
@@ -512,7 +512,7 @@ export async function entregarVehiculo(_previo: EstadoFormulario, datos: FormDat
         accion: "entregar",
         datos: { saldo, conSaldo: conDeuda, mantenimientos: conMantenimiento.map((s) => s.id) },
       });
-      return { clienteId: t.clienteId, saldo: conDeuda ? saldo : null };
+      return { clienteId: t.clienteId, saldo: conDeuda ? saldo : null, conMantenimiento: conMantenimiento.length > 0 };
     });
   } catch (error) {
     if (error instanceof Conflicto) return error.campo ? { errores: { [error.campo]: error.message } } : { mensaje: error.message };
@@ -520,5 +520,6 @@ export async function entregarVehiculo(_previo: EstadoFormulario, datos: FormDat
   }
 
   despuesDeCambiar(id, resultado.clienteId);
+  if (resultado.conMantenimiento) revalidatePath("/panel/mantenimientos");
   redirect(`/panel/ordenes/${id}?entregado=1`);
 }

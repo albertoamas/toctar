@@ -6,6 +6,7 @@ import { cn } from "cn";
 import { KeyRoundIcon } from "lucide-react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
+import { AvisarPorWhatsApp } from "@/componentes/panel/avisar-whatsapp";
 import { Cargando } from "@/componentes/panel/cargando";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -19,10 +20,10 @@ import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
 import { opcionesDeServicio } from "@/modulos/cotizaciones/consultas";
 import { AgregarAdicional } from "@/modulos/ordenes/componentes/agregar-adicional";
 import { AvancesOrden } from "@/modulos/ordenes/componentes/avances-orden";
-import { AvisarListo } from "@/modulos/ordenes/componentes/avisar-listo";
 import { EstadoOrden } from "@/modulos/ordenes/componentes/estado-orden";
 import { ExtenderEntrega } from "@/modulos/ordenes/componentes/extender-entrega";
 import { FotosOrden } from "@/modulos/ordenes/componentes/fotos-orden";
+import { registrarAvisoListo } from "@/modulos/ordenes/acciones";
 import { avancesDeTrabajo, fotosDeTrabajo, obtenerOrden } from "@/modulos/ordenes/consultas";
 import { mensajeListo } from "@/modulos/ordenes/mensajes";
 import { esOrden, estaAbierta, estaAtrasada, puedeExtenderse } from "@/modulos/ordenes/reglas";
@@ -110,7 +111,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
       {o.estado !== "entregado" && (
         <div className="flex max-w-3xl flex-col gap-4">
           <EstadoOrden id={o.id} estado={o.estado} editable={abierta} />
-          {aviso && <AvisarListo id={o.id} enlace={aviso.enlace} avisado={aviso.avisado} />}
+          {aviso && <AvisarPorWhatsApp enlace={aviso.enlace} avisado={aviso.avisado} registrarAction={registrarAvisoListo.bind(null, { id: o.id })} />}
           {o.estado === "listo" && puede(usuario, "entregar_vehiculo") && (
             <div>
               {/* Enlace con forma de botón: lleva a la entrega, con el saldo y el cobro */}

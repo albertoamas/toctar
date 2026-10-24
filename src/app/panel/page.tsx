@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { primerNombre } from "@/modulos/clientes/reglas";
 import { Suspense } from "react";
-import { CalendarIcon, ChevronRightIcon, ContactIcon, GlobeIcon, InboxIcon, MessageSquareWarningIcon, SettingsIcon, TagIcon, UsersIcon, WalletIcon, WrenchIcon, type LucideIcon } from "lucide-react";
+import { CalendarClockIcon, CalendarIcon, ChevronRightIcon, ContactIcon, GlobeIcon, InboxIcon, MessageSquareWarningIcon, SettingsIcon, TagIcon, UsersIcon, WalletIcon, WrenchIcon, type LucideIcon } from "lucide-react";
 import { cn } from "cn";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
@@ -26,6 +26,7 @@ const ACCESOS: Partial<Record<Modulo, { icono: LucideIcon; descripcion: string }
   agenda: { icono: CalendarIcon, descripcion: "Qué espacio del taller está ocupado cada día; agendar y mover reservas." },
   ordenes: { icono: WrenchIcon, descripcion: "Los vehículos en el taller: recibir, trabajar, avisar y entregar." },
   pagos: { icono: WalletIcon, descripcion: "Quién debe todavía, desde cuándo, y cobrarle." },
+  mantenimientos: { icono: CalendarClockIcon, descripcion: "A quién le toca volver: avisarle y agendarlo." },
   consultas: { icono: InboxIcon, descripcion: "Lo que preguntan los clientes, con sus fotos, hasta cotizarlo." },
   clientes: { icono: ContactIcon, descripcion: "Clientes y sus vehículos, para atenderlos con su historial." },
   catalogo: { icono: TagIcon, descripcion: "Precios por tamaño, duración y mantenimiento de cada servicio." },
