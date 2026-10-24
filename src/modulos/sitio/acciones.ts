@@ -21,16 +21,17 @@ const RUTA = "/panel/sitio";
 
 const SLUG_REPETIDO = "Ya hay otra página con esa dirección.";
 
-/** La página del servicio en el sitio: dirección, textos, beneficios, pasos y si se muestra (HU-07). */
+/** La página del servicio en el sitio: dirección, textos, beneficios con ícono, pasos, cómo se ven las opciones y si se muestra (HU-07). */
 export async function guardarServicio(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const autor = await exigirModulo("sitio");
   const valores = Object.fromEntries(
     ["id", "slug", "resumen", "descripcion", "beneficios", "pasos"].map((c) => [c, String(datos.get(c) ?? "")]),
   );
   const visible = datos.get("visible") === "on";
+  const opcionesEnEscalera = datos.get("opcionesEnEscalera") === "on";
   // Lo escrito vuelve al formulario si hay un error
-  const devolver = { ...valores, visible: visible ? "on" : "" };
-  const entrada = esquemaServicio.safeParse({ ...valores, visible });
+  const devolver = { ...valores, visible: visible ? "on" : "", opcionesEnEscalera: opcionesEnEscalera ? "on" : "" };
+  const entrada = esquemaServicio.safeParse({ ...valores, visible, opcionesEnEscalera });
   if (!entrada.success) return { errores: erroresDe(entrada.error), valores: devolver };
   const d = entrada.data;
 
@@ -50,6 +51,7 @@ export async function guardarServicio(_previo: EstadoFormulario, datos: FormData
         beneficios: d.beneficios,
         pasos: d.pasos,
         visibleSitio: d.visible,
+        opcionesEnEscalera: d.opcionesEnEscalera,
         updatedAt: new Date(),
         updatedBy: Number(autor.id),
       })

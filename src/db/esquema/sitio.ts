@@ -10,6 +10,8 @@ import { archivo } from "./configuracion";
 const momento = (nombre: string) => timestamp(nombre, { withTimezone: true });
 
 export type Paso = { titulo: string; detalle: string };
+/** Un beneficio con su ícono, elegido de una lista fija (`ICONOS_BENEFICIO`, pedido de la demo del 24/10). */
+export type Beneficio = { texto: string; icono: string };
 
 export const servicio = pgTable(
   "servicio",
@@ -20,8 +22,10 @@ export const servicio = pgTable(
     slug: text("slug").notNull().unique(),
     resumen: text("resumen").notNull(),
     descripcion: text("descripcion").notNull().default(""),
-    beneficios: jsonb("beneficios").$type<string[]>().notNull().default([]),
+    beneficios: jsonb("beneficios").$type<Beneficio[]>().notNull().default([]),
     pasos: jsonb("pasos").$type<Paso[]>().notNull().default([]),
+    /** Las opciones (variantes) van de menor a mayor: el sitio las muestra como escalones (pedido de la demo del 24/10). */
+    opcionesEnEscalera: boolean("opciones_en_escalera").default(false).notNull(),
     fotoArchivoId: integer("foto_archivo_id").references(() => archivo.id),
     orden: integer("orden").notNull(),
     visibleSitio: boolean("visible_sitio").default(true).notNull(),

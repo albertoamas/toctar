@@ -7,10 +7,13 @@ import { Suspense } from "react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { FotoOReemplazo } from "@/componentes/sitio/foto-o-reemplazo";
+import { IconoBeneficio } from "@/componentes/sitio/icono-beneficio";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import { servicioPublico, type DetalleServicioPublico } from "@/modulos/sitio/publico";
 
-// HU-11 Página de cada servicio (RF-03): descripción, beneficios, proceso, variantes y fotos, sin precios (RN-10).
+// HU-11 Página de cada servicio (RF-03): beneficios, descripción, proceso, variantes y fotos, sin precios (RN-10).
+// Más simple desde la demo del 24/10 ("para tontos"): los beneficios van primero, como una fila de íconos, y las
+// opciones que van de menor a mayor se ven como escalones (como el afiche del nano cerámico del dueño).
 // Termina con la invitación a escribir por WhatsApp con el servicio ya escrito (HU-15).
 
 export async function generateMetadata({ params }: PageProps<"/servicios/[slug]">): Promise<Metadata> {
@@ -58,9 +61,10 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
       </header>
 
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pb-12 md:gap-24 md:pb-24">
-        {(s.descripcion || s.beneficios.length > 0) && <Descripcion servicio={s} />}
+        {s.beneficios.length > 0 && <Beneficios beneficios={s.beneficios} />}
+        {s.descripcion && <Descripcion descripcion={s.descripcion} />}
         {s.pasos.length > 0 && <Proceso pasos={s.pasos} />}
-        {s.variantes.length > 0 && <Variantes variantes={s.variantes} />}
+        {s.variantes.length > 0 && (s.opcionesEnEscalera ? <Escalera variantes={s.variantes} /> : <Variantes variantes={s.variantes} />)}
         {s.fotos.length > 0 && <Fotos servicio={s} />}
       </div>
 
@@ -77,32 +81,39 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
 
 const TITULO_SECCION = "font-heading text-[28px] leading-8 font-bold italic md:text-[40px] md:leading-[44px]";
 
-function Descripcion({ servicio: s }: { servicio: DetalleServicioPublico }) {
+/**
+ * Lo que gana el vehículo, de un vistazo: ícono y frase corta, separados por líneas finas (la fila del afiche del
+ * dueño). Sin título a la vista: los íconos lo dicen; el título queda para el lector de pantalla.
+ */
+function Beneficios({ beneficios }: { beneficios: DetalleServicioPublico["beneficios"] }) {
   return (
-    <section aria-labelledby="descripcion-titulo" className="grid gap-10 md:grid-cols-2">
-      <div className="flex flex-col gap-4">
-        <h2 id="descripcion-titulo" className={TITULO_SECCION}>En qué consiste</h2>
-        {s.descripcion
-          .split(/\n\s*\n/)
-          .filter(Boolean)
-          .map((parrafo, i) => (
-            <p key={i} className="max-w-prose leading-relaxed whitespace-pre-line text-tinta-suave">{parrafo}</p>
-          ))}
-      </div>
-      {s.beneficios.length > 0 && (
-        <div className="flex flex-col gap-4">
-          <h2 className={TITULO_SECCION}>Qué gana tu vehículo</h2>
-          <ul className="flex flex-col gap-3">
-            {s.beneficios.map((b) => (
-              <li key={b} className="flex items-baseline gap-3">
-                {/* Marca a 60°, el único ángulo de la marca */}
-                <span aria-hidden className="inline-block h-3 w-2 shrink-0 -skew-x-[30deg] bg-rojo" />
-                <span>{b}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+    <section aria-labelledby="beneficios-titulo">
+      <h2 id="beneficios-titulo" className="sr-only">Qué gana tu vehículo</h2>
+      <ul className="grid grid-cols-2 border-y border-border sm:grid-cols-3 lg:grid-flow-col lg:grid-cols-none lg:auto-cols-fr">
+        {beneficios.map((b) => (
+          <li
+            key={b.texto}
+            className="flex flex-col items-center gap-2 border-border px-3 py-5 text-center md:gap-3 md:py-6 not-last:border-b odd:border-r sm:odd:border-r-0 sm:not-nth-[3n]:border-r lg:border-b-0 lg:not-last:border-r"
+          >
+            <IconoBeneficio icono={b.icono} className="size-8 text-rojo-texto md:size-9" />
+            <span className="max-w-48 text-sm leading-5 font-semibold text-balance">{b.texto}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function Descripcion({ descripcion }: { descripcion: string }) {
+  return (
+    <section aria-labelledby="descripcion-titulo" className="flex flex-col gap-4">
+      <h2 id="descripcion-titulo" className={TITULO_SECCION}>En qué consiste</h2>
+      {descripcion
+        .split(/\n\s*\n/)
+        .filter(Boolean)
+        .map((parrafo, i) => (
+          <p key={i} className="max-w-prose leading-relaxed whitespace-pre-line text-tinta-suave">{parrafo}</p>
+        ))}
     </section>
   );
 }
@@ -144,6 +155,34 @@ function Variantes({ variantes }: { variantes: DetalleServicioPublico["variantes
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+/**
+ * Opciones de menor a mayor como escalones: cada una lleva una capa (blanca, sobre la base gris del vehículo) más
+ * gruesa que la anterior, la idea del afiche del nano cerámico ("a más años, más gruesa la capa"). En la computadora,
+ * columnas que suben; en el celular, filas con la capa como barra que se alarga.
+ */
+function Escalera({ variantes }: { variantes: DetalleServicioPublico["variantes"] }) {
+  const ultimo = Math.max(variantes.length - 1, 1);
+  return (
+    <section aria-labelledby="variantes-titulo" className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
+        <h2 id="variantes-titulo" className={TITULO_SECCION}>Opciones</h2>
+        <p className="max-w-xl text-tinta-suave">De menor a mayor. Te ayudamos a elegir la que conviene a tu vehículo.</p>
+      </div>
+      <ol className="grid gap-4 md:grid-flow-col md:auto-cols-fr md:items-end md:gap-3">
+        {variantes.map((v, i) => (
+          <li key={v.nombre} className="tt-escalon" style={{ "--paso": i / ultimo } as React.CSSProperties}>
+            <span className="flex flex-col gap-1">
+              <span className="font-heading text-2xl leading-7 font-bold italic">{v.nombre}</span>
+              {v.descripcion && <span className="text-sm text-tinta-suave">{v.descripcion}</span>}
+            </span>
+            <span aria-hidden className="tt-escalon__capa" />
+          </li>
+        ))}
+      </ol>
     </section>
   );
 }

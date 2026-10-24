@@ -35,6 +35,46 @@ test("las variantes se muestran sin precio", async ({ page }) => {
   await expect(page.locator("main")).not.toContainText(/\bBs\b/);
 });
 
+// Pedido de la demo del 24/10: beneficios con ícono y, si las opciones van de menor a mayor, escalones
+test("los beneficios van primero, con ícono, y las opciones de menor a mayor se ven como escalones", async ({ page }, info) => {
+  soloEscritorio(info);
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio");
+  await page.getByRole("link", { name: /Pulido y nano cerámico/ }).click();
+  await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+$/);
+  const panel = page.url();
+  await page.getByRole("button", { name: "Agregar beneficio" }).click();
+  await page.getByLabel("Beneficio 1", { exact: true }).fill("Protege del sol");
+  await page.getByLabel("Beneficio 1, ícono").selectOption({ label: "Sol y rayos UV" });
+  const escalera = page.getByRole("checkbox", { name: /Van de menor a mayor/ });
+  await escalera.check();
+  await page.getByRole("button", { name: "Guardar cambios" }).click();
+  await expect(page.getByText("Cambios guardados.")).toBeVisible();
+
+  await page.goto("/servicios/pulido-y-nano-ceramico");
+  // El beneficio con su ícono (decorativo: el texto dice lo mismo)
+  const beneficio = page.getByRole("region", { name: "Qué gana tu vehículo" }).getByRole("listitem");
+  await expect(beneficio).toHaveText("Protege del sol");
+  await expect(beneficio.locator("svg")).toHaveAttribute("aria-hidden", "true");
+  const opciones = page.getByRole("region", { name: "Opciones" });
+  await expect(opciones.locator(".tt-escalon")).toHaveCount(5);
+  // La capa crece: la última es más alta que la primera (en la computadora, columnas que suben)
+  const capas = opciones.locator(".tt-escalon__capa");
+  const [primera, ultima] = [await capas.first().boundingBox(), await capas.last().boundingBox()];
+  expect(ultima!.height).toBeGreaterThan(primera!.height);
+
+  // Sin la casilla, vuelven a ser recuadros; se quita el beneficio de prueba
+  await page.goto(panel);
+  await escalera.uncheck();
+  await page.getByRole("button", { name: "Quitar beneficio 1" }).click();
+  await page.getByRole("button", { name: "Guardar cambios" }).click();
+  await expect(page.getByText("Cambios guardados.")).toBeVisible();
+  await page.goto("/servicios/pulido-y-nano-ceramico");
+  await expect(opciones.getByRole("listitem")).toHaveCount(5);
+  await expect(opciones.locator(".tt-escalon")).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Qué gana tu vehículo" })).toHaveCount(0);
+});
+
 test("un servicio oculto o inexistente muestra la página no encontrada", async ({ page }, info) => {
   await page.goto("/servicios/no-existe");
   await expect(page.getByRole("heading", { name: "No encontramos esta página" })).toBeVisible();

@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+import { iconoDe } from "@/modulos/sitio/beneficios";
 import { erroresDe } from "@/lib/formularios";
 import { PATRON_SLUG, crearSlug } from "@/lib/slug";
 import { esquemaId, esquemaIdFormulario, esquemaServicio, esquemaVisibilidad } from "@/modulos/sitio/esquemas";
@@ -35,22 +36,30 @@ describe("esquema del servicio", () => {
     slug: "pulido-y-nano-ceramico",
     resumen: "Corregimos la pintura y la protegemos.",
     descripcion: "",
-    beneficios: JSON.stringify(["Brillo", "Protección"]),
+    beneficios: JSON.stringify([
+      { texto: "Brillo", icono: "brillo" },
+      { texto: "Protección", icono: "proteccion" },
+    ]),
     pasos: JSON.stringify([{ titulo: "Lavado", detalle: "" }]),
     visible: true,
+    opcionesEnEscalera: false,
   };
 
   test("acepta un servicio completo y convierte las listas", () => {
     const r = esquemaServicio.parse(valido);
-    expect(r.beneficios).toEqual(["Brillo", "Protección"]);
+    expect(r.beneficios).toEqual([
+      { texto: "Brillo", icono: "brillo" },
+      { texto: "Protección", icono: "proteccion" },
+    ]);
     expect(r.pasos).toEqual([{ titulo: "Lavado", detalle: "" }]);
   });
 
   test.each([
     ["resumen largo", { resumen: "x".repeat(161) }, { resumen: "Hasta 160 caracteres." }],
     ["dirección con mayúsculas", { slug: "Pulido_Ceramico" }, { slug: "La dirección solo lleva minúsculas, números y guiones." }],
-    ["beneficio vacío", { beneficios: JSON.stringify(["Brillo", " "]) }, { "beneficios.1": "Escribe el beneficio o quita la fila." }],
-    ["más de 8 beneficios", { beneficios: JSON.stringify(Array(9).fill("a")) }, { beneficios: "Hasta 8 beneficios." }],
+    ["beneficio vacío", { beneficios: JSON.stringify([{ texto: "Brillo", icono: "brillo" }, { texto: " ", icono: "listo" }]) }, { "beneficios.1": "Escribe el beneficio o quita la fila." }],
+    ["ícono que no está en la lista", { beneficios: JSON.stringify([{ texto: "Brillo", icono: "cohete" }]) }, { "beneficios.0": "Elige un ícono de la lista." }],
+    ["más de 8 beneficios", { beneficios: JSON.stringify(Array(9).fill({ texto: "a", icono: "listo" })) }, { beneficios: "Hasta 8 beneficios." }],
     ["paso sin título", { pasos: JSON.stringify([{ titulo: "", detalle: "x" }]) }, { "pasos.0": "Cada paso necesita un título." }],
     ["más de 10 pasos", { pasos: JSON.stringify(Array(11).fill({ titulo: "a", detalle: "" })) }, { pasos: "Hasta 10 pasos." }],
   ])("rechaza %s", (_, cambio, errores) => {
@@ -78,5 +87,12 @@ describe("datos sueltos de las acciones (revisión de seguridad)", () => {
 
   test("mostrar y ocultar piden un sí o no de verdad", () => {
     expect(esquemaVisibilidad.safeParse({ id: 1, visible: "true" }).success).toBe(false);
+  });
+});
+
+describe("íconos de los beneficios", () => {
+  test("una clave guardada que ya no está en la lista se muestra con el ícono genérico", () => {
+    expect(iconoDe("sol")).toBe("sol");
+    expect(iconoDe("cohete")).toBe("listo");
   });
 });

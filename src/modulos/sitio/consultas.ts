@@ -2,7 +2,7 @@ import "server-only";
 import { asc, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
-import { archivo, contenidoPagina, faq, galeriaItem, servicio, type Paso } from "@/db/esquema";
+import { archivo, contenidoPagina, faq, galeriaItem, servicio, type Beneficio, type Paso } from "@/db/esquema";
 import { urlsFoto, type UrlsFoto } from "@/lib/fotos";
 import { CLAVES_PAGINA, PORTADA, leerContenido, type ContenidoPagina, type Pagina } from "./contenido";
 
@@ -43,8 +43,9 @@ export async function listarServicios(): Promise<FilaServicio[]> {
 
 export type DetalleServicio = FilaServicio & {
   descripcion: string;
-  beneficios: string[];
+  beneficios: Beneficio[];
   pasos: Paso[];
+  opcionesEnEscalera: boolean;
 };
 
 export async function obtenerServicio(id: number): Promise<DetalleServicio | null> {
@@ -66,6 +67,7 @@ export async function obtenerServicio(id: number): Promise<DetalleServicio | nul
     descripcion: s.descripcion,
     beneficios: s.beneficios,
     pasos: s.pasos,
+    opcionesEnEscalera: s.opcionesEnEscalera,
   };
 }
 

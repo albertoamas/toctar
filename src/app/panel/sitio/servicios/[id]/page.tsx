@@ -57,6 +57,7 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
             beneficios: s.beneficios,
             pasos: s.pasos,
             visible: s.visible,
+            opcionesEnEscalera: s.opcionesEnEscalera,
           }}
         />
         <aside>

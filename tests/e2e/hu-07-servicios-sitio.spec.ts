@@ -45,6 +45,9 @@ test("el dueño crea el servicio en el catálogo y completa su página: benefici
   await page.getByLabel("Beneficio 1", { exact: true }).fill("Brillo profundo");
   await page.getByRole("button", { name: "Agregar beneficio" }).click();
   await page.getByLabel("Beneficio 2", { exact: true }).fill("Repele el agua");
+  // Cada beneficio con su ícono, de una lista fija (pedido de la demo del 24/10); el nuevo empieza con el genérico
+  await expect(page.getByLabel("Beneficio 1, ícono")).toHaveValue("listo");
+  await page.getByLabel("Beneficio 2, ícono").selectOption({ label: "Agua" });
   await page.getByRole("button", { name: "Agregar paso" }).click();
   await page.getByLabel("Paso 1, título", { exact: true }).fill("Lavado técnico");
   await page.getByRole("button", { name: "Guardar cambios" }).click();
@@ -53,6 +56,7 @@ test("el dueño crea el servicio en el catálogo y completa su página: benefici
   // Todo quedó guardado; después se oculta sin borrarlo
   await page.reload();
   await expect(page.getByLabel("Beneficio 2", { exact: true })).toHaveValue("Repele el agua");
+  await expect(page.getByLabel("Beneficio 2, ícono")).toHaveValue("agua");
   await expect(page.getByLabel("Paso 1, título", { exact: true })).toHaveValue("Lavado técnico");
   await expect(page.getByRole("checkbox", { name: /Mostrar en el sitio/ })).toBeChecked();
   await page.getByRole("checkbox", { name: /Mostrar en el sitio/ }).uncheck();
