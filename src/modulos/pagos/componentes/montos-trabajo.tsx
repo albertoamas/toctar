@@ -5,17 +5,26 @@ import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { AnularPago } from "./anular-pago";
 import { RegistrarPago } from "./registrar-pago";
 import { VerComprobante } from "./ver-comprobante";
-import { estaPagada, METODO_EN_FRASE, NOMBRE_TIPO_PAGO } from "../reglas";
+import { estaPagada, METODO_EN_FRASE, NOMBRE_TIPO_PAGO, precioCotizadoYFinal } from "../reglas";
 
 // Servicios, saldo y pagos de un trabajo (C3, HU-32): en la reserva y en la orden (C4). Solo para quien ve pagos: quien
 // lo usa ya lo verificó (`montos` llega null si no). Una reserva cancelada, sin acciones; una entregada con saldo se
-// sigue cobrando (RN-13).
+// sigue cobrando (RN-13). Con servicios sumados en el taller (HU-36), el precio cotizado y el final por separado (RF-43).
 
 const bs = (monto: string) => `${mostrarMonto(monto)} Bs`;
 
-type Props = { trabajoId: number; montos: NonNullable<DetalleReserva["montos"]>; cerrado: boolean; hoy: string };
+type Props = {
+  trabajoId: number;
+  montos: NonNullable<DetalleReserva["montos"]>;
+  cerrado: boolean;
+  hoy: string;
+  /** Debajo de los servicios: por ejemplo, "Agregar servicio" para el dueño en la orden. */
+  agregar?: React.ReactNode;
+};
 
-export function MontosTrabajo({ trabajoId, montos, cerrado, hoy }: Props) {
+export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar }: Props) {
+  const conAdicionales = montos.lineas.some((l) => l.esAdicional);
+  const precios = precioCotizadoYFinal(montos.lineas, montos.descuento);
   return (
       <>
         <section aria-labelledby="servicios-titulo" className="flex flex-col gap-3">
@@ -23,11 +32,16 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy }: Props) {
           <ul className="flex flex-col divide-y divide-border rounded-sm border border-border">
             {montos.lineas.map((l, i) => (
               <li key={i} className="flex justify-between gap-4 p-3">
-                <span>{l.descripcion}</span>
-                <span className="tabular-nums">{bs(l.precio)}</span>
+                <span className="flex flex-col">
+                  {l.descripcion}
+                  {l.esAdicional && <span className="text-sm text-tinta-suave">Adicional</span>}
+                </span>
+                {/* El monto nunca se corta: con un servicio de nombre largo, se acomoda el nombre */}
+                <span className="shrink-0 whitespace-nowrap tabular-nums">{bs(l.precio)}</span>
               </li>
             ))}
           </ul>
+          {agregar}
           <dl className="grid max-w-sm grid-cols-[1fr_auto] gap-x-6 gap-y-1">
             {montos.descuento !== "0.00" && (
               <>
@@ -35,8 +49,21 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy }: Props) {
                 <dd className="text-right tabular-nums">− {bs(montos.descuento)}</dd>
               </>
             )}
-            <dt className="font-semibold">Total</dt>
-            <dd className="text-right font-semibold tabular-nums">{bs(montos.saldo.total)}</dd>
+            {conAdicionales ? (
+              <>
+                <dt className="text-tinta-suave">Precio cotizado</dt>
+                <dd className="text-right tabular-nums">{bs(precios.cotizado)}</dd>
+                <dt className="text-tinta-suave">Adicionales</dt>
+                <dd className="text-right tabular-nums">+ {bs(precios.adicionales)}</dd>
+                <dt className="font-semibold">Precio final</dt>
+                <dd className="text-right font-semibold tabular-nums">{bs(precios.final)}</dd>
+              </>
+            ) : (
+              <>
+                <dt className="font-semibold">Total</dt>
+                <dd className="text-right font-semibold tabular-nums">{bs(montos.saldo.total)}</dd>
+              </>
+            )}
             <dt className="text-tinta-suave">Pagado</dt>
             <dd className="text-right tabular-nums">{bs(montos.saldo.pagado)}</dd>
             <dt className="font-semibold">Saldo</dt>
@@ -60,7 +87,7 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy }: Props) {
                           <span className={cn("font-semibold", p.anulado && "line-through")}>
                             {NOMBRE_TIPO_PAGO[p.tipo]} {METODO_EN_FRASE[p.metodo]}
                           </span>
-                          <span className={cn("tabular-nums", p.anulado && "line-through")}>{bs(p.monto)}</span>
+                          <span className={cn("shrink-0 whitespace-nowrap tabular-nums", p.anulado && "line-through")}>{bs(p.monto)}</span>
                         </span>
                         <span className="text-sm text-tinta-suave">
                           {formatearFecha(p.fecha)}, registrado por {p.registradoPor}

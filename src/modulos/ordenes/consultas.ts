@@ -2,7 +2,7 @@ import "server-only";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
-import { archivo, cliente, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, usuario, vehiculo } from "@/db/esquema";
+import { archivo, cliente, servicio, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, usuario, variante, vehiculo } from "@/db/esquema";
 import type { EstadoTrabajo, EtapaFoto } from "@/db/esquema/trabajos";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { obtenerReserva, type DetalleReserva } from "@/modulos/agenda/consultas";
@@ -41,6 +41,20 @@ export async function obtenerOrden(id: number, conMontos: boolean): Promise<Deta
     ? reserva.montos.lineas.map((l) => l.descripcion)
     : (await db.select({ descripcion: trabajoLinea.descripcion }).from(trabajoLinea).where(eq(trabajoLinea.trabajoId, id)).orderBy(asc(trabajoLinea.orden))).map((s) => s.descripcion);
   return { ...reserva, servicios };
+}
+
+/**
+ * Los servicios de la orden que generan mantenimiento (RN-08), uno por servicio aunque tenga varias líneas. La misma
+ * consulta anticipa la fecha al entregar y crea los recordatorios (con `base`, dentro de la transacción).
+ */
+export async function serviciosConMantenimiento(trabajoId: number, base: Pick<typeof db, "selectDistinct"> = db): Promise<{ id: number; nombre: string }[]> {
+  return base
+    .selectDistinct({ id: servicio.id, nombre: servicio.nombre })
+    .from(trabajoLinea)
+    .innerJoin(variante, eq(trabajoLinea.varianteId, variante.id))
+    .innerJoin(servicio, eq(variante.servicioId, servicio.id))
+    .where(and(eq(trabajoLinea.trabajoId, trabajoId), eq(servicio.generaMantenimiento, true)))
+    .orderBy(asc(servicio.nombre));
 }
 
 export type Avance = { id: number; nota: string; autor: string; createdAt: Date };

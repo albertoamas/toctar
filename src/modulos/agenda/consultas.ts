@@ -223,14 +223,22 @@ export type DetalleReserva = {
   recibidoPor: string | null;
   avisadoListoAt: Date | null;
   avisadoListoPor: string | null;
+  /** La entrega (HU-36): quién, cuándo y, si fue con saldo, quién lo autorizó y cuánto quedaba. */
+  entregadoAt: Date | null;
+  entregadoPor: string | null;
+  autorizoSaldo: string | null;
+  saldoAlEntregar: string | null;
+  tamanoId: number;
   /** Solo para quien ve pagos (RN-01 y RN-12: el técnico nunca). */
-  montos: { lineas: { descripcion: string; precio: string }[]; descuento: string; saldo: Saldo; pagos: PagoReserva[] } | null;
+  montos: { lineas: { descripcion: string; precio: string; esAdicional: boolean }[]; descuento: string; saldo: Saldo; pagos: PagoReserva[] } | null;
 };
 
 const tecnico = alias(usuario, "tecnico");
 const registrador = alias(usuario, "registrador");
 const recibio = alias(usuario, "recibio");
 const aviso = alias(usuario, "aviso");
+const entrego = alias(usuario, "entrego");
+const autorizo = alias(usuario, "autorizo");
 
 /** Una reserva, con sus montos y pagos si quien la mira los puede ver; null si no existe. */
 export async function obtenerReserva(id: number, conMontos: boolean): Promise<DetalleReserva | null> {
@@ -265,6 +273,11 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
       avisadoListoPor: aviso.name,
       marca: vehiculo.marca,
       modelo: vehiculo.modelo,
+      tamanoId: vehiculo.tamanoId,
+      entregadoAt: trabajo.entregadoAt,
+      entregadoPor: entrego.name,
+      autorizoSaldo: autorizo.name,
+      saldoAlEntregar: trabajo.saldoAlEntregar,
     })
     .from(trabajo)
     .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
@@ -275,6 +288,8 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
     .leftJoin(tecnico, eq(trabajo.tecnicoId, tecnico.id))
     .leftJoin(recibio, eq(trabajo.recibidoPor, recibio.id))
     .leftJoin(aviso, eq(trabajo.avisadoListoPor, aviso.id))
+    .leftJoin(entrego, eq(trabajo.entregadoPor, entrego.id))
+    .leftJoin(autorizo, eq(trabajo.entregaConSaldoAutorizadaPor, autorizo.id))
     .leftJoin(cotizacion, eq(trabajo.cotizacionId, cotizacion.id))
     .where(eq(trabajo.id, id));
   if (!r) return null;
@@ -284,7 +299,7 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
   if (conMontos) {
     const [lineas, filas] = await Promise.all([
       db
-        .select({ descripcion: trabajoLinea.descripcion, precio: trabajoLinea.precio })
+        .select({ descripcion: trabajoLinea.descripcion, precio: trabajoLinea.precio, esAdicional: trabajoLinea.esAdicional })
         .from(trabajoLinea)
         .where(eq(trabajoLinea.trabajoId, id))
         .orderBy(asc(trabajoLinea.orden)),

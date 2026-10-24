@@ -9,3 +9,4 @@ export * from "./consultas";
 export * from "./cotizaciones";
 export * from "./trabajos";
 export * from "./reclamos";
+export * from "./mantenimientos";

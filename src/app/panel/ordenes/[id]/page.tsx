@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { cn } from "cn";
+import { KeyRoundIcon } from "lucide-react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
@@ -13,7 +14,10 @@ import { puede, puedeVerModulo, puedeVerOrden } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
+import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
+import { opcionesDeServicio } from "@/modulos/cotizaciones/consultas";
+import { AgregarAdicional } from "@/modulos/ordenes/componentes/agregar-adicional";
 import { AvancesOrden } from "@/modulos/ordenes/componentes/avances-orden";
 import { AvisarListo } from "@/modulos/ordenes/componentes/avisar-listo";
 import { EstadoOrden } from "@/modulos/ordenes/componentes/estado-orden";
@@ -42,7 +46,7 @@ export default function PaginaOrden({ params, searchParams }: PageProps<"/panel/
 
 async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/[id]">, "params" | "searchParams">) {
   const usuario = await exigirModulo("ordenes");
-  const [{ id }, { recibido }] = await Promise.all([params, searchParams]);
+  const [{ id }, { recibido, entregado }] = await Promise.all([params, searchParams]);
   if (!/^\d+$/.test(id)) notFound();
   const tecnico = usuario.rol === "tecnico";
   const o = await obtenerOrden(Number(id), puedeVerModulo(usuario, "pagos"));
@@ -60,7 +64,14 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   const yo = Number(usuario.id);
   // Recién ahora, con el acceso verificado, se firman los enlaces de las fotos
   const conAviso = o.estado === "listo" && puede(usuario, "avisar_cliente");
-  const [fotos, avances, negocio] = await Promise.all([fotosDeTrabajo(o.id), avancesDeTrabajo(o.id), conAviso ? obtenerDatosPublicos() : null]);
+  // Sumar servicios: solo el dueño, mientras la orden está abierta (RF-43)
+  const conAdicional = abierta && puede(usuario, "agregar_adicional");
+  const [fotos, avances, negocio, opciones] = await Promise.all([
+    fotosDeTrabajo(o.id),
+    avancesDeTrabajo(o.id),
+    conAviso ? obtenerDatosPublicos() : null,
+    conAdicional ? opcionesDeServicio(o.tamanoId) : [],
+  ]);
   // Lista: el aviso al cliente por WhatsApp (HU-35), con el saldo solo si quien avisa lo ve
   const aviso = negocio && {
     enlace: enlaceWhatsApp(o.telefono, mensajeListo({ negocio: negocio.nombre, cliente: o.cliente, vehiculo: o, saldo: o.montos?.saldo.saldo ?? null })),
@@ -83,10 +94,32 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
         )}
       </div>
       {recibido && o.estado === "recibido" && <AvisoEnPagina>Vehículo recibido. La orden está en «Recibidas».</AvisoEnPagina>}
+      {entregado && o.estado === "entregado" && (
+        <AvisoEnPagina>
+          {o.saldoAlEntregar && o.montos && o.autorizoSaldo ? `Vehículo entregado con saldo de ${mostrarMonto(o.saldoAlEntregar)} Bs.` : "Vehículo entregado."}
+        </AvisoEnPagina>
+      )}
+      {o.estado === "entregado" && o.entregadoAt && (
+        <p className="max-w-3xl rounded-sm border border-border p-3">
+          Entregado el {diaYHora(o.entregadoAt)}
+          {o.entregadoPor && ` por ${o.entregadoPor}`}.
+          {/* La autorización de entregar con saldo, para quien ve pagos (RN-13) */}
+          {o.montos && o.autorizoSaldo && o.saldoAlEntregar && ` Con saldo de ${mostrarMonto(o.saldoAlEntregar)} Bs, autorizado por ${o.autorizoSaldo}.`}
+        </p>
+      )}
       {o.estado !== "entregado" && (
         <div className="flex max-w-3xl flex-col gap-4">
           <EstadoOrden id={o.id} estado={o.estado} editable={abierta} />
           {aviso && <AvisarListo id={o.id} enlace={aviso.enlace} avisado={aviso.avisado} />}
+          {o.estado === "listo" && puede(usuario, "entregar_vehiculo") && (
+            <div>
+              {/* Enlace con forma de botón: lleva a la entrega, con el saldo y el cobro */}
+              <Link href={`/panel/ordenes/${o.id}/entregar`} className={cn(buttonVariants({ variant: "outline" }))}>
+                <KeyRoundIcon />
+                Entregar vehículo
+              </Link>
+            </div>
+          )}
           {puedeExtenderse(o.estado) && puede(usuario, "extender_entrega") && (
             <ExtenderEntrega id={o.id} fechaInicio={o.fechaInicio} fechaFin={o.fechaFin} espacioId={o.espacioId} espacio={o.espacio} hoy={hoy} />
           )}
@@ -155,7 +188,9 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
           </section>
           <AvancesOrden id={o.id} avances={avances.map((a) => ({ id: a.id, nota: a.nota, autor: a.autor, cuando: formatearFechaHora(a.createdAt) }))} editable={abierta} />
           {/* Abierta también después de la entrega: una entregada con saldo se cobra aquí (RN-13, HU-37) */}
-          {o.montos && <MontosTrabajo trabajoId={o.id} montos={o.montos} cerrado={false} hoy={hoy} />}
+          {o.montos && (
+            <MontosTrabajo trabajoId={o.id} montos={o.montos} cerrado={false} hoy={hoy} agregar={conAdicional && <AgregarAdicional id={o.id} opciones={opciones} />} />
+          )}
         </div>
       </div>
     </>

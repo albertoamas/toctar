@@ -4,16 +4,22 @@ import { and, count, eq, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { auditoria, trabajo, trabajoAvance, trabajoFoto, usuario as tablaUsuario } from "@/db/esquema";
-import { fechaEnBolivia, formatearFecha, sumarDias } from "@/lib/fechas";
+import { auditoria, pago, recordatorioMantenimiento, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, usuario as tablaUsuario, vehiculo as tablaVehiculo } from "@/db/esquema";
+import { fechaEnBolivia, formatearFecha, sumarDias, sumarMeses } from "@/lib/fechas";
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { erroresDe, exclusionViolada, type EstadoFormulario } from "@/lib/formularios";
-import { puede, puedeVerOrden } from "@/lib/permisos";
+import { puede, puedeVerModulo, puedeVerOrden } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import type { EstadoTrabajo, EtapaFoto } from "@/db/esquema/trabajos";
 import { espaciosEnFechas, type EspacioDisponible } from "@/modulos/agenda/consultas";
 import { DIAS_MAXIMOS_TRABAJO, NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
-import { esquemaAvance, esquemaAvisoListo, esquemaEstadoOrden, esquemaExtender, esquemaFotoOrden, esquemaQuitarFotoOrden, esquemaRecibir } from "./esquemas";
+import { mostrarMonto } from "@/modulos/catalogo/reglas";
+import { obtenerParametros } from "@/modulos/configuracion/consultas";
+import { opcionesDeServicio } from "@/modulos/cotizaciones/consultas";
+import { descripcionLinea } from "@/modulos/cotizaciones/reglas";
+import { calcularSaldo, estaPagada, precioCotizadoYFinal } from "@/modulos/pagos/reglas";
+import { serviciosConMantenimiento } from "./consultas";
+import { esquemaAdicional, esquemaAvance, esquemaAvisoListo, esquemaEntregar, esquemaEstadoOrden, esquemaExtender, esquemaFotoOrden, esquemaQuitarFotoOrden, esquemaRecibir } from "./esquemas";
 import { estaAbierta, etapaAbierta, puedeExtenderse, MAXIMO_FOTOS_ETAPA, NOMBRE_ETAPA, puedeRecibirse, transicionOrden } from "./reglas";
 
 // Órdenes (C4). Entra el dueño, el encargado con "Órdenes" y el técnico, que solo toca las suyas (RN-12). Recibir el
@@ -378,4 +384,141 @@ export async function registrarAvisoListo(datos: { id: number }): Promise<Estado
 
   despuesDeCambiar(id, clienteId);
   return { ok: true };
+}
+
+/**
+ * Suma un servicio a la orden (HU-36, RF-43): solo el dueño, que es quien pone precios (RN-01). Del catálogo, con el
+ * precio vigente del tamaño o el que él escriba. También sirve para cobrar lo que el cliente deja de más. No en una
+ * orden entregada.
+ */
+export async function agregarAdicional(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  const usuario = await exigirModulo("ordenes");
+  if (!puede(usuario, "agregar_adicional")) return { mensaje: "Los servicios adicionales los suma el dueño." };
+  const valores = { varianteId: String(datos.get("varianteId") ?? ""), precio: String(datos.get("precio") ?? "") };
+  const r = esquemaAdicional.safeParse({ id: datos.get("id"), ...valores });
+  if (!r.success) {
+    const errores = erroresDe(r.error);
+    return errores.id ? { mensaje: RECARGA } : { errores, valores };
+  }
+  const { id, varianteId, precio } = r.data;
+
+  const [t] = await db
+    .select({ estado: trabajo.estado, clienteId: trabajo.clienteId, tamanoId: tablaVehiculo.tamanoId })
+    .from(trabajo)
+    .innerJoin(tablaVehiculo, eq(trabajo.vehiculoId, tablaVehiculo.id))
+    .where(eq(trabajo.id, id));
+  if (!t) return { mensaje: "Esa orden ya no existe." };
+  if (!estaAbierta(t.estado)) return { mensaje: "Solo se suman servicios a una orden abierta (recibida, en proceso o lista)." };
+  // Solo esa variante, con su precio vigente para el tamaño: no hace falta el catálogo entero
+  const [opcion] = await opcionesDeServicio(t.tamanoId, varianteId);
+  if (!opcion) return { errores: { varianteId: "Ese servicio ya no se ofrece: elige otro." }, valores };
+  const descripcion = descripcionLinea(opcion.servicio, opcion.variante);
+  const autorId = Number(usuario.id);
+
+  let final: string;
+  try {
+    final = await db.transaction(async (tx) => {
+      const [actual] = await tx.select({ estado: trabajo.estado, descuento: trabajo.descuento }).from(trabajo).where(eq(trabajo.id, id)).for("update");
+      if (!actual || !estaAbierta(actual.estado)) throw new Conflicto(CAMBIO);
+      const lineas = await tx.select({ precio: trabajoLinea.precio, esAdicional: trabajoLinea.esAdicional, orden: trabajoLinea.orden }).from(trabajoLinea).where(eq(trabajoLinea.trabajoId, id));
+      await tx.insert(trabajoLinea).values({ trabajoId: id, varianteId, descripcion, precio, esAdicional: true, orden: Math.max(-1, ...lineas.map((l) => l.orden)) + 1 });
+      // En la historia sin el precio: la ve también el técnico (RN-12)
+      await tx.insert(trabajoAvance).values({ trabajoId: id, usuarioId: autorId, nota: `Se sumó un servicio: ${descripcion}.` });
+      await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "trabajo", entidadId: id, accion: "adicional", datos: { varianteId, descripcion, precio } });
+      return precioCotizadoYFinal([...lineas, { precio, esAdicional: true }], actual.descuento).final;
+    });
+  } catch (error) {
+    if (error instanceof Conflicto) return { mensaje: error.message, valores };
+    throw error;
+  }
+
+  despuesDeCambiar(id, t.clienteId);
+  return { ok: true, mensaje: `Servicio agregado. Precio final: ${mostrarMonto(final)} Bs.` };
+}
+
+const SALDO_SIN_PERMISO = "Queda saldo pendiente: la entrega con saldo la autoriza el dueño o quien tenga el permiso.";
+
+/**
+ * Entrega el vehículo (HU-36, RF-43, RF-49, CU-19). Con saldo pendiente, solo el dueño o un encargado con "autorizar
+ * entrega con saldo", y queda quién lo autorizó (RN-13). El saldo se vuelve a calcular con la orden bloqueada: un pago
+ * o un adicional a último momento cuenta. Cada servicio que genera mantenimiento programa su recordatorio (RN-08).
+ */
+export async function entregarVehiculo(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  const usuario = await exigirModulo("ordenes");
+  if (!puede(usuario, "entregar_vehiculo")) return { mensaje: "El vehículo lo entrega el dueño o el encargado." };
+  const r = esquemaEntregar.safeParse({ id: datos.get("id"), conSaldo: datos.get("conSaldo") ?? undefined });
+  if (!r.success) return { mensaje: RECARGA };
+  const { id, conSaldo } = r.data;
+  const autorId = Number(usuario.id);
+  const hoy = fechaEnBolivia();
+  const { intervalo_mantenimiento_meses: meses } = await obtenerParametros();
+
+  let resultado: { clienteId: number; saldo: string | null };
+  try {
+    resultado = await db.transaction(async (tx) => {
+      const [t] = await tx
+        .select({ estado: trabajo.estado, descuento: trabajo.descuento, clienteId: trabajo.clienteId, vehiculoId: trabajo.vehiculoId })
+        .from(trabajo)
+        .where(eq(trabajo.id, id))
+        .for("update");
+      if (!t) throw new Conflicto("Esa orden ya no existe.");
+      if (t.estado !== "listo") throw new Conflicto("Solo se entrega una orden lista.");
+      const [lineas, pagos] = await Promise.all([
+        tx.select({ precio: trabajoLinea.precio }).from(trabajoLinea).where(eq(trabajoLinea.trabajoId, id)),
+        tx.select({ monto: pago.monto, anulado: pago.anulado }).from(pago).where(eq(pago.trabajoId, id)),
+      ]);
+      const { saldo } = calcularSaldo(
+        lineas.map((l) => l.precio),
+        t.descuento,
+        pagos,
+      );
+      const conDeuda = !estaPagada(saldo);
+      if (conDeuda && !puede(usuario, "entrega_con_saldo")) throw new Conflicto(SALDO_SIN_PERMISO);
+      if (conDeuda && !conSaldo) {
+        // El monto, solo a quien ve pagos (RN-12); el error va con la casilla, que así aparece aunque al abrir no hubiera saldo
+        const monto = puedeVerModulo(usuario, "pagos") ? ` de ${mostrarMonto(saldo)} Bs` : "";
+        throw new Conflicto(`Queda un saldo${monto}: marca «Entregar con saldo pendiente» para confirmar.`, "conSaldo");
+      }
+
+      await tx
+        .update(trabajo)
+        .set({
+          estado: "entregado",
+          entregadoAt: sql`now()`,
+          entregadoPor: autorId,
+          entregaConSaldoAutorizadaPor: conDeuda ? autorId : null,
+          saldoAlEntregar: saldo,
+          // Si sale antes de la entrega aproximada, la agenda deja de mostrarlo esos días
+          fechaFin: sql`least(${trabajo.fechaFin}, greatest(${trabajo.fechaInicio}, ${hoy}::date))`,
+          updatedAt: sql`now()`,
+        })
+        .where(eq(trabajo.id, id));
+
+      // RN-08: un recordatorio por servicio que lo genera, para dentro de los meses de Configuración
+      const conMantenimiento = await serviciosConMantenimiento(id, tx);
+      if (conMantenimiento.length > 0) {
+        await tx
+          .insert(recordatorioMantenimiento)
+          .values(conMantenimiento.map((s) => ({ trabajoOrigenId: id, clienteId: t.clienteId, vehiculoId: t.vehiculoId, servicioId: s.id, fechaProgramada: sumarMeses(hoy, meses) })))
+          .onConflictDoNothing();
+      }
+
+      // En la historia sin el monto: la ve también el técnico (RN-12)
+      await tx.insert(trabajoAvance).values({ trabajoId: id, usuarioId: autorId, nota: conDeuda ? "Vehículo entregado con saldo pendiente." : "Vehículo entregado." });
+      await tx.insert(auditoria).values({
+        usuarioId: autorId,
+        entidad: "trabajo",
+        entidadId: id,
+        accion: "entregar",
+        datos: { saldo, conSaldo: conDeuda, mantenimientos: conMantenimiento.map((s) => s.id) },
+      });
+      return { clienteId: t.clienteId, saldo: conDeuda ? saldo : null };
+    });
+  } catch (error) {
+    if (error instanceof Conflicto) return error.campo ? { errores: { [error.campo]: error.message } } : { mensaje: error.message };
+    throw error;
+  }
+
+  despuesDeCambiar(id, resultado.clienteId);
+  redirect(`/panel/ordenes/${id}?entregado=1`);
 }
