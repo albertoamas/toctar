@@ -596,7 +596,8 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Capturas a 390 y 1280 px, del comparador y de la galería.
   - En una pantalla de 1900 px de alto, el hueco entre el cierre y el pie es de 0 px en la galería, las preguntas, Nosotros, Servicios, la portada y dos servicios.
   - E2E `hu-12`: la línea arranca al medio, las flechas la mueven y un toque cerca del borde la lleva ahí.
-  - E2E `base`: el cierre pegado al pie en 4 páginas cortas.
+  - E2E `base`: el cierre pegado al pie en las 6 páginas que lo tienen.
+- **Después de la revisión de código:** las dos fotos se ven enteras (`object-contain`); la línea no salta al empezar a desplazar la página (se mueve solo con un arrastre de costado o un toque); el tirador queda entero en los bordes; la etiqueta que no cabe se esconde; el foco del visor entra por el título.
 
 ### Rendimiento del sitio (cierre del grupo 2, 18/10/2026)
 - **Encontrado** (Lighthouse móvil, tres corridas por página): portada 86, Servicios 88, Galería 89, Nosotros 90. El LCP simulado coincidía con el momento en que la página queda interactiva: el simulador cuenta como dependencias del LCP todo lo pedido antes de pintarlo, y la portada pedía 218 KB comprimidos de JavaScript y 7 fuentes (unos 130 KB) de entrada.

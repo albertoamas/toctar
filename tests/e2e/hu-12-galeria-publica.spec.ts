@@ -42,6 +42,8 @@ test("la galería muestra las fotos visibles, se filtra por servicio y se amplí
   await grilla.getByRole("button", { name: `Ampliar: ${conPar}` }).click();
   const visor = page.getByRole("dialog", { name: "Restauración de faroles con polímero" });
   await expect(visor.getByRole("img", { name: `Antes: ${conPar}` })).toBeVisible();
+  // El foco entra por el título, no por el deslizador oculto
+  await expect(visor.getByRole("heading", { name: "Restauración de faroles con polímero" })).toBeFocused();
   await expect(visor.getByRole("img", { name: `Después: ${conPar}` })).toHaveAttribute("src", /galeria\/[\w-]+\.webp$/);
   // El antes y el después en una sola foto, partida por una línea que se arrastra (pedido del 24/10). Entera a la vista,
   // sin bajar: lo mide el después, que ocupa toda la caja; el antes está recortado hasta la línea
@@ -57,6 +59,12 @@ test("la galería muestra las fotos visibles, se filtra por servicio y se amplí
   const caja = (await visor.getByRole("img", { name: `Después: ${conPar}` }).boundingBox())!;
   await page.mouse.click(caja.x + caja.width * 0.2, caja.y + caja.height / 2);
   await expect.poll(async () => Number(await linea.inputValue())).toBeLessThan(30);
+  // Y un arrastre de costado la lleva hasta donde se suelta
+  await page.mouse.move(caja.x + caja.width * 0.5, caja.y + caja.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(caja.x + caja.width * 0.8, caja.y + caja.height / 2, { steps: 5 });
+  await page.mouse.up();
+  await expect.poll(async () => Number(await linea.inputValue())).toBeGreaterThan(70);
   // Cerrar: en español y de 44 px; también cierra con Escape
   const cerrar = visor.getByRole("button", { name: "Cerrar" });
   // Se espera a que termine la animación de apertura (el diálogo entra con un leve zoom)

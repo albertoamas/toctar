@@ -2,22 +2,31 @@
 
 import Image from "next/image";
 import { useId, useRef, useState } from "react";
+import type { UrlsFoto } from "@/lib/fotos";
 
 // Comparador de antes y después de la galería pública: una sola foto partida por una línea que se arrastra. A la
 // izquierda de la línea, el antes; a la derecha, el después. El tirador es el paralelogramo rojo a 60° de la marca.
-// - Con el dedo o el mouse: se arrastra en cualquier punto de la foto. `touch-action: pan-y` deja desplazar la página
-//   hacia arriba y abajo; solo el gesto de costado mueve la línea.
+// - Con el dedo o el mouse: se arrastra de costado en cualquier punto de la foto, o se toca donde se quiere la línea.
+//   Un gesto vertical desplaza la página y no mueve la línea (`touch-action: pan-y` y el umbral de abajo).
 // - Con el teclado y el lector de pantalla: un deslizador nativo (oculto) que mueve la misma línea con las flechas.
+// Las dos fotos se ven enteras (`object-contain`): si no tienen la misma forma, una queda con bordes, pero nunca recortada.
 
-type Foto = { url: string; ancho: number | null; alto: number | null };
+type Foto = Pick<UrlsFoto, "url" | "ancho" | "alto">;
 
 const INICIO = 50;
+/** Píxeles de movimiento antes de decidir si el gesto es un arrastre de costado (línea) o un desplazamiento (página). */
+const UMBRAL = 8;
+/** Cerca del borde, la etiqueta de ese lado quedaría sobre la otra foto: se esconde (en % del ancho). */
+const MARGEN_ETIQUETA = 15;
+
+type Gesto = { id: number; x: number; y: number; arrastrando: boolean };
 
 export function ComparadorAntesDespues({ antes, despues, descripcion }: { antes: Foto; despues: Foto; descripcion: string }) {
   const [corte, setCorte] = useState(INICIO);
   const caja = useRef<HTMLDivElement>(null);
+  const gesto = useRef<Gesto | null>(null);
   const id = useId();
-  // La caja toma la forma de la foto de después (las dos se recortan igual) y nunca pasa del 70 % del alto de la pantalla
+  // La caja toma la forma de la foto de después y nunca pasa del 70 % del alto de la pantalla
   const proporcion = (despues.ancho ?? 4) / (despues.alto ?? 3);
 
   function moverA(x: number) {
@@ -33,27 +42,45 @@ export function ComparadorAntesDespues({ antes, despues, descripcion }: { antes:
         className="group relative mx-auto w-full cursor-ew-resize touch-pan-y overflow-hidden bg-superficie select-none"
         style={{ aspectRatio: proporcion, maxWidth: `calc(70dvh * ${proporcion})` }}
         onPointerDown={(e) => {
-          e.currentTarget.setPointerCapture(e.pointerId);
-          moverA(e.clientX);
+          // Solo el dedo principal o el botón izquierdo: el clic derecho (guardar la foto) o un segundo dedo no mueven nada
+          if (!e.isPrimary || e.button !== 0) return;
+          gesto.current = { id: e.pointerId, x: e.clientX, y: e.clientY, arrastrando: false };
         }}
         onPointerMove={(e) => {
-          if (e.currentTarget.hasPointerCapture(e.pointerId)) moverA(e.clientX);
+          const g = gesto.current;
+          if (!g || g.id !== e.pointerId) return;
+          if (!g.arrastrando) {
+            const dx = Math.abs(e.clientX - g.x);
+            if (dx < UMBRAL || dx < Math.abs(e.clientY - g.y)) return;
+            g.arrastrando = true;
+            e.currentTarget.setPointerCapture(e.pointerId);
+          }
+          moverA(e.clientX);
         }}
+        onPointerUp={(e) => {
+          const g = gesto.current;
+          gesto.current = null;
+          // Un toque sin arrastre lleva la línea ahí
+          if (g && g.id === e.pointerId && !g.arrastrando && Math.hypot(e.clientX - g.x, e.clientY - g.y) < UMBRAL) moverA(e.clientX);
+        }}
+        // El navegador tomó el gesto para desplazar la página: la línea no se toca
+        onPointerCancel={() => (gesto.current = null)}
       >
-        <Image src={despues.url} alt={`Después: ${descripcion}`} fill sizes="(min-width: 64rem) 64rem, 100vw" unoptimized draggable={false} className="object-cover" />
+        <Image src={despues.url} alt={`Después: ${descripcion}`} fill unoptimized draggable={false} className="object-contain" />
         {/* El antes encima, recortado hasta la línea */}
         <Image
           src={antes.url}
           alt={`Antes: ${descripcion}`}
           fill
-          sizes="(min-width: 64rem) 64rem, 100vw"
           unoptimized
           draggable={false}
-          className="object-cover"
+          className="bg-superficie object-contain"
           style={{ clipPath: `inset(0 ${100 - corte}% 0 0)` }}
         />
-        <span aria-hidden className="absolute top-2 left-2 bg-negro/75 px-2 py-0.5 text-sm font-semibold text-blanco">Antes</span>
-        <span aria-hidden className="absolute top-2 right-2 bg-negro/75 px-2 py-0.5 text-sm font-semibold text-blanco">Después</span>
+        {corte > MARGEN_ETIQUETA && <span aria-hidden className="absolute top-2 left-2 bg-negro/75 px-2 py-0.5 text-sm font-semibold text-blanco">Antes</span>}
+        {corte < 100 - MARGEN_ETIQUETA && (
+          <span aria-hidden className="absolute top-2 right-2 bg-negro/75 px-2 py-0.5 text-sm font-semibold text-blanco">Después</span>
+        )}
 
         {/* El deslizador del teclado y el lector de pantalla: oculto; su foco se ve en el tirador (group-has) */}
         <input
@@ -68,18 +95,20 @@ export function ComparadorAntesDespues({ antes, despues, descripcion }: { antes:
           aria-describedby={`${id}-ayuda`}
           className="sr-only"
         />
-        <div aria-hidden className="pointer-events-none absolute inset-y-0 w-0" style={{ left: `${corte}%` }}>
-          {/* La línea, con un borde oscuro fino para que se lea sobre fotos claras */}
-          <span className="absolute inset-y-0 -left-px w-0.5 bg-blanco shadow-[0_0_0_1px_rgb(0_0_0/0.45)]" />
-          {/* El tirador: el corte a 60° de la marca (skew de 30°), con las dos flechas derechas */}
-          <span className="absolute top-1/2 left-0 flex h-11 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center">
-            <span className="absolute inset-0 -skew-x-[30deg] bg-rojo outline-offset-2 outline-[var(--foco)] group-has-[input:focus-visible]:outline-2" />
-          </span>
-          <span className="absolute top-1/2 left-0 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1 text-lg leading-none font-bold text-blanco">
+        {/* La línea, con un borde oscuro fino (ring) para que se lea sobre fotos claras */}
+        <span aria-hidden className="pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2 bg-blanco ring-1 ring-negro/45" style={{ left: `${corte}%` }} />
+        {/* El tirador: el corte a 60° de la marca (skew de 30°). En los bordes no se sale de la foto: queda entero adentro */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 flex h-11 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center"
+          style={{ left: `clamp(1.75rem, ${corte}%, calc(100% - 1.75rem))` }}
+        >
+          <span className="absolute inset-0 -skew-x-[30deg] bg-rojo outline-offset-2 outline-[var(--foco)] group-has-[input:focus-visible]:outline-2" />
+          <span className="relative flex gap-1 text-lg leading-none font-bold text-blanco">
             <span>‹</span>
             <span>›</span>
           </span>
-        </div>
+        </span>
       </div>
       <p id={`${id}-ayuda`} className="text-center text-sm text-tinta-suave">
         Arrastra la línea para comparar

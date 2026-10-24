@@ -254,10 +254,11 @@ test("en la Galería del panel, subir sin nada marca todo junto y el foco va a l
 });
 
 // Pedido del 24/10: en una página corta, la sección de cierre (la invitación a escribir) queda pegada al pie, sin un
-// hueco debajo. Se mira en una pantalla alta, donde el contenido no la llena.
+// hueco debajo. Se mira en una pantalla alta, donde el contenido no la llena. Van las 6 páginas con cierre: el `mt-auto`
+// solo funciona si el cierre es hijo directo de una columna flex que llena el alto, y una página nueva puede romperlo.
 test("la sección de cierre queda pegada al pie aunque la página sea corta", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 2400 });
-  for (const ruta of ["/galeria", "/preguntas-frecuentes", "/nosotros", "/servicios/pulido-de-vidrios"]) {
+  for (const ruta of ["/", "/servicios", "/galeria", "/preguntas-frecuentes", "/nosotros", "/servicios/pulido-de-vidrios"]) {
     await page.goto(ruta);
     const cierre = page.locator("main section").filter({ has: page.locator("[data-whatsapp-principal]") }).last();
     await expect(cierre).toBeVisible();
