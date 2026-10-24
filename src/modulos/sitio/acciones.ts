@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, max } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, max, TransactionRollbackError } from "drizzle-orm";
 import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/db";
 import { contenidoPagina, faq, galeriaItem, servicio } from "@/db/esquema";
@@ -9,7 +9,7 @@ import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { reordenar, type Direccion } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
 import { CLAVES_PAGINA, PAGINAS, PORTADA, datosDelFormulario, esquemaPagina, esquemaPregunta, type Pagina } from "./contenido";
-import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, listarGaleria, listarPreguntas, listarServicios } from "./consultas";
+import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, listarGaleria, listarPreguntas, listarServicios, servicioEnSitio } from "./consultas";
 import { servicioCambiado } from "./servicio-cambiado";
 import { esquemaEditarGaleria, esquemaGaleria, esquemaId, esquemaIdFormulario, esquemaMover, esquemaServicio, esquemaVisibilidad } from "./esquemas";
 
@@ -315,31 +315,51 @@ export async function cambiarVisibilidadGaleria(datos: { id: number; visible: bo
   const entrada = esquemaVisibilidad.safeParse(datos);
   if (!entrada.success) return { mensaje: "Esa foto ya no existe. Recarga la página." };
   const { id, visible } = entrada.data;
-  const [fila] = await db.update(galeriaItem).set({ visible }).where(eq(galeriaItem.id, id)).returning({ id: galeriaItem.id });
+  // Oculto, deja de ser el elegido de la portada: si no, al volver a mostrarlo la portada cambiaría sola
+  const cambios = visible ? { visible } : { visible, enPortada: false };
+  const [fila] = await db.update(galeriaItem).set(cambios).where(eq(galeriaItem.id, id)).returning({ id: galeriaItem.id });
   if (!fila) return { mensaje: "Esa foto ya no existe. Recarga la página." };
   despuesDeCambiarGaleria();
   return { ok: true, mensaje: visible ? "La foto se ve en el sitio." : "Foto oculta: no se ve en el sitio." };
 }
 
-/** Elige el trabajo del comparador de la portada (pedido de la demo del 24/10). Uno solo, y con foto de antes. */
+/**
+ * Elige el trabajo del comparador de la portada (pedido de la demo del 24/10). Uno solo, con foto de antes y que se
+ * vea en el sitio (visible, de un servicio visible): la misma regla que `trabajoDePortada`, así el aviso no miente.
+ */
+const NO_VA_EN_PORTADA = "Ese trabajo ya no se puede mostrar en la portada. Recarga la página.";
+
 export async function elegirParaPortada(datoId: number): Promise<EstadoFormulario> {
   await exigirModulo("sitio");
   const entrada = esquemaId.safeParse(datoId);
-  if (!entrada.success) return { mensaje: "Esa foto ya no existe. Recarga la página." };
-  const [item] = await db.select({ antes: galeriaItem.fotoAntesId }).from(galeriaItem).where(eq(galeriaItem.id, entrada.data));
-  if (!item) return { mensaje: "Esa foto ya no existe. Recarga la página." };
-  if (!item.antes) return { mensaje: "En la portada va un trabajo con foto de antes y de después." };
-  // Primero se quita la anterior: el índice único admite una sola marcada. Si otra persona eligió al mismo tiempo,
-  // el índice frena la segunda elección y se avisa.
-  try {
-    await db.transaction(async (tx) => {
+  if (!entrada.success) return { mensaje: NO_VA_EN_PORTADA };
+  // Primero se quita la anterior (el índice único admite una sola) y después se marca la nueva, solo si todavía
+  // cumple todo: si la borraron u ocultaron entretanto, no se marca nada y se deshace también lo primero.
+  const marcada = await db
+    .transaction(async (tx) => {
       await tx.update(galeriaItem).set({ enPortada: false }).where(eq(galeriaItem.enPortada, true));
-      await tx.update(galeriaItem).set({ enPortada: true }).where(eq(galeriaItem.id, entrada.data));
+      const [fila] = await tx
+        .update(galeriaItem)
+        .set({ enPortada: true })
+        .where(
+          and(
+            eq(galeriaItem.id, entrada.data),
+            eq(galeriaItem.visible, true),
+            isNotNull(galeriaItem.fotoAntesId),
+            inArray(galeriaItem.servicioId, tx.select({ id: servicio.id }).from(servicio).where(servicioEnSitio)),
+          ),
+        )
+        .returning({ id: galeriaItem.id });
+      if (!fila) tx.rollback();
+      return true;
+    })
+    .catch((error: unknown) => {
+      if (error instanceof TransactionRollbackError) return false;
+      // Otra persona eligió al mismo tiempo: el índice único frena la segunda elección
+      if (indiceUnicoViolado(error) !== null) return false;
+      throw error;
     });
-  } catch (error) {
-    if (indiceUnicoViolado(error) !== null) return { mensaje: "Alguien más cambió la portada recién. Recarga la página." };
-    throw error;
-  }
+  if (!marcada) return { mensaje: NO_VA_EN_PORTADA };
   despuesDeCambiarGaleria();
   return { ok: true, mensaje: "Listo: este trabajo se ve en la portada." };
 }

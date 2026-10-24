@@ -1,5 +1,5 @@
 import "server-only";
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { archivo, contenidoPagina, faq, galeriaItem, servicio, type Paso } from "@/db/esquema";
@@ -111,6 +111,8 @@ export type FilaGaleria = {
   servicio: string;
   descripcion: string;
   visible: boolean;
+  /** Visible y de un servicio que se ve en el sitio: lo mismo que filtra `galeriaPublica`. */
+  enSitio: boolean;
   enPortada: boolean;
   orden: number;
   antes: UrlsFoto | null;
@@ -119,11 +121,13 @@ export type FilaGaleria = {
 
 const fotoAntes = alias(archivo, "foto_antes");
 const fotoDespues = alias(archivo, "foto_despues");
+/** El servicio se ve en el sitio: activo (catálogo) y con su página visible. */
+export const servicioEnSitio = sql<boolean>`(${servicio.activo} and ${servicio.visibleSitio})`;
 
 /** Fotos de la galería en su orden (las ocultas también: se ven marcadas en el panel). */
 export async function listarGaleria(): Promise<FilaGaleria[]> {
   const filas = await db
-    .select({ item: galeriaItem, servicio: servicio.nombre, antes: fotoAntes, despues: fotoDespues })
+    .select({ item: galeriaItem, servicio: servicio.nombre, servicioEnSitio, antes: fotoAntes, despues: fotoDespues })
     .from(galeriaItem)
     .innerJoin(servicio, eq(galeriaItem.servicioId, servicio.id))
     .innerJoin(fotoDespues, eq(galeriaItem.fotoDespuesId, fotoDespues.id))
@@ -135,6 +139,7 @@ export async function listarGaleria(): Promise<FilaGaleria[]> {
     servicio: f.servicio,
     descripcion: f.item.descripcion,
     visible: f.item.visible,
+    enSitio: f.item.visible && f.servicioEnSitio,
     enPortada: f.item.enPortada,
     orden: f.item.orden,
     antes: f.antes ? urlsFoto(f.antes) : null,

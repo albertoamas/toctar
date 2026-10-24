@@ -100,7 +100,8 @@ test("la foto del taller va detrás del lema de la portada; sin foto, al lado va
   await expect(bloque.getByText("Sin foto: detrás del lema queda el fondo negro.")).toBeVisible();
   await page.goto("/");
   await expect(page.locator(".tt-portada-foto")).toHaveCount(0);
-  // Al lado del lema, el arte; o el comparador, si la galería tiene un trabajo con antes (pedido de la demo del 24/10)
+  // Al lado del lema, el arte; o el comparador, si la galería tiene un trabajo con antes (pedido de la demo del 24/10).
+  // Las otras pruebas dejan trabajos con antes en la base compartida: la regla exacta la prueban las unitarias de ladoDelLema
   const arte = page.locator("main svg[viewBox='0 0 480 288']");
   await expect(arte.or(page.getByRole("slider", { name: "Comparar antes y después" }))).toHaveCount(1);
 });

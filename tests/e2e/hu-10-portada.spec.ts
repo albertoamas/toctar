@@ -131,4 +131,11 @@ test("el trabajo elegido en la galería del panel se compara arriba en la portad
   await page.goto("/");
   await expect(page.getByRole("slider", { name: "Comparar antes y después" })).toBeVisible();
   await expect(page.getByRole("img", { name: `Después: ${elegido}` })).toHaveCount(0);
+
+  // Al ocultarlo dejó de ser el elegido: mostrarlo otra vez no cambia la portada sola
+  await page.goto("/panel/sitio/galeria");
+  await page.getByRole("button", { name: `Mostrar: ${elegido}` }).click();
+  await expect(tarjeta.getByText("Oculta")).toHaveCount(0);
+  await expect(tarjeta.getByText("En la portada")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: `Mostrar en la portada: ${elegido}` })).toBeVisible();
 });

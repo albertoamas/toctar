@@ -26,3 +26,12 @@ export function trabajoDePortada<T extends ConAntes>(fotos: T[]): (T & { antes: 
   const conAntes = fotos.filter((f): f is T & { antes: NonNullable<T["antes"]> } => f.antes != null);
   return conAntes.find((f) => f.enPortada) ?? conAntes[0] ?? null;
 }
+
+/**
+ * Qué va al lado del lema de la portada: el comparador si hay un trabajo con antes; si no, el arte de la marca, pero
+ * solo sin foto del taller (con foto, el texto usa todo el ancho sobre ella).
+ */
+export function ladoDelLema({ hayFotoTaller, hayComparador }: { hayFotoTaller: boolean; hayComparador: boolean }): "comparador" | "arte" | null {
+  if (hayComparador) return "comparador";
+  return hayFotoTaller ? null : "arte";
+}

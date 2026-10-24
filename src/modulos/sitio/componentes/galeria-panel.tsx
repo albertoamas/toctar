@@ -29,7 +29,17 @@ import { cambiarVisibilidadGaleria, elegirParaPortada, eliminarGaleriaItem, guar
 // Un trabajo con antes se elige para el comparador de la portada (pedido de la demo del 24/10).
 
 type Foto = { miniatura: string; ancho: number | null; alto: number | null };
-export type ItemGaleria = { id: number; servicioId: number; servicio: string; descripcion: string; visible: boolean; antes: Foto | null; despues: Foto };
+export type ItemGaleria = {
+  id: number;
+  servicioId: number;
+  servicio: string;
+  descripcion: string;
+  visible: boolean;
+  /** Visible y de un servicio que se ve en el sitio: solo así puede ir a la portada. */
+  enSitio: boolean;
+  antes: Foto | null;
+  despues: Foto;
+};
 type Servicio = { id: number; nombre: string };
 
 export function GaleriaPanel({ items, servicios, portadaId }: { items: ItemGaleria[]; servicios: Servicio[]; portadaId: number | null }) {
@@ -148,8 +158,8 @@ function Tarjeta({
                   </Button>
                 </>
               )}
-              {/* Solo un trabajo visible con antes puede ir a la portada; el que ya está no muestra el botón */}
-              {item.antes && item.visible && !enPortada && (
+              {/* Solo un trabajo con antes que se ve en el sitio puede ir a la portada; el que ya está no muestra el botón */}
+              {item.antes && item.enSitio && !enPortada && (
                 <Button type="button" variant="ghost" size="icon" disabled={pendiente} aria-label={`Mostrar en la portada: ${item.descripcion}`} onClick={() => ejecutar(() => elegirParaPortada(item.id))}>
                   <HouseIcon />
                 </Button>
