@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { MODULOS, modulosDelMenu, permisosAsignables, puede, puedeVerModulo, type Modulo, type Permiso } from "@/lib/permisos";
+import { MODULOS, modulosDelMenu, nombreEnMenu, permisosAsignables, puede, puedeVerModulo, type Modulo, type Permiso } from "@/lib/permisos";
 
 // La matriz de docs/08-desarrollo/etapas/B1-acceso.md §5, casilla por casilla (RNF-05).
 
@@ -72,4 +72,11 @@ describe("menú y casillas", () => {
       expect(MODULOS[modulo].construido).toBe(true);
     }
   });
+});
+
+test("Pagos se llama «Saldos pendientes» en el menú y «Pagos» en los permisos (HU-37)", () => {
+  expect(nombreEnMenu("pagos")).toBe("Saldos pendientes");
+  expect(MODULOS.pagos.nombre).toBe("Pagos");
+  expect(nombreEnMenu("agenda")).toBe("Agenda");
+  expect(modulosDelMenu({ rol: "encargado", permisos: ["pagos"] })).toEqual(["inicio", "pagos"]);
 });
