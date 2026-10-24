@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { ingresarComoDueno } from "./apoyo";
+import { crearServicioPublicado, ingresarComoDueno } from "./apoyo";
 
 // HU-11 Página de cada servicio y HU-15 (mensaje con el servicio). Criterios: docs/09-pruebas/criterios-entrega-1.md (11.x).
 
@@ -43,11 +43,7 @@ test("un servicio oculto o inexistente muestra la página no encontrada", async 
 
   soloEscritorio(info);
   await ingresarComoDueno(page);
-  await page.goto("/panel/sitio/servicios/nuevo");
-  await page.getByLabel("Nombre del servicio").fill("Servicio oculto con página");
-  await page.getByLabel("Resumen").fill("No se debe ver en el sitio.");
-  await page.getByRole("button", { name: "Crear servicio" }).click();
-  await expect(page.getByText("Servicio creado.")).toBeVisible();
+  await crearServicioPublicado(page, "Servicio oculto con página", "No se debe ver en el sitio.");
   await page.goto("/servicios/servicio-oculto-con-pagina");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Servicio oculto con página");
 

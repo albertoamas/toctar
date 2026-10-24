@@ -2,7 +2,7 @@ import "server-only";
 import { and, asc, desc, eq, inArray, lte } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
-import { cliente, recordatorioMantenimiento as recordatorio, servicio, usuario, vehiculo, type EstadoRecordatorio } from "@/db/esquema";
+import { cliente, recordatorioMantenimiento as recordatorio, servicio, trabajo, usuario, vehiculo, type EstadoRecordatorio, type EstadoTrabajo } from "@/db/esquema";
 import { ESTADOS_RECORDATORIO_ABIERTO, hastaProximos } from "./reglas";
 
 // Lecturas de los recordatorios de mantenimiento (HU-38). Quien las llama ya pasó por exigirModulo("mantenimientos").
@@ -71,12 +71,13 @@ export type MantenimientoDelCliente = {
   placa: string;
   /** Un vehículo desactivado (por ejemplo, lo vendió) no se avisa: la lista de Mantenimientos no lo muestra. */
   vehiculoActivo: boolean;
-  trabajoAgendadoId: number | null;
+  /** La reserva con que se agendó y su estado (para abrirla donde corresponde: reserva u orden). */
+  agendado: { id: number; estado: EstadoTrabajo } | null;
 };
 
 /** Todos los del cliente, para su ficha: el más lejano arriba (los que vienen), los viejos al final. */
 export async function mantenimientosDelCliente(clienteId: number): Promise<MantenimientoDelCliente[]> {
-  return db
+  const filas = await db
     .select({
       id: recordatorio.id,
       fechaProgramada: recordatorio.fechaProgramada,
@@ -84,13 +85,16 @@ export async function mantenimientosDelCliente(clienteId: number): Promise<Mante
       servicio: servicio.nombre,
       placa: vehiculo.placa,
       vehiculoActivo: vehiculo.activo,
-      trabajoAgendadoId: recordatorio.trabajoAgendadoId,
+      agendadoId: trabajo.id,
+      agendadoEstado: trabajo.estado,
     })
     .from(recordatorio)
     .innerJoin(vehiculo, eq(recordatorio.vehiculoId, vehiculo.id))
     .innerJoin(servicio, eq(recordatorio.servicioId, servicio.id))
+    .leftJoin(trabajo, eq(recordatorio.trabajoAgendadoId, trabajo.id))
     .where(eq(recordatorio.clienteId, clienteId))
     .orderBy(desc(recordatorio.fechaProgramada), desc(recordatorio.id));
+  return filas.map(({ agendadoId, agendadoEstado, ...f }) => ({ ...f, agendado: agendadoId && agendadoEstado ? { id: agendadoId, estado: agendadoEstado } : null }));
 }
 
 /** Un recordatorio que todavía se puede agendar, para la nueva reserva (`?recordatorio=`). */

@@ -6,10 +6,11 @@ import { Campo } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import type { EstadoFormulario } from "@/lib/formularios";
+import type { Direccion } from "@/lib/orden";
 
 // Componente de cliente: se usa dentro de otros componentes de cliente (recibe funciones como props).
 // Lista editable del panel: agregar, renombrar, subir y bajar, desactivar y reactivar; nunca se borra (D-6).
-// La usan los espacios del taller, los tamaños de vehículo (HU-05) y las variantes de un servicio (HU-07).
+// La usan los espacios del taller, los tamaños de vehículo (HU-05) y las variantes de un servicio (HU-19, en el catálogo).
 
 export type ElementoLista = { id: number; nombre: string; descripcion: string | null; orden: number; activo: boolean };
 
@@ -17,7 +18,7 @@ export type ElementoLista = { id: number; nombre: string; descripcion: string | 
 export type AccionesLista = {
   /** Agrega (sin "id") o renombra (con "id"). Recibe "nombre", "descripcion" y los campos ocultos. */
   guardar: (previo: EstadoFormulario, datos: FormData) => Promise<EstadoFormulario>;
-  mover: (id: number, direccion: "subir" | "bajar") => Promise<EstadoFormulario>;
+  mover: (id: number, direccion: Direccion) => Promise<EstadoFormulario>;
   cambiarEstado: (id: number, activo: boolean) => Promise<EstadoFormulario>;
 };
 

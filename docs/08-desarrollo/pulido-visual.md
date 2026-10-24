@@ -159,7 +159,7 @@ Antes de la demo del viernes 23.
 |---|---|---|---|
 | 6.1 | Datos del negocio y logo | `/panel/configuracion` | ✅ 19/10 |
 | 6.2 | Taller (espacios y tamaños de vehículo) | `/panel/configuracion/taller` | ✅ 19/10 |
-| 6.3 | Cotizaciones y mantenimiento | `/panel/configuracion/cotizaciones` | ✅ 19/10 |
+| 6.3 | Cotizaciones y mantenimiento (desde el 24/10, Parámetros) | `/panel/configuracion/parametros` | ✅ 19/10 |
 
 ## Registro por pantalla
 

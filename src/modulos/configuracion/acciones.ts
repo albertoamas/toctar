@@ -6,7 +6,7 @@ import { db } from "@/db";
 import { espacioTaller, negocio, parametro, sucursal, tamanoVehiculo } from "@/db/esquema";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
-import { nombreRepetido, puedeDesactivar, reordenar } from "@/lib/orden";
+import { nombreRepetido, puedeDesactivar, reordenar, type Direccion } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
 import { whatsAppLocal } from "@/lib/whatsapp";
 import { ETIQUETA_NEGOCIO, ETIQUETA_PARAMETROS, listarElementos, obtenerConfiguracionNegocio, sucursalPrincipal } from "./consultas";
@@ -126,7 +126,7 @@ export async function guardarParametros(_previo: EstadoFormulario, datos: FormDa
   });
 
   updateTag(ETIQUETA_PARAMETROS);
-  revalidatePath(`${RUTA}/cotizaciones`);
+  revalidatePath(`${RUTA}/parametros`);
   return { ok: true, mensaje: "Cambios guardados.", valores: Object.fromEntries(CLAVES_PARAMETRO.map((c) => [c, String(entrada.data[c])])) };
 }
 
@@ -188,7 +188,7 @@ async function actualizarOrden(lista: Lista, orden: { id: number; orden: number 
   });
 }
 
-export async function moverElemento(datos: { lista: Lista; id: number; direccion: "subir" | "bajar" }): Promise<EstadoFormulario> {
+export async function moverElemento(datos: { lista: Lista; id: number; direccion: Direccion }): Promise<EstadoFormulario> {
   await exigirModulo("configuracion");
   const entrada = esquemaMover.safeParse(datos);
   if (!entrada.success) return { mensaje: "No se pudo mover." };

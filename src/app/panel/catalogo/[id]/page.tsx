@@ -3,29 +3,32 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
+import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioDatosCatalogo } from "@/modulos/catalogo/componentes/formulario-datos-catalogo";
 import { FormularioPrecios } from "@/modulos/catalogo/componentes/formulario-precios";
+import { VariantesServicio } from "@/modulos/catalogo/componentes/variantes-servicio";
 import { obtenerServicioCatalogo } from "@/modulos/catalogo/consultas";
 
 export const metadata: Metadata = { title: "Servicio del catálogo" };
 
-// HU-19 y HU-20: duración, mantenimiento, estado y precios de un servicio. Solo el dueño (RN-01).
-export default function PaginaServicioCatalogo({ params }: PageProps<"/panel/catalogo/[id]">) {
+// HU-19 y HU-20: nombre, duración, mantenimiento, estado, precios y variantes de un servicio. Solo el dueño (RN-01).
+// Su página en el sitio (textos y foto) se edita en Sitio web: el enlace lleva ahí.
+export default function PaginaServicioCatalogo({ params, searchParams }: PageProps<"/panel/catalogo/[id]">) {
   return (
     <section className="flex flex-col gap-6">
       <EnlaceVolver href="/panel/catalogo">Catálogo y precios</EnlaceVolver>
       <Suspense fallback={<Cargando />}>
-        <Detalle params={params} />
+        <Detalle params={params} searchParams={searchParams} />
       </Suspense>
     </section>
   );
 }
 
-async function Detalle({ params }: Pick<PageProps<"/panel/catalogo/[id]">, "params">) {
+async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo/[id]">, "params" | "searchParams">) {
   await exigirModulo("catalogo");
-  const { id } = await params;
+  const [{ id }, { creado }] = await Promise.all([params, searchParams]);
   const numero = Number(id);
   if (!Number.isInteger(numero) || numero <= 0) notFound();
   const s = await obtenerServicioCatalogo(numero);
@@ -37,9 +40,19 @@ async function Detalle({ params }: Pick<PageProps<"/panel/catalogo/[id]">, "para
         <h1 className="font-heading text-4xl font-extrabold italic">{s.nombre}</h1>
         {!s.activo && <span className="tt-insignia">Inactivo</span>}
       </div>
+      {creado && <AvisoEnPagina>Servicio creado. Carga sus precios; su página en el sitio se completa en Sitio web.</AvisoEnPagina>}
+      <p className="flex flex-wrap items-center gap-x-2 text-sm">
+        {/* Sale en el sitio si está activo y su página se muestra (publico.ts pide las dos) */}
+        <span className="text-tinta-suave">
+          {!s.activo ? "Inactivo: no sale en el sitio." : s.visibleSitio ? "Se muestra en el sitio." : "Oculto en el sitio."}
+        </span>
+        <Link href={`/panel/sitio/servicios/${s.id}`} className="inline-flex min-h-11 items-center font-semibold underline">
+          Editar su página en el sitio
+        </Link>
+      </p>
       <div className="flex max-w-4xl flex-col gap-12">
         <div className="max-w-2xl">
-          <FormularioDatosCatalogo servicio={s} />
+          <FormularioDatosCatalogo servicio={{ id: s.id, nombre: s.nombre, duracionDias: s.duracionDias, generaMantenimiento: s.generaMantenimiento, activo: s.activo }} />
         </div>
         <section aria-labelledby="precios-titulo" className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
@@ -72,19 +85,7 @@ async function Detalle({ params }: Pick<PageProps<"/panel/catalogo/[id]">, "para
             s.variantes.map((v) => <FormularioPrecios key={v.id} variante={v} tamanos={s.tamanos} duracionServicio={s.duracionDias} />)
           )}
         </section>
-        <section aria-labelledby="variantes-titulo" className="flex flex-col gap-3">
-          <h2 id="variantes-titulo" className="font-heading text-2xl font-bold italic">Variantes</h2>
-          {/* Sin borde: no se tocan (se editan en el sitio web) */}
-          <ul className="flex flex-wrap gap-2">
-            {s.variantes.map((v) => (
-              <li key={v.id} className="rounded-sm bg-superficie px-3 py-1.5 text-sm">{v.nombre}</li>
-            ))}
-          </ul>
-          <p className="text-sm text-tinta-suave">Las variantes se agregan, ordenan y desactivan en el sitio web.</p>
-          <Link href={`/panel/sitio/servicios/${s.id}`} className="inline-flex min-h-11 items-center self-start font-semibold underline">
-            Editar variantes
-          </Link>
-        </section>
+        <VariantesServicio servicioId={s.id} variantes={s.listaVariantes} />
       </div>
     </>
   );

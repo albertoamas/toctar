@@ -23,6 +23,25 @@ export const puedeExtenderse = (estado: EstadoTrabajo) => estado === "recibido" 
 /** Ya se recibió: abierta o entregada (los mismos de la restricción `trabajo_recibido_si_orden`). */
 export const esOrden = (estado: EstadoTrabajo) => estaAbierta(estado) || estado === "entregado";
 
+/**
+ * Dónde se abre un trabajo (C5 §0): ya recibido, en su orden; si no, en su reserva (D-1). Quien no ve órdenes va siempre
+ * a la reserva, que le dice "Esta reserva ya es una orden". Para cualquier lista que muestre trabajos.
+ */
+export function rutaTrabajo(id: number, estado: EstadoTrabajo, verOrdenes: boolean) {
+  return verOrdenes && esOrden(estado) ? (`/panel/ordenes/${id}` as const) : (`/panel/agenda/${id}` as const);
+}
+
+/**
+ * El enlace "Ver la orden" o "Ver la reserva" a un trabajo, según a dónde lleva (rutaTrabajo), o null si quien mira no
+ * puede abrir esa pantalla (la reserva pide "Agenda"; la orden, "Órdenes").
+ */
+export function enlaceTrabajo(id: number, estado: EstadoTrabajo, ve: { ordenes: boolean; agenda: boolean }) {
+  const href = rutaTrabajo(id, estado, ve.ordenes);
+  const aLaOrden = href.startsWith("/panel/ordenes/");
+  if (!aLaOrden && !ve.agenda) return null;
+  return { href, texto: aLaOrden ? "Ver la orden" : "Ver la reserva" };
+}
+
 /** Cada estado abierto, con su paso siguiente y el de vuelta (por si se marcó por error). */
 const PASOS: Record<(typeof ESTADOS_ORDEN_ABIERTA)[number], { siguiente?: { estado: EstadoTrabajo; texto: string }; anterior?: { estado: EstadoTrabajo; texto: string } }> = {
   recibido: { siguiente: { estado: "en_proceso", texto: "Empezar trabajo" } },

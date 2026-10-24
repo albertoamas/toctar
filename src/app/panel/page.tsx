@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { primerNombre } from "@/modulos/clientes/reglas";
 import { Suspense } from "react";
-import { CalendarClockIcon, CalendarIcon, ChevronRightIcon, ContactIcon, GlobeIcon, InboxIcon, MessageSquareWarningIcon, SettingsIcon, TagIcon, UsersIcon, WalletIcon, WrenchIcon, type LucideIcon } from "lucide-react";
+import { ChevronRightIcon, type LucideIcon } from "lucide-react";
 import { cn } from "cn";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
+import { ICONO_MODULO } from "@/componentes/panel/iconos-modulo";
 import { MODULOS, nombreEnMenu, modulosDelMenu, type Modulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { contarPendientes } from "@/modulos/reclamos/consultas";
@@ -20,18 +21,18 @@ export default function InicioPanel() {
   );
 }
 
-/** Para qué sirve cada módulo, en una línea, y su ícono. Los que todavía no están aquí se muestran solo con el nombre. */
-const ACCESOS: Partial<Record<Modulo, { icono: LucideIcon; descripcion: string }>> = {
-  sitio: { icono: GlobeIcon, descripcion: "Servicios, textos, preguntas y fotos del sitio." },
-  agenda: { icono: CalendarIcon, descripcion: "Qué espacio del taller está ocupado cada día; agendar y mover reservas." },
-  ordenes: { icono: WrenchIcon, descripcion: "Los vehículos en el taller: recibir, trabajar, avisar y entregar." },
-  pagos: { icono: WalletIcon, descripcion: "Quién debe todavía, desde cuándo, y cobrarle." },
-  mantenimientos: { icono: CalendarClockIcon, descripcion: "A quién le toca volver: avisarle y agendarlo." },
-  consultas: { icono: InboxIcon, descripcion: "Lo que preguntan los clientes, con sus fotos, hasta cotizarlo." },
-  clientes: { icono: ContactIcon, descripcion: "Clientes y sus vehículos, para atenderlos con su historial." },
-  catalogo: { icono: TagIcon, descripcion: "Precios por tamaño, duración y mantenimiento de cada servicio." },
-  usuarios: { icono: UsersIcon, descripcion: "El personal del taller, sus roles y contraseñas." },
-  configuracion: { icono: SettingsIcon, descripcion: "Datos del negocio, horario y parámetros." },
+/** Para qué sirve cada módulo, en una línea (Reclamos dice cuántos hay pendientes). El ícono es el del menú. */
+const DESCRIPCION: Partial<Record<Modulo, string>> = {
+  agenda: "Qué espacio del taller está ocupado cada día; agendar y mover reservas.",
+  ordenes: "Los vehículos en el taller: recibir, trabajar, avisar y entregar.",
+  clientes: "Clientes y sus vehículos, para atenderlos con su historial.",
+  consultas: "Lo que preguntan los clientes, con sus fotos, hasta cotizarlo.",
+  pagos: "Quién debe todavía, desde cuándo, y cobrarle.",
+  mantenimientos: "A quién le toca volver: avisarle y agendarlo.",
+  sitio: "La página de cada servicio, los textos, las preguntas y las fotos del sitio.",
+  catalogo: "Los servicios: agregarlos, sus variantes y los precios por tamaño.",
+  usuarios: "El personal del taller, sus roles y contraseñas.",
+  configuracion: "Datos del negocio, el taller y los parámetros.",
 };
 
 async function Contenido() {
@@ -56,7 +57,7 @@ async function Contenido() {
               <li key={m} className="md:col-span-2">
                 <Acceso
                   href={pendientes > 0 ? "/panel/reclamos?ver=pendientes" : "/panel/reclamos"}
-                  icono={MessageSquareWarningIcon}
+                  icono={ICONO_MODULO.reclamos}
                   titulo={pendientes > 0 ? `Reclamos pendientes: ${pendientes}` : "Reclamos"}
                   descripcion={pendientes > 0 ? "Llegaron desde el sitio. Respóndelos por WhatsApp." : "No hay reclamos pendientes."}
                   destacado={pendientes > 0}
@@ -64,7 +65,7 @@ async function Contenido() {
               </li>
             ) : (
               <li key={m}>
-                <Acceso href={MODULOS[m].ruta} icono={ACCESOS[m]?.icono} titulo={nombreEnMenu(m)} descripcion={ACCESOS[m]?.descripcion} />
+                <Acceso href={MODULOS[m].ruta} icono={ICONO_MODULO[m]} titulo={nombreEnMenu(m)} descripcion={DESCRIPCION[m]} />
               </li>
             ),
           )}
@@ -82,7 +83,7 @@ function Acceso({
   destacado = false,
 }: {
   href: string;
-  icono?: LucideIcon;
+  icono: LucideIcon;
   titulo: string;
   descripcion?: string;
   destacado?: boolean;
@@ -95,7 +96,7 @@ function Acceso({
         destacado ? "border-aviso bg-aviso/5" : "border-border",
       )}
     >
-      {Icono && <Icono className={cn("size-6 shrink-0", destacado ? "text-aviso" : "text-tinta-suave")} aria-hidden />}
+      <Icono className={cn("size-6 shrink-0", destacado ? "text-aviso" : "text-tinta-suave")} aria-hidden />
       <span className="flex flex-1 flex-col">
         <span className="font-semibold">{titulo}</span>
         {descripcion && <span className="text-sm text-tinta-suave">{descripcion}</span>}

@@ -1,17 +1,27 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { cn } from "cn";
+import { PlusIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
+import { buttonVariants } from "@/componentes/ui/button";
 import { exigirModulo } from "@/lib/sesion";
 import { listarCatalogo } from "@/modulos/catalogo/consultas";
 
 export const metadata: Metadata = { title: "Catálogo y precios" };
 
-// HU-19 y HU-20: servicios del catálogo con su duración, mantenimiento y precios. Solo el dueño (RN-01).
+// HU-19 y HU-20: los servicios, con su duración, mantenimiento y precios; aquí se agregan. Solo el dueño (RN-01).
 export default function PaginaCatalogo() {
   return (
     <section className="flex max-w-3xl flex-col gap-6">
-      <h1 className="font-heading text-4xl font-extrabold italic">Catálogo y precios</h1>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="font-heading text-4xl font-extrabold italic">Catálogo y precios</h1>
+        {/* Enlace con forma de botón: lleva a otra pantalla */}
+        <Link href="/panel/catalogo/nuevo" className={cn(buttonVariants())}>
+          <PlusIcon />
+          Agregar servicio
+        </Link>
+      </div>
       <Suspense fallback={<Cargando />}>
         <Lista />
       </Suspense>

@@ -34,12 +34,14 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
 
   return (
     <div className="flex flex-1">
-      <aside data-theme="oscuro" className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col overflow-y-auto bg-fondo p-4 text-tinta lg:flex">
+      <aside data-theme="oscuro" className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col bg-fondo p-4 text-tinta lg:flex">
         <div className="mb-6">
           <Marca />
         </div>
-        {menu}
-        <div className="mt-auto border-t border-border pt-4">{sesion}</div>
+        {/* Si el menú no entra (pantalla baja), se desplaza solo él: la marca y "Cerrar sesión" quedan a la vista.
+            El margen negativo con su relleno deja ver el borde de foco de los enlaces */}
+        <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">{menu}</div>
+        <div className="mt-4 border-t border-border pt-4">{sesion}</div>
       </aside>
 
       {/* min-w-0: sin esto, lo ancho del contenido (como la tira de pestañas) estira la columna y la pantalla
@@ -51,8 +53,10 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
         <Toaster />
         <header data-theme="oscuro" className="sticky top-0 z-40 flex h-14 items-center gap-2 bg-fondo px-4 text-tinta lg:hidden">
           <MenuDesplegable lado="left" cabecera={<Marca />}>
-            <div className="px-1">{menu}</div>
-            <div className="mt-auto border-t border-border p-4">{sesion}</div>
+            {/* Igual que la barra lateral: en un celular bajo se desplaza el menú y "Cerrar sesión" queda a la vista. Con el
+                mismo margen que la cabecera, los títulos de grupo quedan alineados con la marca */}
+            <div className="min-h-0 flex-1 overflow-y-auto px-4">{menu}</div>
+            <div className="border-t border-border p-4">{sesion}</div>
           </MenuDesplegable>
           <Marca />
         </header>

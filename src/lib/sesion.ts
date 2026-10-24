@@ -6,7 +6,7 @@ import { cache } from "react";
 import { db } from "@/db";
 import { usuarioPermiso } from "@/db/esquema";
 import { auth } from "@/lib/auth";
-import { puedeVerModulo, type Modulo, type Permiso } from "@/lib/permisos";
+import { puede, puedeVerModulo, type Accion, type Modulo, type Permiso } from "@/lib/permisos";
 import type { Rol } from "@/lib/roles";
 
 // Capa de acceso a la sesión. Toda página y toda acción del panel la usa: el layout
@@ -55,5 +55,12 @@ export async function exigirSesion(): Promise<UsuarioActual> {
 export async function exigirModulo(modulo: Modulo): Promise<UsuarioActual> {
   const usuario = await exigirSesion();
   if (!puedeVerModulo(usuario, modulo)) redirect("/panel/sin-acceso");
+  return usuario;
+}
+
+/** Para lo que no es un módulo entero, como cotizar (solo el dueño, RN-01): sin sesión → ingreso; sin permiso → "Sin acceso". */
+export async function exigirAccion(accion: Accion): Promise<UsuarioActual> {
+  const usuario = await exigirSesion();
+  if (!puede(usuario, accion)) redirect("/panel/sin-acceso");
   return usuario;
 }

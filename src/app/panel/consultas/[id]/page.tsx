@@ -10,7 +10,7 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import { formatearFechaHora } from "@/lib/fechas";
-import { puedeVerModulo } from "@/lib/permisos";
+import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { ArchivosConsulta } from "@/modulos/consultas/componentes/archivos-consulta";
@@ -42,7 +42,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/consulta
   const [{ id }, { creada, cotizada, sinpdf }] = await Promise.all([params, searchParams]);
   const numero = Number(id);
   if (!Number.isInteger(numero) || numero <= 0) notFound();
-  const esDueno = puedeVerModulo(usuario, "cotizaciones");
+  const esDueno = puede(usuario, "cotizar");
   const puedeAgendar = puedeVerModulo(usuario, "agenda");
   const [c, cotizaciones, reservas] = await Promise.all([
     obtenerConsulta(numero),
@@ -103,7 +103,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/consulta
               <span className="text-tinta-suave">por {c.registradaPor}</span>
             </dd>
           </dl>
-          <CotizacionesConsulta consultaId={c.id} estado={c.estado} cotizaciones={cotizaciones} esDueno={esDueno} puedeAgendar={puedeAgendar} reservas={reservas} />
+          <CotizacionesConsulta consultaId={c.id} estado={c.estado} cotizaciones={cotizaciones} esDueno={esDueno} puedeAgendar={puedeAgendar} reservas={reservas} verOrdenes={puedeVerModulo(usuario, "ordenes")} />
         </div>
 
         <div className="flex flex-col gap-10 lg:col-start-1 lg:row-start-1">

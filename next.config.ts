@@ -29,6 +29,13 @@ const nextConfig: NextConfig = {
     // Fotos y logo suben por Server Actions: hasta 5 MB por imagen, más lo que agrega el formulario.
     serverActions: { bodySizeLimit: "6mb" },
   },
+  // Direcciones que cambiaron con la reorganización del panel (C5 §0): los favoritos y el historial siguen andando
+  async redirects() {
+    return [
+      { source: "/panel/configuracion/cotizaciones", destination: "/panel/configuracion/parametros", permanent: true },
+      { source: "/panel/sitio/servicios/nuevo", destination: "/panel/catalogo/nuevo", permanent: true },
+    ];
+  },
   async headers() {
     return [
       { source: "/:path*", headers: ENCABEZADOS_SEGURIDAD },

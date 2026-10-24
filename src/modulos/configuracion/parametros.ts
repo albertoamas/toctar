@@ -24,50 +24,67 @@ function texto(nombre: string) {
     .max(2000, "Hasta 2000 caracteres.");
 }
 
+/** Secciones de la pestaña Parámetros (C5 §0), en el orden del trabajo: la consulta, la cotización, la agenda y el mantenimiento. */
+export const SECCIONES_PARAMETROS = {
+  consultas: { titulo: "Consultas", descripcion: null },
+  cotizaciones: { titulo: "Cotizaciones", descripcion: "Las condiciones, la garantía y las formas de pago salen al pie de cada PDF." },
+  agenda: { titulo: "Agenda", descripcion: null },
+  mantenimiento: { titulo: "Mantenimiento", descripcion: null },
+} as const;
+export type SeccionParametros = keyof typeof SECCIONES_PARAMETROS;
+
+/** Cada parámetro con su sección; los que tienen unidad son números, los demás, textos largos. */
 export const PARAMETROS = {
   adelanto_sugerido: {
+    seccion: "agenda",
     etiqueta: "Adelanto sugerido",
     ayuda: "Monto sugerido al agendar; se puede cambiar en cada reserva.",
     unidad: "Bs",
     esquema: entero(1, 100_000, "Escribe un monto mayor a cero, hasta Bs 100 000."),
   },
   validez_cotizacion_dias: {
+    seccion: "cotizaciones",
     etiqueta: "Validez de la cotización",
     ayuda: "Días que vale una cotización si no se indica otra cosa.",
     unidad: "días",
     esquema: entero(1, 365, "Entre 1 y 365 días."),
   },
   intervalo_mantenimiento_meses: {
+    seccion: "mantenimiento",
     etiqueta: "Aviso de mantenimiento",
     ayuda: "Meses después de la entrega para avisar el mantenimiento.",
     unidad: "meses",
     esquema: entero(1, 24, "Entre 1 y 24 meses."),
   },
   dias_consulta_fria: {
+    seccion: "consultas",
     etiqueta: "Consulta que se enfría",
     ayuda: "Días sin movimiento para resaltarla en Consultas.",
     unidad: "días",
     esquema: entero(1, 90, "Entre 1 y 90 días."),
   },
   condiciones_cotizacion: {
+    seccion: "cotizaciones",
     etiqueta: "Condiciones",
     ayuda: "Lo que el cliente acepta al confirmar la cotización.",
     unidad: null,
     esquema: texto("las condiciones"),
   },
   garantia_cotizacion: {
+    seccion: "cotizaciones",
     etiqueta: "Garantía",
     ayuda: "Qué cubre la garantía y qué tiene que cuidar el cliente.",
     unidad: null,
     esquema: texto("la garantía"),
   },
   formas_pago_cotizacion: {
+    seccion: "cotizaciones",
     etiqueta: "Formas de pago",
     ayuda: "Cómo se puede pagar el adelanto y el saldo.",
     unidad: null,
     esquema: texto("las formas de pago"),
   },
-} as const;
+} as const satisfies Record<string, { seccion: SeccionParametros; etiqueta: string; ayuda: string; unidad: string | null; esquema: z.ZodType }>;
 
 export type ClaveParametro = keyof typeof PARAMETROS;
 export const CLAVES_PARAMETRO = Object.keys(PARAMETROS) as ClaveParametro[];

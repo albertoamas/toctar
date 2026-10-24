@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DIRECCIONES } from "@/lib/orden";
 
 // Listas editables de la pestaña Taller (HU-05): espacios del taller (RN-06) y tamaños de vehículo (RN-07).
 // Reglas puras, probadas en tests/unit/configuracion-parametros.test.ts.
@@ -24,7 +25,7 @@ export const esquemaElemento = z.object({
 export const esquemaMover = z.object({
   lista: z.enum(["espacios", "tamanos"]),
   id: z.number().int().positive(),
-  direccion: z.enum(["subir", "bajar"]),
+  direccion: z.enum(DIRECCIONES),
 });
 
 export const esquemaEstado = z.object({

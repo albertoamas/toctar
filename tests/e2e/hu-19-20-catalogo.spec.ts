@@ -1,6 +1,6 @@
-import { expect, test, type Page, type TestInfo } from "@playwright/test";
+import { expect, test, type TestInfo } from "@playwright/test";
 import pg from "pg";
-import { crearUsuario, ingresar, ingresarComoDueno, URL_BASE_E2E } from "./apoyo";
+import { crearServicioPublicado, crearUsuario, ingresar, ingresarComoDueno, URL_BASE_E2E } from "./apoyo";
 
 // HU-19 Catálogo con variantes y HU-20 Precios por tamaño y duración.
 // Especificación: docs/08-desarrollo/etapas/C1-catalogo-clientes.md §9.
@@ -8,22 +8,11 @@ import { crearUsuario, ingresar, ingresarComoDueno, URL_BASE_E2E } from "./apoyo
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "C" : "E");
 
-/** Crea un servicio desde Sitio web y devuelve su id y la dirección de su página. */
-async function crearServicio(page: Page, nombre: string) {
-  await page.goto("/panel/sitio/servicios/nuevo");
-  await page.getByLabel("Nombre del servicio").fill(nombre);
-  await page.getByLabel("Resumen").fill("Servicio de prueba del catálogo.");
-  await page.getByRole("button", { name: "Crear servicio" }).click();
-  await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+/);
-  const slug = await page.getByLabel("Dirección de la página").inputValue();
-  return { id: page.url().match(/servicios\/(\d+)/)![1], slug };
-}
-
 test("el dueño marca el mantenimiento, cambia la duración y desactiva un servicio, que sale del sitio", async ({ page }, info) => {
   test.setTimeout(60_000);
   const nombre = `Catálogo de prueba ${sufijo(info)}`;
   await ingresarComoDueno(page);
-  const { id, slug } = await crearServicio(page, nombre);
+  const { id, slug } = await crearServicioPublicado(page, nombre);
 
   // Desde el menú
   await page.goto("/panel");
@@ -66,16 +55,44 @@ test("el dueño marca el mantenimiento, cambia la duración y desactiva un servi
   await expect(page.getByRole("heading", { level: 1, name: nombre })).toBeVisible();
 });
 
-test("las variantes se editan en el sitio web: el catálogo las muestra y enlaza ahí", async ({ page }) => {
+test("las variantes se agregan, renombran y desactivan en el catálogo; una nueva pide sus precios", async ({ page }, info) => {
   await ingresarComoDueno(page);
   await page.goto("/panel/catalogo");
-  const fila = page.getByRole("list", { name: "Servicios del catálogo" }).getByRole("link", { name: /Pulido y nano cerámico/ });
   // Cuenta las variantes activas del servicio (datos iniciales: 1, 2, 3, 5 y 10 años)
-  await expect(fila).toContainText("5 variantes");
-  await fila.click();
-  await expect(page.getByRole("region", { name: "Variantes" })).toContainText("5 años");
-  await page.getByRole("link", { name: "Editar variantes" }).click();
-  await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+$/);
+  await expect(page.getByRole("list", { name: "Servicios del catálogo" }).getByRole("link", { name: /Pulido y nano cerámico/ })).toContainText("5 variantes");
+
+  await page.getByRole("link", { name: "Agregar servicio" }).click();
+  await expect(page).toHaveURL(/\/panel\/catalogo\/nuevo$/);
+  // La dirección de antes de la reorganización (C5 §0) lleva a la misma pantalla
+  await page.goto("/panel/sitio/servicios/nuevo");
+  await expect(page).toHaveURL(/\/panel\/catalogo\/nuevo$/);
+  await page.getByLabel("Nombre del servicio").fill(`Variantes de prueba ${sufijo(info)}`);
+  await page.getByRole("button", { name: "Crear servicio" }).click();
+  await expect(page.getByText("Servicio creado.")).toBeVisible();
+  // D-2: nace con la variante "Única". En la misma ficha hay otro "Guardar" (los datos): todo dentro de Variantes
+  const variantes = page.getByRole("region", { name: "Variantes" });
+  const activas = variantes.getByRole("list", { name: "Variantes activos" });
+  await expect(activas).toContainText("Única");
+
+  await variantes.getByRole("button", { name: "Agregar variante" }).click();
+  await variantes.getByLabel("Nombre del variante").fill("Premium");
+  await variantes.getByRole("button", { name: "Agregar", exact: true }).click();
+  await expect(page.getByText("Variante Premium agregada.")).toBeVisible();
+  // La nueva ya tiene su formulario de precios
+  await expect(page.getByRole("form", { name: "Premium" })).toBeVisible();
+  await variantes.getByRole("button", { name: "Editar Única" }).click();
+  await variantes.getByLabel("Nombre del variante").fill("Básico");
+  await variantes.getByRole("button", { name: "Guardar", exact: true }).click();
+  await expect(activas.getByRole("listitem")).toHaveText([/Básico/, /Premium/]);
+
+  // Desactivar no borra; la última activa no se desactiva
+  await variantes.getByRole("button", { name: "Editar Premium" }).click();
+  await variantes.getByRole("button", { name: "Desactivar Premium" }).click();
+  await expect(page.getByText("Premium desactivada.")).toBeVisible();
+  await expect(page.getByRole("form", { name: "Premium" })).toHaveCount(0);
+  await variantes.getByRole("button", { name: "Editar Básico" }).click();
+  await variantes.getByRole("button", { name: "Desactivar Básico" }).click();
+  await expect(page.getByText(/Debe quedar al menos una variante activa/)).toBeVisible();
 });
 
 test("el encargado, aun con todos sus permisos, y el técnico no entran al catálogo", async ({ page }, info) => {
@@ -116,7 +133,7 @@ test("el dueño carga precios por tamaño; vacío es según evaluación y cada c
   test.setTimeout(60_000);
   const nombre = `Precios de prueba ${sufijo(info)}`;
   await ingresarComoDueno(page);
-  const { id } = await crearServicio(page, nombre);
+  const { id } = await crearServicioPublicado(page, nombre);
   await page.goto(`/panel/catalogo/${id}`);
   // Un servicio nuevo tiene la variante "Única" (D-2), todavía sin precios
   const unica = page.getByRole("form", { name: "Única" });

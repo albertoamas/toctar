@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { db } from "@/db";
 import { archivo, cotizacion } from "@/db/esquema";
 import { disposicion, flujoArchivoPrivado, urlArchivoPrivado } from "@/lib/almacenamiento";
-import { exigirModulo } from "@/lib/sesion";
+import { exigirAccion } from "@/lib/sesion";
 import { nombreArchivoPdf } from "@/modulos/cotizaciones/reglas";
 
 // HU-26: el PDF de una cotización. Solo el dueño (RN-01). Lleva al enlace firmado del bucket privado (15 minutos):
@@ -11,7 +11,7 @@ import { nombreArchivoPdf } from "@/modulos/cotizaciones/reglas";
 // HU-27: `?para=compartir` entrega el archivo desde la app, para el menú de compartir del teléfono: así el navegador lo
 // lee sin pedirlo al almacenamiento (que necesitaría CORS de lectura) y sin que pase por otra dirección.
 export async function GET(peticion: Request, { params }: RouteContext<"/panel/cotizaciones/[id]/pdf">) {
-  await exigirModulo("cotizaciones");
+  await exigirAccion("cotizar");
   const { id } = await params;
   if (!/^\d+$/.test(id)) notFound();
   const [c] = await db

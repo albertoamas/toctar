@@ -10,11 +10,11 @@ import { Input } from "@/componentes/ui/input";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { guardarDatosCatalogo } from "../acciones";
 
-// HU-19: duración, mantenimiento y si el servicio está activo en el catálogo.
+// HU-19: nombre, duración, mantenimiento y si el servicio está activo en el catálogo.
 
 const guardarConAviso = conAviso(guardarDatosCatalogo);
 
-type Props = { servicio: { id: number; duracionDias: number; generaMantenimiento: boolean; activo: boolean } };
+type Props = { servicio: { id: number; nombre: string; duracionDias: number; generaMantenimiento: boolean; activo: boolean } };
 
 export function FormularioDatosCatalogo({ servicio: s }: Props) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(guardarConAviso, {});
@@ -29,6 +29,17 @@ export function FormularioDatosCatalogo({ servicio: s }: Props) {
     <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate aria-labelledby="datos-catalogo-titulo">
       <h2 id="datos-catalogo-titulo" className="font-heading text-2xl font-bold italic">Datos del catálogo</h2>
       <input type="hidden" name="id" value={s.id} />
+      <Campo id="nombre" etiqueta="Nombre del servicio" error={e.nombre} ayuda="Sale en el sitio, en las cotizaciones y en las reservas.">
+        <Input
+          id="nombre"
+          name="nombre"
+          autoComplete="off"
+          defaultValue={v?.nombre ?? s.nombre}
+          aria-invalid={!!e.nombre}
+          aria-describedby={e.nombre ? "nombre-error" : "nombre-ayuda"}
+          className="max-w-md"
+        />
+      </Campo>
       <Campo
         id="duracionDias"
         etiqueta="Duración estimada"
