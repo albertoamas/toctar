@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DIRECCIONES } from "@/lib/orden";
 import { PATRON_SLUG } from "@/lib/slug";
 
 // Validación del contenido del sitio (B3): el mismo esquema en el formulario y en el servidor.
@@ -74,7 +75,7 @@ export const esquemaVariante = z.object({
 const idRegistro = z.number().int().positive();
 export const esquemaId = idRegistro;
 export const esquemaIdFormulario = z.coerce.number().int().positive();
-export const esquemaMover = z.object({ id: idRegistro, direccion: z.enum(["subir", "bajar"]) });
+export const esquemaMover = z.object({ id: idRegistro, direccion: z.enum(DIRECCIONES) });
 export const esquemaMoverVariante = esquemaMover.extend({ servicioId: idRegistro });
 export const esquemaEstadoVariante = z.object({ servicioId: idRegistro, id: idRegistro, activo: z.boolean() });
 export const esquemaVisibilidad = z.object({ id: idRegistro, visible: z.boolean() });

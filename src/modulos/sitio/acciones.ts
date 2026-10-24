@@ -7,7 +7,7 @@ import { db } from "@/db";
 import { contenidoPagina, faq, galeriaItem, servicio, variante } from "@/db/esquema";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
-import { nombreRepetido, puedeDesactivar, reordenar } from "@/lib/orden";
+import { nombreRepetido, puedeDesactivar, reordenar, type Direccion } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
 import { crearSlug } from "@/lib/slug";
 import { CLAVES_PAGINA, PAGINAS, PORTADA, datosDelFormulario, esquemaPagina, esquemaPregunta, type Pagina } from "./contenido";
@@ -163,7 +163,7 @@ export async function quitarFotoServicio(datoId: number): Promise<EstadoFormular
   return { ok: true, mensaje: "Foto quitada. El sitio muestra la imagen de reemplazo." };
 }
 
-export async function moverServicio(datos: { id: number; direccion: "subir" | "bajar" }): Promise<EstadoFormulario> {
+export async function moverServicio(datos: { id: number; direccion: Direccion }): Promise<EstadoFormulario> {
   await exigirModulo("sitio");
   const entrada = esquemaMover.safeParse(datos);
   if (!entrada.success) return { mensaje: "No se pudo mover." };
@@ -212,7 +212,7 @@ export async function guardarVariante(_previo: EstadoFormulario, datos: FormData
   return { ok: true, mensaje: id ? "Cambios guardados." : `Variante ${nombre} agregada.` };
 }
 
-export async function moverVariante(datos: { servicioId: number; id: number; direccion: "subir" | "bajar" }): Promise<EstadoFormulario> {
+export async function moverVariante(datos: { servicioId: number; id: number; direccion: Direccion }): Promise<EstadoFormulario> {
   await exigirModulo("sitio");
   const entrada = esquemaMoverVariante.safeParse(datos);
   if (!entrada.success) return { mensaje: "No se pudo mover." };
@@ -326,7 +326,7 @@ export async function guardarPregunta(_previo: EstadoFormulario, datos: FormData
   return { ok: true, mensaje: id ? "Cambios guardados." : "Pregunta agregada." };
 }
 
-export async function moverPregunta(datos: { id: number; direccion: "subir" | "bajar" }): Promise<EstadoFormulario> {
+export async function moverPregunta(datos: { id: number; direccion: Direccion }): Promise<EstadoFormulario> {
   await exigirModulo("sitio");
   const entrada = esquemaMover.safeParse(datos);
   if (!entrada.success) return { mensaje: "No se pudo mover." };
@@ -433,7 +433,7 @@ export async function guardarGaleriaItem(_previo: EstadoFormulario, datos: FormD
   return { ok: true, mensaje: "Cambios guardados." };
 }
 
-export async function moverGaleriaItem(datos: { id: number; direccion: "subir" | "bajar" }): Promise<EstadoFormulario> {
+export async function moverGaleriaItem(datos: { id: number; direccion: Direccion }): Promise<EstadoFormulario> {
   await exigirModulo("sitio");
   const entrada = esquemaMover.safeParse(datos);
   if (!entrada.success) return { mensaje: "No se pudo mover." };

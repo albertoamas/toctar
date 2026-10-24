@@ -7,6 +7,7 @@ import { ArrowDownIcon, ArrowUpIcon, ImageOffIcon } from "lucide-react";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { Button } from "@/componentes/ui/button";
+import type { Direccion } from "@/lib/orden";
 import { moverServicio } from "../acciones";
 
 // HU-07: servicios en el orden en que salen en el sitio. Se abren para editar.
@@ -15,7 +16,7 @@ type Fila = { id: number; nombre: string; resumen: string; visible: boolean; min
 
 export function ListaServicios({ servicios }: { servicios: Fila[] }) {
   const [pendiente, iniciar] = useTransition();
-  const mover = (id: number, direccion: "subir" | "bajar") =>
+  const mover = (id: number, direccion: Direccion) =>
     iniciar(async () => {
       avisarResultado(await moverServicio({ id, direccion }));
     });
