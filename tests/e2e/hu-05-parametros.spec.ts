@@ -9,8 +9,12 @@ const soloEscritorio = (info: TestInfo) => test.skip(info.project.name !== "escr
 test("los parámetros vacíos o negativos muestran el error y no se guardan", async ({ page }) => {
   await ingresarComoDueno(page);
   await page.goto("/panel/configuracion");
-  await page.getByRole("navigation", { name: "Secciones de configuración" }).getByRole("link", { name: "Cotizaciones y mantenimiento" }).click();
-  await expect(page).toHaveURL(/\/panel\/configuracion\/cotizaciones$/);
+  await page.getByRole("navigation", { name: "Secciones de configuración" }).getByRole("link", { name: "Parámetros" }).click();
+  await expect(page).toHaveURL(/\/panel\/configuracion\/parametros$/);
+  // Por tema, en el orden del trabajo
+  // (Next deja la pestaña anterior oculta en la página: se mira solo este formulario)
+  const secciones = page.locator("form").filter({ has: page.getByLabel("Adelanto sugerido") }).locator("legend");
+  await expect(secciones).toHaveText([/^Consultas/, /^Cotizaciones/, /^Agenda/, /^Mantenimiento/]);
 
   await page.getByLabel("Adelanto sugerido").fill("-5");
   await page.getByLabel("Validez de la cotización").fill("");
@@ -21,7 +25,8 @@ test("los parámetros vacíos o negativos muestran el error y no se guardan", as
   await expect(page.getByText("Entre 1 y 365 días.")).toBeVisible();
   await expect(page.getByText("Escribe las condiciones: sale en el PDF de la cotización.")).toBeVisible();
   await expect(page.getByLabel("Adelanto sugerido")).toHaveValue("-5");
-  await expect(page.getByLabel("Adelanto sugerido")).toBeFocused(); // el primer error recibe el foco (pulido 6.3)
+  // El primer error de la página recibe el foco (pulido 6.3): Cotizaciones va antes que Agenda
+  await expect(page.getByLabel("Validez de la cotización")).toBeFocused();
 
   await page.reload();
   await expect(page.getByLabel("Adelanto sugerido")).not.toHaveValue("-5");
@@ -30,7 +35,7 @@ test("los parámetros vacíos o negativos muestran el error y no se guardan", as
 test("el dueño cambia el adelanto y los textos del PDF, y quedan guardados", async ({ page }, info) => {
   soloEscritorio(info);
   await ingresarComoDueno(page);
-  await page.goto("/panel/configuracion/cotizaciones");
+  await page.goto("/panel/configuracion/parametros");
 
   await page.getByLabel("Adelanto sugerido").fill("250");
   await page.getByLabel("Aviso de mantenimiento").fill("6");

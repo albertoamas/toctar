@@ -126,7 +126,7 @@ export async function guardarParametros(_previo: EstadoFormulario, datos: FormDa
   });
 
   updateTag(ETIQUETA_PARAMETROS);
-  revalidatePath(`${RUTA}/cotizaciones`);
+  revalidatePath(`${RUTA}/parametros`);
   return { ok: true, mensaje: "Cambios guardados.", valores: Object.fromEntries(CLAVES_PARAMETRO.map((c) => [c, String(entrada.data[c])])) };
 }
 

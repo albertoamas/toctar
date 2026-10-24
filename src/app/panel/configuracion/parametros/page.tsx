@@ -6,9 +6,10 @@ import { FormularioParametros } from "@/modulos/configuracion/componentes/formul
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { CLAVES_PARAMETRO, type ClaveParametro } from "@/modulos/configuracion/parametros";
 
-export const metadata: Metadata = { title: "Cotizaciones y mantenimiento" };
+export const metadata: Metadata = { title: "Parámetros" };
 
-// HU-05: adelanto, validez, intervalo de mantenimiento y textos del PDF. Solo el dueño.
+// HU-05: los parámetros del negocio por tema: consultas, cotizaciones (y los textos del PDF), agenda y mantenimiento
+// (C5 §0). Solo el dueño.
 export default function PaginaParametros() {
   return (
     <Suspense fallback={<Cargando />}>

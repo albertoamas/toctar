@@ -120,7 +120,7 @@ test("el panel no se sale de la pantalla en el celular y su menú queda a mano",
 test("el aviso de guardado no tapa el botón de guardar", async ({ page }, info) => {
   test.skip(info.project.name !== "celular", "En el celular es donde tapaba");
   await ingresarComoDueno(page);
-  await page.goto("/panel/configuracion/cotizaciones");
+  await page.goto("/panel/configuracion/parametros");
   const guardar = page.getByRole("button", { name: "Guardar cambios" });
   await guardar.scrollIntoViewIfNeeded();
   await guardar.click();
