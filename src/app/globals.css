@@ -595,12 +595,13 @@
   }
   /* Celular (menos de 640 px, el sm de Tailwind): fila compacta, foto chica a la izquierda y el texto a la derecha.
      Así se ven todos los servicios de un vistazo; con la tarjeta grande, 6 servicios eran casi 4000 px (pulido 2.1).
-     Mismo componente y mismo corte a 60°: solo cambia la disposición. */
+     Mismo componente y mismo corte a 60°: solo cambia la disposición. Sin el resumen: cortado en dos renglones con
+     "…" no decía nada ("menos es más", pedido de la demo del 24/10); la foto y el nombre bastan. */
   @media (width < 40rem) {
     .tt-tarjeta {
       grid-template-rows: none;
       grid-template-columns: 7rem minmax(0, 1fr);
-      align-items: start;
+      align-items: center;
     }
     .tt-tarjeta__media {
       margin: 12px 0 12px 12px;
@@ -614,11 +615,7 @@
       line-height: 24px;
     }
     .tt-tarjeta__resumen {
-      display: -webkit-box;
-      overflow: hidden;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
-      line-height: 20px;
+      display: none;
     }
     .tt-tarjeta__enlace {
       margin-top: 4px;

@@ -79,7 +79,7 @@ async function PortadaConDatos() {
 
       <CierreWhatsApp
         titulo="Cuéntanos qué necesita tu vehículo"
-        texto="Mándanos una foto o pasa por el taller: lo revisamos y te decimos qué conviene hacer."
+        texto="Mándanos una foto y te decimos qué conviene hacer."
       />
     </>
   );

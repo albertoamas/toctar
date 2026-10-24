@@ -32,7 +32,7 @@ async function Contenido() {
     <>
       <div className="mx-auto w-full max-w-6xl px-4 pt-12 pb-12 md:pt-20 md:pb-20">
         <TituloPagina>Servicios</TituloPagina>
-        <p className="mt-3 max-w-2xl text-tinta-suave">Elige uno para ver en qué consiste y cómo lo hacemos. Para el precio, escríbenos: depende del tamaño y del estado del vehículo.</p>
+        <p className="mt-3 max-w-2xl text-tinta-suave">Toca uno para ver qué incluye. El precio depende de tu vehículo: escríbenos y te cotizamos.</p>
         {servicios.length === 0 ? (
           <p className="mt-8 text-tinta-suave">Pronto vas a ver aquí nuestros servicios.</p>
         ) : (
