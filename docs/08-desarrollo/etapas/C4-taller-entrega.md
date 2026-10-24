@@ -1,7 +1,7 @@
 # C4 Taller y entrega — especificación
 
 - **Fase y semana:** C. Entrega 2 · semanas 4 y 5
-- **Estado:** aprobada (22 de octubre de 2026); en curso: HU-33
+- **Estado:** programada (23 de octubre de 2026): HU-33 a HU-38 en `develop` (PR #65, #66, #68, #69, #71 y #72). Falta la demo con el dueño desde un celular real
 - **Historias:** HU-33 Recibir vehículo · HU-34 Órdenes del técnico · HU-35 Avisar vehículo listo · HU-36 Entregar vehículo · HU-37 Saldos pendientes · HU-38 Recordatorios de mantenimiento
 - **Base:**
   - Requisitos: RF-40 a RF-43, RF-46 a RF-50; RNF-01, RNF-05, RNF-07, RNF-10, RNF-11.
@@ -324,3 +324,23 @@ Cada PR: lint, typecheck, unitarias, E2E completo y knip; `code-review` siempre 
 | Agendar un mantenimiento lleva precios (reserva directa) | Dueño | Lo agenda el dueño o quien tiene "Pagos" (como cualquier reserva directa, C3). El encargado de mantenimientos sin "Pagos" avisa y deja la nota; agenda el dueño |
 | Los textos de los mensajes de WhatsApp | Dueño | Los de §8, fijos hasta la HU-40 (deseable), que los vuelve editables en Configuración |
 | ¿Hasta cuántas fotos por etapa? | YankoSoft | 20 por etapa. Las fotos van achicadas (unos 300 KB): 80 fotos por orden son unos 24 MB en R2 |
+
+## 13. Cierre (23 de octubre de 2026)
+
+HU-33 a HU-38 en `develop` (PR #65, #66, #68, #69, #71 y #72), con `code-review` y `security-review` en cada una y sus hallazgos atendidos o explicados en el PR. En el medio, Next.js pasó a 16.4.3 por dos vulnerabilidades críticas (PR #67). Los 5 flujos de `flujos-criticos.md` tienen su prueba E2E; los 3, 4 y 5 además juntos, de la reserva al mantenimiento agendado (`tests/e2e/flujo-taller-completo.spec.ts`). Lo que se decidió al programar y no estaba escrito arriba:
+
+- **Fotos de ingreso:** recibir sin fotos pide confirmarlo. Recibido el vehículo, ya no se quitan (son la prueba de cómo llegó). Si la reserva se reprograma o se cancela antes, las que se alcanzaron a tomar se descartan.
+- **Volver de "lista":** la orden recupera la entrega que tenía antes de marcarse lista (`fecha_fin_prevista`, migración `0029_orden_fecha_prevista`). Si ese espacio ya se ocupó, queda la entrega que tenía como lista.
+- **El aviso de "listo"** es un botón que abre WhatsApp y lo registra en el mismo toque: no hay forma de abrir el chat sin que quede registrado.
+- **Entrega con saldo:** quien autoriza sin ver pagos no ve el monto en el aviso (RN-12). La orden se bloquea mientras se entrega: el saldo no cambia entre la revisión y la entrega.
+- **Saldos pendientes:** se cobra desde la misma lista (el encargado con "Pagos" sin "Órdenes" no llega a la orden). El saldo se calcula en la base con la misma cuenta que `calcularSaldo`.
+- **Mantenimientos:**
+  - No se listan ni se avisan los de un cliente o vehículo desactivado.
+  - "Agendar" es para quien ve agenda y pagos (la reserva directa lleva precios).
+  - Si la reserva del mantenimiento se cancela, el recordatorio vuelve a la lista como estaba.
+
+Pendiente a mano, en `pruebas.toctardetailing.com` (ya con https):
+
+- recibir con fotos desde un celular real;
+- avisar y cobrar por WhatsApp de verdad;
+- la demo con el dueño: recibir, listo, aviso, cobro, entrega y el mantenimiento programado.

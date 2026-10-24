@@ -19,14 +19,14 @@
 - **El adelanto depende del dueño:** la lista de precios y las variantes pasan a pedirse para el viernes 23 (antes, 3/11), y el dominio sigue siendo urgente.
 - **Lunes 19:** reunión de avance con el dueño, con una presentación y sin mostrar todavía la app. La primera demo sigue siendo el viernes 23.
 
-## Dónde estamos (21 de octubre)
+## Dónde estamos (23 de octubre)
 
 | Qué | Estado |
 |---|---|
 | Etapas 1 a 4 (descubrimiento, propuesta, cierre comercial, requerimientos) | ✅ Cerradas |
 | Etapa 5 (análisis) | 🟡 Supuestos S-1 a S-5 respondidos; falta que el dueño valide los criterios de las historias |
 | Etapa 6 (diseño) | ✅ Modelo de datos, arquitectura e identidad visual |
-| Etapa 7 (preparación) | 🟡 Local y GitHub listos; faltan dominio, VPS, Coolify, R2 y respaldos |
+| Etapa 7 (preparación) | 🟡 Dominio, VPS en Hetzner, Coolify, R2 y respaldos listos (`07-preparacion/servidor.md`). Pruebas en línea en `pruebas.toctardetailing.com`; producción configurada, sin publicar. Falta la reunión con el dueño (sus accesos y su tarjeta) |
 | Iteración 0 (cimientos) | ✅ En `develop` (PR #1) |
 | Etapa B1 Acceso (HU-01, HU-02, HU-03) | ✅ Cerrada el 14/10, en `develop` (PR #4, #7 y #10) |
 | Etapa B2 Configuración y app (HU-04, HU-05, HU-06) | ✅ Programada y probada a mano el 14/10, en `develop` (PR #14, #15 y #16). Falta instalar en celulares (necesita https, A3) y mostrarla en la demo del 23 |
@@ -38,6 +38,7 @@
 | Etapa C1 Catálogo y clientes (HU-19 a HU-23) | ✅ Programada el 20/10 (PR #49 a #53). Precios de prueba solo en E2E: falta la lista de precios real del dueño |
 | Etapa C2 Consultas y cotizaciones (HU-24 a HU-28) | ✅ Programada el 21/10 (PR #55 a #60). Falta compartir el PDF desde un celular real (necesita https, A3), revisarlo impreso y que el dueño confirme formas de pago, condiciones y garantía |
 | Etapa C3 Agenda y pagos (HU-29 a HU-32) | ✅ Programada el 21/10 (PR #61 a #64). Falta mostrarle el tablero al dueño y probar el cobro con comprobante en un celular real |
+| Etapa C4 Taller y entrega (HU-33 a HU-38) | ✅ Programada el 23/10 (PR #65 a #72). Los 5 flujos críticos con su prueba E2E. Falta la demo desde un celular real |
 | Identidad visual aplicada a la app | ✅ En `develop` (PR #5 y #9, logos nítidos en tamaños chicos) |
 | Inicio del trabajo | 9 de octubre de 2026 (firma y primer pago) |
 | Día D (inicio del plazo del contrato) | 14 de octubre de 2026 (llegó el material) |
@@ -76,7 +77,8 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | C1 Catálogo y clientes | `etapas/C1-catalogo-clientes.md` | ✅ Programada (20/10, PR #49 a #53). Falta cargar los precios reales |
 | C2 Consultas y cotizaciones | `etapas/C2-consultas-cotizaciones.md` | ✅ Programada (21/10, PR #55 a #60). Falta la prueba en celulares con https (A3) y los textos del PDF del dueño |
 | C3 Agenda y pagos | `etapas/C3-agenda-pagos.md` | ✅ Programada (21/10, PR #61 a #64). Falta mostrarle el tablero al dueño |
-| B6, C4 y C5 | Una por etapa | Al empezar cada una |
+| C4 Taller y entrega | `etapas/C4-taller-entrega.md` | ✅ Programada (23/10, PR #65 a #72). Falta la demo desde un celular real |
+| B6 y C5 | Una por etapa | Al empezar cada una |
 
 ## Cómo se trabaja cada historia
 
