@@ -36,7 +36,7 @@ type DefinicionModulo = {
   nombrePermiso?: string;
 };
 
-// En el orden del menú: por grupo (GRUPOS) y, dentro de cada uno, de lo más usado a lo menos.
+// Dentro de cada grupo del menú, en este orden: de lo más usado a lo menos. El orden de los grupos es el de GRUPOS.
 export const MODULOS = {
   inicio: { ruta: "/panel", nombre: "Inicio", grupo: null, permisoEncargado: null, tecnico: true },
   agenda: { ruta: "/panel/agenda", nombre: "Agenda", grupo: "taller", permisoEncargado: "agenda", tecnico: false },
@@ -119,18 +119,17 @@ export function modulosDelMenu(sujeto: SujetoPermisos): Modulo[] {
 export type GrupoMenu = { titulo: string | null; modulos: Modulo[] };
 
 /**
- * El menú en grupos (C5 §0): los módulos que la persona ve, en el orden de MODULOS. Un grupo sin módulos no aparece, y
- * uno con un solo módulo va sin título (el título no ordena nada: el técnico ve "Inicio" y "Órdenes", sin "Taller").
+ * El menú en grupos (C5 §0): primero los sueltos (Inicio) y después cada grupo en el orden de GRUPOS, con los módulos
+ * que la persona ve. Un grupo sin módulos no aparece, y uno con un solo módulo va sin título (el título no ordena nada:
+ * el técnico ve "Inicio" y "Órdenes", sin "Taller").
  */
 export function menuAgrupado(sujeto: SujetoPermisos): GrupoMenu[] {
-  const porGrupo: { grupo: Grupo | null; modulos: Modulo[] }[] = [];
-  for (const m of modulosDelMenu(sujeto)) {
-    const grupo = (MODULOS[m] as DefinicionModulo).grupo;
-    const ultimo = porGrupo.at(-1);
-    if (ultimo && ultimo.grupo === grupo) ultimo.modulos.push(m);
-    else porGrupo.push({ grupo, modulos: [m] });
-  }
-  return porGrupo.map(({ grupo, modulos }) => ({ titulo: grupo && modulos.length > 1 ? GRUPOS[grupo] : null, modulos }));
+  const visibles = modulosDelMenu(sujeto);
+  const grupos: (Grupo | null)[] = [null, ...(Object.keys(GRUPOS) as Grupo[])];
+  return grupos
+    .map((grupo) => ({ grupo, modulos: visibles.filter((m) => (MODULOS[m] as DefinicionModulo).grupo === grupo) }))
+    .filter((b) => b.modulos.length > 0)
+    .map(({ grupo, modulos }) => ({ titulo: grupo && modulos.length > 1 ? GRUPOS[grupo] : null, modulos }));
 }
 
 /** Permisos que se le pueden marcar a un encargado: los de sus módulos, más entrega con saldo. */
