@@ -5,23 +5,30 @@ import { useHidratado } from "@/componentes/hidratado";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { Button } from "@/componentes/ui/button";
-import { registrarAvisoListo } from "../acciones";
+import type { EstadoFormulario } from "@/lib/formularios";
 
-// HU-35: avisar al cliente que su vehículo está listo (RF-48, CU-18). Un solo toque abre WhatsApp con el mensaje ya
-// escrito (lo armó el servidor) y registra quién avisó y cuándo. Es un botón y no un enlace: así no hay forma de abrir
-// el chat sin que quede registrado (otra pestaña, antes de hidratar), y no se dispara dos veces.
+// Avisar al cliente por WhatsApp y dejarlo registrado: vehículo listo (HU-35, RF-48) o mantenimiento (HU-38, RF-50).
+// Un solo toque abre WhatsApp con el mensaje ya escrito (lo armó el servidor) y registra quién avisó y cuándo. Es un
+// botón y no un enlace: así no hay forma de abrir el chat sin que quede registrado (otra pestaña, antes de hidratar),
+// y no se dispara dos veces.
 
 type Props = {
-  id: number;
   /** El enlace a wa.me con el mensaje. */
   enlace: string;
   /** "Avisado el 30/10 a las 15:40 por Ana", si ya se avisó. */
   avisado: string | null;
+  /** false: el "Avisado el…" ya se muestra en otro lado de la fila (la lista de mantenimientos). */
+  conDetalle?: boolean;
+  /**
+   * La acción del servidor que registra el aviso, ya atada a lo que se avisa (`accion.bind(null, { id })`). Termina en
+   * "Action" por la convención de Next para las acciones que se pasan a un componente de cliente.
+   */
+  registrarAction: () => Promise<EstadoFormulario>;
 };
 
 const NO_SE_REGISTRO = "WhatsApp se abrió, pero el aviso no quedó registrado. Revisa tu conexión y vuelve a avisar.";
 
-export function AvisarListo({ id, enlace, avisado }: Props) {
+export function AvisarPorWhatsApp({ enlace, avisado, conDetalle = true, registrarAction }: Props) {
   const listo = useHidratado();
   const [registrando, iniciar] = useTransition();
   // Desde el toque hasta la respuesta: un segundo toque no abre otro chat ni registra otro aviso
@@ -33,7 +40,7 @@ export function AvisarListo({ id, enlace, avisado }: Props) {
     window.open(enlace, "_blank", "noopener,noreferrer");
     iniciar(async () => {
       try {
-        avisarResultado(await registrarAvisoListo({ id }));
+        avisarResultado(await registrarAction());
       } catch {
         avisarResultado({ mensaje: NO_SE_REGISTRO });
       } finally {
@@ -48,7 +55,7 @@ export function AvisarListo({ id, enlace, avisado }: Props) {
         <IconoWhatsApp />
         {avisado ? "Volver a avisar" : "Avisar por WhatsApp"}
       </Button>
-      {avisado && <p className="text-sm text-tinta-suave">{avisado}</p>}
+      {avisado && conDetalle && <p className="text-sm text-tinta-suave">{avisado}</p>}
     </div>
   );
 }
