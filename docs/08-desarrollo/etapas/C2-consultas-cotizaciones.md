@@ -1,7 +1,7 @@
 # C2 Consultas y cotizaciones — especificación
 
 - **Fase y semana:** C. Entrega 2 · semana 3
-- **Estado:** aprobada (20 de octubre de 2026); en curso: HU-24
+- **Estado:** programada (21 de octubre de 2026): HU-24 a HU-28 en `develop` (PR #55 a #60). Falta compartir el PDF desde un celular real (https, A3), revisarlo impreso y que el dueño confirme formas de pago, condiciones y garantía
 - **Historias:** HU-24 Registrar consulta · HU-25 Armar cotización · HU-26 PDF de la cotización · HU-27 Compartir el PDF · HU-28 Seguimiento de consultas
 - **Base:**
   - Requisitos: RF-29 a RF-35; RNF-01, RNF-05, RNF-07, RNF-08, RNF-10, RNF-11.

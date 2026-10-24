@@ -74,7 +74,7 @@ Copiar `.env.example` a `.env` la primera vez y completar `BETTER_AUTH_SECRET` y
 - Las acciones que reciben datos sueltos (no un formulario) también los validan con Zod: cualquiera puede llamarlas.
 - Datos de clientes (fotos de reclamos y, más adelante, documentos) van al bucket privado (`guardarFoto(..., { privado: true })`) y se muestran con `urlsFotoPrivada`. El público es solo para lo que muestra el sitio.
 - Validación con Zod, el mismo esquema en el formulario y en el servidor.
-- Cada historia de usuario: rama propia → plan → implementación → pruebas → Pull Request revisado → merge a `develop` (ver "Control de versiones").
+- Cada historia de usuario: rama propia → plan → implementación → pruebas → Pull Request revisado → merge a `develop` (ver "Control de versiones"). Skills y revisiones de cada paso (`context7`, `frontend-design`, `pdf`, `code-review`, `security-review`): `docs/08-desarrollo/plan-de-desarrollo.md`, "Cómo se trabaja cada historia".
 - Las reglas de negocio (RN) llevan prueba en `tests/unit/`; los flujos críticos, en `tests/e2e/`.
 
 ## Control de versiones

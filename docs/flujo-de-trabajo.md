@@ -120,6 +120,6 @@ docs/
 - [x] 4. Requerimientos: aprobados por el dueño
 - [ ] 5. Análisis: supuestos S-1 a S-5 respondidos (14/10); criterios de HU-01 a HU-18 se validan en la demo del 23/10 y HU-19 a HU-41 antes del 3/11
 - [x] 6. Diseño: modelo de datos, arquitectura (stack aprobado, con Docker) e identidad visual (`06-diseno/identidad-visual.md`); sin prototipo por decisión del usuario
-- [ ] 7. Preparación: local y GitHub listos; faltan dominio, VPS, Coolify y R2 (etapa A3 del plan, hasta el 21/10)
-- [ ] 8. Desarrollo iterativo ← en curso: entrega 1, semana 1 (`08-desarrollo/plan-de-desarrollo.md`)
+- [ ] 7. Preparación: dominio, VPS, Coolify, R2 y respaldos listos; pruebas en línea y producción sin publicar (`07-preparacion/servidor.md`). Falta darle sus accesos al dueño
+- [ ] 8. Desarrollo iterativo ← en curso: entrega 1 programada y pulida; entrega 2, etapas C1 a C4 programadas (`08-desarrollo/plan-de-desarrollo.md`)
 - [ ] 9–11. Pruebas, lanzamiento y soporte (por entrega)

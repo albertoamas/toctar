@@ -1,7 +1,7 @@
 # C3 Agenda y pagos — especificación
 
 - **Fase y semana:** C. Entrega 2 · semana 4
-- **Estado:** aprobada (21 de octubre de 2026); en curso: HU-30
+- **Estado:** programada (21 de octubre de 2026): HU-29 a HU-32 en `develop` (PR #61 a #64). Falta mostrarle el tablero al dueño y probar el cobro con comprobante en un celular real
 - **Historias:** HU-29 Tablero de la agenda · HU-30 Agendar reserva · HU-31 Reprogramar o cancelar · HU-32 Registrar pagos y saldo
 - **Base:**
   - Requisitos: RF-36 a RF-39, RF-45, RF-46; RNF-01, RNF-05, RNF-07, RNF-10, RNF-11.
@@ -56,7 +56,7 @@ La agenda reemplaza al cuaderno: el personal ve en un tablero qué espacio del t
 
 ## 4. Datos
 
-Migraciones por historia: `0026_trabajos` (HU-30: `btree_gist`, `trabajo`, `trabajo_linea`, `pago` y la restricción de exclusión). No hay datos iniciales: los espacios (3) y el adelanto sugerido (Bs 200) ya están desde B2.
+Migraciones por historia: `0026_trabajos` (HU-30: `btree_gist`, `trabajo`, `trabajo_linea`, `pago` y la restricción de exclusión) y `0027_cotizacion_reagendable` (HU-31: el índice de una reserva por cotización no cuenta las canceladas, para volver a agendar una cotización si el cliente vuelve). No hay datos iniciales: los espacios (3) y el adelanto sugerido (Bs 200) ya están desde B2.
 
 ### `trabajo` (reserva y, desde C4, orden)
 | Columna | Tipo | Nulo | Notas |
@@ -220,3 +220,15 @@ Cada PR: lint, typecheck, unitarias, E2E completo y knip; `code-review` y `secur
 | Si se cancela una reserva que salió de una consulta, ¿la consulta queda "confirmado" o pasa a "perdido"? | Dueño | Pasa a "perdido" con motivo "otro" y el motivo de la cancelación como detalle; se puede reabrir. La cotización vuelve a "enviada" (vigente): al reabrir la consulta, queda "cotizado" y se agenda de nuevo (HU-31) |
 | ¿El encargado con "Pagos" ve el total y el saldo de la reserva? | Dueño | Sí: necesita el saldo para cobrar (RF-46). Sigue sin ver ni crear cotizaciones (RN-01) |
 | ¿Se permite un pago mayor al saldo (el cliente deja más)? | Dueño | No: evita errores de tipeo. Si deja más, se suma un adicional en C4 |
+
+## 13. Cierre (21 de octubre de 2026)
+
+HU-29 a HU-32 en `develop` (PR #61 a #64), con `code-review` y `security-review` en cada una y todos sus hallazgos atendidos. Lo que se decidió al programar y no estaba escrito arriba:
+
+- **Cancelar mueve la consulta y la cotización juntas:** la consulta pasa a "perdido" y la cotización a "enviada" solo si la consulta estaba "confirmado"; si no, ninguna se toca. La auditoría lo registra.
+- **Una reserva con saldo cero o a favor** cuenta como pagada: no ofrece más pagos.
+- **"Nueva reserva" en la ficha del cliente** solo para quien ve pagos: la reserva directa lleva precios. Las demás salen de una consulta.
+- **El comprobante** (al registrar un pago o con el adelanto al agendar) va al bucket privado, se achica en el navegador y, si el pago o la reserva no se guardan, se borra.
+- **Un pago no pasa el saldo** aunque dos personas cobren a la vez: se revisa con la reserva bloqueada.
+
+Pendiente a mano: mostrarle el tablero al dueño (demo del viernes 6 de noviembre) y probar en un celular real el cobro con la foto del comprobante.
