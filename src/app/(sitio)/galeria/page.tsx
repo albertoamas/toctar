@@ -6,7 +6,9 @@ import { cn } from "cn";
 import { TituloPagina } from "@/componentes/sitio/titulo-pagina";
 import { VisorGaleria } from "@/componentes/sitio/visor-galeria";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
+import { EnlaceTikTok } from "@/componentes/sitio/enlace-tiktok";
 import { WhatsAppFijo } from "@/componentes/sitio/whatsapp";
+import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
 import { filtrarPorServicio, serviciosConFotos } from "@/modulos/sitio/galeria";
 import { galeriaPublica, type FotoGaleria } from "@/modulos/sitio/publico";
 
@@ -31,7 +33,7 @@ export default function PaginaGaleria({ searchParams }: PageProps<"/galeria">) {
 
 async function Contenido({ searchParams }: Pick<PageProps<"/galeria">, "searchParams">) {
   await connection();
-  const [todas, { servicio }] = await Promise.all([galeriaPublica(), searchParams]);
+  const [todas, { servicio }, { redes }] = await Promise.all([galeriaPublica(), searchParams, obtenerDatosPublicos()]);
   return (
     <>
       <div className="mx-auto w-full max-w-6xl px-4 pt-12 pb-12 md:pt-20 md:pb-20">
@@ -42,6 +44,8 @@ async function Contenido({ searchParams }: Pick<PageProps<"/galeria">, "searchPa
         ) : (
           <Fotos todas={todas} elegido={typeof servicio === "string" ? servicio : undefined} />
         )}
+        {/* Más trabajos, en video (pedido de la demo del 24/10) */}
+        <EnlaceTikTok enlace={redes.tiktok} className="mt-8" />
       </div>
       <CierreWhatsApp titulo="¿Quieres este resultado en tu vehículo?" texto="Mándanos fotos de tu vehículo y te decimos qué conviene hacer." />
     </>

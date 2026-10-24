@@ -6,11 +6,13 @@ import { Suspense } from "react";
 import { cn } from "cn";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { ComparadorAntesDespues } from "@/componentes/sitio/comparador-antes-despues";
+import { EnlaceTikTok } from "@/componentes/sitio/enlace-tiktok";
 import { PortadaArte } from "@/componentes/sitio/portada-arte";
 import { TarjetaServicio } from "@/componentes/sitio/tarjeta-servicio";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import type { UrlsFoto } from "@/lib/fotos";
 import { ladoDelLema, trabajoDePortada } from "@/modulos/sitio/galeria";
+import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
 import { contenidoPublico, fotoPortadaPublica, galeriaPublica, serviciosPublicos, type FotoGaleria, type ServicioPublico } from "@/modulos/sitio/publico";
 
 // Las descripciones para Google van fijas (dentro del <head>, que es donde las lee Google) y sin nombrar
@@ -51,7 +53,13 @@ export default function Portada() {
 
 async function PortadaConDatos() {
   await connection();
-  const [inicio, foto, servicios, fotos] = await Promise.all([contenidoPublico("inicio"), fotoPortadaPublica(), serviciosPublicos(), galeriaPublica()]);
+  const [inicio, foto, servicios, fotos, { redes }] = await Promise.all([
+    contenidoPublico("inicio"),
+    fotoPortadaPublica(),
+    serviciosPublicos(),
+    galeriaPublica(),
+    obtenerDatosPublicos(),
+  ]);
   const trabajo = trabajoDePortada(fotos);
   return (
     <>
@@ -67,7 +75,7 @@ async function PortadaConDatos() {
       </section>
 
       {/* Sin repetir el trabajo que ya se compara arriba */}
-      <Galeria fotos={fotos.filter((f) => f.id !== trabajo?.id).slice(0, FOTOS_EN_PORTADA)} />
+      <Galeria fotos={fotos.filter((f) => f.id !== trabajo?.id).slice(0, FOTOS_EN_PORTADA)} tiktok={redes.tiktok} />
 
       <CierreWhatsApp
         titulo="Cuéntanos qué necesita tu vehículo"
@@ -177,29 +185,38 @@ function Servicios({ servicios }: { servicios: ServicioPublico[] }) {
   );
 }
 
-function Galeria({ fotos }: { fotos: FotoGaleria[] }) {
-  if (fotos.length === 0) return null;
+/** Trabajos recientes. Sin fotos (o solo la del comparador de arriba), queda el acceso a TikTok si está cargado. */
+function Galeria({ fotos, tiktok }: { fotos: FotoGaleria[]; tiktok?: string }) {
+  if (fotos.length === 0 && !tiktok) return null;
   return (
     <section aria-labelledby="galeria-titulo" className="mx-auto w-full max-w-6xl px-4 pb-12 md:pb-24">
       <h2 id="galeria-titulo" className="font-heading text-[28px] leading-8 font-bold italic md:text-[40px] md:leading-[44px]">Trabajos recientes</h2>
-      <ul className="mt-8 grid grid-cols-2 gap-2 md:grid-cols-3">
-        {fotos.map((f) => (
-          <li key={f.id} className="aspect-square overflow-hidden bg-superficie">
-            <Image
-              src={f.despues.miniatura}
-              alt={f.descripcion}
-              width={f.despues.ancho ?? 640}
-              height={f.despues.alto ?? 640}
-              unoptimized
-              loading="lazy"
-              className="size-full object-cover"
-            />
-          </li>
-        ))}
-      </ul>
-      <Link href="/galeria" className="tt-boton tt-boton--contorno mt-8">
-        Ver la galería
-      </Link>
+      {fotos.length > 0 && (
+        <ul className="mt-8 grid grid-cols-2 gap-2 md:grid-cols-3">
+          {fotos.map((f) => (
+            <li key={f.id} className="aspect-square overflow-hidden bg-superficie">
+              <Image
+                src={f.despues.miniatura}
+                alt={f.descripcion}
+                width={f.despues.ancho ?? 640}
+                height={f.despues.alto ?? 640}
+                unoptimized
+                loading="lazy"
+                className="size-full object-cover"
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="mt-8 flex flex-wrap gap-3">
+        {fotos.length > 0 && (
+          <Link href="/galeria" className="tt-boton tt-boton--contorno">
+            Ver la galería
+          </Link>
+        )}
+        {/* Más trabajos, en video (pedido de la demo del 24/10) */}
+        <EnlaceTikTok enlace={tiktok} />
+      </div>
     </section>
   );
 }
