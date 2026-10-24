@@ -118,12 +118,12 @@
 
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
-| 7.1 | Cada servicio tiene nombre, resumen, descripción, beneficios, pasos del proceso, foto principal y orden | E2E `hu-07` "el dueño crea un servicio con beneficios, pasos y variantes, y lo oculta" (vuelve a abrirlo y todo sigue ahí). Unitarias "esquema del servicio" (límites de cada campo) | ✅ |
+| 7.1 | Cada servicio tiene nombre, resumen, descripción, beneficios, pasos del proceso, foto principal y orden | E2E `hu-07` "el dueño crea el servicio en el catálogo y completa su página…" (vuelve a abrirlo y todo sigue ahí). Unitarias "esquema del servicio" (límites de cada campo) | ✅ ⚠️ Desde el 24/10 el servicio se crea y se nombra en Catálogo y precios, y nace oculto; su página se completa en Sitio web (C5 §0) |
 | 7.2 | La foto principal es opcional; sin foto, el sitio muestra una imagen de reemplazo | E2E "la foto principal se sube y se ve…" (sube, ve la miniatura, la quita). La imagen de reemplazo en el sitio se prueba en B4 | ✅ en el panel · ⏳ sitio (B4) |
 | 7.3 | Puedo ocultar un servicio sin borrarlo | Mismo E2E de alta: queda "Oculto" en la lista y se puede volver a mostrar | ✅ |
 | 7.4 | El servicio del sitio es el mismo registro que el del catálogo de la entrega 2 | Una sola tabla `servicio`, con variantes (D-2) ya creadas; C1 le suma precios y duración | ✅ (revisión del diseño) |
 | 7.5 | Nombres y direcciones no se repiten; la dirección es legible para Google | E2E "una dirección repetida da error junto al campo" y el nombre repetido del E2E de alta. Unitarias "dirección de la página (slug)" | ✅ |
-| 7.6 | Entra el dueño o un encargado con el permiso "Sitio web"; nadie más | E2E "el encargado con el permiso Sitio web entra; sin el permiso o como técnico, no" | ✅ |
+| 7.6 | Entra el dueño o un encargado con el permiso "Sitio web"; nadie más | E2E "el encargado con el permiso Sitio web entra; sin el permiso o como técnico, no" | ✅ ⚠️ El encargado edita las páginas; crear servicios es del dueño, porque llevan precios (C5 §0) |
 
 ## HU-08 Textos del sitio
 

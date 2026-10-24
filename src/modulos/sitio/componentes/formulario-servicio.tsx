@@ -15,10 +15,10 @@ import type { EstadoFormulario } from "@/lib/formularios";
 import { guardarServicio } from "../acciones";
 import { LIMITES } from "../esquemas";
 
-// HU-07: datos del servicio que muestra su página en el sitio (RF-03). Sin precios (RN-10).
+// HU-07: la página del servicio en el sitio (RF-03). Sin precios (RN-10). El nombre y las variantes son del catálogo.
 
 type Props = {
-  servicio: { id: number; nombre: string; slug: string; resumen: string; descripcion: string; beneficios: string[]; pasos: Paso[]; visible: boolean };
+  servicio: { id: number; slug: string; resumen: string; descripcion: string; beneficios: string[]; pasos: Paso[]; visible: boolean };
 };
 
 const guardarConAviso = conAviso(guardarServicio);
@@ -30,7 +30,8 @@ export function FormularioServicio({ servicio: s }: Props) {
   const v = estado.valores;
   const e = estado.errores ?? {};
   const visible = v ? v.visible === "on" : s.visible;
-  const describir = (c: string, ayuda = false) => (e[c] ? `${c}-error` : ayuda ? `${c}-ayuda` : undefined);
+  // Cada campo tiene su ayuda: debajo va el error, si lo hay, o la ayuda
+  const describir = (c: string) => (e[c] ? `${c}-error` : `${c}-ayuda`);
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
 
@@ -39,17 +40,14 @@ export function FormularioServicio({ servicio: s }: Props) {
       <input type="hidden" name="id" value={s.id} />
 
       <Seccion titulo="Datos">
-        <Campo id="nombre" etiqueta="Nombre del servicio" error={e.nombre}>
-          <Input id="nombre" name="nombre" autoComplete="off" defaultValue={v?.nombre ?? s.nombre} aria-invalid={!!e.nombre} aria-describedby={describir("nombre")} />
-        </Campo>
         <Campo id="slug" etiqueta="Dirección de la página" error={e.slug} ayuda={`Así se ve en el navegador: …/servicios/${s.slug}. Si la cambias, los enlaces viejos dejan de funcionar.`}>
-          <Input id="slug" name="slug" autoComplete="off" autoCapitalize="none" spellCheck={false} defaultValue={v?.slug ?? s.slug} aria-invalid={!!e.slug} aria-describedby={describir("slug", true)} />
+          <Input id="slug" name="slug" autoComplete="off" autoCapitalize="none" spellCheck={false} defaultValue={v?.slug ?? s.slug} aria-invalid={!!e.slug} aria-describedby={describir("slug")} />
         </Campo>
         <Campo id="resumen" etiqueta="Resumen" error={e.resumen} ayuda="Una o dos frases. Se ve en la tarjeta del servicio y en Google.">
-          <Textarea id="resumen" name="resumen" rows={3} defaultValue={v?.resumen ?? s.resumen} aria-invalid={!!e.resumen} aria-describedby={describir("resumen", true)} />
+          <Textarea id="resumen" name="resumen" rows={3} defaultValue={v?.resumen ?? s.resumen} aria-invalid={!!e.resumen} aria-describedby={describir("resumen")} />
         </Campo>
         <Campo id="descripcion" etiqueta="Descripción" error={e.descripcion} ayuda="En qué consiste el servicio y para qué sirve. Sin precios.">
-          <Textarea id="descripcion" name="descripcion" className="min-h-32" defaultValue={v?.descripcion ?? s.descripcion} aria-invalid={!!e.descripcion} aria-describedby={describir("descripcion", true)} />
+          <Textarea id="descripcion" name="descripcion" className="min-h-32" defaultValue={v?.descripcion ?? s.descripcion} aria-invalid={!!e.descripcion} aria-describedby={describir("descripcion")} />
         </Campo>
         <label className="flex cursor-pointer items-start gap-3">
           <Checkbox key={String(visible)} name="visible" defaultChecked={visible} className="mt-0.5" />

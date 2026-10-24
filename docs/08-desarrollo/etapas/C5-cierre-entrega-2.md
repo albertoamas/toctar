@@ -1,7 +1,7 @@
 # C5 Cierre de la Entrega 2 — especificación
 
 - **Fase y semana:** C. Entrega 2 · se adelanta a la semana 2 (desde el 23 de octubre); en el plan era la semana 5, con margen en la 6 y la 7
-- **Estado:** borrador
+- **Estado:** aprobada (23 de octubre de 2026); en curso: §0, la reorganización del panel
 - **Historias:** HU-39 Pantalla del día · HU-40 Plantillas de WhatsApp · HU-41 Fotos de órdenes a la galería (las tres deseables) · cierre: criterios de HU-19 a HU-38, capacitación y acta
 - **Base:**
   - Requisitos: RF-44, RF-51, RF-52; RNF-01, RNF-05, RNF-11, RNF-14.
@@ -11,6 +11,40 @@
   - Lo que dejó B3: la galería del panel (`/panel/sitio/galeria`), que guarda fotos públicas y las borra al quitar el ítem.
 
 Esta especificación se escribe al empezar la etapa, con lo aprendido en las anteriores. Se programa contra ella; si algo cambia durante la etapa, se corrige aquí primero.
+
+## 0. Reorganización del panel (antes de las historias)
+
+Revisión de todas las rutas y flujos del panel (24 de octubre, aprobada por el desarrollador). No suma funciones: pone cada cosa donde se la busca. Va antes de la HU-40, que agrega una pestaña a Configuración, y de la HU-39, que cambia el inicio. Una rama (`refactor/reorganizacion-panel`), un commit por cambio:
+
+1. **El servicio vive en el catálogo.**
+   - **Antes:** el alta, el nombre y las variantes estaban en Sitio web, y los precios en el catálogo. Un servicio interno (el mantenimiento del cerámico) necesitaba resumen y página para existir, y una variante (que lleva precios) se agregaba en el sitio.
+   - **Ahora:** Catálogo y precios tiene "Agregar servicio" (`/panel/catalogo/nuevo`, solo el nombre), el nombre en sus datos y el editor de variantes. Sitio web > Servicios edita solo la página pública: dirección, resumen, textos, beneficios, pasos, foto y si se muestra.
+   - **Un servicio nuevo nace oculto en el sitio y sin resumen.** Para mostrarlo hay que escribir el resumen (lo exige el formulario).
+   - **Permisos:** crear, nombrar y cambiar variantes pasa a ser del dueño (RN-01: un servicio lleva precios). El encargado con "Sitio web" sigue editando las páginas.
+   - **Enlaces cruzados:** la ficha del catálogo enlaza a "Editar su página en el sitio", y la página del sitio a "Abrir en el catálogo" (solo para el dueño).
+2. **Menú agrupado** sin cambiar ninguna dirección:
+   - Inicio;
+   - **Taller:** Agenda y Órdenes;
+   - **Clientes:** Clientes, Consultas, Saldos pendientes, Mantenimientos y Reclamos;
+   - **Sitio web;**
+   - **Administración:** Catálogo y precios, Usuarios y Configuración.
+
+   El grupo se define en `MODULOS` (`src/lib/permisos.ts`). Un grupo sin módulos para quien entra no se muestra. Los accesos del inicio siguen el mismo orden.
+3. **Configuración: Negocio · Taller · Parámetros.** La pestaña "Cotizaciones y mantenimiento" mezclaba temas. Pasa a "Parámetros" (`/panel/configuracion/parametros`), con secciones:
+   - Consultas: consulta que se enfría;
+   - Cotizaciones: validez, condiciones, garantía y formas de pago;
+   - Agenda: adelanto sugerido;
+   - Mantenimiento: el intervalo.
+
+   La sección de cada parámetro se define junto a él (`PARAMETROS`). La HU-40 suma "Mensajes".
+4. **Un trabajo lleva a su pantalla según su estado.** Si está agendado o cancelado, es una reserva (`/panel/agenda/[id]`); si se recibió, es una orden (`/panel/ordenes/[id]`). Una sola función (`rutaTrabajo`) para la ficha del cliente (reservas y mantenimientos) y para cualquier lista que muestre trabajos.
+5. **El permiso "Pagos" dice lo que da:** "Pagos (cobrar y ver saldos)" en Usuarios. El menú sigue diciendo "Saldos pendientes".
+6. **"Cotizaciones" deja de ser un módulo falso.**
+   - **Qué era:** figuraba como módulo "no construido" con la ruta `/panel/cotizaciones`, que no existe. En realidad servía de llave: cotizar es solo del dueño (RN-01), y `construido: false` lo escondía del menú.
+   - **Ahora:** pasa a ser lo que es, una acción. `puede(usuario, "cotizar")` y `exigirAccion("cotizar")` en la página de cotizar, sus acciones y el PDF. Las cotizaciones siguen viviendo en la consulta, y el PDF en `/panel/cotizaciones/[id]/pdf`.
+   - **Limpieza:** sin ese caso, la marca `construido` ya no la usa nadie (todos los módulos tienen pantalla) y se quita.
+
+Pruebas: las E2E de HU-07, HU-10, HU-11 y HU-19/20 crean el servicio en el catálogo (el ayudante `crearServicioPublicado`), y el menú y el inicio se prueban con sus grupos.
 
 ## 1. Objetivo
 

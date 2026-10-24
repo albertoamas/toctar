@@ -1,9 +1,8 @@
 import "server-only";
-import { asc, eq, sql } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
-import { archivo, contenidoPagina, faq, galeriaItem, servicio, variante, type Paso } from "@/db/esquema";
-import type { ElementoLista } from "@/componentes/panel/lista-editable";
+import { archivo, contenidoPagina, faq, galeriaItem, servicio, type Paso } from "@/db/esquema";
 import { urlsFoto, type UrlsFoto } from "@/lib/fotos";
 import { CLAVES_PAGINA, PORTADA, leerContenido, type ContenidoPagina, type Pagina } from "./contenido";
 
@@ -46,7 +45,6 @@ export type DetalleServicio = FilaServicio & {
   descripcion: string;
   beneficios: string[];
   pasos: Paso[];
-  listaVariantes: ElementoLista[];
 };
 
 export async function obtenerServicio(id: number): Promise<DetalleServicio | null> {
@@ -56,7 +54,6 @@ export async function obtenerServicio(id: number): Promise<DetalleServicio | nul
     .leftJoin(archivo, eq(servicio.fotoArchivoId, archivo.id))
     .where(eq(servicio.id, id));
   if (!fila) return null;
-  const listaVariantes = await listarVariantes(id);
   const s = fila.servicio;
   return {
     id: s.id,
@@ -69,18 +66,7 @@ export async function obtenerServicio(id: number): Promise<DetalleServicio | nul
     descripcion: s.descripcion,
     beneficios: s.beneficios,
     pasos: s.pasos,
-    listaVariantes,
   };
-}
-
-/** Variantes de un servicio: activas primero, en su orden. */
-export async function listarVariantes(servicioId: number): Promise<ElementoLista[]> {
-  const filas = await db
-    .select({ id: variante.id, nombre: variante.nombre, descripcion: variante.descripcion, orden: variante.orden, activo: variante.activo })
-    .from(variante)
-    .where(eq(variante.servicioId, servicioId))
-    .orderBy(sql`${variante.activo} desc`, asc(variante.orden), asc(variante.id));
-  return filas;
 }
 
 /**

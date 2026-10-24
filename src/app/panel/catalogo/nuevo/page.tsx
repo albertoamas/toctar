@@ -3,24 +3,24 @@ import { Suspense } from "react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
 import { exigirModulo } from "@/lib/sesion";
-import { FormularioNuevoServicio } from "@/modulos/sitio/componentes/formulario-nuevo-servicio";
+import { FormularioNuevoServicio } from "@/modulos/catalogo/componentes/formulario-nuevo-servicio";
 
 export const metadata: Metadata = { title: "Nuevo servicio" };
 
-// HU-07: alta de un servicio.
+// HU-19: alta de un servicio. Solo el dueño (RN-01): un servicio lleva precios.
 export default function PaginaNuevoServicio() {
   return (
-    <div className="flex flex-col gap-6">
-      <EnlaceVolver href="/panel/sitio">Servicios</EnlaceVolver>
-      <h2 className="font-heading text-3xl font-bold italic">Nuevo servicio</h2>
+    <section className="flex flex-col gap-6">
+      <EnlaceVolver href="/panel/catalogo">Catálogo y precios</EnlaceVolver>
+      <h1 className="font-heading text-4xl font-extrabold italic">Nuevo servicio</h1>
       <Suspense fallback={<Cargando filas={1} />}>
         <Formulario />
       </Suspense>
-    </div>
+    </section>
   );
 }
 
 async function Formulario() {
-  await exigirModulo("sitio");
+  await exigirModulo("catalogo");
   return <FormularioNuevoServicio />;
 }

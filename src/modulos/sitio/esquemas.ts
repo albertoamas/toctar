@@ -6,7 +6,6 @@ import { PATRON_SLUG } from "@/lib/slug";
 
 export const LIMITES = { resumen: 160, descripcion: 2000, beneficios: 8, beneficio: 120, pasos: 10, tituloPaso: 60, detallePaso: 300 } as const;
 
-const nombre = z.string().trim().min(1, "Escribe el nombre del servicio.").max(60, "Hasta 60 caracteres.");
 const resumen = z
   .string()
   .trim()
@@ -41,11 +40,9 @@ const esquemaPasos = z
   )
   .max(LIMITES.pasos, `Hasta ${LIMITES.pasos} pasos.`);
 
-export const esquemaCrearServicio = z.object({ nombre, resumen });
-
+/** La página de un servicio en el sitio. El nombre y las variantes son del catálogo (catalogo/esquemas.ts). */
 export const esquemaServicio = z.object({
   id: z.coerce.number().int().positive(),
-  nombre,
   slug: z
     .string()
     .trim()
@@ -59,25 +56,11 @@ export const esquemaServicio = z.object({
   visible: z.boolean(),
 });
 
-export const esquemaVariante = z.object({
-  servicioId: z.coerce.number().int().positive(),
-  id: z.coerce.number().int().positive().optional(),
-  nombre: z.string().trim().min(1, "Escribe un nombre.").max(60, "Hasta 60 caracteres."),
-  descripcion: z
-    .string()
-    .trim()
-    .max(200, "Hasta 200 caracteres.")
-    .optional()
-    .transform((v) => v || null),
-});
-
 // Acciones que reciben datos sueltos (no un formulario): también se validan, porque cualquiera puede llamarlas.
 const idRegistro = z.number().int().positive();
 export const esquemaId = idRegistro;
 export const esquemaIdFormulario = z.coerce.number().int().positive();
 export const esquemaMover = z.object({ id: idRegistro, direccion: z.enum(DIRECCIONES) });
-export const esquemaMoverVariante = esquemaMover.extend({ servicioId: idRegistro });
-export const esquemaEstadoVariante = z.object({ servicioId: idRegistro, id: idRegistro, activo: z.boolean() });
 export const esquemaVisibilidad = z.object({ id: idRegistro, visible: z.boolean() });
 
 // Galería (HU-09)

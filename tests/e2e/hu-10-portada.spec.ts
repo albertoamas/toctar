@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { ingresarComoDueno } from "./apoyo";
+import { crearServicioPublicado, ingresarComoDueno } from "./apoyo";
 
 // HU-10 Portada y HU-15 Botón de WhatsApp. Criterios: docs/09-pruebas/criterios-entrega-1.md (10.x y 15.x).
 // El WhatsApp lo carga tests/e2e/preparar.setup.ts antes de todas las pruebas.
@@ -38,11 +38,7 @@ test("ocultar un servicio en el panel lo saca del sitio sin volver a desplegar",
   soloEscritorio(info);
   const nombre = "Servicio para ocultar";
   await ingresarComoDueno(page);
-  await page.goto("/panel/sitio/servicios/nuevo");
-  await page.getByLabel("Nombre del servicio").fill(nombre);
-  await page.getByLabel("Resumen").fill("Aparece y desaparece del sitio.");
-  await page.getByRole("button", { name: "Crear servicio" }).click();
-  await expect(page.getByText("Servicio creado.")).toBeVisible();
+  await crearServicioPublicado(page, nombre, "Aparece y desaparece del sitio.");
   const panel = page.url();
 
   await page.goto("/servicios");

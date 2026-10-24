@@ -82,3 +82,21 @@ export async function crearClienteEnBase(datos: { nombre: string; telefono: stri
     await cliente.end();
   }
 }
+
+/**
+ * Crea un servicio como lo hace el dueño: en el catálogo (nace oculto) y después su página en el sitio, con el resumen y
+ * visible. Devuelve su id y la dirección de su página. Para las pruebas que necesitan un servicio propio en el sitio.
+ */
+export async function crearServicioPublicado(page: Page, nombre: string, resumen = "Servicio de prueba."): Promise<{ id: string; slug: string }> {
+  await page.goto("/panel/catalogo/nuevo");
+  await page.getByLabel("Nombre del servicio").fill(nombre);
+  await page.getByRole("button", { name: "Crear servicio" }).click();
+  await expect(page).toHaveURL(/\/panel\/catalogo\/\d+\?creado=1$/);
+  const id = page.url().match(/catalogo\/(\d+)/)![1];
+  await page.goto(`/panel/sitio/servicios/${id}`);
+  await page.getByLabel("Resumen").fill(resumen);
+  await page.getByRole("checkbox", { name: /Mostrar en el sitio/ }).check();
+  await page.getByRole("button", { name: "Guardar cambios" }).click();
+  await expect(page.getByText("Cambios guardados.")).toBeVisible();
+  return { id, slug: await page.getByLabel("Dirección de la página").inputValue() };
+}

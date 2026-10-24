@@ -10,7 +10,7 @@ import { Button } from "@/componentes/ui/button";
 import type { Direccion } from "@/lib/orden";
 import { moverServicio } from "../acciones";
 
-// HU-07: servicios en el orden en que salen en el sitio. Se abren para editar.
+// HU-07: servicios en el orden en que salen en el sitio. Se abren para editar su página.
 
 type Fila = { id: number; nombre: string; resumen: string; visible: boolean; miniatura: string | null };
 
@@ -21,7 +21,7 @@ export function ListaServicios({ servicios }: { servicios: Fila[] }) {
       avisarResultado(await moverServicio({ id, direccion }));
     });
 
-  if (servicios.length === 0) return <EstadoVacio>Todavía no hay servicios. Agrega el primero con “Agregar servicio”.</EstadoVacio>;
+  if (servicios.length === 0) return <EstadoVacio>Todavía no hay servicios. El dueño los agrega en Catálogo y precios.</EstadoVacio>;
 
   return (
     <ol aria-label="Servicios del sitio" className="flex flex-col divide-y divide-border rounded-sm border border-border">
@@ -41,7 +41,8 @@ export function ListaServicios({ servicios }: { servicios: Fila[] }) {
                 {s.nombre}
                 {!s.visible && <span className="tt-insignia">Oculto</span>}
               </span>
-              <span className="line-clamp-2 text-sm text-tinta-suave">{s.resumen}</span>
+              {/* Uno recién creado en el catálogo no tiene resumen: es lo que falta para mostrarlo */}
+              <span className="line-clamp-2 text-sm text-tinta-suave">{s.resumen || "Falta completar su página."}</span>
               {/* Al final, para que el lector de pantalla diga primero el nombre del servicio */}
               {!s.miniatura && <span className="sr-only">Sin foto.</span>}
             </span>

@@ -1,18 +1,10 @@
 import { describe, expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
-import { nombreRepetido, puedeDesactivar } from "@/lib/orden";
 import { PATRON_SLUG, crearSlug } from "@/lib/slug";
-import {
-  esquemaEstadoVariante,
-  esquemaId,
-  esquemaIdFormulario,
-  esquemaMoverVariante,
-  esquemaServicio,
-  esquemaVariante,
-  esquemaVisibilidad,
-} from "@/modulos/sitio/esquemas";
+import { esquemaId, esquemaIdFormulario, esquemaServicio, esquemaVisibilidad } from "@/modulos/sitio/esquemas";
 
-// HU-07 Servicios del sitio. Criterios: docs/09-pruebas/criterios-entrega-1.md (7.x).
+// HU-07 Servicios del sitio: la página de cada servicio. Criterios: docs/09-pruebas/criterios-entrega-1.md (7.x). El
+// alta, el nombre y las variantes son del catálogo (tests/unit/catalogo.test.ts).
 
 describe("dirección de la página (slug)", () => {
   test.each([
@@ -40,7 +32,6 @@ describe("dirección de la página (slug)", () => {
 describe("esquema del servicio", () => {
   const valido = {
     id: "1",
-    nombre: "Pulido y nano cerámico",
     slug: "pulido-y-nano-ceramico",
     resumen: "Corregimos la pintura y la protegemos.",
     descripcion: "",
@@ -56,7 +47,6 @@ describe("esquema del servicio", () => {
   });
 
   test.each([
-    ["nombre", { nombre: " " }, { nombre: "Escribe el nombre del servicio." }],
     ["resumen largo", { resumen: "x".repeat(161) }, { resumen: "Hasta 160 caracteres." }],
     ["dirección con mayúsculas", { slug: "Pulido_Ceramico" }, { slug: "La dirección solo lleva minúsculas, números y guiones." }],
     ["beneficio vacío", { beneficios: JSON.stringify(["Brillo", " "]) }, { "beneficios.1": "Escribe el beneficio o quita la fila." }],
@@ -72,26 +62,9 @@ describe("esquema del servicio", () => {
   test("RN-10: el servicio no tiene campos de precio", () => {
     expect(Object.keys(esquemaServicio.shape).some((c) => /precio|monto|costo/i.test(c))).toBe(false);
   });
-});
 
-describe("variantes (D-2)", () => {
-  const variantes = [
-    { id: 1, nombre: "1 año", activo: true },
-    { id: 2, nombre: "2 años", activo: false },
-  ];
-
-  test("la última variante activa no se desactiva", () => {
-    expect(puedeDesactivar(variantes, 1)).toBe(false);
-    expect(puedeDesactivar([...variantes, { id: 3, nombre: "3 años", activo: true }], 1)).toBe(true);
-  });
-
-  test("el nombre no se repite dentro del servicio", () => {
-    expect(nombreRepetido(variantes, "2 AÑOS")).toBe(true);
-    expect(nombreRepetido(variantes, "5 años")).toBe(false);
-  });
-
-  test("la descripción es opcional", () => {
-    expect(esquemaVariante.parse({ servicioId: "1", nombre: "Premium", descripcion: "" })).toEqual({ servicioId: 1, nombre: "Premium", descripcion: null });
+  test("el nombre no se cambia desde el sitio: es del catálogo", () => {
+    expect(Object.keys(esquemaServicio.shape)).not.toContain("nombre");
   });
 });
 
@@ -103,10 +76,7 @@ describe("datos sueltos de las acciones (revisión de seguridad)", () => {
     expect(esquemaIdFormulario.safeParse("abc").success).toBe(false);
   });
 
-  test("mostrar, ocultar y activar piden un sí o no de verdad", () => {
+  test("mostrar y ocultar piden un sí o no de verdad", () => {
     expect(esquemaVisibilidad.safeParse({ id: 1, visible: "true" }).success).toBe(false);
-    expect(esquemaEstadoVariante.safeParse({ servicioId: 1, id: 2, activo: 1 }).success).toBe(false);
-    expect(esquemaMoverVariante.safeParse({ servicioId: 1, id: 2, direccion: "subir" }).success).toBe(true);
-    expect(esquemaMoverVariante.safeParse({ id: 2, direccion: "subir" }).success).toBe(false);
   });
 });

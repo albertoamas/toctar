@@ -1,5 +1,6 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { asc, desc, eq, inArray, sql } from "drizzle-orm";
+import type { ElementoLista } from "@/componentes/panel/lista-editable";
 import { db } from "@/db";
 import { precio, servicio, tamanoVehiculo, usuario, variante } from "@/db/esquema";
 import { tamanosActivos, type Tamano } from "@/modulos/configuracion/consultas";
@@ -55,11 +56,32 @@ export type ServicioCatalogo = {
   id: number;
   nombre: string;
   activo: boolean;
+  /** Si su página se muestra en el sitio (se decide en Sitio web). */
+  visibleSitio: boolean;
   duracionDias: number;
   generaMantenimiento: boolean;
+  /** Las activas, con sus precios. */
   variantes: VarianteCatalogo[];
+  /** Todas, para agregar, ordenar y desactivar (las activas primero). */
+  listaVariantes: ElementoLista[];
   tamanos: Tamano[];
 };
+
+/** Variantes de un servicio: activas primero, en su orden. */
+export async function listarVariantes(servicioId: number) {
+  return db
+    .select({
+      id: variante.id,
+      nombre: variante.nombre,
+      descripcion: variante.descripcion,
+      orden: variante.orden,
+      activo: variante.activo,
+      duracionDias: variante.duracionDias,
+    })
+    .from(variante)
+    .where(eq(variante.servicioId, servicioId))
+    .orderBy(sql`${variante.activo} desc`, asc(variante.orden), asc(variante.id));
+}
 
 /** Precio vigente de cada par (D-3): la fila más reciente. */
 export async function preciosVigentes(varianteIds: number[]): Promise<{ varianteId: number; tamanoId: number; monto: Monto }[]> {
@@ -71,33 +93,31 @@ export async function preciosVigentes(varianteIds: number[]): Promise<{ variante
     .orderBy(precio.varianteId, precio.tamanoId, desc(precio.vigenteDesde), desc(precio.id));
 }
 
-/** Un servicio con sus variantes activas y los precios vigentes de cada una, o null si no existe. */
+/** Un servicio con sus variantes y los precios vigentes de las activas, o null si no existe. */
 export async function obtenerServicioCatalogo(id: number): Promise<ServicioCatalogo | null> {
   const [s] = await db
     .select({
       id: servicio.id,
       nombre: servicio.nombre,
       activo: servicio.activo,
+      visibleSitio: servicio.visibleSitio,
       duracionDias: servicio.duracionDias,
       generaMantenimiento: servicio.generaMantenimiento,
     })
     .from(servicio)
     .where(eq(servicio.id, id));
   if (!s) return null;
-  const [variantes, tamanos] = await Promise.all([
-    db
-      .select({ id: variante.id, nombre: variante.nombre, duracionDias: variante.duracionDias })
-      .from(variante)
-      .where(and(eq(variante.servicioId, id), eq(variante.activo, true)))
-      .orderBy(asc(variante.orden), asc(variante.id)),
-    tamanosActivos(),
-  ]);
-  const vigentes = await preciosVigentes(variantes.map((v) => v.id));
+  const [todas, tamanos] = await Promise.all([listarVariantes(id), tamanosActivos()]);
+  const activas = todas.filter((v) => v.activo);
+  const vigentes = await preciosVigentes(activas.map((v) => v.id));
   return {
     ...s,
     tamanos,
-    variantes: variantes.map((v) => ({
-      ...v,
+    listaVariantes: todas,
+    variantes: activas.map((v) => ({
+      id: v.id,
+      nombre: v.nombre,
+      duracionDias: v.duracionDias,
       precios: Object.fromEntries(vigentes.filter((p) => p.varianteId === v.id).map((p) => [p.tamanoId, p.monto])),
     })),
   };

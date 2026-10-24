@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 import { ingresarComoDueno } from "./apoyo";
 
 // Pruebas de humo de la iteración 0: la app arranca, conecta con la base y
@@ -149,12 +149,12 @@ test("las páginas interiores llegan enteras: el título no aparece antes que el
 // Pulido visual 4.2: con pantalla táctil los botones del panel miden 44 px; con mouse, 36
 test("los botones del panel miden 44 px con pantalla táctil y 36 con mouse", async ({ page, isMobile }) => {
   await ingresarComoDueno(page);
-  await page.goto("/panel/sitio");
   const alto = isMobile ? 44 : 36;
-  for (const boton of [page.getByRole("link", { name: "Agregar servicio" }), page.getByRole("button", { name: /^Bajar / }).first()]) {
-    const caja = (await boton.boundingBox())!;
-    expect(Math.round(caja.height)).toBe(alto);
-  }
+  const medir = async (boton: Locator) => expect(Math.round((await boton.boundingBox())!.height)).toBe(alto);
+  await page.goto("/panel/catalogo");
+  await medir(page.getByRole("link", { name: "Agregar servicio" }));
+  await page.goto("/panel/sitio");
+  await medir(page.getByRole("button", { name: /^Bajar / }).first());
   // Toda la fila abre el servicio, también la foto
   await page.getByRole("list", { name: "Servicios del sitio" }).getByRole("link").first().click();
   await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+$/);
@@ -179,9 +179,8 @@ test("ningún botón del panel mide menos que el tamaño normal", async ({ page,
 
 test("al enviar con errores el foco va al campo, y el enlace para volver mide 44 px", async ({ page }) => {
   await ingresarComoDueno(page);
-  await page.goto("/panel/sitio/servicios/nuevo");
-  // La pestaña también se llama "Servicios": el enlace para volver es el de la flecha
-  const volver = page.getByRole("main").getByRole("link", { name: "Servicios" }).filter({ has: page.locator("svg") });
+  await page.goto("/panel/catalogo/nuevo");
+  const volver = page.getByRole("main").getByRole("link", { name: "Catálogo y precios" });
   expect(Math.round((await volver.boundingBox())!.height)).toBe(44);
   await page.getByRole("button", { name: "Crear servicio" }).click();
   await expect(page.getByLabel("Nombre del servicio")).toBeFocused();

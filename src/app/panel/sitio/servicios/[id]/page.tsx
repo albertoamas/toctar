@@ -1,31 +1,33 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
+import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioServicio } from "@/modulos/sitio/componentes/formulario-servicio";
-import { FotoYVariantes } from "@/modulos/sitio/componentes/foto-y-variantes";
+import { FotoServicio } from "@/modulos/sitio/componentes/foto-servicio";
 import { obtenerServicio } from "@/modulos/sitio/consultas";
 
 export const metadata: Metadata = { title: "Servicio" };
 
-// HU-07: edición completa de un servicio: datos, beneficios, pasos, foto y variantes.
-export default function PaginaServicio({ params, searchParams }: PageProps<"/panel/sitio/servicios/[id]">) {
+// HU-07: la página del servicio en el sitio: dirección, textos, beneficios, pasos, foto y si se muestra. El nombre y
+// las variantes son del catálogo: el dueño tiene el enlace.
+export default function PaginaServicio({ params }: PageProps<"/panel/sitio/servicios/[id]">) {
   return (
     <div className="flex flex-col gap-6">
       <EnlaceVolver href="/panel/sitio">Servicios</EnlaceVolver>
       <Suspense fallback={<Cargando />}>
-        <Detalle params={params} searchParams={searchParams} />
+        <Detalle params={params} />
       </Suspense>
     </div>
   );
 }
 
-async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/sitio/servicios/[id]">, "params" | "searchParams">) {
-  await exigirModulo("sitio");
-  const [{ id }, { creado }] = await Promise.all([params, searchParams]);
+async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">, "params">) {
+  const usuario = await exigirModulo("sitio");
+  const { id } = await params;
   const numero = Number(id);
   if (!Number.isInteger(numero) || numero <= 0) notFound();
   const s = await obtenerServicio(numero);
@@ -37,14 +39,18 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/sitio/se
         <h2 className="font-heading text-3xl font-bold italic">{s.nombre}</h2>
         {!s.visible && <span className="tt-insignia">Oculto</span>}
       </div>
-      {creado && (
-        <AvisoEnPagina>Servicio creado. Completa la descripción, los beneficios, los pasos y la foto.</AvisoEnPagina>
+      {puedeVerModulo(usuario, "catalogo") && (
+        <p className="flex flex-wrap items-center gap-x-2 text-sm">
+          <span className="text-tinta-suave">El nombre, las variantes y los precios están en el catálogo.</span>
+          <Link href={`/panel/catalogo/${s.id}`} className="inline-flex min-h-11 items-center font-semibold underline">
+            Abrir en el catálogo
+          </Link>
+        </p>
       )}
       <div className="grid gap-12 lg:grid-cols-[minmax(0,40rem)_minmax(0,22rem)]">
         <FormularioServicio
           servicio={{
             id: s.id,
-            nombre: s.nombre,
             slug: s.slug,
             resumen: s.resumen,
             descripcion: s.descripcion,
@@ -54,7 +60,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/sitio/se
           }}
         />
         <aside>
-          <FotoYVariantes servicioId={s.id} nombre={s.nombre} foto={s.foto} variantes={s.listaVariantes} />
+          <FotoServicio servicioId={s.id} nombre={s.nombre} foto={s.foto} />
         </aside>
       </div>
     </>
