@@ -78,7 +78,8 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | C2 Consultas y cotizaciones | `etapas/C2-consultas-cotizaciones.md` | ✅ Programada (21/10, PR #55 a #60). Falta la prueba en celulares con https (A3) y los textos del PDF del dueño |
 | C3 Agenda y pagos | `etapas/C3-agenda-pagos.md` | ✅ Programada (21/10, PR #61 a #64). Falta mostrarle el tablero al dueño |
 | C4 Taller y entrega | `etapas/C4-taller-entrega.md` | ✅ Programada (23/10, PR #65 a #72). Falta la demo desde un celular real |
-| B6 y C5 | Una por etapa | Al empezar cada una |
+| C5 Cierre de la Entrega 2 | `etapas/C5-cierre-entrega-2.md` | 📝 Borrador (23/10): se adelanta con las tres deseables (HU-39 a HU-41) |
+| B6 | `etapas/B6-…` | Al empezarla |
 
 ## Cómo se trabaja cada historia
 
