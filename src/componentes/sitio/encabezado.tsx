@@ -19,14 +19,14 @@ import { BotonWhatsApp } from "./whatsapp";
 // que ya se llama "TocTar, inicio".
 const LOGO = readFileSync(path.join(process.cwd(), "public/marca/toctar-horizontal-sin-lema-sobre-oscuro.svg"), "utf8")
   .replace(' role="img" aria-label="TocTar"', "")
-  .replace("<svg ", '<svg width="127" height="32" aria-hidden="true" focusable="false" ');
+  .replace("<svg ", '<svg width="143" height="36" aria-hidden="true" focusable="false" ');
 
 function Logo() {
   return (
     <Link
       href="/"
       aria-label="TocTar, inicio"
-      className="flex min-h-11 shrink-0 items-center [&_svg]:h-9 [&_svg]:w-auto md:[&_svg]:h-10"
+      className="flex min-h-11 shrink-0 items-center md:[&_svg]:h-10 md:[&_svg]:w-auto"
       dangerouslySetInnerHTML={{ __html: LOGO }}
     />
   );

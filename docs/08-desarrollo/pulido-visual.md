@@ -128,7 +128,7 @@ Antes de la demo del viernes 23.
 | 2.10 | Sin conexión | `public/sin-conexion.html` | ✅ 18/10 |
 
 ### 2B. Pedidos de la demo del 24/10
-El dueño vio el sitio en pruebas, con sus fotos: le gustó la estructura y pidió un sitio más simple ("para tontos": menos es más), con más imágenes. Se hacen antes de la HU-40, uno por uno, cada uno con su PR. Alcance y horas: `03-cierre-comercial/registro-de-cambios.md`, pedidos 1 a 6.
+El dueño vio el sitio en pruebas, con sus fotos: le gustó la estructura y pidió un sitio más simple ("para tontos": menos es más), con más imágenes. Se hacen antes de la HU-40, uno por uno, cada uno con su PR. Alcance y horas: `03-cierre-comercial/registro-de-cambios.md`, pedidos 1 a 8.
 
 | # | Pedido | Dónde | Estado |
 |---|---|---|---|

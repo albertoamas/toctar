@@ -41,7 +41,7 @@
 | Etapa C4 Taller y entrega (HU-33 a HU-38) | ✅ Programada el 23/10 (PR #65 a #72). Los 5 flujos críticos con su prueba E2E. Falta la demo desde un celular real |
 | Etapa C5 Cierre de la Entrega 2 | 🔵 Especificación aprobada el 23/10 (PR #73). §0, la reorganización del panel, en `develop` el 24/10 (PR #74): servicios en el catálogo, menú en grupos, Parámetros por tema. Siguen la HU-40, la HU-39 y la HU-41 |
 | Datos de demostración | ✅ Scripts `db:reiniciar-local` y `datos:demo` (PR #75): el sitio con fotos y el panel con movimiento de esta semana. Falta cargarlos en pruebas |
-| Pedidos de la demo del sitio (24/10) | ✅ Hechos el 24/10 (PR #78 a #84; `pulido-visual.md`, grupo 2B; registro de cambios 1 a 7). Falta que el dueño cargue en pruebas los íconos, la escalera, las fotos de cada sección y el TikTok |
+| Pedidos de la demo del sitio (24/10) | ✅ Hechos el 24/10 (PR #78 a #84; `pulido-visual.md`, grupo 2B; registro de cambios 1 a 8). Falta que el dueño cargue en pruebas los íconos, la escalera, las fotos de cada sección y el TikTok |
 | Pulido visual de la Entrega 2 | ⏳ Plan en `pulido-visual.md` (grupos 7 a 13): las pantallas de C1 a C4 y lo que cambió con la reorganización |
 | Identidad visual aplicada a la app | ✅ En `develop` (PR #5 y #9, logos nítidos en tamaños chicos) |
 | Inicio del trabajo | 9 de octubre de 2026 (firma y primer pago) |

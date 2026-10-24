@@ -15,6 +15,7 @@ Las horas pasan de "comprometidas" a "usadas" cuando el pedido queda hecho.
 | 5 | 24/10/2026 | Más imágenes en cada servicio, propias y no solo de la galería (ejemplo: el afiche del nano cerámico), con su editor en el panel. Aclarado el 24/10: una foto al lado de cada sección de la página | Dueño, en la demo del sitio | 4 | Bolsa | Hecho (PR #83) |
 | 6 | 24/10/2026 | Las opciones de un servicio como escalones (estilo del afiche: 1, 2, 3, 5 y 10 años) | Dueño, en la demo del sitio | 1 | Incluido | Hecho (PR #81) |
 | 7 | 24/10/2026 | Página de un servicio más corta: sin "En qué consiste" (repetía el resumen, que queda arriba) y sin la grilla de sus fotos de la galería (queda "Ver la galería"). Cambia RF-03 y el criterio 11.1; lo ya escrito en la descripción queda guardado en la base | Dueño ("menos es más"), definido con YankoSoft al revisar el pedido 5 | 0 | Incluido | Hecho (PR #83) |
+| 8 | 24/10/2026 | Logo del encabezado del sitio más grande (36 px en el celular, 40 en la computadora) | Dueño, en la demo del sitio | 0,25 | Incluido | Hecho (PR #84) |
 
 **Tratamiento:** `Bolsa` (se descuenta de las 8 h) · `Cotizado` (Bs 40/h, con aprobación) · `Sistema completo` · `Futuro` (va al backlog) · `Incluido` (ajuste de diseño o texto, o corrección de error).
 
