@@ -46,9 +46,9 @@ Aplicado al servidor `toctar`. Todo lo que no está en la lista se descarta: un 
 | TCP | 22 | Any | SSH, solo con clave |
 | TCP | 80 | Any | http: Coolify saca los certificados y redirige a https |
 | TCP | 443 | Any | https: el sitio, el panel y Coolify |
-| TCP | 8000 | Any | Panel de Coolify. **Temporal:** se borra cuando Coolify tenga su dominio (guía, paso 4.8) |
 
 - Salientes: todo permitido.
+- **El 8000** (panel de Coolify) estuvo abierto solo mientras se configuraba; se cerró el 24/10, cuando Coolify tuvo su dominio con https.
 - **El 3000 nunca se abre:** la app solo se alcanza por el proxy de Coolify.
 - Cuando se creó, el firewall no traía la regla del 22 y SSH no respondía. Se agregó a mano.
 
@@ -131,14 +131,6 @@ Instalado con el instalador oficial (`curl -fsSL https://cdn.coollabs.io/coolify
 
 `main` y `develop` están protegidas: exigen Pull Request (sin revisores obligatorios, porque hay un solo desarrollador), también para el dueño del repositorio, y prohíben el push forzado y el borrado. Un push directo a `main` publicaría en producción.
 
-## Lo que falta
-
-- [ ] Verificación en dos pasos en Coolify (YankoSoft) e invitar al dueño en **Team**.
-- [ ] Día de la publicación: comprobar que `www` redirija, UptimeRobot (cuenta del negocio con avisos también a YankoSoft; monitor de producción) y probar una restauración la semana siguiente.
-- [ ] Reunión con el dueño: sus dos pasos (Cloudflare y Hetzner), su tarjeta en las tres cuentas, decidir los backups de Hetzner y la hoja de entrega con el acceso de emergencia (consola web de Hetzner → Reset root password).
-
-Cada cosa que se instale se anota aquí, con su fecha.
-
 ## Cloudflare R2: fotos, datos de clientes y respaldos
 
 Configurado el 23/10/2026 en la cuenta de Cloudflare del negocio (`toctartarija@gmail.com`). YankoSoft entra con su cuenta personal como **Super Administrator**; al entregar el sistema, el dueño lo puede bajar a **Administrator** (sigue manejando DNS y R2, pero no la facturación ni los miembros).
@@ -170,3 +162,11 @@ Configurado el 23/10/2026 en la cuenta de Cloudflare del negocio (`toctartarija@
 - **Espacio en disco:** `df -h /`. Con Docker, limpiar imágenes viejas desde Coolify o con `docker system prune` (con cuidado: no borrar volúmenes).
 - **Quién intentó entrar:** `fail2ban-client status sshd`.
 - **Costo:** la factura llega todos los meses a la cuenta del negocio. Hetzner acumula los montos menores a 10 hasta pasarlo; desde el 1/10/2026 cambió las fechas de facturación de todos sus clientes.
+
+## Lo que falta
+
+- [ ] Verificación en dos pasos en Coolify (YankoSoft) e invitar al dueño en **Team**.
+- [ ] Día de la publicación: comprobar que `www` redirija, UptimeRobot (cuenta del negocio con avisos también a YankoSoft; monitor de producción) y probar una restauración la semana siguiente.
+- [ ] Reunión con el dueño: sus dos pasos (Cloudflare y Hetzner), su tarjeta en las tres cuentas, decidir los backups de Hetzner y la hoja de entrega con el acceso de emergencia (consola web de Hetzner → Reset root password).
+
+Cada cosa que se instale se anota aquí, con su fecha.
