@@ -10,8 +10,8 @@
 // script escribe directo en la base (no por el panel), la caché no se entera.
 //
 // Los precios, los clientes y los trabajos son inventados (de demostración): los reales los carga el dueño.
-// Fotos que espera la carpeta (las que no estén, se saltan con un aviso):
-//   logo.webp · portada.webp · servicio-<slug>.webp (una por servicio) · las de GALERIA (abajo).
+// Fotos que espera la carpeta, en WebP, JPG o PNG (las que no estén, se saltan con un aviso):
+//   logo · portada · servicio-<slug> (una por servicio) · las de GALERIA (abajo).
 import { randomBytes, randomUUID } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -56,10 +56,13 @@ function sumarMeses(fecha, meses) {
 // ---------------------------------------------------------------------------------------------
 // Fotos: como guardarFoto (src/lib/fotos.ts): WebP de 1600 px y miniatura de 640, registradas en `archivo`
 
+const EXTENSIONES = [".webp", ".jpg", ".jpeg", ".png"];
+
+/** Sube la foto `nombre` (sin extensión) de la carpeta, en el formato que esté; null si no está. */
 async function subirFoto(nombre, carpeta, autorId) {
-  const ruta = join(carpetaFotos, nombre);
-  if (!existsSync(ruta)) {
-    console.warn(`  · Falta ${ruta}: se sigue sin esa foto.`);
+  const ruta = EXTENSIONES.map((e) => join(carpetaFotos, nombre + e)).find((r) => existsSync(r));
+  if (!ruta) {
+    console.warn(`  · Falta ${join(carpetaFotos, nombre)} (${EXTENSIONES.join(", ")}): se sigue sin esa foto.`);
     return null;
   }
   const original = readFileSync(ruta);
@@ -186,8 +189,8 @@ const PRECIOS = {
 
 /** Trabajos terminados para la galería: la foto y de qué servicio es. */
 const GALERIA = [
-  { foto: "galeria-corolla.webp", servicio: "pulido-y-nano-ceramico", descripcion: "Toyota Corolla con pulido y nano cerámico de 5 años" },
-  { foto: "galeria-bmw.webp", servicio: "pulido-y-nano-ceramico", descripcion: "BMW con pulido y nano cerámico, lista para entregar" },
+  { foto: "galeria-corolla", servicio: "pulido-y-nano-ceramico", descripcion: "Toyota Corolla con pulido y nano cerámico de 5 años" },
+  { foto: "galeria-bmw", servicio: "pulido-y-nano-ceramico", descripcion: "BMW con pulido y nano cerámico, lista para entregar" },
 ];
 
 // ---------------------------------------------------------------------------------------------
@@ -240,7 +243,7 @@ try {
 
   // 2. El negocio: logo, redes y ubicación. El WhatsApp es de ejemplo: el real lo carga el dueño
   console.log("Negocio…");
-  const logo = await subirFoto("logo.webp", "negocio", autor);
+  const logo = await subirFoto("logo", "negocio", autor);
   await q(
     `update negocio set logo_archivo_id = coalesce($1, logo_archivo_id), redes = $2, updated_at = now(), updated_by = $3 where id = 1`,
     [
@@ -261,10 +264,10 @@ try {
 
   // 3. El sitio: la foto de la portada, la página de cada servicio y la galería
   console.log("Sitio…");
-  const portada = await subirFoto("portada.webp", "portada", autor);
+  const portada = await subirFoto("portada", "portada", autor);
   if (portada) await q("update contenido_pagina set foto_archivo_id = $1, updated_at = now(), updated_by = $2 where clave = 'inicio'", [portada, autor]);
   for (const [slug, s] of Object.entries(SERVICIOS)) {
-    const foto = await subirFoto(`servicio-${slug}.webp`, "servicios", autor);
+    const foto = await subirFoto(`servicio-${slug}`, "servicios", autor);
     await q(
       `update servicio set descripcion = $2, beneficios = $3, pasos = coalesce($4, pasos), foto_archivo_id = coalesce($5, foto_archivo_id),
          updated_at = now(), updated_by = $6 where slug = $1`,
