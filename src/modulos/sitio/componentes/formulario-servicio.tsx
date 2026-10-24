@@ -86,7 +86,7 @@ export function FormularioServicio({ servicio: s }: Props) {
             <>
               <TextoCorto value={b.texto} onChange={(ev) => cambiar({ ...b, texto: ev.target.value })} aria-label={`Beneficio ${i + 1}`} placeholder="Repele el agua y la suciedad" {...marca} />
               <span className="flex items-center gap-2">
-                <IconoBeneficio icono={b.icono} className="size-6 shrink-0 text-rojo-texto" />
+                <IconoBeneficio icono={b.icono} className="size-6 shrink-0 text-rojo" />
                 <Selector value={b.icono} onChange={(ev) => cambiar({ ...b, icono: ev.target.value })} aria-label={`Beneficio ${i + 1}, ícono`} {...marca}>
                   {Object.entries(ICONOS_BENEFICIO).map(([clave, nombre]) => (
                     <option key={clave} value={clave}>{nombre}</option>

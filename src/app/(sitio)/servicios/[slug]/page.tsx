@@ -93,7 +93,7 @@ function Beneficios({ beneficios }: { beneficios: DetalleServicioPublico["benefi
       <ul className="grid grid-cols-2 border-y border-border sm:grid-cols-3 lg:grid-flow-col lg:grid-cols-none lg:auto-cols-fr">
         {beneficios.map((b, i) => (
           <li key={i} className="flex flex-col items-center gap-2 border-border px-3 py-5 text-center md:gap-3 md:py-6 lg:not-first:border-l">
-            <IconoBeneficio icono={b.icono} className="size-8 text-rojo-texto md:size-9" />
+            <IconoBeneficio icono={b.icono} className="size-8 text-rojo md:size-9" />
             <span className="max-w-48 text-sm leading-5 font-semibold text-balance">{b.texto}</span>
           </li>
         ))}
