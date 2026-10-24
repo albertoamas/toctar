@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { cn } from "cn";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
+import { FotoResponsiva } from "@/componentes/sitio/foto-responsiva";
 import { TituloPagina } from "@/componentes/sitio/titulo-pagina";
 import { Monograma } from "@/componentes/sitio/iconos-marca";
 import { WhatsAppFijo } from "@/componentes/sitio/whatsapp";
@@ -66,18 +67,14 @@ async function Contenido() {
               </div>
             </div>
             {equipo && (
-              // La chica (640 px) en el celular, donde va a lo ancho; la grande desde 768 px
-              <picture>
-                <source media="(min-width: 768px)" srcSet={equipo.url} />
-                {/* <img> a mano: next/image no arma un <picture> con dos versiones */}
-                <img
-                  src={equipo.miniatura}
-                  alt={FOTOS_DE_PAGINA.nosotros.alt}
-                  width={equipo.ancho ?? undefined}
-                  height={equipo.alto ?? undefined}
-                  className="h-auto max-h-[32rem] w-full object-cover"
-                />
-              </picture>
+              // Está en la primera pantalla: sin carga diferida
+              <FotoResponsiva
+                foto={equipo}
+                alt={FOTOS_DE_PAGINA.nosotros.alt}
+                sizes="(min-width: 768px) 50vw, 100vw"
+                cargaDiferida={false}
+                className="h-auto max-h-[32rem] w-full object-cover"
+              />
             )}
           </div>
 

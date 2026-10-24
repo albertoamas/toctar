@@ -109,6 +109,15 @@ export async function obtenerFotoDePagina(pagina: PaginaConFoto): Promise<UrlsFo
   return fila ? urlsFoto(fila.foto) : null;
 }
 
+/** Las fotos de las páginas de textos que tienen (panel de Textos), en una sola consulta. */
+export async function obtenerFotosDePaginas(): Promise<Partial<Record<PaginaConFoto, UrlsFoto>>> {
+  const filas = await db
+    .select({ clave: contenidoPagina.clave, foto: archivo })
+    .from(contenidoPagina)
+    .innerJoin(archivo, eq(contenidoPagina.fotoArchivoId, archivo.id));
+  return Object.fromEntries(filas.map((f) => [f.clave, urlsFoto(f.foto)]));
+}
+
 /** Textos de todas las páginas (HU-08). */
 export async function obtenerContenidos(): Promise<Record<Pagina, ContenidoPagina>> {
   const filas = await db.select().from(contenidoPagina);

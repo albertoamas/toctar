@@ -115,7 +115,6 @@ export async function contenidoPublico(pagina: Pagina): Promise<ContenidoPagina>
   return leerContenido(pagina, fila?.datos);
 }
 
-/** Foto del taller detrás del lema de la portada, o null: entonces la portada muestra el arte de la marca. */
 /** La foto de la portada (el taller) o de Nosotros (el equipo), o null. */
 export async function fotoDePaginaPublica(pagina: PaginaConFoto): Promise<UrlsFoto | null> {
   "use cache";

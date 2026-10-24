@@ -205,17 +205,23 @@ export async function guardarContenido(_previo: EstadoFormulario, datos: FormDat
   return { ok: true, mensaje: `${PAGINAS[pagina].titulo}: cambios guardados.` };
 }
 
-/** Foto que tiene hoy la portada. Si falta su fila, es un error de datos (como en `leerContenido`): falta la migración. */
-async function fotoActualDe(pagina: PaginaConFoto): Promise<number | null> {
-  const [fila] = await db.select({ fotoArchivoId: contenidoPagina.fotoArchivoId }).from(contenidoPagina).where(eq(contenidoPagina.clave, pagina));
-  if (!fila) throw new Error(`Falta la fila "${pagina}" en contenido_pagina: aplica las migraciones.`);
-  return fila.fotoArchivoId;
+/**
+ * Pone la foto de una página (o ninguna) y devuelve la que tenía, en una transacción con la fila bloqueada: dos
+ * cambios a la vez no dejan una foto sin borrar. Si falta la fila, es un error de datos (como en `leerContenido`).
+ */
+async function cambiarFotoDe(pagina: PaginaConFoto, fotoArchivoId: number | null, autorId: number): Promise<number | null> {
+  const anterior = await db.transaction(async (tx) => {
+    const donde = eq(contenidoPagina.clave, pagina);
+    const [fila] = await tx.select({ fotoArchivoId: contenidoPagina.fotoArchivoId }).from(contenidoPagina).where(donde).for("update");
+    if (!fila) throw new Error(`Falta la fila "${pagina}" en contenido_pagina: aplica las migraciones.`);
+    await tx.update(contenidoPagina).set({ fotoArchivoId, updatedAt: new Date(), updatedBy: autorId }).where(donde);
+    return fila.fotoArchivoId;
+  });
+  despuesDeCambiarContenido("textos");
+  return anterior;
 }
 
-async function cambiarFotoDe(pagina: PaginaConFoto, fotoArchivoId: number | null, autorId: number) {
-  await db.update(contenidoPagina).set({ fotoArchivoId, updatedAt: new Date(), updatedBy: autorId }).where(eq(contenidoPagina.clave, pagina));
-  despuesDeCambiarContenido("textos");
-}
+const BORRAR_FOTO_PAGINA_FALLO = "No se pudo borrar del almacenamiento la foto de una página";
 
 const PAGINA_SIN_FOTO = "Esa página no lleva foto. Recarga la página.";
 
@@ -228,12 +234,18 @@ export async function subirFotoDePagina(_previo: EstadoFormulario, datos: FormDa
   const entrada = esquemaPaginaConFoto.safeParse(datos.get("pagina"));
   if (!entrada.success) return { mensaje: PAGINA_SIN_FOTO };
   const pagina = entrada.data;
-  const anterior = await fotoActualDe(pagina);
   const foto = await guardarFoto(datos.get("foto"), { carpeta: FOTOS_DE_PAGINA[pagina].carpeta, miniatura: true, autorId: Number(autor.id) });
   if (!foto.ok) return { errores: { foto: foto.motivo === "vacia" ? "Elige una foto." : ERROR_FOTO } };
 
-  await cambiarFotoDe(pagina, foto.archivoId, Number(autor.id));
-  if (anterior) await eliminarFoto(anterior);
+  let anterior: number | null;
+  try {
+    anterior = await cambiarFotoDe(pagina, foto.archivoId, Number(autor.id));
+  } catch (error) {
+    // No quedó guardada: la foto recién subida se borra para que no quede huérfana
+    await eliminarFoto(foto.archivoId).catch((e) => console.error(BORRAR_FOTO_PAGINA_FALLO, e));
+    throw error;
+  }
+  if (anterior) await eliminarFoto(anterior).catch((e) => console.error(BORRAR_FOTO_PAGINA_FALLO, e));
   return { ok: true, mensaje: "Foto guardada." };
 }
 
@@ -241,10 +253,8 @@ export async function quitarFotoDePagina(pagina: string): Promise<EstadoFormular
   const autor = await exigirModulo("sitio");
   const entrada = esquemaPaginaConFoto.safeParse(pagina);
   if (!entrada.success) return { mensaje: PAGINA_SIN_FOTO };
-  const anterior = await fotoActualDe(entrada.data);
-  if (!anterior) return { ok: true };
-  await cambiarFotoDe(entrada.data, null, Number(autor.id));
-  await eliminarFoto(anterior);
+  const anterior = await cambiarFotoDe(entrada.data, null, Number(autor.id));
+  if (anterior) await eliminarFoto(anterior).catch((e) => console.error(BORRAR_FOTO_PAGINA_FALLO, e));
   return { ok: true, mensaje: FOTOS_DE_PAGINA[entrada.data].quitada };
 }
 

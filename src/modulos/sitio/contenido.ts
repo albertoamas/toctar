@@ -74,6 +74,10 @@ export const PAGINAS_CON_FOTO = Object.keys(FOTOS_DE_PAGINA) as [PaginaConFoto, 
 /** Las acciones de la foto reciben la página suelta: se valida (cualquiera puede llamarlas). */
 export const esquemaPaginaConFoto = z.enum(PAGINAS_CON_FOTO);
 
+export function llevaFoto(pagina: Pagina): pagina is PaginaConFoto {
+  return Object.hasOwn(FOTOS_DE_PAGINA, pagina);
+}
+
 function esquemaCampo(c: CampoContenido) {
   const texto = z.string().trim().min(1, c.vacio).max(c.max, `Hasta ${c.max} caracteres.`);
   if (c.tipo !== "lista") return texto;
