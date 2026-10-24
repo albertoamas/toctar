@@ -92,7 +92,7 @@ Convenciones: `id` es `bigint` autoincremental; todas las tablas tienen `created
 
 | Tabla | Campos | Notas |
 |---|---|---|
-| `servicio_foto` | servicio_id, archivo_id, descripcion, orden | Fotos o afiches propios de un servicio, en una tira de su página (pedido de la demo del 24/10). La descripción es su texto alternativo |
+| `servicio_foto` | servicio_id, seccion (descripcion, proceso u opciones; una por sección), archivo_id, descripcion | La foto al lado de una sección de la página de un servicio (pedido de la demo del 24/10). La descripción es su texto alternativo |
 | `servicio` | nombre, slug (único), resumen, descripcion, beneficios (jsonb: texto e ícono), pasos (jsonb), opciones_en_escalera, foto_archivo_id, orden, visible_sitio, activo, genera_mantenimiento, duracion_dias | Un solo registro para el sitio y el catálogo |
 | `variante` | servicio_id, nombre, descripcion, orden, duracion_dias (opcional, pisa la del servicio), activo | D-2 |
 | `precio` | variante_id, tamano_id, monto (nulo = según evaluación), vigente_desde | D-3; el vigente es el de fecha más reciente |

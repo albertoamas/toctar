@@ -183,7 +183,7 @@
 | 11.4 | Un servicio oculto no tiene página | E2E "un servicio oculto o inexistente muestra la página no encontrada" | ✅ |
 | 11.5 | Título y descripción propios para Google y WhatsApp (RF-09) | Mismo E2E: título "<servicio> · TocTar Detailing"; la descripción es el resumen | ✅ |
 | 11.6 | Más simple (pedido de la demo del 24/10, registro de cambios 3 y 6): los beneficios van primero, cada uno con un ícono elegido de una lista fija; si las opciones van de menor a mayor (casilla en el panel), se ven como escalones con una capa más gruesa en cada una | E2E `hu-11` "los beneficios van primero, con ícono, y las opciones de menor a mayor se ven como escalones"; `hu-07` elige y guarda el ícono. Unitarias "esquema del servicio" (ícono fuera de la lista) e "íconos de los beneficios" | ✅ |
-| 11.7 | Fotos o afiches propios de cada servicio (pedido de la demo del 24/10, registro de cambios 5): se suben en el panel con una descripción, se ordenan y se quitan; en el sitio, una tira que se amplía al tocar | E2E `hu-11` "las fotos propias del servicio se suben en el panel y se ven en una tira que se amplía" | ✅ |
+| 11.7 | Una foto al lado de cada sección de la página de un servicio (pedido de la demo del 24/10, registro de cambios 5): se sube en su lugar del panel con una descripción, se cambia y se quita; en el sitio se amplía al tocarla | E2E `hu-11` "cada sección de la página lleva su foto al lado, subida en su lugar del panel" | ✅ |
 
 ## HU-12 Galería pública
 
