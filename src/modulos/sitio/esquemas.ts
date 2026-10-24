@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { DIRECCIONES } from "@/lib/orden";
 import { PATRON_SLUG } from "@/lib/slug";
+import { CLAVES_ICONO } from "./beneficios";
 
 // Validación del contenido del sitio (B3): el mismo esquema en el formulario y en el servidor.
 
@@ -28,7 +29,12 @@ function listaJson<T extends z.ZodType>(esquema: T) {
 }
 
 const esquemaBeneficios = z
-  .array(z.string().trim().min(1, "Escribe el beneficio o quita la fila.").max(LIMITES.beneficio, `Hasta ${LIMITES.beneficio} caracteres.`))
+  .array(
+    z.object({
+      texto: z.string().trim().min(1, "Escribe el beneficio o quita la fila.").max(LIMITES.beneficio, `Hasta ${LIMITES.beneficio} caracteres.`),
+      icono: z.enum(CLAVES_ICONO, "Elige un ícono de la lista."),
+    }),
+  )
   .max(LIMITES.beneficios, `Hasta ${LIMITES.beneficios} beneficios.`);
 
 const esquemaPasos = z
@@ -54,6 +60,7 @@ export const esquemaServicio = z.object({
   beneficios: listaJson(esquemaBeneficios),
   pasos: listaJson(esquemaPasos),
   visible: z.boolean(),
+  opcionesEnEscalera: z.boolean(),
 });
 
 // Acciones que reciben datos sueltos (no un formulario): también se validan, porque cualquiera puede llamarlas.

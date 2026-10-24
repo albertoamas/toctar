@@ -3,7 +3,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/db";
-import { archivo, contenidoPagina, faq, galeriaItem, servicio, variante, type Paso } from "@/db/esquema";
+import { archivo, contenidoPagina, faq, galeriaItem, servicio, variante, type Beneficio, type Paso } from "@/db/esquema";
 import { urlsFoto, type UrlsFoto } from "@/lib/fotos";
 import { leerContenido, type ContenidoPagina, type Pagina } from "./contenido";
 import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, ETIQUETA_SERVICIOS, obtenerFotoPortada } from "./consultas";
@@ -65,8 +65,10 @@ export async function galeriaPublica(): Promise<FotoGaleria[]> {
 
 export type DetalleServicioPublico = ServicioPublico & {
   descripcion: string;
-  beneficios: string[];
+  beneficios: Beneficio[];
   pasos: Paso[];
+  /** Las opciones van de menor a mayor: se ven como escalones. */
+  opcionesEnEscalera: boolean;
   variantes: { nombre: string; descripcion: string | null }[];
   fotos: FotoGaleria[];
 };
@@ -98,6 +100,7 @@ export async function servicioPublico(slug: string): Promise<DetalleServicioPubl
     descripcion: s.descripcion,
     beneficios: s.beneficios,
     pasos: s.pasos,
+    opcionesEnEscalera: s.opcionesEnEscalera,
     // "Única" es la variante de un servicio sin opciones (D-2): no se muestra como opción.
     variantes: variantes.length === 1 && variantes[0].nombre === "Única" ? [] : variantes,
     fotos,

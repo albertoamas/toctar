@@ -73,7 +73,7 @@ Una migración de tablas y otra de datos iniciales por historia: `0006_servicios
 | `slug` | `text` | no | Único. Sale del nombre al crear (`pulido-y-nano-ceramico`); se puede cambiar con un aviso |
 | `resumen` | `text` | no | Hasta 160 caracteres: tarjeta del sitio y descripción para Google |
 | `descripcion` | `text` | no | Hasta 2000. Puede quedar vacía al crear |
-| `beneficios` | `jsonb` | no | Lista de textos (hasta 8, de hasta 120 caracteres cada uno) |
+| `beneficios` | `jsonb` | no | Lista de textos (hasta 8, de hasta 120 caracteres cada uno). **Cambió después (24/10, pedido de la demo):** cada uno es `{ texto, icono }`, con el ícono de una lista fija (`src/modulos/sitio/beneficios.ts`); se suma `opciones_en_escalera` (boolean) |
 | `pasos` | `jsonb` | no | Lista de `{ titulo, detalle }` (hasta 10; título de hasta 60, detalle de hasta 300) |
 | `foto_archivo_id` | `integer` | sí | FK `archivo`. Sin foto, el sitio muestra la imagen de reemplazo (B4) |
 | `orden` | `integer` | no | |

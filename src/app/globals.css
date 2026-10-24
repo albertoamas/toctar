@@ -478,6 +478,26 @@
     }
   }
 
+  /* Opciones en escalera (página de un servicio, pedido de la demo del 24/10): cada opción lleva una capa blanca sobre
+     la base gris del vehículo, más gruesa cuanto más alta la opción. --paso va de 0 (la primera) a 1 (la última).
+     En el celular, una barra que se alarga; desde 768 px, columnas cuya capa sube. */
+  .tt-escalon {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .tt-escalon__capa {
+    display: block;
+    height: 12px;
+    background: linear-gradient(to right, var(--blanco) calc(12% + 88% * var(--paso)), var(--superficie) 0);
+  }
+  @media (min-width: 768px) {
+    .tt-escalon__capa {
+      height: calc(22px + 48px * var(--paso));
+      background: linear-gradient(to top, var(--superficie) 16px, var(--blanco) 0);
+    }
+  }
+
   /* Tarjeta de servicio (componente TarjetaServicio): esquina inferior derecha cortada a 60°, sin sombra ni radio. */
   .tt-tarjeta {
     display: grid;

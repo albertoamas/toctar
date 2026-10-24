@@ -225,6 +225,13 @@
       "when": 1792864950370,
       "tag": "0031_galeria_en_portada",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1792870302196,
+      "tag": "0032_servicio_beneficios_con_icono",
+      "breakpoints": true
     }
   ]
 }

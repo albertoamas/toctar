@@ -10,26 +10,40 @@ import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
-import type { Paso } from "@/db/esquema";
+import { IconoBeneficio } from "@/componentes/sitio/icono-beneficio";
+import { Selector } from "@/componentes/panel/selector";
+import type { Beneficio, Paso } from "@/db/esquema";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { guardarServicio } from "../acciones";
+import { ICONOS_BENEFICIO, iconoDe } from "../beneficios";
 import { LIMITES } from "../esquemas";
 
 // HU-07: la página del servicio en el sitio (RF-03). Sin precios (RN-10). El nombre y las variantes son del catálogo.
 
 type Props = {
-  servicio: { id: number; slug: string; resumen: string; descripcion: string; beneficios: string[]; pasos: Paso[]; visible: boolean };
+  servicio: {
+    id: number;
+    slug: string;
+    resumen: string;
+    descripcion: string;
+    beneficios: Beneficio[];
+    pasos: Paso[];
+    visible: boolean;
+    opcionesEnEscalera: boolean;
+  };
 };
 
 const guardarConAviso = conAviso(guardarServicio);
 
 export function FormularioServicio({ servicio: s }: Props) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(guardarConAviso, {});
-  const [beneficios, setBeneficios] = useState(s.beneficios);
+  // Un ícono guardado que ya no está en la lista pasa al genérico: lo que se ve en el selector es lo que se guarda
+  const [beneficios, setBeneficios] = useState<Beneficio[]>(() => s.beneficios.map((b) => ({ ...b, icono: iconoDe(b.icono) })));
   const [pasos, setPasos] = useState(s.pasos);
   const v = estado.valores;
   const e = estado.errores ?? {};
   const visible = v ? v.visible === "on" : s.visible;
+  const escalera = v ? v.opcionesEnEscalera === "on" : s.opcionesEnEscalera;
   // Cada campo tiene su ayuda: debajo va el error, si lo hay, o la ayuda
   const describir = (c: string) => (e[c] ? `${c}-error` : `${c}-ayuda`);
   const formulario = useRef<HTMLFormElement>(null);
@@ -46,7 +60,7 @@ export function FormularioServicio({ servicio: s }: Props) {
         <Campo id="resumen" etiqueta="Resumen" error={e.resumen} ayuda="Una o dos frases. Se ve en la tarjeta del servicio y en Google.">
           <Textarea id="resumen" name="resumen" rows={3} defaultValue={v?.resumen ?? s.resumen} aria-invalid={!!e.resumen} aria-describedby={describir("resumen")} />
         </Campo>
-        <Campo id="descripcion" etiqueta="Descripción" error={e.descripcion} ayuda="En qué consiste el servicio y para qué sirve. Sin precios.">
+        <Campo id="descripcion" etiqueta="Descripción" error={e.descripcion} ayuda="Corta: dos o tres frases sobre en qué consiste. Lo demás lo cuentan los beneficios y las fotos. Sin precios.">
           <Textarea id="descripcion" name="descripcion" className="min-h-32" defaultValue={v?.descripcion ?? s.descripcion} aria-invalid={!!e.descripcion} aria-describedby={describir("descripcion")} />
         </Campo>
         <label className="flex cursor-pointer items-start gap-3">
@@ -58,20 +72,40 @@ export function FormularioServicio({ servicio: s }: Props) {
         </label>
       </Seccion>
 
-      <Seccion titulo="Beneficios" descripcion={`Lo que gana el cliente. Hasta ${LIMITES.beneficios}.`}>
+      <Seccion titulo="Beneficios" descripcion={`Lo que gana el cliente, en pocas palabras y con un ícono. Hasta ${LIMITES.beneficios}.`}>
         <EditorLista
           nombre="beneficios"
           etiqueta="Beneficio"
           valor={beneficios}
           onChange={setBeneficios}
-          nueva={() => ""}
+          nueva={() => ({ texto: "", icono: "listo" })}
           maximo={LIMITES.beneficios}
           textoAgregar="Agregar beneficio"
           errores={e}
-          fila={(texto, cambiar, i, marca) => (
-            <TextoCorto value={texto} onChange={(ev) => cambiar(ev.target.value)} aria-label={`Beneficio ${i + 1}`} placeholder="Brillo que dura años" {...marca} />
+          fila={(b, cambiar, i, marca) => (
+            <>
+              <TextoCorto value={b.texto} onChange={(ev) => cambiar({ ...b, texto: ev.target.value })} aria-label={`Beneficio ${i + 1}`} placeholder="Repele el agua y la suciedad" {...marca} />
+              <span className="flex items-center gap-2">
+                <IconoBeneficio icono={b.icono} className="size-6 shrink-0 text-rojo" />
+                <Selector value={b.icono} onChange={(ev) => cambiar({ ...b, icono: ev.target.value })} aria-label={`Beneficio ${i + 1}, ícono`} {...marca}>
+                  {Object.entries(ICONOS_BENEFICIO).map(([clave, nombre]) => (
+                    <option key={clave} value={clave}>{nombre}</option>
+                  ))}
+                </Selector>
+              </span>
+            </>
           )}
         />
+      </Seccion>
+
+      <Seccion titulo="Opciones" descripcion="Las opciones y sus precios se cargan en el catálogo; aquí, cómo se ven en el sitio.">
+        <label className="flex cursor-pointer items-start gap-3">
+          <Checkbox key={String(escalera)} name="opcionesEnEscalera" defaultChecked={escalera} className="mt-0.5" />
+          <span className="flex flex-col">
+            <span className="font-semibold">Van de menor a mayor</span>
+            <span className="text-sm text-tinta-suave">Por ejemplo 1, 2, 3, 5 y 10 años: el sitio las muestra como escalones, cada una con una capa más gruesa.</span>
+          </span>
+        </label>
       </Seccion>
 
       <Seccion titulo="Proceso paso a paso" descripcion={`Cómo se hace, en orden. Hasta ${LIMITES.pasos} pasos.`}>
