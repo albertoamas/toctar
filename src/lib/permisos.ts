@@ -26,8 +26,8 @@ type DefinicionModulo = {
   tecnico: boolean;
   /** Ya tiene pantalla. Un módulo no construido no aparece en el menú ni en las casillas. */
   construido: boolean;
-  /** false: construido y asignable al encargado, pero sin entrada en el menú (se trabaja desde otra pantalla). */
-  enMenu?: boolean;
+  /** Nombre en el menú y en el inicio, si no es el del permiso (por ejemplo, "Saldos pendientes" para "Pagos"). */
+  nombreMenu?: string;
 };
 
 export const MODULOS = {
@@ -39,8 +39,8 @@ export const MODULOS = {
   cotizaciones: { ruta: "/panel/cotizaciones", nombre: "Cotizaciones", permisoEncargado: null, tecnico: false, construido: false },
   agenda: { ruta: "/panel/agenda", nombre: "Agenda", permisoEncargado: "agenda", tecnico: false, construido: true },
   ordenes: { ruta: "/panel/ordenes", nombre: "Órdenes", permisoEncargado: "ordenes", tecnico: true, construido: true },
-  // En C3 los pagos se registran desde cada reserva; la lista de saldos (HU-37, C4) le dará su pantalla
-  pagos: { ruta: "/panel/pagos", nombre: "Pagos", permisoEncargado: "pagos", tecnico: false, construido: true, enMenu: false },
+  // HU-37: su pantalla es la lista de saldos; en el menú se llama por lo que muestra
+  pagos: { ruta: "/panel/pagos", nombre: "Pagos", nombreMenu: "Saldos pendientes", permisoEncargado: "pagos", tecnico: false, construido: true },
   mantenimientos: { ruta: "/panel/mantenimientos", nombre: "Mantenimientos", permisoEncargado: "mantenimientos", tecnico: false, construido: false },
   catalogo: { ruta: "/panel/catalogo", nombre: "Catálogo y precios", permisoEncargado: null, tecnico: false, construido: true },
   usuarios: { ruta: "/panel/usuarios", nombre: "Usuarios", permisoEncargado: null, tecnico: false, construido: true },
@@ -86,11 +86,17 @@ export function puedeVerOrden(sujeto: SujetoPermisos & { id: string }, tecnicoId
   return sujeto.rol !== "tecnico" || tecnicoId === Number(sujeto.id);
 }
 
+/** Cómo se llama el módulo en el menú y en el inicio. */
+export function nombreEnMenu(modulo: Modulo): string {
+  const def: DefinicionModulo = MODULOS[modulo];
+  return def.nombreMenu ?? def.nombre;
+}
+
 /** Módulos del menú del panel, en orden, solo los que ya tienen pantalla. */
 export function modulosDelMenu(sujeto: SujetoPermisos): Modulo[] {
   return (Object.keys(MODULOS) as Modulo[]).filter((m) => {
     const def: DefinicionModulo = MODULOS[m];
-    return def.construido && def.enMenu !== false && puedeVerModulo(sujeto, m);
+    return def.construido && puedeVerModulo(sujeto, m);
   });
 }
 

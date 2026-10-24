@@ -10,6 +10,12 @@ type Vehiculo = { marca: string | null; modelo: string | null; placa: string };
 /** "Toyota Corolla (placa 1234ABC)", o "vehículo (placa 1234ABC)" si no se cargó la marca. */
 export const textoVehiculo = (v: Vehiculo) => `${nombreVehiculo(v) || "vehículo"} (placa ${v.placa})`;
 
+/** Saldo pendiente de una orden entregada (HU-37): para cobrarlo por WhatsApp. */
+export function mensajeSaldo({ negocio, cliente, vehiculo, saldo }: { negocio: string; cliente: string; vehiculo: Vehiculo; saldo: string }): string {
+  const nombre = primerNombre(cliente);
+  return `${nombre ? `Hola ${nombre}` : "Hola"}, te escribimos de ${negocio} por el saldo de ${mostrarMonto(saldo)} Bs del servicio de tu ${textoVehiculo(vehiculo)}. Puedes pagarlo en el taller, por QR o por transferencia.`;
+}
+
 /**
  * Vehículo listo (HU-35, RF-48): nombre, vehículo y, si hay y quien avisa lo ve, el saldo. Un saldo a favor del cliente
  * no se menciona.

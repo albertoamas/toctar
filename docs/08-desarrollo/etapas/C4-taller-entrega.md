@@ -179,7 +179,7 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel (44 px t
 
 ### `/panel/pagos` — Saldos pendientes (dueño y encargado con "Pagos")
 - Arriba, "Total por cobrar: X Bs".
-- Lista de las órdenes entregadas con saldo, la más antigua primero: cliente, placa, saldo, entregada el dd/mm y "hace N días". Cada una tiene "Escribir por WhatsApp" (mensaje de saldo, §8) y "Ver la orden".
+- Lista de las órdenes entregadas con saldo, la más antigua primero: cliente, placa, saldo, entregada el dd/mm (con el año, si es de otro) y "hace N días". Cada una tiene "Escribir por WhatsApp" (mensaje de saldo, §8) y **"Registrar pago" ahí mismo**: el encargado con "Pagos" y sin "Órdenes" no podría cobrar desde la orden. "Ver la orden", para quien ve órdenes.
 - Vacío: "Nadie debe nada."
 
 ### `/panel/mantenimientos` — Mantenimientos (dueño y encargado con "Mantenimientos")

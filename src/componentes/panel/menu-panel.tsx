@@ -1,4 +1,4 @@
-import { MODULOS, modulosDelMenu } from "@/lib/permisos";
+import { MODULOS, nombreEnMenu, modulosDelMenu } from "@/lib/permisos";
 import { exigirSesion } from "@/lib/sesion";
 import { NavegacionPanel } from "./navegacion";
 
@@ -6,6 +6,6 @@ import { NavegacionPanel } from "./navegacion";
 // Esconder un módulo no lo protege: cada página llama a exigirModulo.
 export async function MenuPanel() {
   const usuario = await exigirSesion();
-  const modulos = modulosDelMenu(usuario).map((m) => ({ href: MODULOS[m].ruta, texto: MODULOS[m].nombre }));
+  const modulos = modulosDelMenu(usuario).map((m) => ({ href: MODULOS[m].ruta, texto: nombreEnMenu(m) }));
   return <NavegacionPanel modulos={modulos} />;
 }

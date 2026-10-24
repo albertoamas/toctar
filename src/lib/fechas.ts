@@ -38,6 +38,18 @@ export function sumarMeses(fecha: string, meses: number): string {
   return `${nuevoAnio}-${String(nuevoMes).padStart(2, "0")}-${String(Math.min(dia, ultimo)).padStart(2, "0")}`;
 }
 
+/** "15/10" si es de este año (el de `hoy`); "15/10/2025" si es de otro. */
+export function fechaCorta(fecha: string, hoy: string): string {
+  const completa = formatearFecha(fecha);
+  return fecha.slice(0, 4) === hoy.slice(0, 4) ? completa.slice(0, completa.lastIndexOf("/")) : completa;
+}
+
+/** "hoy", "ayer" o "hace 5 días": cuánto pasó desde una fecha calendario hasta hoy. */
+export function textoHace(fecha: string, hoy: string): string {
+  const dias = diasEntre(fecha, hoy);
+  return dias <= 0 ? "hoy" : dias === 1 ? "ayer" : `hace ${dias} días`;
+}
+
 /** Días entre dos fechas calendario (hasta - desde). */
 export function diasEntre(desde: string, hasta: string): number {
   const ms = Date.parse(`${hasta}T00:00:00Z`) - Date.parse(`${desde}T00:00:00Z`);
