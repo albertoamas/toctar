@@ -22,6 +22,8 @@ type Props = {
   actual: { miniatura: string; ancho: number | null; alto: number | null; alt: string } | null;
   textoVacio: string;
   quitar?: () => Promise<Resultado>;
+  /** La vista previa entera (un afiche vertical), en lugar de recortada al recuadro. */
+  entera?: boolean;
   /** Si hay varias en la misma pantalla, de cuál es: completa el nombre de sus botones ("Subir foto: Opciones"). */
   nombre?: string;
 };
@@ -46,7 +48,7 @@ export async function achicarFoto(archivo: File): Promise<File> {
   }
 }
 
-export function SubidaFoto({ id, accion, camposOcultos, actual, textoVacio, quitar, nombre }: Props) {
+export function SubidaFoto({ id, accion, camposOcultos, actual, textoVacio, quitar, entera, nombre }: Props) {
   const entrada = useRef<HTMLInputElement>(null);
   const [etapa, setEtapa] = useState<"preparando" | "subiendo" | null>(null);
   const [error, setError] = useState<string>();
@@ -87,7 +89,7 @@ export function SubidaFoto({ id, accion, camposOcultos, actual, textoVacio, quit
             width={actual.ancho ?? 640}
             height={actual.alto ?? 480}
             unoptimized
-            className="h-full w-full object-cover"
+            className={`h-full w-full ${entera ? "object-contain" : "object-cover"}`}
           />
         ) : (
           <span className="flex flex-col items-center gap-2 p-4 text-center text-sm text-tinta-suave">

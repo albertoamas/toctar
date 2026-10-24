@@ -109,6 +109,9 @@ export async function subirFotoDeSeccion(_previo: EstadoFormulario, datos: FormD
   const entrada = esquemaFotoSeccion.safeParse({ servicioId: datos.get("servicioId"), seccion: datos.get("seccion") });
   if (!entrada.success) return { mensaje: "No se pudo guardar la foto en esa sección. Recarga la página." };
   const { servicioId, seccion } = entrada.data;
+  // Antes de subir: con una pestaña vieja de un servicio que ya no está, no se sube nada
+  const [existe] = await db.select({ id: servicio.id }).from(servicio).where(eq(servicio.id, servicioId));
+  if (!existe) return { mensaje: "Ese servicio ya no existe." };
 
   const foto = await guardarFoto(datos.get("foto"), { carpeta: "servicios", miniatura: true, autorId: Number(autor.id) });
   if (!foto.ok) return { errores: { foto: foto.motivo === "vacia" ? "Elige una foto." : ERROR_FOTO } };
@@ -122,7 +125,8 @@ export async function subirFotoDeSeccion(_previo: EstadoFormulario, datos: FormD
       if (!existe) return null;
       const donde = and(eq(servicioFoto.servicioId, servicioId), eq(servicioFoto.seccion, seccion));
       const [anterior] = await tx.select({ archivoId: servicioFoto.archivoId }).from(servicioFoto).where(donde);
-      if (anterior) await tx.update(servicioFoto).set({ archivoId: foto.archivoId, createdBy: Number(autor.id) }).where(donde);
+      // Reemplazada: quién y cuándo son de la foto nueva
+      if (anterior) await tx.update(servicioFoto).set({ archivoId: foto.archivoId, createdAt: new Date(), createdBy: Number(autor.id) }).where(donde);
       else await tx.insert(servicioFoto).values({ servicioId, seccion, archivoId: foto.archivoId, createdBy: Number(autor.id) });
       return { anterior: anterior?.archivoId ?? null };
     });

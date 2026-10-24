@@ -34,6 +34,7 @@ export function FotosServicio({ servicioId, fotos, sinContenido }: Props) {
               <SubidaFoto
                 id={`foto-${seccion}`}
                 nombre={nombre}
+                entera
                 accion={subirFotoDeSeccion}
                 camposOcultos={{ servicioId, seccion }}
                 actual={actual ? { ...actual, alt: `Foto de "${nombre}"` } : null}

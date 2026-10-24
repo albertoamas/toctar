@@ -73,7 +73,7 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
           <Variantes variantes={s.variantes} escalera={s.opcionesEnEscalera} foto={s.fotosSecciones.opciones} lado={lados.opciones} />
         )}
         {/* Sus trabajos, en la galería: las fotos ya están en la página (revisión de YankoSoft, 24/10) */}
-        {s.fotos.length > 0 && (
+        {s.tieneFotos && (
           <Link href={`/galeria?servicio=${s.slug}`} className="tt-boton tt-boton--contorno self-start">
             Ver la galería
           </Link>

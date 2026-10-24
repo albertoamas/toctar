@@ -71,7 +71,8 @@ export type DetalleServicioPublico = ServicioPublico & {
   variantes: { nombre: string; descripcion: string | null }[];
   /** La foto al lado de cada sección, si tiene. */
   fotosSecciones: FotosDeSecciones;
-  fotos: FotoGaleria[];
+  /** Si tiene trabajos en la galería: la página enlaza a ella. */
+  tieneFotos: boolean;
 };
 
 /** Un servicio visible con todo lo que muestra su página, o null (oculto o inexistente). */
@@ -86,9 +87,9 @@ export async function servicioPublico(slug: string): Promise<DetalleServicioPubl
     .where(and(eq(servicio.slug, slug), eq(servicio.activo, true), eq(servicio.visibleSitio, true)));
   if (!fila) return null;
   const s = fila.servicio;
-  const [variantes, fotos, fotosSecciones] = await Promise.all([
+  const [variantes, tieneFotos, fotosSecciones] = await Promise.all([
     opcionesDelSitio(s.id),
-    galeriaPublica().then((g) => g.filter((f) => f.servicio.slug === s.slug)),
+    galeriaPublica().then((g) => g.some((f) => f.servicio.slug === s.slug)),
     fotosDeSecciones(s.id),
   ]);
   return {
@@ -102,7 +103,7 @@ export async function servicioPublico(slug: string): Promise<DetalleServicioPubl
     opcionesEnEscalera: s.opcionesEnEscalera,
     variantes,
     fotosSecciones,
-    fotos,
+    tieneFotos,
   };
 }
 
