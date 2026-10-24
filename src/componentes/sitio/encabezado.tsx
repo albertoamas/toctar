@@ -7,8 +7,9 @@ import { EnlacesMenu, NavegacionPrincipal } from "./enlaces-sitio";
 import { BotonWhatsApp } from "./whatsapp";
 
 // Encabezado del sitio (componente EncabezadoSitio del Design System): logo y navegación.
-// Queda fijo arriba al bajar, para tener el menú siempre a mano. A 32 px de alto el lema del logo
-// no se lee: va la versión sin lema.
+// Queda fijo arriba al bajar, para tener el menú siempre a mano. El logo mide 40 px de alto en el celular y 48 en la
+// computadora (más grande desde la demo del 24/10, a pedido del dueño): unos 160 y 190 px de ancho, menos que los
+// 360 que pide el manual para el lema, así que va la versión sin lema.
 // Se separa del contenido con una línea gris fina, sin brillo: está en todas las páginas y no debe competir
 // con ellas. El rojo queda para el logo y la página actual; la línea LED con brillo es de la portada.
 
@@ -22,7 +23,12 @@ const LOGO = readFileSync(path.join(process.cwd(), "public/marca/toctar-horizont
 
 function Logo() {
   return (
-    <Link href="/" aria-label="TocTar, inicio" className="flex min-h-11 shrink-0 items-center" dangerouslySetInnerHTML={{ __html: LOGO }} />
+    <Link
+      href="/"
+      aria-label="TocTar, inicio"
+      className="flex min-h-11 shrink-0 items-center [&_svg]:h-10 [&_svg]:w-auto md:[&_svg]:h-12"
+      dangerouslySetInnerHTML={{ __html: LOGO }}
+    />
   );
 }
 
