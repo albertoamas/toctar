@@ -34,6 +34,8 @@ type DefinicionModulo = {
   construido: boolean;
   /** Nombre en el menú y en el inicio, si no es el del permiso (por ejemplo, "Saldos pendientes" para "Pagos"). */
   nombreMenu?: string;
+  /** Nombre de la casilla del encargado en Usuarios, si el del módulo no dice todo lo que da (C5 §0). */
+  nombrePermiso?: string;
 };
 
 // En el orden del menú: por grupo (GRUPOS) y, dentro de cada uno, de lo más usado a lo menos.
@@ -44,8 +46,18 @@ export const MODULOS = {
   clientes: { ruta: "/panel/clientes", nombre: "Clientes", grupo: "clientes", permisoEncargado: "clientes", tecnico: false, construido: true },
   consultas: { ruta: "/panel/consultas", nombre: "Consultas", grupo: "clientes", permisoEncargado: "consultas", tecnico: false, construido: true },
   cotizaciones: { ruta: "/panel/cotizaciones", nombre: "Cotizaciones", grupo: null, permisoEncargado: null, tecnico: false, construido: false },
-  // HU-37: su pantalla es la lista de saldos; en el menú se llama por lo que muestra
-  pagos: { ruta: "/panel/pagos", nombre: "Pagos", nombreMenu: "Saldos pendientes", grupo: "clientes", permisoEncargado: "pagos", tecnico: false, construido: true },
+  // HU-37: su pantalla es la lista de saldos; en el menú se llama por lo que muestra. La casilla dice lo que da: cobrar
+  // (en la reserva, la orden y la lista) y ver montos y saldos
+  pagos: {
+    ruta: "/panel/pagos",
+    nombre: "Pagos",
+    nombreMenu: "Saldos pendientes",
+    nombrePermiso: "Pagos (cobrar y ver saldos)",
+    grupo: "clientes",
+    permisoEncargado: "pagos",
+    tecnico: false,
+    construido: true,
+  },
   mantenimientos: { ruta: "/panel/mantenimientos", nombre: "Mantenimientos", grupo: "clientes", permisoEncargado: "mantenimientos", tecnico: false, construido: true },
   // Llegan desde el sitio, pero atenderlos es tratar con un cliente
   reclamos: { ruta: "/panel/reclamos", nombre: "Reclamos", grupo: "clientes", permisoEncargado: "reclamos", tecnico: false, construido: true },
@@ -129,6 +141,9 @@ export function menuAgrupado(sujeto: SujetoPermisos): GrupoMenu[] {
 export function permisosAsignables(): { permiso: Permiso; nombre: string }[] {
   const deModulos = (Object.keys(MODULOS) as Modulo[])
     .filter((m) => MODULOS[m].construido && MODULOS[m].permisoEncargado !== null)
-    .map((m) => ({ permiso: MODULOS[m].permisoEncargado as Permiso, nombre: MODULOS[m].nombre }));
+    .map((m) => {
+      const def: DefinicionModulo = MODULOS[m];
+      return { permiso: def.permisoEncargado as Permiso, nombre: def.nombrePermiso ?? def.nombre };
+    });
   return [...deModulos, { permiso: "entrega_con_saldo", nombre: "Autorizar entrega con saldo" }];
 }
