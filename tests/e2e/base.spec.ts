@@ -93,23 +93,26 @@ test("el botón fijo de WhatsApp se esconde mientras el principal está a la vis
 });
 
 // Pedido de la demo del 24/10 (registro de cambios 1): la nubecita del botón fijo
-test("el botón fijo de WhatsApp muestra una nubecita una sola vez por visita, y se cierra", async ({ page }) => {
+test("el botón fijo de WhatsApp muestra una nubecita en cada página hasta que la cierran", async ({ page }) => {
   // Reloj de la página controlado: la espera de la nubecita se adelanta sin depender del tiempo real
   await page.clock.install();
-  await page.goto("/servicios");
   const fijo = page.getByRole("link", { name: "Escribir a TocTar por WhatsApp" });
-  await page.clock.runFor(500);
-  await expect(fijo).toBeVisible();
   const nube = page.getByRole("link", { name: "¿Cotizamos tu vehículo?" });
-  await expect(nube).toHaveCount(0);
-  await page.clock.runFor(3000);
-  await expect(nube).toBeVisible();
+  // Sale unos segundos después de aparecer el botón, y otra vez en la página siguiente
+  for (let vez = 0; vez < 2; vez++) {
+    await page.goto("/servicios");
+    await page.clock.runFor(500);
+    await expect(fijo).toBeVisible();
+    await expect(nube).toHaveCount(0);
+    await page.clock.runFor(3000);
+    await expect(nube).toBeVisible();
+  }
   await expect(nube).toHaveAttribute("href", (await fijo.getAttribute("href"))!);
   // Se cierra con la X; el foco pasa al botón, que queda
   await page.getByRole("button", { name: "Cerrar el mensaje" }).click();
   await expect(nube).toHaveCount(0);
   await expect(fijo).toBeFocused();
-  // En la página siguiente de la visita no vuelve, aunque pase el tiempo
+  // Cerrada, no vuelve en la visita aunque pase el tiempo
   await page.goto("/servicios");
   await page.clock.runFor(500);
   await expect(fijo).toBeVisible();
