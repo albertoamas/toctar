@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { MODULOS, modulosDelMenu, nombreEnMenu, permisosAsignables, puede, puedeVerModulo, type Modulo, type Permiso } from "@/lib/permisos";
+import { MODULOS, menuAgrupado, modulosDelMenu, nombreEnMenu, permisosAsignables, puede, puedeVerModulo, type Modulo, type Permiso } from "@/lib/permisos";
 
 // La matriz de docs/08-desarrollo/etapas/B1-acceso.md §5, casilla por casilla (RNF-05).
 
@@ -52,6 +52,26 @@ describe("encargado", () => {
   test("autoriza entregas con saldo solo con ese permiso (RN-13, S-2)", () => {
     expect(puede(encargado([]), "entrega_con_saldo")).toBe(false);
     expect(puede(encargado(["entrega_con_saldo"]), "entrega_con_saldo")).toBe(true);
+  });
+});
+
+describe("menú en grupos (C5 §0)", () => {
+  test("el dueño ve todos los grupos, con su título, en orden", () => {
+    expect(menuAgrupado(dueno).map((g) => [g.titulo, g.modulos])).toEqual([
+      [null, ["inicio"]],
+      ["Taller", ["agenda", "ordenes"]],
+      ["Clientes", ["clientes", "consultas", "pagos", "mantenimientos", "reclamos"]],
+      [null, ["sitio"]],
+      ["Administración", ["catalogo", "usuarios", "configuracion"]],
+    ]);
+  });
+
+  test("un grupo con un solo módulo va sin título; uno vacío no aparece", () => {
+    expect(menuAgrupado(tecnico)).toEqual([
+      { titulo: null, modulos: ["inicio"] },
+      { titulo: null, modulos: ["ordenes"] },
+    ]);
+    expect(menuAgrupado(encargado(["agenda", "ordenes", "pagos"])).map((g) => g.titulo)).toEqual([null, "Taller", null]);
   });
 });
 

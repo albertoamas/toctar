@@ -1,19 +1,38 @@
 "use client";
 
+import { useId } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "cn";
 
-// Los módulos llegan ya filtrados por rol y permisos desde MenuPanel (src/lib/permisos.ts).
+// Los módulos llegan ya filtrados por rol y permisos, y agrupados, desde MenuPanel (menuAgrupado, src/lib/permisos.ts).
 // El módulo actual lleva un trazo rojo a 60° a la izquierda: el mismo lenguaje que la página actual del sitio.
-export type EnlaceModulo = { href: string; texto: string };
+// Los grupos se separan con aire, no con líneas; su título es chico y no compite con los enlaces, y el lector de
+// pantalla lo anuncia al entrar al grupo.
+type EnlaceModulo = { href: string; texto: string };
+type GrupoEnlaces = { titulo: string | null; enlaces: EnlaceModulo[] };
 
-export function NavegacionPanel({ modulos }: { modulos: EnlaceModulo[] }) {
-  const ruta = usePathname();
-
+export function NavegacionPanel({ grupos }: { grupos: GrupoEnlaces[] }) {
   return (
-    <nav aria-label="Panel" className="flex flex-col gap-1">
-      {modulos.map((m) => {
+    <nav aria-label="Panel" className="flex flex-col gap-5">
+      {grupos.map((g) => (
+        <Grupo key={g.enlaces[0].href} {...g} />
+      ))}
+    </nav>
+  );
+}
+
+function Grupo({ titulo, enlaces }: GrupoEnlaces) {
+  const id = useId();
+  const ruta = usePathname();
+  return (
+    <div role={titulo ? "group" : undefined} aria-labelledby={titulo ? id : undefined} className="flex flex-col gap-1">
+      {titulo && (
+        <p id={id} className="pb-1 pl-7 text-xs font-semibold text-tinta-suave">
+          {titulo}
+        </p>
+      )}
+      {enlaces.map((m) => {
         const activo = m.href === "/panel" ? ruta === m.href : ruta.startsWith(m.href);
         return (
           <Link
@@ -29,6 +48,6 @@ export function NavegacionPanel({ modulos }: { modulos: EnlaceModulo[] }) {
           </Link>
         );
       })}
-    </nav>
+    </div>
   );
 }

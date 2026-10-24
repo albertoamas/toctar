@@ -17,9 +17,15 @@ export const PERMISOS = [
 ] as const;
 export type Permiso = (typeof PERMISOS)[number];
 
+/** Grupos del menú, en su orden (C5 §0). Inicio va suelto, arriba. */
+const GRUPOS = { taller: "Taller", clientes: "Clientes", sitio: "Sitio web", administracion: "Administración" } as const;
+type Grupo = keyof typeof GRUPOS;
+
 type DefinicionModulo = {
   ruta: string;
   nombre: string;
+  /** Dónde va en el menú; null: suelto, arriba (Inicio). */
+  grupo: Grupo | null;
   /** Permiso que habilita el módulo a un encargado; null si el encargado nunca lo tiene. */
   permisoEncargado: Permiso | null;
   /** El técnico lo ve (solo sus órdenes, RN-12). */
@@ -30,21 +36,23 @@ type DefinicionModulo = {
   nombreMenu?: string;
 };
 
+// En el orden del menú: por grupo (GRUPOS) y, dentro de cada uno, de lo más usado a lo menos.
 export const MODULOS = {
-  inicio: { ruta: "/panel", nombre: "Inicio", permisoEncargado: null, tecnico: true, construido: true },
-  sitio: { ruta: "/panel/sitio", nombre: "Sitio web", permisoEncargado: "sitio", tecnico: false, construido: true },
-  reclamos: { ruta: "/panel/reclamos", nombre: "Reclamos", permisoEncargado: "reclamos", tecnico: false, construido: true },
-  clientes: { ruta: "/panel/clientes", nombre: "Clientes", permisoEncargado: "clientes", tecnico: false, construido: true },
-  consultas: { ruta: "/panel/consultas", nombre: "Consultas", permisoEncargado: "consultas", tecnico: false, construido: true },
-  cotizaciones: { ruta: "/panel/cotizaciones", nombre: "Cotizaciones", permisoEncargado: null, tecnico: false, construido: false },
-  agenda: { ruta: "/panel/agenda", nombre: "Agenda", permisoEncargado: "agenda", tecnico: false, construido: true },
-  ordenes: { ruta: "/panel/ordenes", nombre: "Órdenes", permisoEncargado: "ordenes", tecnico: true, construido: true },
+  inicio: { ruta: "/panel", nombre: "Inicio", grupo: null, permisoEncargado: null, tecnico: true, construido: true },
+  agenda: { ruta: "/panel/agenda", nombre: "Agenda", grupo: "taller", permisoEncargado: "agenda", tecnico: false, construido: true },
+  ordenes: { ruta: "/panel/ordenes", nombre: "Órdenes", grupo: "taller", permisoEncargado: "ordenes", tecnico: true, construido: true },
+  clientes: { ruta: "/panel/clientes", nombre: "Clientes", grupo: "clientes", permisoEncargado: "clientes", tecnico: false, construido: true },
+  consultas: { ruta: "/panel/consultas", nombre: "Consultas", grupo: "clientes", permisoEncargado: "consultas", tecnico: false, construido: true },
+  cotizaciones: { ruta: "/panel/cotizaciones", nombre: "Cotizaciones", grupo: null, permisoEncargado: null, tecnico: false, construido: false },
   // HU-37: su pantalla es la lista de saldos; en el menú se llama por lo que muestra
-  pagos: { ruta: "/panel/pagos", nombre: "Pagos", nombreMenu: "Saldos pendientes", permisoEncargado: "pagos", tecnico: false, construido: true },
-  mantenimientos: { ruta: "/panel/mantenimientos", nombre: "Mantenimientos", permisoEncargado: "mantenimientos", tecnico: false, construido: true },
-  catalogo: { ruta: "/panel/catalogo", nombre: "Catálogo y precios", permisoEncargado: null, tecnico: false, construido: true },
-  usuarios: { ruta: "/panel/usuarios", nombre: "Usuarios", permisoEncargado: null, tecnico: false, construido: true },
-  configuracion: { ruta: "/panel/configuracion", nombre: "Configuración", permisoEncargado: null, tecnico: false, construido: true },
+  pagos: { ruta: "/panel/pagos", nombre: "Pagos", nombreMenu: "Saldos pendientes", grupo: "clientes", permisoEncargado: "pagos", tecnico: false, construido: true },
+  mantenimientos: { ruta: "/panel/mantenimientos", nombre: "Mantenimientos", grupo: "clientes", permisoEncargado: "mantenimientos", tecnico: false, construido: true },
+  // Llegan desde el sitio, pero atenderlos es tratar con un cliente
+  reclamos: { ruta: "/panel/reclamos", nombre: "Reclamos", grupo: "clientes", permisoEncargado: "reclamos", tecnico: false, construido: true },
+  sitio: { ruta: "/panel/sitio", nombre: "Sitio web", grupo: "sitio", permisoEncargado: "sitio", tecnico: false, construido: true },
+  catalogo: { ruta: "/panel/catalogo", nombre: "Catálogo y precios", grupo: "administracion", permisoEncargado: null, tecnico: false, construido: true },
+  usuarios: { ruta: "/panel/usuarios", nombre: "Usuarios", grupo: "administracion", permisoEncargado: null, tecnico: false, construido: true },
+  configuracion: { ruta: "/panel/configuracion", nombre: "Configuración", grupo: "administracion", permisoEncargado: null, tecnico: false, construido: true },
 } as const satisfies Record<string, DefinicionModulo>;
 export type Modulo = keyof typeof MODULOS;
 
@@ -98,6 +106,23 @@ export function modulosDelMenu(sujeto: SujetoPermisos): Modulo[] {
     const def: DefinicionModulo = MODULOS[m];
     return def.construido && puedeVerModulo(sujeto, m);
   });
+}
+
+export type GrupoMenu = { titulo: string | null; modulos: Modulo[] };
+
+/**
+ * El menú en grupos (C5 §0): los módulos que la persona ve, en el orden de MODULOS. Un grupo sin módulos no aparece, y
+ * uno con un solo módulo va sin título (el título no ordena nada: el técnico ve "Inicio" y "Órdenes", sin "Taller").
+ */
+export function menuAgrupado(sujeto: SujetoPermisos): GrupoMenu[] {
+  const porGrupo: { grupo: Grupo | null; modulos: Modulo[] }[] = [];
+  for (const m of modulosDelMenu(sujeto)) {
+    const grupo = (MODULOS[m] as DefinicionModulo).grupo;
+    const ultimo = porGrupo.at(-1);
+    if (ultimo && ultimo.grupo === grupo) ultimo.modulos.push(m);
+    else porGrupo.push({ grupo, modulos: [m] });
+  }
+  return porGrupo.map(({ grupo, modulos }) => ({ titulo: grupo && modulos.length > 1 ? GRUPOS[grupo] : null, modulos }));
 }
 
 /** Permisos que se le pueden marcar a un encargado hoy (los de módulos ya construidos, más entrega con saldo). */
