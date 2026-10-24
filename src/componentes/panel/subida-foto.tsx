@@ -22,6 +22,8 @@ type Props = {
   actual: { miniatura: string; ancho: number | null; alto: number | null; alt: string } | null;
   textoVacio: string;
   quitar?: () => Promise<Resultado>;
+  /** Si hay varias en la misma pantalla, de cuál es: completa el nombre de sus botones ("Subir foto: Opciones"). */
+  nombre?: string;
 };
 
 const LADO_MAXIMO = 2400;
@@ -44,7 +46,7 @@ export async function achicarFoto(archivo: File): Promise<File> {
   }
 }
 
-export function SubidaFoto({ id, accion, camposOcultos, actual, textoVacio, quitar }: Props) {
+export function SubidaFoto({ id, accion, camposOcultos, actual, textoVacio, quitar, nombre }: Props) {
   const entrada = useRef<HTMLInputElement>(null);
   const [etapa, setEtapa] = useState<"preparando" | "subiendo" | null>(null);
   const [error, setError] = useState<string>();
@@ -102,7 +104,7 @@ export function SubidaFoto({ id, accion, camposOcultos, actual, textoVacio, quit
         accept="image/*"
         className="sr-only"
         tabIndex={-1}
-        aria-label="Archivo de la foto"
+        aria-label={nombre ? `Archivo de la foto: ${nombre}` : "Archivo de la foto"}
         aria-describedby={error ? `${id}-error` : undefined}
         onChange={(e) => {
           const archivo = e.currentTarget.files?.[0];
@@ -110,7 +112,13 @@ export function SubidaFoto({ id, accion, camposOcultos, actual, textoVacio, quit
         }}
       />
       <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="outline" disabled={ocupado} onClick={() => entrada.current?.click()}>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={ocupado}
+          onClick={() => entrada.current?.click()}
+          aria-label={nombre && !etapa ? `${actual ? "Cambiar foto" : "Subir foto"}: ${nombre}` : undefined}
+        >
           <CameraIcon />
           {etapa === "preparando" ? "Preparando foto…" : etapa === "subiendo" ? "Subiendo…" : actual ? "Cambiar foto" : "Subir foto"}
         </Button>
@@ -119,6 +127,7 @@ export function SubidaFoto({ id, accion, camposOcultos, actual, textoVacio, quit
             type="button"
             variant="ghost"
             disabled={ocupado}
+            aria-label={nombre ? `Quitar foto: ${nombre}` : undefined}
             onClick={() =>
               iniciar(async () => {
                 avisarResultado(await quitar());

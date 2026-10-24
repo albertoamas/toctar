@@ -43,7 +43,6 @@ export async function listarServicios(): Promise<FilaServicio[]> {
 }
 
 export type DetalleServicio = FilaServicio & {
-  descripcion: string;
   beneficios: Beneficio[];
   pasos: Paso[];
   opcionesEnEscalera: boolean;
@@ -65,7 +64,6 @@ export async function obtenerServicio(id: number): Promise<DetalleServicio | nul
     visible: s.visibleSitio,
     orden: s.orden,
     foto: fila.foto ? urlsFoto(fila.foto) : null,
-    descripcion: s.descripcion,
     beneficios: s.beneficios,
     pasos: s.pasos,
     opcionesEnEscalera: s.opcionesEnEscalera,
@@ -85,17 +83,16 @@ export async function opcionesDelSitio(servicioId: number): Promise<{ nombre: st
   return filas.length === 1 && filas[0].nombre === "Única" ? [] : filas;
 }
 
-export type FotoDeSeccion = { descripcion: string; foto: UrlsFoto };
-export type FotosDeSecciones = Partial<Record<SeccionFoto, FotoDeSeccion>>;
+export type FotosDeSecciones = Partial<Record<SeccionFoto, UrlsFoto>>;
 
 /** Las fotos al lado de las secciones de la página de un servicio (pedido de la demo del 24/10). Panel y sitio. */
 export async function fotosDeSecciones(servicioId: number): Promise<FotosDeSecciones> {
   const filas = await db
-    .select({ seccion: servicioFoto.seccion, descripcion: servicioFoto.descripcion, archivo })
+    .select({ seccion: servicioFoto.seccion, archivo })
     .from(servicioFoto)
     .innerJoin(archivo, eq(servicioFoto.archivoId, archivo.id))
     .where(eq(servicioFoto.servicioId, servicioId));
-  return Object.fromEntries(filas.map((f) => [f.seccion, { descripcion: f.descripcion, foto: urlsFoto(f.archivo) }]));
+  return Object.fromEntries(filas.map((f) => [f.seccion, urlsFoto(f.archivo)]));
 }
 
 /**

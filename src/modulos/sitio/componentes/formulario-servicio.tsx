@@ -25,7 +25,6 @@ type Props = {
     id: number;
     slug: string;
     resumen: string;
-    descripcion: string;
     beneficios: Beneficio[];
     pasos: Paso[];
     visible: boolean;
@@ -57,11 +56,8 @@ export function FormularioServicio({ servicio: s }: Props) {
         <Campo id="slug" etiqueta="Dirección de la página" error={e.slug} ayuda={`Así se ve en el navegador: …/servicios/${s.slug}. Si la cambias, los enlaces viejos dejan de funcionar.`}>
           <Input id="slug" name="slug" autoComplete="off" autoCapitalize="none" spellCheck={false} defaultValue={v?.slug ?? s.slug} aria-invalid={!!e.slug} aria-describedby={describir("slug")} />
         </Campo>
-        <Campo id="resumen" etiqueta="Resumen" error={e.resumen} ayuda="Una o dos frases. Se ve en la tarjeta del servicio y en Google.">
+        <Campo id="resumen" etiqueta="Resumen" error={e.resumen} ayuda="Una o dos frases sobre en qué consiste. Se ve arriba en la página del servicio, en su tarjeta y en Google.">
           <Textarea id="resumen" name="resumen" rows={3} defaultValue={v?.resumen ?? s.resumen} aria-invalid={!!e.resumen} aria-describedby={describir("resumen")} />
-        </Campo>
-        <Campo id="descripcion" etiqueta="Descripción" error={e.descripcion} ayuda="Corta: dos o tres frases sobre en qué consiste. Lo demás lo cuentan los beneficios y las fotos. Sin precios.">
-          <Textarea id="descripcion" name="descripcion" className="min-h-32" defaultValue={v?.descripcion ?? s.descripcion} aria-invalid={!!e.descripcion} aria-describedby={describir("descripcion")} />
         </Campo>
         <label className="flex cursor-pointer items-start gap-3">
           <Checkbox key={String(visible)} name="visible" defaultChecked={visible} className="mt-0.5" />

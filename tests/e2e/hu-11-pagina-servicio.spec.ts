@@ -127,66 +127,44 @@ test("en la página de un servicio, volver a Servicios es lo primero y se toca c
   expect(caja.y + caja.height).toBeLessThanOrEqual(Math.min(foto.y, titulo.y));
 });
 
-// Pedido de la demo del 24/10: una foto al lado de cada sección de la página ("En qué consiste", "Cómo lo hacemos",
-// "Opciones"), subida en el panel en su lugar vacío; se toca para verla en grande
+// Pedido de la demo del 24/10: una foto al lado de "Cómo lo hacemos" y de "Opciones", subida en su lugar del panel.
+// Decorativa: sin descripción y sin abrirse en grande (revisión de YankoSoft)
 test("cada sección de la página lleva su foto al lado, subida en su lugar del panel", async ({ page }, info) => {
   test.setTimeout(60_000);
   await ingresarComoDueno(page);
   const { id, slug } = await crearServicioPublicado(page, `Servicio con fotos ${info.project.name}`);
   // Recargada: el aviso del guardado anterior ya no está y el formulario no se reinicia bajo lo que se escribe
   await page.reload();
-  await page.getByLabel("Descripción", { exact: true }).fill("Así lo hacemos.");
+  await page.getByRole("button", { name: "Agregar paso" }).click();
+  await page.getByLabel("Paso 1, título", { exact: true }).fill("Lavado técnico");
   await page.getByRole("button", { name: "Guardar cambios" }).click();
   await expect(page.getByText("Cambios guardados.")).toBeVisible();
   await page.reload();
-  await expect(page.getByLabel("Descripción", { exact: true })).toHaveValue("Así lo hacemos.");
+  await expect(page.getByLabel("Paso 1, título", { exact: true })).toHaveValue("Lavado técnico");
+
   const fotos = page.getByRole("region", { name: "Fotos de la página" });
-  // Un lugar vacío por sección
-  for (const seccion of ["En qué consiste", "Cómo lo hacemos", "Opciones"]) {
-    await expect(fotos.getByRole("button", { name: `Agregar foto: ${seccion}` })).toBeVisible();
-  }
-  // Una sección sin contenido no sale en el sitio, y su foto tampoco: se avisa en su lugar
-  await expect(fotos.getByText("No se ve hasta que agregues pasos.")).toBeVisible();
+  // Un lugar por sección; "Opciones" avisa que no se ve (el servicio no tiene opciones en el catálogo)
+  await expect(fotos.getByRole("button", { name: "Subir foto: Cómo lo hacemos" })).toBeVisible();
+  await expect(fotos.getByRole("button", { name: "Subir foto: Opciones" })).toBeVisible();
   await expect(fotos.getByText("No se ve: el servicio no tiene opciones en el catálogo.")).toBeVisible();
-  await expect(fotos.getByText("No se ve hasta que escribas la descripción.")).toHaveCount(0);
-  const subir = async (seccion: string, descripcion: string) => {
-    await fotos.getByRole("button", { name: `Agregar foto: ${seccion}` }).click();
-    // El selector de archivos no se abre en la prueba: se carga el archivo en su campo
-    await page.getByLabel("Archivo para una sección").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
-    const nueva = page.getByRole("form", { name: `Nueva foto: ${seccion}` });
-    await nueva.getByLabel("Descripción").fill(descripcion);
-    await nueva.getByRole("button", { name: "Guardar foto" }).click();
-    await expect(fotos.getByRole("img", { name: descripcion })).toBeVisible();
-  };
-  // Sin descripción no se guarda
-  await fotos.getByRole("button", { name: "Agregar foto: En qué consiste" }).click();
-  await page.getByLabel("Archivo para una sección").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
-  await page.getByRole("form", { name: "Nueva foto: En qué consiste" }).getByRole("button", { name: "Guardar foto" }).click();
-  await expect(page.getByText("Escribe una descripción corta: también la leen los buscadores.")).toBeVisible();
-  await page.getByRole("form", { name: "Nueva foto: En qué consiste" }).getByRole("button", { name: "Cancelar" }).click();
-  await subir("En qué consiste", "El vehículo terminado");
+  await expect(fotos.getByText("No se ve hasta que agregues pasos.")).toHaveCount(0);
+  // Se sube al elegirla, sin descripción
+  await page.getByLabel("Archivo de la foto: Cómo lo hacemos").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
+  await expect(fotos.getByRole("img", { name: 'Foto de "Cómo lo hacemos"' })).toBeVisible();
+  await expect(fotos.getByRole("button", { name: "Cambiar foto: Cómo lo hacemos" })).toBeVisible();
 
-  // En el sitio, al lado de su sección; se amplía al tocarla
+  // En el sitio, al lado de su sección: decorativa y sin abrirse en grande
   await page.goto(`/servicios/${slug}`);
-  const seccion = page.getByRole("region", { name: "En qué consiste" });
-  await seccion.getByRole("button", { name: "Ampliar: El vehículo terminado" }).click();
-  const visor = page.getByRole("dialog", { name: "El vehículo terminado" });
-  await expect(visor.getByRole("img", { name: "El vehículo terminado" })).toHaveAttribute("src", /servicios\/[\w-]+\.webp$/);
-  await page.keyboard.press("Escape");
-  await expect(visor).toHaveCount(0);
+  const proceso = page.getByRole("region", { name: "Cómo lo hacemos" });
+  await expect(proceso.locator("img")).toHaveAttribute("src", /servicios\/[\w-]+-640\.webp$/);
+  await expect(proceso.locator("img")).toHaveAttribute("alt", "");
+  await expect(proceso.getByRole("button")).toHaveCount(0);
 
-  // Se cambia por otra y se quita; sin foto, la sección queda solo con su texto
+  // Quitada, la sección queda solo con su texto
   await page.goto(`/panel/sitio/servicios/${id}`);
-  await fotos.getByRole("button", { name: "Cambiar la foto: En qué consiste" }).click();
-  await page.getByLabel("Archivo para una sección").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
-  const cambio = page.getByRole("form", { name: "Nueva foto: En qué consiste" });
-  await cambio.getByLabel("Descripción").fill("El interior terminado");
-  await cambio.getByRole("button", { name: "Guardar foto" }).click();
-  await expect(fotos.getByRole("img", { name: "El interior terminado" })).toBeVisible();
-  await expect(fotos.getByRole("img", { name: "El vehículo terminado" })).toHaveCount(0);
-  await fotos.getByRole("button", { name: "Quitar la foto: En qué consiste" }).click();
-  await expect(fotos.getByRole("button", { name: "Agregar foto: En qué consiste" })).toBeVisible();
+  await fotos.getByRole("button", { name: "Quitar foto: Cómo lo hacemos" }).click();
+  await expect(fotos.getByRole("button", { name: "Subir foto: Cómo lo hacemos" })).toBeVisible();
   await page.goto(`/servicios/${slug}`);
-  await expect(page.getByRole("region", { name: "En qué consiste" })).toContainText("Así lo hacemos.");
-  await expect(page.getByRole("region", { name: "En qué consiste" }).getByRole("button")).toHaveCount(0);
+  await expect(proceso).toContainText("Lavado técnico");
+  await expect(proceso.locator("img")).toHaveCount(0);
 });

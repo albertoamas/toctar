@@ -21,11 +21,11 @@ const RUTA = "/panel/sitio";
 
 const SLUG_REPETIDO = "Ya hay otra página con esa dirección.";
 
-/** La página del servicio en el sitio: dirección, textos, beneficios con ícono, pasos, cómo se ven las opciones y si se muestra (HU-07). */
+/** La página del servicio en el sitio: dirección, resumen, beneficios con ícono, pasos, cómo se ven las opciones y si se muestra (HU-07). */
 export async function guardarServicio(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const autor = await exigirModulo("sitio");
   const valores = Object.fromEntries(
-    ["id", "slug", "resumen", "descripcion", "beneficios", "pasos"].map((c) => [c, String(datos.get(c) ?? "")]),
+    ["id", "slug", "resumen", "beneficios", "pasos"].map((c) => [c, String(datos.get(c) ?? "")]),
   );
   const visible = datos.get("visible") === "on";
   const opcionesEnEscalera = datos.get("opcionesEnEscalera") === "on";
@@ -47,7 +47,6 @@ export async function guardarServicio(_previo: EstadoFormulario, datos: FormData
       .set({
         slug: d.slug,
         resumen: d.resumen,
-        descripcion: d.descripcion,
         beneficios: d.beneficios,
         pasos: d.pasos,
         visibleSitio: d.visible,
@@ -107,17 +106,12 @@ const BORRAR_FOTO_FALLO = "No se pudo borrar del almacenamiento la foto de una s
 
 export async function subirFotoDeSeccion(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const autor = await exigirModulo("sitio");
-  const valores = {
-    servicioId: String(datos.get("servicioId") ?? ""),
-    seccion: String(datos.get("seccion") ?? ""),
-    descripcion: String(datos.get("descripcion") ?? ""),
-  };
-  const entrada = esquemaFotoSeccion.safeParse(valores);
-  if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
-  const { servicioId, seccion, descripcion } = entrada.data;
+  const entrada = esquemaFotoSeccion.safeParse({ servicioId: datos.get("servicioId"), seccion: datos.get("seccion") });
+  if (!entrada.success) return { mensaje: "No se pudo guardar la foto en esa sección. Recarga la página." };
+  const { servicioId, seccion } = entrada.data;
 
   const foto = await guardarFoto(datos.get("foto"), { carpeta: "servicios", miniatura: true, autorId: Number(autor.id) });
-  if (!foto.ok) return { errores: { foto: foto.motivo === "vacia" ? "Elige una foto." : ERROR_FOTO }, valores };
+  if (!foto.ok) return { errores: { foto: foto.motivo === "vacia" ? "Elige una foto." : ERROR_FOTO } };
 
   // Con el servicio bloqueado (también lo bloquea quitar): subir y quitar en la misma sección no se cruzan. Si no se
   // guarda, la foto subida se borra para que no quede huérfana.
@@ -128,8 +122,8 @@ export async function subirFotoDeSeccion(_previo: EstadoFormulario, datos: FormD
       if (!existe) return null;
       const donde = and(eq(servicioFoto.servicioId, servicioId), eq(servicioFoto.seccion, seccion));
       const [anterior] = await tx.select({ archivoId: servicioFoto.archivoId }).from(servicioFoto).where(donde);
-      if (anterior) await tx.update(servicioFoto).set({ archivoId: foto.archivoId, descripcion, createdBy: Number(autor.id) }).where(donde);
-      else await tx.insert(servicioFoto).values({ servicioId, seccion, archivoId: foto.archivoId, descripcion, createdBy: Number(autor.id) });
+      if (anterior) await tx.update(servicioFoto).set({ archivoId: foto.archivoId, createdBy: Number(autor.id) }).where(donde);
+      else await tx.insert(servicioFoto).values({ servicioId, seccion, archivoId: foto.archivoId, createdBy: Number(autor.id) });
       return { anterior: anterior?.archivoId ?? null };
     });
   } catch (error) {

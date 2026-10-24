@@ -5,11 +5,10 @@ import { ladosDeFotos } from "@/modulos/sitio/secciones-foto";
 
 describe("lado de la foto de cada sección", () => {
   test("se alternan entre las secciones que tienen foto, empezando por la derecha", () => {
-    expect(ladosDeFotos({ descripcion: true, proceso: true, opciones: true })).toEqual({ descripcion: "derecha", proceso: "izquierda", opciones: "derecha" });
+    expect(ladosDeFotos({ proceso: true, opciones: true })).toEqual({ proceso: "derecha", opciones: "izquierda" });
   });
 
-  test("una sección sin foto no cuenta: dos fotos seguidas nunca quedan del mismo lado", () => {
-    const lados = ladosDeFotos({ descripcion: true, proceso: false, opciones: true });
-    expect([lados.descripcion, lados.opciones]).toEqual(["derecha", "izquierda"]);
+  test("una sección sin foto no cuenta: la siguiente con foto empieza por la derecha", () => {
+    expect(ladosDeFotos({ proceso: false, opciones: true }).opciones).toBe("derecha");
   });
 });

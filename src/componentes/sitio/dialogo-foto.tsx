@@ -4,8 +4,8 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import type { UrlsFoto } from "@/lib/fotos";
 
 // Componente de cliente: se usa dentro de otros componentes de cliente (recibe funciones como props).
-// Una foto en grande en el sitio público: la galería (HU-12, con el comparador si tiene antes) y las fotos propias de
-// un servicio (pedido de la demo del 24/10). En oscuro, como el sitio. El foco entra por el título: si no, caería en
+// Una foto en grande en el sitio público: la de la galería (HU-12), con el comparador si tiene antes. En oscuro, como
+// el sitio. El foco entra por el título: si no, caería en
 // lo primero que se enfoca adentro (el deslizador oculto del comparador), sin nada visible enfocado.
 
 export function DialogoFoto({

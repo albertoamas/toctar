@@ -86,4 +86,9 @@ test("la galería muestra las fotos visibles, se filtra por servicio y se amplí
   await expect(titulo).toBeInViewport();
   await expect(page.getByRole("link", { name: "Mandar fotos de mi vehículo por WhatsApp" })).toBeInViewport();
   await expect(page.getByRole("link", { name: "Escribir a TocTar por WhatsApp" })).toBeHidden();
+
+  // En la página del servicio, sus trabajos se ven en la galería: un enlace, sin repetir las fotos (revisión del 24/10)
+  await page.goto("/servicios/restauracion-de-faroles-con-polimero");
+  await expect(page.getByRole("main").getByRole("link", { name: "Ver la galería" })).toHaveAttribute("href", "/galeria?servicio=restauracion-de-faroles-con-polimero");
+  await expect(page.getByRole("heading", { name: /^Trabajos de/ })).toHaveCount(0);
 });

@@ -1,5 +1,5 @@
 {
-  "id": "110f16f8-6121-49dd-b18f-655ac2ecdbe8",
+  "id": "73041663-9890-435b-87c3-fa8812ac3814",
   "prevId": "bf213ef9-1f88-4e31-b4b8-6b6e307fda34",
   "version": "7",
   "dialect": "postgresql",
@@ -1725,12 +1725,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "descripcion": {
-          "name": "descripcion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -1815,7 +1809,7 @@
       "checkConstraints": {
         "servicio_foto_seccion_valida": {
           "name": "servicio_foto_seccion_valida",
-          "value": "\"servicio_foto\".\"seccion\" in ('descripcion', 'proceso', 'opciones')"
+          "value": "\"servicio_foto\".\"seccion\" in ('proceso', 'opciones')"
         }
       },
       "isRLSEnabled": false

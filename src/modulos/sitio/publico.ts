@@ -64,7 +64,6 @@ export async function galeriaPublica(): Promise<FotoGaleria[]> {
 }
 
 export type DetalleServicioPublico = ServicioPublico & {
-  descripcion: string;
   beneficios: Beneficio[];
   pasos: Paso[];
   /** Las opciones van de menor a mayor: se ven como escalones. */
@@ -98,7 +97,6 @@ export async function servicioPublico(slug: string): Promise<DetalleServicioPubl
     slug: s.slug,
     resumen: s.resumen,
     foto: fila.foto ? urlsFoto(fila.foto) : null,
-    descripcion: s.descripcion,
     beneficios: s.beneficios,
     pasos: s.pasos,
     opcionesEnEscalera: s.opcionesEnEscalera,

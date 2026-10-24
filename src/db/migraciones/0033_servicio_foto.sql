@@ -3,10 +3,9 @@ CREATE TABLE "servicio_foto" (
 	"servicio_id" integer NOT NULL,
 	"seccion" text NOT NULL,
 	"archivo_id" integer NOT NULL,
-	"descripcion" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"created_by" integer,
-	CONSTRAINT "servicio_foto_seccion_valida" CHECK ("servicio_foto"."seccion" in ('descripcion', 'proceso', 'opciones'))
+	CONSTRAINT "servicio_foto_seccion_valida" CHECK ("servicio_foto"."seccion" in ('proceso', 'opciones'))
 );
 --> statement-breakpoint
 ALTER TABLE "servicio_foto" ADD CONSTRAINT "servicio_foto_servicio_id_servicio_id_fk" FOREIGN KEY ("servicio_id") REFERENCES "public"."servicio"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

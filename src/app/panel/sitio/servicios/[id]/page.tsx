@@ -35,7 +35,6 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
   if (!s) notFound();
   // Una sección sin contenido no sale en el sitio, y su foto tampoco: el panel lo avisa en su lugar
   const sinContenido = {
-    descripcion: s.descripcion.trim() ? undefined : "No se ve hasta que escribas la descripción.",
     proceso: s.pasos.length > 0 ? undefined : "No se ve hasta que agregues pasos.",
     opciones: opciones.length > 0 ? undefined : "No se ve: el servicio no tiene opciones en el catálogo.",
   };
@@ -60,7 +59,6 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
             id: s.id,
             slug: s.slug,
             resumen: s.resumen,
-            descripcion: s.descripcion,
             beneficios: s.beneficios,
             pasos: s.pasos,
             visible: s.visible,

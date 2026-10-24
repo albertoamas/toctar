@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
@@ -8,13 +7,12 @@ import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { FotoOReemplazo } from "@/componentes/sitio/foto-o-reemplazo";
 import { IconoBeneficio } from "@/componentes/sitio/icono-beneficio";
-import { FotoAmpliable } from "@/componentes/sitio/foto-ampliable";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
-import type { FotoDeSeccion } from "@/modulos/sitio/consultas";
+import type { UrlsFoto } from "@/lib/fotos";
 import { servicioPublico, type DetalleServicioPublico } from "@/modulos/sitio/publico";
 import { ladosDeFotos } from "@/modulos/sitio/secciones-foto";
 
-// HU-11 Página de cada servicio (RF-03): beneficios, descripción, proceso, variantes y fotos, sin precios (RN-10).
+// HU-11 Página de cada servicio (RF-03): resumen, beneficios, proceso y variantes, sin precios (RN-10).
 // Más simple desde la demo del 24/10 ("para tontos"): los beneficios van primero, como una fila de íconos, y las
 // opciones que van de menor a mayor se ven como escalones (como el afiche del nano cerámico del dueño).
 // Termina con la invitación a escribir por WhatsApp con el servicio ya escrito (HU-15).
@@ -45,7 +43,6 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
   const s = await servicioPublico(slug);
   if (!s) notFound();
   const lados = ladosDeFotos({
-    descripcion: !!s.descripcion && !!s.fotosSecciones.descripcion,
     proceso: s.pasos.length > 0 && !!s.fotosSecciones.proceso,
     opciones: s.variantes.length > 0 && !!s.fotosSecciones.opciones,
   });
@@ -71,12 +68,16 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pb-12 md:gap-24 md:pb-24">
         {s.beneficios.length > 0 && <Beneficios beneficios={s.beneficios} />}
         {/* Cada sección con su foto al lado, si tiene (pedido de la demo del 24/10), alternando de lado */}
-        {s.descripcion && <Descripcion descripcion={s.descripcion} foto={s.fotosSecciones.descripcion} lado={lados.descripcion} />}
         {s.pasos.length > 0 && <Proceso pasos={s.pasos} foto={s.fotosSecciones.proceso} lado={lados.proceso} />}
         {s.variantes.length > 0 && (
           <Variantes variantes={s.variantes} escalera={s.opcionesEnEscalera} foto={s.fotosSecciones.opciones} lado={lados.opciones} />
         )}
-        {s.fotos.length > 0 && <Fotos servicio={s} />}
+        {/* Sus trabajos, en la galería: las fotos ya están en la página (revisión de YankoSoft, 24/10) */}
+        {s.fotos.length > 0 && (
+          <Link href={`/galeria?servicio=${s.slug}`} className="tt-boton tt-boton--contorno self-start">
+            Ver la galería
+          </Link>
+        )}
       </div>
 
       <CierreWhatsApp
@@ -120,37 +121,24 @@ type Lado = "derecha" | "izquierda";
  * la derecha o a la izquierda (`ladosDeFotos`: se alternan entre las secciones con foto, para que la página no sea
  * una sola columna); en el celular, la foto debajo del texto. Sin foto, solo el contenido.
  */
-function ConFoto({ foto, lado, children }: { foto?: FotoDeSeccion; lado: Lado; children: React.ReactNode }) {
+function ConFoto({ foto, lado, children }: { foto?: UrlsFoto; lado: Lado; children: React.ReactNode }) {
   if (!foto) return children;
   return (
     <div className="grid gap-8 md:grid-cols-2 md:items-center md:gap-12">
       <div className="flex min-w-0 flex-col gap-6">{children}</div>
       <div className={lado === "izquierda" ? "md:order-first" : undefined}>
-        <FotoAmpliable foto={foto.foto} descripcion={foto.descripcion} />
+        {/* Decorativa: el texto de la sección dice lo mismo. La chica (640 px) en el celular, la grande desde 768 px */}
+        <picture>
+          <source media="(min-width: 768px)" srcSet={foto.url} />
+          {/* <img> a mano: next/image no arma un <picture> con dos versiones */}
+          <img src={foto.miniatura} alt="" loading="lazy" width={foto.ancho ?? undefined} height={foto.alto ?? undefined} className="mx-auto h-auto max-h-[32rem] w-auto max-w-full" />
+        </picture>
       </div>
     </div>
   );
 }
 
-function Descripcion({ descripcion, foto, lado }: { descripcion: string; foto?: FotoDeSeccion; lado: Lado }) {
-  return (
-    <section aria-labelledby="descripcion-titulo" className="flex flex-col gap-4">
-      <ConFoto foto={foto} lado={lado}>
-        <div className="flex flex-col gap-4">
-          <h2 id="descripcion-titulo" className={TITULO_SECCION}>En qué consiste</h2>
-          {descripcion
-            .split(/\n\s*\n/)
-            .filter(Boolean)
-            .map((parrafo, i) => (
-              <p key={i} className="max-w-prose leading-relaxed whitespace-pre-line text-tinta-suave">{parrafo}</p>
-            ))}
-        </div>
-      </ConFoto>
-    </section>
-  );
-}
-
-function Proceso({ pasos, foto, lado }: { pasos: DetalleServicioPublico["pasos"]; foto?: FotoDeSeccion; lado: Lado }) {
+function Proceso({ pasos, foto, lado }: { pasos: DetalleServicioPublico["pasos"]; foto?: UrlsFoto; lado: Lado }) {
   return (
     <section aria-labelledby="proceso-titulo" className="flex flex-col gap-8">
       <ConFoto foto={foto} lado={lado}>
@@ -179,7 +167,7 @@ function Proceso({ pasos, foto, lado }: { pasos: DetalleServicioPublico["pasos"]
  * Si no, recuadros: si alguna tiene descripción, todas van del mismo ancho (si no, la que tiene texto quedaba ancha y
  * las demás chicas, en renglones disparejos, pulido 2.3).
  */
-function Variantes(props: { variantes: DetalleServicioPublico["variantes"]; escalera: boolean; foto?: FotoDeSeccion; lado: Lado }) {
+function Variantes(props: { variantes: DetalleServicioPublico["variantes"]; escalera: boolean; foto?: UrlsFoto; lado: Lado }) {
   const { variantes, escalera, foto, lado } = props;
   const conDescripcion = variantes.some((v) => v.descripcion);
   const ultimo = Math.max(variantes.length - 1, 1);
@@ -213,24 +201,6 @@ function Variantes(props: { variantes: DetalleServicioPublico["variantes"]; esca
           </ul>
         )}
       </ConFoto>
-    </section>
-  );
-}
-
-function Fotos({ servicio: s }: { servicio: DetalleServicioPublico }) {
-  return (
-    <section aria-labelledby="fotos-titulo" className="flex flex-col gap-6">
-      <h2 id="fotos-titulo" className={TITULO_SECCION}>Trabajos de {s.nombre.toLowerCase()}</h2>
-      <ul className="grid grid-cols-2 gap-2 md:grid-cols-3">
-        {s.fotos.slice(0, 6).map((f) => (
-          <li key={f.id} className="aspect-square overflow-hidden bg-superficie">
-            <Image src={f.despues.miniatura} alt={f.descripcion} width={f.despues.ancho ?? 640} height={f.despues.alto ?? 640} unoptimized loading="lazy" className="size-full object-cover" />
-          </li>
-        ))}
-      </ul>
-      <Link href={`/galeria?servicio=${s.slug}`} className="tt-boton tt-boton--contorno self-start">
-        Ver la galería
-      </Link>
     </section>
   );
 }
