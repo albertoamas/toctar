@@ -55,6 +55,8 @@ npm run test:e2e          # pruebas de punta a punta (Playwright, tests/e2e; rec
 npm run db:generate -- --name <nombre>   # crea una migración desde src/db/esquema/
 npm run db:migrate        # aplica migraciones pendientes
 npm run db:studio         # explorador de la base
+npm run db:reiniciar-local   # deja vacías la base y los buckets de desarrollo (solo si apuntan a localhost)
+npm run datos:demo        # datos de demostración (sitio y panel) en una base recién migrada; fotos en material/fotos-demo
 docker build -t toctar:local .   # imagen igual a la de producción
 ```
 

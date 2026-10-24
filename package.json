@@ -14,7 +14,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "almacenamiento:preparar": "node --env-file=.env scripts/preparar-almacenamiento.mjs"
+    "almacenamiento:preparar": "node --env-file=.env scripts/preparar-almacenamiento.mjs",
+    "db:reiniciar-local": "node --env-file=.env scripts/reiniciar-base-local.mjs",
+    "datos:demo": "node --env-file=.env scripts/datos-demo.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1149.0",
