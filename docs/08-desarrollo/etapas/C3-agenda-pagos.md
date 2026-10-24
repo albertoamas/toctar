@@ -2,6 +2,7 @@
 
 - **Fase y semana:** C. Entrega 2 · semana 4
 - **Estado:** programada (21 de octubre de 2026): HU-29 a HU-32 en `develop` (PR #61 a #64). Falta mostrarle el tablero al dueño y probar el cobro con comprobante en un celular real
+- **Cambió después:** el tablero abre cada trabajo con `rutaTrabajo` (orden o reserva según su estado), y la casilla del encargado se llama "Pagos (cobrar y ver saldos)" (C5 §0, 24/10).
 - **Historias:** HU-29 Tablero de la agenda · HU-30 Agendar reserva · HU-31 Reprogramar o cancelar · HU-32 Registrar pagos y saldo
 - **Base:**
   - Requisitos: RF-36 a RF-39, RF-45, RF-46; RNF-01, RNF-05, RNF-07, RNF-10, RNF-11.

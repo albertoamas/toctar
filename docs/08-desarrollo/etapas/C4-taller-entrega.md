@@ -2,6 +2,7 @@
 
 - **Fase y semana:** C. Entrega 2 · semanas 4 y 5
 - **Estado:** programada (23 de octubre de 2026): HU-33 a HU-38 en `develop` (PR #65, #66, #68, #69, #71 y #72). Falta la demo con el dueño desde un celular real
+- **Cambió después:** los enlaces a un trabajo salen de `rutaTrabajo` y `enlaceTrabajo` (ficha del cliente, mantenimientos y Saldos pendientes), y "Mantenimientos", "Saldos pendientes" y "Reclamos" van en el grupo Clientes del menú (C5 §0, 24/10).
 - **Historias:** HU-33 Recibir vehículo · HU-34 Órdenes del técnico · HU-35 Avisar vehículo listo · HU-36 Entregar vehículo · HU-37 Saldos pendientes · HU-38 Recordatorios de mantenimiento
 - **Base:**
   - Requisitos: RF-40 a RF-43, RF-46 a RF-50; RNF-01, RNF-05, RNF-07, RNF-10, RNF-11.
