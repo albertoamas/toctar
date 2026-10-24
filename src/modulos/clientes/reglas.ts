@@ -48,4 +48,7 @@ export const nombreVehiculo = (v: { marca: string | null; modelo: string | null 
     .filter(Boolean)
     .join(" ");
 
+/** "Toyota Corolla, 1234ABC", o solo la placa si no se cargaron marca ni modelo: el vehículo en una lista. */
+export const vehiculoEnLista = (v: { marca: string | null; modelo: string | null; placa: string }) => [nombreVehiculo(v), v.placa].filter(Boolean).join(", ");
+
 export const prefijoVehiculo = (id?: number) => (id ? `vehiculo-${id}-` : "vehiculo-nuevo-");
