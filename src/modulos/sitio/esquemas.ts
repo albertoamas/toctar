@@ -5,7 +5,7 @@ import { CLAVES_ICONO } from "./beneficios";
 
 // Validación del contenido del sitio (B3): el mismo esquema en el formulario y en el servidor.
 
-export const LIMITES = { resumen: 160, descripcion: 2000, beneficios: 8, beneficio: 120, pasos: 10, tituloPaso: 60, detallePaso: 300 } as const;
+export const LIMITES = { resumen: 160, descripcion: 2000, beneficios: 8, beneficio: 120, pasos: 10, tituloPaso: 60, detallePaso: 300, fotosServicio: 12 } as const;
 
 const resumen = z
   .string()
@@ -80,3 +80,6 @@ const servicioGaleria = z.coerce.number({ error: "Elige el servicio." }).int().p
 
 export const esquemaGaleria = z.object({ servicioId: servicioGaleria, descripcion: descripcionGaleria });
 export const esquemaEditarGaleria = z.object({ id: z.coerce.number().int().positive(), servicioId: servicioGaleria, descripcion: descripcionGaleria });
+
+// Fotos propias de un servicio (pedido de la demo del 24/10): la descripción, como en la galería
+export const esquemaFotoServicio = z.object({ servicioId: z.coerce.number().int().positive(), descripcion: descripcionGaleria });

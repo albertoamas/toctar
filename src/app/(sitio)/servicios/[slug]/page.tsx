@@ -8,6 +8,7 @@ import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { FotoOReemplazo } from "@/componentes/sitio/foto-o-reemplazo";
 import { IconoBeneficio } from "@/componentes/sitio/icono-beneficio";
+import { TiraFotos } from "@/componentes/sitio/tira-fotos";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import { servicioPublico, type DetalleServicioPublico } from "@/modulos/sitio/publico";
 
@@ -62,6 +63,13 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
 
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pb-12 md:gap-24 md:pb-24">
         {s.beneficios.length > 0 && <Beneficios beneficios={s.beneficios} />}
+        {s.fotosPropias.length > 0 && (
+          // Sus fotos o afiches (pedido de la demo del 24/10): más imagen que texto
+          <section aria-labelledby="fotos-propias-titulo">
+            <h2 id="fotos-propias-titulo" className="sr-only">Fotos del servicio</h2>
+            <TiraFotos fotos={s.fotosPropias} />
+          </section>
+        )}
         {s.descripcion && <Descripcion descripcion={s.descripcion} />}
         {s.pasos.length > 0 && <Proceso pasos={s.pasos} />}
         {s.variantes.length > 0 && <Variantes variantes={s.variantes} escalera={s.opcionesEnEscalera} />}

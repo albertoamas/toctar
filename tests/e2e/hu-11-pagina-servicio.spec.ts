@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { crearServicioPublicado, ingresarComoDueno } from "./apoyo";
+import { crearServicioPublicado, ingresarComoDueno, PNG } from "./apoyo";
 
 // HU-11 Página de cada servicio y HU-15 (mensaje con el servicio). Criterios: docs/09-pruebas/criterios-entrega-1.md (11.x).
 
@@ -125,4 +125,49 @@ test("en la página de un servicio, volver a Servicios es lo primero y se toca c
   const foto = (await page.locator('main header [class*="aspect-[4/3]"]').boundingBox())!;
   const titulo = (await page.getByRole("heading", { level: 1 }).boundingBox())!;
   expect(caja.y + caja.height).toBeLessThanOrEqual(Math.min(foto.y, titulo.y));
+});
+
+// Pedido de la demo del 24/10: fotos o afiches propios del servicio, en una tira que se amplía
+test("las fotos propias del servicio se suben en el panel y se ven en una tira que se amplía", async ({ page }, info) => {
+  test.setTimeout(60_000);
+  await ingresarComoDueno(page);
+  const { id, slug } = await crearServicioPublicado(page, `Servicio con fotos ${info.project.name}`);
+  await page.goto(`/panel/sitio/servicios/${id}`);
+  const lista = page.getByRole("list", { name: "Fotos del servicio" });
+  // Lugares vacíos para subir
+  await expect(lista.getByRole("button", { name: "Agregar una foto" })).toHaveCount(4);
+  for (const descripcion of ["Afiche de las opciones", "El vehículo terminado"]) {
+    await expect(lista.getByRole("button", { name: "Agregar una foto" }).first()).toBeEnabled();
+    await page.getByLabel("Archivo de otra foto del servicio").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
+    const nueva = page.getByRole("form", { name: "Nueva foto" });
+    await nueva.getByLabel("Descripción").fill(descripcion);
+    await nueva.getByRole("button", { name: "Guardar foto" }).click();
+    await expect(lista.getByRole("img", { name: descripcion })).toBeVisible();
+  }
+  // Sin descripción no se guarda
+  await page.getByLabel("Archivo de otra foto del servicio").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
+  await page.getByRole("form", { name: "Nueva foto" }).getByRole("button", { name: "Guardar foto" }).click();
+  await expect(page.getByText("Escribe una descripción corta: también la leen los buscadores.")).toBeVisible();
+  await page.getByRole("form", { name: "Nueva foto" }).getByRole("button", { name: "Cancelar" }).click();
+  // El terminado pasa adelante
+  await page.getByRole("button", { name: "Subir: El vehículo terminado" }).click();
+  await expect(lista.getByRole("img").first()).toHaveAttribute("alt", "El vehículo terminado");
+
+  // En el sitio, en ese orden; al tocar una se ve en grande
+  await page.goto(`/servicios/${slug}`);
+  const tira = page.getByRole("region", { name: "Fotos del servicio" });
+  await expect(tira.getByRole("button", { name: /^Ampliar:/ })).toHaveText(["", ""]);
+  await expect(tira.getByRole("button").first()).toHaveAccessibleName("Ampliar: El vehículo terminado");
+  await tira.getByRole("button", { name: "Ampliar: Afiche de las opciones" }).click();
+  const visor = page.getByRole("dialog", { name: "Afiche de las opciones" });
+  await expect(visor.getByRole("img", { name: "Afiche de las opciones" })).toHaveAttribute("src", /servicios\/[\w-]+\.webp$/);
+  await page.keyboard.press("Escape");
+  await expect(visor).toHaveCount(0);
+
+  // Quitada en el panel, deja el sitio
+  await page.goto(`/panel/sitio/servicios/${id}`);
+  await page.getByRole("button", { name: "Quitar: Afiche de las opciones" }).click();
+  await expect(lista.getByRole("img", { name: "Afiche de las opciones" })).toHaveCount(0);
+  await page.goto(`/servicios/${slug}`);
+  await expect(tira.getByRole("button")).toHaveCount(1);
 });

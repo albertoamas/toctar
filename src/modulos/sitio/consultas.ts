@@ -2,7 +2,7 @@ import "server-only";
 import { asc, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
-import { archivo, contenidoPagina, faq, galeriaItem, servicio, type Beneficio, type Paso } from "@/db/esquema";
+import { archivo, contenidoPagina, faq, galeriaItem, servicio, servicioFoto, type Beneficio, type Paso } from "@/db/esquema";
 import { urlsFoto, type UrlsFoto } from "@/lib/fotos";
 import { CLAVES_PAGINA, PORTADA, leerContenido, type ContenidoPagina, type Pagina } from "./contenido";
 
@@ -69,6 +69,19 @@ export async function obtenerServicio(id: number): Promise<DetalleServicio | nul
     pasos: s.pasos,
     opcionesEnEscalera: s.opcionesEnEscalera,
   };
+}
+
+export type FotoDeServicio = { id: number; descripcion: string; foto: UrlsFoto };
+
+/** Fotos propias de un servicio, en su orden (pedido de la demo del 24/10). Las usan el panel y su página pública. */
+export async function fotosDeServicio(servicioId: number): Promise<FotoDeServicio[]> {
+  const filas = await db
+    .select({ id: servicioFoto.id, descripcion: servicioFoto.descripcion, archivo })
+    .from(servicioFoto)
+    .innerJoin(archivo, eq(servicioFoto.archivoId, archivo.id))
+    .where(eq(servicioFoto.servicioId, servicioId))
+    .orderBy(asc(servicioFoto.orden), asc(servicioFoto.id));
+  return filas.map((f) => ({ id: f.id, descripcion: f.descripcion, foto: urlsFoto(f.archivo) }));
 }
 
 /**

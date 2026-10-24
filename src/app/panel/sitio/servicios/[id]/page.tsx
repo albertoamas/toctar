@@ -8,11 +8,12 @@ import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioServicio } from "@/modulos/sitio/componentes/formulario-servicio";
 import { FotoServicio } from "@/modulos/sitio/componentes/foto-servicio";
-import { obtenerServicio } from "@/modulos/sitio/consultas";
+import { FotosServicio } from "@/modulos/sitio/componentes/fotos-servicio";
+import { fotosDeServicio, obtenerServicio } from "@/modulos/sitio/consultas";
 
 export const metadata: Metadata = { title: "Servicio" };
 
-// HU-07: la página del servicio en el sitio: dirección, textos, beneficios, pasos, foto y si se muestra. El nombre y
+// HU-07: la página del servicio en el sitio: dirección, textos, beneficios, pasos, fotos y si se muestra. El nombre y
 // las variantes son del catálogo: el dueño tiene el enlace.
 export default function PaginaServicio({ params }: PageProps<"/panel/sitio/servicios/[id]">) {
   return (
@@ -30,7 +31,7 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
   const { id } = await params;
   const numero = Number(id);
   if (!Number.isInteger(numero) || numero <= 0) notFound();
-  const s = await obtenerServicio(numero);
+  const [s, fotos] = await Promise.all([obtenerServicio(numero), fotosDeServicio(numero)]);
   if (!s) notFound();
 
   return (
@@ -60,8 +61,9 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
             opcionesEnEscalera: s.opcionesEnEscalera,
           }}
         />
-        <aside>
+        <aside className="flex flex-col gap-10">
           <FotoServicio servicioId={s.id} nombre={s.nombre} foto={s.foto} />
+          <FotosServicio servicioId={s.id} fotos={fotos} />
         </aside>
       </div>
     </>

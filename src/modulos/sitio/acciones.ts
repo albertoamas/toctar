@@ -1,9 +1,9 @@
 "use server";
 
-import { and, eq, inArray, isNotNull, max, TransactionRollbackError } from "drizzle-orm";
+import { and, asc, count, eq, inArray, isNotNull, max, TransactionRollbackError } from "drizzle-orm";
 import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/db";
-import { contenidoPagina, faq, galeriaItem, servicio } from "@/db/esquema";
+import { contenidoPagina, faq, galeriaItem, servicio, servicioFoto } from "@/db/esquema";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { reordenar, type Direccion } from "@/lib/orden";
@@ -11,7 +11,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { CLAVES_PAGINA, PAGINAS, PORTADA, datosDelFormulario, esquemaPagina, esquemaPregunta, type Pagina } from "./contenido";
 import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, listarGaleria, listarPreguntas, listarServicios, servicioEnSitio } from "./consultas";
 import { servicioCambiado } from "./servicio-cambiado";
-import { esquemaEditarGaleria, esquemaGaleria, esquemaId, esquemaIdFormulario, esquemaMover, esquemaServicio, esquemaVisibilidad } from "./esquemas";
+import { LIMITES, esquemaEditarGaleria, esquemaFotoServicio, esquemaGaleria, esquemaId, esquemaIdFormulario, esquemaMover, esquemaServicio, esquemaVisibilidad } from "./esquemas";
 
 // Servicios del sitio (HU-07, RF-11), textos (HU-08, RF-10) y galería (HU-09, RF-12). Entra el dueño o un encargado con el permiso "sitio".
 // Del servicio, aquí solo su página: el alta, el nombre y las variantes son del catálogo (catalogo/acciones.ts).
@@ -98,6 +98,62 @@ export async function quitarFotoServicio(datoId: number): Promise<EstadoFormular
   await eliminarFoto(actual.fotoArchivoId);
   servicioCambiado(id);
   return { ok: true, mensaje: "Foto quitada. El sitio muestra la imagen de reemplazo." };
+}
+
+// Fotos propias de un servicio (pedido de la demo del 24/10): fotos o afiches que se ven en una tira en su página.
+
+const MAS_FOTOS = `Hasta ${LIMITES.fotosServicio} fotos por servicio. Quita una para subir otra.`;
+
+export async function subirFotoDeServicio(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  const autor = await exigirModulo("sitio");
+  const valores = { servicioId: String(datos.get("servicioId") ?? ""), descripcion: String(datos.get("descripcion") ?? "") };
+  const entrada = esquemaFotoServicio.safeParse(valores);
+  if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
+  const { servicioId, descripcion } = entrada.data;
+  const [existe] = await db.select({ id: servicio.id }).from(servicio).where(eq(servicio.id, servicioId));
+  if (!existe) return { mensaje: "Ese servicio ya no existe." };
+  const [{ cantidad, ultimo }] = await db
+    .select({ cantidad: count(), ultimo: max(servicioFoto.orden) })
+    .from(servicioFoto)
+    .where(eq(servicioFoto.servicioId, servicioId));
+  if (cantidad >= LIMITES.fotosServicio) return { mensaje: MAS_FOTOS };
+
+  const foto = await guardarFoto(datos.get("foto"), { carpeta: "servicios", miniatura: true, autorId: Number(autor.id) });
+  if (!foto.ok) return { errores: { foto: foto.motivo === "vacia" ? "Elige una foto." : ERROR_FOTO }, valores };
+  await db.insert(servicioFoto).values({ servicioId, archivoId: foto.archivoId, descripcion, orden: (ultimo ?? 0) + 1, createdBy: Number(autor.id) });
+
+  servicioCambiado(servicioId);
+  return { ok: true, mensaje: "Foto guardada." };
+}
+
+export async function moverFotoDeServicio(datos: { id: number; direccion: Direccion }): Promise<EstadoFormulario> {
+  await exigirModulo("sitio");
+  const entrada = esquemaMover.safeParse(datos);
+  if (!entrada.success) return { mensaje: "No se pudo mover." };
+  const [fila] = await db.select({ servicioId: servicioFoto.servicioId }).from(servicioFoto).where(eq(servicioFoto.id, entrada.data.id));
+  if (!fila) return { mensaje: "Esa foto ya no existe. Recarga la página." };
+  const items = (
+    await db.select({ id: servicioFoto.id, orden: servicioFoto.orden }).from(servicioFoto).where(eq(servicioFoto.servicioId, fila.servicioId)).orderBy(asc(servicioFoto.orden), asc(servicioFoto.id))
+  ).map((f) => ({ ...f, activo: true }));
+  const nuevoOrden = reordenar(items, entrada.data.id, entrada.data.direccion);
+  if (!nuevoOrden) return { ok: true };
+  await db.transaction(async (tx) => {
+    for (const o of nuevoOrden) await tx.update(servicioFoto).set({ orden: o.orden }).where(eq(servicioFoto.id, o.id));
+  });
+  servicioCambiado(fila.servicioId);
+  return { ok: true };
+}
+
+/** Se borra también del almacenamiento: ningún otro registro la usa. */
+export async function quitarFotoDeServicio(datoId: number): Promise<EstadoFormulario> {
+  await exigirModulo("sitio");
+  const entrada = esquemaId.safeParse(datoId);
+  if (!entrada.success) return { mensaje: "Esa foto ya no existe. Recarga la página." };
+  const [fila] = await db.delete(servicioFoto).where(eq(servicioFoto.id, entrada.data)).returning();
+  if (!fila) return { mensaje: "Esa foto ya no existe. Recarga la página." };
+  await eliminarFoto(fila.archivoId);
+  servicioCambiado(fila.servicioId);
+  return { ok: true, mensaje: "Foto quitada." };
 }
 
 export async function moverServicio(datos: { id: number; direccion: Direccion }): Promise<EstadoFormulario> {
