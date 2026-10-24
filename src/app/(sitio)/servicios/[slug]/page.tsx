@@ -40,8 +40,9 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
   if (!s) notFound();
 
   return (
-    <article>
-      <header className="mx-auto max-w-6xl px-4 pt-2 pb-12 md:pt-6 md:pb-20">
+    // Una columna que llena la pantalla: así el cierre queda pegado al pie aunque el servicio tenga poco contenido
+    <article className="flex flex-1 flex-col">
+      <header className="mx-auto w-full max-w-6xl px-4 pt-2 pb-12 md:pt-6 md:pb-20">
         {/* Lo primero de la página: en el celular va antes de la foto, para saber dónde se está (pulido 2.3) */}
         <EnlaceVolver href="/servicios">Servicios</EnlaceVolver>
         <div className="mt-2 grid gap-8 md:mt-4 md:grid-cols-2 md:items-center">
@@ -56,7 +57,7 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-6xl flex-col gap-12 px-4 pb-12 md:gap-24 md:pb-24">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pb-12 md:gap-24 md:pb-24">
         {(s.descripcion || s.beneficios.length > 0) && <Descripcion servicio={s} />}
         {s.pasos.length > 0 && <Proceso pasos={s.pasos} />}
         {s.variantes.length > 0 && <Variantes variantes={s.variantes} />}

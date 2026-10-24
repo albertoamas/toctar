@@ -189,7 +189,7 @@
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
 | 12.1 | Muestra los pares antes y después visibles, filtrables por servicio | E2E `hu-12` "la galería muestra las fotos visibles, se filtra por servicio y se amplían". El filtro son enlaces (`?servicio=`) y funciona sin JavaScript. Unitarias "filtro de la galería" | ✅ |
-| 12.2 | Las fotos se ven bien en el celular y se pueden ampliar | Mismo E2E: el visor muestra el antes y el después en grande; se cierra con Escape o con la X. Revisión visual en celular | ✅ |
+| 12.2 | Las fotos se ven bien en el celular y se pueden ampliar | Mismo E2E: el visor muestra el antes y el después en grande; se cierra con Escape o con la X. Revisión visual en celular | ✅ ⚠️ Desde el 24/10, el antes y el después van en una sola foto partida por una línea que se arrastra (con el dedo, el mouse o las flechas); el E2E lo prueba |
 | 12.3 | Solo se ven fotos visibles de servicios visibles | Consulta `galeriaPublica()`; las fotos ocultas del panel (HU-09) no aparecen | ✅ |
 
 ## HU-13 Nosotros y preguntas frecuentes

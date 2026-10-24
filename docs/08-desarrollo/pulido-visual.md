@@ -576,6 +576,29 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Capturas a 360, 390, 768 y 1280 px. Comparativa en `pulido-visual/2.10-sin-conexion-celular.jpg`.
   - E2E `hu-06` "sin internet, el panel muestra el aviso…": ahora comprueba que, sin red, la página tiene Barlow Condensed y Montserrat cargadas (las saca el service worker de su caché). E2E completo: 147 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
 
+### 2.4 y cierre de las páginas: pedidos del 24/10/2026
+- **Pedido:**
+  - En la galería, que el antes y el después se comparen con una línea que se arrastra sobre la foto.
+  - Que la sección de cierre ("¿Quieres este resultado en tu vehículo?" y las demás) no quede a media pantalla en una página corta.
+- **Decidido con YankoSoft:**
+  - **El comparador va en la foto grande:** la grilla sigue igual, con su etiqueta "Antes y después". En la grilla, arrastrar con el dedo chocaba con tocar para abrir.
+  - **El cierre sigue solo en las páginas que ya lo tenían** (portada, Servicios, cada servicio, Galería, Nosotros y Preguntas frecuentes).
+- **Cambios:**
+  - **`ComparadorAntesDespues`** (`src/componentes/sitio/comparador-antes-despues.tsx`):
+    - una sola foto con el antes recortado hasta la línea;
+    - el tirador es el paralelogramo rojo a 60° de la marca, con un borde oscuro en la línea para leerse sobre fotos claras;
+    - se arrastra en cualquier punto de la foto con el dedo o el mouse (`touch-action: pan-y`: la página se sigue desplazando de arriba abajo);
+    - con el teclado y el lector de pantalla, un deslizador nativo oculto (flechas), con el foco en el tirador;
+    - la caja toma la forma de la foto de después y no pasa del 70 % del alto de la pantalla.
+  - **El visor** usa el comparador cuando hay antes; con una sola foto, la muestra como antes. `FotoGrande` quedó sin las opciones del par.
+  - **`CierreWhatsApp`** lleva `mt-auto`: queda pegado al pie. La página de un servicio ahora es una columna que llena la pantalla (`flex-1`), para que el cierre llegue al pie también ahí.
+- **Verificación:**
+  - Capturas a 390 y 1280 px, del comparador y de la galería.
+  - En una pantalla de 1900 px de alto, el hueco entre el cierre y el pie es de 0 px en la galería, las preguntas, Nosotros, Servicios, la portada y dos servicios.
+  - E2E `hu-12`: la línea arranca al medio, las flechas la mueven y un toque cerca del borde la lleva ahí.
+  - E2E `base`: el cierre pegado al pie en las 6 páginas que lo tienen.
+- **Después de la revisión de código:** las dos fotos se ven enteras (`object-contain`); la línea no salta al empezar a desplazar la página (se mueve solo con un arrastre de costado o un toque); el tirador queda entero en los bordes; la etiqueta que no cabe se esconde; el foco del visor entra por el título.
+
 ### Rendimiento del sitio (cierre del grupo 2, 18/10/2026)
 - **Encontrado** (Lighthouse móvil, tres corridas por página): portada 86, Servicios 88, Galería 89, Nosotros 90. El LCP simulado coincidía con el momento en que la página queda interactiva: el simulador cuenta como dependencias del LCP todo lo pedido antes de pintarlo, y la portada pedía 218 KB comprimidos de JavaScript y 7 fuentes (unos 130 KB) de entrada.
   - Los avisos del panel (`Toaster`, sonner: 38 KB) estaban en el diseño raíz: se descargaban en cada página del sitio, que no los usa.

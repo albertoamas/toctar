@@ -1,21 +1,23 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
-import { cn } from "cn";
+import { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/componentes/ui/dialog";
+import type { UrlsFoto } from "@/lib/fotos";
+import { ComparadorAntesDespues } from "./comparador-antes-despues";
 
-// Galería pública (HU-12): grilla de miniaturas; al tocar una se abre el antes y el después en grande.
-// Es el único componente de cliente del sitio.
+// Galería pública (HU-12): grilla de miniaturas; al tocar una se abre en grande. Si tiene antes y después, en el
+// comparador: una sola foto partida por una línea que se arrastra (pedido del 24/10). Con el comparador, es lo único
+// de cliente del sitio.
 
-type Foto = { url: string; miniatura: string; ancho: number | null; alto: number | null };
 /** Columnas de la grilla en la computadora (lg:grid-cols-4): las fotos de la primera fila se ven al entrar. */
 const FOTOS_PRIMERA_FILA = 4;
 
-export type FotoVisor = { id: number; descripcion: string; servicio: string; antes: Foto | null; despues: Foto };
+export type FotoVisor = { id: number; descripcion: string; servicio: string; antes: UrlsFoto | null; despues: UrlsFoto };
 
 export function VisorGaleria({ fotos }: { fotos: FotoVisor[] }) {
   const [abierta, setAbierta] = useState<FotoVisor | null>(null);
+  const titulo = useRef<HTMLHeadingElement>(null);
 
   return (
     <>
@@ -48,18 +50,18 @@ export function VisorGaleria({ fotos }: { fotos: FotoVisor[] }) {
 
       <Dialog open={!!abierta} onOpenChange={(abrir) => !abrir && setAbierta(null)}>
         {abierta && (
-          <DialogContent data-theme="oscuro" className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto rounded-none bg-fondo p-4 text-tinta sm:max-w-5xl">
+          // El foco entra por el título: si no, caería en el deslizador oculto del comparador (sin nada visible enfocado)
+          <DialogContent
+            initialFocus={titulo}
+            data-theme="oscuro"
+            className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto rounded-none bg-fondo p-4 text-tinta sm:max-w-5xl"
+          >
             <div className="flex flex-col gap-1 pr-12">
-              <DialogTitle className="font-heading text-2xl font-bold italic">{abierta.servicio}</DialogTitle>
+              <DialogTitle ref={titulo} tabIndex={-1} className="font-heading text-2xl font-bold italic outline-none">{abierta.servicio}</DialogTitle>
               <DialogDescription className="text-tinta-suave">{abierta.descripcion}</DialogDescription>
             </div>
             {abierta.antes ? (
-              // Las dos en cajas de la misma altura: en el celular entran juntas en la pantalla, una sobre otra,
-              // para comparar sin bajar; en la computadora, lado a lado (pulido 2.4).
-              <div className="grid gap-2 md:grid-cols-2">
-                <FotoGrande foto={abierta.antes} alt={`Antes: ${abierta.descripcion}`} etiqueta="Antes" par />
-                <FotoGrande foto={abierta.despues} alt={`Después: ${abierta.descripcion}`} etiqueta="Después" par />
-              </div>
+              <ComparadorAntesDespues antes={abierta.antes} despues={abierta.despues} descripcion={abierta.descripcion} />
             ) : (
               <FotoGrande foto={abierta.despues} alt={abierta.descripcion} />
             )}
@@ -70,18 +72,10 @@ export function VisorGaleria({ fotos }: { fotos: FotoVisor[] }) {
   );
 }
 
-function FotoGrande({ foto, alt, etiqueta, par = false }: { foto: Foto; alt: string; etiqueta?: string; par?: boolean }) {
+function FotoGrande({ foto, alt }: { foto: UrlsFoto; alt: string }) {
   return (
-    <figure className={cn("relative", par && "h-[36dvh] md:h-[min(70dvh,40rem)]")}>
-      <Image
-        src={foto.url}
-        alt={alt}
-        width={foto.ancho ?? 1600}
-        height={foto.alto ?? 1200}
-        unoptimized
-        className={cn("w-full bg-superficie object-contain", par ? "h-full" : "max-h-[75dvh]")}
-      />
-      {etiqueta && <figcaption className="absolute top-2 left-2 bg-negro/75 px-2 py-0.5 text-sm font-semibold text-blanco">{etiqueta}</figcaption>}
+    <figure>
+      <Image src={foto.url} alt={alt} width={foto.ancho ?? 1600} height={foto.alto ?? 1200} unoptimized className="max-h-[75dvh] w-full bg-superficie object-contain" />
     </figure>
   );
 }
