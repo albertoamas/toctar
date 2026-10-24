@@ -23,7 +23,7 @@ Paso a paso completo, con cuentas, variables y comprobaciones: `guia-de-desplieg
 | # | Tarea | Necesita | Responsable |
 |---|---|---|---|
 | 1 | Instalar `gh` (para Pull Requests desde la terminal) y proteger `main` y `develop` en GitHub | `winget install GitHub.cli` + `gh auth login` | YankoSoft |
-| 2 | Elegir proveedor del VPS (Hetzner o DigitalOcean, 4 GB) y contratarlo | Decisión + tarjeta | YankoSoft (1er mes regalado) |
+| 2 | ~~Elegir proveedor del VPS y contratarlo~~ Hecho el 23/10: Hetzner CX23 en Nuremberg, Ubuntu 26.04, preparado y endurecido (`servidor.md`) | — | — |
 | 3 | Instalar Coolify en el VPS y conectarlo al repositorio | VPS | YankoSoft |
 | 4 | Comprar el dominio y apuntarlo al VPS (`<dominio>` y `pruebas.<dominio>`) | Nombre elegido por el dueño | YankoSoft (1er año regalado) |
 | 5 | Crear en Coolify los dos entornos: `develop` → pruebas, `main` → producción, cada uno con su PostgreSQL 18 | Pasos 1 a 4 | YankoSoft |
