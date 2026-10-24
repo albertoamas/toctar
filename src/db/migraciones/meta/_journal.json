@@ -218,6 +218,13 @@
       "when": 1792776579633,
       "tag": "0030_mantenimientos",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1792864950370,
+      "tag": "0031_galeria_en_portada",
+      "breakpoints": true
     }
   ]
 }

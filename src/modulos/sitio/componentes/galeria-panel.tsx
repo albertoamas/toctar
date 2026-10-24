@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useActionState, useRef, useState, useSyncExternalStore, useTransition } from "react";
-import { ArrowDownIcon, ArrowUpIcon, CameraIcon, EyeIcon, EyeOffIcon, PencilIcon, TrashIcon, UploadIcon, XIcon } from "lucide-react";
+import { ArrowDownIcon, ArrowUpIcon, CameraIcon, EyeIcon, EyeOffIcon, HouseIcon, PencilIcon, TrashIcon, UploadIcon, XIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { avisarResultado } from "@/componentes/panel/avisos";
@@ -22,16 +22,27 @@ import {
 } from "@/componentes/ui/dialog";
 import { Input } from "@/componentes/ui/input";
 import type { EstadoFormulario } from "@/lib/formularios";
-import { cambiarVisibilidadGaleria, eliminarGaleriaItem, guardarGaleriaItem, moverGaleriaItem, subirGaleria } from "../acciones";
+import { cambiarVisibilidadGaleria, elegirParaPortada, eliminarGaleriaItem, guardarGaleriaItem, moverGaleriaItem, subirGaleria } from "../acciones";
 
 // HU-09: galería de antes y después (RF-12). Se sube un par o una foto sola, asociada a un servicio,
 // y se ordena, oculta, edita o elimina. Las fotos se achican en el celular antes de subir.
+// Un trabajo con antes se elige para el comparador de la portada (pedido de la demo del 24/10).
 
 type Foto = { miniatura: string; ancho: number | null; alto: number | null };
-export type ItemGaleria = { id: number; servicioId: number; servicio: string; descripcion: string; visible: boolean; antes: Foto | null; despues: Foto };
+export type ItemGaleria = {
+  id: number;
+  servicioId: number;
+  servicio: string;
+  descripcion: string;
+  visible: boolean;
+  /** Visible y de un servicio que se ve en el sitio: solo así puede ir a la portada. */
+  enSitio: boolean;
+  antes: Foto | null;
+  despues: Foto;
+};
 type Servicio = { id: number; nombre: string };
 
-export function GaleriaPanel({ items, servicios }: { items: ItemGaleria[]; servicios: Servicio[] }) {
+export function GaleriaPanel({ items, servicios, portadaId }: { items: ItemGaleria[]; servicios: Servicio[]; portadaId: number | null }) {
   const [filtro, setFiltro] = useState("");
   const [subiendo, setSubiendo] = useState(false);
   const visibles = filtro ? items.filter((i) => String(i.servicioId) === filtro) : items;
@@ -63,12 +74,26 @@ export function GaleriaPanel({ items, servicios }: { items: ItemGaleria[]; servi
       {items.length === 0 && !subiendo && <EstadoVacio>Todavía no hay fotos. Sube la primera de un trabajo terminado.</EstadoVacio>}
       {items.length > 0 && visibles.length === 0 && <EstadoVacio>No hay fotos de ese servicio todavía.</EstadoVacio>}
       {filtro && visibles.length > 1 && <p className="text-sm text-tinta-suave">Para cambiar el orden, mira todos los servicios.</p>}
+      {items.some((i) => i.antes) && (
+        <p className="flex items-center gap-2 text-sm text-tinta-suave">
+          <HouseIcon aria-hidden className="size-4 shrink-0" />
+          Arriba en la portada se compara el trabajo marcado &quot;En la portada&quot;. Para cambiarlo, toca la casa en otro con foto de antes.
+        </p>
+      )}
 
       {/* En el celular, una por renglón: así entran los 5 íconos y editar tiene lugar (pulido 4.7) */}
       {visibles.length > 0 && (
         <ol aria-label="Fotos de la galería" className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
           {visibles.map((item, i) => (
-            <Tarjeta key={item.id} item={item} servicios={servicios} primero={i === 0} ultimo={i === visibles.length - 1} ordenable={!filtro} />
+            <Tarjeta
+              key={item.id}
+              item={item}
+              servicios={servicios}
+              primero={i === 0}
+              ultimo={i === visibles.length - 1}
+              ordenable={!filtro}
+              enPortada={item.id === portadaId}
+            />
           ))}
         </ol>
       )}
@@ -85,7 +110,21 @@ function Miniatura({ foto, alt, etiqueta }: { foto: Foto; alt: string; etiqueta?
   );
 }
 
-function Tarjeta({ item, servicios, primero, ultimo, ordenable }: { item: ItemGaleria; servicios: Servicio[]; primero: boolean; ultimo: boolean; ordenable: boolean }) {
+function Tarjeta({
+  item,
+  servicios,
+  primero,
+  ultimo,
+  ordenable,
+  enPortada,
+}: {
+  item: ItemGaleria;
+  servicios: Servicio[];
+  primero: boolean;
+  ultimo: boolean;
+  ordenable: boolean;
+  enPortada: boolean;
+}) {
   const [editando, setEditando] = useState(false);
   const [pendiente, iniciar] = useTransition();
   const ejecutar = (accion: () => Promise<EstadoFormulario>) => iniciar(async () => avisarResultado(await accion()));
@@ -105,6 +144,7 @@ function Tarjeta({ item, servicios, primero, ultimo, ordenable }: { item: ItemGa
             <span className="flex flex-wrap items-center gap-1 text-xs font-semibold text-tinta-suave">
               {item.servicio}
               {!item.visible && <span className="tt-insignia">Oculta</span>}
+              {enPortada && <span className="tt-insignia">En la portada</span>}
             </span>
             <span className="line-clamp-2 text-sm">{item.descripcion}</span>
             <span className="-mx-2 mt-auto flex flex-wrap justify-end">
@@ -117,6 +157,12 @@ function Tarjeta({ item, servicios, primero, ultimo, ordenable }: { item: ItemGa
                     <ArrowDownIcon />
                   </Button>
                 </>
+              )}
+              {/* Solo un trabajo con antes que se ve en el sitio puede ir a la portada; el que ya está no muestra el botón */}
+              {item.antes && item.enSitio && !enPortada && (
+                <Button type="button" variant="ghost" size="icon" disabled={pendiente} aria-label={`Mostrar en la portada: ${item.descripcion}`} onClick={() => ejecutar(() => elegirParaPortada(item.id))}>
+                  <HouseIcon />
+                </Button>
               )}
               <Button type="button" variant="ghost" size="icon" aria-label={`Editar: ${item.descripcion}`} onClick={() => setEditando(true)}>
                 <PencilIcon />

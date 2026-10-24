@@ -5,10 +5,12 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { cn } from "cn";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
+import { ComparadorAntesDespues } from "@/componentes/sitio/comparador-antes-despues";
 import { PortadaArte } from "@/componentes/sitio/portada-arte";
 import { TarjetaServicio } from "@/componentes/sitio/tarjeta-servicio";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import type { UrlsFoto } from "@/lib/fotos";
+import { ladoDelLema, trabajoDePortada } from "@/modulos/sitio/galeria";
 import { contenidoPublico, fotoPortadaPublica, galeriaPublica, serviciosPublicos, type FotoGaleria, type ServicioPublico } from "@/modulos/sitio/publico";
 
 // Las descripciones para Google van fijas (dentro del <head>, que es donde las lee Google) y sin nombrar
@@ -21,7 +23,8 @@ export const metadata: Metadata = {
 const SERVICIOS_EN_PORTADA = 6;
 const FOTOS_EN_PORTADA = 6;
 
-// HU-10 Portada: lema, presentación y WhatsApp; servicios; algunas fotos de la galería; cierre.
+// HU-10 Portada: lema, presentación y WhatsApp, con el comparador de antes y después al lado (pedido de la demo del
+// 24/10); servicios; algunas fotos de la galería; cierre.
 // Los textos y las listas salen del panel (B3) y se leen al atender la visita (el build no tiene base).
 // Toda la portada aparece de una vez (pulido 2.1): antes, los títulos fijos ("Servicios", el cierre) salían
 // en el primer envío y su contenido después, y se veían títulos sueltos. Mientras llegan los datos se ve
@@ -49,10 +52,11 @@ export default function Portada() {
 async function PortadaConDatos() {
   await connection();
   const [inicio, foto, servicios, fotos] = await Promise.all([contenidoPublico("inicio"), fotoPortadaPublica(), serviciosPublicos(), galeriaPublica()]);
+  const trabajo = trabajoDePortada(fotos);
   return (
     <>
       <section className="relative overflow-hidden">
-        <Cabecera foto={foto}>
+        <Cabecera foto={foto} trabajo={trabajo}>
           <Presentacion lema={inicio.lema as string} presentacion={inicio.presentacion as string} />
         </Cabecera>
       </section>
@@ -62,7 +66,8 @@ async function PortadaConDatos() {
         <Servicios servicios={servicios} />
       </section>
 
-      <Galeria fotos={fotos.slice(0, FOTOS_EN_PORTADA)} />
+      {/* Sin repetir el trabajo que ya se compara arriba */}
+      <Galeria fotos={fotos.filter((f) => f.id !== trabajo?.id).slice(0, FOTOS_EN_PORTADA)} />
 
       <CierreWhatsApp
         titulo="Cuéntanos qué necesita tu vehículo"
@@ -73,8 +78,11 @@ async function PortadaConDatos() {
 }
 
 /**
- * Cabecera de la portada: lema y presentación sobre la foto del taller (oscurecida), y la línea LED. Sin foto
- * cargada en el panel, al lado va el arte de la marca (pulido 2.1, tercera revisión).
+ * Cabecera de la portada: lema y presentación sobre la foto del taller (oscurecida), y la línea LED. Al lado, el
+ * comparador de antes y después del trabajo elegido en el panel (pedido de la demo del 24/10: lo que más le gustó al
+ * dueño); sin ningún trabajo con antes, el arte de la marca si no hay foto del taller (pulido 2.1, tercera revisión).
+ * En el celular, el arte va arriba y el comparador debajo del texto, sin pasar del 45 % del alto (una foto vertical no
+ * tapa la pantalla entera).
  * Mientras llegan los textos se muestra vacía: sin foto, sin arte y SIN la línea (con el arte, al llegar una foto el
  * texto subía de golpe en el celular). El bloque del texto tiene el MISMO alto mínimo
  * cargando y cargado: así un texto más corto no hace subir la página al llegar (medido el 18/10: con una
@@ -83,16 +91,31 @@ async function PortadaConDatos() {
  * sean "dos o tres frases", como pide el panel.
  * La línea llega junto con el texto: así se enciende una sola vez y ya en su lugar.
  */
-function Cabecera({ children, foto }: { children?: React.ReactNode; foto?: UrlsFoto | null }) {
+function Cabecera({ children, foto, trabajo }: { children?: React.ReactNode; foto?: UrlsFoto | null; trabajo?: ReturnType<typeof trabajoDePortada<FotoGaleria>> }) {
+  // Cargando (sin children) no va nada al lado: llega junto con el texto
+  const lado = children ? ladoDelLema({ hayFotoTaller: !!foto, hayComparador: !!trabajo }) : null;
   return (
     <>
       {foto && <FotoTaller foto={foto} />}
-      {/* La columna derecha es la del arte: con foto, el texto usa todo el ancho (su máximo lo pone Presentacion). */}
-      <div className={cn("relative mx-auto grid max-w-6xl gap-8 px-4 pt-10 pb-12 md:items-end md:pt-20 md:pb-16", !foto && "md:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]")}>
-        {children && !foto && <PortadaArte className="order-first h-auto w-full max-w-72 justify-self-end md:order-last md:max-w-none" />}
+      {/* La columna derecha es la del comparador o la del arte; sin ninguno, el texto usa todo el ancho (su máximo lo pone Presentacion). */}
+      <div
+        className={cn(
+          "relative mx-auto grid max-w-6xl gap-8 px-4 pt-10 pb-12 md:items-end md:pt-20 md:pb-16",
+          lado === "comparador" && "md:grid-cols-2 md:items-center md:gap-12",
+          lado === "arte" && "md:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]",
+        )}
+      >
+        {lado === "arte" && <PortadaArte className="order-first h-auto w-full max-w-72 justify-self-end md:order-last md:max-w-none" />}
         <div aria-hidden={children ? undefined : true} className="min-h-[24.5rem] md:min-h-[18.5rem]">
           {children}
         </div>
+        {/* Después del texto, también en el código: el teclado y el lector de pantalla llegan primero al lema y a
+            "Pedir cotización". En el celular queda debajo, aún en la primera pantalla. */}
+        {lado === "comparador" && trabajo && (
+          <div className="[--alto-comparador:45dvh] md:[--alto-comparador:60dvh]">
+            <ComparadorAntesDespues antes={trabajo.antes} despues={trabajo.despues} descripcion={trabajo.descripcion} conLeyenda alFrente />
+          </div>
+        )}
       </div>
       {children ? <hr className="tt-led tt-led--encender" /> : <div aria-hidden className="h-[3px]" />}
     </>

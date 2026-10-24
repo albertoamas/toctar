@@ -82,19 +82,28 @@ export const faq = pgTable("faq", {
 });
 
 /** Fotos de antes y después de la galería (RF-12). La foto sola va en `foto_despues_id`. */
-export const galeriaItem = pgTable("galeria_item", {
-  id: integer("id").generatedByDefaultAsIdentity().primaryKey(),
-  servicioId: integer("servicio_id")
-    .notNull()
-    .references(() => servicio.id),
-  fotoAntesId: integer("foto_antes_id").references(() => archivo.id),
-  fotoDespuesId: integer("foto_despues_id")
-    .notNull()
-    .references(() => archivo.id),
-  /** También es el texto alternativo de las fotos (RNF-14). */
-  descripcion: text("descripcion").notNull(),
-  orden: integer("orden").notNull(),
-  visible: boolean("visible").default(true).notNull(),
-  createdAt: momento("created_at").defaultNow().notNull(),
-  createdBy: integer("created_by").references(() => usuario.id),
-});
+export const galeriaItem = pgTable(
+  "galeria_item",
+  {
+    id: integer("id").generatedByDefaultAsIdentity().primaryKey(),
+    servicioId: integer("servicio_id")
+      .notNull()
+      .references(() => servicio.id),
+    fotoAntesId: integer("foto_antes_id").references(() => archivo.id),
+    fotoDespuesId: integer("foto_despues_id")
+      .notNull()
+      .references(() => archivo.id),
+    /** También es el texto alternativo de las fotos (RNF-14). */
+    descripcion: text("descripcion").notNull(),
+    orden: integer("orden").notNull(),
+    visible: boolean("visible").default(true).notNull(),
+    /** El trabajo elegido para el comparador de la portada (pedido de la demo del 24/10): uno solo, y con foto de antes. */
+    enPortada: boolean("en_portada").default(false).notNull(),
+    createdAt: momento("created_at").defaultNow().notNull(),
+    createdBy: integer("created_by").references(() => usuario.id),
+  },
+  (t) => [
+    uniqueIndex("galeria_item_una_en_portada").on(t.enPortada).where(sql`${t.enPortada}`),
+    check("galeria_item_portada_con_antes", sql`not ${t.enPortada} or ${t.fotoAntesId} is not null`),
+  ],
+);

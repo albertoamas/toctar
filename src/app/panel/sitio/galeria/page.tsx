@@ -4,6 +4,7 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { exigirModulo } from "@/lib/sesion";
 import { GaleriaPanel } from "@/modulos/sitio/componentes/galeria-panel";
 import { listarGaleria, opcionesServicio } from "@/modulos/sitio/consultas";
+import { trabajoDePortada } from "@/modulos/sitio/galeria";
 
 export const metadata: Metadata = { title: "Galería" };
 
@@ -22,12 +23,15 @@ async function Contenido() {
   return (
     <GaleriaPanel
       servicios={servicios}
+      // El que de verdad se ve en la portada: el elegido o, si no hay, el primero con antes de lo que se ve en el sitio
+      portadaId={trabajoDePortada(items.filter((i) => i.enSitio))?.id ?? null}
       items={items.map((i) => ({
         id: i.id,
         servicioId: i.servicioId,
         servicio: i.servicio,
         descripcion: i.descripcion,
         visible: i.visible,
+        enSitio: i.enSitio,
         antes: i.antes,
         despues: i.despues,
       }))}
