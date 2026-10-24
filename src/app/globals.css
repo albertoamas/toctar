@@ -543,9 +543,11 @@
     transform: skewX(-30deg);
     transform-origin: bottom;
   }
+  /* El resumen ocupa el espacio que sobra: "Ver el servicio" queda al pie, a la misma altura en toda la fila aunque
+     los resúmenes tengan distinto largo (revisión de YankoSoft, 24/10) */
   .tt-tarjeta__cuerpo {
     display: grid;
-    align-content: start;
+    grid-template-rows: auto 1fr auto;
     gap: 8px;
     padding: 24px;
   }
@@ -608,6 +610,9 @@
       margin: 12px 0 12px 12px;
     }
     .tt-tarjeta__cuerpo {
+      /* Sin el resumen a la vista: el título y el enlace, uno debajo del otro */
+      grid-template-rows: none;
+      align-content: center;
       gap: 4px;
       padding: 12px 20px 16px 16px;
     }
