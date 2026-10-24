@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
-import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
+import { fechaCorta, fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
@@ -13,12 +13,15 @@ import { datosDeCotizacion, datosDirecta, espaciosEnFechas, tecnicosActivos } fr
 import { fechaEntregaSugerida } from "@/modulos/agenda/reglas";
 import { ElegirCliente } from "@/modulos/clientes/componentes/elegir-cliente";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
+import { recordatorioParaAgendar } from "@/modulos/mantenimientos/consultas";
 
 export const metadata: Metadata = { title: "Nueva reserva" };
 
 // HU-30: nueva reserva. Desde la cotización vigente de una consulta (`?cotizacion=`), o directa: se elige el cliente con
 // el buscador de Clientes (`?cliente=`) y su vehículo (`?vehiculo=`). Dueño o encargado con "Agenda"; la directa lleva
 // precios y la arma el dueño o quien tiene "Pagos". `?fecha=` y `?espacio=` llegan desde un día libre del tablero.
+// HU-38: `?recordatorio=` llega desde "Agendar" en Mantenimientos, con el cliente y el vehículo: al agendar, el
+// recordatorio queda "agendado".
 export default function PaginaNuevaReserva({ searchParams }: PageProps<"/panel/agenda/nueva">) {
   return (
     <section className="flex flex-col gap-6">
@@ -100,6 +103,20 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   };
   if (!clienteId) return <ElegirCliente q={texto("q")} hrefCliente={conservar} />;
 
+  // El mantenimiento que se agenda: abierto y de este cliente y vehículo (la acción lo vuelve a mirar al guardar)
+  const recordatorioId = numero("recordatorio");
+  if (recordatorioId && !puedeVerModulo(usuario, "mantenimientos")) {
+    return <EstadoVacio>Los mantenimientos los agenda el dueño o quien tiene «Mantenimientos».</EstadoVacio>;
+  }
+  const recordatorio = recordatorioId ? await recordatorioParaAgendar(recordatorioId) : null;
+  if (recordatorioId && (!recordatorio || recordatorio.clienteId !== clienteId || recordatorio.vehiculoId !== numero("vehiculo"))) {
+    return (
+      <EstadoVacio>
+        Ese mantenimiento ya se agendó o se cerró. <Link href="/panel/mantenimientos" className={enlace}>Volver a Mantenimientos</Link>
+      </EstadoVacio>
+    );
+  }
+
   const d = await datosDirecta(clienteId, numero("vehiculo"));
   if (!d) return <EstadoVacio>Ese cliente ya no está activo. <Link href="/panel/agenda/nueva" className={enlace}>Elegir otro</Link></EstadoVacio>;
   const cambiar = (
@@ -123,6 +140,11 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
         </span>
         {cambiar}
       </div>
+      {recordatorio && (
+        <p className="rounded-sm border border-border p-3">
+          Mantenimiento de {recordatorio.servicio} ({recordatorio.fechaProgramada < hoy ? "venció" : "vence"} el {fechaCorta(recordatorio.fechaProgramada, hoy)})
+        </p>
+      )}
       {!d.vehiculo ? (
         <div className="flex flex-col gap-3">
           <h2 className="font-heading text-2xl font-bold italic">Vehículo</h2>
@@ -139,7 +161,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
         </div>
       ) : (
         <Formulario
-          origen={{ tipo: "directa", clienteId: d.cliente.id, vehiculoId: d.vehiculo.id, opciones: d.opciones }}
+          origen={{ tipo: "directa", clienteId: d.cliente.id, vehiculoId: d.vehiculo.id, opciones: d.opciones, recordatorioId: recordatorio?.id ?? null }}
           conPagos={conPagos}
           hoy={hoy}
           fechaInicial={fechaInicial}

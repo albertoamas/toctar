@@ -4,7 +4,7 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { auditoria, cliente, consulta, cotizacion, pago, servicio, trabajo, trabajoLinea, variante, vehiculo } from "@/db/esquema";
+import { auditoria, cliente, consulta, cotizacion, pago, recordatorioMantenimiento, servicio, trabajo, trabajoLinea, variante, vehiculo } from "@/db/esquema";
 import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { erroresDe, exclusionViolada, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { puedeVerModulo } from "@/lib/permisos";
@@ -13,6 +13,7 @@ import { sucursalPrincipal } from "@/modulos/configuracion/consultas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { descripcionLinea, montoNoMayor } from "@/modulos/cotizaciones/reglas";
 import { borrarFotosSueltas, soltarFotosIngreso } from "@/modulos/ordenes/fotos";
+import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
 import { descartarComprobante, guardarComprobante } from "@/modulos/pagos/comprobante";
 import { calcularSaldo } from "@/modulos/pagos/reglas";
 import { datosDeCotizacion, espaciosEnFechas, tecnicosActivos, type EspacioDisponible } from "./consultas";
@@ -43,7 +44,8 @@ type Linea = { varianteId: number; descripcion: string; precio: string };
 
 /**
  * Agenda una reserva (HU-30, RF-36, RF-37): desde la cotización vigente de una consulta (que pasa a "aceptada" y la
- * consulta a "confirmado") o directa, con servicios del catálogo. Con el adelanto, si lo hay (RN-04). Todo o nada.
+ * consulta a "confirmado") o directa, con servicios del catálogo. Con el adelanto, si lo hay (RN-04). La directa que
+ * viene de un mantenimiento (HU-38) deja el recordatorio "agendado" con la reserva. Todo o nada.
  */
 export async function agendarReserva(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const usuario = await exigirModulo("agenda");
@@ -76,6 +78,7 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
   let cotizacionId: number | null = null;
   let descuento = "0.00";
   let lineas: Linea[];
+  let recordatorioId: number | null = null;
   if (d.origen === "cotizacion") {
     const c = await datosDeCotizacion(d.cotizacionId);
     if (!c) return { mensaje: "Esa cotización ya no existe." };
@@ -96,6 +99,8 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
     if (!suyo) return { mensaje: "Ese cliente o vehículo ya no está activo. Vuelve a elegirlo." };
     clienteId = d.clienteId;
     vehiculoId = d.vehiculoId;
+    recordatorioId = d.recordatorioId;
+    if (recordatorioId && !puedeVerModulo(usuario, "mantenimientos")) return { mensaje: "Los mantenimientos los agenda el dueño o quien tiene «Mantenimientos»." };
     const opciones = await db
       .select({ id: variante.id, servicio: servicio.nombre, variante: variante.nombre })
       .from(variante)
@@ -182,6 +187,23 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
           .returning({ id: pago.id });
         await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "pago", entidadId: p.id, accion: "crear", datos: { trabajoId: nuevo.id, monto: adelanto.monto, tipo: "adelanto", metodo: adelanto.metodo, fecha: fechaEnBolivia(), comprobanteArchivoId: comprobanteId } });
       }
+      if (recordatorioId) {
+        // Solo uno abierto y de este cliente y vehículo: si otra persona lo agendó o lo cerró recién, no se reserva
+        const [agendado] = await tx
+          .update(recordatorioMantenimiento)
+          .set({ estado: "agendado", trabajoAgendadoId: nuevo.id, updatedAt: sql`now()` })
+          .where(
+            and(
+              eq(recordatorioMantenimiento.id, recordatorioId),
+              eq(recordatorioMantenimiento.clienteId, clienteId),
+              eq(recordatorioMantenimiento.vehiculoId, vehiculoId),
+              inArray(recordatorioMantenimiento.estado, [...ESTADOS_RECORDATORIO_ABIERTO]),
+            ),
+          )
+          .returning({ id: recordatorioMantenimiento.id });
+        if (!agendado) throw new Conflicto("Ese mantenimiento ya se agendó o se cerró. Vuelve a Mantenimientos.");
+        await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "recordatorio_mantenimiento", entidadId: recordatorioId, accion: "agendar", datos: { trabajoId: nuevo.id } });
+      }
       // Un cliente que reserva sube en la lista de recientes de Clientes
       await tx.update(cliente).set({ updatedAt: sql`now()` }).where(eq(cliente.id, clienteId));
       return { id: nuevo.id };
@@ -196,6 +218,7 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
   }
 
   despuesDeCambiar(resultado.id, clienteId, consultaId);
+  if (recordatorioId) revalidatePath("/panel/mantenimientos");
   redirect(`/panel/agenda/${resultado.id}?agendada=1`);
 }
 
@@ -292,6 +315,7 @@ export async function cancelarReserva(_previo: EstadoFormulario, datos: FormData
   if (actual.estado !== "agendado") return { mensaje: "Solo se cancela una reserva agendada." };
 
   let sueltas: number[];
+  let conMantenimiento = false;
   try {
     sueltas = await db.transaction(async (tx) => {
       const [cancelada] = await tx
@@ -320,7 +344,14 @@ export async function cancelarReserva(_previo: EstadoFormulario, datos: FormData
         if (!vigente) throw new Conflicto("Esa reserva cambió recién. Recarga la página.");
         cotizacionVigente = true;
       }
-      await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "trabajo", entidadId: id, accion: "cancelar", datos: { motivo, consultaPerdida, cotizacionVigente } });
+      // El mantenimiento que se agendó con esta reserva vuelve a la lista, como estaba (avisado o por avisar)
+      const devueltos = await tx
+        .update(recordatorioMantenimiento)
+        .set({ estado: sql`case when ${recordatorioMantenimiento.avisadoAt} is null then 'pendiente' else 'avisado' end`, trabajoAgendadoId: null, updatedAt: sql`now()` })
+        .where(eq(recordatorioMantenimiento.trabajoAgendadoId, id))
+        .returning({ id: recordatorioMantenimiento.id });
+      conMantenimiento = devueltos.length > 0;
+      await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "trabajo", entidadId: id, accion: "cancelar", datos: { motivo, consultaPerdida, cotizacionVigente, mantenimientos: devueltos.map((r) => r.id) } });
       // Las fotos de ingreso que se alcanzaron a tomar ya no sirven: el vehículo no se recibió
       return soltarFotosIngreso(tx, id);
     });
@@ -331,6 +362,7 @@ export async function cancelarReserva(_previo: EstadoFormulario, datos: FormData
 
   await borrarFotosSueltas(sueltas);
   despuesDeCambiar(id, actual.clienteId, actual.consultaId);
+  if (conMantenimiento) revalidatePath("/panel/mantenimientos");
   const [conPagos] = await db.select({ id: pago.id }).from(pago).where(and(eq(pago.trabajoId, id), eq(pago.anulado, false))).limit(1);
   return { ok: true, mensaje: conPagos ? "Reserva cancelada. El adelanto queda como ingreso." : "Reserva cancelada." };
 }

@@ -25,3 +25,9 @@ export function mensajeListo({ negocio, cliente, vehiculo, saldo }: { negocio: s
   const nombre = primerNombre(cliente);
   return `${nombre ? `Hola ${nombre}` : "Hola"}, tu ${textoVehiculo(vehiculo)} ya está listo en ${negocio}. ${pendiente}Te esperamos en el taller.`;
 }
+
+/** Le toca el mantenimiento (HU-38, RF-50): para avisarle y ofrecerle un día. */
+export function mensajeMantenimiento({ negocio, cliente, vehiculo, servicio }: { negocio: string; cliente: string; vehiculo: Vehiculo; servicio: string }): string {
+  const nombre = primerNombre(cliente);
+  return `${nombre ? `Hola ${nombre}` : "Hola"}, te escribimos de ${negocio}: a tu ${textoVehiculo(vehiculo)} le toca el mantenimiento de ${servicio}. ¿Te agendamos un día?`;
+}

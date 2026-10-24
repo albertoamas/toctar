@@ -102,8 +102,11 @@ const base = {
 /** Reserva desde la cotización vigente de una consulta: cliente, vehículo y líneas salen de ella. */
 const esquemaReservaDeCotizacion = z.object({ origen: z.literal("cotizacion"), cotizacionId: id, ...base });
 
-/** Reserva directa (RF-37): cliente y vehículo registrados y servicios del catálogo. */
-const esquemaReservaDirecta = z.object({ origen: z.literal("directa"), clienteId: id, vehiculoId: id, lineas, ...base });
+/**
+ * Reserva directa (RF-37): cliente y vehículo registrados y servicios del catálogo. Con `recordatorioId` si viene de
+ * "Agendar" en Mantenimientos (HU-38): el recordatorio queda agendado con la reserva.
+ */
+const esquemaReservaDirecta = z.object({ origen: z.literal("directa"), clienteId: id, vehiculoId: id, lineas, recordatorioId: idOpcional, ...base });
 
 export const esquemaReserva = z.discriminatedUnion("origen", [esquemaReservaDeCotizacion, esquemaReservaDirecta]);
 
@@ -116,6 +119,7 @@ export function entradaReserva(datos: FormData) {
       cotizacionId: texto("cotizacionId"),
       clienteId: texto("clienteId"),
       vehiculoId: texto("vehiculoId"),
+      recordatorioId: texto("recordatorioId"),
       lineas: texto("lineas") || "[]",
       espacioId: texto("espacioId"),
       tecnicoId: texto("tecnicoId"),
