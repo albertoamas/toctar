@@ -203,6 +203,7 @@
 |---|---|---|---|
 | 13.1 | "Nosotros" muestra el texto cargado en el panel | E2E `hu-13-14` "Nosotros muestra la historia, cómo trabajan y por qué elegirlos" | ✅ |
 | 13.2 | Las preguntas frecuentes se abren y cierran una por una | E2E "las preguntas frecuentes se abren y se cierran una por una" (`<details>`, funciona sin JavaScript) | ✅ |
+| 13.3 | Foto del equipo en Nosotros, al lado de la historia (24/10, registro de cambios 9) | E2E `hu-08` "la foto del equipo se sube en Textos y va al lado de la historia de Nosotros" | ✅ |
 
 ## HU-14 Contacto y mapa
 
