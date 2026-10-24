@@ -5,23 +5,23 @@ import { cn } from "cn";
 import { Cargando } from "@/componentes/panel/cargando";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
-import { diasEntre, fechaEnBolivia, formatearFecha, textoHace } from "@/lib/fechas";
+import { fechaCorta, fechaEnBolivia, textoHace } from "@/lib/fechas";
+import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp } from "@/lib/whatsapp";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
-import { nombreVehiculo } from "@/modulos/clientes/reglas";
+import { vehiculoEnLista } from "@/modulos/clientes/reglas";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
 import { calcularTotales } from "@/modulos/cotizaciones/reglas";
 import { mensajeSaldo } from "@/modulos/ordenes/mensajes";
+import { RegistrarPago } from "@/modulos/pagos/componentes/registrar-pago";
 import { saldosPendientes } from "@/modulos/pagos/consultas";
 
 export const metadata: Metadata = { title: "Saldos pendientes" };
 
-/** Desde cuántos días sin pagar se marca "Hace más de un mes". */
-const DIAS_ATRASO = 30;
-
 // HU-37: quién debe todavía (RF-47). El dueño o el encargado con "Pagos". Las órdenes entregadas con saldo, la más
-// antigua primero; desde cada una se le escribe al cliente por WhatsApp o se abre la orden para registrar el pago.
+// antigua primero; desde cada una se le escribe al cliente por WhatsApp y se registra el pago ahí mismo (quien tiene
+// "Pagos" y no "Órdenes" no podría cobrar desde la orden). "Ver la orden", para quien ve órdenes.
 export default function PaginaSaldos() {
   return (
     <section className="flex flex-col gap-6">
@@ -34,7 +34,8 @@ export default function PaginaSaldos() {
 }
 
 async function Lista() {
-  await exigirModulo("pagos");
+  const usuario = await exigirModulo("pagos");
+  const verOrdenes = puedeVerModulo(usuario, "ordenes");
   const [saldos, negocio] = await Promise.all([saldosPendientes(), obtenerDatosPublicos()]);
   if (saldos.length === 0) return <p className="text-tinta-suave">Nadie debe nada.</p>;
   const hoy = fechaEnBolivia();
@@ -61,13 +62,12 @@ async function Lista() {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex min-w-0 flex-col">
                   <span className="font-semibold">{s.cliente}</span>
-                  <span className="text-sm text-tinta-suave">{[nombreVehiculo(vehiculo), s.placa].filter(Boolean).join(", ")}</span>
+                  <span className="text-sm text-tinta-suave">{vehiculoEnLista(vehiculo)}</span>
                 </div>
                 <span className="shrink-0 font-heading text-2xl font-extrabold whitespace-nowrap italic tabular-nums">{mostrarMonto(s.saldo)} Bs</span>
               </div>
-              <p className="flex flex-wrap items-center gap-2 text-sm">
-                Entregada el {formatearFecha(entregada).slice(0, 5)}, {textoHace(entregada, hoy)}
-                {diasEntre(entregada, hoy) >= DIAS_ATRASO && <span className="tt-insignia tt-insignia--aviso">Hace más de un mes</span>}
+              <p className="text-sm">
+                Entregada el {fechaCorta(entregada, hoy)}, {textoHace(entregada, hoy)}
               </p>
               <div className="flex flex-wrap gap-2">
                 <a
@@ -79,11 +79,13 @@ async function Lista() {
                   <IconoWhatsApp />
                   Escribir por WhatsApp
                 </a>
-                {/* Enlace con forma de botón: en la orden se registra el pago */}
-                <Link href={`/panel/ordenes/${s.id}`} className={cn(buttonVariants({ variant: "outline" }))}>
-                  Ver la orden
-                </Link>
+                {verOrdenes && (
+                  <Link href={`/panel/ordenes/${s.id}`} className={cn(buttonVariants({ variant: "outline" }))}>
+                    Ver la orden
+                  </Link>
+                )}
               </div>
+              <RegistrarPago trabajoId={s.id} saldo={s.saldo} hoy={hoy} conPagos />
             </li>
           );
         })}
