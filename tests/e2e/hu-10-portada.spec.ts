@@ -121,10 +121,44 @@ test("el trabajo elegido en la galería del panel se compara arriba en la portad
 
   await page.goto("/");
   await expect(page.getByRole("img", { name: `Después: ${elegido}` })).toBeVisible();
-  await expect(page.getByRole("slider", { name: "Comparar antes y después" })).toHaveValue("50");
+  // La línea se mueve sola (pedido de YankoSoft del 24/10) hasta que se toca: ahí queda donde se dejó
+  // Se mide la línea (la variable --corte de la caja): el deslizador queda en el medio mientras se mueve sola, para
+  // que su valor no cambie bajo el lector de pantalla
+  const linea = page.getByRole("slider", { name: "Comparar antes y después" });
+  const despues = page.getByRole("img", { name: `Después: ${elegido}` });
+  const posicion = () => despues.evaluate((img) => Number(getComputedStyle(img.closest("[style*='--corte']")!).getPropertyValue("--corte")));
+  await expect.poll(posicion, { timeout: 8000 }).not.toBe(50);
+  await expect(linea).toHaveValue("50");
+  const caja = (await despues.boundingBox())!;
+  await page.mouse.click(caja.x + caja.width * 0.3, caja.y + caja.height / 2);
+  await expect.poll(async () => Number(await linea.inputValue())).toBeLessThan(40);
+  const tocada = await posicion();
+  await page.waitForTimeout(1500);
+  expect(await posicion()).toBe(tocada);
   await expect(page.getByText(elegido, { exact: true })).toBeVisible();
+  // En un celular ancho no queda un hueco entre los botones y el comparador, ni se enciman (revisión de YankoSoft, 24/10)
+  const pantalla = page.viewportSize()!;
+  for (const ancho of [390, 480]) {
+    await page.setViewportSize({ width: ancho, height: 900 });
+    const boton = page.getByRole("main").getByRole("link", { name: "Ver los servicios" });
+    const despues = page.getByRole("img", { name: `Después: ${elegido}` });
+    await expect(boton).toBeVisible();
+    await expect(despues).toBeVisible();
+    const [b, c] = [(await boton.boundingBox())!, (await despues.boundingBox())!];
+    const espacio = c.y - (b.y + b.height);
+    expect(espacio, `a ${ancho} px`).toBeGreaterThanOrEqual(0);
+    expect(espacio, `a ${ancho} px`).toBeLessThan(60);
+  }
+  await page.setViewportSize(pantalla);
   // Junto a "Ver la galería", más trabajos en TikTok (pedido de la demo del 24/10)
   await expect(page.getByRole("region", { name: "Trabajos recientes" }).getByRole("link", { name: "Mira nuestros trabajos en TikTok" })).toBeVisible();
+
+  // Con "reducir movimiento", no se mueve sola
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.reload();
+  await page.waitForTimeout(2500);
+  expect(await posicion()).toBe(50);
+  await page.emulateMedia({ reducedMotion: null });
 
   // Oculto, deja la portada: va otro trabajo con antes
   await page.goto("/panel/sitio/galeria");
@@ -140,4 +174,21 @@ test("el trabajo elegido en la galería del panel se compara arriba en la portad
   await expect(tarjeta.getByText("Oculta")).toHaveCount(0);
   await expect(tarjeta.getByText("En la portada")).toHaveCount(0);
   await expect(page.getByRole("button", { name: `Mostrar en la portada: ${elegido}` })).toBeVisible();
+});
+
+// La cabecera de la portada no hace correr lo que se ve al llegar los datos (2B.10: la reserva de alto queda solo
+// mientras carga)
+test("la portada carga sin que se corra lo que ya está a la vista", async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as unknown as { cls: number }).cls = 0;
+    new PerformanceObserver((lista) => {
+      for (const e of lista.getEntries() as unknown as { value: number; hadRecentInput: boolean }[]) {
+        if (!e.hadRecentInput) (window as unknown as { cls: number }).cls += e.value;
+      }
+    }).observe({ type: "layout-shift", buffered: true });
+  });
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await page.waitForTimeout(1000);
+  expect(await page.evaluate(() => (window as unknown as { cls: number }).cls)).toBeLessThan(0.05);
 });
