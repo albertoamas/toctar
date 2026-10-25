@@ -236,7 +236,11 @@ export async function guardarPlantilla(_previo: EstadoFormulario, datos: FormDat
   const autor = await exigirModulo("configuracion");
   const valores = { texto: String(datos.get("texto") ?? "") };
   const entrada = esquemaPlantilla.safeParse({ clave: datos.get("clave"), texto: valores.texto });
-  if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
+  if (!entrada.success) {
+    const errores = erroresDe(entrada.error);
+    // La clave no es un campo del formulario: si no vale, la página quedó vieja
+    return errores.clave ? { mensaje: errores.clave } : { errores, valores };
+  }
   const { clave, texto } = entrada.data;
 
   const fila = { clave, texto, updatedAt: new Date(), updatedBy: Number(autor.id) };
@@ -249,7 +253,7 @@ export async function guardarPlantilla(_previo: EstadoFormulario, datos: FormDat
 export async function restaurarPlantilla(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   await exigirModulo("configuracion");
   const entrada = esquemaClavePlantilla.safeParse({ clave: datos.get("clave") });
-  if (!entrada.success) return { mensaje: "Ese mensaje no existe. Recarga la página." };
+  if (!entrada.success) return { mensaje: erroresDe(entrada.error).clave };
   const { clave } = entrada.data;
 
   await db.delete(plantillaMensaje).where(eq(plantillaMensaje.clave, clave));

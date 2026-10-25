@@ -32,6 +32,8 @@ export function EditorPlantilla({ clave, guardado: inicial, negocio }: Props) {
   const [, restaurar, restaurando] = useActionState<EstadoFormulario, FormData>(conAviso(restaurarPlantilla, alTerminar), {});
   const formulario = useRef<HTMLFormElement>(null);
   const area = useRef<HTMLTextAreaElement>(null);
+  // El texto empieza con el cursor al principio: hasta que la persona lo toque, ese cursor no es "donde está el cursor"
+  const conCursor = useRef(false);
   useFocoEnError(formulario, estado);
   const hidratado = useHidratado();
 
@@ -44,8 +46,11 @@ export function EditorPlantilla({ clave, guardado: inicial, negocio }: Props) {
   function agregarCampo(campo: string) {
     const el = area.current;
     if (!el) return;
-    const insertado = `{${campo}}`;
-    const { selectionStart: desde, selectionEnd: hasta } = el;
+    // Sin cursor todavía (no se tocó el texto), al final, separado por un espacio
+    const sinCursor = !conCursor.current;
+    const insertado = sinCursor && texto && !/\s$/.test(texto) ? ` {${campo}}` : `{${campo}}`;
+    const [desde, hasta] = sinCursor ? [texto.length, texto.length] : [el.selectionStart, el.selectionEnd];
+    conCursor.current = true;
     setTexto(texto.slice(0, desde) + insertado + texto.slice(hasta));
     // Después de que React escriba el texto nuevo, el cursor queda justo después del campo
     requestAnimationFrame(() => {
@@ -78,6 +83,7 @@ export function EditorPlantilla({ clave, guardado: inicial, negocio }: Props) {
             rows={4}
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
+            onFocus={() => (conCursor.current = true)}
             aria-invalid={!!error}
             aria-describedby={error ? `${id}-error` : undefined}
             className="min-h-28"

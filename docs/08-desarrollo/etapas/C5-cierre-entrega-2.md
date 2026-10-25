@@ -84,8 +84,8 @@ Al abrir el panel, el dueño ve lo que pide atención hoy. Escribe los mensajes 
 |---|---|---|
 | RF-52 | El inicio muestra lo del día | Una consulta por bloque, cada una solo si quien entra ve ese módulo (`puedeVerModulo`) |
 | RN-12 | El técnico no ve precios, pagos ni teléfonos | La pantalla del día no muestra montos ni teléfonos; el técnico no la ve (sigue con sus órdenes) |
-| RF-51, RNF-11 | El dueño edita los mensajes; nada fijo en el código | Tabla `plantilla_mensaje`, con los textos de hoy como datos iniciales; el código solo guarda el texto original para "Volver al texto original" |
-| RF-51 | Una plantilla rota no envía un mensaje roto | Se valida al guardar: no vacía, hasta 1000 caracteres y solo con los campos de ese mensaje. Un campo vacío al armar el mensaje se quita junto con el espacio de antes |
+| RF-51, RNF-11 | El dueño edita los mensajes; nada fijo en el código | Tabla `plantilla_mensaje` con los mensajes que el dueño cambió; el texto original vive solo en el código y vale mientras no haya fila ("Volver al texto original" la borra) |
+| RF-51 | Una plantilla rota no envía un mensaje roto | Se valida al guardar: no vacía, hasta 1000 caracteres, solo con los campos de ese mensaje y con texto además de los campos (si no, con los campos vacíos saldría en blanco). Un campo vacío al armar el mensaje se quita junto con el espacio de antes, o el de después si empieza la línea |
 | RF-44, RN-01 | El dueño publica fotos de una orden entregada | La acción exige ser el dueño; la orden, entregada; y las fotos, de esa orden y de su etapa |
 | RNF-05 | Las fotos de los clientes son privadas | Publicar **copia** la foto al bucket público (un `archivo` nuevo): la de la orden sigue privada, y quitarla de la galería no borra la de la orden |
 | RNF-14 | Las fotos del sitio tienen texto alternativo | La descripción es obligatoria (hasta 140, como en la galería) |

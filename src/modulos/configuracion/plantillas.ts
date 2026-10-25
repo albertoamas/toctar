@@ -51,8 +51,8 @@ export const camposDe = (clave: ClavePlantilla) => PLANTILLAS[clave].campos.map(
 
 /** Un campo es una palabra entre llaves, sin espacios: {nombre}. */
 const CAMPO = /\{([^{}\s]+)\}/g;
-/** El campo con el espacio que tenga antes y después, para quitarlo junto con él si queda vacío. */
-const CAMPO_CON_ESPACIOS = new RegExp(`( ?)${CAMPO.source}( ?)`, "g");
+/** Marca de un campo vacío mientras se arma el mensaje: un carácter que no se escribe en un mensaje. */
+const VACIO = "\u0000";
 
 /** Los campos del texto que no son de esa plantilla, sin repetir, en el orden en que aparecen. */
 export function camposDesconocidos(texto: string, permitidos: readonly string[]): string[] {
@@ -61,43 +61,54 @@ export function camposDesconocidos(texto: string, permitidos: readonly string[])
 }
 
 /**
- * Reemplaza los campos por sus valores. Un campo vacío se quita con un espacio de al lado: "Hola {nombre}, tu…" sin
- * nombre da "Hola, tu…". Un campo que no está en los valores queda como está (la acción no deja guardarlo).
+ * Reemplaza los campos por sus valores. Un campo vacío se quita con el espacio de antes ("Hola {nombre}, tu…" sin
+ * nombre da "Hola, tu…") o, si empieza la línea, con el de después. Un campo que no está en los valores queda como
+ * está (la acción no deja guardarlo).
  */
 export function armarMensaje(plantilla: string, valores: Partial<Record<Campo, string>>): string {
   return plantilla
-    .replace(CAMPO_CON_ESPACIOS, (todo, antes: string, campo: string, despues: string) => {
-      if (!Object.hasOwn(valores, campo)) return todo;
-      const valor = valores[campo as Campo]?.trim();
-      if (valor) return `${antes}${valor}${despues}`;
-      // Vacío: si tenía un espacio antes, queda uno de los dos; si no, se va también el de después
-      return antes ? despues : "";
-    })
+    .replace(CAMPO, (todo, campo: string) => (Object.hasOwn(valores, campo) ? valores[campo as Campo]?.trim() || VACIO : todo))
+    .replaceAll(` ${VACIO}`, "")
+    .replace(new RegExp(`${VACIO} ?`, "g"), "")
     .trim();
 }
+
+/** Lo que el mensaje dice además de los campos: sin eso, con los campos vacíos saldría en blanco. */
+const tieneTextoPropio = (texto: string) => /[^\s\p{P}]/u.test(texto.replace(CAMPO, ""));
 
 /** El área de texto manda los saltos de línea como \r\n: se guardan y se comparan como \n. */
 export const unirSaltos = (texto: string) => texto.replace(/\r\n?/g, "\n");
 
 const llaves = (campos: readonly string[]) => campos.map((c) => `{${c}}`);
 
-export const esquemaClavePlantilla = z.object({ clave: z.enum(CLAVES_PLANTILLA, "Ese mensaje no existe.") });
+export const esquemaClavePlantilla = z.object({ clave: z.enum(CLAVES_PLANTILLA, "Ese mensaje no existe. Recarga la página.") });
 
 export const esquemaPlantilla = esquemaClavePlantilla
   .extend({
-    // Con los saltos como \n, que es lo que cuenta el límite
-    texto: z.string().transform(unirSaltos)
-      .pipe(z.string().trim().min(1, "Escribe el mensaje.").max(LARGO_MAXIMO_PLANTILLA, `Hasta ${LARGO_MAXIMO_PLANTILLA} caracteres.`)),
+    // Con los saltos como \n y contando caracteres como la base (un emoji es uno, no dos)
+    texto: z
+      .string()
+      .transform(unirSaltos)
+      .pipe(
+        z
+          .string()
+          .trim()
+          .min(1, "Escribe el mensaje.")
+          .refine((t) => [...t].length <= LARGO_MAXIMO_PLANTILLA, `Hasta ${LARGO_MAXIMO_PLANTILLA} caracteres.`),
+      ),
   })
   .superRefine(({ clave, texto }, ctx) => {
     const desconocidos = camposDesconocidos(texto, PLANTILLAS[clave].campos);
-    if (desconocidos.length === 0) return;
-    const cuales = desconocidos.length === 1 ? "no es un campo" : "no son campos";
-    ctx.addIssue({
-      code: "custom",
-      path: ["texto"],
-      message: `${new Intl.ListFormat("es").format(llaves(desconocidos))} ${cuales} de este mensaje. Usa: ${llaves(PLANTILLAS[clave].campos).join(", ")}.`,
-    });
+    if (desconocidos.length > 0) {
+      const cuales = desconocidos.length === 1 ? "no es un campo" : "no son campos";
+      ctx.addIssue({
+        code: "custom",
+        path: ["texto"],
+        message: `${new Intl.ListFormat("es").format(llaves(desconocidos))} ${cuales} de este mensaje. Usa: ${llaves(PLANTILLAS[clave].campos).join(", ")}.`,
+      });
+    } else if (!tieneTextoPropio(texto)) {
+      ctx.addIssue({ code: "custom", path: ["texto"], message: "Escribe algo más que campos: si quedan vacíos, el mensaje sale en blanco." });
+    }
   });
 
 /** Las plantillas vigentes: la guardada si el dueño la cambió; si no, la original. */

@@ -20,6 +20,10 @@ test("un campo vacío se va con un espacio de al lado", () => {
   );
   // Al empezar una línea o el mensaje, se va el espacio de después
   expect(armarMensaje("{saldo} Te esperamos.\n{saldo} Gracias.", { saldo: "" })).toBe("Te esperamos.\nGracias.");
+  // Después de un campo con valor no queda un espacio suelto antes del signo
+  expect(armarMensaje("Hola {nombre} {saldo}, chau", { nombre: "Ana", saldo: "" })).toBe("Hola Ana, chau");
+  expect(armarMensaje("Listo en {negocio} {saldo}.", { negocio: "TocTar", saldo: "" })).toBe("Listo en TocTar.");
+  expect(armarMensaje("Hola {nombre} {saldo}, chau", { nombre: "", saldo: "" })).toBe("Hola, chau");
 });
 
 test("un campo repetido se reemplaza las dos veces; uno que no está en los valores queda como está", () => {
@@ -51,7 +55,12 @@ test("el esquema pide texto, hasta 1000 caracteres y solo con los campos de ese 
   expect(errores("saldo", "{precio} {fecha}")).toEqual({
     texto: "{precio} y {fecha} no son campos de este mensaje. Usa: {nombre}, {vehiculo}, {negocio}, {monto}.",
   });
-  expect(errores("otro", "Hola")).toEqual({ clave: "Ese mensaje no existe." });
+  expect(errores("otro", "Hola")).toEqual({ clave: "Ese mensaje no existe. Recarga la página." });
+  // Solo campos: con el cliente al día, el mensaje saldría en blanco
+  expect(errores("listo", " {saldo} {nombre}. ")).toEqual({ texto: "Escribe algo más que campos: si quedan vacíos, el mensaje sale en blanco." });
+  // Los caracteres se cuentan como en la base: un emoji es uno
+  expect(errores("listo", `Hola ${"🚗".repeat(999)}`)).toEqual({ texto: "Hasta 1000 caracteres." });
+  expect(errores("listo", "🚗".repeat(1000))).toBeNull();
   // Los saltos de línea del área de texto (\r\n) se guardan como \n
   expect(esquemaPlantilla.parse({ clave: "mantenimiento", texto: " Hola {nombre}\r\n¿Vienes? " })).toEqual({ clave: "mantenimiento", texto: "Hola {nombre}\n¿Vienes?" });
 });

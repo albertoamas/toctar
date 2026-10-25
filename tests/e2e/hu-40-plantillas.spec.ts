@@ -19,10 +19,21 @@ async function abrirMensaje(page: Page, titulo: string) {
 
 test("el dueño cambia el mensaje de listo, lo ve como le llega y el aviso de la orden lo usa; después vuelve al original", async ({ page }, info) => {
   test.skip(info.project.name === "celular", "El mensaje es uno solo: lo cambia una sola prueba (escritorio).");
-  await crearClienteEnBase({ nombre: "Marta Vaca", telefono: "59176400010", placa: "PL40E1" });
-  const id = await crearOrdenLista({ placa: "PL40E1", espacio: 0, dias: 1200, precio: 500, pagado: 100 });
-  await ingresarComoDueno(page);
+  // Datos propios de cada intento: si el CI la reintenta, no choca con lo que dejó el anterior
+  const placa = `PL40E${info.retry}`;
+  await crearClienteEnBase({ nombre: "Marta Vaca", telefono: `5917640001${info.retry}`, placa });
+  const id = await crearOrdenLista({ placa, espacio: 0, dias: 1200 + info.retry, precio: 500, pagado: 100 });
+  // Empieza y termina con el original, aunque falle a mitad: las otras pruebas leen el mismo mensaje
+  await consultar("delete from plantilla_mensaje where clave = 'listo'");
+  try {
+    await cambiarYVolver(page, id, placa);
+  } finally {
+    await consultar("delete from plantilla_mensaje where clave = 'listo'");
+  }
+});
 
+async function cambiarYVolver(page: Page, id: number, placa: string) {
+  await ingresarComoDueno(page);
   const listo = await abrirMensaje(page, "Vehículo listo");
   const texto = listo.getByLabel("Mensaje", { exact: true });
   await expect(texto).toHaveValue(ORIGINAL);
@@ -46,7 +57,7 @@ test("el dueño cambia el mensaje de listo, lo ve como le llega y el aviso de la
   // El aviso de la orden lo usa
   await page.goto(`/panel/ordenes/${id}`);
   const enlace = await abrirWhatsApp(page, page.getByRole("button", { name: "Avisar por WhatsApp" }));
-  expect(enlace).toContain("Hola Marta, tu vehículo (placa PL40E1) ya está listo en");
+  expect(enlace).toContain(`Hola Marta, tu vehículo (placa ${placa}) ya está listo en`);
   expect(enlace).toContain("Saldo pendiente: 400 Bs. Te esperamos en el taller. ¡Gracias por elegirnos!");
 
   // Volver al texto original borra el cambio
@@ -56,13 +67,15 @@ test("el dueño cambia el mensaje de listo, lo ve como le llega y el aviso de la
   await expect(page.getByText("Volvió el texto original.")).toBeVisible();
   await expect(otraVez.getByLabel("Mensaje", { exact: true })).toHaveValue(ORIGINAL);
   expect(await consultar("select 1 from plantilla_mensaje")).toEqual([]);
-});
+}
 
-test("tocar un campo lo agrega donde está el cursor, y la vista previa lo muestra", async ({ page }) => {
+test("tocar un campo lo agrega donde está el cursor (o al final, si no se tocó el texto), y la vista previa lo muestra", async ({ page }) => {
   await ingresarComoDueno(page);
   const saldo = await abrirMensaje(page, "Saldo pendiente");
   const texto = saldo.getByLabel("Mensaje", { exact: true });
   // Sin guardar: el mensaje guardado no cambia
+  await saldo.getByRole("button", { name: "Agregar {nombre} al mensaje" }).click();
+  await expect(texto).toHaveValue(/transferencia\. \{nombre\}$/);
   await texto.fill("Debes  hoy.");
   await texto.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(6, 6));
   await saldo.getByRole("button", { name: "Agregar {monto} al mensaje" }).click();
