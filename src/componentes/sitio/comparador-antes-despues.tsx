@@ -11,8 +11,8 @@ import type { UrlsFoto } from "@/lib/fotos";
 // - Con el teclado y el lector de pantalla: un deslizador nativo (oculto) que mueve la misma línea con las flechas.
 // Las dos fotos se ven enteras (`object-contain`): si no tienen la misma forma, una queda con bordes, pero nunca recortada.
 // El alto máximo sale de la variable `--alto-comparador` (70dvh si nadie la pone): la portada lo achica en el celular.
-// `sola` (la portada, pedido de YankoSoft del 24/10): la línea va y viene sola hasta que el visitante la toca o la mueve
-// con el teclado; se pausa fuera de la pantalla y no se mueve con "reducir movimiento".
+// `sola` (la portada, pedido de YankoSoft del 24/10): la línea va y viene sola unas veces hasta que el visitante la
+// arrastra, la toca o la enfoca con el teclado; se pausa fuera de la pantalla y no se mueve con "reducir movimiento".
 
 type Foto = Pick<UrlsFoto, "url" | "miniatura" | "ancho" | "alto">;
 
@@ -25,6 +25,8 @@ const MARGEN_ETIQUETA = 15;
 const ESPERA_MS = 1000;
 const AMPLITUD = 30;
 const PERIODO_MS = 5000;
+/** Idas y vueltas antes de quedarse en el medio. */
+const VUELTAS = 3;
 
 type Gesto = { id: number; x: number; y: number; arrastrando: boolean };
 
@@ -58,27 +60,44 @@ export function ComparadorAntesDespues({
   // La caja toma la forma de la foto de después y nunca pasa del alto máximo
   const proporcion = (despues.ancho ?? 4) / (despues.alto ?? 3);
 
-  // El movimiento solo: un vaivén suave desde el medio, solo mientras la foto está a la vista y la pestaña abierta
+  // El movimiento solo: un vaivén suave desde el medio, solo mientras la foto está a la vista y la pestaña abierta.
+  // Escribe la posición directo en la variable --corte de la caja (sin pasar por React en cada cuadro). El deslizador
+  // queda en el medio mientras tanto: su valor no cambia bajo el lector de pantalla. Tras unas idas y vueltas vuelve al
+  // medio y se detiene: no queda moviéndose para siempre (WCAG 2.2.2).
+  const animado = useRef(INICIO);
   useEffect(() => {
     const el = caja.current;
-    if (quieta || !el || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const reducir = matchMedia("(prefers-reduced-motion: reduce)");
+    if (quieta || !el || reducir.matches) return;
     let visible = false;
+    let terminado = false;
     let cuadro = 0;
     let anterior: number | null = null;
     let transcurrido = 0;
-    const paso = (ahora: number) => {
-      if (anterior !== null) transcurrido += ahora - anterior;
-      anterior = ahora;
-      if (transcurrido > ESPERA_MS) setCorte(INICIO + AMPLITUD * Math.sin(((transcurrido - ESPERA_MS) / PERIODO_MS) * 2 * Math.PI));
-      cuadro = requestAnimationFrame(paso);
+    const poner = (valor: number) => {
+      animado.current = valor;
+      el.style.setProperty("--corte", String(valor));
     };
     const parar = () => {
       cancelAnimationFrame(cuadro);
       cuadro = 0;
       anterior = null;
     };
+    const paso = (ahora: number) => {
+      if (anterior !== null) transcurrido += ahora - anterior;
+      anterior = ahora;
+      const enMovimiento = transcurrido - ESPERA_MS;
+      if (enMovimiento >= VUELTAS * PERIODO_MS) {
+        terminado = true;
+        poner(INICIO);
+        parar();
+        return;
+      }
+      if (enMovimiento > 0) poner(INICIO + AMPLITUD * Math.sin((enMovimiento / PERIODO_MS) * 2 * Math.PI));
+      cuadro = requestAnimationFrame(paso);
+    };
     const seguir = () => {
-      if (cuadro || !visible || document.hidden) return;
+      if (cuadro || terminado || !visible || document.hidden || reducir.matches) return;
       cuadro = requestAnimationFrame(paso);
     };
     const observador = new IntersectionObserver(([e]) => {
@@ -89,12 +108,28 @@ export function ComparadorAntesDespues({
     observador.observe(el);
     const alCambiarPestana = () => (document.hidden ? parar() : seguir());
     document.addEventListener("visibilitychange", alCambiarPestana);
+    // Si se activa "reducir movimiento" con la página abierta, se detiene en el medio
+    const alReducir = () => {
+      if (!reducir.matches) return;
+      terminado = true;
+      parar();
+      poner(INICIO);
+    };
+    reducir.addEventListener("change", alReducir);
     return () => {
       parar();
       observador.disconnect();
       document.removeEventListener("visibilitychange", alCambiarPestana);
+      reducir.removeEventListener("change", alReducir);
     };
   }, [quieta]);
+
+  /** El visitante toma la línea: deja de moverse sola y sigue desde donde estaba. */
+  function detener() {
+    if (quieta) return;
+    setCorte(animado.current);
+    setQuieta(true);
+  }
 
   function moverA(x: number) {
     const r = caja.current?.getBoundingClientRect();
@@ -107,11 +142,11 @@ export function ComparadorAntesDespues({
       <div
         ref={caja}
         className="group relative mx-auto w-full cursor-ew-resize touch-pan-y overflow-hidden bg-superficie select-none"
-        style={{ aspectRatio: proporcion, maxWidth: `calc(var(--alto-comparador, 70dvh) * ${proporcion})` }}
+        // --corte: dónde está la línea (en %), la lee todo lo de adentro; el movimiento solo la escribe directo
+        style={{ aspectRatio: proporcion, maxWidth: `calc(var(--alto-comparador, 70dvh) * ${proporcion})`, "--corte": corte } as React.CSSProperties}
         onPointerDown={(e) => {
           // Solo el dedo principal o el botón izquierdo: el clic derecho (guardar la foto) o un segundo dedo no mueven nada
           if (!e.isPrimary || e.button !== 0) return;
-          setQuieta(true);
           gesto.current = { id: e.pointerId, x: e.clientX, y: e.clientY, arrastrando: false };
         }}
         onPointerMove={(e) => {
@@ -122,6 +157,8 @@ export function ComparadorAntesDespues({
             if (dx < UMBRAL || dx < Math.abs(e.clientY - g.y)) return;
             g.arrastrando = true;
             e.currentTarget.setPointerCapture(e.pointerId);
+            // Un arrastre de costado toma la línea; un desplazamiento de la página, no
+            detener();
           }
           moverA(e.clientX);
         }}
@@ -129,7 +166,10 @@ export function ComparadorAntesDespues({
           const g = gesto.current;
           gesto.current = null;
           // Un toque sin arrastre lleva la línea ahí
-          if (g && g.id === e.pointerId && !g.arrastrando && Math.hypot(e.clientX - g.x, e.clientY - g.y) < UMBRAL) moverA(e.clientX);
+          if (g && g.id === e.pointerId && !g.arrastrando && Math.hypot(e.clientX - g.x, e.clientY - g.y) < UMBRAL) {
+            detener();
+            moverA(e.clientX);
+          }
         }}
         // El navegador tomó el gesto para desplazar la página: la línea no se toca
         onPointerCancel={() => (gesto.current = null)}
@@ -141,7 +181,7 @@ export function ComparadorAntesDespues({
           alt={`Antes: ${descripcion}`}
           alFrente={alFrente}
           className="bg-superficie object-contain"
-          style={{ clipPath: `inset(0 ${100 - corte}% 0 0)` }}
+          style={{ clipPath: "inset(0 calc(100% - var(--corte) * 1%) 0 0)" }}
         />
         {corte > MARGEN_ETIQUETA && <span aria-hidden className="absolute top-2 left-2 bg-negro/75 px-2 py-0.5 text-sm font-semibold text-blanco">Antes</span>}
         {corte < 100 - MARGEN_ETIQUETA && (
@@ -156,23 +196,23 @@ export function ComparadorAntesDespues({
           max={100}
           value={Math.round(corte)}
           onChange={(e) => {
-            setQuieta(true);
+            detener();
             setCorte(Number(e.target.value));
           }}
-          // Con el foco del teclado o del lector de pantalla, el valor deja de cambiar solo
-          onFocus={() => setQuieta(true)}
+          // Con el foco del teclado, la línea deja de moverse sola
+          onFocus={detener}
           aria-label="Comparar antes y después"
           aria-valuetext={`Antes, hasta el ${Math.round(corte)} % de la foto`}
           aria-describedby={`${id}-ayuda`}
           className="sr-only"
         />
         {/* La línea, con un borde oscuro fino (ring) para que se lea sobre fotos claras */}
-        <span aria-hidden className="pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2 bg-blanco ring-1 ring-negro/45" style={{ left: `${corte}%` }} />
+        <span aria-hidden className="pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2 bg-blanco ring-1 ring-negro/45" style={{ left: "calc(var(--corte) * 1%)" }} />
         {/* El tirador: el corte a 60° de la marca (skew de 30°). En los bordes no se sale de la foto: queda entero adentro */}
         <span
           aria-hidden
           className="pointer-events-none absolute top-1/2 flex h-11 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center"
-          style={{ left: `clamp(1.75rem, ${corte}%, calc(100% - 1.75rem))` }}
+          style={{ left: "clamp(1.75rem, calc(var(--corte) * 1%), calc(100% - 1.75rem))" }}
         >
           <span className="absolute inset-0 -skew-x-[30deg] bg-rojo outline-offset-2 outline-[var(--foco)] group-has-[input:focus-visible]:outline-2" />
           <span className="relative flex gap-1 text-lg leading-none font-bold text-blanco">

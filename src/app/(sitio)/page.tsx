@@ -105,7 +105,8 @@ function Cabecera({ children, foto, trabajo }: { children: React.ReactNode; foto
       {/* La columna derecha es la del comparador o la del arte; sin ninguno, el texto usa todo el ancho (su máximo lo pone Presentacion). */}
       <div
         className={cn(
-          "relative mx-auto grid max-w-6xl gap-8 px-4 pt-10 pb-12 md:items-end md:pt-20 md:pb-16",
+          "relative grid gap-8 md:items-end",
+          CONTENEDOR_CABECERA,
           lado === "comparador" && "md:grid-cols-2 md:items-center md:gap-12",
           lado === "arte" && "md:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]",
         )}
@@ -125,6 +126,9 @@ function Cabecera({ children, foto, trabajo }: { children: React.ReactNode; foto
   );
 }
 
+/** El ancho y los márgenes de la cabecera: los mismos cargando y cargada, para que nada se corra al llegar los datos. */
+const CONTENEDOR_CABECERA = "mx-auto max-w-6xl px-4 pt-10 pb-12 md:pt-20 md:pb-16";
+
 /**
  * La cabecera mientras llegan los datos: vacía, con el alto que ocupa el texto (24,5rem a 360 px de ancho, 18,5rem en
  * computadora) y el lugar de la línea, sin la línea: se enciende una sola vez, al llegar el texto. Ya cargada, la
@@ -134,7 +138,7 @@ function Cabecera({ children, foto, trabajo }: { children: React.ReactNode; foto
 function CabeceraCargando() {
   return (
     <div aria-hidden>
-      <div className="mx-auto max-w-6xl px-4 pt-10 pb-12 md:pt-20 md:pb-16">
+      <div className={CONTENEDOR_CABECERA}>
         <div className="min-h-[24.5rem] md:min-h-[18.5rem]" />
       </div>
       <div className="h-[3px]" />
