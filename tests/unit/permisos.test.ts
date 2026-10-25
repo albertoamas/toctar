@@ -11,9 +11,10 @@ const encargado = (permisos: Permiso[] | string[]) => ({ rol: "encargado" as con
 describe("dueño", () => {
   test.each(todos)("ve %s", (m) => expect(puedeVerModulo(dueno, m)).toBe(true));
   test("autoriza entregas con saldo", () => expect(puede(dueno, "entrega_con_saldo")).toBe(true));
-  test("cotiza y suma adicionales (RN-01)", () => {
+  test("cotiza, suma adicionales y publica en la galería desde una orden (RN-01)", () => {
     expect(puede(dueno, "cotizar")).toBe(true);
     expect(puede(dueno, "agregar_adicional")).toBe(true);
+    expect(puede(dueno, "publicar_en_galeria")).toBe(true);
   });
 });
 
@@ -54,9 +55,10 @@ describe("encargado", () => {
     expect(puedeVerModulo(conTodo, m)).toBe(false);
   });
 
-  test("nunca cotiza ni suma adicionales, aunque tenga todos los permisos (RN-01)", () => {
+  test("nunca cotiza, suma adicionales ni publica en la galería, aunque tenga todos los permisos (RN-01)", () => {
     expect(puede(conTodo, "cotizar")).toBe(false);
     expect(puede(conTodo, "agregar_adicional")).toBe(false);
+    expect(puede(conTodo, "publicar_en_galeria")).toBe(false);
   });
 
   test("autoriza entregas con saldo solo con ese permiso (RN-13, S-2)", () => {

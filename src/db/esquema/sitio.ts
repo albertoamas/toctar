@@ -1,7 +1,9 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, check, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { usuario } from "./acceso";
 import { archivo } from "./configuracion";
+// Ciclo con trabajos.ts (que usa `variante`): las dos referencias se leen recién al usarse, () => …
+import { trabajo } from "./trabajos";
 
 // Contenido del sitio (B3). Especificación: docs/08-desarrollo/etapas/B3-contenido.md §4.
 // El servicio del sitio es el mismo registro que el del catálogo: C1 le suma duración, mantenimiento y precios
@@ -129,11 +131,14 @@ export const galeriaItem = pgTable(
     visible: boolean("visible").default(true).notNull(),
     /** El trabajo elegido para el comparador de la portada (pedido de la demo del 24/10): uno solo, y con foto de antes. */
     enPortada: boolean("en_portada").default(false).notNull(),
+    /** La orden de donde salieron las fotos, si se publicó desde ella (HU-41, RF-44). Las fotos son copias públicas. */
+    trabajoId: integer("trabajo_id").references(() => trabajo.id),
     createdAt: momento("created_at").defaultNow().notNull(),
     createdBy: integer("created_by").references(() => usuario.id),
   },
   (t) => [
     uniqueIndex("galeria_item_una_en_portada").on(t.enPortada).where(sql`${t.enPortada}`),
+    index("galeria_item_trabajo").on(t.trabajoId),
     check("galeria_item_portada_con_antes", sql`not ${t.enPortada} or ${t.fotoAntesId} is not null`),
   ],
 );

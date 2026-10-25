@@ -1,8 +1,8 @@
 import "server-only";
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
-import { archivo, cliente, servicio, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, usuario, variante, vehiculo } from "@/db/esquema";
+import { archivo, cliente, galeriaItem, servicio, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, usuario, variante, vehiculo } from "@/db/esquema";
 import type { EstadoTrabajo, EtapaFoto } from "@/db/esquema/trabajos";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { obtenerReserva, type DetalleReserva } from "@/modulos/agenda/consultas";
@@ -43,18 +43,38 @@ export async function obtenerOrden(id: number, conMontos: boolean): Promise<Deta
   return { ...reserva, servicios };
 }
 
+type Base = Pick<typeof db, "selectDistinct">;
+
 /**
- * Los servicios de la orden que generan mantenimiento (RN-08), uno por servicio aunque tenga varias líneas. La misma
- * consulta anticipa la fecha al entregar y crea los recordatorios (con `base`, dentro de la transacción).
+ * Los servicios de la orden, uno por servicio aunque tenga varias líneas, en el orden de sus líneas (el principal
+ * primero). Con `soloConMantenimiento`, los que generan mantenimiento (RN-08); con `base`, dentro de una transacción.
  */
-export async function serviciosConMantenimiento(trabajoId: number, base: Pick<typeof db, "selectDistinct"> = db): Promise<{ id: number; nombre: string }[]> {
-  return base
-    .selectDistinct({ id: servicio.id, nombre: servicio.nombre })
+export async function serviciosDeOrden(trabajoId: number, opciones: { soloConMantenimiento?: boolean; base?: Base } = {}): Promise<{ id: number; nombre: string }[]> {
+  const filas = await (opciones.base ?? db)
+    .selectDistinct({ id: servicio.id, nombre: servicio.nombre, orden: trabajoLinea.orden })
     .from(trabajoLinea)
     .innerJoin(variante, eq(trabajoLinea.varianteId, variante.id))
     .innerJoin(servicio, eq(variante.servicioId, servicio.id))
-    .where(and(eq(trabajoLinea.trabajoId, trabajoId), eq(servicio.generaMantenimiento, true)))
-    .orderBy(asc(servicio.nombre));
+    .where(and(eq(trabajoLinea.trabajoId, trabajoId), opciones.soloConMantenimiento ? eq(servicio.generaMantenimiento, true) : undefined))
+    .orderBy(asc(trabajoLinea.orden));
+  // Distinto por servicio: dos líneas del mismo servicio dan una sola opción
+  const vistos = new Set<number>();
+  return filas.filter((f) => !vistos.has(f.id) && vistos.add(f.id)).map(({ id, nombre }) => ({ id, nombre }));
+}
+
+/**
+ * Los servicios de la orden que generan mantenimiento (RN-08). La misma consulta anticipa la fecha al entregar y crea
+ * los recordatorios (con `base`, dentro de la transacción).
+ */
+export const serviciosConMantenimiento = (trabajoId: number, base?: Base) => serviciosDeOrden(trabajoId, { soloConMantenimiento: true, base });
+
+/** Cuántas fotos de la orden se publicaron en la galería (HU-41): las de después y las de antes de cada trabajo publicado. */
+export async function publicadasDeOrden(trabajoId: number): Promise<number> {
+  const [fila] = await db
+    .select({ fotos: sql<number>`(count(*) + count(${galeriaItem.fotoAntesId}))::int` })
+    .from(galeriaItem)
+    .where(eq(galeriaItem.trabajoId, trabajoId));
+  return fila.fotos;
 }
 
 export type Avance = { id: number; nota: string; autor: string; createdAt: Date };

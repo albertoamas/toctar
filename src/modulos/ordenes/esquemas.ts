@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ETAPAS_FOTO } from "@/db/esquema/trabajos";
 import { fechaExiste } from "@/lib/fechas";
 import { leerMonto } from "@/modulos/catalogo/reglas";
+import { esquemaGaleria } from "@/modulos/sitio/esquemas";
 
 // Validación de las órdenes (C4). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §6.
 
@@ -60,3 +61,20 @@ export const esquemaAvisoListo = z.object({ id });
 
 /** Quitar una foto (datos sueltos: se validan). */
 export const esquemaQuitarFotoOrden = z.object({ trabajoId: id, fotoId: id });
+
+/**
+ * Publicar en la galería las fotos de una orden entregada (HU-41): las mismas reglas que la galería (servicio y
+ * descripción, esquemaGaleria), con las fotos elegidas de la orden y la confirmación de que no se ve la placa ni nadie.
+ * Que las fotos y el servicio sean de esa orden lo mira la acción.
+ */
+export const esquemaPublicar = esquemaGaleria.extend({
+  id,
+  fotoDespues: z.coerce.number({ error: "Elige la foto de después." }).int().positive("Elige la foto de después."),
+  // Vacío o "sin foto de antes": solo la de después
+  fotoAntes: z
+    .string()
+    .optional()
+    .transform((v) => (v ? Number(v) : null))
+    .pipe(z.number().int().positive().nullable()),
+  sinPlacaNiCaras: z.literal("on", "Marca que en las fotos no se lee la placa ni se ve a nadie."),
+});

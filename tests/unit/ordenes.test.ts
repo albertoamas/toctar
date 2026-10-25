@@ -2,9 +2,9 @@ import { expect, test } from "vitest";
 import { sumarMeses } from "@/lib/fechas";
 import { precioCotizadoYFinal } from "@/modulos/pagos/reglas";
 import { erroresDe } from "@/lib/formularios";
-import { esquemaAvance, esquemaFotoOrden, esquemaRecibir } from "@/modulos/ordenes/esquemas";
+import { esquemaAvance, esquemaFotoOrden, esquemaPublicar, esquemaRecibir } from "@/modulos/ordenes/esquemas";
 import { puede, puedeVerOrden } from "@/lib/permisos";
-import { enlaceTrabajo, esOrden, estaAtrasada, etapaAbierta, pasosDeOrden, puedeExtenderse, puedeRecibirse, rutaTrabajo, transicionOrden } from "@/modulos/ordenes/reglas";
+import { enlaceTrabajo, esFotoDeAntes, esOrden, estaAtrasada, etapaAbierta, pasosDeOrden, puedeExtenderse, puedePublicarse, puedeRecibirse, rutaTrabajo, transicionOrden } from "@/modulos/ordenes/reglas";
 
 // C4 Taller y entrega (HU-33): la reserva recibida es una orden (D-1), fotos por etapa (D-6) y el técnico solo con las
 // suyas (RN-12).
@@ -141,4 +141,27 @@ test("el enlace a un trabajo dice a dónde va, y no se ofrece si quien mira no p
   // Con "Órdenes" y sin "Agenda": la orden sí, la reserva no
   expect(enlaceTrabajo(7, "listo", { ordenes: true, agenda: false })).toEqual({ href: "/panel/ordenes/7", texto: "Ver la orden" });
   expect(enlaceTrabajo(7, "agendado", { ordenes: true, agenda: false })).toBeNull();
+});
+
+// HU-41 (RF-44): publicar en la galería las fotos de una orden entregada. Especificación: C5-cierre-entrega-2.md §6.
+
+test("se publica desde una orden entregada con alguna foto de después; la de antes sale del ingreso o de antes", () => {
+  expect(puedePublicarse("entregado", ["ingreso", "despues"])).toBe(true);
+  expect(puedePublicarse("entregado", ["ingreso", "antes"])).toBe(false);
+  expect(puedePublicarse("listo", ["despues"])).toBe(false);
+  expect(esFotoDeAntes("ingreso")).toBe(true);
+  expect(esFotoDeAntes("antes")).toBe(true);
+  expect(esFotoDeAntes("durante")).toBe(false);
+  expect(esFotoDeAntes("despues")).toBe(false);
+});
+
+test("publicar pide la foto de después, la casilla y las reglas de la galería; la de antes es opcional", () => {
+  const base = { id: "7", servicioId: "3", descripcion: " Pulido en una Hilux ", fotoDespues: "11", fotoAntes: "", sinPlacaNiCaras: "on" };
+  expect(esquemaPublicar.parse(base)).toEqual({ id: 7, servicioId: 3, descripcion: "Pulido en una Hilux", fotoDespues: 11, fotoAntes: null, sinPlacaNiCaras: "on" });
+  expect(esquemaPublicar.parse({ ...base, fotoAntes: "12" }).fotoAntes).toBe(12);
+  expect(erroresDe(esquemaPublicar.safeParse({ ...base, fotoDespues: "", sinPlacaNiCaras: undefined }).error!)).toEqual({
+    fotoDespues: "Elige la foto de después.",
+    sinPlacaNiCaras: "Marca que en las fotos no se lee la placa ni se ve a nadie.",
+  });
+  expect(erroresDe(esquemaPublicar.safeParse({ ...base, descripcion: "a".repeat(141) }).error!)).toEqual({ descripcion: "Hasta 140 caracteres." });
 });
