@@ -8,6 +8,7 @@ import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { ComparadorAntesDespues } from "@/componentes/sitio/comparador-antes-despues";
 import { EnlaceTikTok } from "@/componentes/sitio/enlace-tiktok";
 import { PortadaArte } from "@/componentes/sitio/portada-arte";
+import { TITULO_SECCION } from "@/componentes/sitio/titulo-pagina";
 import { TarjetaServicio } from "@/componentes/sitio/tarjeta-servicio";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import type { UrlsFoto } from "@/lib/fotos";
@@ -71,7 +72,7 @@ async function PortadaConDatos() {
       </section>
 
       <section aria-labelledby="servicios-titulo" className="mx-auto w-full max-w-6xl px-4 py-12 md:py-24">
-        <h2 id="servicios-titulo" className="font-heading text-[28px] leading-8 font-bold italic md:text-[40px] md:leading-[44px]">Servicios</h2>
+        <h2 id="servicios-titulo" className={TITULO_SECCION}>Servicios</h2>
         <Servicios servicios={servicios} />
       </section>
 
@@ -214,7 +215,7 @@ function Galeria({ fotos, tiktok }: { fotos: FotoGaleria[]; tiktok?: string }) {
   if (fotos.length === 0 && !tiktok) return null;
   return (
     <section aria-labelledby="galeria-titulo" className="mx-auto w-full max-w-6xl px-4 pb-12 md:pb-24">
-      <h2 id="galeria-titulo" className="font-heading text-[28px] leading-8 font-bold italic md:text-[40px] md:leading-[44px]">Trabajos recientes</h2>
+      <h2 id="galeria-titulo" className={TITULO_SECCION}>Trabajos recientes</h2>
       {fotos.length > 0 && (
         <ul className="mt-8 grid grid-cols-2 gap-2 md:grid-cols-3">
           {fotos.map((f) => (

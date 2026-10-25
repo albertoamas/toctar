@@ -38,10 +38,12 @@ export function ladoDelLema({ hayFotoTaller, hayComparador }: { hayFotoTaller: b
 
 /**
  * Cómo se nombra un trabajo de la galería (texto alternativo, botones del panel): su descripción, que es opcional desde
- * el 24/10 (no se ve en el sitio); sin ella, "Trabajo de <servicio>".
+ * el 24/10; sin ella, "Trabajo de <servicio>". El panel suma el número del trabajo (`numero`): ahí varios sin descripción
+ * tienen que distinguirse.
  */
-export function nombreDelTrabajo(descripcion: string, servicio: string): string {
-  return descripcion.trim() || `Trabajo de ${servicio.toLowerCase()}`;
+export function nombreDelTrabajo(descripcion: string, servicio: string, numero?: number): string {
+  // El nombre del servicio tal cual: pasarlo a minúsculas rompe siglas ("PPF")
+  return descripcion.trim() || `Trabajo de ${servicio}${numero === undefined ? "" : ` (n.º ${numero})`}`;
 }
 
 /**

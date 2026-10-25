@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useId, useRef, useState } from "react";
+import { proporcionDe } from "@/lib/formato-fotos";
 import type { UrlsFoto } from "@/lib/fotos";
 
 // Comparador de antes y después de la galería pública: una sola foto partida por una línea que se arrastra. A la
@@ -44,10 +44,7 @@ export function ComparadorAntesDespues({
   descripcion: string;
   /** La descripción, visible debajo (la portada dice qué trabajo es; el visor ya lo dice en su título). */
   conLeyenda?: boolean;
-  /**
-   * Va arriba de la página (la portada): las fotos cargan sin esperar y, en el celular, en su versión chica (640 px):
-   * la grande le quitaba red al texto (lo mismo que con la foto del taller, pulido 2.1).
-   */
+  /** Está en la primera pantalla (la portada, el primer par de la galería): las fotos cargan enseguida. */
   alFrente?: boolean;
   /** La línea se mueve sola hasta que el visitante la toca (la portada). */
   sola?: boolean;
@@ -61,7 +58,7 @@ export function ComparadorAntesDespues({
   const gesto = useRef<Gesto | null>(null);
   const id = useId();
   // La caja toma la forma de la foto de después y nunca pasa del alto máximo
-  const proporcion = (despues.ancho ?? 4) / (despues.alto ?? 3);
+  const proporcion = proporcionDe(despues);
 
   // El movimiento solo: un vaivén suave desde el medio, solo mientras la foto está a la vista y la pestaña abierta.
   // Escribe la posición directo en la variable --corte de la caja (sin pasar por React en cada cuadro). El deslizador
@@ -234,14 +231,23 @@ export function ComparadorAntesDespues({
   );
 }
 
-/** Una de las dos fotos, a todo el recuadro. Al frente, con `<picture>`: la chica en el celular, la grande desde 768 px. */
+/**
+ * Una de las dos fotos, a todo el recuadro, con `<picture>`: la chica (640 px) en el celular, la grande desde 768 px.
+ * Al frente (la portada y el primer par de la galería) carga enseguida; si no, al acercarse a la pantalla.
+ */
 function FotoComparada({ foto, alt, alFrente, className, style }: { foto: Foto; alt: string; alFrente: boolean; className: string; style?: React.CSSProperties }) {
-  if (!alFrente) return <Image src={foto.url} alt={alt} fill unoptimized draggable={false} className={className} style={style} />;
   return (
     <picture>
       <source media="(min-width: 768px)" srcSet={foto.url} />
       {/* <img> a mano: next/image no arma un <picture> con dos versiones */}
-      <img src={foto.miniatura} alt={alt} draggable={false} className={`absolute inset-0 size-full ${className}`} style={style} />
+      <img
+        src={foto.miniatura}
+        alt={alt}
+        draggable={false}
+        loading={alFrente ? undefined : "lazy"}
+        className={`absolute inset-0 size-full ${className}`}
+        style={style}
+      />
     </picture>
   );
 }

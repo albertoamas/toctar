@@ -3,13 +3,14 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { cn } from "cn";
-import { TituloPagina } from "@/componentes/sitio/titulo-pagina";
+import { TITULO_SECCION, TituloPagina } from "@/componentes/sitio/titulo-pagina";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { ComparadorAntesDespues } from "@/componentes/sitio/comparador-antes-despues";
 import { EnlaceTikTok } from "@/componentes/sitio/enlace-tiktok";
 import { FotoResponsiva } from "@/componentes/sitio/foto-responsiva";
 import { WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
+import { proporcionDe } from "@/lib/formato-fotos";
 import { agruparPorServicio, filtrarPorServicio, nombreDelTrabajo, serviciosConFotos } from "@/modulos/sitio/galeria";
 import { galeriaPublica, type FotoGaleria } from "@/modulos/sitio/publico";
 
@@ -41,7 +42,9 @@ async function Contenido({ searchParams }: Pick<PageProps<"/galeria">, "searchPa
     <>
       <div className="mx-auto w-full max-w-6xl px-4 pt-12 pb-12 md:pt-20 md:pb-20">
         <TituloPagina>Galería</TituloPagina>
-        <p className="mt-3 max-w-2xl text-tinta-suave">Trabajos reales del taller. En los de antes y después, arrastra la línea.</p>
+        <p className="mt-3 max-w-2xl text-tinta-suave">
+          Trabajos reales del taller.{todas.some((f) => f.antes) && " En los de antes y después, arrastra la línea."}
+        </p>
         {todas.length === 0 ? (
           <p className="mt-8 text-tinta-suave">Pronto vas a ver aquí nuestros trabajos.</p>
         ) : (
@@ -88,17 +91,16 @@ function Fotos({ todas, elegido }: { todas: FotoGaleria[]; elegido?: string }) {
           </ul>
         </nav>
       )}
-      {agruparPorServicio(fotos).map((g) => (
-        <SeccionServicio key={g.servicio.slug} {...g} />
+      {agruparPorServicio(fotos).map((g, i) => (
+        // El primer par de la primera sección está en la primera pantalla: carga enseguida
+        <SeccionServicio key={g.servicio.slug} {...g} primera={i === 0} />
       ))}
     </div>
   );
 }
 
-const TITULO_SECCION = "font-heading text-[28px] leading-8 font-bold italic md:text-[40px] md:leading-[44px]";
-
 /** Los trabajos de un servicio: primero los pares de antes y después, después las fotos solas. */
-function SeccionServicio({ servicio, pares, solas }: ReturnType<typeof agruparPorServicio<FotoGaleria>>[number]) {
+function SeccionServicio({ servicio, pares, solas, primera }: ReturnType<typeof agruparPorServicio<FotoGaleria>>[number] & { primera: boolean }) {
   const titulo = `galeria-${servicio.slug}`;
   return (
     <section aria-labelledby={titulo} className="flex flex-col gap-6">
@@ -112,28 +114,35 @@ function SeccionServicio({ servicio, pares, solas }: ReturnType<typeof agruparPo
         // Todos a la misma altura (55 % de la pantalla en el celular, 26rem en la computadora) y cada uno con el ancho
         // de su forma: un vertical queda angosto y uno solo no deja media fila vacía
         <ul
-          aria-label={`Antes y después de ${servicio.nombre.toLowerCase()}`}
+          aria-label={`Antes y después: ${servicio.nombre}`}
           className="flex flex-wrap gap-x-6 gap-y-8 [--alto-comparador:55dvh] md:[--alto-comparador:26rem]"
         >
-          {pares.map((f) => (
-            <li key={f.id} className="w-full" style={{ maxWidth: `calc(var(--alto-comparador) * ${(f.despues.ancho ?? 4) / (f.despues.alto ?? 3)})` }}>
+          {pares.map((f, i) => (
+            <li key={f.id} className="w-full" style={{ maxWidth: `calc(var(--alto-comparador) * ${proporcionDe(f.despues)})` }}>
               {/* La ayuda ("Arrastra la línea…") va una sola vez, arriba en la página */}
-              <ComparadorAntesDespues antes={f.antes} despues={f.despues} descripcion={nombreDelTrabajo(f.descripcion, servicio.nombre)} sinAyuda />
+              <ComparadorAntesDespues
+                antes={f.antes}
+                despues={f.despues}
+                descripcion={nombreDelTrabajo(f.descripcion, servicio.nombre)}
+                alFrente={primera && i === 0}
+                sinAyuda
+              />
             </li>
           ))}
         </ul>
       )}
       {solas.length > 0 && (
-        // A la misma altura y cada una con su forma: una fila se reparte el ancho según la proporción de cada foto
-        <ul aria-label={`Fotos de ${servicio.nombre.toLowerCase()}`} className="flex flex-wrap gap-2">
+        // A la misma altura y cada una con el ancho de su forma (sin estirarse ni recortarse); en el celular, una que no
+        // entra se ajusta al ancho de la pantalla
+        <ul aria-label={`Fotos: ${servicio.nombre}`} className="flex flex-wrap gap-2 [--alto-fotos:13rem] md:[--alto-fotos:18rem]">
           {solas.map((f) => {
-            const proporcion = (f.despues.ancho ?? 4) / (f.despues.alto ?? 3);
+            const proporcion = proporcionDe(f.despues);
             return (
-              <li key={f.id} className="h-64 overflow-hidden bg-superficie md:h-72" style={{ flex: `${proporcion} 1 ${proporcion * 15}rem` }}>
+              <li key={f.id} className="max-w-full bg-superficie" style={{ width: `calc(var(--alto-fotos) * ${proporcion})`, aspectRatio: proporcion }}>
                 <FotoResponsiva
                   foto={f.despues}
                   alt={nombreDelTrabajo(f.descripcion, servicio.nombre)}
-                  sizes="(min-width: 768px) 33vw, 100vw"
+                  sizes={`min(100vw, ${Math.round(proporcion * 288)}px)`}
                   className="size-full object-cover"
                 />
               </li>

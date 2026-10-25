@@ -70,7 +70,9 @@ describe("galería por servicio", () => {
   });
 
   test("un trabajo sin descripción se nombra por su servicio", () => {
-    expect(nombreDelTrabajo("  ", "Pulido de vidrios")).toBe("Trabajo de pulido de vidrios");
+    expect(nombreDelTrabajo("  ", "Instalación de PPF")).toBe("Trabajo de Instalación de PPF");
+    // En el panel, con su número: varios sin descripción se distinguen
+    expect(nombreDelTrabajo("", "Pulido de vidrios", 7)).toBe("Trabajo de Pulido de vidrios (n.º 7)");
     expect(nombreDelTrabajo("Hilux con nano cerámico", "Pulido y nano cerámico")).toBe("Hilux con nano cerámico");
   });
 });

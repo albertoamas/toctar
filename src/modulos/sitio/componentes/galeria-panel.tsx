@@ -126,7 +126,7 @@ function Tarjeta({
   ordenable: boolean;
   enPortada: boolean;
 }) {
-  const nombre = nombreDelTrabajo(item.descripcion, item.servicio);
+  const nombre = nombreDelTrabajo(item.descripcion, item.servicio, item.id);
   const [editando, setEditando] = useState(false);
   const [pendiente, iniciar] = useTransition();
   const ejecutar = (accion: () => Promise<EstadoFormulario>) => iniciar(async () => avisarResultado(await accion()));
@@ -229,7 +229,7 @@ function EditarItem({ item, servicios, alTerminar }: { item: ItemGaleria; servic
 }
 
 function Eliminar({ item }: { item: ItemGaleria }) {
-  const nombre = nombreDelTrabajo(item.descripcion, item.servicio);
+  const nombre = nombreDelTrabajo(item.descripcion, item.servicio, item.id);
   const [abierto, setAbierto] = useState(false);
   const [pendiente, iniciar] = useTransition();
   return (
@@ -323,7 +323,7 @@ function SubirFotos({ servicios, alTerminar }: { servicios: Servicio[]; alTermin
           ))}
         </Selector>
       </Campo>
-      <Campo id="descripcion" etiqueta="Descripción (opcional)" error={e.descripcion} ayuda='No se ve en el sitio: la leen Google y los lectores de pantalla. Ejemplo: "Pulido y nano cerámico 5 años en una Hilux".'>
+      <Campo id="descripcion" etiqueta="Descripción (opcional)" error={e.descripcion} ayuda='La leen Google y los lectores de pantalla, y se ve debajo de la foto si va en la portada. Ejemplo: "Pulido y nano cerámico 5 años en una Hilux".'>
         <Input id="descripcion" name="descripcion" autoComplete="off" defaultValue={estado.valores?.descripcion} aria-invalid={!!e.descripcion} aria-describedby={e.descripcion ? "descripcion-error" : "descripcion-ayuda"} />
       </Campo>
 
