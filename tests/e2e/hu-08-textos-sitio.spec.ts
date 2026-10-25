@@ -24,9 +24,14 @@ test("el dueño edita la portada y los motivos de Nosotros, y quedan guardados",
   soloEscritorio(info);
   await ingresarComoDueno(page);
   await page.goto("/panel/sitio/textos");
+  // Se espera a que la página termine de cargar: si se escribe antes de que React tome el formulario, lo escrito queda
+  // mezclado con el texto anterior (pasó en el CI, en máquinas más lentas que la PC)
+  await page.waitForLoadState("networkidle");
 
   const portada = page.getByRole("form", { name: "Portada" });
-  await portada.getByLabel("Presentación").fill("Taller de detailing en Tarija. Texto de prueba.");
+  const presentacion = portada.getByLabel("Presentación");
+  await presentacion.fill("Taller de detailing en Tarija. Texto de prueba.");
+  await expect(presentacion).toHaveValue("Taller de detailing en Tarija. Texto de prueba.");
   await portada.getByRole("button", { name: "Guardar portada" }).click();
   await expect(page.getByText("Portada: cambios guardados.")).toBeVisible();
 
