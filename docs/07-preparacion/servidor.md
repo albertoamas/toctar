@@ -131,7 +131,7 @@ Instalado con el instalador oficial (`curl -fsSL https://cdn.coollabs.io/coolify
 
 `main` y `develop` están protegidas: exigen Pull Request (sin revisores obligatorios, porque hay un solo desarrollador), también para el dueño del repositorio, y prohíben el push forzado y el borrado. Un push directo a `main` publicaría en producción.
 
-Desde el 25/10 también exigen que pase el CI de GitHub Actions (**Verificar**, **E2E** y **Secretos**), y el despliegue puede pedirlo GitHub Actions en vez del Auto Deploy de Coolify: ver `ci-cd.md`.
+Desde el 25/10 también exigen que pase el CI de GitHub Actions (**Verificar**, **E2E** y **Secretos**), y el despliegue lo pide GitHub Actions después de las pruebas: el Auto Deploy de Coolify está apagado en las dos apps. Ver `ci-cd.md`.
 
 ## Cloudflare R2: fotos, datos de clientes y respaldos
 

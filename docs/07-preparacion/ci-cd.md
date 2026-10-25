@@ -42,6 +42,8 @@ Coolify despliega el último commit de la rama. Antes de pedírselo, el job **De
 
 ## Activar el despliegue desde GitHub (una sola vez)
 
+**Activado el 25/10/2026:** token `github-actions` en Coolify (deploy y read, vence en un año: renovarlo antes), secreto y variables en GitHub, Auto Deploy apagado en las dos apps ("Manual deployments only") y `COOLIFY_DESPLIEGUE=activo`.
+
 Mientras no se active, el job **Desplegar** no corre y Coolify sigue desplegando solo en cada push. Para activarlo, en este orden (YankoSoft; los valores secretos no pasan por el chat ni por el repositorio):
 
 1. **Coolify → Settings → Advanced:** encender **API Access**. En **Keys & Tokens → API tokens**, crear un token `github-actions` con los permisos **deploy** (pedir el despliegue) y **read** (consultar cómo terminó). Ninguno más. Copiarlo al gestor de contraseñas.
