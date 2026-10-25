@@ -37,6 +37,7 @@ export function ComparadorAntesDespues({
   conLeyenda = false,
   alFrente = false,
   sola = false,
+  sinAyuda = false,
 }: {
   antes: Foto;
   despues: Foto;
@@ -50,6 +51,8 @@ export function ComparadorAntesDespues({
   alFrente?: boolean;
   /** La línea se mueve sola hasta que el visitante la toca (la portada). */
   sola?: boolean;
+  /** "Arrastra la línea para comparar" solo para el lector de pantalla: la galería lo dice una vez, arriba. */
+  sinAyuda?: boolean;
 }) {
   const [corte, setCorte] = useState(INICIO);
   // Una vez que el visitante la toca, la línea queda donde la deja: ya no se mueve sola
@@ -223,7 +226,7 @@ export function ComparadorAntesDespues({
       </div>
       <div className="flex flex-col items-center gap-0.5 text-center">
         {conLeyenda && <p className="font-semibold">{descripcion}</p>}
-        <p id={`${id}-ayuda`} className="text-sm text-tinta-suave">
+        <p id={`${id}-ayuda`} className={sinAyuda ? "sr-only" : "text-sm text-tinta-suave"}>
           Arrastra la línea para comparar
         </p>
       </div>

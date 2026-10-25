@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { filtrarPorServicio, ladoDelLema, serviciosConFotos, trabajoDePortada } from "@/modulos/sitio/galeria";
+import { agruparPorServicio, filtrarPorServicio, ladoDelLema, nombreDelTrabajo, serviciosConFotos, trabajoDePortada } from "@/modulos/sitio/galeria";
 
 // HU-12 Galería pública. Criterios: docs/09-pruebas/criterios-entrega-1.md (12.x).
 
@@ -53,5 +53,24 @@ describe("al lado del lema de la portada", () => {
   test("sin comparador, el arte de la marca solo si no hay foto del taller", () => {
     expect(ladoDelLema({ hayFotoTaller: false, hayComparador: false })).toBe("arte");
     expect(ladoDelLema({ hayFotoTaller: true, hayComparador: false })).toBeNull();
+  });
+});
+
+describe("galería por servicio", () => {
+  const conAntes = (id: number, servicio: typeof pulido) => ({ id, servicio, antes: { url: "x" } });
+  const sola = (id: number, servicio: typeof pulido) => ({ id, servicio, antes: null });
+
+  test("una sección por servicio, en el orden en que aparecen, con los pares primero", () => {
+    const grupos = agruparPorServicio([sola(1, pulido), conAntes(2, vidrios), conAntes(3, pulido), sola(4, vidrios)]);
+    expect(grupos.map((g) => g.servicio.slug)).toEqual(["pulido-y-nano-ceramico", "pulido-de-vidrios"]);
+    expect(grupos[0].pares.map((f) => f.id)).toEqual([3]);
+    expect(grupos[0].solas.map((f) => f.id)).toEqual([1]);
+    expect(grupos[1].pares.map((f) => f.id)).toEqual([2]);
+    expect(grupos[1].solas.map((f) => f.id)).toEqual([4]);
+  });
+
+  test("un trabajo sin descripción se nombra por su servicio", () => {
+    expect(nombreDelTrabajo("  ", "Pulido de vidrios")).toBe("Trabajo de pulido de vidrios");
+    expect(nombreDelTrabajo("Hilux con nano cerámico", "Pulido y nano cerámico")).toBe("Hilux con nano cerámico");
   });
 });

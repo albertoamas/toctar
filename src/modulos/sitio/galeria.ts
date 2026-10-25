@@ -35,3 +35,27 @@ export function ladoDelLema({ hayFotoTaller, hayComparador }: { hayFotoTaller: b
   if (hayComparador) return "comparador";
   return hayFotoTaller ? null : "arte";
 }
+
+/**
+ * Cómo se nombra un trabajo de la galería (texto alternativo, botones del panel): su descripción, que es opcional desde
+ * el 24/10 (no se ve en el sitio); sin ella, "Trabajo de <servicio>".
+ */
+export function nombreDelTrabajo(descripcion: string, servicio: string): string {
+  return descripcion.trim() || `Trabajo de ${servicio.toLowerCase()}`;
+}
+
+/**
+ * La galería por servicio (rediseño del 24/10): una sección por servicio con trabajos, en el orden en que aparecen; en
+ * cada una, primero los pares de antes y después (lo más llamativo, se comparan en la página) y después las fotos solas,
+ * cada grupo en su orden.
+ */
+export function agruparPorServicio<T extends ConServicio & { antes: unknown }>(fotos: T[]) {
+  return serviciosConFotos(fotos).map((servicio) => {
+    const suyas = fotos.filter((f) => f.servicio.slug === servicio.slug);
+    return {
+      servicio,
+      pares: suyas.filter((f): f is T & { antes: NonNullable<T["antes"]> } => f.antes != null),
+      solas: suyas.filter((f) => f.antes == null),
+    };
+  });
+}
