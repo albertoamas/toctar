@@ -11,7 +11,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp } from "@/lib/whatsapp";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { vehiculoEnLista } from "@/modulos/clientes/reglas";
-import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
+import { obtenerDatosPublicos, obtenerPlantillas } from "@/modulos/configuracion/consultas";
 import { calcularTotales } from "@/modulos/cotizaciones/reglas";
 import { mensajeSaldo } from "@/modulos/ordenes/mensajes";
 import { enlaceTrabajo } from "@/modulos/ordenes/reglas";
@@ -37,7 +37,7 @@ export default function PaginaSaldos() {
 async function Lista() {
   const usuario = await exigirModulo("pagos");
   const ve = { ordenes: puedeVerModulo(usuario, "ordenes"), agenda: puedeVerModulo(usuario, "agenda") };
-  const [saldos, negocio] = await Promise.all([saldosPendientes(), obtenerDatosPublicos()]);
+  const [saldos, negocio, plantillas] = await Promise.all([saldosPendientes(), obtenerDatosPublicos(), obtenerPlantillas()]);
   if (saldos.length === 0) return <p className="text-tinta-suave">Nadie debe nada.</p>;
   const hoy = fechaEnBolivia();
   // La misma cuenta en centavos que el resto de los montos, no una suma de decimales
@@ -73,7 +73,7 @@ async function Lista() {
               </p>
               <div className="flex flex-wrap gap-2">
                 <a
-                  href={enlaceWhatsApp(s.telefono, mensajeSaldo({ negocio: negocio.nombre, cliente: s.cliente, vehiculo, saldo: s.saldo }))}
+                  href={enlaceWhatsApp(s.telefono, mensajeSaldo({ plantilla: plantillas.saldo, negocio: negocio.nombre, cliente: s.cliente, vehiculo, saldo: s.saldo }))}
                   target="_blank"
                   rel="noreferrer"
                   className={cn(buttonVariants({ variant: "outline" }))}

@@ -239,6 +239,13 @@
       "when": 1792883254808,
       "tag": "0033_servicio_foto",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1792957307327,
+      "tag": "0034_plantillas_mensaje",
+      "breakpoints": true
     }
   ]
 }

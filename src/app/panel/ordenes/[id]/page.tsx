@@ -16,7 +16,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
-import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
+import { obtenerDatosPublicos, obtenerPlantillas } from "@/modulos/configuracion/consultas";
 import { opcionesDeServicio } from "@/modulos/cotizaciones/consultas";
 import { AgregarAdicional } from "@/modulos/ordenes/componentes/agregar-adicional";
 import { AvancesOrden } from "@/modulos/ordenes/componentes/avances-orden";
@@ -67,15 +67,20 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   const conAviso = o.estado === "listo" && puede(usuario, "avisar_cliente");
   // Sumar servicios: solo el dueño, mientras la orden está abierta (RF-43)
   const conAdicional = abierta && puede(usuario, "agregar_adicional");
-  const [fotos, avances, negocio, opciones] = await Promise.all([
+  const [fotos, avances, negocio, plantillas, opciones] = await Promise.all([
     fotosDeTrabajo(o.id),
     avancesDeTrabajo(o.id),
     conAviso ? obtenerDatosPublicos() : null,
+    conAviso ? obtenerPlantillas() : null,
     conAdicional ? opcionesDeServicio(o.tamanoId) : [],
   ]);
-  // Lista: el aviso al cliente por WhatsApp (HU-35), con el saldo solo si quien avisa lo ve
-  const aviso = negocio && {
-    enlace: enlaceWhatsApp(o.telefono, mensajeListo({ negocio: negocio.nombre, cliente: o.cliente, vehiculo: o, saldo: o.montos?.saldo.saldo ?? null })),
+  // Lista: el aviso al cliente por WhatsApp (HU-35) con el mensaje de Configuración (HU-40), con el saldo solo si
+  // quien avisa lo ve
+  const aviso = negocio && plantillas && {
+    enlace: enlaceWhatsApp(
+      o.telefono,
+      mensajeListo({ plantilla: plantillas.listo, negocio: negocio.nombre, cliente: o.cliente, vehiculo: o, saldo: o.montos?.saldo.saldo ?? null }),
+    ),
     avisado: o.avisadoListoAt ? `Avisado el ${diaYHora(o.avisadoListoAt)}${o.avisadoListoPor ? ` por ${o.avisadoListoPor}` : ""}` : null,
   };
   const deEtapa = (etapa: (typeof fotos)[number]["etapa"]) =>
