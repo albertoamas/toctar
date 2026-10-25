@@ -120,7 +120,5 @@ export const esquemaNegocio = z.object({
   razonSocial: optativo(120, "Hasta 120 caracteres."),
 });
 
-export type DatosNegocio = z.output<typeof esquemaNegocio>;
-
 export const CAMPOS_NEGOCIO = Object.keys(esquemaNegocio.shape) as (keyof typeof esquemaNegocio.shape)[];
 

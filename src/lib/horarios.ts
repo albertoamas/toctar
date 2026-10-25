@@ -11,7 +11,7 @@ const esquemaTurno = z
   .object({ desde: esquemaHora, hasta: esquemaHora })
   .refine((t) => t.desde < t.hasta, "El turno debe terminar después de empezar.");
 
-export const esquemaDiaHorario = z
+const esquemaDiaHorario = z
   .object({
     dia: z.number().int().min(1).max(7),
     turnos: z.array(esquemaTurno).max(2, "Hasta dos turnos por día."),
@@ -25,7 +25,7 @@ export const esquemaHorarios = z
   .length(7)
   .refine((dias) => dias.every((d, i) => d.dia === i + 1), "Faltan días en el horario.");
 
-export type Turno = z.infer<typeof esquemaTurno>;
+type Turno = z.infer<typeof esquemaTurno>;
 export type DiaHorario = z.infer<typeof esquemaDiaHorario>;
 
 /** Una semana entera cerrada: punto de partida si no hay horario guardado. */
