@@ -94,8 +94,8 @@ Al abrir el panel, el dueño ve lo que pide atención hoy. Escribe los mensajes 
 
 Migraciones:
 
-- `0031_plantillas_mensaje` (HU-40): la tabla y los tres textos de hoy.
-- `0032_galeria_desde_orden` (HU-41): la columna `trabajo_id`.
+- `0034_plantillas_mensaje` (HU-40): la tabla, vacía. (Los números 0031 a 0033 los usaron los pedidos de la demo.)
+- `0035_galeria_desde_orden` (HU-41): la columna `trabajo_id`.
 
 ### `plantilla_mensaje`
 | Columna | Tipo | Nulo | Notas |
@@ -105,7 +105,7 @@ Migraciones:
 | `updated_at` | `timestamptz` | no | |
 | `updated_by` | `integer` | sí | FK `usuario` |
 
-**Datos iniciales**, los textos de C4 §8 escritos con campos:
+**Sin datos iniciales** (decidido al programarla, 25/10): el texto original de cada mensaje vive en el código (`src/modulos/configuracion/plantillas.ts`) y la tabla guarda solo el que el dueño cambió. Sin fila vale el original, y "Volver al texto original" borra la fila: así el original está en un solo lugar y no se repite en una migración. Los originales, los textos de C4 §8 escritos con campos:
 
 - **listo:** "Hola {nombre}, tu {vehiculo} ya está listo en {negocio}. {saldo} Te esperamos en el taller."
 - **saldo:** "Hola {nombre}, te escribimos de {negocio} por el saldo de {monto} del servicio de tu {vehiculo}. Puedes pagarlo en el taller, por QR o por transferencia."
@@ -166,7 +166,7 @@ Todas validan con Zod y empiezan con `exigirModulo`.
 | Acción | Quién | Qué hace | Mensajes |
 |---|---|---|---|
 | `guardarPlantilla` | dueño (`configuracion`) | Clave válida; texto de 1 a 1000 con solo los campos de esa plantilla. Guarda quién y cuándo, y renueva la caché de las plantillas | "Mensaje guardado." · "{precio} no es un campo de este mensaje. Usa: {nombre}, {vehiculo}, {negocio}, {saldo}." · "Escribe el mensaje." |
-| `restaurarPlantilla` | dueño | Vuelve al texto original de esa clave | "Volvió el texto original." |
+| `restaurarPlantilla` | dueño | Vuelve al texto original de esa clave (borra la fila guardada) | "Volvió el texto original." |
 | `publicarEnGaleria` | dueño (`ordenes` y rol dueño) | Orden entregada; foto de después de su etapa "despues"; la de antes (si viene), de "ingreso" o "antes"; servicio entre los de la orden; descripción; casilla marcada. Copia cada foto (y su miniatura) del bucket privado al público como `archivo` nuevo, y crea el `galeria_item` al final, visible, con `trabajo_id`. Si algo falla después de copiar, borra las copias. Renueva la caché de la galería | "Publicado en la galería…" · "Elige la foto de después." · "Marca que en las fotos no se lee la placa ni se ve a nadie." |
 
 **Consultas:**
@@ -236,9 +236,9 @@ Todas validan con Zod y empiezan con `exigirModulo`.
 
 Una rama y un PR por historia, desde `develop`:
 1. `docs/c5-especificacion`: esta especificación.
-2. `hu-40-plantillas-whatsapp`: migración `0031`, `armarMensaje`, la pestaña "Mensajes" y los mensajes de C4 pasan a la plantilla. Va primero porque toca código de C4 que ya está probado.
+2. `hu-40-plantillas-whatsapp`: migración `0034`, `armarMensaje`, la pestaña "Mensajes" y los mensajes de C4 pasan a la plantilla. Va primero porque toca código de C4 que ya está probado.
 3. `hu-39-pantalla-del-dia`. Diseño con `frontend-design`.
-4. `hu-41-galeria-desde-orden`: migración `0032`, la copia al bucket público y la pantalla de publicar.
+4. `hu-41-galeria-desde-orden`: migración `0035`, la copia al bucket público y la pantalla de publicar.
 5. `docs/cierre-entrega-2`:
    - `criterios-entrega-2.md` (HU-19 a HU-41, con el estado de cada criterio);
    - `capacitacion.md`, con una guía corta por rol: dueño (cotizar, agenda, saldos y mensajes), encargado (recibir, entregar y cobrar) y técnico (sus órdenes desde el celular);
