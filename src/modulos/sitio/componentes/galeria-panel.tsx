@@ -22,6 +22,7 @@ import {
 } from "@/componentes/ui/dialog";
 import { Input } from "@/componentes/ui/input";
 import type { EstadoFormulario } from "@/lib/formularios";
+import { nombreDelTrabajo } from "../galeria";
 import { cambiarVisibilidadGaleria, elegirParaPortada, eliminarGaleriaItem, guardarGaleriaItem, moverGaleriaItem, subirGaleria } from "../acciones";
 
 // HU-09: galería de antes y después (RF-12). Se sube un par o una foto sola, asociada a un servicio,
@@ -93,6 +94,8 @@ export function GaleriaPanel({ items, servicios, portadaId }: { items: ItemGaler
               ultimo={i === visibles.length - 1}
               ordenable={!filtro}
               enPortada={item.id === portadaId}
+              // Su lugar en la lista completa (no cambia al filtrar): distingue a los que no tienen descripción
+              numero={items.indexOf(item) + 1}
             />
           ))}
         </ol>
@@ -117,6 +120,7 @@ function Tarjeta({
   ultimo,
   ordenable,
   enPortada,
+  numero,
 }: {
   item: ItemGaleria;
   servicios: Servicio[];
@@ -124,7 +128,9 @@ function Tarjeta({
   ultimo: boolean;
   ordenable: boolean;
   enPortada: boolean;
+  numero: number;
 }) {
+  const nombre = nombreDelTrabajo(item.descripcion, item.servicio, numero);
   const [editando, setEditando] = useState(false);
   const [pendiente, iniciar] = useTransition();
   const ejecutar = (accion: () => Promise<EstadoFormulario>) => iniciar(async () => avisarResultado(await accion()));
@@ -133,8 +139,8 @@ function Tarjeta({
     <li className={`flex flex-col overflow-hidden rounded-sm border border-border ${item.visible ? "" : "opacity-70"}`}>
       {/* Mismo recuadro (2:1) con par o con foto sola: las tarjetas quedan parejas. La sola se recorta solo aquí. */}
       <div className={`grid aspect-[2/1] ${item.antes ? "grid-cols-2 gap-px" : ""}`}>
-        {item.antes && <Miniatura foto={item.antes} alt={`Antes: ${item.descripcion}`} etiqueta="Antes" />}
-        <Miniatura foto={item.despues} alt={item.antes ? `Después: ${item.descripcion}` : item.descripcion} etiqueta={item.antes ? "Después" : undefined} />
+        {item.antes && <Miniatura foto={item.antes} alt={`Antes: ${nombre}`} etiqueta="Antes" />}
+        <Miniatura foto={item.despues} alt={item.antes ? `Después: ${nombre}` : nombre} etiqueta={item.antes ? "Después" : undefined} />
       </div>
       <div className="flex flex-1 flex-col gap-2 p-2">
         {editando ? (
@@ -146,25 +152,25 @@ function Tarjeta({
               {!item.visible && <span className="tt-insignia">Oculta</span>}
               {enPortada && <span className="tt-insignia">En la portada</span>}
             </span>
-            <span className="line-clamp-2 text-sm">{item.descripcion}</span>
+            <span className="line-clamp-2 text-sm">{item.descripcion || <span className="text-tinta-suave">Sin descripción (n.º {numero})</span>}</span>
             <span className="-mx-2 mt-auto flex flex-wrap justify-end">
               {ordenable && (
                 <>
-                  <Button type="button" variant="ghost" size="icon" disabled={pendiente || primero} aria-label={`Subir: ${item.descripcion}`} onClick={() => ejecutar(() => moverGaleriaItem({ id: item.id, direccion: "subir" }))}>
+                  <Button type="button" variant="ghost" size="icon" disabled={pendiente || primero} aria-label={`Subir: ${nombre}`} onClick={() => ejecutar(() => moverGaleriaItem({ id: item.id, direccion: "subir" }))}>
                     <ArrowUpIcon />
                   </Button>
-                  <Button type="button" variant="ghost" size="icon" disabled={pendiente || ultimo} aria-label={`Bajar: ${item.descripcion}`} onClick={() => ejecutar(() => moverGaleriaItem({ id: item.id, direccion: "bajar" }))}>
+                  <Button type="button" variant="ghost" size="icon" disabled={pendiente || ultimo} aria-label={`Bajar: ${nombre}`} onClick={() => ejecutar(() => moverGaleriaItem({ id: item.id, direccion: "bajar" }))}>
                     <ArrowDownIcon />
                   </Button>
                 </>
               )}
               {/* Solo un trabajo con antes que se ve en el sitio puede ir a la portada; el que ya está no muestra el botón */}
               {item.antes && item.enSitio && !enPortada && (
-                <Button type="button" variant="ghost" size="icon" disabled={pendiente} aria-label={`Mostrar en la portada: ${item.descripcion}`} onClick={() => ejecutar(() => elegirParaPortada(item.id))}>
+                <Button type="button" variant="ghost" size="icon" disabled={pendiente} aria-label={`Mostrar en la portada: ${nombre}`} onClick={() => ejecutar(() => elegirParaPortada(item.id))}>
                   <HouseIcon />
                 </Button>
               )}
-              <Button type="button" variant="ghost" size="icon" aria-label={`Editar: ${item.descripcion}`} onClick={() => setEditando(true)}>
+              <Button type="button" variant="ghost" size="icon" aria-label={`Editar: ${nombre}`} onClick={() => setEditando(true)}>
                 <PencilIcon />
               </Button>
               <Button
@@ -172,12 +178,12 @@ function Tarjeta({
                 variant="ghost"
                 size="icon"
                 disabled={pendiente}
-                aria-label={`${item.visible ? "Ocultar" : "Mostrar"}: ${item.descripcion}`}
+                aria-label={`${item.visible ? "Ocultar" : "Mostrar"}: ${nombre}`}
                 onClick={() => ejecutar(() => cambiarVisibilidadGaleria({ id: item.id, visible: !item.visible }))}
               >
                 {item.visible ? <EyeOffIcon /> : <EyeIcon />}
               </Button>
-              <Eliminar item={item} />
+              <Eliminar nombre={nombre} itemId={item.id} />
             </span>
           </>
         )}
@@ -215,7 +221,7 @@ function EditarItem({ item, servicios, alTerminar }: { item: ItemGaleria; servic
           ))}
         </Selector>
       </Campo>
-      <Campo id={`${prefijo}-descripcion`} etiqueta="Descripción" error={e.descripcion}>
+      <Campo id={`${prefijo}-descripcion`} etiqueta="Descripción (opcional)" error={e.descripcion}>
         <Input id={`${prefijo}-descripcion`} name="descripcion" defaultValue={estado.valores?.descripcion ?? item.descripcion} aria-invalid={!!e.descripcion} aria-describedby={e.descripcion ? `${prefijo}-descripcion-error` : undefined} />
       </Campo>
       <div className="flex gap-2">
@@ -226,12 +232,12 @@ function EditarItem({ item, servicios, alTerminar }: { item: ItemGaleria; servic
   );
 }
 
-function Eliminar({ item }: { item: ItemGaleria }) {
+function Eliminar({ nombre, itemId }: { nombre: string; itemId: number }) {
   const [abierto, setAbierto] = useState(false);
   const [pendiente, iniciar] = useTransition();
   return (
     <Dialog open={abierto} onOpenChange={setAbierto}>
-      <DialogTrigger render={<Button type="button" variant="ghost" size="icon" aria-label={`Eliminar: ${item.descripcion}`} />}>
+      <DialogTrigger render={<Button type="button" variant="ghost" size="icon" aria-label={`Eliminar: ${nombre}`} />}>
         <TrashIcon />
       </DialogTrigger>
       <DialogContent>
@@ -247,7 +253,7 @@ function Eliminar({ item }: { item: ItemGaleria }) {
             disabled={pendiente}
             onClick={() =>
               iniciar(async () => {
-                const r = await eliminarGaleriaItem(item.id);
+                const r = await eliminarGaleriaItem(itemId);
                 avisarResultado(r);
                 if (r.ok) setAbierto(false);
               })
@@ -320,7 +326,7 @@ function SubirFotos({ servicios, alTerminar }: { servicios: Servicio[]; alTermin
           ))}
         </Selector>
       </Campo>
-      <Campo id="descripcion" etiqueta="Descripción" error={e.descripcion} ayuda='Ejemplo: "Pulido y nano cerámico 5 años en una Hilux".'>
+      <Campo id="descripcion" etiqueta="Descripción (opcional)" error={e.descripcion} ayuda='La leen Google y los lectores de pantalla, y se ve debajo de la foto si va en la portada. Ejemplo: "Pulido y nano cerámico 5 años en una Hilux".'>
         <Input id="descripcion" name="descripcion" autoComplete="off" defaultValue={estado.valores?.descripcion} aria-invalid={!!e.descripcion} aria-describedby={e.descripcion ? "descripcion-error" : "descripcion-ayuda"} />
       </Campo>
 

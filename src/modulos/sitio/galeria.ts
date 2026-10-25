@@ -35,3 +35,21 @@ export function ladoDelLema({ hayFotoTaller, hayComparador }: { hayFotoTaller: b
   if (hayComparador) return "comparador";
   return hayFotoTaller ? null : "arte";
 }
+
+/**
+ * Cómo se nombra un trabajo de la galería (texto alternativo, botones del panel): su descripción, que es opcional desde
+ * el 24/10; sin ella, "Trabajo de <servicio>". El panel suma su lugar en la lista (`numero`, que también se ve en la
+ * tarjeta): ahí varios sin descripción tienen que distinguirse.
+ */
+export function nombreDelTrabajo(descripcion: string, servicio: string, numero?: number): string {
+  // El nombre del servicio tal cual: pasarlo a minúsculas rompe siglas ("PPF")
+  return descripcion.trim() || `Trabajo de ${servicio}${numero === undefined ? "" : ` (n.º ${numero})`}`;
+}
+
+/**
+ * El orden de la vitrina de la galería (rediseño del 24/10): primero los pares de antes y después (lo más llamativo, se
+ * comparan en la página) y después las fotos solas, cada grupo en el orden del panel.
+ */
+export function paresPrimero<T extends { antes: unknown }>(fotos: T[]): T[] {
+  return [...fotos.filter((f) => f.antes != null), ...fotos.filter((f) => f.antes == null)];
+}

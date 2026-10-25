@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { cn } from "cn";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { FotoResponsiva } from "@/componentes/sitio/foto-responsiva";
-import { TituloPagina } from "@/componentes/sitio/titulo-pagina";
+import { TITULO_SECCION, TituloPagina } from "@/componentes/sitio/titulo-pagina";
 import { Monograma } from "@/componentes/sitio/iconos-marca";
 import { WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import { FOTOS_DE_PAGINA } from "@/modulos/sitio/contenido";
@@ -14,8 +14,6 @@ export const metadata: Metadata = {
   title: "Nosotros",
   description: "Quiénes somos, cómo trabajamos y por qué elegir TocTar Detailing en Tarija.",
 };
-
-const TITULO_SECCION = "font-heading text-[28px] leading-8 font-bold italic md:text-[40px] md:leading-[44px]";
 
 // HU-13 Nosotros (RF-02): historia, cómo trabajan y por qué elegirlos. Los textos salen del panel (HU-08), y la foto del
 // equipo también (pedido de YankoSoft del 24/10): al lado de la historia en la computadora, debajo en el celular.

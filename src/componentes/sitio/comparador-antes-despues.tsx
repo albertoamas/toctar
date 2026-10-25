@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useId, useRef, useState } from "react";
+import { proporcionDe } from "@/lib/formato-fotos";
 import type { UrlsFoto } from "@/lib/fotos";
 
 // Comparador de antes y después de la galería pública: una sola foto partida por una línea que se arrastra. A la
@@ -10,6 +10,8 @@ import type { UrlsFoto } from "@/lib/fotos";
 //   Un gesto vertical desplaza la página y no mueve la línea (`touch-action: pan-y` y el umbral de abajo).
 // - Con el teclado y el lector de pantalla: un deslizador nativo (oculto) que mueve la misma línea con las flechas.
 // Las dos fotos se ven enteras (`object-contain`): si no tienen la misma forma, una queda con bordes, pero nunca recortada.
+// Con `marco` (la galería) va en un recuadro de 4:3 como los demás trabajos y las fotos lo llenan (`object-cover`), salvo
+// que el antes y el después tengan formas distintas: recortadas no coincidirían, y van enteras.
 // El alto máximo sale de la variable `--alto-comparador` (70dvh si nadie la pone): la portada lo achica en el celular.
 // `sola` (la portada, pedido de YankoSoft del 24/10): la línea va y viene sola unas veces hasta que el visitante la
 // arrastra, la toca o la enfoca con el teclado; se pausa fuera de la pantalla y no se mueve con "reducir movimiento".
@@ -37,19 +39,25 @@ export function ComparadorAntesDespues({
   conLeyenda = false,
   alFrente = false,
   sola = false,
+  sinAyuda = false,
+  marco = false,
+  sizes = "(min-width: 768px) 50vw, 100vw",
 }: {
   antes: Foto;
   despues: Foto;
   descripcion: string;
-  /** La descripción, visible debajo (la portada dice qué trabajo es; el visor ya lo dice en su título). */
+  /** La descripción, visible debajo (la portada dice qué trabajo es). */
   conLeyenda?: boolean;
-  /**
-   * Va arriba de la página (la portada): las fotos cargan sin esperar y, en el celular, en su versión chica (640 px):
-   * la grande le quitaba red al texto (lo mismo que con la foto del taller, pulido 2.1).
-   */
+  /** Está en la primera pantalla (la portada, el primer par de la galería): las fotos cargan enseguida. */
   alFrente?: boolean;
   /** La línea se mueve sola hasta que el visitante la toca (la portada). */
   sola?: boolean;
+  /** "Arrastra la línea para comparar" solo para el lector de pantalla: la galería lo dice una vez, arriba. */
+  sinAyuda?: boolean;
+  /** En un recuadro de 4:3 que las fotos llenan: la galería, donde todos los trabajos miden lo mismo. */
+  marco?: boolean;
+  /** Qué ancho ocupa en la pantalla (atributo `sizes`): el navegador elige la versión de 640 px o la grande. */
+  sizes?: string;
 }) {
   const [corte, setCorte] = useState(INICIO);
   // Una vez que el visitante la toca, la línea queda donde la deja: ya no se mueve sola
@@ -58,7 +66,13 @@ export function ComparadorAntesDespues({
   const gesto = useRef<Gesto | null>(null);
   const id = useId();
   // La caja toma la forma de la foto de después y nunca pasa del alto máximo
-  const proporcion = (despues.ancho ?? 4) / (despues.alto ?? 3);
+  const proporcion = proporcionDe(despues);
+  // En el marco, las fotos lo llenan si tienen la misma forma (con 5 % de tolerancia); si no, van enteras
+  const mismaForma = Math.abs(proporcionDe(antes) / proporcion - 1) < 0.05;
+  const ajuste = marco && mismaForma ? "object-cover" : "object-contain";
+  const estiloCaja: React.CSSProperties & Record<"--corte", number> = marco
+    ? { "--corte": corte, aspectRatio: "4 / 3" }
+    : { "--corte": corte, aspectRatio: proporcion, maxWidth: `calc(var(--alto-comparador, 70dvh) * ${proporcion})` };
 
   // El movimiento solo: un vaivén suave desde el medio, solo mientras la foto está a la vista y la pestaña abierta.
   // Escribe la posición directo en la variable --corte de la caja (sin pasar por React en cada cuadro). El deslizador
@@ -138,12 +152,13 @@ export function ComparadorAntesDespues({
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    // Con la ayuda oculta (sinAyuda) no queda espacio debajo: la foto termina donde termina la caja
+    <div className={sinAyuda ? "flex flex-col" : "flex flex-col gap-2"}>
       <div
         ref={caja}
         className="group relative mx-auto w-full cursor-ew-resize touch-pan-y overflow-hidden bg-superficie select-none"
         // --corte: dónde está la línea (en %), la lee todo lo de adentro; el movimiento solo la escribe directo
-        style={{ aspectRatio: proporcion, maxWidth: `calc(var(--alto-comparador, 70dvh) * ${proporcion})`, "--corte": corte } as React.CSSProperties}
+        style={estiloCaja}
         onPointerDown={(e) => {
           // Solo el dedo principal o el botón izquierdo: el clic derecho (guardar la foto) o un segundo dedo no mueven nada
           if (!e.isPrimary || e.button !== 0) return;
@@ -174,13 +189,14 @@ export function ComparadorAntesDespues({
         // El navegador tomó el gesto para desplazar la página: la línea no se toca
         onPointerCancel={() => (gesto.current = null)}
       >
-        <FotoComparada foto={despues} alt={`Después: ${descripcion}`} alFrente={alFrente} className="object-contain" />
+        <FotoComparada foto={despues} alt={`Después: ${descripcion}`} alFrente={alFrente} sizes={sizes} className={ajuste} />
         {/* El antes encima, recortado hasta la línea */}
         <FotoComparada
           foto={antes}
           alt={`Antes: ${descripcion}`}
           alFrente={alFrente}
-          className="bg-superficie object-contain"
+          sizes={sizes}
+          className={`bg-superficie ${ajuste}`}
           style={{ clipPath: "inset(0 calc(100% - var(--corte) * 1%) 0 0)" }}
         />
         {corte > MARGEN_ETIQUETA && <span aria-hidden className="absolute top-2 left-2 bg-negro/75 px-2 py-0.5 text-sm font-semibold text-blanco">Antes</span>}
@@ -223,7 +239,7 @@ export function ComparadorAntesDespues({
       </div>
       <div className="flex flex-col items-center gap-0.5 text-center">
         {conLeyenda && <p className="font-semibold">{descripcion}</p>}
-        <p id={`${id}-ayuda`} className="text-sm text-tinta-suave">
+        <p id={`${id}-ayuda`} className={sinAyuda ? "sr-only" : "text-sm text-tinta-suave"}>
           Arrastra la línea para comparar
         </p>
       </div>
@@ -231,14 +247,24 @@ export function ComparadorAntesDespues({
   );
 }
 
-/** Una de las dos fotos, a todo el recuadro. Al frente, con `<picture>`: la chica en el celular, la grande desde 768 px. */
-function FotoComparada({ foto, alt, alFrente, className, style }: { foto: Foto; alt: string; alFrente: boolean; className: string; style?: React.CSSProperties }) {
-  if (!alFrente) return <Image src={foto.url} alt={alt} fill unoptimized draggable={false} className={className} style={style} />;
+/**
+ * Una de las dos fotos, a todo el recuadro. Con sus dos versiones (640 px y la grande): el navegador elige según el
+ * ancho que ocupa (`sizes`) y la densidad de la pantalla. Al frente carga enseguida; si no, al acercarse a la pantalla.
+ */
+function FotoComparada(props: { foto: Foto; alt: string; alFrente: boolean; sizes: string; className: string; style?: React.CSSProperties }) {
+  const { foto, alt, alFrente, sizes, className, style } = props;
+  const srcSet = foto.miniatura === foto.url ? undefined : `${foto.miniatura} 640w, ${foto.url} ${foto.ancho ?? 1600}w`;
   return (
-    <picture>
-      <source media="(min-width: 768px)" srcSet={foto.url} />
-      {/* <img> a mano: next/image no arma un <picture> con dos versiones */}
-      <img src={foto.miniatura} alt={alt} draggable={false} className={`absolute inset-0 size-full ${className}`} style={style} />
-    </picture>
+    // eslint-disable-next-line @next/next/no-img-element -- next/image no arma este srcSet (las fotos van sin su optimizador)
+    <img
+      src={foto.miniatura}
+      srcSet={srcSet}
+      sizes={srcSet ? sizes : undefined}
+      alt={alt}
+      draggable={false}
+      loading={alFrente ? undefined : "lazy"}
+      className={`absolute inset-0 size-full ${className}`}
+      style={style}
+    />
   );
 }

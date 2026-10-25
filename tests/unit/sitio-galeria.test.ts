@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { filtrarPorServicio, ladoDelLema, serviciosConFotos, trabajoDePortada } from "@/modulos/sitio/galeria";
+import { filtrarPorServicio, ladoDelLema, nombreDelTrabajo, paresPrimero, serviciosConFotos, trabajoDePortada } from "@/modulos/sitio/galeria";
 
 // HU-12 Galería pública. Criterios: docs/09-pruebas/criterios-entrega-1.md (12.x).
 
@@ -53,5 +53,21 @@ describe("al lado del lema de la portada", () => {
   test("sin comparador, el arte de la marca solo si no hay foto del taller", () => {
     expect(ladoDelLema({ hayFotoTaller: false, hayComparador: false })).toBe("arte");
     expect(ladoDelLema({ hayFotoTaller: true, hayComparador: false })).toBeNull();
+  });
+});
+
+describe("vitrina de la galería", () => {
+  const conAntes = (id: number) => ({ id, antes: { url: "x" } });
+  const sola = (id: number) => ({ id, antes: null });
+
+  test("primero los pares de antes y después y después las fotos solas, cada grupo en su orden", () => {
+    expect(paresPrimero([sola(1), conAntes(2), sola(3), conAntes(4)]).map((f) => f.id)).toEqual([2, 4, 1, 3]);
+  });
+
+  test("un trabajo sin descripción se nombra por su servicio", () => {
+    expect(nombreDelTrabajo("  ", "Instalación de PPF")).toBe("Trabajo de Instalación de PPF");
+    // En el panel, con su número: varios sin descripción se distinguen
+    expect(nombreDelTrabajo("", "Pulido de vidrios", 7)).toBe("Trabajo de Pulido de vidrios (n.º 7)");
+    expect(nombreDelTrabajo("Hilux con nano cerámico", "Pulido y nano cerámico")).toBe("Hilux con nano cerámico");
   });
 });

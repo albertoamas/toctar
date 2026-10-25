@@ -71,11 +71,8 @@ export const esquemaMover = z.object({ id: idRegistro, direccion: z.enum(DIRECCI
 export const esquemaVisibilidad = z.object({ id: idRegistro, visible: z.boolean() });
 
 // Galería (HU-09)
-const descripcionGaleria = z
-  .string()
-  .trim()
-  .min(1, "Escribe una descripción corta: también la leen los buscadores.")
-  .max(140, "Hasta 140 caracteres.");
+// La descripción es opcional desde el 24/10: no se ve en el sitio, la leen Google y los lectores de pantalla
+const descripcionGaleria = z.string().trim().max(140, "Hasta 140 caracteres.");
 const servicioGaleria = z.coerce.number({ error: "Elige el servicio." }).int().positive("Elige el servicio.");
 
 export const esquemaGaleria = z.object({ servicioId: servicioGaleria, descripcion: descripcionGaleria });

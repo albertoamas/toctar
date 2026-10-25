@@ -8,14 +8,15 @@ const soloEscritorio = (info: TestInfo) => test.skip(info.project.name !== "escr
 
 const foto = (nombre: string) => ({ name: nombre, mimeType: "image/png", buffer: PNG });
 
-test("sin servicio ni descripción no se sube", async ({ page }) => {
+test("sin servicio no se sube; la descripción es opcional", async ({ page }) => {
   await ingresarComoDueno(page);
   await page.goto("/panel/sitio");
   await page.getByRole("navigation", { name: "Secciones del sitio web" }).getByRole("link", { name: "Galería" }).click();
   await page.getByRole("button", { name: "Subir fotos" }).click();
   await page.getByRole("button", { name: "Guardar en la galería" }).click();
   await expect(page.getByText("Elige el servicio.")).toBeVisible();
-  await expect(page.getByText("Escribe una descripción corta: también la leen los buscadores.")).toBeVisible();
+  // Desde el 24/10 la descripción es opcional: no se ve en el sitio (la leen Google y los lectores de pantalla)
+  await expect(page.getByLabel("Descripción (opcional)")).not.toHaveAttribute("aria-invalid", "true");
 });
 
 test("sube un par antes y después y una foto sola; los ordena, oculta, edita y elimina", async ({ page }, info) => {
@@ -69,7 +70,8 @@ test("sube un par antes y después y una foto sola; los ordena, oculta, edita y 
   await page.getByRole("button", { name: "Editar: Vidrios sin manchas de ácido" }).click();
   // Tras un error, el servicio elegido se conserva (React reinicia el formulario y el selector volvía al original)
   await galeria.getByLabel("Servicio").selectOption({ label: "Pulido y nano cerámico" });
-  await galeria.getByLabel("Descripción").fill("");
+  // La descripción es opcional, pero tiene un largo máximo
+  await galeria.getByLabel("Descripción").fill("x".repeat(141));
   await galeria.getByRole("button", { name: "Guardar" }).click();
   await expect(galeria.getByLabel("Descripción")).toHaveAttribute("aria-invalid", "true");
   await expect(galeria.getByLabel("Servicio").locator("option:checked")).toHaveText("Pulido y nano cerámico");

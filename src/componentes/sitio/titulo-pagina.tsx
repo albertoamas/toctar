@@ -4,3 +4,6 @@
 export function TituloPagina({ children }: { children: React.ReactNode }) {
   return <h1 className="font-heading text-[40px] leading-[44px] font-extrabold italic">{children}</h1>;
 }
+
+/** Título de una sección dentro de una página del sitio (h2): el mismo estilo en todas. */
+export const TITULO_SECCION = "font-heading text-[28px] leading-8 font-bold italic md:text-[40px] md:leading-[44px]";

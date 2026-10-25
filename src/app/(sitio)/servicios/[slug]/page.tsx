@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
+import { TITULO_SECCION } from "@/componentes/sitio/titulo-pagina";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { FotoOReemplazo } from "@/componentes/sitio/foto-o-reemplazo";
 import { FotoResponsiva } from "@/componentes/sitio/foto-responsiva";
@@ -91,8 +92,6 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
     </article>
   );
 }
-
-const TITULO_SECCION = "font-heading text-[28px] leading-8 font-bold italic md:text-[40px] md:leading-[44px]";
 
 /**
  * Lo que gana el vehículo, de un vistazo: ícono y frase corta, separados por líneas finas (la fila del afiche del
