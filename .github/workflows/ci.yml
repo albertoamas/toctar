@@ -212,7 +212,8 @@ jobs:
             echo "::error::Falta el secreto COOLIFY_TOKEN o la variable del UUID de la app de $ENTORNO (ver docs/07-preparacion/ci-cd.md)."
             exit 1
           fi
-          codigo=$(curl -sS -o respuesta.json -w "%{http_code}" -H "Authorization: Bearer $COOLIFY_TOKEN" "$COOLIFY_URL/api/v1/deploy?uuid=$APP_UUID&force=false")
+          # El pedido de despliegue es POST: con GET, Coolify responde "This endpoint has changed to a POST request" (25/10)
+          codigo=$(curl -sS -X POST -o respuesta.json -w "%{http_code}" -H "Authorization: Bearer $COOLIFY_TOKEN" "$COOLIFY_URL/api/v1/deploy?uuid=$APP_UUID&force=false")
           cat respuesta.json; echo
           if [ "$codigo" != "200" ]; then
             echo "::error::Coolify respondió $codigo al pedir el despliegue de $ENTORNO."
