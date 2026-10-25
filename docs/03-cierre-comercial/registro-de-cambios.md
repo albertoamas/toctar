@@ -17,6 +17,7 @@ Las horas pasan de "comprometidas" a "usadas" cuando el pedido queda hecho.
 | 7 | 24/10/2026 | Página de un servicio más corta: sin "En qué consiste" (repetía el resumen, que queda arriba) y sin la grilla de sus fotos de la galería (queda "Ver la galería"). Cambia RF-03 y el criterio 11.1; lo ya escrito en la descripción queda guardado en la base | Dueño ("menos es más"), definido con YankoSoft al revisar el pedido 5 | 0 | Incluido | Hecho (PR #83) |
 | 8 | 24/10/2026 | Logo del encabezado del sitio más grande (36 px en el celular, 40 en la computadora) | Dueño, en la demo del sitio | 0,25 | Incluido | Hecho (PR #84) |
 | 9 | 24/10/2026 | Foto del equipo en Nosotros, al lado de la historia, subida en Textos del sitio | YankoSoft, siguiendo los pedidos de imágenes de la demo | 1 | Incluido | Hecho (PR #85) |
+| 10 | 24/10/2026 | El comparador de antes y después de la portada se mueve solo (3 idas y vueltas) hasta que el visitante lo toca | YankoSoft, al revisar el pedido 4 | 1 | Incluido | Hecho (PR #86) |
 
 **Tratamiento:** `Bolsa` (se descuenta de las 8 h) · `Cotizado` (Bs 40/h, con aprobación) · `Sistema completo` · `Futuro` (va al backlog) · `Incluido` (ajuste de diseño o texto, o corrección de error).
 
