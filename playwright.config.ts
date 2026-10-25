@@ -18,6 +18,10 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${puerto}`,
     trace: "on-first-retry",
+    // Como los usuarios reales: español de Bolivia y su hora. Sin esto, en CI (Linux, en inglés y en UTC) las horas se
+    // ven con AM/PM y las fechas en otro formato que en la PC y en el teléfono del taller.
+    locale: "es-BO",
+    timezoneId: "America/La_Paz",
   },
   projects: [
     // Datos que el sitio necesita y que se cargan por el panel (tests/e2e/preparar.setup.ts)
