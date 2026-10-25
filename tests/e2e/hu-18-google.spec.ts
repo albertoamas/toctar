@@ -1,22 +1,15 @@
 import { expect, test } from "@playwright/test";
-import pg from "pg";
-import { URL_BASE_E2E } from "./apoyo";
+import { consultar } from "./apoyo";
 
 // HU-18 Sitio preparado para Google. Criterios: docs/09-pruebas/criterios-entrega-1.md (18.x).
 // El servidor de pruebas corre como producción: SITIO_INDEXABLE=true (playwright.config.ts).
 
 test("el sitemap lista las páginas y los servicios visibles, no los ocultos", async ({ request }, info) => {
   const slugOculto = `servicio-oculto-${info.project.name}`;
-  const cliente = new pg.Client({ connectionString: URL_BASE_E2E });
-  await cliente.connect();
-  try {
-    await cliente.query(
-      `insert into servicio (nombre, slug, resumen, orden, visible_sitio) values ($1, $2, 'Oculto', 99, false) on conflict (slug) do nothing`,
-      [`Servicio oculto ${info.project.name}`, slugOculto],
-    );
-  } finally {
-    await cliente.end();
-  }
+  await consultar(
+    `insert into servicio (nombre, slug, resumen, orden, visible_sitio) values ($1, $2, 'Oculto', 99, false) on conflict (slug) do nothing`,
+    [`Servicio oculto ${info.project.name}`, slugOculto],
+  );
 
   const respuesta = await request.get("/sitemap.xml");
   expect(respuesta.ok()).toBe(true);

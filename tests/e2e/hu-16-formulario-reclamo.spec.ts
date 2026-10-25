@@ -1,25 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
-import pg from "pg";
-import { PNG, URL_BASE_E2E } from "./apoyo";
+import { consultar, PNG } from "./apoyo";
 
 // HU-16 Formulario de reclamo. Criterios: docs/09-pruebas/criterios-entrega-1.md (16.x).
 // Cada proyecto usa su propia placa y la busca en la base. El reclamo en el panel se prueba en HU-17.
 
 const foto = (nombre: string) => ({ name: nombre, mimeType: "image/png", buffer: PNG });
 
-async function reclamosConPlaca(placa: string) {
-  const cliente = new pg.Client({ connectionString: URL_BASE_E2E });
-  await cliente.connect();
-  try {
-    const { rows } = await cliente.query<{ fotos: number }>(
-      "select (select count(*)::int from reclamo_archivo ra where ra.reclamo_id = r.id) as fotos from reclamo r where placa = $1",
-      [placa],
-    );
-    return rows;
-  } finally {
-    await cliente.end();
-  }
-}
+const reclamosConPlaca = (placa: string) =>
+  consultar<{ fotos: number }>("select (select count(*)::int from reclamo_archivo ra where ra.reclamo_id = r.id) as fotos from reclamo r where placa = $1", [placa]);
 
 async function llenar(page: Page, placa: string) {
   await page.getByLabel("Nombre").fill("Cliente de prueba");

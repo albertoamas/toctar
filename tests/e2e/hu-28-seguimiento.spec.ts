@@ -1,6 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import pg from "pg";
-import { crearClienteEnBase, crearUsuario, ingresar, URL_BASE_E2E } from "./apoyo";
+import { consultar, crearClienteEnBase, crearUsuario, ingresar } from "./apoyo";
 
 // HU-28 Seguimiento de consultas. Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md §9.
 // Cada proyecto (celular o escritorio) usa sus propios clientes; las consultas se crean directo en la base.
@@ -19,19 +18,13 @@ async function ingresarComoEncargado(page: Page, info: TestInfo, n: number) {
 /** Crea una consulta con su último movimiento hace `dias` días. Devuelve su id. */
 async function crearConsulta(datos: { cliente: string; telefono: string; placa: string; dias: number; estado?: string }): Promise<number> {
   await crearClienteEnBase({ nombre: datos.cliente, telefono: datos.telefono, placa: datos.placa });
-  const base = new pg.Client({ connectionString: URL_BASE_E2E });
-  await base.connect();
-  try {
-    const { rows } = await base.query<{ id: number }>(
-      `insert into consulta (cliente_id, vehiculo_id, canal, estado, motivo_perdida, ultimo_movimiento_at, created_by)
-       select v.cliente_id, v.id, 'whatsapp', $2, case when $2 = 'perdido' then 'precio' end, now() - make_interval(days => $3::int), v.created_by
-       from vehiculo v where v.placa = $1 returning id`,
-      [datos.placa, datos.estado ?? "consulto", datos.dias],
-    );
-    return rows[0].id;
-  } finally {
-    await base.end();
-  }
+  const [{ id }] = await consultar<{ id: number }>(
+    `insert into consulta (cliente_id, vehiculo_id, canal, estado, motivo_perdida, ultimo_movimiento_at, created_by)
+     select v.cliente_id, v.id, 'whatsapp', $2, case when $2 = 'perdido' then 'precio' end, now() - make_interval(days => $3::int), v.created_by
+     from vehiculo v where v.placa = $1 returning id`,
+    [datos.placa, datos.estado ?? "consulto", datos.dias],
+  );
+  return id;
 }
 
 /** La fila (computadora) o la tarjeta (celular) de un cliente: la que se ve. */
