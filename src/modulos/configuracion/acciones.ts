@@ -3,13 +3,13 @@
 import { eq, max } from "drizzle-orm";
 import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/db";
-import { espacioTaller, negocio, parametro, sucursal, tamanoVehiculo } from "@/db/esquema";
+import { espacioTaller, negocio, parametro, plantillaMensaje, sucursal, tamanoVehiculo } from "@/db/esquema";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { nombreRepetido, puedeDesactivar, reordenar, type Direccion } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
 import { whatsAppLocal } from "@/lib/whatsapp";
-import { ETIQUETA_NEGOCIO, ETIQUETA_PARAMETROS, listarElementos, obtenerConfiguracionNegocio, sucursalPrincipal } from "./consultas";
+import { ETIQUETA_NEGOCIO, ETIQUETA_PARAMETROS, ETIQUETA_PLANTILLAS, listarElementos, obtenerConfiguracionNegocio, sucursalPrincipal } from "./consultas";
 import { CAMPOS_NEGOCIO, esquemaNegocio } from "./esquemas";
 import {
   esquemaElemento,
@@ -20,6 +20,7 @@ import {
   type Lista,
 } from "./listas";
 import { CLAVES_PARAMETRO, esquemaParametros } from "./parametros";
+import { esquemaClavePlantilla, esquemaPlantilla, PLANTILLAS } from "./plantillas";
 
 // Configuración del negocio (HU-04) y parámetros (HU-05). Solo el dueño entra al módulo "configuracion".
 // Al guardar se invalida la etiqueta "negocio": el sitio muestra los datos nuevos sin volver a desplegar.
@@ -220,4 +221,42 @@ export async function cambiarEstadoElemento(datos: { lista: Lista; id: number; a
 
   despuesDeCambiarLista();
   return { ok: true, mensaje: activo ? `${elemento.nombre} reactivado.` : `${elemento.nombre} desactivado.` };
+}
+
+// ---------------------------------------------------------------------------------------------
+// HU-40 Mensajes de WhatsApp
+
+function despuesDeCambiarPlantilla() {
+  updateTag(ETIQUETA_PLANTILLAS);
+  revalidatePath(`${RUTA}/mensajes`);
+}
+
+/** Guarda el texto de un mensaje, solo con los campos de ese mensaje. */
+export async function guardarPlantilla(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  const autor = await exigirModulo("configuracion");
+  const valores = { texto: String(datos.get("texto") ?? "") };
+  const entrada = esquemaPlantilla.safeParse({ clave: datos.get("clave"), texto: valores.texto });
+  if (!entrada.success) {
+    const errores = erroresDe(entrada.error);
+    // La clave no es un campo del formulario: si no vale, la página quedó vieja
+    return errores.clave ? { mensaje: errores.clave } : { errores, valores };
+  }
+  const { clave, texto } = entrada.data;
+
+  const fila = { clave, texto, updatedAt: new Date(), updatedBy: Number(autor.id) };
+  await db.insert(plantillaMensaje).values(fila).onConflictDoUpdate({ target: plantillaMensaje.clave, set: fila });
+  despuesDeCambiarPlantilla();
+  return { ok: true, mensaje: "Mensaje guardado.", valores: { texto } };
+}
+
+/** Vuelve al texto original de un mensaje: sin fila guardada, vale el original. */
+export async function restaurarPlantilla(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  await exigirModulo("configuracion");
+  const entrada = esquemaClavePlantilla.safeParse({ clave: datos.get("clave") });
+  if (!entrada.success) return { mensaje: erroresDe(entrada.error).clave };
+  const { clave } = entrada.data;
+
+  await db.delete(plantillaMensaje).where(eq(plantillaMensaje.clave, clave));
+  despuesDeCambiarPlantilla();
+  return { ok: true, mensaje: "Volvió el texto original.", valores: { texto: PLANTILLAS[clave].original } };
 }

@@ -74,7 +74,7 @@ Convenciones: `id` es `bigint` autoincremental; todas las tablas tienen `created
 | `espacio_taller` | sucursal_id, nombre, orden, activo | Hoy 3 |
 | `usuario` | nombre, nombre_usuario (único), correo (interno), rol (`dueno`, `encargado`, `tecnico`, con CHECK), desactivado | Tabla de Better Auth. La contraseña (hash) va en `cuenta`; `correo` es interno (`<usuario>@usuarios.toctar.local`) porque la librería lo exige; "desactivar" usa el bloqueo de la librería, que cierra las sesiones. Tablas propias de la librería: `sesion`, `cuenta`, `verificacion` (HU-01) |
 | `usuario_permiso` | usuario_id, permiso | Solo para encargado (RF-16): un módulo (`clientes`, `consultas`, `agenda`, `ordenes`, `pagos`, `mantenimientos`, `sitio`, `reclamos`) o el permiso `entrega_con_saldo` (RN-13) |
-| `plantilla_mensaje` | clave (pk), texto | "Listo" y "mantenimiento" (HU-40) |
+| `plantilla_mensaje` | clave (pk), texto | Los mensajes de WhatsApp que el dueño cambió: "listo", "saldo" y "mantenimiento" (HU-40). Sin fila vale el original, que está en el código |
 | `auditoria` | usuario_id, entidad, entidad_id, accion, datos (jsonb) | Cambios en cotizaciones, pagos y precios (RNF-10) |
 | `archivo` | clave_almacenamiento, tipo_mime, bytes, ancho, alto | Fotos, videos, logo y PDF |
 

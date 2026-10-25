@@ -12,7 +12,7 @@ import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp } from "@/lib/whatsapp";
 import { vehiculoEnLista } from "@/modulos/clientes/reglas";
-import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
+import { obtenerDatosPublicos, obtenerPlantillas } from "@/modulos/configuracion/consultas";
 import { avisarMantenimiento } from "@/modulos/mantenimientos/acciones";
 import { NoLeInteresa } from "@/modulos/mantenimientos/componentes/no-le-interesa";
 import { mantenimientosPorAvisar, type MantenimientoPorAvisar } from "@/modulos/mantenimientos/consultas";
@@ -39,11 +39,11 @@ async function Listas() {
   const usuario = await exigirModulo("mantenimientos");
   const puedeAgendar = puedeVerModulo(usuario, "agenda") && puedeVerModulo(usuario, "pagos");
   const hoy = fechaEnBolivia();
-  const [todos, negocio] = await Promise.all([mantenimientosPorAvisar(hoy), obtenerDatosPublicos()]);
+  const [todos, negocio, plantillas] = await Promise.all([mantenimientosPorAvisar(hoy), obtenerDatosPublicos(), obtenerPlantillas()]);
   if (todos.length === 0) return <EstadoVacio>No hay mantenimientos por avisar.</EstadoVacio>;
   const vencidos = todos.filter((m) => seccionMantenimiento(m.fechaProgramada, hoy) === "vencido");
   const proximos = todos.filter((m) => seccionMantenimiento(m.fechaProgramada, hoy) === "proximo");
-  const fila = (m: MantenimientoPorAvisar) => <Fila key={m.id} m={m} hoy={hoy} negocio={negocio.nombre} puedeAgendar={puedeAgendar} />;
+  const fila = (m: MantenimientoPorAvisar) => <Fila key={m.id} m={m} hoy={hoy} mensaje={{ plantilla: plantillas.mantenimiento, negocio: negocio.nombre }} puedeAgendar={puedeAgendar} />;
 
   return (
     <>
@@ -75,7 +75,7 @@ function Seccion({ id, titulo, cantidad, vacio, children }: { id: string; titulo
   );
 }
 
-function Fila({ m, hoy, negocio, puedeAgendar }: { m: MantenimientoPorAvisar; hoy: string; negocio: string; puedeAgendar: boolean }) {
+function Fila({ m, hoy, mensaje, puedeAgendar }: { m: MantenimientoPorAvisar; hoy: string; mensaje: { plantilla: string; negocio: string }; puedeAgendar: boolean }) {
   const vehiculo = { marca: m.marca, modelo: m.modelo, placa: m.placa };
   const avisado = m.avisadoAt ? `Avisado el ${diaYHora(m.avisadoAt)}${m.avisadoPor ? ` por ${m.avisadoPor}` : ""}` : null;
   const agendar = new URLSearchParams({ cliente: String(m.clienteId), vehiculo: String(m.vehiculoId), recordatorio: String(m.id) });
@@ -96,7 +96,7 @@ function Fila({ m, hoy, negocio, puedeAgendar }: { m: MantenimientoPorAvisar; ho
       <p className="text-sm">{avisado ?? "Todavía no se le avisó."}</p>
       <div className="flex flex-wrap gap-2">
         <AvisarPorWhatsApp
-          enlace={enlaceWhatsApp(m.telefono, mensajeMantenimiento({ negocio, cliente: m.cliente, vehiculo, servicio: m.servicio }))}
+          enlace={enlaceWhatsApp(m.telefono, mensajeMantenimiento({ ...mensaje, cliente: m.cliente, vehiculo, servicio: m.servicio }))}
           avisado={avisado}
           conDetalle={false}
           registrarAction={avisarMantenimiento.bind(null, { id: m.id })}

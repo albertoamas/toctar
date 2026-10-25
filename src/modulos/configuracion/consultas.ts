@@ -2,18 +2,20 @@ import "server-only";
 import { asc, desc, eq } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/db";
-import { archivo, espacioTaller, negocio, parametro, sucursal, tamanoVehiculo, type Redes } from "@/db/esquema";
+import { archivo, espacioTaller, negocio, parametro, plantillaMensaje, sucursal, tamanoVehiculo, type Redes } from "@/db/esquema";
 import { urlArchivo } from "@/lib/almacenamiento";
 import type { DiaHorario } from "@/lib/horarios";
 import type { Coordenadas } from "@/lib/ubicacion";
 import type { Elemento, Lista } from "./listas";
 import { leerParametros, type Parametros } from "./parametros";
+import { plantillasVigentes, type Plantillas } from "./plantillas";
 
 // Lecturas de la configuración. Los datos del negocio los usa el sitio en cada página:
 // van en caché con la etiqueta "negocio", y las acciones que los cambian la invalidan (updateTag).
 
 export const ETIQUETA_NEGOCIO = "negocio";
 export const ETIQUETA_PARAMETROS = "parametros";
+export const ETIQUETA_PLANTILLAS = "plantillas";
 
 export type ConfiguracionNegocio = {
   nombre: string;
@@ -88,6 +90,14 @@ export async function obtenerParametros(): Promise<Parametros> {
   cacheTag(ETIQUETA_PARAMETROS);
   cacheLife("max");
   return leerParametros(await db.select({ clave: parametro.clave, valor: parametro.valor }).from(parametro));
+}
+
+/** Los mensajes de WhatsApp vigentes (HU-40). En caché hasta que el dueño cambie uno. */
+export async function obtenerPlantillas(): Promise<Plantillas> {
+  "use cache";
+  cacheTag(ETIQUETA_PLANTILLAS);
+  cacheLife("max");
+  return plantillasVigentes(await db.select({ clave: plantillaMensaje.clave, texto: plantillaMensaje.texto }).from(plantillaMensaje));
 }
 
 /** Espacios del taller o tamaños de vehículo: activos primero, en su orden; después los desactivados. */

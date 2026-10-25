@@ -1,6 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import pg from "pg";
-import { crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PNG, URL_BASE_E2E } from "./apoyo";
+import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PNG } from "./apoyo";
 
 // HU-25 Armar la cotización (flujo crítico 1). Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md §9.
 // Cada proyecto (celular o escritorio) crea su propio servicio con precios y su consulta, directo en la base.
@@ -9,16 +8,6 @@ test.describe.configure({ mode: "serial" });
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "C" : "E");
 const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 3 : 4}2500${n}0`;
-
-async function consultar<T extends pg.QueryResultRow>(sql: string, valores: unknown[] = []): Promise<T[]> {
-  const base = new pg.Client({ connectionString: URL_BASE_E2E });
-  await base.connect();
-  try {
-    return (await base.query<T>(sql, valores)).rows;
-  } finally {
-    await base.end();
-  }
-}
 
 /**
  * Un servicio con dos variantes: "Con precio" (450 Bs para el primer tamaño, el del vehículo de crearClienteEnBase) y

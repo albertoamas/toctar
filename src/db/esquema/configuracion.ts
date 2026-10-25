@@ -2,9 +2,10 @@ import { sql } from "drizzle-orm";
 import { boolean, check, integer, jsonb, numeric, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 // Rutas relativas: drizzle-kit también carga este archivo y no conoce el alias "@/".
 import type { DiaHorario } from "../../lib/horarios";
+import { CLAVES_PLANTILLA, LARGO_MAXIMO_PLANTILLA } from "../../modulos/configuracion/plantillas";
 import { usuario } from "./acceso";
 
-// Datos del negocio (HU-04, RF-17), archivos subidos y parámetros (HU-05, RF-18).
+// Datos del negocio (HU-04, RF-17), archivos subidos, parámetros (HU-05, RF-18) y mensajes de WhatsApp (HU-40).
 // Especificación: docs/08-desarrollo/etapas/B2-configuracion.md §4.
 
 const momento = (nombre: string) => timestamp(nombre, { withTimezone: true });
@@ -96,4 +97,22 @@ export const espacioTaller = pgTable(
     activo: boolean("activo").default(true).notNull(),
   },
   (t) => [uniqueIndex("espacio_taller_nombre_unico").on(t.sucursalId, sql`lower(${t.nombre})`)],
+);
+
+/**
+ * Mensajes de WhatsApp que el dueño cambió (HU-40). Sin fila, vale el texto original, que vive en el código
+ * (src/modulos/configuracion/plantillas.ts): volver al original borra la fila.
+ */
+export const plantillaMensaje = pgTable(
+  "plantilla_mensaje",
+  {
+    clave: text("clave", { enum: CLAVES_PLANTILLA }).primaryKey(),
+    texto: text("texto").notNull(),
+    updatedAt: momento("updated_at").defaultNow().notNull(),
+    updatedBy: integer("updated_by").references(() => usuario.id),
+  },
+  (t) => [
+    check("plantilla_mensaje_clave_valida", sql.raw(`clave in (${CLAVES_PLANTILLA.map((c) => `'${c}'`).join(", ")})`)),
+    check("plantilla_mensaje_texto_largo", sql`char_length(${t.texto}) between 1 and ${sql.raw(String(LARGO_MAXIMO_PLANTILLA))}`),
+  ],
 );

@@ -1,6 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import pg from "pg";
-import { crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, URL_BASE_E2E } from "./apoyo";
+import { consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
 
 // HU-36 Entregar vehículo (flujo crítico 4). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §9.
 // Las órdenes van directo a la base, listas, en días propios lejos de hoy (1000 o 1100) para no chocar con otras pruebas.
@@ -8,42 +7,14 @@ test.describe.configure({ mode: "serial" });
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "c" : "e");
 const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 5 : 6}3600${n}0`;
+const dias = (info: TestInfo) => (info.project.name === "celular" ? 1000 : 1100);
 const hoy = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/La_Paz" }).format(new Date());
-
-async function consultar<T extends pg.QueryResultRow>(sql: string, valores: unknown[] = []): Promise<T[]> {
-  const base = new pg.Client({ connectionString: URL_BASE_E2E });
-  await base.connect();
-  try {
-    return (await base.query<T>(sql, valores)).rows;
-  } finally {
-    await base.end();
-  }
-}
-
-/** Una orden lista con un pulido y nano cerámico (genera mantenimiento) del precio dado y lo pagado. Devuelve su id. */
-async function ordenLista(info: TestInfo, placa: string, espacio: number, precio: number, pagado: number): Promise<number> {
-  const dias = info.project.name === "celular" ? 1000 : 1100;
-  const [{ id }] = await consultar<{ id: number }>(
-    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, created_by)
-     select e.sucursal_id, v.cliente_id, v.id, e.id, current_date + $3::int, current_date + $3::int, 'listo', now(), now(), v.created_by
-     from vehiculo v, (select * from espacio_taller where activo order by orden offset $2 limit 1) e where v.placa = $1 returning id`,
-    [placa, espacio, dias],
-  );
-  await consultar(
-    `insert into trabajo_linea (trabajo_id, variante_id, descripcion, precio, orden)
-     select $1, v.id, 'Pulido y nano cerámico', $2, 0 from variante v join servicio s on s.id = v.servicio_id
-     where s.slug = 'pulido-y-nano-ceramico' order by v.id limit 1`,
-    [id, precio],
-  );
-  if (pagado > 0) await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, $2, 'qr', 'adelanto', current_date, created_by from trabajo where id = $1", [id, pagado]);
-  return id;
-}
 
 test("pagada: el dueño suma un adicional, se cobra y se entrega; queda programado el mantenimiento", async ({ page }, info) => {
   const s = sufijo(info);
   const placa = `EN36${s.toUpperCase()}1`;
   await crearClienteEnBase({ nombre: `Entrega ${s}`, telefono: telefono(info, 1), placa });
-  const id = await ordenLista(info, placa, 0, 1000, 1000);
+  const id = await crearOrdenLista({ placa, espacio: 0, dias: dias(info), precio: 1000, pagado: 1000 });
 
   await ingresarComoDueno(page);
   await page.goto(`/panel/ordenes/${id}`);
@@ -92,7 +63,7 @@ test("con saldo: el encargado sin el permiso no entrega; con el permiso sí, y q
   const s = sufijo(info);
   const placa = `EN36${s.toUpperCase()}2`;
   await crearClienteEnBase({ nombre: `Debe ${s}`, telefono: telefono(info, 2), placa });
-  const id = await ordenLista(info, placa, 1, 500, 200);
+  const id = await crearOrdenLista({ placa, espacio: 1, dias: dias(info), precio: 500, pagado: 200 });
   await crearUsuario({ usuario: `sinperm-hu36-${s}`, nombre: "Encargado sin permiso", contrasena: "encargado-123", rol: "encargado", permisos: ["ordenes", "pagos"] });
   await crearUsuario({ usuario: `conperm-hu36-${s}`, nombre: "Encargada con permiso", contrasena: "encargado-123", rol: "encargado", permisos: ["ordenes", "pagos", "entrega_con_saldo"] });
 

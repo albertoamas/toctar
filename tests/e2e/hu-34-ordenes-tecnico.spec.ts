@@ -1,6 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import pg from "pg";
-import { crearClienteEnBase, crearUsuario, ingresar, PNG, URL_BASE_E2E } from "./apoyo";
+import { consultar, crearClienteEnBase, crearUsuario, ingresar, PNG } from "./apoyo";
 
 // HU-34 Órdenes del técnico (flujo crítico 3). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §9.
 // Las órdenes van directo a la base. Para no chocar con las reservas de otras pruebas: la del técnico, en un espacio
@@ -10,16 +9,6 @@ test.describe.configure({ mode: "serial" });
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "c" : "e");
 const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 5 : 6}3400${n}0`;
 const hoy = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/La_Paz" }).format(new Date());
-
-async function consultar<T extends pg.QueryResultRow>(sql: string, valores: unknown[] = []): Promise<T[]> {
-  const base = new pg.Client({ connectionString: URL_BASE_E2E });
-  await base.connect();
-  try {
-    return (await base.query<T>(sql, valores)).rows;
-  } finally {
-    await base.end();
-  }
-}
 
 const dia = async (desplazamiento: number) => (await consultar<{ d: string }>("select to_char($1::date + $2::int, 'YYYY-MM-DD') as d", [hoy(), desplazamiento]))[0].d;
 const idDeUsuario = async (usuario: string) => (await consultar<{ id: number }>("select id from usuario where nombre_usuario = $1", [usuario]))[0].id;

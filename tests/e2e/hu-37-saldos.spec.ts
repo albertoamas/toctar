@@ -1,6 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import pg from "pg";
-import { crearClienteEnBase, crearUsuario, ingresar, URL_BASE_E2E } from "./apoyo";
+import { consultar, crearClienteEnBase, crearUsuario, ingresar } from "./apoyo";
 
 // HU-37 Saldos pendientes (flujo crítico 4, el cobro después de la entrega). Especificación:
 // docs/08-desarrollo/etapas/C4-taller-entrega.md §9. Las órdenes van directo a la base, ya entregadas (no ocupan
@@ -9,16 +8,6 @@ test.describe.configure({ mode: "serial" });
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "c" : "e");
 const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 5 : 6}3700${n}0`;
-
-async function consultar<T extends pg.QueryResultRow>(sql: string, valores: unknown[] = []): Promise<T[]> {
-  const base = new pg.Client({ connectionString: URL_BASE_E2E });
-  await base.connect();
-  try {
-    return (await base.query<T>(sql, valores)).rows;
-  } finally {
-    await base.end();
-  }
-}
 
 /** Una orden entregada hace `dias` días, con un servicio de 600 Bs, el descuento y lo pagado. Devuelve su id. */
 async function ordenEntregada(placa: string, dias: number, pagado: number, descuento = 0): Promise<number> {

@@ -1,10 +1,13 @@
 import { expect, test } from "vitest";
 import { diaYHora, fechaCorta, textoHace } from "@/lib/fechas";
 import { nombreVehiculo, primerNombre, vehiculoEnLista } from "@/modulos/clientes/reglas";
+import { PLANTILLAS } from "@/modulos/configuracion/plantillas";
 import { mensajeListo, mensajeSaldo, textoVehiculo } from "@/modulos/ordenes/mensajes";
 
-// C4 (HU-35, RF-48): el mensaje de "listo" lleva nombre, vehículo y, si hay y quien avisa lo ve, el saldo.
+// C4 (HU-35, RF-48): el mensaje de "listo" lleva nombre, vehículo y, si hay y quien avisa lo ve, el saldo. Con la
+// plantilla original de la HU-40 da el mismo texto que antes de que fuera editable (C5 §9).
 
+const listo = { plantilla: PLANTILLAS.listo.original };
 const base = { negocio: "TocTar Detailing", cliente: "Juan Pérez", vehiculo: { marca: "Toyota", modelo: "Corolla", placa: "1234ABC" } };
 
 test("saluda por el primer nombre y nombra el vehículo", () => {
@@ -16,24 +19,24 @@ test("saluda por el primer nombre y nombra el vehículo", () => {
 });
 
 test("con saldo pendiente, lo dice; sin saldo, a favor o sin permiso, no", () => {
-  expect(mensajeListo({ ...base, saldo: "350.00" })).toBe(
+  expect(mensajeListo({ ...listo, ...base, saldo: "350.00" })).toBe(
     "Hola Juan, tu Toyota Corolla (placa 1234ABC) ya está listo en TocTar Detailing. Saldo pendiente: 350 Bs. Te esperamos en el taller.",
   );
   const sinSaldo = "Hola Juan, tu Toyota Corolla (placa 1234ABC) ya está listo en TocTar Detailing. Te esperamos en el taller.";
-  expect(mensajeListo({ ...base, saldo: "0.00" })).toBe(sinSaldo);
-  expect(mensajeListo({ ...base, saldo: "-50.00" })).toBe(sinSaldo);
+  expect(mensajeListo({ ...listo, ...base, saldo: "0.00" })).toBe(sinSaldo);
+  expect(mensajeListo({ ...listo, ...base, saldo: "-50.00" })).toBe(sinSaldo);
   // Quien avisa no ve pagos: el monto no va
-  expect(mensajeListo({ ...base, saldo: null })).toBe(sinSaldo);
+  expect(mensajeListo({ ...listo, ...base, saldo: null })).toBe(sinSaldo);
 });
 
 test("sin nombre, saluda igual; el aviso dice día y hora en Bolivia", () => {
-  expect(mensajeListo({ ...base, cliente: "  ", saldo: null })).toMatch(/^Hola, tu Toyota Corolla/);
+  expect(mensajeListo({ ...listo, ...base, cliente: "  ", saldo: null })).toMatch(/^Hola, tu Toyota Corolla/);
   // 19:40 UTC son las 15:40 en Bolivia (UTC−4)
   expect(diaYHora(new Date("2026-10-30T19:40:00Z"))).toBe("30/10 a las 15:40");
 });
 
 test("el mensaje de saldo dice cuánto, de qué vehículo y cómo pagarlo (HU-37)", () => {
-  expect(mensajeSaldo({ ...base, saldo: "300.50" })).toBe(
+  expect(mensajeSaldo({ plantilla: PLANTILLAS.saldo.original, ...base, saldo: "300.50" })).toBe(
     "Hola Juan, te escribimos de TocTar Detailing por el saldo de 300,50 Bs del servicio de tu Toyota Corolla (placa 1234ABC). Puedes pagarlo en el taller, por QR o por transferencia.",
   );
 });

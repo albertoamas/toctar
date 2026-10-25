@@ -2,6 +2,7 @@ import { expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
 import { esquemaAvisarMantenimiento, esquemaCerrarMantenimiento } from "@/modulos/mantenimientos/esquemas";
 import { seccionMantenimiento, textoVencimiento } from "@/modulos/mantenimientos/reglas";
+import { PLANTILLAS } from "@/modulos/configuracion/plantillas";
 import { mensajeMantenimiento } from "@/modulos/ordenes/mensajes";
 
 // HU-38 (RF-50, RN-08): a quién le toca volver. Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §9.
@@ -25,7 +26,7 @@ test("dice cuánto falta o cuánto pasó", () => {
 });
 
 test("el mensaje saluda, nombra el vehículo y el servicio, y ofrece agendar", () => {
-  const datos = { negocio: "TocTar Detailing", cliente: "Ana María Rojas", vehiculo: { marca: "Toyota", modelo: "Hilux", placa: "2345XYZ" }, servicio: "Nano cerámico" };
+  const datos = { plantilla: PLANTILLAS.mantenimiento.original, negocio: "TocTar Detailing", cliente: "Ana María Rojas", vehiculo: { marca: "Toyota", modelo: "Hilux", placa: "2345XYZ" }, servicio: "Nano cerámico" };
   expect(mensajeMantenimiento(datos)).toBe(
     "Hola Ana, te escribimos de TocTar Detailing: a tu Toyota Hilux (placa 2345XYZ) le toca el mantenimiento de Nano cerámico. ¿Te agendamos un día?",
   );

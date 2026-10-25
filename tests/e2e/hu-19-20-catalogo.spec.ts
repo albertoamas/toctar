@@ -1,6 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import pg from "pg";
-import { crearServicioPublicado, crearUsuario, ingresar, ingresarComoDueno, URL_BASE_E2E } from "./apoyo";
+import { consultar, crearServicioPublicado, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
 
 // HU-19 Catálogo con variantes y HU-20 Precios por tamaño y duración.
 // Especificación: docs/08-desarrollo/etapas/C1-catalogo-clientes.md §9.
@@ -107,17 +106,6 @@ test("el encargado, aun con todos sus permisos, y el técnico no entran al catá
     await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
   }
 });
-
-/** Consulta directa a la base de pruebas, para comprobar lo que quedó guardado. */
-async function consultar<T extends object>(sql: string, parametros: unknown[]): Promise<T[]> {
-  const cliente = new pg.Client({ connectionString: URL_BASE_E2E });
-  await cliente.connect();
-  try {
-    return (await cliente.query<T>(sql, parametros)).rows;
-  } finally {
-    await cliente.end();
-  }
-}
 
 /** Filas de precio de un servicio y un tamaño: para comprobar que no se pisan (D-3). */
 async function filasDePrecio(servicioId: string, tamano: string): Promise<(string | null)[]> {

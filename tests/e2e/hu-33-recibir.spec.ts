@@ -1,6 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import pg from "pg";
-import { crearClienteEnBase, crearUsuario, ingresar, PNG, URL_BASE_E2E } from "./apoyo";
+import { consultar, crearClienteEnBase, crearUsuario, ingresar, PNG } from "./apoyo";
 
 // HU-33 Recibir vehículo (flujo crítico 3, primera parte). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §9.
 // Se recibe desde el día de ingreso: las reservas de hoy van en un espacio propio de cada proyecto (celular: el
@@ -11,16 +10,6 @@ const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "c" : "e")
 const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 5 : 6}3300${n}0`;
 /** Hoy en Bolivia (la base corre en UTC: de noche ya sería mañana). */
 const hoy = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/La_Paz" }).format(new Date());
-
-async function consultar<T extends pg.QueryResultRow>(sql: string, valores: unknown[] = []): Promise<T[]> {
-  const base = new pg.Client({ connectionString: URL_BASE_E2E });
-  await base.connect();
-  try {
-    return (await base.query<T>(sql, valores)).rows;
-  } finally {
-    await base.end();
-  }
-}
 
 /** Una reserva agendada con un servicio, en el espacio del proyecto, del día indicado (hoy, si no se dice). Devuelve su id. */
 async function reserva(info: TestInfo, placa: string, dia = hoy()): Promise<number> {

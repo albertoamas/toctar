@@ -1,21 +1,10 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import pg from "pg";
-import { crearClienteEnBase, ingresarComoDueno, URL_BASE_E2E } from "./apoyo";
+import { consultar, crearClienteEnBase, ingresarComoDueno } from "./apoyo";
 
 // HU-29 Tablero de la agenda. Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §9.
 // Cada proyecto mira su propia semana, lejos de hoy, para no chocar con las reservas de otras pruebas.
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "C" : "E");
-
-async function consultar<T extends pg.QueryResultRow>(sql: string, valores: unknown[] = []): Promise<T[]> {
-  const base = new pg.Client({ connectionString: URL_BASE_E2E });
-  await base.connect();
-  try {
-    return (await base.query<T>(sql, valores)).rows;
-  } finally {
-    await base.end();
-  }
-}
 
 /** El lunes de una semana propia: dentro de 400 (celular) o 500 (escritorio) días. */
 async function lunesPropio(info: TestInfo): Promise<string> {
