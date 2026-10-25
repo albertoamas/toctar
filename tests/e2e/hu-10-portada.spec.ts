@@ -123,11 +123,18 @@ test("el trabajo elegido en la galería del panel se compara arriba en la portad
   await expect(page.getByRole("img", { name: `Después: ${elegido}` })).toBeVisible();
   await expect(page.getByRole("slider", { name: "Comparar antes y después" })).toHaveValue("50");
   await expect(page.getByText(elegido, { exact: true })).toBeVisible();
-  // En un celular ancho no queda un hueco entre los botones y el comparador (revisión de YankoSoft, 24/10)
-  await page.setViewportSize({ width: 480, height: 900 });
-  const boton = (await page.getByRole("link", { name: "Ver los servicios" }).first().boundingBox())!;
-  const comparador = (await page.getByRole("img", { name: `Después: ${elegido}` }).boundingBox())!;
-  expect(comparador.y - (boton.y + boton.height)).toBeLessThan(60);
+  // En un celular ancho no queda un hueco entre los botones y el comparador, ni se enciman (revisión de YankoSoft, 24/10)
+  for (const ancho of [390, 480]) {
+    await page.setViewportSize({ width: ancho, height: 900 });
+    const boton = page.getByRole("main").getByRole("link", { name: "Ver los servicios" });
+    const despues = page.getByRole("img", { name: `Después: ${elegido}` });
+    await expect(boton).toBeVisible();
+    await expect(despues).toBeVisible();
+    const [b, c] = [(await boton.boundingBox())!, (await despues.boundingBox())!];
+    const espacio = c.y - (b.y + b.height);
+    expect(espacio, `a ${ancho} px`).toBeGreaterThanOrEqual(0);
+    expect(espacio, `a ${ancho} px`).toBeLessThan(60);
+  }
   await page.setViewportSize({ width: 1280, height: 720 });
   // Junto a "Ver la galería", más trabajos en TikTok (pedido de la demo del 24/10)
   await expect(page.getByRole("region", { name: "Trabajos recientes" }).getByRole("link", { name: "Mira nuestros trabajos en TikTok" })).toBeVisible();

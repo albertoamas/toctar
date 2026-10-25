@@ -39,7 +39,7 @@ export default function Portada() {
         fallback={
           <>
             <section className="relative overflow-hidden">
-              <Cabecera />
+              <CabeceraCargando />
             </section>
             <div aria-hidden className="min-h-screen" />
           </>
@@ -92,17 +92,13 @@ async function PortadaConDatos() {
  * dueño); sin ningún trabajo con antes, el arte de la marca si no hay foto del taller (pulido 2.1, tercera revisión).
  * En el celular, el arte va arriba y el comparador debajo del texto, sin pasar del 45 % del alto (una foto vertical no
  * tapa la pantalla entera).
- * Mientras llegan los textos se muestra vacía: sin foto, sin arte y SIN la línea (con el arte, al llegar una foto el
- * texto subía de golpe en el celular). Cargando, el bloque del texto reserva lo que ocupa el texto actual (392 px a
- * 360 de ancho, 296 en computadora); ya cargado, mide lo suyo. Hasta el 24/10 la reserva quedaba también cargado, y
- * en un celular más ancho (el texto ocupa menos) dejaba un hueco de hasta 150 px antes del comparador. Medido sin ella,
- * con la red y el procesador frenados: CLS 0 a 360, 412 y 480 px (lo de abajo de la cabecera se reemplaza entero al
- * llegar, no se corre).
+ * Mientras llegan los textos va `CabeceraCargando`: vacía, sin foto, sin arte y SIN la línea (con el arte, al llegar
+ * una foto el texto subía de golpe en el celular). Ya cargada mide lo suyo. Medido con la red y el procesador frenados:
+ * CLS 0 a 360, 412 y 480 px (lo de abajo de la cabecera se reemplaza entero al llegar, no se corre).
  * La línea llega junto con el texto: así se enciende una sola vez y ya en su lugar.
  */
-function Cabecera({ children, foto, trabajo }: { children?: React.ReactNode; foto?: UrlsFoto | null; trabajo?: ReturnType<typeof trabajoDePortada<FotoGaleria>> }) {
-  // Cargando (sin children) no va nada al lado: llega junto con el texto
-  const lado = children ? ladoDelLema({ hayFotoTaller: !!foto, hayComparador: !!trabajo }) : null;
+function Cabecera({ children, foto, trabajo }: { children: React.ReactNode; foto: UrlsFoto | null; trabajo: ReturnType<typeof trabajoDePortada<FotoGaleria>> }) {
+  const lado = ladoDelLema({ hayFotoTaller: !!foto, hayComparador: !!trabajo });
   return (
     <>
       {foto && <FotoTaller foto={foto} />}
@@ -115,12 +111,7 @@ function Cabecera({ children, foto, trabajo }: { children?: React.ReactNode; fot
         )}
       >
         {lado === "arte" && <PortadaArte className="order-first h-auto w-full max-w-72 justify-self-end md:order-last md:max-w-none" />}
-        {/* El alto se reserva solo mientras carga (24,5rem es lo que ocupa el texto a 360 px): ya cargado, el texto mide lo
-            suyo. Si quedara reservado, en un celular más ancho el texto ocupa menos y abajo quedaba un hueco de hasta
-            150 px antes del comparador (revisión de YankoSoft, 24/10) */}
-        <div aria-hidden={children ? undefined : true} className={children ? undefined : "min-h-[24.5rem] md:min-h-[18.5rem]"}>
-          {children}
-        </div>
+        <div>{children}</div>
         {/* Después del texto, también en el código: el teclado y el lector de pantalla llegan primero al lema y a
             "Pedir cotización". En el celular queda debajo, aún en la primera pantalla. */}
         {lado === "comparador" && trabajo && (
@@ -129,8 +120,25 @@ function Cabecera({ children, foto, trabajo }: { children?: React.ReactNode; fot
           </div>
         )}
       </div>
-      {children ? <hr className="tt-led tt-led--encender" /> : <div aria-hidden className="h-[3px]" />}
+      <hr className="tt-led tt-led--encender" />
     </>
+  );
+}
+
+/**
+ * La cabecera mientras llegan los datos: vacía, con el alto que ocupa el texto (24,5rem a 360 px de ancho, 18,5rem en
+ * computadora) y el lugar de la línea, sin la línea: se enciende una sola vez, al llegar el texto. Ya cargada, la
+ * cabecera mide lo suyo (hasta el 24/10 la reserva quedaba también cargada y en un celular ancho dejaba un hueco de
+ * hasta 150 px antes del comparador).
+ */
+function CabeceraCargando() {
+  return (
+    <div aria-hidden>
+      <div className="mx-auto max-w-6xl px-4 pt-10 pb-12 md:pt-20 md:pb-16">
+        <div className="min-h-[24.5rem] md:min-h-[18.5rem]" />
+      </div>
+      <div className="h-[3px]" />
+    </div>
   );
 }
 

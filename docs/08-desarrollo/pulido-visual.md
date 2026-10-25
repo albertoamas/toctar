@@ -386,7 +386,7 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - En el celular la portada medía unos 5050 px (a 390 de ancho): cada servicio era una tarjeta de unos 620 px.
   - Lo que estaba bien: la cabecera (arte, lema, LED que llega con el texto), las tarjetas en la computadora y el cierre con el monograma.
 - **Cambios:**
-  - El bloque de texto de la cabecera tiene el mismo alto mínimo cargando y cargado (24,5rem en el celular, 18,5rem en la computadora): un texto más corto ya no hace subir la página. Medido: diferencia 0 a 360, 412 y 1280 px.
+  - El bloque de texto de la cabecera tiene el mismo alto mínimo cargando y cargado (24,5rem en el celular, 18,5rem en la computadora): un texto más corto ya no hace subir la página. Medido: diferencia 0 a 360, 412 y 1280 px. **Cambió el 24/10 (2B.10):** ya cargado mide lo suyo; la reserva queda solo mientras carga (`CabeceraCargando`), porque en un celular ancho dejaba un hueco sobre el comparador.
   - El cierre usa el botón de WhatsApp principal (rojo): mientras se ve, el fijo se esconde.
   - En el celular (menos de 640 px), `TarjetaServicio` pasa a fila compacta: foto de 7rem a la izquierda, título de 22 px, resumen de 2 renglones y "Ver el servicio" (desde el 24/10, sin el resumen a la vista: 2B.6). Toda la fila se toca y conserva el corte a 60°. La portada del celular bajó a 2975 px. Como es el mismo componente, la página Servicios también lo tiene (se revisa en 2.2).
 - **Descartado o pendiente:**
