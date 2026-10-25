@@ -32,15 +32,19 @@ Merge a main    ──► Actions vuelve a verificar ──► pide el despliegu
 - **Lo que encontró la primera corrida (25/10):** en Linux, Configuración se salía 7 px de la pantalla a 360 de ancho (una grilla "auto" y un `<fieldset>` que no se achicaba); en Windows no se notaba. Se corrigió para toda la app.
 - **Costo:** el repositorio es privado; el plan gratuito de GitHub trae 2000 minutos de Actions al mes. Cada PR y su merge gastan unos 20 a 25 minutos en total.
 
+## Qué se despliega
+
+Coolify despliega el último commit de la rama. Antes de pedírselo, el job **Desplegar** comprueba que ese commit sea el que se acaba de probar. Si mientras se probaba se unió otro PR, no despliega: lo hace la corrida de ese otro merge, que prueba todo junto. Si se unen varios PR seguidos, GitHub cancela las corridas intermedias y deja la más nueva. Así nunca se publica un commit sin probar, y hay un solo despliegue a la vez por rama.
+
 ## Protección de ramas
 
-`develop` y `main` exigen Pull Request y que pasen **Verificar**, **E2E** y **Secretos** (además de no permitir push forzado ni borrado; ver `servidor.md`). Un PR en rojo no se puede unir.
+`develop` y `main` exigen Pull Request y que pasen los checks **Verificar**, **E2E** y **Secretos** (son los nombres exactos de los jobs: si se cambia uno en `ci.yml`, hay que cambiarlo también aquí, o la protección queda esperando un check que ya no existe) (además de no permitir push forzado ni borrado; ver `servidor.md`). Un PR en rojo no se puede unir.
 
 ## Activar el despliegue desde GitHub (una sola vez)
 
-Mientras no se active, el job **Desplegar en Coolify** no corre y Coolify sigue desplegando solo en cada push. Para activarlo, en este orden (YankoSoft; los valores secretos no pasan por el chat ni por el repositorio):
+Mientras no se active, el job **Desplegar** no corre y Coolify sigue desplegando solo en cada push. Para activarlo, en este orden (YankoSoft; los valores secretos no pasan por el chat ni por el repositorio):
 
-1. **Coolify → Settings → Advanced:** encender **API Access**. En **Keys & Tokens → API tokens**, crear un token `github-actions` con permiso **deploy** (solo ese). Copiarlo al gestor de contraseñas.
+1. **Coolify → Settings → Advanced:** encender **API Access**. En **Keys & Tokens → API tokens**, crear un token `github-actions` con los permisos **deploy** (pedir el despliegue) y **read** (consultar cómo terminó). Ninguno más. Copiarlo al gestor de contraseñas.
 2. **GitHub → el repositorio → Settings → Secrets and variables → Actions:**
    - **Secrets → New repository secret:** `COOLIFY_TOKEN` con el token del paso 1.
    - **Variables → New repository variable:**
@@ -48,7 +52,7 @@ Mientras no se active, el job **Desplegar en Coolify** no corre y Coolify sigue 
      - `COOLIFY_UUID_PRODUCCION`: el de `toctar-produccion`.
 3. **Coolify → cada app → Advanced:** apagar **Auto Deploy**. Desde ahí, Coolify solo despliega cuando se lo pide GitHub Actions (o a mano).
 4. **GitHub → Variables:** crear `COOLIFY_DESPLIEGUE` con el valor `activo`.
-5. **Probar:** unir un PR chico a `develop` y mirar en **Actions** que el job **Desplegar en Coolify** termine en verde, y en Coolify que el despliegue lo pidió la API.
+5. **Probar:** unir un PR chico a `develop` y mirar en **Actions** que el job **Desplegar** termine en verde, y en Coolify que el despliegue lo pidió la API.
 
 Para apagarlo (por ejemplo, durante un problema con Coolify): cambiar `COOLIFY_DESPLIEGUE` a otro valor y volver a encender **Auto Deploy** en Coolify.
 
@@ -56,7 +60,7 @@ Para apagarlo (por ejemplo, durante un problema con Coolify): cambiar `COOLIFY_D
 
 - **El CI falla en un PR:** abrir el job en rojo en la pestaña **Actions**, corregir en la misma rama y subir. El CI vuelve a correr solo.
 - **Una prueba E2E sale "flaky":** el PR se puede unir (pasó al reintentar), pero se abre una tarea para arreglarla.
-- **Un despliegue falla:** el job **Desplegar en Coolify** queda en rojo y en línea sigue la versión anterior. Ver los logs del despliegue en Coolify. Para volver a una versión anterior: Coolify → la app → **Deployments** → **Rollback**.
+- **Un despliegue falla:** el job **Desplegar** queda en rojo y en línea sigue la versión anterior. Ver los logs del despliegue en Coolify. Para volver a una versión anterior: Coolify → la app → **Deployments** → **Rollback**.
 - **Una urgencia en producción:** rama `arreglo/...` desde `main`, PR y merge; el CI tarda unos 10 minutos. Si Actions no estuviera disponible, se puede desplegar a mano desde Coolify (**Deploy**), sabiendo que ese despliegue no pasó por el CI.
 
 ## Dependabot
@@ -64,3 +68,5 @@ Para apagarlo (por ejemplo, durante un problema con Coolify): cambiar `COOLIFY_D
 - **npm:** los lunes, un PR a `develop` con las actualizaciones menores y de parches juntas; cada versión mayor en su propio PR.
 - **Acciones de GitHub y la imagen de Node:** una vez al mes. Una versión mayor de Node no se propone: se decide a mano.
 - Pasan por el mismo CI y se unen como cualquier PR (revisión y "Aprobado"). Una versión mayor se revisa con su guía de migración antes de unirla.
+- Dependabot escribe sus títulos en inglés (`chore(deps): bump …`): al unir con squash, el título se reescribe en español, como todos los commits.
+- La imagen base del Dockerfile va con versión exacta (`node:24.22.1-alpine3.24`): así cada parche de Node o de Alpine llega como un PR y pasa por el CI, en vez de cambiar sin aviso en un build.
