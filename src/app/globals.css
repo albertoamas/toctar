@@ -146,6 +146,12 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Un fieldset no se achica por debajo del ancho de su contenido (min-inline-size: min-content): en el celular empujaba
+     el formulario fuera de la pantalla cuando algo de adentro medía un poco más (las horas en el Chromium de Linux; lo
+     encontró el CI, 25/10). Así se comporta como cualquier contenedor. */
+  fieldset {
+    min-inline-size: 0;
+  }
   :focus-visible {
     outline: 2px solid var(--foco);
     outline-offset: 2px;
