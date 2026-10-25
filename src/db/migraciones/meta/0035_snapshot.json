@@ -1,5 +1,5 @@
 {
-  "id": "36a26a12-0064-49ca-9249-2883f280953b",
+  "id": "22fa4959-93cd-4832-bb11-49b9fce5284c",
   "prevId": "10a21a30-9dfc-45ab-b62b-4d1a3b94960c",
   "version": "7",
   "dialect": "postgresql",
@@ -1495,8 +1495,8 @@
           "method": "btree",
           "with": {}
         },
-        "galeria_item_trabajo": {
-          "name": "galeria_item_trabajo",
+        "galeria_item_un_trabajo": {
+          "name": "galeria_item_un_trabajo",
           "columns": [
             {
               "expression": "trabajo_id",
@@ -1505,7 +1505,8 @@
               "nulls": "last"
             }
           ],
-          "isUnique": false,
+          "isUnique": true,
+          "where": "\"galeria_item\".\"trabajo_id\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}

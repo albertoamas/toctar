@@ -24,7 +24,7 @@ import { EstadoOrden } from "@/modulos/ordenes/componentes/estado-orden";
 import { ExtenderEntrega } from "@/modulos/ordenes/componentes/extender-entrega";
 import { FotosOrden } from "@/modulos/ordenes/componentes/fotos-orden";
 import { registrarAvisoListo } from "@/modulos/ordenes/acciones";
-import { avancesDeTrabajo, fotosDeTrabajo, obtenerOrden, publicadasDeOrden } from "@/modulos/ordenes/consultas";
+import { avancesDeTrabajo, fotosDeTrabajo, obtenerOrden, publicadaDeOrden } from "@/modulos/ordenes/consultas";
 import { mensajeListo } from "@/modulos/ordenes/mensajes";
 import { esOrden, estaAbierta, estaAtrasada, puedeExtenderse, puedePublicarse } from "@/modulos/ordenes/reglas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
@@ -69,13 +69,13 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   const conAdicional = abierta && puede(usuario, "agregar_adicional");
   // Publicar sus fotos en la galería del sitio: solo el dueño, ya entregada (HU-41)
   const conGaleria = o.estado === "entregado" && puede(usuario, "publicar_en_galeria");
-  const [fotos, avances, negocio, plantillas, opciones, publicadas] = await Promise.all([
+  const [fotos, avances, negocio, plantillas, opciones, publicada] = await Promise.all([
     fotosDeTrabajo(o.id),
     avancesDeTrabajo(o.id),
     conAviso ? obtenerDatosPublicos() : null,
     conAviso ? obtenerPlantillas() : null,
     conAdicional ? opcionesDeServicio(o.tamanoId) : [],
-    conGaleria ? publicadasDeOrden(o.id) : 0,
+    conGaleria ? publicadaDeOrden(o.id) : null,
   ]);
   // Lista: el aviso al cliente por WhatsApp (HU-35) con el mensaje de Configuración (HU-40), con el saldo solo si
   // quien avisa lo ve
@@ -86,7 +86,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
     ),
     avisado: o.avisadoListoAt ? `Avisado el ${diaYHora(o.avisadoListoAt)}${o.avisadoListoPor ? ` por ${o.avisadoListoPor}` : ""}` : null,
   };
-  const sePuedePublicar = conGaleria && puedePublicarse(o.estado, fotos.map((f) => f.etapa));
+  // Una vez: ya publicada, se ordena u oculta en Sitio web > Galería (y si se quita de ahí, se puede volver a publicar)
+  const sePuedePublicar = conGaleria && !publicada && puedePublicarse(o.estado, fotos.map((f) => f.etapa));
   const deEtapa = (etapa: (typeof fotos)[number]["etapa"]) =>
     fotos.filter((f) => f.etapa === etapa).map((f) => ({ ...f, puedeQuitar: etapa !== "ingreso" && (usuario.rol === "dueno" || f.subidoPor === yo) }));
 
@@ -117,8 +118,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
           {o.montos && o.autorizoSaldo && o.saldoAlEntregar && ` Con saldo de ${mostrarMonto(o.saldoAlEntregar)} Bs, autorizado por ${o.autorizoSaldo}.`}
         </p>
       )}
-      {publicado && publicadas > 0 && <AvisoEnPagina>Publicado en la galería. Lo ordenas u ocultas en Sitio web &gt; Galería.</AvisoEnPagina>}
-      {(sePuedePublicar || publicadas > 0) && (
+      {publicado && publicada && <AvisoEnPagina>Publicado en la galería. Lo ordenas u ocultas en Sitio web &gt; Galería.</AvisoEnPagina>}
+      {(sePuedePublicar || publicada) && (
         <div className="flex max-w-3xl flex-wrap items-center gap-x-4 gap-y-3">
           {sePuedePublicar && (
             <Link href={`/panel/ordenes/${o.id}/publicar`} className={cn(buttonVariants({ variant: "outline" }))}>
@@ -126,9 +127,10 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
               Publicar en la galería
             </Link>
           )}
-          {publicadas > 0 && (
+          {publicada && (
             <Link href="/panel/sitio/galeria" className="tt-area-toque text-sm underline underline-offset-4">
-              Publicada en la galería ({publicadas === 1 ? "1 foto" : `${publicadas} fotos`})
+              Publicada en la galería ({publicada.fotos === 1 ? "1 foto" : `${publicada.fotos} fotos`}
+              {publicada.visible ? "" : ", oculta"})
             </Link>
           )}
         </div>

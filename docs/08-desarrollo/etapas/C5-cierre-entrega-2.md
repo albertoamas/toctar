@@ -154,7 +154,7 @@ Migraciones:
 - **Descripción:** opcional, hasta 140 caracteres, como en la galería (decidido al programarla, 25/10: desde el pedido 2B.12 la galería no la exige). Es el texto alternativo; sin ella, "Trabajo de {servicio}".
 - **Casilla obligatoria:** "En las fotos no se lee la placa ni se ve a nadie".
 - **"Publicar"** guarda y vuelve a la orden con "Publicado en la galería. Lo ordenas u ocultas en Sitio web > Galería.".
-- **En la orden:** si ya se publicó, "Publicada en la galería (2 fotos)", con enlace a la galería del panel.
+- **En la orden:** si ya se publicó, "Publicada en la galería (2 fotos)" (", oculta" si se ocultó), con enlace a la galería del panel. **Una vez por orden** (decidido en la revisión, 25/10; índice único): ya publicada, el botón no aparece y se ordena u oculta en Sitio web > Galería; si se quita de ahí, se puede volver a publicar.
 
 ### En otras pantallas
 - **Órdenes, mantenimientos y saldos:** los enlaces de WhatsApp usan la plantilla guardada.
@@ -167,7 +167,7 @@ Todas validan con Zod y empiezan con `exigirModulo`.
 |---|---|---|---|
 | `guardarPlantilla` | dueño (`configuracion`) | Clave válida; texto de 1 a 1000 con solo los campos de esa plantilla. Guarda quién y cuándo, y renueva la caché de las plantillas | "Mensaje guardado." · "{precio} no es un campo de este mensaje. Usa: {nombre}, {vehiculo}, {negocio}, {saldo}." · "Escribe el mensaje." |
 | `restaurarPlantilla` | dueño | Vuelve al texto original de esa clave (borra la fila guardada) | "Volvió el texto original." |
-| `publicarEnGaleria` | dueño (acción `publicar_en_galeria`, solo del dueño) | Orden entregada; foto de después de su etapa "despues"; la de antes (si viene), de "ingreso" o "antes"; servicio entre los de la orden (`serviciosDeOrden`); descripción opcional; casilla marcada. Copia cada foto (y su miniatura) del bucket privado al público como `archivo` nuevo (`copiarFotoAlPublico`), y crea el `galeria_item` al final, visible, con `trabajo_id`. Si algo falla después de copiar, borra las copias. Renueva la caché de la galería | "Publicado en la galería…" · "Elige la foto de después." · "Marca que en las fotos no se lee la placa ni se ve a nadie." |
+| `publicarEnGaleria` | dueño (acción `publicar_en_galeria`, solo del dueño) | Orden entregada; foto de después de su etapa "despues"; la de antes (si viene), de "ingreso" o "antes"; orden sin publicar; servicio entre los de la orden que sigan activos, los mismos que deja elegir la galería (`serviciosDeOrden`); descripción opcional; casilla marcada. Copia cada foto (y su miniatura) del bucket privado al público como `archivo` nuevo (`copiarFotoAlPublico`), y crea el `galeria_item` al final, visible, con `trabajo_id`. Si algo falla después de copiar, borra las copias. Renueva la caché de la galería | "Publicado en la galería…" · "Elige la foto de después." · "Marca que en las fotos no se lee la placa ni se ve a nadie." |
 
 **Consultas:**
 - Inicio (HU-39), sin montos ni teléfonos: `ingresosDeHoy(hoy)` en `src/modulos/inicio/consultas.ts`; las entregas y las listas sin avisar salen de `ordenesAbiertas()` (la consulta de Órdenes), repartidas con `ordenesDelDia` (`inicio/reglas.ts`); los mantenimientos, de `contarSinAvisar(hoy)` en `mantenimientos/consultas.ts`, con la misma condición que su lista. (Decidido al programarla, 25/10: no repetir consultas que ya existen.)

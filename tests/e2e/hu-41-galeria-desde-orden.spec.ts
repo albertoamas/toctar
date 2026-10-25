@@ -49,6 +49,10 @@ test("el dueño publica antes y después de una orden entregada: copias pública
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?publicado=1$`));
   await expect(page.getByText("Publicado en la galería. Lo ordenas u ocultas en Sitio web > Galería.")).toBeVisible();
   await expect(page.getByRole("link", { name: "Publicada en la galería (2 fotos)" })).toBeVisible();
+  // Una vez por orden: ya no ofrece publicar y la dirección vuelve a la orden
+  await expect(page.getByRole("link", { name: "Publicar en la galería" })).toHaveCount(0);
+  await page.goto(`/panel/ordenes/${id}/publicar`);
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}$`));
 
   // Las copias son públicas y distintas de las fotos de la orden, que siguen privadas (RNF-05)
   const [item] = await consultar<{ id: number; despues: number; antes: number; publicas: boolean }>(
@@ -74,6 +78,9 @@ test("el dueño publica antes y después de una orden entregada: copias pública
   await expect(page.getByText("Foto eliminada.")).toBeVisible();
   expect(await consultar("select id from archivo where id = any($1::int[])", [[item.despues, item.antes]])).toEqual([]);
   expect(await consultar("select 1 from trabajo_foto where trabajo_id = $1", [id])).toHaveLength(2);
+  // Quitada de la galería, se puede volver a publicar
+  await page.goto(`/panel/ordenes/${id}`);
+  await expect(page.getByRole("link", { name: "Publicar en la galería" })).toBeVisible();
 });
 
 test("un encargado con Órdenes no publica: no ve el botón ni entra por la dirección", async ({ page }, info) => {

@@ -77,7 +77,7 @@ export function etapaAbierta(etapa: EtapaFoto, estado: EstadoTrabajo): boolean {
 }
 
 /** De dónde sale la foto de antes al publicar en la galería (HU-41): las del ingreso o las de antes de trabajar. */
-const ETAPAS_FOTO_ANTES = ["ingreso", "antes"] as const satisfies readonly EtapaFoto[];
+export const ETAPAS_FOTO_ANTES = ["ingreso", "antes"] as const satisfies readonly EtapaFoto[];
 export const esFotoDeAntes = (etapa: EtapaFoto) => (ETAPAS_FOTO_ANTES as readonly EtapaFoto[]).includes(etapa);
 
 /** Se publica en la galería desde una orden entregada con al menos una foto de después (HU-41). */

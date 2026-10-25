@@ -9,6 +9,7 @@ import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { reordenar, type Direccion } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
 import { CLAVES_PAGINA, FOTOS_DE_PAGINA, PAGINAS, datosDelFormulario, esquemaPagina, esquemaPaginaConFoto, esquemaPregunta, type Pagina, type PaginaConFoto } from "./contenido";
+import { agregarAGaleria } from "./agregar-a-galeria";
 import { ETIQUETA_CONTENIDO, listarGaleria, listarPreguntas, listarServicios, servicioEnSitio } from "./consultas";
 import { galeriaCambiada } from "./galeria-cambiada";
 import { servicioCambiado } from "./servicio-cambiado";
@@ -350,13 +351,11 @@ export async function subirGaleria(_previo: EstadoFormulario, datos: FormData): 
     return { errores: { antes: ERROR_FOTO }, valores };
   }
 
-  const [{ ultimo }] = await db.select({ ultimo: max(galeriaItem.orden) }).from(galeriaItem);
-  await db.insert(galeriaItem).values({
+  await agregarAGaleria({
     servicioId: entrada.data.servicioId,
     descripcion: entrada.data.descripcion,
     fotoDespuesId: despues.archivoId,
     fotoAntesId: antes?.ok ? antes.archivoId : null,
-    orden: (ultimo ?? 0) + 1,
     createdBy: Number(autor.id),
   });
 

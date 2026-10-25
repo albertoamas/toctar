@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, check, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { usuario } from "./acceso";
 import { archivo } from "./configuracion";
 // Ciclo con trabajos.ts (que usa `variante`): las dos referencias se leen recién al usarse, () => …
@@ -138,7 +138,8 @@ export const galeriaItem = pgTable(
   },
   (t) => [
     uniqueIndex("galeria_item_una_en_portada").on(t.enPortada).where(sql`${t.enPortada}`),
-    index("galeria_item_trabajo").on(t.trabajoId),
+    // Una orden se publica una vez (HU-41): frena también dos envíos a la vez. Quitada de la galería, se puede volver a publicar
+    uniqueIndex("galeria_item_un_trabajo").on(t.trabajoId).where(sql`${t.trabajoId} is not null`),
     check("galeria_item_portada_con_antes", sql`not ${t.enPortada} or ${t.fotoAntesId} is not null`),
   ],
 );
