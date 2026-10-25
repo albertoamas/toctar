@@ -16,12 +16,13 @@ export type FilaDelDia = {
   estado?: string;
 };
 
-export function BloqueDelDia({ id, titulo, filas, vacio, cantidad = filas.length }: { id: string; titulo: string; filas: FilaDelDia[]; vacio: string; cantidad?: number }) {
+/** `contar`: la cantidad de filas junto al título. No va cuando la fila misma es la cuenta ("3 pendientes"). */
+export function BloqueDelDia({ id, titulo, filas, vacio, contar = true }: { id: string; titulo: string; filas: FilaDelDia[]; vacio: string; contar?: boolean }) {
   return (
     <section aria-labelledby={`${id}-titulo`} className="flex min-w-0 flex-col gap-3">
       <h2 id={`${id}-titulo`} className="flex items-baseline gap-3 font-heading text-2xl font-bold italic">
         {titulo}
-        {cantidad > 0 && <span className="font-sans text-sm font-normal not-italic tabular-nums text-tinta-suave">{cantidad}</span>}
+        {contar && filas.length > 0 && <span className="font-sans text-sm font-normal not-italic tabular-nums text-tinta-suave">{filas.length}</span>}
       </h2>
       {filas.length === 0 ? (
         <p className="text-tinta-suave">{vacio}</p>

@@ -10,9 +10,12 @@ import { exigirModulo } from "@/lib/sesion";
 import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { primerNombre } from "@/modulos/clientes/reglas";
 import { BloqueDelDia, type FilaDelDia } from "@/modulos/inicio/componentes/bloque-del-dia";
-import { contarMantenimientosPorAvisar, entregasDeHoy, ingresosDeHoy, listasSinAvisar } from "@/modulos/inicio/consultas";
-import { cantidad, textoEntregaAtrasada, textoIngresoAtrasado } from "@/modulos/inicio/reglas";
+import { ingresosDeHoy } from "@/modulos/inicio/consultas";
+import { cantidad, ordenesDelDia, textoEntregaAtrasada, textoIngresoAtrasado } from "@/modulos/inicio/reglas";
+import { contarSinAvisar } from "@/modulos/mantenimientos/consultas";
 import { DIAS_PROXIMOS } from "@/modulos/mantenimientos/reglas";
+import { ordenesAbiertas } from "@/modulos/ordenes/consultas";
+import { rutaTrabajo } from "@/modulos/ordenes/reglas";
 import { contarPendientes } from "@/modulos/reclamos/consultas";
 
 // Inicio del panel. Para el dueño y el encargado, lo del día (HU-39, RF-52): reclamos, ingresos, entregas, listas sin
@@ -48,14 +51,14 @@ async function Contenido() {
   const modulos = modulosDelMenu(usuario).filter((m) => m !== "inicio");
   // Lo del día es del dueño y del encargado; el técnico trabaja desde sus órdenes
   const ve = (m: Modulo) => usuario.rol !== "tecnico" && puedeVerModulo(usuario, m);
-  const [reclamos, ingresos, entregas, listas, mantenimientos] = await Promise.all([
+  const [reclamos, ingresos, abiertas, mantenimientos] = await Promise.all([
     ve("reclamos") ? contarPendientes() : null,
     ve("agenda") ? ingresosDeHoy(hoy) : null,
-    ve("ordenes") ? entregasDeHoy(hoy) : null,
-    ve("ordenes") ? listasSinAvisar() : null,
-    ve("mantenimientos") ? contarMantenimientosPorAvisar(hoy) : null,
+    ve("ordenes") ? ordenesAbiertas() : null,
+    ve("mantenimientos") ? contarSinAvisar(hoy) : null,
   ]);
-  const conDia = [reclamos, ingresos, entregas, listas, mantenimientos].some((b) => b !== null);
+  const ordenes = abiertas && ordenesDelDia(abiertas, hoy);
+  const conDia = [reclamos, ingresos, ordenes, mantenimientos].some((b) => b !== null);
 
   return (
     <section className="flex flex-col gap-10">
@@ -70,7 +73,7 @@ async function Contenido() {
             <BloqueDelDia
               id="reclamos"
               titulo="Reclamos pendientes"
-              cantidad={0}
+              contar={false}
               vacio="Nada pendiente."
               filas={
                 reclamos > 0
@@ -86,7 +89,7 @@ async function Contenido() {
               vacio="Nada para hoy."
               filas={ingresos.map(
                 (i): FilaDelDia => ({
-                  href: `/panel/agenda/${i.id}`,
+                  href: rutaTrabajo(i.id, "agendado", ve("ordenes")),
                   titulo: i.placa,
                   detalle: [i.cliente, i.espacio, i.horaIngreso].filter(Boolean).join(", "),
                   aviso: textoIngresoAtrasado(i.fechaInicio, hoy),
@@ -94,14 +97,14 @@ async function Contenido() {
               )}
             />
           )}
-          {entregas && (
+          {ordenes && (
             <BloqueDelDia
               id="entregas"
               titulo="Entregas de hoy"
               vacio="Nada para hoy."
-              filas={entregas.map(
+              filas={ordenes.entregas.map(
                 (e): FilaDelDia => ({
-                  href: `/panel/ordenes/${e.id}`,
+                  href: rutaTrabajo(e.id, e.estado, true),
                   titulo: e.placa,
                   detalle: e.cliente,
                   aviso: textoEntregaAtrasada(e, hoy),
@@ -110,19 +113,19 @@ async function Contenido() {
               )}
             />
           )}
-          {listas && (
+          {ordenes && (
             <BloqueDelDia
               id="listas"
               titulo="Listas sin avisar"
               vacio="Nada pendiente."
-              filas={listas.map((l): FilaDelDia => ({ href: `/panel/ordenes/${l.id}`, titulo: l.placa, detalle: l.cliente }))}
+              filas={ordenes.listas.map((l): FilaDelDia => ({ href: rutaTrabajo(l.id, l.estado, true), titulo: l.placa, detalle: l.cliente }))}
             />
           )}
           {mantenimientos && (
             <BloqueDelDia
               id="mantenimientos"
               titulo="Mantenimientos por avisar"
-              cantidad={0}
+              contar={false}
               vacio="Nada pendiente."
               filas={
                 mantenimientos.vencidos + mantenimientos.proximos > 0
@@ -145,9 +148,7 @@ async function Contenido() {
         <EstadoVacio>Por ahora no hay nada para ti en el panel. Pídele al dueño que te dé acceso a lo que vas a usar.</EstadoVacio>
       ) : (
         <nav aria-label="Ir a" className="flex max-w-5xl flex-col gap-3">
-          {conDia && (
-<h2 className="font-heading text-2xl font-bold italic">Ir a</h2>
-          )}
+          {conDia && <h2 className="font-heading text-2xl font-bold italic">Ir a</h2>}
           <ul className="grid gap-3 md:grid-cols-2">
             {modulos.map((m) => (
               <li key={m}>
