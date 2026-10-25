@@ -141,6 +141,7 @@ El dueño vio el sitio en pruebas, con sus fotos: le gustó la estructura y pidi
 | 2B.7 | **Logo del encabezado más grande:** de 32 a 36 px de alto en el celular y 40 en la computadora (sigue sin lema: mide menos de los 360 px que pide el manual) | encabezado del sitio | ✅ 24/10 (PR #84) |
 | 2B.8 | **"Ver el servicio" a la misma altura:** en la computadora, el enlace de cada tarjeta de servicio quedaba más arriba o más abajo según el largo del resumen; ahora va al pie de la tarjeta (revisión de YankoSoft) | Servicios y portada | ✅ 24/10 (PR #84) |
 | 2B.9 | **Foto del equipo en Nosotros:** un lugar en Textos del sitio → Nosotros (como la foto del taller de la portada; `FOTOS_DE_PAGINA`); en el sitio, al lado de la historia en la computadora y debajo en el celular | `/nosotros` y `/panel/sitio/textos` | ✅ 24/10 (PR #85) |
+| 2B.10 | **Sin hueco sobre el comparador de la portada:** en un celular ancho (de 390 a 767 px) quedaba un espacio de hasta 150 px entre los botones y el comparador: el alto reservado para el texto mientras carga seguía puesto ya cargado. Ahora solo se reserva cargando; CLS 0 medido con la red y el procesador frenados (revisión de YankoSoft) | `/` | ✅ 24/10 (PR #86) |
 
 **Del afiche del nano cerámico** (ejemplo del dueño) se toma: la fila de beneficios con ícono, la escalera de años como opciones y la idea en una línea ("a más años, más gruesa la capa"). No se copia: los colores por año (azul, verde, naranja), los brillos ni el texto todo en mayúsculas, que rompen la marca y cuestan en el celular.
 
