@@ -192,7 +192,7 @@
 
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
-| 12.1 | Muestra los pares antes y después visibles, filtrables por servicio. Desde el 24/10 (pulido 2B.12): una sección por servicio, primero los pares (comparables en la página) y después las fotos solas, con "Ver el servicio" | E2E `hu-12` "la galería muestra los trabajos por servicio, se filtra y los pares se comparan en la página". El filtro son enlaces (`?servicio=`) y funciona sin JavaScript. Unitarias "filtro de la galería" y "galería por servicio" | ✅ |
+| 12.1 | Muestra los pares antes y después visibles, filtrables por servicio. Desde el 25/10 (pulido 2B.12): una vitrina pareja, todos los trabajos en el mismo recuadro de 4:3, primero los pares (comparables en la página) y debajo de cada uno su servicio | E2E `hu-12` "la galería muestra los trabajos en una vitrina pareja, se filtra y los pares se comparan en la página" (mismo recuadro para el par y la foto sola). El filtro son enlaces (`?servicio=`) y funciona sin JavaScript. Unitarias "filtro de la galería" y "vitrina de la galería" | ✅ |
 | 12.2 | Las fotos se ven bien en el celular. Desde el 24/10 no se amplían ni muestran descripción (revisión de YankoSoft): el antes y después se arrastra en la página, y las fotos solas van en su forma natural | Mismo E2E: la línea se mueve con las flechas, con un toque y arrastrando; no se abre ningún diálogo. Revisión visual a 390 y 1280 px | ✅ |
 | 12.3 | Solo se ven fotos visibles de servicios visibles | Consulta `galeriaPublica()`; las fotos ocultas del panel (HU-09) no aparecen | ✅ |
 
