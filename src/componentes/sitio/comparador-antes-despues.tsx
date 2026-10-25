@@ -10,6 +10,7 @@ import type { UrlsFoto } from "@/lib/fotos";
 //   Un gesto vertical desplaza la página y no mueve la línea (`touch-action: pan-y` y el umbral de abajo).
 // - Con el teclado y el lector de pantalla: un deslizador nativo (oculto) que mueve la misma línea con las flechas.
 // Las dos fotos se ven enteras (`object-contain`): si no tienen la misma forma, una queda con bordes, pero nunca recortada.
+// Con `marco` (la galería) va en un recuadro de 4:3 como los demás trabajos y las fotos lo llenan (`object-cover`).
 // El alto máximo sale de la variable `--alto-comparador` (70dvh si nadie la pone): la portada lo achica en el celular.
 // `sola` (la portada, pedido de YankoSoft del 24/10): la línea va y viene sola unas veces hasta que el visitante la
 // arrastra, la toca o la enfoca con el teclado; se pausa fuera de la pantalla y no se mueve con "reducir movimiento".
@@ -38,6 +39,7 @@ export function ComparadorAntesDespues({
   alFrente = false,
   sola = false,
   sinAyuda = false,
+  marco = false,
 }: {
   antes: Foto;
   despues: Foto;
@@ -50,6 +52,8 @@ export function ComparadorAntesDespues({
   sola?: boolean;
   /** "Arrastra la línea para comparar" solo para el lector de pantalla: la galería lo dice una vez, arriba. */
   sinAyuda?: boolean;
+  /** En un recuadro de 4:3 que las fotos llenan: la galería, donde todos los trabajos miden lo mismo. */
+  marco?: boolean;
 }) {
   const [corte, setCorte] = useState(INICIO);
   // Una vez que el visitante la toca, la línea queda donde la deja: ya no se mueve sola
@@ -59,6 +63,10 @@ export function ComparadorAntesDespues({
   const id = useId();
   // La caja toma la forma de la foto de después y nunca pasa del alto máximo
   const proporcion = proporcionDe(despues);
+  const ajuste = marco ? "object-cover" : "object-contain";
+  const estiloCaja: React.CSSProperties & Record<"--corte", number> = marco
+    ? { "--corte": corte, aspectRatio: "4 / 3" }
+    : { "--corte": corte, aspectRatio: proporcion, maxWidth: `calc(var(--alto-comparador, 70dvh) * ${proporcion})` };
 
   // El movimiento solo: un vaivén suave desde el medio, solo mientras la foto está a la vista y la pestaña abierta.
   // Escribe la posición directo en la variable --corte de la caja (sin pasar por React en cada cuadro). El deslizador
@@ -138,12 +146,13 @@ export function ComparadorAntesDespues({
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    // Con la ayuda oculta (sinAyuda) no queda espacio debajo: la foto termina donde termina la caja
+    <div className={sinAyuda ? "flex flex-col" : "flex flex-col gap-2"}>
       <div
         ref={caja}
         className="group relative mx-auto w-full cursor-ew-resize touch-pan-y overflow-hidden bg-superficie select-none"
         // --corte: dónde está la línea (en %), la lee todo lo de adentro; el movimiento solo la escribe directo
-        style={{ aspectRatio: proporcion, maxWidth: `calc(var(--alto-comparador, 70dvh) * ${proporcion})`, "--corte": corte } as React.CSSProperties}
+        style={estiloCaja}
         onPointerDown={(e) => {
           // Solo el dedo principal o el botón izquierdo: el clic derecho (guardar la foto) o un segundo dedo no mueven nada
           if (!e.isPrimary || e.button !== 0) return;
@@ -174,13 +183,13 @@ export function ComparadorAntesDespues({
         // El navegador tomó el gesto para desplazar la página: la línea no se toca
         onPointerCancel={() => (gesto.current = null)}
       >
-        <FotoComparada foto={despues} alt={`Después: ${descripcion}`} alFrente={alFrente} className="object-contain" />
+        <FotoComparada foto={despues} alt={`Después: ${descripcion}`} alFrente={alFrente} className={ajuste} />
         {/* El antes encima, recortado hasta la línea */}
         <FotoComparada
           foto={antes}
           alt={`Antes: ${descripcion}`}
           alFrente={alFrente}
-          className="bg-superficie object-contain"
+          className={`bg-superficie ${ajuste}`}
           style={{ clipPath: "inset(0 calc(100% - var(--corte) * 1%) 0 0)" }}
         />
         {corte > MARGEN_ETIQUETA && <span aria-hidden className="absolute top-2 left-2 bg-negro/75 px-2 py-0.5 text-sm font-semibold text-blanco">Antes</span>}

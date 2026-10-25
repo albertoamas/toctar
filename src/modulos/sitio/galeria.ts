@@ -47,17 +47,9 @@ export function nombreDelTrabajo(descripcion: string, servicio: string, numero?:
 }
 
 /**
- * La galería por servicio (rediseño del 24/10): una sección por servicio con trabajos, en el orden en que aparecen; en
- * cada una, primero los pares de antes y después (lo más llamativo, se comparan en la página) y después las fotos solas,
- * cada grupo en su orden.
+ * El orden de la vitrina de la galería (rediseño del 24/10): primero los pares de antes y después (lo más llamativo, se
+ * comparan en la página) y después las fotos solas, cada grupo en el orden del panel.
  */
-export function agruparPorServicio<T extends ConServicio & { antes: unknown }>(fotos: T[]) {
-  return serviciosConFotos(fotos).map((servicio) => {
-    const suyas = fotos.filter((f) => f.servicio.slug === servicio.slug);
-    return {
-      servicio,
-      pares: suyas.filter((f): f is T & { antes: NonNullable<T["antes"]> } => f.antes != null),
-      solas: suyas.filter((f) => f.antes == null),
-    };
-  });
+export function paresPrimero<T extends { antes: unknown }>(fotos: T[]): T[] {
+  return [...fotos.filter((f) => f.antes != null), ...fotos.filter((f) => f.antes == null)];
 }

@@ -6,7 +6,7 @@ import { ingresarComoDueno, PNG } from "./apoyo";
 
 const foto = (nombre: string) => ({ name: nombre, mimeType: "image/png", buffer: PNG });
 
-test("la galería muestra los trabajos por servicio, se filtra y los pares se comparan en la página", async ({ page }, info) => {
+test("la galería muestra los trabajos en una vitrina pareja, se filtra y los pares se comparan en la página", async ({ page }, info) => {
   test.setTimeout(60_000);
   const sufijo = info.project.name === "celular" ? "c" : "e";
   const conPar = `Faroles como nuevos ${sufijo}`;
@@ -27,13 +27,18 @@ test("la galería muestra los trabajos por servicio, se filtra y los pares se co
   }
 
   await page.goto("/galeria");
-  // Una sección por servicio (rediseño del 24/10): el par se compara ahí mismo y la foto sola va en su forma
-  const faroles = page.getByRole("region", { name: "Restauración de faroles con polímero" });
-  const polarizado = page.getByRole("region", { name: "Polarizado de vidrios" });
-  const par = faroles.getByRole("listitem").filter({ has: page.getByRole("img", { name: `Después: ${conPar}` }) });
+  // Una vitrina pareja (rediseño del 24/10): todos los trabajos en el mismo recuadro, los pares primero y comparables
+  // ahí mismo; debajo de cada uno, su servicio, que lleva a su página
+  const trabajos = page.getByRole("list", { name: "Trabajos" });
+  const par = trabajos.getByRole("listitem").filter({ has: page.getByRole("img", { name: `Después: ${conPar}` }) });
+  const fotoSola = trabajos.getByRole("listitem").filter({ has: page.getByRole("img", { name: sola }) });
   await expect(par.getByRole("img", { name: `Antes: ${conPar}` })).toBeVisible();
-  await expect(polarizado.getByRole("img", { name: sola })).toBeVisible();
-  await expect(faroles.getByRole("link", { name: "Ver el servicio" })).toHaveAttribute("href", "/servicios/restauracion-de-faroles-con-polimero");
+  await expect(fotoSola).toBeVisible();
+  await expect(par.getByRole("link", { name: "Restauración de faroles con polímero" })).toHaveAttribute("href", "/servicios/restauracion-de-faroles-con-polimero");
+  // Mismo recuadro para el par y la foto sola
+  const [cajaPar, cajaSola] = [(await par.getByRole("img", { name: `Después: ${conPar}` }).boundingBox())!, (await fotoSola.getByRole("img").boundingBox())!];
+  expect(Math.round(cajaPar.width)).toBe(Math.round(cajaSola.width));
+  expect(Math.round(cajaPar.height)).toBe(Math.round(cajaSola.height));
   // Sin visor ni descripciones a la vista
   await expect(page.getByRole("button", { name: /^Ampliar/ })).toHaveCount(0);
   await expect(page.getByRole("main")).not.toContainText(conPar);
@@ -43,7 +48,7 @@ test("la galería muestra los trabajos por servicio, se filtra y los pares se co
   if (info.project.name === "celular") expect((await filtro.boundingBox())!.height).toBeLessThan(60);
   await filtro.getByRole("link", { name: "Restauración de faroles con polímero" }).click();
   await expect(page).toHaveURL(/servicio=restauracion-de-faroles-con-polimero/);
-  await expect(polarizado).toHaveCount(0);
+  await expect(fotoSola).toHaveCount(0);
 
   // El comparador, en la página: con el teclado, las flechas mueven la línea
   const linea = par.getByRole("slider", { name: "Comparar antes y después" });

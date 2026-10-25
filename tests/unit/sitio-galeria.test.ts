@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { agruparPorServicio, filtrarPorServicio, ladoDelLema, nombreDelTrabajo, serviciosConFotos, trabajoDePortada } from "@/modulos/sitio/galeria";
+import { filtrarPorServicio, ladoDelLema, nombreDelTrabajo, paresPrimero, serviciosConFotos, trabajoDePortada } from "@/modulos/sitio/galeria";
 
 // HU-12 Galería pública. Criterios: docs/09-pruebas/criterios-entrega-1.md (12.x).
 
@@ -56,17 +56,12 @@ describe("al lado del lema de la portada", () => {
   });
 });
 
-describe("galería por servicio", () => {
-  const conAntes = (id: number, servicio: typeof pulido) => ({ id, servicio, antes: { url: "x" } });
-  const sola = (id: number, servicio: typeof pulido) => ({ id, servicio, antes: null });
+describe("vitrina de la galería", () => {
+  const conAntes = (id: number) => ({ id, antes: { url: "x" } });
+  const sola = (id: number) => ({ id, antes: null });
 
-  test("una sección por servicio, en el orden en que aparecen, con los pares primero", () => {
-    const grupos = agruparPorServicio([sola(1, pulido), conAntes(2, vidrios), conAntes(3, pulido), sola(4, vidrios)]);
-    expect(grupos.map((g) => g.servicio.slug)).toEqual(["pulido-y-nano-ceramico", "pulido-de-vidrios"]);
-    expect(grupos[0].pares.map((f) => f.id)).toEqual([3]);
-    expect(grupos[0].solas.map((f) => f.id)).toEqual([1]);
-    expect(grupos[1].pares.map((f) => f.id)).toEqual([2]);
-    expect(grupos[1].solas.map((f) => f.id)).toEqual([4]);
+  test("primero los pares de antes y después y después las fotos solas, cada grupo en su orden", () => {
+    expect(paresPrimero([sola(1), conAntes(2), sola(3), conAntes(4)]).map((f) => f.id)).toEqual([2, 4, 1, 3]);
   });
 
   test("un trabajo sin descripción se nombra por su servicio", () => {
