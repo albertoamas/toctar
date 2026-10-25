@@ -93,11 +93,11 @@ async function PortadaConDatos() {
  * En el celular, el arte va arriba y el comparador debajo del texto, sin pasar del 45 % del alto (una foto vertical no
  * tapa la pantalla entera).
  * Mientras llegan los textos se muestra vacía: sin foto, sin arte y SIN la línea (con el arte, al llegar una foto el
- * texto subía de golpe en el celular). El bloque del texto tiene el MISMO alto mínimo
- * cargando y cargado: así un texto más corto no hace subir la página al llegar (medido el 18/10: con una
- * presentación corta subía 88 px). El mínimo es lo que ocupa el texto actual (392 px a 360 de ancho, 296 en
- * computadora); un texto más largo que eso todavía empuja lo de abajo, por eso conviene que la presentación
- * sean "dos o tres frases", como pide el panel.
+ * texto subía de golpe en el celular). Cargando, el bloque del texto reserva lo que ocupa el texto actual (392 px a
+ * 360 de ancho, 296 en computadora); ya cargado, mide lo suyo. Hasta el 24/10 la reserva quedaba también cargado, y
+ * en un celular más ancho (el texto ocupa menos) dejaba un hueco de hasta 150 px antes del comparador. Medido sin ella,
+ * con la red y el procesador frenados: CLS 0 a 360, 412 y 480 px (lo de abajo de la cabecera se reemplaza entero al
+ * llegar, no se corre).
  * La línea llega junto con el texto: así se enciende una sola vez y ya en su lugar.
  */
 function Cabecera({ children, foto, trabajo }: { children?: React.ReactNode; foto?: UrlsFoto | null; trabajo?: ReturnType<typeof trabajoDePortada<FotoGaleria>> }) {
@@ -115,7 +115,10 @@ function Cabecera({ children, foto, trabajo }: { children?: React.ReactNode; fot
         )}
       >
         {lado === "arte" && <PortadaArte className="order-first h-auto w-full max-w-72 justify-self-end md:order-last md:max-w-none" />}
-        <div aria-hidden={children ? undefined : true} className="min-h-[24.5rem] md:min-h-[18.5rem]">
+        {/* El alto se reserva solo mientras carga (24,5rem es lo que ocupa el texto a 360 px): ya cargado, el texto mide lo
+            suyo. Si quedara reservado, en un celular más ancho el texto ocupa menos y abajo quedaba un hueco de hasta
+            150 px antes del comparador (revisión de YankoSoft, 24/10) */}
+        <div aria-hidden={children ? undefined : true} className={children ? undefined : "min-h-[24.5rem] md:min-h-[18.5rem]"}>
           {children}
         </div>
         {/* Después del texto, también en el código: el teclado y el lector de pantalla llegan primero al lema y a
