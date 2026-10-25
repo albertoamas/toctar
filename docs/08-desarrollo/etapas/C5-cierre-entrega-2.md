@@ -170,7 +170,7 @@ Todas validan con Zod y empiezan con `exigirModulo`.
 | `publicarEnGaleria` | dueño (`ordenes` y rol dueño) | Orden entregada; foto de después de su etapa "despues"; la de antes (si viene), de "ingreso" o "antes"; servicio entre los de la orden; descripción; casilla marcada. Copia cada foto (y su miniatura) del bucket privado al público como `archivo` nuevo, y crea el `galeria_item` al final, visible, con `trabajo_id`. Si algo falla después de copiar, borra las copias. Renueva la caché de la galería | "Publicado en la galería…" · "Elige la foto de después." · "Marca que en las fotos no se lee la placa ni se ve a nadie." |
 
 **Consultas:**
-- `src/modulos/inicio/consultas.ts`: `ingresosDeHoy(hoy)`, `entregasDeHoy(hoy)`, `listasSinAvisar()` y `contarMantenimientosPorAvisar(hoy)`. Sin montos ni teléfonos.
+- Inicio (HU-39), sin montos ni teléfonos: `ingresosDeHoy(hoy)` en `src/modulos/inicio/consultas.ts`; las entregas y las listas sin avisar salen de `ordenesAbiertas()` (la consulta de Órdenes), repartidas con `ordenesDelDia` (`inicio/reglas.ts`); los mantenimientos, de `contarSinAvisar(hoy)` en `mantenimientos/consultas.ts`, con la misma condición que su lista. (Decidido al programarla, 25/10: no repetir consultas que ya existen.)
 - `src/modulos/configuracion/consultas.ts`: `obtenerPlantillas()` (con `use cache` y su etiqueta, como los datos del negocio).
 - `src/modulos/ordenes/consultas.ts`: `publicadasDeOrden(id)`.
 
