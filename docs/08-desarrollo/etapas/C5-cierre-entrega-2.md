@@ -1,7 +1,7 @@
 # C5 Cierre de la Entrega 2 — especificación
 
 - **Fase y semana:** C. Entrega 2 · se adelanta a la semana 2 (desde el 23 de octubre); en el plan era la semana 5, con margen en la 6 y la 7
-- **Estado:** aprobada (23 de octubre de 2026). §0 terminado el 24/10 (PR #74); sigue la HU-40
+- **Estado:** aprobada (23 de octubre de 2026). §0 terminado el 24/10 (PR #74); HU-40 el 25/10 (PR #92) y HU-39 el 25/10; sigue la HU-41
 - **Historias:** HU-39 Pantalla del día · HU-40 Plantillas de WhatsApp · HU-41 Fotos de órdenes a la galería (las tres deseables) · cierre: criterios de HU-19 a HU-38, capacitación y acta
 - **Base:**
   - Requisitos: RF-44, RF-51, RF-52; RNF-01, RNF-05, RNF-11, RNF-14.
@@ -170,7 +170,7 @@ Todas validan con Zod y empiezan con `exigirModulo`.
 | `publicarEnGaleria` | dueño (`ordenes` y rol dueño) | Orden entregada; foto de después de su etapa "despues"; la de antes (si viene), de "ingreso" o "antes"; servicio entre los de la orden; descripción; casilla marcada. Copia cada foto (y su miniatura) del bucket privado al público como `archivo` nuevo, y crea el `galeria_item` al final, visible, con `trabajo_id`. Si algo falla después de copiar, borra las copias. Renueva la caché de la galería | "Publicado en la galería…" · "Elige la foto de después." · "Marca que en las fotos no se lee la placa ni se ve a nadie." |
 
 **Consultas:**
-- `src/modulos/inicio/consultas.ts`: `ingresosDeHoy(hoy)`, `entregasDeHoy(hoy)`, `listasSinAvisar()` y `contarMantenimientosPorAvisar(hoy)`. Sin montos ni teléfonos.
+- Inicio (HU-39), sin montos ni teléfonos: `ingresosDeHoy(hoy)` en `src/modulos/inicio/consultas.ts`; las entregas y las listas sin avisar salen de `ordenesAbiertas()` (la consulta de Órdenes), repartidas con `ordenesDelDia` (`inicio/reglas.ts`); los mantenimientos, de `contarSinAvisar(hoy)` en `mantenimientos/consultas.ts`, con la misma condición que su lista. (Decidido al programarla, 25/10: no repetir consultas que ya existen.)
 - `src/modulos/configuracion/consultas.ts`: `obtenerPlantillas()` (con `use cache` y su etiqueta, como los datos del negocio).
 - `src/modulos/ordenes/consultas.ts`: `publicadasDeOrden(id)`.
 

@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, lte } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lte, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { cliente, recordatorioMantenimiento as recordatorio, servicio, trabajo, usuario, vehiculo, type EstadoRecordatorio, type EstadoTrabajo } from "@/db/esquema";
@@ -52,15 +52,34 @@ export async function mantenimientosPorAvisar(hoy: string): Promise<Mantenimient
     .innerJoin(vehiculo, eq(recordatorio.vehiculoId, vehiculo.id))
     .innerJoin(servicio, eq(recordatorio.servicioId, servicio.id))
     .leftJoin(avisador, eq(recordatorio.avisadoPor, avisador.id))
-    .where(
-      and(
-        inArray(recordatorio.estado, [...ESTADOS_RECORDATORIO_ABIERTO]),
-        lte(recordatorio.fechaProgramada, hastaProximos(hoy)),
-        eq(cliente.activo, true),
-        eq(vehiculo.activo, true),
-      ),
-    )
+    .where(porAvisar(hoy))
     .orderBy(asc(recordatorio.fechaProgramada), asc(recordatorio.id));
+}
+
+/** Cuáles hay que avisar: la condición de la lista y de su cuenta en el inicio (con `cliente` y `vehiculo` unidos). */
+const porAvisar = (hoy: string) =>
+  and(
+    inArray(recordatorio.estado, [...ESTADOS_RECORDATORIO_ABIERTO]),
+    lte(recordatorio.fechaProgramada, hastaProximos(hoy)),
+    eq(cliente.activo, true),
+    eq(vehiculo.activo, true),
+  );
+
+/**
+ * Cuántos de la lista de Mantenimientos todavía no se avisaron, vencidos y próximos (HU-39: el inicio). La misma
+ * condición que la lista, para que el número y la lista no se separen; sin traer datos del cliente.
+ */
+export async function contarSinAvisar(hoy: string): Promise<{ vencidos: number; proximos: number }> {
+  const [cuenta] = await db
+    .select({
+      vencidos: sql<number>`(count(*) filter (where ${recordatorio.fechaProgramada} < ${hoy}))::int`,
+      proximos: sql<number>`(count(*) filter (where ${recordatorio.fechaProgramada} >= ${hoy}))::int`,
+    })
+    .from(recordatorio)
+    .innerJoin(cliente, eq(recordatorio.clienteId, cliente.id))
+    .innerJoin(vehiculo, eq(recordatorio.vehiculoId, vehiculo.id))
+    .where(and(porAvisar(hoy), eq(recordatorio.estado, "pendiente")));
+  return cuenta;
 }
 
 export type MantenimientoDelCliente = {

@@ -17,9 +17,9 @@ test("con datos correctos entra al panel y ve su nombre", async ({ page }) => {
 // Pulido visual 4.1
 test("el inicio da un acceso a cada módulo que la persona puede usar; al técnico, solo a sus órdenes", async ({ page }, info) => {
   await ingresarComoDueno(page);
-  const accesos = page.getByRole("main").getByRole("listitem").getByRole("link");
-  // En el orden del menú (por grupos), con Reclamos primero: es lo que pide atención
-  await expect(accesos).toHaveText([/^Reclamos/, /^Agenda/, /^Órdenes/, /^Clientes/, /^Consultas/, /^Saldos pendientes/, /^Mantenimientos/, /^Sitio web/, /^Catálogo y precios/, /^Usuarios/, /^Configuración/]);
+  // Debajo de lo del día (HU-39), en el orden del menú (por grupos)
+  const accesos = page.getByRole("navigation", { name: "Ir a" }).getByRole("link");
+  await expect(accesos).toHaveText([/^Agenda/, /^Órdenes/, /^Clientes/, /^Consultas/, /^Saldos pendientes/, /^Mantenimientos/, /^Reclamos/, /^Sitio web/, /^Catálogo y precios/, /^Usuarios/, /^Configuración/]);
   await accesos.filter({ hasText: "Usuarios" }).click();
   await expect(page).toHaveURL(/\/panel\/usuarios$/);
 
@@ -28,7 +28,7 @@ test("el inicio da un acceso a cada módulo que la persona puede usar; al técni
   await page.context().clearCookies();
   await ingresar(page, usuario, "tecnico-inicio-1");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Hola, Técnico");
-  await expect(page.getByRole("main").getByRole("listitem").getByRole("link")).toHaveText([/^Órdenes/]);
+  await expect(page.getByRole("navigation", { name: "Ir a" }).getByRole("link")).toHaveText([/^Órdenes/]);
 });
 
 test("el usuario se acepta sin importar mayúsculas", async ({ page }) => {

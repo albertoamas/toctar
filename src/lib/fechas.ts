@@ -80,3 +80,13 @@ export function formatearFecha(fecha: string): string {
   const [anio, mes, dia] = fecha.split("-");
   return `${dia}/${mes}/${anio}`;
 }
+
+/** Fecha calendario con el día de la semana, para un título: "2026-10-23" → "Viernes 23 de octubre". */
+export function fechaConDia(fecha: string): string {
+  const partes = Object.fromEntries(
+    new Intl.DateTimeFormat("es-BO", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" })
+      .formatToParts(new Date(`${fecha}T12:00:00Z`))
+      .map((p) => [p.type, p.value]),
+  );
+  return `${partes.weekday.charAt(0).toUpperCase()}${partes.weekday.slice(1)} ${partes.day} de ${partes.month}`;
+}
