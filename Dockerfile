@@ -1,7 +1,8 @@
 # Imagen de la app para pruebas y producción (Coolify la construye en cada push).
 # Varias etapas: dependencias → compilación → imagen final chica con la salida standalone.
 
-FROM node:24-alpine AS base
+# Versión exacta: así un cambio de Node o de Alpine entra por un PR de Dependabot (y pasa por el CI), no sin avisar
+FROM node:24.22.1-alpine3.24 AS base
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
