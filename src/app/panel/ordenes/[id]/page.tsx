@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { cn } from "cn";
-import { KeyRoundIcon } from "lucide-react";
+import { ImageUpIcon, KeyRoundIcon } from "lucide-react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { AvisarPorWhatsApp } from "@/componentes/panel/avisar-whatsapp";
@@ -24,9 +24,9 @@ import { EstadoOrden } from "@/modulos/ordenes/componentes/estado-orden";
 import { ExtenderEntrega } from "@/modulos/ordenes/componentes/extender-entrega";
 import { FotosOrden } from "@/modulos/ordenes/componentes/fotos-orden";
 import { registrarAvisoListo } from "@/modulos/ordenes/acciones";
-import { avancesDeTrabajo, fotosDeTrabajo, obtenerOrden } from "@/modulos/ordenes/consultas";
+import { avancesDeTrabajo, fotosDeTrabajo, obtenerOrden, publicadasDeOrden } from "@/modulos/ordenes/consultas";
 import { mensajeListo } from "@/modulos/ordenes/mensajes";
-import { esOrden, estaAbierta, estaAtrasada, puedeExtenderse } from "@/modulos/ordenes/reglas";
+import { esOrden, estaAbierta, estaAtrasada, puedeExtenderse, puedePublicarse } from "@/modulos/ordenes/reglas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
 
 export const metadata: Metadata = { title: "Orden" };
@@ -47,7 +47,7 @@ export default function PaginaOrden({ params, searchParams }: PageProps<"/panel/
 
 async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/[id]">, "params" | "searchParams">) {
   const usuario = await exigirModulo("ordenes");
-  const [{ id }, { recibido, entregado }] = await Promise.all([params, searchParams]);
+  const [{ id }, { recibido, entregado, publicado }] = await Promise.all([params, searchParams]);
   if (!/^\d+$/.test(id)) notFound();
   const tecnico = usuario.rol === "tecnico";
   const o = await obtenerOrden(Number(id), puedeVerModulo(usuario, "pagos"));
@@ -67,12 +67,15 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   const conAviso = o.estado === "listo" && puede(usuario, "avisar_cliente");
   // Sumar servicios: solo el dueño, mientras la orden está abierta (RF-43)
   const conAdicional = abierta && puede(usuario, "agregar_adicional");
-  const [fotos, avances, negocio, plantillas, opciones] = await Promise.all([
+  // Publicar sus fotos en la galería del sitio: solo el dueño, ya entregada (HU-41)
+  const conGaleria = o.estado === "entregado" && puede(usuario, "publicar_en_galeria");
+  const [fotos, avances, negocio, plantillas, opciones, publicadas] = await Promise.all([
     fotosDeTrabajo(o.id),
     avancesDeTrabajo(o.id),
     conAviso ? obtenerDatosPublicos() : null,
     conAviso ? obtenerPlantillas() : null,
     conAdicional ? opcionesDeServicio(o.tamanoId) : [],
+    conGaleria ? publicadasDeOrden(o.id) : 0,
   ]);
   // Lista: el aviso al cliente por WhatsApp (HU-35) con el mensaje de Configuración (HU-40), con el saldo solo si
   // quien avisa lo ve
@@ -83,6 +86,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
     ),
     avisado: o.avisadoListoAt ? `Avisado el ${diaYHora(o.avisadoListoAt)}${o.avisadoListoPor ? ` por ${o.avisadoListoPor}` : ""}` : null,
   };
+  const sePuedePublicar = conGaleria && puedePublicarse(o.estado, fotos.map((f) => f.etapa));
   const deEtapa = (etapa: (typeof fotos)[number]["etapa"]) =>
     fotos.filter((f) => f.etapa === etapa).map((f) => ({ ...f, puedeQuitar: etapa !== "ingreso" && (usuario.rol === "dueno" || f.subidoPor === yo) }));
 
@@ -112,6 +116,22 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
           {/* La autorización de entregar con saldo, para quien ve pagos (RN-13) */}
           {o.montos && o.autorizoSaldo && o.saldoAlEntregar && ` Con saldo de ${mostrarMonto(o.saldoAlEntregar)} Bs, autorizado por ${o.autorizoSaldo}.`}
         </p>
+      )}
+      {publicado && publicadas > 0 && <AvisoEnPagina>Publicado en la galería. Lo ordenas u ocultas en Sitio web &gt; Galería.</AvisoEnPagina>}
+      {(sePuedePublicar || publicadas > 0) && (
+        <div className="flex max-w-3xl flex-wrap items-center gap-x-4 gap-y-3">
+          {sePuedePublicar && (
+            <Link href={`/panel/ordenes/${o.id}/publicar`} className={cn(buttonVariants({ variant: "outline" }))}>
+              <ImageUpIcon />
+              Publicar en la galería
+            </Link>
+          )}
+          {publicadas > 0 && (
+            <Link href="/panel/sitio/galeria" className="tt-area-toque text-sm underline underline-offset-4">
+              Publicada en la galería ({publicadas === 1 ? "1 foto" : `${publicadas} fotos`})
+            </Link>
+          )}
+        </div>
       )}
       {o.estado !== "entregado" && (
         <div className="flex max-w-3xl flex-col gap-4">
