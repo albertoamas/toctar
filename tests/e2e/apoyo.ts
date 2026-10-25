@@ -4,7 +4,7 @@ import pg from "pg";
 
 // Datos y ayudas compartidas por las pruebas de punta a punta.
 
-export const URL_BASE_E2E = "postgres://toctar:toctar@localhost:5432/toctar_e2e";
+const URL_BASE_E2E = "postgres://toctar:toctar@localhost:5432/toctar_e2e";
 
 /** PNG de 1 × 1 píxel, para las pruebas que suben fotos. */
 export const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
