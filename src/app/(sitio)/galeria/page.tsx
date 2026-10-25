@@ -38,17 +38,18 @@ export default function PaginaGaleria({ searchParams }: PageProps<"/galeria">) {
 async function Contenido({ searchParams }: Pick<PageProps<"/galeria">, "searchParams">) {
   await connection();
   const [todas, { servicio }, { redes }] = await Promise.all([galeriaPublica(), searchParams, obtenerDatosPublicos()]);
+  const elegido = typeof servicio === "string" ? servicio : undefined;
   return (
     <>
       <div className="mx-auto w-full max-w-6xl px-4 pt-12 pb-12 md:pt-20 md:pb-20">
         <TituloPagina>Galería</TituloPagina>
         <p className="mt-3 max-w-2xl text-tinta-suave">
-          Trabajos reales del taller.{todas.some((f) => f.antes) && " En los de antes y después, arrastra la línea."}
+          Trabajos reales del taller.{filtrarPorServicio(todas, elegido).some((f) => f.antes) && " En los de antes y después, arrastra la línea."}
         </p>
         {todas.length === 0 ? (
           <p className="mt-8 text-tinta-suave">Pronto vas a ver aquí nuestros trabajos.</p>
         ) : (
-          <Fotos todas={todas} elegido={typeof servicio === "string" ? servicio : undefined} />
+          <Fotos todas={todas} elegido={elegido} />
         )}
         {/* Más trabajos, en video (pedido de la demo del 24/10) */}
         <EnlaceTikTok enlace={redes.tiktok} className="mt-8" />
@@ -69,7 +70,8 @@ function Fotos({ todas, elegido }: { todas: FotoGaleria[]; elegido?: string }) {
         <nav aria-label="Filtrar por servicio" className="border-b border-border">
           {/* Como el menú del sitio: solo texto, y el elegido con la barra roja a 60° debajo. En el celular, una sola fila
               que se desliza de costado (de borde a borde); el último cortado avisa que hay más (pulido 2.4) */}
-          <ul className="-mx-4 flex gap-6 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
+          {/* -mb-px y pb-px: la barra del elegido se monta sobre la línea de abajo sin que la fila que se desliza la corte */}
+          <ul className="-mx-4 -mb-px flex gap-6 overflow-x-auto px-4 pb-px sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
             {[{ nombre: "Todos", slug: undefined }, ...opciones].map((o) => {
               const actual = o.slug === activo;
               return (
@@ -95,7 +97,8 @@ function Fotos({ todas, elegido }: { todas: FotoGaleria[]; elegido?: string }) {
       <ul aria-label="Trabajos" className="grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
         {fotos.map((f, i) => (
           <li key={f.id}>
-            <Trabajo foto={f} alFrente={i === 0} />
+            {/* La primera fila (hasta 3) está en la primera pantalla: carga enseguida */}
+            <Trabajo foto={f} alFrente={i < 3} />
           </li>
         ))}
       </ul>
@@ -105,20 +108,23 @@ function Fotos({ todas, elegido }: { todas: FotoGaleria[]; elegido?: string }) {
 
 /**
  * Un trabajo de la vitrina: el par se compara en su recuadro (la ayuda "Arrastra la línea" va una vez, arriba); la foto
- * sola lo llena. Debajo, su servicio, que lleva a su página. El primero está en la primera pantalla: carga enseguida.
+ * sola lo llena. Debajo, su servicio, que lleva a su página.
  */
+/** Lo que ocupa un recuadro de la grilla: 3 columnas desde 1024 px, 2 desde 640 y 1 en el celular. */
+const ANCHO_EN_GRILLA = "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw";
+
 function Trabajo({ foto: f, alFrente }: { foto: FotoGaleria; alFrente: boolean }) {
   const nombre = nombreDelTrabajo(f.descripcion, f.servicio.nombre);
   return (
     <figure className="flex flex-col gap-2">
       {f.antes ? (
-        <ComparadorAntesDespues antes={f.antes} despues={f.despues} descripcion={nombre} alFrente={alFrente} marco sinAyuda />
+        <ComparadorAntesDespues antes={f.antes} despues={f.despues} descripcion={nombre} alFrente={alFrente} sizes={ANCHO_EN_GRILLA} marco sinAyuda />
       ) : (
         <div className="aspect-[4/3] overflow-hidden bg-superficie">
           <FotoResponsiva
             foto={f.despues}
             alt={nombre}
-            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            sizes={ANCHO_EN_GRILLA}
             cargaDiferida={!alFrente}
             className="size-full object-cover"
           />

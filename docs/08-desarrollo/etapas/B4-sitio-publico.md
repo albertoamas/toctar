@@ -2,6 +2,7 @@
 
 - **Fase y semana:** B. Entrega 1 · semana 2 (21 al 27 de octubre; se adelanta desde el 14)
 - **Estado:** programada (14 de octubre de 2026): HU-10 y HU-15 (#23), HU-11 (#24), HU-12 (#25), HU-13 y HU-14. Faltan la revisión manual y la demo
+- **Cambió después (24 y 25/10, pedidos de la demo del sitio):** la galería no tiene visor (`visor-galeria.tsx` se quitó): es una vitrina pareja, con los antes y después comparables en la página y sin descripciones; el comparador (`comparador-antes-despues.tsx`) también va arriba en la portada. Componentes de cliente del sitio: el comparador, el botón fijo de WhatsApp y el menú. Ver `pulido-visual.md`, grupo 2B.
 - **Historias:** HU-10 Portada · HU-11 Página de cada servicio · HU-12 Galería pública · HU-13 Nosotros y preguntas frecuentes · HU-14 Contacto y mapa · HU-15 Botón de WhatsApp
 - **Base:**
   - Requisitos: RF-01 a RF-06, RF-08 y RF-09 (título y descripción de cada página; el mapa del sitio y los datos para Google van en B5).
@@ -95,7 +96,7 @@ Ninguna nueva. Las acciones del panel (B2 y B3) ya invalidan las etiquetas que l
   - `tarjeta-servicio.tsx`, con la imagen de reemplazo;
   - `boton-whatsapp.tsx`, con el glifo oficial de WhatsApp en una tinta;
   - `portada-arte.tsx`, con el arte de `Cover`;
-  - `visor-galeria.tsx`, el único componente de cliente: un diálogo con el antes y el después.
+  - `visor-galeria.tsx`, el único componente de cliente: un diálogo con el antes y el después (se quitó el 25/10: ver "Cambió después").
 - **Estilos:** las clases del Design System que faltan (`tt-boton`, `tt-tarjeta`, `tt-whatsapp`) se agregan a `globals.css`, con los mismos valores del `bundle.css` publicado.
 - **Reglas de marca:**
   - el sitio sin esquinas redondeadas;

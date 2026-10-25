@@ -143,7 +143,7 @@
 
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
-| 9.1 | Subo un par antes y después, o una foto sola, la asocio a un servicio y le pongo una descripción corta (desde el 24/10, opcional: no se ve en el sitio; sin ella el texto alternativo es "Trabajo de <servicio>") | E2E `hu-09` "sube un par antes y después y una foto sola…" y "sin servicio ni descripción no se sube" | ✅ |
+| 9.1 | Subo un par antes y después, o una foto sola, la asocio a un servicio y le pongo una descripción corta (desde el 24/10, opcional: no se ve en el sitio; sin ella el texto alternativo es "Trabajo de <servicio>") | E2E `hu-09` "sube un par antes y después y una foto sola…" y "sin servicio no se sube; la descripción es opcional" | ✅ |
 | 9.2 | Las fotos se comprimen al subirlas | Se achican en el celular antes de enviar (2400 px, JPEG) y el servidor guarda WebP de 1600 px más una miniatura de 640 px (mismo E2E: la miniatura es `-640.webp`) | ✅ |
 | 9.3 | Puedo ordenar y ocultar fotos | Mismo E2E: sube una foto, la oculta y filtra por servicio. También se edita la descripción o el servicio | ✅ |
 | 9.4 | Eliminar una foto la borra también del almacenamiento | Mismo E2E: después de eliminar, la dirección de la foto da 404 | ✅ |
@@ -193,7 +193,7 @@
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
 | 12.1 | Muestra los pares antes y después visibles, filtrables por servicio. Desde el 25/10 (pulido 2B.12): una vitrina pareja, todos los trabajos en el mismo recuadro de 4:3, primero los pares (comparables en la página) y debajo de cada uno su servicio | E2E `hu-12` "la galería muestra los trabajos en una vitrina pareja, se filtra y los pares se comparan en la página" (mismo recuadro para el par y la foto sola). El filtro son enlaces (`?servicio=`) y funciona sin JavaScript. Unitarias "filtro de la galería" y "vitrina de la galería" | ✅ |
-| 12.2 | Las fotos se ven bien en el celular. Desde el 24/10 no se amplían ni muestran descripción (revisión de YankoSoft): el antes y después se arrastra en la página, y las fotos solas van en su forma natural | Mismo E2E: la línea se mueve con las flechas, con un toque y arrastrando; no se abre ningún diálogo. Revisión visual a 390 y 1280 px | ✅ |
+| 12.2 | Las fotos se ven bien en el celular. Desde el 25/10 no se amplían ni muestran descripción (revisión de YankoSoft): el antes y después se arrastra en la página, y las fotos solas llenan el mismo recuadro de 4:3 (se recortan si no tienen esa forma; un par con fotos de formas distintas va entero) | Mismo E2E: la línea se mueve con las flechas, con un toque y arrastrando; no se abre ningún diálogo. Revisión visual a 390, 768 y 1280 px | ✅ |
 | 12.3 | Solo se ven fotos visibles de servicios visibles | Consulta `galeriaPublica()`; las fotos ocultas del panel (HU-09) no aparecen | ✅ |
 
 ## HU-13 Nosotros y preguntas frecuentes

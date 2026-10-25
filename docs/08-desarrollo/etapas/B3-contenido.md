@@ -187,7 +187,7 @@ En `src/modulos/sitio/acciones.ts`. Todas empiezan con `exigirModulo("sitio")`, 
 | `guardarVariante`, `moverVariante`, `cambiarEstadoVariante` | servicio, id, nombre, descripción / dirección / activo | "Ya existe una variante con ese nombre." · "Debe quedar al menos una variante activa." |
 | `guardarContenido` | página, campos | Por campo: "Escribe el lema." · "Hasta 400 caracteres." |
 | `guardarPregunta`, `moverPregunta`, `cambiarVisibilidadPregunta`, `eliminarPregunta` | id, pregunta, respuesta / dirección / visible | "Escribe la pregunta." · "Escribe la respuesta." |
-| `subirGaleria` | servicio, descripción, foto después, foto antes (opcional) | "Elige el servicio." · "Escribe una descripción corta: también la leen los buscadores." · el error de la foto |
+| `subirGaleria` | servicio, descripción, foto después, foto antes (opcional) | "Elige el servicio." · el error de la foto. La descripción es opcional desde el 24/10 (hasta 140 caracteres; antes era obligatoria: "Escribe una descripción corta…") |
 | `guardarGaleriaItem`, `moverGaleriaItem`, `cambiarVisibilidadGaleria`, `eliminarGaleriaItem` | id, servicio, descripción / dirección / visible / id | Eliminar borra también los archivos del almacenamiento |
 
 **Fotos (`src/lib/fotos.ts`):**

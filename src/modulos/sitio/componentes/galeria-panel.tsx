@@ -94,6 +94,8 @@ export function GaleriaPanel({ items, servicios, portadaId }: { items: ItemGaler
               ultimo={i === visibles.length - 1}
               ordenable={!filtro}
               enPortada={item.id === portadaId}
+              // Su lugar en la lista completa (no cambia al filtrar): distingue a los que no tienen descripción
+              numero={items.indexOf(item) + 1}
             />
           ))}
         </ol>
@@ -118,6 +120,7 @@ function Tarjeta({
   ultimo,
   ordenable,
   enPortada,
+  numero,
 }: {
   item: ItemGaleria;
   servicios: Servicio[];
@@ -125,8 +128,9 @@ function Tarjeta({
   ultimo: boolean;
   ordenable: boolean;
   enPortada: boolean;
+  numero: number;
 }) {
-  const nombre = nombreDelTrabajo(item.descripcion, item.servicio, item.id);
+  const nombre = nombreDelTrabajo(item.descripcion, item.servicio, numero);
   const [editando, setEditando] = useState(false);
   const [pendiente, iniciar] = useTransition();
   const ejecutar = (accion: () => Promise<EstadoFormulario>) => iniciar(async () => avisarResultado(await accion()));
@@ -148,7 +152,7 @@ function Tarjeta({
               {!item.visible && <span className="tt-insignia">Oculta</span>}
               {enPortada && <span className="tt-insignia">En la portada</span>}
             </span>
-            <span className="line-clamp-2 text-sm">{item.descripcion || <span className="text-tinta-suave">Sin descripción</span>}</span>
+            <span className="line-clamp-2 text-sm">{item.descripcion || <span className="text-tinta-suave">Sin descripción (n.º {numero})</span>}</span>
             <span className="-mx-2 mt-auto flex flex-wrap justify-end">
               {ordenable && (
                 <>
@@ -179,7 +183,7 @@ function Tarjeta({
               >
                 {item.visible ? <EyeOffIcon /> : <EyeIcon />}
               </Button>
-              <Eliminar item={item} />
+              <Eliminar nombre={nombre} itemId={item.id} />
             </span>
           </>
         )}
@@ -228,8 +232,7 @@ function EditarItem({ item, servicios, alTerminar }: { item: ItemGaleria; servic
   );
 }
 
-function Eliminar({ item }: { item: ItemGaleria }) {
-  const nombre = nombreDelTrabajo(item.descripcion, item.servicio, item.id);
+function Eliminar({ nombre, itemId }: { nombre: string; itemId: number }) {
   const [abierto, setAbierto] = useState(false);
   const [pendiente, iniciar] = useTransition();
   return (
@@ -250,7 +253,7 @@ function Eliminar({ item }: { item: ItemGaleria }) {
             disabled={pendiente}
             onClick={() =>
               iniciar(async () => {
-                const r = await eliminarGaleriaItem(item.id);
+                const r = await eliminarGaleriaItem(itemId);
                 avisarResultado(r);
                 if (r.ok) setAbierto(false);
               })
