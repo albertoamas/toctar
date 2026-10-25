@@ -1,6 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import pg from "pg";
-import { crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PNG, URL_BASE_E2E } from "./apoyo";
+import { abrirWhatsApp, consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PNG } from "./apoyo";
 
 // Flujos críticos 3, 4 y 5 de punta a punta (C4): reserva → recibir → el técnico la trabaja → lista → aviso por
 // WhatsApp → cobro del saldo → entrega → recordatorio de mantenimiento → agendarlo. Especificación:
@@ -12,16 +11,6 @@ test.describe.configure({ mode: "serial" });
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "c" : "e");
 const hoy = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/La_Paz" }).format(new Date());
-
-async function consultar<T extends pg.QueryResultRow>(sql: string, valores: unknown[] = []): Promise<T[]> {
-  const base = new pg.Client({ connectionString: URL_BASE_E2E });
-  await base.connect();
-  try {
-    return (await base.query<T>(sql, valores)).rows;
-  } finally {
-    await base.end();
-  }
-}
 
 test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, info) => {
   const s = sufijo(info);
@@ -74,14 +63,9 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
   await page.context().clearCookies();
   await ingresarComoDueno(page);
   await page.goto(`/panel/ordenes/${id}`);
-  await page.context().route("https://wa.me/**", (ruta) => ruta.fulfill({ body: "WhatsApp" }));
-  const nueva = page.context().waitForEvent("page");
-  await page.getByRole("button", { name: "Avisar por WhatsApp" }).click();
-  const whatsapp = await nueva;
-  await whatsapp.waitForLoadState();
-  expect(decodeURIComponent(whatsapp.url())).toContain("ya está listo en");
-  expect(decodeURIComponent(whatsapp.url())).toContain("Saldo pendiente: 500 Bs.");
-  await whatsapp.close();
+  const enlace = await abrirWhatsApp(page, page.getByRole("button", { name: "Avisar por WhatsApp" }));
+  expect(enlace).toContain("ya está listo en");
+  expect(enlace).toContain("Saldo pendiente: 500 Bs.");
   await expect(page.getByRole("button", { name: "Volver a avisar" })).toBeVisible();
 
   // 4. Cobra el saldo y entrega: queda programado el mantenimiento

@@ -1,6 +1,5 @@
 import { expect, test, type Browser, type Page, type TestInfo } from "@playwright/test";
-import pg from "pg";
-import { crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PNG, URL_BASE_E2E } from "./apoyo";
+import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PNG } from "./apoyo";
 
 // HU-30 Agendar reserva (flujo crítico 2). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §9.
 // Cada prueba usa sus propios días (lejos de hoy y distintos por proyecto) para no chocar con las demás en los
@@ -9,16 +8,6 @@ test.describe.configure({ mode: "serial" });
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "C" : "E");
 const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 1 : 2}3000${n}0`;
-
-async function consultar<T extends pg.QueryResultRow>(sql: string, valores: unknown[] = []): Promise<T[]> {
-  const base = new pg.Client({ connectionString: URL_BASE_E2E });
-  await base.connect();
-  try {
-    return (await base.query<T>(sql, valores)).rows;
-  } finally {
-    await base.end();
-  }
-}
 
 /** Un día propio de cada prueba: dentro de 100 a 300 días, según el proyecto y el número de prueba. */
 async function diaPropio(info: TestInfo, n: number): Promise<string> {

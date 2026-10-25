@@ -1,6 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import pg from "pg";
-import { crearClienteEnBase, ingresarComoDueno, URL_BASE_E2E } from "./apoyo";
+import { consultar, crearClienteEnBase, ingresarComoDueno } from "./apoyo";
 
 // HU-31 Reprogramar o cancelar. Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §9.
 // Cada proyecto usa sus propios días, lejos de hoy. En serie: las del dueño entran con el mismo usuario y, a la vez,
@@ -9,16 +8,6 @@ test.describe.configure({ mode: "serial" });
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "C" : "E");
 const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 5 : 6}3100${n}0`;
-
-async function consultar<T extends pg.QueryResultRow>(sql: string, valores: unknown[] = []): Promise<T[]> {
-  const base = new pg.Client({ connectionString: URL_BASE_E2E });
-  await base.connect();
-  try {
-    return (await base.query<T>(sql, valores)).rows;
-  } finally {
-    await base.end();
-  }
-}
 
 /** Un día propio: dentro de 240 (celular) o 290 (escritorio) días, más un desplazamiento (se agenda hasta un año adelante). */
 async function dia(info: TestInfo, mas: number): Promise<string> {

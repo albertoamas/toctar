@@ -1,6 +1,5 @@
-import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
-import pg from "pg";
-import { crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, URL_BASE_E2E } from "./apoyo";
+import { expect, test, type Page, type TestInfo } from "@playwright/test";
+import { abrirWhatsApp, consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
 
 // HU-38 Recordatorios de mantenimiento (flujo crítico 5). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §9.
 // Los recordatorios van directo a la base, colgados de una orden entregada en el pasado (no ocupa espacio). Las reservas
@@ -12,16 +11,6 @@ const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "c" : "e")
 const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 5 : 6}3800${n}0`;
 /** Hoy en Bolivia (la base corre en UTC: de noche ya sería mañana). */
 const hoy = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/La_Paz" }).format(new Date());
-
-async function consultar<T extends pg.QueryResultRow>(sql: string, valores: unknown[] = []): Promise<T[]> {
-  const base = new pg.Client({ connectionString: URL_BASE_E2E });
-  await base.connect();
-  try {
-    return (await base.query<T>(sql, valores)).rows;
-  } finally {
-    await base.end();
-  }
-}
 
 const dia = async (desplazamiento: number) => (await consultar<{ d: string }>("select to_char($1::date + $2::int, 'YYYY-MM-DD') as d", [hoy(), desplazamiento]))[0].d;
 const diaPropio = (info: TestInfo) => dia(info.project.name === "celular" ? 352 : 356);
@@ -46,18 +35,6 @@ const estadoDe = async (id: number) =>
     "select estado, nota, avisado_por is not null as avisado, trabajo_agendado_id as trabajo from recordatorio_mantenimiento where id = $1",
     [id],
   ))[0];
-
-/** Toca el botón de la fila y devuelve la dirección que abrió (WhatsApp responde la prueba), ya decodificada. */
-async function abrirWhatsApp(page: Page, fila: Locator): Promise<string> {
-  await page.context().route("https://wa.me/**", (ruta) => ruta.fulfill({ body: "WhatsApp" }));
-  const nueva = page.context().waitForEvent("page");
-  await fila.getByRole("button", { name: "Avisar por WhatsApp" }).click();
-  const whatsapp = await nueva;
-  await whatsapp.waitForLoadState();
-  const enlace = decodeURIComponent(whatsapp.url());
-  await whatsapp.close();
-  return enlace;
-}
 
 const vencidos = (page: Page) => page.getByRole("list", { name: "Vencidos" });
 const proximos = (page: Page) => page.getByRole("list", { name: "Próximos 15 días" });
@@ -88,7 +65,7 @@ test("vencidos y próximos; avisar, no le interesa y agendar (y al cancelar la r
   await expect(page.getByText(placaL)).toHaveCount(0);
 
   // Avisar: abre WhatsApp con el mensaje y queda registrado
-  const enlace = await abrirWhatsApp(page, filaV);
+  const enlace = await abrirWhatsApp(page, filaV.getByRole("button", { name: "Avisar por WhatsApp" }));
   expect(enlace).toMatch(/^https:\/\/wa\.me\/591\d{8}\?text=/);
   expect(enlace).toContain(`Hola Lucía, te escribimos de`);
   expect(enlace).toContain(`a tu vehículo (placa ${placaV}) le toca el mantenimiento de Pulido y nano cerámico. ¿Te agendamos un día?`);

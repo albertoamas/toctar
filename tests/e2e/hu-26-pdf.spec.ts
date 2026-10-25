@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import { expect, test, type APIRequestContext, type TestInfo } from "@playwright/test";
-import pg from "pg";
-import { crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, URL_BASE_E2E } from "./apoyo";
+import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
 
 // HU-26 PDF de la cotización (flujo crítico 1). Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md §9.
 // En serie: las del dueño entran todas con el mismo usuario y, a la vez, chocaban con el límite de intentos (RNF-04).
@@ -9,16 +8,6 @@ test.describe.configure({ mode: "serial" });
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "C" : "E");
 const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 5 : 6}2600${n}0`;
-
-async function consultar<T extends pg.QueryResultRow>(sql: string, valores: unknown[] = []): Promise<T[]> {
-  const base = new pg.Client({ connectionString: URL_BASE_E2E });
-  await base.connect();
-  try {
-    return (await base.query<T>(sql, valores)).rows;
-  } finally {
-    await base.end();
-  }
-}
 
 /** Un servicio con precio para el primer tamaño y una consulta de un cliente nuevo. Devuelve la consulta. */
 async function prepararConsulta(info: TestInfo, n: number): Promise<{ consultaId: number; servicio: string }> {

@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { hashPassword } from "better-auth/crypto";
 import pg from "pg";
 
@@ -42,6 +42,56 @@ export async function crearUsuario(datos: {
   } finally {
     await cliente.end();
   }
+}
+
+/** Una consulta directa a la base de pruebas, para preparar datos o comprobar lo que quedó guardado. */
+export async function consultar<T extends pg.QueryResultRow>(sql: string, valores: unknown[] = []): Promise<T[]> {
+  const base = new pg.Client({ connectionString: URL_BASE_E2E });
+  await base.connect();
+  try {
+    return (await base.query<T>(sql, valores)).rows;
+  } finally {
+    await base.end();
+  }
+}
+
+/**
+ * Una orden lista, directo en la base, con un pulido y nano cerámico (genera mantenimiento al entregarse) del precio
+ * dado y, si se pagó algo, el adelanto. `dias` la pone lejos de hoy, en días propios de cada prueba y proyecto, para
+ * que los espacios del taller no choquen con otras pruebas. Devuelve su id.
+ */
+export async function crearOrdenLista(datos: { placa: string; espacio: number; dias: number; precio: number; pagado: number }): Promise<number> {
+  const [{ id }] = await consultar<{ id: number }>(
+    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, created_by)
+     select e.sucursal_id, v.cliente_id, v.id, e.id, current_date + $3::int, current_date + $3::int, 'listo', now(), now(), v.created_by
+     from vehiculo v, (select * from espacio_taller where activo order by orden offset $2 limit 1) e where v.placa = $1 returning id`,
+    [datos.placa, datos.espacio, datos.dias],
+  );
+  await consultar(
+    `insert into trabajo_linea (trabajo_id, variante_id, descripcion, precio, orden)
+     select $1, v.id, 'Pulido y nano cerámico', $2, 0 from variante v join servicio s on s.id = v.servicio_id
+     where s.slug = 'pulido-y-nano-ceramico' order by v.id limit 1`,
+    [id, datos.precio],
+  );
+  if (datos.pagado > 0) {
+    await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, $2, 'qr', 'adelanto', current_date, created_by from trabajo where id = $1", [
+      id,
+      datos.pagado,
+    ]);
+  }
+  return id;
+}
+
+/** Toca el botón que abre WhatsApp y devuelve la dirección que abrió, ya decodificada. WhatsApp lo responde la prueba. */
+export async function abrirWhatsApp(page: Page, boton: Locator): Promise<string> {
+  await page.context().route("https://wa.me/**", (ruta) => ruta.fulfill({ body: "WhatsApp" }));
+  const nueva = page.context().waitForEvent("page");
+  await boton.click();
+  const whatsapp = await nueva;
+  await whatsapp.waitForLoadState();
+  const enlace = decodeURIComponent(whatsapp.url());
+  await whatsapp.close();
+  return enlace;
 }
 
 export async function ingresar(page: Page, usuario: string, contrasena: string) {
