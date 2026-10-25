@@ -43,6 +43,7 @@
 | Datos de demostración | ✅ Scripts `db:reiniciar-local` y `datos:demo` (PR #75): el sitio con fotos y el panel con movimiento de esta semana. Falta cargarlos en pruebas |
 | Pedidos de la demo del sitio (24/10) | ✅ Hechos el 24/10 (PR #78 a #88; `pulido-visual.md`, grupo 2B.1 a 2B.12; registro de cambios 1 a 11). Falta que el dueño cargue en pruebas el trabajo de la portada, los íconos de los beneficios, la escalera del nano cerámico, las fotos de cada sección y del equipo, el TikTok y el WhatsApp real |
 | Pulido visual de la Entrega 2 | ⏳ Plan en `pulido-visual.md` (grupos 7 a 13): las pantallas de C1 a C4 y lo que cambió con la reorganización |
+| Pruebas E2E: escribir antes de que la página responda | ⏳ Anotado el 25/10. En el CI fallaron de a una `hu-08` y `flujo-taller-completo`: la prueba llena un formulario antes de que React lo active (hidratación) y el valor se pierde o el envío no corre. `hu-08` ya espera (`waitForLoadState("networkidle")` y `toHaveValue` antes de guardar). Falta una regla común en `tests/e2e/apoyo.ts` (por ejemplo, abrir la pantalla y esperar a que esté lista) y aplicarla en todas las pruebas que llenan formularios, empezando por `flujo-taller-completo` |
 | Identidad visual aplicada a la app | ✅ En `develop` (PR #5 y #9, logos nítidos en tamaños chicos) |
 | Inicio del trabajo | 9 de octubre de 2026 (firma y primer pago) |
 | Día D (inicio del plazo del contrato) | 14 de octubre de 2026 (llegó el material) |
