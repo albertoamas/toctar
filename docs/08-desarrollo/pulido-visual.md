@@ -128,7 +128,7 @@ Antes de la demo del viernes 23.
 | 2.10 | Sin conexión | `public/sin-conexion.html` | ✅ 18/10 |
 
 ### 2B. Pedidos de la demo del 24/10
-El dueño vio el sitio en pruebas, con sus fotos: le gustó la estructura y pidió un sitio más simple ("para tontos": menos es más), con más imágenes. Se hacen antes de la HU-40, uno por uno, cada uno con su PR. Alcance y horas: `03-cierre-comercial/registro-de-cambios.md`, pedidos 1 a 10.
+El dueño vio el sitio en pruebas, con sus fotos: le gustó la estructura y pidió un sitio más simple ("para tontos": menos es más), con más imágenes. Se hacen antes de la HU-40, uno por uno, cada uno con su PR. Alcance y horas: `03-cierre-comercial/registro-de-cambios.md`, pedidos 1 a 11.
 
 | # | Pedido | Dónde | Estado |
 |---|---|---|---|
@@ -143,6 +143,7 @@ El dueño vio el sitio en pruebas, con sus fotos: le gustó la estructura y pidi
 | 2B.9 | **Foto del equipo en Nosotros:** un lugar en Textos del sitio → Nosotros (como la foto del taller de la portada; `FOTOS_DE_PAGINA`); en el sitio, al lado de la historia en la computadora y debajo en el celular | `/nosotros` y `/panel/sitio/textos` | ✅ 24/10 (PR #85) |
 | 2B.10 | **Sin hueco sobre el comparador de la portada:** en un celular ancho (de 390 a 767 px) quedaba un espacio de hasta 150 px entre los botones y el comparador: el alto reservado para el texto mientras carga seguía puesto ya cargado. Ahora solo se reserva cargando; CLS 0 medido con la red y el procesador frenados (revisión de YankoSoft) | `/` | ✅ 24/10 (PR #86) |
 | 2B.11 | **El comparador de la portada se mueve solo:** la línea va y viene suave (del 20 al 80 %, 5 s la ida y vuelta) desde un segundo después de estar a la vista; tras 3 idas y vueltas queda en el medio (no se mueve para siempre: WCAG 2.2.2). Se detiene si el visitante la arrastra de costado, la toca o la enfoca con el teclado (desplazar la página sobre la foto no la detiene); se pausa fuera de la pantalla o con la pestaña oculta y no se mueve con "reducir movimiento" (tampoco si se activa con la página abierta). El deslizador del lector de pantalla queda en el medio mientras tanto. Solo en la portada: en la galería la persona la abre para arrastrarla (pedido de YankoSoft) | `/` | ✅ 24/10 (PR #86) |
+| 2B.12 | **Galería rediseñada:** una sección por servicio (su nombre y "Ver el servicio"); primero los antes y después, ya comparables en la página (sin abrir nada; quietos, solo el de la portada se mueve solo), todos a la misma altura y cada uno con el ancho de su forma; después las fotos solas, en una fila que se reparte el ancho según la forma de cada una. Sin visor ni descripciones; la descripción del panel pasa a ser opcional (texto alternativo: "Trabajo de <servicio>" si falta). Se mantiene el filtro por servicio (revisión de YankoSoft) | `/galeria` y `/panel/sitio/galeria` | ✅ 24/10 (PR #88) |
 
 **Del afiche del nano cerámico** (ejemplo del dueño) se toma: la fila de beneficios con ícono, la escalera de años como opciones y la idea en una línea ("a más años, más gruesa la capa"). No se copia: los colores por año (azul, verde, naranja), los brillos ni el texto todo en mayúsculas, que rompen la marca y cuestan en el celular.
 
