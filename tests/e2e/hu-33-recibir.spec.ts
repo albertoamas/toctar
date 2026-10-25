@@ -72,7 +72,8 @@ test("recibir con fotos y observaciones: la reserva pasa a orden, las fotos de i
   await form.getByRole("button", { name: "Recibir vehículo" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?recibido=1$`));
   await expect(page.getByText("Vehículo recibido. La orden está en «Recibidas».")).toBeVisible();
-  await expect(page.getByText("Rayón en la puerta trasera; deja una silla de bebé.")).toBeVisible();
+  // Acotado a la orden: Next.js deja oculta la página anterior (el formulario de recibir, con el mismo texto)
+  await expect(page.getByRole("region", { name: "Cómo llegó" }).getByText("Rayón en la puerta trasera; deja una silla de bebé.")).toBeVisible();
 
   const [t] = await consultar<{ estado: string; tecnico: number; recibio: boolean; privado: boolean; etapa: string; avances: number }>(
     `select t.estado, t.tecnico_id as tecnico, t.recibido_por is not null as recibio, a.privado, f.etapa,

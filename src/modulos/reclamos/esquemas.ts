@@ -62,7 +62,6 @@ export const esquemaReclamo = z.object({
     .max(2000, "Hasta 2000 caracteres."),
 });
 
-export type DatosReclamo = z.output<typeof esquemaReclamo>;
 export const CAMPOS_RECLAMO = Object.keys(esquemaReclamo.shape) as (keyof typeof esquemaReclamo.shape)[];
 
 /** Marcar como atendido (HU-17): la nota queda en el registro. */

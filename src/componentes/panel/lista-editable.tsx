@@ -15,7 +15,7 @@ import type { Direccion } from "@/lib/orden";
 export type ElementoLista = { id: number; nombre: string; descripcion: string | null; orden: number; activo: boolean };
 
 
-export type AccionesLista = {
+type AccionesLista = {
   /** Agrega (sin "id") o renombra (con "id"). Recibe "nombre", "descripcion" y los campos ocultos. */
   guardar: (previo: EstadoFormulario, datos: FormData) => Promise<EstadoFormulario>;
   mover: (id: number, direccion: Direccion) => Promise<EstadoFormulario>;

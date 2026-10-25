@@ -51,6 +51,7 @@ npm run build             # build de producción
 npm run lint
 npm run typecheck         # genera tipos de rutas y corre tsc
 npm test                  # pruebas unitarias (Vitest, tests/unit)
+npx knip                  # código sin uso (también lo corre el CI)
 npm run test:e2e          # pruebas de punta a punta (Playwright, tests/e2e; recrea la base toctar_e2e, compila y levanta en :3200)
 npm run db:generate -- --name <nombre>   # crea una migración desde src/db/esquema/
 npm run db:migrate        # aplica migraciones pendientes
@@ -99,6 +100,7 @@ Repositorio privado: `github.com/albertoamas/toctar`.
 
 ## Entornos
 
+- **CI/CD:** cada PR pasa por GitHub Actions (lint, tipos, unitarias, knip, build, E2E y gitleaks) y no se une en rojo; al unir, Actions pide el despliegue a Coolify (`docs/07-preparacion/ci-cd.md`).
 - La verificación de estado es `GET /api/salud` (la usan Docker, Coolify y UptimeRobot).
 
 ## Plugins de Claude Code del proyecto

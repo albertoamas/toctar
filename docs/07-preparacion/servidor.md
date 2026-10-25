@@ -131,6 +131,8 @@ Instalado con el instalador oficial (`curl -fsSL https://cdn.coollabs.io/coolify
 
 `main` y `develop` están protegidas: exigen Pull Request (sin revisores obligatorios, porque hay un solo desarrollador), también para el dueño del repositorio, y prohíben el push forzado y el borrado. Un push directo a `main` publicaría en producción.
 
+Desde el 25/10 también exigen que pase el CI de GitHub Actions (**Verificar**, **E2E** y **Secretos**), y el despliegue puede pedirlo GitHub Actions en vez del Auto Deploy de Coolify: ver `ci-cd.md`.
+
 ## Cloudflare R2: fotos, datos de clientes y respaldos
 
 Configurado el 23/10/2026 en la cuenta de Cloudflare del negocio (`toctartarija@gmail.com`). YankoSoft entra con su cuenta personal como **Super Administrator**; al entregar el sistema, el dueño lo puede bajar a **Administrator** (sigue manejando DNS y R2, pero no la facturación ni los miembros).

@@ -34,8 +34,10 @@ async function Contenido() {
     razonSocial: c.razonSocial ?? "",
   };
 
+  // Una columna que no pasa del ancho de la pantalla (minmax(0,1fr)): con "auto", el contenido más ancho la ensanchaba y
+  // en el Chromium de Linux los campos se salían 7 px a 360 de ancho (lo encontró el CI, 25/10)
   return (
-    <div className="grid gap-12 lg:grid-cols-[minmax(0,42rem)_minmax(0,20rem)]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-12 lg:grid-cols-[minmax(0,42rem)_minmax(0,20rem)]">
       <p className="text-tinta-suave lg:col-span-2">Datos del negocio que se muestran en la página y en los documentos.</p>
       <FormularioNegocio valores={valores} horarios={c.horarios} />
       {/* En el celular y la tableta va debajo de "Guardar cambios", que no lo guarda: una línea lo separa (pulido 6.1) */}

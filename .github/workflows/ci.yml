@@ -1,0 +1,254 @@
+# CI/CD de TocTar. Documentación: docs/07-preparacion/ci-cd.md
+#
+# - En cada Pull Request a develop o main: verificar, E2E y secretos. Los tres son obligatorios para unir (protección
+#   de ramas en GitHub).
+# - En cada push a develop o main (es decir, al unir un PR): lo mismo y, si todo pasa, se le pide a Coolify que
+#   despliegue: develop → pruebas.toctardetailing.com, main → toctardetailing.com. Coolify sigue construyendo la imagen,
+#   con su https, sus respaldos y su rollback; lo que cambia es que solo publica lo que pasó las pruebas.
+#   El despliegue queda apagado hasta que la variable COOLIFY_DESPLIEGUE valga "activo" (ver la documentación).
+
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+  # Para volver a correrlo a mano desde la pestaña Actions
+  workflow_dispatch:
+
+# Un PR con commits nuevos cancela la corrida anterior (ahorra minutos). En develop y main no se cancela la que está
+# corriendo: termina su verificación y su despliegue. Si se unen varios PR seguidos, GitHub deja en espera solo la corrida
+# más nueva (las intermedias se cancelan): esa prueba todo junto y es la que despliega. Un despliegue a la vez por rama.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Solo lectura del código: ningún paso escribe en el repositorio
+permissions:
+  contents: read
+
+# La misma versión de Node que la imagen de producción (Dockerfile: node:24.x-alpine)
+env:
+  NODE_VERSION: "24"
+
+jobs:
+  verificar:
+    # Nombres cortos: son los de las verificaciones obligatorias en la protección de ramas (cambiarlos las rompe)
+    name: Verificar
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Valores de prueba (no son secretos): el build y las unitarias los leen, pero no se conectan a nada
+    env:
+      DATABASE_URL: postgres://toctar:toctar@localhost:5432/toctar
+      BETTER_AUTH_SECRET: ci-secreto-de-prueba-que-no-se-usa-en-ningun-entorno
+      BETTER_AUTH_URL: http://localhost:3000
+      SITIO_URL: http://localhost:3000
+      SITIO_INDEXABLE: "false"
+      S3_ENDPOINT: http://localhost:9000
+      S3_REGION: auto
+      S3_ACCESS_KEY_ID: toctar-dev
+      S3_SECRET_ACCESS_KEY: toctar-dev-secreto
+      S3_BUCKET: toctar
+      S3_BUCKET_PRIVADO: toctar-privado
+      S3_URL_PUBLICA: http://localhost:9000/toctar
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      # El caché de compilación de Next: un build con cambios chicos tarda mucho menos que uno de cero
+      - uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'public/**', 'next.config.ts') }}
+          restore-keys: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+      - name: Lint
+        run: npm run lint
+      - name: Tipos
+        run: npm run typecheck
+      - name: Pruebas unitarias
+        run: npm test
+      - name: Código sin uso (knip)
+        run: npx knip
+      - name: Build de producción
+        run: npm run build
+
+  e2e:
+    name: E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Los mismos servicios que docker-compose.yml: PostgreSQL 18 y RustFS (imita a Cloudflare R2)
+    services:
+      db:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: toctar
+          POSTGRES_PASSWORD: toctar
+          POSTGRES_DB: toctar
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U toctar -d toctar"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      almacenamiento:
+        image: rustfs/rustfs:1.0.1
+        env:
+          RUSTFS_ACCESS_KEY: toctar-dev
+          RUSTFS_SECRET_KEY: toctar-dev-secreto
+        ports:
+          - 9000:9000
+        options: >-
+          --health-cmd "curl -fs http://localhost:9000/health"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    # Lo que en la PC sale de .env (playwright.config.ts pone el resto). Valores de prueba, no secretos.
+    env:
+      BETTER_AUTH_SECRET: ci-secreto-de-prueba-que-no-se-usa-en-ningun-entorno
+      S3_ENDPOINT: http://localhost:9000
+      S3_REGION: auto
+      S3_ACCESS_KEY_ID: toctar-dev
+      S3_SECRET_ACCESS_KEY: toctar-dev-secreto
+      S3_BUCKET: toctar
+      S3_BUCKET_PRIVADO: toctar-privado
+      S3_URL_PUBLICA: http://localhost:9000/toctar
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      # El caché de compilación de Next: un build con cambios chicos tarda mucho menos que uno de cero
+      - uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'public/**', 'next.config.ts') }}
+          restore-keys: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+      # El navegador de Playwright, guardado entre corridas (en Linux se usa el suyo, no Chrome)
+      - name: Versión de Playwright
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: cache-navegador
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - name: Instalar el navegador
+        if: steps.cache-navegador.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Dependencias del navegador
+        if: steps.cache-navegador.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - name: Buckets de almacenamiento
+        run: node scripts/preparar-almacenamiento.mjs
+      # Recrea la base toctar_e2e, compila y levanta la app en :3200 (playwright.config.ts). En CI cada prueba que falla
+      # se reintenta hasta 2 veces: si pasa al reintentar, el reporte la marca como "flaky" (intermitente) para arreglarla.
+      - name: Pruebas E2E
+        run: npx playwright test
+      - name: Rastros de las pruebas que fallaron
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-rastros
+          path: test-results/
+          retention-days: 7
+
+  secretos:
+    name: Secretos
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Todo el historial: un secreto que entró en un commit viejo también cuenta
+          fetch-depth: 0
+      - name: Buscar claves y contraseñas
+        # Con el mismo usuario del runner: así git no rechaza el repositorio por ser de otro dueño
+        run: docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/repo" zricethezav/gitleaks:v8.24.0 git /repo --redact --no-banner
+
+  desplegar:
+    name: Desplegar
+    # Solo al unir a develop o main, si las tres verificaciones pasaron y el despliegue está activado
+    if: github.event_name == 'push' && vars.COOLIFY_DESPLIEGUE == 'activo'
+    needs: [verificar, e2e, secretos]
+    runs-on: ubuntu-latest
+    # Más que la espera de abajo (20 min): si Coolify tarda, se ve su error y no un corte genérico de GitHub
+    timeout-minutes: 25
+    env:
+      COOLIFY_URL: https://coolify.toctardetailing.com
+      ENTORNO: ${{ github.ref_name == 'main' && 'produccion' || 'pruebas' }}
+      # Cada rama con su variable, sin caer en la otra: si falta la de producción, falla en vez de desplegar pruebas
+      APP_UUID: ${{ github.ref_name == 'main' && vars.COOLIFY_UUID_PRODUCCION || github.ref_name == 'develop' && vars.COOLIFY_UUID_PRUEBAS || '' }}
+      SITIO: ${{ github.ref_name == 'main' && 'https://toctardetailing.com' || 'https://pruebas.toctardetailing.com' }}
+    steps:
+      # Coolify despliega el último commit de la rama, no uno en particular. Si mientras esta corrida probaba se unió otro
+      # PR, ese commit todavía no pasó las pruebas: no se despliega desde aquí, lo hace la corrida de ese merge (que prueba
+      # todo junto). Así nunca se publica algo sin probar.
+      - name: Comprobar que se despliega lo que se probó
+        id: vigente
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ultimo=$(gh api "repos/${{ github.repository }}/commits/${{ github.ref_name }}" --jq .sha)
+          if [ "$ultimo" != "$GITHUB_SHA" ]; then
+            echo "::notice::La rama ya tiene un commit más nuevo ($ultimo): lo despliega su propia corrida, después de probarlo."
+            echo "desplegar=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "desplegar=si" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Pedir el despliegue a Coolify
+        id: pedido
+        if: steps.vigente.outputs.desplegar == 'si'
+        env:
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+        run: |
+          if [ -z "$COOLIFY_TOKEN" ] || [ -z "$APP_UUID" ]; then
+            echo "::error::Falta el secreto COOLIFY_TOKEN o la variable del UUID de la app de $ENTORNO (ver docs/07-preparacion/ci-cd.md)."
+            exit 1
+          fi
+          codigo=$(curl -sS -o respuesta.json -w "%{http_code}" -H "Authorization: Bearer $COOLIFY_TOKEN" "$COOLIFY_URL/api/v1/deploy?uuid=$APP_UUID&force=false")
+          cat respuesta.json; echo
+          if [ "$codigo" != "200" ]; then
+            echo "::error::Coolify respondió $codigo al pedir el despliegue de $ENTORNO."
+            exit 1
+          fi
+          echo "despliegue=$(jq -r '.deployments[0].deployment_uuid // empty' respuesta.json)" >> "$GITHUB_OUTPUT"
+      # Coolify construye la imagen y cambia el contenedor solo si el nuevo pasa su verificación de salud; si falla, deja
+      # el anterior funcionando. Por eso no alcanza con mirar el sitio: se espera a que Coolify diga cómo terminó.
+      - name: Esperar a que Coolify termine
+        if: steps.vigente.outputs.desplegar == 'si'
+        env:
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          DESPLIEGUE: ${{ steps.pedido.outputs.despliegue }}
+        run: |
+          if [ -z "$DESPLIEGUE" ]; then
+            echo "::error::Coolify no devolvió el número del despliegue: revisa en su panel si arrancó."
+            exit 1
+          fi
+          for _ in $(seq 1 80); do
+            codigo=$(curl -sS -o estado.json -w "%{http_code}" -H "Authorization: Bearer $COOLIFY_TOKEN" "$COOLIFY_URL/api/v1/deployments/$DESPLIEGUE")
+            # Sin permiso de lectura (o un token vencido) no tiene sentido seguir esperando
+            if [ "$codigo" = "401" ] || [ "$codigo" = "403" ]; then
+              echo "::error::Coolify respondió $codigo al consultar el despliegue: el token necesita los permisos deploy y read."
+              exit 1
+            fi
+            estado=$(jq -r '.status // empty' estado.json 2>/dev/null)
+            echo "Despliegue $DESPLIEGUE: ${estado:-sin respuesta ($codigo)}"
+            case "$estado" in
+              finished) exit 0 ;;
+              failed|cancelled*) echo "::error::El despliegue de $ENTORNO terminó en \"$estado\": revisa sus logs en Coolify. Sigue en línea la versión anterior."; exit 1 ;;
+            esac
+            sleep 15
+          done
+          echo "::error::El despliegue de $ENTORNO no terminó en 20 minutos: revisa Coolify."
+          exit 1
+      - name: Comprobar que el sitio responde
+        if: steps.vigente.outputs.desplegar == 'si'
+        run: |
+          curl -fsS "$SITIO/api/salud" | grep -q '"estado":"ok"' && echo "$SITIO responde bien."

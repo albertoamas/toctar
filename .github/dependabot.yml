@@ -1,0 +1,49 @@
+# Actualizaciones de dependencias (docs/07-preparacion/ci-cd.md). Abren PRs a develop, que pasan por el mismo CI:
+# si algo se rompe, el PR queda en rojo y no se une. Se revisan los lunes, para tenerlos al empezar la semana.
+# Dependabot escribe sus títulos en inglés: al unir (squash), el título se reescribe en español, como todos los commits.
+
+version: 2
+updates:
+  # Paquetes de npm: menores y parches juntos en un solo PR; cada versión mayor en su PR (puede romper cosas)
+  - package-ecosystem: npm
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: America/La_Paz
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      menores-y-parches:
+        update-types: [minor, patch]
+
+  # Las acciones de GitHub del workflow
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      acciones:
+        patterns: ["*"]
+
+  # La imagen base del Dockerfile (node:24.x.y-alpine3.z, versión exacta): parches de seguridad de Node y Alpine
+  - package-ecosystem: docker
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: chore
+      include: scope
+    # Una versión mayor de Node (24 → 26) se decide a mano: cambia el entorno de producción
+    ignore:
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]

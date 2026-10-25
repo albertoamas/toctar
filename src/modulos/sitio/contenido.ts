@@ -70,7 +70,7 @@ export const FOTOS_DE_PAGINA = {
 } as const satisfies Partial<Record<Pagina, { titulo: string; ayuda: string; vacia: string; quitada: string; alt: string; carpeta: string }>>;
 
 export type PaginaConFoto = keyof typeof FOTOS_DE_PAGINA;
-export const PAGINAS_CON_FOTO = Object.keys(FOTOS_DE_PAGINA) as [PaginaConFoto, ...PaginaConFoto[]];
+const PAGINAS_CON_FOTO = Object.keys(FOTOS_DE_PAGINA) as [PaginaConFoto, ...PaginaConFoto[]];
 /** Las acciones de la foto reciben la página suelta: se valida (cualquiera puede llamarlas). */
 export const esquemaPaginaConFoto = z.enum(PAGINAS_CON_FOTO);
 
