@@ -160,6 +160,7 @@
 | 10.4 | Sin precios (RN-10) y servicios sin foto con la imagen de reemplazo | E2E "los servicios sin foto muestran la imagen de reemplazo y ninguna página pública muestra precios" | ✅ |
 | 10.5 | Un cambio en el panel se ve sin volver a desplegar | E2E "ocultar un servicio en el panel lo saca del sitio sin volver a desplegar" | ✅ |
 | 10.6 | El comparador de antes y después va arriba en la portada, con el trabajo elegido en la Galería del panel (pedido de la demo del 24/10, registro de cambios 4) | E2E `hu-10` "el trabajo elegido en la galería del panel se compara arriba en la portada": se elige, se ve y, oculto, lo reemplaza otro con antes. Unitarias "trabajo del comparador de la portada" | ✅ |
+| 10.7 | El comparador de la portada se mueve solo (3 idas y vueltas) hasta que el visitante lo toca; no se mueve con "reducir movimiento"; en un celular ancho queda justo debajo de los botones, sin hueco (24/10, registro de cambios 10, pulido 2B.10 y 2B.11) | E2E `hu-10` "el trabajo elegido en la galería del panel se compara arriba en la portada" (se mueve solo, se detiene al tocarlo, quieto con "reducir movimiento", espacio a 390 y 480 px) y "la portada carga sin que se corra lo que ya está a la vista" | ✅ |
 
 ## HU-15 Botón de WhatsApp
 
