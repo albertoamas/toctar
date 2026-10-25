@@ -116,7 +116,7 @@ function Cabecera({ children, foto, trabajo }: { children: React.ReactNode; foto
             "Pedir cotización". En el celular queda debajo, aún en la primera pantalla. */}
         {lado === "comparador" && trabajo && (
           <div className="[--alto-comparador:45dvh] md:[--alto-comparador:60dvh]">
-            <ComparadorAntesDespues antes={trabajo.antes} despues={trabajo.despues} descripcion={trabajo.descripcion} conLeyenda alFrente />
+            <ComparadorAntesDespues antes={trabajo.antes} despues={trabajo.despues} descripcion={trabajo.descripcion} conLeyenda alFrente sola />
           </div>
         )}
       </div>

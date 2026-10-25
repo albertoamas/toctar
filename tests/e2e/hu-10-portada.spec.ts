@@ -121,7 +121,14 @@ test("el trabajo elegido en la galería del panel se compara arriba en la portad
 
   await page.goto("/");
   await expect(page.getByRole("img", { name: `Después: ${elegido}` })).toBeVisible();
-  await expect(page.getByRole("slider", { name: "Comparar antes y después" })).toHaveValue("50");
+  // La línea se mueve sola (pedido de YankoSoft del 24/10) hasta que se toca: ahí queda donde se dejó
+  const linea = page.getByRole("slider", { name: "Comparar antes y después" });
+  await expect.poll(async () => Number(await linea.inputValue()), { timeout: 8000 }).not.toBe(50);
+  const caja = (await page.getByRole("img", { name: `Después: ${elegido}` }).boundingBox())!;
+  await page.mouse.click(caja.x + caja.width * 0.3, caja.y + caja.height / 2);
+  const tocada = Number(await linea.inputValue());
+  await page.waitForTimeout(1500);
+  expect(Number(await linea.inputValue())).toBe(tocada);
   await expect(page.getByText(elegido, { exact: true })).toBeVisible();
   // En un celular ancho no queda un hueco entre los botones y el comparador, ni se enciman (revisión de YankoSoft, 24/10)
   for (const ancho of [390, 480]) {
@@ -138,6 +145,13 @@ test("el trabajo elegido en la galería del panel se compara arriba en la portad
   await page.setViewportSize({ width: 1280, height: 720 });
   // Junto a "Ver la galería", más trabajos en TikTok (pedido de la demo del 24/10)
   await expect(page.getByRole("region", { name: "Trabajos recientes" }).getByRole("link", { name: "Mira nuestros trabajos en TikTok" })).toBeVisible();
+
+  // Con "reducir movimiento", no se mueve sola
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.reload();
+  await page.waitForTimeout(2500);
+  await expect(page.getByRole("slider", { name: "Comparar antes y después" })).toHaveValue("50");
+  await page.emulateMedia({ reducedMotion: null });
 
   // Oculto, deja la portada: va otro trabajo con antes
   await page.goto("/panel/sitio/galeria");

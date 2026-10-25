@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { UrlsFoto } from "@/lib/fotos";
 
 // Comparador de antes y después de la galería pública: una sola foto partida por una línea que se arrastra. A la
@@ -11,6 +11,8 @@ import type { UrlsFoto } from "@/lib/fotos";
 // - Con el teclado y el lector de pantalla: un deslizador nativo (oculto) que mueve la misma línea con las flechas.
 // Las dos fotos se ven enteras (`object-contain`): si no tienen la misma forma, una queda con bordes, pero nunca recortada.
 // El alto máximo sale de la variable `--alto-comparador` (70dvh si nadie la pone): la portada lo achica en el celular.
+// `sola` (la portada, pedido de YankoSoft del 24/10): la línea va y viene sola hasta que el visitante la toca o la mueve
+// con el teclado; se pausa fuera de la pantalla y no se mueve con "reducir movimiento".
 
 type Foto = Pick<UrlsFoto, "url" | "miniatura" | "ancho" | "alto">;
 
@@ -19,6 +21,10 @@ const INICIO = 50;
 const UMBRAL = 8;
 /** Cerca del borde, la etiqueta de ese lado quedaría sobre la otra foto: se esconde (en % del ancho). */
 const MARGEN_ETIQUETA = 15;
+/** El movimiento solo: espera al estar a la vista, cuánto se aleja del medio (del 20 al 80 %) y cuánto dura una ida y vuelta. */
+const ESPERA_MS = 1000;
+const AMPLITUD = 30;
+const PERIODO_MS = 5000;
 
 type Gesto = { id: number; x: number; y: number; arrastrando: boolean };
 
@@ -28,6 +34,7 @@ export function ComparadorAntesDespues({
   descripcion,
   conLeyenda = false,
   alFrente = false,
+  sola = false,
 }: {
   antes: Foto;
   despues: Foto;
@@ -39,13 +46,55 @@ export function ComparadorAntesDespues({
    * la grande le quitaba red al texto (lo mismo que con la foto del taller, pulido 2.1).
    */
   alFrente?: boolean;
+  /** La línea se mueve sola hasta que el visitante la toca (la portada). */
+  sola?: boolean;
 }) {
   const [corte, setCorte] = useState(INICIO);
+  // Una vez que el visitante la toca, la línea queda donde la deja: ya no se mueve sola
+  const [quieta, setQuieta] = useState(!sola);
   const caja = useRef<HTMLDivElement>(null);
   const gesto = useRef<Gesto | null>(null);
   const id = useId();
   // La caja toma la forma de la foto de después y nunca pasa del alto máximo
   const proporcion = (despues.ancho ?? 4) / (despues.alto ?? 3);
+
+  // El movimiento solo: un vaivén suave desde el medio, solo mientras la foto está a la vista y la pestaña abierta
+  useEffect(() => {
+    const el = caja.current;
+    if (quieta || !el || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let visible = false;
+    let cuadro = 0;
+    let anterior: number | null = null;
+    let transcurrido = 0;
+    const paso = (ahora: number) => {
+      if (anterior !== null) transcurrido += ahora - anterior;
+      anterior = ahora;
+      if (transcurrido > ESPERA_MS) setCorte(INICIO + AMPLITUD * Math.sin(((transcurrido - ESPERA_MS) / PERIODO_MS) * 2 * Math.PI));
+      cuadro = requestAnimationFrame(paso);
+    };
+    const parar = () => {
+      cancelAnimationFrame(cuadro);
+      cuadro = 0;
+      anterior = null;
+    };
+    const seguir = () => {
+      if (cuadro || !visible || document.hidden) return;
+      cuadro = requestAnimationFrame(paso);
+    };
+    const observador = new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting;
+      if (visible) seguir();
+      else parar();
+    });
+    observador.observe(el);
+    const alCambiarPestana = () => (document.hidden ? parar() : seguir());
+    document.addEventListener("visibilitychange", alCambiarPestana);
+    return () => {
+      parar();
+      observador.disconnect();
+      document.removeEventListener("visibilitychange", alCambiarPestana);
+    };
+  }, [quieta]);
 
   function moverA(x: number) {
     const r = caja.current?.getBoundingClientRect();
@@ -62,6 +111,7 @@ export function ComparadorAntesDespues({
         onPointerDown={(e) => {
           // Solo el dedo principal o el botón izquierdo: el clic derecho (guardar la foto) o un segundo dedo no mueven nada
           if (!e.isPrimary || e.button !== 0) return;
+          setQuieta(true);
           gesto.current = { id: e.pointerId, x: e.clientX, y: e.clientY, arrastrando: false };
         }}
         onPointerMove={(e) => {
@@ -105,7 +155,12 @@ export function ComparadorAntesDespues({
           min={0}
           max={100}
           value={Math.round(corte)}
-          onChange={(e) => setCorte(Number(e.target.value))}
+          onChange={(e) => {
+            setQuieta(true);
+            setCorte(Number(e.target.value));
+          }}
+          // Con el foco del teclado o del lector de pantalla, el valor deja de cambiar solo
+          onFocus={() => setQuieta(true)}
           aria-label="Comparar antes y después"
           aria-valuetext={`Antes, hasta el ${Math.round(corte)} % de la foto`}
           aria-describedby={`${id}-ayuda`}
