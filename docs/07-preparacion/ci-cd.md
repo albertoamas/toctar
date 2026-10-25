@@ -28,6 +28,8 @@ Merge a main    ──► Actions vuelve a verificar ──► pide el despliegu
 - **Pruebas intermitentes:** en CI, una prueba E2E que falla se reintenta hasta dos veces. Si pasa al reintentar, el reporte la marca como **flaky**: hay que arreglarla, no ignorarla. Si falla las tres veces, el job queda en rojo y se suben los rastros (`e2e-rastros`, 7 días) para verlos con `npx playwright show-trace`.
 - **Navegador:** en Linux se usa el Chromium de Playwright (en Windows, el Chrome instalado: ver `playwright.config.ts`). Se guarda entre corridas.
 - **Node:** la versión 24, la misma de la imagen de producción.
+- **Idioma y hora:** las E2E usan `es-BO` y `America/La_Paz` (`playwright.config.ts`), como los usuarios. Sin eso, el navegador del CI está en inglés y en UTC: las horas salen con AM/PM y las fechas en otro formato.
+- **Lo que encontró la primera corrida (25/10):** en Linux, Configuración se salía 7 px de la pantalla a 360 de ancho (una grilla "auto" y un `<fieldset>` que no se achicaba); en Windows no se notaba. Se corrigió para toda la app.
 - **Costo:** el repositorio es privado; el plan gratuito de GitHub trae 2000 minutos de Actions al mes. Cada PR y su merge gastan unos 20 a 25 minutos en total.
 
 ## Protección de ramas
