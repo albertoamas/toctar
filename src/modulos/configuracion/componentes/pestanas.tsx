@@ -1,6 +1,6 @@
 import { Pestanas } from "@/componentes/panel/pestanas";
 
-// Pestañas de Configuración (especificación B2 §5; "Parámetros" por tema desde C5 §0).
+// Pestañas de Configuración (especificación B2 §5; "Parámetros" por tema desde C5 §0; "Mensajes", HU-40).
 export function PestanasConfiguracion() {
   return (
     <Pestanas
@@ -9,6 +9,7 @@ export function PestanasConfiguracion() {
         { href: "/panel/configuracion", texto: "Negocio" },
         { href: "/panel/configuracion/taller", texto: "Taller" },
         { href: "/panel/configuracion/parametros", texto: "Parámetros" },
+        { href: "/panel/configuracion/mensajes", texto: "Mensajes" },
       ]}
     />
   );
