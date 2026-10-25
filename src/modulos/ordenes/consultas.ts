@@ -1,8 +1,8 @@
 import "server-only";
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, min } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
-import { archivo, cliente, servicio, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, usuario, variante, vehiculo } from "@/db/esquema";
+import { archivo, cliente, galeriaItem, servicio, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, usuario, variante, vehiculo } from "@/db/esquema";
 import type { EstadoTrabajo, EtapaFoto } from "@/db/esquema/trabajos";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { obtenerReserva, type DetalleReserva } from "@/modulos/agenda/consultas";
@@ -14,15 +14,15 @@ import { ESTADOS_ORDEN_ABIERTA } from "./reglas";
 export type FotoOrden = UrlsFoto & { id: number; etapa: EtapaFoto; subidoPor: number };
 
 /**
- * Las fotos de un trabajo, por etapa y en el orden en que se subieron, con enlaces firmados (bucket privado). Firmarlos
- * es dar acceso: llamarla después de verificar que quien mira puede ver la orden.
+ * Las fotos de un trabajo (o solo las de esas etapas), por etapa y en el orden en que se subieron, con enlaces firmados
+ * (bucket privado). Firmarlos es dar acceso: llamarla después de verificar que quien mira puede ver la orden.
  */
-export async function fotosDeTrabajo(trabajoId: number): Promise<FotoOrden[]> {
+export async function fotosDeTrabajo(trabajoId: number, etapas?: readonly EtapaFoto[]): Promise<FotoOrden[]> {
   const filas = await db
     .select({ id: trabajoFoto.id, etapa: trabajoFoto.etapa, subidoPor: trabajoFoto.subidoPor, clave: archivo.clave, miniaturaClave: archivo.miniaturaClave, ancho: archivo.ancho, alto: archivo.alto })
     .from(trabajoFoto)
     .innerJoin(archivo, eq(trabajoFoto.archivoId, archivo.id))
-    .where(eq(trabajoFoto.trabajoId, trabajoId))
+    .where(and(eq(trabajoFoto.trabajoId, trabajoId), etapas ? inArray(trabajoFoto.etapa, [...etapas]) : undefined))
     .orderBy(asc(trabajoFoto.id));
   return Promise.all(filas.map(async ({ clave, miniaturaClave, ancho, alto, ...f }) => ({ ...f, ...(await urlsFotoPrivada({ clave, miniaturaClave, ancho, alto })) })));
 }
@@ -43,18 +43,46 @@ export async function obtenerOrden(id: number, conMontos: boolean): Promise<Deta
   return { ...reserva, servicios };
 }
 
+type Base = Pick<typeof db, "select">;
+
 /**
- * Los servicios de la orden que generan mantenimiento (RN-08), uno por servicio aunque tenga varias líneas. La misma
- * consulta anticipa la fecha al entregar y crea los recordatorios (con `base`, dentro de la transacción).
+ * Los servicios de la orden, uno por servicio aunque tenga varias líneas, en el orden de sus líneas (el principal
+ * primero). Con `soloConMantenimiento`, los que generan mantenimiento (RN-08); con `soloActivos`, los que siguen en el
+ * catálogo (los que la galería deja elegir); con `base`, dentro de una transacción.
  */
-export async function serviciosConMantenimiento(trabajoId: number, base: Pick<typeof db, "selectDistinct"> = db): Promise<{ id: number; nombre: string }[]> {
-  return base
-    .selectDistinct({ id: servicio.id, nombre: servicio.nombre })
+export async function serviciosDeOrden(
+  trabajoId: number,
+  opciones: { soloConMantenimiento?: boolean; soloActivos?: boolean; base?: Base } = {},
+): Promise<{ id: number; nombre: string }[]> {
+  return (opciones.base ?? db)
+    .select({ id: servicio.id, nombre: servicio.nombre })
     .from(trabajoLinea)
     .innerJoin(variante, eq(trabajoLinea.varianteId, variante.id))
     .innerJoin(servicio, eq(variante.servicioId, servicio.id))
-    .where(and(eq(trabajoLinea.trabajoId, trabajoId), eq(servicio.generaMantenimiento, true)))
-    .orderBy(asc(servicio.nombre));
+    .where(
+      and(
+        eq(trabajoLinea.trabajoId, trabajoId),
+        opciones.soloConMantenimiento ? eq(servicio.generaMantenimiento, true) : undefined,
+        opciones.soloActivos ? eq(servicio.activo, true) : undefined,
+      ),
+    )
+    .groupBy(servicio.id, servicio.nombre)
+    .orderBy(min(trabajoLinea.orden));
+}
+
+/**
+ * Los servicios de la orden que generan mantenimiento (RN-08). La misma consulta anticipa la fecha al entregar y crea
+ * los recordatorios (con `base`, dentro de la transacción).
+ */
+export const serviciosConMantenimiento = (trabajoId: number, base?: Base) => serviciosDeOrden(trabajoId, { soloConMantenimiento: true, base });
+
+/** Si la orden ya se publicó en la galería (HU-41; una sola vez): cuántas fotos y si se ve; null si no se publicó. */
+export async function publicadaDeOrden(trabajoId: number): Promise<{ fotos: number; visible: boolean } | null> {
+  const [fila] = await db
+    .select({ antes: galeriaItem.fotoAntesId, visible: galeriaItem.visible })
+    .from(galeriaItem)
+    .where(eq(galeriaItem.trabajoId, trabajoId));
+  return fila ? { fotos: fila.antes ? 2 : 1, visible: fila.visible } : null;
 }
 
 export type Avance = { id: number; nota: string; autor: string; createdAt: Date };

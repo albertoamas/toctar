@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { archivo } from "@/db/esquema";
-import { borrarArchivo, subirArchivo, urlArchivo, urlArchivoPrivado, type Visibilidad } from "@/lib/almacenamiento";
+import { borrarArchivo, leerArchivo, subirArchivo, urlArchivo, urlArchivoPrivado, type Visibilidad } from "@/lib/almacenamiento";
 import { BYTES_MAXIMOS_FOTO, TIPOS_FOTO } from "@/lib/formato-fotos";
 import { convertirAWebp } from "@/lib/imagen";
 
@@ -63,6 +63,34 @@ export async function guardarFoto(entrada: FormDataEntryValue | null, opciones: 
   } catch (error) {
     // Sin la fila en `archivo` nadie encontraría estos archivos para borrarlos: se borran ahora.
     await Promise.allSettled([clave, miniaturaClave].filter((c): c is string => !!c).map((c) => borrarArchivo(c, visibilidad)));
+    throw error;
+  }
+}
+
+/**
+ * Copia una foto privada (de una orden) al bucket público como un archivo nuevo, con su miniatura (HU-41, RNF-05). La
+ * original no cambia: sigue privada y es de la orden; la copia es de quien la use (la galería) y se borra sola.
+ */
+export async function copiarFotoAlPublico(archivoId: number, opciones: { carpeta: string; autorId: number }): Promise<number> {
+  const [original] = await db.select().from(archivo).where(eq(archivo.id, archivoId));
+  if (!original?.privado) throw new Error(`La foto ${archivoId} no es una foto privada.`);
+  const base = `${opciones.carpeta}/${randomUUID()}`;
+  const subidas: string[] = [];
+  try {
+    const copiar = async (clave: string, nueva: string) => {
+      subidas.push(await subirArchivo(nueva, await leerArchivo(clave, "privado"), original.tipoMime, "publico"));
+      return nueva;
+    };
+    const clave = await copiar(original.clave, `${base}.webp`);
+    const miniaturaClave = original.miniaturaClave ? await copiar(original.miniaturaClave, `${base}-${LADO_MINIATURA}.webp`) : null;
+    const [fila] = await db
+      .insert(archivo)
+      .values({ clave, tipoMime: original.tipoMime, bytes: original.bytes, ancho: original.ancho, alto: original.alto, miniaturaClave, createdBy: opciones.autorId })
+      .returning({ id: archivo.id });
+    return fila.id;
+  } catch (error) {
+    // Sin la fila en `archivo` nadie encontraría las copias para borrarlas: se borran ahora
+    await Promise.allSettled(subidas.map((c) => borrarArchivo(c, "publico")));
     throw error;
   }
 }

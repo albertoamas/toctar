@@ -1,7 +1,7 @@
 # C5 Cierre de la Entrega 2 — especificación
 
 - **Fase y semana:** C. Entrega 2 · se adelanta a la semana 2 (desde el 23 de octubre); en el plan era la semana 5, con margen en la 6 y la 7
-- **Estado:** aprobada (23 de octubre de 2026). §0 terminado el 24/10 (PR #74); HU-40 el 25/10 (PR #92) y HU-39 el 25/10; sigue la HU-41
+- **Estado:** aprobada (23 de octubre de 2026). §0 terminado el 24/10 (PR #74); HU-40 (PR #92), HU-39 (PR #93) y HU-41 el 25/10; sigue el cierre
 - **Historias:** HU-39 Pantalla del día · HU-40 Plantillas de WhatsApp · HU-41 Fotos de órdenes a la galería (las tres deseables) · cierre: criterios de HU-19 a HU-38, capacitación y acta
 - **Base:**
   - Requisitos: RF-44, RF-51, RF-52; RNF-01, RNF-05, RNF-11, RNF-14.
@@ -88,7 +88,7 @@ Al abrir el panel, el dueño ve lo que pide atención hoy. Escribe los mensajes 
 | RF-51 | Una plantilla rota no envía un mensaje roto | Se valida al guardar: no vacía, hasta 1000 caracteres, solo con los campos de ese mensaje y con texto además de los campos (si no, con los campos vacíos saldría en blanco). Un campo vacío al armar el mensaje se quita junto con el espacio de antes, o el de después si empieza la línea |
 | RF-44, RN-01 | El dueño publica fotos de una orden entregada | La acción exige ser el dueño; la orden, entregada; y las fotos, de esa orden y de su etapa |
 | RNF-05 | Las fotos de los clientes son privadas | Publicar **copia** la foto al bucket público (un `archivo` nuevo): la de la orden sigue privada, y quitarla de la galería no borra la de la orden |
-| RNF-14 | Las fotos del sitio tienen texto alternativo | La descripción es obligatoria (hasta 140, como en la galería) |
+| RNF-14 | Las fotos del sitio tienen texto alternativo | Las mismas reglas que la galería (pedido 2B.12): la descripción es opcional, hasta 140; sin ella, el texto alternativo es "Trabajo de {servicio}" |
 
 ## 4. Datos
 
@@ -151,10 +151,10 @@ Migraciones:
   - **Foto de antes** (opcional), entre las de "Ingreso" y "Antes".
   - Las fotos se eligen tocándolas, en una grilla con la elegida marcada (también con texto, no solo con color).
 - **Servicio:** un selector con los servicios de la orden, con el primero ya elegido.
-- **Descripción:** obligatoria, hasta 140 caracteres; es también el texto alternativo.
+- **Descripción:** opcional, hasta 140 caracteres, como en la galería (decidido al programarla, 25/10: desde el pedido 2B.12 la galería no la exige). Es el texto alternativo; sin ella, "Trabajo de {servicio}".
 - **Casilla obligatoria:** "En las fotos no se lee la placa ni se ve a nadie".
 - **"Publicar"** guarda y vuelve a la orden con "Publicado en la galería. Lo ordenas u ocultas en Sitio web > Galería.".
-- **En la orden:** si ya se publicó, "Publicada en la galería (2 fotos)", con enlace a la galería del panel.
+- **En la orden:** si ya se publicó, "Publicada en la galería (2 fotos)" (", oculta" si se ocultó), con enlace a la galería del panel. **Una vez por orden** (decidido en la revisión, 25/10; índice único): ya publicada, el botón no aparece y se ordena u oculta en Sitio web > Galería; si se quita de ahí, se puede volver a publicar.
 
 ### En otras pantallas
 - **Órdenes, mantenimientos y saldos:** los enlaces de WhatsApp usan la plantilla guardada.
@@ -167,7 +167,7 @@ Todas validan con Zod y empiezan con `exigirModulo`.
 |---|---|---|---|
 | `guardarPlantilla` | dueño (`configuracion`) | Clave válida; texto de 1 a 1000 con solo los campos de esa plantilla. Guarda quién y cuándo, y renueva la caché de las plantillas | "Mensaje guardado." · "{precio} no es un campo de este mensaje. Usa: {nombre}, {vehiculo}, {negocio}, {saldo}." · "Escribe el mensaje." |
 | `restaurarPlantilla` | dueño | Vuelve al texto original de esa clave (borra la fila guardada) | "Volvió el texto original." |
-| `publicarEnGaleria` | dueño (`ordenes` y rol dueño) | Orden entregada; foto de después de su etapa "despues"; la de antes (si viene), de "ingreso" o "antes"; servicio entre los de la orden; descripción; casilla marcada. Copia cada foto (y su miniatura) del bucket privado al público como `archivo` nuevo, y crea el `galeria_item` al final, visible, con `trabajo_id`. Si algo falla después de copiar, borra las copias. Renueva la caché de la galería | "Publicado en la galería…" · "Elige la foto de después." · "Marca que en las fotos no se lee la placa ni se ve a nadie." |
+| `publicarEnGaleria` | dueño (acción `publicar_en_galeria`, solo del dueño) | Orden entregada; foto de después de su etapa "despues"; la de antes (si viene), de "ingreso" o "antes"; orden sin publicar; servicio entre los de la orden que sigan activos, los mismos que deja elegir la galería (`serviciosDeOrden`); descripción opcional; casilla marcada. Copia cada foto (y su miniatura) del bucket privado al público como `archivo` nuevo (`copiarFotoAlPublico`), y crea el `galeria_item` al final, visible, con `trabajo_id`. Si algo falla después de copiar, borra las copias. Renueva la caché de la galería | "Publicado en la galería…" · "Elige la foto de después." · "Marca que en las fotos no se lee la placa ni se ve a nadie." |
 
 **Consultas:**
 - Inicio (HU-39), sin montos ni teléfonos: `ingresosDeHoy(hoy)` en `src/modulos/inicio/consultas.ts`; las entregas y las listas sin avisar salen de `ordenesAbiertas()` (la consulta de Órdenes), repartidas con `ordenesDelDia` (`inicio/reglas.ts`); los mantenimientos, de `contarSinAvisar(hoy)` en `mantenimientos/consultas.ts`, con la misma condición que su lista. (Decidido al programarla, 25/10: no repetir consultas que ya existen.)

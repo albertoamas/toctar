@@ -82,14 +82,23 @@ export function puedeVerModulo(sujeto: SujetoPermisos, modulo: Modulo): boolean 
   }
 }
 
-export type Accion = "cotizar" | "entrega_con_saldo" | "recibir_vehiculo" | "extender_entrega" | "avisar_cliente" | "entregar_vehiculo" | "agregar_adicional";
+export type Accion =
+  | "cotizar"
+  | "entrega_con_saldo"
+  | "recibir_vehiculo"
+  | "extender_entrega"
+  | "avisar_cliente"
+  | "entregar_vehiculo"
+  | "agregar_adicional"
+  | "publicar_en_galeria";
 
-/** Las acciones que pone precio: solo el dueño (RN-01). */
-const SOLO_DUENO: readonly Accion[] = ["cotizar", "agregar_adicional"];
+/** Las acciones que ponen precio o publican en el sitio desde una orden: solo el dueño (RN-01). */
+const SOLO_DUENO: readonly Accion[] = ["cotizar", "agregar_adicional", "publicar_en_galeria"];
 
 /**
  * Acciones que no son un módulo entero:
- * - cotizar (C2, dentro de la consulta) y sumar un adicional a la orden (RF-43) ponen precio: solo el dueño (RN-01);
+ * - cotizar (C2, dentro de la consulta) y sumar un adicional a la orden (RF-43) ponen precio, y publicar en la galería
+ *   las fotos de una orden (HU-41, RF-44) decide qué muestra el sitio: solo el dueño (RN-01);
  * - autorizar entrega con saldo (RN-13, S-2): el dueño o el encargado con ese permiso;
  * - recibir el vehículo, extender su entrega, avisarle al cliente y entregarlo (C4): el dueño o el encargado con
  *   "Órdenes", no el técnico (tocan la agenda, el trato con el cliente o el cobro, que él no ve; C4 §12, RN-12).

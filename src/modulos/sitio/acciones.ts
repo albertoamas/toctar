@@ -9,7 +9,9 @@ import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { reordenar, type Direccion } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
 import { CLAVES_PAGINA, FOTOS_DE_PAGINA, PAGINAS, datosDelFormulario, esquemaPagina, esquemaPaginaConFoto, esquemaPregunta, type Pagina, type PaginaConFoto } from "./contenido";
-import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, listarGaleria, listarPreguntas, listarServicios, servicioEnSitio } from "./consultas";
+import { agregarAGaleria } from "./agregar-a-galeria";
+import { ETIQUETA_CONTENIDO, listarGaleria, listarPreguntas, listarServicios, servicioEnSitio } from "./consultas";
+import { galeriaCambiada } from "./galeria-cambiada";
 import { servicioCambiado } from "./servicio-cambiado";
 import { esquemaEditarGaleria, esquemaFotoSeccion, esquemaGaleria, esquemaId, esquemaIdFormulario, esquemaMover, esquemaQuitarFotoSeccion, esquemaServicio, esquemaVisibilidad } from "./esquemas";
 
@@ -316,12 +318,7 @@ export async function eliminarPregunta(datoId: number): Promise<EstadoFormulario
 }
 
 // ---------------------------------------------------------------------------------------------
-// HU-09 Galería. Al guardar se invalida la etiqueta "galeria".
-
-function despuesDeCambiarGaleria() {
-  updateTag(ETIQUETA_GALERIA);
-  revalidatePath(`${RUTA}/galeria`);
-}
+// HU-09 Galería. Al guardar se renueva lo que la muestra (galeriaCambiada).
 
 async function servicioExiste(id: number): Promise<boolean> {
   const [fila] = await db.select({ id: servicio.id }).from(servicio).where(eq(servicio.id, id));
@@ -354,17 +351,15 @@ export async function subirGaleria(_previo: EstadoFormulario, datos: FormData): 
     return { errores: { antes: ERROR_FOTO }, valores };
   }
 
-  const [{ ultimo }] = await db.select({ ultimo: max(galeriaItem.orden) }).from(galeriaItem);
-  await db.insert(galeriaItem).values({
+  await agregarAGaleria({
     servicioId: entrada.data.servicioId,
     descripcion: entrada.data.descripcion,
     fotoDespuesId: despues.archivoId,
     fotoAntesId: antes?.ok ? antes.archivoId : null,
-    orden: (ultimo ?? 0) + 1,
     createdBy: Number(autor.id),
   });
 
-  despuesDeCambiarGaleria();
+  galeriaCambiada();
   return { ok: true, mensaje: antes ? "Fotos guardadas." : "Foto guardada." };
 }
 
@@ -381,7 +376,7 @@ export async function guardarGaleriaItem(_previo: EstadoFormulario, datos: FormD
     .where(eq(galeriaItem.id, entrada.data.id))
     .returning({ id: galeriaItem.id });
   if (!fila) return { mensaje: "Esa foto ya no existe. Recarga la página." };
-  despuesDeCambiarGaleria();
+  galeriaCambiada();
   return { ok: true, mensaje: "Cambios guardados." };
 }
 
@@ -395,7 +390,7 @@ export async function moverGaleriaItem(datos: { id: number; direccion: Direccion
   await db.transaction(async (tx) => {
     for (const o of nuevoOrden) await tx.update(galeriaItem).set({ orden: o.orden }).where(eq(galeriaItem.id, o.id));
   });
-  despuesDeCambiarGaleria();
+  galeriaCambiada();
   return { ok: true };
 }
 
@@ -408,7 +403,7 @@ export async function cambiarVisibilidadGaleria(datos: { id: number; visible: bo
   const cambios = visible ? { visible } : { visible, enPortada: false };
   const [fila] = await db.update(galeriaItem).set(cambios).where(eq(galeriaItem.id, id)).returning({ id: galeriaItem.id });
   if (!fila) return { mensaje: "Esa foto ya no existe. Recarga la página." };
-  despuesDeCambiarGaleria();
+  galeriaCambiada();
   return { ok: true, mensaje: visible ? "La foto se ve en el sitio." : "Foto oculta: no se ve en el sitio." };
 }
 
@@ -449,7 +444,7 @@ export async function elegirParaPortada(datoId: number): Promise<EstadoFormulari
       throw error;
     });
   if (!marcada) return { mensaje: NO_VA_EN_PORTADA };
-  despuesDeCambiarGaleria();
+  galeriaCambiada();
   return { ok: true, mensaje: "Listo: este trabajo se ve en la portada." };
 }
 
@@ -462,6 +457,6 @@ export async function eliminarGaleriaItem(datoId: number): Promise<EstadoFormula
   if (!fila) return { mensaje: "Esa foto ya no existe. Recarga la página." };
   await eliminarFoto(fila.fotoDespuesId);
   if (fila.fotoAntesId) await eliminarFoto(fila.fotoAntesId);
-  despuesDeCambiarGaleria();
+  galeriaCambiada();
   return { ok: true, mensaje: "Foto eliminada." };
 }
