@@ -1,11 +1,18 @@
-import { expect, test, type TestInfo } from "@playwright/test";
+import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { consultar, crearServicioPublicado, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
 
 // HU-19 Catálogo con variantes y HU-20 Precios por tamaño y duración.
-// Especificación: docs/08-desarrollo/etapas/C1-catalogo-clientes.md §9.
+// Especificación: docs/08-desarrollo/etapas/C1-catalogo-clientes.md §9. La ficha del servicio está en lectura y cada
+// sección se edita con "Editar", de a una (pulido 7.3, skill pantallas-panel).
 // Cada proyecto (celular o escritorio) trabaja sobre su propio servicio, para no pisarse al correr en paralelo.
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "C" : "E");
+
+/** La ficha de un servicio, ya cargada: "Editar" se habilita al hidratar y un toque antes se perdería. */
+async function abrirFicha(page: Page, id: string) {
+  await page.goto(`/panel/catalogo/${id}`, { waitUntil: "networkidle" });
+  await expect(page.getByRole("button", { name: "Editar datos del servicio" })).toBeEnabled();
+}
 
 test("el dueño marca el mantenimiento, cambia la duración y desactiva un servicio, que sale del sitio", async ({ page }, info) => {
   test.setTimeout(60_000);
@@ -22,34 +29,43 @@ test("el dueño marca el mantenimiento, cambia la duración y desactiva un servi
   await expect(lista.getByRole("link", { name: /Pulido y nano cerámico/ })).toContainText("Genera mantenimiento");
   await lista.getByRole("link", { name: new RegExp(nombre) }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/catalogo/${id}$`));
+  await abrirFicha(page, id);
 
+  // En lectura; "Editar" abre el formulario de los datos
+  const datos = page.getByRole("region", { name: "Datos" });
+  await expect(datos).toContainText("1 día");
+  await expect(datos).toContainText("No genera recordatorio");
+  const editar = page.getByRole("button", { name: "Editar datos del servicio" });
+  await editar.click();
   // Una duración fuera de rango se rechaza y el foco va al campo
-  await page.getByLabel("Duración estimada").fill("0");
-  await page.getByRole("button", { name: "Guardar", exact: true }).click();
+  await datos.getByLabel("Duración estimada").fill("0");
+  await datos.getByRole("button", { name: "Guardar datos" }).click();
   await expect(page.getByText("Escribe los días, de 1 a 60.")).toBeVisible();
-  await expect(page.getByLabel("Duración estimada")).toBeFocused();
+  await expect(datos.getByLabel("Duración estimada")).toBeFocused();
 
-  await page.getByLabel("Duración estimada").fill("3");
-  await page.getByText("Genera recordatorio de mantenimiento").click();
-  await page.getByRole("button", { name: "Guardar", exact: true }).click();
+  await datos.getByLabel("Duración estimada").fill("3");
+  await datos.getByText("Genera recordatorio de mantenimiento").click();
+  await datos.getByRole("button", { name: "Guardar datos" }).click();
   await expect(page.getByText("Cambios guardados.")).toBeVisible();
-  await page.reload();
-  await expect(page.getByLabel("Duración estimada")).toHaveValue("3");
-  await expect(page.getByRole("checkbox", { name: /Genera recordatorio/ })).toBeChecked();
+  // Guardado, vuelve a lectura con los datos nuevos y el foco en "Editar"
+  await expect(datos).toContainText("3 días");
+  await expect(datos).toContainText("Genera recordatorio");
+  await expect(editar).toBeFocused();
 
   // Inactivo: no sale en el sitio (su página no existe) y queda marcado en el catálogo
-  await page.getByText("Activo en el catálogo").click();
-  await page.getByRole("button", { name: "Guardar", exact: true }).click();
-  await expect(page.getByText("Cambios guardados.")).toBeVisible();
+  await editar.click();
+  await datos.getByText("Activo en el catálogo").click();
+  await datos.getByRole("button", { name: "Guardar datos" }).click();
   await expect(page.getByRole("heading", { level: 1 }).locator("..")).toContainText("Inactivo");
   await page.goto(`/servicios/${slug}`);
   await expect(page.getByRole("heading", { name: "No encontramos esta página" })).toBeVisible();
 
   // Se reactiva: vuelve al sitio
-  await page.goto(`/panel/catalogo/${id}`);
-  await page.getByText("Activo en el catálogo").click();
-  await page.getByRole("button", { name: "Guardar", exact: true }).click();
-  await expect(page.getByText("Cambios guardados.")).toBeVisible();
+  await abrirFicha(page, id);
+  await editar.click();
+  await datos.getByText("Activo en el catálogo").click();
+  await datos.getByRole("button", { name: "Guardar datos" }).click();
+  await expect(datos).toContainText("Activo");
   await page.goto(`/servicios/${slug}`);
   await expect(page.getByRole("heading", { level: 1, name: nombre })).toBeVisible();
 });
@@ -67,8 +83,14 @@ test("las variantes se agregan, renombran y desactivan en el catálogo; una nuev
   await expect(page).toHaveURL(/\/panel\/catalogo\/nuevo$/);
   await page.getByLabel("Nombre del servicio").fill(`Variantes de prueba ${sufijo(info)}`);
   await page.getByRole("button", { name: "Crear servicio" }).click();
-  await expect(page.getByText("Servicio creado.")).toBeVisible();
-  // D-2: nace con la variante "Única". En la misma ficha hay otro "Guardar" (los datos): todo dentro de Variantes
+  await expect(page.getByText("Servicio creado. Carga sus precios.")).toBeVisible();
+  // D-2: nace con la variante "Única", y la ficha se abre en sus precios, que es lo que falta
+  await expect(page.getByRole("form", { name: "Precios de Única" })).toBeVisible();
+
+  await page.waitForLoadState("networkidle");
+  await page.getByRole("button", { name: "Editar variantes" }).click();
+  // Una sección a la vez: abrir las variantes cierra los precios
+  await expect(page.getByRole("form", { name: "Precios de Única" })).toHaveCount(0);
   const variantes = page.getByRole("region", { name: "Variantes" });
   const activas = variantes.getByRole("list", { name: "Variantes activos" });
   await expect(activas).toContainText("Única");
@@ -77,8 +99,8 @@ test("las variantes se agregan, renombran y desactivan en el catálogo; una nuev
   await variantes.getByLabel("Nombre del variante").fill("Premium");
   await variantes.getByRole("button", { name: "Agregar", exact: true }).click();
   await expect(page.getByText("Variante Premium agregada.")).toBeVisible();
-  // La nueva ya tiene su formulario de precios
-  await expect(page.getByRole("form", { name: "Premium" })).toBeVisible();
+  // La nueva ya tiene sus precios, sin cargar
+  await expect(page.getByRole("region", { name: "Premium" })).toContainText("Sin cargar");
   await variantes.getByRole("button", { name: "Editar Única" }).click();
   await variantes.getByLabel("Nombre del variante").fill("Básico");
   await variantes.getByRole("button", { name: "Guardar", exact: true }).click();
@@ -88,10 +110,15 @@ test("las variantes se agregan, renombran y desactivan en el catálogo; una nuev
   await variantes.getByRole("button", { name: "Editar Premium" }).click();
   await variantes.getByRole("button", { name: "Desactivar Premium" }).click();
   await expect(page.getByText("Premium desactivada.")).toBeVisible();
-  await expect(page.getByRole("form", { name: "Premium" })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Premium" })).toHaveCount(0);
   await variantes.getByRole("button", { name: "Editar Básico" }).click();
   await variantes.getByRole("button", { name: "Desactivar Básico" }).click();
   await expect(page.getByText(/Debe quedar al menos una variante activa/)).toBeVisible();
+
+  // "Listo" la cierra: en lectura, los nombres
+  await variantes.getByRole("button", { name: "Cancelar" }).click();
+  await variantes.getByRole("button", { name: "Listo" }).click();
+  await expect(variantes).toContainText("Básico (1 desactivada)");
 });
 
 test("el encargado, aun con todos sus permisos, y el técnico no entran al catálogo", async ({ page }, info) => {
@@ -122,38 +149,48 @@ test("el dueño carga precios por tamaño; vacío es según evaluación y cada c
   const nombre = `Precios de prueba ${sufijo(info)}`;
   await ingresarComoDueno(page);
   const { id } = await crearServicioPublicado(page, nombre);
-  await page.goto(`/panel/catalogo/${id}`);
-  // Un servicio nuevo tiene la variante "Única" (D-2), todavía sin precios
-  const unica = page.getByRole("form", { name: "Única" });
-  await expect(unica.getByLabel("Compactos")).toHaveAttribute("placeholder", "Sin cargar");
+  await abrirFicha(page, id);
+  // Un servicio nuevo tiene la variante "Única" (D-2), todavía sin precios: en lectura, "Sin cargar"
+  const unica = page.getByRole("region", { name: "Única" });
+  await expect(unica.getByText("Sin cargar")).toHaveCount(5);
+  const editar = unica.getByRole("button", { name: "Editar precios de Única" });
+  const precios = page.getByRole("form", { name: "Precios de Única" });
 
   // Un monto con separador de miles se rechaza, con el foco en el campo
-  await unica.getByLabel("Compactos").fill("1.250");
-  await unica.getByRole("button", { name: "Guardar precios de Única" }).click();
-  await expect(unica.getByText(/Escribe solo números/)).toBeVisible();
-  await expect(unica.getByLabel("Compactos")).toBeFocused();
+  await editar.click();
+  await expect(precios.getByLabel("Compactos")).toHaveAttribute("placeholder", "Sin cargar");
+  await precios.getByLabel("Compactos").fill("1.250");
+  await precios.getByRole("button", { name: "Guardar precios" }).click();
+  await expect(precios.getByText(/Escribe solo números/)).toBeVisible();
+  await expect(precios.getByLabel("Compactos")).toBeFocused();
 
-  await unica.getByLabel("Compactos").fill("250");
-  await unica.getByLabel("Sedanes y hatchbacks medianos").fill("300,50");
-  await unica.getByRole("button", { name: "Guardar precios de Única" }).click();
+  await precios.getByLabel("Compactos").fill("250");
+  await precios.getByLabel("Sedanes y hatchbacks medianos").fill("300,50");
+  await precios.getByRole("button", { name: "Guardar precios" }).click();
   await expect(page.getByText("Precios guardados.")).toBeVisible();
-  await page.reload();
-  await expect(unica.getByLabel("Compactos")).toHaveValue("250");
-  await expect(unica.getByLabel("Sedanes y hatchbacks medianos")).toHaveValue("300,50");
-  // Lo que quedó vacío al guardar es "según evaluación"
-  await expect(unica.getByLabel("Vagonetas medianas")).toHaveAttribute("placeholder", "Según evaluación");
+  // Guardado, vuelve a lectura: lo que quedó vacío es "según evaluación"
+  await expect(precios).toHaveCount(0);
+  await expect(unica).toContainText("250 Bs");
+  await expect(unica).toContainText("300,50 Bs");
+  await expect(unica.getByText("Según evaluación")).toHaveCount(3);
+  await editar.click();
+  await expect(precios.getByLabel("Compactos")).toHaveValue("250");
+  await expect(precios.getByLabel("Vagonetas medianas")).toHaveAttribute("placeholder", "Según evaluación");
 
   // Sin cambios no se escribe nada
-  await unica.getByRole("button", { name: "Guardar precios de Única" }).click();
+  await precios.getByRole("button", { name: "Guardar precios" }).click();
   await expect(page.getByText("No había cambios.")).toBeVisible();
 
   // Un cambio agrega una fila y no toca la anterior (D-3)
-  await unica.getByLabel("Compactos").fill("280");
-  await unica.getByRole("button", { name: "Guardar precios de Única" }).click();
+  await editar.click();
+  await precios.getByLabel("Compactos").fill("280");
+  await precios.getByRole("button", { name: "Guardar precios" }).click();
   await expect.poll(() => filasDePrecio(id, "Compactos")).toEqual(["250.00", "280.00"]);
+  await expect(unica).toContainText("280 Bs");
 
-  // El historial: anterior, nuevo, fecha y quién
-  await unica.getByRole("button", { name: "Ver historial" }).click();
+  // El historial, dentro de la edición: anterior, nuevo, fecha y quién
+  await editar.click();
+  await precios.getByRole("button", { name: "Ver historial" }).click();
   const cambios = page.getByRole("dialog").getByRole("list", { name: "Cambios de precio" });
   await expect(cambios.getByRole("listitem").first()).toContainText("Compactos");
   await expect(cambios.getByRole("listitem").first()).toContainText("250 Bs → 280 Bs");
@@ -161,16 +198,13 @@ test("el dueño carga precios por tamaño; vacío es según evaluación y cada c
   await expect(cambios).toContainText("Sin cargar → 250 Bs");
   await page.keyboard.press("Escape");
 
-  // Duración propia de la variante
-  await unica.getByLabel("Duración propia").fill("2");
-  await unica.getByRole("button", { name: "Guardar precios de Única" }).click();
-  // El aviso del guardado anterior puede seguir a la vista: se espera el dato en la base
+  // Duración propia de la variante: en lectura, solo si es distinta de la del servicio
+  await precios.getByLabel("Duración propia").fill("2");
+  await precios.getByRole("button", { name: "Guardar precios" }).click();
   await expect.poll(() => consultar<{ d: number | null }>("select duracion_dias as d from variante where servicio_id = $1", [id])).toEqual([{ d: 2 }]);
-  await page.reload();
-  await expect(unica.getByLabel("Duración propia")).toHaveValue("2");
+  await expect(unica).toContainText("Ocupa 2 días.");
 
-  // En la lista, ya no le faltan precios
+  // En la lista ya no dice que le faltan precios
   await page.goto("/panel/catalogo");
-  await expect(page.getByRole("list", { name: "Servicios del catálogo" }).getByRole("link", { name: new RegExp(nombre) })).toContainText("Precios completos");
+  await expect(page.getByRole("list", { name: "Servicios del catálogo" }).getByRole("link", { name: new RegExp(nombre) })).not.toContainText("Falta");
 });
-
