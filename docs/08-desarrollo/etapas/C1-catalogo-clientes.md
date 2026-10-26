@@ -131,15 +131,15 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel (44 px c
 - Estado vacío: no ocurre (siempre hay servicios); si no hay tamaños activos, un aviso que lleva a Configuración > Taller.
 
 ### `/panel/catalogo/[id]` — Precios de un servicio (ficha en lectura desde el pulido 7.3, 25/10; skill `pantallas-panel`)
-- `EnlaceVolver` a Catálogo. Encabezado compartido: el nombre del servicio, una insignia ("En el sitio", "Oculto en el sitio" o "Inactivo") y "Su página en el sitio" (enlace a Sitio web). Tres secciones en lectura, cada una con "Editar" que abre su formulario en el lugar; una abierta a la vez (las demás esconden "Editar" hasta guardar o cancelar). En la computadora, dos columnas como la orden: los precios a la izquierda y datos y variantes en un recuadro a la derecha. Recién creado y sin precios, se abre en los de su primera variante.
-- **Precios** (primero: es lo que se consulta): por cada variante activa, sus montos por tamaño en lectura (en el celular, una lista de precios; desde 640 px, una grilla de tres columnas), "Sin cargar" resaltado y "Según evaluación" con palabras. "Editar" abre su formulario ("Guardar precios" y "Cancelar"):
+- `EnlaceVolver` a Catálogo. Encabezado compartido: el nombre del servicio, una insignia ("En el sitio", "Oculto en el sitio" o "Inactivo") y "Su página en el sitio" (enlace a Sitio web). Ficha en lectura (pulido 7.3, 26/10): cada sección es un recuadro con su "Editar", que abre su formulario en un modal (en el celular, una hoja desde abajo con los botones fijos). Recién creado y sin precios, se abre el modal de los de su primera variante.
+- **Precios** (primero: es lo que se consulta): un recuadro por variante activa (dos por fila en la computadora), con sus montos por tamaño como lista de precios (el tamaño a la izquierda, el monto a la derecha), "Sin cargar" resaltado y "Según evaluación" con palabras. "Editar" abre el modal "Precios de {variante}" ("Guardar precios" y "Cancelar"):
   - Una línea de ayuda: "Vacío: «Según evaluación», cuando depende de ver el vehículo."
   - Un campo en Bs por tamaño activo, con el nombre del tamaño. El campo vacío dice "Según evaluación" o, si nunca se guardó, "Sin cargar". Los modelos de ejemplo de cada tamaño están en Configuración > Taller (ya no se repiten aquí).
   - Duración propia opcional ("Vacío: usa la del servicio (2 días)."); en lectura se ve solo si es distinta ("Ocupa 2 días.").
-  - En el celular, un campo por renglón; desde 640 px, una grilla de dos o tres columnas.
-  - "Ver historial", dentro de la edición, abre un diálogo con los cambios: tamaño, monto anterior → nuevo, fecha y hora de Bolivia y quién.
-- **Datos:** duración, mantenimiento y si está activo, en lectura. "Editar" abre el formulario: nombre, duración estimada, "Genera recordatorio de mantenimiento" y "Activo en el catálogo" ("Guardar datos" y "Cancelar").
-- **Variantes:** en lectura, sus nombres en una línea (y cuántas desactivadas). "Editar" abre la lista para agregar, renombrar, ordenar y desactivar (cada cambio se guarda al momento; se cierra con "Listo"). Las variantes inactivas no tienen precios en la ficha (conservan los suyos).
+  - Una fila por tamaño, como la lectura: el nombre a la izquierda y el campo en Bs a la derecha, en todos los tamaños de pantalla.
+  - "Ver historial", arriba en el modal de precios, abre un diálogo con los cambios: tamaño, monto anterior → nuevo, fecha y hora de Bolivia y quién.
+- **Datos** (debajo de los precios, al lado de Variantes): duración, mantenimiento y si está activo, en lectura. "Editar" abre el modal "Datos del servicio": nombre, duración estimada, "Genera recordatorio de mantenimiento" y "Activo en el catálogo" ("Guardar datos" y "Cancelar").
+- **Variantes:** en lectura, sus nombres en una línea (y cuántas desactivadas). "Editar" abre el modal "Variantes" con la lista para agregar, renombrar, ordenar y desactivar (cada cambio se guarda al momento; se cierra con "Listo", que no aparece mientras una fila está abierta). Las variantes inactivas no tienen precios en la ficha (conservan los suyos).
 
 ### `/panel/clientes` — Clientes (dueño y encargado con "Clientes")
 - Arriba: buscador ("Buscar por nombre, teléfono o placa") y "Agregar cliente" (enlace con forma de botón, rojo).

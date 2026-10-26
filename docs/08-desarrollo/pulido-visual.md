@@ -962,31 +962,31 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Cambios** (propuesta aprobada el 25/10): `EncabezadoPagina`; la ayuda se acorta a "Como lo conocen los clientes."; el nombre empieza con el cursor puesto (`autoFocus`): es el único campo y en el celular el teclado aparece solo.
 - **Verificación:** capturas a 360, 390, 768 y 1280 px, con el foco visible en el campo. Comparativa en `pulido-visual/7.2-nuevo-servicio-celular.jpg`. La E2E de `base` que comprueba que un error devuelve el foco al campo ahora saca el foco antes de enviar (si no, pasaba sin probar nada).
 
-### 7.3 Servicio del catálogo (25/10/2026)
+### 7.3 Servicio del catálogo (25 y 26/10/2026)
 - **Inventario:**
 
   | Qué hay | Tarea | Quién y cada cuánto | Decisión |
   |---|---|---|---|
-  | Precios de cada variante (un formulario abierto por variante) | Consultar un precio; cambiarlo a veces | Dueño, seguido | Arriba y en lectura, con "Editar" por variante |
-  | Datos (nombre, duración, mantenimiento, activo) | Configurar el servicio | Dueño, rara vez | En lectura, con "Editar", en el recuadro de la derecha |
-  | Variantes (agregar, renombrar, ordenar, desactivar) | Cambiar la estructura | Rara vez | En lectura (sus nombres), con "Editar" que abre el editor |
-  | Historial de precios | Consultar | Rara vez | Dentro de la edición de precios |
+  | Precios de cada variante (un formulario abierto por variante) | Consultar un precio; cambiarlo a veces | Dueño, seguido | Arriba y en lectura, un recuadro por variante con "Editar" |
+  | Datos (nombre, duración, mantenimiento, activo) | Configurar el servicio | Dueño, rara vez | En lectura, con "Editar" |
+  | Variantes (agregar, renombrar, ordenar, desactivar) | Cambiar la estructura | Rara vez | En lectura (sus nombres), con "Editar" |
+  | Historial de precios | Consultar | Rara vez | Dentro del modal de precios |
   | Modelos de cada tamaño y párrafos de ayuda | Explicar | Casi nunca | Se van; queda una línea en el formulario de precios |
 - **Encontrado:**
   - **5.032 px de alto en el celular** (unas siete pantallas): el formulario de datos y uno de precios por variante, todos abiertos; con las cinco variantes del cerámico, 25 campos y **seis botones rojos de guardar** a la vista.
   - Para consultar un precio, lo que más se hace aquí, había que leer formularios.
   - Párrafos de ayuda en cada sección, "Ver los modelos de cada tamaño" (ya están en Configuración) y la lista de variantes repetida al final.
   - El estado en el sitio era una frase gris con un enlace subrayado; en la orden es una insignia y un botón.
-  - En la computadora, todo en una columna larga; la orden usa dos.
-- **Cambios** (propuesta aprobada el 25/10):
-  - **Ficha en lectura:** precios, datos y variantes como texto, cada sección con **"Editar"** que abre su formulario en el lugar ("Guardar precios" o "Guardar datos" y "Cancelar"; "Listo" en las variantes, que se guardan fila por fila). **Una sección abierta a la vez:** las demás esconden su "Editar" hasta guardar o cancelar, así nada de lo escrito se pierde. Al guardar vuelve a lectura con el dato nuevo y el foco en "Editar".
-  - **Precios en lectura** (`PreciosVariante`): en el celular, una lista de precios (el tamaño a la izquierda, el monto a la derecha); desde 640 px, una grilla de tres columnas. "Sin cargar" en aviso, "Según evaluación" con palabras, la duración propia solo si es distinta.
-  - **Como la orden:** en la computadora, dos columnas (los precios a la izquierda; datos y variantes en un recuadro a la derecha; sin `sticky`: con un formulario abierto más alto que la pantalla, su botón quedaba fuera de la vista). Encabezado con la insignia de estado ("En el sitio", "Oculto en el sitio" o "Inactivo") y "Su página en el sitio" como botón de contorno.
-  - Recién creado y todavía sin precios, la ficha se abre en los de su primera variante con "Servicio creado. Carga sus precios."
-  - **Componentes:** `SeccionEditable` y `FichaEditable` (nuevos, `seccion-editable.tsx`: la sección con Editar y una abierta a la vez; los reutilizan las demás fichas), `EncabezadoPagina` con el estado junto al título, `ListaEditable` sin su encabezado cuando la contiene una sección.
+- **Primera versión (25/10), descartada en la revisión del 26/10:** edición en el lugar con una sección abierta a la vez, y en la computadora un recuadro angosto a la derecha. El desarrollador vio desorden: el recuadro de datos no alineaba con los precios (arrancaba a la altura del título "Precios"), tres estilos de título, siete botones "Editar" con borde, la grilla de precios con montos a distintas alturas, y la página que saltaba al editar.
+- **Cambios** (propuesta aprobada el 26/10):
+  - **Un solo sistema por sección:** título (Barlow) fuera del recuadro y "Editar" sin borde en su misma fila; el recuadro debajo. Cada variante es un recuadro con su nombre y su "Editar" en la cabecera. Datos y Variantes debajo de los precios, lado a lado, del mismo alto.
+  - **"Editar" abre un modal** ("Precios de 1 año", "Datos del servicio", "Variantes") con el formulario y "Guardar …" y "Cancelar" (o "Listo") al pie. En el celular es una hoja desde abajo con los botones fijos. La página no salta ni cambia mientras se edita; el foco va al primer campo al abrir y vuelve a "Editar" al cerrar. "Ver historial" va arriba en el modal de precios (consulta, no guarda). El formulario de precios, como la lectura: una fila por tamaño (el nombre a la izquierda y el campo en Bs, de ancho fijo, a la derecha); en una grilla, los nombres largos movían los campos de altura y de ancho.
+  - **Precios en lectura** como lista en todos los tamaños de pantalla: el tamaño a la izquierda y el monto a la derecha, en columna aunque el nombre del tamaño ocupe dos líneas. En la computadora, dos recuadros por fila.
+  - Encabezado compartido con la insignia ("En el sitio", "Oculto en el sitio" o "Inactivo") y "Su página en el sitio" como botón de contorno. Recién creado y sin precios, se abre el modal de los de su primera variante.
+  - **Componentes:** `SeccionConEditar` (nuevo, `seccion-con-editar.tsx`: título, "Editar", recuadro de lectura y modal con el formulario; `useCerrarSeccion`, `PieSeccion` y `CancelarSeccion` para el formulario) reemplaza a `SeccionEditable`, que se borra con su regla de "una abierta a la vez" (el modal ya lo es). Lo reutilizan las demás fichas.
 - **Verificación:**
-  - **2.184 px en el celular (−57 %)** y 1.458 en la computadora (−57 %). Capturas a 360, 390, 768 y 1280 px en lectura y con cada sección abierta; el foco al abrir y al cerrar. Comparativas en `pulido-visual/7.3-servicio-catalogo-celular.jpg` y `7.3-servicio-catalogo-computadora.jpg`.
-  - E2E `hu-19-20` con el flujo nuevo (editar, guardar, volver a lectura con el dato y el foco, una sección a la vez, "Listo"); la página pública se renueva en segundo plano en unos segundos y la prueba la visita hasta ver el cambio (`enElSitio`). `hu-07` ajustada.
+  - **2.226 px en el celular (−56 %)** y 1.384 en la computadora (−59 %). Capturas a 360, 390, 768 y 1280 px en lectura y con cada modal abierto (hoja en el celular); el foco en el primer campo al abrir (también el que se abre solo al crear) y de vuelta en "Editar" al cerrar. Comparativas en `pulido-visual/7.3-servicio-catalogo-celular.jpg` y `7.3-servicio-catalogo-computadora.jpg`.
+  - E2E `hu-19-20` con los modales (editar, guardar, cerrar y volver a lectura con el dato y el foco; "Listo" no aparece con una variante a medio escribir); la página pública se renueva en segundo plano en unos segundos y la prueba la visita hasta ver el cambio (`enElSitio`). `hu-07` cierra el modal de precios que abre la ficha recién creada.
   - La especificación C1 (§5 y §8) quedó al día.
 
 <!-- Plantilla:
