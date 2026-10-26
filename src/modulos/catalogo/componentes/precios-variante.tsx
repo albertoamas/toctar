@@ -1,6 +1,6 @@
 import type { Tamano } from "@/modulos/configuracion/consultas";
 import type { VarianteCatalogo } from "../consultas";
-import { mostrarMonto } from "../reglas";
+import { mostrarMonto, textoDias } from "../reglas";
 
 // HU-20: los precios de una variante en lectura, como se consultan casi siempre. En el celular, una lista de precios
 // (el tamaño a la izquierda y el monto alineado a la derecha, un renglón cada uno); desde 640 px, una grilla. Sin cargar
@@ -25,7 +25,7 @@ export function PreciosVariante({ variante: v, tamanos, duracionServicio }: { va
       </dl>
       {/* Solo si es distinta: la del servicio ya está en sus datos */}
       {v.duracionDias !== null && v.duracionDias !== duracionServicio && (
-        <p className="text-sm text-tinta-suave">Ocupa {v.duracionDias === 1 ? "1 día" : `${v.duracionDias} días`}.</p>
+        <p className="text-sm text-tinta-suave">Ocupa {textoDias(v.duracionDias)}.</p>
       )}
     </div>
   );

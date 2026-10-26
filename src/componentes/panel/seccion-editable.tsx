@@ -6,21 +6,29 @@ import { useHidratado } from "@/componentes/hidratado";
 import { Button } from "@/componentes/ui/button";
 
 // Fichas del panel en modo lectura (skill pantallas-panel, §2): cada sección muestra sus datos como texto y tiene
-// "Editar", que abre su formulario en el mismo lugar. Dentro de una FichaEditable, abrir una sección cierra la que
-// estaba abierta: hay un solo formulario a la vez y nunca una pared de botones de guardar.
+// "Editar", que abre su formulario en el mismo lugar. Dentro de una FichaEditable hay un solo formulario abierto a la
+// vez: mientras una sección está abierta, las demás esconden su "Editar" (se guarda o se cancela primero, así nada de lo
+// escrito se pierde y la pantalla muestra solo lo que se está haciendo).
 // El formulario cierra su sección al guardar con useCerrarSeccion, y pone "Cancelar" (o "Listo") al lado de su botón
 // con CancelarSeccion.
 
 /** El primer control que puede recibir el foco (uno deshabilitado, como "Subir" en la primera fila, no lo recibe). */
 const PRIMER_CONTROL = ["input:not([type=hidden])", "textarea", "select", "button"].map((c) => `${c}:not(:disabled)`).join(", ");
 
-const Ficha = createContext<{ abierta: string | null; abrir: (id: string | null) => void } | null>(null);
+type EstadoFicha = { abierta: string | null; abrir: (id: string) => void; cerrar: (id: string) => void };
+const Ficha = createContext<EstadoFicha | null>(null);
 const Seccion = createContext<{ cerrar: () => void } | null>(null);
 
 /** Agrupa las secciones de una ficha para que se abra una a la vez. `abierta`: la que empieza abierta. */
 export function FichaEditable({ abierta: inicial = null, children }: { abierta?: string | null; children: React.ReactNode }) {
-  const [abierta, abrir] = useState(inicial);
-  return <Ficha.Provider value={{ abierta, abrir }}>{children}</Ficha.Provider>;
+  const [abierta, setAbierta] = useState(inicial);
+  const valor: EstadoFicha = {
+    abierta,
+    abrir: setAbierta,
+    // Solo si sigue abierta esa: un guardado que termina tarde no cierra otra
+    cerrar: (id) => setAbierta((actual) => (actual === id ? null : actual)),
+  };
+  return <Ficha.Provider value={valor}>{children}</Ficha.Provider>;
 }
 
 type Props = {
@@ -40,20 +48,30 @@ export function SeccionEditable({ id, titulo, nivel = 2, etiquetaEditar, lectura
   const ficha = useContext(Ficha);
   const [sola, setSola] = useState(false);
   const abierta = ficha ? ficha.abierta === id : sola;
-  const abrir = (si: boolean) => (ficha ? ficha.abrir(si ? id : null) : setSola(si));
+  // Otra sección de la ficha está abierta: esta no ofrece editar hasta que aquella se guarde o se cancele
+  const otraAbierta = !!ficha && ficha.abierta !== null && !abierta;
   const hidratado = useHidratado();
   const contenido = useRef<HTMLDivElement>(null);
   const boton = useRef<HTMLButtonElement>(null);
-  // Al abrir, el foco va al primer campo; al cerrar (guardar o cancelar), vuelve a "Editar". No en la primera pintura
-  const primera = useRef(true);
+
+  // El foco: al abrir, al primer campo; al cerrarse esta misma (guardar o cancelar), de vuelta a su "Editar". Se compara
+  // con el estado anterior y no con una marca de "primera vez": así el doble efecto del modo estricto no mueve el foco
+  const anterior = useRef(abierta);
+  const cerroSola = useRef(false);
   useEffect(() => {
-    if (primera.current) {
-      primera.current = false;
-      if (!abierta) return;
-    }
+    if (anterior.current === abierta) return;
+    anterior.current = abierta;
     if (abierta) contenido.current?.querySelector<HTMLElement>(PRIMER_CONTROL)?.focus();
-    else boton.current?.focus();
+    else if (cerroSola.current) boton.current?.focus();
+    cerroSola.current = false;
   }, [abierta]);
+
+  const abrir = () => (ficha ? ficha.abrir(id) : setSola(true));
+  const cerrar = () => {
+    cerroSola.current = true;
+    if (ficha) ficha.cerrar(id);
+    else setSola(false);
+  };
   const Titulo = nivel === 3 ? "h3" : "h2";
 
   return (
@@ -62,14 +80,14 @@ export function SeccionEditable({ id, titulo, nivel = 2, etiquetaEditar, lectura
         <Titulo id={`${id}-titulo`} className={nivel === 3 ? "text-lg font-semibold" : "font-heading text-2xl font-bold italic"}>
           {titulo}
         </Titulo>
-        {!abierta && (
-          <Button ref={boton} type="button" variant="outline" disabled={!hidratado} aria-label={etiquetaEditar} onClick={() => abrir(true)}>
+        {!abierta && !otraAbierta && (
+          <Button ref={boton} type="button" variant="outline" disabled={!hidratado} aria-label={etiquetaEditar} onClick={abrir}>
             <PencilIcon />
             Editar
           </Button>
         )}
       </div>
-      <div ref={contenido}>{abierta ? <Seccion.Provider value={{ cerrar: () => abrir(false) }}>{children}</Seccion.Provider> : lectura}</div>
+      <div ref={contenido}>{abierta ? <Seccion.Provider value={{ cerrar }}>{children}</Seccion.Provider> : lectura}</div>
     </section>
   );
 }

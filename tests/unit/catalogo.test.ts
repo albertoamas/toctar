@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
 import { nombreRepetido, puedeDesactivar } from "@/lib/orden";
 import { esquemaCrearServicio, esquemaDatosCatalogo, esquemaEstadoVariante, esquemaMoverVariante, esquemaVariante } from "@/modulos/catalogo/esquemas";
-import { clavePrecio, duracionEfectiva, leerMonto, mostrarMonto, preciosCambiados, preciosFaltantes, type Monto } from "@/modulos/catalogo/reglas";
+import { clavePrecio, duracionEfectiva, leerMonto, mostrarMonto, preciosCambiados, preciosFaltantes, textoDias, type Monto } from "@/modulos/catalogo/reglas";
 
 // C1 Catálogo: reglas de precios (RF-26, RF-28, D-3) y duración (RF-27).
 
@@ -100,4 +100,9 @@ describe("variantes (D-2)", () => {
     expect(esquemaMoverVariante.safeParse({ servicioId: 1, id: 2, direccion: "arriba" }).success).toBe(false);
     expect(esquemaMoverVariante.safeParse({ id: 2, direccion: "subir" }).success).toBe(false);
   });
+});
+
+test("la duración se lee en días, con singular", () => {
+  expect(textoDias(1)).toBe("1 día");
+  expect(textoDias(3)).toBe("3 días");
 });

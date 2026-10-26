@@ -15,10 +15,9 @@ import { FormularioPrecios } from "@/modulos/catalogo/componentes/formulario-pre
 import { PreciosVariante } from "@/modulos/catalogo/componentes/precios-variante";
 import { VariantesServicio } from "@/modulos/catalogo/componentes/variantes-servicio";
 import { obtenerServicioCatalogo } from "@/modulos/catalogo/consultas";
+import { textoDias } from "@/modulos/catalogo/reglas";
 
 export const metadata: Metadata = { title: "Servicio del catálogo" };
-
-const dias = (n: number) => (n === 1 ? "1 día" : `${n} días`);
 
 // HU-19 y HU-20: precios, datos y variantes de un servicio. Solo el dueño (RN-01). Una ficha en lectura (pulido 7.3,
 // skill pantallas-panel): primero los precios, que es lo que se consulta; cada sección se edita con "Editar", de a una.
@@ -43,8 +42,11 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
   if (!s) notFound();
   const activas = s.listaVariantes.filter((v) => v.activo);
   const desactivadas = s.listaVariantes.length - activas.length;
-  // Recién creado: se abre a cargar los precios de su primera variante, que es lo que falta
-  const abierta = creado && s.variantes[0] && s.tamanos.length > 0 ? `precios-${s.variantes[0].id}` : null;
+  // Recién creado y todavía sin precios: se abre a cargar los de su primera variante. Si ya los tiene (se recargó la
+  // página con ?creado=1 después de guardarlos), se ve como cualquier ficha
+  const primera = s.variantes[0];
+  const sinPrecios = !!primera && s.tamanos.length > 0 && s.tamanos.every((t) => primera.precios[t.id] === undefined);
+  const abierta = creado && sinPrecios ? `precios-${primera.id}` : null;
 
   return (
     <>
@@ -57,7 +59,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
           Su página en el sitio
         </Link>
       </div>
-      {creado && <AvisoEnPagina>Servicio creado. Carga sus precios.</AvisoEnPagina>}
+      {creado && sinPrecios && <AvisoEnPagina>Servicio creado. Carga sus precios.</AvisoEnPagina>}
 
       <FichaEditable abierta={abierta}>
         <div className="flex max-w-4xl flex-col gap-10">
@@ -97,7 +99,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
             lectura={
               <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2">
                 <dt className="text-tinta-suave">Duración</dt>
-                <dd>{dias(s.duracionDias)}</dd>
+                <dd>{textoDias(s.duracionDias)}</dd>
                 <dt className="text-tinta-suave">Mantenimiento</dt>
                 <dd>{s.generaMantenimiento ? "Genera recordatorio" : "No genera recordatorio"}</dd>
                 <dt className="text-tinta-suave">Catálogo</dt>

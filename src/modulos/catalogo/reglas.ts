@@ -1,6 +1,9 @@
 // Reglas puras del catálogo (C1). Sin base ni servidor: las prueba tests/unit/catalogo.test.ts.
 // Especificación: docs/08-desarrollo/etapas/C1-catalogo-clientes.md §3 y §6.
 
+/** Una duración en días, como se lee: "1 día", "3 días". */
+export const textoDias = (n: number) => (n === 1 ? "1 día" : `${n} días`);
+
 /** Monto en Bs como lo guarda `numeric(10,2)`: "250.00". Nulo es "según evaluación". */
 export type Monto = string | null;
 

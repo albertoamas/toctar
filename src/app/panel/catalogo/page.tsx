@@ -7,6 +7,7 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { buttonVariants } from "@/componentes/ui/button";
 import { exigirModulo } from "@/lib/sesion";
 import { listarCatalogo } from "@/modulos/catalogo/consultas";
+import { textoDias } from "@/modulos/catalogo/reglas";
 
 export const metadata: Metadata = { title: "Catálogo y precios" };
 
@@ -46,7 +47,7 @@ async function Lista() {
               </span>
               <span className="flex flex-wrap gap-x-3 text-sm text-tinta-suave">
                 <span className="whitespace-nowrap">{s.variantes === 1 ? "1 variante" : `${s.variantes} variantes`}</span>
-                <span className="whitespace-nowrap">{s.duracionDias === 1 ? "1 día" : `${s.duracionDias} días`}</span>
+                <span className="whitespace-nowrap">{textoDias(s.duracionDias)}</span>
                 {/* Solo lo que falta (es lo que hay que cargar); completos no dice nada (pulido 7.1) */}
                 {s.activo && s.preciosFaltantes > 0 && (
                   <span className="font-semibold whitespace-nowrap text-tinta">{s.preciosFaltantes === 1 ? "Falta 1 precio" : `Faltan ${s.preciosFaltantes} precios`}</span>

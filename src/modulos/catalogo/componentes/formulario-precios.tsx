@@ -15,7 +15,7 @@ import type { EstadoFormulario } from "@/lib/formularios";
 import { guardarPreciosVariante, verHistorialPrecios } from "../acciones";
 import type { Tamano } from "@/modulos/configuracion/consultas";
 import type { CambioPrecio, VarianteCatalogo } from "../consultas";
-import { mostrarMonto, type Monto } from "../reglas";
+import { mostrarMonto, textoDias, type Monto } from "../reglas";
 
 // HU-20: precios de una variante por tamaño de vehículo y su duración propia. Se abre con "Editar" desde la ficha del
 // servicio (PreciosVariante, en lectura) y se cierra al guardar.
@@ -33,7 +33,6 @@ export function FormularioPrecios({ variante: v, tamanos, duracionServicio }: Pr
   const valores = estado.valores;
   const e = estado.errores ?? {};
   const prefijo = `variante-${v.id}`;
-  const dias = (n: number) => (n === 1 ? "1 día" : `${n} días`);
 
   return (
     <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-label={`Precios de ${v.nombre}`}>
@@ -61,7 +60,7 @@ export function FormularioPrecios({ variante: v, tamanos, duracionServicio }: Pr
         })}
       </div>
 
-      <Campo id={`${prefijo}-duracion`} etiqueta="Duración propia" error={e.duracionDias} ayuda={`Vacío: usa la del servicio (${dias(duracionServicio)}).`}>
+      <Campo id={`${prefijo}-duracion`} etiqueta="Duración propia" error={e.duracionDias} ayuda={`Vacío: usa la del servicio (${textoDias(duracionServicio)}).`}>
         <div className="flex items-center gap-2">
           <Input
             id={`${prefijo}-duracion`}
