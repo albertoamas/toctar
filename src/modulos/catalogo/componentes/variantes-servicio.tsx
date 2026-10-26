@@ -1,26 +1,33 @@
 "use client";
 
 import { ListaEditable, type ElementoLista } from "@/componentes/panel/lista-editable";
+import { CancelarSeccion } from "@/componentes/panel/seccion-editable";
 import { cambiarEstadoVariante, guardarVariante, moverVariante } from "../acciones";
 
-// HU-19: las variantes de un servicio (D-2): agregar, renombrar, ordenar y desactivar. Sus precios, más arriba en la
-// misma ficha.
+// HU-19: las variantes de un servicio (D-2): agregar, renombrar, ordenar y desactivar. Se abre con "Editar" desde la
+// ficha del servicio, que en lectura ya muestra sus nombres en los precios. Cada cambio se guarda al momento: la
+// sección se cierra con "Listo".
 
 export function VariantesServicio({ servicioId, variantes }: { servicioId: number; variantes: ElementoLista[] }) {
   return (
-    <ListaEditable
-      id="variantes"
-      titulo="Variantes"
-      descripcion="Las opciones que eligen los clientes, como los años del cerámico. Una variante nueva necesita sus precios. Se guardan al momento."
-      singular="variante"
-      campoDescripcion={{ etiqueta: "Descripción", ayuda: "Opcional. Se ve en la página del servicio.", ejemplo: "Capa más densa, más años de protección" }}
-      camposOcultos={{ servicioId }}
-      elementos={variantes}
-      acciones={{
-        guardar: guardarVariante,
-        mover: (id, direccion) => moverVariante({ servicioId, id, direccion }),
-        cambiarEstado: (id, activo) => cambiarEstadoVariante({ servicioId, id, activo }),
-      }}
-    />
+    <div className="flex flex-col gap-4">
+      <ListaEditable
+        id="variantes"
+        titulo="Variantes"
+        conEncabezado={false}
+        singular="variante"
+        campoDescripcion={{ etiqueta: "Descripción", ayuda: "Opcional. Se ve en la página del servicio.", ejemplo: "Capa más densa, más años de protección" }}
+        camposOcultos={{ servicioId }}
+        elementos={variantes}
+        acciones={{
+          guardar: guardarVariante,
+          mover: (id, direccion) => moverVariante({ servicioId, id, direccion }),
+          cambiarEstado: (id, activo) => cambiarEstadoVariante({ servicioId, id, activo }),
+        }}
+      />
+      <div>
+        <CancelarSeccion texto="Listo" />
+      </div>
+    </div>
   );
 }

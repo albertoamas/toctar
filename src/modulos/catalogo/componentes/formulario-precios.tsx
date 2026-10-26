@@ -5,6 +5,7 @@ import { HistoryIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
+import { CancelarSeccion, useCerrarSeccion } from "@/componentes/panel/seccion-editable";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
 import { Button } from "@/componentes/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/componentes/ui/dialog";
@@ -16,14 +17,17 @@ import type { Tamano } from "@/modulos/configuracion/consultas";
 import type { CambioPrecio, VarianteCatalogo } from "../consultas";
 import { mostrarMonto, type Monto } from "../reglas";
 
-// HU-20: precios de una variante por tamaño de vehículo y su duración propia. Un formulario por variante.
-
-const guardarConAviso = conAviso(guardarPreciosVariante);
+// HU-20: precios de una variante por tamaño de vehículo y su duración propia. Se abre con "Editar" desde la ficha del
+// servicio (PreciosVariante, en lectura) y se cierra al guardar.
 
 type Props = { variante: VarianteCatalogo; tamanos: Tamano[]; duracionServicio: number };
 
 export function FormularioPrecios({ variante: v, tamanos, duracionServicio }: Props) {
-  const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(guardarConAviso, {});
+  const cerrar = useCerrarSeccion();
+  const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
+    conAviso(guardarPreciosVariante, (r) => r.ok && cerrar()),
+    {},
+  );
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
   const valores = estado.valores;
@@ -32,9 +36,9 @@ export function FormularioPrecios({ variante: v, tamanos, duracionServicio }: Pr
   const dias = (n: number) => (n === 1 ? "1 día" : `${n} días`);
 
   return (
-    <form ref={formulario} action={accion} className="flex flex-col gap-5 rounded-sm border border-border p-4" noValidate aria-labelledby={`${prefijo}-titulo`}>
+    <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-label={`Precios de ${v.nombre}`}>
       <input type="hidden" name="varianteId" value={v.id} />
-      <h3 id={`${prefijo}-titulo`} className="text-lg font-semibold">{v.nombre}</h3>
+      <p className="text-sm text-tinta-suave">Vacío: «Según evaluación», cuando depende de ver el vehículo.</p>
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {tamanos.map((t) => {
@@ -75,8 +79,9 @@ export function FormularioPrecios({ variante: v, tamanos, duracionServicio }: Pr
 
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={enviando}>
-          {enviando ? "Guardando…" : `Guardar precios de ${v.nombre}`}
+          {enviando ? "Guardando…" : "Guardar precios"}
         </Button>
+        <CancelarSeccion />
         <Historial variante={v} />
       </div>
     </form>
