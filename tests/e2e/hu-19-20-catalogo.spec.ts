@@ -3,7 +3,7 @@ import { consultar, crearServicioPublicado, crearUsuario, ingresar, ingresarComo
 
 // HU-19 Catálogo con variantes y HU-20 Precios por tamaño y duración.
 // Especificación: docs/08-desarrollo/etapas/C1-catalogo-clientes.md §9. La ficha del servicio está en lectura y cada
-// sección se edita con "Editar", de a una (pulido 7.3, skill pantallas-panel).
+// recuadro se edita con "Editar", en un modal (pulido 7.3, skill pantallas-panel).
 // Cada proyecto (celular o escritorio) trabaja sobre su propio servicio, para no pisarse al correr en paralelo.
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "C" : "E");
@@ -45,41 +45,44 @@ test("el dueño marca el mantenimiento, cambia la duración y desactiva un servi
   await expect(page).toHaveURL(new RegExp(`/panel/catalogo/${id}$`));
   await abrirFicha(page, id);
 
-  // En lectura; "Editar" abre el formulario de los datos
+  // En lectura; "Editar" abre el formulario de los datos en un modal
   const datos = page.getByRole("region", { name: "Datos" });
   await expect(datos).toContainText("1 día");
   await expect(datos).toContainText("No genera recordatorio");
   const editar = page.getByRole("button", { name: "Editar datos del servicio" });
+  const modal = page.getByRole("dialog", { name: "Datos del servicio" });
   await editar.click();
   // Una duración fuera de rango se rechaza y el foco va al campo
-  await datos.getByLabel("Duración estimada").fill("0");
-  await datos.getByRole("button", { name: "Guardar datos" }).click();
-  await expect(page.getByText("Escribe los días, de 1 a 60.")).toBeVisible();
-  await expect(datos.getByLabel("Duración estimada")).toBeFocused();
+  await modal.getByLabel("Duración estimada").fill("0");
+  await modal.getByRole("button", { name: "Guardar datos" }).click();
+  await expect(modal.getByText("Escribe los días, de 1 a 60.")).toBeVisible();
+  await expect(modal.getByLabel("Duración estimada")).toBeFocused();
 
-  await datos.getByLabel("Duración estimada").fill("3");
-  await datos.getByText("Genera recordatorio de mantenimiento").click();
-  await datos.getByRole("button", { name: "Guardar datos" }).click();
+  await modal.getByLabel("Duración estimada").fill("3");
+  await modal.getByText("Genera recordatorio de mantenimiento").click();
+  await modal.getByRole("button", { name: "Guardar datos" }).click();
   await expect(page.getByText("Cambios guardados.")).toBeVisible();
-  // Guardado, vuelve a lectura con los datos nuevos y el foco en "Editar"
+  // Guardado, el modal se cierra, la lectura muestra los datos nuevos y el foco vuelve a "Editar"
+  await expect(modal).toHaveCount(0);
   await expect(datos).toContainText("3 días");
   await expect(datos).toContainText("Genera recordatorio");
   await expect(editar).toBeFocused();
 
   // Inactivo: no sale en el sitio (su página no existe) y queda marcado en el catálogo
   await editar.click();
-  await datos.getByText("Activo en el catálogo").click();
-  await datos.getByRole("button", { name: "Guardar datos" }).click();
+  await modal.getByText("Activo en el catálogo").click();
+  await modal.getByRole("button", { name: "Guardar datos" }).click();
+  await expect(modal).toHaveCount(0);
   await expect(page.getByRole("heading", { level: 1 }).locator("..")).toContainText("Inactivo");
   await enElSitio(page, slug, "No encontramos esta página");
 
   // Se reactiva: vuelve al sitio
   await abrirFicha(page, id);
   await editar.click();
-  await datos.getByText("Activo en el catálogo").click();
-  await datos.getByRole("button", { name: "Guardar datos" }).click();
-  // Guardado de verdad: el formulario se cerró (su etiqueta "Activo en el catálogo" también dice "Activo")
-  await expect(datos.getByRole("button", { name: "Guardar datos" })).toHaveCount(0);
+  await modal.getByText("Activo en el catálogo").click();
+  await modal.getByRole("button", { name: "Guardar datos" }).click();
+  // Guardado de verdad: el modal se cerró y la lectura dice "Activo"
+  await expect(modal).toHaveCount(0);
   await expect(datos).toContainText("Activo");
   await enElSitio(page, slug, nombre);
 });
@@ -98,24 +101,24 @@ test("las variantes se agregan, renombran y desactivan en el catálogo; una nuev
   await page.getByLabel("Nombre del servicio").fill(`Variantes de prueba ${sufijo(info)}`);
   await page.getByRole("button", { name: "Crear servicio" }).click();
   await expect(page.getByText("Servicio creado. Carga sus precios.")).toBeVisible();
-  // D-2: nace con la variante "Única", y la ficha se abre en sus precios, que es lo que falta, con el foco en el primero
-  await expect(page.getByRole("form", { name: "Precios de Única" }).getByLabel("Compactos")).toBeFocused();
+  // D-2: nace con la variante "Única", y la ficha se abre en el modal de sus precios, con el foco en el primero
+  const preciosUnica = page.getByRole("dialog", { name: "Precios de Única" });
+  await expect(preciosUnica.getByLabel("Compactos")).toBeFocused();
+  await preciosUnica.getByRole("button", { name: "Cancelar" }).click();
 
-  // Una sección a la vez: mientras los precios están abiertos, las demás no ofrecen editar (nada de lo escrito se pierde)
-  await page.waitForLoadState("networkidle");
-  await expect(page.getByRole("button", { name: "Editar variantes" })).toHaveCount(0);
-  await page.getByRole("form", { name: "Precios de Única" }).getByRole("button", { name: "Cancelar" }).click();
-  await page.getByRole("button", { name: "Editar variantes" }).click();
-  const variantes = page.getByRole("region", { name: "Variantes" });
+  const variantes = page.getByRole("dialog", { name: "Variantes" });
   const activas = variantes.getByRole("list", { name: "Variantes activos" });
+  await page.getByRole("button", { name: "Editar variantes" }).click();
   await expect(activas).toContainText("Única");
-
   await variantes.getByRole("button", { name: "Agregar variante" }).click();
   await variantes.getByLabel("Nombre del variante").fill("Premium");
   await variantes.getByRole("button", { name: "Agregar", exact: true }).click();
   await expect(page.getByText("Variante Premium agregada.")).toBeVisible();
-  // La nueva ya tiene sus precios, sin cargar
+  await variantes.getByRole("button", { name: "Listo" }).click();
+  // La nueva ya tiene sus precios en la ficha, sin cargar
   await expect(page.getByRole("region", { name: "Premium" })).toContainText("Sin cargar");
+
+  await page.getByRole("button", { name: "Editar variantes" }).click();
   await variantes.getByRole("button", { name: "Editar Única" }).click();
   await variantes.getByLabel("Nombre del variante").fill("Básico");
   await variantes.getByRole("button", { name: "Guardar", exact: true }).click();
@@ -125,17 +128,17 @@ test("las variantes se agregan, renombran y desactivan en el catálogo; una nuev
   await variantes.getByRole("button", { name: "Editar Premium" }).click();
   await variantes.getByRole("button", { name: "Desactivar Premium" }).click();
   await expect(page.getByText("Premium desactivada.")).toBeVisible();
-  await expect(page.getByRole("region", { name: "Premium" })).toHaveCount(0);
   await variantes.getByRole("button", { name: "Editar Básico" }).click();
   // Con una fila abierta, "Listo" no está: lo escrito sin guardar se perdería
   await expect(variantes.getByRole("button", { name: "Listo" })).toHaveCount(0);
   await variantes.getByRole("button", { name: "Desactivar Básico" }).click();
   await expect(page.getByText(/Debe quedar al menos una variante activa/)).toBeVisible();
 
-  // "Listo" la cierra: en lectura, los nombres
+  // "Listo" cierra el modal: en lectura, los nombres, y la desactivada ya no tiene precios en la ficha
   await variantes.getByRole("button", { name: "Cancelar" }).click();
   await variantes.getByRole("button", { name: "Listo" }).click();
-  await expect(variantes).toContainText("Básico (1 desactivada)");
+  await expect(page.getByRole("region", { name: "Variantes" })).toContainText("Básico (1 desactivada)");
+  await expect(page.getByRole("region", { name: "Premium" })).toHaveCount(0);
 });
 
 test("el encargado, aun con todos sus permisos, y el técnico no entran al catálogo", async ({ page }, info) => {
@@ -171,7 +174,7 @@ test("el dueño carga precios por tamaño; vacío es según evaluación y cada c
   const unica = page.getByRole("region", { name: "Única" });
   await expect(unica.getByText("Sin cargar")).toHaveCount(5);
   const editar = unica.getByRole("button", { name: "Editar precios de Única" });
-  const precios = page.getByRole("form", { name: "Precios de Única" });
+  const precios = page.getByRole("dialog", { name: "Precios de Única" });
 
   // Un monto con separador de miles se rechaza, con el foco en el campo
   await editar.click();

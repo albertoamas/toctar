@@ -27,6 +27,8 @@ test("el dueño crea el servicio en el catálogo y completa su página: benefici
   await expect(page.getByText("Servicio creado.")).toBeVisible();
   // Nace oculto en el sitio, hasta que se complete su página
   await expect(page.getByText("Oculto en el sitio", { exact: true })).toBeVisible();
+  // Recién creado se abre el modal de sus precios (es lo que falta cargar): se cierra para ir a su página
+  await page.getByRole("dialog", { name: "Precios de Única" }).getByRole("button", { name: "Cancelar" }).click();
   await page.getByRole("link", { name: "Su página en el sitio" }).click();
   await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+$/);
   await expect(page.getByLabel("Dirección de la página")).toHaveValue(`encerado-de-prueba-${sufijo(info)}`);
