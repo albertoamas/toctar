@@ -6,13 +6,14 @@ import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDuen
 // espacios. En serie: las del dueño entran con el mismo usuario y, a la vez, chocaban con el límite de intentos.
 test.describe.configure({ mode: "serial" });
 
-const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "C" : "E");
-const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 1 : 2}3000${n}0`;
+// Datos propios de cada proyecto y de cada intento: si el CI reintenta una prueba, no choca con lo que dejó la anterior
+const sufijo = (info: TestInfo) => `${info.project.name === "celular" ? "C" : "E"}${info.retry || ""}`;
+const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 1 : 2}30${info.retry}0${n}0`;
 
-/** Un día propio de cada prueba: dentro de 100 a 300 días, según el proyecto y el número de prueba. */
+/** Un día propio de cada prueba: dentro de 100 a 300 días, según el proyecto y el número de prueba (y el intento). */
 async function diaPropio(info: TestInfo, n: number): Promise<string> {
   const [{ dia }] = await consultar<{ dia: string }>("select to_char(current_date + $1::int, 'YYYY-MM-DD') as dia", [
-    (info.project.name === "celular" ? 100 : 200) + n * 5,
+    (info.project.name === "celular" ? 100 : 200) + n * 5 + info.retry * 2000,
   ]);
   return dia;
 }
@@ -167,9 +168,11 @@ test("solo se ofrecen los espacios libres; si dos personas agendan el mismo a la
   await abrir(otra.page, b.cotizacionId);
   // A la vez
   await Promise.all([page.getByRole("button", { name: "Agendar" }).click(), otra.page.getByRole("button", { name: "Agendar" }).click()]);
+  // Lo que ve cada persona: la redirección de la acción es una navegación interna (sin evento "load"), y esperar la
+  // dirección con waitForURL a veces no terminaba aunque la reserva ya se mostraba (CI, 25/10)
   const resultado = async (p: Page) =>
     Promise.race([
-      p.waitForURL(/\?agendada=1$/).then(() => "agendada"),
+      p.getByText(/^Reserva agendada para el /).waitFor().then(() => "agendada"),
       p.getByText("Ese espacio se ocupó recién: elige otro.").waitFor().then(() => "ocupado"),
     ]);
   expect((await Promise.all([resultado(page), resultado(otra.page)])).sort()).toEqual(["agendada", "ocupado"]);
@@ -194,7 +197,12 @@ test("reserva directa: cliente y vehículo registrados, servicio del catálogo c
   await page.goto("/panel/agenda");
   await page.getByRole("link", { name: "Nueva reserva" }).click();
   await page.getByLabel("Buscar por nombre, teléfono o placa").fill(`DI30${s}6`);
-  await page.getByRole("list", { name: "Elegir cliente" }).getByRole("link", { name: new RegExp(`Directa ${s}`) }).click();
+  // La búsqueda va a la dirección (?q=) un momento después de escribir y la lista se vuelve a armar: un toque antes de
+  // eso caía en la lista vieja y se perdía (CI del PR #95). Se toca cuando la búsqueda ya está aplicada
+  await expect(page).toHaveURL(new RegExp(`q=DI30${s}6`));
+  const elegir = page.getByRole("list", { name: "Elegir cliente" });
+  await expect(elegir.getByRole("link")).toHaveCount(1);
+  await elegir.getByRole("link", { name: new RegExp(`Directa ${s}`) }).click();
   await expect(page).toHaveURL(new RegExp(`cliente=${clienteId}`));
   // Con un solo vehículo, no hace falta elegirlo
   await page.getByRole("button", { name: "Agregar servicio" }).click();
