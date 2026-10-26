@@ -1,5 +1,20 @@
+import { cantidad } from "@/lib/cantidad";
+
 // Reglas puras del catálogo (C1). Sin base ni servidor: las prueba tests/unit/catalogo.test.ts.
 // Especificación: docs/08-desarrollo/etapas/C1-catalogo-clientes.md §3 y §6.
+
+/** Una duración en días, como se lee: "1 día", "3 días". */
+export const textoDias = (n: number) => cantidad(n, "día", "días");
+
+/**
+ * El precio más bajo de un servicio, para la lista del catálogo ("Desde 700 Bs"): el menor de sus montos vigentes.
+ * "Según evaluación" (null) cuenta solo si todos lo son; sin ningún precio cargado, undefined.
+ */
+export function precioDesde(montos: readonly Monto[]): Monto | undefined {
+  if (montos.length === 0) return undefined;
+  const conMonto = montos.filter((m): m is string => m !== null);
+  return conMonto.length === 0 ? null : conMonto.reduce((menor, m) => (Number(m) < Number(menor) ? m : menor));
+}
 
 /** Monto en Bs como lo guarda `numeric(10,2)`: "250.00". Nulo es "según evaluación". */
 export type Monto = string | null;

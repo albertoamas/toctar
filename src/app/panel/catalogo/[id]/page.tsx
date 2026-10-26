@@ -2,18 +2,29 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { cn } from "cn";
+import { GlobeIcon } from "lucide-react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
+import { buttonVariants } from "@/componentes/ui/button";
+import { cantidad } from "@/lib/cantidad";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioDatosCatalogo } from "@/modulos/catalogo/componentes/formulario-datos-catalogo";
 import { FormularioPrecios } from "@/modulos/catalogo/componentes/formulario-precios";
+import { PreciosVariante } from "@/modulos/catalogo/componentes/precios-variante";
 import { VariantesServicio } from "@/modulos/catalogo/componentes/variantes-servicio";
 import { obtenerServicioCatalogo } from "@/modulos/catalogo/consultas";
+import { textoDias } from "@/modulos/catalogo/reglas";
 
 export const metadata: Metadata = { title: "Servicio del catálogo" };
 
-// HU-19 y HU-20: nombre, duración, mantenimiento, estado, precios y variantes de un servicio. Solo el dueño (RN-01).
+// HU-19 y HU-20: datos, variantes y precios de un servicio. Solo el dueño (RN-01). Una ficha en lectura (pulido 7.3,
+// skill pantallas-panel): arriba, datos y variantes lado a lado (el contexto en pocas líneas: cuánto dura y qué
+// variantes tiene); debajo, los precios, un recuadro por variante en ese orden (de a dos en la computadora). Cada
+// recuadro se edita con "Editar", en un modal.
 // Su página en el sitio (textos y foto) se edita en Sitio web: el enlace lleva ahí.
 export default function PaginaServicioCatalogo({ params, searchParams }: PageProps<"/panel/catalogo/[id]">) {
   return (
@@ -33,60 +44,95 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
   if (!Number.isInteger(numero) || numero <= 0) notFound();
   const s = await obtenerServicioCatalogo(numero);
   if (!s) notFound();
+  // s.variantes son las activas (con sus precios); listaVariantes, todas
+  const desactivadas = s.listaVariantes.length - s.variantes.length;
+  // Recién creado y todavía sin precios: se abren los de su primera variante. Si ya los tiene (se recargó la página con
+  // ?creado=1 después de guardarlos), se ve como cualquier ficha
+  const primera = s.variantes[0];
+  const sinPrecios = !!primera && s.tamanos.length > 0 && s.tamanos.every((t) => primera.precios[t.id] === undefined);
+  const cargarPrecios = !!creado && sinPrecios;
 
   return (
-    <>
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="font-heading text-4xl font-extrabold italic">{s.nombre}</h1>
-        {!s.activo && <span className="tt-insignia">Inactivo</span>}
-      </div>
-      {creado && <AvisoEnPagina>Servicio creado. Carga sus precios; su página en el sitio se completa en Sitio web.</AvisoEnPagina>}
-      <p className="flex flex-wrap items-center gap-x-2 text-sm">
-        {/* Sale en el sitio si está activo y su página se muestra (publico.ts pide las dos) */}
-        <span className="text-tinta-suave">
-          {!s.activo ? "Inactivo: no sale en el sitio." : s.visibleSitio ? "Se muestra en el sitio." : "Oculto en el sitio."}
-        </span>
-        <Link href={`/panel/sitio/servicios/${s.id}`} className="inline-flex min-h-11 items-center font-semibold underline">
-          Editar su página en el sitio
-        </Link>
-      </p>
-      <div className="flex max-w-4xl flex-col gap-12">
-        <div className="max-w-2xl">
+    <div className="flex max-w-5xl flex-col gap-8">
+      <EncabezadoPagina
+        titulo={s.nombre}
+        // Sale en el sitio si está activo y su página se muestra (publico.ts pide las dos)
+        estado={<span className="tt-insignia">{!s.activo ? "Inactivo" : s.visibleSitio ? "En el sitio" : "Oculto en el sitio"}</span>}
+        accion={
+          <Link href={`/panel/sitio/servicios/${s.id}`} className={cn(buttonVariants({ variant: "outline" }))}>
+            <GlobeIcon />
+            Su página en el sitio
+          </Link>
+        }
+      />
+      {cargarPrecios && <AvisoEnPagina>Servicio creado. Carga sus precios.</AvisoEnPagina>}
+
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-2 md:gap-4">
+        <SeccionConEditar
+          id="datos"
+          titulo="Datos"
+          etiquetaEditar="Editar datos del servicio"
+          tituloModal="Datos del servicio"
+          lectura={
+            <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2">
+              <dt className="text-tinta-suave">Duración</dt>
+              <dd>{textoDias(s.duracionDias)}</dd>
+              <dt className="text-tinta-suave">Mantenimiento</dt>
+              <dd>{s.generaMantenimiento ? "Genera recordatorio" : "No genera recordatorio"}</dd>
+              <dt className="text-tinta-suave">Catálogo</dt>
+              <dd>{s.activo ? "Activo" : "Inactivo: no se cotiza ni sale en el sitio"}</dd>
+            </dl>
+          }
+        >
           <FormularioDatosCatalogo servicio={{ id: s.id, nombre: s.nombre, duracionDias: s.duracionDias, generaMantenimiento: s.generaMantenimiento, activo: s.activo }} />
-        </div>
-        <section aria-labelledby="precios-titulo" className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <h2 id="precios-titulo" className="font-heading text-2xl font-bold italic">Precios por tamaño</h2>
-            <p className="text-sm text-tinta-suave">
-              Deja vacío el precio que depende de ver el vehículo: sale como «Según evaluación». Cada cambio queda en el historial con la
-              fecha y quién lo hizo; las cotizaciones ya enviadas no cambian.
+        </SeccionConEditar>
+        <SeccionConEditar
+          id="variantes-seccion"
+          titulo="Variantes"
+          etiquetaEditar="Editar variantes"
+          tituloModal="Variantes"
+          lectura={
+            <p>
+              {s.variantes.length === 0 ? "Sin variantes: agrega al menos una." : new Intl.ListFormat("es").format(s.variantes.map((v) => v.nombre))}
+              {desactivadas > 0 && <span className="text-tinta-suave"> ({cantidad(desactivadas, "desactivada", "desactivadas")})</span>}
             </p>
-          </div>
-          {/* Los modelos de ejemplo, una sola vez y no en cada variante (antes se repetían y alargaban la página) */}
-          {s.tamanos.length > 0 && (
-            <details className="text-sm">
-              <summary className="cursor-pointer py-3 font-semibold">Ver los modelos de cada tamaño</summary>
-              <dl className="flex flex-col gap-2 pb-2">
-                {s.tamanos.map((t) => (
-                  <div key={t.id}>
-                    <dt className="font-semibold">{t.nombre}</dt>
-                    <dd className="text-tinta-suave">{t.descripcion ?? "Sin modelos de ejemplo."}</dd>
-                  </div>
-                ))}
-              </dl>
-            </details>
-          )}
-          {s.tamanos.length === 0 ? (
-            <p className="text-sm text-tinta-suave">
-              No hay tamaños de vehículo activos.{" "}
-              <Link href="/panel/configuracion/taller" className="font-semibold text-tinta underline">Agrégalos en Configuración</Link>.
-            </p>
-          ) : (
-            s.variantes.map((v) => <FormularioPrecios key={v.id} variante={v} tamanos={s.tamanos} duracionServicio={s.duracionDias} />)
-          )}
-        </section>
-        <VariantesServicio servicioId={s.id} variantes={s.listaVariantes} />
+          }
+        >
+          <VariantesServicio servicioId={s.id} variantes={s.listaVariantes} />
+        </SeccionConEditar>
       </div>
-    </>
+
+      <section aria-labelledby="precios-titulo" className="flex flex-col gap-3">
+        <h2 id="precios-titulo" className="flex min-h-11 items-center font-heading text-2xl font-bold italic">
+          Precios
+        </h2>
+        {s.tamanos.length === 0 ? (
+          <p className="text-tinta-suave">
+            Faltan los tamaños de vehículo.{" "}
+            <Link href="/panel/configuracion/taller" className="font-semibold text-tinta underline">
+              Agrégalos en Configuración
+            </Link>
+            .
+          </p>
+        ) : (
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
+            {s.variantes.map((v) => (
+              <SeccionConEditar
+                key={v.id}
+                id={`precios-${v.id}`}
+                titulo={v.nombre}
+                nivel={3}
+                etiquetaEditar={`Editar precios de ${v.nombre}`}
+                tituloModal={`Precios de ${v.nombre}`}
+                abierta={cargarPrecios && v.id === primera.id}
+                lectura={<PreciosVariante variante={v} tamanos={s.tamanos} duracionServicio={s.duracionDias} />}
+              >
+                <FormularioPrecios variante={v} tamanos={s.tamanos} duracionServicio={s.duracionDias} />
+              </SeccionConEditar>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
   );
 }

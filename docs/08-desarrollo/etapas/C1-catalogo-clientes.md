@@ -126,19 +126,22 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel (44 px c
 
 ### `/panel/catalogo` — Catálogo y precios (solo el dueño)
 - Lista de servicios en el orden del sitio, los inactivos al final y atenuados.
-- Cada fila: nombre, variantes ("5 variantes"), duración ("2 días"), "Genera mantenimiento" si corresponde, y el estado de los precios: "Precios completos", "Faltan 7 precios" (pares variante y tamaño activos sin fila) o "Inactivo".
+- Cada fila (pulido 7.1, 25/10): el nombre; debajo, "Desde 700 Bs" (el menor de sus precios vigentes) o "Según evaluación"; en tinta suave, variantes ("5 variantes"), duración ("2 días") y "Con mantenimiento" si corresponde; "Faltan 7 precios" (pares variante y tamaño activos sin fila) en aviso, solo si faltan. "Inactivo" en los inactivos. Con flecha: la fila de un toque compartida (`ListaFilas`).
 - Toda la fila abre el servicio (como en Servicios del sitio y Reclamos).
+- "Agregar servicio" (arriba, rojo) abre el modal "Nuevo servicio" (desde el 26/10; antes, `/panel/catalogo/nuevo`, que redirige aquí): el nombre ("Como lo conocen los clientes.") con el cursor puesto, "Crear servicio" y "Cancelar". Al crear, lleva a la ficha del servicio, que abre el modal de los precios de su primera variante.
 - Estado vacío: no ocurre (siempre hay servicios); si no hay tamaños activos, un aviso que lleva a Configuración > Taller.
 
-### `/panel/catalogo/[id]` — Precios de un servicio
-- `EnlaceVolver` a Catálogo. Título: nombre del servicio, con "Inactivo" si corresponde.
-- **Datos del catálogo** (formulario propio, "Guardar"): duración estimada en días, "Genera recordatorio de mantenimiento" y "Activo en el catálogo" (desmarcado: no se cotiza ni sale en el sitio).
-- **Precios por tamaño** (un formulario por variante activa, "Guardar precios de <variante>"):
-  - Un campo en Bs por tamaño activo, con el nombre del tamaño. Vacío = según evaluación: el campo vacío dice "Según evaluación" o, si nunca se guardó, "Sin cargar". Los modelos de ejemplo de cada tamaño van una sola vez arriba, en "Ver los modelos de cada tamaño" (en cada variante alargaban mucho la página).
-  - Duración propia opcional: "Usa la del servicio (2 días)" si está vacía.
-  - En el celular, un tamaño por renglón; desde 768 px, una grilla de dos o tres columnas.
-  - "Ver historial" abre un diálogo con los cambios: tamaño, monto anterior → nuevo, fecha y hora de Bolivia y quién.
-- **Variantes:** texto "Las variantes se agregan, ordenan y desactivan en el sitio web." con enlace a Editar servicio. Las variantes inactivas no tienen formulario de precios (conservan los suyos).
+### `/panel/catalogo/[id]` — Precios de un servicio (ficha en lectura desde el pulido 7.3, 25/10; skill `pantallas-panel`)
+- `EnlaceVolver` a Catálogo. Encabezado compartido: el nombre del servicio, una insignia ("En el sitio", "Oculto en el sitio" o "Inactivo") y "Su página en el sitio" (enlace a Sitio web). Ficha en lectura (pulido 7.3, 26/10): cada sección es un recuadro con su "Editar", que abre su formulario en un modal (en el celular, una hoja desde abajo con los botones fijos). Recién creado y sin precios, se abre el modal de los de su primera variante.
+- **Datos** y **Variantes** primero, lado a lado y del mismo alto (en el celular, uno debajo del otro): lo que es el servicio antes que sus precios (revisión del 26/10).
+- **Precios:** un recuadro por variante activa (dos por fila en la computadora), con sus montos por tamaño como lista de precios (el tamaño a la izquierda, el monto a la derecha), "Sin cargar" resaltado y "Según evaluación" con palabras. "Editar" abre el modal "Precios de {variante}" ("Guardar precios" y "Cancelar"):
+  - Una línea de ayuda: "Vacío: «Según evaluación», cuando depende de ver el vehículo."
+  - Un campo en Bs por tamaño activo, con el nombre del tamaño. El campo vacío dice "Según evaluación" o, si nunca se guardó, "Sin cargar". Los modelos de ejemplo de cada tamaño están en Configuración > Taller (ya no se repiten aquí).
+  - Duración propia opcional ("Vacío: usa la del servicio (2 días)."); en lectura se ve solo si es distinta ("Ocupa 2 días.").
+  - Una fila por tamaño, como la lectura: el nombre a la izquierda y el campo en Bs a la derecha, en todos los tamaños de pantalla.
+  - "Ver historial", arriba en el modal de precios, abre un diálogo con los cambios: tamaño, monto anterior → nuevo, fecha y hora de Bolivia y quién.
+- **Datos:** duración, mantenimiento y si está activo, en lectura. "Editar" abre el modal "Datos del servicio": nombre, duración estimada, "Genera recordatorio de mantenimiento" y "Activo en el catálogo" ("Guardar datos" y "Cancelar").
+- **Variantes:** en lectura, sus nombres en una línea (y cuántas desactivadas). "Editar" abre el modal "Variantes" con la lista para agregar, renombrar, ordenar y desactivar (cada cambio se guarda al momento; se cierra con "Listo", que no aparece mientras una fila está abierta). Las variantes inactivas no tienen precios en la ficha (conservan los suyos).
 
 ### `/panel/clientes` — Clientes (dueño y encargado con "Clientes")
 - Arriba: buscador ("Buscar por nombre, teléfono o placa") y "Agregar cliente" (enlace con forma de botón, rojo).
@@ -189,9 +192,9 @@ Todas validan con Zod (también las que reciben datos sueltos) y empiezan con `e
 ## 8. Textos de la interfaz
 
 - Menú: "Catálogo y precios", "Clientes".
-- Catálogo: "Los precios que carga el dueño. No salen en el sitio." · "Precios completos" · "Faltan N precios" · "Genera mantenimiento" · "Inactivo".
-- Servicio: "Duración estimada" (ayuda: "Días que suele ocupar un espacio del taller; mejor el caso más largo habitual. Solo sugiere la fecha de entrega al agendar: en cada reserva se ajusta según el vehículo y el trabajo.") · "Genera recordatorio de mantenimiento" (ayuda: "Al entregar, se programa el aviso según el intervalo de Configuración.") · "Activo en el catálogo" (ayuda: "Si lo desmarcas, no se cotiza ni sale en el sitio. No se borra nada.").
-- Precios: "Precios por tamaño" · "Déjalo vacío si el precio depende de ver el vehículo: sale como «Según evaluación»." · "Según evaluación" · "Sin cargar" · "Duración propia" (ayuda: "Vacío: usa la del servicio (N días).") · "Ver historial" · historial vacío: "Todavía no hay cambios de precio."
+- Catálogo: "Los precios no salen en el sitio." · "Desde N Bs" · "Según evaluación" · "Faltan N precios" · "Con mantenimiento" · "Inactivo".
+- Servicio: "Duración estimada" (ayuda: "Los días que suele ocupar un espacio. Solo sugiere la entrega al agendar.") · "Genera recordatorio de mantenimiento" (ayuda: "Al entregarlo, se programa el aviso.") · "Activo en el catálogo" (ayuda: "Inactivo, no se cotiza ni sale en el sitio. No se borra nada.") · "Guardar datos".
+- Precios: "Precios" · "Vacío: «Según evaluación», cuando depende de ver el vehículo." · "Según evaluación" · "Sin cargar" · "Duración propia" (ayuda: "Vacío: usa la del servicio (N días).") · "Guardar precios" · "Ver historial" · historial vacío: "Todavía no hay cambios de precio."
 - Clientes: "Buscar por nombre, teléfono o placa" · "Agregar cliente" · "Ver desactivados".
 - Cliente: "Nombre" · "WhatsApp" (ayuda: "Celular de Bolivia, 8 dígitos.") · "Correo" · "NIT" · "Razón social" · "Notas" (ayuda: "Lo que convenga recordar: cómo prefiere que lo contacten, detalles del vehículo…").
 - Vehículo: "Placa" · "Tamaño" (ayuda con los modelos de ejemplo del tamaño elegido) · "Marca" · "Modelo" · "Año" · "Color" · "Agregar vehículo" · "Primer vehículo (opcional)".

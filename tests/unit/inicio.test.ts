@@ -1,6 +1,7 @@
 import { expect, test } from "vitest";
 import { fechaConDia } from "@/lib/fechas";
-import { cantidad, ordenesDelDia, textoEntregaAtrasada, textoIngresoAtrasado } from "@/modulos/inicio/reglas";
+import { cantidad } from "@/lib/cantidad";
+import { ordenesDelDia, textoEntregaAtrasada, textoIngresoAtrasado } from "@/modulos/inicio/reglas";
 
 // HU-39 Pantalla del día (RF-52). Especificación: docs/08-desarrollo/etapas/C5-cierre-entrega-2.md §5 y §8.
 

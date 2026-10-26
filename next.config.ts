@@ -33,7 +33,9 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: "/panel/configuracion/cotizaciones", destination: "/panel/configuracion/parametros", permanent: true },
-      { source: "/panel/sitio/servicios/nuevo", destination: "/panel/catalogo/nuevo", permanent: true },
+      // "Agregar servicio" es un modal en la lista del catálogo desde el pulido 7.2: las direcciones viejas llevan ahí
+      { source: "/panel/sitio/servicios/nuevo", destination: "/panel/catalogo", permanent: true },
+      { source: "/panel/catalogo/nuevo", destination: "/panel/catalogo", permanent: true },
     ];
   },
   async headers() {

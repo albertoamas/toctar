@@ -4,7 +4,7 @@ import type { ElementoLista } from "@/componentes/panel/lista-editable";
 import { db } from "@/db";
 import { precio, servicio, tamanoVehiculo, usuario, variante } from "@/db/esquema";
 import { tamanosActivos, type Tamano } from "@/modulos/configuracion/consultas";
-import { clavePrecio, preciosFaltantes, type Monto } from "./reglas";
+import { clavePrecio, precioDesde, preciosFaltantes, type Monto } from "./reglas";
 
 // Lecturas del catálogo (C1). Quien las llama ya pasó por exigirModulo("catalogo"): solo el dueño (RN-01).
 
@@ -17,11 +17,13 @@ export type FilaCatalogo = {
   variantes: number;
   /** Pares variante y tamaño activos sin precio cargado. */
   preciosFaltantes: number;
+  /** El menor de sus precios vigentes ("Desde 700 Bs"); null si todos son según evaluación; undefined, sin precios. */
+  desde: Monto | undefined;
 };
 
-/** Todos los servicios, los activos primero y en el orden del sitio, con cuántos precios les faltan. */
+/** Todos los servicios, los activos primero y en el orden del sitio, con su precio más bajo y cuántos precios les faltan. */
 export async function listarCatalogo(): Promise<FilaCatalogo[]> {
-  const [servicios, variantes, tamanos, cargados] = await Promise.all([
+  const [servicios, variantes, tamanos, todos] = await Promise.all([
     db
       .select({
         id: servicio.id,
@@ -34,13 +36,19 @@ export async function listarCatalogo(): Promise<FilaCatalogo[]> {
       .orderBy(desc(servicio.activo), asc(servicio.orden), asc(servicio.id)),
     db.select({ id: variante.id, servicioId: variante.servicioId }).from(variante).where(eq(variante.activo, true)),
     tamanosActivos(),
-    db.selectDistinct({ varianteId: precio.varianteId, tamanoId: precio.tamanoId }).from(precio),
+    preciosVigentes("activas"),
   ]);
-  const tamanoIds = tamanos.map((t) => t.id);
-  const conPrecio = new Set(cargados.map((c) => clavePrecio(c.varianteId, c.tamanoId)));
+  const tamanoIds = new Set(tamanos.map((t) => t.id));
+  // Solo los pares de variantes y tamaños activos: los demás no se cotizan
+  const vigentes = todos.filter((p) => tamanoIds.has(p.tamanoId));
+  const conPrecio = new Set(vigentes.map((p) => clavePrecio(p.varianteId, p.tamanoId)));
+  // Agrupadas, para no recorrer las listas enteras por cada servicio
+  const variantesDe = Map.groupBy(variantes, (v) => v.servicioId);
+  const montosDe = Map.groupBy(vigentes, (p) => p.varianteId);
   return servicios.map((s) => {
-    const suyas = variantes.filter((v) => v.servicioId === s.id).map((v) => v.id);
-    return { ...s, variantes: suyas.length, preciosFaltantes: preciosFaltantes(suyas, tamanoIds, conPrecio) };
+    const suyas = (variantesDe.get(s.id) ?? []).map((v) => v.id);
+    const montos = suyas.flatMap((v) => (montosDe.get(v) ?? []).map((p) => p.monto));
+    return { ...s, variantes: suyas.length, preciosFaltantes: preciosFaltantes(suyas, [...tamanoIds], conPrecio), desde: precioDesde(montos) };
   });
 }
 
@@ -83,13 +91,14 @@ export async function listarVariantes(servicioId: number) {
     .orderBy(sql`${variante.activo} desc`, asc(variante.orden), asc(variante.id));
 }
 
-/** Precio vigente de cada par (D-3): la fila más reciente. */
-export async function preciosVigentes(varianteIds: number[]): Promise<{ varianteId: number; tamanoId: number; monto: Monto }[]> {
+/** Precio vigente de cada par (D-3): la fila más reciente. De esas variantes o, con "activas", de todas las activas. */
+export async function preciosVigentes(varianteIds: number[] | "activas"): Promise<{ varianteId: number; tamanoId: number; monto: Monto }[]> {
   if (varianteIds.length === 0) return [];
+  const delFiltro = varianteIds === "activas" ? db.select({ id: variante.id }).from(variante).where(eq(variante.activo, true)) : varianteIds;
   return db
     .selectDistinctOn([precio.varianteId, precio.tamanoId], { varianteId: precio.varianteId, tamanoId: precio.tamanoId, monto: precio.monto })
     .from(precio)
-    .where(inArray(precio.varianteId, varianteIds))
+    .where(inArray(precio.varianteId, delFiltro))
     .orderBy(precio.varianteId, precio.tamanoId, desc(precio.vigenteDesde), desc(precio.id));
 }
 

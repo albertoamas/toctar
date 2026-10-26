@@ -198,9 +198,9 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 7.1 | Catálogo y precios | `/panel/catalogo` | ⏳ |
-| 7.2 | Nuevo servicio (antes 4.3, en Sitio web) | `/panel/catalogo/nuevo` | ⏳ |
-| 7.3 | Servicio del catálogo: datos, precios por tamaño, variantes e historial | `/panel/catalogo/[id]` | ⏳ |
+| 7.1 | Catálogo y precios | `/panel/catalogo` | ✅ |
+| 7.2 | Nuevo servicio (antes 4.3, en Sitio web; desde el 26/10, un modal de la lista) | `/panel/catalogo` | ✅ |
+| 7.3 | Servicio del catálogo: datos, precios por tamaño, variantes e historial | `/panel/catalogo/[id]` | ✅ |
 
 ### 8. Panel: clientes
 
@@ -935,6 +935,62 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px, y con errores a 360 y 1280. Comparativa en `pulido-visual/6.3-cotizaciones-computadora.jpg`.
   - E2E `hu-05` "los parámetros vacíos o negativos…" (y el foco en el adelanto). E2E completo: 169 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 7.1 Catálogo y precios (25/10/2026)
+- **Inventario** (skill `pantallas-panel`):
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | Servicios con variantes, días y estado de los precios | Encontrar un servicio; saber si le faltan precios | Dueño, seguido | Queda, con el precio a la vista |
+  | Ningún precio en la lista | Responder "¿cuánto cuesta?" | Dueño, todos los días | Se agrega "Desde 700 Bs" (dato existente) |
+  | "Precios completos" en cada fila | Informar | — | Se va: solo se avisa lo que falta |
+  | Insignia "Genera mantenimiento" junto al nombre | Informar | Rara vez | Pasa a texto en los datos de la fila |
+  | "Toca un servicio para editarlo" | Explicar | — | Se va |
+- **Encontrado:**
+  - Una pantalla llamada "Catálogo y precios" que no mostraba ningún precio.
+  - "Precios completos" repetido en las 8 filas, sin información útil.
+  - La insignia de mantenimiento desalineaba la primera fila.
+  - La fila no tenía flecha: en la computadora no parecía tocable, a diferencia del inicio.
+  - Cada lista del panel armaba su encabezado y sus filas a su manera.
+- **Cambios** (propuesta aprobada el 25/10):
+  - Cada fila: el nombre, debajo **"Desde 700 Bs"** (el menor de sus precios vigentes, `precioDesde`) o "Según evaluación", y en tinta suave "5 variantes · 1 día · Con mantenimiento". **"Faltan N precios"** en la insignia de aviso, solo cuando faltan. Flecha a la derecha. Inactivos atenuados con su insignia.
+  - Una línea arriba: "Los precios no salen en el sitio."
+  - **Componentes compartidos nuevos:** `EncabezadoPagina` (título, acción principal y una línea de contexto) y `ListaFilas` / `DatosFila` (`fila-lista.tsx`: fila de un toque con título, dato, detalles, aviso o estado y flecha). La fila del inicio (`BloqueDelDia`) pasa a usarla: una sola implementación.
+  - La lista calcula los precios faltantes y el "desde" con `preciosVigentes` (la misma consulta que la ficha) en lugar de otra consulta propia. `textoDias` reemplaza el "1 día / N días" repetido.
+- **Verificación:** capturas a 360, 390, 768 y 1280 px, sin desborde; el inicio se ve igual con la fila compartida. Comparativa en `pulido-visual/7.1-catalogo-celular.jpg`. E2E `hu-19-20` (el "desde", el aviso de lo que falta y "Con mantenimiento"), `hu-39`, `hu-01` y `hu-17`; unitarias de `precioDesde` y `textoDias`.
+
+### 7.2 Nuevo servicio (25/10/2026)
+- **Encontrado:** ya era una pantalla de crear como pide la skill (un campo y "Crear servicio"). La ayuda explicaba que el servicio nace oculto en el sitio, algo que ya dice su ficha; el título no usaba el encabezado compartido.
+- **Cambios** (propuesta aprobada el 25/10): `EncabezadoPagina`; la ayuda se acorta a "Como lo conocen los clientes."; el nombre empieza con el cursor puesto (`autoFocus`): es el único campo y en el celular el teclado aparece solo.
+- **Verificación:** capturas a 360, 390, 768 y 1280 px, con el foco visible en el campo. Comparativa en `pulido-visual/7.2-nuevo-servicio-celular.jpg`. La E2E de `base` que comprueba que un error devuelve el foco al campo ahora saca el foco antes de enviar (si no, pasaba sin probar nada).
+- **Revisión del 26/10 (aprobada):** una pantalla entera para un solo campo obligaba a ir y volver. "Agregar servicio" abre ahora el modal "Nuevo servicio" desde la lista (el mismo de las fichas, `ModalFormulario`: hoja desde abajo en el celular, el cursor en el nombre); al crear, lleva a la ficha. Se borra `/panel/catalogo/nuevo`, que redirige a `/panel/catalogo` como la vieja `/panel/sitio/servicios/nuevo`. Regla nueva de la skill: crear algo de uno a tres campos va en un modal; un formulario largo, en su pantalla. Capturas a 360, 390, 768 y 1280 px con el modal abierto y el foco en el campo; comparativa en `pulido-visual/7.2-nuevo-servicio-modal-celular.jpg`. E2E: el ayudante `abrirNuevoServicio`, y `hu-19-20` comprueba las dos redirecciones.
+
+### 7.3 Servicio del catálogo (25 y 26/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | Precios de cada variante (un formulario abierto por variante) | Consultar un precio; cambiarlo a veces | Dueño, seguido | Arriba y en lectura, un recuadro por variante con "Editar" |
+  | Datos (nombre, duración, mantenimiento, activo) | Configurar el servicio | Dueño, rara vez | En lectura, con "Editar" |
+  | Variantes (agregar, renombrar, ordenar, desactivar) | Cambiar la estructura | Rara vez | En lectura (sus nombres), con "Editar" |
+  | Historial de precios | Consultar | Rara vez | Dentro del modal de precios |
+  | Modelos de cada tamaño y párrafos de ayuda | Explicar | Casi nunca | Se van; queda una línea en el formulario de precios |
+- **Encontrado:**
+  - **5.032 px de alto en el celular** (unas siete pantallas): el formulario de datos y uno de precios por variante, todos abiertos; con las cinco variantes del cerámico, 25 campos y **seis botones rojos de guardar** a la vista.
+  - Para consultar un precio, lo que más se hace aquí, había que leer formularios.
+  - Párrafos de ayuda en cada sección, "Ver los modelos de cada tamaño" (ya están en Configuración) y la lista de variantes repetida al final.
+  - El estado en el sitio era una frase gris con un enlace subrayado; en la orden es una insignia y un botón.
+- **Primera versión (25/10), descartada en la revisión del 26/10:** edición en el lugar con una sección abierta a la vez, y en la computadora un recuadro angosto a la derecha. El desarrollador vio desorden: el recuadro de datos no alineaba con los precios (arrancaba a la altura del título "Precios"), tres estilos de título, siete botones "Editar" con borde, la grilla de precios con montos a distintas alturas, y la página que saltaba al editar.
+- **Cambios** (propuesta aprobada el 26/10):
+  - **Un solo sistema por sección:** título (Barlow) fuera del recuadro y "Editar" sin borde en su misma fila; el recuadro debajo. Cada variante es un recuadro con su nombre y su "Editar" en la cabecera. Datos y Variantes lado a lado, del mismo alto; desde la revisión del 26/10, **arriba de los precios** (primero lo que es el servicio y después sus precios).
+  - **"Editar" abre un modal** ("Precios de 1 año", "Datos del servicio", "Variantes") con el formulario y "Guardar …" y "Cancelar" (o "Listo") al pie. En el celular es una hoja desde abajo con los botones fijos. La página no salta ni cambia mientras se edita; el foco va al primer campo al abrir y vuelve a "Editar" al cerrar. "Ver historial" va arriba en el modal de precios (consulta, no guarda). El formulario de precios, como la lectura: una fila por tamaño (el nombre a la izquierda y el campo en Bs, de ancho fijo, a la derecha); en una grilla, los nombres largos movían los campos de altura y de ancho.
+  - **Precios en lectura** como lista en todos los tamaños de pantalla: el tamaño a la izquierda y el monto a la derecha, en columna aunque el nombre del tamaño ocupe dos líneas. En la computadora, dos recuadros por fila.
+  - Encabezado compartido con la insignia ("En el sitio", "Oculto en el sitio" o "Inactivo") y "Su página en el sitio" como botón de contorno. Recién creado y sin precios, se abre el modal de los de su primera variante.
+  - **Componentes:** `SeccionConEditar` (nuevo, `seccion-con-editar.tsx`: título, "Editar", recuadro de lectura y modal con el formulario) y `ModalFormulario` (`modal-formulario.tsx`: el modal, con `useCerrarModal`, `PieModal` y `CancelarModal` para el formulario; lo usa también "Agregar servicio") reemplaza a `SeccionEditable`, que se borra con su regla de "una abierta a la vez" (el modal ya lo es). Lo reutilizan las demás fichas.
+- **Verificación:**
+  - **2.226 px en el celular (−56 %)** y 1.384 en la computadora (−59 %); igual con Datos y Variantes arriba. Capturas a 360, 390, 768 y 1280 px en lectura y con cada modal abierto (hoja en el celular); el foco en el primer campo al abrir (también el que se abre solo al crear) y de vuelta en "Editar" al cerrar. Comparativas en `pulido-visual/7.3-servicio-catalogo-celular.jpg` y `7.3-servicio-catalogo-computadora.jpg`.
+  - E2E `hu-19-20` con los modales (editar, guardar, cerrar y volver a lectura con el dato y el foco; "Listo" no aparece con una variante a medio escribir); la página pública se renueva en segundo plano en unos segundos y la prueba la visita hasta ver el cambio (`enElSitio`). `hu-07` cierra el modal de precios que abre la ficha recién creada.
+  - La especificación C1 (§5 y §8) quedó al día.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)

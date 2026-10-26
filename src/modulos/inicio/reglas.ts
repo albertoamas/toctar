@@ -30,6 +30,3 @@ export function ordenesDelDia<O extends OrdenAbierta>(abiertas: O[], hoy: string
     listas: abiertas.filter((o) => o.sinAvisar),
   };
 }
-
-/** "3 vencidos", "1 vencido": la cantidad con su palabra. */
-export const cantidad = (n: number, singular: string, plural: string) => `${n} ${n === 1 ? singular : plural}`;

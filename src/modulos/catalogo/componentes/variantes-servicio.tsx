@@ -1,26 +1,38 @@
 "use client";
 
+import { useState } from "react";
 import { ListaEditable, type ElementoLista } from "@/componentes/panel/lista-editable";
+import { CancelarModal, PieModal } from "@/componentes/panel/modal-formulario";
 import { cambiarEstadoVariante, guardarVariante, moverVariante } from "../acciones";
 
-// HU-19: las variantes de un servicio (D-2): agregar, renombrar, ordenar y desactivar. Sus precios, más arriba en la
-// misma ficha.
+// HU-19: las variantes de un servicio (D-2): agregar, renombrar, ordenar y desactivar. Va en el modal de "Editar" de la
+// ficha del servicio, que en lectura muestra sus nombres. Cada cambio se guarda al momento: el modal se cierra con
+// "Listo", que no aparece mientras una fila está abierta para agregar o renombrar (lo escrito sin guardar se perdería).
 
 export function VariantesServicio({ servicioId, variantes }: { servicioId: number; variantes: ElementoLista[] }) {
+  const [editando, setEditando] = useState(false);
   return (
-    <ListaEditable
-      id="variantes"
-      titulo="Variantes"
-      descripcion="Las opciones que eligen los clientes, como los años del cerámico. Una variante nueva necesita sus precios. Se guardan al momento."
-      singular="variante"
-      campoDescripcion={{ etiqueta: "Descripción", ayuda: "Opcional. Se ve en la página del servicio.", ejemplo: "Capa más densa, más años de protección" }}
-      camposOcultos={{ servicioId }}
-      elementos={variantes}
-      acciones={{
-        guardar: guardarVariante,
-        mover: (id, direccion) => moverVariante({ servicioId, id, direccion }),
-        cambiarEstado: (id, activo) => cambiarEstadoVariante({ servicioId, id, activo }),
-      }}
-    />
+    <div className="flex flex-col gap-4">
+      <ListaEditable
+        id="variantes"
+        titulo="Variantes"
+        conEncabezado={false}
+        singular="variante"
+        campoDescripcion={{ etiqueta: "Descripción", ayuda: "Opcional. Se ve en la página del servicio.", ejemplo: "Capa más densa, más años de protección" }}
+        camposOcultos={{ servicioId }}
+        alEditar={setEditando}
+        elementos={variantes}
+        acciones={{
+          guardar: guardarVariante,
+          mover: (id, direccion) => moverVariante({ servicioId, id, direccion }),
+          cambiarEstado: (id, activo) => cambiarEstadoVariante({ servicioId, id, activo }),
+        }}
+      />
+      {!editando && (
+        <PieModal>
+          <CancelarModal texto="Listo" />
+        </PieModal>
+      )}
+    </div>
   );
 }
