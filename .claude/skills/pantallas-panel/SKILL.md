@@ -19,6 +19,8 @@ Para cada pantalla, una tabla corta en su registro de `pulido-visual.md`:
 
 Las decisiones posibles son cuatro: **queda arriba** (es la tarea de la pantalla), **queda abajo** (se consulta), **se esconde** (detrás de "Editar", "Más" o "Ver más") o **se va** (no ayuda o ya está en otra pantalla). Lo que se usa todos los días gana el lugar; lo que se usa una vez al mes no puede costarle espacio al resto.
 
+**Una pantalla a la vez, y propuesta antes de programar.** Con el inventario y las capturas de antes se arma la propuesta para el desarrollador: qué se encontró, qué se ordena, **qué se mejora visualmente** (con `frontend-design`: jerarquía, espacios, tipografía, la marca con medida) y **qué componentes se reutilizan o se crean** para que la pantalla se vea igual que el resto del panel. Se programa recién con su visto bueno; nunca un grupo entero de golpe. Ordenar no alcanza: pulir también es que se vea mejor y coherente.
+
 **La prueba de los 5 segundos:** al abrir la pantalla en el celular, ¿se entiende qué es y qué hacer, sin leer párrafos ni desplazarse? Si no, sobra algo.
 
 ## 2. Qué tipo de pantalla es

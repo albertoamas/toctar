@@ -22,7 +22,7 @@ Cada pantalla se revisa como lo haría un **desarrollador frontend senior y un d
 
 1. **Antes:** se carga la skill `frontend-design` (y en el panel, `pantallas-panel`). Capturas en celular (360 y 390 px) y computadora (1280 px). En el panel, también la tableta (768 px).
 2. **Análisis:** se revisa la pantalla contra los estándares de abajo y se anota en su registro qué se encontró.
-3. **Propuesta:** en la parte 1 se acordaban con YankoSoft antes de programarlos. En la parte 2 (desde el 25/10, por decisión del desarrollador) las decisiones de UI/UX las toma Claude con las dos skills, y el desarrollador las revisa en el PR de cada grupo, con las capturas de antes y después.
+3. **Propuesta:** se acuerdan los cambios con YankoSoft antes de programarlos, **una pantalla a la vez** (nunca un grupo entero de golpe). La propuesta muestra el inventario, lo que se encontró, las mejoras visuales y de orden, y los componentes que se reutilizan o se crean.
 4. **Cambios:** en la rama del grupo (ver "Ramas"), con commits chicos y separados (estilo, texto, estructura).
 5. **Después:** capturas en los mismos tamaños, para comparar.
 6. **Verificación:** la lista "Al terminar cada pantalla".
