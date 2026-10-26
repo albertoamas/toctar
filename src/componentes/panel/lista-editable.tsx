@@ -25,7 +25,6 @@ type AccionesLista = {
 type Props = {
   id: string;
   titulo: string;
-  descripcion: string;
   /** "espacio", "tamaño", "variante": para los botones y la etiqueta del nombre. */
   singular: string;
   /** Si tiene un segundo campo (por ejemplo, los modelos de ejemplo de un tamaño). */
@@ -36,7 +35,11 @@ type Props = {
   acciones: AccionesLista;
   /** Título de nivel 2 o 3, según dónde va la lista. */
   nivel?: 2 | 3;
-};
+} & (
+  | { conEncabezado?: true; descripcion: string }
+  /** Sin título, descripción ni región propia: ya los pone la sección que la contiene (una SeccionEditable). */
+  | { conEncabezado: false; descripcion?: never }
+);
 
 export function ListaEditable(props: Props) {
   const { id, titulo, singular, elementos, acciones } = props;
@@ -45,15 +48,19 @@ export function ListaEditable(props: Props) {
   const [editando, setEditando] = useState<number | "nuevo" | null>(null);
   const [pendiente, iniciar] = useTransition();
   const Titulo = props.nivel === 3 ? "h3" : "h2";
+  const conEncabezado = props.conEncabezado !== false;
+  const Contenedor = conEncabezado ? "section" : "div";
 
   const ejecutar = (accion: () => Promise<EstadoFormulario>) => iniciar(async () => avisarResultado(await accion()));
 
   return (
-    <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <Titulo id={`${id}-titulo`} className="font-heading text-2xl font-bold italic">{titulo}</Titulo>
-        <p className="text-sm text-tinta-suave">{props.descripcion}</p>
-      </div>
+    <Contenedor {...(conEncabezado ? { "aria-labelledby": `${id}-titulo` } : {})} className="flex flex-col gap-4">
+      {conEncabezado && (
+        <div className="flex flex-col gap-1">
+          <Titulo id={`${id}-titulo`} className="font-heading text-2xl font-bold italic">{titulo}</Titulo>
+          <p className="text-sm text-tinta-suave">{props.descripcion}</p>
+        </div>
+      )}
 
       {activos.length === 0 && <p className="text-sm font-semibold text-rojo-texto">Agrega al menos un {singular}.</p>}
 
@@ -115,7 +122,7 @@ export function ListaEditable(props: Props) {
           </ul>
         </div>
       )}
-    </section>
+    </Contenedor>
   );
 }
 
