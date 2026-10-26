@@ -965,11 +965,12 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   | Historial de precios | Consultar | Rara vez | Dentro de la edición de precios |
   | Modelos de cada tamaño y párrafos de ayuda | Explicar | Casi nunca | Se van; queda una línea en el formulario de precios |
 - **Cambios:**
-  - **Ficha en lectura** con tres secciones (precios, datos y variantes) y **un solo formulario abierto a la vez**. Componente nuevo y compartido `SeccionEditable` (`src/componentes/panel/seccion-editable.tsx`): "Editar" abre el formulario en el lugar, al guardar se cierra solo y vuelve a lectura con los datos nuevos, "Cancelar" (o "Listo" donde cada cambio ya se guardó) al lado del botón, y el foco va al primer campo al abrir y vuelve a "Editar" al cerrar. Lo usarán las demás fichas.
+  - **Ficha en lectura** con tres secciones (precios, datos y variantes) y **un solo formulario abierto a la vez**: mientras una está abierta, las demás esconden su "Editar" hasta guardar o cancelar, así nada de lo escrito se pierde (revisión del PR). Componente nuevo y compartido `SeccionEditable` (`src/componentes/panel/seccion-editable.tsx`): "Editar" abre el formulario en el lugar, al guardar se cierra solo y vuelve a lectura con los datos nuevos, "Cancelar" (o "Listo" donde cada cambio ya se guardó) al lado del botón, y el foco va al primer campo al abrir y vuelve a "Editar" al cerrar. Lo usarán las demás fichas.
   - **Precios en lectura** (`PreciosVariante`): en el celular, una lista de precios (el tamaño a la izquierda y el monto alineado a la derecha); desde 640 px, una grilla. "Sin cargar" resaltado; "Según evaluación" con palabras; la duración propia solo si es distinta.
   - Botones con lo que guardan: "Guardar precios", "Guardar datos".
   - Encabezado: el nombre, una insignia ("En el sitio", "Oculto en el sitio" o "Inactivo") y "Su página en el sitio" como botón de contorno, en lugar de una línea de texto.
-  - Recién creado, la ficha se abre en los precios de su primera variante (lo que falta cargar), con el aviso "Servicio creado. Carga sus precios."
+  - Recién creado y todavía sin precios, la ficha se abre en los de su primera variante, con el aviso "Servicio creado. Carga sus precios." Si se recarga después de guardarlos, se ve como cualquier ficha.
+  - La especificación C1 (§5 y §8) quedó al día con la ficha nueva.
   - `ListaEditable` puede ir sin su encabezado (`conEncabezado={false}`) cuando la contiene una sección.
 - **Verificación:**
   - **2.158 px en el celular (−57 %)** y 1.382 en la computadora (−59 %). Capturas a 360, 390, 768 y 1280 px en lectura y con cada sección abierta; foco al abrir y al cerrar. Comparativa en `pulido-visual/7.3-servicio-catalogo-celular.jpg`.
