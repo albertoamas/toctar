@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ListaEditable, type ElementoLista } from "@/componentes/panel/lista-editable";
-import { CancelarSeccion, PieSeccion } from "@/componentes/panel/seccion-con-editar";
+import { CancelarModal, PieModal } from "@/componentes/panel/modal-formulario";
 import { cambiarEstadoVariante, guardarVariante, moverVariante } from "../acciones";
 
 // HU-19: las variantes de un servicio (D-2): agregar, renombrar, ordenar y desactivar. Va en el modal de "Editar" de la
@@ -29,9 +29,9 @@ export function VariantesServicio({ servicioId, variantes }: { servicioId: numbe
         }}
       />
       {!editando && (
-        <PieSeccion>
-          <CancelarSeccion texto="Listo" />
-        </PieSeccion>
+        <PieModal>
+          <CancelarModal texto="Listo" />
+        </PieModal>
       )}
     </div>
   );

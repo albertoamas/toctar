@@ -21,9 +21,10 @@ import { textoDias } from "@/modulos/catalogo/reglas";
 
 export const metadata: Metadata = { title: "Servicio del catálogo" };
 
-// HU-19 y HU-20: precios, datos y variantes de un servicio. Solo el dueño (RN-01). Una ficha en lectura (pulido 7.3,
-// skill pantallas-panel): primero los precios, que es lo que se consulta, un recuadro por variante (de a dos en la
-// computadora); debajo, datos y variantes lado a lado. Cada recuadro se edita con "Editar", en un modal.
+// HU-19 y HU-20: datos, variantes y precios de un servicio. Solo el dueño (RN-01). Una ficha en lectura (pulido 7.3,
+// skill pantallas-panel): arriba, datos y variantes lado a lado (el contexto en pocas líneas: cuánto dura y qué
+// variantes tiene); debajo, los precios, un recuadro por variante en ese orden (de a dos en la computadora). Cada
+// recuadro se edita con "Editar", en un modal.
 // Su página en el sitio (textos y foto) se edita en Sitio web: el enlace lleva ahí.
 export default function PaginaServicioCatalogo({ params, searchParams }: PageProps<"/panel/catalogo/[id]">) {
   return (
@@ -66,38 +67,6 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
       />
       {cargarPrecios && <AvisoEnPagina>Servicio creado. Carga sus precios.</AvisoEnPagina>}
 
-      <section aria-labelledby="precios-titulo" className="flex flex-col gap-3">
-        <h2 id="precios-titulo" className="flex min-h-11 items-center font-heading text-2xl font-bold italic">
-          Precios
-        </h2>
-        {s.tamanos.length === 0 ? (
-          <p className="text-tinta-suave">
-            Faltan los tamaños de vehículo.{" "}
-            <Link href="/panel/configuracion/taller" className="font-semibold text-tinta underline">
-              Agrégalos en Configuración
-            </Link>
-            .
-          </p>
-        ) : (
-          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
-            {s.variantes.map((v) => (
-              <SeccionConEditar
-                key={v.id}
-                id={`precios-${v.id}`}
-                titulo={v.nombre}
-                nivel={3}
-                etiquetaEditar={`Editar precios de ${v.nombre}`}
-                tituloModal={`Precios de ${v.nombre}`}
-                abierta={cargarPrecios && v.id === primera.id}
-                lectura={<PreciosVariante variante={v} tamanos={s.tamanos} duracionServicio={s.duracionDias} />}
-              >
-                <FormularioPrecios variante={v} tamanos={s.tamanos} duracionServicio={s.duracionDias} />
-              </SeccionConEditar>
-            ))}
-          </div>
-        )}
-      </section>
-
       <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-2 md:gap-4">
         <SeccionConEditar
           id="datos"
@@ -132,6 +101,38 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
           <VariantesServicio servicioId={s.id} variantes={s.listaVariantes} />
         </SeccionConEditar>
       </div>
+
+      <section aria-labelledby="precios-titulo" className="flex flex-col gap-3">
+        <h2 id="precios-titulo" className="flex min-h-11 items-center font-heading text-2xl font-bold italic">
+          Precios
+        </h2>
+        {s.tamanos.length === 0 ? (
+          <p className="text-tinta-suave">
+            Faltan los tamaños de vehículo.{" "}
+            <Link href="/panel/configuracion/taller" className="font-semibold text-tinta underline">
+              Agrégalos en Configuración
+            </Link>
+            .
+          </p>
+        ) : (
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
+            {s.variantes.map((v) => (
+              <SeccionConEditar
+                key={v.id}
+                id={`precios-${v.id}`}
+                titulo={v.nombre}
+                nivel={3}
+                etiquetaEditar={`Editar precios de ${v.nombre}`}
+                tituloModal={`Precios de ${v.nombre}`}
+                abierta={cargarPrecios && v.id === primera.id}
+                lectura={<PreciosVariante variante={v} tamanos={s.tamanos} duracionServicio={s.duracionDias} />}
+              >
+                <FormularioPrecios variante={v} tamanos={s.tamanos} duracionServicio={s.duracionDias} />
+              </SeccionConEditar>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

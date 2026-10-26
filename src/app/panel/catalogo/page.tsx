@@ -1,14 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
-import { cn } from "cn";
-import { PlusIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
-import { buttonVariants } from "@/componentes/ui/button";
 import { cantidad } from "@/lib/cantidad";
 import { exigirModulo } from "@/lib/sesion";
+import { AgregarServicio } from "@/modulos/catalogo/componentes/agregar-servicio";
 import { listarCatalogo } from "@/modulos/catalogo/consultas";
 import { mostrarMonto, textoDias } from "@/modulos/catalogo/reglas";
 
@@ -21,13 +18,8 @@ export default function PaginaCatalogo() {
     <section className="flex max-w-3xl flex-col gap-6">
       <EncabezadoPagina
         titulo="Catálogo y precios"
-        // Enlace con forma de botón: lleva a otra pantalla
-        accion={
-          <Link href="/panel/catalogo/nuevo" className={cn(buttonVariants())}>
-            <PlusIcon />
-            Agregar servicio
-          </Link>
-        }
+        // Un solo campo: un modal y no otra pantalla (pulido 7.2)
+        accion={<AgregarServicio />}
       >
         Los precios no salen en el sitio.
       </EncabezadoPagina>

@@ -4,7 +4,7 @@ import { useActionState, useRef } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
-import { CancelarSeccion, PieSeccion, useCerrarSeccion } from "@/componentes/panel/seccion-con-editar";
+import { CancelarModal, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
@@ -17,7 +17,7 @@ import { guardarDatosCatalogo } from "../acciones";
 type Props = { servicio: { id: number; nombre: string; duracionDias: number; generaMantenimiento: boolean; activo: boolean } };
 
 export function FormularioDatosCatalogo({ servicio: s }: Props) {
-  const cerrar = useCerrarSeccion();
+  const cerrar = useCerrarModal();
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
     conAviso(guardarDatosCatalogo, (r) => r.ok && cerrar()),
     {},
@@ -70,12 +70,12 @@ export function FormularioDatosCatalogo({ servicio: s }: Props) {
         ayuda="Al entregarlo, se programa el aviso."
       />
       <Casilla nombre="activo" marcada={activo} etiqueta="Activo en el catálogo" ayuda="Inactivo, no se cotiza ni sale en el sitio. No se borra nada." />
-      <PieSeccion>
+      <PieModal>
         <Button type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : "Guardar datos"}
         </Button>
-        <CancelarSeccion />
-      </PieSeccion>
+        <CancelarModal />
+      </PieModal>
     </form>
   );
 }

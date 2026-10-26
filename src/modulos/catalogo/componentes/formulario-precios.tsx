@@ -5,7 +5,7 @@ import { HistoryIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
-import { CancelarSeccion, PieSeccion, useCerrarSeccion } from "@/componentes/panel/seccion-con-editar";
+import { CancelarModal, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
 import { Button } from "@/componentes/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/componentes/ui/dialog";
@@ -24,7 +24,7 @@ import { mostrarMonto, textoDias, type Monto } from "../reglas";
 type Props = { variante: VarianteCatalogo; tamanos: Tamano[]; duracionServicio: number };
 
 export function FormularioPrecios({ variante: v, tamanos, duracionServicio }: Props) {
-  const cerrar = useCerrarSeccion();
+  const cerrar = useCerrarModal();
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
     conAviso(guardarPreciosVariante, (r) => r.ok && cerrar()),
     {},
@@ -92,12 +92,12 @@ export function FormularioPrecios({ variante: v, tamanos, duracionServicio }: Pr
         </div>
       </Campo>
 
-      <PieSeccion>
+      <PieModal>
         <Button type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : "Guardar precios"}
         </Button>
-        <CancelarSeccion />
-      </PieSeccion>
+        <CancelarModal />
+      </PieModal>
     </form>
   );
 }
