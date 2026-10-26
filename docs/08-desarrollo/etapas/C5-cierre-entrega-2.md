@@ -18,7 +18,7 @@ Revisión de todas las rutas y flujos del panel (24 de octubre, aprobada por el 
 
 1. **El servicio vive en el catálogo.**
    - **Antes:** el alta, el nombre y las variantes estaban en Sitio web, y los precios en el catálogo. Un servicio interno (el mantenimiento del cerámico) necesitaba resumen y página para existir, y una variante (que lleva precios) se agregaba en el sitio.
-   - **Ahora:** Catálogo y precios tiene "Agregar servicio" (`/panel/catalogo/nuevo`, solo el nombre), el nombre en sus datos y el editor de variantes. Sitio web > Servicios edita solo la página pública: dirección, resumen, textos, beneficios, pasos, foto y si se muestra.
+   - **Ahora:** Catálogo y precios tiene "Agregar servicio" (solo el nombre; desde el pulido 7.2, un modal de la lista), el nombre en sus datos y el editor de variantes. Sitio web > Servicios edita solo la página pública: dirección, resumen, textos, beneficios, pasos, foto y si se muestra.
    - **Un servicio nuevo nace oculto en el sitio y sin resumen.** Para mostrarlo hay que escribir el resumen (lo exige el formulario).
    - **Permisos:** crear, nombrar y cambiar variantes pasa a ser del dueño (RN-01: un servicio lleva precios). El encargado con "Sitio web" sigue editando las páginas.
    - **Enlaces cruzados:** la ficha del catálogo enlaza a "Editar su página en el sitio", y la página del sitio a "Abrir en el catálogo" (solo para el dueño).
@@ -49,7 +49,7 @@ Pruebas: las E2E de HU-07, HU-10, HU-11 y HU-19/20 crean el servicio en el catá
 **Hecho el 24/10 (PR #74).** Además de los 6 puntos, salió de las revisiones:
 - **Barra lateral pulida con `frontend-design`:** cada enlace con el ícono de su módulo (el mismo del inicio, `ICONO_MODULO`), títulos de grupo en Barlow itálica, líneas entre bloques. En una pantalla baja se desplaza solo la lista.
 - **`enlaceTrabajo`:** el enlace a un trabajo dice "Ver la orden" o "Ver la reserva" y solo aparece si quien mira puede abrir esa pantalla. Lo usan la ficha del cliente y Saldos pendientes.
-- **Redirecciones** de las direcciones viejas (`/panel/configuracion/cotizaciones` y `/panel/sitio/servicios/nuevo`), en `next.config.ts`.
+- **Redirecciones** de las direcciones viejas (`/panel/configuracion/cotizaciones`, `/panel/sitio/servicios/nuevo` y, desde el pulido 7.2, `/panel/catalogo/nuevo`), en `next.config.ts`.
 - **Una sola función renueva lo que muestra un servicio** (`servicioCambiado`) y el tipo `Transaccion` vive en `src/db`.
 
 ## 1. Objetivo

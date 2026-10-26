@@ -128,17 +128,19 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel (44 px c
 - Lista de servicios en el orden del sitio, los inactivos al final y atenuados.
 - Cada fila (pulido 7.1, 25/10): el nombre; debajo, "Desde 700 Bs" (el menor de sus precios vigentes) o "Según evaluación"; en tinta suave, variantes ("5 variantes"), duración ("2 días") y "Con mantenimiento" si corresponde; "Faltan 7 precios" (pares variante y tamaño activos sin fila) en aviso, solo si faltan. "Inactivo" en los inactivos. Con flecha: la fila de un toque compartida (`ListaFilas`).
 - Toda la fila abre el servicio (como en Servicios del sitio y Reclamos).
+- "Agregar servicio" (arriba, rojo) abre el modal "Nuevo servicio" (desde el 26/10; antes, `/panel/catalogo/nuevo`, que redirige aquí): el nombre ("Como lo conocen los clientes.") con el cursor puesto, "Crear servicio" y "Cancelar". Al crear, lleva a la ficha del servicio, que abre el modal de los precios de su primera variante.
 - Estado vacío: no ocurre (siempre hay servicios); si no hay tamaños activos, un aviso que lleva a Configuración > Taller.
 
 ### `/panel/catalogo/[id]` — Precios de un servicio (ficha en lectura desde el pulido 7.3, 25/10; skill `pantallas-panel`)
 - `EnlaceVolver` a Catálogo. Encabezado compartido: el nombre del servicio, una insignia ("En el sitio", "Oculto en el sitio" o "Inactivo") y "Su página en el sitio" (enlace a Sitio web). Ficha en lectura (pulido 7.3, 26/10): cada sección es un recuadro con su "Editar", que abre su formulario en un modal (en el celular, una hoja desde abajo con los botones fijos). Recién creado y sin precios, se abre el modal de los de su primera variante.
-- **Precios** (primero: es lo que se consulta): un recuadro por variante activa (dos por fila en la computadora), con sus montos por tamaño como lista de precios (el tamaño a la izquierda, el monto a la derecha), "Sin cargar" resaltado y "Según evaluación" con palabras. "Editar" abre el modal "Precios de {variante}" ("Guardar precios" y "Cancelar"):
+- **Datos** y **Variantes** primero, lado a lado y del mismo alto (en el celular, uno debajo del otro): lo que es el servicio antes que sus precios (revisión del 26/10).
+- **Precios:** un recuadro por variante activa (dos por fila en la computadora), con sus montos por tamaño como lista de precios (el tamaño a la izquierda, el monto a la derecha), "Sin cargar" resaltado y "Según evaluación" con palabras. "Editar" abre el modal "Precios de {variante}" ("Guardar precios" y "Cancelar"):
   - Una línea de ayuda: "Vacío: «Según evaluación», cuando depende de ver el vehículo."
   - Un campo en Bs por tamaño activo, con el nombre del tamaño. El campo vacío dice "Según evaluación" o, si nunca se guardó, "Sin cargar". Los modelos de ejemplo de cada tamaño están en Configuración > Taller (ya no se repiten aquí).
   - Duración propia opcional ("Vacío: usa la del servicio (2 días)."); en lectura se ve solo si es distinta ("Ocupa 2 días.").
   - Una fila por tamaño, como la lectura: el nombre a la izquierda y el campo en Bs a la derecha, en todos los tamaños de pantalla.
   - "Ver historial", arriba en el modal de precios, abre un diálogo con los cambios: tamaño, monto anterior → nuevo, fecha y hora de Bolivia y quién.
-- **Datos** (debajo de los precios, al lado de Variantes): duración, mantenimiento y si está activo, en lectura. "Editar" abre el modal "Datos del servicio": nombre, duración estimada, "Genera recordatorio de mantenimiento" y "Activo en el catálogo" ("Guardar datos" y "Cancelar").
+- **Datos:** duración, mantenimiento y si está activo, en lectura. "Editar" abre el modal "Datos del servicio": nombre, duración estimada, "Genera recordatorio de mantenimiento" y "Activo en el catálogo" ("Guardar datos" y "Cancelar").
 - **Variantes:** en lectura, sus nombres en una línea (y cuántas desactivadas). "Editar" abre el modal "Variantes" con la lista para agregar, renombrar, ordenar y desactivar (cada cambio se guarda al momento; se cierra con "Listo", que no aparece mientras una fila está abierta). Las variantes inactivas no tienen precios en la ficha (conservan los suyos).
 
 ### `/panel/clientes` — Clientes (dueño y encargado con "Clientes")
