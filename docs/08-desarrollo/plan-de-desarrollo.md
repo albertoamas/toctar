@@ -91,7 +91,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 Una rama `hu-XX-…` por historia, desde `develop`, con commits chicos por tipo (`CLAUDE.md`, "Control de versiones"). En cada una, además de programar:
 
 1. **Documentación vigente.** Antes de usar una librería nueva, o una API que pudo cambiar, se lee su documentación actual con `context7`; para Next.js, `node_modules/next/dist/docs/`. Así no se programa sobre una versión vieja.
-2. **Pantallas.** Una pantalla nueva o rediseñada se diseña con la skill `frontend-design`, con la identidad del Design System y el estándar del panel (44 px con pantalla táctil, regla de botones). Se revisan capturas a 360 y 1280 px y nada se sale de la pantalla.
+2. **Pantallas.** Una pantalla nueva o rediseñada se diseña con la skill `frontend-design`, con la identidad del Design System y el estándar del panel (44 px con pantalla táctil, regla de botones). Si es del panel, además con la skill del proyecto `pantallas-panel` (`.claude/skills/`): qué tipo de pantalla es (lista, ficha, crear, configuración o flujo), una acción principal, fichas en modo lectura con "Editar" por sección, lo poco usado en "Más", textos justos y su lista de QA por rol y por estado. Se revisan capturas a 360 y 1280 px y nada se sale de la pantalla.
 3. **Documentos PDF** (cotización en C2; orden y comprobantes en C4).
    - Su diseño se trabaja con `frontend-design`. La app los genera con `@react-pdf/renderer`.
    - El archivo generado se revisa con la skill `pdf`: texto, tamaño A4, fuentes incrustadas, imágenes y cada página convertida a imagen para mirarla como una captura.

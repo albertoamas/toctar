@@ -15,13 +15,14 @@ Cada pantalla se revisa como lo haría un **desarrollador frontend senior y un d
 - **Decisiones con fundamento.** Cada cambio se justifica (accesibilidad, legibilidad, uso con el pulgar, marca, rendimiento) y se mide cuando se puede (contraste, Lighthouse, capturas). Si algo no mejora, no se cambia.
 - **Sin atajos.** Nada de parches de estilo sueltos, `!important`, valores mágicos ni duplicar un bloque para "salir del paso": se arregla en el componente o en el token que corresponde.
 - **Con las skills de diseño.** Antes de analizar cada pantalla se carga la skill de diseño del proyecto (`frontend-design`, activada en `.claude/settings.json`) y se siguen sus criterios: plan de diseño revisado contra el encargo antes de programar, tipografía y jerarquía intencionales, sin los rasgos de "plantilla genérica", movimiento con medida y autocrítica con capturas. Sus reglas no pasan por encima de la identidad visual de TocTar: donde la marca ya decidió (colores, tipografías, corte a 60°), manda la marca.
+- **Con la skill del panel.** En las pantallas del panel se carga también `pantallas-panel` (`.claude/skills/pantallas-panel/SKILL.md`): el inventario de cada pantalla, su tipo (lista, ficha, crear, configuración o flujo), una sola acción principal, las fichas en modo lectura con "Editar" por sección, lo poco usado en el menú "Más", textos justos y la lista de QA por rol, estado y tamaño. **Menos es más:** lo que no ayuda a la tarea de la pantalla se quita, se esconde o se va a otra.
 - **Restricción.** La marca ya tiene su recurso fuerte (rojo, corte a 60°, línea LED); se usa con medida. Pulir es quitar ruido antes que agregar decoración.
 
 ## Cómo se trabaja cada pantalla
 
-1. **Antes:** se carga la skill `frontend-design`. Capturas en celular (360 y 390 px) y computadora (1280 px). En el panel, también la tableta (768 px).
+1. **Antes:** se carga la skill `frontend-design` (y en el panel, `pantallas-panel`). Capturas en celular (360 y 390 px) y computadora (1280 px). En el panel, también la tableta (768 px).
 2. **Análisis:** se revisa la pantalla contra los estándares de abajo y se anota en su registro qué se encontró.
-3. **Propuesta:** se acuerdan los cambios con YankoSoft antes de programarlos.
+3. **Propuesta:** se acuerdan los cambios con YankoSoft antes de programarlos, **una pantalla a la vez** (nunca un grupo entero de golpe). La propuesta muestra el inventario, lo que se encontró, las mejoras visuales y de orden, y los componentes que se reutilizan o se crean.
 4. **Cambios:** en la rama del grupo (ver "Ramas"), con commits chicos y separados (estilo, texto, estructura).
 5. **Después:** capturas en los mismos tamaños, para comparar.
 6. **Verificación:** la lista "Al terminar cada pantalla".
@@ -191,6 +192,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 - **Montos legibles de un vistazo:** cifras con `tabular-nums`, en Bs, y el saldo siempre dicho con palabras ("Pagado", "Saldo: 300 Bs"), no solo con color.
 - **El técnico (RN-12)** nunca ve precios, pagos ni el teléfono del cliente: se revisa también con su usuario.
 - **Estados de un trabajo** (agendada, recibida, en proceso, lista, entregada, cancelada) escritos igual en todas las pantallas.
+- **Cada pantalla se ordena con `pantallas-panel`:** primero su inventario (qué hay, para qué tarea, quién y cada cuánto, y la decisión: queda, se esconde o se va), después su tipo y su forma. Los patrones nuevos (la sección con "Editar" y el menú "Más") se arman una vez en `src/componentes/panel/` en el primer grupo que los necesite y los demás grupos los reusan.
 
 ### 7. Panel: catálogo
 
