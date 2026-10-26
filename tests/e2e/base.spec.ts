@@ -1,5 +1,5 @@
 import { expect, test, type Locator } from "@playwright/test";
-import { ingresarComoDueno } from "./apoyo";
+import { abrirNuevoServicio, ingresarComoDueno } from "./apoyo";
 
 // Pruebas de humo de la iteración 0: la app arranca, conecta con la base y
 // las dos áreas (sitio y panel) cargan con su navegación.
@@ -193,7 +193,7 @@ test("los botones del panel miden 44 px con pantalla táctil y 36 con mouse", as
   const alto = isMobile ? 44 : 36;
   const medir = async (boton: Locator) => expect(Math.round((await boton.boundingBox())!.height)).toBe(alto);
   await page.goto("/panel/catalogo");
-  await medir(page.getByRole("link", { name: "Agregar servicio" }));
+  await medir(page.getByRole("button", { name: "Agregar servicio" }));
   await page.goto("/panel/sitio");
   await medir(page.getByRole("button", { name: /^Bajar / }).first());
   // Toda la fila abre el servicio, también la foto
@@ -206,7 +206,7 @@ test("los botones del panel miden 44 px con pantalla táctil y 36 con mouse", as
 test("ningún botón del panel mide menos que el tamaño normal", async ({ page, isMobile }) => {
   await ingresarComoDueno(page);
   const minimo = isMobile ? 44 : 36;
-  for (const ruta of ["/panel/sitio", "/panel/sitio/textos", "/panel/sitio/preguntas", "/panel/sitio/galeria", "/panel/configuracion"]) {
+  for (const ruta of ["/panel/sitio", "/panel/sitio/textos", "/panel/sitio/preguntas", "/panel/sitio/galeria", "/panel/configuracion", "/panel/catalogo/1"]) {
     await page.goto(ruta, { waitUntil: "networkidle" });
     if (ruta === "/panel/sitio") await page.getByRole("list", { name: "Servicios del sitio" }).getByRole("link").first().click();
     await expect(page.getByRole("main").getByRole("button").first()).toBeVisible();
@@ -220,15 +220,18 @@ test("ningún botón del panel mide menos que el tamaño normal", async ({ page,
 
 test("al enviar con errores el foco va al campo, y el enlace para volver mide 44 px", async ({ page }) => {
   await ingresarComoDueno(page);
-  await page.goto("/panel/catalogo/nuevo");
+  // El modal de Nuevo servicio (pulido 7.2) abre con el foco en el nombre: se lo saca, para que la prueba vea que el
+  // error lo devuelve
+  const nuevo = await abrirNuevoServicio(page);
+  await expect(nuevo.getByLabel("Nombre del servicio")).toBeFocused();
+  await nuevo.getByRole("button", { name: "Crear servicio" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(nuevo.getByLabel("Nombre del servicio")).toBeFocused();
+  await expect(nuevo.getByLabel("Nombre del servicio")).toHaveAttribute("aria-invalid", "true");
+  // El enlace para volver de una ficha mide 44 px
+  await page.goto("/panel/catalogo/1");
   const volver = page.getByRole("main").getByRole("link", { name: "Catálogo y precios" });
   expect(Math.round((await volver.boundingBox())!.height)).toBe(44);
-  // El nombre empieza con el foco (pulido 7.2): se lo saca, para que la prueba vea que el error lo devuelve
-  await expect(page.getByLabel("Nombre del servicio")).toBeFocused();
-  await page.getByRole("button", { name: "Crear servicio" }).focus();
-  await page.keyboard.press("Enter");
-  await expect(page.getByLabel("Nombre del servicio")).toBeFocused();
-  await expect(page.getByLabel("Nombre del servicio")).toHaveAttribute("aria-invalid", "true");
 });
 
 test("en Editar servicio una fila vacía recibe el foco con su error, y en el celular sus botones van debajo", async ({ page, isMobile }) => {

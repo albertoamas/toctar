@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { crearUsuario, ingresar, ingresarComoDueno, PNG } from "./apoyo";
+import { abrirNuevoServicio, crearUsuario, ingresar, ingresarComoDueno, PNG } from "./apoyo";
 
 // HU-07 Servicios del sitio. Criterios: docs/09-pruebas/criterios-entrega-1.md (7.1 a 7.6). Desde la reorganización del
 // panel (C5 §0), el servicio se crea y se nombra en el catálogo; aquí se edita su página.
@@ -17,13 +17,13 @@ test("el dueño crea el servicio en el catálogo y completa su página: benefici
   await expect(page.getByRole("list", { name: "Servicios del sitio" })).toContainText("Pulido y nano cerámico");
   await expect(page.getByRole("link", { name: "Agregar servicio" })).toHaveCount(0);
 
-  await page.goto("/panel/catalogo/nuevo");
+  const nuevo = await abrirNuevoServicio(page);
   // Un nombre repetido se rechaza sin importar mayúsculas
-  await page.getByLabel("Nombre del servicio").fill("pulido y nano CERÁMICO");
-  await page.getByRole("button", { name: "Crear servicio" }).click();
-  await expect(page.getByText("Ya existe un servicio con ese nombre.")).toBeVisible();
-  await page.getByLabel("Nombre del servicio").fill(nombre);
-  await page.getByRole("button", { name: "Crear servicio" }).click();
+  await nuevo.getByLabel("Nombre del servicio").fill("pulido y nano CERÁMICO");
+  await nuevo.getByRole("button", { name: "Crear servicio" }).click();
+  await expect(nuevo.getByText("Ya existe un servicio con ese nombre.")).toBeVisible();
+  await nuevo.getByLabel("Nombre del servicio").fill(nombre);
+  await nuevo.getByRole("button", { name: "Crear servicio" }).click();
   await expect(page.getByText("Servicio creado.")).toBeVisible();
   // Nace oculto en el sitio, hasta que se complete su página
   await expect(page.getByText("Oculto en el sitio", { exact: true })).toBeVisible();
@@ -120,7 +120,7 @@ test("el encargado con el permiso Sitio web entra; sin el permiso o como técnic
       await page.getByRole("list", { name: "Servicios del sitio" }).getByRole("link").first().click();
       await expect(page.getByLabel("Dirección de la página")).toBeVisible();
       await expect(page.getByRole("link", { name: "Abrir en el catálogo" })).toHaveCount(0);
-      await page.goto("/panel/catalogo/nuevo");
+      await page.goto("/panel/catalogo");
       await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
     } else await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
   }

@@ -133,14 +133,21 @@ export async function crearClienteEnBase(datos: { nombre: string; telefono: stri
   }
 }
 
+/** El modal "Nuevo servicio" de la lista del catálogo, abierto (el botón se habilita al cargar la página). */
+export async function abrirNuevoServicio(page: Page): Promise<Locator> {
+  await page.goto("/panel/catalogo", { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Agregar servicio" }).click();
+  return page.getByRole("dialog", { name: "Nuevo servicio" });
+}
+
 /**
  * Crea un servicio como lo hace el dueño: en el catálogo (nace oculto) y después su página en el sitio, con el resumen y
  * visible. Devuelve su id y la dirección de su página. Para las pruebas que necesitan un servicio propio en el sitio.
  */
 export async function crearServicioPublicado(page: Page, nombre: string, resumen = "Servicio de prueba."): Promise<{ id: string; slug: string }> {
-  await page.goto("/panel/catalogo/nuevo");
-  await page.getByLabel("Nombre del servicio").fill(nombre);
-  await page.getByRole("button", { name: "Crear servicio" }).click();
+  const nuevo = await abrirNuevoServicio(page);
+  await nuevo.getByLabel("Nombre del servicio").fill(nombre);
+  await nuevo.getByRole("button", { name: "Crear servicio" }).click();
   await expect(page).toHaveURL(/\/panel\/catalogo\/\d+\?creado=1$/);
   const id = page.url().match(/catalogo\/(\d+)/)![1];
   await page.goto(`/panel/sitio/servicios/${id}`);

@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { consultar, crearServicioPublicado, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
+import { abrirNuevoServicio, consultar, crearServicioPublicado, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
 
 // HU-19 Catálogo con variantes y HU-20 Precios por tamaño y duración.
 // Especificación: docs/08-desarrollo/etapas/C1-catalogo-clientes.md §9. La ficha del servicio está en lectura y cada
@@ -93,13 +93,14 @@ test("las variantes se agregan, renombran y desactivan en el catálogo; una nuev
   // Cuenta las variantes activas del servicio (datos iniciales: 1, 2, 3, 5 y 10 años)
   await expect(page.getByRole("list", { name: "Servicios del catálogo" }).getByRole("link", { name: /Pulido y nano cerámico/ })).toContainText("5 variantes");
 
-  await page.getByRole("link", { name: "Agregar servicio" }).click();
-  await expect(page).toHaveURL(/\/panel\/catalogo\/nuevo$/);
-  // La dirección de antes de la reorganización (C5 §0) lleva a la misma pantalla
-  await page.goto("/panel/sitio/servicios/nuevo");
-  await expect(page).toHaveURL(/\/panel\/catalogo\/nuevo$/);
-  await page.getByLabel("Nombre del servicio").fill(`Variantes de prueba ${sufijo(info)}`);
-  await page.getByRole("button", { name: "Crear servicio" }).click();
+  // "Agregar servicio" es un modal en la lista (pulido 7.2): las direcciones viejas de la pantalla de alta llevan ahí
+  for (const vieja of ["/panel/catalogo/nuevo", "/panel/sitio/servicios/nuevo"]) {
+    await page.goto(vieja);
+    await expect(page).toHaveURL(/\/panel\/catalogo$/);
+  }
+  const nuevo = await abrirNuevoServicio(page);
+  await nuevo.getByLabel("Nombre del servicio").fill(`Variantes de prueba ${sufijo(info)}`);
+  await nuevo.getByRole("button", { name: "Crear servicio" }).click();
   await expect(page.getByText("Servicio creado. Carga sus precios.")).toBeVisible();
   // D-2: nace con la variante "Única", y la ficha se abre en el modal de sus precios, con el foco en el primero
   const preciosUnica = page.getByRole("dialog", { name: "Precios de Única" });
