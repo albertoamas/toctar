@@ -8,6 +8,17 @@ import { consultar, crearServicioPublicado, crearUsuario, ingresar, ingresarComo
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "C" : "E");
 
+/**
+ * La página pública del servicio, hasta que muestre lo esperado: el sitio renueva su copia en segundo plano y la primera
+ * visita después de un cambio puede servir la anterior unos segundos (medido el 25/10: 2 a 3 s con las pruebas en paralelo).
+ */
+async function enElSitio(page: Page, slug: string, titulo: string | RegExp) {
+  await expect(async () => {
+    await page.goto(`/servicios/${slug}`);
+    await expect(page.getByRole("heading", { level: 1, name: titulo })).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
+}
+
 /** La ficha de un servicio, ya cargada: "Editar" se habilita al hidratar y un toque antes se perdería. */
 async function abrirFicha(page: Page, id: string) {
   await page.goto(`/panel/catalogo/${id}`, { waitUntil: "networkidle" });
@@ -57,17 +68,17 @@ test("el dueño marca el mantenimiento, cambia la duración y desactiva un servi
   await datos.getByText("Activo en el catálogo").click();
   await datos.getByRole("button", { name: "Guardar datos" }).click();
   await expect(page.getByRole("heading", { level: 1 }).locator("..")).toContainText("Inactivo");
-  await page.goto(`/servicios/${slug}`);
-  await expect(page.getByRole("heading", { name: "No encontramos esta página" })).toBeVisible();
+  await enElSitio(page, slug, "No encontramos esta página");
 
   // Se reactiva: vuelve al sitio
   await abrirFicha(page, id);
   await editar.click();
   await datos.getByText("Activo en el catálogo").click();
   await datos.getByRole("button", { name: "Guardar datos" }).click();
+  // Guardado de verdad: el formulario se cerró (su etiqueta "Activo en el catálogo" también dice "Activo")
+  await expect(datos.getByRole("button", { name: "Guardar datos" })).toHaveCount(0);
   await expect(datos).toContainText("Activo");
-  await page.goto(`/servicios/${slug}`);
-  await expect(page.getByRole("heading", { level: 1, name: nombre })).toBeVisible();
+  await enElSitio(page, slug, nombre);
 });
 
 test("las variantes se agregan, renombran y desactivan en el catálogo; una nueva pide sus precios", async ({ page }, info) => {
@@ -87,10 +98,11 @@ test("las variantes se agregan, renombran y desactivan en el catálogo; una nuev
   // D-2: nace con la variante "Única", y la ficha se abre en sus precios, que es lo que falta
   await expect(page.getByRole("form", { name: "Precios de Única" })).toBeVisible();
 
+  // Una sección a la vez: mientras los precios están abiertos, las demás no ofrecen editar (nada de lo escrito se pierde)
   await page.waitForLoadState("networkidle");
+  await expect(page.getByRole("button", { name: "Editar variantes" })).toHaveCount(0);
+  await page.getByRole("form", { name: "Precios de Única" }).getByRole("button", { name: "Cancelar" }).click();
   await page.getByRole("button", { name: "Editar variantes" }).click();
-  // Una sección a la vez: abrir las variantes cierra los precios
-  await expect(page.getByRole("form", { name: "Precios de Única" })).toHaveCount(0);
   const variantes = page.getByRole("region", { name: "Variantes" });
   const activas = variantes.getByRole("list", { name: "Variantes activos" });
   await expect(activas).toContainText("Única");
