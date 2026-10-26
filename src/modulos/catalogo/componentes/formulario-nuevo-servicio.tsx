@@ -18,7 +18,7 @@ export function FormularioNuevoServicio() {
   useFocoEnError(formulario, estado);
   return (
     <form ref={formulario} action={accion} className="flex max-w-xl flex-col gap-6" noValidate>
-      <Campo id="nuevo-nombre" etiqueta="Nombre del servicio" error={e.nombre} ayuda="Como lo conocen los clientes. Nace oculto en el sitio: se muestra cuando completes su página.">
+      <Campo id="nuevo-nombre" etiqueta="Nombre del servicio" error={e.nombre} ayuda="Como lo conocen los clientes.">
         <Input
           id="nuevo-nombre"
           name="nombre"

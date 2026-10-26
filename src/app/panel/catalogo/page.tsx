@@ -34,7 +34,7 @@ async function Lista() {
   const servicios = await listarCatalogo();
   return (
     <>
-      <p className="text-tinta-suave">Los precios que cargas aquí no salen en el sitio. Toca un servicio para editarlo.</p>
+      <p className="text-tinta-suave">Los precios no salen en el sitio.</p>
       <ol aria-label="Servicios del catálogo" className="flex flex-col divide-y divide-border rounded-sm border border-border">
         {servicios.map((s) => (
           <li key={s.id}>
@@ -47,10 +47,8 @@ async function Lista() {
               <span className="flex flex-wrap gap-x-3 text-sm text-tinta-suave">
                 <span className="whitespace-nowrap">{s.variantes === 1 ? "1 variante" : `${s.variantes} variantes`}</span>
                 <span className="whitespace-nowrap">{s.duracionDias === 1 ? "1 día" : `${s.duracionDias} días`}</span>
-                {/* Los que faltan, en tinta: es lo que hay que cargar */}
-                {!s.activo ? null : s.preciosFaltantes === 0 ? (
-                  <span className="whitespace-nowrap">Precios completos</span>
-                ) : (
+                {/* Solo lo que falta (es lo que hay que cargar); completos no dice nada (pulido 7.1) */}
+                {s.activo && s.preciosFaltantes > 0 && (
                   <span className="font-semibold whitespace-nowrap text-tinta">{s.preciosFaltantes === 1 ? "Falta 1 precio" : `Faltan ${s.preciosFaltantes} precios`}</span>
                 )}
               </span>
