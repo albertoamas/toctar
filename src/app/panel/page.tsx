@@ -9,7 +9,8 @@ import { MODULOS, modulosDelMenu, nombreEnMenu, puedeVerModulo, type Modulo } fr
 import { exigirModulo } from "@/lib/sesion";
 import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { primerNombre } from "@/modulos/clientes/reglas";
-import { BloqueDelDia, type FilaDelDia } from "@/modulos/inicio/componentes/bloque-del-dia";
+import { type DatosFila } from "@/componentes/panel/fila-lista";
+import { BloqueDelDia } from "@/modulos/inicio/componentes/bloque-del-dia";
 import { ingresosDeHoy } from "@/modulos/inicio/consultas";
 import { cantidad, ordenesDelDia, textoEntregaAtrasada, textoIngresoAtrasado } from "@/modulos/inicio/reglas";
 import { contarSinAvisar } from "@/modulos/mantenimientos/consultas";
@@ -77,7 +78,7 @@ async function Contenido() {
               vacio="Nada pendiente."
               filas={
                 reclamos > 0
-                  ? [{ href: "/panel/reclamos?ver=pendientes", titulo: cantidad(reclamos, "pendiente", "pendientes"), detalle: "Llegaron desde el sitio. Respóndelos por WhatsApp." }]
+                  ? [{ href: "/panel/reclamos?ver=pendientes", titulo: cantidad(reclamos, "pendiente", "pendientes"), detalles: ["Llegaron desde el sitio. Respóndelos por WhatsApp."] }]
                   : []
               }
             />
@@ -88,10 +89,10 @@ async function Contenido() {
               titulo="Ingresos de hoy"
               vacio="Nada para hoy."
               filas={ingresos.map(
-                (i): FilaDelDia => ({
+                (i): DatosFila => ({
                   href: rutaTrabajo(i.id, "agendado", ve("ordenes")),
                   titulo: i.placa,
-                  detalle: [i.cliente, i.espacio, i.horaIngreso].filter(Boolean).join(", "),
+                  detalles: [[i.cliente, i.espacio, i.horaIngreso].filter(Boolean).join(", ")],
                   aviso: textoIngresoAtrasado(i.fechaInicio, hoy),
                 }),
               )}
@@ -103,10 +104,10 @@ async function Contenido() {
               titulo="Entregas de hoy"
               vacio="Nada para hoy."
               filas={ordenes.entregas.map(
-                (e): FilaDelDia => ({
+                (e): DatosFila => ({
                   href: rutaTrabajo(e.id, e.estado, true),
                   titulo: e.placa,
-                  detalle: e.cliente,
+                  detalles: [e.cliente],
                   aviso: textoEntregaAtrasada(e, hoy),
                   estado: NOMBRE_ESTADO_TRABAJO[e.estado],
                 }),
@@ -118,7 +119,7 @@ async function Contenido() {
               id="listas"
               titulo="Listas sin avisar"
               vacio="Nada pendiente."
-              filas={ordenes.listas.map((l): FilaDelDia => ({ href: rutaTrabajo(l.id, l.estado, true), titulo: l.placa, detalle: l.cliente }))}
+              filas={ordenes.listas.map((l): DatosFila => ({ href: rutaTrabajo(l.id, l.estado, true), titulo: l.placa, detalles: [l.cliente] }))}
             />
           )}
           {mantenimientos && (
@@ -133,7 +134,7 @@ async function Contenido() {
                       {
                         href: "/panel/mantenimientos",
                         titulo: `${cantidad(mantenimientos.vencidos, "vencido", "vencidos")}, ${cantidad(mantenimientos.proximos, "próximo", "próximos")}`,
-                        detalle: `Sin avisar todavía. Los próximos vencen en ${DIAS_PROXIMOS} días o menos.`,
+                        detalles: [`Sin avisar todavía. Los próximos vencen en ${DIAS_PROXIMOS} días o menos.`],
                       },
                     ]
                   : []
