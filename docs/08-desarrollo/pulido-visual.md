@@ -196,9 +196,9 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 7.1 | Catálogo y precios | `/panel/catalogo` | ⏳ |
-| 7.2 | Nuevo servicio (antes 4.3, en Sitio web) | `/panel/catalogo/nuevo` | ⏳ |
-| 7.3 | Servicio del catálogo: datos, precios por tamaño, variantes e historial | `/panel/catalogo/[id]` | ⏳ |
+| 7.1 | Catálogo y precios | `/panel/catalogo` | ✅ |
+| 7.2 | Nuevo servicio (antes 4.3, en Sitio web) | `/panel/catalogo/nuevo` | ✅ |
+| 7.3 | Servicio del catálogo: datos, precios por tamaño, variantes e historial | `/panel/catalogo/[id]` | ✅ |
 
 ### 8. Panel: clientes
 
@@ -933,6 +933,47 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px, y con errores a 360 y 1280. Comparativa en `pulido-visual/6.3-cotizaciones-computadora.jpg`.
   - E2E `hu-05` "los parámetros vacíos o negativos…" (y el foco en el adelanto). E2E completo: 169 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 7.1 Catálogo y precios (25/10/2026)
+- **Inventario** (skill `pantallas-panel`):
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | Servicios, con insignias y variantes, días y precios | Encontrar el servicio y ver si le faltan precios | Dueño, seguido | Queda |
+  | "Agregar servicio" | Crear | Dueño, rara vez | Queda: la única acción de la lista |
+  | "Toca un servicio para editarlo" | Explicar | — | Se va: cada fila ya se ve como un enlace |
+  | "Precios completos" en cada fila | Informar | — | Se va: solo se avisa lo que falta |
+- **Cambios:** una línea arriba ("Los precios no salen en el sitio.") y "Faltan N precios" solo cuando faltan.
+- **Verificación:** capturas a 360, 390, 768 y 1280 px, sin desborde.
+
+### 7.2 Nuevo servicio (25/10/2026)
+- **Encontrado:** ya era una pantalla de crear como pide la skill (un campo y "Crear servicio").
+- **Cambios:** la ayuda se acorta a "Como lo conocen los clientes."; que nace oculto en el sitio se ve en la ficha, con su insignia.
+
+### 7.3 Servicio del catálogo (25/10/2026)
+- **Encontrado:**
+  - **5.032 px de alto en el celular** (unas siete pantallas): el formulario de datos y uno de precios por variante, todos abiertos. Con las cinco variantes del cerámico: 25 campos de precio y **seis botones rojos de guardar** a la vista.
+  - Párrafos de ayuda en cada sección, "Ver los modelos de cada tamaño" (ya están en Configuración) y la lista de variantes repetida al final (sus nombres ya estaban en los precios).
+  - Para consultar un precio, que es lo que más se hace aquí, había que leer formularios.
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | Precios de cada variante | Consultar un precio; cambiarlo a veces | Dueño, seguido | Arriba y en lectura, con "Editar" por variante |
+  | Datos (nombre, duración, mantenimiento, activo) | Configurar el servicio | Dueño, rara vez | En lectura, con "Editar" |
+  | Variantes (agregar, renombrar, ordenar, desactivar) | Cambiar la estructura | Rara vez | Se esconde: "Editar" abre el editor; en lectura, sus nombres en una línea |
+  | Historial de precios | Consultar | Rara vez | Dentro de la edición de precios |
+  | Modelos de cada tamaño y párrafos de ayuda | Explicar | Casi nunca | Se van; queda una línea en el formulario de precios |
+- **Cambios:**
+  - **Ficha en lectura** con tres secciones (precios, datos y variantes) y **un solo formulario abierto a la vez**. Componente nuevo y compartido `SeccionEditable` (`src/componentes/panel/seccion-editable.tsx`): "Editar" abre el formulario en el lugar, al guardar se cierra solo y vuelve a lectura con los datos nuevos, "Cancelar" (o "Listo" donde cada cambio ya se guardó) al lado del botón, y el foco va al primer campo al abrir y vuelve a "Editar" al cerrar. Lo usarán las demás fichas.
+  - **Precios en lectura** (`PreciosVariante`): en el celular, una lista de precios (el tamaño a la izquierda y el monto alineado a la derecha); desde 640 px, una grilla. "Sin cargar" resaltado; "Según evaluación" con palabras; la duración propia solo si es distinta.
+  - Botones con lo que guardan: "Guardar precios", "Guardar datos".
+  - Encabezado: el nombre, una insignia ("En el sitio", "Oculto en el sitio" o "Inactivo") y "Su página en el sitio" como botón de contorno, en lugar de una línea de texto.
+  - Recién creado, la ficha se abre en los precios de su primera variante (lo que falta cargar), con el aviso "Servicio creado. Carga sus precios."
+  - `ListaEditable` puede ir sin su encabezado (`conEncabezado={false}`) cuando la contiene una sección.
+- **Verificación:**
+  - **2.158 px en el celular (−57 %)** y 1.382 en la computadora (−59 %). Capturas a 360, 390, 768 y 1280 px en lectura y con cada sección abierta; foco al abrir y al cerrar. Comparativa en `pulido-visual/7.3-servicio-catalogo-celular.jpg`.
+  - E2E `hu-19-20` reescrita con el flujo nuevo (editar, guardar, volver a lectura con los datos y el foco en "Editar", una sección a la vez) y `hu-07` ajustada.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
