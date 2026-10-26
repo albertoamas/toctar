@@ -68,6 +68,8 @@ test("se busca al cliente, se elige y se agrega otro vehículo suyo", async ({ p
   await page.getByRole("link", { name: "Nueva consulta" }).click();
 
   await page.getByLabel("Buscar por nombre, teléfono o placa").fill(`cb24${s}`);
+  // Se toca cuando la búsqueda ya está en la dirección (?q=): antes, la lista se vuelve a armar y el toque se pierde
+  await expect(page).toHaveURL(new RegExp(`q=cb24${s}`));
   const elegir = page.getByRole("list", { name: "Elegir cliente" });
   await expect(elegir.getByRole("link")).toHaveCount(1);
   await elegir.getByRole("link", { name: new RegExp(`Consulta buscada ${s}`) }).click();

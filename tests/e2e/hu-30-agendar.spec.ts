@@ -197,7 +197,12 @@ test("reserva directa: cliente y vehículo registrados, servicio del catálogo c
   await page.goto("/panel/agenda");
   await page.getByRole("link", { name: "Nueva reserva" }).click();
   await page.getByLabel("Buscar por nombre, teléfono o placa").fill(`DI30${s}6`);
-  await page.getByRole("list", { name: "Elegir cliente" }).getByRole("link", { name: new RegExp(`Directa ${s}`) }).click();
+  // La búsqueda va a la dirección (?q=) un momento después de escribir y la lista se vuelve a armar: un toque antes de
+  // eso caía en la lista vieja y se perdía (CI del PR #95). Se toca cuando la búsqueda ya está aplicada
+  await expect(page).toHaveURL(new RegExp(`q=DI30${s}6`));
+  const elegir = page.getByRole("list", { name: "Elegir cliente" });
+  await expect(elegir.getByRole("link")).toHaveCount(1);
+  await elegir.getByRole("link", { name: new RegExp(`Directa ${s}`) }).click();
   await expect(page).toHaveURL(new RegExp(`cliente=${clienteId}`));
   // Con un solo vehículo, no hace falta elegirlo
   await page.getByRole("button", { name: "Agregar servicio" }).click();
