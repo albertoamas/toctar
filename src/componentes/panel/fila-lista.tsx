@@ -47,8 +47,9 @@ function FilaLista({ href, titulo, tituloGrande, dato, detalles = [], aviso, est
         {dato && <span className="text-sm font-semibold tabular-nums">{dato}</span>}
         {detalles.length > 0 && (
           <span className="flex flex-wrap gap-x-3 text-sm text-tinta-suave">
-            {detalles.map((d) => (
-              <span key={d}>{d}</span>
+            {/* Por posición: dos datos pueden decir lo mismo (un cliente y un espacio con el mismo nombre) */}
+            {detalles.map((d, i) => (
+              <span key={i}>{d}</span>
             ))}
           </span>
         )}

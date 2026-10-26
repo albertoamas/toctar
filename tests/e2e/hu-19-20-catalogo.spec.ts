@@ -98,8 +98,8 @@ test("las variantes se agregan, renombran y desactivan en el catálogo; una nuev
   await page.getByLabel("Nombre del servicio").fill(`Variantes de prueba ${sufijo(info)}`);
   await page.getByRole("button", { name: "Crear servicio" }).click();
   await expect(page.getByText("Servicio creado. Carga sus precios.")).toBeVisible();
-  // D-2: nace con la variante "Única", y la ficha se abre en sus precios, que es lo que falta
-  await expect(page.getByRole("form", { name: "Precios de Única" })).toBeVisible();
+  // D-2: nace con la variante "Única", y la ficha se abre en sus precios, que es lo que falta, con el foco en el primero
+  await expect(page.getByRole("form", { name: "Precios de Única" }).getByLabel("Compactos")).toBeFocused();
 
   // Una sección a la vez: mientras los precios están abiertos, las demás no ofrecen editar (nada de lo escrito se pierde)
   await page.waitForLoadState("networkidle");
@@ -127,6 +127,8 @@ test("las variantes se agregan, renombran y desactivan en el catálogo; una nuev
   await expect(page.getByText("Premium desactivada.")).toBeVisible();
   await expect(page.getByRole("region", { name: "Premium" })).toHaveCount(0);
   await variantes.getByRole("button", { name: "Editar Básico" }).click();
+  // Con una fila abierta, "Listo" no está: lo escrito sin guardar se perdería
+  await expect(variantes.getByRole("button", { name: "Listo" })).toHaveCount(0);
   await variantes.getByRole("button", { name: "Desactivar Básico" }).click();
   await expect(page.getByText(/Debe quedar al menos una variante activa/)).toBeVisible();
 

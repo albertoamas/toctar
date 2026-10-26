@@ -1,4 +1,4 @@
-import { useActionState, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { ArrowDownIcon, ArrowUpIcon, PencilIcon, PlusIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { avisarResultado } from "@/componentes/panel/avisos";
@@ -35,6 +35,8 @@ type Props = {
   acciones: AccionesLista;
   /** Título de nivel 2 o 3, según dónde va la lista. */
   nivel?: 2 | 3;
+  /** Avisa si hay una fila abierta para agregar o renombrar (la sección que la contiene no se cierra mientras tanto). */
+  alEditar?: (editando: boolean) => void;
 } & (
   | { conEncabezado?: true; descripcion: string }
   /** Sin título, descripción ni región propia: ya los pone la sección que la contiene (una SeccionEditable). */
@@ -46,6 +48,8 @@ export function ListaEditable(props: Props) {
   const activos = elementos.filter((e) => e.activo);
   const inactivos = elementos.filter((e) => !e.activo);
   const [editando, setEditando] = useState<number | "nuevo" | null>(null);
+  const { alEditar } = props;
+  useEffect(() => alEditar?.(editando !== null), [alEditar, editando]);
   const [pendiente, iniciar] = useTransition();
   const Titulo = props.nivel === 3 ? "h3" : "h2";
   const conEncabezado = props.conEncabezado !== false;

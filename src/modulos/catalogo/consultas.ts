@@ -23,7 +23,7 @@ export type FilaCatalogo = {
 
 /** Todos los servicios, los activos primero y en el orden del sitio, con su precio más bajo y cuántos precios les faltan. */
 export async function listarCatalogo(): Promise<FilaCatalogo[]> {
-  const [servicios, variantes, tamanos] = await Promise.all([
+  const [servicios, variantes, tamanos, todos] = await Promise.all([
     db
       .select({
         id: servicio.id,
@@ -36,15 +36,19 @@ export async function listarCatalogo(): Promise<FilaCatalogo[]> {
       .orderBy(desc(servicio.activo), asc(servicio.orden), asc(servicio.id)),
     db.select({ id: variante.id, servicioId: variante.servicioId }).from(variante).where(eq(variante.activo, true)),
     tamanosActivos(),
+    preciosVigentes("activas"),
   ]);
-  const tamanoIds = tamanos.map((t) => t.id);
+  const tamanoIds = new Set(tamanos.map((t) => t.id));
   // Solo los pares de variantes y tamaños activos: los demás no se cotizan
-  const vigentes = (await preciosVigentes(variantes.map((v) => v.id))).filter((p) => tamanoIds.includes(p.tamanoId));
+  const vigentes = todos.filter((p) => tamanoIds.has(p.tamanoId));
   const conPrecio = new Set(vigentes.map((p) => clavePrecio(p.varianteId, p.tamanoId)));
+  // Agrupadas, para no recorrer las listas enteras por cada servicio
+  const variantesDe = Map.groupBy(variantes, (v) => v.servicioId);
+  const montosDe = Map.groupBy(vigentes, (p) => p.varianteId);
   return servicios.map((s) => {
-    const suyas = variantes.filter((v) => v.servicioId === s.id).map((v) => v.id);
-    const montos = vigentes.filter((p) => suyas.includes(p.varianteId)).map((p) => p.monto);
-    return { ...s, variantes: suyas.length, preciosFaltantes: preciosFaltantes(suyas, tamanoIds, conPrecio), desde: precioDesde(montos) };
+    const suyas = (variantesDe.get(s.id) ?? []).map((v) => v.id);
+    const montos = suyas.flatMap((v) => (montosDe.get(v) ?? []).map((p) => p.monto));
+    return { ...s, variantes: suyas.length, preciosFaltantes: preciosFaltantes(suyas, [...tamanoIds], conPrecio), desde: precioDesde(montos) };
   });
 }
 
@@ -87,13 +91,14 @@ export async function listarVariantes(servicioId: number) {
     .orderBy(sql`${variante.activo} desc`, asc(variante.orden), asc(variante.id));
 }
 
-/** Precio vigente de cada par (D-3): la fila más reciente. */
-export async function preciosVigentes(varianteIds: number[]): Promise<{ varianteId: number; tamanoId: number; monto: Monto }[]> {
+/** Precio vigente de cada par (D-3): la fila más reciente. De esas variantes o, con "activas", de todas las activas. */
+export async function preciosVigentes(varianteIds: number[] | "activas"): Promise<{ varianteId: number; tamanoId: number; monto: Monto }[]> {
   if (varianteIds.length === 0) return [];
+  const delFiltro = varianteIds === "activas" ? db.select({ id: variante.id }).from(variante).where(eq(variante.activo, true)) : varianteIds;
   return db
     .selectDistinctOn([precio.varianteId, precio.tamanoId], { varianteId: precio.varianteId, tamanoId: precio.tamanoId, monto: precio.monto })
     .from(precio)
-    .where(inArray(precio.varianteId, varianteIds))
+    .where(inArray(precio.varianteId, delFiltro))
     .orderBy(precio.varianteId, precio.tamanoId, desc(precio.vigenteDesde), desc(precio.id));
 }
 

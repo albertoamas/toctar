@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { PencilIcon } from "lucide-react";
 import { useHidratado } from "@/componentes/hidratado";
 import { Button } from "@/componentes/ui/button";
@@ -15,18 +15,38 @@ import { Button } from "@/componentes/ui/button";
 /** El primer control que puede recibir el foco (uno deshabilitado, como "Subir" en la primera fila, no lo recibe). */
 const PRIMER_CONTROL = ["input:not([type=hidden])", "textarea", "select", "button"].map((c) => `${c}:not(:disabled)`).join(", ");
 
-type EstadoFicha = { abierta: string | null; abrir: (id: string) => void; cerrar: (id: string) => void };
+type EstadoFicha = {
+  abierta: string | null;
+  abrir: (id: string) => void;
+  cerrar: (id: string) => void;
+  /** Cada sección se anota al aparecer y se borra al irse: así una que desaparece no deja la ficha trabada. */
+  registrar: (id: string) => () => void;
+};
 const Ficha = createContext<EstadoFicha | null>(null);
 const Seccion = createContext<{ cerrar: () => void } | null>(null);
 
 /** Agrupa las secciones de una ficha para que se abra una a la vez. `abierta`: la que empieza abierta. */
 export function FichaEditable({ abierta: inicial = null, children }: { abierta?: string | null; children: React.ReactNode }) {
   const [abierta, setAbierta] = useState(inicial);
+  const [presentes, setPresentes] = useState<ReadonlySet<string>>(new Set());
+  // Estable: las secciones la usan en un efecto, y una nueva en cada render las anotaría y borraría sin parar
+  const registrar = useCallback((id: string) => {
+    setPresentes((antes) => new Set(antes).add(id));
+    return () =>
+      setPresentes((antes) => {
+        const despues = new Set(antes);
+        despues.delete(id);
+        return despues;
+      });
+  }, []);
   const valor: EstadoFicha = {
-    abierta,
+    // La abierta cuenta mientras su sección siga en la ficha (si se fue al recargar, por ejemplo una variante que se
+    // desactivó, las demás vuelven a ofrecer Editar). Antes de que se anote ninguna (la primera pintura), se le cree
+    abierta: abierta !== null && (presentes.size === 0 || presentes.has(abierta)) ? abierta : null,
     abrir: setAbierta,
     // Solo si sigue abierta esa: un guardado que termina tarde no cierra otra
     cerrar: (id) => setAbierta((actual) => (actual === id ? null : actual)),
+    registrar,
   };
   return <Ficha.Provider value={valor}>{children}</Ficha.Provider>;
 }
@@ -51,12 +71,15 @@ export function SeccionEditable({ id, titulo, nivel = 2, etiquetaEditar, lectura
   // Otra sección de la ficha está abierta: esta no ofrece editar hasta que aquella se guarde o se cancele
   const otraAbierta = !!ficha && ficha.abierta !== null && !abierta;
   const hidratado = useHidratado();
+  const registrar = ficha?.registrar;
+  useEffect(() => registrar?.(id), [registrar, id]);
   const contenido = useRef<HTMLDivElement>(null);
   const boton = useRef<HTMLButtonElement>(null);
 
-  // El foco: al abrir, al primer campo; al cerrarse esta misma (guardar o cancelar), de vuelta a su "Editar". Se compara
-  // con el estado anterior y no con una marca de "primera vez": así el doble efecto del modo estricto no mueve el foco
-  const anterior = useRef(abierta);
+  // El foco: al abrir (también si la ficha empieza con esta abierta), al primer campo; al cerrarse esta misma (guardar
+  // o cancelar), de vuelta a su "Editar". Se compara con el estado anterior y no con una marca de "primera vez": así el
+  // doble efecto del modo estricto no lo mueve dos veces
+  const anterior = useRef(false);
   const cerroSola = useRef(false);
   useEffect(() => {
     if (anterior.current === abierta) return;

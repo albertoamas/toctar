@@ -1,8 +1,10 @@
+import { cantidad } from "@/lib/cantidad";
+
 // Reglas puras del catálogo (C1). Sin base ni servidor: las prueba tests/unit/catalogo.test.ts.
 // Especificación: docs/08-desarrollo/etapas/C1-catalogo-clientes.md §3 y §6.
 
 /** Una duración en días, como se lee: "1 día", "3 días". */
-export const textoDias = (n: number) => (n === 1 ? "1 día" : `${n} días`);
+export const textoDias = (n: number) => cantidad(n, "día", "días");
 
 /**
  * El precio más bajo de un servicio, para la lista del catálogo ("Desde 700 Bs"): el menor de sus montos vigentes.

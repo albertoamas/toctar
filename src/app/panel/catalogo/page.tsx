@@ -7,6 +7,7 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { buttonVariants } from "@/componentes/ui/button";
+import { cantidad } from "@/lib/cantidad";
 import { exigirModulo } from "@/lib/sesion";
 import { listarCatalogo } from "@/modulos/catalogo/consultas";
 import { mostrarMonto, textoDias } from "@/modulos/catalogo/reglas";
@@ -47,9 +48,9 @@ async function Lista() {
         href: `/panel/catalogo/${s.id}`,
         titulo: s.nombre,
         dato: s.desde === undefined ? null : s.desde === null ? "Según evaluación" : `Desde ${mostrarMonto(s.desde)} Bs`,
-        detalles: [s.variantes === 1 ? "1 variante" : `${s.variantes} variantes`, textoDias(s.duracionDias), ...(s.generaMantenimiento ? ["Con mantenimiento"] : [])],
+        detalles: [cantidad(s.variantes, "variante", "variantes"), textoDias(s.duracionDias), ...(s.generaMantenimiento ? ["Con mantenimiento"] : [])],
         // Solo lo que falta cargar; completos no dice nada
-        aviso: s.activo && s.preciosFaltantes > 0 ? (s.preciosFaltantes === 1 ? "Falta 1 precio" : `Faltan ${s.preciosFaltantes} precios`) : null,
+        aviso: s.activo && s.preciosFaltantes > 0 ? `${s.preciosFaltantes === 1 ? "Falta" : "Faltan"} ${cantidad(s.preciosFaltantes, "precio", "precios")}` : null,
         estado: s.activo ? undefined : "Inactivo",
         atenuada: !s.activo,
       }))}

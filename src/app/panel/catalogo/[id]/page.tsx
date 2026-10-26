@@ -10,6 +10,7 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { FichaEditable, SeccionEditable } from "@/componentes/panel/seccion-editable";
 import { buttonVariants } from "@/componentes/ui/button";
+import { cantidad } from "@/lib/cantidad";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioDatosCatalogo } from "@/modulos/catalogo/componentes/formulario-datos-catalogo";
 import { FormularioPrecios } from "@/modulos/catalogo/componentes/formulario-precios";
@@ -41,8 +42,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
   if (!Number.isInteger(numero) || numero <= 0) notFound();
   const s = await obtenerServicioCatalogo(numero);
   if (!s) notFound();
-  const activas = s.listaVariantes.filter((v) => v.activo);
-  const desactivadas = s.listaVariantes.length - activas.length;
+  // s.variantes son las activas (con sus precios); listaVariantes, todas
+  const desactivadas = s.listaVariantes.length - s.variantes.length;
   // Recién creado y todavía sin precios: se abre a cargar los de su primera variante. Si ya los tiene (se recargó la
   // página con ?creado=1 después de guardarlos), se ve como cualquier ficha
   const primera = s.variantes[0];
@@ -51,8 +52,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
 
   const leerVariantes = (
     <p className="text-tinta-suave">
-      {activas.length === 0 ? "Sin variantes: agrega al menos una." : new Intl.ListFormat("es").format(activas.map((v) => v.nombre))}
-      {desactivadas > 0 && ` (${desactivadas === 1 ? "1 desactivada" : `${desactivadas} desactivadas`})`}
+      {s.variantes.length === 0 ? "Sin variantes: agrega al menos una." : new Intl.ListFormat("es").format(s.variantes.map((v) => v.nombre))}
+      {desactivadas > 0 && ` (${cantidad(desactivadas, "desactivada", "desactivadas")})`}
     </p>
   );
 
@@ -103,8 +104,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
             )}
           </section>
 
-          {/* Acompaña al bajar por los precios, como el logo en Configuración */}
-          <aside className="flex flex-col gap-8 rounded-sm border border-border p-4 lg:sticky lg:top-8">
+          <aside className="flex flex-col gap-8 rounded-sm border border-border p-4">
             <SeccionEditable
               id="datos"
               titulo="Datos"
