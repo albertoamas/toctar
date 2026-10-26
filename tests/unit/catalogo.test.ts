@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
 import { nombreRepetido, puedeDesactivar } from "@/lib/orden";
 import { esquemaCrearServicio, esquemaDatosCatalogo, esquemaEstadoVariante, esquemaMoverVariante, esquemaVariante } from "@/modulos/catalogo/esquemas";
-import { clavePrecio, duracionEfectiva, leerMonto, mostrarMonto, preciosCambiados, preciosFaltantes, type Monto } from "@/modulos/catalogo/reglas";
+import { clavePrecio, duracionEfectiva, leerMonto, mostrarMonto, precioDesde, preciosCambiados, preciosFaltantes, textoDias, type Monto } from "@/modulos/catalogo/reglas";
 
 // C1 Catálogo: reglas de precios (RF-26, RF-28, D-3) y duración (RF-27).
 
@@ -100,4 +100,17 @@ describe("variantes (D-2)", () => {
     expect(esquemaMoverVariante.safeParse({ servicioId: 1, id: 2, direccion: "arriba" }).success).toBe(false);
     expect(esquemaMoverVariante.safeParse({ id: 2, direccion: "subir" }).success).toBe(false);
   });
+});
+
+test("el precio desde es el menor monto vigente; según evaluación, solo si todos lo son", () => {
+  expect(precioDesde(["950.00", "700.00", "1100.00"])).toBe("700.00");
+  expect(precioDesde([null, "1250.50", "980.00"])).toBe("980.00");
+  expect(precioDesde([null, null])).toBeNull();
+  // Sin precios cargados: no hay nada que mostrar (la fila dice cuántos faltan)
+  expect(precioDesde([])).toBeUndefined();
+});
+
+test("la duración se lee en días, con singular", () => {
+  expect(textoDias(1)).toBe("1 día");
+  expect(textoDias(3)).toBe("3 días");
 });

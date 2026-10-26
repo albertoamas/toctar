@@ -19,7 +19,10 @@ test("el dueño marca el mantenimiento, cambia la duración y desactiva un servi
   await page.getByRole("navigation", { name: "Panel" }).getByRole("link", { name: "Catálogo y precios" }).click();
   const lista = page.getByRole("list", { name: "Servicios del catálogo" });
   // Dato inicial: el nano cerámico genera mantenimiento (RN-08)
-  await expect(lista.getByRole("link", { name: /Pulido y nano cerámico/ })).toContainText("Genera mantenimiento");
+  const ceramico = lista.getByRole("link", { name: /Pulido y nano cerámico/ });
+  await expect(ceramico).toContainText("Con mantenimiento");
+  // Sin precios en la base de pruebas: lo que falta, en el aviso (cuántos depende de los tamaños activos, que hu-05 cambia)
+  await expect(ceramico).toContainText(/Faltan \d+ precios/);
   await lista.getByRole("link", { name: new RegExp(nombre) }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/catalogo/${id}$`));
 
@@ -169,8 +172,10 @@ test("el dueño carga precios por tamaño; vacío es según evaluación y cada c
   await page.reload();
   await expect(unica.getByLabel("Duración propia")).toHaveValue("2");
 
-  // En la lista, ya no le faltan precios
+  // En la lista (pulido 7.1): desde cuánto cuesta (el menor de sus precios) y ya no dice que le faltan
   await page.goto("/panel/catalogo");
-  await expect(page.getByRole("list", { name: "Servicios del catálogo" }).getByRole("link", { name: new RegExp(nombre) })).toContainText("Precios completos");
+  const fila = page.getByRole("list", { name: "Servicios del catálogo" }).getByRole("link", { name: new RegExp(nombre) });
+  await expect(fila).toContainText("Desde 280 Bs");
+  await expect(fila).not.toContainText("Falta");
 });
 

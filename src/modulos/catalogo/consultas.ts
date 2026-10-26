@@ -4,7 +4,7 @@ import type { ElementoLista } from "@/componentes/panel/lista-editable";
 import { db } from "@/db";
 import { precio, servicio, tamanoVehiculo, usuario, variante } from "@/db/esquema";
 import { tamanosActivos, type Tamano } from "@/modulos/configuracion/consultas";
-import { clavePrecio, preciosFaltantes, type Monto } from "./reglas";
+import { clavePrecio, precioDesde, preciosFaltantes, type Monto } from "./reglas";
 
 // Lecturas del catálogo (C1). Quien las llama ya pasó por exigirModulo("catalogo"): solo el dueño (RN-01).
 
@@ -17,11 +17,13 @@ export type FilaCatalogo = {
   variantes: number;
   /** Pares variante y tamaño activos sin precio cargado. */
   preciosFaltantes: number;
+  /** El menor de sus precios vigentes ("Desde 700 Bs"); null si todos son según evaluación; undefined, sin precios. */
+  desde: Monto | undefined;
 };
 
-/** Todos los servicios, los activos primero y en el orden del sitio, con cuántos precios les faltan. */
+/** Todos los servicios, los activos primero y en el orden del sitio, con su precio más bajo y cuántos precios les faltan. */
 export async function listarCatalogo(): Promise<FilaCatalogo[]> {
-  const [servicios, variantes, tamanos, cargados] = await Promise.all([
+  const [servicios, variantes, tamanos] = await Promise.all([
     db
       .select({
         id: servicio.id,
@@ -34,13 +36,15 @@ export async function listarCatalogo(): Promise<FilaCatalogo[]> {
       .orderBy(desc(servicio.activo), asc(servicio.orden), asc(servicio.id)),
     db.select({ id: variante.id, servicioId: variante.servicioId }).from(variante).where(eq(variante.activo, true)),
     tamanosActivos(),
-    db.selectDistinct({ varianteId: precio.varianteId, tamanoId: precio.tamanoId }).from(precio),
   ]);
   const tamanoIds = tamanos.map((t) => t.id);
-  const conPrecio = new Set(cargados.map((c) => clavePrecio(c.varianteId, c.tamanoId)));
+  // Solo los pares de variantes y tamaños activos: los demás no se cotizan
+  const vigentes = (await preciosVigentes(variantes.map((v) => v.id))).filter((p) => tamanoIds.includes(p.tamanoId));
+  const conPrecio = new Set(vigentes.map((p) => clavePrecio(p.varianteId, p.tamanoId)));
   return servicios.map((s) => {
     const suyas = variantes.filter((v) => v.servicioId === s.id).map((v) => v.id);
-    return { ...s, variantes: suyas.length, preciosFaltantes: preciosFaltantes(suyas, tamanoIds, conPrecio) };
+    const montos = vigentes.filter((p) => suyas.includes(p.varianteId)).map((p) => p.monto);
+    return { ...s, variantes: suyas.length, preciosFaltantes: preciosFaltantes(suyas, tamanoIds, conPrecio), desde: precioDesde(montos) };
   });
 }
 
