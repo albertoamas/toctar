@@ -25,7 +25,8 @@ type AccionesLista = {
 type Props = {
   id: string;
   titulo: string;
-  descripcion: string;
+  /** Debajo del título; sin encabezado (conEncabezado false) no se usa. */
+  descripcion?: string;
   /** "espacio", "tamaño", "variante": para los botones y la etiqueta del nombre. */
   singular: string;
   /** Si tiene un segundo campo (por ejemplo, los modelos de ejemplo de un tamaño). */
@@ -36,6 +37,8 @@ type Props = {
   acciones: AccionesLista;
   /** Título de nivel 2 o 3, según dónde va la lista. */
   nivel?: 2 | 3;
+  /** false: sin título ni descripción, porque ya los pone la sección que la contiene (una SeccionEditable). */
+  conEncabezado?: boolean;
 };
 
 export function ListaEditable(props: Props) {
@@ -50,10 +53,14 @@ export function ListaEditable(props: Props) {
 
   return (
     <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <Titulo id={`${id}-titulo`} className="font-heading text-2xl font-bold italic">{titulo}</Titulo>
-        <p className="text-sm text-tinta-suave">{props.descripcion}</p>
-      </div>
+      {props.conEncabezado === false ? (
+        <span id={`${id}-titulo`} className="sr-only">{titulo}</span>
+      ) : (
+        <div className="flex flex-col gap-1">
+          <Titulo id={`${id}-titulo`} className="font-heading text-2xl font-bold italic">{titulo}</Titulo>
+          <p className="text-sm text-tinta-suave">{props.descripcion}</p>
+        </div>
+      )}
 
       {activos.length === 0 && <p className="text-sm font-semibold text-rojo-texto">Agrega al menos un {singular}.</p>}
 
