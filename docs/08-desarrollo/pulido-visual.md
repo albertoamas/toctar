@@ -196,7 +196,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 7.1 | Catálogo y precios | `/panel/catalogo` | ⏳ |
+| 7.1 | Catálogo y precios | `/panel/catalogo` | ✅ |
 | 7.2 | Nuevo servicio (antes 4.3, en Sitio web) | `/panel/catalogo/nuevo` | ⏳ |
 | 7.3 | Servicio del catálogo: datos, precios por tamaño, variantes e historial | `/panel/catalogo/[id]` | ⏳ |
 
@@ -933,6 +933,29 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Verificación:**
   - Capturas a 360, 390, 768 y 1280 px, y con errores a 360 y 1280. Comparativa en `pulido-visual/6.3-cotizaciones-computadora.jpg`.
   - E2E `hu-05` "los parámetros vacíos o negativos…" (y el foco en el adelanto). E2E completo: 169 pasan. Lint, typecheck y 205 unitarias sin errores. knip: nada nuevo.
+
+### 7.1 Catálogo y precios (25/10/2026)
+- **Inventario** (skill `pantallas-panel`):
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | Servicios con variantes, días y estado de los precios | Encontrar un servicio; saber si le faltan precios | Dueño, seguido | Queda, con el precio a la vista |
+  | Ningún precio en la lista | Responder "¿cuánto cuesta?" | Dueño, todos los días | Se agrega "Desde 700 Bs" (dato existente) |
+  | "Precios completos" en cada fila | Informar | — | Se va: solo se avisa lo que falta |
+  | Insignia "Genera mantenimiento" junto al nombre | Informar | Rara vez | Pasa a texto en los datos de la fila |
+  | "Toca un servicio para editarlo" | Explicar | — | Se va |
+- **Encontrado:**
+  - Una pantalla llamada "Catálogo y precios" que no mostraba ningún precio.
+  - "Precios completos" repetido en las 8 filas, sin información útil.
+  - La insignia de mantenimiento desalineaba la primera fila.
+  - La fila no tenía flecha: en la computadora no parecía tocable, a diferencia del inicio.
+  - Cada lista del panel armaba su encabezado y sus filas a su manera.
+- **Cambios** (propuesta aprobada el 25/10):
+  - Cada fila: el nombre, debajo **"Desde 700 Bs"** (el menor de sus precios vigentes, `precioDesde`) o "Según evaluación", y en tinta suave "5 variantes · 1 día · Con mantenimiento". **"Faltan N precios"** en la insignia de aviso, solo cuando faltan. Flecha a la derecha. Inactivos atenuados con su insignia.
+  - Una línea arriba: "Los precios no salen en el sitio."
+  - **Componentes compartidos nuevos:** `EncabezadoPagina` (título, acción principal y una línea de contexto) y `ListaFilas` / `DatosFila` (`fila-lista.tsx`: fila de un toque con título, dato, detalles, aviso o estado y flecha). La fila del inicio (`BloqueDelDia`) pasa a usarla: una sola implementación.
+  - La lista calcula los precios faltantes y el "desde" con `preciosVigentes` (la misma consulta que la ficha) en lugar de otra consulta propia. `textoDias` reemplaza el "1 día / N días" repetido.
+- **Verificación:** capturas a 360, 390, 768 y 1280 px, sin desborde; el inicio se ve igual con la fila compartida. Comparativa en `pulido-visual/7.1-catalogo-celular.jpg`. E2E `hu-19-20` (el "desde", el aviso de lo que falta y "Con mantenimiento"), `hu-39`, `hu-01` y `hu-17`; unitarias de `precioDesde` y `textoDias`.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
