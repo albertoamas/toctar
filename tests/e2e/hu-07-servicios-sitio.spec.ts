@@ -26,8 +26,8 @@ test("el dueño crea el servicio en el catálogo y completa su página: benefici
   await page.getByRole("button", { name: "Crear servicio" }).click();
   await expect(page.getByText("Servicio creado.")).toBeVisible();
   // Nace oculto en el sitio, hasta que se complete su página
-  await expect(page.getByText("Oculto en el sitio.")).toBeVisible();
-  await page.getByRole("link", { name: "Editar su página en el sitio" }).click();
+  await expect(page.getByText("Oculto en el sitio", { exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Su página en el sitio" }).click();
   await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+$/);
   await expect(page.getByLabel("Dirección de la página")).toHaveValue(`encerado-de-prueba-${sufijo(info)}`);
   // El nombre no se cambia aquí: es del catálogo
