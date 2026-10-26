@@ -33,7 +33,7 @@ Toda pantalla del panel es uno de estos tipos. Identificarlo decide su forma; no
 
 ### Ficha (cliente, servicio del catálogo, consulta, reserva, orden)
 - **Encabezado:** quién o qué es (placa, nombre), su estado y **el paso siguiente** como única acción principal (recibir, marcar lista, avisar, entregar). Las acciones que se usan poco (extender, cancelar, anular, desactivar) van en un menú **"Más"**.
-- **Secciones en modo lectura.** Los datos se ven como texto, no como campos. Cada sección que se edita tiene **"Editar"**: abre su formulario en el mismo lugar con "Guardar {lo que es}" y "Cancelar", y **un solo formulario abierto a la vez**. Así la ficha se lee de un vistazo y no muestra una pared de botones de guardar.
+- **Secciones en modo lectura.** Los datos se ven como texto, no como campos. Cada sección que se edita tiene **"Editar"**: abre su formulario en el mismo lugar con "Guardar {lo que es}" y "Cancelar", y **un solo formulario abierto a la vez**: mientras una está abierta, las demás esconden su "Editar" hasta guardar o cancelar (así nada de lo escrito se pierde al cambiar de sección). Así la ficha se lee de un vistazo y no muestra una pared de botones de guardar. El componente ya existe: `SeccionEditable` y `FichaEditable` (`src/componentes/panel/seccion-editable.tsx`, desde el pulido 7.3).
 - **Orden de las secciones:** lo que decide primero (estado, montos, lo que falta), lo que se consulta después (datos, fotos), la historia al final y plegada si es larga ("Ver toda la historia").
 - Un dato vacío no ocupa una fila con un guion: no se muestra, o se ofrece cargarlo desde "Editar".
 
@@ -56,7 +56,7 @@ Los tipos de botón (rojo para guardar o crear, contorno para lo secundario, ros
 - **Cada botón dice qué hace y sobre qué:** "Guardar precios", "Registrar pago", "Entregar vehículo". Un "Guardar" solo vale si en ese momento hay un solo formulario abierto.
 - **Siempre en el mismo lugar:** al pie de su formulario o sección, alineado a la izquierda, el principal primero y "Cancelar" al lado. El paso siguiente de una ficha, en su encabezado.
 - **Menú "Más"** para lo poco frecuente: un solo componente `MenuMas` en `src/componentes/panel/`, sobre el `dropdown-menu` de shadcn (`npx shadcn@latest add dropdown-menu`; se agrega la primera vez que una pantalla lo necesite). No es `menu-desplegable.tsx`, que es la navegación del celular. Lo destructivo dentro de "Más" sigue pidiendo confirmación.
-- **Un componente, no copias:** el patrón "sección con Editar" se arma una vez en `src/componentes/panel/` y lo usan todas las fichas. Si una pantalla necesita una variante, se extiende el componente.
+- **Un componente, no copias:** el patrón "sección con Editar" es `SeccionEditable` y lo usan todas las fichas; el formulario de una sección se cierra al guardar con `useCerrarSeccion` y pone `CancelarSeccion` ("Cancelar", o "Listo" si cada cambio ya se guardó al momento) al lado de su botón. Si una pantalla necesita una variante, se extiende el componente.
 
 ## 4. Textos: lo justo
 
@@ -83,7 +83,7 @@ Los tipos de botón (rojo para guardar o crear, contorno para lo secundario, ros
 
 **Con teclado y lector de pantalla:** todo se alcanza con Tab, el foco se ve, cada botón de ícono tiene nombre, los títulos van en orden (un `h1`).
 
-**En las E2E:** antes de escribir en un formulario, la pantalla ya cargó (`waitForLoadState("networkidle")` o esperar a que un botón que depende de JavaScript esté habilitado), y se comprueba el valor (`toHaveValue`) antes de guardar: si no, el valor se pierde y la prueba falla a veces. Se busca por rol y nombre accesible, que es lo mismo que oye el lector de pantalla.
+**En las E2E:** después de guardar, se espera lo que ve la persona (el formulario cerrado, el aviso, el dato nuevo), no la dirección: las acciones navegan por dentro y `waitForURL` puede no terminar. Lo que muestra el sitio público se renueva en segundo plano en unos segundos: se visita hasta verlo (`toPass`). Antes de escribir en un formulario, la pantalla ya cargó (`waitForLoadState("networkidle")` o esperar a que un botón que depende de JavaScript esté habilitado), y se comprueba el valor (`toHaveValue`) antes de guardar: si no, el valor se pierde y la prueba falla a veces. Se busca por rol y nombre accesible, que es lo mismo que oye el lector de pantalla.
 
 **La prueba final:** abrir la pantalla en el celular, hacer su tarea principal y contar los toques y lo que hubo que leer. Si algo se puede quitar sin que la tarea cueste más, se quita.
 
