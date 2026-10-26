@@ -4,15 +4,15 @@ import { useActionState, useRef } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
-import { CancelarSeccion, useCerrarSeccion } from "@/componentes/panel/seccion-editable";
+import { CancelarSeccion, PieSeccion, useCerrarSeccion } from "@/componentes/panel/seccion-con-editar";
 import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { guardarDatosCatalogo } from "../acciones";
 
-// HU-19: nombre, duración, mantenimiento y si el servicio está activo en el catálogo. Se abre con "Editar" desde la
-// ficha del servicio y se cierra al guardar.
+// HU-19: nombre, duración, mantenimiento y si el servicio está activo en el catálogo. Va en el modal de "Editar" de la
+// ficha del servicio y lo cierra al guardar.
 
 type Props = { servicio: { id: number; nombre: string; duracionDias: number; generaMantenimiento: boolean; activo: boolean } };
 
@@ -30,7 +30,7 @@ export function FormularioDatosCatalogo({ servicio: s }: Props) {
   const activo = v ? v.activo === "on" : s.activo;
 
   return (
-    <form ref={formulario} action={accion} className="flex max-w-2xl flex-col gap-6" noValidate aria-label="Datos del servicio">
+    <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate aria-label="Datos del servicio">
       <input type="hidden" name="id" value={s.id} />
       <Campo id="nombre" etiqueta="Nombre del servicio" error={e.nombre}>
         <Input
@@ -70,12 +70,12 @@ export function FormularioDatosCatalogo({ servicio: s }: Props) {
         ayuda="Al entregarlo, se programa el aviso."
       />
       <Casilla nombre="activo" marcada={activo} etiqueta="Activo en el catálogo" ayuda="Inactivo, no se cotiza ni sale en el sitio. No se borra nada." />
-      <div className="flex flex-wrap gap-2">
+      <PieSeccion>
         <Button type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : "Guardar datos"}
         </Button>
         <CancelarSeccion />
-      </div>
+      </PieSeccion>
     </form>
   );
 }

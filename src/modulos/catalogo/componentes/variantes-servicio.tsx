@@ -2,13 +2,12 @@
 
 import { useState } from "react";
 import { ListaEditable, type ElementoLista } from "@/componentes/panel/lista-editable";
-import { CancelarSeccion } from "@/componentes/panel/seccion-editable";
+import { CancelarSeccion, PieSeccion } from "@/componentes/panel/seccion-con-editar";
 import { cambiarEstadoVariante, guardarVariante, moverVariante } from "../acciones";
 
-// HU-19: las variantes de un servicio (D-2): agregar, renombrar, ordenar y desactivar. Se abre con "Editar" desde la
-// ficha del servicio, que en lectura ya muestra sus nombres en los precios. Cada cambio se guarda al momento: la
-// sección se cierra con "Listo", que no aparece mientras una fila está abierta para agregar o renombrar: lo escrito sin
-// guardar se perdería.
+// HU-19: las variantes de un servicio (D-2): agregar, renombrar, ordenar y desactivar. Va en el modal de "Editar" de la
+// ficha del servicio, que en lectura muestra sus nombres. Cada cambio se guarda al momento: el modal se cierra con
+// "Listo", que no aparece mientras una fila está abierta para agregar o renombrar (lo escrito sin guardar se perdería).
 
 export function VariantesServicio({ servicioId, variantes }: { servicioId: number; variantes: ElementoLista[] }) {
   const [editando, setEditando] = useState(false);
@@ -30,9 +29,9 @@ export function VariantesServicio({ servicioId, variantes }: { servicioId: numbe
         }}
       />
       {!editando && (
-        <div>
+        <PieSeccion>
           <CancelarSeccion texto="Listo" />
-        </div>
+        </PieSeccion>
       )}
     </div>
   );

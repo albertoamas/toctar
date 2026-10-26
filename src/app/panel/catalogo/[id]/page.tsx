@@ -8,7 +8,7 @@ import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
-import { FichaEditable, SeccionEditable } from "@/componentes/panel/seccion-editable";
+import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { buttonVariants } from "@/componentes/ui/button";
 import { cantidad } from "@/lib/cantidad";
 import { exigirModulo } from "@/lib/sesion";
@@ -22,7 +22,8 @@ import { textoDias } from "@/modulos/catalogo/reglas";
 export const metadata: Metadata = { title: "Servicio del catálogo" };
 
 // HU-19 y HU-20: precios, datos y variantes de un servicio. Solo el dueño (RN-01). Una ficha en lectura (pulido 7.3,
-// skill pantallas-panel): primero los precios, que es lo que se consulta; cada sección se edita con "Editar", de a una.
+// skill pantallas-panel): primero los precios, que es lo que se consulta, un recuadro por variante (de a dos en la
+// computadora); debajo, datos y variantes lado a lado. Cada recuadro se edita con "Editar", en un modal.
 // Su página en el sitio (textos y foto) se edita en Sitio web: el enlace lleva ahí.
 export default function PaginaServicioCatalogo({ params, searchParams }: PageProps<"/panel/catalogo/[id]">) {
   return (
@@ -44,21 +45,14 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
   if (!s) notFound();
   // s.variantes son las activas (con sus precios); listaVariantes, todas
   const desactivadas = s.listaVariantes.length - s.variantes.length;
-  // Recién creado y todavía sin precios: se abre a cargar los de su primera variante. Si ya los tiene (se recargó la
-  // página con ?creado=1 después de guardarlos), se ve como cualquier ficha
+  // Recién creado y todavía sin precios: se abren los de su primera variante. Si ya los tiene (se recargó la página con
+  // ?creado=1 después de guardarlos), se ve como cualquier ficha
   const primera = s.variantes[0];
   const sinPrecios = !!primera && s.tamanos.length > 0 && s.tamanos.every((t) => primera.precios[t.id] === undefined);
-  const abierta = creado && sinPrecios ? `precios-${primera.id}` : null;
-
-  const leerVariantes = (
-    <p className="text-tinta-suave">
-      {s.variantes.length === 0 ? "Sin variantes: agrega al menos una." : new Intl.ListFormat("es").format(s.variantes.map((v) => v.nombre))}
-      {desactivadas > 0 && ` (${cantidad(desactivadas, "desactivada", "desactivadas")})`}
-    </p>
-  );
+  const cargarPrecios = !!creado && sinPrecios;
 
   return (
-    <>
+    <div className="flex max-w-5xl flex-col gap-8">
       <EncabezadoPagina
         titulo={s.nombre}
         // Sale en el sitio si está activo y su página se muestra (publico.ts pide las dos)
@@ -70,64 +64,74 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
           </Link>
         }
       />
-      {creado && sinPrecios && <AvisoEnPagina>Servicio creado. Carga sus precios.</AvisoEnPagina>}
+      {cargarPrecios && <AvisoEnPagina>Servicio creado. Carga sus precios.</AvisoEnPagina>}
 
-      {/* Como la orden: en la computadora, los precios a la izquierda y los datos en un recuadro a la derecha */}
-      <FichaEditable abierta={abierta}>
-        <div className="grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
-          <section aria-labelledby="precios-titulo" className="flex flex-col gap-4">
-            <h2 id="precios-titulo" className="font-heading text-2xl font-bold italic">
-              Precios
-            </h2>
-            {s.tamanos.length === 0 ? (
-              <p className="text-tinta-suave">
-                Faltan los tamaños de vehículo.{" "}
-                <Link href="/panel/configuracion/taller" className="font-semibold text-tinta underline">
-                  Agrégalos en Configuración
-                </Link>
-                .
-              </p>
-            ) : (
-              s.variantes.map((v) => (
-                <div key={v.id} className="rounded-sm border border-border p-4">
-                  <SeccionEditable
-                    id={`precios-${v.id}`}
-                    titulo={v.nombre}
-                    nivel={3}
-                    etiquetaEditar={`Editar precios de ${v.nombre}`}
-                    lectura={<PreciosVariante variante={v} tamanos={s.tamanos} duracionServicio={s.duracionDias} />}
-                  >
-                    <FormularioPrecios variante={v} tamanos={s.tamanos} duracionServicio={s.duracionDias} />
-                  </SeccionEditable>
-                </div>
-              ))
-            )}
-          </section>
+      <section aria-labelledby="precios-titulo" className="flex flex-col gap-3">
+        <h2 id="precios-titulo" className="flex min-h-11 items-center font-heading text-2xl font-bold italic">
+          Precios
+        </h2>
+        {s.tamanos.length === 0 ? (
+          <p className="text-tinta-suave">
+            Faltan los tamaños de vehículo.{" "}
+            <Link href="/panel/configuracion/taller" className="font-semibold text-tinta underline">
+              Agrégalos en Configuración
+            </Link>
+            .
+          </p>
+        ) : (
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
+            {s.variantes.map((v) => (
+              <SeccionConEditar
+                key={v.id}
+                id={`precios-${v.id}`}
+                titulo={v.nombre}
+                nivel={3}
+                etiquetaEditar={`Editar precios de ${v.nombre}`}
+                tituloModal={`Precios de ${v.nombre}`}
+                abierta={cargarPrecios && v.id === primera.id}
+                lectura={<PreciosVariante variante={v} tamanos={s.tamanos} duracionServicio={s.duracionDias} />}
+              >
+                <FormularioPrecios variante={v} tamanos={s.tamanos} duracionServicio={s.duracionDias} />
+              </SeccionConEditar>
+            ))}
+          </div>
+        )}
+      </section>
 
-          <aside className="flex flex-col gap-8 rounded-sm border border-border p-4">
-            <SeccionEditable
-              id="datos"
-              titulo="Datos"
-              etiquetaEditar="Editar datos del servicio"
-              lectura={
-                <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2">
-                  <dt className="text-tinta-suave">Duración</dt>
-                  <dd>{textoDias(s.duracionDias)}</dd>
-                  <dt className="text-tinta-suave">Mantenimiento</dt>
-                  <dd>{s.generaMantenimiento ? "Genera recordatorio" : "No genera recordatorio"}</dd>
-                  <dt className="text-tinta-suave">Catálogo</dt>
-                  <dd>{s.activo ? "Activo" : "Inactivo: no se cotiza ni sale en el sitio"}</dd>
-                </dl>
-              }
-            >
-              <FormularioDatosCatalogo servicio={{ id: s.id, nombre: s.nombre, duracionDias: s.duracionDias, generaMantenimiento: s.generaMantenimiento, activo: s.activo }} />
-            </SeccionEditable>
-            <SeccionEditable id="variantes-seccion" titulo="Variantes" etiquetaEditar="Editar variantes" lectura={leerVariantes}>
-              <VariantesServicio servicioId={s.id} variantes={s.listaVariantes} />
-            </SeccionEditable>
-          </aside>
-        </div>
-      </FichaEditable>
-    </>
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-2 md:gap-4">
+        <SeccionConEditar
+          id="datos"
+          titulo="Datos"
+          etiquetaEditar="Editar datos del servicio"
+          tituloModal="Datos del servicio"
+          lectura={
+            <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2">
+              <dt className="text-tinta-suave">Duración</dt>
+              <dd>{textoDias(s.duracionDias)}</dd>
+              <dt className="text-tinta-suave">Mantenimiento</dt>
+              <dd>{s.generaMantenimiento ? "Genera recordatorio" : "No genera recordatorio"}</dd>
+              <dt className="text-tinta-suave">Catálogo</dt>
+              <dd>{s.activo ? "Activo" : "Inactivo: no se cotiza ni sale en el sitio"}</dd>
+            </dl>
+          }
+        >
+          <FormularioDatosCatalogo servicio={{ id: s.id, nombre: s.nombre, duracionDias: s.duracionDias, generaMantenimiento: s.generaMantenimiento, activo: s.activo }} />
+        </SeccionConEditar>
+        <SeccionConEditar
+          id="variantes-seccion"
+          titulo="Variantes"
+          etiquetaEditar="Editar variantes"
+          tituloModal="Variantes"
+          lectura={
+            <p>
+              {s.variantes.length === 0 ? "Sin variantes: agrega al menos una." : new Intl.ListFormat("es").format(s.variantes.map((v) => v.nombre))}
+              {desactivadas > 0 && <span className="text-tinta-suave"> ({cantidad(desactivadas, "desactivada", "desactivadas")})</span>}
+            </p>
+          }
+        >
+          <VariantesServicio servicioId={s.id} variantes={s.listaVariantes} />
+        </SeccionConEditar>
+      </div>
+    </div>
   );
 }
