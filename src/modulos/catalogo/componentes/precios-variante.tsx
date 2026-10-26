@@ -3,14 +3,15 @@ import type { VarianteCatalogo } from "../consultas";
 import { mostrarMonto, textoDias } from "../reglas";
 
 // HU-20: los precios de una variante en lectura, como se consultan casi siempre. En el celular, una lista de precios
-// (el tamaño a la izquierda y el monto alineado a la derecha, un renglón cada uno); desde 640 px, una grilla. Sin cargar
+// (el tamaño a la izquierda y el monto alineado a la derecha, un renglón cada uno); desde 640 px, una grilla de tres
+// columnas (en la computadora la ficha va en dos columnas y los precios ocupan la ancha). Sin cargar
 // se resalta (es lo que falta); "Según evaluación" se dice con palabras.
 // Se editan con "Editar" (FormularioPrecios).
 
 export function PreciosVariante({ variante: v, tamanos, duracionServicio }: { variante: VarianteCatalogo; tamanos: Tamano[]; duracionServicio: number }) {
   return (
     <div className="flex flex-col gap-3">
-      <dl className="flex flex-col divide-y divide-border sm:grid sm:grid-cols-3 sm:gap-x-4 sm:gap-y-3 sm:divide-y-0 lg:grid-cols-5">
+      <dl className="flex flex-col divide-y divide-border sm:grid sm:grid-cols-3 sm:gap-x-4 sm:gap-y-3 sm:divide-y-0">
         {tamanos.map((t) => {
           const monto = v.precios[t.id];
           return (

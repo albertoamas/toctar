@@ -7,6 +7,7 @@ import { GlobeIcon } from "lucide-react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { FichaEditable, SeccionEditable } from "@/componentes/panel/seccion-editable";
 import { buttonVariants } from "@/componentes/ui/button";
 import { exigirModulo } from "@/lib/sesion";
@@ -48,21 +49,31 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
   const sinPrecios = !!primera && s.tamanos.length > 0 && s.tamanos.every((t) => primera.precios[t.id] === undefined);
   const abierta = creado && sinPrecios ? `precios-${primera.id}` : null;
 
+  const leerVariantes = (
+    <p className="text-tinta-suave">
+      {activas.length === 0 ? "Sin variantes: agrega al menos una." : new Intl.ListFormat("es").format(activas.map((v) => v.nombre))}
+      {desactivadas > 0 && ` (${desactivadas === 1 ? "1 desactivada" : `${desactivadas} desactivadas`})`}
+    </p>
+  );
+
   return (
     <>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-4">
-        <h1 className="font-heading text-4xl font-extrabold italic">{s.nombre}</h1>
-        {/* Sale en el sitio si está activo y su página se muestra (publico.ts pide las dos) */}
-        <span className="tt-insignia">{!s.activo ? "Inactivo" : s.visibleSitio ? "En el sitio" : "Oculto en el sitio"}</span>
-        <Link href={`/panel/sitio/servicios/${s.id}`} className={cn(buttonVariants({ variant: "outline" }), "sm:ml-auto")}>
-          <GlobeIcon />
-          Su página en el sitio
-        </Link>
-      </div>
+      <EncabezadoPagina
+        titulo={s.nombre}
+        // Sale en el sitio si está activo y su página se muestra (publico.ts pide las dos)
+        estado={<span className="tt-insignia">{!s.activo ? "Inactivo" : s.visibleSitio ? "En el sitio" : "Oculto en el sitio"}</span>}
+        accion={
+          <Link href={`/panel/sitio/servicios/${s.id}`} className={cn(buttonVariants({ variant: "outline" }))}>
+            <GlobeIcon />
+            Su página en el sitio
+          </Link>
+        }
+      />
       {creado && sinPrecios && <AvisoEnPagina>Servicio creado. Carga sus precios.</AvisoEnPagina>}
 
+      {/* Como la orden: en la computadora, los precios a la izquierda y los datos en un recuadro a la derecha */}
       <FichaEditable abierta={abierta}>
-        <div className="flex max-w-4xl flex-col gap-10">
+        <div className="grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
           <section aria-labelledby="precios-titulo" className="flex flex-col gap-4">
             <h2 id="precios-titulo" className="font-heading text-2xl font-bold italic">
               Precios
@@ -92,37 +103,29 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
             )}
           </section>
 
-          <SeccionEditable
-            id="datos"
-            titulo="Datos"
-            etiquetaEditar="Editar datos del servicio"
-            lectura={
-              <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2">
-                <dt className="text-tinta-suave">Duración</dt>
-                <dd>{textoDias(s.duracionDias)}</dd>
-                <dt className="text-tinta-suave">Mantenimiento</dt>
-                <dd>{s.generaMantenimiento ? "Genera recordatorio" : "No genera recordatorio"}</dd>
-                <dt className="text-tinta-suave">Catálogo</dt>
-                <dd>{s.activo ? "Activo" : "Inactivo: no se cotiza ni sale en el sitio"}</dd>
-              </dl>
-            }
-          >
-            <FormularioDatosCatalogo servicio={{ id: s.id, nombre: s.nombre, duracionDias: s.duracionDias, generaMantenimiento: s.generaMantenimiento, activo: s.activo }} />
-          </SeccionEditable>
-
-          <SeccionEditable
-            id="variantes-seccion"
-            titulo="Variantes"
-            etiquetaEditar="Editar variantes"
-            lectura={
-              <p className="text-tinta-suave">
-                {activas.length === 0 ? "Sin variantes: agrega al menos una." : new Intl.ListFormat("es").format(activas.map((v) => v.nombre))}
-                {desactivadas > 0 && ` (${desactivadas === 1 ? "1 desactivada" : `${desactivadas} desactivadas`})`}
-              </p>
-            }
-          >
-            <VariantesServicio servicioId={s.id} variantes={s.listaVariantes} />
-          </SeccionEditable>
+          {/* Acompaña al bajar por los precios, como el logo en Configuración */}
+          <aside className="flex flex-col gap-8 rounded-sm border border-border p-4 lg:sticky lg:top-8">
+            <SeccionEditable
+              id="datos"
+              titulo="Datos"
+              etiquetaEditar="Editar datos del servicio"
+              lectura={
+                <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2">
+                  <dt className="text-tinta-suave">Duración</dt>
+                  <dd>{textoDias(s.duracionDias)}</dd>
+                  <dt className="text-tinta-suave">Mantenimiento</dt>
+                  <dd>{s.generaMantenimiento ? "Genera recordatorio" : "No genera recordatorio"}</dd>
+                  <dt className="text-tinta-suave">Catálogo</dt>
+                  <dd>{s.activo ? "Activo" : "Inactivo: no se cotiza ni sale en el sitio"}</dd>
+                </dl>
+              }
+            >
+              <FormularioDatosCatalogo servicio={{ id: s.id, nombre: s.nombre, duracionDias: s.duracionDias, generaMantenimiento: s.generaMantenimiento, activo: s.activo }} />
+            </SeccionEditable>
+            <SeccionEditable id="variantes-seccion" titulo="Variantes" etiquetaEditar="Editar variantes" lectura={leerVariantes}>
+              <VariantesServicio servicioId={s.id} variantes={s.listaVariantes} />
+            </SeccionEditable>
+          </aside>
         </div>
       </FichaEditable>
     </>
