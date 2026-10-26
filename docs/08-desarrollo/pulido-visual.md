@@ -197,7 +197,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
 | 7.1 | Catálogo y precios | `/panel/catalogo` | ✅ |
-| 7.2 | Nuevo servicio (antes 4.3, en Sitio web) | `/panel/catalogo/nuevo` | ⏳ |
+| 7.2 | Nuevo servicio (antes 4.3, en Sitio web) | `/panel/catalogo/nuevo` | ✅ |
 | 7.3 | Servicio del catálogo: datos, precios por tamaño, variantes e historial | `/panel/catalogo/[id]` | ⏳ |
 
 ### 8. Panel: clientes
@@ -956,6 +956,11 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - **Componentes compartidos nuevos:** `EncabezadoPagina` (título, acción principal y una línea de contexto) y `ListaFilas` / `DatosFila` (`fila-lista.tsx`: fila de un toque con título, dato, detalles, aviso o estado y flecha). La fila del inicio (`BloqueDelDia`) pasa a usarla: una sola implementación.
   - La lista calcula los precios faltantes y el "desde" con `preciosVigentes` (la misma consulta que la ficha) en lugar de otra consulta propia. `textoDias` reemplaza el "1 día / N días" repetido.
 - **Verificación:** capturas a 360, 390, 768 y 1280 px, sin desborde; el inicio se ve igual con la fila compartida. Comparativa en `pulido-visual/7.1-catalogo-celular.jpg`. E2E `hu-19-20` (el "desde", el aviso de lo que falta y "Con mantenimiento"), `hu-39`, `hu-01` y `hu-17`; unitarias de `precioDesde` y `textoDias`.
+
+### 7.2 Nuevo servicio (25/10/2026)
+- **Encontrado:** ya era una pantalla de crear como pide la skill (un campo y "Crear servicio"). La ayuda explicaba que el servicio nace oculto en el sitio, algo que ya dice su ficha; el título no usaba el encabezado compartido.
+- **Cambios** (propuesta aprobada el 25/10): `EncabezadoPagina`; la ayuda se acorta a "Como lo conocen los clientes."; el nombre empieza con el cursor puesto (`autoFocus`): es el único campo y en el celular el teclado aparece solo.
+- **Verificación:** capturas a 360, 390, 768 y 1280 px, con el foco visible en el campo. Comparativa en `pulido-visual/7.2-nuevo-servicio-celular.jpg`. La E2E de `base` que comprueba que un error devuelve el foco al campo ahora saca el foco antes de enviar (si no, pasaba sin probar nada).
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
