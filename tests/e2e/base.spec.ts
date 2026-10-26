@@ -223,7 +223,10 @@ test("al enviar con errores el foco va al campo, y el enlace para volver mide 44
   await page.goto("/panel/catalogo/nuevo");
   const volver = page.getByRole("main").getByRole("link", { name: "Catálogo y precios" });
   expect(Math.round((await volver.boundingBox())!.height)).toBe(44);
-  await page.getByRole("button", { name: "Crear servicio" }).click();
+  // El nombre empieza con el foco (pulido 7.2): se lo saca, para que la prueba vea que el error lo devuelve
+  await expect(page.getByLabel("Nombre del servicio")).toBeFocused();
+  await page.getByRole("button", { name: "Crear servicio" }).focus();
+  await page.keyboard.press("Enter");
   await expect(page.getByLabel("Nombre del servicio")).toBeFocused();
   await expect(page.getByLabel("Nombre del servicio")).toHaveAttribute("aria-invalid", "true");
 });
