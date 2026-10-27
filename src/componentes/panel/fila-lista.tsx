@@ -18,8 +18,10 @@ export type DatosFila = {
   detalles?: string[];
   /** Lo que pide atención ("Faltan 3 precios", "Debía ingresar el 21/10"): insignia de aviso junto al título. */
   aviso?: string | null;
-  /** El estado escrito ("En proceso", "Inactivo"), en una insignia neutra, si no hay aviso. */
+  /** El estado escrito ("En proceso", "Inactivo"), en una insignia después del aviso (los dos se ven: pulido 9.1). */
   estado?: string;
+  /** El color del estado, si dice algo por sí mismo: "Confirmado" en verde, "Perdido" o "Cancelada" en ámbar. */
+  tonoEstado?: "exito" | "aviso";
   /** Inactiva o desactivada: atenuada. */
   atenuada?: boolean;
 };
@@ -36,13 +38,14 @@ export function ListaFilas({ etiqueta, filas }: { etiqueta: string; filas: Datos
   );
 }
 
-function FilaLista({ href, titulo, tituloGrande, dato, detalles = [], aviso, estado, atenuada }: DatosFila) {
+function FilaLista({ href, titulo, tituloGrande, dato, detalles = [], aviso, estado, tonoEstado, atenuada }: DatosFila) {
   return (
     <Link href={href} className={cn("flex min-h-11 items-center gap-3 p-3 hover:bg-superficie", atenuada && "text-tinta-suave")}>
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span className={tituloGrande ? "font-heading text-xl font-extrabold italic tabular-nums" : "font-semibold"}>{titulo}</span>
-          {aviso ? <span className="tt-insignia tt-insignia--aviso">{aviso}</span> : estado && <span className="tt-insignia">{estado}</span>}
+          {aviso && <span className="tt-insignia tt-insignia--aviso">{aviso}</span>}
+          {estado && <span className={cn("tt-insignia", tonoEstado && `tt-insignia--${tonoEstado}`)}>{estado}</span>}
         </span>
         {dato && <span className="text-sm font-semibold tabular-nums">{dato}</span>}
         {detalles.length > 0 && (

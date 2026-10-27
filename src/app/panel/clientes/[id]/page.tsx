@@ -168,8 +168,8 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
                 // El saldo de una cancelada no se cobra: no se muestra
                 dato: r.saldo && r.estado !== "cancelado" ? (estaPagada(r.saldo.saldo) ? "Pagado" : `Saldo: ${mostrarMonto(r.saldo.saldo)} Bs`) : null,
                 detalles: [r.placa],
-                aviso: r.estado === "cancelado" ? NOMBRE_ESTADO_TRABAJO[r.estado] : null,
                 estado: NOMBRE_ESTADO_TRABAJO[r.estado],
+                tonoEstado: r.estado === "cancelado" ? "aviso" : undefined,
               }))}
             />
           )}
