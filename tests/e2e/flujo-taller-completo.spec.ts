@@ -70,7 +70,7 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
 
   // 4. Cobra el saldo y entrega: queda programado el mantenimiento
   await page.getByRole("link", { name: "Entregar vehículo" }).click();
-  await expect(page.getByText(/^Se programará el mantenimiento de Pulido y nano cerámico para el /)).toBeVisible();
+  await expect(page.getByText(/^Se programará: Mantenimiento del nano cerámico, el \d{2}\/\d{2}\/\d{4}\.$/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Registrar pago" })).toBeEnabled();
   await page.getByRole("button", { name: "Registrar pago" }).click();
   const pago = page.getByRole("form", { name: "Registrar pago" });
@@ -88,9 +88,9 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
   const fila = page.getByRole("list", { name: "Vencidos" }).getByRole("listitem").filter({ hasText: placa });
   await expect(fila).toContainText("venció ayer");
   await fila.getByRole("link", { name: "Agendar" }).click();
-  await page.getByRole("button", { name: "Agregar servicio" }).click();
-  // El mantenimiento es un servicio cobrado del catálogo (RN-09); el precio, el que ponga el dueño
-  await page.getByLabel("Servicio 1", { exact: true }).selectOption({ label: "Mantenimiento del nano cerámico" });
+  // Llega con su servicio de mantenimiento ya elegido (pedido 21); es un servicio cobrado del catálogo (RN-09) y el
+  // precio lo pone el dueño
+  await expect(page.getByLabel("Servicio 1", { exact: true }).locator("option:checked")).toHaveText("Mantenimiento del nano cerámico");
   await page.getByLabel("Precio del servicio 1").fill("350");
   const [{ d }] = await consultar<{ d: string }>("select to_char($1::date + $2::int, 'YYYY-MM-DD') as d", [hoy(), info.project.name === "celular" ? 360 : 363]);
   await page.getByLabel("Ingresa el").fill(d);

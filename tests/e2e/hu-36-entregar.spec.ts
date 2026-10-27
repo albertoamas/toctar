@@ -34,7 +34,7 @@ test("pagada: el dueño suma un adicional, se cobra y se entrega; queda programa
   // El saldo de 200 se cobra en la entrega
   await page.getByRole("link", { name: "Entregar vehículo" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}/entregar$`));
-  await expect(page.getByText(/^Se programará el mantenimiento de Pulido y nano cerámico para el \d{2}\/\d{2}\/\d{4}\.$/)).toBeVisible();
+  await expect(page.getByText(/^Se programará: Mantenimiento del nano cerámico, el \d{2}\/\d{2}\/\d{4}\.$/)).toBeVisible();
   await page.getByRole("button", { name: "Registrar pago" }).click();
   const pagoForm = page.getByRole("form", { name: "Registrar pago" });
   await expect(pagoForm.getByLabel("Monto")).toHaveValue("200");
@@ -49,16 +49,21 @@ test("pagada: el dueño suma un adicional, se cobra y se entrega; queda programa
   await expect(page.getByRole("status").filter({ hasText: "Vehículo entregado." })).toBeVisible();
   await expect(page.getByText(/^Entregado el /)).toBeVisible();
 
-  const [{ meses }] = await consultar<{ meses: number }>("select (valor #>> '{}')::int as meses from parametro where clave = 'intervalo_mantenimiento_meses'");
-  const [t] = await consultar<{ estado: string; saldo: string; autorizo: number | null; recordatorios: number; fecha: string; esperada: string }>(
+  // El plan (pedido 21): el mantenimiento y la frecuencia que dice el catálogo del pulido
+  const [{ meses, mantenimiento }] = await consultar<{ meses: number; mantenimiento: number }>(
+    "select mantenimiento_meses as meses, mantenimiento_servicio_id as mantenimiento from servicio where slug = 'pulido-y-nano-ceramico'",
+  );
+  const [t] = await consultar<{ estado: string; saldo: string; autorizo: number | null; recordatorios: number; fecha: string; esperada: string; plan: number; cada: number }>(
     `select t.estado, t.saldo_al_entregar as saldo, t.entrega_con_saldo_autorizada_por as autorizo,
        (select count(*)::int from recordatorio_mantenimiento r where r.trabajo_origen_id = t.id) as recordatorios,
        (select to_char(r.fecha_programada, 'YYYY-MM-DD') from recordatorio_mantenimiento r where r.trabajo_origen_id = t.id) as fecha,
+       (select r.servicio_mantenimiento_id from recordatorio_mantenimiento r where r.trabajo_origen_id = t.id) as plan,
+       (select r.intervalo_meses from recordatorio_mantenimiento r where r.trabajo_origen_id = t.id) as cada,
        to_char($2::date + make_interval(months => $3), 'YYYY-MM-DD') as esperada
      from trabajo t where t.id = $1`,
     [id, hoy(), meses],
   );
-  expect(t).toMatchObject({ estado: "entregado", saldo: "0.00", autorizo: null, recordatorios: 1 });
+  expect(t).toMatchObject({ estado: "entregado", saldo: "0.00", autorizo: null, recordatorios: 1, plan: mantenimiento, cada: meses });
   expect(t.fecha).toBe(t.esperada);
 });
 

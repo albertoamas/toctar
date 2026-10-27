@@ -48,7 +48,7 @@ test("el dueño marca el mantenimiento, cambia la duración y desactiva un servi
   // En lectura; "Editar" abre el formulario de los datos en un modal
   const datos = page.getByRole("region", { name: "Datos" });
   await expect(datos).toContainText("1 día");
-  await expect(datos).toContainText("No genera recordatorio");
+  await expect(datos).toContainText("No programa mantenimiento");
   const editar = page.getByRole("button", { name: "Editar datos del servicio" });
   const modal = page.getByRole("dialog", { name: "Datos del servicio" });
   await editar.click();
@@ -59,13 +59,19 @@ test("el dueño marca el mantenimiento, cambia la duración y desactiva un servi
   await expect(modal.getByLabel("Duración estimada")).toBeFocused();
 
   await modal.getByLabel("Duración estimada").fill("3");
-  await modal.getByText("Genera recordatorio de mantenimiento").click();
+  // Su mantenimiento (pedido 21): con la casilla, el servicio y cada cuántos meses
+  await modal.getByText("Programa un mantenimiento al entregarlo").click();
+  await modal.getByRole("button", { name: "Guardar datos" }).click();
+  await expect(modal.getByText("Elige el servicio de mantenimiento.")).toBeVisible();
+  await expect(modal.getByText("Escribe los meses, de 1 a 24.")).toBeVisible();
+  await modal.getByLabel("Servicio de mantenimiento").selectOption({ label: "Este mismo servicio" });
+  await modal.getByLabel("Cada", { exact: true }).fill("6");
   await modal.getByRole("button", { name: "Guardar datos" }).click();
   await expect(page.getByText("Cambios guardados.")).toBeVisible();
   // Guardado, el modal se cierra, la lectura muestra los datos nuevos y el foco vuelve a "Editar"
   await expect(modal).toHaveCount(0);
   await expect(datos).toContainText("3 días");
-  await expect(datos).toContainText("Genera recordatorio");
+  await expect(datos).toContainText("Él mismo, cada 6 meses");
   await expect(editar).toBeFocused();
 
   // Inactivo: no sale en el sitio (su página no existe) y queda marcado en el catálogo

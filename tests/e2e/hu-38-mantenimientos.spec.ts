@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { abrirWhatsApp, consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
+import { abrirWhatsApp, consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
 
 // HU-38 Recordatorios de mantenimiento (flujo crítico 5). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §9.
 // Los recordatorios van directo a la base, colgados de una orden entregada en el pasado (no ocupa espacio). Las reservas
@@ -23,8 +23,9 @@ async function recordatorio(placa: string, dias: number): Promise<number> {
        select e.sucursal_id, v.cliente_id, v.id, e.id, current_date - 100, current_date - 100, 'entregado', now(), now(), now() - interval '100 days', v.created_by
        from vehiculo v, (select * from espacio_taller where activo order by orden limit 1) e where v.placa = $1 returning id, cliente_id, vehiculo_id
      )
-     insert into recordatorio_mantenimiento (trabajo_origen_id, cliente_id, vehiculo_id, servicio_id, fecha_programada)
-     select t.id, t.cliente_id, t.vehiculo_id, (select id from servicio where slug = 'pulido-y-nano-ceramico'), $2::date + $3::int from t returning id`,
+     insert into recordatorio_mantenimiento (trabajo_origen_id, cliente_id, vehiculo_id, servicio_id, servicio_mantenimiento_id, intervalo_meses, fecha_programada)
+     select t.id, t.cliente_id, t.vehiculo_id, (select id from servicio where slug = 'pulido-y-nano-ceramico'),
+       (select id from servicio where slug = 'mantenimiento-del-nano-ceramico'), 3, $2::date + $3::int from t returning id`,
     [placa, hoy(), dias],
   );
   return id;
@@ -120,9 +121,10 @@ test("vencidos y próximos; avisar, no le interesa y agendar (y al cancelar la r
   await expect(page.getByText(/^Venció el \d{2}\/\d{2}(\/\d{4})?$/)).toBeVisible();
   // Desde un mantenimiento no se cambia el cliente: el recordatorio es suyo
   await expect(page.getByRole("link", { name: "Cambiar" })).toHaveCount(0);
-  await page.getByRole("button", { name: "Agregar servicio" }).click();
-  // El mantenimiento es un servicio cobrado del catálogo (RN-09); el precio, el que ponga el dueño
-  await page.getByLabel("Servicio 1", { exact: true }).selectOption({ label: "Mantenimiento del nano cerámico" });
+  // Llega con su servicio de mantenimiento ya elegido (pedido 21). Es un servicio cobrado del catálogo (RN-09); el precio,
+  // el que ponga el dueño (según evaluación)
+  await expect(page.getByLabel("Servicio 1", { exact: true })).toHaveValue(/\d+/);
+  await expect(page.getByLabel("Servicio 1", { exact: true }).locator("option:checked")).toHaveText("Mantenimiento del nano cerámico");
   await page.getByLabel("Precio del servicio 1").fill("350");
   await page.getByLabel("Ingresa el").fill(await diaPropio(info));
   const espacio = page.getByLabel("Espacio", { exact: true });
@@ -196,4 +198,100 @@ test("solo con Mantenimientos se entra; sin Agenda y Pagos no se agenda; el téc
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto("/panel/mantenimientos");
   await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
+});
+
+// Pedido 21: los planes de mantenimiento (P21-planes-mantenimiento.md §9)
+test("entregar el mantenimiento lo deja hecho y programa el siguiente con la frecuencia del plan, aunque viniera por su cuenta", async ({ page }, info) => {
+  const s = sufijo(info);
+  const placa = `MT38${s.toUpperCase()}6`;
+  await crearClienteEnBase({ nombre: `Plan ${s}`, telefono: telefono(info, 6), placa });
+  const plan = await recordatorio(placa, 3);
+  // Este vehículo, cada 2 meses (editado en su ficha)
+  await consultar("update recordatorio_mantenimiento set intervalo_meses = 2 where id = $1", [plan]);
+  // Vino por su cuenta: una orden del mantenimiento que no se agendó desde Mantenimientos
+  const orden = await crearOrdenLista({ placa, espacio: 0, dias: info.project.name === "celular" ? 370 : 372, precio: 300, pagado: 300, servicio: "mantenimiento-del-nano-ceramico" });
+  const [{ proximo, iso }] = await consultar<{ proximo: string; iso: string }>(
+    "select to_char(($1::date + interval '2 months')::date, 'DD/MM/YYYY') as proximo, to_char(($1::date + interval '2 months')::date, 'YYYY-MM-DD') as iso",
+    [hoy()],
+  );
+
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/ordenes/${orden}/entregar`);
+  // Lo anticipa con la misma regla que la entrega
+  await expect(page.getByText("Queda hecho el mantenimiento de Pulido y nano cerámico.")).toBeVisible();
+  await expect(page.getByText(`Se programará: Mantenimiento del nano cerámico, el ${proximo}.`)).toBeVisible();
+  await page.getByRole("form", { name: "Entregar vehículo" }).getByRole("button", { name: "Entregar vehículo" }).click();
+  await expect(page.getByText(/^Entregado el /)).toBeVisible();
+
+  const filas = await consultar<{ id: number; estado: string; hecho: number | null; cada: number; fecha: string }>(
+    `select id, estado, trabajo_hecho_id as hecho, intervalo_meses as cada, to_char(fecha_programada, 'YYYY-MM-DD') as fecha
+     from recordatorio_mantenimiento where vehiculo_id = (select id from vehiculo where placa = $1) order by id`,
+    [placa],
+  );
+  expect(filas).toEqual([
+    expect.objectContaining({ id: plan, estado: "hecho", hecho: orden, cada: 2 }),
+    expect.objectContaining({ estado: "pendiente", hecho: null, cada: 2, fecha: iso }),
+  ]);
+  // En "Cerrados", hecho y con la orden que lo hizo
+  await page.goto("/panel/mantenimientos?vista=cerrados");
+  const cerrado = page.getByRole("list", { name: "Cerrados" }).getByRole("listitem").filter({ hasText: placa });
+  await expect(cerrado).toContainText("Hecho");
+  await expect(cerrado.getByRole("link", { name: "Ver la orden" })).toHaveAttribute("href", `/panel/ordenes/${orden}`);
+});
+
+test("en la ficha del cliente: agregar un mantenimiento anterior al sistema, editar el plan y terminarlo", async ({ page }, info) => {
+  const s = sufijo(info);
+  const placa = `MT38${s.toUpperCase()}7`;
+  const clienteId = await crearClienteEnBase({ nombre: `Anterior ${s}`, telefono: telefono(info, 7), placa });
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/clientes/${clienteId}`);
+
+  // Se hizo el cerámico hace 100 días: con 3 meses, ya venció y queda por avisar
+  const agregar = page.getByRole("dialog", { name: "Agregar mantenimiento" });
+  const cargar = async () => {
+    await page.getByRole("button", { name: "Agregar mantenimiento" }).click();
+    await agregar.getByLabel("Servicio que se hizo").selectOption({ label: "Pulido y nano cerámico" });
+    await expect(agregar.getByLabel("Cada", { exact: true })).toHaveValue("3");
+    await agregar.getByLabel("Cuándo se hizo").fill(await dia(-100));
+    await expect(agregar.getByText(/^Próximo mantenimiento: \d{2}\/\d{2}\/\d{4} \(ya venció: queda por avisar\)$/)).toBeVisible();
+    await agregar.getByRole("button", { name: "Agregar mantenimiento" }).click();
+  };
+  await cargar();
+  await expect(page.getByText("Mantenimiento agregado.")).toBeVisible();
+  await expect(agregar).toHaveCount(0);
+  const fila = page.getByRole("list", { name: "Mantenimientos" }).getByRole("listitem").filter({ hasText: placa });
+  await expect(fila).toContainText("cada 3 meses");
+  await expect(fila).toContainText("Por avisar");
+  // El mismo otra vez no se duplica
+  await cargar();
+  await expect(agregar.getByText("Ese vehículo ya tiene un mantenimiento abierto de ese servicio: edítalo.")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.goto("/panel/mantenimientos");
+  await expect(vencidos(page).getByRole("listitem").filter({ hasText: placa })).toContainText("cada 3 meses");
+
+  // Editar: cada 2 meses y otra fecha
+  await page.goto(`/panel/clientes/${clienteId}`);
+  await fila.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Editar" }).click();
+  const editar = page.getByRole("dialog", { name: "Mantenimiento de Pulido y nano cerámico" });
+  await editar.getByLabel("Cada", { exact: true }).fill("2");
+  const proximo = await dia(20);
+  await editar.getByLabel("Próximo mantenimiento").fill(proximo);
+  await editar.getByRole("button", { name: "Guardar plan" }).click();
+  await expect(page.getByText("Plan guardado.")).toBeVisible();
+  await expect(fila).toContainText("cada 2 meses");
+  const [plan] = await consultar<{ cada: number; fecha: string; estado: string }>(
+    `select intervalo_meses as cada, to_char(fecha_programada, 'YYYY-MM-DD') as fecha, estado from recordatorio_mantenimiento
+     where vehiculo_id = (select id from vehiculo where placa = $1)`,
+    [placa],
+  );
+  expect(plan).toEqual({ cada: 2, fecha: proximo, estado: "pendiente" });
+
+  // Terminarlo: "No le interesa"
+  await fila.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "No le interesa" }).click();
+  await page.getByRole("dialog", { name: "No le interesa" }).getByRole("button", { name: "Sí, no le interesa" }).click();
+  await expect(page.getByText("Listo: no se le volverá a avisar.")).toBeVisible();
+  await expect(fila).toContainText("No le interesa");
+  await expect(fila.getByRole("button", { name: "Más" })).toHaveCount(0);
 });

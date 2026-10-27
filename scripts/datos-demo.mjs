@@ -429,7 +429,8 @@ try {
     pagos: () => [{ monto: 150, metodo: "efectivo", tipo: "adelanto", dia: -25 }],
   });
   // Entregadas hace unos meses, pagadas: sus mantenimientos (uno vencido y uno que viene)
-  const intervalo = Number((await uno("select valor #>> '{}' as v from parametro where clave = 'intervalo_mantenimiento_meses'")).v);
+  // Su plan (pedido 21): el mantenimiento y la frecuencia que dice el catálogo del pulido
+  const plan = await uno("select mantenimiento_servicio_id as m, mantenimiento_meses as meses from servicio where slug = 'pulido-y-nano-ceramico'");
   for (const [c, hace, capa] of [
     [carlos, 95, "1 año"],
     [maria, 80, "2 años"],
@@ -445,9 +446,9 @@ try {
       ],
     });
     await q(
-      `insert into recordatorio_mantenimiento (trabajo_origen_id, cliente_id, vehiculo_id, servicio_id, fecha_programada, created_at)
-       values ($1, $2, $3, $4, $5, $6)`,
-      [id, c.cliente, c.vehiculo, servicio["pulido-y-nano-ceramico"].id, sumarMeses(entregado, intervalo), momentoHabil(-hace, "17:00")],
+      `insert into recordatorio_mantenimiento (trabajo_origen_id, cliente_id, vehiculo_id, servicio_id, servicio_mantenimiento_id, intervalo_meses, fecha_programada, created_at)
+       values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [id, c.cliente, c.vehiculo, servicio["pulido-y-nano-ceramico"].id, plan.m, plan.meses, sumarMeses(entregado, plan.meses), momentoHabil(-hace, "17:00")],
     );
   }
 

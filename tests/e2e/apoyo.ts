@@ -60,7 +60,7 @@ export async function consultar<T extends pg.QueryResultRow>(sql: string, valore
  * dado y, si se pagó algo, el adelanto. `dias` la pone lejos de hoy, en días propios de cada prueba y proyecto, para
  * que los espacios del taller no choquen con otras pruebas. Devuelve su id.
  */
-export async function crearOrdenLista(datos: { placa: string; espacio: number; dias: number; precio: number; pagado: number }): Promise<number> {
+export async function crearOrdenLista(datos: { placa: string; espacio: number; dias: number; precio: number; pagado: number; servicio?: string }): Promise<number> {
   const [{ id }] = await consultar<{ id: number }>(
     `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, created_by)
      select e.sucursal_id, v.cliente_id, v.id, e.id, current_date + $3::int, current_date + $3::int, 'listo', now(), now(), v.created_by
@@ -69,9 +69,9 @@ export async function crearOrdenLista(datos: { placa: string; espacio: number; d
   );
   await consultar(
     `insert into trabajo_linea (trabajo_id, variante_id, descripcion, precio, orden)
-     select $1, v.id, 'Pulido y nano cerámico', $2, 0 from variante v join servicio s on s.id = v.servicio_id
-     where s.slug = 'pulido-y-nano-ceramico' order by v.id limit 1`,
-    [id, datos.precio],
+     select $1, v.id, s.nombre, $2, 0 from variante v join servicio s on s.id = v.servicio_id
+     where s.slug = $3 order by v.id limit 1`,
+    [id, datos.precio, datos.servicio ?? "pulido-y-nano-ceramico"],
   );
   if (datos.pagado > 0) {
     await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, $2, 'qr', 'adelanto', current_date, created_by from trabajo where id = $1", [
