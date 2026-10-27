@@ -257,3 +257,12 @@ test("el encargado con Agenda sin Pagos agenda sin montos ni adelanto; el técni
   await page.goto("/panel/agenda");
   await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
 });
+
+test("«Cambiar» vuelve a elegir el cliente sin perder el día y el espacio que llegaron del tablero", async ({ page }, info) => {
+  const s = sufijo(info);
+  const clienteId = await crearClienteEnBase({ nombre: `Cambia cliente ${s}`, telefono: telefono(info, 9), placa: `CC30${s}9` });
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/agenda/nueva?fecha=2030-01-02&espacio=1&cliente=${clienteId}`);
+  await expect(page.getByRole("link", { name: "Cambiar" })).toHaveAttribute("href", "/panel/agenda/nueva?fecha=2030-01-02&espacio=1");
+});
+

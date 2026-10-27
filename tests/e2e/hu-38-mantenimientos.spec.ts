@@ -95,6 +95,8 @@ test("vencidos y próximos; avisar, no le interesa y agendar (y al cancelar la r
   // Solo lo visible: Next deja la página de Mantenimientos oculta en el documento, con el mismo texto
   await expect(page.getByText("Mantenimiento de Pulido y nano cerámico", { exact: true }).filter({ visible: true })).toBeVisible();
   await expect(page.getByText(/^Venció el \d{2}\/\d{2}(\/\d{4})?$/)).toBeVisible();
+  // Desde un mantenimiento no se cambia el cliente: el recordatorio es suyo
+  await expect(page.getByRole("link", { name: "Cambiar" })).toHaveCount(0);
   await page.getByRole("button", { name: "Agregar servicio" }).click();
   // El mantenimiento es un servicio cobrado del catálogo (RN-09); el precio, el que ponga el dueño
   await page.getByLabel("Servicio 1", { exact: true }).selectOption({ label: "Mantenimiento del nano cerámico" });
