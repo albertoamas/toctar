@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { cn } from "cn";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -91,7 +92,7 @@ async function Lista() {
                   <RegistrarPago trabajoId={s.id} saldo={s.saldo} hoy={hoy} conPagos />
                 </div>
                 {trabajo && (
-                  <Link href={trabajo.href} className="inline-flex min-h-11 items-center self-start font-semibold underline lg:self-end">
+                  <Link href={trabajo.href} className={cn(ENLACE_TEXTO, "lg:self-end")}>
                     {trabajo.texto}
                   </Link>
                 )}

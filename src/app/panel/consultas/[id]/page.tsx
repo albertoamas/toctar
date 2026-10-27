@@ -9,6 +9,7 @@ import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -138,7 +139,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/consulta
             </dl>
             {/* El encargado puede tener Consultas sin Clientes: entonces no enlaza a una ficha que no puede abrir */}
             {verFicha && (
-              <Link href={`/panel/clientes/${c.clienteId}`} className="inline-flex min-h-11 items-center self-start font-semibold underline">
+              <Link href={`/panel/clientes/${c.clienteId}`} className={ENLACE_TEXTO}>
                 Ver ficha del cliente
               </Link>
             )}

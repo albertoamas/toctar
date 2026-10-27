@@ -8,6 +8,7 @@ import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/lib/fechas";
@@ -70,7 +71,6 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
         Ver la orden
       </Link>
     ) : null;
-  const enlace = "inline-flex min-h-11 items-center self-start font-semibold underline";
 
   return (
     <div className="flex max-w-5xl flex-col gap-8">
@@ -132,12 +132,12 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
           </dl>
           {/* Los enlaces, de 44 px y fuera de la lista: la ficha del cliente (con Clientes) y su consulta (con Consultas) */}
           {verFicha && (
-            <Link href={`/panel/clientes/${r.clienteId}`} className={enlace}>
+            <Link href={`/panel/clientes/${r.clienteId}`} className={ENLACE_TEXTO}>
               Ver ficha del cliente
             </Link>
           )}
           {r.consultaId && verConsulta && (
-            <Link href={`/panel/consultas/${r.consultaId}`} className={enlace}>
+            <Link href={`/panel/consultas/${r.consultaId}`} className={ENLACE_TEXTO}>
               {r.cotizacion ? `Ver la cotización ${r.cotizacion.numero}${r.cotizacion.version > 1 ? `, versión ${r.cotizacion.version}` : ""}` : "Ver la consulta"}
             </Link>
           )}

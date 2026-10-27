@@ -2,6 +2,7 @@
 
 import { useActionState, useRef, useState } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
+import { useHidratado } from "@/componentes/hidratado";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
@@ -16,9 +17,11 @@ import { cerrarMantenimiento } from "../acciones";
 
 export function NoLeInteresa({ id }: { id: number }) {
   const [abierto, setAbierto] = useState(false);
+  // Abre un modal (necesita JavaScript): se habilita al hidratar, así un toque temprano no se pierde
+  const listo = useHidratado();
   return (
     <>
-      <Button type="button" variant="ghost" onClick={() => setAbierto(true)} className="self-start lg:self-end">
+      <Button type="button" variant="ghost" disabled={!listo} onClick={() => setAbierto(true)} className="self-start lg:self-end">
         No le interesa
       </Button>
       <ModalFormulario titulo="No le interesa" abierto={abierto} alCambiar={setAbierto}>

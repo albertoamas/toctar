@@ -44,8 +44,9 @@ async function Lista() {
             const delGrupo = ordenes.filter((o) => o.estado === estado);
             return (
               <section key={estado} aria-labelledby={`grupo-${estado}`} className="flex flex-col gap-3">
-                <h2 id={`grupo-${estado}`} className="font-heading text-2xl font-extrabold italic">
-                  {GRUPOS[estado]} <span className="tabular-nums text-tinta-suave">({delGrupo.length})</span>
+                <h2 id={`grupo-${estado}`} className="font-heading text-2xl font-bold italic">
+                  {GRUPOS[estado]} <span className="tabular-nums text-tinta-suave" aria-hidden>({delGrupo.length})</span>
+                  <span className="sr-only">, {delGrupo.length === 1 ? "1 orden" : `${delGrupo.length} órdenes`}</span>
                 </h2>
                 {delGrupo.length === 0 ? (
                   <p className="text-tinta-suave">Ninguna.</p>
