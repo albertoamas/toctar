@@ -142,6 +142,7 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel y sin de
 - **Pagos** (con "Pagos"): lista con fecha, tipo, método, monto, comprobante (ver en grande) y "Anular" (motivo); los anulados, tachados, con su motivo. "Registrar pago".
 - **Reprogramar:** fechas y espacio, con los espacios libres. **Cancelar:** motivo; aviso "El adelanto no se devuelve (Bs 200 quedan como ingreso)".
 - Una reserva cancelada se ve con su motivo y sus pagos, sin acciones.
+- **Pulido 10.3 (27/10):** el encabezado compartido con el paso siguiente como única acción principal ("Recibir vehículo" desde el día de ingreso, o "Ver la orden" si ya se recibió), "Escribir por WhatsApp" y "Más" con "Reprogramar" y "Cancelar reserva" (mientras esté agendada), cada uno con su formulario en un modal; cancelar empieza con el foco en el motivo y su "Volver". Cancelada, el motivo bajo el título ("Cancelada: …"). Los datos sin la placa repetida: el vehículo con su modelo y "Tamaño: …"; el cliente como texto y, debajo, "Ver ficha del cliente" y "Ver la cotización …" (44 px). "Registrar pago" sin fondo en la cabecera de Pagos, con su formulario en un modal (el bloque de servicios y pagos lo comparte la orden; en Saldos pendientes, el botón sigue rojo, también con el modal).
 
 ### En otras pantallas
 - **Consulta:** en "Cotizaciones", la vigente tiene "Agendar" (con "Agenda"); con reserva, "Reserva del 24/10 en Espacio 2" con enlace.

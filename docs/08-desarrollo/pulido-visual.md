@@ -226,7 +226,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 |---|---|---|---|
 | 10.1 | Agenda: tablero de la semana y del día | `/panel/agenda` | ✅ |
 | 10.2 | Nueva reserva (desde una cotización, directa y desde un mantenimiento) | `/panel/agenda/nueva` | ✅ |
-| 10.3 | Reserva: montos, pagos, reprogramar y cancelar | `/panel/agenda/[id]` | ⏳ |
+| 10.3 | Reserva: montos, pagos, reprogramar y cancelar | `/panel/agenda/[id]` | ✅ |
 
 ### 11. Panel: taller
 
@@ -1248,6 +1248,29 @@ Pedido del desarrollador: releer las reglas del principio de este documento y co
   - El mantenimiento, en una línea con su vencimiento en una insignia (de aviso si venció). En la propuesta decía `AvisoEnPagina`, pero ese componente es la confirmación de algo recién creado (ícono de éxito y anuncio al lector de pantalla): la insignia es lo que usa el panel para un dato que pide atención.
   - `EncabezadoPagina`; `CabeceraSeccion` acepta no tener acción.
 - **Verificación:** con pantalla táctil a 360, 390, 768 y 1280 px, los cinco caminos (desde una cotización, elegir cliente, elegir vehículo, directa y desde un mantenimiento): nada se sale; bajo 44 px solo el selector oculto del comprobante. La directa, 1.943 px en el celular (−7 %; la estimación era 1.750) y la de cotización, 1.806 (+2 %: la cotización tiene su propio recuadro); lo que se gana es "Agendar" siempre a mano y la pantalla igual al resto. Comparativa en `pulido-visual/10.2-nueva-reserva-celular.jpg`. E2E `hu-30` (la hora plegada y su foco al abrirla, la cotización con su total), `hu-38` (el mantenimiento con su insignia), `hu-29`, `hu-31`, `hu-32` y `hu-33`.
+
+### 10.3 Reserva (27/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | Placa, estado y WhatsApp | Qué reserva es, contactar | Dueño o encargado, seguido | Arriba |
+  | "Recibir vehículo" (el día de ingreso) | El paso siguiente | Una vez por reserva | Al encabezado |
+  | Reprogramar y Cancelar reserva (formularios en la página) | Mover o cancelar | A veces y rara vez | A "Más", con modales |
+  | Datos (fechas, espacio, técnico, cliente, vehículo, consulta, agendada) | Contexto | Seguido | En lectura, sin la placa repetida |
+  | Servicios, total, pagado y saldo | Cuánto falta | Seguido, con pagos | Quedan |
+  | Pagos y "Registrar pago" | Cobrar | Seguido | Quedan; "Registrar pago" sin fondo, con su modal |
+  | "Esta reserva ya es una orden" (aviso de éxito) | Ir a la orden | Ya recibida | "Ver la orden" en el encabezado |
+  | Recuadro "Cancelada: motivo" | Por qué | Cancelada | Una línea bajo el título |
+- **Encontrado:**
+  - Dos rojos compitiendo ("Recibir vehículo" y "Registrar pago"); "Reprogramar" y "Cancelar reserva" siempre a la vista, y sus formularios empujaban la página.
+  - Enlaces de menos de 44 px: el nombre del cliente, "Ver la orden" y la cotización.
+  - "Ya es una orden" con el aviso de éxito (es para lo recién creado); el vehículo repetía la placa del título y su tamaño sin etiqueta; el título sin el encabezado compartido.
+- **Cambios** (propuesta aprobada el 27/10):
+  - El paso siguiente, uno solo, en `EncabezadoPagina`: "Recibir vehículo" o "Ver la orden"; con "Escribir por WhatsApp" y `MenuMas` ("Reprogramar", "Cancelar reserva") con sus modales (`MasReserva`). Cancelar empieza con el foco en el motivo, que es obligatorio (un Enter ahí escribe, no confirma), y su botón para cerrar dice "Volver" (`CancelarModal` acepta "Volver"); en la propuesta decía el foco en "Volver".
+  - Cancelada, el motivo bajo el título. Datos: el vehículo con su modelo y "Tamaño: …" (la consulta de la reserva trae año y color); el cliente como texto; "Ver ficha del cliente" y "Ver la cotización …" de 44 px.
+  - **"Registrar pago"** (`RegistrarPago`) se abre en un modal; en la cabecera de Pagos va sin fondo (`seccion`). El bloque de servicios y pagos (`MontosTrabajo`) lo comparte la orden (grupo 11), que cambia igual; en Saldos pendientes (grupo 12) el botón sigue rojo, ya con el modal.
+- **Verificación:** con pantalla táctil a 360, 390, 768 y 1280 px (agendada para hoy, a futuro, ya orden, "Más", los dos modales y el de registrar pago): nada se sale y ningún control mide menos de 44 px. Comparativa en `pulido-visual/10.3-reserva-celular.jpg`. E2E `hu-31` (reprogramar y cancelar desde "Más"), `hu-32` (registrar y anular pagos), `hu-33` (recibir y "Ver la orden" desde el encabezado), `hu-36`, `hu-37` y `hu-38`.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
