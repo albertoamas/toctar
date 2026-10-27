@@ -191,6 +191,7 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel y sin de
 - **Validez:** "Válida hasta" con la fecha de hoy + los días de Configuración (S-5).
 - **Estimado por fotos:** casilla, marcada si la consulta llegó por WhatsApp (RN-03).
 - **Fotos para el PDF:** casillas con las fotos de la consulta, hasta 4.
+- **PDF, pulido 9.5 (27/10):** cuerpo en 10,5 pt; el logo según su forma (horizontal, 14 mm de alto; casi cuadrado o vertical, 24 mm); el tamaño del vehículo con su etiqueta ("Tamaño: Compactos"). Las cotizaciones ya enviadas no se regeneran (RN-02).
 - **Pulido 9.4 (27/10):** encabezado compartido con "Cliente, placa (tamaño)" en su línea. Una cotización nueva arranca con el servicio de interés de la consulta (`lineasDelServicioDeInteres`): con una sola variante, elegida y con su precio sugerido; con varias, una línea vacía para elegir cuál; "todavía no sabe", sin líneas. Las secciones: Servicios; Total (descuento y resumen); Condiciones (adelanto y validez lado a lado desde 640 px, y la casilla de estimado). Sin las ayudas que repetían Configuración o el tamaño. El total y "Guardar y generar PDF" fijos abajo en el celular (`PieFormulario`).
 - "Guardar y generar PDF". `?desde=<cotizacionId>` llega con las líneas, el descuento y las fotos de esa versión: guardar crea la versión siguiente.
 

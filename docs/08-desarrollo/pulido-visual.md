@@ -218,7 +218,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 | 9.2 | Nueva consulta | `/panel/consultas/nueva` | ✅ |
 | 9.3 | Detalle de una consulta: estado, fotos, cotizaciones y reservas | `/panel/consultas/[id]` | ✅ |
 | 9.4 | Cotizar | `/panel/consultas/[id]/cotizar` | ✅ |
-| 9.5 | PDF de la cotización (impreso y en el celular; con la skill `pdf`) | `/panel/cotizaciones/[id]/pdf` | ⏳ |
+| 9.5 | PDF de la cotización (impreso y en el celular; con la skill `pdf`) | `/panel/cotizaciones/[id]/pdf` | ✅ |
 
 ### 10. Panel: agenda y pagos
 
@@ -1162,6 +1162,23 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Una cotización nueva arranca con el servicio de interés de la consulta: con una sola variante, elegida y con su precio; con varias, una línea para elegir cuál; sin servicio, vacía. Función pura `lineasDelServicioDeInteres`, con prueba unitaria. Corregir arranca, como antes, con las líneas de la versión anterior.
   - `EncabezadoPagina` con "Cliente, placa (tamaño)".
 - **Verificación:** con dos servicios, 1.441 px en el celular, igual que antes (la estimación era 1.250: la sección Condiciones suma su título), pero el total y el botón quedan siempre a la vista. Capturas a 360, 390, 768 y 1280 px con una línea precargada, con dos servicios y al corregir; sin desborde. En la base local se cotizó también la consulta 1 de la demo (al capturar los errores, el formulario estaba completo) y se crearon las consultas 4 y 5 (una con un servicio de una variante y otra con el nano cerámico). Comparativa en `pulido-visual/9.4-cotizar-celular.jpg`. E2E `hu-25` (la primera línea según el servicio de interés, el total al pie), `hu-26`, `hu-27` y `hu-30` (la reserva directa usa las mismas líneas).
+
+### 9.5 PDF de la cotización (27/10/2026)
+- **Revisión** (skill `pdf`): los dos PDF de la base local y los de la prueba unitaria, como imagen en A4, en blanco y negro y a 390 px de ancho (el celular, sin zoom).
+- **Lo que ya estaba bien:** una hoja A4 limpia en el orden de lectura; el total en la banda negra con el corte a 60° (en blanco y negro sigue siendo lo más visible; en el celular se lee sin zoom); montos con dos decimales y separador de miles; las fuentes incrustadas; el rojo solo en piezas grandes.
+- **Encontrado:**
+  - El logo con 14 mm de alto fijo: el que subió el dueño en Configuración es casi cuadrado y con lema, y quedaba de 14 × 14 mm con el lema ilegible (la marca pide la variante sin lema en tamaños chicos; la del PDF, cuando no hay uno subido, ya lo es).
+  - El vehículo como en el panel antes de la 9.3: "Suzuki Swift, Plata" y "Compactos" sin etiqueta.
+  - El cuerpo en 9,5 pt, chico en el celular, con un tercio de la hoja libre.
+  - "Fecha" y "Válida hasta" pegados al título (2 mm).
+- **Cambios** (propuesta aprobada el 27/10):
+  - El logo según su forma: horizontal, 14 mm de alto (hasta 70 mm de ancho); casi cuadrado o vertical, 24 mm.
+  - "Tamaño: …" con su etiqueta, en tinta suave, debajo del modelo.
+  - El cuerpo en 10,5 pt (etiquetas, encabezado, secciones, banda del total y pie en proporción); la columna de precios y los totales un poco más anchos.
+  - 4 mm entre el título y las fechas.
+  - Las cotizaciones ya enviadas no cambian (RN-02): los cambios valen para las nuevas y para las versiones nuevas.
+  - Para el grupo 13 (Configuración): en la ayuda del logo, recomendar el horizontal sin lema para los documentos.
+- **Verificación:** con tres servicios y sin fotos, una hoja; con cuatro fotos, la segunda hoja con las fotos; con 20 líneas, varias hojas numeradas. Pruebas unitarias nuevas: tres servicios caben en una hoja, y el logo cuadrado con una versión 2. Comparativa en `pulido-visual/9.5-pdf-cotizacion.jpg` (antes, después y en el celular). E2E `hu-26` (el PDF se genera, se ve y se descarga).
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
