@@ -224,7 +224,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 10.1 | Agenda: tablero de la semana y del día | `/panel/agenda` | ⏳ |
+| 10.1 | Agenda: tablero de la semana y del día | `/panel/agenda` | ✅ |
 | 10.2 | Nueva reserva (desde una cotización, directa y desde un mantenimiento) | `/panel/agenda/nueva` | ⏳ |
 | 10.3 | Reserva: montos, pagos, reprogramar y cancelar | `/panel/agenda/[id]` | ⏳ |
 
@@ -1066,6 +1066,27 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - `CabeceraSeccion` (de `seccion-con-editar.tsx`): la cabecera de Vehículos era una copia de la de `SeccionConEditar`.
   - El comentario y la prueba de `placasEnFila`: pasa adelante las placas que contienen lo buscado, sea o no una placa.
   - Descartados: el foco al cancelar desde "Más" ya vuelve al botón (la E2E lo comprueba); al reactivar, el aviso lo anuncia; "Pagado" y "Saldo" se distinguen por el texto, y lo que debe está en el encabezado; el `conAviso` por render es el patrón de los demás formularios en modal.
+
+### 10.1 Agenda (27/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | "Nueva reserva" | Agendar sin un espacio pensado | Dueño o encargado, a diario | Arriba |
+  | Semana anterior, siguiente y "Hoy" | Moverse por las semanas | A diario | Queda, en un renglón |
+  | Tablero (espacios por días, cintas, "Libre") | Ver lo ocupado y agendar en un hueco | Lo principal | Queda; en la tableta, la vista por día |
+  | Pestañas de los días (celular) | Elegir el día | A diario | Quedan |
+  | "Martes 27 de octubre, hoy" (celular) | Saber qué día se ve | — | Se va: lo dice la pestaña elegida |
+- **Encontrado:**
+  - En la tableta (768 px), siete columnas de unos 75 px: las placas se cortaban ("4…", "3…") y "Hoy" se montaba sobre "Mié 28".
+  - En el celular, cuatro renglones antes de la primera reserva: las flechas solas, la semana, las pestañas y el día repetido.
+  - El título sin el encabezado compartido.
+  - Bien y sin cambios: las cintas con el corte a 60° y la placa grande, "Libre, Agendar" punteado, los días cerrados rayados y con su palabra, y todo con texto para el lector de pantalla.
+- **Cambios** (propuesta aprobada el 27/10):
+  - La grilla de la semana desde 1024 px; hasta ahí, la vista por día (el celular y la tableta, lo mismo).
+  - La semana en un renglón entre las flechas: corta en el celular ("26 oct al 1 nov", con el año si cambia: "28 dic al 3 ene 2027"), completa desde 640 px; "Hoy" al final, fuera de la semana actual. Regla pura `textoSemanaCorto`, con prueba unitaria.
+  - Sin el renglón del día repetido; `EncabezadoPagina` con "Nueva reserva".
+- **Verificación:** capturas con pantalla táctil a 360, 390, 768 y 1280 px de esta semana y de una con cambio de año; nada se sale y ningún control mide menos de 44 px. En el celular el tablero empieza unos 80 px más arriba. Comparativa en `pulido-visual/10.1-agenda.jpg` (celular y tableta). E2E `hu-29` (la pestaña de hoy marcada; moverse de semana y volver con "Hoy"), `hu-30`, `hu-31`, `hu-33` y `hu-38`.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)

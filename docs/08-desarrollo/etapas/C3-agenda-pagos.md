@@ -123,6 +123,7 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel y sin de
 - Arriba: "Nueva reserva" (enlace con forma de botón, rojo), la semana ("20 al 26 de octubre"), "‹ Semana anterior", "Hoy", "Semana siguiente ›". `?semana=AAAA-MM-DD` (el lunes).
 - **Computadora:** grilla con una fila por espacio y siete columnas; cada reserva es un bloque que abarca sus días (recortado a la semana si empieza antes o termina después), con placa, servicio y técnico. Hoy, marcado. Días cerrados, atenuados. Un día libre se toca para agendar ahí (`/panel/agenda/nueva?fecha=…&espacio=…`).
 - **Celular:** un día a la vez (con los siete días de la semana como pestañas), una tarjeta por espacio: la reserva que lo ocupa o "Libre" con "Agendar". Así no hace falta desplazarse de lado.
+- **Pulido 10.1 (27/10):** la grilla de la semana, desde 1024 px; en la tableta, la vista por día (con siete columnas de 75 px las cintas se cortaban). La semana en un renglón: "‹", la semana ("26 oct al 1 nov" en el celular, `textoSemanaCorto`; completa desde 640 px), "›" y "Hoy" fuera de la semana actual. Sin el renglón "Martes 27 de octubre, hoy": la pestaña elegida lo marca (hoy, con su número en rojo). Encabezado compartido.
 - Vacío: la grilla con todo "Libre".
 
 ### `/panel/agenda/nueva` — Nueva reserva
