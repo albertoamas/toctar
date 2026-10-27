@@ -21,11 +21,20 @@ type Props = {
   hoy: string;
   /** Debajo de los servicios: por ejemplo, "Agregar servicio" para el dueño en la orden. */
   agregar?: React.ReactNode;
+  /**
+   * Al entregar (pulido 11.4): cobrar el saldo es lo primero, así que va destacado al pie de los pagos ("Falta cobrar")
+   * y no sin fondo en la cabecera.
+   */
+  cobrar?: boolean;
 };
 
-export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar }: Props) {
+export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar, cobrar }: Props) {
   const conAdicionales = montos.lineas.some((l) => l.esAdicional);
   const precios = precioCotizadoYFinal(montos.lineas, montos.descuento);
+  const porCobrar = !cerrado && !estaPagada(montos.saldo.saldo);
+  const registrar = (variante: "ghost" | "outline") => (
+    <RegistrarPago trabajoId={trabajoId} saldo={montos.saldo.saldo} hoy={hoy} conPagos={montos.pagos.some((p) => !p.anulado)} variante={variante} />
+  );
   return (
       <>
         <section aria-labelledby="servicios-titulo" className="flex flex-col gap-3">
@@ -43,7 +52,7 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar }: Prop
             ))}
           </ul>
           {agregar}
-          <dl className="grid max-w-sm grid-cols-[1fr_auto] gap-x-6 gap-y-1">
+          <dl className="grid grid-cols-[1fr_auto] gap-x-6 gap-y-1 px-3">
             {montos.descuento !== "0.00" && (
               <>
                 <dt className="text-tinta-suave">Descuento</dt>
@@ -75,9 +84,7 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar }: Prop
           {/* "Registrar pago" sin fondo en la cabecera, como "Editar" (pulido 10.3): el rojo de la pantalla es su paso
               siguiente (recibir, entregar) */}
           <CabeceraSeccion id="pagos" titulo="Pagos">
-            {!cerrado && !estaPagada(montos.saldo.saldo) && (
-              <RegistrarPago trabajoId={trabajoId} saldo={montos.saldo.saldo} hoy={hoy} conPagos={montos.pagos.some((p) => !p.anulado)} seccion />
-            )}
+            {porCobrar && !cobrar && registrar("ghost")}
           </CabeceraSeccion>
           {montos.pagos.length === 0 ? (
             <p className="text-tinta-suave">Todavía no hay pagos.</p>
@@ -107,6 +114,12 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar }: Prop
                 );
               })}
             </ul>
+          )}
+          {porCobrar && cobrar && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-sm bg-superficie p-3">
+              <span className="font-semibold tabular-nums">Falta cobrar {bs(montos.saldo.saldo)}</span>
+              {registrar("outline")}
+            </div>
           )}
           {!cerrado && estaPagada(montos.saldo.saldo) && <p className="font-semibold text-exito">Pagado por completo.</p>}
         </section>

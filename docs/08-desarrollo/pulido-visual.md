@@ -235,7 +235,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 | 11.1 | Órdenes (dueño y encargado) y Mis órdenes (técnico) | `/panel/ordenes` | ✅ |
 | 11.2 | Orden: estado, fotos, avances, montos y aviso | `/panel/ordenes/[id]` | ✅ |
 | 11.3 | Recibir vehículo | `/panel/ordenes/[id]/recibir` | ✅ |
-| 11.4 | Entregar vehículo | `/panel/ordenes/[id]/entregar` | ⏳ |
+| 11.4 | Entregar vehículo | `/panel/ordenes/[id]/entregar` | ✅ |
 
 ### 12. Panel: seguimiento
 
@@ -1348,6 +1348,28 @@ Pedido del desarrollador: releer las reglas del principio de este documento y co
   - El botón en `PieFormulario`: fijo abajo en el celular, al pie desde 640 px; el aviso sin fotos, justo encima.
   - La ayuda de las fotos, más corta: "Todo el vehículo y cada detalle. Después de recibirlo ya no se quitan."
 - **Verificación:** con pantalla táctil a 360, 390, 768 y 1280 px, sin fotos y con el aviso de recibir sin fotos: nada se sale y ningún control mide menos de 44 px (las entradas de archivo ocultas no cuentan). Comparativa en `pulido-visual/11.3-recibir-celular.jpg`. E2E `hu-33`.
+
+### 11.4 Entregar vehículo (27/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Decisión |
+  |---|---|---|
+  | "Entregar 5678JKR" y el cliente | Confirmar que es el auto | `EncabezadoPagina` con el cliente y el vehículo |
+  | Servicios, total, pagado y saldo | Cuánto falta | Quedan, con los montos alineados |
+  | "Registrar pago" sin fondo en la cabecera de Pagos | Cobrar el saldo: lo primero | "Falta cobrar" con "Registrar pago" al pie de los pagos |
+  | Casilla "Entregar con saldo pendiente" | La excepción | Queda, después del cobro |
+  | Aviso del mantenimiento | Saber que se programa | Queda |
+  | "Entregar vehículo" | Terminar | Con `PieFormulario` |
+- **Encontrado:**
+  - Con saldo, lo más visible era la casilla con borde de aviso y el botón rojo: la pantalla empujaba a entregar sin cobrar, y "Registrar pago" era un texto chico en la cabecera de Pagos.
+  - Total, pagado y saldo terminaban a la mitad (`max-w-sm` en `MontosTrabajo`) y no en la columna de los precios; pasaba igual en la reserva.
+  - El título sin el encabezado compartido y solo con el cliente; el botón no quedaba fijo abajo en el celular.
+  - El visor del comprobante (pendiente de 10.3 y 11.4) se revisó en el código, sin datos de demostración con foto: es el mismo diálogo del visor de fotos, con su título y la miniatura de 44 px con nombre. Sin cambios.
+- **Cambios** (propuesta aprobada el 27/10):
+  - `MontosTrabajo` con `cobrar`: con saldo, al pie de los pagos "Falta cobrar 200 Bs" y "Registrar pago" con borde (el mismo modal); la cabecera ya no lo repite. Al cobrar todo, "Pagado por completo.". `RegistrarPago` recibe `variante` (rojo en Saldos pendientes, sin fondo en la cabecera de una sección, con borde aquí) en lugar de `seccion`.
+  - Total, pagado y saldo a todo el ancho, alineados con los precios (`px-3`, como las filas de servicios): en la entrega, la reserva y la orden.
+  - `EncabezadoPagina` con "Rodrigo Mendoza, Hyundai Tucson 2022 Azul" (`detalleVehiculo`) y el botón en `PieFormulario`.
+- **Verificación:** con pantalla táctil a 360, 390, 768 y 1280 px (entregar con saldo, la reserva y la orden con los montos nuevos): nada se sale y ningún control mide menos de 44 px. Comparativa en `pulido-visual/11.4-entregar-celular.jpg`. E2E `hu-31`, `hu-32`, `hu-36`, `hu-37`, `hu-38` y `flujo-taller-completo`.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)

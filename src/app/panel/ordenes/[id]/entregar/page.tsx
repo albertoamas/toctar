@@ -3,10 +3,12 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { fechaEnBolivia, formatearFecha, sumarMeses } from "@/lib/fechas";
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
+import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { FormularioEntrega } from "@/modulos/ordenes/componentes/formulario-entrega";
 import { obtenerOrden, serviciosConMantenimiento } from "@/modulos/ordenes/consultas";
@@ -18,6 +20,8 @@ export const metadata: Metadata = { title: "Entregar vehículo" };
 // HU-36: entregar el vehículo (RF-43, RF-49, CU-19). El dueño o el encargado con "Órdenes", desde una orden lista: el
 // precio final, lo pagado y el saldo (con "Pagos"; sin ellos, solo si queda saldo), cobrar ahí mismo y confirmar. Con
 // saldo, solo quien puede autorizarlo (RN-13). Si un servicio genera mantenimiento, se anticipa la fecha (RN-08).
+// Pulido 11.4: con saldo, "Falta cobrar" y "Registrar pago" van antes de la casilla de entregar con saldo, que es la
+// excepción; el botón, fijo abajo en el celular.
 export default function PaginaEntregar({ params }: PageProps<"/panel/ordenes/[id]/entregar">) {
   return (
     <section className="flex max-w-3xl flex-col gap-6">
@@ -46,13 +50,10 @@ async function Entrega({ params }: Pick<PageProps<"/panel/ordenes/[id]/entregar"
   return (
     <>
       <EnlaceVolver href={`/panel/ordenes/${o.id}`}>Orden</EnlaceVolver>
-      <div className="flex flex-col gap-1">
-        <h1 className="font-heading text-4xl font-extrabold italic">Entregar {o.placa}</h1>
-        <p>{o.cliente}</p>
-      </div>
+      <EncabezadoPagina titulo={`Entregar ${o.placa}`}>{[o.cliente, detalleVehiculo(o).join(" ")].filter(Boolean).join(", ")}</EncabezadoPagina>
 
       {conPagos ? (
-        <MontosTrabajo trabajoId={o.id} montos={o.montos} cerrado={false} hoy={hoy} />
+        <MontosTrabajo trabajoId={o.id} montos={o.montos} cerrado={false} hoy={hoy} cobrar />
       ) : (
         <p className="text-lg font-semibold">{conDeuda ? "Queda saldo pendiente." : "Pagado."}</p>
       )}

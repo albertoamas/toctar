@@ -32,12 +32,15 @@ type Props = {
   conPagos: boolean;
 };
 
-export function RegistrarPago({ seccion, ...props }: Props & { /** En la cabecera de una sección: sin fondo. */ seccion?: boolean }) {
+export function RegistrarPago({
+  variante = "default",
+  ...props
+}: Props & { /** Rojo si es la acción de la pantalla (Saldos); sin fondo en la cabecera de una sección; con borde al entregar. */ variante?: "default" | "ghost" | "outline" }) {
   const [abierto, setAbierto] = useState(false);
   const hidratado = useHidratado();
   return (
     <>
-      <Button type="button" variant={seccion ? "ghost" : "default"} disabled={!hidratado} onClick={() => setAbierto(true)}>
+      <Button type="button" variant={variante} disabled={!hidratado} onClick={() => setAbierto(true)}>
         <PlusIcon />
         Registrar pago
       </Button>
