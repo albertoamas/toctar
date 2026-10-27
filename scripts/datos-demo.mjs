@@ -334,7 +334,7 @@ try {
     const lineas = [];
     for (const [slug, nombreVariante] of datos.lineas) {
       const v = await variante(slug, nombreVariante);
-      const descripcion = nombreVariante.toLowerCase() === "única" ? servicio[slug].nombre : `${servicio[slug].nombre} — ${nombreVariante}`;
+      const descripcion = nombreVariante.toLowerCase() === "única" ? servicio[slug].nombre : `${servicio[slug].nombre} (${nombreVariante})`;
       lineas.push({ varianteId: v.id, descripcion, precio: Number(await precio(slug, nombreVariante, tamano)) });
     }
     const total = lineas.reduce((suma, l) => suma + l.precio, 0);
