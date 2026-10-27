@@ -51,6 +51,22 @@ export function precioSugerido(vigentes: ReadonlyMap<number, Monto>, tamanoId: n
 /** Fecha de validez sugerida (S-5): hoy en Bolivia más los días de Configuración. */
 export const fechaValidez = (hoy: Date, dias: number) => sumarDias(fechaEnBolivia(hoy), dias);
 
+/**
+ * Con qué línea arranca una cotización nueva (pulido 9.4): el servicio de interés de la consulta. Si tiene una sola
+ * variante, ya elegida y con su precio sugerido (vacío si es "según evaluación" o no está cargado); si tiene varias,
+ * una línea vacía para elegir cuál. Sin servicio de interés ("todavía no sabe") o si ya no se ofrece, ninguna.
+ */
+export function lineasDelServicioDeInteres(
+  opciones: readonly { servicioId: number; varianteId: number; sugerencia: Sugerencia }[],
+  servicioId: number | null,
+): { varianteId: number; precio: string }[] {
+  const delServicio = servicioId ? opciones.filter((o) => o.servicioId === servicioId) : [];
+  if (delServicio.length === 0) return [];
+  if (delServicio.length > 1) return [{ varianteId: 0, precio: "" }];
+  const [unica] = delServicio;
+  return [{ varianteId: unica.varianteId, precio: unica.sugerencia.tipo === "monto" ? unica.sugerencia.monto : "" }];
+}
+
 /** "Pulido y nano cerámico — 5 años"; con la variante "Única" (servicio sin opciones, D-2), solo el servicio. */
 export const descripcionLinea = (servicio: string, variante: string) => (variante.trim().toLowerCase() === "única" ? servicio : `${servicio} — ${variante}`);
 

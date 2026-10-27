@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { fechaEnBolivia } from "@/lib/fechas";
 import { exigirAccion } from "@/lib/sesion";
@@ -14,6 +15,7 @@ import { datosParaCotizar } from "@/modulos/cotizaciones/consultas";
 export const metadata: Metadata = { title: "Cotizar" };
 
 // HU-25: armar la cotización de una consulta. Solo el dueño (RN-01): exigirAccion("cotizar"). `?desde=<id>` corrige la versión vigente: arranca con sus líneas, descuento y fotos, y guarda la siguiente.
+// Pulido 9.4: el encabezado compartido, con el cliente, la placa y el tamaño (de él salen los precios) en su línea.
 export default function PaginaCotizar({ params, searchParams }: PageProps<"/panel/consultas/[id]/cotizar">) {
   return (
     <Suspense fallback={<Cargando />}>
@@ -45,12 +47,9 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/consul
     <section className="flex flex-col gap-6">
       <EnlaceVolver href={volver}>{datos.cliente}</EnlaceVolver>
       <div className="flex flex-col gap-2">
-        <h1 className="font-heading text-4xl font-extrabold italic">{titulo}</h1>
-        <p className="flex flex-wrap gap-x-3 text-tinta-suave">
-          <span className="font-semibold text-tinta">{datos.cliente}</span>
-          <span>{datos.placa}</span>
-          <span>{datos.tamano}</span>
-        </p>
+        <EncabezadoPagina titulo={titulo}>
+          {datos.cliente}, {datos.placa} ({datos.tamano})
+        </EncabezadoPagina>
         {datos.desde && (
           <p className="text-sm text-tinta-suave">
             Se guarda como versión {datos.desde.version + 1}. La versión {datos.desde.version} queda como estaba, con su PDF.

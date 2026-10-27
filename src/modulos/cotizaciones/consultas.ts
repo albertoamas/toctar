@@ -23,13 +23,14 @@ import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { preciosVigentes } from "@/modulos/catalogo/consultas";
 import { duracionEfectiva, type Monto } from "@/modulos/catalogo/reglas";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
-import { descripcionLinea, fechaValidez, precioSugerido, type Sugerencia } from "./reglas";
+import { descripcionLinea, fechaValidez, lineasDelServicioDeInteres, precioSugerido, type Sugerencia } from "./reglas";
 
 // Lecturas de las cotizaciones (HU-25). Las de montos solo las llama quien pasó por exigirAccion("cotizar"): el
 // dueño (RN-01). `cotizacionesDeConsulta` también la usa el encargado, sin montos.
 
 export type OpcionServicio = {
   varianteId: number;
+  servicioId: number;
   servicio: string;
   variante: string;
   descripcion: string;
@@ -46,6 +47,7 @@ export async function opcionesDeServicio(tamanoId: number, soloVariante?: number
   const variantes = await db
     .select({
       varianteId: variante.id,
+      servicioId: servicio.id,
       servicio: servicio.nombre,
       variante: variante.nombre,
       duracionServicio: servicio.duracionDias,
@@ -111,6 +113,7 @@ export async function datosParaCotizar(consultaId: number, desdeId: number | nul
       tamanoId: vehiculo.tamanoId,
       tamano: tamanoVehiculo.nombre,
       canal: consulta.canal,
+      servicioId: consulta.servicioId,
     })
     .from(consulta)
     .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
@@ -159,7 +162,8 @@ export async function datosParaCotizar(consultaId: number, desdeId: number | nul
         // Por WhatsApp se cotiza por fotos: es un estimado (RN-03)
         esEstimado: c.canal === "whatsapp",
         descuento: "0.00",
-        lineas: [],
+        // Arranca con lo que pidió el cliente (pulido 9.4)
+        lineas: lineasDelServicioDeInteres(opciones, c.servicioId),
         fotos: [],
       };
 
