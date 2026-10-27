@@ -102,6 +102,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
       ? `Entregado el ${diaYHora(o.entregadoAt)}${o.entregadoPor ? ` por ${o.entregadoPor}` : ""}.${o.montos && o.autorizoSaldo && o.saldoAlEntregar ? ` Con saldo de ${mostrarMonto(o.saldoAlEntregar)} Bs, autorizado por ${o.autorizoSaldo}.` : ""}`
       : null;
   const entregar = o.estado === "listo" && puede(usuario, "entregar_vehiculo");
+  // "Más" solo si tiene algo que ofrecer (el técnico, en una recibida, no tiene nada)
+  const conMas = abierta && (!!anterior || !!extender);
   const detalle = detalleVehiculo(o);
   const enlace = "inline-flex min-h-11 items-center self-start font-semibold underline";
 
@@ -116,7 +118,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
           </>
         }
         accion={
-          (!tecnico || abierta) && (
+          (!tecnico || conMas) && (
             <div className="flex flex-wrap gap-2">
               {!tecnico && (
                 <a href={enlaceWhatsApp(o.telefono)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
@@ -124,7 +126,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
                   Escribir por WhatsApp
                 </a>
               )}
-              {abierta && <MasOrden id={o.id} anterior={anterior} extender={extender} avisada={avisada} />}
+              {conMas && <MasOrden id={o.id} anterior={anterior} extender={extender} avisada={avisada} />}
             </div>
           )
         }

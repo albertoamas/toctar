@@ -68,7 +68,7 @@ function filaOrden(o: OrdenEnLista, hoy: string, conTecnico: boolean): DatosFila
     titulo: o.placa,
     tituloGrande: true,
     aviso: estaAtrasada(o, hoy) ? "Atrasada" : o.sinAvisar ? "Sin avisar" : null,
-    dato: o.fechaFin === hoy ? "Entrega hoy" : `Entrega ${formatearFecha(o.fechaFin)}`,
+    dato: o.fechaFin === hoy ? "Entrega hoy" : `Entrega aproximada: ${formatearFecha(o.fechaFin)}`,
     detalles: [o.servicios.join(", "), conTecnico ? `${o.cliente}, ${o.tecnico ?? "sin técnico"}` : o.cliente],
   };
 }

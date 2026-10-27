@@ -1295,7 +1295,7 @@ Pedido del desarrollador: releer las reglas del principio de este documento y co
   - "Pulido y nano cerámico — 5 años": los datos de demostración armaban la descripción con el formato viejo (`scripts/datos-demo.mjs`). Las órdenes del panel ya usan "Servicio (opción)" (9.4).
 - **Cambios** (propuesta aprobada el 27/10):
   - Tres grupos en el orden del taller, Recibidas, En proceso y Listas, cada uno con su título y su cantidad ("Ninguna." si está vacío). Desde 1024 px, una columna por grupo, como un tablero; más angosto, uno debajo del otro. El técnico ve lo mismo con sus órdenes.
-  - Cada orden es una fila de `ListaFilas`: la placa grande, "Atrasada" o "Sin avisar" como aviso (no se dan juntas), "Entrega hoy" o "Entrega 26/10/2026" en negrita, y los servicios y el cliente (con el técnico, para el dueño y el encargado) en tinta suave.
+  - Cada orden es una fila de `ListaFilas`: la placa grande, "Atrasada" o "Sin avisar" como aviso (no se dan juntas), "Entrega hoy" o "Entrega aproximada: 26/10/2026" en negrita, y los servicios y el cliente (con el técnico, para el dueño y el encargado) en tinta suave.
   - `EncabezadoPagina` y `EstadoVacio`. Los datos de demostración escriben "Servicio (opción)"; los que ya están en una base no cambian hasta volver a cargarlos.
 - **Verificación:** capturas con pantalla táctil a 360, 390, 768 y 1280 px; nada se sale y ningún control mide menos de 44 px. Comparativa en `pulido-visual/11.1-ordenes-celular.jpg`. E2E `hu-33` (Mis órdenes del técnico y la de otro técnico vacía) y `hu-34` (la orden en su grupo, con el conteo).
 
@@ -1370,6 +1370,18 @@ Pedido del desarrollador: releer las reglas del principio de este documento y co
   - Total, pagado y saldo a todo el ancho, alineados con los precios (`px-3`, como las filas de servicios): en la entrega, la reserva y la orden.
   - `EncabezadoPagina` con "Rodrigo Mendoza, Hyundai Tucson 2022 Azul" (`detalleVehiculo`) y el botón en `PieFormulario`.
 - **Verificación:** con pantalla táctil a 360, 390, 768 y 1280 px (entregar con saldo, la reserva y la orden con los montos nuevos): nada se sale y ningún control mide menos de 44 px. Comparativa en `pulido-visual/11.4-entregar-celular.jpg`. E2E `hu-31`, `hu-32`, `hu-36`, `hu-37`, `hu-38` y `flujo-taller-completo`.
+
+### Revisión del grupo 11 (code-review, 27/10/2026)
+- **Corregido:**
+  - La lista decía "Entrega 26/10/2026" y perdía "aproximada", que la orden sí dice: vuelve a "Entrega aproximada: …".
+  - El técnico, en una orden recibida, tenía un contenedor de acciones vacío en el encabezado ("Más" sin nada que ofrecer): ahora no se muestra.
+  - `hu-35` seguía entrando a `?estado=listo`, que ya no existe: busca la orden en el grupo "Listas".
+  - El error del modal "Volver a…" queda asociado a su botón (`aria-describedby`).
+- **Descartado:**
+  - Que los montos alineados cambien también la reserva: fue parte de la propuesta 11.4.
+  - Unificar la línea del encabezado de Recibir y Entregar: Recibir muestra el tamaño a propósito (es lo que se cotizó y se revisa al recibir); al entregar no hace falta.
+  - Que `ExtenderEntrega` dependa del modal: ya lo dice su comentario y solo se usa ahí.
+- **Verificación:** E2E completa (326 de 326) antes de estos cambios, y `hu-33`, `hu-34` y `hu-35` después.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)

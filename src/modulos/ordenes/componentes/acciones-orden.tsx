@@ -65,7 +65,7 @@ function Volver({ id, anterior, avisada }: { id: number; anterior: NonNullable<P
         {avisada && " El aviso al cliente se borra: cuando esté lista, hay que volver a avisarle."}
       </p>
       <PieModal>
-        <Button type="submit" disabled={enviando}>
+        <Button type="submit" disabled={enviando} aria-describedby={estado.mensaje && !estado.ok ? "volver-error" : undefined}>
           {enviando ? "Guardando…" : `Sí, ${anterior.texto.toLowerCase()}`}
         </Button>
         <CancelarModal focoInicial />
