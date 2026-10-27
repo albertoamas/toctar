@@ -233,7 +233,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
 | 11.1 | Órdenes (dueño y encargado) y Mis órdenes (técnico) | `/panel/ordenes` | ✅ |
-| 11.2 | Orden: estado, fotos, avances, montos y aviso | `/panel/ordenes/[id]` | ⏳ |
+| 11.2 | Orden: estado, fotos, avances, montos y aviso | `/panel/ordenes/[id]` | ✅ |
 | 11.3 | Recibir vehículo | `/panel/ordenes/[id]/recibir` | ⏳ |
 | 11.4 | Entregar vehículo | `/panel/ordenes/[id]/entregar` | ⏳ |
 
@@ -1298,6 +1298,35 @@ Pedido del desarrollador: releer las reglas del principio de este documento y co
   - Cada orden es una fila de `ListaFilas`: la placa grande, "Atrasada" o "Sin avisar" como aviso (no se dan juntas), "Entrega hoy" o "Entrega 26/10/2026" en negrita, y los servicios y el cliente (con el técnico, para el dueño y el encargado) en tinta suave.
   - `EncabezadoPagina` y `EstadoVacio`. Los datos de demostración escriben "Servicio (opción)"; los que ya están en una base no cambian hasta volver a cargarlos.
 - **Verificación:** capturas con pantalla táctil a 360, 390, 768 y 1280 px; nada se sale y ningún control mide menos de 44 px. Comparativa en `pulido-visual/11.1-ordenes-celular.jpg`. E2E `hu-33` (Mis órdenes del técnico y la de otro técnico vacía) y `hu-34` (la orden en su grupo, con el conteo).
+
+### 11.2 Orden (27/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | Placa, estado, "Atrasada" y WhatsApp | Qué orden es, contactar | Todos, siempre | Arriba, con `EncabezadoPagina` |
+  | Pasos y el botón grande del paso siguiente | Avanzar la orden | El técnico, a diario | Quedan |
+  | "Volver a recibida" o "Volver a en proceso" | Deshacer un toque sin querer | Rara vez | A "Más", con confirmación |
+  | "Extender entrega" (formulario en la página) | Mover la fecha | Dueño o encargado, rara vez | A "Más", en un modal |
+  | Avisar por WhatsApp y "Entregar vehículo" | El paso siguiente de una lista | Dueño o encargado | Un solo rojo: el que toca ahora |
+  | Datos (con la placa repetida y el tamaño sin etiqueta) | Contexto | Seguido | Como la reserva (10.3) |
+  | Fotos en cuatro etapas | Subir y ver fotos | El técnico, a diario | Las vacías, en una fila |
+  | Avances y la historia | Anotar y ver el trabajo | Todos | Quedan |
+  | Servicios, montos y pagos | Cobrar, sumar adicionales | Dueño o encargado con Pagos | Quedan; en la computadora, a la derecha |
+  | "Entregado el…" en un recuadro | Cuándo y quién | Ya entregada | Una línea bajo el título |
+- **Encontrado:**
+  - Una lista no tenía ningún botón rojo ya avisada ("Volver a avisar" y "Entregar vehículo" en contorno), y sin avisar el rojo era el aviso y la entrega quedaba igual de visible.
+  - "Extender entrega" y "Volver a…" siempre a la vista; extender abría su formulario dentro de la página.
+  - Cada etapa de fotos vacía ocupaba unos 190 px (la casilla de la cámara y "Elegir de la galería"); una entregada sin fotos mostraba cuatro líneas "Sin fotos de…".
+  - Los datos repetían la placa, el tamaño iba sin etiqueta y el nombre del cliente y "Ver la reserva" eran enlaces de menos de 44 px.
+  - En la computadora, la columna derecha quedaba vacía bajo los datos y los montos al final de la izquierda.
+- **Cambios** (propuesta aprobada el 27/10):
+  - `EncabezadoPagina` con la placa, el estado, "Atrasada", "Escribir por WhatsApp" y `MenuMas` (`MasOrden`, `acciones-orden.tsx`): "Extender entrega" en un modal (`ExtenderEntrega` ya es solo el formulario, con `PieModal`) y "Volver a…" con su confirmación ("Sí, volver a en proceso", el foco en "Cancelar"; si ya se avisó, dice que el aviso se borra). El técnico ve "Más" con "Volver a…", porque es quien trabaja la orden. Entregada, "Entregado el… por…" (y el saldo autorizado, con Pagos) bajo el título.
+  - Lista: sin avisar, "Avisar por WhatsApp" en rojo y "Entregar vehículo" en contorno; avisada, "Entregar vehículo" en rojo y "Volver a avisar" en contorno. En la propuesta decía la entrega siempre en rojo: así el rojo sigue siendo el paso que toca.
+  - Datos como en la reserva: la entrega primero ("Hoy" o la fecha, aproximada), espacio, técnico, ingreso, cliente con su teléfono (no para el técnico) y el vehículo con su modelo (`detalleVehiculo`) y "Tamaño: …"; "Ver ficha del cliente" y "Ver la reserva" de 44 px.
+  - Fotos: una etapa vacía muestra "Tomar foto" y "Elegir de la galería" en una fila (`FotosOrden` con `compacta`); con fotos, la grilla y la casilla de la cámara, como antes. Cerrada y sin fotos, una línea: "Sin fotos.". Recibir (11.3) sigue con la casilla.
+  - Desde 1024 px, el trabajo a la izquierda (cómo llegó, fotos y avances) y los datos y montos a la derecha; en el celular, datos, trabajo y montos.
+- **Verificación:** con pantalla táctil a 360, 390, 768 y 1280 px (en proceso y atrasada, lista y avisada, entregada; el menú "Más" y sus dos modales): nada se sale y ningún control mide menos de 44 px (las entradas de archivo ocultas no cuentan). En el celular, la orden en proceso pasa de 2.802 a 2.424 px. Comparativa en `pulido-visual/11.2-orden-celular.jpg`. E2E `hu-33`, `hu-34` (volver a en proceso y extender desde "Más"), `hu-35`, `hu-36`, `hu-37`, `hu-41` y `flujo-taller-completo`.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)

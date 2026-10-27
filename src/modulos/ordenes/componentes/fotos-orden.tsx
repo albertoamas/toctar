@@ -30,11 +30,16 @@ type Props = {
   textoVacio: string;
   /** Sin el título de la etapa: la pantalla ya lo dice (por ejemplo, "Fotos de ingreso" al recibir). */
   sinTitulo?: boolean;
+  /**
+   * Sin fotos, los dos botones en una fila en lugar de la casilla de la cámara: la orden tiene cuatro etapas y las
+   * vacías no ocupan media pantalla cada una (pulido 11.2).
+   */
+  compacta?: boolean;
 };
 
 const NO_SUBIO = "no se pudo subir. Revisa tu conexión y vuelve a intentar.";
 
-export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio, sinTitulo }: Props) {
+export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio, sinTitulo, compacta }: Props) {
   const camara = useRef<HTMLInputElement>(null);
   const galeria = useRef<HTMLInputElement>(null);
   const [subiendo, setSubiendo] = useState<{ actual: number; total: number } | null>(null);
@@ -87,6 +92,8 @@ export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio, sinT
     if (elegidas.length > 0) void subir(elegidas);
   };
   const ocupado = !listo || subiendo !== null || lugares <= 0;
+  const textoCamara = subiendo ? `Subiendo ${subiendo.actual} de ${subiendo.total}…` : lugares <= 0 ? `Ya tiene ${MAXIMO_FOTOS_ETAPA}` : "Tomar foto";
+  const enFila = compacta && editable && fotos.length === 0;
 
   return (
     <div className="flex flex-col gap-3">
@@ -97,7 +104,18 @@ export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio, sinT
       )}
 
       {fotos.length === 0 && !editable && <p className="text-sm text-tinta-suave">{textoVacio}</p>}
-      {(fotos.length > 0 || editable) && (
+      {enFila && (
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" disabled={ocupado} onClick={() => camara.current?.click()} aria-describedby={error ? `${id}-error` : undefined}>
+            <CameraIcon />
+            {textoCamara}
+          </Button>
+          <Button type="button" variant="outline" disabled={ocupado} onClick={() => galeria.current?.click()}>
+            Elegir de la galería
+          </Button>
+        </div>
+      )}
+      {!enFila && (fotos.length > 0 || editable) && (
         <ul aria-label={`Fotos de ${nombre.toLowerCase()}`} className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
           {fotos.map((f, i) => (
             <li key={f.id}>
@@ -122,7 +140,7 @@ export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio, sinT
                 className="flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-sm border-2 border-dashed border-tinta-suave p-2 text-center text-sm font-semibold hover:bg-superficie focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)] disabled:opacity-50"
               >
                 <CameraIcon className="size-7" aria-hidden />
-                {subiendo ? `Subiendo ${subiendo.actual} de ${subiendo.total}…` : lugares <= 0 ? `Ya tiene ${MAXIMO_FOTOS_ETAPA}` : "Tomar foto"}
+                {textoCamara}
               </button>
             </li>
           )}
@@ -133,11 +151,13 @@ export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio, sinT
         <>
           <input ref={camara} type="file" accept="image/*" capture="environment" className="sr-only" tabIndex={-1} aria-label={`Cámara para fotos de ${nombre.toLowerCase()}`} onChange={alElegir} />
           <input ref={galeria} type="file" accept="image/*" multiple className="sr-only" tabIndex={-1} aria-label={`Fotos de ${nombre.toLowerCase()} desde la galería`} onChange={alElegir} />
-          <div>
-            <Button type="button" variant="ghost" disabled={ocupado} onClick={() => galeria.current?.click()}>
-              Elegir de la galería
-            </Button>
-          </div>
+          {!enFila && (
+            <div>
+              <Button type="button" variant="ghost" disabled={ocupado} onClick={() => galeria.current?.click()}>
+                Elegir de la galería
+              </Button>
+            </div>
+          )}
         </>
       )}
       {error && <MensajeError id={`${id}-error`}>{error}</MensajeError>}

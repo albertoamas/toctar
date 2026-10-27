@@ -13,14 +13,14 @@ import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { ESTADOS_ORDEN_ABIERTA, pasosDeOrden } from "../reglas";
 
 // HU-34: el estado de la orden (RF-41). Se usa de pie en el taller, con el celular: los tres pasos a la vista y el
-// siguiente como botón grande, a todo el ancho; volver un paso atrás (por si se tocó sin querer) queda chico y aparte.
+// siguiente como botón grande, a todo el ancho. Volver un paso atrás (por si se tocó sin querer) está en "Más" (pulido 11.2).
 
 const PASOS = ESTADOS_ORDEN_ABIERTA.map((estado) => ({ estado, nombre: NOMBRE_ESTADO_TRABAJO[estado] }));
 
 export function EstadoOrden({ id, estado, editable }: { id: number; estado: EstadoTrabajo; /** Quien mira la trabaja: puede cambiarla. */ editable: boolean }) {
   const [resultado, accion, enviando] = useActionState<EstadoFormulario, FormData>(conAviso(cambiarEstadoOrden), {});
   const actual = PASOS.findIndex((p) => p.estado === estado);
-  const { siguiente, anterior } = pasosDeOrden(estado);
+  const { siguiente } = pasosDeOrden(estado);
 
   return (
     <section aria-label="Estado de la orden" className="flex flex-col gap-4">
@@ -43,27 +43,14 @@ export function EstadoOrden({ id, estado, editable }: { id: number; estado: Esta
         ))}
       </ol>
       {resultado.mensaje && !resultado.ok && <MensajeError id="estado-error">{resultado.mensaje}</MensajeError>}
-      {editable && (siguiente || anterior) && (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          {siguiente && (
-            <form action={accion} className="sm:flex-1">
-              <input type="hidden" name="id" value={id} />
-              <input type="hidden" name="estado" value={siguiente.estado} />
-              <Button type="submit" disabled={enviando} className="h-14 w-full text-base sm:max-w-sm">
-                {siguiente.texto}
-              </Button>
-            </form>
-          )}
-          {anterior && (
-            <form action={accion}>
-              <input type="hidden" name="id" value={id} />
-              <input type="hidden" name="estado" value={anterior.estado} />
-              <Button type="submit" variant="ghost" disabled={enviando}>
-                {anterior.texto}
-              </Button>
-            </form>
-          )}
-        </div>
+      {editable && siguiente && (
+        <form action={accion}>
+          <input type="hidden" name="id" value={id} />
+          <input type="hidden" name="estado" value={siguiente.estado} />
+          <Button type="submit" disabled={enviando} className="h-14 w-full text-base sm:max-w-sm">
+            {siguiente.texto}
+          </Button>
+        </form>
       )}
     </section>
   );
