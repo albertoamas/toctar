@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
+import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { Selector } from "@/componentes/panel/selector";
 import { Button } from "@/componentes/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
@@ -69,7 +70,7 @@ export function FormularioConsulta({ cliente, tamanos, servicios }: Props) {
             <RadioGroup value={vehiculo} onValueChange={(valor) => setVehiculo(String(valor))} className="gap-2" aria-describedby={e.vehiculo ? "vehiculo-error" : undefined}>
               {cliente.vehiculos.map((ve, i) => (
                 <OpcionRadio key={ve.id} id={`vehiculo-${ve.id}`} valor={String(ve.id)} invalido={!!e.vehiculo && i === 0}>
-                  <span className="font-semibold">{ve.placa}</span>
+                  <span className="font-heading text-xl font-extrabold italic tabular-nums">{ve.placa}</span>
                   <span className="flex flex-wrap gap-x-3 text-sm text-tinta-suave">
                     {ve.detalle.map((d) => (
                       <span key={d}>{d}</span>
@@ -129,11 +130,11 @@ export function FormularioConsulta({ cliente, tamanos, servicios }: Props) {
         </Campo>
       </fieldset>
 
-      <div>
+      <PieFormulario>
         <Button type="submit" disabled={enviando}>
           {enviando ? "Registrando…" : "Registrar consulta"}
         </Button>
-      </div>
+      </PieFormulario>
     </form>
   );
 }

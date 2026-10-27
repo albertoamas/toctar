@@ -2,8 +2,12 @@ import type { Metadata } from "next";
 import { nombreVehiculo } from "@/modulos/clientes/reglas";
 import Link from "next/link";
 import { Suspense } from "react";
+import { ArrowLeftRightIcon, SearchIcon } from "lucide-react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
+import { buttonVariants } from "@/componentes/ui/button";
 import { exigirModulo } from "@/lib/sesion";
 import { formatearWhatsApp } from "@/lib/whatsapp";
 import { ElegirCliente } from "@/modulos/clientes/componentes/elegir-cliente";
@@ -16,12 +20,13 @@ export const metadata: Metadata = { title: "Nueva consulta" };
 
 // HU-24: nueva consulta. Primero el cliente: se busca (el buscador de Clientes, HU-22) y se elige, o se registra ahí
 // mismo con "Cliente nuevo". La elección va en la dirección (?cliente=, ?nuevo=1): la ficha del cliente enlaza acá con
-// el cliente ya elegido, y Atrás vuelve a la búsqueda.
+// el cliente ya elegido, y Atrás vuelve a la búsqueda. Pulido 9.2: el cliente elegido en un recuadro de lectura con
+// "Cambiar" en su cabecera (como "Editar" en las fichas) y "Registrar consulta" fijo abajo en el celular.
 export default function PaginaNuevaConsulta({ searchParams }: PageProps<"/panel/consultas/nueva">) {
   return (
     <section className="flex max-w-2xl flex-col gap-6">
       <EnlaceVolver href="/panel/consultas">Consultas</EnlaceVolver>
-      <h1 className="font-heading text-4xl font-extrabold italic">Nueva consulta</h1>
+      <EncabezadoPagina titulo="Nueva consulta" />
       <Suspense fallback={<Cargando />}>
         <Contenido searchParams={searchParams} />
       </Suspense>
@@ -29,7 +34,14 @@ export default function PaginaNuevaConsulta({ searchParams }: PageProps<"/panel/
   );
 }
 
-const titulo = "font-heading text-2xl font-bold italic";
+/** "Cambiar" o "Buscar un cliente registrado": vuelve a elegir. Enlace sin borde, como "Editar" en las fichas. */
+function VolverAElegir({ children }: { children: React.ReactNode }) {
+  return (
+    <Link href="/panel/consultas/nueva" className={buttonVariants({ variant: "ghost" })}>
+      {children}
+    </Link>
+  );
+}
 
 async function Contenido({ searchParams }: Pick<PageProps<"/panel/consultas/nueva">, "searchParams">) {
   await exigirModulo("consultas");
@@ -49,18 +61,18 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/consultas/nuev
       };
       return (
         <>
-          <div className="flex flex-col gap-3">
-            <h2 className={titulo}>Cliente</h2>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-sm border border-tinta p-3">
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="font-semibold">{c.nombre}</span>
-                <span className="text-sm text-tinta-suave">{formatearWhatsApp(c.telefono)}</span>
-              </span>
-              <Link href="/panel/consultas/nueva" className="inline-flex min-h-11 items-center text-sm font-semibold underline">
+          <section aria-labelledby="cliente-titulo" className="flex flex-col gap-3">
+            <CabeceraSeccion id="cliente" titulo="Cliente">
+              <VolverAElegir>
+                <ArrowLeftRightIcon />
                 Cambiar
-              </Link>
-            </div>
-          </div>
+              </VolverAElegir>
+            </CabeceraSeccion>
+            <p className="flex flex-col rounded-sm border border-border p-4">
+              <span className="font-semibold">{c.nombre}</span>
+              <span className="text-tinta-suave">{formatearWhatsApp(c.telefono)}</span>
+            </p>
+          </section>
           <Formulario cliente={elegido} />
         </>
       );
@@ -70,12 +82,12 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/consultas/nuev
   if (texto("nuevo")) {
     return (
       <>
-        <div className="flex flex-wrap items-baseline justify-between gap-x-4">
-          <h2 className={titulo}>Cliente nuevo</h2>
-          <Link href="/panel/consultas/nueva" className="inline-flex min-h-11 items-center text-sm font-semibold underline">
+        <CabeceraSeccion id="cliente" titulo="Cliente nuevo">
+          <VolverAElegir>
+            <SearchIcon />
             Buscar un cliente registrado
-          </Link>
-        </div>
+          </VolverAElegir>
+        </CabeceraSeccion>
         <Formulario cliente={null} />
       </>
     );
