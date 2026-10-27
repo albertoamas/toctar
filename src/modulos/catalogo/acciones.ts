@@ -68,21 +68,28 @@ export async function crearServicio(_previo: EstadoFormulario, datos: FormData):
   redirect(`/panel/catalogo/${id}?creado=1`);
 }
 
-/** Nombre, duración, mantenimiento y si el servicio está activo (HU-19, RF-27, RF-28, RN-08). */
+/** Nombre, duración, su mantenimiento y si el servicio está activo (HU-19, RF-27, RF-28, RN-08, pedido 21). */
 export async function guardarDatosCatalogo(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const autor = await exigirModulo("catalogo");
-  const generaMantenimiento = datos.get("generaMantenimiento") === "on";
+  const conMantenimiento = datos.get("conMantenimiento") === "on";
   const activo = datos.get("activo") === "on";
   const valores = {
     id: String(datos.get("id") ?? ""),
     nombre: String(datos.get("nombre") ?? ""),
     duracionDias: String(datos.get("duracionDias") ?? ""),
-    generaMantenimiento: generaMantenimiento ? "on" : "",
+    conMantenimiento: conMantenimiento ? "on" : "",
+    mantenimientoServicioId: String(datos.get("mantenimientoServicioId") ?? ""),
+    mantenimientoMeses: String(datos.get("mantenimientoMeses") ?? ""),
     activo: activo ? "on" : "",
   };
-  const entrada = esquemaDatosCatalogo.safeParse({ ...valores, generaMantenimiento, activo });
+  const entrada = esquemaDatosCatalogo.safeParse({ ...valores, conMantenimiento, activo });
   if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
-  const { id, nombre, duracionDias } = entrada.data;
+  const { id, nombre, duracionDias, mantenimiento } = entrada.data;
+  // El servicio de mantenimiento tiene que existir (puede ser él mismo); uno inactivo no se agenda
+  if (mantenimiento && mantenimiento.servicioId !== id) {
+    const [suyo] = await db.select({ activo: servicio.activo }).from(servicio).where(eq(servicio.id, mantenimiento.servicioId));
+    if (!suyo?.activo) return { errores: { mantenimientoServicioId: "Ese servicio ya no está activo: elige otro." }, valores };
+  }
 
   const otros = await db.select({ id: servicio.id, nombre: servicio.nombre }).from(servicio).where(ne(servicio.id, id));
   if (nombreRepetido(otros, nombre)) return { errores: { nombre: NOMBRE_REPETIDO }, valores };
@@ -91,7 +98,15 @@ export async function guardarDatosCatalogo(_previo: EstadoFormulario, datos: For
   try {
     [actualizado] = await db
       .update(servicio)
-      .set({ nombre, duracionDias, generaMantenimiento, activo, updatedAt: new Date(), updatedBy: Number(autor.id) })
+      .set({
+        nombre,
+        duracionDias,
+        activo,
+        mantenimientoServicioId: mantenimiento?.servicioId ?? null,
+        mantenimientoMeses: mantenimiento?.meses ?? null,
+        updatedAt: new Date(),
+        updatedBy: Number(autor.id),
+      })
       .where(eq(servicio.id, id))
       .returning({ id: servicio.id });
   } catch (error) {

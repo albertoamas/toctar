@@ -240,6 +240,8 @@ export type DetalleReserva = {
   autorizoSaldo: string | null;
   saldoAlEntregar: string | null;
   tamanoId: number;
+  /** El vehículo: sus planes de mantenimiento al entregar (pedido 21). */
+  vehiculoId: number;
   /** Solo para quien ve pagos (RN-01 y RN-12: el técnico nunca). */
   montos: { lineas: { descripcion: string; precio: string; esAdicional: boolean }[]; descuento: string; saldo: Saldo; pagos: PagoReserva[] } | null;
 };
@@ -287,6 +289,7 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
       anio: vehiculo.anio,
       color: vehiculo.color,
       tamanoId: vehiculo.tamanoId,
+      vehiculoId: vehiculo.id,
       entregadoAt: trabajo.entregadoAt,
       entregadoPor: entrego.name,
       autorizoSaldo: autorizo.name,

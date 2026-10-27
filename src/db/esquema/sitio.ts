@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, check, integer, jsonb, pgTable, text, timestamp, uniqueIndex, type AnyPgColumn } from "drizzle-orm/pg-core";
 import { usuario } from "./acceso";
 import { archivo } from "./configuracion";
 // Ciclo con trabajos.ts (que usa `variante`): las dos referencias se leen recién al usarse, () => …
@@ -36,8 +36,12 @@ export const servicio = pgTable(
     activo: boolean("activo").default(true).notNull(),
     /** Días estimados que ocupa un espacio del taller (RF-27): solo sugiere la fecha de entrega. Una variante puede tener la suya. */
     duracionDias: integer("duracion_dias").default(1).notNull(),
-    /** Al entregarlo se programa el recordatorio de mantenimiento (RN-08). */
-    generaMantenimiento: boolean("genera_mantenimiento").default(false).notNull(),
+    /**
+     * Al entregarlo se programa su mantenimiento (RN-08, pedido 21): qué servicio se agenda (puede ser él mismo) y cada
+     * cuántos meses. Los dos o ninguno.
+     */
+    mantenimientoServicioId: integer("mantenimiento_servicio_id").references((): AnyPgColumn => servicio.id),
+    mantenimientoMeses: integer("mantenimiento_meses"),
     createdAt: momento("created_at").defaultNow().notNull(),
     updatedAt: momento("updated_at").defaultNow().notNull(),
     updatedBy: integer("updated_by").references(() => usuario.id),
@@ -45,6 +49,8 @@ export const servicio = pgTable(
   (t) => [
     uniqueIndex("servicio_nombre_unico").on(sql`lower(${t.nombre})`),
     check("servicio_duracion_valida", sql`${t.duracionDias} between 1 and 60`),
+    check("servicio_mantenimiento_completo", sql`(${t.mantenimientoServicioId} is null) = (${t.mantenimientoMeses} is null)`),
+    check("servicio_mantenimiento_meses_valido", sql`${t.mantenimientoMeses} between 1 and 24`),
   ],
 );
 

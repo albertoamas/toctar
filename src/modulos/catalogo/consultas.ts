@@ -1,5 +1,6 @@
 import "server-only";
 import { asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import type { ElementoLista } from "@/componentes/panel/lista-editable";
 import { db } from "@/db";
 import { precio, servicio, tamanoVehiculo, usuario, variante } from "@/db/esquema";
@@ -13,7 +14,8 @@ export type FilaCatalogo = {
   nombre: string;
   activo: boolean;
   duracionDias: number;
-  generaMantenimiento: boolean;
+  /** Al entregarlo, programa su mantenimiento (pedido 21). */
+  conMantenimiento: boolean;
   variantes: number;
   /** Pares variante y tamaño activos sin precio cargado. */
   preciosFaltantes: number;
@@ -30,7 +32,7 @@ export async function listarCatalogo(): Promise<FilaCatalogo[]> {
         nombre: servicio.nombre,
         activo: servicio.activo,
         duracionDias: servicio.duracionDias,
-        generaMantenimiento: servicio.generaMantenimiento,
+        conMantenimiento: sql<boolean>`${servicio.mantenimientoMeses} is not null`,
       })
       .from(servicio)
       .orderBy(desc(servicio.activo), asc(servicio.orden), asc(servicio.id)),
@@ -67,7 +69,10 @@ export type ServicioCatalogo = {
   /** Si su página se muestra en el sitio (se decide en Sitio web). */
   visibleSitio: boolean;
   duracionDias: number;
-  generaMantenimiento: boolean;
+  /** Su mantenimiento (pedido 21): el servicio que se agenda (puede ser él mismo) y cada cuántos meses; null si no tiene. */
+  mantenimiento: { servicioId: number; servicio: string; meses: number } | null;
+  /** Los servicios activos, para elegir su mantenimiento (este primero). */
+  serviciosParaMantenimiento: { id: number; nombre: string }[];
   /** Las activas, con sus precios. */
   variantes: VarianteCatalogo[];
   /** Todas, para agregar, ordenar y desactivar (las activas primero). */
@@ -104,23 +109,37 @@ export async function preciosVigentes(varianteIds: number[] | "activas"): Promis
 
 /** Un servicio con sus variantes y los precios vigentes de las activas, o null si no existe. */
 export async function obtenerServicioCatalogo(id: number): Promise<ServicioCatalogo | null> {
-  const [s] = await db
+  const suyo = alias(servicio, "suyo");
+  const [fila] = await db
     .select({
       id: servicio.id,
       nombre: servicio.nombre,
       activo: servicio.activo,
       visibleSitio: servicio.visibleSitio,
       duracionDias: servicio.duracionDias,
-      generaMantenimiento: servicio.generaMantenimiento,
+      mantenimientoServicioId: servicio.mantenimientoServicioId,
+      mantenimientoMeses: servicio.mantenimientoMeses,
+      mantenimientoServicio: suyo.nombre,
     })
     .from(servicio)
+    .leftJoin(suyo, eq(servicio.mantenimientoServicioId, suyo.id))
     .where(eq(servicio.id, id));
-  if (!s) return null;
-  const [todas, tamanos] = await Promise.all([listarVariantes(id), tamanosActivos()]);
+  if (!fila) return null;
+  const { mantenimientoServicioId, mantenimientoMeses, mantenimientoServicio, ...s } = fila;
+  const mantenimiento =
+    mantenimientoServicioId && mantenimientoMeses && mantenimientoServicio ? { servicioId: mantenimientoServicioId, servicio: mantenimientoServicio, meses: mantenimientoMeses } : null;
+  const [todas, tamanos, activos] = await Promise.all([
+    listarVariantes(id),
+    tamanosActivos(),
+    db.select({ id: servicio.id, nombre: servicio.nombre }).from(servicio).where(eq(servicio.activo, true)).orderBy(asc(servicio.orden), asc(servicio.id)),
+  ]);
+  const serviciosParaMantenimiento = [{ id: s.id, nombre: s.nombre }, ...activos.filter((a) => a.id !== s.id)];
   const activas = todas.filter((v) => v.activo);
   const vigentes = await preciosVigentes(activas.map((v) => v.id));
   return {
     ...s,
+    mantenimiento,
+    serviciosParaMantenimiento,
     tamanos,
     listaVariantes: todas,
     variantes: activas.map((v) => ({

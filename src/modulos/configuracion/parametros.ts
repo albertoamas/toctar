@@ -24,12 +24,14 @@ function texto(nombre: string) {
     .max(2000, "Hasta 2000 caracteres.");
 }
 
-/** Secciones de la pestaña Parámetros (C5 §0), en el orden del trabajo: la consulta, la cotización, la agenda y el mantenimiento. */
+/**
+ * Secciones de la pestaña Parámetros (C5 §0), en el orden del trabajo: la consulta, la cotización y la agenda. El
+ * mantenimiento ya no tiene sección: cada servicio dice cada cuánto, en el catálogo (pedido 21).
+ */
 export const SECCIONES_PARAMETROS = {
   consultas: { titulo: "Consultas", descripcion: null },
   cotizaciones: { titulo: "Cotizaciones", descripcion: "Las condiciones, la garantía y las formas de pago salen al pie de cada PDF." },
   agenda: { titulo: "Agenda", descripcion: null },
-  mantenimiento: { titulo: "Mantenimiento", descripcion: null },
 } as const;
 export type SeccionParametros = keyof typeof SECCIONES_PARAMETROS;
 
@@ -48,13 +50,6 @@ export const PARAMETROS = {
     ayuda: "Días que vale una cotización si no se indica otra cosa.",
     unidad: "días",
     esquema: entero(1, 365, "Entre 1 y 365 días."),
-  },
-  intervalo_mantenimiento_meses: {
-    seccion: "mantenimiento",
-    etiqueta: "Aviso de mantenimiento",
-    ayuda: "Meses después de la entrega para avisar el mantenimiento.",
-    unidad: "meses",
-    esquema: entero(1, 24, "Entre 1 y 24 meses."),
   },
   dias_consulta_fria: {
     seccion: "consultas",

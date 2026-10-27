@@ -18,6 +18,7 @@ import { PreciosVariante } from "@/modulos/catalogo/componentes/precios-variante
 import { VariantesServicio } from "@/modulos/catalogo/componentes/variantes-servicio";
 import { obtenerServicioCatalogo } from "@/modulos/catalogo/consultas";
 import { textoDias } from "@/modulos/catalogo/reglas";
+import { textoCadaMeses } from "@/modulos/mantenimientos/reglas";
 
 export const metadata: Metadata = { title: "Servicio del catálogo" };
 
@@ -78,13 +79,20 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
               <dt className="text-tinta-suave">Duración</dt>
               <dd>{textoDias(s.duracionDias)}</dd>
               <dt className="text-tinta-suave">Mantenimiento</dt>
-              <dd>{s.generaMantenimiento ? "Genera recordatorio" : "No genera recordatorio"}</dd>
+              <dd>
+                {!s.mantenimiento
+                  ? "No programa mantenimiento"
+                  : `${s.mantenimiento.servicioId === s.id ? "Él mismo" : s.mantenimiento.servicio}, ${textoCadaMeses(s.mantenimiento.meses)}`}
+              </dd>
               <dt className="text-tinta-suave">Catálogo</dt>
               <dd>{s.activo ? "Activo" : "Inactivo: no se cotiza ni sale en el sitio"}</dd>
             </dl>
           }
         >
-          <FormularioDatosCatalogo servicio={{ id: s.id, nombre: s.nombre, duracionDias: s.duracionDias, generaMantenimiento: s.generaMantenimiento, activo: s.activo }} />
+          <FormularioDatosCatalogo
+            servicio={{ id: s.id, nombre: s.nombre, duracionDias: s.duracionDias, mantenimiento: s.mantenimiento, activo: s.activo }}
+            servicios={s.serviciosParaMantenimiento}
+          />
         </SeccionConEditar>
         <SeccionConEditar
           id="variantes-seccion"
