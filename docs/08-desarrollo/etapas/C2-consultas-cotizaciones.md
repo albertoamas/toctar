@@ -172,6 +172,7 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel y sin de
 - **Vehículo:** opciones del cliente o "Otro vehículo" (placa y tamaño).
 - **Servicio de interés** (opcional), **canal** (WhatsApp o taller) y **nota**.
 - `?cliente=<id>` llega con el cliente elegido (desde su ficha).
+- Pulido 9.2 (27/10): para elegir, la misma fila que la lista de Clientes (las placas en negrita, `placasEnFila`); el elegido, en un recuadro de lectura con "Cambiar" en su cabecera (como "Editar" en las fichas; con cliente nuevo, "Buscar un cliente registrado"); las opciones de vehículo con la placa grande; "Registrar consulta" fijo abajo en el celular (`PieFormulario`). El canal sigue sin opción marcada de entrada: un valor por defecto que no se cambia sería un dato falso sobre de dónde llegan los clientes.
 - Al guardar, va a la consulta, con la invitación a agregar fotos o videos.
 
 ### `/panel/consultas/[id]` — Consulta

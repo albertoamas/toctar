@@ -215,7 +215,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
 | 9.1 | Consultas (pestañas y consultas que se enfrían) | `/panel/consultas` | ✅ |
-| 9.2 | Nueva consulta | `/panel/consultas/nueva` | ⏳ |
+| 9.2 | Nueva consulta | `/panel/consultas/nueva` | ✅ |
 | 9.3 | Detalle de una consulta: estado, fotos, cotizaciones y reservas | `/panel/consultas/[id]` | ⏳ |
 | 9.4 | Cotizar | `/panel/consultas/[id]/cotizar` | ⏳ |
 | 9.5 | PDF de la cotización (impreso y en el celular; con la skill `pdf`) | `/panel/cotizaciones/[id]/pdf` | ⏳ |
@@ -1087,6 +1087,28 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - **`ListaFilas` extendida** (aprobado con la propuesta): muestra el aviso y el estado a la vez, y el estado puede ir en verde o ámbar (`tonoEstado`). En el inicio, una entrega atrasada muestra "Atrasada desde el …" y también "En proceso"; en la ficha del cliente, "Cancelada" es una sola insignia ámbar (antes se armaba como aviso).
   - `EncabezadoPagina` con "Nueva consulta".
 - **Verificación:** capturas a 360, 390, 768 y 1280 px de las tres pestañas, del inicio y de dos fichas de cliente; sin desborde. Comparativa en `pulido-visual/9.1-consultas-celular.jpg`. E2E `hu-28` (el aviso con palabras, el estado en Abiertas y no en Perdidas, el orden), `hu-39` (la entrega atrasada con su estado), `hu-24`, `hu-23` y `hu-32`.
+
+### 9.2 Nueva consulta (27/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | Buscador, lista de clientes y "Cliente nuevo" | Elegir de quién es | Dueño o encargado, varias veces al día | Queda, con la fila de Clientes |
+  | Cliente elegido y "Cambiar" | Confirmar quién es | Igual | Recuadro de lectura |
+  | Vehículo: sus autos u "Otro vehículo" | Elegir cuál | Igual | Queda, la placa grande |
+  | Servicio, canal y nota | Lo que preguntó | Igual | Queda |
+  | "Registrar consulta" | Guardar | Igual | Fijo abajo en el celular |
+- **Encontrado:**
+  - La lista para elegir cliente era la vieja de Clientes (tarjetas sueltas, placas en gris); la misma va en "Nueva reserva".
+  - El cliente elegido en un recuadro de borde negro grueso con "Cambiar" subrayado, un estilo que no está en otra pantalla.
+  - La placa chica en las opciones de vehículo; los títulos de sección y sus acciones sin la cabecera compartida; el título sin el encabezado compartido.
+  - "Registrar consulta" al fondo: en el celular, más de una pantalla abajo.
+- **Cambios** (propuesta aprobada el 27/10):
+  - Elegir cliente con `ListaFilas`, como Clientes (8.1): el nombre, las placas en negrita (hasta tres y "y N más") y el WhatsApp. También en "Nueva reserva".
+  - El elegido en un recuadro de lectura, con "Cambiar" sin borde en `CabeceraSeccion` (como "Editar"); con cliente nuevo, "Buscar un cliente registrado". Los dos con su ícono, como "Editar" y "Agregar".
+  - La placa grande en las opciones de vehículo; "Registrar consulta" en `PieFormulario`; `EncabezadoPagina`.
+  - El canal, sin opción marcada de entrada (como estaba): un valor por defecto que no se cambia sería un dato falso sobre de dónde llegan los clientes. Si el dueño dice que casi todo llega por WhatsApp, se puede marcar de entrada.
+- **Verificación:** capturas a 360, 390, 768 y 1280 px de los tres pasos (elegir, elegido y cliente nuevo), de los errores y de "Nueva reserva"; sin desborde. Comparativa en `pulido-visual/9.2-nueva-consulta-celular.jpg`. E2E `hu-24` (la placa en la fila para elegir, el elegido en su recuadro con "Cambiar") y `hu-30`.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
