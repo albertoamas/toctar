@@ -61,9 +61,10 @@ export function PieModal({ children }: { children: React.ReactNode }) {
 
 /**
  * "Cancelar" al lado del botón principal: cierra sin guardar. "Listo" donde cada cambio ya se guardó al momento (una
- * lista que se edita fila por fila). Fuera de un modal no se muestra.
+ * lista que se edita fila por fila). "Volver" si el principal ya dice "Cancelar…" ("Cancelar reserva"). Fuera de un
+ * modal no se muestra.
  */
-export function CancelarModal({ texto = "Cancelar", focoInicial }: { texto?: "Cancelar" | "Listo"; focoInicial?: boolean }) {
+export function CancelarModal({ texto = "Cancelar", focoInicial }: { texto?: "Cancelar" | "Listo" | "Volver"; focoInicial?: boolean }) {
   const modal = useContext(Modal);
   if (!modal) return null;
   return (

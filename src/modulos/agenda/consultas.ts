@@ -228,6 +228,8 @@ export type DetalleReserva = {
   agendadaPor: string;
   marca: string | null;
   modelo: string | null;
+  anio: number | null;
+  color: string | null;
   /** La orden (C4): quién la trabaja, cómo se recibió y el último aviso de "listo" (HU-35). */
   tecnicoId: number | null;
   observacionesIngreso: string | null;
@@ -285,6 +287,8 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
       avisadoListoPor: aviso.name,
       marca: vehiculo.marca,
       modelo: vehiculo.modelo,
+      anio: vehiculo.anio,
+      color: vehiculo.color,
       tamanoId: vehiculo.tamanoId,
       entregadoAt: trabajo.entregadoAt,
       entregadoPor: entrego.name,
