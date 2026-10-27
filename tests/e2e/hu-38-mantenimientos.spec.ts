@@ -91,7 +91,12 @@ test("vencidos y próximos; avisar, no le interesa y agendar (y al cancelar la r
   await page.goto("/panel/mantenimientos");
   await filaV.getByRole("link", { name: "Agendar" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/agenda/nueva\\?cliente=${clienteV}&vehiculo=\\d+&recordatorio=${vencido}$`));
-  await expect(page.getByText(/^Mantenimiento de Pulido y nano cerámico \(venció el \d{2}\/\d{2}(\/\d{4})?\)$/)).toBeVisible();
+  // El mantenimiento que se agenda, con su vencimiento en una insignia (pulido 10.2)
+  // Solo lo visible: Next deja la página de Mantenimientos oculta en el documento, con el mismo texto
+  await expect(page.getByText("Mantenimiento de Pulido y nano cerámico", { exact: true }).filter({ visible: true })).toBeVisible();
+  await expect(page.getByText(/^Venció el \d{2}\/\d{2}(\/\d{4})?$/)).toBeVisible();
+  // Desde un mantenimiento no se cambia el cliente: el recordatorio es suyo
+  await expect(page.getByRole("link", { name: "Cambiar" })).toHaveCount(0);
   await page.getByRole("button", { name: "Agregar servicio" }).click();
   // El mantenimiento es un servicio cobrado del catálogo (RN-09); el precio, el que ponga el dueño
   await page.getByLabel("Servicio 1", { exact: true }).selectOption({ label: "Mantenimiento del nano cerámico" });
@@ -118,7 +123,9 @@ test("vencidos y próximos; avisar, no le interesa y agendar (y al cancelar la r
 
   // Si la reserva se cancela, el mantenimiento vuelve a la lista como estaba: avisado
   await page.goto(`/panel/agenda/${reservaId}`);
-  await page.getByRole("button", { name: "Cancelar reserva" }).click();
+  // Desde "Más" (pulido 10.3)
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Cancelar reserva" }).click();
   const form = page.getByRole("form", { name: "Cancelar reserva" });
   await form.getByLabel("Motivo").fill("No pudo venir");
   await form.getByRole("button", { name: "Cancelar reserva" }).click();

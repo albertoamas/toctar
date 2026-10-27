@@ -11,7 +11,7 @@ import { Button } from "@/componentes/ui/button";
 import type { Tamano } from "@/modulos/configuracion/consultas";
 import { cambiarEstadoVehiculo, guardarVehiculo, type EstadoCliente } from "../acciones";
 import type { VehiculoCliente } from "../consultas";
-import { nombreVehiculo, prefijoVehiculo } from "../reglas";
+import { detalleVehiculo, prefijoVehiculo } from "../reglas";
 import { CamposVehiculo } from "./campos";
 import { DatosVehiculo } from "./datos-vehiculo";
 
@@ -23,7 +23,7 @@ import { DatosVehiculo } from "./datos-vehiculo";
 type Props = { clienteId: number; vehiculos: VehiculoCliente[]; tamanos: Tamano[] };
 
 /** "Toyota Yaris 2019 Blanco": lo que se sabe del vehículo, además de la placa. El tamaño va aparte (DatosVehiculo). */
-const detalle = (v: VehiculoCliente) => [nombreVehiculo(v), v.anio, v.color].filter((d): d is string | number => !!d);
+const detalle = (v: VehiculoCliente) => detalleVehiculo(v);
 
 export function VehiculosCliente({ clienteId, vehiculos, tamanos }: Props) {
   const hidratado = useHidratado();

@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
 import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
 import { esquemaAdelanto, esquemaFechas, esquemaReserva } from "@/modulos/agenda/esquemas";
-import { bloquesDeLaSemana, diaDeLaSemana, diasDeLaSemana, fechaEntregaSugerida, lunesDeLaSemana, numeroDia, ocupaEspacio, seCruzan, textoDia, textoSemana } from "@/modulos/agenda/reglas";
+import { bloquesDeLaSemana, diaDeLaSemana, diasDeLaSemana, fechaEntregaSugerida, lunesDeLaSemana, numeroDia, ocupaEspacio, seCruzan, textoDia, textoSemana, textoSemanaCorto } from "@/modulos/agenda/reglas";
 import { calcularSaldo } from "@/modulos/pagos/reglas";
 
 // C3 Agenda y pagos (HU-30): semanas, entrega sugerida, cruces (RN-06), saldo (RF-46) y validación de la reserva.
@@ -106,6 +106,10 @@ test("el rótulo de la semana y de cada día", () => {
   expect(textoSemana("2026-10-19")).toBe("19 al 25 de octubre");
   expect(textoSemana("2026-10-26")).toBe("26 de octubre al 1 de noviembre");
   expect(textoSemana("2026-12-28")).toBe("28 de diciembre de 2026 al 3 de enero de 2027");
+  // La corta, para el celular (pulido 10.1)
+  expect(textoSemanaCorto("2026-10-19")).toBe("19 al 25 oct");
+  expect(textoSemanaCorto("2026-10-26")).toBe("26 oct al 1 nov");
+  expect(textoSemanaCorto("2026-12-28")).toBe("28 dic al 3 ene 2027");
   expect(textoDia("2026-10-22")).toBe("Jueves 22 de octubre");
   expect(numeroDia("2026-10-05")).toBe("5");
 });

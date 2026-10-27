@@ -23,7 +23,7 @@ export type ClienteElegido = {
   id: number;
   nombre: string;
   /** `detalle`: marca y modelo, color… lo que se sepa. El tamaño, aparte (se mostraba junto al modelo y confundía). */
-  vehiculos: { id: number; placa: string; tamano: string; detalle: string[] }[];
+  vehiculos: { id: number; placa: string; tamano: string; detalle: (string | number)[] }[];
 };
 
 type Props = {

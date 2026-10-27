@@ -123,6 +123,7 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel y sin de
 - Arriba: "Nueva reserva" (enlace con forma de botón, rojo), la semana ("20 al 26 de octubre"), "‹ Semana anterior", "Hoy", "Semana siguiente ›". `?semana=AAAA-MM-DD` (el lunes).
 - **Computadora:** grilla con una fila por espacio y siete columnas; cada reserva es un bloque que abarca sus días (recortado a la semana si empieza antes o termina después), con placa, servicio y técnico. Hoy, marcado. Días cerrados, atenuados. Un día libre se toca para agendar ahí (`/panel/agenda/nueva?fecha=…&espacio=…`).
 - **Celular:** un día a la vez (con los siete días de la semana como pestañas), una tarjeta por espacio: la reserva que lo ocupa o "Libre" con "Agendar". Así no hace falta desplazarse de lado.
+- **Pulido 10.1 (27/10):** la grilla de la semana, desde 1024 px; en la tableta, la vista por día (con siete columnas de 75 px las cintas se cortaban). La semana en un renglón: "‹", la semana ("26 oct al 1 nov" en el celular, `textoSemanaCorto`; completa desde 640 px), "›" y "Hoy" fuera de la semana actual. Sin el renglón "Martes 27 de octubre, hoy": la pestaña elegida lo marca (hoy, con su número en rojo). Encabezado compartido.
 - Vacío: la grilla con todo "Libre".
 
 ### `/panel/agenda/nueva` — Nueva reserva
@@ -133,6 +134,7 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel y sin de
 - **Técnico** (opcional), **hora aproximada** y **nota**.
 - **Adelanto** (solo con "Pagos"): monto (sugerido), método, comprobante opcional; o la casilla "Sin adelanto".
 - "Agendar". Al guardar, va a la reserva.
+- **Pulido 10.2 (27/10):** el cliente y su vehículo en un recuadro de lectura, como en Nueva consulta (`DatosVehiculo`: la placa grande, marca y modelo, año y color, y "Tamaño: …" aparte), con "Cambiar" sin borde en la directa. Desde una cotización, sus servicios en su propio recuadro (servicio y precio, el total) y "Al agendar, la cotización queda aceptada.". "Elegir vehículo" con la fila de un toque. El mantenimiento que se agenda, con su vencimiento en una insignia (de aviso si venció). La hora aproximada y la nota plegadas ("＋ Agregar hora y nota", `MasDatos`). Sin la ayuda del adelanto; la de la entrega, "Se le da al cliente como aproximada.". "Agendar" en `PieFormulario`, fijo abajo en el celular, con el total al lado en la directa.
 
 ### `/panel/agenda/[id]` — Reserva
 - Cliente (enlace a su ficha si puede), vehículo, fechas, espacio, técnico, hora, nota, estado; "Escribir por WhatsApp"; la consulta y la cotización de las que salió.
@@ -140,6 +142,7 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel y sin de
 - **Pagos** (con "Pagos"): lista con fecha, tipo, método, monto, comprobante (ver en grande) y "Anular" (motivo); los anulados, tachados, con su motivo. "Registrar pago".
 - **Reprogramar:** fechas y espacio, con los espacios libres. **Cancelar:** motivo; aviso "El adelanto no se devuelve (Bs 200 quedan como ingreso)".
 - Una reserva cancelada se ve con su motivo y sus pagos, sin acciones.
+- **Pulido 10.3 (27/10):** el encabezado compartido con el paso siguiente como única acción principal ("Recibir vehículo" desde el día de ingreso, o "Ver la orden" si ya se recibió), "Escribir por WhatsApp" y "Más" con "Reprogramar" y "Cancelar reserva" (mientras esté agendada), cada uno con su formulario en un modal; cancelar empieza con el foco en el motivo y su "Volver". Cancelada, el motivo bajo el título ("Cancelada: …"). Los datos sin la placa repetida: el vehículo con su modelo y "Tamaño: …"; el cliente como texto y, debajo, "Ver ficha del cliente" y "Ver la cotización …" (44 px). "Registrar pago" sin fondo en la cabecera de Pagos, con su formulario en un modal (el bloque de servicios y pagos lo comparte la orden; en Saldos pendientes, el botón sigue rojo, también con el modal).
 
 ### En otras pantallas
 - **Consulta:** en "Cotizaciones", la vigente tiene "Agendar" (con "Agenda"); con reserva, "Reserva del 24/10 en Espacio 2" con enlace.

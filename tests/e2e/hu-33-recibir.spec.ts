@@ -80,8 +80,9 @@ test("recibir con fotos y observaciones: la reserva pasa a orden, las fotos de i
 
   // La reserva ya es una orden: sin acciones de reserva
   await page.goto(`/panel/agenda/${id}`);
-  await expect(page.getByText("Esta reserva ya es una orden.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Reprogramar" })).toHaveCount(0);
+  // "Ver la orden" es el paso siguiente, en el encabezado
+  // Sin "Más": ya no se reprograma ni se cancela
+  await expect(page.getByRole("button", { name: "Más" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Recibir vehículo" })).toHaveCount(0);
   await page.getByRole("link", { name: "Ver la orden" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}$`));
@@ -129,7 +130,7 @@ test("antes de su día no se recibe y sin fotos se pide confirmar", async ({ pag
 
   // Todavía no llega su día: no se ofrece, y por la dirección lo explica
   await page.goto(`/panel/agenda/${idFutura}`);
-  await expect(page.getByRole("button", { name: "Reprogramar" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Más" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Recibir vehículo" })).toHaveCount(0);
   await page.goto(`/panel/ordenes/${idFutura}/recibir`);
   await expect(page.getByText(/todavía no llega a su día de ingreso/)).toBeVisible();
@@ -166,7 +167,9 @@ test("si la reserva se cancela, las fotos de ingreso que se alcanzaron a tomar s
 
   // Al final no lo dejó: se cancela la reserva
   await page.goto(`/panel/agenda/${id}`);
-  await page.getByRole("button", { name: "Cancelar reserva" }).click();
+  // Desde "Más" (pulido 10.3)
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Cancelar reserva" }).click();
   const form = page.getByRole("form", { name: "Cancelar reserva" });
   await form.getByLabel("Motivo").fill("No trajo el vehículo");
   await form.getByRole("button", { name: "Cancelar reserva" }).click();

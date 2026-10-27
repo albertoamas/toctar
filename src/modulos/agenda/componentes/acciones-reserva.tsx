@@ -1,11 +1,12 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { CalendarIcon, XIcon } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
+import { MenuMas } from "@/componentes/panel/menu-mas";
+import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { Selector } from "@/componentes/panel/selector";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
@@ -15,9 +16,10 @@ import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { cancelarReserva, reprogramarReserva } from "../acciones";
 import { useEspaciosLibres } from "./espacios-libres";
 
-// HU-31: reprogramar o cancelar una reserva agendada (RF-39). Cada una se abre aparte, como "Desactivar" en otras
-// pantallas: no se toca sin querer. Reprogramar ofrece solo los espacios libres en las nuevas fechas (sin contar la
-// propia reserva); cancelar pide el motivo y avisa que el adelanto no se devuelve (RN-05).
+// HU-31: reprogramar o cancelar una reserva agendada (RF-39). Pulido 10.3: se usan poco y van en el menú "Más" del
+// encabezado, cada una con su formulario en un modal (como "Marcar como perdida"). Reprogramar ofrece solo los espacios
+// libres en las nuevas fechas (sin contar la propia reserva); cancelar pide el motivo y avisa que el adelanto no se
+// devuelve (RN-05).
 
 type Props = {
   id: number;
@@ -29,34 +31,43 @@ type Props = {
   pagado: string | null;
 };
 
-export function AccionesReserva(props: Props) {
+export function MasReserva(props: Props) {
   const [abierta, setAbierta] = useState<"reprogramar" | "cancelar" | null>(null);
-  const router = useRouter();
-  const ruta = usePathname();
-  // Hecho el cambio, sin "?agendada=1": el aviso de recién agendada ya no corresponde
-  const alTerminar = (hecho?: boolean) => {
-    setAbierta(null);
-    if (hecho) router.replace(ruta);
-  };
-  if (abierta === "reprogramar") return <Reprogramar {...props} alTerminar={alTerminar} />;
-  if (abierta === "cancelar") return <Cancelar {...props} alTerminar={alTerminar} />;
+  const cambiar = (abierto: boolean) => !abierto && setAbierta(null);
   return (
-    <div className="flex flex-wrap gap-2">
-      <Button type="button" variant="outline" onClick={() => setAbierta("reprogramar")}>
-        <CalendarIcon />
-        Reprogramar
-      </Button>
-      <Button type="button" variant="outline" onClick={() => setAbierta("cancelar")}>
-        <XIcon />
-        Cancelar reserva
-      </Button>
-    </div>
+    <>
+      <MenuMas
+        acciones={[
+          { texto: "Reprogramar", alElegir: () => setAbierta("reprogramar") },
+          { texto: "Cancelar reserva", alElegir: () => setAbierta("cancelar") },
+        ]}
+      />
+      <ModalFormulario titulo="Reprogramar" abierto={abierta === "reprogramar"} alCambiar={cambiar}>
+        <Reprogramar {...props} />
+      </ModalFormulario>
+      <ModalFormulario titulo="Cancelar reserva" abierto={abierta === "cancelar"} alCambiar={cambiar}>
+        <Cancelar {...props} />
+      </ModalFormulario>
+    </>
   );
 }
 
-function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espacioId: espacioActual, hoy, alTerminar }: Props & { alTerminar: (hecho?: boolean) => void }) {
+/** Al terminar: cierra el modal y, si está, quita "?agendada=1" (el aviso de recién agendada ya no corresponde). */
+function useAlTerminar() {
+  const cerrar = useCerrarModal();
+  const router = useRouter();
+  const ruta = usePathname();
+  const parametros = useSearchParams();
+  return () => {
+    cerrar();
+    if (parametros.has("agendada")) router.replace(ruta);
+  };
+}
+
+function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espacioId: espacioActual, hoy }: Props) {
+  const alTerminar = useAlTerminar();
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
-    conAviso(reprogramarReserva, (r) => r.ok && alTerminar(true)),
+    conAviso(reprogramarReserva, (r) => r.ok && alTerminar()),
     {},
   );
   const formulario = useRef<HTMLFormElement>(null);
@@ -71,8 +82,7 @@ function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espac
   const espacioId = libres.some((x) => String(x.id) === espacioElegido) ? espacioElegido : "";
 
   return (
-    <form ref={formulario} action={accion} className="flex flex-col gap-5 rounded-sm border border-border p-4" noValidate aria-labelledby="reprogramar-titulo">
-      <h2 id="reprogramar-titulo" className="font-heading text-2xl font-bold italic">Reprogramar</h2>
+    <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-label="Reprogramar">
       <input type="hidden" name="id" value={id} />
       {estado.mensaje && !estado.ok && <MensajeError id="reprogramar-error">{estado.mensaje}</MensajeError>}
       <div className="grid gap-5 sm:grid-cols-2">
@@ -105,21 +115,20 @@ function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espac
           ))}
         </Selector>
       </Campo>
-      <div className="flex flex-wrap gap-2">
+      <PieModal>
         <Button type="submit" disabled={enviando || buscando}>
           {enviando ? "Moviendo…" : "Mover reserva"}
         </Button>
-        <Button type="button" variant="outline" onClick={() => alTerminar()}>
-          Volver
-        </Button>
-      </div>
+        <CancelarModal />
+      </PieModal>
     </form>
   );
 }
 
-function Cancelar({ id, pagado, alTerminar }: Props & { alTerminar: (hecho?: boolean) => void }) {
+function Cancelar({ id, pagado }: Props) {
+  const alTerminar = useAlTerminar();
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
-    conAviso(cancelarReserva, (r) => r.ok && alTerminar(true)),
+    conAviso(cancelarReserva, (r) => r.ok && alTerminar()),
     {},
   );
   const formulario = useRef<HTMLFormElement>(null);
@@ -134,23 +143,21 @@ function Cancelar({ id, pagado, alTerminar }: Props & { alTerminar: (hecho?: boo
         : `El adelanto no se devuelve: ${mostrarMonto(pagado)} Bs quedan como ingreso.`;
 
   return (
-    <form ref={formulario} action={accion} className="flex flex-col gap-5 rounded-sm border border-border p-4" noValidate aria-labelledby="cancelar-titulo">
-      <h2 id="cancelar-titulo" className="font-heading text-2xl font-bold italic">Cancelar reserva</h2>
+    <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-label="Cancelar reserva">
       <input type="hidden" name="id" value={id} />
       {estado.mensaje && !estado.ok && <MensajeError id="cancelar-error">{estado.mensaje}</MensajeError>}
       <p>{aviso}</p>
       <Campo id="motivo" etiqueta="Motivo" error={e.motivo} ayuda="Queda en la reserva y, si vino de una consulta, la consulta pasa a perdida.">
         <Textarea id="motivo" name="motivo" rows={2} value={motivo} onChange={(ev) => setMotivo(ev.target.value)} aria-invalid={!!e.motivo} aria-describedby={e.motivo ? "motivo-error" : "motivo-ayuda"} />
       </Campo>
-      <div className="flex flex-wrap gap-2">
-        {/* Rojo de "no se deshace": libera el espacio y deja la reserva cerrada */}
+      {/* El foco empieza en el motivo (obligatorio): ahí un Enter escribe, no confirma */}
+      <PieModal>
+        {/* Rosado de "no se deshace": libera el espacio y deja la reserva cerrada */}
         <Button type="submit" variant="destructive" disabled={enviando}>
           {enviando ? "Cancelando…" : "Cancelar reserva"}
         </Button>
-        <Button type="button" variant="outline" onClick={() => alTerminar()}>
-          Volver
-        </Button>
-      </div>
+        <CancelarModal texto="Volver" />
+      </PieModal>
     </form>
   );
 }

@@ -38,7 +38,9 @@ test("reprogramar solo ofrece espacios libres en las nuevas fechas y mueve la re
 
   await ingresarComoDueno(page);
   await page.goto(`/panel/agenda/${id}`);
-  await page.getByRole("button", { name: "Reprogramar" }).click();
+  // Desde "Más" (pulido 10.3)
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Reprogramar" }).click();
   const form = page.getByRole("form", { name: "Reprogramar" });
   await form.getByLabel("Ingresa el").fill(d10);
   await form.getByLabel("Entrega aproximada").fill(d10);
@@ -79,7 +81,9 @@ test("cancelar pide motivo, deja los pagos, libera el espacio y la consulta pasa
 
   await ingresarComoDueno(page);
   await page.goto(`/panel/agenda/${id}`);
-  await page.getByRole("button", { name: "Cancelar reserva" }).click();
+  // Desde "Más" (pulido 10.3)
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Cancelar reserva" }).click();
   const form = page.getByRole("form", { name: "Cancelar reserva" });
   await expect(form.getByText("El adelanto no se devuelve: 150 Bs quedan como ingreso.")).toBeVisible();
   await form.getByRole("button", { name: "Cancelar reserva" }).click();
@@ -89,7 +93,8 @@ test("cancelar pide motivo, deja los pagos, libera el espacio y la consulta pasa
   await form.getByRole("button", { name: "Cancelar reserva" }).click();
   await expect(page.getByText(/^Reserva cancelada\./)).toBeVisible();
   await expect(page.getByText("Cancelada:", { exact: false })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Reprogramar" })).toHaveCount(0);
+  // Sin "Más": ya no se reprograma ni se cancela
+  await expect(page.getByRole("button", { name: "Más" })).toHaveCount(0);
 
   const [r] = await consultar<{ estado: string; pagos: number; consulta: string; detalle: string; cotizacion: string }>(
     `select t.estado, (select count(*)::int from pago p where p.trabajo_id = t.id and not p.anulado) as pagos,

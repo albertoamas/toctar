@@ -80,6 +80,19 @@ export function textoSemana(lunes: string): string {
   return `${a.dia} al ${b.dia} de ${MESES[b.mes - 1]}`;
 }
 
+/**
+ * "26 oct al 1 nov": la semana corta, para que entre entre las flechas en el celular (pulido 10.1). Con cambio de año,
+ * el año al final ("29 dic al 4 ene 2027"); en el mismo mes, el mes una vez ("20 al 26 oct").
+ */
+export function textoSemanaCorto(lunes: string): string {
+  const a = partes(lunes);
+  const b = partes(sumarDias(lunes, 6));
+  const mes = (m: number) => MESES[m - 1].slice(0, 3);
+  if (a.anio !== b.anio) return `${a.dia} ${mes(a.mes)} al ${b.dia} ${mes(b.mes)} ${b.anio}`;
+  if (a.mes !== b.mes) return `${a.dia} ${mes(a.mes)} al ${b.dia} ${mes(b.mes)}`;
+  return `${a.dia} al ${b.dia} ${mes(b.mes)}`;
+}
+
 /** "Jueves 24 de octubre": el día completo, para lectores de pantalla y el celular. */
 export function textoDia(fecha: string): string {
   const { dia, mes } = partes(fecha);

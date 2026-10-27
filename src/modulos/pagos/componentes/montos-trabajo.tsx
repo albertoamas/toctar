@@ -1,4 +1,5 @@
 import { cn } from "cn";
+import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
 import { formatearFecha } from "@/lib/fechas";
 import type { DetalleReserva } from "@/modulos/agenda/consultas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
@@ -71,7 +72,13 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar }: Prop
           </dl>
         </section>
         <section aria-labelledby="pagos-titulo" className="flex flex-col gap-3">
-          <h2 id="pagos-titulo" className="font-heading text-2xl font-bold italic">Pagos</h2>
+          {/* "Registrar pago" sin fondo en la cabecera, como "Editar" (pulido 10.3): el rojo de la pantalla es su paso
+              siguiente (recibir, entregar) */}
+          <CabeceraSeccion id="pagos" titulo="Pagos">
+            {!cerrado && !estaPagada(montos.saldo.saldo) && (
+              <RegistrarPago trabajoId={trabajoId} saldo={montos.saldo.saldo} hoy={hoy} conPagos={montos.pagos.some((p) => !p.anulado)} seccion />
+            )}
+          </CabeceraSeccion>
           {montos.pagos.length === 0 ? (
             <p className="text-tinta-suave">Todavía no hay pagos.</p>
           ) : (
@@ -101,12 +108,7 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar }: Prop
               })}
             </ul>
           )}
-          {!cerrado &&
-            (estaPagada(montos.saldo.saldo) ? (
-              <p className="font-semibold text-exito">Pagado por completo.</p>
-            ) : (
-              <RegistrarPago trabajoId={trabajoId} saldo={montos.saldo.saldo} hoy={hoy} conPagos={montos.pagos.some((p) => !p.anulado)} />
-            ))}
+          {!cerrado && estaPagada(montos.saldo.saldo) && <p className="font-semibold text-exito">Pagado por completo.</p>}
         </section>
       </>
   );

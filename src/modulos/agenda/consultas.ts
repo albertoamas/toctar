@@ -22,6 +22,7 @@ import { ESTADOS_TRABAJO, type EstadoTrabajo, type MetodoPago, type TipoPago } f
 import { fechaEnBolivia } from "@/lib/fechas";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { duracionEfectiva } from "@/modulos/catalogo/reglas";
+import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { sucursalPrincipal } from "@/modulos/configuracion/consultas";
 import { opcionesDeServicio, type OpcionServicio } from "@/modulos/cotizaciones/consultas";
 import { calcularSaldo, type Saldo } from "@/modulos/pagos/reglas";
@@ -84,11 +85,16 @@ export type DatosDeCotizacion = {
   /** El cliente y el vehículo siguen activos. */
   activos: boolean;
   cliente: { id: number; nombre: string };
-  vehiculo: { id: number; placa: string; tamano: string };
+  vehiculo: VehiculoReserva;
   lineas: LineaReserva[];
   descuento: string;
   saldo: Saldo;
 };
+
+/** El vehículo de una reserva, como lo muestra el panel (DatosVehiculo): la placa, lo que se sepa y el tamaño. */
+export type VehiculoReserva = { id: number; placa: string; tamano: string; detalle: (string | number)[] };
+
+const columnasVehiculo = { marca: vehiculo.marca, modelo: vehiculo.modelo, anio: vehiculo.anio, color: vehiculo.color };
 
 /** Lo que hace falta para agendar desde una cotización, o null si no existe. */
 export async function datosDeCotizacion(cotizacionId: number): Promise<DatosDeCotizacion | null> {
@@ -108,6 +114,7 @@ export async function datosDeCotizacion(cotizacionId: number): Promise<DatosDeCo
       vehiculoId: vehiculo.id,
       placa: vehiculo.placa,
       tamano: tamanoVehiculo.nombre,
+      ...columnasVehiculo,
     })
     .from(cotizacion)
     .innerJoin(consulta, eq(cotizacion.consultaId, consulta.id))
@@ -137,7 +144,7 @@ export async function datosDeCotizacion(cotizacionId: number): Promise<DatosDeCo
     agendable: c.estado === "enviada" && c.estadoConsulta === "cotizado",
     activos: c.clienteActivo && c.vehiculoActivo,
     cliente: { id: c.clienteId, nombre: c.cliente },
-    vehiculo: { id: c.vehiculoId, placa: c.placa, tamano: c.tamano },
+    vehiculo: { id: c.vehiculoId, placa: c.placa, tamano: c.tamano, detalle: detalleVehiculo(c) },
     lineas: lineas.map((l) => ({
       varianteId: l.varianteId,
       descripcion: l.descripcion,
@@ -155,9 +162,9 @@ export async function datosDeCotizacion(cotizacionId: number): Promise<DatosDeCo
 
 export type DatosDirecta = {
   cliente: { id: number; nombre: string };
-  vehiculos: { id: number; placa: string; tamanoId: number; tamano: string }[];
+  vehiculos: (VehiculoReserva & { tamanoId: number })[];
   /** El vehículo elegido y los servicios con el precio de su tamaño. */
-  vehiculo: { id: number; placa: string; tamano: string } | null;
+  vehiculo: VehiculoReserva | null;
   opciones: OpcionServicio[];
 };
 
@@ -165,18 +172,20 @@ export type DatosDirecta = {
 export async function datosDirecta(clienteId: number, vehiculoId: number | null): Promise<DatosDirecta | null> {
   const [c] = await db.select({ id: cliente.id, nombre: cliente.nombre }).from(cliente).where(and(eq(cliente.id, clienteId), eq(cliente.activo, true)));
   if (!c) return null;
-  const vehiculos = await db
-    .select({ id: vehiculo.id, placa: vehiculo.placa, tamanoId: vehiculo.tamanoId, tamano: tamanoVehiculo.nombre })
-    .from(vehiculo)
-    .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
-    .where(and(eq(vehiculo.clienteId, clienteId), eq(vehiculo.activo, true)))
-    .orderBy(asc(vehiculo.id));
+  const vehiculos = (
+    await db
+      .select({ id: vehiculo.id, placa: vehiculo.placa, tamanoId: vehiculo.tamanoId, tamano: tamanoVehiculo.nombre, ...columnasVehiculo })
+      .from(vehiculo)
+      .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
+      .where(and(eq(vehiculo.clienteId, clienteId), eq(vehiculo.activo, true)))
+      .orderBy(asc(vehiculo.id))
+  ).map((v) => ({ id: v.id, placa: v.placa, tamanoId: v.tamanoId, tamano: v.tamano, detalle: detalleVehiculo(v) }));
   // Con un solo vehículo, no hace falta elegirlo
   const elegido = vehiculos.find((v) => v.id === vehiculoId) ?? (vehiculos.length === 1 ? vehiculos[0] : undefined);
   return {
     cliente: c,
     vehiculos,
-    vehiculo: elegido ? { id: elegido.id, placa: elegido.placa, tamano: elegido.tamano } : null,
+    vehiculo: elegido ?? null,
     opciones: elegido ? await opcionesDeServicio(elegido.tamanoId) : [],
   };
 }
@@ -216,6 +225,8 @@ export type DetalleReserva = {
   agendadaPor: string;
   marca: string | null;
   modelo: string | null;
+  anio: number | null;
+  color: string | null;
   /** La orden (C4): quién la trabaja, cómo se recibió y el último aviso de "listo" (HU-35). */
   tecnicoId: number | null;
   observacionesIngreso: string | null;
@@ -273,6 +284,8 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
       avisadoListoPor: aviso.name,
       marca: vehiculo.marca,
       modelo: vehiculo.modelo,
+      anio: vehiculo.anio,
+      color: vehiculo.color,
       tamanoId: vehiculo.tamanoId,
       entregadoAt: trabajo.entregadoAt,
       entregadoPor: entrego.name,
