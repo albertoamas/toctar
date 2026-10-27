@@ -26,10 +26,9 @@ export function FormularioNota({ id, nota }: { id: number; nota: string | null }
   return (
     <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate aria-label="Nota de la consulta">
       <input type="hidden" name="id" value={id} />
-      {/* Su propio id: "Nueva consulta" tiene un campo "nota" y Next guarda la página anterior oculta en el documento
-          (para volver atrás al instante); con el mismo id, la etiqueta se asociaba a ese campo y no a este */}
-      <Campo id="editar-nota" etiqueta="Qué pidió, qué le preocupa, cuándo lo necesita" error={error}>
-        <Textarea id="editar-nota" name="nota" rows={5} defaultValue={estado.valores?.nota ?? nota ?? ""} aria-invalid={!!error} aria-describedby={error ? "editar-nota-error" : undefined} />
+      {/* El id "nota" se repite en Nueva consulta, que Next deja oculta en el documento: Campo usa uno único */}
+      <Campo id="nota" etiqueta="Qué pidió, qué le preocupa, cuándo lo necesita" error={error}>
+        <Textarea id="nota" name="nota" rows={5} defaultValue={estado.valores?.nota ?? nota ?? ""} aria-invalid={!!error} />
       </Campo>
       <PieModal>
         <Button type="submit" disabled={enviando}>
