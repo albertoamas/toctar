@@ -2,16 +2,7 @@ import { expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
 import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
 import { esquemaCotizacion } from "@/modulos/cotizaciones/esquemas";
-import {
-  anioCotizacion,
-  calcularTotales,
-  claveCorrelativo,
-  descripcionLinea,
-  fechaValidez,
-  leerMontoOCero,
-  numeroCotizacion,
-  precioSugerido,
-} from "@/modulos/cotizaciones/reglas";
+import { anioCotizacion, calcularTotales, claveCorrelativo, descripcionLinea, fechaValidez, leerMontoOCero, lineasDelServicioDeInteres, numeroCotizacion, precioSugerido } from "@/modulos/cotizaciones/reglas";
 
 // C2 Cotizaciones (HU-25): totales, número, precio sugerido, validez y la validación del formulario (RF-31, RN-02).
 
@@ -115,4 +106,22 @@ test("descuento, adelanto, validez y fotos (RN-04, S-5)", () => {
   expect(errores({ validaHasta: sumarDias(hoy, 366) })).toEqual({ validaHasta: "La validez puede ser de hasta un año." });
   expect(errores({ fotos: ["1", "2", "3", "4", "5"] })).toEqual({ fotos: "Hasta 4 fotos." });
   expect(errores({ fotos: ["1", "1"] })).toEqual({ fotos: "Revisa las fotos elegidas." });
+});
+
+test("una cotización nueva arranca con el servicio que pidió el cliente", () => {
+  const opciones = [
+    { servicioId: 1, varianteId: 11, sugerencia: { tipo: "monto" as const, monto: "450.00" } },
+    { servicioId: 2, varianteId: 21, sugerencia: { tipo: "monto" as const, monto: "900.00" } },
+    { servicioId: 2, varianteId: 22, sugerencia: { tipo: "monto" as const, monto: "1100.00" } },
+    { servicioId: 3, varianteId: 31, sugerencia: { tipo: "evaluacion" as const } },
+  ];
+  // Una sola variante: elegida y con su precio
+  expect(lineasDelServicioDeInteres(opciones, 1)).toEqual([{ varianteId: 11, precio: "450.00" }]);
+  // Varias (1 año, 2 años…): una línea vacía para elegir cuál
+  expect(lineasDelServicioDeInteres(opciones, 2)).toEqual([{ varianteId: 0, precio: "" }]);
+  // Según evaluación: elegida, el precio se escribe
+  expect(lineasDelServicioDeInteres(opciones, 3)).toEqual([{ varianteId: 31, precio: "" }]);
+  // "Todavía no sabe", o un servicio que ya no se ofrece: arranca vacía
+  expect(lineasDelServicioDeInteres(opciones, null)).toEqual([]);
+  expect(lineasDelServicioDeInteres(opciones, 9)).toEqual([]);
 });

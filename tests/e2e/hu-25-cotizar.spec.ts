@@ -245,3 +245,36 @@ test("las fotos elegidas para la cotización ya no se quitan de la consulta", as
   await page.getByRole("dialog").getByRole("button", { name: "Quitar foto" }).click();
   await expect(page.getByText("Esa foto está en una cotización: no se quita.")).toBeVisible();
 });
+
+test("una cotización nueva arranca con el servicio que pidió el cliente, y el total va al pie", async ({ page }, info) => {
+  const s = sufijo(info);
+  const varias = await crearServicioConPrecios(info);
+  // Un servicio de una sola variante, con precio para el tamaño del vehículo
+  const unica = `De una variante ${s}`;
+  await consultar(
+    `with s as (
+       insert into servicio (nombre, slug, resumen, orden) values ($1, $2, 'Servicio de prueba.', 99) on conflict do nothing returning id
+     ), v as (insert into variante (servicio_id, nombre, orden) select id, 'Única', 1 from s returning id)
+     insert into precio (variante_id, tamano_id, monto, created_by)
+     select v.id, (select id from tamano_vehiculo order by orden limit 1), 300, (select id from usuario where nombre_usuario = 'dueno') from v`,
+    [unica, `de-una-variante-${s.toLowerCase()}`],
+  );
+  const conUnica = await crearConsulta(info, 6);
+  const conVarias = await crearConsulta(info, 7);
+  await consultar("update consulta set servicio_id = (select id from servicio where nombre = $2) where id = $1", [conUnica, unica]);
+  await consultar("update consulta set servicio_id = (select id from servicio where nombre = $2) where id = $1", [conVarias, varias]);
+  await ingresarComoDueno(page);
+
+  // Una sola variante: elegida, con su precio, y el total al pie
+  await page.goto(`/panel/consultas/${conUnica}/cotizar`);
+  await expect(servicio(page, 1)).toHaveValue(/\d+/);
+  await expect(servicio(page, 1).locator("option:checked")).toHaveText(unica);
+  await expect(precio(page, 1)).toHaveValue("300");
+  // El total del pie (el resumen de arriba lo anuncia; este no se repite al lector de pantalla)
+  await expect(page.locator("form p[aria-hidden]")).toHaveText(/Total\s*300 Bs/);
+
+  // Varias variantes: una línea para elegir cuál
+  await page.goto(`/panel/consultas/${conVarias}/cotizar`);
+  await expect(servicio(page, 1)).toHaveValue("");
+  await expect(servicio(page, 2)).toHaveCount(0);
+});
