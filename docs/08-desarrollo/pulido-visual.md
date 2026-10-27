@@ -1192,6 +1192,14 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Descartados: el `conAviso` por render (el patrón de los demás formularios en modal) y los ids repetidos de los títulos (`cliente-titulo`, `nota-titulo`), que son el mismo caso general de `Campo` y esperan la decisión del desarrollador.
 - **Verificación:** con tres servicios y sin fotos, una hoja; con cuatro fotos, la segunda hoja con las fotos; con 20 líneas, varias hojas numeradas. Pruebas unitarias nuevas: tres servicios caben en una hoja, y el logo cuadrado con una versión 2. Comparativa en `pulido-visual/9.5-pdf-cotizacion.jpg` (antes, después y en el celular). E2E `hu-26` (el PDF se genera, se ve y se descarga).
 
+### Repaso de las reglas en los grupos 7 a 9 (27/10/2026)
+Pedido del desarrollador: releer las reglas del principio de este documento y corregir lo que no se cumplió.
+- **Capturas del celular:** se tomaron sin pantalla táctil y con `fullPage` (la regla pide la emulación táctil y la ventana agrandada; con `fullPage`, además, el pie fijo aparecía a mitad de página). Se repasaron todas las pantallas de los grupos 7 a 9 con pantalla táctil a 360, 390, 768 y 1280 px: nada se sale y ningún botón ni campo mide menos de 44 px (solo el selector de archivos oculto, que se usa con su botón). Las capturas siguientes se toman así.
+- **Ramas:** los grupos 7 y 8 se trabajaron en `pulido/grupo-7` y `pulido/grupo-8` (ya unidos); la regla pide `pulido/catalogo`, `pulido/clientes`… El grupo 9 se renombró a `pulido/consultas` (GitHub cerró el PR #101 y siguió en el #102); los siguientes usan los nombres de la regla.
+- **Errores en `09-pruebas/criterios-entrega-1.md`:** los de los grupos 7 a 9 se anotaron en su tabla.
+- **Textos:** sin guiones largos (—) en lo que ve la gente (revisión del 9.4).
+- **Sin duplicar:** el bloque del vehículo (`DatosVehiculo`) y la validación de una línea de servicio (`lineaServicio`) quedan en un solo lugar.
+
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
 - **Encontrado:**
