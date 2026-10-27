@@ -217,7 +217,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 | 9.1 | Consultas (pestañas y consultas que se enfrían) | `/panel/consultas` | ✅ |
 | 9.2 | Nueva consulta | `/panel/consultas/nueva` | ✅ |
 | 9.3 | Detalle de una consulta: estado, fotos, cotizaciones y reservas | `/panel/consultas/[id]` | ✅ |
-| 9.4 | Cotizar | `/panel/consultas/[id]/cotizar` | ⏳ |
+| 9.4 | Cotizar | `/panel/consultas/[id]/cotizar` | ✅ |
 | 9.5 | PDF de la cotización (impreso y en el celular; con la skill `pdf`) | `/panel/cotizaciones/[id]/pdf` | ⏳ |
 
 ### 10. Panel: agenda y pagos
@@ -1137,6 +1137,31 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
 - **Revisión del 27/10 (pedido del desarrollador):** el vehículo decía "Compactos, Suzuki Swift" y se leía como una lista de modelos. El tamaño va aparte, con su etiqueta, en las tres pantallas que lo mostraban así: en la consulta, una fila "Tamaño"; en la ficha del cliente y en las opciones de Nueva consulta, el modelo en su línea y "Tamaño: Compactos" debajo. En la misma revisión: una consulta con varios servicios de interés se anotó como pedido 18 (`registro-de-cambios.md`); consulta y cotización siguen separadas (no toda consulta se cotiza, y una consulta tiene varias versiones de cotización que no cambian), pero ya se ven en una sola pantalla.
 - **Hallazgo de accesibilidad:** Next 16 deja la página anterior oculta en el documento (para volver atrás al instante). Si tiene un campo con el mismo `id` que la actual, la etiqueta de la actual se asocia al oculto y el lector de pantalla no la anuncia. Pasaba con la nota (Nueva consulta también tiene `id="nota"`): el campo del modal tiene ahora su propio id. Pasa también en el modal "Datos del cliente" después de "Agregar cliente" (desde antes del pulido): propuesta aparte, que `Campo` genere ids únicos.
 - **Verificación:** 1.068 px en el celular la abierta (−7 %; la estimación era 900: los datos ocupan más que lo previsto), 1.270 la cotizada. Capturas a 360, 390, 768 y 1280 px de una abierta, una cotizada (se cotizó la consulta 2 de la demo local) y una perdida, del menú "Más" y de los modales; sin desborde. Comparativa en `pulido-visual/9.3-consulta-celular.jpg`. E2E `hu-24` (la nota en un modal), `hu-25` y `hu-28` (perder desde "Más", el motivo bajo el título, reabrir desde el encabezado), `hu-26`, `hu-27`, `hu-30` y `hu-31`.
+
+### 9.4 Cotizar (27/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | Título; cliente, placa y tamaño | Qué se cotiza | Dueño, cada cotización | En el encabezado, en su línea |
+  | Líneas de servicio (servicio, precio, sugerido) | Armar la cotización | Igual | Quedan; la primera, con lo que pidió el cliente |
+  | Subir, bajar y quitar en cada línea | Ordenar o quitar | Quitar a veces; ordenar casi nunca | Quedan: `EditorLista` es el de Sitio web (pulido 4.4) |
+  | Descuento y Subtotal, Descuento y Total | El precio final | Igual | Quedan; el total, también fijo al pie |
+  | Adelanto, Válida hasta y "Estimado según fotos" | Condiciones del PDF | Casi siempre como vienen | En su sección, sin ayudas de más |
+  | Fotos para el PDF | Elegir hasta 4 | Con fotos en la consulta | Queda |
+  | "Guardar y generar PDF" | Enviar | Igual | Fijo abajo en el celular, con el total |
+- **Encontrado:**
+  - En el celular, con dos servicios, 1.440 px: el total a mitad de página y el botón al fondo; mientras se cargan los precios, el total no se ve.
+  - La sección "Total" mezclaba el precio con las condiciones (adelanto, validez y estimado).
+  - Ayudas que repetían lo obvio: "El de Configuración; se puede cambiar…", "Sugerida con los días de Configuración", "En bolivianos" y "Los precios sugeridos son los del catálogo para…".
+  - Siempre arrancaba sin líneas, aunque la consulta dijera qué servicio quiere el cliente.
+  - El encabezado no era el compartido.
+- **Cambios** (propuesta aprobada el 27/10):
+  - El total y el botón en `PieFormulario`: fijos abajo en el celular, al pie en la computadora. El total del pie no se anuncia (`aria-hidden`): ya lo anuncia el resumen.
+  - Dos secciones: Total (descuento y resumen) y Condiciones (adelanto y validez lado a lado, y el estimado). Se van las cuatro ayudas; queda "Opcional." en el descuento y la del estimado (qué cambia en el PDF).
+  - Una cotización nueva arranca con el servicio de interés de la consulta: con una sola variante, elegida y con su precio; con varias, una línea para elegir cuál; sin servicio, vacía. Función pura `lineasDelServicioDeInteres`, con prueba unitaria. Corregir arranca, como antes, con las líneas de la versión anterior.
+  - `EncabezadoPagina` con "Cliente, placa (tamaño)".
+- **Verificación:** con dos servicios, 1.441 px en el celular, igual que antes (la estimación era 1.250: la sección Condiciones suma su título), pero el total y el botón quedan siempre a la vista. Capturas a 360, 390, 768 y 1280 px con una línea precargada, con dos servicios y al corregir; sin desborde. En la base local se cotizó también la consulta 1 de la demo (al capturar los errores, el formulario estaba completo) y se crearon las consultas 4 y 5 (una con un servicio de una variante y otra con el nano cerámico). Comparativa en `pulido-visual/9.4-cotizar-celular.jpg`. E2E `hu-25` (la primera línea según el servicio de interés, el total al pie), `hu-26`, `hu-27` y `hu-30` (la reserva directa usa las mismas líneas).
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
