@@ -65,6 +65,8 @@ test("el dueño ve lo del día: ingresos (y el atrasado), entregas, listas sin a
   await expect(ingresos.getByRole("link", { name: new RegExp(`^${placas.hoy}`) })).not.toContainText("Debía ingresar");
   await expect(ingresos.getByRole("link", { name: new RegExp(`^${placas.atrasado}`) })).toContainText(`Debía ingresar el ${dia(-2).corta}`);
   await expect(bloque(page, "Entregas de hoy").getByRole("link", { name: new RegExp(`^${placas.entrega}`) })).toContainText(`Atrasada desde el ${dia(-4).corta}`);
+  // Con el aviso, también su estado (pulido 9.1: la fila muestra los dos)
+  await expect(bloque(page, "Entregas de hoy").getByRole("link", { name: new RegExp(`^${placas.entrega}`) })).toContainText("En proceso");
   await expect(bloque(page, "Listas sin avisar").getByRole("link", { name: new RegExp(`^${placas.lista}`) })).toBeVisible();
   await expect(bloque(page, "Mantenimientos por avisar").getByRole("link", { name: /^\d+ vencidos?, \d+ próximos?/ })).toBeVisible();
   // Sin montos ni teléfonos (RN-12)

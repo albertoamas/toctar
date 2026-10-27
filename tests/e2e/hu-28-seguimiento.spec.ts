@@ -27,10 +27,11 @@ async function crearConsulta(datos: { cliente: string; telefono: string; placa: 
   return id;
 }
 
-/** La fila (computadora) o la tarjeta (celular) de un cliente: la que se ve. */
-const fila = (page: Page, cliente: string) => page.locator("tr, li").filter({ hasText: cliente }).locator("visible=true");
+/** La fila de un cliente en la lista de consultas (la fila de un toque compartida, pulido 9.1). */
+const filas = (page: Page) => page.getByRole("list", { name: "Consultas" }).getByRole("link");
+const fila = (page: Page, cliente: string) => filas(page).filter({ hasText: cliente });
 
-test("abiertas por antigüedad, con los días sin movimiento; las que se enfrían se resaltan", async ({ page }, info) => {
+test("abiertas por antigüedad, con los días sin movimiento; las que se enfrían lo dicen en un aviso", async ({ page }, info) => {
   const s = sufijo(info).toUpperCase();
   await crearConsulta({ cliente: `Fría ${s}`, telefono: telefono(info, 1), placa: `SF28${s}1`, dias: 9 });
   await crearConsulta({ cliente: `Tibia ${s}`, telefono: telefono(info, 2), placa: `ST28${s}1`, dias: 3 });
@@ -41,14 +42,16 @@ test("abiertas por antigüedad, con los días sin movimiento; las que se enfría
 
   const pestanas = page.getByRole("navigation", { name: "Consultas por estado" });
   await expect(pestanas.getByRole("link", { name: /^Abiertas \(\d+\)$/ })).toHaveAttribute("aria-current", "page");
-  await expect(fila(page, `Fría ${s}`)).toContainText("Se está enfriando: hace 9 días");
+  await expect(fila(page, `Fría ${s}`)).toContainText("9 días sin movimiento");
+  // En Abiertas, cada una con su estado
+  await expect(fila(page, `Fría ${s}`)).toContainText("Consultó");
   await expect(fila(page, `Tibia ${s}`)).toContainText("hace 3 días");
-  await expect(fila(page, `Tibia ${s}`)).not.toContainText("enfriando");
+  await expect(fila(page, `Tibia ${s}`)).not.toContainText("sin movimiento");
   await expect(fila(page, `Nueva ${s}`)).toContainText("hoy");
   await expect(fila(page, `Ya perdida ${s}`)).toHaveCount(0);
 
   // Las más antiguas primero
-  const textos = await page.locator("tr, li").locator("visible=true").allInnerTexts();
+  const textos = await filas(page).allInnerTexts();
   const posicion = (nombre: string) => textos.findIndex((t) => t.includes(nombre));
   expect(posicion(`Fría ${s}`)).toBeLessThan(posicion(`Tibia ${s}`));
   expect(posicion(`Tibia ${s}`)).toBeLessThan(posicion(`Nueva ${s}`));
@@ -57,8 +60,9 @@ test("abiertas por antigüedad, con los días sin movimiento; las que se enfría
   await expect(page).toHaveURL(/\?vista=perdidas$/);
   await expect(pestanas.getByRole("link", { name: /^Perdidas/ })).toHaveAttribute("aria-current", "page");
   await expect(fila(page, `Ya perdida ${s}`)).toContainText("hace 2 días");
-  // Una perdida no se resalta, aunque lleve días
-  await expect(fila(page, `Ya perdida ${s}`)).not.toContainText("enfriando");
+  // Una perdida no se resalta, aunque lleve días; y la pestaña ya dice su estado: no se repite
+  await expect(fila(page, `Ya perdida ${s}`)).not.toContainText("sin movimiento");
+  await expect(fila(page, `Ya perdida ${s}`)).not.toContainText("Perdido");
 });
 
 test("marcar como perdida con motivo y reabrir; «Otro» pide el detalle", async ({ page }, info) => {
