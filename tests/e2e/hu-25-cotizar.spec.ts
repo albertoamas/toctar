@@ -43,6 +43,12 @@ async function crearConsulta(info: TestInfo, n: number, canal: "whatsapp" | "tal
 }
 
 const servicio = (page: Page, i: number) => page.getByLabel(`Servicio ${i}`, { exact: true });
+const opcion = (page: Page, i: number) => page.getByLabel(`Opción del servicio ${i}`);
+/** Elige el servicio y su opción en sus dos menús (pulido 9.4). */
+async function elegir(page: Page, i: number, nombre: string, variante: string) {
+  await servicio(page, i).selectOption({ label: nombre });
+  await opcion(page, i).selectOption({ label: variante });
+}
 const precio = (page: Page, i: number) => page.getByLabel(`Precio del servicio ${i}`);
 
 test("el dueño cotiza con el precio del tamaño; según evaluación obliga a escribirlo; descuento y total", async ({ page }, info) => {
@@ -60,12 +66,12 @@ test("el dueño cotiza con el precio del tamaño; según evaluación obliga a es
   await expect(page.getByLabel("Válida hasta")).not.toHaveValue("");
 
   await page.getByRole("button", { name: "Agregar servicio" }).click();
-  await servicio(page, 1).selectOption({ label: `${nombre} — Con precio` });
+  await elegir(page, 1, nombre, "Con precio");
   await expect(precio(page, 1)).toHaveValue("450");
   await expect(page.getByText("Precio sugerido: 450 Bs")).toBeVisible();
 
   await page.getByRole("button", { name: "Agregar servicio" }).click();
-  await servicio(page, 2).selectOption({ label: `${nombre} — Por evaluar` });
+  await elegir(page, 2, nombre, "Por evaluar");
   await expect(precio(page, 2)).toHaveValue("");
   await expect(page.getByText("Según evaluación: escribe el precio")).toBeVisible();
 
@@ -100,8 +106,9 @@ test("el dueño cotiza con el precio del tamaño; según evaluación obliga a es
     [id],
   );
   expect(lineas).toEqual([
-    { descripcion: `${nombre} — Con precio`, precio_sugerido: "450.00", precio: "450.00" },
-    { descripcion: `${nombre} — Por evaluar`, precio_sugerido: null, precio: "200.50" },
+    // La opción entre paréntesis, sin guion largo (pulido 9.4)
+    { descripcion: `${nombre} (Con precio)`, precio_sugerido: "450.00", precio: "450.00" },
+    { descripcion: `${nombre} (Por evaluar)`, precio_sugerido: null, precio: "200.50" },
   ]);
   const [registro] = await consultar<{ accion: string }>(
     "select a.accion from auditoria a join cotizacion c on c.id = a.entidad_id where a.entidad = 'cotizacion' and c.consulta_id = $1",
@@ -118,7 +125,7 @@ test("corregir crea la versión 2 con el mismo número; la 1 queda reemplazada y
   // En el taller no es un estimado
   await expect(page.getByRole("checkbox", { name: "Estimado según fotos o video" })).not.toBeChecked();
   await page.getByRole("button", { name: "Agregar servicio" }).click();
-  await servicio(page, 1).selectOption({ label: `${nombre} — Con precio` });
+  await elegir(page, 1, nombre, "Con precio");
   await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
   await expect(page).toHaveURL(/\?cotizada=\d+$/);
 
@@ -176,7 +183,7 @@ test("el descuento no pasa el subtotal, el adelanto no pasa el total y la valide
   await expect(page.getByText("Agrega al menos un servicio.")).toBeVisible();
 
   await page.getByRole("button", { name: "Agregar servicio" }).click();
-  await servicio(page, 1).selectOption({ label: `${nombre} — Con precio` });
+  await elegir(page, 1, nombre, "Con precio");
   await page.getByLabel("Descuento").fill("500");
   await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
   await expect(page.getByText("El descuento no puede ser mayor que el subtotal.")).toBeVisible();
@@ -231,7 +238,7 @@ test("las fotos elegidas para la cotización ya no se quitan de la consulta", as
 
   await page.getByRole("link", { name: "Cotizar" }).click();
   await page.getByRole("button", { name: "Agregar servicio" }).click();
-  await servicio(page, 1).selectOption({ label: `${nombre} — Con precio` });
+  await elegir(page, 1, nombre, "Con precio");
   await page.getByRole("checkbox", { name: "Foto 1 en el PDF" }).check();
   await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
   await expect(page).toHaveURL(/\?cotizada=\d+$/);
@@ -273,8 +280,15 @@ test("una cotización nueva arranca con el servicio que pidió el cliente, y el 
   // El total del pie (el resumen de arriba lo anuncia; este no se repite al lector de pantalla)
   await expect(page.locator("form p[aria-hidden]")).toHaveText(/Total\s*300 Bs/);
 
-  // Varias variantes: una línea para elegir cuál
-  await page.goto(`/panel/consultas/${conVarias}/cotizar`);
-  await expect(servicio(page, 1)).toHaveValue("");
+  // Varias variantes: el servicio ya elegido y su opción por elegir, en otro menú; sin elegirla, se avisa ahí
+  await page.goto(`/panel/consultas/${conVarias}/cotizar`, { waitUntil: "networkidle" });
+  await expect(servicio(page, 1).locator("option:checked")).toHaveText(varias);
+  await expect(opcion(page, 1)).toHaveValue("");
   await expect(servicio(page, 2)).toHaveCount(0);
+  await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
+  await expect(page.getByText("Elige la opción.")).toBeVisible();
+  await expect(opcion(page, 1)).toBeFocused();
+  // Un servicio sin opciones no muestra el segundo menú
+  await servicio(page, 1).selectOption({ label: unica });
+  await expect(opcion(page, 1)).toHaveCount(0);
 });

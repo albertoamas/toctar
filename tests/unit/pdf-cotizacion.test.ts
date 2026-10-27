@@ -29,8 +29,8 @@ async function datos(cambios: Partial<DatosPdf> = {}): Promise<DatosPdf> {
     cliente: { nombre: "Juan Pérez Aguilar", whatsapp: "+591 7724 0010" },
     vehiculo: { placa: "2849XKT", descripcion: "Toyota Yaris, Blanco", tamano: "Sedanes y hatchbacks medianos" },
     lineas: [
-      { descripcion: "Pulido y nano cerámico — 5 años", precio: "1850.00" },
-      { descripcion: "Lavado de interior — Premium", precio: "350.00" },
+      { descripcion: "Pulido y nano cerámico (5 años)", precio: "1850.00" },
+      { descripcion: "Lavado de interior (Premium)", precio: "350.00" },
       { descripcion: "Restauración de faroles con polímero", precio: "200.50" },
     ],
     subtotal: "2400.50",
