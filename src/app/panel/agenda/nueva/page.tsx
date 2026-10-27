@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { cn } from "cn";
@@ -45,13 +45,16 @@ export default function PaginaNuevaReserva({ searchParams }: PageProps<"/panel/a
 
 const enlace = "font-semibold underline";
 
-/** El cliente y su vehículo, en lectura. "Cambiar" (sin borde, como "Editar") vuelve a elegir, en la directa. */
-function ClienteYVehiculo({ nombre, vehiculo, cambiar }: { nombre: string; vehiculo: VehiculoReserva | null; cambiar?: boolean }) {
+/**
+ * El cliente y su vehículo, en lectura. "Cambiar" (sin borde, como "Editar") vuelve a elegir en la directa, con el día y
+ * el espacio que llegaron del tablero (`cambiar`: a dónde lleva).
+ */
+function ClienteYVehiculo({ nombre, vehiculo, cambiar }: { nombre: string; vehiculo: VehiculoReserva | null; cambiar?: Route }) {
   return (
     <section aria-labelledby="cliente-titulo" className="flex flex-col gap-3">
       <CabeceraSeccion id="cliente" titulo="Cliente">
         {cambiar && (
-          <Link href="/panel/agenda/nueva" className={cn(buttonVariants({ variant: "ghost" }))}>
+          <Link href={cambiar} className={cn(buttonVariants({ variant: "ghost" }))}>
             <ArrowLeftRightIcon />
             Cambiar
           </Link>
@@ -152,6 +155,11 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   }
 
   const d = await datosDirecta(clienteId, numero("vehiculo"));
+  // Volver a elegir el cliente, sin perder el día y el espacio que llegaron del tablero
+  const elegirDeNuevo = new URLSearchParams();
+  if (texto("fecha")) elegirDeNuevo.set("fecha", texto("fecha"));
+  if (texto("espacio")) elegirDeNuevo.set("espacio", texto("espacio"));
+  const volverAElegir = `/panel/agenda/nueva${elegirDeNuevo.size ? `?${elegirDeNuevo.toString()}` : ""}` as Route;
   if (!d) return <EstadoVacio>Ese cliente ya no está activo. <Link href="/panel/agenda/nueva" className={enlace}>Elegir otro</Link></EstadoVacio>;
   if (d.vehiculos.length === 0) {
     return (
@@ -162,7 +170,8 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   }
   return (
     <>
-      <ClienteYVehiculo nombre={d.cliente.nombre} vehiculo={d.vehiculo} cambiar />
+      {/* Desde un mantenimiento no se cambia el cliente: el recordatorio es de ese cliente y ese vehículo */}
+      <ClienteYVehiculo nombre={d.cliente.nombre} vehiculo={d.vehiculo} cambiar={recordatorio ? undefined : volverAElegir} />
       {/* El mantenimiento que se agenda: vencido, en una insignia de aviso */}
       {recordatorio && (
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1">

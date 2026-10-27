@@ -17,7 +17,7 @@ import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { MasReserva } from "@/modulos/agenda/componentes/acciones-reserva";
 import { obtenerReserva } from "@/modulos/agenda/consultas";
 import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
-import { nombreVehiculo } from "@/modulos/clientes/reglas";
+import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { esOrden, puedeRecibirse } from "@/modulos/ordenes/reglas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
 
@@ -54,7 +54,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
   const verOrdenes = puedeVerModulo(usuario, "ordenes");
   const orden = esOrden(r.estado);
 
-  const detalle = [nombreVehiculo(r), r.anio, r.color].filter(Boolean);
+  const detalle = detalleVehiculo(r);
   // El paso siguiente, uno solo, en el encabezado: recibir el vehículo desde su día de ingreso, o ir a la orden si ya se
   // recibió. Reprogramar y cancelar, en "Más", mientras siga agendada
   const principal =

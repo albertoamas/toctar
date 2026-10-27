@@ -22,7 +22,7 @@ import { ESTADOS_TRABAJO, type EstadoTrabajo, type MetodoPago, type TipoPago } f
 import { fechaEnBolivia } from "@/lib/fechas";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { duracionEfectiva } from "@/modulos/catalogo/reglas";
-import { nombreVehiculo } from "@/modulos/clientes/reglas";
+import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { sucursalPrincipal } from "@/modulos/configuracion/consultas";
 import { opcionesDeServicio, type OpcionServicio } from "@/modulos/cotizaciones/consultas";
 import { calcularSaldo, type Saldo } from "@/modulos/pagos/reglas";
@@ -95,9 +95,6 @@ export type DatosDeCotizacion = {
 export type VehiculoReserva = { id: number; placa: string; tamano: string; detalle: (string | number)[] };
 
 const columnasVehiculo = { marca: vehiculo.marca, modelo: vehiculo.modelo, anio: vehiculo.anio, color: vehiculo.color };
-/** "Toyota Corolla", 2019 y "Blanco": lo que se sepa del vehículo, además de la placa y el tamaño. */
-const detalleVehiculo = (v: { marca: string | null; modelo: string | null; anio: number | null; color: string | null }) =>
-  [nombreVehiculo(v), v.anio, v.color].filter((d): d is string | number => !!d);
 
 /** Lo que hace falta para agendar desde una cotización, o null si no existe. */
 export async function datosDeCotizacion(cotizacionId: number): Promise<DatosDeCotizacion | null> {
@@ -188,7 +185,7 @@ export async function datosDirecta(clienteId: number, vehiculoId: number | null)
   return {
     cliente: c,
     vehiculos,
-    vehiculo: elegido ? { id: elegido.id, placa: elegido.placa, tamano: elegido.tamano, detalle: elegido.detalle } : null,
+    vehiculo: elegido ?? null,
     opciones: elegido ? await opcionesDeServicio(elegido.tamanoId) : [],
   };
 }

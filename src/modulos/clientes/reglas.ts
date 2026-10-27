@@ -64,6 +64,13 @@ export const nombreVehiculo = (v: { marca: string | null; modelo: string | null 
     .filter(Boolean)
     .join(" ");
 
+/**
+ * Lo que se sabe del vehículo además de su placa y su tamaño ("Toyota Corolla", 2019, "Blanco"), en ese orden: lo
+ * muestran la ficha del cliente, Nueva consulta y la reserva (DatosVehiculo). Sin marca, modelo, año ni color, vacío.
+ */
+export const detalleVehiculo = (v: { marca: string | null; modelo: string | null; anio: number | null; color: string | null }) =>
+  [nombreVehiculo(v), v.anio, v.color?.trim()].filter((d): d is string | number => !!d);
+
 /** "Toyota Corolla, 1234ABC", o solo la placa si no se cargaron marca ni modelo: el vehículo en una lista. */
 export const vehiculoEnLista = (v: { marca: string | null; modelo: string | null; placa: string }) => [nombreVehiculo(v), v.placa].filter(Boolean).join(", ");
 

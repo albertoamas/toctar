@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
@@ -52,14 +52,15 @@ export function MasReserva(props: Props) {
   );
 }
 
-/** Al terminar: cierra el modal y quita "?agendada=1" (el aviso de recién agendada ya no corresponde). */
+/** Al terminar: cierra el modal y, si está, quita "?agendada=1" (el aviso de recién agendada ya no corresponde). */
 function useAlTerminar() {
   const cerrar = useCerrarModal();
   const router = useRouter();
   const ruta = usePathname();
+  const parametros = useSearchParams();
   return () => {
     cerrar();
-    router.replace(ruta);
+    if (parametros.has("agendada")) router.replace(ruta);
   };
 }
 

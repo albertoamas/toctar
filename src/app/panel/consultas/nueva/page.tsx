@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { nombreVehiculo } from "@/modulos/clientes/reglas";
+import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ArrowLeftRightIcon, SearchIcon } from "lucide-react";
@@ -57,7 +57,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/consultas/nuev
         nombre: c.nombre,
         vehiculos: c.vehiculos
           .filter((v) => v.activo)
-          .map((v) => ({ id: v.id, placa: v.placa, tamano: v.tamano, detalle: [nombreVehiculo(v), v.color ?? ""].filter(Boolean) })),
+          .map((v) => ({ id: v.id, placa: v.placa, tamano: v.tamano, detalle: detalleVehiculo(v) })),
       };
       return (
         <>
