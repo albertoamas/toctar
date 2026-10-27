@@ -1,8 +1,11 @@
 import * as React from "react"
 import { Input as InputPrimitive } from "@base-ui/react/input"
 import { cn } from "cn"
+import { useAtributosDeCampo } from "@/componentes/panel/campo"
 
-function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+// Dentro de un Campo del panel toma su id único (useAtributosDeCampo)
+function Input({ className, type, ...resto }: React.ComponentProps<"input">) {
+  const props = useAtributosDeCampo(resto)
   return (
     <InputPrimitive
       type={type}
