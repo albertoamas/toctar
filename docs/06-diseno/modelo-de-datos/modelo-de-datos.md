@@ -20,6 +20,7 @@ El modelo cubre el **Sistema completo**, aunque hoy se programa solo Web + Gesti
 | D-8 | **Parámetros como tabla clave-valor validada en código** (`parametro`). | Agregar un parámetro no requiere migración (RNF-11). |
 | D-9 | **Montos en `numeric(10,2)`**, fechas de agenda en `date`, marcas de tiempo en `timestamptz` (America/La_Paz al mostrar). | Sin errores de redondeo ni de zona horaria. |
 | D-10 | **Archivos en una tabla común (`archivo`)**; el binario va al almacenamiento de fotos, la base guarda solo la referencia. | La base queda liviana y los respaldos son rápidos. |
+| D-11 | **El plan de mantenimiento de un vehículo es su fila abierta de `recordatorio_mantenimiento`**, sin tabla aparte: al hacerse queda `hecho` y nace la siguiente con la misma frecuencia. Un índice único parcial impide dos abiertos del mismo vehículo y servicio (pedido 21, 27/10/2026). | El mantenimiento repetido no puede pasar, la historia del plan son sus filas y la lista de Mantenimientos no cambia de forma. |
 
 ## Diagrama entidad-relación (núcleo)
 
@@ -93,7 +94,7 @@ Convenciones: `id` es `bigint` autoincremental; todas las tablas tienen `created
 | Tabla | Campos | Notas |
 |---|---|---|
 | `servicio_foto` | servicio_id, seccion (proceso u opciones; una por sección), archivo_id | La foto al lado de una sección de la página de un servicio (pedido de la demo del 24/10). Decorativa |
-| `servicio` | nombre, slug (único), resumen, descripcion (sin uso desde el 24/10: la página muestra el resumen), beneficios (jsonb: texto e ícono), pasos (jsonb), opciones_en_escalera, foto_archivo_id, orden, visible_sitio, activo, genera_mantenimiento, duracion_dias | Un solo registro para el sitio y el catálogo |
+| `servicio` | nombre, slug (único), resumen, descripcion (sin uso desde el 24/10: la página muestra el resumen), beneficios (jsonb: texto e ícono), pasos (jsonb), opciones_en_escalera, foto_archivo_id, orden, visible_sitio, activo, duracion_dias, mantenimiento_servicio_id, mantenimiento_meses | Un solo registro para el sitio y el catálogo. Su mantenimiento (pedido 21): el servicio que se agenda (puede ser él mismo) y cada cuántos meses, los dos o ninguno |
 | `variante` | servicio_id, nombre, descripcion, orden, duracion_dias (opcional, pisa la del servicio), activo | D-2 |
 | `precio` | variante_id, tamano_id, monto (nulo = según evaluación), vigente_desde | D-3; el vigente es el de fecha más reciente |
 
@@ -139,7 +140,7 @@ ALTER TABLE trabajo ADD CONSTRAINT trabajo_sin_cruces
 
 | Tabla | Campos | Notas |
 |---|---|---|
-| `recordatorio_mantenimiento` | trabajo_origen_id, cliente_id, vehiculo_id, servicio_id, fecha_programada, estado (`pendiente`, `avisado`, `agendado`, `no_interesado`), avisado_at, trabajo_agendado_id, nota | Se crea al entregar un trabajo con `genera_mantenimiento` (RN-08) |
+| `recordatorio_mantenimiento` | trabajo_origen_id (nulo si se cargó a mano), cliente_id, vehiculo_id, servicio_id (el servicio base), servicio_mantenimiento_id (el que se agenda), intervalo_meses, fecha_programada, estado (`pendiente`, `avisado`, `agendado`, `hecho`, `no_interesado`), avisado_at, trabajo_agendado_id, trabajo_hecho_id, nota | El plan de mantenimiento de un vehículo (D-11, RN-08): se crea al entregar un servicio con mantenimiento en el catálogo o desde la ficha del cliente; un solo abierto por vehículo y servicio base |
 
 ### Futuro: Sistema completo y más allá
 

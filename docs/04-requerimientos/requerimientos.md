@@ -120,7 +120,7 @@ Cada requisito tiene un código para rastrearlo hasta su historia de usuario y s
 | Código | Requisito | Entrega | Prioridad | Origen |
 |---|---|---|---|---|
 | RF-48 | Al marcar una orden como lista, un botón abre WhatsApp con un mensaje para el cliente (nombre, vehículo y saldo). | 2 | Imprescindible | Ent, Cot |
-| RF-49 | Al entregar un servicio que genera mantenimiento, el sistema calcula la fecha del próximo mantenimiento. | 2 | Imprescindible | Ent, Enc-7 |
+| RF-49 | Al entregar un servicio que genera mantenimiento, el sistema calcula la fecha del próximo mantenimiento. Al entregar el mantenimiento, programa el siguiente (pedido 21). | 2 | Imprescindible | Ent, Enc-7 |
 | RF-50 | El personal ve los mantenimientos por vencer y vencidos, los avisa con un botón de WhatsApp y los marca como avisado, agendado o no interesado. | 2 | Imprescindible | Ent, Cot |
 | RF-51 | El dueño edita las plantillas de los mensajes de WhatsApp. | 2 | Deseable | Acl-8 |
 | RF-52 | La pantalla de inicio del panel muestra lo del día: ingresos, entregas, órdenes listas sin avisar y mantenimientos por avisar. | 2 | Deseable | — |
@@ -155,7 +155,7 @@ Cada requisito tiene un código para rastrearlo hasta su historia de usuario y s
 | RN-05 | Si el cliente cancela, el adelanto no se devuelve y queda como ingreso. | Enc-6 |
 | RN-06 | Un espacio del taller no puede tener dos vehículos en el mismo día. La cantidad de espacios es configurable (hoy 3). | Enc-3, Acl-9 |
 | RN-07 | Los precios se dan por tamaño de vehículo; los tamaños son configurables (hoy 5: compactos, sedanes y hatchbacks medianos, vagonetas medianas, vagonetas grandes y camionetas, extra grandes; ver `01-descubrimiento/material-recibido.md`). | Enc-16 |
-| RN-08 | El recordatorio de mantenimiento solo aplica a los servicios marcados (hoy nano cerámico y nano grafeno), con intervalo configurable (hoy 3 meses) contado desde la entrega. | Enc-7 |
+| RN-08 | El recordatorio de mantenimiento solo aplica a los servicios que tienen uno en el catálogo (hoy el pulido y nano cerámico). Cada servicio dice cuál es su mantenimiento (otro servicio o él mismo) y cada cuántos meses, contados desde la entrega; cada vehículo tiene su plan, que se puede ajustar (otra frecuencia, otra fecha) y se repite al entregar cada mantenimiento. Cambió el 27/10/2026 (pedido 21): antes era un intervalo único para todo el negocio (3 meses). | Enc-7, pedido 21 |
 | RN-09 | El mantenimiento es un servicio cobrado del catálogo. | Enc-8 |
 | RN-10 | El sitio público no muestra precios ni testimonios. | Enc-20, Acl-3 |
 | RN-11 | El cliente no tiene cuenta ni reserva por su cuenta; el personal registra consultas y reservas. | Acl-5 |

@@ -1,7 +1,7 @@
 # P21 Planes de mantenimiento por vehículo: especificación
 
 - **Fase y semana:** C. Entrega 2 · 27 de octubre de 2026, antes del grupo 13 del pulido y del cierre (C5)
-- **Estado:** borrador (27/10/2026), para el visto bueno de YankoSoft
+- **Estado:** aprobada (27/10/2026) y programada en la rama `pedido-21-planes-mantenimiento`
 - **Pedido:** 21 de `03-cierre-comercial/registro-de-cambios.md` (absorbe el pedido 17 y el error del mantenimiento repetido)
 - **Historias que cambian:** HU-19 (catálogo), HU-36 (entregar), HU-38 (mantenimientos), HU-05 (parámetros), HU-23 (ficha del cliente)
 - **Base:**
@@ -91,7 +91,7 @@ Se conservan `recordatorio_unico_por_servicio` (`trabajo_origen_id`, `servicio_i
 - La línea 1 llega elegida con el **servicio de mantenimiento**; si tiene una sola opción, también la opción y su precio sugerido. Se puede cambiar o sumar otras.
 
 ### `/panel/clientes/[id]`: ficha del cliente, sección "Mantenimientos" (con el módulo Mantenimientos)
-- **Cabecera:** "Agregar mantenimiento" (sin fondo, como "Editar"), si el cliente tiene vehículos activos.
+- **Cabecera:** "Agregar" (sin fondo, como en Vehículos; "Agregar mantenimiento" para el lector de pantalla), si el cliente tiene vehículos activos y algún servicio programa mantenimiento.
 - **Cada plan abierto** (pendiente o avisado): servicio base, vehículo, "cada N meses", la próxima fecha y su estado; acciones en un menú "Más": "Editar" y "No le interesa". Agendado: "Ver la reserva" y sin acciones (se edita al cancelar la reserva).
 - **La historia** (hechos, "No le interesa"), como hoy, debajo.
 - **Agregar mantenimiento (modal):** "Vehículo" (si tiene más de uno), "Servicio que se hizo" (los que programan mantenimiento), "Cuándo se hizo" (fecha, hasta hoy), "Cada" [N] "meses" (llega el del catálogo) y la línea "Próximo mantenimiento: 15/10/2026" que se calcula a la vista. Botón "Agregar mantenimiento".
@@ -120,7 +120,7 @@ Se conservan `recordatorio_unico_por_servicio` (`trabajo_origen_id`, `servicio_i
 ## 8. Textos de la interfaz
 - **Catálogo:** "Programa un mantenimiento al entregarlo" · "Servicio de mantenimiento" · "Este mismo servicio" · "Cada" · "meses" · lectura "Mantenimiento del nano cerámico, cada 3 meses" · "Él mismo, cada 6 meses" · "No programa mantenimiento".
 - **Entregar:** "Se programará: {servicio}, el {fecha}." · "Queda hecho el mantenimiento de {servicio base}."
-- **Ficha:** "Agregar mantenimiento" · "Servicio que se hizo" · "Cuándo se hizo" · "Próximo mantenimiento" · "Guardar plan" · "cada {N} meses" · "Mantenimiento agregado." · "Plan guardado."
+- **Ficha:** "Agregar" (para el lector de pantalla, "Agregar mantenimiento": el texto entero no entra a 360 px, como "Agregar" en Vehículos) · "Servicio que se hizo" · "Cuándo se hizo" · "Próximo mantenimiento" · "Guardar plan" · "cada {N} meses" · "Mantenimiento agregado." · "Plan guardado."
 - **Mantenimientos:** "cada {N} meses" · "Hecho".
 
 ## 9. Pruebas
