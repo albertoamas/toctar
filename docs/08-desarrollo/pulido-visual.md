@@ -208,7 +208,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 |---|---|---|---|
 | 8.1 | Clientes y búsqueda | `/panel/clientes` | ✅ |
 | 8.2 | Agregar cliente | `/panel/clientes/nuevo` | ✅ |
-| 8.3 | Ficha del cliente: datos, vehículos, consultas, reservas y mantenimientos | `/panel/clientes/[id]` | ⏳ |
+| 8.3 | Ficha del cliente: datos, vehículos, consultas, reservas y mantenimientos | `/panel/clientes/[id]` | ✅ |
 
 ### 9. Panel: consultas y cotizaciones
 
@@ -1035,6 +1035,31 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - Notas: "Por ejemplo, cómo prefiere que lo contacten." (también en la ficha). `EncabezadoPagina`.
   - **Componentes nuevos:** `MasDatos` (`mas-datos.tsx`: un `<details>` nativo, funciona antes de cargar la página y sus campos se envían igual estando cerrado) y `PieFormulario` (`pie-formulario.tsx`: el botón de crear fijo al pie en el celular). `CamposCliente` y `CamposVehiculo` reciben `plegar`; la ficha y la nueva consulta no cambian.
 - **Verificación:** **950 px en el celular (−37 %)**; con todo abierto, 1.582. Capturas a 360, 390, 768 y 1280 px vacía, con todo abierto y con errores (el correo inválido recibe el foco; el grupo del vehículo abierto porque trae la marca); desplazada hasta el final, el botón fijo no tapa nada. Comparativa en `pulido-visual/8.2-agregar-cliente-celular.jpg`. E2E `hu-21`: lo opcional plegado, el foco al abrir, el "＋ Agregar" de 44 px y el error de un campo plegado a la vista y con el foco; "Crear cliente".
+
+### 8.3 Ficha del cliente (26/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | Nombre y "Escribir por WhatsApp" | Saber quién es, contactarlo | Seguido | Arriba |
+  | Vehículos (lista, lápiz y "Agregar vehículo") | Ver sus autos, agregar uno | Seguido | Arriba; editar y agregar en modales |
+  | Datos: 6 campos abiertos y "Guardar cambios" | Consultar un dato; corregirlo a veces | Consultar seguido, editar rara vez | En lectura, con "Editar" en un modal |
+  | Reservas con saldo y estado | Qué tiene agendado y qué debe | Seguido | Queda; lo que debe sube al encabezado |
+  | Consultas y "Nueva consulta" | Qué preguntó, empezar otra | A veces | Queda |
+  | Mantenimientos | Cuándo le toca | A veces | Al final |
+  | "Desactivar" (título, texto y botón) | Darlo de baja | Casi nunca | Al menú "Más", con confirmación |
+- **Encontrado:**
+  - **1.888 px en el celular** (casi tres pantallas); la mitad, el formulario de datos abierto (6 campos y "Guardar cambios") para algo que se edita rara vez.
+  - Lo que debe el cliente, recién en la tercera pantalla, dentro de Reservas.
+  - "Desactivar", una sección entera (título, texto y botón) entre Datos y Consultas.
+  - Los campos vacíos (correo, NIT, razón social) ocupando lugar; el vehículo se editaba dentro de la lista y la página saltaba.
+  - El encabezado sin el componente compartido; en el celular, el botón de WhatsApp solo en su renglón.
+- **Cambios** (propuesta aprobada el 26/10):
+  - Encabezado compartido con "Debe 900 Bs" (insignia de aviso, solo para quien ve pagos; función pura `saldoPendiente`, con prueba unitaria), "Escribir por WhatsApp" y **"Más"** con "Desactivar cliente" (confirmación en un modal, el foco en "Cancelar"). Desactivado: "Reactivar cliente" en el encabezado.
+  - Datos en lectura (etiqueta y valor, solo lo que tiene valor) con "Editar" en un modal; vehículos con la placa grande, el lápiz y "＋ Agregar" en modales, con lo opcional plegado como en el alta. Lado a lado y del mismo alto en la computadora.
+  - Reservas con `ListaFilas` (con flecha, como las demás listas), antes que Consultas; Mantenimientos igual (su fila lleva un enlace adentro).
+  - **Componentes:** `MenuMas` (nuevo, `menu-mas.tsx`, sobre el `dropdown-menu` de shadcn: lo usarán las fichas de consulta, reserva y orden); `CancelarModal focoInicial`, para las confirmaciones. Reutilizados: `EncabezadoPagina`, `SeccionConEditar`, `ModalFormulario`, `ListaFilas` y `MasDatos`. `AccesoCliente` pasa a `MasCliente` y `ReactivarCliente`.
+- **Verificación:** **1.279 px en el celular (−32 %)** y 914 en la computadora (−26 %). Capturas a 360, 390, 768 y 1280 px de dos clientes (uno con reservas, saldo y mantenimiento; otro con dos vehículos y una consulta), del menú "Más" y de cada modal; el foco en el primer campo al abrir (en "Cancelar" en la confirmación) y de vuelta en su botón al cerrar. Comparativa en `pulido-visual/8.3-ficha-cliente-celular.jpg`. E2E `hu-23` (datos y vehículos en modales: errores, foco, lectura después de guardar, lo guardado al volver a abrir; desactivar desde "Más" y reactivar), `hu-32` ("Debe 300 Bs" en el encabezado; sin Pagos, ni saldos ni deuda), `hu-24`, `hu-33` y `hu-38`.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)

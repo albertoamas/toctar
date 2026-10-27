@@ -157,11 +157,12 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel (44 px c
 - Al crear, lleva a la ficha con el aviso "Cliente <nombre> creado."
 
 ### `/panel/clientes/[id]` — Ficha del cliente
-- Título: nombre, con "Desactivado" si corresponde. Botón "Escribir por WhatsApp" (enlace con forma de botón, contorno).
-- **Datos:** formulario para editar (mismos campos que al crear).
-- **Vehículos:** lista (placa, tamaño, marca y modelo, año, color) con "Agregar vehículo"; cada uno se edita en la misma lista y se desactiva desde su edición (como las listas de Configuración, 6.2).
-- **Acceso:** "Desactivar cliente" con confirmación en la página; desactivado, "Reactivar cliente".
-- En el celular, primero los vehículos (lo que más se consulta en el taller), después los datos y al final desactivar; en la computadora, los datos a la izquierda y vehículos y desactivar a la derecha.
+Ficha en lectura desde el pulido 8.3 (26/10; skill `pantallas-panel`):
+- **Encabezado** compartido: el nombre; insignias "Desactivado" y, para quien ve pagos, "Debe 900 Bs" (la suma de los saldos sin pagar de sus reservas y órdenes, sin las canceladas: `saldoPendiente`). "Escribir por WhatsApp" (enlace con forma de botón, contorno) y el menú **"Más"** con "Desactivar cliente", que abre la confirmación en un modal ("Sí, desactivar" y "Cancelar", con el foco en "Cancelar"). Desactivado: "Reactivar cliente" como acción del encabezado y la línea "No sale en la lista ni en las búsquedas."
+- **Vehículos** y **Datos** lado a lado y del mismo alto en la computadora (en el celular, primero los vehículos):
+  - Vehículos: la placa grande, el tamaño y lo que se sepa (marca y modelo, año, color). El lápiz abre el modal "Editar {placa}" y "＋ Agregar", "Agregar vehículo": placa y tamaño a la vista, lo demás plegado como en el alta ("Guardar vehículo" o "Agregar vehículo" y "Cancelar"; al editar, "Desactivar" al pie). Los desactivados, aparte, con "Reactivar".
+  - Datos: WhatsApp, correo, NIT, razón social y notas, solo los que tienen valor. "Editar" abre el modal "Datos del cliente" (los campos del alta, "Guardar datos" y "Cancelar").
+- Después, **Reservas** (la fila de un toque compartida, con el saldo), **Consultas** y **Mantenimientos** (C2 a C4).
 - Secciones de historial: no se muestran en C1 (ver §2).
 
 ## 6. Acciones del servidor
