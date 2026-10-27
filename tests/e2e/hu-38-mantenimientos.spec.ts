@@ -121,7 +121,9 @@ test("vencidos y próximos; avisar, no le interesa y agendar (y al cancelar la r
 
   // Si la reserva se cancela, el mantenimiento vuelve a la lista como estaba: avisado
   await page.goto(`/panel/agenda/${reservaId}`);
-  await page.getByRole("button", { name: "Cancelar reserva" }).click();
+  // Desde "Más" (pulido 10.3)
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Cancelar reserva" }).click();
   const form = page.getByRole("form", { name: "Cancelar reserva" });
   await form.getByLabel("Motivo").fill("No pudo venir");
   await form.getByRole("button", { name: "Cancelar reserva" }).click();
