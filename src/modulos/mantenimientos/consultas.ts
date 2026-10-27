@@ -3,7 +3,7 @@ import { and, asc, desc, eq, gt, inArray, lte, sql, type SQL } from "drizzle-orm
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { cliente, recordatorioMantenimiento as recordatorio, servicio, trabajo, usuario, vehiculo, type EstadoRecordatorio, type EstadoTrabajo } from "@/db/esquema";
-import { ESTADOS_RECORDATORIO_ABIERTO, ESTADOS_RECORDATORIO_CERRADO, hastaProximos, type VistaMantenimientos } from "./reglas";
+import { ESTADOS_RECORDATORIO_ABIERTO, ESTADOS_RECORDATORIO_CERRADO, hastaProximos, MAXIMO_CERRADOS, type VistaMantenimientos } from "./reglas";
 
 // Lecturas de los recordatorios de mantenimiento (HU-38). Quien las llama ya pasó por exigirModulo("mantenimientos").
 // Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §6.
@@ -46,7 +46,7 @@ export async function mantenimientosMasAdelante(hoy: string): Promise<Mantenimie
   return listar(masAdelante(hoy), [asc(recordatorio.fechaProgramada), asc(recordatorio.id)]);
 }
 
-/** Pedido 20: los agendados y los de "No le interesa", el que se cerró más recién primero. */
+/** Pedido 20: los agendados y los de "No le interesa", el que se cerró más recién primero (los últimos 50). */
 export async function mantenimientosCerrados(): Promise<MantenimientoCerrado[]> {
   const filas = await db
     .select({ ...CAMPOS, nota: recordatorio.nota, agendadoId: trabajo.id, agendadoEstado: trabajo.estado })
@@ -57,7 +57,8 @@ export async function mantenimientosCerrados(): Promise<MantenimientoCerrado[]> 
     .leftJoin(avisador, eq(recordatorio.avisadoPor, avisador.id))
     .leftJoin(trabajo, eq(recordatorio.trabajoAgendadoId, trabajo.id))
     .where(cerrados)
-    .orderBy(desc(recordatorio.updatedAt), desc(recordatorio.id));
+    .orderBy(desc(recordatorio.updatedAt), desc(recordatorio.id))
+    .limit(MAXIMO_CERRADOS);
   return filas.map(({ agendadoId, agendadoEstado, ...f }) => ({ ...f, agendado: agendadoId && agendadoEstado ? { id: agendadoId, estado: agendadoEstado } : null }));
 }
 

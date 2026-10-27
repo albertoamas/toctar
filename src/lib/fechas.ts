@@ -90,3 +90,13 @@ export function fechaConDia(fecha: string): string {
   );
   return `${partes.weekday.charAt(0).toUpperCase()}${partes.weekday.slice(1)} ${partes.day} de ${partes.month}`;
 }
+
+/** El mes y el año de una fecha calendario, para un título: "2026-12-05" → "Diciembre 2026". */
+export function mesYAnio(fecha: string): string {
+  const partes = Object.fromEntries(
+    new Intl.DateTimeFormat("es-BO", { timeZone: "UTC", month: "long", year: "numeric" })
+      .formatToParts(new Date(`${fecha}T12:00:00Z`))
+      .map((p) => [p.type, p.value]),
+  );
+  return `${partes.month.charAt(0).toUpperCase()}${partes.month.slice(1)} ${partes.year}`;
+}

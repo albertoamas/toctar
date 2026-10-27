@@ -1,7 +1,8 @@
 import { expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
 import { esquemaAvisarMantenimiento, esquemaCerrarMantenimiento } from "@/modulos/mantenimientos/esquemas";
-import { agruparPorMes, seccionMantenimiento, textoVencimiento, tituloMes } from "@/modulos/mantenimientos/reglas";
+import { mesYAnio } from "@/lib/fechas";
+import { agruparPorMes, seccionMantenimiento, textoVencimiento } from "@/modulos/mantenimientos/reglas";
 import { PLANTILLAS } from "@/modulos/configuracion/plantillas";
 import { mensajeMantenimiento } from "@/modulos/ordenes/mensajes";
 
@@ -41,8 +42,9 @@ test("avisar y cerrar validan lo que llega; la nota es opcional y corta", () => 
 });
 
 test("Más adelante: agrupa por mes, en el orden en que llegan, y titula el mes (pedido 20)", () => {
-  expect(tituloMes("2026-12-05")).toBe("Diciembre 2026");
-  expect(tituloMes("2027-01-31")).toBe("Enero 2027");
+  expect(mesYAnio("2026-12-05")).toBe("Diciembre 2026");
+  expect(mesYAnio("2027-01-31")).toBe("Enero 2027");
+  expect(mesYAnio("2026-09-01")).toBe("Septiembre 2026");
   const lista = [{ f: "2026-11-30" }, { f: "2026-12-01" }, { f: "2026-12-20" }, { f: "2027-01-02" }];
   expect(agruparPorMes(lista, (e) => e.f)).toEqual([
     { mes: "2026-11", titulo: "Noviembre 2026", elementos: [{ f: "2026-11-30" }] },

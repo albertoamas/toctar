@@ -32,6 +32,7 @@ import {
   NOMBRE_ESTADO_RECORDATORIO,
   seccionMantenimiento,
   textoVencimiento,
+  MAXIMO_CERRADOS,
   VISTAS_MANTENIMIENTOS,
   type VistaMantenimientos,
 } from "@/modulos/mantenimientos/reglas";
@@ -68,7 +69,13 @@ async function Listas({ searchParams }: Pick<PageProps<"/panel/mantenimientos">,
   const { vista: pedida } = await searchParams;
   const vista = VISTAS_MANTENIMIENTOS.find((v) => v === pedida) ?? "por-avisar";
   const hoy = fechaEnBolivia();
-  const cantidades = await contarPorVista(hoy);
+  // Las cantidades y la lista a la vez, no una detrás de otra
+  const [cantidades, contenido] = await Promise.all([
+    contarPorVista(hoy),
+    vista === "cerrados"
+      ? cerrados(hoy, { ordenes: puedeVerModulo(usuario, "ordenes"), agenda: puedeVerModulo(usuario, "agenda") })
+      : abiertos(vista, hoy, puedeVerModulo(usuario, "agenda") && puedeVerModulo(usuario, "pagos")),
+  ]);
 
   return (
     <>
@@ -77,13 +84,19 @@ async function Listas({ searchParams }: Pick<PageProps<"/panel/mantenimientos">,
         activa={enlace(vista)}
         pestanas={VISTAS_MANTENIMIENTOS.map((v) => ({ href: enlace(v), texto: `${TITULOS[v]} (${cantidades[v]})` }))}
       />
-      {vista === "cerrados" ? <Cerrados hoy={hoy} ve={{ ordenes: puedeVerModulo(usuario, "ordenes"), agenda: puedeVerModulo(usuario, "agenda") }} /> : <Abiertos vista={vista} hoy={hoy} puedeAgendar={puedeVerModulo(usuario, "agenda") && puedeVerModulo(usuario, "pagos")} />}
+      {contenido}
+      {vista === "cerrados" && cantidades.cerrados > MAXIMO_CERRADOS && (
+        <p className="text-sm text-tinta-suave">Se muestran los {MAXIMO_CERRADOS} más recientes. Los demás están en la ficha de cada cliente.</p>
+      )}
     </>
   );
 }
 
-/** "Por avisar" (vencidos y próximos) y "Más adelante" (por mes): las mismas filas, con sus acciones. */
-async function Abiertos({ vista, hoy, puedeAgendar }: { vista: "por-avisar" | "mas-adelante"; hoy: string; puedeAgendar: boolean }) {
+/**
+ * "Por avisar" (vencidos y próximos) y "Más adelante" (por mes): las mismas filas. En "Más adelante" no se avisa: el
+ * mensaje dice que ya le toca, y avisado antes de tiempo, no figuraría "Sin avisar" cuando de verdad le toque.
+ */
+async function abiertos(vista: "por-avisar" | "mas-adelante", hoy: string, puedeAgendar: boolean) {
   const [lista, negocio, plantillas] = await Promise.all([
     vista === "por-avisar" ? mantenimientosPorAvisar(hoy) : mantenimientosMasAdelante(hoy),
     obtenerDatosPublicos(),
@@ -92,11 +105,13 @@ async function Abiertos({ vista, hoy, puedeAgendar }: { vista: "por-avisar" | "m
   if (lista.length === 0) {
     return <EstadoVacio>{vista === "por-avisar" ? "No hay mantenimientos por avisar." : `Ninguno vence después de los próximos ${DIAS_PROXIMOS} días.`}</EstadoVacio>;
   }
-  const fila = (m: MantenimientoPorAvisar) => <Fila key={m.id} m={m} hoy={hoy} mensaje={{ plantilla: plantillas.mantenimiento, negocio: negocio.nombre }} puedeAgendar={puedeAgendar} />;
+  const fila = (m: MantenimientoPorAvisar) => (
+    <Fila key={m.id} m={m} hoy={hoy} mensaje={{ plantilla: plantillas.mantenimiento, negocio: negocio.nombre }} puedeAgendar={puedeAgendar} conAviso={vista === "por-avisar"} />
+  );
 
   if (vista === "mas-adelante") {
     return agruparPorMes(lista, (m) => m.fechaProgramada).map((g) => (
-      <Seccion key={g.mes} titulo={g.titulo} cantidad={g.elementos.length} vacio="">
+      <Seccion key={g.mes} titulo={g.titulo} cantidad={g.elementos.length}>
         {g.elementos.map(fila)}
       </Seccion>
     ));
@@ -116,7 +131,7 @@ async function Abiertos({ vista, hoy, puedeAgendar }: { vista: "por-avisar" | "m
 }
 
 /** Agendados (con su reserva) y "No le interesa" (con su nota): para consultar, sin acciones. */
-async function Cerrados({ hoy, ve }: { hoy: string; ve: { ordenes: boolean; agenda: boolean } }) {
+async function cerrados(hoy: string, ve: { ordenes: boolean; agenda: boolean }) {
   const lista = await mantenimientosCerrados();
   if (lista.length === 0) return <EstadoVacio>Todavía no hay mantenimientos agendados ni cerrados.</EstadoVacio>;
   return (
@@ -128,7 +143,7 @@ async function Cerrados({ hoy, ve }: { hoy: string; ve: { ordenes: boolean; agen
   );
 }
 
-function Seccion({ titulo, cantidad: n, vacio, children }: { titulo: string; cantidad: number; vacio: string; children: React.ReactNode }) {
+function Seccion({ titulo, cantidad: n, vacio, children }: { titulo: string; cantidad: number; /** Si puede quedar vacía. */ vacio?: string; children: React.ReactNode }) {
   return (
     // El lector oye la sección como "Vencidos, 2 mantenimientos"; a la vista, "Vencidos (2)"
     <section aria-label={`${titulo}, ${cantidad(n)}`} className="flex max-w-3xl flex-col gap-3">
@@ -146,7 +161,7 @@ function Seccion({ titulo, cantidad: n, vacio, children }: { titulo: string; can
   );
 }
 
-function Fila({ m, hoy, mensaje, puedeAgendar }: { m: MantenimientoPorAvisar; hoy: string; mensaje: { plantilla: string; negocio: string }; puedeAgendar: boolean }) {
+function Fila({ m, hoy, mensaje, puedeAgendar, conAviso }: { m: MantenimientoPorAvisar; hoy: string; mensaje: { plantilla: string; negocio: string }; puedeAgendar: boolean; conAviso: boolean }) {
   const vehiculo = { marca: m.marca, modelo: m.modelo, placa: m.placa };
   const avisado = m.avisadoAt ? `Avisado el ${diaYHora(m.avisadoAt)}${m.avisadoPor ? ` por ${m.avisadoPor}` : ""}` : null;
   const agendar = new URLSearchParams({ cliente: String(m.clienteId), vehiculo: String(m.vehiculoId), recordatorio: String(m.id) });
@@ -156,7 +171,7 @@ function Fila({ m, hoy, mensaje, puedeAgendar }: { m: MantenimientoPorAvisar; ho
         <div className="flex min-w-0 flex-col">
           <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span className="font-semibold">{m.cliente}</span>
-            {!avisado && <span className="tt-insignia tt-insignia--aviso">Sin avisar</span>}
+            {conAviso && !avisado && <span className="tt-insignia tt-insignia--aviso">Sin avisar</span>}
           </span>
           <span className="text-sm text-tinta-suave">{vehiculoEnLista(vehiculo)}</span>
           <span className="text-sm">Mantenimiento de {m.servicio}</span>
@@ -170,13 +185,15 @@ function Fila({ m, hoy, mensaje, puedeAgendar }: { m: MantenimientoPorAvisar; ho
       </div>
       <div className="flex flex-col gap-1 lg:items-end">
         <div className="flex flex-wrap gap-2">
-          <AvisarPorWhatsApp
-            enlace={enlaceWhatsApp(m.telefono, mensajeMantenimiento({ ...mensaje, cliente: m.cliente, vehiculo, servicio: m.servicio }))}
-            avisado={avisado}
-            conDetalle={false}
-            enLista
-            registrarAction={avisarMantenimiento.bind(null, { id: m.id })}
-          />
+          {conAviso && (
+            <AvisarPorWhatsApp
+              enlace={enlaceWhatsApp(m.telefono, mensajeMantenimiento({ ...mensaje, cliente: m.cliente, vehiculo, servicio: m.servicio }))}
+              avisado={avisado}
+              conDetalle={false}
+              enLista
+              registrarAction={avisarMantenimiento.bind(null, { id: m.id })}
+            />
+          )}
           {puedeAgendar && (
             <Link href={`/panel/agenda/nueva?${agendar.toString()}`} className={cn(buttonVariants({ variant: "outline" }))}>
               <CalendarIcon />

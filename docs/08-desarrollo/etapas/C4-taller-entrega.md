@@ -190,8 +190,8 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel (44 px t
 - Vacío: "No hay mantenimientos por avisar."
 - **Pedido 20 (27/10/2026):** todos los mantenimientos en tres pestañas (`?vista=`), con su cantidad:
   - **Por avisar** (la de siempre, por defecto): vencidos y próximos 15 días.
-  - **Más adelante:** los abiertos (pendientes o avisados) que vencen después de los próximos 15 días, agrupados por mes ("Diciembre 2026 (3)"), el más cercano primero. Las mismas filas y acciones que "Por avisar". Vacío: "Ninguno vence después de los próximos 15 días."
-  - **Cerrados:** agendados (con "Ver la reserva" u "Ver la orden", para quien puede abrirla) y "No le interesa" (con su nota), el que se cerró más recién primero. Sin acciones: si se cancela la reserva, vuelve solo a "Por avisar". Vacío: "Todavía no hay mantenimientos agendados ni cerrados."
+  - **Más adelante:** los abiertos (pendientes o avisados) que vencen después de los próximos 15 días, agrupados por mes ("Diciembre 2026 (3)"), el más cercano primero. Las mismas filas que "Por avisar", con "Agendar" y "No le interesa" pero **sin avisar**: el mensaje dice que ya le toca, y avisado antes de tiempo no figuraría "Sin avisar" cuando de verdad le toque. Vacío: "Ninguno vence después de los próximos 15 días."
+  - **Cerrados:** agendados (con "Ver la reserva" u "Ver la orden", para quien puede abrirla) y "No le interesa" (con su nota), el que se cerró más recién primero; los 50 más recientes ("Se muestran los 50 más recientes. Los demás están en la ficha de cada cliente."). Sin acciones: si se cancela la reserva, vuelve solo a "Por avisar". Vacío: "Todavía no hay mantenimientos agendados ni cerrados."
   - Ninguna muestra los de un cliente o vehículo desactivado (siguen en la ficha del cliente). Las cantidades salen de las mismas condiciones que las listas (`contarPorVista`).
 
 ### En otras pantallas
@@ -226,7 +226,7 @@ Todas validan con Zod (también las de datos sueltos) y empiezan con `exigirModu
   - `obtenerOrden(id, { conMontos })`, que trae fotos con enlaces firmados, avances, líneas y pagos;
   - `saldoDeOrden(id)`.
 - `src/modulos/pagos/consultas.ts`: `saldosPendientes()`.
-- `src/modulos/mantenimientos/consultas.ts`: `mantenimientosPorAvisar(hoy)` y `mantenimientosDelCliente(id)`. Pedido 20: `mantenimientosMasAdelante(hoy)`, `mantenimientosCerrados()` y `contarPorVista(hoy)`; en `reglas.ts`, `agruparPorMes` y `tituloMes`.
+- `src/modulos/mantenimientos/consultas.ts`: `mantenimientosPorAvisar(hoy)` y `mantenimientosDelCliente(id)`. Pedido 20: `mantenimientosMasAdelante(hoy)`, `mantenimientosCerrados()` y `contarPorVista(hoy)`; en `reglas.ts`, `agruparPorMes` (con `mesYAnio` de `lib/fechas`).
 
 **Funciones puras** (con prueba unitaria):
 - `transicionOrden(actual, nuevo)`;
@@ -296,7 +296,7 @@ Todas validan con Zod (también las de datos sueltos) y empiezan con `exigirModu
     - un adicional sube el precio final y solo el dueño lo agrega;
     - un servicio que genera mantenimiento crea el recordatorio con la fecha correcta.
   - `hu-37-saldos`: aparece la entregada con saldo y se va al registrar el pago.
-  - `hu-38-mantenimientos`: vencidos y próximos; avisar, no le interesa y agendar (el recordatorio queda "agendado" con la reserva). Pedido 20: el de 16 días en "Más adelante", bajo su mes; el de "No le interesa" y el agendado en "Cerrados", con su nota y su reserva. Unitaria: `agruparPorMes` y `tituloMes`.
+  - `hu-38-mantenimientos`: vencidos y próximos; avisar, no le interesa y agendar (el recordatorio queda "agendado" con la reserva). Pedido 20: el de 16 días en "Más adelante", bajo su mes; el de "No le interesa" y el agendado en "Cerrados", con su nota y su reserva. Unitaria: `agruparPorMes` y `mesYAnio`.
   - **Flujo completo (flujos críticos 3, 4 y 5):** reserva → recibir → técnico → listo → aviso → cobro del saldo → entrega → recordatorio → agendar el mantenimiento.
   - A 360 px, ninguna pantalla nueva se sale.
 
