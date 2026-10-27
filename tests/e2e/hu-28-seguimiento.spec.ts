@@ -80,7 +80,9 @@ test("marcar como perdida desde «Más», con motivo, y reabrir desde el encabez
 
   await formulario.getByRole("radio", { name: "Otro" }).check();
   await formulario.getByRole("button", { name: "Marcar como perdida" }).click();
-  await expect(formulario.locator("#detalle-error")).toHaveText("Cuenta qué pasó.");
+  await expect(formulario.getByText("Cuenta qué pasó.")).toBeVisible();
+  // El error está enlazado a su campo (aria-describedby), con el id único del Campo
+  await expect(formulario.getByLabel("Detalle")).toHaveAccessibleDescription("Cuenta qué pasó.");
   // Tras el error, el motivo sigue elegido y es el que se envía
   await expect(formulario.getByRole("radio", { name: "Otro" })).toBeChecked();
   await formulario.getByLabel("Detalle").fill("Lo hizo en otro taller.");

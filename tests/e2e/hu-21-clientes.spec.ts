@@ -44,6 +44,14 @@ test("el personal registra un cliente con su primer vehículo; los obligatorios 
   // El tamaño aparte, con su etiqueta: junto al modelo se leía como una lista de modelos
   await expect(vehiculos).toContainText("Tamaño: Compactos");
   await expect(vehiculos).toContainText("Toyota Yaris");
+
+  // Next deja "Agregar cliente" oculta en el documento, con sus campos "nombre" y "telefono": los del modal de Datos
+  // tienen su propio id y su etiqueta los nombra (antes, la etiqueta apuntaba al campo oculto)
+  await page.getByRole("button", { name: "Editar datos del cliente" }).click();
+  const datos = page.getByRole("dialog", { name: "Datos del cliente" });
+  await expect(datos.getByLabel("Nombre", { exact: true })).toHaveValue(nombre);
+  await expect(datos.getByLabel("Nombre", { exact: true })).toBeFocused();
+  await expect(datos.getByLabel("WhatsApp")).toHaveAccessibleDescription("Celular de Bolivia, 8 dígitos.");
 });
 
 test("un teléfono o una placa repetidos avisan de quién son y llevan a su ficha", async ({ page }, info) => {
