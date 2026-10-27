@@ -234,7 +234,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 |---|---|---|---|
 | 11.1 | Órdenes (dueño y encargado) y Mis órdenes (técnico) | `/panel/ordenes` | ✅ |
 | 11.2 | Orden: estado, fotos, avances, montos y aviso | `/panel/ordenes/[id]` | ✅ |
-| 11.3 | Recibir vehículo | `/panel/ordenes/[id]/recibir` | ⏳ |
+| 11.3 | Recibir vehículo | `/panel/ordenes/[id]/recibir` | ✅ |
 | 11.4 | Entregar vehículo | `/panel/ordenes/[id]/entregar` | ⏳ |
 
 ### 12. Panel: seguimiento
@@ -1327,6 +1327,27 @@ Pedido del desarrollador: releer las reglas del principio de este documento y co
   - Fotos: una etapa vacía muestra "Tomar foto" y "Elegir de la galería" en una fila (`FotosOrden` con `compacta`); con fotos, la grilla y la casilla de la cámara, como antes. Cerrada y sin fotos, una línea: "Sin fotos.". Recibir (11.3) sigue con la casilla.
   - Desde 1024 px, el trabajo a la izquierda (cómo llegó, fotos y avances) y los datos y montos a la derecha; en el celular, datos, trabajo y montos.
 - **Verificación:** con pantalla táctil a 360, 390, 768 y 1280 px (en proceso y atrasada, lista y avisada, entregada; el menú "Más" y sus dos modales): nada se sale y ningún control mide menos de 44 px (las entradas de archivo ocultas no cuentan). En el celular, la orden en proceso pasa de 2.802 a 2.464 px. Comparativa en `pulido-visual/11.2-orden-celular.jpg`. E2E `hu-33`, `hu-34` (volver a en proceso y extender desde "Más"), `hu-35`, `hu-36`, `hu-37`, `hu-41` y `flujo-taller-completo`.
+
+### 11.3 Recibir vehículo (27/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Decisión |
+  |---|---|---|
+  | "Recibir 2345KLM", el cliente y el tamaño sin etiqueta | Confirmar que es el auto correcto | `EncabezadoPagina` con el cliente y el vehículo en una línea |
+  | Servicios (título y lista) | Saber qué se le hace | En una línea |
+  | Fotos de ingreso: la casilla "Tomar foto" y "Elegir de la galería" | Lo primero, de pie junto al auto | Queda: aquí la casilla grande es la tarea |
+  | Observaciones y técnico | Anotar y asignar | Quedan |
+  | "Recibir vehículo" o "Recibir sin fotos" | Terminar el paso | Con `PieFormulario` |
+- **Encontrado:**
+  - En el celular, "Recibir vehículo" quedaba al final y tapado por el teclado mientras se escribían las observaciones (Nueva reserva y Cotizar ya lo tienen fijo abajo).
+  - El vehículo, solo por su tamaño y sin etiqueta: ni modelo ni color para confirmar que es el auto.
+  - Un título y una lista con viñetas para uno o dos servicios; el título sin el encabezado compartido.
+  - Bien y sin cambios: el orden del paso (fotos, observaciones, técnico), el aviso sin fotos con el segundo toque, el técnico de la reserva ya elegido y que el técnico no entre.
+- **Cambios** (propuesta aprobada el 27/10):
+  - `EncabezadoPagina` con "Carlos Fernández, Toyota Corolla 2019 Blanco (tamaño: …)" (`detalleVehiculo`); "Servicios: …" en una línea, separados por coma.
+  - El botón en `PieFormulario`: fijo abajo en el celular, al pie desde 640 px; el aviso sin fotos, justo encima.
+  - La ayuda de las fotos, más corta: "Todo el vehículo y cada detalle. Después de recibirlo ya no se quitan."
+- **Verificación:** con pantalla táctil a 360, 390, 768 y 1280 px, sin fotos y con el aviso de recibir sin fotos: nada se sale y ningún control mide menos de 44 px (las entradas de archivo ocultas no cuentan). Comparativa en `pulido-visual/11.3-recibir-celular.jpg`. E2E `hu-33`.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)

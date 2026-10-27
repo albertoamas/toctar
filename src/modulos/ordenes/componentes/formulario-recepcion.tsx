@@ -4,6 +4,7 @@ import { useActionState, useRef, useState } from "react";
 import { ClipboardCheckIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
+import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { Selector } from "@/componentes/panel/selector";
 import { Button } from "@/componentes/ui/button";
 import { Textarea } from "@/componentes/ui/textarea";
@@ -76,12 +77,13 @@ export function FormularioRecepcion({ trabajoId, tecnicos, tecnicoInicial, tecni
           Sin fotos de ingreso no hay cómo probar el estado en que llegó. Toma al menos una o confirma que lo recibes sin fotos.
         </p>
       )}
-      <div>
+      {/* En el celular, fijo abajo: a mano aunque el teclado esté abierto en las observaciones (pulido 11.3) */}
+      <PieFormulario>
         <Button type="submit" disabled={enviando}>
           <ClipboardCheckIcon />
           {enviando ? "Recibiendo…" : confirmarSinFotos && !conFotos ? "Recibir sin fotos" : "Recibir vehículo"}
         </Button>
-      </div>
+      </PieFormulario>
     </form>
   );
 }
