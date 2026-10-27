@@ -72,8 +72,13 @@ test("se busca al cliente, se elige y se agrega otro vehículo suyo", async ({ p
   await expect(page).toHaveURL(new RegExp(`q=cb24${s}`));
   const elegir = page.getByRole("list", { name: "Elegir cliente" });
   await expect(elegir.getByRole("link")).toHaveCount(1);
+  // La fila de Clientes (pulido 9.2): el nombre y su placa
+  await expect(elegir.getByRole("link")).toContainText(`CB24${s}1`);
   await elegir.getByRole("link", { name: new RegExp(`Consulta buscada ${s}`) }).click();
   await expect(page).toHaveURL(/\?cliente=\d+$/);
+  // El elegido, en su recuadro, con "Cambiar" para volver a elegir
+  await expect(page.getByRole("region", { name: "Cliente" })).toContainText(`Consulta buscada ${s}`);
+  await expect(page.getByRole("link", { name: "Cambiar" })).toHaveAttribute("href", "/panel/consultas/nueva");
 
   await page.getByRole("radio", { name: "Otro vehículo" }).check();
   await page.getByLabel("Placa", { exact: true }).fill(`cb24-${s.toLowerCase()}2`);
