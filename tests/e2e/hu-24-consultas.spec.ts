@@ -82,7 +82,7 @@ test("se busca al cliente, se elige y se agrega otro vehículo suyo", async ({ p
 
   await page.getByRole("radio", { name: "Otro vehículo" }).check();
   await page.getByLabel("Placa", { exact: true }).fill(`cb24-${s.toLowerCase()}2`);
-  await page.getByLabel("Tamaño").selectOption({ index: 1 });
+  await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
   await page.getByRole("radio", { name: "En el taller" }).check();
   await registrar(page);
   await expect(page).toHaveURL(/\/panel\/consultas\/\d+\?creada=1$/);
@@ -109,13 +109,13 @@ test("cliente nuevo: se registra con la consulta; un WhatsApp repetido avisa y o
   await page.getByLabel("Nombre", { exact: true }).fill(`Nuevo por consulta ${s}`);
   await page.getByRole("textbox", { name: "WhatsApp" }).fill(local(info, 3));
   await page.getByLabel("Placa", { exact: true }).fill(`CN24${s}1`);
-  await page.getByLabel("Tamaño").selectOption({ index: 1 });
+  await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
   await page.getByRole("radio", { name: "WhatsApp" }).check();
   await registrar(page);
   await expect(page.getByText(`Ese número ya es de Ya registrado ${s}.`)).toBeVisible();
   await expect(page.getByRole("link", { name: `Usar a Ya registrado ${s}` })).toHaveAttribute("href", `/panel/consultas/nueva?cliente=${existente}`);
   // Lo escrito se conserva tras el error, también el tamaño y el canal
-  await expect(page.getByLabel("Tamaño")).not.toHaveValue("");
+  await expect(page.getByLabel("Tamaño", { exact: true })).not.toHaveValue("");
   await expect(page.getByRole("radio", { name: "WhatsApp" })).toBeChecked();
 
   await page.getByRole("textbox", { name: "WhatsApp" }).fill(local(info, 4));

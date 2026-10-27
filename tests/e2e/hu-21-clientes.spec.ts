@@ -41,7 +41,8 @@ test("el personal registra un cliente con su primer vehículo; los obligatorios 
   // La placa se guarda normalizada: mayúsculas, sin espacios ni guiones
   const vehiculos = page.getByRole("list", { name: "Vehículos" });
   await expect(vehiculos).toContainText(`HU21${sufijo(info)}01`);
-  await expect(vehiculos).toContainText("Compactos");
+  // El tamaño aparte, con su etiqueta: junto al modelo se leía como una lista de modelos
+  await expect(vehiculos).toContainText("Tamaño: Compactos");
   await expect(vehiculos).toContainText("Toyota Yaris");
 });
 
