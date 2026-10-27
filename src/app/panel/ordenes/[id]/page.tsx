@@ -9,6 +9,7 @@ import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { AvisarPorWhatsApp } from "@/componentes/panel/avisar-whatsapp";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import { diaYHora, fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/lib/fechas";
@@ -105,7 +106,6 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   // "Más" solo si tiene algo que ofrecer (el técnico, en una recibida, no tiene nada)
   const conMas = abierta && (!!anterior || !!extender);
   const detalle = detalleVehiculo(o);
-  const enlace = "inline-flex min-h-11 items-center self-start font-semibold underline";
 
   return (
     <div className="flex max-w-5xl flex-col gap-8">
@@ -203,12 +203,12 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
           </dl>
           {/* Los enlaces, de 44 px y fuera de la lista: la ficha del cliente (con Clientes) y la reserva (con Agenda) */}
           {verFicha && (
-            <Link href={`/panel/clientes/${o.clienteId}`} className={enlace}>
+            <Link href={`/panel/clientes/${o.clienteId}`} className={ENLACE_TEXTO}>
               Ver ficha del cliente
             </Link>
           )}
           {verAgenda && (
-            <Link href={`/panel/agenda/${o.id}`} className={enlace}>
+            <Link href={`/panel/agenda/${o.id}`} className={ENLACE_TEXTO}>
               Ver la reserva
             </Link>
           )}

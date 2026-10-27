@@ -59,7 +59,7 @@ test("vencidos y próximos; avisar, no le interesa y agendar (y al cancelar la r
   await expect(filaV).toContainText(`Lucía Vencida ${s}`);
   await expect(filaV).toContainText("Mantenimiento de Pulido y nano cerámico");
   await expect(filaV).toContainText("venció hace 10 días");
-  await expect(filaV).toContainText("Todavía no se le avisó.");
+  await expect(filaV).toContainText("Sin avisar");
   await expect(proximos(page).getByRole("listitem").filter({ hasText: placaP })).toContainText("vence en 5 días");
   // A 16 días todavía no se muestra
   await expect(page.getByText(placaL)).toHaveCount(0);
@@ -76,9 +76,11 @@ test("vencidos y próximos; avisar, no le interesa y agendar (y al cancelar la r
   // No le interesa, con nota: se cierra y deja la lista
   const filaN = proximos(page).getByRole("listitem").filter({ hasText: placaN });
   await filaN.getByRole("button", { name: "No le interesa" }).click();
-  const cerrar = filaN.getByRole("form", { name: "No le interesa" });
+  // En un modal, con el foco en "Volver": un Enter no lo cierra sin querer (pulido 12.2)
+  const cerrar = page.getByRole("dialog", { name: "No le interesa" });
+  await expect(cerrar.getByRole("button", { name: "Volver" })).toBeFocused();
   await cerrar.getByLabel("Nota (opcional)").fill("Vendió el vehículo");
-  await cerrar.getByRole("button", { name: "No le interesa" }).click();
+  await cerrar.getByRole("button", { name: "Sí, no le interesa" }).click();
   await expect(page.getByText("Listo: no se le volverá a avisar.")).toBeVisible();
   await expect(page.getByText(placaN)).toHaveCount(0);
   expect(await estadoDe(noQuiere)).toMatchObject({ estado: "no_interesado", nota: "Vendió el vehículo" });

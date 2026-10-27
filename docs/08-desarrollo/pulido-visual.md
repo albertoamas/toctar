@@ -241,8 +241,8 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 12.1 | Saldos pendientes | `/panel/pagos` | ⏳ |
-| 12.2 | Mantenimientos | `/panel/mantenimientos` | ⏳ |
+| 12.1 | Saldos pendientes | `/panel/pagos` | ✅ |
+| 12.2 | Mantenimientos | `/panel/mantenimientos` | ✅ |
 
 ### 13. Repaso de lo que cambió y pendientes de la parte 1
 
@@ -1382,6 +1382,61 @@ Pedido del desarrollador: releer las reglas del principio de este documento y co
   - Unificar la línea del encabezado de Recibir y Entregar: Recibir muestra el tamaño a propósito (es lo que se cotizó y se revisa al recibir); al entregar no hace falta.
   - Que `ExtenderEntrega` dependa del modal: ya lo dice su comentario y solo se usa ahí.
 - **Verificación:** E2E completa (326 de 326) antes de estos cambios, y `hu-33`, `hu-34` y `hu-35` después.
+
+### 12.1 Saldos pendientes (27/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | "Total por cobrar", con la cantidad de órdenes | Cuánto se debe en total | Dueño, seguido | Queda, bajo `EncabezadoPagina` |
+  | Fila: cliente, vehículo, monto y "Entregada el…, hace…" | Quién debe, cuánto y desde cuándo | Dueño o encargado con Pagos | Queda |
+  | "Escribir por WhatsApp" | Recordarle al cliente | Seguido | Queda: la acción de la fila |
+  | "Registrar pago" rojo y a todo el ancho en cada fila | Cobrar | Cuando paga | Con borde, al lado de WhatsApp |
+  | "Ver la orden" con forma de botón | Ir al detalle | A veces | Enlace de 44 px |
+  | "Nadie debe nada." | Vacío | — | `EstadoVacio` |
+- **Encontrado:**
+  - Un botón rojo por fila: con varios deudores, varias barras rojas compitiendo (en la computadora, de 730 px cada una).
+  - Tres botones por fila en dos renglones; sin `EncabezadoPagina` ni `EstadoVacio`.
+  - Bien y sin cambios: el total grande, la más antigua primero, el monto en Barlow, "hace 24 días", el mensaje con la plantilla y cobrar desde aquí con Pagos sin Órdenes.
+- **Cambios** (propuesta aprobada el 27/10):
+  - "Escribir por WhatsApp" y "Registrar pago" (el mismo modal) juntos y con borde; "Ver la orden" o "Ver la reserva" como enlace de 44 px, para quien puede abrirla. Desde 1024 px, las acciones a la derecha del texto: cada fila, más baja.
+  - `RegistrarPago` con borde por defecto (el rojo solo se usaba aquí).
+  - `EncabezadoPagina` y `EstadoVacio`. No se marca un saldo "viejo": haría falta un valor configurable que no existe.
+- **Verificación:** con pantalla táctil a 360, 390, 768 y 1280 px: nada se sale y ningún control mide menos de 44 px. Comparativa en `pulido-visual/12.1-saldos-celular.jpg`. E2E `hu-32`, `hu-36` y `hu-37`.
+
+### 12.2 Mantenimientos (27/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | "Vencidos" y "Próximos 15 días", con "1 mantenimiento" | Separar lo urgente | — | Quedan, con la cantidad como en Órdenes ("Vencidos (1)") |
+  | Fila: cliente, vehículo, servicio, fecha grande y "venció hace…" | A quién avisar y desde cuándo | Dueño o encargado, cada semana | Queda |
+  | "Todavía no se le avisó." | Saber si falta avisar | — | Insignia "Sin avisar", como en Órdenes; avisado, "Avisado el… por…" |
+  | "Avisar por WhatsApp" rojo en cada fila | Avisar | Seguido | Con borde |
+  | "Agendar" | Darle una reserva | Cuando acepta | Queda |
+  | "No le interesa" con su formulario dentro de la fila | Cerrar el recordatorio | Rara vez | Sin fondo, con un modal |
+- **Encontrado:**
+  - Un botón rojo por fila, como en Saldos pendientes.
+  - "No le interesa" abría su formulario dentro de la fila y empujaba la lista; pesaba lo mismo que avisar, y en el celular los tres botones ocupaban dos renglones.
+  - "Todavía no se le avisó." en cada fila; el título sin `EncabezadoPagina` y la cantidad de los grupos escrita distinto que en Órdenes.
+  - Bien y sin cambios: los dos grupos, la fecha grande, "venció hace" y "vence en", "Agendar" solo con Agenda y Pagos, y el aviso registrado.
+- **Cambios** (propuesta aprobada el 27/10):
+  - Filas con la forma de Saldos pendientes: "Avisar por WhatsApp" (`AvisarPorWhatsApp` con `enLista`: siempre con borde; en la orden sigue rojo, porque ahí es el paso siguiente) y "Agendar" con borde; "No le interesa" sin fondo debajo. Desde 1024 px, las acciones a la derecha.
+  - "No le interesa" en un modal: "No se le volverá a avisar…", la nota opcional, "Sí, no le interesa" (rosado: no se deshace) y "Volver" con el foco.
+  - "Sin avisar" en una insignia junto al nombre; avisado, "Avisado el… por…" bajo el servicio. `EncabezadoPagina` y los grupos como en Órdenes.
+  - Los 15 días de "Próximos" son una constante (`DIAS_PROXIMOS`, de la HU-38), no un valor del panel: anotado como pedido 19 en el registro de cambios, para que lo decida el dueño.
+- **Verificación:** con pantalla táctil a 360, 390, 768 y 1280 px: nada se sale y ningún control mide menos de 44 px. Comparativa en `pulido-visual/12.2-mantenimientos-celular.jpg`. E2E `hu-35`, `hu-38` (el modal con el foco en "Volver") y `hu-40`.
+
+### Revisión del grupo 12 (code-review, 27/10/2026)
+- **Corregido:**
+  - "No le interesa" no esperaba a que la página cargara: un toque temprano no abría el modal. Se habilita al hidratar, como "Registrar pago" y "Avisar por WhatsApp".
+  - Los grupos de Órdenes y Mantenimientos se anunciaban "Vencidos (1)", sin la unidad: la sección se llama "Vencidos, 1 mantenimiento" o "Recibidas, 2 órdenes" para el lector (`aria-label`); a la vista sigue "(1)". Un texto oculto dentro del título no servía: Chromium le agrega un espacio ("Recibidas , 2 órdenes").
+  - Sus títulos en `font-bold`, como las demás secciones del panel (estaban en `font-extrabold`).
+  - El enlace de texto de 44 px ("Ver ficha del cliente", "Ver la reserva", "Ver la orden") estaba copiado en cinco lugares: `ENLACE_TEXTO` (`componentes/panel/enlace-texto.ts`).
+- **Descartado:**
+  - La fecha de Mantenimientos en el medio de la fila en la computadora: queda junto a las acciones, como el monto en Saldos pendientes, y las dos listas se leen igual.
+  - Juntar `enLista` y `conDetalle` de `AvisarPorWhatsApp` en una sola opción: con un solo uso en lista, no vale la pena todavía.
+- **Verificación:** E2E completa (326 de 326) antes de estos cambios; después, `hu-24`, `hu-31` a `hu-35`, `hu-37` y `hu-38`.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)

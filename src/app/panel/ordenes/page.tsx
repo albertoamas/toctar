@@ -43,8 +43,9 @@ async function Lista() {
           {ESTADOS_ORDEN_ABIERTA.map((estado) => {
             const delGrupo = ordenes.filter((o) => o.estado === estado);
             return (
-              <section key={estado} aria-labelledby={`grupo-${estado}`} className="flex flex-col gap-3">
-                <h2 id={`grupo-${estado}`} className="font-heading text-2xl font-extrabold italic">
+              // El lector oye la sección como "Recibidas, 2 órdenes"; a la vista, "Recibidas (2)"
+              <section key={estado} aria-label={`${GRUPOS[estado]}, ${delGrupo.length === 1 ? "1 orden" : `${delGrupo.length} órdenes`}`} className="flex flex-col gap-3">
+                <h2 className="font-heading text-2xl font-bold italic">
                   {GRUPOS[estado]} <span className="tabular-nums text-tinta-suave">({delGrupo.length})</span>
                 </h2>
                 {delGrupo.length === 0 ? (
