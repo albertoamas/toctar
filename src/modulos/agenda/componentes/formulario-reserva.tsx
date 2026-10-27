@@ -4,6 +4,8 @@ import { useActionState, useRef, useState } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
+import { MasDatos } from "@/componentes/panel/mas-datos";
+import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { Selector } from "@/componentes/panel/selector";
 import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
@@ -25,6 +27,8 @@ import { useEspaciosLibres } from "./espacios-libres";
 // HU-30: agendar una reserva (RF-36, RF-37). Las fechas sugieren la entrega con la mayor duración de los servicios
 // (decisión del 20/10: es aproximada y se edita); al cambiarlas se vuelven a pedir los espacios libres (RN-06). El
 // servidor vuelve a mirar todo y la base rechaza un cruce aunque dos personas reserven a la vez.
+// Pulido 10.2: la hora y la nota plegadas (se usan a veces), sin las ayudas que repetían Configuración, y "Agendar" en
+// PieFormulario: fijo abajo en el celular, con el total al lado en la reserva directa (como en Cotizar).
 
 type Origen =
   | { tipo: "cotizacion"; cotizacionId: number; duraciones: number[] }
@@ -105,7 +109,7 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
         <fieldset className="flex flex-col gap-4">
           <legend className="mb-4 font-heading text-2xl font-bold italic">Servicios</legend>
           <LineasServicio opciones={origen.opciones} lineas={lineas} onChange={setLineas} errores={e} />
-          {total !== null && total !== "0.00" && <p className="font-semibold">Total: {mostrarMonto(total)} Bs</p>}
+          {/* El total, al pie con "Agendar" */}
         </fieldset>
       )}
 
@@ -124,7 +128,7 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
               aria-describedby={e.fechaInicio ? "fechaInicio-error" : undefined}
             />
           </Campo>
-          <Campo id="fechaFin" etiqueta="Entrega aproximada" error={e.fechaFin} ayuda="Sugerida por la duración de los servicios. Se le da al cliente como aproximada.">
+          <Campo id="fechaFin" etiqueta="Entrega aproximada" error={e.fechaFin} ayuda="Se le da al cliente como aproximada.">
             <Input
               id="fechaFin"
               name="fechaFin"
@@ -171,12 +175,15 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
             ))}
           </Selector>
         </Campo>
-        <Campo id="horaIngreso" etiqueta="Hora aproximada" error={e.horaIngreso} ayuda="Como lo dijo el cliente: «a las 9», «en la tarde».">
-          <Input id="horaIngreso" name="horaIngreso" autoComplete="off" value={horaIngreso} onChange={(ev) => setHoraIngreso(ev.target.value)} className="max-w-xs" aria-invalid={!!e.horaIngreso} aria-describedby={e.horaIngreso ? "horaIngreso-error" : "horaIngreso-ayuda"} />
-        </Campo>
-        <Campo id="nota" etiqueta="Nota" error={e.nota}>
-          <Textarea id="nota" name="nota" rows={2} value={nota} onChange={(ev) => setNota(ev.target.value)} aria-invalid={!!e.nota} aria-describedby={e.nota ? "nota-error" : undefined} />
-        </Campo>
+        {/* Se usan a veces: plegadas; se abren solas si traen algo escrito o un error */}
+        <MasDatos texto="Agregar hora y nota" abierto={!!horaIngreso || !!nota || !!e.horaIngreso || !!e.nota}>
+          <Campo id="horaIngreso" etiqueta="Hora aproximada" error={e.horaIngreso} ayuda="Como lo dijo el cliente: «a las 9», «en la tarde».">
+            <Input id="horaIngreso" name="horaIngreso" autoComplete="off" value={horaIngreso} onChange={(ev) => setHoraIngreso(ev.target.value)} className="max-w-xs" aria-invalid={!!e.horaIngreso} />
+          </Campo>
+          <Campo id="nota" etiqueta="Nota" error={e.nota}>
+            <Textarea id="nota" name="nota" rows={2} value={nota} onChange={(ev) => setNota(ev.target.value)} aria-invalid={!!e.nota} />
+          </Campo>
+        </MasDatos>
       </fieldset>
 
       {conPagos && (
@@ -194,8 +201,8 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
           </label>
           {!sinAdelanto && (
             <>
-              <Campo id="adelanto" etiqueta="Monto" error={e.adelanto} ayuda="El sugerido de Configuración; el cliente puede dar más.">
-                <CampoMonto id="adelanto" name="adelanto" value={adelanto} onChange={(ev) => setAdelanto(ev.target.value)} aria-invalid={!!e.adelanto} aria-describedby={e.adelanto ? "adelanto-error" : "adelanto-ayuda"} />
+              <Campo id="adelanto" etiqueta="Monto" error={e.adelanto}>
+                <CampoMonto id="adelanto" name="adelanto" value={adelanto} onChange={(ev) => setAdelanto(ev.target.value)} aria-invalid={!!e.adelanto} />
               </Campo>
               <div className="flex flex-col gap-3">
                 <p id="metodo-titulo" className="text-sm font-medium">Método</p>
@@ -217,11 +224,20 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
         </fieldset>
       )}
 
-      <div>
-        <Button type="submit" disabled={enviando || buscando || preparando}>
-          {preparando ? "Preparando foto…" : enviando ? "Agendando…" : "Agendar"}
-        </Button>
-      </div>
+      <PieFormulario>
+        <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:justify-start">
+          {/* El total de la reserva directa, a la vista mientras se cargan los precios */}
+          {total !== null && total !== "0.00" && (
+            <p className="flex items-baseline gap-2">
+              <span className="text-tinta-suave">Total</span>
+              <span className="text-lg font-bold tabular-nums">{mostrarMonto(total)} Bs</span>
+            </p>
+          )}
+          <Button type="submit" disabled={enviando || buscando || preparando}>
+            {preparando ? "Preparando foto…" : enviando ? "Agendando…" : "Agendar"}
+          </Button>
+        </div>
+      </PieFormulario>
     </form>
   );
 }
