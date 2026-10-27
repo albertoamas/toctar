@@ -35,7 +35,7 @@ export function FormularioCotizacion({ datos, hoy }: Props) {
 
   // Todo controlado: React reinicia el formulario al terminar la acción y así nada se pierde tras un error
   const mostrar = (monto: string) => (monto === "0.00" ? "" : mostrarMonto(monto));
-  const [lineas, setLineas] = useState<Linea[]>(datos.inicial.lineas.map((l) => ({ varianteId: l.varianteId, precio: mostrarMonto(l.precio) })));
+  const [lineas, setLineas] = useState<Linea[]>(datos.inicial.lineas.map((l) => ({ ...l, precio: mostrarMonto(l.precio) })));
   const [descuento, setDescuento] = useState(mostrar(datos.inicial.descuento));
   const [adelanto, setAdelanto] = useState(mostrarMonto(datos.inicial.adelanto));
   const [validaHasta, setValidaHasta] = useState(datos.inicial.validaHasta);
@@ -68,7 +68,7 @@ export function FormularioCotizacion({ datos, hoy }: Props) {
           <dt className="text-tinta-suave">Subtotal</dt>
           <dd className="text-right tabular-nums">{bs(totales.subtotal)}</dd>
           <dt className="text-tinta-suave">Descuento</dt>
-          <dd className="text-right tabular-nums">{totales.descuento === "0.00" ? "—" : `− ${bs(totales.descuento)}`}</dd>
+          <dd className="text-right tabular-nums">{totales.descuento === "0.00" ? "Sin descuento" : `− ${bs(totales.descuento)}`}</dd>
           <dt className="font-semibold">Total</dt>
           <dd className="text-right text-lg font-bold tabular-nums">{bs(totales.total)}</dd>
         </dl>

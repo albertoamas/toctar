@@ -92,7 +92,7 @@ export type DatosParaCotizar = {
   opciones: OpcionServicio[];
   fotos: (UrlsFoto & { id: number })[];
   /** Valores con los que arranca el formulario: los de Configuración, o los de la versión que se corrige. */
-  inicial: { validaHasta: string; adelanto: string; esEstimado: boolean; descuento: string; lineas: { varianteId: number; precio: string }[]; fotos: number[] };
+  inicial: { validaHasta: string; adelanto: string; esEstimado: boolean; descuento: string; lineas: { servicioId?: number; varianteId: number; precio: string }[]; fotos: number[] };
   /** La versión que se corrige (vigente), si llegó `desde`, y su id. */
   desde: BaseCotizacion | null;
   desdeId: number | null;
