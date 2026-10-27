@@ -6,7 +6,9 @@ import { CalendarIcon } from "lucide-react";
 import { AvisarPorWhatsApp } from "@/componentes/panel/avisar-whatsapp";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
+import { Pestanas } from "@/componentes/panel/pestanas";
 import { buttonVariants } from "@/componentes/ui/button";
 import { diaYHora, fechaCorta, fechaEnBolivia } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
@@ -16,8 +18,25 @@ import { vehiculoEnLista } from "@/modulos/clientes/reglas";
 import { obtenerDatosPublicos, obtenerPlantillas } from "@/modulos/configuracion/consultas";
 import { avisarMantenimiento } from "@/modulos/mantenimientos/acciones";
 import { NoLeInteresa } from "@/modulos/mantenimientos/componentes/no-le-interesa";
-import { mantenimientosPorAvisar, type MantenimientoPorAvisar } from "@/modulos/mantenimientos/consultas";
-import { DIAS_PROXIMOS, seccionMantenimiento, textoVencimiento } from "@/modulos/mantenimientos/reglas";
+import {
+  contarPorVista,
+  mantenimientosCerrados,
+  mantenimientosMasAdelante,
+  mantenimientosPorAvisar,
+  type MantenimientoCerrado,
+  type MantenimientoPorAvisar,
+} from "@/modulos/mantenimientos/consultas";
+import {
+  agruparPorMes,
+  DIAS_PROXIMOS,
+  NOMBRE_ESTADO_RECORDATORIO,
+  seccionMantenimiento,
+  textoVencimiento,
+  MAXIMO_CERRADOS,
+  VISTAS_MANTENIMIENTOS,
+  type VistaMantenimientos,
+} from "@/modulos/mantenimientos/reglas";
+import { enlaceTrabajo } from "@/modulos/ordenes/reglas";
 import { mensajeMantenimiento } from "@/modulos/ordenes/mensajes";
 
 export const metadata: Metadata = { title: "Mantenimientos" };
@@ -27,27 +46,78 @@ export const metadata: Metadata = { title: "Mantenimientos" };
 // reserva directa del cliente y su vehículo: lleva precios, así que solo para quien ve agenda y pagos) o cerrarlo.
 // Pulido 12.2: las filas como en Saldos pendientes (acciones con borde, a la derecha en la computadora), "Sin avisar"
 // en una insignia como en Órdenes y "No le interesa" sin fondo, con su modal.
-export default function PaginaMantenimientos() {
+// Pedido 20: todos los mantenimientos en tres pestañas (`?vista=`): "Por avisar" (lo de hoy, la tarea de la pantalla),
+// "Más adelante" (los abiertos que vencen después, por mes, para planificar) y "Cerrados" (agendados y "No le
+// interesa", el más reciente primero, sin acciones). Los de un cliente o vehículo desactivado, en ninguna.
+export default function PaginaMantenimientos({ searchParams }: PageProps<"/panel/mantenimientos">) {
   return (
     <section className="flex flex-col gap-6">
       <EncabezadoPagina titulo="Mantenimientos" />
       <Suspense fallback={<Cargando />}>
-        <Listas />
+        <Listas searchParams={searchParams} />
       </Suspense>
     </section>
   );
 }
 
-async function Listas() {
-  const usuario = await exigirModulo("mantenimientos");
-  const puedeAgendar = puedeVerModulo(usuario, "agenda") && puedeVerModulo(usuario, "pagos");
-  const hoy = fechaEnBolivia();
-  const [todos, negocio, plantillas] = await Promise.all([mantenimientosPorAvisar(hoy), obtenerDatosPublicos(), obtenerPlantillas()]);
-  if (todos.length === 0) return <EstadoVacio>No hay mantenimientos por avisar.</EstadoVacio>;
-  const vencidos = todos.filter((m) => seccionMantenimiento(m.fechaProgramada, hoy) === "vencido");
-  const proximos = todos.filter((m) => seccionMantenimiento(m.fechaProgramada, hoy) === "proximo");
-  const fila = (m: MantenimientoPorAvisar) => <Fila key={m.id} m={m} hoy={hoy} mensaje={{ plantilla: plantillas.mantenimiento, negocio: negocio.nombre }} puedeAgendar={puedeAgendar} />;
+const TITULOS: Record<VistaMantenimientos, string> = { "por-avisar": "Por avisar", "mas-adelante": "Más adelante", cerrados: "Cerrados" };
+const enlace = (vista: VistaMantenimientos) => (vista === "por-avisar" ? "/panel/mantenimientos" : `/panel/mantenimientos?vista=${vista}`);
+const cantidad = (n: number) => (n === 1 ? "1 mantenimiento" : `${n} mantenimientos`);
 
+async function Listas({ searchParams }: Pick<PageProps<"/panel/mantenimientos">, "searchParams">) {
+  const usuario = await exigirModulo("mantenimientos");
+  const { vista: pedida } = await searchParams;
+  const vista = VISTAS_MANTENIMIENTOS.find((v) => v === pedida) ?? "por-avisar";
+  const hoy = fechaEnBolivia();
+  // Las cantidades y la lista a la vez, no una detrás de otra
+  const [cantidades, contenido] = await Promise.all([
+    contarPorVista(hoy),
+    vista === "cerrados"
+      ? cerrados(hoy, { ordenes: puedeVerModulo(usuario, "ordenes"), agenda: puedeVerModulo(usuario, "agenda") })
+      : abiertos(vista, hoy, puedeVerModulo(usuario, "agenda") && puedeVerModulo(usuario, "pagos")),
+  ]);
+
+  return (
+    <>
+      <Pestanas
+        etiqueta="Mantenimientos"
+        activa={enlace(vista)}
+        pestanas={VISTAS_MANTENIMIENTOS.map((v) => ({ href: enlace(v), texto: `${TITULOS[v]} (${cantidades[v]})` }))}
+      />
+      {contenido}
+      {vista === "cerrados" && cantidades.cerrados > MAXIMO_CERRADOS && (
+        <p className="text-sm text-tinta-suave">Se muestran los {MAXIMO_CERRADOS} más recientes. Los demás están en la ficha de cada cliente.</p>
+      )}
+    </>
+  );
+}
+
+/**
+ * "Por avisar" (vencidos y próximos) y "Más adelante" (por mes): las mismas filas. En "Más adelante" no se avisa: el
+ * mensaje dice que ya le toca, y avisado antes de tiempo, no figuraría "Sin avisar" cuando de verdad le toque.
+ */
+async function abiertos(vista: "por-avisar" | "mas-adelante", hoy: string, puedeAgendar: boolean) {
+  const [lista, negocio, plantillas] = await Promise.all([
+    vista === "por-avisar" ? mantenimientosPorAvisar(hoy) : mantenimientosMasAdelante(hoy),
+    obtenerDatosPublicos(),
+    obtenerPlantillas(),
+  ]);
+  if (lista.length === 0) {
+    return <EstadoVacio>{vista === "por-avisar" ? "No hay mantenimientos por avisar." : `Ninguno vence después de los próximos ${DIAS_PROXIMOS} días.`}</EstadoVacio>;
+  }
+  const fila = (m: MantenimientoPorAvisar) => (
+    <Fila key={m.id} m={m} hoy={hoy} mensaje={{ plantilla: plantillas.mantenimiento, negocio: negocio.nombre }} puedeAgendar={puedeAgendar} conAviso={vista === "por-avisar"} />
+  );
+
+  if (vista === "mas-adelante") {
+    return agruparPorMes(lista, (m) => m.fechaProgramada).map((g) => (
+      <Seccion key={g.mes} titulo={g.titulo} cantidad={g.elementos.length}>
+        {g.elementos.map(fila)}
+      </Seccion>
+    ));
+  }
+  const vencidos = lista.filter((m) => seccionMantenimiento(m.fechaProgramada, hoy) === "vencido");
+  const proximos = lista.filter((m) => seccionMantenimiento(m.fechaProgramada, hoy) === "proximo");
   return (
     <>
       <Seccion titulo="Vencidos" cantidad={vencidos.length} vacio="Ninguno vencido.">
@@ -60,14 +130,27 @@ async function Listas() {
   );
 }
 
-function Seccion({ titulo, cantidad, vacio, children }: { titulo: string; cantidad: number; vacio: string; children: React.ReactNode }) {
+/** Agendados (con su reserva) y "No le interesa" (con su nota): para consultar, sin acciones. */
+async function cerrados(hoy: string, ve: { ordenes: boolean; agenda: boolean }) {
+  const lista = await mantenimientosCerrados();
+  if (lista.length === 0) return <EstadoVacio>Todavía no hay mantenimientos agendados ni cerrados.</EstadoVacio>;
+  return (
+    <ul aria-label="Cerrados" className="flex max-w-3xl flex-col divide-y divide-border rounded-sm border border-border">
+      {lista.map((m) => (
+        <FilaCerrada key={m.id} m={m} hoy={hoy} ve={ve} />
+      ))}
+    </ul>
+  );
+}
+
+function Seccion({ titulo, cantidad: n, vacio, children }: { titulo: string; cantidad: number; /** Si puede quedar vacía. */ vacio?: string; children: React.ReactNode }) {
   return (
     // El lector oye la sección como "Vencidos, 2 mantenimientos"; a la vista, "Vencidos (2)"
-    <section aria-label={`${titulo}, ${cantidad === 1 ? "1 mantenimiento" : `${cantidad} mantenimientos`}`} className="flex max-w-3xl flex-col gap-3">
+    <section aria-label={`${titulo}, ${cantidad(n)}`} className="flex max-w-3xl flex-col gap-3">
       <h2 className="font-heading text-2xl font-bold italic">
-        {titulo} <span className="tabular-nums text-tinta-suave">({cantidad})</span>
+        {titulo} <span className="tabular-nums text-tinta-suave">({n})</span>
       </h2>
-      {cantidad === 0 ? (
+      {n === 0 ? (
         <p className="text-tinta-suave">{vacio}</p>
       ) : (
         <ul aria-label={titulo} className="flex flex-col divide-y divide-border rounded-sm border border-border">
@@ -78,7 +161,7 @@ function Seccion({ titulo, cantidad, vacio, children }: { titulo: string; cantid
   );
 }
 
-function Fila({ m, hoy, mensaje, puedeAgendar }: { m: MantenimientoPorAvisar; hoy: string; mensaje: { plantilla: string; negocio: string }; puedeAgendar: boolean }) {
+function Fila({ m, hoy, mensaje, puedeAgendar, conAviso }: { m: MantenimientoPorAvisar; hoy: string; mensaje: { plantilla: string; negocio: string }; puedeAgendar: boolean; conAviso: boolean }) {
   const vehiculo = { marca: m.marca, modelo: m.modelo, placa: m.placa };
   const avisado = m.avisadoAt ? `Avisado el ${diaYHora(m.avisadoAt)}${m.avisadoPor ? ` por ${m.avisadoPor}` : ""}` : null;
   const agendar = new URLSearchParams({ cliente: String(m.clienteId), vehiculo: String(m.vehiculoId), recordatorio: String(m.id) });
@@ -88,7 +171,7 @@ function Fila({ m, hoy, mensaje, puedeAgendar }: { m: MantenimientoPorAvisar; ho
         <div className="flex min-w-0 flex-col">
           <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span className="font-semibold">{m.cliente}</span>
-            {!avisado && <span className="tt-insignia tt-insignia--aviso">Sin avisar</span>}
+            {conAviso && !avisado && <span className="tt-insignia tt-insignia--aviso">Sin avisar</span>}
           </span>
           <span className="text-sm text-tinta-suave">{vehiculoEnLista(vehiculo)}</span>
           <span className="text-sm">Mantenimiento de {m.servicio}</span>
@@ -102,13 +185,15 @@ function Fila({ m, hoy, mensaje, puedeAgendar }: { m: MantenimientoPorAvisar; ho
       </div>
       <div className="flex flex-col gap-1 lg:items-end">
         <div className="flex flex-wrap gap-2">
-          <AvisarPorWhatsApp
-            enlace={enlaceWhatsApp(m.telefono, mensajeMantenimiento({ ...mensaje, cliente: m.cliente, vehiculo, servicio: m.servicio }))}
-            avisado={avisado}
-            conDetalle={false}
-            enLista
-            registrarAction={avisarMantenimiento.bind(null, { id: m.id })}
-          />
+          {conAviso && (
+            <AvisarPorWhatsApp
+              enlace={enlaceWhatsApp(m.telefono, mensajeMantenimiento({ ...mensaje, cliente: m.cliente, vehiculo, servicio: m.servicio }))}
+              avisado={avisado}
+              conDetalle={false}
+              enLista
+              registrarAction={avisarMantenimiento.bind(null, { id: m.id })}
+            />
+          )}
           {puedeAgendar && (
             <Link href={`/panel/agenda/nueva?${agendar.toString()}`} className={cn(buttonVariants({ variant: "outline" }))}>
               <CalendarIcon />
@@ -118,6 +203,35 @@ function Fila({ m, hoy, mensaje, puedeAgendar }: { m: MantenimientoPorAvisar; ho
         </div>
         <NoLeInteresa id={m.id} />
       </div>
+    </li>
+  );
+}
+
+function FilaCerrada({ m, hoy, ve }: { m: MantenimientoCerrado; hoy: string; ve: { ordenes: boolean; agenda: boolean } }) {
+  // Agendado: a su reserva, o a su orden si ya se recibió, si quien mira puede abrirla
+  const agendado = m.agendado && enlaceTrabajo(m.agendado.id, m.agendado.estado, ve);
+  return (
+    <li className="flex flex-col gap-1 p-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-col">
+          <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span className="font-semibold">{m.cliente}</span>
+            <span className="tt-insignia">{NOMBRE_ESTADO_RECORDATORIO[m.estado]}</span>
+          </span>
+          <span className="text-sm text-tinta-suave">{vehiculoEnLista({ marca: m.marca, modelo: m.modelo, placa: m.placa })}</span>
+          <span className="text-sm">Mantenimiento de {m.servicio}</span>
+          {m.nota && <span className="text-sm text-tinta-suave">Nota: {m.nota}</span>}
+        </div>
+        <span className="flex shrink-0 flex-col items-end">
+          <span className="font-heading text-2xl font-extrabold whitespace-nowrap italic tabular-nums">{fechaCorta(m.fechaProgramada, hoy)}</span>
+          <span className="text-sm whitespace-nowrap text-tinta-suave">programado</span>
+        </span>
+      </div>
+      {agendado && (
+        <Link href={agendado.href} className={ENLACE_TEXTO}>
+          {agendado.texto}
+        </Link>
+      )}
     </li>
   );
 }
