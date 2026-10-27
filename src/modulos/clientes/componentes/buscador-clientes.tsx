@@ -44,7 +44,8 @@ export function BuscadorClientes() {
         value={texto}
         onChange={(e) => cambiar(e.target.value)}
         aria-label="Buscar por nombre, teléfono o placa"
-        placeholder="Buscar por nombre, teléfono o placa"
+        // Corto: el largo se cortaba a 360 px. El lector de pantalla oye la etiqueta completa
+        placeholder="Nombre, teléfono o placa"
         autoComplete="off"
         spellCheck={false}
         aria-busy={buscando}
