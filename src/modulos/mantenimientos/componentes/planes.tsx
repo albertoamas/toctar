@@ -29,9 +29,10 @@ export function AgregarMantenimiento(props: { clienteId: number; vehiculos: Vehi
   const hidratado = useHidratado();
   return (
     <>
-      <Button type="button" variant="ghost" disabled={!hidratado} onClick={() => setAbierto(true)}>
+      {/* "Agregar", como en Vehículos: a 360 px el texto entero no entra junto al título */}
+      <Button type="button" variant="ghost" disabled={!hidratado} aria-label="Agregar mantenimiento" onClick={() => setAbierto(true)}>
         <PlusIcon />
-        Agregar mantenimiento
+        Agregar
       </Button>
       <ModalFormulario titulo="Agregar mantenimiento" abierto={abierto} alCambiar={setAbierto}>
         <FormularioAgregar {...props} />
