@@ -225,7 +225,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
 | 10.1 | Agenda: tablero de la semana y del día | `/panel/agenda` | ✅ |
-| 10.2 | Nueva reserva (desde una cotización, directa y desde un mantenimiento) | `/panel/agenda/nueva` | ⏳ |
+| 10.2 | Nueva reserva (desde una cotización, directa y desde un mantenimiento) | `/panel/agenda/nueva` | ✅ |
 | 10.3 | Reserva: montos, pagos, reprogramar y cancelar | `/panel/agenda/[id]` | ⏳ |
 
 ### 11. Panel: taller
@@ -1221,6 +1221,33 @@ Pedido del desarrollador: releer las reglas del principio de este documento y co
   - La semana en un renglón entre las flechas: corta en el celular ("26 oct al 1 nov", con el año si cambia: "28 dic al 3 ene 2027"), completa desde 640 px; "Hoy" al final, fuera de la semana actual. Regla pura `textoSemanaCorto`, con prueba unitaria.
   - Sin el renglón del día repetido; `EncabezadoPagina` con "Nueva reserva".
 - **Verificación:** capturas con pantalla táctil a 360, 390, 768 y 1280 px de esta semana y de una con cambio de año; nada se sale y ningún control mide menos de 44 px. En el celular el tablero empieza unos 80 px más arriba. Comparativa en `pulido-visual/10.1-agenda.jpg` (celular y tableta). E2E `hu-29` (la pestaña de hoy marcada; moverse de semana y volver con "Hoy"), `hu-30`, `hu-31`, `hu-33` y `hu-38`.
+
+### 10.2 Nueva reserva (27/10/2026)
+- **Antes de empezar:** la rama trae los cambios del grupo 9 (#102, sin unir todavía): la reserva directa usa los dos menús de servicio de la 9.4.
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | Cliente y vehículo (o la cotización con sus servicios) | Qué se agenda | Dueño o encargado, cada reserva | Arriba, en lectura |
+  | Servicios (directa) | Qué y a qué precio | Dueño o quien ve pagos | Quedan |
+  | Ingreso, entrega y espacio | Lo central | Cada reserva | Quedan |
+  | Técnico | Asignarlo | Casi siempre | Queda |
+  | Hora aproximada y nota | Un detalle del cliente | A veces | Plegados |
+  | Adelanto: monto, método y comprobante | Lo que pagó | Casi siempre, con pagos | Queda |
+  | "Agendar" | Guardar | Cada reserva | Fijo abajo en el celular |
+- **Encontrado:**
+  - La pantalla más larga del panel: 2.084 px en el celular la directa y 1.776 desde una cotización, con "Agendar" al fondo.
+  - El cliente elegido con el estilo viejo (borde negro grueso, "Cambiar" subrayado) y el vehículo como "2345KLM, Sedanes y hatchbacks medianos" (la confusión de la 9.3).
+  - "Elegir vehículo" en tarjetas sueltas, la placa chica y el tamaño sin etiqueta.
+  - Ayudas largas o que repetían Configuración; el total de la directa entre los servicios; el mantenimiento en un recuadro sin estilo; el título sin el encabezado compartido.
+- **Cambios** (propuesta aprobada el 27/10):
+  - Cliente y vehículo en un recuadro de lectura con `CabeceraSeccion` y `DatosVehiculo`; la consulta de la reserva directa y la de la cotización traen marca, modelo, año y color. Desde una cotización, sus servicios en su recuadro, con el total y la línea de que queda aceptada.
+  - "Elegir vehículo" con `ListaFilas` (la placa grande, lo que se sepa y "Tamaño: …").
+  - Hora y nota en `MasDatos`; sin la ayuda del adelanto y con la de la entrega en una línea.
+  - "Agendar" en `PieFormulario`, con el total de la directa al lado.
+  - El mantenimiento, en una línea con su vencimiento en una insignia (de aviso si venció). En la propuesta decía `AvisoEnPagina`, pero ese componente es la confirmación de algo recién creado (ícono de éxito y anuncio al lector de pantalla): la insignia es lo que usa el panel para un dato que pide atención.
+  - `EncabezadoPagina`; `CabeceraSeccion` acepta no tener acción.
+- **Verificación:** con pantalla táctil a 360, 390, 768 y 1280 px, los cinco caminos (desde una cotización, elegir cliente, elegir vehículo, directa y desde un mantenimiento): nada se sale; bajo 44 px solo el selector oculto del comprobante. La directa, 1.943 px en el celular (−7 %; la estimación era 1.750) y la de cotización, 1.806 (+2 %: la cotización tiene su propio recuadro); lo que se gana es "Agendar" siempre a mano y la pantalla igual al resto. Comparativa en `pulido-visual/10.2-nueva-reserva-celular.jpg`. E2E `hu-30` (la hora plegada y su foco al abrirla, la cotización con su total), `hu-38` (el mantenimiento con su insignia), `hu-29`, `hu-31`, `hu-32` y `hu-33`.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)

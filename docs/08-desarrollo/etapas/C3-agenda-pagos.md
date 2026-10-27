@@ -134,6 +134,7 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel y sin de
 - **Técnico** (opcional), **hora aproximada** y **nota**.
 - **Adelanto** (solo con "Pagos"): monto (sugerido), método, comprobante opcional; o la casilla "Sin adelanto".
 - "Agendar". Al guardar, va a la reserva.
+- **Pulido 10.2 (27/10):** el cliente y su vehículo en un recuadro de lectura, como en Nueva consulta (`DatosVehiculo`: la placa grande, marca y modelo, año y color, y "Tamaño: …" aparte), con "Cambiar" sin borde en la directa. Desde una cotización, sus servicios en su propio recuadro (servicio y precio, el total) y "Al agendar, la cotización queda aceptada.". "Elegir vehículo" con la fila de un toque. El mantenimiento que se agenda, con su vencimiento en una insignia (de aviso si venció). La hora aproximada y la nota plegadas ("＋ Agregar hora y nota", `MasDatos`). Sin la ayuda del adelanto; la de la entrega, "Se le da al cliente como aproximada.". "Agendar" en `PieFormulario`, fijo abajo en el celular, con el total al lado en la directa.
 
 ### `/panel/agenda/[id]` — Reserva
 - Cliente (enlace a su ficha si puede), vehículo, fechas, espacio, técnico, hora, nota, estado; "Escribir por WhatsApp"; la consulta y la cotización de las que salió.
