@@ -13,8 +13,8 @@ async function imagen(color: string): Promise<Imagen> {
   return { data, format: "jpg", ancho: 800, alto: 600 };
 }
 
-async function logo(): Promise<Imagen> {
-  const svg = readFileSync(path.join(process.cwd(), "public", "marca", "toctar-horizontal-sin-lema-sobre-claro.svg"));
+async function logo(archivo = "toctar-horizontal-sin-lema-sobre-claro.svg"): Promise<Imagen> {
+  const svg = readFileSync(path.join(process.cwd(), "public", "marca", archivo));
   const { data, info } = await sharp(svg, { density: 300 }).resize({ height: 240 }).png().toBuffer({ resolveWithObject: true });
   return { data, format: "png", ancho: info.width, alto: info.height };
 }
@@ -71,6 +71,18 @@ test("sin fotos, sin descuento ni estimado, y con muchas líneas", { timeout: 30
   expect(pdf.startsWith("%PDF-")).toBe(true);
   // 20 líneas, totales y textos no entran en una hoja: el pie numera las páginas
   expect(pdf.match(/\/Type \/Page\b/g)?.length).toBeGreaterThanOrEqual(2);
+});
+
+test("tres servicios sin fotos caben en una hoja, también con el cuerpo en 10,5 pt", { timeout: 30_000 }, async () => {
+  const pdf = await generar("una-hoja", await datos({ fotos: [] }));
+  expect(pdf.match(/\/Type \/Page\b/g)?.length).toBe(1);
+});
+
+test("con el logo cuadrado que el dueño puede subir (vertical, con lema) y una versión nueva", { timeout: 30_000 }, async () => {
+  const d = await datos({ version: 2, fotos: [] });
+  const pdf = await generar("logo-cuadrado", { ...d, negocio: { ...d.negocio, logo: await logo("toctar-vertical-sobre-claro.svg") } });
+  expect(pdf.startsWith("%PDF-")).toBe(true);
+  expect(pdf.match(/\/Type \/Page\b/g)?.length).toBe(1);
 });
 
 test("los montos del documento llevan dos decimales y separador de miles", () => {
