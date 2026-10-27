@@ -206,7 +206,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 8.1 | Clientes y búsqueda | `/panel/clientes` | ⏳ |
+| 8.1 | Clientes y búsqueda | `/panel/clientes` | ✅ |
 | 8.2 | Agregar cliente | `/panel/clientes/nuevo` | ⏳ |
 | 8.3 | Ficha del cliente: datos, vehículos, consultas, reservas y mantenimientos | `/panel/clientes/[id]` | ⏳ |
 
@@ -991,6 +991,27 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - **2.226 px en el celular (−56 %)** y 1.384 en la computadora (−59 %); igual con Datos y Variantes arriba. Capturas a 360, 390, 768 y 1280 px en lectura y con cada modal abierto (hoja en el celular); el foco en el primer campo al abrir (también el que se abre solo al crear) y de vuelta en "Editar" al cerrar. Comparativas en `pulido-visual/7.3-servicio-catalogo-celular.jpg` y `7.3-servicio-catalogo-computadora.jpg`.
   - E2E `hu-19-20` con los modales (editar, guardar, cerrar y volver a lectura con el dato y el foco; "Listo" no aparece con una variante a medio escribir); la página pública se renueva en segundo plano en unos segundos y la prueba la visita hasta ver el cambio (`enElSitio`). `hu-07` cierra el modal de precios que abre la ficha recién creada.
   - La especificación C1 (§5 y §8) quedó al día.
+
+### 8.1 Clientes y búsqueda (26/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | Buscador (nombre, teléfono o placa) | Encontrar a un cliente | Dueño o encargado, varias veces al día | Arriba: es la tarea de la pantalla |
+  | Lista: nombre, WhatsApp y placas | Abrir la ficha | Igual | Queda, con la fila de un toque compartida |
+  | "Agregar cliente" | Registrar un cliente | Seguido | Arriba; en su pantalla (cliente y vehículo: un formulario largo) |
+  | "Ver desactivados" | Recuperar a un cliente dado de baja | Rara vez | Abajo |
+- **Encontrado:**
+  - Dos listas distintas en la misma pantalla (tarjetas sueltas en el celular, tabla en la computadora), cuando el catálogo y el inicio ya usan la fila de un toque.
+  - La placa, que es como el taller nombra un auto, en gris chico al lado del teléfono.
+  - El texto del buscador cortado en el celular ("Buscar por nombre, teléfono o p" a 360 px).
+  - Viendo los desactivados, solo un texto en negrita lo decía; para volver, un enlace al final.
+- **Cambios** (propuesta aprobada el 26/10):
+  - `ListaFilas` en todos los tamaños: el nombre, las placas en negrita y el WhatsApp en tinta suave (o "Sin vehículos"). Se van la tabla y las tarjetas.
+  - **Varios vehículos** (pedido del desarrollador al aprobar: una familia o una flota): hasta tres placas y "y 2 más", sin cortar una placa al pasar de renglón; si se buscó una placa, las que coinciden van primero, así la buscada se ve aunque sea la quinta. Función pura `placasEnFila`, con prueba unitaria.
+  - `EncabezadoPagina` con "Agregar cliente"; en el buscador, "Nombre, teléfono o placa" (el lector de pantalla sigue oyendo la etiqueta completa).
+  - Viendo los desactivados: "Desactivados. Ver los activos" arriba de la lista y las filas atenuadas.
+- **Verificación:** capturas a 360, 390, 768 y 1280 px de la lista, una búsqueda, una sin resultados, una por la quinta placa y los desactivados, con un cliente temporal de cinco vehículos y un nombre de 60 letras (se borró después); sin desborde. El alto en el celular queda igual por fila (la placa en su renglón). Comparativa en `pulido-visual/8.1-clientes-celular.jpg`. E2E `hu-22` (cinco vehículos: tres placas y "y 2 más"; la quinta buscada pasa adelante) y `hu-23`, sin el filtro de lo visible que pedían la tabla y las tarjetas.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)

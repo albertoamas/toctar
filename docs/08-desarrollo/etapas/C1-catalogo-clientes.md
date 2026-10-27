@@ -144,10 +144,10 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel (44 px c
 - **Variantes:** en lectura, sus nombres en una línea (y cuántas desactivadas). "Editar" abre el modal "Variantes" con la lista para agregar, renombrar, ordenar y desactivar (cada cambio se guarda al momento; se cierra con "Listo", que no aparece mientras una fila está abierta). Las variantes inactivas no tienen precios en la ficha (conservan los suyos).
 
 ### `/panel/clientes` — Clientes (dueño y encargado con "Clientes")
-- Arriba: buscador ("Buscar por nombre, teléfono o placa") y "Agregar cliente" (enlace con forma de botón, rojo).
+- Arriba: el encabezado compartido con "Agregar cliente" (enlace con forma de botón, rojo) y el buscador (etiqueta "Buscar por nombre, teléfono o placa"; en el campo, "Nombre, teléfono o placa", que entra entero a 360 px).
 - La búsqueda actualiza la dirección (`?q=`) con una pausa de 300 ms mientras se escribe; la lista se calcula en el servidor. Una ✕ propia de 44 px borra la búsqueda y devuelve el foco al campo. "Ver desactivados" y "Ver los activos" conservan lo escrito. Sin búsqueda, los 30 más recientes; con búsqueda, hasta 30 resultados y "Hay más: escribe algo más preciso" si se pasan.
-- Celular: tarjetas (nombre, teléfono, placas) que se tocan enteras. Computadora: tabla (nombre, WhatsApp, vehículos) con la fila entera tocable.
-- Los desactivados no salen; un enlace "Ver desactivados" (`?ver=desactivados`) los lista.
+- La fila de un toque compartida (`ListaFilas`, pulido 8.1, 26/10) en todos los tamaños: el nombre; debajo, en negrita, las placas (como el taller nombra los autos); en tinta suave, el WhatsApp y "Sin vehículos" si no tiene. Con varios vehículos, hasta tres placas y "y 2 más" (`placasEnFila`); si se buscó una placa, las que coinciden van primero, así la buscada se ve aunque sea la quinta.
+- Los desactivados no salen; un enlace "Ver desactivados" (`?ver=desactivados`), al final, los lista. Viéndolos, una línea arriba dice "Desactivados." con "Ver los activos", y las filas van atenuadas.
 - Estados vacíos: "Todavía no hay clientes. Agrega el primero con Agregar cliente." · "No hay clientes con «<búsqueda>»."
 
 ### `/panel/clientes/nuevo` — Agregar cliente
