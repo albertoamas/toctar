@@ -21,7 +21,7 @@ import { CamposVehiculo } from "./campos";
 
 type Props = { clienteId: number; vehiculos: VehiculoCliente[]; tamanos: Tamano[] };
 
-/** "Toyota Yaris · 2019 · Blanco": lo que se sabe del vehículo, además de la placa y el tamaño. */
+/** "Toyota Yaris 2019 Blanco": lo que se sabe del vehículo, además de la placa. El tamaño va aparte, con su etiqueta. */
 const detalle = (v: VehiculoCliente) => [nombreVehiculo(v), v.anio, v.color].filter(Boolean);
 
 export function VehiculosCliente({ clienteId, vehiculos, tamanos }: Props) {
@@ -59,12 +59,14 @@ export function VehiculosCliente({ clienteId, vehiculos, tamanos }: Props) {
             <li key={v.id} className="flex items-center gap-3 p-3">
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="font-heading text-xl font-extrabold italic tabular-nums">{v.placa}</span>
-                <span className="flex flex-wrap gap-x-3 text-sm text-tinta-suave">
-                  <span>{v.tamano}</span>
-                  {detalle(v).map((d) => (
-                    <span key={String(d)}>{d}</span>
-                  ))}
-                </span>
+                {detalle(v).length > 0 && (
+                  <span className="flex flex-wrap gap-x-3 text-sm">
+                    {detalle(v).map((d) => (
+                      <span key={String(d)}>{d}</span>
+                    ))}
+                  </span>
+                )}
+                <span className="text-sm text-tinta-suave">Tamaño: {v.tamano}</span>
               </span>
               <Button type="button" variant="ghost" size="icon" disabled={!hidratado} aria-label={`Editar ${v.placa}`} onClick={() => abrir(v)}>
                 <PencilIcon />

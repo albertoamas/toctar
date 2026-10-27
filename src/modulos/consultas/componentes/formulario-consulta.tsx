@@ -21,8 +21,8 @@ import { CLIENTE_NUEVO, NOMBRE_CANAL, VEHICULO_OTRO } from "../reglas";
 export type ClienteElegido = {
   id: number;
   nombre: string;
-  /** `detalle`: tamaño, marca y modelo, color… lo que se sepa. */
-  vehiculos: { id: number; placa: string; detalle: string[] }[];
+  /** `detalle`: marca y modelo, color… lo que se sepa. El tamaño, aparte (se mostraba junto al modelo y confundía). */
+  vehiculos: { id: number; placa: string; tamano: string; detalle: string[] }[];
 };
 
 type Props = {
@@ -71,11 +71,14 @@ export function FormularioConsulta({ cliente, tamanos, servicios }: Props) {
               {cliente.vehiculos.map((ve, i) => (
                 <OpcionRadio key={ve.id} id={`vehiculo-${ve.id}`} valor={String(ve.id)} invalido={!!e.vehiculo && i === 0}>
                   <span className="font-heading text-xl font-extrabold italic tabular-nums">{ve.placa}</span>
-                  <span className="flex flex-wrap gap-x-3 text-sm text-tinta-suave">
-                    {ve.detalle.map((d) => (
-                      <span key={d}>{d}</span>
-                    ))}
-                  </span>
+                  {ve.detalle.length > 0 && (
+                    <span className="flex flex-wrap gap-x-3 text-sm">
+                      {ve.detalle.map((d) => (
+                        <span key={d}>{d}</span>
+                      ))}
+                    </span>
+                  )}
+                  <span className="text-sm text-tinta-suave">Tamaño: {ve.tamano}</span>
                 </OpcionRadio>
               ))}
               <OpcionRadio id="vehiculo-otro" valor={VEHICULO_OTRO}>

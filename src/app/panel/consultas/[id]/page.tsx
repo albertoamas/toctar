@@ -116,8 +116,11 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/consulta
               <dt className="text-tinta-suave">Vehículo</dt>
               <dd className="flex flex-col">
                 <span className="font-heading text-xl font-extrabold italic tabular-nums">{c.placa}</span>
-                <span className="text-sm text-tinta-suave">{[c.tamano, vehiculo].filter(Boolean).join(", ")}</span>
+                {vehiculo && <span className="text-sm text-tinta-suave">{vehiculo}</span>}
               </dd>
+              {/* El tamaño aparte: junto al modelo, con una coma, se leía como una lista de modelos */}
+              <dt className="text-tinta-suave">Tamaño</dt>
+              <dd>{c.tamano}</dd>
               <dt className="text-tinta-suave">Servicio</dt>
               <dd>{c.servicio ?? <span className="text-tinta-suave">Todavía no sabe</span>}</dd>
               <dt className="text-tinta-suave">Canal</dt>
