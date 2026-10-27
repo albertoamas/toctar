@@ -32,7 +32,15 @@ import { useEspaciosLibres } from "./espacios-libres";
 
 type Origen =
   | { tipo: "cotizacion"; cotizacionId: number; duraciones: number[] }
-  | { tipo: "directa"; clienteId: number; vehiculoId: number; opciones: OpcionServicio[]; recordatorioId?: number | null };
+  | {
+      tipo: "directa";
+      clienteId: number;
+      vehiculoId: number;
+      opciones: OpcionServicio[];
+      recordatorioId?: number | null;
+      /** Las líneas con que llega (un mantenimiento, con su servicio ya elegido: pedido 21). */
+      lineasIniciales?: Linea[];
+    };
 
 type Props = {
   origen: Origen;
@@ -54,7 +62,7 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
   const e = estado.errores ?? {};
 
   // Todo controlado: React reinicia el formulario al terminar la acción y así nada se pierde tras un error
-  const [lineas, setLineas] = useState<Linea[]>([]);
+  const [lineas, setLineas] = useState<Linea[]>(origen.tipo === "directa" ? (origen.lineasIniciales ?? []) : []);
   const duraciones =
     origen.tipo === "cotizacion"
       ? origen.duraciones

@@ -169,7 +169,14 @@ export async function mantenimientosDelCliente(clienteId: number): Promise<Mante
 /** Un recordatorio que todavía se puede agendar, para la nueva reserva (`?recordatorio=`). */
 export async function recordatorioParaAgendar(id: number) {
   const [r] = await db
-    .select({ id: recordatorio.id, clienteId: recordatorio.clienteId, vehiculoId: recordatorio.vehiculoId, fechaProgramada: recordatorio.fechaProgramada, servicio: servicio.nombre })
+    .select({
+      id: recordatorio.id,
+      clienteId: recordatorio.clienteId,
+      vehiculoId: recordatorio.vehiculoId,
+      fechaProgramada: recordatorio.fechaProgramada,
+      servicio: servicio.nombre,
+      servicioMantenimientoId: recordatorio.servicioMantenimientoId,
+    })
     .from(recordatorio)
     .innerJoin(servicio, eq(recordatorio.servicioId, servicio.id))
     .where(and(eq(recordatorio.id, id), inArray(recordatorio.estado, [...ESTADOS_RECORDATORIO_ABIERTO])));

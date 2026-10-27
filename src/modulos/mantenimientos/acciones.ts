@@ -3,15 +3,17 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { auditoria, cliente, recordatorioMantenimiento as recordatorio, vehiculo } from "@/db/esquema";
-import { erroresDe, type EstadoFormulario } from "@/lib/formularios";
+import { auditoria, cliente, recordatorioMantenimiento as recordatorio, servicio, vehiculo } from "@/db/esquema";
+import { fechaEnBolivia, sumarMeses } from "@/lib/fechas";
+import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { exigirModulo } from "@/lib/sesion";
-import { esquemaAvisarMantenimiento, esquemaCerrarMantenimiento } from "./esquemas";
+import { esquemaAgregarMantenimiento, esquemaAvisarMantenimiento, esquemaCerrarMantenimiento, esquemaEditarPlan } from "./esquemas";
 import { ESTADOS_RECORDATORIO_ABIERTO } from "./reglas";
 
-// Recordatorios de mantenimiento (HU-38, RF-50). Entra el dueño o el encargado con "Mantenimientos". Al agendar, el
-// recordatorio pasa a "agendado" en la acción de la reserva (agendarReserva), en la misma transacción.
-// Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §6.
+// Recordatorios de mantenimiento (HU-38, RF-50) y planes por vehículo (pedido 21). Entra el dueño o el encargado con
+// "Mantenimientos". Al agendar, el recordatorio pasa a "agendado" en la acción de la reserva (agendarReserva); al
+// entregar, los planes se resuelven en la entrega (aplicarPlanesAlEntregar), cada uno en su transacción.
+// Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §6 y P21-planes-mantenimiento.md §6.
 
 const RECARGA = "No se pudo leer el pedido. Recarga la página.";
 const YA_NO = "Ese mantenimiento ya no está por avisar: se agendó, se cerró o el cliente se desactivó. Recarga la página.";
@@ -80,4 +82,104 @@ export async function cerrarMantenimiento(_previo: EstadoFormulario, datos: Form
 
   despuesDeCambiar(clienteId);
   return { ok: true, mensaje: "Listo: no se le volverá a avisar." };
+}
+
+const REPETIDO = "Ese vehículo ya tiene un mantenimiento abierto de ese servicio: edítalo.";
+
+/**
+ * Agrega un mantenimiento desde la ficha del cliente (pedido 21, el pedido 17): un servicio que el vehículo se hizo
+ * antes del sistema. El próximo es la fecha en que se hizo más la frecuencia; si ya pasó, queda vencido y aparece en
+ * "Por avisar". Un plan abierto de ese vehículo y servicio no se duplica (índice único en la base).
+ */
+export async function agregarMantenimiento(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  const usuario = await exigirModulo("mantenimientos");
+  const valores = {
+    clienteId: String(datos.get("clienteId") ?? ""),
+    vehiculoId: String(datos.get("vehiculoId") ?? ""),
+    servicioId: String(datos.get("servicioId") ?? ""),
+    hecho: String(datos.get("hecho") ?? ""),
+    meses: String(datos.get("meses") ?? ""),
+  };
+  const r = esquemaAgregarMantenimiento.safeParse(valores);
+  if (!r.success) {
+    const errores = erroresDe(r.error);
+    return errores.clienteId ? { mensaje: RECARGA } : { errores, valores };
+  }
+  const { clienteId, vehiculoId, servicioId, hecho, meses } = r.data;
+  if (hecho > fechaEnBolivia()) return { errores: { hecho: "La fecha no puede ser después de hoy." }, valores };
+
+  const [[suyo], [delCatalogo]] = await Promise.all([
+    db
+      .select({ id: vehiculo.id })
+      .from(vehiculo)
+      .innerJoin(cliente, eq(vehiculo.clienteId, cliente.id))
+      .where(and(eq(vehiculo.id, vehiculoId), eq(vehiculo.clienteId, clienteId), eq(vehiculo.activo, true), eq(cliente.activo, true))),
+    db.select({ mantenimientoServicioId: servicio.mantenimientoServicioId }).from(servicio).where(eq(servicio.id, servicioId)),
+  ]);
+  if (!suyo) return { errores: { vehiculoId: "Ese vehículo ya no está activo: elige otro." }, valores };
+  if (!delCatalogo?.mantenimientoServicioId) return { errores: { servicioId: "Ese servicio no programa mantenimiento: elige otro." }, valores };
+
+  const autorId = Number(usuario.id);
+  try {
+    await db.transaction(async (tx) => {
+      const [nuevo] = await tx
+        .insert(recordatorio)
+        .values({
+          clienteId,
+          vehiculoId,
+          servicioId,
+          servicioMantenimientoId: delCatalogo.mantenimientoServicioId!,
+          intervaloMeses: meses,
+          fechaProgramada: sumarMeses(hecho, meses),
+        })
+        .returning({ id: recordatorio.id });
+      await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "recordatorio_mantenimiento", entidadId: nuevo.id, accion: "agregar", datos: { vehiculoId, servicioId, hecho, meses } });
+    });
+  } catch (error) {
+    if (indiceUnicoViolado(error) === "recordatorio_un_plan_abierto") return { errores: { servicioId: REPETIDO }, valores };
+    throw error;
+  }
+
+  despuesDeCambiar(clienteId);
+  return { ok: true, mensaje: "Mantenimiento agregado." };
+}
+
+/**
+ * Edita un plan sin agendar (pendiente o avisado): cada cuántos meses y cuándo es el próximo. Si cambia la fecha, se
+ * vuelve a avisar (el aviso de antes era por otra fecha). Agendado, se cambia al reprogramar o cancelar la reserva.
+ */
+export async function editarPlan(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  const usuario = await exigirModulo("mantenimientos");
+  const valores = { id: String(datos.get("id") ?? ""), meses: String(datos.get("meses") ?? ""), proximo: String(datos.get("proximo") ?? "") };
+  const r = esquemaEditarPlan.safeParse(valores);
+  if (!r.success) {
+    const errores = erroresDe(r.error);
+    return errores.id ? { mensaje: RECARGA } : { errores, valores };
+  }
+  const { id, meses, proximo } = r.data;
+  const hoy = fechaEnBolivia();
+  if (proximo < hoy || proximo > sumarMeses(hoy, 24)) return { errores: { proximo: "Elige una fecha desde hoy y hasta dentro de 24 meses." }, valores };
+  const autorId = Number(usuario.id);
+
+  const clienteId = await db.transaction(async (tx) => {
+    const [actual] = await tx.select({ fecha: recordatorio.fechaProgramada }).from(recordatorio).where(abierto(id)).for("update");
+    if (!actual) return null;
+    const otraFecha = actual.fecha !== proximo;
+    const [editado] = await tx
+      .update(recordatorio)
+      .set({
+        intervaloMeses: meses,
+        fechaProgramada: proximo,
+        ...(otraFecha && { estado: "pendiente" as const, avisadoAt: null, avisadoPor: null }),
+        updatedAt: sql`now()`,
+      })
+      .where(eq(recordatorio.id, id))
+      .returning({ clienteId: recordatorio.clienteId });
+    await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "recordatorio_mantenimiento", entidadId: id, accion: "editar", datos: { meses, proximo } });
+    return editado.clienteId;
+  });
+  if (clienteId === null) return { mensaje: YA_NO };
+
+  despuesDeCambiar(clienteId);
+  return { ok: true, mensaje: "Plan guardado." };
 }

@@ -1,5 +1,7 @@
 import type { EstadoRecordatorio } from "@/db/esquema/mantenimientos";
 import { diasEntre, mesYAnio, sumarDias, sumarMeses } from "@/lib/fechas";
+import { mostrarMonto } from "@/modulos/catalogo/reglas";
+import type { Sugerencia } from "@/modulos/cotizaciones/reglas";
 
 // Reglas de los recordatorios de mantenimiento (HU-38, RF-50) y de los planes por vehículo (pedido 21).
 // Especificación: C4-taller-entrega.md §5 y §6, y P21-planes-mantenimiento.md §6.
@@ -124,4 +126,19 @@ export function textoVencimiento(fecha: string, hoy: string): string {
   const dias = diasEntre(hoy, fecha);
   if (dias < 0) return dias === -1 ? "venció ayer" : `venció hace ${-dias} días`;
   return dias === 0 ? "vence hoy" : dias === 1 ? "vence mañana" : `vence en ${dias} días`;
+}
+
+/**
+ * La línea con que llega la reserva de un mantenimiento (pedido 21): su servicio de mantenimiento y, si tiene una sola
+ * opción para ese vehículo, también la opción y su precio sugerido. Null si ese servicio ya no se ofrece (inactivo).
+ */
+export function lineaDelMantenimiento(
+  opciones: { servicioId: number; varianteId: number; sugerencia: Sugerencia }[],
+  servicioId: number,
+): { servicioId: number; varianteId: number; precio: string } | null {
+  const suyas = opciones.filter((o) => o.servicioId === servicioId);
+  if (suyas.length === 0) return null;
+  if (suyas.length > 1) return { servicioId, varianteId: 0, precio: "" };
+  const [unica] = suyas;
+  return { servicioId, varianteId: unica.varianteId, precio: unica.sugerencia.tipo === "monto" ? mostrarMonto(unica.sugerencia.monto) : "" };
 }

@@ -21,6 +21,7 @@ import { DatosVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 import { ElegirCliente } from "@/modulos/clientes/componentes/elegir-cliente";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { recordatorioParaAgendar } from "@/modulos/mantenimientos/consultas";
+import { lineaDelMantenimiento } from "@/modulos/mantenimientos/reglas";
 
 export const metadata: Metadata = { title: "Nueva reserva" };
 
@@ -28,7 +29,7 @@ export const metadata: Metadata = { title: "Nueva reserva" };
 // el buscador de Clientes (`?cliente=`) y su vehículo (`?vehiculo=`). Dueño o encargado con "Agenda"; la directa lleva
 // precios y la arma el dueño o quien tiene "Pagos". `?fecha=` y `?espacio=` llegan desde un día libre del tablero.
 // HU-38: `?recordatorio=` llega desde "Agendar" en Mantenimientos, con el cliente y el vehículo: al agendar, el
-// recordatorio queda "agendado".
+// recordatorio queda "agendado". Pedido 21: la línea llega con su servicio de mantenimiento.
 // Pulido 10.2: el cliente y su vehículo en un recuadro de lectura (como en Nueva consulta), con "Cambiar" en su
 // cabecera; la hora y la nota plegadas, y "Agendar" fijo abajo en el celular (en FormularioReserva).
 export default function PaginaNuevaReserva({ searchParams }: PageProps<"/panel/agenda/nueva">) {
@@ -197,7 +198,15 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
         </section>
       ) : (
         <Formulario
-          origen={{ tipo: "directa", clienteId: d.cliente.id, vehiculoId: d.vehiculo.id, opciones: d.opciones, recordatorioId: recordatorio?.id ?? null }}
+          origen={{
+            tipo: "directa",
+            clienteId: d.cliente.id,
+            vehiculoId: d.vehiculo.id,
+            opciones: d.opciones,
+            recordatorioId: recordatorio?.id ?? null,
+            // Un mantenimiento llega con su servicio de mantenimiento ya elegido (pedido 21)
+            lineasIniciales: recordatorio ? [lineaDelMantenimiento(d.opciones, recordatorio.servicioMantenimientoId)].filter((l) => l !== null) : [],
+          }}
           conPagos={conPagos}
           hoy={hoy}
           fechaInicial={fechaInicial}
