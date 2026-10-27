@@ -1,0 +1,32 @@
+"use client";
+
+import { ChevronDownIcon } from "lucide-react";
+import { useHidratado } from "@/componentes/hidratado";
+import { Button } from "@/componentes/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/componentes/ui/dropdown-menu";
+
+// Menú "Más" de una ficha (skill pantallas-panel, §3): las acciones que se usan poco (desactivar, cancelar, anular)
+// fuera de la vista, junto a la acción principal del encabezado. Cada opción abre su confirmación (un modal): lo
+// destructivo nunca se hace con un solo toque. Se habilita al cargar la página, así un toque temprano no se pierde.
+// No es menu-desplegable.tsx, que es la navegación del celular.
+
+export type AccionMas = { texto: string; alElegir: () => void };
+
+export function MenuMas({ acciones }: { acciones: AccionMas[] }) {
+  const hidratado = useHidratado();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<Button type="button" variant="outline" disabled={!hidratado} />}>
+        Más
+        <ChevronDownIcon />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-auto min-w-48">
+        {acciones.map((a) => (
+          <DropdownMenuItem key={a.texto} onClick={a.alElegir} className="min-h-9 px-3 text-base pointer-coarse:min-h-11">
+            {a.texto}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}

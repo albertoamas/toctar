@@ -41,8 +41,8 @@ Toda pantalla del panel es uno de estos tipos. Identificarlo decide su forma; no
 
 ### Crear (nuevo cliente, nueva reserva, nueva consulta)
 - **¿Modal o pantalla?** Crear algo de **pocos campos (uno a tres)** va en un **modal** desde la lista ("Agregar servicio": solo el nombre), con `ModalFormulario`: no se pierde la lista de vista y no hay una página casi vacía. Un formulario largo (un cliente con su vehículo, una reserva) va en **su propia pantalla**. En los dos casos, al crear se llega a la ficha.
-- **Un formulario y un botón principal**, al final, que dice lo que crea ("Crear cliente"). En el celular, si el formulario es más alto que la pantalla, el botón queda fijo abajo.
-- Primero lo obligatorio; lo opcional al final o detrás de "Agregar más datos". Valores por defecto que acierten (hoy, el primer espacio libre, el servicio más pedido) para que el caso común sea llenar poco.
+- **Un formulario y un botón principal**, al final, que dice lo que crea ("Crear cliente"). En el celular el botón queda fijo abajo: `PieFormulario` (`src/componentes/panel/pie-formulario.tsx`).
+- Primero lo obligatorio; lo opcional al final o plegado detrás de "＋ Agregar …" ("Agregar correo, NIT y notas"): `MasDatos` (`mas-datos.tsx`), que empieza abierto si trae un valor o un error. Valores por defecto que acierten (hoy, el primer espacio libre, el servicio más pedido) para que el caso común sea llenar poco.
 - Al terminar, lleva a la ficha de lo creado con un aviso corto.
 
 ### Configuración (Negocio, Taller, Parámetros, Mensajes)
@@ -58,7 +58,7 @@ Los tipos de botón (rojo para guardar o crear, contorno para lo secundario, ros
 - **Una acción principal (roja) a la vista por pantalla**, o por sección abierta. Si hay dos rojos compitiendo, uno no es principal.
 - **Cada botón dice qué hace y sobre qué:** "Guardar precios", "Registrar pago", "Entregar vehículo". Un "Guardar" solo vale si en ese momento hay un solo formulario abierto.
 - **Siempre en el mismo lugar:** al pie de su formulario o sección, alineado a la izquierda, el principal primero y "Cancelar" al lado. El paso siguiente de una ficha, en su encabezado.
-- **Menú "Más"** para lo poco frecuente: un solo componente `MenuMas` en `src/componentes/panel/`, sobre el `dropdown-menu` de shadcn (`npx shadcn@latest add dropdown-menu`; se agrega la primera vez que una pantalla lo necesite). No es `menu-desplegable.tsx`, que es la navegación del celular. Lo destructivo dentro de "Más" sigue pidiendo confirmación.
+- **Menú "Más"** para lo poco frecuente: un solo componente, `MenuMas` (`src/componentes/panel/menu-mas.tsx`, sobre el `dropdown-menu` de shadcn; desde el pulido 8.3, en la ficha del cliente). No es `menu-desplegable.tsx`, que es la navegación del celular. Lo destructivo dentro de "Más" sigue pidiendo confirmación: un `ModalFormulario` con "Sí, {verbo}" y `CancelarModal focoInicial` (el foco en "Cancelar", así un Enter no lo confirma).
 - **Un componente, no copias:** el patrón "sección con Editar" es `SeccionConEditar` y lo usan todas las fichas; todo modal con formulario es `ModalFormulario`; su formulario se cierra al guardar con `useCerrarModal` y pone sus botones en `PieModal`, con `CancelarModal` ("Cancelar", o "Listo" si cada cambio ya se guardó al momento). Lo que se consulta (como un historial) va arriba en el modal, no en el pie. Si una pantalla necesita una variante, se extiende el componente.
 - **Alineación:** listas de datos con la etiqueta a la izquierda y el valor a la derecha (también los campos de un formulario de montos: una fila por campo, de ancho fijo), así los números quedan en columna aunque una etiqueta ocupe dos líneas. En una grilla, las etiquetas largas desalinean los valores.
 

@@ -206,9 +206,9 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 8.1 | Clientes y búsqueda | `/panel/clientes` | ⏳ |
-| 8.2 | Agregar cliente | `/panel/clientes/nuevo` | ⏳ |
-| 8.3 | Ficha del cliente: datos, vehículos, consultas, reservas y mantenimientos | `/panel/clientes/[id]` | ⏳ |
+| 8.1 | Clientes y búsqueda | `/panel/clientes` | ✅ |
+| 8.2 | Agregar cliente | `/panel/clientes/nuevo` | ✅ |
+| 8.3 | Ficha del cliente: datos, vehículos, consultas, reservas y mantenimientos | `/panel/clientes/[id]` | ✅ |
 
 ### 9. Panel: consultas y cotizaciones
 
@@ -991,6 +991,81 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - **2.226 px en el celular (−56 %)** y 1.384 en la computadora (−59 %); igual con Datos y Variantes arriba. Capturas a 360, 390, 768 y 1280 px en lectura y con cada modal abierto (hoja en el celular); el foco en el primer campo al abrir (también el que se abre solo al crear) y de vuelta en "Editar" al cerrar. Comparativas en `pulido-visual/7.3-servicio-catalogo-celular.jpg` y `7.3-servicio-catalogo-computadora.jpg`.
   - E2E `hu-19-20` con los modales (editar, guardar, cerrar y volver a lectura con el dato y el foco; "Listo" no aparece con una variante a medio escribir); la página pública se renueva en segundo plano en unos segundos y la prueba la visita hasta ver el cambio (`enElSitio`). `hu-07` cierra el modal de precios que abre la ficha recién creada.
   - La especificación C1 (§5 y §8) quedó al día.
+
+### 8.1 Clientes y búsqueda (26/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | Buscador (nombre, teléfono o placa) | Encontrar a un cliente | Dueño o encargado, varias veces al día | Arriba: es la tarea de la pantalla |
+  | Lista: nombre, WhatsApp y placas | Abrir la ficha | Igual | Queda, con la fila de un toque compartida |
+  | "Agregar cliente" | Registrar un cliente | Seguido | Arriba; en su pantalla (cliente y vehículo: un formulario largo) |
+  | "Ver desactivados" | Recuperar a un cliente dado de baja | Rara vez | Abajo |
+- **Encontrado:**
+  - Dos listas distintas en la misma pantalla (tarjetas sueltas en el celular, tabla en la computadora), cuando el catálogo y el inicio ya usan la fila de un toque.
+  - La placa, que es como el taller nombra un auto, en gris chico al lado del teléfono.
+  - El texto del buscador cortado en el celular ("Buscar por nombre, teléfono o p" a 360 px).
+  - Viendo los desactivados, solo un texto en negrita lo decía; para volver, un enlace al final.
+- **Cambios** (propuesta aprobada el 26/10):
+  - `ListaFilas` en todos los tamaños: el nombre, las placas en negrita y el WhatsApp en tinta suave (o "Sin vehículos"). Se van la tabla y las tarjetas.
+  - **Varios vehículos** (pedido del desarrollador al aprobar: una familia o una flota): hasta tres placas y "y 2 más", sin cortar una placa al pasar de renglón; si se buscó una placa, las que coinciden van primero, así la buscada se ve aunque sea la quinta. Función pura `placasEnFila`, con prueba unitaria.
+  - `EncabezadoPagina` con "Agregar cliente"; en el buscador, "Nombre, teléfono o placa" (el lector de pantalla sigue oyendo la etiqueta completa).
+  - Viendo los desactivados: "Desactivados. Ver los activos" arriba de la lista y las filas atenuadas.
+- **Verificación:** capturas a 360, 390, 768 y 1280 px de la lista, una búsqueda, una sin resultados, una por la quinta placa y los desactivados, con un cliente temporal de cinco vehículos y un nombre de 60 letras (se borró después); sin desborde. El alto en el celular queda igual por fila (la placa en su renglón). Comparativa en `pulido-visual/8.1-clientes-celular.jpg`. E2E `hu-22` (cinco vehículos: tres placas y "y 2 más"; la quinta buscada pasa adelante) y `hu-23`, sin el filtro de lo visible que pedían la tabla y las tarjetas.
+
+### 8.2 Agregar cliente (26/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | Nombre y WhatsApp | Registrar al cliente | Dueño o encargado, cada cliente nuevo | A la vista (obligatorios) |
+  | Placa y tamaño del primer vehículo | Lo normal: llega con su auto | Casi siempre | A la vista: el tamaño define el precio |
+  | Correo, NIT, razón social y notas | Facturar, recordar algo | A veces, casi siempre después | Plegados: "Agregar correo, NIT y notas" |
+  | Marca, modelo, año y color | Describir el auto | A veces | Plegados: "Agregar marca, modelo, año y color" |
+  | "Agregar cliente" (botón) | Crear | Al final | "Crear cliente", fijo al pie en el celular |
+- **Encontrado:**
+  - 12 campos a la vista y 1.501 px en el celular (dos pantallas), cuando el caso común usa 4.
+  - Entre el WhatsApp y la placa, cuatro campos opcionales: para cargar el auto había que pasar por lo que no se usa.
+  - El botón decía lo mismo que el título ("Agregar cliente") y quedaba al fondo.
+  - En la computadora, el nombre ocupaba todo el ancho y el WhatsApp quedaba angosto, mientras placa y tamaño iban de a dos.
+  - La ayuda de Notas, en dos líneas; el título sin el encabezado compartido.
+- **Cambios** (propuesta aprobada el 26/10):
+  - A la vista, nombre y WhatsApp; placa y tamaño (de a dos desde 640 px). Lo opcional, plegado detrás de "＋ Agregar …": se abre con un toque, el foco pasa a su primer campo y empieza abierto si trae un valor o un error (un error nunca queda escondido).
+  - "Crear cliente" ("Creando…"); en el celular, fijo al pie mientras el formulario se desplaza.
+  - Notas: "Por ejemplo, cómo prefiere que lo contacten." (también en la ficha). `EncabezadoPagina`.
+  - **Componentes nuevos:** `MasDatos` (`mas-datos.tsx`: un `<details>` nativo, funciona antes de cargar la página y sus campos se envían igual estando cerrado) y `PieFormulario` (`pie-formulario.tsx`: el botón de crear fijo al pie en el celular). `CamposCliente` y `CamposVehiculo` reciben `plegar`; la ficha y la nueva consulta no cambian.
+- **Verificación:** **950 px en el celular (−37 %)**; con todo abierto, 1.582. Capturas a 360, 390, 768 y 1280 px vacía, con todo abierto y con errores (el correo inválido recibe el foco; el grupo del vehículo abierto porque trae la marca); desplazada hasta el final, el botón fijo no tapa nada. Comparativa en `pulido-visual/8.2-agregar-cliente-celular.jpg`. E2E `hu-21`: lo opcional plegado, el foco al abrir, el "＋ Agregar" de 44 px y el error de un campo plegado a la vista y con el foco; "Crear cliente".
+
+### 8.3 Ficha del cliente (26/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | Nombre y "Escribir por WhatsApp" | Saber quién es, contactarlo | Seguido | Arriba |
+  | Vehículos (lista, lápiz y "Agregar vehículo") | Ver sus autos, agregar uno | Seguido | Arriba; editar y agregar en modales |
+  | Datos: 6 campos abiertos y "Guardar cambios" | Consultar un dato; corregirlo a veces | Consultar seguido, editar rara vez | En lectura, con "Editar" en un modal |
+  | Reservas con saldo y estado | Qué tiene agendado y qué debe | Seguido | Queda; lo que debe sube al encabezado |
+  | Consultas y "Nueva consulta" | Qué preguntó, empezar otra | A veces | Queda |
+  | Mantenimientos | Cuándo le toca | A veces | Al final |
+  | "Desactivar" (título, texto y botón) | Darlo de baja | Casi nunca | Al menú "Más", con confirmación |
+- **Encontrado:**
+  - **1.888 px en el celular** (casi tres pantallas); la mitad, el formulario de datos abierto (6 campos y "Guardar cambios") para algo que se edita rara vez.
+  - Lo que debe el cliente, recién en la tercera pantalla, dentro de Reservas.
+  - "Desactivar", una sección entera (título, texto y botón) entre Datos y Consultas.
+  - Los campos vacíos (correo, NIT, razón social) ocupando lugar; el vehículo se editaba dentro de la lista y la página saltaba.
+  - El encabezado sin el componente compartido; en el celular, el botón de WhatsApp solo en su renglón.
+- **Cambios** (propuesta aprobada el 26/10):
+  - Encabezado compartido con "Debe 900 Bs" (insignia de aviso, solo para quien ve pagos; como en Saldos pendientes, lo entregado sin pagar: función pura `saldoPendiente`, con prueba unitaria), "Escribir por WhatsApp" y **"Más"** con "Desactivar cliente" (confirmación en un modal, el foco en "Cancelar"). Desactivado: "Reactivar cliente" en el encabezado.
+  - Datos en lectura (etiqueta y valor, solo lo que tiene valor) con "Editar" en un modal; vehículos con la placa grande, el lápiz y "＋ Agregar" en modales, con lo opcional plegado como en el alta. Lado a lado y del mismo alto en la computadora.
+  - Reservas con `ListaFilas` (con flecha, como las demás listas), antes que Consultas; Mantenimientos igual (su fila lleva un enlace adentro).
+  - **Componentes:** `MenuMas` (nuevo, `menu-mas.tsx`, sobre el `dropdown-menu` de shadcn: lo usarán las fichas de consulta, reserva y orden); `CancelarModal focoInicial`, para las confirmaciones. Reutilizados: `EncabezadoPagina`, `SeccionConEditar`, `ModalFormulario`, `ListaFilas` y `MasDatos`. `AccesoCliente` pasa a `MasCliente` y `ReactivarCliente`.
+- **Verificación:** **1.279 px en el celular (−32 %)** y 914 en la computadora (−26 %). Capturas a 360, 390, 768 y 1280 px de dos clientes (uno con reservas, saldo y mantenimiento; otro con dos vehículos y una consulta), del menú "Más" y de cada modal; el foco en el primer campo al abrir (en "Cancelar" en la confirmación) y de vuelta en su botón al cerrar. Comparativa en `pulido-visual/8.3-ficha-cliente-celular.jpg`. E2E `hu-23` (datos y vehículos en modales: errores, foco, lectura después de guardar, lo guardado al volver a abrir; desactivar desde "Más" y reactivar), `hu-32` (agendada, sin "Debe"; entregada con saldo, "Debe 300 Bs"; sin Pagos, ni saldos ni deuda), `hu-24`, `hu-33` y `hu-38`.
+- **Revisión del grupo 8 (code-review, 26/10):**
+  - "Debe" sumaba también las reservas por venir: ahora cuenta lo entregado sin pagar, como Saldos pendientes. Y se calcula también para quien tiene Pagos sin Agenda.
+  - `MasDatos` podía volver a cerrarse solo tras un segundo envío, y quitarle el foco al campo con error: ahora solo se abre, y el foco al abrir es una vez por toque.
+  - `CabeceraSeccion` (de `seccion-con-editar.tsx`): la cabecera de Vehículos era una copia de la de `SeccionConEditar`.
+  - El comentario y la prueba de `placasEnFila`: pasa adelante las placas que contienen lo buscado, sea o no una placa.
+  - Descartados: el foco al cancelar desde "Más" ya vuelve al botón (la E2E lo comprueba); al reactivar, el aviso lo anuncia; "Pagado" y "Saldo" se distinguen por el texto, y lo que debe está en el encabezado; el `conAviso` por render es el patrón de los demás formularios en modal.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)

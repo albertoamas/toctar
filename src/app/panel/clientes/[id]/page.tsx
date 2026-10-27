@@ -1,23 +1,26 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
+import { Fragment, Suspense } from "react";
 import { cn } from "cn";
 import { CalendarIcon, InboxIcon } from "lucide-react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { ListaFilas } from "@/componentes/panel/fila-lista";
+import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import { puedeVerModulo } from "@/lib/permisos";
 import { formatearFecha } from "@/lib/fechas";
 import { exigirModulo } from "@/lib/sesion";
-import { enlaceWhatsApp, whatsAppLocal } from "@/lib/whatsapp";
+import { enlaceWhatsApp, formatearWhatsApp, whatsAppLocal } from "@/lib/whatsapp";
 import { reservasDelCliente } from "@/modulos/agenda/consultas";
 import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
-import { estaPagada } from "@/modulos/pagos/reglas";
-import { AccesoCliente } from "@/modulos/clientes/componentes/acceso-cliente";
+import { estaPagada, saldoPendiente } from "@/modulos/pagos/reglas";
+import { MasCliente, ReactivarCliente } from "@/modulos/clientes/componentes/acceso-cliente";
 import { FormularioDatosCliente } from "@/modulos/clientes/componentes/formulario-datos-cliente";
 import { VehiculosCliente } from "@/modulos/clientes/componentes/vehiculos-cliente";
 import { obtenerCliente } from "@/modulos/clientes/consultas";
@@ -33,6 +36,8 @@ export const metadata: Metadata = { title: "Cliente" };
 // HU-23: ficha del cliente: datos, vehículos, WhatsApp y desactivar. HU-24: sus consultas y "Nueva consulta", si quien
 // entra tiene el módulo. HU-32: sus reservas, con el saldo de cada una para quien ve pagos; desde C4 son también sus
 // órdenes, con su estado. HU-38: sus mantenimientos programados, para quien tiene "Mantenimientos".
+// Pulido 8.3 (skill pantallas-panel): una ficha en lectura. Arriba, quién es, lo que debe y cómo escribirle (desactivar,
+// en "Más"); vehículos y datos lado a lado, cada uno editado en un modal; después reservas, consultas y mantenimientos.
 export default function PaginaCliente({ params, searchParams }: PageProps<"/panel/clientes/[id]">) {
   return (
     <section className="flex flex-col gap-6">
@@ -60,31 +65,72 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
     tamanosActivos(),
     verConsultas ? consultasDelCliente(numero) : [],
     obtenerParametros(),
-    verAgenda ? reservasDelCliente(numero, verPagos) : [],
+    // Con Pagos también sin Agenda: de ahí sale lo que debe (la lista de reservas es de Agenda)
+    verAgenda || verPagos ? reservasDelCliente(numero, verPagos) : [],
     verMantenimientos ? mantenimientosDelCliente(numero) : [],
   ]);
   if (!c) notFound();
 
+  const debe = saldoPendiente(reservas);
+  const datos: [string, string | null][] = [
+    ["WhatsApp", formatearWhatsApp(c.telefono)],
+    ["Correo", c.correo],
+    ["NIT", c.nit],
+    ["Razón social", c.razonSocial],
+    ["Notas", c.notas],
+  ];
+
   return (
-    <>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-4">
-        <h1 className="font-heading text-4xl font-extrabold italic">{c.nombre}</h1>
-        {!c.activo && <span className="tt-insignia">Desactivado</span>}
-        {/* Enlace con forma de botón: abre el chat (cn: sin él, el borde del contorno no se ve) */}
-        <a href={enlaceWhatsApp(c.telefono)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }), "sm:ml-auto")}>
-          <IconoWhatsApp />
-          Escribir por WhatsApp
-        </a>
-      </div>
+    <div className="flex max-w-5xl flex-col gap-8">
+      <EncabezadoPagina
+        titulo={c.nombre}
+        estado={
+          (!c.activo || debe) && (
+            <span className="flex flex-wrap gap-2">
+              {!c.activo && <span className="tt-insignia">Desactivado</span>}
+              {/* Solo para quien ve pagos: sin el permiso, reservas no trae saldos */}
+              {debe && <span className="tt-insignia tt-insignia--aviso">Debe {mostrarMonto(debe)} Bs</span>}
+            </span>
+          )
+        }
+        accion={
+          <div className="flex flex-wrap gap-2">
+            {!c.activo && <ReactivarCliente id={c.id} />}
+            {/* Enlace con forma de botón: abre el chat (cn: sin él, el borde del contorno no se ve) */}
+            <a href={enlaceWhatsApp(c.telefono)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
+              <IconoWhatsApp />
+              Escribir por WhatsApp
+            </a>
+            {c.activo && <MasCliente id={c.id} nombre={c.nombre} />}
+          </div>
+        }
+      >
+        {!c.activo && "No sale en la lista ni en las búsquedas."}
+      </EncabezadoPagina>
       {creado && <AvisoEnPagina>Cliente {c.nombre} creado.</AvisoEnPagina>}
 
-      {/* En el celular, primero los vehículos (lo que más se consulta en el taller), después los datos y al final
-          desactivar; en la computadora, los datos a la izquierda */}
-      <div className="grid max-w-5xl gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:grid-rows-[auto_1fr] lg:items-start">
-        <div className="lg:col-start-2 lg:row-start-1">
-          <VehiculosCliente clienteId={c.id} vehiculos={c.vehiculos} tamanos={tamanos} />
-        </div>
-        <div className="lg:col-start-1 lg:row-span-2 lg:row-start-1">
+      {/* Lado a lado y del mismo alto en la computadora (como en el catálogo); en el celular, primero los vehículos */}
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-2 md:gap-4">
+        <VehiculosCliente clienteId={c.id} vehiculos={c.vehiculos} tamanos={tamanos} />
+        <SeccionConEditar
+          id="datos"
+          titulo="Datos"
+          etiquetaEditar="Editar datos del cliente"
+          tituloModal="Datos del cliente"
+          lectura={
+            // Solo lo que tiene valor: un dato vacío no ocupa una fila (se carga desde "Editar")
+            <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2">
+              {datos
+                .filter(([, valor]) => valor?.trim())
+                .map(([etiqueta, valor]) => (
+                  <Fragment key={etiqueta}>
+                    <dt className="text-tinta-suave">{etiqueta}</dt>
+                    <dd className="break-words whitespace-pre-line">{valor}</dd>
+                  </Fragment>
+                ))}
+            </dl>
+          }
+        >
           <FormularioDatosCliente
             id={c.id}
             iniciales={{
@@ -96,14 +142,42 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
               notas: c.notas ?? "",
             }}
           />
-        </div>
-        <div className="lg:col-start-2 lg:row-start-2">
-          <AccesoCliente id={c.id} nombre={c.nombre} activo={c.activo} />
-        </div>
+        </SeccionConEditar>
       </div>
 
+      {verAgenda && (
+        <section aria-labelledby="reservas-titulo" className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <h2 id="reservas-titulo" className="font-heading text-2xl font-bold italic">Reservas</h2>
+            {/* La reserva directa lleva precios: la arma quien ve pagos (las demás salen de una consulta) */}
+            {c.activo && verPagos && (
+              <Link href={`/panel/agenda/nueva?cliente=${c.id}`} className={cn(buttonVariants({ variant: "outline" }))}>
+                <CalendarIcon />
+                Nueva reserva
+              </Link>
+            )}
+          </div>
+          {reservas.length === 0 ? (
+            <p className="text-tinta-suave">Todavía no tiene reservas.</p>
+          ) : (
+            <ListaFilas
+              etiqueta="Reservas"
+              filas={reservas.map((r) => ({
+                href: rutaTrabajo(r.id, r.estado, verOrdenes),
+                titulo: `${formatearFecha(r.fechaInicio)} en ${r.espacio}`,
+                // El saldo de una cancelada no se cobra: no se muestra
+                dato: r.saldo && r.estado !== "cancelado" ? (estaPagada(r.saldo.saldo) ? "Pagado" : `Saldo: ${mostrarMonto(r.saldo.saldo)} Bs`) : null,
+                detalles: [r.placa],
+                aviso: r.estado === "cancelado" ? NOMBRE_ESTADO_TRABAJO[r.estado] : null,
+                estado: NOMBRE_ESTADO_TRABAJO[r.estado],
+              }))}
+            />
+          )}
+        </section>
+      )}
+
       {verConsultas && (
-        <section aria-labelledby="consultas-titulo" className="flex max-w-5xl flex-col gap-4">
+        <section aria-labelledby="consultas-titulo" className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <h2 id="consultas-titulo" className="font-heading text-2xl font-bold italic">Consultas</h2>
             {/* Un cliente desactivado no consulta: se reactiva primero */}
@@ -118,50 +192,8 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
         </section>
       )}
 
-      {verAgenda && (
-        <section aria-labelledby="reservas-titulo" className="flex max-w-5xl flex-col gap-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <h2 id="reservas-titulo" className="font-heading text-2xl font-bold italic">Reservas</h2>
-            {/* La reserva directa lleva precios: la arma quien ve pagos (las demás salen de una consulta) */}
-            {c.activo && verPagos && (
-              <Link href={`/panel/agenda/nueva?cliente=${c.id}`} className={cn(buttonVariants({ variant: "outline" }))}>
-                <CalendarIcon />
-                Nueva reserva
-              </Link>
-            )}
-          </div>
-          {reservas.length === 0 ? (
-            <p className="text-tinta-suave">Todavía no tiene reservas.</p>
-          ) : (
-            <ul aria-label="Reservas" className="flex flex-col divide-y divide-border rounded-sm border border-border">
-              {reservas.map((r) => (
-                <li key={r.id}>
-                  <Link href={rutaTrabajo(r.id, r.estado, verOrdenes)} className="flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-1 p-3 hover:bg-superficie">
-                    <span className="flex flex-col">
-                      <span className="font-semibold">
-                        {formatearFecha(r.fechaInicio)} en {r.espacio}
-                      </span>
-                      <span className="text-sm text-tinta-suave">{r.placa}</span>
-                    </span>
-                    <span className="flex flex-wrap items-center gap-3">
-                      {/* El saldo de una cancelada no se cobra: no se muestra */}
-                      {r.saldo && r.estado !== "cancelado" && (
-                        <span className={cn("tabular-nums", estaPagada(r.saldo.saldo) ? "text-exito" : "font-semibold")}>
-                          {estaPagada(r.saldo.saldo) ? "Pagado" : `Saldo: ${mostrarMonto(r.saldo.saldo)} Bs`}
-                        </span>
-                      )}
-                      <span className={cn("tt-insignia", r.estado === "cancelado" && "tt-insignia--aviso")}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</span>
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
-
       {verMantenimientos && (
-        <section aria-labelledby="mantenimientos-titulo" className="flex max-w-5xl flex-col gap-4">
+        <section aria-labelledby="mantenimientos-titulo" className="flex flex-col gap-4">
           <h2 id="mantenimientos-titulo" className="font-heading text-2xl font-bold italic">Mantenimientos</h2>
           {mantenimientos.length === 0 ? (
             <p className="text-tinta-suave">No tiene mantenimientos programados.</p>
@@ -196,6 +228,6 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
           )}
         </section>
       )}
-    </>
+    </div>
   );
 }

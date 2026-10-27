@@ -144,22 +144,25 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel (44 px c
 - **Variantes:** en lectura, sus nombres en una línea (y cuántas desactivadas). "Editar" abre el modal "Variantes" con la lista para agregar, renombrar, ordenar y desactivar (cada cambio se guarda al momento; se cierra con "Listo", que no aparece mientras una fila está abierta). Las variantes inactivas no tienen precios en la ficha (conservan los suyos).
 
 ### `/panel/clientes` — Clientes (dueño y encargado con "Clientes")
-- Arriba: buscador ("Buscar por nombre, teléfono o placa") y "Agregar cliente" (enlace con forma de botón, rojo).
+- Arriba: el encabezado compartido con "Agregar cliente" (enlace con forma de botón, rojo) y el buscador (etiqueta "Buscar por nombre, teléfono o placa"; en el campo, "Nombre, teléfono o placa", que entra entero a 360 px).
 - La búsqueda actualiza la dirección (`?q=`) con una pausa de 300 ms mientras se escribe; la lista se calcula en el servidor. Una ✕ propia de 44 px borra la búsqueda y devuelve el foco al campo. "Ver desactivados" y "Ver los activos" conservan lo escrito. Sin búsqueda, los 30 más recientes; con búsqueda, hasta 30 resultados y "Hay más: escribe algo más preciso" si se pasan.
-- Celular: tarjetas (nombre, teléfono, placas) que se tocan enteras. Computadora: tabla (nombre, WhatsApp, vehículos) con la fila entera tocable.
-- Los desactivados no salen; un enlace "Ver desactivados" (`?ver=desactivados`) los lista.
+- La fila de un toque compartida (`ListaFilas`, pulido 8.1, 26/10) en todos los tamaños: el nombre; debajo, en negrita, las placas (como el taller nombra los autos); en tinta suave, el WhatsApp y "Sin vehículos" si no tiene. Con varios vehículos, hasta tres placas y "y 2 más" (`placasEnFila`); si se buscó una placa, las que coinciden van primero, así la buscada se ve aunque sea la quinta.
+- Los desactivados no salen; un enlace "Ver desactivados" (`?ver=desactivados`), al final, los lista. Viéndolos, una línea arriba dice "Desactivados." con "Ver los activos", y las filas van atenuadas.
 - Estados vacíos: "Todavía no hay clientes. Agrega el primero con Agregar cliente." · "No hay clientes con «<búsqueda>»."
 
 ### `/panel/clientes/nuevo` — Agregar cliente
 - Formulario: nombre, WhatsApp (+591, 8 dígitos), correo, NIT, razón social y notas; y, opcional, el primer vehículo (placa, tamaño, marca, modelo, año, color), porque lo normal es registrar al cliente con su auto.
+- A la vista, el caso común (pulido 8.2, 26/10): nombre y WhatsApp; placa y tamaño (de a dos desde 640 px). Lo opcional va plegado detrás de "＋ Agregar correo, NIT y notas" y "＋ Agregar marca, modelo, año y color" (`MasDatos`): se abre con un toque y el foco pasa a su primer campo; empieza abierto si trae un valor o un error.
+- "Crear cliente" ("Creando…"), en el celular fijo al pie (`PieFormulario`).
 - Al crear, lleva a la ficha con el aviso "Cliente <nombre> creado."
 
 ### `/panel/clientes/[id]` — Ficha del cliente
-- Título: nombre, con "Desactivado" si corresponde. Botón "Escribir por WhatsApp" (enlace con forma de botón, contorno).
-- **Datos:** formulario para editar (mismos campos que al crear).
-- **Vehículos:** lista (placa, tamaño, marca y modelo, año, color) con "Agregar vehículo"; cada uno se edita en la misma lista y se desactiva desde su edición (como las listas de Configuración, 6.2).
-- **Acceso:** "Desactivar cliente" con confirmación en la página; desactivado, "Reactivar cliente".
-- En el celular, primero los vehículos (lo que más se consulta en el taller), después los datos y al final desactivar; en la computadora, los datos a la izquierda y vehículos y desactivar a la derecha.
+Ficha en lectura desde el pulido 8.3 (26/10; skill `pantallas-panel`):
+- **Encabezado** compartido: el nombre; insignias "Desactivado" y, para quien ve pagos, "Debe 900 Bs" (como en Saldos pendientes: la suma de los saldos de sus órdenes entregadas sin pagar; una reserva por venir o un trabajo en el taller todavía no se deben: `saldoPendiente`. También para quien tiene Pagos sin Agenda). "Escribir por WhatsApp" (enlace con forma de botón, contorno) y el menú **"Más"** con "Desactivar cliente", que abre la confirmación en un modal ("Sí, desactivar" y "Cancelar", con el foco en "Cancelar"). Desactivado: "Reactivar cliente" como acción del encabezado y la línea "No sale en la lista ni en las búsquedas."
+- **Vehículos** y **Datos** lado a lado y del mismo alto en la computadora (en el celular, primero los vehículos):
+  - Vehículos: la placa grande, el tamaño y lo que se sepa (marca y modelo, año, color). El lápiz abre el modal "Editar {placa}" y "＋ Agregar", "Agregar vehículo": placa y tamaño a la vista, lo demás plegado como en el alta ("Guardar vehículo" o "Agregar vehículo" y "Cancelar"; al editar, "Desactivar" al pie). Los desactivados, aparte, con "Reactivar".
+  - Datos: WhatsApp, correo, NIT, razón social y notas, solo los que tienen valor. "Editar" abre el modal "Datos del cliente" (los campos del alta, "Guardar datos" y "Cancelar").
+- Después, **Reservas** (la fila de un toque compartida, con el saldo), **Consultas** y **Mantenimientos** (C2 a C4).
 - Secciones de historial: no se muestran en C1 (ver §2).
 
 ## 6. Acciones del servidor

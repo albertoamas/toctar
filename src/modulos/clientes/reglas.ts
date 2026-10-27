@@ -34,6 +34,22 @@ export function normalizarBusqueda(q: string): Busqueda | null {
   return { texto, digitos: digitos.length >= 3 ? digitos : null, placa: placa || null };
 }
 
+/** Cuántas placas muestra la fila de un cliente en la lista: con más, la fila dejaría de leerse de un vistazo. */
+const PLACAS_EN_FILA = 3;
+
+/**
+ * Las placas de un cliente en su fila de la lista (pulido 8.1): hasta tres y "y N más". Las que contienen lo buscado
+ * (escrito como placa) van primero, así la buscada se ve aunque sea el quinto vehículo. Null si no tiene vehículos.
+ */
+export function placasEnFila(placas: string[], busqueda: Busqueda | null): string | null {
+  if (placas.length === 0) return null;
+  const buscada = busqueda?.placa;
+  const orden = buscada ? [...placas.filter((p) => p.includes(buscada)), ...placas.filter((p) => !p.includes(buscada))] : placas;
+  const vistas = orden.slice(0, PLACAS_EN_FILA).join(", ");
+  const resto = orden.length - PLACAS_EN_FILA;
+  return resto > 0 ? `${vistas} y ${resto} más` : vistas;
+}
+
 /** Escapa los comodines de LIKE (% y _) para que se busquen como texto. */
 export const escaparLike = (texto: string) => texto.replace(/[\\%_]/g, (c) => `\\${c}`);
 

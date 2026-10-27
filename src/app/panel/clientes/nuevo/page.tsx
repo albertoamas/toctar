@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioNuevoCliente } from "@/modulos/clientes/componentes/formulario-nuevo-cliente";
 import { tamanosActivos } from "@/modulos/configuracion/consultas";
@@ -13,7 +14,7 @@ export default function PaginaNuevoCliente() {
   return (
     <section className="flex flex-col gap-6">
       <EnlaceVolver href="/panel/clientes">Clientes</EnlaceVolver>
-      <h1 className="font-heading text-4xl font-extrabold italic">Agregar cliente</h1>
+      <EncabezadoPagina titulo="Agregar cliente" />
       <Suspense fallback={<Cargando />}>
         <Formulario />
       </Suspense>

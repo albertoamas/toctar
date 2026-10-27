@@ -11,9 +11,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/componentes/
 
 const Modal = createContext<{ cerrar: () => void } | null>(null);
 
-/** Dónde va el foco al abrir: el primer campo para escribir; si no hay (una lista), el primer botón habilitado. */
+/**
+ * Dónde va el foco al abrir: el primer campo para escribir; si no hay (una lista), el primer botón habilitado. Una
+ * confirmación de algo destructivo lo pone en "Cancelar" (`CancelarModal focoInicial`): un Enter no la confirma.
+ */
 const habilitado = (selectores: string[]) => selectores.map((c) => `${c}:not(:disabled)`).join(", ");
 const primerControl = (modal: HTMLElement | null) =>
+  modal?.querySelector<HTMLElement>("[data-foco-inicial]") ??
   modal?.querySelector<HTMLElement>(habilitado(["input:not([type=hidden])", "textarea", "select"])) ??
   modal?.querySelector<HTMLElement>(habilitado(["button"])) ??
   true;
@@ -59,11 +63,11 @@ export function PieModal({ children }: { children: React.ReactNode }) {
  * "Cancelar" al lado del botón principal: cierra sin guardar. "Listo" donde cada cambio ya se guardó al momento (una
  * lista que se edita fila por fila). Fuera de un modal no se muestra.
  */
-export function CancelarModal({ texto = "Cancelar" }: { texto?: "Cancelar" | "Listo" }) {
+export function CancelarModal({ texto = "Cancelar", focoInicial }: { texto?: "Cancelar" | "Listo"; focoInicial?: boolean }) {
   const modal = useContext(Modal);
   if (!modal) return null;
   return (
-    <Button type="button" variant="outline" onClick={modal.cerrar}>
+    <Button type="button" variant="outline" onClick={modal.cerrar} data-foco-inicial={focoInicial || undefined}>
       {texto}
     </Button>
   );
