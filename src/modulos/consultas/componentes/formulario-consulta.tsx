@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { Canal } from "@/db/esquema/consultas";
 import { CamposCliente, CamposVehiculo } from "@/modulos/clientes/componentes/campos";
+import { DatosVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 import type { EstadoCliente } from "@/modulos/clientes/acciones";
 import type { Tamano } from "@/modulos/configuracion/consultas";
 import { crearConsulta } from "../acciones";
@@ -70,15 +71,7 @@ export function FormularioConsulta({ cliente, tamanos, servicios }: Props) {
             <RadioGroup value={vehiculo} onValueChange={(valor) => setVehiculo(String(valor))} className="gap-2" aria-describedby={e.vehiculo ? "vehiculo-error" : undefined}>
               {cliente.vehiculos.map((ve, i) => (
                 <OpcionRadio key={ve.id} id={`vehiculo-${ve.id}`} valor={String(ve.id)} invalido={!!e.vehiculo && i === 0}>
-                  <span className="font-heading text-xl font-extrabold italic tabular-nums">{ve.placa}</span>
-                  {ve.detalle.length > 0 && (
-                    <span className="flex flex-wrap gap-x-3 text-sm">
-                      {ve.detalle.map((d) => (
-                        <span key={d}>{d}</span>
-                      ))}
-                    </span>
-                  )}
-                  <span className="text-sm text-tinta-suave">Tamaño: {ve.tamano}</span>
+                  <DatosVehiculo placa={ve.placa} detalle={ve.detalle} tamano={ve.tamano} />
                 </OpcionRadio>
               ))}
               <OpcionRadio id="vehiculo-otro" valor={VEHICULO_OTRO}>

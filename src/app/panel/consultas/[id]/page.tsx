@@ -61,8 +61,11 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/consulta
   // El paso siguiente, uno solo, en el encabezado (skill pantallas-panel, §2 "Ficha"): cotizar una abierta sin cotización
   // (solo el dueño, RN-01), agendar la cotizada (el cliente aceptó: la cotización queda aceptada y la consulta confirmada,
   // RF-36) o reabrir una perdida. Una confirmada ya no cambia: su reserva está en Cotizaciones
-  const vigente = cotizaciones.find((x) => x.estado === "enviada");
+  // Una perdida se reabre primero y una confirmada ya no cambia: solo se cotiza o corrige una abierta. "Corregir" va en
+  // Cotizaciones con la misma cuenta (corregible), así el encabezado y la sección no se contradicen
+  const vigente = cotizaciones.find((x) => x.estado === "enviada") ?? null;
   const abierta = c.estado === "consulto" || c.estado === "cotizado";
+  const corregible = esDueno && abierta ? vigente : null;
   const principal =
     c.estado === "perdido" ? (
       <ReabrirConsulta id={c.id} />
@@ -140,7 +143,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/consulta
               </Link>
             )}
           </div>
-          <CotizacionesConsulta consultaId={c.id} estado={c.estado} cotizaciones={cotizaciones} esDueno={esDueno} reservas={reservas} verOrdenes={puedeVerModulo(usuario, "ordenes")} />
+          <CotizacionesConsulta consultaId={c.id} cotizaciones={cotizaciones} corregible={corregible} esDueno={esDueno} reservas={reservas} verOrdenes={puedeVerModulo(usuario, "ordenes")} />
         </div>
 
         <div className="flex flex-col gap-10 lg:col-start-1 lg:row-start-1">

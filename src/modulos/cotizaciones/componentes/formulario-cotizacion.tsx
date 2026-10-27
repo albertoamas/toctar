@@ -129,8 +129,9 @@ export function FormularioCotizacion({ datos, hoy }: Props) {
 
       <PieFormulario>
         <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:justify-start">
-          {/* El resumen de arriba lo anuncia (aria-live): este repite el total a la vista, sin volver a anunciarlo */}
-          <p className="flex items-baseline gap-2" aria-hidden>
+          {/* El resumen de arriba lo anuncia (aria-live): este repite el total a la vista, sin volver a anunciarlo. Solo
+              en el celular, donde el pie queda fijo; en la computadora el resumen está justo arriba */}
+          <p className="flex items-baseline gap-2 sm:hidden" aria-hidden>
             <span className="text-tinta-suave">Total</span>
             <span className="text-lg font-bold tabular-nums">{bs(totales.total)}</span>
           </p>

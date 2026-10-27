@@ -4,7 +4,6 @@ import { DownloadIcon, FileTextIcon, PencilIcon } from "lucide-react";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
 import { buttonVariants } from "@/componentes/ui/button";
-import type { EstadoConsulta } from "@/db/esquema/consultas";
 import type { EstadoCotizacion } from "@/db/esquema/cotizaciones";
 import { formatearFecha, formatearFechaHora } from "@/lib/fechas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
@@ -32,8 +31,9 @@ const INSIGNIA: Record<EstadoCotizacion, string> = {
 
 type Props = {
   consultaId: number;
-  estado: EstadoConsulta;
   cotizaciones: FilaCotizacion[];
+  /** La vigente que el dueño puede corregir (consulta abierta): la calcula la página, junto con el paso siguiente. */
+  corregible: FilaCotizacion | null;
   esDueno: boolean;
   /** Las reservas que salieron de esta consulta. */
   reservas: ReservaCorta[];
@@ -41,16 +41,12 @@ type Props = {
   verOrdenes: boolean;
 };
 
-export function CotizacionesConsulta({ consultaId, estado, cotizaciones, esDueno, reservas, verOrdenes }: Props) {
-  const vigente = cotizaciones.find((c) => c.estado === "enviada");
-  // Se corrige una consulta abierta; una perdida se reabre primero y una confirmada ya no cambia
-  const abierta = estado === "consulto" || estado === "cotizado";
-
+export function CotizacionesConsulta({ consultaId, cotizaciones, corregible, esDueno, reservas, verOrdenes }: Props) {
   return (
     <section aria-labelledby="cotizaciones-titulo" className="flex flex-col gap-3">
       <CabeceraSeccion id="cotizaciones" titulo="Cotizaciones">
-        {esDueno && abierta && vigente && (
-          <Link href={`/panel/consultas/${consultaId}/cotizar?desde=${vigente.id}`} aria-label="Corregir (nueva versión)" className={cn(buttonVariants({ variant: "ghost" }))}>
+        {corregible && (
+          <Link href={`/panel/consultas/${consultaId}/cotizar?desde=${corregible.id}`} aria-label="Corregir (nueva versión)" className={cn(buttonVariants({ variant: "ghost" }))}>
             <PencilIcon />
             Corregir
           </Link>

@@ -78,9 +78,9 @@ test("tres servicios sin fotos caben en una hoja, también con el cuerpo en 10,5
   expect(pdf.match(/\/Type \/Page\b/g)?.length).toBe(1);
 });
 
-test("con el logo cuadrado que el dueño puede subir (vertical, con lema) y una versión nueva", { timeout: 30_000 }, async () => {
+test("con un logo cuadrado (el vertical sin lema: a ese tamaño la marca no lleva el lema) y una versión nueva", { timeout: 30_000 }, async () => {
   const d = await datos({ version: 2, fotos: [] });
-  const pdf = await generar("logo-cuadrado", { ...d, negocio: { ...d.negocio, logo: await logo("toctar-vertical-sobre-claro.svg") } });
+  const pdf = await generar("logo-cuadrado", { ...d, negocio: { ...d.negocio, logo: await logo("toctar-vertical-sin-lema-sobre-claro.svg") } });
   expect(pdf.startsWith("%PDF-")).toBe(true);
   expect(pdf.match(/\/Type \/Page\b/g)?.length).toBe(1);
 });

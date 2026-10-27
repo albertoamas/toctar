@@ -131,10 +131,12 @@ function BandaTotal({ total }: { total: string }) {
 
 function Logo({ negocio }: { negocio: DatosPdf["negocio"] }) {
   if (!negocio.logo) return <Text style={e.tituloTexto}>{negocio.nombre}</Text>;
-  // Según su forma: uno horizontal, 14 mm de alto; uno casi cuadrado o vertical (el dueño puede subir el que tenga),
-  // 24 mm, así no queda de 14 × 14 mm con su lema ilegible. El ancho, el que dé la proporción (hasta 70 mm)
+  // Según su forma (el dueño puede subir el que tenga): uno cuadrado o vertical, 24 mm de alto, así no queda de 14 × 14
+  // mm; uno horizontal (desde 3:1), 14 mm; en medio, de a poco, sin saltos entre dos logos casi iguales. El ancho, el que
+  // dé la proporción (hasta 70 mm)
   const proporcion = negocio.logo.ancho / negocio.logo.alto;
-  const alto = (proporcion < 2 ? 24 : 14) * MM;
+  const avance = Math.min(1, Math.max(0, (proporcion - 1.5) / 1.5));
+  const alto = (24 - 10 * avance) * MM;
   const ancho = Math.min(70 * MM, alto * proporcion);
   // eslint-disable-next-line jsx-a11y/alt-text -- es el Image de react-pdf, que no tiene alt (no es un <img>)
   return <Image src={{ data: negocio.logo.data, format: negocio.logo.format }} style={{ width: ancho, height: alto, objectFit: "contain", objectPosition: "left" }} />;
