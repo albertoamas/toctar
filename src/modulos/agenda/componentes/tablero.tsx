@@ -9,7 +9,8 @@ import { bloquesDeLaSemana, DIA_CORTO, diaDeLaSemana, NOMBRE_ESTADO_TRABAJO, num
 // HU-29: el tablero de la agenda (RF-38). Una fila por espacio y una columna por día (S-3: por día, sin horas). Cada
 // reserva es una cinta negra con el borde cortado a 60° que abarca sus días; si sigue desde la semana anterior o hacia la
 // siguiente, el borde va recto y lo dice. Un día libre se toca para agendar ahí; uno cerrado va rayado y lo dice.
-// En el celular, un día a la vez (AgendaDelDia): sin desplazarse de lado.
+// En el celular y la tableta, un día a la vez (AgendaDelDia): sin desplazarse de lado. La semana entera, desde 1024 px
+// (pulido 10.1: en la tableta, con siete columnas de 75 px, las cintas se cortaban en "4…").
 // Todo es texto y enlaces: se lee igual con lector de pantalla, sin depender del color.
 
 type Props = {
@@ -106,7 +107,7 @@ function DiaSinReserva({ fecha, espacio, cerrado, pasado, style }: { fecha: stri
 export function TableroSemana({ semana, dias, hoy, conOrdenes }: Props) {
   const lunes = dias[0];
   return (
-    <div className="hidden md:block">
+    <div className="hidden lg:block">
       <div className="grid grid-cols-[8rem_repeat(7,minmax(0,1fr))] gap-1.5">
         <div aria-hidden />
         {dias.map((fecha, i) => {
@@ -157,11 +158,11 @@ export function TableroSemana({ semana, dias, hoy, conOrdenes }: Props) {
   );
 }
 
-/** Celular: un día, una tarjeta por espacio. Las pestañas de los días van en la página (son enlaces). */
+/** Celular y tableta: un día, una tarjeta por espacio. Las pestañas de los días van en la página (son enlaces). */
 export function AgendaDelDia({ semana, dia, hoy, conOrdenes }: { semana: SemanaDeAgenda; dia: string; hoy: string; conOrdenes: boolean }) {
   const cerrado = semana.diasCerrados.includes(diaDeLaSemana(dia));
   return (
-    <ul aria-label={`Espacios el ${textoDia(dia)}`} className="flex flex-col gap-2 md:hidden">
+    <ul aria-label={`Espacios el ${textoDia(dia)}`} className="flex flex-col gap-2 lg:hidden">
       {semana.espacios.map((espacio) => {
         const r = semana.reservas.find((x) => x.espacioId === espacio.id && seCruzan({ inicio: x.inicio, fin: x.fin }, { inicio: dia, fin: dia }));
         return (

@@ -4,29 +4,34 @@ import { Suspense } from "react";
 import { cn } from "cn";
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { AgendaDelDia, TableroSemana } from "@/modulos/agenda/componentes/tablero";
 import { semanaDeAgenda } from "@/modulos/agenda/consultas";
-import { DIA_CORTO, diasDeLaSemana, lunesDeLaSemana, numeroDia, textoDia, textoSemana } from "@/modulos/agenda/reglas";
+import { DIA_CORTO, diasDeLaSemana, lunesDeLaSemana, numeroDia, textoDia, textoSemana, textoSemanaCorto } from "@/modulos/agenda/reglas";
 
 export const metadata: Metadata = { title: "Agenda" };
 
 // HU-29: el tablero de la agenda (RF-38). `?semana=` (cualquier día de la semana; se toma su lunes) y, en el celular,
 // `?dia=` (el día que se ve). Dueño o encargado con "Agenda"; el técnico nunca (sus órdenes llegan en C4).
+// Pulido 10.1: el tablero de la semana desde 1024 px (en la tableta las cintas no se leían); hasta ahí, un día a la vez.
+// La semana se recorre en un renglón: flecha, la semana (corta en el celular), flecha y "Hoy".
 export default function PaginaAgenda({ searchParams }: PageProps<"/panel/agenda">) {
   return (
     <section className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="font-heading text-4xl font-extrabold italic">Agenda</h1>
-        {/* Enlace con forma de botón: lleva a otra pantalla */}
-        <Link href="/panel/agenda/nueva" className={cn(buttonVariants())}>
-          <PlusIcon />
-          Nueva reserva
-        </Link>
-      </div>
+      <EncabezadoPagina
+        titulo="Agenda"
+        accion={
+          // Enlace con forma de botón: lleva a otra pantalla
+          <Link href="/panel/agenda/nueva" className={cn(buttonVariants())}>
+            <PlusIcon />
+            Nueva reserva
+          </Link>
+        }
+      />
       <Suspense fallback={<Cargando />}>
         <Tablero searchParams={searchParams} />
       </Suspense>
@@ -52,18 +57,20 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
 
   return (
     <>
-      <nav aria-label="Semanas" className="flex flex-wrap items-center gap-2">
-        <Link href={enlaceSemana(sumarDias(lunes, -7))} className={cn(buttonVariants({ variant: "outline", size: "icon" }))} aria-label="Semana anterior">
+      {/* Un renglón: la semana entre las flechas; en el celular, corta ("26 oct al 1 nov") para que entre */}
+      <nav aria-label="Semanas" className="flex items-center gap-2">
+        <Link href={enlaceSemana(sumarDias(lunes, -7))} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Semana anterior">
           <ChevronLeftIcon />
         </Link>
-        <Link href={enlaceSemana(sumarDias(lunes, 7))} className={cn(buttonVariants({ variant: "outline", size: "icon" }))} aria-label="Semana siguiente">
+        <p className="min-w-0 text-center font-heading text-xl font-bold italic sm:text-2xl" aria-live="polite">
+          <span className="sm:hidden">{textoSemanaCorto(lunes)}</span>
+          <span className="hidden sm:inline">{textoSemana(lunes)}</span>
+        </p>
+        <Link href={enlaceSemana(sumarDias(lunes, 7))} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Semana siguiente">
           <ChevronRightIcon />
         </Link>
-        <p className="font-heading text-2xl font-bold italic" aria-live="polite">
-          {textoSemana(lunes)}
-        </p>
         {!estaSemana && (
-          <Link href="/panel/agenda" className={cn(buttonVariants({ variant: "outline" }), "sm:ml-auto")}>
+          <Link href="/panel/agenda" className={cn(buttonVariants({ variant: "outline" }), "ml-auto shrink-0")}>
             Hoy
           </Link>
         )}
@@ -75,8 +82,9 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
         <>
           <TableroSemana semana={semana} dias={dias} hoy={hoy} conOrdenes={conOrdenes} />
 
-          {/* Celular: los siete días como pestañas (enlaces: el día va en la dirección) */}
-          <nav aria-label="Días de la semana" className="-mx-4 overflow-x-auto px-4 md:hidden">
+          {/* Celular y tableta: los siete días como pestañas (enlaces: el día va en la dirección). La marcada dice qué
+              día se ve y, si es hoy, su número va en rojo */}
+          <nav aria-label="Días de la semana" className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0 lg:hidden">
             <ul className="grid min-w-max grid-cols-7 gap-1">
               {dias.map((d, i) => (
                 <li key={d}>
@@ -96,10 +104,6 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
               ))}
             </ul>
           </nav>
-          <p className="font-semibold md:hidden">
-            {textoDia(dia)}
-            {dia === hoy && <span className="text-rojo-texto">, hoy</span>}
-          </p>
           <AgendaDelDia semana={semana} dia={dia} hoy={hoy} conOrdenes={conOrdenes} />
         </>
       )}
