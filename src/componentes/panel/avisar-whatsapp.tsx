@@ -19,6 +19,8 @@ type Props = {
   avisado: string | null;
   /** false: el "Avisado el…" ya se muestra en otro lado de la fila (la lista de mantenimientos). */
   conDetalle?: boolean;
+  /** En una lista, siempre con borde: un rojo por fila competiría con los demás (pulido 12.2). */
+  enLista?: boolean;
   /**
    * La acción del servidor que registra el aviso, ya atada a lo que se avisa (`accion.bind(null, { id })`). Termina en
    * "Action" por la convención de Next para las acciones que se pasan a un componente de cliente.
@@ -28,7 +30,7 @@ type Props = {
 
 const NO_SE_REGISTRO = "WhatsApp se abrió, pero el aviso no quedó registrado. Revisa tu conexión y vuelve a avisar.";
 
-export function AvisarPorWhatsApp({ enlace, avisado, conDetalle = true, registrarAction }: Props) {
+export function AvisarPorWhatsApp({ enlace, avisado, conDetalle = true, enLista, registrarAction }: Props) {
   const listo = useHidratado();
   const [registrando, iniciar] = useTransition();
   // Desde el toque hasta la respuesta: un segundo toque no abre otro chat ni registra otro aviso
@@ -51,7 +53,7 @@ export function AvisarPorWhatsApp({ enlace, avisado, conDetalle = true, registra
 
   return (
     <div className="flex flex-col gap-2">
-      <Button type="button" variant={avisado ? "outline" : "default"} className="self-start" disabled={!listo || enCurso || registrando} onClick={avisar}>
+      <Button type="button" variant={avisado || enLista ? "outline" : "default"} className="self-start" disabled={!listo || enCurso || registrando} onClick={avisar}>
         <IconoWhatsApp />
         {avisado ? "Volver a avisar" : "Avisar por WhatsApp"}
       </Button>

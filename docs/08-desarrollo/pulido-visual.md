@@ -242,7 +242,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
 | 12.1 | Saldos pendientes | `/panel/pagos` | ✅ |
-| 12.2 | Mantenimientos | `/panel/mantenimientos` | ⏳ |
+| 12.2 | Mantenimientos | `/panel/mantenimientos` | ✅ |
 
 ### 13. Repaso de lo que cambió y pendientes de la parte 1
 
@@ -1403,6 +1403,29 @@ Pedido del desarrollador: releer las reglas del principio de este documento y co
   - `RegistrarPago` con borde por defecto (el rojo solo se usaba aquí).
   - `EncabezadoPagina` y `EstadoVacio`. No se marca un saldo "viejo": haría falta un valor configurable que no existe.
 - **Verificación:** con pantalla táctil a 360, 390, 768 y 1280 px: nada se sale y ningún control mide menos de 44 px. Comparativa en `pulido-visual/12.1-saldos-celular.jpg`. E2E `hu-32`, `hu-36` y `hu-37`.
+
+### 12.2 Mantenimientos (27/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | "Vencidos" y "Próximos 15 días", con "1 mantenimiento" | Separar lo urgente | — | Quedan, con la cantidad como en Órdenes ("Vencidos (1)") |
+  | Fila: cliente, vehículo, servicio, fecha grande y "venció hace…" | A quién avisar y desde cuándo | Dueño o encargado, cada semana | Queda |
+  | "Todavía no se le avisó." | Saber si falta avisar | — | Insignia "Sin avisar", como en Órdenes; avisado, "Avisado el… por…" |
+  | "Avisar por WhatsApp" rojo en cada fila | Avisar | Seguido | Con borde |
+  | "Agendar" | Darle una reserva | Cuando acepta | Queda |
+  | "No le interesa" con su formulario dentro de la fila | Cerrar el recordatorio | Rara vez | Sin fondo, con un modal |
+- **Encontrado:**
+  - Un botón rojo por fila, como en Saldos pendientes.
+  - "No le interesa" abría su formulario dentro de la fila y empujaba la lista; pesaba lo mismo que avisar, y en el celular los tres botones ocupaban dos renglones.
+  - "Todavía no se le avisó." en cada fila; el título sin `EncabezadoPagina` y la cantidad de los grupos escrita distinto que en Órdenes.
+  - Bien y sin cambios: los dos grupos, la fecha grande, "venció hace" y "vence en", "Agendar" solo con Agenda y Pagos, y el aviso registrado.
+- **Cambios** (propuesta aprobada el 27/10):
+  - Filas con la forma de Saldos pendientes: "Avisar por WhatsApp" (`AvisarPorWhatsApp` con `enLista`: siempre con borde; en la orden sigue rojo, porque ahí es el paso siguiente) y "Agendar" con borde; "No le interesa" sin fondo debajo. Desde 1024 px, las acciones a la derecha.
+  - "No le interesa" en un modal: "No se le volverá a avisar…", la nota opcional, "Sí, no le interesa" (rosado: no se deshace) y "Volver" con el foco.
+  - "Sin avisar" en una insignia junto al nombre; avisado, "Avisado el… por…" bajo el servicio. `EncabezadoPagina` y los grupos como en Órdenes.
+  - Los 15 días de "Próximos" son una constante (`DIAS_PROXIMOS`, de la HU-38), no un valor del panel: anotado como pedido 19 en el registro de cambios, para que lo decida el dueño.
+- **Verificación:** con pantalla táctil a 360, 390, 768 y 1280 px: nada se sale y ningún control mide menos de 44 px. Comparativa en `pulido-visual/12.2-mantenimientos-celular.jpg`. E2E `hu-35`, `hu-38` (el modal con el foco en "Volver") y `hu-40`.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
