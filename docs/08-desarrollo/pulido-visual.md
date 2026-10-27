@@ -1198,6 +1198,7 @@ Pedido del desarrollador: releer las reglas del principio de este documento y co
 - **Ramas:** los grupos 7 y 8 se trabajaron en `pulido/grupo-7` y `pulido/grupo-8` (ya unidos); la regla pide `pulido/catalogo`, `pulido/clientes`… El grupo 9 se renombró a `pulido/consultas` (GitHub cerró el PR #101 y siguió en el #102); los siguientes usan los nombres de la regla.
 - **Errores en `09-pruebas/criterios-entrega-1.md`:** los de los grupos 7 a 9 se anotaron en su tabla.
 - **Textos:** sin guiones largos (—) en lo que ve la gente (revisión del 9.4).
+- **Ids únicos (accesibilidad):** `Campo` genera un id único para su etiqueta, error y ayuda, y se lo pasa a su control (`useAtributosDeCampo` en `Input`, `Textarea` y `Selector`). Arregla en todo el panel el caso de la nota (9.3) y del modal "Datos del cliente": Next deja hasta 3 páginas ocultas en el documento y los ids comunes chocaban. Los títulos de sección repetidos (`cliente-titulo`) quedan: dicen lo mismo en las dos páginas.
 - **Sin duplicar:** el bloque del vehículo (`DatosVehiculo`) y la validación de una línea de servicio (`lineaServicio`) quedan en un solo lugar.
 
 <!-- Plantilla:
