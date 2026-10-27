@@ -97,5 +97,5 @@ test("un cliente se desactiva con confirmación, deja de salir en la lista y se 
   await page.getByRole("button", { name: "Reactivar cliente" }).click();
   await expect(page.getByText("Cliente reactivado.")).toBeVisible();
   await page.goto(`/panel/clientes?q=${encodeURIComponent(nombre)}`);
-  await expect(page.getByRole("link", { name: nombre }).locator("visible=true")).toBeVisible();
+  await expect(page.getByRole("link", { name: nombre })).toBeVisible();
 });

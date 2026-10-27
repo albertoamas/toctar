@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { crearClienteEnBase as crearCliente, ingresarComoDueno } from "./apoyo";
+import { consultar, crearClienteEnBase as crearCliente, ingresarComoDueno } from "./apoyo";
 
 // HU-22 Buscar clientes. Especificación: docs/08-desarrollo/etapas/C1-catalogo-clientes.md §9.
 // Los clientes se crean directo en la base, con datos propios de cada proyecto (celular o escritorio).
@@ -14,8 +14,8 @@ test("se busca por parte del nombre sin tildes, por teléfono parcial y por plac
   await ingresarComoDueno(page);
   await page.goto("/panel/clientes");
   const buscador = page.getByRole("searchbox", { name: "Buscar por nombre, teléfono o placa" });
-  // En el celular la lista son tarjetas; en la computadora, una tabla: se mira la que se ve
-  const resultado = () => page.getByRole("link", { name: nombre }).locator("visible=true");
+  // Cada fila es un enlace con el nombre, las placas y el WhatsApp (pulido 8.1)
+  const resultado = () => page.getByRole("link", { name: nombre });
 
   // Sin tildes ni mayúsculas, sin apretar nada
   await buscador.pressSequentially(`jose perez busqueda ${s.toLowerCase()}`);
@@ -58,10 +58,27 @@ test("los desactivados no salen en la lista, pero se ven aparte", async ({ page 
   await page.goto(`/panel/clientes?q=${encodeURIComponent(nombre)}`);
   await expect(page.getByText(`No hay clientes con «${nombre}».`)).toBeVisible();
   await page.getByRole("link", { name: "Ver desactivados" }).click();
-  await expect(page.getByRole("link", { name: nombre }).locator("visible=true")).toBeVisible();
+  await expect(page.getByRole("list", { name: "Clientes desactivados" }).getByRole("link", { name: nombre })).toBeVisible();
   // La búsqueda se conserva al cambiar de vista
   await expect(page).toHaveURL(/q=.*ver=desactivados/);
   await page.getByRole("link", { name: "Ver los activos" }).click();
   await expect(page).not.toHaveURL(/ver=desactivados/);
   await expect(page.getByRole("searchbox", { name: "Buscar por nombre, teléfono o placa" })).toHaveValue(nombre);
+});
+
+test("un cliente con cinco vehículos muestra tres placas y cuántas más; la buscada se ve aunque sea la quinta", async ({ page }, info) => {
+  const s = sufijo(info);
+  const nombre = `Flota de prueba ${s}`;
+  const id = await crearCliente({ nombre, telefono: telefono(info, 3), placa: `FL${s}1` });
+  for (const n of [2, 3, 4, 5]) {
+    await consultar(
+      "insert into vehiculo (cliente_id, placa, tamano_id, created_by) select $1, $2, (select id from tamano_vehiculo order by orden limit 1), created_by from cliente where id = $1",
+      [id, `FL${s}${n}`],
+    );
+  }
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/clientes?q=${encodeURIComponent(nombre)}`);
+  await expect(page.getByRole("link", { name: nombre })).toContainText(`FL${s}1, FL${s}2, FL${s}3 y 2 más`);
+  await page.goto(`/panel/clientes?q=fl-${s.toLowerCase()}5`);
+  await expect(page.getByRole("link", { name: nombre })).toContainText(`FL${s}5, FL${s}1, FL${s}2 y 2 más`);
 });
