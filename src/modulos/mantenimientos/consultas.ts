@@ -1,9 +1,9 @@
 import "server-only";
-import { and, asc, desc, eq, gt, inArray, lte, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNotNull, lte, sql, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { cliente, recordatorioMantenimiento as recordatorio, servicio, trabajo, usuario, vehiculo, type EstadoRecordatorio, type EstadoTrabajo } from "@/db/esquema";
-import { ESTADOS_RECORDATORIO_ABIERTO, ESTADOS_RECORDATORIO_CERRADO, hastaProximos, MAXIMO_CERRADOS, type VistaMantenimientos } from "./reglas";
+import { ESTADOS_PLAN_ABIERTO, ESTADOS_RECORDATORIO_ABIERTO, ESTADOS_RECORDATORIO_CERRADO, hastaProximos, MAXIMO_CERRADOS, type VistaMantenimientos } from "./reglas";
 
 // Lecturas de los recordatorios de mantenimiento (HU-38). Quien las llama ya pasó por exigirModulo("mantenimientos").
 // Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §6.
@@ -15,6 +15,8 @@ export type MantenimientoPorAvisar = {
   avisadoAt: Date | null;
   avisadoPor: string | null;
   servicio: string;
+  /** Cada cuántos meses, en este vehículo (pedido 21). */
+  intervaloMeses: number;
   clienteId: number;
   cliente: string;
   telefono: string;
@@ -24,11 +26,11 @@ export type MantenimientoPorAvisar = {
   modelo: string | null;
 };
 
-/** Uno cerrado (pedido 20): agendado, con su reserva, o "No le interesa", con su nota. */
+/** Uno cerrado (pedido 20): agendado, con su reserva; hecho, con su orden (pedido 21); o "No le interesa", con su nota. */
 export type MantenimientoCerrado = MantenimientoPorAvisar & {
   nota: string | null;
-  /** La reserva con que se agendó y su estado (para abrirla donde corresponde: reserva u orden). */
-  agendado: { id: number; estado: EstadoTrabajo } | null;
+  /** La reserva con que se agendó o la orden que lo hizo, y su estado (para abrirla donde corresponde). */
+  trabajo: { id: number; estado: EstadoTrabajo } | null;
 };
 
 const avisador = alias(usuario, "avisador");
@@ -46,20 +48,21 @@ export async function mantenimientosMasAdelante(hoy: string): Promise<Mantenimie
   return listar(masAdelante(hoy), [asc(recordatorio.fechaProgramada), asc(recordatorio.id)]);
 }
 
-/** Pedido 20: los agendados y los de "No le interesa", el que se cerró más recién primero (los últimos 50). */
+/** Pedido 20: los agendados, hechos y de "No le interesa", el que se cerró más recién primero (los últimos 50). */
 export async function mantenimientosCerrados(): Promise<MantenimientoCerrado[]> {
   const filas = await db
-    .select({ ...CAMPOS, nota: recordatorio.nota, agendadoId: trabajo.id, agendadoEstado: trabajo.estado })
+    .select({ ...CAMPOS, nota: recordatorio.nota, trabajoId: trabajo.id, trabajoEstado: trabajo.estado })
     .from(recordatorio)
     .innerJoin(cliente, eq(recordatorio.clienteId, cliente.id))
     .innerJoin(vehiculo, eq(recordatorio.vehiculoId, vehiculo.id))
     .innerJoin(servicio, eq(recordatorio.servicioId, servicio.id))
     .leftJoin(avisador, eq(recordatorio.avisadoPor, avisador.id))
-    .leftJoin(trabajo, eq(recordatorio.trabajoAgendadoId, trabajo.id))
+    // La reserva con que se agendó o, ya hecho, la orden que lo hizo (nunca las dos: la base lo exige)
+    .leftJoin(trabajo, eq(trabajo.id, sql`coalesce(${recordatorio.trabajoAgendadoId}, ${recordatorio.trabajoHechoId})`))
     .where(cerrados)
     .orderBy(desc(recordatorio.updatedAt), desc(recordatorio.id))
     .limit(MAXIMO_CERRADOS);
-  return filas.map(({ agendadoId, agendadoEstado, ...f }) => ({ ...f, agendado: agendadoId && agendadoEstado ? { id: agendadoId, estado: agendadoEstado } : null }));
+  return filas.map(({ trabajoId, trabajoEstado, ...f }) => ({ ...f, trabajo: trabajoId && trabajoEstado ? { id: trabajoId, estado: trabajoEstado } : null }));
 }
 
 /** Cuántos hay en cada pestaña, con las mismas condiciones que sus listas: el número y la lista no se separan. */
@@ -83,6 +86,7 @@ const CAMPOS = {
   avisadoAt: recordatorio.avisadoAt,
   avisadoPor: avisador.name,
   servicio: servicio.nombre,
+  intervaloMeses: recordatorio.intervaloMeses,
   clienteId: cliente.id,
   cliente: cliente.nombre,
   telefono: cliente.telefono,
@@ -136,15 +140,24 @@ export type MantenimientoDelCliente = {
   id: number;
   fechaProgramada: string;
   estado: EstadoRecordatorio;
+  /** El servicio base (el que se hizo). */
   servicio: string;
+  /** Cada cuántos meses, en este vehículo (pedido 21). */
+  intervaloMeses: number;
+  /** "No le interesa", con su nota. */
+  nota: string | null;
   placa: string;
   /** Un vehículo desactivado (por ejemplo, lo vendió) no se avisa: la lista de Mantenimientos no lo muestra. */
   vehiculoActivo: boolean;
   /** La reserva con que se agendó y su estado (para abrirla donde corresponde: reserva u orden). */
   agendado: { id: number; estado: EstadoTrabajo } | null;
+  /** La orden que lo hizo (pedido 21). */
+  hecho: { id: number; estado: EstadoTrabajo } | null;
 };
 
-/** Todos los del cliente, para su ficha: el más lejano arriba (los que vienen), los viejos al final. */
+const hechoEn = alias(trabajo, "hecho_en");
+
+/** Todos los del cliente, para su ficha: primero los planes abiertos (el más cercano arriba), después la historia. */
 export async function mantenimientosDelCliente(clienteId: number): Promise<MantenimientoDelCliente[]> {
   const filas = await db
     .select({
@@ -152,18 +165,42 @@ export async function mantenimientosDelCliente(clienteId: number): Promise<Mante
       fechaProgramada: recordatorio.fechaProgramada,
       estado: recordatorio.estado,
       servicio: servicio.nombre,
+      intervaloMeses: recordatorio.intervaloMeses,
+      nota: recordatorio.nota,
       placa: vehiculo.placa,
       vehiculoActivo: vehiculo.activo,
       agendadoId: trabajo.id,
       agendadoEstado: trabajo.estado,
+      hechoId: hechoEn.id,
+      hechoEstado: hechoEn.estado,
     })
     .from(recordatorio)
     .innerJoin(vehiculo, eq(recordatorio.vehiculoId, vehiculo.id))
     .innerJoin(servicio, eq(recordatorio.servicioId, servicio.id))
     .leftJoin(trabajo, eq(recordatorio.trabajoAgendadoId, trabajo.id))
+    .leftJoin(hechoEn, eq(recordatorio.trabajoHechoId, hechoEn.id))
     .where(eq(recordatorio.clienteId, clienteId))
-    .orderBy(desc(recordatorio.fechaProgramada), desc(recordatorio.id));
-  return filas.map(({ agendadoId, agendadoEstado, ...f }) => ({ ...f, agendado: agendadoId && agendadoEstado ? { id: agendadoId, estado: agendadoEstado } : null }));
+    .orderBy(
+      desc(inArray(recordatorio.estado, [...ESTADOS_PLAN_ABIERTO])),
+      sql`case when ${inArray(recordatorio.estado, [...ESTADOS_PLAN_ABIERTO])} then ${recordatorio.fechaProgramada} end asc`,
+      desc(recordatorio.fechaProgramada),
+      desc(recordatorio.id),
+    );
+  return filas.map(({ agendadoId, agendadoEstado, hechoId, hechoEstado, ...f }) => ({
+    ...f,
+    agendado: agendadoId && agendadoEstado ? { id: agendadoId, estado: agendadoEstado } : null,
+    hecho: hechoId && hechoEstado ? { id: hechoId, estado: hechoEstado } : null,
+  }));
+}
+
+/** Los servicios activos que programan mantenimiento, para "Agregar mantenimiento" (pedido 21), con su frecuencia. */
+export async function serviciosConMantenimiento(): Promise<{ id: number; nombre: string; meses: number }[]> {
+  const filas = await db
+    .select({ id: servicio.id, nombre: servicio.nombre, meses: servicio.mantenimientoMeses })
+    .from(servicio)
+    .where(and(eq(servicio.activo, true), isNotNull(servicio.mantenimientoMeses)))
+    .orderBy(asc(servicio.orden), asc(servicio.id));
+  return filas.map((f) => ({ ...f, meses: f.meses ?? 1 }));
 }
 
 /** Un recordatorio que todavía se puede agendar, para la nueva reserva (`?recordatorio=`). */

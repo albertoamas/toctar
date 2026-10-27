@@ -25,13 +25,13 @@ export function NoLeInteresa({ id }: { id: number }) {
         No le interesa
       </Button>
       <ModalFormulario titulo="No le interesa" abierto={abierto} alCambiar={setAbierto}>
-        <Formulario id={id} />
+        <FormularioNoLeInteresa id={id} />
       </ModalFormulario>
     </>
   );
 }
 
-function Formulario({ id }: { id: number }) {
+export function FormularioNoLeInteresa({ id }: { id: number }) {
   const cerrar = useCerrarModal();
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
     conAviso(cerrarMantenimiento, (r) => r.ok && cerrar()),
