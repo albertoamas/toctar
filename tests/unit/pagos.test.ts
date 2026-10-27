@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
 import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
 import { esquemaAnularPago, esquemaPago } from "@/modulos/pagos/esquemas";
-import { estaPagada } from "@/modulos/pagos/reglas";
+import { estaPagada, saldoPendiente } from "@/modulos/pagos/reglas";
 
 // C3 Pagos (HU-32, RF-45): validación del pago y de su anulación. El saldo (calcularSaldo) se prueba en agenda.test.ts.
 
@@ -45,4 +45,15 @@ test("una reserva está pagada con saldo cero o a favor del cliente", () => {
   expect(estaPagada("0.00")).toBe(true);
   expect(estaPagada("-50.00")).toBe(true);
   expect(estaPagada("0.01")).toBe(false);
+});
+
+test("lo que debe un cliente suma los saldos sin pagar, sin las canceladas ni lo pagado de más", () => {
+  const con = (estado: string, saldo: string) => ({ estado, saldo: { total: "0", pagado: "0", saldo } });
+  expect(saldoPendiente([])).toBeNull();
+  expect(saldoPendiente([con("agendado", "0.00")])).toBeNull();
+  expect(saldoPendiente([con("agendado", "900.00"), con("listo", "150.50"), con("entregado", "0.00")])).toBe("1050.50");
+  // La cancelada no se cobra; un saldo negativo (pagó de más) no resta
+  expect(saldoPendiente([con("cancelado", "500.00"), con("en_proceso", "-20.00"), con("agendado", "100.00")])).toBe("100.00");
+  // Quien no ve pagos no tiene saldos calculados
+  expect(saldoPendiente([{ estado: "agendado", saldo: null }])).toBeNull();
 });
