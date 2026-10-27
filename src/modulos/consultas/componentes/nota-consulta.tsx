@@ -4,33 +4,38 @@ import { useActionState, useRef } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
+import { CancelarModal, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { Button } from "@/componentes/ui/button";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { guardarNota } from "../acciones";
 
-// HU-24: la nota de la consulta, editable. Guardarla cuenta como movimiento (RF-35).
+// HU-24: la nota de la consulta. Pulido 9.3: se lee en la página y se edita en el modal de "Editar" (SeccionConEditar),
+// que se cierra al guardar. Guardarla cuenta como movimiento (RF-35).
 
-const guardarConAviso = conAviso(guardarNota);
-
-export function NotaConsulta({ id, nota }: { id: number; nota: string | null }) {
-  const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(guardarConAviso, {});
+export function FormularioNota({ id, nota }: { id: number; nota: string | null }) {
+  const cerrar = useCerrarModal();
+  const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
+    conAviso(guardarNota, (r) => r.ok && cerrar()),
+    {},
+  );
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
   const error = estado.errores?.nota;
 
   return (
-    <form ref={formulario} action={accion} className="flex flex-col gap-4" noValidate aria-labelledby="nota-titulo">
-      <h2 id="nota-titulo" className="font-heading text-2xl font-bold italic">Nota</h2>
+    <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate aria-label="Nota de la consulta">
       <input type="hidden" name="id" value={id} />
+      {/* El id "nota" se repite en Nueva consulta, que Next deja oculta en el documento: Campo usa uno único */}
       <Campo id="nota" etiqueta="Qué pidió, qué le preocupa, cuándo lo necesita" error={error}>
-        <Textarea id="nota" name="nota" rows={4} defaultValue={estado.valores?.nota ?? nota ?? ""} aria-invalid={!!error} aria-describedby={error ? "nota-error" : undefined} />
+        <Textarea id="nota" name="nota" rows={5} defaultValue={estado.valores?.nota ?? nota ?? ""} aria-invalid={!!error} />
       </Campo>
-      <div>
+      <PieModal>
         <Button type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : "Guardar nota"}
         </Button>
-      </div>
+        <CancelarModal />
+      </PieModal>
     </form>
   );
 }

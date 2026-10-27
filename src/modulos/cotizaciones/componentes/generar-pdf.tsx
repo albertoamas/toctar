@@ -10,7 +10,7 @@ import { generarPdfPendiente } from "../acciones";
 export function GenerarPdf({ cotizacionId }: { cotizacionId: number }) {
   const [generando, iniciar] = useTransition();
   return (
-    <Button type="button" variant="outline" size="sm" disabled={generando} onClick={() => iniciar(async () => avisarResultado(await generarPdfPendiente({ cotizacionId })))}>
+    <Button type="button" variant="outline" disabled={generando} onClick={() => iniciar(async () => avisarResultado(await generarPdfPendiente({ cotizacionId })))}>
       <RefreshCwIcon />
       {generando ? "Generando…" : "Generar PDF"}
     </Button>

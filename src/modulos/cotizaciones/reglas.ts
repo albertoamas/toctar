@@ -51,8 +51,42 @@ export function precioSugerido(vigentes: ReadonlyMap<number, Monto>, tamanoId: n
 /** Fecha de validez sugerida (S-5): hoy en Bolivia más los días de Configuración. */
 export const fechaValidez = (hoy: Date, dias: number) => sumarDias(fechaEnBolivia(hoy), dias);
 
+/**
+ * Con qué línea arranca una cotización nueva (pulido 9.4): el servicio de interés de la consulta. Si tiene una sola
+ * variante, ya elegida y con su precio sugerido (vacío si es "según evaluación" o no está cargado); si tiene varias, el
+ * servicio elegido y falta la opción. Sin servicio de interés ("todavía no sabe") o si ya no se ofrece, ninguna.
+ */
+export function lineasDelServicioDeInteres(
+  opciones: readonly { servicioId: number; varianteId: number; sugerencia: Sugerencia }[],
+  servicioId: number | null,
+): { servicioId?: number; varianteId: number; precio: string }[] {
+  const delServicio = servicioId ? opciones.filter((o) => o.servicioId === servicioId) : [];
+  if (delServicio.length === 0) return [];
+  if (delServicio.length > 1) return [{ servicioId: delServicio[0].servicioId, varianteId: 0, precio: "" }];
+  const [unica] = delServicio;
+  return [{ varianteId: unica.varianteId, precio: unica.sugerencia.tipo === "monto" ? unica.sugerencia.monto : "" }];
+}
+
 /** "Pulido y nano cerámico — 5 años"; con la variante "Única" (servicio sin opciones, D-2), solo el servicio. */
-export const descripcionLinea = (servicio: string, variante: string) => (variante.trim().toLowerCase() === "única" ? servicio : `${servicio} — ${variante}`);
+/**
+ * "Pulido y nano cerámico (2 años)": la descripción de una línea, en el panel, la cotización y su PDF. La opción va entre
+ * paréntesis (antes, tras un guion largo); "Única" no se escribe.
+ */
+export const descripcionLinea = (servicio: string, variante: string) => (variante.trim().toLowerCase() === "única" ? servicio : `${servicio} (${variante})`);
+
+/**
+ * Las opciones del catálogo agrupadas por servicio, en su orden (pulido 9.4): se elige primero el servicio y, si tiene
+ * varias, la opción en otro menú. Así se distingue a simple vista cuál tiene opciones.
+ */
+export function serviciosConOpciones<T extends { servicioId: number; servicio: string }>(opciones: readonly T[]): { servicioId: number; servicio: string; opciones: T[] }[] {
+  const grupos = new Map<number, { servicioId: number; servicio: string; opciones: T[] }>();
+  for (const o of opciones) {
+    const grupo = grupos.get(o.servicioId) ?? { servicioId: o.servicioId, servicio: o.servicio, opciones: [] };
+    grupo.opciones.push(o);
+    grupos.set(o.servicioId, grupo);
+  }
+  return [...grupos.values()];
+}
 
 /**
  * Lee un monto que puede ser cero (descuento, adelanto): vacío o "0" es "0.00". Mismo formato que los precios

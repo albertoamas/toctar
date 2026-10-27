@@ -1,10 +1,13 @@
 import { cn } from "cn";
+import { useAtributosDeCampo } from "@/componentes/panel/campo";
 
 // Lista desplegable nativa del navegador, con el mismo aspecto (y el mismo alto) que Input. En el celular abre
 // el selector propio del teléfono, que es más cómodo que uno dibujado.
 // Las opciones llevan fondo y tinta del tema: con el fondo transparente, Chrome en Windows dibujaba la lista
 // en blanco con el texto blanco del sitio oscuro, y no se leía nada (revisión de YankoSoft, pulido 2.8).
-export function Selector({ className, ...props }: React.ComponentProps<"select">) {
+// Dentro de un Campo toma su id único (useAtributosDeCampo).
+export function Selector({ className, ...resto }: React.ComponentProps<"select">) {
+  const props = useAtributosDeCampo(resto);
   return (
     <select
       className={cn(

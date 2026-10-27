@@ -4,7 +4,7 @@ import type { MetadataRoute } from "next";
 // Sin modo sin conexión (acuerdo): sin internet se ve un aviso (public/sw.js).
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "TocTar Detailing — Panel",
+    name: "TocTar Detailing: Panel",
     short_name: "TocTar",
     description: "Panel de gestión de TocTar Detailing",
     lang: "es",

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { METODOS_PAGO } from "@/db/esquema/trabajos";
 import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
 import { leerMonto } from "@/modulos/catalogo/reglas";
+import { lineaServicio } from "@/modulos/cotizaciones/esquemas";
 import { MAXIMO_LINEAS } from "@/modulos/cotizaciones/reglas";
 import { DIAS_MAXIMOS_TRABAJO } from "./reglas";
 
@@ -28,19 +29,6 @@ const textoOpcional = (maximo: number) =>
     .max(maximo, `Hasta ${maximo} caracteres.`)
     .transform((v) => v || null);
 
-const precioLinea = z.string().transform((v, ctx) => {
-  if (!v.trim()) {
-    ctx.addIssue({ code: "custom", message: "Escribe el precio." });
-    return z.NEVER;
-  }
-  const monto = leerMonto(v);
-  if (!monto) {
-    ctx.addIssue({ code: "custom", message: "Revisa el precio: un número mayor a cero, como 450 o 450,50." });
-    return z.NEVER;
-  }
-  return monto;
-});
-
 const lineas = z
   .string()
   .transform((v, ctx) => {
@@ -53,7 +41,7 @@ const lineas = z
   })
   .pipe(
     z
-      .array(z.object({ varianteId: z.number({ message: "Elige el servicio." }).int().positive("Elige el servicio."), precio: precioLinea }))
+      .array(lineaServicio)
       .min(1, "Agrega al menos un servicio.")
       .max(MAXIMO_LINEAS, `Hasta ${MAXIMO_LINEAS} servicios.`),
   );

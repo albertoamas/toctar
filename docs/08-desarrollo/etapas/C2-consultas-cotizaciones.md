@@ -162,16 +162,17 @@ PK (`consulta_id`, `archivo_id`). Hasta 10 por consulta (se valida en la acción
 Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel y sin desborde a 360 px.
 
 ### `/panel/consultas` — Consultas (dueño y encargado con "Consultas")
-- Arriba: "Nueva consulta" (enlace con forma de botón, rojo).
+- Arriba, el encabezado compartido con "Nueva consulta" (enlace con forma de botón, rojo).
 - Pestañas por estado con su cantidad: "Abiertas (n)" (consultó y cotizado, la vista por defecto), "Confirmadas", "Perdidas".
-- Cada consulta: cliente, vehículo (placa), servicio, estado y "hace N días" desde el último movimiento; las más antiguas primero. Desde 7 días se resalta (borde de aviso): se está enfriando. El umbral sale de Configuración (§12).
-- Celular: tarjetas tocables enteras. Computadora: tabla con la fila tocable.
+- Cada consulta, en la fila de un toque compartida (`ListaFilas`, pulido 9.1, 26/10) en todos los tamaños: el cliente; el servicio en negrita ("Todavía no sabe" si no eligió); en tinta suave, la placa y "hace N días" desde el último movimiento. Las más antiguas primero. Desde 7 días una abierta se enfría y lo dice en una insignia de aviso, "9 días sin movimiento" (los días no se repiten abajo). El umbral sale de Configuración (§12).
+- El estado (Consultó o Cotizado) en una insignia, solo en Abiertas: en Confirmadas y Perdidas la pestaña ya lo dice. En la ficha del cliente, la misma fila con la placa grande y el estado siempre (Confirmado en verde, Perdido en ámbar).
 
 ### `/panel/consultas/nueva` — Nueva consulta
 - **Cliente:** buscador (el de C1, en modo "elegir"). Al elegir, sus vehículos activos como opciones. "Cliente nuevo" despliega nombre, WhatsApp, placa y tamaño, con el aviso de repetidos de C1.
 - **Vehículo:** opciones del cliente o "Otro vehículo" (placa y tamaño).
 - **Servicio de interés** (opcional), **canal** (WhatsApp o taller) y **nota**.
 - `?cliente=<id>` llega con el cliente elegido (desde su ficha).
+- Pulido 9.2 (27/10): para elegir, la misma fila que la lista de Clientes (las placas en negrita, `placasEnFila`); el elegido, en un recuadro de lectura con "Cambiar" en su cabecera (como "Editar" en las fichas; con cliente nuevo, "Buscar un cliente registrado"); las opciones de vehículo con la placa grande; "Registrar consulta" fijo abajo en el celular (`PieFormulario`). El canal sigue sin opción marcada de entrada: un valor por defecto que no se cambia sería un dato falso sobre de dónde llegan los clientes.
 - Al guardar, va a la consulta, con la invitación a agregar fotos o videos.
 
 ### `/panel/consultas/[id]` — Consulta
@@ -180,6 +181,7 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel y sin de
 - **Nota:** editable.
 - **Cotizaciones** (dueño): versiones, de la más nueva a la más vieja, con número, versión, fecha, total, validez y estado; "Ver PDF" y "Compartir" en cada una; "Cotizar" si no hay ninguna; "Corregir (nueva versión)" en la vigente. El encargado ve la lista sin montos ni PDF (RN-01: no envía cotizaciones).
 - **Estado:** "Marcar como perdida" (motivo y detalle) o "Reabrir".
+- **Pulido 9.3 (27/10, skill `pantallas-panel`):** el encabezado compartido lleva el paso siguiente como única acción principal (consultó: "Cotizar", solo el dueño; cotizado: "Agendar", con Agenda; perdida: "Reabrir"; confirmada: nada, su reserva está en Cotizaciones), "Escribir por WhatsApp" y "Más" con "Marcar como perdida" (su formulario en un modal). Perdida, el motivo en una línea bajo el título ("Perdida: Precio. Le pareció caro."). Los datos sin el nombre (ya está en el título), con la placa grande y su modelo, el tamaño en su propia fila, el WhatsApp y "Ver ficha del cliente" (con el permiso Clientes). En Nueva consulta, las opciones de vehículo también con "Tamaño: …" aparte. En Cotizaciones, "Corregir" sin borde en la cabecera; los botones del PDF en el tamaño estándar; las reservas con la fila de un toque. La nota en lectura, editada en un modal. En el celular: datos, cotizaciones, fotos y nota.
 
 ### `/panel/consultas/[id]/cotizar` — Cotizar (solo el dueño)
 - Encabezado: cliente, vehículo y su **tamaño** (de él salen los precios).
@@ -189,6 +191,9 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel y sin de
 - **Validez:** "Válida hasta" con la fecha de hoy + los días de Configuración (S-5).
 - **Estimado por fotos:** casilla, marcada si la consulta llegó por WhatsApp (RN-03).
 - **Fotos para el PDF:** casillas con las fotos de la consulta, hasta 4.
+- **PDF, pulido 9.5 (27/10):** cuerpo en 10,5 pt; el logo según su forma (horizontal, 14 mm de alto; casi cuadrado o vertical, 24 mm); el tamaño del vehículo con su etiqueta ("Tamaño: Compactos"). Las cotizaciones ya enviadas no se regeneran (RN-02).
+- **Servicio y opción (revisión del 27/10):** cada línea tiene el menú del servicio y, si el servicio tiene varias opciones, el menú "Opción" (`ElegirServicio`; también en la reserva directa y en los adicionales de la orden). Sin la opción: "Elige la opción.". La descripción de la línea lleva la opción entre paréntesis: "Pulido y nano cerámico (2 años)".
+- **Pulido 9.4 (27/10):** encabezado compartido con "Cliente, placa (tamaño)" en su línea. Una cotización nueva arranca con el servicio de interés de la consulta (`lineasDelServicioDeInteres`): con una sola variante, elegida y con su precio sugerido; con varias, una línea vacía para elegir cuál; "todavía no sabe", sin líneas. Las secciones: Servicios; Total (descuento y resumen); Condiciones (adelanto y validez lado a lado desde 640 px, y la casilla de estimado). Sin las ayudas que repetían Configuración o el tamaño. El total y "Guardar y generar PDF" fijos abajo en el celular (`PieFormulario`).
 - "Guardar y generar PDF". `?desde=<cotizacionId>` llega con las líneas, el descuento y las fotos de esa versión: guardar crea la versión siguiente.
 
 ### `/panel/cotizaciones/[id]/pdf` — PDF (ruta, solo el dueño)

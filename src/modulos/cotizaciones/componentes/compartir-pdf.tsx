@@ -68,7 +68,7 @@ export function CompartirPdf({ cotizacionId, nombre, titulo }: Props) {
 
   const ocupado = estado === "bajando" || estado === "compartiendo";
   return (
-    <Button type="button" variant="outline" size="sm" disabled={ocupado} onClick={() => void compartir()}>
+    <Button type="button" variant="outline" disabled={ocupado} onClick={() => void compartir()}>
       <Share2Icon />
       {estado === "bajando" ? "Preparando…" : estado === "falta-tocar" ? "Compartir ahora" : "Compartir"}
     </Button>

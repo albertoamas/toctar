@@ -1,7 +1,10 @@
 import * as React from "react"
 import { cn } from "cn"
+import { useAtributosDeCampo } from "@/componentes/panel/campo"
 
-function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
+// Dentro de un Campo del panel toma su id único (useAtributosDeCampo)
+function Textarea({ className, ...resto }: React.ComponentProps<"textarea">) {
+  const props = useAtributosDeCampo(resto)
   return (
     <textarea
       data-slot="textarea"
