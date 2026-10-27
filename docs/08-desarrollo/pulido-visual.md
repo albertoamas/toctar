@@ -207,7 +207,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
 | 8.1 | Clientes y búsqueda | `/panel/clientes` | ✅ |
-| 8.2 | Agregar cliente | `/panel/clientes/nuevo` | ⏳ |
+| 8.2 | Agregar cliente | `/panel/clientes/nuevo` | ✅ |
 | 8.3 | Ficha del cliente: datos, vehículos, consultas, reservas y mantenimientos | `/panel/clientes/[id]` | ⏳ |
 
 ### 9. Panel: consultas y cotizaciones
@@ -1012,6 +1012,29 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - `EncabezadoPagina` con "Agregar cliente"; en el buscador, "Nombre, teléfono o placa" (el lector de pantalla sigue oyendo la etiqueta completa).
   - Viendo los desactivados: "Desactivados. Ver los activos" arriba de la lista y las filas atenuadas.
 - **Verificación:** capturas a 360, 390, 768 y 1280 px de la lista, una búsqueda, una sin resultados, una por la quinta placa y los desactivados, con un cliente temporal de cinco vehículos y un nombre de 60 letras (se borró después); sin desborde. El alto en el celular queda igual por fila (la placa en su renglón). Comparativa en `pulido-visual/8.1-clientes-celular.jpg`. E2E `hu-22` (cinco vehículos: tres placas y "y 2 más"; la quinta buscada pasa adelante) y `hu-23`, sin el filtro de lo visible que pedían la tabla y las tarjetas.
+
+### 8.2 Agregar cliente (26/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | Nombre y WhatsApp | Registrar al cliente | Dueño o encargado, cada cliente nuevo | A la vista (obligatorios) |
+  | Placa y tamaño del primer vehículo | Lo normal: llega con su auto | Casi siempre | A la vista: el tamaño define el precio |
+  | Correo, NIT, razón social y notas | Facturar, recordar algo | A veces, casi siempre después | Plegados: "Agregar correo, NIT y notas" |
+  | Marca, modelo, año y color | Describir el auto | A veces | Plegados: "Agregar marca, modelo, año y color" |
+  | "Agregar cliente" (botón) | Crear | Al final | "Crear cliente", fijo al pie en el celular |
+- **Encontrado:**
+  - 12 campos a la vista y 1.501 px en el celular (dos pantallas), cuando el caso común usa 4.
+  - Entre el WhatsApp y la placa, cuatro campos opcionales: para cargar el auto había que pasar por lo que no se usa.
+  - El botón decía lo mismo que el título ("Agregar cliente") y quedaba al fondo.
+  - En la computadora, el nombre ocupaba todo el ancho y el WhatsApp quedaba angosto, mientras placa y tamaño iban de a dos.
+  - La ayuda de Notas, en dos líneas; el título sin el encabezado compartido.
+- **Cambios** (propuesta aprobada el 26/10):
+  - A la vista, nombre y WhatsApp; placa y tamaño (de a dos desde 640 px). Lo opcional, plegado detrás de "＋ Agregar …": se abre con un toque, el foco pasa a su primer campo y empieza abierto si trae un valor o un error (un error nunca queda escondido).
+  - "Crear cliente" ("Creando…"); en el celular, fijo al pie mientras el formulario se desplaza.
+  - Notas: "Por ejemplo, cómo prefiere que lo contacten." (también en la ficha). `EncabezadoPagina`.
+  - **Componentes nuevos:** `MasDatos` (`mas-datos.tsx`: un `<details>` nativo, funciona antes de cargar la página y sus campos se envían igual estando cerrado) y `PieFormulario` (`pie-formulario.tsx`: el botón de crear fijo al pie en el celular). `CamposCliente` y `CamposVehiculo` reciben `plegar`; la ficha y la nueva consulta no cambian.
+- **Verificación:** **950 px en el celular (−37 %)**; con todo abierto, 1.582. Capturas a 360, 390, 768 y 1280 px vacía, con todo abierto y con errores (el correo inválido recibe el foco; el grupo del vehículo abierto porque trae la marca); desplazada hasta el final, el botón fijo no tapa nada. Comparativa en `pulido-visual/8.2-agregar-cliente-celular.jpg`. E2E `hu-21`: lo opcional plegado, el foco al abrir, el "＋ Agregar" de 44 px y el error de un campo plegado a la vista y con el foco; "Crear cliente".
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)

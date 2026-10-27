@@ -41,8 +41,8 @@ Toda pantalla del panel es uno de estos tipos. Identificarlo decide su forma; no
 
 ### Crear (nuevo cliente, nueva reserva, nueva consulta)
 - **¿Modal o pantalla?** Crear algo de **pocos campos (uno a tres)** va en un **modal** desde la lista ("Agregar servicio": solo el nombre), con `ModalFormulario`: no se pierde la lista de vista y no hay una página casi vacía. Un formulario largo (un cliente con su vehículo, una reserva) va en **su propia pantalla**. En los dos casos, al crear se llega a la ficha.
-- **Un formulario y un botón principal**, al final, que dice lo que crea ("Crear cliente"). En el celular, si el formulario es más alto que la pantalla, el botón queda fijo abajo.
-- Primero lo obligatorio; lo opcional al final o detrás de "Agregar más datos". Valores por defecto que acierten (hoy, el primer espacio libre, el servicio más pedido) para que el caso común sea llenar poco.
+- **Un formulario y un botón principal**, al final, que dice lo que crea ("Crear cliente"). En el celular el botón queda fijo abajo: `PieFormulario` (`src/componentes/panel/pie-formulario.tsx`).
+- Primero lo obligatorio; lo opcional al final o plegado detrás de "＋ Agregar …" ("Agregar correo, NIT y notas"): `MasDatos` (`mas-datos.tsx`), que empieza abierto si trae un valor o un error. Valores por defecto que acierten (hoy, el primer espacio libre, el servicio más pedido) para que el caso común sea llenar poco.
 - Al terminar, lleva a la ficha de lo creado con un aviso corto.
 
 ### Configuración (Negocio, Taller, Parámetros, Mensajes)

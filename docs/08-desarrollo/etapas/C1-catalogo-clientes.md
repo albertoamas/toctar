@@ -152,6 +152,8 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel (44 px c
 
 ### `/panel/clientes/nuevo` — Agregar cliente
 - Formulario: nombre, WhatsApp (+591, 8 dígitos), correo, NIT, razón social y notas; y, opcional, el primer vehículo (placa, tamaño, marca, modelo, año, color), porque lo normal es registrar al cliente con su auto.
+- A la vista, el caso común (pulido 8.2, 26/10): nombre y WhatsApp; placa y tamaño (de a dos desde 640 px). Lo opcional va plegado detrás de "＋ Agregar correo, NIT y notas" y "＋ Agregar marca, modelo, año y color" (`MasDatos`): se abre con un toque y el foco pasa a su primer campo; empieza abierto si trae un valor o un error.
+- "Crear cliente" ("Creando…"), en el celular fijo al pie (`PieFormulario`).
 - Al crear, lleva a la ficha con el aviso "Cliente <nombre> creado."
 
 ### `/panel/clientes/[id]` — Ficha del cliente
