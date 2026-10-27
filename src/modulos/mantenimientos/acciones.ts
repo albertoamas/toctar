@@ -84,7 +84,7 @@ export async function cerrarMantenimiento(_previo: EstadoFormulario, datos: Form
   return { ok: true, mensaje: "Listo: no se le volverá a avisar." };
 }
 
-const REPETIDO = "Ese vehículo ya tiene un mantenimiento abierto de ese servicio: edítalo.";
+const REPETIDO = "Ese vehículo ya tiene un mantenimiento de ese servicio por hacer: está en su lista.";
 
 /**
  * Agrega un mantenimiento desde la ficha del cliente (pedido 21, el pedido 17): un servicio que el vehículo se hizo
@@ -114,7 +114,7 @@ export async function agregarMantenimiento(_previo: EstadoFormulario, datos: For
       .from(vehiculo)
       .innerJoin(cliente, eq(vehiculo.clienteId, cliente.id))
       .where(and(eq(vehiculo.id, vehiculoId), eq(vehiculo.clienteId, clienteId), eq(vehiculo.activo, true), eq(cliente.activo, true))),
-    db.select({ mantenimientoServicioId: servicio.mantenimientoServicioId }).from(servicio).where(eq(servicio.id, servicioId)),
+    db.select({ mantenimientoServicioId: servicio.mantenimientoServicioId }).from(servicio).where(and(eq(servicio.id, servicioId), eq(servicio.activo, true))),
   ]);
   if (!suyo) return { errores: { vehiculoId: "Ese vehículo ya no está activo: elige otro." }, valores };
   if (!delCatalogo?.mantenimientoServicioId) return { errores: { servicioId: "Ese servicio no programa mantenimiento: elige otro." }, valores };

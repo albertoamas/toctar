@@ -85,10 +85,22 @@ export async function guardarDatosCatalogo(_previo: EstadoFormulario, datos: For
   const entrada = esquemaDatosCatalogo.safeParse({ ...valores, conMantenimiento, activo });
   if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
   const { id, nombre, duracionDias, mantenimiento } = entrada.data;
-  // El servicio de mantenimiento tiene que existir (puede ser él mismo); uno inactivo no se agenda
-  if (mantenimiento && mantenimiento.servicioId !== id) {
+  // El servicio de mantenimiento tiene que existir (puede ser él mismo); uno inactivo no se agenda. Si no cambió, no se
+  // vuelve a mirar: editar el nombre no obliga a cambiar el mantenimiento
+  const [actual] = await db.select({ mantenimientoServicioId: servicio.mantenimientoServicioId }).from(servicio).where(eq(servicio.id, id));
+  if (mantenimiento && mantenimiento.servicioId !== id && mantenimiento.servicioId !== actual?.mantenimientoServicioId) {
     const [suyo] = await db.select({ activo: servicio.activo }).from(servicio).where(eq(servicio.id, mantenimiento.servicioId));
     if (!suyo?.activo) return { errores: { mantenimientoServicioId: "Ese servicio ya no está activo: elige otro." }, valores };
+  }
+  // Uno que otros usan como su mantenimiento no se desactiva: sus planes no se podrían agendar
+  if (!activo) {
+    const usan = await db
+      .select({ nombre: servicio.nombre })
+      .from(servicio)
+      .where(and(eq(servicio.mantenimientoServicioId, id), ne(servicio.id, id), eq(servicio.activo, true)));
+    if (usan.length > 0) {
+      return { errores: { activo: `Es el mantenimiento de ${new Intl.ListFormat("es").format(usan.map((u) => u.nombre))}: cámbialo ahí primero.` }, valores };
+    }
   }
 
   const otros = await db.select({ id: servicio.id, nombre: servicio.nombre }).from(servicio).where(ne(servicio.id, id));

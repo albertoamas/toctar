@@ -133,7 +133,12 @@ export async function obtenerServicioCatalogo(id: number): Promise<ServicioCatal
     tamanosActivos(),
     db.select({ id: servicio.id, nombre: servicio.nombre }).from(servicio).where(eq(servicio.activo, true)).orderBy(asc(servicio.orden), asc(servicio.id)),
   ]);
-  const serviciosParaMantenimiento = [{ id: s.id, nombre: s.nombre }, ...activos.filter((a) => a.id !== s.id)];
+  // Este primero; el que tiene configurado, aunque ya no esté activo, para que el menú lo muestre
+  const serviciosParaMantenimiento = [
+    { id: s.id, nombre: s.nombre },
+    ...activos.filter((a) => a.id !== s.id),
+    ...(mantenimiento && mantenimiento.servicioId !== s.id && !activos.some((a) => a.id === mantenimiento.servicioId) ? [{ id: mantenimiento.servicioId, nombre: mantenimiento.servicio }] : []),
+  ];
   const activas = todas.filter((v) => v.activo);
   const vigentes = await preciosVigentes(activas.map((v) => v.id));
   return {

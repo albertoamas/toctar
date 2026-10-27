@@ -158,3 +158,21 @@ describe("agregar y editar un plan (pedido 21)", () => {
     });
   });
 });
+
+describe("planesAlEntregar: los casos de la revisión (pedido 21)", () => {
+  const plan = (cambios: Partial<PlanAbierto> = {}): PlanAbierto => ({ id: 50, servicioId: 1, servicioMantenimientoId: 8, intervaloMeses: 3, trabajoAgendadoId: null, ...cambios });
+  const entregar = (servicios: ServicioEntregado[], abiertos: PlanAbierto[]) => planesAlEntregar({ servicios, abiertos, trabajoId: 900, hoy: "2026-10-27" });
+
+  test("agendado con esta orden queda hecho aunque en la reserva se haya cambiado el servicio", () => {
+    expect(entregar([{ servicioId: 2, mantenimiento: null }], [plan({ trabajoAgendadoId: 900 })])).toEqual({
+      hechos: [50],
+      nuevos: [{ servicioId: 1, servicioMantenimientoId: 8, intervaloMeses: 3, fechaProgramada: "2027-01-27" }],
+    });
+  });
+
+  test("un mantenimiento que se repite a sí mismo, entregado como el de otro plan, no abre un segundo aviso", () => {
+    const r = entregar([{ servicioId: 8, mantenimiento: { servicioId: 8, meses: 3 } }], [plan()]);
+    expect(r.hechos).toEqual([50]);
+    expect(r.nuevos).toEqual([{ servicioId: 1, servicioMantenimientoId: 8, intervaloMeses: 3, fechaProgramada: "2027-01-27" }]);
+  });
+});

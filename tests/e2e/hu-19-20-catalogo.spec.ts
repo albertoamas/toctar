@@ -237,3 +237,16 @@ test("el dueño carga precios por tamaño; vacío es según evaluación y cada c
   await expect(fila).toContainText("Desde 280 Bs");
   await expect(fila).not.toContainText("Falta");
 });
+
+test("un servicio que otro usa como su mantenimiento no se desactiva (pedido 21)", async ({ page }) => {
+  await ingresarComoDueno(page);
+  const [{ id }] = await consultar<{ id: number }>("select id from servicio where slug = 'mantenimiento-del-nano-ceramico'");
+  await page.goto(`/panel/catalogo/${id}`);
+  await page.getByRole("button", { name: "Editar datos del servicio" }).click();
+  const modal = page.getByRole("dialog", { name: "Datos del servicio" });
+  await modal.getByText("Activo en el catálogo").click();
+  await modal.getByRole("button", { name: "Guardar datos" }).click();
+  await expect(modal.getByText("Es el mantenimiento de Pulido y nano cerámico: cámbialo ahí primero.")).toBeVisible();
+  const [{ activo }] = await consultar<{ activo: boolean }>("select activo from servicio where id = $1", [id]);
+  expect(activo).toBe(true);
+});

@@ -104,7 +104,7 @@ Se conservan `recordatorio_unico_por_servicio` (`trabajo_origen_id`, `servicio_i
 |---|---|---|---|
 | `guardarDatosCatalogo` (cambia) | `catalogo` (dueño) | Guarda `mantenimiento_servicio_id` y `mantenimiento_meses` (los dos o ninguno); el servicio de mantenimiento debe existir | "Elige el servicio de mantenimiento." · "Escribe los meses, de 1 a 24." |
 | `entregarVehiculo` (cambia) | `ordenes` | En la transacción de la entrega, aplica `planesAlEntregar` (abajo): marca hechos y crea los siguientes. Ya no lee el parámetro | Los de siempre |
-| `agregarMantenimiento` (nueva) | `mantenimientos` | Vehículo activo del cliente; servicio con mantenimiento en el catálogo; fecha hasta hoy; meses de 1 a 24. Crea el plan con `fecha_programada` = fecha + meses (puede quedar vencido). Si ya hay uno abierto de ese vehículo y servicio, no lo crea | "Mantenimiento agregado." · "Ese vehículo ya tiene un mantenimiento abierto de ese servicio: edítalo." |
+| `agregarMantenimiento` (nueva) | `mantenimientos` | Vehículo activo del cliente; servicio con mantenimiento en el catálogo; fecha hasta hoy; meses de 1 a 24. Crea el plan con `fecha_programada` = fecha + meses (puede quedar vencido). Si ya hay uno abierto de ese vehículo y servicio, no lo crea | "Mantenimiento agregado." · "Ese vehículo ya tiene un mantenimiento de ese servicio por hacer: está en su lista." |
 | `editarPlan` (nueva) | `mantenimientos` | Solo abierto sin agendar (pendiente o avisado), de un cliente y vehículo activos. Cambia `intervalo_meses` y `fecha_programada` (desde hoy, hasta 24 meses) | "Plan guardado." · el `YA_NO` de siempre |
 | `cerrarMantenimiento` | `mantenimientos` | Sin cambios ("No le interesa") | |
 
@@ -148,3 +148,13 @@ Rama `pedido-21-planes-mantenimiento` (sale de `pedido-20-mantenimientos-todos` 
 |---|---|---|
 | Qué servicios programan mantenimiento, con qué servicio y cada cuánto (los vidrios, el grafeno) | Dueño | Queda el pulido y nano cerámico → mantenimiento del nano cerámico cada 3 meses; el dueño carga el resto en el catálogo |
 | ¿El servicio de mantenimiento programa a su vez otro? | Resuelto | Sí: el plan se repite solo, con su frecuencia, al entregar cada mantenimiento |
+
+## 13. Revisión (27 de octubre de 2026)
+- **`code-review`, corregido:**
+  - La migración pasa a "hecho" los recordatorios "agendados" cuya reserva ya se entregó (antes de este pedido quedaban agendados para siempre), y recién después cierra los repetidos: si no, un plan quedaba trabado y la historia agendada se perdía.
+  - `planesAlEntregar`: un plan agendado con la orden que se entrega queda hecho aunque en la reserva se haya cambiado el servicio; un servicio que es su propio mantenimiento, entregado como el mantenimiento de otro plan, no abre un segundo aviso (con unitarias).
+  - Catálogo: no se desactiva un servicio que otro usa como su mantenimiento ("Es el mantenimiento de …: cámbialo ahí primero."), y editar el nombre no obliga a cambiar un mantenimiento que no cambió (el menú lo muestra aunque esté inactivo). E2E en `hu-19-20`.
+  - Agregar: el servidor exige el servicio activo; el mensaje del repetido ya no manda a editar ("…por hacer: está en su lista"), porque uno agendado no se edita.
+  - Entregar: claves por posición en las líneas que anticipan; Nueva reserva: aviso si el servicio de mantenimiento ya no se ofrece.
+- **`security-review`:** sin hallazgos. Las acciones nuevas exigen el módulo en el servidor, validan con Zod y comprueban en la base que el vehículo es del cliente y está activo.
+- **Verificación:** unitarias (348), E2E completa (330) antes de la revisión y, después, `hu-19`, `hu-30`, `hu-31`, `hu-36`, `hu-38`, `hu-39` y `flujo-taller-completo` (este falló una vez al recibir, la intermitencia ya anotada, y pasó al repetirlo). La migración, probada con un recordatorio agendado y entregado en una transacción.

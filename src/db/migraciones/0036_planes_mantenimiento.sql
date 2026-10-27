@@ -25,6 +25,10 @@ WHERE s."genera_mantenimiento";--> statement-breakpoint
 UPDATE "recordatorio_mantenimiento" r SET
   "intervalo_meses" = COALESCE((SELECT ("valor" #>> '{}')::int FROM "parametro" WHERE "clave" = 'intervalo_mantenimiento_meses'), 3),
   "servicio_mantenimiento_id" = COALESCE((SELECT s."mantenimiento_servicio_id" FROM "servicio" s WHERE s."id" = r."servicio_id"), r."servicio_id");--> statement-breakpoint
+-- Antes, un recordatorio agendado quedaba "agendado" aunque su reserva se entregara: esos ya se hicieron
+UPDATE "recordatorio_mantenimiento" r SET "estado" = 'hecho', "trabajo_hecho_id" = r."trabajo_agendado_id", "trabajo_agendado_id" = NULL, "updated_at" = now()
+FROM "trabajo" t
+WHERE t."id" = r."trabajo_agendado_id" AND r."estado" = 'agendado' AND t."estado" = 'entregado';--> statement-breakpoint
 -- Los abiertos repetidos de un vehículo y servicio (el error que esto corrige): queda el más reciente
 UPDATE "recordatorio_mantenimiento" SET "estado" = 'no_interesado', "trabajo_agendado_id" = NULL, "nota" = 'Repetido: se dejó el más reciente.', "updated_at" = now()
 WHERE "id" IN (

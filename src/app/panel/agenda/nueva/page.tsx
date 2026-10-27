@@ -182,6 +182,12 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
           </span>
         </p>
       )}
+      {/* Su servicio de mantenimiento ya no se ofrece (inactivo o sin precio para ese tamaño): se dice por qué falta la línea */}
+      {recordatorio && d.vehiculo && !lineaDelMantenimiento(d.opciones, recordatorio.servicioMantenimientoId) && (
+        <p role="status" className="rounded-sm border border-aviso p-3 text-sm">
+          Su servicio de mantenimiento ya no se ofrece en el catálogo: elige el servicio que se hará.
+        </p>
+      )}
       {!d.vehiculo ? (
         <section aria-labelledby="vehiculo-titulo" className="flex flex-col gap-3">
           <CabeceraSeccion id="vehiculo" titulo="Vehículo" />

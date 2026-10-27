@@ -47,10 +47,12 @@ export type PlanNuevo = { servicioId: number; servicioMantenimientoId: number; i
 
 /**
  * Qué pasa con los planes de un vehículo al entregar una orden (pedido 21, P21 §6):
- * 1. Cada plan abierto cuyo servicio de mantenimiento está en la orden queda hecho y nace el siguiente, igual y con su
- *    frecuencia. Así se repite aunque el cliente haya venido por su cuenta, sin agendar desde Mantenimientos.
- * 2. Cada servicio de la orden con mantenimiento en el catálogo, si su plan no se resolvió en el paso 1: el abierto (si
- *    hay) queda hecho y nace uno nuevo, con la frecuencia del que había o, si no había, la del catálogo.
+ * 1. Cada plan abierto cuyo servicio de mantenimiento está en la orden, o que se agendó con esta orden (aunque en la
+ *    reserva se haya cambiado el servicio), queda hecho y nace el siguiente, igual y con su frecuencia. Así se repite
+ *    aunque el cliente haya venido por su cuenta, sin agendar desde Mantenimientos.
+ * 2. Cada servicio de la orden con mantenimiento en el catálogo, si su plan no se resolvió en el paso 1 y no se entregó
+ *    como el mantenimiento de otro plan: el abierto (si hay) queda hecho y nace uno nuevo, con la frecuencia del que
+ *    había o, si no había, la del catálogo.
  * Un plan agendado con otra reserva no se toca (ya tiene su fecha), y nunca hay dos nuevos del mismo servicio base.
  */
 export function planesAlEntregar({
@@ -75,13 +77,17 @@ export function planesAlEntregar({
     fechaProgramada: sumarMeses(hoy, intervaloMeses),
   });
 
+  // Los servicios que se entregaron como el mantenimiento de un plan: no abren un plan propio (sería el mismo aviso dos veces)
+  const comoMantenimiento = new Set<number>();
   for (const p of abiertos) {
-    if (!tocable(p) || !entregados.has(p.servicioMantenimientoId)) continue;
+    const conEstaOrden = p.trabajoAgendadoId === trabajoId;
+    if (!tocable(p) || !(conEstaOrden || entregados.has(p.servicioMantenimientoId))) continue;
     hechos.push(p.id);
+    if (entregados.has(p.servicioMantenimientoId)) comoMantenimiento.add(p.servicioMantenimientoId);
     nuevos.set(p.servicioId, siguiente(p.servicioId, p.servicioMantenimientoId, p.intervaloMeses));
   }
   for (const s of servicios) {
-    if (!s.mantenimiento || nuevos.has(s.servicioId)) continue;
+    if (!s.mantenimiento || nuevos.has(s.servicioId) || comoMantenimiento.has(s.servicioId)) continue;
     const abierto = abiertos.find((p) => p.servicioId === s.servicioId);
     if (abierto && !tocable(abierto)) continue;
     if (abierto) hechos.push(abierto.id);

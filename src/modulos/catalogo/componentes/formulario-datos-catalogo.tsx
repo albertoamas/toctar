@@ -3,7 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
-import { Campo } from "@/componentes/panel/campo";
+import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CancelarModal, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { Selector } from "@/componentes/panel/selector";
 import { Button } from "@/componentes/ui/button";
@@ -131,6 +131,8 @@ export function FormularioDatosCatalogo({ servicio: s, servicios }: Props) {
           <span className="text-sm text-tinta-suave">Inactivo, no se cotiza ni sale en el sitio. No se borra nada.</span>
         </span>
       </label>
+      {/* No se desactiva si otro servicio lo usa como su mantenimiento (pedido 21) */}
+      {e.activo && <MensajeError id="activo-error">{e.activo}</MensajeError>}
       <PieModal>
         <Button type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : "Guardar datos"}

@@ -264,7 +264,7 @@ test("en la ficha del cliente: agregar un mantenimiento anterior al sistema, edi
   await expect(fila).toContainText("Por avisar");
   // El mismo otra vez no se duplica
   await cargar();
-  await expect(agregar.getByText("Ese vehículo ya tiene un mantenimiento abierto de ese servicio: edítalo.")).toBeVisible();
+  await expect(agregar.getByText("Ese vehículo ya tiene un mantenimiento de ese servicio por hacer: está en su lista.")).toBeVisible();
   await page.keyboard.press("Escape");
   await page.goto("/panel/mantenimientos");
   await expect(vencidos(page).getByRole("listitem").filter({ hasText: placa })).toContainText("cada 3 meses");
