@@ -8,23 +8,23 @@ import { calcularTotales, leerMontoOCero, MAXIMO_FOTOS_PDF, MAXIMO_LINEAS, monto
 
 const id = z.coerce.number().int().positive();
 
-const precioLinea = z.string().transform((v, ctx) => {
-  if (!v.trim()) {
-    ctx.addIssue({ code: "custom", message: "Escribe el precio." });
-    return z.NEVER;
-  }
-  const monto = leerMonto(v);
-  if (!monto) {
-    ctx.addIssue({ code: "custom", message: "Revisa el precio: un número mayor a cero, como 450 o 450,50." });
-    return z.NEVER;
-  }
-  return monto;
-});
-
-const linea = z.object({
-  varianteId: z.number({ message: "Elige el servicio." }).int().positive("Elige el servicio."),
-  precio: precioLinea,
-});
+/**
+ * Una línea de servicio: la cotización y la reserva directa (agenda). Se elige el servicio y, si tiene varias, su opción
+ * (pulido 9.4): `servicioId` llega cuando se eligió el servicio y falta la opción, y entonces el error lo dice. Se
+ * revisa en orden (servicio, opción y precio) y se muestra el primero, como en el resto de los formularios.
+ */
+export const lineaServicio = z
+  .object({ servicioId: z.number().int().positive().optional(), varianteId: z.number({ message: "Elige el servicio." }).int(), precio: z.string() })
+  .superRefine((l, ctx) => {
+    if (l.varianteId <= 0) {
+      ctx.addIssue({ code: "custom", path: ["varianteId"], message: l.servicioId ? "Elige la opción." : "Elige el servicio." });
+    } else if (!l.precio.trim()) {
+      ctx.addIssue({ code: "custom", path: ["precio"], message: "Escribe el precio." });
+    } else if (!leerMonto(l.precio)) {
+      ctx.addIssue({ code: "custom", path: ["precio"], message: "Revisa el precio: un número mayor a cero, como 450 o 450,50." });
+    }
+  })
+  .transform((l) => ({ varianteId: l.varianteId, precio: leerMonto(l.precio)! }));
 
 const montoOCero = (mensaje: string) =>
   z.string().transform((v, ctx) => {
@@ -47,7 +47,7 @@ const lineas = z
       return z.NEVER;
     }
   })
-  .pipe(z.array(linea).min(1, "Agrega al menos un servicio.").max(MAXIMO_LINEAS, `Hasta ${MAXIMO_LINEAS} servicios.`));
+  .pipe(z.array(lineaServicio).min(1, "Agrega al menos un servicio.").max(MAXIMO_LINEAS, `Hasta ${MAXIMO_LINEAS} servicios.`));
 
 export const esquemaCotizacion = z
   .object({

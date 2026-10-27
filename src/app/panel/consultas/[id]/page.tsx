@@ -4,9 +4,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { cn } from "cn";
+import { CalendarIcon, FileTextIcon } from "lucide-react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import { formatearFechaHora } from "@/lib/fechas";
@@ -14,18 +17,19 @@ import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { ArchivosConsulta } from "@/modulos/consultas/componentes/archivos-consulta";
-import { EstadoConsulta } from "@/modulos/consultas/componentes/estado-consulta";
-import { NotaConsulta } from "@/modulos/consultas/componentes/nota-consulta";
+import { MasConsulta, ReabrirConsulta } from "@/modulos/consultas/componentes/estado-consulta";
+import { FormularioNota } from "@/modulos/consultas/componentes/nota-consulta";
 import { reservasDeConsulta } from "@/modulos/agenda/consultas";
 import { obtenerConsulta } from "@/modulos/consultas/consultas";
 import { CotizacionesConsulta } from "@/modulos/cotizaciones/componentes/cotizaciones-consulta";
 import { cotizacionesDeConsulta } from "@/modulos/cotizaciones/consultas";
-import { INSIGNIA_ESTADO, NOMBRE_CANAL, NOMBRE_ESTADO } from "@/modulos/consultas/reglas";
+import { INSIGNIA_ESTADO, NOMBRE_CANAL, NOMBRE_ESTADO, NOMBRE_MOTIVO } from "@/modulos/consultas/reglas";
 
 export const metadata: Metadata = { title: "Consulta" };
 
 // HU-24: una consulta, con sus fotos y su nota. HU-28: marcarla como perdida o reabrirla. HU-25: sus cotizaciones; el
-// dueño cotiza y corrige, el encargado las ve sin montos (RN-01).
+// dueño cotiza y corrige, el encargado las ve sin montos (RN-01). Pulido 9.3 (skill pantallas-panel): el paso siguiente
+// en el encabezado y "Marcar como perdida" en "Más"; la nota en lectura, editada en un modal.
 export default function PaginaConsulta({ params, searchParams }: PageProps<"/panel/consultas/[id]">) {
   return (
     <section className="flex flex-col gap-6">
@@ -51,20 +55,51 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/consulta
   ]);
   if (!c) notFound();
   const recienGuardada = typeof cotizada === "string" ? cotizaciones.find((x) => String(x.id) === cotizada) : undefined;
-  // El encargado puede tener Consultas sin Clientes: entonces el nombre no enlaza a una ficha que no puede abrir
   const verFicha = puedeVerModulo(usuario, "clientes");
   const vehiculo = nombreVehiculo(c);
 
+  // El paso siguiente, uno solo, en el encabezado (skill pantallas-panel, §2 "Ficha"): cotizar una abierta sin cotización
+  // (solo el dueño, RN-01), agendar la cotizada (el cliente aceptó: la cotización queda aceptada y la consulta confirmada,
+  // RF-36) o reabrir una perdida. Una confirmada ya no cambia: su reserva está en Cotizaciones
+  // Una perdida se reabre primero y una confirmada ya no cambia: solo se cotiza o corrige una abierta. "Corregir" va en
+  // Cotizaciones con la misma cuenta (corregible), así el encabezado y la sección no se contradicen
+  const vigente = cotizaciones.find((x) => x.estado === "enviada") ?? null;
+  const abierta = c.estado === "consulto" || c.estado === "cotizado";
+  const corregible = esDueno && abierta ? vigente : null;
+  const principal =
+    c.estado === "perdido" ? (
+      <ReabrirConsulta id={c.id} />
+    ) : puedeAgendar && vigente && c.estado === "cotizado" ? (
+      <Link href={`/panel/agenda/nueva?cotizacion=${vigente.id}`} className={cn(buttonVariants())}>
+        <CalendarIcon />
+        Agendar
+      </Link>
+    ) : esDueno && abierta && !vigente ? (
+      <Link href={`/panel/consultas/${c.id}/cotizar`} className={cn(buttonVariants())}>
+        <FileTextIcon />
+        Cotizar
+      </Link>
+    ) : null;
+
   return (
-    <>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-4">
-        <h1 className="font-heading text-4xl font-extrabold italic">{c.cliente}</h1>
-        <span className={INSIGNIA_ESTADO[c.estado]}>{NOMBRE_ESTADO[c.estado]}</span>
-        <a href={enlaceWhatsApp(c.telefono)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }), "sm:ml-auto")}>
-          <IconoWhatsApp />
-          Escribir por WhatsApp
-        </a>
-      </div>
+    <div className="flex max-w-5xl flex-col gap-8">
+      <EncabezadoPagina
+        titulo={c.cliente}
+        estado={<span className={INSIGNIA_ESTADO[c.estado]}>{NOMBRE_ESTADO[c.estado]}</span>}
+        accion={
+          <div className="flex flex-wrap gap-2">
+            {principal}
+            <a href={enlaceWhatsApp(c.telefono)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
+              <IconoWhatsApp />
+              Escribir por WhatsApp
+            </a>
+            {abierta && <MasConsulta id={c.id} />}
+          </div>
+        }
+      >
+        {/* "Perdida: Precio. Le pareció caro." o "Perdida: No respondió." */}
+        {c.estado === "perdido" && c.motivoPerdida && `Perdida: ${NOMBRE_MOTIVO[c.motivoPerdida]}.${c.detallePerdida ? ` ${c.detallePerdida}` : ""}`}
+      </EncabezadoPagina>
       {creada && <AvisoEnPagina>Consulta registrada. Agrega las fotos que mandó el cliente o las que tomes en el taller.</AvisoEnPagina>}
       {recienGuardada && (
         <AvisoEnPagina>
@@ -74,44 +109,56 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/consulta
         </AvisoEnPagina>
       )}
 
-      <div className="grid max-w-5xl gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
+      {/* En la computadora, fotos y nota a la izquierda; datos y cotizaciones a la derecha. En el celular, primero los
+          datos y las cotizaciones (el contexto y lo que decide), después fotos y nota */}
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
         <div className="flex flex-col gap-10 lg:col-start-2 lg:row-start-1">
-          <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3 rounded-sm border border-border p-4 text-sm">
-            <dt className="text-tinta-suave">Cliente</dt>
-            <dd className="flex flex-col">
-              {verFicha ? (
-                <Link href={`/panel/clientes/${c.clienteId}`} className="font-semibold underline">
-                  {c.cliente}
-                </Link>
-              ) : (
-                <span className="font-semibold">{c.cliente}</span>
-              )}
-              <span className="text-tinta-suave">{formatearWhatsApp(c.telefono)}</span>
-            </dd>
-            <dt className="text-tinta-suave">Vehículo</dt>
-            <dd className="flex flex-col">
-              <span className="font-semibold">{c.placa}</span>
-              <span className="text-tinta-suave">{[c.tamano, vehiculo].filter(Boolean).join(", ")}</span>
-            </dd>
-            <dt className="text-tinta-suave">Servicio</dt>
-            <dd>{c.servicio ?? <span className="text-tinta-suave">Todavía no sabe</span>}</dd>
-            <dt className="text-tinta-suave">Canal</dt>
-            <dd>{NOMBRE_CANAL[c.canal]}</dd>
-            <dt className="text-tinta-suave">Registrada</dt>
-            <dd className="flex flex-col">
-              <span>{formatearFechaHora(c.createdAt)}</span>
-              <span className="text-tinta-suave">por {c.registradaPor}</span>
-            </dd>
-          </dl>
-          <CotizacionesConsulta consultaId={c.id} estado={c.estado} cotizaciones={cotizaciones} esDueno={esDueno} puedeAgendar={puedeAgendar} reservas={reservas} verOrdenes={puedeVerModulo(usuario, "ordenes")} />
+          {/* El cliente ya está en el título: acá, su WhatsApp y su ficha */}
+          <div className="flex flex-col gap-2 rounded-sm border border-border p-4">
+            <dl aria-label="Datos de la consulta" className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3">
+              <dt className="text-tinta-suave">Vehículo</dt>
+              <dd className="flex flex-col">
+                <span className="font-heading text-xl font-extrabold italic tabular-nums">{c.placa}</span>
+                {vehiculo && <span className="text-sm text-tinta-suave">{vehiculo}</span>}
+              </dd>
+              {/* El tamaño aparte: junto al modelo, con una coma, se leía como una lista de modelos */}
+              <dt className="text-tinta-suave">Tamaño</dt>
+              <dd>{c.tamano}</dd>
+              <dt className="text-tinta-suave">Servicio</dt>
+              <dd>{c.servicio ?? <span className="text-tinta-suave">Todavía no sabe</span>}</dd>
+              <dt className="text-tinta-suave">Canal</dt>
+              <dd>{NOMBRE_CANAL[c.canal]}</dd>
+              <dt className="text-tinta-suave">WhatsApp</dt>
+              <dd>{formatearWhatsApp(c.telefono)}</dd>
+              <dt className="text-tinta-suave">Registrada</dt>
+              <dd className="flex flex-col">
+                <span>{formatearFechaHora(c.createdAt)}</span>
+                <span className="text-sm text-tinta-suave">por {c.registradaPor}</span>
+              </dd>
+            </dl>
+            {/* El encargado puede tener Consultas sin Clientes: entonces no enlaza a una ficha que no puede abrir */}
+            {verFicha && (
+              <Link href={`/panel/clientes/${c.clienteId}`} className="inline-flex min-h-11 items-center self-start font-semibold underline">
+                Ver ficha del cliente
+              </Link>
+            )}
+          </div>
+          <CotizacionesConsulta consultaId={c.id} cotizaciones={cotizaciones} corregible={corregible} esDueno={esDueno} reservas={reservas} verOrdenes={puedeVerModulo(usuario, "ordenes")} />
         </div>
 
         <div className="flex flex-col gap-10 lg:col-start-1 lg:row-start-1">
           <ArchivosConsulta consultaId={c.id} archivos={c.archivos} />
-          <NotaConsulta id={c.id} nota={c.nota} />
-          <EstadoConsulta id={c.id} estado={c.estado} motivo={c.motivoPerdida} detalle={c.detallePerdida} />
+          <SeccionConEditar
+            id="nota"
+            titulo="Nota"
+            etiquetaEditar="Editar la nota"
+            tituloModal="Nota de la consulta"
+            lectura={c.nota?.trim() ? <p className="whitespace-pre-line">{c.nota}</p> : <p className="text-tinta-suave">Sin nota.</p>}
+          >
+            <FormularioNota id={c.id} nota={c.nota} />
+          </SeccionConEditar>
         </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -396,7 +396,7 @@ export async function registrarAvisoListo(datos: { id: number }): Promise<Estado
 export async function agregarAdicional(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const usuario = await exigirModulo("ordenes");
   if (!puede(usuario, "agregar_adicional")) return { mensaje: "Los servicios adicionales los suma el dueño." };
-  const valores = { varianteId: String(datos.get("varianteId") ?? ""), precio: String(datos.get("precio") ?? "") };
+  const valores = { servicioId: String(datos.get("servicioId") ?? ""), varianteId: String(datos.get("varianteId") ?? ""), precio: String(datos.get("precio") ?? "") };
   const r = esquemaAdicional.safeParse({ id: datos.get("id"), ...valores });
   if (!r.success) {
     const errores = erroresDe(r.error);

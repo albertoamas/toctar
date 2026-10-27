@@ -27,10 +27,11 @@ async function crearConsulta(datos: { cliente: string; telefono: string; placa: 
   return id;
 }
 
-/** La fila (computadora) o la tarjeta (celular) de un cliente: la que se ve. */
-const fila = (page: Page, cliente: string) => page.locator("tr, li").filter({ hasText: cliente }).locator("visible=true");
+/** La fila de un cliente en la lista de consultas (la fila de un toque compartida, pulido 9.1). */
+const filas = (page: Page) => page.getByRole("list", { name: "Consultas" }).getByRole("link");
+const fila = (page: Page, cliente: string) => filas(page).filter({ hasText: cliente });
 
-test("abiertas por antigüedad, con los días sin movimiento; las que se enfrían se resaltan", async ({ page }, info) => {
+test("abiertas por antigüedad, con los días sin movimiento; las que se enfrían lo dicen en un aviso", async ({ page }, info) => {
   const s = sufijo(info).toUpperCase();
   await crearConsulta({ cliente: `Fría ${s}`, telefono: telefono(info, 1), placa: `SF28${s}1`, dias: 9 });
   await crearConsulta({ cliente: `Tibia ${s}`, telefono: telefono(info, 2), placa: `ST28${s}1`, dias: 3 });
@@ -41,14 +42,16 @@ test("abiertas por antigüedad, con los días sin movimiento; las que se enfría
 
   const pestanas = page.getByRole("navigation", { name: "Consultas por estado" });
   await expect(pestanas.getByRole("link", { name: /^Abiertas \(\d+\)$/ })).toHaveAttribute("aria-current", "page");
-  await expect(fila(page, `Fría ${s}`)).toContainText("Se está enfriando: hace 9 días");
+  await expect(fila(page, `Fría ${s}`)).toContainText("9 días sin movimiento");
+  // En Abiertas, cada una con su estado
+  await expect(fila(page, `Fría ${s}`)).toContainText("Consultó");
   await expect(fila(page, `Tibia ${s}`)).toContainText("hace 3 días");
-  await expect(fila(page, `Tibia ${s}`)).not.toContainText("enfriando");
+  await expect(fila(page, `Tibia ${s}`)).not.toContainText("sin movimiento");
   await expect(fila(page, `Nueva ${s}`)).toContainText("hoy");
   await expect(fila(page, `Ya perdida ${s}`)).toHaveCount(0);
 
   // Las más antiguas primero
-  const textos = await page.locator("tr, li").locator("visible=true").allInnerTexts();
+  const textos = await filas(page).allInnerTexts();
   const posicion = (nombre: string) => textos.findIndex((t) => t.includes(nombre));
   expect(posicion(`Fría ${s}`)).toBeLessThan(posicion(`Tibia ${s}`));
   expect(posicion(`Tibia ${s}`)).toBeLessThan(posicion(`Nueva ${s}`));
@@ -57,17 +60,19 @@ test("abiertas por antigüedad, con los días sin movimiento; las que se enfría
   await expect(page).toHaveURL(/\?vista=perdidas$/);
   await expect(pestanas.getByRole("link", { name: /^Perdidas/ })).toHaveAttribute("aria-current", "page");
   await expect(fila(page, `Ya perdida ${s}`)).toContainText("hace 2 días");
-  // Una perdida no se resalta, aunque lleve días
-  await expect(fila(page, `Ya perdida ${s}`)).not.toContainText("enfriando");
+  // Una perdida no se resalta, aunque lleve días; y la pestaña ya dice su estado: no se repite
+  await expect(fila(page, `Ya perdida ${s}`)).not.toContainText("sin movimiento");
+  await expect(fila(page, `Ya perdida ${s}`)).not.toContainText("Perdido");
 });
 
-test("marcar como perdida con motivo y reabrir; «Otro» pide el detalle", async ({ page }, info) => {
+test("marcar como perdida desde «Más», con motivo, y reabrir desde el encabezado; «Otro» pide el detalle", async ({ page }, info) => {
   const s = sufijo(info).toUpperCase();
   const id = await crearConsulta({ cliente: `Por perder ${s}`, telefono: telefono(info, 5), placa: `PP28${s}1`, dias: 4 });
   await ingresarComoEncargado(page, info, 2);
-  await page.goto(`/panel/consultas/${id}`);
+  await page.goto(`/panel/consultas/${id}`, { waitUntil: "networkidle" });
 
-  await page.getByRole("button", { name: "Marcar como perdida" }).click();
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Marcar como perdida" }).click();
   const formulario = page.getByRole("form", { name: "Marcar como perdida" });
   await formulario.getByRole("button", { name: "Marcar como perdida" }).click();
   await expect(page.getByText("Elige el motivo.")).toBeVisible();
@@ -75,20 +80,24 @@ test("marcar como perdida con motivo y reabrir; «Otro» pide el detalle", async
 
   await formulario.getByRole("radio", { name: "Otro" }).check();
   await formulario.getByRole("button", { name: "Marcar como perdida" }).click();
-  await expect(formulario.locator("#detalle-error")).toHaveText("Cuenta qué pasó.");
+  await expect(formulario.getByText("Cuenta qué pasó.")).toBeVisible();
+  // El error está enlazado a su campo (aria-describedby), con el id único del Campo
+  await expect(formulario.getByLabel("Detalle")).toHaveAccessibleDescription("Cuenta qué pasó.");
   // Tras el error, el motivo sigue elegido y es el que se envía
   await expect(formulario.getByRole("radio", { name: "Otro" })).toBeChecked();
   await formulario.getByLabel("Detalle").fill("Lo hizo en otro taller.");
   await formulario.getByRole("button", { name: "Marcar como perdida" }).click();
   await expect(page.getByText("Marcada como perdida.")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Perdida" })).toBeVisible();
-  await expect(page.getByText("Lo hizo en otro taller.")).toBeVisible();
+  await expect(formulario).toBeHidden();
+  // El motivo, en una línea bajo el título; ya no se ofrece perderla
+  await expect(page.getByText("Perdida: Otro. Lo hizo en otro taller.")).toBeVisible();
   await expect(page.getByRole("main").getByText("Perdido", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Más" })).toHaveCount(0);
 
   await page.getByRole("button", { name: "Reabrir" }).click();
   await expect(page.getByText("Consulta reabierta.")).toBeVisible();
   await expect(page.getByRole("main").getByText("Consultó", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Marcar como perdida" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Más" })).toBeVisible();
   // Reabrir cuenta como movimiento: vuelve a las abiertas como de hoy
   await page.goto("/panel/consultas");
   await expect(fila(page, `Por perder ${s}`)).toContainText("hoy");

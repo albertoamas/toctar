@@ -21,7 +21,10 @@ test("pagada: el dueño suma un adicional, se cobra y se entrega; queda programa
   // Un adicional: sube el precio final (RF-43)
   await page.getByRole("button", { name: "Agregar servicio" }).click();
   const form = page.getByRole("form", { name: "Agregar servicio" });
-  await form.getByLabel("Servicio").selectOption({ index: 1 });
+  await form.getByLabel("Servicio", { exact: true }).selectOption({ index: 1 });
+  // Si el servicio tiene opciones (1 año, 2 años…), aparece su menú (pulido 9.4)
+  const opcion = form.getByLabel("Opción del servicio");
+  if (await opcion.count()) await opcion.selectOption({ index: 1 });
   await form.getByLabel("Precio").fill("200");
   await form.getByRole("button", { name: "Agregar" }).click();
   await expect(page.getByText("Servicio agregado. Precio final: 1200 Bs.")).toBeVisible();

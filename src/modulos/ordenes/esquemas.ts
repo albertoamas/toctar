@@ -42,7 +42,9 @@ export const esquemaExtender = z.object({
 /** Un servicio adicional (RF-43): del catálogo, con su precio (el vigente del tamaño o el que ponga el dueño). */
 export const esquemaAdicional = z.object({
   id,
-  varianteId: z.coerce.number({ message: "Elige el servicio." }).int().positive("Elige el servicio."),
+  // Se elige el servicio y, si tiene varias, su opción: con el servicio elegido, lo que falta es la opción
+  servicioId: z.coerce.number().int().optional(),
+  varianteId: z.coerce.number({ message: "Elige el servicio." }).int(),
   precio: z.string().transform((v, ctx) => {
     const m = leerMonto(v);
     if (!m) {
@@ -51,7 +53,13 @@ export const esquemaAdicional = z.object({
     }
     return m;
   }),
-});
+})
+  // Aunque el precio también falte (sin opción no llega el sugerido): cada error va en su campo
+  .refine((d) => d.varianteId > 0, {
+    path: ["varianteId"],
+    when: () => true,
+    error: (iss) => ((iss.input as { servicioId?: number } | undefined)?.servicioId ? "Elige la opción." : "Elige el servicio."),
+  });
 
 /** Entregar el vehículo (HU-36): con saldo pendiente, la casilla que lo confirma (RN-13). */
 export const esquemaEntregar = z.object({ id, conSaldo: z.literal("on").optional() });

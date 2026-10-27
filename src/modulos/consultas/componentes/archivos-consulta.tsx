@@ -135,7 +135,7 @@ export function ArchivosConsulta({ consultaId, archivos }: Props) {
       <div className="flex flex-col gap-1">
         <h2 id="fotos-titulo" className="font-heading text-2xl font-bold italic">Fotos y videos</h2>
         <p id="fotos-ayuda" className="text-sm text-tinta-suave">
-          Lo que mandó el cliente o lo que viste en el taller. Hasta {MAXIMO_ARCHIVOS}; videos de hasta {SEGUNDOS_MAXIMOS_VIDEO} segundos.
+          Hasta {MAXIMO_ARCHIVOS}; videos de hasta {SEGUNDOS_MAXIMOS_VIDEO} segundos.
         </p>
       </div>
 

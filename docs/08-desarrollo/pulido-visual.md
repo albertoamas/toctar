@@ -214,11 +214,11 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 9.1 | Consultas (pestañas y consultas que se enfrían) | `/panel/consultas` | ⏳ |
-| 9.2 | Nueva consulta | `/panel/consultas/nueva` | ⏳ |
-| 9.3 | Detalle de una consulta: estado, fotos, cotizaciones y reservas | `/panel/consultas/[id]` | ⏳ |
-| 9.4 | Cotizar | `/panel/consultas/[id]/cotizar` | ⏳ |
-| 9.5 | PDF de la cotización (impreso y en el celular; con la skill `pdf`) | `/panel/cotizaciones/[id]/pdf` | ⏳ |
+| 9.1 | Consultas (pestañas y consultas que se enfrían) | `/panel/consultas` | ✅ |
+| 9.2 | Nueva consulta | `/panel/consultas/nueva` | ✅ |
+| 9.3 | Detalle de una consulta: estado, fotos, cotizaciones y reservas | `/panel/consultas/[id]` | ✅ |
+| 9.4 | Cotizar | `/panel/consultas/[id]/cotizar` | ✅ |
+| 9.5 | PDF de la cotización (impreso y en el celular; con la skill `pdf`) | `/panel/cotizaciones/[id]/pdf` | ✅ |
 
 ### 10. Panel: agenda y pagos
 
@@ -1066,6 +1066,140 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - `CabeceraSeccion` (de `seccion-con-editar.tsx`): la cabecera de Vehículos era una copia de la de `SeccionConEditar`.
   - El comentario y la prueba de `placasEnFila`: pasa adelante las placas que contienen lo buscado, sea o no una placa.
   - Descartados: el foco al cancelar desde "Más" ya vuelve al botón (la E2E lo comprueba); al reactivar, el aviso lo anuncia; "Pagado" y "Saldo" se distinguen por el texto, y lo que debe está en el encabezado; el `conAviso` por render es el patrón de los demás formularios en modal.
+
+### 9.1 Consultas (26/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | "Nueva consulta" | Registrar a alguien que preguntó | Dueño o encargado, varias veces al día | Arriba |
+  | Pestañas Abiertas, Confirmadas y Perdidas, con cantidades | Ver qué falta responder o cerrar | Igual | Quedan |
+  | Fila: cliente, placa, servicio, estado y días | Abrir la consulta | Igual | La fila de un toque compartida |
+  | "Se enfría" (ámbar) | Saber a quién volver a escribir | Lo más importante de la lista | Insignia de aviso, con palabras |
+- **Encontrado:**
+  - Dos listas distintas (tarjetas en el celular, tabla en la computadora); la misma lista va en la ficha del cliente, lo único que quedaba distinto ahí después de la 8.3.
+  - "Se enfría" se veía distinto en cada tamaño (recuadro ámbar en el celular; fondo apenas visible y un reloj en la computadora) y se decía con color e ícono.
+  - En Confirmadas y Perdidas, la insignia repetía lo que dice la pestaña; el servicio (lo que quiere el cliente) en gris chico, como la placa.
+  - El título sin el encabezado compartido.
+- **Cambios** (propuesta aprobada el 26/10):
+  - `ListaFilas` en todos los tamaños: el cliente, el servicio en negrita, la placa y hace cuánto en tinta suave. La que se enfría: "9 días sin movimiento" en una insignia de aviso (los días no se repiten abajo). En la propuesta decía "sin respuesta"; se escribió "sin movimiento" porque los días cuentan cualquier movimiento, no solo la respuesta del cliente.
+  - El estado solo en Abiertas (Consultó o Cotizado); en la ficha del cliente, siempre, con la placa grande.
+  - **`ListaFilas` extendida** (aprobado con la propuesta): muestra el aviso y el estado a la vez, y el estado puede ir en verde o ámbar (`tonoEstado`). En el inicio, una entrega atrasada muestra "Atrasada desde el …" y también "En proceso"; en la ficha del cliente, "Cancelada" es una sola insignia ámbar (antes se armaba como aviso).
+  - `EncabezadoPagina` con "Nueva consulta".
+- **Verificación:** capturas a 360, 390, 768 y 1280 px de las tres pestañas, del inicio y de dos fichas de cliente; sin desborde. Comparativa en `pulido-visual/9.1-consultas-celular.jpg`. E2E `hu-28` (el aviso con palabras, el estado en Abiertas y no en Perdidas, el orden), `hu-39` (la entrega atrasada con su estado), `hu-24`, `hu-23` y `hu-32`.
+
+### 9.2 Nueva consulta (27/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | Buscador, lista de clientes y "Cliente nuevo" | Elegir de quién es | Dueño o encargado, varias veces al día | Queda, con la fila de Clientes |
+  | Cliente elegido y "Cambiar" | Confirmar quién es | Igual | Recuadro de lectura |
+  | Vehículo: sus autos u "Otro vehículo" | Elegir cuál | Igual | Queda, la placa grande |
+  | Servicio, canal y nota | Lo que preguntó | Igual | Queda |
+  | "Registrar consulta" | Guardar | Igual | Fijo abajo en el celular |
+- **Encontrado:**
+  - La lista para elegir cliente era la vieja de Clientes (tarjetas sueltas, placas en gris); la misma va en "Nueva reserva".
+  - El cliente elegido en un recuadro de borde negro grueso con "Cambiar" subrayado, un estilo que no está en otra pantalla.
+  - La placa chica en las opciones de vehículo; los títulos de sección y sus acciones sin la cabecera compartida; el título sin el encabezado compartido.
+  - "Registrar consulta" al fondo: en el celular, más de una pantalla abajo.
+- **Cambios** (propuesta aprobada el 27/10):
+  - Elegir cliente con `ListaFilas`, como Clientes (8.1): el nombre, las placas en negrita (hasta tres y "y N más") y el WhatsApp. También en "Nueva reserva".
+  - El elegido en un recuadro de lectura, con "Cambiar" sin borde en `CabeceraSeccion` (como "Editar"); con cliente nuevo, "Buscar un cliente registrado". Los dos con su ícono, como "Editar" y "Agregar".
+  - La placa grande en las opciones de vehículo; "Registrar consulta" en `PieFormulario`; `EncabezadoPagina`.
+  - El canal, sin opción marcada de entrada (como estaba): un valor por defecto que no se cambia sería un dato falso sobre de dónde llegan los clientes. Si el dueño dice que casi todo llega por WhatsApp, se puede marcar de entrada.
+- **Verificación:** capturas a 360, 390, 768 y 1280 px de los tres pasos (elegir, elegido y cliente nuevo), de los errores y de "Nueva reserva"; sin desborde. Comparativa en `pulido-visual/9.2-nueva-consulta-celular.jpg`. E2E `hu-24` (la placa en la fila para elegir, el elegido en su recuadro con "Cambiar") y `hu-30`.
+
+### 9.3 Detalle de una consulta (27/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | Nombre, estado y "Escribir por WhatsApp" | Quién es, contactarlo | Dueño o encargado, seguido | Arriba |
+  | Cotizar, Agendar o Reabrir (en distintas secciones) | El paso siguiente | Seguido | Al encabezado, uno solo |
+  | Datos (cliente, vehículo, servicio, canal, registrada) | Contexto | Seguido | En lectura, sin el nombre repetido |
+  | Cotizaciones, PDF, Compartir y Descargar | Mandar o revisar la cotización | Dueño, seguido | Quedan; botones del tamaño estándar |
+  | "Corregir (nueva versión)" | Rehacer la cotización | Dueño, a veces | Sin borde en la cabecera de Cotizaciones |
+  | Reservas de la consulta | Ir a la reserva | A veces | Fila de un toque |
+  | Fotos y videos | Ver y agregar | Seguido | Quedan; la ayuda en una línea |
+  | Nota (campo abierto y "Guardar nota") | Leerla; corregirla a veces | Leer seguido | En lectura, con "Editar" en un modal |
+  | "Marcar como perdida" | Cerrarla | A veces | Al menú "Más", con su modal |
+  | Recuadro "Perdida" con "Reabrir" | Por qué se perdió; reabrir | A veces | Motivo bajo el título; "Reabrir" en el encabezado |
+- **Encontrado:**
+  - Los botones repartidos: hasta tres rojos a la vista ("Cotizar", "Guardar nota", "Agendar") y el paso siguiente en un lugar distinto según el estado.
+  - La nota, un formulario siempre abierto con su botón rojo; "Marcar como perdida" al fondo; la perdida, una sección entera para una línea de motivo.
+  - Los botones del PDF de 32 px (Ver PDF, Compartir, Descargar y Generar PDF): el estándar es 44 con el dedo.
+  - El nombre repetido en los datos; la placa sin destacar; las reservas como enlaces subrayados sueltos; el título sin el encabezado compartido.
+- **Cambios** (propuesta aprobada el 27/10):
+  - El paso siguiente, uno solo, en `EncabezadoPagina` (Cotizar, Agendar o Reabrir), con "Escribir por WhatsApp" y `MenuMas` con "Marcar como perdida" (modal); perdida, el motivo bajo el título.
+  - Datos en lectura con la placa grande y "Ver ficha del cliente"; "Corregir" en `CabeceraSeccion`; botones del PDF de tamaño estándar (no queda ningún `size="sm"` en el panel); reservas con `ListaFilas`; la nota con `SeccionConEditar`; la ayuda de fotos en una línea.
+  - `EstadoConsulta` pasa a `MasConsulta` y `ReabrirConsulta`; `NotaConsulta`, a `FormularioNota`.
+- **Revisión del 27/10 (pedido del desarrollador):** el vehículo decía "Compactos, Suzuki Swift" y se leía como una lista de modelos. El tamaño va aparte, con su etiqueta, en las tres pantallas que lo mostraban así: en la consulta, una fila "Tamaño"; en la ficha del cliente y en las opciones de Nueva consulta, el modelo en su línea y "Tamaño: Compactos" debajo. En la misma revisión: una consulta con varios servicios de interés se anotó como pedido 18 (`registro-de-cambios.md`); consulta y cotización siguen separadas (no toda consulta se cotiza, y una consulta tiene varias versiones de cotización que no cambian), pero ya se ven en una sola pantalla.
+- **Hallazgo de accesibilidad:** Next 16 deja la página anterior oculta en el documento (para volver atrás al instante). Si tiene un campo con el mismo `id` que la actual, la etiqueta de la actual se asocia al oculto y el lector de pantalla no la anuncia. Pasaba con la nota (Nueva consulta también tiene `id="nota"`): el campo del modal tiene ahora su propio id. Pasa también en el modal "Datos del cliente" después de "Agregar cliente" (desde antes del pulido): propuesta aparte, que `Campo` genere ids únicos.
+- **Verificación:** 1.068 px en el celular la abierta (−7 %; la estimación era 900: los datos ocupan más que lo previsto), 1.270 la cotizada. Capturas a 360, 390, 768 y 1280 px de una abierta, una cotizada (se cotizó la consulta 2 de la demo local) y una perdida, del menú "Más" y de los modales; sin desborde. Comparativa en `pulido-visual/9.3-consulta-celular.jpg`. E2E `hu-24` (la nota en un modal), `hu-25` y `hu-28` (perder desde "Más", el motivo bajo el título, reabrir desde el encabezado), `hu-26`, `hu-27`, `hu-30` y `hu-31`.
+
+### 9.4 Cotizar (27/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | Título; cliente, placa y tamaño | Qué se cotiza | Dueño, cada cotización | En el encabezado, en su línea |
+  | Líneas de servicio (servicio, precio, sugerido) | Armar la cotización | Igual | Quedan; la primera, con lo que pidió el cliente |
+  | Subir, bajar y quitar en cada línea | Ordenar o quitar | Quitar a veces; ordenar casi nunca | Quedan: `EditorLista` es el de Sitio web (pulido 4.4) |
+  | Descuento y Subtotal, Descuento y Total | El precio final | Igual | Quedan; el total, también fijo al pie |
+  | Adelanto, Válida hasta y "Estimado según fotos" | Condiciones del PDF | Casi siempre como vienen | En su sección, sin ayudas de más |
+  | Fotos para el PDF | Elegir hasta 4 | Con fotos en la consulta | Queda |
+  | "Guardar y generar PDF" | Enviar | Igual | Fijo abajo en el celular, con el total |
+- **Encontrado:**
+  - En el celular, con dos servicios, 1.440 px: el total a mitad de página y el botón al fondo; mientras se cargan los precios, el total no se ve.
+  - La sección "Total" mezclaba el precio con las condiciones (adelanto, validez y estimado).
+  - Ayudas que repetían lo obvio: "El de Configuración; se puede cambiar…", "Sugerida con los días de Configuración", "En bolivianos" y "Los precios sugeridos son los del catálogo para…".
+  - Siempre arrancaba sin líneas, aunque la consulta dijera qué servicio quiere el cliente.
+  - El encabezado no era el compartido.
+- **Cambios** (propuesta aprobada el 27/10):
+  - El total y el botón en `PieFormulario`: fijos abajo en el celular, al pie en la computadora. El total del pie no se anuncia (`aria-hidden`): ya lo anuncia el resumen.
+  - Dos secciones: Total (descuento y resumen) y Condiciones (adelanto y validez lado a lado, y el estimado). Se van las cuatro ayudas; queda "Opcional." en el descuento y la del estimado (qué cambia en el PDF).
+  - Una cotización nueva arranca con el servicio de interés de la consulta: con una sola variante, elegida y con su precio; con varias, una línea para elegir cuál; sin servicio, vacía. Función pura `lineasDelServicioDeInteres`, con prueba unitaria. Corregir arranca, como antes, con las líneas de la versión anterior.
+  - `EncabezadoPagina` con "Cliente, placa (tamaño)".
+- **Revisión del 27/10 (pedido del desarrollador):** el menú de servicios tenía guiones largos ("Pulido y nano cerámico — 2 años", un rasgo de texto generado) y no distinguía los servicios con opciones: todo en un menú, con el nombre repetido en cada opción y cortado al cerrarlo.
+  - **Dos menús:** primero el servicio (uno por renglón); si tiene varias opciones, al lado (debajo en el celular) el menú "Opción". Componente nuevo `ElegirServicio`, compartido por las líneas de la cotización y de la reserva directa, y por los adicionales de una orden (grupo 11): lo resuelto en una pantalla se resuelve igual en las demás. Regla pura `serviciosConOpciones`.
+  - Sin la opción elegida, el error lo dice ("Elige la opción.") y va a ese menú. El esquema de una línea (`lineaServicio`) es uno solo para la cotización y la reserva (la reserva tenía una copia).
+  - La cotización que arranca con un servicio de varias opciones ya trae el servicio elegido: falta solo la opción.
+  - **Sin guion largo:** "Pulido y nano cerámico (2 años)" (`descripcionLinea`), en el panel, la cotización, su PDF, la reserva y los adicionales. Las ya guardadas no cambian. También el nombre de la app instalada ("TocTar Detailing: Panel") y el resumen sin descuento ("Sin descuento" en lugar de "—").
+  - Capturas con pantalla táctil y la ventana agrandada (la regla de capturas del celular, ver "Estándares").
+- **Verificación:** con dos servicios, 1.441 px en el celular, igual que antes (la estimación era 1.250: la sección Condiciones suma su título), pero el total y el botón quedan siempre a la vista. Capturas a 360, 390, 768 y 1280 px con una línea precargada, con dos servicios y al corregir; sin desborde. En la base local se cotizó también la consulta 1 de la demo (al capturar los errores, el formulario estaba completo) y se crearon las consultas 4 y 5 (una con un servicio de una variante y otra con el nano cerámico). Comparativa en `pulido-visual/9.4-cotizar-celular.jpg`. E2E `hu-25` (la primera línea según el servicio de interés, el total al pie), `hu-26`, `hu-27` y `hu-30` (la reserva directa usa las mismas líneas).
+
+### 9.5 PDF de la cotización (27/10/2026)
+- **Revisión** (skill `pdf`): los dos PDF de la base local y los de la prueba unitaria, como imagen en A4, en blanco y negro y a 390 px de ancho (el celular, sin zoom).
+- **Lo que ya estaba bien:** una hoja A4 limpia en el orden de lectura; el total en la banda negra con el corte a 60° (en blanco y negro sigue siendo lo más visible; en el celular se lee sin zoom); montos con dos decimales y separador de miles; las fuentes incrustadas; el rojo solo en piezas grandes.
+- **Encontrado:**
+  - El logo con 14 mm de alto fijo: el que subió el dueño en Configuración es casi cuadrado y con lema, y quedaba de 14 × 14 mm con el lema ilegible (la marca pide la variante sin lema en tamaños chicos; la del PDF, cuando no hay uno subido, ya lo es).
+  - El vehículo como en el panel antes de la 9.3: "Suzuki Swift, Plata" y "Compactos" sin etiqueta.
+  - El cuerpo en 9,5 pt, chico en el celular, con un tercio de la hoja libre.
+  - "Fecha" y "Válida hasta" pegados al título (2 mm).
+- **Cambios** (propuesta aprobada el 27/10):
+  - El logo según su forma: horizontal, 14 mm de alto (hasta 70 mm de ancho); casi cuadrado o vertical, 24 mm.
+  - "Tamaño: …" con su etiqueta, en tinta suave, debajo del modelo.
+  - El cuerpo en 10,5 pt (etiquetas, encabezado, secciones, banda del total y pie en proporción); la columna de precios y los totales un poco más anchos.
+  - 4 mm entre el título y las fechas.
+  - Las cotizaciones ya enviadas no cambian (RN-02): los cambios valen para las nuevas y para las versiones nuevas.
+  - Para el grupo 13 (Configuración): en la ayuda del logo, recomendar el horizontal sin lema para los documentos.
+- **Revisión del grupo 9 (code-review, 27/10):**
+  - El logo pasaba de 24 a 14 mm de golpe en la proporción 2:1: ahora el alto baja de a poco entre 1,5:1 y 3:1. Un logo vertical **con** lema sigue sin cumplir la marca a ese tamaño (el lema va desde 320 px): no se puede elegir la variante de una imagen que sube el dueño; la prueba usa el vertical sin lema y la ayuda de Configuración lo recomendará (grupo 13).
+  - El paso siguiente de la consulta y "Corregir" se calculan una vez, en la página (`corregible`): el encabezado y Cotizaciones no se contradicen.
+  - El vehículo (placa, detalle y "Tamaño: …"), un componente compartido: `DatosVehiculo`, en la ficha del cliente y en Nueva consulta.
+  - El total del pie de Cotizar, solo en el celular (en la computadora el resumen está justo arriba).
+  - Descartados: el `conAviso` por render (el patrón de los demás formularios en modal) y los ids repetidos de los títulos (`cliente-titulo`, `nota-titulo`), que son el mismo caso general de `Campo` y esperan la decisión del desarrollador.
+- **Verificación:** con tres servicios y sin fotos, una hoja; con cuatro fotos, la segunda hoja con las fotos; con 20 líneas, varias hojas numeradas. Pruebas unitarias nuevas: tres servicios caben en una hoja, y el logo cuadrado con una versión 2. Comparativa en `pulido-visual/9.5-pdf-cotizacion.jpg` (antes, después y en el celular). E2E `hu-26` (el PDF se genera, se ve y se descarga).
+
+### Repaso de las reglas en los grupos 7 a 9 (27/10/2026)
+Pedido del desarrollador: releer las reglas del principio de este documento y corregir lo que no se cumplió.
+- **Capturas del celular:** se tomaron sin pantalla táctil y con `fullPage` (la regla pide la emulación táctil y la ventana agrandada; con `fullPage`, además, el pie fijo aparecía a mitad de página). Se repasaron todas las pantallas de los grupos 7 a 9 con pantalla táctil a 360, 390, 768 y 1280 px: nada se sale y ningún botón ni campo mide menos de 44 px (solo el selector de archivos oculto, que se usa con su botón). Las capturas siguientes se toman así.
+- **Ramas:** los grupos 7 y 8 se trabajaron en `pulido/grupo-7` y `pulido/grupo-8` (ya unidos); la regla pide `pulido/catalogo`, `pulido/clientes`… El grupo 9 se renombró a `pulido/consultas` (GitHub cerró el PR #101 y siguió en el #102); los siguientes usan los nombres de la regla.
+- **Errores en `09-pruebas/criterios-entrega-1.md`:** los de los grupos 7 a 9 se anotaron en su tabla.
+- **Textos:** sin guiones largos (—) en lo que ve la gente (revisión del 9.4).
+- **Ids únicos (accesibilidad):** `Campo` genera un id único para su etiqueta, error y ayuda, y se lo pasa a su control (`useAtributosDeCampo` en `Input`, `Textarea` y `Selector`). Arregla en todo el panel el caso de la nota (9.3) y del modal "Datos del cliente": Next deja hasta 3 páginas ocultas en el documento y los ids comunes chocaban. Los títulos de sección repetidos (`cliente-titulo`) quedan: dicen lo mismo en las dos páginas.
+- **Sin duplicar:** el bloque del vehículo (`DatosVehiculo`) y la validación de una línea de servicio (`lineaServicio`) quedan en un solo lugar.
 
 ### 10.1 Agenda (27/10/2026)
 - **Inventario:**

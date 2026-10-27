@@ -3,12 +3,14 @@
 import { useActionState, useRef, useState } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
+import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { Selector } from "@/componentes/panel/selector";
 import { Button } from "@/componentes/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { Canal } from "@/db/esquema/consultas";
 import { CamposCliente, CamposVehiculo } from "@/modulos/clientes/componentes/campos";
+import { DatosVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 import type { EstadoCliente } from "@/modulos/clientes/acciones";
 import type { Tamano } from "@/modulos/configuracion/consultas";
 import { crearConsulta } from "../acciones";
@@ -20,8 +22,8 @@ import { CLIENTE_NUEVO, NOMBRE_CANAL, VEHICULO_OTRO } from "../reglas";
 export type ClienteElegido = {
   id: number;
   nombre: string;
-  /** `detalle`: tamaño, marca y modelo, color… lo que se sepa. */
-  vehiculos: { id: number; placa: string; detalle: string[] }[];
+  /** `detalle`: marca y modelo, color… lo que se sepa. El tamaño, aparte (se mostraba junto al modelo y confundía). */
+  vehiculos: { id: number; placa: string; tamano: string; detalle: string[] }[];
 };
 
 type Props = {
@@ -69,12 +71,7 @@ export function FormularioConsulta({ cliente, tamanos, servicios }: Props) {
             <RadioGroup value={vehiculo} onValueChange={(valor) => setVehiculo(String(valor))} className="gap-2" aria-describedby={e.vehiculo ? "vehiculo-error" : undefined}>
               {cliente.vehiculos.map((ve, i) => (
                 <OpcionRadio key={ve.id} id={`vehiculo-${ve.id}`} valor={String(ve.id)} invalido={!!e.vehiculo && i === 0}>
-                  <span className="font-semibold">{ve.placa}</span>
-                  <span className="flex flex-wrap gap-x-3 text-sm text-tinta-suave">
-                    {ve.detalle.map((d) => (
-                      <span key={d}>{d}</span>
-                    ))}
-                  </span>
+                  <DatosVehiculo placa={ve.placa} detalle={ve.detalle} tamano={ve.tamano} />
                 </OpcionRadio>
               ))}
               <OpcionRadio id="vehiculo-otro" valor={VEHICULO_OTRO}>
@@ -129,11 +126,11 @@ export function FormularioConsulta({ cliente, tamanos, servicios }: Props) {
         </Campo>
       </fieldset>
 
-      <div>
+      <PieFormulario>
         <Button type="submit" disabled={enviando}>
           {enviando ? "Registrando…" : "Registrar consulta"}
         </Button>
-      </div>
+      </PieFormulario>
     </form>
   );
 }

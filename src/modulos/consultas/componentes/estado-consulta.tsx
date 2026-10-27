@@ -4,26 +4,39 @@ import { useActionState, useRef, useState } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
+import { MenuMas } from "@/componentes/panel/menu-mas";
+import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { Button } from "@/componentes/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import { Textarea } from "@/componentes/ui/textarea";
-import type { EstadoConsulta, MotivoPerdida } from "@/db/esquema/consultas";
+import type { MotivoPerdida } from "@/db/esquema/consultas";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { cambiarEstadoConsulta } from "../acciones";
 import { NOMBRE_MOTIVO } from "../reglas";
 
-// HU-28: marcar la consulta como perdida (con motivo) o reabrirla (RF-30). Se marca desde un formulario que se abre
-// aparte, como "Desactivar" en otras pantallas: no se toca sin querer. Reabrir no pierde nada: es un botón.
+// HU-28: marcar la consulta como perdida (con motivo) o reabrirla (RF-30). Pulido 9.3: perderla se hace pocas veces y
+// va en el menú "Más" del encabezado, con su formulario en un modal (como "Desactivar cliente"); reabrir no pierde nada
+// y es la acción principal del encabezado de una perdida.
 
 // Del texto de cada motivo, no del esquema de la base: así este componente no arrastra Drizzle al navegador
 const MOTIVOS = Object.keys(NOMBRE_MOTIVO) as MotivoPerdida[];
 
-type Props = { id: number; estado: EstadoConsulta; motivo: MotivoPerdida | null; detalle: string | null };
+export function MasConsulta({ id }: { id: number }) {
+  const [perdiendo, setPerdiendo] = useState(false);
+  return (
+    <>
+      <MenuMas acciones={[{ texto: "Marcar como perdida", alElegir: () => setPerdiendo(true) }]} />
+      <ModalFormulario titulo="Marcar como perdida" abierto={perdiendo} alCambiar={setPerdiendo}>
+        <FormularioPerder id={id} />
+      </ModalFormulario>
+    </>
+  );
+}
 
-export function EstadoConsulta({ id, estado, motivo, detalle }: Props) {
-  const [abierto, setAbierto] = useState(false);
+function FormularioPerder({ id }: { id: number }) {
+  const cerrar = useCerrarModal();
   const [resultado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
-    conAviso(cambiarEstadoConsulta, (r) => r.ok && setAbierto(false)),
+    conAviso(cambiarEstadoConsulta, (r) => r.ok && cerrar()),
     {},
   );
   const formulario = useRef<HTMLFormElement>(null);
@@ -33,42 +46,8 @@ export function EstadoConsulta({ id, estado, motivo, detalle }: Props) {
   // Controlado, con su campo oculto: React reinicia el formulario tras un error y los radios de base-ui se vaciaban
   const [elegido, setElegido] = useState(v.motivo ?? "");
 
-  if (estado === "confirmado") return null;
-
-  if (estado === "perdido") {
-    return (
-      <section aria-labelledby="estado-titulo" className="flex flex-col gap-3 rounded-sm border border-border p-4">
-        <h2 id="estado-titulo" className="font-heading text-2xl font-bold italic">Perdida</h2>
-        {motivo && (
-          <p>
-            <span className="font-semibold">{NOMBRE_MOTIVO[motivo]}</span>
-            {detalle && <span className="text-tinta-suave">: {detalle}</span>}
-          </p>
-        )}
-        <form action={accion}>
-          <input type="hidden" name="id" value={id} />
-          <input type="hidden" name="accion" value="reabrir" />
-          <Button type="submit" variant="outline" disabled={enviando}>
-            {enviando ? "Reabriendo…" : "Reabrir"}
-          </Button>
-        </form>
-      </section>
-    );
-  }
-
-  if (!abierto) {
-    return (
-      <div>
-        <Button type="button" variant="outline" onClick={() => setAbierto(true)}>
-          Marcar como perdida
-        </Button>
-      </div>
-    );
-  }
-
   return (
-    <form ref={formulario} action={accion} className="flex flex-col gap-5 rounded-sm border border-border p-4" noValidate aria-labelledby="perder-titulo">
-      <h2 id="perder-titulo" className="font-heading text-2xl font-bold italic">Marcar como perdida</h2>
+    <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate aria-label="Marcar como perdida">
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="accion" value="perder" />
       <div className="flex flex-col gap-3">
@@ -93,14 +72,27 @@ export function EstadoConsulta({ id, estado, motivo, detalle }: Props) {
       <Campo id="detalle" etiqueta="Detalle" error={e.detalle} ayuda={elegido === "otro" ? "Con «Otro», escribe qué pasó." : "Opcional."}>
         <Textarea id="detalle" name="detalle" rows={2} defaultValue={v.detalle} aria-invalid={!!e.detalle} aria-describedby={e.detalle ? "detalle-error" : "detalle-ayuda"} />
       </Campo>
-      <div className="flex flex-wrap gap-2">
+      <PieModal>
         <Button type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : "Marcar como perdida"}
         </Button>
-        <Button type="button" variant="outline" onClick={() => setAbierto(false)}>
-          Cancelar
-        </Button>
-      </div>
+        <CancelarModal />
+      </PieModal>
+    </form>
+  );
+}
+
+const reabrirConAviso = conAviso(cambiarEstadoConsulta);
+
+export function ReabrirConsulta({ id }: { id: number }) {
+  const [, accion, enviando] = useActionState<EstadoFormulario, FormData>(reabrirConAviso, {});
+  return (
+    <form action={accion}>
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="accion" value="reabrir" />
+      <Button type="submit" disabled={enviando}>
+        {enviando ? "Reabriendo…" : "Reabrir"}
+      </Button>
     </form>
   );
 }

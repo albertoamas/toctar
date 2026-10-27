@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { cn } from "cn";
 import { PlusIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { Pestanas } from "@/componentes/panel/pestanas";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -16,18 +17,20 @@ import { VISTAS, type Vista } from "@/modulos/consultas/reglas";
 export const metadata: Metadata = { title: "Consultas" };
 
 // HU-24 y HU-28: las consultas por estado, las que llevan más tiempo sin movimiento primero, con los días desde el
-// último. Las abiertas que se enfrían se resaltan. Dueño o encargado con el permiso "consultas"; el técnico nunca (RN-12).
+// último. Las abiertas que se enfrían lo dicen en una insignia de aviso (pulido 9.1). Dueño o encargado con el permiso "consultas"; el técnico nunca (RN-12).
 export default function PaginaConsultas({ searchParams }: PageProps<"/panel/consultas">) {
   return (
     <section className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="font-heading text-4xl font-extrabold italic">Consultas</h1>
-        {/* Enlace con forma de botón: lleva a otra pantalla */}
-        <Link href="/panel/consultas/nueva" className={cn(buttonVariants())}>
-          <PlusIcon />
-          Nueva consulta
-        </Link>
-      </div>
+      <EncabezadoPagina
+        titulo="Consultas"
+        accion={
+          // Enlace con forma de botón: lleva a otra pantalla
+          <Link href="/panel/consultas/nueva" className={cn(buttonVariants())}>
+            <PlusIcon />
+            Nueva consulta
+          </Link>
+        }
+      />
       <Suspense fallback={<Cargando />}>
         <Lista searchParams={searchParams} />
       </Suspense>
@@ -59,7 +62,8 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/consultas">, "sear
       {consultas.length === 0 ? (
         <EstadoVacio>{VACIOS[vista]}</EstadoVacio>
       ) : (
-        <ListaConsultas consultas={consultas} umbral={parametros.dias_consulta_fria} />
+        // En Abiertas el estado distingue lo cotizado de lo que espera cotización; en las otras, la pestaña ya lo dice
+        <ListaConsultas consultas={consultas} umbral={parametros.dias_consulta_fria} conEstado={vista === "abiertas"} />
       )}
     </>
   );
