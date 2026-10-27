@@ -72,7 +72,10 @@ test("desde la cotización: queda aceptada, la consulta confirmada, las líneas 
   await expect(page.getByLabel("Ingresa el")).toHaveValue(dia);
   const [{ fin }] = await consultar<{ fin: string }>("select to_char($1::date + 1, 'YYYY-MM-DD') as fin", [dia]);
   await expect(page.getByLabel("Entrega aproximada")).toHaveValue(fin);
-  await expect(page.getByText("Total: 800 Bs")).toBeVisible();
+  // Los servicios de la cotización con su total, en su recuadro (pulido 10.2)
+  const cotizada = page.getByRole("region", { name: /^Cotización/ });
+  await expect(cotizada.getByText("Total", { exact: true })).toBeVisible();
+  await expect(cotizada.getByText("800 Bs", { exact: true }).last()).toBeVisible();
 
   // Sin elegir espacio ni método: los errores
   await page.getByRole("button", { name: "Agendar" }).click();
@@ -81,6 +84,10 @@ test("desde la cotización: queda aceptada, la consulta confirmada, las líneas 
 
   await espacio(page).selectOption({ index: 1 });
   await page.getByRole("radio", { name: "QR" }).check();
+  // La hora y la nota van plegadas (pulido 10.2): al abrirlas, el foco pasa a la hora
+  await expect(page.getByLabel("Hora aproximada")).toBeHidden();
+  await page.getByText("Agregar hora y nota").click();
+  await expect(page.getByLabel("Hora aproximada")).toBeFocused();
   await page.getByLabel("Hora aproximada").fill("a las 9");
   // El adelanto con la foto del comprobante (HU-32): queda privada y se ve en la reserva
   await page.locator("#comprobante").setInputFiles({ name: "comprobante.png", mimeType: "image/png", buffer: PNG });
