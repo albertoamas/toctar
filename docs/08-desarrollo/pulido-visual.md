@@ -1178,6 +1178,12 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - 4 mm entre el título y las fechas.
   - Las cotizaciones ya enviadas no cambian (RN-02): los cambios valen para las nuevas y para las versiones nuevas.
   - Para el grupo 13 (Configuración): en la ayuda del logo, recomendar el horizontal sin lema para los documentos.
+- **Revisión del grupo 9 (code-review, 27/10):**
+  - El logo pasaba de 24 a 14 mm de golpe en la proporción 2:1: ahora el alto baja de a poco entre 1,5:1 y 3:1. Un logo vertical **con** lema sigue sin cumplir la marca a ese tamaño (el lema va desde 320 px): no se puede elegir la variante de una imagen que sube el dueño; la prueba usa el vertical sin lema y la ayuda de Configuración lo recomendará (grupo 13).
+  - El paso siguiente de la consulta y "Corregir" se calculan una vez, en la página (`corregible`): el encabezado y Cotizaciones no se contradicen.
+  - El vehículo (placa, detalle y "Tamaño: …"), un componente compartido: `DatosVehiculo`, en la ficha del cliente y en Nueva consulta.
+  - El total del pie de Cotizar, solo en el celular (en la computadora el resumen está justo arriba).
+  - Descartados: el `conAviso` por render (el patrón de los demás formularios en modal) y los ids repetidos de los títulos (`cliente-titulo`, `nota-titulo`), que son el mismo caso general de `Campo` y esperan la decisión del desarrollador.
 - **Verificación:** con tres servicios y sin fotos, una hoja; con cuatro fotos, la segunda hoja con las fotos; con 20 líneas, varias hojas numeradas. Pruebas unitarias nuevas: tres servicios caben en una hoja, y el logo cuadrado con una versión 2. Comparativa en `pulido-visual/9.5-pdf-cotizacion.jpg` (antes, después y en el celular). E2E `hu-26` (el PDF se genera, se ve y se descarga).
 
 <!-- Plantilla:
