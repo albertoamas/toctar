@@ -216,7 +216,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 |---|---|---|---|
 | 9.1 | Consultas (pestañas y consultas que se enfrían) | `/panel/consultas` | ✅ |
 | 9.2 | Nueva consulta | `/panel/consultas/nueva` | ✅ |
-| 9.3 | Detalle de una consulta: estado, fotos, cotizaciones y reservas | `/panel/consultas/[id]` | ⏳ |
+| 9.3 | Detalle de una consulta: estado, fotos, cotizaciones y reservas | `/panel/consultas/[id]` | ✅ |
 | 9.4 | Cotizar | `/panel/consultas/[id]/cotizar` | ⏳ |
 | 9.5 | PDF de la cotización (impreso y en el celular; con la skill `pdf`) | `/panel/cotizaciones/[id]/pdf` | ⏳ |
 
@@ -1109,6 +1109,33 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - La placa grande en las opciones de vehículo; "Registrar consulta" en `PieFormulario`; `EncabezadoPagina`.
   - El canal, sin opción marcada de entrada (como estaba): un valor por defecto que no se cambia sería un dato falso sobre de dónde llegan los clientes. Si el dueño dice que casi todo llega por WhatsApp, se puede marcar de entrada.
 - **Verificación:** capturas a 360, 390, 768 y 1280 px de los tres pasos (elegir, elegido y cliente nuevo), de los errores y de "Nueva reserva"; sin desborde. Comparativa en `pulido-visual/9.2-nueva-consulta-celular.jpg`. E2E `hu-24` (la placa en la fila para elegir, el elegido en su recuadro con "Cambiar") y `hu-30`.
+
+### 9.3 Detalle de una consulta (27/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | Nombre, estado y "Escribir por WhatsApp" | Quién es, contactarlo | Dueño o encargado, seguido | Arriba |
+  | Cotizar, Agendar o Reabrir (en distintas secciones) | El paso siguiente | Seguido | Al encabezado, uno solo |
+  | Datos (cliente, vehículo, servicio, canal, registrada) | Contexto | Seguido | En lectura, sin el nombre repetido |
+  | Cotizaciones, PDF, Compartir y Descargar | Mandar o revisar la cotización | Dueño, seguido | Quedan; botones del tamaño estándar |
+  | "Corregir (nueva versión)" | Rehacer la cotización | Dueño, a veces | Sin borde en la cabecera de Cotizaciones |
+  | Reservas de la consulta | Ir a la reserva | A veces | Fila de un toque |
+  | Fotos y videos | Ver y agregar | Seguido | Quedan; la ayuda en una línea |
+  | Nota (campo abierto y "Guardar nota") | Leerla; corregirla a veces | Leer seguido | En lectura, con "Editar" en un modal |
+  | "Marcar como perdida" | Cerrarla | A veces | Al menú "Más", con su modal |
+  | Recuadro "Perdida" con "Reabrir" | Por qué se perdió; reabrir | A veces | Motivo bajo el título; "Reabrir" en el encabezado |
+- **Encontrado:**
+  - Los botones repartidos: hasta tres rojos a la vista ("Cotizar", "Guardar nota", "Agendar") y el paso siguiente en un lugar distinto según el estado.
+  - La nota, un formulario siempre abierto con su botón rojo; "Marcar como perdida" al fondo; la perdida, una sección entera para una línea de motivo.
+  - Los botones del PDF de 32 px (Ver PDF, Compartir, Descargar y Generar PDF): el estándar es 44 con el dedo.
+  - El nombre repetido en los datos; la placa sin destacar; las reservas como enlaces subrayados sueltos; el título sin el encabezado compartido.
+- **Cambios** (propuesta aprobada el 27/10):
+  - El paso siguiente, uno solo, en `EncabezadoPagina` (Cotizar, Agendar o Reabrir), con "Escribir por WhatsApp" y `MenuMas` con "Marcar como perdida" (modal); perdida, el motivo bajo el título.
+  - Datos en lectura con la placa grande y "Ver ficha del cliente"; "Corregir" en `CabeceraSeccion`; botones del PDF de tamaño estándar (no queda ningún `size="sm"` en el panel); reservas con `ListaFilas`; la nota con `SeccionConEditar`; la ayuda de fotos en una línea.
+  - `EstadoConsulta` pasa a `MasConsulta` y `ReabrirConsulta`; `NotaConsulta`, a `FormularioNota`.
+- **Hallazgo de accesibilidad:** Next 16 deja la página anterior oculta en el documento (para volver atrás al instante). Si tiene un campo con el mismo `id` que la actual, la etiqueta de la actual se asocia al oculto y el lector de pantalla no la anuncia. Pasaba con la nota (Nueva consulta también tiene `id="nota"`): el campo del modal tiene ahora su propio id. Pasa también en el modal "Datos del cliente" después de "Agregar cliente" (desde antes del pulido): propuesta aparte, que `Campo` genere ids únicos.
+- **Verificación:** 1.068 px en el celular la abierta (−7 %; la estimación era 900: los datos ocupan más que lo previsto), 1.270 la cotizada. Capturas a 360, 390, 768 y 1280 px de una abierta, una cotizada (se cotizó la consulta 2 de la demo local) y una perdida, del menú "Más" y de los modales; sin desborde. Comparativa en `pulido-visual/9.3-consulta-celular.jpg`. E2E `hu-24` (la nota en un modal), `hu-25` y `hu-28` (perder desde "Más", el motivo bajo el título, reabrir desde el encabezado), `hu-26`, `hu-27`, `hu-30` y `hu-31`.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
