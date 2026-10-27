@@ -232,7 +232,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 11.1 | Órdenes (dueño y encargado) y Mis órdenes (técnico) | `/panel/ordenes` | ⏳ |
+| 11.1 | Órdenes (dueño y encargado) y Mis órdenes (técnico) | `/panel/ordenes` | ✅ |
 | 11.2 | Orden: estado, fotos, avances, montos y aviso | `/panel/ordenes/[id]` | ⏳ |
 | 11.3 | Recibir vehículo | `/panel/ordenes/[id]/recibir` | ⏳ |
 | 11.4 | Entregar vehículo | `/panel/ordenes/[id]/entregar` | ⏳ |
@@ -1276,6 +1276,28 @@ Pedido del desarrollador: releer las reglas del principio de este documento y co
   - Reprogramar o cancelar solo navega si hay que quitar "?agendada=1"; `datosDirecta` no copia dos veces el vehículo elegido.
   - Descartados: el foco al cerrar un modal cuyo botón desaparece (pagar todo el saldo, cancelar), como "Reactivar" en el grupo 8 (el aviso lo anuncia); los ids de título repetidos, el caso ya documentado; y el motivo de cancelación en tinta suave, como el de la consulta perdida (9.3), con la insignia "Cancelada" en aviso.
 - **Verificación:** con pantalla táctil a 360, 390, 768 y 1280 px (agendada para hoy, a futuro, ya orden, "Más", los dos modales y el de registrar pago): nada se sale y ningún control mide menos de 44 px. Comparativa en `pulido-visual/10.3-reserva-celular.jpg`. E2E `hu-31` (reprogramar y cancelar desde "Más"), `hu-32` (registrar y anular pagos), `hu-33` (recibir y "Ver la orden" desde el encabezado), `hu-36`, `hu-37` y `hu-38`.
+
+### 11.1 Órdenes (27/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | "Órdenes" o "Mis órdenes" | Saber dónde está | — | Queda, con `EncabezadoPagina` |
+  | Pestañas Todas, Recibidas, En proceso y Listas | Filtrar por estado | Dueño o encargado, a diario | Se van: la lista se agrupa por estado |
+  | Tarjetas (placa, estado, aviso, servicios, cliente, técnico y entrega) | Abrir la orden | Todos, varias veces al día | Quedan, como filas de `ListaFilas` |
+  | Insignia del estado en cada tarjeta | Saber en qué va | — | Se va: lo dice el grupo |
+  | "Atrasada" y "Sin avisar" | Lo que pide atención | — | Quedan, como aviso |
+- **Encontrado:**
+  - En el celular (390 px) las pestañas no cabían: "Listas (1)" quedaba cortada.
+  - Las pestañas escondían órdenes que son pocas a la vez (las que caben en los espacios del taller).
+  - Tarjetas propias, distintas de las listas del resto del panel, y con las insignias en lugares distintos según el largo de la placa; en la computadora ocupaban dos tercios del ancho.
+  - Sin `EncabezadoPagina` ni `EstadoVacio`.
+  - "Pulido y nano cerámico — 5 años": los datos de demostración armaban la descripción con el formato viejo (`scripts/datos-demo.mjs`). Las órdenes del panel ya usan "Servicio (opción)" (9.4).
+- **Cambios** (propuesta aprobada el 27/10):
+  - Tres grupos en el orden del taller, Recibidas, En proceso y Listas, cada uno con su título y su cantidad ("Ninguna." si está vacío). Desde 1024 px, una columna por grupo, como un tablero; más angosto, uno debajo del otro. El técnico ve lo mismo con sus órdenes.
+  - Cada orden es una fila de `ListaFilas`: la placa grande, "Atrasada" o "Sin avisar" como aviso (no se dan juntas), "Entrega hoy" o "Entrega 26/10/2026" en negrita, y los servicios y el cliente (con el técnico, para el dueño y el encargado) en tinta suave.
+  - `EncabezadoPagina` y `EstadoVacio`. Los datos de demostración escriben "Servicio (opción)"; los que ya están en una base no cambian hasta volver a cargarlos.
+- **Verificación:** capturas con pantalla táctil a 360, 390, 768 y 1280 px; nada se sale y ningún control mide menos de 44 px. Comparativa en `pulido-visual/11.1-ordenes-celular.jpg`. E2E `hu-33` (Mis órdenes del técnico y la de otro técnico vacía) y `hu-34` (la orden en su grupo, con el conteo).
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)

@@ -122,10 +122,8 @@ test("extender la entrega: con el espacio ocupado se elige otro libre; las lista
   expect(t).toEqual({ fin: d3, espacio: espacios[1].id });
   await expect(page.getByRole("list", { name: "Historia de la orden" }).getByText(/^Entrega extendida al/)).toBeVisible();
 
-  // La lista del encargado: pestañas por estado con su conteo
-  await page.goto("/panel/ordenes?estado=recibido");
-  await expect(page.getByRole("link", { name: /^Recibidas \(\d+\)$/ })).toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("link", { name: new RegExp(`^${placa}`) })).toBeVisible();
-  await page.getByRole("link", { name: /^Listas \(\d+\)$/ }).click();
-  await expect(page.getByRole("link", { name: new RegExp(`^${placa}`) })).toHaveCount(0);
+  // La lista del encargado: agrupada por estado, con su conteo (pulido 11.1)
+  await page.goto("/panel/ordenes");
+  await expect(page.getByRole("region", { name: /^Recibidas \(\d+\)$/ }).getByRole("link", { name: new RegExp(`^${placa}`) })).toBeVisible();
+  await expect(page.getByRole("region", { name: /^Listas \(\d+\)$/ }).getByRole("link", { name: new RegExp(`^${placa}`) })).toHaveCount(0);
 });
