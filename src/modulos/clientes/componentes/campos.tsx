@@ -45,8 +45,8 @@ function Existente({ estado, campo, enlace = aLaFicha }: { estado: EstadoCliente
   );
 }
 
-/** Algún campo trae un valor o un error: lo plegado empieza abierto, así no se esconde. */
-const conAlgo = (estado: EstadoCliente, campos: string[]) => campos.some((c) => !!estado.valores?.[c] || !!estado.errores?.[c]);
+/** Algún campo trae un valor (lo enviado, o el guardado al editar) o un error: lo plegado empieza abierto. */
+const conAlgo = (valores: Partial<Record<string, string>>, errores: Partial<Record<string, string>>, campos: string[]) => campos.some((c) => !!valores[c] || !!errores[c]);
 
 export function CamposCliente({ estado, iniciales = {}, compacto, plegar, enlaceExistente }: PropsCampos) {
   const v = estado.valores ?? iniciales;
@@ -80,7 +80,7 @@ export function CamposCliente({ estado, iniciales = {}, compacto, plegar, enlace
       </div>
       <Existente estado={estado} campo="telefono" enlace={enlaceExistente} />
       {plegar && mas ? (
-        <MasDatos texto="Agregar correo, NIT y notas" abierto={conAlgo(estado, ["correo", "nit", "razonSocial", "notas"])}>
+        <MasDatos texto="Agregar correo, NIT y notas" abierto={conAlgo(v, e, ["correo", "nit", "razonSocial", "notas"])}>
           {mas}
         </MasDatos>
       ) : (
@@ -183,7 +183,7 @@ export function CamposVehiculo({ estado, iniciales = {}, prefijo = "", compacto,
   return (
     <>
       {grilla}
-      <MasDatos texto="Agregar marca, modelo, año y color" abierto={conAlgo(estado, ["marca", "modelo", "anio", "color"].map(n))}>
+      <MasDatos texto="Agregar marca, modelo, año y color" abierto={conAlgo(v, e, ["marca", "modelo", "anio", "color"].map(n))}>
         <div className="grid gap-6 sm:grid-cols-2">{opcionales}</div>
       </MasDatos>
     </>

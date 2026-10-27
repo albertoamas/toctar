@@ -1,19 +1,22 @@
 "use client";
 
-import { nombreVehiculo } from "@/modulos/clientes/reglas";
 import { useActionState, useRef, useState, useTransition } from "react";
 import { PencilIcon, PlusIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
+import { useHidratado } from "@/componentes/hidratado";
 import { avisarResultado, conAviso } from "@/componentes/panel/avisos";
+import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { Button } from "@/componentes/ui/button";
 import type { Tamano } from "@/modulos/configuracion/consultas";
 import { cambiarEstadoVehiculo, guardarVehiculo, type EstadoCliente } from "../acciones";
 import type { VehiculoCliente } from "../consultas";
-import { prefijoVehiculo } from "../reglas";
+import { nombreVehiculo, prefijoVehiculo } from "../reglas";
 import { CamposVehiculo } from "./campos";
 
-// HU-23: vehículos de un cliente. Se agregan y editan en la misma lista; "Desactivar" va dentro de la edición, como en
-// las listas de Configuración (pulido 6.2): se usa poco y así no se toca sin querer. Nada se borra (RN-14).
+// HU-23: vehículos de un cliente, en su ficha. Pulido 8.3 (skill pantallas-panel): la lista en lectura, con la placa
+// grande; el lápiz abre "Editar {placa}" y "＋ Agregar" abre "Agregar vehículo", en un modal (ModalFormulario), con
+// placa y tamaño a la vista y lo demás plegado como en el alta. "Desactivar" va dentro de la edición: se usa poco y así
+// no se toca sin querer. Nada se borra (RN-14).
 
 type Props = { clienteId: number; vehiculos: VehiculoCliente[]; tamanos: Tamano[] };
 
@@ -21,54 +24,56 @@ type Props = { clienteId: number; vehiculos: VehiculoCliente[]; tamanos: Tamano[
 const detalle = (v: VehiculoCliente) => [nombreVehiculo(v), v.anio, v.color].filter(Boolean);
 
 export function VehiculosCliente({ clienteId, vehiculos, tamanos }: Props) {
-  const [editando, setEditando] = useState<number | "nuevo" | null>(null);
+  const hidratado = useHidratado();
+  // El modal guarda el vehículo elegido aparte de si está abierto: al cerrarse, el contenido no cambia mientras se va.
+  // Se busca por id en la lista, que llega actualizada después de guardar
+  const [abierto, setAbierto] = useState(false);
+  const [elegidoId, setElegidoId] = useState<number | null>(null);
+  const [aperturas, setAperturas] = useState(0);
+  const elegido = vehiculos.find((v) => v.id === elegidoId) ?? null;
   const [pendiente, iniciar] = useTransition();
   const activos = vehiculos.filter((v) => v.activo);
   const inactivos = vehiculos.filter((v) => !v.activo);
+  const abrir = (v: VehiculoCliente | null) => {
+    setElegidoId(v?.id ?? null);
+    setAperturas((n) => n + 1);
+    setAbierto(true);
+  };
   const reactivar = (id: number) => iniciar(async () => avisarResultado(await cambiarEstadoVehiculo({ clienteId, id, activo: true })));
 
   return (
-    <section aria-labelledby="vehiculos-titulo" className="flex flex-col gap-4">
-      <h2 id="vehiculos-titulo" className="font-heading text-2xl font-bold italic">Vehículos</h2>
-      {activos.length === 0 && editando !== "nuevo" && <p className="text-tinta-suave">Todavía no tiene vehículos.</p>}
-      {activos.length > 0 && (
-        <ul aria-label="Vehículos" className="flex flex-col divide-y divide-border rounded-sm border border-border">
-          {activos.map((v) =>
-            editando === v.id ? (
-              <li key={v.id} className="p-3">
-                <FormularioVehiculo clienteId={clienteId} vehiculo={v} tamanos={tamanos} alTerminar={() => setEditando(null)} />
-              </li>
-            ) : (
-              <li key={v.id} className="flex items-center gap-3 p-3">
-                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="font-semibold">{v.placa}</span>
-                  <span className="flex flex-wrap gap-x-3 text-sm text-tinta-suave">
-                    <span>{v.tamano}</span>
-                    {detalle(v).map((d) => (
-                      <span key={String(d)}>{d}</span>
-                    ))}
-                  </span>
-                </span>
-                <Button type="button" variant="ghost" size="icon" aria-label={`Editar ${v.placa}`} onClick={() => setEditando(v.id)}>
-                  <PencilIcon />
-                </Button>
-              </li>
-            ),
-          )}
-        </ul>
-      )}
-
-      {editando === "nuevo" ? (
-        <div className="rounded-sm border border-border p-3">
-          <FormularioVehiculo clienteId={clienteId} tamanos={tamanos} alTerminar={() => setEditando(null)} />
-        </div>
+    <section aria-labelledby="vehiculos-titulo" className="flex flex-col gap-3">
+      {/* Como el título de SeccionConEditar: Datos, al lado, se ve igual */}
+      <div className="flex min-h-11 items-center justify-between gap-3">
+        <h2 id="vehiculos-titulo" className="font-heading text-2xl font-bold italic">
+          Vehículos
+        </h2>
+        <Button type="button" variant="ghost" disabled={!hidratado} aria-label="Agregar vehículo" onClick={() => abrir(null)}>
+          <PlusIcon />
+          Agregar
+        </Button>
+      </div>
+      {activos.length === 0 ? (
+        <p className="flex-1 rounded-sm border border-border p-4 text-tinta-suave">Todavía no tiene vehículos.</p>
       ) : (
-        <div>
-          <Button type="button" variant="outline" onClick={() => setEditando("nuevo")}>
-            <PlusIcon />
-            Agregar vehículo
-          </Button>
-        </div>
+        <ul aria-label="Vehículos" className="flex flex-1 flex-col divide-y divide-border rounded-sm border border-border">
+          {activos.map((v) => (
+            <li key={v.id} className="flex items-center gap-3 p-3">
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="font-heading text-xl font-extrabold italic tabular-nums">{v.placa}</span>
+                <span className="flex flex-wrap gap-x-3 text-sm text-tinta-suave">
+                  <span>{v.tamano}</span>
+                  {detalle(v).map((d) => (
+                    <span key={String(d)}>{d}</span>
+                  ))}
+                </span>
+              </span>
+              <Button type="button" variant="ghost" size="icon" disabled={!hidratado} aria-label={`Editar ${v.placa}`} onClick={() => abrir(v)}>
+                <PencilIcon />
+              </Button>
+            </li>
+          ))}
+        </ul>
       )}
 
       {inactivos.length > 0 && (
@@ -86,11 +91,17 @@ export function VehiculosCliente({ clienteId, vehiculos, tamanos }: Props) {
           </ul>
         </div>
       )}
+
+      <ModalFormulario titulo={elegido ? `Editar ${elegido.placa}` : "Agregar vehículo"} abierto={abierto} alCambiar={setAbierto}>
+        {/* La key: cada apertura empieza con el formulario limpio, con lo guardado y sin errores de la vez anterior */}
+        <FormularioVehiculo key={aperturas} clienteId={clienteId} vehiculo={elegido ?? undefined} tamanos={tamanos} />
+      </ModalFormulario>
     </section>
   );
 }
 
-function FormularioVehiculo({ clienteId, vehiculo, tamanos, alTerminar }: { clienteId: number; vehiculo?: VehiculoCliente; tamanos: Tamano[]; alTerminar: () => void }) {
+function FormularioVehiculo({ clienteId, vehiculo, tamanos }: { clienteId: number; vehiculo?: VehiculoCliente; tamanos: Tamano[] }) {
+  const alTerminar = useCerrarModal();
   const [estado, accion, enviando] = useActionState<EstadoCliente, FormData>(
     conAviso(guardarVehiculo, (r) => r.ok && alTerminar()),
     {},
@@ -113,17 +124,15 @@ function FormularioVehiculo({ clienteId, vehiculo, tamanos, alTerminar }: { clie
   const opciones = vehiculo && !tamanos.some((t) => t.id === vehiculo.tamanoId) ? [...tamanos, { id: vehiculo.tamanoId, nombre: vehiculo.tamano, descripcion: null }] : tamanos;
 
   return (
-    <form ref={formulario} action={accion} className="flex flex-col gap-4" noValidate aria-label={vehiculo ? `Editar ${vehiculo.placa}` : "Agregar vehículo"}>
+    <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate aria-label={vehiculo ? `Editar ${vehiculo.placa}` : "Agregar vehículo"}>
       <input type="hidden" name="clienteId" value={clienteId} />
       {vehiculo && <input type="hidden" name="id" value={vehiculo.id} />}
-      <CamposVehiculo estado={estado} iniciales={iniciales} prefijo={prefijo} tamanos={opciones} />
-      <div className="flex flex-wrap gap-2">
+      <CamposVehiculo estado={estado} iniciales={iniciales} prefijo={prefijo} tamanos={opciones} plegar />
+      <PieModal>
         <Button type="submit" disabled={enviando}>
-          {enviando ? "Guardando…" : vehiculo ? "Guardar" : "Agregar"}
+          {enviando ? "Guardando…" : vehiculo ? "Guardar vehículo" : "Agregar vehículo"}
         </Button>
-        <Button type="button" variant="outline" onClick={alTerminar}>
-          Cancelar
-        </Button>
+        <CancelarModal />
         {vehiculo && (
           <Button
             type="button"
@@ -142,7 +151,7 @@ function FormularioVehiculo({ clienteId, vehiculo, tamanos, alTerminar }: { clie
             Desactivar
           </Button>
         )}
-      </div>
+      </PieModal>
     </form>
   );
 }

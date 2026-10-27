@@ -49,3 +49,12 @@ export function precioCotizadoYFinal(lineas: readonly { precio: string; esAdicio
 
 /** Nada pendiente: saldo cero o a favor del cliente (negativo). Ya no recibe pagos. */
 export const estaPagada = (saldo: string) => montoNoMayor(saldo, "0");
+
+/**
+ * Lo que debe un cliente (ficha del cliente, pulido 8.3): la suma de los saldos de sus reservas y órdenes que no están
+ * pagadas, sin las canceladas (su saldo no se cobra). Null si no debe nada o si no se calcularon los saldos.
+ */
+export function saldoPendiente(trabajos: readonly { estado: string; saldo: Saldo | null }[]): string | null {
+  const saldos = trabajos.filter((t) => t.estado !== "cancelado" && t.saldo && !estaPagada(t.saldo.saldo)).map((t) => t.saldo!.saldo);
+  return saldos.length > 0 ? calcularTotales(saldos, "0").total : null;
+}
