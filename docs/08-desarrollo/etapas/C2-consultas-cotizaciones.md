@@ -162,10 +162,10 @@ PK (`consulta_id`, `archivo_id`). Hasta 10 por consulta (se valida en la acción
 Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel y sin desborde a 360 px.
 
 ### `/panel/consultas` — Consultas (dueño y encargado con "Consultas")
-- Arriba: "Nueva consulta" (enlace con forma de botón, rojo).
+- Arriba, el encabezado compartido con "Nueva consulta" (enlace con forma de botón, rojo).
 - Pestañas por estado con su cantidad: "Abiertas (n)" (consultó y cotizado, la vista por defecto), "Confirmadas", "Perdidas".
-- Cada consulta: cliente, vehículo (placa), servicio, estado y "hace N días" desde el último movimiento; las más antiguas primero. Desde 7 días se resalta (borde de aviso): se está enfriando. El umbral sale de Configuración (§12).
-- Celular: tarjetas tocables enteras. Computadora: tabla con la fila tocable.
+- Cada consulta, en la fila de un toque compartida (`ListaFilas`, pulido 9.1, 26/10) en todos los tamaños: el cliente; el servicio en negrita ("Todavía no sabe" si no eligió); en tinta suave, la placa y "hace N días" desde el último movimiento. Las más antiguas primero. Desde 7 días una abierta se enfría y lo dice en una insignia de aviso, "9 días sin movimiento" (los días no se repiten abajo). El umbral sale de Configuración (§12).
+- El estado (Consultó o Cotizado) en una insignia, solo en Abiertas: en Confirmadas y Perdidas la pestaña ya lo dice. En la ficha del cliente, la misma fila con la placa grande y el estado siempre (Confirmado en verde, Perdido en ámbar).
 
 ### `/panel/consultas/nueva` — Nueva consulta
 - **Cliente:** buscador (el de C1, en modo "elegir"). Al elegir, sus vehículos activos como opciones. "Cliente nuevo" despliega nombre, WhatsApp, placa y tamaño, con el aviso de repetidos de C1.

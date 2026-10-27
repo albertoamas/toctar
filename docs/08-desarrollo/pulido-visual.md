@@ -214,7 +214,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 9.1 | Consultas (pestañas y consultas que se enfrían) | `/panel/consultas` | ⏳ |
+| 9.1 | Consultas (pestañas y consultas que se enfrían) | `/panel/consultas` | ✅ |
 | 9.2 | Nueva consulta | `/panel/consultas/nueva` | ⏳ |
 | 9.3 | Detalle de una consulta: estado, fotos, cotizaciones y reservas | `/panel/consultas/[id]` | ⏳ |
 | 9.4 | Cotizar | `/panel/consultas/[id]/cotizar` | ⏳ |
@@ -1066,6 +1066,27 @@ Cada pantalla anota aquí, al trabajarla: qué se encontró, qué se cambió (co
   - `CabeceraSeccion` (de `seccion-con-editar.tsx`): la cabecera de Vehículos era una copia de la de `SeccionConEditar`.
   - El comentario y la prueba de `placasEnFila`: pasa adelante las placas que contienen lo buscado, sea o no una placa.
   - Descartados: el foco al cancelar desde "Más" ya vuelve al botón (la E2E lo comprueba); al reactivar, el aviso lo anuncia; "Pagado" y "Saldo" se distinguen por el texto, y lo que debe está en el encabezado; el `conAviso` por render es el patrón de los demás formularios en modal.
+
+### 9.1 Consultas (26/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | "Nueva consulta" | Registrar a alguien que preguntó | Dueño o encargado, varias veces al día | Arriba |
+  | Pestañas Abiertas, Confirmadas y Perdidas, con cantidades | Ver qué falta responder o cerrar | Igual | Quedan |
+  | Fila: cliente, placa, servicio, estado y días | Abrir la consulta | Igual | La fila de un toque compartida |
+  | "Se enfría" (ámbar) | Saber a quién volver a escribir | Lo más importante de la lista | Insignia de aviso, con palabras |
+- **Encontrado:**
+  - Dos listas distintas (tarjetas en el celular, tabla en la computadora); la misma lista va en la ficha del cliente, lo único que quedaba distinto ahí después de la 8.3.
+  - "Se enfría" se veía distinto en cada tamaño (recuadro ámbar en el celular; fondo apenas visible y un reloj en la computadora) y se decía con color e ícono.
+  - En Confirmadas y Perdidas, la insignia repetía lo que dice la pestaña; el servicio (lo que quiere el cliente) en gris chico, como la placa.
+  - El título sin el encabezado compartido.
+- **Cambios** (propuesta aprobada el 26/10):
+  - `ListaFilas` en todos los tamaños: el cliente, el servicio en negrita, la placa y hace cuánto en tinta suave. La que se enfría: "9 días sin movimiento" en una insignia de aviso (los días no se repiten abajo). En la propuesta decía "sin respuesta"; se escribió "sin movimiento" porque los días cuentan cualquier movimiento, no solo la respuesta del cliente.
+  - El estado solo en Abiertas (Consultó o Cotizado); en la ficha del cliente, siempre, con la placa grande.
+  - **`ListaFilas` extendida** (aprobado con la propuesta): muestra el aviso y el estado a la vez, y el estado puede ir en verde o ámbar (`tonoEstado`). En el inicio, una entrega atrasada muestra "Atrasada desde el …" y también "En proceso"; en la ficha del cliente, "Cancelada" es una sola insignia ámbar (antes se armaba como aviso).
+  - `EncabezadoPagina` con "Nueva consulta".
+- **Verificación:** capturas a 360, 390, 768 y 1280 px de las tres pestañas, del inicio y de dos fichas de cliente; sin desborde. Comparativa en `pulido-visual/9.1-consultas-celular.jpg`. E2E `hu-28` (el aviso con palabras, el estado en Abiertas y no en Perdidas, el orden), `hu-39` (la entrega atrasada con su estado), `hu-24`, `hu-23` y `hu-32`.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
