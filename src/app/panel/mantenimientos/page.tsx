@@ -50,22 +50,22 @@ async function Listas() {
 
   return (
     <>
-      <Seccion id="vencidos" titulo="Vencidos" cantidad={vencidos.length} vacio="Ninguno vencido.">
+      <Seccion titulo="Vencidos" cantidad={vencidos.length} vacio="Ninguno vencido.">
         {vencidos.map(fila)}
       </Seccion>
-      <Seccion id="proximos" titulo={`Próximos ${DIAS_PROXIMOS} días`} cantidad={proximos.length} vacio={`Ninguno vence en los próximos ${DIAS_PROXIMOS} días.`}>
+      <Seccion titulo={`Próximos ${DIAS_PROXIMOS} días`} cantidad={proximos.length} vacio={`Ninguno vence en los próximos ${DIAS_PROXIMOS} días.`}>
         {proximos.map(fila)}
       </Seccion>
     </>
   );
 }
 
-function Seccion({ id, titulo, cantidad, vacio, children }: { id: string; titulo: string; cantidad: number; vacio: string; children: React.ReactNode }) {
+function Seccion({ titulo, cantidad, vacio, children }: { titulo: string; cantidad: number; vacio: string; children: React.ReactNode }) {
   return (
-    <section aria-labelledby={`${id}-titulo`} className="flex max-w-3xl flex-col gap-3">
-      <h2 id={`${id}-titulo`} className="font-heading text-2xl font-bold italic">
-        {titulo} <span className="tabular-nums text-tinta-suave" aria-hidden>({cantidad})</span>
-        <span className="sr-only">, {cantidad === 1 ? "1 mantenimiento" : `${cantidad} mantenimientos`}</span>
+    // El lector oye la sección como "Vencidos, 2 mantenimientos"; a la vista, "Vencidos (2)"
+    <section aria-label={`${titulo}, ${cantidad === 1 ? "1 mantenimiento" : `${cantidad} mantenimientos`}`} className="flex max-w-3xl flex-col gap-3">
+      <h2 className="font-heading text-2xl font-bold italic">
+        {titulo} <span className="tabular-nums text-tinta-suave">({cantidad})</span>
       </h2>
       {cantidad === 0 ? (
         <p className="text-tinta-suave">{vacio}</p>

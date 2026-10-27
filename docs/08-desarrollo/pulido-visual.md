@@ -1427,6 +1427,17 @@ Pedido del desarrollador: releer las reglas del principio de este documento y co
   - Los 15 días de "Próximos" son una constante (`DIAS_PROXIMOS`, de la HU-38), no un valor del panel: anotado como pedido 19 en el registro de cambios, para que lo decida el dueño.
 - **Verificación:** con pantalla táctil a 360, 390, 768 y 1280 px: nada se sale y ningún control mide menos de 44 px. Comparativa en `pulido-visual/12.2-mantenimientos-celular.jpg`. E2E `hu-35`, `hu-38` (el modal con el foco en "Volver") y `hu-40`.
 
+### Revisión del grupo 12 (code-review, 27/10/2026)
+- **Corregido:**
+  - "No le interesa" no esperaba a que la página cargara: un toque temprano no abría el modal. Se habilita al hidratar, como "Registrar pago" y "Avisar por WhatsApp".
+  - Los grupos de Órdenes y Mantenimientos se anunciaban "Vencidos (1)", sin la unidad: la sección se llama "Vencidos, 1 mantenimiento" o "Recibidas, 2 órdenes" para el lector (`aria-label`); a la vista sigue "(1)". Un texto oculto dentro del título no servía: Chromium le agrega un espacio ("Recibidas , 2 órdenes").
+  - Sus títulos en `font-bold`, como las demás secciones del panel (estaban en `font-extrabold`).
+  - El enlace de texto de 44 px ("Ver ficha del cliente", "Ver la reserva", "Ver la orden") estaba copiado en cinco lugares: `ENLACE_TEXTO` (`componentes/panel/enlace-texto.ts`).
+- **Descartado:**
+  - La fecha de Mantenimientos en el medio de la fila en la computadora: queda junto a las acciones, como el monto en Saldos pendientes, y las dos listas se leen igual.
+  - Juntar `enLista` y `conDetalle` de `AvisarPorWhatsApp` en una sola opción: con un solo uso en lista, no vale la pena todavía.
+- **Verificación:** E2E completa (326 de 326) antes de estos cambios; después, `hu-24`, `hu-31` a `hu-35`, `hu-37` y `hu-38`.
+
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
 - **Encontrado:**
