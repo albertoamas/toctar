@@ -38,8 +38,8 @@ export function normalizarBusqueda(q: string): Busqueda | null {
 const PLACAS_EN_FILA = 3;
 
 /**
- * Las placas de un cliente en su fila de la lista (pulido 8.1): hasta tres y "y N más". Si se buscó una placa, las que
- * coinciden van primero, así la buscada se ve aunque sea el quinto vehículo. Null si no tiene vehículos.
+ * Las placas de un cliente en su fila de la lista (pulido 8.1): hasta tres y "y N más". Las que contienen lo buscado
+ * (escrito como placa) van primero, así la buscada se ve aunque sea el quinto vehículo. Null si no tiene vehículos.
  */
 export function placasEnFila(placas: string[], busqueda: Busqueda | null): string | null {
   if (placas.length === 0) return null;

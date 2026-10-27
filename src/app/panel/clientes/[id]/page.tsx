@@ -65,7 +65,8 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
     tamanosActivos(),
     verConsultas ? consultasDelCliente(numero) : [],
     obtenerParametros(),
-    verAgenda ? reservasDelCliente(numero, verPagos) : [],
+    // Con Pagos también sin Agenda: de ahí sale lo que debe (la lista de reservas es de Agenda)
+    verAgenda || verPagos ? reservasDelCliente(numero, verPagos) : [],
     verMantenimientos ? mantenimientosDelCliente(numero) : [],
   ]);
   if (!c) notFound();

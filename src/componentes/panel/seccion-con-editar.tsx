@@ -27,23 +27,35 @@ type Props = {
   children: React.ReactNode;
 };
 
+/**
+ * La cabecera de una sección de ficha: el título y, en su misma fila, su acción sin borde ("Editar", "＋ Agregar"). La
+ * usan SeccionConEditar y las secciones que son una lista (los vehículos del cliente), así las de al lado se ven igual.
+ */
+export function CabeceraSeccion({ id, titulo, nivel = 2, children }: { id: string; titulo: string; nivel?: 2 | 3; children: React.ReactNode }) {
+  const Titulo = nivel === 3 ? "h3" : "h2";
+  return (
+    <div className="flex min-h-11 items-center justify-between gap-3">
+      <Titulo id={`${id}-titulo`} className={nivel === 3 ? "text-lg font-semibold" : "font-heading text-2xl font-bold italic"}>
+        {titulo}
+      </Titulo>
+      {children}
+    </div>
+  );
+}
+
 export function SeccionConEditar({ id, titulo, nivel = 2, etiquetaEditar, tituloModal, abierta = false, lectura, children }: Props) {
   const hidratado = useHidratado();
   // Abierto si la persona lo abrió o, hasta que lo toque, si empieza abierta. La que empieza abierta se abre al cargar
   // la página (hidratado) y no desde el servidor: el diálogo pone el foco en su primer campo cuando se abre
   const [elegido, setAbierto] = useState<boolean | null>(null);
   const abierto = elegido ?? (abierta && hidratado);
-  const Titulo = nivel === 3 ? "h3" : "h2";
   const cabecera = (
-    <div className="flex min-h-11 items-center justify-between gap-3">
-      <Titulo id={`${id}-titulo`} className={nivel === 3 ? "text-lg font-semibold" : "font-heading text-2xl font-bold italic"}>
-        {titulo}
-      </Titulo>
+    <CabeceraSeccion id={id} titulo={titulo} nivel={nivel}>
       <Button type="button" variant="ghost" disabled={!hidratado} aria-label={etiquetaEditar} onClick={() => setAbierto(true)}>
         <PencilIcon />
         Editar
       </Button>
-    </div>
+    </CabeceraSeccion>
   );
 
   return (

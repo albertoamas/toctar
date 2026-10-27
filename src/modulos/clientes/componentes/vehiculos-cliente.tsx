@@ -6,6 +6,7 @@ import { useFocoEnError } from "@/componentes/foco-en-error";
 import { useHidratado } from "@/componentes/hidratado";
 import { avisarResultado, conAviso } from "@/componentes/panel/avisos";
 import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
+import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
 import { Button } from "@/componentes/ui/button";
 import type { Tamano } from "@/modulos/configuracion/consultas";
 import { cambiarEstadoVehiculo, guardarVehiculo, type EstadoCliente } from "../acciones";
@@ -43,16 +44,13 @@ export function VehiculosCliente({ clienteId, vehiculos, tamanos }: Props) {
 
   return (
     <section aria-labelledby="vehiculos-titulo" className="flex flex-col gap-3">
-      {/* Como el título de SeccionConEditar: Datos, al lado, se ve igual */}
-      <div className="flex min-h-11 items-center justify-between gap-3">
-        <h2 id="vehiculos-titulo" className="font-heading text-2xl font-bold italic">
-          Vehículos
-        </h2>
+      {/* La misma cabecera que SeccionConEditar: Datos, al lado, se ve igual */}
+      <CabeceraSeccion id="vehiculos" titulo="Vehículos">
         <Button type="button" variant="ghost" disabled={!hidratado} aria-label="Agregar vehículo" onClick={() => abrir(null)}>
           <PlusIcon />
           Agregar
         </Button>
-      </div>
+      </CabeceraSeccion>
       {activos.length === 0 ? (
         <p className="flex-1 rounded-sm border border-border p-4 text-tinta-suave">Todavía no tiene vehículos.</p>
       ) : (

@@ -37,6 +37,7 @@ test("la fila de un cliente muestra hasta tres placas y, si se buscó una, la bu
   expect(placasEnFila(cinco, null)).toBe("1111AAA, 2222BBB, 3333CCC y 2 más");
   // La quinta, buscada con guion y en minúsculas, pasa adelante
   expect(placasEnFila(cinco, normalizarBusqueda("5555-eee"))).toBe("5555EEE, 1111AAA, 2222BBB y 2 más");
-  // Una búsqueda por nombre no cambia el orden
+  // Una búsqueda que no está en ninguna placa (un nombre) no cambia el orden; una que sí, la pasa adelante
   expect(placasEnFila(cinco, normalizarBusqueda("josé"))).toBe("1111AAA, 2222BBB, 3333CCC y 2 más");
+  expect(placasEnFila(cinco, normalizarBusqueda("ee"))).toBe("5555EEE, 1111AAA, 2222BBB y 2 más");
 });
