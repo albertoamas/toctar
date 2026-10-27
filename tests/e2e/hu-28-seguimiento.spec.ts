@@ -65,13 +65,14 @@ test("abiertas por antigüedad, con los días sin movimiento; las que se enfría
   await expect(fila(page, `Ya perdida ${s}`)).not.toContainText("Perdido");
 });
 
-test("marcar como perdida con motivo y reabrir; «Otro» pide el detalle", async ({ page }, info) => {
+test("marcar como perdida desde «Más», con motivo, y reabrir desde el encabezado; «Otro» pide el detalle", async ({ page }, info) => {
   const s = sufijo(info).toUpperCase();
   const id = await crearConsulta({ cliente: `Por perder ${s}`, telefono: telefono(info, 5), placa: `PP28${s}1`, dias: 4 });
   await ingresarComoEncargado(page, info, 2);
-  await page.goto(`/panel/consultas/${id}`);
+  await page.goto(`/panel/consultas/${id}`, { waitUntil: "networkidle" });
 
-  await page.getByRole("button", { name: "Marcar como perdida" }).click();
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Marcar como perdida" }).click();
   const formulario = page.getByRole("form", { name: "Marcar como perdida" });
   await formulario.getByRole("button", { name: "Marcar como perdida" }).click();
   await expect(page.getByText("Elige el motivo.")).toBeVisible();
@@ -85,14 +86,16 @@ test("marcar como perdida con motivo y reabrir; «Otro» pide el detalle", async
   await formulario.getByLabel("Detalle").fill("Lo hizo en otro taller.");
   await formulario.getByRole("button", { name: "Marcar como perdida" }).click();
   await expect(page.getByText("Marcada como perdida.")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Perdida" })).toBeVisible();
-  await expect(page.getByText("Lo hizo en otro taller.")).toBeVisible();
+  await expect(formulario).toBeHidden();
+  // El motivo, en una línea bajo el título; ya no se ofrece perderla
+  await expect(page.getByText("Perdida: Otro. Lo hizo en otro taller.")).toBeVisible();
   await expect(page.getByRole("main").getByText("Perdido", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Más" })).toHaveCount(0);
 
   await page.getByRole("button", { name: "Reabrir" }).click();
   await expect(page.getByText("Consulta reabierta.")).toBeVisible();
   await expect(page.getByRole("main").getByText("Consultó", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Marcar como perdida" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Más" })).toBeVisible();
   // Reabrir cuenta como movimiento: vuelve a las abiertas como de hoy
   await page.goto("/panel/consultas");
   await expect(fila(page, `Por perder ${s}`)).toContainText("hoy");

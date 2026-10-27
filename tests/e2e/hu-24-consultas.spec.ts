@@ -50,10 +50,10 @@ test("desde la ficha del cliente: llega elegido, con su único vehículo marcado
   await expect(page.getByText(/^Consulta registrada\./)).toBeVisible();
   await expect(page.getByRole("heading", { level: 1, name: `Consulta ficha ${s}` })).toBeVisible();
   await expect(page.locator("dl").locator("visible=true")).toContainText(`CF24${s}1`);
-  await expect(page.getByLabel(/Qué pidió/)).toHaveValue("Quiere sacar las rayas del capó antes de venderlo.");
+  await expect(page.getByRole("region", { name: "Nota" })).toContainText("Quiere sacar las rayas del capó antes de venderlo.");
 
   // Queda en la ficha y en la lista de abiertas
-  await page.getByRole("link", { name: `Consulta ficha ${s}` }).click();
+  await page.getByRole("link", { name: "Ver ficha del cliente" }).click();
   await expect(page.getByRole("heading", { level: 2, name: "Consultas" })).toBeVisible();
   await expect(page.getByRole("link", { name: `CF24${s}1` }).locator("visible=true")).toBeVisible();
   await page.goto("/panel/consultas");
@@ -125,7 +125,7 @@ test("cliente nuevo: se registra con la consulta; un WhatsApp repetido avisa y o
   await expect(page.locator("dl").locator("visible=true")).toContainText(`CN24${s}1`);
 
   // El cliente quedó registrado, con su vehículo
-  await page.getByRole("link", { name: `Nuevo por consulta ${s}` }).click();
+  await page.getByRole("link", { name: "Ver ficha del cliente" }).click();
   await expect(page.getByRole("list", { name: "Vehículos", exact: true })).toContainText(`CN24${s}1`);
 });
 
@@ -155,12 +155,18 @@ test("las fotos se suben, se ven en grande y se quitan", async ({ page }, info) 
   await expect(dialogo).toBeHidden();
   await expect(fotos.getByRole("listitem")).toHaveCount(1);
 
-  // La nota se edita
-  await page.getByLabel(/Qué pidió/).fill("Mandó fotos del capó.");
-  await page.getByRole("button", { name: "Guardar nota" }).click();
+  // La nota se lee en la página y se edita en un modal (pulido 9.3)
+  await page.getByRole("button", { name: "Editar la nota" }).click();
+  const nota = page.getByRole("dialog", { name: "Nota de la consulta" });
+  await expect(nota.getByLabel(/Qué pidió/)).toBeFocused();
+  await nota.getByLabel(/Qué pidió/).fill("Mandó fotos del capó.");
+  await expect(nota.getByLabel(/Qué pidió/)).toHaveValue("Mandó fotos del capó.");
+  await nota.getByRole("button", { name: "Guardar nota" }).click();
   await expect(page.getByText("Nota guardada.")).toBeVisible();
+  await expect(nota).toBeHidden();
+  await expect(page.getByRole("region", { name: "Nota" })).toContainText("Mandó fotos del capó.");
   await page.reload();
-  await expect(page.getByLabel(/Qué pidió/)).toHaveValue("Mandó fotos del capó.");
+  await expect(page.getByRole("region", { name: "Nota" })).toContainText("Mandó fotos del capó.");
   await expect(fotos.getByRole("listitem")).toHaveCount(1);
 });
 

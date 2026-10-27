@@ -156,8 +156,9 @@ test("corregir crea la versión 2 con el mismo número; la 1 queda reemplazada y
   await expect(page.getByText("Se guarda como versión 3.")).toBeVisible();
 
   // Perdida y reabierta, vuelve a "Cotizado": ya tiene cotización
-  await page.goto(`/panel/consultas/${id}`);
-  await page.getByRole("button", { name: "Marcar como perdida" }).click();
+  await page.goto(`/panel/consultas/${id}`, { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Marcar como perdida" }).click();
   await page.getByRole("radio", { name: "Precio" }).check();
   await page.getByRole("form", { name: "Marcar como perdida" }).getByRole("button", { name: "Marcar como perdida" }).click();
   await expect(page.getByText("Marcada como perdida.")).toBeVisible();
