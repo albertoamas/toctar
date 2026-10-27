@@ -1,9 +1,9 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, lte, sql, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { cliente, recordatorioMantenimiento as recordatorio, servicio, trabajo, usuario, vehiculo, type EstadoRecordatorio, type EstadoTrabajo } from "@/db/esquema";
-import { ESTADOS_RECORDATORIO_ABIERTO, hastaProximos } from "./reglas";
+import { ESTADOS_RECORDATORIO_ABIERTO, ESTADOS_RECORDATORIO_CERRADO, hastaProximos, type VistaMantenimientos } from "./reglas";
 
 // Lecturas de los recordatorios de mantenimiento (HU-38). Quien las llama ya pasó por exigirModulo("mantenimientos").
 // Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §6.
@@ -24,6 +24,13 @@ export type MantenimientoPorAvisar = {
   modelo: string | null;
 };
 
+/** Uno cerrado (pedido 20): agendado, con su reserva, o "No le interesa", con su nota. */
+export type MantenimientoCerrado = MantenimientoPorAvisar & {
+  nota: string | null;
+  /** La reserva con que se agendó y su estado (para abrirla donde corresponde: reserva u orden). */
+  agendado: { id: number; estado: EstadoTrabajo } | null;
+};
+
 const avisador = alias(usuario, "avisador");
 
 /**
@@ -31,39 +38,81 @@ const avisador = alias(usuario, "avisador");
  * antiguo primero. Sin los de un cliente o vehículo desactivado: no se le avisa ni se le puede agendar.
  */
 export async function mantenimientosPorAvisar(hoy: string): Promise<MantenimientoPorAvisar[]> {
-  return db
-    .select({
-      id: recordatorio.id,
-      fechaProgramada: recordatorio.fechaProgramada,
-      estado: recordatorio.estado,
-      avisadoAt: recordatorio.avisadoAt,
-      avisadoPor: avisador.name,
-      servicio: servicio.nombre,
-      clienteId: cliente.id,
-      cliente: cliente.nombre,
-      telefono: cliente.telefono,
-      vehiculoId: vehiculo.id,
-      placa: vehiculo.placa,
-      marca: vehiculo.marca,
-      modelo: vehiculo.modelo,
-    })
+  return listar(porAvisar(hoy), [asc(recordatorio.fechaProgramada), asc(recordatorio.id)]);
+}
+
+/** Pedido 20: los abiertos que vencen después de los próximos 15 días, el más cercano primero (para planificar). */
+export async function mantenimientosMasAdelante(hoy: string): Promise<MantenimientoPorAvisar[]> {
+  return listar(masAdelante(hoy), [asc(recordatorio.fechaProgramada), asc(recordatorio.id)]);
+}
+
+/** Pedido 20: los agendados y los de "No le interesa", el que se cerró más recién primero. */
+export async function mantenimientosCerrados(): Promise<MantenimientoCerrado[]> {
+  const filas = await db
+    .select({ ...CAMPOS, nota: recordatorio.nota, agendadoId: trabajo.id, agendadoEstado: trabajo.estado })
     .from(recordatorio)
     .innerJoin(cliente, eq(recordatorio.clienteId, cliente.id))
     .innerJoin(vehiculo, eq(recordatorio.vehiculoId, vehiculo.id))
     .innerJoin(servicio, eq(recordatorio.servicioId, servicio.id))
     .leftJoin(avisador, eq(recordatorio.avisadoPor, avisador.id))
-    .where(porAvisar(hoy))
-    .orderBy(asc(recordatorio.fechaProgramada), asc(recordatorio.id));
+    .leftJoin(trabajo, eq(recordatorio.trabajoAgendadoId, trabajo.id))
+    .where(cerrados)
+    .orderBy(desc(recordatorio.updatedAt), desc(recordatorio.id));
+  return filas.map(({ agendadoId, agendadoEstado, ...f }) => ({ ...f, agendado: agendadoId && agendadoEstado ? { id: agendadoId, estado: agendadoEstado } : null }));
 }
 
+/** Cuántos hay en cada pestaña, con las mismas condiciones que sus listas: el número y la lista no se separan. */
+export async function contarPorVista(hoy: string): Promise<Record<VistaMantenimientos, number>> {
+  const [cuenta] = await db
+    .select({
+      "por-avisar": sql<number>`(count(*) filter (where ${porAvisar(hoy)}))::int`,
+      "mas-adelante": sql<number>`(count(*) filter (where ${masAdelante(hoy)}))::int`,
+      cerrados: sql<number>`(count(*) filter (where ${cerrados}))::int`,
+    })
+    .from(recordatorio)
+    .innerJoin(cliente, eq(recordatorio.clienteId, cliente.id))
+    .innerJoin(vehiculo, eq(recordatorio.vehiculoId, vehiculo.id));
+  return cuenta;
+}
+
+const CAMPOS = {
+  id: recordatorio.id,
+  fechaProgramada: recordatorio.fechaProgramada,
+  estado: recordatorio.estado,
+  avisadoAt: recordatorio.avisadoAt,
+  avisadoPor: avisador.name,
+  servicio: servicio.nombre,
+  clienteId: cliente.id,
+  cliente: cliente.nombre,
+  telefono: cliente.telefono,
+  vehiculoId: vehiculo.id,
+  placa: vehiculo.placa,
+  marca: vehiculo.marca,
+  modelo: vehiculo.modelo,
+};
+
+function listar(condicion: SQL | undefined, orden: SQL[]): Promise<MantenimientoPorAvisar[]> {
+  return db
+    .select(CAMPOS)
+    .from(recordatorio)
+    .innerJoin(cliente, eq(recordatorio.clienteId, cliente.id))
+    .innerJoin(vehiculo, eq(recordatorio.vehiculoId, vehiculo.id))
+    .innerJoin(servicio, eq(recordatorio.servicioId, servicio.id))
+    .leftJoin(avisador, eq(recordatorio.avisadoPor, avisador.id))
+    .where(condicion)
+    .orderBy(...orden);
+}
+
+/** Del cliente y vehículo activos: los de uno desactivado no se avisan ni se agendan (siguen en la ficha del cliente). */
+const activos = and(eq(cliente.activo, true), eq(vehiculo.activo, true));
+
 /** Cuáles hay que avisar: la condición de la lista y de su cuenta en el inicio (con `cliente` y `vehiculo` unidos). */
-const porAvisar = (hoy: string) =>
-  and(
-    inArray(recordatorio.estado, [...ESTADOS_RECORDATORIO_ABIERTO]),
-    lte(recordatorio.fechaProgramada, hastaProximos(hoy)),
-    eq(cliente.activo, true),
-    eq(vehiculo.activo, true),
-  );
+const porAvisar = (hoy: string) => and(inArray(recordatorio.estado, [...ESTADOS_RECORDATORIO_ABIERTO]), lte(recordatorio.fechaProgramada, hastaProximos(hoy)), activos);
+
+/** Abiertos que todavía no entran en la lista de hoy. */
+const masAdelante = (hoy: string) => and(inArray(recordatorio.estado, [...ESTADOS_RECORDATORIO_ABIERTO]), gt(recordatorio.fechaProgramada, hastaProximos(hoy)), activos);
+
+const cerrados = and(inArray(recordatorio.estado, [...ESTADOS_RECORDATORIO_CERRADO]), activos);
 
 /**
  * Cuántos de la lista de Mantenimientos todavía no se avisaron, vencidos y próximos (HU-39: el inicio). La misma

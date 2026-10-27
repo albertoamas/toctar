@@ -36,6 +36,10 @@ const estadoDe = async (id: number) =>
     [id],
   ))[0];
 
+const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+/** "2026-12-05" → "Diciembre 2026": el grupo de "Más adelante" (pedido 20). */
+const mes = (fecha: string) => `${MESES[Number(fecha.slice(5, 7)) - 1]} ${fecha.slice(0, 4)}`;
+
 const vencidos = (page: Page) => page.getByRole("list", { name: "Vencidos" });
 const proximos = (page: Page) => page.getByRole("list", { name: "Próximos 15 días" });
 
@@ -61,8 +65,13 @@ test("vencidos y próximos; avisar, no le interesa y agendar (y al cancelar la r
   await expect(filaV).toContainText("venció hace 10 días");
   await expect(filaV).toContainText("Sin avisar");
   await expect(proximos(page).getByRole("listitem").filter({ hasText: placaP })).toContainText("vence en 5 días");
-  // A 16 días todavía no se muestra
+  // A 16 días todavía no se avisa: está en "Más adelante", bajo su mes (pedido 20)
   await expect(page.getByText(placaL)).toHaveCount(0);
+  await page.getByRole("link", { name: /^Más adelante \(\d+\)$/ }).click();
+  await expect(page.getByRole("region", { name: new RegExp(`^${mes(await dia(16))}, \\d+ mantenimientos?$`) }).getByRole("listitem").filter({ hasText: placaL })).toContainText("vence en 16 días");
+  await expect(page.getByText(placaV)).toHaveCount(0);
+  await page.getByRole("link", { name: /^Por avisar \(\d+\)$/ }).click();
+  await expect(vencidos(page)).toBeVisible();
 
   // Avisar: abre WhatsApp con el mensaje y queda registrado
   const enlace = await abrirWhatsApp(page, filaV.getByRole("button", { name: "Avisar por WhatsApp" }));
@@ -84,6 +93,11 @@ test("vencidos y próximos; avisar, no le interesa y agendar (y al cancelar la r
   await expect(page.getByText("Listo: no se le volverá a avisar.")).toBeVisible();
   await expect(page.getByText(placaN)).toHaveCount(0);
   expect(await estadoDe(noQuiere)).toMatchObject({ estado: "no_interesado", nota: "Vendió el vehículo" });
+  // En "Cerrados", con su nota (pedido 20)
+  await page.goto("/panel/mantenimientos?vista=cerrados");
+  const cerradoN = page.getByRole("list", { name: "Cerrados" }).getByRole("listitem").filter({ hasText: placaN });
+  await expect(cerradoN).toContainText("No le interesa");
+  await expect(cerradoN).toContainText("Nota: Vendió el vehículo");
   // Cerrado, ya no se agenda desde un enlace viejo
   const [{ clienteN, vehiculoN }] = await consultar<{ clienteN: number; vehiculoN: number }>("select cliente_id as \"clienteN\", vehiculo_id as \"vehiculoN\" from recordatorio_mantenimiento where id = $1", [noQuiere]);
   await page.goto(`/panel/agenda/nueva?cliente=${clienteN}&vehiculo=${vehiculoN}&recordatorio=${noQuiere}`);
@@ -117,6 +131,11 @@ test("vencidos y próximos; avisar, no le interesa y agendar (y al cancelar la r
   await page.goto("/panel/mantenimientos");
   await expect(page.getByRole("heading", { level: 1, name: "Mantenimientos" })).toBeVisible();
   await expect(page.getByText(placaV)).toHaveCount(0);
+  // En "Cerrados", agendado y con su reserva (pedido 20)
+  await page.goto("/panel/mantenimientos?vista=cerrados");
+  const cerradoV = page.getByRole("list", { name: "Cerrados" }).getByRole("listitem").filter({ hasText: placaV });
+  await expect(cerradoV).toContainText("Agendado");
+  await expect(cerradoV.getByRole("link", { name: "Ver la reserva" })).toHaveAttribute("href", `/panel/agenda/${reservaId}`);
   await page.goto(`/panel/clientes/${clienteV}`);
   const delCliente = page.getByRole("list", { name: "Mantenimientos" }).getByRole("listitem");
   await expect(delCliente).toContainText("Pulido y nano cerámico");

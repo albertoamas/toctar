@@ -13,6 +13,33 @@ export const DIAS_PROXIMOS = 15;
 /** Los que todavía se avisan: ni agendados ni cerrados. */
 export const ESTADOS_RECORDATORIO_ABIERTO = ["pendiente", "avisado"] as const satisfies readonly EstadoRecordatorio[];
 
+/** Los que ya no se avisan: agendados (con su reserva) o "No le interesa". */
+export const ESTADOS_RECORDATORIO_CERRADO = ["agendado", "no_interesado"] as const satisfies readonly EstadoRecordatorio[];
+
+/** Las pestañas de Mantenimientos (pedido 20): lo de hoy, lo que viene después y lo cerrado. */
+export const VISTAS_MANTENIMIENTOS = ["por-avisar", "mas-adelante", "cerrados"] as const;
+export type VistaMantenimientos = (typeof VISTAS_MANTENIMIENTOS)[number];
+
+const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+/** "2026-12-05" → "Diciembre 2026". */
+export function tituloMes(fecha: string): string {
+  const [anio, mes] = fecha.split("-");
+  return `${MESES[Number(mes) - 1]} ${anio}`;
+}
+
+/** Agrupa por el mes de la fecha, en el orden en que llegan (ya vienen por fecha): "Más adelante". */
+export function agruparPorMes<T>(elementos: T[], fecha: (e: T) => string): { mes: string; titulo: string; elementos: T[] }[] {
+  const grupos: { mes: string; titulo: string; elementos: T[] }[] = [];
+  for (const e of elementos) {
+    const mes = fecha(e).slice(0, 7);
+    const ultimo = grupos.at(-1);
+    if (ultimo?.mes === mes) ultimo.elementos.push(e);
+    else grupos.push({ mes, titulo: tituloMes(fecha(e)), elementos: [e] });
+  }
+  return grupos;
+}
+
 export const NOMBRE_ESTADO_RECORDATORIO: Record<EstadoRecordatorio, string> = {
   pendiente: "Por avisar",
   avisado: "Avisado",
