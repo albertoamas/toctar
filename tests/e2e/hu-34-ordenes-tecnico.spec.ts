@@ -64,7 +64,11 @@ test("el técnico trabaja su orden: empieza, sube fotos, escribe avances y la ma
   await pasos.getByRole("button", { name: "Marcar listo" }).click();
   await expect(page.getByText("La orden está lista. Avisa al cliente.")).toBeVisible();
   await expect(historia.getByText("Pasó a lista.")).toBeVisible();
-  await expect(pasos.getByRole("button", { name: "Volver a en proceso" })).toBeVisible();
+  // Volver un paso atrás está en "Más" (pulido 11.2); el técnico no extiende la entrega
+  await page.getByRole("button", { name: "Más" }).click();
+  await expect(page.getByRole("menuitem", { name: "Volver a en proceso" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Extender entrega" })).toHaveCount(0);
+  await page.keyboard.press("Escape");
 
   // Terminó antes: la entrega pasa a hoy y el espacio queda libre desde mañana
   const [t] = await consultar<{ estado: string; fin: string; listo: boolean; avances: number; fotos: number }>(
@@ -77,12 +81,16 @@ test("el técnico trabaja su orden: empieza, sube fotos, escribe avances y la ma
   expect(t).toEqual({ estado: "listo", fin: hoy(), listo: true, avances: 3, fotos: 1 });
   const auditoria = await consultar<{ accion: string }>("select accion from auditoria where entidad = 'trabajo' and entidad_id = $1 order by id", [id]);
   expect(auditoria.map((a) => a.accion)).toEqual(["estado", "estado"]);
-  // El técnico no extiende la entrega
-  await expect(page.getByRole("button", { name: "Extender entrega" })).toHaveCount(0);
 
   // La marcó lista por error: al volver, recupera su entrega y deja de figurar como avisada
   await consultar("update trabajo set avisado_listo_at = now(), avisado_listo_por = $2 where id = $1", [id, tecnicoId]);
-  await pasos.getByRole("button", { name: "Volver a en proceso" }).click();
+  await page.reload();
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Volver a en proceso" }).click();
+  const volver = page.getByRole("dialog", { name: "Volver a en proceso" });
+  await expect(volver.getByText(/El aviso al cliente se borra/)).toBeVisible();
+  await volver.getByRole("button", { name: "Sí, volver a en proceso" }).click();
+  await expect(volver).toHaveCount(0);
   // El aviso de antes puede seguir a la vista: se espera el paso, que sí cambia
   await expect(pasos.locator('[aria-current="step"]')).toHaveText("En proceso");
   const [vuelta] = await consultar<{ fin: string; avisada: boolean }>("select to_char(fecha_fin, 'YYYY-MM-DD') as fin, avisado_listo_at is not null as avisada from trabajo where id = $1", [id]);
@@ -110,7 +118,8 @@ test("extender la entrega: con el espacio ocupado se elige otro libre; las lista
   await expect(page).toHaveURL(/\/panel$/);
 
   await page.goto(`/panel/ordenes/${id}`);
-  await page.getByRole("button", { name: "Extender entrega" }).click();
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Extender entrega" }).click();
   const form = page.getByRole("form", { name: "Extender entrega" });
   await form.getByLabel("Nueva entrega").fill(d3);
   await expect(form.getByText(`${espacios[0].nombre} está ocupado en esas fechas: muévela a un espacio libre.`)).toBeVisible();
@@ -122,10 +131,8 @@ test("extender la entrega: con el espacio ocupado se elige otro libre; las lista
   expect(t).toEqual({ fin: d3, espacio: espacios[1].id });
   await expect(page.getByRole("list", { name: "Historia de la orden" }).getByText(/^Entrega extendida al/)).toBeVisible();
 
-  // La lista del encargado: pestañas por estado con su conteo
-  await page.goto("/panel/ordenes?estado=recibido");
-  await expect(page.getByRole("link", { name: /^Recibidas \(\d+\)$/ })).toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("link", { name: new RegExp(`^${placa}`) })).toBeVisible();
-  await page.getByRole("link", { name: /^Listas \(\d+\)$/ }).click();
-  await expect(page.getByRole("link", { name: new RegExp(`^${placa}`) })).toHaveCount(0);
+  // La lista del encargado: agrupada por estado, con su conteo (pulido 11.1)
+  await page.goto("/panel/ordenes");
+  await expect(page.getByRole("region", { name: /^Recibidas \(\d+\)$/ }).getByRole("link", { name: new RegExp(`^${placa}`) })).toBeVisible();
+  await expect(page.getByRole("region", { name: /^Listas \(\d+\)$/ }).getByRole("link", { name: new RegExp(`^${placa}`) })).toHaveCount(0);
 });

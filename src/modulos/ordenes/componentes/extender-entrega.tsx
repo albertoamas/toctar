@@ -1,10 +1,10 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
-import { CalendarPlusIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
+import { CancelarModal, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { Selector } from "@/componentes/panel/selector";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
@@ -19,20 +19,9 @@ import { espaciosParaExtender, extenderEntrega } from "../acciones";
 
 type Props = { id: number; fechaInicio: string; fechaFin: string; espacioId: number; espacio: string; hoy: string };
 
-export function ExtenderEntrega(props: Props) {
-  const [abierto, setAbierto] = useState(false);
-  if (abierto) return <Formulario {...props} cerrar={() => setAbierto(false)} />;
-  return (
-    <div>
-      <Button type="button" variant="outline" onClick={() => setAbierto(true)}>
-        <CalendarPlusIcon />
-        Extender entrega
-      </Button>
-    </div>
-  );
-}
-
-function Formulario({ id, fechaInicio, fechaFin: finActual, espacioId: espacioActual, espacio: nombreActual, hoy, cerrar }: Props & { cerrar: () => void }) {
+/** El formulario, dentro del modal de "Más" (pulido 11.2): al extender, se cierra. */
+export function ExtenderEntrega({ id, fechaInicio, fechaFin: finActual, espacioId: espacioActual, espacio: nombreActual, hoy }: Props) {
+  const cerrar = useCerrarModal();
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
     conAviso(extenderEntrega, (r) => r.ok && cerrar()),
     {},
@@ -55,8 +44,7 @@ function Formulario({ id, fechaInicio, fechaFin: finActual, espacioId: espacioAc
   const suyo = buscando || activos.length === 0 || libres.some((x) => x.id === espacioActual) ? null : activos.some((x) => x.id === espacioActual) ? "ocupado en esas fechas" : "desactivado";
 
   return (
-    <form ref={formulario} action={accion} className="flex flex-col gap-5 rounded-sm border border-border p-4" noValidate aria-labelledby="extender-titulo">
-      <h3 id="extender-titulo" className="font-heading text-xl font-bold italic">Extender entrega</h3>
+    <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-label="Extender entrega">
       <input type="hidden" name="id" value={id} />
       {estado.mensaje && !estado.ok && <MensajeError id="extender-error">{estado.mensaje}</MensajeError>}
       <Campo id="fechaFin" etiqueta="Nueva entrega" error={e.fechaFin}>
@@ -95,14 +83,12 @@ function Formulario({ id, fechaInicio, fechaFin: finActual, espacioId: espacioAc
           ))}
         </Selector>
       </Campo>
-      <div className="flex flex-wrap gap-2">
+      <PieModal>
         <Button type="submit" disabled={enviando || buscando}>
           {enviando ? "Guardando…" : "Extender entrega"}
         </Button>
-        <Button type="button" variant="outline" onClick={cerrar}>
-          Volver
-        </Button>
-      </div>
+        <CancelarModal />
+      </PieModal>
     </form>
   );
 }
