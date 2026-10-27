@@ -106,8 +106,14 @@ test("un cliente se desactiva desde «Más» con confirmación, deja de salir en
   await page.getByRole("menuitem", { name: "Desactivar cliente" }).click();
   const confirmar = page.getByRole("dialog", { name: "Desactivar cliente" });
   await expect(confirmar).toContainText("deja de salir en la lista");
-  // El foco en "Cancelar": un Enter no desactiva
+  // El foco en "Cancelar": un Enter no desactiva. Al cancelar, vuelve a "Más"
   await expect(confirmar.getByRole("button", { name: "Cancelar" })).toBeFocused();
+  await confirmar.getByRole("button", { name: "Cancelar" }).click();
+  await expect(confirmar).toBeHidden();
+  await expect(page.getByRole("button", { name: "Más" })).toBeFocused();
+
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Desactivar cliente" }).click();
   await confirmar.getByRole("button", { name: "Sí, desactivar" }).click();
   await expect(page.getByText("Cliente desactivado.")).toBeVisible();
   await expect(page.getByRole("heading", { level: 1 }).locator("..")).toContainText("Desactivado");

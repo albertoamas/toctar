@@ -88,8 +88,13 @@ test("registrar un pago con comprobante, no pasar el saldo y anular con motivo",
   // En la ficha del cliente, la reserva con su saldo
   await page.goto(`/panel/clientes/${clienteId}`);
   await expect(page.getByRole("list", { name: "Reservas" }).getByRole("link")).toContainText("Saldo: 300 Bs");
-  // Y lo que debe, en el encabezado (pulido 8.3)
-  await expect(page.getByRole("heading", { level: 1 }).locator("..")).toContainText("Debe 300 Bs");
+  // Lo que debe, en el encabezado (pulido 8.3), como en Saldos pendientes: una reserva por venir todavía no se debe;
+  // entregada con saldo, sí
+  const encabezado = page.getByRole("heading", { level: 1 }).locator("..");
+  await expect(encabezado).not.toContainText("Debe");
+  await consultar("update trabajo set estado = 'entregado', recibido_at = now(), listo_at = now(), entregado_at = now() where id = $1", [id]);
+  await page.reload();
+  await expect(encabezado).toContainText("Debe 300 Bs");
 });
 
 test("pagada por completo no ofrece más pagos; sin Pagos no se ven montos", async ({ page }, info) => {
