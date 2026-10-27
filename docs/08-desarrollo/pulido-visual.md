@@ -241,7 +241,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
-| 12.1 | Saldos pendientes | `/panel/pagos` | ⏳ |
+| 12.1 | Saldos pendientes | `/panel/pagos` | ✅ |
 | 12.2 | Mantenimientos | `/panel/mantenimientos` | ⏳ |
 
 ### 13. Repaso de lo que cambió y pendientes de la parte 1
@@ -1382,6 +1382,27 @@ Pedido del desarrollador: releer las reglas del principio de este documento y co
   - Unificar la línea del encabezado de Recibir y Entregar: Recibir muestra el tamaño a propósito (es lo que se cotizó y se revisa al recibir); al entregar no hace falta.
   - Que `ExtenderEntrega` dependa del modal: ya lo dice su comentario y solo se usa ahí.
 - **Verificación:** E2E completa (326 de 326) antes de estos cambios, y `hu-33`, `hu-34` y `hu-35` después.
+
+### 12.1 Saldos pendientes (27/10/2026)
+- **Inventario:**
+
+  | Qué hay | Tarea | Quién y cada cuánto | Decisión |
+  |---|---|---|---|
+  | "Total por cobrar", con la cantidad de órdenes | Cuánto se debe en total | Dueño, seguido | Queda, bajo `EncabezadoPagina` |
+  | Fila: cliente, vehículo, monto y "Entregada el…, hace…" | Quién debe, cuánto y desde cuándo | Dueño o encargado con Pagos | Queda |
+  | "Escribir por WhatsApp" | Recordarle al cliente | Seguido | Queda: la acción de la fila |
+  | "Registrar pago" rojo y a todo el ancho en cada fila | Cobrar | Cuando paga | Con borde, al lado de WhatsApp |
+  | "Ver la orden" con forma de botón | Ir al detalle | A veces | Enlace de 44 px |
+  | "Nadie debe nada." | Vacío | — | `EstadoVacio` |
+- **Encontrado:**
+  - Un botón rojo por fila: con varios deudores, varias barras rojas compitiendo (en la computadora, de 730 px cada una).
+  - Tres botones por fila en dos renglones; sin `EncabezadoPagina` ni `EstadoVacio`.
+  - Bien y sin cambios: el total grande, la más antigua primero, el monto en Barlow, "hace 24 días", el mensaje con la plantilla y cobrar desde aquí con Pagos sin Órdenes.
+- **Cambios** (propuesta aprobada el 27/10):
+  - "Escribir por WhatsApp" y "Registrar pago" (el mismo modal) juntos y con borde; "Ver la orden" o "Ver la reserva" como enlace de 44 px, para quien puede abrirla. Desde 1024 px, las acciones a la derecha del texto: cada fila, más baja.
+  - `RegistrarPago` con borde por defecto (el rojo solo se usaba aquí).
+  - `EncabezadoPagina` y `EstadoVacio`. No se marca un saldo "viejo": haría falta un valor configurable que no existe.
+- **Verificación:** con pantalla táctil a 360, 390, 768 y 1280 px: nada se sale y ningún control mide menos de 44 px. Comparativa en `pulido-visual/12.1-saldos-celular.jpg`. E2E `hu-32`, `hu-36` y `hu-37`.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)

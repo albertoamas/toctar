@@ -33,9 +33,9 @@ type Props = {
 };
 
 export function RegistrarPago({
-  variante = "default",
+  variante = "outline",
   ...props
-}: Props & { /** Rojo si es la acción de la pantalla (Saldos); sin fondo en la cabecera de una sección; con borde al entregar. */ variante?: "default" | "ghost" | "outline" }) {
+}: Props & { /** Con borde (en cada fila de Saldos y al entregar); sin fondo en la cabecera de una sección. */ variante?: "ghost" | "outline" }) {
   const [abierto, setAbierto] = useState(false);
   const hidratado = useHidratado();
   return (
