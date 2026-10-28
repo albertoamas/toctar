@@ -1,8 +1,8 @@
-import { expect, test } from "vitest";
+import { describe, expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
-import { esquemaAvisarMantenimiento, esquemaCerrarMantenimiento } from "@/modulos/mantenimientos/esquemas";
+import { esquemaAgregarMantenimiento, esquemaAvisarMantenimiento, esquemaCerrarMantenimiento, esquemaEditarPlan } from "@/modulos/mantenimientos/esquemas";
 import { mesYAnio } from "@/lib/fechas";
-import { agruparPorMes, seccionMantenimiento, textoVencimiento } from "@/modulos/mantenimientos/reglas";
+import { agruparPorMes, lineaDelMantenimiento, planesAlEntregar, seccionMantenimiento, textoVencimiento, type PlanAbierto, type ServicioEntregado } from "@/modulos/mantenimientos/reglas";
 import { PLANTILLAS } from "@/modulos/configuracion/plantillas";
 import { mensajeMantenimiento } from "@/modulos/ordenes/mensajes";
 
@@ -52,4 +52,127 @@ test("Más adelante: agrupa por mes, en el orden en que llegan, y titula el mes 
     { mes: "2027-01", titulo: "Enero 2027", elementos: [{ f: "2027-01-02" }] },
   ]);
   expect(agruparPorMes([], (e: { f: string }) => e.f)).toEqual([]);
+});
+
+// Pedido 21: los planes de mantenimiento al entregar (P21-planes-mantenimiento.md §6)
+describe("planesAlEntregar", () => {
+  const PULIDO = 1;
+  const MANT_CERAMICO = 8;
+  const VIDRIOS = 4;
+  const pulido = { servicioId: PULIDO, mantenimiento: { servicioId: MANT_CERAMICO, meses: 3 } };
+  const mantCeramico = { servicioId: MANT_CERAMICO, mantenimiento: null };
+  const vidrios = { servicioId: VIDRIOS, mantenimiento: { servicioId: VIDRIOS, meses: 6 } };
+  const plan = (cambios: Partial<PlanAbierto> = {}): PlanAbierto => ({ id: 50, servicioId: PULIDO, servicioMantenimientoId: MANT_CERAMICO, intervaloMeses: 3, trabajoAgendadoId: null, ...cambios });
+  const entregar = (servicios: ServicioEntregado[], abiertos: PlanAbierto[] = []) => planesAlEntregar({ servicios, abiertos, trabajoId: 900, hoy: "2026-10-27" });
+
+  test("el servicio base crea el plan con su mantenimiento y la frecuencia del catálogo", () => {
+    expect(entregar([pulido])).toEqual({ hechos: [], nuevos: [{ servicioId: PULIDO, servicioMantenimientoId: MANT_CERAMICO, intervaloMeses: 3, fechaProgramada: "2027-01-27" }] });
+  });
+
+  test("un servicio sin mantenimiento no crea nada", () => {
+    expect(entregar([{ servicioId: 2, mantenimiento: null }])).toEqual({ hechos: [], nuevos: [] });
+  });
+
+  test("entregar el mantenimiento lo deja hecho y programa el siguiente con la frecuencia del plan (la editada)", () => {
+    expect(entregar([mantCeramico], [plan({ intervaloMeses: 2, trabajoAgendadoId: 900 })])).toEqual({
+      hechos: [50],
+      nuevos: [{ servicioId: PULIDO, servicioMantenimientoId: MANT_CERAMICO, intervaloMeses: 2, fechaProgramada: "2026-12-27" }],
+    });
+  });
+
+  test("el cliente que vino por su cuenta (sin agendar desde la lista) igual cierra el suyo: no queda repetido", () => {
+    expect(entregar([mantCeramico], [plan({ trabajoAgendadoId: null })]).hechos).toEqual([50]);
+  });
+
+  test("el plan agendado con otra reserva no se toca", () => {
+    expect(entregar([mantCeramico], [plan({ trabajoAgendadoId: 777 })])).toEqual({ hechos: [], nuevos: [] });
+    expect(entregar([pulido], [plan({ trabajoAgendadoId: 777 })])).toEqual({ hechos: [], nuevos: [] });
+  });
+
+  test("rehacer el servicio base reinicia el plan, con la frecuencia que tenía y el mantenimiento del catálogo", () => {
+    expect(entregar([pulido], [plan({ intervaloMeses: 2, servicioMantenimientoId: 99 })])).toEqual({
+      hechos: [50],
+      nuevos: [{ servicioId: PULIDO, servicioMantenimientoId: MANT_CERAMICO, intervaloMeses: 2, fechaProgramada: "2026-12-27" }],
+    });
+  });
+
+  test("el base y su mantenimiento en la misma orden: uno solo", () => {
+    const r = entregar([pulido, mantCeramico], [plan()]);
+    expect(r.hechos).toEqual([50]);
+    expect(r.nuevos).toHaveLength(1);
+  });
+
+  test("un servicio que es su propio mantenimiento (vidrios cada 6 meses) se repite solo", () => {
+    expect(entregar([vidrios])).toEqual({ hechos: [], nuevos: [{ servicioId: VIDRIOS, servicioMantenimientoId: VIDRIOS, intervaloMeses: 6, fechaProgramada: "2027-04-27" }] });
+    const abierto = plan({ id: 60, servicioId: VIDRIOS, servicioMantenimientoId: VIDRIOS, intervaloMeses: 6 });
+    expect(entregar([vidrios], [abierto])).toEqual({ hechos: [60], nuevos: [{ servicioId: VIDRIOS, servicioMantenimientoId: VIDRIOS, intervaloMeses: 6, fechaProgramada: "2027-04-27" }] });
+  });
+
+  test("dos planes del mismo vehículo, cada uno por su lado", () => {
+    const r = entregar([mantCeramico, vidrios], [plan(), plan({ id: 60, servicioId: VIDRIOS, servicioMantenimientoId: VIDRIOS, intervaloMeses: 6 })]);
+    expect(r.hechos.sort()).toEqual([50, 60]);
+    expect(r.nuevos.map((n) => n.servicioId).sort()).toEqual([PULIDO, VIDRIOS]);
+  });
+});
+
+describe("lineaDelMantenimiento (pedido 21)", () => {
+  const opcion = (servicioId: number, varianteId: number, monto: string | null) => ({
+    servicioId,
+    varianteId,
+    sugerencia: monto === null ? ({ tipo: "evaluacion" } as const) : ({ tipo: "monto", monto } as const),
+  });
+
+  test("una sola opción: llega elegida, con su precio sugerido", () => {
+    expect(lineaDelMantenimiento([opcion(8, 80, "350.00"), opcion(1, 10, "800.00")], 8)).toEqual({ servicioId: 8, varianteId: 80, precio: "350" });
+  });
+
+  test("según evaluación: elegida, sin precio", () => {
+    expect(lineaDelMantenimiento([opcion(8, 80, null)], 8)).toEqual({ servicioId: 8, varianteId: 80, precio: "" });
+  });
+
+  test("varias opciones: solo el servicio, la opción se elige", () => {
+    expect(lineaDelMantenimiento([opcion(4, 40, "100.00"), opcion(4, 41, "150.00")], 4)).toEqual({ servicioId: 4, varianteId: 0, precio: "" });
+  });
+
+  test("un servicio que ya no se ofrece: ninguna", () => {
+    expect(lineaDelMantenimiento([opcion(1, 10, "800.00")], 8)).toBeNull();
+  });
+});
+
+describe("agregar y editar un plan (pedido 21)", () => {
+  const agregar = { clienteId: "3", vehiculoId: "5", servicioId: "1", hecho: "2026-07-15", meses: "3" };
+
+  test("agregar: vehículo, servicio, cuándo se hizo y cada cuántos meses", () => {
+    expect(esquemaAgregarMantenimiento.parse(agregar)).toEqual({ clienteId: 3, vehiculoId: 5, servicioId: 1, hecho: "2026-07-15", meses: 3 });
+    expect(erroresDe(esquemaAgregarMantenimiento.safeParse({ ...agregar, vehiculoId: "" }).error!)).toEqual({ vehiculoId: "Elige el vehículo." });
+    expect(erroresDe(esquemaAgregarMantenimiento.safeParse({ ...agregar, servicioId: "" }).error!)).toEqual({ servicioId: "Elige el servicio que se hizo." });
+    expect(erroresDe(esquemaAgregarMantenimiento.safeParse({ ...agregar, hecho: "2026-02-30" }).error!)).toEqual({ hecho: "Escribe cuándo se hizo." });
+    expect(erroresDe(esquemaAgregarMantenimiento.safeParse({ ...agregar, meses: "0" }).error!)).toEqual({ meses: "Escribe los meses, de 1 a 24." });
+  });
+
+  test("editar: cada cuántos meses y la fecha del próximo", () => {
+    expect(esquemaEditarPlan.parse({ id: "9", meses: "2", proximo: "2026-12-01" })).toEqual({ id: 9, meses: 2, proximo: "2026-12-01" });
+    expect(erroresDe(esquemaEditarPlan.safeParse({ id: "9", meses: "2,5", proximo: "" }).error!)).toEqual({
+      meses: "Escribe los meses, de 1 a 24.",
+      proximo: "Escribe la fecha del próximo mantenimiento.",
+    });
+  });
+});
+
+describe("planesAlEntregar: los casos de la revisión (pedido 21)", () => {
+  const plan = (cambios: Partial<PlanAbierto> = {}): PlanAbierto => ({ id: 50, servicioId: 1, servicioMantenimientoId: 8, intervaloMeses: 3, trabajoAgendadoId: null, ...cambios });
+  const entregar = (servicios: ServicioEntregado[], abiertos: PlanAbierto[]) => planesAlEntregar({ servicios, abiertos, trabajoId: 900, hoy: "2026-10-27" });
+
+  test("agendado con esta orden queda hecho aunque en la reserva se haya cambiado el servicio", () => {
+    expect(entregar([{ servicioId: 2, mantenimiento: null }], [plan({ trabajoAgendadoId: 900 })])).toEqual({
+      hechos: [50],
+      nuevos: [{ servicioId: 1, servicioMantenimientoId: 8, intervaloMeses: 3, fechaProgramada: "2027-01-27" }],
+    });
+  });
+
+  test("un mantenimiento que se repite a sí mismo, entregado como el de otro plan, no abre un segundo aviso", () => {
+    const r = entregar([{ servicioId: 8, mantenimiento: { servicioId: 8, meses: 3 } }], [plan()]);
+    expect(r.hechos).toEqual([50]);
+    expect(r.nuevos).toEqual([{ servicioId: 1, servicioMantenimientoId: 8, intervaloMeses: 3, fechaProgramada: "2027-01-27" }]);
+  });
 });

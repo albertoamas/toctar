@@ -11,10 +11,10 @@ test("los parámetros vacíos o negativos muestran el error y no se guardan", as
   await page.goto("/panel/configuracion");
   await page.getByRole("navigation", { name: "Secciones de configuración" }).getByRole("link", { name: "Parámetros" }).click();
   await expect(page).toHaveURL(/\/panel\/configuracion\/parametros$/);
-  // Por tema, en el orden del trabajo
+  // Por tema, en el orden del trabajo (el mantenimiento, desde el pedido 21, es de cada servicio del catálogo)
   // (Next deja la pestaña anterior oculta en la página: se mira solo este formulario)
   const secciones = page.locator("form").filter({ has: page.getByLabel("Adelanto sugerido") }).locator("legend");
-  await expect(secciones).toHaveText([/^Consultas/, /^Cotizaciones/, /^Agenda/, /^Mantenimiento/]);
+  await expect(secciones).toHaveText([/^Consultas/, /^Cotizaciones/, /^Agenda/]);
 
   await page.getByLabel("Adelanto sugerido").fill("-5");
   await page.getByLabel("Validez de la cotización").fill("");
@@ -42,14 +42,14 @@ test("el dueño cambia el adelanto y los textos del PDF, y quedan guardados", as
   await page.goto("/panel/configuracion/parametros");
 
   await page.getByLabel("Adelanto sugerido").fill("250");
-  await page.getByLabel("Aviso de mantenimiento").fill("6");
   await page.getByLabel("Garantía").fill("Garantía de prueba: cubre el trabajo si se siguen los cuidados.");
   await page.getByRole("button", { name: "Guardar cambios" }).click();
   await expect(page.getByText("Cambios guardados.")).toBeVisible();
 
   await page.reload();
   await expect(page.getByLabel("Adelanto sugerido")).toHaveValue("250");
-  await expect(page.getByLabel("Aviso de mantenimiento")).toHaveValue("6");
+  // Cada servicio dice cada cuánto es su mantenimiento, en el catálogo (pedido 21)
+  await expect(page.getByLabel("Aviso de mantenimiento")).toHaveCount(0);
   await expect(page.getByLabel("Garantía")).toHaveValue("Garantía de prueba: cubre el trabajo si se siguen los cuidados.");
 });
 

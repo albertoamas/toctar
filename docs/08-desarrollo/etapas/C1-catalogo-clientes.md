@@ -51,7 +51,7 @@ El dueño carga en el panel el precio de cada variante por tamaño de vehículo,
 | RNF-10 | Quién y cuándo cambia precios | `precio.created_by` y `precio.vigente_desde` |
 | RN-01, RN-12 | Precios solo para el dueño; el técnico no ve clientes | Módulo `catalogo` sin permiso de encargado; módulo `clientes` sin técnico. `exigirModulo` en cada página y acción (RNF-05) |
 | RN-07 | Precio por tamaño, tamaños configurables | La grilla sale de `tamano_vehiculo` activos (HU-05). Un tamaño desactivado conserva sus precios pero no se muestra |
-| RN-08 | Mantenimiento solo en servicios marcados | `servicio.genera_mantenimiento`. Dato inicial: verdadero en "Pulido y nano cerámico" |
+| RN-08 | Mantenimiento solo en servicios marcados | `servicio.genera_mantenimiento`. Dato inicial: verdadero en "Pulido y nano cerámico". **Cambió con el pedido 21** (`P21-planes-mantenimiento.md`): `mantenimiento_servicio_id` y `mantenimiento_meses` |
 | RN-14 | Clientes y servicios se desactivan | `cliente.activo`, `vehiculo.activo`, `servicio.activo` |
 | RF-20, RF-21 | Datos del cliente y del vehículo | Esquemas Zod compartidos por formulario y servidor |
 | RF-22 | Buscar por nombre, teléfono o placa | Consulta con `unaccent` + `ilike` en el nombre, dígitos en el teléfono y placa normalizada |
@@ -140,7 +140,7 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel (44 px c
   - Duración propia opcional ("Vacío: usa la del servicio (2 días)."); en lectura se ve solo si es distinta ("Ocupa 2 días.").
   - Una fila por tamaño, como la lectura: el nombre a la izquierda y el campo en Bs a la derecha, en todos los tamaños de pantalla.
   - "Ver historial", arriba en el modal de precios, abre un diálogo con los cambios: tamaño, monto anterior → nuevo, fecha y hora de Bolivia y quién.
-- **Datos:** duración, mantenimiento y si está activo, en lectura. "Editar" abre el modal "Datos del servicio": nombre, duración estimada, "Genera recordatorio de mantenimiento" y "Activo en el catálogo" ("Guardar datos" y "Cancelar").
+- **Datos:** duración, mantenimiento y si está activo, en lectura. "Editar" abre el modal "Datos del servicio": nombre, duración estimada, "Genera recordatorio de mantenimiento" y "Activo en el catálogo" ("Guardar datos" y "Cancelar"). Desde el pedido 21, en lugar de la casilla: "Programa un mantenimiento al entregarlo", con el servicio de mantenimiento y cada cuántos meses (`P21-planes-mantenimiento.md` §5).
 - **Variantes:** en lectura, sus nombres en una línea (y cuántas desactivadas). "Editar" abre el modal "Variantes" con la lista para agregar, renombrar, ordenar y desactivar (cada cambio se guarda al momento; se cierra con "Listo", que no aparece mientras una fila está abierta). Las variantes inactivas no tienen precios en la ficha (conservan los suyos).
 
 ### `/panel/clientes` — Clientes (dueño y encargado con "Clientes")

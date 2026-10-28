@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { DIRECCIONES } from "@/lib/orden";
+import { mesesMantenimiento } from "@/modulos/mantenimientos/esquemas";
 
 // Validación del catálogo (C1): el mismo esquema en el formulario y en el servidor. El servicio se crea, se nombra y
 // tiene sus variantes aquí; su página en el sitio (resumen, textos, foto) se edita en Sitio web (sitio/esquemas.ts).
@@ -19,13 +20,30 @@ const duracionDias = z.coerce
 /** Alta de un servicio: solo el nombre. Nace oculto en el sitio, hasta que se complete su página. */
 export const esquemaCrearServicio = z.object({ nombre });
 
-export const esquemaDatosCatalogo = z.object({
-  id,
-  nombre,
-  duracionDias,
-  generaMantenimiento: z.boolean(),
-  activo: z.boolean(),
-});
+/**
+ * Nombre, duración, si está activo y su mantenimiento (RN-08, pedido 21): con la casilla marcada, el servicio que se
+ * agenda (puede ser él mismo) y cada cuántos meses; sin ella, ninguno.
+ */
+export const esquemaDatosCatalogo = z
+  .object({
+    id,
+    nombre,
+    duracionDias,
+    activo: z.boolean(),
+    conMantenimiento: z.boolean(),
+    mantenimientoServicioId: z.string(),
+    mantenimientoMeses: z.string(),
+  })
+  .superRefine((d, ctx) => {
+    if (!d.conMantenimiento) return;
+    if (!id.safeParse(d.mantenimientoServicioId).success) ctx.addIssue({ code: "custom", path: ["mantenimientoServicioId"], message: "Elige el servicio de mantenimiento." });
+    const meses = mesesMantenimiento.safeParse(d.mantenimientoMeses);
+    if (!meses.success) ctx.addIssue({ code: "custom", path: ["mantenimientoMeses"], message: meses.error.issues[0].message });
+  })
+  .transform(({ conMantenimiento, mantenimientoServicioId, mantenimientoMeses, ...d }) => ({
+    ...d,
+    mantenimiento: conMantenimiento ? { servicioId: Number(mantenimientoServicioId), meses: Number(mantenimientoMeses) } : null,
+  }));
 
 /** Duración propia de una variante: vacía usa la del servicio (HU-20). */
 const duracionOpcional = z.preprocess((v) => (v === "" || v === null || v === undefined ? null : v), duracionDias.nullable());

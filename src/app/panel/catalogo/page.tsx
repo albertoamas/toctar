@@ -40,7 +40,7 @@ async function Lista() {
         href: `/panel/catalogo/${s.id}`,
         titulo: s.nombre,
         dato: s.desde === undefined ? null : s.desde === null ? "Según evaluación" : `Desde ${mostrarMonto(s.desde)} Bs`,
-        detalles: [cantidad(s.variantes, "variante", "variantes"), textoDias(s.duracionDias), ...(s.generaMantenimiento ? ["Con mantenimiento"] : [])],
+        detalles: [cantidad(s.variantes, "variante", "variantes"), textoDias(s.duracionDias), ...(s.conMantenimiento ? ["Con mantenimiento"] : [])],
         // Solo lo que falta cargar; completos no dice nada
         aviso: s.activo && s.preciosFaltantes > 0 ? `${s.preciosFaltantes === 1 ? "Falta" : "Faltan"} ${cantidad(s.preciosFaltantes, "precio", "precios")}` : null,
         estado: s.activo ? undefined : "Inactivo",

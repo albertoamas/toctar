@@ -29,6 +29,7 @@ import {
 import {
   agruparPorMes,
   DIAS_PROXIMOS,
+  textoCadaMeses,
   NOMBRE_ESTADO_RECORDATORIO,
   seccionMantenimiento,
   textoVencimiento,
@@ -174,7 +175,9 @@ function Fila({ m, hoy, mensaje, puedeAgendar, conAviso }: { m: MantenimientoPor
             {conAviso && !avisado && <span className="tt-insignia tt-insignia--aviso">Sin avisar</span>}
           </span>
           <span className="text-sm text-tinta-suave">{vehiculoEnLista(vehiculo)}</span>
-          <span className="text-sm">Mantenimiento de {m.servicio}</span>
+          <span className="text-sm">
+            Mantenimiento de {m.servicio}, {textoCadaMeses(m.intervaloMeses)}
+          </span>
           {avisado && <span className="text-sm text-tinta-suave">{avisado}</span>}
         </div>
         {/* La fecha es lo que ordena la lista: se lee primero, como el monto en Saldos pendientes */}
@@ -208,8 +211,8 @@ function Fila({ m, hoy, mensaje, puedeAgendar, conAviso }: { m: MantenimientoPor
 }
 
 function FilaCerrada({ m, hoy, ve }: { m: MantenimientoCerrado; hoy: string; ve: { ordenes: boolean; agenda: boolean } }) {
-  // Agendado: a su reserva, o a su orden si ya se recibió, si quien mira puede abrirla
-  const agendado = m.agendado && enlaceTrabajo(m.agendado.id, m.agendado.estado, ve);
+  // Agendado: a su reserva, o a su orden si ya se recibió; hecho: a la orden que lo hizo (si quien mira puede abrirla)
+  const trabajo = m.trabajo && enlaceTrabajo(m.trabajo.id, m.trabajo.estado, ve);
   return (
     <li className="flex flex-col gap-1 p-4">
       <div className="flex items-start justify-between gap-4">
@@ -227,9 +230,9 @@ function FilaCerrada({ m, hoy, ve }: { m: MantenimientoCerrado; hoy: string; ve:
           <span className="text-sm whitespace-nowrap text-tinta-suave">programado</span>
         </span>
       </div>
-      {agendado && (
-        <Link href={agendado.href} className={ENLACE_TEXTO}>
-          {agendado.texto}
+      {trabajo && (
+        <Link href={trabajo.href} className={ENLACE_TEXTO}>
+          {trabajo.texto}
         </Link>
       )}
     </li>

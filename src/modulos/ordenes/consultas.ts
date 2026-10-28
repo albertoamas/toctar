@@ -47,12 +47,12 @@ type Base = Pick<typeof db, "select">;
 
 /**
  * Los servicios de la orden, uno por servicio aunque tenga varias líneas, en el orden de sus líneas (el principal
- * primero). Con `soloConMantenimiento`, los que generan mantenimiento (RN-08); con `soloActivos`, los que siguen en el
- * catálogo (los que la galería deja elegir); con `base`, dentro de una transacción.
+ * primero). Con `soloActivos`, los que siguen en el catálogo (los que la galería deja elegir); con `base`, dentro de
+ * una transacción. Los del mantenimiento se leen en `mantenimientos/planes.ts` (pedido 21).
  */
 export async function serviciosDeOrden(
   trabajoId: number,
-  opciones: { soloConMantenimiento?: boolean; soloActivos?: boolean; base?: Base } = {},
+  opciones: { soloActivos?: boolean; base?: Base } = {},
 ): Promise<{ id: number; nombre: string }[]> {
   return (opciones.base ?? db)
     .select({ id: servicio.id, nombre: servicio.nombre })
@@ -62,19 +62,12 @@ export async function serviciosDeOrden(
     .where(
       and(
         eq(trabajoLinea.trabajoId, trabajoId),
-        opciones.soloConMantenimiento ? eq(servicio.generaMantenimiento, true) : undefined,
         opciones.soloActivos ? eq(servicio.activo, true) : undefined,
       ),
     )
     .groupBy(servicio.id, servicio.nombre)
     .orderBy(min(trabajoLinea.orden));
 }
-
-/**
- * Los servicios de la orden que generan mantenimiento (RN-08). La misma consulta anticipa la fecha al entregar y crea
- * los recordatorios (con `base`, dentro de la transacción).
- */
-export const serviciosConMantenimiento = (trabajoId: number, base?: Base) => serviciosDeOrden(trabajoId, { soloConMantenimiento: true, base });
 
 /** Si la orden ya se publicó en la galería (HU-41; una sola vez): cuántas fotos y si se ve; null si no se publicó. */
 export async function publicadaDeOrden(trabajoId: number): Promise<{ fotos: number; visible: boolean } | null> {

@@ -184,6 +184,8 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel (44 px t
 - Vacío: "Nadie debe nada."
 
 ### `/panel/mantenimientos` — Mantenimientos (dueño y encargado con "Mantenimientos")
+> **Pedido 21 (27/10/2026):** el intervalo único se cambió por un plan por vehículo, con el mantenimiento y la frecuencia de cada servicio del catálogo; al entregar el mantenimiento queda "hecho" y se programa el siguiente. Ver `P21-planes-mantenimiento.md`.
+
 - Dos secciones, **Vencidos** y **Próximos 15 días**, ordenadas por fecha. Cada una muestra cliente, placa, servicio, fecha programada y estado ("Avisado el 2/02").
 - En cada una: "Avisar por WhatsApp", que abre el chat y marca avisado; "Agendar", que lleva a `/panel/agenda/nueva?cliente=…&vehiculo=…&recordatorio=…`; y "No le interesa", que pide una nota opcional.
 - No muestra los de un cliente o vehículo desactivado. "Agendar", solo para quien ve Agenda y Pagos (la reserva directa lleva precios).

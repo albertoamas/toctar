@@ -4,8 +4,8 @@ import { and, count, eq, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { auditoria, pago, recordatorioMantenimiento, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, usuario as tablaUsuario, vehiculo as tablaVehiculo } from "@/db/esquema";
-import { fechaEnBolivia, formatearFecha, sumarDias, sumarMeses } from "@/lib/fechas";
+import { auditoria, pago, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, usuario as tablaUsuario, vehiculo as tablaVehiculo } from "@/db/esquema";
+import { fechaEnBolivia, formatearFecha, sumarDias } from "@/lib/fechas";
 import { copiarFotoAlPublico, eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { erroresDe, exclusionViolada, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { puede, puedeVerModulo, puedeVerOrden } from "@/lib/permisos";
@@ -14,13 +14,13 @@ import type { EstadoTrabajo, EtapaFoto } from "@/db/esquema/trabajos";
 import { espaciosEnFechas, type EspacioDisponible } from "@/modulos/agenda/consultas";
 import { DIAS_MAXIMOS_TRABAJO, NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
-import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { opcionesDeServicio } from "@/modulos/cotizaciones/consultas";
 import { descripcionLinea } from "@/modulos/cotizaciones/reglas";
 import { calcularSaldo, estaPagada, precioCotizadoYFinal } from "@/modulos/pagos/reglas";
 import { agregarAGaleria } from "@/modulos/sitio/agregar-a-galeria";
 import { galeriaCambiada } from "@/modulos/sitio/galeria-cambiada";
-import { publicadaDeOrden, serviciosConMantenimiento, serviciosDeOrden } from "./consultas";
+import { aplicarPlanesAlEntregar } from "@/modulos/mantenimientos/planes";
+import { publicadaDeOrden, serviciosDeOrden } from "./consultas";
 import { esquemaAdicional, esquemaAvance, esquemaAvisoListo, esquemaEntregar, esquemaEstadoOrden, esquemaExtender, esquemaFotoOrden, esquemaPublicar, esquemaQuitarFotoOrden, esquemaRecibir } from "./esquemas";
 import { esFotoDeAntes, estaAbierta, etapaAbierta, puedeExtenderse, MAXIMO_FOTOS_ETAPA, NOMBRE_ETAPA, puedeRecibirse, transicionOrden } from "./reglas";
 
@@ -443,7 +443,8 @@ const SALDO_SIN_PERMISO = "Queda saldo pendiente: la entrega con saldo la autori
 /**
  * Entrega el vehículo (HU-36, RF-43, RF-49, CU-19). Con saldo pendiente, solo el dueño o un encargado con "autorizar
  * entrega con saldo", y queda quién lo autorizó (RN-13). El saldo se vuelve a calcular con la orden bloqueada: un pago
- * o un adicional a último momento cuenta. Cada servicio que genera mantenimiento programa su recordatorio (RN-08).
+ * o un adicional a último momento cuenta. Los planes de mantenimiento del vehículo (RN-08, pedido 21): el que se hizo
+ * queda hecho y nace el siguiente; un servicio con mantenimiento en el catálogo crea el suyo.
  */
 export async function entregarVehiculo(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const usuario = await exigirModulo("ordenes");
@@ -453,7 +454,6 @@ export async function entregarVehiculo(_previo: EstadoFormulario, datos: FormDat
   const { id, conSaldo } = r.data;
   const autorId = Number(usuario.id);
   const hoy = fechaEnBolivia();
-  const { intervalo_mantenimiento_meses: meses } = await obtenerParametros();
 
   let resultado: { clienteId: number; saldo: string | null; conMantenimiento: boolean };
   try {
@@ -496,14 +496,8 @@ export async function entregarVehiculo(_previo: EstadoFormulario, datos: FormDat
         })
         .where(eq(trabajo.id, id));
 
-      // RN-08: un recordatorio por servicio que lo genera, para dentro de los meses de Configuración
-      const conMantenimiento = await serviciosConMantenimiento(id, tx);
-      if (conMantenimiento.length > 0) {
-        await tx
-          .insert(recordatorioMantenimiento)
-          .values(conMantenimiento.map((s) => ({ trabajoOrigenId: id, clienteId: t.clienteId, vehiculoId: t.vehiculoId, servicioId: s.id, fechaProgramada: sumarMeses(hoy, meses) })))
-          .onConflictDoNothing();
-      }
+      // RN-08 (pedido 21): los planes de mantenimiento del vehículo, en la misma transacción
+      const planes = await aplicarPlanesAlEntregar(tx, { trabajoId: id, clienteId: t.clienteId, vehiculoId: t.vehiculoId, hoy });
 
       // En la historia sin el monto: la ve también el técnico (RN-12)
       await tx.insert(trabajoAvance).values({ trabajoId: id, usuarioId: autorId, nota: conDeuda ? "Vehículo entregado con saldo pendiente." : "Vehículo entregado." });
@@ -512,9 +506,9 @@ export async function entregarVehiculo(_previo: EstadoFormulario, datos: FormDat
         entidad: "trabajo",
         entidadId: id,
         accion: "entregar",
-        datos: { saldo, conSaldo: conDeuda, mantenimientos: conMantenimiento.map((s) => s.id) },
+        datos: { saldo, conSaldo: conDeuda, mantenimientosHechos: planes.hechos, mantenimientosNuevos: planes.nuevos },
       });
-      return { clienteId: t.clienteId, saldo: conDeuda ? saldo : null, conMantenimiento: conMantenimiento.length > 0 };
+      return { clienteId: t.clienteId, saldo: conDeuda ? saldo : null, conMantenimiento: planes.hechos.length + planes.nuevos.length > 0 };
     });
   } catch (error) {
     if (error instanceof Conflicto) return error.campo ? { errores: { [error.campo]: error.message } } : { mensaje: error.message };

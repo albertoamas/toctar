@@ -47,8 +47,9 @@ async function prepararDia(info: TestInfo) {
   };
   // Un mantenimiento vencido, del vehículo de la entrega
   await consultar(
-    `insert into recordatorio_mantenimiento (trabajo_origen_id, cliente_id, vehiculo_id, servicio_id, fecha_programada)
-     select id, cliente_id, vehiculo_id, (select id from servicio where slug = 'pulido-y-nano-ceramico'), $2::date from trabajo where id = $1`,
+    `insert into recordatorio_mantenimiento (trabajo_origen_id, cliente_id, vehiculo_id, servicio_id, servicio_mantenimiento_id, intervalo_meses, fecha_programada)
+     select id, cliente_id, vehiculo_id, (select id from servicio where slug = 'pulido-y-nano-ceramico'), (select id from servicio where slug = 'mantenimiento-del-nano-ceramico'), 3, $2::date
+     from trabajo where id = $1`,
     [ids.entrega, dia(-10).iso],
   );
   return { placas, ids };

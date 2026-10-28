@@ -48,7 +48,7 @@ test("el dueño marca el mantenimiento, cambia la duración y desactiva un servi
   // En lectura; "Editar" abre el formulario de los datos en un modal
   const datos = page.getByRole("region", { name: "Datos" });
   await expect(datos).toContainText("1 día");
-  await expect(datos).toContainText("No genera recordatorio");
+  await expect(datos).toContainText("No programa mantenimiento");
   const editar = page.getByRole("button", { name: "Editar datos del servicio" });
   const modal = page.getByRole("dialog", { name: "Datos del servicio" });
   await editar.click();
@@ -59,13 +59,19 @@ test("el dueño marca el mantenimiento, cambia la duración y desactiva un servi
   await expect(modal.getByLabel("Duración estimada")).toBeFocused();
 
   await modal.getByLabel("Duración estimada").fill("3");
-  await modal.getByText("Genera recordatorio de mantenimiento").click();
+  // Su mantenimiento (pedido 21): con la casilla, el servicio y cada cuántos meses
+  await modal.getByText("Programa un mantenimiento al entregarlo").click();
+  await modal.getByRole("button", { name: "Guardar datos" }).click();
+  await expect(modal.getByText("Elige el servicio de mantenimiento.")).toBeVisible();
+  await expect(modal.getByText("Escribe los meses, de 1 a 24.")).toBeVisible();
+  await modal.getByLabel("Servicio de mantenimiento").selectOption({ label: "Este mismo servicio" });
+  await modal.getByLabel("Cada", { exact: true }).fill("6");
   await modal.getByRole("button", { name: "Guardar datos" }).click();
   await expect(page.getByText("Cambios guardados.")).toBeVisible();
   // Guardado, el modal se cierra, la lectura muestra los datos nuevos y el foco vuelve a "Editar"
   await expect(modal).toHaveCount(0);
   await expect(datos).toContainText("3 días");
-  await expect(datos).toContainText("Genera recordatorio");
+  await expect(datos).toContainText("Él mismo, cada 6 meses");
   await expect(editar).toBeFocused();
 
   // Inactivo: no sale en el sitio (su página no existe) y queda marcado en el catálogo
@@ -230,4 +236,17 @@ test("el dueño carga precios por tamaño; vacío es según evaluación y cada c
   const fila = page.getByRole("list", { name: "Servicios del catálogo" }).getByRole("link", { name: new RegExp(nombre) });
   await expect(fila).toContainText("Desde 280 Bs");
   await expect(fila).not.toContainText("Falta");
+});
+
+test("un servicio que otro usa como su mantenimiento no se desactiva (pedido 21)", async ({ page }) => {
+  await ingresarComoDueno(page);
+  const [{ id }] = await consultar<{ id: number }>("select id from servicio where slug = 'mantenimiento-del-nano-ceramico'");
+  await page.goto(`/panel/catalogo/${id}`);
+  await page.getByRole("button", { name: "Editar datos del servicio" }).click();
+  const modal = page.getByRole("dialog", { name: "Datos del servicio" });
+  await modal.getByText("Activo en el catálogo").click();
+  await modal.getByRole("button", { name: "Guardar datos" }).click();
+  await expect(modal.getByText("Es el mantenimiento de Pulido y nano cerámico: cámbialo ahí primero.")).toBeVisible();
+  const [{ activo }] = await consultar<{ activo: boolean }>("select activo from servicio where id = $1", [id]);
+  expect(activo).toBe(true);
 });

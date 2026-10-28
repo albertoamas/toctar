@@ -9,11 +9,11 @@ import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
-import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
+import { CabeceraSeccion, SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import { puedeVerModulo } from "@/lib/permisos";
-import { formatearFecha } from "@/lib/fechas";
+import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp, whatsAppLocal } from "@/lib/whatsapp";
 import { reservasDelCliente } from "@/modulos/agenda/consultas";
@@ -27,15 +27,17 @@ import { obtenerCliente } from "@/modulos/clientes/consultas";
 import { obtenerParametros, tamanosActivos } from "@/modulos/configuracion/consultas";
 import { ListaConsultas } from "@/modulos/consultas/componentes/lista-consultas";
 import { consultasDelCliente } from "@/modulos/consultas/consultas";
-import { mantenimientosDelCliente } from "@/modulos/mantenimientos/consultas";
-import { NOMBRE_ESTADO_RECORDATORIO } from "@/modulos/mantenimientos/reglas";
+import { AgregarMantenimiento, MasPlan } from "@/modulos/mantenimientos/componentes/planes";
+import { mantenimientosDelCliente, serviciosConMantenimiento } from "@/modulos/mantenimientos/consultas";
+import { ESTADOS_RECORDATORIO_ABIERTO, NOMBRE_ESTADO_RECORDATORIO, textoCadaMeses } from "@/modulos/mantenimientos/reglas";
 import { enlaceTrabajo, rutaTrabajo } from "@/modulos/ordenes/reglas";
 
 export const metadata: Metadata = { title: "Cliente" };
 
 // HU-23: ficha del cliente: datos, vehículos, WhatsApp y desactivar. HU-24: sus consultas y "Nueva consulta", si quien
 // entra tiene el módulo. HU-32: sus reservas, con el saldo de cada una para quien ve pagos; desde C4 son también sus
-// órdenes, con su estado. HU-38: sus mantenimientos programados, para quien tiene "Mantenimientos".
+// órdenes, con su estado. HU-38: sus mantenimientos programados, para quien tiene "Mantenimientos". Pedido 21: sus planes
+// (cada cuántos meses), agregar uno hecho antes del sistema y, en el menú "Más" de cada uno, editarlo o terminarlo.
 // Pulido 8.3 (skill pantallas-panel): una ficha en lectura. Arriba, quién es, lo que debe y cómo escribirle (desactivar,
 // en "Más"); vehículos y datos lado a lado, cada uno editado en un modal; después reservas, consultas y mantenimientos.
 export default function PaginaCliente({ params, searchParams }: PageProps<"/panel/clientes/[id]">) {
@@ -60,7 +62,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
   const verMantenimientos = puedeVerModulo(usuario, "mantenimientos");
   // Una reserva ya recibida se abre en su orden, si quien mira ve órdenes
   const verOrdenes = puedeVerModulo(usuario, "ordenes");
-  const [c, tamanos, consultas, parametros, reservas, mantenimientos] = await Promise.all([
+  const [c, tamanos, consultas, parametros, reservas, mantenimientos, conMantenimiento] = await Promise.all([
     obtenerCliente(numero),
     tamanosActivos(),
     verConsultas ? consultasDelCliente(numero) : [],
@@ -68,10 +70,13 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
     // Con Pagos también sin Agenda: de ahí sale lo que debe (la lista de reservas es de Agenda)
     verAgenda || verPagos ? reservasDelCliente(numero, verPagos) : [],
     verMantenimientos ? mantenimientosDelCliente(numero) : [],
+    verMantenimientos ? serviciosConMantenimiento() : [],
   ]);
   if (!c) notFound();
 
   const debe = saldoPendiente(reservas);
+  const hoy = fechaEnBolivia();
+  const vehiculosActivos = c.vehiculos.filter((v) => v.activo).map((v) => ({ id: v.id, placa: v.placa }));
   const datos: [string, string | null][] = [
     ["WhatsApp", formatearWhatsApp(c.telefono)],
     ["Correo", c.correo],
@@ -194,32 +199,42 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
 
       {verMantenimientos && (
         <section aria-labelledby="mantenimientos-titulo" className="flex flex-col gap-4">
-          <h2 id="mantenimientos-titulo" className="font-heading text-2xl font-bold italic">Mantenimientos</h2>
+          <CabeceraSeccion id="mantenimientos" titulo="Mantenimientos">
+            {/* Un servicio hecho antes del sistema: con un vehículo activo y algún servicio que programe mantenimiento */}
+            {c.activo && vehiculosActivos.length > 0 && conMantenimiento.length > 0 && (
+              <AgregarMantenimiento clienteId={c.id} vehiculos={vehiculosActivos} servicios={conMantenimiento} hoy={hoy} />
+            )}
+          </CabeceraSeccion>
           {mantenimientos.length === 0 ? (
             <p className="text-tinta-suave">No tiene mantenimientos programados.</p>
           ) : (
             <ul aria-label="Mantenimientos" className="flex flex-col divide-y divide-border rounded-sm border border-border">
               {mantenimientos.map((m) => {
-                // Agendado: a su reserva, o a su orden si ya se recibió, si quien mira puede abrirla
-                const agendado = m.agendado && enlaceTrabajo(m.agendado.id, m.agendado.estado, { ordenes: verOrdenes, agenda: verAgenda });
+                const ve = { ordenes: verOrdenes, agenda: verAgenda };
+                // Agendado: a su reserva, o a su orden si ya se recibió; hecho: a la orden que lo hizo
+                const trabajo = (m.agendado && enlaceTrabajo(m.agendado.id, m.agendado.estado, ve)) || (m.hecho && enlaceTrabajo(m.hecho.id, m.hecho.estado, ve));
+                // Sin agendar y de un vehículo activo: se edita o se termina
+                const editable = m.vehiculoActivo && c.activo && (ESTADOS_RECORDATORIO_ABIERTO as readonly string[]).includes(m.estado);
                 return (
                   <li key={m.id} className="flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-1 p-3">
                     <span className="flex flex-col">
                       <span className="font-semibold">
-                        {formatearFecha(m.fechaProgramada)}: {m.servicio}
+                        {formatearFecha(m.fechaProgramada)}: Mantenimiento de {m.servicio}
                       </span>
                       <span className="text-sm text-tinta-suave">
-                        {m.placa}
+                        {m.placa}, {textoCadaMeses(m.intervaloMeses)}
                         {!m.vehiculoActivo && ", vehículo desactivado: no se avisa"}
                       </span>
+                      {m.nota && <span className="text-sm text-tinta-suave">Nota: {m.nota}</span>}
                     </span>
                     <span className="flex flex-wrap items-center gap-3">
-                      {agendado && (
-                        <Link href={agendado.href} className="inline-flex min-h-11 items-center text-sm font-semibold underline">
-                          {agendado.texto}
+                      {trabajo && (
+                        <Link href={trabajo.href} className="inline-flex min-h-11 items-center text-sm font-semibold underline">
+                          {trabajo.texto}
                         </Link>
                       )}
                       <span className="tt-insignia">{NOMBRE_ESTADO_RECORDATORIO[m.estado]}</span>
+                      {editable && <MasPlan plan={{ id: m.id, intervaloMeses: m.intervaloMeses, fechaProgramada: m.fechaProgramada, servicio: m.servicio }} hoy={hoy} />}
                     </span>
                   </li>
                 );
