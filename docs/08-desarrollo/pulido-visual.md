@@ -250,7 +250,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 |---|---|---|---|
 | 13.1 | Estructura del panel (1.4) | El menú en grupos y la barra lateral pulida el 24/10 (C5 §0): se registra y se revisa con el técnico y con un encargado | ✅ |
 | 13.2 | Servicios del sitio y su página (4.2 y 4.4) | Sin alta, nombre ni variantes desde la reorganización: que nada quede huérfano | ✅ |
-| 13.3 | Portada (2.1) | La foto del taller es el LCP del celular: que cargue sin diferir y con prioridad (`loading="eager"`) | ⏳ |
+| 13.3 | Portada (2.1) | La foto del taller es el LCP del celular: que cargue sin diferir y con prioridad (`loading="eager"`) | ✅ |
 | 13.4 | No encontrado dentro del panel | Hoy no existe: un cliente, una orden o una cotización que ya no está (27 `notFound()` del panel) muestra la página del sitio público, con su menú y "Ver los servicios", y saca al personal del panel. Necesita la suya, dentro del panel | ⏳ |
 | 13.5 | Error inesperado (sitio y panel) | Hoy no existe: sin `error.tsx` ni `global-error.tsx`, una falla del servidor muestra la página genérica de Next, sin marca ni forma de volver | ⏳ |
 
@@ -1462,6 +1462,15 @@ Pedido del desarrollador: releer las reglas del principio de este documento y co
   - La lista: "En este orden salen en el sitio." y, para el dueño, "Agregar un servicio en el catálogo" (`ENLACE_TEXTO`).
 - **Para el dueño:** el "Mantenimiento del nano cerámico" sale en el sitio como un servicio más; ahora es el mantenimiento que se agenda del cerámico (pedido 21). Si no lo quiere publicitar, se desmarca "Mostrar en el sitio".
 - **Verificación:** capturas a 360, 390, 768 y 1280 px (también de uno inactivo en la base local, reactivado después): nada se sale. Comparativa en `pulido-visual/13.2-servicio-sitio-celular.jpg`. E2E `hu-07`, `hu-09` y `hu-11` (sin opciones, ni casilla ni lugar de foto).
+
+### 13.3 Portada: la foto del taller en el celular (27/10/2026)
+- **Medido** con una compilación de producción: Lighthouse móvil (tres corridas) y el LCP leído en Chrome (cinco corridas) como un celular con 4G lenta y CPU 4 veces más lenta, antes y después de probar la foto con prioridad alta.
+- **Encontrado:**
+  - El LCP del celular es la foto del taller de 640 px (18 KB): 1,74 s de mediana.
+  - Ya carga sin diferir: no tiene `loading="lazy"` y aparece al 7 % del HTML, antes de cualquier parte que llegue después; el navegador la descubre enseguida.
+  - Con prioridad alta, el LCP no cambia (1,74 s) y Lighthouse da 88, 88 y 88, contra 84, 86 y 90 hoy: dentro de lo que varía entre corridas. El tiempo se va en pintar la página (primer contenido en 1,1 s), no en traer la foto; coincide con lo medido en 2.1.
+- **Cambios:** ninguno (aprobado el 27/10): la foto ya cumple lo que pedía este punto y subirle la prioridad no la acelera.
+- **Nota:** el diagnóstico del elemento LCP de Lighthouse 12.2 falla con el Chrome instalado ("RootCauses"); por eso el elemento se leyó en el navegador. Los puntajes no se ven afectados.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
