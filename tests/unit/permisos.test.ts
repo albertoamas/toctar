@@ -102,12 +102,12 @@ describe("menú y casillas", () => {
 });
 
 test("Pagos se llama «Saldos pendientes» en el menú y su casilla dice lo que da (HU-37, C5 §0)", () => {
-  expect(nombreEnMenu("pagos")).toBe("Saldos pendientes");
+  expect(nombreEnMenu("pagos", "dueno")).toBe("Saldos pendientes");
   expect(MODULOS.pagos.nombre).toBe("Pagos");
   // La casilla del encargado dice lo que da (C5 §0); las demás, el nombre del módulo
   expect(permisosAsignables().find((p) => p.permiso === "pagos")?.nombre).toBe("Pagos (cobrar y ver saldos)");
   expect(permisosAsignables().find((p) => p.permiso === "agenda")?.nombre).toBe("Agenda");
-  expect(nombreEnMenu("agenda")).toBe("Agenda");
+  expect(nombreEnMenu("agenda", "dueno")).toBe("Agenda");
   // El técnico ve solo las suyas: "Mis órdenes", como el título de su pantalla (pulido 13.1)
   expect(nombreEnMenu("ordenes", "tecnico")).toBe("Mis órdenes");
   expect(nombreEnMenu("ordenes", "dueno")).toBe("Órdenes");

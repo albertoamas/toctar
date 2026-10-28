@@ -1490,6 +1490,16 @@ Pedido del desarrollador: releer las reglas del principio de este documento y co
   - **Último recurso** (`src/app/global-error.tsx`): su propio documento (no recibe el diseño raíz), con los estilos de la marca importados, "Algo salió mal" y "Volver a intentar".
 - **Verificación:** con una compilación de producción y un error forzado a propósito en Nosotros y en Clientes (solo con una cabecera de prueba; deshecho después, sin restos en el código), a 360, 390, 768 y 1280 px: el error sale dentro del marco del sitio y dentro del panel; el mensaje del error no llega al navegador; el código del panel coincide con el del registro del servidor; "Volver a intentar" vuelve a cargar la pantalla; nada se sale. Comparativa en `pulido-visual/13.5-error-panel.jpg`. `src/app/error.tsx` y `global-error.tsx` no se pudieron forzar sin tocar el ingreso o el diseño raíz: comparten el contenido probado y compilan.
 
+### Revisión del grupo 13 (code-review, 27/10/2026)
+- **Corregido:**
+  - 13.2: si un servicio pierde sus opciones, la foto de "Opciones" que ya tenía queda a la vista con su aviso ("No se ve…"), para poder quitarla; sin foto, el lugar no se ofrece.
+  - 13.2: la lista del sitio vuelve a decir "Toca uno para editar su página." para todos; quien no ve el catálogo lee "Los servicios nuevos los agrega el dueño."; el enlace del catálogo, en su renglón y con `cn`.
+  - 13.5: un error del diseño del panel (su menú o su sesión) no lo alcanza `panel/error.tsx` y cae en `src/app/error.tsx`: ahí "Ir al inicio" lleva a `/panel`, no al sitio.
+  - 13.1: "Mis órdenes" sale de un solo lugar (`nombreEnMenu`, con el rol obligatorio), también en el título de la pantalla.
+  - 13.5: el titular de `global-error.tsx` con `font-heading`.
+  - 13.4: la ruta que captura las direcciones que no existen verifica la sesión (`exigirSesion`, dentro de `<Suspense>`), como toda página del panel.
+- **Descartado:** que "Van de menor a mayor" se conserve sin verse cuando el servicio no tiene opciones: es a propósito (por si vuelve a tenerlas), como quedó en la propuesta 13.2.
+
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
 - **Encontrado:**

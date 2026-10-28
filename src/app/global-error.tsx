@@ -10,7 +10,7 @@ export default function ErrorGlobal({ retry }: { error: unknown; retry: () => vo
     <html lang="es">
       <body data-theme="oscuro" className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-fondo px-4 text-center text-tinta">
         <title>Algo salió mal · TocTar Detailing</title>
-        <h1 className="text-4xl font-extrabold italic">Algo salió mal</h1>
+        <h1 className="font-heading text-4xl font-extrabold italic">Algo salió mal</h1>
         <p className="max-w-md text-tinta-suave">Fue un problema nuestro. Vuelve a intentar en un momento.</p>
         <button type="button" onClick={() => retry()} className="tt-boton tt-boton--principal">
           Volver a intentar

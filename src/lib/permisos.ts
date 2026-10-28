@@ -118,7 +118,7 @@ export function puedeVerOrden(sujeto: SujetoPermisos & { id: string }, tecnicoId
  * Cómo se llama el módulo en el menú y en el inicio. El técnico ve solo las suyas: para él, "Mis órdenes", como el
  * título de la pantalla (pulido 13.1).
  */
-export function nombreEnMenu(modulo: Modulo, rol?: Rol): string {
+export function nombreEnMenu(modulo: Modulo, rol: Rol): string {
   if (modulo === "ordenes" && rol === "tecnico") return "Mis órdenes";
   const def: DefinicionModulo = MODULOS[modulo];
   return def.nombreMenu ?? def.nombre;

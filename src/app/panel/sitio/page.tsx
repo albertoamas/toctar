@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
+import { cn } from "cn";
 import { Cargando } from "@/componentes/panel/cargando";
 import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { puedeVerModulo } from "@/lib/permisos";
@@ -27,14 +28,17 @@ async function Lista() {
   const servicios = await listarServicios();
   return (
     <>
-      <p className="flex flex-wrap items-center gap-x-3 text-tinta-suave">
-        En este orden salen en el sitio.
+      <div className="flex flex-col gap-1">
+        <p className="text-tinta-suave">
+          En este orden salen en el sitio. Toca uno para editar su página.
+          {!puedeVerModulo(usuario, "catalogo") && " Los servicios nuevos los agrega el dueño."}
+        </p>
         {puedeVerModulo(usuario, "catalogo") && (
-          <Link href="/panel/catalogo" className={ENLACE_TEXTO + " text-tinta"}>
+          <Link href="/panel/catalogo" className={cn(ENLACE_TEXTO, "text-tinta")}>
             Agregar un servicio en el catálogo
           </Link>
         )}
-      </p>
+      </div>
       <ListaServicios
       servicios={servicios.map((s) => ({
         id: s.id,

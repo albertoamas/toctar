@@ -5,6 +5,7 @@ import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { ListaFilas, type DatosFila } from "@/componentes/panel/fila-lista";
 import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
+import { nombreEnMenu } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { ordenesAbiertas, type OrdenEnLista } from "@/modulos/ordenes/consultas";
 import { ESTADOS_ORDEN_ABIERTA, estaAtrasada } from "@/modulos/ordenes/reglas";
@@ -35,7 +36,7 @@ async function Lista() {
 
   return (
     <>
-      <EncabezadoPagina titulo={tecnico ? "Mis órdenes" : "Órdenes"} />
+      <EncabezadoPagina titulo={nombreEnMenu("ordenes", usuario.rol)} />
       {ordenes.length === 0 ? (
         <EstadoVacio>{tecnico ? "No tienes órdenes asignadas." : "No hay órdenes abiertas. Se abren al recibir un vehículo desde la agenda."}</EstadoVacio>
       ) : (

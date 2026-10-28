@@ -34,9 +34,13 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
   const [s, fotos, opciones] = await Promise.all([obtenerServicio(numero), fotosDeSecciones(numero), opcionesDelSitio(numero)]);
   if (!s) notFound();
   // Una sección sin contenido no sale en el sitio, y su foto tampoco: el panel lo avisa en su lugar
-  const sinContenido = { proceso: s.pasos.length > 0 ? undefined : "No se ve hasta que agregues pasos." };
-  // Sin opciones en el catálogo, "Opciones" no sale en el sitio: ni su casilla ni su foto (pulido 13.2)
+  // Sin opciones en el catálogo, "Opciones" no sale en el sitio: ni su casilla ni el lugar de su foto (pulido 13.2). Si
+  // ya tenía una foto, queda a la vista con su aviso, para poder quitarla
   const conOpciones = opciones.length > 0;
+  const sinContenido = {
+    proceso: s.pasos.length > 0 ? undefined : "No se ve hasta que agregues pasos.",
+    opciones: conOpciones ? undefined : "No se ve: el servicio no tiene opciones en el catálogo.",
+  };
   const catalogo = puedeVerModulo(usuario, "catalogo");
 
   return (
@@ -70,7 +74,7 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
         />
         <aside className="flex flex-col gap-10">
           <FotoServicio servicioId={s.id} nombre={s.nombre} foto={s.foto} />
-          <FotosServicio servicioId={s.id} fotos={fotos} sinContenido={sinContenido} ocultas={conOpciones ? [] : ["opciones"]} />
+          <FotosServicio servicioId={s.id} fotos={fotos} sinContenido={sinContenido} ocultas={conOpciones || fotos.opciones ? [] : ["opciones"]} />
         </aside>
       </div>
     </>
