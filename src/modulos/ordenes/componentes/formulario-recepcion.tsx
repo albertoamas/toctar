@@ -8,11 +8,11 @@ import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { Selector } from "@/componentes/panel/selector";
 import { Button } from "@/componentes/ui/button";
 import { Textarea } from "@/componentes/ui/textarea";
-import type { EstadoFormulario } from "@/lib/formularios";
-import { recibirVehiculo } from "../acciones";
+import { recibirVehiculo, type EstadoRecepcion } from "../acciones";
 
 // HU-33: recibir el vehículo (RF-40). Las fotos de ingreso se suben aparte, al tomarlas; aquí van las observaciones y el
-// técnico. Sin fotos se puede recibir, pero se pide confirmar: son la prueba de cómo llegó el vehículo.
+// técnico. Sin fotos se puede recibir, pero se pide confirmar: son la prueba de cómo llegó el vehículo. Quién no tiene
+// fotos lo dice el servidor (sinFotos), no la pantalla: una foto recién subida podía no haber llegado todavía a ella.
 
 type Props = {
   trabajoId: number;
@@ -20,30 +20,23 @@ type Props = {
   tecnicoInicial: number | null;
   /** El técnico de la reserva, si ya no está activo: se avisa en vez de soltarlo sin decir nada. */
   tecnicoInactivo: string | null;
-  conFotos: boolean;
 };
 
-export function FormularioRecepcion({ trabajoId, tecnicos, tecnicoInicial, tecnicoInactivo, conFotos }: Props) {
-  const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(recibirVehiculo, {});
+export function FormularioRecepcion({ trabajoId, tecnicos, tecnicoInicial, tecnicoInactivo }: Props) {
+  const [estado, accion, enviando] = useActionState<EstadoRecepcion, FormData>(recibirVehiculo, {});
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
   const e = estado.errores ?? {};
   // Controlados: React reinicia el formulario al terminar la acción y así nada se pierde tras un error
   const [observaciones, setObservaciones] = useState("");
   const [tecnicoId, setTecnicoId] = useState(tecnicoInicial && tecnicos.some((t) => t.id === tecnicoInicial) ? String(tecnicoInicial) : "");
-  const [confirmarSinFotos, setConfirmarSinFotos] = useState(false);
-
-  function enviar(ev: React.SyntheticEvent<HTMLFormElement, SubmitEvent>) {
-    // Sin fotos, el primer toque pide confirmar; el segundo recibe
-    if (!conFotos && !confirmarSinFotos) {
-      ev.preventDefault();
-      setConfirmarSinFotos(true);
-    }
-  }
+  // El servidor no encontró fotos: el próximo toque confirma que se recibe sin ellas
+  const confirmarSinFotos = !!estado.sinFotos;
 
   return (
-    <form ref={formulario} action={accion} onSubmit={enviar} className="flex flex-col gap-5" noValidate aria-label="Recibir vehículo">
+    <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-label="Recibir vehículo">
       <input type="hidden" name="id" value={trabajoId} />
+      {confirmarSinFotos && <input type="hidden" name="sinFotos" value="1" />}
       {estado.mensaje && !estado.ok && <MensajeError id="recepcion-error">{estado.mensaje}</MensajeError>}
       <Campo id="observaciones" etiqueta="Observaciones" error={e.observaciones} ayuda="Rayones, golpes, objetos que deja el cliente…">
         <Textarea
@@ -72,7 +65,7 @@ export function FormularioRecepcion({ trabajoId, tecnicos, tecnicoInicial, tecni
           ))}
         </Selector>
       </Campo>
-      {confirmarSinFotos && !conFotos && (
+      {confirmarSinFotos && (
         <p role="alert" className="rounded-sm border border-aviso p-3 text-sm">
           Sin fotos de ingreso no hay cómo probar el estado en que llegó. Toma al menos una o confirma que lo recibes sin fotos.
         </p>
@@ -81,7 +74,7 @@ export function FormularioRecepcion({ trabajoId, tecnicos, tecnicoInicial, tecni
       <PieFormulario>
         <Button type="submit" disabled={enviando}>
           <ClipboardCheckIcon />
-          {enviando ? "Recibiendo…" : confirmarSinFotos && !conFotos ? "Recibir sin fotos" : "Recibir vehículo"}
+          {enviando ? "Recibiendo…" : confirmarSinFotos ? "Recibir sin fotos" : "Recibir vehículo"}
         </Button>
       </PieFormulario>
     </form>
