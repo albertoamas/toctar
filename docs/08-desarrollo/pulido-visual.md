@@ -252,7 +252,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 | 13.2 | Servicios del sitio y su página (4.2 y 4.4) | Sin alta, nombre ni variantes desde la reorganización: que nada quede huérfano | ✅ |
 | 13.3 | Portada (2.1) | La foto del taller es el LCP del celular: que cargue sin diferir y con prioridad (`loading="eager"`) | ✅ |
 | 13.4 | No encontrado dentro del panel | Hoy no existe: un cliente, una orden o una cotización que ya no está (27 `notFound()` del panel) muestra la página del sitio público, con su menú y "Ver los servicios", y saca al personal del panel. Necesita la suya, dentro del panel || ✅ |
-| 13.5 | Error inesperado (sitio y panel) | Hoy no existe: sin `error.tsx` ni `global-error.tsx`, una falla del servidor muestra la página genérica de Next, sin marca ni forma de volver | ⏳ |
+| 13.5 | Error inesperado (sitio y panel) | Hoy no existe: sin `error.tsx` ni `global-error.tsx`, una falla del servidor muestra la página genérica de Next, sin marca ni forma de volver || ✅ |
 
 **Cobertura** (revisada el 24/10 contra todas las rutas de `src/app` y `public/`): cada pantalla del sitio, el ingreso y el panel está en un grupo. Lo que no tiene ruta propia se revisa dentro de su pantalla:
 - **Los diálogos:** el historial de precios va en 7.3, el visor de fotos en 11.2 y 11.3, y el comprobante en 10.3 y 11.4.
@@ -1480,6 +1480,15 @@ Pedido del desarrollador: releer las reglas del principio de este documento y co
   - La del sitio no cambia.
 - **De paso:** `hu-34` buscaba el grupo con `\d+ órdenes?`, que no coincide con "1 orden" (sin tilde): fallaba solo con una orden en el grupo. Ahora `(orden|órdenes)`.
 - **Verificación:** capturas a 360, 390, 768 y 1280 px: nada se sale. Comparativa en `pulido-visual/13.4-no-encontrado-panel-celular.jpg`. E2E `base` (un cliente y una dirección que no existen se quedan en el panel; "Ir al inicio"), `hu-23` y `hu-34`.
+
+### 13.5 Error inesperado, sitio y panel (27/10/2026)
+- **Encontrado:** sin `error.tsx` ni `global-error.tsx`, un error del servidor (por ejemplo, la base caída) mostraba la página genérica de Next: en inglés, sin la marca y sin forma de volver.
+- **Cambios** (propuesta aprobada el 27/10; guía de Next 16, `error.js`: el componente recibe `error` y `retry`):
+  - **Sitio** (`src/app/(sitio)/error.tsx`): dentro de su marco, en oscuro, como "No encontramos esta página": "Algo salió mal", "Fue un problema nuestro. Vuelve a intentar en un momento.", "Volver a intentar" e "Ir al inicio". El contenido es `ErrorInesperado` (`componentes/sitio/error-inesperado.tsx`).
+  - **Panel** (`src/app/panel/error.tsx`): dentro del panel, con su menú: "No se pudo cargar esta pantalla. Vuelve a intentar; si sigue pasando, avisa a YankoSoft con este código: …". El código es el `digest` de Next, el mismo del registro del servidor; no revela datos.
+  - **El resto** (`src/app/error.tsx`, como el ingreso): el mismo contenido que el sitio, en oscuro.
+  - **Último recurso** (`src/app/global-error.tsx`): su propio documento (no recibe el diseño raíz), con los estilos de la marca importados, "Algo salió mal" y "Volver a intentar".
+- **Verificación:** con una compilación de producción y un error forzado a propósito en Nosotros y en Clientes (solo con una cabecera de prueba; deshecho después, sin restos en el código), a 360, 390, 768 y 1280 px: el error sale dentro del marco del sitio y dentro del panel; el mensaje del error no llega al navegador; el código del panel coincide con el del registro del servidor; "Volver a intentar" vuelve a cargar la pantalla; nada se sale. Comparativa en `pulido-visual/13.5-error-panel.jpg`. `src/app/error.tsx` y `global-error.tsx` no se pudieron forzar sin tocar el ingreso o el diseño raíz: comparten el contenido probado y compilan.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
