@@ -248,11 +248,11 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 
 | # | Pantalla | Qué se revisa | Estado |
 |---|---|---|---|
-| 13.1 | Estructura del panel (1.4) | El menú en grupos y la barra lateral pulida el 24/10 (C5 §0): se registra y se revisa con el técnico y con un encargado | ⏳ |
-| 13.2 | Servicios del sitio y su página (4.2 y 4.4) | Sin alta, nombre ni variantes desde la reorganización: que nada quede huérfano | ⏳ |
-| 13.3 | Portada (2.1) | La foto del taller es el LCP del celular: que cargue sin diferir y con prioridad (`loading="eager"`) | ⏳ |
-| 13.4 | No encontrado dentro del panel | Hoy no existe: un cliente, una orden o una cotización que ya no está (27 `notFound()` del panel) muestra la página del sitio público, con su menú y "Ver los servicios", y saca al personal del panel. Necesita la suya, dentro del panel | ⏳ |
-| 13.5 | Error inesperado (sitio y panel) | Hoy no existe: sin `error.tsx` ni `global-error.tsx`, una falla del servidor muestra la página genérica de Next, sin marca ni forma de volver | ⏳ |
+| 13.1 | Estructura del panel (1.4) | El menú en grupos y la barra lateral pulida el 24/10 (C5 §0): se registra y se revisa con el técnico y con un encargado | ✅ |
+| 13.2 | Servicios del sitio y su página (4.2 y 4.4) | Sin alta, nombre ni variantes desde la reorganización: que nada quede huérfano | ✅ |
+| 13.3 | Portada (2.1) | La foto del taller es el LCP del celular: que cargue sin diferir y con prioridad (`loading="eager"`) | ✅ |
+| 13.4 | No encontrado dentro del panel | Hoy no existe: un cliente, una orden o una cotización que ya no está (27 `notFound()` del panel) muestra la página del sitio público, con su menú y "Ver los servicios", y saca al personal del panel. Necesita la suya, dentro del panel || ✅ |
+| 13.5 | Error inesperado (sitio y panel) | Hoy no existe: sin `error.tsx` ni `global-error.tsx`, una falla del servidor muestra la página genérica de Next, sin marca ni forma de volver || ✅ |
 
 **Cobertura** (revisada el 24/10 contra todas las rutas de `src/app` y `public/`): cada pantalla del sitio, el ingreso y el panel está en un grupo. Lo que no tiene ruta propia se revisa dentro de su pantalla:
 - **Los diálogos:** el historial de precios va en 7.3, el visor de fotos en 11.2 y 11.3, y el comprobante en 10.3 y 11.4.
@@ -1437,6 +1437,68 @@ Pedido del desarrollador: releer las reglas del principio de este documento y co
   - La fecha de Mantenimientos en el medio de la fila en la computadora: queda junto a las acciones, como el monto en Saldos pendientes, y las dos listas se leen igual.
   - Juntar `enLista` y `conDetalle` de `AvisarPorWhatsApp` en una sola opción: con un solo uso en lista, no vale la pena todavía.
 - **Verificación:** E2E completa (326 de 326) antes de estos cambios; después, `hu-24`, `hu-31` a `hu-35`, `hu-37` y `hu-38`.
+
+### 13.1 Estructura del panel, con cada rol (27/10/2026)
+- **Qué cambió desde 1.4** (reorganización del 24/10, C5 §0, PR #74): el menú en grupos (Inicio; Taller: Agenda y Órdenes; Clientes: Clientes, Consultas, Saldos pendientes, Mantenimientos y Reclamos; Sitio web; Administración: Catálogo y precios, Usuarios y Configuración), cada enlace con el ícono de su módulo, los títulos de grupo en Barlow itálica y líneas entre bloques. Un grupo sin módulos para quien entra no aparece, y uno con un solo módulo va sin título.
+- **Revisión con cada rol:** el dueño, un encargado (Agenda, Órdenes, Clientes, Consultas y Pagos) y un técnico, a 360, 390, 768 y 1280 px con pantalla táctil y el menú del celular abierto (usuarios temporales en la base local, borrados al terminar).
+- **Encontrado:**
+  - El técnico veía "Órdenes" en el menú y en su inicio, y "Mis órdenes" en la pantalla.
+  - El nombre del usuario, al pie del menú, se cortaba en un renglón ("Encargado de pr…"); el del dueño, "Yerko Tejerina Aparicio", también se cortaría.
+  - Bien y sin cambios: cada rol ve solo lo suyo, nada se sale y todos los enlaces miden 44 px o más; el módulo actual con el trazo rojo; la barra lateral desde 1024 px.
+- **Cambios** (propuesta aprobada el 27/10):
+  - `nombreEnMenu(modulo, rol)`: para el técnico, "Mis órdenes", en el menú y en el inicio (con prueba unitaria).
+  - El nombre del usuario en hasta dos renglones (`UsuarioSesion`, `line-clamp-2`).
+- **Verificación:** las capturas por rol antes y después; comparativa en `pulido-visual/13.1-menu-tecnico-celular.jpg`. E2E `hu-01` (el inicio y el menú del técnico dicen "Mis órdenes"), `hu-33`, `hu-34`, `hu-39` y `base`; unitaria de permisos.
+
+### 13.2 Servicios del sitio y su página, después de la reorganización (27/10/2026)
+- **Revisado:** la lista (`/panel/sitio`) y la página de un servicio con opciones (el pulido) y de uno sin opciones (el mantenimiento del nano cerámico), a 360, 390, 768 y 1280 px. El módulo del sitio ya no tiene restos del alta, el nombre ni las variantes (viven en el catálogo desde el 24/10) y las direcciones viejas redirigen.
+- **Encontrado:**
+  - Un servicio sin opciones en el catálogo mostraba igual la sección "Opciones" con la casilla "Van de menor a mayor" (no hacía nada) y el lugar de su foto (no sale en el sitio).
+  - Un servicio inactivo en el catálogo sale de la lista, pero su página se abría y editaba desde un enlace viejo sin decir que no se publica.
+  - La lista empezaba con un párrafo de tres frases.
+- **Cambios** (propuesta aprobada el 27/10):
+  - Sin opciones: "Opciones" dice "Sin opciones en el catálogo: esta sección no sale en el sitio." y no ofrece la casilla (lo marcado se conserva por si después tiene opciones) ni el lugar de su foto.
+  - Inactivo: la insignia "Inactivo en el catálogo" y "No sale en el sitio mientras esté inactivo en el catálogo.", con "Abrir en el catálogo" para el dueño.
+  - La lista: "En este orden salen en el sitio." y, para el dueño, "Agregar un servicio en el catálogo" (`ENLACE_TEXTO`).
+- **Para el dueño:** el "Mantenimiento del nano cerámico" sale en el sitio como un servicio más; ahora es el mantenimiento que se agenda del cerámico (pedido 21). Si no lo quiere publicitar, se desmarca "Mostrar en el sitio".
+- **Verificación:** capturas a 360, 390, 768 y 1280 px (también de uno inactivo en la base local, reactivado después): nada se sale. Comparativa en `pulido-visual/13.2-servicio-sitio-celular.jpg`. E2E `hu-07`, `hu-09` y `hu-11` (sin opciones, ni casilla ni lugar de foto).
+
+### 13.3 Portada: la foto del taller en el celular (27/10/2026)
+- **Medido** con una compilación de producción: Lighthouse móvil (tres corridas) y el LCP leído en Chrome (cinco corridas) como un celular con 4G lenta y CPU 4 veces más lenta, antes y después de probar la foto con prioridad alta.
+- **Encontrado:**
+  - El LCP del celular es la foto del taller de 640 px (18 KB): 1,74 s de mediana.
+  - Ya carga sin diferir: no tiene `loading="lazy"` y aparece al 7 % del HTML, antes de cualquier parte que llegue después; el navegador la descubre enseguida.
+  - Con prioridad alta, el LCP no cambia (1,74 s) y Lighthouse da 88, 88 y 88, contra 84, 86 y 90 hoy: dentro de lo que varía entre corridas. El tiempo se va en pintar la página (primer contenido en 1,1 s), no en traer la foto; coincide con lo medido en 2.1.
+- **Cambios:** ninguno (aprobado el 27/10): la foto ya cumple lo que pedía este punto y subirle la prioridad no la acelera.
+- **Nota:** el diagnóstico del elemento LCP de Lighthouse 12.2 falla con el Chrome instalado ("RootCauses"); por eso el elemento se leyó en el navegador. Los puntajes no se ven afectados.
+
+### 13.4 No encontrado dentro del panel (27/10/2026)
+- **Encontrado:** un cliente, una orden o una dirección del panel que no existe (`/panel/clientes/999999`, `/panel/ordenes/999999`, `/panel/no-existe`) mostraba la página del sitio público, con su menú, su pie y "Ver los servicios": el personal quedaba fuera del panel. El panel no tenía su `not-found` y, en Next 16, una dirección que no existe en ninguna ruta va siempre a la general (`app/not-found.tsx`, la del sitio).
+- **Cambios** (propuesta aprobada el 27/10):
+  - `src/app/panel/not-found.tsx`, dentro del diseño del panel (en claro, con su menú y su sesión): "No encontramos esto", "Puede que se haya borrado, que el enlace sea viejo o que la dirección esté mal escrita." e "Ir al inicio" (enlace con forma de botón rojo). Lo usan los 26 `notFound()` del panel.
+  - `src/app/panel/[...resto]/page.tsx`: captura cualquier dirección del panel que no existe. Con `export const instant = false`: siempre responde "no encontrado", y sin eso la validación de Cache Components avisaba en desarrollo ("Could not validate `instant`"; guía de Next 16, instant-navigation).
+  - La del sitio no cambia.
+- **De paso:** `hu-34` buscaba el grupo con `\d+ órdenes?`, que no coincide con "1 orden" (sin tilde): fallaba solo con una orden en el grupo. Ahora `(orden|órdenes)`.
+- **Verificación:** capturas a 360, 390, 768 y 1280 px: nada se sale. Comparativa en `pulido-visual/13.4-no-encontrado-panel-celular.jpg`. E2E `base` (un cliente y una dirección que no existen se quedan en el panel; "Ir al inicio"), `hu-23` y `hu-34`.
+
+### 13.5 Error inesperado, sitio y panel (27/10/2026)
+- **Encontrado:** sin `error.tsx` ni `global-error.tsx`, un error del servidor (por ejemplo, la base caída) mostraba la página genérica de Next: en inglés, sin la marca y sin forma de volver.
+- **Cambios** (propuesta aprobada el 27/10; guía de Next 16, `error.js`: el componente recibe `error` y `retry`):
+  - **Sitio** (`src/app/(sitio)/error.tsx`): dentro de su marco, en oscuro, como "No encontramos esta página": "Algo salió mal", "Fue un problema nuestro. Vuelve a intentar en un momento.", "Volver a intentar" e "Ir al inicio". El contenido es `ErrorInesperado` (`componentes/sitio/error-inesperado.tsx`).
+  - **Panel** (`src/app/panel/error.tsx`): dentro del panel, con su menú: "No se pudo cargar esta pantalla. Vuelve a intentar; si sigue pasando, avisa a YankoSoft con este código: …". El código es el `digest` de Next, el mismo del registro del servidor; no revela datos.
+  - **El resto** (`src/app/error.tsx`, como el ingreso): el mismo contenido que el sitio, en oscuro.
+  - **Último recurso** (`src/app/global-error.tsx`): su propio documento (no recibe el diseño raíz), con los estilos de la marca importados, "Algo salió mal" y "Volver a intentar".
+- **Verificación:** con una compilación de producción y un error forzado a propósito en Nosotros y en Clientes (solo con una cabecera de prueba; deshecho después, sin restos en el código), a 360, 390, 768 y 1280 px: el error sale dentro del marco del sitio y dentro del panel; el mensaje del error no llega al navegador; el código del panel coincide con el del registro del servidor; "Volver a intentar" vuelve a cargar la pantalla; nada se sale. Comparativa en `pulido-visual/13.5-error-panel.jpg`. `src/app/error.tsx` y `global-error.tsx` no se pudieron forzar sin tocar el ingreso o el diseño raíz: comparten el contenido probado y compilan.
+
+### Revisión del grupo 13 (code-review, 27/10/2026)
+- **Corregido:**
+  - 13.2: si un servicio pierde sus opciones, la foto de "Opciones" que ya tenía queda a la vista con su aviso ("No se ve…"), para poder quitarla; sin foto, el lugar no se ofrece.
+  - 13.2: la lista del sitio vuelve a decir "Toca uno para editar su página." para todos; quien no ve el catálogo lee "Los servicios nuevos los agrega el dueño."; el enlace del catálogo, en su renglón y con `cn`.
+  - 13.5: un error del diseño del panel (su menú o su sesión) no lo alcanza `panel/error.tsx` y cae en `src/app/error.tsx`: ahí "Ir al inicio" lleva a `/panel`, no al sitio.
+  - 13.1: "Mis órdenes" sale de un solo lugar (`nombreEnMenu`, con el rol obligatorio), también en el título de la pantalla.
+  - 13.5: el titular de `global-error.tsx` con `font-heading`.
+  - 13.4: la ruta que captura las direcciones que no existen verifica la sesión (`exigirSesion`, dentro de `<Suspense>`), como toda página del panel.
+- **Descartado:** que "Van de menor a mayor" se conserve sin verse cuando el servicio no tiene opciones: es a propósito (por si vuelve a tenerlas), como quedó en la propuesta 13.2.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)

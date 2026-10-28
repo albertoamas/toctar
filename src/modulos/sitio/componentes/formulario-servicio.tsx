@@ -30,11 +30,13 @@ type Props = {
     visible: boolean;
     opcionesEnEscalera: boolean;
   };
+  /** Tiene opciones en el catálogo: si no, "Opciones" no sale en el sitio y su casilla no hace nada (pulido 13.2). */
+  conOpciones: boolean;
 };
 
 const guardarConAviso = conAviso(guardarServicio);
 
-export function FormularioServicio({ servicio: s }: Props) {
+export function FormularioServicio({ servicio: s, conOpciones }: Props) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(guardarConAviso, {});
   // Un ícono guardado que ya no está en la lista pasa al genérico: lo que se ve en el selector es lo que se guarda
   const [beneficios, setBeneficios] = useState<Beneficio[]>(() => s.beneficios.map((b) => ({ ...b, icono: iconoDe(b.icono) })));
@@ -94,15 +96,22 @@ export function FormularioServicio({ servicio: s }: Props) {
         />
       </Seccion>
 
-      <Seccion titulo="Opciones" descripcion="Las opciones y sus precios se cargan en el catálogo; aquí, cómo se ven en el sitio.">
-        <label className="flex cursor-pointer items-start gap-3">
-          <Checkbox key={String(escalera)} name="opcionesEnEscalera" defaultChecked={escalera} className="mt-0.5" />
-          <span className="flex flex-col">
-            <span className="font-semibold">Van de menor a mayor</span>
-            <span className="text-sm text-tinta-suave">Por ejemplo 1, 2, 3, 5 y 10 años: el sitio las muestra como escalones, cada una con una capa más gruesa.</span>
-          </span>
-        </label>
-      </Seccion>
+      {conOpciones ? (
+        <Seccion titulo="Opciones" descripcion="Las opciones y sus precios se cargan en el catálogo; aquí, cómo se ven en el sitio.">
+          <label className="flex cursor-pointer items-start gap-3">
+            <Checkbox key={String(escalera)} name="opcionesEnEscalera" defaultChecked={escalera} className="mt-0.5" />
+            <span className="flex flex-col">
+              <span className="font-semibold">Van de menor a mayor</span>
+              <span className="text-sm text-tinta-suave">Por ejemplo 1, 2, 3, 5 y 10 años: el sitio las muestra como escalones, cada una con una capa más gruesa.</span>
+            </span>
+          </label>
+        </Seccion>
+      ) : (
+        <Seccion titulo="Opciones" descripcion="Sin opciones en el catálogo: esta sección no sale en el sitio.">
+          {/* Se conserva lo que estaba marcado, por si después se le agregan opciones */}
+          {escalera && <input type="hidden" name="opcionesEnEscalera" value="on" />}
+        </Seccion>
+      )}
 
       <Seccion titulo="Proceso paso a paso" descripcion={`Cómo se hace, en orden. Hasta ${LIMITES.pasos} pasos.`}>
         <EditorLista

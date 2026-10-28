@@ -10,7 +10,8 @@ export async function UsuarioSesion() {
   return (
     <div className="flex items-center justify-between gap-2 px-3">
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium">{usuario.nombre}</p>
+        {/* Hasta dos renglones: un nombre completo ("Yerko Tejerina Aparicio") no se corta a la mitad (pulido 13.1) */}
+        <p className="line-clamp-2 text-sm font-medium break-words">{usuario.nombre}</p>
         <p className="text-xs text-muted-foreground">{NOMBRE_ROL[usuario.rol]}</p>
       </div>
       <form action={cerrarSesion}>

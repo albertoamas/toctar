@@ -15,9 +15,11 @@ type Props = {
   fotos: Partial<Record<SeccionFoto, Foto>>;
   /** Por sección, por qué no se ve en el sitio (sin pasos o sin opciones). */
   sinContenido: Partial<Record<SeccionFoto, string>>;
+  /** Secciones que no aplican a este servicio (sin opciones en el catálogo): su foto no se ofrece (pulido 13.2). */
+  ocultas?: SeccionFoto[];
 };
 
-export function FotosServicio({ servicioId, fotos, sinContenido }: Props) {
+export function FotosServicio({ servicioId, fotos, sinContenido, ocultas = [] }: Props) {
   return (
     <section aria-labelledby="fotos-secciones-titulo" className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
@@ -25,7 +27,7 @@ export function FotosServicio({ servicioId, fotos, sinContenido }: Props) {
         <p className="text-sm text-tinta-suave">Una foto al lado de cada parte de la página. Si es un afiche, lo que dice escríbelo también en la página: Google no lee la imagen.</p>
       </div>
       <ul className="flex flex-col gap-6">
-        {(Object.entries(SECCIONES_FOTO) as [SeccionFoto, string][]).map(([seccion, nombre]) => {
+        {(Object.entries(SECCIONES_FOTO) as [SeccionFoto, string][]).filter(([seccion]) => !ocultas.includes(seccion)).map(([seccion, nombre]) => {
           const actual = fotos[seccion];
           return (
             <li key={seccion} className="flex flex-col gap-2">

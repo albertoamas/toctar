@@ -8,7 +8,7 @@ export async function MenuPanel() {
   const usuario = await exigirSesion();
   const grupos = menuAgrupado(usuario).map((g) => ({
     titulo: g.titulo,
-    enlaces: g.modulos.map((m) => ({ modulo: m, href: MODULOS[m].ruta, texto: nombreEnMenu(m) })),
+    enlaces: g.modulos.map((m) => ({ modulo: m, href: MODULOS[m].ruta, texto: nombreEnMenu(m, usuario.rol) })),
   }));
   return <NavegacionPanel grupos={grupos} />;
 }

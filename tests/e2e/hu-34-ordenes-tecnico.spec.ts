@@ -133,6 +133,6 @@ test("extender la entrega: con el espacio ocupado se elige otro libre; las lista
 
   // La lista del encargado: agrupada por estado, con su conteo (pulido 11.1)
   await page.goto("/panel/ordenes");
-  await expect(page.getByRole("region", { name: /^Recibidas, \d+ órdenes?$/ }).getByRole("link", { name: new RegExp(`^${placa}`) })).toBeVisible();
-  await expect(page.getByRole("region", { name: /^Listas, \d+ órdenes?$/ }).getByRole("link", { name: new RegExp(`^${placa}`) })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: /^Recibidas, \d+ (orden|órdenes)$/ }).getByRole("link", { name: new RegExp(`^${placa}`) })).toBeVisible();
+  await expect(page.getByRole("region", { name: /^Listas, \d+ (orden|órdenes)$/ }).getByRole("link", { name: new RegExp(`^${placa}`) })).toHaveCount(0);
 });
