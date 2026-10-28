@@ -251,7 +251,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 | 13.1 | Estructura del panel (1.4) | El menú en grupos y la barra lateral pulida el 24/10 (C5 §0): se registra y se revisa con el técnico y con un encargado | ✅ |
 | 13.2 | Servicios del sitio y su página (4.2 y 4.4) | Sin alta, nombre ni variantes desde la reorganización: que nada quede huérfano | ✅ |
 | 13.3 | Portada (2.1) | La foto del taller es el LCP del celular: que cargue sin diferir y con prioridad (`loading="eager"`) | ✅ |
-| 13.4 | No encontrado dentro del panel | Hoy no existe: un cliente, una orden o una cotización que ya no está (27 `notFound()` del panel) muestra la página del sitio público, con su menú y "Ver los servicios", y saca al personal del panel. Necesita la suya, dentro del panel | ⏳ |
+| 13.4 | No encontrado dentro del panel | Hoy no existe: un cliente, una orden o una cotización que ya no está (27 `notFound()` del panel) muestra la página del sitio público, con su menú y "Ver los servicios", y saca al personal del panel. Necesita la suya, dentro del panel || ✅ |
 | 13.5 | Error inesperado (sitio y panel) | Hoy no existe: sin `error.tsx` ni `global-error.tsx`, una falla del servidor muestra la página genérica de Next, sin marca ni forma de volver | ⏳ |
 
 **Cobertura** (revisada el 24/10 contra todas las rutas de `src/app` y `public/`): cada pantalla del sitio, el ingreso y el panel está en un grupo. Lo que no tiene ruta propia se revisa dentro de su pantalla:
@@ -1471,6 +1471,15 @@ Pedido del desarrollador: releer las reglas del principio de este documento y co
   - Con prioridad alta, el LCP no cambia (1,74 s) y Lighthouse da 88, 88 y 88, contra 84, 86 y 90 hoy: dentro de lo que varía entre corridas. El tiempo se va en pintar la página (primer contenido en 1,1 s), no en traer la foto; coincide con lo medido en 2.1.
 - **Cambios:** ninguno (aprobado el 27/10): la foto ya cumple lo que pedía este punto y subirle la prioridad no la acelera.
 - **Nota:** el diagnóstico del elemento LCP de Lighthouse 12.2 falla con el Chrome instalado ("RootCauses"); por eso el elemento se leyó en el navegador. Los puntajes no se ven afectados.
+
+### 13.4 No encontrado dentro del panel (27/10/2026)
+- **Encontrado:** un cliente, una orden o una dirección del panel que no existe (`/panel/clientes/999999`, `/panel/ordenes/999999`, `/panel/no-existe`) mostraba la página del sitio público, con su menú, su pie y "Ver los servicios": el personal quedaba fuera del panel. El panel no tenía su `not-found` y, en Next 16, una dirección que no existe en ninguna ruta va siempre a la general (`app/not-found.tsx`, la del sitio).
+- **Cambios** (propuesta aprobada el 27/10):
+  - `src/app/panel/not-found.tsx`, dentro del diseño del panel (en claro, con su menú y su sesión): "No encontramos esto", "Puede que se haya borrado, que el enlace sea viejo o que la dirección esté mal escrita." e "Ir al inicio" (enlace con forma de botón rojo). Lo usan los 26 `notFound()` del panel.
+  - `src/app/panel/[...resto]/page.tsx`: captura cualquier dirección del panel que no existe. Con `export const instant = false`: siempre responde "no encontrado", y sin eso la validación de Cache Components avisaba en desarrollo ("Could not validate `instant`"; guía de Next 16, instant-navigation).
+  - La del sitio no cambia.
+- **De paso:** `hu-34` buscaba el grupo con `\d+ órdenes?`, que no coincide con "1 orden" (sin tilde): fallaba solo con una orden en el grupo. Ahora `(orden|órdenes)`.
+- **Verificación:** capturas a 360, 390, 768 y 1280 px: nada se sale. Comparativa en `pulido-visual/13.4-no-encontrado-panel-celular.jpg`. E2E `base` (un cliente y una dirección que no existen se quedan en el panel; "Ir al inicio"), `hu-23` y `hu-34`.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
