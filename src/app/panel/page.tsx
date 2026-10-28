@@ -154,7 +154,7 @@ async function Contenido() {
           <ul className="grid gap-3 md:grid-cols-2">
             {modulos.map((m) => (
               <li key={m}>
-                <Acceso href={MODULOS[m].ruta} icono={ICONO_MODULO[m]} titulo={nombreEnMenu(m)} descripcion={DESCRIPCION[m]} />
+                <Acceso href={MODULOS[m].ruta} icono={ICONO_MODULO[m]} titulo={nombreEnMenu(m, usuario.rol)} descripcion={DESCRIPCION[m]} />
               </li>
             ))}
           </ul>

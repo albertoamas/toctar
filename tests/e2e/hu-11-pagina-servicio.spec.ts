@@ -143,10 +143,12 @@ test("cada sección de la página lleva su foto al lado, subida en su lugar del 
   await expect(page.getByLabel("Paso 1, título", { exact: true })).toHaveValue("Lavado técnico");
 
   const fotos = page.getByRole("region", { name: "Fotos de la página" });
-  // Un lugar por sección; "Opciones" avisa que no se ve (el servicio no tiene opciones en el catálogo)
+  // Un lugar por sección. Sin opciones en el catálogo, "Opciones" no sale en el sitio: ni su foto ni su casilla se
+  // ofrecen (pulido 13.2)
   await expect(fotos.getByRole("button", { name: "Subir foto: Cómo lo hacemos" })).toBeVisible();
-  await expect(fotos.getByRole("button", { name: "Subir foto: Opciones" })).toBeVisible();
-  await expect(fotos.getByText("No se ve: el servicio no tiene opciones en el catálogo.")).toBeVisible();
+  await expect(fotos.getByRole("button", { name: "Subir foto: Opciones" })).toHaveCount(0);
+  await expect(page.getByText("Sin opciones en el catálogo: esta sección no sale en el sitio.")).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: /Van de menor a mayor/ })).toHaveCount(0);
   await expect(fotos.getByText("No se ve hasta que agregues pasos.")).toHaveCount(0);
   // Se sube al elegirla, sin descripción
   await page.getByLabel("Archivo de la foto: Cómo lo hacemos").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });

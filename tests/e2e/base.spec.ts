@@ -316,3 +316,18 @@ test("la sección de cierre queda pegada al pie aunque la página sea corta", as
     expect(hueco, ruta).toBe(0);
   }
 });
+
+// Pulido 13.4: lo que no existe dentro del panel se queda en el panel, con su menú, y no en la página del sitio
+test("un registro o una dirección del panel que no existe se queda en el panel", async ({ page }, info) => {
+  await ingresarComoDueno(page);
+  for (const direccion of ["/panel/clientes/999999", "/panel/no-existe"]) {
+    await page.goto(direccion);
+    await expect(page.getByRole("heading", { level: 1, name: "No encontramos esto" })).toBeVisible();
+    // Sin lo del sitio público, y con el menú del panel (en el celular, en su desplegable)
+    await expect(page.getByRole("link", { name: "Ver los servicios" })).toHaveCount(0);
+    if (info.project.name === "celular") await expect(page.getByRole("button", { name: "Abrir menú" })).toBeVisible();
+    else await expect(page.getByRole("navigation", { name: "Panel" })).toBeVisible();
+  }
+  await page.getByRole("link", { name: "Ir al inicio" }).click();
+  await expect(page).toHaveURL(/\/panel$/);
+});

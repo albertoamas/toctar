@@ -43,6 +43,8 @@ export async function listarServicios(): Promise<FilaServicio[]> {
 }
 
 export type DetalleServicio = FilaServicio & {
+  /** Activo en el catálogo: inactivo no sale en el sitio aunque su página esté completa (pulido 13.2). */
+  activo: boolean;
   beneficios: Beneficio[];
   pasos: Paso[];
   opcionesEnEscalera: boolean;
@@ -64,6 +66,7 @@ export async function obtenerServicio(id: number): Promise<DetalleServicio | nul
     visible: s.visibleSitio,
     orden: s.orden,
     foto: fila.foto ? urlsFoto(fila.foto) : null,
+    activo: s.activo,
     beneficios: s.beneficios,
     pasos: s.pasos,
     opcionesEnEscalera: s.opcionesEnEscalera,

@@ -96,7 +96,7 @@ test("un encargado solo con Agenda ve solo los ingresos; el técnico sigue con s
   await crearUsuario({ usuario: `tec-hu39-${s}`, nombre: "Técnico del día", contrasena: "tecnico-123", rol: "tecnico" });
   await ingresar(page, `tec-hu39-${s}`, "tecnico-123");
   await expect(page).toHaveURL(/\/panel$/);
-  await expect(page.getByRole("navigation", { name: "Ir a" }).getByRole("link")).toHaveText([/^Órdenes/]);
+  await expect(page.getByRole("navigation", { name: "Ir a" }).getByRole("link")).toHaveText([/^Mis órdenes/]);
   await expect(page.getByRole("main").getByRole("heading", { level: 2 })).toHaveCount(0);
 });
 
