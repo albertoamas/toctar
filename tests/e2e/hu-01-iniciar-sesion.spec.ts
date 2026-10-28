@@ -28,7 +28,11 @@ test("el inicio da un acceso a cada módulo que la persona puede usar; al técni
   await page.context().clearCookies();
   await ingresar(page, usuario, "tecnico-inicio-1");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Hola, Técnico");
-  await expect(page.getByRole("navigation", { name: "Ir a" }).getByRole("link")).toHaveText([/^Órdenes/]);
+  // Ve solo las suyas: "Mis órdenes", en el inicio y en el menú, como el título de su pantalla (pulido 13.1)
+  await expect(page.getByRole("navigation", { name: "Ir a" }).getByRole("link")).toHaveText([/^Mis órdenes/]);
+  // En el celular el menú se abre (en la computadora es la barra lateral)
+  if (info.project.name === "celular") await page.getByRole("button", { name: "Abrir menú" }).click();
+  await expect(page.getByRole("navigation", { name: "Panel" }).getByRole("link", { name: "Mis órdenes" })).toBeVisible();
 });
 
 test("el usuario se acepta sin importar mayúsculas", async ({ page }) => {

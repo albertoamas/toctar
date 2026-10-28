@@ -108,5 +108,8 @@ test("Pagos se llama «Saldos pendientes» en el menú y su casilla dice lo que 
   expect(permisosAsignables().find((p) => p.permiso === "pagos")?.nombre).toBe("Pagos (cobrar y ver saldos)");
   expect(permisosAsignables().find((p) => p.permiso === "agenda")?.nombre).toBe("Agenda");
   expect(nombreEnMenu("agenda")).toBe("Agenda");
+  // El técnico ve solo las suyas: "Mis órdenes", como el título de su pantalla (pulido 13.1)
+  expect(nombreEnMenu("ordenes", "tecnico")).toBe("Mis órdenes");
+  expect(nombreEnMenu("ordenes", "dueno")).toBe("Órdenes");
   expect(modulosDelMenu({ rol: "encargado", permisos: ["pagos"] })).toEqual(["inicio", "pagos"]);
 });

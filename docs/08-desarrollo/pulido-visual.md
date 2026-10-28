@@ -248,7 +248,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 
 | # | Pantalla | Qué se revisa | Estado |
 |---|---|---|---|
-| 13.1 | Estructura del panel (1.4) | El menú en grupos y la barra lateral pulida el 24/10 (C5 §0): se registra y se revisa con el técnico y con un encargado | ⏳ |
+| 13.1 | Estructura del panel (1.4) | El menú en grupos y la barra lateral pulida el 24/10 (C5 §0): se registra y se revisa con el técnico y con un encargado | ✅ |
 | 13.2 | Servicios del sitio y su página (4.2 y 4.4) | Sin alta, nombre ni variantes desde la reorganización: que nada quede huérfano | ⏳ |
 | 13.3 | Portada (2.1) | La foto del taller es el LCP del celular: que cargue sin diferir y con prioridad (`loading="eager"`) | ⏳ |
 | 13.4 | No encontrado dentro del panel | Hoy no existe: un cliente, una orden o una cotización que ya no está (27 `notFound()` del panel) muestra la página del sitio público, con su menú y "Ver los servicios", y saca al personal del panel. Necesita la suya, dentro del panel | ⏳ |
@@ -1437,6 +1437,18 @@ Pedido del desarrollador: releer las reglas del principio de este documento y co
   - La fecha de Mantenimientos en el medio de la fila en la computadora: queda junto a las acciones, como el monto en Saldos pendientes, y las dos listas se leen igual.
   - Juntar `enLista` y `conDetalle` de `AvisarPorWhatsApp` en una sola opción: con un solo uso en lista, no vale la pena todavía.
 - **Verificación:** E2E completa (326 de 326) antes de estos cambios; después, `hu-24`, `hu-31` a `hu-35`, `hu-37` y `hu-38`.
+
+### 13.1 Estructura del panel, con cada rol (27/10/2026)
+- **Qué cambió desde 1.4** (reorganización del 24/10, C5 §0, PR #74): el menú en grupos (Inicio; Taller: Agenda y Órdenes; Clientes: Clientes, Consultas, Saldos pendientes, Mantenimientos y Reclamos; Sitio web; Administración: Catálogo y precios, Usuarios y Configuración), cada enlace con el ícono de su módulo, los títulos de grupo en Barlow itálica y líneas entre bloques. Un grupo sin módulos para quien entra no aparece, y uno con un solo módulo va sin título.
+- **Revisión con cada rol:** el dueño, un encargado (Agenda, Órdenes, Clientes, Consultas y Pagos) y un técnico, a 360, 390, 768 y 1280 px con pantalla táctil y el menú del celular abierto (usuarios temporales en la base local, borrados al terminar).
+- **Encontrado:**
+  - El técnico veía "Órdenes" en el menú y en su inicio, y "Mis órdenes" en la pantalla.
+  - El nombre del usuario, al pie del menú, se cortaba en un renglón ("Encargado de pr…"); el del dueño, "Yerko Tejerina Aparicio", también se cortaría.
+  - Bien y sin cambios: cada rol ve solo lo suyo, nada se sale y todos los enlaces miden 44 px o más; el módulo actual con el trazo rojo; la barra lateral desde 1024 px.
+- **Cambios** (propuesta aprobada el 27/10):
+  - `nombreEnMenu(modulo, rol)`: para el técnico, "Mis órdenes", en el menú y en el inicio (con prueba unitaria).
+  - El nombre del usuario en hasta dos renglones (`UsuarioSesion`, `line-clamp-2`).
+- **Verificación:** las capturas por rol antes y después; comparativa en `pulido-visual/13.1-menu-tecnico-celular.jpg`. E2E `hu-01` (el inicio y el menú del técnico dicen "Mis órdenes"), `hu-33`, `hu-34`, `hu-39` y `base`; unitaria de permisos.
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
