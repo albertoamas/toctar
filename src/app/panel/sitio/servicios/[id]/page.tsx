@@ -34,18 +34,20 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
   const [s, fotos, opciones] = await Promise.all([obtenerServicio(numero), fotosDeSecciones(numero), opcionesDelSitio(numero)]);
   if (!s) notFound();
   // Una sección sin contenido no sale en el sitio, y su foto tampoco: el panel lo avisa en su lugar
-  const sinContenido = {
-    proceso: s.pasos.length > 0 ? undefined : "No se ve hasta que agregues pasos.",
-    opciones: opciones.length > 0 ? undefined : "No se ve: el servicio no tiene opciones en el catálogo.",
-  };
+  const sinContenido = { proceso: s.pasos.length > 0 ? undefined : "No se ve hasta que agregues pasos." };
+  // Sin opciones en el catálogo, "Opciones" no sale en el sitio: ni su casilla ni su foto (pulido 13.2)
+  const conOpciones = opciones.length > 0;
+  const catalogo = puedeVerModulo(usuario, "catalogo");
 
   return (
     <>
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="font-heading text-3xl font-bold italic">{s.nombre}</h2>
-        {!s.visible && <span className="tt-insignia">Oculto</span>}
+        {!s.activo ? <span className="tt-insignia tt-insignia--aviso">Inactivo en el catálogo</span> : !s.visible && <span className="tt-insignia">Oculto</span>}
       </div>
-      {puedeVerModulo(usuario, "catalogo") && (
+      {/* Llegó por un enlace viejo: la lista del sitio ya no lo muestra */}
+      {!s.activo && <p className="text-tinta-suave">No sale en el sitio mientras esté inactivo en el catálogo.</p>}
+      {catalogo && (
         <p className="flex flex-wrap items-center gap-x-2 text-sm">
           <span className="text-tinta-suave">El nombre, las variantes y los precios están en el catálogo.</span>
           <Link href={`/panel/catalogo/${s.id}`} className="inline-flex min-h-11 items-center font-semibold underline">
@@ -64,10 +66,11 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
             visible: s.visible,
             opcionesEnEscalera: s.opcionesEnEscalera,
           }}
+          conOpciones={conOpciones}
         />
         <aside className="flex flex-col gap-10">
           <FotoServicio servicioId={s.id} nombre={s.nombre} foto={s.foto} />
-          <FotosServicio servicioId={s.id} fotos={fotos} sinContenido={sinContenido} />
+          <FotosServicio servicioId={s.id} fotos={fotos} sinContenido={sinContenido} ocultas={conOpciones ? [] : ["opciones"]} />
         </aside>
       </div>
     </>

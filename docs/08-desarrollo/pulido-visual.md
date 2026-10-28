@@ -249,7 +249,7 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 | # | Pantalla | Qué se revisa | Estado |
 |---|---|---|---|
 | 13.1 | Estructura del panel (1.4) | El menú en grupos y la barra lateral pulida el 24/10 (C5 §0): se registra y se revisa con el técnico y con un encargado | ✅ |
-| 13.2 | Servicios del sitio y su página (4.2 y 4.4) | Sin alta, nombre ni variantes desde la reorganización: que nada quede huérfano | ⏳ |
+| 13.2 | Servicios del sitio y su página (4.2 y 4.4) | Sin alta, nombre ni variantes desde la reorganización: que nada quede huérfano | ✅ |
 | 13.3 | Portada (2.1) | La foto del taller es el LCP del celular: que cargue sin diferir y con prioridad (`loading="eager"`) | ⏳ |
 | 13.4 | No encontrado dentro del panel | Hoy no existe: un cliente, una orden o una cotización que ya no está (27 `notFound()` del panel) muestra la página del sitio público, con su menú y "Ver los servicios", y saca al personal del panel. Necesita la suya, dentro del panel | ⏳ |
 | 13.5 | Error inesperado (sitio y panel) | Hoy no existe: sin `error.tsx` ni `global-error.tsx`, una falla del servidor muestra la página genérica de Next, sin marca ni forma de volver | ⏳ |
@@ -1449,6 +1449,19 @@ Pedido del desarrollador: releer las reglas del principio de este documento y co
   - `nombreEnMenu(modulo, rol)`: para el técnico, "Mis órdenes", en el menú y en el inicio (con prueba unitaria).
   - El nombre del usuario en hasta dos renglones (`UsuarioSesion`, `line-clamp-2`).
 - **Verificación:** las capturas por rol antes y después; comparativa en `pulido-visual/13.1-menu-tecnico-celular.jpg`. E2E `hu-01` (el inicio y el menú del técnico dicen "Mis órdenes"), `hu-33`, `hu-34`, `hu-39` y `base`; unitaria de permisos.
+
+### 13.2 Servicios del sitio y su página, después de la reorganización (27/10/2026)
+- **Revisado:** la lista (`/panel/sitio`) y la página de un servicio con opciones (el pulido) y de uno sin opciones (el mantenimiento del nano cerámico), a 360, 390, 768 y 1280 px. El módulo del sitio ya no tiene restos del alta, el nombre ni las variantes (viven en el catálogo desde el 24/10) y las direcciones viejas redirigen.
+- **Encontrado:**
+  - Un servicio sin opciones en el catálogo mostraba igual la sección "Opciones" con la casilla "Van de menor a mayor" (no hacía nada) y el lugar de su foto (no sale en el sitio).
+  - Un servicio inactivo en el catálogo sale de la lista, pero su página se abría y editaba desde un enlace viejo sin decir que no se publica.
+  - La lista empezaba con un párrafo de tres frases.
+- **Cambios** (propuesta aprobada el 27/10):
+  - Sin opciones: "Opciones" dice "Sin opciones en el catálogo: esta sección no sale en el sitio." y no ofrece la casilla (lo marcado se conserva por si después tiene opciones) ni el lugar de su foto.
+  - Inactivo: la insignia "Inactivo en el catálogo" y "No sale en el sitio mientras esté inactivo en el catálogo.", con "Abrir en el catálogo" para el dueño.
+  - La lista: "En este orden salen en el sitio." y, para el dueño, "Agregar un servicio en el catálogo" (`ENLACE_TEXTO`).
+- **Para el dueño:** el "Mantenimiento del nano cerámico" sale en el sitio como un servicio más; ahora es el mantenimiento que se agenda del cerámico (pedido 21). Si no lo quiere publicitar, se desmarca "Mostrar en el sitio".
+- **Verificación:** capturas a 360, 390, 768 y 1280 px (también de uno inactivo en la base local, reactivado después): nada se sale. Comparativa en `pulido-visual/13.2-servicio-sitio-celular.jpg`. E2E `hu-07`, `hu-09` y `hu-11` (sin opciones, ni casilla ni lugar de foto).
 
 <!-- Plantilla:
 ### X.Y Nombre (fecha)
