@@ -42,6 +42,8 @@ import { esFotoDeAntes, estaAbierta, etapaAbierta, puedeExtenderse, MAXIMO_FOTOS
 // docs/08-desarrollo/etapas/C4-taller-entrega.md.
 
 const RECARGA = "No se pudo leer el pedido. Recarga la página.";
+/** La firma es un PNG chico (un dibujo a mano): más que esto no es una firma del recuadro. */
+const BYTES_MAXIMOS_FIRMA = 1024 * 1024;
 const NO_ES_TUYA = "Esa orden no es tuya.";
 const ERROR_FOTO = "La foto debe ser JPG, PNG o WebP de hasta 5 MB.";
 
@@ -621,11 +623,40 @@ const SALDO_SIN_PERMISO = "Queda saldo pendiente: la entrega con saldo la autori
 export async function entregarVehiculo(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const usuario = await exigirModulo("ordenes");
   if (!puede(usuario, "entregar_vehiculo")) return { mensaje: "El vehículo lo entrega el dueño o el encargado." };
-  const r = esquemaEntregar.safeParse({ id: datos.get("id"), conSaldo: datos.get("conSaldo") ?? undefined });
-  if (!r.success) return { mensaje: RECARGA };
-  const { id, conSaldo } = r.data;
+  const firma = datos.get("firma");
+  const conFirma = firma instanceof File && firma.size > 0;
+  const valores = {
+    firmaNombre: String(datos.get("firmaNombre") ?? ""),
+    sinFirma: String(datos.get("sinFirma") ?? ""),
+    sinFirmaMotivo: String(datos.get("sinFirmaMotivo") ?? ""),
+  };
+  const r = esquemaEntregar.safeParse({
+    id: datos.get("id"),
+    conSaldo: datos.get("conSaldo") ?? undefined,
+    conFirma,
+    firmaNombre: valores.firmaNombre,
+    sinFirma: valores.sinFirma || undefined,
+    sinFirmaMotivo: valores.sinFirmaMotivo,
+  });
+  if (!r.success) {
+    const errores = erroresDe(r.error);
+    return errores.id || errores.conSaldo || errores.sinFirma ? { mensaje: RECARGA } : { errores, valores };
+  }
+  const { id, conSaldo, sinFirma } = r.data;
+  // Sin firma, ni el nombre: el motivo dice quién o por qué
+  const firmaNombre = sinFirma ? null : r.data.firmaNombre;
+  const sinFirmaMotivo = sinFirma ? r.data.sinFirmaMotivo : null;
   const autorId = Number(usuario.id);
   const hoy = fechaEnBolivia();
+
+  // La firma, antes de la transacción (se convierte y se sube); si la entrega no se completa, se borra
+  let firmaArchivoId: number | null = null;
+  if (!sinFirma && conFirma) {
+    if (firma.size > BYTES_MAXIMOS_FIRMA) return { errores: { firma: "No se pudo leer la firma. Bórrala y vuelve a firmar." }, valores };
+    const g = await guardarFoto(firma, { carpeta: "firmas", autorId, privado: true, ladoMayor: 1200 });
+    if (!g.ok) return { errores: { firma: "No se pudo leer la firma. Bórrala y vuelve a firmar." }, valores };
+    firmaArchivoId = g.archivoId;
+  }
 
   let resultado: { clienteId: number; saldo: string | null; conMantenimiento: boolean };
   try {
@@ -662,6 +693,9 @@ export async function entregarVehiculo(_previo: EstadoFormulario, datos: FormDat
           entregadoPor: autorId,
           entregaConSaldoAutorizadaPor: conDeuda ? autorId : null,
           saldoAlEntregar: saldo,
+          firmaArchivoId,
+          firmaNombre,
+          sinFirmaMotivo,
           // Si sale antes de la entrega aproximada, la agenda deja de mostrarlo esos días
           fechaFin: sql`least(${trabajo.fechaFin}, greatest(${trabajo.fechaInicio}, ${hoy}::date))`,
           updatedAt: sql`now()`,
@@ -678,12 +712,14 @@ export async function entregarVehiculo(_previo: EstadoFormulario, datos: FormDat
         entidad: "trabajo",
         entidadId: id,
         accion: "entregar",
-        datos: { saldo, conSaldo: conDeuda, mantenimientosHechos: planes.hechos, mantenimientosNuevos: planes.nuevos },
+        datos: { saldo, conSaldo: conDeuda, conFirma: firmaArchivoId !== null, sinFirmaMotivo, mantenimientosHechos: planes.hechos, mantenimientosNuevos: planes.nuevos },
       });
       return { clienteId: t.clienteId, saldo: conDeuda ? saldo : null, conMantenimiento: planes.hechos.length + planes.nuevos.length > 0 };
     });
   } catch (error) {
-    if (error instanceof Conflicto) return error.campo ? { errores: { [error.campo]: error.message } } : { mensaje: error.message };
+    // Sin la entrega, la firma no es de nadie: se borra
+    if (firmaArchivoId) await eliminarFoto(firmaArchivoId).catch((e) => console.error("No se pudo borrar la firma", e));
+    if (error instanceof Conflicto) return error.campo ? { errores: { [error.campo]: error.message }, valores } : { mensaje: error.message, valores };
     throw error;
   }
 

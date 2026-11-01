@@ -179,3 +179,24 @@ export async function partesDelChecklist(): Promise<{ id: number; nombre: string
     .where(eq(parteRevision.activo, true))
     .orderBy(asc(parteRevision.orden), asc(parteRevision.id));
 }
+
+export type FirmaEntrega = { nombre: string | null; motivo: string | null; imagen: UrlsFoto | null };
+
+/** La firma del cliente al entregar (pedido 13), con enlace firmado; null si no se entregó o si es de antes de la firma. */
+export async function firmaDeTrabajo(trabajoId: number): Promise<FirmaEntrega | null> {
+  const [f] = await db
+    .select({
+      nombre: trabajo.firmaNombre,
+      motivo: trabajo.sinFirmaMotivo,
+      clave: archivo.clave,
+      miniaturaClave: archivo.miniaturaClave,
+      ancho: archivo.ancho,
+      alto: archivo.alto,
+    })
+    .from(trabajo)
+    .leftJoin(archivo, eq(trabajo.firmaArchivoId, archivo.id))
+    .where(eq(trabajo.id, trabajoId));
+  if (!f || (!f.clave && !f.motivo)) return null;
+  const { clave, miniaturaClave, ancho, alto, ...datos } = f;
+  return { ...datos, imagen: clave ? await urlsFotoPrivada({ clave, miniaturaClave, ancho, alto }) : null };
+}

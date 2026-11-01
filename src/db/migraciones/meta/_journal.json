@@ -288,6 +288,13 @@
       "when": 1793571111596,
       "tag": "0040_checklist_parte_por_parte",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1793572688816,
+      "tag": "0041_firma_entrega",
+      "breakpoints": true
     }
   ]
 }
