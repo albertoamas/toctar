@@ -133,6 +133,47 @@ export async function crearClienteEnBase(datos: { nombre: string; telefono: stri
   }
 }
 
+/**
+ * Una cotización (pedido 23) del vehículo con esa placa, directo en la base y sin PDF: para las listas y los estados.
+ * El encabezado lleva el estado y su último movimiento hace `dias` días; la versión 1, el total. Devuelve su id.
+ */
+export async function crearCotizacionEnBase(datos: {
+  placa: string;
+  numero: string;
+  total?: number;
+  dias?: number;
+  estado?: "cotizado" | "confirmado" | "perdido";
+}): Promise<number> {
+  const estado = datos.estado ?? "cotizado";
+  const [{ id }] = await consultar<{ id: number }>(
+    `with q as (
+       insert into consulta (cliente_id, vehiculo_id, estado, motivo_perdida, ultimo_movimiento_at, created_by)
+       select v.cliente_id, v.id, $2, case when $2 = 'perdido' then 'precio' end, now() - make_interval(days => $3::int), v.created_by
+       from vehiculo v where v.placa = $1 returning id, created_by
+     )
+     insert into cotizacion (consulta_id, numero, version, es_estimado, subtotal, descuento, total, adelanto_sugerido, valida_hasta,
+       condiciones, garantia, formas_pago, estado, datos_documento, created_by)
+     select q.id, $4, 1, false, $5::numeric, 0, $5::numeric, 0, current_date + 15, 'c', 'g', 'f', case when $2 = 'confirmado' then 'aceptada' else 'enviada' end,
+       '{}'::jsonb, q.created_by from q returning consulta_id as id`,
+    [datos.placa, estado, datos.dias ?? 0, datos.numero, datos.total ?? 500],
+  );
+  return id;
+}
+
+/**
+ * Cotiza por la pantalla a un cliente registrado con un solo vehículo (así se genera su PDF): un servicio de una sola
+ * opción, con su precio sugerido. Devuelve el id de la cotización.
+ */
+export async function cotizarEnPantalla(page: Page, clienteId: number, servicio: string, modo: "En persona" | "Por fotos" = "En persona"): Promise<number> {
+  await page.goto(`/panel/cotizaciones/nueva?cliente=${clienteId}`, { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Agregar servicio" }).click();
+  await page.getByLabel("Servicio 1", { exact: true }).selectOption({ label: servicio });
+  await page.getByRole("radio", { name: new RegExp(`^${modo}`) }).check();
+  await page.getByRole("button", { name: "Crear cotización" }).click();
+  await expect(page).toHaveURL(/\/panel\/cotizaciones\/\d+\?creada=1$/);
+  return Number(new URL(page.url()).pathname.split("/").at(-1));
+}
+
 /** El modal "Nuevo servicio" de la lista del catálogo, abierto (el botón se habilita al cargar la página). */
 export async function abrirNuevoServicio(page: Page): Promise<Locator> {
   await page.goto("/panel/catalogo", { waitUntil: "networkidle" });

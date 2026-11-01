@@ -48,7 +48,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
   const r = await obtenerReserva(Number(id), conPagos);
   if (!r) notFound();
   const verFicha = puedeVerModulo(usuario, "clientes");
-  const verConsulta = puedeVerModulo(usuario, "consultas");
+  const verCotizacion = puedeVerModulo(usuario, "cotizaciones");
   const unDia = r.fechaInicio === r.fechaFin;
   const hoy = fechaEnBolivia();
   const cancelada = r.estado === "cancelado";
@@ -130,15 +130,16 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
               <span className="text-sm text-tinta-suave">por {r.agendadaPor}</span>
             </dd>
           </dl>
-          {/* Los enlaces, de 44 px y fuera de la lista: la ficha del cliente (con Clientes) y su consulta (con Consultas) */}
+          {/* Los enlaces, de 44 px y fuera de la lista: la ficha del cliente (con Clientes) y su cotización (con Cotizaciones) */}
           {verFicha && (
             <Link href={`/panel/clientes/${r.clienteId}`} className={ENLACE_TEXTO}>
               Ver ficha del cliente
             </Link>
           )}
-          {r.consultaId && verConsulta && (
-            <Link href={`/panel/consultas/${r.consultaId}`} className={ENLACE_TEXTO}>
-              {r.cotizacion ? `Ver la cotización ${r.cotizacion.numero}${r.cotizacion.version > 1 ? `, versión ${r.cotizacion.version}` : ""}` : "Ver la consulta"}
+          {r.consultaId && r.cotizacion && verCotizacion && (
+            <Link href={`/panel/cotizaciones/${r.consultaId}`} className={ENLACE_TEXTO}>
+              Ver la cotización {r.cotizacion.numero}
+              {r.cotizacion.version > 1 && `, versión ${r.cotizacion.version}`}
             </Link>
           )}
         </div>

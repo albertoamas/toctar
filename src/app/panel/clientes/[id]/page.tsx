@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Fragment, Suspense } from "react";
 import { cn } from "cn";
-import { CalendarIcon, InboxIcon } from "lucide-react";
+import { CalendarIcon, FileTextIcon } from "lucide-react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
@@ -12,7 +12,7 @@ import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { CabeceraSeccion, SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
-import { puedeVerModulo } from "@/lib/permisos";
+import { puede, puedeVerModulo } from "@/lib/permisos";
 import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp, whatsAppLocal } from "@/lib/whatsapp";
@@ -25,8 +25,8 @@ import { FormularioDatosCliente } from "@/modulos/clientes/componentes/formulari
 import { VehiculosCliente } from "@/modulos/clientes/componentes/vehiculos-cliente";
 import { obtenerCliente } from "@/modulos/clientes/consultas";
 import { obtenerParametros, tamanosActivos } from "@/modulos/configuracion/consultas";
-import { ListaConsultas } from "@/modulos/consultas/componentes/lista-consultas";
-import { consultasDelCliente } from "@/modulos/consultas/consultas";
+import { ListaCotizaciones } from "@/modulos/cotizaciones/componentes/lista-cotizaciones";
+import { cotizacionesDelCliente } from "@/modulos/cotizaciones/consultas";
 import { AgregarMantenimiento, MasPlan } from "@/modulos/mantenimientos/componentes/planes";
 import { mantenimientosDelCliente, serviciosConMantenimiento } from "@/modulos/mantenimientos/consultas";
 import { ESTADOS_RECORDATORIO_ABIERTO, NOMBRE_ESTADO_RECORDATORIO, textoCadaMeses } from "@/modulos/mantenimientos/reglas";
@@ -34,12 +34,12 @@ import { enlaceTrabajo, rutaTrabajo } from "@/modulos/ordenes/reglas";
 
 export const metadata: Metadata = { title: "Cliente" };
 
-// HU-23: ficha del cliente: datos, vehículos, WhatsApp y desactivar. HU-24: sus consultas y "Nueva consulta", si quien
-// entra tiene el módulo. HU-32: sus reservas, con el saldo de cada una para quien ve pagos; desde C4 son también sus
+// HU-23: ficha del cliente: datos, vehículos, WhatsApp y desactivar. Pedido 23: sus cotizaciones y "Nueva cotización",
+// si quien entra tiene el módulo. HU-32: sus reservas, con el saldo de cada una para quien ve pagos; desde C4 son también sus
 // órdenes, con su estado. HU-38: sus mantenimientos programados, para quien tiene "Mantenimientos". Pedido 21: sus planes
 // (cada cuántos meses), agregar uno hecho antes del sistema y, en el menú "Más" de cada uno, editarlo o terminarlo.
 // Pulido 8.3 (skill pantallas-panel): una ficha en lectura. Arriba, quién es, lo que debe y cómo escribirle (desactivar,
-// en "Más"); vehículos y datos lado a lado, cada uno editado en un modal; después reservas, consultas y mantenimientos.
+// en "Más"); vehículos y datos lado a lado, cada uno editado en un modal; después reservas, cotizaciones y mantenimientos.
 export default function PaginaCliente({ params, searchParams }: PageProps<"/panel/clientes/[id]">) {
   return (
     <section className="flex flex-col gap-6">
@@ -56,16 +56,18 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
   const [{ id }, { creado }] = await Promise.all([params, searchParams]);
   const numero = Number(id);
   if (!Number.isInteger(numero) || numero <= 0) notFound();
-  const verConsultas = puedeVerModulo(usuario, "consultas");
+  const verCotizaciones = puedeVerModulo(usuario, "cotizaciones");
+  // Con "Cotizaciones" se cotiza (pedido 24): la acción es aparte por si algún día no van juntas
+  const cotiza = puede(usuario, "cotizar");
   const verAgenda = puedeVerModulo(usuario, "agenda");
   const verPagos = puedeVerModulo(usuario, "pagos");
   const verMantenimientos = puedeVerModulo(usuario, "mantenimientos");
   // Una reserva ya recibida se abre en su orden, si quien mira ve órdenes
   const verOrdenes = puedeVerModulo(usuario, "ordenes");
-  const [c, tamanos, consultas, parametros, reservas, mantenimientos, conMantenimiento] = await Promise.all([
+  const [c, tamanos, cotizaciones, parametros, reservas, mantenimientos, conMantenimiento] = await Promise.all([
     obtenerCliente(numero),
     tamanosActivos(),
-    verConsultas ? consultasDelCliente(numero) : [],
+    verCotizaciones ? cotizacionesDelCliente(numero) : [],
     obtenerParametros(),
     // Con Pagos también sin Agenda: de ahí sale lo que debe (la lista de reservas es de Agenda)
     verAgenda || verPagos ? reservasDelCliente(numero, verPagos) : [],
@@ -154,7 +156,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
         <section aria-labelledby="reservas-titulo" className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <h2 id="reservas-titulo" className="font-heading text-2xl font-bold italic">Reservas</h2>
-            {/* La reserva directa lleva precios: la arma quien ve pagos (las demás salen de una consulta) */}
+            {/* La reserva directa lleva precios: la arma quien ve pagos (las demás salen de una cotización) */}
             {c.activo && verPagos && (
               <Link href={`/panel/agenda/nueva?cliente=${c.id}`} className={cn(buttonVariants({ variant: "outline" }))}>
                 <CalendarIcon />
@@ -181,19 +183,23 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
         </section>
       )}
 
-      {verConsultas && (
-        <section aria-labelledby="consultas-titulo" className="flex flex-col gap-4">
+      {verCotizaciones && (
+        <section aria-labelledby="cotizaciones-titulo" className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <h2 id="consultas-titulo" className="font-heading text-2xl font-bold italic">Consultas</h2>
-            {/* Un cliente desactivado no consulta: se reactiva primero */}
-            {c.activo && (
-              <Link href={`/panel/consultas/nueva?cliente=${c.id}`} className={cn(buttonVariants({ variant: "outline" }))}>
-                <InboxIcon />
-                Nueva consulta
+            <h2 id="cotizaciones-titulo" className="font-heading text-2xl font-bold italic">Cotizaciones</h2>
+            {/* A un cliente desactivado no se le cotiza: se reactiva primero */}
+            {c.activo && cotiza && (
+              <Link href={`/panel/cotizaciones/nueva?cliente=${c.id}`} className={cn(buttonVariants({ variant: "outline" }))}>
+                <FileTextIcon />
+                Nueva cotización
               </Link>
             )}
           </div>
-          {consultas.length > 0 ? <ListaConsultas consultas={consultas} umbral={parametros.dias_consulta_fria} sinCliente /> : <p className="text-tinta-suave">Todavía no tiene consultas.</p>}
+          {cotizaciones.length > 0 ? (
+            <ListaCotizaciones cotizaciones={cotizaciones} umbral={parametros.dias_cotizacion_sin_respuesta} sinCliente />
+          ) : (
+            <p className="text-tinta-suave">Todavía no tiene cotizaciones.</p>
+          )}
         </section>
       )}
 

@@ -6,6 +6,9 @@ import { archivo } from "./configuracion";
 import { servicio } from "./sitio";
 
 // Consultas (C2, HU-24 y HU-28) y auditoría (RNF-10). Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md §4.
+// Pedido 23 (P23-cotizacion-directa.md §4, D-12): la consulta es el encabezado de una cotización, que agrupa sus
+// versiones y lleva su estado (cotizado = pendiente, confirmado = aceptada, perdido = rechazada). En la interfaz ya no
+// existe la consulta: "consulto", el canal, la nota y los archivos quedan solo en lo registrado antes.
 
 const momento = (nombre: string) => timestamp(nombre, { withTimezone: true });
 
@@ -31,7 +34,8 @@ export const consulta = pgTable(
       .references(() => vehiculo.id),
     /** Vacío: el cliente todavía no sabe qué servicio quiere. */
     servicioId: integer("servicio_id").references(() => servicio.id),
-    canal: text("canal").$type<Canal>().notNull(),
+    /** Solo en las consultas de antes del pedido 23. */
+    canal: text("canal").$type<Canal>(),
     estado: text("estado").$type<EstadoConsulta>().default("consulto").notNull(),
     motivoPerdida: text("motivo_perdida").$type<MotivoPerdida>(),
     detallePerdida: text("detalle_perdida"),

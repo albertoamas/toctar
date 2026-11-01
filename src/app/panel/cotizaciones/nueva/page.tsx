@@ -1,32 +1,34 @@
 import type { Metadata } from "next";
-import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ArrowLeftRightIcon, SearchIcon } from "lucide-react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
 import { buttonVariants } from "@/componentes/ui/button";
-import { exigirModulo } from "@/lib/sesion";
+import { fechaEnBolivia } from "@/lib/fechas";
+import { exigirAccion } from "@/lib/sesion";
 import { formatearWhatsApp } from "@/lib/whatsapp";
 import { ElegirCliente } from "@/modulos/clientes/componentes/elegir-cliente";
 import { obtenerCliente } from "@/modulos/clientes/consultas";
+import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { tamanosActivos } from "@/modulos/configuracion/consultas";
-import { FormularioConsulta, type ClienteElegido } from "@/modulos/consultas/componentes/formulario-consulta";
-import { opcionesServicio } from "@/modulos/sitio/consultas";
+import { FormularioNuevaCotizacion, type ClienteElegido } from "@/modulos/cotizaciones/componentes/formulario-nueva-cotizacion";
+import { inicioCotizacion, opcionesPorTamano } from "@/modulos/cotizaciones/consultas";
 
-export const metadata: Metadata = { title: "Nueva consulta" };
+export const metadata: Metadata = { title: "Nueva cotización" };
 
-// HU-24: nueva consulta. Primero el cliente: se busca (el buscador de Clientes, HU-22) y se elige, o se registra ahí
-// mismo con "Cliente nuevo". La elección va en la dirección (?cliente=, ?nuevo=1): la ficha del cliente enlaza acá con
-// el cliente ya elegido, y Atrás vuelve a la búsqueda. Pulido 9.2: el cliente elegido en un recuadro de lectura con
-// "Cambiar" en su cabecera (como "Editar" en las fichas) y "Registrar consulta" fijo abajo en el celular.
-export default function PaginaNuevaConsulta({ searchParams }: PageProps<"/panel/consultas/nueva">) {
+// Pedido 23: nueva cotización, sin consulta antes. Primero el cliente: se busca (el buscador de Clientes, HU-22) y se
+// elige, o se registra ahí mismo con "Cliente nuevo". La elección va en la dirección (?cliente=, ?nuevo=1): la ficha del
+// cliente enlaza acá con el cliente ya elegido, y Atrás vuelve a la búsqueda. Después, en un formulario, el vehículo,
+// los servicios con su precio y cómo se cotizó. Cotiza el dueño o el encargado con "Cotizaciones" (pedido 24).
+export default function PaginaNuevaCotizacion({ searchParams }: PageProps<"/panel/cotizaciones/nueva">) {
   return (
-    <section className="flex max-w-2xl flex-col gap-6">
-      <EnlaceVolver href="/panel/consultas">Consultas</EnlaceVolver>
-      <EncabezadoPagina titulo="Nueva consulta" />
+    <section className="flex max-w-3xl flex-col gap-6">
+      <EnlaceVolver href="/panel/cotizaciones">Cotizaciones</EnlaceVolver>
+      <EncabezadoPagina titulo="Nueva cotización" />
       <Suspense fallback={<Cargando />}>
         <Contenido searchParams={searchParams} />
       </Suspense>
@@ -37,14 +39,14 @@ export default function PaginaNuevaConsulta({ searchParams }: PageProps<"/panel/
 /** "Cambiar" o "Buscar un cliente registrado": vuelve a elegir. Enlace sin borde, como "Editar" en las fichas. */
 function VolverAElegir({ children }: { children: React.ReactNode }) {
   return (
-    <Link href="/panel/consultas/nueva" className={buttonVariants({ variant: "ghost" })}>
+    <Link href="/panel/cotizaciones/nueva" className={buttonVariants({ variant: "ghost" })}>
       {children}
     </Link>
   );
 }
 
-async function Contenido({ searchParams }: Pick<PageProps<"/panel/consultas/nueva">, "searchParams">) {
-  await exigirModulo("consultas");
+async function Contenido({ searchParams }: Pick<PageProps<"/panel/cotizaciones/nueva">, "searchParams">) {
+  await exigirAccion("cotizar");
   const parametros = await searchParams;
   const texto = (clave: string) => (typeof parametros[clave] === "string" ? (parametros[clave] as string) : "");
   const clienteId = Number(texto("cliente"));
@@ -57,7 +59,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/consultas/nuev
         nombre: c.nombre,
         vehiculos: c.vehiculos
           .filter((v) => v.activo)
-          .map((v) => ({ id: v.id, placa: v.placa, tamano: v.tamano, detalle: detalleVehiculo(v) })),
+          .map((v) => ({ id: v.id, placa: v.placa, tamanoId: v.tamanoId, tamano: v.tamano, detalle: detalleVehiculo(v) })),
       };
       return (
         <>
@@ -93,10 +95,16 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/consultas/nuev
     );
   }
 
-  return <ElegirCliente q={texto("q")} hrefCliente={(id) => `/panel/consultas/nueva?cliente=${id}`} hrefNuevo="/panel/consultas/nueva?nuevo=1" />;
+  return <ElegirCliente q={texto("q")} hrefCliente={(id) => `/panel/cotizaciones/nueva?cliente=${id}`} hrefNuevo="/panel/cotizaciones/nueva?nuevo=1" />;
 }
 
 async function Formulario({ cliente }: { cliente: ClienteElegido | null }) {
-  const [tamanos, servicios] = await Promise.all([tamanosActivos(), opcionesServicio()]);
-  return <FormularioConsulta cliente={cliente} tamanos={tamanos} servicios={servicios} />;
+  const tamanos = await tamanosActivos();
+  // Los precios de cada tamaño activo y de los de sus vehículos (un tamaño desactivado sigue valiendo para un auto que ya lo tiene)
+  const [opciones, inicio] = await Promise.all([opcionesPorTamano([...tamanos.map((t) => t.id), ...(cliente?.vehiculos.map((v) => v.tamanoId) ?? [])]), inicioCotizacion()]);
+  if (Object.values(opciones).every((o) => o.length === 0)) {
+    // El catálogo es del dueño: el encargado no tiene a dónde ir, así que no se enlaza
+    return <EstadoVacio>No hay servicios activos para cotizar: se activan en Catálogo y precios.</EstadoVacio>;
+  }
+  return <FormularioNuevaCotizacion cliente={cliente} tamanos={tamanos} opciones={opciones} inicio={inicio} hoy={fechaEnBolivia()} />;
 }

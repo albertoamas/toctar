@@ -36,6 +36,11 @@ const nextConfig: NextConfig = {
       // "Agregar servicio" es un modal en la lista del catálogo desde el pulido 7.2: las direcciones viejas llevan ahí
       { source: "/panel/sitio/servicios/nuevo", destination: "/panel/catalogo", permanent: true },
       { source: "/panel/catalogo/nuevo", destination: "/panel/catalogo", permanent: true },
+      // Pedido 23: la consulta ya no existe; la cotización conserva su id (es el mismo encabezado, D-12)
+      { source: "/panel/consultas", destination: "/panel/cotizaciones", permanent: true },
+      { source: "/panel/consultas/nueva", destination: "/panel/cotizaciones/nueva", permanent: true },
+      { source: "/panel/consultas/:id(\\d+)/cotizar", destination: "/panel/cotizaciones/:id", permanent: true },
+      { source: "/panel/consultas/:id(\\d+)", destination: "/panel/cotizaciones/:id", permanent: true },
     ];
   },
   async headers() {

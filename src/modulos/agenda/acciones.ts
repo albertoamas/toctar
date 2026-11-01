@@ -24,7 +24,7 @@ import { entradaReserva, esquemaAdelanto, esquemaCancelar, esquemaConsultaEspaci
 // rechaza un cruce aunque dos personas reserven a la vez (D-5). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md.
 
 const ESPACIO_OCUPADO = "Ese espacio se ocupó recién: elige otro.";
-const COTIZACION_CAMBIO = "Esa cotización ya fue agendada o se corrigió. Vuelve a la consulta.";
+const COTIZACION_CAMBIO = "Esa cotización ya fue agendada o tiene una versión nueva. Vuelve a la cotización.";
 
 /** Algo cambió entre la revisión y la escritura: se lanza dentro de la transacción para deshacerla entera. */
 class Conflicto extends Error {}
@@ -228,8 +228,8 @@ function despuesDeCambiar(id: number, clienteId: number, consultaId: number | nu
   revalidatePath(`/panel/agenda/${id}`);
   revalidatePath(`/panel/clientes/${clienteId}`);
   if (consultaId) {
-    revalidatePath("/panel/consultas");
-    revalidatePath(`/panel/consultas/${consultaId}`);
+    revalidatePath("/panel/cotizaciones");
+    revalidatePath(`/panel/cotizaciones/${consultaId}`);
   }
 }
 

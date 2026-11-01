@@ -1,13 +1,16 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PNG } from "./apoyo";
+import { consultar, crearClienteEnBase, crearCotizacionEnBase, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
 
-// HU-25 Armar la cotización (flujo crítico 1). Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md §9.
-// Cada proyecto (celular o escritorio) crea su propio servicio con precios y su consulta, directo en la base.
+// Cotización directa (pedido 23, flujo crítico 1; antes HU-24 y HU-25). Especificación:
+// docs/08-desarrollo/etapas/P23-cotizacion-directa.md §9. Cada proyecto (celular o escritorio) crea su propio servicio
+// con precios y sus clientes, directo en la base.
 // En serie: las del dueño entran todas con el mismo usuario y, a la vez, chocaban con el límite de intentos (RNF-04).
 test.describe.configure({ mode: "serial" });
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "C" : "E");
-const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 3 : 4}2500${n}0`;
+/** Local, 8 dígitos (lo que se escribe en el campo). */
+const local = (info: TestInfo, n: number) => `7${info.project.name === "celular" ? 3 : 4}2500${n}0`;
+const telefono = (info: TestInfo, n: number) => `591${local(info, n)}`;
 
 /**
  * Un servicio con dos variantes: "Con precio" (450 Bs para el primer tamaño, el del vehículo de crearClienteEnBase) y
@@ -31,17 +34,6 @@ async function crearServicioConPrecios(info: TestInfo): Promise<string> {
   return nombre;
 }
 
-async function crearConsulta(info: TestInfo, n: number, canal: "whatsapp" | "taller" = "whatsapp"): Promise<number> {
-  const s = sufijo(info);
-  await crearClienteEnBase({ nombre: `Cotizado ${n} ${s}`, telefono: telefono(info, n), placa: `CZ25${s}${n}` });
-  const [fila] = await consultar<{ id: number }>(
-    `insert into consulta (cliente_id, vehiculo_id, canal, created_by)
-     select v.cliente_id, v.id, $2, v.created_by from vehiculo v where v.placa = $1 returning id`,
-    [`CZ25${s}${n}`, canal],
-  );
-  return fila.id;
-}
-
 const servicio = (page: Page, i: number) => page.getByLabel(`Servicio ${i}`, { exact: true });
 const opcion = (page: Page, i: number) => page.getByLabel(`Opción del servicio ${i}`);
 /** Elige el servicio y su opción en sus dos menús (pulido 9.4). */
@@ -50,63 +42,77 @@ async function elegir(page: Page, i: number, nombre: string, variante: string) {
   await opcion(page, i).selectOption({ label: variante });
 }
 const precio = (page: Page, i: number) => page.getByLabel(`Precio del servicio ${i}`);
+const crear = (page: Page) => page.getByRole("button", { name: "Crear cotización" }).click();
+const idDeLaPagina = (page: Page) => Number(new URL(page.url()).pathname.split("/")[3]);
 
-test("el dueño cotiza con el precio del tamaño; según evaluación obliga a escribirlo; descuento y total", async ({ page }, info) => {
+test("cliente nuevo en una sola pantalla: su vehículo, los servicios con el precio del tamaño y por fotos", async ({ page }, info) => {
+  const s = sufijo(info);
   const nombre = await crearServicioConPrecios(info);
-  const id = await crearConsulta(info, 1);
   await ingresarComoDueno(page);
-  await page.goto(`/panel/consultas/${id}`);
-  await expect(page.getByText("Todavía no se cotizó.")).toBeVisible();
-  await page.getByRole("link", { name: "Cotizar" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/consultas/${id}/cotizar$`));
+  await page.goto("/panel/cotizaciones");
+  await page.getByRole("link", { name: "Nueva cotización" }).click();
+  await page.getByRole("link", { name: "Cliente nuevo" }).click();
+  await expect(page.getByRole("heading", { name: "Cliente nuevo" })).toBeVisible();
+  // Sin el tamaño del vehículo no hay precio sugerido: los servicios esperan
+  await expect(page.getByText("Elige el vehículo (o su tamaño) para ver los servicios con su precio.")).toBeVisible();
 
-  // Llegó por WhatsApp: es un estimado (RN-03), y el adelanto y la validez vienen de Configuración
-  await expect(page.getByRole("checkbox", { name: "Estimado según fotos o video" })).toBeChecked();
-  await expect(page.getByLabel("Adelanto sugerido")).not.toHaveValue("");
-  await expect(page.getByLabel("Válida hasta")).not.toHaveValue("");
+  // Vacío: los errores del cliente, el vehículo y la cotización juntos; el foco, al primero
+  await crear(page);
+  await expect(page.getByText("Escribe el nombre.")).toBeVisible();
+  await expect(page.getByText("Escribe la placa.")).toBeVisible();
+  await expect(page.getByText("Elige cómo se cotizó.")).toBeVisible();
+  await expect(page.getByText("Agrega al menos un servicio.")).toBeVisible();
+  await expect(page.getByLabel("Nombre", { exact: true })).toBeFocused();
 
+  await page.getByLabel("Nombre", { exact: true }).fill(`Nuevo cotizado ${s}`);
+  await page.getByRole("textbox", { name: "WhatsApp" }).fill(local(info, 1));
+  await page.getByLabel("Placa", { exact: true }).fill(`CN25${s}1`);
+  await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
+  // Con el tamaño, los servicios con su precio sugerido
   await page.getByRole("button", { name: "Agregar servicio" }).click();
   await elegir(page, 1, nombre, "Con precio");
   await expect(precio(page, 1)).toHaveValue("450");
   await expect(page.getByText("Precio sugerido: 450 Bs")).toBeVisible();
+  // Otro tamaño, otro precio sugerido: este no tiene, y vuelve al cambiar de nuevo
+  await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 2 });
+  await expect(precio(page, 1)).toHaveValue("");
+  await expect(page.getByText("Sin precio en el catálogo para este tamaño: escribe el precio")).toBeVisible();
+  await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
+  await expect(precio(page, 1)).toHaveValue("450");
 
   await page.getByRole("button", { name: "Agregar servicio" }).click();
   await elegir(page, 2, nombre, "Por evaluar");
-  await expect(precio(page, 2)).toHaveValue("");
   await expect(page.getByText("Según evaluación: escribe el precio")).toBeVisible();
-
-  await page.getByLabel("Descuento").fill("50");
-  await page.getByLabel("Adelanto sugerido").fill("100");
-  await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
-  await expect(page.getByText("Escribe el precio.")).toBeVisible();
-  await expect(precio(page, 2)).toBeFocused();
-  // Lo elegido se conserva tras el error
-  await expect(precio(page, 1)).toHaveValue("450");
-  await expect(page.getByLabel("Descuento")).toHaveValue("50");
-
   await precio(page, 2).fill("200,50");
+  await page.getByLabel("Descuento").fill("50");
+  await page.getByRole("radio", { name: /^Por fotos/ }).check();
   const totales = page.locator("dl").filter({ hasText: "Subtotal" });
   await expect(totales).toContainText("650,50 Bs");
   await expect(totales).toContainText("600,50 Bs");
+  await crear(page);
 
-  await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/consultas/${id}\\?cotizada=\\d+$`));
-  const [{ numero }] = await consultar<{ numero: string }>("select numero from cotizacion where consulta_id = $1", [id]);
-  expect(numero).toMatch(/^\d{4}-\d{4}$/);
-  await expect(page.getByText(`Cotización ${numero} lista.`)).toBeVisible();
-  await expect(page.getByRole("main").getByText("Cotizado", { exact: true })).toBeVisible();
-  const lista = page.getByRole("list", { name: "Cotizaciones" });
-  await expect(lista).toContainText(numero);
-  await expect(lista).toContainText("600,50 Bs");
-  await expect(lista).toContainText("Estimado por fotos");
+  await expect(page).toHaveURL(/\/panel\/cotizaciones\/\d+\?creada=1$/);
+  const id = idDeLaPagina(page);
+  const [c] = await consultar<{ numero: string; es_estimado: boolean; canal: string | null; estado: string; cliente: string; placa: string }>(
+    `select k.numero, k.es_estimado, q.canal, q.estado, cl.nombre as cliente, v.placa
+     from consulta q join cotizacion k on k.consulta_id = q.id join cliente cl on cl.id = q.cliente_id join vehiculo v on v.id = q.vehiculo_id where q.id = $1`,
+    [id],
+  );
+  expect(c).toEqual({ numero: expect.stringMatching(/^\d{4}-\d{4}$/), es_estimado: true, canal: null, estado: "cotizado", cliente: `Nuevo cotizado ${s}`, placa: `CN25${s}1` });
+  await expect(page.getByText(/^Cotización creada\./)).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: `Cotización ${c.numero}` })).toBeVisible();
+  await expect(page.getByRole("main").getByText("Pendiente", { exact: true })).toBeVisible();
+  const versiones = page.getByRole("list", { name: "Versiones" });
+  await expect(versiones).toContainText("600,50 Bs");
+  await expect(versiones).toContainText("Por fotos (estimado)");
+  await expect(versiones.getByRole("link", { name: "Ver PDF" })).toBeVisible();
 
-  // Se guardaron los precios copiados y el sugerido de cada línea (D-4), y la auditoría (RNF-10)
+  // Los precios copiados y el sugerido de cada línea (D-4), y la auditoría (RNF-10)
   const lineas = await consultar<{ descripcion: string; precio_sugerido: string | null; precio: string }>(
     "select l.descripcion, l.precio_sugerido, l.precio from cotizacion_linea l join cotizacion c on c.id = l.cotizacion_id where c.consulta_id = $1 order by l.orden",
     [id],
   );
   expect(lineas).toEqual([
-    // La opción entre paréntesis, sin guion largo (pulido 9.4)
     { descripcion: `${nombre} (Con precio)`, precio_sugerido: "450.00", precio: "450.00" },
     { descripcion: `${nombre} (Por evaluar)`, precio_sugerido: null, precio: "200.50" },
   ]);
@@ -115,180 +121,179 @@ test("el dueño cotiza con el precio del tamaño; según evaluación obliga a es
     [id],
   );
   expect(registro.accion).toBe("crear");
+
+  // El cliente quedó registrado, con su vehículo y la cotización en su ficha
+  await page.getByRole("link", { name: "Ver ficha del cliente" }).click();
+  await expect(page.getByRole("list", { name: "Vehículos", exact: true })).toContainText(`CN25${s}1`);
+  await expect(page.getByRole("list", { name: "Cotizaciones" })).toContainText("600,50 Bs");
 });
 
-test("corregir crea la versión 2 con el mismo número; la 1 queda reemplazada y sin cambios", async ({ page }, info) => {
-  const nombre = `Cotizable ${sufijo(info)}`;
-  const id = await crearConsulta(info, 2, "taller");
+test("un WhatsApp repetido avisa y ofrece cotizarle a ese cliente; lo escrito se conserva", async ({ page }, info) => {
+  const s = sufijo(info);
+  const nombre = `Cotizable ${s}`;
+  const existente = await crearClienteEnBase({ nombre: `Ya registrado ${s}`, telefono: telefono(info, 2) });
   await ingresarComoDueno(page);
-  await page.goto(`/panel/consultas/${id}/cotizar`);
-  // En el taller no es un estimado
-  await expect(page.getByRole("checkbox", { name: "Estimado según fotos o video" })).not.toBeChecked();
+  await page.goto("/panel/cotizaciones/nueva?nuevo=1", { waitUntil: "networkidle" });
+  await page.getByLabel("Nombre", { exact: true }).fill(`Repetido ${s}`);
+  await page.getByRole("textbox", { name: "WhatsApp" }).fill(local(info, 2));
+  await page.getByLabel("Placa", { exact: true }).fill(`CR25${s}1`);
+  await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
   await page.getByRole("button", { name: "Agregar servicio" }).click();
   await elegir(page, 1, nombre, "Con precio");
-  await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
-  await expect(page).toHaveURL(/\?cotizada=\d+$/);
-
-  await page.getByRole("link", { name: "Corregir (nueva versión)" }).click();
-  await expect(page).toHaveURL(/\/cotizar\?desde=\d+$/);
-  await expect(page.getByText("Se guarda como versión 2.")).toBeVisible();
-  // Arranca con lo de la versión 1
+  await page.getByRole("radio", { name: "En persona" }).check();
+  await crear(page);
+  await expect(page.getByText(`Ese número ya es de Ya registrado ${s}.`)).toBeVisible();
+  await expect(page.getByRole("link", { name: `Usar a Ya registrado ${s}` })).toHaveAttribute("href", `/panel/cotizaciones/nueva?cliente=${existente}`);
+  // Lo escrito se conserva tras el error: el tamaño, los servicios y cómo se cotizó
+  await expect(page.getByLabel("Tamaño", { exact: true })).not.toHaveValue("");
   await expect(precio(page, 1)).toHaveValue("450");
-  await precio(page, 1).fill("400");
-  await page.getByRole("button", { name: "Guardar versión 2 y generar PDF" }).click();
-  await expect(page).toHaveURL(/\?cotizada=\d+$/);
+  await expect(page.getByRole("radio", { name: "En persona" })).toBeChecked();
+  expect(await consultar("select 1 from vehiculo where placa = $1", [`CR25${s}1`])).toEqual([]);
+});
 
-  const versiones = await consultar<{ numero: string; version: number; estado: string; total: string }>(
-    "select numero, version, estado, total from cotizacion where consulta_id = $1 order by version",
+test("desde la ficha del cliente: llega elegido, con su vehículo marcado, y la cotización queda en su ficha", async ({ page }, info) => {
+  const s = sufijo(info);
+  const nombre = `Cotizable ${s}`;
+  const id = await crearClienteEnBase({ nombre: `Desde ficha ${s}`, telefono: telefono(info, 3), placa: `CF25${s}1` });
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/clientes/${id}`);
+  await expect(page.getByText("Todavía no tiene cotizaciones.")).toBeVisible();
+  await page.getByRole("link", { name: "Nueva cotización" }).click();
+  await expect(page).toHaveURL(new RegExp(`/panel/cotizaciones/nueva\\?cliente=${id}$`));
+  await expect(page.getByRole("region", { name: "Cliente" })).toContainText(`Desde ficha ${s}`);
+  await expect(page.getByRole("radio", { name: new RegExp(`CF25${s}1`) })).toBeChecked();
+  // Con el vehículo elegido, los servicios ya muestran su precio
+  await page.getByRole("button", { name: "Agregar servicio" }).click();
+  await elegir(page, 1, nombre, "Con precio");
+  await expect(precio(page, 1)).toHaveValue("450");
+  await page.getByRole("radio", { name: "En persona" }).check();
+  await crear(page);
+  await expect(page).toHaveURL(/\/panel\/cotizaciones\/\d+\?creada=1$/);
+  await expect(page.getByRole("list", { name: "Versiones" })).toContainText("En persona");
+
+  await page.goto(`/panel/clientes/${id}`);
+  await expect(page.getByRole("list", { name: "Cotizaciones" }).getByRole("link", { name: new RegExp(`CF25${s}1`) })).toBeVisible();
+});
+
+test("nueva versión: el mismo número, la anterior queda reemplazada y una vieja lleva a la vigente", async ({ page }, info) => {
+  const s = sufijo(info);
+  const nombre = `Cotizable ${s}`;
+  const cliente = await crearClienteEnBase({ nombre: `Con versiones ${s}`, telefono: telefono(info, 4), placa: `CV25${s}1` });
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/cotizaciones/nueva?cliente=${cliente}`, { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Agregar servicio" }).click();
+  await elegir(page, 1, nombre, "Con precio");
+  await page.getByRole("radio", { name: /^Por fotos/ }).check();
+  await crear(page);
+  await expect(page).toHaveURL(/\?creada=1$/);
+  const id = idDeLaPagina(page);
+
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Nueva versión" }).click();
+  await expect(page).toHaveURL(new RegExp(`/panel/cotizaciones/${id}/nueva-version\\?desde=\\d+$`));
+  await expect(page.getByRole("heading", { level: 1, name: "Versión 2" })).toBeVisible();
+  // Arranca con lo de la versión 1, también cómo se cotizó
+  await expect(precio(page, 1)).toHaveValue("450");
+  await expect(page.getByRole("radio", { name: /^Por fotos/ })).toBeChecked();
+  await precio(page, 1).fill("400");
+  await page.getByRole("radio", { name: "En persona" }).check();
+  await page.getByRole("button", { name: "Guardar versión 2" }).click();
+  await expect(page).toHaveURL(new RegExp(`/panel/cotizaciones/${id}\\?version=\\d+$`));
+  await expect(page.getByText(/^Versión 2 guardada\./)).toBeVisible();
+
+  const versiones = await consultar<{ id: number; numero: string; version: number; estado: string; total: string; es_estimado: boolean }>(
+    "select id, numero, version, estado, total, es_estimado from cotizacion where consulta_id = $1 order by version",
     [id],
   );
-  expect(versiones.map((v) => [v.version, v.estado, v.total])).toEqual([
-    [1, "reemplazada", "450.00"],
-    [2, "enviada", "400.00"],
+  expect(versiones.map((v) => [v.version, v.estado, v.total, v.es_estimado])).toEqual([
+    [1, "reemplazada", "450.00", true],
+    [2, "enviada", "400.00", false],
   ]);
   expect(versiones[0].numero).toBe(versiones[1].numero);
-  await expect(page.getByText(`Versión 2 de la cotización ${versiones[0].numero} lista.`)).toBeVisible();
-  await expect(page.getByRole("list", { name: "Cotizaciones" }).getByRole("listitem")).toHaveCount(2);
+  const lista = page.getByRole("list", { name: "Versiones" });
+  await expect(lista.getByRole("listitem")).toHaveCount(2);
+  await expect(lista.getByRole("listitem").first()).toContainText("Vigente");
 
-  // Ir a cotizar de nuevo lleva a corregir la vigente; la reemplazada ya no se corrige
-  const [{ id: primera }] = await consultar<{ id: number }>("select id from cotizacion where consulta_id = $1 and version = 1", [id]);
-  await page.goto(`/panel/consultas/${id}/cotizar?desde=${primera}`);
-  await expect(page.getByText("Esa versión ya fue corregida.")).toBeVisible();
-  await page.goto(`/panel/consultas/${id}/cotizar`);
-  await expect(page.getByText("Se guarda como versión 3.")).toBeVisible();
-  // Un `desde` que no es de esta consulta lleva a corregir la vigente
-  await page.goto(`/panel/consultas/${id}/cotizar?desde=999999`);
-  await expect(page).toHaveURL(/\/cotizar\?desde=\d+$/);
-  await expect(page).not.toHaveURL(/desde=999999/);
-  await expect(page.getByText("Se guarda como versión 3.")).toBeVisible();
-
-  // Perdida y reabierta, vuelve a "Cotizado": ya tiene cotización
-  await page.goto(`/panel/consultas/${id}`, { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: "Más" }).click();
-  await page.getByRole("menuitem", { name: "Marcar como perdida" }).click();
-  await page.getByRole("radio", { name: "Precio" }).check();
-  await page.getByRole("form", { name: "Marcar como perdida" }).getByRole("button", { name: "Marcar como perdida" }).click();
-  await expect(page.getByText("Marcada como perdida.")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Corregir (nueva versión)" })).toHaveCount(0);
-  await page.getByRole("button", { name: "Reabrir" }).click();
-  await expect(page.getByRole("main").getByText("Cotizado", { exact: true })).toBeVisible();
+  // Una versión vieja ya no se reemplaza; sin `desde` o con uno de otra cotización, a la vigente
+  await page.goto(`/panel/cotizaciones/${id}/nueva-version?desde=${versiones[0].id}`);
+  await expect(page.getByText("Esa versión ya fue reemplazada.")).toBeVisible();
+  for (const desde of ["", "?desde=999999"]) {
+    await page.goto(`/panel/cotizaciones/${id}/nueva-version${desde}`);
+    await expect(page).toHaveURL(new RegExp(`desde=${versiones[1].id}$`));
+    await expect(page.getByRole("heading", { level: 1, name: "Versión 3" })).toBeVisible();
+  }
 });
 
 test("el descuento no pasa el subtotal, el adelanto no pasa el total y la validez no es anterior a hoy", async ({ page }, info) => {
-  const nombre = `Cotizable ${sufijo(info)}`;
-  const id = await crearConsulta(info, 3);
+  const s = sufijo(info);
+  const nombre = `Cotizable ${s}`;
+  const cliente = await crearClienteEnBase({ nombre: `Con errores ${s}`, telefono: telefono(info, 5), placa: `CE25${s}1` });
   await ingresarComoDueno(page);
-  await page.goto(`/panel/consultas/${id}/cotizar`);
-  await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
+  await page.goto(`/panel/cotizaciones/nueva?cliente=${cliente}`, { waitUntil: "networkidle" });
+  await page.getByRole("radio", { name: "En persona" }).check();
+  await crear(page);
   await expect(page.getByText("Agrega al menos un servicio.")).toBeVisible();
 
   await page.getByRole("button", { name: "Agregar servicio" }).click();
   await elegir(page, 1, nombre, "Con precio");
   await page.getByLabel("Descuento").fill("500");
-  await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
+  await crear(page);
   await expect(page.getByText("El descuento no puede ser mayor que el subtotal.")).toBeVisible();
   await expect(page.getByLabel("Descuento")).toBeFocused();
 
   await page.getByLabel("Descuento").fill("");
   await page.getByLabel("Adelanto sugerido").fill("451");
-  await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
+  await crear(page);
   await expect(page.getByText("El adelanto no puede ser mayor que el total.")).toBeVisible();
 
   await page.getByLabel("Adelanto sugerido").fill("100");
   await page.getByLabel("Válida hasta").fill("2020-01-01");
-  await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
+  await crear(page);
   await expect(page.getByText("La validez no puede ser anterior a hoy.")).toBeVisible();
 });
 
-test("RN-01: el encargado ve que está cotizada sin montos y no entra a cotizar; el técnico tampoco", async ({ page }, info) => {
-  const s = sufijo(info).toLowerCase();
-  const id = await crearConsulta(info, 4);
-  await consultar(
-    `insert into cotizacion (consulta_id, numero, version, es_estimado, subtotal, descuento, total, adelanto_sugerido, valida_hasta, condiciones, garantia, formas_pago, datos_documento, created_by)
-     select $1, '2026-9' || $2, 1, false, 300, 0, 300, 100, current_date + 15, 'c', 'g', 'f', '{}'::jsonb, id from usuario where nombre_usuario = 'dueno'`,
-    [id, info.project.name === "celular" ? "01" : "02"],
-  );
-  await crearUsuario({ usuario: `enc-hu25-${s}`, nombre: "Encargado con todo", contrasena: "encargado-123", rol: "encargado", permisos: ["consultas", "clientes", "reclamos", "sitio"] });
-  await ingresar(page, `enc-hu25-${s}`, "encargado-123");
+test("pedido 24: el encargado con Cotizaciones cotiza y ve los montos; sin el permiso no entra; el técnico tampoco", async ({ page }, info) => {
+  const s = sufijo(info);
+  const nombre = `Cotizable ${s}`;
+  const cliente = await crearClienteEnBase({ nombre: `Para encargado ${s}`, telefono: telefono(info, 6), placa: `CP25${s}1` });
+  const otra = await crearCotizacionEnBase({ placa: `CP25${s}1`, numero: `2030-9${s === "C" ? 1 : 2}25`, total: 300 });
+  await crearUsuario({ usuario: `enc-hu25-${s.toLowerCase()}`, nombre: "Encargado que cotiza", contrasena: "encargado-123", rol: "encargado", permisos: ["cotizaciones"] });
+  await ingresar(page, `enc-hu25-${s.toLowerCase()}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
-  await page.goto(`/panel/consultas/${id}`);
-  const lista = page.getByRole("list", { name: "Cotizaciones" });
-  await expect(lista).toContainText(`2026-9${info.project.name === "celular" ? "01" : "02"}`);
-  await expect(lista).not.toContainText("Bs");
-  await expect(page.getByRole("link", { name: /Cotizar|Corregir/ })).toHaveCount(0);
-  await page.goto(`/panel/consultas/${id}/cotizar`);
-  await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
+  await page.goto(`/panel/cotizaciones/${otra}`);
+  await expect(page.getByRole("list", { name: "Versiones" })).toContainText("300 Bs");
+  // Sin Clientes no se enlaza a la ficha
+  await expect(page.getByRole("link", { name: "Ver ficha del cliente" })).toHaveCount(0);
 
-  await page.context().clearCookies();
-  await crearUsuario({ usuario: `tec-hu25-${s}`, nombre: "Técnico", contrasena: "tecnico-123", rol: "tecnico" });
-  await ingresar(page, `tec-hu25-${s}`, "tecnico-123");
-  await expect(page).toHaveURL(/\/panel$/);
-  await page.goto(`/panel/consultas/${id}/cotizar`);
-  await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
-});
-
-test("las fotos elegidas para la cotización ya no se quitan de la consulta", async ({ page }, info) => {
-  const nombre = `Cotizable ${sufijo(info)}`;
-  const id = await crearConsulta(info, 5);
-  await ingresarComoDueno(page);
-  await page.goto(`/panel/consultas/${id}`);
-  await expect(page.getByRole("button", { name: "Agregar fotos o videos" })).toBeEnabled();
-  await page.getByLabel("Archivos de fotos o videos").setInputFiles({ name: "capo.png", mimeType: "image/png", buffer: PNG });
-  await expect(page.getByText("Foto agregada.")).toBeVisible();
-
-  await page.getByRole("link", { name: "Cotizar" }).click();
+  await page.goto(`/panel/cotizaciones/nueva?cliente=${cliente}`, { waitUntil: "networkidle" });
   await page.getByRole("button", { name: "Agregar servicio" }).click();
   await elegir(page, 1, nombre, "Con precio");
-  await page.getByRole("checkbox", { name: "Foto 1 en el PDF" }).check();
-  await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
-  await expect(page).toHaveURL(/\?cotizada=\d+$/);
-  const [{ n }] = await consultar<{ n: number }>(
-    "select count(*)::int as n from cotizacion_foto f join cotizacion c on c.id = f.cotizacion_id where c.consulta_id = $1",
-    [id],
+  await page.getByRole("radio", { name: "En persona" }).check();
+  await crear(page);
+  await expect(page).toHaveURL(/\/panel\/cotizaciones\/\d+\?creada=1$/);
+  const [{ autor }] = await consultar<{ autor: string }>(
+    "select u.nombre as autor from cotizacion c join usuario u on u.id = c.created_by where c.consulta_id = $1",
+    [idDeLaPagina(page)],
   );
-  expect(n).toBe(1);
+  expect(autor).toBe("Encargado que cotiza");
 
-  await page.getByRole("button", { name: "Ver la foto 1" }).click();
-  await page.getByRole("dialog").getByRole("button", { name: "Quitar foto" }).click();
-  await expect(page.getByText("Esa foto está en una cotización: no se quita.")).toBeVisible();
-});
+  // Sin el permiso: ni la lista ni cotizar
+  await page.context().clearCookies();
+  await crearUsuario({ usuario: `enc-sin-hu25-${s.toLowerCase()}`, nombre: "Encargado sin cotizaciones", contrasena: "encargado-123", rol: "encargado", permisos: ["clientes", "agenda"] });
+  await ingresar(page, `enc-sin-hu25-${s.toLowerCase()}`, "encargado-123");
+  await expect(page).toHaveURL(/\/panel$/);
+  for (const ruta of ["/panel/cotizaciones", "/panel/cotizaciones/nueva", `/panel/cotizaciones/${otra}`]) {
+    await page.goto(ruta);
+    await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
+  }
+  // En la ficha del cliente no aparece la sección
+  await page.goto(`/panel/clientes/${cliente}`);
+  await expect(page.getByRole("heading", { name: "Cotizaciones" })).toHaveCount(0);
 
-test("una cotización nueva arranca con el servicio que pidió el cliente, y el total va al pie", async ({ page }, info) => {
-  const s = sufijo(info);
-  const varias = await crearServicioConPrecios(info);
-  // Un servicio de una sola variante, con precio para el tamaño del vehículo
-  const unica = `De una variante ${s}`;
-  await consultar(
-    `with s as (
-       insert into servicio (nombre, slug, resumen, orden) values ($1, $2, 'Servicio de prueba.', 99) on conflict do nothing returning id
-     ), v as (insert into variante (servicio_id, nombre, orden) select id, 'Única', 1 from s returning id)
-     insert into precio (variante_id, tamano_id, monto, created_by)
-     select v.id, (select id from tamano_vehiculo order by orden limit 1), 300, (select id from usuario where nombre_usuario = 'dueno') from v`,
-    [unica, `de-una-variante-${s.toLowerCase()}`],
-  );
-  const conUnica = await crearConsulta(info, 6);
-  const conVarias = await crearConsulta(info, 7);
-  await consultar("update consulta set servicio_id = (select id from servicio where nombre = $2) where id = $1", [conUnica, unica]);
-  await consultar("update consulta set servicio_id = (select id from servicio where nombre = $2) where id = $1", [conVarias, varias]);
-  await ingresarComoDueno(page);
-
-  // Una sola variante: elegida, con su precio, y el total al pie
-  await page.goto(`/panel/consultas/${conUnica}/cotizar`);
-  await expect(servicio(page, 1)).toHaveValue(/\d+/);
-  await expect(servicio(page, 1).locator("option:checked")).toHaveText(unica);
-  await expect(precio(page, 1)).toHaveValue("300");
-  // El total del pie (el resumen de arriba lo anuncia; este no se repite al lector de pantalla)
-  await expect(page.locator("form p[aria-hidden]")).toHaveText(/Total\s*300 Bs/);
-
-  // Varias variantes: el servicio ya elegido y su opción por elegir, en otro menú; sin elegirla, se avisa ahí
-  await page.goto(`/panel/consultas/${conVarias}/cotizar`, { waitUntil: "networkidle" });
-  await expect(servicio(page, 1).locator("option:checked")).toHaveText(varias);
-  await expect(opcion(page, 1)).toHaveValue("");
-  await expect(servicio(page, 2)).toHaveCount(0);
-  await page.getByRole("button", { name: "Guardar y generar PDF" }).click();
-  await expect(page.getByText("Elige la opción.")).toBeVisible();
-  await expect(opcion(page, 1)).toBeFocused();
-  // Un servicio sin opciones no muestra el segundo menú
-  await servicio(page, 1).selectOption({ label: unica });
-  await expect(opcion(page, 1)).toHaveCount(0);
+  await page.context().clearCookies();
+  await crearUsuario({ usuario: `tec-hu25-${s.toLowerCase()}`, nombre: "Técnico", contrasena: "tecnico-123", rol: "tecnico" });
+  await ingresar(page, `tec-hu25-${s.toLowerCase()}`, "tecnico-123");
+  await expect(page).toHaveURL(/\/panel$/);
+  await page.goto("/panel/cotizaciones/nueva");
+  await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
 });

@@ -1,5 +1,5 @@
 import "server-only";
-import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, NoSuchKey, NotFound, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, NoSuchKey, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // Fotos y PDF en almacenamiento compatible con S3: Cloudflare R2 en pruebas y producción,
@@ -54,31 +54,6 @@ export async function borrarArchivo(clave: string, visibilidad: Visibilidad = "p
 /** URL pública de un archivo del bucket público (fotos del sitio). */
 export function urlArchivo(clave: string): string {
   return `${variable("S3_URL_PUBLICA").replace(/\/$/, "")}/${clave}`;
-}
-
-/** Cuánto dura el permiso para subir un archivo directo desde el navegador. */
-const SEGUNDOS_SUBIDA_DIRECTA = 10 * 60;
-
-/**
- * Permiso firmado para que el navegador suba un archivo directo al bucket privado (videos de consultas: una acción del
- * servidor acepta hasta 6 MB). El tipo y el tamaño van firmados: con otros, el almacenamiento rechaza la subida.
- * Necesita CORS en el bucket (scripts/preparar-almacenamiento.mjs; en R2, docs/08-desarrollo/despliegue.md).
- */
-export async function urlSubidaPrivada(clave: string, tipo: string, bytes: number): Promise<string> {
-  return getSignedUrl(obtenerCliente(), new PutObjectCommand({ Bucket: bucket("privado"), Key: clave, ContentType: tipo, ContentLength: bytes }), {
-    expiresIn: SEGUNDOS_SUBIDA_DIRECTA,
-  });
-}
-
-/** Tipo y tamaño de un archivo del bucket privado, o null si no está (por ejemplo, la subida no terminó). */
-export async function datosArchivoPrivado(clave: string): Promise<{ tipo: string; bytes: number } | null> {
-  try {
-    const r = await obtenerCliente().send(new HeadObjectCommand({ Bucket: bucket("privado"), Key: clave }));
-    return { tipo: r.ContentType ?? "", bytes: r.ContentLength ?? 0 };
-  } catch (error) {
-    if (error instanceof NotFound) return null;
-    throw error;
-  }
 }
 
 /**

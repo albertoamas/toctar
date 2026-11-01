@@ -1,5 +1,5 @@
 // Datos de demostración para mostrarle el sistema al dueño: el sitio público completo (textos de cada servicio, fotos,
-// galería, portada, logo y redes) y el panel con movimiento de esta semana (clientes, consultas, reservas, órdenes en
+// galería, portada, logo y redes) y el panel con movimiento de esta semana (clientes, cotizaciones, reservas, órdenes en
 // el taller, un saldo pendiente, mantenimientos y un reclamo). Las fechas son relativas a hoy, en hora de Bolivia.
 //
 // Uso:  npm run datos:demo                      (fotos en material/fotos-demo, fuera de Git)
@@ -224,7 +224,7 @@ try {
     contrasenas[nombreUsuario] = contrasena;
     return fila.id;
   }
-  await usuario("ana.taller", "Ana Rojas", "encargado", ["agenda", "ordenes", "pagos", "clientes", "consultas", "mantenimientos", "reclamos"]);
+  await usuario("ana.taller", "Ana Rojas", "encargado", ["agenda", "ordenes", "pagos", "clientes", "cotizaciones", "mantenimientos", "reclamos"]);
   const tecnico = await usuario("luis.tecnico", "Luis Mamani", "tecnico");
 
   // 2. El negocio: logo, redes y ubicación. El WhatsApp es de ejemplo: el real lo carga el dueño
@@ -310,18 +310,60 @@ try {
   const fernando = await cliente("Fernando Rocha", "59170010007", { placa: "6789TRS", tamano: 4, marca: "Toyota", modelo: "Land Cruiser Prado", anio: 2023, color: "Blanco" });
   const gabriela = await cliente("Gabriela Soliz", "59170010008", { placa: "3901MZD", tamano: 2, marca: "Mazda", modelo: "3", anio: 2020, color: "Rojo" });
 
-  // 6. Consultas: una nueva, una que se enfría (más de 7 días sin movimiento) y una perdida
-  console.log("Consultas…");
-  async function consultaDe(c, slug, canal, creada, nota, perdida = null) {
-    await q(
-      `insert into consulta (cliente_id, vehiculo_id, servicio_id, canal, estado, motivo_perdida, detalle_perdida, nota, ultimo_movimiento_at, created_at, created_by)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9, $10)`,
-      [c.cliente, c.vehiculo, servicio[slug].id, canal, perdida ? "perdido" : "consulto", perdida?.motivo ?? null, perdida?.detalle ?? null, nota, creada, autor],
+  // 6. Cotizaciones (pedido 23): una de ayer por fotos, una que espera respuesta (más de 7 días) y una rechazada. Sin
+  // PDF: la ficha ofrece «Generar PDF», que lo arma con lo copiado al cotizar
+  console.log("Cotizaciones…");
+  const parametro = async (clave) => (await uno("select valor #>> '{}' as valor from parametro where clave = $1", [clave])).valor;
+  const [condiciones, garantia, formasPago] = [await parametro("condiciones_cotizacion"), await parametro("garantia_cotizacion"), await parametro("formas_pago_cotizacion")];
+  /** `lineas`: [slug, variante, precio]; `tamano`: el del vehículo (1 … 5), del que sale el precio sugerido. */
+  async function cotizacionDe(c, tamano, lineas, { porFotos, creada, rechazada = null }) {
+    const anio = Number(creada.slice(0, 4));
+    const { ultimo } = await uno(
+      `insert into correlativo (clave, ultimo) values ($1, 1) on conflict (clave) do update set ultimo = correlativo.ultimo + 1 returning ultimo`,
+      [`cotizacion-${anio}`],
     );
+    const numero = `${anio}-${String(ultimo).padStart(4, "0")}`;
+    const encabezado = await uno(
+      `insert into consulta (cliente_id, vehiculo_id, estado, motivo_perdida, detalle_perdida, ultimo_movimiento_at, created_at, created_by)
+       values ($1, $2, $3, $4, $5, $6, $6, $7) returning id`,
+      [c.cliente, c.vehiculo, rechazada ? "perdido" : "cotizado", rechazada?.motivo ?? null, rechazada?.detalle ?? null, creada, autor],
+    );
+    // Cliente, vehículo y negocio como están al cotizar (D-4), igual que datosDocumento
+    const { doc } = await uno(
+      `select json_build_object(
+         'cliente', json_build_object('nombre', c.nombre, 'telefono', c.telefono),
+         'vehiculo', json_build_object('placa', v.placa, 'descripcion', nullif(concat_ws(', ', nullif(concat_ws(' ', v.marca, v.modelo), ''), v.color), ''), 'tamano', t.nombre),
+         'negocio', json_build_object('nombre', n.nombre, 'razonSocial', n.razon_social, 'nit', n.nit, 'whatsapp', s.telefono_whatsapp, 'direccion', s.direccion)
+       ) as doc
+       from cliente c join vehiculo v on v.cliente_id = c.id join tamano_vehiculo t on t.id = v.tamano_id cross join negocio n
+       cross join (select telefono_whatsapp, direccion from sucursal where activo order by id limit 1) s
+       where c.id = $1 and v.id = $2 and n.id = 1`,
+      [c.cliente, c.vehiculo],
+    );
+    const total = lineas.reduce((suma, [, , monto]) => suma + monto, 0).toFixed(2);
+    const cot = await uno(
+      `insert into cotizacion (consulta_id, numero, version, es_estimado, subtotal, descuento, total, adelanto_sugerido, valida_hasta, condiciones, garantia,
+         formas_pago, datos_documento, created_by, created_at)
+       values ($1, $2, 1, $3, $4::numeric, 0, $4::numeric, least(200, $4::numeric), ($5::timestamptz at time zone 'America/La_Paz')::date + 15, $6, $7, $8, $9, $10, $5) returning id`,
+      [encabezado.id, numero, porFotos, total, creada, condiciones, garantia, formasPago, doc, autor],
+    );
+    for (const [orden, [slug, nombreVariante, monto]] of lineas.entries()) {
+      const v = await variante(slug, nombreVariante);
+      const sugerido = await precio(slug, nombreVariante, tamano);
+      await q(
+        `insert into cotizacion_linea (cotizacion_id, variante_id, tamano_id, descripcion, precio_sugerido, precio, orden) values ($1, $2, $3, $4, $5, $6, $7)`,
+        [cot.id, v.id, tamanos[tamano - 1].id, nombreVariante === "Única" ? servicio[slug].nombre : `${servicio[slug].nombre} (${nombreVariante})`, sugerido, monto, orden],
+      );
+    }
   }
-  await consultaDe(daniela, "pulido-de-vidrios", "whatsapp", momento(-1, "18:20"), "Manchas de agua dura en el parabrisas. Mandó fotos por WhatsApp.");
-  await consultaDe(fernando, "instalacion-de-ppf", "taller", momento(-9, "11:00"), "Quiere PPF solo en el capó y los parachoques. Vino al taller a preguntar.");
-  await consultaDe(gabriela, "polarizado-de-vidrios", "whatsapp", momento(-14, "16:45"), "Polarizado completo.", { motivo: "precio", detalle: "Le pareció caro; lo va a pensar." });
+  await cotizacionDe(daniela, 1, [["pulido-de-vidrios", "Única", 150]], { porFotos: true, creada: momento(-1, "18:20") });
+  // El PPF es según evaluación: el precio se escribe al ver el vehículo
+  await cotizacionDe(fernando, 4, [["instalacion-de-ppf", "Única", 3500]], { porFotos: false, creada: momento(-9, "11:00") });
+  await cotizacionDe(gabriela, 2, [["polarizado-de-vidrios", "Única", 500]], {
+    porFotos: true,
+    creada: momento(-14, "16:45"),
+    rechazada: { motivo: "precio", detalle: "Le pareció caro; lo va a pensar." },
+  });
 
   // 7. Trabajos: reservas de esta semana, órdenes en el taller, una entregada con saldo y dos que ya volverán
   console.log("Agenda y órdenes…");

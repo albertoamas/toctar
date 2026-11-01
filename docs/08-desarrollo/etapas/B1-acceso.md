@@ -35,7 +35,7 @@ El dueño da acceso al panel a cada persona del taller, con el rol que le corres
 | RF-15 | El dueño crea usuarios, asigna rol, restablece la contraseña y desactiva | Acciones de `src/modulos/usuarios/`, solo para el rol `dueno` |
 | RF-16, S-2, S-4 | El dueño define los módulos del encargado y si puede autorizar entregas con saldo | Tabla `usuario_permiso`, leída por `src/lib/permisos.ts` |
 | RNF-05 | Los permisos se validan en el servidor | Toda página y acción llama a `exigirModulo` **antes** de leer o escribir. Ocultar el menú no cuenta como control |
-| RN-01 | Solo el dueño cotiza | Cotizar es una acción solo del dueño (`puede(usuario, "cotizar")`, desde C5 §0; antes, un módulo `cotizaciones` sin pantalla): no existe la casilla y `permisos.ts` la rechaza aunque algo así esté en la base |
+| RN-01 | Cotiza el dueño o el encargado con "Cotizaciones" (pedido 24, 01/11/2026) | Cotizar es una acción (`puede(usuario, "cotizar")`): el dueño siempre; el encargado, con el permiso `cotizaciones` (antes, solo el dueño) |
 | RN-12 | El técnico no ve precios ni pagos; solo sus órdenes | El técnico tiene únicamente el módulo `ordenes` (el filtro "solo las suyas" se aplica en C4) |
 | RN-13 | Entrega con saldo: el dueño o un encargado autorizado | Permiso `entrega_con_saldo` (se usa en C4; aquí solo se asigna) |
 | RN-14 | Los usuarios se desactivan, no se borran | No hay acción de borrar. Desactivar usa el bloqueo de Better Auth: impide ingresar y **cierra sus sesiones al instante** |
@@ -50,7 +50,7 @@ El dueño da acceso al panel a cada persona del taller, con el rol que le corres
 |---|---|---|---|
 | `id` | `integer` identidad | no | Clave primaria |
 | `usuario_id` | `integer` | no | FK a `usuario.id`, `on delete cascade` (los usuarios no se borran, pero la base queda coherente) |
-| `permiso` | `text` | no | CHECK: uno de `sitio`, `reclamos`, `clientes`, `consultas`, `agenda`, `ordenes`, `pagos`, `mantenimientos`, `entrega_con_saldo` |
+| `permiso` | `text` | no | CHECK: uno de `sitio`, `reclamos`, `clientes`, `cotizaciones` (antes `consultas`, migración 0038), `agenda`, `ordenes`, `pagos`, `mantenimientos`, `entrega_con_saldo` |
 | `created_at` | `timestamptz` | no | `now()` |
 | `created_by` | `integer` | sí | FK a `usuario.id`: el dueño que lo asignó |
 
@@ -76,8 +76,8 @@ Sin cambios. Rol en `rol` (CHECK `dueno` | `encargado` | `tecnico`) y estado en 
 | Usuarios (`/panel/usuarios`) | ✅ | — | — | 1 |
 | Configuración (`/panel/configuracion`) | ✅ | — | — | 1 |
 | Catálogo y precios (`/panel/catalogo`) | ✅ | — | — | 2 |
-| Cotizar (acción, dentro de Consultas) | ✅ | — (RN-01) | — | 2 |
-| Clientes · Consultas · Agenda · Pagos · Mantenimientos | ✅ | con su permiso | — | 2 |
+| Cotizar (acción, dentro de Cotizaciones) | ✅ | con "Cotizaciones" (pedido 24) | — | 2 |
+| Clientes · Cotizaciones · Agenda · Pagos · Mantenimientos | ✅ | con su permiso | — | 2 |
 | Órdenes (`/panel/ordenes`) | ✅ | con permiso `ordenes` | ✅ solo las suyas, sin precios | 2 |
 | Autorizar entrega con saldo (acción) | ✅ | con permiso `entrega_con_saldo` | — | 2 |
 | Recibir, extender, avisar y entregar (acciones de la orden) | ✅ | con permiso `ordenes` | — | 2 |
@@ -86,7 +86,7 @@ Sin cambios. Rol en `rol` (CHECK `dueno` | `encargado` | `tecnico`) y estado en 
 ### Funciones
 
 ```ts
-type Modulo = "inicio" | "agenda" | "ordenes" | "clientes" | "consultas" | "pagos" | "mantenimientos" | "reclamos"
+type Modulo = "inicio" | "agenda" | "ordenes" | "clientes" | "cotizaciones" | "pagos" | "mantenimientos" | "reclamos"
   | "sitio" | "catalogo" | "usuarios" | "configuracion";   // en el orden del menú, con su grupo (C5 §0)
 type Permiso = Exclude<Modulo, "inicio" | "usuarios" | "configuracion" | "catalogo"> | "entrega_con_saldo";
 type Accion = "cotizar" | "entrega_con_saldo" | "recibir_vehiculo" | "extender_entrega" | "avisar_cliente"

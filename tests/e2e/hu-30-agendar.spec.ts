@@ -35,15 +35,15 @@ async function servicioDeDosDias(info: TestInfo): Promise<{ varianteId: number; 
   return { varianteId: id, nombre };
 }
 
-/** Una consulta cotizada (cotización vigente de 900 Bs con 100 de descuento), directo en la base. */
+/** Una cotización pendiente (versión vigente de 900 Bs con 100 de descuento), directo en la base. */
 async function consultaCotizada(info: TestInfo, n: number): Promise<{ consultaId: number; cotizacionId: number }> {
   const s = sufijo(info);
   const { varianteId, nombre } = await servicioDeDosDias(info);
   await crearClienteEnBase({ nombre: `Agenda ${n} ${s}`, telefono: telefono(info, n), placa: `AG30${s}${n}` });
   const [c] = await consultar<{ consulta: number; cotizacion: number }>(
     `with q as (
-       insert into consulta (cliente_id, vehiculo_id, canal, estado, created_by)
-       select v.cliente_id, v.id, 'whatsapp', 'cotizado', v.created_by from vehiculo v where v.placa = $1 returning id, created_by
+       insert into consulta (cliente_id, vehiculo_id, estado, created_by)
+       select v.cliente_id, v.id, 'cotizado', v.created_by from vehiculo v where v.placa = $1 returning id, created_by
      ), c as (
        insert into cotizacion (consulta_id, numero, version, es_estimado, subtotal, descuento, total, adelanto_sugerido, valida_hasta,
          condiciones, garantia, formas_pago, datos_documento, created_by)
@@ -60,11 +60,11 @@ async function consultaCotizada(info: TestInfo, n: number): Promise<{ consultaId
 
 const espacio = (page: Page) => page.getByLabel("Espacio", { exact: true });
 
-test("desde la cotización: queda aceptada, la consulta confirmada, las líneas copiadas y el adelanto registrado", async ({ page }, info) => {
+test("desde la cotización: la versión y la cotización quedan aceptadas, las líneas copiadas y el adelanto registrado", async ({ page }, info) => {
   const { consultaId, cotizacionId } = await consultaCotizada(info, 1);
   const dia = await diaPropio(info, 1);
   await ingresarComoDueno(page);
-  await page.goto(`/panel/consultas/${consultaId}`);
+  await page.goto(`/panel/cotizaciones/${consultaId}`);
   await expect(page.getByRole("link", { name: "Agendar" })).toHaveAttribute("href", `/panel/agenda/nueva?cotizacion=${cotizacionId}`);
   await page.goto(`/panel/agenda/nueva?cotizacion=${cotizacionId}&fecha=${dia}`);
 
@@ -118,12 +118,12 @@ test("desde la cotización: queda aceptada, la consulta confirmada, las líneas 
   );
   expect(auditoria.map((a) => a.accion)).toEqual(["agendar", "crear"]);
 
-  // En la consulta: la reserva, y ya no se agenda otra vez
-  await page.goto(`/panel/consultas/${consultaId}`);
+  // En la cotización: la reserva, y ya no se agenda otra vez
+  await page.goto(`/panel/cotizaciones/${consultaId}`);
   await expect(page.getByRole("link", { name: /^Reserva del/ })).toBeVisible();
   await expect(page.getByRole("link", { name: "Agendar" })).toHaveCount(0);
   await page.goto(`/panel/agenda/nueva?cotizacion=${cotizacionId}`);
-  await expect(page.getByText("Esa cotización ya fue agendada o se corrigió.")).toBeVisible();
+  await expect(page.getByText("Esa cotización ya fue agendada o tiene una versión nueva.")).toBeVisible();
 });
 
 test("la base rechaza un cruce en el mismo espacio aunque el código fallara; una cancelada no ocupa", async ({}, info) => {
@@ -189,7 +189,7 @@ test("solo se ofrecen los espacios libres; si dos personas agendan el mismo a la
 async function otraPersona(browser: Browser, info: TestInfo) {
   const ctx = await browser.newContext(info.project.use);
   const page = await ctx.newPage();
-  await crearUsuario({ usuario: `dueno2-hu30-${sufijo(info).toLowerCase()}`, nombre: "Otro dueño", contrasena: "dueno-hu30-123", rol: "encargado", permisos: ["agenda", "consultas", "pagos"] });
+  await crearUsuario({ usuario: `dueno2-hu30-${sufijo(info).toLowerCase()}`, nombre: "Otro dueño", contrasena: "dueno-hu30-123", rol: "encargado", permisos: ["agenda", "cotizaciones", "pagos"] });
   await ingresar(page, `dueno2-hu30-${sufijo(info).toLowerCase()}`, "dueno-hu30-123");
   await expect(page).toHaveURL(/\/panel$/);
   return { ctx, page };
@@ -230,10 +230,10 @@ test("el encargado con Agenda sin Pagos agenda sin montos ni adelanto; el técni
   const s = sufijo(info).toLowerCase();
   const { consultaId, cotizacionId } = await consultaCotizada(info, 7);
   const dia = await diaPropio(info, 7);
-  await crearUsuario({ usuario: `enc-hu30-${s}`, nombre: "Encargado de agenda", contrasena: "encargado-123", rol: "encargado", permisos: ["agenda", "consultas"] });
+  await crearUsuario({ usuario: `enc-hu30-${s}`, nombre: "Encargado de agenda", contrasena: "encargado-123", rol: "encargado", permisos: ["agenda", "cotizaciones"] });
   await ingresar(page, `enc-hu30-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
-  await page.goto(`/panel/consultas/${consultaId}`);
+  await page.goto(`/panel/cotizaciones/${consultaId}`);
   await page.getByRole("link", { name: "Agendar" }).click();
   await expect(page.getByText(/Total:/)).toHaveCount(0);
   await expect(page.getByRole("checkbox", { name: "Sin adelanto" })).toHaveCount(0);

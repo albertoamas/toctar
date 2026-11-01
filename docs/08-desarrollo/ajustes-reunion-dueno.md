@@ -19,7 +19,7 @@ Igual que una historia (`plan-de-desarrollo.md`, "Cómo se trabaja cada historia
 
 | Orden | Punto | Pedido | Horas | Tratamiento sugerido | Estado |
 |---|---|---|---|---|---|
-| 1 | Cotización directa, sin consulta | 23 (y 24 y 25 si el dueño los confirma) | 18 a 24 | Por definir (cambia lo contratado: HU-24 y HU-25) | ⏳ |
+| 1 | Cotización directa, sin consulta | 23 y 24 (el 25, descartado) | 18 a 24 | Por definir (cambia lo contratado: HU-24 y HU-25) | ✅ Programado (PR #113, 01/11) |
 | 2 | Checklist al recibir el vehículo | 12 | 8 a 10 | Cotizado (Bs 320): por confirmar | ⏳ |
 | 3 | Firma digital del cliente | 13 | 6 a 8 (más 2 a 3 si también al recibir) | Cotizado (Bs 240, Bs 320 con PDF): por confirmar | ⏳ |
 | 4 | Fotos: solo las que sirven, sin videos | 27 | 4 a 6 | Incluido | ⏳ |
@@ -37,6 +37,8 @@ Los puntos 1 a 4 tocan las mismas pantallas (cotizar, recibir, entregar): se hac
 ---
 
 ## 1. Cotización directa, sin consulta (pedido 23)
+
+> **Estado (01/11/2026):** programado en el PR #113 con la especificación `etapas/P23-cotizacion-directa.md`. Lo que cambió respecto de la propuesta de abajo: como se mantienen las versiones, la tabla `consulta` quedó como encabezado de la cotización (D-12) en lugar de mover sus columnas a `cotizacion`; las consultas viejas sin cotizar no se migran ni se muestran.
 
 ### Lo que dijo el dueño
 > "Son muchos pasos y cosas que no se hacen." En el taller: le escriben por WhatsApp o pasan por el taller preguntando por los servicios; un mensaje automático responde con la lista de servicios; el cliente dice cuál le interesa y **recién ahí se hace la cotización**. En el sistema espera lo mismo: cuando el cliente dice, por ejemplo, "quiero una instalación de PPF", el dueño o el encargado **registra al cliente si no está y hace la cotización directamente**, la envía o la imprime, y **se acepta o se rechaza**. "No le interesa la consulta para nada, ni si fue por WhatsApp o en el taller." **Sí le importa si la cotización se hizo por fotos o en persona** (eso, como está, le gustó).
@@ -91,10 +93,11 @@ Los puntos 1 a 4 tocan las mismas pantallas (cotizar, recibir, entregar): se hac
 - Unitarias: la migración de estados, el aviso de "sin respuesta", el esquema de la cotización nueva (con cliente y vehículo nuevos o existentes).
 - E2E: crear una cotización con un cliente nuevo; con uno existente; por fotos; aceptar y agendar; rechazar con motivo; editar (si el 25); buscar en la lista; el técnico no entra; las E2E de HU-24 a HU-28 se reescriben y `flujo-taller-completo` sigue pasando.
 
-### Preguntas para el dueño
-1. ¿El **encargado** puede cotizar cuando él no está (pedido 24)?
-2. ¿Prefiere **editar** la cotización (pedido 25) o hacer una versión nueva cada vez?
-3. ¿Le sirven los motivos de rechazo de hoy (precio, no respondió, otro)?
+### Preguntas para el dueño (respondidas el 01/11)
+1. ¿El **encargado** puede cotizar cuando él no está (pedido 24)? **Sí.**
+2. ¿Prefiere **editar** la cotización (pedido 25) o hacer una versión nueva cada vez? **Versiones** (el 25 se descarta).
+3. ¿Le sirven los motivos de rechazo de hoy (precio, no respondió, otro)? **Sí.**
+4. Nueva: ¿el encargado también suma adicionales a una orden? Por preguntar; hoy, solo el dueño.
 
 ### Terminado cuando
 El dueño crea una cotización para un cliente nuevo en una sola pantalla, la comparte por WhatsApp y la acepta o la rechaza, sin pasar por ninguna consulta.

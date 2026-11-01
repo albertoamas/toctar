@@ -8,7 +8,7 @@ export const PERMISOS = [
   "sitio",
   "reclamos",
   "clientes",
-  "consultas",
+  "cotizaciones",
   "agenda",
   "ordenes",
   "pagos",
@@ -42,7 +42,15 @@ export const MODULOS = {
   agenda: { ruta: "/panel/agenda", nombre: "Agenda", grupo: "taller", permisoEncargado: "agenda", tecnico: false },
   ordenes: { ruta: "/panel/ordenes", nombre: "Órdenes", grupo: "taller", permisoEncargado: "ordenes", tecnico: true },
   clientes: { ruta: "/panel/clientes", nombre: "Clientes", grupo: "clientes", permisoEncargado: "clientes", tecnico: false },
-  consultas: { ruta: "/panel/consultas", nombre: "Consultas", grupo: "clientes", permisoEncargado: "consultas", tecnico: false },
+  // Pedido 23: la cotización directa, sin consulta antes. Pedido 24: el encargado con este permiso cotiza
+  cotizaciones: {
+    ruta: "/panel/cotizaciones",
+    nombre: "Cotizaciones",
+    nombrePermiso: "Cotizaciones (cotizar y ver precios)",
+    grupo: "clientes",
+    permisoEncargado: "cotizaciones",
+    tecnico: false,
+  },
   // HU-37: su pantalla es la lista de saldos; en el menú se llama por lo que muestra. La casilla dice lo que da: cobrar
   // (en la reserva, la orden y la lista) y ver montos y saldos
   pagos: {
@@ -92,13 +100,17 @@ export type Accion =
   | "agregar_adicional"
   | "publicar_en_galeria";
 
-/** Las acciones que ponen precio o publican en el sitio desde una orden: solo el dueño (RN-01). */
-const SOLO_DUENO: readonly Accion[] = ["cotizar", "agregar_adicional", "publicar_en_galeria"];
+/** Las acciones que ponen precio o publican en el sitio desde una orden: solo el dueño. */
+const SOLO_DUENO: readonly Accion[] = ["agregar_adicional", "publicar_en_galeria"];
+
+/** El permiso del encargado que habilita cada acción; las demás van con "Órdenes". */
+const PERMISO_DE_ACCION: Partial<Record<Accion, Permiso>> = { cotizar: "cotizaciones", entrega_con_saldo: "entrega_con_saldo" };
 
 /**
  * Acciones que no son un módulo entero:
- * - cotizar (C2, dentro de la consulta) y sumar un adicional a la orden (RF-43) ponen precio, y publicar en la galería
- *   las fotos de una orden (HU-41, RF-44) decide qué muestra el sitio: solo el dueño (RN-01);
+ * - cotizar (pedidos 23 y 24, RN-01): el dueño o el encargado con "Cotizaciones";
+ * - sumar un adicional a la orden (RF-43) pone precio en un trabajo ya acordado, y publicar en la galería las fotos de
+ *   una orden (HU-41, RF-44) decide qué muestra el sitio: solo el dueño;
  * - autorizar entrega con saldo (RN-13, S-2): el dueño o el encargado con ese permiso;
  * - recibir el vehículo, extender su entrega, avisarle al cliente y entregarlo (C4): el dueño o el encargado con
  *   "Órdenes", no el técnico (tocan la agenda, el trato con el cliente o el cobro, que él no ve; C4 §12, RN-12).
@@ -106,7 +118,7 @@ const SOLO_DUENO: readonly Accion[] = ["cotizar", "agregar_adicional", "publicar
 export function puede(sujeto: SujetoPermisos, accion: Accion): boolean {
   if (sujeto.rol === "dueno") return true;
   if (sujeto.rol !== "encargado" || SOLO_DUENO.includes(accion)) return false;
-  return sujeto.permisos.includes(accion === "entrega_con_saldo" ? accion : "ordenes");
+  return sujeto.permisos.includes(PERMISO_DE_ACCION[accion] ?? "ordenes");
 }
 
 /** El técnico solo ve las órdenes asignadas a él (RN-12, S-1); el dueño y el encargado con "Órdenes", todas. */

@@ -25,11 +25,10 @@ function texto(nombre: string) {
 }
 
 /**
- * Secciones de la pestaña Parámetros (C5 §0), en el orden del trabajo: la consulta, la cotización y la agenda. El
- * mantenimiento ya no tiene sección: cada servicio dice cada cuánto, en el catálogo (pedido 21).
+ * Secciones de la pestaña Parámetros (C5 §0), en el orden del trabajo: la cotización y la agenda. La consulta ya no
+ * existe (pedido 23) y el mantenimiento no tiene sección: cada servicio dice cada cuánto, en el catálogo (pedido 21).
  */
 export const SECCIONES_PARAMETROS = {
-  consultas: { titulo: "Consultas", descripcion: null },
   cotizaciones: { titulo: "Cotizaciones", descripcion: "Las condiciones, la garantía y las formas de pago salen al pie de cada PDF." },
   agenda: { titulo: "Agenda", descripcion: null },
 } as const;
@@ -51,10 +50,10 @@ export const PARAMETROS = {
     unidad: "días",
     esquema: entero(1, 365, "Entre 1 y 365 días."),
   },
-  dias_consulta_fria: {
-    seccion: "consultas",
-    etiqueta: "Consulta que se enfría",
-    ayuda: "Días sin movimiento para resaltarla en Consultas.",
+  dias_cotizacion_sin_respuesta: {
+    seccion: "cotizaciones",
+    etiqueta: "Cotización sin respuesta",
+    ayuda: "Días sin respuesta del cliente para resaltarla en Cotizaciones.",
     unidad: "días",
     esquema: entero(1, 90, "Entre 1 y 90 días."),
   },

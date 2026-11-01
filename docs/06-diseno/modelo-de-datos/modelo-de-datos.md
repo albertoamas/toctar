@@ -21,6 +21,7 @@ El modelo cubre el **Sistema completo**, aunque hoy se programa solo Web + Gesti
 | D-9 | **Montos en `numeric(10,2)`**, fechas de agenda en `date`, marcas de tiempo en `timestamptz` (America/La_Paz al mostrar). | Sin errores de redondeo ni de zona horaria. |
 | D-10 | **Archivos en una tabla común (`archivo`)**; el binario va al almacenamiento de fotos, la base guarda solo la referencia. | La base queda liviana y los respaldos son rápidos. |
 | D-11 | **El plan de mantenimiento de un vehículo es su fila abierta de `recordatorio_mantenimiento`**, sin tabla aparte: al hacerse queda `hecho` y nace la siguiente con la misma frecuencia. Un índice único parcial impide dos abiertos del mismo vehículo y servicio (pedido 21, 27/10/2026). | El mantenimiento repetido no puede pasar, la historia del plan son sus filas y la lista de Mantenimientos no cambia de forma. |
+| D-12 | **La consulta es el encabezado de la cotización** (pedido 23, 01/11/2026): `consulta` agrupa las versiones (`cotizacion`) y lleva el estado comercial (`cotizado` = pendiente, `confirmado` = aceptada, `perdido` = rechazada) y el último movimiento. Ya no se crea en `consulto` ni lleva canal, nota ni archivos; se conserva el nombre de la tabla. | Con versiones (RN-02) hace falta un encabezado, y ya existía: sin mover datos, la agenda y las órdenes siguen apuntando a `consulta_id` y `cotizacion_id`. |
 
 ## Diagrama entidad-relación (núcleo)
 
@@ -105,15 +106,15 @@ Convenciones: `id` es `bigint` autoincremental; todas las tablas tienen `created
 | `cliente` | nombre, telefono (único), correo, nit, razon_social, notas, activo | NIT para SIAT futura |
 | `vehiculo` | cliente_id, placa (única), marca, modelo, anio, color, tamano_id, activo | |
 
-### Consultas y cotizaciones (entrega 2)
+### Cotizaciones (entrega 2; pedido 23)
 
 | Tabla | Campos | Notas |
 |---|---|---|
-| `consulta` | cliente_id, vehiculo_id, servicio_id, canal (`whatsapp`, `taller`), estado (`consulto`, `cotizado`, `confirmado`, `perdido`), motivo_perdida, nota, ultimo_movimiento_at | RF-35 ordena por `ultimo_movimiento_at` |
-| `consulta_archivo` | consulta_id, archivo_id | Fotos y videos |
+| `consulta` | cliente_id, vehiculo_id, servicio_id, canal (nulo desde el pedido 23), estado (`cotizado`, `confirmado`, `perdido`; `consulto` solo en lo de antes), motivo_perdida, detalle_perdida, nota, ultimo_movimiento_at | El encabezado de la cotización (D-12). RF-35 ordena por `ultimo_movimiento_at` |
+| `consulta_archivo` | consulta_id, archivo_id | Fotos y videos de las consultas de antes del pedido 23; ya no se usa (se borra en una migración posterior) |
 | `cotizacion` | consulta_id, numero, version, es_estimado, subtotal, descuento, total, adelanto_sugerido, valida_hasta (se define en cada cotización, S-5), condiciones (texto copiado), estado (`enviada`, `reemplazada`, `aceptada`), pdf_archivo_id | Único (numero, version); número correlativo por año, ej. `2026-0042` |
 | `cotizacion_linea` | cotizacion_id, variante_id, tamano_id, descripcion, precio_sugerido, precio, orden | D-4 |
-| `cotizacion_foto` | cotizacion_id, archivo_id, orden | Fotos que van en el PDF |
+| `cotizacion_foto` | cotizacion_id, archivo_id, orden | Fotos en el PDF de las cotizaciones de antes del pedido 23; ya no se usa |
 
 ### Trabajos: reserva y orden (entrega 2)
 

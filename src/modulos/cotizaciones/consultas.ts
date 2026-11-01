@@ -1,32 +1,18 @@
 import "server-only";
-import { nombreVehiculo } from "@/modulos/clientes/reglas";
-import { and, asc, desc, eq, like } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, like, ne, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
-import {
-  archivo,
-  cliente,
-  consulta,
-  consultaArchivo,
-  cotizacion,
-  cotizacionFoto,
-  cotizacionLinea,
-  negocio,
-  servicio,
-  sucursal,
-  tamanoVehiculo,
-  variante,
-  vehiculo,
-} from "@/db/esquema";
-import type { Canal, EstadoConsulta } from "@/db/esquema/consultas";
+import { cliente, consulta, cotizacion, cotizacionLinea, negocio, servicio, sucursal, tamanoVehiculo, usuario, variante, vehiculo } from "@/db/esquema";
+import type { EstadoConsulta, MotivoPerdida } from "@/db/esquema/consultas";
 import type { DatosDocumento, EstadoCotizacion } from "@/db/esquema/cotizaciones";
-import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { preciosVigentes } from "@/modulos/catalogo/consultas";
 import { duracionEfectiva, type Monto } from "@/modulos/catalogo/reglas";
+import { detalleVehiculo, escaparLike, nombreVehiculo, normalizarBusqueda } from "@/modulos/clientes/reglas";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
-import { descripcionLinea, fechaValidez, lineasDelServicioDeInteres, precioSugerido, type Sugerencia } from "./reglas";
+import { descripcionLinea, fechaValidez, precioSugerido, VISTAS, type Sugerencia, type Vista } from "./reglas";
 
-// Lecturas de las cotizaciones (HU-25). Las de montos solo las llama quien pasó por exigirAccion("cotizar"): el
-// dueño (RN-01). `cotizacionesDeConsulta` también la usa el encargado, sin montos.
+// Lecturas de las cotizaciones (pedido 23, P23-cotizacion-directa.md §5). Quien las llama ya pasó por
+// exigirModulo("cotizaciones"): el dueño o el encargado con ese permiso, que también cotiza (pedido 24). El técnico
+// nunca (RN-12). Cada cotización es un encabezado (la tabla `consulta`, D-12) con sus versiones (`cotizacion`).
 
 export type OpcionServicio = {
   varianteId: number;
@@ -39,11 +25,8 @@ export type OpcionServicio = {
   duracion: number;
 };
 
-/**
- * Los servicios activos, por variante, con el precio vigente para ese tamaño de vehículo (RF-31). Los usan la
- * cotización (C2), la reserva directa (C3) y los adicionales de la orden (C4, con `soloVariante`: una sola).
- */
-export async function opcionesDeServicio(tamanoId: number, soloVariante?: number): Promise<OpcionServicio[]> {
+/** Las variantes activas, en el orden del catálogo, con sus precios vigentes por tamaño. */
+async function variantesConPrecios(soloVariante?: number) {
   const variantes = await db
     .select({
       varianteId: variante.id,
@@ -63,47 +46,66 @@ export async function opcionesDeServicio(tamanoId: number, soloVariante?: number
     if (!porVariante.has(p.varianteId)) porVariante.set(p.varianteId, new Map());
     porVariante.get(p.varianteId)!.set(p.tamanoId, p.monto);
   }
-  return variantes.map(({ duracionServicio, duracionVariante, ...v }) => ({
-    ...v,
-    descripcion: descripcionLinea(v.servicio, v.variante),
-    sugerencia: precioSugerido(porVariante.get(v.varianteId) ?? new Map(), tamanoId),
-    duracion: duracionEfectiva({ duracionDias: duracionServicio }, { duracionDias: duracionVariante }),
-  }));
+  return (tamanoId: number): OpcionServicio[] =>
+    variantes.map(({ duracionServicio, duracionVariante, ...v }) => ({
+      ...v,
+      descripcion: descripcionLinea(v.servicio, v.variante),
+      sugerencia: precioSugerido(porVariante.get(v.varianteId) ?? new Map(), tamanoId),
+      duracion: duracionEfectiva({ duracionDias: duracionServicio }, { duracionDias: duracionVariante }),
+    }));
 }
 
-type BaseCotizacion = {
+/**
+ * Los servicios activos, por variante, con el precio vigente para ese tamaño de vehículo (RF-31). Los usan la
+ * cotización, la reserva directa (C3) y los adicionales de la orden (C4, con `soloVariante`: una sola).
+ */
+export async function opcionesDeServicio(tamanoId: number, soloVariante?: number): Promise<OpcionServicio[]> {
+  return (await variantesConPrecios(soloVariante))(tamanoId);
+}
+
+/**
+ * Las mismas opciones para cada tamaño, en una sola lectura: en la nueva cotización el tamaño se elige en el mismo
+ * formulario (un vehículo nuevo) y el precio sugerido cambia con él.
+ */
+export async function opcionesPorTamano(tamanoIds: readonly number[]): Promise<Record<number, OpcionServicio[]>> {
+  const para = await variantesConPrecios();
+  return Object.fromEntries([...new Set(tamanoIds)].map((t) => [t, para(t)]));
+}
+
+/** Con qué arranca una cotización nueva: la validez y el adelanto de Configuración. */
+export async function inicioCotizacion(): Promise<{ validaHasta: string; adelanto: string }> {
+  const parametros = await obtenerParametros();
+  return { validaHasta: fechaValidez(new Date(), parametros.validez_cotizacion_dias), adelanto: parametros.adelanto_sugerido.toFixed(2) };
+}
+
+type BaseVersion = {
   numero: string;
   version: number;
   lineas: { varianteId: number; precio: string }[];
   descuento: string;
   adelanto: string;
   esEstimado: boolean;
-  fotos: number[];
 };
 
-export type DatosParaCotizar = {
+export type DatosNuevaVersion = {
   consultaId: number;
   estado: EstadoConsulta;
   cliente: string;
   placa: string;
-  tamanoId: number;
   tamano: string;
-  canal: Canal;
   opciones: OpcionServicio[];
-  fotos: (UrlsFoto & { id: number })[];
-  /** Valores con los que arranca el formulario: los de Configuración, o los de la versión que se corrige. */
-  inicial: { validaHasta: string; adelanto: string; esEstimado: boolean; descuento: string; lineas: { servicioId?: number; varianteId: number; precio: string }[]; fotos: number[] };
-  /** La versión que se corrige (vigente), si llegó `desde`, y su id. */
-  desde: BaseCotizacion | null;
-  desdeId: number | null;
-  /** `desde` es una versión de esta consulta ya reemplazada: se avisa que ya fue corregida. */
+  /** Valores con los que arranca el formulario: los de la versión que se reemplaza, con la validez de hoy. */
+  inicial: { validaHasta: string; adelanto: string; esEstimado: boolean; descuento: string; lineas: { varianteId: number; precio: string }[] };
+  /** La versión que se reemplaza (la vigente), si `desde` lo es. */
+  desde: (BaseVersion & { id: number }) | null;
+  /** `desde` es una versión de esta cotización ya reemplazada: se avisa que ya hay otra. */
   desdeReemplazado: boolean;
-  /** Ya tiene una cotización vigente: entonces solo se corrige. */
+  /** La versión vigente, para llevar a ella si `desde` no lo es. */
   vigenteId: number | null;
 };
 
-/** Todo lo que hace falta para cotizar una consulta, o null si no existe. `desde`: la versión que se corrige. */
-export async function datosParaCotizar(consultaId: number, desdeId: number | null): Promise<DatosParaCotizar | null> {
+/** Todo lo que hace falta para la versión nueva de una cotización, o null si no existe o no tiene versiones. */
+export async function datosNuevaVersion(consultaId: number, desdeId: number | null): Promise<DatosNuevaVersion | null> {
   const [c] = await db
     .select({
       consultaId: consulta.id,
@@ -112,25 +114,17 @@ export async function datosParaCotizar(consultaId: number, desdeId: number | nul
       placa: vehiculo.placa,
       tamanoId: vehiculo.tamanoId,
       tamano: tamanoVehiculo.nombre,
-      canal: consulta.canal,
-      servicioId: consulta.servicioId,
     })
     .from(consulta)
     .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
     .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
     .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
-    .where(eq(consulta.id, consultaId));
+    .where(and(eq(consulta.id, consultaId), tieneVersiones));
   if (!c) return null;
 
-  const [opciones, fotos, parametros, [vigente], desde, [reemplazado]] = await Promise.all([
+  const [opciones, inicio, [vigente], desde, [pedida]] = await Promise.all([
     opcionesDeServicio(c.tamanoId),
-    db
-      .select({ id: archivo.id, clave: archivo.clave, miniaturaClave: archivo.miniaturaClave, ancho: archivo.ancho, alto: archivo.alto })
-      .from(consultaArchivo)
-      .innerJoin(archivo, eq(consultaArchivo.archivoId, archivo.id))
-      .where(and(eq(consultaArchivo.consultaId, consultaId), like(archivo.tipoMime, "image/%")))
-      .orderBy(asc(consultaArchivo.orden)),
-    obtenerParametros(),
+    inicioCotizacion(),
     db
       .select({ id: cotizacion.id })
       .from(cotizacion)
@@ -138,49 +132,37 @@ export async function datosParaCotizar(consultaId: number, desdeId: number | nul
     desdeId ? baseDeVersion(consultaId, desdeId) : null,
     desdeId
       ? db
-          .select({ id: cotizacion.id })
+          .select({ estado: cotizacion.estado })
           .from(cotizacion)
-          .where(and(eq(cotizacion.id, desdeId), eq(cotizacion.consultaId, consultaId), eq(cotizacion.estado, "reemplazada")))
+          .where(and(eq(cotizacion.id, desdeId), eq(cotizacion.consultaId, consultaId)))
       : [],
   ]);
 
-  const fotosFirmadas = await Promise.all(fotos.map(async (f) => ({ id: f.id, ...(await urlsFotoPrivada(f)) })));
-
-  const inicial = desde
-    ? {
-        validaHasta: fechaValidez(new Date(), parametros.validez_cotizacion_dias),
-        adelanto: desde.adelanto,
-        esEstimado: desde.esEstimado,
-        descuento: desde.descuento,
-        // Una variante que ya no se ofrece no vuelve: se cotiza de nuevo
-        lineas: desde.lineas.filter((l) => opciones.some((o) => o.varianteId === l.varianteId)),
-        fotos: desde.fotos.filter((f) => fotos.some((x) => x.id === f)),
-      }
-    : {
-        validaHasta: fechaValidez(new Date(), parametros.validez_cotizacion_dias),
-        adelanto: parametros.adelanto_sugerido.toFixed(2),
-        // Por WhatsApp se cotiza por fotos: es un estimado (RN-03)
-        esEstimado: c.canal === "whatsapp",
-        descuento: "0.00",
-        // Arranca con lo que pidió el cliente (pulido 9.4)
-        lineas: lineasDelServicioDeInteres(opciones, c.servicioId),
-        fotos: [],
-      };
-
   return {
-    ...c,
+    consultaId: c.consultaId,
+    estado: c.estado,
+    cliente: c.cliente,
+    placa: c.placa,
+    tamano: c.tamano,
     opciones,
-    fotos: fotosFirmadas,
-    inicial,
-    desde,
-    desdeId: desde ? desdeId : null,
-    desdeReemplazado: !!reemplazado,
+    inicial: desde
+      ? {
+          validaHasta: inicio.validaHasta,
+          adelanto: desde.adelanto,
+          esEstimado: desde.esEstimado,
+          descuento: desde.descuento,
+          // Una variante que ya no se ofrece no vuelve: se cotiza de nuevo
+          lineas: desde.lineas.filter((l) => opciones.some((o) => o.varianteId === l.varianteId)),
+        }
+      : { ...inicio, esEstimado: false, descuento: "0.00", lineas: [] },
+    desde: desde && desdeId ? { ...desde, id: desdeId } : null,
+    desdeReemplazado: pedida?.estado === "reemplazada",
     vigenteId: vigente?.id ?? null,
   };
 }
 
-/** Una versión vigente de esa consulta, para corregirla; null si no existe o ya fue reemplazada. */
-async function baseDeVersion(consultaId: number, id: number): Promise<BaseCotizacion | null> {
+/** Una versión vigente de esa cotización, para reemplazarla; null si no existe o ya fue reemplazada. */
+async function baseDeVersion(consultaId: number, id: number): Promise<BaseVersion | null> {
   const [c] = await db
     .select({
       numero: cotizacion.numero,
@@ -192,29 +174,28 @@ async function baseDeVersion(consultaId: number, id: number): Promise<BaseCotiza
     .from(cotizacion)
     .where(and(eq(cotizacion.id, id), eq(cotizacion.consultaId, consultaId), eq(cotizacion.estado, "enviada")));
   if (!c) return null;
-  const [lineas, fotos] = await Promise.all([
-    db
-      .select({ varianteId: cotizacionLinea.varianteId, precio: cotizacionLinea.precio })
-      .from(cotizacionLinea)
-      .where(eq(cotizacionLinea.cotizacionId, id))
-      .orderBy(asc(cotizacionLinea.orden)),
-    db.select({ id: cotizacionFoto.archivoId }).from(cotizacionFoto).where(eq(cotizacionFoto.cotizacionId, id)).orderBy(asc(cotizacionFoto.orden)),
-  ]);
-  return { ...c, lineas, fotos: fotos.map((f) => f.id) };
+  const lineas = await db
+    .select({ varianteId: cotizacionLinea.varianteId, precio: cotizacionLinea.precio })
+    .from(cotizacionLinea)
+    .where(eq(cotizacionLinea.cotizacionId, id))
+    .orderBy(asc(cotizacionLinea.orden));
+  return { ...c, lineas };
 }
 
-export type FilaCotizacion = {
+export type FilaVersion = {
   id: number;
   numero: string;
   version: number;
   estado: EstadoCotizacion;
   createdAt: Date;
-  /** Solo para el dueño (RN-01): al encargado le llega sin montos ni PDF. */
-  montos: { total: string; validaHasta: string; esEstimado: boolean; tienePdf: boolean } | null;
+  total: string;
+  validaHasta: string;
+  esEstimado: boolean;
+  tienePdf: boolean;
 };
 
-/** Las versiones de las cotizaciones de una consulta, de la más nueva a la más vieja. */
-export async function cotizacionesDeConsulta(consultaId: number, conMontos: boolean): Promise<FilaCotizacion[]> {
+/** Las versiones de una cotización, de la más nueva a la más vieja. */
+async function versionesDeCotizacion(consultaId: number): Promise<FilaVersion[]> {
   const filas = await db
     .select({
       id: cotizacion.id,
@@ -229,41 +210,39 @@ export async function cotizacionesDeConsulta(consultaId: number, conMontos: bool
     })
     .from(cotizacion)
     .where(eq(cotizacion.consultaId, consultaId))
-    .orderBy(desc(cotizacion.createdAt), desc(cotizacion.id));
-  return filas.map(({ total, validaHasta, esEstimado, pdf, ...f }) => ({ ...f, montos: conMontos ? { total, validaHasta, esEstimado, tienePdf: pdf !== null } : null }));
-}
-
-/** Si la consulta tiene alguna cotización (para reabrirla en "cotizado"). */
-export async function tieneCotizacion(consultaId: number): Promise<boolean> {
-  const [c] = await db.select({ id: cotizacion.id }).from(cotizacion).where(eq(cotizacion.consultaId, consultaId)).limit(1);
-  return !!c;
+    .orderBy(desc(cotizacion.version), desc(cotizacion.id));
+  return filas.map(({ pdf, ...f }) => ({ ...f, tienePdf: pdf !== null }));
 }
 
 /**
  * Cliente, vehículo y negocio como están al cotizar: se copian en la cotización (D-4) y de ahí sale su PDF, aunque se
- * genere después o los datos cambien (RN-02).
+ * genere después o los datos cambien (RN-02). `base`: la transacción que acaba de crear al cliente o al vehículo. Las
+ * lecturas van una tras otra: una transacción es una sola conexión, y pg no admite dos consultas a la vez en ella.
  */
-export async function datosDocumento(consultaId: number): Promise<DatosDocumento> {
-  const [[c], [n], [s]] = await Promise.all([
-    db
-      .select({
-        nombre: cliente.nombre,
-        telefono: cliente.telefono,
-        placa: vehiculo.placa,
-        marca: vehiculo.marca,
-        modelo: vehiculo.modelo,
-        color: vehiculo.color,
-        tamano: tamanoVehiculo.nombre,
-      })
-      .from(consulta)
-      .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
-      .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
-      .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
-      .where(eq(consulta.id, consultaId)),
-    db.select({ nombre: negocio.nombre, razonSocial: negocio.razonSocial, nit: negocio.nit }).from(negocio).where(eq(negocio.id, 1)),
-    db.select({ whatsapp: sucursal.telefonoWhatsapp, direccion: sucursal.direccion }).from(sucursal).where(eq(sucursal.activo, true)).orderBy(asc(sucursal.id)).limit(1),
-  ]);
-  if (!c) throw new Error(`No existe la consulta ${consultaId}.`);
+export async function datosDocumento(consultaId: number, base: Pick<typeof db, "select"> = db): Promise<DatosDocumento> {
+  const [c] = await base
+    .select({
+      nombre: cliente.nombre,
+      telefono: cliente.telefono,
+      placa: vehiculo.placa,
+      marca: vehiculo.marca,
+      modelo: vehiculo.modelo,
+      color: vehiculo.color,
+      tamano: tamanoVehiculo.nombre,
+    })
+    .from(consulta)
+    .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
+    .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
+    .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
+    .where(eq(consulta.id, consultaId));
+  const [n] = await base.select({ nombre: negocio.nombre, razonSocial: negocio.razonSocial, nit: negocio.nit }).from(negocio).where(eq(negocio.id, 1));
+  const [s] = await base
+    .select({ whatsapp: sucursal.telefonoWhatsapp, direccion: sucursal.direccion })
+    .from(sucursal)
+    .where(eq(sucursal.activo, true))
+    .orderBy(asc(sucursal.id))
+    .limit(1);
+  if (!c) throw new Error(`No existe la cotización ${consultaId}.`);
   if (!n) throw new Error("Faltan los datos del negocio: falta aplicar la migración 0003_datos_negocio.");
   return {
     cliente: { nombre: c.nombre, telefono: c.telefono },
@@ -273,5 +252,150 @@ export async function datosDocumento(consultaId: number): Promise<DatosDocumento
       tamano: c.tamano,
     },
     negocio: { ...n, whatsapp: s?.whatsapp ?? null, direccion: s?.direccion ?? null },
+  };
+}
+
+export type FilaCotizacion = {
+  id: number;
+  clienteId: number;
+  cliente: string;
+  placa: string;
+  numero: string;
+  total: string;
+  estado: EstadoConsulta;
+  ultimoMovimientoAt: Date;
+};
+
+/** Es una cotización (D-12): un encabezado con alguna versión. Las consultas de antes sin cotizar no lo son. */
+export const tieneVersiones = exists(db.select({ id: cotizacion.id }).from(cotizacion).where(eq(cotizacion.consultaId, consulta.id)));
+
+/** La versión que vale de cada cotización: la vigente, o la aceptada. Las reemplazadas quedan solo en su ficha. */
+const versionActual = and(eq(cotizacion.consultaId, consulta.id), ne(cotizacion.estado, "reemplazada"));
+
+const columnasFila = {
+  id: consulta.id,
+  clienteId: consulta.clienteId,
+  cliente: cliente.nombre,
+  placa: vehiculo.placa,
+  numero: cotizacion.numero,
+  total: cotizacion.total,
+  estado: consulta.estado,
+  ultimoMovimientoAt: consulta.ultimoMovimientoAt,
+};
+
+function filas(donde: SQL | undefined) {
+  return db
+    .select(columnasFila)
+    .from(consulta)
+    .innerJoin(cotizacion, versionActual)
+    .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
+    .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
+    .where(donde);
+}
+
+/** Cuántas filas muestran Aceptadas y Rechazadas sin buscar: son historia, y crecen. */
+export const LIMITE_HISTORIA = 50;
+
+/** Lo buscado: por cliente, teléfono, placa o número (de la versión que vale). */
+function coincide(q: string): SQL | undefined {
+  const busqueda = normalizarBusqueda(q);
+  if (!busqueda) return undefined;
+  return or(
+    sql`unaccent(lower(${cliente.nombre})) like unaccent(lower(${`%${escaparLike(busqueda.texto)}%`}))`,
+    busqueda.digitos ? like(cliente.telefono, `%${escaparLike(busqueda.digitos)}%`) : undefined,
+    busqueda.placa ? like(vehiculo.placa, `%${escaparLike(busqueda.placa)}%`) : undefined,
+    like(cotizacion.numero, `%${escaparLike(busqueda.texto)}%`),
+  );
+}
+
+/**
+ * Las cotizaciones de una pestaña. Las pendientes, las que llevan más tiempo sin respuesta primero (RF-35); las
+ * aceptadas y rechazadas, las más nuevas primero y hasta LIMITE_HISTORIA (buscando, se encuentran todas).
+ */
+export async function listarCotizaciones(vista: Vista, q: string): Promise<{ cotizaciones: FilaCotizacion[]; hayMas: boolean }> {
+  const donde = and(eq(consulta.estado, VISTAS[vista]), coincide(q));
+  if (vista === "pendientes") return { cotizaciones: await filas(donde).orderBy(asc(consulta.ultimoMovimientoAt), asc(consulta.id)), hayMas: false };
+  const encontradas = await filas(donde)
+    .orderBy(desc(consulta.ultimoMovimientoAt), desc(consulta.id))
+    .limit(LIMITE_HISTORIA + 1);
+  return { cotizaciones: encontradas.slice(0, LIMITE_HISTORIA), hayMas: encontradas.length > LIMITE_HISTORIA };
+}
+
+/**
+ * Cuántas hay en cada pestaña, con la misma búsqueda: así se ve en qué pestaña está lo buscado. Solo las que tienen
+ * versiones (la unión con la versión que vale): las consultas de antes sin cotizar no cuentan.
+ */
+export async function contarPorVista(q: string): Promise<Record<Vista, number>> {
+  const porEstado = await db
+    .select({ estado: consulta.estado, total: count() })
+    .from(consulta)
+    .innerJoin(cotizacion, versionActual)
+    .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
+    .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
+    .where(coincide(q))
+    .groupBy(consulta.estado);
+  const de = (estado: EstadoConsulta) => porEstado.find((f) => f.estado === estado)?.total ?? 0;
+  return { pendientes: de(VISTAS.pendientes), aceptadas: de(VISTAS.aceptadas), rechazadas: de(VISTAS.rechazadas) };
+}
+
+/** Las cotizaciones de un cliente, de la más nueva a la más vieja (su ficha). */
+export async function cotizacionesDelCliente(clienteId: number): Promise<FilaCotizacion[]> {
+  return filas(eq(consulta.clienteId, clienteId)).orderBy(desc(consulta.createdAt), desc(consulta.id));
+}
+
+export type DetalleCotizacion = {
+  id: number;
+  numero: string;
+  clienteId: number;
+  cliente: string;
+  telefono: string;
+  placa: string;
+  /** Marca y modelo, año y color: lo que se sepa (DatosVehiculo). */
+  detalle: (string | number)[];
+  tamano: string;
+  estado: EstadoConsulta;
+  motivoPerdida: MotivoPerdida | null;
+  detallePerdida: string | null;
+  createdAt: Date;
+  registradaPor: string;
+  versiones: FilaVersion[];
+};
+
+/** Una cotización con sus versiones, o null si no existe o no tiene ninguna (una consulta de antes sin cotizar). */
+export async function obtenerCotizacion(id: number): Promise<DetalleCotizacion | null> {
+  const [[c], versiones] = await Promise.all([
+    db
+      .select({
+        id: consulta.id,
+        clienteId: consulta.clienteId,
+        cliente: cliente.nombre,
+        telefono: cliente.telefono,
+        placa: vehiculo.placa,
+        marca: vehiculo.marca,
+        modelo: vehiculo.modelo,
+        anio: vehiculo.anio,
+        color: vehiculo.color,
+        tamano: tamanoVehiculo.nombre,
+        estado: consulta.estado,
+        motivoPerdida: consulta.motivoPerdida,
+        detallePerdida: consulta.detallePerdida,
+        createdAt: consulta.createdAt,
+        registradaPor: usuario.name,
+      })
+      .from(consulta)
+      .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
+      .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
+      .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
+      .innerJoin(usuario, eq(consulta.createdBy, usuario.id))
+      .where(eq(consulta.id, id)),
+    versionesDeCotizacion(id),
+  ]);
+  if (!c || versiones.length === 0) return null;
+  const { marca, modelo, anio, color, ...datos } = c;
+  return {
+    ...datos,
+    numero: versiones[0].numero,
+    detalle: detalleVehiculo({ marca, modelo, anio, color }),
+    versiones,
   };
 }
