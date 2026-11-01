@@ -78,6 +78,18 @@ test("pagada: el dueño suma un adicional, se cobra y se entrega; queda programa
   );
   expect(t).toMatchObject({ estado: "entregado", saldo: "0.00", autorizo: null, recordatorios: 1, plan: mantenimiento, cada: meses });
   expect(t.fecha).toBe(t.esperada);
+
+  // El técnico de la orden ve la firma (pedido 13): no es un precio ni un teléfono
+  await crearUsuario({ usuario: `tec-hu36-${s}`, nombre: `Técnico Entrega ${s}`, contrasena: "tecnico-123", rol: "tecnico" });
+  await consultar("update trabajo set tecnico_id = (select id from usuario where nombre_usuario = $2) where id = $1", [id, `tec-hu36-${s}`]);
+  await page.context().clearCookies();
+  await ingresar(page, `tec-hu36-${s}`, "tecnico-123");
+  await expect(page).toHaveURL(/\/panel$/);
+  await page.goto(`/panel/ordenes/${id}`);
+  const vista = page.getByRole("region", { name: "Firma de entrega" });
+  await expect(vista).toContainText(`Recibido conforme por Hermana de Entrega ${s}.`);
+  await expect(vista.getByRole("img", { name: `Firma de Hermana de Entrega ${s}` })).toHaveJSProperty("complete", true);
+  expect(await vista.getByRole("img").evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(0);
 });
 
 test("con saldo: el encargado sin el permiso no entrega; con el permiso sí, y queda quién lo autorizó (RN-13)", async ({ page }, info) => {

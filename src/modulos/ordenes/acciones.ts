@@ -44,6 +44,7 @@ import { esFotoDeAntes, estaAbierta, etapaAbierta, puedeExtenderse, MAXIMO_FOTOS
 const RECARGA = "No se pudo leer el pedido. Recarga la página.";
 /** La firma es un PNG chico (un dibujo a mano): más que esto no es una firma del recuadro. */
 const BYTES_MAXIMOS_FIRMA = 1024 * 1024;
+const FIRMA_ILEGIBLE = "No se pudo leer la firma. Bórrala y vuelve a firmar.";
 const NO_ES_TUYA = "Esa orden no es tuya.";
 const ERROR_FOTO = "La foto debe ser JPG, PNG o WebP de hasta 5 MB.";
 
@@ -652,9 +653,9 @@ export async function entregarVehiculo(_previo: EstadoFormulario, datos: FormDat
   // La firma, antes de la transacción (se convierte y se sube); si la entrega no se completa, se borra
   let firmaArchivoId: number | null = null;
   if (!sinFirma && conFirma) {
-    if (firma.size > BYTES_MAXIMOS_FIRMA) return { errores: { firma: "No se pudo leer la firma. Bórrala y vuelve a firmar." }, valores };
+    if (firma.size > BYTES_MAXIMOS_FIRMA) return { errores: { firma: FIRMA_ILEGIBLE }, valores };
     const g = await guardarFoto(firma, { carpeta: "firmas", autorId, privado: true, ladoMayor: 1200 });
-    if (!g.ok) return { errores: { firma: "No se pudo leer la firma. Bórrala y vuelve a firmar." }, valores };
+    if (!g.ok) return { errores: { firma: FIRMA_ILEGIBLE }, valores };
     firmaArchivoId = g.archivoId;
   }
 

@@ -30,8 +30,8 @@ Que al llevarse su vehículo el cliente firme con el dedo en el celular del tall
 En `trabajo`: `firma_archivo_id` (archivo, único), `firma_nombre`, `sin_firma_motivo`. La fecha y quién entregó ya están (`entregado_at`, `entregado_por`).
 
 ## 5. Pantallas
-- **Entregar (`/panel/ordenes/[id]/entregar`):** antes del botón, "Firma del cliente" (recuadro, "Borrar firma", nombre) y la casilla "Entregar sin firma" (con su motivo). El botón dice "Entregar vehículo".
-- **Orden (`/panel/ordenes/[id]`):** en la columna de datos, debajo de "Entregado el …", la sección "Firma": la imagen y "Recibido conforme por {nombre}", o "Entregado sin firma: {motivo}".
+- **Entregar (`/panel/ordenes/[id]/entregar`):** antes del botón, "Firma del cliente" (recuadro, "Borrar firma", nombre) y la casilla "Entregar sin firma" (con su motivo). El botón dice "Entregar vehículo". El recuadro sigue un solo dedo, guarda la firma con el fondo del panel (se lee en cualquier visor) y la conserva si cambia el ancho; al marcar "Entregar sin firma", la firma dibujada se descarta.
+- **Orden (`/panel/ordenes/[id]`):** la sección "Firma de entrega", debajo de "Cómo llegó" (cómo llegó y cómo se fue, juntos): la imagen y "Recibido conforme por {nombre}", o "Entregado sin firma: {motivo}". La fecha y quién entregó siguen en el encabezado ("Entregado el …").
 
 ## 6. Acciones
 `entregarVehiculo` (cambia): además de lo de siempre, recibe `firma` (PNG del recuadro, hasta 1 MB) y `firmaNombre`, o `sinFirma` y `sinFirmaMotivo`. Valida antes de guardar nada; guarda la firma (WebP, privada) antes de la transacción y la borra si la entrega no se completa. Auditoría: `conFirma` en `datos`.

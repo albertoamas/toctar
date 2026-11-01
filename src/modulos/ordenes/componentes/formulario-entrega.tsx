@@ -88,7 +88,15 @@ export function FormularioEntrega({ id, conDeuda, saldo, puedeAutorizar, cliente
           </>
         )}
         <label htmlFor="sinFirma" className="flex min-h-11 cursor-pointer items-center gap-3 self-start">
-          <Checkbox id="sinFirma" checked={sinFirma} onCheckedChange={(si) => setSinFirma(si === true)} />
+          <Checkbox
+            id="sinFirma"
+            checked={sinFirma}
+            onCheckedChange={(si) => {
+              setSinFirma(si === true);
+              // La firma que había no se envía: al volver, el recuadro empieza vacío
+              if (si) setFirma(null);
+            }}
+          />
           <span className="font-medium">Entregar sin firma</span>
         </label>
         {sinFirma && (
