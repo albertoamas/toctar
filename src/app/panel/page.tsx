@@ -37,7 +37,7 @@ const DESCRIPCION: Partial<Record<Modulo, string>> = {
   agenda: "Qué espacio del taller está ocupado cada día; agendar y mover reservas.",
   ordenes: "Los vehículos en el taller: recibir, trabajar, avisar y entregar.",
   clientes: "Clientes y sus vehículos, para atenderlos con su historial.",
-  consultas: "Lo que preguntan los clientes, con sus fotos, hasta cotizarlo.",
+  cotizaciones: "Armar y enviar cotizaciones; quedan aceptadas al agendarlas.",
   pagos: "Quién debe todavía, desde cuándo, y cobrarle.",
   mantenimientos: "A quién le toca volver: avisarle y agendarlo.",
   reclamos: "Lo que llega desde el sitio: responder y cerrar.",

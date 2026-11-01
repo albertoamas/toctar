@@ -11,13 +11,13 @@ import { buscarClientes } from "../consultas";
 import { normalizarBusqueda, placasEnFila } from "../reglas";
 import { BuscadorClientes } from "./buscador-clientes";
 
-// Elegir al cliente con el buscador de Clientes (HU-22): la nueva consulta (HU-24) y la reserva directa (HU-30). La
+// Elegir al cliente con el buscador de Clientes (HU-22): la nueva cotización (pedido 23) y la reserva directa (HU-30). La
 // elección va en la dirección (`hrefCliente`); "Cliente nuevo" es opcional (la reserva pide un cliente ya registrado).
 // Pulido 9.2: la misma fila que la lista de Clientes (8.1), con las placas en negrita.
 
 type Props = {
   q: string;
-  /** A dónde lleva elegir un cliente, por ejemplo "/panel/consultas/nueva?cliente=12". */
+  /** A dónde lleva elegir un cliente, por ejemplo "/panel/cotizaciones/nueva?cliente=12". */
   hrefCliente: (id: number) => Route;
   /** Si se puede registrar ahí mismo: la dirección de "Cliente nuevo". */
   hrefNuevo?: Route;

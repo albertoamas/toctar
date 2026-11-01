@@ -9,7 +9,7 @@ import { CLAVES_PARAMETRO, esquemaParametros, leerParametros } from "@/modulos/c
 const validos = {
   adelanto_sugerido: "200",
   validez_cotizacion_dias: "15",
-  dias_consulta_fria: "7",
+  dias_cotizacion_sin_respuesta: "7",
   condiciones_cotizacion: "Precios en bolivianos.",
   garantia_cotizacion: "Cubre el trabajo si se siguen los cuidados.",
   formas_pago_cotizacion: "Efectivo o QR.",
@@ -17,7 +17,7 @@ const validos = {
 
 describe("parámetros: ninguno vacío ni negativo (HU-05)", () => {
   test("acepta los valores iniciales y los convierte a número", () => {
-    expect(esquemaParametros.parse(validos)).toEqual({ ...validos, adelanto_sugerido: 200, validez_cotizacion_dias: 15, dias_consulta_fria: 7 });
+    expect(esquemaParametros.parse(validos)).toEqual({ ...validos, adelanto_sugerido: 200, validez_cotizacion_dias: 15, dias_cotizacion_sin_respuesta: 7 });
   });
 
   test.each([
@@ -28,8 +28,8 @@ describe("parámetros: ninguno vacío ni negativo (HU-05)", () => {
     ["adelanto_sugerido", "100001", "Escribe un monto mayor a cero, hasta Bs 100 000."],
     ["validez_cotizacion_dias", "0", "Entre 1 y 365 días."],
     ["validez_cotizacion_dias", "366", "Entre 1 y 365 días."],
-    ["dias_consulta_fria", "0", "Entre 1 y 90 días."],
-    ["dias_consulta_fria", "91", "Entre 1 y 90 días."],
+    ["dias_cotizacion_sin_respuesta", "0", "Entre 1 y 90 días."],
+    ["dias_cotizacion_sin_respuesta", "91", "Entre 1 y 90 días."],
     ["condiciones_cotizacion", "   ", "Escribe las condiciones: sale en el PDF de la cotización."],
     ["garantia_cotizacion", "x".repeat(2001), "Hasta 2000 caracteres."],
   ])("rechaza %s = %j", (clave, valor, mensaje) => {
@@ -42,7 +42,7 @@ describe("parámetros: ninguno vacío ni negativo (HU-05)", () => {
     const filas = [
       { clave: "adelanto_sugerido", valor: 250 },
       { clave: "validez_cotizacion_dias", valor: 10 },
-      { clave: "dias_consulta_fria", valor: 5 },
+      { clave: "dias_cotizacion_sin_respuesta", valor: 5 },
       { clave: "condiciones_cotizacion", valor: "Condiciones" },
       { clave: "garantia_cotizacion", valor: "Garantía" },
       { clave: "formas_pago_cotizacion", valor: "QR" },
@@ -50,7 +50,7 @@ describe("parámetros: ninguno vacío ni negativo (HU-05)", () => {
     expect(leerParametros(filas)).toEqual({
       adelanto_sugerido: 250,
       validez_cotizacion_dias: 10,
-      dias_consulta_fria: 5,
+      dias_cotizacion_sin_respuesta: 5,
       condiciones_cotizacion: "Condiciones",
       garantia_cotizacion: "Garantía",
       formas_pago_cotizacion: "QR",

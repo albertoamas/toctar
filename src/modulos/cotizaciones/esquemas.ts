@@ -1,10 +1,12 @@
 import { z } from "zod";
+import type { MotivoPerdida } from "@/db/esquema/consultas";
 import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
 import { leerMonto } from "@/modulos/catalogo/reglas";
-import { calcularTotales, leerMontoOCero, MAXIMO_FOTOS_PDF, MAXIMO_LINEAS, montoNoMayor } from "./reglas";
+import { calcularTotales, CLIENTE_NUEVO, leerMontoOCero, MAXIMO_LINEAS, MODOS, montoNoMayor, NOMBRE_MOTIVO, VEHICULO_OTRO } from "./reglas";
 
-// Validación de la cotización (HU-25). Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md §6 y §8.
+// Validación de la cotización. Especificación: docs/08-desarrollo/etapas/P23-cotizacion-directa.md §6.
 // Las líneas llegan como JSON en un campo oculto (EditorLista); los errores de cada una van en "lineas.0", "lineas.1"…
+// El cliente y el vehículo nuevos se validan con los esquemas de Clientes (C1), en la acción.
 
 const id = z.coerce.number().int().positive();
 
@@ -49,50 +51,84 @@ const lineas = z
   })
   .pipe(z.array(lineaServicio).min(1, "Agrega al menos un servicio.").max(MAXIMO_LINEAS, `Hasta ${MAXIMO_LINEAS} servicios.`));
 
-export const esquemaCotizacion = z
-  .object({
-    consultaId: id,
-    /** La versión que se corrige; vacío en la primera. */
-    desde: z
-      .string()
-      .optional()
-      .transform((v) => (v ? Number(v) : null))
-      .pipe(z.number().int().positive().nullable()),
-    lineas,
-    descuento: montoOCero("Revisa el descuento: un número, como 50 o 50,50."),
-    adelanto: montoOCero("Revisa el adelanto: un número, como 200 o 200,50."),
-    validaHasta: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, "Elige la fecha.")
-      // Una fecha que no existe ("2026-02-31") la acepta Date.parse, pero la rechaza la base: se compara de vuelta
-      .refine((v) => !Number.isNaN(Date.parse(v)) && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v, "Elige la fecha.")
-      .refine((v) => v <= sumarDias(fechaEnBolivia(), 365), "La validez puede ser de hasta un año.")
-      .refine((v) => v >= fechaEnBolivia(), "La validez no puede ser anterior a hoy."),
-    esEstimado: z.boolean(),
-    fotos: z.array(id).max(MAXIMO_FOTOS_PDF, `Hasta ${MAXIMO_FOTOS_PDF} fotos.`),
-  })
-  .superRefine((d, ctx) => {
-    if (d.fotos.length !== new Set(d.fotos).size) ctx.addIssue({ code: "custom", path: ["fotos"], message: "Revisa las fotos elegidas." });
-    // Sin líneas válidas no hay subtotal con qué comparar: primero el error de las líneas
-    if (!Array.isArray(d.lineas) || d.lineas.length === 0) return;
-    const { subtotal, total } = calcularTotales(
-      d.lineas.map((l) => l.precio),
-      d.descuento,
-    );
-    if (!montoNoMayor(d.descuento, subtotal)) ctx.addIssue({ code: "custom", path: ["descuento"], message: "El descuento no puede ser mayor que el subtotal." });
-    else if (!montoNoMayor(d.adelanto, total)) ctx.addIssue({ code: "custom", path: ["adelanto"], message: "El adelanto no puede ser mayor que el total." });
+/** Lo que lleva cada versión: servicios, montos, validez y cómo se cotizó (RN-03). */
+const camposPrecio = {
+  lineas,
+  descuento: montoOCero("Revisa el descuento: un número, como 50 o 50,50."),
+  adelanto: montoOCero("Revisa el adelanto: un número, como 200 o 200,50."),
+  validaHasta: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Elige la fecha.")
+    // Una fecha que no existe ("2026-02-31") la acepta Date.parse, pero la rechaza la base: se compara de vuelta
+    .refine((v) => !Number.isNaN(Date.parse(v)) && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v, "Elige la fecha.")
+    .refine((v) => v <= sumarDias(fechaEnBolivia(), 365), "La validez puede ser de hasta un año.")
+    .refine((v) => v >= fechaEnBolivia(), "La validez no puede ser anterior a hoy."),
+  modo: z.enum(MODOS, { message: "Elige cómo se cotizó." }),
+};
+
+/** El descuento no pasa del subtotal ni el adelanto del total. Sin líneas válidas no hay con qué comparar. */
+function revisarMontos(d: { lineas: { precio: string }[]; descuento: string; adelanto: string }, ctx: z.RefinementCtx) {
+  if (!Array.isArray(d.lineas) || d.lineas.length === 0) return;
+  const { subtotal, total } = calcularTotales(
+    d.lineas.map((l) => l.precio),
+    d.descuento,
+  );
+  if (!montoNoMayor(d.descuento, subtotal)) ctx.addIssue({ code: "custom", path: ["descuento"], message: "El descuento no puede ser mayor que el subtotal." });
+  else if (!montoNoMayor(d.adelanto, total)) ctx.addIssue({ code: "custom", path: ["adelanto"], message: "El adelanto no puede ser mayor que el total." });
+}
+
+/** Un id elegido en un selector, o el valor especial ("nuevo", "otro"). Vacío: no se eligió. */
+const eleccion = <T extends string>(especial: T, mensaje: string) =>
+  z.string().transform((v, ctx): number | T => {
+    if (v === especial) return especial;
+    const n = Number(v);
+    if (!v || !Number.isInteger(n) || n <= 0) {
+      ctx.addIssue({ code: "custom", message: mensaje });
+      return z.NEVER;
+    }
+    return n;
   });
 
-/** Lee el formulario: las casillas y las fotos elegidas no llegan como texto simple. */
-export function entradaCotizacion(datos: FormData) {
+export const esquemaClienteElegido = eleccion(CLIENTE_NUEVO, "Elige el cliente.");
+export const esquemaVehiculoElegido = eleccion(VEHICULO_OTRO, "Elige el vehículo.");
+
+/**
+ * Nueva cotización (pedido 23): el cliente (uno registrado o "nuevo") y su vehículo (uno suyo u "otro"), con los precios.
+ * Los datos del cliente y del vehículo nuevos se validan aparte, con los esquemas de Clientes.
+ */
+export const esquemaNuevaCotizacion = z.object({ cliente: esquemaClienteElegido, ...camposPrecio }).superRefine(revisarMontos);
+
+/** Nueva versión de una cotización pendiente (RN-02): reemplaza a `desde`, la vigente. */
+export const esquemaNuevaVersion = z.object({ consultaId: id, desde: id, ...camposPrecio }).superRefine(revisarMontos);
+
+/** Lee los campos de precio del formulario (los demás, como texto, con `leerValores`). */
+export function entradaPrecios(datos: FormData) {
+  const texto = (clave: string, vacio = "") => String(datos.get(clave) ?? vacio);
   return {
-    consultaId: String(datos.get("consultaId") ?? ""),
-    desde: String(datos.get("desde") ?? ""),
-    lineas: String(datos.get("lineas") ?? "[]"),
-    descuento: String(datos.get("descuento") ?? ""),
-    adelanto: String(datos.get("adelanto") ?? ""),
-    validaHasta: String(datos.get("validaHasta") ?? ""),
-    esEstimado: datos.get("esEstimado") === "on",
-    fotos: datos.getAll("fotos").map(String),
+    lineas: texto("lineas", "[]"),
+    descuento: texto("descuento"),
+    adelanto: texto("adelanto"),
+    validaHasta: texto("validaHasta"),
+    modo: texto("modo"),
   };
 }
+
+/** Los motivos, del texto de cada uno y no del esquema de la base: así este archivo no arrastra Drizzle al navegador. */
+const MOTIVOS = Object.keys(NOMBRE_MOTIVO) as [MotivoPerdida, ...MotivoPerdida[]];
+
+/** Rechazar (con motivo) o volver a pendiente (RF-30). Con "Otro", el detalle dice qué pasó. */
+export const esquemaCambioEstado = z.discriminatedUnion("accion", [
+  z
+    .object({
+      id,
+      accion: z.literal("rechazar"),
+      motivo: z.enum(MOTIVOS, { message: "Elige el motivo." }),
+      detalle: z
+        .string()
+        .trim()
+        .max(300, "Hasta 300 caracteres.")
+        .transform((v) => v || null),
+    })
+    .refine((d) => d.motivo !== "otro" || d.detalle, { path: ["detalle"], message: "Cuenta qué pasó." }),
+  z.object({ id, accion: z.literal("reabrir") }),
+]);

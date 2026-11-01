@@ -32,7 +32,7 @@ describe("formulario de usuario", () => {
   test("rechaza contraseña corta, rol inventado y permiso inexistente", () => {
     expect(esquemaCrearUsuario.safeParse({ ...valido, contrasena: "1234" }).success).toBe(false);
     expect(esquemaCrearUsuario.safeParse({ ...valido, rol: "admin" }).success).toBe(false);
-    expect(esquemaCrearUsuario.safeParse({ ...valido, permisos: ["cotizaciones"] }).success).toBe(false);
+    expect(esquemaCrearUsuario.safeParse({ ...valido, permisos: ["consultas"] }).success).toBe(false);
   });
 
   test("al editar, el id llega del formulario como texto", () => {

@@ -267,6 +267,13 @@
       "when": 1793138068402,
       "tag": "0037_sin_intervalo_global",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1793544948074,
+      "tag": "0038_cotizacion_directa",
+      "breakpoints": true
     }
   ]
 }

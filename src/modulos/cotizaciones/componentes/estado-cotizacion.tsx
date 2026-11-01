@@ -1,42 +1,62 @@
 "use client";
 
+import type { Route } from "next";
+import { useRouter } from "next/navigation";
 import { useActionState, useRef, useState } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
-import { MenuMas } from "@/componentes/panel/menu-mas";
+import { MenuMas, type AccionMas } from "@/componentes/panel/menu-mas";
 import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { Button } from "@/componentes/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { MotivoPerdida } from "@/db/esquema/consultas";
 import type { EstadoFormulario } from "@/lib/formularios";
-import { cambiarEstadoConsulta } from "../acciones";
+import { cambiarEstadoCotizacion } from "../acciones";
 import { NOMBRE_MOTIVO } from "../reglas";
 
-// HU-28: marcar la consulta como perdida (con motivo) o reabrirla (RF-30). Pulido 9.3: perderla se hace pocas veces y
-// va en el menú "Más" del encabezado, con su formulario en un modal (como "Desactivar cliente"); reabrir no pierde nada
-// y es la acción principal del encabezado de una perdida.
+// El menú "Más" de una cotización (pedido 23, como en las demás fichas): "Nueva versión" y "Rechazar" en una pendiente
+// (rechazar pide el motivo en un modal); "Volver a pendiente" en una rechazada. Se usan poco: el paso siguiente
+// ("Agendar") va solo en el encabezado.
 
 // Del texto de cada motivo, no del esquema de la base: así este componente no arrastra Drizzle al navegador
 const MOTIVOS = Object.keys(NOMBRE_MOTIVO) as MotivoPerdida[];
 
-export function MasConsulta({ id }: { id: number }) {
-  const [perdiendo, setPerdiendo] = useState(false);
+type Props = {
+  id: number;
+  /** A dónde lleva "Nueva versión" (pendiente y quien mira puede cotizar). */
+  nuevaVersion: Route | null;
+  /** "rechazar": una pendiente; "reabrir": una rechazada. */
+  cambio: "rechazar" | "reabrir" | null;
+};
+
+export function MasCotizacion({ id, nuevaVersion, cambio }: Props) {
+  const router = useRouter();
+  const [abierta, setAbierta] = useState<"rechazar" | "reabrir" | null>(null);
+  const cerrar = (abierto: boolean) => !abierto && setAbierta(null);
+  const acciones: AccionMas[] = [];
+  if (nuevaVersion) acciones.push({ texto: "Nueva versión", alElegir: () => router.push(nuevaVersion) });
+  if (cambio === "rechazar") acciones.push({ texto: "Rechazar", alElegir: () => setAbierta("rechazar") });
+  if (cambio === "reabrir") acciones.push({ texto: "Volver a pendiente", alElegir: () => setAbierta("reabrir") });
+  if (acciones.length === 0) return null;
   return (
     <>
-      <MenuMas acciones={[{ texto: "Marcar como perdida", alElegir: () => setPerdiendo(true) }]} />
-      <ModalFormulario titulo="Marcar como perdida" abierto={perdiendo} alCambiar={setPerdiendo}>
-        <FormularioPerder id={id} />
+      <MenuMas acciones={acciones} />
+      <ModalFormulario titulo="Rechazar la cotización" abierto={abierta === "rechazar"} alCambiar={cerrar}>
+        <FormularioRechazar id={id} />
+      </ModalFormulario>
+      <ModalFormulario titulo="Volver a pendiente" abierto={abierta === "reabrir"} alCambiar={cerrar}>
+        <FormularioReabrir id={id} />
       </ModalFormulario>
     </>
   );
 }
 
-function FormularioPerder({ id }: { id: number }) {
+function FormularioRechazar({ id }: { id: number }) {
   const cerrar = useCerrarModal();
   const [resultado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
-    conAviso(cambiarEstadoConsulta, (r) => r.ok && cerrar()),
+    conAviso(cambiarEstadoCotizacion, (r) => r.ok && cerrar()),
     {},
   );
   const formulario = useRef<HTMLFormElement>(null);
@@ -47,9 +67,10 @@ function FormularioPerder({ id }: { id: number }) {
   const [elegido, setElegido] = useState(v.motivo ?? "");
 
   return (
-    <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate aria-label="Marcar como perdida">
+    <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate aria-label="Rechazar la cotización">
       <input type="hidden" name="id" value={id} />
-      <input type="hidden" name="accion" value="perder" />
+      <input type="hidden" name="accion" value="rechazar" />
+      {resultado.mensaje && !resultado.ok && <MensajeError id="rechazar-error">{resultado.mensaje}</MensajeError>}
       <div className="flex flex-col gap-3">
         <p id="motivo-titulo" className="text-sm font-medium">Motivo</p>
         <input type="hidden" name="motivo" value={elegido} />
@@ -74,7 +95,7 @@ function FormularioPerder({ id }: { id: number }) {
       </Campo>
       <PieModal>
         <Button type="submit" disabled={enviando}>
-          {enviando ? "Guardando…" : "Marcar como perdida"}
+          {enviando ? "Guardando…" : "Sí, rechazar"}
         </Button>
         <CancelarModal />
       </PieModal>
@@ -82,17 +103,24 @@ function FormularioPerder({ id }: { id: number }) {
   );
 }
 
-const reabrirConAviso = conAviso(cambiarEstadoConsulta);
-
-export function ReabrirConsulta({ id }: { id: number }) {
-  const [, accion, enviando] = useActionState<EstadoFormulario, FormData>(reabrirConAviso, {});
+function FormularioReabrir({ id }: { id: number }) {
+  const cerrar = useCerrarModal();
+  const [resultado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
+    conAviso(cambiarEstadoCotizacion, (r) => r.ok && cerrar()),
+    {},
+  );
   return (
-    <form action={accion}>
+    <form action={accion} className="flex flex-col gap-5" aria-label="Volver a pendiente">
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="accion" value="reabrir" />
-      <Button type="submit" disabled={enviando}>
-        {enviando ? "Reabriendo…" : "Reabrir"}
-      </Button>
+      {resultado.mensaje && !resultado.ok && <MensajeError id="reabrir-error">{resultado.mensaje}</MensajeError>}
+      <p>La cotización vuelve a pendiente con su versión vigente, y se puede agendar o hacer una nueva versión.</p>
+      <PieModal>
+        <Button type="submit" disabled={enviando}>
+          {enviando ? "Guardando…" : "Sí, volver a pendiente"}
+        </Button>
+        <CancelarModal focoInicial />
+      </PieModal>
     </form>
   );
 }

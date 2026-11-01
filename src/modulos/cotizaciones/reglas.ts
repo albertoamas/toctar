@@ -1,13 +1,67 @@
-import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
-import { leerMonto, type Monto } from "@/modulos/catalogo/reglas";
+import type { EstadoConsulta, MotivoPerdida } from "@/db/esquema/consultas";
+import { diasEntre, fechaEnBolivia, sumarDias } from "@/lib/fechas";
+import { leerMonto, mostrarMonto, type Monto } from "@/modulos/catalogo/reglas";
 
-// Reglas puras de las cotizaciones (C2, HU-25). Sin base ni servidor: las prueba tests/unit/cotizaciones.test.ts.
-// Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md §3 y §6.
+// Reglas puras de las cotizaciones (C2, HU-25; pedido 23). Sin base ni servidor: las prueba tests/unit/cotizaciones.test.ts.
+// Especificación: docs/08-desarrollo/etapas/P23-cotizacion-directa.md (antes, C2-consultas-cotizaciones.md).
 // Los montos viajan como texto con dos decimales ("250.50"), como los guarda numeric(10,2). Las cuentas se hacen en
 // centavos enteros: con decimales de coma flotante, 0,1 + 0,2 no da 0,3.
 
 export const MAXIMO_LINEAS = 20;
-export const MAXIMO_FOTOS_PDF = 4;
+
+/** "1250,50 Bs": el mismo formato en la lista, la ficha y el formulario (no depende del idioma del servidor o del teléfono). */
+export const bs = (monto: string) => `${mostrarMonto(monto)} Bs`;
+
+/**
+ * El estado de una cotización es el de su encabezado (la tabla `consulta`, D-12), con los nombres de la interfaz.
+ * "consulto" solo queda en lo registrado antes del pedido 23: no se muestra en ninguna lista.
+ */
+export const NOMBRE_ESTADO: Record<EstadoConsulta, string> = {
+  consulto: "Sin cotizar",
+  cotizado: "Pendiente",
+  confirmado: "Aceptada",
+  perdido: "Rechazada",
+};
+
+/** Tono de la insignia de cada estado (`ListaFilas`, `Insignia`): la pendiente, sin tono. */
+export const TONO_ESTADO: Partial<Record<EstadoConsulta, "exito" | "aviso">> = { confirmado: "exito", perdido: "aviso" };
+
+export const NOMBRE_MOTIVO: Record<MotivoPerdida, string> = { precio: "Precio", no_respondio: "No respondió", otro: "Otro" };
+
+/** Pestañas de la lista, cada una con su estado. */
+export const VISTAS = { pendientes: "cotizado", aceptadas: "confirmado", rechazadas: "perdido" } as const satisfies Record<string, EstadoConsulta>;
+export type Vista = keyof typeof VISTAS;
+
+/**
+ * Cambios de estado (RF-30): una pendiente se acepta al agendarla (C3), se rechaza o recibe una versión nueva (sigue
+ * pendiente); una rechazada vuelve a pendiente. Una aceptada no cambia desde aquí: si se cancela su reserva, la agenda
+ * la pasa a rechazada.
+ */
+export function transicionPermitida(estado: EstadoConsulta, destino: EstadoConsulta): boolean {
+  if (estado === "cotizado") return destino === "cotizado" || destino === "confirmado" || destino === "perdido";
+  if (estado === "perdido") return destino === "cotizado";
+  return false;
+}
+
+/** Días calendario, en hora de Bolivia, desde un instante hasta hoy: lo de anoche a las 23:00 ya es "hace 1 día". */
+export function diasDesde(instante: Date, hoy: Date = new Date()): number {
+  return Math.max(0, diasEntre(fechaEnBolivia(instante), fechaEnBolivia(hoy)));
+}
+
+export const textoDias = (dias: number) => (dias === 0 ? "hoy" : dias === 1 ? "hace 1 día" : `hace ${dias} días`);
+
+/** Una pendiente sin movimiento desde hace `umbral` días (Configuración) espera respuesta: se resalta (RF-35). */
+export const sinRespuesta = (estado: EstadoConsulta, dias: number, umbral: number) => estado === "cotizado" && dias >= umbral;
+
+/** Cómo se cotizó (RN-03): por fotos es un estimado y el PDF lo dice. */
+export const MODOS = ["persona", "fotos"] as const;
+export type Modo = (typeof MODOS)[number];
+export const NOMBRE_MODO: Record<Modo, string> = { persona: "En persona", fotos: "Por fotos" };
+export const modoDe = (esEstimado: boolean): Modo => (esEstimado ? "fotos" : "persona");
+
+/** Valor del selector de cliente para registrarlo ahí mismo, y del de vehículo para agregar otro. */
+export const CLIENTE_NUEVO = "nuevo";
+export const VEHICULO_OTRO = "otro";
 
 const aCentavos = (monto: string) => Math.round(Number(monto) * 100);
 const deCentavos = (centavos: number) => (centavos / 100).toFixed(2);
@@ -52,23 +106,6 @@ export function precioSugerido(vigentes: ReadonlyMap<number, Monto>, tamanoId: n
 export const fechaValidez = (hoy: Date, dias: number) => sumarDias(fechaEnBolivia(hoy), dias);
 
 /**
- * Con qué línea arranca una cotización nueva (pulido 9.4): el servicio de interés de la consulta. Si tiene una sola
- * variante, ya elegida y con su precio sugerido (vacío si es "según evaluación" o no está cargado); si tiene varias, el
- * servicio elegido y falta la opción. Sin servicio de interés ("todavía no sabe") o si ya no se ofrece, ninguna.
- */
-export function lineasDelServicioDeInteres(
-  opciones: readonly { servicioId: number; varianteId: number; sugerencia: Sugerencia }[],
-  servicioId: number | null,
-): { servicioId?: number; varianteId: number; precio: string }[] {
-  const delServicio = servicioId ? opciones.filter((o) => o.servicioId === servicioId) : [];
-  if (delServicio.length === 0) return [];
-  if (delServicio.length > 1) return [{ servicioId: delServicio[0].servicioId, varianteId: 0, precio: "" }];
-  const [unica] = delServicio;
-  return [{ varianteId: unica.varianteId, precio: unica.sugerencia.tipo === "monto" ? unica.sugerencia.monto : "" }];
-}
-
-/** "Pulido y nano cerámico — 5 años"; con la variante "Única" (servicio sin opciones, D-2), solo el servicio. */
-/**
  * "Pulido y nano cerámico (2 años)": la descripción de una línea, en el panel, la cotización y su PDF. La opción va entre
  * paréntesis (antes, tras un guion largo); "Única" no se escribe.
  */
@@ -100,3 +137,6 @@ export function leerMontoOCero(texto: string): string | undefined {
 
 /** "Cotizacion-2026-0042.pdf", "Cotizacion-2026-0042-v2.pdf": sin tildes, para cualquier teléfono o computadora. */
 export const nombreArchivoPdf = (numero: string, version: number) => `Cotizacion-${numero}${version > 1 ? `-v${version}` : ""}.pdf`;
+
+/** El PDF de una versión, dentro de su cotización (pedido 23): la ruta comprueba que la versión sea de esa cotización. */
+export const rutaPdf = (consultaId: number, versionId: number) => `/panel/cotizaciones/${consultaId}/pdf/${versionId}` as const;

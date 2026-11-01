@@ -25,12 +25,12 @@ import { lineaDelMantenimiento } from "@/modulos/mantenimientos/reglas";
 
 export const metadata: Metadata = { title: "Nueva reserva" };
 
-// HU-30: nueva reserva. Desde la cotización vigente de una consulta (`?cotizacion=`), o directa: se elige el cliente con
+// HU-30: nueva reserva. Desde la versión vigente de una cotización (`?cotizacion=`), o directa: se elige el cliente con
 // el buscador de Clientes (`?cliente=`) y su vehículo (`?vehiculo=`). Dueño o encargado con "Agenda"; la directa lleva
 // precios y la arma el dueño o quien tiene "Pagos". `?fecha=` y `?espacio=` llegan desde un día libre del tablero.
 // HU-38: `?recordatorio=` llega desde "Agendar" en Mantenimientos, con el cliente y el vehículo: al agendar, el
 // recordatorio queda "agendado". Pedido 21: la línea llega con su servicio de mantenimiento.
-// Pulido 10.2: el cliente y su vehículo en un recuadro de lectura (como en Nueva consulta), con "Cambiar" en su
+// Pulido 10.2: el cliente y su vehículo en un recuadro de lectura (como en Nueva cotización), con "Cambiar" en su
 // cabecera; la hora y la nota plegadas, y "Agendar" fijo abajo en el celular (en FormularioReserva).
 export default function PaginaNuevaReserva({ searchParams }: PageProps<"/panel/agenda/nueva">) {
   return (
@@ -86,8 +86,8 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
     if (!c.agendable) {
       return (
         <EstadoVacio>
-          Esa cotización ya fue agendada o se corrigió.{" "}
-          <Link href={`/panel/consultas/${c.consultaId}`} className={enlace}>Volver a la consulta</Link>
+          Esa cotización ya fue agendada o tiene una versión nueva.{" "}
+          <Link href={`/panel/cotizaciones/${c.consultaId}`} className={enlace}>Volver a la cotización</Link>
         </EstadoVacio>
       );
     }
@@ -95,7 +95,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
     return (
       <>
         <ClienteYVehiculo nombre={c.cliente.nombre} vehiculo={c.vehiculo} />
-        {/* Los servicios de la cotización, en lectura: para cambiar precios se corrige la cotización */}
+        {/* Los servicios de la cotización, en lectura: para cambiar precios se hace una versión nueva */}
         <section aria-labelledby="cotizacion-titulo" className="flex flex-col gap-3">
           <CabeceraSeccion id="cotizacion" titulo={`Cotización ${c.numero}${c.version > 1 ? `, versión ${c.version}` : ""}`} />
           <div className="flex flex-col gap-2 rounded-sm border border-border p-4">
@@ -130,7 +130,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
 
   // Directa: lleva precios, así que la arma el dueño o quien registra pagos
   if (!conPagos) {
-    return <EstadoVacio>La reserva directa lleva precios: la arma el dueño o quien registra pagos. Agenda desde la cotización de una consulta.</EstadoVacio>;
+    return <EstadoVacio>La reserva directa lleva precios: la arma el dueño o quien registra pagos. Agenda desde una cotización.</EstadoVacio>;
   }
   const clienteId = numero("cliente");
   const conservar = (id: number) => {

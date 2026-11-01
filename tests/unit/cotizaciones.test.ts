@@ -1,10 +1,29 @@
 import { expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
 import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
-import { esquemaCotizacion } from "@/modulos/cotizaciones/esquemas";
-import { anioCotizacion, calcularTotales, claveCorrelativo, descripcionLinea, fechaValidez, leerMontoOCero, lineasDelServicioDeInteres, numeroCotizacion, precioSugerido, serviciosConOpciones } from "@/modulos/cotizaciones/reglas";
+import { esquemaCambioEstado, esquemaNuevaCotizacion, esquemaNuevaVersion, esquemaVehiculoElegido } from "@/modulos/cotizaciones/esquemas";
+import {
+  anioCotizacion,
+  calcularTotales,
+  claveCorrelativo,
+  descripcionLinea,
+  diasDesde,
+  fechaValidez,
+  leerMontoOCero,
+  modoDe,
+  NOMBRE_ESTADO,
+  numeroCotizacion,
+  precioSugerido,
+  rutaPdf,
+  serviciosConOpciones,
+  sinRespuesta,
+  textoDias,
+  transicionPermitida,
+  VISTAS,
+} from "@/modulos/cotizaciones/reglas";
 
-// C2 Cotizaciones (HU-25): totales, número, precio sugerido, validez y la validación del formulario (RF-31, RN-02).
+// Cotizaciones (HU-25, pedido 23): totales, número, precio sugerido, validez, la validación del formulario (RF-31,
+// RN-02, RN-03) y el seguimiento (RF-30, RF-35).
 
 test("calcularTotales suma en centavos, descuenta y nunca da negativo", () => {
   expect(calcularTotales(["450.00", "200.50"], "50.00")).toEqual({ subtotal: "650.50", descuento: "50.00", total: "600.50" });
@@ -54,7 +73,7 @@ test("descuento y adelanto aceptan cero o vacío", () => {
 const hoy = fechaEnBolivia();
 const valida = {
   consultaId: "7",
-  desde: "",
+  desde: "12",
   lineas: JSON.stringify([
     { varianteId: 3, precio: "450" },
     { varianteId: 4, precio: "200,50" },
@@ -62,14 +81,13 @@ const valida = {
   descuento: "50",
   adelanto: "200",
   validaHasta: sumarDias(hoy, 15),
-  esEstimado: true,
-  fotos: ["10", "11"],
+  modo: "fotos",
 };
 
-test("una cotización válida se lee con los montos normalizados", () => {
-  expect(esquemaCotizacion.parse(valida)).toEqual({
+test("una versión nueva válida se lee con los montos normalizados (RN-02)", () => {
+  expect(esquemaNuevaVersion.parse(valida)).toEqual({
     consultaId: 7,
-    desde: null,
+    desde: 12,
     lineas: [
       { varianteId: 3, precio: "450.00" },
       { varianteId: 4, precio: "200.50" },
@@ -77,14 +95,14 @@ test("una cotización válida se lee con los montos normalizados", () => {
     descuento: "50.00",
     adelanto: "200.00",
     validaHasta: sumarDias(hoy, 15),
-    esEstimado: true,
-    fotos: [10, 11],
+    modo: "fotos",
   });
-  expect(esquemaCotizacion.parse({ ...valida, desde: "12" }).desde).toBe(12);
+  // Sin la versión que reemplaza no hay versión nueva
+  expect(esquemaNuevaVersion.safeParse({ ...valida, desde: "" }).success).toBe(false);
 });
 
 const errores = (cambio: Partial<typeof valida>) => {
-  const r = esquemaCotizacion.safeParse({ ...valida, ...cambio });
+  const r = esquemaNuevaVersion.safeParse({ ...valida, ...cambio });
   return r.success ? {} : erroresDe(r.error);
 };
 
@@ -98,7 +116,7 @@ test("cada línea necesita servicio y precio; los errores van a su fila", () => 
   expect(errores({ lineas: "no es json" })).toEqual({ lineas: "No se pudo leer la lista de servicios. Recarga la página." });
 });
 
-test("descuento, adelanto, validez y fotos (RN-04, S-5)", () => {
+test("descuento, adelanto y validez (RN-04, S-5)", () => {
   expect(errores({ descuento: "700" })).toEqual({ descuento: "El descuento no puede ser mayor que el subtotal." });
   expect(errores({ adelanto: "600.51" })).toEqual({ adelanto: "El adelanto no puede ser mayor que el total." });
   expect(errores({ adelanto: "600.50" })).toEqual({});
@@ -107,26 +125,81 @@ test("descuento, adelanto, validez y fotos (RN-04, S-5)", () => {
   // Una fecha que no existe la acepta Date.parse pero la rechaza la base
   expect(errores({ validaHasta: "2026-02-31" })).toEqual({ validaHasta: "Elige la fecha." });
   expect(errores({ validaHasta: sumarDias(hoy, 366) })).toEqual({ validaHasta: "La validez puede ser de hasta un año." });
-  expect(errores({ fotos: ["1", "2", "3", "4", "5"] })).toEqual({ fotos: "Hasta 4 fotos." });
-  expect(errores({ fotos: ["1", "1"] })).toEqual({ fotos: "Revisa las fotos elegidas." });
 });
 
-test("una cotización nueva arranca con el servicio que pidió el cliente", () => {
-  const opciones = [
-    { servicioId: 1, varianteId: 11, sugerencia: { tipo: "monto" as const, monto: "450.00" } },
-    { servicioId: 2, varianteId: 21, sugerencia: { tipo: "monto" as const, monto: "900.00" } },
-    { servicioId: 2, varianteId: 22, sugerencia: { tipo: "monto" as const, monto: "1100.00" } },
-    { servicioId: 3, varianteId: 31, sugerencia: { tipo: "evaluacion" as const } },
-  ];
-  // Una sola variante: elegida y con su precio
-  expect(lineasDelServicioDeInteres(opciones, 1)).toEqual([{ varianteId: 11, precio: "450.00" }]);
-  // Varias (1 año, 2 años…): el servicio elegido y falta su opción
-  expect(lineasDelServicioDeInteres(opciones, 2)).toEqual([{ servicioId: 2, varianteId: 0, precio: "" }]);
-  // Según evaluación: elegida, el precio se escribe
-  expect(lineasDelServicioDeInteres(opciones, 3)).toEqual([{ varianteId: 31, precio: "" }]);
-  // "Todavía no sabe", o un servicio que ya no se ofrece: arranca vacía
-  expect(lineasDelServicioDeInteres(opciones, null)).toEqual([]);
-  expect(lineasDelServicioDeInteres(opciones, 9)).toEqual([]);
+test("cómo se cotizó es obligatorio: en persona o por fotos (RN-03)", () => {
+  expect(errores({ modo: "" })).toEqual({ modo: "Elige cómo se cotizó." });
+  expect(errores({ modo: "whatsapp" })).toEqual({ modo: "Elige cómo se cotizó." });
+  expect(esquemaNuevaVersion.parse({ ...valida, modo: "persona" }).modo).toBe("persona");
+  // La versión nueva arranca con el de la anterior
+  expect([modoDe(true), modoDe(false)]).toEqual(["fotos", "persona"]);
+});
+
+test("la cotización nueva (pedido 23) lleva el cliente: uno registrado o «nuevo»", () => {
+  const { lineas, descuento, adelanto, validaHasta, modo } = valida;
+  const precios = { lineas, descuento, adelanto, validaHasta, modo };
+  expect(esquemaNuevaCotizacion.parse({ cliente: "12", ...precios }).cliente).toBe(12);
+  expect(esquemaNuevaCotizacion.parse({ cliente: "nuevo", ...precios }).cliente).toBe("nuevo");
+  for (const malo of ["", "0", "-1", "abc", "1.5"]) {
+    expect(erroresDe(esquemaNuevaCotizacion.safeParse({ cliente: malo, ...precios }).error!)).toEqual({ cliente: "Elige el cliente." });
+  }
+  // Un precio que falta no esconde el resto: cada error en su campo
+  expect(erroresDe(esquemaNuevaCotizacion.safeParse({ cliente: "", ...precios, modo: "" }).error!)).toEqual({ cliente: "Elige el cliente.", modo: "Elige cómo se cotizó." });
+});
+
+test("el vehículo elegido es un id o «otro»", () => {
+  expect(esquemaVehiculoElegido.parse("7")).toBe(7);
+  expect(esquemaVehiculoElegido.parse("otro")).toBe("otro");
+  for (const malo of ["", "0", "nuevo"]) expect(esquemaVehiculoElegido.safeParse(malo).error?.issues[0].message).toBe("Elige el vehículo.");
+});
+
+// Seguimiento (RF-30, RF-35): el estado vive en el encabezado de la cotización (D-12).
+
+test("una pendiente se acepta (al agendar), se rechaza o recibe una versión; una rechazada vuelve a pendiente", () => {
+  expect(transicionPermitida("cotizado", "confirmado")).toBe(true);
+  expect(transicionPermitida("cotizado", "perdido")).toBe(true);
+  expect(transicionPermitida("cotizado", "cotizado")).toBe(true); // una versión nueva
+  expect(transicionPermitida("perdido", "cotizado")).toBe(true);
+  expect(transicionPermitida("perdido", "perdido")).toBe(false);
+  expect(transicionPermitida("perdido", "confirmado")).toBe(false);
+  for (const destino of ["consulto", "cotizado", "perdido"] as const) expect(transicionPermitida("confirmado", destino)).toBe(false);
+  // Lo registrado antes del pedido 23 sin cotizar ya no se mueve
+  for (const destino of ["cotizado", "perdido", "confirmado"] as const) expect(transicionPermitida("consulto", destino)).toBe(false);
+});
+
+test("los estados se llaman como en el taller: pendiente, aceptada y rechazada", () => {
+  expect([NOMBRE_ESTADO.cotizado, NOMBRE_ESTADO.confirmado, NOMBRE_ESTADO.perdido]).toEqual(["Pendiente", "Aceptada", "Rechazada"]);
+  expect(VISTAS).toEqual({ pendientes: "cotizado", aceptadas: "confirmado", rechazadas: "perdido" });
+});
+
+test("los días se cuentan por fecha de Bolivia, no por horas", () => {
+  const ahora = new Date("2026-10-20T15:00:00Z"); // 11:00 en La Paz
+  expect(diasDesde(new Date("2026-10-20T04:30:00Z"), ahora)).toBe(0); // 00:30 de hoy
+  expect(diasDesde(new Date("2026-10-20T03:30:00Z"), ahora)).toBe(1); // 23:30 de ayer
+  expect(diasDesde(new Date("2026-10-11T15:00:00Z"), ahora)).toBe(9);
+  expect(diasDesde(new Date("2026-10-21T15:00:00Z"), ahora)).toBe(0); // un reloj adelantado no da negativos
+  expect([0, 1, 9].map(textoDias)).toEqual(["hoy", "hace 1 día", "hace 9 días"]);
+});
+
+test("una pendiente sin movimiento desde el umbral espera respuesta; las demás nunca", () => {
+  expect(sinRespuesta("cotizado", 6, 7)).toBe(false);
+  expect(sinRespuesta("cotizado", 7, 7)).toBe(true);
+  expect(sinRespuesta("perdido", 30, 7)).toBe(false);
+  expect(sinRespuesta("confirmado", 30, 7)).toBe(false);
+  expect(sinRespuesta("consulto", 30, 7)).toBe(false);
+});
+
+test("rechazar pide el motivo; con «Otro», el detalle", () => {
+  expect(esquemaCambioEstado.parse({ id: "3", accion: "rechazar", motivo: "precio", detalle: " " })).toEqual({ id: 3, accion: "rechazar", motivo: "precio", detalle: null });
+  expect(esquemaCambioEstado.safeParse({ id: "3", accion: "rechazar", motivo: "", detalle: "" }).error?.issues[0].message).toBe("Elige el motivo.");
+  expect(esquemaCambioEstado.safeParse({ id: "3", accion: "rechazar", motivo: "otro", detalle: "" }).error?.issues[0]).toMatchObject({ path: ["detalle"], message: "Cuenta qué pasó." });
+  expect(esquemaCambioEstado.safeParse({ id: "3", accion: "rechazar", motivo: "precio", detalle: "x".repeat(301) }).error?.issues[0].message).toBe("Hasta 300 caracteres.");
+  expect(esquemaCambioEstado.parse({ id: "3", accion: "reabrir" })).toEqual({ id: 3, accion: "reabrir" });
+  expect(esquemaCambioEstado.safeParse({ id: "3", accion: "perder" }).success).toBe(false);
+});
+
+test("el PDF de una versión va dentro de su cotización", () => {
+  expect(rutaPdf(7, 12)).toBe("/panel/cotizaciones/7/pdf/12");
 });
 
 test("las opciones del catálogo se agrupan por servicio, en su orden, para elegir el servicio y después la opción", () => {

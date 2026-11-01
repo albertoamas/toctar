@@ -11,7 +11,8 @@ import { Input } from "@/componentes/ui/input";
 
 const PAUSA_MS = 300;
 
-export function BuscadorClientes() {
+/** `etiqueta` y `ejemplo`: lo que se puede buscar, si no es solo un cliente (Cotizaciones también busca por número). */
+export function BuscadorClientes({ etiqueta = "Buscar por nombre, teléfono o placa", ejemplo = "Nombre, teléfono o placa" }: { etiqueta?: string; ejemplo?: string }) {
   const router = useRouter();
   const ruta = usePathname();
   const parametros = useSearchParams();
@@ -43,9 +44,9 @@ export function BuscadorClientes() {
         type="search"
         value={texto}
         onChange={(e) => cambiar(e.target.value)}
-        aria-label="Buscar por nombre, teléfono o placa"
+        aria-label={etiqueta}
         // Corto: el largo se cortaba a 360 px. El lector de pantalla oye la etiqueta completa
-        placeholder="Nombre, teléfono o placa"
+        placeholder={ejemplo}
         autoComplete="off"
         spellCheck={false}
         aria-busy={buscando}

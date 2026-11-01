@@ -12,7 +12,8 @@ import { Button } from "@/componentes/ui/button";
 // Algunos teléfonos (Safari, sobre todo) solo abren el menú si se pide enseguida después del toque: si bajar el PDF
 // tarda, lo rechazan. Entonces el archivo queda listo y el botón pide un segundo toque, que lo abre al instante.
 
-type Props = { cotizacionId: number; nombre: string; titulo: string };
+/** `ruta`: la del PDF de la versión (`rutaPdf`). */
+type Props = { ruta: string; nombre: string; titulo: string };
 type Estado = "listo" | "bajando" | "compartiendo" | "falta-tocar";
 
 /** Si el navegador comparte PDF, sin bajar nada todavía: se pregunta con un archivo vacío del mismo tipo. */
@@ -20,11 +21,10 @@ const comparteArchivos = (nombre: string) => !!navigator.canShare?.({ files: [ne
 
 const NO_SE_PUDO = "No se pudo compartir el PDF. Usa «Descargar» y mándalo desde WhatsApp.";
 
-export function CompartirPdf({ cotizacionId, nombre, titulo }: Props) {
+export function CompartirPdf({ ruta, nombre, titulo }: Props) {
   // El PDF bajado se guarda solo para el segundo toque; después de compartir se suelta
   const archivo = useRef<File | null>(null);
   const [estado, setEstado] = useState<Estado>("listo");
-  const ruta = `/panel/cotizaciones/${cotizacionId}/pdf`;
 
   async function compartir() {
     if (!comparteArchivos(nombre)) {

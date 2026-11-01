@@ -1,217 +1,285 @@
 "use server";
 
-import { and, eq, inArray, like, max, sql } from "drizzle-orm";
+import { and, eq, max, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
+import { cliente, consulta, cotizacion, vehiculo } from "@/db/esquema";
+import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
+import { exigirAccion, exigirModulo } from "@/lib/sesion";
+import { clienteConTelefono } from "@/modulos/clientes/consultas";
+import { esquemaCliente, esquemaVehiculo } from "@/modulos/clientes/esquemas";
 import {
-  archivo,
-  auditoria,
-  consulta,
-  consultaArchivo,
-  correlativo,
-  cotizacion,
-  cotizacionFoto,
-  cotizacionLinea,
-  servicio,
-  variante,
-  vehiculo,
-} from "@/db/esquema";
-import { erroresDe, type EstadoFormulario } from "@/lib/formularios";
-import { exigirAccion } from "@/lib/sesion";
-import { preciosVigentes } from "@/modulos/catalogo/consultas";
-import type { Monto } from "@/modulos/catalogo/reglas";
+  camposConPrefijo,
+  erroresConPrefijo,
+  leerValores,
+  PREFIJO_VEHICULO,
+  revisarVehiculo,
+  type EstadoCliente,
+  type Existentes,
+} from "@/modulos/clientes/servidor";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
-import { NOMBRE_ESTADO, transicionPermitida } from "@/modulos/consultas/reglas";
-import { entradaCotizacion, esquemaCotizacion } from "./esquemas";
-import { datosDocumento } from "./consultas";
+import { entradaPrecios, esquemaCambioEstado, esquemaClienteElegido, esquemaNuevaCotizacion, esquemaNuevaVersion, esquemaVehiculoElegido } from "./esquemas";
 import { generarPdf } from "./pdf/generar";
-import { anioCotizacion, calcularTotales, claveCorrelativo, descripcionLinea, numeroCotizacion, precioSugerido } from "./reglas";
+import { CLIENTE_NUEVO, NOMBRE_ESTADO, transicionPermitida, VEHICULO_OTRO } from "./reglas";
+import { escribirVersion, numeroNuevo, prepararLineas } from "./servidor";
 
-// Cotizaciones (HU-25). Solo el dueño (RN-01): exigirAccion("cotizar").
-// Una cotización enviada no cambia (RN-02, RF-34): no hay acción de editar. Corregirla crea la versión siguiente con el
-// mismo número, y la anterior queda "reemplazada". Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md §6.
+// Cotizaciones (pedido 23, P23-cotizacion-directa.md §6). Cotiza el dueño o el encargado con "Cotizaciones" (pedido 24,
+// RN-01): exigirAccion("cotizar"). Una cotización enviada no cambia (RN-02): una versión nueva la reemplaza con el
+// mismo número, y la anterior queda "reemplazada" con su PDF.
+
+const PEDIDO_ILEGIBLE = "No se pudo leer el pedido. Recarga la página.";
+
+function despuesDeCambiar(id: number, clienteId?: number) {
+  revalidatePath("/panel/cotizaciones");
+  revalidatePath(`/panel/cotizaciones/${id}`);
+  if (clienteId) revalidatePath(`/panel/clientes/${clienteId}`);
+}
+
+/** El PDF (HU-26), fuera de la transacción: si falla, la cotización ya quedó y su ficha ofrece generarlo de nuevo. */
+async function conPdf(cotizacionId: number, autorId: number): Promise<boolean> {
+  try {
+    await generarPdf(cotizacionId, autorId);
+    return true;
+  } catch (error) {
+    console.error(`No se pudo generar el PDF de la cotización ${cotizacionId}:`, error);
+    return false;
+  }
+}
 
 /**
- * Guarda la cotización (o la versión nueva) y pasa la consulta a "cotizado". Los totales se recalculan acá; las
- * descripciones, los precios sugeridos y los textos de Configuración se copian (D-4). Todo en una transacción.
+ * Nueva cotización (pedido 23): el cliente se elige o se registra ahí mismo (nombre y WhatsApp, con el aviso de
+ * repetidos de C1, RF-23), el vehículo se elige entre los suyos o se agrega, y la versión 1 con sus precios. Todo en una
+ * transacción: o queda todo, o nada.
  */
-export async function guardarCotizacion(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+export async function crearCotizacion(_previo: EstadoCliente, datos: FormData): Promise<EstadoCliente> {
   const autor = await exigirAccion("cotizar");
-  const entrada = entradaCotizacion(datos);
-  const r = esquemaCotizacion.safeParse(entrada);
+  const valores = leerValores(datos);
+  const errores: Record<string, string> = {};
+
+  const entrada = esquemaNuevaCotizacion.safeParse({ cliente: valores.cliente ?? "", ...entradaPrecios(datos) });
+  if (!entrada.success) Object.assign(errores, erroresDe(entrada.error));
+  // El cliente se lee aparte: aunque falte un precio, se muestran juntos los errores del cliente y del vehículo
+  const delCliente = esquemaClienteElegido.safeParse(valores.cliente ?? "");
+  if (!delCliente.success) return { mensaje: PEDIDO_ILEGIBLE };
+  const elegido = delCliente.data;
+
+  // Cliente nuevo: solo lo justo para atenderlo; el resto se completa en su ficha
+  let nuevoCliente: { nombre: string; telefono: string } | null = null;
+  if (elegido === CLIENTE_NUEVO) {
+    const c = esquemaCliente.pick({ nombre: true, telefono: true }).safeParse(valores);
+    if (c.success) nuevoCliente = c.data;
+    else Object.assign(errores, erroresDe(c.error));
+  }
+
+  // Vehículo: con un cliente nuevo siempre es nuevo; con uno registrado, uno suyo u "otro"
+  let vehiculoId: number | null = null;
+  let nuevoVehiculo: z.output<typeof esquemaVehiculo> | null = null;
+  let eleccionVehiculo: number | typeof VEHICULO_OTRO | null = elegido === CLIENTE_NUEVO ? VEHICULO_OTRO : null;
+  if (elegido !== CLIENTE_NUEVO) {
+    const v = esquemaVehiculoElegido.safeParse(valores.vehiculo ?? "");
+    if (v.success) eleccionVehiculo = v.data;
+    else errores.vehiculo = v.error.issues[0].message;
+  }
+  if (eleccionVehiculo === VEHICULO_OTRO) {
+    const n = esquemaVehiculo.safeParse(camposConPrefijo(valores, PREFIJO_VEHICULO));
+    if (n.success) nuevoVehiculo = n.data;
+    else Object.assign(errores, erroresConPrefijo(erroresDe(n.error), PREFIJO_VEHICULO));
+  } else vehiculoId = eleccionVehiculo;
+  if (!entrada.success || Object.keys(errores).length > 0) return { errores, valores };
+  const precios = entrada.data;
+
+  // Lo que el esquema no sabe: que el cliente y su vehículo existan y estén activos, y los repetidos (RF-23). El tamaño
+  // del vehículo da los precios sugeridos que se copian en cada línea
+  const existentes: Existentes = {};
+  let tamanoId = nuevoVehiculo?.tamanoId ?? 0;
+  if (typeof elegido === "number") {
+    const [c] = await db.select({ id: cliente.id }).from(cliente).where(and(eq(cliente.id, elegido), eq(cliente.activo, true)));
+    if (!c) return { mensaje: "Ese cliente ya no está activo. Elige otro.", valores };
+    if (vehiculoId) {
+      const [suyo] = await db
+        .select({ tamanoId: vehiculo.tamanoId })
+        .from(vehiculo)
+        .where(and(eq(vehiculo.id, vehiculoId), eq(vehiculo.clienteId, elegido), eq(vehiculo.activo, true)));
+      if (suyo) tamanoId = suyo.tamanoId;
+      else errores.vehiculo = "Elige el vehículo.";
+    }
+  } else if (nuevoCliente) {
+    const conTelefono = await clienteConTelefono(nuevoCliente.telefono);
+    if (conTelefono) {
+      errores.telefono = `Ese número ya es de ${conTelefono.nombre}.`;
+      existentes.telefono = conTelefono;
+    }
+  }
+  if (nuevoVehiculo) await revisarVehiculo(nuevoVehiculo, PREFIJO_VEHICULO, errores, existentes);
+  if (Object.keys(errores).length > 0) return { errores, valores, existentes };
+
+  const [preparadas, parametros] = await Promise.all([prepararLineas(precios.lineas, tamanoId), obtenerParametros()]);
+  if ("errores" in preparadas) return { errores: preparadas.errores, valores };
+
+  const autorId = Number(autor.id);
+  let ids: { consulta: number; cliente: number; version: number };
+  try {
+    ids = await db.transaction(async (tx) => {
+      let clienteId: number;
+      if (typeof elegido === "number") {
+        clienteId = elegido;
+        // Un cliente al que se le cotiza sube en la lista de recientes de Clientes
+        await tx.update(cliente).set({ updatedAt: sql`now()` }).where(eq(cliente.id, clienteId));
+      } else {
+        const [c] = await tx
+          .insert(cliente)
+          .values({ ...nuevoCliente!, createdBy: autorId, updatedBy: autorId })
+          .returning({ id: cliente.id });
+        clienteId = c.id;
+      }
+      if (nuevoVehiculo) {
+        const [v] = await tx.insert(vehiculo).values({ ...nuevoVehiculo, clienteId, createdBy: autorId }).returning({ id: vehiculo.id });
+        vehiculoId = v.id;
+      }
+      // El encabezado, ya pendiente: agrupa las versiones y lleva el estado (D-12)
+      const [encabezado] = await tx
+        .insert(consulta)
+        .values({ clienteId, vehiculoId: vehiculoId!, estado: "cotizado", createdBy: autorId })
+        .returning({ id: consulta.id });
+      const version = await escribirVersion(tx, {
+        consultaId: encabezado.id,
+        numero: await numeroNuevo(tx),
+        version: 1,
+        precios,
+        lineas: preparadas.lineas,
+        parametros,
+        autorId,
+      });
+      return { consulta: encabezado.id, cliente: clienteId, version };
+    });
+  } catch (error) {
+    // Dos personas registrando lo mismo a la vez: lo frena el índice único
+    const indice = indiceUnicoViolado(error);
+    if (indice === "cliente_telefono_unico") return { errores: { telefono: "Ese número ya está registrado. Busca al cliente." }, valores };
+    if (indice === "vehiculo_placa_unica") return { errores: { [`${PREFIJO_VEHICULO}placa`]: "Esa placa ya está registrada. Busca al cliente." }, valores };
+    throw error;
+  }
+
+  const pdf = await conPdf(ids.version, autorId);
+  despuesDeCambiar(ids.consulta, ids.cliente);
+  revalidatePath("/panel/clientes");
+  redirect(`/panel/cotizaciones/${ids.consulta}?creada=1${pdf ? "" : "&sinpdf=1"}`);
+}
+
+/**
+ * Versión nueva de una cotización pendiente (RN-02, RF-34): reemplaza a la vigente con el mismo número, y la anterior
+ * queda como estaba, con su PDF. El cliente y el vehículo no cambian.
+ */
+export async function guardarVersion(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  const autor = await exigirAccion("cotizar");
+  const r = esquemaNuevaVersion.safeParse({ consultaId: String(datos.get("consultaId") ?? ""), desde: String(datos.get("desde") ?? ""), ...entradaPrecios(datos) });
   if (!r.success) {
     const errores = erroresDe(r.error);
     // Los campos ocultos no tienen dónde mostrar su error: llegaron alterados
-    if (errores.consultaId || errores.desde) return { mensaje: "No se pudo leer el pedido. Recarga la página." };
+    if (errores.consultaId || errores.desde) return { mensaje: PEDIDO_ILEGIBLE };
     // Sin `valores`: el formulario es controlado y conserva lo escrito
     return { errores };
   }
   const d = r.data;
 
-  // La consulta, su vehículo (su tamaño da los precios) y si se puede cotizar
   const [c] = await db
-    .select({ estado: consulta.estado, tamanoId: vehiculo.tamanoId })
+    .select({ estado: consulta.estado, clienteId: consulta.clienteId, tamanoId: vehiculo.tamanoId })
     .from(consulta)
     .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
     .where(eq(consulta.id, d.consultaId));
-  if (!c) return { mensaje: "Esa consulta ya no existe." };
-  if (!transicionPermitida(c.estado, "cotizado")) {
-    return { mensaje: `La consulta está ${NOMBRE_ESTADO[c.estado].toLowerCase()}: ${c.estado === "perdido" ? "reábrela para cotizar" : "ya no se cotiza"}.` };
+  if (!c) return { mensaje: "Esa cotización ya no existe." };
+  // Solo una pendiente recibe versiones: una rechazada vuelve a pendiente primero y una aceptada ya no cambia
+  if (c.estado !== "cotizado") {
+    return { mensaje: `La cotización está ${NOMBRE_ESTADO[c.estado].toLowerCase()}: ${c.estado === "perdido" ? "vuelve a ponerla pendiente para cambiarla" : "ya no se cambia"}.` };
   }
-
-  // Cada línea: una variante activa de un servicio activo; su precio sugerido es el vigente para ese tamaño
-  const varianteIds = [...new Set(d.lineas.map((l) => l.varianteId))];
-  const [opciones, vigentes, fotosValidas, parametros, documento] = await Promise.all([
-    db
-      .select({ id: variante.id, servicio: servicio.nombre, variante: variante.nombre })
-      .from(variante)
-      .innerJoin(servicio, eq(variante.servicioId, servicio.id))
-      .where(and(inArray(variante.id, varianteIds), eq(variante.activo, true), eq(servicio.activo, true))),
-    preciosVigentes(varianteIds),
-    d.fotos.length === 0
-      ? []
-      : db
-          .select({ id: consultaArchivo.archivoId })
-          .from(consultaArchivo)
-          .innerJoin(archivo, eq(consultaArchivo.archivoId, archivo.id))
-          .where(and(eq(consultaArchivo.consultaId, d.consultaId), inArray(consultaArchivo.archivoId, d.fotos), like(archivo.tipoMime, "image/%"))),
-    obtenerParametros(),
-    datosDocumento(d.consultaId),
-  ]);
-  const errores: Record<string, string> = {};
-  d.lineas.forEach((l, i) => {
-    if (!opciones.some((o) => o.id === l.varianteId)) errores[`lineas.${i}`] = "Ese servicio ya no se ofrece: quítalo.";
-  });
-  if (fotosValidas.length !== d.fotos.length) errores.fotos = "Una de las fotos ya no está en la consulta. Recarga la página.";
-  if (Object.keys(errores).length > 0) return { errores };
-
-  const montosDe = (varianteId: number) => new Map<number, Monto>(vigentes.filter((p) => p.varianteId === varianteId).map((p) => [p.tamanoId, p.monto]));
-  const lineas = d.lineas.map((l, orden) => {
-    const o = opciones.find((x) => x.id === l.varianteId)!;
-    const sugerencia = precioSugerido(montosDe(l.varianteId), c.tamanoId);
-    return {
-      varianteId: l.varianteId,
-      tamanoId: c.tamanoId,
-      descripcion: descripcionLinea(o.servicio, o.variante),
-      precioSugerido: sugerencia.tipo === "monto" ? sugerencia.monto : null,
-      precio: l.precio,
-      orden,
-    };
-  });
-  const totales = calcularTotales(
-    lineas.map((l) => l.precio),
-    d.descuento,
-  );
+  const [preparadas, parametros] = await Promise.all([prepararLineas(d.lineas, c.tamanoId), obtenerParametros()]);
+  if ("errores" in preparadas) return { errores: preparadas.errores };
   const autorId = Number(autor.id);
 
   const resultado = await db.transaction(async (tx) => {
-    // Candado sobre la consulta: dos guardados a la vez no crean dos vigentes ni dos versiones con el mismo número. Con
-    // él tomado se vuelve a mirar lo que pudo cambiar desde la revisión de arriba: el estado (alguien la marcó perdida)
-    // y las fotos (alguien quitó una; quitarArchivoConsulta toma el mismo candado)
+    // Candado sobre el encabezado: dos guardados a la vez no crean dos vigentes ni dos versiones con el mismo número.
+    // Con él tomado se vuelve a mirar el estado (alguien la rechazó o la agendó recién)
     const [bloqueada] = await tx.select({ estado: consulta.estado }).from(consulta).where(eq(consulta.id, d.consultaId)).for("update");
-    if (!bloqueada || !transicionPermitida(bloqueada.estado, "cotizado")) return { error: "La consulta cambió de estado recién. Vuelve a la consulta." } as const;
-    if (d.fotos.length > 0) {
-      const siguen = await tx
-        .select({ id: consultaArchivo.archivoId })
-        .from(consultaArchivo)
-        .where(and(eq(consultaArchivo.consultaId, d.consultaId), inArray(consultaArchivo.archivoId, d.fotos)));
-      if (siguen.length !== d.fotos.length) return { error: "Una de las fotos ya no está en la consulta. Recarga la página." } as const;
-    }
+    if (bloqueada?.estado !== "cotizado") return { error: "La cotización cambió de estado recién. Vuelve a su ficha." } as const;
     const [vigente] = await tx
       .select({ id: cotizacion.id, numero: cotizacion.numero })
       .from(cotizacion)
       .where(and(eq(cotizacion.consultaId, d.consultaId), eq(cotizacion.estado, "enviada")));
-
-    let numero: string;
-    let version: number;
-    if (d.desde) {
-      // Se corrige la vigente: comparte número y la reemplaza (su PDF queda intacto)
-      if (!vigente || vigente.id !== d.desde) return { error: "Esa versión ya fue corregida. Vuelve a la consulta para ver la vigente." } as const;
-      numero = vigente.numero;
-      const [{ ultima }] = await tx.select({ ultima: max(cotizacion.version) }).from(cotizacion).where(eq(cotizacion.numero, numero));
-      version = (ultima ?? 0) + 1;
-      await tx.update(cotizacion).set({ estado: "reemplazada" }).where(eq(cotizacion.id, vigente.id));
-    } else {
-      if (vigente) return { error: "Esta consulta ya tiene una cotización: corrígela con una versión nueva." } as const;
-      const anio = anioCotizacion();
-      const [{ ultimo }] = await tx
-        .insert(correlativo)
-        .values({ clave: claveCorrelativo(anio), ultimo: 1 })
-        .onConflictDoUpdate({ target: correlativo.clave, set: { ultimo: sql`${correlativo.ultimo} + 1` } })
-        .returning({ ultimo: correlativo.ultimo });
-      numero = numeroCotizacion(anio, ultimo);
-      version = 1;
-    }
-
-    const [nueva] = await tx
-      .insert(cotizacion)
-      .values({
-        consultaId: d.consultaId,
-        numero,
-        version,
-        esEstimado: d.esEstimado,
-        ...totales,
-        adelantoSugerido: d.adelanto,
-        validaHasta: d.validaHasta,
-        condiciones: parametros.condiciones_cotizacion,
-        garantia: parametros.garantia_cotizacion,
-        formasPago: parametros.formas_pago_cotizacion,
-        datosDocumento: documento,
-        createdBy: autorId,
-      })
-      .returning({ id: cotizacion.id });
-    await tx.insert(cotizacionLinea).values(lineas.map((l) => ({ ...l, cotizacionId: nueva.id })));
-    if (d.fotos.length > 0) await tx.insert(cotizacionFoto).values(d.fotos.map((archivoId, orden) => ({ cotizacionId: nueva.id, archivoId, orden })));
-    await tx.insert(auditoria).values({
-      usuarioId: autorId,
-      entidad: "cotizacion",
-      entidadId: nueva.id,
-      accion: version === 1 ? "crear" : "nueva_version",
-      datos: { numero, version, total: totales.total },
+    if (!vigente || vigente.id !== d.desde) return { error: "Esa versión ya fue reemplazada. Vuelve a la cotización para ver la vigente." } as const;
+    const [{ ultima }] = await tx.select({ ultima: max(cotizacion.version) }).from(cotizacion).where(eq(cotizacion.numero, vigente.numero));
+    await tx.update(cotizacion).set({ estado: "reemplazada" }).where(eq(cotizacion.id, vigente.id));
+    const id = await escribirVersion(tx, {
+      consultaId: d.consultaId,
+      numero: vigente.numero,
+      version: (ultima ?? 0) + 1,
+      precios: d,
+      lineas: preparadas.lineas,
+      parametros,
+      autorId,
     });
-    await tx.update(consulta).set({ estado: "cotizado", ultimoMovimientoAt: sql`now()` }).where(eq(consulta.id, d.consultaId));
-    return { id: nueva.id } as const;
+    await tx.update(consulta).set({ ultimoMovimientoAt: sql`now()` }).where(eq(consulta.id, d.consultaId));
+    return { id } as const;
   });
   if ("error" in resultado) return { mensaje: resultado.error };
 
-  // El PDF (HU-26), fuera de la transacción: arma imágenes y sube un archivo. Si falla, la cotización ya quedó
-  // guardada y la consulta ofrece generarlo de nuevo; no se pierde lo cargado
-  let conPdf = true;
-  try {
-    await generarPdf(resultado.id, autorId);
-  } catch (error) {
-    console.error(`No se pudo generar el PDF de la cotización ${resultado.id}:`, error);
-    conPdf = false;
-  }
-
-  revalidatePath("/panel/consultas");
-  revalidatePath(`/panel/consultas/${d.consultaId}`);
-  redirect(`/panel/consultas/${d.consultaId}?cotizada=${resultado.id}${conPdf ? "" : "&sinpdf=1"}`);
+  const pdf = await conPdf(resultado.id, autorId);
+  despuesDeCambiar(d.consultaId, c.clienteId);
+  redirect(`/panel/cotizaciones/${d.consultaId}?version=${resultado.id}${pdf ? "" : "&sinpdf=1"}`);
 }
 
 /**
- * Genera el PDF de una cotización que quedó sin él (falló al guardarla). Solo si todavía no tiene: el que ya existe no
+ * Rechaza la cotización, con motivo, o la vuelve a pendiente (HU-28, RF-30). Solo si el estado lo permite
+ * (`transicionPermitida`); si dos personas la cambian a la vez, vale el primer cambio.
+ */
+export async function cambiarEstadoCotizacion(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  await exigirModulo("cotizaciones");
+  const valores = { motivo: String(datos.get("motivo") ?? ""), detalle: String(datos.get("detalle") ?? "") };
+  const entrada = esquemaCambioEstado.safeParse({ id: datos.get("id"), accion: datos.get("accion"), ...valores });
+  if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
+  const d = entrada.data;
+
+  const [actual] = await db.select({ estado: consulta.estado, clienteId: consulta.clienteId }).from(consulta).where(eq(consulta.id, d.id));
+  if (!actual) return { mensaje: "Esa cotización ya no existe. Recarga la página." };
+  const destino = d.accion === "rechazar" ? "perdido" : "cotizado";
+  // Volver a pendiente no es una versión nueva: desde una pendiente no se "vuelve"
+  if (!transicionPermitida(actual.estado, destino) || actual.estado === destino) {
+    return { mensaje: `Esta cotización ya está ${NOMBRE_ESTADO[actual.estado].toLowerCase()}. Recarga la página.` };
+  }
+
+  const [cambiada] = await db
+    .update(consulta)
+    .set({
+      estado: destino,
+      motivoPerdida: d.accion === "rechazar" ? d.motivo : null,
+      detallePerdida: d.accion === "rechazar" ? d.detalle : null,
+      ultimoMovimientoAt: sql`now()`,
+    })
+    .where(and(eq(consulta.id, d.id), eq(consulta.estado, actual.estado)))
+    .returning({ id: consulta.id });
+  if (!cambiada) return { mensaje: "Alguien cambió esta cotización recién. Recarga la página." };
+
+  despuesDeCambiar(d.id, actual.clienteId);
+  return { ok: true, mensaje: d.accion === "rechazar" ? "Cotización rechazada." : "La cotización volvió a pendiente." };
+}
+
+/**
+ * Genera el PDF de una versión que quedó sin él (falló al guardarla). Solo si todavía no tiene: el que ya existe no
  * se regenera (RN-02). Recibe datos sueltos: se validan.
  */
 export async function generarPdfPendiente(datos: { cotizacionId: number }): Promise<EstadoFormulario> {
   const autor = await exigirAccion("cotizar");
   const entrada = z.object({ cotizacionId: z.number().int().positive() }).safeParse(datos);
-  if (!entrada.success) return { mensaje: "No se pudo leer el pedido. Recarga la página." };
+  if (!entrada.success) return { mensaje: PEDIDO_ILEGIBLE };
   const [c] = await db
     .select({ consultaId: cotizacion.consultaId, pdf: cotizacion.pdfArchivoId })
     .from(cotizacion)
     .where(eq(cotizacion.id, entrada.data.cotizacionId));
   if (!c) return { mensaje: "Esa cotización ya no existe. Recarga la página." };
-  if (!c.pdf) {
-    try {
-      await generarPdf(entrada.data.cotizacionId, Number(autor.id));
-    } catch (error) {
-      console.error(`No se pudo generar el PDF de la cotización ${entrada.data.cotizacionId}:`, error);
-      return { mensaje: "No se pudo generar el PDF. Vuelve a intentar en un momento." };
-    }
+  if (!c.pdf && !(await conPdf(entrada.data.cotizacionId, Number(autor.id)))) {
+    return { mensaje: "No se pudo generar el PDF. Vuelve a intentar en un momento." };
   }
-  revalidatePath(`/panel/consultas/${c.consultaId}`);
+  revalidatePath(`/panel/cotizaciones/${c.consultaId}`);
   return { ok: true, mensaje: "PDF listo." };
 }

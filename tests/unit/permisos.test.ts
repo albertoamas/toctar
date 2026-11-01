@@ -32,7 +32,7 @@ describe("encargado", () => {
     ["sitio", "sitio"],
     ["reclamos", "reclamos"],
     ["clientes", "clientes"],
-    ["consultas", "consultas"],
+    ["cotizaciones", "cotizaciones"],
     ["agenda", "agenda"],
     ["ordenes", "ordenes"],
     ["pagos", "pagos"],
@@ -55,8 +55,14 @@ describe("encargado", () => {
     expect(puedeVerModulo(conTodo, m)).toBe(false);
   });
 
-  test("nunca cotiza, suma adicionales ni publica en la galería, aunque tenga todos los permisos (RN-01)", () => {
-    expect(puede(conTodo, "cotizar")).toBe(false);
+  test("cotiza solo con «Cotizaciones» (pedido 24, RN-01)", () => {
+    expect(puede(encargado([]), "cotizar")).toBe(false);
+    expect(puede(encargado(["cotizaciones"]), "cotizar")).toBe(true);
+    // Ni con todos los demás permisos
+    expect(puede(encargado(["clientes", "agenda", "ordenes", "pagos", "entrega_con_saldo"]), "cotizar")).toBe(false);
+  });
+
+  test("nunca suma adicionales ni publica en la galería, aunque tenga todos los permisos", () => {
     expect(puede(conTodo, "agregar_adicional")).toBe(false);
     expect(puede(conTodo, "publicar_en_galeria")).toBe(false);
   });
@@ -72,7 +78,7 @@ describe("menú en grupos (C5 §0)", () => {
     expect(menuAgrupado(dueno).map((g) => [g.titulo, g.modulos])).toEqual([
       [null, ["inicio"]],
       ["Taller", ["agenda", "ordenes"]],
-      ["Clientes", ["clientes", "consultas", "pagos", "mantenimientos", "reclamos"]],
+      ["Clientes", ["clientes", "cotizaciones", "pagos", "mantenimientos", "reclamos"]],
       [null, ["sitio"]],
       ["Administración", ["catalogo", "usuarios", "configuracion"]],
     ]);
