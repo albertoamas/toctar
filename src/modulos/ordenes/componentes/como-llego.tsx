@@ -34,7 +34,8 @@ export function ComoLlego({ detalles, observaciones }: Props) {
           <p className="text-tinta-suave">El resto, bien.</p>
         </>
       ) : (
-        <p className="text-tinta-suave">Sin detalles marcados al recibir.</p>
+        // Neutro: una orden de antes del checklist tampoco tiene detalles, y no por haber llegado bien
+        <p className="text-tinta-suave">Sin detalles registrados.</p>
       )}
       {observaciones && <p className="whitespace-pre-line">{observaciones}</p>}
     </section>

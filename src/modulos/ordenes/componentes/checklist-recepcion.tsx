@@ -9,6 +9,7 @@ import { avisarResultado, conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { achicarFoto } from "@/componentes/panel/subida-foto";
+import { BYTES_MAXIMOS_FOTO } from "@/lib/formato-fotos";
 import { Button } from "@/componentes/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import { Textarea } from "@/componentes/ui/textarea";
@@ -79,17 +80,22 @@ export function ChecklistRecepcion({ trabajoId, partes, detalles }: Props) {
   );
 }
 
-/** La acción con la foto achicada en el navegador antes de subirla (como las demás fotos del panel). */
-async function guardarConFotoAchicada(previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
-  const foto = datos.get("foto");
-  if (foto instanceof File && foto.size > 0) datos.set("foto", await achicarFoto(foto));
-  return guardarDetalle(previo, datos);
-}
-
 function FormularioDetalle({ trabajoId, parteId, detalle }: { trabajoId: number; parteId: number; detalle: DetalleRevision | null }) {
   const cerrar = useCerrarModal();
+  // La foto vive en el estado y no en el campo: React reinicia el formulario al terminar la acción (también con un error)
+  // y el archivo se perdía mientras la vista previa lo seguía mostrando
+  const [archivo, setArchivo] = useState<File | null>(null);
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
-    conAviso(guardarConFotoAchicada, (r) => r.ok && cerrar()),
+    conAviso(async (previo: EstadoFormulario, datos: FormData) => {
+      if (archivo) {
+        // Achicada en el navegador, como las demás fotos del panel; si no se pudo achicar y sigue grande, se avisa aquí:
+        // el servidor no recibe pedidos de más de 6 MB
+        const achicada = await achicarFoto(archivo);
+        if (achicada.size > BYTES_MAXIMOS_FOTO) return { errores: { foto: "La foto es muy grande: tómala de nuevo o elige otra." }, valores: previo.valores };
+        datos.set("foto", achicada);
+      }
+      return guardarDetalle(previo, datos);
+    }, (r) => r.ok && cerrar()),
     {},
   );
   const formulario = useRef<HTMLFormElement>(null);
@@ -139,15 +145,15 @@ function FormularioDetalle({ trabajoId, parteId, detalle }: { trabajoId: number;
         <input
           ref={camara}
           id="foto"
-          name="foto"
           type="file"
           accept="image/*"
           capture="environment"
           className="sr-only"
           aria-label="Cámara para la foto del detalle"
           onChange={(ev) => {
-            const archivo = ev.target.files?.[0];
-            setVistaPrevia(archivo ? URL.createObjectURL(archivo) : null);
+            const elegido = ev.target.files?.[0] ?? null;
+            setArchivo(elegido);
+            setVistaPrevia(elegido ? URL.createObjectURL(elegido) : null);
           }}
         />
         <Button type="button" variant="outline" className="self-start" onClick={() => camara.current?.click()}>

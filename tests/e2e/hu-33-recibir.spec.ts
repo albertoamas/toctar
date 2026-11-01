@@ -139,7 +139,7 @@ test("antes de su día no se recibe y sin fotos se pide confirmar", async ({ pag
   await page.goto(`/panel/ordenes/${idSinFotos}/recibir`);
   const form = page.getByRole("form", { name: "Recibir vehículo" });
   await form.getByRole("button", { name: "Recibir vehículo" }).click();
-  await expect(form.getByText(/Sin fotos de ingreso no hay cómo probar/)).toBeVisible();
+  await expect(form.getByText(/Sin fotos de ingreso ni de detalles no hay cómo probar/)).toBeVisible();
   await form.getByRole("button", { name: "Recibir sin fotos" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${idSinFotos}\\?recibido=1$`));
   await expect(page.getByText("Se recibió sin fotos de ingreso.")).toBeVisible();

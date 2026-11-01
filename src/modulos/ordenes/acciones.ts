@@ -265,8 +265,10 @@ export async function guardarDetalle(_previo: EstadoFormulario, datos: FormData)
   try {
     reemplazada = await db.transaction(async (tx) => {
       // Candado sobre la reserva: si alguien la recibe en este momento, el detalle no entra después
-      const [bloqueada] = await tx.select({ estado: trabajo.estado }).from(trabajo).where(eq(trabajo.id, trabajoId)).for("update");
+      const [bloqueada] = await tx.select({ estado: trabajo.estado, fechaInicio: trabajo.fechaInicio }).from(trabajo).where(eq(trabajo.id, trabajoId)).for("update");
       if (bloqueada?.estado !== "agendado") throw new Conflicto("El vehículo ya se recibió: el checklist no cambia.");
+      // Alguien pudo reprogramarla recién: el checklist es del día en que llega el vehículo
+      if (!puedeRecibirse(bloqueada, fechaEnBolivia())) throw new Conflicto("El checklist se hace el día que llega el vehículo.");
       const [antes] = await tx
         .select({ archivoId: trabajoRevision.archivoId })
         .from(trabajoRevision)
@@ -305,9 +307,14 @@ export async function quitarDetalle(datos: { trabajoId: number; parteId: number 
   let quitado: { archivoId: number | null; clienteId: number } | null;
   try {
     quitado = await db.transaction(async (tx) => {
-      const [t] = await tx.select({ estado: trabajo.estado, clienteId: trabajo.clienteId }).from(trabajo).where(eq(trabajo.id, trabajoId)).for("update");
+      const [t] = await tx
+        .select({ estado: trabajo.estado, fechaInicio: trabajo.fechaInicio, clienteId: trabajo.clienteId })
+        .from(trabajo)
+        .where(eq(trabajo.id, trabajoId))
+        .for("update");
       if (!t) return null;
       if (t.estado !== "agendado") throw new Conflicto("El vehículo ya se recibió: el checklist no cambia.");
+      if (!puedeRecibirse(t, fechaEnBolivia())) throw new Conflicto("El checklist se hace el día que llega el vehículo.");
       const [fila] = await tx
         .delete(trabajoRevision)
         .where(and(eq(trabajoRevision.trabajoId, trabajoId), eq(trabajoRevision.parteId, parteId)))
