@@ -33,6 +33,8 @@ test("sin nombre, saluda igual; el aviso dice día y hora en Bolivia", () => {
   expect(mensajeListo({ ...listo, ...base, cliente: "  ", saldo: null })).toMatch(/^Hola, tu Toyota Corolla/);
   // 19:40 UTC son las 15:40 en Bolivia (UTC−4)
   expect(diaYHora(new Date("2026-10-30T19:40:00Z"))).toBe("30/10 a las 15:40");
+  // Del 1 al 9, el día también con dos cifras (ICU lo escribe con una en es-BO)
+  expect(diaYHora(new Date("2026-11-01T14:46:00Z"))).toBe("01/11 a las 10:46");
 });
 
 test("el mensaje de saldo dice cuánto, de qué vehículo y cómo pagarlo (HU-37)", () => {

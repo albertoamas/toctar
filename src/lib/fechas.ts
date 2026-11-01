@@ -70,7 +70,8 @@ export function diaYHora(instante: Date): string {
   const partes = Object.fromEntries(
     new Intl.DateTimeFormat("es-BO", { timeZone: ZONA_HORARIA, day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
       .formatToParts(instante)
-      .map((p) => [p.type, p.value]),
+      // "2-digit" no alcanza: con es-BO, ICU escribe el día 1 como "1". Se completa a mano
+      .map((p) => [p.type, p.value.padStart(2, "0")]),
   );
   return `${partes.day}/${partes.month} a las ${partes.hour}:${partes.minute}`;
 }
