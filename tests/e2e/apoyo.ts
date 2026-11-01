@@ -187,6 +187,28 @@ export async function revisarChecklistEnBase(trabajoId: number) {
   );
 }
 
+/** Firma con el mouse en el recuadro de "Entregar vehículo" (pedido 13); espera a que la firma esté lista. */
+export async function firmarEnRecuadro(page: Page) {
+  const recuadro = page.getByRole("img", { name: "Recuadro para la firma del cliente" });
+  // El mouse firma donde está el recuadro en la pantalla: primero, al centro de la vista (lejos del pie fijo del celular)
+  await recuadro.evaluate((e) => e.scrollIntoView({ block: "center" }));
+  const caja = (await recuadro.boundingBox())!;
+  const y = caja.y + caja.height / 2;
+  await page.mouse.move(caja.x + 20, y);
+  await page.mouse.down();
+  for (let i = 1; i <= 12; i++) await page.mouse.move(caja.x + 20 + i * 15, y + (i % 2 ? 25 : -25));
+  await page.mouse.up();
+  await expect(page.getByRole("button", { name: "Borrar firma" })).toBeEnabled();
+}
+
+/** Marca "Entregar sin firma" con un motivo (pedido 13): para las pruebas que entregan sin probar la firma. */
+export async function entregarSinFirma(page: Page, motivo = "Prueba: retira otra persona.") {
+  const form = page.getByRole("form", { name: "Entregar vehículo" });
+  await form.getByText("Entregar sin firma", { exact: true }).click();
+  await form.getByLabel("Motivo").fill(motivo);
+  await expect(form.getByLabel("Motivo")).toHaveValue(motivo);
+}
+
 /** El modal "Nuevo servicio" de la lista del catálogo, abierto (el botón se habilita al cargar la página). */
 export async function abrirNuevoServicio(page: Page): Promise<Locator> {
   await page.goto("/panel/catalogo", { waitUntil: "networkidle" });
