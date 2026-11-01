@@ -12,6 +12,9 @@ type Consulta = (datos: { fechaInicio: string; fechaFin: string; excepto?: numbe
  * extender una orden (HU-34, con `consultar` y `ayudaFechas` propios). Se vuelven a pedir al cambiar las fechas y solo
  * vale la última respuesta: una vieja que llega tarde no pisa a la nueva. Con `iniciales` (los que ya trajo la página
  * para esas fechas) no se piden de nuevo al abrir. `consultar` tiene que ser estable (una acción del servidor).
+ * Mientras la lista que hay es de otras fechas, cuenta como "buscando": al cambiar la fecha, React dibuja una vez con la
+ * lista anterior antes de empezar a pedir la nueva, y en ese instante se podía elegir un espacio que en las fechas
+ * nuevas está ocupado (la prueba flujo-taller-completo fallaba a veces por eso).
  */
 export function useEspaciosLibres(
   fechaInicio: string,
@@ -19,8 +22,10 @@ export function useEspaciosLibres(
   { excepto, iniciales, consultar = consultarEspacios, ayudaFechas }: { excepto?: number; iniciales?: EspacioDisponible[]; consultar?: Consulta; ayudaFechas?: string } = {},
 ) {
   const [espacios, setEspacios] = useState<EspacioDisponible[] | null>(iniciales ?? null);
+  // Para qué fechas es la lista que hay
+  const [claveLista, setClaveLista] = useState<string | null>(iniciales ? `${fechaInicio}|${fechaFin}` : null);
   const [fechasValidas, setFechasValidas] = useState(true);
-  const [buscando, iniciar] = useTransition();
+  const [pendiente, iniciar] = useTransition();
   const pedido = useRef(0);
   const yaPedido = useRef(iniciales ? `${fechaInicio}|${fechaFin}` : null);
   // Una fecha borrada (el campo queda vacío mientras se escribe): no hay nada que pedir
@@ -39,9 +44,12 @@ export function useEspaciosLibres(
       // Sin lista: las fechas no valen (el servidor no busca con ellas)
       setFechasValidas(nuevos !== null);
       setEspacios(nuevos ?? []);
+      setClaveLista(clave);
     });
   }, [fechaInicio, fechaFin, excepto, consultar]);
 
+  const desactualizada = completas && claveLista !== `${fechaInicio}|${fechaFin}`;
+  const buscando = pendiente || desactualizada;
   const libres = completas ? (espacios ?? []).filter((x) => x.libre) : [];
   const ayuda =
     completas && (buscando || espacios === null)

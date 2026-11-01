@@ -145,7 +145,10 @@ export async function quitarFotoOrden(datos: { trabajoId: number; fotoId: number
  * Recibe el vehículo (HU-33, RF-40): la reserva agendada, desde su día de ingreso, pasa a orden "recibida" con las
  * observaciones de ingreso y su técnico. Las fotos de ingreso ya se subieron mientras se recibía.
  */
-export async function recibirVehiculo(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+/** Al recibir: además, si falta confirmar que se recibe sin fotos de ingreso. */
+export type EstadoRecepcion = EstadoFormulario & { sinFotos?: boolean };
+
+export async function recibirVehiculo(_previo: EstadoRecepcion, datos: FormData): Promise<EstadoRecepcion> {
   const usuario = await exigirModulo("ordenes");
   if (!puede(usuario, "recibir_vehiculo")) return { mensaje: "El vehículo lo recibe el dueño o el encargado." };
   const valores = { tecnicoId: String(datos.get("tecnicoId") ?? ""), observaciones: String(datos.get("observaciones") ?? "") };
@@ -155,6 +158,17 @@ export async function recibirVehiculo(_previo: EstadoFormulario, datos: FormData
     return errores.id || errores.tecnicoId ? { mensaje: RECARGA } : { errores, valores };
   }
   const { id, tecnicoId, observaciones } = r.data;
+
+  // Sin fotos de ingreso se puede recibir, pero se pide confirmar: son la prueba de cómo llegó. Lo decide el servidor,
+  // que sabe cuántas hay: la pantalla podía no haberse enterado todavía de una foto recién subida y pedir confirmar de
+  // más (la prueba flujo-taller-completo fallaba a veces por eso)
+  if (datos.get("sinFotos") !== "1") {
+    const [{ cuantas }] = await db
+      .select({ cuantas: count() })
+      .from(trabajoFoto)
+      .where(and(eq(trabajoFoto.trabajoId, id), eq(trabajoFoto.etapa, "ingreso")));
+    if (cuantas === 0) return { sinFotos: true, valores };
+  }
 
   const autorId = Number(usuario.id);
   const hoy = fechaEnBolivia();

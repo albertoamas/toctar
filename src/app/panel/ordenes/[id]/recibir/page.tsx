@@ -80,7 +80,7 @@ async function Recepcion({ params }: Pick<PageProps<"/panel/ordenes/[id]/recibir
             </div>
             <FotosOrden trabajoId={o.id} etapa="ingreso" fotos={fotos} editable textoVacio="" sinTitulo />
           </section>
-          <FormularioRecepcion trabajoId={o.id} tecnicos={tecnicos} tecnicoInicial={o.tecnicoId} tecnicoInactivo={tecnicoInactivo} conFotos={fotos.length > 0} />
+          <FormularioRecepcion trabajoId={o.id} tecnicos={tecnicos} tecnicoInicial={o.tecnicoId} tecnicoInactivo={tecnicoInactivo} />
         </>
       )}
     </>
