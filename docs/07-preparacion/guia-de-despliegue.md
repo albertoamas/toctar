@@ -103,12 +103,7 @@ En cada entorno: + New → Database → **PostgreSQL**, con la imagen `postgres:
    - otro para los respaldos, limitado a `toctar-respaldos`.
    Copiar el Access Key ID y el Secret apenas se crean: el secret se muestra una sola vez.
 4. El endpoint es `https://<id-de-cuenta>.r2.cloudflarestorage.com`. El id de la cuenta aparece en la página de R2.
-5. **CORS en los dos buckets privados:** los videos de las consultas suben directo desde el navegador (una acción del servidor acepta hasta 6 MB), con un permiso firmado de 10 minutos. Settings → **CORS Policy** → Add:
-   - `toctar-privado`: origen `https://<dominio>`; `toctar-privado-pruebas`: origen `https://pruebas.<dominio>`.
-   ```json
-   [{ "AllowedOrigins": ["https://<dominio>"], "AllowedMethods": ["PUT", "GET"], "AllowedHeaders": ["content-type"], "MaxAgeSeconds": 3600 }]
-   ```
-   Sin esto, al agregar un video a una consulta aparece "No se pudo subir el video".
+5. **Sin CORS en los buckets privados:** desde el pedido 23 (01/11/2026) nada sube directo desde el navegador (antes, los videos de las consultas). Si ya se había configurado una CORS Policy en `toctar-privado` o `toctar-privado-pruebas`, se puede borrar: Settings → **CORS Policy**.
 
 ## 7. Las dos apps (en Coolify, 20 minutos cada una)
 

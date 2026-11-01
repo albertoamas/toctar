@@ -145,8 +145,8 @@ Configurado el 23/10/2026 en la cuenta de Cloudflare del negocio (`toctartarija@
 |---|---|---|
 | `toctar-fotos` | Fotos del sitio, producción | Dominio `fotos.toctardetailing.com` (**pendiente**: necesita el dominio en Cloudflare) |
 | `toctar-fotos-pruebas` | Fotos del sitio, pruebas | Dominio `fotos-pruebas.toctardetailing.com` (**pendiente**) |
-| `toctar-privado` | Datos de clientes, producción: reclamos, consultas, órdenes y comprobantes | **Nunca.** CORS: `https://toctardetailing.com`, PUT y GET |
-| `toctar-privado-pruebas` | Datos de clientes, pruebas | **Nunca.** CORS: `https://pruebas.toctardetailing.com`, PUT y GET |
+| `toctar-privado` | Datos de clientes, producción: reclamos, cotizaciones, órdenes y comprobantes | **Nunca.** Sin CORS (pedido 23) |
+| `toctar-privado-pruebas` | Datos de clientes, pruebas | **Nunca.** Sin CORS (pedido 23) |
 | `toctar-respaldos` | Copias de la base de datos | **Nunca** |
 
 - **Tokens** (Account API tokens, sin vencimiento), con su Access Key ID y Secret guardados **solo en el gestor de contraseñas**:
