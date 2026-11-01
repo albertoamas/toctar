@@ -195,10 +195,13 @@ export const trabajoAvance = pgTable(
 );
 
 // Checklist de recepción (pedido 12, P12-checklist-recepcion.md §4): las partes que revisa quien recibe, y lo que
-// encontró en cada una. Lo que no tiene fila llegó bien.
+// encontró en cada una: bien o con un detalle. Se recibe con todas las partes activas revisadas.
 
 export const TIPOS_DETALLE = ["rayon", "golpe", "raspon", "roto", "otro"] as const;
 export type TipoDetalle = (typeof TIPOS_DETALLE)[number];
+/** Cómo quedó cada parte revisada: bien, o con un detalle. Sin fila, todavía no se revisó. */
+export const ESTADOS_REVISION = ["bien", "detalle"] as const;
+export type EstadoRevision = (typeof ESTADOS_REVISION)[number];
 
 /** Las partes del checklist, que arma el dueño en Configuración (RNF-11). Se desactivan, no se borran (D-6). */
 export const parteRevision = pgTable(
@@ -212,7 +215,10 @@ export const parteRevision = pgTable(
   (t) => [uniqueIndex("parte_revision_nombre_unico").on(sql`lower(${t.nombre})`)],
 );
 
-/** Un detalle con que llegó el vehículo: la parte (su nombre copiado, D-4), qué tiene, una nota y su foto (privada). */
+/**
+ * Cada parte revisada al recibir: "bien", o "detalle" con qué tiene, una nota y su foto (privada). El nombre de la parte
+ * se copia (D-4). Sin fila, la parte todavía no se revisó.
+ */
 export const trabajoRevision = pgTable(
   "trabajo_revision",
   {
@@ -224,7 +230,9 @@ export const trabajoRevision = pgTable(
       .notNull()
       .references(() => parteRevision.id),
     parte: text("parte").notNull(),
-    tipo: text("tipo").$type<TipoDetalle>().notNull(),
+    estado: text("estado").$type<EstadoRevision>().default("detalle").notNull(),
+    /** Solo con detalle. */
+    tipo: text("tipo").$type<TipoDetalle>(),
     nota: text("nota"),
     archivoId: integer("archivo_id")
       .unique()
@@ -235,5 +243,12 @@ export const trabajoRevision = pgTable(
     createdAt: momento("created_at").defaultNow().notNull(),
     updatedAt: momento("updated_at").defaultNow().notNull(),
   },
-  (t) => [uniqueIndex("trabajo_revision_unica").on(t.trabajoId, t.parteId), check("trabajo_revision_tipo_valido", sql`${t.tipo} in (${lista(TIPOS_DETALLE)})`)],
+  (t) => [
+    uniqueIndex("trabajo_revision_unica").on(t.trabajoId, t.parteId),
+    check("trabajo_revision_tipo_valido", sql`${t.tipo} in (${lista(TIPOS_DETALLE)})`),
+    check("trabajo_revision_estado_valido", sql`${t.estado} in (${lista(ESTADOS_REVISION)})`),
+    // Con detalle, siempre su tipo; bien, sin tipo, nota ni foto
+    check("trabajo_revision_tipo_si_detalle", sql`(${t.estado} = 'detalle') = (${t.tipo} is not null)`),
+    check("trabajo_revision_bien_sin_foto", sql`${t.estado} = 'detalle' or (${t.nota} is null and ${t.archivoId} is null)`),
+  ],
 );

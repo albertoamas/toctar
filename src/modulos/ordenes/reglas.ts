@@ -87,3 +87,10 @@ export const puedePublicarse = (estado: EstadoTrabajo, etapas: readonly EtapaFot
 export const NOMBRE_DETALLE: Record<TipoDetalle, string> = { rayon: "Rayón", golpe: "Golpe", raspon: "Raspón", roto: "Roto", otro: "Otro" };
 /** Los tipos, del texto de cada uno y no del esquema de la base: así no se arrastra Drizzle al navegador. */
 export const TIPOS_DE_DETALLE = Object.keys(NOMBRE_DETALLE) as [TipoDetalle, ...TipoDetalle[]];
+
+/** Qué falta revisar antes de recibir: "Falta revisar Capó en el checklist." o la lista (hasta 4 y "N más"). */
+export function textoSinRevisar(partes: readonly string[]): string {
+  if (partes.length === 1) return `Falta revisar ${partes[0]} en el checklist.`;
+  const lista = partes.length > 4 ? `${partes.slice(0, 4).join(", ")} y ${partes.length - 4} más` : `${partes.slice(0, -1).join(", ")} y ${partes.at(-1)}`;
+  return `Faltan revisar ${partes.length} partes del checklist: ${lista}.`;
+}

@@ -3,7 +3,7 @@ import { and, asc, desc, eq, inArray, min } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { archivo, cliente, galeriaItem, parteRevision, servicio, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, trabajoRevision, usuario, variante, vehiculo } from "@/db/esquema";
-import type { EstadoTrabajo, EtapaFoto, TipoDetalle } from "@/db/esquema/trabajos";
+import type { EstadoRevision, EstadoTrabajo, EtapaFoto, TipoDetalle } from "@/db/esquema/trabajos";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { obtenerReserva, type DetalleReserva } from "@/modulos/agenda/consultas";
 import { ESTADOS_ORDEN_ABIERTA } from "./reglas";
@@ -136,20 +136,24 @@ export async function ordenesAbiertas(tecnicoId?: number): Promise<OrdenEnLista[
     .sort((a, b) => Number(a.estado === "listo") - Number(b.estado === "listo"));
 }
 
+/** Una parte revisada al recibir: bien, o con un detalle (su tipo, nota y foto). */
 export type DetalleRevision = {
   parteId: number;
   parte: string;
-  tipo: TipoDetalle;
+  estado: EstadoRevision;
+  /** Solo con detalle. */
+  tipo: TipoDetalle | null;
   nota: string | null;
   foto: UrlsFoto | null;
 };
 
-/** Los detalles con que llegó el vehículo (pedido 12), en el orden de la lista de partes; las fotos, con enlace firmado. */
-export async function detallesDeTrabajo(trabajoId: number): Promise<DetalleRevision[]> {
+/** Las partes revisadas al recibir (pedido 12), en el orden de la lista de partes; las fotos, con enlace firmado. */
+export async function revisionDeTrabajo(trabajoId: number): Promise<DetalleRevision[]> {
   const filas = await db
     .select({
       parteId: trabajoRevision.parteId,
       parte: trabajoRevision.parte,
+      estado: trabajoRevision.estado,
       tipo: trabajoRevision.tipo,
       nota: trabajoRevision.nota,
       clave: archivo.clave,

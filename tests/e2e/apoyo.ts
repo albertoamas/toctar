@@ -174,6 +174,19 @@ export async function cotizarEnPantalla(page: Page, clienteId: number, servicio:
   return Number(new URL(page.url()).pathname.split("/").at(-1));
 }
 
+/**
+ * Marca "bien" en la base todas las partes del checklist (pedido 12) que la reserva todavía no tiene revisadas: para las
+ * pruebas que reciben un vehículo sin probar el checklist. Llamarla justo antes de "Recibir vehículo".
+ */
+export async function revisarChecklistEnBase(trabajoId: number) {
+  await consultar(
+    `insert into trabajo_revision (trabajo_id, parte_id, parte, estado, created_by)
+     select $1, p.id, p.nombre, 'bien', (select created_by from trabajo where id = $1) from parte_revision p
+     on conflict (trabajo_id, parte_id) do nothing`,
+    [trabajoId],
+  );
+}
+
 /** El modal "Nuevo servicio" de la lista del catálogo, abierto (el botón se habilita al cargar la página). */
 export async function abrirNuevoServicio(page: Page): Promise<Locator> {
   await page.goto("/panel/catalogo", { waitUntil: "networkidle" });

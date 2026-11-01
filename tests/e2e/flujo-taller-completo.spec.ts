@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { abrirWhatsApp, consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PNG } from "./apoyo";
+import { abrirWhatsApp, consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PNG, revisarChecklistEnBase } from "./apoyo";
 
 // Flujos críticos 3, 4 y 5 de punta a punta (C4): reserva → recibir → el técnico la trabaja → lista → aviso por
 // WhatsApp → cobro del saldo → entrega → recordatorio de mantenimiento → agendarlo. Especificación:
@@ -45,6 +45,7 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
   await expect(page.getByText("Foto guardada.")).toBeVisible();
   const recepcion = page.getByRole("form", { name: "Recibir vehículo" });
   await recepcion.getByLabel("Técnico").selectOption({ label: `Técnico Flujo ${s}` });
+  await revisarChecklistEnBase(id);
   await recepcion.getByRole("button", { name: "Recibir vehículo" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?recibido=1$`));
 

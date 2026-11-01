@@ -3,7 +3,7 @@ import { sumarMeses } from "@/lib/fechas";
 import { precioCotizadoYFinal } from "@/modulos/pagos/reglas";
 import { erroresDe } from "@/lib/formularios";
 import { TIPOS_DETALLE } from "@/db/esquema/trabajos";
-import { esquemaAvance, esquemaDetalle, esquemaFotoOrden, esquemaPublicar, esquemaQuitarDetalle, esquemaRecibir } from "@/modulos/ordenes/esquemas";
+import { esquemaAvance, esquemaDetalle, esquemaFotoOrden, esquemaPublicar, esquemaMarcarBien, esquemaRecibir } from "@/modulos/ordenes/esquemas";
 import { puede, puedeVerOrden } from "@/lib/permisos";
 import {
   enlaceTrabajo,
@@ -17,6 +17,7 @@ import {
   puedePublicarse,
   puedeRecibirse,
   rutaTrabajo,
+  textoSinRevisar,
   TIPOS_DE_DETALLE,
   transicionOrden,
 } from "@/modulos/ordenes/reglas";
@@ -191,11 +192,17 @@ test("un detalle pide qué tiene; con «Otro», la nota; la nota vacía es null"
   expect(esquemaDetalle.safeParse({ ...base, tipo: "otro" }).error?.issues[0]).toMatchObject({ path: ["nota"], message: "Con «Otro», cuenta qué es." });
   expect(esquemaDetalle.parse({ ...base, tipo: "otro", nota: "Falta la antena" }).nota).toBe("Falta la antena");
   expect(esquemaDetalle.safeParse({ ...base, nota: "x".repeat(301) }).error?.issues[0].message).toBe("Hasta 300 caracteres.");
-  // Quitar un detalle recibe datos sueltos
-  expect(esquemaQuitarDetalle.safeParse({ trabajoId: 1, parteId: "x" }).success).toBe(false);
+  // Marcar una parte bien recibe datos sueltos
+  expect(esquemaMarcarBien.safeParse({ trabajoId: 1, parteId: "x" }).success).toBe(false);
 });
 
 test("los tipos de detalle se leen como en el taller, y son los de la base", () => {
   expect(TIPOS_DE_DETALLE.map((t) => NOMBRE_DETALLE[t])).toEqual(["Rayón", "Golpe", "Raspón", "Roto", "Otro"]);
   expect([...TIPOS_DE_DETALLE]).toEqual([...TIPOS_DETALLE]);
+});
+
+test("antes de recibir se dice qué partes faltan revisar", () => {
+  expect(textoSinRevisar(["Capó"])).toBe("Falta revisar Capó en el checklist.");
+  expect(textoSinRevisar(["Capó", "Techo"])).toBe("Faltan revisar 2 partes del checklist: Capó y Techo.");
+  expect(textoSinRevisar(["A", "B", "C", "D", "E", "F"])).toBe("Faltan revisar 6 partes del checklist: A, B, C, D y 2 más.");
 });

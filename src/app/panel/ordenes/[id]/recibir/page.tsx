@@ -13,7 +13,7 @@ import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { ChecklistRecepcion } from "@/modulos/ordenes/componentes/checklist-recepcion";
 import { FormularioRecepcion } from "@/modulos/ordenes/componentes/formulario-recepcion";
 import { FotosOrden } from "@/modulos/ordenes/componentes/fotos-orden";
-import { detallesDeTrabajo, fotosDeTrabajo, obtenerOrden, partesDelChecklist } from "@/modulos/ordenes/consultas";
+import { revisionDeTrabajo, fotosDeTrabajo, obtenerOrden, partesDelChecklist } from "@/modulos/ordenes/consultas";
 import { esOrden, puedeRecibirse } from "@/modulos/ordenes/reglas";
 
 export const metadata: Metadata = { title: "Recibir vehículo" };
@@ -51,7 +51,7 @@ async function Recepcion({ params }: Pick<PageProps<"/panel/ordenes/[id]/recibir
   const detalle = detalleVehiculo(o);
   const yo = Number(usuario.id);
   const tecnicoInactivo = o.tecnicoId && !tecnicos.some((t) => t.id === o.tecnicoId) ? o.tecnico : null;
-  const [todas, partes, detalles] = await Promise.all([fotosDeTrabajo(o.id, ["ingreso"]), partesDelChecklist(), detallesDeTrabajo(o.id)]);
+  const [todas, partes, revision] = await Promise.all([fotosDeTrabajo(o.id, ["ingreso"]), partesDelChecklist(), revisionDeTrabajo(o.id)]);
   const fotos = todas.map((f) => ({ ...f, puedeQuitar: usuario.rol === "dueno" || f.subidoPor === yo }));
 
   return (
@@ -74,7 +74,7 @@ async function Recepcion({ params }: Pick<PageProps<"/panel/ordenes/[id]/recibir
           <p>
             <span className="text-tinta-suave">Servicios:</span> {o.servicios.join(", ")}
           </p>
-          <ChecklistRecepcion trabajoId={o.id} partes={partes} detalles={detalles} />
+          <ChecklistRecepcion trabajoId={o.id} partes={partes} revision={revision} />
           <section aria-labelledby="ingreso-titulo" className="flex flex-col gap-3">
             <div className="flex flex-col gap-1">
               <h2 id="ingreso-titulo" className="font-heading text-2xl font-bold italic">Fotos de ingreso</h2>

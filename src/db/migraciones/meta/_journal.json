@@ -281,6 +281,13 @@
       "when": 1793566130793,
       "tag": "0039_checklist_recepcion",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1793571111596,
+      "tag": "0040_checklist_parte_por_parte",
+      "breakpoints": true
     }
   ]
 }

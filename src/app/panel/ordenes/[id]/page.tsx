@@ -28,7 +28,7 @@ import { EstadoOrden } from "@/modulos/ordenes/componentes/estado-orden";
 import { ComoLlego } from "@/modulos/ordenes/componentes/como-llego";
 import { FotosOrden } from "@/modulos/ordenes/componentes/fotos-orden";
 import { registrarAvisoListo } from "@/modulos/ordenes/acciones";
-import { avancesDeTrabajo, detallesDeTrabajo, fotosDeTrabajo, obtenerOrden, publicadaDeOrden } from "@/modulos/ordenes/consultas";
+import { avancesDeTrabajo, revisionDeTrabajo, fotosDeTrabajo, obtenerOrden, publicadaDeOrden } from "@/modulos/ordenes/consultas";
 import { mensajeListo } from "@/modulos/ordenes/mensajes";
 import { esOrden, estaAbierta, estaAtrasada, pasosDeOrden, puedeExtenderse, puedePublicarse } from "@/modulos/ordenes/reglas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
@@ -73,14 +73,14 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   const conAdicional = abierta && puede(usuario, "agregar_adicional");
   // Publicar sus fotos en la galería del sitio: solo el dueño, ya entregada (HU-41)
   const conGaleria = o.estado === "entregado" && puede(usuario, "publicar_en_galeria");
-  const [fotos, avances, negocio, plantillas, opciones, publicada, detalles] = await Promise.all([
+  const [fotos, avances, negocio, plantillas, opciones, publicada, revision] = await Promise.all([
     fotosDeTrabajo(o.id),
     avancesDeTrabajo(o.id),
     conAviso ? obtenerDatosPublicos() : null,
     conAviso ? obtenerPlantillas() : null,
     conAdicional ? opcionesDeServicio(o.tamanoId) : [],
     conGaleria ? publicadaDeOrden(o.id) : null,
-    detallesDeTrabajo(o.id),
+    revisionDeTrabajo(o.id),
   ]);
   // Lista: el aviso al cliente por WhatsApp (HU-35) con el mensaje de Configuración (HU-40), con el saldo solo si
   // quien avisa lo ve
@@ -217,7 +217,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
         </div>
 
         <div className="flex flex-col gap-10 lg:col-start-1 lg:row-span-2 lg:row-start-1">
-          <ComoLlego detalles={detalles} observaciones={o.observacionesIngreso} />
+          <ComoLlego revision={revision} observaciones={o.observacionesIngreso} />
           {/* Con "Pagos", los servicios van con sus precios en el bloque de montos; si no, solo los nombres */}
           {!o.montos && (
             <section aria-labelledby="servicios-titulo" className="flex flex-col gap-2">

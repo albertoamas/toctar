@@ -2,12 +2,13 @@ import Image from "next/image";
 import type { DetalleRevision } from "../consultas";
 import { NOMBRE_DETALLE } from "../reglas";
 
-// "Cómo llegó" en la orden (pedido 12): los detalles del checklist con su foto (se abre en grande), "El resto, bien" y
-// las observaciones de ingreso. Lo ve también el técnico: no hay precios ni teléfonos (RN-12).
+// "Cómo llegó" en la orden (pedido 12): los detalles del checklist con su foto (se abre en grande), "El resto, bien" (o
+// "Todas las partes, bien") y las observaciones de ingreso. Lo ve también el técnico: no hay precios ni teléfonos (RN-12).
 
-type Props = { detalles: DetalleRevision[]; observaciones: string | null };
+type Props = { revision: DetalleRevision[]; observaciones: string | null };
 
-export function ComoLlego({ detalles, observaciones }: Props) {
+export function ComoLlego({ revision, observaciones }: Props) {
+  const detalles = revision.filter((d) => d.estado === "detalle");
   return (
     <section aria-labelledby="como-llego-titulo" className="flex flex-col gap-3">
       <h2 id="como-llego-titulo" className="font-heading text-2xl font-bold italic">Cómo llegó</h2>
@@ -24,7 +25,7 @@ export function ComoLlego({ detalles, observaciones }: Props) {
                 <span className="flex min-w-0 flex-col">
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold">{d.parte}</span>
-                    <span className="tt-insignia tt-insignia--aviso">{NOMBRE_DETALLE[d.tipo]}</span>
+                    <span className="tt-insignia tt-insignia--aviso">{d.tipo && NOMBRE_DETALLE[d.tipo]}</span>
                   </span>
                   {d.nota && <span className="text-sm">{d.nota}</span>}
                 </span>
@@ -33,9 +34,11 @@ export function ComoLlego({ detalles, observaciones }: Props) {
           </ul>
           <p className="text-tinta-suave">El resto, bien.</p>
         </>
+      ) : revision.length > 0 ? (
+        <p>Revisada parte por parte: todas bien.</p>
       ) : (
-        // Neutro: una orden de antes del checklist tampoco tiene detalles, y no por haber llegado bien
-        <p className="text-tinta-suave">Sin detalles registrados.</p>
+        // Las órdenes recibidas antes del checklist
+        <p className="text-tinta-suave">Se recibió sin checklist.</p>
       )}
       {observaciones && <p className="whitespace-pre-line">{observaciones}</p>}
     </section>

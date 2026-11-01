@@ -14,38 +14,58 @@ import { Button } from "@/componentes/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
-import { guardarDetalle, quitarDetalle } from "../acciones";
+import { guardarDetalle, marcarBien } from "../acciones";
 import type { DetalleRevision } from "../consultas";
 import { NOMBRE_DETALLE, TIPOS_DE_DETALLE } from "../reglas";
 
-// Checklist de recepción (pedido 12, P12-checklist-recepcion.md §5): una fila por parte, "Bien" si no se marca nada.
-// "Marcar detalle" abre un modal con qué tiene, una nota y la foto (la cámara del celular); se guarda al momento, como
-// las fotos de ingreso. Solo antes de recibir: después, el detalle es prueba de cómo llegó.
+// Checklist de recepción (pedido 12, P12-checklist-recepcion.md §5): quien recibe revisa parte por parte y marca cada
+// una "Bien" (un toque, se guarda al momento) o "Detalle" (un modal con qué tiene, una nota y la foto). Arriba, cuántas
+// lleva revisadas: el vehículo se recibe con todas revisadas. Solo antes de recibir: después, es prueba de cómo llegó.
 
-type Props = { trabajoId: number; partes: { id: number; nombre: string }[]; detalles: DetalleRevision[] };
+type Props = { trabajoId: number; partes: { id: number; nombre: string }[]; revision: DetalleRevision[] };
 
-export function ChecklistRecepcion({ trabajoId, partes, detalles }: Props) {
+export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
   const [abierta, setAbierta] = useState<{ id: number; nombre: string } | null>(null);
   const hidratado = useHidratado();
-  const detalleDe = (parteId: number) => detalles.find((d) => d.parteId === parteId);
-  // Una parte desactivada que ya tenía un detalle sigue a la vista: lo marcado no desaparece
-  const sueltos = detalles.filter((d) => !partes.some((p) => p.id === d.parteId)).map((d) => ({ id: d.parteId, nombre: d.parte }));
-  const filas = [...partes, ...sueltos];
+  const [marcando, setMarcando] = useState<number | null>(null);
+  const [, iniciar] = useTransition();
+  const de = (parteId: number) => revision.find((d) => d.parteId === parteId);
+  // Una parte desactivada que ya estaba revisada sigue a la vista: lo marcado no desaparece
+  const sueltas = revision.filter((d) => !partes.some((p) => p.id === d.parteId)).map((d) => ({ id: d.parteId, nombre: d.parte }));
+  const filas = [...partes, ...sueltas];
+  const revisadas = filas.filter((p) => de(p.id)).length;
+
+  function bien(parteId: number) {
+    setMarcando(parteId);
+    iniciar(async () => {
+      const r = await marcarBien({ trabajoId, parteId });
+      if (!r.ok) avisarResultado(r);
+      setMarcando(null);
+    });
+  }
 
   return (
     <section aria-labelledby="checklist-titulo" className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1">
-        <h2 id="checklist-titulo" className="font-heading text-2xl font-bold italic">Checklist</h2>
-        <p className="text-sm text-tinta-suave">Marca solo lo que llegó con un detalle: lo demás queda bien.</p>
+      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+        <div className="flex flex-col gap-1">
+          <h2 id="checklist-titulo" className="font-heading text-2xl font-bold italic">Checklist</h2>
+          <p className="text-sm text-tinta-suave">Revisa cada parte: bien, o con un detalle y su foto.</p>
+        </div>
+        {filas.length > 0 && (
+          <p aria-live="polite" className={revisadas === filas.length ? "font-semibold" : "text-tinta-suave"}>
+            Revisadas {revisadas} de {filas.length}
+          </p>
+        )}
       </div>
       {filas.length === 0 ? (
         <p className="text-tinta-suave">No hay partes en el checklist: se agregan en Configuración → Taller.</p>
       ) : (
         <ul aria-label="Partes del checklist" className="flex flex-col divide-y divide-border rounded-sm border border-border">
           {filas.map((p) => {
-            const d = detalleDe(p.id);
+            const d = de(p.id);
+            const ocupado = !hidratado || marcando === p.id;
             return (
-              <li key={p.id} className="flex items-center gap-3 px-3 py-2">
+              <li key={p.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2">
                 {d?.foto && (
                   <a href={d.foto.url} target="_blank" rel="noreferrer" className="shrink-0" aria-label={`Ver la foto: ${p.nombre}`}>
                     <Image src={d.foto.miniatura} alt="" width={48} height={48} unoptimized className="size-12 rounded-sm object-cover" />
@@ -53,28 +73,44 @@ export function ChecklistRecepcion({ trabajoId, partes, detalles }: Props) {
                 )}
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="font-semibold">{p.nombre}</span>
-                  {d ? (
-                    <span className="text-sm">
-                      <span className="tt-insignia tt-insignia--aviso mr-2">{NOMBRE_DETALLE[d.tipo]}</span>
-                      {d.nota}
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 text-sm text-tinta-suave">
+                  {!d ? (
+                    <span className="text-sm text-tinta-suave">Sin revisar</span>
+                  ) : d.estado === "bien" ? (
+                    <span className="flex items-center gap-1 text-sm">
                       <CheckIcon className="size-4" aria-hidden />
                       Bien
                     </span>
+                  ) : (
+                    <span className="text-sm">
+                      <span className="tt-insignia tt-insignia--aviso mr-2">{d.tipo && NOMBRE_DETALLE[d.tipo]}</span>
+                      {d.nota}
+                    </span>
                   )}
                 </span>
-                <Button type="button" variant={d ? "ghost" : "outline"} disabled={!hidratado} onClick={() => setAbierta(p)} aria-label={`${d ? "Cambiar" : "Marcar detalle"}: ${p.nombre}`}>
-                  {d ? "Cambiar" : "Marcar detalle"}
-                </Button>
+                <span className="flex gap-2">
+                  {!d && (
+                    <Button type="button" variant="outline" disabled={ocupado} onClick={() => bien(p.id)} aria-label={`Bien: ${p.nombre}`}>
+                      <CheckIcon />
+                      Bien
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant={d ? "ghost" : "outline"}
+                    disabled={ocupado}
+                    onClick={() => setAbierta(p)}
+                    aria-label={`${d ? "Cambiar" : "Detalle"}: ${p.nombre}`}
+                  >
+                    {d ? "Cambiar" : "Detalle"}
+                  </Button>
+                </span>
               </li>
             );
           })}
         </ul>
       )}
-      <ModalFormulario titulo={abierta ? `Detalle: ${abierta.nombre}` : "Detalle"} abierto={!!abierta} alCambiar={(a) => !a && setAbierta(null)}>
-        {abierta && <FormularioDetalle key={abierta.id} trabajoId={trabajoId} parteId={abierta.id} detalle={detalleDe(abierta.id) ?? null} />}
+      <ModalFormulario titulo={abierta ? abierta.nombre : "Parte"} abierto={!!abierta} alCambiar={(a) => !a && setAbierta(null)}>
+        {abierta && <FormularioDetalle key={abierta.id} trabajoId={trabajoId} parteId={abierta.id} detalle={de(abierta.id) ?? null} />}
       </ModalFormulario>
     </section>
   );
@@ -109,9 +145,10 @@ function FormularioDetalle({ trabajoId, parteId, detalle }: { trabajoId: number;
   const [quitando, iniciar] = useTransition();
   useEffect(() => () => void (vistaPrevia && URL.revokeObjectURL(vistaPrevia)), [vistaPrevia]);
 
+  // "Está bien": la parte queda bien (si tenía un detalle, se borran su nota y su foto)
   function quitar() {
     iniciar(async () => {
-      const r = await quitarDetalle({ trabajoId, parteId });
+      const r = await marcarBien({ trabajoId, parteId });
       avisarResultado(r);
       if (r.ok) cerrar();
     });
@@ -166,7 +203,7 @@ function FormularioDetalle({ trabajoId, parteId, detalle }: { trabajoId: number;
         <Button type="submit" disabled={enviando || quitando}>
           {enviando ? "Guardando…" : "Guardar detalle"}
         </Button>
-        {detalle && (
+        {detalle?.estado === "detalle" && (
           <Button type="button" variant="outline" disabled={enviando || quitando} onClick={quitar}>
             <CheckIcon />
             {quitando ? "Guardando…" : "Está bien"}

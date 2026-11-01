@@ -105,5 +105,5 @@ export const esquemaDetalle = z
   })
   .refine((d) => d.tipo !== "otro" || d.nota, { path: ["nota"], message: "Con «Otro», cuenta qué es." });
 
-/** Quitar un detalle (la parte vuelve a "Bien"): datos sueltos, se validan. */
-export const esquemaQuitarDetalle = z.object({ trabajoId: id, parteId: id });
+/** Marcar una parte "bien" (también una que tenía un detalle): datos sueltos, se validan. */
+export const esquemaMarcarBien = z.object({ trabajoId: id, parteId: id });

@@ -31,11 +31,11 @@ import {
   esquemaExtender,
   esquemaFotoOrden,
   esquemaPublicar,
-  esquemaQuitarDetalle,
+  esquemaMarcarBien,
   esquemaQuitarFotoOrden,
   esquemaRecibir,
 } from "./esquemas";
-import { esFotoDeAntes, estaAbierta, etapaAbierta, puedeExtenderse, MAXIMO_FOTOS_ETAPA, NOMBRE_ETAPA, puedeRecibirse, transicionOrden } from "./reglas";
+import { esFotoDeAntes, estaAbierta, etapaAbierta, puedeExtenderse, MAXIMO_FOTOS_ETAPA, NOMBRE_ETAPA, puedeRecibirse, textoSinRevisar, transicionOrden } from "./reglas";
 
 // Órdenes (C4). Entra el dueño, el encargado con "Órdenes" y el técnico, que solo toca las suyas (RN-12). Recibir el
 // vehículo es del dueño y del encargado: sale de la agenda, que el técnico no ve. Especificación:
@@ -172,6 +172,15 @@ export async function recibirVehiculo(_previo: EstadoRecepcion, datos: FormData)
   }
   const { id, tecnicoId, observaciones } = r.data;
 
+  // El checklist (pedido 12): cada parte activa se revisa, bien o con un detalle, antes de recibir
+  const sinRevisar = await db
+    .select({ nombre: parteRevision.nombre })
+    .from(parteRevision)
+    .leftJoin(trabajoRevision, and(eq(trabajoRevision.parteId, parteRevision.id), eq(trabajoRevision.trabajoId, id)))
+    .where(and(eq(parteRevision.activo, true), isNull(trabajoRevision.id)))
+    .orderBy(parteRevision.orden, parteRevision.id);
+  if (sinRevisar.length > 0) return { mensaje: textoSinRevisar(sinRevisar.map((p) => p.nombre)), valores };
+
   // Sin fotos de ingreso se puede recibir, pero se pide confirmar: son la prueba de cómo llegó. Lo decide el servidor,
   // que sabe cuántas hay: la pantalla podía no haberse enterado todavía de una foto recién subida y pedir confirmar de
   // más (la prueba flujo-taller-completo fallaba a veces por eso)
@@ -212,7 +221,10 @@ export async function recibirVehiculo(_previo: EstadoRecepcion, datos: FormData)
         .returning({ clienteId: trabajo.clienteId });
       if (!recibida) throw new Conflicto("Esa reserva ya fue recibida, se canceló o todavía no llega a su día de ingreso. Recarga la página.");
       await tx.insert(trabajoAvance).values({ trabajoId: id, usuarioId: autorId, nota: "Vehículo recibido." });
-      const [{ detalles }] = await tx.select({ detalles: count() }).from(trabajoRevision).where(eq(trabajoRevision.trabajoId, id));
+      const [{ detalles }] = await tx
+        .select({ detalles: count() })
+        .from(trabajoRevision)
+        .where(and(eq(trabajoRevision.trabajoId, id), eq(trabajoRevision.estado, "detalle")));
       await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "trabajo", entidadId: id, accion: "recibir", datos: { tecnicoId, observaciones, detalles } });
       return recibida.clienteId;
     });
@@ -276,10 +288,10 @@ export async function guardarDetalle(_previo: EstadoFormulario, datos: FormData)
       const archivoId = fotoNueva ?? antes?.archivoId ?? null;
       await tx
         .insert(trabajoRevision)
-        .values({ trabajoId, parteId, parte: parte.nombre, tipo, nota, archivoId, createdBy: autorId })
+        .values({ trabajoId, parteId, parte: parte.nombre, estado: "detalle", tipo, nota, archivoId, createdBy: autorId })
         .onConflictDoUpdate({
           target: [trabajoRevision.trabajoId, trabajoRevision.parteId],
-          set: { tipo, nota, archivoId, updatedAt: sql`now()` },
+          set: { estado: "detalle", tipo, nota, archivoId, updatedAt: sql`now()` },
         });
       return fotoNueva && antes?.archivoId ? antes.archivoId : null;
     });
@@ -296,17 +308,21 @@ export async function guardarDetalle(_previo: EstadoFormulario, datos: FormData)
   return { ok: true, mensaje: "Detalle guardado." };
 }
 
-/** Quita un detalle del checklist: la parte vuelve a "Bien". Solo antes de recibir. Recibe datos sueltos: se validan. */
-export async function quitarDetalle(datos: { trabajoId: number; parteId: number }): Promise<EstadoFormulario> {
+/**
+ * Marca una parte "bien" en el checklist (también una que tenía un detalle: se borran su nota y su foto). Solo antes de
+ * recibir, el día de ingreso. Recibe datos sueltos: se validan.
+ */
+export async function marcarBien(datos: { trabajoId: number; parteId: number }): Promise<EstadoFormulario> {
   const usuario = await exigirModulo("ordenes");
   if (!puede(usuario, "recibir_vehiculo")) return { mensaje: "El checklist lo hace quien recibe el vehículo." };
-  const entrada = esquemaQuitarDetalle.safeParse(datos);
+  const entrada = esquemaMarcarBien.safeParse(datos);
   if (!entrada.success) return { mensaje: RECARGA };
   const { trabajoId, parteId } = entrada.data;
+  const autorId = Number(usuario.id);
 
-  let quitado: { archivoId: number | null; clienteId: number } | null;
+  let marcada: { archivoId: number | null; clienteId: number } | null;
   try {
-    quitado = await db.transaction(async (tx) => {
+    marcada = await db.transaction(async (tx) => {
       const [t] = await tx
         .select({ estado: trabajo.estado, fechaInicio: trabajo.fechaInicio, clienteId: trabajo.clienteId })
         .from(trabajo)
@@ -315,22 +331,35 @@ export async function quitarDetalle(datos: { trabajoId: number; parteId: number 
       if (!t) return null;
       if (t.estado !== "agendado") throw new Conflicto("El vehículo ya se recibió: el checklist no cambia.");
       if (!puedeRecibirse(t, fechaEnBolivia())) throw new Conflicto("El checklist se hace el día que llega el vehículo.");
-      const [fila] = await tx
-        .delete(trabajoRevision)
-        .where(and(eq(trabajoRevision.trabajoId, trabajoId), eq(trabajoRevision.parteId, parteId)))
-        .returning({ archivoId: trabajoRevision.archivoId });
-      return fila ? { archivoId: fila.archivoId, clienteId: t.clienteId } : null;
+      const [[parte], [antes]] = await Promise.all([
+        tx.select({ nombre: parteRevision.nombre, activo: parteRevision.activo }).from(parteRevision).where(eq(parteRevision.id, parteId)),
+        tx
+          .select({ archivoId: trabajoRevision.archivoId })
+          .from(trabajoRevision)
+          .where(and(eq(trabajoRevision.trabajoId, trabajoId), eq(trabajoRevision.parteId, parteId))),
+      ]);
+      // Una parte desactivada no se agrega, pero la ya revisada se puede cambiar
+      if (!parte || (!parte.activo && !antes)) return null;
+      await tx
+        .insert(trabajoRevision)
+        .values({ trabajoId, parteId, parte: parte.nombre, estado: "bien", createdBy: autorId })
+        .onConflictDoUpdate({
+          target: [trabajoRevision.trabajoId, trabajoRevision.parteId],
+          set: { estado: "bien", tipo: null, nota: null, archivoId: null, updatedAt: sql`now()` },
+        });
+      return { archivoId: antes?.archivoId ?? null, clienteId: t.clienteId };
     });
   } catch (error) {
     if (error instanceof Conflicto) return { mensaje: error.message };
     throw error;
   }
-  if (!quitado) return { mensaje: "Ese detalle ya no está. Recarga la página." };
-  if (quitado.archivoId) await eliminarFoto(quitado.archivoId).catch((e) => console.error("No se pudo borrar la foto del detalle", e));
+  if (!marcada) return { mensaje: "Esa parte ya no está en el checklist. Recarga la página." };
+  // La foto del detalle que había: ya no es de nadie
+  if (marcada.archivoId) await eliminarFoto(marcada.archivoId).catch((e) => console.error("No se pudo borrar la foto del detalle", e));
 
   revalidatePath(`/panel/ordenes/${trabajoId}/recibir`);
-  despuesDeCambiar(trabajoId, quitado.clienteId);
-  return { ok: true, mensaje: "La parte quedó bien." };
+  despuesDeCambiar(trabajoId, marcada.clienteId);
+  return { ok: true };
 }
 
 const CAMBIO = "Esa orden cambió recién. Recarga la página.";
