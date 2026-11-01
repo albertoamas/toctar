@@ -11,10 +11,11 @@ test("los parámetros vacíos o negativos muestran el error y no se guardan", as
   await page.goto("/panel/configuracion");
   await page.getByRole("navigation", { name: "Secciones de configuración" }).getByRole("link", { name: "Parámetros" }).click();
   await expect(page).toHaveURL(/\/panel\/configuracion\/parametros$/);
-  // Por tema, en el orden del trabajo (el mantenimiento, desde el pedido 21, es de cada servicio del catálogo)
+  // Por tema, en el orden del trabajo (el mantenimiento, desde el pedido 21, es de cada servicio del catálogo; la
+  // consulta, desde el pedido 23, ya no existe: "Cotización sin respuesta" va en Cotizaciones)
   // (Next deja la pestaña anterior oculta en la página: se mira solo este formulario)
   const secciones = page.locator("form").filter({ has: page.getByLabel("Adelanto sugerido") }).locator("legend");
-  await expect(secciones).toHaveText([/^Consultas/, /^Cotizaciones/, /^Agenda/]);
+  await expect(secciones).toHaveText([/^Cotizaciones/, /^Agenda/]);
 
   await page.getByLabel("Adelanto sugerido").fill("-5");
   await page.getByLabel("Validez de la cotización").fill("");

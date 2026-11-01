@@ -19,7 +19,7 @@ test("el inicio da un acceso a cada módulo que la persona puede usar; al técni
   await ingresarComoDueno(page);
   // Debajo de lo del día (HU-39), en el orden del menú (por grupos)
   const accesos = page.getByRole("navigation", { name: "Ir a" }).getByRole("link");
-  await expect(accesos).toHaveText([/^Agenda/, /^Órdenes/, /^Clientes/, /^Consultas/, /^Saldos pendientes/, /^Mantenimientos/, /^Reclamos/, /^Sitio web/, /^Catálogo y precios/, /^Usuarios/, /^Configuración/]);
+  await expect(accesos).toHaveText([/^Agenda/, /^Órdenes/, /^Clientes/, /^Cotizaciones/, /^Saldos pendientes/, /^Mantenimientos/, /^Reclamos/, /^Sitio web/, /^Catálogo y precios/, /^Usuarios/, /^Configuración/]);
   await accesos.filter({ hasText: "Usuarios" }).click();
   await expect(page).toHaveURL(/\/panel\/usuarios$/);
 
