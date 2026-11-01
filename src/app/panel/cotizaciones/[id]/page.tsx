@@ -71,6 +71,11 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
                 Agendar
               </Link>
             )}
+            {/* Como en las demás fichas: escribirle al cliente, al lado del paso siguiente */}
+            <a href={enlaceWhatsApp(c.telefono)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
+              <IconoWhatsApp />
+              Escribir por WhatsApp
+            </a>
             <MasCotizacion
               id={c.id}
               nuevaVersion={pendiente && vigente && cotiza ? `/panel/cotizaciones/${c.id}/nueva-version?desde=${vigente.id}` : null}
@@ -103,18 +108,12 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
           <p className="text-sm text-tinta-suave">
             Registrada el {formatearFechaHora(c.createdAt)} por {c.registradaPor}
           </p>
-          <div className="flex flex-wrap gap-x-6">
-            <a href={enlaceWhatsApp(c.telefono)} target="_blank" rel="noreferrer" className={cn(ENLACE_TEXTO, "gap-2")}>
-              <IconoWhatsApp />
-              Escribir por WhatsApp
-            </a>
-            {/* El encargado puede tener Cotizaciones sin Clientes: entonces no enlaza a una ficha que no puede abrir */}
-            {puedeVerModulo(usuario, "clientes") && (
-              <Link href={`/panel/clientes/${c.clienteId}`} className={ENLACE_TEXTO}>
-                Ver ficha del cliente
-              </Link>
-            )}
-          </div>
+          {/* El encargado puede tener Cotizaciones sin Clientes: entonces no enlaza a una ficha que no puede abrir */}
+          {puedeVerModulo(usuario, "clientes") && (
+            <Link href={`/panel/clientes/${c.clienteId}`} className={ENLACE_TEXTO}>
+              Ver ficha del cliente
+            </Link>
+          )}
         </div>
       </section>
 
