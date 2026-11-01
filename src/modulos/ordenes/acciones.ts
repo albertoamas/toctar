@@ -4,7 +4,7 @@ import { and, count, eq, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { auditoria, pago, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, usuario as tablaUsuario, vehiculo as tablaVehiculo } from "@/db/esquema";
+import { auditoria, pago, parteRevision, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, trabajoRevision, usuario as tablaUsuario, vehiculo as tablaVehiculo } from "@/db/esquema";
 import { fechaEnBolivia, formatearFecha, sumarDias } from "@/lib/fechas";
 import { copiarFotoAlPublico, eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { erroresDe, exclusionViolada, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
@@ -21,7 +21,20 @@ import { agregarAGaleria } from "@/modulos/sitio/agregar-a-galeria";
 import { galeriaCambiada } from "@/modulos/sitio/galeria-cambiada";
 import { aplicarPlanesAlEntregar } from "@/modulos/mantenimientos/planes";
 import { publicadaDeOrden, serviciosDeOrden } from "./consultas";
-import { esquemaAdicional, esquemaAvance, esquemaAvisoListo, esquemaEntregar, esquemaEstadoOrden, esquemaExtender, esquemaFotoOrden, esquemaPublicar, esquemaQuitarFotoOrden, esquemaRecibir } from "./esquemas";
+import {
+  esquemaAdicional,
+  esquemaAvance,
+  esquemaAvisoListo,
+  esquemaDetalle,
+  esquemaEntregar,
+  esquemaEstadoOrden,
+  esquemaExtender,
+  esquemaFotoOrden,
+  esquemaPublicar,
+  esquemaQuitarDetalle,
+  esquemaQuitarFotoOrden,
+  esquemaRecibir,
+} from "./esquemas";
 import { esFotoDeAntes, estaAbierta, etapaAbierta, puedeExtenderse, MAXIMO_FOTOS_ETAPA, NOMBRE_ETAPA, puedeRecibirse, transicionOrden } from "./reglas";
 
 // Órdenes (C4). Entra el dueño, el encargado con "Órdenes" y el técnico, que solo toca las suyas (RN-12). Recibir el
@@ -163,11 +176,18 @@ export async function recibirVehiculo(_previo: EstadoRecepcion, datos: FormData)
   // que sabe cuántas hay: la pantalla podía no haberse enterado todavía de una foto recién subida y pedir confirmar de
   // más (la prueba flujo-taller-completo fallaba a veces por eso)
   if (datos.get("sinFotos") !== "1") {
-    const [{ cuantas }] = await db
-      .select({ cuantas: count() })
-      .from(trabajoFoto)
-      .where(and(eq(trabajoFoto.trabajoId, id), eq(trabajoFoto.etapa, "ingreso")));
-    if (cuantas === 0) return { sinFotos: true, valores };
+    // Las fotos de los detalles del checklist (pedido 12) también prueban cómo llegó
+    const [[{ cuantas }], [{ deDetalles }]] = await Promise.all([
+      db
+        .select({ cuantas: count() })
+        .from(trabajoFoto)
+        .where(and(eq(trabajoFoto.trabajoId, id), eq(trabajoFoto.etapa, "ingreso"))),
+      db
+        .select({ deDetalles: count(trabajoRevision.archivoId) })
+        .from(trabajoRevision)
+        .where(eq(trabajoRevision.trabajoId, id)),
+    ]);
+    if (cuantas + deDetalles === 0) return { sinFotos: true, valores };
   }
 
   const autorId = Number(usuario.id);
@@ -192,7 +212,8 @@ export async function recibirVehiculo(_previo: EstadoRecepcion, datos: FormData)
         .returning({ clienteId: trabajo.clienteId });
       if (!recibida) throw new Conflicto("Esa reserva ya fue recibida, se canceló o todavía no llega a su día de ingreso. Recarga la página.");
       await tx.insert(trabajoAvance).values({ trabajoId: id, usuarioId: autorId, nota: "Vehículo recibido." });
-      await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "trabajo", entidadId: id, accion: "recibir", datos: { tecnicoId, observaciones } });
+      const [{ detalles }] = await tx.select({ detalles: count() }).from(trabajoRevision).where(eq(trabajoRevision.trabajoId, id));
+      await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "trabajo", entidadId: id, accion: "recibir", datos: { tecnicoId, observaciones, detalles } });
       return recibida.clienteId;
     });
   } catch (error) {
@@ -202,6 +223,107 @@ export async function recibirVehiculo(_previo: EstadoRecepcion, datos: FormData)
 
   despuesDeCambiar(id, clienteId);
   redirect(`/panel/ordenes/${id}?recibido=1`);
+}
+
+/**
+ * Guarda un detalle del checklist de recepción (pedido 12): la parte, qué tiene, una nota y, si llega, su foto (achicada en
+ * el navegador, WebP en el servidor, bucket privado). Solo mientras la reserva espera ser recibida: después es prueba de
+ * cómo llegó y no cambia. Una foto nueva reemplaza a la anterior.
+ */
+export async function guardarDetalle(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  const usuario = await exigirModulo("ordenes");
+  if (!puede(usuario, "recibir_vehiculo")) return { mensaje: "El checklist lo hace quien recibe el vehículo." };
+  const valores = { tipo: String(datos.get("tipo") ?? ""), nota: String(datos.get("nota") ?? "") };
+  const r = esquemaDetalle.safeParse({ trabajoId: datos.get("trabajoId"), parteId: datos.get("parteId"), ...valores });
+  if (!r.success) {
+    const errores = erroresDe(r.error);
+    return errores.trabajoId || errores.parteId ? { mensaje: RECARGA } : { errores, valores };
+  }
+  const { trabajoId, parteId, tipo, nota } = r.data;
+
+  const [[t], [parte], [actual]] = await Promise.all([
+    db.select({ estado: trabajo.estado, fechaInicio: trabajo.fechaInicio, clienteId: trabajo.clienteId }).from(trabajo).where(eq(trabajo.id, trabajoId)),
+    db.select({ nombre: parteRevision.nombre, activo: parteRevision.activo }).from(parteRevision).where(eq(parteRevision.id, parteId)),
+    db.select({ id: trabajoRevision.id }).from(trabajoRevision).where(and(eq(trabajoRevision.trabajoId, trabajoId), eq(trabajoRevision.parteId, parteId))),
+  ]);
+  if (!t) return { mensaje: "Esa reserva ya no existe." };
+  if (t.estado !== "agendado") return { mensaje: "El vehículo ya se recibió: el checklist no cambia.", valores };
+  if (!puedeRecibirse(t, fechaEnBolivia())) return { mensaje: "El checklist se hace el día que llega el vehículo.", valores };
+  // Una parte desactivada no se agrega, pero lo que ya se marcó con ella se puede cambiar
+  if (!parte || (!parte.activo && !actual)) return { mensaje: "Esa parte ya no está en el checklist. Recarga la página." };
+
+  const autorId = Number(usuario.id);
+  let fotoNueva: number | null = null;
+  const foto = datos.get("foto");
+  if (foto instanceof File && foto.size > 0) {
+    const g = await guardarFoto(foto, { carpeta: "ordenes", miniatura: true, autorId, privado: true });
+    if (!g.ok) return { errores: { foto: ERROR_FOTO }, valores };
+    fotoNueva = g.archivoId;
+  }
+
+  let reemplazada: number | null = null;
+  try {
+    reemplazada = await db.transaction(async (tx) => {
+      // Candado sobre la reserva: si alguien la recibe en este momento, el detalle no entra después
+      const [bloqueada] = await tx.select({ estado: trabajo.estado }).from(trabajo).where(eq(trabajo.id, trabajoId)).for("update");
+      if (bloqueada?.estado !== "agendado") throw new Conflicto("El vehículo ya se recibió: el checklist no cambia.");
+      const [antes] = await tx
+        .select({ archivoId: trabajoRevision.archivoId })
+        .from(trabajoRevision)
+        .where(and(eq(trabajoRevision.trabajoId, trabajoId), eq(trabajoRevision.parteId, parteId)));
+      const archivoId = fotoNueva ?? antes?.archivoId ?? null;
+      await tx
+        .insert(trabajoRevision)
+        .values({ trabajoId, parteId, parte: parte.nombre, tipo, nota, archivoId, createdBy: autorId })
+        .onConflictDoUpdate({
+          target: [trabajoRevision.trabajoId, trabajoRevision.parteId],
+          set: { tipo, nota, archivoId, updatedAt: sql`now()` },
+        });
+      return fotoNueva && antes?.archivoId ? antes.archivoId : null;
+    });
+  } catch (error) {
+    // Sin la fila, la foto nueva no la encontraría nadie: se borra
+    if (fotoNueva) await eliminarFoto(fotoNueva).catch((e) => console.error("No se pudo borrar la foto del detalle", e));
+    if (error instanceof Conflicto) return { mensaje: error.message, valores };
+    throw error;
+  }
+  if (reemplazada) await eliminarFoto(reemplazada).catch((e) => console.error("No se pudo borrar la foto anterior del detalle", e));
+
+  revalidatePath(`/panel/ordenes/${trabajoId}/recibir`);
+  despuesDeCambiar(trabajoId, t.clienteId);
+  return { ok: true, mensaje: "Detalle guardado." };
+}
+
+/** Quita un detalle del checklist: la parte vuelve a "Bien". Solo antes de recibir. Recibe datos sueltos: se validan. */
+export async function quitarDetalle(datos: { trabajoId: number; parteId: number }): Promise<EstadoFormulario> {
+  const usuario = await exigirModulo("ordenes");
+  if (!puede(usuario, "recibir_vehiculo")) return { mensaje: "El checklist lo hace quien recibe el vehículo." };
+  const entrada = esquemaQuitarDetalle.safeParse(datos);
+  if (!entrada.success) return { mensaje: RECARGA };
+  const { trabajoId, parteId } = entrada.data;
+
+  let quitado: { archivoId: number | null; clienteId: number } | null;
+  try {
+    quitado = await db.transaction(async (tx) => {
+      const [t] = await tx.select({ estado: trabajo.estado, clienteId: trabajo.clienteId }).from(trabajo).where(eq(trabajo.id, trabajoId)).for("update");
+      if (!t) return null;
+      if (t.estado !== "agendado") throw new Conflicto("El vehículo ya se recibió: el checklist no cambia.");
+      const [fila] = await tx
+        .delete(trabajoRevision)
+        .where(and(eq(trabajoRevision.trabajoId, trabajoId), eq(trabajoRevision.parteId, parteId)))
+        .returning({ archivoId: trabajoRevision.archivoId });
+      return fila ? { archivoId: fila.archivoId, clienteId: t.clienteId } : null;
+    });
+  } catch (error) {
+    if (error instanceof Conflicto) return { mensaje: error.message };
+    throw error;
+  }
+  if (!quitado) return { mensaje: "Ese detalle ya no está. Recarga la página." };
+  if (quitado.archivoId) await eliminarFoto(quitado.archivoId).catch((e) => console.error("No se pudo borrar la foto del detalle", e));
+
+  revalidatePath(`/panel/ordenes/${trabajoId}/recibir`);
+  despuesDeCambiar(trabajoId, quitado.clienteId);
+  return { ok: true, mensaje: "La parte quedó bien." };
 }
 
 const CAMBIO = "Esa orden cambió recién. Recarga la página.";

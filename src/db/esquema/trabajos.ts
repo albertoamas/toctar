@@ -193,3 +193,47 @@ export const trabajoAvance = pgTable(
   },
   (t) => [index("trabajo_avance_por_trabajo").on(t.trabajoId)],
 );
+
+// Checklist de recepción (pedido 12, P12-checklist-recepcion.md §4): las partes que revisa quien recibe, y lo que
+// encontró en cada una. Lo que no tiene fila llegó bien.
+
+export const TIPOS_DETALLE = ["rayon", "golpe", "raspon", "roto", "otro"] as const;
+export type TipoDetalle = (typeof TIPOS_DETALLE)[number];
+
+/** Las partes del checklist, que arma el dueño en Configuración (RNF-11). Se desactivan, no se borran (D-6). */
+export const parteRevision = pgTable(
+  "parte_revision",
+  {
+    id: integer("id").generatedByDefaultAsIdentity().primaryKey(),
+    nombre: text("nombre").notNull(),
+    orden: integer("orden").notNull(),
+    activo: boolean("activo").default(true).notNull(),
+  },
+  (t) => [uniqueIndex("parte_revision_nombre_unico").on(sql`lower(${t.nombre})`)],
+);
+
+/** Un detalle con que llegó el vehículo: la parte (su nombre copiado, D-4), qué tiene, una nota y su foto (privada). */
+export const trabajoRevision = pgTable(
+  "trabajo_revision",
+  {
+    id: integer("id").generatedByDefaultAsIdentity().primaryKey(),
+    trabajoId: integer("trabajo_id")
+      .notNull()
+      .references(() => trabajo.id),
+    parteId: integer("parte_id")
+      .notNull()
+      .references(() => parteRevision.id),
+    parte: text("parte").notNull(),
+    tipo: text("tipo").$type<TipoDetalle>().notNull(),
+    nota: text("nota"),
+    archivoId: integer("archivo_id")
+      .unique()
+      .references(() => archivo.id),
+    createdBy: integer("created_by")
+      .notNull()
+      .references(() => usuario.id),
+    createdAt: momento("created_at").defaultNow().notNull(),
+    updatedAt: momento("updated_at").defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("trabajo_revision_unica").on(t.trabajoId, t.parteId), check("trabajo_revision_tipo_valido", sql`${t.tipo} in (${lista(TIPOS_DETALLE)})`)],
+);

@@ -2,8 +2,8 @@ import "server-only";
 import { and, asc, desc, eq, inArray, min } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
-import { archivo, cliente, galeriaItem, servicio, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, usuario, variante, vehiculo } from "@/db/esquema";
-import type { EstadoTrabajo, EtapaFoto } from "@/db/esquema/trabajos";
+import { archivo, cliente, galeriaItem, parteRevision, servicio, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, trabajoRevision, usuario, variante, vehiculo } from "@/db/esquema";
+import type { EstadoTrabajo, EtapaFoto, TipoDetalle } from "@/db/esquema/trabajos";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { obtenerReserva, type DetalleReserva } from "@/modulos/agenda/consultas";
 import { ESTADOS_ORDEN_ABIERTA } from "./reglas";
@@ -134,4 +134,44 @@ export async function ordenesAbiertas(tecnicoId?: number): Promise<OrdenEnLista[
   return ordenes
     .map(({ avisadoListoAt, ...o }) => ({ ...o, sinAvisar: o.estado === "listo" && avisadoListoAt === null, servicios: porOrden.get(o.id) ?? [] }))
     .sort((a, b) => Number(a.estado === "listo") - Number(b.estado === "listo"));
+}
+
+export type DetalleRevision = {
+  parteId: number;
+  parte: string;
+  tipo: TipoDetalle;
+  nota: string | null;
+  foto: UrlsFoto | null;
+};
+
+/** Los detalles con que llegó el vehículo (pedido 12), en el orden de la lista de partes; las fotos, con enlace firmado. */
+export async function detallesDeTrabajo(trabajoId: number): Promise<DetalleRevision[]> {
+  const filas = await db
+    .select({
+      parteId: trabajoRevision.parteId,
+      parte: trabajoRevision.parte,
+      tipo: trabajoRevision.tipo,
+      nota: trabajoRevision.nota,
+      clave: archivo.clave,
+      miniaturaClave: archivo.miniaturaClave,
+      ancho: archivo.ancho,
+      alto: archivo.alto,
+    })
+    .from(trabajoRevision)
+    .innerJoin(parteRevision, eq(trabajoRevision.parteId, parteRevision.id))
+    .leftJoin(archivo, eq(trabajoRevision.archivoId, archivo.id))
+    .where(eq(trabajoRevision.trabajoId, trabajoId))
+    .orderBy(asc(parteRevision.orden), asc(parteRevision.id));
+  return Promise.all(
+    filas.map(async ({ clave, miniaturaClave, ancho, alto, ...d }) => ({ ...d, foto: clave ? await urlsFotoPrivada({ clave, miniaturaClave, ancho, alto }) : null })),
+  );
+}
+
+/** Las partes activas del checklist, en su orden: las filas de la recepción. */
+export async function partesDelChecklist(): Promise<{ id: number; nombre: string }[]> {
+  return db
+    .select({ id: parteRevision.id, nombre: parteRevision.nombre })
+    .from(parteRevision)
+    .where(eq(parteRevision.activo, true))
+    .orderBy(asc(parteRevision.orden), asc(parteRevision.id));
 }

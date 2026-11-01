@@ -2,9 +2,24 @@ import { expect, test } from "vitest";
 import { sumarMeses } from "@/lib/fechas";
 import { precioCotizadoYFinal } from "@/modulos/pagos/reglas";
 import { erroresDe } from "@/lib/formularios";
-import { esquemaAvance, esquemaFotoOrden, esquemaPublicar, esquemaRecibir } from "@/modulos/ordenes/esquemas";
+import { TIPOS_DETALLE } from "@/db/esquema/trabajos";
+import { esquemaAvance, esquemaDetalle, esquemaFotoOrden, esquemaPublicar, esquemaQuitarDetalle, esquemaRecibir } from "@/modulos/ordenes/esquemas";
 import { puede, puedeVerOrden } from "@/lib/permisos";
-import { enlaceTrabajo, esFotoDeAntes, esOrden, estaAtrasada, etapaAbierta, pasosDeOrden, puedeExtenderse, puedePublicarse, puedeRecibirse, rutaTrabajo, transicionOrden } from "@/modulos/ordenes/reglas";
+import {
+  enlaceTrabajo,
+  esFotoDeAntes,
+  esOrden,
+  estaAtrasada,
+  etapaAbierta,
+  NOMBRE_DETALLE,
+  pasosDeOrden,
+  puedeExtenderse,
+  puedePublicarse,
+  puedeRecibirse,
+  rutaTrabajo,
+  TIPOS_DE_DETALLE,
+  transicionOrden,
+} from "@/modulos/ordenes/reglas";
 
 // C4 Taller y entrega (HU-33): la reserva recibida es una orden (D-1), fotos por etapa (D-6) y el técnico solo con las
 // suyas (RN-12).
@@ -164,4 +179,23 @@ test("publicar pide la foto de después, la casilla y las reglas de la galería;
     sinPlacaNiCaras: "Marca que en las fotos no se lee la placa ni se ve a nadie.",
   });
   expect(erroresDe(esquemaPublicar.safeParse({ ...base, descripcion: "a".repeat(141) }).error!)).toEqual({ descripcion: "Hasta 140 caracteres." });
+});
+
+// Pedido 12: el checklist de recepción.
+
+test("un detalle pide qué tiene; con «Otro», la nota; la nota vacía es null", () => {
+  const base = { trabajoId: "4", parteId: "2", tipo: "rayon", nota: "  " };
+  expect(esquemaDetalle.parse(base)).toEqual({ trabajoId: 4, parteId: 2, tipo: "rayon", nota: null });
+  expect(esquemaDetalle.safeParse({ ...base, tipo: "" }).error?.issues[0]).toMatchObject({ path: ["tipo"], message: "Elige qué tiene." });
+  expect(esquemaDetalle.safeParse({ ...base, tipo: "abollado" }).error?.issues[0].message).toBe("Elige qué tiene.");
+  expect(esquemaDetalle.safeParse({ ...base, tipo: "otro" }).error?.issues[0]).toMatchObject({ path: ["nota"], message: "Con «Otro», cuenta qué es." });
+  expect(esquemaDetalle.parse({ ...base, tipo: "otro", nota: "Falta la antena" }).nota).toBe("Falta la antena");
+  expect(esquemaDetalle.safeParse({ ...base, nota: "x".repeat(301) }).error?.issues[0].message).toBe("Hasta 300 caracteres.");
+  // Quitar un detalle recibe datos sueltos
+  expect(esquemaQuitarDetalle.safeParse({ trabajoId: 1, parteId: "x" }).success).toBe(false);
+});
+
+test("los tipos de detalle se leen como en el taller, y son los de la base", () => {
+  expect(TIPOS_DE_DETALLE.map((t) => NOMBRE_DETALLE[t])).toEqual(["Rayón", "Golpe", "Raspón", "Roto", "Otro"]);
+  expect([...TIPOS_DE_DETALLE]).toEqual([...TIPOS_DETALLE]);
 });

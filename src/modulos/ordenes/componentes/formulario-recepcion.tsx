@@ -38,7 +38,7 @@ export function FormularioRecepcion({ trabajoId, tecnicos, tecnicoInicial, tecni
       <input type="hidden" name="id" value={trabajoId} />
       {confirmarSinFotos && <input type="hidden" name="sinFotos" value="1" />}
       {estado.mensaje && !estado.ok && <MensajeError id="recepcion-error">{estado.mensaje}</MensajeError>}
-      <Campo id="observaciones" etiqueta="Observaciones" error={e.observaciones} ayuda="Rayones, golpes, objetos que deja el cliente…">
+      <Campo id="observaciones" etiqueta="Observaciones" error={e.observaciones} ayuda="Lo que no está en el checklist: objetos que deja el cliente, lo que pidió…">
         <Textarea
           id="observaciones"
           name="observaciones"
@@ -67,7 +67,7 @@ export function FormularioRecepcion({ trabajoId, tecnicos, tecnicoInicial, tecni
       </Campo>
       {confirmarSinFotos && (
         <p role="alert" className="rounded-sm border border-aviso p-3 text-sm">
-          Sin fotos de ingreso no hay cómo probar el estado en que llegó. Toma al menos una o confirma que lo recibes sin fotos.
+          Sin fotos de ingreso ni de detalles no hay cómo probar el estado en que llegó. Toma al menos una o confirma que lo recibes sin fotos.
         </p>
       )}
       {/* En el celular, fijo abajo: a mano aunque el teclado esté abierto en las observaciones (pulido 11.3) */}
