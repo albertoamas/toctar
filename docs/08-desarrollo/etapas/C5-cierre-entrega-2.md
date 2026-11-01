@@ -1,7 +1,7 @@
 # C5 Cierre de la Entrega 2 — especificación
 
 - **Fase y semana:** C. Entrega 2 · se adelanta a la semana 2 (desde el 23 de octubre); en el plan era la semana 5, con margen en la 6 y la 7
-- **Estado:** aprobada (23 de octubre de 2026). §0 terminado el 24/10 (PR #74); HU-40 (PR #92), HU-39 (PR #93) y HU-41 el 25/10; sigue el cierre
+- **Estado:** aprobada (23 de octubre de 2026). §0 terminado el 24/10 (PR #74); HU-40 (PR #92), HU-39 (PR #93) y HU-41 (PR #94) el 25/10; el pulido visual de la Entrega 2 y los pedidos 20 y 21 el 27/10. Sigue el cierre: criterios, capacitación y acta
 - **Historias:** HU-39 Pantalla del día · HU-40 Plantillas de WhatsApp · HU-41 Fotos de órdenes a la galería (las tres deseables) · cierre: criterios de HU-19 a HU-38, capacitación y acta
 - **Base:**
   - Requisitos: RF-44, RF-51, RF-52; RNF-01, RNF-05, RNF-11, RNF-14.
