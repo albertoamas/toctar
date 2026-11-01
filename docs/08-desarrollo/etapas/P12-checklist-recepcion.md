@@ -7,13 +7,14 @@
 - **Base:** RF-40 (recibir con fotos y observaciones), RN-12 (el técnico no ve precios ni teléfonos), RNF-11 (todo configurable), D-4 (lo registrado copia el nombre), D-6 (se desactiva, no se borra), D-10 (archivos)
 
 ## 1. Objetivo
-Que al recibir un vehículo el dueño o el encargado marquen, en el celular y en menos de un minuto, **qué partes llegaron con un detalle** (rayón, golpe, raspón, roto u otro), con una nota y una foto de cada uno. Lo que no se marca llegó bien. En la orden se ve "Cómo llegó": los detalles con su foto y "El resto, bien".
+Que al recibir un vehículo el dueño o el encargado **revisen parte por parte** en el celular y marquen cada una **"Bien"** o **"Detalle"** (rayón, golpe, raspón, roto u otro, con una nota y una foto). No se recibe con partes sin revisar: así ninguna se pasa por alto (ajuste pedido el 01/11, al probarlo; antes, todo arrancaba en "Bien"). En la orden se ve "Cómo llegó": los detalles con su foto y "El resto, bien".
 
 ## 2. Alcance
 - **Incluye:**
   - En Configuración → Taller, la lista **"Partes del checklist"** (agregar, renombrar, ordenar, desactivar), con una lista base que el dueño ajusta.
-  - Al recibir, la sección **"Checklist"**: una fila por parte activa, "Bien" por defecto; **"Marcar detalle"** abre un modal con el tipo, una nota y la foto (cámara). Cada detalle se guarda al momento, como las fotos de ingreso.
-  - Un detalle se cambia o se quita ("Está bien") mientras la reserva no se recibió; después queda fijo, como prueba.
+  - Al recibir, la sección **"Checklist"**: una fila por parte activa, **"Sin revisar"** al empezar, con **"Bien"** (un toque) y **"Detalle"** (un modal con el tipo, una nota y la foto con la cámara), y arriba "Revisadas N de M". Cada marca se guarda al momento, como las fotos de ingreso.
+  - Una parte se cambia (de bien a detalle y al revés, con "Está bien") mientras la reserva no se recibió; después queda fija, como prueba.
+  - **Recibir exige todas las partes activas revisadas;** si falta alguna, el mensaje dice cuáles.
   - En la orden (también para el técnico), "Cómo llegó" con los detalles, su foto en grande al tocarla, "El resto, bien" y las observaciones.
   - Recibir sin fotos pide confirmar si no hay fotos de ingreso **ni** fotos de detalles.
 - **No incluye** (y dónde queda):
@@ -24,7 +25,9 @@ Que al recibir un vehículo el dueño o el encargado marquen, en el celular y en
 
 | Regla | Cómo se garantiza |
 |---|---|
-| Una parte, un detalle por orden | Índice único `(trabajo_id, parte_id)` en `trabajo_revision` |
+| Una parte, una revisión por orden | Índice único `(trabajo_id, parte_id)` en `trabajo_revision` |
+| Se recibe con todo revisado | `recibirVehiculo` busca las partes activas sin fila y no recibe si hay alguna |
+| "Bien" no lleva tipo, nota ni foto; "detalle" siempre lleva su tipo | CHECK en la base (`trabajo_revision_tipo_si_detalle`, `trabajo_revision_bien_sin_foto`) |
 | El detalle es prueba: no cambia después de recibir | La acción solo escribe con la reserva en `agendado`, dentro de una transacción con candado sobre el trabajo |
 | Con "Otro", la nota dice qué es | Esquema Zod (`esquemaDetalle`) |
 | RNF-11: la lista la arma el dueño | Tabla `parte_revision`, editable en Configuración; los tipos de detalle son fijos (vocabulario, no un valor del negocio) |
@@ -32,9 +35,9 @@ Que al recibir un vehículo el dueño o el encargado marquen, en el celular y en
 | RN-12 | El checklist no tiene precios ni teléfonos; el técnico lo ve en sus órdenes |
 | Datos de clientes en el bucket privado | La foto va con `guardarFoto(..., { privado: true })` y se muestra con `urlsFotoPrivada` |
 
-## 4. Datos (migración `0039_checklist_recepcion`)
+## 4. Datos (migraciones `0039_checklist_recepcion` y `0040_checklist_parte_por_parte`)
 - **`parte_revision`:** `id`, `nombre` (único sin distinguir mayúsculas), `orden`, `activo`. Datos iniciales: Capó, Techo, Maletero, Parachoques delantero, Parachoques trasero, Puertas del lado izquierdo, Puertas del lado derecho, Guardabarros, Faros y luces, Espejos, Parabrisas y vidrios, Aros y llantas, Tapizado e interior.
-- **`trabajo_revision`:** `id`, `trabajo_id`, `parte_id`, `parte` (nombre copiado), `tipo` (`rayon`, `golpe`, `raspon`, `roto`, `otro`, con CHECK), `nota` (opcional), `archivo_id` (foto, opcional, única), `created_by`, `created_at`, `updated_at`. Único `(trabajo_id, parte_id)`.
+- **`trabajo_revision`:** `id`, `trabajo_id`, `parte_id`, `parte` (nombre copiado), `estado` (`bien` o `detalle`), `tipo` (solo con detalle: `rayon`, `golpe`, `raspon`, `roto`, `otro`), `nota` (opcional), `archivo_id` (foto, opcional, única), `created_by`, `created_at`, `updated_at`. Único `(trabajo_id, parte_id)`. Sin fila, la parte no se revisó.
 
 ## 5. Pantallas
 - **Configuración → Taller:** una tercera lista, "Partes del checklist", con el mismo componente que espacios y tamaños.
@@ -45,15 +48,15 @@ Que al recibir un vehículo el dueño o el encargado marquen, en el celular y en
 | Acción | Quién | Qué hace |
 |---|---|---|
 | `guardarDetalle` | `puede(usuario, "recibir_vehiculo")` | Valida `trabajoId`, `parteId`, `tipo`, `nota` y la foto (opcional). Con la reserva `agendado` y la parte activa (o ya marcada), crea o cambia el detalle; una foto nueva reemplaza a la anterior (que se borra). "Detalle guardado." |
-| `quitarDetalle` | ídem | Datos sueltos (Zod). Borra el detalle y su foto: la parte vuelve a "Bien". "La parte quedó bien." |
+| `marcarBien` | ídem | Datos sueltos (Zod). Marca la parte "bien" (si tenía un detalle, borra su nota y su foto). Mismas reglas de estado y día |
 | Lista de partes | `exigirModulo("configuracion")` (el dueño) | Las de `guardarElemento`, `moverElemento` y `cambiarEstadoElemento`, con la lista `partes` |
 
 ## 7. Textos
-Sección "Checklist"; ayuda "Marca solo lo que llegó con un detalle: lo demás queda bien."; botón "Marcar detalle" / "Cambiar"; modal "Detalle: {parte}"; campos "Qué tiene" (Rayón, Golpe, Raspón, Roto, Otro), "Nota" (ayuda "Dónde y cómo es."), "Foto"; botones "Guardar detalle", "Está bien" (quitar). Errores: "Elige qué tiene.", "Con «Otro», cuenta qué es.". En la orden: "El resto, bien." / "Sin checklist." si no hubo ninguno.
+Sección "Checklist"; ayuda "Revisa cada parte: bien, o con un detalle y su foto."; "Revisadas N de M"; en cada fila "Sin revisar", botones "Bien" y "Detalle" ("Cambiar" una vez revisada); modal con el nombre de la parte; campos "Qué tiene" (Rayón, Golpe, Raspón, Roto, Otro), "Nota" (ayuda "Dónde y cómo es."), "Foto"; botones "Guardar detalle", "Está bien" (quitar). Errores: "Elige qué tiene.", "Con «Otro», cuenta qué es.". Al recibir con partes sin revisar: "Faltan revisar N partes del checklist: …". En la orden: "El resto, bien.", "Revisada parte por parte: todas bien." o "Se recibió sin checklist." (las de antes).
 
 ## 8. Pruebas
 - **Unitarias:** `esquemaDetalle` (tipo obligatorio, "Otro" pide la nota, nota de hasta 300), los nombres de los tipos.
-- **E2E:** el dueño agrega una parte a la lista; al recibir marca dos detalles (uno con foto), cambia uno y quita otro; después de recibir ya no se cambian; la orden los muestra, también al técnico (sin precios); recibir solo con fotos de detalles no pide confirmar "sin fotos".
+- **E2E:** al recibir, cada parte arranca sin revisar; un detalle con foto, otro con "Otro" que pide la nota y vuelve a "Bien"; sin revisar todo no se recibe; una por una "Bien" y se recibe; la orden los muestra, también al técnico; todas bien y sin fotos pide confirmar. Ninguna prueba agrega partes a la lista (es de todos y las pruebas corren a la vez). Las demás pruebas que reciben marcan todo bien en la base (`revisarChecklistEnBase`).
 
 ## 9. Terminado cuando
-El dueño, en el celular, marca los detalles con su foto antes de recibir y quedan visibles en la orden.
+El dueño, en el celular, revisa cada parte (bien o con detalle y foto) antes de recibir, y los detalles quedan visibles en la orden.

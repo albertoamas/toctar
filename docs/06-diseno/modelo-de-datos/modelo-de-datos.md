@@ -124,7 +124,7 @@ Convenciones: `id` es `bigint` autoincremental; todas las tablas tienen `created
 | `trabajo_linea` | trabajo_id, variante_id, descripcion, precio, es_adicional | Total = suma de líneas |
 | `trabajo_foto` | trabajo_id, archivo_id, etapa (`ingreso`, `antes`, `durante`, `despues`), subido_por | |
 | `parte_revision` | nombre (único), orden, activo | Las partes del checklist de recepción, en Configuración → Taller (pedido 12) |
-| `trabajo_revision` | trabajo_id, parte_id, parte (nombre copiado, D-4), tipo (`rayon`, `golpe`, `raspon`, `roto`, `otro`), nota, archivo_id (privado), created_by | Un detalle con que llegó el vehículo; lo que no tiene fila llegó bien. Único (trabajo_id, parte_id); fijo después de recibir y se quita si la reserva se reprograma o se cancela |
+| `trabajo_revision` | trabajo_id, parte_id, parte (nombre copiado, D-4), estado (`bien`, `detalle`), tipo (solo con detalle: `rayon`, `golpe`, `raspon`, `roto`, `otro`), nota, archivo_id (privado), created_by | Cada parte revisada al recibir; sin fila, no se revisó (no se recibe con partes sin revisar). Único (trabajo_id, parte_id); fijo después de recibir y se quita si la reserva se reprograma o se cancela |
 | `trabajo_avance` | trabajo_id, usuario_id, nota | |
 | `pago` | trabajo_id, monto, metodo (`efectivo`, `qr`, `transferencia`), tipo (`adelanto`, `saldo`), fecha, comprobante_archivo_id, anulado, motivo_anulacion, anulado_por | Saldo = total − pagos no anulados. Si el trabajo se cancela, el adelanto queda como ingreso (RN-05) |
 

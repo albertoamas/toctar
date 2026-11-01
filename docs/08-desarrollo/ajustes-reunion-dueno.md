@@ -106,7 +106,7 @@ El dueño crea una cotización para un cliente nuevo en una sola pantalla, la co
 
 ## 2. Checklist al recibir el vehículo (pedido 12)
 
-> **Estado (01/11/2026):** programado con la especificación `etapas/P12-checklist-recepcion.md`. Va incluido en el plan (no se cotiza aparte). Diferencias con la propuesta: "Marcar detalle" abre un modal (en vez de dos botones por fila) y las fotos generales de ingreso se mantienen hasta el pedido 27. La lista base y los tipos de detalle quedan como abajo, y el dueño ajusta la lista en Configuración → Taller.
+> **Estado (01/11/2026):** programado con la especificación `etapas/P12-checklist-recepcion.md`. Va incluido en el plan (no se cotiza aparte). Diferencias con la propuesta: cada parte arranca "Sin revisar" y se marca "Bien" o "Detalle" (este, en un modal), y no se recibe sin revisarlas todas (ajuste del 01/11 al probarlo) y las fotos generales de ingreso se mantienen hasta el pedido 27. La lista base y los tipos de detalle quedan como abajo, y el dueño ajusta la lista en Configuración → Taller.
 
 ### Lo que dijo el dueño
 > Para recibir el vehículo quiere "un checklist, por llamarlo, para marcar detalles si es que el auto llegó con detalles, junto con la foto".
