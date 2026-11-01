@@ -2,7 +2,7 @@ import "server-only";
 import { asc, desc, eq } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/db";
-import { archivo, espacioTaller, negocio, parametro, plantillaMensaje, sucursal, tamanoVehiculo, type Redes } from "@/db/esquema";
+import { archivo, espacioTaller, negocio, parametro, parteRevision, plantillaMensaje, sucursal, tamanoVehiculo, type Redes } from "@/db/esquema";
 import { urlArchivo } from "@/lib/almacenamiento";
 import type { DiaHorario } from "@/lib/horarios";
 import type { Coordenadas } from "@/lib/ubicacion";
@@ -100,8 +100,15 @@ export async function obtenerPlantillas(): Promise<Plantillas> {
   return plantillasVigentes(await db.select({ clave: plantillaMensaje.clave, texto: plantillaMensaje.texto }).from(plantillaMensaje));
 }
 
-/** Espacios del taller o tamaños de vehículo: activos primero, en su orden; después los desactivados. */
+/** Espacios del taller, tamaños de vehículo o partes del checklist: activos primero, en su orden; después los desactivados. */
 export async function listarElementos(lista: Lista): Promise<Elemento[]> {
+  if (lista === "partes") {
+    const partes = await db
+      .select({ id: parteRevision.id, nombre: parteRevision.nombre, orden: parteRevision.orden, activo: parteRevision.activo })
+      .from(parteRevision)
+      .orderBy(desc(parteRevision.activo), asc(parteRevision.orden), asc(parteRevision.id));
+    return partes.map((p) => ({ ...p, descripcion: null }));
+  }
   if (lista === "tamanos") {
     return db
       .select({ id: tamanoVehiculo.id, nombre: tamanoVehiculo.nombre, descripcion: tamanoVehiculo.descripcion, orden: tamanoVehiculo.orden, activo: tamanoVehiculo.activo })
