@@ -19,7 +19,7 @@ La documentación vive en `docs/` y manda sobre cualquier supuesto:
 
 ## Reglas del negocio que no se negocian
 
-- Solo el dueño cotiza. El técnico no ve precios. Una cotización enviada no cambia su precio ni su PDF.
+- Cotiza el dueño o el encargado con el permiso "Cotizaciones" (pedido 24). El técnico no ve precios. Una cotización enviada no cambia su precio ni su PDF: un cambio es una versión nueva.
 - El cliente no usa el sistema: no reserva ni tiene cuenta. El personal registra todo.
 - Sin precios ni testimonios en el sitio público.
 - Todo es configurable desde el panel (servicios, precios, montos, tarifas, intervalos, espacios del taller). Nada de valores del negocio fijos en el código.

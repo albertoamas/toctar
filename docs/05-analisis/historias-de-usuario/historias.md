@@ -36,11 +36,11 @@ Este es el backlog del proyecto. Cada historia se programa en el orden de la tab
 | HU-21 | Registrar clientes y vehículos | 2 | Imprescindible | M | RF-20, RF-21, RF-23 |
 | HU-22 | Buscar clientes | 2 | Imprescindible | S | RF-22 |
 | HU-23 | Ficha del cliente | 2 | Imprescindible | M | RF-24 |
-| HU-24 | Registrar consulta | 2 | Imprescindible | M | RF-29, RF-30 |
-| HU-25 | Armar cotización | 2 | Imprescindible | L | RF-31, RF-34 |
+| HU-24 | Registrar consulta (reemplazada por la cotización directa, pedido 23) | 2 | Imprescindible | M | RF-29, RF-30 |
+| HU-25 | Armar cotización (directa, pedido 23) | 2 | Imprescindible | L | RF-29, RF-31, RF-34 |
 | HU-26 | PDF de la cotización | 2 | Imprescindible | L | RF-32 |
 | HU-27 | Compartir el PDF | 2 | Imprescindible | S | RF-33 |
-| HU-28 | Seguimiento de consultas | 2 | Imprescindible | S | RF-30, RF-35 |
+| HU-28 | Seguimiento de cotizaciones | 2 | Imprescindible | S | RF-30, RF-35 |
 | HU-29 | Tablero de la agenda | 2 | Imprescindible | L | RF-38 |
 | HU-30 | Agendar reserva | 2 | Imprescindible | M | RF-36, RF-37 |
 | HU-31 | Reprogramar o cancelar | 2 | Imprescindible | S | RF-39 |
@@ -194,22 +194,20 @@ Como personal, quiero encontrar un cliente rápido, para atenderlo mientras escr
 
 ### HU-23 Ficha del cliente
 Como personal, quiero ver todo lo de un cliente en un lugar, para atenderlo con contexto.
-- Muestra datos, vehículos, consultas, cotizaciones, órdenes, pagos y saldo pendiente.
-- Desde la ficha puedo iniciar una consulta o una reserva directa, o abrir WhatsApp.
+- Muestra datos, vehículos, cotizaciones, órdenes, pagos y saldo pendiente.
+- Desde la ficha puedo iniciar una cotización o una reserva directa, o abrir WhatsApp.
 
-### HU-24 Registrar consulta
-Como personal, quiero registrar cada consulta, para que ninguna se pierda.
-- Registro cliente, vehículo, servicio de interés, canal, fotos o videos y nota (CU-10).
-- Si el cliente o el vehículo no existen, los creo sin salir de la pantalla.
-- La consulta queda en estado "consultó".
+### HU-24 Registrar consulta (reemplazada)
+Desde el pedido 23 (01/11/2026) no hay consulta aparte: el dueño pidió cotizar directo. Lo que hacía esta historia (registrar al cliente y su vehículo sin salir de la pantalla) pasó a HU-25. Especificación: `08-desarrollo/etapas/P23-cotizacion-directa.md`.
 
 ### HU-25 Armar cotización
-Como dueño, quiero armar una cotización con precios sugeridos, para cotizar rápido sin equivocarme.
+Como dueño o encargado con el permiso "Cotizaciones", quiero armar una cotización en una sola pantalla con precios sugeridos, para cotizar rápido sin equivocarme.
+- Elijo al cliente o lo registro ahí mismo, con su vehículo (pedido 23).
 - Agrego servicios y variantes; el precio se sugiere según el tamaño del vehículo y lo puedo cambiar.
 - Agrego descuento; el sistema calcula total y adelanto sugerido.
-- Indico si es un estimado por fotos (RN-03).
+- Indico cómo se cotizó: en persona o por fotos; por fotos es un estimado (RN-03).
 - Defino la validez de la cotización; el sistema sugiere la de la configuración (S-5).
-- Solo el dueño ve el botón "Cotizar" y el servidor rechaza a otros roles (RN-01).
+- Cotizan el dueño y el encargado con el permiso; el servidor rechaza a los demás (RN-01, pedido 24).
 - Modificar una cotización enviada crea una versión nueva; la anterior no cambia (RN-02).
 
 ### HU-26 PDF de la cotización
@@ -223,11 +221,11 @@ Como dueño, quiero mandar el PDF desde el celular, para no pasar por la computa
 - En el celular, "Compartir" abre el menú del teléfono con el PDF adjunto (WhatsApp, correo).
 - En la computadora, el PDF se descarga o se imprime.
 
-### HU-28 Seguimiento de consultas
-Como dueño, quiero ver qué consultas siguen abiertas, para recuperar clientes que se enfrían.
-- Lista por estado: consultó, cotizado, confirmado, perdido.
-- Muestra los días desde el último movimiento, de más antiguo a más nuevo.
-- Puedo marcar una consulta como perdida con un motivo (precio, no respondió, otro).
+### HU-28 Seguimiento de cotizaciones
+Como dueño, quiero ver qué cotizaciones esperan respuesta, para recuperar clientes que se enfrían.
+- Lista por estado: pendientes, aceptadas y rechazadas, con búsqueda por cliente, teléfono, placa o número.
+- Muestra los días desde el último movimiento; las pendientes, de más antigua a más nueva, y las que pasan los días de Configuración dicen "Sin respuesta".
+- Puedo rechazar una cotización con un motivo (precio, no respondió, otro) y volverla a pendiente.
 
 ### HU-29 Tablero de la agenda
 Como personal, quiero ver la ocupación del taller por espacio y día, para saber cuándo hay lugar.
