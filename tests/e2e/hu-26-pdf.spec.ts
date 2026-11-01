@@ -73,6 +73,8 @@ test("al guardar se genera el PDF; se ve, se descarga con su nombre y una versi�
   expect(huella((await bajarPdf(page.request, consultaId, v1.id)).cuerpo)).toBe(antes);
   // Las dos versiones muestran su PDF en la ficha
   await expect(page.getByRole("link", { name: "Ver PDF" })).toHaveCount(2);
+  // Un enlace de antes del pedido 23 (/cotizaciones/<versión>/pdf) lleva al de ahora
+  expect((await page.request.get(`/panel/cotizaciones/${v1.id}/pdf?descargar=1`)).headers()["content-disposition"]).toBe(`attachment; filename="Cotizacion-${v1.numero}.pdf"`);
   // Una versión pedida con otra cotización en la dirección no se encuentra (pedido 23)
   expect((await page.request.get(`/panel/cotizaciones/${consultaId + 100000}/pdf/${v1.id}`)).status()).toBe(404);
 });

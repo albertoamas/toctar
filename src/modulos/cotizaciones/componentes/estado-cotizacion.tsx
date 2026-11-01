@@ -11,17 +11,13 @@ import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/comp
 import { Button } from "@/componentes/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import { Textarea } from "@/componentes/ui/textarea";
-import type { MotivoPerdida } from "@/db/esquema/consultas";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { cambiarEstadoCotizacion } from "../acciones";
-import { NOMBRE_MOTIVO } from "../reglas";
+import { MOTIVOS, NOMBRE_MOTIVO } from "../reglas";
 
 // El menú "Más" de una cotización (pedido 23, como en las demás fichas): "Nueva versión" y "Rechazar" en una pendiente
 // (rechazar pide el motivo en un modal); "Volver a pendiente" en una rechazada. Se usan poco: el paso siguiente
 // ("Agendar") va solo en el encabezado.
-
-// Del texto de cada motivo, no del esquema de la base: así este componente no arrastra Drizzle al navegador
-const MOTIVOS = Object.keys(NOMBRE_MOTIVO) as MotivoPerdida[];
 
 type Props = {
   id: number;

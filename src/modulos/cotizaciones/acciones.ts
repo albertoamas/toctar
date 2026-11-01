@@ -20,7 +20,8 @@ import {
   type Existentes,
 } from "@/modulos/clientes/servidor";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
-import { entradaPrecios, esquemaCambioEstado, esquemaClienteElegido, esquemaNuevaCotizacion, esquemaNuevaVersion, esquemaVehiculoElegido } from "./esquemas";
+import { entradaPrecios, esquemaCambioEstado, esquemaClienteElegido, esquemaNuevaVersion, esquemaPreciosNuevos, esquemaVehiculoElegido } from "./esquemas";
+import { tieneVersiones } from "./consultas";
 import { generarPdf } from "./pdf/generar";
 import { CLIENTE_NUEVO, NOMBRE_ESTADO, transicionPermitida, VEHICULO_OTRO } from "./reglas";
 import { escribirVersion, numeroNuevo, prepararLineas } from "./servidor";
@@ -58,12 +59,13 @@ export async function crearCotizacion(_previo: EstadoCliente, datos: FormData): 
   const valores = leerValores(datos);
   const errores: Record<string, string> = {};
 
-  const entrada = esquemaNuevaCotizacion.safeParse({ cliente: valores.cliente ?? "", ...entradaPrecios(datos) });
-  if (!entrada.success) Object.assign(errores, erroresDe(entrada.error));
-  // El cliente se lee aparte: aunque falte un precio, se muestran juntos los errores del cliente y del vehículo
+  // El cliente va en un campo oculto: si llega alterado, no hay nada que mostrar junto a un campo
   const delCliente = esquemaClienteElegido.safeParse(valores.cliente ?? "");
   if (!delCliente.success) return { mensaje: PEDIDO_ILEGIBLE };
   const elegido = delCliente.data;
+  // Los precios aparte: aunque falte uno, se muestran juntos los errores del cliente, del vehículo y de la cotización
+  const entrada = esquemaPreciosNuevos.safeParse(entradaPrecios(datos));
+  if (!entrada.success) Object.assign(errores, erroresDe(entrada.error));
 
   // Cliente nuevo: solo lo justo para atenderlo; el resto se completa en su ficha
   let nuevoCliente: { nombre: string; telefono: string } | null = null;
@@ -240,7 +242,11 @@ export async function cambiarEstadoCotizacion(_previo: EstadoFormulario, datos: 
   if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
   const d = entrada.data;
 
-  const [actual] = await db.select({ estado: consulta.estado, clienteId: consulta.clienteId }).from(consulta).where(eq(consulta.id, d.id));
+  // Una consulta de antes sin cotizar no es una cotización: no se mueve (quedaría pendiente sin versión, fuera de las listas)
+  const [actual] = await db
+    .select({ estado: consulta.estado, clienteId: consulta.clienteId })
+    .from(consulta)
+    .where(and(eq(consulta.id, d.id), tieneVersiones));
   if (!actual) return { mensaje: "Esa cotización ya no existe. Recarga la página." };
   const destino = d.accion === "rechazar" ? "perdido" : "cotizado";
   // Volver a pendiente no es una versión nueva: desde una pendiente no se "vuelve"

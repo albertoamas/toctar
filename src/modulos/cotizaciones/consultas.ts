@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, desc, eq, like, ne, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, like, ne, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { cliente, consulta, cotizacion, cotizacionLinea, negocio, servicio, sucursal, tamanoVehiculo, usuario, variante, vehiculo } from "@/db/esquema";
 import type { EstadoConsulta, MotivoPerdida } from "@/db/esquema/consultas";
@@ -119,10 +119,10 @@ export async function datosNuevaVersion(consultaId: number, desdeId: number | nu
     .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
     .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
     .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
-    .where(eq(consulta.id, consultaId));
+    .where(and(eq(consulta.id, consultaId), tieneVersiones));
   if (!c) return null;
 
-  const [opciones, inicio, [vigente], desde, [reemplazado]] = await Promise.all([
+  const [opciones, inicio, [vigente], desde, [pedida]] = await Promise.all([
     opcionesDeServicio(c.tamanoId),
     inicioCotizacion(),
     db
@@ -132,16 +132,18 @@ export async function datosNuevaVersion(consultaId: number, desdeId: number | nu
     desdeId ? baseDeVersion(consultaId, desdeId) : null,
     desdeId
       ? db
-          .select({ id: cotizacion.id })
+          .select({ estado: cotizacion.estado })
           .from(cotizacion)
-          .where(and(eq(cotizacion.id, desdeId), eq(cotizacion.consultaId, consultaId), eq(cotizacion.estado, "reemplazada")))
+          .where(and(eq(cotizacion.id, desdeId), eq(cotizacion.consultaId, consultaId)))
       : [],
   ]);
 
-  const { tamanoId, ...datos } = c;
-  void tamanoId;
   return {
-    ...datos,
+    consultaId: c.consultaId,
+    estado: c.estado,
+    cliente: c.cliente,
+    placa: c.placa,
+    tamano: c.tamano,
     opciones,
     inicial: desde
       ? {
@@ -154,7 +156,7 @@ export async function datosNuevaVersion(consultaId: number, desdeId: number | nu
         }
       : { ...inicio, esEstimado: false, descuento: "0.00", lineas: [] },
     desde: desde && desdeId ? { ...desde, id: desdeId } : null,
-    desdeReemplazado: !!reemplazado,
+    desdeReemplazado: pedida?.estado === "reemplazada",
     vigenteId: vigente?.id ?? null,
   };
 }
@@ -214,28 +216,32 @@ async function versionesDeCotizacion(consultaId: number): Promise<FilaVersion[]>
 
 /**
  * Cliente, vehículo y negocio como están al cotizar: se copian en la cotización (D-4) y de ahí sale su PDF, aunque se
- * genere después o los datos cambien (RN-02). `base`: la transacción que acaba de crear al cliente o al vehículo.
+ * genere después o los datos cambien (RN-02). `base`: la transacción que acaba de crear al cliente o al vehículo. Las
+ * lecturas van una tras otra: una transacción es una sola conexión, y pg no admite dos consultas a la vez en ella.
  */
 export async function datosDocumento(consultaId: number, base: Pick<typeof db, "select"> = db): Promise<DatosDocumento> {
-  const [[c], [n], [s]] = await Promise.all([
-    base
-      .select({
-        nombre: cliente.nombre,
-        telefono: cliente.telefono,
-        placa: vehiculo.placa,
-        marca: vehiculo.marca,
-        modelo: vehiculo.modelo,
-        color: vehiculo.color,
-        tamano: tamanoVehiculo.nombre,
-      })
-      .from(consulta)
-      .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
-      .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
-      .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
-      .where(eq(consulta.id, consultaId)),
-    base.select({ nombre: negocio.nombre, razonSocial: negocio.razonSocial, nit: negocio.nit }).from(negocio).where(eq(negocio.id, 1)),
-    base.select({ whatsapp: sucursal.telefonoWhatsapp, direccion: sucursal.direccion }).from(sucursal).where(eq(sucursal.activo, true)).orderBy(asc(sucursal.id)).limit(1),
-  ]);
+  const [c] = await base
+    .select({
+      nombre: cliente.nombre,
+      telefono: cliente.telefono,
+      placa: vehiculo.placa,
+      marca: vehiculo.marca,
+      modelo: vehiculo.modelo,
+      color: vehiculo.color,
+      tamano: tamanoVehiculo.nombre,
+    })
+    .from(consulta)
+    .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
+    .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
+    .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
+    .where(eq(consulta.id, consultaId));
+  const [n] = await base.select({ nombre: negocio.nombre, razonSocial: negocio.razonSocial, nit: negocio.nit }).from(negocio).where(eq(negocio.id, 1));
+  const [s] = await base
+    .select({ whatsapp: sucursal.telefonoWhatsapp, direccion: sucursal.direccion })
+    .from(sucursal)
+    .where(eq(sucursal.activo, true))
+    .orderBy(asc(sucursal.id))
+    .limit(1);
   if (!c) throw new Error(`No existe la cotización ${consultaId}.`);
   if (!n) throw new Error("Faltan los datos del negocio: falta aplicar la migración 0003_datos_negocio.");
   return {
@@ -259,6 +265,9 @@ export type FilaCotizacion = {
   estado: EstadoConsulta;
   ultimoMovimientoAt: Date;
 };
+
+/** Es una cotización (D-12): un encabezado con alguna versión. Las consultas de antes sin cotizar no lo son. */
+export const tieneVersiones = exists(db.select({ id: cotizacion.id }).from(cotizacion).where(eq(cotizacion.consultaId, consulta.id)));
 
 /** La versión que vale de cada cotización: la vigente, o la aceptada. Las reemplazadas quedan solo en su ficha. */
 const versionActual = and(eq(cotizacion.consultaId, consulta.id), ne(cotizacion.estado, "reemplazada"));

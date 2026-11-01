@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
 import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
-import { esquemaCambioEstado, esquemaNuevaCotizacion, esquemaNuevaVersion, esquemaVehiculoElegido } from "@/modulos/cotizaciones/esquemas";
+import { esquemaCambioEstado, esquemaClienteElegido, esquemaNuevaVersion, esquemaPreciosNuevos, esquemaVehiculoElegido } from "@/modulos/cotizaciones/esquemas";
 import {
   anioCotizacion,
   calcularTotales,
@@ -135,16 +135,16 @@ test("cómo se cotizó es obligatorio: en persona o por fotos (RN-03)", () => {
   expect([modoDe(true), modoDe(false)]).toEqual(["fotos", "persona"]);
 });
 
-test("la cotización nueva (pedido 23) lleva el cliente: uno registrado o «nuevo»", () => {
+test("la cotización nueva (pedido 23): el cliente es uno registrado o «nuevo», y sus precios se validan igual", () => {
+  expect(esquemaClienteElegido.parse("12")).toBe(12);
+  expect(esquemaClienteElegido.parse("nuevo")).toBe("nuevo");
+  for (const malo of ["", "0", "-1", "abc", "1.5"]) expect(esquemaClienteElegido.safeParse(malo).error?.issues[0].message).toBe("Elige el cliente.");
   const { lineas, descuento, adelanto, validaHasta, modo } = valida;
-  const precios = { lineas, descuento, adelanto, validaHasta, modo };
-  expect(esquemaNuevaCotizacion.parse({ cliente: "12", ...precios }).cliente).toBe(12);
-  expect(esquemaNuevaCotizacion.parse({ cliente: "nuevo", ...precios }).cliente).toBe("nuevo");
-  for (const malo of ["", "0", "-1", "abc", "1.5"]) {
-    expect(erroresDe(esquemaNuevaCotizacion.safeParse({ cliente: malo, ...precios }).error!)).toEqual({ cliente: "Elige el cliente." });
-  }
-  // Un precio que falta no esconde el resto: cada error en su campo
-  expect(erroresDe(esquemaNuevaCotizacion.safeParse({ cliente: "", ...precios, modo: "" }).error!)).toEqual({ cliente: "Elige el cliente.", modo: "Elige cómo se cotizó." });
+  expect(esquemaPreciosNuevos.parse({ lineas, descuento, adelanto, validaHasta, modo }).modo).toBe("fotos");
+  expect(erroresDe(esquemaPreciosNuevos.safeParse({ lineas, descuento, adelanto, validaHasta, modo: "" }).error!)).toEqual({ modo: "Elige cómo se cotizó." });
+  expect(erroresDe(esquemaPreciosNuevos.safeParse({ lineas, descuento: "700", adelanto, validaHasta, modo }).error!)).toEqual({
+    descuento: "El descuento no puede ser mayor que el subtotal.",
+  });
 });
 
 test("el vehículo elegido es un id o «otro»", () => {

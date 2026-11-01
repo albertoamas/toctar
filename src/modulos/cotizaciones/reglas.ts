@@ -27,6 +27,8 @@ export const NOMBRE_ESTADO: Record<EstadoConsulta, string> = {
 export const TONO_ESTADO: Partial<Record<EstadoConsulta, "exito" | "aviso">> = { confirmado: "exito", perdido: "aviso" };
 
 export const NOMBRE_MOTIVO: Record<MotivoPerdida, string> = { precio: "Precio", no_respondio: "No respondió", otro: "Otro" };
+/** Los motivos, del texto de cada uno y no del esquema de la base: así no se arrastra Drizzle al navegador. */
+export const MOTIVOS = Object.keys(NOMBRE_MOTIVO) as [MotivoPerdida, ...MotivoPerdida[]];
 
 /** Pestañas de la lista, cada una con su estado. */
 export const VISTAS = { pendientes: "cotizado", aceptadas: "confirmado", rechazadas: "perdido" } as const satisfies Record<string, EstadoConsulta>;

@@ -1,7 +1,7 @@
 import "server-only";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { z } from "zod";
-import { db } from "@/db";
+import { db, type Transaccion } from "@/db";
 import { auditoria, correlativo, cotizacion, cotizacionLinea, servicio, variante } from "@/db/esquema";
 import { preciosVigentes } from "@/modulos/catalogo/consultas";
 import type { Monto } from "@/modulos/catalogo/reglas";
@@ -12,8 +12,6 @@ import { anioCotizacion, calcularTotales, claveCorrelativo, descripcionLinea, nu
 
 // Lo que comparten la nueva cotización y la versión nueva (pedido 23, P23-cotizacion-directa.md §6): las líneas con su
 // precio sugerido y escribir la versión. No es un archivo "use server": no expone nada al navegador.
-
-type Transaccion = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /** Lo validado de una versión (los mismos campos en la nueva cotización y en la versión nueva). */
 type Precios = Pick<z.output<typeof esquemaNuevaVersion>, "lineas" | "descuento" | "adelanto" | "validaHasta" | "modo">;

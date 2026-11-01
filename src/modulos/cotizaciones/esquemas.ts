@@ -1,8 +1,7 @@
 import { z } from "zod";
-import type { MotivoPerdida } from "@/db/esquema/consultas";
 import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
 import { leerMonto } from "@/modulos/catalogo/reglas";
-import { calcularTotales, CLIENTE_NUEVO, leerMontoOCero, MAXIMO_LINEAS, MODOS, montoNoMayor, NOMBRE_MOTIVO, VEHICULO_OTRO } from "./reglas";
+import { calcularTotales, CLIENTE_NUEVO, leerMontoOCero, MAXIMO_LINEAS, MODOS, montoNoMayor, MOTIVOS, VEHICULO_OTRO } from "./reglas";
 
 // Validación de la cotización. Especificación: docs/08-desarrollo/etapas/P23-cotizacion-directa.md §6.
 // Las líneas llegan como JSON en un campo oculto (EditorLista); los errores de cada una van en "lineas.0", "lineas.1"…
@@ -93,10 +92,10 @@ export const esquemaClienteElegido = eleccion(CLIENTE_NUEVO, "Elige el cliente."
 export const esquemaVehiculoElegido = eleccion(VEHICULO_OTRO, "Elige el vehículo.");
 
 /**
- * Nueva cotización (pedido 23): el cliente (uno registrado o "nuevo") y su vehículo (uno suyo u "otro"), con los precios.
- * Los datos del cliente y del vehículo nuevos se validan aparte, con los esquemas de Clientes.
+ * Los precios de una cotización nueva (pedido 23). El cliente (`esquemaClienteElegido`), su vehículo y los datos del
+ * cliente y del vehículo nuevos se validan aparte, con los esquemas de Clientes.
  */
-export const esquemaNuevaCotizacion = z.object({ cliente: esquemaClienteElegido, ...camposPrecio }).superRefine(revisarMontos);
+export const esquemaPreciosNuevos = z.object(camposPrecio).superRefine(revisarMontos);
 
 /** Nueva versión de una cotización pendiente (RN-02): reemplaza a `desde`, la vigente. */
 export const esquemaNuevaVersion = z.object({ consultaId: id, desde: id, ...camposPrecio }).superRefine(revisarMontos);
@@ -112,9 +111,6 @@ export function entradaPrecios(datos: FormData) {
     modo: texto("modo"),
   };
 }
-
-/** Los motivos, del texto de cada uno y no del esquema de la base: así este archivo no arrastra Drizzle al navegador. */
-const MOTIVOS = Object.keys(NOMBRE_MOTIVO) as [MotivoPerdida, ...MotivoPerdida[]];
 
 /** Rechazar (con motivo) o volver a pendiente (RF-30). Con "Otro", el detalle dice qué pasó. */
 export const esquemaCambioEstado = z.discriminatedUnion("accion", [
