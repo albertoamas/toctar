@@ -101,7 +101,7 @@ Cada requisito tiene un código para rastrearlo hasta su historia de usuario y s
 
 | Código | Requisito | Entrega | Prioridad | Origen |
 |---|---|---|---|---|
-| RF-40 | Al ingresar el vehículo, la reserva pasa a orden de trabajo con una inspección de ingreso: fotos y observaciones (rayones, golpes, objetos). | 2 | Imprescindible | Prop |
+| RF-40 | Al ingresar el vehículo, la reserva pasa a orden de trabajo con una inspección de ingreso: un checklist de partes que arma el dueño, con el detalle de cada una (rayón, golpe, raspón, roto u otro), su nota y su foto (pedido 12), fotos generales y observaciones. | 2 | Imprescindible | Prop, pedido 12 |
 | RF-41 | La orden tiene estados: recibido, en proceso, listo y entregado. | 2 | Imprescindible | Cot |
 | RF-42 | El técnico ve sus órdenes, sube fotos de antes, durante y después, registra avances y notas, y marca la orden como lista. | 2 | Imprescindible | Prop |
 | RF-43 | La orden muestra el precio cotizado y el precio final; el dueño puede sumar servicios adicionales. | 2 | Imprescindible | Prop |

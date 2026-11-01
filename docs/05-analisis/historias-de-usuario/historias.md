@@ -252,7 +252,8 @@ Como personal, quiero registrar cada pago, para saber cuánto falta cobrar.
 
 ### HU-33 Recibir vehículo
 Como personal, quiero registrar el estado del vehículo al ingresar, para evitar reclamos por daños previos.
-- Desde la reserva elijo "Recibir"; tomo fotos con la cámara del celular y anoto observaciones.
+- Desde la reserva elijo "Recibir"; en el checklist marco las partes que llegaron con un detalle (qué tiene, una nota y su foto); lo demás queda bien (pedido 12).
+- Tomo fotos generales con la cámara del celular y anoto observaciones.
 - Se crea la orden en estado "recibido" con el precio cotizado.
 
 ### HU-34 Órdenes del técnico
