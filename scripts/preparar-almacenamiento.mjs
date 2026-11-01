@@ -1,13 +1,12 @@
 // Crea los buckets de desarrollo en RustFS, como en R2:
 // - S3_BUCKET: público (fotos del sitio), con lectura pública.
-// - S3_BUCKET_PRIVADO: privado (datos de clientes, como las fotos de reclamos), sin lectura pública. Con CORS: los
-//   videos de las consultas suben directo desde el navegador con un permiso firmado (src/lib/almacenamiento.ts).
+// - S3_BUCKET_PRIVADO: privado (datos de clientes, como las fotos de reclamos), sin lectura pública. Sin CORS: desde el
+//   pedido 23 nada sube directo desde el navegador (antes, los videos de las consultas).
 // Uso: npm run almacenamiento:preparar  (requiere docker compose up -d). Se puede correr de nuevo sin problema.
 import {
   CreateBucketCommand,
   DeleteBucketPolicyCommand,
   HeadBucketCommand,
-  PutBucketCorsCommand,
   PutBucketPolicyCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -55,12 +54,3 @@ try {
   // Sin política: ya es privado.
 }
 console.log(`"${privado}": sin lectura pública.`);
-// En desarrollo, cualquier origen: la app corre en localhost, en la IP de la PC (celular) y en :3200 (pruebas). Subir
-// igual exige el permiso firmado. En R2 se limita al dominio (docs/07-preparacion/guia-de-despliegue.md).
-await cliente.send(
-  new PutBucketCorsCommand({
-    Bucket: privado,
-    CORSConfiguration: { CORSRules: [{ AllowedOrigins: ["*"], AllowedMethods: ["PUT", "GET"], AllowedHeaders: ["content-type"], MaxAgeSeconds: 3600 }] },
-  }),
-);
-console.log(`"${privado}": subida directa desde el navegador habilitada (CORS).`);
