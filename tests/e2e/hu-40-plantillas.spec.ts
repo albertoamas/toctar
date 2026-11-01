@@ -93,7 +93,7 @@ test("a 360 px no se sale nada", async ({ page }) => {
 
 test("un encargado no entra, aunque tenga todos los demás permisos", async ({ page }, info) => {
   const usuario = `encargado-hu40-${info.project.name === "celular" ? "c" : "e"}`;
-  await crearUsuario({ usuario, nombre: "Encargado", contrasena: "encargado-123", rol: "encargado", permisos: ["sitio", "reclamos", "clientes", "consultas", "agenda", "ordenes", "pagos", "mantenimientos", "entrega_con_saldo"],
+  await crearUsuario({ usuario, nombre: "Encargado", contrasena: "encargado-123", rol: "encargado", permisos: ["sitio", "reclamos", "clientes", "cotizaciones", "agenda", "ordenes", "pagos", "mantenimientos", "entrega_con_saldo"],
   });
   await ingresar(page, usuario, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);

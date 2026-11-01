@@ -60,11 +60,11 @@ test("cancelar pide motivo, deja los pagos, libera el espacio y la consulta pasa
   const s = sufijo(info);
   await crearClienteEnBase({ nombre: `Cancela ${s}`, telefono: telefono(info, 3), placa: `CA31${s}3` });
   const d20 = await dia(info, 20);
-  // Una consulta confirmada, su cotización aceptada y la reserva con 150 Bs de adelanto
+  // Una cotización aceptada (su versión también) y la reserva con 150 Bs de adelanto
   const [c] = await consultar<{ consulta: number; cotizacion: number }>(
     `with q as (
-       insert into consulta (cliente_id, vehiculo_id, canal, estado, created_by)
-       select v.cliente_id, v.id, 'taller', 'confirmado', v.created_by from vehiculo v where v.placa = $1 returning id, created_by
+       insert into consulta (cliente_id, vehiculo_id, estado, created_by)
+       select v.cliente_id, v.id, 'confirmado', v.created_by from vehiculo v where v.placa = $1 returning id, created_by
      ), c as (
        insert into cotizacion (consulta_id, numero, version, es_estimado, subtotal, descuento, total, adelanto_sugerido, valida_hasta,
          condiciones, garantia, formas_pago, estado, datos_documento, created_by)
@@ -107,9 +107,12 @@ test("cancelar pide motivo, deja los pagos, libera el espacio y la consulta pasa
   await crearClienteEnBase({ nombre: `Toma el lugar ${s}`, telefono: telefono(info, 4), placa: `CA31${s}4` });
   await reserva(`CA31${s}4`, 0, d20, d20);
 
-  // Si el cliente vuelve: se reabre la consulta y la misma cotización se agenda otra vez (la cancelada no cuenta)
-  await page.goto(`/panel/consultas/${c.consulta}`);
-  await page.getByRole("button", { name: "Reabrir" }).click();
+  // Si el cliente vuelve: la cotización vuelve a pendiente y se agenda otra vez (la cancelada no cuenta)
+  await page.goto(`/panel/cotizaciones/${c.consulta}`);
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Volver a pendiente" }).click();
+  await page.getByRole("button", { name: "Sí, volver a pendiente" }).click();
+  await expect(page.getByText("La cotización volvió a pendiente.")).toBeVisible();
   await page.getByRole("link", { name: "Agendar" }).click();
   const d30 = await dia(info, 30);
   await page.getByLabel("Ingresa el").fill(d30);
