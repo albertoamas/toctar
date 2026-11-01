@@ -27,6 +27,8 @@ type Props = {
   titulo: string;
   /** "espacio", "tamaño", "variante": para los botones y la etiqueta del nombre. */
   singular: string;
+  /** El singular es femenino ("parte"): "Agrega al menos una parte", "Nombre de la parte". */
+  femenino?: boolean;
   /** Si tiene un segundo campo (por ejemplo, los modelos de ejemplo de un tamaño). */
   campoDescripcion?: { etiqueta: string; ayuda: string; ejemplo: string };
   /** Campos que viajan en cada formulario (por ejemplo, la lista o el servicio). */
@@ -44,7 +46,7 @@ type Props = {
 );
 
 export function ListaEditable(props: Props) {
-  const { id, titulo, singular, elementos, acciones } = props;
+  const { id, titulo, singular, femenino, elementos, acciones } = props;
   const activos = elementos.filter((e) => e.activo);
   const inactivos = elementos.filter((e) => !e.activo);
   const [editando, setEditando] = useState<number | "nuevo" | null>(null);
@@ -66,7 +68,7 @@ export function ListaEditable(props: Props) {
         </div>
       )}
 
-      {activos.length === 0 && <p className="text-sm font-semibold text-rojo-texto">Agrega al menos un {singular}.</p>}
+      {activos.length === 0 && <p className="text-sm font-semibold text-rojo-texto">Agrega al menos {femenino ? "una" : "un"} {singular}.</p>}
 
       <ol className="flex flex-col divide-y divide-border rounded-sm border border-border" aria-label={`${titulo} activos`}>
         {activos.map((e, i) =>
@@ -131,7 +133,7 @@ export function ListaEditable(props: Props) {
 }
 
 function FormularioElemento(props: Props & { elemento?: ElementoLista; alTerminar: () => void }) {
-  const { id, singular, campoDescripcion, camposOcultos, elemento, alTerminar } = props;
+  const { id, singular, femenino, campoDescripcion, camposOcultos, elemento, alTerminar } = props;
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(async (previo, datos) => {
     const r = await props.acciones.guardar(previo, datos);
     avisarResultado(r);
@@ -157,7 +159,7 @@ function FormularioElemento(props: Props & { elemento?: ElementoLista; alTermina
         <input key={nombre} type="hidden" name={nombre} value={valor} />
       ))}
       {elemento && <input type="hidden" name="id" value={elemento.id} />}
-      <Campo id={`${prefijo}-nombre`} etiqueta={`Nombre del ${singular}`} error={e.nombre}>
+      <Campo id={`${prefijo}-nombre`} etiqueta={`Nombre ${femenino ? "de la" : "del"} ${singular}`} error={e.nombre}>
         <Input
           id={`${prefijo}-nombre`}
           name="nombre"

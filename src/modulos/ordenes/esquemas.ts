@@ -3,6 +3,7 @@ import { ETAPAS_FOTO } from "@/db/esquema/trabajos";
 import { fechaExiste } from "@/lib/fechas";
 import { leerMonto } from "@/modulos/catalogo/reglas";
 import { esquemaGaleria } from "@/modulos/sitio/esquemas";
+import { TIPOS_DE_DETALLE } from "./reglas";
 
 // Validación de las órdenes (C4). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §6.
 
@@ -86,3 +87,23 @@ export const esquemaPublicar = esquemaGaleria.extend({
     .pipe(z.number().int().positive().nullable()),
   sinPlacaNiCaras: z.literal("on", "Marca que en las fotos no se lee la placa ni se ve a nadie."),
 });
+
+/**
+ * Un detalle del checklist de recepción (pedido 12): la parte, qué tiene y una nota (con "Otro", obligatoria). La foto,
+ * si la hay, va aparte en el campo "foto".
+ */
+export const esquemaDetalle = z
+  .object({
+    trabajoId: id,
+    parteId: id,
+    tipo: z.enum(TIPOS_DE_DETALLE, { message: "Elige qué tiene." }),
+    nota: z
+      .string()
+      .trim()
+      .max(300, "Hasta 300 caracteres.")
+      .transform((v) => v || null),
+  })
+  .refine((d) => d.tipo !== "otro" || d.nota, { path: ["nota"], message: "Con «Otro», cuenta qué es." });
+
+/** Marcar una parte "bien" (también una que tenía un detalle): datos sueltos, se validan. */
+export const esquemaMarcarBien = z.object({ trabajoId: id, parteId: id });

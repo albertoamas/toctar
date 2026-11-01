@@ -3,7 +3,7 @@
 import { eq, max } from "drizzle-orm";
 import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/db";
-import { espacioTaller, negocio, parametro, plantillaMensaje, sucursal, tamanoVehiculo } from "@/db/esquema";
+import { espacioTaller, negocio, parametro, parteRevision, plantillaMensaje, sucursal, tamanoVehiculo } from "@/db/esquema";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { nombreRepetido, puedeDesactivar, reordenar, type Direccion } from "@/lib/orden";
@@ -136,7 +136,7 @@ function despuesDeCambiarLista() {
   revalidatePath(`${RUTA}/taller`);
 }
 
-/** Agrega (sin id) o renombra (con id) un espacio del taller o un tamaño de vehículo. */
+/** Agrega (sin id) o renombra (con id) un espacio del taller, un tamaño de vehículo o una parte del checklist. */
 export async function guardarElemento(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   await exigirModulo("configuracion");
   const valores = { nombre: String(datos.get("nombre") ?? ""), descripcion: String(datos.get("descripcion") ?? "") };
@@ -154,7 +154,13 @@ export async function guardarElemento(_previo: EstadoFormulario, datos: FormData
   if (id && !elementos.some((e) => e.id === id)) return { mensaje: "Ese elemento ya no existe. Recarga la página." };
 
   try {
-    if (lista === "tamanos") {
+    if (lista === "partes") {
+      if (id) await db.update(parteRevision).set({ nombre }).where(eq(parteRevision.id, id));
+      else {
+        const [{ ultimo }] = await db.select({ ultimo: max(parteRevision.orden) }).from(parteRevision);
+        await db.insert(parteRevision).values({ nombre, orden: (ultimo ?? 0) + 1 });
+      }
+    } else if (lista === "tamanos") {
       if (id) await db.update(tamanoVehiculo).set({ nombre, descripcion }).where(eq(tamanoVehiculo.id, id));
       else {
         const [{ ultimo }] = await db.select({ ultimo: max(tamanoVehiculo.orden) }).from(tamanoVehiculo);
@@ -177,13 +183,14 @@ export async function guardarElemento(_previo: EstadoFormulario, datos: FormData
   }
 
   despuesDeCambiarLista();
-  return { ok: true, mensaje: id ? "Cambios guardados." : `${nombre} agregado.` };
+  return { ok: true, mensaje: id ? "Cambios guardados." : `${nombre} ${lista === "partes" ? "agregada" : "agregado"}.` };
 }
 
 async function actualizarOrden(lista: Lista, orden: { id: number; orden: number }[]) {
   await db.transaction(async (tx) => {
     for (const o of orden) {
-      if (lista === "tamanos") await tx.update(tamanoVehiculo).set({ orden: o.orden }).where(eq(tamanoVehiculo.id, o.id));
+      if (lista === "partes") await tx.update(parteRevision).set({ orden: o.orden }).where(eq(parteRevision.id, o.id));
+      else if (lista === "tamanos") await tx.update(tamanoVehiculo).set({ orden: o.orden }).where(eq(tamanoVehiculo.id, o.id));
       else await tx.update(espacioTaller).set({ orden: o.orden }).where(eq(espacioTaller.id, o.id));
     }
   });
@@ -202,7 +209,7 @@ export async function moverElemento(datos: { lista: Lista; id: number; direccion
   return { ok: true };
 }
 
-/** Desactivar no borra (D-6): lo ya registrado con ese espacio o tamaño lo sigue mostrando. */
+/** Desactivar no borra (D-6): lo ya registrado con ese espacio, tamaño o parte lo sigue mostrando. */
 export async function cambiarEstadoElemento(datos: { lista: Lista; id: number; activo: boolean }): Promise<EstadoFormulario> {
   await exigirModulo("configuracion");
   const entrada = esquemaEstado.safeParse(datos);
@@ -216,11 +223,13 @@ export async function cambiarEstadoElemento(datos: { lista: Lista; id: number; a
 
   // Al reactivarlo, vuelve al final de la lista.
   const orden = activo ? Math.max(0, ...elementos.filter((e) => e.activo).map((e) => e.orden)) + 1 : elemento.orden;
-  if (lista === "tamanos") await db.update(tamanoVehiculo).set({ activo, orden }).where(eq(tamanoVehiculo.id, id));
+  if (lista === "partes") await db.update(parteRevision).set({ activo, orden }).where(eq(parteRevision.id, id));
+  else if (lista === "tamanos") await db.update(tamanoVehiculo).set({ activo, orden }).where(eq(tamanoVehiculo.id, id));
   else await db.update(espacioTaller).set({ activo, orden }).where(eq(espacioTaller.id, id));
 
   despuesDeCambiarLista();
-  return { ok: true, mensaje: activo ? `${elemento.nombre} reactivado.` : `${elemento.nombre} desactivado.` };
+  const a = lista === "partes" ? "a" : "o";
+  return { ok: true, mensaje: activo ? `${elemento.nombre} reactivad${a}.` : `${elemento.nombre} desactivad${a}.` };
 }
 
 // ---------------------------------------------------------------------------------------------

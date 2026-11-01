@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearUsuario, ingresar, PNG } from "./apoyo";
+import { consultar, crearClienteEnBase, crearUsuario, ingresar, PNG, revisarChecklistEnBase } from "./apoyo";
 
 // HU-33 Recibir vehículo (flujo crítico 3, primera parte). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §9.
 // Se recibe desde el día de ingreso: las reservas de hoy van en un espacio propio de cada proyecto (celular: el
@@ -58,6 +58,8 @@ test("recibir con fotos y observaciones: la reserva pasa a orden, las fotos de i
   const form = page.getByRole("form", { name: "Recibir vehículo" });
   await form.getByLabel("Observaciones").fill("Rayón en la puerta trasera; deja una silla de bebé.");
   await form.getByLabel("Técnico").selectOption({ label: `Técnico Uno ${s}` });
+  // El checklist (pedido 12) se prueba en hu-33-checklist: aquí, todas las partes bien
+  await revisarChecklistEnBase(id);
   await form.getByRole("button", { name: "Recibir vehículo" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?recibido=1$`));
   await expect(page.getByText("Vehículo recibido. La orden está en «Recibidas».")).toBeVisible();
@@ -137,9 +139,10 @@ test("antes de su día no se recibe y sin fotos se pide confirmar", async ({ pag
 
   // El cliente llegó un día tarde y sin fotos: se pide confirmar
   await page.goto(`/panel/ordenes/${idSinFotos}/recibir`);
+  await revisarChecklistEnBase(idSinFotos);
   const form = page.getByRole("form", { name: "Recibir vehículo" });
   await form.getByRole("button", { name: "Recibir vehículo" }).click();
-  await expect(form.getByText(/Sin fotos de ingreso no hay cómo probar/)).toBeVisible();
+  await expect(form.getByText(/Sin fotos de ingreso ni de detalles no hay cómo probar/)).toBeVisible();
   await form.getByRole("button", { name: "Recibir sin fotos" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${idSinFotos}\\?recibido=1$`));
   await expect(page.getByText("Se recibió sin fotos de ingreso.")).toBeVisible();

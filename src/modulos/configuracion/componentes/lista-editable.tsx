@@ -4,7 +4,7 @@ import { ListaEditable as ListaGenerica, type ElementoLista } from "@/componente
 import { cambiarEstadoElemento, guardarElemento, moverElemento } from "../acciones";
 import { LISTAS, type Lista } from "../listas";
 
-// HU-05: listas de la pestaña Taller (espacios del taller o tamaños de vehículo).
+// HU-05: listas de la pestaña Taller (espacios del taller, tamaños de vehículo y, desde el pedido 12, partes del checklist).
 
 export function ListaEditable({ lista, elementos, descripcion }: { lista: Lista; elementos: ElementoLista[]; descripcion: string }) {
   const def = LISTAS[lista];
@@ -14,6 +14,7 @@ export function ListaEditable({ lista, elementos, descripcion }: { lista: Lista;
       titulo={def.titulo}
       descripcion={descripcion}
       singular={def.singular}
+      femenino={"femenino" in def}
       campoDescripcion={
         def.conDescripcion
           ? { etiqueta: "Modelos de ejemplo", ayuda: "Ayuda a elegir el tamaño al cotizar.", ejemplo: "Corolla, Sentra, Honda Civic" }

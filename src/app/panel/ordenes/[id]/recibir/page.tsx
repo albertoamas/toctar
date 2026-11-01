@@ -10,15 +10,16 @@ import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { tecnicosActivos } from "@/modulos/agenda/consultas";
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
+import { ChecklistRecepcion } from "@/modulos/ordenes/componentes/checklist-recepcion";
 import { FormularioRecepcion } from "@/modulos/ordenes/componentes/formulario-recepcion";
 import { FotosOrden } from "@/modulos/ordenes/componentes/fotos-orden";
-import { fotosDeTrabajo, obtenerOrden } from "@/modulos/ordenes/consultas";
+import { revisionDeTrabajo, fotosDeTrabajo, obtenerOrden, partesDelChecklist } from "@/modulos/ordenes/consultas";
 import { esOrden, puedeRecibirse } from "@/modulos/ordenes/reglas";
 
 export const metadata: Metadata = { title: "Recibir vehículo" };
 
 // HU-33: recibir el vehículo (RF-40, CU-15). Dueño o encargado con "Órdenes", desde el día de ingreso de la reserva:
-// fotos de ingreso con la cámara, observaciones y técnico. Al recibirlo, la reserva pasa a orden. Pulido 11.3: arriba,
+// el checklist de partes (pedido 12), fotos de ingreso con la cámara, observaciones y técnico. Al recibirlo, la reserva pasa a orden. Pulido 11.3: arriba,
 // quién y qué vehículo (para confirmar que es el auto correcto) y sus servicios en una línea; el botón, fijo abajo en el
 // celular.
 export default function PaginaRecibir({ params }: PageProps<"/panel/ordenes/[id]/recibir">) {
@@ -50,8 +51,8 @@ async function Recepcion({ params }: Pick<PageProps<"/panel/ordenes/[id]/recibir
   const detalle = detalleVehiculo(o);
   const yo = Number(usuario.id);
   const tecnicoInactivo = o.tecnicoId && !tecnicos.some((t) => t.id === o.tecnicoId) ? o.tecnico : null;
-  const fotos = (await fotosDeTrabajo(o.id))
-    .filter((f) => f.etapa === "ingreso").map((f) => ({ ...f, puedeQuitar: usuario.rol === "dueno" || f.subidoPor === yo }));
+  const [todas, partes, revision] = await Promise.all([fotosDeTrabajo(o.id, ["ingreso"]), partesDelChecklist(), revisionDeTrabajo(o.id)]);
+  const fotos = todas.map((f) => ({ ...f, puedeQuitar: usuario.rol === "dueno" || f.subidoPor === yo }));
 
   return (
     <>
@@ -73,10 +74,11 @@ async function Recepcion({ params }: Pick<PageProps<"/panel/ordenes/[id]/recibir
           <p>
             <span className="text-tinta-suave">Servicios:</span> {o.servicios.join(", ")}
           </p>
+          <ChecklistRecepcion trabajoId={o.id} partes={partes} revision={revision} />
           <section aria-labelledby="ingreso-titulo" className="flex flex-col gap-3">
             <div className="flex flex-col gap-1">
               <h2 id="ingreso-titulo" className="font-heading text-2xl font-bold italic">Fotos de ingreso</h2>
-              <p className="text-sm text-tinta-suave">Todo el vehículo y cada detalle. Después de recibirlo ya no se quitan.</p>
+              <p className="text-sm text-tinta-suave">Todo el vehículo. Los detalles, con su foto en el checklist. Después de recibirlo ya no se quitan.</p>
             </div>
             <FotosOrden trabajoId={o.id} etapa="ingreso" fotos={fotos} editable textoVacio="" sinTitulo />
           </section>

@@ -20,7 +20,7 @@ Igual que una historia (`plan-de-desarrollo.md`, "Cómo se trabaja cada historia
 | Orden | Punto | Pedido | Horas | Tratamiento sugerido | Estado |
 |---|---|---|---|---|---|
 | 1 | Cotización directa, sin consulta | 23 y 24 (el 25, descartado) | 18 a 24 | Por definir (cambia lo contratado: HU-24 y HU-25) | ✅ Programado (PR #113, 01/11) |
-| 2 | Checklist al recibir el vehículo | 12 | 8 a 10 | Cotizado (Bs 320): por confirmar | ⏳ |
+| 2 | Checklist al recibir el vehículo | 12 | 8 a 10 | Incluido en el plan (decisión del 01/11) | ✅ Programado (01/11) |
 | 3 | Firma digital del cliente | 13 | 6 a 8 (más 2 a 3 si también al recibir) | Cotizado (Bs 240, Bs 320 con PDF): por confirmar | ⏳ |
 | 4 | Fotos: solo las que sirven, sin videos | 27 | 4 a 6 | Incluido | ⏳ |
 | 5 | Rediseño del panel: administrativo estándar | 26 | 25 a 35 | Incluido (sin él no hay aceptación) | ⏳ |
@@ -105,6 +105,8 @@ El dueño crea una cotización para un cliente nuevo en una sola pantalla, la co
 ---
 
 ## 2. Checklist al recibir el vehículo (pedido 12)
+
+> **Estado (01/11/2026):** programado con la especificación `etapas/P12-checklist-recepcion.md`. Va incluido en el plan (no se cotiza aparte). Diferencias con la propuesta: cada parte arranca "Sin revisar" y se marca "Bien" o "Detalle" (este, en un modal), y no se recibe sin revisarlas todas (ajuste del 01/11 al probarlo) y las fotos generales de ingreso se mantienen hasta el pedido 27. La lista base y los tipos de detalle quedan como abajo, y el dueño ajusta la lista en Configuración → Taller.
 
 ### Lo que dijo el dueño
 > Para recibir el vehículo quiere "un checklist, por llamarlo, para marcar detalles si es que el auto llegó con detalles, junto con la foto".

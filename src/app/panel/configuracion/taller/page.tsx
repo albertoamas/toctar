@@ -7,7 +7,8 @@ import { listarElementos } from "@/modulos/configuracion/consultas";
 
 export const metadata: Metadata = { title: "Configuración del taller" };
 
-// HU-05: espacios del taller (RN-06) y tamaños de vehículo (RN-07). Solo el dueño.
+// HU-05: espacios del taller (RN-06) y tamaños de vehículo (RN-07); pedido 12: las partes del checklist de recepción.
+// Solo el dueño.
 export default function PaginaTaller() {
   return (
     <Suspense fallback={<Cargando />}>
@@ -18,7 +19,7 @@ export default function PaginaTaller() {
 
 async function Contenido() {
   await exigirModulo("configuracion");
-  const [espacios, tamanos] = await Promise.all([listarElementos("espacios"), listarElementos("tamanos")]);
+  const [espacios, tamanos, partes] = await Promise.all([listarElementos("espacios"), listarElementos("tamanos"), listarElementos("partes")]);
   return (
     <div className="grid max-w-5xl gap-12 lg:grid-cols-2">
       <ListaEditable
@@ -31,6 +32,7 @@ async function Contenido() {
         elementos={tamanos}
         descripcion="Los precios de cada servicio se cargan por tamaño. El orden es el de las listas al cotizar."
       />
+      <ListaEditable lista="partes" elementos={partes} descripcion="Lo que se revisa al recibir un vehículo, en este orden." />
     </div>
   );
 }
