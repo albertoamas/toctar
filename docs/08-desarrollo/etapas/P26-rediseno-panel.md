@@ -60,13 +60,18 @@ Montserrat en todo el panel, sin itálicas. Una escala en utilidades de `globals
 | Fase | Rama | Qué entra | Estado |
 |---|---|---|---|
 | 1. Estilo base | `pedido-26-estilo-base` | Tokens, tipografía, diseño del panel (menú y barra), `EncabezadoPagina`, tarjeta, insignias, `ListaFilas`, `Pestanas`, `SeccionConEditar`, `EstadoVacio`, `Cargando`; los títulos y recuadros de todas las pantallas pasan a las utilidades nuevas | En curso |
-| 2. Pantallas del prototipo | `pedido-26-inicio-ordenes-cotizaciones` | Inicio con números y "Para hoy"; Órdenes y Cotizaciones en tabla con filtros; las fichas de la orden (barra de pasos, cómo llegó resumido) y de la cotización; contadores en el menú | — |
+| 2. Pantallas del prototipo | `pedido-26-inicio-ordenes-cotizaciones` | Inicio con números, "Para hoy" y "Para atender"; Órdenes y Cotizaciones en tabla (`TablaLista`) con filtros; las fichas de la orden (barra de pasos, cómo llegó resumido) y de la cotización | En curso |
 | 3. Sitio web y Configuración | `pedido-26-sitio-configuracion` | Una portada con tarjetas "¿Qué quieres cambiar?" y, al entrar, solo esa parte | — |
 | 4. Catálogo y Usuarios | `pedido-26-catalogo-usuarios` | En tabla; "Editar precios" en un modal | — |
 | 5. Resto | `pedido-26-resto` | Clientes, Agenda, Pagos, Mantenimientos, Reclamos, formularios de crear y flujos (recibir, entregar) | — |
 | 6. Reglas | con la fase 5 | `CLAUDE.md`, `06-diseno/identidad-visual.md`, `pulido-visual.md` y la skill `pantallas-panel` dicen "el panel es administrativo estándar; la marca es del sitio y del ingreso" | — |
 
 Ninguna fase se une a `develop` hasta que el dueño apruebe el prototipo: al unir se despliega en pruebas, y un panel a medio cambiar mezcla dos estilos. Las fases se apilan (cada una sale de la anterior) y se unen en orden.
+
+### Decisiones de la fase 2
+- **Montos en el inicio:** la HU-39 lo dejaba sin montos. Con el pedido 26, "Por cobrar" y los totales de "Para atender" se ven solo con el permiso de Pagos o Cotizaciones; el técnico nunca (RN-12).
+- **Sin accesos a cada módulo en el inicio del dueño:** repetían el menú (pulido 4.1) y el dueño pidió un inicio simple. El técnico y el encargado sin permisos los conservan.
+- **Sin contadores en el menú** (estaban en el prototipo): el menú vive en el diseño compartido, que no se vuelve a pedir al navegar, y los números quedarían viejos. Los números están en el inicio.
 
 ## 7. Pruebas
 - **Unitarias:** no cambian (no hay reglas nuevas).

@@ -1,5 +1,5 @@
 import "server-only";
-import { asc, count, desc, eq, sql } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { archivo, reclamo, reclamoArchivo, servicio, usuario, type EstadoReclamo } from "@/db/esquema";
 import { urlsFoto, urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
@@ -34,11 +34,6 @@ export async function listarReclamos(soloPendientes: boolean): Promise<FilaRecla
     .leftJoin(servicio, eq(reclamo.servicioId, servicio.id))
     .where(soloPendientes ? eq(reclamo.estado, "pendiente") : undefined)
     .orderBy(sql`case when ${reclamo.estado} = 'pendiente' then 0 else 1 end`, desc(reclamo.createdAt));
-}
-
-export async function contarPendientes(): Promise<number> {
-  const [{ total }] = await db.select({ total: count() }).from(reclamo).where(eq(reclamo.estado, "pendiente"));
-  return total;
 }
 
 export type DetalleReclamo = {

@@ -30,8 +30,8 @@ test("el dueño ve el reclamo pendiente, le escribe por WhatsApp y lo marca aten
   await dejarReclamo(page, nombre, `10.17.0.${sufijo(info) === "C" ? 1 : 2}`);
 
   await ingresarComoDueno(page);
-  // En la pantalla del día (HU-39), el bloque con cuántos hay
-  await expect(page.getByRole("region", { name: "Reclamos pendientes" }).getByRole("link", { name: /^\d+ pendientes?/ })).toBeVisible();
+  // En el inicio (HU-39, pedido 26), en "Para atender", con su acción
+  await expect(page.getByRole("region", { name: "Para atender" }).getByRole("link", { name: new RegExp(`^Reclamo de ${nombre}.*Responder`) }).first()).toBeVisible();
   await page.goto("/panel/reclamos?ver=pendientes");
   // La pestaña dice cuántos hay por atender (pulido 5.1)
   await expect(page.getByRole("navigation", { name: "Filtrar reclamos" }).getByRole("link", { name: /^Pendientes \(\d+\)$/ })).toBeVisible();
@@ -88,7 +88,7 @@ test("el encargado entra a reclamos solo con el permiso; el técnico nunca", asy
 
   await ingresar(page, `enc-reclamos-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
-  await expect(page.getByRole("heading", { name: "Reclamos pendientes" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Para atender" })).toBeVisible();
   await page.goto("/panel/reclamos");
   await expect(page.getByRole("heading", { level: 1, name: "Reclamos" })).toBeVisible();
 

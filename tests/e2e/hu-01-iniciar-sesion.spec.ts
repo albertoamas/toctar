@@ -14,13 +14,13 @@ test("con datos correctos entra al panel y ve su nombre", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Hola, ${DUENO.nombre.split(" ")[0]}`);
 });
 
-// Pulido visual 4.1
-test("el inicio da un acceso a cada módulo que la persona puede usar; al técnico, solo a sus órdenes", async ({ page }, info) => {
+// Pulido visual 4.1; pedido 26: el dueño entra a lo del día (los módulos, en el menú); el técnico, a sus órdenes
+test("el dueño ve lo del día y llega a cada módulo por el menú; el técnico tiene el acceso a sus órdenes", async ({ page }, info) => {
   await ingresarComoDueno(page);
-  // Debajo de lo del día (HU-39), en el orden del menú (por grupos)
-  const accesos = page.getByRole("navigation", { name: "Ir a" }).getByRole("link");
-  await expect(accesos).toHaveText([/^Agenda/, /^Órdenes/, /^Clientes/, /^Cotizaciones/, /^Saldos pendientes/, /^Mantenimientos/, /^Reclamos/, /^Sitio web/, /^Catálogo y precios/, /^Usuarios/, /^Configuración/]);
-  await accesos.filter({ hasText: "Usuarios" }).click();
+  await expect(page.getByRole("region", { name: "Resumen de hoy" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Ir a" })).toHaveCount(0);
+  if (info.project.name === "celular") await page.getByRole("button", { name: "Abrir menú" }).click();
+  await page.getByRole("navigation", { name: "Panel" }).getByRole("link", { name: "Usuarios" }).click();
   await expect(page).toHaveURL(/\/panel\/usuarios$/);
 
   const usuario = `tecnico-inicio-${info.project.name}`;
