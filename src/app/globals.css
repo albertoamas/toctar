@@ -277,25 +277,6 @@
     transform: translateY(-50%);
   }
 
-  /* Burbuja de chat de la vista previa de los mensajes (HU-40): como le llega al cliente, con la punta arriba a la
-     izquierda cortada a 60° (alto = ancho × tan 60°), el ángulo de la marca. */
-  .tt-burbuja {
-    --tt-punta: 0.5rem;
-    position: relative;
-    border-radius: 0 var(--radius-xl) var(--radius-xl) var(--radius-xl);
-    background: var(--fondo);
-  }
-  .tt-burbuja::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: calc(var(--tt-punta) * -1);
-    width: var(--tt-punta);
-    height: calc(var(--tt-punta) * 1.732);
-    background: inherit;
-    clip-path: polygon(0 0, 100% 0, 100% 100%);
-  }
-
   /* El lema entre guiones cortos, como en el logo. */
   .tt-lema {
     display: inline-flex;

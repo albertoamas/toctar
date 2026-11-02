@@ -25,8 +25,8 @@ async function Contenido() {
   await exigirModulo("configuracion");
   const [plantillas, negocio] = await Promise.all([obtenerPlantillas(), obtenerDatosPublicos()]);
   return (
-    <div className="flex max-w-5xl flex-col gap-8">
-      <p className="max-w-2xl text-tinta-suave">
+    <div className="flex max-w-5xl flex-col gap-6">
+      <p className="max-w-2xl text-sm text-tinta-suave">
         Los mensajes que se arman para enviar por WhatsApp; quien avisa los revisa y los envía desde su celular. Cada campo
         entre llaves se cambia por el dato de ese cliente: tócalo para agregarlo donde está el cursor.
       </p>

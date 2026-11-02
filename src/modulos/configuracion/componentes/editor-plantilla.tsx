@@ -14,9 +14,11 @@ import { camposDe, PLANTILLAS, unirSaltos, type ClavePlantilla } from "../planti
 
 type Props = { clave: ClavePlantilla; guardado: string; negocio: string };
 
-// HU-40: un mensaje de WhatsApp. El texto, los campos que admite (tocar uno lo agrega donde está el cursor), cómo le
-// llega al cliente con datos de ejemplo y, debajo, guardar o volver al original. En el celular va todo en una columna;
-// en la computadora, la vista previa a la derecha, a la altura del texto.
+// HU-40: un mensaje de WhatsApp, en su tarjeta (pedido 26). El texto, los campos que admite (tocar uno lo agrega donde
+// está el cursor), cómo le llega al cliente con datos de ejemplo y, debajo, guardar o volver al original. En el celular
+// va todo en una columna; en la computadora, la vista previa a la derecha, a la altura del texto. "Guardar mensaje" es
+// el botón principal (rojo) solo cuando ese mensaje tiene cambios: con tres mensajes en la pantalla, nunca compiten
+// tres rojos.
 export function EditorPlantilla({ clave, guardado: inicial, negocio }: Props) {
   const { titulo, cuando, original } = PLANTILLAS[clave];
   const [texto, setTexto] = useState(inicial);
@@ -60,8 +62,8 @@ export function EditorPlantilla({ clave, guardado: inicial, negocio }: Props) {
   }
 
   return (
-    <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-5 border-t border-border pt-8">
-      <div className="flex flex-col gap-1">
+    <section aria-labelledby={`${id}-titulo`} className="tt-tarjeta-panel flex flex-col overflow-hidden">
+      <div className="flex flex-col gap-1 border-b border-border px-4 py-3 sm:px-5">
         <h2 id={`${id}-titulo`} className="tt-titulo-seccion">
           {titulo}
         </h2>
@@ -72,7 +74,7 @@ export function EditorPlantilla({ clave, guardado: inicial, negocio }: Props) {
         ref={formulario}
         action={guardar}
         noValidate
-        className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-x-10"
+        className="grid grid-cols-[minmax(0,1fr)] gap-6 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-x-10"
       >
         <input type="hidden" name="clave" value={clave} />
         <Campo id={id} etiqueta="Mensaje" error={error}>
@@ -91,7 +93,7 @@ export function EditorPlantilla({ clave, guardado: inicial, negocio }: Props) {
         </Campo>
 
         <div className="flex flex-col gap-3">
-          <h3 className="font-semibold">Campos</h3>
+          <h3 className="tt-titulo-sub">Campos</h3>
           <dl className="flex flex-col gap-2">
             {camposDe(clave).map(({ campo, significa }) => (
               <div key={campo} className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -101,7 +103,7 @@ export function EditorPlantilla({ clave, guardado: inicial, negocio }: Props) {
                     disabled={!hidratado}
                     onClick={() => agregarCampo(campo)}
                     aria-label={`Agregar {${campo}} al mensaje`}
-                    className="tt-area-toque rounded-sm border border-border bg-superficie px-2 py-0.5 text-sm font-semibold hover:bg-fondo focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-60"
+                    className="tt-area-toque rounded-md border border-border bg-neutro-fondo px-2 py-0.5 text-sm font-semibold hover:border-tinta-suave focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-60"
                   >
                     {`{${campo}}`}
                   </button>
@@ -114,9 +116,10 @@ export function EditorPlantilla({ clave, guardado: inicial, negocio }: Props) {
 
         {/* En la computadora, a la derecha y desde arriba: se lee junto al texto que se escribe */}
         <figure className="flex flex-col gap-2 lg:col-start-2 lg:row-span-3 lg:row-start-1">
-          <figcaption className="font-semibold">Así le llega</figcaption>
-          <div className="rounded-sm bg-superficie px-4 py-5 pl-6">
-            <p className="tt-burbuja max-w-[34ch] px-3 py-2 text-sm leading-relaxed break-words whitespace-pre-wrap">
+          <figcaption className="tt-titulo-sub">Así le llega</figcaption>
+          {/* Como en un chat: la burbuja del mensaje que llega, sobre el fondo de la conversación */}
+          <div className="rounded-lg bg-neutro-fondo p-4">
+            <p className="max-w-[34ch] rounded-xl rounded-tl-sm bg-fondo px-3 py-2 text-sm leading-relaxed break-words whitespace-pre-wrap shadow-[var(--sombra-tarjeta)]">
               {mensajeDeEjemplo(clave, texto, negocio) || <span className="text-tinta-suave">El mensaje está vacío.</span>}
             </p>
           </div>
@@ -124,13 +127,13 @@ export function EditorPlantilla({ clave, guardado: inicial, negocio }: Props) {
         </figure>
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <Button type="submit" disabled={enviando}>
-            {guardando ? "Guardando…" : "Guardar"}
+          <Button type="submit" variant={sinGuardar ? "default" : "outline"} disabled={enviando}>
+            {guardando ? "Guardando…" : "Guardar mensaje"}
           </Button>
           <Button type="submit" variant="outline" formAction={restaurar} disabled={enviando || (texto === original && guardado === original)}>
             {restaurando ? "Volviendo…" : "Volver al texto original"}
           </Button>
-          {sinGuardar && <p className="text-sm text-tinta-suave">Hay cambios sin guardar.</p>}
+          {sinGuardar && <p className="text-sm font-semibold text-aviso">Hay cambios sin guardar.</p>}
         </div>
       </form>
     </section>
