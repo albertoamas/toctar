@@ -36,9 +36,9 @@ test("el dueño ve el reclamo pendiente, le escribe por WhatsApp y lo marca aten
   // La pestaña dice cuántos hay por atender (pulido 5.1)
   await expect(page.getByRole("navigation", { name: "Filtrar reclamos" }).getByRole("link", { name: /^Pendientes \(\d+\)$/ })).toBeVisible();
   if (info.project.name === "escritorio") {
-    // En la tabla toda la fila abre el reclamo: se toca la placa, no el nombre (pulido 5.1)
-    // (con el mouse en esa posición: Playwright no hace clic en la celda porque el enlace de la fila la cubre)
-    const placa = (await page.getByRole("row").filter({ hasText: nombre }).getByRole("cell").nth(2).boundingBox())!;
+    // En la tabla toda la fila abre el reclamo: se toca con el mouse donde está la placa, no el nombre (pulido 5.1;
+    // pedido 26, TablaLista: la fila entera es el enlace)
+    const placa = (await page.getByRole("list", { name: "Reclamos" }).getByRole("link").filter({ hasText: nombre }).locator(".tt-placa").boundingBox())!;
     await page.mouse.click(placa.x + placa.width / 2, placa.y + placa.height / 2);
   } else {
     await enLaLista(page, nombre).click();
