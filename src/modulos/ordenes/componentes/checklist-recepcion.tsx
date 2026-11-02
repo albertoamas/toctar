@@ -74,12 +74,14 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
                 )}
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="font-semibold">{p.nombre}</span>
+                  {/* El estado de la parte en una insignia, como en el resto del panel (pedido 26) */}
                   {!d ? (
-                    <span className="text-sm text-tinta-suave">Sin revisar</span>
+                    <span>
+                      <Insignia>Sin revisar</Insignia>
+                    </span>
                   ) : d.estado === "bien" ? (
-                    <span className="flex items-center gap-1 text-sm">
-                      <CheckIcon className="size-4" aria-hidden />
-                      Bien
+                    <span>
+                      <Insignia tono="exito">Bien</Insignia>
                     </span>
                   ) : (
                     <span className="text-sm">
