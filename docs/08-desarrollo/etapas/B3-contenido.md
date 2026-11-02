@@ -4,6 +4,7 @@
 - **Estado:** programada (14 de octubre de 2026): HU-07 (#19), HU-08 (#20) y HU-09. Falta la revisión manual y la demo con B4
 - **Cambió después:** el alta, el nombre y las variantes del servicio pasaron al catálogo ("Agregar servicio" en `/panel/catalogo`); Sitio web edita solo la página pública. Se quitó la marca `construido` de los módulos (C5 §0, 24/10).
 - **Cambió después (24/10, pedidos de la demo del sitio):** la página de un servicio ya no muestra la descripción (repetía el resumen, que dice en qué consiste) ni la grilla de sus fotos de la galería (queda "Ver la galería"); suma una foto decorativa al lado de "Cómo lo hacemos" y de "Opciones" (`servicio_foto`). Ver `pulido-visual.md`, grupo 2B.
+- **Cambió después (02/11, pedido 26, `P26-rediseno-panel.md` fase 3):** sin pestañas. `/panel/sitio` es una portada con tarjetas ("¿Qué quieres cambiar?"): Portada, Servicios, Nosotros, Contacto, Preguntas frecuentes y Galería. La lista de servicios pasó a `/panel/sitio/servicios`; los textos de una sola página, a `/panel/sitio/textos?pagina=inicio|nosotros|contacto` (sin `?pagina`, todas). Cada parte vuelve con "‹ Sitio web". Las tablas de rutas de abajo son las de B3.
 - **Historias:** HU-07 Servicios del sitio · HU-08 Textos del sitio · HU-09 Galería en el panel
 - **Base:**
   - Requisitos: RF-10, RF-11, RF-12; RF-03 y RF-04 (los usa B4); RNF-02, RNF-11, RNF-14.

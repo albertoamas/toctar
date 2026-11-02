@@ -8,10 +8,10 @@ import { LogoDocumentos } from "@/modulos/configuracion/componentes/logo-documen
 import { obtenerConfiguracionNegocio } from "@/modulos/configuracion/consultas";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 
-export const metadata: Metadata = { title: "Configuración" };
+export const metadata: Metadata = { title: "Negocio" };
 
-// HU-04: datos del negocio (pestaña Negocio). Solo el dueño (módulo "configuracion").
-export default function PaginaConfiguracion() {
+// HU-04: datos del negocio, horario, redes y logo (Configuración > Negocio, pedido 26). Solo el dueño (módulo "configuracion").
+export default function PaginaNegocio() {
   return (
     <>
       <EncabezadoPagina titulo="Negocio" volver={{ href: "/panel/configuracion", texto: "Configuración" }} />

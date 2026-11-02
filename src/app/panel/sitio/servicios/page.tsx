@@ -16,12 +16,14 @@ export const metadata: Metadata = { title: "Servicios del sitio" };
 // agregan en el catálogo (lo hace el dueño: llevan precios); pulido 13.2: para él, el enlace en lugar de la explicación.
 export default function PaginaServicios() {
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
+    <>
       <EncabezadoPagina titulo="Servicios" volver={{ href: "/panel/sitio", texto: "Sitio web" }} />
-      <Suspense fallback={<Cargando />}>
-        <Lista />
-      </Suspense>
-    </div>
+      <div className="flex max-w-3xl flex-col gap-6">
+        <Suspense fallback={<Cargando />}>
+          <Lista />
+        </Suspense>
+      </div>
+    </>
   );
 }
 

@@ -9,7 +9,11 @@ import { FotoDePagina } from "@/modulos/sitio/componentes/foto-pagina";
 import { CLAVES_PAGINA, llevaFoto, PAGINAS, type Pagina } from "@/modulos/sitio/contenido";
 import { obtenerContenidos, obtenerFotosDePaginas } from "@/modulos/sitio/consultas";
 
-export const metadata: Metadata = { title: "Textos del sitio" };
+/** El título de la pestaña del navegador, el mismo que el de la pantalla: "Portada", o "Textos del sitio" si se ven todas. */
+export async function generateMetadata({ searchParams }: PageProps<"/panel/sitio/textos">): Promise<Metadata> {
+  const { pagina } = await searchParams;
+  return { title: esPagina(pagina) ? PAGINAS[pagina].titulo : "Textos del sitio" };
+}
 
 // HU-08: textos de portada (con la foto del taller), nosotros y contacto. Dueño o encargado con el permiso "sitio".
 // Pedido 26: desde la portada de Sitio web se entra a una página (?pagina=inicio): solo sus textos y su foto. Sin
@@ -34,6 +38,8 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/sitio/textos">
     <>
       <EncabezadoPagina titulo={elegida ? PAGINAS[elegida].titulo : "Textos del sitio"} volver={{ href: "/panel/sitio", texto: "Sitio web" }} />
       <div className="flex max-w-2xl flex-col gap-10">
+        {/* Varios formularios a la vista: cada uno guarda lo suyo */}
+        {!elegida && <p className="text-sm text-tinta-suave">Cada parte se guarda con su botón.</p>}
         {/* Una línea entre las partes: son formularios aparte (pulido 4.5) */}
         {paginas.map((p, i) => (
           <div key={p} className={cn("flex flex-col gap-8", i > 0 && "border-t border-border pt-10")}>

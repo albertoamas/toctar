@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
@@ -10,6 +9,7 @@ import { FormularioServicio } from "@/modulos/sitio/componentes/formulario-servi
 import { FotoServicio } from "@/modulos/sitio/componentes/foto-servicio";
 import { FotosServicio } from "@/modulos/sitio/componentes/fotos-servicio";
 import { fotosDeSecciones, obtenerServicio, opcionesDelSitio } from "@/modulos/sitio/consultas";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Insignia } from "@/componentes/panel/insignia";
 
 export const metadata: Metadata = { title: "Servicio" };
@@ -19,7 +19,6 @@ export const metadata: Metadata = { title: "Servicio" };
 export default function PaginaServicio({ params }: PageProps<"/panel/sitio/servicios/[id]">) {
   return (
     <div className="flex flex-col gap-6">
-      <EnlaceVolver href="/panel/sitio/servicios">Servicios</EnlaceVolver>
       <Suspense fallback={<Cargando />}>
         <Detalle params={params} />
       </Suspense>
@@ -46,10 +45,11 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-3">
-        <h2 className="tt-titulo-seccion text-xl">{s.nombre}</h2>
-        {!s.activo ? <Insignia tono="aviso">Inactivo en el catálogo</Insignia> : !s.visible && <Insignia>Oculto</Insignia>}
-      </div>
+      <EncabezadoPagina
+        titulo={s.nombre}
+        volver={{ href: "/panel/sitio/servicios", texto: "Servicios" }}
+        estado={!s.activo ? <Insignia tono="aviso">Inactivo en el catálogo</Insignia> : !s.visible && <Insignia>Oculto</Insignia>}
+      />
       {/* Llegó por un enlace viejo: la lista del sitio ya no lo muestra */}
       {!s.activo && <p className="text-tinta-suave">No sale en el sitio mientras esté inactivo en el catálogo.</p>}
       {catalogo && (
