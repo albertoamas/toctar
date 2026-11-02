@@ -36,13 +36,11 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
   );
   await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, 300, 'qr', 'adelanto', current_date, created_by from trabajo where id = $1", [id]);
 
-  // 1. El dueño recibe el vehículo, con una foto de ingreso, y se lo asigna al técnico
+  // 1. El dueño recibe el vehículo (el checklist, todo bien) y se lo asigna al técnico
   await ingresarComoDueno(page);
   await page.goto(`/panel/agenda/${id}`);
   await page.getByRole("link", { name: "Recibir vehículo" }).click();
-  await expect(page.getByRole("button", { name: "Tomar foto" }).first()).toBeEnabled();
-  await page.getByLabel("Cámara para fotos de ingreso").setInputFiles({ name: "frente.png", mimeType: "image/png", buffer: PNG });
-  await expect(page.getByText("Foto guardada.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Checklist" })).toBeVisible();
   const recepcion = page.getByRole("form", { name: "Recibir vehículo" });
   await recepcion.getByLabel("Técnico").selectOption({ label: `Técnico Flujo ${s}` });
   await revisarChecklistEnBase(id);
@@ -57,6 +55,9 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
   const pasos = page.getByRole("region", { name: "Estado de la orden" });
   await pasos.getByRole("button", { name: "Empezar trabajo" }).click();
   await expect(pasos.locator('[aria-current="step"]')).toHaveText("En proceso");
+  // Al empezar, la foto de inicio con todo el vehículo (pedido 27)
+  await page.getByLabel("Cámara para fotos del inicio").setInputFiles({ name: "frente.png", mimeType: "image/png", buffer: PNG });
+  await expect(page.getByText("Foto guardada.")).toBeVisible();
   await pasos.getByRole("button", { name: "Marcar listo" }).click();
   await expect(pasos.locator('[aria-current="step"]')).toHaveText("Lista");
 

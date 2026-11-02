@@ -1,9 +1,8 @@
 import { z } from "zod";
-import { ETAPAS_FOTO } from "@/db/esquema/trabajos";
 import { fechaExiste } from "@/lib/fechas";
 import { leerMonto } from "@/modulos/catalogo/reglas";
 import { esquemaGaleria } from "@/modulos/sitio/esquemas";
-import { TIPOS_DE_DETALLE } from "./reglas";
+import { ETAPAS_CON_SUBIDA, TIPOS_DE_DETALLE } from "./reglas";
 
 // Validación de las órdenes (C4). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §6.
 
@@ -24,8 +23,8 @@ export const esquemaRecibir = z.object({
     .transform((v) => v || null),
 });
 
-/** Una foto de la orden: a qué orden y de qué etapa. La foto va aparte, en el campo "foto". */
-export const esquemaFotoOrden = z.object({ trabajoId: id, etapa: z.enum(ETAPAS_FOTO) });
+/** Una foto de la orden: a qué orden y de qué etapa (inicio o final, pedido 27). La foto va aparte, en el campo "foto". */
+export const esquemaFotoOrden = z.object({ trabajoId: id, etapa: z.enum(ETAPAS_CON_SUBIDA) });
 
 /** Cambiar el estado de una orden (RF-41): a recibido, en proceso o listo; la transición la mira la acción. */
 export const esquemaEstadoOrden = z.object({ id, estado: z.enum(["recibido", "en_proceso", "listo"]) });

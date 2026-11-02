@@ -29,7 +29,7 @@ async function reserva(info: TestInfo, placa: string, dia = hoy()): Promise<numb
 
 const idDeUsuario = async (usuario: string) => (await consultar<{ id: number }>("select id from usuario where nombre_usuario = $1", [usuario]))[0].id;
 
-test("recibir con fotos y observaciones: la reserva pasa a orden, las fotos de ingreso quedan y el técnico la ve sin precios", async ({ page }, info) => {
+test("recibir con observaciones: la reserva pasa a orden, sin fotos de ingreso sueltas (pedido 27), y el técnico la ve sin precios", async ({ page }, info) => {
   const s = sufijo(info);
   const placa = `RC33${s.toUpperCase()}1`;
   const clienteId = await crearClienteEnBase({ nombre: `Recibe ${s}`, telefono: telefono(info, 1), placa });
@@ -47,13 +47,9 @@ test("recibir con fotos y observaciones: la reserva pasa a orden, las fotos de i
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}/recibir$`));
   await expect(page.getByRole("heading", { level: 1, name: `Recibir ${placa}` })).toBeVisible();
 
-  // Una foto de ingreso con la cámara
-  await page.getByLabel("Cámara para fotos de ingreso").setInputFiles({ name: "frente.png", mimeType: "image/png", buffer: PNG });
-  await expect(page.getByText("Foto guardada.")).toBeVisible();
-  // Mientras se recibe, quien la subió la puede quitar
-  await page.getByRole("button", { name: "Ver la foto 1 de ingreso" }).click();
-  await expect(page.getByRole("dialog").getByRole("button", { name: "Quitar foto" })).toBeVisible();
-  await page.keyboard.press("Escape");
+  // Pedido 27: al recibir, las fotos son las de los detalles del checklist; no hay otras
+  await expect(page.getByRole("heading", { name: "Checklist" })).toBeVisible();
+  await expect(page.getByLabel("Cámara para fotos de ingreso")).toHaveCount(0);
 
   const form = page.getByRole("form", { name: "Recibir vehículo" });
   await form.getByLabel("Observaciones").fill("Rayón en la puerta trasera; deja una silla de bebé.");
@@ -66,13 +62,14 @@ test("recibir con fotos y observaciones: la reserva pasa a orden, las fotos de i
   // Acotado a la orden: Next.js deja oculta la página anterior (el formulario de recibir, con el mismo texto)
   await expect(page.getByRole("region", { name: "Cómo llegó" }).getByText("Rayón en la puerta trasera; deja una silla de bebé.")).toBeVisible();
 
-  const [t] = await consultar<{ estado: string; tecnico: number; recibio: boolean; privado: boolean; etapa: string; avances: number }>(
-    `select t.estado, t.tecnico_id as tecnico, t.recibido_por is not null as recibio, a.privado, f.etapa,
+  const [t] = await consultar<{ estado: string; tecnico: number; recibio: boolean; fotos: number; avances: number }>(
+    `select t.estado, t.tecnico_id as tecnico, t.recibido_por is not null as recibio,
+       (select count(*)::int from trabajo_foto f where f.trabajo_id = t.id) as fotos,
        (select count(*)::int from trabajo_avance v where v.trabajo_id = t.id) as avances
-     from trabajo t join trabajo_foto f on f.trabajo_id = t.id join archivo a on a.id = f.archivo_id where t.id = $1`,
+     from trabajo t where t.id = $1`,
     [id],
   );
-  expect(t).toEqual({ estado: "recibido", tecnico: tecnicoId, recibio: true, privado: true, etapa: "ingreso", avances: 1 });
+  expect(t).toEqual({ estado: "recibido", tecnico: tecnicoId, recibio: true, fotos: 0, avances: 1 });
   const [{ accion }] = await consultar<{ accion: string }>("select accion from auditoria where entidad = 'trabajo' and entidad_id = $1", [id]);
   expect(accion).toBe("recibir");
 
@@ -88,11 +85,11 @@ test("recibir con fotos y observaciones: la reserva pasa a orden, las fotos de i
   await expect(page.getByRole("link", { name: "Recibir vehículo" })).toHaveCount(0);
   await page.getByRole("link", { name: "Ver la orden" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}$`));
-  // Recibido, las fotos de ingreso son la prueba de cómo llegó: ya no se quitan (D-6)
-  await page.getByRole("button", { name: "Ver la foto 1 de ingreso" }).click();
-  await expect(page.getByRole("dialog").getByRole("img")).toBeVisible();
-  await expect(page.getByRole("dialog").getByRole("button", { name: "Quitar foto" })).toHaveCount(0);
-  await page.keyboard.press("Escape");
+  // En la orden, dos momentos de fotos: inicio y final (pedido 27)
+  await expect(page.getByRole("button", { name: "Tomar foto" })).toHaveCount(2);
+  await expect(page.getByLabel("Cámara para fotos del inicio")).toBeAttached();
+  await expect(page.getByLabel("Cámara para fotos del final")).toBeAttached();
+  await expect(page.getByLabel("Cámara para fotos del trabajo")).toHaveCount(0);
 
   // El técnico la ve en "Mis órdenes", sin precios ni el teléfono del cliente
   await page.context().clearCookies();
@@ -105,7 +102,8 @@ test("recibir con fotos y observaciones: la reserva pasa a orden, las fotos de i
   await expect(page.getByRole("region", { name: "Servicios" }).getByText("Lavado completo")).toBeVisible();
   await expect(page.getByText(/Bs/)).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Escribir por WhatsApp" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Ver la foto 1 de ingreso" })).toBeVisible();
+  // Él sube las del inicio y del final de su orden (pedido 27)
+  await expect(page.getByLabel("Cámara para fotos del inicio")).toBeAttached();
 
   // Otro técnico no la ve
   await page.context().clearCookies();
@@ -117,7 +115,7 @@ test("recibir con fotos y observaciones: la reserva pasa a orden, las fotos de i
   await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
 });
 
-test("antes de su día no se recibe y sin fotos se pide confirmar", async ({ page }, info) => {
+test("antes de su día no se recibe; tarde, se recibe sin pedir fotos", async ({ page }, info) => {
   const s = sufijo(info);
   const futura = `RC33${s.toUpperCase()}2`;
   const sinFotos = `RC33${s.toUpperCase()}3`;
@@ -137,21 +135,19 @@ test("antes de su día no se recibe y sin fotos se pide confirmar", async ({ pag
   await page.goto(`/panel/ordenes/${idFutura}/recibir`);
   await expect(page.getByText(/todavía no llega a su día de ingreso/)).toBeVisible();
 
-  // El cliente llegó un día tarde y sin fotos: se pide confirmar
+  // El cliente llegó un día tarde: con el checklist revisado se recibe al primer toque (la prueba es el checklist)
   await page.goto(`/panel/ordenes/${idSinFotos}/recibir`);
   await revisarChecklistEnBase(idSinFotos);
   const form = page.getByRole("form", { name: "Recibir vehículo" });
   await form.getByRole("button", { name: "Recibir vehículo" }).click();
-  await expect(form.getByText(/Sin fotos de ingreso ni de detalles no hay cómo probar/)).toBeVisible();
-  await form.getByRole("button", { name: "Recibir sin fotos" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${idSinFotos}\\?recibido=1$`));
-  await expect(page.getByText("Se recibió sin fotos de ingreso.")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Cómo llegó" })).toContainText("Revisada parte por parte: todas bien.");
   // Recibida, la recepción ya no se abre: lleva a la orden
   await page.goto(`/panel/ordenes/${idSinFotos}/recibir`);
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${idSinFotos}$`));
 });
 
-test("si la reserva se cancela, las fotos de ingreso que se alcanzaron a tomar se descartan", async ({ page }, info) => {
+test("si la reserva se cancela, el checklist y sus fotos que se alcanzaron a tomar se descartan", async ({ page }, info) => {
   const s = sufijo(info);
   const placa = `RC33${s.toUpperCase()}4`;
   await crearClienteEnBase({ nombre: `No vino ${s}`, telefono: telefono(info, 4), placa });
@@ -161,12 +157,16 @@ test("si la reserva se cancela, las fotos de ingreso que se alcanzaron a tomar s
   await ingresar(page, `taller3-hu33-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
 
-  await page.goto(`/panel/ordenes/${id}/recibir`);
-  // La subida necesita JavaScript: el botón se habilita al hidratar
-  await expect(page.getByRole("button", { name: "Tomar foto" })).toBeEnabled();
-  await page.getByLabel("Cámara para fotos de ingreso").setInputFiles({ name: "frente.png", mimeType: "image/png", buffer: PNG });
-  await expect(page.getByText("Foto guardada.")).toBeVisible();
-  const [{ archivo }] = await consultar<{ archivo: number }>("select archivo_id as archivo from trabajo_foto where trabajo_id = $1", [id]);
+  await page.goto(`/panel/ordenes/${id}/recibir`, { waitUntil: "networkidle" });
+  // Un detalle con su foto
+  await page.getByRole("button", { name: "Detalle: Capó" }).click();
+  const detalle = page.getByRole("dialog", { name: "Capó" });
+  await detalle.getByRole("radio", { name: "Golpe" }).check();
+  await detalle.getByLabel("Cámara para la foto del detalle").setInputFiles({ name: "capo.png", mimeType: "image/png", buffer: PNG });
+  await expect(detalle.getByRole("img", { name: "Foto del detalle" })).toBeVisible();
+  await detalle.getByRole("button", { name: "Guardar detalle" }).click();
+  await expect(page.getByText("Detalle guardado.")).toBeVisible();
+  const [{ archivo }] = await consultar<{ archivo: number }>("select archivo_id as archivo from trabajo_revision where trabajo_id = $1", [id]);
 
   // Al final no lo dejó: se cancela la reserva
   await page.goto(`/panel/agenda/${id}`);
@@ -177,9 +177,9 @@ test("si la reserva se cancela, las fotos de ingreso que se alcanzaron a tomar s
   await form.getByLabel("Motivo").fill("No trajo el vehículo");
   await form.getByRole("button", { name: "Cancelar reserva" }).click();
   await expect(page.getByText(/^Reserva cancelada/)).toBeVisible();
-  const [quedan] = await consultar<{ fotos: number; archivos: number }>(
-    "select (select count(*)::int from trabajo_foto where trabajo_id = $1) as fotos, (select count(*)::int from archivo where id = $2) as archivos",
+  const [quedan] = await consultar<{ detalles: number; archivos: number }>(
+    "select (select count(*)::int from trabajo_revision where trabajo_id = $1) as detalles, (select count(*)::int from archivo where id = $2) as archivos",
     [id, archivo],
   );
-  expect(quedan).toEqual({ fotos: 0, archivos: 0 });
+  expect(quedan).toEqual({ detalles: 0, archivos: 0 });
 });

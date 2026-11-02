@@ -234,15 +234,17 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
           )}
           <section aria-labelledby="fotos-titulo" className="flex flex-col gap-6">
             <h2 id="fotos-titulo" className="font-heading text-2xl font-bold italic">Fotos</h2>
-            {/* Cerrada y sin ninguna: una línea, no cuatro */}
+            {/* Cerrada y sin ninguna: una línea, no dos */}
             {fotos.length === 0 && !abierta ? (
               <p className="text-tinta-suave">Sin fotos.</p>
             ) : (
               <>
-                <FotosOrden trabajoId={o.id} etapa="ingreso" fotos={deEtapa("ingreso")} editable={false} textoVacio="Se recibió sin fotos de ingreso." />
-                <FotosOrden trabajoId={o.id} etapa="antes" fotos={deEtapa("antes")} editable={abierta} compacta textoVacio="Sin fotos de antes." />
-                <FotosOrden trabajoId={o.id} etapa="durante" fotos={deEtapa("durante")} editable={abierta} compacta textoVacio="Sin fotos del trabajo." />
-                <FotosOrden trabajoId={o.id} etapa="despues" fotos={deEtapa("despues")} editable={abierta} compacta textoVacio="Sin fotos de después." />
+                {/* Pedido 27: dos momentos. Los detalles de cómo llegó, con su foto, están en el checklist */}
+                <FotosOrden trabajoId={o.id} etapa="antes" fotos={deEtapa("antes")} editable={abierta} compacta textoVacio="Sin fotos de inicio." />
+                <FotosOrden trabajoId={o.id} etapa="despues" fotos={deEtapa("despues")} editable={abierta} compacta textoVacio="Sin fotos del final." />
+                {/* Las de antes del pedido 27 (ingreso y durante) se siguen viendo, sin subir más */}
+                {deEtapa("ingreso").length > 0 && <FotosOrden trabajoId={o.id} etapa="ingreso" fotos={deEtapa("ingreso")} editable={false} textoVacio="" />}
+                {deEtapa("durante").length > 0 && <FotosOrden trabajoId={o.id} etapa="durante" fotos={deEtapa("durante")} editable={false} textoVacio="" />}
               </>
             )}
           </section>
