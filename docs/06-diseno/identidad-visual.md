@@ -12,8 +12,9 @@
 | Colores | Rojo `#E30613` (el CMYK 0/100/100/0 de Illustrator), carbón `#1A1A1A`, negro y blanco. `#FE0000` solo como fondo de la versión del logo en blanco | Las dos únicas tintas del PNG exportado de Illustrator. El JPG daba `#E40613` por la compresión |
 | Texto rojo | `rojo-texto` (`#FF4D57` en oscuro, `#C40511` en claro) para texto de tamaño normal | El rojo de marca da 4,3:1 sobre negro; el mínimo es 4,5:1 |
 | Recurso gráfico | Corte diagonal a 60° (botón principal, tarjetas, franjas) y línea LED roja, lisa (sin brillo desde el 19/10) | Trazos del monograma a 60°; fachada del manual, pág. 6 |
-| Tipografía | Montserrat para el texto, Barlow Condensed itálica para los titulares | El lema del logo está en Montserrat; el logotipo es condensado, pesado e itálico |
+| Tipografía | Montserrat para el texto, Barlow Condensed itálica para los titulares **del sitio y el ingreso**. El panel, todo en Montserrat sin itálicas (pedido 26) | El lema del logo está en Montserrat; el logotipo es condensado, pesado e itálico |
 | Temas | Sitio público siempre oscuro; panel claro por defecto, con barra lateral negra; ingreso en oscuro | Versión principal del logo sobre negro; lectura al sol en el taller |
+| Panel administrativo (02/11, pedido 26) | **La marca es del sitio y del ingreso.** El panel es un panel administrativo estándar: área de trabajo gris claro (`--fondo-panel`), tarjetas blancas con borde suave y sombra (`tt-tarjeta-panel`), esquinas de 8 px, insignias de color por estado (`Insignia`) y el rojo solo en el botón principal y el módulo activo del menú. Sin cortes a 60° ni titulares en Barlow en el panel. El menú sigue negro, con el logo horizontal sin lema | Reunión con el dueño (fines de octubre): "no es amigable, se confunde todo con el fondo". Prototipo y fases en `08-desarrollo/etapas/P26-rediseno-panel.md` |
 | Logos | 21 SVG en `public/marca/`: horizontal y vertical con y sin lema, y monograma, cada uno en 4 tintas, más el ícono de la app | Piezas trazadas una vez desde el PNG sin compresión de la pág. 4 del PDF: el **monograma como polígono** (14 esquinas, rectas exactas) y **TOCTAR y el lema con curvas**. El vertical se arma con esas piezas ubicadas como en el PNG de Illustrator (coincidencia 99,4 % y 98,7 %); su lema se traza aparte porque tiene otro espaciado |
 | Logo en tamaños chicos | **Con lema solo desde 360 px de ancho (horizontal) o 320 px (vertical).** Por debajo, la versión `-sin-lema` y el lema como texto con la clase `tt-lema`, que se ve nítido a cualquier tamaño | El lema dibujado queda de 2 a 5 px y se ve borroso (encontrado el 14/10 en la pantalla de ingreso) |
 | Servicios sin foto | Imagen de reemplazo con el monograma y una banda a 60° | Decisión del 14/10 (`01-descubrimiento/material-recibido.md`) |
@@ -25,6 +26,7 @@
 
 - Tokens: `src/app/globals.css`. El tema oscuro se aplica con `data-theme="oscuro"` en cualquier elemento, y las variables de shadcn/ui apuntan a los tokens de marca.
 - Utilidades: `bg-rojo`, `text-rojo-texto`, `text-tinta-suave`, `bg-superficie`, `font-heading` (Barlow Condensed), y las clases `tt-led`, `tt-lema` y `tt-boton-marca`.
+- Panel (pedido 26): `bg-fondo-panel`, los tonos de insignia (`--info`, `--exito-fondo`, `--aviso-fondo`, `--peligro`, `--violeta`, `--neutro-fondo`), las utilidades `tt-titulo-pagina`, `tt-titulo-seccion`, `tt-titulo-sub`, `tt-placa` y `tt-tarjeta-panel`, y las clases `tt-estado` y `tt-seccion-formulario`.
 - Fuentes: `next/font/google` en `src/app/layout.tsx`.
 - Ícono de la app: `src/app/icon.svg`.
 

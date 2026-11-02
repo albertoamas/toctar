@@ -23,11 +23,34 @@ Las decisiones posibles son cuatro: **queda arriba** (es la tarea de la pantalla
 
 **La prueba de los 5 segundos:** al abrir la pantalla en el celular, ¿se entiende qué es y qué hacer, sin leer párrafos ni desplazarse? Si no, sobra algo.
 
+## 1b. El estilo del panel (pedido 26)
+
+El panel es un panel administrativo estándar: la marca queda en el sitio y el ingreso. Una pantalla nueva no inventa su
+estilo: se arma con estas piezas (`src/componentes/panel/`), y si alguna no alcanza, se extiende.
+
+| Para | Pieza |
+|---|---|
+| El título, el estado, la acción y "‹ Volver" | `EncabezadoPagina` (con `estado`, `accion` y `volver`) |
+| Una lista que abre fichas | `TablaLista` (tabla en la computadora, filas en el celular; `movil` dice dónde va cada celda) y `CeldaDoble` |
+| Una lista simple de un toque | `ListaFilas` |
+| Filtros dentro de una lista | `Filtros` (píldoras con su cuenta, por la dirección) |
+| Las vistas de un módulo | `Pestanas` |
+| Un número del día | `TarjetaNumero` |
+| La portada de una sección con partes | `TarjetasSeccion` ("¿Qué quieres cambiar?") |
+| Una sección de ficha con "Editar" | `SeccionConEditar` (el formulario en `ModalFormulario`) |
+| Una parte de un formulario largo | `SeccionFormulario` (o `tt-seccion-formulario` en el fieldset) |
+| Un estado | `Insignia` con su tono; los del trabajo, de `TONO_ESTADO_TRABAJO` |
+| Un bloque suelto | `tt-tarjeta-panel` |
+
+Colores: los tokens de `globals.css` (`bg-fondo-panel`, `text-info`, `bg-aviso-fondo`…), nunca un `#hex`. Títulos con
+`tt-titulo-pagina`, `tt-titulo-seccion` y `tt-titulo-sub`; placas y números con `tt-placa`. El rojo, solo en el botón
+principal y en el módulo activo del menú.
+
 ## 2. Qué tipo de pantalla es
 
 Toda pantalla del panel es uno de estos tipos. Identificarlo decide su forma; no se inventa una forma nueva por pantalla.
 
-### Lista (Clientes, Órdenes, Consultas, Saldos…)
+### Lista (Clientes, Órdenes, Cotizaciones, Saldos…)
 - Arriba: título, **una** acción principal si la hay ("Agregar cliente") y, si hace falta, buscar y filtros (pestañas, cuatro como mucho).
 - Cada fila es **un toque** que abre su ficha. Lo que identifica (placa, nombre) grande; lo que decide (estado, monto, fecha) a la vista, con palabras y no solo color; el resto, fuera de la fila.
 - Las filas no llevan formularios ni varios botones: las acciones viven en la ficha. Excepción: una acción que se hace desde la lista todos los días (como "Escribir por WhatsApp" en Saldos), una sola.
