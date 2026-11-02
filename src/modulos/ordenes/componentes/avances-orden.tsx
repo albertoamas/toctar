@@ -24,7 +24,7 @@ export function AvancesOrden({ id, avances, editable }: { id: number; avances: A
   const e = estado.errores ?? {};
 
   return (
-    <section aria-labelledby="avances-titulo" className="flex flex-col gap-4">
+    <section aria-labelledby="avances-titulo" className="tt-tarjeta-panel flex flex-col gap-4 p-4">
       <h2 id="avances-titulo" className="tt-titulo-seccion">Avances</h2>
       {editable && (
         <form ref={formulario} action={accion} className="flex flex-col gap-3" noValidate>

@@ -177,7 +177,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
 
       {/* En la computadora: a la izquierda el trabajo (cómo llegó, fotos y avances); a la derecha los datos y, debajo, los
           montos. En el celular, en ese orden: datos, trabajo y montos */}
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:grid-rows-[auto_1fr] lg:items-start">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:grid-rows-[auto_1fr] lg:items-start">
         {/* La placa ya está en el título: el vehículo dice su modelo y su tamaño, con la etiqueta (como la reserva) */}
         <div className="flex flex-col gap-2 tt-tarjeta-panel p-4 lg:col-start-2 lg:row-start-1">
           <dl aria-label="Datos de la orden" className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3">
@@ -219,12 +219,12 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
           )}
         </div>
 
-        <div className="flex flex-col gap-10 lg:col-start-1 lg:row-span-2 lg:row-start-1">
+        <div className="flex flex-col gap-6 lg:col-start-1 lg:row-span-2 lg:row-start-1">
           <ComoLlego revision={revision} observaciones={o.observacionesIngreso} />
           {firma && <FirmaDeEntrega firma={firma} />}
           {/* Con "Pagos", los servicios van con sus precios en el bloque de montos; si no, solo los nombres */}
           {!o.montos && (
-            <section aria-labelledby="servicios-titulo" className="flex flex-col gap-2">
+            <section aria-labelledby="servicios-titulo" className="tt-tarjeta-panel flex flex-col gap-2 p-4">
               <h2 id="servicios-titulo" className="tt-titulo-seccion">Servicios</h2>
               <ul className="list-disc pl-5">
                 {o.servicios.map((s, i) => (
@@ -233,7 +233,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
               </ul>
             </section>
           )}
-          <section aria-labelledby="fotos-titulo" className="flex flex-col gap-6">
+          <section aria-labelledby="fotos-titulo" className="tt-tarjeta-panel flex flex-col gap-5 p-4">
             <h2 id="fotos-titulo" className="tt-titulo-seccion">Fotos</h2>
             {/* Cerrada y sin ninguna: una línea, no dos */}
             {fotos.length === 0 && !abierta ? (
@@ -254,7 +254,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
 
         {/* Abierta también después de la entrega: una entregada con saldo se cobra aquí (RN-13, HU-37) */}
         {o.montos && (
-          <div className="flex flex-col gap-10 lg:col-start-2 lg:row-start-2">
+          <div className="flex flex-col gap-6 lg:col-start-2 lg:row-start-2">
             <MontosTrabajo trabajoId={o.id} montos={o.montos} cerrado={false} hoy={hoy} agregar={conAdicional && <AgregarAdicional id={o.id} opciones={opciones} />} />
           </div>
         )}

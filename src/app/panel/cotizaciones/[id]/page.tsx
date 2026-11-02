@@ -96,32 +96,35 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
         </AvisoEnPagina>
       )}
 
-      <section aria-labelledby="cliente-titulo" className="flex flex-col gap-3">
-        <CabeceraSeccion id="cliente" titulo="Cliente y vehículo" />
-        <div className="flex flex-col gap-3 tt-tarjeta-panel p-4">
-          <p className="flex flex-col">
-            <span className="font-semibold">{c.cliente}</span>
-            <span className="text-tinta-suave">{formatearWhatsApp(c.telefono)}</span>
-          </p>
-          <p className="flex flex-col">
-            <DatosVehiculo placa={c.placa} detalle={c.detalle} tamano={c.tamano} />
-          </p>
-          <p className="text-sm text-tinta-suave">
-            Registrada el {formatearFechaHora(c.createdAt)} por {c.registradaPor}
-          </p>
-          {/* El encargado puede tener Cotizaciones sin Clientes: entonces no enlaza a una ficha que no puede abrir */}
-          {puedeVerModulo(usuario, "clientes") && (
-            <Link href={`/panel/clientes/${c.clienteId}`} className={ENLACE_TEXTO}>
-              Ver ficha del cliente
-            </Link>
-          )}
-        </div>
-      </section>
+      {/* En la computadora, el precio a la izquierda (es lo que decide) y el cliente a la derecha (pedido 26) */}
+      <div className="grid items-start gap-6 @4xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <section aria-labelledby="versiones-titulo" className="flex flex-col gap-3">
+          <CabeceraSeccion id="versiones" titulo={c.versiones.length > 1 ? "Versiones" : "Precio"} />
+          <VersionesCotizacion consultaId={c.id} versiones={c.versiones} />
+        </section>
 
-      <section aria-labelledby="versiones-titulo" className="flex flex-col gap-3">
-        <CabeceraSeccion id="versiones" titulo={c.versiones.length > 1 ? "Versiones" : "Precio"} />
-        <VersionesCotizacion consultaId={c.id} versiones={c.versiones} />
-      </section>
+        <section aria-labelledby="cliente-titulo" className="flex flex-col gap-3">
+          <CabeceraSeccion id="cliente" titulo="Cliente y vehículo" />
+          <div className="tt-tarjeta-panel flex flex-col gap-3 p-4">
+            <p className="flex flex-col">
+              <span className="font-semibold">{c.cliente}</span>
+              <span className="text-tinta-suave">{formatearWhatsApp(c.telefono)}</span>
+            </p>
+            <p className="flex flex-col">
+              <DatosVehiculo placa={c.placa} detalle={c.detalle} tamano={c.tamano} />
+            </p>
+            <p className="text-sm text-tinta-suave">
+              Registrada el {formatearFechaHora(c.createdAt)} por {c.registradaPor}
+            </p>
+            {/* El encargado puede tener Cotizaciones sin Clientes: entonces no enlaza a una ficha que no puede abrir */}
+            {puedeVerModulo(usuario, "clientes") && (
+              <Link href={`/panel/clientes/${c.clienteId}`} className={ENLACE_TEXTO}>
+                Ver ficha del cliente
+              </Link>
+            )}
+          </div>
+        </section>
+      </div>
 
       {reservas.length > 0 && (
         <section aria-labelledby="reservas-titulo" className="flex flex-col gap-3">

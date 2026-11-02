@@ -6,7 +6,7 @@ import type { FirmaEntrega } from "../consultas";
 
 export function FirmaDeEntrega({ firma }: { firma: FirmaEntrega }) {
   return (
-    <section aria-labelledby="firma-titulo" className="flex flex-col gap-3">
+    <section aria-labelledby="firma-titulo" className="tt-tarjeta-panel flex flex-col gap-3 p-4">
       <h2 id="firma-titulo" className="tt-titulo-seccion">Firma de entrega</h2>
       {firma.imagen ? (
         <>
