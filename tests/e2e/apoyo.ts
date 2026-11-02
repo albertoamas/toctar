@@ -190,6 +190,8 @@ export async function revisarChecklistEnBase(trabajoId: number) {
 /** Firma con el mouse en el recuadro de "Entregar vehículo" (pedido 13); espera a que la firma esté lista. */
 export async function firmarEnRecuadro(page: Page) {
   const recuadro = page.getByRole("img", { name: "Recuadro para la firma del cliente" });
+  // Una ventana que se está cerrando (la de "Registrar pago") taparía el recuadro y el trazo no llegaría
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   // El mouse firma donde está el recuadro en la pantalla: primero, al centro de la vista (lejos del pie fijo del celular)
   await recuadro.evaluate((e) => e.scrollIntoView({ block: "center" }));
   const caja = (await recuadro.boundingBox())!;

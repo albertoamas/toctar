@@ -93,7 +93,7 @@ test("se revisa parte por parte: bien o con un detalle y su foto; sin revisar to
   }
   await expect(page.getByText(`Revisadas ${total} de ${total}`)).toBeVisible();
 
-  // Con la foto del detalle no hace falta confirmar "sin fotos": se recibe al primer toque
+  // Revisado todo, se recibe
   await form.getByRole("button", { name: "Recibir vehículo" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?recibido=1$`));
   const comoLlego = page.getByRole("region", { name: "Cómo llegó" });
@@ -123,7 +123,7 @@ test("se revisa parte por parte: bien o con un detalle y su foto; sin revisar to
   await expect(page.getByRole("region", { name: "Cómo llegó" })).toContainText("Rayón largo al centro");
 });
 
-test("todas bien y sin fotos se pide confirmar; después de recibir el checklist no cambia", async ({ page }, info) => {
+test("todas bien se recibe al primer toque; después de recibir el checklist no cambia", async ({ page }, info) => {
   const s = sufijo(info);
   const placa = `CK33${s.toUpperCase()}2`;
   await crearClienteEnBase({ nombre: `Checklist sin fotos ${s}`, telefono: telefono(info, 2), placa });
@@ -134,8 +134,6 @@ test("todas bien y sin fotos se pide confirmar; después de recibir el checklist
   await revisarChecklistEnBase(id);
   const form = page.getByRole("form", { name: "Recibir vehículo" });
   await form.getByRole("button", { name: "Recibir vehículo" }).click();
-  await expect(form.getByRole("alert")).toContainText("Sin fotos de ingreso ni de detalles");
-  await form.getByRole("button", { name: "Recibir sin fotos" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?recibido=1$`));
   await expect(page.getByRole("region", { name: "Cómo llegó" })).toContainText("Revisada parte por parte: todas bien.");
 

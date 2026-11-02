@@ -22,7 +22,7 @@ Igual que una historia (`plan-de-desarrollo.md`, "Cómo se trabaja cada historia
 | 1 | Cotización directa, sin consulta | 23 y 24 (el 25, descartado) | 18 a 24 | Por definir (cambia lo contratado: HU-24 y HU-25) | ✅ Programado (PR #113, 01/11) |
 | 2 | Checklist al recibir el vehículo | 12 | 8 a 10 | Incluido en el plan (decisión del 01/11) | ✅ Programado (01/11) |
 | 3 | Firma digital del cliente | 13 | 6 | Incluido en el plan (decisión del 01/11); el PDF, aparte | ✅ Programado (01/11) |
-| 4 | Fotos: solo las que sirven, sin videos | 27 | 4 a 6 | Incluido | ⏳ |
+| 4 | Fotos: solo las que sirven, sin videos | 27 | 4 a 6 | Incluido | ✅ Programado (01/11) |
 | 5 | Rediseño del panel: administrativo estándar | 26 | 25 a 35 | Incluido (sin él no hay aceptación) | ⏳ |
 | 6 | Órdenes con historial y agenda con las completadas | 28 | 6 a 8 | Incluido | ✅ Programado (01/11) |
 | 7 | Saldos pendientes: ordenar y buscar | 30 | 2 | Incluido (bolsa de 8 h) | ⏳ |
@@ -143,7 +143,7 @@ Al recibir, el dueño marca en el celular los detalles con su foto en menos de u
 
 ## 3. Firma digital del cliente (pedido 13)
 
-> **Estado (01/11/2026):** programado con la especificación `etapas/P13-firma-entrega.md`. Respuestas: la firma es **al entregar**; se puede entregar **sin firma, con el motivo**; la **constancia en PDF queda aparte** (por explicar al dueño).
+> **Estado (01/11/2026):** programado con la especificación `etapas/P13-firma-entrega.md`. Respuestas: la firma es **al entregar**; se puede entregar **sin firma, con el motivo**; la **constancia en PDF queda aparte: sugerírsela al dueño** en la próxima revisión (un documento con los trabajos hechos, cómo llegó y la firma, para mandarle al cliente por WhatsApp; +2 h).
 
 ### Lo que dijo el dueño (01/11)
 > Quiere que **los clientes firmen al recibir su vehículo**, para verificar que todo esté bien, de forma digital.
@@ -171,6 +171,8 @@ El cliente firma en el celular al llevarse su auto y la firma queda en la orden 
 ---
 
 ## 4. Fotos: solo las que sirven (pedido 27)
+
+> **Estado (01/11/2026):** programado con la especificación `etapas/P27-fotos-justas.md`. Además de la propuesta, se quitaron las "Fotos de ingreso" sueltas al recibir (repetían la foto de cada detalle del checklist) y la confirmación "recibir sin fotos": la prueba de cómo llegó es el checklist.
 
 ### Lo que dijo el dueño
 > El sistema pide fotos innecesarias: en la consulta (no debería existir), en la cotización (se hace en persona o le mandan fotos por WhatsApp). En la orden: las de **recepción** sí van (son de detalles), las de **inicio** (todo el vehículo) y las del **final** también; las de **proceso** no le interesan. **No necesita subir videos en ninguna parte.**

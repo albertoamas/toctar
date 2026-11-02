@@ -51,10 +51,10 @@ test("el técnico trabaja su orden: empieza, sube fotos, escribe avances y la ma
   await expect(page.getByText("La orden está en proceso.")).toBeVisible();
   await expect(pasos.locator('[aria-current="step"]')).toHaveText("En proceso");
 
-  // Una foto de antes y un avance
+  // Una foto del inicio y un avance
   await expect(page.getByRole("button", { name: "Tomar foto" }).first()).toBeEnabled();
-  await page.getByLabel("Cámara para fotos de antes").setInputFiles({ name: "antes.png", mimeType: "image/png", buffer: PNG });
-  await expect(page.getByRole("button", { name: "Ver la foto 1 de antes" })).toBeVisible();
+  await page.getByLabel("Cámara para fotos del inicio").setInputFiles({ name: "antes.png", mimeType: "image/png", buffer: PNG });
+  await expect(page.getByRole("button", { name: "Ver la foto 1 del inicio" })).toBeVisible();
   await page.getByLabel("Escribir un avance").fill("Pulido de la puerta trasera, listo el primer paso.");
   await page.getByRole("button", { name: "Guardar avance" }).click();
   const historia = page.getByRole("list", { name: "Historia de la orden" });

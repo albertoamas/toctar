@@ -31,7 +31,7 @@ import { FotosOrden } from "@/modulos/ordenes/componentes/fotos-orden";
 import { registrarAvisoListo } from "@/modulos/ordenes/acciones";
 import { avancesDeTrabajo, firmaDeTrabajo, revisionDeTrabajo, fotosDeTrabajo, obtenerOrden, publicadaDeOrden } from "@/modulos/ordenes/consultas";
 import { mensajeListo } from "@/modulos/ordenes/mensajes";
-import { esOrden, estaAbierta, estaAtrasada, pasosDeOrden, puedeExtenderse, puedePublicarse } from "@/modulos/ordenes/reglas";
+import { puedeQuitarFoto, esOrden, estaAbierta, estaAtrasada, pasosDeOrden, puedeExtenderse, puedePublicarse } from "@/modulos/ordenes/reglas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
 
 export const metadata: Metadata = { title: "Orden" };
@@ -96,7 +96,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   // Una vez: ya publicada, se ordena u oculta en Sitio web > Galería (y si se quita de ahí, se puede volver a publicar)
   const sePuedePublicar = conGaleria && !publicada && puedePublicarse(o.estado, fotos.map((f) => f.etapa));
   const deEtapa = (etapa: (typeof fotos)[number]["etapa"]) =>
-    fotos.filter((f) => f.etapa === etapa).map((f) => ({ ...f, puedeQuitar: etapa !== "ingreso" && (usuario.rol === "dueno" || f.subidoPor === yo) }));
+    fotos.filter((f) => f.etapa === etapa).map((f) => ({ ...f, puedeQuitar: puedeQuitarFoto(etapa, o.estado) && (usuario.rol === "dueno" || f.subidoPor === yo) }));
   const avisada = o.avisadoListoAt !== null;
   const { anterior } = pasosDeOrden(o.estado);
   const extender =
@@ -234,15 +234,17 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
           )}
           <section aria-labelledby="fotos-titulo" className="flex flex-col gap-6">
             <h2 id="fotos-titulo" className="font-heading text-2xl font-bold italic">Fotos</h2>
-            {/* Cerrada y sin ninguna: una línea, no cuatro */}
+            {/* Cerrada y sin ninguna: una línea, no dos */}
             {fotos.length === 0 && !abierta ? (
               <p className="text-tinta-suave">Sin fotos.</p>
             ) : (
               <>
-                <FotosOrden trabajoId={o.id} etapa="ingreso" fotos={deEtapa("ingreso")} editable={false} textoVacio="Se recibió sin fotos de ingreso." />
-                <FotosOrden trabajoId={o.id} etapa="antes" fotos={deEtapa("antes")} editable={abierta} compacta textoVacio="Sin fotos de antes." />
-                <FotosOrden trabajoId={o.id} etapa="durante" fotos={deEtapa("durante")} editable={abierta} compacta textoVacio="Sin fotos del trabajo." />
-                <FotosOrden trabajoId={o.id} etapa="despues" fotos={deEtapa("despues")} editable={abierta} compacta textoVacio="Sin fotos de después." />
+                {/* Pedido 27: dos momentos, inicio y final; los detalles de cómo llegó, con su foto, están en el checklist. Las
+                    de ingreso y durante, de antes del pedido, se siguen viendo en su lugar del tiempo, sin subir más */}
+                {deEtapa("ingreso").length > 0 && <FotosOrden trabajoId={o.id} etapa="ingreso" fotos={deEtapa("ingreso")} editable={false} textoVacio="" />}
+                <FotosOrden trabajoId={o.id} etapa="antes" fotos={deEtapa("antes")} editable={abierta} compacta textoVacio="Sin fotos de inicio." />
+                {deEtapa("durante").length > 0 && <FotosOrden trabajoId={o.id} etapa="durante" fotos={deEtapa("durante")} editable={false} textoVacio="" />}
+                <FotosOrden trabajoId={o.id} etapa="despues" fotos={deEtapa("despues")} editable={abierta} compacta textoVacio="Sin fotos del final." />
               </>
             )}
           </section>
