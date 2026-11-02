@@ -65,7 +65,7 @@ Montserrat en todo el panel, sin itálicas. Una escala en utilidades de `globals
 | 4. Catálogo y Usuarios | `pedido-26-catalogo-usuarios` | Las dos listas en `TablaLista`: el catálogo con precio desde, variantes, duración y lo que falta cargar (lo completo no dice nada, pulido 7.1); usuarios con el rol y el estado en insignias y "(tú)". Los precios de cada variante ya se editaban en un modal ("Editar"); ahora sus recuadros son blancos | En curso |
 | 5. Resto | `pedido-26-resto` | Reclamos en `TablaLista` con `Pestanas`; los formularios en tarjetas (`SeccionFormulario`, `tt-seccion-formulario`; los de una sola parte son la tarjeta), también recibir, entregar y publicar; la ficha de la cotización con sus servicios y su descuento. Clientes, Saldos y Mantenimientos quedan con sus filas en tarjeta (las de Saldos y Mantenimientos llevan acciones propias: no son de un toque); Agenda, con el estilo base | En curso |
 | 6. Reglas | con la fase 5 | `CLAUDE.md`, `06-diseno/identidad-visual.md`, `pulido-visual.md` y la skill `pantallas-panel` (con la tabla de piezas del panel) dicen "el panel es administrativo estándar; la marca es del sitio y del ingreso" | En curso |
-| 7. Lo que faltó | `pedido-26-resto` | Lo que no se rediseñó o quedó a medias, encontrado al capturar todas las pantallas: ver "Fase 7" abajo | Por hacer |
+| 7. Lo que faltó | `pedido-26-resto` | Lo que no se rediseñó o quedó a medias, encontrado al capturar todas las pantallas: ver "Fase 7" abajo | Hecha (02/11): los 10 puntos; los montos quedaron en dos tarjetas (Servicios y Pagos) y no en una "Cuenta", por las regiones que usan el lector y las pruebas |
 
 ### Fase 7: lo que faltó (barrido del 02/11)
 
