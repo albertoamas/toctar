@@ -60,7 +60,7 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
           </Link>
         </p>
       )}
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,40rem)_minmax(0,22rem)]">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,40rem)_minmax(0,22rem)]">
         <FormularioServicio
           servicio={{
             id: s.id,
@@ -73,7 +73,7 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
           }}
           conOpciones={conOpciones}
         />
-        <aside className="flex flex-col gap-10">
+        <aside className="flex flex-col gap-6">
           <FotoServicio servicioId={s.id} nombre={s.nombre} foto={s.foto} />
           <FotosServicio servicioId={s.id} fotos={fotos} sinContenido={sinContenido} ocultas={conOpciones || fotos.opciones ? [] : ["opciones"]} />
         </aside>

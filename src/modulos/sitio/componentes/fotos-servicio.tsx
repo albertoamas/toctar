@@ -21,7 +21,7 @@ type Props = {
 
 export function FotosServicio({ servicioId, fotos, sinContenido, ocultas = [] }: Props) {
   return (
-    <section aria-labelledby="fotos-secciones-titulo" className="flex flex-col gap-4">
+    <section aria-labelledby="fotos-secciones-titulo" className="tt-tarjeta-panel flex flex-col gap-4 p-4 sm:p-5">
       <div className="flex flex-col gap-1">
         <h2 id="fotos-secciones-titulo" className="tt-titulo-seccion">Fotos de la página</h2>
         <p className="text-sm text-tinta-suave">Una foto al lado de cada parte de la página. Si es un afiche, lo que dice escríbelo también en la página: Google no lee la imagen.</p>
@@ -31,7 +31,7 @@ export function FotosServicio({ servicioId, fotos, sinContenido, ocultas = [] }:
           const actual = fotos[seccion];
           return (
             <li key={seccion} className="flex flex-col gap-2">
-              <h3 className="text-sm font-semibold">{nombre}</h3>
+              <h3 className="tt-titulo-sub">{nombre}</h3>
               {sinContenido[seccion] && <p className="text-sm text-tinta-suave">{sinContenido[seccion]}</p>}
               <SubidaFoto
                 id={`foto-${seccion}`}

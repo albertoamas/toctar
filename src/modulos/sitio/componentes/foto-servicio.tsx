@@ -13,7 +13,7 @@ type Props = {
 
 export function FotoServicio({ servicioId, nombre, foto }: Props) {
   return (
-    <section aria-labelledby="foto-titulo" className="flex flex-col gap-4">
+    <section aria-labelledby="foto-titulo" className="tt-tarjeta-panel flex flex-col gap-4 p-4 sm:p-5">
       <div className="flex flex-col gap-1">
         <h2 id="foto-titulo" className="tt-titulo-seccion">Foto principal</h2>
         <p className="text-sm text-tinta-suave">Se ve en la tarjeta y arriba de la página del servicio. Mejor horizontal. Se guarda al momento, sin el botón Guardar cambios.</p>
