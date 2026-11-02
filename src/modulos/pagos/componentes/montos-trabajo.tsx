@@ -12,7 +12,7 @@ import { estaPagada, METODO_EN_FRASE, NOMBRE_TIPO_PAGO, precioCotizadoYFinal } f
 // pagos: quien lo usa ya lo verificó (`montos` llega null si no). Una reserva cancelada, sin acciones; una entregada con
 // saldo se sigue cobrando (RN-13). Con servicios sumados en el taller (HU-36), el precio cotizado y el final por separado
 // (RF-43). Pedido 26: dos tarjetas con su título adentro; en la de servicios, los totales al pie y el saldo resaltado
-// (ámbar si falta, verde si está pagado).
+// (ámbar si se puede cobrar, verde y "Pagado por completo" si está pagado).
 
 const bs = (monto: string) => `${mostrarMonto(monto)} Bs`;
 
@@ -34,6 +34,7 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar, cobrar
   const conAdicionales = montos.lineas.some((l) => l.esAdicional);
   const precios = precioCotizadoYFinal(montos.lineas, montos.descuento);
   const porCobrar = !cerrado && !estaPagada(montos.saldo.saldo);
+  const pagada = !cerrado && estaPagada(montos.saldo.saldo);
   const registrar = (variante: "ghost" | "outline") => (
     <RegistrarPago trabajoId={trabajoId} saldo={montos.saldo.saldo} hoy={hoy} conPagos={montos.pagos.some((p) => !p.anulado)} variante={variante} />
   );
@@ -83,15 +84,16 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar, cobrar
               <dt className="text-tinta-suave">Pagado</dt>
               <dd className="text-right tabular-nums">{bs(montos.saldo.pagado)}</dd>
             </div>
-            {/* El saldo: ámbar mientras falta, verde cuando está pagado */}
+            {/* El saldo: ámbar mientras se puede cobrar, verde cuando está pagado; una cancelada, sin color (no se cobra) */}
             <div
               className={cn(
                 "grid grid-cols-[1fr_auto] items-baseline gap-x-6 border-t border-border px-4 py-3",
-                estaPagada(montos.saldo.saldo) ? "bg-exito-fondo text-exito" : "bg-aviso-fondo text-aviso",
+                pagada ? "bg-exito-fondo text-exito" : porCobrar && "bg-aviso-fondo text-aviso",
               )}
             >
               <dt className="font-semibold">Saldo</dt>
               <dd className="text-right text-lg font-bold tabular-nums">{bs(montos.saldo.saldo)}</dd>
+              {pagada && <dd className="col-span-2 text-sm font-semibold">Pagado por completo.</dd>}
             </div>
           </dl>
         </section>
@@ -132,15 +134,12 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar, cobrar
               })}
             </ul>
           )}
-          {/* Al entregar, cobrar es lo primero: al pie, en ámbar */}
+          {/* Al entregar, cobrar es lo primero: al pie de los pagos, con su botón (el saldo ya va resaltado arriba) */}
           {porCobrar && cobrar && (
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-aviso-fondo px-4 py-3">
-              <span className="font-semibold text-aviso tabular-nums">Falta cobrar {bs(montos.saldo.saldo)}</span>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3">
+              <span className="font-semibold tabular-nums">Falta cobrar {bs(montos.saldo.saldo)}</span>
               {registrar("outline")}
             </div>
-          )}
-          {!cerrado && estaPagada(montos.saldo.saldo) && (
-            <p className="border-t border-border bg-exito-fondo px-4 py-3 font-semibold text-exito">Pagado por completo.</p>
           )}
         </section>
       </>

@@ -4,7 +4,6 @@ import { cn } from "cn";
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
 import type { ReservaTablero, SemanaDeAgenda } from "../consultas";
 import { rutaTrabajo } from "@/modulos/ordenes/reglas";
-import type { TonoEstado } from "@/lib/tonos";
 import { bloquesDeLaSemana, DIA_CORTO, diaDeLaSemana, NOMBRE_ESTADO_TRABAJO, numeroDia, seCruzan, textoDia, TONO_ESTADO_TRABAJO } from "../reglas";
 
 // HU-29: el tablero de la agenda (RF-38). Una fila por espacio y una columna por día (S-3: por día, sin horas). Cada
@@ -29,23 +28,20 @@ function textoFechas(r: ReservaTablero) {
   return r.inicio === r.fin ? textoDia(r.inicio) : `${textoDia(r.inicio)} al ${textoDia(r.fin)}`;
 }
 
-/** El fondo y la barra de un bloque, según el tono de su estado (agendada, sin tono: gris). */
-const COLOR_BLOQUE: Record<TonoEstado | "neutro", string> = {
-  neutro: "bg-neutro-fondo border-l-tinta-suave",
-  info: "bg-info-fondo border-l-info",
-  exito: "bg-exito-fondo border-l-exito",
-  violeta: "bg-violeta-fondo border-l-violeta",
-  aviso: "bg-aviso-fondo border-l-aviso",
-  peligro: "bg-peligro-fondo border-l-peligro",
-};
-const COLOR_ESTADO: Record<TonoEstado | "neutro", string> = {
-  neutro: "text-tinta-suave",
-  info: "text-info",
-  exito: "text-exito",
-  violeta: "text-violeta",
-  aviso: "text-aviso",
-  peligro: "text-peligro",
-};
+/**
+ * El color de un bloque: el de su estado (las clases tt-tono-* de globals.css, las mismas de las insignias), de fondo y
+ * en la barra. La agendada, blanca con borde: se ve igual sobre la tarjeta y sobre el gris del celular. La entregada,
+ * sólida en verde: así se distingue de la lista y se ve de lejos (pedido 28).
+ */
+function colorBloque(estado: ReservaTablero["estado"]) {
+  const tono = TONO_ESTADO_TRABAJO[estado] ?? "neutro";
+  if (estado === "entregado") return { tono, clase: "tt-tono-exito border-l-exito bg-exito text-sobre-rojo", estado: "text-sobre-rojo" };
+  if (tono === "neutro") return { tono, clase: "tt-tono-neutro border border-l-4 border-border border-l-tinta-suave bg-fondo", estado: "text-tinta-suave" };
+  return { tono, clase: `tt-tono-${tono} border-l-[var(--tono)] bg-[var(--tono-fondo)]`, estado: "text-[var(--tono)]" };
+}
+
+/** Un día que el taller no atiende: igual en la semana y en el día. */
+const CERRADO = "flex min-h-14 items-center justify-center rounded-lg bg-neutro-fondo text-tinta-suave";
 
 /** Placa, servicio y técnico: lo que dice el bloque de una reserva. */
 function Cinta({
@@ -63,16 +59,16 @@ function Cinta({
   className?: string;
   style?: React.CSSProperties;
 }) {
-  const tono = TONO_ESTADO_TRABAJO[r.estado] ?? "neutro";
+  const color = colorBloque(r.estado);
   return (
     <Link
       href={rutaTrabajo(r.id, r.estado, conOrdenes)}
       style={style}
       // El tono, también como dato: la entregada va en verde (pedido 28)
-      data-tono={tono}
+      data-tono={color.tono}
       className={cn(
         "relative flex min-h-14 min-w-0 flex-col justify-center gap-0.5 rounded-lg border-l-4 py-1.5 pr-2.5 pl-2.5 text-tinta transition-[filter] hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]",
-        COLOR_BLOQUE[tono],
+        color.clase,
         className,
       )}
     >
@@ -87,9 +83,9 @@ function Cinta({
           {r.masServicios > 0 && ` y ${r.masServicios} más`}
         </span>
       )}
-      <span className="truncate text-xs text-tinta-suave">{r.tecnico ?? "Sin técnico"}</span>
+      <span className={cn("truncate text-xs", r.estado === "entregado" ? "text-sobre-rojo/80" : "text-tinta-suave")}>{r.tecnico ?? "Sin técnico"}</span>
       {/* Desde que se recibe (recibida, en proceso, lista, entregada), el estado se ve también escrito, en su color */}
-      {r.estado !== "agendado" && <span className={cn("truncate text-xs font-semibold", COLOR_ESTADO[tono])}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</span>}
+      {r.estado !== "agendado" && <span className={cn("truncate text-xs font-semibold", color.estado)}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</span>}
       <span className="sr-only">
         , {NOMBRE_ESTADO_TRABAJO[r.estado].toLowerCase()}, {textoFechas(r)}
         {empiezaAntes && ", sigue desde la semana anterior"}
@@ -103,7 +99,7 @@ function Cinta({
 function DiaSinReserva({ fecha, espacio, cerrado, pasado, style }: { fecha: string; espacio: { id: number; nombre: string }; cerrado: boolean; pasado: boolean; style?: React.CSSProperties }) {
   if (cerrado) {
     return (
-      <div style={style} className="flex min-h-14 items-center justify-center rounded-lg bg-superficie text-xs text-tinta-suave">
+      <div style={style} className={cn(CERRADO, "text-xs")}>
         Cerrado
       </div>
     );
@@ -199,7 +195,7 @@ export function AgendaDelDia({ semana, dia, hoy, conOrdenes }: { semana: SemanaD
             {r ? (
               <Cinta r={r} empiezaAntes={r.inicio < dia} terminaDespues={r.fin > dia} conOrdenes={conOrdenes} />
             ) : cerrado ? (
-              <p className="flex min-h-14 items-center justify-center rounded-lg bg-neutro-fondo text-sm text-tinta-suave">Cerrado</p>
+              <p className={cn(CERRADO, "text-sm")}>Cerrado</p>
             ) : dia < hoy || !espacio.activo ? (
               <p className="flex min-h-14 items-center px-3 text-sm text-tinta-suave">Sin reserva</p>
             ) : (

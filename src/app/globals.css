@@ -299,14 +299,46 @@
 
   /* Insignia de estado del panel (pedido 26): una píldora con punto, con el fondo del tono. La palabra lleva el
      significado; el color lo refuerza. Sin tono, gris. La usa el componente Insignia. */
+  /* Los tonos de estado, en un solo lugar: cada clase da su color (--tono) y su fondo (--tono-fondo). Los usan la
+     insignia y los bloques de la agenda (tablero.tsx). Sin tono, gris. */
+  .tt-estado,
+  .tt-tono-neutro {
+    --tono: var(--tinta-suave);
+    --tono-fondo: var(--neutro-fondo);
+  }
+  .tt-estado--exito,
+  .tt-tono-exito {
+    --tono: var(--exito);
+    --tono-fondo: var(--exito-fondo);
+  }
+  .tt-estado--aviso,
+  .tt-tono-aviso {
+    --tono: var(--aviso);
+    --tono-fondo: var(--aviso-fondo);
+  }
+  .tt-estado--peligro,
+  .tt-tono-peligro {
+    --tono: var(--peligro);
+    --tono-fondo: var(--peligro-fondo);
+  }
+  .tt-estado--info,
+  .tt-tono-info {
+    --tono: var(--info);
+    --tono-fondo: var(--info-fondo);
+  }
+  .tt-estado--violeta,
+  .tt-tono-violeta {
+    --tono: var(--violeta);
+    --tono-fondo: var(--violeta-fondo);
+  }
   .tt-estado {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     padding: 2px 9px;
     border-radius: 9999px;
-    background: var(--neutro-fondo);
-    color: var(--tinta-suave);
+    background: var(--tono-fondo);
+    color: var(--tono);
     font-size: 12.5px;
     line-height: 18px;
     font-weight: 600;
@@ -318,26 +350,6 @@
     height: 6px;
     border-radius: 9999px;
     background: currentColor;
-  }
-  .tt-estado--exito {
-    background: var(--exito-fondo);
-    color: var(--exito);
-  }
-  .tt-estado--aviso {
-    background: var(--aviso-fondo);
-    color: var(--aviso);
-  }
-  .tt-estado--peligro {
-    background: var(--peligro-fondo);
-    color: var(--peligro);
-  }
-  .tt-estado--info {
-    background: var(--info-fondo);
-    color: var(--info);
-  }
-  .tt-estado--violeta {
-    background: var(--violeta-fondo);
-    color: var(--violeta);
   }
 
   /* Una parte de un formulario largo, como tarjeta (SeccionFormulario, pedido 26). La leyenda de un fieldset se dibuja

@@ -127,7 +127,7 @@ export function EditorPlantilla({ clave, guardado: inicial, negocio }: Props) {
         </figure>
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <Button type="submit" variant={sinGuardar ? "default" : "outline"} disabled={enviando}>
+          <Button type="submit" variant={sinGuardar ? "default" : "outline"} disabled={enviando || !sinGuardar}>
             {guardando ? "Guardando…" : "Guardar mensaje"}
           </Button>
           <Button type="submit" variant="outline" formAction={restaurar} disabled={enviando || (texto === original && guardado === original)}>
