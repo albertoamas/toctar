@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { abrirWhatsApp, consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
+import { abrirWhatsApp, consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, entregarSinFirma, ingresar, ingresarComoDueno } from "./apoyo";
 
 // HU-38 Recordatorios de mantenimiento (flujo crítico 5). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §9.
 // Los recordatorios van directo a la base, colgados de una orden entregada en el pasado (no ocupa espacio). Las reservas
@@ -220,6 +220,7 @@ test("entregar el mantenimiento lo deja hecho y programa el siguiente con la fre
   // Lo anticipa con la misma regla que la entrega
   await expect(page.getByText("Queda hecho el mantenimiento de Pulido y nano cerámico.")).toBeVisible();
   await expect(page.getByText(`Se programará: Mantenimiento del nano cerámico, el ${proximo}.`)).toBeVisible();
+  await entregarSinFirma(page);
   await page.getByRole("form", { name: "Entregar vehículo" }).getByRole("button", { name: "Entregar vehículo" }).click();
   await expect(page.getByText(/^Entregado el /)).toBeVisible();
 

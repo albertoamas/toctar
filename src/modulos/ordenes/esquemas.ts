@@ -62,8 +62,35 @@ export const esquemaAdicional = z.object({
     error: (iss) => ((iss.input as { servicioId?: number } | undefined)?.servicioId ? "Elige la opción." : "Elige el servicio."),
   });
 
-/** Entregar el vehículo (HU-36): con saldo pendiente, la casilla que lo confirma (RN-13). */
-export const esquemaEntregar = z.object({ id, conSaldo: z.literal("on").optional() });
+/**
+ * Entregar el vehículo (HU-36): con saldo pendiente, la casilla que lo confirma (RN-13). Pedido 13: la firma del cliente
+ * (`conFirma`: llegó la imagen) con el nombre de quien recibe, o "Entregar sin firma" con el motivo.
+ */
+export const esquemaEntregar = z
+  .object({
+    id,
+    conSaldo: z.literal("on").optional(),
+    conFirma: z.boolean(),
+    firmaNombre: z
+      .string()
+      .trim()
+      .max(100, "Hasta 100 caracteres.")
+      .transform((v) => v || null),
+    sinFirma: z.literal("on").optional(),
+    sinFirmaMotivo: z
+      .string()
+      .trim()
+      .max(300, "Hasta 300 caracteres.")
+      .transform((v) => v || null),
+  })
+  .superRefine((d, ctx) => {
+    if (d.sinFirma) {
+      if (!d.sinFirmaMotivo || d.sinFirmaMotivo.length < 3) ctx.addIssue({ code: "custom", path: ["sinFirmaMotivo"], message: "Cuenta por qué no firma." });
+      return;
+    }
+    if (!d.conFirma) ctx.addIssue({ code: "custom", path: ["firma"], message: "Falta la firma del cliente, o marca «Entregar sin firma»." });
+    if (!d.firmaNombre) ctx.addIssue({ code: "custom", path: ["firmaNombre"], message: "Escribe el nombre de quien recibe." });
+  });
 
 /** Registrar el aviso de "listo" (datos sueltos: se validan). */
 export const esquemaAvisoListo = z.object({ id });

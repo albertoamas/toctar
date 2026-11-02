@@ -21,7 +21,7 @@ Igual que una historia (`plan-de-desarrollo.md`, "Cómo se trabaja cada historia
 |---|---|---|---|---|---|
 | 1 | Cotización directa, sin consulta | 23 y 24 (el 25, descartado) | 18 a 24 | Por definir (cambia lo contratado: HU-24 y HU-25) | ✅ Programado (PR #113, 01/11) |
 | 2 | Checklist al recibir el vehículo | 12 | 8 a 10 | Incluido en el plan (decisión del 01/11) | ✅ Programado (01/11) |
-| 3 | Firma digital del cliente | 13 | 6 a 8 (más 2 a 3 si también al recibir) | Cotizado (Bs 240, Bs 320 con PDF): por confirmar | ⏳ |
+| 3 | Firma digital del cliente | 13 | 6 | Incluido en el plan (decisión del 01/11); el PDF, aparte | ✅ Programado (01/11) |
 | 4 | Fotos: solo las que sirven, sin videos | 27 | 4 a 6 | Incluido | ⏳ |
 | 5 | Rediseño del panel: administrativo estándar | 26 | 25 a 35 | Incluido (sin él no hay aceptación) | ⏳ |
 | 6 | Órdenes con historial y agenda con las completadas | 28 | 6 a 8 | Incluido | ⏳ |
@@ -142,6 +142,8 @@ Al recibir, el dueño marca en el celular los detalles con su foto en menos de u
 ---
 
 ## 3. Firma digital del cliente (pedido 13)
+
+> **Estado (01/11/2026):** programado con la especificación `etapas/P13-firma-entrega.md`. Respuestas: la firma es **al entregar**; se puede entregar **sin firma, con el motivo**; la **constancia en PDF queda aparte** (por explicar al dueño).
 
 ### Lo que dijo el dueño (01/11)
 > Quiere que **los clientes firmen al recibir su vehículo**, para verificar que todo esté bien, de forma digital.

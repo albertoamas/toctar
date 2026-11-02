@@ -77,6 +77,15 @@ export const trabajo = pgTable(
     entregaConSaldoAutorizadaPor: integer("entrega_con_saldo_autorizada_por").references(() => usuario.id),
     /** El saldo al momento de la entrega (lista de saldos y auditoría). */
     saldoAlEntregar: monto("saldo_al_entregar"),
+    /**
+     * Pedido 13: la firma del cliente al llevarse el vehículo (una constancia de conformidad, no una firma certificada):
+     * la imagen (bucket privado) y el nombre de quien firmó. Sin firma, el motivo.
+     */
+    firmaArchivoId: integer("firma_archivo_id")
+      .unique()
+      .references(() => archivo.id),
+    firmaNombre: text("firma_nombre"),
+    sinFirmaMotivo: text("sin_firma_motivo"),
     createdAt: momento("created_at").defaultNow().notNull(),
     createdBy: integer("created_by")
       .notNull()
@@ -91,6 +100,9 @@ export const trabajo = pgTable(
     // Una orden siempre se recibió y una entregada siempre tiene su entrega (C4)
     check("trabajo_recibido_si_orden", sql`(${t.estado} in (${lista(ESTADOS_ORDEN)})) = (${t.recibidoAt} is not null)`),
     check("trabajo_entregado_con_fecha", sql`(${t.estado} = 'entregado') = (${t.entregadoAt} is not null)`),
+    // Con firma, el nombre de quien firmó; nunca firma y motivo de no firmar a la vez
+    check("trabajo_firma_con_nombre", sql`${t.firmaArchivoId} is null or ${t.firmaNombre} is not null`),
+    check("trabajo_firma_o_motivo", sql`${t.firmaArchivoId} is null or ${t.sinFirmaMotivo} is null`),
     // Una cotización tiene a lo sumo una reserva activa: una cancelada no cuenta, así se agenda de nuevo (HU-31)
     uniqueIndex("trabajo_cotizacion_unica").on(t.cotizacionId).where(sql`${t.estado} <> 'cancelado'`),
     index("trabajo_por_fechas").on(t.fechaInicio, t.fechaFin),

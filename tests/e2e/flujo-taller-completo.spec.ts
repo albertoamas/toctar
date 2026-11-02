@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { abrirWhatsApp, consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PNG, revisarChecklistEnBase } from "./apoyo";
+import { abrirWhatsApp, consultar, crearClienteEnBase, crearUsuario, firmarEnRecuadro, ingresar, ingresarComoDueno, PNG, revisarChecklistEnBase } from "./apoyo";
 
 // Flujos críticos 3, 4 y 5 de punta a punta (C4): reserva → recibir → el técnico la trabaja → lista → aviso por
 // WhatsApp → cobro del saldo → entrega → recordatorio de mantenimiento → agendarlo. Especificación:
@@ -79,6 +79,8 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
   await pago.getByText("Efectivo", { exact: true }).click();
   await pago.getByRole("button", { name: "Registrar pago" }).click();
   await expect(page.getByText("Pago de 500 Bs registrado. Saldo: 0 Bs.")).toBeVisible();
+  // El cliente firma que lo recibe conforme (pedido 13)
+  await firmarEnRecuadro(page);
   await page.getByRole("form", { name: "Entregar vehículo" }).getByRole("button", { name: "Entregar vehículo" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?entregado=1$`));
   const [{ recordatorioId }] = await consultar<{ recordatorioId: number }>('select id as "recordatorioId" from recordatorio_mantenimiento where trabajo_origen_id = $1', [id]);

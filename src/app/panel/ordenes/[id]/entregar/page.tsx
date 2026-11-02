@@ -73,7 +73,7 @@ async function Entrega({ params }: Pick<PageProps<"/panel/ordenes/[id]/entregar"
         </div>
       )}
 
-      <FormularioEntrega id={o.id} conDeuda={conDeuda} saldo={conPagos ? `${mostrarMonto(saldo)} Bs` : null} puedeAutorizar={puede(usuario, "entrega_con_saldo")} />
+      <FormularioEntrega id={o.id} conDeuda={conDeuda} saldo={conPagos ? `${mostrarMonto(saldo)} Bs` : null} puedeAutorizar={puede(usuario, "entrega_con_saldo")} cliente={o.cliente} />
     </>
   );
 }

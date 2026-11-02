@@ -26,9 +26,10 @@ import { AgregarAdicional } from "@/modulos/ordenes/componentes/agregar-adiciona
 import { AvancesOrden } from "@/modulos/ordenes/componentes/avances-orden";
 import { EstadoOrden } from "@/modulos/ordenes/componentes/estado-orden";
 import { ComoLlego } from "@/modulos/ordenes/componentes/como-llego";
+import { FirmaDeEntrega } from "@/modulos/ordenes/componentes/firma-entrega";
 import { FotosOrden } from "@/modulos/ordenes/componentes/fotos-orden";
 import { registrarAvisoListo } from "@/modulos/ordenes/acciones";
-import { avancesDeTrabajo, revisionDeTrabajo, fotosDeTrabajo, obtenerOrden, publicadaDeOrden } from "@/modulos/ordenes/consultas";
+import { avancesDeTrabajo, firmaDeTrabajo, revisionDeTrabajo, fotosDeTrabajo, obtenerOrden, publicadaDeOrden } from "@/modulos/ordenes/consultas";
 import { mensajeListo } from "@/modulos/ordenes/mensajes";
 import { esOrden, estaAbierta, estaAtrasada, pasosDeOrden, puedeExtenderse, puedePublicarse } from "@/modulos/ordenes/reglas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
@@ -73,7 +74,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   const conAdicional = abierta && puede(usuario, "agregar_adicional");
   // Publicar sus fotos en la galería del sitio: solo el dueño, ya entregada (HU-41)
   const conGaleria = o.estado === "entregado" && puede(usuario, "publicar_en_galeria");
-  const [fotos, avances, negocio, plantillas, opciones, publicada, revision] = await Promise.all([
+  const [fotos, avances, negocio, plantillas, opciones, publicada, revision, firma] = await Promise.all([
     fotosDeTrabajo(o.id),
     avancesDeTrabajo(o.id),
     conAviso ? obtenerDatosPublicos() : null,
@@ -81,6 +82,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
     conAdicional ? opcionesDeServicio(o.tamanoId) : [],
     conGaleria ? publicadaDeOrden(o.id) : null,
     revisionDeTrabajo(o.id),
+    o.estado === "entregado" ? firmaDeTrabajo(o.id) : null,
   ]);
   // Lista: el aviso al cliente por WhatsApp (HU-35) con el mensaje de Configuración (HU-40), con el saldo solo si
   // quien avisa lo ve
@@ -218,6 +220,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
 
         <div className="flex flex-col gap-10 lg:col-start-1 lg:row-span-2 lg:row-start-1">
           <ComoLlego revision={revision} observaciones={o.observacionesIngreso} />
+          {firma && <FirmaDeEntrega firma={firma} />}
           {/* Con "Pagos", los servicios van con sus precios en el bloque de montos; si no, solo los nombres */}
           {!o.montos && (
             <section aria-labelledby="servicios-titulo" className="flex flex-col gap-2">

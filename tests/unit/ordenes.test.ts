@@ -3,7 +3,7 @@ import { sumarMeses } from "@/lib/fechas";
 import { precioCotizadoYFinal } from "@/modulos/pagos/reglas";
 import { erroresDe } from "@/lib/formularios";
 import { TIPOS_DETALLE } from "@/db/esquema/trabajos";
-import { esquemaAvance, esquemaDetalle, esquemaFotoOrden, esquemaPublicar, esquemaMarcarBien, esquemaRecibir } from "@/modulos/ordenes/esquemas";
+import { esquemaAvance, esquemaDetalle, esquemaEntregar, esquemaFotoOrden, esquemaPublicar, esquemaMarcarBien, esquemaRecibir } from "@/modulos/ordenes/esquemas";
 import { puede, puedeVerOrden } from "@/lib/permisos";
 import {
   enlaceTrabajo,
@@ -205,4 +205,22 @@ test("antes de recibir se dice qué partes faltan revisar", () => {
   expect(textoSinRevisar(["Capó"])).toBe("Falta revisar Capó en el checklist.");
   expect(textoSinRevisar(["Capó", "Techo"])).toBe("Faltan revisar 2 partes del checklist: Capó y Techo.");
   expect(textoSinRevisar(["A", "B", "C", "D", "E", "F"])).toBe("Faltan revisar 6 partes del checklist: A, B, C, D y 2 más.");
+});
+
+// Pedido 13: la firma del cliente al entregar.
+
+test("se entrega con la firma y el nombre de quien recibe, o sin firma con el motivo", () => {
+  const base = { id: "9", conFirma: true, firmaNombre: " Ana Pérez ", sinFirmaMotivo: "" };
+  expect(esquemaEntregar.parse(base)).toMatchObject({ id: 9, conFirma: true, firmaNombre: "Ana Pérez", sinFirmaMotivo: null });
+  const errores = (d: object) => {
+    const r = esquemaEntregar.safeParse({ ...base, ...d });
+    return r.success ? {} : erroresDe(r.error);
+  };
+  expect(errores({ conFirma: false })).toEqual({ firma: "Falta la firma del cliente, o marca «Entregar sin firma»." });
+  expect(errores({ firmaNombre: "  " })).toEqual({ firmaNombre: "Escribe el nombre de quien recibe." });
+  // Sin firma, ni la imagen ni el nombre: el motivo, de al menos 3 letras
+  expect(errores({ conFirma: false, firmaNombre: "", sinFirma: "on" })).toEqual({ sinFirmaMotivo: "Cuenta por qué no firma." });
+  expect(errores({ conFirma: false, firmaNombre: "", sinFirma: "on", sinFirmaMotivo: "ok" })).toEqual({ sinFirmaMotivo: "Cuenta por qué no firma." });
+  expect(errores({ conFirma: false, sinFirma: "on", sinFirmaMotivo: "Retiró su hijo" })).toEqual({});
+  expect(errores({ sinFirma: "on", sinFirmaMotivo: "x".repeat(301) }).sinFirmaMotivo).toBe("Hasta 300 caracteres.");
 });

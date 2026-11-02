@@ -271,6 +271,7 @@ Como personal, quiero cerrar la orden al entregar, para que todo quede registrad
 - Veo precio final, pagos y saldo; el dueño puede sumar servicios adicionales.
 - Con saldo pendiente, solo el dueño o un encargado con el permiso "autorizar entrega con saldo" puede confirmar la entrega (RN-13).
 - Si el servicio genera mantenimiento, se calcula la fecha del próximo (RN-08).
+- El cliente firma con el dedo que recibe su vehículo conforme, con su nombre; si no puede firmar, se entrega sin firma con el motivo (pedido 13).
 
 ### HU-37 Saldos pendientes
 Como dueño, quiero ver quién me debe, para cobrarlo.

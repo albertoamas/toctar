@@ -120,7 +120,7 @@ Convenciones: `id` es `bigint` autoincremental; todas las tablas tienen `created
 
 | Tabla | Campos | Notas |
 |---|---|---|
-| `trabajo` | sucursal_id, cliente_id, vehiculo_id, cotizacion_id (opcional), espacio_id, fecha_inicio, fecha_fin, tecnico_id, estado (`agendado`, `recibido`, `en_proceso`, `listo`, `entregado`, `cancelado`), observaciones_ingreso, recibido_at, listo_at, avisado_listo_at, entregado_at, entrega_con_saldo_autorizada_por, motivo_cancelacion | D-1 y D-5. Al entregar antes de tiempo, `fecha_fin` se ajusta y libera el espacio |
+| `trabajo` | sucursal_id, cliente_id, vehiculo_id, cotizacion_id (opcional), espacio_id, fecha_inicio, fecha_fin, tecnico_id, estado (`agendado`, `recibido`, `en_proceso`, `listo`, `entregado`, `cancelado`), observaciones_ingreso, recibido_at, listo_at, avisado_listo_at, entregado_at, entrega_con_saldo_autorizada_por, motivo_cancelacion, firma_archivo_id (privado), firma_nombre, sin_firma_motivo (pedido 13: la firma del cliente al entregar, o el motivo) | D-1 y D-5. Al entregar antes de tiempo, `fecha_fin` se ajusta y libera el espacio |
 | `trabajo_linea` | trabajo_id, variante_id, descripcion, precio, es_adicional | Total = suma de líneas |
 | `trabajo_foto` | trabajo_id, archivo_id, etapa (`ingreso`, `antes`, `durante`, `despues`), subido_por | |
 | `parte_revision` | nombre (único), orden, activo | Las partes del checklist de recepción, en Configuración → Taller (pedido 12) |
