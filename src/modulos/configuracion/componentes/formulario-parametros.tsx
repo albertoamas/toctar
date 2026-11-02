@@ -36,7 +36,7 @@ export function FormularioParametros({ valores: iniciales }: { valores: Record<C
         return (
           <fieldset key={s} className="flex flex-col gap-5">
             <legend className="mb-5 flex flex-col gap-1">
-              <span className="font-heading text-2xl font-bold italic">{titulo}</span>
+              <span className="tt-titulo-seccion">{titulo}</span>
               {descripcion && <span className="text-sm text-tinta-suave">{descripcion}</span>}
             </legend>
             {CLAVES_PARAMETRO.filter((c) => PARAMETROS[c].seccion === s).map((c) => {

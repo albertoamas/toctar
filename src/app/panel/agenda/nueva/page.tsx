@@ -61,7 +61,7 @@ function ClienteYVehiculo({ nombre, vehiculo, cambiar }: { nombre: string; vehic
           </Link>
         )}
       </CabeceraSeccion>
-      <div className="flex flex-col gap-0.5 rounded-sm border border-border p-4">
+      <div className="flex flex-col gap-0.5 tt-tarjeta-panel p-4">
         <span className="font-semibold">{nombre}</span>
         {vehiculo && <DatosVehiculo placa={vehiculo.placa} detalle={vehiculo.detalle} tamano={vehiculo.tamano} />}
       </div>
@@ -98,7 +98,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
         {/* Los servicios de la cotización, en lectura: para cambiar precios se hace una versión nueva */}
         <section aria-labelledby="cotizacion-titulo" className="flex flex-col gap-3">
           <CabeceraSeccion id="cotizacion" titulo={`Cotización ${c.numero}${c.version > 1 ? `, versión ${c.version}` : ""}`} />
-          <div className="flex flex-col gap-2 rounded-sm border border-border p-4">
+          <div className="flex flex-col gap-2 tt-tarjeta-panel p-4">
             <ul className="flex flex-col gap-1">
               {c.lineas.map((l, i) => (
                 <li key={i} className="flex justify-between gap-4">
@@ -177,7 +177,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
       {recordatorio && (
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <span>Mantenimiento de {recordatorio.servicio}</span>
-          <span className={cn("tt-insignia", recordatorio.fechaProgramada < hoy && "tt-insignia--aviso")}>
+          <span className={cn("tt-estado", recordatorio.fechaProgramada < hoy && "tt-estado--aviso")}>
             {recordatorio.fechaProgramada < hoy ? "Venció" : "Vence"} el {fechaCorta(recordatorio.fechaProgramada, hoy)}
           </span>
         </p>

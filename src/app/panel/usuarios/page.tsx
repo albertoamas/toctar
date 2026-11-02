@@ -19,7 +19,7 @@ export default function PaginaUsuarios({ searchParams }: PageProps<"/panel/usuar
   return (
     <section className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="font-heading text-4xl font-extrabold italic">Usuarios</h1>
+        <h1 className="tt-titulo-pagina">Usuarios</h1>
         {/* Enlace con forma de botón: lleva a otra pantalla, así que se anuncia como enlace (un Button con render de Link se anunciaba como botón) */}
         <Link href="/panel/usuarios/nuevo" className={cn(buttonVariants())}>
           <PlusIcon />
@@ -52,7 +52,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/usuarios">, "searc
       <ul className="flex flex-col gap-2 md:hidden">
         {usuarios.map((u) => (
           <li key={u.id}>
-            <Link href={`/panel/usuarios/${u.id}`} className="flex items-center justify-between gap-3 rounded-sm border border-border p-4 hover:bg-superficie">
+            <Link href={`/panel/usuarios/${u.id}`} className="flex items-center justify-between gap-3 tt-tarjeta-panel p-4 hover:bg-superficie">
               {/* "(tú)" como en la tabla, y el usuario y el rol sin partirse (pulido 5.3) */}
               <span className="flex min-w-0 flex-col">
                 <span className="truncate font-semibold">
@@ -107,8 +107,8 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/usuarios">, "searc
 
 function Estado({ desactivado }: { desactivado: boolean }) {
   return desactivado ? (
-    <span className="tt-insignia">Desactivado</span>
+    <span className="tt-estado">Desactivado</span>
   ) : (
-    <span className="tt-insignia tt-insignia--exito">Activo</span>
+    <span className="tt-estado tt-estado--exito">Activo</span>
   );
 }

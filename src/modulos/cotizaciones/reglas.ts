@@ -1,4 +1,5 @@
 import type { EstadoConsulta, MotivoPerdida } from "@/db/esquema/consultas";
+import type { TonoEstado } from "@/componentes/panel/fila-lista";
 import { diasEntre, fechaEnBolivia, sumarDias } from "@/lib/fechas";
 import { leerMonto, mostrarMonto, type Monto } from "@/modulos/catalogo/reglas";
 
@@ -23,8 +24,8 @@ export const NOMBRE_ESTADO: Record<EstadoConsulta, string> = {
   perdido: "Rechazada",
 };
 
-/** Tono de la insignia de cada estado (`ListaFilas`, `Insignia`): la pendiente, sin tono. */
-export const TONO_ESTADO: Partial<Record<EstadoConsulta, "exito" | "aviso">> = { confirmado: "exito", perdido: "aviso" };
+/** Tono de la insignia de cada estado (`ListaFilas` y la ficha): la pendiente, sin tono; la rechazada, en rojo. */
+export const TONO_ESTADO: Partial<Record<EstadoConsulta, TonoEstado>> = { confirmado: "exito", perdido: "peligro" };
 
 export const NOMBRE_MOTIVO: Record<MotivoPerdida, string> = { precio: "Precio", no_respondio: "No respondió", otro: "Otro" };
 /** Los motivos, del texto de cada uno y no del esquema de la base: así no se arrastra Drizzle al navegador. */

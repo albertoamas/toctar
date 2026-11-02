@@ -18,7 +18,7 @@ export function PreciosVariante({ variante: v, tamanos, duracionServicio }: { va
             <div key={t.id} className="flex min-w-0 items-baseline justify-between gap-4 py-2">
               <dt className="text-sm text-tinta-suave">{t.nombre}</dt>
               <dd className="shrink-0 font-semibold whitespace-nowrap tabular-nums">
-                {monto === undefined ? <span className="tt-insignia tt-insignia--aviso">Sin cargar</span> : monto === null ? "Según evaluación" : `${mostrarMonto(monto)} Bs`}
+                {monto === undefined ? <span className="tt-estado tt-estado--aviso">Sin cargar</span> : monto === null ? "Según evaluación" : `${mostrarMonto(monto)} Bs`}
               </dd>
             </div>
           );

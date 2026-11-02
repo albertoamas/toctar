@@ -14,16 +14,16 @@ import { GenerarPdf } from "./generar-pdf";
 
 const NOMBRE: Record<EstadoCotizacion, string> = { enviada: "Vigente", reemplazada: "Reemplazada", aceptada: "Aceptada" };
 const INSIGNIA: Record<EstadoCotizacion, string> = {
-  enviada: "tt-insignia tt-insignia--exito",
-  reemplazada: "tt-insignia",
-  aceptada: "tt-insignia tt-insignia--exito",
+  enviada: "tt-estado tt-estado--exito",
+  reemplazada: "tt-estado",
+  aceptada: "tt-estado tt-estado--exito",
 };
 
 export function VersionesCotizacion({ consultaId, versiones }: { consultaId: number; versiones: FilaVersion[] }) {
   // Con una sola versión, su nombre no aporta: es "la cotización"
   const varias = versiones.length > 1;
   return (
-    <ul aria-label="Versiones" className="flex flex-col divide-y divide-border rounded-sm border border-border">
+    <ul aria-label="Versiones" className="flex flex-col divide-y divide-border tt-tarjeta-panel">
       {versiones.map((c) => {
         const ruta = rutaPdf(consultaId, c.id);
         return (

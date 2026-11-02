@@ -41,7 +41,7 @@ async function Detalle({ params }: Pick<PageProps<"/panel/reclamos/[id]">, "para
   return (
     <>
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="font-heading text-4xl font-extrabold italic">{r.nombre}</h1>
+        <h1 className="tt-titulo-pagina">{r.nombre}</h1>
         <InsigniaEstado estado={r.estado} />
       </div>
 
@@ -56,18 +56,18 @@ async function Detalle({ params }: Pick<PageProps<"/panel/reclamos/[id]">, "para
             <Dato termino="Fecha aproximada del trabajo">{r.fechaAproximada ? formatearFecha(r.fechaAproximada) : "No indicó"}</Dato>
           </dl>
           <div className="flex flex-col gap-2">
-            <h2 className="font-heading text-xl font-bold italic">Qué pasó</h2>
+            <h2 className="tt-titulo-sub">Qué pasó</h2>
             <p className="whitespace-pre-line">{r.descripcion}</p>
           </div>
           <div className="flex flex-col gap-2">
-            <h2 className="font-heading text-xl font-bold italic">Fotos</h2>
+            <h2 className="tt-titulo-sub">Fotos</h2>
             {r.fotos.length > 0 ? <FotosReclamo fotos={r.fotos} /> : <p className="text-tinta-suave">No mandó fotos.</p>}
           </div>
         </div>
 
         <div className="flex flex-col gap-8">
           <section className="flex flex-col items-start gap-2">
-            <h2 className="font-heading text-xl font-bold italic">Responder</h2>
+            <h2 className="tt-titulo-sub">Responder</h2>
             <p className="text-sm text-tinta-suave">Abre el chat con {r.nombre} con un saludo ya escrito.</p>
             {/* Con cn: sin él, el borde transparente de la base le ganaba al del contorno y no se veía (revisión de botones) */}
             <a href={enlaceWhatsApp(r.telefono, mensajeAlCliente(r.nombre, recibido))} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
@@ -77,11 +77,11 @@ async function Detalle({ params }: Pick<PageProps<"/panel/reclamos/[id]">, "para
           </section>
 
           <section className="flex flex-col gap-2">
-            <h2 className="font-heading text-xl font-bold italic">Atención</h2>
+            <h2 className="tt-titulo-sub">Atención</h2>
             {r.estado === "pendiente" ? (
               <AtenderReclamo id={r.id} />
             ) : (
-              <div className="flex flex-col gap-1 rounded-sm border border-border bg-superficie p-4">
+              <div className="flex flex-col gap-1 tt-tarjeta-panel p-4">
                 <p className="whitespace-pre-line">{r.notaAtencion}</p>
                 <p className="text-sm text-tinta-suave">
                   {r.atendidoPor ?? "Usuario borrado"}

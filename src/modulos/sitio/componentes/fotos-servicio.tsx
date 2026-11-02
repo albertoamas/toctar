@@ -23,7 +23,7 @@ export function FotosServicio({ servicioId, fotos, sinContenido, ocultas = [] }:
   return (
     <section aria-labelledby="fotos-secciones-titulo" className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <h2 id="fotos-secciones-titulo" className="font-heading text-2xl font-bold italic">Fotos de la página</h2>
+        <h2 id="fotos-secciones-titulo" className="tt-titulo-seccion">Fotos de la página</h2>
         <p className="text-sm text-tinta-suave">Una foto al lado de cada parte de la página. Si es un afiche, lo que dice escríbelo también en la página: Google no lee la imagen.</p>
       </div>
       <ul className="flex flex-col gap-6">

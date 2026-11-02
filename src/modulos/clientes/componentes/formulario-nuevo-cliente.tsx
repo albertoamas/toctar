@@ -23,7 +23,7 @@ export function FormularioNuevoCliente({ tamanos }: { tamanos: Tamano[] }) {
       <div className="border-t border-border pt-8">
         <fieldset className="flex flex-col gap-6">
           <legend className="mb-5 flex flex-col gap-1">
-            <span className="font-heading text-2xl font-bold italic">Primer vehículo</span>
+            <span className="tt-titulo-seccion">Primer vehículo</span>
             <span className="text-sm text-tinta-suave">Opcional. Más vehículos, desde su ficha.</span>
           </legend>
           <CamposVehiculo estado={estado} prefijo="vehiculo-" tamanos={tamanos} plegar />

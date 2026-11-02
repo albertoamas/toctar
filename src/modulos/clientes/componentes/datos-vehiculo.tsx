@@ -8,7 +8,7 @@ type Props = { placa: string; detalle: (string | number)[]; tamano: string };
 export function DatosVehiculo({ placa, detalle, tamano }: Props) {
   return (
     <>
-      <span className="font-heading text-xl font-extrabold italic tabular-nums">{placa}</span>
+      <span className="tt-placa text-lg">{placa}</span>
       {detalle.length > 0 && (
         <span className="flex flex-wrap gap-x-3 text-sm">
           {/* Por posición: dos datos pueden ser iguales (un modelo y un color "Blanco") */}

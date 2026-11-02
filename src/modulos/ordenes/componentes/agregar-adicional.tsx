@@ -50,8 +50,8 @@ function Formulario({ id, opciones, cerrar }: { id: number; opciones: OpcionServ
   const sinMarca = { "aria-invalid": false };
 
   return (
-    <form ref={formulario} action={accion} className="flex flex-col gap-4 rounded-sm border border-border p-4" noValidate aria-labelledby="adicional-titulo">
-      <h3 id="adicional-titulo" className="font-heading text-xl font-bold italic">Agregar servicio</h3>
+    <form ref={formulario} action={accion} className="flex flex-col gap-4 tt-tarjeta-panel p-4" noValidate aria-labelledby="adicional-titulo">
+      <h3 id="adicional-titulo" className="tt-titulo-sub">Agregar servicio</h3>
       <input type="hidden" name="id" value={id} />
       {estado.mensaje && !estado.ok && <MensajeError id="adicional-error">{estado.mensaje}</MensajeError>}
       <input type="hidden" name="servicioId" value={servicioId || ""} />

@@ -11,10 +11,10 @@ export function ComoLlego({ revision, observaciones }: Props) {
   const detalles = revision.filter((d) => d.estado === "detalle");
   return (
     <section aria-labelledby="como-llego-titulo" className="flex flex-col gap-3">
-      <h2 id="como-llego-titulo" className="font-heading text-2xl font-bold italic">Cómo llegó</h2>
+      <h2 id="como-llego-titulo" className="tt-titulo-seccion">Cómo llegó</h2>
       {detalles.length > 0 ? (
         <>
-          <ul aria-label="Detalles de ingreso" className="flex flex-col divide-y divide-border rounded-sm border border-border">
+          <ul aria-label="Detalles de ingreso" className="flex flex-col divide-y divide-border tt-tarjeta-panel">
             {detalles.map((d) => (
               <li key={d.parteId} className="flex items-center gap-3 p-3">
                 {d.foto && (
@@ -25,7 +25,7 @@ export function ComoLlego({ revision, observaciones }: Props) {
                 <span className="flex min-w-0 flex-col">
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold">{d.parte}</span>
-                    <span className="tt-insignia tt-insignia--aviso">{d.tipo && NOMBRE_DETALLE[d.tipo]}</span>
+                    <span className="tt-estado tt-estado--aviso">{d.tipo && NOMBRE_DETALLE[d.tipo]}</span>
                   </span>
                   {d.nota && <span className="text-sm">{d.nota}</span>}
                 </span>

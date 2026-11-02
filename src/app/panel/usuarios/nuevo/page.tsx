@@ -13,7 +13,7 @@ export default function PaginaNuevoUsuario() {
   return (
     <section className="flex flex-col gap-6">
       <EnlaceVolver href="/panel/usuarios">Usuarios</EnlaceVolver>
-      <h1 className="font-heading text-4xl font-extrabold italic">Crear usuario</h1>
+      <h1 className="tt-titulo-pagina">Crear usuario</h1>
       <Suspense fallback={<Cargando />}>
         <Formulario />
       </Suspense>

@@ -78,7 +78,7 @@ function FormularioRechazar({ id }: { id: number }) {
           className="flex flex-wrap gap-2"
         >
           {MOTIVOS.map((m, i) => (
-            <label key={m} htmlFor={`motivo-${m}`} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-sm border border-border px-3 py-2 has-data-checked:border-tinta">
+            <label key={m} htmlFor={`motivo-${m}`} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-border bg-fondo px-3 py-2 has-data-checked:border-tinta">
               <RadioGroupItem id={`motivo-${m}`} value={m} data-invalido={(!!e.motivo && i === 0) || undefined} />
               <span className="font-semibold">{NOMBRE_MOTIVO[m]}</span>
             </label>

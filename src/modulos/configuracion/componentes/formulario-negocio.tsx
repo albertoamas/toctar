@@ -126,7 +126,7 @@ function Seccion(props: { titulo: string; descripcion?: string; children: React.
   return (
     <fieldset className="flex flex-col gap-5">
       <legend className="mb-5 flex flex-col gap-1">
-        <span className="font-heading text-2xl font-bold italic">{props.titulo}</span>
+        <span className="tt-titulo-seccion">{props.titulo}</span>
         {props.descripcion && <span className="text-sm text-tinta-suave">{props.descripcion}</span>}
       </legend>
       {props.children}

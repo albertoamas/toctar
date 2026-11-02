@@ -17,7 +17,7 @@ import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp, whatsAppLocal } from "@/lib/whatsapp";
 import { reservasDelCliente } from "@/modulos/agenda/consultas";
-import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
+import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { estaPagada, saldoPendiente } from "@/modulos/pagos/reglas";
 import { MasCliente, ReactivarCliente } from "@/modulos/clientes/componentes/acceso-cliente";
@@ -94,9 +94,9 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
         estado={
           (!c.activo || debe) && (
             <span className="flex flex-wrap gap-2">
-              {!c.activo && <span className="tt-insignia">Desactivado</span>}
+              {!c.activo && <span className="tt-estado">Desactivado</span>}
               {/* Solo para quien ve pagos: sin el permiso, reservas no trae saldos */}
-              {debe && <span className="tt-insignia tt-insignia--aviso">Debe {mostrarMonto(debe)} Bs</span>}
+              {debe && <span className="tt-estado tt-estado--aviso">Debe {mostrarMonto(debe)} Bs</span>}
             </span>
           )
         }
@@ -155,7 +155,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
       {verAgenda && (
         <section aria-labelledby="reservas-titulo" className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <h2 id="reservas-titulo" className="font-heading text-2xl font-bold italic">Reservas</h2>
+            <h2 id="reservas-titulo" className="tt-titulo-seccion">Reservas</h2>
             {/* La reserva directa lleva precios: la arma quien ve pagos (las demás salen de una cotización) */}
             {c.activo && verPagos && (
               <Link href={`/panel/agenda/nueva?cliente=${c.id}`} className={cn(buttonVariants({ variant: "outline" }))}>
@@ -176,7 +176,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
                 dato: r.saldo && r.estado !== "cancelado" ? (estaPagada(r.saldo.saldo) ? "Pagado" : `Saldo: ${mostrarMonto(r.saldo.saldo)} Bs`) : null,
                 detalles: [r.placa],
                 estado: NOMBRE_ESTADO_TRABAJO[r.estado],
-                tonoEstado: r.estado === "cancelado" ? "aviso" : undefined,
+                tonoEstado: TONO_ESTADO_TRABAJO[r.estado],
               }))}
             />
           )}
@@ -186,7 +186,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
       {verCotizaciones && (
         <section aria-labelledby="cotizaciones-titulo" className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <h2 id="cotizaciones-titulo" className="font-heading text-2xl font-bold italic">Cotizaciones</h2>
+            <h2 id="cotizaciones-titulo" className="tt-titulo-seccion">Cotizaciones</h2>
             {/* A un cliente desactivado no se le cotiza: se reactiva primero */}
             {c.activo && cotiza && (
               <Link href={`/panel/cotizaciones/nueva?cliente=${c.id}`} className={cn(buttonVariants({ variant: "outline" }))}>
@@ -214,7 +214,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
           {mantenimientos.length === 0 ? (
             <p className="text-tinta-suave">No tiene mantenimientos programados.</p>
           ) : (
-            <ul aria-label="Mantenimientos" className="flex flex-col divide-y divide-border rounded-sm border border-border">
+            <ul aria-label="Mantenimientos" className="flex flex-col divide-y divide-border tt-tarjeta-panel">
               {mantenimientos.map((m) => {
                 const ve = { ordenes: verOrdenes, agenda: verAgenda };
                 // Agendado: a su reserva, o a su orden si ya se recibió; hecho: a la orden que lo hizo
@@ -239,7 +239,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
                           {trabajo.texto}
                         </Link>
                       )}
-                      <span className="tt-insignia">{NOMBRE_ESTADO_RECORDATORIO[m.estado]}</span>
+                      <span className="tt-estado">{NOMBRE_ESTADO_RECORDATORIO[m.estado]}</span>
                       {editable && <MasPlan plan={{ id: m.id, intervaloMeses: m.intervaloMeses, fechaProgramada: m.fechaProgramada, servicio: m.servicio }} hoy={hoy} />}
                     </span>
                   </li>

@@ -16,7 +16,7 @@ import { diaYHora, fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/
 import { puede, puedeVerModulo, puedeVerOrden } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
-import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
+import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { obtenerDatosPublicos, obtenerPlantillas } from "@/modulos/configuracion/consultas";
@@ -117,8 +117,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
         titulo={o.placa}
         estado={
           <>
-            <span className="tt-insignia">{NOMBRE_ESTADO_TRABAJO[o.estado]}</span>
-            {estaAtrasada(o, hoy) && <span className="tt-insignia tt-insignia--aviso">Atrasada</span>}
+            <span className={cn("tt-estado", TONO_ESTADO_TRABAJO[o.estado] && `tt-estado--${TONO_ESTADO_TRABAJO[o.estado]}`)}>{NOMBRE_ESTADO_TRABAJO[o.estado]}</span>
+            {estaAtrasada(o, hoy) && <span className="tt-estado tt-estado--aviso">Atrasada</span>}
           </>
         }
         accion={
@@ -178,7 +178,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
           montos. En el celular, en ese orden: datos, trabajo y montos */}
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:grid-rows-[auto_1fr] lg:items-start">
         {/* La placa ya está en el título: el vehículo dice su modelo y su tamaño, con la etiqueta (como la reserva) */}
-        <div className="flex flex-col gap-2 rounded-sm border border-border p-4 lg:col-start-2 lg:row-start-1">
+        <div className="flex flex-col gap-2 tt-tarjeta-panel p-4 lg:col-start-2 lg:row-start-1">
           <dl aria-label="Datos de la orden" className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3">
             <dt className="text-tinta-suave">Entrega</dt>
             <dd className="flex flex-col">
@@ -224,7 +224,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
           {/* Con "Pagos", los servicios van con sus precios en el bloque de montos; si no, solo los nombres */}
           {!o.montos && (
             <section aria-labelledby="servicios-titulo" className="flex flex-col gap-2">
-              <h2 id="servicios-titulo" className="font-heading text-2xl font-bold italic">Servicios</h2>
+              <h2 id="servicios-titulo" className="tt-titulo-seccion">Servicios</h2>
               <ul className="list-disc pl-5">
                 {o.servicios.map((s, i) => (
                   <li key={i}>{s}</li>
@@ -233,7 +233,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
             </section>
           )}
           <section aria-labelledby="fotos-titulo" className="flex flex-col gap-6">
-            <h2 id="fotos-titulo" className="font-heading text-2xl font-bold italic">Fotos</h2>
+            <h2 id="fotos-titulo" className="tt-titulo-seccion">Fotos</h2>
             {/* Cerrada y sin ninguna: una línea, no dos */}
             {fotos.length === 0 && !abierta ? (
               <p className="text-tinta-suave">Sin fotos.</p>

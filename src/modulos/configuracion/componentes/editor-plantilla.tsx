@@ -62,7 +62,7 @@ export function EditorPlantilla({ clave, guardado: inicial, negocio }: Props) {
   return (
     <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-5 border-t border-border pt-8">
       <div className="flex flex-col gap-1">
-        <h2 id={`${id}-titulo`} className="font-heading text-2xl font-bold italic">
+        <h2 id={`${id}-titulo`} className="tt-titulo-seccion">
           {titulo}
         </h2>
         <p className="text-sm text-tinta-suave">{cuando}</p>

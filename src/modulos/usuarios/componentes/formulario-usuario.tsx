@@ -77,7 +77,7 @@ export function FormularioUsuario(props: Props) {
         <input type="hidden" name="rol" value={rol} />
         <RadioGroup value={rol} onValueChange={(v) => setRol(v as Rol)} className="gap-3">
           {ROLES.map((r) => (
-            <label key={r} htmlFor={`rol-${r}`} className="flex cursor-pointer items-start gap-3 rounded-sm border border-border p-3 has-data-checked:border-tinta">
+            <label key={r} htmlFor={`rol-${r}`} className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-fondo p-3 has-data-checked:border-tinta">
               <RadioGroupItem id={`rol-${r}`} value={r} className="mt-0.5" />
               <span className="flex flex-col">
                 <span className="font-semibold">{NOMBRE_ROL[r]}</span>

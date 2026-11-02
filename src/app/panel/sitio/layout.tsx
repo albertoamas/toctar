@@ -7,7 +7,7 @@ export default function LayoutSitioWeb({ children }: LayoutProps<"/panel/sitio">
   return (
     <section className="flex flex-col gap-8">
       <div className="flex flex-col gap-4">
-        <h1 className="font-heading text-4xl font-extrabold italic">Sitio web</h1>
+        <h1 className="tt-titulo-pagina">Sitio web</h1>
         <Suspense fallback={<div className="h-12 border-b border-border" />}>
           <PestanasSitio />
         </Suspense>

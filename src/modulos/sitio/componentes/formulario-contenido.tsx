@@ -33,7 +33,7 @@ export function FormularioContenido({ pagina, contenido }: { pagina: Pagina; con
     <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-labelledby={`${pagina}-titulo`}>
       <input type="hidden" name="pagina" value={pagina} />
       <div className="flex flex-col gap-1">
-        <h2 id={`${pagina}-titulo`} className="font-heading text-2xl font-bold italic">{def.titulo}</h2>
+        <h2 id={`${pagina}-titulo`} className="tt-titulo-seccion">{def.titulo}</h2>
         <p className="text-sm text-tinta-suave">{def.descripcion}</p>
       </div>
 

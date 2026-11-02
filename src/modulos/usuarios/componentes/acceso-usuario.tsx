@@ -51,7 +51,7 @@ function RestablecerContrasena({ id, nombre }: { id: number; nombre: string }) {
 
   return (
     <section className="flex flex-col items-start gap-2">
-      <h2 className="font-heading text-xl font-bold italic">Contraseña</h2>
+      <h2 className="tt-titulo-sub">Contraseña</h2>
       <p className="text-sm text-tinta-suave">Si {nombre} la olvidó, ponle una nueva y pásasela.</p>
       <Dialog open={abierto} onOpenChange={setAbierto}>
         <DialogTrigger render={<Button variant="outline" />}>Restablecer contraseña</DialogTrigger>
@@ -93,11 +93,11 @@ function Desactivar({ id, nombre, esUnoMismo }: { id: number; nombre: string; es
 
   return (
     <section className="flex flex-col items-start gap-2">
-      <h2 className="font-heading text-xl font-bold italic">Acceso</h2>
+      <h2 className="tt-titulo-sub">Acceso</h2>
       {esUnoMismo ? (
         <p className="text-sm text-tinta-suave">No puedes desactivar tu propio usuario. Si hace falta, pídeselo a otro dueño.</p>
       ) : confirmando ? (
-        <form action={accion} className="flex flex-col items-start gap-3 rounded-sm border border-border bg-superficie p-4">
+        <form action={accion} className="flex flex-col items-start gap-3 tt-tarjeta-panel p-4">
           <input type="hidden" name="id" value={id} />
           <p ref={aviso} tabIndex={-1} className="outline-none">{nombre} no podrá ingresar y se cerrarán sus sesiones abiertas. Su historial se conserva.</p>
           <div className="flex flex-wrap gap-2">
@@ -119,7 +119,7 @@ function Reactivar({ id, nombre }: { id: number; nombre: string }) {
   const [, accion, enviando] = useActionState<EstadoFormulario, FormData>(conAviso(reactivarUsuario), {});
   return (
     <section className="flex flex-col items-start gap-2">
-      <h2 className="font-heading text-xl font-bold italic">Acceso</h2>
+      <h2 className="tt-titulo-sub">Acceso</h2>
       <p className="text-sm text-tinta-suave">{nombre} está desactivado y no puede ingresar.</p>
       <form action={accion}>
         <input type="hidden" name="id" value={id} />

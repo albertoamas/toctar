@@ -62,7 +62,7 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
         <Link href={enlaceSemana(sumarDias(lunes, -7))} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Semana anterior">
           <ChevronLeftIcon />
         </Link>
-        <p className="min-w-0 text-center font-heading text-xl font-bold italic sm:text-2xl" aria-live="polite">
+        <p className="min-w-0 text-center tt-titulo-seccion" aria-live="polite">
           <span className="sm:hidden">{textoSemanaCorto(lunes)}</span>
           <span className="hidden sm:inline">{textoSemana(lunes)}</span>
         </p>

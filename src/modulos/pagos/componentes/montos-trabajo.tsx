@@ -38,8 +38,8 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar, cobrar
   return (
       <>
         <section aria-labelledby="servicios-titulo" className="flex flex-col gap-3">
-          <h2 id="servicios-titulo" className="font-heading text-2xl font-bold italic">Servicios</h2>
-          <ul className="flex flex-col divide-y divide-border rounded-sm border border-border">
+          <h2 id="servicios-titulo" className="tt-titulo-seccion">Servicios</h2>
+          <ul className="flex flex-col divide-y divide-border tt-tarjeta-panel">
             {montos.lineas.map((l, i) => (
               <li key={i} className="flex justify-between gap-4 p-3">
                 <span className="flex flex-col">
@@ -89,7 +89,7 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar, cobrar
           {montos.pagos.length === 0 ? (
             <p className="text-tinta-suave">Todavía no hay pagos.</p>
           ) : (
-            <ul aria-label="Pagos" className="flex flex-col divide-y divide-border rounded-sm border border-border">
+            <ul aria-label="Pagos" className="flex flex-col divide-y divide-border tt-tarjeta-panel">
               {montos.pagos.map((p) => {
                 const descripcion = `${NOMBRE_TIPO_PAGO[p.tipo]} ${METODO_EN_FRASE[p.metodo]} de ${bs(p.monto)}, ${formatearFecha(p.fecha)}`;
                 return (

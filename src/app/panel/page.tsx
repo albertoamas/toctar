@@ -8,7 +8,7 @@ import { cantidad } from "@/lib/cantidad";
 import { fechaConDia, fechaEnBolivia } from "@/lib/fechas";
 import { MODULOS, modulosDelMenu, nombreEnMenu, puedeVerModulo, type Modulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
-import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
+import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { primerNombre } from "@/modulos/clientes/reglas";
 import { type DatosFila } from "@/componentes/panel/fila-lista";
 import { BloqueDelDia } from "@/modulos/inicio/componentes/bloque-del-dia";
@@ -65,7 +65,7 @@ async function Contenido() {
   return (
     <section className="flex flex-col gap-10">
       <div className="flex flex-col gap-1">
-        <h1 className="font-heading text-4xl font-extrabold italic">Hola, {primerNombre(usuario.nombre)}</h1>
+        <h1 className="tt-titulo-pagina">Hola, {primerNombre(usuario.nombre)}</h1>
         <p className="text-tinta-suave">{fechaConDia(hoy)}</p>
       </div>
 
@@ -111,6 +111,7 @@ async function Contenido() {
                   detalles: [e.cliente],
                   aviso: textoEntregaAtrasada(e, hoy),
                   estado: NOMBRE_ESTADO_TRABAJO[e.estado],
+                  tonoEstado: TONO_ESTADO_TRABAJO[e.estado],
                 }),
               )}
             />
@@ -150,7 +151,7 @@ async function Contenido() {
         <EstadoVacio>Por ahora no hay nada para ti en el panel. Pídele al dueño que te dé acceso a lo que vas a usar.</EstadoVacio>
       ) : (
         <nav aria-label="Ir a" className="flex max-w-5xl flex-col gap-3">
-          {conDia && <h2 className="font-heading text-2xl font-bold italic">Ir a</h2>}
+          {conDia && <h2 className="tt-titulo-seccion">Ir a</h2>}
           <ul className="grid gap-3 md:grid-cols-2">
             {modulos.map((m) => (
               <li key={m}>
@@ -166,7 +167,7 @@ async function Contenido() {
 
 function Acceso({ href, icono: Icono, titulo, descripcion }: { href: string; icono: LucideIcon; titulo: string; descripcion?: string }) {
   return (
-    <Link href={href} className="flex h-full min-h-11 items-center gap-4 rounded-sm border border-border p-4 hover:bg-superficie">
+    <Link href={href} className="flex h-full min-h-11 items-center gap-4 tt-tarjeta-panel p-4 hover:bg-superficie">
       <Icono className="size-6 shrink-0 text-tinta-suave" aria-hidden />
       <span className="flex flex-1 flex-col">
         <span className="font-semibold">{titulo}</span>

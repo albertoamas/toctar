@@ -99,7 +99,7 @@ function GrillaFotos({ nombre, titulo, foto, fotos, elegida, error, conNinguna =
   const idError = `${nombre}-error`;
   return (
     <fieldset className="flex flex-col gap-3" aria-describedby={error ? idError : undefined}>
-      <legend className="mb-3 font-heading text-2xl font-bold italic">{titulo}</legend>
+      <legend className="mb-3 tt-titulo-seccion">{titulo}</legend>
       {error && <MensajeError id={idError}>{error}</MensajeError>}
       <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
         {conNinguna && (
@@ -126,4 +126,4 @@ function GrillaFotos({ nombre, titulo, foto, fotos, elegida, error, conNinguna =
 }
 
 /** La marca de la elegida, también con texto: no solo con el color del marco. */
-const Elegida = () => <span className="tt-insignia pointer-events-none absolute bottom-1 left-1 hidden bg-fondo text-tinta peer-checked:inline-flex">Elegida</span>;
+const Elegida = () => <span className="tt-estado pointer-events-none absolute bottom-1 left-1 hidden bg-fondo text-tinta peer-checked:inline-flex">Elegida</span>;

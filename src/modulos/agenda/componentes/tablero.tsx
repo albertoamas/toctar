@@ -57,7 +57,7 @@ function Cinta({
     >
       <span className="flex items-baseline gap-2">
         {empiezaAntes && <ChevronLeftIcon className="size-3.5 shrink-0 self-center" aria-hidden />}
-        <span className="truncate font-heading text-xl leading-none font-bold italic">{r.placa}</span>
+        <span className="truncate tt-titulo-sub leading-none">{r.placa}</span>
         {terminaDespues && <ChevronRightIcon className="ml-auto size-3.5 shrink-0 self-center" aria-hidden />}
       </span>
       {r.servicio && (
@@ -132,9 +132,9 @@ export function TableroSemana({ semana, dias, hoy, conOrdenes }: Props) {
           const gridRow = fila + 2;
           return (
             <section key={espacio.id} aria-label={espacio.nombre} className="contents">
-              <h2 style={{ gridRow, gridColumn: 1 }} className="flex flex-col justify-center font-heading text-xl font-bold italic">
+              <h2 style={{ gridRow, gridColumn: 1 }} className="flex flex-col justify-center tt-titulo-sub">
                 {espacio.nombre}
-                {!espacio.activo && <span className="font-sans text-xs font-normal not-italic text-tinta-suave">Desactivado</span>}
+                {!espacio.activo && <span className="text-xs font-normal text-tinta-suave">Desactivado</span>}
               </h2>
               {dias.map((fecha, i) =>
                 ocupado(fecha) || !espacio.activo ? null : (
@@ -168,9 +168,9 @@ export function AgendaDelDia({ semana, dia, hoy, conOrdenes }: { semana: SemanaD
         const r = semana.reservas.find((x) => x.espacioId === espacio.id && seCruzan({ inicio: x.inicio, fin: x.fin }, { inicio: dia, fin: dia }));
         return (
           <li key={espacio.id} className="flex flex-col gap-1">
-            <h2 className="font-heading text-lg font-bold italic">
+            <h2 className="tt-titulo-sub">
               {espacio.nombre}
-              {!espacio.activo && <span className="ml-2 font-sans text-xs font-normal not-italic text-tinta-suave">Desactivado</span>}
+              {!espacio.activo && <span className="ml-2 text-xs font-normal text-tinta-suave">Desactivado</span>}
             </h2>
             {r ? (
               <Cinta r={r} empiezaAntes={r.inicio < dia} terminaDespues={r.fin > dia} conOrdenes={conOrdenes} />

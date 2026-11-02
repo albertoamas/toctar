@@ -58,7 +58,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
       <EncabezadoPagina
         titulo={s.nombre}
         // Sale en el sitio si está activo y su página se muestra (publico.ts pide las dos)
-        estado={<span className="tt-insignia">{!s.activo ? "Inactivo" : s.visibleSitio ? "En el sitio" : "Oculto en el sitio"}</span>}
+        estado={<span className="tt-estado">{!s.activo ? "Inactivo" : s.visibleSitio ? "En el sitio" : "Oculto en el sitio"}</span>}
         accion={
           <Link href={`/panel/sitio/servicios/${s.id}`} className={cn(buttonVariants({ variant: "outline" }))}>
             <GlobeIcon />
@@ -111,7 +111,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
       </div>
 
       <section aria-labelledby="precios-titulo" className="flex flex-col gap-3">
-        <h2 id="precios-titulo" className="flex min-h-11 items-center font-heading text-2xl font-bold italic">
+        <h2 id="precios-titulo" className="flex min-h-11 items-center tt-titulo-seccion">
           Precios
         </h2>
         {s.tamanos.length === 0 ? (

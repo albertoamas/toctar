@@ -44,14 +44,14 @@ export function ListaPreguntas({ preguntas }: { preguntas: Pregunta[] }) {
         )}
       </div>
       {editando === "nueva" && (
-        <div className="rounded-sm border border-border p-3">
+        <div className="tt-tarjeta-panel p-3">
           <FormularioPregunta alTerminar={() => setEditando(null)} />
         </div>
       )}
       {preguntas.length === 0 && <EstadoVacio>Todavía no hay preguntas. Agrega las que más te hacen los clientes.</EstadoVacio>}
 
       {preguntas.length > 0 && (
-        <ol aria-label="Preguntas frecuentes" className="flex flex-col divide-y divide-border rounded-sm border border-border">
+        <ol aria-label="Preguntas frecuentes" className="flex flex-col divide-y divide-border tt-tarjeta-panel">
           {preguntas.map((p, i) =>
             editando === p.id ? (
               <li key={p.id} className="p-3">
@@ -63,7 +63,7 @@ export function ListaPreguntas({ preguntas }: { preguntas: Pregunta[] }) {
                 <div className="group flex min-w-60 flex-1 cursor-pointer flex-col gap-1" onClick={() => setEditando(p.id)}>
                   <span className="flex flex-wrap items-center gap-2 font-semibold group-hover:underline">
                     {p.pregunta}
-                    {!p.visible && <span className="tt-insignia">Oculta</span>}
+                    {!p.visible && <span className="tt-estado">Oculta</span>}
                   </span>
                   <span className="line-clamp-2 text-sm text-tinta-suave">{p.respuesta}</span>
                 </div>

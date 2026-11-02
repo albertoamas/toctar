@@ -34,11 +34,11 @@ async function Detalle({ params }: Pick<PageProps<"/panel/usuarios/[id]">, "para
   return (
     <>
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="font-heading text-4xl font-extrabold italic">{usuario.nombre}</h1>
+        <h1 className="tt-titulo-pagina">{usuario.nombre}</h1>
         {usuario.desactivado ? (
-          <span className="tt-insignia">Desactivado</span>
+          <span className="tt-estado">Desactivado</span>
         ) : (
-          <span className="tt-insignia tt-insignia--exito">Activo</span>
+          <span className="tt-estado tt-estado--exito">Activo</span>
         )}
       </div>
       <div className="grid gap-10 lg:grid-cols-[minmax(0,36rem)_minmax(0,22rem)]">

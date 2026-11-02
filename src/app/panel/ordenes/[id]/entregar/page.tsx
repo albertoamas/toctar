@@ -60,7 +60,7 @@ async function Entrega({ params }: Pick<PageProps<"/panel/ordenes/[id]/entregar"
       )}
 
       {(planes.programa.length > 0 || planes.hechos.length > 0) && (
-        <div className="flex flex-col gap-1 rounded-sm border border-border p-3 text-sm">
+        <div className="flex flex-col gap-1 tt-tarjeta-panel p-3 text-sm">
           {/* Por posición: dos planes pueden decir lo mismo (dos servicios con el mismo mantenimiento) */}
           {planes.hechos.map((servicio, i) => (
             <p key={`hecho-${i}`}>Queda hecho el mantenimiento de {servicio}.</p>

@@ -28,7 +28,7 @@ export function EditorHorarios({ valor, onChange, errores }: Props) {
   return (
     <div className="flex flex-col gap-3">
       <input type="hidden" name="horarios" value={JSON.stringify(valor)} />
-      <ul className="flex flex-col divide-y divide-border rounded-sm border border-border">
+      <ul className="flex flex-col divide-y divide-border tt-tarjeta-panel">
         {valor.map((d, i) => {
           const nombre = NOMBRE_DIA[d.dia - 1];
           const abierto = d.turnos.length > 0;

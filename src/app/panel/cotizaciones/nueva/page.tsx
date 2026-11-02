@@ -70,7 +70,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/cotizaciones/n
                 Cambiar
               </VolverAElegir>
             </CabeceraSeccion>
-            <p className="flex flex-col rounded-sm border border-border p-4">
+            <p className="flex flex-col tt-tarjeta-panel p-4">
               <span className="font-semibold">{c.nombre}</span>
               <span className="text-tinta-suave">{formatearWhatsApp(c.telefono)}</span>
             </p>

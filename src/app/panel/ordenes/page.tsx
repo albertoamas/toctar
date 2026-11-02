@@ -80,7 +80,7 @@ async function EnElTaller({ tecnicoId }: { tecnicoId?: number }) {
         return (
           // El lector oye la sección como "Recibidas, 2 órdenes"; a la vista, "Recibidas (2)"
           <section key={estado} aria-label={`${GRUPOS[estado]}, ${delGrupo.length === 1 ? "1 orden" : `${delGrupo.length} órdenes`}`} className="flex flex-col gap-3">
-            <h2 className="font-heading text-2xl font-bold italic">
+            <h2 className="tt-titulo-seccion">
               {GRUPOS[estado]} <span className="tabular-nums text-tinta-suave">({delGrupo.length})</span>
             </h2>
             {delGrupo.length === 0 ? (

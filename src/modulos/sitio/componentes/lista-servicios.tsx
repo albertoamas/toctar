@@ -24,7 +24,7 @@ export function ListaServicios({ servicios }: { servicios: Fila[] }) {
   if (servicios.length === 0) return <EstadoVacio>Todavía no hay servicios. El dueño los agrega en Catálogo y precios.</EstadoVacio>;
 
   return (
-    <ol aria-label="Servicios del sitio" className="flex flex-col divide-y divide-border rounded-sm border border-border">
+    <ol aria-label="Servicios del sitio" className="flex flex-col divide-y divide-border tt-tarjeta-panel">
       {servicios.map((s, i) => (
         <li key={s.id} className="flex items-center gap-3 p-3">
           {/* Toda la fila abre el servicio, también la foto (pulido 4.2); las flechas quedan aparte */}
@@ -39,7 +39,7 @@ export function ListaServicios({ servicios }: { servicios: Fila[] }) {
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="flex flex-wrap items-center gap-2 font-semibold group-hover:underline">
                 {s.nombre}
-                {!s.visible && <span className="tt-insignia">Oculto</span>}
+                {!s.visible && <span className="tt-estado">Oculto</span>}
               </span>
               {/* Uno recién creado en el catálogo no tiene resumen: es lo que falta para mostrarlo */}
               <span className="line-clamp-2 text-sm text-tinta-suave">{s.resumen || "Falta completar su página."}</span>

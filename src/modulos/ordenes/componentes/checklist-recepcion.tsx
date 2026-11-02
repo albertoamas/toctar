@@ -48,7 +48,7 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
     <section aria-labelledby="checklist-titulo" className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
         <div className="flex flex-col gap-1">
-          <h2 id="checklist-titulo" className="font-heading text-2xl font-bold italic">Checklist</h2>
+          <h2 id="checklist-titulo" className="tt-titulo-seccion">Checklist</h2>
           <p className="text-sm text-tinta-suave">Revisa cada parte: bien, o con un detalle y su foto.</p>
         </div>
         {filas.length > 0 && (
@@ -60,7 +60,7 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
       {filas.length === 0 ? (
         <p className="text-tinta-suave">No hay partes en el checklist: se agregan en Configuración → Taller.</p>
       ) : (
-        <ul aria-label="Partes del checklist" className="flex flex-col divide-y divide-border rounded-sm border border-border">
+        <ul aria-label="Partes del checklist" className="flex flex-col divide-y divide-border tt-tarjeta-panel">
           {filas.map((p) => {
             const d = de(p.id);
             const ocupado = !hidratado || marcando === p.id;
@@ -82,7 +82,7 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
                     </span>
                   ) : (
                     <span className="text-sm">
-                      <span className="tt-insignia tt-insignia--aviso mr-2">{d.tipo && NOMBRE_DETALLE[d.tipo]}</span>
+                      <span className="tt-estado tt-estado--aviso mr-2">{d.tipo && NOMBRE_DETALLE[d.tipo]}</span>
                       {d.nota}
                     </span>
                   )}
@@ -165,7 +165,7 @@ function FormularioDetalle({ trabajoId, parteId, detalle }: { trabajoId: number;
         <input type="hidden" name="tipo" value={tipo} />
         <RadioGroup value={tipo} onValueChange={(v) => setTipo(String(v))} aria-labelledby="tipo-titulo" aria-describedby={e.tipo ? "tipo-error" : undefined} className="flex flex-wrap gap-2">
           {TIPOS_DE_DETALLE.map((t, i) => (
-            <label key={t} htmlFor={`tipo-${t}`} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-sm border border-border px-3 py-2 has-data-checked:border-tinta">
+            <label key={t} htmlFor={`tipo-${t}`} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-border bg-fondo px-3 py-2 has-data-checked:border-tinta">
               <RadioGroupItem id={`tipo-${t}`} value={t} data-invalido={(!!e.tipo && i === 0) || undefined} />
               <span className="font-semibold">{NOMBRE_DETALLE[t]}</span>
             </label>

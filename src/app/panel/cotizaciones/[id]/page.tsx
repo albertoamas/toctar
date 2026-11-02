@@ -18,7 +18,7 @@ import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { reservasDeConsulta } from "@/modulos/agenda/consultas";
-import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
+import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { DatosVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 import { MasCotizacion } from "@/modulos/cotizaciones/componentes/estado-cotizacion";
 import { VersionesCotizacion } from "@/modulos/cotizaciones/componentes/versiones-cotizacion";
@@ -61,7 +61,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
     <div className="flex max-w-3xl flex-col gap-8">
       <EncabezadoPagina
         titulo={`Cotización ${c.numero}`}
-        estado={<span className={cn("tt-insignia", TONO_ESTADO[c.estado] && `tt-insignia--${TONO_ESTADO[c.estado]}`)}>{NOMBRE_ESTADO[c.estado]}</span>}
+        estado={<span className={cn("tt-estado", TONO_ESTADO[c.estado] && `tt-estado--${TONO_ESTADO[c.estado]}`)}>{NOMBRE_ESTADO[c.estado]}</span>}
         accion={
           <div className="flex flex-wrap gap-2">
             {/* El paso siguiente, uno solo: agendar la pendiente (el cliente aceptó) */}
@@ -97,7 +97,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
 
       <section aria-labelledby="cliente-titulo" className="flex flex-col gap-3">
         <CabeceraSeccion id="cliente" titulo="Cliente y vehículo" />
-        <div className="flex flex-col gap-3 rounded-sm border border-border p-4">
+        <div className="flex flex-col gap-3 tt-tarjeta-panel p-4">
           <p className="flex flex-col">
             <span className="font-semibold">{c.cliente}</span>
             <span className="text-tinta-suave">{formatearWhatsApp(c.telefono)}</span>
@@ -131,7 +131,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
               href: rutaTrabajo(r.id, r.estado, puedeVerModulo(usuario, "ordenes")),
               titulo: `Reserva del ${formatearFecha(r.fechaInicio).slice(0, 5)} en ${r.espacio}`,
               estado: NOMBRE_ESTADO_TRABAJO[r.estado],
-              tonoEstado: r.estado === "cancelado" ? "aviso" : undefined,
+              tonoEstado: TONO_ESTADO_TRABAJO[r.estado],
             }))}
           />
         </section>

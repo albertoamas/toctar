@@ -8,9 +8,9 @@ import { ListaFilas, type DatosFila } from "@/componentes/panel/fila-lista";
 export function BloqueDelDia({ id, titulo, filas, vacio, contar = true }: { id: string; titulo: string; filas: DatosFila[]; vacio: string; contar?: boolean }) {
   return (
     <section aria-labelledby={`${id}-titulo`} className="flex min-w-0 flex-col gap-3">
-      <h2 id={`${id}-titulo`} className="flex items-baseline gap-3 font-heading text-2xl font-bold italic">
+      <h2 id={`${id}-titulo`} className="flex items-baseline gap-3 tt-titulo-seccion">
         {titulo}
-        {contar && filas.length > 0 && <span className="font-sans text-sm font-normal not-italic tabular-nums text-tinta-suave">{filas.length}</span>}
+        {contar && filas.length > 0 && <span className="text-sm font-normal tabular-nums text-tinta-suave">{filas.length}</span>}
       </h2>
       {filas.length === 0 ? (
         <p className="text-tinta-suave">{vacio}</p>

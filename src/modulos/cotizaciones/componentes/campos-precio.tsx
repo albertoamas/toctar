@@ -45,7 +45,7 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
   return (
     <>
       <fieldset className="flex flex-col gap-4">
-        <legend className="mb-4 font-heading text-2xl font-bold italic">Servicios</legend>
+        <legend className="mb-4 tt-titulo-seccion">Servicios</legend>
         {opciones ? (
           <LineasServicio opciones={opciones} lineas={p.lineas} onChange={p.setLineas} errores={e} />
         ) : (
@@ -56,7 +56,7 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
       </fieldset>
 
       <fieldset className="flex flex-col gap-3">
-        <legend className="mb-3 font-heading text-2xl font-bold italic">¿Cómo se cotizó?</legend>
+        <legend className="mb-3 tt-titulo-seccion">¿Cómo se cotizó?</legend>
         <input type="hidden" name="modo" value={p.modo} />
         <RadioGroup
           value={p.modo}
@@ -66,7 +66,7 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
           className="flex flex-col gap-2 sm:flex-row"
         >
           {MODOS.map((m, i) => (
-            <label key={m} htmlFor={`modo-${m}`} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-sm border border-border px-3 py-2 has-data-checked:border-tinta">
+            <label key={m} htmlFor={`modo-${m}`} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-border bg-fondo px-3 py-2 has-data-checked:border-tinta">
               <RadioGroupItem id={`modo-${m}`} value={m} data-invalido={(!!e.modo && i === 0) || undefined} />
               <span className="flex flex-col">
                 <span className="font-semibold">{NOMBRE_MODO[m]}</span>
@@ -79,11 +79,11 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
       </fieldset>
 
       <fieldset className="flex flex-col gap-5">
-        <legend className="mb-5 font-heading text-2xl font-bold italic">Total</legend>
+        <legend className="mb-5 tt-titulo-seccion">Total</legend>
         <Campo id="descuento" etiqueta="Descuento" error={e.descuento} ayuda="Opcional.">
           <CampoMonto id="descuento" name="descuento" value={p.descuento} onChange={(ev) => p.setDescuento(ev.target.value)} aria-invalid={!!e.descuento} aria-describedby={e.descuento ? "descuento-error" : "descuento-ayuda"} />
         </Campo>
-        <dl className="grid max-w-sm grid-cols-[1fr_auto] gap-x-6 gap-y-2 rounded-sm border border-border p-4" aria-live="polite">
+        <dl className="grid max-w-sm grid-cols-[1fr_auto] gap-x-6 gap-y-2 tt-tarjeta-panel p-4" aria-live="polite">
           <dt className="text-tinta-suave">Subtotal</dt>
           <dd className="text-right tabular-nums">{bs(p.totales.subtotal)}</dd>
           <dt className="text-tinta-suave">Descuento</dt>
@@ -94,7 +94,7 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
       </fieldset>
 
       <fieldset className="flex flex-col gap-5">
-        <legend className="mb-5 font-heading text-2xl font-bold italic">Condiciones</legend>
+        <legend className="mb-5 tt-titulo-seccion">Condiciones</legend>
         {/* Vienen de Configuración y casi siempre se dejan así: sin ayudas que lo repitan */}
         <div className="grid gap-5 sm:grid-cols-2">
           <Campo id="adelanto" etiqueta="Adelanto sugerido" error={e.adelanto}>

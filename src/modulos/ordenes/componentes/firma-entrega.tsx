@@ -7,7 +7,7 @@ import type { FirmaEntrega } from "../consultas";
 export function FirmaDeEntrega({ firma }: { firma: FirmaEntrega }) {
   return (
     <section aria-labelledby="firma-titulo" className="flex flex-col gap-3">
-      <h2 id="firma-titulo" className="font-heading text-2xl font-bold italic">Firma de entrega</h2>
+      <h2 id="firma-titulo" className="tt-titulo-seccion">Firma de entrega</h2>
       {firma.imagen ? (
         <>
           <a href={firma.imagen.url} target="_blank" rel="noreferrer" className="self-start rounded-sm border border-border bg-fondo p-2" aria-label="Ver la firma en grande">

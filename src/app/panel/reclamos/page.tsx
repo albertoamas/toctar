@@ -17,7 +17,7 @@ export const metadata: Metadata = { title: "Reclamos" };
 export default function PaginaReclamos({ searchParams }: PageProps<"/panel/reclamos">) {
   return (
     <section className="flex flex-col gap-6">
-      <h1 className="font-heading text-4xl font-extrabold italic">Reclamos</h1>
+      <h1 className="tt-titulo-pagina">Reclamos</h1>
       <Suspense fallback={<Cargando />}>
         <Lista searchParams={searchParams} />
       </Suspense>
@@ -71,7 +71,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/reclamos">, "searc
       <ul aria-label="Reclamos" className="flex flex-col gap-2 md:hidden">
         {reclamos.map((r) => (
           <li key={r.id}>
-            <Link href={`/panel/reclamos/${r.id}`} className="flex items-center justify-between gap-3 rounded-sm border border-border p-4 hover:bg-superficie">
+            <Link href={`/panel/reclamos/${r.id}`} className="flex items-center justify-between gap-3 tt-tarjeta-panel p-4 hover:bg-superficie">
               {/* Ningún dato se parte a la mitad, y el servicio, como en la tabla (pulido 5.1) */}
               <span className="flex min-w-0 flex-col gap-0.5">
                 <span className="truncate font-semibold">{r.nombre}</span>

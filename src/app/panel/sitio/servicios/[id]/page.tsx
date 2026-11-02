@@ -46,8 +46,8 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
   return (
     <>
       <div className="flex flex-wrap items-center gap-3">
-        <h2 className="font-heading text-3xl font-bold italic">{s.nombre}</h2>
-        {!s.activo ? <span className="tt-insignia tt-insignia--aviso">Inactivo en el catálogo</span> : !s.visible && <span className="tt-insignia">Oculto</span>}
+        <h2 className="tt-titulo-seccion text-xl">{s.nombre}</h2>
+        {!s.activo ? <span className="tt-estado tt-estado--aviso">Inactivo en el catálogo</span> : !s.visible && <span className="tt-estado">Oculto</span>}
       </div>
       {/* Llegó por un enlace viejo: la lista del sitio ya no lo muestra */}
       {!s.activo && <p className="text-tinta-suave">No sale en el sitio mientras esté inactivo en el catálogo.</p>}
