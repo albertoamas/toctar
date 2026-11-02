@@ -36,15 +36,19 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
 
   return (
     <div className="flex flex-1">
-      <aside data-theme="oscuro" className="sticky top-0 hidden h-dvh w-62 shrink-0 flex-col bg-fondo p-4 text-tinta [--radius:8px] lg:flex">
-        <div className="mt-1 mb-6">
-          <Marca />
-        </div>
-        {/* Si el menú no entra (pantalla baja), se desplaza solo él: la marca y "Cerrar sesión" quedan a la vista.
-            El margen negativo con su relleno deja ver el borde de foco de los enlaces */}
-        <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">{menu}</div>
-        <div className="mt-4 border-t border-border pt-4">{sesion}</div>
-      </aside>
+      {/* La columna pinta el fondo negro de arriba abajo, aunque la página sea más larga que la pantalla; adentro, el menú
+          queda fijo al bajar (sticky, del alto de la pantalla). Con el fondo en el menú, debajo quedaba un hueco blanco */}
+      <div data-theme="oscuro" className="hidden w-62 shrink-0 bg-fondo lg:block">
+        <aside className="sticky top-0 flex h-dvh flex-col p-4 text-tinta [--radius:8px]">
+          <div className="mt-1 mb-6">
+            <Marca />
+          </div>
+          {/* Si el menú no entra (pantalla baja), se desplaza solo él: la marca y "Cerrar sesión" quedan a la vista.
+              El margen negativo con su relleno deja ver el borde de foco de los enlaces */}
+          <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">{menu}</div>
+          <div className="mt-4 border-t border-border pt-4">{sesion}</div>
+        </aside>
+      </div>
 
       {/* min-w-0: sin esto, lo ancho del contenido (como la tira de pestañas) estira la columna y la pantalla
           se sale por la derecha en el celular. */}
