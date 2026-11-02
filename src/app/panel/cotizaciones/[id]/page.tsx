@@ -96,13 +96,9 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
         </AvisoEnPagina>
       )}
 
-      {/* En la computadora, el precio a la izquierda (es lo que decide) y el cliente a la derecha (pedido 26) */}
+      {/* En el celular, primero para quién es; en la computadora, el precio a la izquierda (es lo que decide) y el
+          cliente a la derecha (pedido 26) */}
       <div className="grid items-start gap-6 @4xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <section aria-labelledby="versiones-titulo" className="flex flex-col gap-3">
-          <CabeceraSeccion id="versiones" titulo={c.versiones.length > 1 ? "Versiones" : "Precio"} />
-          <VersionesCotizacion consultaId={c.id} versiones={c.versiones} />
-        </section>
-
         <section aria-labelledby="cliente-titulo" className="flex flex-col gap-3">
           <CabeceraSeccion id="cliente" titulo="Cliente y vehículo" />
           <div className="tt-tarjeta-panel flex flex-col gap-3 p-4">
@@ -123,6 +119,11 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
               </Link>
             )}
           </div>
+        </section>
+
+        <section aria-labelledby="versiones-titulo" className="flex flex-col gap-3 @4xl:order-first">
+          <CabeceraSeccion id="versiones" titulo={c.versiones.length > 1 ? "Versiones" : "Precio"} />
+          <VersionesCotizacion consultaId={c.id} versiones={c.versiones} />
         </section>
       </div>
 

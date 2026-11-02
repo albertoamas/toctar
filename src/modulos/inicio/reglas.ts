@@ -59,7 +59,8 @@ export function paraHoy(ingresos: Ingreso[], abiertas: OrdenDelDia[], hoy: strin
     cliente: i.cliente,
     estado: "agendado" as const,
     avisos: [textoIngresoAtrasado(i.fechaInicio, hoy)].filter((a): a is string => a !== null),
-    cuando: [i.horaIngreso ? `Llega ${i.horaIngreso}` : "Llega hoy", i.espacio].join(", "),
+    // La que debía llegar antes ya lo dice su aviso: aquí, que sigue por recibir
+    cuando: [i.fechaInicio < hoy ? "Por recibir" : i.horaIngreso ? `Llega ${i.horaIngreso}` : "Llega hoy", i.espacio].join(", "),
   }));
   const vistas = new Set<number>();
   const ordenes = [...entregas, ...listas]

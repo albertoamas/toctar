@@ -74,7 +74,7 @@ Ninguna fase se une a `develop` hasta que el dueño apruebe el prototipo: al uni
 - **Sin contadores en el menú** (estaban en el prototipo): el menú vive en el diseño compartido, que no se vuelve a pedir al navegar, y los números quedarían viejos. Los números están en el inicio.
 
 ## 7. Pruebas
-- **Unitarias:** no cambian (no hay reglas nuevas).
+- **Unitarias:** las reglas nuevas de la fase 2: `textoEntrega` y `estadoFiltrado` (`tests/unit/ordenes.test.ts`) y `paraHoy` (`tests/unit/inicio.test.ts`).
 - **E2E:** las existentes siguen pasando (buscan por rol y nombre accesible, no por estilo). Si una pantalla cambia de forma (tabla en lugar de filas), se ajusta su prueba en esa fase.
 - **A mano, en cada fase:** capturas de antes y después a 360 y 1280 px, con el dueño, el encargado y el técnico; nada se sale de la pantalla; el foco se ve; contraste de las insignias AA.
 

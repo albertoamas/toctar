@@ -30,8 +30,8 @@ test("el dueño ve el reclamo pendiente, le escribe por WhatsApp y lo marca aten
   await dejarReclamo(page, nombre, `10.17.0.${sufijo(info) === "C" ? 1 : 2}`);
 
   await ingresarComoDueno(page);
-  // En el inicio (HU-39, pedido 26), en "Para atender", con su acción
-  await expect(page.getByRole("region", { name: "Para atender" }).getByRole("link", { name: new RegExp(`^Reclamo de ${nombre}.*Responder`) }).first()).toBeVisible();
+  // En el inicio (HU-39, pedido 26), en "Para atender": los más antiguos con su acción y, si hay más, la fila a la lista
+  await expect(page.getByRole("region", { name: "Para atender" }).getByRole("link", { name: /^(Reclamo de .*Responder|\d+ reclamos pendientes más)/ }).first()).toBeVisible();
   await page.goto("/panel/reclamos?ver=pendientes");
   // La pestaña dice cuántos hay por atender (pulido 5.1)
   await expect(page.getByRole("navigation", { name: "Filtrar reclamos" }).getByRole("link", { name: /^Pendientes \(\d+\)$/ })).toBeVisible();

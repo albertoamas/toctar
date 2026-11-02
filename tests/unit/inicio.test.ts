@@ -57,7 +57,7 @@ test("Para hoy junta lo que llega, las entregas y las listas sin avisar, sin rep
   ];
   const filas = paraHoy(ingresos, abiertas, hoy);
   expect(filas.map((f) => f.id)).toEqual([1, 2, 3, 4, 5]);
-  expect(filas[0]).toMatchObject({ estado: "agendado", avisos: ["Debía ingresar el 21/10"], cuando: "Llega hoy, Espacio 1" });
+  expect(filas[0]).toMatchObject({ estado: "agendado", avisos: ["Debía ingresar el 21/10"], cuando: "Por recibir, Espacio 1" });
   expect(filas[1]).toMatchObject({ avisos: [], cuando: "Llega a las 8:30, Espacio 2" });
   expect(filas[2]).toMatchObject({ estado: "en_proceso", avisos: ["Atrasada desde el 22/10"], cuando: "Entrega ayer" });
   // Entrega de hoy y lista sin avisar: una vez, con su aviso

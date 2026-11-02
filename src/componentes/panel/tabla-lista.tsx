@@ -20,7 +20,7 @@ export type ColumnaTabla = {
   movil: "titulo" | "estado" | "detalle" | "oculta";
 };
 
-export type FilaTabla = { href: string; celdas: React.ReactNode[]; atenuada?: boolean };
+export type FilaTabla = { href: string; celdas: React.ReactNode[] };
 
 const CELDA_MOVIL: Record<ColumnaTabla["movil"], string> = {
   titulo: "col-start-1 row-start-1",
@@ -48,10 +48,7 @@ export function TablaLista({ etiqueta, columnas, filas }: { etiqueta: string; co
           <li key={f.href} className="relative">
             <Link
               href={f.href}
-              className={cn(
-                "grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 py-3 pr-11 pl-4 text-sm hover:bg-superficie/60 focus-visible:-outline-offset-2 @2xl:grid-cols-[var(--columnas)]",
-                f.atenuada && "opacity-70",
-              )}
+              className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 py-3 pr-11 pl-4 text-sm hover:bg-superficie/60 focus-visible:-outline-offset-2 @2xl:grid-cols-[var(--columnas)]"
             >
               {f.celdas.map((celda, i) => (
                 <span key={i} className={cn("min-w-0", CELDA_MOVIL[columnas[i].movil], CELDA_TABLA, columnas[i].alinear === "derecha" && "@2xl:text-right")}>

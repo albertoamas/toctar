@@ -24,9 +24,9 @@ import { ingresosDeHoy } from "@/modulos/inicio/consultas";
 import { paraHoy, type FilaDelDia } from "@/modulos/inicio/reglas";
 import { contarSinAvisar } from "@/modulos/mantenimientos/consultas";
 import { ordenesAbiertas } from "@/modulos/ordenes/consultas";
-import { estaAtrasada, rutaTrabajo } from "@/modulos/ordenes/reglas";
+import { enlaceTrabajo, estaAtrasada, rutaTrabajo } from "@/modulos/ordenes/reglas";
 import { saldosPendientes } from "@/modulos/pagos/consultas";
-import { listarReclamos } from "@/modulos/reclamos/consultas";
+import { reclamosPorAtender } from "@/modulos/reclamos/consultas";
 
 // Inicio del panel (HU-39, RF-52; pedido 26, etapas/P26-rediseno-panel.md). Para el dueño y el encargado: arriba sus dos
 // tareas de todos los días (nueva reserva, nueva cotización); los números del día en tarjetas que llevan a su lista;
@@ -58,8 +58,9 @@ async function Contenido() {
     ve("pagos") ? saldosPendientes() : null,
     ve("cotizaciones") ? listarCotizaciones("pendientes", "").then((r) => r.cotizaciones) : null,
     ve("mantenimientos") ? contarSinAvisar(hoy) : null,
-    ve("reclamos") ? listarReclamos(true) : null,
-    obtenerParametros(),
+    ve("reclamos") ? reclamosPorAtender(POR_TIPO) : null,
+    // Los días sin respuesta de una cotización: solo hacen falta con Cotizaciones
+    ve("cotizaciones") ? obtenerParametros() : null,
   ]);
   const conDia = [ingresos, abiertas, saldos, pendientes, mantenimientos, reclamos].some((b) => b !== null);
 
@@ -81,18 +82,23 @@ async function Contenido() {
     );
   }
 
-  const umbral = parametros.dias_cotizacion_sin_respuesta;
-  const sinResponder = pendientes?.filter((c) => sinRespuesta(c.estado, diasDesde(c.ultimoMovimientoAt, ahora), umbral)) ?? [];
+  const sinResponder = parametros
+    ? (pendientes ?? []).filter((c) => sinRespuesta(c.estado, diasDesde(c.ultimoMovimientoAt, ahora), parametros.dias_cotizacion_sin_respuesta))
+    : [];
   const delDia = paraHoy(ingresos ?? [], abiertas ?? [], hoy);
 
+  // De cada tipo, los que más urgen (los más antiguos) y, si hay más, una fila a su lista: nada queda sin decirse
+  const masDe = (total: number, href: Route, icono: LucideIcon, que: string): Pendiente[] =>
+    total > POR_TIPO ? [{ href, icono, titulo: `${total - POR_TIPO} ${que} más`, detalle: `${total} en total`, accion: "Ver todos" }] : [];
   const atender: Pendiente[] = [
-    ...(reclamos ?? []).slice(0, POR_TIPO).map((r) => ({
+    ...(reclamos?.primeros ?? []).map((r) => ({
       href: `/panel/reclamos/${r.id}` as Route,
       icono: MessageSquareWarningIcon,
       titulo: `Reclamo de ${r.nombre}`,
       detalle: [r.servicio ?? r.placa, `llegó ${textoDias(diasDesde(r.createdAt, ahora))}`].join(", "),
       accion: "Responder",
     })),
+    ...masDe(reclamos?.total ?? 0, "/panel/reclamos?ver=pendientes", MessageSquareWarningIcon, "reclamos pendientes"),
     ...sinResponder.slice(0, POR_TIPO).map((c) => ({
       href: `/panel/cotizaciones/${c.id}` as Route,
       icono: ICONO_MODULO.cotizaciones,
@@ -100,13 +106,16 @@ async function Contenido() {
       detalle: `${bs(c.total)}, sin respuesta hace ${cantidad(diasDesde(c.ultimoMovimientoAt, ahora), "día", "días")}`,
       accion: "Ver",
     })),
+    ...masDe(sinResponder.length, "/panel/cotizaciones", ICONO_MODULO.cotizaciones, "cotizaciones sin respuesta"),
     ...(saldos ?? []).slice(0, POR_TIPO).map((s) => ({
-      href: `/panel/ordenes/${s.id}` as Route,
+      // A la orden si quien mira puede abrirla; si no (Pagos sin Órdenes), a Saldos pendientes, donde se cobra
+      href: (enlaceTrabajo(s.id, "entregado", { ordenes: ve("ordenes"), agenda: ve("agenda") })?.href ?? "/panel/pagos") as Route,
       icono: ICONO_MODULO.pagos,
       titulo: `Saldo de ${s.cliente}`,
       detalle: `${bs(s.saldo)}, entregada ${textoDias(diasDesde(s.entregadoAt, ahora))}`,
       accion: "Cobrar",
     })),
+    ...masDe(saldos?.length ?? 0, "/panel/pagos", ICONO_MODULO.pagos, "saldos"),
     ...(mantenimientos && mantenimientos.vencidos > 0
       ? [
           {
@@ -124,7 +133,8 @@ async function Contenido() {
   const sinAvisar = abiertas?.filter((o) => o.sinAvisar).length ?? 0;
   const porCobrar = saldos?.reduce((suma, s) => suma + Number(s.saldo), 0) ?? 0;
   const notaTaller = [atrasadas > 0 && cantidad(atrasadas, "atrasada", "atrasadas"), sinAvisar > 0 && cantidad(sinAvisar, "lista sin avisar", "listas sin avisar")].filter(Boolean).join(", ");
-  const ingresoAtrasado = ingresos?.some((i) => i.fechaInicio < hoy) ?? false;
+  const llegaHoy = ingresos?.filter((i) => i.fechaInicio === hoy).length ?? 0;
+  const debianLlegar = (ingresos?.length ?? 0) - llegaHoy;
 
   return (
     <section className="flex flex-col gap-6">
@@ -158,9 +168,9 @@ async function Contenido() {
             href="/panel/agenda"
             icono={CarFrontIcon}
             titulo="Llegan hoy"
-            valor={ingresos.length}
-            nota={ingresoAtrasado ? "Uno debía llegar antes" : ingresos.length > 0 ? "Por recibir" : "Nada para hoy"}
-            aviso={ingresoAtrasado}
+            valor={llegaHoy}
+            nota={debianLlegar > 0 ? `${cantidad(debianLlegar, "debía", "debían")} llegar antes` : llegaHoy > 0 ? "Por recibir" : "Nada para hoy"}
+            aviso={debianLlegar > 0}
           />
         )}
         {saldos && (
