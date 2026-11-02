@@ -54,7 +54,8 @@ const VACIOS: Record<Vista, string> = {
 async function Lista({ searchParams }: Pick<PageProps<"/panel/cotizaciones">, "searchParams">) {
   await exigirModulo("cotizaciones");
   const parametros = await searchParams;
-  const vista: Vista = typeof parametros.vista === "string" && parametros.vista in VISTAS ? (parametros.vista as Vista) : "pendientes";
+  // hasOwn y no `in`: `?vista=__proto__` no es una pestaña
+  const vista: Vista = typeof parametros.vista === "string" && Object.hasOwn(VISTAS, parametros.vista) ? (parametros.vista as Vista) : "pendientes";
   const q = typeof parametros.q === "string" ? parametros.q : "";
   // Las pestañas conservan la búsqueda escrita: el campo la sigue mostrando
   const enlace = (v: Vista) => {
