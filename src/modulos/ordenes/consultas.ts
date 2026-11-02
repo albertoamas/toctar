@@ -1,12 +1,13 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, min } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, like, min, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { archivo, cliente, galeriaItem, parteRevision, servicio, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, trabajoRevision, usuario, variante, vehiculo } from "@/db/esquema";
 import type { EstadoRevision, EstadoTrabajo, EtapaFoto, TipoDetalle } from "@/db/esquema/trabajos";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { obtenerReserva, type DetalleReserva } from "@/modulos/agenda/consultas";
-import { ESTADOS_ORDEN_ABIERTA } from "./reglas";
+import { escaparLike, normalizarBusqueda } from "@/modulos/clientes/reglas";
+import { ENTREGADAS_POR_PAGINA, ESTADOS_ORDEN_ABIERTA, fechaBuscada } from "./reglas";
 
 // Lecturas de las órdenes (C4). Quien las llama ya pasó por exigirModulo("ordenes") y, si es técnico, por
 // `puedeVerOrden` (src/lib/permisos.ts). Los montos solo para quien ve "Pagos" (RN-12). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md.
@@ -134,6 +135,59 @@ export async function ordenesAbiertas(tecnicoId?: number): Promise<OrdenEnLista[
   return ordenes
     .map(({ avisadoListoAt, ...o }) => ({ ...o, sinAvisar: o.estado === "listo" && avisadoListoAt === null, servicios: porOrden.get(o.id) ?? [] }))
     .sort((a, b) => Number(a.estado === "listo") - Number(b.estado === "listo"));
+}
+
+export type OrdenEntregada = { id: number; placa: string; cliente: string; tecnico: string | null; entregadoAt: Date; servicios: string[] };
+
+/**
+ * El historial (pedido 28): las órdenes entregadas, la más reciente primero, de a ENTREGADAS_POR_PAGINA; las de un
+ * técnico si se indica. `q` busca por placa, cliente o fecha de entrega ("5/10" o "5/10/2026", en hora de Bolivia).
+ */
+export async function ordenesEntregadas(datos: { tecnicoId?: number; q: string; pagina: number }): Promise<{ ordenes: OrdenEntregada[]; total: number }> {
+  const busqueda = normalizarBusqueda(datos.q);
+  const fecha = fechaBuscada(datos.q);
+  const enBolivia = sql`(${trabajo.entregadoAt} at time zone 'America/La_Paz')`;
+  const coincide = fecha
+    ? and(
+        sql`extract(day from ${enBolivia}) = ${fecha.dia}`,
+        sql`extract(month from ${enBolivia}) = ${fecha.mes}`,
+        fecha.anio ? sql`extract(year from ${enBolivia}) = ${fecha.anio}` : undefined,
+      )
+    : busqueda
+      ? or(
+          sql`unaccent(lower(${cliente.nombre})) like unaccent(lower(${`%${escaparLike(busqueda.texto)}%`}))`,
+          busqueda.placa ? like(vehiculo.placa, `%${escaparLike(busqueda.placa)}%`) : undefined,
+        )
+      : undefined;
+  const donde = and(eq(trabajo.estado, "entregado"), datos.tecnicoId === undefined ? undefined : eq(trabajo.tecnicoId, datos.tecnicoId), coincide);
+  const [[{ total }], ordenes] = await Promise.all([
+    db
+      .select({ total: count() })
+      .from(trabajo)
+      .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
+      .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
+      .where(donde),
+    db
+      .select({ id: trabajo.id, placa: vehiculo.placa, cliente: cliente.nombre, tecnico: tecnico.name, entregadoAt: trabajo.entregadoAt })
+      .from(trabajo)
+      .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
+      .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
+      .leftJoin(tecnico, eq(trabajo.tecnicoId, tecnico.id))
+      .where(donde)
+      .orderBy(desc(trabajo.entregadoAt), desc(trabajo.id))
+      .limit(ENTREGADAS_POR_PAGINA)
+      .offset((datos.pagina - 1) * ENTREGADAS_POR_PAGINA),
+  ]);
+  if (ordenes.length === 0) return { ordenes: [], total };
+  const lineas = await db
+    .select({ trabajoId: trabajoLinea.trabajoId, descripcion: trabajoLinea.descripcion })
+    .from(trabajoLinea)
+    .where(inArray(trabajoLinea.trabajoId, ordenes.map((o) => o.id)))
+    .orderBy(asc(trabajoLinea.orden));
+  const porOrden = new Map<number, string[]>();
+  for (const l of lineas) porOrden.set(l.trabajoId, [...(porOrden.get(l.trabajoId) ?? []), l.descripcion]);
+  // Entregadas: la fecha de entrega siempre está (CHECK trabajo_entregado_con_fecha)
+  return { ordenes: ordenes.map((o) => ({ ...o, entregadoAt: o.entregadoAt!, servicios: porOrden.get(o.id) ?? [] })), total };
 }
 
 /** Una parte revisada al recibir: bien, o con un detalle (su tipo, nota y foto). */

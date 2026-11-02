@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
 import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
 import { esquemaAdelanto, esquemaFechas, esquemaReserva } from "@/modulos/agenda/esquemas";
-import { bloquesDeLaSemana, diaDeLaSemana, diasDeLaSemana, fechaEntregaSugerida, lunesDeLaSemana, numeroDia, ocupaEspacio, seCruzan, textoDia, textoSemana, textoSemanaCorto } from "@/modulos/agenda/reglas";
+import { entregadasALaVista, bloquesDeLaSemana, diaDeLaSemana, diasDeLaSemana, fechaEntregaSugerida, lunesDeLaSemana, numeroDia, ocupaEspacio, seCruzan, textoDia, textoSemana, textoSemanaCorto } from "@/modulos/agenda/reglas";
 import { calcularSaldo } from "@/modulos/pagos/reglas";
 
 // C3 Agenda y pagos (HU-30): semanas, entrega sugerida, cruces (RN-06), saldo (RF-46) y validación de la reserva.
@@ -112,4 +112,30 @@ test("el rótulo de la semana y de cada día", () => {
   expect(textoSemanaCorto("2026-12-28")).toBe("28 dic al 3 ene 2027");
   expect(textoDia("2026-10-22")).toBe("Jueves 22 de octubre");
   expect(numeroDia("2026-10-05")).toBe("5");
+});
+
+// Pedido 28: las entregadas siguen en el tablero, sin tapar a la reserva que ocupa el espacio.
+
+test("una entregada se muestra en sus días pasados, salvo los que usa otra reserva u otra entregada del mismo espacio", () => {
+  const hoy = "2026-10-30";
+  const entregada = { id: 1, estado: "entregado" as const, inicio: "2026-10-20", fin: "2026-10-22" };
+  const siguiente = { id: 2, estado: "agendado" as const, inicio: "2026-10-22", fin: "2026-10-24" };
+  // Salió el 22 y ese día entró otra: la entregada se ve el 20 y el 21
+  expect(entregadasALaVista([entregada, siguiente], hoy)).toEqual([siguiente, { ...entregada, fin: "2026-10-21" }]);
+  // Sin otra reserva, todos sus días; una cancelada no cuenta
+  expect(entregadasALaVista([entregada], hoy)).toEqual([entregada]);
+  expect(entregadasALaVista([entregada, { ...siguiente, estado: "cancelado" as const }], hoy)).toEqual([entregada]);
+  // Si otra ocupa todos sus días, no se muestra
+  const deUnDia = { ...entregada, fin: "2026-10-20" };
+  const mismoDia = { ...siguiente, inicio: "2026-10-20" };
+  expect(entregadasALaVista([deUnDia, mismoDia], hoy)).toEqual([mismoDia]);
+  // Otra reserva en el medio: dos tramos
+  const medio = { id: 3, estado: "en_proceso" as const, inicio: "2026-10-21", fin: "2026-10-21" };
+  expect(entregadasALaVista([entregada, medio], hoy)).toEqual([medio, { ...entregada, fin: "2026-10-20" }, { ...entregada, inicio: "2026-10-22" }]);
+  // Dos entregadas en los mismos días: la primera se queda con ellos
+  const otraEntregada = { id: 4, estado: "entregado" as const, inicio: "2026-10-22", fin: "2026-10-23" };
+  expect(entregadasALaVista([entregada, otraEntregada], hoy)).toEqual([entregada, { ...otraEntregada, inicio: "2026-10-23" }]);
+  // Hoy el espacio queda libre para agendar: la entregada de hoy no se ve todavía
+  expect(entregadasALaVista([{ ...entregada, fin: hoy, inicio: "2026-10-29" }], hoy)).toEqual([{ ...entregada, inicio: "2026-10-29", fin: "2026-10-29" }]);
+  expect(entregadasALaVista([{ ...entregada, inicio: hoy, fin: hoy }], hoy)).toEqual([]);
 });
