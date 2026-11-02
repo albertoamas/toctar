@@ -4,6 +4,7 @@ import { useActionState, useRef, useState } from "react";
 import { ExternalLinkIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
+import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
@@ -14,7 +15,6 @@ import type { EstadoFormulario } from "@/lib/formularios";
 import { guardarNegocio } from "../acciones";
 import { NOMBRE_RED, REDES } from "../esquemas";
 import { EditorHorarios } from "./editor-horarios";
-import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 
 type Props = {
   /** Valores iniciales, ya como texto de los campos. */

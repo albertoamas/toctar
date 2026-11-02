@@ -361,11 +361,19 @@
 
   /* Una parte de un formulario largo, como tarjeta (SeccionFormulario, pedido 26). La leyenda de un fieldset se dibuja
      sobre su borde: flotando deja de serlo y pasa a ser un elemento más de la columna, dentro de la tarjeta. */
-  .tt-seccion-formulario {
+  /* La tarjeta blanca sobre el fondo gris del panel (pedido 26): cada bloque se separa solo. Una sola definición para
+     la tarjeta suelta, la parte de un formulario largo y el formulario de una sola parte (tt-formulario-panel), que
+     además llevan su relleno. En componentes y no como utilidad: así p-4, rounded-lg y las demás la ajustan. */
+  .tt-tarjeta-panel,
+  .tt-seccion-formulario,
+  .tt-formulario-panel {
     border: 1px solid var(--borde);
     border-radius: var(--radius);
     background: var(--fondo);
     box-shadow: var(--sombra-tarjeta);
+  }
+  .tt-seccion-formulario,
+  .tt-formulario-panel {
     padding: 1rem;
   }
   .tt-seccion-formulario > legend {
@@ -373,7 +381,8 @@
     width: 100%;
   }
   @media (width >= 40rem) {
-    .tt-seccion-formulario {
+    .tt-seccion-formulario,
+    .tt-formulario-panel {
       padding: 1.25rem;
     }
   }
@@ -792,13 +801,6 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
-}
-/* La tarjeta blanca sobre el fondo gris del panel: cada bloque se separa solo */
-@utility tt-tarjeta-panel {
-  border: 1px solid var(--borde);
-  border-radius: var(--radius);
-  background: var(--fondo);
-  box-shadow: var(--sombra-tarjeta);
 }
 
 /* Agenda (HU-29). Como @utility (y no en @layer components): así Tailwind las incluye cuando las encuentra en el

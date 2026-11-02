@@ -70,13 +70,22 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/reclamos">, "searc
               <span key="p" className="tt-placa">
                 {r.placa}
               </span>,
-              r.servicio ?? <span className="text-tinta-suave">Servicio: no indicó</span>,
+              // En el celular la celda va sola: dice de qué es; en la tabla, bajo su columna
+              r.servicio ?? (
+                <span className="text-tinta-suave">
+                  <span className="@2xl:hidden">Servicio: no indicó</span>
+                  <span className="hidden @2xl:inline">No indicó</span>
+                </span>
+              ),
               r.fotos > 0 ? (
                 <span key="f" className="inline-flex items-center gap-1">
                   <ImageIcon className="size-4 text-tinta-suave" aria-hidden />
                   {r.fotos === 1 ? "1 foto" : `${r.fotos} fotos`}
                 </span>
-              ) : null,
+              ) : (
+                // En la tabla, para que la columna no quede vacía; en el celular, nada
+                <span className="hidden text-tinta-suave @2xl:inline">Sin fotos</span>
+              ),
               <InsigniaEstado key="e" estado={r.estado} />,
             ],
           }))}

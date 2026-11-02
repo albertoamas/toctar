@@ -114,8 +114,8 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
       {estado.mensaje && !estado.ok && <MensajeError id="reserva-error">{estado.mensaje}</MensajeError>}
 
       {origen.tipo === "directa" && (
-        <fieldset className="flex flex-col gap-4">
-          <legend className="mb-4 tt-titulo-seccion">Servicios</legend>
+        <fieldset className="tt-seccion-formulario flex flex-col gap-4">
+          <legend className="tt-titulo-seccion">Servicios</legend>
           <LineasServicio opciones={origen.opciones} lineas={lineas} onChange={setLineas} errores={e} />
           {/* El total, al pie con "Agendar" */}
         </fieldset>
@@ -195,8 +195,8 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
       </fieldset>
 
       {conPagos && (
-        <fieldset className="flex flex-col gap-5">
-          <legend className="mb-5 tt-titulo-seccion">Adelanto</legend>
+        <fieldset className="tt-seccion-formulario flex flex-col gap-5">
+          <legend className="tt-titulo-seccion">Adelanto</legend>
           {sinAdelanto && <input type="hidden" name="sinAdelanto" value="on" />}
           <label htmlFor="sinAdelanto" className="flex min-h-11 cursor-pointer items-center gap-3">
             <Checkbox id="sinAdelanto" checked={sinAdelanto} onCheckedChange={(si) => {

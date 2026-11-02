@@ -17,7 +17,7 @@ export function FormularioNuevoCliente({ tamanos }: { tamanos: Tamano[] }) {
   useFocoEnError(formulario, estado);
 
   return (
-    <form ref={formulario} action={accion} className="tt-tarjeta-panel flex max-w-2xl flex-col p-4 sm:p-6 gap-6" noValidate>
+    <form ref={formulario} action={accion} className="tt-formulario-panel flex max-w-2xl flex-col gap-6" noValidate>
       <CamposCliente estado={estado} plegar />
       {/* La línea va afuera: en el borde de un fieldset, la legend lo corta */}
       <div className="border-t border-border pt-8">

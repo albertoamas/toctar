@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
+import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { Campo } from "@/componentes/panel/campo";
 import { EditorLista } from "@/componentes/panel/editor-lista";
 import { TextoCorto } from "@/componentes/panel/texto-corto";
@@ -17,7 +18,6 @@ import type { EstadoFormulario } from "@/lib/formularios";
 import { guardarServicio } from "../acciones";
 import { ICONOS_BENEFICIO, iconoDe } from "../beneficios";
 import { LIMITES } from "../esquemas";
-import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 
 // HU-07: la página del servicio en el sitio (RF-03). Sin precios (RN-10). El nombre y las variantes son del catálogo.
 

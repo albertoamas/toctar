@@ -3,6 +3,7 @@
 import { useActionState, useRef } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
+import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { Campo } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
@@ -34,11 +35,7 @@ export function FormularioParametros({ valores: iniciales }: { valores: Record<C
       {SECCIONES.map((s) => {
         const { titulo, descripcion } = SECCIONES_PARAMETROS[s];
         return (
-          <fieldset key={s} className="tt-seccion-formulario flex flex-col gap-5">
-            <legend className="flex flex-col gap-1">
-              <span className="tt-titulo-seccion">{titulo}</span>
-              {descripcion && <span className="text-sm text-tinta-suave">{descripcion}</span>}
-            </legend>
+          <SeccionFormulario key={s} titulo={titulo} descripcion={descripcion ?? undefined}>
             {CLAVES_PARAMETRO.filter((c) => PARAMETROS[c].seccion === s).map((c) => {
               const p = PARAMETROS[c];
               return (
@@ -64,7 +61,7 @@ export function FormularioParametros({ valores: iniciales }: { valores: Record<C
                 </Campo>
               );
             })}
-          </fieldset>
+          </SeccionFormulario>
         );
       })}
 

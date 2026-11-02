@@ -194,7 +194,7 @@ export type FilaVersion = {
   validaHasta: string;
   esEstimado: boolean;
   tienePdf: boolean;
-  /** Lo cotizado, en su orden (pedido 26: se ve en la ficha, como en el PDF). */
+  /** Lo cotizado, en su orden (pedido 26: se ve en la ficha, como en el PDF). Vacío en una reemplazada. */
   lineas: { descripcion: string; precio: string }[];
 };
 
@@ -216,18 +216,18 @@ async function versionesDeCotizacion(consultaId: number): Promise<FilaVersion[]>
     .from(cotizacion)
     .where(eq(cotizacion.consultaId, consultaId))
     .orderBy(desc(cotizacion.version), desc(cotizacion.id));
-  if (filas.length === 0) return [];
-  // Una sola consulta para las líneas de todas las versiones
-  const lineas = await db
-    .select({ cotizacionId: cotizacionLinea.cotizacionId, descripcion: cotizacionLinea.descripcion, precio: cotizacionLinea.precio })
-    .from(cotizacionLinea)
-    .where(inArray(cotizacionLinea.cotizacionId, filas.map((f) => f.id)))
-    .orderBy(asc(cotizacionLinea.orden), asc(cotizacionLinea.id));
-  return filas.map(({ pdf, ...f }) => ({
-    ...f,
-    tienePdf: pdf !== null,
-    lineas: lineas.filter((l) => l.cotizacionId === f.id).map(({ descripcion, precio }) => ({ descripcion, precio })),
-  }));
+  // Las líneas, en una sola consulta y solo de las que las muestran: una reemplazada ya no vale y se ve solo su total
+  const conLineas = filas.filter((f) => f.estado !== "reemplazada").map((f) => f.id);
+  const porVersion = new Map<number, FilaVersion["lineas"]>();
+  if (conLineas.length > 0) {
+    const lineas = await db
+      .select({ cotizacionId: cotizacionLinea.cotizacionId, descripcion: cotizacionLinea.descripcion, precio: cotizacionLinea.precio })
+      .from(cotizacionLinea)
+      .where(inArray(cotizacionLinea.cotizacionId, conLineas))
+      .orderBy(asc(cotizacionLinea.orden), asc(cotizacionLinea.id));
+    for (const { cotizacionId, ...l } of lineas) porVersion.set(cotizacionId, [...(porVersion.get(cotizacionId) ?? []), l]);
+  }
+  return filas.map(({ pdf, ...f }) => ({ ...f, tienePdf: pdf !== null, lineas: porVersion.get(f.id) ?? [] }));
 }
 
 /**

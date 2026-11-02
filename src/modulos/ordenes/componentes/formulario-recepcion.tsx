@@ -32,7 +32,7 @@ export function FormularioRecepcion({ trabajoId, tecnicos, tecnicoInicial, tecni
   const [tecnicoId, setTecnicoId] = useState(tecnicoInicial && tecnicos.some((t) => t.id === tecnicoInicial) ? String(tecnicoInicial) : "");
 
   return (
-    <form ref={formulario} action={accion} className="tt-tarjeta-panel flex flex-col p-4 sm:p-6 gap-5" noValidate aria-label="Recibir vehículo">
+    <form ref={formulario} action={accion} className="tt-formulario-panel flex flex-col gap-5" noValidate aria-label="Recibir vehículo">
       <input type="hidden" name="id" value={trabajoId} />
       {estado.mensaje && !estado.ok && <MensajeError id="recepcion-error">{estado.mensaje}</MensajeError>}
       <Campo id="observaciones" etiqueta="Observaciones" error={e.observaciones} ayuda="Lo que no está en el checklist: objetos que deja el cliente, lo que pidió…">
