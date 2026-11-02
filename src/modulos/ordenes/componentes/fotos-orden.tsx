@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/componentes/ui/dialog";
 import type { EtapaFoto } from "@/db/esquema/trabajos";
 import type { UrlsFoto } from "@/lib/fotos";
 import { quitarFotoOrden, subirFotoOrden } from "../acciones";
-import { MAXIMO_FOTOS_ETAPA, NOMBRE_ETAPA } from "../reglas";
+import { FRASE_ETAPA, MAXIMO_FOTOS_ETAPA, NOMBRE_ETAPA } from "../reglas";
 
 // HU-33 y HU-34: las fotos de una etapa de la orden (RF-40, RF-42). En el taller, con el celular: "Tomar foto" abre la
 // cámara trasera; también se pueden elegir varias de la galería. Se suben de a una (achicadas en el navegador), así
@@ -28,18 +28,16 @@ type Props = {
   editable: boolean;
   /** Lo que se muestra sin fotos. */
   textoVacio: string;
-  /** Sin el título de la etapa: la pantalla ya lo dice (por ejemplo, "Fotos de ingreso" al recibir). */
-  sinTitulo?: boolean;
   /**
-   * Sin fotos, los dos botones en una fila en lugar de la casilla de la cámara: la orden tiene cuatro etapas y las
-   * vacías no ocupan media pantalla cada una (pulido 11.2).
+   * Sin fotos, los dos botones en una fila en lugar de la casilla de la cámara: las etapas vacías no ocupan media
+   * pantalla cada una (pulido 11.2).
    */
   compacta?: boolean;
 };
 
 const NO_SUBIO = "no se pudo subir. Revisa tu conexión y vuelve a intentar.";
 
-export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio, sinTitulo, compacta }: Props) {
+export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio, compacta }: Props) {
   const camara = useRef<HTMLInputElement>(null);
   const galeria = useRef<HTMLInputElement>(null);
   const [subiendo, setSubiendo] = useState<{ actual: number; total: number } | null>(null);
@@ -51,6 +49,7 @@ export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio, sinT
   const lugares = MAXIMO_FOTOS_ETAPA - fotos.length;
   const elegida = abierta === null ? null : fotos[abierta];
   const nombre = NOMBRE_ETAPA[etapa];
+  const frase = FRASE_ETAPA[etapa];
   const id = `fotos-${etapa}`;
 
   async function subir(elegidas: File[]) {
@@ -97,11 +96,9 @@ export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio, sinT
 
   return (
     <div className="flex flex-col gap-3">
-      {!sinTitulo && (
-        <h3 className="font-heading text-xl font-bold italic">
-          {nombre} <span className="font-sans text-sm font-normal not-italic text-tinta-suave">({fotos.length})</span>
-        </h3>
-      )}
+      <h3 className="font-heading text-xl font-bold italic">
+        {nombre} <span className="font-sans text-sm font-normal not-italic text-tinta-suave">({fotos.length})</span>
+      </h3>
 
       {fotos.length === 0 && !editable && <p className="text-sm text-tinta-suave">{textoVacio}</p>}
       {enFila && (
@@ -116,14 +113,14 @@ export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio, sinT
         </div>
       )}
       {!enFila && (fotos.length > 0 || editable) && (
-        <ul aria-label={`Fotos de ${nombre.toLowerCase()}`} className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+        <ul aria-label={`Fotos ${frase}`} className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
           {fotos.map((f, i) => (
             <li key={f.id}>
               <button
                 type="button"
                 onClick={() => setAbierta(i)}
                 className="block aspect-square w-full overflow-hidden rounded-sm bg-superficie focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]"
-                aria-label={`Ver la foto ${i + 1} de ${nombre.toLowerCase()}`}
+                aria-label={`Ver la foto ${i + 1} ${frase}`}
               >
                 <Image src={f.miniatura} alt="" width={f.ancho ?? 640} height={f.alto ?? 640} unoptimized className="size-full object-cover" />
               </button>
@@ -149,8 +146,8 @@ export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio, sinT
 
       {editable && (
         <>
-          <input ref={camara} type="file" accept="image/*" capture="environment" className="sr-only" tabIndex={-1} aria-label={`Cámara para fotos de ${nombre.toLowerCase()}`} onChange={alElegir} />
-          <input ref={galeria} type="file" accept="image/*" multiple className="sr-only" tabIndex={-1} aria-label={`Fotos de ${nombre.toLowerCase()} desde la galería`} onChange={alElegir} />
+          <input ref={camara} type="file" accept="image/*" capture="environment" className="sr-only" tabIndex={-1} aria-label={`Cámara para fotos ${frase}`} onChange={alElegir} />
+          <input ref={galeria} type="file" accept="image/*" multiple className="sr-only" tabIndex={-1} aria-label={`Fotos ${frase} desde la galería`} onChange={alElegir} />
           {!enFila && (
             <div>
               <Button type="button" variant="ghost" disabled={ocupado} onClick={() => galeria.current?.click()}>
@@ -168,8 +165,9 @@ export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio, sinT
             <DialogTitle>
               {nombre}: foto {abierta! + 1} de {fotos.length}
             </DialogTitle>
-            <Image src={elegida.url} alt={`Foto ${abierta! + 1} de ${nombre.toLowerCase()}`} width={elegida.ancho ?? 1600} height={elegida.alto ?? 1200} unoptimized className="max-h-[70dvh] w-full bg-superficie object-contain" />
-            {editable && elegida.puedeQuitar && (
+            <Image src={elegida.url} alt={`Foto ${abierta! + 1} ${frase}`} width={elegida.ancho ?? 1600} height={elegida.alto ?? 1200} unoptimized className="max-h-[70dvh] w-full bg-superficie object-contain" />
+            {/* Quitar no depende de poder subir: una foto de durante (de antes del pedido 27) se quita mientras la orden esté abierta */}
+            {elegida.puedeQuitar && (
               <div>
                 <Button type="button" variant="outline" disabled={quitando} onClick={() => quitar(elegida.id)}>
                   <TrashIcon />

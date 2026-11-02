@@ -20,10 +20,10 @@ test("el dueño publica antes y después de una orden entregada: copias pública
   // Las fotos se suben mientras la orden está abierta
   await page.goto(`/panel/ordenes/${id}`, { waitUntil: "networkidle" });
   await expect(page.getByRole("button", { name: "Tomar foto" }).first()).toBeEnabled();
-  await page.getByLabel("Cámara para fotos de antes").setInputFiles(foto("antes.png"));
-  await expect(page.getByRole("button", { name: "Ver la foto 1 de antes" })).toBeVisible();
-  await page.getByLabel("Cámara para fotos de después").setInputFiles(foto("despues.png"));
-  await expect(page.getByRole("button", { name: "Ver la foto 1 de después" })).toBeVisible();
+  await page.getByLabel("Cámara para fotos del inicio").setInputFiles(foto("antes.png"));
+  await expect(page.getByRole("button", { name: "Ver la foto 1 del inicio" })).toBeVisible();
+  await page.getByLabel("Cámara para fotos del final").setInputFiles(foto("despues.png"));
+  await expect(page.getByRole("button", { name: "Ver la foto 1 del final" })).toBeVisible();
   // Todavía no se entregó: no se publica
   await expect(page.getByRole("link", { name: "Publicar en la galería" })).toHaveCount(0);
 
@@ -116,8 +116,8 @@ test("a 360 px la pantalla de publicar no se sale", async ({ page }, info) => {
   await ingresarComoDueno(page);
   await page.goto(`/panel/ordenes/${id}`, { waitUntil: "networkidle" });
   await expect(page.getByRole("button", { name: "Tomar foto" }).first()).toBeEnabled();
-  await page.getByLabel("Cámara para fotos de después").setInputFiles(foto("despues.png"));
-  await expect(page.getByRole("button", { name: "Ver la foto 1 de después" })).toBeVisible();
+  await page.getByLabel("Cámara para fotos del final").setInputFiles(foto("despues.png"));
+  await expect(page.getByRole("button", { name: "Ver la foto 1 del final" })).toBeVisible();
   await consultar("update trabajo set estado = 'entregado', entregado_at = now() where id = $1", [id]);
   await page.goto(`/panel/ordenes/${id}/publicar`);
   await expect(page.getByRole("heading", { level: 1, name: `Publicar ${placa}` })).toBeVisible();

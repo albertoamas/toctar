@@ -12,9 +12,11 @@ import {
   estaAtrasada,
   etapaAbierta,
   NOMBRE_DETALLE,
+  NOMBRE_ETAPA,
   pasosDeOrden,
   puedeExtenderse,
   puedePublicarse,
+  puedeQuitarFoto,
   puedeRecibirse,
   rutaTrabajo,
   textoSinRevisar,
@@ -41,15 +43,29 @@ test("una reserva se recibe desde su día de ingreso, si sigue agendada", () => 
   expect(puedeRecibirse({ estado: "recibido", fechaInicio: "2026-10-22" }, "2026-10-22")).toBe(false);
 });
 
-test("las fotos de ingreso solo cambian mientras se recibe; las demás, hasta la entrega", () => {
-  expect(etapaAbierta("ingreso", "agendado")).toBe(true);
-  expect(etapaAbierta("ingreso", "recibido")).toBe(false);
-  for (const etapa of ["antes", "durante", "despues"] as const) {
+test("pedido 27: se suben fotos de inicio y del final mientras la orden está abierta; las de ingreso y durante, ya no", () => {
+  for (const etapa of ["antes", "despues"] as const) {
     expect(etapaAbierta(etapa, "agendado")).toBe(false);
     expect(etapaAbierta(etapa, "en_proceso")).toBe(true);
     expect(etapaAbierta(etapa, "listo")).toBe(true);
     expect(etapaAbierta(etapa, "entregado")).toBe(false);
   }
+  for (const etapa of ["ingreso", "durante"] as const) {
+    for (const estado of ["agendado", "recibido", "en_proceso", "listo"] as const) expect(etapaAbierta(etapa, estado)).toBe(false);
+  }
+  expect([NOMBRE_ETAPA.antes, NOMBRE_ETAPA.despues]).toEqual(["Inicio", "Final"]);
+  // Tampoco por la acción: el esquema solo acepta las dos
+  expect(esquemaFotoOrden.safeParse({ trabajoId: "3", etapa: "ingreso" }).success).toBe(false);
+  expect(esquemaFotoOrden.safeParse({ trabajoId: "3", etapa: "durante" }).success).toBe(false);
+});
+
+test("una foto subida por error se quita con la orden abierta (también las de durante); las de ingreso, solo al recibir", () => {
+  for (const etapa of ["antes", "durante", "despues"] as const) {
+    expect(puedeQuitarFoto(etapa, "en_proceso")).toBe(true);
+    expect(puedeQuitarFoto(etapa, "entregado")).toBe(false);
+  }
+  expect(puedeQuitarFoto("ingreso", "agendado")).toBe(true);
+  expect(puedeQuitarFoto("ingreso", "recibido")).toBe(false);
 });
 
 test("recibe el dueño o el encargado con Órdenes; el técnico no", () => {

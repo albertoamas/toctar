@@ -60,7 +60,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
   // recibió. Reprogramar y cancelar, en "Más", mientras siga agendada
   const principal =
     puede(usuario, "recibir_vehiculo") && puedeRecibirse(r, hoy) ? (
-      // Enlace con forma de botón: lleva a la recepción, con las fotos de ingreso
+      // Enlace con forma de botón: lleva a la recepción, con el checklist
       <Link href={`/panel/ordenes/${r.id}/recibir`} className={cn(buttonVariants())}>
         <ClipboardCheckIcon />
         Recibir vehículo

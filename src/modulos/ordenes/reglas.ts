@@ -3,7 +3,17 @@ import type { EstadoTrabajo, EtapaFoto, TipoDetalle } from "@/db/esquema/trabajo
 // Reglas puras de las órdenes (C4). Una orden es una reserva ya recibida (D-1): el mismo `trabajo`.
 // Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md.
 
-export const NOMBRE_ETAPA: Record<EtapaFoto, string> = { ingreso: "Ingreso", antes: "Antes", durante: "Durante", despues: "Después" };
+/**
+ * Pedido 27: la orden tiene dos momentos de fotos, "Inicio" (todo el vehículo, al empezar) y "Final" (al terminar; de
+ * ahí sale la galería). Los detalles de cómo llegó van con su foto en el checklist (pedido 12). Las de ingreso y las
+ * de durante son de antes: se ven, pero ya no se suben. En la base siguen `antes` y `despues` (sin migrar datos).
+ */
+export const NOMBRE_ETAPA: Record<EtapaFoto, string> = { ingreso: "Ingreso", antes: "Inicio", durante: "Durante", despues: "Final" };
+/** La etapa dentro de una frase: "Fotos del inicio", "Ver la foto 2 del final". */
+export const FRASE_ETAPA: Record<EtapaFoto, string> = { ingreso: "de ingreso", antes: "del inicio", durante: "del trabajo", despues: "del final" };
+/** Las etapas a las que se suben fotos (pedido 27). */
+export const ETAPAS_CON_SUBIDA = ["antes", "despues"] as const satisfies readonly EtapaFoto[];
+const conSubida = (etapa: EtapaFoto) => (ETAPAS_CON_SUBIDA as readonly EtapaFoto[]).includes(etapa);
 export const MAXIMO_FOTOS_ETAPA = 20;
 
 /**
@@ -67,13 +77,17 @@ export const estaAtrasada = (o: { estado: EstadoTrabajo; fechaFin: string }, hoy
 /** Una reserva se recibe desde su día de ingreso (en Bolivia): si el cliente llega antes, primero se reprograma. */
 export const puedeRecibirse = (r: { estado: EstadoTrabajo; fechaInicio: string }, hoy: string) => r.estado === "agendado" && r.fechaInicio <= hoy;
 
-/**
- * Si a esa etapa todavía se le suben o quitan fotos. Las de ingreso, solo mientras se recibe: después son la prueba de
- * cómo llegó el vehículo (D-6). Las demás, mientras la orden está abierta (no después de la entrega).
- */
+/** Si a esa etapa se le suben fotos ahora: solo inicio y final (pedido 27), mientras la orden está abierta. */
 export function etapaAbierta(etapa: EtapaFoto, estado: EstadoTrabajo): boolean {
-  if (etapa === "ingreso") return estado === "agendado";
-  return estaAbierta(estado);
+  return conSubida(etapa) && estaAbierta(estado);
+}
+
+/**
+ * Si se puede quitar una foto ya subida (por error): las de la orden, mientras está abierta, también las de durante
+ * de antes del pedido 27; las de ingreso, solo mientras se recibe: después son la prueba de cómo llegó (D-6).
+ */
+export function puedeQuitarFoto(etapa: EtapaFoto, estado: EstadoTrabajo): boolean {
+  return etapa === "ingreso" ? estado === "agendado" : estaAbierta(estado);
 }
 
 /** De dónde sale la foto de antes al publicar en la galería (HU-41): las del ingreso o las de antes de trabajar. */

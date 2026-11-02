@@ -4,7 +4,7 @@ import type { Transaccion } from "@/db";
 import { trabajoFoto, trabajoRevision } from "@/db/esquema";
 import { eliminarFoto } from "@/lib/fotos";
 
-// Las fotos de ingreso y el checklist (pedido 12) de una reserva que no se recibió: si se reprograma o se cancela, lo de
+// Las fotos de ingreso (de antes del pedido 27) y el checklist (pedido 12) de una reserva que no se recibió: si se reprograma o se cancela, lo de
 // hoy no prueba cómo llega el vehículo otro día (o nunca). Se quitan de la reserva dentro de la transacción y los
 // archivos se borran después.
 
