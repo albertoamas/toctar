@@ -277,6 +277,7 @@ Como personal, quiero cerrar la orden al entregar, para que todo quede registrad
 Como dueño, quiero ver quién me debe, para cobrarlo.
 - Lista de órdenes entregadas con saldo, con cliente, monto y días.
 - Desde cada una puedo abrir WhatsApp o registrar el pago.
+- Busco por cliente, teléfono o placa y ordeno por la más antigua, el mayor monto o el cliente; el total por cobrar es el de todas (pedido 30).
 
 ### HU-38 Recordatorios de mantenimiento
 Como personal, quiero ver a quién le toca mantenimiento, para traerlos de vuelta al taller.

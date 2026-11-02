@@ -25,7 +25,7 @@ Igual que una historia (`plan-de-desarrollo.md`, "Cómo se trabaja cada historia
 | 4 | Fotos: solo las que sirven, sin videos | 27 | 4 a 6 | Incluido | ✅ Programado (01/11) |
 | 5 | Rediseño del panel: administrativo estándar | 26 | 25 a 35 | Incluido (sin él no hay aceptación) | ⏳ |
 | 6 | Órdenes con historial y agenda con las completadas | 28 | 6 a 8 | Incluido | ⏳ |
-| 7 | Saldos pendientes: ordenar y buscar | 30 | 2 | Incluido (bolsa de 8 h) | ⏳ |
+| 7 | Saldos pendientes: ordenar y buscar | 30 | 2 | Incluido (bolsa de 8 h) | ✅ Programado (01/11) |
 | 8 | Vehículos sin placa | 29 | 6 a 8 | Por definir | ⏳ |
 | 9 | Avisos de mantenimiento automáticos | 22 | Por estimar | Por cotizar (API de WhatsApp de Meta) | ⏳ Explicar al dueño |
 | — | Reclamos | — | — | Sin cambios | — |
@@ -255,6 +255,8 @@ El dueño busca "5678" en Órdenes → Entregadas y abre la orden de hace dos me
 ---
 
 ## 7. Saldos pendientes: ordenar y buscar (pedido 30)
+
+> **Estado (01/11/2026):** programado con la especificación `etapas/P30-saldos-buscar-ordenar.md`.
 
 > "Le gustó, pero le falta orden, buscar."
 
