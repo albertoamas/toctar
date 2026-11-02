@@ -65,6 +65,26 @@ Montserrat en todo el panel, sin itálicas. Una escala en utilidades de `globals
 | 4. Catálogo y Usuarios | `pedido-26-catalogo-usuarios` | Las dos listas en `TablaLista`: el catálogo con precio desde, variantes, duración y lo que falta cargar (lo completo no dice nada, pulido 7.1); usuarios con el rol y el estado en insignias y "(tú)". Los precios de cada variante ya se editaban en un modal ("Editar"); ahora sus recuadros son blancos | En curso |
 | 5. Resto | `pedido-26-resto` | Reclamos en `TablaLista` con `Pestanas`; los formularios en tarjetas (`SeccionFormulario`, `tt-seccion-formulario`; los de una sola parte son la tarjeta), también recibir, entregar y publicar; la ficha de la cotización con sus servicios y su descuento. Clientes, Saldos y Mantenimientos quedan con sus filas en tarjeta (las de Saldos y Mantenimientos llevan acciones propias: no son de un toque); Agenda, con el estilo base | En curso |
 | 6. Reglas | con la fase 5 | `CLAUDE.md`, `06-diseno/identidad-visual.md`, `pulido-visual.md` y la skill `pantallas-panel` (con la tabla de piezas del panel) dicen "el panel es administrativo estándar; la marca es del sitio y del ingreso" | En curso |
+| 7. Lo que faltó | `pedido-26-resto` | Lo que no se rediseñó o quedó a medias, encontrado al capturar todas las pantallas: ver "Fase 7" abajo | Por hacer |
+
+### Fase 7: lo que faltó (barrido del 02/11)
+
+Al terminar la fase 6 se capturaron todas las pantallas del panel (24, con datos reales) y se buscó en el código lo que quedaba de la marca. Lo que faltó, en el orden en que se hace (en `pedido-26-resto`, PR #125):
+
+| # | Pantalla | Qué falta | Cómo queda |
+|---|---|---|---|
+| 1 | Diseño del panel | En una página más larga que la pantalla, debajo del menú negro queda un área blanca (con el fondo gris ahora se nota) | El fondo del menú llega hasta abajo |
+| 2 | Clientes (lista) y elegir cliente (Nueva cotización, Nueva reserva) | Cada cliente en tres renglones apilados (nombre, placa, teléfono), sin columnas | `TablaLista`: cliente, vehículos (placas) y WhatsApp; en el celular, el nombre arriba y lo demás de a dos |
+| 3 | Agenda (el tablero de la semana) | Sigue con la marca: reservas como cintas negras con el corte a 60°, "Hoy" subrayado en rojo, días cerrados rayados a 60° | Cada reserva, un bloque redondeado del color de su estado (`TONO_ESTADO_TRABAJO`); la columna de hoy en azul suave; los cerrados en gris liso |
+| 4 | Montos de la orden (`MontosTrabajo`: ficha de la reserva, de la orden y Entregar) | Total, pagado y saldo sueltos sobre el gris; "Falta cobrar" en una franja gris que casi no se ve | Una tarjeta "Cuenta": servicios, total, pagado y el saldo resaltado, y los pagos |
+| 5 | Configuración → Mensajes | Sin tarjetas; la burbuja de la vista previa con la punta a 60°; tres botones rojos a la vista; dice "la pestaña Negocio" | Una tarjeta por mensaje con "Guardar mensaje" en contorno; la burbuja de chat sin el corte; el texto al día |
+| 6 | Ficha de un reclamo | Los datos, "Qué pasó" y las fotos, sueltos | En tarjetas |
+| 7 | Ficha de un usuario | "Contraseña" y "Acceso", sueltos; el texto de los módulos dice que el encargado "nunca puede cotizar" (desde el pedido 24 puede, con el permiso Cotizaciones) | En tarjetas; el texto al día |
+| 8 | Página de un servicio (Sitio web) | La columna de fotos (principal y de la página), sin tarjeta | En tarjetas |
+| 9 | Checklist al recibir | "Bien" y "Sin revisar" como texto suelto | Insignias: verde y gris |
+| 10 | Negocio | En el celular, una línea gris de antes separa el logo de una tarjeta que ya lo separa | Sin la línea |
+
+Quedan bien y no cambian: Inicio, Órdenes, Cotizaciones, la ficha del cliente, Saldos, Mantenimientos, la lista de Reclamos, Catálogo, Usuarios (lista y crear), Sitio web (portada, servicios, textos, preguntas, galería), Configuración (portada, negocio, parámetros, taller), Nueva reserva y las páginas de error.
 
 Ninguna fase se une a `develop` hasta que el dueño apruebe el prototipo: al unir se despliega en pruebas, y un panel a medio cambiar mezcla dos estilos. Las fases se apilan (cada una sale de la anterior) y se unen en orden.
 
