@@ -49,8 +49,9 @@ function Cinta({
       style={style}
       className={cn(
         "relative flex min-h-14 min-w-0 flex-col justify-center gap-0.5 py-1.5 pr-3 text-blanco opacity-100 hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]",
-        // Si viene de la semana anterior, el borde va recto: la cinta sigue
-        empiezaAntes ? "bg-negro pl-3" : "tt-cinta",
+        // Si viene de la semana anterior, el borde va recto: la cinta sigue. Entregada (pedido 28): en verde, la de éxito
+        empiezaAntes ? cn("pl-3", r.estado === "entregado" ? "bg-exito" : "bg-negro") : "tt-cinta",
+        r.estado === "entregado" && "[--tt-cinta:var(--exito)]",
         className,
       )}
     >

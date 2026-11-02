@@ -94,3 +94,20 @@ export function textoSinRevisar(partes: readonly string[]): string {
   const lista = partes.length > 4 ? `${partes.slice(0, 4).join(", ")} y ${partes.length - 4} más` : `${partes.slice(0, -1).join(", ")} y ${partes.at(-1)}`;
   return `Faltan revisar ${partes.length} partes del checklist: ${lista}.`;
 }
+
+/** Cuántas entregadas muestra cada página del historial (pedido 28). */
+export const ENTREGADAS_POR_PAGINA = 20;
+
+/**
+ * Lo que se escribe en la búsqueda de entregadas (pedido 28), como fecha: "5/10" (día y mes, de cualquier año) o
+ * "5/10/2026" (también "5-10-26"). Null si no es una fecha.
+ */
+export function fechaBuscada(texto: string): { dia: number; mes: number; anio: number | null } | null {
+  const m = texto.trim().match(/^(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2}|\d{4}))?$/);
+  if (!m) return null;
+  const dia = Number(m[1]);
+  const mes = Number(m[2]);
+  if (dia < 1 || dia > 31 || mes < 1 || mes > 12) return null;
+  const anio = m[3] ? Number(m[3].length === 2 ? `20${m[3]}` : m[3]) : null;
+  return { dia, mes, anio };
+}

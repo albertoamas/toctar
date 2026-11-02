@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
 import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
 import { esquemaAdelanto, esquemaFechas, esquemaReserva } from "@/modulos/agenda/esquemas";
-import { bloquesDeLaSemana, diaDeLaSemana, diasDeLaSemana, fechaEntregaSugerida, lunesDeLaSemana, numeroDia, ocupaEspacio, seCruzan, textoDia, textoSemana, textoSemanaCorto } from "@/modulos/agenda/reglas";
+import { entregadasALaVista, bloquesDeLaSemana, diaDeLaSemana, diasDeLaSemana, fechaEntregaSugerida, lunesDeLaSemana, numeroDia, ocupaEspacio, seCruzan, textoDia, textoSemana, textoSemanaCorto } from "@/modulos/agenda/reglas";
 import { calcularSaldo } from "@/modulos/pagos/reglas";
 
 // C3 Agenda y pagos (HU-30): semanas, entrega sugerida, cruces (RN-06), saldo (RF-46) y validación de la reserva.
@@ -112,4 +112,19 @@ test("el rótulo de la semana y de cada día", () => {
   expect(textoSemanaCorto("2026-12-28")).toBe("28 dic al 3 ene 2027");
   expect(textoDia("2026-10-22")).toBe("Jueves 22 de octubre");
   expect(numeroDia("2026-10-05")).toBe("5");
+});
+
+// Pedido 28: las entregadas siguen en el tablero, sin tapar a la reserva que ocupa el espacio.
+
+test("una entregada se muestra en sus días, salvo los que usa otra reserva del mismo espacio", () => {
+  const entregada = { id: 1, estado: "entregado" as const, inicio: "2026-10-20", fin: "2026-10-22" };
+  const siguiente = { id: 2, estado: "agendado" as const, inicio: "2026-10-22", fin: "2026-10-24" };
+  // Salió el 22 y ese día entró otra: la entregada se ve el 20 y el 21
+  expect(entregadasALaVista([entregada, siguiente])).toEqual([siguiente, { ...entregada, fin: "2026-10-21" }]);
+  // Sin otra reserva, todos sus días
+  expect(entregadasALaVista([entregada])).toEqual([entregada]);
+  // Si la otra ocupa todos sus días, no se muestra; una cancelada no cuenta
+  const deUnDia = { ...entregada, fin: "2026-10-20" };
+  expect(entregadasALaVista([deUnDia, { ...siguiente, inicio: "2026-10-20" }])).toEqual([{ ...siguiente, inicio: "2026-10-20" }]);
+  expect(entregadasALaVista([entregada, { ...siguiente, estado: "cancelado" as const }])).toEqual([entregada]);
 });

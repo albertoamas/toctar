@@ -26,7 +26,7 @@ import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { sucursalPrincipal } from "@/modulos/configuracion/consultas";
 import { opcionesDeServicio, type OpcionServicio } from "@/modulos/cotizaciones/consultas";
 import { calcularSaldo, type Saldo } from "@/modulos/pagos/reglas";
-import { ocupaEspacio } from "./reglas";
+import { entregadasALaVista, ocupaEspacio } from "./reglas";
 
 // Lecturas de la agenda (C3). Quien las llama ya pasó por exigirModulo("agenda"); los montos y pagos solo se piden
 // para quien además ve "pagos" (o el dueño). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md.
@@ -444,10 +444,13 @@ export type SemanaDeAgenda = {
   diasCerrados: number[];
 };
 
-/** La semana del tablero (HU-29): los espacios y las reservas que ocupan alguno de esos días. */
+/**
+ * La semana del tablero (HU-29): los espacios y las reservas que caen en alguno de esos días. Pedido 28: también las
+ * entregadas, en los días que no usa otra reserva (`entregadasALaVista`); las canceladas no.
+ */
 export async function semanaDeAgenda(lunes: string, domingo: string): Promise<SemanaDeAgenda> {
   const s = await sucursalPrincipal();
-  const enLaSemana = and(eq(trabajo.sucursalId, s.id), notInArray(trabajo.estado, NO_OCUPAN), lte(trabajo.fechaInicio, domingo), gte(trabajo.fechaFin, lunes));
+  const enLaSemana = and(eq(trabajo.sucursalId, s.id), ne(trabajo.estado, "cancelado"), lte(trabajo.fechaInicio, domingo), gte(trabajo.fechaFin, lunes));
   const [espacios, reservas, lineas] = await Promise.all([
     db
       .select({ id: espacioTaller.id, nombre: espacioTaller.nombre, activo: espacioTaller.activo })
@@ -480,10 +483,12 @@ export async function semanaDeAgenda(lunes: string, domingo: string): Promise<Se
   ]);
   const porTrabajo = new Map<number, string[]>();
   for (const l of lineas) porTrabajo.set(l.trabajoId, [...(porTrabajo.get(l.trabajoId) ?? []), l.descripcion]);
-  const conReservas = new Set(reservas.map((r) => r.espacioId));
+  const aLaVista = [...new Set(reservas.map((r) => r.espacioId))].flatMap((espacioId) => entregadasALaVista(reservas.filter((r) => r.espacioId === espacioId)));
+  const conReservas = new Set(aLaVista.map((r) => r.espacioId));
   return {
     espacios: espacios.filter((e) => e.activo || conReservas.has(e.id)),
-    reservas: reservas.map((r) => {
+    // Por espacio, las que ocupan primero: en el día del celular gana la reserva que ocupa sobre la entregada
+    reservas: aLaVista.map((r) => {
       const suyas = porTrabajo.get(r.id) ?? [];
       return { ...r, servicio: suyas[0] ?? null, masServicios: Math.max(0, suyas.length - 1) };
     }),

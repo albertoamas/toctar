@@ -63,6 +63,24 @@ export function bloquesDeLaSemana<T extends Rango>(trabajos: readonly T[], lunes
 /** Una reserva ocupa espacio en la agenda mientras no se cancela ni se entrega (como la restricción de la base). */
 export const ocupaEspacio = (estado: EstadoTrabajo) => estado !== "cancelado" && estado !== "entregado";
 
+/**
+ * Pedido 28: las entregadas siguen en el tablero, en sus días, para ver qué se entregó y cuándo. Pero ya no ocupan el
+ * espacio: si otra reserva lo usa esos días (la que entró el mismo día en que salió), gana esa, y la entregada se
+ * muestra solo en los días que quedan libres antes (los primeros seguidos). Sin días libres, no se muestra.
+ */
+export function entregadasALaVista<T extends Rango & { estado: EstadoTrabajo }>(reservas: readonly T[]): T[] {
+  const activas = reservas.filter((r) => ocupaEspacio(r.estado));
+  const entregadas = reservas.filter((r) => r.estado === "entregado").flatMap((e) => {
+    let fin: string | null = null;
+    for (let dia = e.inicio; dia <= e.fin; dia = sumarDias(dia, 1)) {
+      if (activas.some((a) => seCruzan(a, { inicio: dia, fin: dia }))) break;
+      fin = dia;
+    }
+    return fin ? [{ ...e, fin }] : [];
+  });
+  return [...activas, ...entregadas];
+}
+
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 export const DIA_CORTO = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"] as const;
 
