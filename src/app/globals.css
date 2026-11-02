@@ -28,6 +28,18 @@
   --color-blanco: var(--blanco);
   --color-exito: var(--exito);
   --color-aviso: var(--aviso);
+  /* Panel administrativo (pedido 26, etapas/P26-rediseno-panel.md): el fondo gris del área de trabajo y los tonos de las
+     insignias de estado */
+  --color-fondo-panel: var(--fondo-panel);
+  --color-exito-fondo: var(--exito-fondo);
+  --color-aviso-fondo: var(--aviso-fondo);
+  --color-info: var(--info);
+  --color-info-fondo: var(--info-fondo);
+  --color-peligro: var(--peligro);
+  --color-peligro-fondo: var(--peligro-fondo);
+  --color-violeta: var(--violeta);
+  --color-violeta-fondo: var(--violeta-fondo);
+  --color-neutro-fondo: var(--neutro-fondo);
 
   /* shadcn/ui */
   --color-background: var(--background);
@@ -63,12 +75,14 @@
   --radius-xl: calc(var(--radius) * 2);
 }
 
-/* Tema claro: el predeterminado del panel interno. */
+/* Tema claro: el del panel interno, un panel administrativo estándar (pedido 26): área de trabajo gris, tarjetas blancas
+   con borde suave y sombra, esquinas de 8 px e insignias de color por estado. La marca queda en el sitio y el ingreso. */
 :root {
   --fondo: #ffffff;
+  --fondo-panel: #f3f4f6;
   --superficie: #f2f2f2;
   --superficie-alta: #ffffff;
-  --borde: #d4d4d4;
+  --borde: #e2e5e9;
   --borde-control: #8a8a8a;
   --tinta: #1a1a1a;
   --tinta-suave: #595959;
@@ -81,8 +95,19 @@
   --foco: #1a1a1a;
   --exito: #1b6e43;
   --aviso: #7a4f00;
+  /* Tonos de las insignias: texto y fondo, contraste AA (≥ 4,5:1) entre ellos */
+  --exito-fondo: #e6f4ea;
+  --aviso-fondo: #fdf1e0;
+  --info: #1d4ed8;
+  --info-fondo: #e8effd;
+  --peligro: #b42318;
+  --peligro-fondo: #fdecea;
+  --violeta: #6d28d9;
+  --violeta-fondo: #f1ebfd;
+  --neutro-fondo: #eceef1;
   --elevacion: 0 8px 24px rgba(26, 26, 26, 0.16);
-  --radius: 2px; /* radio-1: el panel. El sitio va con esquinas rectas (radio-0). */
+  --sombra-tarjeta: 0 1px 2px rgb(22 24 29 / 6%), 0 1px 3px rgb(22 24 29 / 4%);
+  --radius: 8px; /* El panel. El sitio y el ingreso, con las esquinas de la marca (ver [data-theme="oscuro"]). */
 }
 
 /* Alias de shadcn/ui. Van también en cada [data-theme] para que se resuelvan con los
@@ -134,6 +159,7 @@
   --aviso: #f2b33d;
   --elevacion: 0 12px 32px rgba(0, 0, 0, 0.6);
   --sidebar-accent: var(--superficie-alta);
+  --radius: 2px; /* radio-1 de la marca: el ingreso. El sitio va con esquinas rectas (radio-0). */
 }
 
 @layer base {
@@ -207,18 +233,17 @@
     transform: skewX(-30deg);
   }
 
-  /* Módulo actual en el menú del panel: un trazo rojo a 60° a la izquierda (skew de 30° de un trazo vertical),
-     como los del monograma. Es lo único rojo del menú. */
-  /* Inclinado, el trazo ocupa de 5 a 18 px desde el borde: el texto empieza en 28 px (pl-7). */
+  /* Módulo actual en el menú del panel (pedido 26): una barra roja recta en el borde izquierdo del enlace (dentro: el
+     menú se desplaza y recortaría lo que sale). Con su ícono en rojo, es lo único rojo del menú. */
   .tt-modulo-actual::before {
     content: "";
     position: absolute;
-    top: 50%;
-    left: 10px;
+    top: 8px;
+    bottom: 8px;
+    left: 0;
     width: 3px;
-    height: 18px;
+    border-radius: 0 3px 3px 0;
     background: var(--rojo);
-    transform: translateY(-50%) skewX(-30deg);
   }
 
   /* Siluetas de carga del panel (Cargando): aparecen recién a los 0,3 s, para que una carga rápida no parpadee. */
@@ -227,7 +252,8 @@
   }
   .tt-cargando__bloque {
     border-radius: var(--radius-sm, 4px);
-    background: var(--superficie);
+    /* Se ve sobre el gris del panel y sobre una tarjeta blanca */
+    background: color-mix(in srgb, var(--tinta) 8%, transparent);
     animation: tt-latido 1.4s ease-in-out infinite;
   }
   @media (prefers-reduced-motion: reduce) {
@@ -319,6 +345,49 @@
   }
   .tt-insignia--error {
     color: var(--rojo-texto);
+  }
+
+  /* Insignia de estado del panel (pedido 26): una píldora con punto, con el fondo del tono. La palabra lleva el
+     significado; el color lo refuerza. Sin tono, gris. (La del sitio, con la marca a 60°, es .tt-insignia.) */
+  .tt-estado {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 9px;
+    border-radius: 9999px;
+    background: var(--neutro-fondo);
+    color: var(--tinta-suave);
+    font-size: 12.5px;
+    line-height: 18px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .tt-estado::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: currentColor;
+  }
+  .tt-estado--exito {
+    background: var(--exito-fondo);
+    color: var(--exito);
+  }
+  .tt-estado--aviso {
+    background: var(--aviso-fondo);
+    color: var(--aviso);
+  }
+  .tt-estado--peligro {
+    background: var(--peligro-fondo);
+    color: var(--peligro);
+  }
+  .tt-estado--info {
+    background: var(--info-fondo);
+    color: var(--info);
+  }
+  .tt-estado--violeta {
+    background: var(--violeta-fondo);
+    color: var(--violeta);
   }
 
   /* Botones del sitio (componente Boton del Design System). El principal es rojo con la esquina
@@ -705,6 +774,43 @@
   50% {
     opacity: 0.55;
   }
+}
+
+/* Panel administrativo (pedido 26). Como @utility, para usarlas junto a las de Tailwind (y que las encuentre en el
+   código). La escala de títulos y la tarjeta viven solo aquí: cambiarlas es tocar un lugar. */
+
+/* El h1 de cada pantalla */
+@utility tt-titulo-pagina {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+/* El h2 de una sección o tarjeta */
+@utility tt-titulo-seccion {
+  font-size: 1.0625rem;
+  line-height: 1.5rem;
+  font-weight: 650;
+}
+/* El h3, dentro de una sección */
+@utility tt-titulo-sub {
+  font-size: 0.9375rem;
+  line-height: 1.375rem;
+  font-weight: 600;
+}
+/* Placas, números de cotización y cuentas grandes: se leen y se comparan de un vistazo */
+@utility tt-placa {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+/* La tarjeta blanca sobre el fondo gris del panel: cada bloque se separa solo */
+@utility tt-tarjeta-panel {
+  border: 1px solid var(--borde);
+  border-radius: var(--radius);
+  background: var(--fondo);
+  box-shadow: var(--sombra-tarjeta);
 }
 
 /* Agenda (HU-29). Como @utility (y no en @layer components): así Tailwind las incluye cuando las encuentra en el
