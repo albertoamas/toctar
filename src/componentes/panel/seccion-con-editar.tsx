@@ -62,8 +62,8 @@ export function SeccionConEditar({ id, titulo, nivel = 2, etiquetaEditar, titulo
     <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-2">
       {nivel === 2 && cabecera}
       {/* flex-1: en una grilla, las tarjetas de una misma fila quedan del mismo alto. Una sección de nivel 3 va dentro de
-          otra tarjeta: un recuadro con borde, sin sombra */}
-      <div className={nivel === 3 ? "flex flex-1 flex-col gap-3 rounded-lg border border-border p-4" : "tt-tarjeta-panel flex flex-1 flex-col gap-3 p-4"}>
+          otra (o en una grilla de recuadros, como los precios de cada variante): blanco, con borde, sin sombra */}
+      <div className={nivel === 3 ? "flex flex-1 flex-col gap-3 rounded-lg border border-border bg-fondo p-4" : "tt-tarjeta-panel flex flex-1 flex-col gap-3 p-4"}>
         {nivel === 3 && cabecera}
         {lectura}
       </div>
