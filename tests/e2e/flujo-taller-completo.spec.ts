@@ -55,7 +55,8 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
   const pasos = page.getByRole("region", { name: "Estado de la orden" });
   await pasos.getByRole("button", { name: "Empezar trabajo" }).click();
   await expect(pasos.locator('[aria-current="step"]')).toHaveText("En proceso");
-  // Al empezar, la foto de inicio con todo el vehículo (pedido 27)
+  // Al empezar, la foto de inicio con todo el vehículo (pedido 27); la subida necesita JavaScript
+  await expect(page.getByRole("button", { name: "Tomar foto" }).first()).toBeEnabled();
   await page.getByLabel("Cámara para fotos del inicio").setInputFiles({ name: "frente.png", mimeType: "image/png", buffer: PNG });
   await expect(page.getByText("Foto guardada.")).toBeVisible();
   await pasos.getByRole("button", { name: "Marcar listo" }).click();

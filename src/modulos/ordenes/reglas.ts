@@ -77,12 +77,17 @@ export const estaAtrasada = (o: { estado: EstadoTrabajo; fechaFin: string }, hoy
 /** Una reserva se recibe desde su día de ingreso (en Bolivia): si el cliente llega antes, primero se reprograma. */
 export const puedeRecibirse = (r: { estado: EstadoTrabajo; fechaInicio: string }, hoy: string) => r.estado === "agendado" && r.fechaInicio <= hoy;
 
-/**
- * Si a esa etapa todavía se le suben o quitan fotos. Las de ingreso, solo mientras se recibe: después son la prueba de
- * cómo llegó el vehículo (D-6). Las demás, mientras la orden está abierta (no después de la entrega).
- */
+/** Si a esa etapa se le suben fotos ahora: solo inicio y final (pedido 27), mientras la orden está abierta. */
 export function etapaAbierta(etapa: EtapaFoto, estado: EstadoTrabajo): boolean {
   return conSubida(etapa) && estaAbierta(estado);
+}
+
+/**
+ * Si se puede quitar una foto ya subida (por error): las de la orden, mientras está abierta, también las de durante
+ * de antes del pedido 27; las de ingreso, solo mientras se recibe: después son la prueba de cómo llegó (D-6).
+ */
+export function puedeQuitarFoto(etapa: EtapaFoto, estado: EstadoTrabajo): boolean {
+  return etapa === "ingreso" ? estado === "agendado" : estaAbierta(estado);
 }
 
 /** De dónde sale la foto de antes al publicar en la galería (HU-41): las del ingreso o las de antes de trabajar. */

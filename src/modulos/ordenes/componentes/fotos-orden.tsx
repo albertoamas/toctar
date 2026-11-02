@@ -166,7 +166,8 @@ export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio, comp
               {nombre}: foto {abierta! + 1} de {fotos.length}
             </DialogTitle>
             <Image src={elegida.url} alt={`Foto ${abierta! + 1} ${frase}`} width={elegida.ancho ?? 1600} height={elegida.alto ?? 1200} unoptimized className="max-h-[70dvh] w-full bg-superficie object-contain" />
-            {editable && elegida.puedeQuitar && (
+            {/* Quitar no depende de poder subir: una foto de durante (de antes del pedido 27) se quita mientras la orden esté abierta */}
+            {elegida.puedeQuitar && (
               <div>
                 <Button type="button" variant="outline" disabled={quitando} onClick={() => quitar(elegida.id)}>
                   <TrashIcon />

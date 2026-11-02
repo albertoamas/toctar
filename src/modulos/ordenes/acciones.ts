@@ -35,7 +35,7 @@ import {
   esquemaQuitarFotoOrden,
   esquemaRecibir,
 } from "./esquemas";
-import { esFotoDeAntes, estaAbierta, etapaAbierta, puedeExtenderse, MAXIMO_FOTOS_ETAPA, FRASE_ETAPA, puedeRecibirse, textoSinRevisar, transicionOrden } from "./reglas";
+import { esFotoDeAntes, estaAbierta, etapaAbierta, puedeExtenderse, puedeQuitarFoto, MAXIMO_FOTOS_ETAPA, FRASE_ETAPA, puedeRecibirse, textoSinRevisar, transicionOrden } from "./reglas";
 
 // Órdenes (C4). Entra el dueño, el encargado con "Órdenes" y el técnico, que solo toca las suyas (RN-12). Recibir el
 // vehículo es del dueño y del encargado: sale de la agenda, que el técnico no ve. Especificación:
@@ -59,12 +59,9 @@ class Conflicto extends Error {
   }
 }
 
-/**
- * Si a esa etapa se le puede sumar una foto ahora: abierta y, las de ingreso, desde el día en que llega el vehículo (antes
- * no prueban nada). Devuelve el motivo si no.
- */
-function motivoSinFoto(etapa: EtapaFoto, t: { estado: EstadoTrabajo; fechaInicio: string }, fotos: number): string | null {
-  if (!etapaAbierta(etapa, t.estado)) return `Ya no se agregan fotos ${FRASE_ETAPA[etapa]}.`;
+/** Si a esa etapa se le puede sumar una foto ahora (inicio o final, con la orden abierta). Devuelve el motivo si no. */
+function motivoSinFoto(etapa: EtapaFoto, estado: EstadoTrabajo, fotos: number): string | null {
+  if (!etapaAbierta(etapa, estado)) return `Ya no se agregan fotos ${FRASE_ETAPA[etapa]}.`;
   if (fotos >= MAXIMO_FOTOS_ETAPA) return `Hasta ${MAXIMO_FOTOS_ETAPA} fotos por etapa.`;
   return null;
 }
@@ -92,13 +89,13 @@ export async function subirFotoOrden(_previo: EstadoFormulario, datos: FormData)
   const { trabajoId, etapa } = entrada.data;
 
   const [t] = await db
-    .select({ estado: trabajo.estado, fechaInicio: trabajo.fechaInicio, tecnicoId: trabajo.tecnicoId, clienteId: trabajo.clienteId })
+    .select({ estado: trabajo.estado, tecnicoId: trabajo.tecnicoId, clienteId: trabajo.clienteId })
     .from(trabajo)
     .where(eq(trabajo.id, trabajoId));
   if (!t) return { mensaje: "Esa orden ya no existe." };
   if (!puedeVerOrden(usuario, t.tecnicoId)) return { mensaje: NO_ES_TUYA };
   // Antes de procesar la foto: si no va a entrar, ni se convierte ni se sube
-  const antes = motivoSinFoto(etapa, t, await contarFotos(db, trabajoId, etapa));
+  const antes = motivoSinFoto(etapa, t.estado, await contarFotos(db, trabajoId, etapa));
   if (antes) return { errores: { foto: antes } };
 
   const autorId = Number(usuario.id);
@@ -107,9 +104,9 @@ export async function subirFotoOrden(_previo: EstadoFormulario, datos: FormData)
   try {
     await db.transaction(async (tx) => {
       // Candado sobre la orden: dos subidas a la vez no pasan juntas el límite, y el estado no cambia en el medio
-      const [actual] = await tx.select({ estado: trabajo.estado, fechaInicio: trabajo.fechaInicio }).from(trabajo).where(eq(trabajo.id, trabajoId)).for("update");
+      const [actual] = await tx.select({ estado: trabajo.estado }).from(trabajo).where(eq(trabajo.id, trabajoId)).for("update");
       if (!actual) throw new Conflicto("Esa orden ya no existe.");
-      const motivo = motivoSinFoto(etapa, actual, await contarFotos(tx, trabajoId, etapa));
+      const motivo = motivoSinFoto(etapa, actual.estado, await contarFotos(tx, trabajoId, etapa));
       if (motivo) throw new Conflicto(motivo);
       await tx.insert(trabajoFoto).values({ trabajoId, archivoId: r.archivoId, etapa, subidoPor: autorId });
     });
@@ -139,11 +136,11 @@ export async function quitarFotoOrden(datos: { trabajoId: number; fotoId: number
   if (!f) return { mensaje: "Esa foto ya no está." };
   if (!puedeVerOrden(usuario, f.tecnicoId)) return { mensaje: NO_ES_TUYA };
   if (usuario.rol !== "dueno" && f.subidoPor !== Number(usuario.id)) return { mensaje: "Solo quien subió la foto, o el dueño, la puede quitar." };
-  if (!etapaAbierta(f.etapa, f.estado)) return { mensaje: "Esa foto ya no se puede quitar." };
+  if (!puedeQuitarFoto(f.etapa, f.estado)) return { mensaje: "Esa foto ya no se puede quitar." };
 
   const borrada = await db.transaction(async (tx) => {
     const [actual] = await tx.select({ estado: trabajo.estado }).from(trabajo).where(eq(trabajo.id, trabajoId)).for("update");
-    if (!actual || !etapaAbierta(f.etapa, actual.estado)) return false;
+    if (!actual || !puedeQuitarFoto(f.etapa, actual.estado)) return false;
     const [fila] = await tx.delete(trabajoFoto).where(eq(trabajoFoto.id, fotoId)).returning({ id: trabajoFoto.id });
     return !!fila;
   });
@@ -156,7 +153,7 @@ export async function quitarFotoOrden(datos: { trabajoId: number; fotoId: number
 
 /**
  * Recibe el vehículo (HU-33, RF-40): la reserva agendada, desde su día de ingreso, pasa a orden "recibida" con las
- * observaciones de ingreso y su técnico. Las fotos de ingreso ya se subieron mientras se recibía.
+ * observaciones de ingreso y su técnico. Cómo llegó lo dice el checklist (pedido 12), revisado parte por parte.
  */
 export async function recibirVehiculo(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const usuario = await exigirModulo("ordenes");

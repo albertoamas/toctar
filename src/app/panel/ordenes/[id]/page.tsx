@@ -31,7 +31,7 @@ import { FotosOrden } from "@/modulos/ordenes/componentes/fotos-orden";
 import { registrarAvisoListo } from "@/modulos/ordenes/acciones";
 import { avancesDeTrabajo, firmaDeTrabajo, revisionDeTrabajo, fotosDeTrabajo, obtenerOrden, publicadaDeOrden } from "@/modulos/ordenes/consultas";
 import { mensajeListo } from "@/modulos/ordenes/mensajes";
-import { esOrden, estaAbierta, estaAtrasada, pasosDeOrden, puedeExtenderse, puedePublicarse } from "@/modulos/ordenes/reglas";
+import { puedeQuitarFoto, esOrden, estaAbierta, estaAtrasada, pasosDeOrden, puedeExtenderse, puedePublicarse } from "@/modulos/ordenes/reglas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
 
 export const metadata: Metadata = { title: "Orden" };
@@ -96,7 +96,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   // Una vez: ya publicada, se ordena u oculta en Sitio web > Galería (y si se quita de ahí, se puede volver a publicar)
   const sePuedePublicar = conGaleria && !publicada && puedePublicarse(o.estado, fotos.map((f) => f.etapa));
   const deEtapa = (etapa: (typeof fotos)[number]["etapa"]) =>
-    fotos.filter((f) => f.etapa === etapa).map((f) => ({ ...f, puedeQuitar: etapa !== "ingreso" && (usuario.rol === "dueno" || f.subidoPor === yo) }));
+    fotos.filter((f) => f.etapa === etapa).map((f) => ({ ...f, puedeQuitar: puedeQuitarFoto(etapa, o.estado) && (usuario.rol === "dueno" || f.subidoPor === yo) }));
   const avisada = o.avisadoListoAt !== null;
   const { anterior } = pasosDeOrden(o.estado);
   const extender =
@@ -239,12 +239,12 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
               <p className="text-tinta-suave">Sin fotos.</p>
             ) : (
               <>
-                {/* Pedido 27: dos momentos. Los detalles de cómo llegó, con su foto, están en el checklist */}
-                <FotosOrden trabajoId={o.id} etapa="antes" fotos={deEtapa("antes")} editable={abierta} compacta textoVacio="Sin fotos de inicio." />
-                <FotosOrden trabajoId={o.id} etapa="despues" fotos={deEtapa("despues")} editable={abierta} compacta textoVacio="Sin fotos del final." />
-                {/* Las de antes del pedido 27 (ingreso y durante) se siguen viendo, sin subir más */}
+                {/* Pedido 27: dos momentos, inicio y final; los detalles de cómo llegó, con su foto, están en el checklist. Las
+                    de ingreso y durante, de antes del pedido, se siguen viendo en su lugar del tiempo, sin subir más */}
                 {deEtapa("ingreso").length > 0 && <FotosOrden trabajoId={o.id} etapa="ingreso" fotos={deEtapa("ingreso")} editable={false} textoVacio="" />}
+                <FotosOrden trabajoId={o.id} etapa="antes" fotos={deEtapa("antes")} editable={abierta} compacta textoVacio="Sin fotos de inicio." />
                 {deEtapa("durante").length > 0 && <FotosOrden trabajoId={o.id} etapa="durante" fotos={deEtapa("durante")} editable={false} textoVacio="" />}
+                <FotosOrden trabajoId={o.id} etapa="despues" fotos={deEtapa("despues")} editable={abierta} compacta textoVacio="Sin fotos del final." />
               </>
             )}
           </section>

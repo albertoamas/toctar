@@ -16,6 +16,7 @@ import {
   pasosDeOrden,
   puedeExtenderse,
   puedePublicarse,
+  puedeQuitarFoto,
   puedeRecibirse,
   rutaTrabajo,
   textoSinRevisar,
@@ -56,6 +57,15 @@ test("pedido 27: se suben fotos de inicio y del final mientras la orden está ab
   // Tampoco por la acción: el esquema solo acepta las dos
   expect(esquemaFotoOrden.safeParse({ trabajoId: "3", etapa: "ingreso" }).success).toBe(false);
   expect(esquemaFotoOrden.safeParse({ trabajoId: "3", etapa: "durante" }).success).toBe(false);
+});
+
+test("una foto subida por error se quita con la orden abierta (también las de durante); las de ingreso, solo al recibir", () => {
+  for (const etapa of ["antes", "durante", "despues"] as const) {
+    expect(puedeQuitarFoto(etapa, "en_proceso")).toBe(true);
+    expect(puedeQuitarFoto(etapa, "entregado")).toBe(false);
+  }
+  expect(puedeQuitarFoto("ingreso", "agendado")).toBe(true);
+  expect(puedeQuitarFoto("ingreso", "recibido")).toBe(false);
 });
 
 test("recibe el dueño o el encargado con Órdenes; el técnico no", () => {
