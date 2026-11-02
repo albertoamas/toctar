@@ -66,7 +66,8 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
         <div className="sticky top-14 z-40 lg:top-0">
           <AvisoConexion />
         </div>
-        <main className="flex-1 px-4 py-5 md:px-8 md:py-7">{children}</main>
+        {/* @container: las tablas del panel (TablaLista) se acomodan al ancho del área de trabajo, no al de la pantalla */}
+        <main className="@container flex-1 px-4 py-5 md:px-8 md:py-7">{children}</main>
       </div>
     </div>
   );
