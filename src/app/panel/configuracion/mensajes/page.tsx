@@ -5,15 +5,19 @@ import { exigirModulo } from "@/lib/sesion";
 import { EditorPlantilla } from "@/modulos/configuracion/componentes/editor-plantilla";
 import { obtenerDatosPublicos, obtenerPlantillas } from "@/modulos/configuracion/consultas";
 import { CLAVES_PLANTILLA } from "@/modulos/configuracion/plantillas";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 
 export const metadata: Metadata = { title: "Mensajes" };
 
 // HU-40: los mensajes de WhatsApp que se envían desde la orden, los saldos y los mantenimientos. Solo el dueño.
 export default function PaginaMensajes() {
   return (
-    <Suspense fallback={<Cargando />}>
-      <Contenido />
-    </Suspense>
+    <>
+      <EncabezadoPagina titulo="Mensajes" volver={{ href: "/panel/configuracion", texto: "Configuración" }} />
+      <Suspense fallback={<Cargando />}>
+        <Contenido />
+      </Suspense>
+    </>
   );
 }
 

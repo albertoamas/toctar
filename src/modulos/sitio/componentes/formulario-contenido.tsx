@@ -17,7 +17,9 @@ import { PAGINAS, type CampoContenido, type ContenidoPagina, type Pagina } from 
 
 const guardarConAviso = conAviso(guardarContenido);
 
-export function FormularioContenido({ pagina, contenido }: { pagina: Pagina; contenido: ContenidoPagina }) {
+/** `tituloOculto`: la pantalla ya lleva el nombre de la página en su título (se entró solo a ella): el del formulario queda
+ * para el lector de pantalla, que lo usa para nombrar el formulario. */
+export function FormularioContenido({ pagina, contenido, tituloOculto = false }: { pagina: Pagina; contenido: ContenidoPagina; tituloOculto?: boolean }) {
   const def = PAGINAS[pagina];
   const campos = def.campos as readonly CampoContenido[];
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(guardarConAviso, {});
@@ -33,7 +35,9 @@ export function FormularioContenido({ pagina, contenido }: { pagina: Pagina; con
     <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-labelledby={`${pagina}-titulo`}>
       <input type="hidden" name="pagina" value={pagina} />
       <div className="flex flex-col gap-1">
-        <h2 id={`${pagina}-titulo`} className="tt-titulo-seccion">{def.titulo}</h2>
+        <h2 id={`${pagina}-titulo`} className={tituloOculto ? "sr-only" : "tt-titulo-seccion"}>
+          {def.titulo}
+        </h2>
         <p className="text-sm text-tinta-suave">{def.descripcion}</p>
       </div>
 

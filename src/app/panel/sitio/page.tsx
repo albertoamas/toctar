@@ -1,52 +1,39 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import Link from "next/link";
-import { cn } from "cn";
+import { CircleHelpIcon, HouseIcon, ImagesIcon, MapPinIcon, TagIcon, UsersIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
-import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
-import { puedeVerModulo } from "@/lib/permisos";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { TarjetasSeccion } from "@/componentes/panel/tarjetas-seccion";
 import { exigirModulo } from "@/lib/sesion";
-import { ListaServicios } from "@/modulos/sitio/componentes/lista-servicios";
-import { listarServicios } from "@/modulos/sitio/consultas";
 
-export const metadata: Metadata = { title: "Servicios del sitio" };
+export const metadata: Metadata = { title: "Sitio web" };
 
-// HU-07: la página de cada servicio en el sitio, en orden. Dueño o encargado con el permiso "sitio". Los servicios se
-// agregan en el catálogo (lo hace el dueño: llevan precios); pulido 13.2: para él, el enlace en lugar de la explicación.
-export default function PaginaServicios() {
+// Sitio web (pedido 26): "¿Qué quieres cambiar?" con una tarjeta por cada parte del sitio, en el orden en que se ve.
+// Cada página del sitio (portada, nosotros, contacto) es su propia tarjeta: el dueño entra directo a sus textos. Dueño o
+// encargado con el permiso "sitio".
+export default function PaginaSitioWeb() {
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
-      <Suspense fallback={<Cargando />}>
-        <Lista />
-      </Suspense>
-    </div>
+    <Suspense fallback={<Cargando />}>
+      <Contenido />
+    </Suspense>
   );
 }
 
-async function Lista() {
-  const usuario = await exigirModulo("sitio");
-  const servicios = await listarServicios();
+async function Contenido() {
+  await exigirModulo("sitio");
   return (
     <>
-      <div className="flex flex-col gap-1">
-        <p className="text-tinta-suave">
-          En este orden salen en el sitio. Toca uno para editar su página.
-          {!puedeVerModulo(usuario, "catalogo") && " Los servicios nuevos los agrega el dueño."}
-        </p>
-        {puedeVerModulo(usuario, "catalogo") && (
-          <Link href="/panel/catalogo" className={cn(ENLACE_TEXTO, "text-tinta")}>
-            Agregar un servicio en el catálogo
-          </Link>
-        )}
-      </div>
-      <ListaServicios
-      servicios={servicios.map((s) => ({
-        id: s.id,
-        nombre: s.nombre,
-        resumen: s.resumen,
-        visible: s.visible,
-        miniatura: s.foto?.miniatura ?? null,
-      }))}
+      <EncabezadoPagina titulo="Sitio web">¿Qué quieres cambiar?</EncabezadoPagina>
+      <TarjetasSeccion
+        etiqueta="Partes del sitio web"
+        tarjetas={[
+          { href: "/panel/sitio/textos?pagina=inicio", icono: HouseIcon, titulo: "Portada", descripcion: "El título, la frase y la foto del taller." },
+          { href: "/panel/sitio/servicios", icono: TagIcon, titulo: "Servicios", descripcion: "La página de cada servicio: textos, fotos y su orden." },
+          { href: "/panel/sitio/textos?pagina=nosotros", icono: UsersIcon, titulo: "Nosotros", descripcion: "La historia del taller y la foto del equipo." },
+          { href: "/panel/sitio/textos?pagina=contacto", icono: MapPinIcon, titulo: "Contacto", descripcion: "El texto de la página de contacto." },
+          { href: "/panel/sitio/preguntas", icono: CircleHelpIcon, titulo: "Preguntas frecuentes", descripcion: "Las preguntas y respuestas que se ven en el sitio." },
+          { href: "/panel/sitio/galeria", icono: ImagesIcon, titulo: "Galería", descripcion: "Las fotos de los trabajos y cuáles van en la portada." },
+        ]}
       />
     </>
   );

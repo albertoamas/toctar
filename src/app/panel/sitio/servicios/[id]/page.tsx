@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: "Servicio" };
 export default function PaginaServicio({ params }: PageProps<"/panel/sitio/servicios/[id]">) {
   return (
     <div className="flex flex-col gap-6">
-      <EnlaceVolver href="/panel/sitio">Servicios</EnlaceVolver>
+      <EnlaceVolver href="/panel/sitio/servicios">Servicios</EnlaceVolver>
       <Suspense fallback={<Cargando />}>
         <Detalle params={params} />
       </Suspense>

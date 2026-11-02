@@ -9,7 +9,7 @@ import { ETIQUETA_SERVICIOS } from "./consultas";
  */
 export function servicioCambiado(id?: number) {
   updateTag(ETIQUETA_SERVICIOS);
-  revalidatePath("/panel/sitio");
+  revalidatePath("/panel/sitio/servicios");
   revalidatePath("/panel/catalogo");
   if (id) {
     revalidatePath(`/panel/sitio/servicios/${id}`);
