@@ -21,7 +21,7 @@ export function AtenderReclamo({ id }: { id: number }) {
   useFocoEnError(formulario, estado);
 
   return (
-    <form ref={formulario} action={accion} className="flex flex-col items-start gap-4 tt-tarjeta-panel p-4">
+    <form ref={formulario} action={accion} className="flex flex-col items-start gap-4">
       <input type="hidden" name="id" value={id} />
       <div className="w-full">
         <Campo id="nota" etiqueta="Qué se hizo" error={error} ayuda="Queda en el registro del reclamo.">
