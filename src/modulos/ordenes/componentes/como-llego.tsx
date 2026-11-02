@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { DetalleRevision } from "../consultas";
 import { NOMBRE_DETALLE } from "../reglas";
+import { Insignia } from "@/componentes/panel/insignia";
 
 // "Cómo llegó" en la orden (pedido 12): los detalles del checklist con su foto (se abre en grande), "El resto, bien" (o
 // "Todas las partes, bien") y las observaciones de ingreso. Lo ve también el técnico: no hay precios ni teléfonos (RN-12).
@@ -25,7 +26,7 @@ export function ComoLlego({ revision, observaciones }: Props) {
                 <span className="flex min-w-0 flex-col">
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold">{d.parte}</span>
-                    <span className="tt-estado tt-estado--aviso">{d.tipo && NOMBRE_DETALLE[d.tipo]}</span>
+                    <Insignia tono="aviso">{d.tipo && NOMBRE_DETALLE[d.tipo]}</Insignia>
                   </span>
                   {d.nota && <span className="text-sm">{d.nota}</span>}
                 </span>

@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { exigirModulo } from "@/lib/sesion";
 import { listarUsuarios } from "@/modulos/usuarios/consultas";
 import { NOMBRE_ROL } from "@/modulos/usuarios/textos";
+import { Insignia } from "@/componentes/panel/insignia";
 
 export const metadata: Metadata = { title: "Usuarios" };
 
@@ -107,8 +108,8 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/usuarios">, "searc
 
 function Estado({ desactivado }: { desactivado: boolean }) {
   return desactivado ? (
-    <span className="tt-estado">Desactivado</span>
+    <Insignia>Desactivado</Insignia>
   ) : (
-    <span className="tt-estado tt-estado--exito">Activo</span>
+    <Insignia tono="exito">Activo</Insignia>
   );
 }

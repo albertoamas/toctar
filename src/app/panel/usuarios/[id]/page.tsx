@@ -8,6 +8,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { AccesoUsuario } from "@/modulos/usuarios/componentes/acceso-usuario";
 import { FormularioUsuario } from "@/modulos/usuarios/componentes/formulario-usuario";
 import { obtenerUsuario } from "@/modulos/usuarios/consultas";
+import { Insignia } from "@/componentes/panel/insignia";
 
 export const metadata: Metadata = { title: "Usuario" };
 
@@ -36,9 +37,9 @@ async function Detalle({ params }: Pick<PageProps<"/panel/usuarios/[id]">, "para
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="tt-titulo-pagina">{usuario.nombre}</h1>
         {usuario.desactivado ? (
-          <span className="tt-estado">Desactivado</span>
+          <Insignia>Desactivado</Insignia>
         ) : (
-          <span className="tt-estado tt-estado--exito">Activo</span>
+          <Insignia tono="exito">Activo</Insignia>
         )}
       </div>
       <div className="grid gap-10 lg:grid-cols-[minmax(0,36rem)_minmax(0,22rem)]">

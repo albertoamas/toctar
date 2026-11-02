@@ -9,6 +9,7 @@ import { avisarResultado } from "@/componentes/panel/avisos";
 import { Button } from "@/componentes/ui/button";
 import type { Direccion } from "@/lib/orden";
 import { moverServicio } from "../acciones";
+import { Insignia } from "@/componentes/panel/insignia";
 
 // HU-07: servicios en el orden en que salen en el sitio. Se abren para editar su página.
 
@@ -39,7 +40,7 @@ export function ListaServicios({ servicios }: { servicios: Fila[] }) {
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="flex flex-wrap items-center gap-2 font-semibold group-hover:underline">
                 {s.nombre}
-                {!s.visible && <span className="tt-estado">Oculto</span>}
+                {!s.visible && <Insignia>Oculto</Insignia>}
               </span>
               {/* Uno recién creado en el catálogo no tiene resumen: es lo que falta para mostrarlo */}
               <span className="line-clamp-2 text-sm text-tinta-suave">{s.resumen || "Falta completar su página."}</span>

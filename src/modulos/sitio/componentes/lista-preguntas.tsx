@@ -21,6 +21,7 @@ import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { cambiarVisibilidadPregunta, eliminarPregunta, guardarPregunta, moverPregunta } from "../acciones";
+import { Insignia } from "@/componentes/panel/insignia";
 
 // HU-08: preguntas frecuentes del sitio (RF-05). Se agregan, editan, ordenan, ocultan y eliminan.
 
@@ -63,7 +64,7 @@ export function ListaPreguntas({ preguntas }: { preguntas: Pregunta[] }) {
                 <div className="group flex min-w-60 flex-1 cursor-pointer flex-col gap-1" onClick={() => setEditando(p.id)}>
                   <span className="flex flex-wrap items-center gap-2 font-semibold group-hover:underline">
                     {p.pregunta}
-                    {!p.visible && <span className="tt-estado">Oculta</span>}
+                    {!p.visible && <Insignia>Oculta</Insignia>}
                   </span>
                   <span className="line-clamp-2 text-sm text-tinta-suave">{p.respuesta}</span>
                 </div>

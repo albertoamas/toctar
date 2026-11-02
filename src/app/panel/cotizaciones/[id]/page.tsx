@@ -8,6 +8,7 @@ import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { Insignia } from "@/componentes/panel/insignia";
 import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
@@ -61,7 +62,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
     <div className="flex max-w-3xl flex-col gap-8">
       <EncabezadoPagina
         titulo={`Cotización ${c.numero}`}
-        estado={<span className={cn("tt-estado", TONO_ESTADO[c.estado] && `tt-estado--${TONO_ESTADO[c.estado]}`)}>{NOMBRE_ESTADO[c.estado]}</span>}
+        estado={<Insignia tono={TONO_ESTADO[c.estado]}>{NOMBRE_ESTADO[c.estado]}</Insignia>}
         accion={
           <div className="flex flex-wrap gap-2">
             {/* El paso siguiente, uno solo: agendar la pendiente (el cliente aceptó) */}

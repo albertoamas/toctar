@@ -1,4 +1,4 @@
-import type { TonoEstado } from "@/componentes/panel/fila-lista";
+import type { TonoEstado } from "@/lib/tonos";
 import type { EstadoTrabajo } from "@/db/esquema/trabajos";
 import { sumarDias } from "@/lib/fechas";
 import { NOMBRE_DIA } from "@/lib/horarios";

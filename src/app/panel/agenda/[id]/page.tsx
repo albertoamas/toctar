@@ -8,6 +8,7 @@ import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { Insignia } from "@/componentes/panel/insignia";
 import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -76,7 +77,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
     <div className="flex max-w-5xl flex-col gap-8">
       <EncabezadoPagina
         titulo={r.placa}
-        estado={<span className={cn("tt-estado", TONO_ESTADO_TRABAJO[r.estado] && `tt-estado--${TONO_ESTADO_TRABAJO[r.estado]}`)}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</span>}
+        estado={<Insignia tono={TONO_ESTADO_TRABAJO[r.estado]}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</Insignia>}
         accion={
           <div className="flex flex-wrap gap-2">
             {principal}

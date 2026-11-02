@@ -316,39 +316,8 @@
     background: currentColor;
   }
 
-  /* Insignia de estado del panel: la palabra lleva el significado; el color y la marca a 60° lo refuerzan. */
-  .tt-insignia {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 2px 8px;
-    border: 1px solid currentColor;
-    border-radius: var(--radius);
-    font-size: 13px;
-    line-height: 18px;
-    font-weight: 600;
-    color: var(--tinta-suave);
-    white-space: nowrap;
-  }
-  .tt-insignia::before {
-    content: "";
-    width: 7px;
-    height: 7px;
-    background: currentColor;
-    transform: skewX(-30deg);
-  }
-  .tt-insignia--exito {
-    color: var(--exito);
-  }
-  .tt-insignia--aviso {
-    color: var(--aviso);
-  }
-  .tt-insignia--error {
-    color: var(--rojo-texto);
-  }
-
   /* Insignia de estado del panel (pedido 26): una píldora con punto, con el fondo del tono. La palabra lleva el
-     significado; el color lo refuerza. Sin tono, gris. (La del sitio, con la marca a 60°, es .tt-insignia.) */
+     significado; el color lo refuerza. Sin tono, gris. La usa el componente Insignia. */
   .tt-estado {
     display: inline-flex;
     align-items: center;

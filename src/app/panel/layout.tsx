@@ -18,7 +18,8 @@ export const metadata: Metadata = {
 // Diseño del panel (pedido 26, etapas/P26-rediseno-panel.md): un panel administrativo estándar. Menú lateral oscuro con
 // el logo, y el área de trabajo gris claro con las tarjetas blancas encima, que se lee mejor al sol en el taller. En el
 // celular y la tableta (menos de 1024 px), barra superior y menú desplegable: con la barra lateral, el contenido quedaba
-// apretado. El menú va con las esquinas del panel (8 px), no con las de la marca del tema oscuro.
+// apretado. El menú (la barra lateral y la hoja del celular) va con las esquinas del panel (8 px), no con las de la marca
+// del tema oscuro.
 // La barra lateral y la superior quedan fijas al bajar: el menú y "Cerrar sesión" siempre a mano.
 // Este layout NO protege a las páginas: cada página valida la sesión (src/lib/sesion.ts).
 export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
@@ -52,8 +53,8 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
         {/* Los avisos ("Cambios guardados.") son solo del panel: en el diseño raíz, su código (sonner) se descargaba
             también en cada página del sitio, que no los usa (pulido 2, rendimiento). */}
         <Toaster />
-        <header data-theme="oscuro" className="sticky top-0 z-40 flex h-14 items-center gap-2 bg-fondo px-4 text-tinta [--radius:8px] lg:hidden">
-          <MenuDesplegable lado="left" cabecera={<Marca />}>
+        <header data-theme="oscuro" className="sticky top-0 z-40 flex h-14 items-center gap-2 bg-fondo px-4 text-tinta lg:hidden">
+          <MenuDesplegable lado="left" cabecera={<Marca />} className="[--radius:8px]">
             {/* Igual que la barra lateral: en un celular bajo se desplaza el menú y "Cerrar sesión" queda a la vista. Con el
                 mismo margen que la cabecera, los títulos de grupo quedan alineados con la marca */}
             <div className="min-h-0 flex-1 overflow-y-auto px-4">{menu}</div>

@@ -39,6 +39,7 @@ import {
 } from "@/modulos/mantenimientos/reglas";
 import { enlaceTrabajo } from "@/modulos/ordenes/reglas";
 import { mensajeMantenimiento } from "@/modulos/ordenes/mensajes";
+import { Insignia } from "@/componentes/panel/insignia";
 
 export const metadata: Metadata = { title: "Mantenimientos" };
 
@@ -172,7 +173,7 @@ function Fila({ m, hoy, mensaje, puedeAgendar, conAviso }: { m: MantenimientoPor
         <div className="flex min-w-0 flex-col">
           <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span className="font-semibold">{m.cliente}</span>
-            {conAviso && !avisado && <span className="tt-estado tt-estado--aviso">Sin avisar</span>}
+            {conAviso && !avisado && <Insignia tono="aviso">Sin avisar</Insignia>}
           </span>
           <span className="text-sm text-tinta-suave">{vehiculoEnLista(vehiculo)}</span>
           <span className="text-sm">
@@ -219,7 +220,7 @@ function FilaCerrada({ m, hoy, ve }: { m: MantenimientoCerrado; hoy: string; ve:
         <div className="flex min-w-0 flex-col">
           <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span className="font-semibold">{m.cliente}</span>
-            <span className="tt-estado">{NOMBRE_ESTADO_RECORDATORIO[m.estado]}</span>
+            <Insignia>{NOMBRE_ESTADO_RECORDATORIO[m.estado]}</Insignia>
           </span>
           <span className="text-sm text-tinta-suave">{vehiculoEnLista({ marca: m.marca, modelo: m.modelo, placa: m.placa })}</span>
           <span className="text-sm">Mantenimiento de {m.servicio}</span>

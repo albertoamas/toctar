@@ -9,6 +9,7 @@ import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { AvisarPorWhatsApp } from "@/componentes/panel/avisar-whatsapp";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { Insignia } from "@/componentes/panel/insignia";
 import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -117,8 +118,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
         titulo={o.placa}
         estado={
           <>
-            <span className={cn("tt-estado", TONO_ESTADO_TRABAJO[o.estado] && `tt-estado--${TONO_ESTADO_TRABAJO[o.estado]}`)}>{NOMBRE_ESTADO_TRABAJO[o.estado]}</span>
-            {estaAtrasada(o, hoy) && <span className="tt-estado tt-estado--aviso">Atrasada</span>}
+            <Insignia tono={TONO_ESTADO_TRABAJO[o.estado]}>{NOMBRE_ESTADO_TRABAJO[o.estado]}</Insignia>
+            {estaAtrasada(o, hoy) && <Insignia tono="aviso">Atrasada</Insignia>}
           </>
         }
         accion={

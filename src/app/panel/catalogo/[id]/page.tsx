@@ -19,6 +19,7 @@ import { VariantesServicio } from "@/modulos/catalogo/componentes/variantes-serv
 import { obtenerServicioCatalogo } from "@/modulos/catalogo/consultas";
 import { textoDias } from "@/modulos/catalogo/reglas";
 import { textoCadaMeses } from "@/modulos/mantenimientos/reglas";
+import { Insignia } from "@/componentes/panel/insignia";
 
 export const metadata: Metadata = { title: "Servicio del catálogo" };
 
@@ -58,7 +59,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
       <EncabezadoPagina
         titulo={s.nombre}
         // Sale en el sitio si está activo y su página se muestra (publico.ts pide las dos)
-        estado={<span className="tt-estado">{!s.activo ? "Inactivo" : s.visibleSitio ? "En el sitio" : "Oculto en el sitio"}</span>}
+        estado={<Insignia>{!s.activo ? "Inactivo" : s.visibleSitio ? "En el sitio" : "Oculto en el sitio"}</Insignia>}
         accion={
           <Link href={`/panel/sitio/servicios/${s.id}`} className={cn(buttonVariants({ variant: "outline" }))}>
             <GlobeIcon />

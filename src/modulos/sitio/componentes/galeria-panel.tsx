@@ -24,6 +24,7 @@ import { Input } from "@/componentes/ui/input";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { nombreDelTrabajo } from "../galeria";
 import { cambiarVisibilidadGaleria, elegirParaPortada, eliminarGaleriaItem, guardarGaleriaItem, moverGaleriaItem, subirGaleria } from "../acciones";
+import { Insignia } from "@/componentes/panel/insignia";
 
 // HU-09: galería de antes y después (RF-12). Se sube un par o una foto sola, asociada a un servicio,
 // y se ordena, oculta, edita o elimina. Las fotos se achican en el celular antes de subir.
@@ -149,8 +150,8 @@ function Tarjeta({
           <>
             <span className="flex flex-wrap items-center gap-1 text-xs font-semibold text-tinta-suave">
               {item.servicio}
-              {!item.visible && <span className="tt-estado">Oculta</span>}
-              {enPortada && <span className="tt-estado">En la portada</span>}
+              {!item.visible && <Insignia>Oculta</Insignia>}
+              {enPortada && <Insignia>En la portada</Insignia>}
             </span>
             <span className="line-clamp-2 text-sm">{item.descripcion || <span className="text-tinta-suave">Sin descripción (n.º {numero})</span>}</span>
             <span className="-mx-2 mt-auto flex flex-wrap justify-end">

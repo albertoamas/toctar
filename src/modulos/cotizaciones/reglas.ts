@@ -1,5 +1,5 @@
 import type { EstadoConsulta, MotivoPerdida } from "@/db/esquema/consultas";
-import type { TonoEstado } from "@/componentes/panel/fila-lista";
+import type { TonoEstado } from "@/lib/tonos";
 import { diasEntre, fechaEnBolivia, sumarDias } from "@/lib/fechas";
 import { leerMonto, mostrarMonto, type Monto } from "@/modulos/catalogo/reglas";
 

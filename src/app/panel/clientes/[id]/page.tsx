@@ -31,6 +31,7 @@ import { AgregarMantenimiento, MasPlan } from "@/modulos/mantenimientos/componen
 import { mantenimientosDelCliente, serviciosConMantenimiento } from "@/modulos/mantenimientos/consultas";
 import { ESTADOS_RECORDATORIO_ABIERTO, NOMBRE_ESTADO_RECORDATORIO, textoCadaMeses } from "@/modulos/mantenimientos/reglas";
 import { enlaceTrabajo, rutaTrabajo } from "@/modulos/ordenes/reglas";
+import { Insignia } from "@/componentes/panel/insignia";
 
 export const metadata: Metadata = { title: "Cliente" };
 
@@ -94,9 +95,9 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
         estado={
           (!c.activo || debe) && (
             <span className="flex flex-wrap gap-2">
-              {!c.activo && <span className="tt-estado">Desactivado</span>}
+              {!c.activo && <Insignia>Desactivado</Insignia>}
               {/* Solo para quien ve pagos: sin el permiso, reservas no trae saldos */}
-              {debe && <span className="tt-estado tt-estado--aviso">Debe {mostrarMonto(debe)} Bs</span>}
+              {debe && <Insignia tono="aviso">Debe {mostrarMonto(debe)} Bs</Insignia>}
             </span>
           )
         }
@@ -239,7 +240,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
                           {trabajo.texto}
                         </Link>
                       )}
-                      <span className="tt-estado">{NOMBRE_ESTADO_RECORDATORIO[m.estado]}</span>
+                      <Insignia>{NOMBRE_ESTADO_RECORDATORIO[m.estado]}</Insignia>
                       {editable && <MasPlan plan={{ id: m.id, intervaloMeses: m.intervaloMeses, fechaProgramada: m.fechaProgramada, servicio: m.servicio }} hoy={hoy} />}
                     </span>
                   </li>

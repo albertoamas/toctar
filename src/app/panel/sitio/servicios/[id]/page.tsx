@@ -10,6 +10,7 @@ import { FormularioServicio } from "@/modulos/sitio/componentes/formulario-servi
 import { FotoServicio } from "@/modulos/sitio/componentes/foto-servicio";
 import { FotosServicio } from "@/modulos/sitio/componentes/fotos-servicio";
 import { fotosDeSecciones, obtenerServicio, opcionesDelSitio } from "@/modulos/sitio/consultas";
+import { Insignia } from "@/componentes/panel/insignia";
 
 export const metadata: Metadata = { title: "Servicio" };
 
@@ -47,7 +48,7 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
     <>
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="tt-titulo-seccion text-xl">{s.nombre}</h2>
-        {!s.activo ? <span className="tt-estado tt-estado--aviso">Inactivo en el catálogo</span> : !s.visible && <span className="tt-estado">Oculto</span>}
+        {!s.activo ? <Insignia tono="aviso">Inactivo en el catálogo</Insignia> : !s.visible && <Insignia>Oculto</Insignia>}
       </div>
       {/* Llegó por un enlace viejo: la lista del sitio ya no lo muestra */}
       {!s.activo && <p className="text-tinta-suave">No sale en el sitio mientras esté inactivo en el catálogo.</p>}

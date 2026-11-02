@@ -17,6 +17,7 @@ import type { EstadoFormulario } from "@/lib/formularios";
 import { guardarDetalle, marcarBien } from "../acciones";
 import type { DetalleRevision } from "../consultas";
 import { NOMBRE_DETALLE, TIPOS_DE_DETALLE } from "../reglas";
+import { Insignia } from "@/componentes/panel/insignia";
 
 // Checklist de recepción (pedido 12, P12-checklist-recepcion.md §5): quien recibe revisa parte por parte y marca cada
 // una "Bien" (un toque, se guarda al momento) o "Detalle" (un modal con qué tiene, una nota y la foto). Arriba, cuántas
@@ -82,7 +83,7 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
                     </span>
                   ) : (
                     <span className="text-sm">
-                      <span className="tt-estado tt-estado--aviso mr-2">{d.tipo && NOMBRE_DETALLE[d.tipo]}</span>
+                      <Insignia tono="aviso" className="mr-2">{d.tipo && NOMBRE_DETALLE[d.tipo]}</Insignia>
                       {d.nota}
                     </span>
                   )}
