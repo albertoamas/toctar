@@ -48,9 +48,8 @@ flowchart LR
     subgraph E2[Entrega 2: Gestión]
         CU08([CU-08 Gestionar catálogo y precios])
         CU09([CU-09 Gestionar clientes y vehículos])
-        CU10([CU-10 Registrar consulta])
         CU11([CU-11 Cotizar y enviar PDF])
-        CU12([CU-12 Dar seguimiento a consultas])
+        CU12([CU-12 Dar seguimiento a cotizaciones])
         CU13([CU-13 Agendar reserva])
         CU14([CU-14 Reprogramar o cancelar reserva])
         CU15([CU-15 Recibir vehículo])
@@ -63,7 +62,7 @@ flowchart LR
 
     V --- CU01 & CU02 & CU03
     D --- CU04 & CU05 & CU06 & CU07 & CU08 & CU11
-    P --- CU09 & CU10 & CU12 & CU13 & CU14 & CU15 & CU17 & CU18 & CU19 & CU20
+    P --- CU09 & CU12 & CU13 & CU14 & CU15 & CU17 & CU18 & CU19 & CU20
     T --- CU16
     CU02 & CU18 & CU20 -.-> W
     CU11 -. compartir PDF .-> W
@@ -85,9 +84,9 @@ Todos los usuarios del panel inician sesión (CU-00). El dueño también puede h
 | CU-07 | Configurar negocio y parámetros | Dueño | 1 | RF-17, RF-18 |
 | CU-08 | Gestionar catálogo y precios | Dueño | 2 | RF-25 a RF-28 |
 | CU-09 | Gestionar clientes y vehículos | Personal | 2 | RF-20 a RF-24 |
-| CU-10 | Registrar una consulta | Personal | 2 | RF-29, RF-30 |
-| CU-11 | Cotizar y enviar el PDF | Dueño | 2 | RF-31 a RF-34 |
-| CU-12 | Dar seguimiento a consultas | Personal | 2 | RF-30, RF-35 |
+| CU-10 | Registrar una consulta (reemplazado por CU-11, pedido 23) | — | 2 | — |
+| CU-11 | Cotizar y enviar el PDF | Dueño o encargado con "Cotizaciones" | 2 | RF-29, RF-31 a RF-34 |
+| CU-12 | Dar seguimiento a cotizaciones | Personal | 2 | RF-30, RF-35 |
 | CU-13 | Agendar una reserva | Personal | 2 | RF-36 a RF-38 |
 | CU-14 | Reprogramar o cancelar una reserva | Personal | 2 | RF-39 |
 | CU-15 | Recibir el vehículo (abrir la orden) | Personal | 2 | RF-40 |
@@ -99,37 +98,28 @@ Todos los usuarios del panel inician sesión (CU-00). El dueño también puede h
 
 ## Detalle de los casos principales
 
-### CU-10 Registrar una consulta
+### CU-10 Registrar una consulta (reemplazado)
 
-- **Actor:** personal.
-- **Precondición:** sesión iniciada.
-- **Flujo principal:**
-    1. El personal elige "Nueva consulta".
-    2. Busca al cliente por teléfono, nombre o placa.
-    3. Elige el vehículo, el servicio de interés y el canal (WhatsApp o taller).
-    4. Adjunta fotos o videos si los hay y escribe una nota.
-    5. El sistema guarda la consulta en estado "consultó".
-- **Alternativos:**
-    - 2a. El cliente no existe: lo registra en el momento (nombre y teléfono como mínimo). Si el teléfono ya existe, el sistema lo avisa (RF-23).
-    - 3a. El vehículo no existe: lo registra en el momento con placa y tamaño como mínimo.
-- **Postcondición:** la consulta aparece en la lista de seguimiento.
+Desde el pedido 23 (01/11/2026) no hay consulta aparte: el dueño pidió cotizar directo. Registrar al cliente y a su vehículo sin salir de la pantalla pasó a CU-11. Especificación: `08-desarrollo/etapas/P23-cotizacion-directa.md`.
 
 ### CU-11 Cotizar y enviar el PDF
 
-- **Actor:** dueño (RN-01).
-- **Precondición:** existe una consulta.
+- **Actor:** dueño, o encargado con el permiso "Cotizaciones" (RN-01, pedido 24).
+- **Precondición:** sesión iniciada.
 - **Flujo principal:**
-    1. El dueño abre la consulta y elige "Cotizar".
-    2. Agrega servicios y variantes; el sistema sugiere el precio según el tamaño del vehículo.
-    3. Ajusta precios o descuento si quiere; el sistema calcula el total y sugiere el adelanto.
-    4. Elige fotos del vehículo para el PDF y define la validez (sugerida por la configuración, S-5).
-    5. Guarda; el sistema genera el PDF y la consulta pasa a "cotizado".
+    1. El actor elige "Nueva cotización" y busca al cliente por nombre, teléfono o placa.
+    2. Elige su vehículo; agrega servicios y variantes, y el sistema sugiere el precio según el tamaño del vehículo.
+    3. Ajusta precios o descuento si quiere; el sistema calcula el total y sugiere el adelanto y la validez (S-5).
+    4. Indica cómo se cotizó: en persona o por fotos.
+    5. Guarda; el sistema genera el PDF y la cotización queda "pendiente".
     6. Comparte el PDF: en el celular abre el menú de compartir (WhatsApp, correo); en la PC lo descarga o imprime.
 - **Alternativos:**
-    - 2a. La variante no tiene precio (PPF, chapa): el dueño escribe el precio.
-    - 3a. Cotización basada en fotos: el PDF indica que es un estimado (RN-03).
-    - 7a. El dueño modifica una cotización ya enviada: se crea una versión nueva; la anterior queda igual (RN-02).
-- **Postcondición:** cotización guardada con precios fijos y PDF disponible.
+    - 1a. El cliente no existe: lo registra en la misma pantalla (nombre y WhatsApp). Si el teléfono ya existe, el sistema lo avisa y ofrece cotizarle a ese cliente (RF-23).
+    - 2a. El vehículo no existe: lo registra en la misma pantalla con placa y tamaño como mínimo.
+    - 2b. La variante no tiene precio (PPF, chapa): el actor escribe el precio.
+    - 4a. Cotizada por fotos: el PDF indica que es un estimado (RN-03).
+    - 7a. Se cambia una cotización ya enviada: se crea una versión nueva con el mismo número; la anterior queda igual (RN-02).
+- **Postcondición:** cotización pendiente, con precios fijos y su PDF.
 
 ### CU-13 Agendar una reserva
 

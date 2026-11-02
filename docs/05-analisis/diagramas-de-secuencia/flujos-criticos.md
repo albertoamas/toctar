@@ -9,6 +9,8 @@ Cubren el recorrido completo de un trabajo: consulta → cotización → reserva
 
 ## 1. Consulta y cotización en PDF (CU-10, CU-11)
 
+> **Cambió con el pedido 23 (01/11/2026):** ya no hay consulta aparte. La cotización se arma directo, en una pantalla (cliente, vehículo, servicios y cómo se cotizó), y queda pendiente hasta que se agenda (aceptada) o se rechaza. El resto del flujo (precios sugeridos, PDF, compartir y versiones) sigue como abajo. Ver `08-desarrollo/etapas/P23-cotizacion-directa.md`.
+
 ```mermaid
 sequenceDiagram
     actor D as Dueño
