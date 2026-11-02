@@ -61,7 +61,7 @@ Montserrat en todo el panel, sin itálicas. Una escala en utilidades de `globals
 |---|---|---|---|
 | 1. Estilo base | `pedido-26-estilo-base` | Tokens, tipografía, diseño del panel (menú y barra), `EncabezadoPagina`, tarjeta, insignias, `ListaFilas`, `Pestanas`, `SeccionConEditar`, `EstadoVacio`, `Cargando`; los títulos y recuadros de todas las pantallas pasan a las utilidades nuevas | En curso |
 | 2. Pantallas del prototipo | `pedido-26-inicio-ordenes-cotizaciones` | Inicio con números, "Para hoy" y "Para atender"; Órdenes y Cotizaciones en tabla (`TablaLista`) con filtros; las fichas de la orden (barra de pasos, cómo llegó resumido) y de la cotización | En curso |
-| 3. Sitio web y Configuración | `pedido-26-sitio-configuracion` | Una portada con tarjetas "¿Qué quieres cambiar?" y, al entrar, solo esa parte | — |
+| 3. Sitio web y Configuración | `pedido-26-sitio-configuracion` | Una portada con tarjetas "¿Qué quieres cambiar?" (`TarjetasSeccion`) y, al entrar, solo esa parte con "‹ Sitio web" o "‹ Configuración" (`EncabezadoPagina` con `volver`). Cada página del sitio es su tarjeta (`/panel/sitio/textos?pagina=`); la lista de servicios pasa a `/panel/sitio/servicios` y los datos del negocio a `/panel/configuracion/negocio`. Sin pestañas | En curso |
 | 4. Catálogo y Usuarios | `pedido-26-catalogo-usuarios` | En tabla; "Editar precios" en un modal | — |
 | 5. Resto | `pedido-26-resto` | Clientes, Agenda, Pagos, Mantenimientos, Reclamos, formularios de crear y flujos (recibir, entregar) | — |
 | 6. Reglas | con la fase 5 | `CLAUDE.md`, `06-diseno/identidad-visual.md`, `pulido-visual.md` y la skill `pantallas-panel` dicen "el panel es administrativo estándar; la marca es del sitio y del ingreso" | — |
@@ -72,6 +72,10 @@ Ninguna fase se une a `develop` hasta que el dueño apruebe el prototipo: al uni
 - **Montos en el inicio:** la HU-39 lo dejaba sin montos. Con el pedido 26, "Por cobrar" y los totales de "Para atender" se ven solo con el permiso de Pagos o Cotizaciones; el técnico nunca (RN-12).
 - **Sin accesos a cada módulo en el inicio del dueño:** repetían el menú (pulido 4.1) y el dueño pidió un inicio simple. El técnico y el encargado sin permisos los conservan.
 - **Sin contadores en el menú** (estaban en el prototipo): el menú vive en el diseño compartido, que no se vuelve a pedir al navegar, y los números quedarían viejos. Los números están en el inicio.
+
+### Decisiones de la fase 3
+- **Sin pestañas en Sitio web y Configuración:** la portada con tarjetas las reemplaza (el dueño no encontraba dónde cambiar un texto) y cada parte vuelve con "‹". Los formularios siguen sobre el fondo gris: pasarlos a tarjetas es de la fase 5, con el resto de los formularios.
+- **Pendiente aparte:** la E2E del pedido 30 (`hu-37-saldos`, "el total por cobrar sigue siendo el de todas") falla a veces con los dos proyectos en paralelo: el total es de toda la base y otra prueba lo cambia mientras corre. No es de este rediseño.
 
 ## 7. Pruebas
 - **Unitarias:** las reglas nuevas de la fase 2: `textoEntrega` y `estadoFiltrado` (`tests/unit/ordenes.test.ts`) y `paraHoy` (`tests/unit/inicio.test.ts`).

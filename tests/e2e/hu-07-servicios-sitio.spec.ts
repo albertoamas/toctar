@@ -13,6 +13,8 @@ test("el dueño crea el servicio en el catálogo y completa su página: benefici
   await ingresarComoDueno(page);
   if (info.project.name === "celular") await page.getByRole("button", { name: "Abrir menú" }).click();
   await page.getByRole("navigation", { name: "Panel" }).getByRole("link", { name: "Sitio web" }).click();
+  // Desde la portada de Sitio web (pedido 26), a Servicios
+  await page.getByRole("navigation", { name: "Partes del sitio web" }).getByRole("link", { name: /^Servicios/ }).click();
   // Los servicios iniciales (datos de la migración); el alta es del catálogo
   await expect(page.getByRole("list", { name: "Servicios del sitio" })).toContainText("Pulido y nano cerámico");
   await expect(page.getByRole("link", { name: "Agregar servicio" })).toHaveCount(0);
@@ -70,7 +72,7 @@ test("el dueño crea el servicio en el catálogo y completa su página: benefici
 test("una dirección repetida da error junto al campo", async ({ page }, info) => {
   soloEscritorio(info);
   await ingresarComoDueno(page);
-  await page.goto("/panel/sitio");
+  await page.goto("/panel/sitio/servicios");
   await page.getByRole("link", { name: /Pulido de vidrios/ }).click();
   await page.getByLabel("Dirección de la página").fill("pulido-y-nano-ceramico");
   await page.getByRole("button", { name: "Guardar cambios" }).click();
@@ -83,7 +85,7 @@ test("una dirección repetida da error junto al campo", async ({ page }, info) =
 test("la foto principal se sube y se ve; un archivo que no es imagen se rechaza", async ({ page }, info) => {
   soloEscritorio(info);
   await ingresarComoDueno(page);
-  await page.goto("/panel/sitio");
+  await page.goto("/panel/sitio/servicios");
   await page.getByRole("link", { name: /Polarizado de vidrios/ }).click();
   // La foto principal: sus botones no llevan nombre de sección (las fotos de la página, sí)
   await expect(page.getByRole("button", { name: "Subir foto", exact: true })).toBeEnabled();
@@ -116,6 +118,8 @@ test("el encargado con el permiso Sitio web entra; sin el permiso o como técnic
     await page.goto("/panel/sitio");
     if (c.entra) {
       await expect(page.getByRole("heading", { name: "Sitio web" })).toBeVisible();
+      // Desde la portada de Sitio web (pedido 26), a Servicios
+      await page.getByRole("navigation", { name: "Partes del sitio web" }).getByRole("link", { name: /^Servicios/ }).click();
       // Edita la página, pero el servicio (alta, nombre, precios) es del dueño
       await page.getByRole("list", { name: "Servicios del sitio" }).getByRole("link").first().click();
       await expect(page.getByLabel("Dirección de la página")).toBeVisible();

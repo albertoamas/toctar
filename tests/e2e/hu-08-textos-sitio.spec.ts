@@ -9,7 +9,10 @@ const soloEscritorio = (info: TestInfo) => test.skip(info.project.name !== "escr
 test("un texto vacío da error junto al campo y no se guarda", async ({ page }) => {
   await ingresarComoDueno(page);
   await page.goto("/panel/sitio");
-  await page.getByRole("navigation", { name: "Secciones del sitio web" }).getByRole("link", { name: "Textos" }).click();
+  // Desde la portada de Sitio web (pedido 26): cada página del sitio es una tarjeta
+  await page.getByRole("navigation", { name: "Partes del sitio web" }).getByRole("link", { name: /^Portada/ }).click();
+  await expect(page).toHaveURL(/\/panel\/sitio\/textos\?pagina=inicio$/);
+  await expect(page.getByRole("form", { name: "Nosotros" })).toHaveCount(0);
 
   const portada = page.getByRole("form", { name: "Portada" });
   await portada.getByLabel("Lema").fill("");

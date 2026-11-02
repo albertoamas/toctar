@@ -13,6 +13,9 @@ test("el dueño cambia los datos y el pie del sitio los muestra al guardar", asy
   await ingresarComoDueno(page);
   await page.getByRole("navigation", { name: "Panel" }).getByRole("link", { name: "Configuración" }).click();
   await expect(page.getByRole("heading", { name: "Configuración" })).toBeVisible();
+  // Desde la portada de Configuración (pedido 26), a Negocio
+  await page.getByRole("navigation", { name: "Partes de la configuración" }).getByRole("link", { name: /^Negocio/ }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Negocio" })).toBeVisible();
 
   await page.getByLabel("WhatsApp").fill("+591 712 34 567");
   await page.getByLabel("Dirección").fill("Barrio Aeropuerto, calle Juan Pablo II, Tarija");
@@ -44,7 +47,7 @@ test("el dueño cambia los datos y el pie del sitio los muestra al guardar", asy
 
 test("los datos mal escritos muestran el error junto al campo y no se guardan", async ({ page }) => {
   await ingresarComoDueno(page);
-  await page.goto("/panel/configuracion");
+  await page.goto("/panel/configuracion/negocio");
 
   await page.getByLabel("WhatsApp").fill("7123");
   await page.getByLabel("Ubicación en el mapa").fill("https://maps.app.goo.gl/AbCdEf123");
@@ -78,7 +81,7 @@ test("el encargado y el técnico no entran a la configuración", async ({ page }
 test("el logo para documentos se sube y se ve; un archivo que no es imagen se rechaza", async ({ page }, info) => {
   soloEscritorio(info);
   await ingresarComoDueno(page);
-  await page.goto("/panel/configuracion");
+  await page.goto("/panel/configuracion/negocio");
   // Se sube al elegir el archivo: hay que esperar a que la página esté lista
   await expect(page.getByRole("button", { name: "Subir logo" })).toBeEnabled();
 
@@ -105,7 +108,7 @@ test("el logo para documentos se sube y se ve; un archivo que no es imagen se re
 test("a 360 px ningún campo de Configuración se sale de la pantalla", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await ingresarComoDueno(page);
-  await page.goto("/panel/configuracion");
+  await page.goto("/panel/configuracion/negocio");
   await expect(page.getByLabel("Lunes, turno 1, desde")).toBeVisible();
   const fuera = await page.getByRole("main").locator("input:not([type=hidden]), textarea, button").evaluateAll((campos) =>
     campos.filter((c) => (c as HTMLElement).offsetParent && c.getBoundingClientRect().right > window.innerWidth).map((c) => c.getAttribute("aria-label") || c.id),
