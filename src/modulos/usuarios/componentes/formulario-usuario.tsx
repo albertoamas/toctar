@@ -92,7 +92,7 @@ export function FormularioUsuario(props: Props) {
       {rol === "encargado" && (
         <fieldset className="flex flex-col gap-3">
           <legend className="mb-1 text-sm font-semibold">Módulos del encargado</legend>
-          <p className="text-sm text-tinta-suave">Elige qué puede ver y hacer. Nunca puede cotizar ni cambiar la configuración.</p>
+          <p className="text-sm text-tinta-suave">Elige qué puede ver y hacer. Nunca cambia la configuración, el catálogo ni los usuarios.</p>
           {props.asignables.map(({ permiso, nombre }) => (
             <label key={permiso} htmlFor={`permiso-${permiso}`} className="flex cursor-pointer items-start gap-3">
               <Checkbox id={`permiso-${permiso}`} name="permisos" value={permiso} defaultChecked={permisosMarcados.includes(permiso)} className="mt-0.5" />

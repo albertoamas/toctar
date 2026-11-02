@@ -42,7 +42,7 @@ async function Detalle({ params }: Pick<PageProps<"/panel/usuarios/[id]">, "para
           <Insignia tono="exito">Activo</Insignia>
         )}
       </div>
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,36rem)_minmax(0,22rem)]">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,36rem)_minmax(0,22rem)]">
         <FormularioUsuario modo="editar" asignables={permisosAsignables()} usuario={usuario} />
         <AccesoUsuario
           id={usuario.id}
