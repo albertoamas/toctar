@@ -103,7 +103,9 @@ test("pedido 30: se buscan por cliente, teléfono o placa y se ordenan; el total
   await ingresar(page, `caja2-hu37-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto("/panel/pagos");
-  const total = await page.getByText("Total por cobrar").locator("..").innerText();
+  const renglon = page.getByText("Total por cobrar").locator("..");
+  const monto = renglon.locator("span").nth(1);
+  const total = await monto.innerText();
 
   // Por cliente: las dos de esta prueba (y de este proyecto)
   const buscador = page.getByLabel("Buscar por nombre, teléfono o placa");
@@ -111,8 +113,9 @@ test("pedido 30: se buscan por cliente, teléfono o placa y se ordenan; el total
   await expect(page).toHaveURL(new RegExp(`q=busca`));
   const lista = page.getByRole("list", { name: "Órdenes con saldo" });
   await expect(lista.getByRole("listitem")).toHaveCount(2);
-  // El total por cobrar no cambia al buscar
-  await expect(page.getByText("Total por cobrar").locator("..")).toHaveText(total);
+  // El total por cobrar no cambia al buscar; el contador dice cuántas se ven de todas
+  await expect(monto).toHaveText(total);
+  await expect(renglon).toContainText(/2 de \d+/);
 
   // Más antigua primero (lo de siempre); por mayor monto; por cliente
   const nombres = () => lista.getByRole("listitem").locator("span.font-semibold").allInnerTexts();

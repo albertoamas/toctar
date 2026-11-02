@@ -53,7 +53,8 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
   const ve = { ordenes: puedeVerModulo(usuario, "ordenes"), agenda: puedeVerModulo(usuario, "agenda") };
   const parametros = await searchParams;
   const q = typeof parametros.q === "string" ? parametros.q : "";
-  const orden: OrdenSaldos = typeof parametros.orden === "string" && parametros.orden in ORDENES_SALDOS ? (parametros.orden as OrdenSaldos) : "antiguas";
+  // hasOwn y no `in`: `?orden=__proto__` no es un orden
+  const orden: OrdenSaldos = typeof parametros.orden === "string" && Object.hasOwn(ORDENES_SALDOS, parametros.orden) ? (parametros.orden as OrdenSaldos) : "antiguas";
   const [todos, negocio, plantillas] = await Promise.all([saldosPendientes(), obtenerDatosPublicos(), obtenerPlantillas()]);
   if (todos.length === 0) return <EstadoVacio>Nadie debe nada.</EstadoVacio>;
   const hoy = fechaEnBolivia();
@@ -77,7 +78,10 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
       <p className="flex flex-wrap items-baseline gap-x-3">
         <span className="text-tinta-suave">Total por cobrar</span>
         <span className="font-heading text-4xl font-extrabold italic tabular-nums">{mostrarMonto(total)} Bs</span>
-        <span className="text-sm text-tinta-suave">{todos.length === 1 ? "1 orden" : `${todos.length} órdenes`}</span>
+        <span className="text-sm text-tinta-suave">
+          {/* Buscando, cuántas se ven de todas; el total es siempre el de todas */}
+          {q.trim() ? `${saldos.length} de ${todos.length}` : todos.length === 1 ? "1 orden" : `${todos.length} órdenes`}
+        </span>
       </p>
 
       <Pestanas

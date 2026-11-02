@@ -68,10 +68,10 @@ export function saldoPendiente(trabajos: readonly { estado: string; saldo: Saldo
 export const ORDENES_SALDOS = { antiguas: "Más antiguas", monto: "Mayor monto", cliente: "Cliente" } as const;
 export type OrdenSaldos = keyof typeof ORDENES_SALDOS;
 
-/** Sin tildes ni mayúsculas: "José" y "jose" son lo mismo. */
-const sinTildes = (texto: string) => texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+/** Sin tildes, mayúsculas ni espacios de más: "José  Pérez" y "jose perez" son lo mismo. */
+const sinTildes = (texto: string) => texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim().replace(/\s+/g, " ");
 
-/** Los saldos de quien coincide con lo buscado: el nombre del cliente, su teléfono (3 dígitos o más) o la placa. */
+/** Los saldos de quien coincide con lo buscado: el nombre del cliente, su teléfono o la placa (3 caracteres o más cada uno). */
 export function filtrarSaldos<T extends { cliente: string; telefono: string; placa: string }>(saldos: readonly T[], busqueda: Busqueda | null): T[] {
   if (!busqueda) return [...saldos];
   const texto = sinTildes(busqueda.texto);
@@ -79,7 +79,8 @@ export function filtrarSaldos<T extends { cliente: string; telefono: string; pla
     (s) =>
       sinTildes(s.cliente).includes(texto) ||
       (!!busqueda.digitos && s.telefono.includes(busqueda.digitos)) ||
-      (!!busqueda.placa && s.placa.includes(busqueda.placa)),
+      // Como el teléfono, desde 3: con menos, "ana" o "b" traerían casi todas las placas
+      (!!busqueda.placa && busqueda.placa.length >= 3 && s.placa.includes(busqueda.placa)),
   );
 }
 

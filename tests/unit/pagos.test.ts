@@ -77,6 +77,9 @@ test("se buscan por cliente (sin importar tildes), teléfono o placa; sin búsqu
   expect(buscar("4567 bdf")).toEqual([2]);
   expect(buscar("")).toEqual([1, 2, 3]);
   expect(buscar("nadie")).toEqual([]);
+  // Espacios de más en el nombre guardado; dos letras no buscan placas ("an" no trae 4567BDF por la placa)
+  expect(filtrarSaldos([{ ...saldos[0], cliente: "José  Pérez " }], normalizarBusqueda("jose perez")).length).toBe(1);
+  expect(buscar("kl")).toEqual([]);
 });
 
 test("se ordenan por la más antigua, el mayor monto o el cliente; a igualdad, la más antigua primero", () => {
