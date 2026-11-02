@@ -17,6 +17,7 @@ import type { EstadoFormulario } from "@/lib/formularios";
 import { guardarServicio } from "../acciones";
 import { ICONOS_BENEFICIO, iconoDe } from "../beneficios";
 import { LIMITES } from "../esquemas";
+import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 
 // HU-07: la página del servicio en el sitio (RF-03). Sin precios (RN-10). El nombre y las variantes son del catálogo.
 
@@ -51,10 +52,10 @@ export function FormularioServicio({ servicio: s, conOpciones }: Props) {
   useFocoEnError(formulario, estado);
 
   return (
-    <form ref={formulario} action={accion} className="flex flex-col gap-10" noValidate>
+    <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate>
       <input type="hidden" name="id" value={s.id} />
 
-      <Seccion titulo="Datos">
+      <SeccionFormulario titulo="Datos">
         <Campo id="slug" etiqueta="Dirección de la página" error={e.slug} ayuda={`Así se ve en el navegador: …/servicios/${s.slug}. Si la cambias, los enlaces viejos dejan de funcionar.`}>
           <Input id="slug" name="slug" autoComplete="off" autoCapitalize="none" spellCheck={false} defaultValue={v?.slug ?? s.slug} aria-invalid={!!e.slug} aria-describedby={describir("slug")} />
         </Campo>
@@ -68,9 +69,9 @@ export function FormularioServicio({ servicio: s, conOpciones }: Props) {
             <span className="text-sm text-tinta-suave">Si lo desmarcas, no aparece en el sitio, pero no se borra.</span>
           </span>
         </label>
-      </Seccion>
+      </SeccionFormulario>
 
-      <Seccion titulo="Beneficios" descripcion={`Lo que gana el cliente, en pocas palabras y con un ícono. Hasta ${LIMITES.beneficios}.`}>
+      <SeccionFormulario titulo="Beneficios" descripcion={`Lo que gana el cliente, en pocas palabras y con un ícono. Hasta ${LIMITES.beneficios}.`}>
         <EditorLista
           nombre="beneficios"
           etiqueta="Beneficio"
@@ -94,10 +95,10 @@ export function FormularioServicio({ servicio: s, conOpciones }: Props) {
             </>
           )}
         />
-      </Seccion>
+      </SeccionFormulario>
 
       {conOpciones ? (
-        <Seccion titulo="Opciones" descripcion="Las opciones y sus precios se cargan en el catálogo; aquí, cómo se ven en el sitio.">
+        <SeccionFormulario titulo="Opciones" descripcion="Las opciones y sus precios se cargan en el catálogo; aquí, cómo se ven en el sitio.">
           <label className="flex cursor-pointer items-start gap-3">
             <Checkbox key={String(escalera)} name="opcionesEnEscalera" defaultChecked={escalera} className="mt-0.5" />
             <span className="flex flex-col">
@@ -105,15 +106,15 @@ export function FormularioServicio({ servicio: s, conOpciones }: Props) {
               <span className="text-sm text-tinta-suave">Por ejemplo 1, 2, 3, 5 y 10 años: el sitio las muestra como escalones, cada una con una capa más gruesa.</span>
             </span>
           </label>
-        </Seccion>
+        </SeccionFormulario>
       ) : (
-        <Seccion titulo="Opciones" descripcion="Sin opciones en el catálogo: esta sección no sale en el sitio.">
+        <SeccionFormulario titulo="Opciones" descripcion="Sin opciones en el catálogo: esta sección no sale en el sitio.">
           {/* Se conserva lo que estaba marcado, por si después se le agregan opciones */}
           {escalera && <input type="hidden" name="opcionesEnEscalera" value="on" />}
-        </Seccion>
+        </SeccionFormulario>
       )}
 
-      <Seccion titulo="Proceso paso a paso" descripcion={`Cómo se hace, en orden. Hasta ${LIMITES.pasos} pasos.`}>
+      <SeccionFormulario titulo="Proceso paso a paso" descripcion={`Cómo se hace, en orden. Hasta ${LIMITES.pasos} pasos.`}>
         <EditorLista
           nombre="pasos"
           etiqueta="Paso"
@@ -130,7 +131,7 @@ export function FormularioServicio({ servicio: s, conOpciones }: Props) {
             </>
           )}
         />
-      </Seccion>
+      </SeccionFormulario>
 
       <div>
         <Button type="submit" disabled={enviando}>
@@ -138,17 +139,5 @@ export function FormularioServicio({ servicio: s, conOpciones }: Props) {
         </Button>
       </div>
     </form>
-  );
-}
-
-function Seccion(props: { titulo: string; descripcion?: string; children: React.ReactNode }) {
-  return (
-    <fieldset className="flex flex-col gap-5">
-      <legend className="mb-5 flex flex-col gap-1">
-        <span className="tt-titulo-seccion">{props.titulo}</span>
-        {props.descripcion && <span className="text-sm text-tinta-suave">{props.descripcion}</span>}
-      </legend>
-      {props.children}
-    </fieldset>
   );
 }

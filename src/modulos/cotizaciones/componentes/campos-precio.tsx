@@ -44,8 +44,8 @@ type Props = {
 export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
   return (
     <>
-      <fieldset className="flex flex-col gap-4">
-        <legend className="mb-4 tt-titulo-seccion">Servicios</legend>
+      <fieldset className="tt-seccion-formulario flex flex-col gap-4">
+        <legend className="tt-titulo-seccion">Servicios</legend>
         {opciones ? (
           <LineasServicio opciones={opciones} lineas={p.lineas} onChange={p.setLineas} errores={e} />
         ) : (
@@ -55,8 +55,8 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
         {!opciones && e.lineas && <MensajeError id="lineas-error">{e.lineas}</MensajeError>}
       </fieldset>
 
-      <fieldset className="flex flex-col gap-3">
-        <legend className="mb-3 tt-titulo-seccion">¿Cómo se cotizó?</legend>
+      <fieldset className="tt-seccion-formulario flex flex-col gap-3">
+        <legend className="tt-titulo-seccion">¿Cómo se cotizó?</legend>
         <input type="hidden" name="modo" value={p.modo} />
         <RadioGroup
           value={p.modo}
@@ -78,8 +78,8 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
         {e.modo && <MensajeError id="modo-error">{e.modo}</MensajeError>}
       </fieldset>
 
-      <fieldset className="flex flex-col gap-5">
-        <legend className="mb-5 tt-titulo-seccion">Total</legend>
+      <fieldset className="tt-seccion-formulario flex flex-col gap-5">
+        <legend className="tt-titulo-seccion">Total</legend>
         <Campo id="descuento" etiqueta="Descuento" error={e.descuento} ayuda="Opcional.">
           <CampoMonto id="descuento" name="descuento" value={p.descuento} onChange={(ev) => p.setDescuento(ev.target.value)} aria-invalid={!!e.descuento} aria-describedby={e.descuento ? "descuento-error" : "descuento-ayuda"} />
         </Campo>
@@ -93,8 +93,8 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
         </dl>
       </fieldset>
 
-      <fieldset className="flex flex-col gap-5">
-        <legend className="mb-5 tt-titulo-seccion">Condiciones</legend>
+      <fieldset className="tt-seccion-formulario flex flex-col gap-5">
+        <legend className="tt-titulo-seccion">Condiciones</legend>
         {/* Vienen de Configuración y casi siempre se dejan así: sin ayudas que lo repitan */}
         <div className="grid gap-5 sm:grid-cols-2">
           <Campo id="adelanto" etiqueta="Adelanto sugerido" error={e.adelanto}>

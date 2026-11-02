@@ -32,7 +32,7 @@ export function FormularioContenido({ pagina, contenido, tituloOculto = false }:
   useFocoEnError(formulario, estado);
 
   return (
-    <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-labelledby={`${pagina}-titulo`}>
+    <form ref={formulario} action={accion} className="tt-tarjeta-panel flex flex-col p-4 sm:p-6 gap-5" noValidate aria-labelledby={`${pagina}-titulo`}>
       <input type="hidden" name="pagina" value={pagina} />
       <div className="flex flex-col gap-1">
         <h2 id={`${pagina}-titulo`} className={tituloOculto ? "sr-only" : "tt-titulo-seccion"}>

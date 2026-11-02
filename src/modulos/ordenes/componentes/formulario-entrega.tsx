@@ -59,7 +59,7 @@ export function FormularioEntrega({ id, conDeuda, saldo, puedeAutorizar, cliente
   }
 
   return (
-    <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-label="Entregar vehículo">
+    <form ref={formulario} action={accion} className="tt-tarjeta-panel flex flex-col p-4 sm:p-6 gap-5" noValidate aria-label="Entregar vehículo">
       <input type="hidden" name="id" value={id} />
       {estado.mensaje && <MensajeError id="entrega-error">{estado.mensaje}</MensajeError>}
 

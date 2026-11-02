@@ -100,7 +100,7 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
       : null;
 
   return (
-    <form ref={formulario} action={accion} onSubmit={(ev) => enviar(ev, conPagos && !sinAdelanto)} className="flex max-w-3xl flex-col gap-10" noValidate>
+    <form ref={formulario} action={accion} onSubmit={(ev) => enviar(ev, conPagos && !sinAdelanto)} className="flex max-w-3xl flex-col gap-6" noValidate>
       <input type="hidden" name="origen" value={origen.tipo} />
       {origen.tipo === "cotizacion" ? (
         <input type="hidden" name="cotizacionId" value={origen.cotizacionId} />
@@ -121,8 +121,8 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
         </fieldset>
       )}
 
-      <fieldset className="flex flex-col gap-5">
-        <legend className="mb-5 tt-titulo-seccion">Fechas y espacio</legend>
+      <fieldset className="tt-seccion-formulario flex flex-col gap-5">
+        <legend className="tt-titulo-seccion">Fechas y espacio</legend>
         <div className="grid gap-5 sm:grid-cols-2">
           <Campo id="fechaInicio" etiqueta="Ingresa el" error={e.fechaInicio}>
             <Input
@@ -173,8 +173,8 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
         </Campo>
       </fieldset>
 
-      <fieldset className="flex flex-col gap-5">
-        <legend className="mb-5 tt-titulo-seccion">Detalles</legend>
+      <fieldset className="tt-seccion-formulario flex flex-col gap-5">
+        <legend className="tt-titulo-seccion">Detalles</legend>
         <Campo id="tecnicoId" etiqueta="Técnico" error={e.tecnicoId}>
           <Selector id="tecnicoId" name="tecnicoId" value={tecnicoId} onChange={(ev) => setTecnicoId(ev.target.value)} aria-invalid={!!e.tecnicoId} aria-describedby={e.tecnicoId ? "tecnicoId-error" : undefined} className="max-w-xs">
             <option value="">Sin asignar</option>

@@ -359,6 +359,25 @@
     color: var(--violeta);
   }
 
+  /* Una parte de un formulario largo, como tarjeta (SeccionFormulario, pedido 26). La leyenda de un fieldset se dibuja
+     sobre su borde: flotando deja de serlo y pasa a ser un elemento más de la columna, dentro de la tarjeta. */
+  .tt-seccion-formulario {
+    border: 1px solid var(--borde);
+    border-radius: var(--radius);
+    background: var(--fondo);
+    box-shadow: var(--sombra-tarjeta);
+    padding: 1rem;
+  }
+  .tt-seccion-formulario > legend {
+    float: left;
+    width: 100%;
+  }
+  @media (width >= 40rem) {
+    .tt-seccion-formulario {
+      padding: 1.25rem;
+    }
+  }
+
   /* Botones del sitio (componente Boton del Design System). El principal es rojo con la esquina
      inferior derecha cortada a 60°; el corte va en una capa de fondo para que el anillo de foco no se recorte.
      Un solo principal por pantalla: en el sitio es siempre la acción de WhatsApp. */

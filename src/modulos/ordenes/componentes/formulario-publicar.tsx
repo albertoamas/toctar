@@ -34,7 +34,7 @@ export function FormularioPublicar({ id, despues, antes, servicios }: Props) {
   const v = estado.valores ?? {};
 
   return (
-    <form ref={formulario} action={accion} className="flex flex-col gap-8" noValidate aria-label="Publicar en la galería">
+    <form ref={formulario} action={accion} className="tt-tarjeta-panel flex flex-col p-4 sm:p-6 gap-8" noValidate aria-label="Publicar en la galería">
       <input type="hidden" name="id" value={id} />
       {estado.mensaje && <MensajeError id="publicar-error">{estado.mensaje}</MensajeError>}
 

@@ -83,7 +83,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
     <form
       ref={formulario}
       action={accion}
-      className="flex max-w-3xl flex-col gap-10"
+      className="flex max-w-3xl flex-col gap-6"
       noValidate
       // El tamaño del vehículo nuevo es un menú de CamposVehiculo, sin control propio: se escucha su cambio
       onChange={(ev) => {
@@ -96,14 +96,14 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
       <input type="hidden" name="cliente" value={cliente ? cliente.id : CLIENTE_NUEVO} />
       {estado.mensaje && !estado.ok && <MensajeError id="cotizacion-error">{estado.mensaje}</MensajeError>}
       {!cliente && (
-        <fieldset className="flex flex-col gap-6">
+        <fieldset className="tt-seccion-formulario flex flex-col gap-6">
           <legend className="sr-only">Cliente nuevo</legend>
           <CamposCliente estado={estado} compacto enlaceExistente={usarExistente} />
         </fieldset>
       )}
 
-      <fieldset className="flex flex-col gap-4">
-        <legend className="mb-4 tt-titulo-seccion">Vehículo</legend>
+      <fieldset className="tt-seccion-formulario flex flex-col gap-4">
+        <legend className="tt-titulo-seccion">Vehículo</legend>
         {conVehiculos && (
           <>
             <input type="hidden" name="vehiculo" value={vehiculo} />
