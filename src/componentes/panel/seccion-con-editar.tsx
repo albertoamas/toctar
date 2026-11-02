@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { cn } from "cn";
 import { PencilIcon } from "lucide-react";
 import { useHidratado } from "@/componentes/hidratado";
 import { ModalFormulario } from "@/componentes/panel/modal-formulario";
@@ -21,6 +22,8 @@ type Props = {
   tituloModal: string;
   /** Empieza abierta (por ejemplo, los precios de un servicio recién creado). */
   abierta?: boolean;
+  /** Clases del recuadro, donde el lugar lo pide (un nivel 3 suelto sobre el gris lleva fondo blanco). */
+  claseRecuadro?: string;
   /** Los datos como texto, en el recuadro. */
   lectura: React.ReactNode;
   /** El formulario, en el modal. */
@@ -43,7 +46,7 @@ export function CabeceraSeccion({ id, titulo, nivel = 2, children }: { id: strin
   );
 }
 
-export function SeccionConEditar({ id, titulo, nivel = 2, etiquetaEditar, tituloModal, abierta = false, lectura, children }: Props) {
+export function SeccionConEditar({ id, titulo, nivel = 2, etiquetaEditar, tituloModal, abierta = false, claseRecuadro, lectura, children }: Props) {
   const hidratado = useHidratado();
   // Abierto si la persona lo abrió o, hasta que lo toque, si empieza abierta. La que empieza abierta se abre al cargar
   // la página (hidratado) y no desde el servidor: el diálogo pone el foco en su primer campo cuando se abre
@@ -62,8 +65,8 @@ export function SeccionConEditar({ id, titulo, nivel = 2, etiquetaEditar, titulo
     <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-2">
       {nivel === 2 && cabecera}
       {/* flex-1: en una grilla, las tarjetas de una misma fila quedan del mismo alto. Una sección de nivel 3 va dentro de
-          otra (o en una grilla de recuadros, como los precios de cada variante): blanco, con borde, sin sombra */}
-      <div className={nivel === 3 ? "flex flex-1 flex-col gap-3 rounded-lg border border-border bg-fondo p-4" : "tt-tarjeta-panel flex flex-1 flex-col gap-3 p-4"}>
+          otra tarjeta: un recuadro con borde, sin sombra; `claseRecuadro` lo ajusta donde va suelto */}
+      <div className={cn(nivel === 3 ? "flex flex-1 flex-col gap-3 rounded-lg border border-border p-4" : "tt-tarjeta-panel flex flex-1 flex-col gap-3 p-4", claseRecuadro)}>
         {nivel === 3 && cabecera}
         {lectura}
       </div>

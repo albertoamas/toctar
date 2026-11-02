@@ -134,6 +134,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
                 etiquetaEditar={`Editar precios de ${v.nombre}`}
                 tituloModal={`Precios de ${v.nombre}`}
                 abierta={cargarPrecios && v.id === primera.id}
+                // Sueltos sobre el gris de la página (no dentro de otra tarjeta): blancos
+                claseRecuadro="bg-fondo"
                 lectura={<PreciosVariante variante={v} tamanos={s.tamanos} duracionServicio={s.duracionDias} />}
               >
                 <FormularioPrecios variante={v} tamanos={s.tamanos} duracionServicio={s.duracionDias} />

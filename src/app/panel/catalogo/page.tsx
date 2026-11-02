@@ -40,17 +40,21 @@ async function Lista() {
       columnas={[
         { titulo: "Servicio", ancho: "minmax(0,1.6fr)", movil: "titulo" },
         { titulo: "Precio", ancho: "minmax(0,1fr)", alinear: "derecha", movil: "estado" },
-        { titulo: "Variantes", ancho: "6.5rem", movil: "detalle" },
-        { titulo: "Duración", ancho: "5.5rem", movil: "detalle" },
+        { titulo: "Variantes", ancho: "6.5rem", movil: "par" },
+        { titulo: "Duración", ancho: "5.5rem", movil: "par" },
         { titulo: "Estado", ancho: "minmax(0,1fr)", movil: "detalle" },
       ]}
       filas={servicios.map((s) => ({
         href: `/panel/catalogo/${s.id}`,
+        atenuada: !s.activo,
         celdas: [
           <CeldaDoble key="s" principal={s.nombre} secundario={s.conMantenimiento ? "Con mantenimiento" : undefined} />,
-          <span key="p" className="font-semibold tabular-nums">
-            {s.desde === undefined ? "—" : s.desde === null ? "Según evaluación" : `Desde ${mostrarMonto(s.desde)} Bs`}
-          </span>,
+          // Sin precios cargados, nada: lo dice "Faltan precios"
+          s.desde === undefined ? null : (
+            <span key="p" className="font-semibold tabular-nums">
+              {s.desde === null ? "Según evaluación" : `Desde ${mostrarMonto(s.desde)} Bs`}
+            </span>
+          ),
           cantidad(s.variantes, "variante", "variantes"),
           textoDias(s.duracionDias),
           // Solo lo que pide atención: lo que falta cargar o si está inactivo; completo, no dice nada (pulido 7.1)

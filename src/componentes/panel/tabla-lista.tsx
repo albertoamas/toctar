@@ -16,16 +16,24 @@ export type ColumnaTabla = {
   /** El ancho de la columna en la grilla: "minmax(0,1.4fr)", "7rem"… Por defecto, una parte igual. */
   ancho?: string;
   alinear?: "derecha";
-  /** Dónde va en el celular: arriba a la izquierda, arriba a la derecha, debajo o no se muestra. */
-  movil: "titulo" | "estado" | "detalle" | "oculta";
+  /**
+   * Dónde va en el celular: arriba a la izquierda, arriba a la derecha, debajo en su propio renglón, debajo de a dos por
+   * renglón (datos cortos: "5 variantes" y "1 día") o no se muestra.
+   */
+  movil: "titulo" | "estado" | "detalle" | "par" | "oculta";
 };
 
-export type FilaTabla = { href: string; celdas: React.ReactNode[] };
+/**
+ * Una celda vacía (null, undefined, false o "") no ocupa lugar en el celular ni se lee; en la computadora, su columna
+ * queda. `atenuada`: inactiva o desactivada, en tinta suave.
+ */
+export type FilaTabla = { href: string; celdas: React.ReactNode[]; atenuada?: boolean };
 
 const CELDA_MOVIL: Record<ColumnaTabla["movil"], string> = {
   titulo: "col-start-1 row-start-1",
   estado: "col-start-2 row-start-1 justify-self-end",
   detalle: "col-span-2 text-tinta-suave",
+  par: "text-tinta-suave",
   oculta: "hidden",
 };
 // Con espacio, todas en su columna, en una sola línea de la grilla
@@ -48,13 +56,20 @@ export function TablaLista({ etiqueta, columnas, filas }: { etiqueta: string; co
           <li key={f.href} className="relative">
             <Link
               href={f.href}
-              className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 py-3 pr-11 pl-4 text-sm hover:bg-superficie/60 focus-visible:-outline-offset-2 @2xl:grid-cols-[var(--columnas)]"
+              className={cn(
+                "grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 py-3 pr-11 pl-4 text-sm hover:bg-superficie/60 focus-visible:-outline-offset-2 @2xl:grid-cols-[var(--columnas)]",
+                f.atenuada && "text-tinta-suave [&_*]:text-tinta-suave",
+              )}
             >
               {f.celdas.map((celda, i) => (
-                <span key={i} className={cn("min-w-0", CELDA_MOVIL[columnas[i].movil], CELDA_TABLA, columnas[i].alinear === "derecha" && "@2xl:text-right")}>
+                <span
+                  key={i}
+                  className={cn("min-w-0", CELDA_MOVIL[columnas[i].movil], CELDA_TABLA, !tieneAlgo(celda) && "hidden", columnas[i].alinear === "derecha" && "@2xl:text-right")}
+                >
                   {celda}
-                  {/* Entre celdas, una coma para el lector de pantalla: el enlace se oye "3456GHT, Toyota Hilux, Jorge Quiroga…" */}
-                  {i < f.celdas.length - 1 && <span className="sr-only">, </span>}
+                  {/* Entre celdas con algo, una coma para el lector de pantalla: el enlace se oye "3456GHT, Toyota Hilux,
+                      Jorge Quiroga…" */}
+                  {tieneAlgo(celda) && i < f.celdas.findLastIndex(tieneAlgo) && <span className="sr-only">, </span>}
                 </span>
               ))}
             </Link>
@@ -65,6 +80,8 @@ export function TablaLista({ etiqueta, columnas, filas }: { etiqueta: string; co
     </div>
   );
 }
+
+const tieneAlgo = (celda: React.ReactNode) => celda !== null && celda !== undefined && celda !== false && celda !== "";
 
 /** Una celda de dos renglones: lo principal y, debajo, un dato en tinta suave ("6789TRS" y "Toyota Hilux"). */
 export function CeldaDoble({ principal, secundario, marcada = false }: { principal: React.ReactNode; secundario?: React.ReactNode; marcada?: boolean }) {

@@ -16,7 +16,7 @@ import { NOMBRE_ROL } from "@/modulos/usuarios/textos";
 
 export const metadata: Metadata = { title: "Usuarios" };
 
-// HU-02: lista de usuarios (pedido 26: en una tabla, con el rol y el estado en insignias). Toda la fila abre el usuario;
+// HU-02: lista de usuarios (pedido 26: en una tabla, con el estado en una insignia). Toda la fila abre el usuario;
 // el propio dice "(tú)". Solo el dueño (módulo "usuarios").
 export default function PaginaUsuarios({ searchParams }: PageProps<"/panel/usuarios">) {
   return (
@@ -51,12 +51,13 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/usuarios">, "searc
         etiqueta="Usuarios"
         columnas={[
           { titulo: "Nombre", ancho: "minmax(0,1.4fr)", movil: "titulo" },
-          { titulo: "Usuario", movil: "detalle" },
-          { titulo: "Rol", movil: "detalle" },
+          { titulo: "Usuario", movil: "par" },
+          { titulo: "Rol", movil: "par" },
           { titulo: "Estado", ancho: "8rem", movil: "estado" },
         ]}
         filas={usuarios.map((u) => ({
           href: `/panel/usuarios/${u.id}`,
+          atenuada: u.desactivado,
           celdas: [
             <CeldaDoble
               key="n"
@@ -70,7 +71,8 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/usuarios">, "searc
             <span key="u" className="break-all">
               {u.usuario}
             </span>,
-            <Insignia key="r">{NOMBRE_ROL[u.rol]}</Insignia>,
+            // El rol es un dato, no un estado: texto, como las demás columnas
+            NOMBRE_ROL[u.rol],
             u.desactivado ? <Insignia key="e">Desactivado</Insignia> : <Insignia key="e" tono="exito">Activo</Insignia>,
           ],
         }))}
