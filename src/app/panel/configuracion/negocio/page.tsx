@@ -41,11 +41,12 @@ async function Contenido() {
   // Una columna que no pasa del ancho de la pantalla (minmax(0,1fr)): con "auto", el contenido más ancho la ensanchaba y
   // en el Chromium de Linux los campos se salían 7 px a 360 de ancho (lo encontró el CI, 25/10)
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-12 lg:grid-cols-[minmax(0,42rem)_minmax(0,20rem)]">
-      <p className="text-tinta-suave lg:col-span-2">Datos del negocio que se muestran en la página y en los documentos.</p>
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,42rem)_minmax(0,20rem)]">
+      <p className="text-sm text-tinta-suave lg:col-span-2">Datos del negocio que se muestran en la página y en los documentos.</p>
       <FormularioNegocio valores={valores} horarios={c.horarios} />
-      {/* En el celular y la tableta va debajo de "Guardar cambios", que no lo guarda: una línea lo separa (pulido 6.1) */}
-      <aside className="border-t border-border pt-10 lg:sticky lg:top-8 lg:self-start lg:border-0 lg:pt-0">
+      {/* En el celular y la tableta va debajo de "Guardar cambios", que no lo guarda: en su propia tarjeta (pulido 6.1;
+          pedido 26) */}
+      <aside className="tt-tarjeta-panel p-4 sm:p-5 lg:sticky lg:top-8 lg:self-start">
         <LogoDocumentos logo={c.logo} />
       </aside>
     </div>
