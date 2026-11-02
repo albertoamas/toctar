@@ -6,13 +6,12 @@ import { PlusIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
-import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { buttonVariants } from "@/componentes/ui/button";
 import { exigirModulo } from "@/lib/sesion";
-import { formatearWhatsApp } from "@/lib/whatsapp";
 import { BuscadorClientes } from "@/modulos/clientes/componentes/buscador-clientes";
+import { TablaClientes } from "@/modulos/clientes/componentes/tabla-clientes";
 import { buscarClientes } from "@/modulos/clientes/consultas";
-import { normalizarBusqueda, placasEnFila } from "@/modulos/clientes/reglas";
+import { normalizarBusqueda } from "@/modulos/clientes/reglas";
 
 export const metadata: Metadata = { title: "Clientes" };
 
@@ -92,18 +91,12 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/clientes">, "searc
   return (
     <>
       {vistaDesactivados}
-      <ListaFilas
+      <TablaClientes
         etiqueta={desactivados ? "Clientes desactivados" : "Clientes"}
-        filas={clientes.map((c) => {
-          const placas = placasEnFila(c.placas, busqueda);
-          return {
-            href: `/panel/clientes/${c.id}`,
-            titulo: c.nombre,
-            dato: placas,
-            detalles: placas ? [formatearWhatsApp(c.telefono)] : [formatearWhatsApp(c.telefono), "Sin vehículos"],
-            atenuada: desactivados,
-          };
-        })}
+        clientes={clientes}
+        busqueda={busqueda}
+        href={(id) => `/panel/clientes/${id}`}
+        atenuadas={desactivados}
       />
       {hayMas && <p className="text-sm text-tinta-suave">Hay más clientes: escribe algo más preciso para encontrar el que buscas.</p>}
       {verDesactivados}
