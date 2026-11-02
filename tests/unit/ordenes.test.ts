@@ -10,6 +10,8 @@ import {
   esFotoDeAntes,
   esOrden,
   estaAtrasada,
+  estadoFiltrado,
+  textoEntrega,
   etapaAbierta,
   fechaBuscada,
   NOMBRE_DETALLE,
@@ -247,4 +249,22 @@ test("pedido 28: la búsqueda de entregadas entiende fechas como «5/10» o «5/
   expect(fechaBuscada(" 05-10-26 ")).toEqual({ dia: 5, mes: 10, anio: 2026 });
   expect(fechaBuscada("5/10/2026")).toEqual({ dia: 5, mes: 10, anio: 2026 });
   for (const no of ["5678ABC", "32/10", "5/13", "5", "Juan"]) expect(fechaBuscada(no)).toBeNull();
+});
+
+test("la entrega se dice como el taller: hoy, mañana, ayer o la fecha corta (pedido 26)", () => {
+  expect(textoEntrega("2026-11-02", "2026-11-02")).toBe("Hoy");
+  expect(textoEntrega("2026-11-03", "2026-11-02")).toBe("Mañana");
+  expect(textoEntrega("2026-11-01", "2026-11-02")).toBe("Ayer");
+  expect(textoEntrega("2026-11-06", "2026-11-02")).toBe("06/11");
+  expect(textoEntrega("2027-01-04", "2026-12-31")).toBe("04/01/2027");
+  // Fin de mes: mañana y ayer cruzan el mes
+  expect(textoEntrega("2026-12-01", "2026-11-30")).toBe("Mañana");
+  expect(textoEntrega("2026-10-31", "2026-11-01")).toBe("Ayer");
+});
+
+test("el filtro por estado de En el taller acepta solo los estados abiertos (pedido 26)", () => {
+  expect(estadoFiltrado("recibido")).toBe("recibido");
+  expect(estadoFiltrado("en_proceso")).toBe("en_proceso");
+  expect(estadoFiltrado("listo")).toBe("listo");
+  for (const otro of ["entregado", "agendado", "", "__proto__", undefined, ["listo"]]) expect(estadoFiltrado(otro)).toBeNull();
 });

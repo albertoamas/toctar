@@ -19,9 +19,9 @@ test("avisar abre WhatsApp con nombre, vehículo y saldo, y queda quién avisó 
   await ingresar(page, `aviso-hu35-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
 
-  // En la lista, en "Listas" y "Sin avisar"
-  await page.goto("/panel/ordenes");
-  await expect(page.getByRole("region", { name: /^Listas/ }).getByRole("link", { name: new RegExp(`^${placa}.*Sin avisar`) })).toBeVisible();
+  // En la lista, "Lista" y "Sin avisar" (también con el filtro de las listas)
+  await page.goto("/panel/ordenes?estado=listo");
+  await expect(page.getByRole("list", { name: "Órdenes en el taller" }).getByRole("link", { name: new RegExp(`^${placa}.*Lista.*Sin avisar`) })).toBeVisible();
 
   await page.goto(`/panel/ordenes/${id}`);
   const enlace = await abrirWhatsApp(page, page.getByRole("button", { name: "Avisar por WhatsApp" }));
