@@ -23,7 +23,7 @@ Igual que una historia (`plan-de-desarrollo.md`, "Cómo se trabaja cada historia
 | 2 | Checklist al recibir el vehículo | 12 | 8 a 10 | Incluido en el plan (decisión del 01/11) | ✅ Programado (01/11) |
 | 3 | Firma digital del cliente | 13 | 6 | Incluido en el plan (decisión del 01/11); el PDF, aparte | ✅ Programado (01/11) |
 | 4 | Fotos: solo las que sirven, sin videos | 27 | 4 a 6 | Incluido | ✅ Programado (01/11) |
-| 5 | Rediseño del panel: administrativo estándar | 26 | 25 a 35 | Incluido (sin él no hay aceptación) | ⏳ |
+| 5 | Rediseño del panel: administrativo estándar | 26 | 25 a 35 | Incluido (sin él no hay aceptación) | 🟡 En curso (02/11): prototipo y fase 1 de 6 (`etapas/P26-rediseno-panel.md`) |
 | 6 | Órdenes con historial y agenda con las completadas | 28 | 6 a 8 | Incluido | ✅ Programado (01/11) |
 | 7 | Saldos pendientes: ordenar y buscar | 30 | 2 | Incluido (bolsa de 8 h) | ✅ Programado (01/11) |
 | 8 | Vehículos sin placa | 29 | 6 a 8 | Por definir | ⏳ |
