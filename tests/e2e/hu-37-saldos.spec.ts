@@ -41,8 +41,9 @@ test("la entregada con saldo aparece, con su WhatsApp, y se cobra desde la lista
 
   await ingresar(page, `caja-hu37-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
-  // En el menú se llama por lo que muestra
-  await page.getByRole("link", { name: "Saldos pendientes" }).first().click();
+  // En el menú se llama por lo que muestra (en el celular, el menú se abre)
+  if (info.project.name === "celular") await page.getByRole("button", { name: "Abrir menú" }).click();
+  await page.getByRole("navigation", { name: "Panel" }).getByRole("link", { name: "Saldos pendientes" }).click();
   await expect(page).toHaveURL(/\/panel\/pagos$/);
   await expect(page.getByText(/^Total por cobrar/)).toBeVisible();
 

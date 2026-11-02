@@ -53,6 +53,8 @@ export function TablaLista({ etiqueta, columnas, filas }: { etiqueta: string; co
               {f.celdas.map((celda, i) => (
                 <span key={i} className={cn("min-w-0", CELDA_MOVIL[columnas[i].movil], CELDA_TABLA, columnas[i].alinear === "derecha" && "@2xl:text-right")}>
                   {celda}
+                  {/* Entre celdas, una coma para el lector de pantalla: el enlace se oye "3456GHT, Toyota Hilux, Jorge Quiroga…" */}
+                  {i < f.celdas.length - 1 && <span className="sr-only">, </span>}
                 </span>
               ))}
             </Link>
@@ -69,7 +71,12 @@ export function CeldaDoble({ principal, secundario, marcada = false }: { princip
   return (
     <span className="flex flex-col">
       <span className={marcada ? "tt-placa text-[0.95rem]" : "font-medium"}>{principal}</span>
-      {secundario && <span className="text-xs text-tinta-suave">{secundario}</span>}
+      {secundario && (
+        <span className="text-xs text-tinta-suave">
+          <span className="sr-only">, </span>
+          {secundario}
+        </span>
+      )}
     </span>
   );
 }
