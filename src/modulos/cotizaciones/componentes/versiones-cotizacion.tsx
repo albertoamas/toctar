@@ -34,7 +34,28 @@ export function VersionesCotizacion({ consultaId, versiones }: { consultaId: num
                 <span className={INSIGNIA[c.estado]}>{NOMBRE[c.estado]}</span>
               </span>
             )}
-            <span className={cn("text-2xl font-bold tabular-nums", c.estado === "reemplazada" ? "text-tinta-suave" : "text-tinta")}>{bs(c.total)}</span>
+            {/* Lo cotizado, como en el PDF (pedido 26): cada servicio con su precio, el descuento si hubo y el total. Las
+                reemplazadas, solo con su total: ya no valen */}
+            {c.estado !== "reemplazada" && c.lineas.length > 0 && (
+              <dl aria-label={`Servicios de la versión ${c.version}`} className="mb-1 flex flex-col divide-y divide-border text-sm">
+                {c.lineas.map((l, i) => (
+                  <div key={i} className="flex justify-between gap-4 py-2 first:pt-0">
+                    <dt>{l.descripcion}</dt>
+                    <dd className="shrink-0 font-semibold tabular-nums">{bs(l.precio)}</dd>
+                  </div>
+                ))}
+                {Number(c.descuento) > 0 && (
+                  <div className="flex justify-between gap-4 py-2">
+                    <dt className="text-tinta-suave">Descuento</dt>
+                    <dd className="shrink-0 tabular-nums">−{bs(c.descuento)}</dd>
+                  </div>
+                )}
+              </dl>
+            )}
+            <span className={cn("text-2xl font-bold tabular-nums", c.estado === "reemplazada" ? "text-tinta-suave" : "text-tinta")}>
+              <span className="sr-only">Total: </span>
+              {bs(c.total)}
+            </span>
             <span className="flex flex-wrap gap-x-3 text-sm">
               <span>Válida hasta {formatearFecha(c.validaHasta)}</span>
               <span>{c.esEstimado ? "Por fotos (estimado)" : "En persona"}</span>

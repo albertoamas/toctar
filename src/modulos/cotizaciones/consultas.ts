@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, desc, eq, exists, like, ne, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, inArray, like, ne, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { cliente, consulta, cotizacion, cotizacionLinea, negocio, servicio, sucursal, tamanoVehiculo, usuario, variante, vehiculo } from "@/db/esquema";
 import type { EstadoConsulta, MotivoPerdida } from "@/db/esquema/consultas";
@@ -189,12 +189,16 @@ export type FilaVersion = {
   estado: EstadoCotizacion;
   createdAt: Date;
   total: string;
+  /** El descuento de la versión; "0.00" si no hubo. */
+  descuento: string;
   validaHasta: string;
   esEstimado: boolean;
   tienePdf: boolean;
+  /** Lo cotizado, en su orden (pedido 26: se ve en la ficha, como en el PDF). */
+  lineas: { descripcion: string; precio: string }[];
 };
 
-/** Las versiones de una cotización, de la más nueva a la más vieja. */
+/** Las versiones de una cotización, de la más nueva a la más vieja, con sus líneas. */
 async function versionesDeCotizacion(consultaId: number): Promise<FilaVersion[]> {
   const filas = await db
     .select({
@@ -204,6 +208,7 @@ async function versionesDeCotizacion(consultaId: number): Promise<FilaVersion[]>
       estado: cotizacion.estado,
       createdAt: cotizacion.createdAt,
       total: cotizacion.total,
+      descuento: cotizacion.descuento,
       validaHasta: cotizacion.validaHasta,
       esEstimado: cotizacion.esEstimado,
       pdf: cotizacion.pdfArchivoId,
@@ -211,7 +216,18 @@ async function versionesDeCotizacion(consultaId: number): Promise<FilaVersion[]>
     .from(cotizacion)
     .where(eq(cotizacion.consultaId, consultaId))
     .orderBy(desc(cotizacion.version), desc(cotizacion.id));
-  return filas.map(({ pdf, ...f }) => ({ ...f, tienePdf: pdf !== null }));
+  if (filas.length === 0) return [];
+  // Una sola consulta para las líneas de todas las versiones
+  const lineas = await db
+    .select({ cotizacionId: cotizacionLinea.cotizacionId, descripcion: cotizacionLinea.descripcion, precio: cotizacionLinea.precio })
+    .from(cotizacionLinea)
+    .where(inArray(cotizacionLinea.cotizacionId, filas.map((f) => f.id)))
+    .orderBy(asc(cotizacionLinea.orden), asc(cotizacionLinea.id));
+  return filas.map(({ pdf, ...f }) => ({
+    ...f,
+    tienePdf: pdf !== null,
+    lineas: lineas.filter((l) => l.cotizacionId === f.id).map(({ descripcion, precio }) => ({ descripcion, precio })),
+  }));
 }
 
 /**
