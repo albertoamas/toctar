@@ -697,8 +697,9 @@ export async function entregarVehiculo(_previo: EstadoFormulario, datos: FormDat
           firmaArchivoId,
           firmaNombre,
           sinFirmaMotivo,
-          // Si sale antes de la entrega aproximada, la agenda deja de mostrarlo esos días
-          fechaFin: sql`least(${trabajo.fechaFin}, greatest(${trabajo.fechaInicio}, ${hoy}::date))`,
+          // El día en que salió: antes de la entrega aproximada, la agenda deja de mostrarlo esos días; después (se
+          // atrasó), lo muestra hasta ese día (pedido 28). Entregada ya no ocupa el espacio: no choca con otra reserva
+          fechaFin: sql`greatest(${trabajo.fechaInicio}, ${hoy}::date)`,
           updatedAt: sql`now()`,
         })
         .where(eq(trabajo.id, id));

@@ -18,7 +18,9 @@ async function entregada(info: TestInfo, n: number, tecnico?: string): Promise<{
   // Hay tres espacios: la cuarta usa el de la primera, ya entregada (no ocupa)
   const id = await crearOrdenLista({ placa, espacio: (n - 1) % 3, dias: dias(info), precio: 500, pagado: 500 });
   const [{ dia }] = await consultar<{ dia: string }>(
-    `update trabajo set estado = 'entregado', entregado_at = (fecha_fin::timestamp + time '15:00') at time zone 'America/La_Paz',
+    // En el pasado (como en la vida real): la agenda muestra las entregadas en días ya pasados
+    `update trabajo set estado = 'entregado', fecha_inicio = current_date - (fecha_fin - current_date), fecha_fin = current_date - (fecha_fin - current_date),
+       entregado_at = ((current_date - (fecha_fin - current_date))::timestamp + time '15:00') at time zone 'America/La_Paz',
        tecnico_id = (select id from usuario where nombre_usuario = $2), sin_firma_motivo = 'Prueba'
      where id = $1 returning to_char(fecha_fin, 'YYYY-MM-DD') as dia`,
     [id, tecnico ?? null],

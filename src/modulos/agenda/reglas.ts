@@ -64,21 +64,31 @@ export function bloquesDeLaSemana<T extends Rango>(trabajos: readonly T[], lunes
 export const ocupaEspacio = (estado: EstadoTrabajo) => estado !== "cancelado" && estado !== "entregado";
 
 /**
- * Pedido 28: las entregadas siguen en el tablero, en sus días, para ver qué se entregó y cuándo. Pero ya no ocupan el
- * espacio: si otra reserva lo usa esos días (la que entró el mismo día en que salió), gana esa, y la entregada se
- * muestra solo en los días que quedan libres antes (los primeros seguidos). Sin días libres, no se muestra.
+ * Pedido 28: las entregadas siguen en el tablero, en los días que estuvieron, para ver qué se entregó y cuándo. Pero ya
+ * no ocupan el espacio, así que se muestran solo en los días anteriores a `hoy` (hoy el espacio queda libre para
+ * agendar) y que no usa otra reserva (la que entró el día en que salió) ni otra entregada. Cada tramo de días libres
+ * seguidos es una cinta; sin días libres, no se muestra. Día por día: no depende de la semana que se mira.
  */
-export function entregadasALaVista<T extends Rango & { estado: EstadoTrabajo }>(reservas: readonly T[]): T[] {
-  const activas = reservas.filter((r) => ocupaEspacio(r.estado));
-  const entregadas = reservas.filter((r) => r.estado === "entregado").flatMap((e) => {
-    let fin: string | null = null;
-    for (let dia = e.inicio; dia <= e.fin; dia = sumarDias(dia, 1)) {
-      if (activas.some((a) => seCruzan(a, { inicio: dia, fin: dia }))) break;
-      fin = dia;
+export function entregadasALaVista<T extends Rango & { estado: EstadoTrabajo }>(reservas: readonly T[], hoy: string): T[] {
+  const ocupados: Rango[] = reservas.filter((r) => ocupaEspacio(r.estado));
+  const tramos: T[] = [];
+  const entregadas = reservas.filter((r) => r.estado === "entregado").sort((a, b) => (a.inicio < b.inicio ? -1 : a.inicio > b.inicio ? 1 : 0));
+  for (const e of entregadas) {
+    let tramo: Rango | null = null;
+    const cerrar = () => {
+      if (tramo) {
+        tramos.push({ ...e, ...tramo });
+        ocupados.push(tramo);
+      }
+      tramo = null;
+    };
+    for (let dia = e.inicio; dia <= e.fin && dia < hoy; dia = sumarDias(dia, 1)) {
+      if (ocupados.some((o) => seCruzan(o, { inicio: dia, fin: dia }))) cerrar();
+      else tramo = tramo ? { inicio: tramo.inicio, fin: dia } : { inicio: dia, fin: dia };
     }
-    return fin ? [{ ...e, fin }] : [];
-  });
-  return [...activas, ...entregadas];
+    cerrar();
+  }
+  return [...reservas.filter((r) => ocupaEspacio(r.estado)), ...tramos];
 }
 
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];

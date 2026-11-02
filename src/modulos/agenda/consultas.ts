@@ -26,7 +26,7 @@ import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { sucursalPrincipal } from "@/modulos/configuracion/consultas";
 import { opcionesDeServicio, type OpcionServicio } from "@/modulos/cotizaciones/consultas";
 import { calcularSaldo, type Saldo } from "@/modulos/pagos/reglas";
-import { entregadasALaVista, ocupaEspacio } from "./reglas";
+import { entregadasALaVista, ocupaEspacio, seCruzan } from "./reglas";
 
 // Lecturas de la agenda (C3). Quien las llama ya pasó por exigirModulo("agenda"); los montos y pagos solo se piden
 // para quien además ve "pagos" (o el dueño). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md.
@@ -483,7 +483,11 @@ export async function semanaDeAgenda(lunes: string, domingo: string): Promise<Se
   ]);
   const porTrabajo = new Map<number, string[]>();
   for (const l of lineas) porTrabajo.set(l.trabajoId, [...(porTrabajo.get(l.trabajoId) ?? []), l.descripcion]);
-  const aLaVista = [...new Set(reservas.map((r) => r.espacioId))].flatMap((espacioId) => entregadasALaVista(reservas.filter((r) => r.espacioId === espacioId)));
+  const hoy = fechaEnBolivia();
+  // Los tramos de entregadas que caen en la semana (un tramo puede quedar antes del lunes)
+  const aLaVista = [...new Set(reservas.map((r) => r.espacioId))]
+    .flatMap((espacioId) => entregadasALaVista(reservas.filter((r) => r.espacioId === espacioId), hoy))
+    .filter((r) => seCruzan(r, { inicio: lunes, fin: domingo }));
   const conReservas = new Set(aLaVista.map((r) => r.espacioId));
   return {
     espacios: espacios.filter((e) => e.activo || conReservas.has(e.id)),

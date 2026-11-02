@@ -149,7 +149,7 @@ export function TableroSemana({ semana, dias, hoy, conOrdenes }: Props) {
                 ),
               )}
               {deEspacio.map((b) => (
-                <Cinta key={b.id} r={b} empiezaAntes={b.empiezaAntes} terminaDespues={b.terminaDespues} conOrdenes={conOrdenes} style={{ gridRow, gridColumn: `${b.columna + 2} / span ${b.dias}` }} />
+                <Cinta key={`${b.id}-${b.inicio}`} r={b} empiezaAntes={b.empiezaAntes} terminaDespues={b.terminaDespues} conOrdenes={conOrdenes} style={{ gridRow, gridColumn: `${b.columna + 2} / span ${b.dias}` }} />
               ))}
             </section>
           );

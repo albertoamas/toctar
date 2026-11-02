@@ -57,7 +57,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/ordenes">, "search
           {/* Fuera de la lista: al buscar, el campo no se vuelve a montar y no pierde el foco */}
           <BuscadorClientes etiqueta="Buscar por placa, cliente o fecha de entrega" ejemplo="Placa, cliente o fecha (5/10)" />
           <Suspense fallback={<Cargando />}>
-            <Entregadas tecnicoId={tecnico ? Number(usuario.id) : undefined} q={typeof parametros.q === "string" ? parametros.q : ""} pagina={Number(parametros.pagina) || 1} conTecnico={!tecnico} />
+            <Entregadas tecnicoId={tecnico ? Number(usuario.id) : undefined} q={typeof parametros.q === "string" ? parametros.q : ""} pagina={Number(parametros.pagina)} conTecnico={!tecnico} />
           </Suspense>
         </>
       ) : (
@@ -97,9 +97,14 @@ async function EnElTaller({ tecnicoId }: { tecnicoId?: number }) {
 
 /** El historial (pedido 28): la más reciente primero, con su búsqueda y de a páginas. */
 async function Entregadas({ tecnicoId, q, pagina, conTecnico }: { tecnicoId?: number; q: string; pagina: number; conTecnico: boolean }) {
-  const pedida = Math.max(1, Math.floor(pagina));
-  const { ordenes, total } = await ordenesEntregadas({ tecnicoId, q, pagina: pedida });
+  // Una página rara (texto, 0, Infinity) es la primera; una después de la última, la última
+  let pedida = Number.isSafeInteger(pagina) && pagina > 1 ? pagina : 1;
+  let { ordenes, total } = await ordenesEntregadas({ tecnicoId, q, pagina: pedida });
   const paginas = Math.max(1, Math.ceil(total / ENTREGADAS_POR_PAGINA));
+  if (pedida > paginas) {
+    pedida = paginas;
+    ({ ordenes, total } = await ordenesEntregadas({ tecnicoId, q, pagina: pedida }));
+  }
   const enlace = (p: number) => {
     const datos = new URLSearchParams({ vista: "entregadas" });
     if (q.trim()) datos.set("q", q);
