@@ -4,6 +4,7 @@
 - **Estado:** aprobada (01/11/2026) y en curso en la rama `pedido-12-checklist-recepcion`
 - **Pedido:** 12 de `03-cierre-comercial/registro-de-cambios.md`. Tratamiento: incluido en el plan de ajustes (decisión del 01/11, no se cotiza aparte)
 - **Historias que cambian:** HU-33 (recibir), HU-34 (la orden), HU-05 (configuración del taller)
+- **Cambió después (02/11, pedido 26):** el checklist es un interruptor por parte, que se ve prendido o apagado: "Bien" se prende en verde al tocarlo (al momento, se guarda por detrás) y otro toque lo apaga (la parte vuelve a "Sin revisar": acción `desmarcarParte`, con las mismas reglas que marcar; si tenía detalle, se borran su nota y su foto). "Detalle" abre el modal; guardado, queda en ámbar con el tipo y la nota y la foto debajo. De detalle a bien, un toque en "Bien" (el modal ya no tiene "Está bien"). Arriba, una barra de avance con "Faltan N". Reglas puras `alTocarBien` y `textoAvanceChecklist` (`tests/unit/ordenes.test.ts`). En el mismo cambio, el formulario de recibir manda el técnico y las observaciones en campos ocultos: tras un envío que fallaba (partes sin revisar), React reiniciaba el formulario y a veces se recibía sin técnico.
 - **Base:** RF-40 (recibir con fotos y observaciones), RN-12 (el técnico no ve precios ni teléfonos), RNF-11 (todo configurable), D-4 (lo registrado copia el nombre), D-6 (se desactiva, no se borra), D-10 (archivos)
 
 ## 1. Objetivo

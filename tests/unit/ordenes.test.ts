@@ -11,6 +11,8 @@ import {
   esOrden,
   estaAtrasada,
   estadoFiltrado,
+  alTocarBien,
+  textoAvanceChecklist,
   textoEntrega,
   etapaAbierta,
   fechaBuscada,
@@ -267,4 +269,18 @@ test("el filtro por estado de En el taller acepta solo los estados abiertos (ped
   expect(estadoFiltrado("en_proceso")).toBe("en_proceso");
   expect(estadoFiltrado("listo")).toBe("listo");
   for (const otro of ["entregado", "agendado", "", "__proto__", undefined, ["listo"]]) expect(estadoFiltrado(otro)).toBeNull();
+});
+
+test("el checklist es un interruptor: tocar Bien en una parte bien la desmarca; si no, la marca (pedido 26)", () => {
+  expect(alTocarBien("bien")).toBe("desmarcar");
+  expect(alTocarBien(null)).toBe("marcar");
+  // Con un detalle, "Bien" la pasa a bien (y el servidor borra la nota y la foto)
+  expect(alTocarBien("detalle")).toBe("marcar");
+});
+
+test("el avance del checklist dice cuántas faltan, en singular o plural, o que están todas (pedido 26)", () => {
+  expect(textoAvanceChecklist(8, 13)).toBe("Faltan 5");
+  expect(textoAvanceChecklist(12, 13)).toBe("Falta 1");
+  expect(textoAvanceChecklist(13, 13)).toBe("Todas revisadas");
+  expect(textoAvanceChecklist(0, 0)).toBe("Todas revisadas");
 });

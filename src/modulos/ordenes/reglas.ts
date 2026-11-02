@@ -1,4 +1,4 @@
-import type { EstadoTrabajo, EtapaFoto, TipoDetalle } from "@/db/esquema/trabajos";
+import type { EstadoRevision, EstadoTrabajo, EtapaFoto, TipoDetalle } from "@/db/esquema/trabajos";
 import { fechaCorta, sumarDias } from "@/lib/fechas";
 
 // Reglas puras de las órdenes (C4). Una orden es una reserva ya recibida (D-1): el mismo `trabajo`.
@@ -128,6 +128,16 @@ export function textoSinRevisar(partes: readonly string[]): string {
 
 /** Cuántas entregadas muestra cada página del historial (pedido 28). */
 export const ENTREGADAS_POR_PAGINA = 20;
+
+/**
+ * El checklist como interruptor (pedido 26): tocar "Bien" en una parte que ya está bien la desmarca (vuelve a "Sin
+ * revisar"); en una sin revisar o con detalle, la marca bien.
+ */
+export const alTocarBien = (estado: EstadoRevision | null): "marcar" | "desmarcar" => (estado === "bien" ? "desmarcar" : "marcar");
+
+/** El avance del checklist, en palabras: "Faltan 5" o, con todas revisadas, "Todas revisadas". */
+export const textoAvanceChecklist = (revisadas: number, total: number) =>
+  revisadas >= total ? "Todas revisadas" : `${total - revisadas === 1 ? "Falta" : "Faltan"} ${total - revisadas}`;
 
 /**
  * Lo que se escribe en la búsqueda de entregadas (pedido 28), como fecha: "5/10" (día y mes, de cualquier año) o
