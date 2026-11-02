@@ -2,5 +2,5 @@
 // La acción principal ya está arriba en cada pantalla ("Agregar servicio", "Agregar usuario"): aquí no se repite.
 
 export function EstadoVacio({ children }: { children: React.ReactNode }) {
-  return <p className="rounded-sm border border-dashed border-input px-4 py-6 text-tinta-suave">{children}</p>;
+  return <p className="rounded-lg border border-dashed border-input bg-fondo px-4 py-6 text-tinta-suave">{children}</p>;
 }

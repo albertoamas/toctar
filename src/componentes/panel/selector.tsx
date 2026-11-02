@@ -11,7 +11,7 @@ export function Selector({ className, ...resto }: React.ComponentProps<"select">
   return (
     <select
       className={cn(
-        "h-9 pointer-coarse:h-11 w-full min-w-0 rounded-lg border border-input bg-transparent px-2 py-1 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 [&_option]:bg-fondo [&_option]:text-tinta",
+        "h-9 pointer-coarse:h-11 w-full min-w-0 rounded-lg border border-input bg-fondo px-2 py-1 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 [&_option]:bg-fondo [&_option]:text-tinta",
         className,
       )}
       {...props}

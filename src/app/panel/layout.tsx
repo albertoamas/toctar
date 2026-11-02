@@ -15,9 +15,10 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "TocTar", statusBarStyle: "black" },
 };
 
-// Diseño del panel: barra lateral negra con el monograma (presencia de la marca) y contenido en
-// tema claro, que se lee mejor al sol en el taller. En el celular y la tableta (menos de 1024 px), barra
-// superior y menú desplegable: con la barra lateral, el contenido quedaba apretado.
+// Diseño del panel (pedido 26, etapas/P26-rediseno-panel.md): un panel administrativo estándar. Menú lateral oscuro con
+// el logo, y el área de trabajo gris claro con las tarjetas blancas encima, que se lee mejor al sol en el taller. En el
+// celular y la tableta (menos de 1024 px), barra superior y menú desplegable: con la barra lateral, el contenido quedaba
+// apretado. El menú va con las esquinas del panel (8 px), no con las de la marca del tema oscuro.
 // La barra lateral y la superior quedan fijas al bajar: el menú y "Cerrar sesión" siempre a mano.
 // Este layout NO protege a las páginas: cada página valida la sesión (src/lib/sesion.ts).
 export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
@@ -34,8 +35,8 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
 
   return (
     <div className="flex flex-1">
-      <aside data-theme="oscuro" className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col bg-fondo p-4 text-tinta lg:flex">
-        <div className="mb-6">
+      <aside data-theme="oscuro" className="sticky top-0 hidden h-dvh w-62 shrink-0 flex-col bg-fondo p-4 text-tinta [--radius:8px] lg:flex">
+        <div className="mt-1 mb-6">
           <Marca />
         </div>
         {/* Si el menú no entra (pantalla baja), se desplaza solo él: la marca y "Cerrar sesión" quedan a la vista.
@@ -46,12 +47,12 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
 
       {/* min-w-0: sin esto, lo ancho del contenido (como la tira de pestañas) estira la columna y la pantalla
           se sale por la derecha en el celular. */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col bg-fondo-panel">
         <RegistrarServiceWorker />
         {/* Los avisos ("Cambios guardados.") son solo del panel: en el diseño raíz, su código (sonner) se descargaba
             también en cada página del sitio, que no los usa (pulido 2, rendimiento). */}
         <Toaster />
-        <header data-theme="oscuro" className="sticky top-0 z-40 flex h-14 items-center gap-2 bg-fondo px-4 text-tinta lg:hidden">
+        <header data-theme="oscuro" className="sticky top-0 z-40 flex h-14 items-center gap-2 bg-fondo px-4 text-tinta [--radius:8px] lg:hidden">
           <MenuDesplegable lado="left" cabecera={<Marca />}>
             {/* Igual que la barra lateral: en un celular bajo se desplaza el menú y "Cerrar sesión" queda a la vista. Con el
                 mismo margen que la cabecera, los títulos de grupo quedan alineados con la marca */}
@@ -64,17 +65,17 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
         <div className="sticky top-14 z-40 lg:top-0">
           <AvisoConexion />
         </div>
-        <main className="flex-1 p-4 md:p-8">{children}</main>
+        <main className="flex-1 px-4 py-5 md:px-8 md:py-7">{children}</main>
       </div>
     </div>
   );
 }
 
+/** El logo horizontal sin lema (el lema pide 360 px de ancho), sobre el fondo oscuro del menú. */
 function Marca() {
   return (
-    <span className="flex items-center gap-3 px-3">
-      <Image src="/marca/toctar-monograma-sobre-oscuro.svg" alt="" width={32} height={24} unoptimized />
-      <span className="font-heading text-xl font-extrabold italic">Panel</span>
+    <span className="flex items-center px-3">
+      <Image src="/marca/toctar-horizontal-sin-lema-sobre-oscuro.svg" alt="TocTar, panel" width={120} height={30} unoptimized priority />
     </span>
   );
 }

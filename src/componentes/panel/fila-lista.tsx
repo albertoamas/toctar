@@ -2,15 +2,19 @@ import Link from "next/link";
 import { cn } from "cn";
 import { ChevronRightIcon } from "lucide-react";
 
-// Listas de un toque del panel (skill pantallas-panel, §2 "Lista"): cada fila abre su pantalla. Lo que identifica va
-// arriba (un nombre, o grande si es una placa o una cuenta), lo que decide en negrita debajo ("Desde 700 Bs"), los
-// datos secundarios en tinta suave, y lo que pide atención en una insignia de aviso. La flecha dice que se toca.
+/** Los tonos de las insignias de estado (.tt-estado de globals.css). Sin tono, gris. */
+export type TonoEstado = "exito" | "aviso" | "peligro" | "info" | "violeta";
+
+// Listas de un toque del panel (skill pantallas-panel, §2 "Lista"): una tarjeta con una fila por elemento, y cada fila
+// abre su pantalla. Lo que identifica va arriba (un nombre, o una placa o una cuenta, más marcada), lo que decide en
+// negrita debajo ("Desde 700 Bs"), los datos secundarios en tinta suave, y el estado y lo que pide atención en
+// insignias de color (pedido 26). La flecha dice que se toca.
 // La usan el inicio (lo del día) y las listas de cada módulo, así todas se ven y se leen igual.
 
 export type DatosFila = {
   href: string;
   titulo: string;
-  /** Grande, en Barlow: una placa o una cuenta ("3 pendientes"), que es como el taller las nombra. */
+  /** Marcado: una placa o una cuenta ("3 pendientes"), que es como el taller las nombra. */
   tituloGrande?: boolean;
   /** Lo que decide, en negrita debajo del título: "Desde 700 Bs". */
   dato?: string | null;
@@ -21,14 +25,14 @@ export type DatosFila = {
   /** El estado escrito ("En proceso", "Inactivo"), en una insignia después del aviso (los dos se ven: pulido 9.1). */
   estado?: string;
   /** El color del estado, si dice algo por sí mismo: "Confirmado" en verde, "Perdido" o "Cancelada" en ámbar. */
-  tonoEstado?: "exito" | "aviso";
+  tonoEstado?: TonoEstado;
   /** Inactiva o desactivada: atenuada. */
   atenuada?: boolean;
 };
 
 export function ListaFilas({ etiqueta, filas }: { etiqueta: string; filas: DatosFila[] }) {
   return (
-    <ul aria-label={etiqueta} className="flex flex-col divide-y divide-border rounded-sm border border-border">
+    <ul aria-label={etiqueta} className="tt-tarjeta-panel flex flex-col divide-y divide-border overflow-hidden">
       {filas.map((f) => (
         <li key={f.href}>
           <FilaLista {...f} />
@@ -40,12 +44,12 @@ export function ListaFilas({ etiqueta, filas }: { etiqueta: string; filas: Datos
 
 function FilaLista({ href, titulo, tituloGrande, dato, detalles = [], aviso, estado, tonoEstado, atenuada }: DatosFila) {
   return (
-    <Link href={href} className={cn("flex min-h-11 items-center gap-3 p-3 hover:bg-superficie", atenuada && "text-tinta-suave")}>
+    <Link href={href} className={cn("flex min-h-11 items-center gap-3 px-4 py-3 hover:bg-superficie/60 focus-visible:-outline-offset-2", atenuada && "text-tinta-suave")}>
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className={tituloGrande ? "font-heading text-xl font-extrabold italic tabular-nums" : "font-semibold"}>{titulo}</span>
-          {aviso && <span className="tt-insignia tt-insignia--aviso">{aviso}</span>}
-          {estado && <span className={cn("tt-insignia", tonoEstado && `tt-insignia--${tonoEstado}`)}>{estado}</span>}
+          <span className={tituloGrande ? "tt-placa text-base" : "font-semibold"}>{titulo}</span>
+          {estado && <span className={cn("tt-estado", tonoEstado && `tt-estado--${tonoEstado}`)}>{estado}</span>}
+          {aviso && <span className="tt-estado tt-estado--aviso">{aviso}</span>}
         </span>
         {dato && <span className="text-sm font-semibold tabular-nums">{dato}</span>}
         {detalles.length > 0 && (

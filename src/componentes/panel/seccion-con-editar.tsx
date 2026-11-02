@@ -6,7 +6,7 @@ import { useHidratado } from "@/componentes/hidratado";
 import { ModalFormulario } from "@/componentes/panel/modal-formulario";
 import { Button } from "@/componentes/ui/button";
 
-// Fichas del panel en lectura (skill pantallas-panel, §2): cada sección muestra sus datos en un recuadro y "Editar"
+// Fichas del panel en lectura (skill pantallas-panel, §2): cada sección muestra sus datos en una tarjeta y "Editar"
 // abre su formulario en un modal (ModalFormulario). La página no salta ni cambia mientras se edita, y el modal ya es
 // "una edición a la vez". Una sección de nivel 2 lleva su título fuera del recuadro; una de nivel 3 (dentro de otra,
 // como cada variante en Precios), dentro, en la cabecera del recuadro.
@@ -35,7 +35,7 @@ export function CabeceraSeccion({ id, titulo, nivel = 2, children }: { id: strin
   const Titulo = nivel === 3 ? "h3" : "h2";
   return (
     <div className="flex min-h-11 items-center justify-between gap-3">
-      <Titulo id={`${id}-titulo`} className={nivel === 3 ? "text-lg font-semibold" : "font-heading text-2xl font-bold italic"}>
+      <Titulo id={`${id}-titulo`} className={nivel === 3 ? "tt-titulo-sub" : "tt-titulo-seccion"}>
         {titulo}
       </Titulo>
       {children}
@@ -59,10 +59,11 @@ export function SeccionConEditar({ id, titulo, nivel = 2, etiquetaEditar, titulo
   );
 
   return (
-    <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-3">
+    <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-2">
       {nivel === 2 && cabecera}
-      {/* flex-1: en una grilla, los recuadros de una misma fila quedan del mismo alto */}
-      <div className="flex flex-1 flex-col gap-3 rounded-sm border border-border p-4">
+      {/* flex-1: en una grilla, las tarjetas de una misma fila quedan del mismo alto. Una sección de nivel 3 va dentro de
+          otra tarjeta: un recuadro con borde, sin sombra */}
+      <div className={nivel === 3 ? "flex flex-1 flex-col gap-3 rounded-lg border border-border p-4" : "tt-tarjeta-panel flex flex-1 flex-col gap-3 p-4"}>
         {nivel === 3 && cabecera}
         {lectura}
       </div>

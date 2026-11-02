@@ -7,13 +7,13 @@ type Props = { titulo: string; estado?: React.ReactNode; accion?: React.ReactNod
 
 export function EncabezadoPagina({ titulo, estado, accion, children }: Props) {
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-4">
-        <h1 className="font-heading text-4xl font-extrabold italic">{titulo}</h1>
+    <div className="flex flex-col gap-1">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
+        <h1 className="tt-titulo-pagina">{titulo}</h1>
         {estado}
         {accion && <div className="sm:ml-auto">{accion}</div>}
       </div>
-      {children && <p className="text-tinta-suave">{children}</p>}
+      {children && <p className="text-sm text-tinta-suave">{children}</p>}
     </div>
   );
 }

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "cn";
 
-// Pestañas de un módulo del panel. Cada pestaña tiene su ruta, para poder enlazarla.
+// Pestañas de un módulo del panel. Cada pestaña tiene su ruta, para poder enlazarla. La activa, subrayada en tinta: el
+// rojo es del botón principal y del menú (pedido 26).
 
 export type Pestana = {
   href: string;
@@ -27,8 +28,8 @@ export function Pestanas({ etiqueta, pestanas, activa: elegida }: { etiqueta: st
                 href={p.href}
                 aria-current={activa ? "page" : undefined}
                 className={cn(
-                  "-mb-px block border-b-2 border-transparent py-3 text-sm font-semibold text-tinta-suave hover:text-tinta",
-                  activa && "border-rojo text-tinta",
+                  "-mb-px block border-b-2 border-transparent px-1 py-3 text-sm font-semibold text-tinta-suave hover:text-tinta",
+                  activa && "border-tinta text-tinta",
                 )}
               >
                 {p.texto}
