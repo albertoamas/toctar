@@ -260,6 +260,10 @@ export type FilaCotizacion = {
   clienteId: number;
   cliente: string;
   placa: string;
+  /** Marca y modelo ("Toyota Hilux"); vacío si no se cargaron. */
+  vehiculo: string;
+  /** Los servicios de la versión que vale, en su orden: "Instalación de PPF, Pulido de vidrios". */
+  servicios: string;
   numero: string;
   total: string;
   estado: EstadoConsulta;
@@ -277,11 +281,20 @@ const columnasFila = {
   clienteId: consulta.clienteId,
   cliente: cliente.nombre,
   placa: vehiculo.placa,
+  marca: vehiculo.marca,
+  modelo: vehiculo.modelo,
+  servicios: sql<string>`coalesce((select string_agg(${cotizacionLinea.descripcion}, ', ' order by ${cotizacionLinea.orden}) from ${cotizacionLinea} where ${cotizacionLinea.cotizacionId} = ${cotizacion.id}), '')`,
   numero: cotizacion.numero,
   total: cotizacion.total,
   estado: consulta.estado,
   ultimoMovimientoAt: consulta.ultimoMovimientoAt,
 };
+
+/** La fila de la consulta, con el vehículo nombrado como en el resto del panel. */
+const aFila = ({ marca, modelo, ...f }: { marca: string | null; modelo: string | null } & Omit<FilaCotizacion, "vehiculo">): FilaCotizacion => ({
+  ...f,
+  vehiculo: nombreVehiculo({ marca, modelo }),
+});
 
 function filas(donde: SQL | undefined) {
   return db
@@ -314,10 +327,12 @@ function coincide(q: string): SQL | undefined {
  */
 export async function listarCotizaciones(vista: Vista, q: string): Promise<{ cotizaciones: FilaCotizacion[]; hayMas: boolean }> {
   const donde = and(eq(consulta.estado, VISTAS[vista]), coincide(q));
-  if (vista === "pendientes") return { cotizaciones: await filas(donde).orderBy(asc(consulta.ultimoMovimientoAt), asc(consulta.id)), hayMas: false };
-  const encontradas = await filas(donde)
-    .orderBy(desc(consulta.ultimoMovimientoAt), desc(consulta.id))
-    .limit(LIMITE_HISTORIA + 1);
+  if (vista === "pendientes") return { cotizaciones: (await filas(donde).orderBy(asc(consulta.ultimoMovimientoAt), asc(consulta.id))).map(aFila), hayMas: false };
+  const encontradas = (
+    await filas(donde)
+      .orderBy(desc(consulta.ultimoMovimientoAt), desc(consulta.id))
+      .limit(LIMITE_HISTORIA + 1)
+  ).map(aFila);
   return { cotizaciones: encontradas.slice(0, LIMITE_HISTORIA), hayMas: encontradas.length > LIMITE_HISTORIA };
 }
 
@@ -340,7 +355,7 @@ export async function contarPorVista(q: string): Promise<Record<Vista, number>> 
 
 /** Las cotizaciones de un cliente, de la más nueva a la más vieja (su ficha). */
 export async function cotizacionesDelCliente(clienteId: number): Promise<FilaCotizacion[]> {
-  return filas(eq(consulta.clienteId, clienteId)).orderBy(desc(consulta.createdAt), desc(consulta.id));
+  return (await filas(eq(consulta.clienteId, clienteId)).orderBy(desc(consulta.createdAt), desc(consulta.id))).map(aFila);
 }
 
 export type DetalleCotizacion = {

@@ -1,11 +1,13 @@
-import { ListaFilas } from "@/componentes/panel/fila-lista";
+import { Insignia } from "@/componentes/panel/insignia";
+import { CeldaDoble, TablaLista, type ColumnaTabla } from "@/componentes/panel/tabla-lista";
 import { cantidad } from "@/lib/cantidad";
 import type { FilaCotizacion } from "../consultas";
 import { bs, diasDesde, NOMBRE_ESTADO, sinRespuesta, textoDias, TONO_ESTADO } from "../reglas";
 
-// Cotizaciones en lista (pedido 23): en Cotizaciones y en la ficha del cliente. La fila de un toque: el cliente arriba (o
-// la placa, grande, en la ficha: ya se sabe de quién son), el total en negrita y, en tinta suave, la placa, el número
-// y hace cuánto. Desde `umbral` días (Configuración) una pendiente espera respuesta y lo dice en una insignia de aviso.
+// Cotizaciones en una tabla (pedido 23; pedido 26): en Cotizaciones y en la ficha del cliente. Cada fila: el número, el
+// cliente con su vehículo (en la ficha del cliente, solo el vehículo: ya se sabe de quién son), los servicios, el total y
+// hace cuánto. Desde `umbral` días (Configuración) una pendiente espera respuesta y lo dice en una insignia de aviso.
+// En el celular, el cliente y el total arriba.
 
 type Props = {
   cotizaciones: FilaCotizacion[];
@@ -17,22 +19,38 @@ type Props = {
 
 export function ListaCotizaciones({ cotizaciones, umbral, sinCliente = false, conEstado = true }: Props) {
   const hoy = new Date();
+  const columnas: ColumnaTabla[] = [
+    { titulo: "Número", ancho: "6.5rem", movil: "detalle" },
+    { titulo: sinCliente ? "Vehículo" : "Cliente", ancho: "minmax(0,1.3fr)", movil: "titulo" },
+    { titulo: "Servicios", ancho: "minmax(0,1.3fr)", movil: "detalle" },
+    { titulo: "Total", ancho: "7rem", alinear: "derecha", movil: "estado" },
+    { titulo: conEstado ? "Estado" : "Movimiento", ancho: "minmax(0,1.1fr)", movil: "detalle" },
+  ];
   return (
-    <ListaFilas
+    <TablaLista
       etiqueta="Cotizaciones"
+      columnas={columnas}
       filas={cotizaciones.map((c) => {
         const dias = diasDesde(c.ultimoMovimientoAt, hoy);
         const esperando = sinRespuesta(c.estado, dias, umbral);
+        const vehiculo = [c.placa, c.vehiculo].filter(Boolean).join(", ");
         return {
           href: `/panel/cotizaciones/${c.id}`,
-          titulo: sinCliente ? c.placa : c.cliente,
-          tituloGrande: sinCliente,
-          dato: bs(c.total),
-          // Esperando respuesta, los días van en el aviso: no se repiten abajo
-          detalles: [...(sinCliente ? [] : [c.placa]), c.numero, ...(esperando ? [] : [textoDias(dias)])],
-          aviso: esperando ? `Sin respuesta hace ${cantidad(dias, "día", "días")}` : null,
-          estado: conEstado ? NOMBRE_ESTADO[c.estado] : undefined,
-          tonoEstado: TONO_ESTADO[c.estado],
+          celdas: [
+            <span key="n" className="font-semibold tabular-nums">
+              {c.numero}
+            </span>,
+            sinCliente ? <CeldaDoble key="c" principal={c.placa} secundario={c.vehiculo} marcada /> : <CeldaDoble key="c" principal={c.cliente} secundario={vehiculo} />,
+            c.servicios,
+            <span key="t" className="font-semibold tabular-nums">
+              {bs(c.total)}
+            </span>,
+            <span key="e" className="flex flex-wrap items-center gap-1.5">
+              {conEstado && <Insignia tono={TONO_ESTADO[c.estado]}>{NOMBRE_ESTADO[c.estado]}</Insignia>}
+              {/* Esperando respuesta, los días van en el aviso: no se repiten */}
+              {esperando ? <Insignia tono="aviso">Sin respuesta hace {cantidad(dias, "día", "días")}</Insignia> : <span className="inline-block text-tinta-suave first-letter:uppercase">{textoDias(dias)}</span>}
+            </span>,
+          ],
         };
       })}
     />
