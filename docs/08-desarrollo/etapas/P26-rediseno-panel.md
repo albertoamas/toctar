@@ -75,7 +75,7 @@ Ninguna fase se une a `develop` hasta que el dueño apruebe el prototipo: al uni
 
 ### Decisiones de la fase 3
 - **Sin pestañas en Sitio web y Configuración:** la portada con tarjetas las reemplaza (el dueño no encontraba dónde cambiar un texto) y cada parte vuelve con "‹". Los formularios siguen sobre el fondo gris: pasarlos a tarjetas es de la fase 5, con el resto de los formularios.
-- **Pendiente aparte:** la E2E del pedido 30 (`hu-37-saldos`, "el total por cobrar sigue siendo el de todas") falla a veces con los dos proyectos en paralelo: el total es de toda la base y otra prueba lo cambia mientras corre. No es de este rediseño.
+- **E2E intermitente corregida:** la del pedido 30 (`hu-37-saldos`, "el total por cobrar sigue siendo el de todas") fallaba con los dos proyectos en paralelo: el total es de toda la base y otra prueba lo cambiaba mientras corría. Ahora compara, en el mismo momento, el total con la búsqueda y el de la pantalla sin buscar.
 
 ## 7. Pruebas
 - **Unitarias:** las reglas nuevas de la fase 2: `textoEntrega` y `estadoFiltrado` (`tests/unit/ordenes.test.ts`) y `paraHoy` (`tests/unit/inicio.test.ts`).

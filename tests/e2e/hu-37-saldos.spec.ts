@@ -106,7 +106,6 @@ test("pedido 30: se buscan por cliente, teléfono o placa y se ordenan; el total
   await page.goto("/panel/pagos");
   const renglon = page.getByText("Total por cobrar").locator("..");
   const monto = renglon.locator("span").nth(1);
-  const total = await monto.innerText();
 
   // Por cliente: las dos de esta prueba (y de este proyecto)
   const buscador = page.getByLabel("Buscar por nombre, teléfono o placa");
@@ -114,8 +113,19 @@ test("pedido 30: se buscan por cliente, teléfono o placa y se ordenan; el total
   await expect(page).toHaveURL(new RegExp(`q=busca`));
   const lista = page.getByRole("list", { name: "Órdenes con saldo" });
   await expect(lista.getByRole("listitem")).toHaveCount(2);
-  // El total por cobrar no cambia al buscar; el contador dice cuántas se ven de todas
-  await expect(monto).toHaveText(total);
+  // El total por cobrar no cambia al buscar: es el mismo que se ve sin buscar. El total es de toda la base y otras pruebas
+  // en paralelo cobran o dejan saldos: se comparan las dos pantallas en el mismo momento, hasta que coincidan
+  const sinBuscar = await page.context().newPage();
+  await expect
+    .poll(async () => {
+      await sinBuscar.goto("/panel/pagos");
+      const deTodas = await sinBuscar.getByText("Total por cobrar").locator("..").locator("span").nth(1).innerText();
+      await page.reload();
+      return (await monto.innerText()) === deTodas;
+    })
+    .toBe(true);
+  await sinBuscar.close();
+  // El contador dice cuántas se ven de todas
   await expect(renglon).toContainText(/2 de \d+/);
 
   // Más antigua primero (lo de siempre); por mayor monto; por cliente
