@@ -4,11 +4,13 @@ import { cn } from "cn";
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
 import type { ReservaTablero, SemanaDeAgenda } from "../consultas";
 import { rutaTrabajo } from "@/modulos/ordenes/reglas";
-import { bloquesDeLaSemana, DIA_CORTO, diaDeLaSemana, NOMBRE_ESTADO_TRABAJO, numeroDia, seCruzan, textoDia } from "../reglas";
+import type { TonoEstado } from "@/lib/tonos";
+import { bloquesDeLaSemana, DIA_CORTO, diaDeLaSemana, NOMBRE_ESTADO_TRABAJO, numeroDia, seCruzan, textoDia, TONO_ESTADO_TRABAJO } from "../reglas";
 
 // HU-29: el tablero de la agenda (RF-38). Una fila por espacio y una columna por día (S-3: por día, sin horas). Cada
-// reserva es una cinta negra con el borde cortado a 60° que abarca sus días; si sigue desde la semana anterior o hacia la
-// siguiente, el borde va recto y lo dice. Un día libre se toca para agendar ahí; uno cerrado va rayado y lo dice.
+// reserva es un bloque que abarca sus días, del color de su estado (pedido 26: el mismo tono que su insignia, con una
+// barra a la izquierda); si sigue desde la semana anterior o hacia la siguiente, lo dice con una flecha. Un día libre se
+// toca para agendar ahí; uno cerrado va en gris y lo dice. Hoy, resaltado en azul.
 // En el celular y la tableta, un día a la vez (AgendaDelDia): sin desplazarse de lado. La semana entera, desde 1024 px
 // (pulido 10.1: en la tableta, con siete columnas de 75 px, las cintas se cortaban en "4…").
 // Todo es texto y enlaces: se lee igual con lector de pantalla, sin depender del color.
@@ -27,7 +29,25 @@ function textoFechas(r: ReservaTablero) {
   return r.inicio === r.fin ? textoDia(r.inicio) : `${textoDia(r.inicio)} al ${textoDia(r.fin)}`;
 }
 
-/** Placa, servicio y técnico: lo que dice la cinta. */
+/** El fondo y la barra de un bloque, según el tono de su estado (agendada, sin tono: gris). */
+const COLOR_BLOQUE: Record<TonoEstado | "neutro", string> = {
+  neutro: "bg-neutro-fondo border-l-tinta-suave",
+  info: "bg-info-fondo border-l-info",
+  exito: "bg-exito-fondo border-l-exito",
+  violeta: "bg-violeta-fondo border-l-violeta",
+  aviso: "bg-aviso-fondo border-l-aviso",
+  peligro: "bg-peligro-fondo border-l-peligro",
+};
+const COLOR_ESTADO: Record<TonoEstado | "neutro", string> = {
+  neutro: "text-tinta-suave",
+  info: "text-info",
+  exito: "text-exito",
+  violeta: "text-violeta",
+  aviso: "text-aviso",
+  peligro: "text-peligro",
+};
+
+/** Placa, servicio y técnico: lo que dice el bloque de una reserva. */
 function Cinta({
   r,
   empiezaAntes,
@@ -43,15 +63,16 @@ function Cinta({
   className?: string;
   style?: React.CSSProperties;
 }) {
+  const tono = TONO_ESTADO_TRABAJO[r.estado] ?? "neutro";
   return (
     <Link
       href={rutaTrabajo(r.id, r.estado, conOrdenes)}
       style={style}
+      // El tono, también como dato: la entregada va en verde (pedido 28)
+      data-tono={tono}
       className={cn(
-        "relative flex min-h-14 min-w-0 flex-col justify-center gap-0.5 py-1.5 pr-3 text-blanco opacity-100 hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]",
-        // Si viene de la semana anterior, el borde va recto: la cinta sigue. Entregada (pedido 28): en verde, la de éxito
-        empiezaAntes ? cn("pl-3", r.estado === "entregado" ? "bg-exito" : "bg-negro") : "tt-cinta",
-        r.estado === "entregado" && "[--tt-cinta:var(--exito)]",
+        "relative flex min-h-14 min-w-0 flex-col justify-center gap-0.5 rounded-lg border-l-4 py-1.5 pr-2.5 pl-2.5 text-tinta transition-[filter] hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]",
+        COLOR_BLOQUE[tono],
         className,
       )}
     >
@@ -66,9 +87,9 @@ function Cinta({
           {r.masServicios > 0 && ` y ${r.masServicios} más`}
         </span>
       )}
-      <span className="truncate text-xs text-blanco/75">{r.tecnico ?? "Sin técnico"}</span>
-      {/* En C3 todas están agendadas; desde C4 (recibido, en proceso, listo) el estado se ve también escrito */}
-      {r.estado !== "agendado" && <span className="truncate text-xs font-semibold">{NOMBRE_ESTADO_TRABAJO[r.estado]}</span>}
+      <span className="truncate text-xs text-tinta-suave">{r.tecnico ?? "Sin técnico"}</span>
+      {/* Desde que se recibe (recibida, en proceso, lista, entregada), el estado se ve también escrito, en su color */}
+      {r.estado !== "agendado" && <span className={cn("truncate text-xs font-semibold", COLOR_ESTADO[tono])}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</span>}
       <span className="sr-only">
         , {NOMBRE_ESTADO_TRABAJO[r.estado].toLowerCase()}, {textoFechas(r)}
         {empiezaAntes && ", sigue desde la semana anterior"}
@@ -82,9 +103,8 @@ function Cinta({
 function DiaSinReserva({ fecha, espacio, cerrado, pasado, style }: { fecha: string; espacio: { id: number; nombre: string }; cerrado: boolean; pasado: boolean; style?: React.CSSProperties }) {
   if (cerrado) {
     return (
-      <div style={style} className="tt-cerrado flex min-h-14 items-center justify-center text-xs text-tinta-suave">
-        {/* Con fondo propio: sobre el rayado no se leía */}
-        <span className="bg-superficie px-1.5 py-0.5">Cerrado</span>
+      <div style={style} className="flex min-h-14 items-center justify-center rounded-lg bg-superficie text-xs text-tinta-suave">
+        Cerrado
       </div>
     );
   }
@@ -93,7 +113,7 @@ function DiaSinReserva({ fecha, espacio, cerrado, pasado, style }: { fecha: stri
     <Link
       href={agendarEn(fecha, espacio.id)}
       style={style}
-      className="group flex min-h-14 items-center justify-center gap-1 border border-dashed border-border text-xs text-tinta-suave hover:border-tinta hover:text-tinta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]"
+      className="group flex min-h-14 items-center justify-center gap-1 rounded-lg border border-dashed border-border text-xs text-tinta-suave hover:border-tinta-suave hover:bg-superficie/60 hover:text-tinta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]"
     >
       <PlusIcon className="size-3.5 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden />
       Libre
@@ -108,17 +128,21 @@ function DiaSinReserva({ fecha, espacio, cerrado, pasado, style }: { fecha: stri
 export function TableroSemana({ semana, dias, hoy, conOrdenes }: Props) {
   const lunes = dias[0];
   return (
-    <div className="hidden lg:block">
+    // En una tarjeta, como el resto del panel
+    <div className="tt-tarjeta-panel hidden p-3 lg:block">
       <div className="grid grid-cols-[8rem_repeat(7,minmax(0,1fr))] gap-1.5">
         <div aria-hidden />
         {dias.map((fecha, i) => {
           const esHoy = fecha === hoy;
           const cerrado = semana.diasCerrados.includes(i + 1);
           return (
-            <div key={fecha} className={cn("flex items-baseline gap-1.5 border-t-2 px-1 pt-1.5 pb-1", esHoy ? "border-rojo" : "border-transparent", cerrado && "text-tinta-suave")}>
+            <div
+              key={fecha}
+              className={cn("flex items-baseline gap-1.5 rounded-lg px-2 pt-1.5 pb-1", esHoy && "bg-info-fondo text-info", cerrado && !esHoy && "text-tinta-suave")}
+            >
               <span className="text-sm">{DIA_CORTO[i]}</span>
               <span className={cn("text-lg", esHoy ? "font-bold" : "font-semibold")}>{numeroDia(fecha)}</span>
-              {esHoy && <span className="ml-auto text-xs font-semibold text-rojo-texto">Hoy</span>}
+              {esHoy && <span className="ml-auto text-xs font-semibold">Hoy</span>}
             </div>
           );
         })}
@@ -175,15 +199,13 @@ export function AgendaDelDia({ semana, dia, hoy, conOrdenes }: { semana: SemanaD
             {r ? (
               <Cinta r={r} empiezaAntes={r.inicio < dia} terminaDespues={r.fin > dia} conOrdenes={conOrdenes} />
             ) : cerrado ? (
-              <p className="tt-cerrado flex min-h-14 items-center justify-center text-sm text-tinta-suave">
-                <span className="bg-superficie px-1.5 py-0.5">Cerrado</span>
-              </p>
+              <p className="flex min-h-14 items-center justify-center rounded-lg bg-neutro-fondo text-sm text-tinta-suave">Cerrado</p>
             ) : dia < hoy || !espacio.activo ? (
               <p className="flex min-h-14 items-center px-3 text-sm text-tinta-suave">Sin reserva</p>
             ) : (
               <Link
                 href={agendarEn(dia, espacio.id)}
-                className="flex min-h-14 items-center justify-between gap-3 border border-dashed border-border px-3 text-sm hover:border-tinta"
+                className="flex min-h-14 items-center justify-between gap-3 rounded-lg border border-dashed border-border bg-fondo px-3 text-sm hover:border-tinta-suave"
               >
                 <span className="text-tinta-suave">Libre</span>
                 <span className="inline-flex items-center gap-1 font-semibold">

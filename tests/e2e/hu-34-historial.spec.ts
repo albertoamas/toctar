@@ -68,7 +68,7 @@ test("en «Entregadas» se buscan por placa, cliente o fecha; la agenda las mues
   await page.goto(`/panel/agenda?semana=${a.dia}&dia=${a.dia}`);
   const cinta = page.getByRole("link", { name: new RegExp(`^${a.placa}`) }).locator("visible=true");
   await expect(cinta).toContainText("Entregada");
-  await expect(cinta).toHaveClass(/--exito/);
+  await expect(cinta).toHaveAttribute("data-tono", "exito");
 });
 
 test("el técnico ve en «Entregadas» solo las suyas", async ({ page }, info) => {

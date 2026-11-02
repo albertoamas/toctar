@@ -802,21 +802,3 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
 }
-
-/* Agenda (HU-29). Como @utility (y no en @layer components): así Tailwind las incluye cuando las encuentra en el
-   código, como al resto de las utilidades. */
-
-/* Un día que el taller no atiende, rayado a 60° (el ángulo de la marca); lleva además el texto "Cerrado", para no
-   depender solo del dibujo. */
-@utility tt-cerrado {
-  background-image: repeating-linear-gradient(60deg, color-mix(in srgb, var(--tinta-suave) 45%, transparent) 0 1px, transparent 1px 10px);
-  background-color: var(--superficie);
-}
-
-/* La reserva como una cinta con el borde izquierdo cortado a 60°. Se pinta con un degradado perpendicular al corte
-   (120deg), como el botón de la marca, y no con clip-path: un recorte deja los bordes difusos y tapa el anillo de foco.
-   El ángulo es siempre 60°, sea cual sea el alto; el corte pasa a 28 px de la esquina superior izquierda. */
-@utility tt-cinta {
-  background: linear-gradient(120deg, transparent 27px, var(--tt-cinta, var(--negro)) 28px);
-  padding-left: 2.4rem;
-}
