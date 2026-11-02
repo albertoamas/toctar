@@ -1,5 +1,6 @@
 import type { MetodoPago, TipoPago } from "@/db/esquema/trabajos";
 import { calcularTotales, montoNoMayor, restarMontos } from "@/modulos/cotizaciones/reglas";
+import type { Busqueda } from "@/modulos/clientes/reglas";
 
 // Reglas puras de los pagos (C3, HU-32). Montos como los guarda numeric(10,2) ("250.50"); las cuentas son las de las
 // cotizaciones, en centavos enteros. Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md.
@@ -58,4 +59,37 @@ export const estaPagada = (saldo: string) => montoNoMayor(saldo, "0");
 export function saldoPendiente(trabajos: readonly { estado: string; saldo: Saldo | null }[]): string | null {
   const saldos = trabajos.filter((t) => t.estado === "entregado" && t.saldo && !estaPagada(t.saldo.saldo)).map((t) => t.saldo!.saldo);
   return saldos.length > 0 ? calcularTotales(saldos, "0").total : null;
+}
+
+// Pedido 30: los saldos pendientes se buscan y se ordenan. La lista es chica (solo las que deben): se hace aquí, sobre
+// las que trae la consulta, con reglas puras.
+
+/** Cómo se ordena la lista de saldos: la más antigua primero (la que más urge cobrar), el mayor monto o el cliente. */
+export const ORDENES_SALDOS = { antiguas: "Más antiguas", monto: "Mayor monto", cliente: "Cliente" } as const;
+export type OrdenSaldos = keyof typeof ORDENES_SALDOS;
+
+/** Sin tildes ni mayúsculas: "José" y "jose" son lo mismo. */
+const sinTildes = (texto: string) => texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+
+/** Los saldos de quien coincide con lo buscado: el nombre del cliente, su teléfono (3 dígitos o más) o la placa. */
+export function filtrarSaldos<T extends { cliente: string; telefono: string; placa: string }>(saldos: readonly T[], busqueda: Busqueda | null): T[] {
+  if (!busqueda) return [...saldos];
+  const texto = sinTildes(busqueda.texto);
+  return saldos.filter(
+    (s) =>
+      sinTildes(s.cliente).includes(texto) ||
+      (!!busqueda.digitos && s.telefono.includes(busqueda.digitos)) ||
+      (!!busqueda.placa && s.placa.includes(busqueda.placa)),
+  );
+}
+
+/** Los saldos en ese orden; a igualdad, la más antigua primero. */
+export function ordenarSaldos<T extends { id: number; saldo: string; entregadoAt: Date; cliente: string }>(saldos: readonly T[], orden: OrdenSaldos): T[] {
+  const antigua = (a: T, b: T) => a.entregadoAt.getTime() - b.entregadoAt.getTime() || a.id - b.id;
+  const criterio: Record<OrdenSaldos, (a: T, b: T) => number> = {
+    antiguas: antigua,
+    monto: (a, b) => Number(b.saldo) - Number(a.saldo) || antigua(a, b),
+    cliente: (a, b) => a.cliente.localeCompare(b.cliente, "es", { sensitivity: "base" }) || antigua(a, b),
+  };
+  return [...saldos].sort(criterio[orden]);
 }

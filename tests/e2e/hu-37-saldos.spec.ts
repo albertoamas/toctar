@@ -89,3 +89,48 @@ test("sin Pagos no se entra a los saldos; el técnico tampoco", async ({ page },
   await page.goto("/panel/pagos");
   await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
 });
+
+test("pedido 30: se buscan por cliente, teléfono o placa y se ordenan; el total por cobrar sigue siendo el de todas", async ({ page }, info) => {
+  const s = sufijo(info);
+  const chico = `SL37${s.toUpperCase()}7`;
+  const grande = `SL37${s.toUpperCase()}8`;
+  await crearClienteEnBase({ nombre: `Zoila Busca ${s}`, telefono: telefono(info, 7), placa: chico });
+  await crearClienteEnBase({ nombre: `Alberto Busca ${s}`, telefono: telefono(info, 8), placa: grande });
+  // Más antigua y chica (debe 100) y más nueva y grande (debe 600)
+  await ordenEntregada(chico, 60, 500);
+  await ordenEntregada(grande, 2, 0);
+  await crearUsuario({ usuario: `caja2-hu37-${s}`, nombre: "Encargado de caja", contrasena: "encargado-123", rol: "encargado", permisos: ["pagos"] });
+  await ingresar(page, `caja2-hu37-${s}`, "encargado-123");
+  await expect(page).toHaveURL(/\/panel$/);
+  await page.goto("/panel/pagos");
+  const total = await page.getByText("Total por cobrar").locator("..").innerText();
+
+  // Por cliente: las dos de esta prueba (y de este proyecto)
+  const buscador = page.getByLabel("Buscar por nombre, teléfono o placa");
+  await buscador.fill(`busca ${s}`);
+  await expect(page).toHaveURL(new RegExp(`q=busca`));
+  const lista = page.getByRole("list", { name: "Órdenes con saldo" });
+  await expect(lista.getByRole("listitem")).toHaveCount(2);
+  // El total por cobrar no cambia al buscar
+  await expect(page.getByText("Total por cobrar").locator("..")).toHaveText(total);
+
+  // Más antigua primero (lo de siempre); por mayor monto; por cliente
+  const nombres = () => lista.getByRole("listitem").locator("span.font-semibold").allInnerTexts();
+  await expect.poll(nombres).toEqual([`Zoila Busca ${s}`, `Alberto Busca ${s}`]);
+  const orden = page.getByRole("navigation", { name: "Ordenar saldos" });
+  await orden.getByRole("link", { name: "Mayor monto" }).click();
+  await expect(page).toHaveURL(/orden=monto/);
+  await expect(page).toHaveURL(/q=busca/);
+  await expect.poll(nombres).toEqual([`Alberto Busca ${s}`, `Zoila Busca ${s}`]);
+  await orden.getByRole("link", { name: "Cliente" }).click();
+  await expect.poll(nombres).toEqual([`Alberto Busca ${s}`, `Zoila Busca ${s}`]);
+
+  // Por placa y por teléfono
+  await buscador.fill(chico.toLowerCase());
+  await expect(page).toHaveURL(new RegExp(`q=${chico.toLowerCase()}`));
+  await expect.poll(nombres).toEqual([`Zoila Busca ${s}`]);
+  await buscador.fill(telefono(info, 8).slice(3));
+  await expect.poll(nombres).toEqual([`Alberto Busca ${s}`]);
+  await buscador.fill("nadie-debe-esto");
+  await expect(page.getByText("Ningún saldo coincide con «nadie-debe-esto».")).toBeVisible();
+});

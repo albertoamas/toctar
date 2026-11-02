@@ -2,7 +2,8 @@ import { expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
 import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
 import { esquemaAnularPago, esquemaPago } from "@/modulos/pagos/esquemas";
-import { estaPagada, saldoPendiente } from "@/modulos/pagos/reglas";
+import { normalizarBusqueda } from "@/modulos/clientes/reglas";
+import { estaPagada, filtrarSaldos, ordenarSaldos, saldoPendiente } from "@/modulos/pagos/reglas";
 
 // C3 Pagos (HU-32, RF-45): validación del pago y de su anulación. El saldo (calcularSaldo) se prueba en agenda.test.ts.
 
@@ -58,4 +59,29 @@ test("lo que debe un cliente, como en Saldos pendientes: lo entregado sin pagar"
   expect(saldoPendiente([con("entregado", "-20.00"), con("entregado", "100.00")])).toBe("100.00");
   // Quien no ve pagos no tiene saldos calculados
   expect(saldoPendiente([{ estado: "entregado", saldo: null }])).toBeNull();
+});
+
+// Pedido 30: buscar y ordenar los saldos pendientes.
+
+const saldos = [
+  { id: 1, cliente: "José Pérez", telefono: "59170010001", placa: "2345KLM", saldo: "300.00", entregadoAt: new Date("2026-09-01T15:00:00Z") },
+  { id: 2, cliente: "Ana Vaca", telefono: "59170020002", placa: "4567BDF", saldo: "1200.50", entregadoAt: new Date("2026-10-01T15:00:00Z") },
+  { id: 3, cliente: "Carlos Ríos", telefono: "59170030003", placa: "6789TRS", saldo: "300.00", entregadoAt: new Date("2026-08-01T15:00:00Z") },
+];
+const buscar = (q: string) => filtrarSaldos(saldos, normalizarBusqueda(q)).map((s) => s.id);
+
+test("se buscan por cliente (sin importar tildes), teléfono o placa; sin búsqueda, todos", () => {
+  expect(buscar("jose")).toEqual([1]);
+  expect(buscar("RÍOS")).toEqual([3]);
+  expect(buscar("0020002")).toEqual([2]);
+  expect(buscar("4567 bdf")).toEqual([2]);
+  expect(buscar("")).toEqual([1, 2, 3]);
+  expect(buscar("nadie")).toEqual([]);
+});
+
+test("se ordenan por la más antigua, el mayor monto o el cliente; a igualdad, la más antigua primero", () => {
+  const ids = (orden: Parameters<typeof ordenarSaldos>[1]) => ordenarSaldos(saldos, orden).map((s) => s.id);
+  expect(ids("antiguas")).toEqual([3, 1, 2]);
+  expect(ids("monto")).toEqual([2, 3, 1]);
+  expect(ids("cliente")).toEqual([2, 3, 1]);
 });
