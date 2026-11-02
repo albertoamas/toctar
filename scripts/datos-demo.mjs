@@ -4,8 +4,9 @@
 //
 // Uso:  npm run datos:demo                      (fotos en material/fotos-demo, fuera de Git)
 //       npm run datos:demo -- --fotos=<carpeta>
-// Requisitos: una base recién migrada, con el dueño ya creado (al arrancar la app, src/lib/arranque.ts), y los
-// buckets del almacenamiento. Solo corre sobre una base sin clientes ni trabajos: nunca pisa datos de verdad.
+// Requisitos: una base recién migrada y los buckets del almacenamiento. Si la base no tiene usuarios, crea el dueño con
+// DUENO_INICIAL_* de .env, como hace la app al arrancar (src/lib/arranque.ts). Solo corre sobre una base sin clientes
+// ni trabajos: nunca pisa datos de verdad. Para empezar de cero en local, todo junto: npm run datos:reiniciar
 // Después, reinicia la app: el sitio guarda en caché los datos del negocio, los servicios y la galería, y como este
 // script escribe directo en la base (no por el panel), la caché no se entera.
 //
@@ -33,6 +34,20 @@ const s3 = new S3Client({
 const q = async (sql, valores = []) => (await base.query(sql, valores)).rows;
 const uno = async (sql, valores = []) => (await q(sql, valores))[0];
 
+/** Una firma a mano de ejemplo, como la del recuadro al entregar (pedido 13): trazo de tinta sobre fondo claro. */
+const firmaDeEjemplo = () =>
+  sharp(
+    Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="200" viewBox="0 0 600 200">
+      <rect width="600" height="200" fill="#ffffff"/>
+      <path d="M60 140 C 90 40, 120 40, 115 120 S 150 170, 180 90 C 200 50, 215 150, 240 110 S 290 60, 300 120
+               C 310 160, 350 70, 380 100 S 430 150, 460 90 C 480 60, 500 120, 540 80"
+            fill="none" stroke="#1d1d1f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M90 160 L 520 150" fill="none" stroke="#1d1d1f" stroke-width="3" stroke-linecap="round"/>
+    </svg>`),
+  )
+    .png()
+    .toBuffer();
+
 // ---------------------------------------------------------------------------------------------
 // Fechas: hoy en Bolivia y días alrededor (como src/lib/fechas.ts)
 
@@ -58,25 +73,29 @@ function sumarMeses(fecha, meses) {
 
 const EXTENSIONES = [".webp", ".jpg", ".jpeg", ".png"];
 
-/** Sube la foto `nombre` (sin extensión) de la carpeta, en el formato que esté; null si no está. */
-async function subirFoto(nombre, carpeta, autorId) {
-  const ruta = EXTENSIONES.map((e) => join(carpetaFotos, nombre + e)).find((r) => existsSync(r));
-  if (!ruta) {
+/**
+ * Sube la foto `nombre` (sin extensión) de la carpeta, en el formato que esté; null si no está. Con `imagen`, sube esa
+ * imagen en lugar de buscarla; con `privado`, al bucket privado (datos de clientes, como una firma).
+ */
+async function subirFoto(nombre, carpeta, autorId, { imagen = null, privado = false } = {}) {
+  const ruta = imagen ? null : EXTENSIONES.map((e) => join(carpetaFotos, nombre + e)).find((r) => existsSync(r));
+  if (!imagen && !ruta) {
     console.warn(`  · Falta ${join(carpetaFotos, nombre)} (${EXTENSIONES.join(", ")}): se sigue sin esa foto.`);
     return null;
   }
-  const original = readFileSync(ruta);
+  const original = imagen ?? readFileSync(ruta);
+  const bucket = privado ? process.env.S3_BUCKET_PRIVADO : process.env.S3_BUCKET;
   const convertir = (lado) =>
     sharp(original).rotate().resize({ width: lado, height: lado, fit: "inside", withoutEnlargement: true }).webp({ quality: 85 }).toBuffer({ resolveWithObject: true });
   const [grande, chica] = await Promise.all([convertir(1600), convertir(640)]);
   const clave = `${carpeta}/${randomUUID()}`;
-  const subir = (k, cuerpo) => s3.send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET, Key: k, Body: cuerpo, ContentType: "image/webp" }));
+  const subir = (k, cuerpo) => s3.send(new PutObjectCommand({ Bucket: bucket, Key: k, Body: cuerpo, ContentType: "image/webp" }));
   await subir(`${clave}.webp`, grande.data);
   await subir(`${clave}-640.webp`, chica.data);
   const fila = await uno(
     `insert into archivo (clave, tipo_mime, bytes, ancho, alto, miniatura_clave, privado, created_by)
-     values ($1, 'image/webp', $2, $3, $4, $5, false, $6) returning id`,
-    [`${clave}.webp`, grande.info.size, grande.info.width, grande.info.height, `${clave}-640.webp`, autorId],
+     values ($1, 'image/webp', $2, $3, $4, $5, $6, $7) returning id`,
+    [`${clave}.webp`, grande.info.size, grande.info.width, grande.info.height, `${clave}-640.webp`, privado, autorId],
   );
   return fila.id;
 }
@@ -183,11 +202,8 @@ const GALERIA = [
 
 await base.connect();
 try {
-  const dueno = await uno("select id from usuario where rol = 'dueno' order by id limit 1");
-  if (!dueno) throw new Error("No hay dueño: arranca la app una vez (crea el dueño de .env) y vuelve a correr este script.");
   const [{ clientes }] = await q("select (select count(*) from cliente)::int + (select count(*) from trabajo)::int as clientes");
   if (clientes > 0) throw new Error("La base ya tiene clientes o trabajos: los datos de demostración solo se cargan en una base nueva.");
-  const autor = dueno.id;
   const servicio = Object.fromEntries((await q("select id, slug, nombre from servicio")).map((s) => [s.slug, s]));
   const tamanos = await q("select id from tamano_vehiculo where activo order by orden");
   const espacios = await q("select id from espacio_taller where activo order by orden");
@@ -206,11 +222,8 @@ try {
 
   await base.query("begin");
 
-  // 1. El personal: un encargado y un técnico, con contraseñas al azar (se muestran al final)
-  console.log("Personal…");
-  const contrasenas = {};
-  async function usuario(nombreUsuario, nombre, rol, permisos = []) {
-    const contrasena = randomBytes(9).toString("base64url");
+  // 0. El dueño: el de la base, o uno nuevo con DUENO_INICIAL_* de .env (su contraseña no se muestra: es la de .env)
+  async function cuentaCon(nombreUsuario, nombre, rol, contrasena) {
     const fila = await uno(
       `insert into usuario (nombre, correo, nombre_usuario, rol, desactivado, updated_at) values ($1, $2, $3, $4, false, now()) returning id`,
       [nombre, `${nombreUsuario}@usuarios.toctar.local`, nombreUsuario, rol],
@@ -220,9 +233,27 @@ try {
       fila.id,
       await hashPassword(contrasena),
     ]);
-    for (const p of permisos) await q("insert into usuario_permiso (usuario_id, permiso) values ($1, $2)", [fila.id, p]);
-    contrasenas[nombreUsuario] = contrasena;
     return fila.id;
+  }
+  let dueno = await uno("select id, nombre_usuario from usuario where rol = 'dueno' order by id limit 1");
+  if (!dueno) {
+    const { DUENO_INICIAL_USUARIO: u, DUENO_INICIAL_NOMBRE: n, DUENO_INICIAL_CONTRASENA: c } = process.env;
+    if (!u || !n || !c) throw new Error("No hay dueño: completa DUENO_INICIAL_USUARIO, DUENO_INICIAL_NOMBRE y DUENO_INICIAL_CONTRASENA en .env.");
+    if ((await uno("select count(*)::int as total from usuario")).total > 0) throw new Error("Hay usuarios pero ningún dueño: revisa la base.");
+    dueno = { id: await cuentaCon(u.trim().toLowerCase(), n, "dueno", c), nombre_usuario: u.trim().toLowerCase() };
+    console.log(`Dueño «${dueno.nombre_usuario}» creado (contraseña: la de DUENO_INICIAL_CONTRASENA en .env).`);
+  }
+  const autor = dueno.id;
+
+  // 1. El personal: un encargado y un técnico, con contraseñas al azar (se muestran al final)
+  console.log("Personal…");
+  const contrasenas = {};
+  async function usuario(nombreUsuario, nombre, rol, permisos = []) {
+    const contrasena = randomBytes(9).toString("base64url");
+    const id = await cuentaCon(nombreUsuario, nombre, rol, contrasena);
+    for (const p of permisos) await q("insert into usuario_permiso (usuario_id, permiso) values ($1, $2)", [id, p]);
+    contrasenas[nombreUsuario] = contrasena;
+    return id;
   }
   await usuario("ana.taller", "Ana Rojas", "encargado", ["agenda", "ordenes", "pagos", "clientes", "cotizaciones", "mantenimientos", "reclamos"]);
   const tecnico = await usuario("luis.tecnico", "Luis Mamani", "tecnico");
@@ -371,6 +402,12 @@ try {
    * Un trabajo con sus líneas (al precio de la tabla para el tamaño del vehículo), pagos y avances. `pagos` recibe el
    * total, así lo pagado cierra con los precios; `conSaldo` deja el saldo pendiente registrado al entregar.
    */
+  const partes = await q("select id, nombre from parte_revision where activo order by orden");
+  const firmaPng = await firmaDeEjemplo();
+  /**
+   * `revision` (pedido 12): las partes con detalle, { "Nombre de la parte": [tipo, nota] }; el resto, bien. Sin `revision`,
+   * la orden no tiene checklist (todavía no se recibe). `firma` (pedido 13): el nombre de quien firmó, o { sinFirma: motivo }.
+   */
   async function trabajoDe(c, datos) {
     const { orden: tamano } = await uno("select t.orden from vehiculo v join tamano_vehiculo t on t.id = v.tamano_id where v.id = $1", [c.vehiculo]);
     const lineas = [];
@@ -411,6 +448,21 @@ try {
         autor,
       ],
     );
+    if (datos.revision) {
+      for (const p of partes) {
+        const [tipo, nota] = datos.revision[p.nombre] ?? [null, null];
+        await q(
+          `insert into trabajo_revision (trabajo_id, parte_id, parte, estado, tipo, nota, created_by, created_at, updated_at) values ($1, $2, $3, $4, $5, $6, $7, $8, $8)`,
+          [t.id, p.id, p.nombre, tipo ? "detalle" : "bien", tipo, nota, autor, datos.recibido],
+        );
+      }
+    }
+    if (datos.firma?.sinFirma) {
+      await q("update trabajo set sin_firma_motivo = $2 where id = $1", [t.id, datos.firma.sinFirma]);
+    } else if (datos.firma) {
+      const archivo = await subirFoto(null, "firmas", autor, { imagen: firmaPng, privado: true });
+      await q("update trabajo set firma_archivo_id = $2, firma_nombre = $3 where id = $1", [t.id, archivo, datos.firma]);
+    }
     for (const [orden, l] of lineas.entries()) {
       await q("insert into trabajo_linea (trabajo_id, variante_id, descripcion, precio, orden) values ($1, $2, $3, $4, $5)", [t.id, l.varianteId, l.descripcion, l.precio, orden]);
     }
@@ -430,9 +482,9 @@ try {
     }
     return t.id;
   }
-  // Reservas que vienen
+  // Reservas que vienen: Carlos llega hoy (para probar «Recibir» con el checklist) y María en unos días
   await trabajoDe(carlos, {
-    espacio: 1, desde: 2, hasta: 3, hora: "a las 8:30", tecnico, estado: "agendado", creado: momentoHabil(-2, "17:10"),
+    espacio: 2, desde: 0, hasta: 1, hora: "a las 8:30", tecnico, estado: "agendado", creado: momentoHabil(-2, "17:10"),
     lineas: [["pulido-y-nano-ceramico", "3 años"]],
     pagos: () => [{ monto: 300, metodo: "qr", tipo: "adelanto", dia: -2 }],
   });
@@ -445,6 +497,7 @@ try {
     espacio: 3, desde: -1, hasta: 1, hora: "a las 9", tecnico, estado: "en_proceso", creado: momentoHabil(-6, "15:00"),
     observaciones: "Rayón leve en la puerta trasera derecha. Deja una caja de herramientas en la tolva.",
     recibido: momentoHabil(-1, "09:05"),
+    revision: { "Puertas del lado derecho": ["rayon", "Rayón leve en la puerta trasera."], "Aros y llantas": ["raspon", "Aro delantero izquierdo raspado."] },
     lineas: [["pulido-y-nano-ceramico", "5 años"]],
     pagos: () => [{ monto: 500, metodo: "efectivo", tipo: "adelanto", dia: -6 }],
     avances: [
@@ -456,6 +509,7 @@ try {
   await trabajoDe(rodrigo, {
     espacio: 1, desde: -1, hasta: 0, tecnico, estado: "listo", creado: momentoHabil(-4, "09:40"),
     recibido: momentoHabil(-1, "15:00"), listo: momentoHabil(0, "11:00"),
+    revision: { "Faros y luces": ["otro", "Faroles opacos y amarillentos (es lo que se va a restaurar)."] },
     lineas: [["restauracion-de-faroles-con-polimero", "Única"]],
     avances: [
       [momentoHabil(-1, "15:00"), autor, "Vehículo recibido."],
@@ -467,20 +521,23 @@ try {
   await trabajoDe(valeria, {
     espacio: 2, desde: -21, hasta: -20, estado: "entregado", creado: momentoHabil(-25, "10:00"),
     recibido: momentoHabil(-21, "09:00"), listo: momentoHabil(-20, "12:00"), entregado: momentoHabil(-20, "17:30"), conSaldo: true,
+    revision: { "Tapizado e interior": ["otro", "Mancha en el asiento trasero."] },
+    firma: "Valeria Gutiérrez",
     lineas: [["lavado-de-interior", "Básico"], ["pulido-de-vidrios", "Única"]],
     pagos: () => [{ monto: 150, metodo: "efectivo", tipo: "adelanto", dia: -25 }],
   });
   // Entregadas hace unos meses, pagadas: sus mantenimientos (uno vencido y uno que viene)
   // Su plan (pedido 21): el mantenimiento y la frecuencia que dice el catálogo del pulido
   const plan = await uno("select mantenimiento_servicio_id as m, mantenimiento_meses as meses from servicio where slug = 'pulido-y-nano-ceramico'");
-  for (const [c, hace, capa] of [
-    [carlos, 95, "1 año"],
-    [maria, 80, "2 años"],
+  for (const [c, hace, capa, firma] of [
+    [carlos, 95, "1 año", { sinFirma: "Lo retiró su hijo; no quiso firmar." }],
+    [maria, 80, "2 años", "María José Vaca"],
   ]) {
     const entregado = dia(habil(-hace));
     const id = await trabajoDe(c, {
       espacio: 3, desde: -hace - 1, hasta: -hace, estado: "entregado", creado: momentoHabil(-hace - 7, "10:00"),
       recibido: momentoHabil(-hace - 1, "09:00"), listo: momentoHabil(-hace, "12:00"), entregado: momentoHabil(-hace, "17:00"),
+      revision: {}, firma,
       lineas: [["pulido-y-nano-ceramico", capa]],
       pagos: (total) => [
         { monto: 300, metodo: "qr", tipo: "adelanto", dia: -hace - 7 },
