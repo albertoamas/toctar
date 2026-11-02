@@ -11,6 +11,7 @@ import {
   esOrden,
   estaAtrasada,
   etapaAbierta,
+  fechaBuscada,
   NOMBRE_DETALLE,
   NOMBRE_ETAPA,
   pasosDeOrden,
@@ -239,4 +240,11 @@ test("se entrega con la firma y el nombre de quien recibe, o sin firma con el mo
   expect(errores({ conFirma: false, firmaNombre: "", sinFirma: "on", sinFirmaMotivo: "ok" })).toEqual({ sinFirmaMotivo: "Cuenta por qué no firma." });
   expect(errores({ conFirma: false, sinFirma: "on", sinFirmaMotivo: "Retiró su hijo" })).toEqual({});
   expect(errores({ sinFirma: "on", sinFirmaMotivo: "x".repeat(301) }).sinFirmaMotivo).toBe("Hasta 300 caracteres.");
+});
+
+test("pedido 28: la búsqueda de entregadas entiende fechas como «5/10» o «5/10/2026»", () => {
+  expect(fechaBuscada("5/10")).toEqual({ dia: 5, mes: 10, anio: null });
+  expect(fechaBuscada(" 05-10-26 ")).toEqual({ dia: 5, mes: 10, anio: 2026 });
+  expect(fechaBuscada("5/10/2026")).toEqual({ dia: 5, mes: 10, anio: 2026 });
+  for (const no of ["5678ABC", "32/10", "5/13", "5", "Juan"]) expect(fechaBuscada(no)).toBeNull();
 });

@@ -24,7 +24,7 @@ Igual que una historia (`plan-de-desarrollo.md`, "Cómo se trabaja cada historia
 | 3 | Firma digital del cliente | 13 | 6 | Incluido en el plan (decisión del 01/11); el PDF, aparte | ✅ Programado (01/11) |
 | 4 | Fotos: solo las que sirven, sin videos | 27 | 4 a 6 | Incluido | ✅ Programado (01/11) |
 | 5 | Rediseño del panel: administrativo estándar | 26 | 25 a 35 | Incluido (sin él no hay aceptación) | ⏳ |
-| 6 | Órdenes con historial y agenda con las completadas | 28 | 6 a 8 | Incluido | ⏳ |
+| 6 | Órdenes con historial y agenda con las completadas | 28 | 6 a 8 | Incluido | ✅ Programado (01/11) |
 | 7 | Saldos pendientes: ordenar y buscar | 30 | 2 | Incluido (bolsa de 8 h) | ⏳ |
 | 8 | Vehículos sin placa | 29 | 6 a 8 | Por definir | ⏳ |
 | 9 | Avisos de mantenimiento automáticos | 22 | Por estimar | Por cotizar (API de WhatsApp de Meta) | ⏳ Explicar al dueño |
@@ -237,6 +237,8 @@ El dueño aprueba el prototipo y, con todo el panel cambiado, encuentra cada cos
 ---
 
 ## 6. Órdenes y Agenda: historial y completadas (pedido 28)
+
+> **Estado (01/11/2026):** programado con la especificación `etapas/P28-ordenes-historial.md`. El rediseño del panel (punto 5) queda para el final, por decisión del 01/11: cambia la apariencia de todo y conviene hacerlo cuando no se agreguen más funciones.
 
 ### Lo que dijo el dueño
 > Agenda le gustó, pero nota algo de redundancia con Órdenes. Quiere que **se queden marcadas las completadas**, en el calendario y en Órdenes. En Órdenes, sobre todo, **no puede buscar una orden pasada**.

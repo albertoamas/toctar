@@ -28,6 +28,8 @@ export function BuscadorClientes({ etiqueta = "Buscar por nombre, teléfono o pl
     clearTimeout(espera.current);
     espera.current = setTimeout(() => {
       const nuevos = new URLSearchParams(parametros);
+      // Otra búsqueda empieza en la primera página (las listas con páginas, como las órdenes entregadas)
+      nuevos.delete("pagina");
       if (valor.trim()) nuevos.set("q", valor);
       else nuevos.delete("q");
       const consulta = nuevos.toString();
