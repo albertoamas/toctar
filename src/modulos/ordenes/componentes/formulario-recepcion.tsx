@@ -38,7 +38,6 @@ export function FormularioRecepcion({ trabajoId, tecnicos, tecnicoInicial, tecni
       <Campo id="observaciones" etiqueta="Observaciones" error={e.observaciones} ayuda="Lo que no está en el checklist: objetos que deja el cliente, lo que pidió…">
         <Textarea
           id="observaciones"
-          name="observaciones"
           rows={4}
           value={observaciones}
           onChange={(ev) => setObservaciones(ev.target.value)}
@@ -46,10 +45,15 @@ export function FormularioRecepcion({ trabajoId, tecnicos, tecnicoInicial, tecni
           aria-describedby={e.observaciones ? "observaciones-error" : "observaciones-ayuda"}
         />
       </Campo>
+      {/* Lo mismo con las observaciones: su texto, en un campo oculto */}
+      <input type="hidden" name="observaciones" value={observaciones} />
       <Campo id="tecnicoId" etiqueta="Técnico" error={e.tecnicoId} ayuda={tecnicoInactivo ? `${tecnicoInactivo} ya no está activo: elige otro técnico.` : undefined}>
+        {/* El valor va en un campo oculto propio, como en la reserva: React reinicia el formulario al terminar cada envío
+            (también uno que falla, como "faltan partes del checklist") y el menú podía quedar vacío en la página mientras
+            el estado seguía con el técnico: se recibía sin técnico */}
+        <input type="hidden" name="tecnicoId" value={tecnicoId} />
         <Selector
           id="tecnicoId"
-          name="tecnicoId"
           value={tecnicoId}
           onChange={(ev) => setTecnicoId(ev.target.value)}
           aria-invalid={!!e.tecnicoId}
