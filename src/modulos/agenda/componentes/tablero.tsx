@@ -35,7 +35,7 @@ function textoFechas(r: ReservaTablero) {
  */
 function colorBloque(estado: ReservaTablero["estado"]) {
   const tono = TONO_ESTADO_TRABAJO[estado] ?? "neutro";
-  if (estado === "entregado") return { tono, clase: "tt-tono-exito border-l-exito bg-exito text-sobre-rojo", estado: "text-sobre-rojo" };
+  if (estado === "entregado") return { tono, clase: "tt-tono-exito border-l-exito bg-exito text-fondo", estado: "text-fondo" };
   if (tono === "neutro") return { tono, clase: "tt-tono-neutro border border-l-4 border-border border-l-tinta-suave bg-fondo", estado: "text-tinta-suave" };
   return { tono, clase: `tt-tono-${tono} border-l-[var(--tono)] bg-[var(--tono-fondo)]`, estado: "text-[var(--tono)]" };
 }
@@ -83,7 +83,7 @@ function Cinta({
           {r.masServicios > 0 && ` y ${r.masServicios} más`}
         </span>
       )}
-      <span className={cn("truncate text-xs", r.estado === "entregado" ? "text-sobre-rojo/80" : "text-tinta-suave")}>{r.tecnico ?? "Sin técnico"}</span>
+      <span className={cn("truncate text-xs", r.estado === "entregado" ? "text-fondo/80" : "text-tinta-suave")}>{r.tecnico ?? "Sin técnico"}</span>
       {/* Desde que se recibe (recibida, en proceso, lista, entregada), el estado se ve también escrito, en su color */}
       {r.estado !== "agendado" && <span className={cn("truncate text-xs font-semibold", color.estado)}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</span>}
       <span className="sr-only">

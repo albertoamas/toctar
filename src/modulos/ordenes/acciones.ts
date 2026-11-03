@@ -229,6 +229,7 @@ export async function guardarDetalle(_previo: EstadoFormulario, datos: FormData)
   }
   const { trabajoId, parteId, tipo, nota } = r.data;
 
+  // Antes de subir la foto, lo que la rechazaría (sin candado: adentro de la transacción se vuelve a comprobar todo)
   const [[t], [parte], [actual]] = await Promise.all([
     db.select({ estado: trabajo.estado, fechaInicio: trabajo.fechaInicio, clienteId: trabajo.clienteId }).from(trabajo).where(eq(trabajo.id, trabajoId)),
     db.select({ nombre: parteRevision.nombre, activo: parteRevision.activo }).from(parteRevision).where(eq(parteRevision.id, parteId)),
@@ -252,15 +253,10 @@ export async function guardarDetalle(_previo: EstadoFormulario, datos: FormData)
   let reemplazada: number | null = null;
   try {
     reemplazada = await db.transaction(async (tx) => {
-      // Candado sobre la reserva: si alguien la recibe en este momento, el detalle no entra después
-      const [bloqueada] = await tx.select({ estado: trabajo.estado, fechaInicio: trabajo.fechaInicio }).from(trabajo).where(eq(trabajo.id, trabajoId)).for("update");
-      if (bloqueada?.estado !== "agendado") throw new Conflicto("El vehículo ya se recibió: el checklist no cambia.");
-      // Alguien pudo reprogramarla recién: el checklist es del día en que llega el vehículo
-      if (!puedeRecibirse(bloqueada, fechaEnBolivia())) throw new Conflicto("El checklist se hace el día que llega el vehículo.");
-      const [antes] = await tx
-        .select({ archivoId: trabajoRevision.archivoId })
-        .from(trabajoRevision)
-        .where(and(eq(trabajoRevision.trabajoId, trabajoId), eq(trabajoRevision.parteId, parteId)));
+      // Con candado, como marcar y desmarcar: si alguien la recibe o la reprograma en este momento, el detalle no entra
+      const p = await parteDelChecklist(tx, trabajoId, parteId);
+      if (!p || (!p.parte.activo && !p.antes)) throw new Conflicto("Esa parte ya no está en el checklist. Recarga la página.");
+      const antes = p.antes;
       const archivoId = fotoNueva ?? antes?.archivoId ?? null;
       await tx
         .insert(trabajoRevision)
@@ -284,10 +280,6 @@ export async function guardarDetalle(_previo: EstadoFormulario, datos: FormData)
   return { ok: true, mensaje: "Detalle guardado." };
 }
 
-/**
- * Marca una parte "bien" en el checklist (también una que tenía un detalle: se borran su nota y su foto). Solo antes de
- * recibir, el día de ingreso. Recibe datos sueltos: se validan.
- */
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /**
@@ -321,7 +313,10 @@ async function despuesDelChecklist(trabajoId: number, cambio: { archivoId: numbe
   despuesDeCambiar(trabajoId, cambio.clienteId);
 }
 
-/** Pedido 12: la parte, bien (un toque). Si tenía un detalle, se borran su nota y su foto. */
+/**
+ * Pedido 12: la parte, bien (un toque; también una que tenía un detalle: se borran su nota y su foto). Solo antes de
+ * recibir, el día de ingreso. Recibe datos sueltos: se validan.
+ */
 export async function marcarBien(datos: { trabajoId: number; parteId: number }): Promise<EstadoFormulario> {
   const usuario = await exigirModulo("ordenes");
   if (!puede(usuario, "recibir_vehiculo")) return { mensaje: "El checklist lo hace quien recibe el vehículo." };
@@ -365,13 +360,15 @@ export async function desmarcarParte(datos: { trabajoId: number; parteId: number
   if (!entrada.success) return { mensaje: RECARGA };
   const { trabajoId, parteId } = entrada.data;
 
-  let quitada: { archivoId: number | null; clienteId: number } | null;
+  let quitada: { archivoId: number | null; clienteId: number } | "sin cambios" | null;
   try {
     quitada = await db.transaction(async (tx) => {
       const p = await parteDelChecklist(tx, trabajoId, parteId);
       if (!p) return null;
       // Ya estaba sin revisar: no hay nada que quitar
-      if (!p.antes) return { archivoId: null, clienteId: p.clienteId };
+      if (!p.antes) return "sin cambios";
+      // Una parte desactivada ya no se puede volver a marcar: lo revisado con ella se cambia (bien o detalle), no se quita
+      if (!p.parte.activo) throw new Conflicto("Esa parte ya no está en el checklist: se puede cambiar a bien o a detalle, no quitar.");
       await tx.delete(trabajoRevision).where(and(eq(trabajoRevision.trabajoId, trabajoId), eq(trabajoRevision.parteId, parteId)));
       return { archivoId: p.antes.archivoId, clienteId: p.clienteId };
     });
@@ -380,7 +377,7 @@ export async function desmarcarParte(datos: { trabajoId: number; parteId: number
     throw error;
   }
   if (!quitada) return { mensaje: "Esa parte ya no está en el checklist. Recarga la página." };
-  await despuesDelChecklist(trabajoId, quitada);
+  if (quitada !== "sin cambios") await despuesDelChecklist(trabajoId, quitada);
   return { ok: true };
 }
 

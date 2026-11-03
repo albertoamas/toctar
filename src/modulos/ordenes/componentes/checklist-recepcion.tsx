@@ -33,6 +33,8 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
   const [abierta, setAbierta] = useState<{ id: number; nombre: string } | null>(null);
   const hidratado = useHidratado();
   const [, iniciar] = useTransition();
+  // Las partes que se están guardando: sus botones esperan, así dos toques rápidos no se cruzan (marcar y desmarcar)
+  const [guardando, setGuardando] = useState<number[]>([]);
   // Lo tocado se ve al momento; si el servidor no lo guarda, vuelve solo a como estaba (con su aviso)
   const [marcas, marcar] = useOptimistic<Marca[], Marca>([], (actuales, nueva) => [...actuales.filter((m) => m.parteId !== nueva.parteId), nueva]);
   const de = (parteId: number) => revision.find((d) => d.parteId === parteId);
@@ -47,11 +49,14 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
   const completo = filas.length > 0 && revisadas === filas.length;
 
   function tocarBien(parteId: number) {
+    if (guardando.includes(parteId)) return;
     const accion = alTocarBien(estadoDe(parteId));
+    setGuardando((g) => [...g, parteId]);
     iniciar(async () => {
       marcar({ parteId, estado: accion === "marcar" ? "bien" : null });
       const r = accion === "marcar" ? await marcarBien({ trabajoId, parteId }) : await desmarcarParte({ trabajoId, parteId });
       if (!r.ok) avisarResultado(r);
+      setGuardando((g) => g.filter((id) => id !== parteId));
     });
   }
 
@@ -92,6 +97,7 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
           <ul aria-label="Partes del checklist" className="flex flex-col divide-y divide-border">
             {filas.map((p) => {
               const estado = estadoDe(p.id);
+              const ocupada = !hidratado || guardando.includes(p.id);
               const d = de(p.id);
               // El detalle guardado, solo si sigue siendo detalle (un "Bien" recién tocado ya lo reemplazó)
               const detalle = estado === "detalle" && d?.estado === "detalle" ? d : null;
@@ -108,13 +114,13 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
                     <span role="group" aria-label={p.nombre} className="flex shrink-0 overflow-hidden rounded-lg border border-border">
                       <button
                         type="button"
-                        disabled={!hidratado}
+                        disabled={ocupada}
                         aria-pressed={estado === "bien"}
                         aria-label={`Bien: ${p.nombre}`}
                         onClick={() => tocarBien(p.id)}
                         className={cn(
                           "inline-flex min-h-11 items-center gap-1.5 px-3 text-sm font-semibold transition-colors sm:px-3.5 focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--foco)] disabled:opacity-50",
-                          estado === "bien" ? "bg-exito text-sobre-rojo" : "bg-fondo text-tinta-suave hover:bg-superficie hover:text-tinta",
+                          estado === "bien" ? "bg-exito text-fondo" : "bg-fondo text-tinta-suave hover:bg-superficie hover:text-tinta",
                         )}
                       >
                         <CheckIcon className="size-4" aria-hidden />
@@ -122,7 +128,7 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
                       </button>
                       <button
                         type="button"
-                        disabled={!hidratado}
+                        disabled={ocupada}
                         aria-pressed={estado === "detalle"}
                         aria-label={`Detalle: ${p.nombre}`}
                         onClick={() => setAbierta(p)}
@@ -153,7 +159,8 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
         </div>
       )}
       <ModalFormulario titulo={abierta ? abierta.nombre : "Parte"} abierto={!!abierta} alCambiar={(a) => !a && setAbierta(null)}>
-        {abierta && <FormularioDetalle key={abierta.id} trabajoId={trabajoId} parteId={abierta.id} detalle={de(abierta.id) ?? null} />}
+        {/* Con lo que se ve: si la parte se acaba de pasar a bien, el modal empieza vacío y no con el detalle de antes */}
+        {abierta && <FormularioDetalle key={abierta.id} trabajoId={trabajoId} parteId={abierta.id} detalle={estadoDe(abierta.id) === "detalle" ? (de(abierta.id) ?? null) : null} />}
       </ModalFormulario>
     </section>
   );
