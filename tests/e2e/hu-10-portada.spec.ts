@@ -155,7 +155,8 @@ test("el trabajo elegido en la galería del panel se compara arriba en la portad
   const tiktok = page.getByRole("region", { name: "Mira cómo trabajamos" });
   await expect(tiktok).toContainText("@toctar.detailing");
   await expect(tiktok.getByRole("link", { name: "Ver en TikTok" })).toHaveAttribute("href", "https://www.tiktok.com/@toctar.detailing");
-  await expect(page.getByRole("region", { name: "Trabajos recientes" }).getByRole("link", { name: /TikTok/ })).toHaveCount(0);
+  // Sin "Trabajos recientes" (pedido 36): las fotos están en la Galería, a un toque desde el menú
+  await expect(page.getByRole("heading", { name: "Trabajos recientes" })).toHaveCount(0);
   if (info.project.name === "escritorio") {
     await expect(page.getByRole("banner").getByRole("link", { name: "TikTok", exact: true })).toHaveAttribute("href", "https://www.tiktok.com/@toctar.detailing");
   } else {
