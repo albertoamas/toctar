@@ -107,10 +107,11 @@ test("la lista de servicios termina con una invitación a mandar fotos, con un s
 
 test("con el teclado se enmarca toda la tarjeta del servicio", async ({ page, isMobile }) => {
   test.skip(isMobile, "El teclado se prueba en la computadora");
-  // Solo con el teclado y con la página ya hidratada: desde el último enlace del menú, Tab llega a la primera tarjeta
+  // Solo con el teclado y con la página ya hidratada: desde lo último del encabezado (TikTok, junto al menú desde el
+  // pedido 35), Tab llega a la primera tarjeta
   await page.goto("/servicios", { waitUntil: "networkidle" });
   const enlace = page.locator(".tt-tarjeta__enlace").first();
-  await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Contacto" }).focus();
+  await page.getByRole("banner").getByRole("link", { name: "TikTok", exact: true }).focus();
   await page.keyboard.press("Tab");
   await expect(enlace).toBeFocused();
   await expect(page.locator(".tt-tarjeta").first()).toHaveCSS("outline-style", "solid");

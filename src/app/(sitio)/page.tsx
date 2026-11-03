@@ -7,11 +7,13 @@ import { cn } from "cn";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { ComparadorAntesDespues } from "@/componentes/sitio/comparador-antes-despues";
 import { EnlaceTikTok } from "@/componentes/sitio/enlace-tiktok";
+import { IconoRed } from "@/componentes/sitio/iconos-marca";
 import { PortadaArte } from "@/componentes/sitio/portada-arte";
 import { TITULO_SECCION } from "@/componentes/sitio/titulo-pagina";
 import { TarjetaServicio } from "@/componentes/sitio/tarjeta-servicio";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import type { UrlsFoto } from "@/lib/fotos";
+import { usuarioDeTikTok } from "@/lib/tiktok";
 import { PORTADA } from "@/modulos/sitio/contenido";
 import { ladoDelLema, nombreDelTrabajo, trabajoDePortada } from "@/modulos/sitio/galeria";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
@@ -77,7 +79,8 @@ async function PortadaConDatos() {
       </section>
 
       {/* Sin repetir el trabajo que ya se compara arriba */}
-      <Galeria fotos={fotos.filter((f) => f.id !== trabajo?.id).slice(0, FOTOS_EN_PORTADA)} tiktok={redes.tiktok} />
+      <Galeria fotos={fotos.filter((f) => f.id !== trabajo?.id).slice(0, FOTOS_EN_PORTADA)} />
+      <BloqueTikTok enlace={redes.tiktok} />
 
       <CierreWhatsApp
         titulo="Cuéntanos qué necesita tu vehículo"
@@ -210,37 +213,52 @@ function Servicios({ servicios }: { servicios: ServicioPublico[] }) {
   );
 }
 
-/** Trabajos recientes. Sin fotos (o solo la del comparador de arriba), queda el acceso a TikTok si está cargado. */
-function Galeria({ fotos, tiktok }: { fotos: FotoGaleria[]; tiktok?: string }) {
-  if (fotos.length === 0 && !tiktok) return null;
+/** Trabajos recientes. Sin fotos (o solo la del comparador de arriba), no aparece: TikTok tiene su bloque (pedido 35). */
+function Galeria({ fotos }: { fotos: FotoGaleria[] }) {
+  if (fotos.length === 0) return null;
   return (
     <section aria-labelledby="galeria-titulo" className="mx-auto w-full max-w-6xl px-4 pb-12 md:pb-24">
       <h2 id="galeria-titulo" className={TITULO_SECCION}>Trabajos recientes</h2>
-      {fotos.length > 0 && (
-        <ul className="mt-8 grid grid-cols-2 gap-2 md:grid-cols-3">
-          {fotos.map((f) => (
-            <li key={f.id} className="aspect-square overflow-hidden bg-superficie">
-              <Image
-                src={f.despues.miniatura}
-                alt={nombreDelTrabajo(f.descripcion, f.servicio.nombre)}
-                width={f.despues.ancho ?? 640}
-                height={f.despues.alto ?? 640}
-                unoptimized
-                loading="lazy"
-                className="size-full object-cover"
-              />
-            </li>
-          ))}
-        </ul>
-      )}
-      <div className="mt-8 flex flex-wrap gap-3">
-        {fotos.length > 0 && (
-          <Link href="/galeria" className="tt-boton tt-boton--contorno">
-            Ver la galería
-          </Link>
-        )}
-        {/* Más trabajos, en video (pedido de la demo del 24/10) */}
-        <EnlaceTikTok enlace={tiktok} />
+      <ul className="mt-8 grid grid-cols-2 gap-2 md:grid-cols-3">
+        {fotos.map((f) => (
+          <li key={f.id} className="aspect-square overflow-hidden bg-superficie">
+            <Image
+              src={f.despues.miniatura}
+              alt={nombreDelTrabajo(f.descripcion, f.servicio.nombre)}
+              width={f.despues.ancho ?? 640}
+              height={f.despues.alto ?? 640}
+              unoptimized
+              loading="lazy"
+              className="size-full object-cover"
+            />
+          </li>
+        ))}
+      </ul>
+      <Link href="/galeria" className="tt-boton tt-boton--contorno mt-8">
+        Ver la galería
+      </Link>
+    </section>
+  );
+}
+
+/**
+ * TikTok en la portada (pedido 35): un bloque propio después de los trabajos recientes, con su título, el usuario y un
+ * botón blanco grande. Antes era un botón suelto al final de la galería, a más de la mitad de la página. Solo si el
+ * dueño cargó el enlace.
+ */
+function BloqueTikTok({ enlace }: { enlace?: string }) {
+  if (!enlace) return null;
+  const usuario = usuarioDeTikTok(enlace);
+  return (
+    <section aria-labelledby="tiktok-titulo" className="mx-auto w-full max-w-6xl px-4 pb-12 md:pb-24">
+      <div className="tt-bloque-tiktok">
+        <IconoRed red="tiktok" className="tt-bloque-tiktok__marca" />
+        <h2 id="tiktok-titulo" className={TITULO_SECCION}>
+          Mira cómo trabajamos
+        </h2>
+        <p className="max-w-xl text-tinta-media">Videos de nuestros trabajos en el taller, del antes al después.</p>
+        {usuario && <p className="text-sm font-semibold text-tinta-suave">{usuario}</p>}
+        <EnlaceTikTok enlace={enlace} texto="Ver en TikTok" className="mt-2 self-start" />
       </div>
     </section>
   );

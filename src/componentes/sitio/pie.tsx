@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { MapPinIcon } from "lucide-react";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -58,7 +59,9 @@ async function DatosDelNegocio() {
       <Bloque titulo="Dónde estamos">
         <address className="not-italic">{d.direccion}</address>
         {d.coordenadas && (
-          <a href={enlaceMapa(d.coordenadas)} target="_blank" rel="noreferrer" className={ENLACE_DESTACADO}>
+          // Un botón de verdad, con su ícono (pedido 35): como texto en negrita no se veía que se tocaba
+          <a href={enlaceMapa(d.coordenadas)} target="_blank" rel="noreferrer" className="tt-boton tt-boton--contorno mt-2 self-start">
+            <MapPinIcon className="size-[18px]" aria-hidden />
             Cómo llegar
           </a>
         )}

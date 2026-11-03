@@ -433,8 +433,53 @@
   .tt-boton--principal:hover {
     --tt-relleno: var(--rojo-presionado);
   }
+  /* TikTok (pedido 35): casi tan importante como WhatsApp, pero en blanco, con el mismo corte a 60°: se ve a la primera y
+     no le roba el rojo, que es de la acción principal */
+  .tt-boton--blanco {
+    --tt-relleno: var(--blanco);
+    padding-right: 28px;
+    color: var(--negro);
+  }
+  .tt-boton--blanco::before {
+    background: linear-gradient(119.74deg, var(--tt-relleno) calc(100% - 7.45px), transparent calc(100% - 6.45px));
+  }
+  .tt-boton--blanco:hover {
+    --tt-relleno: var(--tinta-media);
+  }
   .tt-boton--contorno {
     box-shadow: inset 0 0 0 1px var(--borde-control);
+  }
+  /* El bloque de TikTok de la portada (pedido 35): su superficie, una barra blanca al costado y el ícono grande, apenas
+     visible, de marca de agua */
+  .tt-bloque-tiktok {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 40px 24px 40px 28px;
+    background: var(--superficie);
+    border-top: 1px solid var(--borde);
+    border-bottom: 1px solid var(--borde);
+  }
+  .tt-bloque-tiktok::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--blanco);
+  }
+  .tt-bloque-tiktok__marca {
+    position: absolute;
+    z-index: -1;
+    right: -32px;
+    bottom: -48px;
+    width: 240px;
+    height: 240px;
+    color: var(--superficie-alta);
   }
   .tt-boton--contorno:hover {
     --tt-relleno: var(--superficie);
