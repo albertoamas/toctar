@@ -43,7 +43,9 @@
 | HU-40 Plantillas de WhatsApp | C5 | ✅ Terminada |
 | HU-41 Fotos de órdenes a la galería | C5 | ✅ Terminada |
 
-**Revisión manual de YankoSoft:** pendiente. Se hace en `pruebas.toctardetailing.com` con los tres roles (dueño, encargado con y sin cada permiso, técnico), en un celular real y en la computadora, recorriendo esta lista de arriba abajo.
+**Revisión manual de YankoSoft:**
+- **02/11/2026, en local, a 390 y 1280 px:** el ciclo completo por la pantalla con los tres roles (cotizar con un cliente nuevo, agendar, recibir con el checklist, el técnico empieza, sube la foto de inicio y la marca lista, avisar, cobrar, firmar y entregar), con 39 capturas revisadas. Sin pasos que fallen ni pantallas que se salgan. El técnico no ve precios, pagos ni teléfonos; el encargado sin Pagos ni Cotizaciones no ve montos. Salieron dos detalles, corregidos (ver "Errores encontrados").
+- **Pendiente:** lo mismo en `pruebas.toctardetailing.com` desde un celular real (los ⏳ de abajo).
 
 ---
 
@@ -348,6 +350,8 @@ Los errores del 26 y 27 de octubre (pulido visual de la Entrega 2) están en `cr
 | 02/11/2026 | HU-33 | Al recibir, si el envío fallaba (por ejemplo, "faltan partes del checklist"), el menú del técnico volvía a "Sin asignar" mientras la pantalla lo seguía teniendo: el vehículo se podía recibir sin técnico | El técnico va en un campo propio y el menú se vuelve a poner después de cada envío | E2E `hu-33-checklist` (recibe después de un intento fallido y el técnico elegido ve la orden) |
 | 02/11/2026 | HU-33 | Una parte marcada "Bien" por error no se podía dejar sin revisar | "Bien" funciona como interruptor (pedido 26); una parte que se desactivó en Configuración se cambia a bien o detalle, pero no se quita | E2E `hu-33-checklist` y unitarias `ordenes` |
 | 02/11/2026 | HU-36 | En una orden cancelada, el saldo se resaltaba en ámbar como si se pudiera cobrar | Ámbar solo si se puede cobrar; verde con "Pagado por completo" si está pagada; sin color si está cancelada | Revisión del pedido 26, con capturas de una orden pagada, con saldo y cancelada |
+| 02/11/2026 | HU-34, HU-36 | En una orden entregada seguía la fila "Entrega: Hoy, aproximada", que contradecía el encabezado ("Entregado el 02/11 a las 22:28") | Entregada, la fila no se muestra (recorrido de la Entrega 2) | E2E `hu-36` "pagada: el dueño suma un adicional…" |
+| 02/11/2026 | HU-34 | En Fotos, con una foto subida, "Tomar foto" pasaba a ser un recuadro punteado y "Elegir de la galería" quedaba suelto debajo, sin borde | Los dos botones, iguales y juntos debajo de las fotos, haya fotos o no (recorrido de la Entrega 2) | E2E `hu-34-ordenes-tecnico` y `flujo-taller-completo` |
 
 ## Lo que falta para el acta
 
