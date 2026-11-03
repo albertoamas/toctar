@@ -65,6 +65,8 @@ test("el dueño crea el servicio en el catálogo y completa su página: benefici
   await page.getByRole("checkbox", { name: /Mostrar en el sitio/ }).uncheck();
   await page.getByRole("button", { name: "Guardar cambios" }).click();
   await expect(page.getByText("Cambios guardados.")).toBeVisible();
+  // En el celular el aviso sale arriba, sobre "‹ Servicios": se espera a que se vaya (con el mouse encima no se iría)
+  await expect(page.getByText("Cambios guardados.")).toBeHidden({ timeout: 10_000 });
   await page.getByRole("link", { name: "Servicios" }).first().click();
   await expect(page.getByRole("listitem").filter({ hasText: nombre })).toContainText("Oculto");
 });
