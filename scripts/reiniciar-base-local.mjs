@@ -3,7 +3,7 @@
 // si DATABASE_URL o S3_ENDPOINT no apuntan a localhost, no hace nada.
 //
 // Uso:  npm run db:reiniciar-local
-// Después: npm run db:migrate, arrancar la app una vez (crea el dueño, src/lib/arranque.ts) y npm run datos:demo.
+// Después: npm run db:migrate y npm run datos:demo (crea el dueño de .env). Los tres pasos juntos: npm run datos:reiniciar.
 import { DeleteObjectsCommand, ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
 import pg from "pg";
 

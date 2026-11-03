@@ -59,6 +59,7 @@ npm run db:migrate        # aplica migraciones pendientes
 npm run db:studio         # explorador de la base
 npm run db:reiniciar-local   # deja vacías la base y los buckets de desarrollo (solo si apuntan a localhost)
 npm run datos:demo        # datos de demostración (sitio y panel) en una base recién migrada; fotos en material/fotos-demo
+npm run datos:reiniciar   # db:reiniciar-local + db:migrate + datos:demo de una vez (con la app detenida)
 docker build -t toctar:local .   # imagen igual a la de producción
 ```
 
