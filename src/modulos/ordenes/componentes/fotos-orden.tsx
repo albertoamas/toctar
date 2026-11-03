@@ -16,7 +16,8 @@ import { FRASE_ETAPA, MAXIMO_FOTOS_ETAPA, NOMBRE_ETAPA } from "../reglas";
 
 // HU-33 y HU-34: las fotos de una etapa de la orden (RF-40, RF-42). En el taller, con el celular: "Tomar foto" abre la
 // cámara trasera; también se pueden elegir varias de la galería. Se suben de a una (achicadas en el navegador), así
-// una que falla no frena a las demás. Al tocar una se ve en grande; quitarla está ahí y no en la grilla.
+// una que falla no frena a las demás. Al tocar una se ve en grande; quitarla está ahí y no en la grilla. Los dos
+// botones van siempre en una fila arriba de las fotos, iguales con fotos o sin ellas (recorrido de la Entrega 2).
 
 type FotoEnOrden = UrlsFoto & { id: number; puedeQuitar: boolean };
 
@@ -28,16 +29,11 @@ type Props = {
   editable: boolean;
   /** Lo que se muestra sin fotos. */
   textoVacio: string;
-  /**
-   * Sin fotos, los dos botones en una fila en lugar de la casilla de la cámara: las etapas vacías no ocupan media
-   * pantalla cada una (pulido 11.2).
-   */
-  compacta?: boolean;
 };
 
 const NO_SUBIO = "no se pudo subir. Revisa tu conexión y vuelve a intentar.";
 
-export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio, compacta }: Props) {
+export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio }: Props) {
   const camara = useRef<HTMLInputElement>(null);
   const galeria = useRef<HTMLInputElement>(null);
   const [subiendo, setSubiendo] = useState<{ actual: number; total: number } | null>(null);
@@ -92,7 +88,6 @@ export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio, comp
   };
   const ocupado = !listo || subiendo !== null || lugares <= 0;
   const textoCamara = subiendo ? `Subiendo ${subiendo.actual} de ${subiendo.total}…` : lugares <= 0 ? `Ya tiene ${MAXIMO_FOTOS_ETAPA}` : "Tomar foto";
-  const enFila = compacta && editable && fotos.length === 0;
 
   return (
     <div className="flex flex-col gap-3">
@@ -101,18 +96,21 @@ export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio, comp
       </h3>
 
       {fotos.length === 0 && !editable && <p className="text-sm text-tinta-suave">{textoVacio}</p>}
-      {enFila && (
+      {/* Los dos caminos para sumar fotos, iguales y juntos, arriba de las fotos: con muchas, la cámara sigue a mano */}
+      {editable && (
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="outline" disabled={ocupado} onClick={() => camara.current?.click()} aria-describedby={error ? `${id}-error` : undefined}>
             <CameraIcon />
             {textoCamara}
           </Button>
-          <Button type="button" variant="outline" disabled={ocupado} onClick={() => galeria.current?.click()}>
+          <Button type="button" variant="outline" disabled={ocupado} onClick={() => galeria.current?.click()} aria-describedby={error ? `${id}-error` : undefined}>
             Elegir de la galería
           </Button>
+          <input ref={camara} type="file" accept="image/*" capture="environment" className="sr-only" tabIndex={-1} aria-label={`Cámara para fotos ${frase}`} onChange={alElegir} />
+          <input ref={galeria} type="file" accept="image/*" multiple className="sr-only" tabIndex={-1} aria-label={`Fotos ${frase} desde la galería`} onChange={alElegir} />
         </div>
       )}
-      {!enFila && (fotos.length > 0 || editable) && (
+      {fotos.length > 0 && (
         <ul aria-label={`Fotos ${frase}`} className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
           {fotos.map((f, i) => (
             <li key={f.id}>
@@ -126,36 +124,7 @@ export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio, comp
               </button>
             </li>
           ))}
-          {editable && (
-            <li>
-              {/* La casilla de la cámara, del tamaño de una foto: lo primero que se toca en el taller */}
-              <button
-                type="button"
-                disabled={ocupado}
-                onClick={() => camara.current?.click()}
-                aria-describedby={error ? `${id}-error` : undefined}
-                className="flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-sm border-2 border-dashed border-tinta-suave p-2 text-center text-sm font-semibold hover:bg-superficie focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)] disabled:opacity-50"
-              >
-                <CameraIcon className="size-7" aria-hidden />
-                {textoCamara}
-              </button>
-            </li>
-          )}
         </ul>
-      )}
-
-      {editable && (
-        <>
-          <input ref={camara} type="file" accept="image/*" capture="environment" className="sr-only" tabIndex={-1} aria-label={`Cámara para fotos ${frase}`} onChange={alElegir} />
-          <input ref={galeria} type="file" accept="image/*" multiple className="sr-only" tabIndex={-1} aria-label={`Fotos ${frase} desde la galería`} onChange={alElegir} />
-          {!enFila && (
-            <div>
-              <Button type="button" variant="ghost" disabled={ocupado} onClick={() => galeria.current?.click()}>
-                Elegir de la galería
-              </Button>
-            </div>
-          )}
-        </>
       )}
       {error && <MensajeError id={`${id}-error`}>{error}</MensajeError>}
 
