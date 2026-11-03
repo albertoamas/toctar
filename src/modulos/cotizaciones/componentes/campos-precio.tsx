@@ -45,7 +45,7 @@ type Props = {
 export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
   return (
     <>
-      <SeccionFormulario titulo="Servicios" className="gap-4">
+      <SeccionFormulario titulo="Servicios" claseContenido="gap-4">
         {opciones ? (
           <LineasServicio opciones={opciones} lineas={p.lineas} onChange={p.setLineas} errores={e} />
         ) : (
@@ -55,7 +55,7 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
         {!opciones && e.lineas && <MensajeError id="lineas-error">{e.lineas}</MensajeError>}
       </SeccionFormulario>
 
-      <SeccionFormulario titulo="¿Cómo se cotizó?" className="gap-3">
+      <SeccionFormulario titulo="¿Cómo se cotizó?" claseContenido="gap-3">
         <input type="hidden" name="modo" value={p.modo} />
         <RadioGroup
           value={p.modo}

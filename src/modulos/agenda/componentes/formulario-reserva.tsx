@@ -113,7 +113,7 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
       {estado.mensaje && !estado.ok && <MensajeError id="reserva-error">{estado.mensaje}</MensajeError>}
 
       {origen.tipo === "directa" && (
-        <SeccionFormulario titulo="Servicios" className="gap-4">
+        <SeccionFormulario titulo="Servicios" claseContenido="gap-4">
           <LineasServicio opciones={origen.opciones} lineas={lineas} onChange={setLineas} errores={e} />
           {/* El total, al pie con "Agendar" */}
         </SeccionFormulario>

@@ -97,12 +97,12 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
       <input type="hidden" name="cliente" value={cliente ? cliente.id : CLIENTE_NUEVO} />
       {estado.mensaje && !estado.ok && <MensajeError id="cotizacion-error">{estado.mensaje}</MensajeError>}
       {!cliente && (
-        <SeccionFormulario titulo="Cliente nuevo" tituloOculto className="gap-6">
+        <SeccionFormulario titulo="Cliente nuevo" tituloOculto claseContenido="gap-6">
           <CamposCliente estado={estado} compacto enlaceExistente={usarExistente} />
         </SeccionFormulario>
       )}
 
-      <SeccionFormulario titulo="Vehículo" className="gap-4">
+      <SeccionFormulario titulo="Vehículo" claseContenido="gap-4">
         {conVehiculos && (
           <>
             <input type="hidden" name="vehiculo" value={vehiculo} />

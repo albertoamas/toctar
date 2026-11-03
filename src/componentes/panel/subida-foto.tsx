@@ -81,15 +81,17 @@ export function SubidaFoto({ id, accion, camposOcultos, actual, textoVacio, quit
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-sm border border-border bg-superficie">
+      {/* La foto llena la caja (fill: absolute adentro): con h-full, Safari no toma la altura de una caja con aspect-ratio
+          como fija y la foto estiraba la caja (como el logo de Negocio, 03/11) */}
+      <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-sm border border-border bg-superficie">
         {actual ? (
           <Image
             src={actual.miniatura}
             alt={actual.alt}
-            width={actual.ancho ?? 640}
-            height={actual.alto ?? 480}
+            fill
+            sizes="(min-width: 1024px) 24rem, 100vw"
             unoptimized
-            className={`h-full w-full ${entera ? "object-contain" : "object-cover"}`}
+            className={entera ? "object-contain" : "object-cover"}
           />
         ) : (
           <span className="flex flex-col items-center gap-2 p-4 text-center text-sm text-tinta-suave">
