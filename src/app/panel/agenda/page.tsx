@@ -16,7 +16,7 @@ import { DIA_CORTO, diasDeLaSemana, lunesDeLaSemana, numeroDia, textoDia, textoS
 export const metadata: Metadata = { title: "Agenda" };
 
 // HU-29: el tablero de la agenda (RF-38). `?semana=` (cualquier día de la semana; se toma su lunes) y, en el celular,
-// `?dia=` (el día que se ve). Dueño o encargado con "Agenda"; el técnico nunca (sus órdenes llegan en C4).
+// `?dia=` (el día que se ve). Dueño o encargado con "Agenda".
 // Pulido 10.1: el tablero de la semana desde 1024 px (en la tableta las cintas no se leían); hasta ahí, un día a la vez.
 // La semana se recorre en un renglón: flecha, la semana (corta en el celular), flecha y "Hoy".
 export default function PaginaAgenda({ searchParams }: PageProps<"/panel/agenda">) {

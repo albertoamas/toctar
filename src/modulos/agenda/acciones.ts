@@ -19,8 +19,8 @@ import { calcularSaldo } from "@/modulos/pagos/reglas";
 import { datosDeCotizacion, espaciosEnFechas, type EspacioDisponible } from "./consultas";
 import { entradaReserva, esquemaAdelanto, esquemaCancelar, esquemaConsultaEspacios, esquemaFechas, esquemaReprogramar, esquemaReserva } from "./esquemas";
 
-// Agenda (HU-30). Entra el dueño o un encargado con "Agenda"; el adelanto, solo con "Pagos" (o el dueño). El técnico
-// nunca (RN-12). Un espacio no tiene dos vehículos el mismo día (RN-06): la pantalla solo ofrece los libres y la base
+// Agenda (HU-30). Entra el dueño o un encargado con "Agenda"; el adelanto, solo con "Pagos" (o el dueño, RN-12). Un
+// espacio no tiene dos vehículos el mismo día (RN-06): la pantalla solo ofrece los libres y la base
 // rechaza un cruce aunque dos personas reserven a la vez (D-5). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md.
 
 const ESPACIO_OCUPADO = "Ese espacio se ocupó recién: elige otro.";

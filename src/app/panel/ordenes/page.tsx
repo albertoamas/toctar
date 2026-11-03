@@ -12,7 +12,6 @@ import { Pestanas } from "@/componentes/panel/pestanas";
 import { CeldaDoble, TablaLista, type ColumnaTabla, type FilaTabla } from "@/componentes/panel/tabla-lista";
 import { buttonVariants } from "@/componentes/ui/button";
 import { diaYHora, fechaEnBolivia } from "@/lib/fechas";
-import { nombreEnMenu } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { BuscadorClientes } from "@/modulos/clientes/componentes/buscador-clientes";
@@ -39,13 +38,13 @@ export default function PaginaOrdenes({ searchParams }: PageProps<"/panel/ordene
 const NOMBRE_FILTRO: Record<(typeof ESTADOS_ORDEN_ABIERTA)[number], string> = { recibido: "Recibidas", en_proceso: "En proceso", listo: "Listas" };
 
 async function Lista({ searchParams }: Pick<PageProps<"/panel/ordenes">, "searchParams">) {
-  const usuario = await exigirModulo("ordenes");
+  await exigirModulo("ordenes");
   const parametros = await searchParams;
   const entregadas = parametros.vista === "entregadas";
 
   return (
     <>
-      <EncabezadoPagina titulo={nombreEnMenu("ordenes", usuario.rol)} />
+      <EncabezadoPagina titulo="Órdenes" />
       <Pestanas
         etiqueta="Órdenes"
         activa={entregadas ? "/panel/ordenes?vista=entregadas" : "/panel/ordenes"}

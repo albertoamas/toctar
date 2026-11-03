@@ -8,8 +8,8 @@ import { obtenerReserva, type DetalleReserva } from "@/modulos/agenda/consultas"
 import { escaparLike, nombreVehiculo, normalizarBusqueda } from "@/modulos/clientes/reglas";
 import { ENTREGADAS_POR_PAGINA, ESTADOS_ORDEN_ABIERTA, fechaBuscada } from "./reglas";
 
-// Lecturas de las órdenes (C4). Quien las llama ya pasó por exigirModulo("ordenes") y, si es técnico, por
-// `puedeVerOrden` (src/lib/permisos.ts). Los montos solo para quien ve "Pagos" (RN-12). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md.
+// Lecturas de las órdenes (C4). Quien las llama ya pasó por exigirModulo("ordenes"). Los montos solo para quien ve
+// "Pagos" (RN-12). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md.
 
 export type FotoOrden = UrlsFoto & { id: number; etapa: EtapaFoto; subidoPor: number };
 
@@ -28,7 +28,7 @@ export async function fotosDeTrabajo(trabajoId: number, etapas?: readonly EtapaF
 }
 
 export type DetalleOrden = DetalleReserva & {
-  /** Las descripciones de los servicios, para todos (el técnico las necesita para trabajar); los precios van en `montos`. */
+  /** Las descripciones de los servicios, para todos (hacen falta para trabajar); los precios van en `montos`. */
   servicios: string[];
 };
 
@@ -36,7 +36,7 @@ export type DetalleOrden = DetalleReserva & {
 export async function obtenerOrden(id: number, conMontos: boolean): Promise<DetalleOrden | null> {
   const reserva = await obtenerReserva(id, conMontos);
   if (!reserva) return null;
-  // Con montos, las líneas ya vinieron; sin ellos (el técnico), solo sus nombres
+  // Con montos, las líneas ya vinieron; sin ellos (sin Pagos), solo sus nombres
   const servicios = reserva.montos
     ? reserva.montos.lineas.map((l) => l.descripcion)
     : (await db.select({ descripcion: trabajoLinea.descripcion }).from(trabajoLinea).where(eq(trabajoLinea.trabajoId, id)).orderBy(asc(trabajoLinea.orden))).map((s) => s.descripcion);

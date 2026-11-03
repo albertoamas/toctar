@@ -37,8 +37,8 @@ import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
 
 export const metadata: Metadata = { title: "Orden" };
 
-// HU-33 y HU-34: la orden (RF-40 a RF-42). El dueño y el encargado con "Órdenes" ven todas; el técnico, solo las suyas
-// y sin precios ni pagos ni el teléfono del cliente (RN-12). Arriba, el paso siguiente; después, cómo llegó, las fotos
+// HU-33 y HU-34: la orden (RF-40 a RF-42). El dueño y el encargado con "Órdenes" ven todas (pedido 32: sin técnico
+// asignado); los precios y los pagos, solo con "Pagos" (RN-12). Arriba, el paso siguiente; después, cómo llegó, las fotos
 // por etapa y la historia. Pulido 11.2: lo poco usado (extender la entrega, volver un paso) en "Más", con modales.
 export default function PaginaOrden({ params, searchParams }: PageProps<"/panel/ordenes/[id]">) {
   return (
@@ -55,7 +55,6 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   const usuario = await exigirModulo("ordenes");
   const [{ id }, { recibido, entregado, publicado }] = await Promise.all([params, searchParams]);
   if (!/^\d+$/.test(id)) notFound();
-  const tecnico = usuario.rol === "tecnico";
   const o = await obtenerOrden(Number(id), puedeVerModulo(usuario, "pagos"));
   if (!o) notFound();
   const verAgenda = puedeVerModulo(usuario, "agenda");
@@ -107,7 +106,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
       ? `Entregado el ${diaYHora(o.entregadoAt)}${o.entregadoPor ? ` por ${o.entregadoPor}` : ""}.${o.montos && o.autorizoSaldo && o.saldoAlEntregar ? ` Con saldo de ${mostrarMonto(o.saldoAlEntregar)} Bs, autorizado por ${o.autorizoSaldo}.` : ""}`
       : null;
   const entregar = o.estado === "listo" && puede(usuario, "entregar_vehiculo");
-  // "Más" solo si tiene algo que ofrecer (el técnico, en una recibida, no tiene nada)
+  // "Más" solo si tiene algo que ofrecer (una recibida que no se puede extender no tiene nada)
   const conMas = abierta && (!!anterior || !!extender);
   const detalle = detalleVehiculo(o);
 
@@ -122,17 +121,13 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
           </>
         }
         accion={
-          (!tecnico || conMas) && (
-            <div className="flex flex-wrap gap-2">
-              {!tecnico && (
-                <a href={enlaceWhatsApp(o.telefono)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
-                  <IconoWhatsApp />
-                  Escribir por WhatsApp
-                </a>
-              )}
-              {conMas && <MasOrden id={o.id} anterior={anterior} extender={extender} avisada={avisada} />}
-            </div>
-          )
+          <div className="flex flex-wrap gap-2">
+            <a href={enlaceWhatsApp(o.telefono)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
+              <IconoWhatsApp />
+              Escribir por WhatsApp
+            </a>
+            {conMas && <MasOrden id={o.id} anterior={anterior} extender={extender} avisada={avisada} />}
+          </div>
         }
       >
         {entrega}
@@ -195,7 +190,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
             <dt className="text-tinta-suave">Cliente</dt>
             <dd className="flex flex-col">
               <span className="font-semibold">{o.cliente}</span>
-              {!tecnico && <span className="text-sm text-tinta-suave">{formatearWhatsApp(o.telefono)}</span>}
+              <span className="text-sm text-tinta-suave">{formatearWhatsApp(o.telefono)}</span>
             </dd>
             <dt className="text-tinta-suave">Vehículo</dt>
             <dd className="flex flex-col">

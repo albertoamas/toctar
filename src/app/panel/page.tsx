@@ -32,8 +32,7 @@ import { reclamosPorAtender } from "@/modulos/reclamos/consultas";
 // tareas de todos los días (nueva reserva, nueva cotización); los números del día en tarjetas que llevan a su lista;
 // "Para hoy" (lo que llega, lo que se entrega y lo que espera aviso) y "Para atender" (reclamos, cotizaciones sin
 // respuesta, saldos y mantenimientos vencidos). Cada parte, solo si quien entra ve ese módulo: los montos, solo con Pagos
-// o Cotizaciones; el técnico nunca ve montos ni teléfonos (RN-12) y entra a sus órdenes. Llega entera: el saludo lleva
-// el nombre de la sesión.
+// o Cotizaciones (RN-12). Llega entera: el saludo lleva el nombre de la sesión.
 export default function InicioPanel() {
   return (
     <Suspense fallback={<Cargando />}>
@@ -50,8 +49,7 @@ async function Contenido() {
   const hoy = fechaEnBolivia();
   const ahora = new Date();
   const modulos = modulosDelMenu(usuario).filter((m) => m !== "inicio");
-  // Lo del día es del dueño y del encargado; el técnico trabaja desde sus órdenes
-  const ve = (m: Modulo) => usuario.rol !== "tecnico" && puedeVerModulo(usuario, m);
+  const ve = (m: Modulo) => puedeVerModulo(usuario, m);
   const [ingresos, abiertas, saldos, pendientes, mantenimientos, reclamos, parametros] = await Promise.all([
     ve("agenda") ? ingresosDeHoy(hoy) : null,
     ve("ordenes") ? ordenesAbiertas() : null,
@@ -69,12 +67,12 @@ async function Contenido() {
       <section className="flex flex-col gap-6">
         <Saludo nombre={usuario.nombre} hoy={hoy} />
         {modulos.length === 0 ? (
-          // Un encargado al que todavía no le marcaron permisos (el técnico ya tiene sus órdenes, C4)
+          // Un encargado al que todavía no le marcaron permisos
           <EstadoVacio>Por ahora no hay nada para ti en el panel. Pídele al dueño que te dé acceso a lo que vas a usar.</EstadoVacio>
         ) : (
           <nav aria-label="Ir a" className="grid max-w-3xl gap-3 md:grid-cols-2">
             {modulos.map((m) => (
-              <Acceso key={m} href={MODULOS[m].ruta as Route} icono={ICONO_MODULO[m]} titulo={nombreEnMenu(m, usuario.rol)} />
+              <Acceso key={m} href={MODULOS[m].ruta as Route} icono={ICONO_MODULO[m]} titulo={nombreEnMenu(m)} />
             ))}
           </nav>
         )}

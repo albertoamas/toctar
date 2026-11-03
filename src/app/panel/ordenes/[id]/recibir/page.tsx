@@ -18,7 +18,7 @@ export const metadata: Metadata = { title: "Recibir vehículo" };
 
 // HU-33: recibir el vehículo (RF-40, CU-15). Dueño o encargado con "Órdenes", desde el día de ingreso de la reserva:
 // el checklist de partes (pedido 12), con la foto de cada detalle (pedido 27: no hay otras fotos al recibir),
-// observaciones y técnico. Al recibirlo, la reserva pasa a orden. Pulido 11.3: arriba,
+// y las observaciones. Al recibirlo, la reserva pasa a orden. Pulido 11.3: arriba,
 // quién y qué vehículo (para confirmar que es el auto correcto) y sus servicios en una línea; el botón, fijo abajo en el
 // celular.
 export default function PaginaRecibir({ params }: PageProps<"/panel/ordenes/[id]/recibir">) {
@@ -33,7 +33,6 @@ export default function PaginaRecibir({ params }: PageProps<"/panel/ordenes/[id]
 
 async function Recepcion({ params }: Pick<PageProps<"/panel/ordenes/[id]/recibir">, "params">) {
   const usuario = await exigirModulo("ordenes");
-  // La recepción sale de la agenda, que el técnico no ve (C4 §12)
   if (!puede(usuario, "recibir_vehiculo")) redirect("/panel/sin-acceso");
   const verAgenda = puedeVerModulo(usuario, "agenda");
   const { id } = await params;

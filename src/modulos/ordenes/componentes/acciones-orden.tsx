@@ -12,8 +12,7 @@ import { cambiarEstadoOrden } from "../acciones";
 import { ExtenderEntrega } from "./extender-entrega";
 
 // Pulido 11.2: lo que se usa poco en una orden va en el menú "Más" del encabezado, cada cosa con su modal (como
-// MasReserva). Volver un paso atrás es para un toque sin querer (también del técnico); extender la entrega, del dueño y
-// del encargado.
+// MasReserva). Volver un paso atrás es para un toque sin querer; extender la entrega, de quien puede tocar la agenda.
 
 type Props = {
   id: number;

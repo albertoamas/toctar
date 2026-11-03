@@ -11,8 +11,8 @@ import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { descripcionLinea, fechaValidez, precioSugerido, VISTAS, type Sugerencia, type Vista } from "./reglas";
 
 // Lecturas de las cotizaciones (pedido 23, P23-cotizacion-directa.md §5). Quien las llama ya pasó por
-// exigirModulo("cotizaciones"): el dueño o el encargado con ese permiso, que también cotiza (pedido 24). El técnico
-// nunca (RN-12). Cada cotización es un encabezado (la tabla `consulta`, D-12) con sus versiones (`cotizacion`).
+// exigirModulo("cotizaciones"): el dueño o el encargado con ese permiso, que también cotiza (pedido 24, RN-12).
+// Cada cotización es un encabezado (la tabla `consulta`, D-12) con sus versiones (`cotizacion`).
 
 export type OpcionServicio = {
   varianteId: number;

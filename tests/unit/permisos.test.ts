@@ -1,11 +1,11 @@
 import { describe, expect, test } from "vitest";
-import { MODULOS, menuAgrupado, modulosDelMenu, nombreEnMenu, permisosAsignables, puede, puedeVerModulo, type Modulo, type Permiso } from "@/lib/permisos";
+import { MODULOS, menuAgrupado, modulosDelMenu, nombreEnMenu, PERFILES, perfilDe, PERMISOS, permisosAsignables, puede, puedeVerModulo, type Modulo, type Permiso } from "@/lib/permisos";
+import { ROLES } from "@/lib/roles";
 
 // La matriz de docs/08-desarrollo/etapas/B1-acceso.md §5, casilla por casilla (RNF-05).
 
 const todos = Object.keys(MODULOS) as Modulo[];
 const dueno = { rol: "dueno" as const, permisos: [] };
-const tecnico = { rol: "tecnico" as const, permisos: [] };
 const encargado = (permisos: Permiso[] | string[]) => ({ rol: "encargado" as const, permisos });
 
 describe("dueño", () => {
@@ -18,12 +18,40 @@ describe("dueño", () => {
   });
 });
 
-describe("técnico (RN-12)", () => {
-  const visibles: Modulo[] = ["inicio", "ordenes"];
-  test.each(todos)("%s", (m) => expect(puedeVerModulo(tecnico, m)).toBe(visibles.includes(m)));
-  test("no autoriza entregas con saldo ni cotiza", () => {
-    expect(puede(tecnico, "entrega_con_saldo")).toBe(false);
-    expect(puede(tecnico, "cotizar")).toBe(false);
+test("dos roles: dueño y encargado (pedido 32, sin técnico)", () => {
+  expect(ROLES).toEqual(["dueno", "encargado"]);
+});
+
+describe("perfiles del encargado (pedido 32)", () => {
+  const [taller, atencion, todo] = PERFILES;
+
+  test("Taller: agenda y órdenes; recibe, trabaja y entrega, sin ver precios ni cotizar (RN-12)", () => {
+    expect(taller.permisos).toEqual(["agenda", "ordenes"]);
+    const e = encargado([...taller.permisos]);
+    expect(puede(e, "recibir_vehiculo")).toBe(true);
+    expect(puede(e, "entregar_vehiculo")).toBe(true);
+    expect(puedeVerModulo(e, "pagos")).toBe(false);
+    expect(puede(e, "cotizar")).toBe(false);
+  });
+
+  test("Atención incluye Taller; Todo tiene todos los permisos", () => {
+    expect(taller.permisos.every((p) => (atencion.permisos as readonly string[]).includes(p))).toBe(true);
+    expect([...todo.permisos].sort()).toEqual([...PERMISOS].sort());
+  });
+
+  test("cada perfil usa permisos que existen, sin repetir", () => {
+    for (const p of PERFILES) {
+      expect(new Set(p.permisos).size).toBe(p.permisos.length);
+      for (const x of p.permisos) expect(PERMISOS).toContain(x);
+    }
+  });
+
+  test("perfilDe reconoce el perfil sin importar el orden, y ninguno si se ajustó una casilla", () => {
+    expect(perfilDe(["ordenes", "agenda"])?.clave).toBe("taller");
+    expect(perfilDe([...atencion.permisos].reverse())?.clave).toBe("atencion");
+    expect(perfilDe(PERMISOS)?.clave).toBe("todo");
+    expect(perfilDe(["agenda", "ordenes", "reclamos"])).toBeNull();
+    expect(perfilDe([])).toBeNull();
   });
 });
 
@@ -85,7 +113,7 @@ describe("menú en grupos (C5 §0)", () => {
   });
 
   test("un grupo con un solo módulo va sin título; uno vacío no aparece", () => {
-    expect(menuAgrupado(tecnico)).toEqual([
+    expect(menuAgrupado(encargado(["ordenes"]))).toEqual([
       { titulo: null, modulos: ["inicio"] },
       { titulo: null, modulos: ["ordenes"] },
     ]);
@@ -96,8 +124,8 @@ describe("menú en grupos (C5 §0)", () => {
 describe("menú y casillas", () => {
   test("el menú muestra los módulos que el usuario puede ver", () => {
     expect(modulosDelMenu(dueno)).toEqual(todos);
-    // El técnico: solo sus órdenes (RN-12)
-    expect(modulosDelMenu(tecnico)).toEqual(["inicio", "ordenes"]);
+    // El perfil Taller: la agenda y las órdenes
+    expect(modulosDelMenu(encargado(["agenda", "ordenes"]))).toEqual(["inicio", "agenda", "ordenes"]);
     expect(modulosDelMenu(encargado([]))).toEqual(["inicio"]);
   });
 
@@ -108,14 +136,12 @@ describe("menú y casillas", () => {
 });
 
 test("Pagos se llama «Saldos pendientes» en el menú y su casilla dice lo que da (HU-37, C5 §0)", () => {
-  expect(nombreEnMenu("pagos", "dueno")).toBe("Saldos pendientes");
+  expect(nombreEnMenu("pagos")).toBe("Saldos pendientes");
   expect(MODULOS.pagos.nombre).toBe("Pagos");
   // La casilla del encargado dice lo que da (C5 §0); las demás, el nombre del módulo
   expect(permisosAsignables().find((p) => p.permiso === "pagos")?.nombre).toBe("Pagos (cobrar y ver saldos)");
   expect(permisosAsignables().find((p) => p.permiso === "agenda")?.nombre).toBe("Agenda");
-  expect(nombreEnMenu("agenda", "dueno")).toBe("Agenda");
-  // El técnico ve solo las suyas: "Mis órdenes", como el título de su pantalla (pulido 13.1)
-  expect(nombreEnMenu("ordenes", "tecnico")).toBe("Mis órdenes");
-  expect(nombreEnMenu("ordenes", "dueno")).toBe("Órdenes");
+  expect(nombreEnMenu("agenda")).toBe("Agenda");
+  expect(nombreEnMenu("ordenes")).toBe("Órdenes");
   expect(modulosDelMenu({ rol: "encargado", permisos: ["pagos"] })).toEqual(["inicio", "pagos"]);
 });

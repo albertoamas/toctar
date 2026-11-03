@@ -245,7 +245,8 @@ try {
   }
   const autor = dueno.id;
 
-  // 1. El personal: un encargado y un técnico, con contraseñas al azar (se muestran al final)
+  // 1. El personal: dos encargados (pedido 32: no hay técnicos), con contraseñas al azar (se muestran al final). Ana
+  // atiende a los clientes; Luis trabaja en el taller, con el perfil Taller (agenda y órdenes)
   console.log("Personal…");
   const contrasenas = {};
   async function usuario(nombreUsuario, nombre, rol, permisos = []) {
@@ -256,7 +257,7 @@ try {
     return id;
   }
   await usuario("ana.taller", "Ana Rojas", "encargado", ["agenda", "ordenes", "pagos", "clientes", "cotizaciones", "mantenimientos", "reclamos"]);
-  const tecnico = await usuario("luis.tecnico", "Luis Mamani", "tecnico");
+  const luis = await usuario("luis.mamani", "Luis Mamani", "encargado", ["agenda", "ordenes"]);
 
   // 2. El negocio: logo, redes y ubicación. El WhatsApp es de ejemplo: el real lo carga el dueño
   console.log("Negocio…");
@@ -501,8 +502,8 @@ try {
     pagos: () => [{ monto: 500, metodo: "efectivo", tipo: "adelanto", dia: -6 }],
     avances: [
       [momentoHabil(-1, "09:05"), autor, "Vehículo recibido."],
-      [momentoHabil(-1, "10:00"), tecnico, "Pasó a en proceso."],
-      [momentoHabil(0, "11:30"), tecnico, "Pulido terminado. Mañana aplicamos el nano cerámico."],
+      [momentoHabil(-1, "10:00"), luis, "Pasó a en proceso."],
+      [momentoHabil(0, "11:30"), luis, "Pulido terminado. Mañana aplicamos el nano cerámico."],
     ],
   });
   await trabajoDe(rodrigo, {
@@ -512,8 +513,8 @@ try {
     lineas: [["restauracion-de-faroles-con-polimero", "Única"]],
     avances: [
       [momentoHabil(-1, "15:00"), autor, "Vehículo recibido."],
-      [momentoHabil(-1, "15:30"), tecnico, "Pasó a en proceso."],
-      [momentoHabil(0, "11:00"), tecnico, "Pasó a lista."],
+      [momentoHabil(-1, "15:30"), luis, "Pasó a en proceso."],
+      [momentoHabil(0, "11:00"), luis, "Pasó a lista."],
     ],
   });
   // Entregada hace 20 días con saldo: aparece en Saldos pendientes

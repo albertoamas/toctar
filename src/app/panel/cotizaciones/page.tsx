@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: "Cotizaciones" };
 
 // Pedido 23 (P23-cotizacion-directa.md §5): las cotizaciones por estado, con búsqueda por cliente, teléfono, placa o
 // número. Las pendientes, las que llevan más tiempo sin respuesta primero (RF-35), con su aviso desde los días de
-// Configuración. Dueño o encargado con "Cotizaciones"; el técnico nunca (RN-12).
+// Configuración. Dueño o encargado con "Cotizaciones" (RN-12: sin él, nada de precios).
 export default function PaginaCotizaciones({ searchParams }: PageProps<"/panel/cotizaciones">) {
   return (
     <section className="flex flex-col gap-6">

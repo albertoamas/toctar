@@ -231,7 +231,7 @@ export type DetalleReserva = {
   tamanoId: number;
   /** El vehículo: sus planes de mantenimiento al entregar (pedido 21). */
   vehiculoId: number;
-  /** Solo para quien ve pagos (RN-01 y RN-12: el técnico nunca). */
+  /** Solo para quien ve pagos (RN-01 y RN-12). */
   montos: { lineas: { descripcion: string; precio: string; esAdicional: boolean }[]; descuento: string; saldo: Saldo; pagos: PagoReserva[] } | null;
 };
 

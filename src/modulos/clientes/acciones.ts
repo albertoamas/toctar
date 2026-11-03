@@ -22,7 +22,7 @@ import { prefijoVehiculo } from "./reglas";
 
 export type { EstadoCliente };
 
-// Clientes y vehículos (HU-21 a HU-23). Entra el dueño o un encargado con el permiso "clientes"; el técnico nunca (RN-12).
+// Clientes y vehículos (HU-21 a HU-23). Entra el dueño o un encargado con el permiso "clientes".
 
 function despuesDeCambiar(clienteId: number) {
   revalidatePath("/panel/clientes");

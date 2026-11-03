@@ -37,9 +37,8 @@ import {
 } from "./esquemas";
 import { esFotoDeAntes, estaAbierta, etapaAbierta, puedeExtenderse, puedeQuitarFoto, MAXIMO_FOTOS_ETAPA, FRASE_ETAPA, puedeRecibirse, textoSinRevisar, transicionOrden } from "./reglas";
 
-// Órdenes (C4). Entra el dueño, el encargado con "Órdenes" y el técnico, que solo toca las suyas (RN-12). Recibir el
-// vehículo es del dueño y del encargado: sale de la agenda, que el técnico no ve. Especificación:
-// docs/08-desarrollo/etapas/C4-taller-entrega.md.
+// Órdenes (C4). Entra el dueño o el encargado con "Órdenes", que trabaja todas: no hay técnico asignado (pedido 32).
+// Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md.
 
 const RECARGA = "No se pudo leer el pedido. Recarga la página.";
 /** La firma es un PNG chico (un dibujo a mano): más que esto no es una firma del recuadro. */
@@ -378,7 +377,7 @@ const MENSAJE_ESTADO: Partial<Record<EstadoTrabajo, string>> = {
 };
 
 /**
- * Cambia el estado de la orden un paso adelante o atrás (HU-34, RF-41). El técnico, solo en las suyas. Al pasar a
+ * Cambia el estado de la orden un paso adelante o atrás (HU-34, RF-41). Al pasar a
  * listo, si la entrega aproximada es después de hoy, pasa a hoy: el espacio queda libre desde mañana (decisión del 20/10).
  * Si se marcó lista por error y vuelve a en proceso, recupera esa entrega, salvo que el espacio ya se haya tomado; y el
  * aviso al cliente se borra, porque ya no es cierto.
@@ -437,7 +436,7 @@ export async function cambiarEstadoOrden(_previo: EstadoFormulario, datos: FormD
   return { ok: true, mensaje: MENSAJE_ESTADO[estado] };
 }
 
-/** Escribe un avance en la historia de la orden (HU-34, RF-42). El técnico, solo en las suyas; mientras esté abierta. */
+/** Escribe un avance en la historia de la orden (HU-34, RF-42), mientras esté abierta. */
 export async function agregarAvance(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const usuario = await exigirModulo("ordenes");
   const valores = { nota: String(datos.get("nota") ?? "") };
@@ -601,7 +600,7 @@ export async function agregarAdicional(_previo: EstadoFormulario, datos: FormDat
       if (!actual || !estaAbierta(actual.estado)) throw new Conflicto(CAMBIO);
       const lineas = await tx.select({ precio: trabajoLinea.precio, esAdicional: trabajoLinea.esAdicional, orden: trabajoLinea.orden }).from(trabajoLinea).where(eq(trabajoLinea.trabajoId, id));
       await tx.insert(trabajoLinea).values({ trabajoId: id, varianteId, descripcion, precio, esAdicional: true, orden: Math.max(-1, ...lineas.map((l) => l.orden)) + 1 });
-      // En la historia sin el precio: la ve también el técnico (RN-12)
+      // En la historia sin el precio: la ve también quien no tiene Pagos (RN-12)
       await tx.insert(trabajoAvance).values({ trabajoId: id, usuarioId: autorId, nota: `Se sumó un servicio: ${descripcion}.` });
       await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "trabajo", entidadId: id, accion: "adicional", datos: { varianteId, descripcion, precio } });
       return precioCotizadoYFinal([...lineas, { precio, esAdicional: true }], actual.descuento).final;
@@ -709,7 +708,7 @@ export async function entregarVehiculo(_previo: EstadoFormulario, datos: FormDat
       // RN-08 (pedido 21): los planes de mantenimiento del vehículo, en la misma transacción
       const planes = await aplicarPlanesAlEntregar(tx, { trabajoId: id, clienteId: t.clienteId, vehiculoId: t.vehiculoId, hoy });
 
-      // En la historia sin el monto: la ve también el técnico (RN-12)
+      // En la historia sin el monto: la ve también quien no tiene Pagos (RN-12)
       await tx.insert(trabajoAvance).values({ trabajoId: id, usuarioId: autorId, nota: conDeuda ? "Vehículo entregado con saldo pendiente." : "Vehículo entregado." });
       await tx.insert(auditoria).values({
         usuarioId: autorId,

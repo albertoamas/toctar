@@ -15,7 +15,7 @@ import { normalizarBusqueda } from "@/modulos/clientes/reglas";
 
 export const metadata: Metadata = { title: "Clientes" };
 
-// HU-21 y HU-22: lista y búsqueda de clientes. Dueño o encargado con el permiso "clientes"; el técnico nunca (RN-12).
+// HU-21 y HU-22: lista y búsqueda de clientes. Dueño o encargado con el permiso "clientes".
 // Pulido 8.1: la fila de un toque compartida, con las placas (como el taller nombra los autos) en negrita.
 export default function PaginaClientes({ searchParams }: PageProps<"/panel/clientes">) {
   return (

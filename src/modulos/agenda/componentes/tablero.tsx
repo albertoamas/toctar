@@ -43,7 +43,7 @@ function colorBloque(estado: ReservaTablero["estado"]) {
 /** Un día que el taller no atiende: igual en la semana y en el día. */
 const CERRADO = "flex min-h-14 items-center justify-center rounded-lg bg-neutro-fondo text-tinta-suave";
 
-/** Placa, servicio y técnico: lo que dice el bloque de una reserva. */
+/** Placa, servicio y estado: lo que dice el bloque de una reserva. */
 function Cinta({
   r,
   empiezaAntes,
