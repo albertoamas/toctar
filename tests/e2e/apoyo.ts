@@ -12,11 +12,14 @@ export const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAA
 export const DUENO = { usuario: "dueno", nombre: "Dueño de prueba", contrasena: "dueno-e2e-123" };
 
 /** Crea (o reemplaza) un usuario directo en la base de pruebas. */
+/** Los permisos del perfil Taller (pedido 32, `PERFILES` en src/lib/permisos.ts): quien recibe y trabaja los vehículos. */
+export const PERFIL_TALLER = ["agenda", "ordenes"];
+
 export async function crearUsuario(datos: {
   usuario: string;
   nombre: string;
   contrasena: string;
-  rol: "dueno" | "encargado" | "tecnico";
+  rol: "dueno" | "encargado";
   desactivado?: boolean;
   /** Permisos del encargado (src/lib/permisos.ts), por ejemplo ["sitio"]. */
   permisos?: string[];

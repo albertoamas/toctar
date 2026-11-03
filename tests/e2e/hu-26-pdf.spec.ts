@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { expect, test, type APIRequestContext, type TestInfo } from "@playwright/test";
-import { consultar, cotizarEnPantalla, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
+import { consultar, cotizarEnPantalla, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER } from "./apoyo";
 
 // HU-26 PDF de la cotización (flujo crítico 1). Especificación: docs/08-desarrollo/etapas/P23-cotizacion-directa.md §9.
 // En serie: las del dueño entran todas con el mismo usuario y, a la vez, chocaban con el límite de intentos (RNF-04).
@@ -96,7 +96,7 @@ test("si una cotización quedó sin PDF, su ficha lo genera", async ({ page }, i
   expect(nombre).toBe(`Cliente PDF 2 ${sufijo(info)}`);
 });
 
-test("RN-01: el encargado sin Cotizaciones y el técnico no abren el PDF", async ({ page }, info) => {
+test("RN-01: el encargado sin Cotizaciones, también con el perfil Taller, no abre el PDF", async ({ page }, info) => {
   const s = sufijo(info).toLowerCase();
   // La ruta pide el permiso antes de buscar la cotización: no importa cuál sea
   const c = { id: 1, version: 1 };
@@ -108,8 +108,8 @@ test("RN-01: el encargado sin Cotizaciones y el técnico no abren el PDF", async
   expect((await r.body()).subarray(0, 5).toString()).not.toBe("%PDF-");
 
   await page.context().clearCookies();
-  await crearUsuario({ usuario: `tec-hu26-${s}`, nombre: "Técnico", contrasena: "tecnico-123", rol: "tecnico" });
-  await ingresar(page, `tec-hu26-${s}`, "tecnico-123");
+  await crearUsuario({ usuario: `taller-hu26-${s}`, nombre: "Chico del taller", contrasena: "taller-123", rol: "encargado", permisos: PERFIL_TALLER });
+  await ingresar(page, `taller-hu26-${s}`, "taller-123");
   await expect(page).toHaveURL(/\/panel$/);
   expect((await page.request.get(`/panel/cotizaciones/${c.id}/pdf/${c.version}`)).url()).toMatch(/\/panel\/sin-acceso$/);
 });

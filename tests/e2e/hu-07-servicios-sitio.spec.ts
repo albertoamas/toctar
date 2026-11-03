@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { abrirNuevoServicio, crearUsuario, ingresar, ingresarComoDueno, PNG } from "./apoyo";
+import { abrirNuevoServicio, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER, PNG } from "./apoyo";
 
 // HU-07 Servicios del sitio. Criterios: docs/09-pruebas/criterios-entrega-1.md (7.1 a 7.6). Desde la reorganización del
 // panel (C5 §0), el servicio se crea y se nombra en el catálogo; aquí se edita su página.
@@ -106,11 +106,11 @@ test("la foto principal se sube y se ve; un archivo que no es imagen se rechaza"
   await expect(page.getByText("Sin foto: el sitio muestra la imagen de reemplazo de TocTar.")).toBeVisible();
 });
 
-test("el encargado con el permiso Sitio web entra; sin el permiso o como técnico, no", async ({ page }, info) => {
+test("el encargado con el permiso Sitio web entra; sin el permiso o con el perfil Taller, no", async ({ page }, info) => {
   const casos = [
     { usuario: `enc-sitio-${sufijo(info)}`, rol: "encargado" as const, permisos: ["sitio"], entra: true },
     { usuario: `enc-sin-sitio-${sufijo(info)}`, rol: "encargado" as const, permisos: [], entra: false },
-    { usuario: `tec-sitio-${sufijo(info)}`, rol: "tecnico" as const, permisos: [], entra: false },
+    { usuario: `taller-sitio-${sufijo(info)}`, rol: "encargado" as const, permisos: PERFIL_TALLER, entra: false },
   ];
   for (const c of casos) {
     await crearUsuario({ usuario: c.usuario, nombre: c.usuario, contrasena: "clave-sitio-1", rol: c.rol, permisos: c.permisos });

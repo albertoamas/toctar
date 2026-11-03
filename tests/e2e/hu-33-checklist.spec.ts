@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PNG, revisarChecklistEnBase } from "./apoyo";
+import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER, PNG, revisarChecklistEnBase } from "./apoyo";
 
 // Checklist de recepción (pedido 12). Especificación: docs/08-desarrollo/etapas/P12-checklist-recepcion.md §8.
 // La reserva de hoy va en un espacio propio de cada proyecto, desactivado: así no se cruza con las de otras pruebas.
@@ -32,12 +32,12 @@ async function reservaDeHoy(info: TestInfo, placa: string, n: number): Promise<n
 
 const fila = (page: Page, parte: string) => page.getByRole("list", { name: "Partes del checklist" }).getByRole("listitem").filter({ hasText: parte });
 
-test("se revisa parte por parte: bien o con un detalle y su foto; sin revisar todo no se recibe; la orden y el técnico lo ven", async ({ page }, info) => {
+test("se revisa parte por parte: bien o con un detalle y su foto; sin revisar todo no se recibe; la orden y el taller lo ven", async ({ page }, info) => {
   const s = sufijo(info);
   const placa = `CK33${s.toUpperCase()}1`;
   await crearClienteEnBase({ nombre: `Checklist ${s}`, telefono: telefono(info, 1), placa });
   const id = await reservaDeHoy(info, placa, 1);
-  await crearUsuario({ usuario: `tec-ck33-${s}`, nombre: `Técnico Checklist ${s}`, contrasena: "tecnico-123", rol: "tecnico" });
+  await crearUsuario({ usuario: `taller-ck33-${s}`, nombre: `Chico del taller ${s}`, contrasena: "taller-123", rol: "encargado", permisos: PERFIL_TALLER });
   const [{ total }] = await consultar<{ total: number }>("select count(*)::int as total from parte_revision where activo");
 
   // La lista se arma en Configuración → Taller
@@ -92,7 +92,6 @@ test("se revisa parte por parte: bien o con un detalle y su foto; sin revisar to
 
   // Sin revisar todo, no se recibe: dice qué falta
   const form = page.getByRole("form", { name: "Recibir vehículo" });
-  await form.getByLabel("Técnico").selectOption({ label: `Técnico Checklist ${s}` });
   await form.getByRole("button", { name: "Recibir vehículo" }).click();
   await expect(form.getByText(`Faltan revisar ${total - 2} partes del checklist: Maletero,`)).toBeVisible();
 
@@ -127,9 +126,9 @@ test("se revisa parte por parte: bien o con un detalle y su foto; sin revisar to
   );
   expect(detalles).toBe(1);
 
-  // El técnico ve cómo llegó en su orden
+  // Cualquiera del taller ve cómo llegó (pedido 32: no hay técnico asignado)
   await page.context().clearCookies();
-  await ingresar(page, `tec-ck33-${s}`, "tecnico-123");
+  await ingresar(page, `taller-ck33-${s}`, "taller-123");
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto(`/panel/ordenes/${id}`);
   await expect(page.getByRole("region", { name: "Cómo llegó" })).toContainText("Rayón largo al centro");

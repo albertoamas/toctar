@@ -39,14 +39,11 @@ test("avisar abre WhatsApp con nombre, vehículo y saldo, y queda quién avisó 
   expect(t).toEqual({ avisada: true, auditoria: "avisar_listo" });
 });
 
-test("sin Pagos el mensaje no lleva el saldo; el técnico no avisa", async ({ page }, info) => {
+test("sin Pagos el mensaje no lleva el saldo", async ({ page }, info) => {
   const s = sufijo(info);
   const placa = `AV35${s.toUpperCase()}2`;
   await crearClienteEnBase({ nombre: `Marco ${s}`, telefono: telefono(info, 2), placa });
   const id = await crearOrdenLista({ placa, espacio: 1, dias: dias(info), precio: 500, pagado: 150 });
-  await crearUsuario({ usuario: `tec-hu35-${s}`, nombre: "Técnico Aviso", contrasena: "tecnico-123", rol: "tecnico" });
-  const [{ tecnico }] = await consultar<{ tecnico: number }>("select id as tecnico from usuario where nombre_usuario = $1", [`tec-hu35-${s}`]);
-  await consultar("update trabajo set tecnico_id = $2 where id = $1", [id, tecnico]);
   await crearUsuario({ usuario: `aviso2-hu35-${s}`, nombre: "Encargado sin pagos", contrasena: "encargado-123", rol: "encargado", permisos: ["ordenes"] });
 
   await ingresar(page, `aviso2-hu35-${s}`, "encargado-123");
@@ -55,11 +52,4 @@ test("sin Pagos el mensaje no lleva el saldo; el técnico no avisa", async ({ pa
   const enlace = await abrirWhatsApp(page, page.getByRole("button", { name: "Avisar por WhatsApp" }));
   expect(enlace).toContain("ya está listo en");
   expect(enlace).not.toContain("Saldo");
-
-  await page.context().clearCookies();
-  await ingresar(page, `tec-hu35-${s}`, "tecnico-123");
-  await expect(page).toHaveURL(/\/panel$/);
-  await page.goto(`/panel/ordenes/${id}`);
-  await expect(page.getByRole("heading", { level: 1, name: placa })).toBeVisible();
-  await expect(page.getByRole("button", { name: /avisar/i })).toHaveCount(0);
 });

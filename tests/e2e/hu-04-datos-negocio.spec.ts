@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { crearUsuario, ingresar, ingresarComoDueno, PNG } from "./apoyo";
+import { crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER, PNG } from "./apoyo";
 
 // HU-04 Datos del negocio. Criterios: docs/09-pruebas/criterios-entrega-1.md (4.1 a 4.6).
 // Los datos del negocio son una sola fila: las pruebas que guardan corren solo en escritorio,
@@ -66,10 +66,10 @@ test("los datos mal escritos muestran el error junto al campo y no se guardan", 
   await expect(page.getByLabel("WhatsApp")).not.toHaveValue("7123");
 });
 
-test("el encargado y el técnico no entran a la configuración", async ({ page }, info) => {
-  for (const rol of ["encargado", "tecnico"] as const) {
-    const usuario = `${rol}-config-${sufijo(info)}`;
-    await crearUsuario({ usuario, nombre: `${rol} config`, contrasena: "clave-config-1", rol });
+test("ningún encargado entra a la configuración, ni sin permisos ni con el perfil Taller", async ({ page }, info) => {
+  for (const [perfil, permisos] of [["sin-permisos", []], ["taller", PERFIL_TALLER]] as const) {
+    const usuario = `${perfil}-config-${sufijo(info)}`;
+    await crearUsuario({ usuario, nombre: `Encargado ${perfil}`, contrasena: "clave-config-1", rol: "encargado", permisos: [...permisos] });
     await page.context().clearCookies();
     await ingresar(page, usuario, "clave-config-1");
     await expect(page).toHaveURL(/\/panel$/);

@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearUsuario, ingresar } from "./apoyo";
+import { consultar, crearClienteEnBase, crearUsuario, ingresar, PERFIL_TALLER } from "./apoyo";
 
 // HU-37 Saldos pendientes (flujo crítico 4, el cobro después de la entrega). Especificación:
 // docs/08-desarrollo/etapas/C4-taller-entrega.md §9. Las órdenes van directo a la base, ya entregadas (no ocupan
@@ -74,7 +74,7 @@ test("la entregada con saldo aparece, con su WhatsApp, y se cobra desde la lista
   await expect(page.getByText(debe)).toHaveCount(0);
 });
 
-test("sin Pagos no se entra a los saldos; el técnico tampoco", async ({ page }, info) => {
+test("sin Pagos no se entra a los saldos, tampoco con el perfil Taller", async ({ page }, info) => {
   const s = sufijo(info);
   await crearUsuario({ usuario: `ordenes-hu37-${s}`, nombre: "Encargado de órdenes", contrasena: "encargado-123", rol: "encargado", permisos: ["ordenes"] });
   await ingresar(page, `ordenes-hu37-${s}`, "encargado-123");
@@ -84,8 +84,8 @@ test("sin Pagos no se entra a los saldos; el técnico tampoco", async ({ page },
   await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
 
   await page.context().clearCookies();
-  await crearUsuario({ usuario: `tec-hu37-${s}`, nombre: "Técnico", contrasena: "tecnico-123", rol: "tecnico" });
-  await ingresar(page, `tec-hu37-${s}`, "tecnico-123");
+  await crearUsuario({ usuario: `taller-hu37-${s}`, nombre: "Chico del taller", contrasena: "taller-123", rol: "encargado", permisos: PERFIL_TALLER });
+  await ingresar(page, `taller-hu37-${s}`, "taller-123");
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto("/panel/pagos");
   await expect(page).toHaveURL(/\/panel\/sin-acceso$/);

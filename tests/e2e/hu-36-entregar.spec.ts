@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, entregarSinFirma, firmarEnRecuadro, ingresar, ingresarComoDueno } from "./apoyo";
+import { consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, entregarSinFirma, firmarEnRecuadro, ingresar, ingresarComoDueno, PERFIL_TALLER } from "./apoyo";
 
 // HU-36 Entregar vehículo (flujo crítico 4). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §9.
 // Las órdenes van directo a la base, listas, en días propios lejos de hoy (1000 o 1100) para no chocar con otras pruebas.
@@ -79,11 +79,10 @@ test("pagada: el dueño suma un adicional, se cobra y se entrega; queda programa
   expect(t).toMatchObject({ estado: "entregado", saldo: "0.00", autorizo: null, recordatorios: 1, plan: mantenimiento, cada: meses });
   expect(t.fecha).toBe(t.esperada);
 
-  // El técnico de la orden ve la firma (pedido 13): no es un precio ni un teléfono
-  await crearUsuario({ usuario: `tec-hu36-${s}`, nombre: `Técnico Entrega ${s}`, contrasena: "tecnico-123", rol: "tecnico" });
-  await consultar("update trabajo set tecnico_id = (select id from usuario where nombre_usuario = $2) where id = $1", [id, `tec-hu36-${s}`]);
+  // El perfil Taller (sin Pagos) también ve la firma (pedido 13): no es un precio
+  await crearUsuario({ usuario: `taller-hu36-${s}`, nombre: `Chico del taller ${s}`, contrasena: "taller-123", rol: "encargado", permisos: PERFIL_TALLER });
   await page.context().clearCookies();
-  await ingresar(page, `tec-hu36-${s}`, "tecnico-123");
+  await ingresar(page, `taller-hu36-${s}`, "taller-123");
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto(`/panel/ordenes/${id}`);
   const vista = page.getByRole("region", { name: "Firma de entrega" });

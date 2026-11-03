@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearCotizacionEnBase, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
+import { consultar, crearClienteEnBase, crearCotizacionEnBase, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER } from "./apoyo";
 
 // Cotización directa (pedido 23, flujo crítico 1; antes HU-24 y HU-25). Especificación:
 // docs/08-desarrollo/etapas/P23-cotizacion-directa.md §9. Cada proyecto (celular o escritorio) crea su propio servicio
@@ -252,7 +252,7 @@ test("el descuento no pasa el subtotal, el adelanto no pasa el total y la valide
   await expect(page.getByText("La validez no puede ser anterior a hoy.")).toBeVisible();
 });
 
-test("pedido 24: el encargado con Cotizaciones cotiza y ve los montos; sin el permiso no entra; el técnico tampoco", async ({ page }, info) => {
+test("pedido 24: el encargado con Cotizaciones cotiza y ve los montos; sin el permiso no entra; el perfil Taller tampoco", async ({ page }, info) => {
   const s = sufijo(info);
   const nombre = `Cotizable ${s}`;
   const cliente = await crearClienteEnBase({ nombre: `Para encargado ${s}`, telefono: telefono(info, 6), placa: `CP25${s}1` });
@@ -291,8 +291,8 @@ test("pedido 24: el encargado con Cotizaciones cotiza y ve los montos; sin el pe
   await expect(page.getByRole("heading", { name: "Cotizaciones" })).toHaveCount(0);
 
   await page.context().clearCookies();
-  await crearUsuario({ usuario: `tec-hu25-${s.toLowerCase()}`, nombre: "Técnico", contrasena: "tecnico-123", rol: "tecnico" });
-  await ingresar(page, `tec-hu25-${s.toLowerCase()}`, "tecnico-123");
+  await crearUsuario({ usuario: `taller-hu25-${s.toLowerCase()}`, nombre: "Chico del taller", contrasena: "taller-123", rol: "encargado", permisos: PERFIL_TALLER });
+  await ingresar(page, `taller-hu25-${s.toLowerCase()}`, "taller-123");
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto("/panel/cotizaciones/nueva");
   await expect(page).toHaveURL(/\/panel\/sin-acceso$/);

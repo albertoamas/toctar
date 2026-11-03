@@ -1,7 +1,7 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { abrirWhatsApp, consultar, crearClienteEnBase, crearUsuario, firmarEnRecuadro, ingresar, ingresarComoDueno, PNG, revisarChecklistEnBase } from "./apoyo";
+import { abrirWhatsApp, consultar, crearClienteEnBase, crearUsuario, firmarEnRecuadro, ingresar, ingresarComoDueno, PERFIL_TALLER, PNG, revisarChecklistEnBase } from "./apoyo";
 
-// Flujos críticos 3, 4 y 5 de punta a punta (C4): reserva → recibir → el técnico la trabaja → lista → aviso por
+// Flujos críticos 3, 4 y 5 de punta a punta (C4): reserva → recibir → un chico del taller la trabaja → lista → aviso por
 // WhatsApp → cobro del saldo → entrega → recordatorio de mantenimiento → agendarlo. Especificación:
 // docs/08-desarrollo/etapas/C4-taller-entrega.md §9. Cada paso tiene su prueba propia (HU-30 a HU-38); aquí se prueba
 // que encajan. La reserva de hoy va directo a la base, en un espacio propio y desactivado (ninguna otra prueba lo usa;
@@ -16,7 +16,7 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
   const s = sufijo(info);
   const placa = `FL00${s.toUpperCase()}1`;
   const clienteId = await crearClienteEnBase({ nombre: `Rosa Flujo ${s}`, telefono: `5917${info.project.name === "celular" ? 5 : 6}39000`, placa });
-  await crearUsuario({ usuario: `tec-flujo-${s}`, nombre: `Técnico Flujo ${s}`, contrasena: "tecnico-123", rol: "tecnico" });
+  await crearUsuario({ usuario: `taller-flujo-${s}`, nombre: `Chico del taller ${s}`, contrasena: "taller-123", rol: "encargado", permisos: PERFIL_TALLER });
   const [{ espacio }] = await consultar<{ espacio: number }>(
     `insert into espacio_taller (sucursal_id, nombre, orden, activo) select sucursal_id, $1, 91, false from espacio_taller limit 1 returning id as espacio`,
     [`Espacio flujo ${s}`],
@@ -36,20 +36,19 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
   );
   await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, 300, 'qr', 'adelanto', current_date, created_by from trabajo where id = $1", [id]);
 
-  // 1. El dueño recibe el vehículo (el checklist, todo bien) y se lo asigna al técnico
+  // 1. El dueño recibe el vehículo (el checklist, todo bien); no se asigna a nadie (pedido 32)
   await ingresarComoDueno(page);
   await page.goto(`/panel/agenda/${id}`);
   await page.getByRole("link", { name: "Recibir vehículo" }).click();
   await expect(page.getByRole("heading", { name: "Checklist" })).toBeVisible();
   const recepcion = page.getByRole("form", { name: "Recibir vehículo" });
-  await recepcion.getByLabel("Técnico").selectOption({ label: `Técnico Flujo ${s}` });
   await revisarChecklistEnBase(id);
   await recepcion.getByRole("button", { name: "Recibir vehículo" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?recibido=1$`));
 
-  // 2. El técnico la trabaja y la marca lista
+  // 2. Un chico del taller (perfil Taller) la trabaja y la marca lista
   await page.context().clearCookies();
-  await ingresar(page, `tec-flujo-${s}`, "tecnico-123");
+  await ingresar(page, `taller-flujo-${s}`, "taller-123");
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto(`/panel/ordenes/${id}`);
   const pasos = page.getByRole("region", { name: "Estado de la orden" });

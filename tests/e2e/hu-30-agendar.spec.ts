@@ -226,7 +226,7 @@ test("reserva directa: cliente y vehículo registrados, servicio del catálogo c
   await expect(page.locator("dl").filter({ hasText: "Saldo" })).toContainText("900 Bs");
 });
 
-test("el encargado con Agenda sin Pagos agenda sin montos ni adelanto; el técnico no entra", async ({ page }, info) => {
+test("el encargado con Agenda sin Pagos agenda sin montos ni adelanto; sin Agenda no entra", async ({ page }, info) => {
   const s = sufijo(info).toLowerCase();
   const { consultaId, cotizacionId } = await consultaCotizada(info, 7);
   const dia = await diaPropio(info, 7);
@@ -251,8 +251,8 @@ test("el encargado con Agenda sin Pagos agenda sin montos ni adelanto; el técni
   await expect(page.getByText(/La reserva directa lleva precios/)).toBeVisible();
 
   await page.context().clearCookies();
-  await crearUsuario({ usuario: `tec-hu30-${s}`, nombre: "Técnico", contrasena: "tecnico-123", rol: "tecnico" });
-  await ingresar(page, `tec-hu30-${s}`, "tecnico-123");
+  await crearUsuario({ usuario: `ordenes-hu30-${s}`, nombre: "Solo órdenes", contrasena: "encargado-123", rol: "encargado", permisos: ["ordenes"] });
+  await ingresar(page, `ordenes-hu30-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto("/panel/agenda");
   await expect(page).toHaveURL(/\/panel\/sin-acceso$/);

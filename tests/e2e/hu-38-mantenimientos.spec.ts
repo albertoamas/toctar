@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { abrirWhatsApp, consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, entregarSinFirma, ingresar, ingresarComoDueno } from "./apoyo";
+import { abrirWhatsApp, consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, entregarSinFirma, ingresar, ingresarComoDueno, PERFIL_TALLER } from "./apoyo";
 
 // HU-38 Recordatorios de mantenimiento (flujo crítico 5). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §9.
 // Los recordatorios van directo a la base, colgados de una orden entregada en el pasado (no ocupa espacio). Las reservas
@@ -165,7 +165,7 @@ test("vencidos y próximos; avisar, no le interesa y agendar (y al cancelar la r
   await expect(vencidos(page).getByRole("listitem").filter({ hasText: placaV })).toContainText(/Avisado el/);
 });
 
-test("solo con Mantenimientos se entra; sin Agenda y Pagos no se agenda; el técnico no entra", async ({ page }, info) => {
+test("solo con Mantenimientos se entra; sin Agenda y Pagos no se agenda; el perfil Taller no entra", async ({ page }, info) => {
   const s = sufijo(info);
   const placa = `MT38${s.toUpperCase()}5`;
   const clienteId = await crearClienteEnBase({ nombre: `Permisos ${s}`, telefono: telefono(info, 5), placa });
@@ -193,8 +193,8 @@ test("solo con Mantenimientos se entra; sin Agenda y Pagos no se agenda; el téc
   await expect(page.getByText("Los mantenimientos los agenda el dueño o quien tiene «Mantenimientos».")).toBeVisible();
 
   await page.context().clearCookies();
-  await crearUsuario({ usuario: `tec-hu38-${s}`, nombre: "Técnico", contrasena: "tecnico-123", rol: "tecnico" });
-  await ingresar(page, `tec-hu38-${s}`, "tecnico-123");
+  await crearUsuario({ usuario: `taller-hu38-${s}`, nombre: "Chico del taller", contrasena: "taller-123", rol: "encargado", permisos: PERFIL_TALLER });
+  await ingresar(page, `taller-hu38-${s}`, "taller-123");
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto("/panel/mantenimientos");
   await expect(page).toHaveURL(/\/panel\/sin-acceso$/);

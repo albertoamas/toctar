@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
+import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER } from "./apoyo";
 
 // HU-39 Pantalla del día. Especificación: docs/08-desarrollo/etapas/C5-cierre-entrega-2.md §9.
 // Los trabajos van directo a la base, en días cercanos a hoy (es lo que muestra el inicio). Para no chocar con las
@@ -87,7 +87,7 @@ test("el dueño ve los números del día, lo que llega (y el atrasado), las entr
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${ids.entrega}$`));
 });
 
-test("un encargado solo con Agenda ve solo lo que llega, sin montos; el técnico sigue con sus órdenes", async ({ page }, info) => {
+test("un encargado solo con Agenda ve solo lo que llega, sin montos; el perfil Taller, también el taller", async ({ page }, info) => {
   const s = sufijo(info).toLowerCase();
   await crearUsuario({ usuario: `enc-hu39-${s}`, nombre: "Encargada de agenda", contrasena: "encargado-123", rol: "encargado", permisos: ["agenda"] });
   await ingresar(page, `enc-hu39-${s}`, "encargado-123");
@@ -99,12 +99,13 @@ test("un encargado solo con Agenda ve solo lo que llega, sin montos; el técnico
   await expect(page.getByRole("main")).not.toContainText(/\bBs\b|\+591/);
 
   await page.context().clearCookies();
-  await crearUsuario({ usuario: `tec-hu39-${s}`, nombre: "Técnico del día", contrasena: "tecnico-123", rol: "tecnico" });
-  await ingresar(page, `tec-hu39-${s}`, "tecnico-123");
+  await crearUsuario({ usuario: `taller-hu39-${s}`, nombre: "Chico del taller", contrasena: "taller-123", rol: "encargado", permisos: PERFIL_TALLER });
+  await ingresar(page, `taller-hu39-${s}`, "taller-123");
   await expect(page).toHaveURL(/\/panel$/);
-  await expect(page.getByRole("navigation", { name: "Ir a" }).getByRole("link")).toHaveText([/^Mis órdenes/]);
-  await expect(page.getByRole("main").getByRole("heading", { level: 2 })).toHaveCount(0);
-  await expect(page.getByRole("main")).not.toContainText(/\bBs\b|\+591/);
+  // Pedido 32: el mismo inicio que el encargado, con lo de su taller y sin montos (no tiene Pagos ni Cotizaciones)
+  await expect(resumen(page).getByRole("link")).toHaveText([/^En el taller/, /^Llegan hoy/]);
+  await expect(page.getByRole("heading", { name: "Para atender" })).toHaveCount(0);
+  await expect(page.getByRole("main")).not.toContainText(/\bBs\b/);
 });
 
 test("a 360 px no se sale nada", async ({ page }) => {
