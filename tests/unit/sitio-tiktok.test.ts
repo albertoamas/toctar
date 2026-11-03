@@ -23,4 +23,9 @@ describe("el usuario de TikTok del bloque de la portada (pedido 35)", () => {
   test("si el enlace no lo trae (un video, un enlace corto), no se muestra", () => {
     expect(usuarioDeTikTok("https://vm.tiktok.com/ZMabc123/")).toBeNull();
   });
+  test("solo de tiktok.com, y sin el punto que se cuela al copiar de un texto", () => {
+    expect(usuarioDeTikTok("https://www.tiktok.com/@toctar.")).toBe("@toctar");
+    expect(usuarioDeTikTok("https://nottiktok.com/@x")).toBeNull();
+    expect(usuarioDeTikTok("no es un enlace")).toBeNull();
+  });
 });

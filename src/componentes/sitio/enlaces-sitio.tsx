@@ -18,7 +18,7 @@ function esActual(ruta: string | null, href: string): boolean {
 /** Barra de la computadora: la página actual enciende un tramo de la línea LED bajo su enlace. */
 export function NavegacionPrincipal({ enlaces }: { enlaces: Enlace[] }) {
   return (
-    <nav aria-label="Principal" className="hidden self-stretch md:flex">
+    <nav aria-label="Principal" className="flex self-stretch">
       <Suspense fallback={<Barra enlaces={enlaces} ruta={null} />}>
         <BarraConRuta enlaces={enlaces} />
       </Suspense>

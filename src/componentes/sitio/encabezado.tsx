@@ -42,7 +42,7 @@ export function Encabezado() {
         <Logo />
         <div className="hidden items-center gap-8 self-stretch md:flex">
           <NavegacionPrincipal enlaces={PAGINAS_PRINCIPALES} />
-          <TikTokDelNegocio texto="TikTok" variante="contorno" className="px-4" />
+          <TikTokDelNegocio texto="TikTok" variante="contorno" className="px-4" reservar />
         </div>
         <div className="md:hidden">
           <MenuDesplegable lado="right" cabecera={<Logo />} className="data-[side=right]:w-full">

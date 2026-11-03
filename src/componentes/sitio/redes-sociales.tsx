@@ -1,6 +1,7 @@
 import { cn } from "cn";
 import type { Redes } from "@/db/esquema";
 import { NOMBRE_RED, REDES } from "@/modulos/configuracion/esquemas";
+import { EnlaceTikTok } from "./enlace-tiktok";
 import { IconoRed } from "./iconos-marca";
 
 // Redes del negocio (HU-04): solo las que cargó el dueño, en el orden de siempre.
@@ -16,10 +17,7 @@ export function RedesSociales({ redes, variante, className }: { redes: Redes; va
       {cargadas.map((r) => (
         <li key={r}>
           {variante === "iconos" && r === "tiktok" ? (
-            <a href={redes[r]} target="_blank" rel="noreferrer" aria-label={`TocTar en ${NOMBRE_RED[r]}`} className="tt-boton tt-boton--blanco ml-2.5">
-              <IconoRed red={r} className="size-5" />
-              {NOMBRE_RED[r]}
-            </a>
+            <EnlaceTikTok enlace={redes[r]} texto={NOMBRE_RED[r]} className="ml-2.5" />
           ) : variante === "iconos" ? (
             <a
               href={redes[r]}
