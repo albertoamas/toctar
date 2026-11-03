@@ -85,6 +85,7 @@
   --borde: #e2e5e9;
   --borde-control: #8a8a8a;
   --tinta: #1a1a1a;
+  --tinta-media: #3d3d3d; /* Texto que se lee de corrido sobre la tarjeta del sitio (pedido 33) */
   --tinta-suave: #595959;
   --rojo: #e30613;
   --rojo-presionado: #c40511;
@@ -152,6 +153,7 @@
   --borde: #333333;
   --borde-control: #767676;
   --tinta: #ffffff;
+  --tinta-media: #d4d4d4;
   --tinta-suave: #b3b3b3;
   --rojo-texto: #ff4d57;
   --foco: #ffffff;
@@ -587,13 +589,19 @@
     }
   }
 
-  /* Tarjeta de servicio (componente TarjetaServicio): esquina inferior derecha cortada a 60°, sin sombra ni radio. */
+  /* Tarjeta de servicio (componente TarjetaServicio): esquina inferior derecha cortada a 60°, sin sombra ni radio.
+     Pedido 33 (03/11): se veía apagada (gris muy oscuro sobre negro, el rojo solo en el enlace). Un gris un poco más
+     claro y una línea arriba la despegan del fondo; una franja roja con punta a 60° entre la foto y el texto; la foto
+     con un poco más de brillo; el texto más claro. Sin brillos ni degradados de color. */
   .tt-tarjeta {
     display: grid;
     grid-template-rows: auto 1fr;
     color: var(--tinta);
-    /* Corte a 60° de 28 × 16 px pintado con un degradado (ver .tt-boton--principal): 13,89 px del corte a la esquina. */
-    background: linear-gradient(119.74deg, var(--superficie) calc(100% - 14.39px), transparent calc(100% - 13.39px));
+    /* Corte a 60° de 28 × 16 px pintado con un degradado (ver .tt-boton--principal): 13,89 px del corte a la esquina.
+       Con un degradado y no con clip-path: un clip-path recortaría también el marco del foco del teclado. */
+    background: linear-gradient(119.74deg, var(--superficie-alta) calc(100% - 14.39px), transparent calc(100% - 13.39px));
+    /* La línea de arriba, como borde: una sombra interior quedaba debajo de la foto */
+    border-top: 1px solid var(--borde);
   }
   .tt-tarjeta__media {
     position: relative;
@@ -606,6 +614,22 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    /* Solo en la tarjeta: la foto original no cambia */
+    filter: brightness(1.1) contrast(1.06) saturate(1.12);
+    transition: transform 400ms ease;
+  }
+  /* La franja roja entre la foto y el texto, con la punta cortada a 60° (el ángulo de la marca) */
+  .tt-tarjeta__media::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 76px;
+    height: 5px;
+    /* La punta, con un degradado anclado a la esquina como el corte de la tarjeta (un clip-path deja el borde difuso,
+       identidad-visual.md): a 60°, 3 px de corrida en 5 px de alto */
+    background: linear-gradient(119.74deg, var(--rojo) calc(100% - 3.1px), transparent calc(100% - 2.1px));
+    transition: width 400ms ease;
   }
   /* Servicio sin foto todavía: monograma en una tinta y una banda roja a 60° (decisión del 14/10). */
   .tt-reemplazo {
@@ -637,35 +661,73 @@
   .tt-tarjeta__cuerpo {
     display: grid;
     grid-template-rows: auto 1fr auto;
-    gap: 8px;
-    padding: 24px;
+    gap: 10px;
+    padding: 24px 24px 28px;
   }
   .tt-tarjeta__titulo {
     margin: 0;
     font-family: var(--font-titular);
-    font-size: 28px;
-    line-height: 32px;
+    font-size: 30px;
+    line-height: 34px;
     font-weight: 700;
     font-style: italic;
   }
   .tt-tarjeta__resumen {
     margin: 0;
-    font-size: 14px;
-    line-height: 22px;
-    color: var(--tinta-suave);
+    font-size: 15px;
+    line-height: 24px;
+    color: var(--tinta-media);
   }
   .tt-tarjeta__enlace {
     justify-self: start;
-    margin-top: 8px;
+    margin-top: 6px;
     color: var(--rojo-texto);
-    font-size: 14px;
-    line-height: 20px;
-    font-weight: 600;
+    font-size: 15px;
+    line-height: 22px;
+    font-weight: 700;
     text-decoration: none;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 6px;
   }
   .tt-tarjeta__enlace:hover {
     text-decoration: underline;
-    text-underline-offset: 4px;
+  }
+  /* Con el mouse o con el teclado: la franja cruza la tarjeta, la foto se acerca apenas y el enlace se subraya. En el
+     celular (sin mouse) no hay nada que esperar: la franja ya va más larga */
+  .tt-tarjeta:has(.tt-tarjeta__enlace:focus-visible) .tt-tarjeta__media img {
+    transform: scale(1.04);
+  }
+  .tt-tarjeta:has(.tt-tarjeta__enlace:focus-visible) .tt-tarjeta__media::after {
+    width: 100%;
+  }
+  .tt-tarjeta__enlace:focus-visible {
+    text-decoration: underline;
+  }
+  @media (hover: hover) {
+    .tt-tarjeta:hover .tt-tarjeta__media img {
+      transform: scale(1.04);
+    }
+    .tt-tarjeta:hover .tt-tarjeta__media::after {
+      width: 100%;
+    }
+    .tt-tarjeta:hover .tt-tarjeta__enlace {
+      text-decoration: underline;
+    }
+  }
+  @media (hover: none) {
+    .tt-tarjeta__media::after {
+      width: 112px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tt-tarjeta__media img,
+    .tt-tarjeta__media::after {
+      transition: none;
+    }
+    .tt-tarjeta:hover .tt-tarjeta__media img,
+    .tt-tarjeta:has(.tt-tarjeta__enlace:focus-visible) .tt-tarjeta__media img {
+      transform: none;
+    }
   }
   /* Con el teclado se enmarca toda la tarjeta, que es lo que se abre, y no solo el enlace (pulido 2.2). */
   .tt-tarjeta:has(.tt-tarjeta__enlace:focus-visible) {
@@ -692,11 +754,24 @@
   @media (width < 40rem) {
     .tt-tarjeta {
       grid-template-rows: none;
-      grid-template-columns: 7rem minmax(0, 1fr);
+      grid-template-columns: 7.5rem minmax(0, 1fr);
       align-items: center;
     }
+    /* La franja roja va al costado de la fila (pedido 33) */
+    .tt-tarjeta::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--rojo);
+    }
     .tt-tarjeta__media {
-      margin: 12px 0 12px 12px;
+      margin: 12px 0 12px 15px;
+    }
+    .tt-tarjeta__media::after {
+      display: none;
     }
     .tt-tarjeta__cuerpo {
       /* Sin el resumen a la vista: el título y el enlace, uno debajo del otro */
