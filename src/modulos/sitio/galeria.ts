@@ -47,9 +47,16 @@ export function nombreDelTrabajo(descripcion: string, servicio: string, numero?:
 }
 
 /**
- * El orden de la vitrina de la galería (rediseño del 24/10): primero los pares de antes y después (lo más llamativo, se
- * comparan en la página) y después las fotos solas, cada grupo en el orden del panel.
+ * Las dos secciones de la galería (pedido 34): los pares de antes y después (lo más llamativo, se comparan en la
+ * página) y las fotos solas, cada grupo en el orden del panel.
  */
-export function paresPrimero<T extends { antes: unknown }>(fotos: T[]): T[] {
-  return [...fotos.filter((f) => f.antes != null), ...fotos.filter((f) => f.antes == null)];
+/**
+ * La forma del recuadro de un antes y después en la galería (pedido 34), según la proporción (ancho / alto) de la foto
+ * de después: cuadrado si es vertical (las del celular lo llenan, sin franjas a los costados); de 4:3 si es horizontal
+ * o cuadrada (en un cuadrado perdería mucho de sus costados).
+ */
+export const formaDelPar = (proporcion: number): "1 / 1" | "4 / 3" => (proporcion < 1 ? "1 / 1" : "4 / 3");
+
+export function separarPares<T extends { antes: unknown }>(fotos: T[]): { pares: T[]; solas: T[] } {
+  return { pares: fotos.filter((f) => f.antes != null), solas: fotos.filter((f) => f.antes == null) };
 }

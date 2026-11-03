@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { filtrarPorServicio, ladoDelLema, nombreDelTrabajo, paresPrimero, serviciosConFotos, trabajoDePortada } from "@/modulos/sitio/galeria";
+import { filtrarPorServicio, formaDelPar, ladoDelLema, nombreDelTrabajo, separarPares, serviciosConFotos, trabajoDePortada } from "@/modulos/sitio/galeria";
 
 // HU-12 Galería pública. Criterios: docs/09-pruebas/criterios-entrega-1.md (12.x).
 
@@ -60,8 +60,19 @@ describe("vitrina de la galería", () => {
   const conAntes = (id: number) => ({ id, antes: { url: "x" } });
   const sola = (id: number) => ({ id, antes: null });
 
-  test("primero los pares de antes y después y después las fotos solas, cada grupo en su orden", () => {
-    expect(paresPrimero([sola(1), conAntes(2), sola(3), conAntes(4)]).map((f) => f.id)).toEqual([2, 4, 1, 3]);
+  test("los pares de antes y después y las fotos solas, en sus dos secciones y cada grupo en su orden (pedido 34)", () => {
+    const { pares, solas } = separarPares([sola(1), conAntes(2), sola(3), conAntes(4)]);
+    expect(pares.map((f) => f.id)).toEqual([2, 4]);
+    expect(solas.map((f) => f.id)).toEqual([1, 3]);
+    // Sin pares, todo va a las solas (la sección de antes y después no aparece)
+    expect(separarPares([sola(5)])).toEqual({ pares: [], solas: [sola(5)] });
+  });
+
+  test("el recuadro de un antes y después: cuadrado si la foto es vertical, de 4:3 si es horizontal o cuadrada", () => {
+    expect(formaDelPar(3 / 4)).toBe("1 / 1");
+    expect(formaDelPar(9 / 16)).toBe("1 / 1");
+    expect(formaDelPar(1)).toBe("4 / 3");
+    expect(formaDelPar(16 / 9)).toBe("4 / 3");
   });
 
   test("un trabajo sin descripción se nombra por su servicio", () => {
