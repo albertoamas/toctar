@@ -22,6 +22,7 @@ El modelo cubre el **Sistema completo**, aunque hoy se programa solo Web + Gesti
 | D-10 | **Archivos en una tabla común (`archivo`)**; el binario va al almacenamiento de fotos, la base guarda solo la referencia. | La base queda liviana y los respaldos son rápidos. |
 | D-11 | **El plan de mantenimiento de un vehículo es su fila abierta de `recordatorio_mantenimiento`**, sin tabla aparte: al hacerse queda `hecho` y nace la siguiente con la misma frecuencia. Un índice único parcial impide dos abiertos del mismo vehículo y servicio (pedido 21, 27/10/2026). | El mantenimiento repetido no puede pasar, la historia del plan son sus filas y la lista de Mantenimientos no cambia de forma. |
 | D-12 | **La consulta es el encabezado de la cotización** (pedido 23, 01/11/2026): `consulta` agrupa las versiones (`cotizacion`) y lleva el estado comercial (`cotizado` = pendiente, `confirmado` = aceptada, `perdido` = rechazada) y el último movimiento. Ya no se crea en `consulto` ni lleva canal, nota ni archivos; se conserva el nombre de la tabla. | Con versiones (RN-02) hace falta un encabezado, y ya existía: sin mover datos, la agenda y las órdenes siguen apuntando a `consulta_id` y `cotizacion_id`. |
+| D-13 | **Dos roles, sin técnico asignado** (pedido 32, 02/11/2026): `usuario.rol` es `dueno` o `encargado`, y lo que hace cada encargado sale de `usuario_permiso` (los perfiles de la pantalla, como Taller, solo marcan casillas). `trabajo` no tiene técnico: quién hizo cada paso queda en `trabajo_avance.usuario_id`, `recibido_por`, `entregado_por` y `trabajo_foto.subido_por`. | En TocTar cuatro personas hacen de todo; asignar un auto a un técnico era un paso que nadie usaba y dejaba a los empleados sin poder recibir ni entregar. |
 
 ## Diagrama entidad-relación (núcleo)
 
@@ -47,7 +48,6 @@ erDiagram
     CLIENTE ||--o{ TRABAJO : contrata
     VEHICULO ||--o{ TRABAJO : recibe
     ESPACIO_TALLER ||--o{ TRABAJO : ocupa
-    USUARIO |o--o{ TRABAJO : "técnico asignado"
     TRABAJO ||--|{ TRABAJO_LINEA : incluye
     TRABAJO ||--o{ TRABAJO_FOTO : documenta
     TRABAJO ||--o{ TRABAJO_AVANCE : registra
@@ -74,7 +74,7 @@ Convenciones: `id` es `bigint` autoincremental; todas las tablas tienen `created
 | `parametro` | clave (pk), valor (jsonb) | Adelanto sugerido, validez de cotización, intervalo de mantenimiento, condiciones del PDF, etc. |
 | `tamano_vehiculo` | nombre, descripcion, orden, activo | Hoy 5, de compactos a extra grandes; `descripcion` lleva modelos de ejemplo para clasificar el vehículo |
 | `espacio_taller` | sucursal_id, nombre, orden, activo | Hoy 3 |
-| `usuario` | nombre, nombre_usuario (único), correo (interno), rol (`dueno`, `encargado`, `tecnico`, con CHECK), desactivado | Tabla de Better Auth. La contraseña (hash) va en `cuenta`; `correo` es interno (`<usuario>@usuarios.toctar.local`) porque la librería lo exige; "desactivar" usa el bloqueo de la librería, que cierra las sesiones. Tablas propias de la librería: `sesion`, `cuenta`, `verificacion` (HU-01) |
+| `usuario` | nombre, nombre_usuario (único), correo (interno), rol (`dueno`, `encargado`, con CHECK; D-13), desactivado | Tabla de Better Auth. La contraseña (hash) va en `cuenta`; `correo` es interno (`<usuario>@usuarios.toctar.local`) porque la librería lo exige; "desactivar" usa el bloqueo de la librería, que cierra las sesiones. Tablas propias de la librería: `sesion`, `cuenta`, `verificacion` (HU-01) |
 | `usuario_permiso` | usuario_id, permiso | Solo para encargado (RF-16): un módulo (`clientes`, `consultas`, `agenda`, `ordenes`, `pagos`, `mantenimientos`, `sitio`, `reclamos`) o el permiso `entrega_con_saldo` (RN-13) |
 | `plantilla_mensaje` | clave (pk), texto | Los mensajes de WhatsApp que el dueño cambió: "listo", "saldo" y "mantenimiento" (HU-40). Sin fila vale el original, que está en el código |
 | `auditoria` | usuario_id, entidad, entidad_id, accion, datos (jsonb) | Cambios en cotizaciones, pagos y precios (RNF-10) |
@@ -120,7 +120,7 @@ Convenciones: `id` es `bigint` autoincremental; todas las tablas tienen `created
 
 | Tabla | Campos | Notas |
 |---|---|---|
-| `trabajo` | sucursal_id, cliente_id, vehiculo_id, cotizacion_id (opcional), espacio_id, fecha_inicio, fecha_fin, tecnico_id, estado (`agendado`, `recibido`, `en_proceso`, `listo`, `entregado`, `cancelado`), observaciones_ingreso, recibido_at, listo_at, avisado_listo_at, entregado_at, entrega_con_saldo_autorizada_por, motivo_cancelacion, firma_archivo_id (privado), firma_nombre, sin_firma_motivo (pedido 13: la firma del cliente al entregar, o el motivo) | D-1 y D-5. Al entregar antes de tiempo, `fecha_fin` se ajusta y libera el espacio |
+| `trabajo` | sucursal_id, cliente_id, vehiculo_id, cotizacion_id (opcional), espacio_id, fecha_inicio, fecha_fin, estado (`agendado`, `recibido`, `en_proceso`, `listo`, `entregado`, `cancelado`), observaciones_ingreso, recibido_at, listo_at, avisado_listo_at, entregado_at, entrega_con_saldo_autorizada_por, motivo_cancelacion, firma_archivo_id (privado), firma_nombre, sin_firma_motivo (pedido 13: la firma del cliente al entregar, o el motivo) | D-1 y D-5. Al entregar antes de tiempo, `fecha_fin` se ajusta y libera el espacio |
 | `trabajo_linea` | trabajo_id, variante_id, descripcion, precio, es_adicional | Total = suma de líneas |
 | `trabajo_foto` | trabajo_id, archivo_id, etapa (`ingreso`, `antes`, `durante`, `despues`), subido_por | |
 | `parte_revision` | nombre (único), orden, activo | Las partes del checklist de recepción, en Configuración → Taller (pedido 12) |
@@ -152,6 +152,6 @@ No se crean ahora; se documentan para que lo de hoy no les cierre el paso.
 | Módulo | Tablas | Se conecta con |
 |---|---|---|
 | Inventario | `producto`, `movimiento_inventario` (entrada, consumo, ajuste) | `trabajo` (consumo por orden), `sucursal` |
-| Asistencia y planilla | `empleado` (tarifa_hora, recargo_extra), `marcacion`, `planilla`, `planilla_detalle` | `usuario` (un técnico es un empleado con acceso) |
+| Asistencia y planilla | `empleado` (tarifa_hora, recargo_extra), `marcacion`, `planilla`, `planilla_detalle` | `usuario` (quien trabaja en el taller es un empleado con acceso) |
 | Caja | `movimiento_caja` (ingreso o egreso, categoría), `cierre_caja` | `pago` (cada pago genera su ingreso), `sucursal` |
 | Factura SIAT | `factura`, `factura_linea` | `trabajo`, `cliente` (NIT y razón social) |

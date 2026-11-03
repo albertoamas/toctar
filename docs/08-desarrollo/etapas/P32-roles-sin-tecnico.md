@@ -1,7 +1,7 @@
 # P32 Dos roles, sin técnico asignado — especificación
 
 - **Fase y semana:** C. Entrega 2 · 2 de noviembre de 2026, después del recorrido manual de la Entrega 2
-- **Estado:** aprobada (02/11/2026, enfoque A) y en curso en la rama `pedido-32-roles-sin-tecnico`
+- **Estado:** aprobada (02/11/2026, enfoque A) y programada en la rama `pedido-32-roles-sin-tecnico`
 - **Pedido:** 32 de `03-cierre-comercial/registro-de-cambios.md`
 - **Historias que cambian:** HU-02 (roles), HU-03 (permisos del encargado), HU-30 (agendar), HU-33 (recibir), HU-34 (órdenes del técnico, pasa a "Trabajar una orden"), HU-39 (inicio)
 - **Base:**
@@ -37,10 +37,13 @@ Que el sistema refleje cómo trabaja TocTar: cuatro personas (el dueño, el enca
 
 **Decisión (D-13):** el rol del usuario es `dueno` o `encargado`; un encargado sin permisos solo ve el inicio. Las órdenes no tienen técnico: lo que importa de quién hizo cada paso ya está en el historial de la orden.
 
-**Migración `0042_dos_roles`:**
-1. Cada `usuario` con rol `tecnico` pasa a `encargado`, y recibe en `usuario_permiso` los permisos del perfil Taller (`agenda`, `ordenes`).
-2. `usuario.rol`: la restricción `usuario_rol_valido` pasa a `('dueno', 'encargado')` y el valor por defecto a `encargado` (también el `defaultRole` de Better Auth).
-3. `trabajo`: se borran el índice `trabajo_por_tecnico` y la columna `tecnico_id`.
+**Migraciones** (una por cambio, cada una con su commit):
+- `0042_sin_tecnico_asignado`: `trabajo` pierde el índice `trabajo_por_tecnico`, la clave foránea y la columna `tecnico_id`.
+- `0043_dos_roles`:
+  1. Cada `usuario` con rol `tecnico` recibe en `usuario_permiso` los permisos del perfil Taller (`agenda`, `ordenes`) y pasa a `encargado`.
+  2. `usuario.rol`: la restricción `usuario_rol_valido` pasa a `('dueno', 'encargado')` y el valor por defecto a `encargado` (también el `defaultRole` de Better Auth).
+
+Probadas sobre la base local con el técnico de la demo (queda encargado con agenda y órdenes) y en la base de las E2E, que se crea desde cero.
 
 Los perfiles no se guardan: son atajos de la pantalla que marcan casillas (`PERFILES` en `src/lib/permisos.ts`). Lo que se guarda son los permisos, como hoy.
 
@@ -74,13 +77,14 @@ Sin componentes nuevos: los perfiles son botones `outline` con `aria-pressed`, e
 ## 9. Pruebas
 - **Unitarias:** la matriz de permisos con dos roles (`permisos`); los perfiles (Taller dentro de Atención, Todo con todos, y ninguno con un permiso que no exista); el esquema de usuarios rechaza `tecnico`.
 - **E2E:**
-  - `hu-02`: crear un encargado con el perfil Taller (empieza marcado) y cambiarlo a Atención.
+  - `hu-02`: dos roles y el perfil Taller marcado al crear un encargado; tras un error, el perfil elegido (Atención) se conserva y es el que se guarda.
+  - `hu-03`: un perfil marca sus casillas, ajustar una casilla deja de ser un perfil, y quitarlas todas lo deja sin permisos. (No se guarda a nadie como dueño: las pruebas corren en paralelo y la del único dueño, en `hu-02`, dejaría de valer.)
   - `hu-34-ordenes-tecnico` pasa a `hu-34-trabajar-orden`: un encargado con el perfil Taller ve todas las órdenes, empieza una, sube la foto de inicio y la marca lista, y no ve montos.
   - Las pruebas que usaban un técnico para probar "sin acceso" usan un encargado sin ese permiso.
   - `flujo-taller-completo` sigue pasando con un encargado del perfil Taller.
 
 ## 10. Orden de trabajo
-Una rama, `pedido-32-roles-sin-tecnico`, con un commit por parte: la especificación; la migración y los roles; permisos y usuarios; la asignación fuera de agenda, recibir y órdenes; las pruebas; los documentos.
+Una rama, `pedido-32-roles-sin-tecnico`, con un commit por parte: la especificación; sin técnico asignado (con su migración); los dos roles y los perfiles (con su migración); las pruebas E2E; los documentos.
 
 ## 11. Criterio de salida
 El dueño crea a los chicos como encargados con el perfil Taller, y ellos reciben, trabajan y entregan cualquier auto sin que nadie les asigne nada. En la orden se ve quién hizo cada paso.

@@ -44,7 +44,7 @@
 
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
-| 1.1 | Con datos correctos, entro al panel y veo solo los módulos de mi rol | E2E `hu-01` "con datos correctos entra al panel…" y `hu-02` "el dueño crea un técnico…" (el técnico no ve Usuarios) | ✅ |
+| 1.1 | Con datos correctos, entro al panel y veo solo los módulos de mi rol | E2E `hu-01` "con datos correctos entra al panel…" y `hu-02` "el dueño crea un encargado…" (no ve Usuarios) | ✅ |
 | 1.2 | Con datos incorrectos, veo un mensaje que no dice cuál de los dos falló | E2E `hu-01` "con contraseña incorrecta…" y "un usuario que no existe ve el mismo mensaje" | ✅ |
 | 1.3 | Un usuario desactivado no puede entrar | E2E `hu-01` "un usuario desactivado no puede entrar…" | ✅ |
 | 1.4 | La sesión vence tras un tiempo sin uso y puedo cerrarla cuando quiera | Vence a los **7 días sin uso** (configuración en `src/lib/auth.ts`, revisada). Cierre: E2E `hu-01` "cerrar sesión vuelve al ingreso…" | ✅ |
@@ -57,7 +57,7 @@
 
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
-| 2.1 | Creo un usuario con nombre, usuario, contraseña inicial y rol (dueño, encargado o técnico) | E2E `hu-02` "el dueño crea un técnico (usuario con guion)…" (el creado ingresa); "un usuario repetido muestra un error claro"; "los errores del formulario se muestran junto a cada campo" | ✅ |
+| 2.1 | Creo un usuario con nombre, usuario, contraseña inicial y rol (dueño o encargado; pedido 32, sin rol Técnico) | E2E `hu-02` "el dueño crea un encargado (usuario con guion)…" (el creado ingresa); "un usuario repetido muestra un error claro"; "los errores del formulario se muestran junto a cada campo" | ✅ |
 | 2.2 | Restablezco la contraseña de cualquier usuario | E2E `hu-02` "restablecer la contraseña: la anterior deja de servir y la nueva funciona". Además se cierran las sesiones abiertas con la contraseña anterior | ✅ |
 | 2.3 | Desactivo un usuario sin borrar lo que registró | E2E `hu-02` "desactivar a alguien con la sesión abierta lo saca del panel". No existe ninguna acción de borrar (RN-14) | ✅ |
 | 2.4 | ⚠️ **Ajustado:** nadie puede desactivarse a sí mismo, y el único dueño activo no puede quitarse el rol | E2E `hu-02` "el único dueño no puede desactivarse ni quitarse el rol"; unitarias `usuarios-reglas` | ✅ |
@@ -70,9 +70,9 @@
 
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
-| 3.1 | Marco o desmarco módulos (clientes, consultas, agenda, órdenes, pagos, mantenimientos, sitio, reclamos) y el permiso "autorizar entrega con saldo" | E2E `hu-03` "el permiso del encargado se guarda y se borra al cambiarle el rol". Las casillas aparecen solo para el encargado. **Hoy existe "Autorizar entrega con saldo"**; cada módulo suma su casilla cuando existe su pantalla (Sitio web en B3, Reclamos en B5, el resto en la entrega 2), y su etapa lo prueba | ✅ con lo existente |
+| 3.1 | Marco o desmarco módulos (clientes, consultas, agenda, órdenes, pagos, mantenimientos, sitio, reclamos) y el permiso "autorizar entrega con saldo" | E2E `hu-03` "los permisos del encargado: el perfil marca sus casillas…" (pedido 32: los perfiles Taller, Atención y Todo). Las casillas aparecen solo para el encargado. **Hoy existe "Autorizar entrega con saldo"**; cada módulo suma su casilla cuando existe su pantalla (Sitio web en B3, Reclamos en B5, el resto en la entrega 2), y su etapa lo prueba | ✅ con lo existente |
 | 3.2 | El encargado nunca puede cotizar ni cambiar la configuración | Unitarias `permisos` "nunca ve cotizaciones, usuarios, configuración, catálogo, aunque tenga todos los permisos" | ✅ |
-| 3.3 | El permiso se valida en el servidor: entrar por la URL de un módulo no habilitado muestra "sin acceso" | E2E `hu-03` "el encargado sin módulos solo ve el inicio y no entra a Usuarios" y `hu-02` (el técnico). Unitarias: matriz completa. Revisión del código: las 5 páginas y 5 acciones del panel verifican el acceso, y las 12 llamadas a la autenticación llevan la sesión (14/10) | ✅ |
+| 3.3 | El permiso se valida en el servidor: entrar por la URL de un módulo no habilitado muestra "sin acceso" | E2E `hu-03` "el encargado sin permisos solo ve el inicio y no entra a Usuarios" y `hu-02` (el perfil Taller). Unitarias: matriz completa. Revisión del código: las 5 páginas y 5 acciones del panel verifican el acceso, y las 12 llamadas a la autenticación llevan la sesión (14/10) | ✅ |
 
 ## HU-04 Datos del negocio
 
@@ -86,7 +86,7 @@
 | 4.4 | La ubicación se carga pegando las coordenadas o el enlace de Google Maps; si no se puede leer, el error explica cómo copiarlas | Unitarias "ubicación" (6 formatos, enlace corto, rangos). E2E "los datos mal escritos muestran el error junto al campo y no se guardan" | ✅ |
 | 4.5 | Los horarios admiten días cerrados y hasta dos turnos; un turno al revés se marca en el día | Unitarias "horarios" y "esquema del negocio". Mismo E2E de errores | ✅ |
 | 4.6 | El logo para los documentos se sube (PNG, JPG o WebP de hasta 5 MB) y se ve; un archivo que no es imagen se rechaza | E2E "el logo para documentos se sube y se ve…" (comprueba que el archivo guardado es WebP) | ⚠️ ✅ El logo del sitio y del panel es el de la marca (`public/marca/`); el que se sube aquí es el del PDF (especificación B2 §2) |
-| 4.7 | Solo el dueño entra a la configuración | E2E "el encargado y el técnico no entran a la configuración"; unitarias `permisos` | ✅ |
+| 4.7 | Solo el dueño entra a la configuración | E2E "ningún encargado entra a la configuración, ni sin permisos ni con el perfil Taller"; unitarias `permisos` | ✅ |
 
 ## HU-05 Parámetros del sistema
 
@@ -123,7 +123,7 @@
 | 7.3 | Puedo ocultar un servicio sin borrarlo | Mismo E2E de alta: queda "Oculto" en la lista y se puede volver a mostrar | ✅ |
 | 7.4 | El servicio del sitio es el mismo registro que el del catálogo de la entrega 2 | Una sola tabla `servicio`, con variantes (D-2) ya creadas; C1 le suma precios y duración | ✅ (revisión del diseño) |
 | 7.5 | Nombres y direcciones no se repiten; la dirección es legible para Google | E2E "una dirección repetida da error junto al campo" y el nombre repetido del E2E de alta. Unitarias "dirección de la página (slug)" | ✅ |
-| 7.6 | Entra el dueño o un encargado con el permiso "Sitio web"; nadie más | E2E "el encargado con el permiso Sitio web entra; sin el permiso o como técnico, no" | ✅ ⚠️ El encargado edita las páginas; crear servicios es del dueño, porque llevan precios (C5 §0) |
+| 7.6 | Entra el dueño o un encargado con el permiso "Sitio web"; nadie más | E2E "el encargado con el permiso Sitio web entra; sin el permiso o con el perfil Taller, no" | ✅ ⚠️ El encargado edita las páginas; crear servicios es del dueño, porque llevan precios (C5 §0) |
 
 ## HU-08 Textos del sitio
 
@@ -236,7 +236,7 @@
 | 17.1 | Veo la lista con los pendientes primero | E2E `hu-17` "el dueño ve el reclamo pendiente…": el reclamo dejado en el sitio aparece en el inicio ("Reclamos pendientes: N") y en el filtro Pendientes. La consulta ordena pendientes primero y los más nuevos arriba | ✅ |
 | 17.2 | Abro uno, veo sus datos y fotos, y lo marco como atendido con una nota | Mismo E2E: datos, 2 fotos que se amplían, la nota es obligatoria, el aviso "Reclamo marcado como atendido." y la nota con quién y cuándo. Unitaria "marcar como atendido" | ✅ |
 | 17.3 | Desde el reclamo abro WhatsApp con ese cliente | Mismo E2E: el enlace va a `wa.me/591…` con el saludo y la fecha del reclamo. Unitaria "mensaje de WhatsApp al cliente" | ✅ |
-| 17.4 | Solo el dueño y el encargado con el módulo | E2E "el encargado entra a reclamos solo con el permiso; el técnico nunca" (va a "sin acceso" aunque escriba la dirección). Unitarias `permisos` | ✅ |
+| 17.4 | Solo el dueño y el encargado con el módulo | E2E "el encargado entra a reclamos solo con el permiso; sin él o con el perfil Taller, no" (va a "sin acceso" aunque escriba la dirección). Unitarias `permisos` | ✅ |
 
 ## HU-18 Sitio preparado para Google
 

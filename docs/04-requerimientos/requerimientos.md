@@ -16,9 +16,8 @@ Cada requisito tiene un código para rastrearlo hasta su historia de usuario y s
 | Actor | Descripción | Usa el sistema |
 |---|---|---|
 | Visitante | Cualquier persona que entra al sitio público | Solo el sitio público |
-| Dueño | Atiende WhatsApp, único que cotiza, configura todo | Panel completo |
-| Encargado | Rol opcional para cuando contraten a alguien; permisos que defina el dueño | Panel según permisos |
-| Técnico | Hoy 2 empleados; trabajan los vehículos | Sus órdenes de trabajo |
+| Dueño | Atiende WhatsApp, cotiza, configura todo | Panel completo |
+| Encargado | El personal del taller (hoy el encargado y dos empleados que hacen de todo): lo que el dueño marque en sus permisos. Desde el pedido 32 (02/11/2026) no hay rol Técnico: quien trabaja los vehículos es un encargado con el perfil Taller | Panel según permisos |
 | Cliente | Recibe la cotización en PDF y los avisos por WhatsApp | No tiene cuenta (Acl-5) |
 
 ## 2. Requisitos funcionales
@@ -51,7 +50,7 @@ Cada requisito tiene un código para rastrearlo hasta su historia de usuario y s
 | Código | Requisito | Entrega | Prioridad | Origen |
 |---|---|---|---|---|
 | RF-14 | Los usuarios entran con usuario y contraseña, y pueden cerrar sesión. | 1 | Imprescindible | Cot |
-| RF-15 | El dueño crea usuarios, les asigna un rol (dueño, encargado, técnico), restablece su contraseña y los desactiva. | 1 | Imprescindible | Acl-7 |
+| RF-15 | El dueño crea usuarios, les asigna un rol (dueño o encargado; pedido 32), restablece su contraseña y los desactiva. | 1 | Imprescindible | Acl-7 |
 | RF-16 | El dueño define a qué módulos accede el encargado. | 1 | Imprescindible | Acl-7, Prop |
 | RF-17 | El dueño edita los datos del negocio: nombre, logo, WhatsApp, dirección, horarios, correo y redes; se usan en el sitio y en el PDF. | 1 | Imprescindible | Acl-8 |
 | RF-18 | El dueño configura los parámetros: espacios del taller, tamaños de vehículo, adelanto sugerido, validez de la cotización, condiciones y garantía del PDF, intervalo de mantenimiento y servicios que lo generan. | 1 | Imprescindible | Acl-8, Acl-9 |
@@ -92,7 +91,7 @@ Cada requisito tiene un código para rastrearlo hasta su historia de usuario y s
 
 | Código | Requisito | Entrega | Prioridad | Origen |
 |---|---|---|---|---|
-| RF-36 | Al confirmar una cotización se crea una reserva con fecha de ingreso, espacio del taller, duración (sugerida por el catálogo) y técnico opcional. | 2 | Imprescindible | Cot, Acl-5 |
+| RF-36 | Al confirmar una cotización se crea una reserva con fecha de ingreso, espacio del taller, duración (sugerida por el catálogo) y el adelanto. Sin técnico asignado (pedido 32). | 2 | Imprescindible | Cot, Acl-5 |
 | RF-37 | El personal crea reservas directas, sin cotización previa, para clientes registrados (por ejemplo, un mantenimiento). | 2 | Imprescindible | Acl-5 |
 | RF-38 | La agenda muestra un tablero por espacio y por día, con vista semanal. | 2 | Imprescindible | Cot |
 | RF-39 | El personal reprograma o cancela una reserva, indicando el motivo. | 2 | Imprescindible | — |
@@ -103,7 +102,7 @@ Cada requisito tiene un código para rastrearlo hasta su historia de usuario y s
 |---|---|---|---|---|
 | RF-40 | Al ingresar el vehículo, la reserva pasa a orden de trabajo con una inspección de ingreso: un checklist de partes que arma el dueño, revisado parte por parte, con el detalle de cada una (rayón, golpe, raspón, roto u otro), su nota y su foto (pedidos 12 y 27), y observaciones. | 2 | Imprescindible | Prop, pedido 12 |
 | RF-41 | La orden tiene estados: recibido, en proceso, listo y entregado. | 2 | Imprescindible | Cot |
-| RF-42 | El técnico ve sus órdenes, sube fotos de antes, durante y después, registra avances y notas, y marca la orden como lista. | 2 | Imprescindible | Prop |
+| RF-42 | Quien tiene el permiso de Órdenes ve las órdenes del taller (sin técnico asignado, pedido 32), sube las fotos de inicio y del final (pedido 27), registra avances y notas, y marca la orden como lista. | 2 | Imprescindible | Prop |
 | RF-43 | La orden muestra el precio cotizado y el precio final; el dueño puede sumar servicios adicionales. | 2 | Imprescindible | Prop |
 | RF-44 | Desde una orden entregada, el dueño elige fotos de antes y después para publicarlas en la galería del sitio. | 2 | Deseable | Prop |
 
@@ -159,7 +158,7 @@ Cada requisito tiene un código para rastrearlo hasta su historia de usuario y s
 | RN-09 | El mantenimiento es un servicio cobrado del catálogo. | Enc-8 |
 | RN-10 | El sitio público no muestra precios ni testimonios. | Enc-20, Acl-3 |
 | RN-11 | El cliente no tiene cuenta ni reserva por su cuenta; el personal registra consultas y reservas. | Acl-5 |
-| RN-12 | El técnico no ve precios, pagos ni datos de otros módulos; solo sus órdenes. | Prop; confirmado 14/10 |
+| RN-12 | Quien no tiene el permiso de Pagos ni el de Cotizaciones no ve precios, montos ni saldos; cada módulo, solo con su permiso. (Hasta el 02/11/2026 decía: el técnico no ve precios, pagos ni datos de otros módulos; solo sus órdenes. Cambió con el pedido 32: no hay rol Técnico.) | Prop; confirmado 14/10; cambió el 02/11 (pedido 32) |
 | RN-13 | Una orden con saldo pendiente solo se marca como entregada si la autoriza el dueño o un encargado con el permiso "autorizar entrega con saldo". | Confirmado 14/10 ("el dueño o la persona a cargo del taller") |
 | RN-14 | Los registros con historial (clientes, servicios, usuarios) se desactivan, no se borran. | Prop |
 
@@ -181,9 +180,9 @@ Cada requisito tiene un código para rastrearlo hasta su historia de usuario y s
 - [x] Precio y contenido del mantenimiento del cerámico: contenido recibido; el precio varía según tamaño, tratamiento y estado (se carga como "según evaluación").
 - [ ] Variantes de inyección y succión y de pulido de vidrios.
 - [x] ¿Cuántos días de validez lleva la cotización? Varía según el caso: se define en cada cotización (con un valor sugerido configurable).
-- [x] ¿El técnico debe ver los precios? No (RN-12).
+- [x] ¿El técnico debe ver los precios? No (RN-12). Cambió el 02/11 (pedido 32): no hay rol Técnico; ver precios depende de los permisos de Pagos y Cotizaciones.
 - [x] ¿Se puede entregar un vehículo con saldo pendiente? Sí, autorizado por el dueño o el encargado del taller (RN-13).
-- [x] ¿Cada técnico ve solo sus órdenes o todas las del taller? Solo las suyas.
+- [x] ¿Cada técnico ve solo sus órdenes o todas las del taller? Solo las suyas. Cambió el 02/11 (pedido 32): no se asigna un técnico; todos los que tienen Órdenes ven todas.
 - [x] ¿La agenda se maneja solo por día o también por hora de ingreso? Solo por día y espacio.
 - [x] ¿A quién se avisa cuando llega un reclamo y cómo? En el panel, al dueño y al encargado con el módulo de reclamos.
 - [ ] Horarios de atención (pendiente de confirmar) y dirección exacta para Google Maps (recibida).

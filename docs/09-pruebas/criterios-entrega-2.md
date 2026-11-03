@@ -3,7 +3,7 @@
 - **Fuente:**
   - `05-analisis/historias-de-usuario/historias.md` (HU-19 a HU-41).
   - Las especificaciones de etapa en `08-desarrollo/etapas/` (C1 a C5).
-  - Los ajustes de la reunión con el dueño (`08-desarrollo/ajustes-reunion-dueno.md`, pedidos 12, 13, 21, 23, 24, 26, 27, 28 y 30).
+  - Los ajustes de la reunión con el dueño (`08-desarrollo/ajustes-reunion-dueno.md`, pedidos 12, 13, 21, 23, 24, 26, 27, 28 y 30) y el pedido 32 (dos roles, sin técnico asignado).
 - **Uso:**
   - Es la lista con la que el dueño revisa y firma el acta de la entrega 2 (`actas-de-aceptacion/entrega-2.md`).
   - Con ella se hace la prueba completa en `pruebas.toctardetailing.com` y se arma la capacitación por rol.
@@ -34,7 +34,7 @@
 | HU-31 Reprogramar o cancelar | C3 | ✅ Terminada |
 | HU-32 Registrar pagos y saldo | C3 | ✅ Terminada. Falta la foto del comprobante desde un celular real |
 | HU-33 Recibir vehículo | C4 | ✅ Terminada, con el checklist parte por parte (pedidos 12 y 26) |
-| HU-34 Órdenes del técnico | C4 | ✅ Terminada, con fotos de inicio y final (pedido 27) e historial (pedido 28) |
+| HU-34 Trabajar una orden | C4 | ✅ Terminada, con fotos de inicio y final (pedido 27), historial (pedido 28) y sin técnico asignado (pedido 32) |
 | HU-35 Avisar vehículo listo | C4 | ✅ Terminada |
 | HU-36 Entregar vehículo | C4 | ✅ Terminada, con la firma del cliente (pedido 13) |
 | HU-37 Saldos pendientes | C4 | ✅ Terminada, con búsqueda y orden (pedido 30) |
@@ -43,7 +43,7 @@
 | HU-40 Plantillas de WhatsApp | C5 | ✅ Terminada |
 | HU-41 Fotos de órdenes a la galería | C5 | ✅ Terminada |
 
-**Revisión manual de YankoSoft:** pendiente. Se hace en `pruebas.toctardetailing.com` con los tres roles (dueño, encargado con y sin cada permiso, técnico), en un celular real y en la computadora, recorriendo esta lista de arriba abajo.
+**Revisión manual de YankoSoft:** pendiente. Se hace en `pruebas.toctardetailing.com` con los dos roles (dueño; encargado con y sin cada permiso, y con el perfil Taller), en un celular real y en la computadora, recorriendo esta lista de arriba abajo.
 
 ---
 
@@ -57,7 +57,7 @@
 | 19.2 | Cada servicio dice cuál es su mantenimiento (otro servicio o él mismo) y cada cuántos meses | E2E `hu-19-20` "el dueño marca el mantenimiento…" y `hu-38` "entregar el mantenimiento lo deja hecho y programa el siguiente…" | ⚠️ Antes era una casilla "genera recordatorio" con un intervalo único; el pedido 21 lo cambió a un plan por servicio |
 | 19.3 | Desactivo un servicio o una variante sin perder el historial; el servicio desactivado sale del sitio | E2E `hu-19-20` "…desactiva un servicio, que sale del sitio"; unitarias `catalogo` | ✅ |
 | 19.4 | Un servicio que otro usa como su mantenimiento no se desactiva | E2E `hu-19-20` "un servicio que otro usa como su mantenimiento no se desactiva (pedido 21)" | ✅ (agregado) |
-| 19.5 | Solo el dueño entra al catálogo (lleva precios, RN-01); el encargado y el técnico no | E2E `hu-19-20` "el encargado, aun con todos sus permisos, y el técnico no entran al catálogo" | ✅ |
+| 19.5 | Solo el dueño entra al catálogo (lleva precios, RN-01); ningún encargado | E2E `hu-19-20` "ningún encargado entra al catálogo, ni con todos sus permisos ni con el perfil Taller" | ✅ |
 
 ## HU-20 Precios por tamaño y duración
 
@@ -79,7 +79,7 @@
 | 21.1 | Cliente: nombre y WhatsApp obligatorios; correo, NIT y razón social opcionales (plegados en "Agregar correo, NIT y notas") | E2E `hu-21` "el personal registra un cliente con su primer vehículo…" y "lo opcional está plegado…" | ✅ |
 | 21.2 | Vehículo: placa y tamaño obligatorios; marca, modelo, año y color opcionales. Un cliente también se registra sin vehículo | E2E `hu-21` "…con su primer vehículo; los obligatorios vacíos muestran su error" y "un cliente se registra sin vehículo" | ✅ (cambia si se aprueba el pedido 29, vehículos sin placa) |
 | 21.3 | Si el WhatsApp o la placa ya existen, avisa de quién son y lleva a su ficha | E2E `hu-21` "un teléfono o una placa repetidos avisan de quién son y llevan a su ficha" | ✅ |
-| 21.4 | El encargado entra a Clientes solo con el permiso; el técnico nunca | E2E `hu-21` "el encargado entra a Clientes solo con el permiso; el técnico nunca" | ✅ |
+| 21.4 | El encargado entra a Clientes solo con el permiso | E2E `hu-21` "el encargado entra a Clientes solo con el permiso; el perfil Taller no" | ✅ |
 
 ## HU-22 Buscar clientes
 
@@ -121,7 +121,7 @@
 | 25.3 | Agrego descuento; se calculan el total y el adelanto sugerido. El descuento no pasa el subtotal ni el adelanto el total | E2E `hu-25` "el descuento no pasa el subtotal, el adelanto no pasa el total…"; unitarias `cotizaciones` | ✅ |
 | 25.4 | Indico cómo se cotizó: en persona o por fotos; por fotos es un estimado y el PDF lo dice (RN-03) | E2E `hu-25` "…y por fotos" y `hu-26`; unitarias `pdf-cotizacion` | ✅ |
 | 25.5 | La validez se sugiere desde Configuración y no puede ser anterior a hoy | E2E `hu-25` "…la validez no es anterior a hoy"; `hu-05` (el parámetro) | ✅ |
-| 25.6 | Cotizan el dueño y el encargado con "Cotizaciones"; el servidor rechaza a los demás (RN-01) | E2E `hu-25` "pedido 24: el encargado con Cotizaciones cotiza y ve los montos; sin el permiso no entra; el técnico tampoco"; unitarias `permisos` | ⚠️ Pedido 24 (antes, solo el dueño) |
+| 25.6 | Cotizan el dueño y el encargado con "Cotizaciones"; el servidor rechaza a los demás (RN-01) | E2E `hu-25` "pedido 24: el encargado con Cotizaciones cotiza y ve los montos; sin el permiso no entra; el perfil Taller tampoco"; unitarias `permisos` | ⚠️ Pedido 24 (antes, solo el dueño) |
 | 25.7 | Un cambio a una cotización enviada crea una versión nueva con el mismo número; la anterior no cambia (RN-02) | E2E `hu-25` "nueva versión: el mismo número, la anterior queda reemplazada…" | ✅ |
 
 ## HU-26 PDF de la cotización
@@ -134,7 +134,7 @@
 | 26.2 | Una versión nueva no cambia el PDF anterior; si una quedó sin PDF, su ficha lo genera | E2E `hu-26` "…una versión nueva no cambia el anterior" y "si una cotización quedó sin PDF, su ficha lo genera" | ✅ |
 | 26.3 | El texto de condiciones, garantía y formas de pago sale de Configuración | E2E `hu-05` (Parámetros) y unitarias `pdf-cotizacion` | ✅ |
 | 26.4 | Se ve bien impreso en A4 y en la pantalla del celular | Revisión a mano: imprimirlo y abrirlo en un celular real | ⏳ |
-| 26.5 | El encargado sin "Cotizaciones" y el técnico no abren el PDF | E2E `hu-26` "RN-01: el encargado sin Cotizaciones y el técnico no abren el PDF" | ✅ |
+| 26.5 | El encargado sin "Cotizaciones" no abre el PDF | E2E `hu-26` "RN-01: el encargado sin Cotizaciones, también con el perfil Taller, no abre el PDF" | ✅ |
 | 26.6 | Los textos reales de condiciones, garantía y formas de pago | Los confirma el dueño (hay un borrador cargado) | ⏳ (del dueño) |
 
 ## HU-27 Compartir el PDF
@@ -165,7 +165,7 @@
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
 | 29.1 | Vista semanal: filas por espacio, columnas por día; cada reserva ocupa los días de su duración | E2E `hu-29` "las reservas ocupan sus días en su espacio…"; unitarias `agenda` | ✅ |
-| 29.2 | Cada bloque muestra placa, servicio, técnico y estado, con el color de su estado; al tocarlo se abre | E2E `hu-29` y `hu-34` "…la agenda las muestra en verde" (las entregadas siguen marcadas, pedido 28) | ✅ |
+| 29.2 | Cada bloque muestra placa, servicio y estado, con el color de su estado (sin técnico, pedido 32); al tocarlo se abre | E2E `hu-29` y `hu-34` "…la agenda las muestra en verde" (las entregadas siguen marcadas, pedido 28) | ✅ |
 | 29.3 | Arranca en la semana de hoy y la marca; un día libre lleva a agendar ahí | E2E `hu-29` "el tablero arranca en la semana de hoy y la marca" y "…un día libre lleva a agendar ahí" | ✅ |
 | 29.4 | Funciona en el celular (vista por día) | Las E2E `hu-29` corren también en el celular | ✅ |
 
@@ -177,8 +177,8 @@
 |---|---|---|---|
 | 30.1 | Desde una cotización pendiente ("Agendar": el cliente aceptó) o como reserva directa | E2E `hu-30` "desde la cotización…" y "reserva directa: cliente y vehículo registrados, servicio del catálogo con su precio…" | ⚠️ "Cotización confirmada" pasó a ser "pendiente que se acepta al agendar" (pedido 23) |
 | 30.2 | Sugiere la duración y solo ofrece espacios libres en esos días (RN-06); si dos personas agendan el mismo espacio a la vez, una recibe un aviso | E2E `hu-30` "solo se ofrecen los espacios libres…" y "la base rechaza un cruce en el mismo espacio aunque el código fallara…"; unitarias `agenda` | ✅ |
-| 30.3 | Asigno técnico (opcional) y registro el adelanto con el monto sugerido, editable (RN-04) | E2E `hu-30` "desde la cotización: …el adelanto registrado" | ✅ |
-| 30.4 | El encargado con Agenda y sin Pagos agenda sin ver montos; el técnico no entra | E2E `hu-30` "el encargado con Agenda sin Pagos agenda sin montos ni adelanto; el técnico no entra" | ✅ |
+| 30.3 | Registro el adelanto con el monto sugerido, editable (RN-04); no se asigna un técnico (pedido 32) | E2E `hu-30` "desde la cotización: …el adelanto registrado" | ✅ |
+| 30.4 | El encargado con Agenda y sin Pagos agenda sin ver montos; sin Agenda no entra | E2E `hu-30` "el encargado con Agenda sin Pagos agenda sin montos ni adelanto; sin Agenda no entra" | ✅ |
 | 30.5 | Desde el tablero, el día y el espacio llegan elegidos y "Cambiar" cliente no los pierde | E2E `hu-30` "«Cambiar» vuelve a elegir el cliente sin perder el día y el espacio…" | ✅ (agregado) |
 
 ## HU-31 Reprogramar o cancelar
@@ -210,21 +210,22 @@
 |---|---|---|---|
 | 33.1 | Desde la reserva, "Recibir": el checklist con las partes de Configuración; cada una se marca "Bien" o "Detalle" (qué tiene, una nota y su foto) y "Bien" se vuelve a tocar para desmarcarla | E2E `hu-33-checklist` "se revisa parte por parte: bien o con un detalle y su foto…"; unitarias `ordenes` | ⚠️ Pedido 12 (antes, solo fotos y observaciones) y pedido 26 (marcar y desmarcar como interruptor) |
 | 33.2 | Sin revisar todas las partes no se recibe; con todas bien, se recibe al primer toque. Después de recibir, el checklist no cambia | E2E `hu-33-checklist` "…sin revisar todo no se recibe…" y "todas bien se recibe al primer toque; después de recibir el checklist no cambia" | ✅ |
-| 33.3 | Anoto observaciones y el técnico; se crea la orden "recibida" con el precio cotizado | E2E `hu-33-recibir` "recibir con observaciones: la reserva pasa a orden…" | ✅ |
+| 33.3 | Anoto observaciones (sin técnico, pedido 32); se crea la orden "recibida" con el precio cotizado | E2E `hu-33-recibir` "recibir con observaciones: la reserva pasa a orden…" | ✅ |
 | 33.4 | Antes de su día no se recibe; si llega tarde, se recibe igual | E2E `hu-33-recibir` "antes de su día no se recibe; tarde, se recibe…" | ✅ |
 | 33.5 | Si la reserva se cancela, el checklist y sus fotos se descartan | E2E `hu-33-recibir` "si la reserva se cancela, el checklist y sus fotos…" | ✅ (agregado) |
 | 33.6 | El checklist con fotos desde la cámara de un celular real | Revisión a mano (necesita https) | ⏳ |
 
-## HU-34 Órdenes del técnico
+## HU-34 Trabajar una orden
 
-> Como técnico, quiero ver mis trabajos y registrar el avance, para que el dueño sepa cómo va cada vehículo.
+> Como personal del taller, quiero ver las órdenes y registrar el avance, para que el dueño sepa cómo va cada vehículo.
 
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
-| 34.1 | El técnico ve solo sus órdenes, sin precios, pagos ni teléfonos (RN-12) | E2E `hu-33-recibir` (la ve sin precios), `hu-34-historial` "el técnico ve en «Entregadas» solo las suyas"; unitarias `permisos` | ✅ |
-| 34.2 | Cambia el estado (en proceso, listo), sube fotos de inicio y del final, y escribe avances; al marcarla lista, el espacio se libera | E2E `hu-34-ordenes-tecnico` "el técnico trabaja su orden: empieza, sube fotos, escribe avances y la marca lista…" | ⚠️ Pedido 27: fotos de inicio y del final, sin fotos "durante" |
-| 34.3 | Se puede extender la entrega a otro espacio libre; el dueño ve las órdenes agrupadas por estado | E2E `hu-34-ordenes-tecnico` "extender la entrega…; las listas del dueño por estado" | ✅ (agregado) |
+| 34.1 | Con el permiso de Órdenes se ven todas, sin técnico asignado; sin Pagos, sin precios (RN-12) | E2E `hu-33-recibir` (otro del perfil Taller la ve sin precios), `hu-34-historial` "el perfil Taller ve en «Entregadas» todas, sin precios"; unitarias `permisos` | ✅ |
+| 34.2 | Cambia el estado (en proceso, listo), sube fotos de inicio y del final, y escribe avances; al marcarla lista, el espacio se libera | E2E `hu-34-trabajar-orden` "el perfil Taller trabaja cualquier orden: empieza, sube fotos, escribe avances y la marca lista…" | ⚠️ Pedido 27: fotos de inicio y del final, sin fotos "durante" |
+| 34.3 | Se puede extender la entrega a otro espacio libre; el dueño ve las órdenes agrupadas por estado | E2E `hu-34-trabajar-orden` "extender la entrega…; las listas del dueño por estado" | ✅ (agregado) |
 | 34.4 | Las órdenes entregadas se buscan por placa, cliente o fecha | E2E `hu-34-historial` "en «Entregadas» se buscan por placa, cliente o fecha…" | ✅ (agregado, pedido 28) |
+| 34.5 | No se asigna un técnico: la reserva, recibir y la orden no lo piden, y la orden dice quién hizo cada paso | E2E `hu-33-recibir` (sin el campo), `hu-34-trabajar-orden` (la orden no dice a quién está asignada) y `flujo-taller-completo` | ⚠️ Pedido 32 (antes, técnico opcional) |
 
 ## HU-35 Avisar vehículo listo
 
@@ -234,7 +235,7 @@
 |---|---|---|---|
 | 35.1 | En una orden lista, "Avisar" abre WhatsApp con el mensaje escrito (nombre, vehículo y saldo) | E2E `hu-35` "avisar abre WhatsApp con nombre, vehículo y saldo…"; unitarias `mensajes-orden` | ✅ |
 | 35.2 | Queda registrado quién avisó y cuándo | E2E `hu-35` (misma prueba) | ✅ |
-| 35.3 | Sin Pagos el mensaje no lleva el saldo; el técnico no avisa | E2E `hu-35` "sin Pagos el mensaje no lleva el saldo; el técnico no avisa" | ✅ |
+| 35.3 | Sin Pagos el mensaje no lleva el saldo | E2E `hu-35` "sin Pagos el mensaje no lleva el saldo" | ✅ |
 
 ## HU-36 Entregar vehículo
 
@@ -257,7 +258,7 @@
 | 37.1 | Lista de órdenes entregadas con saldo, con cliente, monto y días | E2E `hu-37` "la entregada con saldo aparece, con su WhatsApp…" | ✅ |
 | 37.2 | Desde cada una abro WhatsApp o registro el pago | E2E `hu-37` "…y se cobra desde la lista aunque no se vean órdenes" | ✅ |
 | 37.3 | Busco por cliente, teléfono o placa y ordeno por antigüedad, monto o cliente; el total por cobrar es el de todas | E2E `hu-37` "pedido 30: se buscan por cliente, teléfono o placa y se ordenan…" | ✅ (agregado, pedido 30) |
-| 37.4 | Sin Pagos no se entra; el técnico tampoco | E2E `hu-37` "sin Pagos no se entra a los saldos; el técnico tampoco" | ✅ |
+| 37.4 | Sin Pagos no se entra, tampoco con el perfil Taller | E2E `hu-37` "sin Pagos no se entra a los saldos, tampoco con el perfil Taller" | ✅ |
 
 ## HU-38 Recordatorios de mantenimiento
 
@@ -269,7 +270,7 @@
 | 38.2 | "Avisar" abre WhatsApp con el mensaje escrito; después, agendado o "No le interesa" | E2E `hu-38` "…avisar, no le interesa y agendar (y al cancelar la reserva, vuelve)" | ✅ |
 | 38.3 | "Agendar" abre una reserva directa del servicio de mantenimiento; si se cancela, el mantenimiento vuelve | E2E `hu-38` (misma prueba) | ✅ |
 | 38.4 | Entregar el mantenimiento lo deja hecho y programa el siguiente con la frecuencia del plan, también si el cliente vino por su cuenta | E2E `hu-38` "entregar el mantenimiento lo deja hecho y programa el siguiente…" | ⚠️ Pedido 21: planes por vehículo (antes, un intervalo único) |
-| 38.5 | Solo con Mantenimientos se entra; sin Agenda y Pagos no se agenda; el técnico no entra | E2E `hu-38` "solo con Mantenimientos se entra…" | ✅ |
+| 38.5 | Solo con Mantenimientos se entra; sin Agenda y Pagos no se agenda; el perfil Taller no entra | E2E `hu-38` "solo con Mantenimientos se entra…" | ✅ |
 | 38.6 | Los servicios con mantenimiento y su frecuencia están cargados | Lo carga el dueño en el catálogo | ⏳ (del dueño) |
 
 ## HU-39 Pantalla del día
@@ -279,7 +280,7 @@
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
 | 39.1 | Muestra los números del día, lo que llega (y lo atrasado), las entregas, las listas sin avisar, los mantenimientos por avisar y los reclamos pendientes; cada fila lleva a su pantalla | E2E `hu-39` "el dueño ve los números del día…"; unitarias `inicio` | ✅ |
-| 39.2 | Cada uno ve solo lo de sus módulos, sin montos si no tiene Pagos; el técnico sigue con sus órdenes | E2E `hu-39` "un encargado solo con Agenda ve solo lo que llega, sin montos…" | ✅ |
+| 39.2 | Cada uno ve solo lo de sus módulos, sin montos si no tiene Pagos (también el perfil Taller) | E2E `hu-39` "un encargado solo con Agenda ve solo lo que llega, sin montos…" | ✅ |
 
 ## HU-40 Plantillas de WhatsApp
 
@@ -307,7 +308,7 @@
 
 | Criterio | Cómo se comprueba | Estado |
 |---|---|---|
-| Una cotización se agenda, el vehículo se recibe con su checklist, el técnico lo trabaja, se avisa, se cobra, se entrega con firma y queda programado su próximo mantenimiento, que se agenda | E2E `flujo-taller-completo` "del día de ingreso al próximo mantenimiento agendado" | ✅ |
+| Una cotización se agenda, el vehículo se recibe con su checklist, un chico del taller (perfil Taller) lo trabaja, se avisa, se cobra, se entrega con firma y queda programado su próximo mantenimiento, que se agenda | E2E `flujo-taller-completo` "del día de ingreso al próximo mantenimiento agendado" | ✅ |
 | El mismo ciclo, a mano, con los tres roles y en un celular real | Revisión a mano en `pruebas.toctardetailing.com` | ⏳ |
 
 ## Reglas de negocio de esta entrega
@@ -323,7 +324,7 @@
 | RN-07 | Precios por tamaño de vehículo, con tamaños configurables | 20.1 y 25.2 | ✅ |
 | RN-08 | El mantenimiento sale del plan de cada servicio | 19.2, 36.3 y 38.4 | ✅ |
 | RN-09 | El mantenimiento es un servicio cobrado del catálogo | 38.3 (se agenda como reserva con su precio) | ✅ |
-| RN-12 | El técnico no ve precios, pagos ni teléfonos | 34.1 y las pruebas de acceso de cada módulo | ✅ |
+| RN-12 | Sin Pagos ni Cotizaciones no se ven precios ni montos (pedido 32: ya no hay rol Técnico) | 34.1 y las pruebas de acceso de cada módulo; unitarias `permisos` (perfiles) | ✅ |
 | RN-13 | Con saldo, solo entrega quien tiene la autorización | 36.2 | ✅ |
 | RN-14 | Clientes, servicios y usuarios se desactivan, no se borran | 19.3, 23.4 | ✅ |
 
@@ -332,7 +333,7 @@
 | Requisito | Cómo se comprueba | Estado |
 |---|---|---|
 | RNF-01 Celular desde 360 px y computadora | Todas las E2E corren en celular y en escritorio; pruebas "a 360 px no se sale nada" en `hu-39`, `hu-40`, `hu-41` y `base`; el panel rediseñado (pedido 26) revisado a 360, 390, 768 y 1280 px | ✅ |
-| RNF-03 Instalable | E2E `hu-06`; instalación real en el celular del dueño, el encargado y el técnico | ⏳ (en la capacitación) |
+| RNF-03 Instalable | E2E `hu-06`; instalación real en el celular del dueño y de cada encargado | ⏳ (en la capacitación) |
 | RNF-05 Permisos validados en el servidor | Unitarias `permisos` (matriz completa) y las pruebas de acceso de cada historia (por dirección, no solo por menú) | ✅ |
 | RNF-06 Respaldos | Restauración de prueba de un respaldo, documentada en `10-lanzamiento/` | ⏳ (antes de publicar) |
 | RNF-10 Auditoría | Cambios de precio, cotizaciones, agendar, recibir, pagos anulados, adicionales y entregas (con quién autorizó el saldo y la firma) dejan quién y cuándo en `auditoria` | ✅ |

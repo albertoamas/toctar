@@ -8,7 +8,7 @@
 
 | # | Supuesto | Respuesta | Casos afectados |
 |---|---|---|---|
-| S-1 | El técnico ve solo las órdenes asignadas a él y no ve precios ni pagos. | Confirmado | CU-16 |
+| S-1 | El técnico ve solo las órdenes asignadas a él y no ve precios ni pagos. | Cambió el 02/11/2026 (pedido 32): no hay técnico asignado ni rol Técnico; las órdenes las ve y trabaja quien tiene el permiso de Órdenes, y los precios, quien tiene Pagos | CU-16 |
 | S-2 | Un vehículo con saldo pendiente solo se entrega con autorización del dueño. | **Ajustado:** el dueño o "la persona a cargo del taller". Se implementa como permiso del encargado: "autorizar entrega con saldo" | CU-19 |
 | S-3 | La agenda se maneja por día (no por hora); la hora de ingreso es solo una nota. | Confirmado: por día y espacio | CU-13 |
 | S-4 | Los reclamos llegan al panel; el dueño los ve en la pantalla de inicio. | **Ajustado:** también los ve el encargado que tenga el módulo de reclamos | CU-03, CU-05 |
@@ -20,9 +20,8 @@
 |---|---|---|
 | Visitante | — | Sin cuenta |
 | Personal | — | Actor abstracto: lo que hacen dueño y encargado |
-| Encargado | Personal | Solo los módulos que el dueño le habilite |
+| Encargado | Personal | Solo los módulos que el dueño le habilite (pedido 32: también quien trabaja los vehículos, con el perfil Taller) |
 | Dueño | Personal | Además, cotiza, configura y autoriza |
-| Técnico | — | Solo sus órdenes |
 | WhatsApp | — | Sistema externo: se abre con el mensaje escrito, el envío lo hace la persona |
 
 ## Diagrama general
@@ -32,7 +31,6 @@ flowchart LR
     V((Visitante))
     P((Personal<br/>dueño o encargado))
     D((Dueño))
-    T((Técnico))
     W[[WhatsApp]]
 
     subgraph E1[Entrega 1: Web]
@@ -63,7 +61,7 @@ flowchart LR
     V --- CU01 & CU02 & CU03
     D --- CU04 & CU05 & CU06 & CU07 & CU08 & CU11
     P --- CU09 & CU12 & CU13 & CU14 & CU15 & CU17 & CU18 & CU19 & CU20
-    T --- CU16
+    P --- CU16
     CU02 & CU18 & CU20 -.-> W
     CU11 -. compartir PDF .-> W
 ```
@@ -74,7 +72,7 @@ Todos los usuarios del panel inician sesión (CU-00). El dueño también puede h
 
 | Código | Caso de uso | Actor | Entrega | Requisitos |
 |---|---|---|---|---|
-| CU-00 | Iniciar y cerrar sesión | Dueño, encargado, técnico | 1 | RF-14 |
+| CU-00 | Iniciar y cerrar sesión | Dueño y encargado | 1 | RF-14 |
 | CU-01 | Ver servicios y galería | Visitante | 1 | RF-01 a RF-06, RF-09 |
 | CU-02 | Escribir por WhatsApp desde el sitio | Visitante | 1 | RF-08 |
 | CU-03 | Enviar un reclamo o pedido de garantía | Visitante | 1 | RF-07 |
@@ -90,7 +88,7 @@ Todos los usuarios del panel inician sesión (CU-00). El dueño también puede h
 | CU-13 | Agendar una reserva | Personal | 2 | RF-36 a RF-38 |
 | CU-14 | Reprogramar o cancelar una reserva | Personal | 2 | RF-39 |
 | CU-15 | Recibir el vehículo (abrir la orden) | Personal | 2 | RF-40 |
-| CU-16 | Trabajar la orden | Técnico | 2 | RF-41, RF-42 |
+| CU-16 | Trabajar la orden | Personal | 2 | RF-41, RF-42 |
 | CU-17 | Registrar un pago | Personal | 2 | RF-45 a RF-47 |
 | CU-18 | Avisar que el vehículo está listo | Personal | 2 | RF-48 |
 | CU-19 | Entregar el vehículo | Personal | 2 | RF-41, RF-43, RF-44, RF-49 |
@@ -129,13 +127,12 @@ Desde el pedido 23 (01/11/2026) no hay consulta aparte: el dueño pidió cotizar
     1. El personal marca la cotización como confirmada y elige "Agendar".
     2. El sistema propone la duración según el catálogo.
     3. El personal elige la fecha de ingreso y el espacio en el tablero; el sistema muestra solo los espacios libres en esos días (RN-06).
-    4. Asigna un técnico (opcional).
-    5. Registra el adelanto (CU-17); el monto sugerido es editable (RN-04).
-    6. El sistema guarda la reserva y la consulta pasa a "confirmado".
+    4. Registra el adelanto (CU-17); el monto sugerido es editable (RN-04).
+    5. El sistema guarda la reserva y la consulta pasa a "confirmado".
 - **Alternativos:**
     - 1a. Reserva directa sin cotización (por ejemplo, un mantenimiento): elige cliente, vehículo y servicio con su precio de catálogo.
     - 3a. No hay espacio libre en la fecha pedida: el sistema lo indica y el personal elige otra fecha.
-    - 5a. El cliente no deja adelanto: la reserva se guarda con una marca de "sin adelanto".
+    - 4a. El cliente no deja adelanto: la reserva se guarda con una marca de "sin adelanto".
 - **Postcondición:** la reserva ocupa el espacio en el tablero.
 
 ### CU-15 Recibir el vehículo
@@ -146,17 +143,17 @@ Desde el pedido 23 (01/11/2026) no hay consulta aparte: el dueño pidió cotizar
     1. El personal abre la reserva y elige "Recibir".
     2. Toma fotos del vehículo y anota observaciones (rayones, golpes, objetos dentro).
     3. El sistema crea la orden en estado "recibido" con el precio cotizado.
-- **Postcondición:** el técnico asignado ve la orden.
+- **Postcondición:** la orden está en "Órdenes" para todo el que tiene ese permiso (pedido 32: sin técnico asignado).
 
 ### CU-16 Trabajar la orden
 
-- **Actor:** técnico.
-- **Precondición:** orden asignada al técnico (S-1).
+- **Actor:** personal con el permiso de Órdenes (pedido 32: sin técnico asignado).
+- **Precondición:** orden abierta.
 - **Flujo principal:**
-    1. El técnico abre sus órdenes y elige una.
-    2. La pasa a "en proceso" y sube fotos de antes.
-    3. Registra avances y notas; sube fotos durante el trabajo.
-    4. Al terminar, sube fotos de después y marca "listo".
+    1. Abre "Órdenes" y elige una.
+    2. La pasa a "en proceso" y sube las fotos de inicio (pedido 27).
+    3. Registra avances y notas.
+    4. Al terminar, sube las fotos del final y marca "listo".
 - **Postcondición:** el personal ve la orden como lista y sin avisar.
 
 ### CU-19 Entregar el vehículo
