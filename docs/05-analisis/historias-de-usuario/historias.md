@@ -172,7 +172,7 @@ Como dueño, quiero que TocTar aparezca al buscar en Tarija, para recibir client
 ### HU-19 Catálogo con variantes
 Como dueño, quiero definir variantes de cada servicio, para cotizar con opciones.
 - Agrego variantes a un servicio (por ejemplo, 1, 2, 3, 5 y 10 años).
-- Marco si el servicio genera recordatorio de mantenimiento.
+- Indico cuál es el mantenimiento del servicio (otro servicio o él mismo) y cada cuántos meses (pedido 21).
 - Desactivo servicios o variantes sin perder el historial.
 
 ### HU-20 Precios por tamaño y duración
@@ -212,7 +212,7 @@ Como dueño o encargado con el permiso "Cotizaciones", quiero armar una cotizaci
 
 ### HU-26 PDF de la cotización
 Como dueño, quiero un PDF profesional, para entregarlo impreso o por WhatsApp.
-- Lleva logo, datos del negocio, cliente y vehículo, número y fecha, detalle, total, adelanto, validez, formas de pago, condiciones y garantía, y fotos elegidas.
+- Lleva logo, datos del negocio, cliente y vehículo, número y fecha, detalle, total, adelanto, validez, formas de pago, condiciones y garantía (sin fotos desde el pedido 27).
 - Se ve bien impreso en A4 y en la pantalla del celular.
 - El texto de condiciones sale de la configuración.
 
@@ -252,14 +252,14 @@ Como personal, quiero registrar cada pago, para saber cuánto falta cobrar.
 
 ### HU-33 Recibir vehículo
 Como personal, quiero registrar el estado del vehículo al ingresar, para evitar reclamos por daños previos.
-- Desde la reserva elijo "Recibir"; en el checklist marco las partes que llegaron con un detalle (qué tiene, una nota y su foto); lo demás queda bien (pedido 12).
+- Desde la reserva elijo "Recibir"; en el checklist marco cada parte "Bien" o con un detalle (qué tiene, una nota y su foto), y "Bien" se vuelve a tocar para desmarcarla; sin revisarlas todas no se recibe (pedidos 12 y 26).
 - Anoto observaciones (lo que no es una parte). Las fotos de inicio y del final se toman en la orden (pedido 27).
 - Se crea la orden en estado "recibido" con el precio cotizado.
 
 ### HU-34 Órdenes del técnico
 Como técnico, quiero ver mis trabajos y registrar el avance, para que el dueño sepa cómo va cada vehículo.
 - Veo solo mis órdenes, sin precios ni pagos (RN-12).
-- Cambio el estado (recibido, en proceso, listo), subo fotos de antes, durante y después, y escribo notas.
+- Cambio el estado (recibido, en proceso, listo), subo fotos de inicio y del final (pedido 27) y escribo notas.
 
 ### HU-35 Avisar vehículo listo
 Como personal, quiero avisar al cliente con un toque, para no escribir el mismo mensaje cada vez.
