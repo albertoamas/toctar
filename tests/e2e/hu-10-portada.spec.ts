@@ -150,8 +150,19 @@ test("el trabajo elegido en la galería del panel se compara arriba en la portad
     expect(espacio, `a ${ancho} px`).toBeLessThan(60);
   }
   await page.setViewportSize(pantalla);
-  // Junto a "Ver la galería", más trabajos en TikTok (pedido de la demo del 24/10)
-  await expect(page.getByRole("region", { name: "Trabajos recientes" }).getByRole("link", { name: "Mira nuestros trabajos en TikTok" })).toBeVisible();
+  // TikTok, casi tan importante como WhatsApp (pedido 35): un bloque propio, con el usuario y su botón; y en el encabezado
+  // (en la computadora, junto al menú; en el celular, dentro del menú)
+  const tiktok = page.getByRole("region", { name: "Mira cómo trabajamos" });
+  await expect(tiktok).toContainText("@toctar.detailing");
+  await expect(tiktok.getByRole("link", { name: "Ver en TikTok" })).toHaveAttribute("href", "https://www.tiktok.com/@toctar.detailing");
+  await expect(page.getByRole("region", { name: "Trabajos recientes" }).getByRole("link", { name: /TikTok/ })).toHaveCount(0);
+  if (info.project.name === "escritorio") {
+    await expect(page.getByRole("banner").getByRole("link", { name: "TikTok", exact: true })).toHaveAttribute("href", "https://www.tiktok.com/@toctar.detailing");
+  } else {
+    await page.getByRole("banner").getByRole("button", { name: /menú/i }).click();
+    await expect(page.getByRole("dialog").getByRole("link", { name: "Míranos en TikTok" })).toHaveAttribute("href", "https://www.tiktok.com/@toctar.detailing");
+    await page.keyboard.press("Escape");
+  }
 
   // Con "reducir movimiento", no se mueve sola
   await page.emulateMedia({ reducedMotion: "reduce" });

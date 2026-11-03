@@ -1,20 +1,24 @@
 import { cn } from "cn";
 import type { Redes } from "@/db/esquema";
 import { NOMBRE_RED, REDES } from "@/modulos/configuracion/esquemas";
+import { EnlaceTikTok } from "./enlace-tiktok";
 import { IconoRed } from "./iconos-marca";
 
 // Redes del negocio (HU-04): solo las que cargó el dueño, en el orden de siempre.
-// - "iconos": el pie. Botones de 44 × 44 px; el nombre lo leen los lectores de pantalla.
+// - "iconos": el pie. Botones de 44 × 44 px; el nombre lo leen los lectores de pantalla. TikTok, con su nombre y en
+//   blanco (pedido 35: casi tan importante como WhatsApp).
 // - "con-nombre": Contacto, donde hay lugar y el nombre confirma a dónde lleva cada enlace.
 
 export function RedesSociales({ redes, variante, className }: { redes: Redes; variante: "iconos" | "con-nombre"; className?: string }) {
   const cargadas = REDES.filter((r) => redes[r]);
   if (cargadas.length === 0) return null;
   return (
-    <ul aria-label="Redes sociales" className={cn("flex flex-wrap", variante === "iconos" ? "-mx-2.5 gap-1" : "gap-x-6 gap-y-1", className)}>
+    <ul aria-label="Redes sociales" className={cn("flex flex-wrap items-center", variante === "iconos" ? "-mx-2.5 gap-1" : "gap-x-6 gap-y-1", className)}>
       {cargadas.map((r) => (
         <li key={r}>
-          {variante === "iconos" ? (
+          {variante === "iconos" && r === "tiktok" ? (
+            <EnlaceTikTok enlace={redes[r]} texto={NOMBRE_RED[r]} className="ml-2.5" />
+          ) : variante === "iconos" ? (
             <a
               href={redes[r]}
               target="_blank"
