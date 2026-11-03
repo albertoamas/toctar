@@ -81,7 +81,15 @@ export function FormularioUsuario(props: Props) {
         {/* El valor viaja en un campo oculto propio: React reinicia el formulario al terminar la acción y el campo interno
             de los radios de base-ui volvía al rol inicial tras un error, aunque en pantalla siguiera marcado el elegido */}
         <input type="hidden" name="rol" value={rol} />
-        <RadioGroup value={rol} onValueChange={(v) => setRol(v as Rol)} className="gap-3">
+        <RadioGroup
+          value={rol}
+          onValueChange={(v) => {
+            setRol(v as Rol);
+            // Un dueño que pasa a encargado no trae permisos: empieza con Taller, como uno nuevo
+            if (v === "encargado" && permisos.length === 0) setPermisos(PERFILES[0].permisos);
+          }}
+          className="gap-3"
+        >
           {ROLES.map((r) => (
             <label key={r} htmlFor={`rol-${r}`} className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-fondo p-3 has-data-checked:border-tinta">
               <RadioGroupItem id={`rol-${r}`} value={r} className="mt-0.5" />

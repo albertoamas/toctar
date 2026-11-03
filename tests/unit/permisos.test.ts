@@ -22,6 +22,15 @@ test("dos roles: dueño y encargado (pedido 32, sin técnico)", () => {
   expect(ROLES).toEqual(["dueno", "encargado"]);
 });
 
+test("un rol que no existe (un técnico viejo en la base) no ve ni puede nada, aunque traiga permisos", () => {
+  const viejo = { rol: "tecnico" as never, permisos: [...PERMISOS] };
+  for (const m of todos) expect(puedeVerModulo(viejo, m)).toBe(false);
+  expect(puede(viejo, "recibir_vehiculo")).toBe(false);
+  expect(puede(viejo, "entregar_vehiculo")).toBe(false);
+  // Con los mismos permisos, un encargado sí
+  expect(puede(encargado([...PERMISOS]), "recibir_vehiculo")).toBe(true);
+});
+
 describe("perfiles del encargado (pedido 32)", () => {
   const [taller, atencion, todo] = PERFILES;
 

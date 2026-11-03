@@ -81,6 +81,9 @@ export function puedeVerModulo(sujeto: SujetoPermisos, modulo: Modulo): boolean 
       // Usuarios, configuración y catálogo no tienen permiso de encargado: aunque la base tuviera algo raro guardado,
       // se niegan (RN-01).
       return def.permisoEncargado !== null && sujeto.permisos.includes(def.permisoEncargado);
+    default:
+      // Un rol que no existe (dato viejo o raro en la base): nada
+      return false;
   }
 }
 
@@ -111,7 +114,8 @@ const PERMISO_DE_ACCION: Partial<Record<Accion, Permiso>> = { cotizar: "cotizaci
  */
 export function puede(sujeto: SujetoPermisos, accion: Accion): boolean {
   if (sujeto.rol === "dueno") return true;
-  if (SOLO_DUENO.includes(accion)) return false;
+  // Solo el encargado actúa por sus permisos: un rol que no existe no puede nada
+  if (sujeto.rol !== "encargado" || SOLO_DUENO.includes(accion)) return false;
   return sujeto.permisos.includes(PERMISO_DE_ACCION[accion] ?? "ordenes");
 }
 
