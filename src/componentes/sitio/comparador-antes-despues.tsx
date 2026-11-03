@@ -10,7 +10,7 @@ import type { UrlsFoto } from "@/lib/fotos";
 //   Un gesto vertical desplaza la página y no mueve la línea (`touch-action: pan-y` y el umbral de abajo).
 // - Con el teclado y el lector de pantalla: un deslizador nativo (oculto) que mueve la misma línea con las flechas.
 // Las dos fotos se ven enteras (`object-contain`): si no tienen la misma forma, una queda con bordes, pero nunca recortada.
-// Con `marco` (la galería) va en un recuadro de 4:3 como los demás trabajos y las fotos lo llenan (`object-cover`), salvo
+// Con `marco` (la galería) va en un recuadro de 4:3, o cuadrado con `formaMarco` (pedido 34), y las fotos lo llenan (`object-cover`), salvo
 // que el antes y el después tengan formas distintas: recortadas no coincidirían, y van enteras.
 // El alto máximo sale de la variable `--alto-comparador` (70dvh si nadie la pone): la portada lo achica en el celular.
 // `sola` (la portada, pedido de YankoSoft del 24/10): la línea va y viene sola unas veces hasta que el visitante la
@@ -41,6 +41,7 @@ export function ComparadorAntesDespues({
   sola = false,
   sinAyuda = false,
   marco = false,
+  formaMarco = "4 / 3",
   sizes = "(min-width: 768px) 50vw, 100vw",
 }: {
   antes: Foto;
@@ -54,8 +55,11 @@ export function ComparadorAntesDespues({
   sola?: boolean;
   /** "Arrastra la línea para comparar" solo para el lector de pantalla: la galería lo dice una vez, arriba. */
   sinAyuda?: boolean;
-  /** En un recuadro de 4:3 que las fotos llenan: la galería, donde todos los trabajos miden lo mismo. */
+  /** En un recuadro que las fotos llenan (la galería), de la forma de `formaMarco`. */
   marco?: boolean;
+  /** La forma del marco: 4:3 por defecto; cuadrado en la sección "Antes y después" de la galería (pedido 34), así las
+      fotos verticales del celular no quedan con franjas a los costados. */
+  formaMarco?: "4 / 3" | "1 / 1";
   /** Qué ancho ocupa en la pantalla (atributo `sizes`): el navegador elige la versión de 640 px o la grande. */
   sizes?: string;
 }) {
@@ -71,7 +75,7 @@ export function ComparadorAntesDespues({
   const mismaForma = Math.abs(proporcionDe(antes) / proporcion - 1) < 0.05;
   const ajuste = marco && mismaForma ? "object-cover" : "object-contain";
   const estiloCaja: React.CSSProperties & Record<"--corte", number> = marco
-    ? { "--corte": corte, aspectRatio: "4 / 3" }
+    ? { "--corte": corte, aspectRatio: formaMarco }
     : { "--corte": corte, aspectRatio: proporcion, maxWidth: `calc(var(--alto-comparador, 70dvh) * ${proporcion})` };
 
   // El movimiento solo: un vaivén suave desde el medio, solo mientras la foto está a la vista y la pestaña abierta.

@@ -593,7 +593,8 @@
      Pedido 33 (03/11): se veía apagada (gris muy oscuro sobre negro, el rojo solo en el enlace). Un gris un poco más
      claro y una línea arriba la despegan del fondo; una franja roja con punta a 60° entre la foto y el texto; la foto
      con un poco más de brillo; el texto más claro. Sin brillos ni degradados de color. */
-  .tt-tarjeta {
+  .tt-tarjeta,
+  .tt-trabajo {
     display: grid;
     grid-template-rows: auto 1fr;
     color: var(--tinta);
@@ -618,12 +619,16 @@
     filter: brightness(1.1) contrast(1.06) saturate(1.12);
     transition: transform 400ms ease;
   }
-  /* La franja roja entre la foto y el texto, con la punta cortada a 60° (el ángulo de la marca) */
-  .tt-tarjeta__media::after {
+  /* La franja roja entre la foto y el texto, con la punta cortada a 60° (el ángulo de la marca). Encima del comparador de
+     la galería y sin tapar sus toques */
+  .tt-tarjeta__media::after,
+  .tt-trabajo__media::after {
     content: "";
     position: absolute;
+    z-index: 2;
     left: 0;
     bottom: 0;
+    pointer-events: none;
     width: 76px;
     height: 5px;
     /* La punta, con un degradado anclado a la esquina como el corte de la tarjeta (un clip-path deja el borde difuso,
@@ -697,7 +702,8 @@
   .tt-tarjeta:has(.tt-tarjeta__enlace:focus-visible) .tt-tarjeta__media img {
     transform: scale(1.04);
   }
-  .tt-tarjeta:has(.tt-tarjeta__enlace:focus-visible) .tt-tarjeta__media::after {
+  .tt-tarjeta:has(.tt-tarjeta__enlace:focus-visible) .tt-tarjeta__media::after,
+  .tt-trabajo:has(.tt-trabajo__enlace:focus-visible) .tt-trabajo__media::after {
     width: 100%;
   }
   .tt-tarjeta__enlace:focus-visible {
@@ -707,27 +713,98 @@
     .tt-tarjeta:hover .tt-tarjeta__media img {
       transform: scale(1.04);
     }
-    .tt-tarjeta:hover .tt-tarjeta__media::after {
+    .tt-tarjeta:hover .tt-tarjeta__media::after,
+    .tt-trabajo:hover .tt-trabajo__media::after {
       width: 100%;
+    }
+    .tt-trabajo:hover .tt-trabajo__foto img {
+      transform: scale(1.04);
+    }
+    .tt-trabajo:hover .tt-trabajo__enlace {
+      text-decoration: underline;
     }
     .tt-tarjeta:hover .tt-tarjeta__enlace {
       text-decoration: underline;
     }
   }
   @media (hover: none) {
-    .tt-tarjeta__media::after {
+    .tt-tarjeta__media::after,
+    .tt-trabajo__media::after {
       width: 112px;
     }
   }
   @media (prefers-reduced-motion: reduce) {
     .tt-tarjeta__media img,
-    .tt-tarjeta__media::after {
+    .tt-tarjeta__media::after,
+    .tt-trabajo__foto img,
+    .tt-trabajo__media::after {
       transition: none;
     }
     .tt-tarjeta:hover .tt-tarjeta__media img,
-    .tt-tarjeta:has(.tt-tarjeta__enlace:focus-visible) .tt-tarjeta__media img {
+    .tt-tarjeta:has(.tt-tarjeta__enlace:focus-visible) .tt-tarjeta__media img,
+    .tt-trabajo:hover .tt-trabajo__foto img,
+    .tt-trabajo:has(.tt-trabajo__enlace:focus-visible) .tt-trabajo__foto img {
       transform: none;
     }
+  }
+
+  /* Un trabajo de la galería (pedido 34): la misma tarjeta que un servicio, con el comparador o la foto arriba y, debajo,
+     su servicio y "Ver el servicio" al pie (a la misma altura en toda la fila). No es un enlace entero: en un antes y
+     después, el toque es para la línea. */
+  .tt-trabajo {
+    position: relative;
+    margin: 0;
+  }
+  .tt-trabajo__media {
+    position: relative;
+  }
+  .tt-trabajo__foto {
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--superficie);
+  }
+  .tt-trabajo__foto img {
+    /* Solo en la tarjeta, como en las de servicios: la foto original no cambia */
+    filter: brightness(1.1) contrast(1.06) saturate(1.12);
+    transition: transform 400ms ease;
+  }
+  .tt-trabajo__cuerpo {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 4px;
+    padding: 16px 20px 20px;
+  }
+  .tt-trabajo__titulo {
+    font-family: var(--font-titular);
+    font-size: 24px;
+    line-height: 28px;
+    font-weight: 700;
+    font-style: italic;
+  }
+  .tt-trabajo__enlace {
+    align-self: end;
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--rojo-texto);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 6px;
+  }
+  .tt-trabajo__enlace:hover,
+  .tt-trabajo__enlace:focus-visible {
+    text-decoration: underline;
+    outline: none;
+  }
+  .tt-trabajo:has(.tt-trabajo__enlace:focus-visible) {
+    outline: 2px solid var(--foco);
+    outline-offset: 2px;
+  }
+  .tt-trabajo:has(.tt-trabajo__enlace:focus-visible) .tt-trabajo__foto img {
+    transform: scale(1.04);
   }
   /* Con el teclado se enmarca toda la tarjeta, que es lo que se abre, y no solo el enlace (pulido 2.2). */
   .tt-tarjeta:has(.tt-tarjeta__enlace:focus-visible) {
