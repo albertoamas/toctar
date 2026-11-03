@@ -7,7 +7,7 @@ const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "c" : "e")
 
 test("tras 5 contraseñas incorrectas se bloquea el ingreso, aunque la sexta sea la correcta", async ({ page }, info) => {
   const usuario = `bloqueo-${sufijo(info)}`;
-  await crearUsuario({ usuario, nombre: "Prueba de bloqueo", contrasena: "correcta-123", rol: "tecnico" });
+  await crearUsuario({ usuario, nombre: "Prueba de bloqueo", contrasena: "correcta-123", rol: "encargado" });
   // Una conexión propia: el límite por conexión no se mezcla con las demás pruebas.
   await page.setExtraHTTPHeaders({ "x-real-ip": `10.16.0.${sufijo(info) === "c" ? 1 : 2}` });
 

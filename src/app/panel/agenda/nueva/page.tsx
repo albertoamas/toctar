@@ -15,7 +15,7 @@ import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { FormularioReserva } from "@/modulos/agenda/componentes/formulario-reserva";
-import { datosDeCotizacion, datosDirecta, espaciosEnFechas, tecnicosActivos, type VehiculoReserva } from "@/modulos/agenda/consultas";
+import { datosDeCotizacion, datosDirecta, espaciosEnFechas, type VehiculoReserva } from "@/modulos/agenda/consultas";
 import { fechaEntregaSugerida } from "@/modulos/agenda/reglas";
 import { DatosVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 import { ElegirCliente } from "@/modulos/clientes/componentes/elegir-cliente";
@@ -232,11 +232,10 @@ async function Formulario(props: {
   fechaFin: string;
   espacio: number | null;
 }) {
-  const [tecnicos, parametros, espacios] = await Promise.all([tecnicosActivos(), obtenerParametros(), espaciosEnFechas(props.fechaInicial, props.fechaFin)]);
+  const [parametros, espacios] = await Promise.all([obtenerParametros(), espaciosEnFechas(props.fechaInicial, props.fechaFin)]);
   return (
     <FormularioReserva
       origen={props.origen}
-      tecnicos={tecnicos}
       conPagos={props.conPagos}
       adelantoSugerido={parametros.adelanto_sugerido.toFixed(2)}
       hoy={props.hoy}

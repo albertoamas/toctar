@@ -12,7 +12,7 @@ import { descartarComprobante, guardarComprobante } from "./comprobante";
 import { esquemaAnularPago, esquemaPago } from "./esquemas";
 import { calcularSaldo, estaPagada } from "./reglas";
 
-// Pagos de una reserva (HU-32, RF-45, RF-46). Dueño o encargado con "Pagos"; el técnico nunca (RN-12). Un pago no
+// Pagos de una reserva (HU-32, RF-45, RF-46). Dueño o encargado con "Pagos" (RN-12). Un pago no
 // pasa el saldo pendiente y no se borra: se anula con motivo (D-6). Todo queda en la auditoría (RNF-10).
 
 const RECARGA = "No se pudo leer el pedido. Recarga la página.";

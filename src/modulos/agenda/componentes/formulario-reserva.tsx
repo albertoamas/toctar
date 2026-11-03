@@ -44,7 +44,6 @@ type Origen =
 
 type Props = {
   origen: Origen;
-  tecnicos: { id: number; nombre: string }[];
   /** Quien ve pagos registra el adelanto (RN-04); los demás agendan "sin adelanto". */
   conPagos: boolean;
   adelantoSugerido: string;
@@ -55,7 +54,7 @@ type Props = {
 };
 
 
-export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido, hoy, fechaInicial, espacioInicial, espaciosIniciales }: Props) {
+export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fechaInicial, espacioInicial, espaciosIniciales }: Props) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(agendarReserva, {});
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
@@ -76,7 +75,6 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
   // El elegido vale mientras siga libre en las fechas de ahora
   const [espacioElegido, setEspacioId] = useState(espacioInicial ? String(espacioInicial) : "");
   const espacioId = libres.some((x) => String(x.id) === espacioElegido) ? espacioElegido : "";
-  const [tecnicoId, setTecnicoId] = useState("");
   const [horaIngreso, setHoraIngreso] = useState("");
   const [nota, setNota] = useState("");
   const [sinAdelanto, setSinAdelanto] = useState(false);
@@ -168,18 +166,6 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
             <option value="">Elige el espacio</option>
             {libres.map((x) => (
               <option key={x.id} value={x.id}>{x.nombre}</option>
-            ))}
-          </Selector>
-        </Campo>
-      </fieldset>
-
-      <fieldset className="tt-seccion-formulario flex flex-col gap-5">
-        <legend className="tt-titulo-seccion">Detalles</legend>
-        <Campo id="tecnicoId" etiqueta="Técnico" error={e.tecnicoId}>
-          <Selector id="tecnicoId" name="tecnicoId" value={tecnicoId} onChange={(ev) => setTecnicoId(ev.target.value)} aria-invalid={!!e.tecnicoId} aria-describedby={e.tecnicoId ? "tecnicoId-error" : undefined} className="max-w-xs">
-            <option value="">Sin asignar</option>
-            {tecnicos.map((t) => (
-              <option key={t.id} value={t.id}>{t.nombre}</option>
             ))}
           </Selector>
         </Campo>

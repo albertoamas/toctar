@@ -16,11 +16,11 @@ import { borrarFotosSueltas, soltarFotosIngreso } from "@/modulos/ordenes/fotos"
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
 import { descartarComprobante, guardarComprobante } from "@/modulos/pagos/comprobante";
 import { calcularSaldo } from "@/modulos/pagos/reglas";
-import { datosDeCotizacion, espaciosEnFechas, tecnicosActivos, type EspacioDisponible } from "./consultas";
+import { datosDeCotizacion, espaciosEnFechas, type EspacioDisponible } from "./consultas";
 import { entradaReserva, esquemaAdelanto, esquemaCancelar, esquemaConsultaEspacios, esquemaFechas, esquemaReprogramar, esquemaReserva } from "./esquemas";
 
-// Agenda (HU-30). Entra el dueño o un encargado con "Agenda"; el adelanto, solo con "Pagos" (o el dueño). El técnico
-// nunca (RN-12). Un espacio no tiene dos vehículos el mismo día (RN-06): la pantalla solo ofrece los libres y la base
+// Agenda (HU-30). Entra el dueño o un encargado con "Agenda"; el adelanto, solo con "Pagos" (o el dueño, RN-12). Un
+// espacio no tiene dos vehículos el mismo día (RN-06): la pantalla solo ofrece los libres y la base
 // rechaza un cruce aunque dos personas reserven a la vez (D-5). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md.
 
 const ESPACIO_OCUPADO = "Ese espacio se ocupó recién: elige otro.";
@@ -115,12 +115,11 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
     if (Object.keys(errLineas).length > 0) return { errores: errLineas };
   }
 
-  // Lo que el esquema no sabe: el espacio, el técnico y el tope del adelanto
-  const [espacios, tecnicos] = await Promise.all([espaciosEnFechas(fechaInicio, fechaFin), d.tecnicoId ? tecnicosActivos() : []]);
+  // Lo que el esquema no sabe: el espacio y el tope del adelanto
+  const espacios = await espaciosEnFechas(fechaInicio, fechaFin);
   const espacio = espacios.find((e) => e.id === d.espacioId);
   if (!espacio) errores.espacioId = "Elige el espacio.";
   else if (!espacio.libre) errores.espacioId = ESPACIO_OCUPADO;
-  if (d.tecnicoId && !tecnicos.some((t) => t.id === d.tecnicoId)) errores.tecnicoId = "Ese técnico ya no está activo.";
   const { total } = calcularSaldo(
     lineas.map((l) => l.precio),
     descuento,
@@ -166,7 +165,6 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
           fechaInicio,
           fechaFin,
           horaIngreso: d.horaIngreso,
-          tecnicoId: d.tecnicoId,
           descuento,
           nota: d.nota,
           createdBy: autorId,

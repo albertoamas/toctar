@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, gte, inArray, isNull, lte, ne, notInArray, or } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lte, ne, notInArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import {
@@ -62,15 +62,6 @@ export async function espaciosEnFechas(fechaInicio: string, fechaFin: string, ex
   ]);
   const ocupadoSet = new Set(ocupados.map((o) => o.espacioId));
   return espacios.map((e) => ({ ...e, libre: !ocupadoSet.has(e.id) }));
-}
-
-/** Técnicos activos, para asignar la reserva (opcional). */
-export async function tecnicosActivos(): Promise<{ id: number; nombre: string }[]> {
-  return db
-    .select({ id: usuario.id, nombre: usuario.name })
-    .from(usuario)
-    .where(and(eq(usuario.role, "tecnico"), or(isNull(usuario.banned), eq(usuario.banned, false))))
-    .orderBy(asc(usuario.name));
 }
 
 type LineaReserva = { varianteId: number; descripcion: string; precio: string; duracion: number };
@@ -216,7 +207,6 @@ export type DetalleReserva = {
   fechaInicio: string;
   fechaFin: string;
   horaIngreso: string | null;
-  tecnico: string | null;
   nota: string | null;
   motivoCancelacion: string | null;
   consultaId: number | null;
@@ -227,8 +217,7 @@ export type DetalleReserva = {
   modelo: string | null;
   anio: number | null;
   color: string | null;
-  /** La orden (C4): quién la trabaja, cómo se recibió y el último aviso de "listo" (HU-35). */
-  tecnicoId: number | null;
+  /** La orden (C4): cómo se recibió y el último aviso de "listo" (HU-35). */
   observacionesIngreso: string | null;
   recibidoAt: Date | null;
   recibidoPor: string | null;
@@ -242,11 +231,10 @@ export type DetalleReserva = {
   tamanoId: number;
   /** El vehículo: sus planes de mantenimiento al entregar (pedido 21). */
   vehiculoId: number;
-  /** Solo para quien ve pagos (RN-01 y RN-12: el técnico nunca). */
+  /** Solo para quien ve pagos (RN-01 y RN-12). */
   montos: { lineas: { descripcion: string; precio: string; esAdicional: boolean }[]; descuento: string; saldo: Saldo; pagos: PagoReserva[] } | null;
 };
 
-const tecnico = alias(usuario, "tecnico");
 const registrador = alias(usuario, "registrador");
 const recibio = alias(usuario, "recibio");
 const aviso = alias(usuario, "aviso");
@@ -269,7 +257,6 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
       fechaInicio: trabajo.fechaInicio,
       fechaFin: trabajo.fechaFin,
       horaIngreso: trabajo.horaIngreso,
-      tecnico: tecnico.name,
       nota: trabajo.nota,
       motivoCancelacion: trabajo.motivoCancelacion,
       consultaId: trabajo.consultaId,
@@ -278,7 +265,6 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
       descuento: trabajo.descuento,
       createdAt: trabajo.createdAt,
       agendadaPor: registrador.name,
-      tecnicoId: trabajo.tecnicoId,
       observacionesIngreso: trabajo.observacionesIngreso,
       recibidoAt: trabajo.recibidoAt,
       recibidoPor: recibio.name,
@@ -301,7 +287,6 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
     .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
     .innerJoin(espacioTaller, eq(trabajo.espacioId, espacioTaller.id))
     .innerJoin(registrador, eq(trabajo.createdBy, registrador.id))
-    .leftJoin(tecnico, eq(trabajo.tecnicoId, tecnico.id))
     .leftJoin(recibio, eq(trabajo.recibidoPor, recibio.id))
     .leftJoin(aviso, eq(trabajo.avisadoListoPor, aviso.id))
     .leftJoin(entrego, eq(trabajo.entregadoPor, entrego.id))
@@ -430,7 +415,6 @@ export type ReservaTablero = {
   estado: EstadoTrabajo;
   placa: string;
   cliente: string;
-  tecnico: string | null;
   /** El primer servicio y cuántos más lleva ("Pulido y nano cerámico — 5 años", 1). */
   servicio: string | null;
   masServicios: number;
@@ -466,12 +450,10 @@ export async function semanaDeAgenda(lunes: string, domingo: string): Promise<Se
         estado: trabajo.estado,
         placa: vehiculo.placa,
         cliente: cliente.nombre,
-        tecnico: tecnico.name,
       })
       .from(trabajo)
       .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
       .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
-      .leftJoin(tecnico, eq(trabajo.tecnicoId, tecnico.id))
       .where(enLaSemana)
       .orderBy(asc(trabajo.fechaInicio)),
     db

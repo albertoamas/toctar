@@ -5,7 +5,7 @@ import { cliente, tamanoVehiculo, vehiculo } from "@/db/esquema";
 import { escaparLike, normalizarBusqueda } from "./reglas";
 
 // Lecturas de clientes (C1). Quien las llama ya pasó por exigirModulo("clientes"): el dueño o un encargado con el
-// permiso; el técnico nunca (RN-12).
+// permiso.
 
 export type FilaCliente = { id: number; nombre: string; telefono: string; placas: string[] };
 

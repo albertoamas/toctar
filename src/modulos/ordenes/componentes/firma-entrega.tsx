@@ -2,7 +2,7 @@ import Image from "next/image";
 import type { FirmaEntrega } from "../consultas";
 
 // La entrega en la orden (pedido 13): la firma del cliente, en grande al tocarla, con "Recibido conforme por {nombre}", o
-// "Entregado sin firma" con el motivo. La firma no es un precio ni un teléfono: la ve también el técnico (RN-12).
+// "Entregado sin firma" con el motivo. La firma no es un precio: la ve todo el que trabaja la orden (RN-12).
 
 export function FirmaDeEntrega({ firma }: { firma: FirmaEntrega }) {
   return (

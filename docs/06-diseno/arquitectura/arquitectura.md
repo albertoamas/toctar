@@ -11,7 +11,7 @@ Una sola aplicación web sirve el sitio público y el panel. Corre en contenedor
 flowchart LR
     subgraph Usuarios
         V[Visitante<br/>navegador]
-        P[Dueño, encargado, técnico<br/>PWA en celular o PC]
+        P[Dueño y encargados<br/>PWA en celular o PC]
     end
 
     subgraph VPS[Servidor en la nube]
@@ -79,7 +79,7 @@ Se verifica el precio real al contratar y se le informa al dueño antes (acuerdo
 
 ### Permisos
 - Cada acción del servidor verifica la sesión y el rol antes de tocar datos (RNF-05). Un solo módulo `permisos.ts` define qué puede hacer cada rol y qué módulos tiene el encargado.
-- Las reglas sensibles se prueban automáticamente: cotiza el dueño o el encargado con el permiso (RN-01), el técnico no ve precios (RN-12), la entrega con saldo requiere al dueño o un encargado autorizado (RN-13).
+- Las reglas sensibles se prueban automáticamente: cotiza el dueño o el encargado con el permiso (RN-01), sin Pagos ni Cotizaciones no se ven precios (RN-12), la entrega con saldo requiere al dueño o un encargado autorizado (RN-13).
 
 ### WhatsApp
 - **Botón del sitio y avisos:** enlaces `https://wa.me/591XXXXXXXX?text=...` con el mensaje armado desde la plantilla. Abren la app con el texto escrito; la persona envía.

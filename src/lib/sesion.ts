@@ -17,7 +17,7 @@ export type UsuarioActual = {
   nombre: string;
   usuario: string;
   rol: Rol;
-  /** Solo los encargados tienen permisos guardados; para dueño y técnico va vacío. */
+  /** Solo los encargados tienen permisos guardados; para el dueño va vacío (puede todo). */
   permisos: Permiso[];
 };
 

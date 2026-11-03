@@ -74,7 +74,7 @@ Una vez por semana se muestra el avance al dueño: corregir el rumbo cada semana
 
 ### 10. Lanzamiento
 - Cargar los datos reales: precios, servicios y, si se quiere, los clientes del cuaderno.
-- Capacitar al dueño y a los técnicos con videos cortos.
+- Capacitar al dueño y al personal con videos cortos.
 - Acompañar la primera semana de uso.
 
 ### 11. Soporte y mejora

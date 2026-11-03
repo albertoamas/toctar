@@ -1,40 +1,25 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { ClipboardCheckIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
-import { Selector } from "@/componentes/panel/selector";
 import { Button } from "@/componentes/ui/button";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { recibirVehiculo } from "../acciones";
 
 // HU-33: recibir el vehículo (RF-40). Cómo llegó lo dice el checklist (pedido 12), con la foto de cada detalle; aquí van
-// las observaciones y el técnico. El servidor no recibe con partes del checklist sin revisar.
+// las observaciones (pedido 32: sin técnico asignado). El servidor no recibe con partes del checklist sin revisar.
 
-type Props = {
-  trabajoId: number;
-  tecnicos: { id: number; nombre: string }[];
-  tecnicoInicial: number | null;
-  /** El técnico de la reserva, si ya no está activo: se avisa en vez de soltarlo sin decir nada. */
-  tecnicoInactivo: string | null;
-};
-
-export function FormularioRecepcion({ trabajoId, tecnicos, tecnicoInicial, tecnicoInactivo }: Props) {
+export function FormularioRecepcion({ trabajoId }: { trabajoId: number }) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(recibirVehiculo, {});
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
   const e = estado.errores ?? {};
-  // Controlados: React reinicia el formulario al terminar la acción y así nada se pierde tras un error
+  // Controlado: React reinicia el formulario al terminar la acción y así lo escrito no se pierde tras un error
   const [observaciones, setObservaciones] = useState("");
-  const menuTecnico = useRef<HTMLSelectElement>(null);
-  const [tecnicoId, setTecnicoId] = useState(tecnicoInicial && tecnicos.some((t) => t.id === tecnicoInicial) ? String(tecnicoInicial) : "");
-  // Terminado un envío, React reinicia el formulario: el menú vuelve a mostrar el técnico elegido
-  useEffect(() => {
-    if (menuTecnico.current) menuTecnico.current.value = tecnicoId;
-  }, [estado, tecnicoId]);
 
   return (
     <form ref={formulario} action={accion} className="tt-formulario-panel flex flex-col gap-5" noValidate aria-label="Recibir vehículo">
@@ -50,27 +35,6 @@ export function FormularioRecepcion({ trabajoId, tecnicos, tecnicoInicial, tecni
           aria-invalid={!!e.observaciones}
           aria-describedby={e.observaciones ? "observaciones-error" : "observaciones-ayuda"}
         />
-      </Campo>
-      <Campo id="tecnicoId" etiqueta="Técnico" error={e.tecnicoId} ayuda={tecnicoInactivo ? `${tecnicoInactivo} ya no está activo: elige otro técnico.` : undefined}>
-        {/* El valor va en un campo oculto propio, como en la reserva: React reinicia el formulario al terminar cada envío
-            (también uno que falla, como "faltan partes del checklist") y el menú quedaba en "Sin asignar" mientras el
-            estado seguía con el técnico: se recibía sin técnico. Además, después de cada envío se vuelve a poner a la
-            vista (menuTecnico), así lo que se ve es lo que se envía */}
-        <input type="hidden" name="tecnicoId" value={tecnicoId} />
-        <Selector
-          ref={menuTecnico}
-          id="tecnicoId"
-          value={tecnicoId}
-          onChange={(ev) => setTecnicoId(ev.target.value)}
-          aria-invalid={!!e.tecnicoId}
-          aria-describedby={e.tecnicoId ? "tecnicoId-error" : tecnicoInactivo ? "tecnicoId-ayuda" : undefined}
-          className="max-w-xs"
-        >
-          <option value="">Sin asignar</option>
-          {tecnicos.map((t) => (
-            <option key={t.id} value={t.id}>{t.nombre}</option>
-          ))}
-        </Selector>
       </Campo>
       {/* En el celular, fijo abajo: a mano aunque el teclado esté abierto en las observaciones (pulido 11.3) */}
       <PieFormulario>

@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { crearUsuario, ingresar, ingresarComoDueno, PNG } from "./apoyo";
+import { crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER, PNG } from "./apoyo";
 
 // HU-17 Atender reclamos. Criterios: docs/09-pruebas/criterios-entrega-1.md (17.x).
 // Cada proyecto deja su propio reclamo por el sitio, con una IP inventada para no tocar el límite por hora de HU-16.
@@ -80,11 +80,11 @@ test("el dueño ve el reclamo pendiente, le escribe por WhatsApp y lo marca aten
   await expect(enLaLista(page, nombre)).toBeVisible();
 });
 
-test("el encargado entra a reclamos solo con el permiso; el técnico nunca", async ({ page }, info) => {
+test("el encargado entra a reclamos solo con el permiso; sin él o con el perfil Taller, no", async ({ page }, info) => {
   const s = sufijo(info).toLowerCase();
   await crearUsuario({ usuario: `enc-reclamos-${s}`, nombre: "Encargado con reclamos", contrasena: "encargado-123", rol: "encargado", permisos: ["reclamos"] });
   await crearUsuario({ usuario: `enc-sin-reclamos-${s}`, nombre: "Encargado sin reclamos", contrasena: "encargado-123", rol: "encargado" });
-  await crearUsuario({ usuario: `tec-reclamos-${s}`, nombre: "Técnico", contrasena: "tecnico-123", rol: "tecnico" });
+  await crearUsuario({ usuario: `taller-reclamos-${s}`, nombre: "Chico del taller", contrasena: "taller-123", rol: "encargado", permisos: PERFIL_TALLER });
 
   await ingresar(page, `enc-reclamos-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
@@ -92,7 +92,7 @@ test("el encargado entra a reclamos solo con el permiso; el técnico nunca", asy
   await page.goto("/panel/reclamos");
   await expect(page.getByRole("heading", { level: 1, name: "Reclamos" })).toBeVisible();
 
-  for (const [usuario, contrasena] of [[`enc-sin-reclamos-${s}`, "encargado-123"], [`tec-reclamos-${s}`, "tecnico-123"]]) {
+  for (const [usuario, contrasena] of [[`enc-sin-reclamos-${s}`, "encargado-123"], [`taller-reclamos-${s}`, "taller-123"]]) {
     await page.context().clearCookies();
     await ingresar(page, usuario, contrasena);
     await expect(page).toHaveURL(/\/panel$/);

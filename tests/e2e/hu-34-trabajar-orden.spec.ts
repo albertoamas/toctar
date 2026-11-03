@@ -1,8 +1,9 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearUsuario, ingresar, PNG } from "./apoyo";
+import { consultar, crearClienteEnBase, crearUsuario, ingresar, PERFIL_TALLER, PNG } from "./apoyo";
 
-// HU-34 Órdenes del técnico (flujo crítico 3). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §9.
-// Las órdenes van directo a la base. Para no chocar con las reservas de otras pruebas: la del técnico, en un espacio
+// HU-34 Trabajar una orden (flujo crítico 3). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §9 y,
+// desde el pedido 32 (sin técnico asignado), P32-roles-sin-tecnico.md. Las órdenes van directo a la base. Para no chocar
+// con las reservas de otras pruebas: la que se trabaja, en un espacio
 // propio y desactivado (ninguna otra prueba lo usa); la de extender, en días propios lejos de hoy (600 o 700).
 test.describe.configure({ mode: "serial" });
 
@@ -14,38 +15,41 @@ const dia = async (desplazamiento: number) => (await consultar<{ d: string }>("s
 const idDeUsuario = async (usuario: string) => (await consultar<{ id: number }>("select id from usuario where nombre_usuario = $1", [usuario]))[0].id;
 
 /** Una orden ya recibida, con un servicio, en el espacio y los días indicados. Devuelve su id. */
-async function orden(placa: string, espacioId: number, desde: string, hasta: string, tecnicoId: number | null): Promise<number> {
+async function orden(placa: string, espacioId: number, desde: string, hasta: string): Promise<number> {
   const [{ id }] = await consultar<{ id: number }>(
-    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, tecnico_id, estado, recibido_at, created_by)
-     select e.sucursal_id, v.cliente_id, v.id, e.id, $3::date, $4::date, $5, 'recibido', now(), v.created_by
+    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, recibido_at, created_by)
+     select e.sucursal_id, v.cliente_id, v.id, e.id, $3::date, $4::date, 'recibido', now(), v.created_by
      from vehiculo v, espacio_taller e where v.placa = $1 and e.id = $2 returning id`,
-    [placa, espacioId, desde, hasta, tecnicoId],
+    [placa, espacioId, desde, hasta],
   );
   await consultar("insert into trabajo_linea (trabajo_id, variante_id, descripcion, precio, orden) select $1, (select id from variante order by id limit 1), 'Lavado completo', 500, 0", [id]);
   return id;
 }
 
-test("el técnico trabaja su orden: empieza, sube fotos, escribe avances y la marca lista; el espacio se libera", async ({ page }, info) => {
+test("el perfil Taller trabaja cualquier orden, sin asignarla y sin ver precios: empieza, sube fotos, escribe avances y la marca lista", async ({ page }, info) => {
   const s = sufijo(info);
   const placa = `OT34${s.toUpperCase()}1`;
   await crearClienteEnBase({ nombre: `Trabajo ${s}`, telefono: telefono(info, 1), placa });
-  await crearUsuario({ usuario: `tec-hu34-${s}`, nombre: `Técnico Taller ${s}`, contrasena: "tecnico-123", rol: "tecnico" });
-  const tecnicoId = await idDeUsuario(`tec-hu34-${s}`);
+  await crearUsuario({ usuario: `taller-tr34-${s}`, nombre: `Chico del taller ${s}`, contrasena: "taller-123", rol: "encargado", permisos: PERFIL_TALLER });
+  const quienTrabaja = await idDeUsuario(`taller-tr34-${s}`);
   const [{ espacio }] = await consultar<{ espacio: number }>(
     `insert into espacio_taller (sucursal_id, nombre, orden, activo) select sucursal_id, $1, 90, false from espacio_taller limit 1
      on conflict do nothing returning id as espacio`,
     [`Espacio HU-34 ${s}`],
   );
   // Entró hace tres días y la entrega aproximada era dentro de tres
-  const id = await orden(placa, espacio, await dia(-3), await dia(3), tecnicoId);
+  const id = await orden(placa, espacio, await dia(-3), await dia(3));
 
-  await ingresar(page, `tec-hu34-${s}`, "tecnico-123");
+  await ingresar(page, `taller-tr34-${s}`, "taller-123");
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto("/panel/ordenes");
   await page.getByRole("link", { name: new RegExp(`^${placa}`) }).click();
   await expect(page.getByRole("heading", { level: 1, name: placa })).toBeVisible();
   const pasos = page.getByRole("region", { name: "Estado de la orden" });
   await expect(pasos.locator('[aria-current="step"]')).toHaveText("Recibida");
+  // Sin Pagos: los servicios sin precio (RN-12); y nada dice a quién está asignada (pedido 32)
+  await expect(page.getByRole("main")).not.toContainText(" Bs");
+  await expect(page.getByLabel("Datos de la orden")).not.toContainText("Técnico");
 
   await pasos.getByRole("button", { name: "Empezar trabajo" }).click();
   await expect(page.getByText("La orden está en proceso.")).toBeVisible();
@@ -64,10 +68,9 @@ test("el técnico trabaja su orden: empieza, sube fotos, escribe avances y la ma
   await pasos.getByRole("button", { name: "Marcar listo" }).click();
   await expect(page.getByText("La orden está lista. Avisa al cliente.")).toBeVisible();
   await expect(historia.getByText("Pasó a lista.")).toBeVisible();
-  // Volver un paso atrás está en "Más" (pulido 11.2); el técnico no extiende la entrega
+  // Volver un paso atrás está en "Más" (pulido 11.2); extender la entrega se prueba abajo (una lista ya no se extiende)
   await page.getByRole("button", { name: "Más" }).click();
   await expect(page.getByRole("menuitem", { name: "Volver a en proceso" })).toBeVisible();
-  await expect(page.getByRole("menuitem", { name: "Extender entrega" })).toHaveCount(0);
   await page.keyboard.press("Escape");
 
   // Terminó antes: la entrega pasa a hoy y el espacio queda libre desde mañana
@@ -83,7 +86,7 @@ test("el técnico trabaja su orden: empieza, sube fotos, escribe avances y la ma
   expect(auditoria.map((a) => a.accion)).toEqual(["estado", "estado"]);
 
   // La marcó lista por error: al volver, recupera su entrega y deja de figurar como avisada
-  await consultar("update trabajo set avisado_listo_at = now(), avisado_listo_por = $2 where id = $1", [id, tecnicoId]);
+  await consultar("update trabajo set avisado_listo_at = now(), avisado_listo_por = $2 where id = $1", [id, quienTrabaja]);
   await page.reload();
   await page.getByRole("button", { name: "Más" }).click();
   await page.getByRole("menuitem", { name: "Volver a en proceso" }).click();
@@ -106,14 +109,14 @@ test("extender la entrega: con el espacio ocupado se elige otro libre; las lista
   const espacios = await consultar<{ id: number; nombre: string }>("select id, nombre from espacio_taller where activo order by orden");
   const base = info.project.name === "celular" ? 600 : 700;
   const [d0, d1, d3] = [await dia(base), await dia(base + 1), await dia(base + 3)];
-  const id = await orden(placa, espacios[0].id, d0, d1, null);
+  const id = await orden(placa, espacios[0].id, d0, d1);
   // En el mismo espacio, otra reserva desde el día 3
   await consultar(
     `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, created_by)
      select e.sucursal_id, v.cliente_id, v.id, e.id, $3::date, $3::date, v.created_by from vehiculo v, espacio_taller e where v.placa = $1 and e.id = $2`,
     [otra, espacios[0].id, d3],
   );
-  await crearUsuario({ usuario: `taller-hu34-${s}`, nombre: "Encargado del taller", contrasena: "encargado-123", rol: "encargado", permisos: ["agenda", "ordenes"] });
+  await crearUsuario({ usuario: `taller-hu34-${s}`, nombre: "Encargado del taller", contrasena: "encargado-123", rol: "encargado", permisos: PERFIL_TALLER });
   await ingresar(page, `taller-hu34-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
 

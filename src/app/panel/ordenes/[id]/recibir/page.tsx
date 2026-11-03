@@ -8,7 +8,6 @@ import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
-import { tecnicosActivos } from "@/modulos/agenda/consultas";
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { ChecklistRecepcion } from "@/modulos/ordenes/componentes/checklist-recepcion";
 import { FormularioRecepcion } from "@/modulos/ordenes/componentes/formulario-recepcion";
@@ -19,7 +18,7 @@ export const metadata: Metadata = { title: "Recibir vehículo" };
 
 // HU-33: recibir el vehículo (RF-40, CU-15). Dueño o encargado con "Órdenes", desde el día de ingreso de la reserva:
 // el checklist de partes (pedido 12), con la foto de cada detalle (pedido 27: no hay otras fotos al recibir),
-// observaciones y técnico. Al recibirlo, la reserva pasa a orden. Pulido 11.3: arriba,
+// y las observaciones. Al recibirlo, la reserva pasa a orden. Pulido 11.3: arriba,
 // quién y qué vehículo (para confirmar que es el auto correcto) y sus servicios en una línea; el botón, fijo abajo en el
 // celular.
 export default function PaginaRecibir({ params }: PageProps<"/panel/ordenes/[id]/recibir">) {
@@ -34,12 +33,11 @@ export default function PaginaRecibir({ params }: PageProps<"/panel/ordenes/[id]
 
 async function Recepcion({ params }: Pick<PageProps<"/panel/ordenes/[id]/recibir">, "params">) {
   const usuario = await exigirModulo("ordenes");
-  // La recepción sale de la agenda, que el técnico no ve (C4 §12)
   if (!puede(usuario, "recibir_vehiculo")) redirect("/panel/sin-acceso");
   const verAgenda = puedeVerModulo(usuario, "agenda");
   const { id } = await params;
   if (!/^\d+$/.test(id)) notFound();
-  const [o, tecnicos] = await Promise.all([obtenerOrden(Number(id), false), tecnicosActivos()]);
+  const o = await obtenerOrden(Number(id), false);
   if (!o) notFound();
   if (esOrden(o.estado)) redirect(`/panel/ordenes/${o.id}`);
   // Cancelada: no hay nada que recibir; se ve en la agenda, si quien entra la ve
@@ -49,7 +47,6 @@ async function Recepcion({ params }: Pick<PageProps<"/panel/ordenes/[id]/recibir
   }
   const hoy = fechaEnBolivia();
   const detalle = detalleVehiculo(o);
-  const tecnicoInactivo = o.tecnicoId && !tecnicos.some((t) => t.id === o.tecnicoId) ? o.tecnico : null;
   const [partes, revision] = await Promise.all([partesDelChecklist(), revisionDeTrabajo(o.id)]);
 
   return (
@@ -73,7 +70,7 @@ async function Recepcion({ params }: Pick<PageProps<"/panel/ordenes/[id]/recibir
             <span className="text-tinta-suave">Servicios:</span> {o.servicios.join(", ")}
           </p>
           <ChecklistRecepcion trabajoId={o.id} partes={partes} revision={revision} />
-          <FormularioRecepcion trabajoId={o.id} tecnicos={tecnicos} tecnicoInicial={o.tecnicoId} tecnicoInactivo={tecnicoInactivo} />
+          <FormularioRecepcion trabajoId={o.id} />
         </>
       )}
     </>

@@ -9,6 +9,8 @@
   - Casos de uso: CU-00 y CU-06.
   - Modelo: tablas `usuario` y `usuario_permiso`.
 
+> **Cambió después (02/11/2026, pedido 32):** ya no hay rol Técnico. Quedan Dueño y Encargado, con perfiles que marcan sus permisos (Taller, Atención, Todo); la matriz vive en `src/lib/permisos.ts` y `tests/unit/permisos.test.ts`. Especificación: `P32-roles-sin-tecnico.md`.
+
 ## 1. Objetivo
 
 El dueño da acceso al panel a cada persona del taller, con el rol que le corresponde, y decide qué módulos ve el encargado. Nadie llega a lo que no le toca: ni por el menú ni escribiendo la dirección.

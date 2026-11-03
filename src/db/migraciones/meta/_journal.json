@@ -295,6 +295,20 @@
       "when": 1793572688816,
       "tag": "0041_firma_entrega",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1793674441566,
+      "tag": "0042_sin_tecnico_asignado",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1793674645672,
+      "tag": "0043_dos_roles",
+      "breakpoints": true
     }
   ]
 }

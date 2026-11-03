@@ -1,9 +1,9 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearUsuario, ingresar, PNG, revisarChecklistEnBase } from "./apoyo";
+import { consultar, crearClienteEnBase, crearUsuario, ingresar, PERFIL_TALLER, PNG, revisarChecklistEnBase } from "./apoyo";
 
 // HU-33 Recibir vehículo (flujo crítico 3, primera parte). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §9.
 // Se recibe desde el día de ingreso: las reservas de hoy van en un espacio propio de cada proyecto (celular: el
-// primero; escritorio: el segundo), así no se cruzan. Encargados y técnicos por prueba (límite de ingreso, RNF-04).
+// primero; escritorio: el segundo), así no se cruzan. Encargados por prueba (límite de ingreso, RNF-04).
 test.describe.configure({ mode: "serial" });
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "c" : "e");
@@ -27,18 +27,15 @@ async function reserva(info: TestInfo, placa: string, dia = hoy()): Promise<numb
   return id;
 }
 
-const idDeUsuario = async (usuario: string) => (await consultar<{ id: number }>("select id from usuario where nombre_usuario = $1", [usuario]))[0].id;
-
-test("recibir con observaciones: la reserva pasa a orden, sin fotos de ingreso sueltas (pedido 27), y el técnico la ve sin precios", async ({ page }, info) => {
+test("recibir con observaciones: la reserva pasa a orden, sin fotos de ingreso sueltas (pedido 27) ni técnico (pedido 32), y el perfil Taller la ve sin precios", async ({ page }, info) => {
   const s = sufijo(info);
   const placa = `RC33${s.toUpperCase()}1`;
   const clienteId = await crearClienteEnBase({ nombre: `Recibe ${s}`, telefono: telefono(info, 1), placa });
   const id = await reserva(info, placa);
   // Con "Clientes": desde la ficha se comprueba a dónde lleva la reserva ya recibida
   await crearUsuario({ usuario: `taller-hu33-${s}`, nombre: "Encargado del taller", contrasena: "encargado-123", rol: "encargado", permisos: ["agenda", "ordenes", "pagos", "clientes"] });
-  await crearUsuario({ usuario: `tec-hu33-${s}`, nombre: `Técnico Uno ${s}`, contrasena: "tecnico-123", rol: "tecnico" });
-  await crearUsuario({ usuario: `tec2-hu33-${s}`, nombre: `Técnico Dos ${s}`, contrasena: "tecnico-123", rol: "tecnico" });
-  const tecnicoId = await idDeUsuario(`tec-hu33-${s}`);
+  // Otro de los chicos del taller, que no la recibió: la ve igual (nadie la tiene asignada)
+  await crearUsuario({ usuario: `otro-hu33-${s}`, nombre: `Chico del taller ${s}`, contrasena: "taller-123", rol: "encargado", permisos: PERFIL_TALLER });
 
   await ingresar(page, `taller-hu33-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
@@ -53,7 +50,8 @@ test("recibir con observaciones: la reserva pasa a orden, sin fotos de ingreso s
 
   const form = page.getByRole("form", { name: "Recibir vehículo" });
   await form.getByLabel("Observaciones").fill("Rayón en la puerta trasera; deja una silla de bebé.");
-  await form.getByLabel("Técnico").selectOption({ label: `Técnico Uno ${s}` });
+  // Pedido 32: no se asigna un técnico
+  await expect(form.getByLabel("Técnico")).toHaveCount(0);
   // El checklist (pedido 12) se prueba en hu-33-checklist: aquí, todas las partes bien
   await revisarChecklistEnBase(id);
   await form.getByRole("button", { name: "Recibir vehículo" }).click();
@@ -62,14 +60,14 @@ test("recibir con observaciones: la reserva pasa a orden, sin fotos de ingreso s
   // Acotado a la orden: Next.js deja oculta la página anterior (el formulario de recibir, con el mismo texto)
   await expect(page.getByRole("region", { name: "Cómo llegó" }).getByText("Rayón en la puerta trasera; deja una silla de bebé.")).toBeVisible();
 
-  const [t] = await consultar<{ estado: string; tecnico: number; recibio: boolean; fotos: number; avances: number }>(
-    `select t.estado, t.tecnico_id as tecnico, t.recibido_por is not null as recibio,
+  const [t] = await consultar<{ estado: string; recibio: boolean; fotos: number; avances: number }>(
+    `select t.estado, t.recibido_por is not null as recibio,
        (select count(*)::int from trabajo_foto f where f.trabajo_id = t.id) as fotos,
        (select count(*)::int from trabajo_avance v where v.trabajo_id = t.id) as avances
      from trabajo t where t.id = $1`,
     [id],
   );
-  expect(t).toEqual({ estado: "recibido", tecnico: tecnicoId, recibio: true, fotos: 0, avances: 1 });
+  expect(t).toEqual({ estado: "recibido", recibio: true, fotos: 0, avances: 1 });
   const [{ accion }] = await consultar<{ accion: string }>("select accion from auditoria where entidad = 'trabajo' and entidad_id = $1", [id]);
   expect(accion).toBe("recibir");
 
@@ -91,28 +89,17 @@ test("recibir con observaciones: la reserva pasa a orden, sin fotos de ingreso s
   await expect(page.getByLabel("Cámara para fotos del final")).toBeAttached();
   await expect(page.getByLabel("Cámara para fotos del trabajo")).toHaveCount(0);
 
-  // El técnico la ve en "Mis órdenes", sin precios ni el teléfono del cliente
+  // Otro del perfil Taller la ve en "Órdenes", sin precios (no tiene Pagos, RN-12), y sube sus fotos (pedido 27)
   await page.context().clearCookies();
-  await ingresar(page, `tec-hu33-${s}`, "tecnico-123");
+  await ingresar(page, `otro-hu33-${s}`, "taller-123");
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto("/panel/ordenes");
-  await expect(page.getByRole("heading", { level: 1, name: "Mis órdenes" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Órdenes" })).toBeVisible();
   await page.getByRole("link", { name: new RegExp(`^${placa}`) }).click();
   await expect(page.getByRole("heading", { level: 1, name: placa })).toBeVisible();
   await expect(page.getByRole("region", { name: "Servicios" }).getByText("Lavado completo")).toBeVisible();
   await expect(page.getByText(/Bs/)).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Escribir por WhatsApp" })).toHaveCount(0);
-  // Él sube las del inicio y del final de su orden (pedido 27)
   await expect(page.getByLabel("Cámara para fotos del inicio")).toBeAttached();
-
-  // Otro técnico no la ve
-  await page.context().clearCookies();
-  await ingresar(page, `tec2-hu33-${s}`, "tecnico-123");
-  await expect(page).toHaveURL(/\/panel$/);
-  await page.goto("/panel/ordenes");
-  await expect(page.getByText("No tienes órdenes asignadas.")).toBeVisible();
-  await page.goto(`/panel/ordenes/${id}`);
-  await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
 });
 
 test("antes de su día no se recibe; tarde, se recibe sin pedir fotos", async ({ page }, info) => {

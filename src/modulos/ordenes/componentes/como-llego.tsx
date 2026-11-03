@@ -5,7 +5,7 @@ import { Insignia } from "@/componentes/panel/insignia";
 
 // "Cómo llegó" en la orden (pedido 12; pedido 26): una tarjeta con el resumen del checklist arriba ("11 bien",
 // "2 con detalle"), los detalles con su foto (se abre en grande), las partes en bien plegadas ("El resto, bien") y las
-// observaciones de ingreso. Lo ve también el técnico: no hay precios ni teléfonos (RN-12).
+// observaciones de ingreso. Lo ve todo el que trabaja la orden: no hay precios (RN-12).
 
 type Props = { revision: DetalleRevision[]; observaciones: string | null };
 

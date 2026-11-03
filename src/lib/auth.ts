@@ -53,7 +53,7 @@ export const auth = betterAuth({
       ac: controlDeAcceso,
       roles,
       adminRoles: ["dueno"],
-      defaultRole: "tecnico",
+      defaultRole: "encargado",
       bannedUserMessage: "Usuario o contraseña incorrectos.",
     }),
     nextCookies(), // siempre al final

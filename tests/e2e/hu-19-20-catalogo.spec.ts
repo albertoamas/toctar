@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { abrirNuevoServicio, consultar, crearServicioPublicado, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
+import { abrirNuevoServicio, consultar, crearServicioPublicado, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER } from "./apoyo";
 
 // HU-19 Catálogo con variantes y HU-20 Precios por tamaño y duración.
 // Especificación: docs/08-desarrollo/etapas/C1-catalogo-clientes.md §9. La ficha del servicio está en lectura y cada
@@ -148,11 +148,10 @@ test("las variantes se agregan, renombran y desactivan en el catálogo; una nuev
   await expect(page.getByRole("region", { name: "Premium" })).toHaveCount(0);
 });
 
-test("el encargado, aun con todos sus permisos, y el técnico no entran al catálogo", async ({ page }, info) => {
-  for (const rol of ["encargado", "tecnico"] as const) {
-    const usuario = `${rol}-catalogo-${sufijo(info).toLowerCase()}`;
-    const permisos = rol === "encargado" ? ["sitio", "reclamos", "clientes"] : [];
-    await crearUsuario({ usuario, nombre: `${rol} catálogo`, contrasena: "clave-catalogo-1", rol, permisos });
+test("ningún encargado entra al catálogo, ni con todos sus permisos ni con el perfil Taller", async ({ page }, info) => {
+  for (const [perfil, permisos] of [["todo", ["sitio", "reclamos", "clientes", "cotizaciones", "agenda", "ordenes", "pagos", "mantenimientos", "entrega_con_saldo"]], ["taller", PERFIL_TALLER]] as const) {
+    const usuario = `${perfil}-catalogo-${sufijo(info).toLowerCase()}`;
+    await crearUsuario({ usuario, nombre: `Encargado ${perfil}`, contrasena: "clave-catalogo-1", rol: "encargado", permisos: [...permisos] });
     await page.context().clearCookies();
     await ingresar(page, usuario, "clave-catalogo-1");
     await expect(page).toHaveURL(/\/panel$/);

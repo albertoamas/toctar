@@ -1,6 +1,5 @@
 import "server-only";
 import { and, asc, count, desc, eq, inArray, like, min, or, sql } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { archivo, cliente, galeriaItem, parteRevision, servicio, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, trabajoRevision, usuario, variante, vehiculo } from "@/db/esquema";
 import type { EstadoRevision, EstadoTrabajo, EtapaFoto, TipoDetalle } from "@/db/esquema/trabajos";
@@ -9,8 +8,8 @@ import { obtenerReserva, type DetalleReserva } from "@/modulos/agenda/consultas"
 import { escaparLike, nombreVehiculo, normalizarBusqueda } from "@/modulos/clientes/reglas";
 import { ENTREGADAS_POR_PAGINA, ESTADOS_ORDEN_ABIERTA, fechaBuscada } from "./reglas";
 
-// Lecturas de las órdenes (C4). Quien las llama ya pasó por exigirModulo("ordenes") y, si es técnico, por
-// `puedeVerOrden` (src/lib/permisos.ts). Los montos solo para quien ve "Pagos" (RN-12). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md.
+// Lecturas de las órdenes (C4). Quien las llama ya pasó por exigirModulo("ordenes"). Los montos solo para quien ve
+// "Pagos" (RN-12). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md.
 
 export type FotoOrden = UrlsFoto & { id: number; etapa: EtapaFoto; subidoPor: number };
 
@@ -29,7 +28,7 @@ export async function fotosDeTrabajo(trabajoId: number, etapas?: readonly EtapaF
 }
 
 export type DetalleOrden = DetalleReserva & {
-  /** Las descripciones de los servicios, para todos (el técnico las necesita para trabajar); los precios van en `montos`. */
+  /** Las descripciones de los servicios, para todos (hacen falta para trabajar); los precios van en `montos`. */
   servicios: string[];
 };
 
@@ -37,7 +36,7 @@ export type DetalleOrden = DetalleReserva & {
 export async function obtenerOrden(id: number, conMontos: boolean): Promise<DetalleOrden | null> {
   const reserva = await obtenerReserva(id, conMontos);
   if (!reserva) return null;
-  // Con montos, las líneas ya vinieron; sin ellos (el técnico), solo sus nombres
+  // Con montos, las líneas ya vinieron; sin ellos (sin Pagos), solo sus nombres
   const servicios = reserva.montos
     ? reserva.montos.lineas.map((l) => l.descripcion)
     : (await db.select({ descripcion: trabajoLinea.descripcion }).from(trabajoLinea).where(eq(trabajoLinea.trabajoId, id)).orderBy(asc(trabajoLinea.orden))).map((s) => s.descripcion);
@@ -98,20 +97,17 @@ export type OrdenEnLista = {
   /** Marca y modelo ("Toyota Hilux"); vacío si no se cargaron. */
   vehiculo: string;
   cliente: string;
-  tecnico: string | null;
   fechaFin: string;
   /** Lista y todavía sin avisar al cliente (HU-35). */
   sinAvisar: boolean;
   servicios: string[];
 };
 
-const tecnico = alias(usuario, "tecnico");
-
 /**
- * Las órdenes abiertas; las de un técnico si se indica. Primero las que se trabajan, la entrega más cercana arriba (así
- * las atrasadas y las de hoy quedan primero); al final, las listas que esperan al cliente.
+ * Las órdenes abiertas. Primero las que se trabajan, la entrega más cercana arriba (así las atrasadas y las de hoy quedan
+ * primero); al final, las listas que esperan al cliente.
  */
-export async function ordenesAbiertas(tecnicoId?: number): Promise<OrdenEnLista[]> {
+export async function ordenesAbiertas(): Promise<OrdenEnLista[]> {
   const abiertas = inArray(trabajo.estado, [...ESTADOS_ORDEN_ABIERTA]);
   const ordenes = await db
     .select({
@@ -121,15 +117,13 @@ export async function ordenesAbiertas(tecnicoId?: number): Promise<OrdenEnLista[
       marca: vehiculo.marca,
       modelo: vehiculo.modelo,
       cliente: cliente.nombre,
-      tecnico: tecnico.name,
       fechaFin: trabajo.fechaFin,
       avisadoListoAt: trabajo.avisadoListoAt,
     })
     .from(trabajo)
     .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
     .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
-    .leftJoin(tecnico, eq(trabajo.tecnicoId, tecnico.id))
-    .where(tecnicoId === undefined ? abiertas : and(abiertas, eq(trabajo.tecnicoId, tecnicoId)))
+    .where(abiertas)
     .orderBy(asc(trabajo.fechaFin), asc(trabajo.id));
   if (ordenes.length === 0) return [];
   const lineas = await db
@@ -154,13 +148,12 @@ export async function ordenesAbiertas(tecnicoId?: number): Promise<OrdenEnLista[
     .sort((a, b) => Number(a.estado === "listo") - Number(b.estado === "listo"));
 }
 
-export type OrdenEntregada = { id: number; placa: string; vehiculo: string; cliente: string; tecnico: string | null; entregadoAt: Date; servicios: string[] };
+export type OrdenEntregada = { id: number; placa: string; vehiculo: string; cliente: string; entregadoAt: Date; servicios: string[] };
 
 /**
- * El historial (pedido 28): las órdenes entregadas, la más reciente primero, de a ENTREGADAS_POR_PAGINA; las de un
- * técnico si se indica. `q` busca por placa, cliente o fecha de entrega ("5/10" o "5/10/2026", en hora de Bolivia).
+ * El historial (pedido 28): las órdenes entregadas, la más reciente primero, de a ENTREGADAS_POR_PAGINA. `q` busca por placa, cliente o fecha de entrega ("5/10" o "5/10/2026", en hora de Bolivia).
  */
-export async function ordenesEntregadas(datos: { tecnicoId?: number; q: string; pagina: number }): Promise<{ ordenes: OrdenEntregada[]; total: number }> {
+export async function ordenesEntregadas(datos: { q: string; pagina: number }): Promise<{ ordenes: OrdenEntregada[]; total: number }> {
   const busqueda = normalizarBusqueda(datos.q);
   const fecha = fechaBuscada(datos.q);
   const enBolivia = sql`(${trabajo.entregadoAt} at time zone 'America/La_Paz')`;
@@ -176,7 +169,7 @@ export async function ordenesEntregadas(datos: { tecnicoId?: number; q: string; 
           busqueda.placa ? like(vehiculo.placa, `%${escaparLike(busqueda.placa)}%`) : undefined,
         )
       : undefined;
-  const donde = and(eq(trabajo.estado, "entregado"), datos.tecnicoId === undefined ? undefined : eq(trabajo.tecnicoId, datos.tecnicoId), coincide);
+  const donde = and(eq(trabajo.estado, "entregado"), coincide);
   const [[{ total }], ordenes] = await Promise.all([
     db
       .select({ total: count() })
@@ -185,11 +178,10 @@ export async function ordenesEntregadas(datos: { tecnicoId?: number; q: string; 
       .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
       .where(donde),
     db
-      .select({ id: trabajo.id, placa: vehiculo.placa, marca: vehiculo.marca, modelo: vehiculo.modelo, cliente: cliente.nombre, tecnico: tecnico.name, entregadoAt: trabajo.entregadoAt })
+      .select({ id: trabajo.id, placa: vehiculo.placa, marca: vehiculo.marca, modelo: vehiculo.modelo, cliente: cliente.nombre, entregadoAt: trabajo.entregadoAt })
       .from(trabajo)
       .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
       .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
-      .leftJoin(tecnico, eq(trabajo.tecnicoId, tecnico.id))
       .where(donde)
       .orderBy(desc(trabajo.entregadoAt), desc(trabajo.id))
       .limit(ENTREGADAS_POR_PAGINA)

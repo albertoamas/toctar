@@ -43,7 +43,7 @@ function colorBloque(estado: ReservaTablero["estado"]) {
 /** Un día que el taller no atiende: igual en la semana y en el día. */
 const CERRADO = "flex min-h-14 items-center justify-center rounded-lg bg-neutro-fondo text-tinta-suave";
 
-/** Placa, servicio y técnico: lo que dice el bloque de una reserva. */
+/** Placa, servicio y estado: lo que dice el bloque de una reserva. */
 function Cinta({
   r,
   empiezaAntes,
@@ -83,7 +83,6 @@ function Cinta({
           {r.masServicios > 0 && ` y ${r.masServicios} más`}
         </span>
       )}
-      <span className={cn("truncate text-xs", r.estado === "entregado" ? "text-fondo/80" : "text-tinta-suave")}>{r.tecnico ?? "Sin técnico"}</span>
       {/* Desde que se recibe (recibida, en proceso, lista, entregada), el estado se ve también escrito, en su color */}
       {r.estado !== "agendado" && <span className={cn("truncate text-xs font-semibold", color.estado)}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</span>}
       <span className="sr-only">

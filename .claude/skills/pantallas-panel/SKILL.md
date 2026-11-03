@@ -5,7 +5,7 @@ description: Criterios de UI/UX y lista de QA para diseñar, ordenar o pulir cua
 
 # Pantallas del panel
 
-El panel lo usa el dueño de un taller de detailing, casi siempre desde el celular, de pie, con las manos ocupadas y poco tiempo; a veces un encargado y, para sus órdenes, el técnico. Abre una pantalla para hacer **una cosa**: ver quién debe, recibir un auto, cambiar un precio. Cada botón, texto o bloque de más le cuesta tiempo y le hace dudar. Por eso la regla de fondo es **menos es más**: lo que no ayuda a la tarea de esa pantalla se quita, se esconde o se lleva a otra pantalla.
+El panel lo usa el dueño de un taller de detailing, casi siempre desde el celular, de pie, con las manos ocupadas y poco tiempo; a veces un encargado o uno de los chicos del taller (encargados con el perfil Taller). Abre una pantalla para hacer **una cosa**: ver quién debe, recibir un auto, cambiar un precio. Cada botón, texto o bloque de más le cuesta tiempo y le hace dudar. Por eso la regla de fondo es **menos es más**: lo que no ayuda a la tarea de esa pantalla se quita, se esconde o se lleva a otra pantalla.
 
 Esta skill complementa a `frontend-design` (el criterio visual) y a los estándares de `docs/08-desarrollo/pulido-visual.md` (identidad, tamaños, botones, accesibilidad). Aquí está **cómo se ordena una pantalla** y **cómo se prueba**.
 
@@ -102,7 +102,7 @@ Los tipos de botón (rojo para guardar o crear, contorno para lo secundario, ros
 
 ## 6. QA: antes de dar una pantalla por terminada
 
-**Con cada rol:** dueño; encargado con el permiso y sin él; técnico donde aplique (nunca ve precios, pagos ni teléfonos del cliente, RN-12). Se entra con cada uno y se mira qué ve y qué no.
+**Con cada rol:** dueño; encargado con el permiso y sin él, y con el perfil Taller (sin Pagos ni Cotizaciones no ve precios, RN-12). Se entra con cada uno y se mira qué ve y qué no.
 
 **Con cada estado:** vacío, uno, muchos (50 filas), textos largos (un nombre de 60 letras, una placa larga), sin foto, con error del servidor, sin conexión, doble toque en el botón principal, volver atrás después de guardar.
 

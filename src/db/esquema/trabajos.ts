@@ -51,7 +51,6 @@ export const trabajo = pgTable(
     fechaFin: date("fecha_fin").notNull(),
     /** "a las 9", "en la tarde": solo una nota (S-3). */
     horaIngreso: text("hora_ingreso"),
-    tecnicoId: integer("tecnico_id").references(() => usuario.id),
     /** Copiado de la cotización (D-4); 0 en una reserva directa. Total = suma de las líneas − descuento. */
     descuento: monto("descuento").default("0").notNull(),
     estado: text("estado").$type<EstadoTrabajo>().default("agendado").notNull(),
@@ -108,7 +107,6 @@ export const trabajo = pgTable(
     index("trabajo_por_fechas").on(t.fechaInicio, t.fechaFin),
     index("trabajo_por_cliente").on(t.clienteId),
     index("trabajo_por_consulta").on(t.consultaId),
-    index("trabajo_por_tecnico").on(t.tecnicoId, t.estado),
     index("trabajo_por_entrega").on(t.estado, t.entregadoAt),
   ],
 );

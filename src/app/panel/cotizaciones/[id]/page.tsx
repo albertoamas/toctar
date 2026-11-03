@@ -31,7 +31,7 @@ export const metadata: Metadata = { title: "Cotización" };
 
 // Pedido 23 (P23-cotizacion-directa.md §5): una cotización con sus versiones y su PDF. El paso siguiente de una
 // pendiente es "Agendar" (el cliente aceptó: queda aceptada, RF-36); "Nueva versión", "Rechazar" y "Volver a pendiente"
-// van en "Más". Dueño o encargado con "Cotizaciones" (pedido 24); el técnico nunca (RN-12).
+// van en "Más". Dueño o encargado con "Cotizaciones" (pedido 24, RN-12).
 export default function PaginaCotizacion({ params, searchParams }: PageProps<"/panel/cotizaciones/[id]">) {
   return (
     <section className="flex flex-col gap-6">

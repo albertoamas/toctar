@@ -245,7 +245,8 @@ try {
   }
   const autor = dueno.id;
 
-  // 1. El personal: un encargado y un técnico, con contraseñas al azar (se muestran al final)
+  // 1. El personal: dos encargados (pedido 32: no hay técnicos), con contraseñas al azar (se muestran al final). Ana
+  // atiende a los clientes; Luis trabaja en el taller, con el perfil Taller (agenda y órdenes)
   console.log("Personal…");
   const contrasenas = {};
   async function usuario(nombreUsuario, nombre, rol, permisos = []) {
@@ -256,7 +257,7 @@ try {
     return id;
   }
   await usuario("ana.taller", "Ana Rojas", "encargado", ["agenda", "ordenes", "pagos", "clientes", "cotizaciones", "mantenimientos", "reclamos"]);
-  const tecnico = await usuario("luis.tecnico", "Luis Mamani", "tecnico");
+  const luis = await usuario("luis.mamani", "Luis Mamani", "encargado", ["agenda", "ordenes"]);
 
   // 2. El negocio: logo, redes y ubicación. El WhatsApp es de ejemplo: el real lo carga el dueño
   console.log("Negocio…");
@@ -421,10 +422,10 @@ try {
     const saldoAlEntregar = datos.conSaldo ? total - pagos.reduce((suma, p) => suma + p.monto, 0) : null;
 
     const t = await uno(
-      `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, hora_ingreso, tecnico_id, estado, nota,
+      `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, hora_ingreso, estado, nota,
          observaciones_ingreso, recibido_at, recibido_por, listo_at, entregado_at, entregado_por, entrega_con_saldo_autorizada_por, saldo_al_entregar,
          created_at, created_by)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) returning id`,
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) returning id`,
       [
         sucursal.id,
         c.cliente,
@@ -433,7 +434,6 @@ try {
         dia(habil(datos.desde)),
         dia(habil(datos.hasta)),
         datos.hora ?? null,
-        datos.tecnico ?? null,
         datos.estado,
         datos.nota ?? null,
         datos.observaciones ?? null,
@@ -484,7 +484,7 @@ try {
   }
   // Reservas que vienen: Carlos llega hoy (para probar «Recibir» con el checklist) y María en unos días
   await trabajoDe(carlos, {
-    espacio: 2, desde: 0, hasta: 1, hora: "a las 8:30", tecnico, estado: "agendado", creado: momentoHabil(-2, "17:10"),
+    espacio: 2, desde: 0, hasta: 1, hora: "a las 8:30", estado: "agendado", creado: momentoHabil(-2, "17:10"),
     lineas: [["pulido-y-nano-ceramico", "3 años"]],
     pagos: () => [{ monto: 300, metodo: "qr", tipo: "adelanto", dia: -2 }],
   });
@@ -494,7 +494,7 @@ try {
   });
   // En el taller: una en proceso y una lista sin avisar
   await trabajoDe(jorge, {
-    espacio: 3, desde: -1, hasta: 1, hora: "a las 9", tecnico, estado: "en_proceso", creado: momentoHabil(-6, "15:00"),
+    espacio: 3, desde: -1, hasta: 1, hora: "a las 9", estado: "en_proceso", creado: momentoHabil(-6, "15:00"),
     observaciones: "Rayón leve en la puerta trasera derecha. Deja una caja de herramientas en la tolva.",
     recibido: momentoHabil(-1, "09:05"),
     revision: { "Puertas del lado derecho": ["rayon", "Rayón leve en la puerta trasera."], "Aros y llantas": ["raspon", "Aro delantero izquierdo raspado."] },
@@ -502,19 +502,19 @@ try {
     pagos: () => [{ monto: 500, metodo: "efectivo", tipo: "adelanto", dia: -6 }],
     avances: [
       [momentoHabil(-1, "09:05"), autor, "Vehículo recibido."],
-      [momentoHabil(-1, "10:00"), tecnico, "Pasó a en proceso."],
-      [momentoHabil(0, "11:30"), tecnico, "Pulido terminado. Mañana aplicamos el nano cerámico."],
+      [momentoHabil(-1, "10:00"), luis, "Pasó a en proceso."],
+      [momentoHabil(0, "11:30"), luis, "Pulido terminado. Mañana aplicamos el nano cerámico."],
     ],
   });
   await trabajoDe(rodrigo, {
-    espacio: 1, desde: -1, hasta: 0, tecnico, estado: "listo", creado: momentoHabil(-4, "09:40"),
+    espacio: 1, desde: -1, hasta: 0, estado: "listo", creado: momentoHabil(-4, "09:40"),
     recibido: momentoHabil(-1, "15:00"), listo: momentoHabil(0, "11:00"),
     revision: { "Faros y luces": ["otro", "Faroles opacos y amarillentos (es lo que se va a restaurar)."] },
     lineas: [["restauracion-de-faroles-con-polimero", "Única"]],
     avances: [
       [momentoHabil(-1, "15:00"), autor, "Vehículo recibido."],
-      [momentoHabil(-1, "15:30"), tecnico, "Pasó a en proceso."],
-      [momentoHabil(0, "11:00"), tecnico, "Pasó a lista."],
+      [momentoHabil(-1, "15:30"), luis, "Pasó a en proceso."],
+      [momentoHabil(0, "11:00"), luis, "Pasó a lista."],
     ],
   });
   // Entregada hace 20 días con saldo: aparece en Saldos pendientes

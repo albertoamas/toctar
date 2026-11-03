@@ -14,6 +14,8 @@
 
 Esta especificación se escribe al empezar la etapa, con lo aprendido en las anteriores. Se programa contra ella; si algo cambia durante la etapa, se corrige aquí primero.
 
+> **Cambió después (02/11/2026, pedido 32):** no se asigna un técnico a la reserva ni a la orden (se borró `trabajo.tecnico_id`) y no hay rol Técnico: todas las órdenes las ve y trabaja quien tiene el permiso de Órdenes. Especificación: `P32-roles-sin-tecnico.md`.
+
 ## 1. Objetivo
 
 El ciclo completo de un vehículo en el sistema. El personal lo recibe con fotos y observaciones, el técnico ve solo sus órdenes y registra el avance, el cliente recibe el aviso de "listo" por WhatsApp con un toque y el vehículo se entrega con el saldo cobrado (o autorizado). La fecha del próximo mantenimiento queda programada, y el dueño ve quién le debe y a quién le toca volver.

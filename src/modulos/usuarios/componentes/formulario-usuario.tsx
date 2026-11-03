@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
+import { cn } from "cn";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
@@ -10,7 +11,7 @@ import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import type { EstadoFormulario } from "@/lib/formularios";
-import type { Permiso } from "@/lib/permisos";
+import { PERFILES, perfilDe, type Permiso } from "@/lib/permisos";
 import { ROLES, type Rol } from "@/lib/roles";
 import { actualizarUsuario, crearUsuario } from "../acciones";
 import { DESCRIPCION_PERMISO, DESCRIPCION_ROL, NOMBRE_ROL } from "../textos";
@@ -33,9 +34,14 @@ export function FormularioUsuario(props: Props) {
     {},
   );
   const valores = estado.valores;
-  const [rol, setRol] = useState<Rol>((valores?.rol as Rol) || editar?.rol || "tecnico");
+  const [rol, setRol] = useState<Rol>((valores?.rol as Rol) || editar?.rol || "encargado");
   const [verContrasena, setVerContrasena] = useState(false);
-  const permisosMarcados = valores ? (valores.permisos ?? "").split(",") : (editar?.permisos ?? []);
+  // Controlados, como el rol: viajan en campos ocultos propios. Un encargado nuevo empieza con el perfil Taller, el más
+  // común (pedido 32: los que reciben y trabajan los vehículos)
+  const [permisos, setPermisos] = useState<readonly Permiso[]>(editar?.permisos ?? PERFILES[0].permisos);
+  const perfil = perfilDe(permisos);
+  const marcar = (permiso: Permiso, marcado: boolean) =>
+    setPermisos((actuales) => (marcado ? [...actuales.filter((p) => p !== permiso), permiso] : actuales.filter((p) => p !== permiso)));
   const e = estado.errores ?? {};
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
@@ -75,7 +81,15 @@ export function FormularioUsuario(props: Props) {
         {/* El valor viaja en un campo oculto propio: React reinicia el formulario al terminar la acción y el campo interno
             de los radios de base-ui volvía al rol inicial tras un error, aunque en pantalla siguiera marcado el elegido */}
         <input type="hidden" name="rol" value={rol} />
-        <RadioGroup value={rol} onValueChange={(v) => setRol(v as Rol)} className="gap-3">
+        <RadioGroup
+          value={rol}
+          onValueChange={(v) => {
+            setRol(v as Rol);
+            // Un dueño que pasa a encargado no trae permisos: empieza con Taller, como uno nuevo
+            if (v === "encargado" && permisos.length === 0) setPermisos(PERFILES[0].permisos);
+          }}
+          className="gap-3"
+        >
           {ROLES.map((r) => (
             <label key={r} htmlFor={`rol-${r}`} className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-fondo p-3 has-data-checked:border-tinta">
               <RadioGroupItem id={`rol-${r}`} value={r} className="mt-0.5" />
@@ -91,11 +105,37 @@ export function FormularioUsuario(props: Props) {
 
       {rol === "encargado" && (
         <fieldset className="flex flex-col gap-3">
-          <legend className="mb-1 text-sm font-semibold">Módulos del encargado</legend>
-          <p className="text-sm text-tinta-suave">Elige qué puede ver y hacer. Nunca cambia la configuración, el catálogo ni los usuarios.</p>
+          <legend className="mb-1 text-sm font-semibold">Permisos</legend>
+          {permisos.map((p) => (
+            <input key={p} type="hidden" name="permisos" value={p} />
+          ))}
+          {/* Los perfiles (pedido 32): marcan las casillas de un toque; el que coincide con lo marcado se ve presionado */}
+          <div role="group" aria-labelledby="perfiles-titulo" aria-describedby="perfiles-ayuda" className="flex flex-col gap-2">
+            <span id="perfiles-titulo" className="text-sm font-medium">
+              Perfil
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {PERFILES.map((p) => (
+                <Button
+                  key={p.clave}
+                  type="button"
+                  variant="outline"
+                  aria-pressed={perfil?.clave === p.clave}
+                  onClick={() => setPermisos(p.permisos)}
+                  className={cn(perfil?.clave === p.clave && "border-tinta bg-tinta text-fondo hover:bg-tinta hover:text-fondo")}
+                >
+                  {p.nombre}
+                  <span className="sr-only">: {p.descripcion}</span>
+                </Button>
+              ))}
+            </div>
+            <span id="perfiles-ayuda" className="text-sm text-tinta-suave">
+              Marca sus casillas de un toque; después puedes ajustarlas.
+            </span>
+          </div>
           {props.asignables.map(({ permiso, nombre }) => (
             <label key={permiso} htmlFor={`permiso-${permiso}`} className="flex cursor-pointer items-start gap-3">
-              <Checkbox id={`permiso-${permiso}`} name="permisos" value={permiso} defaultChecked={permisosMarcados.includes(permiso)} className="mt-0.5" />
+              <Checkbox id={`permiso-${permiso}`} checked={permisos.includes(permiso)} onCheckedChange={(marcado) => marcar(permiso, marcado)} className="mt-0.5" />
               <span className="flex flex-col">
                 <span className="font-medium">{nombre}</span>
                 <span className="text-sm text-tinta-suave">{DESCRIPCION_PERMISO[permiso]}</span>

@@ -22,7 +22,7 @@ export const usuario = pgTable(
     emailVerified: boolean("correo_verificado").default(false).notNull(),
     image: text("imagen"),
     username: text("nombre_usuario").unique(),
-    role: text("rol").notNull().default("tecnico"),
+    role: text("rol").notNull().default("encargado"),
     banned: boolean("desactivado").default(false),
     banReason: text("motivo_desactivacion"),
     banExpires: momento("desactivado_hasta"),
@@ -32,7 +32,7 @@ export const usuario = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (t) => [check("usuario_rol_valido", sql`${t.role} in ('dueno', 'encargado', 'tecnico')`)],
+  (t) => [check("usuario_rol_valido", sql`${t.role} in ('dueno', 'encargado')`)],
 );
 
 export const sesion = pgTable(
@@ -96,7 +96,7 @@ export const verificacion = pgTable(
 );
 
 // Permisos del encargado (HU-03, RF-16): módulos habilitados y "autorizar entrega con saldo" (RN-13).
-// Dueño y técnico no usan esta tabla: su acceso sale del rol (src/lib/permisos.ts).
+// El dueño no usa esta tabla: puede todo (src/lib/permisos.ts).
 
 
 export const usuarioPermiso = pgTable(

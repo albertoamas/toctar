@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
+import { crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER } from "./apoyo";
 
 // HU-21 Registrar clientes y vehículos. Especificación: docs/08-desarrollo/etapas/C1-catalogo-clientes.md §9.
 // Cada proyecto (celular o escritorio) usa su propio teléfono y su propia placa, para no pisarse al correr en paralelo.
@@ -115,11 +115,11 @@ test("un cliente se registra sin vehículo", async ({ page }, info) => {
   await expect(page.getByText("Todavía no tiene vehículos.")).toBeVisible();
 });
 
-test("el encargado entra a Clientes solo con el permiso; el técnico nunca", async ({ page }, info) => {
+test("el encargado entra a Clientes solo con el permiso; el perfil Taller no", async ({ page }, info) => {
   const casos = [
     { usuario: `enc-clientes-${sufijo(info).toLowerCase()}`, rol: "encargado" as const, permisos: ["clientes"], entra: true },
     { usuario: `enc-sin-clientes-${sufijo(info).toLowerCase()}`, rol: "encargado" as const, permisos: ["sitio"], entra: false },
-    { usuario: `tec-clientes-${sufijo(info).toLowerCase()}`, rol: "tecnico" as const, permisos: [], entra: false },
+    { usuario: `taller-clientes-${sufijo(info).toLowerCase()}`, rol: "encargado" as const, permisos: PERFIL_TALLER, entra: false },
   ];
   for (const c of casos) {
     await crearUsuario({ usuario: c.usuario, nombre: c.usuario, contrasena: "clave-clientes-1", rol: c.rol, permisos: c.permisos });

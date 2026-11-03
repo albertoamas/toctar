@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
+import { consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER } from "./apoyo";
 
 // Pedido 28: el historial de órdenes (la pestaña "Entregadas", con búsqueda) y las entregadas a la vista en la agenda.
 // Especificación: docs/08-desarrollo/etapas/P28-ordenes-historial.md. Las órdenes van directo a la base, en días propios
@@ -10,8 +10,8 @@ const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "c" : "e")
 const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 5 : 6}3480${n}0`;
 const dias = (info: TestInfo) => (info.project.name === "celular" ? 1300 : 1400);
 
-/** Una orden entregada en su día (a las 15:00 de Bolivia), del técnico indicado. Devuelve id y el día. */
-async function entregada(info: TestInfo, n: number, tecnico?: string): Promise<{ id: number; dia: string; placa: string }> {
+/** Una orden entregada en su día (a las 15:00 de Bolivia). Devuelve id y el día. */
+async function entregada(info: TestInfo, n: number): Promise<{ id: number; dia: string; placa: string }> {
   const s = sufijo(info);
   const placa = `HI34${s.toUpperCase()}${n}`;
   await crearClienteEnBase({ nombre: `Historial ${n} ${s}`, telefono: telefono(info, n), placa });
@@ -21,9 +21,9 @@ async function entregada(info: TestInfo, n: number, tecnico?: string): Promise<{
     // En el pasado (como en la vida real): la agenda muestra las entregadas en días ya pasados
     `update trabajo set estado = 'entregado', fecha_inicio = current_date - (fecha_fin - current_date), fecha_fin = current_date - (fecha_fin - current_date),
        entregado_at = ((current_date - (fecha_fin - current_date))::timestamp + time '15:00') at time zone 'America/La_Paz',
-       tecnico_id = (select id from usuario where nombre_usuario = $2), sin_firma_motivo = 'Prueba'
+       sin_firma_motivo = 'Prueba'
      where id = $1 returning to_char(fecha_fin, 'YYYY-MM-DD') as dia`,
-    [id, tecnico ?? null],
+    [id],
   );
   return { id, dia, placa };
 }
@@ -71,17 +71,19 @@ test("en «Entregadas» se buscan por placa, cliente o fecha; la agenda las mues
   await expect(cinta).toHaveAttribute("data-tono", "exito");
 });
 
-test("el técnico ve en «Entregadas» solo las suyas", async ({ page }, info) => {
+test("el perfil Taller ve en «Entregadas» todas, sin precios (pedido 32)", async ({ page }, info) => {
   const s = sufijo(info);
-  await crearUsuario({ usuario: `tec-hi34-${s}`, nombre: `Técnico Historial ${s}`, contrasena: "tecnico-123", rol: "tecnico" });
-  const suya = await entregada(info, 3, `tec-hi34-${s}`);
-  const ajena = await entregada(info, 4);
-  await ingresar(page, `tec-hi34-${s}`, "tecnico-123");
+  await crearUsuario({ usuario: `taller-hi34-${s}`, nombre: `Chico del taller ${s}`, contrasena: "taller-123", rol: "encargado", permisos: PERFIL_TALLER });
+  const una = await entregada(info, 3);
+  const otra = await entregada(info, 4);
+  await ingresar(page, `taller-hi34-${s}`, "taller-123");
   await expect(page).toHaveURL(/\/panel$/);
-  await page.goto("/panel/ordenes?vista=entregadas");
+  // Las dos, aunque nadie las tenga asignadas: se buscan por placa (son de hace años: no están en la primera página)
   const lista = page.getByRole("list", { name: "Órdenes entregadas" });
-  await expect(lista.getByRole("link").filter({ hasText: suya.placa })).toBeVisible();
-  await expect(lista.getByRole("link").filter({ hasText: ajena.placa })).toHaveCount(0);
-  // Sin precios
+  for (const placa of [una.placa, otra.placa]) {
+    await page.goto(`/panel/ordenes?vista=entregadas&q=${placa}`);
+    await expect(lista.getByRole("link").filter({ hasText: placa })).toBeVisible();
+  }
+  // Sin Pagos, sin precios (RN-12)
   await expect(page.getByText(/Bs/)).toHaveCount(0);
 });

@@ -28,8 +28,6 @@ type DefinicionModulo = {
   grupo: Grupo | null;
   /** Permiso que habilita el módulo a un encargado; null si el encargado nunca lo tiene. */
   permisoEncargado: Permiso | null;
-  /** El técnico lo ve (solo sus órdenes, RN-12). */
-  tecnico: boolean;
   /** Nombre en el menú y en el inicio, si no es el del permiso (por ejemplo, "Saldos pendientes" para "Pagos"). */
   nombreMenu?: string;
   /** Nombre de la casilla del encargado en Usuarios, si el del módulo no dice todo lo que da (C5 §0). */
@@ -38,10 +36,10 @@ type DefinicionModulo = {
 
 // Dentro de cada grupo del menú, en este orden: de lo más usado a lo menos. El orden de los grupos es el de GRUPOS.
 export const MODULOS = {
-  inicio: { ruta: "/panel", nombre: "Inicio", grupo: null, permisoEncargado: null, tecnico: true },
-  agenda: { ruta: "/panel/agenda", nombre: "Agenda", grupo: "taller", permisoEncargado: "agenda", tecnico: false },
-  ordenes: { ruta: "/panel/ordenes", nombre: "Órdenes", grupo: "taller", permisoEncargado: "ordenes", tecnico: true },
-  clientes: { ruta: "/panel/clientes", nombre: "Clientes", grupo: "clientes", permisoEncargado: "clientes", tecnico: false },
+  inicio: { ruta: "/panel", nombre: "Inicio", grupo: null, permisoEncargado: null },
+  agenda: { ruta: "/panel/agenda", nombre: "Agenda", grupo: "taller", permisoEncargado: "agenda" },
+  ordenes: { ruta: "/panel/ordenes", nombre: "Órdenes", grupo: "taller", permisoEncargado: "ordenes" },
+  clientes: { ruta: "/panel/clientes", nombre: "Clientes", grupo: "clientes", permisoEncargado: "clientes" },
   // Pedido 23: la cotización directa, sin consulta antes. Pedido 24: el encargado con este permiso cotiza
   cotizaciones: {
     ruta: "/panel/cotizaciones",
@@ -49,7 +47,6 @@ export const MODULOS = {
     nombrePermiso: "Cotizaciones (cotizar y ver precios)",
     grupo: "clientes",
     permisoEncargado: "cotizaciones",
-    tecnico: false,
   },
   // HU-37: su pantalla es la lista de saldos; en el menú se llama por lo que muestra. La casilla dice lo que da: cobrar
   // (en la reserva, la orden y la lista) y ver montos y saldos
@@ -60,15 +57,14 @@ export const MODULOS = {
     nombrePermiso: "Pagos (cobrar y ver saldos)",
     grupo: "clientes",
     permisoEncargado: "pagos",
-    tecnico: false,
   },
-  mantenimientos: { ruta: "/panel/mantenimientos", nombre: "Mantenimientos", grupo: "clientes", permisoEncargado: "mantenimientos", tecnico: false },
+  mantenimientos: { ruta: "/panel/mantenimientos", nombre: "Mantenimientos", grupo: "clientes", permisoEncargado: "mantenimientos" },
   // Llegan desde el sitio, pero atenderlos es tratar con un cliente
-  reclamos: { ruta: "/panel/reclamos", nombre: "Reclamos", grupo: "clientes", permisoEncargado: "reclamos", tecnico: false },
-  sitio: { ruta: "/panel/sitio", nombre: "Sitio web", grupo: "sitio", permisoEncargado: "sitio", tecnico: false },
-  catalogo: { ruta: "/panel/catalogo", nombre: "Catálogo y precios", grupo: "administracion", permisoEncargado: null, tecnico: false },
-  usuarios: { ruta: "/panel/usuarios", nombre: "Usuarios", grupo: "administracion", permisoEncargado: null, tecnico: false },
-  configuracion: { ruta: "/panel/configuracion", nombre: "Configuración", grupo: "administracion", permisoEncargado: null, tecnico: false },
+  reclamos: { ruta: "/panel/reclamos", nombre: "Reclamos", grupo: "clientes", permisoEncargado: "reclamos" },
+  sitio: { ruta: "/panel/sitio", nombre: "Sitio web", grupo: "sitio", permisoEncargado: "sitio" },
+  catalogo: { ruta: "/panel/catalogo", nombre: "Catálogo y precios", grupo: "administracion", permisoEncargado: null },
+  usuarios: { ruta: "/panel/usuarios", nombre: "Usuarios", grupo: "administracion", permisoEncargado: null },
+  configuracion: { ruta: "/panel/configuracion", nombre: "Configuración", grupo: "administracion", permisoEncargado: null },
 } as const satisfies Record<string, DefinicionModulo>;
 export type Modulo = keyof typeof MODULOS;
 
@@ -80,13 +76,14 @@ export function puedeVerModulo(sujeto: SujetoPermisos, modulo: Modulo): boolean 
   switch (sujeto.rol) {
     case "dueno":
       return true;
-    case "tecnico":
-      return def.tecnico;
     case "encargado":
       if (modulo === "inicio") return true;
       // Usuarios, configuración y catálogo no tienen permiso de encargado: aunque la base tuviera algo raro guardado,
       // se niegan (RN-01).
       return def.permisoEncargado !== null && sujeto.permisos.includes(def.permisoEncargado);
+    default:
+      // Un rol que no existe (dato viejo o raro en la base): nada
+      return false;
   }
 }
 
@@ -113,25 +110,17 @@ const PERMISO_DE_ACCION: Partial<Record<Accion, Permiso>> = { cotizar: "cotizaci
  *   una orden (HU-41, RF-44) decide qué muestra el sitio: solo el dueño;
  * - autorizar entrega con saldo (RN-13, S-2): el dueño o el encargado con ese permiso;
  * - recibir el vehículo, extender su entrega, avisarle al cliente y entregarlo (C4): el dueño o el encargado con
- *   "Órdenes", no el técnico (tocan la agenda, el trato con el cliente o el cobro, que él no ve; C4 §12, RN-12).
+ *   "Órdenes" (pedido 32: los mismos que trabajan la orden).
  */
 export function puede(sujeto: SujetoPermisos, accion: Accion): boolean {
   if (sujeto.rol === "dueno") return true;
+  // Solo el encargado actúa por sus permisos: un rol que no existe no puede nada
   if (sujeto.rol !== "encargado" || SOLO_DUENO.includes(accion)) return false;
   return sujeto.permisos.includes(PERMISO_DE_ACCION[accion] ?? "ordenes");
 }
 
-/** El técnico solo ve las órdenes asignadas a él (RN-12, S-1); el dueño y el encargado con "Órdenes", todas. */
-export function puedeVerOrden(sujeto: SujetoPermisos & { id: string }, tecnicoId: number | null): boolean {
-  return sujeto.rol !== "tecnico" || tecnicoId === Number(sujeto.id);
-}
-
-/**
- * Cómo se llama el módulo en el menú y en el inicio. El técnico ve solo las suyas: para él, "Mis órdenes", como el
- * título de la pantalla (pulido 13.1).
- */
-export function nombreEnMenu(modulo: Modulo, rol: Rol): string {
-  if (modulo === "ordenes" && rol === "tecnico") return "Mis órdenes";
+/** Cómo se llama el módulo en el menú y en el inicio ("Saldos pendientes" para Pagos). */
+export function nombreEnMenu(modulo: Modulo): string {
   const def: DefinicionModulo = MODULOS[modulo];
   return def.nombreMenu ?? def.nombre;
 }
@@ -146,7 +135,7 @@ export type GrupoMenu = { titulo: string | null; modulos: Modulo[] };
 /**
  * El menú en grupos (C5 §0): primero los sueltos (Inicio) y después cada grupo en el orden de GRUPOS, con los módulos
  * que la persona ve. Un grupo sin módulos no aparece, y uno con un solo módulo va sin título (el título no ordena nada:
- * el técnico ve "Inicio" y "Órdenes", sin "Taller").
+ * con solo Órdenes se ve "Inicio" y "Órdenes", sin "Taller").
  */
 export function menuAgrupado(sujeto: SujetoPermisos): GrupoMenu[] {
   const visibles = modulosDelMenu(sujeto);
@@ -155,6 +144,27 @@ export function menuAgrupado(sujeto: SujetoPermisos): GrupoMenu[] {
     .map((grupo) => ({ grupo, modulos: visibles.filter((m) => (MODULOS[m] as DefinicionModulo).grupo === grupo) }))
     .filter((b) => b.modulos.length > 0)
     .map(({ grupo, modulos }) => ({ titulo: grupo && modulos.length > 1 ? GRUPOS[grupo] : null, modulos }));
+}
+
+/**
+ * Perfiles del encargado (pedido 32): atajos que marcan sus casillas en Usuarios. No se guardan: lo que se guarda son los
+ * permisos, y después de elegir un perfil se puede ajustar cada casilla.
+ * - Taller: recibe, trabaja, avisa y entrega los vehículos (sin ver precios ni saldos).
+ * - Atención: además, trata con los clientes: los registra, les cotiza, les cobra y les avisa el mantenimiento.
+ * - Todo: todos los permisos del encargado (nunca la configuración, el catálogo ni los usuarios, RN-01).
+ */
+const TALLER = ["agenda", "ordenes"] as const satisfies readonly Permiso[];
+export const PERFILES = [
+  { clave: "taller", nombre: "Taller", descripcion: "agenda y órdenes", permisos: TALLER },
+  { clave: "atencion", nombre: "Atención", descripcion: "taller, clientes, cotizaciones, pagos y mantenimientos", permisos: [...TALLER, "clientes", "cotizaciones", "pagos", "mantenimientos"] },
+  { clave: "todo", nombre: "Todo", descripcion: "todos los permisos", permisos: PERMISOS },
+] as const satisfies readonly { clave: string; nombre: string; descripcion: string; permisos: readonly Permiso[] }[];
+export type Perfil = (typeof PERFILES)[number];
+
+/** El perfil que coincide justo con esos permisos, o null si no coincide ninguno (se ajustaron casillas). */
+export function perfilDe(permisos: readonly string[]): Perfil | null {
+  const marcados = new Set(permisos);
+  return PERFILES.find((p) => p.permisos.length === marcados.size && p.permisos.every((x) => marcados.has(x))) ?? null;
 }
 
 /** Permisos que se le pueden marcar a un encargado: los de sus módulos, más entrega con saldo. */

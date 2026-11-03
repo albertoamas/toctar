@@ -46,7 +46,7 @@ Este es el backlog del proyecto. Cada historia se programa en el orden de la tab
 | HU-31 | Reprogramar o cancelar | 2 | Imprescindible | S | RF-39 |
 | HU-32 | Registrar pagos y saldo | 2 | Imprescindible | M | RF-45, RF-46 |
 | HU-33 | Recibir vehículo | 2 | Imprescindible | M | RF-40 |
-| HU-34 | Órdenes del técnico | 2 | Imprescindible | M | RF-41, RF-42 |
+| HU-34 | Trabajar una orden | 2 | Imprescindible | M | RF-41, RF-42 |
 | HU-35 | Avisar vehículo listo | 2 | Imprescindible | S | RF-48 |
 | HU-36 | Entregar vehículo | 2 | Imprescindible | M | RF-43, RF-49 |
 | HU-37 | Saldos pendientes | 2 | Imprescindible | S | RF-47 |
@@ -68,7 +68,7 @@ Como usuario del panel, quiero entrar con mi usuario y contraseña, para usar so
 
 ### HU-02 Gestionar usuarios y roles
 Como dueño, quiero crear usuarios con su rol, para que cada persona tenga su acceso.
-- Creo un usuario con nombre, usuario, contraseña inicial y rol (dueño, encargado o técnico).
+- Creo un usuario con nombre, usuario, contraseña inicial y rol (dueño o encargado; pedido 32: no hay rol Técnico).
 - Restablezco la contraseña de cualquier usuario.
 - Desactivo un usuario sin borrar lo que registró.
 - No puedo desactivarme a mí mismo si soy el único dueño activo.
@@ -78,6 +78,7 @@ Como dueño, quiero elegir qué módulos ve el encargado, para darle acceso sin 
 - Marco o desmarco módulos (clientes, consultas, agenda, órdenes, pagos, mantenimientos, sitio, reclamos) y el permiso "autorizar entrega con saldo" (RN-13).
 - El encargado nunca puede cotizar (RN-01) ni cambiar la configuración.
 - El permiso se valida en el servidor: entrar por la URL de un módulo no habilitado muestra "sin acceso".
+- Un perfil marca sus casillas de un toque: Taller (agenda y órdenes), Atención (además clientes, cotizaciones, pagos y mantenimientos) o Todo; después se ajustan (pedido 32).
 
 ### HU-04 Datos del negocio
 Como dueño, quiero editar los datos del negocio, para que el sitio y el PDF estén siempre al día.
@@ -237,7 +238,7 @@ Como personal, quiero ver la ocupación del taller por espacio y día, para sabe
 Como personal, quiero agendar una reserva sin cruces, para dejar de usar el cuaderno.
 - Desde una cotización confirmada o como reserva directa (CU-13).
 - El sistema sugiere la duración y solo deja elegir espacios libres en esos días (RN-06).
-- Asigno técnico (opcional) y registro el adelanto con el monto sugerido editable (RN-04).
+- Registro el adelanto con el monto sugerido editable (RN-04). No se asigna un técnico (pedido 32).
 
 ### HU-31 Reprogramar o cancelar
 Como personal, quiero mover o cancelar una reserva, para reflejar lo que pide el cliente.
@@ -256,9 +257,9 @@ Como personal, quiero registrar el estado del vehículo al ingresar, para evitar
 - Anoto observaciones (lo que no es una parte). Las fotos de inicio y del final se toman en la orden (pedido 27).
 - Se crea la orden en estado "recibido" con el precio cotizado.
 
-### HU-34 Órdenes del técnico
-Como técnico, quiero ver mis trabajos y registrar el avance, para que el dueño sepa cómo va cada vehículo.
-- Veo solo mis órdenes, sin precios ni pagos (RN-12).
+### HU-34 Trabajar una orden
+Como personal del taller, quiero ver las órdenes y registrar el avance, para que el dueño sepa cómo va cada vehículo. (Hasta el pedido 32 era "Órdenes del técnico": cada técnico veía solo las suyas.)
+- Con el permiso de Órdenes veo todas las del taller, sin técnico asignado; sin Pagos, sin precios (RN-12, pedido 32).
 - Cambio el estado (recibido, en proceso, listo), subo fotos de inicio y del final (pedido 27) y escribo notas.
 
 ### HU-35 Avisar vehículo listo

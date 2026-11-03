@@ -4,7 +4,7 @@ import { precioCotizadoYFinal } from "@/modulos/pagos/reglas";
 import { erroresDe } from "@/lib/formularios";
 import { TIPOS_DETALLE } from "@/db/esquema/trabajos";
 import { esquemaAvance, esquemaDetalle, esquemaEntregar, esquemaFotoOrden, esquemaPublicar, esquemaMarcarBien, esquemaRecibir } from "@/modulos/ordenes/esquemas";
-import { puede, puedeVerOrden } from "@/lib/permisos";
+import { puede } from "@/lib/permisos";
 import {
   enlaceTrabajo,
   esFotoDeAntes,
@@ -73,26 +73,18 @@ test("una foto subida por error se quita con la orden abierta (también las de d
   expect(puedeQuitarFoto("ingreso", "recibido")).toBe(false);
 });
 
-test("recibe el dueño o el encargado con Órdenes; el técnico no", () => {
+test("recibe el dueño o el encargado con Órdenes (pedido 32: el perfil Taller también)", () => {
   expect(puede({ rol: "dueno", permisos: [] }, "recibir_vehiculo")).toBe(true);
   expect(puede({ rol: "encargado", permisos: ["ordenes"] }, "recibir_vehiculo")).toBe(true);
+  expect(puede({ rol: "encargado", permisos: ["agenda", "ordenes"] }, "recibir_vehiculo")).toBe(true);
   expect(puede({ rol: "encargado", permisos: ["agenda"] }, "recibir_vehiculo")).toBe(false);
-  expect(puede({ rol: "tecnico", permisos: [] }, "recibir_vehiculo")).toBe(false);
 });
 
-test("el técnico solo ve sus órdenes; el dueño y el encargado, todas", () => {
-  const tecnico = { id: "7", rol: "tecnico" as const, permisos: [] };
-  expect(puedeVerOrden(tecnico, 7)).toBe(true);
-  expect(puedeVerOrden(tecnico, 8)).toBe(false);
-  expect(puedeVerOrden(tecnico, null)).toBe(false);
-  expect(puedeVerOrden({ id: "1", rol: "dueno", permisos: [] }, 8)).toBe(true);
-  expect(puedeVerOrden({ id: "2", rol: "encargado", permisos: ["ordenes"] }, null)).toBe(true);
-});
-
-test("recibir: técnico opcional y observaciones de hasta 2000", () => {
-  expect(esquemaRecibir.parse({ id: "3", tecnicoId: "", observaciones: "  " })).toEqual({ id: 3, tecnicoId: null, observaciones: null });
-  expect(esquemaRecibir.parse({ id: "3", tecnicoId: "5", observaciones: " Rayón en la puerta " })).toEqual({ id: 3, tecnicoId: 5, observaciones: "Rayón en la puerta" });
-  const larga = esquemaRecibir.safeParse({ id: "3", tecnicoId: "", observaciones: "x".repeat(2001) });
+test("recibir: observaciones de hasta 2000, sin técnico (pedido 32)", () => {
+  expect(esquemaRecibir.parse({ id: "3", observaciones: "  " })).toEqual({ id: 3, observaciones: null });
+  // Si llega un técnico, no pasa: no hay a quién asignar
+  expect(esquemaRecibir.parse({ id: "3", tecnicoId: "5", observaciones: " Rayón en la puerta " })).toEqual({ id: 3, observaciones: "Rayón en la puerta" });
+  const larga = esquemaRecibir.safeParse({ id: "3", observaciones: "x".repeat(2001) });
   expect(!larga.success && erroresDe(larga.error)).toEqual({ observaciones: "Hasta 2000 caracteres." });
 });
 
@@ -122,7 +114,7 @@ test("atrasada: abierta y con la entrega ya pasada; una lista espera al cliente"
 
 test("extender la entrega: el dueño o el encargado con Órdenes", () => {
   expect(puede({ rol: "encargado", permisos: ["ordenes"] }, "extender_entrega")).toBe(true);
-  expect(puede({ rol: "tecnico", permisos: [] }, "extender_entrega")).toBe(false);
+  expect(puede({ rol: "encargado", permisos: ["agenda"] }, "extender_entrega")).toBe(false);
   expect(esquemaAvance.safeParse({ id: "1", nota: "  " }).success).toBe(false);
 });
 
@@ -151,7 +143,7 @@ test("precio cotizado, adicionales y final: el descuento de la cotización una s
 
 test("entrega y adicionales: entrega el dueño o el encargado con Órdenes; los adicionales, solo el dueño", () => {
   expect(puede({ rol: "encargado", permisos: ["ordenes"] }, "entregar_vehiculo")).toBe(true);
-  expect(puede({ rol: "tecnico", permisos: [] }, "entregar_vehiculo")).toBe(false);
+  expect(puede({ rol: "encargado", permisos: ["agenda"] }, "entregar_vehiculo")).toBe(false);
   expect(puede({ rol: "dueno", permisos: [] }, "agregar_adicional")).toBe(true);
   expect(puede({ rol: "encargado", permisos: ["ordenes", "pagos", "entrega_con_saldo"] }, "agregar_adicional")).toBe(false);
   // RN-13
