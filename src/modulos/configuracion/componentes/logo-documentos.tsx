@@ -32,7 +32,9 @@ export function LogoDocumentos({ logo }: Props) {
         <p className="text-sm text-tinta-suave">Sale en las cotizaciones en PDF. PNG, JPG o WebP de hasta 5 MB; mejor con fondo transparente. Se guarda al momento, sin el botón Guardar cambios.</p>
       </div>
 
-      <div className="flex aspect-[3/2] items-center justify-center rounded-sm border border-border bg-superficie p-6">
+      {/* El logo, ubicado dentro de la caja (absolute) y no por su tamaño: Safari no toma la altura de una caja con
+          aspect-ratio como fija, así que con max-h-full el logo quedaba de su tamaño real y estiraba la tarjeta */}
+      <div className="relative flex aspect-[3/2] items-center justify-center overflow-hidden rounded-sm border border-border bg-superficie">
         {logo ? (
           <Image
             src={logo.url}
@@ -40,7 +42,7 @@ export function LogoDocumentos({ logo }: Props) {
             width={logo.ancho ?? 400}
             height={logo.alto ?? 300}
             unoptimized
-            className="max-h-full w-auto object-contain"
+            className="absolute inset-0 size-full object-contain p-6"
           />
         ) : (
           <span className="flex flex-col items-center gap-2 text-sm text-tinta-suave">

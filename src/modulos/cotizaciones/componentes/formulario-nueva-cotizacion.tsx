@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
+import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { MensajeError } from "@/componentes/panel/campo";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
@@ -96,14 +97,12 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
       <input type="hidden" name="cliente" value={cliente ? cliente.id : CLIENTE_NUEVO} />
       {estado.mensaje && !estado.ok && <MensajeError id="cotizacion-error">{estado.mensaje}</MensajeError>}
       {!cliente && (
-        <fieldset className="tt-seccion-formulario flex flex-col gap-6">
-          <legend className="sr-only">Cliente nuevo</legend>
+        <SeccionFormulario titulo="Cliente nuevo" tituloOculto className="gap-6">
           <CamposCliente estado={estado} compacto enlaceExistente={usarExistente} />
-        </fieldset>
+        </SeccionFormulario>
       )}
 
-      <fieldset className="tt-seccion-formulario flex flex-col gap-4">
-        <legend className="tt-titulo-seccion">Vehículo</legend>
+      <SeccionFormulario titulo="Vehículo" className="gap-4">
         {conVehiculos && (
           <>
             <input type="hidden" name="vehiculo" value={vehiculo} />
@@ -135,7 +134,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
             <CamposVehiculo estado={estado} prefijo={PREFIJO} tamanos={tamanos} compacto enlaceExistente={usarExistente} />
           </>
         )}
-      </fieldset>
+      </SeccionFormulario>
 
       <CamposPrecio precios={precios} opciones={delTamano(tamanoId)} errores={e} hoy={hoy} />
 

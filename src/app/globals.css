@@ -369,9 +369,14 @@
   .tt-formulario-panel {
     padding: 1rem;
   }
+  /* La leyenda flota para quedar adentro de la tarjeta y no sobre el borde. Nunca con el fieldset en flex o grid:
+     Safari no deja flotar adentro y la vuelve a poner en el borde (por eso el flex va en un div, SeccionFormulario) */
   .tt-seccion-formulario > legend {
     float: left;
     width: 100%;
+  }
+  .tt-seccion-formulario > legend + * {
+    clear: both;
   }
   @media (width >= 40rem) {
     .tt-seccion-formulario,

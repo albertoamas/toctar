@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
 import { Input } from "@/componentes/ui/input";
@@ -44,8 +45,7 @@ type Props = {
 export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
   return (
     <>
-      <fieldset className="tt-seccion-formulario flex flex-col gap-4">
-        <legend className="tt-titulo-seccion">Servicios</legend>
+      <SeccionFormulario titulo="Servicios" className="gap-4">
         {opciones ? (
           <LineasServicio opciones={opciones} lineas={p.lineas} onChange={p.setLineas} errores={e} />
         ) : (
@@ -53,10 +53,9 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
           <p className="text-tinta-suave">Elige el vehículo (o su tamaño) para ver los servicios con su precio.</p>
         )}
         {!opciones && e.lineas && <MensajeError id="lineas-error">{e.lineas}</MensajeError>}
-      </fieldset>
+      </SeccionFormulario>
 
-      <fieldset className="tt-seccion-formulario flex flex-col gap-3">
-        <legend className="tt-titulo-seccion">¿Cómo se cotizó?</legend>
+      <SeccionFormulario titulo="¿Cómo se cotizó?" className="gap-3">
         <input type="hidden" name="modo" value={p.modo} />
         <RadioGroup
           value={p.modo}
@@ -76,10 +75,9 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
           ))}
         </RadioGroup>
         {e.modo && <MensajeError id="modo-error">{e.modo}</MensajeError>}
-      </fieldset>
+      </SeccionFormulario>
 
-      <fieldset className="tt-seccion-formulario flex flex-col gap-5">
-        <legend className="tt-titulo-seccion">Total</legend>
+      <SeccionFormulario titulo="Total">
         <Campo id="descuento" etiqueta="Descuento" error={e.descuento} ayuda="Opcional.">
           <CampoMonto id="descuento" name="descuento" value={p.descuento} onChange={(ev) => p.setDescuento(ev.target.value)} aria-invalid={!!e.descuento} aria-describedby={e.descuento ? "descuento-error" : "descuento-ayuda"} />
         </Campo>
@@ -91,10 +89,9 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
           <dt className="font-semibold">Total</dt>
           <dd className="text-right text-lg font-bold tabular-nums">{bs(p.totales.total)}</dd>
         </dl>
-      </fieldset>
+      </SeccionFormulario>
 
-      <fieldset className="tt-seccion-formulario flex flex-col gap-5">
-        <legend className="tt-titulo-seccion">Condiciones</legend>
+      <SeccionFormulario titulo="Condiciones">
         {/* Vienen de Configuración y casi siempre se dejan así: sin ayudas que lo repitan */}
         <div className="grid gap-5 sm:grid-cols-2">
           <Campo id="adelanto" etiqueta="Adelanto sugerido" error={e.adelanto}>
@@ -104,7 +101,7 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
             <Input id="validaHasta" name="validaHasta" type="date" min={hoy} value={p.validaHasta} onChange={(ev) => p.setValidaHasta(ev.target.value)} aria-invalid={!!e.validaHasta} aria-describedby={e.validaHasta ? "validaHasta-error" : undefined} className="max-w-48" />
           </Campo>
         </div>
-      </fieldset>
+      </SeccionFormulario>
     </>
   );
 }

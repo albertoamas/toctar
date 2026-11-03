@@ -130,7 +130,7 @@ jobs:
           path: .next/cache
           key: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'public/**', 'next.config.ts') }}
           restore-keys: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
-      # El navegador de Playwright, guardado entre corridas (en Linux se usa el suyo, no Chrome)
+      # Los navegadores de Playwright, guardados entre corridas (en Linux se usa su Chromium, no Chrome; WebKit, para el iPhone)
       - name: Versión de Playwright
         id: playwright
         run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
@@ -138,13 +138,13 @@ jobs:
         id: cache-navegador
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-webkit
       - name: Instalar el navegador
         if: steps.cache-navegador.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
       - name: Dependencias del navegador
         if: steps.cache-navegador.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
+        run: npx playwright install-deps chromium webkit
       - name: Buckets de almacenamiento
         run: node scripts/preparar-almacenamiento.mjs
       # Recrea la base toctar_e2e, compila y levanta la app en :3200 (playwright.config.ts). En CI cada prueba que falla
