@@ -85,6 +85,7 @@
   --borde: #e2e5e9;
   --borde-control: #8a8a8a;
   --tinta: #1a1a1a;
+  --tinta-media: #3d3d3d; /* Texto que se lee de corrido sobre la tarjeta del sitio (pedido 33) */
   --tinta-suave: #595959;
   --rojo: #e30613;
   --rojo-presionado: #c40511;
@@ -152,6 +153,7 @@
   --borde: #333333;
   --borde-control: #767676;
   --tinta: #ffffff;
+  --tinta-media: #d4d4d4;
   --tinta-suave: #b3b3b3;
   --rojo-texto: #ff4d57;
   --foco: #ffffff;
@@ -592,14 +594,14 @@
      claro y una línea arriba la despegan del fondo; una franja roja con punta a 60° entre la foto y el texto; la foto
      con un poco más de brillo; el texto más claro. Sin brillos ni degradados de color. */
   .tt-tarjeta {
-    --tt-tarjeta-fondo: color-mix(in srgb, var(--superficie), var(--tinta) 3%);
     display: grid;
     grid-template-rows: auto 1fr;
     color: var(--tinta);
     /* Corte a 60° de 28 × 16 px pintado con un degradado (ver .tt-boton--principal): 13,89 px del corte a la esquina.
        Con un degradado y no con clip-path: un clip-path recortaría también el marco del foco del teclado. */
-    background: linear-gradient(119.74deg, var(--tt-tarjeta-fondo) calc(100% - 14.39px), transparent calc(100% - 13.39px));
-    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--borde), var(--tinta) 4%);
+    background: linear-gradient(119.74deg, var(--superficie-alta) calc(100% - 14.39px), transparent calc(100% - 13.39px));
+    /* La línea de arriba, como borde: una sombra interior quedaba debajo de la foto */
+    border-top: 1px solid var(--borde);
   }
   .tt-tarjeta__media {
     position: relative;
@@ -614,9 +616,7 @@
     object-fit: cover;
     /* Solo en la tarjeta: la foto original no cambia */
     filter: brightness(1.1) contrast(1.06) saturate(1.12);
-    transition:
-      transform 400ms ease,
-      filter 400ms ease;
+    transition: transform 400ms ease;
   }
   /* La franja roja entre la foto y el texto, con la punta cortada a 60° (el ángulo de la marca) */
   .tt-tarjeta__media::after {
@@ -668,7 +668,7 @@
     margin: 0;
     font-family: var(--font-titular);
     font-size: 30px;
-    line-height: 32px;
+    line-height: 34px;
     font-weight: 700;
     font-style: italic;
   }
@@ -676,7 +676,7 @@
     margin: 0;
     font-size: 15px;
     line-height: 24px;
-    color: color-mix(in srgb, var(--tinta) 82%, transparent);
+    color: var(--tinta-media);
   }
   .tt-tarjeta__enlace {
     justify-self: start;
@@ -685,24 +685,33 @@
     font-size: 15px;
     line-height: 22px;
     font-weight: 700;
-    text-decoration: underline;
-    text-decoration-color: transparent;
+    text-decoration: none;
     text-decoration-thickness: 2px;
     text-underline-offset: 6px;
-    transition: text-decoration-color 250ms ease;
   }
-  /* Con el mouse: la franja cruza la tarjeta, la foto se acerca apenas y se aclara, y el enlace se subraya. En el
+  .tt-tarjeta__enlace:hover {
+    text-decoration: underline;
+  }
+  /* Con el mouse o con el teclado: la franja cruza la tarjeta, la foto se acerca apenas y el enlace se subraya. En el
      celular (sin mouse) no hay nada que esperar: la franja ya va más larga */
+  .tt-tarjeta:has(.tt-tarjeta__enlace:focus-visible) .tt-tarjeta__media img {
+    transform: scale(1.04);
+  }
+  .tt-tarjeta:has(.tt-tarjeta__enlace:focus-visible) .tt-tarjeta__media::after {
+    width: 100%;
+  }
+  .tt-tarjeta__enlace:focus-visible {
+    text-decoration: underline;
+  }
   @media (hover: hover) {
     .tt-tarjeta:hover .tt-tarjeta__media img {
       transform: scale(1.04);
-      filter: brightness(1.2) contrast(1.06) saturate(1.15);
     }
     .tt-tarjeta:hover .tt-tarjeta__media::after {
       width: 100%;
     }
     .tt-tarjeta:hover .tt-tarjeta__enlace {
-      text-decoration-color: currentColor;
+      text-decoration: underline;
     }
   }
   @media (hover: none) {
@@ -712,11 +721,11 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .tt-tarjeta__media img,
-    .tt-tarjeta__media::after,
-    .tt-tarjeta__enlace {
+    .tt-tarjeta__media::after {
       transition: none;
     }
-    .tt-tarjeta:hover .tt-tarjeta__media img {
+    .tt-tarjeta:hover .tt-tarjeta__media img,
+    .tt-tarjeta:has(.tt-tarjeta__enlace:focus-visible) .tt-tarjeta__media img {
       transform: none;
     }
   }
