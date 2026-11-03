@@ -62,7 +62,7 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
         <Link href={enlaceSemana(sumarDias(lunes, -7))} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Semana anterior">
           <ChevronLeftIcon />
         </Link>
-        <p className="min-w-0 text-center font-heading text-xl font-bold italic sm:text-2xl" aria-live="polite">
+        <p className="min-w-0 text-center tt-titulo-seccion" aria-live="polite">
           <span className="sm:hidden">{textoSemanaCorto(lunes)}</span>
           <span className="hidden sm:inline">{textoSemana(lunes)}</span>
         </p>
@@ -94,11 +94,11 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
                     aria-label={`${textoDia(d)}${d === hoy ? ", hoy" : ""}`}
                     className={cn(
                       "flex min-h-11 min-w-11 flex-col items-center justify-center border-b-2 px-1 text-xs",
-                      d === dia ? "border-rojo font-semibold text-tinta" : "border-transparent text-tinta-suave",
+                      d === dia ? "border-tinta font-semibold text-tinta" : "border-transparent text-tinta-suave",
                     )}
                   >
                     <span>{DIA_CORTO[i]}</span>
-                    <span className={cn("text-base", d === hoy && "font-bold text-rojo-texto")}>{numeroDia(d)}</span>
+                    <span className={cn("text-base", d === hoy && "font-bold text-info")}>{numeroDia(d)}</span>
                   </Link>
                 </li>
               ))}

@@ -8,6 +8,7 @@ import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { Insignia } from "@/componentes/panel/insignia";
 import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -17,7 +18,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { MasReserva } from "@/modulos/agenda/componentes/acciones-reserva";
 import { obtenerReserva } from "@/modulos/agenda/consultas";
-import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
+import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { esOrden, puedeRecibirse } from "@/modulos/ordenes/reglas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
@@ -76,7 +77,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
     <div className="flex max-w-5xl flex-col gap-8">
       <EncabezadoPagina
         titulo={r.placa}
-        estado={<span className={cn("tt-insignia", cancelada && "tt-insignia--aviso")}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</span>}
+        estado={<Insignia tono={TONO_ESTADO_TRABAJO[r.estado]}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</Insignia>}
         accion={
           <div className="flex flex-wrap gap-2">
             {principal}
@@ -101,7 +102,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
 
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
         {/* La placa ya está en el título: el vehículo dice su modelo y su tamaño, con la etiqueta */}
-        <div className="flex flex-col gap-2 rounded-sm border border-border p-4 lg:col-start-2 lg:row-start-1">
+        <div className="flex flex-col gap-2 tt-tarjeta-panel p-4 lg:col-start-2 lg:row-start-1">
           <dl aria-label="Datos de la reserva" className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3">
             <dt className="text-tinta-suave">Ingresa</dt>
             <dd className="flex flex-col">
@@ -149,7 +150,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
           {r.montos && <MontosTrabajo trabajoId={r.id} montos={r.montos} cerrado={cancelada} hoy={hoy} />}
           {r.nota && (
             <section aria-labelledby="nota-titulo" className="flex flex-col gap-2">
-              <h2 id="nota-titulo" className="font-heading text-2xl font-bold italic">Nota</h2>
+              <h2 id="nota-titulo" className="tt-titulo-seccion">Nota</h2>
               <p className="whitespace-pre-line">{r.nota}</p>
             </section>
           )}

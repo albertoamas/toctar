@@ -53,9 +53,9 @@ export function VehiculosCliente({ clienteId, vehiculos, tamanos }: Props) {
         </Button>
       </CabeceraSeccion>
       {activos.length === 0 ? (
-        <p className="flex-1 rounded-sm border border-border p-4 text-tinta-suave">Todavía no tiene vehículos.</p>
+        <p className="flex-1 tt-tarjeta-panel p-4 text-tinta-suave">Todavía no tiene vehículos.</p>
       ) : (
-        <ul aria-label="Vehículos" className="flex flex-1 flex-col divide-y divide-border rounded-sm border border-border">
+        <ul aria-label="Vehículos" className="flex flex-1 flex-col divide-y divide-border tt-tarjeta-panel">
           {activos.map((v) => (
             <li key={v.id} className="flex items-center gap-3 p-3">
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">

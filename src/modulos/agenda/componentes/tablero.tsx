@@ -4,11 +4,12 @@ import { cn } from "cn";
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
 import type { ReservaTablero, SemanaDeAgenda } from "../consultas";
 import { rutaTrabajo } from "@/modulos/ordenes/reglas";
-import { bloquesDeLaSemana, DIA_CORTO, diaDeLaSemana, NOMBRE_ESTADO_TRABAJO, numeroDia, seCruzan, textoDia } from "../reglas";
+import { bloquesDeLaSemana, DIA_CORTO, diaDeLaSemana, NOMBRE_ESTADO_TRABAJO, numeroDia, seCruzan, textoDia, TONO_ESTADO_TRABAJO } from "../reglas";
 
 // HU-29: el tablero de la agenda (RF-38). Una fila por espacio y una columna por día (S-3: por día, sin horas). Cada
-// reserva es una cinta negra con el borde cortado a 60° que abarca sus días; si sigue desde la semana anterior o hacia la
-// siguiente, el borde va recto y lo dice. Un día libre se toca para agendar ahí; uno cerrado va rayado y lo dice.
+// reserva es un bloque que abarca sus días, del color de su estado (pedido 26: el mismo tono que su insignia, con una
+// barra a la izquierda); si sigue desde la semana anterior o hacia la siguiente, lo dice con una flecha. Un día libre se
+// toca para agendar ahí; uno cerrado va en gris y lo dice. Hoy, resaltado en azul.
 // En el celular y la tableta, un día a la vez (AgendaDelDia): sin desplazarse de lado. La semana entera, desde 1024 px
 // (pulido 10.1: en la tableta, con siete columnas de 75 px, las cintas se cortaban en "4…").
 // Todo es texto y enlaces: se lee igual con lector de pantalla, sin depender del color.
@@ -27,7 +28,22 @@ function textoFechas(r: ReservaTablero) {
   return r.inicio === r.fin ? textoDia(r.inicio) : `${textoDia(r.inicio)} al ${textoDia(r.fin)}`;
 }
 
-/** Placa, servicio y técnico: lo que dice la cinta. */
+/**
+ * El color de un bloque: el de su estado (las clases tt-tono-* de globals.css, las mismas de las insignias), de fondo y
+ * en la barra. La agendada, blanca con borde: se ve igual sobre la tarjeta y sobre el gris del celular. La entregada,
+ * sólida en verde: así se distingue de la lista y se ve de lejos (pedido 28).
+ */
+function colorBloque(estado: ReservaTablero["estado"]) {
+  const tono = TONO_ESTADO_TRABAJO[estado] ?? "neutro";
+  if (estado === "entregado") return { tono, clase: "tt-tono-exito border-l-exito bg-exito text-fondo", estado: "text-fondo" };
+  if (tono === "neutro") return { tono, clase: "tt-tono-neutro border border-l-4 border-border border-l-tinta-suave bg-fondo", estado: "text-tinta-suave" };
+  return { tono, clase: `tt-tono-${tono} border-l-[var(--tono)] bg-[var(--tono-fondo)]`, estado: "text-[var(--tono)]" };
+}
+
+/** Un día que el taller no atiende: igual en la semana y en el día. */
+const CERRADO = "flex min-h-14 items-center justify-center rounded-lg bg-neutro-fondo text-tinta-suave";
+
+/** Placa, servicio y técnico: lo que dice el bloque de una reserva. */
 function Cinta({
   r,
   empiezaAntes,
@@ -43,21 +59,22 @@ function Cinta({
   className?: string;
   style?: React.CSSProperties;
 }) {
+  const color = colorBloque(r.estado);
   return (
     <Link
       href={rutaTrabajo(r.id, r.estado, conOrdenes)}
       style={style}
+      // El tono, también como dato: la entregada va en verde (pedido 28)
+      data-tono={color.tono}
       className={cn(
-        "relative flex min-h-14 min-w-0 flex-col justify-center gap-0.5 py-1.5 pr-3 text-blanco opacity-100 hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]",
-        // Si viene de la semana anterior, el borde va recto: la cinta sigue. Entregada (pedido 28): en verde, la de éxito
-        empiezaAntes ? cn("pl-3", r.estado === "entregado" ? "bg-exito" : "bg-negro") : "tt-cinta",
-        r.estado === "entregado" && "[--tt-cinta:var(--exito)]",
+        "relative flex min-h-14 min-w-0 flex-col justify-center gap-0.5 rounded-lg border-l-4 py-1.5 pr-2.5 pl-2.5 text-tinta transition-[filter] hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]",
+        color.clase,
         className,
       )}
     >
       <span className="flex items-baseline gap-2">
         {empiezaAntes && <ChevronLeftIcon className="size-3.5 shrink-0 self-center" aria-hidden />}
-        <span className="truncate font-heading text-xl leading-none font-bold italic">{r.placa}</span>
+        <span className="truncate tt-titulo-sub leading-none">{r.placa}</span>
         {terminaDespues && <ChevronRightIcon className="ml-auto size-3.5 shrink-0 self-center" aria-hidden />}
       </span>
       {r.servicio && (
@@ -66,9 +83,9 @@ function Cinta({
           {r.masServicios > 0 && ` y ${r.masServicios} más`}
         </span>
       )}
-      <span className="truncate text-xs text-blanco/75">{r.tecnico ?? "Sin técnico"}</span>
-      {/* En C3 todas están agendadas; desde C4 (recibido, en proceso, listo) el estado se ve también escrito */}
-      {r.estado !== "agendado" && <span className="truncate text-xs font-semibold">{NOMBRE_ESTADO_TRABAJO[r.estado]}</span>}
+      <span className={cn("truncate text-xs", r.estado === "entregado" ? "text-fondo/80" : "text-tinta-suave")}>{r.tecnico ?? "Sin técnico"}</span>
+      {/* Desde que se recibe (recibida, en proceso, lista, entregada), el estado se ve también escrito, en su color */}
+      {r.estado !== "agendado" && <span className={cn("truncate text-xs font-semibold", color.estado)}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</span>}
       <span className="sr-only">
         , {NOMBRE_ESTADO_TRABAJO[r.estado].toLowerCase()}, {textoFechas(r)}
         {empiezaAntes && ", sigue desde la semana anterior"}
@@ -82,9 +99,8 @@ function Cinta({
 function DiaSinReserva({ fecha, espacio, cerrado, pasado, style }: { fecha: string; espacio: { id: number; nombre: string }; cerrado: boolean; pasado: boolean; style?: React.CSSProperties }) {
   if (cerrado) {
     return (
-      <div style={style} className="tt-cerrado flex min-h-14 items-center justify-center text-xs text-tinta-suave">
-        {/* Con fondo propio: sobre el rayado no se leía */}
-        <span className="bg-superficie px-1.5 py-0.5">Cerrado</span>
+      <div style={style} className={cn(CERRADO, "text-xs")}>
+        Cerrado
       </div>
     );
   }
@@ -93,7 +109,7 @@ function DiaSinReserva({ fecha, espacio, cerrado, pasado, style }: { fecha: stri
     <Link
       href={agendarEn(fecha, espacio.id)}
       style={style}
-      className="group flex min-h-14 items-center justify-center gap-1 border border-dashed border-border text-xs text-tinta-suave hover:border-tinta hover:text-tinta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]"
+      className="group flex min-h-14 items-center justify-center gap-1 rounded-lg border border-dashed border-border text-xs text-tinta-suave hover:border-tinta-suave hover:bg-superficie/60 hover:text-tinta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]"
     >
       <PlusIcon className="size-3.5 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden />
       Libre
@@ -108,17 +124,21 @@ function DiaSinReserva({ fecha, espacio, cerrado, pasado, style }: { fecha: stri
 export function TableroSemana({ semana, dias, hoy, conOrdenes }: Props) {
   const lunes = dias[0];
   return (
-    <div className="hidden lg:block">
+    // En una tarjeta, como el resto del panel
+    <div className="tt-tarjeta-panel hidden p-3 lg:block">
       <div className="grid grid-cols-[8rem_repeat(7,minmax(0,1fr))] gap-1.5">
         <div aria-hidden />
         {dias.map((fecha, i) => {
           const esHoy = fecha === hoy;
           const cerrado = semana.diasCerrados.includes(i + 1);
           return (
-            <div key={fecha} className={cn("flex items-baseline gap-1.5 border-t-2 px-1 pt-1.5 pb-1", esHoy ? "border-rojo" : "border-transparent", cerrado && "text-tinta-suave")}>
+            <div
+              key={fecha}
+              className={cn("flex items-baseline gap-1.5 rounded-lg px-2 pt-1.5 pb-1", esHoy && "bg-info-fondo text-info", cerrado && !esHoy && "text-tinta-suave")}
+            >
               <span className="text-sm">{DIA_CORTO[i]}</span>
               <span className={cn("text-lg", esHoy ? "font-bold" : "font-semibold")}>{numeroDia(fecha)}</span>
-              {esHoy && <span className="ml-auto text-xs font-semibold text-rojo-texto">Hoy</span>}
+              {esHoy && <span className="ml-auto text-xs font-semibold">Hoy</span>}
             </div>
           );
         })}
@@ -132,9 +152,9 @@ export function TableroSemana({ semana, dias, hoy, conOrdenes }: Props) {
           const gridRow = fila + 2;
           return (
             <section key={espacio.id} aria-label={espacio.nombre} className="contents">
-              <h2 style={{ gridRow, gridColumn: 1 }} className="flex flex-col justify-center font-heading text-xl font-bold italic">
+              <h2 style={{ gridRow, gridColumn: 1 }} className="flex flex-col justify-center tt-titulo-sub">
                 {espacio.nombre}
-                {!espacio.activo && <span className="font-sans text-xs font-normal not-italic text-tinta-suave">Desactivado</span>}
+                {!espacio.activo && <span className="text-xs font-normal text-tinta-suave">Desactivado</span>}
               </h2>
               {dias.map((fecha, i) =>
                 ocupado(fecha) || !espacio.activo ? null : (
@@ -168,22 +188,20 @@ export function AgendaDelDia({ semana, dia, hoy, conOrdenes }: { semana: SemanaD
         const r = semana.reservas.find((x) => x.espacioId === espacio.id && seCruzan({ inicio: x.inicio, fin: x.fin }, { inicio: dia, fin: dia }));
         return (
           <li key={espacio.id} className="flex flex-col gap-1">
-            <h2 className="font-heading text-lg font-bold italic">
+            <h2 className="tt-titulo-sub">
               {espacio.nombre}
-              {!espacio.activo && <span className="ml-2 font-sans text-xs font-normal not-italic text-tinta-suave">Desactivado</span>}
+              {!espacio.activo && <span className="ml-2 text-xs font-normal text-tinta-suave">Desactivado</span>}
             </h2>
             {r ? (
               <Cinta r={r} empiezaAntes={r.inicio < dia} terminaDespues={r.fin > dia} conOrdenes={conOrdenes} />
             ) : cerrado ? (
-              <p className="tt-cerrado flex min-h-14 items-center justify-center text-sm text-tinta-suave">
-                <span className="bg-superficie px-1.5 py-0.5">Cerrado</span>
-              </p>
+              <p className={cn(CERRADO, "text-sm")}>Cerrado</p>
             ) : dia < hoy || !espacio.activo ? (
               <p className="flex min-h-14 items-center px-3 text-sm text-tinta-suave">Sin reserva</p>
             ) : (
               <Link
                 href={agendarEn(dia, espacio.id)}
-                className="flex min-h-14 items-center justify-between gap-3 border border-dashed border-border px-3 text-sm hover:border-tinta"
+                className="flex min-h-14 items-center justify-between gap-3 rounded-lg border border-dashed border-border bg-fondo px-3 text-sm hover:border-tinta-suave"
               >
                 <span className="text-tinta-suave">Libre</span>
                 <span className="inline-flex items-center gap-1 font-semibold">

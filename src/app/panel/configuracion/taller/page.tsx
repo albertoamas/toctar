@@ -4,6 +4,7 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { exigirModulo } from "@/lib/sesion";
 import { ListaEditable } from "@/modulos/configuracion/componentes/lista-editable";
 import { listarElementos } from "@/modulos/configuracion/consultas";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 
 export const metadata: Metadata = { title: "Configuración del taller" };
 
@@ -11,9 +12,12 @@ export const metadata: Metadata = { title: "Configuración del taller" };
 // Solo el dueño.
 export default function PaginaTaller() {
   return (
-    <Suspense fallback={<Cargando />}>
-      <Contenido />
-    </Suspense>
+    <>
+      <EncabezadoPagina titulo="Taller" volver={{ href: "/panel/configuracion", texto: "Configuración" }} />
+      <Suspense fallback={<Cargando />}>
+        <Contenido />
+      </Suspense>
+    </>
   );
 }
 

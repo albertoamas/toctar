@@ -17,13 +17,13 @@ export function FormularioNuevoCliente({ tamanos }: { tamanos: Tamano[] }) {
   useFocoEnError(formulario, estado);
 
   return (
-    <form ref={formulario} action={accion} className="flex max-w-2xl flex-col gap-6" noValidate>
+    <form ref={formulario} action={accion} className="tt-formulario-panel flex max-w-2xl flex-col gap-6" noValidate>
       <CamposCliente estado={estado} plegar />
       {/* La línea va afuera: en el borde de un fieldset, la legend lo corta */}
       <div className="border-t border-border pt-8">
         <fieldset className="flex flex-col gap-6">
           <legend className="mb-5 flex flex-col gap-1">
-            <span className="font-heading text-2xl font-bold italic">Primer vehículo</span>
+            <span className="tt-titulo-seccion">Primer vehículo</span>
             <span className="text-sm text-tinta-suave">Opcional. Más vehículos, desde su ficha.</span>
           </legend>
           <CamposVehiculo estado={estado} prefijo="vehiculo-" tamanos={tamanos} plegar />

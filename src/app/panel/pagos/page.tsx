@@ -77,7 +77,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
     <>
       <p className="flex flex-wrap items-baseline gap-x-3">
         <span className="text-tinta-suave">Total por cobrar</span>
-        <span className="font-heading text-4xl font-extrabold italic tabular-nums">{mostrarMonto(total)} Bs</span>
+        <span className="tt-titulo-pagina tabular-nums">{mostrarMonto(total)} Bs</span>
         <span className="text-sm text-tinta-suave">
           {/* Buscando, cuántas se ven de todas; el total es siempre el de todas */}
           {q.trim() ? `${saldos.length} de ${todos.length}` : todos.length === 1 ? "1 orden" : `${todos.length} órdenes`}
@@ -93,7 +93,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
       {saldos.length === 0 ? (
         <EstadoVacio>Ningún saldo coincide con «{q.trim()}».</EstadoVacio>
       ) : (
-        <ul aria-label="Órdenes con saldo" className="flex max-w-3xl flex-col divide-y divide-border rounded-sm border border-border">
+        <ul aria-label="Órdenes con saldo" className="flex max-w-3xl flex-col divide-y divide-border tt-tarjeta-panel">
           {saldos.map((s) => {
             const entregada = fechaEnBolivia(s.entregadoAt);
             const vehiculo = { marca: s.marca, modelo: s.modelo, placa: s.placa };
@@ -106,7 +106,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
                       <span className="font-semibold">{s.cliente}</span>
                       <span className="text-sm text-tinta-suave">{vehiculoEnLista(vehiculo)}</span>
                     </div>
-                    <span className="shrink-0 font-heading text-2xl font-extrabold whitespace-nowrap italic tabular-nums">{mostrarMonto(s.saldo)} Bs</span>
+                    <span className="shrink-0 tt-placa text-xl whitespace-nowrap">{mostrarMonto(s.saldo)} Bs</span>
                   </div>
                   <p className="text-sm">
                     Entregada el {fechaCorta(entregada, hoy)}, {textoHace(entregada, hoy)}

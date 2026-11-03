@@ -9,6 +9,7 @@ import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { AvisarPorWhatsApp } from "@/componentes/panel/avisar-whatsapp";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { Insignia } from "@/componentes/panel/insignia";
 import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -16,7 +17,7 @@ import { diaYHora, fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/
 import { puede, puedeVerModulo, puedeVerOrden } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
-import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
+import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { obtenerDatosPublicos, obtenerPlantillas } from "@/modulos/configuracion/consultas";
@@ -117,8 +118,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
         titulo={o.placa}
         estado={
           <>
-            <span className="tt-insignia">{NOMBRE_ESTADO_TRABAJO[o.estado]}</span>
-            {estaAtrasada(o, hoy) && <span className="tt-insignia tt-insignia--aviso">Atrasada</span>}
+            <Insignia tono={TONO_ESTADO_TRABAJO[o.estado]}>{NOMBRE_ESTADO_TRABAJO[o.estado]}</Insignia>
+            {estaAtrasada(o, hoy) && <Insignia tono="aviso">Atrasada</Insignia>}
           </>
         }
         accion={
@@ -176,9 +177,9 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
 
       {/* En la computadora: a la izquierda el trabajo (cómo llegó, fotos y avances); a la derecha los datos y, debajo, los
           montos. En el celular, en ese orden: datos, trabajo y montos */}
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:grid-rows-[auto_1fr] lg:items-start">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:grid-rows-[auto_1fr] lg:items-start">
         {/* La placa ya está en el título: el vehículo dice su modelo y su tamaño, con la etiqueta (como la reserva) */}
-        <div className="flex flex-col gap-2 rounded-sm border border-border p-4 lg:col-start-2 lg:row-start-1">
+        <div className="flex flex-col gap-2 tt-tarjeta-panel p-4 lg:col-start-2 lg:row-start-1">
           <dl aria-label="Datos de la orden" className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3">
             <dt className="text-tinta-suave">Entrega</dt>
             <dd className="flex flex-col">
@@ -218,13 +219,13 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
           )}
         </div>
 
-        <div className="flex flex-col gap-10 lg:col-start-1 lg:row-span-2 lg:row-start-1">
+        <div className="flex flex-col gap-6 lg:col-start-1 lg:row-span-2 lg:row-start-1">
           <ComoLlego revision={revision} observaciones={o.observacionesIngreso} />
           {firma && <FirmaDeEntrega firma={firma} />}
           {/* Con "Pagos", los servicios van con sus precios en el bloque de montos; si no, solo los nombres */}
           {!o.montos && (
-            <section aria-labelledby="servicios-titulo" className="flex flex-col gap-2">
-              <h2 id="servicios-titulo" className="font-heading text-2xl font-bold italic">Servicios</h2>
+            <section aria-labelledby="servicios-titulo" className="tt-tarjeta-panel flex flex-col gap-2 p-4">
+              <h2 id="servicios-titulo" className="tt-titulo-seccion">Servicios</h2>
               <ul className="list-disc pl-5">
                 {o.servicios.map((s, i) => (
                   <li key={i}>{s}</li>
@@ -232,8 +233,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
               </ul>
             </section>
           )}
-          <section aria-labelledby="fotos-titulo" className="flex flex-col gap-6">
-            <h2 id="fotos-titulo" className="font-heading text-2xl font-bold italic">Fotos</h2>
+          <section aria-labelledby="fotos-titulo" className="tt-tarjeta-panel flex flex-col gap-5 p-4">
+            <h2 id="fotos-titulo" className="tt-titulo-seccion">Fotos</h2>
             {/* Cerrada y sin ninguna: una línea, no dos */}
             {fotos.length === 0 && !abierta ? (
               <p className="text-tinta-suave">Sin fotos.</p>
@@ -253,7 +254,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
 
         {/* Abierta también después de la entrega: una entregada con saldo se cobra aquí (RN-13, HU-37) */}
         {o.montos && (
-          <div className="flex flex-col gap-10 lg:col-start-2 lg:row-start-2">
+          <div className="flex flex-col gap-6 lg:col-start-2 lg:row-start-2">
             <MontosTrabajo trabajoId={o.id} montos={o.montos} cerrado={false} hoy={hoy} agregar={conAdicional && <AgregarAdicional id={o.id} opciones={opciones} />} />
           </div>
         )}

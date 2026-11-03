@@ -1,10 +1,7 @@
 import type { EstadoReclamo } from "@/db/esquema";
+import { Insignia } from "@/componentes/panel/insignia";
 
 // El color siempre va con la palabra.
 export function InsigniaEstado({ estado }: { estado: EstadoReclamo }) {
-  return estado === "pendiente" ? (
-    <span className="tt-insignia tt-insignia--aviso">Pendiente</span>
-  ) : (
-    <span className="tt-insignia tt-insignia--exito">Atendido</span>
-  );
+  return estado === "pendiente" ? <Insignia tono="aviso">Pendiente</Insignia> : <Insignia tono="exito">Atendido</Insignia>;
 }

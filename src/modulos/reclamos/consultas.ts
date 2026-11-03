@@ -36,9 +36,23 @@ export async function listarReclamos(soloPendientes: boolean): Promise<FilaRecla
     .orderBy(sql`case when ${reclamo.estado} = 'pendiente' then 0 else 1 end`, desc(reclamo.createdAt));
 }
 
-export async function contarPendientes(): Promise<number> {
-  const [{ total }] = await db.select({ total: count() }).from(reclamo).where(eq(reclamo.estado, "pendiente"));
-  return total;
+/**
+ * Para el inicio (pedido 26): cuántos reclamos esperan respuesta y los `limite` más antiguos (los que más urgen), sin
+ * contar fotos: el inicio no las muestra y se abre muchas veces al día.
+ */
+export async function reclamosPorAtender(limite: number): Promise<{ total: number; primeros: Pick<FilaReclamo, "id" | "nombre" | "placa" | "servicio" | "createdAt">[] }> {
+  const pendiente = eq(reclamo.estado, "pendiente");
+  const [[{ total }], primeros] = await Promise.all([
+    db.select({ total: count() }).from(reclamo).where(pendiente),
+    db
+      .select({ id: reclamo.id, nombre: reclamo.nombre, placa: reclamo.placa, servicio: servicio.nombre, createdAt: reclamo.createdAt })
+      .from(reclamo)
+      .leftJoin(servicio, eq(reclamo.servicioId, servicio.id))
+      .where(pendiente)
+      .orderBy(asc(reclamo.createdAt), asc(reclamo.id))
+      .limit(limite),
+  ]);
+  return { total, primeros };
 }
 
 export type DetalleReclamo = {

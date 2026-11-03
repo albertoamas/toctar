@@ -55,42 +55,48 @@ async function prepararDia(info: TestInfo) {
   return { placas, ids };
 }
 
-const bloque = (page: Page, titulo: string) => page.getByRole("region", { name: titulo });
+/** "Para hoy" (pedido 26): lo que llega, lo que se entrega y lo que espera aviso, en una tabla. */
+const delDia = (page: Page) => page.getByRole("region", { name: "Para hoy" }).getByRole("list", { name: "Para hoy" });
+const resumen = (page: Page) => page.getByRole("region", { name: "Resumen de hoy" });
 
-test("el dueño ve lo del día: ingresos (y el atrasado), entregas, listas sin avisar y mantenimientos; cada fila lleva a su pantalla", async ({ page }, info) => {
+test("el dueño ve los números del día, lo que llega (y el atrasado), las entregas y las listas sin avisar; cada fila lleva a su pantalla", async ({ page }, info) => {
   const { placas, ids } = await prepararDia(info);
   await ingresarComoDueno(page);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Hola, /);
 
-  const ingresos = bloque(page, "Ingresos de hoy");
-  await expect(ingresos.getByRole("link", { name: new RegExp(`^${placas.hoy}`) })).not.toContainText("Debía ingresar");
-  await expect(ingresos.getByRole("link", { name: new RegExp(`^${placas.atrasado}`) })).toContainText(`Debía ingresar el ${dia(-2).corta}`);
-  await expect(bloque(page, "Entregas de hoy").getByRole("link", { name: new RegExp(`^${placas.entrega}`) })).toContainText(`Atrasada desde el ${dia(-4).corta}`);
-  // Con el aviso, también su estado (pulido 9.1: la fila muestra los dos)
-  await expect(bloque(page, "Entregas de hoy").getByRole("link", { name: new RegExp(`^${placas.entrega}`) })).toContainText("En proceso");
-  await expect(bloque(page, "Listas sin avisar").getByRole("link", { name: new RegExp(`^${placas.lista}`) })).toBeVisible();
-  await expect(bloque(page, "Mantenimientos por avisar").getByRole("link", { name: /^\d+ vencidos?, \d+ próximos?/ })).toBeVisible();
-  // Sin montos ni teléfonos (RN-12)
-  await expect(page.getByRole("main")).not.toContainText(/\bBs\b|\+591/);
-  await expect(page.getByRole("navigation", { name: "Ir a" }).getByRole("link", { name: /^Agenda/ })).toBeVisible();
+  const fila = (placa: string) => delDia(page).getByRole("link", { name: new RegExp(`^${placa}`) });
+  await expect(fila(placas.hoy)).toContainText("Agendada");
+  await expect(fila(placas.hoy)).not.toContainText("Debía ingresar");
+  await expect(fila(placas.atrasado)).toContainText(`Debía ingresar el ${dia(-2).corta}`);
+  await expect(fila(placas.entrega)).toContainText(`Atrasada desde el ${dia(-4).corta}`);
+  await expect(fila(placas.entrega)).toContainText("En proceso");
+  await expect(fila(placas.lista)).toContainText("Sin avisar");
+  // Los números del día, cada uno a su lista; el dueño ve lo que hay por cobrar
+  await expect(resumen(page).getByRole("link", { name: /^En el taller \d+/ })).toHaveAttribute("href", "/panel/ordenes");
+  await expect(resumen(page).getByRole("link", { name: /^Mantenimientos \d+/ })).toHaveAttribute("href", "/panel/mantenimientos");
+  await expect(resumen(page).getByRole("link", { name: /^Por cobrar [\d.,]+ Bs/ })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Para atender" }).getByRole("link", { name: /mantenimientos? vencidos?/ })).toBeVisible();
+  // Sus dos tareas de todos los días
+  await expect(page.getByRole("link", { name: "Nueva reserva" })).toHaveAttribute("href", "/panel/agenda/nueva");
+  await expect(page.getByRole("link", { name: "Nueva cotización" })).toHaveAttribute("href", "/panel/cotizaciones/nueva");
 
-  // Cada fila, a su pantalla: el ingreso a la reserva, la entrega a la orden
-  await ingresos.getByRole("link", { name: new RegExp(`^${placas.hoy}`) }).click();
+  await fila(placas.hoy).click();
   await expect(page).toHaveURL(new RegExp(`/panel/agenda/${ids.hoy}$`));
   await page.goto("/panel");
-  await bloque(page, "Entregas de hoy").getByRole("link", { name: new RegExp(`^${placas.entrega}`) }).click();
+  await fila(placas.entrega).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${ids.entrega}$`));
 });
 
-test("un encargado solo con Agenda ve solo los ingresos; el técnico sigue con sus órdenes", async ({ page }, info) => {
+test("un encargado solo con Agenda ve solo lo que llega, sin montos; el técnico sigue con sus órdenes", async ({ page }, info) => {
   const s = sufijo(info).toLowerCase();
   await crearUsuario({ usuario: `enc-hu39-${s}`, nombre: "Encargada de agenda", contrasena: "encargado-123", rol: "encargado", permisos: ["agenda"] });
   await ingresar(page, `enc-hu39-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
-  await expect(page.getByRole("heading", { level: 2, name: "Ingresos de hoy" })).toBeVisible();
-  for (const otro of ["Reclamos pendientes", "Entregas de hoy", "Listas sin avisar", "Mantenimientos por avisar"]) {
-    await expect(page.getByRole("heading", { name: otro })).toHaveCount(0);
-  }
+  await expect(page.getByRole("heading", { level: 2, name: "Para hoy" })).toBeVisible();
+  await expect(resumen(page).getByRole("link")).toHaveText([/^Llegan hoy/]);
+  await expect(page.getByRole("heading", { name: "Para atender" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Nueva cotización" })).toHaveCount(0);
+  await expect(page.getByRole("main")).not.toContainText(/\bBs\b|\+591/);
 
   await page.context().clearCookies();
   await crearUsuario({ usuario: `tec-hu39-${s}`, nombre: "Técnico del día", contrasena: "tecnico-123", rol: "tecnico" });
@@ -98,11 +104,12 @@ test("un encargado solo con Agenda ve solo los ingresos; el técnico sigue con s
   await expect(page).toHaveURL(/\/panel$/);
   await expect(page.getByRole("navigation", { name: "Ir a" }).getByRole("link")).toHaveText([/^Mis órdenes/]);
   await expect(page.getByRole("main").getByRole("heading", { level: 2 })).toHaveCount(0);
+  await expect(page.getByRole("main")).not.toContainText(/\bBs\b|\+591/);
 });
 
 test("a 360 px no se sale nada", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await ingresarComoDueno(page);
-  await expect(page.getByRole("heading", { name: "Ingresos de hoy" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Para hoy" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360);
 });

@@ -4,6 +4,7 @@ import { useActionState, useRef, useState } from "react";
 import { ExternalLinkIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
+import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
@@ -37,8 +38,8 @@ export function FormularioNegocio(props: Props) {
   useFocoEnError(formulario, estado);
 
   return (
-    <form ref={formulario} action={accion} className="flex max-w-2xl flex-col gap-10" noValidate>
-      <Seccion titulo="Contacto">
+    <form ref={formulario} action={accion} className="flex max-w-2xl flex-col gap-6" noValidate>
+      <SeccionFormulario titulo="Contacto">
         <Campo id="nombre" etiqueta="Nombre del negocio" error={e.nombre}>
           <Input id="nombre" name="nombre" defaultValue={v.nombre} aria-invalid={!!e.nombre} aria-describedby={describir("nombre")} />
         </Campo>
@@ -62,9 +63,9 @@ export function FormularioNegocio(props: Props) {
         <Campo id="correo" etiqueta="Correo" error={e.correo}>
           <Input id="correo" name="correo" type="email" autoCapitalize="none" spellCheck={false} defaultValue={v.correo} aria-invalid={!!e.correo} aria-describedby={describir("correo")} />
         </Campo>
-      </Seccion>
+      </SeccionFormulario>
 
-      <Seccion titulo="Ubicación">
+      <SeccionFormulario titulo="Ubicación">
         <Campo id="direccion" etiqueta="Dirección" error={e.direccion}>
           <Textarea id="direccion" name="direccion" rows={2} defaultValue={v.direccion} aria-invalid={!!e.direccion} aria-describedby={describir("direccion")} />
         </Campo>
@@ -89,29 +90,29 @@ export function FormularioNegocio(props: Props) {
         >
           <Input id="ubicacion" name="ubicacion" autoComplete="off" spellCheck={false} placeholder="-21.5355, -64.7296" defaultValue={v.ubicacion} aria-invalid={!!e.ubicacion} aria-describedby={describir("ubicacion", true)} />
         </Campo>
-      </Seccion>
+      </SeccionFormulario>
 
-      <Seccion titulo="Horario de atención" descripcion="Se muestra en la página. Marca los días que abren.">
+      <SeccionFormulario titulo="Horario de atención" descripcion="Se muestra en la página. Marca los días que abren.">
         <EditorHorarios valor={horarios} onChange={setHorarios} errores={e} />
         {e.horarios && <MensajeError id="horarios-error">{e.horarios}</MensajeError>}
-      </Seccion>
+      </SeccionFormulario>
 
-      <Seccion titulo="Redes sociales" descripcion="Copia el enlace desde la página del negocio en cada red. Las que queden vacías no se muestran.">
+      <SeccionFormulario titulo="Redes sociales" descripcion="Copia el enlace desde la página del negocio en cada red. Las que queden vacías no se muestran.">
         {REDES.map((red) => (
           <Campo key={red} id={red} etiqueta={NOMBRE_RED[red]} error={e[red]}>
             <Input id={red} name={red} type="url" autoCapitalize="none" spellCheck={false} placeholder={`https://www.${red}.com/…`} defaultValue={v[red]} aria-invalid={!!e[red]} aria-describedby={describir(red)} />
           </Campo>
         ))}
-      </Seccion>
+      </SeccionFormulario>
 
-      <Seccion titulo="Datos para facturar" descripcion="Opcionales. Salen en los documentos.">
+      <SeccionFormulario titulo="Datos para facturar" descripcion="Opcionales. Salen en los documentos.">
         <Campo id="nit" etiqueta="NIT" error={e.nit}>
           <Input id="nit" name="nit" inputMode="numeric" defaultValue={v.nit} aria-invalid={!!e.nit} aria-describedby={describir("nit")} className="max-w-60" />
         </Campo>
         <Campo id="razonSocial" etiqueta="Razón social" error={e.razonSocial}>
           <Input id="razonSocial" name="razonSocial" defaultValue={v.razonSocial} aria-invalid={!!e.razonSocial} aria-describedby={describir("razonSocial")} />
         </Campo>
-      </Seccion>
+      </SeccionFormulario>
 
       <div>
         <Button type="submit" disabled={enviando}>
@@ -119,17 +120,5 @@ export function FormularioNegocio(props: Props) {
         </Button>
       </div>
     </form>
-  );
-}
-
-function Seccion(props: { titulo: string; descripcion?: string; children: React.ReactNode }) {
-  return (
-    <fieldset className="flex flex-col gap-5">
-      <legend className="mb-5 flex flex-col gap-1">
-        <span className="font-heading text-2xl font-bold italic">{props.titulo}</span>
-        {props.descripcion && <span className="text-sm text-tinta-suave">{props.descripcion}</span>}
-      </legend>
-      {props.children}
-    </fieldset>
   );
 }

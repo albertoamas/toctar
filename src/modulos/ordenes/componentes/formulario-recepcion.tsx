@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { ClipboardCheckIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
@@ -29,10 +29,15 @@ export function FormularioRecepcion({ trabajoId, tecnicos, tecnicoInicial, tecni
   const e = estado.errores ?? {};
   // Controlados: React reinicia el formulario al terminar la acción y así nada se pierde tras un error
   const [observaciones, setObservaciones] = useState("");
+  const menuTecnico = useRef<HTMLSelectElement>(null);
   const [tecnicoId, setTecnicoId] = useState(tecnicoInicial && tecnicos.some((t) => t.id === tecnicoInicial) ? String(tecnicoInicial) : "");
+  // Terminado un envío, React reinicia el formulario: el menú vuelve a mostrar el técnico elegido
+  useEffect(() => {
+    if (menuTecnico.current) menuTecnico.current.value = tecnicoId;
+  }, [estado, tecnicoId]);
 
   return (
-    <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-label="Recibir vehículo">
+    <form ref={formulario} action={accion} className="tt-formulario-panel flex flex-col gap-5" noValidate aria-label="Recibir vehículo">
       <input type="hidden" name="id" value={trabajoId} />
       {estado.mensaje && !estado.ok && <MensajeError id="recepcion-error">{estado.mensaje}</MensajeError>}
       <Campo id="observaciones" etiqueta="Observaciones" error={e.observaciones} ayuda="Lo que no está en el checklist: objetos que deja el cliente, lo que pidió…">
@@ -47,9 +52,14 @@ export function FormularioRecepcion({ trabajoId, tecnicos, tecnicoInicial, tecni
         />
       </Campo>
       <Campo id="tecnicoId" etiqueta="Técnico" error={e.tecnicoId} ayuda={tecnicoInactivo ? `${tecnicoInactivo} ya no está activo: elige otro técnico.` : undefined}>
+        {/* El valor va en un campo oculto propio, como en la reserva: React reinicia el formulario al terminar cada envío
+            (también uno que falla, como "faltan partes del checklist") y el menú quedaba en "Sin asignar" mientras el
+            estado seguía con el técnico: se recibía sin técnico. Además, después de cada envío se vuelve a poner a la
+            vista (menuTecnico), así lo que se ve es lo que se envía */}
+        <input type="hidden" name="tecnicoId" value={tecnicoId} />
         <Selector
+          ref={menuTecnico}
           id="tecnicoId"
-          name="tecnicoId"
           value={tecnicoId}
           onChange={(ev) => setTecnicoId(ev.target.value)}
           aria-invalid={!!e.tecnicoId}

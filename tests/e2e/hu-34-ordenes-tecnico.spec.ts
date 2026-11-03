@@ -131,8 +131,15 @@ test("extender la entrega: con el espacio ocupado se elige otro libre; las lista
   expect(t).toEqual({ fin: d3, espacio: espacios[1].id });
   await expect(page.getByRole("list", { name: "Historia de la orden" }).getByText(/^Entrega extendida al/)).toBeVisible();
 
-  // La lista del encargado: agrupada por estado, con su conteo (pulido 11.1)
+  // La lista del encargado: una tabla con filtros por estado y su conteo (pedido 26)
   await page.goto("/panel/ordenes");
-  await expect(page.getByRole("region", { name: /^Recibidas, \d+ (orden|órdenes)$/ }).getByRole("link", { name: new RegExp(`^${placa}`) })).toBeVisible();
-  await expect(page.getByRole("region", { name: /^Listas, \d+ (orden|órdenes)$/ }).getByRole("link", { name: new RegExp(`^${placa}`) })).toHaveCount(0);
+  const filtros = page.getByRole("navigation", { name: "Filtrar por estado" });
+  const enTaller = page.getByRole("list", { name: "Órdenes en el taller" });
+  await expect(enTaller.getByRole("link", { name: new RegExp(`^${placa}.*Recibida`) })).toBeVisible();
+  await filtros.getByRole("link", { name: /^Recibidas \d+$/ }).click();
+  await expect(filtros.getByRole("link", { name: /^Recibidas/ })).toHaveAttribute("aria-current", "page");
+  await expect(enTaller.getByRole("link", { name: new RegExp(`^${placa}`) })).toBeVisible();
+  await filtros.getByRole("link", { name: /^Listas \d+$/ }).click();
+  await expect(filtros.getByRole("link", { name: /^Listas/ })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("link", { name: new RegExp(`^${placa}`) })).toHaveCount(0);
 });

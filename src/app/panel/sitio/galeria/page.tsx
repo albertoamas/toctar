@@ -5,15 +5,19 @@ import { exigirModulo } from "@/lib/sesion";
 import { GaleriaPanel } from "@/modulos/sitio/componentes/galeria-panel";
 import { listarGaleria, opcionesServicio } from "@/modulos/sitio/consultas";
 import { trabajoDePortada } from "@/modulos/sitio/galeria";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 
 export const metadata: Metadata = { title: "Galería" };
 
 // HU-09: galería de antes y después. Dueño o encargado con el permiso "sitio".
 export default function PaginaGaleria() {
   return (
-    <Suspense fallback={<Cargando />}>
-      <Contenido />
-    </Suspense>
+    <>
+      <EncabezadoPagina titulo="Galería" volver={{ href: "/panel/sitio", texto: "Sitio web" }} />
+      <Suspense fallback={<Cargando />}>
+        <Contenido />
+      </Suspense>
+    </>
   );
 }
 

@@ -152,8 +152,8 @@ test("la lista de usuarios: Agregar usuario, (tú) y la fila que abre el usuario
   await page.goto("/panel/usuarios");
   await expect(page.getByText("(tú)").locator("visible=true")).toBeVisible();
   if (info.project.name !== "escritorio") return;
-  // Se toca la celda del rol, no el nombre (con el mouse: el enlace de la fila la cubre)
-  const rol = (await page.getByRole("row").filter({ hasText: "(tú)" }).getByRole("cell").nth(2).boundingBox())!;
+  // Se toca con el mouse donde está el rol, no el nombre: toda la fila es el enlace (pedido 26, TablaLista)
+  const rol = (await page.getByRole("list", { name: "Usuarios" }).getByRole("link").filter({ hasText: "(tú)" }).getByText(/^Dueño,\s*$/).boundingBox())!;
   await page.mouse.click(rol.x + rol.width / 2, rol.y + rol.height / 2);
   await expect(page).toHaveURL(/\/panel\/usuarios\/\d+$/);
 });

@@ -3,6 +3,7 @@
 - **Fase y semana:** B. Entrega 1 · semana 1 (14 al 20 de octubre)
 - **Estado:** programada y probada a mano por YankoSoft (14 de octubre de 2026): HU-04 (#14), HU-05 (#15) y HU-06 (#16). Faltan la instalación real en celulares (necesita https, A3) y la demo
 - **Cambió después:** la pestaña "Cotizaciones y mantenimiento" pasó a "Parámetros" (`/panel/configuracion/parametros`), ordenada por tema (C5 §0, 24/10). La dirección vieja redirige a la nueva.
+- **Cambió después (02/11, pedido 26, `P26-rediseno-panel.md` fase 3):** sin pestañas. `/panel/configuracion` es una portada con tarjetas (Negocio, Taller, Parámetros y Mensajes) y los datos del negocio pasaron a `/panel/configuracion/negocio`. Cada parte vuelve con "‹ Configuración". Las tablas de rutas de abajo son las de B2.
 - **Historias:** HU-04 Datos del negocio · HU-05 Parámetros del sistema · HU-06 App instalable
 - **Base:**
   - Requisitos: RF-17, RF-18, RF-19, RNF-03 y RNF-11.

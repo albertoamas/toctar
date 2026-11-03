@@ -5,6 +5,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { FormularioParametros } from "@/modulos/configuracion/componentes/formulario-parametros";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { CLAVES_PARAMETRO, type ClaveParametro } from "@/modulos/configuracion/parametros";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 
 export const metadata: Metadata = { title: "Parámetros" };
 
@@ -12,9 +13,12 @@ export const metadata: Metadata = { title: "Parámetros" };
 // (C5 §0). Solo el dueño.
 export default function PaginaParametros() {
   return (
-    <Suspense fallback={<Cargando />}>
-      <Contenido />
-    </Suspense>
+    <>
+      <EncabezadoPagina titulo="Parámetros" volver={{ href: "/panel/configuracion", texto: "Configuración" }} />
+      <Suspense fallback={<Cargando />}>
+        <Contenido />
+      </Suspense>
+    </>
   );
 }
 

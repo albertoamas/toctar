@@ -30,15 +30,15 @@ test("el dueño ve el reclamo pendiente, le escribe por WhatsApp y lo marca aten
   await dejarReclamo(page, nombre, `10.17.0.${sufijo(info) === "C" ? 1 : 2}`);
 
   await ingresarComoDueno(page);
-  // En la pantalla del día (HU-39), el bloque con cuántos hay
-  await expect(page.getByRole("region", { name: "Reclamos pendientes" }).getByRole("link", { name: /^\d+ pendientes?/ })).toBeVisible();
+  // En el inicio (HU-39, pedido 26), en "Para atender": los más antiguos con su acción y, si hay más, la fila a la lista
+  await expect(page.getByRole("region", { name: "Para atender" }).getByRole("link", { name: /^(Reclamo de .*Responder|\d+ reclamos pendientes más)/ }).first()).toBeVisible();
   await page.goto("/panel/reclamos?ver=pendientes");
   // La pestaña dice cuántos hay por atender (pulido 5.1)
   await expect(page.getByRole("navigation", { name: "Filtrar reclamos" }).getByRole("link", { name: /^Pendientes \(\d+\)$/ })).toBeVisible();
   if (info.project.name === "escritorio") {
-    // En la tabla toda la fila abre el reclamo: se toca la placa, no el nombre (pulido 5.1)
-    // (con el mouse en esa posición: Playwright no hace clic en la celda porque el enlace de la fila la cubre)
-    const placa = (await page.getByRole("row").filter({ hasText: nombre }).getByRole("cell").nth(2).boundingBox())!;
+    // En la tabla toda la fila abre el reclamo: se toca con el mouse donde está la placa, no el nombre (pulido 5.1;
+    // pedido 26, TablaLista: la fila entera es el enlace)
+    const placa = (await page.getByRole("list", { name: "Reclamos" }).getByRole("link").filter({ hasText: nombre }).locator(".tt-placa").boundingBox())!;
     await page.mouse.click(placa.x + placa.width / 2, placa.y + placa.height / 2);
   } else {
     await enLaLista(page, nombre).click();
@@ -88,7 +88,7 @@ test("el encargado entra a reclamos solo con el permiso; el técnico nunca", asy
 
   await ingresar(page, `enc-reclamos-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
-  await expect(page.getByRole("heading", { name: "Reclamos pendientes" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Para atender" })).toBeVisible();
   await page.goto("/panel/reclamos");
   await expect(page.getByRole("heading", { level: 1, name: "Reclamos" })).toBeVisible();
 

@@ -31,7 +31,8 @@ Manual de marca, tokens y componentes en el Design System https://claude.ai/arti
 
 - Usa los tokens de `src/app/globals.css` (`bg-rojo`, `text-rojo-texto`, `text-tinta-suave`, `bg-superficie`…), nunca colores sueltos.
 - Sitio público y pantalla de ingreso siempre en oscuro (`data-theme="oscuro"`); panel en claro.
-- El rojo de marca no va como texto chico: para eso existe `rojo-texto`. Los titulares van en `font-heading italic`.
+- El rojo de marca no va como texto chico: para eso existe `rojo-texto`. En el sitio y el ingreso, los titulares van en `font-heading italic`.
+- El panel es un panel administrativo estándar (pedido 26, `docs/08-desarrollo/etapas/P26-rediseno-panel.md`): Montserrat sin itálicas (`tt-titulo-pagina`, `tt-titulo-seccion`, `tt-titulo-sub`), tarjetas blancas (`tt-tarjeta-panel`) sobre `bg-fondo-panel` e insignias con `Insignia` (`src/componentes/panel/insignia.tsx`). El rojo, solo en el botón principal y en el módulo activo del menú.
 - El único ángulo diagonal es 60°. Los logos están en `public/marca/`: no se recolorean, se elige la variante.
 - Logo con lema solo desde 360 px de ancho (horizontal) o 320 px (vertical); más chico, la variante `-sin-lema` y el lema como texto (`<p className="tt-lema">`).
 

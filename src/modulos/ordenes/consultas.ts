@@ -6,7 +6,7 @@ import { archivo, cliente, galeriaItem, parteRevision, servicio, trabajo, trabaj
 import type { EstadoRevision, EstadoTrabajo, EtapaFoto, TipoDetalle } from "@/db/esquema/trabajos";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { obtenerReserva, type DetalleReserva } from "@/modulos/agenda/consultas";
-import { escaparLike, normalizarBusqueda } from "@/modulos/clientes/reglas";
+import { escaparLike, nombreVehiculo, normalizarBusqueda } from "@/modulos/clientes/reglas";
 import { ENTREGADAS_POR_PAGINA, ESTADOS_ORDEN_ABIERTA, fechaBuscada } from "./reglas";
 
 // Lecturas de las órdenes (C4). Quien las llama ya pasó por exigirModulo("ordenes") y, si es técnico, por
@@ -95,6 +95,8 @@ export type OrdenEnLista = {
   id: number;
   estado: EstadoTrabajo;
   placa: string;
+  /** Marca y modelo ("Toyota Hilux"); vacío si no se cargaron. */
+  vehiculo: string;
   cliente: string;
   tecnico: string | null;
   fechaFin: string;
@@ -112,7 +114,17 @@ const tecnico = alias(usuario, "tecnico");
 export async function ordenesAbiertas(tecnicoId?: number): Promise<OrdenEnLista[]> {
   const abiertas = inArray(trabajo.estado, [...ESTADOS_ORDEN_ABIERTA]);
   const ordenes = await db
-    .select({ id: trabajo.id, estado: trabajo.estado, placa: vehiculo.placa, cliente: cliente.nombre, tecnico: tecnico.name, fechaFin: trabajo.fechaFin, avisadoListoAt: trabajo.avisadoListoAt })
+    .select({
+      id: trabajo.id,
+      estado: trabajo.estado,
+      placa: vehiculo.placa,
+      marca: vehiculo.marca,
+      modelo: vehiculo.modelo,
+      cliente: cliente.nombre,
+      tecnico: tecnico.name,
+      fechaFin: trabajo.fechaFin,
+      avisadoListoAt: trabajo.avisadoListoAt,
+    })
     .from(trabajo)
     .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
     .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
@@ -133,11 +145,16 @@ export async function ordenesAbiertas(tecnicoId?: number): Promise<OrdenEnLista[
   const porOrden = new Map<number, string[]>();
   for (const l of lineas) porOrden.set(l.trabajoId, [...(porOrden.get(l.trabajoId) ?? []), l.descripcion]);
   return ordenes
-    .map(({ avisadoListoAt, ...o }) => ({ ...o, sinAvisar: o.estado === "listo" && avisadoListoAt === null, servicios: porOrden.get(o.id) ?? [] }))
+    .map(({ avisadoListoAt, marca, modelo, ...o }) => ({
+      ...o,
+      vehiculo: nombreVehiculo({ marca, modelo }),
+      sinAvisar: o.estado === "listo" && avisadoListoAt === null,
+      servicios: porOrden.get(o.id) ?? [],
+    }))
     .sort((a, b) => Number(a.estado === "listo") - Number(b.estado === "listo"));
 }
 
-export type OrdenEntregada = { id: number; placa: string; cliente: string; tecnico: string | null; entregadoAt: Date; servicios: string[] };
+export type OrdenEntregada = { id: number; placa: string; vehiculo: string; cliente: string; tecnico: string | null; entregadoAt: Date; servicios: string[] };
 
 /**
  * El historial (pedido 28): las órdenes entregadas, la más reciente primero, de a ENTREGADAS_POR_PAGINA; las de un
@@ -168,7 +185,7 @@ export async function ordenesEntregadas(datos: { tecnicoId?: number; q: string; 
       .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
       .where(donde),
     db
-      .select({ id: trabajo.id, placa: vehiculo.placa, cliente: cliente.nombre, tecnico: tecnico.name, entregadoAt: trabajo.entregadoAt })
+      .select({ id: trabajo.id, placa: vehiculo.placa, marca: vehiculo.marca, modelo: vehiculo.modelo, cliente: cliente.nombre, tecnico: tecnico.name, entregadoAt: trabajo.entregadoAt })
       .from(trabajo)
       .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
       .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
@@ -187,7 +204,10 @@ export async function ordenesEntregadas(datos: { tecnicoId?: number; q: string; 
   const porOrden = new Map<number, string[]>();
   for (const l of lineas) porOrden.set(l.trabajoId, [...(porOrden.get(l.trabajoId) ?? []), l.descripcion]);
   // Entregadas: la fecha de entrega siempre está (CHECK trabajo_entregado_con_fecha)
-  return { ordenes: ordenes.map((o) => ({ ...o, entregadoAt: o.entregadoAt!, servicios: porOrden.get(o.id) ?? [] })), total };
+  return {
+    ordenes: ordenes.map(({ marca, modelo, ...o }) => ({ ...o, vehiculo: nombreVehiculo({ marca, modelo }), entregadoAt: o.entregadoAt!, servicios: porOrden.get(o.id) ?? [] })),
+    total,
+  };
 }
 
 /** Una parte revisada al recibir: bien, o con un detalle (su tipo, nota y foto). */

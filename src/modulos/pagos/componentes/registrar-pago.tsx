@@ -59,7 +59,7 @@ function Opciones<T extends string>({ nombre, titulo, valores, etiquetas, valor,
       <input type="hidden" name={nombre} value={valor} />
       <RadioGroup value={valor} onValueChange={(v) => cambiar(String(v))} aria-labelledby={`${nombre}-titulo`} aria-describedby={error ? `${nombre}-error` : undefined} className="flex flex-wrap gap-2">
         {valores.map((v, i) => (
-          <label key={v} htmlFor={`${nombre}-${v}`} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-sm border border-border px-3 py-2 has-data-checked:border-tinta">
+          <label key={v} htmlFor={`${nombre}-${v}`} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-border bg-fondo px-3 py-2 has-data-checked:border-tinta">
             <RadioGroupItem id={`${nombre}-${v}`} value={v} data-invalido={(!!error && i === 0) || undefined} />
             <span className="font-semibold">{etiquetas[v]}</span>
           </label>

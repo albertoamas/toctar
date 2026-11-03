@@ -96,8 +96,8 @@ export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio, comp
 
   return (
     <div className="flex flex-col gap-3">
-      <h3 className="font-heading text-xl font-bold italic">
-        {nombre} <span className="font-sans text-sm font-normal not-italic text-tinta-suave">({fotos.length})</span>
+      <h3 className="tt-titulo-sub">
+        {nombre} <span className="text-sm font-normal text-tinta-suave">({fotos.length})</span>
       </h3>
 
       {fotos.length === 0 && !editable && <p className="text-sm text-tinta-suave">{textoVacio}</p>}

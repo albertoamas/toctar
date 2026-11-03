@@ -11,7 +11,7 @@ import { z } from "zod";
 const CAMPOS = {
   nombre: "El primer nombre del cliente. Si no tiene, se quita.",
   vehiculo: "Marca, modelo y placa: «Toyota Corolla (placa 1234ABC)».",
-  negocio: "El nombre del negocio, el de la pestaña Negocio.",
+  negocio: "El nombre del negocio, el de Configuración > Negocio.",
   saldo: "«Saldo pendiente: 350 Bs.» si debe algo y quien avisa ve los pagos. Si no, se quita.",
   monto: "Lo que debe: «350 Bs».",
   servicio: "El servicio que toca mantener.",

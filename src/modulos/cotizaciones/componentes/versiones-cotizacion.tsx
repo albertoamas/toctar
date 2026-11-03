@@ -14,16 +14,16 @@ import { GenerarPdf } from "./generar-pdf";
 
 const NOMBRE: Record<EstadoCotizacion, string> = { enviada: "Vigente", reemplazada: "Reemplazada", aceptada: "Aceptada" };
 const INSIGNIA: Record<EstadoCotizacion, string> = {
-  enviada: "tt-insignia tt-insignia--exito",
-  reemplazada: "tt-insignia",
-  aceptada: "tt-insignia tt-insignia--exito",
+  enviada: "tt-estado tt-estado--exito",
+  reemplazada: "tt-estado",
+  aceptada: "tt-estado tt-estado--exito",
 };
 
 export function VersionesCotizacion({ consultaId, versiones }: { consultaId: number; versiones: FilaVersion[] }) {
   // Con una sola versión, su nombre no aporta: es "la cotización"
   const varias = versiones.length > 1;
   return (
-    <ul aria-label="Versiones" className="flex flex-col divide-y divide-border rounded-sm border border-border">
+    <ul aria-label="Versiones" className="flex flex-col divide-y divide-border tt-tarjeta-panel">
       {versiones.map((c) => {
         const ruta = rutaPdf(consultaId, c.id);
         return (
@@ -33,6 +33,27 @@ export function VersionesCotizacion({ consultaId, versiones }: { consultaId: num
                 <span className="font-semibold">Versión {c.version}</span>
                 <span className={INSIGNIA[c.estado]}>{NOMBRE[c.estado]}</span>
               </span>
+            )}
+            {/* Lo cotizado, como en el PDF (pedido 26): cada servicio con su precio, el descuento si hubo y el total. Las
+                reemplazadas, solo con su total: ya no valen */}
+            {c.estado !== "reemplazada" && c.lineas.length > 0 && (
+              <>
+              <h3 className="sr-only">Servicios{varias ? ` de la versión ${c.version}` : ""}</h3>
+              <dl className="mb-1 flex flex-col divide-y divide-border text-sm">
+                {c.lineas.map((l, i) => (
+                  <div key={i} className="flex justify-between gap-4 py-2 first:pt-0">
+                    <dt>{l.descripcion}</dt>
+                    <dd className="shrink-0 font-semibold tabular-nums">{bs(l.precio)}</dd>
+                  </div>
+                ))}
+                {Number(c.descuento) > 0 && (
+                  <div className="flex justify-between gap-4 py-2">
+                    <dt className="text-tinta-suave">Descuento</dt>
+                    <dd className="shrink-0 tabular-nums">−{bs(c.descuento)}</dd>
+                  </div>
+                )}
+              </dl>
+              </>
             )}
             <span className={cn("text-2xl font-bold tabular-nums", c.estado === "reemplazada" ? "text-tinta-suave" : "text-tinta")}>{bs(c.total)}</span>
             <span className="flex flex-wrap gap-x-3 text-sm">

@@ -71,7 +71,7 @@ export async function guardarNegocio(_previo: EstadoFormulario, datos: FormData)
   });
 
   updateTag(ETIQUETA_NEGOCIO);
-  revalidatePath(RUTA);
+  revalidatePath(`${RUTA}/negocio`);
   // Se devuelven los valores ya normalizados: el formulario muestra lo que quedó guardado.
   return {
     ok: true,
@@ -105,7 +105,7 @@ export async function subirLogo(_previo: EstadoFormulario, datos: FormData): Pro
   if (anterior?.logoArchivoId) await eliminarFoto(anterior.logoArchivoId);
 
   updateTag(ETIQUETA_NEGOCIO);
-  revalidatePath(RUTA);
+  revalidatePath(`${RUTA}/negocio`);
   return { ok: true, mensaje: "Logo actualizado." };
 }
 

@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Sin acceso" };
 export default function SinAcceso() {
   return (
     <section className="flex max-w-prose flex-col items-start gap-4">
-      <h1 className="font-heading text-4xl font-extrabold italic">Sin acceso</h1>
+      <h1 className="tt-titulo-pagina">Sin acceso</h1>
       <Suspense fallback={null}>
         <Explicacion />
       </Suspense>

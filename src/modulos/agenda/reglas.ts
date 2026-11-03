@@ -1,3 +1,4 @@
+import type { TonoEstado } from "@/lib/tonos";
 import type { EstadoTrabajo } from "@/db/esquema/trabajos";
 import { sumarDias } from "@/lib/fechas";
 import { NOMBRE_DIA } from "@/lib/horarios";
@@ -15,6 +16,19 @@ export const NOMBRE_ESTADO_TRABAJO: Record<EstadoTrabajo, string> = {
   listo: "Lista",
   entregado: "Entregada",
   cancelado: "Cancelada",
+};
+
+/**
+ * El color de la insignia de cada estado (pedido 26), igual en todo el panel: agendada en gris, recibida en violeta, en
+ * proceso en azul, lista y entregada en verde, cancelada en ámbar.
+ */
+export const TONO_ESTADO_TRABAJO: Record<EstadoTrabajo, TonoEstado | undefined> = {
+  agendado: undefined,
+  recibido: "violeta",
+  en_proceso: "info",
+  listo: "exito",
+  entregado: "exito",
+  cancelado: "aviso",
 };
 
 /** Día de la semana de una fecha: 1 = lunes … 7 = domingo (ISO 8601, como los horarios de Configuración). */

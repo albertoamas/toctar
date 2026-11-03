@@ -63,14 +63,14 @@ export function ListaEditable(props: Props) {
     <Contenedor {...(conEncabezado ? { "aria-labelledby": `${id}-titulo` } : {})} className="flex flex-col gap-4">
       {conEncabezado && (
         <div className="flex flex-col gap-1">
-          <Titulo id={`${id}-titulo`} className="font-heading text-2xl font-bold italic">{titulo}</Titulo>
+          <Titulo id={`${id}-titulo`} className="tt-titulo-seccion">{titulo}</Titulo>
           <p className="text-sm text-tinta-suave">{props.descripcion}</p>
         </div>
       )}
 
       {activos.length === 0 && <p className="text-sm font-semibold text-rojo-texto">Agrega al menos {femenino ? "una" : "un"} {singular}.</p>}
 
-      <ol className="flex flex-col divide-y divide-border rounded-sm border border-border" aria-label={`${titulo} activos`}>
+      <ol className="flex flex-col divide-y divide-border tt-tarjeta-panel" aria-label={`${titulo} activos`}>
         {activos.map((e, i) =>
           editando === e.id ? (
             <li key={e.id} className="p-3">
@@ -101,7 +101,7 @@ export function ListaEditable(props: Props) {
       </ol>
 
       {editando === "nuevo" ? (
-        <div className="rounded-sm border border-border p-3">
+        <div className="tt-tarjeta-panel p-3">
           <FormularioElemento {...props} alTerminar={() => setEditando(null)} />
         </div>
       ) : (

@@ -11,7 +11,7 @@ const foto = (nombre: string) => ({ name: nombre, mimeType: "image/png", buffer:
 test("sin servicio no se sube; la descripción es opcional", async ({ page }) => {
   await ingresarComoDueno(page);
   await page.goto("/panel/sitio");
-  await page.getByRole("navigation", { name: "Secciones del sitio web" }).getByRole("link", { name: "Galería" }).click();
+  await page.getByRole("navigation", { name: "Partes del sitio web" }).getByRole("link", { name: /^Galería/ }).click();
   await page.getByRole("button", { name: "Subir fotos" }).click();
   await page.getByRole("button", { name: "Guardar en la galería" }).click();
   await expect(page.getByText("Elige el servicio.")).toBeVisible();

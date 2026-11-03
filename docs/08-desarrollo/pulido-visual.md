@@ -35,8 +35,8 @@ Estados: ⏳ pendiente · 🔵 en curso · ✅ terminada.
 ### Identidad visual
 - Solo los tokens de `src/app/globals.css` (`bg-rojo`, `text-rojo-texto`, `text-tinta-suave`, `bg-superficie`…). Nada de colores sueltos ni valores de color a mano.
 - El sitio y la pantalla de ingreso siempre en oscuro; el panel en claro, con la barra lateral negra.
-- El rojo de marca no va como texto chico: para eso existe `rojo-texto`. Los titulares van en `font-heading italic`.
-- El único ángulo diagonal es 60°, pintado con degradado y no con `clip-path` (`06-diseno/identidad-visual.md`).
+- **Sitio e ingreso:** el rojo de marca no va como texto chico (para eso existe `rojo-texto`); los titulares van en `font-heading italic`; el único ángulo diagonal es 60°, pintado con degradado y no con `clip-path` (`06-diseno/identidad-visual.md`).
+- **Panel (desde el 02/11, pedido 26):** un panel administrativo estándar, sin la marca. Fondo `bg-fondo-panel` y el contenido en tarjetas (`tt-tarjeta-panel`); títulos `tt-titulo-pagina`, `tt-titulo-seccion` y `tt-titulo-sub` (Montserrat, sin itálicas); estados con `Insignia` y su tono; listas en `TablaLista`; el rojo, solo en el botón principal. Componentes y decisiones en `etapas/P26-rediseno-panel.md` y en la skill `pantallas-panel`.
 - Logos de `public/marca/`, sin recolorear. Con lema solo desde 360 px (horizontal) o 320 px (vertical).
 - Los mismos componentes en todas las pantallas (`Campo`, `Button`, `tt-boton`, insignias): una pantalla no inventa su propio estilo.
 

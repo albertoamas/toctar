@@ -4,15 +4,19 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { exigirModulo } from "@/lib/sesion";
 import { ListaPreguntas } from "@/modulos/sitio/componentes/lista-preguntas";
 import { listarPreguntas } from "@/modulos/sitio/consultas";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 
 export const metadata: Metadata = { title: "Preguntas frecuentes" };
 
 // HU-08: preguntas frecuentes del sitio. Dueño o encargado con el permiso "sitio".
 export default function PaginaPreguntas() {
   return (
-    <Suspense fallback={<Cargando />}>
-      <Lista />
-    </Suspense>
+    <>
+      <EncabezadoPagina titulo="Preguntas frecuentes" volver={{ href: "/panel/sitio", texto: "Sitio web" }} />
+      <Suspense fallback={<Cargando />}>
+        <Lista />
+      </Suspense>
+    </>
   );
 }
 

@@ -1,4 +1,5 @@
-import type { EstadoTrabajo, EtapaFoto, TipoDetalle } from "@/db/esquema/trabajos";
+import type { EstadoRevision, EstadoTrabajo, EtapaFoto, TipoDetalle } from "@/db/esquema/trabajos";
+import { fechaCorta, sumarDias } from "@/lib/fechas";
 
 // Reglas puras de las órdenes (C4). Una orden es una reserva ya recibida (D-1): el mismo `trabajo`.
 // Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md.
@@ -74,6 +75,22 @@ export function transicionOrden(actual: EstadoTrabajo, nuevo: EstadoTrabajo): bo
 /** Una orden abierta cuya entrega aproximada ya pasó (las listas no: están esperando al cliente). */
 export const estaAtrasada = (o: { estado: EstadoTrabajo; fechaFin: string }, hoy: string) => (o.estado === "recibido" || o.estado === "en_proceso") && o.fechaFin < hoy;
 
+/**
+ * Cuándo se entrega, como lo dice el taller (pedido 26): "Hoy", "Mañana", "Ayer" o la fecha corta ("21/10"; con el año
+ * si es de otro). Lo atrasado lo marca la insignia, no el texto.
+ */
+export function textoEntrega(fechaFin: string, hoy: string): string {
+  if (fechaFin === hoy) return "Hoy";
+  if (fechaFin === sumarDias(hoy, 1)) return "Mañana";
+  if (fechaFin === sumarDias(hoy, -1)) return "Ayer";
+  return fechaCorta(fechaFin, hoy);
+}
+
+/** El filtro por estado de la lista En el taller (?estado=): uno de los abiertos, o todas si no es ninguno. */
+export function estadoFiltrado(valor: unknown): (typeof ESTADOS_ORDEN_ABIERTA)[number] | null {
+  return typeof valor === "string" && (ESTADOS_ORDEN_ABIERTA as readonly string[]).includes(valor) ? (valor as (typeof ESTADOS_ORDEN_ABIERTA)[number]) : null;
+}
+
 /** Una reserva se recibe desde su día de ingreso (en Bolivia): si el cliente llega antes, primero se reprograma. */
 export const puedeRecibirse = (r: { estado: EstadoTrabajo; fechaInicio: string }, hoy: string) => r.estado === "agendado" && r.fechaInicio <= hoy;
 
@@ -111,6 +128,16 @@ export function textoSinRevisar(partes: readonly string[]): string {
 
 /** Cuántas entregadas muestra cada página del historial (pedido 28). */
 export const ENTREGADAS_POR_PAGINA = 20;
+
+/**
+ * El checklist como interruptor (pedido 26): tocar "Bien" en una parte que ya está bien la desmarca (vuelve a "Sin
+ * revisar"); en una sin revisar o con detalle, la marca bien.
+ */
+export const alTocarBien = (estado: EstadoRevision | null): "marcar" | "desmarcar" => (estado === "bien" ? "desmarcar" : "marcar");
+
+/** El avance del checklist, en palabras: "Faltan 5" o, con todas revisadas, "Todas revisadas". */
+export const textoAvanceChecklist = (revisadas: number, total: number) =>
+  revisadas >= total ? "Todas revisadas" : `${total - revisadas === 1 ? "Falta" : "Faltan"} ${total - revisadas}`;
 
 /**
  * Lo que se escribe en la búsqueda de entregadas (pedido 28), como fecha: "5/10" (día y mes, de cualquier año) o

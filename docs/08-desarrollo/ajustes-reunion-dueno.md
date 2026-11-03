@@ -23,7 +23,7 @@ Igual que una historia (`plan-de-desarrollo.md`, "Cómo se trabaja cada historia
 | 2 | Checklist al recibir el vehículo | 12 | 8 a 10 | Incluido en el plan (decisión del 01/11) | ✅ Programado (01/11) |
 | 3 | Firma digital del cliente | 13 | 6 | Incluido en el plan (decisión del 01/11); el PDF, aparte | ✅ Programado (01/11) |
 | 4 | Fotos: solo las que sirven, sin videos | 27 | 4 a 6 | Incluido | ✅ Programado (01/11) |
-| 5 | Rediseño del panel: administrativo estándar | 26 | 25 a 35 | Incluido (sin él no hay aceptación) | ⏳ |
+| 5 | Rediseño del panel: administrativo estándar | 26 | 25 a 35 | Incluido (sin él no hay aceptación) | ✅ Programado (02/11) y aprobado por el dueño (`etapas/P26-rediseno-panel.md`, PR #125) |
 | 6 | Órdenes con historial y agenda con las completadas | 28 | 6 a 8 | Incluido | ✅ Programado (01/11) |
 | 7 | Saldos pendientes: ordenar y buscar | 30 | 2 | Incluido (bolsa de 8 h) | ✅ Programado (01/11) |
 | 8 | Vehículos sin placa | 29 | 6 a 8 | Por definir | ⏳ |
@@ -197,6 +197,8 @@ Ninguna pantalla pide fotos de más ni videos, y la orden tiene tres momentos cl
 ---
 
 ## 5. Rediseño del panel: administrativo estándar (pedido 26)
+
+> **Estado (02/11/2026):** programado con la especificación `etapas/P26-rediseno-panel.md` en 7 fases (las dos últimas, pantallas que faltaban y el checklist como interruptor) y aprobado por el dueño al ver el panel.
 
 ### Lo que dijo el dueño
 > Lo peor, junto con la cotización: no es amigable, mucho texto; "la idea es que un tonto pueda usarlo"; se confunde todo con el fondo, nada resalta; está "todo tirado a lo loco". No le gustó nada. No le interesa seguir la identidad visual en el panel interno: busca un panel administrativo **más estándar y amigable**. Cuesta seguir el flujo: mucha complejidad para cosas simples.

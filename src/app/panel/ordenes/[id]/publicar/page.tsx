@@ -39,7 +39,7 @@ async function Publicar({ params }: Pick<PageProps<"/panel/ordenes/[id]/publicar
     <>
       <EnlaceVolver href={volver}>Orden</EnlaceVolver>
       <div className="flex flex-col gap-1">
-        <h1 className="font-heading text-4xl font-extrabold italic">Publicar {o.placa}</h1>
+        <h1 className="tt-titulo-pagina">Publicar {o.placa}</h1>
         <p className="text-tinta-suave">Las fotos que elijas se copian a la galería del sitio; las de la orden no cambian.</p>
       </div>
       {servicios.length === 0 ? (

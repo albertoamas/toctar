@@ -9,7 +9,8 @@ const soloEscritorio = (info: TestInfo) => test.skip(info.project.name !== "escr
 test("los parámetros vacíos o negativos muestran el error y no se guardan", async ({ page }) => {
   await ingresarComoDueno(page);
   await page.goto("/panel/configuracion");
-  await page.getByRole("navigation", { name: "Secciones de configuración" }).getByRole("link", { name: "Parámetros" }).click();
+  // Desde la portada de Configuración (pedido 26)
+  await page.getByRole("navigation", { name: "Partes de la configuración" }).getByRole("link", { name: /^Parámetros/ }).click();
   await expect(page).toHaveURL(/\/panel\/configuracion\/parametros$/);
   // Por tema, en el orden del trabajo (el mantenimiento, desde el pedido 21, es de cada servicio del catálogo; la
   // consulta, desde el pedido 23, ya no existe: "Cotización sin respuesta" va en Cotizaciones)

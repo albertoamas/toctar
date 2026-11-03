@@ -24,6 +24,7 @@ import { Input } from "@/componentes/ui/input";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { nombreDelTrabajo } from "../galeria";
 import { cambiarVisibilidadGaleria, elegirParaPortada, eliminarGaleriaItem, guardarGaleriaItem, moverGaleriaItem, subirGaleria } from "../acciones";
+import { Insignia } from "@/componentes/panel/insignia";
 
 // HU-09: galería de antes y después (RF-12). Se sube un par o una foto sola, asociada a un servicio,
 // y se ordena, oculta, edita o elimina. Las fotos se achican en el celular antes de subir.
@@ -136,7 +137,7 @@ function Tarjeta({
   const ejecutar = (accion: () => Promise<EstadoFormulario>) => iniciar(async () => avisarResultado(await accion()));
 
   return (
-    <li className={`flex flex-col overflow-hidden rounded-sm border border-border ${item.visible ? "" : "opacity-70"}`}>
+    <li className={`flex flex-col overflow-hidden tt-tarjeta-panel ${item.visible ? "" : "opacity-70"}`}>
       {/* Mismo recuadro (2:1) con par o con foto sola: las tarjetas quedan parejas. La sola se recorta solo aquí. */}
       <div className={`grid aspect-[2/1] ${item.antes ? "grid-cols-2 gap-px" : ""}`}>
         {item.antes && <Miniatura foto={item.antes} alt={`Antes: ${nombre}`} etiqueta="Antes" />}
@@ -149,8 +150,8 @@ function Tarjeta({
           <>
             <span className="flex flex-wrap items-center gap-1 text-xs font-semibold text-tinta-suave">
               {item.servicio}
-              {!item.visible && <span className="tt-insignia">Oculta</span>}
-              {enPortada && <span className="tt-insignia">En la portada</span>}
+              {!item.visible && <Insignia>Oculta</Insignia>}
+              {enPortada && <Insignia>En la portada</Insignia>}
             </span>
             <span className="line-clamp-2 text-sm">{item.descripcion || <span className="text-tinta-suave">Sin descripción (n.º {numero})</span>}</span>
             <span className="-mx-2 mt-auto flex flex-wrap justify-end">
@@ -302,10 +303,10 @@ function SubirFotos({ servicios, alTerminar }: { servicios: Servicio[]; alTermin
   }
 
   return (
-    <form ref={formulario} onSubmit={enviar} className="flex max-w-2xl flex-col gap-5 rounded-sm border border-border p-4" noValidate aria-labelledby="subir-titulo">
+    <form ref={formulario} onSubmit={enviar} className="flex max-w-2xl flex-col gap-5 tt-tarjeta-panel p-4" noValidate aria-labelledby="subir-titulo">
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h2 id="subir-titulo" className="font-heading text-2xl font-bold italic">Subir fotos</h2>
+          <h2 id="subir-titulo" className="tt-titulo-seccion">Subir fotos</h2>
           <p className="text-sm text-tinta-suave">Un par de antes y después, o solo la foto del resultado.</p>
         </div>
         <Button type="button" variant="ghost" size="icon" onClick={alTerminar} aria-label="Cerrar">

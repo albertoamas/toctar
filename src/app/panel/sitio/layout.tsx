@@ -1,18 +1,5 @@
-import { Suspense } from "react";
-import { PestanasSitio } from "@/modulos/sitio/componentes/pestanas";
-
-// Encabezado y pestañas del módulo Sitio web. Este layout NO protege: cada página llama a exigirModulo.
-// Las pestañas leen la ruta (usePathname): en rutas dinámicas como /servicios/[id] van dentro de <Suspense>.
+// Sitio web (pedido 26): la portada (/panel/sitio) ofrece las partes en tarjetas y cada parte trae su encabezado, con
+// "‹ Sitio web" para volver. Este layout NO protege: cada página llama a exigirModulo.
 export default function LayoutSitioWeb({ children }: LayoutProps<"/panel/sitio">) {
-  return (
-    <section className="flex flex-col gap-8">
-      <div className="flex flex-col gap-4">
-        <h1 className="font-heading text-4xl font-extrabold italic">Sitio web</h1>
-        <Suspense fallback={<div className="h-12 border-b border-border" />}>
-          <PestanasSitio />
-        </Suspense>
-      </div>
-      {children}
-    </section>
-  );
+  return <section className="flex flex-col gap-6">{children}</section>;
 }

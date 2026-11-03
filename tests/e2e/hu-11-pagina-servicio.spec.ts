@@ -39,7 +39,7 @@ test("las variantes se muestran sin precio", async ({ page }) => {
 test("los beneficios van primero, con ícono, y las opciones de menor a mayor se ven como escalones", async ({ page }, info) => {
   soloEscritorio(info);
   await ingresarComoDueno(page);
-  await page.goto("/panel/sitio");
+  await page.goto("/panel/sitio/servicios");
   await page.getByRole("link", { name: /Pulido y nano cerámico/ }).click();
   await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+$/);
   const panel = page.url();

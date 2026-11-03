@@ -39,6 +39,7 @@ import {
 } from "@/modulos/mantenimientos/reglas";
 import { enlaceTrabajo } from "@/modulos/ordenes/reglas";
 import { mensajeMantenimiento } from "@/modulos/ordenes/mensajes";
+import { Insignia } from "@/componentes/panel/insignia";
 
 export const metadata: Metadata = { title: "Mantenimientos" };
 
@@ -136,7 +137,7 @@ async function cerrados(hoy: string, ve: { ordenes: boolean; agenda: boolean }) 
   const lista = await mantenimientosCerrados();
   if (lista.length === 0) return <EstadoVacio>Todavía no hay mantenimientos agendados ni cerrados.</EstadoVacio>;
   return (
-    <ul aria-label="Cerrados" className="flex max-w-3xl flex-col divide-y divide-border rounded-sm border border-border">
+    <ul aria-label="Cerrados" className="flex max-w-3xl flex-col divide-y divide-border tt-tarjeta-panel">
       {lista.map((m) => (
         <FilaCerrada key={m.id} m={m} hoy={hoy} ve={ve} />
       ))}
@@ -148,13 +149,13 @@ function Seccion({ titulo, cantidad: n, vacio, children }: { titulo: string; can
   return (
     // El lector oye la sección como "Vencidos, 2 mantenimientos"; a la vista, "Vencidos (2)"
     <section aria-label={`${titulo}, ${cantidad(n)}`} className="flex max-w-3xl flex-col gap-3">
-      <h2 className="font-heading text-2xl font-bold italic">
+      <h2 className="tt-titulo-seccion">
         {titulo} <span className="tabular-nums text-tinta-suave">({n})</span>
       </h2>
       {n === 0 ? (
         <p className="text-tinta-suave">{vacio}</p>
       ) : (
-        <ul aria-label={titulo} className="flex flex-col divide-y divide-border rounded-sm border border-border">
+        <ul aria-label={titulo} className="flex flex-col divide-y divide-border tt-tarjeta-panel">
           {children}
         </ul>
       )}
@@ -172,7 +173,7 @@ function Fila({ m, hoy, mensaje, puedeAgendar, conAviso }: { m: MantenimientoPor
         <div className="flex min-w-0 flex-col">
           <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span className="font-semibold">{m.cliente}</span>
-            {conAviso && !avisado && <span className="tt-insignia tt-insignia--aviso">Sin avisar</span>}
+            {conAviso && !avisado && <Insignia tono="aviso">Sin avisar</Insignia>}
           </span>
           <span className="text-sm text-tinta-suave">{vehiculoEnLista(vehiculo)}</span>
           <span className="text-sm">
@@ -182,7 +183,7 @@ function Fila({ m, hoy, mensaje, puedeAgendar, conAviso }: { m: MantenimientoPor
         </div>
         {/* La fecha es lo que ordena la lista: se lee primero, como el monto en Saldos pendientes */}
         <span className="flex shrink-0 flex-col items-end">
-          <span className="font-heading text-2xl font-extrabold whitespace-nowrap italic tabular-nums">{fechaCorta(m.fechaProgramada, hoy)}</span>
+          <span className="tt-placa text-xl whitespace-nowrap">{fechaCorta(m.fechaProgramada, hoy)}</span>
           <span className="text-sm whitespace-nowrap text-tinta-suave">{textoVencimiento(m.fechaProgramada, hoy)}</span>
         </span>
       </div>
@@ -219,14 +220,14 @@ function FilaCerrada({ m, hoy, ve }: { m: MantenimientoCerrado; hoy: string; ve:
         <div className="flex min-w-0 flex-col">
           <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span className="font-semibold">{m.cliente}</span>
-            <span className="tt-insignia">{NOMBRE_ESTADO_RECORDATORIO[m.estado]}</span>
+            <Insignia>{NOMBRE_ESTADO_RECORDATORIO[m.estado]}</Insignia>
           </span>
           <span className="text-sm text-tinta-suave">{vehiculoEnLista({ marca: m.marca, modelo: m.modelo, placa: m.placa })}</span>
           <span className="text-sm">Mantenimiento de {m.servicio}</span>
           {m.nota && <span className="text-sm text-tinta-suave">Nota: {m.nota}</span>}
         </div>
         <span className="flex shrink-0 flex-col items-end">
-          <span className="font-heading text-2xl font-extrabold whitespace-nowrap italic tabular-nums">{fechaCorta(m.fechaProgramada, hoy)}</span>
+          <span className="tt-placa text-xl whitespace-nowrap">{fechaCorta(m.fechaProgramada, hoy)}</span>
           <span className="text-sm whitespace-nowrap text-tinta-suave">programado</span>
         </span>
       </div>

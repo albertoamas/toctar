@@ -5,7 +5,7 @@ import { CheckCircle2Icon } from "lucide-react";
 
 export function AvisoEnPagina({ children }: { children: React.ReactNode }) {
   return (
-    <p role="status" className="flex items-center gap-2 rounded-sm border border-border bg-superficie p-3 text-sm">
+    <p role="status" className="flex items-center gap-2 rounded-lg border border-exito/25 bg-exito-fondo p-3 text-sm">
       <CheckCircle2Icon className="size-4 shrink-0 text-exito" aria-hidden />
       {children}
     </p>

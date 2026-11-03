@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, desc, eq, exists, like, ne, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, inArray, like, ne, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { cliente, consulta, cotizacion, cotizacionLinea, negocio, servicio, sucursal, tamanoVehiculo, usuario, variante, vehiculo } from "@/db/esquema";
 import type { EstadoConsulta, MotivoPerdida } from "@/db/esquema/consultas";
@@ -189,12 +189,16 @@ export type FilaVersion = {
   estado: EstadoCotizacion;
   createdAt: Date;
   total: string;
+  /** El descuento de la versión; "0.00" si no hubo. */
+  descuento: string;
   validaHasta: string;
   esEstimado: boolean;
   tienePdf: boolean;
+  /** Lo cotizado, en su orden (pedido 26: se ve en la ficha, como en el PDF). Vacío en una reemplazada. */
+  lineas: { descripcion: string; precio: string }[];
 };
 
-/** Las versiones de una cotización, de la más nueva a la más vieja. */
+/** Las versiones de una cotización, de la más nueva a la más vieja, con sus líneas. */
 async function versionesDeCotizacion(consultaId: number): Promise<FilaVersion[]> {
   const filas = await db
     .select({
@@ -204,6 +208,7 @@ async function versionesDeCotizacion(consultaId: number): Promise<FilaVersion[]>
       estado: cotizacion.estado,
       createdAt: cotizacion.createdAt,
       total: cotizacion.total,
+      descuento: cotizacion.descuento,
       validaHasta: cotizacion.validaHasta,
       esEstimado: cotizacion.esEstimado,
       pdf: cotizacion.pdfArchivoId,
@@ -211,7 +216,18 @@ async function versionesDeCotizacion(consultaId: number): Promise<FilaVersion[]>
     .from(cotizacion)
     .where(eq(cotizacion.consultaId, consultaId))
     .orderBy(desc(cotizacion.version), desc(cotizacion.id));
-  return filas.map(({ pdf, ...f }) => ({ ...f, tienePdf: pdf !== null }));
+  // Las líneas, en una sola consulta y solo de las que las muestran: una reemplazada ya no vale y se ve solo su total
+  const conLineas = filas.filter((f) => f.estado !== "reemplazada").map((f) => f.id);
+  const porVersion = new Map<number, FilaVersion["lineas"]>();
+  if (conLineas.length > 0) {
+    const lineas = await db
+      .select({ cotizacionId: cotizacionLinea.cotizacionId, descripcion: cotizacionLinea.descripcion, precio: cotizacionLinea.precio })
+      .from(cotizacionLinea)
+      .where(inArray(cotizacionLinea.cotizacionId, conLineas))
+      .orderBy(asc(cotizacionLinea.orden), asc(cotizacionLinea.id));
+    for (const { cotizacionId, ...l } of lineas) porVersion.set(cotizacionId, [...(porVersion.get(cotizacionId) ?? []), l]);
+  }
+  return filas.map(({ pdf, ...f }) => ({ ...f, tienePdf: pdf !== null, lineas: porVersion.get(f.id) ?? [] }));
 }
 
 /**
@@ -260,6 +276,10 @@ export type FilaCotizacion = {
   clienteId: number;
   cliente: string;
   placa: string;
+  /** Marca y modelo ("Toyota Hilux"); vacío si no se cargaron. */
+  vehiculo: string;
+  /** Los servicios de la versión que vale, en su orden: "Instalación de PPF, Pulido de vidrios". */
+  servicios: string;
   numero: string;
   total: string;
   estado: EstadoConsulta;
@@ -277,11 +297,20 @@ const columnasFila = {
   clienteId: consulta.clienteId,
   cliente: cliente.nombre,
   placa: vehiculo.placa,
+  marca: vehiculo.marca,
+  modelo: vehiculo.modelo,
+  servicios: sql<string>`coalesce((select string_agg(${cotizacionLinea.descripcion}, ', ' order by ${cotizacionLinea.orden}) from ${cotizacionLinea} where ${cotizacionLinea.cotizacionId} = ${cotizacion.id}), '')`,
   numero: cotizacion.numero,
   total: cotizacion.total,
   estado: consulta.estado,
   ultimoMovimientoAt: consulta.ultimoMovimientoAt,
 };
+
+/** La fila de la consulta, con el vehículo nombrado como en el resto del panel. */
+const aFila = ({ marca, modelo, ...f }: { marca: string | null; modelo: string | null } & Omit<FilaCotizacion, "vehiculo">): FilaCotizacion => ({
+  ...f,
+  vehiculo: nombreVehiculo({ marca, modelo }),
+});
 
 function filas(donde: SQL | undefined) {
   return db
@@ -314,10 +343,12 @@ function coincide(q: string): SQL | undefined {
  */
 export async function listarCotizaciones(vista: Vista, q: string): Promise<{ cotizaciones: FilaCotizacion[]; hayMas: boolean }> {
   const donde = and(eq(consulta.estado, VISTAS[vista]), coincide(q));
-  if (vista === "pendientes") return { cotizaciones: await filas(donde).orderBy(asc(consulta.ultimoMovimientoAt), asc(consulta.id)), hayMas: false };
-  const encontradas = await filas(donde)
-    .orderBy(desc(consulta.ultimoMovimientoAt), desc(consulta.id))
-    .limit(LIMITE_HISTORIA + 1);
+  if (vista === "pendientes") return { cotizaciones: (await filas(donde).orderBy(asc(consulta.ultimoMovimientoAt), asc(consulta.id))).map(aFila), hayMas: false };
+  const encontradas = (
+    await filas(donde)
+      .orderBy(desc(consulta.ultimoMovimientoAt), desc(consulta.id))
+      .limit(LIMITE_HISTORIA + 1)
+  ).map(aFila);
   return { cotizaciones: encontradas.slice(0, LIMITE_HISTORIA), hayMas: encontradas.length > LIMITE_HISTORIA };
 }
 
@@ -340,7 +371,7 @@ export async function contarPorVista(q: string): Promise<Record<Vista, number>> 
 
 /** Las cotizaciones de un cliente, de la más nueva a la más vieja (su ficha). */
 export async function cotizacionesDelCliente(clienteId: number): Promise<FilaCotizacion[]> {
-  return filas(eq(consulta.clienteId, clienteId)).orderBy(desc(consulta.createdAt), desc(consulta.id));
+  return (await filas(eq(consulta.clienteId, clienteId)).orderBy(desc(consulta.createdAt), desc(consulta.id))).map(aFila);
 }
 
 export type DetalleCotizacion = {

@@ -100,7 +100,7 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
       : null;
 
   return (
-    <form ref={formulario} action={accion} onSubmit={(ev) => enviar(ev, conPagos && !sinAdelanto)} className="flex max-w-3xl flex-col gap-10" noValidate>
+    <form ref={formulario} action={accion} onSubmit={(ev) => enviar(ev, conPagos && !sinAdelanto)} className="flex max-w-3xl flex-col gap-6" noValidate>
       <input type="hidden" name="origen" value={origen.tipo} />
       {origen.tipo === "cotizacion" ? (
         <input type="hidden" name="cotizacionId" value={origen.cotizacionId} />
@@ -114,15 +114,15 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
       {estado.mensaje && !estado.ok && <MensajeError id="reserva-error">{estado.mensaje}</MensajeError>}
 
       {origen.tipo === "directa" && (
-        <fieldset className="flex flex-col gap-4">
-          <legend className="mb-4 font-heading text-2xl font-bold italic">Servicios</legend>
+        <fieldset className="tt-seccion-formulario flex flex-col gap-4">
+          <legend className="tt-titulo-seccion">Servicios</legend>
           <LineasServicio opciones={origen.opciones} lineas={lineas} onChange={setLineas} errores={e} />
           {/* El total, al pie con "Agendar" */}
         </fieldset>
       )}
 
-      <fieldset className="flex flex-col gap-5">
-        <legend className="mb-5 font-heading text-2xl font-bold italic">Fechas y espacio</legend>
+      <fieldset className="tt-seccion-formulario flex flex-col gap-5">
+        <legend className="tt-titulo-seccion">Fechas y espacio</legend>
         <div className="grid gap-5 sm:grid-cols-2">
           <Campo id="fechaInicio" etiqueta="Ingresa el" error={e.fechaInicio}>
             <Input
@@ -173,8 +173,8 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
         </Campo>
       </fieldset>
 
-      <fieldset className="flex flex-col gap-5">
-        <legend className="mb-5 font-heading text-2xl font-bold italic">Detalles</legend>
+      <fieldset className="tt-seccion-formulario flex flex-col gap-5">
+        <legend className="tt-titulo-seccion">Detalles</legend>
         <Campo id="tecnicoId" etiqueta="Técnico" error={e.tecnicoId}>
           <Selector id="tecnicoId" name="tecnicoId" value={tecnicoId} onChange={(ev) => setTecnicoId(ev.target.value)} aria-invalid={!!e.tecnicoId} aria-describedby={e.tecnicoId ? "tecnicoId-error" : undefined} className="max-w-xs">
             <option value="">Sin asignar</option>
@@ -195,8 +195,8 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
       </fieldset>
 
       {conPagos && (
-        <fieldset className="flex flex-col gap-5">
-          <legend className="mb-5 font-heading text-2xl font-bold italic">Adelanto</legend>
+        <fieldset className="tt-seccion-formulario flex flex-col gap-5">
+          <legend className="tt-titulo-seccion">Adelanto</legend>
           {sinAdelanto && <input type="hidden" name="sinAdelanto" value="on" />}
           <label htmlFor="sinAdelanto" className="flex min-h-11 cursor-pointer items-center gap-3">
             <Checkbox id="sinAdelanto" checked={sinAdelanto} onCheckedChange={(si) => {
@@ -218,7 +218,7 @@ export function FormularioReserva({ origen, tecnicos, conPagos, adelantoSugerido
                 <input type="hidden" name="metodo" value={metodo} />
                 <RadioGroup value={metodo} onValueChange={(v) => setMetodo(String(v))} aria-labelledby="metodo-titulo" aria-describedby={e.metodo ? "metodo-error" : undefined} className="flex flex-wrap gap-2">
                   {METODOS.map((m, i) => (
-                    <label key={m} htmlFor={`metodo-${m}`} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-sm border border-border px-3 py-2 has-data-checked:border-tinta">
+                    <label key={m} htmlFor={`metodo-${m}`} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-border bg-fondo px-3 py-2 has-data-checked:border-tinta">
                       <RadioGroupItem id={`metodo-${m}`} value={m} data-invalido={(!!e.metodo && i === 0) || undefined} />
                       <span className="font-semibold">{NOMBRE_METODO[m]}</span>
                     </label>

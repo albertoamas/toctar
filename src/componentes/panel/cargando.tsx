@@ -8,7 +8,7 @@ export function Cargando({ filas = 3 }: { filas?: number }) {
       <span className="sr-only">Cargando…</span>
       <div aria-hidden className="tt-cargando__bloque h-8 w-48" />
       {Array.from({ length: filas }, (_, i) => (
-        <div key={i} aria-hidden className="tt-cargando__bloque h-16 w-full max-w-2xl" />
+        <div key={i} aria-hidden className="tt-cargando__bloque h-16 w-full max-w-3xl" />
       ))}
     </div>
   );

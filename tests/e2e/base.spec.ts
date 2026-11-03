@@ -194,7 +194,7 @@ test("los botones del panel miden 44 px con pantalla táctil y 36 con mouse", as
   const medir = async (boton: Locator) => expect(Math.round((await boton.boundingBox())!.height)).toBe(alto);
   await page.goto("/panel/catalogo");
   await medir(page.getByRole("button", { name: "Agregar servicio" }));
-  await page.goto("/panel/sitio");
+  await page.goto("/panel/sitio/servicios");
   await medir(page.getByRole("button", { name: /^Bajar / }).first());
   // Toda la fila abre el servicio, también la foto
   await page.getByRole("list", { name: "Servicios del sitio" }).getByRole("link").first().click();
@@ -206,9 +206,9 @@ test("los botones del panel miden 44 px con pantalla táctil y 36 con mouse", as
 test("ningún botón del panel mide menos que el tamaño normal", async ({ page, isMobile }) => {
   await ingresarComoDueno(page);
   const minimo = isMobile ? 44 : 36;
-  for (const ruta of ["/panel/sitio", "/panel/sitio/textos", "/panel/sitio/preguntas", "/panel/sitio/galeria", "/panel/configuracion", "/panel/catalogo/1"]) {
+  for (const ruta of ["/panel/sitio/servicios", "/panel/sitio/textos", "/panel/sitio/preguntas", "/panel/sitio/galeria", "/panel/configuracion/negocio", "/panel/catalogo/1"]) {
     await page.goto(ruta, { waitUntil: "networkidle" });
-    if (ruta === "/panel/sitio") await page.getByRole("list", { name: "Servicios del sitio" }).getByRole("link").first().click();
+    if (ruta === "/panel/sitio/servicios") await page.getByRole("list", { name: "Servicios del sitio" }).getByRole("link").first().click();
     await expect(page.getByRole("main").getByRole("button").first()).toBeVisible();
     const chicos = await page.getByRole("main").getByRole("button").evaluateAll(
       (botones, min) => botones.filter((b) => b.tagName !== "INPUT" && (b as HTMLElement).offsetParent && b.getBoundingClientRect().height < min).map((b) => b.getAttribute("aria-label") || b.textContent?.trim()),
@@ -236,7 +236,7 @@ test("al enviar con errores el foco va al campo, y el enlace para volver mide 44
 
 test("en Editar servicio una fila vacía recibe el foco con su error, y en el celular sus botones van debajo", async ({ page, isMobile }) => {
   await ingresarComoDueno(page);
-  await page.goto("/panel/sitio");
+  await page.goto("/panel/sitio/servicios");
   await page.getByRole("list", { name: "Servicios del sitio" }).getByRole("link").first().click();
   await page.getByRole("button", { name: "Agregar beneficio" }).click();
   const beneficio = page.getByRole("textbox", { name: "Beneficio 1" });
