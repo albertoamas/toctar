@@ -175,11 +175,16 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
         {/* La placa ya está en el título: el vehículo dice su modelo y su tamaño, con la etiqueta (como la reserva) */}
         <div className="flex flex-col gap-2 tt-tarjeta-panel p-4 lg:col-start-2 lg:row-start-1">
           <dl aria-label="Datos de la orden" className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3">
-            <dt className="text-tinta-suave">Entrega</dt>
-            <dd className="flex flex-col">
-              <span className="font-semibold">{o.fechaFin === hoy ? "Hoy" : formatearFecha(o.fechaFin)}</span>
-              <span className="text-sm text-tinta-suave">aproximada</span>
-            </dd>
+            {/* La entrega aproximada sirve mientras está en el taller; entregada, el encabezado ya dice cuándo se entregó */}
+            {o.estado !== "entregado" && (
+              <>
+                <dt className="text-tinta-suave">Entrega</dt>
+                <dd className="flex flex-col">
+                  <span className="font-semibold">{o.fechaFin === hoy ? "Hoy" : formatearFecha(o.fechaFin)}</span>
+                  <span className="text-sm text-tinta-suave">aproximada</span>
+                </dd>
+              </>
+            )}
             <dt className="text-tinta-suave">Espacio</dt>
             <dd className="font-semibold">{o.espacio}</dd>
             <dt className="text-tinta-suave">Ingresó</dt>
@@ -235,9 +240,9 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
                 {/* Pedido 27: dos momentos, inicio y final; los detalles de cómo llegó, con su foto, están en el checklist. Las
                     de ingreso y durante, de antes del pedido, se siguen viendo en su lugar del tiempo, sin subir más */}
                 {deEtapa("ingreso").length > 0 && <FotosOrden trabajoId={o.id} etapa="ingreso" fotos={deEtapa("ingreso")} editable={false} textoVacio="" />}
-                <FotosOrden trabajoId={o.id} etapa="antes" fotos={deEtapa("antes")} editable={abierta} compacta textoVacio="Sin fotos de inicio." />
+                <FotosOrden trabajoId={o.id} etapa="antes" fotos={deEtapa("antes")} editable={abierta} textoVacio="Sin fotos de inicio." />
                 {deEtapa("durante").length > 0 && <FotosOrden trabajoId={o.id} etapa="durante" fotos={deEtapa("durante")} editable={false} textoVacio="" />}
-                <FotosOrden trabajoId={o.id} etapa="despues" fotos={deEtapa("despues")} editable={abierta} compacta textoVacio="Sin fotos del final." />
+                <FotosOrden trabajoId={o.id} etapa="despues" fotos={deEtapa("despues")} editable={abierta} textoVacio="Sin fotos del final." />
               </>
             )}
           </section>

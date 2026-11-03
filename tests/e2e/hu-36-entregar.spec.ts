@@ -51,6 +51,11 @@ test("pagada: el dueño suma un adicional, se cobra y se entrega; queda programa
   await entrega.getByLabel("Nombre de quien recibe").fill(`Hermana de Entrega ${s}`);
   await entrega.getByRole("button", { name: "Entregar vehículo" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?entregado=1$`));
+  // Entregada, el encabezado dice cuándo: la entrega "aproximada" ya no se muestra (recorrido de la Entrega 2)
+  const datos = page.getByLabel("Datos de la orden");
+  await expect(datos).toContainText("Espacio");
+  await expect(datos.getByText("Entrega", { exact: true })).toHaveCount(0);
+  await expect(datos).not.toContainText("aproximada");
   await expect(page.getByRole("status").filter({ hasText: "Vehículo entregado." })).toBeVisible();
   await expect(page.getByText(/^Entregado el /)).toBeVisible();
   const firma = page.getByRole("region", { name: "Firma de entrega" });
