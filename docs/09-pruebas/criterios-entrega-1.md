@@ -154,7 +154,7 @@
 
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
-| 10.1 | Muestra lema, imagen principal, servicios destacados y algunas fotos de la galería | E2E `hu-10` "la portada muestra el lema, los servicios y el botón de WhatsApp". La imagen principal es el arte de la marca hasta tener una foto propia del taller (decisión abierta de B4). Las fotos de la galería aparecen cuando hay fotos visibles | ⚠️ ✅ |
+| 10.1 | Muestra lema, imagen principal, servicios destacados y algunas fotos de la galería | E2E `hu-10` "la portada muestra el lema, los servicios y el botón de WhatsApp". La imagen principal es el arte de la marca hasta tener una foto propia del taller (decisión abierta de B4). Las fotos de la galería aparecen cuando hay fotos visibles. **Cambió el 03/11 (pedido 36):** la portada ya no muestra miniaturas de la galería; el trabajo destacado va en el comparador de arriba y el resto, en la Galería | ⚠️ ✅ |
 | 10.2 | El botón principal abre WhatsApp | Mismo E2E: abre `wa.me` con el número cargado en el panel | ✅ |
 | 10.3 | Carga rápido en el celular (RNF-02) | Lighthouse móvil (14/10): portada 91 de rendimiento, 100 de accesibilidad y 100 de SEO | ✅ |
 | 10.4 | Sin precios (RN-10) y servicios sin foto con la imagen de reemplazo | E2E "los servicios sin foto muestran la imagen de reemplazo y ninguna página pública muestra precios" | ✅ |
