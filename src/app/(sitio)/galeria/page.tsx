@@ -9,8 +9,9 @@ import { ComparadorAntesDespues } from "@/componentes/sitio/comparador-antes-des
 import { EnlaceTikTok } from "@/componentes/sitio/enlace-tiktok";
 import { FotoResponsiva } from "@/componentes/sitio/foto-responsiva";
 import { WhatsAppFijo } from "@/componentes/sitio/whatsapp";
+import { proporcionDe } from "@/lib/formato-fotos";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
-import { filtrarPorServicio, nombreDelTrabajo, separarPares, serviciosConFotos } from "@/modulos/sitio/galeria";
+import { filtrarPorServicio, formaDelPar, nombreDelTrabajo, separarPares, serviciosConFotos } from "@/modulos/sitio/galeria";
 import { galeriaPublica, type FotoGaleria } from "@/modulos/sitio/publico";
 
 export const metadata: Metadata = {
@@ -23,8 +24,9 @@ export const metadata: Metadata = {
 // Rediseño del 24/10 (pulido 2B.12): una vitrina pareja, todos los trabajos en el mismo recuadro de 4:3 (lo que ordena
 // la página es esa repetición); los antes y después se comparan ahí mismo, sin abrir nada; debajo de cada uno, su
 // servicio. Sin visor ni descripciones. El filtro, como el menú del sitio.
-// Pedido 34 (03/11): dos secciones, "Antes y después" arriba (más grandes, cuadrados, la línea se mueve sola un momento
-// como en la portada) y "Más trabajos" debajo (las fotos sin antes); una sección vacía no aparece. Cada trabajo en su
+// Pedido 34 (03/11): dos secciones, "Antes y después" arriba (más grandes; cuadrados si las fotos son verticales, de 4:3
+// si son horizontales; la línea del primero se mueve sola un momento, como en la portada) y "Más trabajos" debajo (las
+// fotos sin antes); una sección vacía no aparece. Cada trabajo en su
 // tarjeta, como las de servicios: franja roja a 60°, el servicio como título y "Ver el servicio".
 // Llega entera, con el título: nada aparece suelto antes que el resto (pulido 2.1 y 2.5, revisión de YankoSoft).
 export default function PaginaGaleria({ searchParams }: PageProps<"/galeria">) {
@@ -63,6 +65,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/galeria">, "searchPa
 function Fotos({ todas, elegido }: { todas: FotoGaleria[]; elegido?: string }) {
   const fotos = filtrarPorServicio(todas, elegido);
   const { pares, solas } = separarPares(fotos);
+  const tituloSolas = pares.length > 0 ? "Más trabajos" : "Trabajos";
   const activo = fotos.length === todas.length ? undefined : elegido;
   const opciones = serviciosConFotos(todas);
 
@@ -107,7 +110,8 @@ function Fotos({ todas, elegido }: { todas: FotoGaleria[]; elegido?: string }) {
           <ul aria-label="Antes y después" className="grid gap-6 md:grid-cols-2">
             {pares.map((f, i) => (
               <li key={f.id} className="grid">
-                <Trabajo foto={f} alFrente={i < 2} sizes={ANCHO_PAR} />
+                {/* Solo el primero se mueve solo: uno alcanza para mostrar que se arrastra, y varios a la vez distraen */}
+                <Trabajo foto={f} alFrente={i < 2} sizes={ANCHO_PAR} mostrarLinea={i === 0} />
               </li>
             ))}
           </ul>
@@ -115,17 +119,11 @@ function Fotos({ todas, elegido }: { todas: FotoGaleria[]; elegido?: string }) {
       )}
       {solas.length > 0 && (
         <section aria-labelledby="galeria-mas" className="flex flex-col gap-4">
-          {/* Sin pares, la sección no necesita título: es toda la galería */}
-          {pares.length > 0 ? (
-            <h2 id="galeria-mas" className={TITULO_SECCION}>
-              Más trabajos
-            </h2>
-          ) : (
-            <h2 id="galeria-mas" className="sr-only">
-              Trabajos
-            </h2>
-          )}
-          <ul aria-label="Más trabajos" className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Sin pares, la sección no necesita título a la vista: es toda la galería */}
+          <h2 id="galeria-mas" className={pares.length > 0 ? TITULO_SECCION : "sr-only"}>
+            {tituloSolas}
+          </h2>
+          <ul aria-label={tituloSolas} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {solas.map((f, i) => (
               <li key={f.id} className="grid">
                 <Trabajo foto={f} alFrente={pares.length === 0 && i < 3} sizes={ANCHO_EN_GRILLA} />
@@ -138,23 +136,37 @@ function Fotos({ todas, elegido }: { todas: FotoGaleria[]; elegido?: string }) {
   );
 }
 
-/** Lo que ocupa una foto suelta: 3 columnas desde 1024 px, 2 desde 640 y 1 en el celular. */
-const ANCHO_EN_GRILLA = "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw";
-/** Lo que ocupa un antes y después: 2 columnas desde 768 px y 1 en el celular. */
-const ANCHO_PAR = "(min-width: 768px) 50vw, 100vw";
+/**
+ * Lo que ocupa una foto suelta: 3 columnas desde 1024 px, 2 desde 640 y 1 en el celular. La galería no pasa de 1152 px
+ * (max-w-6xl): en una pantalla más ancha, cada columna mide lo mismo y no hace falta la foto grande.
+ */
+const ANCHO_EN_GRILLA = "(min-width: 1152px) 368px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw";
+/** Lo que ocupa un antes y después: 2 columnas desde 768 px y 1 en el celular; desde 1152 px, siempre 564 px. */
+const ANCHO_PAR = "(min-width: 1152px) 564px, (min-width: 768px) 50vw, 100vw";
 
 /**
- * Un trabajo, en su tarjeta (como las de servicios): el par se compara en su recuadro cuadrado, con la línea que se
- * mueve sola un momento; la foto sola llena su recuadro de 4:3. Debajo, su servicio y "Ver el servicio", que lleva a su
+ * Un trabajo, en su tarjeta (como las de servicios): el par se compara en su recuadro (cuadrado si las fotos son
+ * verticales, para que no queden franjas; de 4:3 si son horizontales, para no recortarles los costados), y en el
+ * primero la línea se mueve sola un momento; la foto sola llena su recuadro de 4:3. Debajo, su servicio y "Ver el servicio", que lleva a su
  * página. La tarjeta no es un enlace entero: en un par, el toque es para la línea.
  */
-function Trabajo({ foto: f, alFrente, sizes }: { foto: FotoGaleria; alFrente: boolean; sizes: string }) {
+function Trabajo({ foto: f, alFrente, sizes, mostrarLinea = false }: { foto: FotoGaleria; alFrente: boolean; sizes: string; mostrarLinea?: boolean }) {
   const nombre = nombreDelTrabajo(f.descripcion, f.servicio.nombre);
   return (
     <figure className="tt-trabajo">
       <div className="tt-trabajo__media">
         {f.antes ? (
-          <ComparadorAntesDespues antes={f.antes} despues={f.despues} descripcion={nombre} alFrente={alFrente} sizes={sizes} marco formaMarco="1 / 1" sinAyuda sola />
+          <ComparadorAntesDespues
+            antes={f.antes}
+            despues={f.despues}
+            descripcion={nombre}
+            alFrente={alFrente}
+            sizes={sizes}
+            marco
+            formaMarco={formaDelPar(proporcionDe(f.despues))}
+            sinAyuda
+            sola={mostrarLinea}
+          />
         ) : (
           <div className="tt-trabajo__foto">
             <FotoResponsiva foto={f.despues} alt={nombre} sizes={sizes} cargaDiferida={!alFrente} className="size-full object-cover" />

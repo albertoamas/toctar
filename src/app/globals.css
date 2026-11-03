@@ -763,9 +763,12 @@
     overflow: hidden;
     background: var(--superficie);
   }
-  .tt-trabajo__foto img {
-    /* Solo en la tarjeta, como en las de servicios: la foto original no cambia */
+  /* Solo en la tarjeta, como en las de servicios: la foto original no cambia. También las del antes y después, así las dos
+     secciones se ven de la misma familia */
+  .tt-trabajo__media img {
     filter: brightness(1.1) contrast(1.06) saturate(1.12);
+  }
+  .tt-trabajo__foto img {
     transition: transform 400ms ease;
   }
   .tt-trabajo__cuerpo {

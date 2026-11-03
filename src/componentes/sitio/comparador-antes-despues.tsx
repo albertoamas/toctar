@@ -13,7 +13,7 @@ import type { UrlsFoto } from "@/lib/fotos";
 // Con `marco` (la galería) va en un recuadro de 4:3, o cuadrado con `formaMarco` (pedido 34), y las fotos lo llenan (`object-cover`), salvo
 // que el antes y el después tengan formas distintas: recortadas no coincidirían, y van enteras.
 // El alto máximo sale de la variable `--alto-comparador` (70dvh si nadie la pone): la portada lo achica en el celular.
-// `sola` (la portada, pedido de YankoSoft del 24/10): la línea va y viene sola unas veces hasta que el visitante la
+// `sola` (la portada, pedido de YankoSoft del 24/10; desde el pedido 34, también el primer par de la galería): la línea va y viene sola unas veces hasta que el visitante la
 // arrastra, la toca o la enfoca con el teclado; se pausa fuera de la pantalla y no se mueve con "reducir movimiento".
 
 type Foto = Pick<UrlsFoto, "url" | "miniatura" | "ancho" | "alto">;
@@ -51,14 +51,14 @@ export function ComparadorAntesDespues({
   conLeyenda?: boolean;
   /** Está en la primera pantalla (la portada, el primer par de la galería): las fotos cargan enseguida. */
   alFrente?: boolean;
-  /** La línea se mueve sola hasta que el visitante la toca (la portada). */
+  /** La línea se mueve sola hasta que el visitante la toca (la portada y el primer par de la galería, pedido 34). */
   sola?: boolean;
   /** "Arrastra la línea para comparar" solo para el lector de pantalla: la galería lo dice una vez, arriba. */
   sinAyuda?: boolean;
   /** En un recuadro que las fotos llenan (la galería), de la forma de `formaMarco`. */
   marco?: boolean;
-  /** La forma del marco: 4:3 por defecto; cuadrado en la sección "Antes y después" de la galería (pedido 34), así las
-      fotos verticales del celular no quedan con franjas a los costados. */
+  /** La forma del marco: 4:3 por defecto; cuadrado para las fotos verticales del celular en la galería (pedido 34),
+      así no quedan con franjas a los costados. */
   formaMarco?: "4 / 3" | "1 / 1";
   /** Qué ancho ocupa en la pantalla (atributo `sizes`): el navegador elige la versión de 640 px o la grande. */
   sizes?: string;

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 import { ingresarComoDueno, PNG } from "./apoyo";
 
 // HU-12 Galería pública. Criterios: docs/09-pruebas/criterios-entrega-1.md (12.1 a 12.3).
@@ -35,17 +35,13 @@ test("la galería muestra los trabajos en una vitrina pareja, se filtra y los pa
   const fotoSola = page.getByRole("list", { name: "Más trabajos" }).getByRole("listitem").filter({ has: page.getByRole("img", { name: sola }) });
   await expect(par.getByRole("img", { name: `Antes: ${conPar}` })).toBeVisible();
   await expect(fotoSola).toBeVisible();
-  // La línea del par se mueve sola un momento, como en la portada (pedido 34): se mide la variable --corte de la caja,
-  // porque el deslizador queda en el medio mientras tanto
-  const despuesDelPar = par.getByRole("img", { name: `Después: ${conPar}` });
-  await despuesDelPar.scrollIntoViewIfNeeded();
-  const posicion = () => despuesDelPar.evaluate((img) => Number(getComputedStyle(img.closest("[style*='--corte']")!).getPropertyValue("--corte")));
-  await expect.poll(posicion, { timeout: 8000 }).not.toBe(50);
   await expect(par.getByRole("link", { name: "Ver el servicio: Restauración de faroles con polímero" })).toHaveAttribute("href", "/servicios/restauracion-de-faroles-con-polimero");
-  // El par, en un recuadro cuadrado; la foto sola, en uno de 4:3
+  // Las fotos de la prueba son cuadradas: el par va en 4:3 (cuadrado solo con fotos verticales, unitaria formaDelPar), y
+  // la foto sola también; el par, más grande (dos por fila, o uno en el celular)
   const [cajaPar, cajaSola] = [(await par.getByRole("img", { name: `Después: ${conPar}` }).boundingBox())!, (await fotoSola.getByRole("img").boundingBox())!];
-  expect(Math.abs(cajaPar.width / cajaPar.height - 1)).toBeLessThan(0.02);
+  expect(Math.abs(cajaPar.width / cajaPar.height - 4 / 3)).toBeLessThan(0.02);
   expect(Math.abs(cajaSola.width / cajaSola.height - 4 / 3)).toBeLessThan(0.02);
+  if (info.project.name === "escritorio") expect(cajaPar.width).toBeGreaterThan(cajaSola.width);
   // Sin visor ni descripciones a la vista
   await expect(page.getByRole("button", { name: /^Ampliar/ })).toHaveCount(0);
   await expect(page.getByRole("main")).not.toContainText(conPar);
@@ -57,6 +53,16 @@ test("la galería muestra los trabajos en una vitrina pareja, se filtra y los pa
   await expect(page).toHaveURL(/servicio=restauracion-de-faroles-con-polimero/);
   await expect(fotoSola).toHaveCount(0);
 
+  // La línea del primer par se mueve sola un momento, como en la portada (pedido 34); los demás, quietos. Se mide la
+  // variable --corte de la caja, porque el deslizador queda en el medio mientras tanto. El primero puede ser el del otro
+  // proyecto (celular y escritorio suben el suyo a la vez): se mira el primero de la lista
+  const corte = (img: Locator) => img.evaluate((e) => Number(getComputedStyle(e.closest("[style*='--corte']")!).getPropertyValue("--corte")));
+  const primero = page.getByRole("list", { name: "Antes y después" }).getByRole("listitem").first().getByRole("img", { name: /^Después: / });
+  await primero.scrollIntoViewIfNeeded();
+  await expect.poll(() => corte(primero), { timeout: 8000 }).not.toBe(50);
+  const despuesDelPar = par.getByRole("img", { name: `Después: ${conPar}` });
+  const posicion = () => corte(despuesDelPar);
+
   // El comparador, en la página: con el teclado, las flechas mueven la línea. Al tomar el foco deja de moverse sola y
   // queda donde estaba (como en la portada): la flecha suma desde ahí
   const linea = par.getByRole("slider", { name: "Comparar antes y después" });
@@ -67,7 +73,9 @@ test("la galería muestra los trabajos en una vitrina pareja, se filtra y los pa
   await page.keyboard.press("ArrowRight");
   await expect(linea).toHaveValue(String(Math.min(100, quieta + 1)));
   // Con el dedo o el mouse: un toque cerca del borde izquierdo la lleva ahí, y un arrastre de costado, hasta donde se suelta
-  const caja = (await par.getByRole("img", { name: `Después: ${conPar}` }).boundingBox())!;
+  // (antes, el par a la vista: los toques van a coordenadas de la pantalla)
+  await despuesDelPar.evaluate((img) => img.scrollIntoView({ block: "center" }));
+  const caja = (await despuesDelPar.boundingBox())!;
   await page.mouse.click(caja.x + caja.width * 0.2, caja.y + caja.height / 2);
   await expect.poll(async () => Number(await linea.inputValue())).toBeLessThan(30);
   await page.mouse.move(caja.x + caja.width * 0.5, caja.y + caja.height / 2);
