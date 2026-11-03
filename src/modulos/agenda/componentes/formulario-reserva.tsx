@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
+import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
@@ -112,15 +113,13 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
       {estado.mensaje && !estado.ok && <MensajeError id="reserva-error">{estado.mensaje}</MensajeError>}
 
       {origen.tipo === "directa" && (
-        <fieldset className="tt-seccion-formulario flex flex-col gap-4">
-          <legend className="tt-titulo-seccion">Servicios</legend>
+        <SeccionFormulario titulo="Servicios" claseContenido="gap-4">
           <LineasServicio opciones={origen.opciones} lineas={lineas} onChange={setLineas} errores={e} />
           {/* El total, al pie con "Agendar" */}
-        </fieldset>
+        </SeccionFormulario>
       )}
 
-      <fieldset className="tt-seccion-formulario flex flex-col gap-5">
-        <legend className="tt-titulo-seccion">Fechas y espacio</legend>
+      <SeccionFormulario titulo="Fechas y espacio">
         <div className="grid gap-5 sm:grid-cols-2">
           <Campo id="fechaInicio" etiqueta="Ingresa el" error={e.fechaInicio}>
             <Input
@@ -178,11 +177,10 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
             <Textarea id="nota" name="nota" rows={2} value={nota} onChange={(ev) => setNota(ev.target.value)} aria-invalid={!!e.nota} />
           </Campo>
         </MasDatos>
-      </fieldset>
+      </SeccionFormulario>
 
       {conPagos && (
-        <fieldset className="tt-seccion-formulario flex flex-col gap-5">
-          <legend className="tt-titulo-seccion">Adelanto</legend>
+        <SeccionFormulario titulo="Adelanto">
           {sinAdelanto && <input type="hidden" name="sinAdelanto" value="on" />}
           <label htmlFor="sinAdelanto" className="flex min-h-11 cursor-pointer items-center gap-3">
             <Checkbox id="sinAdelanto" checked={sinAdelanto} onCheckedChange={(si) => {
@@ -215,7 +213,7 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
               <CampoComprobante onChange={setComprobante} error={errorFoto ?? e.comprobante} />
             </>
           )}
-        </fieldset>
+        </SeccionFormulario>
       )}
 
       <PieFormulario>

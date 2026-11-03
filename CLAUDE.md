@@ -70,7 +70,7 @@ Copiar `.env.example` a `.env` la primera vez y completar `BETTER_AUTH_SECRET` y
 - Código, nombres de archivos, tablas y mensajes en **español** (sin tildes ni ñ en identificadores: `cotizacion`, `anio`). Librerías y APIs de terceros quedan como son.
 - Componentes de shadcn/ui en `src/componentes/ui/` (se agregan con `npx shadcn@latest add <nombre>`); componentes propios del sitio y del panel en `src/componentes/sitio/` y `src/componentes/panel/`.
 - Rutas: sitio público en `src/app/(sitio)/`, panel en `src/app/panel/`.
-- En Windows, Playwright usa el Google Chrome instalado: Control de aplicaciones bloquea el Chromium de Playwright.
+- En Windows, Playwright usa el Google Chrome instalado: Control de aplicaciones bloquea el Chromium de Playwright. El WebKit de Playwright sí corre (proyecto E2E `iphone`, el motor de Safari): se instala una vez con `npx playwright install webkit`.
 - Estructura por módulo en `src/modulos/<modulo>/`: `acciones.ts` (server actions), `consultas.ts`, `esquemas.ts` (Zod), `componentes/`.
 - Toda página y acción del panel verifica la sesión con `src/lib/sesion.ts` (`exigirSesion`) y el rol o módulo con `src/lib/permisos.ts`. El layout del panel NO protege a sus páginas y `src/proxy.ts` solo redirige rápido.
 - La sesión se lee siempre dentro de `<Suspense>` (Cache Components): leerla fuera rompe el build.
