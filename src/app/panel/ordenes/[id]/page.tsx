@@ -14,7 +14,7 @@ import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import { diaYHora, fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/lib/fechas";
-import { puede, puedeVerModulo, puedeVerOrden } from "@/lib/permisos";
+import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
@@ -58,7 +58,6 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   const tecnico = usuario.rol === "tecnico";
   const o = await obtenerOrden(Number(id), puedeVerModulo(usuario, "pagos"));
   if (!o) notFound();
-  if (!puedeVerOrden(usuario, o.tecnicoId)) redirect("/panel/sin-acceso");
   const verAgenda = puedeVerModulo(usuario, "agenda");
   // Todavía es una reserva (o se canceló): se ve en la agenda, si quien entra la ve
   if (!esOrden(o.estado)) {
@@ -188,8 +187,6 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
             </dd>
             <dt className="text-tinta-suave">Espacio</dt>
             <dd className="font-semibold">{o.espacio}</dd>
-            <dt className="text-tinta-suave">Técnico</dt>
-            <dd>{o.tecnico ?? <span className="text-tinta-suave">Sin asignar</span>}</dd>
             <dt className="text-tinta-suave">Ingresó</dt>
             <dd className="flex flex-col">
               {o.recibidoAt && <span>{formatearFechaHora(o.recibidoAt)}</span>}

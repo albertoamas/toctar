@@ -8,7 +8,6 @@ import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
-import { tecnicosActivos } from "@/modulos/agenda/consultas";
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { ChecklistRecepcion } from "@/modulos/ordenes/componentes/checklist-recepcion";
 import { FormularioRecepcion } from "@/modulos/ordenes/componentes/formulario-recepcion";
@@ -39,7 +38,7 @@ async function Recepcion({ params }: Pick<PageProps<"/panel/ordenes/[id]/recibir
   const verAgenda = puedeVerModulo(usuario, "agenda");
   const { id } = await params;
   if (!/^\d+$/.test(id)) notFound();
-  const [o, tecnicos] = await Promise.all([obtenerOrden(Number(id), false), tecnicosActivos()]);
+  const o = await obtenerOrden(Number(id), false);
   if (!o) notFound();
   if (esOrden(o.estado)) redirect(`/panel/ordenes/${o.id}`);
   // Cancelada: no hay nada que recibir; se ve en la agenda, si quien entra la ve
@@ -49,7 +48,6 @@ async function Recepcion({ params }: Pick<PageProps<"/panel/ordenes/[id]/recibir
   }
   const hoy = fechaEnBolivia();
   const detalle = detalleVehiculo(o);
-  const tecnicoInactivo = o.tecnicoId && !tecnicos.some((t) => t.id === o.tecnicoId) ? o.tecnico : null;
   const [partes, revision] = await Promise.all([partesDelChecklist(), revisionDeTrabajo(o.id)]);
 
   return (
@@ -73,7 +71,7 @@ async function Recepcion({ params }: Pick<PageProps<"/panel/ordenes/[id]/recibir
             <span className="text-tinta-suave">Servicios:</span> {o.servicios.join(", ")}
           </p>
           <ChecklistRecepcion trabajoId={o.id} partes={partes} revision={revision} />
-          <FormularioRecepcion trabajoId={o.id} tecnicos={tecnicos} tecnicoInicial={o.tecnicoId} tecnicoInactivo={tecnicoInactivo} />
+          <FormularioRecepcion trabajoId={o.id} />
         </>
       )}
     </>

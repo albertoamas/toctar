@@ -1,14 +1,14 @@
 "use server";
 
-import { and, count, eq, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { and, count, eq, inArray, isNull, lte, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { auditoria, pago, parteRevision, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, trabajoRevision, usuario as tablaUsuario, vehiculo as tablaVehiculo } from "@/db/esquema";
+import { auditoria, pago, parteRevision, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, trabajoRevision, vehiculo as tablaVehiculo } from "@/db/esquema";
 import { fechaEnBolivia, formatearFecha, sumarDias } from "@/lib/fechas";
 import { copiarFotoAlPublico, eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { erroresDe, exclusionViolada, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
-import { puede, puedeVerModulo, puedeVerOrden } from "@/lib/permisos";
+import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirAccion, exigirModulo } from "@/lib/sesion";
 import type { EstadoTrabajo, EtapaFoto } from "@/db/esquema/trabajos";
 import { espaciosEnFechas, type EspacioDisponible } from "@/modulos/agenda/consultas";
@@ -45,7 +45,6 @@ const RECARGA = "No se pudo leer el pedido. Recarga la página.";
 /** La firma es un PNG chico (un dibujo a mano): más que esto no es una firma del recuadro. */
 const BYTES_MAXIMOS_FIRMA = 1024 * 1024;
 const FIRMA_ILEGIBLE = "No se pudo leer la firma. Bórrala y vuelve a firmar.";
-const NO_ES_TUYA = "Esa orden no es tuya.";
 const ERROR_FOTO = "La foto debe ser JPG, PNG o WebP de hasta 5 MB.";
 
 /** Algo cambió entre la revisión y la escritura: se lanza dentro de la transacción para deshacerla entera. Con
@@ -89,11 +88,10 @@ export async function subirFotoOrden(_previo: EstadoFormulario, datos: FormData)
   const { trabajoId, etapa } = entrada.data;
 
   const [t] = await db
-    .select({ estado: trabajo.estado, tecnicoId: trabajo.tecnicoId, clienteId: trabajo.clienteId })
+    .select({ estado: trabajo.estado, clienteId: trabajo.clienteId })
     .from(trabajo)
     .where(eq(trabajo.id, trabajoId));
   if (!t) return { mensaje: "Esa orden ya no existe." };
-  if (!puedeVerOrden(usuario, t.tecnicoId)) return { mensaje: NO_ES_TUYA };
   // Antes de procesar la foto: si no va a entrar, ni se convierte ni se sube
   const antes = motivoSinFoto(etapa, t.estado, await contarFotos(db, trabajoId, etapa));
   if (antes) return { errores: { foto: antes } };
@@ -129,12 +127,11 @@ export async function quitarFotoOrden(datos: { trabajoId: number; fotoId: number
   const { trabajoId, fotoId } = entrada.data;
 
   const [f] = await db
-    .select({ archivoId: trabajoFoto.archivoId, etapa: trabajoFoto.etapa, subidoPor: trabajoFoto.subidoPor, estado: trabajo.estado, tecnicoId: trabajo.tecnicoId, clienteId: trabajo.clienteId })
+    .select({ archivoId: trabajoFoto.archivoId, etapa: trabajoFoto.etapa, subidoPor: trabajoFoto.subidoPor, estado: trabajo.estado, clienteId: trabajo.clienteId })
     .from(trabajoFoto)
     .innerJoin(trabajo, eq(trabajoFoto.trabajoId, trabajo.id))
     .where(and(eq(trabajoFoto.id, fotoId), eq(trabajoFoto.trabajoId, trabajoId)));
   if (!f) return { mensaje: "Esa foto ya no está." };
-  if (!puedeVerOrden(usuario, f.tecnicoId)) return { mensaje: NO_ES_TUYA };
   if (usuario.rol !== "dueno" && f.subidoPor !== Number(usuario.id)) return { mensaje: "Solo quien subió la foto, o el dueño, la puede quitar." };
   if (!puedeQuitarFoto(f.etapa, f.estado)) return { mensaje: "Esa foto ya no se puede quitar." };
 
@@ -153,18 +150,18 @@ export async function quitarFotoOrden(datos: { trabajoId: number; fotoId: number
 
 /**
  * Recibe el vehículo (HU-33, RF-40): la reserva agendada, desde su día de ingreso, pasa a orden "recibida" con las
- * observaciones de ingreso y su técnico. Cómo llegó lo dice el checklist (pedido 12), revisado parte por parte.
+ * observaciones de ingreso. Cómo llegó lo dice el checklist (pedido 12), revisado parte por parte.
  */
 export async function recibirVehiculo(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const usuario = await exigirModulo("ordenes");
   if (!puede(usuario, "recibir_vehiculo")) return { mensaje: "El vehículo lo recibe el dueño o el encargado." };
-  const valores = { tecnicoId: String(datos.get("tecnicoId") ?? ""), observaciones: String(datos.get("observaciones") ?? "") };
+  const valores = { observaciones: String(datos.get("observaciones") ?? "") };
   const r = esquemaRecibir.safeParse({ id: datos.get("id"), ...valores });
   if (!r.success) {
     const errores = erroresDe(r.error);
-    return errores.id || errores.tecnicoId ? { mensaje: RECARGA } : { errores, valores };
+    return errores.id ? { mensaje: RECARGA } : { errores, valores };
   }
-  const { id, tecnicoId, observaciones } = r.data;
+  const { id, observaciones } = r.data;
 
   // El checklist (pedido 12): cada parte activa se revisa, bien o con un detalle, antes de recibir
   const sinRevisar = await db
@@ -180,19 +177,10 @@ export async function recibirVehiculo(_previo: EstadoFormulario, datos: FormData
   let clienteId: number;
   try {
     clienteId = await db.transaction(async (tx) => {
-      // El técnico, activo: dentro de la transacción y con candado, así no se lo desactiva a mitad de camino
-      if (tecnicoId) {
-        const [activo] = await tx
-          .select({ id: tablaUsuario.id })
-          .from(tablaUsuario)
-          .where(and(eq(tablaUsuario.id, tecnicoId), eq(tablaUsuario.role, "tecnico"), or(isNull(tablaUsuario.banned), eq(tablaUsuario.banned, false))))
-          .for("update");
-        if (!activo) throw new Conflicto("Ese técnico ya no está activo.", "tecnicoId");
-      }
       // Solo una reserva agendada que ya llegó a su día: si otra persona la recibió o la canceló recién, no se toca
       const [recibida] = await tx
         .update(trabajo)
-        .set({ estado: "recibido", recibidoAt: sql`now()`, recibidoPor: autorId, observacionesIngreso: observaciones, tecnicoId, updatedAt: sql`now()` })
+        .set({ estado: "recibido", recibidoAt: sql`now()`, recibidoPor: autorId, observacionesIngreso: observaciones, updatedAt: sql`now()` })
         .where(and(eq(trabajo.id, id), eq(trabajo.estado, "agendado"), lte(trabajo.fechaInicio, hoy)))
         .returning({ clienteId: trabajo.clienteId });
       if (!recibida) throw new Conflicto("Esa reserva ya fue recibida, se canceló o todavía no llega a su día de ingreso. Recarga la página.");
@@ -201,11 +189,11 @@ export async function recibirVehiculo(_previo: EstadoFormulario, datos: FormData
         .select({ detalles: count() })
         .from(trabajoRevision)
         .where(and(eq(trabajoRevision.trabajoId, id), eq(trabajoRevision.estado, "detalle")));
-      await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "trabajo", entidadId: id, accion: "recibir", datos: { tecnicoId, observaciones, detalles } });
+      await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "trabajo", entidadId: id, accion: "recibir", datos: { observaciones, detalles } });
       return recibida.clienteId;
     });
   } catch (error) {
-    if (error instanceof Conflicto) return error.campo ? { errores: { [error.campo]: error.message }, valores } : { mensaje: error.message, valores };
+    if (error instanceof Conflicto) return { mensaje: error.message, valores };
     throw error;
   }
 
@@ -406,12 +394,11 @@ export async function cambiarEstadoOrden(_previo: EstadoFormulario, datos: FormD
   const cambiar = (recuperarEntrega: boolean) =>
     db.transaction(async (tx) => {
       const [actual] = await tx
-        .select({ estado: trabajo.estado, tecnicoId: trabajo.tecnicoId, clienteId: trabajo.clienteId, fechaFin: trabajo.fechaFin, fechaFinPrevista: trabajo.fechaFinPrevista })
+        .select({ estado: trabajo.estado, clienteId: trabajo.clienteId, fechaFin: trabajo.fechaFin, fechaFinPrevista: trabajo.fechaFinPrevista })
         .from(trabajo)
         .where(eq(trabajo.id, id))
         .for("update");
       if (!actual) throw new Conflicto("Esa orden ya no existe.");
-      if (!puedeVerOrden(usuario, actual.tecnicoId)) throw new Conflicto(NO_ES_TUYA);
       if (!transicionOrden(actual.estado, estado)) throw new Conflicto(CAMBIO);
       const antesDeTiempo = actual.fechaFin > hoy;
       const vuelveDeLista = actual.estado === "listo";
@@ -461,9 +448,8 @@ export async function agregarAvance(_previo: EstadoFormulario, datos: FormData):
   }
   const { id, nota } = r.data;
 
-  const [t] = await db.select({ estado: trabajo.estado, tecnicoId: trabajo.tecnicoId, clienteId: trabajo.clienteId }).from(trabajo).where(eq(trabajo.id, id));
+  const [t] = await db.select({ estado: trabajo.estado, clienteId: trabajo.clienteId }).from(trabajo).where(eq(trabajo.id, id));
   if (!t) return { mensaje: "Esa orden ya no existe." };
-  if (!puedeVerOrden(usuario, t.tecnicoId)) return { mensaje: NO_ES_TUYA };
   if (!estaAbierta(t.estado)) return { mensaje: "Esa orden ya no está abierta." };
   await db.insert(trabajoAvance).values({ trabajoId: id, usuarioId: Number(usuario.id), nota });
 

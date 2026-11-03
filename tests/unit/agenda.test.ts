@@ -78,15 +78,17 @@ test("fechas: desde hoy, la entrega no antes del ingreso, y que existan", () => 
 });
 
 test("una reserva directa lleva cliente, vehículo, servicios y espacio; desde una cotización, solo la cotización", () => {
-  const directa = { origen: "directa", clienteId: "3", vehiculoId: "4", lineas: JSON.stringify([{ varianteId: 7, precio: "450" }]), espacioId: "1", tecnicoId: "", horaIngreso: " a las 9 ", nota: "" };
-  expect(esquemaReserva.parse(directa)).toMatchObject({ origen: "directa", clienteId: 3, lineas: [{ varianteId: 7, precio: "450.00" }], tecnicoId: null, horaIngreso: "a las 9", nota: null });
+  const directa = { origen: "directa", clienteId: "3", vehiculoId: "4", lineas: JSON.stringify([{ varianteId: 7, precio: "450" }]), espacioId: "1", horaIngreso: " a las 9 ", nota: "" };
+  expect(esquemaReserva.parse(directa)).toMatchObject({ origen: "directa", clienteId: 3, lineas: [{ varianteId: 7, precio: "450.00" }], horaIngreso: "a las 9", nota: null });
   // Desde "Agendar" en Mantenimientos (HU-38), con el recordatorio; si no, sin él
   expect(esquemaReserva.parse(directa)).toMatchObject({ recordatorioId: null });
   expect(esquemaReserva.parse({ ...directa, recordatorioId: "12" })).toMatchObject({ recordatorioId: 12 });
   expect(esquemaReserva.safeParse({ ...directa, recordatorioId: "abc" }).success).toBe(false);
   expect(erroresDe(esquemaReserva.safeParse({ ...directa, espacioId: "" }).error!)).toEqual({ espacioId: "Elige el espacio." });
   expect(erroresDe(esquemaReserva.safeParse({ ...directa, lineas: "[]" }).error!)).toEqual({ lineas: "Agrega al menos un servicio." });
-  expect(esquemaReserva.parse({ origen: "cotizacion", cotizacionId: "9", espacioId: "2", tecnicoId: "5", horaIngreso: "", nota: "" })).toMatchObject({ cotizacionId: 9, tecnicoId: 5 });
+  expect(esquemaReserva.parse({ origen: "cotizacion", cotizacionId: "9", espacioId: "2", horaIngreso: "", nota: "" })).toMatchObject({ cotizacionId: 9 });
+  // Pedido 32: la reserva no lleva técnico; si llega uno, no pasa
+  expect(esquemaReserva.parse({ ...directa, tecnicoId: "5" })).not.toHaveProperty("tecnicoId");
 });
 
 test("el adelanto: un monto y su método, o sin adelanto", () => {

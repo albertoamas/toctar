@@ -89,10 +89,11 @@ test("el técnico solo ve sus órdenes; el dueño y el encargado, todas", () => 
   expect(puedeVerOrden({ id: "2", rol: "encargado", permisos: ["ordenes"] }, null)).toBe(true);
 });
 
-test("recibir: técnico opcional y observaciones de hasta 2000", () => {
-  expect(esquemaRecibir.parse({ id: "3", tecnicoId: "", observaciones: "  " })).toEqual({ id: 3, tecnicoId: null, observaciones: null });
-  expect(esquemaRecibir.parse({ id: "3", tecnicoId: "5", observaciones: " Rayón en la puerta " })).toEqual({ id: 3, tecnicoId: 5, observaciones: "Rayón en la puerta" });
-  const larga = esquemaRecibir.safeParse({ id: "3", tecnicoId: "", observaciones: "x".repeat(2001) });
+test("recibir: observaciones de hasta 2000, sin técnico (pedido 32)", () => {
+  expect(esquemaRecibir.parse({ id: "3", observaciones: "  " })).toEqual({ id: 3, observaciones: null });
+  // Si llega un técnico, no pasa: no hay a quién asignar
+  expect(esquemaRecibir.parse({ id: "3", tecnicoId: "5", observaciones: " Rayón en la puerta " })).toEqual({ id: 3, observaciones: "Rayón en la puerta" });
+  const larga = esquemaRecibir.safeParse({ id: "3", observaciones: "x".repeat(2001) });
   expect(!larga.success && erroresDe(larga.error)).toEqual({ observaciones: "Hasta 2000 caracteres." });
 });
 

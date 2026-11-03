@@ -24,8 +24,8 @@ export const metadata: Metadata = { title: "Órdenes" };
 // HU-33 y HU-34: las órdenes abiertas en una tabla (pedido 26), la entrega más cercana primero (así las atrasadas y las de
 // hoy quedan arriba) y las listas al final; con filtros por estado (?estado=) que dicen cuántas hay en cada uno. Son
 // pocas a la vez (las que caben en los espacios), así que se ven todas. Pedido 28: la pestaña "Entregadas", el
-// historial, con búsqueda por placa, cliente o fecha y de a páginas. El técnico ve solo las suyas (RN-12, S-1), sin la
-// columna del técnico; el dueño y el encargado con "Órdenes", todas.
+// historial, con búsqueda por placa, cliente o fecha y de a páginas. Pedido 32: sin técnico asignado, todos los que
+// tienen "Órdenes" las ven todas.
 export default function PaginaOrdenes({ searchParams }: PageProps<"/panel/ordenes">) {
   return (
     <section className="flex flex-col gap-5">
@@ -40,7 +40,6 @@ const NOMBRE_FILTRO: Record<(typeof ESTADOS_ORDEN_ABIERTA)[number], string> = { 
 
 async function Lista({ searchParams }: Pick<PageProps<"/panel/ordenes">, "searchParams">) {
   const usuario = await exigirModulo("ordenes");
-  const tecnico = usuario.rol === "tecnico";
   const parametros = await searchParams;
   const entregadas = parametros.vista === "entregadas";
 
@@ -60,24 +59,23 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/ordenes">, "search
           {/* Fuera de la lista: al buscar, el campo no se vuelve a montar y no pierde el foco */}
           <BuscadorClientes etiqueta="Buscar por placa, cliente o fecha de entrega" ejemplo="Placa, cliente o fecha (5/10)" />
           <Suspense fallback={<Cargando />}>
-            <Entregadas tecnicoId={tecnico ? Number(usuario.id) : undefined} q={typeof parametros.q === "string" ? parametros.q : ""} pagina={Number(parametros.pagina)} conTecnico={!tecnico} />
+            <Entregadas q={typeof parametros.q === "string" ? parametros.q : ""} pagina={Number(parametros.pagina)} />
           </Suspense>
         </>
       ) : (
-        <EnElTaller tecnicoId={tecnico ? Number(usuario.id) : undefined} filtro={estadoFiltrado(parametros.estado)} />
+        <EnElTaller filtro={estadoFiltrado(parametros.estado)} />
       )}
     </>
   );
 }
 
-async function EnElTaller({ tecnicoId, filtro }: { tecnicoId?: number; filtro: (typeof ESTADOS_ORDEN_ABIERTA)[number] | null }) {
-  const ordenes = await ordenesAbiertas(tecnicoId);
+async function EnElTaller({ filtro }: { filtro: (typeof ESTADOS_ORDEN_ABIERTA)[number] | null }) {
+  const ordenes = await ordenesAbiertas();
   const hoy = fechaEnBolivia();
   if (ordenes.length === 0) {
-    return <EstadoVacio>{tecnicoId ? "No tienes órdenes asignadas." : "No hay órdenes abiertas. Se abren al recibir un vehículo desde la agenda."}</EstadoVacio>;
+    return <EstadoVacio>No hay órdenes abiertas. Se abren al recibir un vehículo desde la agenda.</EstadoVacio>;
   }
   const visibles = filtro ? ordenes.filter((o) => o.estado === filtro) : ordenes;
-  const conTecnico = tecnicoId === undefined;
   return (
     <>
       <Filtros
@@ -95,23 +93,22 @@ async function EnElTaller({ tecnicoId, filtro }: { tecnicoId?: number; filtro: (
       {visibles.length === 0 ? (
         <EstadoVacio>Ninguna orden {NOMBRE_FILTRO[filtro!].toLowerCase()} ahora.</EstadoVacio>
       ) : (
-        <TablaLista etiqueta="Órdenes en el taller" columnas={columnasTaller(conTecnico)} filas={visibles.map((o) => filaOrden(o, hoy, conTecnico))} />
+        <TablaLista etiqueta="Órdenes en el taller" columnas={COLUMNAS_TALLER} filas={visibles.map((o) => filaOrden(o, hoy))} />
       )}
     </>
   );
 }
 
-const columnasTaller = (conTecnico: boolean): ColumnaTabla[] => [
+const COLUMNAS_TALLER: ColumnaTabla[] = [
   { titulo: "Vehículo", ancho: "minmax(0,1.1fr)", movil: "titulo" },
   { titulo: "Cliente", movil: "detalle" },
   { titulo: "Servicio", ancho: "minmax(0,1.3fr)", movil: "detalle" },
-  ...(conTecnico ? [{ titulo: "Técnico", ancho: "minmax(0,0.8fr)", movil: "oculta" } satisfies ColumnaTabla] : []),
   { titulo: "Estado", ancho: "minmax(0,1.1fr)", movil: "estado" },
   { titulo: "Entrega", ancho: "6.5rem", movil: "detalle" },
 ];
 
 /** Una orden en la tabla: la placa y el vehículo, quién, qué, el estado con lo que pide atención y cuándo se entrega. */
-function filaOrden(o: OrdenEnLista, hoy: string, conTecnico: boolean): FilaTabla {
+function filaOrden(o: OrdenEnLista, hoy: string): FilaTabla {
   const atrasada = estaAtrasada(o, hoy);
   return {
     href: `/panel/ordenes/${o.id}`,
@@ -119,7 +116,6 @@ function filaOrden(o: OrdenEnLista, hoy: string, conTecnico: boolean): FilaTabla
       <CeldaDoble key="v" principal={o.placa} secundario={o.vehiculo} marcada />,
       o.cliente,
       o.servicios.join(", "),
-      ...(conTecnico ? [o.tecnico ?? <span className="text-tinta-suave">Sin técnico</span>] : []),
       <span key="e" className="flex flex-wrap justify-end gap-1.5 @2xl:justify-start">
         <Insignia tono={TONO_ESTADO_TRABAJO[o.estado]}>{NOMBRE_ESTADO_TRABAJO[o.estado]}</Insignia>
         {atrasada && <Insignia tono="aviso">Atrasada</Insignia>}
@@ -134,14 +130,14 @@ function filaOrden(o: OrdenEnLista, hoy: string, conTecnico: boolean): FilaTabla
 }
 
 /** El historial (pedido 28): la más reciente primero, con su búsqueda y de a páginas. */
-async function Entregadas({ tecnicoId, q, pagina, conTecnico }: { tecnicoId?: number; q: string; pagina: number; conTecnico: boolean }) {
+async function Entregadas({ q, pagina }: { q: string; pagina: number }) {
   // Una página rara (texto, 0, Infinity) es la primera; una después de la última, la última
   let pedida = Number.isSafeInteger(pagina) && pagina > 1 ? pagina : 1;
-  let { ordenes, total } = await ordenesEntregadas({ tecnicoId, q, pagina: pedida });
+  let { ordenes, total } = await ordenesEntregadas({ q, pagina: pedida });
   const paginas = Math.max(1, Math.ceil(total / ENTREGADAS_POR_PAGINA));
   if (pedida > paginas) {
     pedida = paginas;
-    ({ ordenes, total } = await ordenesEntregadas({ tecnicoId, q, pagina: pedida }));
+    ({ ordenes, total } = await ordenesEntregadas({ q, pagina: pedida }));
   }
   const enlace = (p: number) => {
     const datos = new URLSearchParams({ vista: "entregadas" });
@@ -155,7 +151,7 @@ async function Entregadas({ tecnicoId, q, pagina, conTecnico }: { tecnicoId?: nu
         <EstadoVacio>{q.trim() ? `Ninguna entregada coincide con «${q.trim()}».` : "Todavía no se entregó ninguna orden."}</EstadoVacio>
       ) : (
         <>
-          <TablaLista etiqueta="Órdenes entregadas" columnas={columnasEntregadas(conTecnico)} filas={ordenes.map((o) => filaEntregada(o, conTecnico))} />
+          <TablaLista etiqueta="Órdenes entregadas" columnas={COLUMNAS_ENTREGADAS} filas={ordenes.map(filaEntregada)} />
           {paginas > 1 && (
             <nav aria-label="Páginas" className="flex flex-wrap items-center gap-3">
               {pedida > 1 && (
@@ -181,23 +177,21 @@ async function Entregadas({ tecnicoId, q, pagina, conTecnico }: { tecnicoId?: nu
   );
 }
 
-const columnasEntregadas = (conTecnico: boolean): ColumnaTabla[] => [
+const COLUMNAS_ENTREGADAS: ColumnaTabla[] = [
   { titulo: "Vehículo", ancho: "minmax(0,1.1fr)", movil: "titulo" },
   { titulo: "Cliente", movil: "detalle" },
   { titulo: "Servicio", ancho: "minmax(0,1.3fr)", movil: "detalle" },
-  ...(conTecnico ? [{ titulo: "Técnico", ancho: "minmax(0,0.8fr)", movil: "oculta" } satisfies ColumnaTabla] : []),
   { titulo: "Entregada", ancho: "8.5rem", movil: "detalle" },
 ];
 
 /** Una entregada: la placa y el vehículo, quién, qué se hizo y cuándo se entregó. */
-function filaEntregada(o: OrdenEntregada, conTecnico: boolean): FilaTabla {
+function filaEntregada(o: OrdenEntregada): FilaTabla {
   return {
     href: `/panel/ordenes/${o.id}`,
     celdas: [
       <CeldaDoble key="v" principal={o.placa} secundario={o.vehiculo} marcada />,
       o.cliente,
       o.servicios.join(", "),
-      ...(conTecnico ? [o.tecnico ?? <span className="text-tinta-suave">Sin técnico</span>] : []),
       <span key="f">
         <span className="@2xl:hidden">Entregada el </span>
         {diaYHora(o.entregadoAt)}

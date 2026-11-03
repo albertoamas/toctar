@@ -113,8 +113,6 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
             <dd>{unDia ? "El mismo día" : `${formatearFecha(r.fechaFin)}, aproximada`}</dd>
             <dt className="text-tinta-suave">Espacio</dt>
             <dd className="font-semibold">{r.espacio}</dd>
-            <dt className="text-tinta-suave">Técnico</dt>
-            <dd>{r.tecnico ?? <span className="text-tinta-suave">Sin asignar</span>}</dd>
             <dt className="text-tinta-suave">Cliente</dt>
             <dd className="flex flex-col">
               <span className="font-semibold">{r.cliente}</span>

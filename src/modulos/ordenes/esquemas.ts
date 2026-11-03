@@ -8,14 +8,9 @@ import { ETAPAS_CON_SUBIDA, TIPOS_DE_DETALLE } from "./reglas";
 
 const id = z.coerce.number().int().positive();
 
-/** Recibir el vehículo (HU-33): el técnico (opcional; vacío = sin asignar) y las observaciones de ingreso. */
+/** Recibir el vehículo (HU-33): las observaciones de ingreso (pedido 32: sin técnico asignado). */
 export const esquemaRecibir = z.object({
   id,
-  tecnicoId: z
-    .string()
-    .optional()
-    .transform((v) => (v ? Number(v) : null))
-    .pipe(z.number().int().positive().nullable()),
   observaciones: z
     .string()
     .trim()
