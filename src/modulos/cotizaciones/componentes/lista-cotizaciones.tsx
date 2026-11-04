@@ -7,7 +7,7 @@ import { bs, diasDesde, NOMBRE_ESTADO, sinRespuesta, textoDias, TONO_ESTADO } fr
 // Cotizaciones en una tabla (pedido 23; pedido 26): en Cotizaciones y en la ficha del cliente. Cada fila: el número, el
 // cliente con su vehículo (en la ficha del cliente, solo el vehículo: ya se sabe de quién son), los servicios, el total y
 // hace cuánto. Desde `umbral` días (Configuración) una pendiente espera respuesta y lo dice en una insignia de aviso.
-// En el celular, el cliente y el total arriba.
+// En el celular, el cliente y el total arriba. Una aceptada sin reserva lleva "Sin fecha" (pedido 31).
 
 type Props = {
   cotizaciones: FilaCotizacion[];
@@ -47,6 +47,8 @@ export function ListaCotizaciones({ cotizaciones, umbral, sinCliente = false, co
             </span>,
             <span key="e" className="flex flex-wrap items-center gap-1.5">
               {conEstado && <Insignia tono={TONO_ESTADO[c.estado]}>{NOMBRE_ESTADO[c.estado]}</Insignia>}
+              {/* Aceptada sin reserva (pedido 31): falta darle fecha */}
+              {c.sinFecha && <Insignia tono="aviso">Sin fecha</Insignia>}
               {/* Esperando respuesta, los días van en el aviso: no se repiten */}
               {esperando ? <Insignia tono="aviso">Sin respuesta hace {cantidad(dias, "día", "días")}</Insignia> : <span className="inline-block text-tinta-suave first-letter:uppercase">{textoDias(dias)}</span>}
             </span>,

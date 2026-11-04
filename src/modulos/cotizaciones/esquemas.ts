@@ -127,4 +127,6 @@ export const esquemaCambioEstado = z.discriminatedUnion("accion", [
     })
     .refine((d) => d.motivo !== "otro" || d.detalle, { path: ["detalle"], message: "Cuenta qué pasó." }),
   z.object({ id, accion: z.literal("reabrir") }),
+  // "Aceptó, sin fecha" (pedido 31): queda aceptada y se reserva después
+  z.object({ id, accion: z.literal("aceptar") }),
 ]);

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { Suspense } from "react";
-import { CalendarPlusIcon, CarFrontIcon, ChevronRightIcon, FilePlusIcon, MessageSquareWarningIcon, type LucideIcon } from "lucide-react";
+import { CalendarClockIcon, CalendarPlusIcon, CarFrontIcon, ChevronRightIcon, FilePlusIcon, MessageSquareWarningIcon, type LucideIcon } from "lucide-react";
 import { cn } from "cn";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
@@ -17,7 +17,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { primerNombre } from "@/modulos/clientes/reglas";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
-import { listarCotizaciones } from "@/modulos/cotizaciones/consultas";
+import { aceptadasSinFecha, listarCotizaciones } from "@/modulos/cotizaciones/consultas";
 import { bs, diasDesde, sinRespuesta, textoDias } from "@/modulos/cotizaciones/reglas";
 import { ParaAtender, type Pendiente } from "@/modulos/inicio/componentes/para-atender";
 import { ingresosDeHoy } from "@/modulos/inicio/consultas";
@@ -33,6 +33,8 @@ import { reclamosPorAtender } from "@/modulos/reclamos/consultas";
 // "Para hoy" (lo que llega, lo que se entrega y lo que espera aviso) y "Para atender" (reclamos, cotizaciones sin
 // respuesta, saldos y mantenimientos vencidos). Cada parte, solo si quien entra ve ese módulo: los montos, solo con Pagos
 // o Cotizaciones (RN-12). Llega entera: el saludo lleva el nombre de la sesión.
+// Pedido 31 (P31-flujo-de-un-trabajo.md §2 C1): "Para atender" suma las cotizaciones aceptadas sin fecha, para
+// reservarlas; "Para hoy" dice el paso siguiente de cada vehículo, con el texto del botón de su pantalla.
 export default function InicioPanel() {
   return (
     <Suspense fallback={<Cargando />}>
@@ -50,11 +52,12 @@ async function Contenido() {
   const ahora = new Date();
   const modulos = modulosDelMenu(usuario).filter((m) => m !== "inicio");
   const ve = (m: Modulo) => puedeVerModulo(usuario, m);
-  const [ingresos, abiertas, saldos, pendientes, mantenimientos, reclamos, parametros] = await Promise.all([
+  const [ingresos, abiertas, saldos, pendientes, aceptadas, mantenimientos, reclamos, parametros] = await Promise.all([
     ve("agenda") ? ingresosDeHoy(hoy) : null,
     ve("ordenes") ? ordenesAbiertas() : null,
     ve("pagos") ? saldosPendientes() : null,
     ve("cotizaciones") ? listarCotizaciones("pendientes", "").then((r) => r.cotizaciones) : null,
+    ve("cotizaciones") ? aceptadasSinFecha() : null,
     ve("mantenimientos") ? contarSinAvisar(hoy) : null,
     ve("reclamos") ? reclamosPorAtender(POR_TIPO) : null,
     // Los días sin respuesta de una cotización: solo hacen falta con Cotizaciones
@@ -105,6 +108,16 @@ async function Contenido() {
       accion: "Ver",
     })),
     ...masDe(sinResponder.length, "/panel/cotizaciones", ICONO_MODULO.cotizaciones, "cotizaciones sin respuesta"),
+    // Aceptadas sin fecha (pedido 31): falta reservarlas
+    ...(aceptadas ?? []).slice(0, POR_TIPO).map((c) => ({
+      href: `/panel/cotizaciones/${c.id}` as Route,
+      icono: CalendarClockIcon,
+      titulo: `Cotización aceptada de ${c.cliente}`,
+      detalle: `${bs(c.total)}, sin fecha`,
+      // Reservar lo hace quien ve la Agenda; si no, la abre para verla
+      accion: ve("agenda") ? "Reservar" : "Ver",
+    })),
+    ...masDe(aceptadas?.length ?? 0, "/panel/cotizaciones?vista=aceptadas", CalendarClockIcon, "aceptadas sin fecha"),
     ...(saldos ?? []).slice(0, POR_TIPO).map((s) => ({
       // A la orden si quien mira puede abrirla; si no (Pagos sin Órdenes), a Saldos pendientes, donde se cobra
       href: (enlaceTrabajo(s.id, "entregado", { ordenes: ve("ordenes"), agenda: ve("agenda") })?.href ?? "/panel/pagos") as Route,
@@ -235,6 +248,7 @@ function ParaHoy({ filas, verOrdenes }: { filas: FilaDelDia[]; verOrdenes: boole
             { titulo: "Vehículo", ancho: "minmax(0,1fr)", movil: "titulo" },
             { titulo: "Estado", ancho: "minmax(0,1.3fr)", movil: "estado" },
             { titulo: "Cuándo", ancho: "minmax(0,1fr)", movil: "detalle" },
+            { titulo: "Siguiente paso", ancho: "minmax(0,1fr)", movil: "detalle" },
           ]}
           filas={filas.map((f) => ({
             href: rutaTrabajo(f.id, f.estado, verOrdenes),
@@ -249,6 +263,11 @@ function ParaHoy({ filas, verOrdenes }: { filas: FilaDelDia[]; verOrdenes: boole
                 ))}
               </span>,
               f.cuando,
+              f.siguiente && (
+                <span key="s" className="font-semibold">
+                  {f.siguiente}
+                </span>
+              ),
             ],
           }))}
         />

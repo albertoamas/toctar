@@ -8,14 +8,16 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
+import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
 import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaCorta, fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
+import { bs } from "@/modulos/cotizaciones/reglas";
 import { FormularioReserva } from "@/modulos/agenda/componentes/formulario-reserva";
-import { datosDeCotizacion, datosDirecta, espaciosEnFechas, type VehiculoReserva } from "@/modulos/agenda/consultas";
+import { cotizacionesParaReservar, datosDeCotizacion, datosDirecta, espaciosEnFechas, type CotizacionParaReservar, type VehiculoReserva } from "@/modulos/agenda/consultas";
 import { fechaEntregaSugerida } from "@/modulos/agenda/reglas";
 import { DatosVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 import { ElegirCliente } from "@/modulos/clientes/componentes/elegir-cliente";
@@ -32,15 +34,34 @@ export const metadata: Metadata = { title: "Nueva reserva" };
 // recordatorio queda "agendado". Pedido 21: la línea llega con su servicio de mantenimiento.
 // Pulido 10.2: el cliente y su vehículo en un recuadro de lectura (como en Nueva cotización), con "Cambiar" en su
 // cabecera; la hora y la nota plegadas, y "Agendar" fijo abajo en el celular (en FormularioReserva).
+// Pedido 31 (P31-flujo-de-un-trabajo.md §5): desde una cotización, "Volver" lleva a ella y arriba van los pasos del
+// trabajo. En la directa, elegido el vehículo, se ofrecen primero sus cotizaciones para reservar (pendientes o aceptadas
+// sin fecha): así no se vuelven a escribir los precios. Quien no tiene Pagos (no arma directas) también elige al cliente
+// y reserva una de sus cotizaciones.
 export default function PaginaNuevaReserva({ searchParams }: PageProps<"/panel/agenda/nueva">) {
   return (
     <section className="flex flex-col gap-6">
-      <EnlaceVolver href="/panel/agenda">Agenda</EnlaceVolver>
-      <EncabezadoPagina titulo="Nueva reserva" />
-      <Suspense fallback={<Cargando />}>
+      <Suspense
+        fallback={
+          <>
+            <EncabezadoPagina titulo="Nueva reserva" />
+            <Cargando />
+          </>
+        }
+      >
         <Contenido searchParams={searchParams} />
       </Suspense>
     </section>
+  );
+}
+
+/** El encabezado: "Volver" a donde se vino (la cotización o la Agenda) y el título. */
+function Encabezado({ volver }: { volver?: { href: Route; texto: string } }) {
+  return (
+    <>
+      <EnlaceVolver href={volver?.href ?? "/panel/agenda"}>{volver?.texto ?? "Agenda"}</EnlaceVolver>
+      <EncabezadoPagina titulo="Nueva reserva" />
+    </>
   );
 }
 
@@ -82,18 +103,29 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
 
   if (cotizacionId) {
     const c = await datosDeCotizacion(cotizacionId);
-    if (!c) return <EstadoVacio>Esa cotización ya no existe.</EstadoVacio>;
+    if (!c) {
+      return (
+        <>
+          <Encabezado />
+          <EstadoVacio>Esa cotización ya no existe.</EstadoVacio>
+        </>
+      );
+    }
+    // A la cotización solo si quien reserva la puede abrir (Agenda sin Cotizaciones vuelve a la Agenda)
+    const volver = puedeVerModulo(usuario, "cotizaciones") ? { href: `/panel/cotizaciones/${c.consultaId}` as Route, texto: `Cotización ${c.numero}` } : undefined;
     if (!c.agendable) {
       return (
-        <EstadoVacio>
-          Esa cotización ya fue agendada o tiene una versión nueva.{" "}
-          <Link href={`/panel/cotizaciones/${c.consultaId}`} className={enlace}>Volver a la cotización</Link>
-        </EstadoVacio>
+        <>
+          <Encabezado volver={volver} />
+          <EstadoVacio>Esa cotización ya tiene una reserva o una versión nueva.</EstadoVacio>
+        </>
       );
     }
     const duraciones = c.lineas.map((l) => l.duracion);
     return (
       <>
+        <Encabezado volver={volver} />
+        <PasosTrabajo paso={c.aceptada ? 1 : 0} />
         <ClienteYVehiculo nombre={c.cliente.nombre} vehiculo={c.vehiculo} />
         {/* Los servicios de la cotización, en lectura: para cambiar precios se hace una versión nueva */}
         <section aria-labelledby="cotizacion-titulo" className="flex flex-col gap-3">
@@ -113,7 +145,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
                 <span className="tabular-nums">{mostrarMonto(c.saldo.total)} Bs</span>
               </p>
             )}
-            <p className="text-sm text-tinta-suave">Al agendar, la cotización queda aceptada.</p>
+            <p className="text-sm text-tinta-suave">Al reservar, la cotización queda aceptada.</p>
           </div>
         </section>
         <Formulario
@@ -128,30 +160,51 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
     );
   }
 
-  // Directa: lleva precios, así que la arma el dueño o quien registra pagos
-  if (!conPagos) {
-    return <EstadoVacio>La reserva directa lleva precios: la arma el dueño o quien registra pagos. Agenda desde una cotización.</EstadoVacio>;
-  }
+  // Directa: lleva precios, así que la arma el dueño o quien registra pagos. Sin Pagos, se elige al cliente y su vehículo
+  // para reservar una de sus cotizaciones
   const clienteId = numero("cliente");
+  // El día y el espacio que llegaron del tablero: se conservan al elegir el cliente y al usar una de sus cotizaciones
+  const delTablero = new URLSearchParams();
+  if (texto("fecha")) delTablero.set("fecha", texto("fecha"));
+  if (texto("espacio")) delTablero.set("espacio", texto("espacio"));
   const conservar = (id: number) => {
     const p = new URLSearchParams({ cliente: String(id) });
     if (texto("fecha")) p.set("fecha", texto("fecha"));
     if (texto("espacio")) p.set("espacio", texto("espacio"));
     return `/panel/agenda/nueva?${p.toString()}` as const;
   };
-  if (!clienteId) return <ElegirCliente q={texto("q")} hrefCliente={conservar} />;
+  if (!clienteId) {
+    return (
+      <>
+        <Encabezado />
+        <ElegirCliente q={texto("q")} hrefCliente={conservar} />
+      </>
+    );
+  }
 
   // El mantenimiento que se agenda: abierto y de este cliente y vehículo (la acción lo vuelve a mirar al guardar)
   const recordatorioId = numero("recordatorio");
-  if (recordatorioId && !puedeVerModulo(usuario, "mantenimientos")) {
-    return <EstadoVacio>Los mantenimientos los agenda el dueño o quien tiene «Mantenimientos».</EstadoVacio>;
+  if (recordatorioId && (!puedeVerModulo(usuario, "mantenimientos") || !conPagos)) {
+    return (
+      <>
+        <Encabezado />
+        <EstadoVacio>
+          {!puedeVerModulo(usuario, "mantenimientos")
+            ? "Los mantenimientos los agenda el dueño o quien tiene «Mantenimientos»."
+            : "La reserva del mantenimiento lleva precios: la arma el dueño o quien registra pagos."}
+        </EstadoVacio>
+      </>
+    );
   }
   const recordatorio = recordatorioId ? await recordatorioParaAgendar(recordatorioId) : null;
   if (recordatorioId && (!recordatorio || recordatorio.clienteId !== clienteId || recordatorio.vehiculoId !== numero("vehiculo"))) {
     return (
-      <EstadoVacio>
-        Ese mantenimiento ya se agendó o se cerró. <Link href="/panel/mantenimientos" className={enlace}>Volver a Mantenimientos</Link>
-      </EstadoVacio>
+      <>
+        <Encabezado />
+        <EstadoVacio>
+          Ese mantenimiento ya se agendó o se cerró. <Link href="/panel/mantenimientos" className={enlace}>Volver a Mantenimientos</Link>
+        </EstadoVacio>
+      </>
     );
   }
 
@@ -161,16 +214,29 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   if (texto("fecha")) elegirDeNuevo.set("fecha", texto("fecha"));
   if (texto("espacio")) elegirDeNuevo.set("espacio", texto("espacio"));
   const volverAElegir = `/panel/agenda/nueva${elegirDeNuevo.size ? `?${elegirDeNuevo.toString()}` : ""}` as Route;
-  if (!d) return <EstadoVacio>Ese cliente ya no está activo. <Link href="/panel/agenda/nueva" className={enlace}>Elegir otro</Link></EstadoVacio>;
-  if (d.vehiculos.length === 0) {
+  if (!d) {
     return (
-      <EstadoVacio>
-        {d.cliente.nombre} no tiene vehículos activos. <Link href={`/panel/clientes/${d.cliente.id}`} className={enlace}>Agregar uno en su ficha</Link>
-      </EstadoVacio>
+      <>
+        <Encabezado />
+        <EstadoVacio>Ese cliente ya no está activo. <Link href="/panel/agenda/nueva" className={enlace}>Elegir otro</Link></EstadoVacio>
+      </>
     );
   }
+  if (d.vehiculos.length === 0) {
+    return (
+      <>
+        <Encabezado />
+        <EstadoVacio>
+          {d.cliente.nombre} no tiene vehículos activos. <Link href={`/panel/clientes/${d.cliente.id}`} className={enlace}>Agregar uno en su ficha</Link>
+        </EstadoVacio>
+      </>
+    );
+  }
+  // Sus cotizaciones para reservar: un mantenimiento no las ofrece (se agenda su servicio de mantenimiento)
+  const cotizaciones = d.vehiculo && !recordatorio ? await cotizacionesParaReservar(d.cliente.id, d.vehiculo.id) : [];
   return (
     <>
+      <Encabezado />
       {/* Desde un mantenimiento no se cambia el cliente: el recordatorio es de ese cliente y ese vehículo */}
       <ClienteYVehiculo nombre={d.cliente.nombre} vehiculo={d.vehiculo} cambiar={recordatorio ? undefined : volverAElegir} />
       {/* El mantenimiento que se agenda: vencido, en una insignia de aviso */}
@@ -203,24 +269,62 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
           />
         </section>
       ) : (
-        <Formulario
-          origen={{
-            tipo: "directa",
-            clienteId: d.cliente.id,
-            vehiculoId: d.vehiculo.id,
-            opciones: d.opciones,
-            recordatorioId: recordatorio?.id ?? null,
-            // Un mantenimiento llega con su servicio de mantenimiento ya elegido (pedido 21)
-            lineasIniciales: recordatorio ? [lineaDelMantenimiento(d.opciones, recordatorio.servicioMantenimientoId)].filter((l) => l !== null) : [],
-          }}
-          conPagos={conPagos}
-          hoy={hoy}
-          fechaInicial={fechaInicial}
-          fechaFin={fechaInicial}
-          espacio={numero("espacio")}
-        />
+        <>
+          {cotizaciones.length > 0 && (
+            <CotizacionesDelCliente cotizaciones={cotizaciones} conMontos={conPagos || puedeVerModulo(usuario, "cotizaciones")} delTablero={delTablero} />
+          )}
+          {conPagos ? (
+            <>
+              {cotizaciones.length > 0 && <h2 className="tt-titulo-seccion">O una reserva sin cotización</h2>}
+              <Formulario
+                origen={{
+                  tipo: "directa",
+                  clienteId: d.cliente.id,
+                  vehiculoId: d.vehiculo.id,
+                  opciones: d.opciones,
+                  recordatorioId: recordatorio?.id ?? null,
+                  // Un mantenimiento llega con su servicio de mantenimiento ya elegido (pedido 21)
+                  lineasIniciales: recordatorio ? [lineaDelMantenimiento(d.opciones, recordatorio.servicioMantenimientoId)].filter((l) => l !== null) : [],
+                }}
+                conPagos={conPagos}
+                hoy={hoy}
+                fechaInicial={fechaInicial}
+                fechaFin={fechaInicial}
+                espacio={numero("espacio")}
+              />
+            </>
+          ) : (
+            cotizaciones.length === 0 && (
+              <EstadoVacio>Este vehículo no tiene cotizaciones para reservar. La reserva sin cotización lleva precios: la arma el dueño o quien registra pagos.</EstadoVacio>
+            )
+          )}
+        </>
       )}
     </>
+  );
+}
+
+/**
+ * Las cotizaciones del vehículo que se pueden reservar (pedido 31): cada una lleva a la reserva desde ella, con sus
+ * servicios y precios ya puestos, y con el día y el espacio del tablero. El total, solo a quien ve montos (RN-12: Pagos
+ * o Cotizaciones).
+ */
+function CotizacionesDelCliente({ cotizaciones, conMontos, delTablero }: { cotizaciones: CotizacionParaReservar[]; conMontos: boolean; delTablero: URLSearchParams }) {
+  return (
+    <section aria-labelledby="sus-cotizaciones-titulo" className="flex flex-col gap-3">
+      <CabeceraSeccion id="sus-cotizaciones" titulo="Sus cotizaciones" />
+      <p className="-mt-1 text-sm text-tinta-suave">Toca una para reservarla con sus servicios y precios.</p>
+      <ListaFilas
+        etiqueta="Sus cotizaciones"
+        filas={cotizaciones.map((c) => ({
+          href: `/panel/agenda/nueva?${new URLSearchParams({ cotizacion: String(c.cotizacionId), ...Object.fromEntries(delTablero) }).toString()}` as Route,
+          titulo: `Cotización ${c.numero}${c.version > 1 ? `, versión ${c.version}` : ""}`,
+          detalles: [c.servicios, ...(conMontos ? [bs(c.total)] : [])].filter(Boolean),
+          estado: c.aceptada ? "Aceptada, sin fecha" : "Pendiente",
+          tonoEstado: c.aceptada ? "exito" : undefined,
+        }))}
+      />
+    </section>
   );
 }
 

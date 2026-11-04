@@ -9,6 +9,7 @@ import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { AvisarPorWhatsApp } from "@/componentes/panel/avisar-whatsapp";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
 import { Insignia } from "@/componentes/panel/insignia";
 import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
@@ -17,6 +18,7 @@ import { diaYHora, fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
+import { pasoDelTrabajo } from "@/modulos/agenda/pasos";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
@@ -132,6 +134,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
       >
         {entrega}
       </EncabezadoPagina>
+      {/* Los pasos del trabajo (pedido 31): sin cotización, empieza en "Reservada" */}
+      {o.estado !== "cancelado" && <PasosTrabajo paso={pasoDelTrabajo({ trabajo: o.estado }) ?? 0} conCotizacion={o.consultaId !== null} />}
       {recibido && o.estado === "recibido" && <AvisoEnPagina>Vehículo recibido. La orden está en «Recibidas».</AvisoEnPagina>}
       {entregado && o.estado === "entregado" && (
         <AvisoEnPagina>

@@ -3,6 +3,7 @@
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useActionState, useRef, useState } from "react";
+import { CalendarClockIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
@@ -16,25 +17,26 @@ import { cambiarEstadoCotizacion } from "../acciones";
 import { MOTIVOS, NOMBRE_MOTIVO } from "../reglas";
 
 // El menú "Más" de una cotización (pedido 23, como en las demás fichas): "Nueva versión" y "Rechazar" en una pendiente
-// (rechazar pide el motivo en un modal); "Volver a pendiente" en una rechazada. Se usan poco: el paso siguiente
-// ("Agendar") va solo en el encabezado.
+// (rechazar pide el motivo en un modal); "Volver a pendiente" en una rechazada; "Rechazar" y "Volver a pendiente" en
+// una aceptada sin fecha (pedido 31). Se usan poco: el paso siguiente ("Aceptó: reservar") va solo en el encabezado,
+// junto a "Aceptó, sin fecha" (`AceptoSinFecha`).
 
 type Props = {
   id: number;
   /** A dónde lleva "Nueva versión" (pendiente y quien mira puede cotizar). */
   nuevaVersion: Route | null;
-  /** "rechazar": una pendiente; "reabrir": una rechazada. */
-  cambio: "rechazar" | "reabrir" | null;
+  /** "rechazar": una pendiente; "reabrir": una rechazada; los dos: una aceptada sin fecha. */
+  cambios: ("rechazar" | "reabrir")[];
 };
 
-export function MasCotizacion({ id, nuevaVersion, cambio }: Props) {
+export function MasCotizacion({ id, nuevaVersion, cambios }: Props) {
   const router = useRouter();
   const [abierta, setAbierta] = useState<"rechazar" | "reabrir" | null>(null);
   const cerrar = (abierto: boolean) => !abierto && setAbierta(null);
   const acciones: AccionMas[] = [];
   if (nuevaVersion) acciones.push({ texto: "Nueva versión", alElegir: () => router.push(nuevaVersion) });
-  if (cambio === "rechazar") acciones.push({ texto: "Rechazar", alElegir: () => setAbierta("rechazar") });
-  if (cambio === "reabrir") acciones.push({ texto: "Volver a pendiente", alElegir: () => setAbierta("reabrir") });
+  if (cambios.includes("rechazar")) acciones.push({ texto: "Rechazar", alElegir: () => setAbierta("rechazar") });
+  if (cambios.includes("reabrir")) acciones.push({ texto: "Volver a pendiente", alElegir: () => setAbierta("reabrir") });
   if (acciones.length === 0) return null;
   return (
     <>
@@ -110,10 +112,51 @@ function FormularioReabrir({ id }: { id: number }) {
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="accion" value="reabrir" />
       {resultado.mensaje && !resultado.ok && <MensajeError id="reabrir-error">{resultado.mensaje}</MensajeError>}
-      <p>La cotización vuelve a pendiente con su versión vigente, y se puede agendar o hacer una nueva versión.</p>
+      <p>La cotización vuelve a pendiente con su versión vigente, y se puede reservar o hacer una nueva versión.</p>
       <PieModal>
         <Button type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : "Sí, volver a pendiente"}
+        </Button>
+        <CancelarModal focoInicial />
+      </PieModal>
+    </form>
+  );
+}
+
+/**
+ * "Aceptó, sin fecha" (pedido 31): el cliente dijo que sí pero todavía no tiene día. La cotización queda aceptada, en su
+ * pestaña con "Sin fecha", y se reserva después. Confirma en un modal: cambia el estado.
+ */
+export function AceptoSinFecha({ id }: { id: number }) {
+  const [abierto, setAbierto] = useState(false);
+  return (
+    <>
+      <Button variant="outline" onClick={() => setAbierto(true)}>
+        <CalendarClockIcon />
+        Aceptó, sin fecha
+      </Button>
+      <ModalFormulario titulo="Aceptó, sin fecha" abierto={abierto} alCambiar={setAbierto}>
+        <FormularioAceptar id={id} />
+      </ModalFormulario>
+    </>
+  );
+}
+
+function FormularioAceptar({ id }: { id: number }) {
+  const cerrar = useCerrarModal();
+  const [resultado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
+    conAviso(cambiarEstadoCotizacion, (r) => r.ok && cerrar()),
+    {},
+  );
+  return (
+    <form action={accion} className="flex flex-col gap-5" aria-label="Aceptó, sin fecha">
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="accion" value="aceptar" />
+      {resultado.mensaje && !resultado.ok && <MensajeError id="aceptar-error">{resultado.mensaje}</MensajeError>}
+      <p>La cotización queda aceptada. La reservas cuando el cliente tenga fecha.</p>
+      <PieModal>
+        <Button type="submit" disabled={enviando}>
+          {enviando ? "Guardando…" : "Sí, aceptada"}
         </Button>
         <CancelarModal focoInicial />
       </PieModal>
