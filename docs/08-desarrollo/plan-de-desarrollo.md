@@ -1,6 +1,6 @@
 # Plan de desarrollo — TocTar Detailing (Web + Gestión)
 
-- **Versión:** 5 · 15 de octubre de 2026 (antes: v4 del 14/10)
+- **Versión:** 6 · 4 de noviembre de 2026 (antes: v5 del 15/10)
 - **Base:**
   - Backlog: `05-analisis/historias-de-usuario/historias.md`.
   - Plazos y pagos: `03-cierre-comercial/acuerdo.md`.
@@ -11,7 +11,14 @@
   - Al cerrar una etapa, se marca aquí y en `flujo-de-trabajo.md`.
   - Si una fecha se mueve, se cambia aquí y se avisa al dueño en la revisión del viernes.
 
-## Qué cambió en la versión 5
+## Qué cambió en la versión 6
+
+- **Todo lo programable de las dos entregas está en `develop`** y en `pruebas.toctardetailing.com`: C1 a C5, el pulido visual, los ajustes de la reunión con el dueño (cotización directa, checklist, firma, fotos justas, órdenes con historial, saldos), el rediseño del panel, dos roles sin técnico asignado (pedido 32), los ajustes del sitio (pedidos 33 a 36) y las correcciones de la auditoría QA del 03/11.
+- **La Entrega 1 no tuvo su acta el 3/11.** Como se decidió el 21/10, `develop` completo pasa a `main` al aceptar, así que las dos entregas se aceptan y se publican juntas. Falta acordarlo con el dueño, junto con la fecha de la demo y del acta.
+- **Lo que queda es el cierre** ("Para cerrar la Entrega 2"): la prueba completa a mano en celulares reales, la capacitación, las actas y lo que decide o carga el dueño.
+- **El alcance cambió por pedidos del dueño**, todos en `registro-de-cambios.md` (pedidos 1 a 36). Las secciones de cada etapa de abajo son el plan original: lo que cambió después está en el registro y en la especificación de cada etapa (por ejemplo, sin técnico desde el pedido 32 y sin consulta aparte desde el 23).
+
+## Qué cambió en la versión 5 (15/10)
 
 - **El desarrollo va más rápido de lo previsto.** El trabajo empezó el 9/10 con la firma y el primer pago (base técnica el 10/10). Apenas llegó el material, el 14/10, B1 a B4 (15 historias, con pruebas y documentación) se programaron en dos días; el plan v4 les daba dos semanas. Lo lento del proyecto fueron las reuniones y la recolección de requisitos, no el código. Los plazos del contrato cuentan desde el 14/10, porque el acuerdo los hace empezar con el pago y el material.
 - **El calendario se adelanta una semana** para la Entrega 2 (meta 13/11 en vez de 20/11). **Las fechas del acuerdo no cambian** (3/11 y 1/12): el adelanto queda como margen.
@@ -19,52 +26,78 @@
 - **El adelanto depende del dueño:** la lista de precios y las variantes pasan a pedirse para el viernes 23 (antes, 3/11), y el dominio sigue siendo urgente.
 - **Lunes 19:** reunión de avance con el dueño, con una presentación y sin mostrar todavía la app. La primera demo sigue siendo el viernes 23.
 
-## Dónde estamos (2 de noviembre)
+## Dónde estamos (4 de noviembre)
 
 | Qué | Estado |
 |---|---|
 | Etapas 1 a 4 (descubrimiento, propuesta, cierre comercial, requerimientos) | ✅ Cerradas |
-| Etapa 5 (análisis) | 🟡 Supuestos S-1 a S-5 respondidos; falta que el dueño valide los criterios de las historias |
+| Etapa 5 (análisis) | 🟡 Supuestos S-1 a S-5 respondidos; criterios de HU-01 a HU-41 escritos (`09-pruebas/criterios-entrega-1.md` y `-2.md`). Falta que el dueño los valide, en la demo del cierre |
 | Etapa 6 (diseño) | ✅ Modelo de datos, arquitectura e identidad visual |
-| Etapa 7 (preparación) | 🟡 Dominio, VPS en Hetzner, Coolify, R2 y respaldos listos (`07-preparacion/servidor.md`). Pruebas en línea en `pruebas.toctardetailing.com`; producción configurada, sin publicar. Falta la reunión con el dueño (sus accesos y su tarjeta) |
+| Etapa 7 (preparación) | 🟡 Dominio, VPS en Hetzner, Coolify, R2, respaldos y CI/CD listos (`07-preparacion/servidor.md`, `ci-cd.md`). Pruebas en línea en `pruebas.toctardetailing.com`, que se despliega sola al unir a `develop`; producción configurada, sin publicar. Falta la reunión con el dueño (sus accesos y su tarjeta) y la restauración de prueba (RNF-06) |
 | Iteración 0 (cimientos) | ✅ En `develop` (PR #1) |
 | Etapa B1 Acceso (HU-01, HU-02, HU-03) | ✅ Cerrada el 14/10, en `develop` (PR #4, #7 y #10) |
-| Etapa B2 Configuración y app (HU-04, HU-05, HU-06) | ✅ Programada y probada a mano el 14/10, en `develop` (PR #14, #15 y #16). Falta instalar en celulares (necesita https, A3) y mostrarla en la demo del 23 |
-| Etapa B3 Contenido del panel (HU-07, HU-08, HU-09) | ✅ Programada el 14/10 (PR #19, #20 y #21). Falta la revisión manual y mostrarla con B4 |
-| Etapa B4 Sitio público (HU-10 a HU-15) | ✅ Programada el 14/10 (PR #23 a #26). Lighthouse móvil ≥ 90. Falta la revisión manual y la demo del 23 |
-| Etapa B5 Reclamos y Google (HU-16, HU-17, HU-18) | ✅ Programada el 15/10 (PR #33 a #36). Falta la revisión manual, validar el JSON-LD en Google con https (A3) y que el dueño cree su Perfil de Empresa (`10-lanzamiento/perfil-de-google.md`) |
+| Etapa B2 Configuración y app (HU-04, HU-05, HU-06) | ✅ Programada y probada a mano el 14/10, en `develop` (PR #14, #15 y #16). Falta instalarla en celulares reales (ya hay https en pruebas) |
+| Etapa B3 Contenido del panel (HU-07, HU-08, HU-09) | ✅ Programada el 14/10 (PR #19, #20 y #21) y mostrada en la demo del sitio (24/10). Falta la prueba completa a mano |
+| Etapa B4 Sitio público (HU-10 a HU-15) | ✅ Programada el 14/10 (PR #23 a #26), mostrada en la demo del 24/10 y ajustada con los pedidos del dueño (1 a 11 y 33 a 36). Lighthouse móvil ≥ 90 en local; falta medirlo en pruebas |
+| Etapa B5 Reclamos y Google (HU-16, HU-17, HU-18) | ✅ Programada el 15/10 (PR #33 a #36). Falta la prueba a mano, validar el JSON-LD en Google con https y que el dueño cree su Perfil de Empresa (`10-lanzamiento/perfil-de-google.md`) |
 | Revisión de seguridad y calidad de la Entrega 1 | ✅ 16/10 (PR #40) |
 | Pulido visual de la Entrega 1 | ✅ Las 32 pantallas, en `develop` (PR #43 a #48). Registro y comparativas en `pulido-visual.md` |
 | Etapa C1 Catálogo y clientes (HU-19 a HU-23) | ✅ Programada el 20/10 (PR #49 a #53). Precios de prueba solo en E2E: falta la lista de precios real del dueño |
-| Etapa C2 Consultas y cotizaciones (HU-24 a HU-28) | ✅ Programada el 21/10 (PR #55 a #60). Falta compartir el PDF desde un celular real (necesita https, A3), revisarlo impreso y que el dueño confirme formas de pago, condiciones y garantía |
-| Etapa C3 Agenda y pagos (HU-29 a HU-32) | ✅ Programada el 21/10 (PR #61 a #64). Falta mostrarle el tablero al dueño y probar el cobro con comprobante en un celular real |
-| Etapa C4 Taller y entrega (HU-33 a HU-38) | ✅ Programada el 23/10 (PR #65 a #72). Los 5 flujos críticos con su prueba E2E. Falta la demo desde un celular real |
-| Etapa C5 Cierre de la Entrega 2 | 🔵 Especificación aprobada el 23/10 (PR #73). §0, la reorganización del panel, en `develop` el 24/10 (PR #74). HU-40 (mensajes de WhatsApp editables, PR #92), HU-39 (pantalla del día, PR #93) y HU-41 (fotos de órdenes a la galería, PR #94) programadas el 25/10. Hechos el pulido visual de la Entrega 2 (27/10) y los pedidos 20 y 21 (mantenimientos). Criterios de HU-19 a HU-41 escritos el 02/11 (`09-pruebas/criterios-entrega-2.md`). **Sigue el cierre:** la prueba completa con esa lista, capacitación por rol, demo y acta |
-| Datos de demostración | ✅ Scripts `db:reiniciar-local` y `datos:demo` (PR #75): el sitio con fotos y el panel con movimiento de esta semana. Al día con los ajustes del dueño (checklist y firma) y con `datos:reiniciar` para todo de una vez (02/11). Falta cargarlos en pruebas |
-| Pedidos de la demo del sitio (24/10) | ✅ Hechos el 24/10 (PR #78 a #88; `pulido-visual.md`, grupo 2B.1 a 2B.12; registro de cambios 1 a 11). Falta que el dueño cargue en pruebas el trabajo de la portada, los íconos de los beneficios, la escalera del nano cerámico, las fotos de cada sección y del equipo, el TikTok y el WhatsApp real |
+| Etapa C2 Consultas y cotizaciones (HU-24 a HU-28) | ✅ Programada el 21/10 (PR #55 a #60). Desde el pedido 23 (PR #113), cotización directa sin consulta aparte. Falta compartir el PDF desde un celular real, revisarlo impreso y que el dueño confirme formas de pago, condiciones y garantía |
+| Etapa C3 Agenda y pagos (HU-29 a HU-32) | ✅ Programada el 21/10 (PR #61 a #64) y vista por el dueño en la reunión del panel (fines de octubre). Falta probar el cobro con comprobante en un celular real |
+| Etapa C4 Taller y entrega (HU-33 a HU-38) | ✅ Programada el 23/10 (PR #65 a #72), con checklist (pedido 12), firma (13), fotos de inicio y final (27) e historial (28). Los 5 flujos críticos con su prueba E2E. Falta la prueba desde un celular real |
+| Etapa C5 Cierre de la Entrega 2 | 🔵 Especificación aprobada el 23/10 (PR #73). §0, HU-39, HU-40 y HU-41 hechas (PR #74, #92 a #94); criterios de HU-19 a HU-41 escritos el 02/11 (`09-pruebas/criterios-entrega-2.md`, PR #127). Todo lo programable está en `develop`. **Sigue el cierre:** ver "Para cerrar la Entrega 2", debajo |
+| Datos de demostración | ✅ Scripts `db:reiniciar-local`, `datos:demo` y `datos:reiniciar` (PR #75 y #120), al día con los ajustes del dueño. Falta cargarlos en pruebas: necesita un túnel SSH a la base y las claves de R2 de pruebas, que maneja el usuario |
+| Pedidos de la demo del sitio (24/10) | ✅ Hechos el 24/10 (PR #78 a #88; `pulido-visual.md`, 2B.1 a 2B.12; registro de cambios 1 a 11). Falta que el dueño cargue en pruebas el trabajo de la portada, los íconos de los beneficios, la escalera del nano cerámico, las fotos de cada sección y del equipo, el TikTok y el WhatsApp real |
 | Pulido visual de la Entrega 2 | ✅ Grupos 7 a 13, pantalla por pantalla, en `develop` (PR #99, #100, #102 a #105 y #108, del 25 al 27/10). Registro, comparativas y revisiones de cada grupo en `pulido-visual.md` |
-| Pedidos nuevos del dueño (25 al 27/10) | 🔵 En `registro-de-cambios.md`. **Hechos:** 20 (ver todos los mantenimientos, PR #106) y 21 (planes de mantenimiento por vehículo, que absorbe el 17; PR #107). **Esperan al dueño:** 12 a 14 (cotizados), 15 y 16 (Sistema completo), 18 y 19, 22 (WhatsApp automático, por cotizar) y 23 a 25 (cotización única, encargado que cotiza y cotización editable: los prueba y decide). Además, cargar en el catálogo los servicios con mantenimiento y su frecuencia |
+| Pedidos nuevos del dueño (25/10 al 03/11) | 🔵 En `registro-de-cambios.md`. **Hechos:** 12, 13, 17 (dentro del 21), 20, 21, 23, 24, 26 a 28, 30 y 32 a 36. **Descartado:** 25 (se mantienen las versiones). **Esperan al dueño:** 14 (cotizado), 15 y 16 (Sistema completo), 18, 19, 22 (WhatsApp automático, por cotizar), 29 (vehículos sin placa) y 31 (separar Cotizaciones de Nueva reserva). Además, cargar en el catálogo los servicios con mantenimiento y su frecuencia |
 | Pruebas E2E intermitentes | ✅ `flujo-taller-completo` y `hu-30` fallaban a veces con la suite completa: eran dos carreras reales del sistema (recibir pedía confirmar "sin fotos" con una foto recién subida; el menú de espacios mostraba un instante la lista de otras fechas), corregidas el 27/10 (PR #109). La E2E completa pasó tres veces seguidas sin fallas. Lo del 25/10 (`hu-08`: llenar antes de que la página responda) ya espera la hidratación |
-| Ajustes de la reunión con el dueño (01/11) | ⏳ Plan en `ajustes-reunion-dueno.md`: 1) cotización directa sin consulta (✅ PR #113), 2) checklist al recibir (✅), 3) firma del cliente (✅), 4) fotos justas (✅), 5) rediseño del panel (✅ 02/11, aprobado por el dueño, PR #125). Además, el pedido 32 (02/11): dos roles, dueño y encargado, sin técnico asignado (`etapas/P32-roles-sin-tecnico.md`), 6) órdenes con historial (✅), 7) Saldos con búsqueda (✅), 8) vehículos sin placa, 9) avisos automáticos (por cotizar). Van antes del cierre de C5 |
+| Ajustes de la reunión con el dueño (01/11) | ✅ Plan en `ajustes-reunion-dueno.md`: cotización directa (PR #113), checklist al recibir (#114), firma (#115), fotos justas (#116), órdenes con historial (#117), saldos con búsqueda (#118), rediseño del panel (#125, aprobado por el dueño) y dos roles sin técnico asignado (pedido 32, #129). Quedan, a decisión del dueño, vehículos sin placa (pedido 29) y los avisos automáticos (pedido 22, por cotizar) |
+| Ajustes del sitio (03/11) | ✅ Pedidos 33 a 36: tarjetas de servicio más vivas (#131), galería en dos secciones (#132), TikTok a la par de WhatsApp y "Cómo llegar" como botón (#133) y portada sin "Trabajos recientes" (#134). Corrección del iPhone en formularios y logo (#130) |
+| Auditoría QA del 03/11 | ✅ 14 hallazgos verificados: 10 corregidos (Zod, fechas, limpieza de fotos, bloqueos y el último dueño) y 4 descartados con motivo (PR #135, `09-pruebas/auditoria-qa-2026-11-03.md`) |
 | Identidad visual aplicada a la app | ✅ En `develop` (PR #5 y #9, logos nítidos en tamaños chicos) |
 | Inicio del trabajo | 9 de octubre de 2026 (firma y primer pago) |
 | Día D (inicio del plazo del contrato) | 14 de octubre de 2026 (llegó el material) |
 
+## Para cerrar la Entrega 2 (al 4 de noviembre)
+
+Todo lo programable está en `develop` y en `pruebas.toctardetailing.com`. Lo que falta, en orden. Con la Entrega 2 se acepta también la Entrega 1 (todo `develop` pasa junto a `main`).
+
+**Lo hace YankoSoft (no depende del dueño):**
+
+1. **Prueba completa a mano** con `09-pruebas/criterios-entrega-2.md` (y los ⚠️/⏳ de `criterios-entrega-1.md`) en pruebas, con https: dueño y encargado con cada perfil (Taller, Atención, Todo), en un Android y un iPhone. Cubre los ⏳ de celular real: compartir el PDF (27.3), comprobante con la cámara (32.5), checklist con fotos (33.6), PDF impreso en A4 (26.4) e instalar la app (B2).
+2. **Datos de demostración en pruebas** (`datos:demo`), para la demo y la capacitación.
+3. **Guía de capacitación** `10-lanzamiento/capacitacion.md`, corta y por rol (ver C5, punto 3).
+4. **Borradores de las actas** `09-pruebas/actas-de-aceptacion/entrega-1.md` y `entrega-2.md`.
+5. **En el servidor** (con el acceso SSH de YankoSoft): confirmar que Traefik pone `x-real-ip` y que el puerto de la app no está abierto; la restauración de prueba antes de publicar (RNF-06, `07-preparacion/servidor.md`); Lighthouse y JSON-LD con https.
+
+**Lo decide o lo carga el dueño** (sin apuro: se avanza con lo de arriba mientras tanto):
+
+| Qué | Dónde |
+|---|---|
+| Pedido 29: vehículos sin placa | `registro-de-cambios.md`, prioridad 8 de `ajustes-reunion-dueno.md` |
+| Pedido 31: separar Cotizaciones de Nueva reserva | `registro-de-cambios.md` |
+| Pedidos 14 (Bs 200), 18, 19 y 22 (avisos automáticos, por cotizar); la constancia en PDF de la entrega (pedido 13, +2 h) | `registro-de-cambios.md` |
+| Pedidos 15 y 16: van en el Sistema completo | `registro-de-cambios.md` |
+| Decisiones abiertas de C5 (permiso del cliente para publicar fotos, qué ve el encargado en Inicio, más mensajes editables) | `etapas/C5-cierre-entrega-2.md`, §12 |
+| Sus datos: lista de precios real (20.4), servicios con mantenimiento y su frecuencia, textos del PDF (formas de pago, condiciones, garantía; 26.6), contenido del sitio (trabajo de la portada, fotos, TikTok, WhatsApp real) | Panel, en producción al publicar |
+| Reunión de accesos: sus dos pasos en Cloudflare y Hetzner, su tarjeta y el equipo en Coolify | `07-preparacion/servidor.md` |
+
+**Al aceptar:** demo, capacitación, actas confirmadas, merge de `develop` a `main`, etiquetas `v1.0.0` y `v2.0.0`, publicación en producción y cobro (Bs 700 + Bs 2.000).
+
 ## Calendario
 
-| Semana | Fechas | Fase | Revisión con el dueño |
+| Semana | Fechas | Qué se hizo o qué toca | Con el dueño |
 |---|---|---|---|
-| 1 | 14 al 20 de octubre | B1 a B5 ✅ | **Lunes 19**: reunión de avance (presentación, sin demo) |
-| 2 | 21 al 27 de octubre | A3 entorno en la nube · B6 contenido real · C1 Catálogo y clientes (si llegaron los precios) | **Viernes 23**: primera demo, la web completa |
-| 3 | 28 de octubre al 3 de noviembre | B6 cierre de la Entrega 1 · C2 Consultas y cotizaciones | **Viernes 30**: acta de la Entrega 1 y publicación (límite **3/11**) |
-| 4 | 4 al 10 de noviembre | C3 Agenda y pagos · C4 Taller y entrega | **Viernes 6**: demo de cotización con PDF y agenda |
-| 5 | 11 al 17 de noviembre | C4 y C5 cierre de la Entrega 2 | **Viernes 13**: ciclo completo y acta de la Entrega 2 (meta) |
-| 6 y 7 | 18 de noviembre al 1 de diciembre | Margen: ajustes del uso real, historias deseables (HU-39 a HU-41) | Límite del acuerdo: **1/12** |
+| 1 | 14 al 20 de octubre | B1 a B5 ✅ | Lunes 19: reunión de avance ✅ |
+| 2 | 21 al 27 de octubre | A3 (pruebas en línea y CI/CD) ✅ · C1 a C5 programadas ✅ · pulido visual de las dos entregas ✅ | Demo del sitio (24/10) y sus pedidos ✅ |
+| 3 | 28 de octubre al 3 de noviembre | Ajustes de la reunión del panel, rediseño, dos roles, ajustes del sitio y auditoría QA ✅ | Reunión del panel ✅. El acta de la Entrega 1 no se hizo: va con la de la 2 |
+| 4 en adelante | Desde el 4 de noviembre | Cierre: "Para cerrar la Entrega 2" | Demo del ciclo completo, capacitación y actas, con fecha a acordar. Límite del acuerdo: **1/12** |
 
 | Hito | Fecha límite | Pago al aceptarse |
 |---|---|---|
-| Entrega 1: Web publicada y aceptada | 3 de noviembre | Bs 700 |
-| Entrega 2: Gestión aceptada | 1 de diciembre (meta: 13 de noviembre) | Bs 2.000 |
+| Entrega 1: Web publicada y aceptada | 3 de noviembre (pasó sin acta; se acepta junto con la Entrega 2) | Bs 700 |
+| Entrega 2: Gestión aceptada | 1 de diciembre | Bs 2.000 |
 
 ## Especificación de cada etapa
 
@@ -85,9 +118,17 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | C2 Consultas y cotizaciones | `etapas/C2-consultas-cotizaciones.md` | ✅ Programada (21/10, PR #55 a #60). Falta la prueba en celulares con https (A3) y los textos del PDF del dueño |
 | C3 Agenda y pagos | `etapas/C3-agenda-pagos.md` | ✅ Programada (21/10, PR #61 a #64). Falta mostrarle el tablero al dueño |
 | C4 Taller y entrega | `etapas/C4-taller-entrega.md` | ✅ Programada (23/10, PR #65 a #72). Falta la demo desde un celular real |
-| C5 Cierre de la Entrega 2 | `etapas/C5-cierre-entrega-2.md` | 🔵 Aprobada (23/10). §0, HU-39, HU-40 y HU-41 hechas; sigue el cierre (criterios, capacitación y acta) |
+| C5 Cierre de la Entrega 2 | `etapas/C5-cierre-entrega-2.md` | 🔵 Aprobada (23/10). §0, HU-39, HU-40 y HU-41 hechas; sigue el cierre ("Para cerrar la Entrega 2") |
 | P21 Planes de mantenimiento | `etapas/P21-planes-mantenimiento.md` | ✅ Aprobada y programada (27/10, PR #107). Falta que el dueño cargue los servicios con mantenimiento |
-| B6 | `etapas/B6-…` | Al empezarla |
+| P12 Checklist al recibir | `etapas/P12-checklist-recepcion.md` | ✅ Programada (01/11, PR #114) |
+| P13 Firma al entregar | `etapas/P13-firma-entrega.md` | ✅ Programada (01/11, PR #115); la constancia en PDF, por decidir |
+| P23 Cotización directa | `etapas/P23-cotizacion-directa.md` | ✅ Programada (01/11, PR #113), con el pedido 24 |
+| P26 Rediseño del panel | `etapas/P26-rediseno-panel.md` | ✅ Programada y aprobada por el dueño (02/11, PR #125) |
+| P27 Fotos justas | `etapas/P27-fotos-justas.md` | ✅ Programada (01/11, PR #116) |
+| P28 Órdenes con historial | `etapas/P28-ordenes-historial.md` | ✅ Programada (01/11, PR #117) |
+| P30 Saldos: buscar y ordenar | `etapas/P30-saldos-buscar-ordenar.md` | ✅ Programada (01/11, PR #118) |
+| P32 Dos roles, sin técnico | `etapas/P32-roles-sin-tecnico.md` | ✅ Programada (03/11, PR #129) |
+| B6 Cierre de la Entrega 1 | Sin especificación aparte | Va junto con el cierre de la Entrega 2 (C5) |
 
 ## Cómo se trabaja cada historia
 
@@ -211,6 +252,8 @@ Una rama `hu-XX-…` por historia, desde `develop`, con commits chicos por tipo 
 
 ### B6. Cierre de la entrega 1 (semanas 2 y 3, hasta el 3 de noviembre)
 
+**Cambió (04/11):** el pulido visual y la carga de contenido de prueba están hechos. La prueba a mano, la capacitación, el acta, el merge y el cobro van junto con los de la Entrega 2 ("Para cerrar la Entrega 2").
+
 0. Pulido visual pantalla por pantalla (`pulido-visual.md`): el sitio antes de la demo del 23, el panel antes del acta del 30.
 1. Prueba completa en `pruebas.<dominio>` con la lista de criterios de HU-01 a HU-18. Las correcciones entran por PR.
 2. Carga del contenido real: servicios, textos, fotos, datos del negocio y horario.
@@ -277,11 +320,11 @@ Una rama `hu-XX-…` por historia, desde `develop`, con commits chicos por tipo 
 
 ### C5. Cierre de la entrega 2 (semana 5; margen en la 6 y la 7)
 
-1. Historias deseables, solo si hay tiempo: HU-39 Pantalla del día · HU-40 Plantillas de WhatsApp (`plantilla_mensaje`) · HU-41 Fotos de órdenes a la galería.
-2. Prueba completa con la lista de criterios de HU-19 a HU-38.
-3. Capacitación por rol: dueño (cotizar, agenda, saldos), encargado y técnico (sus órdenes desde el celular).
-4. Demo del viernes 13 y acta de la entrega 2 (`09-pruebas/actas-de-aceptacion/entrega-2.md`).
-5. Merge a `main`, etiqueta `v2.0.0`, cobro de Bs 2.000. Al completar el pago, TocTar recibe una copia del código.
+1. ✅ Historias deseables: HU-39 Pantalla del día · HU-40 Plantillas de WhatsApp (`plantilla_mensaje`) · HU-41 Fotos de órdenes a la galería (PR #92 a #94).
+2. Prueba completa a mano con la lista de criterios de HU-19 a HU-41 (y los pendientes de HU-01 a HU-18).
+3. Capacitación por rol: dueño (cotizar, agenda, saldos, mensajes y usuarios) y encargado según su perfil (Taller: recibir, trabajar y entregar; Atención: además clientes, cotizaciones y saldos). Sin técnico desde el pedido 32.
+4. Demo del ciclo completo (fecha a acordar con el dueño) y actas de las dos entregas (`09-pruebas/actas-de-aceptacion/`).
+5. Merge a `main`, etiquetas `v1.0.0` y `v2.0.0`, publicación y cobro (Bs 700 + Bs 2.000). Al completar el pago, TocTar recibe una copia del código.
 
 **Criterio de salida de la fase C:** acta firmada antes del 1 de diciembre y pago recibido.
 
@@ -290,8 +333,8 @@ Una rama `hu-XX-…` por historia, desde `develop`, con commits chicos por tipo 
 ## Fase D. Lanzamiento y soporte
 
 ### D1. Lanzamiento
-- **Antes de publicar la entrega 1:** restauración de prueba de un respaldo, documentada en `10-lanzamiento/` (RNF-06).
-- **Carga de datos reales:** los clientes del cuaderno, si el dueño quiere (se coordina en la semana 5).
+- **Antes de publicar:** restauración de prueba de un respaldo, documentada en `07-preparacion/servidor.md` (RNF-06).
+- **Carga de datos reales:** precios, servicios con mantenimiento, textos del PDF, contenido del sitio y, si el dueño quiere, los clientes del cuaderno. Se coordina con él antes de publicar.
 - **Primera semana de uso:** acompañamiento. Las correcciones entran como `arreglo/…` desde `main`.
 
 ### D2. Soporte y mejora
@@ -300,18 +343,6 @@ Una rama `hu-XX-…` por historia, desde `develop`, con commits chicos por tipo 
 - Pedidos nuevos: `03-cierre-comercial/registro-de-cambios.md` (bolsa de 8 h; después Bs 40 por hora). Inventario, asistencia, planilla, caja y reportes son el Sistema completo (Bs 2.000 dentro de los 90 días).
 
 ---
-
-## Cómo se trabaja cada historia
-
-1. Mover el issue a "En curso" (máximo 2 a la vez).
-2. Crear la rama `hu-XX-descripcion` desde `develop` actualizado.
-3. Leer la especificación de la etapa (`etapas/<código>.md`) y planificar con Claude Code a partir de ella.
-4. Implementación siguiendo `CLAUDE.md` (tokens de marca, `exigirSesion`, permisos, Zod).
-5. Pruebas: unitarias para cada regla RN y E2E para los criterios. Si cambia el esquema, la migración se genera con nombre (`npm run db:generate -- --name …`).
-6. `lint`, `typecheck`, `test` y `test:e2e` pasan.
-7. PR con la plantilla y `Closes #N`; revisión propia del diff completo (y `/code-review` como segunda mirada).
-8. Merge con squash a `develop`: se despliega en pruebas.
-9. La historia queda **terminada** cuando la ve el dueño en la revisión del viernes.
 
 ## Ritmo de la semana
 
@@ -325,30 +356,30 @@ Una rama `hu-XX-…` por historia, desde `develop`, con commits chicos por tipo 
 ## Seguimiento
 
 - **GitHub:** un issue por historia con sus criterios como casillas; milestones "Entrega 1 · Web" (3/11) y "Entrega 2 · Gestión" (1/12); tablero con las columnas Backlog, Esta semana, En curso, En revisión, En pruebas y Aceptado. Se arma cuando esté instalado `gh`.
-- **Este documento:** la columna de estado de "Dónde estamos" se actualiza cada viernes.
+- **Este documento:** "Dónde estamos" y "Para cerrar la Entrega 2" se actualizan al unir cada PR que cambie el estado.
 
 ## Decisiones y material pendientes
 
-| # | Qué | De quién | Para cuándo | Bloquea |
+| # | Qué | De quién | Estado | Bloquea |
 |---|---|---|---|---|
-| 1 | ~~Dominio exacto y titular~~ ✅ `toctardetailing.com` (15/10) | Dueño | — | — |
-| 2 | Proveedor del VPS: Hetzner o DigitalOcean | YankoSoft | Lunes 19 de octubre | A3 |
-| 3 | Horario de atención confirmado, con los días | Dueño | Viernes 23 de octubre | Nada (se carga desde el panel) |
-| 4 | Textos por servicio y preguntas frecuentes (hay borradores cargados) | Dueño | Viernes 23 de octubre | B6 (contenido real) |
-| 5 | Fotos principales de cada servicio | Dueño | Antes del 3 de noviembre | Nada (imagen de reemplazo) |
-| 6 | Validación de criterios HU-01 a HU-18 | Dueño | Demo del viernes 23 | B6 (acta) |
-| 7 | Condiciones y garantía del PDF (hay un borrador cargado en el panel, B2) | Dueño | Viernes 30 de octubre | C2 |
-| 8 | Lista de precios, variantes de inyección y succión y de vidrios | Dueño | **Viernes 23 de octubre** (se pide el lunes 19) | C1 y C2 |
-| 9 | Validación de HU-19 a HU-41 | Dueño | Viernes 30 de octubre | Fase C |
+| 1 | Dominio exacto y titular | Dueño | ✅ `toctardetailing.com` (15/10) | — |
+| 2 | Proveedor del VPS | YankoSoft | ✅ Hetzner (CX23) | — |
+| 3 | Horario de atención con los días | Dueño | Se carga desde el panel antes de publicar | Nada |
+| 4 | Textos por servicio y preguntas frecuentes (hay borradores cargados) | Dueño | Antes de publicar | La publicación |
+| 5 | Fotos de cada servicio, de la portada y del equipo | Dueño | Antes de publicar | Nada (imagen de reemplazo) |
+| 6 | Validación de los criterios de HU-01 a HU-41 | Dueño | En la demo del cierre | Las actas |
+| 7 | Formas de pago, condiciones y garantía del PDF (hay un borrador cargado) | Dueño | Antes del acta (criterio 26.6) | El acta de la Entrega 2 |
+| 8 | Lista de precios real y sus variantes | Dueño | Antes de publicar (criterio 20.4) | La publicación |
+| 9 | Pedidos que esperan su decisión: 14, 18, 19, 22, 29, 31 y la constancia en PDF de la entrega | Dueño | Sin fecha (`registro-de-cambios.md`) | Nada: se cierra sin ellos si no los aprueba |
 | 10 | Vectorial original del logo | Diseñador del dueño | Sin fecha | Nada (hay trazado fiel) |
 
 ## Riesgos
 
 | Riesgo | Efecto | Qué se hace |
 |---|---|---|
-| El dominio o el titular no llegan a tiempo | Sin entorno de pruebas para la demo del 23 | Pedirlo hoy. Si no llega el 19, el VPS se levanta con un subdominio temporal de Coolify y la demo se hace igual |
-| Material atrasado (textos, fotos, precios) | Contenido de prueba en las demos | Datos de prueba realistas; el contenido real se carga en B6 y en C1 |
+| La prueba en celulares reales encuentra fallos que las E2E no ven | Ajustes antes del acta | Se prueba en Android y en iPhone (Safari) temprano en el cierre; las E2E ya corren también en WebKit |
+| Material atrasado (textos, fotos, precios) | Publicar con contenido de prueba | El sitio y el panel funcionan con lo cargado; el contenido real se carga desde el panel, sin depender de YankoSoft |
 | El dueño tarda en responder o en aceptar | El calendario se corre | Pedidos concretos en cada demo; el acta se considera aceptada a los 5 días hábiles sin observaciones |
-| Entrega 1 sin margen | Atraso en el primer cobro | Las historias deseables y los ajustes menores se mueven; la calidad no se recorta |
-| Agenda y PDF, las interfaces más difíciles | Rehacerlas al final | Mostrarlas incompletas en la demo de su semana |
+| Las dos entregas se aceptan juntas | El primer cobro se corre hasta el cierre | Acordar con el dueño la fecha de la demo y del acta; el límite del acuerdo es el 1/12 |
+| Lo del servidor (restauración, datos de demostración en pruebas) depende del acceso SSH, que tiene solo YankoSoft | Se atrasa el cierre si no se agenda | Se hace en una sola sesión, paso a paso, con los comandos listos |
 | Pedidos nuevos en las demos | Alcance que crece | Todo pedido va al registro de cambios antes de hacerse |
