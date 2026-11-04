@@ -51,7 +51,7 @@ El dueño dijo que el camino de la cotización a la reserva "no se siente fluido
 - `/panel/cotizaciones/[id]`: los pasos arriba; en una pendiente, "Aceptó: reservar" (principal) y "Aceptó, sin fecha" (contorno); en una aceptada sin fecha, "Reservar" (principal) y la insignia "Sin fecha"; "Más" con Rechazar y Volver a pendiente.
 - `/panel/cotizaciones?vista=aceptadas`: la insignia "Sin fecha" en las que no tienen reserva.
 - `/panel/agenda/nueva?cotizacion=`: acepta también la aceptada sin fecha; "Volver" a la cotización.
-- `/panel/agenda/nueva` (directa o sin Pagos): después de elegir cliente y vehículo, "Sus cotizaciones" con "Usar esta cotización" si las hay.
+- `/panel/agenda/nueva` (directa o sin Pagos): 768 px de ancho, como Nueva cotización. Después de elegir cliente y vehículo, "Sus cotizaciones" si las hay, y la reserva sin cotización plegada detrás de "＋ Reserva sin cotización" (sin cotizaciones, a la vista).
 - `/panel/agenda/[id]` y `/panel/ordenes/[id]`: los pasos arriba; el aviso de reserva con el día, el espacio y la cotización.
 - `/panel` (Inicio): aceptadas sin fecha en "Para atender"; el paso siguiente en "Para hoy".
 
@@ -61,11 +61,11 @@ El dueño dijo que el camino de la cotización a la reserva "no se siente fluido
 - `agendarReserva` desde una cotización: acepta la aceptada sin fecha, con el mismo orden de bloqueos (consulta y después cotización, QA-10).
 
 ## 7. Componentes y diseño
-- `PasosTrabajo` (`src/componentes/panel/pasos-trabajo.tsx`): una lista ordenada (`ol`) de seis pasos con su texto, el actual marcado con `aria-current="step"`; los hechos en `tinta`, el actual en `rojo` (el único rojo además del botón principal) y los que faltan en `borde`. En el celular, solo el texto del paso actual y "Paso 3 de 6"; desde `@xl`, los seis.
+- `PasosTrabajo` (`src/componentes/panel/pasos-trabajo.tsx`): el indicador de pasos del panel, con círculos (pedido 26): hecho en verde con ✓, el actual en azul con `aria-current="step"`, los que faltan en gris; sin rojo, que es del botón principal. En el celular, los círculos y el nombre del paso actual; desde `@xl`, el nombre debajo de cada uno. En la orden reemplaza a sus tres pasos: uno solo por pantalla, y el botón grande sigue debajo (`EstadoOrden`).
 - Todo con los tokens y componentes del panel (`EncabezadoPagina`, `Insignia`, `tt-tarjeta-panel`, `buttonVariants`), sin la estética de la maqueta.
 
 ## 8. Textos de la interfaz
-- Botones: "Aceptó: reservar", "Aceptó, sin fecha", "Reservar", "Usar esta cotización".
+- Botones: "Aceptó: reservar", "Aceptó, sin fecha", "Reservar".
 - Insignia: "Sin fecha".
 - Modal de "Aceptó, sin fecha": "La cotización queda aceptada. La reservas cuando el cliente tenga fecha." con "Sí, aceptada" y "Cancelar".
 - Aviso al reservar: "Reservada para el {día} en el {espacio}." y, desde una cotización, "La cotización {número} quedó aceptada."

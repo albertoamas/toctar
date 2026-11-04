@@ -11,8 +11,8 @@ Los autos se venden. Cuando el comprador trae un auto que ya atendimos, el siste
 
 ## 2. Alcance
 - **Incluye:**
-  - **"Cambió de dueño"** en la edición de un vehículo (ficha del dueño actual), junto a "Desactivar": lleva a una pantalla que pide elegir al nuevo dueño y confirma.
-  - **Desde el aviso de placa repetida** al agregar un vehículo en la ficha de otro cliente: "¿Cambió de dueño? Pasarlo a {cliente}", que lleva a la misma confirmación con el nuevo dueño ya elegido.
+  - **"Cambiar de dueño"** en el menú "Más" de la edición de un vehículo (ficha del dueño actual), junto a "Desactivar": lleva a una pantalla que pide elegir al nuevo dueño y confirma.
+  - **Desde el aviso de placa repetida** al agregar un vehículo en la ficha de otro cliente: "Cambiar de dueño a este cliente", que lleva a la misma confirmación con el nuevo dueño ya elegido.
   - Al confirmar, en una transacción:
     - el vehículo pasa al nuevo dueño (sigue siendo el mismo, con su placa y sus datos);
     - sus mantenimientos abiertos (pendientes o avisados) pasan al nuevo dueño: el aviso le llega a él;
@@ -34,7 +34,7 @@ Sin migración. Cambia `vehiculo.cliente_id`, `recordatorio_mantenimiento.client
 - Bloqueos, en el orden del resto de la app: primero las consultas del vehículo, después el vehículo (`FOR UPDATE`, que frena una reserva nueva sobre él mientras se cambia).
 
 ## 5. Pantallas y rutas
-- `/panel/clientes/[id]/vehiculos/[vehiculo]/dueno`: "Cambiar de dueño {placa}". Sin `?nuevo=`, el buscador de clientes; con él, el resumen (de quién a quién, qué pasa y qué se cierra) y "Pasar a {cliente}". Al terminar, la ficha del nuevo dueño con el aviso "{placa} ahora es de {cliente}."
+- `/panel/clientes/[id]/vehiculos/[vehiculo]/dueno`: "Cambiar de dueño {placa}", un flujo de un paso a 768 px. Sin `?nuevo=`, el buscador de clientes con el título "Nuevo dueño", sin el dueño actual; con él, una tarjeta con tres filas (Pasa, Se cierra, Queda) y al pie "Cambiar de dueño" y "Cancelar", fijos abajo en el celular. Al terminar, la ficha del nuevo dueño con el aviso "{placa} ahora es de {cliente}."
 
 ## 6. Acciones del servidor
 - `cambiarDuenoVehiculo`: con el permiso de Clientes; `vehiculoId`, `clienteActualId` y `clienteNuevoId` validados con Zod.
