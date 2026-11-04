@@ -1,13 +1,16 @@
 "use client";
 
 import { useActionState, useRef, useState, useTransition } from "react";
-import { PencilIcon, PlusIcon } from "lucide-react";
+import type { Route } from "next";
+import Link from "next/link";
+import { cn } from "cn";
+import { ArrowRightLeftIcon, PencilIcon, PlusIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { useHidratado } from "@/componentes/hidratado";
 import { avisarResultado, conAviso } from "@/componentes/panel/avisos";
 import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
-import { Button } from "@/componentes/ui/button";
+import { Button, buttonVariants } from "@/componentes/ui/button";
 import type { Tamano } from "@/modulos/configuracion/consultas";
 import { cambiarEstadoVehiculo, guardarVehiculo, type EstadoCliente } from "../acciones";
 import type { VehiculoCliente } from "../consultas";
@@ -18,7 +21,8 @@ import { DatosVehiculo } from "./datos-vehiculo";
 // HU-23: vehículos de un cliente, en su ficha. Pulido 8.3 (skill pantallas-panel): la lista en lectura, con la placa
 // grande; el lápiz abre "Editar {placa}" y "＋ Agregar" abre "Agregar vehículo", en un modal (ModalFormulario), con
 // placa y tamaño a la vista y lo demás plegado como en el alta. "Desactivar" va dentro de la edición: se usa poco y así
-// no se toca sin querer. Nada se borra (RN-14).
+// no se toca sin querer. Nada se borra (RN-14). Pedido 37: "Cambió de dueño", también en la edición; y al agregar una
+// placa que es de otro cliente, el enlace para pasarla a este.
 
 type Props = { clienteId: number; vehiculos: VehiculoCliente[]; tamanos: Tamano[] };
 
@@ -120,17 +124,31 @@ function FormularioVehiculo({ clienteId, vehiculo, tamanos }: { clienteId: numbe
     <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate aria-label={vehiculo ? `Editar ${vehiculo.placa}` : "Agregar vehículo"}>
       <input type="hidden" name="clienteId" value={clienteId} />
       {vehiculo && <input type="hidden" name="id" value={vehiculo.id} />}
-      <CamposVehiculo estado={estado} iniciales={iniciales} prefijo={prefijo} tamanos={opciones} plegar />
+      <CamposVehiculo
+        estado={estado}
+        iniciales={iniciales}
+        prefijo={prefijo}
+        tamanos={opciones}
+        plegar
+        // Al agregar una placa que es de otro cliente: el auto cambió de dueño y se pasa a este (pedido 37)
+        cambioDeDueno={vehiculo ? undefined : (e) => `/panel/clientes/${e.id}/vehiculos/${e.vehiculoId}/dueno?nuevo=${clienteId}` as Route}
+      />
       <PieModal>
         <Button type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : vehiculo ? "Guardar vehículo" : "Agregar vehículo"}
         </Button>
         <CancelarModal />
         {vehiculo && (
+          // Se vendió: pasa a otro cliente con su plan de mantenimiento (pedido 37)
+          <Link href={`/panel/clientes/${clienteId}/vehiculos/${vehiculo.id}/dueno`} onClick={alTerminar} className={cn(buttonVariants({ variant: "outline" }), "ml-auto")}>
+            <ArrowRightLeftIcon />
+            Cambió de dueño
+          </Link>
+        )}
+        {vehiculo && (
           <Button
             type="button"
             variant="outline"
-            className="ml-auto"
             disabled={desactivando}
             aria-label={`Desactivar ${vehiculo.placa}`}
             onClick={() =>

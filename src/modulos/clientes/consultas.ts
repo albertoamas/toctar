@@ -123,11 +123,54 @@ export async function clienteConTelefono(telefono: string, excepto?: number): Pr
  * De quién es esa placa entre los vehículos activos, para avisar el duplicado (RF-23). `excepto`: el vehículo que se
  * está editando o reactivando, que no choca consigo mismo.
  */
-export async function clienteConPlaca(placa: string, excepto?: number): Promise<{ id: number; nombre: string } | null> {
+export async function clienteConPlaca(placa: string, excepto?: number): Promise<{ id: number; nombre: string; vehiculoId: number } | null> {
   const [c] = await db
-    .select({ id: cliente.id, nombre: cliente.nombre })
+    .select({ id: cliente.id, nombre: cliente.nombre, vehiculoId: vehiculo.id })
     .from(vehiculo)
     .innerJoin(cliente, eq(vehiculo.clienteId, cliente.id))
     .where(and(eq(vehiculo.placa, placa), eq(vehiculo.activo, true), excepto ? ne(vehiculo.id, excepto) : undefined));
   return c ?? null;
+}
+
+export type DatosCambioDueno = {
+  placa: string;
+  marca: string | null;
+  modelo: string | null;
+  anio: number | null;
+  color: string | null;
+  tamano: string;
+  activo: boolean;
+  dueno: string;
+  /** Agendada, en el taller o lista: frena el cambio. */
+  reservaActiva: boolean;
+  /** Cotizaciones del dueño actual para este vehículo que siguen abiertas (pendientes o aceptadas sin fecha). */
+  cotizacionesAbiertas: number;
+  /** Mantenimientos pendientes o avisados: pasan al nuevo dueño. */
+  mantenimientosAbiertos: number;
+};
+
+/**
+ * Lo que muestra la pantalla de cambio de dueño (pedido 37): el vehículo de ese cliente y qué va a pasar. Null si el
+ * vehículo no existe o no es de ese cliente.
+ */
+export async function datosCambioDueno(vehiculoId: number, clienteId: number): Promise<DatosCambioDueno | null> {
+  const [v] = await db
+    .select({
+      placa: vehiculo.placa,
+      marca: vehiculo.marca,
+      modelo: vehiculo.modelo,
+      anio: vehiculo.anio,
+      color: vehiculo.color,
+      tamano: tamanoVehiculo.nombre,
+      activo: vehiculo.activo,
+      dueno: cliente.nombre,
+      reservaActiva: sql<boolean>`exists (select 1 from trabajo t where t.vehiculo_id = ${vehiculo.id} and t.estado in ('agendado', 'recibido', 'en_proceso', 'listo'))`,
+      cotizacionesAbiertas: sql<number>`(select count(*)::int from consulta q where q.vehiculo_id = ${vehiculo.id} and q.cliente_id = ${vehiculo.clienteId} and q.estado in ('cotizado', 'confirmado') and exists (select 1 from cotizacion c where c.consulta_id = q.id))`,
+      mantenimientosAbiertos: sql<number>`(select count(*)::int from recordatorio_mantenimiento r where r.vehiculo_id = ${vehiculo.id} and r.estado in ('pendiente', 'avisado'))`,
+    })
+    .from(vehiculo)
+    .innerJoin(cliente, eq(vehiculo.clienteId, cliente.id))
+    .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
+    .where(and(eq(vehiculo.id, vehiculoId), eq(vehiculo.clienteId, clienteId)));
+  return v ?? null;
 }

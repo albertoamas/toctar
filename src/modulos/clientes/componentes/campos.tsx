@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Campo } from "@/componentes/panel/campo";
 import { MasDatos } from "@/componentes/panel/mas-datos";
+import { useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { Selector } from "@/componentes/panel/selector";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
@@ -26,6 +27,11 @@ type PropsCampos = {
   plegar?: boolean;
   /** A dónde lleva el aviso de repetido. Por defecto, a la ficha del cliente. */
   enlaceExistente?: EnlaceExistente;
+  /**
+   * Con la placa de otro cliente, a dónde lleva "¿Cambió de dueño?" (pedido 37): la ficha de un cliente, donde el
+   * vehículo puede pasar a él. Sin esto, solo el enlace a la ficha del dueño.
+   */
+  cambioDeDueno?: (existente: { id: number; vehiculoId: number }) => Route;
 };
 
 type EnlaceExistente = (existente: { id: number; nombre: string }) => { href: Route; texto: string };
@@ -41,6 +47,19 @@ function Existente({ estado, campo, enlace = aLaFicha }: { estado: EstadoCliente
     // Va debajo del Campo, después de su error: primero se lee qué pasó y después la salida
     <Link href={href} className="-mt-4 inline-flex min-h-11 items-center self-start text-sm font-semibold underline">
       {texto}
+    </Link>
+  );
+}
+
+/** La placa es de otro cliente y se puede pasar a este (pedido 37): "¿Cambió de dueño? Pasarlo a este cliente". */
+function CambioDeDueno({ estado, campo, href }: { estado: EstadoCliente; campo: string; href?: (e: { id: number; vehiculoId: number }) => Route }) {
+  const existente = estado.existentes?.[campo];
+  // Dentro de un modal, se cierra al irse: al volver a la ficha, no queda abierto
+  const cerrar = useCerrarModal();
+  if (!href || !existente?.vehiculoId) return null;
+  return (
+    <Link href={href({ id: existente.id, vehiculoId: existente.vehiculoId })} onClick={cerrar} className="-mt-4 inline-flex min-h-11 items-center self-start text-sm font-semibold underline">
+      ¿Cambió de dueño? Pasarlo a este cliente
     </Link>
   );
 }
@@ -114,7 +133,7 @@ function MasDatosCliente({ estado, iniciales = {} }: PropsCampos) {
   );
 }
 
-export function CamposVehiculo({ estado, iniciales = {}, prefijo = "", compacto, plegar, enlaceExistente, tamanos }: PropsCampos & { tamanos: Tamano[] }) {
+export function CamposVehiculo({ estado, iniciales = {}, prefijo = "", compacto, plegar, enlaceExistente, cambioDeDueno, tamanos }: PropsCampos & { tamanos: Tamano[] }) {
   const v = estado.valores ?? iniciales;
   const e = estado.errores ?? {};
   const n = (campo: string) => prefijo + campo;
@@ -159,6 +178,7 @@ export function CamposVehiculo({ estado, iniciales = {}, prefijo = "", compacto,
           />
         </Campo>
         <Existente estado={estado} campo={n("placa")} enlace={enlaceExistente} />
+        <CambioDeDueno estado={estado} campo={n("placa")} href={cambioDeDueno} />
       </div>
       <Campo id={n("tamanoId")} etiqueta="Tamaño" error={e[n("tamanoId")]} ayuda={elegido?.descripcion ?? "Define el precio al cotizar."}>
         <Selector
