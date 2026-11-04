@@ -256,11 +256,16 @@ export async function cambiarEstadoCotizacion(_previo: EstadoFormulario, datos: 
   const resultado = await db.transaction(async (tx) => {
     // Una consulta de antes sin cotizar no es una cotización: no se mueve (quedaría pendiente sin versión, fuera de las listas)
     const [actual] = await tx
-      .select({ estado: consulta.estado, clienteId: consulta.clienteId })
+      .select({ estado: consulta.estado, clienteId: consulta.clienteId, vehiculoCliente: vehiculo.clienteId })
       .from(consulta)
+      .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
       .where(and(eq(consulta.id, d.id), tieneVersiones))
-      .for("update");
+      .for("update", { of: consulta });
     if (!actual) return { mensaje: "Esa cotización ya no existe. Recarga la página." };
+    // El vehículo pasó a otro cliente (pedido 37): su cotización no vuelve a abrirse ni se acepta; rechazarla, sí
+    if (d.accion !== "rechazar" && actual.vehiculoCliente !== actual.clienteId) {
+      return { mensaje: "El vehículo de esta cotización ya es de otro cliente: cotízale a él." };
+    }
     const reserva = await tieneReservaActiva(d.id, tx);
     // Volver a pendiente no es una versión nueva: desde una pendiente no se "vuelve"
     if (!transicionPermitida(actual.estado, destino, reserva) || actual.estado === destino) {

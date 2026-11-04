@@ -19,7 +19,9 @@ Los autos se venden. Cuando el comprador trae un auto que ya atendimos, el siste
     - las cotizaciones abiertas del dueño anterior para ese vehículo (pendientes o aceptadas sin fecha) pasan a rechazadas con el motivo "Otro: el vehículo cambió de dueño";
     - queda en la auditoría quién lo hizo, cuándo y de quién a quién.
 - **No cambia:** lo del dueño anterior (sus reservas, órdenes, pagos, cotizaciones cerradas y PDF) sigue a su nombre.
-- **Lo frena:** una reserva activa (agendada, en el taller o lista para entregar): primero se entrega o se cancela. También un vehículo o un cliente nuevo desactivado, o pasarlo al mismo dueño.
+- **Lo frena:** una reserva activa (agendada, en el taller o lista para entregar): primero se entrega o se cancela. También un vehículo o un cliente nuevo desactivado, o pasarlo al mismo dueño. Si tiene cotizaciones abiertas, lo hace quien tiene "Cotizaciones" (cerrarlas es rechazarlas, pedido 24).
+- **Abierta** es una cotización pendiente o aceptada **sin** trabajo (no cancelado). Una aceptada con su trabajo, aunque ya entregado, es historia y no se toca (`cotizacionAbierta`).
+- **Después del cambio**, una cotización del anterior para ese vehículo no vuelve a pendiente, no se acepta y no se reserva: el vehículo ya es de otro cliente. Una reserva y un cambio de dueño a la vez no se cruzan: reservar bloquea el vehículo y mira que siga siendo de ese cliente.
 - **No incluye:** registrar al nuevo dueño desde esta pantalla (se crea antes en Clientes, como siempre) ni pasar el historial de trabajos del anterior al nuevo.
 
 ## 3. Reglas que se cumplen

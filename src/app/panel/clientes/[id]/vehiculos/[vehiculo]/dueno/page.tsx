@@ -70,6 +70,8 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/client
     return (
       <>
         {encabezado}
+        {/* Un ?nuevo= que no sirve (el mismo dueño, uno desactivado o que no existe) dice por qué se vuelve a elegir */}
+        {nuevoId !== null && <p className="text-tinta-media">{nuevoId === clienteId ? "Ya es su dueño: elige a otro cliente." : "Ese cliente ya no está activo: elige a otro."}</p>}
         <p className="text-tinta-media">¿A quién pasa? Si es un cliente nuevo, regístralo primero en Clientes.</p>
         <ElegirCliente q={typeof parametros.q === "string" ? parametros.q : ""} hrefCliente={(otro) => `${base}?nuevo=${otro}` as Route} />
       </>

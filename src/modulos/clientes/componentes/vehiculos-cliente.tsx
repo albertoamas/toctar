@@ -131,7 +131,8 @@ function FormularioVehiculo({ clienteId, vehiculo, tamanos }: { clienteId: numbe
         tamanos={opciones}
         plegar
         // Al agregar una placa que es de otro cliente: el auto cambió de dueño y se pasa a este (pedido 37)
-        cambioDeDueno={vehiculo ? undefined : (e) => `/panel/clientes/${e.id}/vehiculos/${e.vehiculoId}/dueno?nuevo=${clienteId}` as Route}
+        // (si la placa ya es de este mismo cliente, no hay a quién pasarla)
+        cambioDeDueno={vehiculo ? undefined : (e) => (e.id === clienteId ? null : (`/panel/clientes/${e.id}/vehiculos/${e.vehiculoId}/dueno?nuevo=${clienteId}` as Route))}
       />
       <PieModal>
         <Button type="submit" disabled={enviando}>

@@ -1,7 +1,10 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, like, ne, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, inArray, like, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { cliente, tamanoVehiculo, vehiculo } from "@/db/esquema";
+import { cliente, consulta, recordatorioMantenimiento, tamanoVehiculo, trabajo, vehiculo } from "@/db/esquema";
+import { cotizacionAbierta } from "@/modulos/cotizaciones/consultas";
+import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
+import { ESTADOS_RESERVA_ACTIVA } from "@/modulos/ordenes/reglas";
 import { escaparLike, normalizarBusqueda } from "./reglas";
 
 // Lecturas de clientes (C1). Quien las llama ya pasó por exigirModulo("clientes"): el dueño o un encargado con el
@@ -164,9 +167,15 @@ export async function datosCambioDueno(vehiculoId: number, clienteId: number): P
       tamano: tamanoVehiculo.nombre,
       activo: vehiculo.activo,
       dueno: cliente.nombre,
-      reservaActiva: sql<boolean>`exists (select 1 from trabajo t where t.vehiculo_id = ${vehiculo.id} and t.estado in ('agendado', 'recibido', 'en_proceso', 'listo'))`,
-      cotizacionesAbiertas: sql<number>`(select count(*)::int from consulta q where q.vehiculo_id = ${vehiculo.id} and q.cliente_id = ${vehiculo.clienteId} and q.estado in ('cotizado', 'confirmado') and exists (select 1 from cotizacion c where c.consulta_id = q.id))`,
-      mantenimientosAbiertos: sql<number>`(select count(*)::int from recordatorio_mantenimiento r where r.vehiculo_id = ${vehiculo.id} and r.estado in ('pendiente', 'avisado'))`,
+      reservaActiva: sql<boolean>`${exists(db.select({ id: trabajo.id }).from(trabajo).where(and(eq(trabajo.vehiculoId, vehiculo.id), inArray(trabajo.estado, [...ESTADOS_RESERVA_ACTIVA]))))}`,
+      cotizacionesAbiertas: sql<number>`(${db
+        .select({ n: count() })
+        .from(consulta)
+        .where(and(eq(consulta.vehiculoId, vehiculo.id), eq(consulta.clienteId, vehiculo.clienteId), cotizacionAbierta))})`.mapWith(Number),
+      mantenimientosAbiertos: sql<number>`(${db
+        .select({ n: count() })
+        .from(recordatorioMantenimiento)
+        .where(and(eq(recordatorioMantenimiento.vehiculoId, vehiculo.id), inArray(recordatorioMantenimiento.estado, [...ESTADOS_RECORDATORIO_ABIERTO])))})`.mapWith(Number),
     })
     .from(vehiculo)
     .innerJoin(cliente, eq(vehiculo.clienteId, cliente.id))

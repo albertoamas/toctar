@@ -112,3 +112,35 @@ test("con una reserva activa no se pasa: primero se entrega o se cancela", async
   const [{ cliente }] = await consultar<{ cliente: number }>("select cliente_id as cliente from vehiculo where id = $1", [d.vehiculoId]);
   expect(cliente).toBe(d.anteriorId);
 });
+
+test("lo entregado al anterior no se toca, y su cotización cerrada no vuelve a abrirse", async ({ page }, info) => {
+  const d = await dosClientes(info, 4);
+  // Una cotización aceptada con su trabajo ya entregado (historia) y otra pendiente (abierta)
+  const entregada = await crearCotizacionEnBase({ placa: d.placa, numero: `2037-${sufijo(info)}4a`, estado: "confirmado" });
+  await consultar(
+    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, consulta_id, espacio_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, entregado_at, created_by)
+     select e.sucursal_id, q.cliente_id, q.vehiculo_id, q.id, e.id, current_date - 30, current_date - 30, 'entregado', now(), now(), now(), q.created_by
+     from consulta q, (select * from espacio_taller where activo order by orden limit 1) e where q.id = $1`,
+    [entregada],
+  );
+  const abierta = await crearCotizacionEnBase({ placa: d.placa, numero: `2037-${sufijo(info)}4b` });
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/clientes/${d.anteriorId}/vehiculos/${d.vehiculoId}/dueno?nuevo=${d.nuevoId}`);
+  await expect(page.getByText("1 cotización abierta")).toBeVisible();
+  await page.getByRole("button", { name: `Pasar a ${d.nuevo}` }).click();
+  await expect(page).toHaveURL((url) => url.pathname === `/panel/clientes/${d.nuevoId}` && url.searchParams.has("recibido"));
+  const filas = await consultar<{ id: number; estado: string; version: string }>(
+    "select q.id, q.estado, c.estado as version from consulta q join cotizacion c on c.consulta_id = q.id where q.id = any($1) order by q.id",
+    [[entregada, abierta]],
+  );
+  expect(filas).toEqual([
+    { id: entregada, estado: "confirmado", version: "aceptada" },
+    { id: abierta, estado: "perdido", version: "enviada" },
+  ]);
+  // La cerrada no vuelve a pendiente: el vehículo ya es de otro cliente
+  await page.goto(`/panel/cotizaciones/${abierta}`);
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Volver a pendiente" }).click();
+  await page.getByRole("button", { name: "Sí, volver a pendiente" }).click();
+  await expect(page.getByRole("dialog").getByText("El vehículo de esta cotización ya es de otro cliente: cotízale a él.")).toBeVisible();
+});

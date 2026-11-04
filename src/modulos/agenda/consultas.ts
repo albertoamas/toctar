@@ -105,6 +105,7 @@ export async function datosDeCotizacion(cotizacionId: number): Promise<DatosDeCo
       clienteId: cliente.id,
       cliente: cliente.nombre,
       clienteActivo: cliente.activo,
+      vehiculoCliente: vehiculo.clienteId,
       vehiculoActivo: vehiculo.activo,
       vehiculoId: vehiculo.id,
       placa: vehiculo.placa,
@@ -136,7 +137,8 @@ export async function datosDeCotizacion(cotizacionId: number): Promise<DatosDeCo
     numero: c.numero,
     version: c.version,
     consultaId: c.consultaId,
-    agendable: sePuedeReservar({ version: c.estado, encabezado: c.estadoConsulta, conReserva: c.conReserva }),
+    // El vehículo tiene que seguir siendo de ese cliente: si cambió de dueño (pedido 37), su cotización ya no se reserva
+    agendable: sePuedeReservar({ version: c.estado, encabezado: c.estadoConsulta, conReserva: c.conReserva }) && c.vehiculoCliente === c.clienteId,
     aceptada: c.estadoConsulta === "confirmado",
     activos: c.clienteActivo && c.vehiculoActivo,
     cliente: { id: c.clienteId, nombre: c.cliente },

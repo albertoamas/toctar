@@ -23,6 +23,9 @@ export const MAXIMO_FOTOS_ETAPA = 20;
  */
 export const ESTADOS_ORDEN_ABIERTA = ["recibido", "en_proceso", "listo"] as const satisfies readonly EstadoTrabajo[];
 /** Recibida, en proceso o lista: se trabaja, se le suben fotos y avances, y se puede extender. */
+/** Una reserva activa: agendada o en el taller (recibida, en proceso o lista). Frena un cambio de dueño (pedido 37). */
+export const ESTADOS_RESERVA_ACTIVA = ["agendado", ...ESTADOS_ORDEN_ABIERTA] as const satisfies readonly EstadoTrabajo[];
+
 export const estaAbierta = (estado: EstadoTrabajo) => (ESTADOS_ORDEN_ABIERTA as readonly EstadoTrabajo[]).includes(estado);
 
 /**

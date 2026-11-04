@@ -7,7 +7,10 @@ import { db } from "@/db";
 import { auditoria, cliente, consulta, cotizacion, recordatorioMantenimiento, trabajo, vehiculo } from "@/db/esquema";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { exigirModulo } from "@/lib/sesion";
+import { puedeVerModulo } from "@/lib/permisos";
+import { cotizacionAbierta } from "@/modulos/cotizaciones/consultas";
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
+import { ESTADOS_RESERVA_ACTIVA } from "@/modulos/ordenes/reglas";
 import { clienteConPlaca, clienteConTelefono } from "./consultas";
 import {
   camposConPrefijo,
@@ -205,11 +208,15 @@ export async function cambiarDuenoVehiculo(_previo: EstadoFormulario, datos: For
     clienteActualId: datos.get("clienteActualId"),
     clienteNuevoId: datos.get("clienteNuevoId"),
   });
-  if (!entrada.success) return { mensaje: entrada.error.issues[0]?.path[0] === "clienteNuevoId" ? entrada.error.issues[0].message : "No se pudo leer el pedido. Recarga la página." };
+  if (!entrada.success) {
+    // El mensaje propio solo para el mismo dueño (el refine); cualquier otro error es un pedido ilegible
+    const mismo = entrada.error.issues.find((i) => i.code === "custom");
+    return { mensaje: mismo?.message ?? "No se pudo leer el pedido. Recarga la página." };
+  }
   const { vehiculoId, clienteActualId, clienteNuevoId } = entrada.data;
   const autorId = Number(autor.id);
 
-  let resultado: { placa: string; nuevo: string } | { mensaje: string };
+  let resultado: { placa: string; nuevo: string; cerradas: number[] } | { mensaje: string };
   try {
     resultado = await db.transaction(async (tx) => {
       await tx.select({ id: consulta.id }).from(consulta).where(eq(consulta.vehiculoId, vehiculoId)).for("update");
@@ -225,9 +232,17 @@ export async function cambiarDuenoVehiculo(_previo: EstadoFormulario, datos: For
       const [activa] = await tx
         .select({ id: trabajo.id })
         .from(trabajo)
-        .where(and(eq(trabajo.vehiculoId, vehiculoId), inArray(trabajo.estado, ["agendado", "recibido", "en_proceso", "listo"])))
+        .where(and(eq(trabajo.vehiculoId, vehiculoId), inArray(trabajo.estado, [...ESTADOS_RESERVA_ACTIVA])))
         .limit(1);
       if (activa) throw new ConReservaActiva();
+      // Cerrar sus cotizaciones abiertas es rechazarlas: lo hace quien tiene "Cotizaciones" (pedido 24)
+      const abiertas = await tx
+        .select({ id: consulta.id })
+        .from(consulta)
+        .where(and(eq(consulta.vehiculoId, vehiculoId), eq(consulta.clienteId, clienteActualId), cotizacionAbierta));
+      if (abiertas.length > 0 && !puedeVerModulo(autor, "cotizaciones")) {
+        return { mensaje: "Tiene cotizaciones abiertas que se cierran al pasarlo: lo hace el dueño o quien tiene «Cotizaciones»." };
+      }
 
       await tx.update(vehiculo).set({ clienteId: clienteNuevoId, updatedAt: new Date() }).where(eq(vehiculo.id, vehiculoId));
       // Los avisos de mantenimiento, al nuevo dueño. El plan sigue con el vehículo (P21)
@@ -235,13 +250,16 @@ export async function cambiarDuenoVehiculo(_previo: EstadoFormulario, datos: For
         .update(recordatorioMantenimiento)
         .set({ clienteId: clienteNuevoId })
         .where(and(eq(recordatorioMantenimiento.vehiculoId, vehiculoId), inArray(recordatorioMantenimiento.estado, [...ESTADOS_RECORDATORIO_ABIERTO])));
-      // Las cotizaciones abiertas del anterior (pendientes o aceptadas sin fecha: sin reserva activa, ya se miró) se
-      // cierran; su versión aceptada vuelve a vigente, como al rechazar
-      const cerradas = await tx
-        .update(consulta)
-        .set({ estado: "perdido", motivoPerdida: "otro", detallePerdida: MOTIVO_CAMBIO_DE_DUENO, ultimoMovimientoAt: sql`now()` })
-        .where(and(eq(consulta.vehiculoId, vehiculoId), eq(consulta.clienteId, clienteActualId), inArray(consulta.estado, ["cotizado", "confirmado"])))
-        .returning({ id: consulta.id });
+      // Las cotizaciones abiertas del anterior (pendientes o aceptadas sin reserva) se cierran; su versión aceptada vuelve
+      // a vigente, como al rechazar. Una aceptada con su trabajo (aunque ya entregado) es historia: no se toca
+      const cerradas =
+        abiertas.length === 0
+          ? []
+          : await tx
+              .update(consulta)
+              .set({ estado: "perdido", motivoPerdida: "otro", detallePerdida: MOTIVO_CAMBIO_DE_DUENO, ultimoMovimientoAt: sql`now()` })
+              .where(inArray(consulta.id, abiertas.map((c) => c.id)))
+              .returning({ id: consulta.id });
       if (cerradas.length > 0) {
         await tx
           .update(cotizacion)
@@ -256,7 +274,7 @@ export async function cambiarDuenoVehiculo(_previo: EstadoFormulario, datos: For
         datos: { placa: v.placa, deClienteId: clienteActualId, aClienteId: clienteNuevoId, cotizacionesCerradas: cerradas.map((c) => c.id) },
       });
       await tx.update(cliente).set({ updatedAt: sql`now()` }).where(eq(cliente.id, clienteNuevoId));
-      return { placa: v.placa, nuevo: nuevo.nombre };
+      return { placa: v.placa, nuevo: nuevo.nombre, cerradas: cerradas.map((c) => c.id) };
     });
   } catch (error) {
     if (error instanceof ConReservaActiva) return { mensaje: "Tiene una reserva o está en el taller: entrégalo o cancela la reserva antes de pasarlo." };
@@ -267,6 +285,8 @@ export async function cambiarDuenoVehiculo(_previo: EstadoFormulario, datos: For
   despuesDeCambiar(clienteActualId);
   despuesDeCambiar(clienteNuevoId);
   revalidatePath("/panel/cotizaciones");
+  for (const id of resultado.cerradas) revalidatePath(`/panel/cotizaciones/${id}`);
   revalidatePath("/panel/mantenimientos");
+  revalidatePath("/panel");
   redirect(`/panel/clientes/${clienteNuevoId}?recibido=${encodeURIComponent(resultado.placa)}`);
 }

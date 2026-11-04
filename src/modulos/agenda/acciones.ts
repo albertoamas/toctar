@@ -158,6 +158,14 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
         // Lanzar (y no devolver) deshace la transacción: si no, la cotización quedaría aceptada sin reserva
         if (!aceptada) throw new Conflicto(COTIZACION_CAMBIO);
       }
+      // El vehículo, bloqueado (después de la consulta, el orden del cambio de dueño) y todavía de ese cliente: una
+      // reserva y un cambio de dueño a la vez no dejan una reserva del anterior con un auto del nuevo (pedido 37)
+      const [suyo] = await tx
+        .select({ id: vehiculo.id })
+        .from(vehiculo)
+        .where(and(eq(vehiculo.id, vehiculoId), eq(vehiculo.clienteId, clienteId), eq(vehiculo.activo, true)))
+        .for("update");
+      if (!suyo) throw new Conflicto("Ese vehículo cambió de dueño o se desactivó recién. Vuelve a elegirlo.");
       const [nuevo] = await tx
         .insert(trabajo)
         .values({
