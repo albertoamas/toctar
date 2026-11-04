@@ -65,7 +65,7 @@ test("desde la cotización: la versión y la cotización quedan aceptadas, las l
   const dia = await diaPropio(info, 1);
   await ingresarComoDueno(page);
   await page.goto(`/panel/cotizaciones/${consultaId}`);
-  await expect(page.getByRole("link", { name: "Agendar" })).toHaveAttribute("href", `/panel/agenda/nueva?cotizacion=${cotizacionId}`);
+  await expect(page.getByRole("link", { name: "Aceptó: reservar" })).toHaveAttribute("href", `/panel/agenda/nueva?cotizacion=${cotizacionId}`);
   await page.goto(`/panel/agenda/nueva?cotizacion=${cotizacionId}&fecha=${dia}`);
 
   // La entrega sugerida usa la duración del servicio (2 días: sale al día siguiente)
@@ -96,7 +96,7 @@ test("desde la cotización: la versión y la cotización quedan aceptadas, las l
   const adelanto = Number(await page.getByLabel("Monto").inputValue());
   await page.getByRole("button", { name: "Agendar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1$/);
-  await expect(page.getByText(/^Reserva agendada para el/)).toBeVisible();
+  await expect(page.getByText(/^Reservada para el/)).toBeVisible();
   const saldo = page.locator("dl").filter({ hasText: "Saldo" });
   await expect(saldo).toContainText("800 Bs");
   await expect(saldo).toContainText(`${800 - adelanto} Bs`);
@@ -121,9 +121,9 @@ test("desde la cotización: la versión y la cotización quedan aceptadas, las l
   // En la cotización: la reserva, y ya no se agenda otra vez
   await page.goto(`/panel/cotizaciones/${consultaId}`);
   await expect(page.getByRole("link", { name: /^Reserva del/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Agendar" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /reservar/i })).toHaveCount(0);
   await page.goto(`/panel/agenda/nueva?cotizacion=${cotizacionId}`);
-  await expect(page.getByText("Esa cotización ya fue agendada o tiene una versión nueva.")).toBeVisible();
+  await expect(page.getByText("Esa cotización ya tiene una reserva o una versión nueva.")).toBeVisible();
 });
 
 test("la base rechaza un cruce en el mismo espacio aunque el código fallara; una cancelada no ocupa", async ({}, info) => {
@@ -179,7 +179,7 @@ test("solo se ofrecen los espacios libres; si dos personas agendan el mismo a la
   // dirección con waitForURL a veces no terminaba aunque la reserva ya se mostraba (CI, 25/10)
   const resultado = async (p: Page) =>
     Promise.race([
-      p.getByText(/^Reserva agendada para el /).waitFor().then(() => "agendada"),
+      p.getByText(/^Reservada para el /).waitFor().then(() => "agendada"),
       p.getByText("Ese espacio se ocupó recién: elige otro.").waitFor().then(() => "ocupado"),
     ]);
   expect((await Promise.all([resultado(page), resultado(otra.page)])).sort()).toEqual(["agendada", "ocupado"]);
@@ -234,7 +234,7 @@ test("el encargado con Agenda sin Pagos agenda sin montos ni adelanto; sin Agend
   await ingresar(page, `enc-hu30-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto(`/panel/cotizaciones/${consultaId}`);
-  await page.getByRole("link", { name: "Agendar" }).click();
+  await page.getByRole("link", { name: "Aceptó: reservar" }).click();
   await expect(page.getByText(/Total:/)).toHaveCount(0);
   await expect(page.getByRole("checkbox", { name: "Sin adelanto" })).toHaveCount(0);
   await page.getByLabel("Ingresa el").fill(dia);
@@ -246,9 +246,13 @@ test("el encargado con Agenda sin Pagos agenda sin montos ni adelanto; sin Agend
   await expect(page.getByText("Saldo")).toHaveCount(0);
   const [{ pagos }] = await consultar<{ pagos: number }>("select count(*)::int as pagos from pago p join trabajo t on t.id = p.trabajo_id where t.cotizacion_id = $1", [cotizacionId]);
   expect(pagos).toBe(0);
-  // La reserva directa lleva precios: no la arma
-  await page.goto("/panel/agenda/nueva");
-  await expect(page.getByText(/La reserva directa lleva precios/)).toBeVisible();
+  // La reserva sin cotización lleva precios: no la arma (pedido 31: elige al cliente y reserva una de sus cotizaciones)
+  const [{ cliente: clienteId, vehiculo: vehiculoId }] = await consultar<{ cliente: number; vehiculo: number }>(
+    "select cliente_id as cliente, vehiculo_id as vehiculo from consulta where id = $1",
+    [consultaId],
+  );
+  await page.goto(`/panel/agenda/nueva?cliente=${clienteId}&vehiculo=${vehiculoId}`);
+  await expect(page.getByText(/La reserva sin cotización lleva precios/)).toBeVisible();
 
   await page.context().clearCookies();
   await crearUsuario({ usuario: `ordenes-hu30-${s}`, nombre: "Solo órdenes", contrasena: "encargado-123", rol: "encargado", permisos: ["ordenes"] });

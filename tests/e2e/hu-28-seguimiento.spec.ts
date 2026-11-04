@@ -115,7 +115,7 @@ test("rechazar desde «Más», con motivo, y volver a pendiente; «Otro» pide e
   // El motivo, en una línea bajo el título; ya no se agenda ni se hace otra versión
   await expect(page.getByText("Rechazada: Otro. Lo hizo en otro taller.")).toBeVisible();
   await expect(page.getByRole("main").getByText("Rechazada", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Agendar" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /reservar/i })).toHaveCount(0);
 
   await page.getByRole("button", { name: "Más" }).click();
   await expect(page.getByRole("menuitem", { name: "Nueva versión" })).toHaveCount(0);
