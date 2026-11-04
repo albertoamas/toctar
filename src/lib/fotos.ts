@@ -43,9 +43,13 @@ export async function guardarFoto(entrada: FormDataEntryValue | null, opciones: 
 
   const visibilidad: Visibilidad = opciones.privado ? "privado" : "publico";
   const base = `${opciones.carpeta}/${opciones.prefijo ?? ""}${randomUUID()}`;
-  const clave = await subirArchivo(`${base}.webp`, imagen.data, "image/webp", visibilidad);
-  const miniaturaClave = chica ? await subirArchivo(`${base}-${LADO_MINIATURA}.webp`, chica.data, "image/webp", visibilidad) : null;
+  // Se anota cada subida: si falla la segunda (la miniatura) o el registro, se borra lo que ya se subió (auditoría QA-04)
+  const subidas: string[] = [];
   try {
+    const clave = await subirArchivo(`${base}.webp`, imagen.data, "image/webp", visibilidad);
+    subidas.push(clave);
+    const miniaturaClave = chica ? await subirArchivo(`${base}-${LADO_MINIATURA}.webp`, chica.data, "image/webp", visibilidad) : null;
+    if (miniaturaClave) subidas.push(miniaturaClave);
     const [fila] = await db
       .insert(archivo)
       .values({
@@ -62,7 +66,7 @@ export async function guardarFoto(entrada: FormDataEntryValue | null, opciones: 
     return { ok: true, archivoId: fila.id, clave };
   } catch (error) {
     // Sin la fila en `archivo` nadie encontraría estos archivos para borrarlos: se borran ahora.
-    await Promise.allSettled([clave, miniaturaClave].filter((c): c is string => !!c).map((c) => borrarArchivo(c, visibilidad)));
+    await Promise.allSettled(subidas.map((c) => borrarArchivo(c, visibilidad)));
     throw error;
   }
 }
@@ -101,6 +105,15 @@ export async function eliminarFoto(archivoId: number): Promise<void> {
   if (!fila) return;
   const visibilidad: Visibilidad = fila.privado ? "privado" : "publico";
   await Promise.all([fila.clave, fila.miniaturaClave].filter((c): c is string => !!c).map((c) => borrarArchivo(c, visibilidad)));
+}
+
+/**
+ * Borra fotos que ya no usa nadie sin cortar lo que sigue: lo guardado en la base ya vale y el sitio ya se renovó. Si el
+ * almacenamiento falla, queda en el registro del servidor (el archivo sobra en el bucket, pero ya no se muestra).
+ */
+export async function eliminarFotosSinFallar(ids: readonly (number | null | undefined)[], motivo: string): Promise<void> {
+  const resultados = await Promise.allSettled(ids.filter((id): id is number => typeof id === "number").map((id) => eliminarFoto(id)));
+  for (const r of resultados) if (r.status === "rejected") console.error(motivo, r.reason);
 }
 
 export type UrlsFoto = { url: string; miniatura: string; ancho: number | null; alto: number | null };
