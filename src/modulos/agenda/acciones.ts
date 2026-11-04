@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
@@ -11,6 +11,7 @@ import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { sucursalPrincipal } from "@/modulos/configuracion/consultas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
+import { tieneReservaActiva } from "@/modulos/cotizaciones/consultas";
 import { descripcionLinea, montoNoMayor } from "@/modulos/cotizaciones/reglas";
 import { borrarFotosSueltas, soltarFotosIngreso } from "@/modulos/ordenes/fotos";
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
@@ -145,12 +146,9 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
         // Pedido 31: también la aceptada sin fecha. Con la consulta bloqueada se mira que no tenga ya una reserva: dos
         // personas que reservan la misma cotización a la vez no crean dos
         const [encabezado] = await tx.select({ estado: consulta.estado }).from(consulta).where(eq(consulta.id, consultaId)).for("update");
-        const [activa] = await tx
-          .select({ id: trabajo.id })
-          .from(trabajo)
-          .where(and(eq(trabajo.consultaId, consultaId), ne(trabajo.estado, "cancelado")))
-          .limit(1);
-        if (!encabezado || (encabezado.estado !== "cotizado" && encabezado.estado !== "confirmado") || activa) throw new Conflicto(COTIZACION_CAMBIO);
+        if (!encabezado || (encabezado.estado !== "cotizado" && encabezado.estado !== "confirmado") || (await tieneReservaActiva(consultaId, tx))) {
+          throw new Conflicto(COTIZACION_CAMBIO);
+        }
         await tx.update(consulta).set({ estado: "confirmado", ultimoMovimientoAt: sql`now()` }).where(eq(consulta.id, consultaId));
         const [aceptada] = await tx
           .update(cotizacion)

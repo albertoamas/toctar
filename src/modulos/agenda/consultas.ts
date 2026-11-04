@@ -74,6 +74,8 @@ export type DatosDeCotizacion = {
   consultaId: number;
   /** Pendiente, o aceptada sin fecha (pedido 31): se puede reservar (`sePuedeReservar`). */
   agendable: boolean;
+  /** Ya aceptada (sin fecha, si es agendable): los pasos del trabajo la muestran en "Aceptada" y no en "Cotizada". */
+  aceptada: boolean;
   /** El cliente y el vehículo siguen activos. */
   activos: boolean;
   cliente: { id: number; nombre: string };
@@ -135,6 +137,7 @@ export async function datosDeCotizacion(cotizacionId: number): Promise<DatosDeCo
     version: c.version,
     consultaId: c.consultaId,
     agendable: sePuedeReservar({ version: c.estado, encabezado: c.estadoConsulta, conReserva: c.conReserva }),
+    aceptada: c.estadoConsulta === "confirmado",
     activos: c.clienteActivo && c.vehiculoActivo,
     cliente: { id: c.clienteId, nombre: c.cliente },
     vehiculo: { id: c.vehiculoId, placa: c.placa, tamano: c.tamano, detalle: detalleVehiculo(c) },
@@ -177,7 +180,8 @@ export type CotizacionParaReservar = {
 /**
  * Las cotizaciones de un cliente y su vehículo que se pueden reservar (`sePuedeReservar`): la pendiente o la aceptada
  * sin fecha. Así Nueva reserva no vuelve a pedir los servicios y los precios que ya se cotizaron (RN-02). La más nueva
- * primero. El total lo muestra solo quien ve montos (RN-12): lo decide la pantalla.
+ * primero. El total lo muestra solo quien ve montos (RN-12): lo decide la pantalla. La condición es la de
+ * `sePuedeReservar`, escrita en SQL para filtrar en la base: si una cambia, cambia la otra.
  */
 export async function cotizacionesParaReservar(clienteId: number, vehiculoId: number): Promise<CotizacionParaReservar[]> {
   const filas = await db

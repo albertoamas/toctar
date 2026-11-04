@@ -1,11 +1,11 @@
 "use server";
 
-import { and, eq, max, ne, sql } from "drizzle-orm";
+import { and, eq, max, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { cliente, consulta, cotizacion, trabajo, vehiculo } from "@/db/esquema";
+import { cliente, consulta, cotizacion, vehiculo } from "@/db/esquema";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { exigirAccion, exigirModulo } from "@/lib/sesion";
 import { clienteConTelefono } from "@/modulos/clientes/consultas";
@@ -21,7 +21,7 @@ import {
 } from "@/modulos/clientes/servidor";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { entradaPrecios, esquemaCambioEstado, esquemaClienteElegido, esquemaNuevaVersion, esquemaPreciosNuevos, esquemaVehiculoElegido } from "./esquemas";
-import { tieneVersiones } from "./consultas";
+import { tieneReservaActiva, tieneVersiones } from "./consultas";
 import { generarPdf } from "./pdf/generar";
 import { CLIENTE_NUEVO, NOMBRE_ESTADO, transicionPermitida, VEHICULO_OTRO } from "./reglas";
 import { escribirVersion, numeroNuevo, prepararLineas } from "./servidor";
@@ -261,13 +261,9 @@ export async function cambiarEstadoCotizacion(_previo: EstadoFormulario, datos: 
       .where(and(eq(consulta.id, d.id), tieneVersiones))
       .for("update");
     if (!actual) return { mensaje: "Esa cotización ya no existe. Recarga la página." };
-    const [reserva] = await tx
-      .select({ id: trabajo.id })
-      .from(trabajo)
-      .where(and(eq(trabajo.consultaId, d.id), ne(trabajo.estado, "cancelado")))
-      .limit(1);
+    const reserva = await tieneReservaActiva(d.id, tx);
     // Volver a pendiente no es una versión nueva: desde una pendiente no se "vuelve"
-    if (!transicionPermitida(actual.estado, destino, !!reserva) || actual.estado === destino) {
+    if (!transicionPermitida(actual.estado, destino, reserva) || actual.estado === destino) {
       return {
         mensaje: reserva
           ? "Esta cotización ya tiene una reserva: se cambia desde la reserva. Recarga la página."

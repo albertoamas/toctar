@@ -296,6 +296,17 @@ export const conReservaActiva = sql<boolean>`${exists(
   db.select({ id: trabajo.id }).from(trabajo).where(and(eq(trabajo.consultaId, consulta.id), ne(trabajo.estado, "cancelado"))),
 )}`;
 
+/** Si la cotización tiene una reserva activa; con `base`, dentro de la transacción que bloqueó su consulta. */
+export async function tieneReservaActiva(consultaId: number, base: Pick<typeof db, "select"> = db): Promise<boolean> {
+  const [fila] = await base.select({ activa: conReservaActiva }).from(consulta).where(eq(consulta.id, consultaId));
+  return !!fila?.activa;
+}
+
+/** Las aceptadas sin reserva (pedido 31), las que esperan fecha hace más tiempo primero: para Inicio. */
+export async function aceptadasSinFecha(): Promise<FilaCotizacion[]> {
+  return (await filas(sinFecha).orderBy(asc(consulta.ultimoMovimientoAt), asc(consulta.id))).map(aFila);
+}
+
 /** Aceptada sin reserva activa: "Aceptó, sin fecha" (pedido 31, P31-flujo-de-un-trabajo.md §4). */
 const sinFecha = sql<boolean>`(${consulta.estado} = 'confirmado' and not ${conReservaActiva})`;
 
@@ -357,7 +368,8 @@ export async function listarCotizaciones(vista: Vista, q: string): Promise<{ cot
   if (vista === "pendientes") return { cotizaciones: (await filas(donde).orderBy(asc(consulta.ultimoMovimientoAt), asc(consulta.id))).map(aFila), hayMas: false };
   const encontradas = (
     await filas(donde)
-      .orderBy(desc(consulta.ultimoMovimientoAt), desc(consulta.id))
+      // En Aceptadas, primero las que esperan fecha (pedido 31): no quedan detrás de la historia
+      .orderBy(...(vista === "aceptadas" ? [desc(sinFecha)] : []), desc(consulta.ultimoMovimientoAt), desc(consulta.id))
       .limit(LIMITE_HISTORIA + 1)
   ).map(aFila);
   return { cotizaciones: encontradas.slice(0, LIMITE_HISTORIA), hayMas: encontradas.length > LIMITE_HISTORIA };

@@ -17,7 +17,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { primerNombre } from "@/modulos/clientes/reglas";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
-import { listarCotizaciones } from "@/modulos/cotizaciones/consultas";
+import { aceptadasSinFecha, listarCotizaciones } from "@/modulos/cotizaciones/consultas";
 import { bs, diasDesde, sinRespuesta, textoDias } from "@/modulos/cotizaciones/reglas";
 import { ParaAtender, type Pendiente } from "@/modulos/inicio/componentes/para-atender";
 import { ingresosDeHoy } from "@/modulos/inicio/consultas";
@@ -57,7 +57,7 @@ async function Contenido() {
     ve("ordenes") ? ordenesAbiertas() : null,
     ve("pagos") ? saldosPendientes() : null,
     ve("cotizaciones") ? listarCotizaciones("pendientes", "").then((r) => r.cotizaciones) : null,
-    ve("cotizaciones") ? listarCotizaciones("aceptadas", "").then((r) => r.cotizaciones.filter((c) => c.sinFecha)) : null,
+    ve("cotizaciones") ? aceptadasSinFecha() : null,
     ve("mantenimientos") ? contarSinAvisar(hoy) : null,
     ve("reclamos") ? reclamosPorAtender(POR_TIPO) : null,
     // Los días sin respuesta de una cotización: solo hacen falta con Cotizaciones
@@ -114,7 +114,8 @@ async function Contenido() {
       icono: CalendarClockIcon,
       titulo: `Cotización aceptada de ${c.cliente}`,
       detalle: `${bs(c.total)}, sin fecha`,
-      accion: "Reservar",
+      // Reservar lo hace quien ve la Agenda; si no, la abre para verla
+      accion: ve("agenda") ? "Reservar" : "Ver",
     })),
     ...masDe(aceptadas?.length ?? 0, "/panel/cotizaciones?vista=aceptadas", CalendarClockIcon, "aceptadas sin fecha"),
     ...(saldos ?? []).slice(0, POR_TIPO).map((s) => ({
@@ -262,9 +263,11 @@ function ParaHoy({ filas, verOrdenes }: { filas: FilaDelDia[]; verOrdenes: boole
                 ))}
               </span>,
               f.cuando,
-              <span key="s" className="font-semibold">
-                {f.siguiente}
-              </span>,
+              f.siguiente && (
+                <span key="s" className="font-semibold">
+                  {f.siguiente}
+                </span>
+              ),
             ],
           }))}
         />

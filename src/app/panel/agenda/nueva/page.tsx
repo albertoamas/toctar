@@ -125,7 +125,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
     return (
       <>
         <Encabezado volver={volver} />
-        <PasosTrabajo paso={1} />
+        <PasosTrabajo paso={c.aceptada ? 1 : 0} />
         <ClienteYVehiculo nombre={c.cliente.nombre} vehiculo={c.vehiculo} />
         {/* Los servicios de la cotización, en lectura: para cambiar precios se hace una versión nueva */}
         <section aria-labelledby="cotizacion-titulo" className="flex flex-col gap-3">
@@ -163,6 +163,10 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   // Directa: lleva precios, así que la arma el dueño o quien registra pagos. Sin Pagos, se elige al cliente y su vehículo
   // para reservar una de sus cotizaciones
   const clienteId = numero("cliente");
+  // El día y el espacio que llegaron del tablero: se conservan al elegir el cliente y al usar una de sus cotizaciones
+  const delTablero = new URLSearchParams();
+  if (texto("fecha")) delTablero.set("fecha", texto("fecha"));
+  if (texto("espacio")) delTablero.set("espacio", texto("espacio"));
   const conservar = (id: number) => {
     const p = new URLSearchParams({ cliente: String(id) });
     if (texto("fecha")) p.set("fecha", texto("fecha"));
@@ -184,7 +188,11 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
     return (
       <>
         <Encabezado />
-        <EstadoVacio>Los mantenimientos los agenda el dueño o quien tiene «Mantenimientos» y «Pagos».</EstadoVacio>
+        <EstadoVacio>
+          {!puedeVerModulo(usuario, "mantenimientos")
+            ? "Los mantenimientos los agenda el dueño o quien tiene «Mantenimientos»."
+            : "La reserva del mantenimiento lleva precios: la arma el dueño o quien registra pagos."}
+        </EstadoVacio>
       </>
     );
   }
@@ -262,7 +270,9 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
         </section>
       ) : (
         <>
-          {cotizaciones.length > 0 && <CotizacionesDelCliente cotizaciones={cotizaciones} conMontos={conPagos} />}
+          {cotizaciones.length > 0 && (
+            <CotizacionesDelCliente cotizaciones={cotizaciones} conMontos={conPagos || puedeVerModulo(usuario, "cotizaciones")} delTablero={delTablero} />
+          )}
           {conPagos ? (
             <>
               {cotizaciones.length > 0 && <h2 className="tt-titulo-seccion">O una reserva sin cotización</h2>}
@@ -296,9 +306,10 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
 
 /**
  * Las cotizaciones del vehículo que se pueden reservar (pedido 31): cada una lleva a la reserva desde ella, con sus
- * servicios y precios ya puestos. El total, solo a quien ve montos (RN-12).
+ * servicios y precios ya puestos, y con el día y el espacio del tablero. El total, solo a quien ve montos (RN-12: Pagos
+ * o Cotizaciones).
  */
-function CotizacionesDelCliente({ cotizaciones, conMontos }: { cotizaciones: CotizacionParaReservar[]; conMontos: boolean }) {
+function CotizacionesDelCliente({ cotizaciones, conMontos, delTablero }: { cotizaciones: CotizacionParaReservar[]; conMontos: boolean; delTablero: URLSearchParams }) {
   return (
     <section aria-labelledby="sus-cotizaciones-titulo" className="flex flex-col gap-3">
       <CabeceraSeccion id="sus-cotizaciones" titulo="Sus cotizaciones" />
@@ -306,7 +317,7 @@ function CotizacionesDelCliente({ cotizaciones, conMontos }: { cotizaciones: Cot
       <ListaFilas
         etiqueta="Sus cotizaciones"
         filas={cotizaciones.map((c) => ({
-          href: `/panel/agenda/nueva?cotizacion=${c.cotizacionId}`,
+          href: `/panel/agenda/nueva?${new URLSearchParams({ cotizacion: String(c.cotizacionId), ...Object.fromEntries(delTablero) }).toString()}` as Route,
           titulo: `Cotización ${c.numero}${c.version > 1 ? `, versión ${c.version}` : ""}`,
           detalles: [c.servicios, ...(conMontos ? [bs(c.total)] : [])].filter(Boolean),
           estado: c.aceptada ? "Aceptada, sin fecha" : "Pendiente",
