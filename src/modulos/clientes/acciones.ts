@@ -245,10 +245,11 @@ export async function cambiarDuenoVehiculo(_previo: EstadoFormulario, datos: For
       }
 
       await tx.update(vehiculo).set({ clienteId: clienteNuevoId, updatedAt: new Date() }).where(eq(vehiculo.id, vehiculoId));
-      // Los avisos de mantenimiento, al nuevo dueño. El plan sigue con el vehículo (P21)
+      // Los avisos de mantenimiento, al nuevo dueño: uno ya avisado al anterior vuelve a estar por avisar, porque el
+      // comprador todavía no lo sabe. El plan sigue con el vehículo (P21)
       await tx
         .update(recordatorioMantenimiento)
-        .set({ clienteId: clienteNuevoId })
+        .set({ clienteId: clienteNuevoId, estado: "pendiente", avisadoAt: null, avisadoPor: null, updatedAt: sql`now()` })
         .where(and(eq(recordatorioMantenimiento.vehiculoId, vehiculoId), inArray(recordatorioMantenimiento.estado, [...ESTADOS_RECORDATORIO_ABIERTO])));
       // Las cotizaciones abiertas del anterior (pendientes o aceptadas sin reserva) se cierran; su versión aceptada vuelve
       // a vigente, como al rechazar. Una aceptada con su trabajo (aunque ya entregado) es historia: no se toca

@@ -40,6 +40,8 @@ async function mantenimientoAbierto(placa: string): Promise<number> {
 test("desde la edición del vehículo: pasa al comprador con su mantenimiento y se cierra la cotización abierta del anterior", async ({ page }, info) => {
   const d = await dosClientes(info, 1);
   const recordatorioId = await mantenimientoAbierto(d.placa);
+  // Ya se le avisó al anterior: al comprador todavía no
+  await consultar("update recordatorio_mantenimiento set estado = 'avisado', avisado_at = now(), avisado_por = (select id from usuario where nombre_usuario = 'dueno') where id = $1", [recordatorioId]);
   const consultaId = await crearCotizacionEnBase({ placa: d.placa, numero: `2037-${sufijo(info)}1` });
   await ingresarComoDueno(page);
   await page.goto(`/panel/clientes/${d.anteriorId}`, { waitUntil: "networkidle" });
@@ -77,6 +79,8 @@ test("desde la edición del vehículo: pasa al comprador con su mantenimiento y 
     [d.vehiculoId, recordatorioId, consultaId],
   );
   expect(r).toEqual({ vehiculo: d.nuevoId, recordatorio: d.nuevoId, consulta: "perdido", detalle: "El vehículo cambió de dueño.", cotizacion: "enviada", auditoria: 1 });
+  const [aviso] = await consultar<{ estado: string; avisado_at: Date | null; avisado_por: number | null }>("select estado, avisado_at, avisado_por from recordatorio_mantenimiento where id = $1", [recordatorioId]);
+  expect(aviso).toEqual({ estado: "pendiente", avisado_at: null, avisado_por: null });
   // Lo del anterior queda a su nombre: su trabajo entregado y su cotización
   const [{ trabajos, consultas }] = await consultar<{ trabajos: number; consultas: number }>(
     "select (select count(*)::int from trabajo where cliente_id = $1) as trabajos, (select count(*)::int from consulta where cliente_id = $1) as consultas",
@@ -99,6 +103,8 @@ test("desde la placa repetida al agregar un vehículo en la ficha del comprador"
   await dialogo.getByRole("button", { name: "Agregar vehículo" }).click();
   await expect(dialogo.getByText(`La placa ${d.placa} ya está registrada a nombre de ${d.anterior}.`)).toBeVisible();
   await dialogo.getByRole("link", { name: "Cambiar de dueño a este cliente" }).click();
+  // Desde su placa repetida, "Cancelar" vuelve a la ficha del comprador
+  await expect(page.getByRole("link", { name: "Cancelar" })).toHaveAttribute("href", `/panel/clientes/${d.nuevoId}`);
   await expect(page.getByText(`De ${d.anterior} a ${d.nuevo}.`)).toBeVisible();
   await page.getByRole("button", { name: "Cambiar de dueño" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/clientes/${d.nuevoId}\\?recibido=${d.placa}$`));

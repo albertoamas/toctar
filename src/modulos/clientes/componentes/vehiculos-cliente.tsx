@@ -103,7 +103,7 @@ function FormularioVehiculo({ clienteId, vehiculo, tamanos }: { clienteId: numbe
     conAviso(guardarVehiculo, (r) => r.ok && alTerminar()),
     {},
   );
-  const [, iniciar] = useTransition();
+  const [desactivando, iniciar] = useTransition();
   const router = useRouter();
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
@@ -133,10 +133,10 @@ function FormularioVehiculo({ clienteId, vehiculo, tamanos }: { clienteId: numbe
         plegar
         // Al agregar una placa que es de otro cliente: el auto cambió de dueño y se pasa a este (pedido 37)
         // (si la placa ya es de este mismo cliente, no hay a quién pasarla)
-        cambioDeDueno={vehiculo ? undefined : (e) => (e.id === clienteId ? null : (`/panel/clientes/${e.id}/vehiculos/${e.vehiculoId}/dueno?nuevo=${clienteId}` as Route))}
+        cambioDeDueno={vehiculo ? undefined : (e) => (e.id === clienteId ? null : (`/panel/clientes/${e.id}/vehiculos/${e.vehiculoId}/dueno?nuevo=${clienteId}&desde=comprador` as Route))}
       />
       <PieModal>
-        <Button type="submit" disabled={enviando}>
+        <Button type="submit" disabled={enviando || desactivando}>
           {enviando ? "Guardando…" : vehiculo ? "Guardar vehículo" : "Agregar vehículo"}
         </Button>
         <CancelarModal />
@@ -144,6 +144,7 @@ function FormularioVehiculo({ clienteId, vehiculo, tamanos }: { clienteId: numbe
         {vehiculo && (
           <div className="ml-auto">
             <MenuMas
+              deshabilitado={desactivando}
               acciones={[
                 {
                   texto: "Cambiar de dueño",

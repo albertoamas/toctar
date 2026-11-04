@@ -164,7 +164,9 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
         .select({ id: vehiculo.id })
         .from(vehiculo)
         .where(and(eq(vehiculo.id, vehiculoId), eq(vehiculo.clienteId, clienteId), eq(vehiculo.activo, true)))
-        .for("update");
+        // "no key update": choca con el FOR UPDATE del cambio de dueño, pero no con las claves foráneas de otra acción
+        // (crear una cotización de ese vehículo), que formarían un ciclo con el cliente
+        .for("no key update");
       if (!suyo) throw new Conflicto("Ese vehículo cambió de dueño o se desactivó recién. Vuelve a elegirlo.");
       const [nuevo] = await tx
         .insert(trabajo)

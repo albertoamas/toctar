@@ -12,11 +12,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 
 export type AccionMas = { texto: string; alElegir: () => void };
 
-export function MenuMas({ acciones }: { acciones: AccionMas[] }) {
+export function MenuMas({ acciones, deshabilitado = false }: { acciones: AccionMas[]; /** Mientras una de sus acciones corre. */ deshabilitado?: boolean }) {
   const hidratado = useHidratado();
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button type="button" variant="outline" disabled={!hidratado} />}>
+      <DropdownMenuTrigger render={<Button type="button" variant="outline" disabled={!hidratado || deshabilitado} />}>
         Más
         <ChevronDownIcon />
       </DropdownMenuTrigger>

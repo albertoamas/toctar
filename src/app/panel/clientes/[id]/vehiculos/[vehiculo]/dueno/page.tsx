@@ -6,6 +6,7 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { cantidad } from "@/lib/cantidad";
+import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { ConfirmarCambioDueno } from "@/modulos/clientes/componentes/cambiar-dueno";
 import { ElegirCliente } from "@/modulos/clientes/componentes/elegir-cliente";
@@ -27,10 +28,11 @@ export default function PaginaCambioDueno({ params, searchParams }: PageProps<"/
   );
 }
 
-const numero = (texto: unknown) => (typeof texto === "string" && /^\d+$/.test(texto) ? Number(texto) : null);
+/** Un id de la dirección: solo dígitos y dentro de lo que guarda la base (uno mayor, no existe). */
+const numero = (texto: unknown) => (typeof texto === "string" && /^\d{1,10}$/.test(texto) && Number(texto) <= 2147483647 ? Number(texto) : null);
 
 async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/clientes/[id]/vehiculos/[vehiculo]/dueno">, "params" | "searchParams">) {
-  await exigirModulo("clientes");
+  const usuario = await exigirModulo("clientes");
   const [{ id, vehiculo }, parametros] = await Promise.all([params, searchParams]);
   const clienteId = numero(id);
   const vehiculoId = numero(vehiculo);
@@ -39,9 +41,13 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/client
   if (!v) notFound();
   const base = `/panel/clientes/${clienteId}/vehiculos/${vehiculoId}/dueno`;
   const detalle = detalleVehiculo(v).join(" ");
+  const nuevoId = numero(parametros.nuevo);
+  const nuevo = nuevoId && nuevoId !== clienteId ? await obtenerCliente(nuevoId) : null;
+  // "Volver" y "Cancelar", a donde se vino: la ficha del comprador si se llegó desde su placa repetida (`?desde=comprador`)
+  const volver = parametros.desde === "comprador" && nuevo ? { href: `/panel/clientes/${nuevo.id}` as Route, texto: nuevo.nombre } : { href: `/panel/clientes/${clienteId}` as Route, texto: v.dueno };
   const encabezado = (contexto: string) => (
     <>
-      <EnlaceVolver href={`/panel/clientes/${clienteId}` as Route}>{v.dueno}</EnlaceVolver>
+      <EnlaceVolver href={volver.href}>{volver.texto}</EnlaceVolver>
       <EncabezadoPagina titulo={`Cambiar de dueño ${v.placa}`}>{[detalle && `${detalle}.`, contexto].filter(Boolean).join(" ")}</EncabezadoPagina>
     </>
   );
@@ -64,8 +70,15 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/client
     );
   }
 
-  const nuevoId = numero(parametros.nuevo);
-  const nuevo = nuevoId && nuevoId !== clienteId ? await obtenerCliente(nuevoId) : null;
+  // Cerrar sus cotizaciones es rechazarlas: se dice antes de ofrecer un botón que la acción no va a aceptar (pedido 24)
+  if (v.cotizacionesAbiertas > 0 && !puedeVerModulo(usuario, "cotizaciones")) {
+    return (
+      <>
+        {encabezado(ahora)}
+        <EstadoVacio>{v.placa} tiene cotizaciones abiertas que se cierran al cambiarle el dueño: lo hace el dueño o quien tiene «Cotizaciones».</EstadoVacio>
+      </>
+    );
+  }
   if (!nuevo || !nuevo.activo) {
     return (
       <>
@@ -103,7 +116,7 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/client
           </div>
         ))}
       </dl>
-      <ConfirmarCambioDueno vehiculoId={vehiculoId} clienteActualId={clienteId} clienteNuevoId={nuevo.id} />
+      <ConfirmarCambioDueno vehiculoId={vehiculoId} clienteActualId={clienteId} clienteNuevoId={nuevo.id} cancelar={volver.href} />
     </>
   );
 }

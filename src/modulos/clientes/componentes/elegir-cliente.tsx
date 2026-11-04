@@ -27,8 +27,8 @@ type Props = {
 };
 
 export async function ElegirCliente({ q, hrefCliente, hrefNuevo, titulo = "Cliente", excepto }: Props) {
-  const { clientes: encontrados, hayMas } = await buscarClientes(q);
-  const clientes = encontrados.filter((c) => c.id !== excepto);
+  const { clientes, hayMas } = await buscarClientes(q, false, excepto);
+  const otros = excepto ? "otros clientes" : "clientes";
   const sugerencia = hrefNuevo ? " Regístralo con «Cliente nuevo»." : " Regístralo primero en Clientes.";
   const busqueda = normalizarBusqueda(q);
   return (
@@ -43,7 +43,7 @@ export async function ElegirCliente({ q, hrefCliente, hrefNuevo, titulo = "Clien
       </CabeceraSeccion>
       <BuscadorClientes />
       {clientes.length === 0 ? (
-        <EstadoVacio>{q ? `No hay clientes con «${q.trim()}».${sugerencia}` : `Todavía no hay clientes.${sugerencia}`}</EstadoVacio>
+        <EstadoVacio>{q ? `No hay ${otros} con «${q.trim()}».${sugerencia}` : `Todavía no hay ${otros}.${sugerencia}`}</EstadoVacio>
       ) : (
         <TablaClientes etiqueta="Elegir cliente" clientes={clientes} busqueda={busqueda} href={hrefCliente} />
       )}

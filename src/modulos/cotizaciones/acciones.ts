@@ -139,6 +139,15 @@ export async function crearCotizacion(_previo: EstadoCliente, datos: FormData): 
       if (nuevoVehiculo) {
         const [v] = await tx.insert(vehiculo).values({ ...nuevoVehiculo, clienteId, createdBy: autorId }).returning({ id: vehiculo.id });
         vehiculoId = v.id;
+      } else {
+        // Sigue siendo de ese cliente, con el vehículo bloqueado: un cambio de dueño a la vez no deja una cotización del
+        // anterior que ese cambio no llegó a cerrar (pedido 37)
+        const [suyo] = await tx
+          .select({ id: vehiculo.id })
+          .from(vehiculo)
+          .where(and(eq(vehiculo.id, vehiculoId!), eq(vehiculo.clienteId, clienteId), eq(vehiculo.activo, true)))
+          .for("no key update");
+        if (!suyo) throw new VehiculoCambio();
       }
       // El encabezado, ya pendiente: agrupa las versiones y lleva el estado (D-12)
       const [encabezado] = await tx
@@ -157,6 +166,7 @@ export async function crearCotizacion(_previo: EstadoCliente, datos: FormData): 
       return { consulta: encabezado.id, cliente: clienteId, version };
     });
   } catch (error) {
+    if (error instanceof VehiculoCambio) return { errores: { vehiculo: "Elige el vehículo." }, valores };
     // Dos personas registrando lo mismo a la vez: lo frena el índice único
     const indice = indiceUnicoViolado(error);
     if (indice === "cliente_telefono_unico") return { errores: { telefono: "Ese número ya está registrado. Busca al cliente." }, valores };
@@ -231,6 +241,9 @@ export async function guardarVersion(_previo: EstadoFormulario, datos: FormData)
   redirect(`/panel/cotizaciones/${d.consultaId}?version=${resultado.id}${pdf ? "" : "&sinpdf=1"}`);
 }
 
+/** El vehículo elegido cambió de dueño o se desactivó mientras se cotizaba (pedido 37): se deshace la transacción. */
+class VehiculoCambio extends Error {}
+
 const DESTINO = { rechazar: "perdido", reabrir: "cotizado", aceptar: "confirmado" } as const;
 const HECHO = {
   rechazar: "Cotización rechazada.",
@@ -256,14 +269,15 @@ export async function cambiarEstadoCotizacion(_previo: EstadoFormulario, datos: 
   const resultado = await db.transaction(async (tx) => {
     // Una consulta de antes sin cotizar no es una cotización: no se mueve (quedaría pendiente sin versión, fuera de las listas)
     const [actual] = await tx
-      .select({ estado: consulta.estado, clienteId: consulta.clienteId, vehiculoCliente: vehiculo.clienteId })
+      .select({ estado: consulta.estado, clienteId: consulta.clienteId, vehiculoId: consulta.vehiculoId })
       .from(consulta)
-      .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
       .where(and(eq(consulta.id, d.id), tieneVersiones))
-      .for("update", { of: consulta });
+      .for("update");
     if (!actual) return { mensaje: "Esa cotización ya no existe. Recarga la página." };
-    // El vehículo pasó a otro cliente (pedido 37): su cotización no vuelve a abrirse ni se acepta; rechazarla, sí
-    if (d.accion !== "rechazar" && actual.vehiculoCliente !== actual.clienteId) {
+    // El vehículo pasó a otro cliente (pedido 37): su cotización no vuelve a abrirse ni se acepta; rechazarla, sí. Se lee
+    // después del bloqueo, en otra consulta: la misma que bloquea vería al dueño de antes si esperó a un cambio de dueño
+    const [delVehiculo] = await tx.select({ clienteId: vehiculo.clienteId }).from(vehiculo).where(eq(vehiculo.id, actual.vehiculoId));
+    if (d.accion !== "rechazar" && delVehiculo?.clienteId !== actual.clienteId) {
       return { mensaje: "El vehículo de esta cotización ya es de otro cliente: cotízale a él." };
     }
     const reserva = await tieneReservaActiva(d.id, tx);

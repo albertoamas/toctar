@@ -18,7 +18,7 @@ const LIMITE_RESULTADOS = 30;
  * Clientes por nombre (sin importar tildes ni mayúsculas), parte del teléfono o placa (HU-22, RF-22). Sin búsqueda,
  * los más recientes. Trae uno más del límite para saber si hay más (`hayMas`).
  */
-export async function buscarClientes(q: string, desactivados = false): Promise<{ clientes: FilaCliente[]; hayMas: boolean }> {
+export async function buscarClientes(q: string, desactivados = false, excepto?: number): Promise<{ clientes: FilaCliente[]; hayMas: boolean }> {
   const busqueda = normalizarBusqueda(q);
   const coincide = busqueda
     ? or(
@@ -38,7 +38,7 @@ export async function buscarClientes(q: string, desactivados = false): Promise<{
   const filas = await db
     .select({ id: cliente.id, nombre: cliente.nombre, telefono: cliente.telefono })
     .from(cliente)
-    .where(and(eq(cliente.activo, !desactivados), coincide))
+    .where(and(eq(cliente.activo, !desactivados), coincide, excepto ? ne(cliente.id, excepto) : undefined))
     .orderBy(desc(cliente.updatedAt), desc(cliente.id))
     .limit(LIMITE_RESULTADOS + 1);
   return { clientes: await conPlacas(filas.slice(0, LIMITE_RESULTADOS)), hayMas: filas.length > LIMITE_RESULTADOS };
