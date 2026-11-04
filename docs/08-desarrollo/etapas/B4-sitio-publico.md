@@ -73,7 +73,7 @@ Todas en `src/app/(sitio)/`, en tema oscuro, desde 360 px. El encabezado (`Encab
 
 | Ruta | Contenido |
 |---|---|
-| `/` | **Portada (HU-10):** arte de marca (`Cover`: losas y franjas a 60°), lema como titular, presentación y botón principal "Escribir por WhatsApp". Línea LED que se enciende una vez. Servicios en tarjetas (`TarjetaServicio`; los primeros 6). ~~Hasta 6 fotos de la galería con un enlace "Ver la galería"~~ (quitadas en el pedido 36: las fotos están en la Galería); bloque de TikTok (pedido 35). Cierre con invitación a escribir |
+| `/` | **Portada (HU-10):** arte de marca (`Cover`: losas y franjas a 60°), lema como titular, presentación y botón principal "Escribir por WhatsApp". Línea LED que se enciende una vez. Servicios en tarjetas (`TarjetaServicio`; los primeros 6). Bloque de TikTok (pedido 35). Sin miniaturas de la galería (pedido 36): las fotos están en la Galería. Cierre con invitación a escribir |
 | `/servicios` | Todos los servicios visibles en tarjetas |
 | `/servicios/[slug]` | **Servicio (HU-11):** foto principal o la imagen de reemplazo, nombre (`titular-hero`), resumen y descripción; beneficios; proceso paso a paso numerado; variantes (nombre y descripción, sin precio); fotos de ese servicio; cierre "Consultar por este servicio" (WhatsApp con el servicio escrito) |
 | `/galeria` | **Galería (HU-12):** filtro por servicio (enlaces, funcionan sin JavaScript) y grilla de miniaturas. Al tocar una foto se abre un visor con el antes y el después en grande. Si no hay fotos: "Pronto vas a ver aquí nuestros trabajos." |
