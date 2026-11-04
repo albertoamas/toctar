@@ -158,7 +158,7 @@
 | 28.1 | Lista por estado (pendientes, aceptadas y rechazadas), con búsqueda por cliente, teléfono, placa o número; las pestañas cuentan lo encontrado | E2E `hu-28` "se busca por placa o número, y las pestañas cuentan lo encontrado" | ✅ |
 | 28.2 | Las pendientes, de más antigua a más nueva; las que pasan los días de Configuración dicen "Sin respuesta" | E2E `hu-28` "pendientes por antigüedad…"; unitarias `cotizaciones` | ✅ |
 | 28.3 | Rechazo con un motivo (precio, no respondió, otro con detalle) y vuelvo a pendiente | E2E `hu-28` "rechazar desde «Más», con motivo, y volver a pendiente…" | ✅ |
-| 28.4 | Al agendar, la cotización pasa sola a aceptada | E2E `hu-30` "desde la cotización: la versión y la cotización quedan aceptadas…" | ✅ |
+| 28.4 | Al reservar, la cotización pasa sola a aceptada; con "Aceptó, sin fecha" queda aceptada sin reserva, con la insignia "Sin fecha", y se reserva después (pedido 31) | E2E `hu-30` "desde la cotización: la versión y la cotización quedan aceptadas…"; E2E `p31-flujo-trabajo` | ✅ |
 
 ## HU-29 Tablero de la agenda
 
@@ -177,7 +177,7 @@
 
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
-| 30.1 | Desde una cotización pendiente ("Agendar": el cliente aceptó) o como reserva directa | E2E `hu-30` "desde la cotización…" y "reserva directa: cliente y vehículo registrados, servicio del catálogo con su precio…" | ⚠️ "Cotización confirmada" pasó a ser "pendiente que se acepta al agendar" (pedido 23) |
+| 30.1 | Desde una cotización pendiente o aceptada sin fecha ("Aceptó: reservar" o "Reservar"), o desde Nueva reserva, que ofrece primero las cotizaciones del vehículo; o como reserva directa (pedido 31) | E2E `hu-30` "desde la cotización…" y "reserva directa: cliente y vehículo registrados, servicio del catálogo con su precio…"; E2E `p31-flujo-trabajo` | ⚠️ "Cotización confirmada" pasó a ser "pendiente que se acepta al agendar" (pedido 23) |
 | 30.2 | Sugiere la duración y solo ofrece espacios libres en esos días (RN-06); si dos personas agendan el mismo espacio a la vez, una recibe un aviso | E2E `hu-30` "solo se ofrecen los espacios libres…" y "la base rechaza un cruce en el mismo espacio aunque el código fallara…"; unitarias `agenda` | ✅ |
 | 30.3 | Registro el adelanto con el monto sugerido, editable (RN-04); no se asigna un técnico (pedido 32) | E2E `hu-30` "desde la cotización: …el adelanto registrado" | ✅ |
 | 30.4 | El encargado con Agenda y sin Pagos agenda sin ver montos; sin Agenda no entra | E2E `hu-30` "el encargado con Agenda sin Pagos agenda sin montos ni adelanto; sin Agenda no entra" | ✅ |

@@ -128,6 +128,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | P28 Órdenes con historial | `etapas/P28-ordenes-historial.md` | ✅ Programada (01/11, PR #117) |
 | P30 Saldos: buscar y ordenar | `etapas/P30-saldos-buscar-ordenar.md` | ✅ Programada (01/11, PR #118) |
 | P32 Dos roles, sin técnico | `etapas/P32-roles-sin-tecnico.md` | ✅ Programada (03/11, PR #129) |
+| P31 Un trabajo, de la cotización a la entrega | `etapas/P31-flujo-de-un-trabajo.md` | 🔵 Parte 1 programada (04/11); la parte 2 (cotizar sin registrar y placa opcional), a decidir con el dueño |
 | B6 Cierre de la Entrega 1 | Sin especificación aparte | Va junto con el cierre de la Entrega 2 (C5) |
 
 ## Cómo se trabaja cada historia
