@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { fechaEnBolivia } from "@/lib/fechas";
+import { fechaEnBolivia, fechaExiste } from "@/lib/fechas";
 import { normalizarWhatsApp } from "@/lib/whatsapp";
 
 // Formulario público de garantía y reclamos (HU-16): el mismo esquema en el navegador y en el servidor.
@@ -45,7 +45,8 @@ export const esquemaReclamo = z.object({
     .trim()
     .transform((v, ctx) => {
       if (!v) return null;
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isNaN(Date.parse(v))) {
+      // Una fecha que no existe (31/02) la rechazaría la base al guardar: se avisa aquí
+      if (!fechaExiste(v)) {
         ctx.addIssue({ code: "custom", message: "Revisa la fecha." });
         return z.NEVER;
       }

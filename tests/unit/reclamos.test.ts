@@ -27,6 +27,14 @@ describe("esquema del reclamo", () => {
     expect(Object.keys(erroresDe(r.error!)).sort()).toEqual(["descripcion", "nombre", "placa", "telefono"]);
   });
 
+  test("la fecha tiene que existir (auditoría QA-02)", () => {
+    for (const fecha of ["2026-02-31", "2026-04-31", "2025-02-29", "2026-13-01"]) {
+      const r = esquemaReclamo.safeParse({ ...valido, fechaAproximada: fecha });
+      expect(erroresDe(r.error!), fecha).toEqual({ fechaAproximada: "Revisa la fecha." });
+    }
+    expect(esquemaReclamo.parse({ ...valido, fechaAproximada: "2024-02-29" }).fechaAproximada).toBe("2024-02-29");
+  });
+
   test("la fecha no puede ser futura", () => {
     const r = esquemaReclamo.safeParse({ ...valido, fechaAproximada: "2999-01-01" });
     expect(erroresDe(r.error!)).toEqual({ fechaAproximada: "La fecha no puede ser futura." });

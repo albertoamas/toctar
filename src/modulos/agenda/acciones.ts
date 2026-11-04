@@ -139,17 +139,19 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
   try {
     resultado = await db.transaction(async (tx) => {
       if (cotizacionId && consultaId) {
-        // Solo la vigente de una consulta "cotizado": si otra persona la agendó o la corrigió recién, no se toca
-        const [aceptada] = await tx
-          .update(cotizacion)
-          .set({ estado: "aceptada" })
-          .where(and(eq(cotizacion.id, cotizacionId), eq(cotizacion.estado, "enviada")))
-          .returning({ id: cotizacion.id });
+        // Solo la vigente de una consulta "cotizado": si otra persona la agendó o la corrigió recién, no se toca.
+        // Primero la consulta y después la cotización, en el mismo orden que una versión nueva (cotizaciones/acciones.ts):
+        // con el orden al revés, agendar y corregir a la vez se esperaban entre sí y la base cortaba uno (auditoría QA-10)
         const [confirmada] = await tx
           .update(consulta)
           .set({ estado: "confirmado", ultimoMovimientoAt: sql`now()` })
           .where(and(eq(consulta.id, consultaId), eq(consulta.estado, "cotizado")))
           .returning({ id: consulta.id });
+        const [aceptada] = await tx
+          .update(cotizacion)
+          .set({ estado: "aceptada" })
+          .where(and(eq(cotizacion.id, cotizacionId), eq(cotizacion.estado, "enviada")))
+          .returning({ id: cotizacion.id });
         // Lanzar (y no devolver) deshace la transacción: si no, la cotización quedaría aceptada sin reserva
         if (!aceptada || !confirmada) throw new Conflicto(COTIZACION_CAMBIO);
       }

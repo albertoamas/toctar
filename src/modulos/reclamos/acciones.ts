@@ -6,7 +6,7 @@ import { db } from "@/db";
 import { reclamo, reclamoArchivo, servicio } from "@/db/esquema";
 import { codigoDeConexion } from "@/lib/conexion";
 import { erroresDe, type EstadoFormulario } from "@/lib/formularios";
-import { eliminarFoto, guardarFoto } from "@/lib/fotos";
+import { eliminarFotosSinFallar, guardarFoto } from "@/lib/fotos";
 import { exigirModulo } from "@/lib/sesion";
 import { CAMPOS_RECLAMO, MAXIMO_FOTOS, esquemaAtender, esquemaReclamo } from "./esquemas";
 import { LIMITE_POR_HORA, evaluarEnvio } from "./reglas";
@@ -56,40 +56,47 @@ export async function enviarReclamo(_previo: EstadoFormulario, datos: FormData):
   const fotos = datos.getAll("fotos").filter((f): f is File => f instanceof File && f.size > 0);
   if (fotos.length > MAXIMO_FOTOS) return { errores: { fotos: `Hasta ${MAXIMO_FOTOS} fotos.` }, valores };
 
+  // Si algo falla a mitad (una foto inválida, el almacenamiento o la base), no queda ninguna foto suelta (auditoría QA-06)
   const guardadas: number[] = [];
-  for (const f of fotos) {
-    const r = await guardarFoto(f, { carpeta: "reclamos", miniatura: true, autorId: null, privado: true });
-    if (!r.ok) {
-      // Si una foto falla, no queda nada a medias.
-      for (const id of guardadas) await eliminarFoto(id);
-      return { errores: { fotos: ERROR_FOTO }, valores };
+  const deshacer = () => eliminarFotosSinFallar(guardadas, "No se pudo borrar una foto de un reclamo que no se guardó");
+  let guardado: boolean;
+  try {
+    for (const f of fotos) {
+      const r = await guardarFoto(f, { carpeta: "reclamos", miniatura: true, autorId: null, privado: true });
+      if (!r.ok) {
+        await deshacer();
+        return { errores: { fotos: ERROR_FOTO }, valores };
+      }
+      guardadas.push(r.archivoId);
     }
-    guardadas.push(r.archivoId);
-  }
 
-  const guardado = await db.transaction(async (tx) => {
-    // Se vuelve a contar con un candado por conexión: así varios envíos al mismo tiempo no pasan juntos el límite.
-    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${ipHash}, 0))`);
-    if ((await reclamosEnLaUltimaHora(tx, ipHash)) >= LIMITE_POR_HORA) return false;
-    const [nuevo] = await tx
-      .insert(reclamo)
-      .values({
-        nombre: d.nombre,
-        telefono: d.telefono,
-        placa: d.placa,
-        servicioId: d.servicioId,
-        fechaAproximada: d.fechaAproximada,
-        descripcion: d.descripcion,
-        ipHash,
-      })
-      .returning({ id: reclamo.id });
-    if (guardadas.length > 0) {
-      await tx.insert(reclamoArchivo).values(guardadas.map((archivoId, orden) => ({ reclamoId: nuevo.id, archivoId, orden })));
-    }
-    return true;
-  });
+    guardado = await db.transaction(async (tx) => {
+      // Se vuelve a contar con un candado por conexión: así varios envíos al mismo tiempo no pasan juntos el límite.
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${ipHash}, 0))`);
+      if ((await reclamosEnLaUltimaHora(tx, ipHash)) >= LIMITE_POR_HORA) return false;
+      const [nuevo] = await tx
+        .insert(reclamo)
+        .values({
+          nombre: d.nombre,
+          telefono: d.telefono,
+          placa: d.placa,
+          servicioId: d.servicioId,
+          fechaAproximada: d.fechaAproximada,
+          descripcion: d.descripcion,
+          ipHash,
+        })
+        .returning({ id: reclamo.id });
+      if (guardadas.length > 0) {
+        await tx.insert(reclamoArchivo).values(guardadas.map((archivoId, orden) => ({ reclamoId: nuevo.id, archivoId, orden })));
+      }
+      return true;
+    });
+  } catch (error) {
+    await deshacer();
+    throw error;
+  }
   if (!guardado) {
-    for (const id of guardadas) await eliminarFoto(id);
+    await deshacer();
     return { mensaje: MENSAJE_LIMITE, valores };
   }
 

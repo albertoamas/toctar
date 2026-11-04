@@ -15,6 +15,9 @@ test("normalizarPlaca rechaza lo que no parece una placa", () => {
 
 test("el año máximo es el siguiente al actual", () => {
   expect(anioMaximo(new Date("2026-10-20T12:00:00Z"))).toBe(2027);
+  // Año Nuevo en UTC, todavía 31/12 a las 21:00 en Bolivia: vale el año de Bolivia, en cualquier zona del proceso
+  expect(anioMaximo(new Date("2027-01-01T01:00:00Z"))).toBe(2027);
+  expect(anioMaximo(new Date("2027-01-01T04:00:00Z"))).toBe(2028);
 });
 
 test("normalizarBusqueda separa el texto, los dígitos del teléfono y la placa", () => {

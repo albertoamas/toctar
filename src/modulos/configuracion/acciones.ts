@@ -5,7 +5,7 @@ import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/db";
 import { espacioTaller, negocio, parametro, parteRevision, plantillaMensaje, sucursal, tamanoVehiculo } from "@/db/esquema";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
-import { eliminarFoto, guardarFoto } from "@/lib/fotos";
+import { eliminarFotosSinFallar, guardarFoto } from "@/lib/fotos";
 import { nombreRepetido, puedeDesactivar, reordenar, type Direccion } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
 import { whatsAppLocal } from "@/lib/whatsapp";
@@ -89,6 +89,7 @@ export async function guardarNegocio(_previo: EstadoFormulario, datos: FormData)
 }
 
 const ERROR_LOGO = "El logo debe ser PNG, JPG o WebP de hasta 5 MB.";
+const BORRAR_LOGO_FALLO = "No se pudo borrar del almacenamiento un logo";
 
 /** Logo para el PDF de cotización y otros documentos. Se guarda en WebP de hasta 1600 px, con transparencia. */
 export async function subirLogo(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
@@ -96,16 +97,24 @@ export async function subirLogo(_previo: EstadoFormulario, datos: FormData): Pro
   const foto = await guardarFoto(datos.get("logo"), { carpeta: "negocio", prefijo: "logo-", autorId: Number(autor.id) });
   if (!foto.ok) return { errores: { logo: foto.motivo === "vacia" ? "Elige una imagen." : ERROR_LOGO } };
 
-  const [anterior] = await db.select({ logoArchivoId: negocio.logoArchivoId }).from(negocio).where(eq(negocio.id, 1));
-  await db
-    .update(negocio)
-    .set({ logoArchivoId: foto.archivoId, updatedAt: new Date(), updatedBy: Number(autor.id) })
-    .where(eq(negocio.id, 1));
-  // El logo anterior no lo usa nadie más: se borra, también del almacenamiento.
-  if (anterior?.logoArchivoId) await eliminarFoto(anterior.logoArchivoId);
+  let anterior: number | null;
+  try {
+    // Con la fila del negocio bloqueada: dos cambios de logo a la vez no dejan uno sin usar
+    anterior = await db.transaction(async (tx) => {
+      const [fila] = await tx.select({ logoArchivoId: negocio.logoArchivoId }).from(negocio).where(eq(negocio.id, 1)).for("update");
+      await tx.update(negocio).set({ logoArchivoId: foto.archivoId, updatedAt: new Date(), updatedBy: Number(autor.id) }).where(eq(negocio.id, 1));
+      return fila?.logoArchivoId ?? null;
+    });
+  } catch (error) {
+    await eliminarFotosSinFallar([foto.archivoId], BORRAR_LOGO_FALLO);
+    throw error;
+  }
 
   updateTag(ETIQUETA_NEGOCIO);
   revalidatePath(`${RUTA}/negocio`);
+  // El logo anterior no lo usa nadie más: se borra después de renovar; si el almacenamiento falla, el nuevo ya vale
+  // (auditoría QA-07)
+  await eliminarFotosSinFallar([anterior], BORRAR_LOGO_FALLO);
   return { ok: true, mensaje: "Logo actualizado." };
 }
 
