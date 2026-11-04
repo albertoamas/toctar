@@ -105,6 +105,7 @@
 | 23.3 | Desde la ficha inicio una cotización o una reserva, o abro su WhatsApp | E2E `hu-25` (desde la ficha, el cliente llega elegido) y `hu-30` (reserva directa) | ✅ |
 | 23.4 | Un cliente se desactiva desde "Más", con confirmación, y se reactiva | E2E `hu-23` "un cliente se desactiva desde «Más» con confirmación…" | ✅ (agregado) |
 | 23.5 | Sus mantenimientos: agregar uno anterior al sistema, cambiar el plan y terminarlo | E2E `hu-38` "en la ficha del cliente: agregar un mantenimiento anterior al sistema…" | ✅ (agregado, pedidos 17 y 21) |
+| 23.6 | Un vehículo que cambió de dueño pasa al comprador con su plan de mantenimiento; se cierran las cotizaciones abiertas del anterior y lo suyo queda a su nombre; con una reserva activa no se pasa (pedido 37) | E2E `p37-cambio-de-dueno` (desde la edición, desde la placa repetida y frenado con una reserva) | ✅ |
 
 ## HU-24 Registrar consulta (reemplazada)
 
