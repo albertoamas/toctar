@@ -18,6 +18,7 @@ import {
   serviciosConOpciones,
   sinRespuesta,
   textoDias,
+  sePuedeReservar,
   transicionPermitida,
   VISTAS,
 } from "@/modulos/cotizaciones/reglas";
@@ -162,9 +163,23 @@ test("una pendiente se acepta (al agendar), se rechaza o recibe una versión; un
   expect(transicionPermitida("perdido", "cotizado")).toBe(true);
   expect(transicionPermitida("perdido", "perdido")).toBe(false);
   expect(transicionPermitida("perdido", "confirmado")).toBe(false);
-  for (const destino of ["consulto", "cotizado", "perdido"] as const) expect(transicionPermitida("confirmado", destino)).toBe(false);
+  // Aceptada con reserva: no cambia desde la cotización (la cancela la agenda)
+  for (const destino of ["consulto", "cotizado", "perdido"] as const) expect(transicionPermitida("confirmado", destino, true)).toBe(false);
+  // Aceptada sin fecha (pedido 31): se rechaza o vuelve a pendiente, como una pendiente
+  expect(transicionPermitida("confirmado", "perdido")).toBe(true);
+  expect(transicionPermitida("confirmado", "cotizado")).toBe(true);
+  expect(transicionPermitida("confirmado", "confirmado")).toBe(false);
   // Lo registrado antes del pedido 23 sin cotizar ya no se mueve
   for (const destino of ["cotizado", "perdido", "confirmado"] as const) expect(transicionPermitida("consulto", destino)).toBe(false);
+});
+
+test("se reserva la pendiente o la aceptada sin fecha (pedido 31); nunca dos veces", () => {
+  expect(sePuedeReservar({ encabezado: "cotizado", version: "enviada", conReserva: false })).toBe(true);
+  expect(sePuedeReservar({ encabezado: "confirmado", version: "aceptada", conReserva: false })).toBe(true);
+  // Ya reservada, reemplazada por una versión nueva o rechazada: no
+  expect(sePuedeReservar({ encabezado: "confirmado", version: "aceptada", conReserva: true })).toBe(false);
+  expect(sePuedeReservar({ encabezado: "cotizado", version: "reemplazada", conReserva: false })).toBe(false);
+  expect(sePuedeReservar({ encabezado: "perdido", version: "enviada", conReserva: false })).toBe(false);
 });
 
 test("los estados se llaman como en el taller: pendiente, aceptada y rechazada", () => {

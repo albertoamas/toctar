@@ -9,6 +9,7 @@ import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Insignia } from "@/componentes/panel/insignia";
+import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
 import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
@@ -19,9 +20,10 @@ import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { reservasDeConsulta } from "@/modulos/agenda/consultas";
+import { pasoDelTrabajo } from "@/modulos/agenda/pasos";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { DatosVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
-import { MasCotizacion } from "@/modulos/cotizaciones/componentes/estado-cotizacion";
+import { AceptoSinFecha, MasCotizacion } from "@/modulos/cotizaciones/componentes/estado-cotizacion";
 import { VersionesCotizacion } from "@/modulos/cotizaciones/componentes/versiones-cotizacion";
 import { obtenerCotizacion } from "@/modulos/cotizaciones/consultas";
 import { NOMBRE_ESTADO, NOMBRE_MOTIVO, TONO_ESTADO } from "@/modulos/cotizaciones/reglas";
@@ -29,9 +31,10 @@ import { rutaTrabajo } from "@/modulos/ordenes/reglas";
 
 export const metadata: Metadata = { title: "Cotización" };
 
-// Pedido 23 (P23-cotizacion-directa.md §5): una cotización con sus versiones y su PDF. El paso siguiente de una
-// pendiente es "Agendar" (el cliente aceptó: queda aceptada, RF-36); "Nueva versión", "Rechazar" y "Volver a pendiente"
-// van en "Más". Dueño o encargado con "Cotizaciones" (pedido 24, RN-12).
+// Pedido 23 (P23-cotizacion-directa.md §5): una cotización con sus versiones y su PDF. Dueño o encargado con
+// "Cotizaciones" (pedido 24, RN-12). Pedido 31 (P31-flujo-de-un-trabajo.md §5): arriba, los pasos del trabajo; el paso
+// siguiente de una pendiente es "Aceptó: reservar" (queda aceptada al reservar, RF-36), con "Aceptó, sin fecha" al lado;
+// el de una aceptada sin fecha, "Reservar". "Nueva versión", "Rechazar" y "Volver a pendiente" van en "Más".
 export default function PaginaCotizacion({ params, searchParams }: PageProps<"/panel/cotizaciones/[id]">) {
   return (
     <section className="flex flex-col gap-6">
@@ -54,6 +57,11 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
 
   const vigente = c.versiones.find((v) => v.estado === "enviada") ?? null;
   const pendiente = c.estado === "cotizado";
+  // La versión que se reserva: la vigente de una pendiente o la aceptada de una sin fecha
+  const aReservar = pendiente ? vigente : c.sinFecha ? (c.versiones.find((v) => v.estado === "aceptada") ?? null) : null;
+  const activa = reservas.find((r) => r.estado !== "cancelado");
+  // Sin ver la Agenda no se sabe en qué va su reserva: se queda en "Reservada"
+  const paso = pasoDelTrabajo({ cotizacion: c.estado, trabajo: activa?.estado ?? (c.estado === "confirmado" && !c.sinFecha ? "agendado" : null) });
   const cotiza = puede(usuario, "cotizar");
   const recienGuardada = typeof version === "string" ? c.versiones.find((v) => String(v.id) === version) : undefined;
   const sinPdf = sinpdf && !c.versiones[0].tienePdf;
@@ -62,16 +70,22 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
     <div className="flex max-w-3xl flex-col gap-8">
       <EncabezadoPagina
         titulo={`Cotización ${c.numero}`}
-        estado={<Insignia tono={TONO_ESTADO[c.estado]}>{NOMBRE_ESTADO[c.estado]}</Insignia>}
+        estado={
+          <span className="flex flex-wrap gap-1.5">
+            <Insignia tono={TONO_ESTADO[c.estado]}>{NOMBRE_ESTADO[c.estado]}</Insignia>
+            {c.sinFecha && <Insignia tono="aviso">Sin fecha</Insignia>}
+          </span>
+        }
         accion={
           <div className="flex flex-wrap gap-2">
-            {/* El paso siguiente, uno solo: agendar la pendiente (el cliente aceptó) */}
-            {pendiente && vigente && puedeAgendar && (
-              <Link href={`/panel/agenda/nueva?cotizacion=${vigente.id}`} className={cn(buttonVariants())}>
+            {/* El paso siguiente, uno solo: reservar (el cliente aceptó). Una pendiente también puede quedar aceptada sin fecha */}
+            {aReservar && puedeAgendar && (
+              <Link href={`/panel/agenda/nueva?cotizacion=${aReservar.id}`} className={cn(buttonVariants())}>
                 <CalendarIcon />
-                Agendar
+                {pendiente ? "Aceptó: reservar" : "Reservar"}
               </Link>
             )}
+            {pendiente && vigente && <AceptoSinFecha id={c.id} />}
             {/* Como en las demás fichas: escribirle al cliente, al lado del paso siguiente */}
             <a href={enlaceWhatsApp(c.telefono)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
               <IconoWhatsApp />
@@ -80,7 +94,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
             <MasCotizacion
               id={c.id}
               nuevaVersion={pendiente && vigente && cotiza ? `/panel/cotizaciones/${c.id}/nueva-version?desde=${vigente.id}` : null}
-              cambio={pendiente ? "rechazar" : c.estado === "perdido" ? "reabrir" : null}
+              cambios={pendiente ? ["rechazar"] : c.sinFecha ? ["rechazar", "reabrir"] : c.estado === "perdido" ? ["reabrir"] : []}
             />
           </div>
         }
@@ -88,6 +102,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
         {/* "Rechazada: Precio. Le pareció caro." */}
         {c.estado === "perdido" && c.motivoPerdida && `Rechazada: ${NOMBRE_MOTIVO[c.motivoPerdida]}.${c.detallePerdida ? ` ${c.detallePerdida}` : ""}`}
       </EncabezadoPagina>
+      {paso !== null && <PasosTrabajo paso={paso} />}
       {(creada || recienGuardada) && (
         <AvisoEnPagina>
           {creada ? "Cotización creada." : `Versión ${recienGuardada!.version} guardada.`}

@@ -1,4 +1,5 @@
 import type { EstadoConsulta, MotivoPerdida } from "@/db/esquema/consultas";
+import type { EstadoCotizacion } from "@/db/esquema/cotizaciones";
 import type { TonoEstado } from "@/lib/tonos";
 import { diasEntre, fechaEnBolivia, sumarDias } from "@/lib/fechas";
 import { leerMonto, mostrarMonto, type Monto } from "@/modulos/catalogo/reglas";
@@ -36,13 +37,26 @@ export const VISTAS = { pendientes: "cotizado", aceptadas: "confirmado", rechaza
 export type Vista = keyof typeof VISTAS;
 
 /**
- * Cambios de estado (RF-30): una pendiente se acepta al agendarla (C3), se rechaza o recibe una versión nueva (sigue
- * pendiente); una rechazada vuelve a pendiente. Una aceptada no cambia desde aquí: si se cancela su reserva, la agenda
- * la pasa a rechazada.
+ * Cambios de estado (RF-30): una pendiente se acepta (al reservarla o con "Aceptó, sin fecha", pedido 31), se rechaza o
+ * recibe una versión nueva (sigue pendiente); una rechazada vuelve a pendiente. Una aceptada sin reserva activa se
+ * rechaza o vuelve a pendiente como una pendiente; con reserva, no cambia desde aquí: si se cancela la reserva, la
+ * agenda la pasa a rechazada.
  */
-export function transicionPermitida(estado: EstadoConsulta, destino: EstadoConsulta): boolean {
+export function transicionPermitida(estado: EstadoConsulta, destino: EstadoConsulta, conReserva = false): boolean {
   if (estado === "cotizado") return destino === "cotizado" || destino === "confirmado" || destino === "perdido";
   if (estado === "perdido") return destino === "cotizado";
+  if (estado === "confirmado") return !conReserva && (destino === "cotizado" || destino === "perdido");
+  return false;
+}
+
+/**
+ * Se reserva desde la cotización (HU-30, pedido 31): la pendiente (encabezado "cotizado" y versión "enviada") o la
+ * aceptada sin fecha (encabezado "confirmado", versión "aceptada" y ninguna reserva activa). Una reemplazada, una
+ * rechazada o una que ya tiene reserva, no.
+ */
+export function sePuedeReservar(c: { version: EstadoCotizacion; encabezado: EstadoConsulta; conReserva: boolean }): boolean {
+  if (c.encabezado === "cotizado") return c.version === "enviada";
+  if (c.encabezado === "confirmado") return c.version === "aceptada" && !c.conReserva;
   return false;
 }
 

@@ -1,11 +1,11 @@
 "use server";
 
-import { and, eq, max, sql } from "drizzle-orm";
+import { and, eq, max, ne, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { cliente, consulta, cotizacion, vehiculo } from "@/db/esquema";
+import { cliente, consulta, cotizacion, trabajo, vehiculo } from "@/db/esquema";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { exigirAccion, exigirModulo } from "@/lib/sesion";
 import { clienteConTelefono } from "@/modulos/clientes/consultas";
@@ -231,9 +231,19 @@ export async function guardarVersion(_previo: EstadoFormulario, datos: FormData)
   redirect(`/panel/cotizaciones/${d.consultaId}?version=${resultado.id}${pdf ? "" : "&sinpdf=1"}`);
 }
 
+const DESTINO = { rechazar: "perdido", reabrir: "cotizado", aceptar: "confirmado" } as const;
+const HECHO = {
+  rechazar: "Cotización rechazada.",
+  reabrir: "La cotización volvió a pendiente.",
+  aceptar: "Cotización aceptada. Resérvala cuando el cliente tenga fecha.",
+} as const;
+
 /**
- * Rechaza la cotización, con motivo, o la vuelve a pendiente (HU-28, RF-30). Solo si el estado lo permite
- * (`transicionPermitida`); si dos personas la cambian a la vez, vale el primer cambio.
+ * Rechaza la cotización, con motivo, la vuelve a pendiente o la acepta sin fecha (HU-28, RF-30; pedido 31). Solo si el
+ * estado lo permite (`transicionPermitida`): una aceptada con reserva activa no cambia desde aquí. Con la consulta
+ * bloqueada y después su versión (el mismo orden que agendar y que una versión nueva, QA-10): si dos personas la
+ * cambian a la vez, vale el primer cambio. La versión que vale acompaña al encabezado: aceptada si se acepta, enviada
+ * si una aceptada sin fecha se rechaza o vuelve a pendiente (como al cancelar su reserva).
  */
 export async function cambiarEstadoCotizacion(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   await exigirModulo("cotizaciones");
@@ -241,34 +251,63 @@ export async function cambiarEstadoCotizacion(_previo: EstadoFormulario, datos: 
   const entrada = esquemaCambioEstado.safeParse({ id: datos.get("id"), accion: datos.get("accion"), ...valores });
   if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
   const d = entrada.data;
+  const destino = DESTINO[d.accion];
 
-  // Una consulta de antes sin cotizar no es una cotización: no se mueve (quedaría pendiente sin versión, fuera de las listas)
-  const [actual] = await db
-    .select({ estado: consulta.estado, clienteId: consulta.clienteId })
-    .from(consulta)
-    .where(and(eq(consulta.id, d.id), tieneVersiones));
-  if (!actual) return { mensaje: "Esa cotización ya no existe. Recarga la página." };
-  const destino = d.accion === "rechazar" ? "perdido" : "cotizado";
-  // Volver a pendiente no es una versión nueva: desde una pendiente no se "vuelve"
-  if (!transicionPermitida(actual.estado, destino) || actual.estado === destino) {
-    return { mensaje: `Esta cotización ya está ${NOMBRE_ESTADO[actual.estado].toLowerCase()}. Recarga la página.` };
-  }
+  const resultado = await db.transaction(async (tx) => {
+    // Una consulta de antes sin cotizar no es una cotización: no se mueve (quedaría pendiente sin versión, fuera de las listas)
+    const [actual] = await tx
+      .select({ estado: consulta.estado, clienteId: consulta.clienteId })
+      .from(consulta)
+      .where(and(eq(consulta.id, d.id), tieneVersiones))
+      .for("update");
+    if (!actual) return { mensaje: "Esa cotización ya no existe. Recarga la página." };
+    const [reserva] = await tx
+      .select({ id: trabajo.id })
+      .from(trabajo)
+      .where(and(eq(trabajo.consultaId, d.id), ne(trabajo.estado, "cancelado")))
+      .limit(1);
+    // Volver a pendiente no es una versión nueva: desde una pendiente no se "vuelve"
+    if (!transicionPermitida(actual.estado, destino, !!reserva) || actual.estado === destino) {
+      return {
+        mensaje: reserva
+          ? "Esta cotización ya tiene una reserva: se cambia desde la reserva. Recarga la página."
+          : `Esta cotización ya está ${NOMBRE_ESTADO[actual.estado].toLowerCase()}. Recarga la página.`,
+      };
+    }
 
-  const [cambiada] = await db
-    .update(consulta)
-    .set({
-      estado: destino,
-      motivoPerdida: d.accion === "rechazar" ? d.motivo : null,
-      detallePerdida: d.accion === "rechazar" ? d.detalle : null,
-      ultimoMovimientoAt: sql`now()`,
-    })
-    .where(and(eq(consulta.id, d.id), eq(consulta.estado, actual.estado)))
-    .returning({ id: consulta.id });
-  if (!cambiada) return { mensaje: "Alguien cambió esta cotización recién. Recarga la página." };
+    await tx
+      .update(consulta)
+      .set({
+        estado: destino,
+        motivoPerdida: d.accion === "rechazar" ? d.motivo : null,
+        detallePerdida: d.accion === "rechazar" ? d.detalle : null,
+        ultimoMovimientoAt: sql`now()`,
+      })
+      .where(eq(consulta.id, d.id));
+    // La versión que vale: la vigente pasa a aceptada; o la aceptada (sin reserva) vuelve a vigente
+    const [desde, hacia] = destino === "confirmado" ? (["enviada", "aceptada"] as const) : actual.estado === "confirmado" ? (["aceptada", "enviada"] as const) : [null, null];
+    if (desde && hacia) {
+      const [version] = await tx
+        .update(cotizacion)
+        .set({ estado: hacia })
+        .where(and(eq(cotizacion.consultaId, d.id), eq(cotizacion.estado, desde)))
+        .returning({ id: cotizacion.id });
+      // Sin la versión que acompaña, el encabezado quedaría en otro estado que su versión: se deshace
+      if (!version) throw new CambioCruzado();
+    }
+    return { ok: true as const, clienteId: actual.clienteId };
+  }).catch((error: unknown) => {
+    if (error instanceof CambioCruzado) return { mensaje: "Alguien cambió esta cotización recién. Recarga la página." };
+    throw error;
+  });
+  if (!("ok" in resultado)) return resultado;
 
-  despuesDeCambiar(d.id, actual.clienteId);
-  return { ok: true, mensaje: d.accion === "rechazar" ? "Cotización rechazada." : "La cotización volvió a pendiente." };
+  despuesDeCambiar(d.id, resultado.clienteId);
+  return { ok: true, mensaje: HECHO[d.accion] };
 }
+
+/** La versión de una cotización cambió mientras se cambiaba su estado: se deshace la transacción. */
+class CambioCruzado extends Error {}
 
 /**
  * Genera el PDF de una versión que quedó sin él (falló al guardarla). Solo si todavía no tiene: el que ya existe no

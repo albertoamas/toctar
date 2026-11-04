@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, count, desc, eq, exists, inArray, like, ne, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
-import { cliente, consulta, cotizacion, cotizacionLinea, negocio, servicio, sucursal, tamanoVehiculo, usuario, variante, vehiculo } from "@/db/esquema";
+import { cliente, consulta, cotizacion, cotizacionLinea, negocio, servicio, sucursal, tamanoVehiculo, trabajo, usuario, variante, vehiculo } from "@/db/esquema";
 import type { EstadoConsulta, MotivoPerdida } from "@/db/esquema/consultas";
 import type { DatosDocumento, EstadoCotizacion } from "@/db/esquema/cotizaciones";
 import { preciosVigentes } from "@/modulos/catalogo/consultas";
@@ -283,11 +283,21 @@ export type FilaCotizacion = {
   numero: string;
   total: string;
   estado: EstadoConsulta;
+  /** Aceptada sin una reserva activa ("Aceptó, sin fecha", pedido 31): se reserva después. */
+  sinFecha: boolean;
   ultimoMovimientoAt: Date;
 };
 
 /** Es una cotización (D-12): un encabezado con alguna versión. Las consultas de antes sin cotizar no lo son. */
 export const tieneVersiones = exists(db.select({ id: cotizacion.id }).from(cotizacion).where(eq(cotizacion.consultaId, consulta.id)));
+
+/** Tiene una reserva que no se canceló (agendada, en el taller o entregada). */
+export const conReservaActiva = sql<boolean>`${exists(
+  db.select({ id: trabajo.id }).from(trabajo).where(and(eq(trabajo.consultaId, consulta.id), ne(trabajo.estado, "cancelado"))),
+)}`;
+
+/** Aceptada sin reserva activa: "Aceptó, sin fecha" (pedido 31, P31-flujo-de-un-trabajo.md §4). */
+const sinFecha = sql<boolean>`(${consulta.estado} = 'confirmado' and not ${conReservaActiva})`;
 
 /** La versión que vale de cada cotización: la vigente, o la aceptada. Las reemplazadas quedan solo en su ficha. */
 const versionActual = and(eq(cotizacion.consultaId, consulta.id), ne(cotizacion.estado, "reemplazada"));
@@ -303,6 +313,7 @@ const columnasFila = {
   numero: cotizacion.numero,
   total: cotizacion.total,
   estado: consulta.estado,
+  sinFecha,
   ultimoMovimientoAt: consulta.ultimoMovimientoAt,
 };
 
@@ -385,6 +396,8 @@ export type DetalleCotizacion = {
   detalle: (string | number)[];
   tamano: string;
   estado: EstadoConsulta;
+  /** Aceptada sin una reserva activa (pedido 31). */
+  sinFecha: boolean;
   motivoPerdida: MotivoPerdida | null;
   detallePerdida: string | null;
   createdAt: Date;
@@ -408,6 +421,7 @@ export async function obtenerCotizacion(id: number): Promise<DetalleCotizacion |
         color: vehiculo.color,
         tamano: tamanoVehiculo.nombre,
         estado: consulta.estado,
+        sinFecha,
         motivoPerdida: consulta.motivoPerdida,
         detallePerdida: consulta.detallePerdida,
         createdAt: consulta.createdAt,

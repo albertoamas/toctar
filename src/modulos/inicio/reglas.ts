@@ -1,5 +1,6 @@
 import type { EstadoTrabajo } from "@/db/esquema/trabajos";
 import { fechaCorta } from "@/lib/fechas";
+import { pasoSiguiente } from "@/modulos/agenda/pasos";
 import { estaAtrasada, textoEntrega } from "@/modulos/ordenes/reglas";
 
 // Reglas de la pantalla del día (HU-39). Puras: las prueba tests/unit/inicio.test.ts.
@@ -41,6 +42,8 @@ export type FilaDelDia = {
   avisos: string[];
   /** Cuándo: "Llega a las 8:30, Espacio 2" o "Entrega hoy". */
   cuando: string;
+  /** El paso siguiente, con el texto del botón de su pantalla (pedido 31): "Recibir vehículo", "Marcar listo"… */
+  siguiente: string | null;
 };
 
 type Ingreso = { id: number; placa: string; cliente: string; espacio: string; fechaInicio: string; horaIngreso: string | null };
@@ -61,6 +64,7 @@ export function paraHoy(ingresos: Ingreso[], abiertas: OrdenDelDia[], hoy: strin
     avisos: [textoIngresoAtrasado(i.fechaInicio, hoy)].filter((a): a is string => a !== null),
     // La que debía llegar antes ya lo dice su aviso: aquí, que sigue por recibir
     cuando: [i.fechaInicio < hoy ? "Por recibir" : i.horaIngreso ? `Llega ${i.horaIngreso}` : "Llega hoy", i.espacio].join(", "),
+    siguiente: pasoSiguiente("agendado", false),
   }));
   const vistas = new Set<number>();
   const ordenes = [...entregas, ...listas]
@@ -72,6 +76,7 @@ export function paraHoy(ingresos: Ingreso[], abiertas: OrdenDelDia[], hoy: strin
       estado: o.estado,
       avisos: [textoEntregaAtrasada(o, hoy), o.sinAvisar ? "Sin avisar" : null].filter((a): a is string => a !== null),
       cuando: `Entrega ${textoEntrega(o.fechaFin, hoy).toLowerCase()}`,
+      siguiente: pasoSiguiente(o.estado, o.sinAvisar),
     }));
   return [...llegan, ...ordenes];
 }

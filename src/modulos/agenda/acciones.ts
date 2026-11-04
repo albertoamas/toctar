@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
@@ -142,18 +142,23 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
         // Solo la vigente de una consulta "cotizado": si otra persona la agendó o la corrigió recién, no se toca.
         // Primero la consulta y después la cotización, en el mismo orden que una versión nueva (cotizaciones/acciones.ts):
         // con el orden al revés, agendar y corregir a la vez se esperaban entre sí y la base cortaba uno (auditoría QA-10)
-        const [confirmada] = await tx
-          .update(consulta)
-          .set({ estado: "confirmado", ultimoMovimientoAt: sql`now()` })
-          .where(and(eq(consulta.id, consultaId), eq(consulta.estado, "cotizado")))
-          .returning({ id: consulta.id });
+        // Pedido 31: también la aceptada sin fecha. Con la consulta bloqueada se mira que no tenga ya una reserva: dos
+        // personas que reservan la misma cotización a la vez no crean dos
+        const [encabezado] = await tx.select({ estado: consulta.estado }).from(consulta).where(eq(consulta.id, consultaId)).for("update");
+        const [activa] = await tx
+          .select({ id: trabajo.id })
+          .from(trabajo)
+          .where(and(eq(trabajo.consultaId, consultaId), ne(trabajo.estado, "cancelado")))
+          .limit(1);
+        if (!encabezado || (encabezado.estado !== "cotizado" && encabezado.estado !== "confirmado") || activa) throw new Conflicto(COTIZACION_CAMBIO);
+        await tx.update(consulta).set({ estado: "confirmado", ultimoMovimientoAt: sql`now()` }).where(eq(consulta.id, consultaId));
         const [aceptada] = await tx
           .update(cotizacion)
           .set({ estado: "aceptada" })
-          .where(and(eq(cotizacion.id, cotizacionId), eq(cotizacion.estado, "enviada")))
+          .where(and(eq(cotizacion.id, cotizacionId), eq(cotizacion.estado, encabezado.estado === "cotizado" ? "enviada" : "aceptada")))
           .returning({ id: cotizacion.id });
         // Lanzar (y no devolver) deshace la transacción: si no, la cotización quedaría aceptada sin reserva
-        if (!aceptada || !confirmada) throw new Conflicto(COTIZACION_CAMBIO);
+        if (!aceptada) throw new Conflicto(COTIZACION_CAMBIO);
       }
       const [nuevo] = await tx
         .insert(trabajo)

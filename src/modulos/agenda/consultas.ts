@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, gte, inArray, lte, ne, notInArray } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lte, ne, not, notInArray, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import {
@@ -24,7 +24,8 @@ import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { duracionEfectiva } from "@/modulos/catalogo/reglas";
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { sucursalPrincipal } from "@/modulos/configuracion/consultas";
-import { opcionesDeServicio, type OpcionServicio } from "@/modulos/cotizaciones/consultas";
+import { conReservaActiva, opcionesDeServicio, type OpcionServicio } from "@/modulos/cotizaciones/consultas";
+import { sePuedeReservar } from "@/modulos/cotizaciones/reglas";
 import { calcularSaldo, type Saldo } from "@/modulos/pagos/reglas";
 import { entregadasALaVista, ocupaEspacio, seCruzan } from "./reglas";
 
@@ -71,7 +72,7 @@ export type DatosDeCotizacion = {
   numero: string;
   version: number;
   consultaId: number;
-  /** La consulta todavía está "cotizado" y la cotización "enviada": se puede agendar. */
+  /** Pendiente, o aceptada sin fecha (pedido 31): se puede reservar (`sePuedeReservar`). */
   agendable: boolean;
   /** El cliente y el vehículo siguen activos. */
   activos: boolean;
@@ -98,6 +99,7 @@ export async function datosDeCotizacion(cotizacionId: number): Promise<DatosDeCo
       descuento: cotizacion.descuento,
       consultaId: consulta.id,
       estadoConsulta: consulta.estado,
+      conReserva: conReservaActiva,
       clienteId: cliente.id,
       cliente: cliente.nombre,
       clienteActivo: cliente.activo,
@@ -132,7 +134,7 @@ export async function datosDeCotizacion(cotizacionId: number): Promise<DatosDeCo
     numero: c.numero,
     version: c.version,
     consultaId: c.consultaId,
-    agendable: c.estado === "enviada" && c.estadoConsulta === "cotizado",
+    agendable: sePuedeReservar({ version: c.estado, encabezado: c.estadoConsulta, conReserva: c.conReserva }),
     activos: c.clienteActivo && c.vehiculoActivo,
     cliente: { id: c.clienteId, nombre: c.cliente },
     vehiculo: { id: c.vehiculoId, placa: c.placa, tamano: c.tamano, detalle: detalleVehiculo(c) },
@@ -158,6 +160,50 @@ export type DatosDirecta = {
   vehiculo: VehiculoReserva | null;
   opciones: OpcionServicio[];
 };
+
+/** Una cotización que se puede reservar, para ofrecerla en Nueva reserva (pedido 31). */
+export type CotizacionParaReservar = {
+  /** La versión que vale (la que se reserva). */
+  cotizacionId: number;
+  numero: string;
+  version: number;
+  /** Los servicios, en su orden: "Instalación de PPF, Pulido de vidrios". */
+  servicios: string;
+  total: string;
+  /** Aceptada sin fecha; si no, pendiente. */
+  aceptada: boolean;
+};
+
+/**
+ * Las cotizaciones de un cliente y su vehículo que se pueden reservar (`sePuedeReservar`): la pendiente o la aceptada
+ * sin fecha. Así Nueva reserva no vuelve a pedir los servicios y los precios que ya se cotizaron (RN-02). La más nueva
+ * primero. El total lo muestra solo quien ve montos (RN-12): lo decide la pantalla.
+ */
+export async function cotizacionesParaReservar(clienteId: number, vehiculoId: number): Promise<CotizacionParaReservar[]> {
+  const filas = await db
+    .select({
+      cotizacionId: cotizacion.id,
+      numero: cotizacion.numero,
+      version: cotizacion.version,
+      total: cotizacion.total,
+      estado: consulta.estado,
+      servicios: sql<string>`coalesce((select string_agg(${cotizacionLinea.descripcion}, ', ' order by ${cotizacionLinea.orden}) from ${cotizacionLinea} where ${cotizacionLinea.cotizacionId} = ${cotizacion.id}), '')`,
+    })
+    .from(cotizacion)
+    .innerJoin(consulta, eq(cotizacion.consultaId, consulta.id))
+    .where(
+      and(
+        eq(consulta.clienteId, clienteId),
+        eq(consulta.vehiculoId, vehiculoId),
+        or(
+          and(eq(consulta.estado, "cotizado"), eq(cotizacion.estado, "enviada")),
+          and(eq(consulta.estado, "confirmado"), eq(cotizacion.estado, "aceptada"), not(conReservaActiva)),
+        ),
+      ),
+    )
+    .orderBy(desc(consulta.createdAt), desc(consulta.id));
+  return filas.map(({ estado, ...f }) => ({ ...f, aceptada: estado === "confirmado" }));
+}
 
 /** Lo que hace falta para una reserva directa: el cliente activo, sus vehículos y, elegido uno, los servicios. */
 export async function datosDirecta(clienteId: number, vehiculoId: number | null): Promise<DatosDirecta | null> {

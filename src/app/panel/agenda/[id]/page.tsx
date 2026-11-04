@@ -9,15 +9,17 @@ import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Insignia } from "@/componentes/panel/insignia";
+import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
 import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
-import { fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/lib/fechas";
+import { fechaConDia, fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/lib/fechas";
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { MasReserva } from "@/modulos/agenda/componentes/acciones-reserva";
 import { obtenerReserva } from "@/modulos/agenda/consultas";
+import { pasoDelTrabajo } from "@/modulos/agenda/pasos";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { esOrden, puedeRecibirse } from "@/modulos/ordenes/reglas";
@@ -93,10 +95,14 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
       >
         {cancelada && r.motivoCancelacion ? `Cancelada: ${r.motivoCancelacion}` : orden && !verOrdenes ? "Ya se recibió: es una orden del taller." : null}
       </EncabezadoPagina>
-      {/* Solo mientras siga agendada: tras cancelarla (o en un enlace viejo) ya no corresponde */}
+      {/* Los pasos del trabajo (pedido 31): una reserva sin cotización empieza en "Reservada"; una cancelada no avanza */}
+      {!cancelada && <PasosTrabajo paso={pasoDelTrabajo({ trabajo: r.estado }) ?? 0} conCotizacion={r.consultaId !== null} />}
+      {/* Solo mientras siga agendada: tras cancelarla (o en un enlace viejo) ya no corresponde. Dice qué pasó, también con
+          la cotización (pedido 31) */}
       {agendada && r.estado === "agendado" && (
         <AvisoEnPagina>
-          Reserva agendada para el {formatearFecha(r.fechaInicio).slice(0, 5)} en {r.espacio}.
+          Reservada para el {fechaConDia(r.fechaInicio).toLowerCase()} en el {r.espacio}.
+          {r.cotizacion && ` La cotización ${r.cotizacion.numero} quedó aceptada.`}
         </AvisoEnPagina>
       )}
 
