@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -27,10 +26,9 @@ export const metadata: Metadata = {
 };
 
 const SERVICIOS_EN_PORTADA = 6;
-const FOTOS_EN_PORTADA = 6;
 
 // HU-10 Portada: lema, presentación y WhatsApp, con el comparador de antes y después al lado (pedido de la demo del
-// 24/10); servicios; algunas fotos de la galería; cierre.
+// 24/10); servicios; TikTok; cierre. Sin "Trabajos recientes" desde el pedido 36: las fotos están en la Galería.
 // Los textos y las listas salen del panel (B3) y se leen al atender la visita (el build no tiene base).
 // Toda la portada aparece de una vez (pulido 2.1): antes, los títulos fijos ("Servicios", el cierre) salían
 // en el primer envío y su contenido después, y se veían títulos sueltos. Mientras llegan los datos se ve
@@ -78,8 +76,6 @@ async function PortadaConDatos() {
         <Servicios servicios={servicios} />
       </section>
 
-      {/* Sin repetir el trabajo que ya se compara arriba */}
-      <Galeria fotos={fotos.filter((f) => f.id !== trabajo?.id).slice(0, FOTOS_EN_PORTADA)} />
       <BloqueTikTok enlace={redes.tiktok} />
 
       <CierreWhatsApp
@@ -213,38 +209,9 @@ function Servicios({ servicios }: { servicios: ServicioPublico[] }) {
   );
 }
 
-/** Trabajos recientes. Sin fotos (o solo la del comparador de arriba), no aparece: TikTok tiene su bloque (pedido 35). */
-function Galeria({ fotos }: { fotos: FotoGaleria[] }) {
-  if (fotos.length === 0) return null;
-  return (
-    <section aria-labelledby="galeria-titulo" className="mx-auto w-full max-w-6xl px-4 pb-12 md:pb-24">
-      <h2 id="galeria-titulo" className={TITULO_SECCION}>Trabajos recientes</h2>
-      <ul className="mt-8 grid grid-cols-2 gap-2 md:grid-cols-3">
-        {fotos.map((f) => (
-          <li key={f.id} className="aspect-square overflow-hidden bg-superficie">
-            <Image
-              src={f.despues.miniatura}
-              alt={nombreDelTrabajo(f.descripcion, f.servicio.nombre)}
-              width={f.despues.ancho ?? 640}
-              height={f.despues.alto ?? 640}
-              unoptimized
-              loading="lazy"
-              className="size-full object-cover"
-            />
-          </li>
-        ))}
-      </ul>
-      <Link href="/galeria" className="tt-boton tt-boton--contorno mt-8">
-        Ver la galería
-      </Link>
-    </section>
-  );
-}
-
 /**
- * TikTok en la portada (pedido 35): un bloque propio después de los trabajos recientes, con su título, el usuario y un
- * botón blanco grande. Antes era un botón suelto al final de la galería, a más de la mitad de la página. Solo si el
- * dueño cargó el enlace.
+ * TikTok en la portada (pedido 35): un bloque propio después de los servicios, con su título, el usuario y un
+ * botón blanco grande. Solo si el dueño cargó el enlace.
  */
 function BloqueTikTok({ enlace }: { enlace?: string }) {
   if (!enlace) return null;

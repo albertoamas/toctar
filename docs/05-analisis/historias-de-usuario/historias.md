@@ -117,7 +117,7 @@ Como dueño, quiero subir fotos de antes y después, para mostrar el trabajo.
 
 ### HU-10 Portada
 Como visitante, quiero ver de un vistazo qué hace TocTar, para decidir si escribir.
-- Muestra lema, imagen principal, servicios destacados y algunas fotos de la galería.
+- Muestra lema, imagen principal (con el comparador de un trabajo de la galería), servicios destacados y TikTok. Desde el pedido 36, sin miniaturas de la galería: las fotos están en la Galería.
 - El botón principal abre WhatsApp.
 - Carga rápido en el celular (RNF-02).
 
