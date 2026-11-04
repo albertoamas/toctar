@@ -1,5 +1,7 @@
 // Reglas puras de clientes y vehículos (C1). Sin base ni servidor: las prueba tests/unit/clientes.test.ts.
 
+import { fechaEnBolivia } from "@/lib/fechas";
+
 /**
  * Placa como se guarda: mayúsculas, sin espacios, guiones ni puntos ("1234 abc" → "1234ABC"). Así una placa escrita
  * de dos maneras es la misma y el aviso de duplicado funciona (RF-23). Devuelve null si no parece una placa.
@@ -9,8 +11,11 @@ export function normalizarPlaca(texto: string): string | null {
   return /^[A-Z0-9]{2,10}$/.test(placa) ? placa : null;
 }
 
-/** Año máximo de un vehículo: el siguiente al actual (salen modelos del año que viene). */
-export const anioMaximo = (hoy: Date = new Date()) => hoy.getFullYear() + 1;
+/**
+ * Año máximo de un vehículo: el siguiente al actual en Bolivia (salen modelos del año que viene). Con el año de Bolivia y
+ * no el de la zona del proceso: el servidor corre en UTC y en Año Nuevo daría uno más que el navegador (auditoría QA-03).
+ */
+export const anioMaximo = (hoy: Date = new Date()) => Number(fechaEnBolivia(hoy).slice(0, 4)) + 1;
 export const ANIO_MINIMO = 1950;
 
 export type Busqueda = {
