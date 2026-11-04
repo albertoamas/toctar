@@ -248,7 +248,7 @@ function ParaHoy({ filas, verOrdenes }: { filas: FilaDelDia[]; verOrdenes: boole
             { titulo: "Vehículo", ancho: "minmax(0,1fr)", movil: "titulo" },
             { titulo: "Estado", ancho: "minmax(0,1.3fr)", movil: "estado" },
             { titulo: "Cuándo", ancho: "minmax(0,1fr)", movil: "detalle" },
-            { titulo: "Siguiente paso", ancho: "minmax(0,1fr)", movil: "detalle" },
+            { titulo: "Siguiente paso", ancho: "minmax(0,1fr)", movil: "oculta" },
           ]}
           filas={filas.map((f) => ({
             href: rutaTrabajo(f.id, f.estado, verOrdenes),
@@ -262,12 +262,12 @@ function ParaHoy({ filas, verOrdenes }: { filas: FilaDelDia[]; verOrdenes: boole
                   </Insignia>
                 ))}
               </span>,
-              f.cuando,
-              f.siguiente && (
-                <span key="s" className="font-semibold">
-                  {f.siguiente}
-                </span>
-              ),
+              <span key="c">
+                {f.cuando}
+                {/* En el celular, el paso siguiente en la misma línea: su columna no se muestra */}
+                {f.siguiente && <span className="@2xl:hidden">, {f.siguiente.charAt(0).toLowerCase() + f.siguiente.slice(1)}</span>}
+              </span>,
+              f.siguiente,
             ],
           }))}
         />

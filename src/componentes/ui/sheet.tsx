@@ -105,7 +105,7 @@ function SheetTitle({ className, ...props }: SheetPrimitive.Title.Props) {
     <SheetPrimitive.Title
       data-slot="sheet-title"
       className={cn(
-        "font-heading text-lg font-bold text-foreground italic",
+        "tt-titulo-seccion text-foreground",
         className
       )}
       {...props}

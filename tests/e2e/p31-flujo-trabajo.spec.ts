@@ -141,7 +141,9 @@ test("Nueva reserva ofrece las cotizaciones del vehículo: los precios llegan si
   await expect(suyas.getByRole("link")).toHaveCount(1);
   await expect(suyas).toContainText("700 Bs");
   // También se puede armar una sin cotización
-  await expect(page.getByRole("heading", { name: "O una reserva sin cotización" })).toBeVisible();
+  await expect(page.getByText("Reserva sin cotización", { exact: true })).toBeVisible();
+  // Plegada: lo común es usar la cotización
+  await expect(page.getByRole("button", { name: "Agendar" })).toBeHidden();
   await suyas.getByRole("link").click();
   await expect(page).toHaveURL(new RegExp(`cotizacion=${c.cotizacionId}$`));
   await expect(page.getByRole("region", { name: new RegExp(`^Cotización ${c.numero}`) })).toContainText("700 Bs");
@@ -168,7 +170,7 @@ test("el encargado sin Pagos elige al cliente y reserva su cotización, sin ver 
   await expect(suyas.getByRole("link")).toHaveCount(1);
   await expect(suyas).not.toContainText("Bs");
   // Sin Pagos no arma una sin cotización
-  await expect(page.getByRole("heading", { name: "O una reserva sin cotización" })).toHaveCount(0);
+  await expect(page.getByText("Reserva sin cotización", { exact: true })).toHaveCount(0);
   await suyas.getByRole("link").click();
   // Sin Cotizaciones, "Volver" lleva a la Agenda
   await expect(page.getByRole("main").getByRole("link", { name: "Agenda", exact: true })).toBeVisible();

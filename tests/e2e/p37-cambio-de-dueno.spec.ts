@@ -44,16 +44,25 @@ test("desde la edición del vehículo: pasa al comprador con su mantenimiento y 
   await ingresarComoDueno(page);
   await page.goto(`/panel/clientes/${d.anteriorId}`, { waitUntil: "networkidle" });
   await page.getByRole("button", { name: `Editar ${d.placa}` }).click();
-  await page.getByRole("link", { name: "Cambió de dueño" }).click();
+  await page.getByRole("button", { name: "Más" }).click();
+  // Con la máquina muy cargada, un toque justo al abrirse el menú puede no contar: se repite mientras el menú siga abierto
+  const opcion = page.getByRole("menuitem", { name: "Cambiar de dueño" });
+  await expect(async () => {
+    if (await opcion.isVisible()) await opcion.click({ timeout: 1000 });
+    await expect(page).toHaveURL(/\/dueno$/, { timeout: 1000 });
+  }).toPass({ timeout: 10000 });
   await expect(page.getByRole("heading", { name: `Cambiar de dueño ${d.placa}` })).toBeVisible();
 
   // Se elige al comprador con el buscador de Clientes
+  // (el dueño actual no se ofrece)
+  await page.goto(`${new URL(page.url()).pathname}?q=${encodeURIComponent(d.anterior)}`);
+  await expect(page.getByRole("list", { name: "Elegir cliente" })).toHaveCount(0);
   await page.goto(`${new URL(page.url()).pathname}?q=${encodeURIComponent(d.nuevo)}`);
   await page.getByRole("list", { name: "Elegir cliente" }).getByRole("link").filter({ hasText: d.nuevo }).click();
-  await expect(page.getByRole("heading", { name: `De ${d.anterior} a ${d.nuevo}` })).toBeVisible();
+  await expect(page.getByText(`De ${d.anterior} a ${d.nuevo}.`)).toBeVisible();
   await expect(page.getByText("1 mantenimiento por avisar")).toBeVisible();
   await expect(page.getByText("1 cotización abierta")).toBeVisible();
-  await page.getByRole("button", { name: `Pasar a ${d.nuevo}` }).click();
+  await page.getByRole("button", { name: "Cambiar de dueño" }).click();
 
   await expect(page).toHaveURL(new RegExp(`/panel/clientes/${d.nuevoId}\\?recibido=${d.placa}$`));
   await expect(page.getByText(`${d.placa} ahora es de ${d.nuevo}, con su plan de mantenimiento.`)).toBeVisible();
@@ -89,9 +98,9 @@ test("desde la placa repetida al agregar un vehículo en la ficha del comprador"
   await dialogo.getByLabel("Tamaño").selectOption({ index: 1 });
   await dialogo.getByRole("button", { name: "Agregar vehículo" }).click();
   await expect(dialogo.getByText(`La placa ${d.placa} ya está registrada a nombre de ${d.anterior}.`)).toBeVisible();
-  await dialogo.getByRole("link", { name: "¿Cambió de dueño? Pasarlo a este cliente" }).click();
-  await expect(page.getByRole("heading", { name: `De ${d.anterior} a ${d.nuevo}` })).toBeVisible();
-  await page.getByRole("button", { name: `Pasar a ${d.nuevo}` }).click();
+  await dialogo.getByRole("link", { name: "Cambiar de dueño a este cliente" }).click();
+  await expect(page.getByText(`De ${d.anterior} a ${d.nuevo}.`)).toBeVisible();
+  await page.getByRole("button", { name: "Cambiar de dueño" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/clientes/${d.nuevoId}\\?recibido=${d.placa}$`));
   await expect(page.getByRole("list", { name: "Vehículos" })).toContainText(d.placa);
 });
@@ -108,7 +117,7 @@ test("con una reserva activa no se pasa: primero se entrega o se cancela", async
   await ingresarComoDueno(page);
   await page.goto(`/panel/clientes/${d.anteriorId}/vehiculos/${d.vehiculoId}/dueno?nuevo=${d.nuevoId}`);
   await expect(page.getByText(`${d.placa} tiene una reserva o está en el taller`)).toBeVisible();
-  await expect(page.getByRole("button", { name: /^Pasar a/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Cambiar de dueño" })).toHaveCount(0);
   const [{ cliente }] = await consultar<{ cliente: number }>("select cliente_id as cliente from vehiculo where id = $1", [d.vehiculoId]);
   expect(cliente).toBe(d.anteriorId);
 });
@@ -127,7 +136,7 @@ test("lo entregado al anterior no se toca, y su cotización cerrada no vuelve a 
   await ingresarComoDueno(page);
   await page.goto(`/panel/clientes/${d.anteriorId}/vehiculos/${d.vehiculoId}/dueno?nuevo=${d.nuevoId}`);
   await expect(page.getByText("1 cotización abierta")).toBeVisible();
-  await page.getByRole("button", { name: `Pasar a ${d.nuevo}` }).click();
+  await page.getByRole("button", { name: "Cambiar de dueño" }).click();
   await expect(page).toHaveURL((url) => url.pathname === `/panel/clientes/${d.nuevoId}` && url.searchParams.has("recibido"));
   const filas = await consultar<{ id: number; estado: string; version: string }>(
     "select q.id, q.estado, c.estado as version from consulta q join cotizacion c on c.consulta_id = q.id where q.id = any($1) order by q.id",

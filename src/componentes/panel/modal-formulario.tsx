@@ -40,7 +40,7 @@ export function ModalFormulario({ titulo, abierto, alCambiar, children }: Props)
         className="max-h-[calc(100dvh-2rem)] gap-5 overflow-y-auto text-base max-sm:top-auto max-sm:bottom-0 max-sm:max-w-full max-sm:translate-y-0 max-sm:rounded-b-none sm:max-w-lg"
       >
         <DialogHeader>
-          <DialogTitle className="text-2xl">{titulo}</DialogTitle>
+          <DialogTitle>{titulo}</DialogTitle>
         </DialogHeader>
         <Modal.Provider value={{ cerrar: () => alCambiar(false) }}>{children}</Modal.Provider>
       </DialogContent>

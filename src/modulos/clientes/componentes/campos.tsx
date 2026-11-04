@@ -28,8 +28,8 @@ type PropsCampos = {
   /** A dónde lleva el aviso de repetido. Por defecto, a la ficha del cliente. */
   enlaceExistente?: EnlaceExistente;
   /**
-   * Con la placa de otro cliente, a dónde lleva "¿Cambió de dueño?" (pedido 37): la ficha de un cliente, donde el
-   * vehículo puede pasar a él. Sin esto, solo el enlace a la ficha del dueño.
+   * Con la placa de otro cliente, a dónde lleva "Cambiar de dueño a este cliente" (pedido 37): en la ficha de un cliente,
+   * donde el vehículo puede pasar a él. Sin esto, solo el enlace a la ficha del dueño.
    */
   cambioDeDueno?: (existente: { id: number; vehiculoId: number }) => Route | null;
 };
@@ -51,7 +51,7 @@ function Existente({ estado, campo, enlace = aLaFicha }: { estado: EstadoCliente
   );
 }
 
-/** La placa es de otro cliente y se puede pasar a este (pedido 37): "¿Cambió de dueño? Pasarlo a este cliente". */
+/** La placa es de otro cliente y se puede pasar a este (pedido 37): "Cambiar de dueño a este cliente". */
 function CambioDeDueno({ estado, campo, href }: { estado: EstadoCliente; campo: string; href?: (e: { id: number; vehiculoId: number }) => Route | null }) {
   const existente = estado.existentes?.[campo];
   // Dentro de un modal, se cierra al irse: al volver a la ficha, no queda abierto
@@ -60,7 +60,7 @@ function CambioDeDueno({ estado, campo, href }: { estado: EstadoCliente; campo: 
   if (!destino) return null;
   return (
     <Link href={destino} onClick={cerrar} className="-mt-4 inline-flex min-h-11 items-center self-start text-sm font-semibold underline">
-      ¿Cambió de dueño? Pasarlo a este cliente
+      Cambiar de dueño a este cliente
     </Link>
   );
 }

@@ -2,15 +2,15 @@
 
 import { useActionState, useRef, useState, useTransition } from "react";
 import type { Route } from "next";
-import Link from "next/link";
-import { cn } from "cn";
-import { ArrowRightLeftIcon, PencilIcon, PlusIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { PencilIcon, PlusIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { useHidratado } from "@/componentes/hidratado";
 import { avisarResultado, conAviso } from "@/componentes/panel/avisos";
+import { MenuMas } from "@/componentes/panel/menu-mas";
 import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
-import { Button, buttonVariants } from "@/componentes/ui/button";
+import { Button } from "@/componentes/ui/button";
 import type { Tamano } from "@/modulos/configuracion/consultas";
 import { cambiarEstadoVehiculo, guardarVehiculo, type EstadoCliente } from "../acciones";
 import type { VehiculoCliente } from "../consultas";
@@ -20,9 +20,9 @@ import { DatosVehiculo } from "./datos-vehiculo";
 
 // HU-23: vehículos de un cliente, en su ficha. Pulido 8.3 (skill pantallas-panel): la lista en lectura, con la placa
 // grande; el lápiz abre "Editar {placa}" y "＋ Agregar" abre "Agregar vehículo", en un modal (ModalFormulario), con
-// placa y tamaño a la vista y lo demás plegado como en el alta. "Desactivar" va dentro de la edición: se usa poco y así
-// no se toca sin querer. Nada se borra (RN-14). Pedido 37: "Cambió de dueño", también en la edición; y al agregar una
-// placa que es de otro cliente, el enlace para pasarla a este.
+// placa y tamaño a la vista y lo demás plegado como en el alta. "Desactivar" y "Cambiar de dueño" (pedido 37) van en "Más",
+// dentro de la edición: se usan poco y así no se tocan sin querer. Nada se borra (RN-14). Al agregar una placa que es de
+// otro cliente, el enlace para pasarla a este.
 
 type Props = { clienteId: number; vehiculos: VehiculoCliente[]; tamanos: Tamano[] };
 
@@ -103,7 +103,8 @@ function FormularioVehiculo({ clienteId, vehiculo, tamanos }: { clienteId: numbe
     conAviso(guardarVehiculo, (r) => r.ok && alTerminar()),
     {},
   );
-  const [desactivando, iniciar] = useTransition();
+  const [, iniciar] = useTransition();
+  const router = useRouter();
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
   const prefijo = prefijoVehiculo(vehiculo?.id);
@@ -139,29 +140,30 @@ function FormularioVehiculo({ clienteId, vehiculo, tamanos }: { clienteId: numbe
           {enviando ? "Guardando…" : vehiculo ? "Guardar vehículo" : "Agregar vehículo"}
         </Button>
         <CancelarModal />
+        {/* Lo poco usado, en "Más": pasarlo a otro cliente (pedido 37) y desactivarlo */}
         {vehiculo && (
-          // Se vendió: pasa a otro cliente con su plan de mantenimiento (pedido 37)
-          <Link href={`/panel/clientes/${clienteId}/vehiculos/${vehiculo.id}/dueno`} onClick={alTerminar} className={cn(buttonVariants({ variant: "outline" }), "ml-auto")}>
-            <ArrowRightLeftIcon />
-            Cambió de dueño
-          </Link>
-        )}
-        {vehiculo && (
-          <Button
-            type="button"
-            variant="outline"
-            disabled={desactivando}
-            aria-label={`Desactivar ${vehiculo.placa}`}
-            onClick={() =>
-              iniciar(async () => {
-                const r = await cambiarEstadoVehiculo({ clienteId, id: vehiculo.id, activo: false });
-                avisarResultado(r);
-                if (r.ok) alTerminar();
-              })
-            }
-          >
-            Desactivar
-          </Button>
+          <div className="ml-auto">
+            <MenuMas
+              acciones={[
+                {
+                  texto: "Cambiar de dueño",
+                  alElegir: () => {
+                    alTerminar();
+                    router.push(`/panel/clientes/${clienteId}/vehiculos/${vehiculo.id}/dueno`);
+                  },
+                },
+                {
+                  texto: `Desactivar ${vehiculo.placa}`,
+                  alElegir: () =>
+                    iniciar(async () => {
+                      const r = await cambiarEstadoVehiculo({ clienteId, id: vehiculo.id, activo: false });
+                      avisarResultado(r);
+                      if (r.ok) alTerminar();
+                    }),
+                },
+              ]}
+            />
+          </div>
         )}
       </PieModal>
     </form>

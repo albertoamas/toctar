@@ -46,14 +46,18 @@ test("el perfil Taller trabaja cualquier orden, sin asignarla y sin ver precios:
   await page.getByRole("link", { name: new RegExp(`^${placa}`) }).click();
   await expect(page.getByRole("heading", { level: 1, name: placa })).toBeVisible();
   const pasos = page.getByRole("region", { name: "Estado de la orden" });
-  await expect(pasos.locator('[aria-current="step"]')).toHaveText("Recibida");
+  // Los pasos del trabajo (pedido 31): recibida y en proceso son "En el taller"; la insignia dice cuál
+  const pasoActual = page.getByRole("navigation", { name: "Pasos del trabajo" }).locator('[aria-current="step"]');
+  await expect(pasoActual).toHaveText("En el taller");
+  await expect(page.getByRole("main").getByText("Recibida", { exact: true }).first()).toBeVisible();
   // Sin Pagos: los servicios sin precio (RN-12); y nada dice a quién está asignada (pedido 32)
   await expect(page.getByRole("main")).not.toContainText(" Bs");
   await expect(page.getByLabel("Datos de la orden")).not.toContainText("Técnico");
 
   await pasos.getByRole("button", { name: "Empezar trabajo" }).click();
   await expect(page.getByText("La orden está en proceso.")).toBeVisible();
-  await expect(pasos.locator('[aria-current="step"]')).toHaveText("En proceso");
+  await expect(pasoActual).toHaveText("En el taller");
+  await expect(page.getByRole("main").getByText("En proceso", { exact: true }).first()).toBeVisible();
 
   // Una foto del inicio y un avance
   await expect(page.getByRole("button", { name: "Tomar foto" }).first()).toBeEnabled();
@@ -95,7 +99,8 @@ test("el perfil Taller trabaja cualquier orden, sin asignarla y sin ver precios:
   await volver.getByRole("button", { name: "Sí, volver a en proceso" }).click();
   await expect(volver).toHaveCount(0);
   // El aviso de antes puede seguir a la vista: se espera el paso, que sí cambia
-  await expect(pasos.locator('[aria-current="step"]')).toHaveText("En proceso");
+  await expect(pasoActual).toHaveText("En el taller");
+  await expect(page.getByRole("main").getByText("En proceso", { exact: true }).first()).toBeVisible();
   const [vuelta] = await consultar<{ fin: string; avisada: boolean }>("select to_char(fecha_fin, 'YYYY-MM-DD') as fin, avisado_listo_at is not null as avisada from trabajo where id = $1", [id]);
   expect(vuelta).toEqual({ fin: await dia(3), avisada: false });
 });
