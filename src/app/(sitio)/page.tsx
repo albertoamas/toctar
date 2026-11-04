@@ -211,8 +211,7 @@ function Servicios({ servicios }: { servicios: ServicioPublico[] }) {
 
 /**
  * TikTok en la portada (pedido 35): un bloque propio después de los servicios, con su título, el usuario y un
- * botón blanco grande. Antes era un botón suelto al final de la galería, a más de la mitad de la página. Solo si el
- * dueño cargó el enlace.
+ * botón blanco grande. Solo si el dueño cargó el enlace.
  */
 function BloqueTikTok({ enlace }: { enlace?: string }) {
   if (!enlace) return null;
