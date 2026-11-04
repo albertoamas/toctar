@@ -61,7 +61,7 @@ El dueño dijo que el camino de la cotización a la reserva "no se siente fluido
 - `agendarReserva` desde una cotización: acepta la aceptada sin fecha, con el mismo orden de bloqueos (consulta y después cotización, QA-10).
 
 ## 7. Componentes y diseño
-- `PasosTrabajo` (`src/componentes/panel/pasos-trabajo.tsx`): el indicador de pasos del panel, con círculos (pedido 26): hecho en verde con ✓, el actual en azul con `aria-current="step"`, los que faltan en gris; sin rojo, que es del botón principal. En el celular, los círculos y el nombre del paso actual; desde `@xl`, el nombre debajo de cada uno. En la orden reemplaza a sus tres pasos: uno solo por pantalla, y el botón grande sigue debajo (`EstadoOrden`).
+- `PasosTrabajo` (`src/componentes/panel/pasos-trabajo.tsx`): barras de pasos: las hechas en tinta, la actual en azul con `aria-current="step"`, las que faltan en el borde; sin rojo, que es del botón principal. En el celular, "Paso 3 de 6: Reservada" sobre las barras; desde `@xl`, el nombre debajo de cada una. Ocupa el ancho de su pantalla. En la orden reemplaza a sus tres pasos con círculos: uno solo por pantalla, y el botón grande sigue debajo (`EstadoOrden`).
 - Todo con los tokens y componentes del panel (`EncabezadoPagina`, `Insignia`, `tt-tarjeta-panel`, `buttonVariants`), sin la estética de la maqueta.
 
 ## 8. Textos de la interfaz
