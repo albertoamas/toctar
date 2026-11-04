@@ -71,7 +71,7 @@
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
 | 3.1 | Marco o desmarco módulos (clientes, consultas, agenda, órdenes, pagos, mantenimientos, sitio, reclamos) y el permiso "autorizar entrega con saldo" | E2E `hu-03` "los permisos del encargado: el perfil marca sus casillas…" (pedido 32: los perfiles Taller, Atención y Todo). Las casillas aparecen solo para el encargado. **Hoy existe "Autorizar entrega con saldo"**; cada módulo suma su casilla cuando existe su pantalla (Sitio web en B3, Reclamos en B5, el resto en la entrega 2), y su etapa lo prueba | ✅ con lo existente |
-| 3.2 | El encargado nunca puede cotizar ni cambiar la configuración | Unitarias `permisos` "nunca ve cotizaciones, usuarios, configuración, catálogo, aunque tenga todos los permisos" | ✅ |
+| 3.2 | El encargado nunca puede cambiar la configuración, los usuarios ni el catálogo; cotiza solo con el permiso "Cotizaciones" (pedido 24, que reemplaza el "nunca cotiza" original) | Unitarias `permisos` "nunca ve usuarios, configuración, catálogo, aunque tenga todos los permisos" y "cotiza solo con «Cotizaciones»" | ✅ |
 | 3.3 | El permiso se valida en el servidor: entrar por la URL de un módulo no habilitado muestra "sin acceso" | E2E `hu-03` "el encargado sin permisos solo ve el inicio y no entra a Usuarios" y `hu-02` (el perfil Taller). Unitarias: matriz completa. Revisión del código: las 5 páginas y 5 acciones del panel verifican el acceso, y las 12 llamadas a la autenticación llevan la sesión (14/10) | ✅ |
 
 ## HU-04 Datos del negocio

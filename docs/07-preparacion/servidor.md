@@ -168,7 +168,8 @@ Configurado el 23/10/2026 en la cuenta de Cloudflare del negocio (`toctartarija@
 ## Lo que falta
 
 - [ ] Verificación en dos pasos en Coolify (YankoSoft) e invitar al dueño en **Team**.
-- [ ] Día de la publicación: comprobar que `www` redirija, UptimeRobot (cuenta del negocio con avisos también a YankoSoft; monitor de producción) y probar una restauración la semana siguiente.
+- [ ] **Antes de publicar** (RNF-06): probar una restauración de la base y de las fotos, y anotarla aquí.
+- [ ] Día de la publicación: comprobar que `www` redirija y UptimeRobot (cuenta del negocio con avisos también a YankoSoft; monitor de producción).
 - [ ] Reunión con el dueño: sus dos pasos (Cloudflare y Hetzner), su tarjeta en las tres cuentas, decidir los backups de Hetzner y la hoja de entrega con el acceso de emergencia (consola web de Hetzner → Reset root password).
 
 Cada cosa que se instale se anota aquí, con su fecha.

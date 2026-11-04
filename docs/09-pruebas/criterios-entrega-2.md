@@ -311,7 +311,7 @@
 | Criterio | Cómo se comprueba | Estado |
 |---|---|---|
 | Una cotización se agenda, el vehículo se recibe con su checklist, un chico del taller (perfil Taller) lo trabaja, se avisa, se cobra, se entrega con firma y queda programado su próximo mantenimiento, que se agenda | E2E `flujo-taller-completo` "del día de ingreso al próximo mantenimiento agendado" | ✅ |
-| El mismo ciclo, a mano, con los tres roles y en un celular real | Revisión a mano en `pruebas.toctardetailing.com` | ⏳ |
+| El mismo ciclo, a mano, con los dos roles (dueño y encargado con cada perfil: Taller, Atención y Todo; pedido 32) y en un celular real | Revisión a mano en `pruebas.toctardetailing.com` | ⏳ |
 
 ## Reglas de negocio de esta entrega
 
@@ -357,7 +357,7 @@ Los errores del 26 y 27 de octubre (pulido visual de la Entrega 2) están en `cr
 
 ## Lo que falta para el acta
 
-1. La revisión manual de YankoSoft con esta lista, en `pruebas.toctardetailing.com`, con los tres roles.
+1. La revisión manual de YankoSoft con esta lista, en `pruebas.toctardetailing.com`, con los dos roles (el encargado con cada perfil; pedido 32).
 2. Las pruebas en un celular real (⏳ de 26.4, 27.3, 32.5, 33.6, 36.5 y el ciclo completo).
 3. Lo que carga o confirma el dueño (⏳ de 20.4, 26.6 y 38.6).
 4. Los pedidos que el dueño apruebe antes del acta (29, 31, 19), con sus criterios en esta lista.
