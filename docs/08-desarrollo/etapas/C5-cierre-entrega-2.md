@@ -241,7 +241,7 @@ Una rama y un PR por historia, desde `develop`:
 4. `hu-41-galeria-desde-orden`: migración `0035`, la copia al bucket público y la pantalla de publicar.
 5. `docs/cierre-entrega-2`:
    - `criterios-entrega-2.md` (HU-19 a HU-41, con el estado de cada criterio);
-   - `capacitacion.md`, con una guía corta por rol: dueño (cotizar, agenda, saldos y mensajes), encargado (recibir, entregar y cobrar) y técnico (sus órdenes desde el celular);
+   - `capacitacion.md`, con una guía corta por rol: dueño (cotizar, agenda, saldos, mensajes y usuarios) y encargado según su perfil (Taller: recibir, trabajar y entregar; Atención: además clientes, cotizaciones y saldos). Sin técnico desde el pedido 32;
    - el acta `entrega-2.md`;
    - el cierre de esta especificación.
 
@@ -249,7 +249,7 @@ Cada PR pasa por lint, typecheck, unitarias, E2E completo y knip; `code-review` 
 
 ## 11. Criterio de salida
 
-- Todos los criterios de HU-19 a HU-38 en ✅ o 🟢 en `criterios-entrega-2.md`; las deseables, en ✅ o anotadas para después.
+- Todos los criterios de HU-19 a HU-41 en ✅ o 🟢 en `criterios-entrega-2.md`, o anotados para después (los ⏳ que dependen del dueño).
 - El E2E completo pasa.
 - **En la demo:**
   - la pantalla del día con datos de una semana de prueba;

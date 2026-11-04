@@ -19,7 +19,7 @@
 - **El adelanto depende del dueño:** la lista de precios y las variantes pasan a pedirse para el viernes 23 (antes, 3/11), y el dominio sigue siendo urgente.
 - **Lunes 19:** reunión de avance con el dueño, con una presentación y sin mostrar todavía la app. La primera demo sigue siendo el viernes 23.
 
-## Dónde estamos (2 de noviembre)
+## Dónde estamos (4 de noviembre)
 
 | Qué | Estado |
 |---|---|
@@ -39,16 +39,44 @@
 | Etapa C2 Consultas y cotizaciones (HU-24 a HU-28) | ✅ Programada el 21/10 (PR #55 a #60). Falta compartir el PDF desde un celular real (necesita https, A3), revisarlo impreso y que el dueño confirme formas de pago, condiciones y garantía |
 | Etapa C3 Agenda y pagos (HU-29 a HU-32) | ✅ Programada el 21/10 (PR #61 a #64). Falta mostrarle el tablero al dueño y probar el cobro con comprobante en un celular real |
 | Etapa C4 Taller y entrega (HU-33 a HU-38) | ✅ Programada el 23/10 (PR #65 a #72). Los 5 flujos críticos con su prueba E2E. Falta la demo desde un celular real |
-| Etapa C5 Cierre de la Entrega 2 | 🔵 Especificación aprobada el 23/10 (PR #73). §0, la reorganización del panel, en `develop` el 24/10 (PR #74). HU-40 (mensajes de WhatsApp editables, PR #92), HU-39 (pantalla del día, PR #93) y HU-41 (fotos de órdenes a la galería, PR #94) programadas el 25/10. Hechos el pulido visual de la Entrega 2 (27/10) y los pedidos 20 y 21 (mantenimientos). Criterios de HU-19 a HU-41 escritos el 02/11 (`09-pruebas/criterios-entrega-2.md`). **Sigue el cierre:** la prueba completa con esa lista, capacitación por rol, demo y acta |
+| Etapa C5 Cierre de la Entrega 2 | 🔵 Especificación aprobada el 23/10 (PR #73). §0, HU-39, HU-40 y HU-41 hechas (PR #74, #92 a #94); criterios de HU-19 a HU-41 escritos el 02/11 (`09-pruebas/criterios-entrega-2.md`, PR #127). Todo lo programable está en `develop`. **Sigue el cierre:** ver "Para cerrar la Entrega 2", debajo |
 | Datos de demostración | ✅ Scripts `db:reiniciar-local` y `datos:demo` (PR #75): el sitio con fotos y el panel con movimiento de esta semana. Al día con los ajustes del dueño (checklist y firma) y con `datos:reiniciar` para todo de una vez (02/11). Falta cargarlos en pruebas |
 | Pedidos de la demo del sitio (24/10) | ✅ Hechos el 24/10 (PR #78 a #88; `pulido-visual.md`, grupo 2B.1 a 2B.12; registro de cambios 1 a 11). Falta que el dueño cargue en pruebas el trabajo de la portada, los íconos de los beneficios, la escalera del nano cerámico, las fotos de cada sección y del equipo, el TikTok y el WhatsApp real |
 | Pulido visual de la Entrega 2 | ✅ Grupos 7 a 13, pantalla por pantalla, en `develop` (PR #99, #100, #102 a #105 y #108, del 25 al 27/10). Registro, comparativas y revisiones de cada grupo en `pulido-visual.md` |
 | Pedidos nuevos del dueño (25 al 27/10) | 🔵 En `registro-de-cambios.md`. **Hechos:** 20 (ver todos los mantenimientos, PR #106) y 21 (planes de mantenimiento por vehículo, que absorbe el 17; PR #107). **Esperan al dueño:** 12 a 14 (cotizados), 15 y 16 (Sistema completo), 18 y 19, 22 (WhatsApp automático, por cotizar) y 23 a 25 (cotización única, encargado que cotiza y cotización editable: los prueba y decide). Además, cargar en el catálogo los servicios con mantenimiento y su frecuencia |
 | Pruebas E2E intermitentes | ✅ `flujo-taller-completo` y `hu-30` fallaban a veces con la suite completa: eran dos carreras reales del sistema (recibir pedía confirmar "sin fotos" con una foto recién subida; el menú de espacios mostraba un instante la lista de otras fechas), corregidas el 27/10 (PR #109). La E2E completa pasó tres veces seguidas sin fallas. Lo del 25/10 (`hu-08`: llenar antes de que la página responda) ya espera la hidratación |
-| Ajustes de la reunión con el dueño (01/11) | ⏳ Plan en `ajustes-reunion-dueno.md`: 1) cotización directa sin consulta (✅ PR #113), 2) checklist al recibir (✅), 3) firma del cliente (✅), 4) fotos justas (✅), 5) rediseño del panel (✅ 02/11, aprobado por el dueño, PR #125). Además, el pedido 32 (02/11): dos roles, dueño y encargado, sin técnico asignado (`etapas/P32-roles-sin-tecnico.md`), 6) órdenes con historial (✅), 7) Saldos con búsqueda (✅), 8) vehículos sin placa, 9) avisos automáticos (por cotizar). Van antes del cierre de C5 |
+| Ajustes de la reunión con el dueño (01/11) | ✅ Plan en `ajustes-reunion-dueno.md`: cotización directa (PR #113), checklist al recibir (#114), firma (#115), fotos justas (#116), órdenes con historial (#117), saldos con búsqueda (#118), rediseño del panel (#125, aprobado por el dueño) y dos roles sin técnico asignado (pedido 32, #129). Quedan, a decisión del dueño, vehículos sin placa (pedido 29) y los avisos automáticos (pedido 22, por cotizar) |
+| Ajustes del sitio (03/11) | ✅ Pedidos 33 a 36: tarjetas de servicio más vivas (#131), galería en dos secciones (#132), TikTok a la par de WhatsApp y "Cómo llegar" como botón (#133) y portada sin "Trabajos recientes" (#134). Corrección del iPhone en formularios y logo (#130) |
+| Auditoría QA del 03/11 | ✅ 14 hallazgos verificados: 10 corregidos (Zod, fechas, limpieza de fotos, bloqueos y el último dueño) y 4 descartados con motivo (PR #135, `09-pruebas/auditoria-qa-2026-11-03.md`) |
 | Identidad visual aplicada a la app | ✅ En `develop` (PR #5 y #9, logos nítidos en tamaños chicos) |
 | Inicio del trabajo | 9 de octubre de 2026 (firma y primer pago) |
 | Día D (inicio del plazo del contrato) | 14 de octubre de 2026 (llegó el material) |
+
+## Para cerrar la Entrega 2 (al 4 de noviembre)
+
+Todo lo programable está en `develop` y en `pruebas.toctardetailing.com`. Lo que falta, en orden. Con la Entrega 2 se acepta también la Entrega 1 (todo `develop` pasa junto a `main`).
+
+**Lo hace YankoSoft (no depende del dueño):**
+
+1. **Prueba completa a mano** con `09-pruebas/criterios-entrega-2.md` (y los ⚠️/⏳ de `criterios-entrega-1.md`) en pruebas, con https: dueño y encargado con cada perfil (Taller, Atención, Todo), en un Android y un iPhone. Cubre los ⏳ de celular real: compartir el PDF (27.3), comprobante con la cámara (32.5), checklist con fotos (33.6), PDF impreso en A4 (26.4) e instalar la app (B2).
+2. **Datos de demostración en pruebas** (`datos:demo`), para la demo y la capacitación.
+3. **Guía de capacitación** `10-lanzamiento/capacitacion.md`, corta y por rol (ver C5, punto 3).
+4. **Borradores de las actas** `09-pruebas/actas-de-aceptacion/entrega-1.md` y `entrega-2.md`.
+5. **En el servidor** (con el acceso SSH de YankoSoft): confirmar que Traefik pone `x-real-ip` y que el puerto de la app no está abierto; la restauración de prueba antes de publicar (RNF-06, `07-preparacion/servidor.md`); Lighthouse y JSON-LD con https.
+
+**Lo decide o lo carga el dueño** (sin apuro: se avanza con lo de arriba mientras tanto):
+
+| Qué | Dónde |
+|---|---|
+| Pedido 29: vehículos sin placa | `registro-de-cambios.md`, prioridad 8 de `ajustes-reunion-dueno.md` |
+| Pedido 31: separar Cotizaciones de Nueva reserva | `registro-de-cambios.md` |
+| Pedidos 14 (Bs 200), 18, 19 y 22 (avisos automáticos, por cotizar); la constancia en PDF de la entrega (pedido 13, +2 h) | `registro-de-cambios.md` |
+| Pedidos 15 y 16: van en el Sistema completo | `registro-de-cambios.md` |
+| Decisiones abiertas de C5 (permiso del cliente para publicar fotos, qué ve el encargado en Inicio, más mensajes editables) | `etapas/C5-cierre-entrega-2.md`, §12 |
+| Sus datos: lista de precios real (20.4), servicios con mantenimiento y su frecuencia, textos del PDF (formas de pago, condiciones, garantía; 26.6), contenido del sitio (trabajo de la portada, fotos, TikTok, WhatsApp real) | Panel, en producción al publicar |
+| Reunión de accesos: sus dos pasos en Cloudflare y Hetzner, su tarjeta y el equipo en Coolify | `07-preparacion/servidor.md` |
+
+**Al aceptar:** demo, capacitación, actas confirmadas, merge de `develop` a `main`, etiquetas `v1.0.0` y `v2.0.0`, publicación en producción y cobro (Bs 700 + Bs 2.000).
 
 ## Calendario
 
@@ -279,7 +307,7 @@ Una rama `hu-XX-…` por historia, desde `develop`, con commits chicos por tipo 
 
 1. Historias deseables, solo si hay tiempo: HU-39 Pantalla del día · HU-40 Plantillas de WhatsApp (`plantilla_mensaje`) · HU-41 Fotos de órdenes a la galería.
 2. Prueba completa con la lista de criterios de HU-19 a HU-38.
-3. Capacitación por rol: dueño (cotizar, agenda, saldos), encargado y técnico (sus órdenes desde el celular).
+3. Capacitación por rol: dueño (cotizar, agenda, saldos, mensajes y usuarios) y encargado según su perfil (Taller: recibir, trabajar y entregar; Atención: además clientes, cotizaciones y saldos). Sin técnico desde el pedido 32.
 4. Demo del viernes 13 y acta de la entrega 2 (`09-pruebas/actas-de-aceptacion/entrega-2.md`).
 5. Merge a `main`, etiqueta `v2.0.0`, cobro de Bs 2.000. Al completar el pago, TocTar recibe una copia del código.
 
