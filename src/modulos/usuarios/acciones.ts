@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { APIError } from "better-auth/api";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
@@ -13,7 +13,7 @@ import type { Permiso } from "@/lib/permisos";
 import type { Rol } from "@/lib/roles";
 import { exigirModulo } from "@/lib/sesion";
 import { correoInterno } from "@/lib/usuarios";
-import { listarUsuarios } from "./consultas";
+import { listarUsuarios, type FilaUsuario } from "./consultas";
 import {
   esquemaActualizarUsuario,
   esquemaCrearUsuario,
@@ -43,6 +43,24 @@ function usuarioRepetido(error: unknown): boolean {
   const codigo = (error.body as { code?: string } | undefined)?.code ?? "";
   return codigo === "USERNAME_IS_ALREADY_TAKEN" || codigo.startsWith("USER_ALREADY_EXISTS");
 }
+
+/**
+ * Los cambios que podrían dejar al negocio sin un dueño activo (cambiar un rol, desactivar) van de a uno, con un candado
+ * de la base: dos dueños que se cambian el rol o se desactivan entre sí al mismo tiempo no ven los dos la lista de antes
+ * (auditoría QA-09). Dentro se vuelve a leer la lista y se confirma que quien lo pide sigue siendo un dueño activo.
+ * Better Auth escribe con otra conexión, pero el candado sigue tomado hasta que termina `cambio`.
+ */
+async function deAUnoConLosDuenos<T>(autorId: number, cambio: (usuarios: FilaUsuario[]) => Promise<T>): Promise<T | "autor-cambio"> {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended('usuarios:duenos', 0))`);
+    const usuarios = await listarUsuarios();
+    const autor = usuarios.find((u) => u.id === autorId);
+    if (autor?.rol !== "dueno" || autor.desactivado) return "autor-cambio";
+    return cambio(usuarios);
+  });
+}
+
+const AUTOR_CAMBIO = "Tu usuario cambió recién (otro dueño te cambió el rol o te desactivó). Recarga la página.";
 
 /** Reemplaza los permisos de un usuario: solo los encargados guardan permisos. */
 async function guardarPermisos(usuarioId: number, rol: Rol, permisos: Permiso[], autorId: number) {
@@ -94,16 +112,20 @@ export async function actualizarUsuario(_previo: EstadoFormulario, datos: FormDa
   if (!entrada.success) return { errores: erroresDe(entrada.error), valores: valoresDe(datos) };
   const { id, nombre, rol, permisos } = entrada.data;
 
-  const usuarios = await listarUsuarios();
-  const actual = usuarios.find((u) => u.id === id);
-  if (!actual) return { mensaje: "Ese usuario ya no existe." };
-  if (cambioDeRolDejaSinDueno(usuarios, id, rol)) {
+  const h = await headers();
+  const resultado = await deAUnoConLosDuenos(Number(autor.id), async (usuarios) => {
+    const actual = usuarios.find((u) => u.id === id);
+    if (!actual) return "no-existe" as const;
+    if (cambioDeRolDejaSinDueno(usuarios, id, rol)) return "sin-dueno" as const;
+    await auth.api.adminUpdateUser({ body: { userId: String(id), data: { name: nombre } }, headers: h });
+    if (rol !== actual.rol) await auth.api.setRole({ body: { userId: String(id), role: rol }, headers: h });
+    return "ok" as const;
+  });
+  if (resultado === "autor-cambio") return { mensaje: AUTOR_CAMBIO };
+  if (resultado === "no-existe") return { mensaje: "Ese usuario ya no existe." };
+  if (resultado === "sin-dueno") {
     return { errores: { rol: "Es el único dueño activo: crea otro dueño antes de cambiarle el rol." }, valores: valoresDe(datos) };
   }
-
-  const h = await headers();
-  await auth.api.adminUpdateUser({ body: { userId: String(id), data: { name: nombre } }, headers: h });
-  if (rol !== actual.rol) await auth.api.setRole({ body: { userId: String(id), role: rol }, headers: h });
   await guardarPermisos(id, rol, permisos, Number(autor.id));
 
   revalidatePath(RUTA);
@@ -133,7 +155,12 @@ export async function desactivarUsuario(_previo: EstadoFormulario, datos: FormDa
   // Better Auth no permite bloquearse a uno mismo; así además siempre queda un dueño activo.
   if (String(id) === autor.id) return { mensaje: "No puedes desactivar tu propio usuario. Pídeselo a otro dueño." };
 
-  await auth.api.banUser({ body: { userId: String(id), banReason: "Desactivado por el dueño" }, headers: await headers() });
+  // De a uno: si dos dueños se desactivan entre sí al mismo tiempo, el segundo ya está desactivado y no sigue
+  const h = await headers();
+  const resultado = await deAUnoConLosDuenos(Number(autor.id), async () => {
+    await auth.api.banUser({ body: { userId: String(id), banReason: "Desactivado por el dueño" }, headers: h });
+  });
+  if (resultado === "autor-cambio") return { mensaje: AUTOR_CAMBIO };
   revalidatePath(RUTA);
   revalidatePath(`${RUTA}/${id}`);
   return { ok: true, mensaje: "Usuario desactivado. Ya no puede ingresar y sus sesiones se cerraron." };
