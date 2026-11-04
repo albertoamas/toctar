@@ -17,7 +17,7 @@ import { borrarFotosSueltas, soltarFotosIngreso } from "@/modulos/ordenes/fotos"
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
 import { descartarComprobante, guardarComprobante } from "@/modulos/pagos/comprobante";
 import { calcularSaldo } from "@/modulos/pagos/reglas";
-import { datosDeCotizacion, espaciosEnFechas, type EspacioDisponible } from "./consultas";
+import { bloquearEspacio, datosDeCotizacion, espaciosEnFechas, type EspacioDisponible } from "./consultas";
 import { entradaReserva, esquemaAdelanto, esquemaCancelar, esquemaConsultaEspacios, esquemaFechas, esquemaReprogramar, esquemaReserva } from "./esquemas";
 
 // Agenda (HU-30). Entra el dueño o un encargado con "Agenda"; el adelanto, solo con "Pagos" (o el dueño, RN-12). Un
@@ -168,6 +168,7 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
         // (crear una cotización de ese vehículo), que formarían un ciclo con el cliente
         .for("no key update");
       if (!suyo) throw new Conflicto("Ese vehículo cambió de dueño o se desactivó recién. Vuelve a elegirlo.");
+      await bloquearEspacio(tx, d.espacioId);
       const [nuevo] = await tx
         .insert(trabajo)
         .values({
@@ -275,6 +276,7 @@ export async function reprogramarReserva(_previo: EstadoFormulario, datos: FormD
   let sueltas: number[];
   try {
     sueltas = await db.transaction(async (tx) => {
+      await bloquearEspacio(tx, espacioId);
       // Solo si sigue agendada: si otra persona la canceló recién, no se mueve
       const [movida] = await tx
         .update(trabajo)

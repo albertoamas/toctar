@@ -11,7 +11,7 @@ import { erroresDe, exclusionViolada, indiceUnicoViolado, type EstadoFormulario 
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirAccion, exigirModulo } from "@/lib/sesion";
 import type { EstadoTrabajo, EtapaFoto } from "@/db/esquema/trabajos";
-import { espaciosEnFechas, type EspacioDisponible } from "@/modulos/agenda/consultas";
+import { bloquearEspacio, espaciosEnFechas, type EspacioDisponible } from "@/modulos/agenda/consultas";
 import { DIAS_MAXIMOS_TRABAJO, NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { opcionesDeServicio } from "@/modulos/cotizaciones/consultas";
@@ -393,12 +393,14 @@ export async function cambiarEstadoOrden(_previo: EstadoFormulario, datos: FormD
   const cambiar = (recuperarEntrega: boolean) =>
     db.transaction(async (tx) => {
       const [actual] = await tx
-        .select({ estado: trabajo.estado, clienteId: trabajo.clienteId, fechaFin: trabajo.fechaFin, fechaFinPrevista: trabajo.fechaFinPrevista })
+        .select({ estado: trabajo.estado, clienteId: trabajo.clienteId, fechaFin: trabajo.fechaFin, fechaFinPrevista: trabajo.fechaFinPrevista, espacioId: trabajo.espacioId })
         .from(trabajo)
         .where(eq(trabajo.id, id))
         .for("update");
       if (!actual) throw new Conflicto("Esa orden ya no existe.");
       if (!transicionOrden(actual.estado, estado)) throw new Conflicto(CAMBIO);
+      // Al volver de lista recupera días del espacio que había liberado: de a uno, como una reserva
+      if (actual.estado === "listo") await bloquearEspacio(tx, actual.espacioId);
       const antesDeTiempo = actual.fechaFin > hoy;
       const vuelveDeLista = actual.estado === "listo";
       // La que tenía, si todavía no pasó
@@ -510,6 +512,7 @@ export async function extenderEntrega(_previo: EstadoFormulario, datos: FormData
   const destino = `al ${formatearFecha(fechaFin).slice(0, 5)}${espacioId !== rango.espacioId ? ` en ${espacio.nombre}` : ""}`;
   try {
     await db.transaction(async (tx) => {
+      await bloquearEspacio(tx, espacioId);
       // Solo si se sigue trabajando y nadie la cambió en el medio
       const [movida] = await tx
         .update(trabajo)
