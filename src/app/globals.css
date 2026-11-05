@@ -233,6 +233,33 @@
     }
   }
 
+  /* La franja de la marca del ingreso (pulido 3.2): superficie gris con un borde cortado a 60°, el único ángulo de la
+     identidad. En el celular, el borde de abajo (28 px de alto por 16,17 de ancho: tan 60° = 1,732). En la computadora,
+     el borde derecho, a lo alto de la pantalla: un fondo inclinado con skew de 30° (un lado a 60°), así el ángulo no
+     cambia con la altura, que un recorte en porcentajes no puede seguir. */
+  .tt-franja-ingreso {
+    position: relative;
+    isolation: isolate;
+    background: var(--superficie);
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 28px), calc(100% - 16.17px) 100%, 0 100%);
+  }
+  @media (min-width: 1024px) {
+    .tt-franja-ingreso {
+      background: none;
+      clip-path: none;
+      overflow: hidden;
+    }
+    .tt-franja-ingreso::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 0 -50%;
+      z-index: -1;
+      background: var(--superficie);
+      transform: skewX(-30deg);
+      transform-origin: top right;
+    }
+  }
+
   /* Página actual en la barra del sitio: una barra roja sobre la línea gris del encabezado, bajo el enlace.
      Los extremos van a 60° (skew de 30°), el ángulo de la marca. Baja 1 px para tapar la línea gris. */
   .tt-enlace-actual::after {

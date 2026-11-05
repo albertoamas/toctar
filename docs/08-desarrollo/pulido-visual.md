@@ -162,6 +162,7 @@ El dueño vio el sitio en pruebas, con sus fotos: le gustó la estructura y pidi
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
 | 3.1 | Ingresar | `/ingresar` | ✅ 19/10 |
+| 3.2 | **Ingresar renovado y sin bordes blancos** (revisión de YankoSoft, maqueta aprobada el 05/11): el logo grande empujaba el formulario a la mitad de la pantalla del celular, la línea roja quedaba suelta al final y, en la computadora, todo quedaba chico en el centro. Ahora la marca va en una franja gris cortada a 60° (arriba en el celular; a la izquierda y a lo alto en la computadora, con skew de 30° para que el ángulo no cambie con la altura), con el logo horizontal sin lema, el lema como texto y la línea LED debajo. El formulario se ve sin bajar, todo alineado a la izquierda, campos de 48 px, botón de 52 y "¿Olvidaste tu contraseña? Pídele al dueño que te dé una nueva.". El fondo de la página es negro en el ingreso y en el sitio (`data-fondo="oscuro"`): antes, el blanco del body se veía arriba y abajo, al estirar la página y bajo las barras del sistema | `/ingresar` | ✅ 05/11 |
 
 ### 4. Panel: inicio y sitio web
 
