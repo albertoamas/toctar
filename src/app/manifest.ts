@@ -11,7 +11,9 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/panel",
     scope: "/",
     display: "standalone",
-    orientation: "portrait",
+    // Sigue la rotación del celular: en Android la app instalada respeta este valor (con "portrait" no giraba); el
+    // iPhone lo ignora. El panel y el sitio se adaptan al ancho, y en horizontal hay más lugar (la firma al entregar).
+    orientation: "any",
     background_color: "#000000",
     theme_color: "#000000",
     icons: [

@@ -108,7 +108,7 @@
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
 | 6.1 | El sistema se puede instalar: tiene nombre, ícono de TocTar y abre en el panel como app | E2E `hu-06` "el manifiesto tiene nombre, abre en el panel como app y sus íconos existen" y "las páginas enlazan el manifiesto…" (incluye el ícono para iPhone) | ✅ |
-| 6.2 | Se instala de verdad en Android (Chrome) y en iPhone (Safari, "Agregar a inicio") | A mano en el entorno de pruebas: la instalación exige https | ⏳ con A3 (dominio) |
+| 6.2 | Se instala de verdad en Android (Chrome) y en iPhone (Safari, "Agregar a inicio"), y gira al poner el celular en horizontal | A mano en el entorno de pruebas: la instalación exige https | ⏳ con A3 (dominio) |
 | 6.3 | Sin conexión se muestra un aviso claro | E2E "sin internet, el panel muestra el aviso y una página nueva muestra «Sin conexión»": franja en el panel y página propia con "Reintentar" | ✅ |
 | 6.4 | Sin modo sin conexión (acuerdo): no se guarda nada para usar sin internet | Revisión del código: el service worker (`public/sw.js`) solo guarda la página de aviso | ✅ |
 

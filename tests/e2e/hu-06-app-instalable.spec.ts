@@ -8,7 +8,8 @@ test("el manifiesto tiene nombre, abre en el panel como app y sus íconos existe
   const respuesta = await request.get("/manifest.webmanifest");
   expect(respuesta.ok()).toBe(true);
   const manifiesto = await respuesta.json();
-  expect(manifiesto).toMatchObject({ short_name: "TocTar", start_url: "/panel", display: "standalone", lang: "es" });
+  // "any": la app instalada en Android gira con el celular (con "portrait" quedaba fija en vertical)
+  expect(manifiesto).toMatchObject({ short_name: "TocTar", start_url: "/panel", display: "standalone", lang: "es", orientation: "any" });
   expect(manifiesto.icons.map((i: { sizes: string; purpose: string }) => `${i.sizes} ${i.purpose}`)).toEqual([
     "192x192 any",
     "512x512 any",
