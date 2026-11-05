@@ -78,7 +78,9 @@ jobs:
 
   e2e:
     name: E2E
-    runs-on: ubuntu-latest
+    # Versión fija: ubuntu-latest pasó a 26.04 y el WebKit de Playwright (iPhone) depende de las librerías de cada versión.
+    # Se sube a mano, al actualizar Playwright
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Los mismos servicios que docker-compose.yml: PostgreSQL 18 y RustFS (imita a Cloudflare R2)
     services:
@@ -138,7 +140,8 @@ jobs:
         id: cache-navegador
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-webkit
+          # Con la imagen en la clave: el WebKit de Playwright se compila para cada versión de Ubuntu
+          key: playwright-${{ env.ImageOS }}-${{ steps.playwright.outputs.version }}-webkit
       - name: Instalar el navegador
         if: steps.cache-navegador.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium webkit
