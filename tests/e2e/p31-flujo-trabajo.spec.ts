@@ -109,7 +109,7 @@ test("«Aceptó» la deja en Por reservar de la Agenda; desde ahí se reserva y 
   await expect(page.getByRole("main").getByRole("link", { name: "Agenda", exact: true })).toHaveAttribute("href", "/panel/agenda");
   await reservar(page, dia);
   // El aviso flotante dice qué pasó, y no se repite al recargar
-  const aviso = page.getByText(`La cotización ${c.numero} quedó aceptada.`);
+  const aviso = page.getByText(/^Reservada para el /);
   await expect(aviso).toBeVisible();
   await expect(pasoActual(page)).toContainText("Reservada");
   await page.reload();

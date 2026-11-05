@@ -79,7 +79,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
         }
         accion={
           <div className="flex flex-wrap gap-2">
-            {/* El paso siguiente, uno solo: reservar (el cliente aceptó). Una pendiente también puede quedar aceptada sin fecha */}
+            {/* El paso siguiente, uno solo: en una pendiente, "Aceptó"; en una aceptada sin fecha, el atajo a la Agenda */}
             {aReservar && puedeAgendar && (
               <Link href={`/panel/agenda/nueva?cotizacion=${aReservar.id}`} className={cn(buttonVariants())}>
                 <CalendarIcon />

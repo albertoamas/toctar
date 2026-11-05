@@ -17,7 +17,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { primerNombre } from "@/modulos/clientes/reglas";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
-import { aceptadasSinFecha, listarCotizaciones } from "@/modulos/cotizaciones/consultas";
+import { cotizacionesPorReservar, listarCotizaciones } from "@/modulos/cotizaciones/consultas";
 import { bs, diasDesde, sinRespuesta, textoDias } from "@/modulos/cotizaciones/reglas";
 import { ParaAtender, type Pendiente } from "@/modulos/inicio/componentes/para-atender";
 import { ingresosDeHoy } from "@/modulos/inicio/consultas";
@@ -57,7 +57,7 @@ async function Contenido() {
     ve("ordenes") ? ordenesAbiertas() : null,
     ve("pagos") ? saldosPendientes() : null,
     ve("cotizaciones") ? listarCotizaciones("pendientes", "").then((r) => r.cotizaciones) : null,
-    ve("cotizaciones") ? aceptadasSinFecha() : null,
+    ve("cotizaciones") ? cotizacionesPorReservar() : null,
     ve("mantenimientos") ? contarSinAvisar(hoy) : null,
     ve("reclamos") ? reclamosPorAtender(POR_TIPO) : null,
     // Los días sin respuesta de una cotización: solo hacen falta con Cotizaciones

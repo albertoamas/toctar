@@ -97,12 +97,9 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
       </EncabezadoPagina>
       {/* Los pasos del trabajo (pedido 31): una reserva sin cotización empieza en "Reservada"; una cancelada no avanza */}
       {!cancelada && <PasosTrabajo paso={pasoDelTrabajo({ trabajo: r.estado }) ?? 0} conCotizacion={r.consultaId !== null} />}
-      {/* Solo mientras siga agendada: tras cancelarla (o en un enlace viejo) ya no corresponde. Dice qué pasó, también con
-          la cotización (pedido 31) */}
+      {/* Solo mientras siga agendada: tras cancelarla (o en un enlace viejo) ya no corresponde */}
       {agendada && r.estado === "agendado" && (
-        <AvisoFlotante
-          mensaje={`Reservada para el ${fechaConDia(r.fechaInicio).toLowerCase()} en el ${r.espacio}.${r.cotizacion ? ` La cotización ${r.cotizacion.numero} quedó aceptada.` : ""}`}
-        />
+        <AvisoFlotante mensaje={`Reservada para el ${fechaConDia(r.fechaInicio).toLowerCase()} en el ${r.espacio}.`} />
       )}
 
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">

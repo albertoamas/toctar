@@ -279,9 +279,17 @@ export async function cambiarEstadoCotizacion(_previo: EstadoFormulario, datos: 
     if (!actual) return { mensaje: "Esa cotización ya no existe. Recarga la página." };
     // El vehículo pasó a otro cliente (pedido 37): su cotización no vuelve a abrirse ni se acepta; rechazarla, sí. Se lee
     // después del bloqueo, en otra consulta: la misma que bloquea vería al dueño de antes si esperó a un cambio de dueño
-    const [delVehiculo] = await tx.select({ clienteId: vehiculo.clienteId }).from(vehiculo).where(eq(vehiculo.id, actual.vehiculoId));
+    const [delVehiculo] = await tx
+      .select({ clienteId: vehiculo.clienteId, activo: vehiculo.activo, clienteActivo: cliente.activo })
+      .from(vehiculo)
+      .innerJoin(cliente, eq(cliente.id, actual.clienteId))
+      .where(eq(vehiculo.id, actual.vehiculoId));
     if (d.accion !== "rechazar" && delVehiculo?.clienteId !== actual.clienteId) {
       return { mensaje: "El vehículo de esta cotización ya es de otro cliente: cotízale a él." };
+    }
+    // Aceptada queda en "Por reservar": no se puede prometer con el cliente o el vehículo desactivados
+    if (d.accion === "aceptar" && !(delVehiculo?.activo && delVehiculo.clienteActivo)) {
+      return { mensaje: "El cliente o el vehículo de esta cotización está desactivado: reactívalo en su ficha." };
     }
     const reserva = await tieneReservaActiva(d.id, tx);
     // Volver a pendiente no es una versión nueva: desde una pendiente no se "vuelve"

@@ -120,7 +120,18 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
         </>
       );
     }
+    // Se dice antes de llenar el formulario, y no recién al guardar
+    if (!c.activos) {
+      return (
+        <>
+          <Encabezado />
+          <EstadoVacio>El cliente o el vehículo de esa cotización ya no está activo. Reactívalo en su ficha para reservarla.</EstadoVacio>
+        </>
+      );
+    }
     const duraciones = c.lineas.map((l) => l.duracion);
+    // Los precios de la cotización, con Pagos o con Cotizaciones (RN-12), como en "Por reservar"
+    const verMontos = conPagos || puedeVerModulo(usuario, "cotizaciones");
     return (
       <>
         <Encabezado />
@@ -134,17 +145,17 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
               {c.lineas.map((l, i) => (
                 <li key={i} className="flex justify-between gap-4">
                   <span>{l.descripcion}</span>
-                  {conPagos && <span className="shrink-0 tabular-nums">{mostrarMonto(l.precio)} Bs</span>}
+                  {verMontos && <span className="shrink-0 tabular-nums">{mostrarMonto(l.precio)} Bs</span>}
                 </li>
               ))}
             </ul>
-            {conPagos && (
+            {verMontos && (
               <p className="flex justify-between gap-4 border-t border-border pt-2 font-semibold">
                 <span>Total</span>
                 <span className="tabular-nums">{mostrarMonto(c.saldo.total)} Bs</span>
               </p>
             )}
-            <p className="text-sm text-tinta-suave">Al reservar, la cotización queda aceptada.</p>
+            {!c.aceptada && <p className="text-sm text-tinta-suave">Al reservar, la cotización queda aceptada.</p>}
           </div>
         </section>
         <Formulario

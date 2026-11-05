@@ -6,13 +6,16 @@ import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
+import { MasDatos } from "@/componentes/panel/mas-datos";
+import { cantidad } from "@/lib/cantidad";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { AgendaDelDia, TableroSemana } from "@/modulos/agenda/componentes/tablero";
-import { cotizacionesPorReservar, semanaDeAgenda } from "@/modulos/agenda/consultas";
+import { semanaDeAgenda } from "@/modulos/agenda/consultas";
 import { DIA_CORTO, diasDeLaSemana, lunesDeLaSemana, numeroDia, textoDia, textoSemana, textoSemanaCorto } from "@/modulos/agenda/reglas";
+import { cotizacionesPorReservar, type FilaCotizacion } from "@/modulos/cotizaciones/consultas";
 import { bs, diasDesde, textoDias } from "@/modulos/cotizaciones/reglas";
 
 export const metadata: Metadata = { title: "Agenda" };
@@ -41,6 +44,9 @@ export default function PaginaAgenda({ searchParams }: PageProps<"/panel/agenda"
   );
 }
 
+/** Cuántas de "Por reservar" se ven sin desplegar. */
+const POR_RESERVAR_A_LA_VISTA = 5;
+
 const enlaceSemana = (lunes: string, dia?: string) => `/panel/agenda?semana=${lunes}${dia ? `&dia=${dia}` : ""}` as Route;
 
 async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searchParams">) {
@@ -57,6 +63,12 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
   const [semana, porReservar] = await Promise.all([semanaDeAgenda(lunes, dias[6]), cotizacionesPorReservar()]);
   const conMontos = puedeVerModulo(usuario, "pagos") || puedeVerModulo(usuario, "cotizaciones");
   const ahora = new Date();
+  const fila = (c: FilaCotizacion) => ({
+    href: `/panel/agenda/nueva?cotizacion=${c.cotizacionId}`,
+    titulo: c.placa,
+    tituloGrande: true,
+    detalles: [c.cliente, c.servicios, ...(conMontos ? [bs(c.total)] : []), `Aceptada ${textoDias(diasDesde(c.ultimoMovimientoAt, ahora))}`].filter(Boolean),
+  });
   const estaSemana = dias.includes(hoy);
 
   return (
@@ -68,15 +80,13 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
           <h2 id="por-reservar-titulo" className="tt-titulo-seccion">
             Por reservar ({porReservar.length})
           </h2>
-          <ListaFilas
-            etiqueta="Por reservar"
-            filas={porReservar.map((c) => ({
-              href: `/panel/agenda/nueva?cotizacion=${c.cotizacionId}`,
-              titulo: c.placa,
-              tituloGrande: true,
-              detalles: [c.cliente, c.servicios, ...(conMontos ? [bs(c.total)] : []), `Aceptada ${textoDias(diasDesde(c.aceptadaEl, ahora))}`].filter(Boolean),
-            }))}
-          />
+          <ListaFilas etiqueta="Por reservar" filas={porReservar.slice(0, POR_RESERVAR_A_LA_VISTA).map(fila)} />
+          {/* Con muchas, las demás plegadas: el tablero es lo principal de la Agenda y no queda abajo de una lista larga */}
+          {porReservar.length > POR_RESERVAR_A_LA_VISTA && (
+            <MasDatos texto={`Ver ${cantidad(porReservar.length - POR_RESERVAR_A_LA_VISTA, "más", "más")}`} abierto={false}>
+              <ListaFilas etiqueta="Más por reservar" filas={porReservar.slice(POR_RESERVAR_A_LA_VISTA).map(fila)} />
+            </MasDatos>
+          )}
         </section>
       )}
       {/* Un renglón: la semana entre las flechas; en el celular, corta ("26 oct al 1 nov") para que entre */}
