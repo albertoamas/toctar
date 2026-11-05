@@ -2,10 +2,16 @@ import { expect, test, type TestInfo } from "@playwright/test";
 import { crearClienteEnBase, ingresarComoDueno } from "./apoyo";
 
 // HU-23 Ficha del cliente. Especificación: docs/08-desarrollo/etapas/C1-catalogo-clientes.md §9.
-// Cada proyecto (celular o escritorio) usa sus propios teléfonos y placas.
+// Cada proyecto (celular o escritorio) usa sus propios teléfonos y placas, y cada reintento los suyos: con los mismos, el
+// reintento chocaba con la placa del intento anterior y nunca podía pasar.
 
-const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "C" : "E");
-const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 5 : 6}0000${n}0`;
+const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "C" : "E") + (info.retry ? String(info.retry) : "");
+const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 5 : 6}000${info.retry}${n}0`;
+
+// El registro completo (red, pantalla y pasos) también del primer fallo, no solo del reintento: el color vacío al
+// reabrir un vehículo recién guardado sale de vez en cuando y hace falta ver qué pasó en ese intento
+// (criterio 23.5 de docs/09-pruebas/criterios-entrega-2.md).
+test.use({ trace: "retain-on-failure" });
 
 test("en la ficha los datos se leen y se editan en un modal; un teléfono de otro cliente se avisa", async ({ page }, info) => {
   const s = sufijo(info);
