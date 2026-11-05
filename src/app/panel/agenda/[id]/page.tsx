@@ -125,7 +125,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
               {detalle.length > 0 && <span>{detalle.join(" ")}</span>}
               <span className="text-sm text-tinta-suave">Tamaño: {r.tamano}</span>
             </dd>
-            <dt className="text-tinta-suave">Agendada</dt>
+            <dt className="text-tinta-suave">Reservada</dt>
             <dd className="flex flex-col">
               <span>{formatearFechaHora(r.createdAt)}</span>
               <span className="text-sm text-tinta-suave">por {r.agendadaPor}</span>

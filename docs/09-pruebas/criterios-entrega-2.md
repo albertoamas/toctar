@@ -271,7 +271,7 @@
 |---|---|---|---|
 | 38.1 | Mantenimientos vencidos y próximos (15 días) ordenados por fecha; "Más adelante" y "Cerrados" en sus pestañas | E2E `hu-38` "vencidos y próximos…"; unitarias `mantenimientos` | ✅ (las pestañas, pedido 20) |
 | 38.2 | "Avisar" abre WhatsApp con el mensaje escrito; después, agendado o "No le interesa" | E2E `hu-38` "…avisar, no le interesa y agendar (y al cancelar la reserva, vuelve)" | ✅ |
-| 38.3 | "Agendar" abre una reserva directa del servicio de mantenimiento; si se cancela, el mantenimiento vuelve | E2E `hu-38` (misma prueba) | ✅ |
+| 38.3 | "Reservar" abre una reserva directa del servicio de mantenimiento; si se cancela, el mantenimiento vuelve | E2E `hu-38` (misma prueba) | ✅ |
 | 38.4 | Entregar el mantenimiento lo deja hecho y programa el siguiente con la frecuencia del plan, también si el cliente vino por su cuenta | E2E `hu-38` "entregar el mantenimiento lo deja hecho y programa el siguiente…" | ⚠️ Pedido 21: planes por vehículo (antes, un intervalo único) |
 | 38.5 | Solo con Mantenimientos se entra; sin Agenda y Pagos no se agenda; el perfil Taller no entra | E2E `hu-38` "solo con Mantenimientos se entra…" | ✅ |
 | 38.6 | Los servicios con mantenimiento y su frecuencia están cargados | Lo carga el dueño en el catálogo | ⏳ (del dueño) |

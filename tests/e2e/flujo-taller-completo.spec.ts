@@ -93,7 +93,7 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
   await page.goto("/panel/mantenimientos");
   const fila = page.getByRole("list", { name: "Vencidos" }).getByRole("listitem").filter({ hasText: placa });
   await expect(fila).toContainText("venció ayer");
-  await fila.getByRole("link", { name: "Agendar" }).click();
+  await fila.getByRole("link", { name: "Reservar" }).click();
   // Llega con su servicio de mantenimiento ya elegido (pedido 21); es un servicio cobrado del catálogo (RN-09) y el
   // precio lo pone el dueño
   await expect(page.getByLabel("Servicio 1", { exact: true }).locator("option:checked")).toHaveText("Mantenimiento del nano cerámico");

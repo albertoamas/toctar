@@ -10,7 +10,7 @@ import { NOMBRE_DIA } from "@/lib/horarios";
 export const DIAS_MAXIMOS_TRABAJO = 60;
 
 export const NOMBRE_ESTADO_TRABAJO: Record<EstadoTrabajo, string> = {
-  agendado: "Agendada",
+  agendado: "Reservada",
   recibido: "Recibida",
   en_proceso: "En proceso",
   listo: "Lista",

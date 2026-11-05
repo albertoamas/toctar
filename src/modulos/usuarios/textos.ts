@@ -14,9 +14,9 @@ export const DESCRIPCION_PERMISO: Record<string, string> = {
   reclamos: "Ver y atender los reclamos que llegan por la página.",
   clientes: "Registrar y buscar clientes y vehículos.",
   cotizaciones: "Hacer cotizaciones y sus versiones, con sus precios y su PDF.",
-  agenda: "Agendar, reprogramar y cancelar reservas.",
+  agenda: "Reservar, reprogramar y cancelar reservas.",
   ordenes: "Recibir los vehículos, trabajarlos, avisar que están listos y entregarlos.",
   pagos: "Registrar adelantos y saldos.",
-  mantenimientos: "Avisar y agendar mantenimientos.",
+  mantenimientos: "Avisar y reservar mantenimientos.",
   entrega_con_saldo: "Puede entregar un vehículo aunque falte pagar.",
 };

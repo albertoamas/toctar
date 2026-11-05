@@ -39,7 +39,7 @@ export const PARAMETROS = {
   adelanto_sugerido: {
     seccion: "agenda",
     etiqueta: "Adelanto sugerido",
-    ayuda: "Monto sugerido al agendar; se puede cambiar en cada reserva.",
+    ayuda: "Monto sugerido al reservar; se puede cambiar en cada reserva.",
     unidad: "Bs",
     esquema: entero(1, 100_000, "Escribe un monto mayor a cero, hasta Bs 100 000."),
   },

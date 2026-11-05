@@ -81,7 +81,8 @@ jobs:
     # Versión fija: ubuntu-latest pasó a 26.04 y el WebKit de Playwright (iPhone) depende de las librerías de cada versión.
     # Se sube a mano, al actualizar Playwright
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # Sin el navegador en caché, instalarlo puede llevar 17 minutos, más unos 15 de pruebas
+    timeout-minutes: 45
     # Los mismos servicios que docker-compose.yml: PostgreSQL 18 y RustFS (imita a Cloudflare R2)
     services:
       db:
@@ -133,15 +134,18 @@ jobs:
           key: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'public/**', 'next.config.ts') }}
           restore-keys: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
       # Los navegadores de Playwright, guardados entre corridas (en Linux se usa su Chromium, no Chrome; WebKit, para el iPhone)
-      - name: Versión de Playwright
+      # ImageOS es una variable del runner: solo existe dentro de un paso, no en el contexto env de la clave
+      - name: Versión de Playwright e imagen
         id: playwright
-        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+          echo "imagen=$ImageOS" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@v4
         id: cache-navegador
         with:
           path: ~/.cache/ms-playwright
           # Con la imagen en la clave: el WebKit de Playwright se compila para cada versión de Ubuntu
-          key: playwright-${{ env.ImageOS }}-${{ steps.playwright.outputs.version }}-webkit
+          key: playwright-${{ steps.playwright.outputs.imagen }}-${{ steps.playwright.outputs.version }}-webkit
       - name: Instalar el navegador
         if: steps.cache-navegador.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium webkit

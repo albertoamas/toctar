@@ -25,7 +25,7 @@ export const ESTADOS_PLAN_ABIERTO = ["pendiente", "avisado", "agendado"] as cons
 export const NOMBRE_ESTADO_RECORDATORIO: Record<EstadoRecordatorio, string> = {
   pendiente: "Por avisar",
   avisado: "Avisado",
-  agendado: "Agendado",
+  agendado: "Reservado",
   hecho: "Hecho",
   no_interesado: "No le interesa",
 };

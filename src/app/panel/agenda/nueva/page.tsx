@@ -31,7 +31,7 @@ export const metadata: Metadata = { title: "Nueva reserva" };
 // HU-30: nueva reserva. Desde la versión vigente de una cotización (`?cotizacion=`), o directa: se elige el cliente con
 // el buscador de Clientes (`?cliente=`) y su vehículo (`?vehiculo=`). Dueño o encargado con "Agenda"; la directa lleva
 // precios y la arma el dueño o quien tiene "Pagos". `?fecha=` y `?espacio=` llegan desde un día libre del tablero.
-// HU-38: `?recordatorio=` llega desde "Agendar" en Mantenimientos, con el cliente y el vehículo: al agendar, el
+// HU-38: `?recordatorio=` llega desde "Reservar" en Mantenimientos, con el cliente y el vehículo: al agendar, el
 // recordatorio queda "agendado". Pedido 21: la línea llega con su servicio de mantenimiento.
 // Pulido 10.2: el cliente y su vehículo en un recuadro de lectura (como en Nueva cotización), con "Cambiar" en su
 // cabecera; la hora y la nota plegadas, y "Reservar" fijo abajo en el celular (en FormularioReserva).
@@ -200,7 +200,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
         <Encabezado />
         <EstadoVacio>
           {!puedeVerModulo(usuario, "mantenimientos")
-            ? "Los mantenimientos los agenda el dueño o quien tiene «Mantenimientos»."
+            ? "Los mantenimientos los reserva el dueño o quien tiene «Mantenimientos»."
             : "La reserva del mantenimiento lleva precios: la arma el dueño o quien registra pagos."}
         </EstadoVacio>
       </>
@@ -212,7 +212,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
       <>
         <Encabezado />
         <EstadoVacio>
-          Ese mantenimiento ya se agendó o se cerró. <Link href="/panel/mantenimientos" className={enlace}>Volver a Mantenimientos</Link>
+          Ese mantenimiento ya se reservó o se cerró. <Link href="/panel/mantenimientos" className={enlace}>Volver a Mantenimientos</Link>
         </EstadoVacio>
       </>
     );
