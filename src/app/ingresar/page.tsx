@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 // Pantalla de ingreso en tema oscuro, con el logo vertical; el panel después va en claro.
 export default function PaginaIngreso() {
   return (
-    <main data-theme="oscuro" className="relative flex flex-1 flex-col items-center justify-center gap-10 bg-fondo px-4 py-12 text-tinta">
+    <main data-theme="oscuro" data-fondo="oscuro" className="relative flex flex-1 flex-col items-center justify-center gap-10 bg-fondo px-4 py-12 text-tinta">
       {/* Salida al sitio: sin ella, quien llegaba aquí por error no tenía cómo volver (pulido 3.1) */}
       <EnlaceVolver href="/" className="absolute top-1 left-2 px-2 sm:left-4">
         Volver al sitio

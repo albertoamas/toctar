@@ -94,3 +94,15 @@ test("tras un error el foco va a la contraseña; los campos son de 44 px y la co
   await expect(contrasena).toHaveValue("");
   await expect(contrasena).toHaveAccessibleDescription("Usuario o contraseña incorrectos.");
 });
+
+test("el fondo de la página es negro en el ingreso y en el sitio, y claro en el panel después de entrar", async ({ page }) => {
+  // Antes, el body quedaba blanco y se veía arriba y abajo al estirar la página o bajo las barras del sistema
+  const fondo = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  await page.goto("/contacto");
+  await expect.poll(fondo).toBe("rgb(0, 0, 0)");
+  await page.goto("/ingresar");
+  await expect.poll(fondo).toBe("rgb(0, 0, 0)");
+  // Después de entrar, Next deja el ingreso oculto en la página: no cuenta
+  await ingresarComoDueno(page);
+  await expect.poll(fondo).toBe("rgb(255, 255, 255)");
+});

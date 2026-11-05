@@ -176,6 +176,16 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Las pantallas siempre oscuras (el sitio y el ingreso) marcan su contenedor con data-fondo="oscuro": el fondo del
+     documento también va en negro. Si no, el blanco del body se veía arriba y abajo, al estirar la página, bajo las
+     barras del sistema y alrededor de la barra de gestos (en la app instalada y en el navegador). No es data-theme:
+     ese también lo lleva el menú del celular, que se abre sobre el panel claro. Solo cuenta si está a la vista: Next deja
+     la pantalla anterior oculta (display: none) para volver rápido, y el ingreso quedaba ahí después de entrar al panel. */
+  html:has([data-fondo="oscuro"]:not([style*="display: none"], [style*="display: none"] *)),
+  html:has([data-fondo="oscuro"]:not([style*="display: none"], [style*="display: none"] *)) body {
+    background-color: var(--negro);
+    color-scheme: dark;
+  }
   /* Un fieldset no se achica por debajo del ancho de su contenido (min-inline-size: min-content): en el celular empujaba
      el formulario fuera de la pantalla cuando algo de adentro medía un poco más (las horas en el Chromium de Linux; lo
      encontró el CI, 25/10). Así se comporta como cualquier contenedor. */
