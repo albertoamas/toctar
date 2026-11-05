@@ -8,6 +8,9 @@
 
 /* Tema oscuro = cualquier elemento dentro de [data-theme="oscuro"] (el sitio público siempre). */
 @custom-variant dark (&:where([data-theme="oscuro"], [data-theme="oscuro"] *));
+/* Pantalla ancha y en horizontal (el ingreso en dos columnas, pulido 3.2): una tableta grande en vertical se ve como el
+   celular, porque en una columna angosta y alta la diagonal de 60° se come la franja. */
+@custom-variant apaisado (@media (min-width: 1024px) and (orientation: landscape));
 
 @theme inline {
   --font-sans: var(--font-texto);
@@ -176,6 +179,16 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Las pantallas siempre oscuras (el sitio y el ingreso) marcan su contenedor con data-fondo="oscuro": el fondo del
+     documento también va en negro. Si no, el blanco del body se veía arriba y abajo, al estirar la página, bajo las
+     barras del sistema y alrededor de la barra de gestos (en la app instalada y en el navegador). No es data-theme:
+     ese también lo lleva el menú del celular, que se abre sobre el panel claro. Solo cuenta si está a la vista: Next deja
+     la pantalla anterior oculta (display: none) para volver rápido, y el ingreso quedaba ahí después de entrar al panel. */
+  html:has([data-fondo="oscuro"]:not([style*="display: none"], [style*="display: none"] *)),
+  html:has([data-fondo="oscuro"]:not([style*="display: none"], [style*="display: none"] *)) body {
+    background-color: var(--negro);
+    color-scheme: dark;
+  }
   /* Un fieldset no se achica por debajo del ancho de su contenido (min-inline-size: min-content): en el celular empujaba
      el formulario fuera de la pantalla cuando algo de adentro medía un poco más (las horas en el Chromium de Linux; lo
      encontró el CI, 25/10). Así se comporta como cualquier contenedor. */
@@ -220,6 +233,33 @@
     .tt-led--encender,
     .tt-portada-foto {
       animation: none;
+    }
+  }
+
+  /* La franja de la marca del ingreso (pulido 3.2): superficie gris con un borde cortado a 60°, el único ángulo de la
+     identidad. En el celular, el borde de abajo (28 px de alto por 16,17 de ancho: tan 60° = 1,732). En la computadora,
+     el borde derecho, a lo alto de la pantalla: un fondo inclinado con skew de 30° (un lado a 60°), así el ángulo no
+     cambia con la altura, que un recorte en porcentajes no puede seguir. Solo en horizontal: ver la variante apaisado. */
+  .tt-franja-ingreso {
+    position: relative;
+    isolation: isolate;
+    background: var(--superficie);
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 28px), calc(100% - 16.17px) 100%, 0 100%);
+  }
+  @media (min-width: 1024px) and (orientation: landscape) {
+    .tt-franja-ingreso {
+      background: none;
+      clip-path: none;
+      overflow: hidden;
+    }
+    .tt-franja-ingreso::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 0 -50%;
+      z-index: -1;
+      background: var(--superficie);
+      transform: skewX(-30deg);
+      transform-origin: top right;
     }
   }
 

@@ -68,16 +68,16 @@ test("cerrar sesión vuelve al ingreso y el panel queda cerrado", async ({ page,
 });
 
 // Pulido visual 3.1
-test("tras un error el foco va a la contraseña; los campos son de 44 px y la contraseña se puede ver", async ({ page }) => {
+test("tras un error el foco va a la contraseña; los campos son de 48 px, el botón de 52 y la contraseña se puede ver", async ({ page }) => {
   await page.goto("/ingresar");
   // Una salida al sitio, de 44 px
   const volver = page.getByRole("link", { name: "Volver al sitio" });
   await expect(volver).toHaveAttribute("href", "/");
   expect((await volver.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   const contrasena = page.getByLabel("Contraseña", { exact: true });
-  for (const campo of [page.getByLabel("Usuario"), contrasena, page.getByRole("button", { name: "Ingresar" })]) {
-    expect((await campo.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-  }
+  // Pulido 3.2: también en el celular, donde el campo común baja a 44 px
+  for (const campo of [page.getByLabel("Usuario"), contrasena]) expect((await campo.boundingBox())!.height).toBeGreaterThanOrEqual(48);
+  expect((await page.getByRole("button", { name: "Ingresar" }).boundingBox())!.height).toBeGreaterThanOrEqual(52);
 
   // Mostrar y ocultar lo escrito
   await contrasena.fill("secreta");
@@ -93,4 +93,34 @@ test("tras un error el foco va a la contraseña; los campos son de 44 px y la co
   await expect(contrasena).toBeFocused();
   await expect(contrasena).toHaveValue("");
   await expect(contrasena).toHaveAccessibleDescription("Usuario o contraseña incorrectos.");
+});
+
+test("el fondo de la página es negro en el ingreso y en el sitio, y claro en el panel después de entrar", async ({ page }) => {
+  // Antes, el body quedaba blanco y se veía arriba y abajo al estirar la página o bajo las barras del sistema
+  const fondo = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  await page.goto("/contacto");
+  await expect.poll(fondo).toBe("rgb(0, 0, 0)");
+  await page.goto("/ingresar");
+  await expect.poll(fondo).toBe("rgb(0, 0, 0)");
+  // Después de entrar, Next deja el ingreso oculto en la página: no cuenta
+  await ingresarComoDueno(page);
+  await expect.poll(fondo).toBe("rgb(255, 255, 255)");
+});
+
+test("en una pantalla ancha, el logo y el lema quedan dentro de la franja gris, también si es alta", async ({ page, isMobile }) => {
+  test.skip(isMobile, "Las dos columnas son de una pantalla ancha y en horizontal");
+  // Pulido 3.2: la diagonal de 60° avanza al bajar; en una pantalla alta y no tan ancha alcanzaba al lema y al logo
+  await page.goto("/ingresar");
+  for (const [width, height] of [[1024, 700], [1024, 840], [1280, 800], [1280, 1080], [1600, 1480], [2560, 1440]]) {
+    await page.setViewportSize({ width, height });
+    const margenes = await page.evaluate(() => {
+      const franja = document.querySelector(".tt-franja-ingreso")!.getBoundingClientRect();
+      const diagonal = (y: number) => franja.right - Math.tan(Math.PI / 6) * (y - franja.top);
+      return [".tt-lema", 'img[alt="TocTar"]'].map((selector) => {
+        const caja = document.querySelector(selector)!.getBoundingClientRect();
+        return diagonal(caja.bottom) - caja.right;
+      });
+    });
+    for (const margen of margenes) expect(margen, `${width} × ${height}`).toBeGreaterThan(8);
+  }
 });

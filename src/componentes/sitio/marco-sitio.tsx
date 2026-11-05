@@ -5,7 +5,7 @@ import { Pie } from "./pie";
 // logo es sobre negro). Lo usan el diseño del sitio y la página no encontrada general, que queda fuera de él (pulido 2.9).
 export function MarcoSitio({ children }: { children: React.ReactNode }) {
   return (
-    <div data-theme="oscuro" className="flex flex-1 flex-col bg-fondo text-tinta">
+    <div data-theme="oscuro" data-fondo="oscuro" className="flex flex-1 flex-col bg-fondo text-tinta">
       <Encabezado />
       <main className="flex flex-1 flex-col">{children}</main>
       <Pie />

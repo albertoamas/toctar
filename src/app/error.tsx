@@ -9,7 +9,7 @@ import { ErrorInesperado } from "@/componentes/sitio/error-inesperado";
 export default function ErrorGeneral({ retry }: { error: unknown; retry: () => void }) {
   const ruta = usePathname();
   return (
-    <div data-theme="oscuro" className="flex flex-1 flex-col bg-fondo text-tinta">
+    <div data-theme="oscuro" data-fondo="oscuro" className="flex flex-1 flex-col bg-fondo text-tinta">
       <ErrorInesperado retry={retry} inicio={ruta.startsWith("/panel") ? "/panel" : "/"} />
     </div>
   );

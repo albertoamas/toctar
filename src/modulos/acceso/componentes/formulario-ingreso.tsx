@@ -8,9 +8,10 @@ import { Label } from "@/componentes/ui/label";
 import { iniciarSesion } from "../acciones";
 import type { EstadoIngreso } from "../esquemas";
 
-// Se usa sobre todo desde el celular en el taller: campos y botón de 44 px, y la contraseña se puede ver para
-// no equivocarse al escribirla (pulido 3.1).
-const CAMPO = "h-11";
+// Se usa sobre todo desde el celular en el taller: campos de 48 px y botón de 52 (pulido 3.2; antes 44), y la contraseña
+// se puede ver para no equivocarse al escribirla (pulido 3.1).
+// El Input común trae pointer-coarse:h-11 y md:text-sm: se repiten aquí para que el tamaño del ingreso gane también ahí.
+const CAMPO = "h-12 pointer-coarse:h-12 text-base md:text-base";
 const ID_ERROR = "ingreso-error";
 
 export function FormularioIngreso() {
@@ -57,7 +58,7 @@ export function FormularioIngreso() {
             type="button"
             onClick={() => setVerContrasena((v) => !v)}
             aria-label={verContrasena ? "Ocultar la contraseña" : "Mostrar la contraseña"}
-            className="absolute top-0 right-0 grid size-11 place-items-center rounded-lg text-tinta-suave hover:text-tinta focus-visible:outline-2 focus-visible:outline-[var(--foco)]"
+            className="absolute top-0.5 right-0.5 grid size-11 place-items-center rounded-lg text-tinta-suave hover:text-tinta focus-visible:outline-2 focus-visible:outline-[var(--foco)]"
           >
             {verContrasena ? <EyeOffIcon className="size-5" aria-hidden /> : <EyeIcon className="size-5" aria-hidden />}
           </button>
@@ -69,7 +70,7 @@ export function FormularioIngreso() {
           <MensajeError id={ID_ERROR}>{estado.error}</MensajeError>
         </div>
       )}
-      <button type="submit" disabled={enviando} className="tt-boton tt-boton--principal w-full disabled:opacity-60">
+      <button type="submit" disabled={enviando} className="tt-boton tt-boton--principal min-h-13 w-full text-base disabled:opacity-60">
         {enviando ? "Ingresando…" : "Ingresar"}
       </button>
     </form>
