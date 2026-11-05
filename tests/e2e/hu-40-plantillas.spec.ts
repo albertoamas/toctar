@@ -76,6 +76,8 @@ test("tocar un campo lo agrega donde está el cursor (o al final, si no se tocó
   // Sin guardar: el mensaje guardado no cambia
   await saldo.getByRole("button", { name: "Agregar {nombre} al mensaje" }).click();
   await expect(texto).toHaveValue(/transferencia\. \{nombre\}$/);
+  // El cursor se coloca en el cuadro siguiente: escribir antes pierde la selección de fill() y el texto va al final
+  await expect(texto).toBeFocused();
   await texto.fill("Debes  hoy.");
   await texto.evaluate((el: HTMLTextAreaElement) => el.setSelectionRange(6, 6));
   await saldo.getByRole("button", { name: "Agregar {monto} al mensaje" }).click();
