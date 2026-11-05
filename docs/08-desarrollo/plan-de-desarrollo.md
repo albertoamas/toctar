@@ -50,11 +50,12 @@
 | Datos de demostración | ✅ Scripts `db:reiniciar-local`, `datos:demo` y `datos:reiniciar` (PR #75 y #120), al día con los ajustes del dueño. Falta cargarlos en pruebas: necesita un túnel SSH a la base y las claves de R2 de pruebas, que maneja el usuario |
 | Pedidos de la demo del sitio (24/10) | ✅ Hechos el 24/10 (PR #78 a #88; `pulido-visual.md`, 2B.1 a 2B.12; registro de cambios 1 a 11). Falta que el dueño cargue en pruebas el trabajo de la portada, los íconos de los beneficios, la escalera del nano cerámico, las fotos de cada sección y del equipo, el TikTok y el WhatsApp real |
 | Pulido visual de la Entrega 2 | ✅ Grupos 7 a 13, pantalla por pantalla, en `develop` (PR #99, #100, #102 a #105 y #108, del 25 al 27/10). Registro, comparativas y revisiones de cada grupo en `pulido-visual.md` |
-| Pedidos nuevos del dueño (25/10 al 03/11) | 🔵 En `registro-de-cambios.md`. **Hechos:** 12, 13, 17 (dentro del 21), 20, 21, 23, 24, 26 a 28, 30 y 32 a 36. **Descartado:** 25 (se mantienen las versiones). **Esperan al dueño:** 14 (cotizado), 15 y 16 (Sistema completo), 18, 19, 22 (WhatsApp automático, por cotizar), 29 (vehículos sin placa) y 31 (separar Cotizaciones de Nueva reserva). Además, cargar en el catálogo los servicios con mantenimiento y su frecuencia |
+| Pedidos nuevos del dueño (25/10 al 04/11) | 🔵 En `registro-de-cambios.md`. **Hechos:** 12, 13, 17 (dentro del 21), 20, 21, 23, 24, 26 a 28, 30, 31 (parte 1) y 32 a 37. **Descartado:** 25 (se mantienen las versiones). **Esperan al dueño:** 14 (cotizado), 15 y 16 (Sistema completo), 19, 22 (WhatsApp automático, por cotizar), 29 (vehículos sin placa) y 31, parte 2 (cotizar sin registrar). **Ya no aplica:** 18 (resuelto por el 23). Además, cargar en el catálogo los servicios con mantenimiento y su frecuencia |
 | Pruebas E2E intermitentes | ✅ `flujo-taller-completo` y `hu-30` fallaban a veces con la suite completa: eran dos carreras reales del sistema (recibir pedía confirmar "sin fotos" con una foto recién subida; el menú de espacios mostraba un instante la lista de otras fechas), corregidas el 27/10 (PR #109). La E2E completa pasó tres veces seguidas sin fallas. Lo del 25/10 (`hu-08`: llenar antes de que la página responda) ya espera la hidratación |
 | Ajustes de la reunión con el dueño (01/11) | ✅ Plan en `ajustes-reunion-dueno.md`: cotización directa (PR #113), checklist al recibir (#114), firma (#115), fotos justas (#116), órdenes con historial (#117), saldos con búsqueda (#118), rediseño del panel (#125, aprobado por el dueño) y dos roles sin técnico asignado (pedido 32, #129). Quedan, a decisión del dueño, vehículos sin placa (pedido 29) y los avisos automáticos (pedido 22, por cotizar) |
 | Ajustes del sitio (03/11) | ✅ Pedidos 33 a 36: tarjetas de servicio más vivas (#131), galería en dos secciones (#132), TikTok a la par de WhatsApp y "Cómo llegar" como botón (#133) y portada sin "Trabajos recientes" (#134). Corrección del iPhone en formularios y logo (#130) |
 | Auditoría QA del 03/11 | ✅ 14 hallazgos verificados: 10 corregidos (Zod, fechas, limpieza de fotos, bloqueos y el último dueño) y 4 descartados con motivo (PR #135, `09-pruebas/auditoria-qa-2026-11-03.md`) |
+| Flujo del trabajo y cambio de dueño (04/11) | ✅ Pedido 31, parte 1 (#137): pasos del trabajo, "Aceptó: reservar" y "Aceptó, sin fecha", Nueva reserva con las cotizaciones del vehículo e Inicio con el paso siguiente. Pedido 37 (#138): un vehículo cambia de dueño con su plan de mantenimiento. También en #138: el ajuste al estándar del panel y las reservas de un mismo espacio de a una |
 | Identidad visual aplicada a la app | ✅ En `develop` (PR #5 y #9, logos nítidos en tamaños chicos) |
 | Inicio del trabajo | 9 de octubre de 2026 (firma y primer pago) |
 | Día D (inicio del plazo del contrato) | 14 de octubre de 2026 (llegó el material) |
@@ -75,9 +76,8 @@ Todo lo programable está en `develop` y en `pruebas.toctardetailing.com`. Lo qu
 
 | Qué | Dónde |
 |---|---|
-| Pedido 29: vehículos sin placa | `registro-de-cambios.md`, prioridad 8 de `ajustes-reunion-dueno.md` |
-| Pedido 31: separar Cotizaciones de Nueva reserva | `registro-de-cambios.md` |
-| Pedidos 14 (Bs 200), 18, 19 y 22 (avisos automáticos, por cotizar); la constancia en PDF de la entrega (pedido 13, +2 h) | `registro-de-cambios.md` |
+| Pedido 29 y pedido 31, parte 2: vehículos sin placa y cotizar sin registrar al cliente (van juntos) | `etapas/P31-flujo-de-un-trabajo.md`, parte 2 |
+| Pedidos 14 (Bs 200), 19 y 22 (avisos automáticos, por cotizar); la constancia en PDF de la entrega (pedido 13, +2 h) | `registro-de-cambios.md` |
 | Pedidos 15 y 16: van en el Sistema completo | `registro-de-cambios.md` |
 | Decisiones abiertas de C5 (permiso del cliente para publicar fotos, qué ve el encargado en Inicio, más mensajes editables) | `etapas/C5-cierre-entrega-2.md`, §12 |
 | Sus datos: lista de precios real (20.4), servicios con mantenimiento y su frecuencia, textos del PDF (formas de pago, condiciones, garantía; 26.6), contenido del sitio (trabajo de la portada, fotos, TikTok, WhatsApp real) | Panel, en producción al publicar |
@@ -128,8 +128,8 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | P28 Órdenes con historial | `etapas/P28-ordenes-historial.md` | ✅ Programada (01/11, PR #117) |
 | P30 Saldos: buscar y ordenar | `etapas/P30-saldos-buscar-ordenar.md` | ✅ Programada (01/11, PR #118) |
 | P32 Dos roles, sin técnico | `etapas/P32-roles-sin-tecnico.md` | ✅ Programada (03/11, PR #129) |
-| P31 Un trabajo, de la cotización a la entrega | `etapas/P31-flujo-de-un-trabajo.md` | 🔵 Parte 1 programada (04/11); la parte 2 (cotizar sin registrar y placa opcional), a decidir con el dueño |
-| P37 Un vehículo cambia de dueño | `etapas/P37-cambio-de-dueno.md` | 🔵 Programada (04/11) |
+| P31 Un trabajo, de la cotización a la entrega | `etapas/P31-flujo-de-un-trabajo.md` | 🔵 Parte 1 hecha (04/11, PR #137 y #138); la parte 2 (cotizar sin registrar y placa opcional), a decidir con el dueño |
+| P37 Un vehículo cambia de dueño | `etapas/P37-cambio-de-dueno.md` | ✅ Hecha (04/11, PR #138) |
 | B6 Cierre de la Entrega 1 | Sin especificación aparte | Va junto con el cierre de la Entrega 2 (C5) |
 
 ## Cómo se trabaja cada historia
@@ -372,7 +372,7 @@ Una rama `hu-XX-…` por historia, desde `develop`, con commits chicos por tipo 
 | 6 | Validación de los criterios de HU-01 a HU-41 | Dueño | En la demo del cierre | Las actas |
 | 7 | Formas de pago, condiciones y garantía del PDF (hay un borrador cargado) | Dueño | Antes del acta (criterio 26.6) | El acta de la Entrega 2 |
 | 8 | Lista de precios real y sus variantes | Dueño | Antes de publicar (criterio 20.4) | La publicación |
-| 9 | Pedidos que esperan su decisión: 14, 18, 19, 22, 29, 31 y la constancia en PDF de la entrega | Dueño | Sin fecha (`registro-de-cambios.md`) | Nada: se cierra sin ellos si no los aprueba |
+| 9 | Pedidos que esperan su decisión: 14, 19, 22, 29, 31 (parte 2) y la constancia en PDF de la entrega | Dueño | Sin fecha (`registro-de-cambios.md`) | Nada: se cierra sin ellos si no los aprueba |
 | 10 | Vectorial original del logo | Diseñador del dueño | Sin fecha | Nada (hay trazado fiel) |
 
 ## Riesgos
