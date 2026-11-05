@@ -65,7 +65,7 @@ test("el dueño ve los números del día, lo que llega (y el atrasado), las entr
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Hola, /);
 
   const fila = (placa: string) => delDia(page).getByRole("link", { name: new RegExp(`^${placa}`) });
-  await expect(fila(placas.hoy)).toContainText("Agendada");
+  await expect(fila(placas.hoy)).toContainText("Reservada");
   await expect(fila(placas.hoy)).not.toContainText("Debía ingresar");
   await expect(fila(placas.atrasado)).toContainText(`Debía ingresar el ${dia(-2).corta}`);
   await expect(fila(placas.entrega)).toContainText(`Atrasada desde el ${dia(-4).corta}`);

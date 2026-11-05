@@ -109,7 +109,7 @@ test("vencidos y próximos; avisar, no le interesa y reservar (y al cancelar la 
   // Cerrado, ya no se agenda desde un enlace viejo
   const [{ clienteN, vehiculoN }] = await consultar<{ clienteN: number; vehiculoN: number }>("select cliente_id as \"clienteN\", vehiculo_id as \"vehiculoN\" from recordatorio_mantenimiento where id = $1", [noQuiere]);
   await page.goto(`/panel/agenda/nueva?cliente=${clienteN}&vehiculo=${vehiculoN}&recordatorio=${noQuiere}`);
-  await expect(page.getByText("Ese mantenimiento ya se agendó o se cerró.")).toBeVisible();
+  await expect(page.getByText("Ese mantenimiento ya se reservó o se cerró.")).toBeVisible();
 
   // Reservar: una reserva directa del cliente y su vehículo, con el aviso del mantenimiento
   await page.goto("/panel/mantenimientos");
@@ -143,12 +143,12 @@ test("vencidos y próximos; avisar, no le interesa y reservar (y al cancelar la 
   // En "Cerrados", agendado y con su reserva (pedido 20)
   await page.goto("/panel/mantenimientos?vista=cerrados");
   const cerradoV = page.getByRole("list", { name: "Cerrados" }).getByRole("listitem").filter({ hasText: placaV });
-  await expect(cerradoV).toContainText("Agendado");
+  await expect(cerradoV).toContainText("Reservado");
   await expect(cerradoV.getByRole("link", { name: "Ver la reserva" })).toHaveAttribute("href", `/panel/agenda/${reservaId}`);
   await page.goto(`/panel/clientes/${clienteV}`);
   const delCliente = page.getByRole("list", { name: "Mantenimientos" }).getByRole("listitem");
   await expect(delCliente).toContainText("Pulido y nano cerámico");
-  await expect(delCliente).toContainText("Agendado");
+  await expect(delCliente).toContainText("Reservado");
   await expect(delCliente.getByRole("link", { name: "Ver la reserva" })).toHaveAttribute("href", `/panel/agenda/${reservaId}`);
 
   // Si la reserva se cancela, el mantenimiento vuelve a la lista como estaba: avisado

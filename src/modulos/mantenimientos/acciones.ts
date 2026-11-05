@@ -16,7 +16,7 @@ import { ESTADOS_RECORDATORIO_ABIERTO } from "./reglas";
 // Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §6 y P21-planes-mantenimiento.md §6.
 
 const RECARGA = "No se pudo leer el pedido. Recarga la página.";
-const YA_NO = "Ese mantenimiento ya no está por avisar: se agendó, se cerró o el cliente se desactivó. Recarga la página.";
+const YA_NO = "Ese mantenimiento ya no está por avisar: se reservó, se cerró o el cliente se desactivó. Recarga la página.";
 
 /** Abierto, y de un cliente y un vehículo activos: los mismos que muestra la lista (mantenimientosPorAvisar). */
 const abierto = (id: number) =>

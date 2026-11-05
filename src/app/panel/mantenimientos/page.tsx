@@ -135,7 +135,7 @@ async function abiertos(vista: "por-avisar" | "mas-adelante", hoy: string, puede
 /** Agendados (con su reserva) y "No le interesa" (con su nota): para consultar, sin acciones. */
 async function cerrados(hoy: string, ve: { ordenes: boolean; agenda: boolean }) {
   const lista = await mantenimientosCerrados();
-  if (lista.length === 0) return <EstadoVacio>Todavía no hay mantenimientos agendados ni cerrados.</EstadoVacio>;
+  if (lista.length === 0) return <EstadoVacio>Todavía no hay mantenimientos reservados ni cerrados.</EstadoVacio>;
   return (
     <ul aria-label="Cerrados" className="flex max-w-3xl flex-col divide-y divide-border tt-tarjeta-panel">
       {lista.map((m) => (

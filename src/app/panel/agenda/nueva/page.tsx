@@ -212,7 +212,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
       <>
         <Encabezado />
         <EstadoVacio>
-          Ese mantenimiento ya se agendó o se cerró. <Link href="/panel/mantenimientos" className={enlace}>Volver a Mantenimientos</Link>
+          Ese mantenimiento ya se reservó o se cerró. <Link href="/panel/mantenimientos" className={enlace}>Volver a Mantenimientos</Link>
         </EstadoVacio>
       </>
     );

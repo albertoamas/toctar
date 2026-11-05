@@ -25,7 +25,7 @@ import { entradaReserva, esquemaAdelanto, esquemaCancelar, esquemaConsultaEspaci
 // rechaza un cruce aunque dos personas reserven a la vez (D-5). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md.
 
 const ESPACIO_OCUPADO = "Ese espacio se ocupó recién: elige otro.";
-const COTIZACION_CAMBIO = "Esa cotización ya fue agendada o tiene una versión nueva. Vuelve a la cotización.";
+const COTIZACION_CAMBIO = "Esa cotización ya fue reservada o tiene una versión nueva. Vuelve a la cotización.";
 
 /** Algo cambió entre la revisión y la escritura: se lanza dentro de la transacción para deshacerla entera. */
 class Conflicto extends Error {}
@@ -215,7 +215,7 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
             ),
           )
           .returning({ id: recordatorioMantenimiento.id });
-        if (!agendado) throw new Conflicto("Ese mantenimiento ya se agendó o se cerró. Vuelve a Mantenimientos.");
+        if (!agendado) throw new Conflicto("Ese mantenimiento ya se reservó o se cerró. Vuelve a Mantenimientos.");
         await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "recordatorio_mantenimiento", entidadId: recordatorioId, accion: "agendar", datos: { trabajoId: nuevo.id } });
       }
       // Un cliente que reserva sube en la lista de recientes de Clientes
@@ -227,7 +227,7 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
     if (error instanceof Conflicto) return { mensaje: error.message };
     // Dos personas reservaron el mismo espacio a la vez: la base frenó la segunda (D-5)
     if (exclusionViolada(error) === "trabajo_sin_cruces") return { errores: { espacioId: ESPACIO_OCUPADO } };
-    if (indiceUnicoViolado(error) === "trabajo_cotizacion_unica") return { mensaje: "Esa cotización ya fue agendada." };
+    if (indiceUnicoViolado(error) === "trabajo_cotizacion_unica") return { mensaje: "Esa cotización ya fue reservada." };
     throw error;
   }
 
