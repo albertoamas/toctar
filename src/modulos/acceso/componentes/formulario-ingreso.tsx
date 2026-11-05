@@ -10,7 +10,8 @@ import type { EstadoIngreso } from "../esquemas";
 
 // Se usa sobre todo desde el celular en el taller: campos de 48 px y botón de 52 (pulido 3.2; antes 44), y la contraseña
 // se puede ver para no equivocarse al escribirla (pulido 3.1).
-const CAMPO = "h-12 text-base";
+// El Input común trae pointer-coarse:h-11 y md:text-sm: se repiten aquí para que el tamaño del ingreso gane también ahí.
+const CAMPO = "h-12 pointer-coarse:h-12 text-base md:text-base";
 const ID_ERROR = "ingreso-error";
 
 export function FormularioIngreso() {
