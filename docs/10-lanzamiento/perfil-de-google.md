@@ -23,6 +23,17 @@
    - Fotos: logo, portada, el taller por fuera y por dentro, y trabajos terminados.
    - Servicios: los mismos nombres que en el sitio.
 
+## Conectar la ficha con el sitio (pedido 38)
+
+Así "Cómo llegar" abre la ficha de TocTar y el mapa de Contacto muestra su tarjeta, con el nombre y las estrellas. No hace falta ninguna clave de Google.
+
+1. En Google Maps, abrir la ficha del taller y tocar **Compartir**.
+2. **Copiar vínculo** y pegarlo en el panel: Configuración → Negocio → **Enlace de Google Maps**.
+3. Volver a **Compartir → Insertar un mapa → Copiar HTML** y pegarlo en **Mapa para la página**.
+4. **Guardar cambios** y abrir Contacto en el sitio para revisar.
+
+Si después cambia el nombre o el pin de la ficha, se vuelve a copiar el mapa. El enlace sigue sirviendo.
+
 ## Después
 
 - **Reseñas:** al entregar un vehículo, pedirle al cliente que deje una reseña. Google muestra primero los negocios con reseñas recientes. Se responden todas, también las malas, con calma.
