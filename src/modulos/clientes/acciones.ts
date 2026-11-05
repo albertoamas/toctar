@@ -1,12 +1,16 @@
 "use server";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { cliente, vehiculo } from "@/db/esquema";
+import { auditoria, cliente, consulta, cotizacion, recordatorioMantenimiento, trabajo, vehiculo } from "@/db/esquema";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { exigirModulo } from "@/lib/sesion";
+import { puedeVerModulo } from "@/lib/permisos";
+import { cotizacionAbierta } from "@/modulos/cotizaciones/consultas";
+import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
+import { ESTADOS_RESERVA_ACTIVA } from "@/modulos/ordenes/reglas";
 import { clienteConPlaca, clienteConTelefono } from "./consultas";
 import {
   camposConPrefijo,
@@ -17,7 +21,7 @@ import {
   type EstadoCliente,
   type Existentes,
 } from "./servidor";
-import { esquemaCliente, esquemaEstado, esquemaEstadoVehiculo, esquemaVehiculo } from "./esquemas";
+import { esquemaCambioDueno, esquemaCliente, esquemaEstado, esquemaEstadoVehiculo, esquemaVehiculo } from "./esquemas";
 import { prefijoVehiculo } from "./reglas";
 
 export type { EstadoCliente };
@@ -182,4 +186,108 @@ export async function cambiarEstadoVehiculo(datos: { clienteId: number; id: numb
   }
   despuesDeCambiar(clienteId);
   return { ok: true, mensaje: activo ? `${elegido.placa} reactivado.` : `${elegido.placa} desactivado.` };
+}
+
+/** Motivo con el que se cierran las cotizaciones abiertas del dueño anterior (pedido 37). */
+const MOTIVO_CAMBIO_DE_DUENO = "El vehículo cambió de dueño.";
+
+/** Una reserva activa del vehículo frena el cambio (pedido 37): primero se entrega o se cancela. */
+class ConReservaActiva extends Error {}
+
+/**
+ * El vehículo cambia de dueño (pedido 37, etapas/P37-cambio-de-dueno.md): pasa el mismo vehículo, con su plan de
+ * mantenimiento, al nuevo dueño; los mantenimientos abiertos le llegan a él y las cotizaciones abiertas del anterior para
+ * ese vehículo se cierran (rechazadas, con el motivo). Lo del anterior (reservas, órdenes, pagos) queda a su nombre. Con
+ * una reserva activa (agendada, en el taller o lista) no se hace. Bloquea primero las consultas del vehículo y después el
+ * vehículo, el orden del resto de la app: así una reserva nueva sobre él espera a que termine.
+ */
+export async function cambiarDuenoVehiculo(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  const autor = await exigirModulo("clientes");
+  const entrada = esquemaCambioDueno.safeParse({
+    vehiculoId: datos.get("vehiculoId"),
+    clienteActualId: datos.get("clienteActualId"),
+    clienteNuevoId: datos.get("clienteNuevoId"),
+  });
+  if (!entrada.success) {
+    // El mensaje propio solo para el mismo dueño (el refine); cualquier otro error es un pedido ilegible
+    const mismo = entrada.error.issues.find((i) => i.code === "custom");
+    return { mensaje: mismo?.message ?? "No se pudo leer el pedido. Recarga la página." };
+  }
+  const { vehiculoId, clienteActualId, clienteNuevoId } = entrada.data;
+  const autorId = Number(autor.id);
+
+  let resultado: { placa: string; nuevo: string; cerradas: number[] } | { mensaje: string };
+  try {
+    resultado = await db.transaction(async (tx) => {
+      await tx.select({ id: consulta.id }).from(consulta).where(eq(consulta.vehiculoId, vehiculoId)).for("update");
+      const [v] = await tx
+        .select({ placa: vehiculo.placa, clienteId: vehiculo.clienteId, activo: vehiculo.activo })
+        .from(vehiculo)
+        .where(eq(vehiculo.id, vehiculoId))
+        .for("update");
+      if (!v || v.clienteId !== clienteActualId) return { mensaje: "Ese vehículo ya cambió. Recarga la página." };
+      if (!v.activo) return { mensaje: `${v.placa} está desactivado: reactívalo antes de pasarlo.` };
+      const [nuevo] = await tx.select({ nombre: cliente.nombre, activo: cliente.activo }).from(cliente).where(eq(cliente.id, clienteNuevoId));
+      if (!nuevo?.activo) return { mensaje: "Ese cliente ya no está activo. Elige otro." };
+      const [activa] = await tx
+        .select({ id: trabajo.id })
+        .from(trabajo)
+        .where(and(eq(trabajo.vehiculoId, vehiculoId), inArray(trabajo.estado, [...ESTADOS_RESERVA_ACTIVA])))
+        .limit(1);
+      if (activa) throw new ConReservaActiva();
+      // Cerrar sus cotizaciones abiertas es rechazarlas: lo hace quien tiene "Cotizaciones" (pedido 24)
+      const abiertas = await tx
+        .select({ id: consulta.id })
+        .from(consulta)
+        .where(and(eq(consulta.vehiculoId, vehiculoId), eq(consulta.clienteId, clienteActualId), cotizacionAbierta));
+      if (abiertas.length > 0 && !puedeVerModulo(autor, "cotizaciones")) {
+        return { mensaje: "Tiene cotizaciones abiertas que se cierran al pasarlo: lo hace el dueño o quien tiene «Cotizaciones»." };
+      }
+
+      await tx.update(vehiculo).set({ clienteId: clienteNuevoId, updatedAt: new Date() }).where(eq(vehiculo.id, vehiculoId));
+      // Los avisos de mantenimiento, al nuevo dueño: uno ya avisado al anterior vuelve a estar por avisar, porque el
+      // comprador todavía no lo sabe. El plan sigue con el vehículo (P21)
+      await tx
+        .update(recordatorioMantenimiento)
+        .set({ clienteId: clienteNuevoId, estado: "pendiente", avisadoAt: null, avisadoPor: null, updatedAt: sql`now()` })
+        .where(and(eq(recordatorioMantenimiento.vehiculoId, vehiculoId), inArray(recordatorioMantenimiento.estado, [...ESTADOS_RECORDATORIO_ABIERTO])));
+      // Las cotizaciones abiertas del anterior (pendientes o aceptadas sin reserva) se cierran; su versión aceptada vuelve
+      // a vigente, como al rechazar. Una aceptada con su trabajo (aunque ya entregado) es historia: no se toca
+      const cerradas =
+        abiertas.length === 0
+          ? []
+          : await tx
+              .update(consulta)
+              .set({ estado: "perdido", motivoPerdida: "otro", detallePerdida: MOTIVO_CAMBIO_DE_DUENO, ultimoMovimientoAt: sql`now()` })
+              .where(inArray(consulta.id, abiertas.map((c) => c.id)))
+              .returning({ id: consulta.id });
+      if (cerradas.length > 0) {
+        await tx
+          .update(cotizacion)
+          .set({ estado: "enviada" })
+          .where(and(inArray(cotizacion.consultaId, cerradas.map((c) => c.id)), eq(cotizacion.estado, "aceptada")));
+      }
+      await tx.insert(auditoria).values({
+        usuarioId: autorId,
+        entidad: "vehiculo",
+        entidadId: vehiculoId,
+        accion: "cambiar_dueno",
+        datos: { placa: v.placa, deClienteId: clienteActualId, aClienteId: clienteNuevoId, cotizacionesCerradas: cerradas.map((c) => c.id) },
+      });
+      await tx.update(cliente).set({ updatedAt: sql`now()` }).where(eq(cliente.id, clienteNuevoId));
+      return { placa: v.placa, nuevo: nuevo.nombre, cerradas: cerradas.map((c) => c.id) };
+    });
+  } catch (error) {
+    if (error instanceof ConReservaActiva) return { mensaje: "Tiene una reserva o está en el taller: entrégalo o cancela la reserva antes de pasarlo." };
+    throw error;
+  }
+  if ("mensaje" in resultado) return resultado;
+
+  despuesDeCambiar(clienteActualId);
+  despuesDeCambiar(clienteNuevoId);
+  revalidatePath("/panel/cotizaciones");
+  for (const id of resultado.cerradas) revalidatePath(`/panel/cotizaciones/${id}`);
+  revalidatePath("/panel/mantenimientos");
+  revalidatePath("/panel");
+  redirect(`/panel/clientes/${clienteNuevoId}?recibido=${encodeURIComponent(resultado.placa)}`);
 }

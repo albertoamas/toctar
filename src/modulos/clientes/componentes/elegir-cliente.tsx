@@ -20,15 +20,20 @@ type Props = {
   hrefCliente: (id: number) => Route;
   /** Si se puede registrar ahí mismo: la dirección de "Cliente nuevo". */
   hrefNuevo?: Route;
+  /** El título de la sección. Por defecto, "Cliente". */
+  titulo?: string;
+  /** Quien no se puede elegir: el dueño actual, al cambiar de dueño un vehículo (pedido 37). */
+  excepto?: number;
 };
 
-export async function ElegirCliente({ q, hrefCliente, hrefNuevo }: Props) {
-  const { clientes, hayMas } = await buscarClientes(q);
+export async function ElegirCliente({ q, hrefCliente, hrefNuevo, titulo = "Cliente", excepto }: Props) {
+  const { clientes, hayMas } = await buscarClientes(q, false, excepto);
+  const otros = excepto ? "otros clientes" : "clientes";
   const sugerencia = hrefNuevo ? " Regístralo con «Cliente nuevo»." : " Regístralo primero en Clientes.";
   const busqueda = normalizarBusqueda(q);
   return (
     <div className="flex flex-col gap-4">
-      <CabeceraSeccion id="cliente" titulo="Cliente">
+      <CabeceraSeccion id="cliente" titulo={titulo}>
         {hrefNuevo && (
           <Link href={hrefNuevo} className={cn(buttonVariants({ variant: "outline" }))}>
             <UserPlusIcon />
@@ -38,7 +43,7 @@ export async function ElegirCliente({ q, hrefCliente, hrefNuevo }: Props) {
       </CabeceraSeccion>
       <BuscadorClientes />
       {clientes.length === 0 ? (
-        <EstadoVacio>{q ? `No hay clientes con «${q.trim()}».${sugerencia}` : `Todavía no hay clientes.${sugerencia}`}</EstadoVacio>
+        <EstadoVacio>{q ? `No hay ${otros} con «${q.trim()}».${sugerencia}` : `Todavía no hay ${otros}.${sugerencia}`}</EstadoVacio>
       ) : (
         <TablaClientes etiqueta="Elegir cliente" clientes={clientes} busqueda={busqueda} href={hrefCliente} />
       )}

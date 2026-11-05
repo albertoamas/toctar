@@ -54,7 +54,7 @@ export default function PaginaCliente({ params, searchParams }: PageProps<"/pane
 
 async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[id]">, "params" | "searchParams">) {
   const usuario = await exigirModulo("clientes");
-  const [{ id }, { creado }] = await Promise.all([params, searchParams]);
+  const [{ id }, { creado, recibido }] = await Promise.all([params, searchParams]);
   const numero = Number(id);
   if (!Number.isInteger(numero) || numero <= 0) notFound();
   const verCotizaciones = puedeVerModulo(usuario, "cotizaciones");
@@ -116,6 +116,12 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
         {!c.activo && "No sale en la lista ni en las búsquedas."}
       </EncabezadoPagina>
       {creado && <AvisoEnPagina>Cliente {c.nombre} creado.</AvisoEnPagina>}
+      {/* Pedido 37: un vehículo que pasó a este cliente, solo si de verdad es suyo */}
+      {typeof recibido === "string" && c.vehiculos.some((v) => v.activo && v.placa === recibido) && (
+        <AvisoEnPagina>
+          {recibido} ahora es de {c.nombre}, con su plan de mantenimiento.
+        </AvisoEnPagina>
+      )}
 
       {/* Lado a lado y del mismo alto en la computadora (como en el catálogo); en el celular, primero los vehículos */}
       <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-2 md:gap-4">

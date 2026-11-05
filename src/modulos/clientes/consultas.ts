@@ -1,7 +1,10 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, like, ne, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, inArray, like, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { cliente, tamanoVehiculo, vehiculo } from "@/db/esquema";
+import { cliente, consulta, recordatorioMantenimiento, tamanoVehiculo, trabajo, vehiculo } from "@/db/esquema";
+import { cotizacionAbierta } from "@/modulos/cotizaciones/consultas";
+import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
+import { ESTADOS_RESERVA_ACTIVA } from "@/modulos/ordenes/reglas";
 import { escaparLike, normalizarBusqueda } from "./reglas";
 
 // Lecturas de clientes (C1). Quien las llama ya pasó por exigirModulo("clientes"): el dueño o un encargado con el
@@ -15,7 +18,7 @@ const LIMITE_RESULTADOS = 30;
  * Clientes por nombre (sin importar tildes ni mayúsculas), parte del teléfono o placa (HU-22, RF-22). Sin búsqueda,
  * los más recientes. Trae uno más del límite para saber si hay más (`hayMas`).
  */
-export async function buscarClientes(q: string, desactivados = false): Promise<{ clientes: FilaCliente[]; hayMas: boolean }> {
+export async function buscarClientes(q: string, desactivados = false, excepto?: number): Promise<{ clientes: FilaCliente[]; hayMas: boolean }> {
   const busqueda = normalizarBusqueda(q);
   const coincide = busqueda
     ? or(
@@ -35,7 +38,7 @@ export async function buscarClientes(q: string, desactivados = false): Promise<{
   const filas = await db
     .select({ id: cliente.id, nombre: cliente.nombre, telefono: cliente.telefono })
     .from(cliente)
-    .where(and(eq(cliente.activo, !desactivados), coincide))
+    .where(and(eq(cliente.activo, !desactivados), coincide, excepto ? ne(cliente.id, excepto) : undefined))
     .orderBy(desc(cliente.updatedAt), desc(cliente.id))
     .limit(LIMITE_RESULTADOS + 1);
   return { clientes: await conPlacas(filas.slice(0, LIMITE_RESULTADOS)), hayMas: filas.length > LIMITE_RESULTADOS };
@@ -123,11 +126,60 @@ export async function clienteConTelefono(telefono: string, excepto?: number): Pr
  * De quién es esa placa entre los vehículos activos, para avisar el duplicado (RF-23). `excepto`: el vehículo que se
  * está editando o reactivando, que no choca consigo mismo.
  */
-export async function clienteConPlaca(placa: string, excepto?: number): Promise<{ id: number; nombre: string } | null> {
+export async function clienteConPlaca(placa: string, excepto?: number): Promise<{ id: number; nombre: string; vehiculoId: number } | null> {
   const [c] = await db
-    .select({ id: cliente.id, nombre: cliente.nombre })
+    .select({ id: cliente.id, nombre: cliente.nombre, vehiculoId: vehiculo.id })
     .from(vehiculo)
     .innerJoin(cliente, eq(vehiculo.clienteId, cliente.id))
     .where(and(eq(vehiculo.placa, placa), eq(vehiculo.activo, true), excepto ? ne(vehiculo.id, excepto) : undefined));
   return c ?? null;
+}
+
+export type DatosCambioDueno = {
+  placa: string;
+  marca: string | null;
+  modelo: string | null;
+  anio: number | null;
+  color: string | null;
+  tamano: string;
+  activo: boolean;
+  dueno: string;
+  /** Agendada, en el taller o lista: frena el cambio. */
+  reservaActiva: boolean;
+  /** Cotizaciones del dueño actual para este vehículo que siguen abiertas (pendientes o aceptadas sin fecha). */
+  cotizacionesAbiertas: number;
+  /** Mantenimientos pendientes o avisados: pasan al nuevo dueño. */
+  mantenimientosAbiertos: number;
+};
+
+/**
+ * Lo que muestra la pantalla de cambio de dueño (pedido 37): el vehículo de ese cliente y qué va a pasar. Null si el
+ * vehículo no existe o no es de ese cliente.
+ */
+export async function datosCambioDueno(vehiculoId: number, clienteId: number): Promise<DatosCambioDueno | null> {
+  const [v] = await db
+    .select({
+      placa: vehiculo.placa,
+      marca: vehiculo.marca,
+      modelo: vehiculo.modelo,
+      anio: vehiculo.anio,
+      color: vehiculo.color,
+      tamano: tamanoVehiculo.nombre,
+      activo: vehiculo.activo,
+      dueno: cliente.nombre,
+      reservaActiva: sql<boolean>`${exists(db.select({ id: trabajo.id }).from(trabajo).where(and(eq(trabajo.vehiculoId, vehiculo.id), inArray(trabajo.estado, [...ESTADOS_RESERVA_ACTIVA]))))}`,
+      cotizacionesAbiertas: sql<number>`(${db
+        .select({ n: count() })
+        .from(consulta)
+        .where(and(eq(consulta.vehiculoId, vehiculo.id), eq(consulta.clienteId, vehiculo.clienteId), cotizacionAbierta))})`.mapWith(Number),
+      mantenimientosAbiertos: sql<number>`(${db
+        .select({ n: count() })
+        .from(recordatorioMantenimiento)
+        .where(and(eq(recordatorioMantenimiento.vehiculoId, vehiculo.id), inArray(recordatorioMantenimiento.estado, [...ESTADOS_RECORDATORIO_ABIERTO])))})`.mapWith(Number),
+    })
+    .from(vehiculo)
+    .innerJoin(cliente, eq(vehiculo.clienteId, cliente.id))
+    .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
+    .where(and(eq(vehiculo.id, vehiculoId), eq(vehiculo.clienteId, clienteId)));
+  return v ?? null;
 }

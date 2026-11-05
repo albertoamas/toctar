@@ -9,8 +9,11 @@ import { CAMPOS_VEHICULO } from "./esquemas";
 // Ayudas del servidor para registrar clientes y vehículos: las usan las acciones de Clientes (C1) y la nueva consulta
 // (C2), que registra al cliente ahí mismo. No es un archivo "use server": no expone nada al navegador.
 
-/** Respuesta de los formularios de clientes: además de los errores, a quién pertenece el dato repetido (RF-23). */
-export type EstadoCliente = EstadoFormulario & { existentes?: Record<string, { id: number; nombre: string }> };
+/**
+ * Respuesta de los formularios de clientes: además de los errores, a quién pertenece el dato repetido (RF-23); en una
+ * placa, también su vehículo, para cambiarle el dueño (pedido 37).
+ */
+export type EstadoCliente = EstadoFormulario & { existentes?: Record<string, { id: number; nombre: string; vehiculoId?: number }> };
 export type Existentes = NonNullable<EstadoCliente["existentes"]>;
 
 /** Prefijo de los campos del vehículo en el formulario de cliente nuevo (y en el de la nueva consulta). */

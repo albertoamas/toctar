@@ -8,6 +8,7 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
+import { MasDatos } from "@/componentes/panel/mas-datos";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
 import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -40,7 +41,7 @@ export const metadata: Metadata = { title: "Nueva reserva" };
 // y reserva una de sus cotizaciones.
 export default function PaginaNuevaReserva({ searchParams }: PageProps<"/panel/agenda/nueva">) {
   return (
-    <section className="flex flex-col gap-6">
+    <section className="flex max-w-3xl flex-col gap-6">
       <Suspense
         fallback={
           <>
@@ -274,8 +275,8 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
             <CotizacionesDelCliente cotizaciones={cotizaciones} conMontos={conPagos || puedeVerModulo(usuario, "cotizaciones")} delTablero={delTablero} />
           )}
           {conPagos ? (
-            <>
-              {cotizaciones.length > 0 && <h2 className="tt-titulo-seccion">O una reserva sin cotización</h2>}
+            // Con cotizaciones, lo común es usar una: la reserva sin cotización queda plegada. Sin ellas, a la vista
+            <PlegadaSi plegada={cotizaciones.length > 0}>
               <Formulario
                 origen={{
                   tipo: "directa",
@@ -292,7 +293,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
                 fechaFin={fechaInicial}
                 espacio={numero("espacio")}
               />
-            </>
+            </PlegadaSi>
           ) : (
             cotizaciones.length === 0 && (
               <EstadoVacio>Este vehículo no tiene cotizaciones para reservar. La reserva sin cotización lleva precios: la arma el dueño o quien registra pagos.</EstadoVacio>
@@ -301,6 +302,17 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
         </>
       )}
     </>
+  );
+}
+
+/** El formulario de una reserva sin cotización, detrás de "＋" si `plegada` (`MasDatos`: una vez abierto, no se cierra solo). */
+function PlegadaSi({ plegada, children }: { plegada: boolean; children: React.ReactNode }) {
+  return plegada ? (
+    <MasDatos texto="Reserva sin cotización" abierto={false}>
+      {children}
+    </MasDatos>
+  ) : (
+    children
   );
 }
 
@@ -313,15 +325,15 @@ function CotizacionesDelCliente({ cotizaciones, conMontos, delTablero }: { cotiz
   return (
     <section aria-labelledby="sus-cotizaciones-titulo" className="flex flex-col gap-3">
       <CabeceraSeccion id="sus-cotizaciones" titulo="Sus cotizaciones" />
-      <p className="-mt-1 text-sm text-tinta-suave">Toca una para reservarla con sus servicios y precios.</p>
       <ListaFilas
         etiqueta="Sus cotizaciones"
         filas={cotizaciones.map((c) => ({
           href: `/panel/agenda/nueva?${new URLSearchParams({ cotizacion: String(c.cotizacionId), ...Object.fromEntries(delTablero) }).toString()}` as Route,
           titulo: `Cotización ${c.numero}${c.version > 1 ? `, versión ${c.version}` : ""}`,
           detalles: [c.servicios, ...(conMontos ? [bs(c.total)] : [])].filter(Boolean),
-          estado: c.aceptada ? "Aceptada, sin fecha" : "Pendiente",
+          estado: c.aceptada ? "Aceptada" : "Pendiente",
           tonoEstado: c.aceptada ? "exito" : undefined,
+          aviso: c.aceptada ? "Sin fecha" : null,
         }))}
       />
     </section>

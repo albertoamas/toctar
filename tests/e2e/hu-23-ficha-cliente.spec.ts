@@ -89,8 +89,13 @@ test("los vehículos se agregan, editan, desactivan y reactivan desde la ficha, 
   await expect(edicion.getByLabel("Color")).toHaveValue("Rojo");
 
   // Desactivar desde la edición y reactivar
-  await edicion.getByRole("button", { name: `Desactivar FIC${s}1` }).click();
-  await expect(edicion).toBeHidden();
+  await edicion.getByRole("button", { name: "Más" }).click();
+  // Con la máquina muy cargada, un toque justo al abrirse el menú puede no contar: se repite mientras el menú siga abierto
+  const desactivar = page.getByRole("menuitem", { name: `Desactivar FIC${s}1` });
+  await expect(async () => {
+    if (await desactivar.isVisible()) await desactivar.click({ timeout: 1000 });
+    await expect(edicion).toBeHidden({ timeout: 2000 });
+  }).toPass({ timeout: 15000 });
   await expect(page.getByRole("list", { name: "Vehículos desactivados" })).toContainText(`FIC${s}1`);
   await page.getByRole("button", { name: `Reactivar FIC${s}1` }).click();
   await expect(vehiculos).toContainText(`FIC${s}1`);

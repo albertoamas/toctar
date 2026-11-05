@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, desc, eq, gte, inArray, lte, ne, not, notInArray, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { db } from "@/db";
+import { db, type Transaccion } from "@/db";
 import {
   archivo,
   cliente,
@@ -105,6 +105,7 @@ export async function datosDeCotizacion(cotizacionId: number): Promise<DatosDeCo
       clienteId: cliente.id,
       cliente: cliente.nombre,
       clienteActivo: cliente.activo,
+      vehiculoCliente: vehiculo.clienteId,
       vehiculoActivo: vehiculo.activo,
       vehiculoId: vehiculo.id,
       placa: vehiculo.placa,
@@ -136,7 +137,8 @@ export async function datosDeCotizacion(cotizacionId: number): Promise<DatosDeCo
     numero: c.numero,
     version: c.version,
     consultaId: c.consultaId,
-    agendable: sePuedeReservar({ version: c.estado, encabezado: c.estadoConsulta, conReserva: c.conReserva }),
+    // El vehículo tiene que seguir siendo de ese cliente: si cambió de dueño (pedido 37), su cotización ya no se reserva
+    agendable: sePuedeReservar({ version: c.estado, encabezado: c.estadoConsulta, conReserva: c.conReserva }) && c.vehiculoCliente === c.clienteId,
     aceptada: c.estadoConsulta === "confirmado",
     activos: c.clienteActivo && c.vehiculoActivo,
     cliente: { id: c.clienteId, nombre: c.cliente },
@@ -163,6 +165,16 @@ export type DatosDirecta = {
   vehiculo: VehiculoReserva | null;
   opciones: OpcionServicio[];
 };
+
+/**
+ * Quien va a ocupar un espacio, de a uno por espacio. Sin esto, dos reservas a la vez en el mismo espacio se esperan entre
+ * sí al revisar `trabajo_sin_cruces` y la base corta una con un bloqueo mutuo (40P01), que llega como un error y no como
+ * "se ocupó recién". Con esto, la segunda espera, y la restricción la rechaza limpia. "no key update": no frena las claves
+ * foráneas de lo que solo apunta al espacio.
+ */
+export async function bloquearEspacio(tx: Transaccion, espacioId: number): Promise<void> {
+  await tx.select({ id: espacioTaller.id }).from(espacioTaller).where(eq(espacioTaller.id, espacioId)).for("no key update");
+}
 
 /** Una cotización que se puede reservar, para ofrecerla en Nueva reserva (pedido 31). */
 export type CotizacionParaReservar = {

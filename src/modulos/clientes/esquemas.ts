@@ -84,3 +84,9 @@ export const esquemaEstado = z.object({
 
 /** Para cambiarEstadoVehiculo, que recibe datos sueltos: cualquiera puede llamarla. */
 export const esquemaEstadoVehiculo = esquemaEstado.extend({ clienteId: z.coerce.number().int().positive() });
+
+/** Un vehículo que cambia de dueño (pedido 37): de quién es ahora y a quién pasa. */
+const idDeFila = z.coerce.number().int().positive().max(2147483647);
+export const esquemaCambioDueno = z
+  .object({ vehiculoId: idDeFila, clienteActualId: idDeFila, clienteNuevoId: idDeFila })
+  .refine((d) => d.clienteActualId !== d.clienteNuevoId, { path: ["clienteNuevoId"], message: "Elige otro cliente: ya es su dueño." });

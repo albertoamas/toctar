@@ -52,14 +52,16 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto(`/panel/ordenes/${id}`);
   const pasos = page.getByRole("region", { name: "Estado de la orden" });
+  const pasoActual = page.getByRole("navigation", { name: "Pasos del trabajo" }).locator('[aria-current="step"]');
   await pasos.getByRole("button", { name: "Empezar trabajo" }).click();
-  await expect(pasos.locator('[aria-current="step"]')).toHaveText("En proceso");
+  await expect(page.getByRole("main").getByText("En proceso", { exact: true }).first()).toBeVisible();
+  await expect(pasoActual).toHaveText("En el taller");
   // Al empezar, la foto de inicio con todo el vehículo (pedido 27); la subida necesita JavaScript
   await expect(page.getByRole("button", { name: "Tomar foto" }).first()).toBeEnabled();
   await page.getByLabel("Cámara para fotos del inicio").setInputFiles({ name: "frente.png", mimeType: "image/png", buffer: PNG });
   await expect(page.getByText("Foto guardada.")).toBeVisible();
   await pasos.getByRole("button", { name: "Marcar listo" }).click();
-  await expect(pasos.locator('[aria-current="step"]')).toHaveText("Lista");
+  await expect(pasoActual).toHaveText("Lista");
 
   // 3. El dueño avisa por WhatsApp, con el saldo
   await page.context().clearCookies();

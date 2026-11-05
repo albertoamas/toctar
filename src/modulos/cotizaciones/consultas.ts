@@ -307,6 +307,12 @@ export async function aceptadasSinFecha(): Promise<FilaCotizacion[]> {
   return (await filas(sinFecha).orderBy(asc(consulta.ultimoMovimientoAt), asc(consulta.id))).map(aFila);
 }
 
+/**
+ * Abierta: una cotización (con versiones) pendiente, o aceptada sin reserva activa. Las que cierra un cambio de dueño
+ * (pedido 37): una aceptada con su trabajo, aunque ya se haya entregado, es historia y no se toca.
+ */
+export const cotizacionAbierta = sql`(${tieneVersiones} and (${consulta.estado} = 'cotizado' or (${consulta.estado} = 'confirmado' and not ${conReservaActiva})))`;
+
 /** Aceptada sin reserva activa: "Aceptó, sin fecha" (pedido 31, P31-flujo-de-un-trabajo.md §4). */
 const sinFecha = sql<boolean>`(${consulta.estado} = 'confirmado' and not ${conReservaActiva})`;
 
