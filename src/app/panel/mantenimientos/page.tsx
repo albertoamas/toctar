@@ -201,7 +201,7 @@ function Fila({ m, hoy, mensaje, puedeAgendar, conAviso }: { m: MantenimientoPor
           {puedeAgendar && (
             <Link href={`/panel/agenda/nueva?${agendar.toString()}`} className={cn(buttonVariants({ variant: "outline" }))}>
               <CalendarIcon />
-              Agendar
+              Reservar
             </Link>
           )}
         </div>

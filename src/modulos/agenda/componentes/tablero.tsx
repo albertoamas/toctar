@@ -205,7 +205,7 @@ export function AgendaDelDia({ semana, dia, hoy, conOrdenes }: { semana: SemanaD
                 <span className="text-tinta-suave">Libre</span>
                 <span className="inline-flex items-center gap-1 font-semibold">
                   <PlusIcon className="size-4" aria-hidden />
-                  Agendar
+                  Reservar
                   <span className="sr-only">
                     {" "}
                     en {espacio.nombre} el {textoDia(dia)}

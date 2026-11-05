@@ -76,7 +76,7 @@ test("las reservas ocupan sus días en su espacio; un día libre lleva a agendar
     await expect(page).toHaveURL(/&dia=\d{4}-\d{2}-\d{2}$/);
     const dia = page.getByRole("list", { name: /^Espacios el Martes/ });
     await expect(dia.getByRole("link", { name: new RegExp(`^TB29${s}1`) })).toBeVisible();
-    await expect(dia.getByRole("link", { name: /Agendar/ })).toHaveCount(espacios.length - 1);
+    await expect(dia.getByRole("link", { name: /Reservar/ })).toHaveCount(espacios.length - 1);
     // Tocar la reserva la abre
     await dia.getByRole("link", { name: new RegExp(`^TB29${s}1`) }).click();
     await expect(page).toHaveURL(/\/panel\/agenda\/\d+$/);
