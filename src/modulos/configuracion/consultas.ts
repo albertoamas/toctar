@@ -27,6 +27,8 @@ export type ConfiguracionNegocio = {
   sucursalId: number;
   direccion: string;
   coordenadas: Coordenadas | null;
+  enlaceMapa: string | null;
+  mapaInsertado: string | null;
   horarios: DiaHorario[];
   whatsapp: string | null;
 };
@@ -57,6 +59,8 @@ export async function obtenerConfiguracionNegocio(): Promise<ConfiguracionNegoci
     sucursalId: s.id,
     direccion: s.direccion,
     coordenadas: s.lat !== null && s.lng !== null ? { lat: Number(s.lat), lng: Number(s.lng) } : null,
+    enlaceMapa: s.enlaceMapa,
+    mapaInsertado: s.mapaInsertado,
     horarios: s.horarios,
     whatsapp: s.telefonoWhatsapp,
   };
@@ -74,6 +78,8 @@ export async function obtenerDatosPublicos(): Promise<DatosPublicos> {
     redes: c.redes,
     direccion: c.direccion,
     coordenadas: c.coordenadas,
+    enlaceMapa: c.enlaceMapa,
+    mapaInsertado: c.mapaInsertado,
     horarios: c.horarios,
     whatsapp: c.whatsapp,
   };
@@ -81,7 +87,7 @@ export async function obtenerDatosPublicos(): Promise<DatosPublicos> {
 
 export type DatosPublicos = Pick<
   ConfiguracionNegocio,
-  "nombre" | "correo" | "redes" | "direccion" | "coordenadas" | "horarios" | "whatsapp"
+  "nombre" | "correo" | "redes" | "direccion" | "coordenadas" | "enlaceMapa" | "mapaInsertado" | "horarios" | "whatsapp"
 >;
 
 /** Parámetros vigentes (HU-05). En caché hasta que el dueño los cambie. */

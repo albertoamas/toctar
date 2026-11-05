@@ -5,7 +5,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { resumirHorarios } from "@/lib/horarios";
 import { PAGINAS_PRINCIPALES, PAGINAS_SECUNDARIAS } from "@/lib/sitio";
-import { enlaceMapa } from "@/lib/ubicacion";
+import { enlaceComoLlegar } from "@/lib/ubicacion";
 import { urlSitio } from "@/lib/sitio";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
@@ -58,9 +58,9 @@ async function DatosDelNegocio() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(datosNegocioLocal(d, urlSitio())) }} />
       <Bloque titulo="Dónde estamos">
         <address className="not-italic">{d.direccion}</address>
-        {d.coordenadas && (
+        {(d.enlaceMapa || d.coordenadas) && (
           // Un botón de verdad, con su ícono (pedido 35): como texto en negrita no se veía que se tocaba
-          <a href={enlaceMapa(d.coordenadas)} target="_blank" rel="noreferrer" className="tt-boton tt-boton--contorno mt-2 self-start">
+          <a href={enlaceComoLlegar(d)} target="_blank" rel="noreferrer" className="tt-boton tt-boton--contorno mt-2 self-start">
             <MapPinIcon className="size-[18px]" aria-hidden />
             Cómo llegar
           </a>

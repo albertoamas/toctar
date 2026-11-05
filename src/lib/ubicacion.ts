@@ -53,3 +53,90 @@ export function leerUbicacion(texto: string): ResultadoUbicacion {
 export function enlaceMapa({ lat, lng }: Coordenadas): string {
   return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 }
+
+// Pedido 38: la ficha del taller en Google Maps. El dueño pega lo que la ficha le da en "Compartir": el enlace (abre la
+// ficha, con su nombre, estrellas y ruta) y el código de "Insertar un mapa" (el mapa con la tarjeta del negocio). Sin
+// clave ni Place ID. Del código solo se guarda la dirección del mapa, validada: nunca se inserta el HTML pegado.
+
+export const ERROR_ENLACE_MAPA = "Pega el enlace de Google Maps: en la ficha del taller, Compartir → Copiar vínculo.";
+export const ERROR_MAPA_INSERTADO = "Pega el código de Google Maps: en la ficha del taller, Compartir → Insertar un mapa → Copiar HTML.";
+
+/** Lo que se guarda del enlace: el enlace (null si se escribieron solo coordenadas) y sus coordenadas, si las trae. */
+export type EnlaceMapa = { enlace: string | null; coordenadas: Coordenadas | null };
+/** Lo que se guarda del mapa: la dirección del `<iframe>` y sus coordenadas, si las trae. */
+export type MapaInsertado = { src: string; coordenadas: Coordenadas | null };
+
+type Lectura<T> = { ok: true; valor: T } | { ok: false; error: string };
+
+// google.com, google.com.bo, maps.google.com…
+const DOMINIO_GOOGLE = /^(?:www\.|maps\.)?google\.[a-z]{2,3}(?:\.[a-z]{2})?$/;
+
+function aUrl(texto: string): URL | null {
+  try {
+    // Pegado sin "https://" (www.google.com/maps/…): se completa, como en las redes
+    return new URL(/^[a-z][a-z\d+.-]*:/i.test(texto) ? texto : `https://${texto}`);
+  } catch {
+    return null;
+  }
+}
+
+function sinCredenciales(url: URL): boolean {
+  return url.protocol === "https:" && !url.username && !url.password && !url.port;
+}
+
+function esEnlaceDeMaps(url: URL): boolean {
+  if (!sinCredenciales(url)) return false;
+  const host = url.hostname.toLowerCase();
+  if (host === "maps.app.goo.gl") return url.pathname.length > 1;
+  if (host === "goo.gl") return url.pathname.startsWith("/maps/");
+  if (!DOMINIO_GOOGLE.test(host)) return false;
+  return host.startsWith("maps.") || url.pathname === "/maps" || url.pathname.startsWith("/maps/");
+}
+
+/** El enlace de la ficha, uno largo de Google Maps o las coordenadas solas. Vacío: null. */
+export function leerEnlaceMapa(texto: string): Lectura<EnlaceMapa | null> {
+  const limpio = texto.trim();
+  if (!limpio) return { ok: true, valor: null };
+  const coordenadas = leerUbicacion(limpio);
+  // Sin letras: son las coordenadas de siempre
+  if (!/[a-z]/i.test(limpio)) {
+    return coordenadas.ok ? { ok: true, valor: { enlace: null, coordenadas: coordenadas.coordenadas } } : { ok: false, error: ERROR_ENLACE_MAPA };
+  }
+  const url = aUrl(limpio);
+  if (!url || !esEnlaceDeMaps(url)) return { ok: false, error: ERROR_ENLACE_MAPA };
+  return { ok: true, valor: { enlace: url.href, coordenadas: coordenadas.ok ? coordenadas.coordenadas : null } };
+}
+
+/** El código de "Insertar un mapa" (el `<iframe>` entero) o solo su dirección. Vacío: null. */
+export function leerMapaInsertado(texto: string): Lectura<MapaInsertado | null> {
+  const limpio = texto.trim();
+  if (!limpio) return { ok: true, valor: null };
+  const src = (/<iframe\b[^>]*?\bsrc\s*=\s*["']([^"']+)["']/i.exec(limpio)?.[1] ?? limpio).replace(/&amp;/g, "&");
+  const url = aUrl(src);
+  const pb = url?.searchParams.get("pb");
+  if (!url || !sinCredenciales(url) || url.hostname.toLowerCase() !== "www.google.com" || url.pathname !== "/maps/embed" || !pb) {
+    return { ok: false, error: ERROR_MAPA_INSERTADO };
+  }
+  // En el mapa, la longitud va antes: !2d<lng>!3d<lat>
+  const pin = /!2d(-?\d{1,3}(?:\.\d+)?)!3d(-?\d{1,3}(?:\.\d+)?)/.exec(pb);
+  return { ok: true, valor: { src: url.href, coordenadas: pin ? validas(Number(pin[2]), Number(pin[1])) : null } };
+}
+
+/** Lo que muestra el campo del enlace: el enlace guardado o, si se cargaron solo coordenadas, las coordenadas. */
+export function textoEnlaceMapa(enlace: string | null, coordenadas: Coordenadas | null): string {
+  return enlace ?? (coordenadas ? `${coordenadas.lat}, ${coordenadas.lng}` : "");
+}
+
+/** "Cómo llegar": la ficha del taller; si no está, las coordenadas; si tampoco, la dirección. */
+export function enlaceComoLlegar(d: { enlaceMapa: string | null; coordenadas: Coordenadas | null; direccion: string }): string {
+  if (d.enlaceMapa) return d.enlaceMapa;
+  if (d.coordenadas) return enlaceMapa(d.coordenadas);
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.direccion)}`;
+}
+
+/** El mapa de Contacto: el de la ficha; si no está, uno con las coordenadas; si tampoco, ninguno. */
+export function mapaDeContacto(d: { mapaInsertado: string | null; coordenadas: Coordenadas | null }): string | null {
+  if (d.mapaInsertado) return d.mapaInsertado;
+  if (d.coordenadas) return `https://www.google.com/maps?q=${d.coordenadas.lat},${d.coordenadas.lng}&z=16&output=embed`;
+  return null;
+}

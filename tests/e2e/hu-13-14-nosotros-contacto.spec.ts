@@ -47,7 +47,8 @@ test("Contacto muestra la dirección con el mapa, el horario y el WhatsApp", asy
   await page.goto("/contacto");
   await expect(page).toHaveTitle("Contacto · TocTar Detailing");
   const donde = page.getByRole("region", { name: "Dónde estamos" });
-  await expect(donde.getByRole("link").first()).toHaveAttribute("href", /^https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=/);
+  // Pedido 38: la ficha del taller (o, sin ella, las coordenadas): siempre Google Maps
+  await expect(donde.getByRole("link").first()).toHaveAttribute("href", /^https:\/\/www\.google\.com\/maps\//);
   await expect(donde).toContainText("Barrio Aeropuerto");
   await expect(page.getByRole("region", { name: "Horario" })).toContainText("Lunes a");
   await expect(page.getByRole("main").getByRole("link", { name: "Pedir cotización por WhatsApp" })).toHaveAttribute("href", /^https:\/\/wa\.me\/59171234567/);

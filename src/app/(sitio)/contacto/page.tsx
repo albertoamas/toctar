@@ -7,7 +7,7 @@ import { TituloPagina } from "@/componentes/sitio/titulo-pagina";
 import { RedesSociales } from "@/componentes/sitio/redes-sociales";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import { resumirHorarios } from "@/lib/horarios";
-import { enlaceMapa } from "@/lib/ubicacion";
+import { enlaceComoLlegar, mapaDeContacto } from "@/lib/ubicacion";
 import { formatearWhatsApp } from "@/lib/whatsapp";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
 import { REDES } from "@/modulos/configuracion/esquemas";
@@ -37,7 +37,9 @@ export default function PaginaContacto() {
 async function Datos() {
   await connection();
   const [d, contacto] = await Promise.all([obtenerDatosPublicos(), contenidoPublico("contacto")]);
-  const mapa = d.coordenadas ? enlaceMapa(d.coordenadas) : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.direccion)}`;
+  // Pedido 38: la ficha del taller en Google Maps; sin ella, las coordenadas o la dirección
+  const mapa = enlaceComoLlegar(d);
+  const mapaIncrustado = mapaDeContacto(d);
   const hayRedes = REDES.some((r) => d.redes[r]);
 
   return (
@@ -68,12 +70,12 @@ async function Datos() {
           </a>
         </section>
 
-        {d.coordenadas && (
+        {mapaIncrustado && (
           // Mapa de Google sin clave. Se carga recién al acercarse (loading="lazy") para no frenar la página (RNF-02).
           <div className="relative aspect-[4/3] w-full bg-superficie md:col-start-2 md:row-span-5 md:row-start-1 md:aspect-auto md:min-h-[28rem]">
             <iframe
               title="Mapa del taller de TocTar Detailing"
-              src={`https://www.google.com/maps?q=${d.coordenadas.lat},${d.coordenadas.lng}&z=16&output=embed`}
+              src={mapaIncrustado}
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
               className="absolute inset-0 h-full w-full border-0"
