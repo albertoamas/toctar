@@ -11,7 +11,7 @@ preparar("cargar el WhatsApp, la ubicación y el TikTok del negocio", async ({ p
   await ingresarComoDueno(page);
   await page.goto("/panel/configuracion/negocio");
   await page.getByLabel("WhatsApp").fill("71234567");
-  await page.getByLabel("Ubicación en el mapa").fill("https://www.google.com/maps/place/x/data=!3d-21.5355!4d-64.7296");
+  await page.getByLabel("Enlace de Google Maps").fill("https://www.google.com/maps/place/x/data=!3d-21.5355!4d-64.7296");
   await page.getByLabel("TikTok").fill("https://www.tiktok.com/@toctar.detailing");
   await page.getByRole("button", { name: "Guardar cambios" }).click();
   await expect(page.getByText("Cambios guardados.")).toBeVisible();

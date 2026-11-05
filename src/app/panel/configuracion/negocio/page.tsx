@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { exigirModulo } from "@/lib/sesion";
 import { whatsAppLocal } from "@/lib/whatsapp";
+import { textoEnlaceMapa } from "@/lib/ubicacion";
 import { FormularioNegocio } from "@/modulos/configuracion/componentes/formulario-negocio";
 import { LogoDocumentos } from "@/modulos/configuracion/componentes/logo-documentos";
 import { obtenerConfiguracionNegocio } from "@/modulos/configuracion/consultas";
@@ -30,7 +31,9 @@ async function Contenido() {
     whatsapp: c.whatsapp ? whatsAppLocal(c.whatsapp) : "",
     correo: c.correo ?? "",
     direccion: c.direccion,
-    ubicacion: c.coordenadas ? `${c.coordenadas.lat}, ${c.coordenadas.lng}` : "",
+    // Las coordenadas que salieron del mapa no se muestran como si se hubieran escrito en el enlace
+    enlaceMapa: textoEnlaceMapa(c.enlaceMapa, c.mapaInsertado ? null : c.coordenadas),
+    mapaInsertado: c.mapaInsertado ?? "",
     facebook: c.redes.facebook ?? "",
     instagram: c.redes.instagram ?? "",
     tiktok: c.redes.tiktok ?? "",

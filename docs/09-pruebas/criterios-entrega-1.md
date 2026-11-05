@@ -213,7 +213,7 @@
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
 | 14.1 | Muestra dirección, mapa de Google Maps, horarios, WhatsApp, correo y redes | E2E "Contacto muestra la dirección con el mapa, el horario y el WhatsApp". El mapa embebido aparece cuando hay ubicación cargada (HU-04) y se carga diferido | ✅ |
-| 14.2 | Tocar la dirección en el celular abre la app de mapas | La dirección y "Cómo llegar" enlazan a Google Maps (mismo E2E); en el celular, el sistema abre la app | ✅ (probar en el celular en la demo) |
+| 14.2 | Tocar la dirección en el celular abre la app de mapas | "Cómo llegar" abre la ficha de TocTar en Google Maps si está cargada en Configuración (pedido 38; si no, las coordenadas). Mismo E2E y `hu-04`; en el celular, el sistema abre la app | ✅ (probar en el celular en la demo) |
 
 ## HU-16 Formulario de reclamo
 

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { esquemaHorarios } from "@/lib/horarios";
-import { leerUbicacion } from "@/lib/ubicacion";
+import { leerEnlaceMapa, leerMapaInsertado } from "@/lib/ubicacion";
 import { normalizarWhatsApp } from "@/lib/whatsapp";
 
 // Validación de la configuración (HU-04): el mismo esquema en el formulario y en el servidor.
@@ -80,18 +80,23 @@ export const esquemaNegocio = z.object({
       return v.toLowerCase();
     }),
   direccion: z.string().trim().min(5, "Escribe la dirección del taller.").max(200, "Hasta 200 caracteres."),
-  ubicacion: z
-    .string()
-    .trim()
-    .transform((v, ctx) => {
-      if (!v) return null;
-      const r = leerUbicacion(v);
-      if (!r.ok) {
-        ctx.addIssue({ code: "custom", message: r.error });
-        return z.NEVER;
-      }
-      return r.coordenadas;
-    }),
+  // Pedido 38: lo que da la ficha en "Compartir"
+  enlaceMapa: z.string().transform((v, ctx) => {
+    const r = leerEnlaceMapa(v);
+    if (!r.ok) {
+      ctx.addIssue({ code: "custom", message: r.error });
+      return z.NEVER;
+    }
+    return r.valor;
+  }),
+  mapaInsertado: z.string().transform((v, ctx) => {
+    const r = leerMapaInsertado(v);
+    if (!r.ok) {
+      ctx.addIssue({ code: "custom", message: r.error });
+      return z.NEVER;
+    }
+    return r.valor;
+  }),
   horarios: z
     .string()
     .transform((v, ctx) => {

@@ -9,6 +9,7 @@ import { eliminarFotosSinFallar, guardarFoto } from "@/lib/fotos";
 import { nombreRepetido, puedeDesactivar, reordenar, type Direccion } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
 import { whatsAppLocal } from "@/lib/whatsapp";
+import { textoEnlaceMapa } from "@/lib/ubicacion";
 import { ETIQUETA_NEGOCIO, ETIQUETA_PARAMETROS, ETIQUETA_PLANTILLAS, listarElementos, obtenerConfiguracionNegocio, sucursalPrincipal } from "./consultas";
 import { CAMPOS_NEGOCIO, esquemaNegocio } from "./esquemas";
 import {
@@ -37,7 +38,10 @@ export async function guardarNegocio(_previo: EstadoFormulario, datos: FormData)
   if (!entrada.success) return { errores: erroresDe(entrada.error), valores: valoresDe(datos) };
   const d = entrada.data;
   const autorId = Number(autor.id);
-  const { sucursalId } = await obtenerConfiguracionNegocio();
+  const { sucursalId, coordenadas: guardadas } = await obtenerConfiguracionNegocio();
+  // Pedido 38: las coordenadas salen del enlace (el pin) o, si no las trae, del mapa. El enlace corto de "Compartir" no
+  // las trae: con él se conservan las que ya estaban. Sin enlace ni mapa, no hay ubicación
+  const coordenadas = d.enlaceMapa?.coordenadas ?? d.mapaInsertado?.coordenadas ?? (d.enlaceMapa ? guardadas : null);
 
   await db.transaction(async (tx) => {
     await tx
@@ -60,8 +64,10 @@ export async function guardarNegocio(_previo: EstadoFormulario, datos: FormData)
       .update(sucursal)
       .set({
         direccion: d.direccion,
-        lat: d.ubicacion?.lat ?? null,
-        lng: d.ubicacion?.lng ?? null,
+        lat: coordenadas?.lat ?? null,
+        lng: coordenadas?.lng ?? null,
+        enlaceMapa: d.enlaceMapa?.enlace ?? null,
+        mapaInsertado: d.mapaInsertado?.src ?? null,
         horarios: d.horarios,
         telefonoWhatsapp: d.whatsapp,
         updatedAt: new Date(),
@@ -80,7 +86,8 @@ export async function guardarNegocio(_previo: EstadoFormulario, datos: FormData)
       ...valoresDe(datos),
       whatsapp: whatsAppLocal(d.whatsapp),
       correo: d.correo ?? "",
-      ubicacion: d.ubicacion ? `${d.ubicacion.lat}, ${d.ubicacion.lng}` : "",
+      enlaceMapa: textoEnlaceMapa(d.enlaceMapa?.enlace ?? null, d.mapaInsertado ? null : coordenadas),
+      mapaInsertado: d.mapaInsertado?.src ?? "",
       facebook: d.facebook ?? "",
       instagram: d.instagram ?? "",
       tiktok: d.tiktok ?? "",

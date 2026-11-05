@@ -134,7 +134,8 @@ describe("esquema del negocio", () => {
     whatsapp: "71234567",
     correo: "",
     direccion: "Barrio Aeropuerto, Tarija",
-    ubicacion: "",
+    enlaceMapa: "",
+    mapaInsertado: "",
     horarios: JSON.stringify(semanaCerrada()),
     facebook: "",
     instagram: "",
@@ -145,7 +146,7 @@ describe("esquema del negocio", () => {
 
   test("lo optativo vacío se guarda como null", () => {
     const r = esquemaNegocio.parse(valido);
-    expect(r).toMatchObject({ whatsapp: "59171234567", correo: null, ubicacion: null, facebook: null, nit: null, razonSocial: null });
+    expect(r).toMatchObject({ whatsapp: "59171234567", correo: null, enlaceMapa: null, mapaInsertado: null, facebook: null, nit: null, razonSocial: null });
   });
 
   test("el WhatsApp y la dirección son obligatorios", () => {

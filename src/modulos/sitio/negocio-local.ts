@@ -1,5 +1,5 @@
 import type { DiaHorario } from "@/lib/horarios";
-import type { Coordenadas } from "@/lib/ubicacion";
+import { enlaceComoLlegar, type Coordenadas } from "@/lib/ubicacion";
 
 // Datos de negocio local para Google (HU-18, RF-09): JSON-LD de schema.org con lo que cargó el dueño.
 // Puro: se prueba en tests/unit/negocio-local.test.ts.
@@ -10,6 +10,8 @@ type Datos = {
   nombre: string;
   direccion: string;
   coordenadas: Coordenadas | null;
+  /** Pedido 38: la ficha en Google Maps; va como hasMap. */
+  enlaceMapa?: string | null;
   horarios: DiaHorario[];
   whatsapp: string | null;
   correo: string | null;
@@ -46,6 +48,7 @@ export function datosNegocioLocal(d: Datos, url: string) {
       addressCountry: "BO",
     },
     ...(d.coordenadas && { geo: { "@type": "GeoCoordinates", latitude: d.coordenadas.lat, longitude: d.coordenadas.lng } }),
+    ...((d.enlaceMapa || d.coordenadas) && { hasMap: enlaceComoLlegar({ enlaceMapa: d.enlaceMapa ?? null, coordenadas: d.coordenadas, direccion: d.direccion }) }),
     ...(d.whatsapp && { telephone: `+${d.whatsapp}` }),
     ...(d.correo && { email: d.correo }),
     ...(redes.length > 0 && { sameAs: redes }),

@@ -54,6 +54,10 @@ export const sucursal = pgTable("sucursal", {
   direccion: text("direccion").notNull(),
   lat: numeric("lat", { precision: 9, scale: 6, mode: "number" }),
   lng: numeric("lng", { precision: 9, scale: 6, mode: "number" }),
+  /** Pedido 38: el enlace de la ficha en Google Maps (Compartir → Copiar vínculo). */
+  enlaceMapa: text("enlace_mapa"),
+  /** Pedido 38: la dirección del mapa de la ficha (el src de Compartir → Insertar un mapa), ya validada. */
+  mapaInsertado: text("mapa_insertado"),
   horarios: jsonb("horarios").$type<DiaHorario[]>().notNull(),
   /** Formato internacional sin "+": 591 y los 8 dígitos del celular. */
   telefonoWhatsapp: text("telefono_whatsapp"),

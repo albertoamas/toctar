@@ -10,7 +10,7 @@ import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { DiaHorario } from "@/lib/horarios";
-import { enlaceMapa, leerUbicacion } from "@/lib/ubicacion";
+import { enlaceMapa, leerEnlaceMapa } from "@/lib/ubicacion";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { guardarNegocio } from "../acciones";
 import { NOMBRE_RED, REDES } from "../esquemas";
@@ -33,7 +33,9 @@ export function FormularioNegocio(props: Props) {
   const describir = (campo: string, conAyuda = false) =>
     e[campo] ? `${campo}-error` : conAyuda ? `${campo}-ayuda` : undefined;
 
-  const ubicacion = v.ubicacion ? leerUbicacion(v.ubicacion) : null;
+  // "Ver en el mapa": lo guardado, para revisar que abre el taller
+  const enlace = v.enlaceMapa ? leerEnlaceMapa(v.enlaceMapa) : null;
+  const verEnMapa = enlace?.ok && enlace.valor ? (enlace.valor.enlace ?? (enlace.valor.coordenadas && enlaceMapa(enlace.valor.coordenadas))) : null;
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
 
@@ -69,17 +71,18 @@ export function FormularioNegocio(props: Props) {
         <Campo id="direccion" etiqueta="Dirección" error={e.direccion}>
           <Textarea id="direccion" name="direccion" rows={2} defaultValue={v.direccion} aria-invalid={!!e.direccion} aria-describedby={describir("direccion")} />
         </Campo>
+        {/* Pedido 38: lo que da la ficha del taller en Google Maps, en "Compartir" */}
         <Campo
-          id="ubicacion"
-          etiqueta="Ubicación en el mapa"
-          error={e.ubicacion}
+          id="enlaceMapa"
+          etiqueta="Enlace de Google Maps"
+          error={e.enlaceMapa}
           ayuda={
             <>
-              Pega las coordenadas o el enlace de Google Maps. Para copiarlas: en Google Maps, mantén presionado el punto del taller.
-              {ubicacion?.ok && (
+              En Google Maps, abre la ficha del taller y toca Compartir → Copiar vínculo. También sirven las coordenadas.
+              {verEnMapa && (
                 <>
                   {" "}
-                  <a href={enlaceMapa(ubicacion.coordenadas)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-tinta underline">
+                  <a href={verEnMapa} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-tinta underline">
                     Ver en el mapa
                     <ExternalLinkIcon className="size-3.5" aria-hidden />
                   </a>
@@ -88,7 +91,37 @@ export function FormularioNegocio(props: Props) {
             </>
           }
         >
-          <Input id="ubicacion" name="ubicacion" autoComplete="off" spellCheck={false} placeholder="-21.5355, -64.7296" defaultValue={v.ubicacion} aria-invalid={!!e.ubicacion} aria-describedby={describir("ubicacion", true)} />
+          <Input
+            id="enlaceMapa"
+            name="enlaceMapa"
+            inputMode="url"
+            autoCapitalize="none"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="https://maps.app.goo.gl/…"
+            defaultValue={v.enlaceMapa}
+            aria-invalid={!!e.enlaceMapa}
+            aria-describedby={describir("enlaceMapa", true)}
+          />
+        </Campo>
+        <Campo
+          id="mapaInsertado"
+          etiqueta="Mapa para la página"
+          error={e.mapaInsertado}
+          ayuda="En la ficha del taller: Compartir → Insertar un mapa → Copiar HTML. Si lo dejas vacío, el mapa muestra un pin en la ubicación del taller."
+        >
+          <Textarea
+            id="mapaInsertado"
+            name="mapaInsertado"
+            rows={3}
+            autoCapitalize="none"
+            spellCheck={false}
+            placeholder={'<iframe src="https://www.google.com/maps/embed?pb=…"></iframe>'}
+            defaultValue={v.mapaInsertado}
+            aria-invalid={!!e.mapaInsertado}
+            aria-describedby={describir("mapaInsertado", true)}
+            className="font-mono text-sm break-all"
+          />
         </Campo>
       </SeccionFormulario>
 
