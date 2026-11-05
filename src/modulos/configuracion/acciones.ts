@@ -86,7 +86,7 @@ export async function guardarNegocio(_previo: EstadoFormulario, datos: FormData)
       ...valoresDe(datos),
       whatsapp: whatsAppLocal(d.whatsapp),
       correo: d.correo ?? "",
-      enlaceMapa: textoEnlaceMapa(d.enlaceMapa?.enlace ?? null, d.mapaInsertado ? null : coordenadas),
+      enlaceMapa: textoEnlaceMapa(d.enlaceMapa?.enlace ?? null, coordenadas, d.mapaInsertado?.src ?? null),
       mapaInsertado: d.mapaInsertado?.src ?? "",
       facebook: d.facebook ?? "",
       instagram: d.instagram ?? "",

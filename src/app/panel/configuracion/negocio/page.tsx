@@ -32,7 +32,7 @@ async function Contenido() {
     correo: c.correo ?? "",
     direccion: c.direccion,
     // Las coordenadas que salieron del mapa no se muestran como si se hubieran escrito en el enlace
-    enlaceMapa: textoEnlaceMapa(c.enlaceMapa, c.mapaInsertado ? null : c.coordenadas),
+    enlaceMapa: textoEnlaceMapa(c.enlaceMapa, c.coordenadas, c.mapaInsertado),
     mapaInsertado: c.mapaInsertado ?? "",
     facebook: c.redes.facebook ?? "",
     instagram: c.redes.instagram ?? "",

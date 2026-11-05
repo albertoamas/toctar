@@ -98,6 +98,10 @@ describe("en el sitio", () => {
     expect(textoEnlaceMapa("https://maps.app.goo.gl/AbC", coordenadas)).toBe("https://maps.app.goo.gl/AbC");
     expect(textoEnlaceMapa(null, coordenadas)).toBe("-21.5355, -64.7296");
     expect(textoEnlaceMapa(null, null)).toBe("");
+    // El pin del mapa pegado no se muestra como si se hubiera escrito; coordenadas escritas a mano, sí
+    expect(textoEnlaceMapa(null, PIN, SRC_REAL)).toBe("");
+    expect(textoEnlaceMapa(null, coordenadas, SRC_REAL)).toBe("-21.5355, -64.7296");
+    expect(textoEnlaceMapa(null, coordenadas, "https://www.google.com/maps/embed?pb=!1m2")).toBe("-21.5355, -64.7296");
   });
 
   test("los datos para Google enlazan la ficha (hasMap)", () => {
