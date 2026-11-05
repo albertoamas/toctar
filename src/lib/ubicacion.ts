@@ -122,9 +122,17 @@ export function leerMapaInsertado(texto: string): Lectura<MapaInsertado | null> 
   return { ok: true, valor: { src: url.href, coordenadas: pin ? validas(Number(pin[2]), Number(pin[1])) : null } };
 }
 
-/** Lo que muestra el campo del enlace: el enlace guardado o, si se cargaron solo coordenadas, las coordenadas. */
-export function textoEnlaceMapa(enlace: string | null, coordenadas: Coordenadas | null): string {
-  return enlace ?? (coordenadas ? `${coordenadas.lat}, ${coordenadas.lng}` : "");
+/**
+ * Lo que muestra el campo del enlace: el enlace guardado o, si no hay, las coordenadas. Salvo que las coordenadas
+ * sean el pin del mapa pegado: esas no se escribieron en el enlace y no se muestran como si se hubieran escrito.
+ */
+export function textoEnlaceMapa(enlace: string | null, coordenadas: Coordenadas | null, mapaInsertado: string | null = null): string {
+  if (enlace) return enlace;
+  if (!coordenadas) return "";
+  const delMapa = mapaInsertado ? leerMapaInsertado(mapaInsertado) : null;
+  const pin = delMapa?.ok ? delMapa.valor?.coordenadas : null;
+  if (pin && pin.lat === coordenadas.lat && pin.lng === coordenadas.lng) return "";
+  return `${coordenadas.lat}, ${coordenadas.lng}`;
 }
 
 /** "Cómo llegar": la ficha del taller; si no está, las coordenadas; si tampoco, la dirección. */
