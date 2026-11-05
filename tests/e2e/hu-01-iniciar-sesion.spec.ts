@@ -106,3 +106,21 @@ test("el fondo de la página es negro en el ingreso y en el sitio, y claro en el
   await ingresarComoDueno(page);
   await expect.poll(fondo).toBe("rgb(255, 255, 255)");
 });
+
+test("en una pantalla ancha, el logo y el lema quedan dentro de la franja gris, también si es alta", async ({ page, isMobile }) => {
+  test.skip(isMobile, "Las dos columnas son de una pantalla ancha y en horizontal");
+  // Pulido 3.2: la diagonal de 60° avanza al bajar; en una pantalla alta y no tan ancha alcanzaba al lema y al logo
+  await page.goto("/ingresar");
+  for (const [width, height] of [[1024, 700], [1024, 840], [1280, 800], [1280, 1080], [1600, 1480], [2560, 1440]]) {
+    await page.setViewportSize({ width, height });
+    const margenes = await page.evaluate(() => {
+      const franja = document.querySelector(".tt-franja-ingreso")!.getBoundingClientRect();
+      const diagonal = (y: number) => franja.right - Math.tan(Math.PI / 6) * (y - franja.top);
+      return [".tt-lema", 'img[alt="TocTar"]'].map((selector) => {
+        const caja = document.querySelector(selector)!.getBoundingClientRect();
+        return diagonal(caja.bottom) - caja.right;
+      });
+    });
+    for (const margen of margenes) expect(margen, `${width} × ${height}`).toBeGreaterThan(8);
+  }
+});

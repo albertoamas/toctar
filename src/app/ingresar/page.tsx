@@ -13,15 +13,16 @@ export const metadata: Metadata = {
 // la vista sin bajar. Todo alineado a la izquierda. data-fondo="oscuro": el fondo de toda la página también en negro.
 export default function PaginaIngreso() {
   return (
-    <main data-theme="oscuro" data-fondo="oscuro" className="grid flex-1 grid-rows-[auto_1fr] bg-fondo text-tinta apaisado:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] apaisado:grid-rows-none">
+    <main data-theme="oscuro" data-fondo="oscuro" className="grid flex-1 grid-rows-[auto_1fr] bg-fondo text-tinta apaisado:grid-cols-2 apaisado:grid-rows-none">
       <header className="tt-franja-ingreso flex flex-col gap-7 px-4 pt-2 pb-14 sm:px-10 apaisado:py-8 apaisado:pr-48 apaisado:pl-16">
         {/* Salida al sitio: sin ella, quien llegaba aquí por error no tenía cómo volver (pulido 3.1) */}
         <EnlaceVolver href="/" className="-ml-1">
           Volver al sitio
         </EnlaceVolver>
         {/* El logo horizontal sin lema, y el lema como texto: a este tamaño, el del dibujo no se lee. En una pantalla ancha
-            crece con ella y baja con la altura, sin llegar a la diagonal (medido de 1024 a 3440 px) */}
-        <div className="flex flex-col items-start gap-3 apaisado:mt-[clamp(6rem,calc(45vh-14rem),30rem)] apaisado:gap-4">
+            crece con ella y baja con la altura, con un tope según el ancho: la diagonal avanza al bajar y, en una pantalla
+            alta y no tan ancha, lo alcanzaba (barrido de 266 tamaños, de 1024 × 600 a 2560 × 1440) */}
+        <div className="flex flex-col items-start gap-3 apaisado:mt-[max(4rem,min(clamp(6rem,calc(45vh-14rem),30rem),calc(75.8vw-784px)))] apaisado:gap-4">
           <Image
             src="/marca/toctar-horizontal-sin-lema-sobre-oscuro.svg"
             alt="TocTar"
@@ -31,7 +32,7 @@ export default function PaginaIngreso() {
             unoptimized
             className="h-auto w-[200px] apaisado:w-[clamp(260px,20vw,460px)]"
           />
-          <p className="tt-lema text-tinta-suave min-[1600px]:apaisado:text-sm">Como ven tu auto, te ven a ti</p>
+          <p className="tt-lema text-tinta-suave">Como ven tu auto, te ven a ti</p>
           {/* La línea LED une la marca con lo que sigue; antes quedaba suelta al final de la pantalla */}
           <hr className="tt-led w-18 apaisado:w-[clamp(6rem,7vw,10rem)]" />
         </div>
