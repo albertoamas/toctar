@@ -1,8 +1,8 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
 
-// Pedido 31: un trabajo, de la cotización a la entrega (etapas/P31-flujo-de-un-trabajo.md §9). "Aceptó, sin fecha",
-// reservar después, la Nueva reserva que ofrece las cotizaciones del cliente, el "Volver" a la cotización y los pasos.
+// Pedido 31: un trabajo, de la cotización a la entrega (etapas/P31-flujo-de-un-trabajo.md §9). Cotizaciones cotiza y la
+// Agenda reserva: "Aceptó", "Por reservar", la Nueva reserva que ofrece las cotizaciones del cliente y los pasos.
 // En serie: las del dueño entran con el mismo usuario.
 test.describe.configure({ mode: "serial" });
 
@@ -70,66 +70,79 @@ async function reservar(page: Page, dia: string) {
   await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1$/);
 }
 
-test("«Aceptó, sin fecha» la deja en Aceptadas e Inicio; después se reserva y «Volver» lleva a la cotización", async ({ page }, info) => {
+test("«Aceptó» la deja en Por reservar de la Agenda; desde ahí se reserva y «Volver» lleva a la Agenda", async ({ page }, info) => {
   const c = await cotizacionPendiente(info, 1);
   const dia = await diaPropio(info, 1);
   await ingresarComoDueno(page);
   await page.goto(`/panel/cotizaciones/${c.consultaId}`);
-  // Pendiente: los pasos en "Cotizada" y el paso siguiente, uno solo
+  // Pendiente: Cotizaciones solo cotiza, el paso siguiente es uno solo y no lleva a reservar
   await expect(pasoActual(page)).toContainText("Cotizada");
-  await expect(page.getByRole("link", { name: "Aceptó: reservar" })).toHaveAttribute("href", `/panel/agenda/nueva?cotizacion=${c.cotizacionId}`);
+  await expect(page.getByRole("link", { name: /reservar/i })).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Aceptó, sin fecha" }).click();
-  await page.getByRole("button", { name: "Sí, aceptada" }).click();
-  await expect(page.getByText("Cotización aceptada. Resérvala cuando el cliente tenga fecha.")).toBeVisible();
+  await page.getByRole("button", { name: "Aceptó", exact: true }).click();
+  await expect(page.getByText("Cotización aceptada. Queda en Por reservar hasta que tenga fecha.")).toBeVisible();
   await expect(page.getByRole("main").getByText("Sin fecha", { exact: true })).toBeVisible();
   await expect(pasoActual(page)).toContainText("Aceptada");
-  await expect(page.getByRole("link", { name: "Aceptó: reservar" })).toHaveCount(0);
+  // El atajo, a la reserva de la Agenda
+  await expect(page.getByRole("link", { name: "Reservar en Agenda" })).toHaveAttribute("href", `/panel/agenda/nueva?cotizacion=${c.cotizacionId}`);
   const [antes] = await consultar<{ con: string; cot: string }>(
     "select q.estado as con, c.estado as cot from consulta q join cotizacion c on c.consulta_id = q.id where q.id = $1",
     [c.consultaId],
   );
   expect(antes).toEqual({ con: "confirmado", cot: "aceptada" });
 
-  // En Aceptadas, con "Sin fecha"; en Inicio, para reservarla
+  // En Aceptadas, con "Sin fecha"; en Inicio, directo a la reserva
   await page.goto("/panel/cotizaciones?vista=aceptadas");
   await expect(page.getByRole("link").filter({ hasText: c.numero })).toContainText("Sin fecha");
   await page.goto("/panel");
   const enInicio = page.getByRole("link").filter({ hasText: `Cotización aceptada de ${c.cliente}` });
   await expect(enInicio).toContainText("Reservar");
+  await expect(enInicio).toHaveAttribute("href", `/panel/agenda/nueva?cotizacion=${c.cotizacionId}`);
 
-  // Reservar: "Volver" a la cotización, el aviso dice qué pasó y la reserva queda en "Reservada"
-  await page.goto(`/panel/cotizaciones/${c.consultaId}`);
-  await page.getByRole("link", { name: "Reservar", exact: true }).click();
-  await expect(page.getByRole("link", { name: `Cotización ${c.numero}` })).toHaveAttribute("href", `/panel/cotizaciones/${c.consultaId}`);
+  // En la Agenda, en "Por reservar", con el total para quien ve montos
+  await page.goto("/panel/agenda");
+  const porReservar = page.getByRole("list", { name: "Por reservar" });
+  const fila = porReservar.getByRole("link").filter({ hasText: c.cliente });
+  await expect(fila).toContainText("700 Bs");
+  await fila.click();
+  await expect(page).toHaveURL(new RegExp(`cotizacion=${c.cotizacionId}$`));
+  await expect(page.getByRole("main").getByRole("link", { name: "Agenda", exact: true })).toHaveAttribute("href", "/panel/agenda");
   await reservar(page, dia);
-  await expect(page.getByText(`La cotización ${c.numero} quedó aceptada.`)).toBeVisible();
+  // El aviso flotante dice qué pasó, y no se repite al recargar
+  const aviso = page.getByText(`La cotización ${c.numero} quedó aceptada.`);
+  await expect(aviso).toBeVisible();
   await expect(pasoActual(page)).toContainText("Reservada");
+  await page.reload();
+  await expect(pasoActual(page)).toContainText("Reservada");
+  await expect(aviso).toHaveCount(0);
 
-  // Ya reservada: no se vuelve a reservar ni a cambiar desde la cotización
+  // Reservada: sale de "Por reservar" y no se vuelve a reservar ni a cambiar desde la cotización
+  await page.goto("/panel/agenda");
+  await expect(page.getByRole("list", { name: "Por reservar" }).getByRole("link").filter({ hasText: c.cliente })).toHaveCount(0);
   await page.goto(`/panel/cotizaciones/${c.consultaId}`);
   await expect(page.getByRole("link", { name: /reservar/i })).toHaveCount(0);
   await expect(page.getByRole("main").getByText("Sin fecha", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Más" })).toHaveCount(0);
 });
 
-test("una aceptada sin fecha vuelve a pendiente desde «Más», con su versión vigente", async ({ page }, info) => {
+test("una aceptada sin fecha vuelve a pendiente desde «Más», con su versión vigente, y sale de Por reservar", async ({ page }, info) => {
   const c = await cotizacionPendiente(info, 2);
   await ingresarComoDueno(page);
   await page.goto(`/panel/cotizaciones/${c.consultaId}`);
-  await page.getByRole("button", { name: "Aceptó, sin fecha" }).click();
-  await page.getByRole("button", { name: "Sí, aceptada" }).click();
+  await page.getByRole("button", { name: "Aceptó", exact: true }).click();
   await expect(page.getByRole("main").getByText("Sin fecha", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Más" }).click();
   await page.getByRole("menuitem", { name: "Volver a pendiente" }).click();
   await page.getByRole("button", { name: "Sí, volver a pendiente" }).click();
   await expect(page.getByText("La cotización volvió a pendiente.")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Aceptó: reservar" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Aceptó", exact: true })).toBeVisible();
   const [r] = await consultar<{ con: string; cot: string }>(
     "select q.estado as con, c.estado as cot from consulta q join cotizacion c on c.consulta_id = q.id where q.id = $1",
     [c.consultaId],
   );
   expect(r).toEqual({ con: "cotizado", cot: "enviada" });
+  await page.goto("/panel/agenda");
+  await expect(page.getByRole("main").getByRole("link").filter({ hasText: c.cliente })).toHaveCount(0);
 });
 
 test("Nueva reserva ofrece las cotizaciones del vehículo: los precios llegan sin escribirlos", async ({ page }, info) => {

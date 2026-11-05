@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { cn } from "cn";
 import { PlusIcon } from "lucide-react";
-import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
+import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
@@ -45,7 +45,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/usuarios">, "searc
 
   return (
     <>
-      {typeof creado === "string" && <AvisoEnPagina>Usuario {creado} creado. Pásale su usuario y contraseña.</AvisoEnPagina>}
+      {typeof creado === "string" && <AvisoFlotante mensaje={`Usuario ${creado} creado. Pásale su usuario y contraseña.`} />}
       {otros.length === 0 && <EstadoVacio>Todavía no hay otros usuarios. Agrega uno para cada persona del taller.</EstadoVacio>}
       <TablaLista
         etiqueta="Usuarios"

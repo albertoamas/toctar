@@ -113,7 +113,8 @@ test("cancelar pide motivo, deja los pagos, libera el espacio y la consulta pasa
   await page.getByRole("menuitem", { name: "Volver a pendiente" }).click();
   await page.getByRole("button", { name: "Sí, volver a pendiente" }).click();
   await expect(page.getByText("La cotización volvió a pendiente.")).toBeVisible();
-  await page.getByRole("link", { name: "Aceptó: reservar" }).click();
+  await page.getByRole("button", { name: "Aceptó", exact: true }).click();
+  await page.getByRole("link", { name: "Reservar en Agenda" }).click();
   const d30 = await dia(info, 30);
   await page.getByLabel("Ingresa el").fill(d30);
   await page.getByLabel("Entrega aproximada").fill(d30);

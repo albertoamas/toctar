@@ -273,6 +273,8 @@ export async function datosDocumento(consultaId: number, base: Pick<typeof db, "
 
 export type FilaCotizacion = {
   id: number;
+  /** La versión que vale: la que se reserva. */
+  cotizacionId: number;
   clienteId: number;
   cliente: string;
   placa: string;
@@ -321,6 +323,7 @@ const versionActual = and(eq(cotizacion.consultaId, consulta.id), ne(cotizacion.
 
 const columnasFila = {
   id: consulta.id,
+  cotizacionId: cotizacion.id,
   clienteId: consulta.clienteId,
   cliente: cliente.nombre,
   placa: vehiculo.placa,

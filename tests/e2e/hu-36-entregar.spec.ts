@@ -56,7 +56,8 @@ test("pagada: el dueño suma un adicional, se cobra y se entrega; queda programa
   await expect(datos).toContainText("Espacio");
   await expect(datos.getByText("Entrega", { exact: true })).toHaveCount(0);
   await expect(datos).not.toContainText("aproximada");
-  await expect(page.getByRole("status").filter({ hasText: "Vehículo entregado." })).toBeVisible();
+  // El aviso flotante (la historia de la orden dice lo mismo)
+  await expect(page.getByLabel(/Notifications/).getByText("Vehículo entregado.")).toBeVisible();
   await expect(page.getByText(/^Entregado el /)).toBeVisible();
   const firma = page.getByRole("region", { name: "Firma de entrega" });
   await expect(firma).toContainText(`Recibido conforme por Hermana de Entrega ${s}.`);
@@ -136,7 +137,7 @@ test("con saldo: el encargado sin el permiso no entrega; con el permiso sí, y q
   await entrega.getByText("Entregar con saldo pendiente (300 Bs)").click();
   await entrega.getByRole("button", { name: "Entregar vehículo" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?entregado=1$`));
-  await expect(page.getByRole("status").filter({ hasText: "Vehículo entregado con saldo de 300 Bs." })).toBeVisible();
+  await expect(page.getByText("Vehículo entregado con saldo de 300 Bs.")).toBeVisible();
   await expect(page.getByText(/Con saldo de 300 Bs, autorizado por Encargada con permiso\.$/)).toBeVisible();
   await expect(page.getByRole("region", { name: "Firma de entrega" })).toContainText("Entregado sin firma: Se lo lleva el chofer de la empresa.")
   // Entregada con saldo: se sigue cobrando (HU-37)

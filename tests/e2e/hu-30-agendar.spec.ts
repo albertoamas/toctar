@@ -65,7 +65,7 @@ test("desde la cotización: la versión y la cotización quedan aceptadas, las l
   const dia = await diaPropio(info, 1);
   await ingresarComoDueno(page);
   await page.goto(`/panel/cotizaciones/${consultaId}`);
-  await expect(page.getByRole("link", { name: "Aceptó: reservar" })).toHaveAttribute("href", `/panel/agenda/nueva?cotizacion=${cotizacionId}`);
+  await expect(page.getByRole("button", { name: "Aceptó", exact: true })).toBeVisible();
   await page.goto(`/panel/agenda/nueva?cotizacion=${cotizacionId}&fecha=${dia}`);
 
   // La entrega sugerida usa la duración del servicio (2 días: sale al día siguiente)
@@ -234,7 +234,8 @@ test("el encargado con Agenda sin Pagos agenda sin montos ni adelanto; sin Agend
   await ingresar(page, `enc-hu30-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto(`/panel/cotizaciones/${consultaId}`);
-  await page.getByRole("link", { name: "Aceptó: reservar" }).click();
+  await page.getByRole("button", { name: "Aceptó", exact: true }).click();
+  await page.getByRole("link", { name: "Reservar en Agenda" }).click();
   await expect(page.getByText(/Total:/)).toHaveCount(0);
   await expect(page.getByRole("checkbox", { name: "Sin adelanto" })).toHaveCount(0);
   await page.getByLabel("Ingresa el").fill(dia);

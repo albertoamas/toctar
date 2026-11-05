@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { cn } from "cn";
 import { ImageUpIcon, KeyRoundIcon } from "lucide-react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
-import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
+import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { AvisarPorWhatsApp } from "@/componentes/panel/avisar-whatsapp";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
@@ -136,13 +136,11 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
       </EncabezadoPagina>
       {/* Los pasos del trabajo (pedido 31): sin cotización, empieza en "Reservada" */}
       {o.estado !== "cancelado" && <PasosTrabajo paso={pasoDelTrabajo({ trabajo: o.estado }) ?? 0} conCotizacion={o.consultaId !== null} />}
-      {recibido && o.estado === "recibido" && <AvisoEnPagina>Vehículo recibido. La orden está en «Recibidas».</AvisoEnPagina>}
+      {recibido && o.estado === "recibido" && <AvisoFlotante mensaje="Vehículo recibido. La orden está en «Recibidas»." />}
       {entregado && o.estado === "entregado" && (
-        <AvisoEnPagina>
-          {o.saldoAlEntregar && o.montos && o.autorizoSaldo ? `Vehículo entregado con saldo de ${mostrarMonto(o.saldoAlEntregar)} Bs.` : "Vehículo entregado."}
-        </AvisoEnPagina>
+        <AvisoFlotante mensaje={o.saldoAlEntregar && o.montos && o.autorizoSaldo ? `Vehículo entregado con saldo de ${mostrarMonto(o.saldoAlEntregar)} Bs.` : "Vehículo entregado."} />
       )}
-      {publicado && publicada && <AvisoEnPagina>Publicado en la galería. Lo ordenas u ocultas en Sitio web &gt; Galería.</AvisoEnPagina>}
+      {publicado && publicada && <AvisoFlotante mensaje="Publicado en la galería. Lo ordenas u ocultas en Sitio web > Galería." />}
       {(sePuedePublicar || publicada) && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
           {sePuedePublicar && (

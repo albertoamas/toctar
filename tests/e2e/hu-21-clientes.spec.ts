@@ -36,7 +36,7 @@ test("el personal registra un cliente con su primer vehículo; los obligatorios 
   await page.getByRole("button", { name: "Crear cliente" }).click();
 
   await expect(page).toHaveURL(/\/panel\/clientes\/\d+\?creado=1$/);
-  await expect(page.getByRole("status")).toContainText(`Cliente ${nombre} creado.`);
+  await expect(page.getByText(`Cliente ${nombre} creado.`)).toBeVisible();
   await expect(page.getByRole("heading", { level: 1, name: nombre })).toBeVisible();
   // La placa se guarda normalizada: mayúsculas, sin espacios ni guiones
   const vehiculos = page.getByRole("list", { name: "Vehículos" });

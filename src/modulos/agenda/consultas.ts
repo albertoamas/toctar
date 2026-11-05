@@ -176,6 +176,41 @@ export async function bloquearEspacio(tx: Transaccion, espacioId: number): Promi
   await tx.select({ id: espacioTaller.id }).from(espacioTaller).where(eq(espacioTaller.id, espacioId)).for("no key update");
 }
 
+/** Una cotización aceptada que espera fecha, para "Por reservar" de la Agenda (pedido 31). */
+export type CotizacionPorReservar = { cotizacionId: number; placa: string; cliente: string; servicios: string; total: string; aceptadaEl: Date };
+
+/**
+ * "Por reservar" de la Agenda: las aceptadas sin reserva activa, con el cliente y el vehículo activos y el vehículo
+ * todavía de ese cliente (`sePuedeReservar`). Las que esperan hace más tiempo, primero. El total lo muestra solo quien ve
+ * montos (RN-12): lo decide la pantalla.
+ */
+export async function cotizacionesPorReservar(): Promise<CotizacionPorReservar[]> {
+  return db
+    .select({
+      cotizacionId: cotizacion.id,
+      placa: vehiculo.placa,
+      cliente: cliente.nombre,
+      servicios: sql<string>`coalesce((select string_agg(${cotizacionLinea.descripcion}, ', ' order by ${cotizacionLinea.orden}) from ${cotizacionLinea} where ${cotizacionLinea.cotizacionId} = ${cotizacion.id}), '')`,
+      total: cotizacion.total,
+      aceptadaEl: consulta.ultimoMovimientoAt,
+    })
+    .from(cotizacion)
+    .innerJoin(consulta, eq(cotizacion.consultaId, consulta.id))
+    .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
+    .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
+    .where(
+      and(
+        eq(consulta.estado, "confirmado"),
+        eq(cotizacion.estado, "aceptada"),
+        not(conReservaActiva),
+        eq(vehiculo.clienteId, consulta.clienteId),
+        eq(cliente.activo, true),
+        eq(vehiculo.activo, true),
+      ),
+    )
+    .orderBy(asc(consulta.ultimoMovimientoAt), asc(consulta.id));
+}
+
 /** Una cotización que se puede reservar, para ofrecerla en Nueva reserva (pedido 31). */
 export type CotizacionParaReservar = {
   /** La versión que vale (la que se reserva). */

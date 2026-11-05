@@ -36,6 +36,9 @@ function despuesDeCambiar(id: number, clienteId?: number) {
   revalidatePath("/panel/cotizaciones");
   revalidatePath(`/panel/cotizaciones/${id}`);
   if (clienteId) revalidatePath(`/panel/clientes/${clienteId}`);
+  // Una aceptada sin fecha aparece en "Por reservar" de la Agenda y en Inicio (pedido 31)
+  revalidatePath("/panel/agenda");
+  revalidatePath("/panel");
 }
 
 /** El PDF (HU-26), fuera de la transacción: si falla, la cotización ya quedó y su ficha ofrece generarlo de nuevo. */
@@ -248,7 +251,7 @@ const DESTINO = { rechazar: "perdido", reabrir: "cotizado", aceptar: "confirmado
 const HECHO = {
   rechazar: "Cotización rechazada.",
   reabrir: "La cotización volvió a pendiente.",
-  aceptar: "Cotización aceptada. Resérvala cuando el cliente tenga fecha.",
+  aceptar: "Cotización aceptada. Queda en Por reservar hasta que tenga fecha.",
 } as const;
 
 /**

@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { cn } from "cn";
 import { ClipboardCheckIcon, WrenchIcon } from "lucide-react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
-import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
+import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Insignia } from "@/componentes/panel/insignia";
@@ -100,10 +100,9 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
       {/* Solo mientras siga agendada: tras cancelarla (o en un enlace viejo) ya no corresponde. Dice qué pasó, también con
           la cotización (pedido 31) */}
       {agendada && r.estado === "agendado" && (
-        <AvisoEnPagina>
-          Reservada para el {fechaConDia(r.fechaInicio).toLowerCase()} en el {r.espacio}.
-          {r.cotizacion && ` La cotización ${r.cotizacion.numero} quedó aceptada.`}
-        </AvisoEnPagina>
+        <AvisoFlotante
+          mensaje={`Reservada para el ${fechaConDia(r.fechaInicio).toLowerCase()} en el ${r.espacio}.${r.cotizacion ? ` La cotización ${r.cotizacion.numero} quedó aceptada.` : ""}`}
+        />
       )}
 
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">

@@ -33,7 +33,7 @@ test("el dueño crea un encargado (usuario con guion), con el perfil Taller de e
   await expect(page.getByRole("radio", { name: /Encargado/ })).toBeChecked();
   await expect(page.getByRole("button", { name: /^Taller/ })).toHaveAttribute("aria-pressed", "true");
   await crearPorPantalla(page, { nombre, usuario, contrasena: "taller-123", rol: "Encargado" });
-  await expect(page.getByRole("status")).toContainText(`Usuario ${nombre} creado`);
+  await expect(page.getByText(`Usuario ${nombre} creado`)).toBeVisible();
 
   const { ctx, page: otra } = await otraPersona(browser, info);
   await ingresar(otra, usuario, "taller-123");
@@ -148,9 +148,10 @@ test("tras un error, el rol y el perfil elegidos se conservan y son los que se g
 
   await page.getByLabel("Contraseña inicial").fill("encargado-123");
   await page.getByRole("button", { name: "Crear usuario" }).click();
-  await expect(page.getByRole("status")).toContainText(`Usuario ${nombre} creado`);
+  await expect(page.getByText(`Usuario ${nombre} creado`)).toBeVisible();
   // Fila de la tabla (computadora) o tarjeta (celular): la que se ve
-  await expect(page.locator("tr, li").filter({ hasText: nombre }).locator("visible=true")).toContainText("Encargado");
+  // (dentro de la página: el aviso flotante también nombra al usuario)
+  await expect(page.getByRole("main").locator("tr, li").filter({ hasText: nombre }).locator("visible=true")).toContainText("Encargado");
   const permisos = await consultar<{ permiso: string }>(
     "select p.permiso from usuario_permiso p join usuario u on u.id = p.usuario_id where u.nombre_usuario = $1 order by p.permiso",
     [usuario],

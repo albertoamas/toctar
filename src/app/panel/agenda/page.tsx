@@ -5,13 +5,16 @@ import { cn } from "cn";
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { ListaFilas } from "@/componentes/panel/fila-lista";
+import { Insignia } from "@/componentes/panel/insignia";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { AgendaDelDia, TableroSemana } from "@/modulos/agenda/componentes/tablero";
-import { semanaDeAgenda } from "@/modulos/agenda/consultas";
+import { cotizacionesPorReservar, semanaDeAgenda } from "@/modulos/agenda/consultas";
 import { DIA_CORTO, diasDeLaSemana, lunesDeLaSemana, numeroDia, textoDia, textoSemana, textoSemanaCorto } from "@/modulos/agenda/reglas";
+import { bs, diasDesde, textoDias } from "@/modulos/cotizaciones/reglas";
 
 export const metadata: Metadata = { title: "Agenda" };
 
@@ -52,11 +55,32 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
   const dias = diasDeLaSemana(lunes);
   // En el celular: el día pedido si es de esta semana; si no, hoy (si cae en ella) o el lunes
   const dia = typeof diaPedido === "string" && dias.includes(diaPedido) ? diaPedido : dias.includes(hoy) ? hoy : lunes;
-  const semana = await semanaDeAgenda(lunes, dias[6]);
+  const [semana, porReservar] = await Promise.all([semanaDeAgenda(lunes, dias[6]), cotizacionesPorReservar()]);
+  const conMontos = puedeVerModulo(usuario, "pagos") || puedeVerModulo(usuario, "cotizaciones");
+  const ahora = new Date();
   const estaSemana = dias.includes(hoy);
 
   return (
     <>
+      {/* Pedido 31: las cotizaciones aceptadas que esperan fecha, arriba del tablero. La Agenda es donde se reserva; sin
+          ninguna, no ocupa lugar */}
+      {porReservar.length > 0 && (
+        <section aria-labelledby="por-reservar-titulo" className="flex flex-col gap-3">
+          <h2 id="por-reservar-titulo" className="flex items-center gap-2 tt-titulo-seccion">
+            Por reservar
+            <Insignia>{porReservar.length}</Insignia>
+          </h2>
+          <ListaFilas
+            etiqueta="Por reservar"
+            filas={porReservar.map((c) => ({
+              href: `/panel/agenda/nueva?cotizacion=${c.cotizacionId}`,
+              titulo: c.placa,
+              tituloGrande: true,
+              detalles: [c.cliente, c.servicios, ...(conMontos ? [bs(c.total)] : []), `Aceptada ${textoDias(diasDesde(c.aceptadaEl, ahora))}`].filter(Boolean),
+            }))}
+          />
+        </section>
+      )}
       {/* Un renglón: la semana entre las flechas; en el celular, corta ("26 oct al 1 nov") para que entre */}
       <nav aria-label="Semanas" className="flex items-center gap-2">
         <Link href={enlaceSemana(sumarDias(lunes, -7))} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Semana anterior">

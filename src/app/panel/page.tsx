@@ -110,14 +110,15 @@ async function Contenido() {
     ...masDe(sinResponder.length, "/panel/cotizaciones", ICONO_MODULO.cotizaciones, "cotizaciones sin respuesta"),
     // Aceptadas sin fecha (pedido 31): falta reservarlas
     ...(aceptadas ?? []).slice(0, POR_TIPO).map((c) => ({
-      href: `/panel/cotizaciones/${c.id}` as Route,
+      // A la reserva, para quien ve la Agenda; si no, a la cotización
+      href: (ve("agenda") ? `/panel/agenda/nueva?cotizacion=${c.cotizacionId}` : `/panel/cotizaciones/${c.id}`) as Route,
       icono: CalendarClockIcon,
       titulo: `Cotización aceptada de ${c.cliente}`,
       detalle: `${bs(c.total)}, sin fecha`,
       // Reservar lo hace quien ve la Agenda; si no, la abre para verla
       accion: ve("agenda") ? "Reservar" : "Ver",
     })),
-    ...masDe(aceptadas?.length ?? 0, "/panel/cotizaciones?vista=aceptadas", CalendarClockIcon, "aceptadas sin fecha"),
+    ...masDe(aceptadas?.length ?? 0, ve("agenda") ? "/panel/agenda" : "/panel/cotizaciones?vista=aceptadas", CalendarClockIcon, "aceptadas sin fecha"),
     ...(saldos ?? []).slice(0, POR_TIPO).map((s) => ({
       // A la orden si quien mira puede abrirla; si no (Pagos sin Órdenes), a Saldos pendientes, donde se cobra
       href: (enlaceTrabajo(s.id, "entregado", { ordenes: ve("ordenes"), agenda: ve("agenda") })?.href ?? "/panel/pagos") as Route,
