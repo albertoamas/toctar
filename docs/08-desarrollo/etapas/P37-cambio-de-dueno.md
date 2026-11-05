@@ -1,7 +1,7 @@
 # P37 Un vehículo cambia de dueño — especificación
 
 - **Fase y semana:** C. Entrega 2 · 4 de noviembre de 2026, antes del cierre
-- **Estado:** aprobada por YankoSoft (04/11/2026). Rama `pedido-37-cambio-de-dueno`.
+- **Estado:** aprobada por YankoSoft y hecha (04/11/2026, PR #138).
 - **Pedido:** 37 de `03-cierre-comercial/registro-de-cambios.md`
 - **Historias que cambian:** HU-21 (registrar vehículos), HU-23 (ficha del cliente), HU-38 (mantenimientos)
 - **Base:** C1 (`C1-catalogo-clientes.md`): la placa es única entre los vehículos activos (RF-23) y nada se borra (RN-14). P21 (`P21-planes-mantenimiento.md`): el plan de mantenimiento es del vehículo.

@@ -2,8 +2,8 @@
 
 - **Fase y semana:** C. Entrega 2 · 4 de noviembre de 2026, antes del cierre
 - **Estado:** aprobada por YankoSoft (04/11/2026) con la maqueta del recorrido. Se programa en dos partes:
-  - **Parte 1 (A y C):** el recorrido claro y el Inicio por pasos. Rama `pedido-31-flujo-de-un-trabajo`.
-  - **Parte 2 (B):** cotizar sin registrar y la placa opcional (pedidos 31 b y 29). Rama propia, después de la 1.
+  - **Parte 1 (A y C):** el recorrido claro y el Inicio por pasos. ✅ Hecha (04/11/2026, PR #137; ajustes de diseño en #138).
+  - **Parte 2 (B):** cotizar sin registrar y la placa opcional (pedidos 31 b y 29). ⏳ Sin empezar: la decide el dueño.
 - **Pedidos:** 31 y 29 de `03-cierre-comercial/registro-de-cambios.md`. El 18 queda resuelto por el 23 (la cotización ya lleva varios servicios).
 - **Historias que cambian:** HU-25 (cotizar), HU-28 (seguimiento), HU-30 (agendar), HU-39 (inicio)
 - **Base:**
