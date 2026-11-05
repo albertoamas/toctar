@@ -15,8 +15,10 @@ export function fechaEnBolivia(instante: Date = new Date()): string {
 }
 
 /** El día de la semana (1 = lunes … 7 = domingo) y los minutos desde la medianoche de un instante, en hora de Bolivia. */
+const FORMATO_MOMENTO = new Intl.DateTimeFormat("en-US", { timeZone: ZONA_HORARIA, weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+
 export function momentoEnBolivia(instante: Date = new Date()): { dia: number; minutos: number } {
-  const partes = new Intl.DateTimeFormat("en-US", { timeZone: ZONA_HORARIA, weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(instante);
+  const partes = FORMATO_MOMENTO.formatToParts(instante);
   const valor = (tipo: string) => partes.find((p) => p.type === tipo)?.value ?? "";
   const dia = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(valor("weekday")) + 1;
   return { dia, minutos: Number(valor("hour")) * 60 + Number(valor("minute")) };

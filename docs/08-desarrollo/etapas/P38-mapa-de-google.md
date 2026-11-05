@@ -33,7 +33,7 @@ Migración `0044_mapa_google`, tabla `sucursal`:
 | `enlace_mapa` | text | sí | El enlace de la ficha (Compartir → Copiar vínculo) |
 | `mapa_insertado` | text | sí | La dirección del mapa (el `src` de Compartir → Insertar un mapa) |
 
-`lat` y `lng` siguen igual y se calculan solas: del enlace si trae el pin (`!3d…!4d…`), si no del mapa (`!2d…!3d…`), si no de las coordenadas escritas a mano. El enlace corto (`maps.app.goo.gl`) no trae coordenadas.
+`lat` y `lng` siguen igual y se calculan solas: del enlace si trae el pin (`!3d…!4d…`), si no del mapa (`!2d…!3d…`), si no de las coordenadas escritas a mano. El enlace corto (`maps.app.goo.gl`) no trae coordenadas: con él se conservan las que ya estaban guardadas. Sin enlace ni mapa, se borran.
 
 ## 5. Pantallas y rutas
 - **`/panel/configuracion/negocio`** (el dueño, con Configuración), sección **Ubicación**:
@@ -63,7 +63,7 @@ Los campos van con `Campo`, `Input` y `Textarea`, como el resto del formulario. 
 
 ## 8. Textos de la interfaz
 - **Enlace de Google Maps**, ayuda: "En Google Maps, abre la ficha del taller y toca Compartir → Copiar vínculo. También sirven las coordenadas."
-- **Mapa para la página**, ayuda: "En la ficha del taller: Compartir → Insertar un mapa → Copiar HTML. Si lo dejas vacío, el mapa usa la ubicación del enlace."
+- **Mapa para la página**, ayuda: "En la ficha del taller: Compartir → Insertar un mapa → Copiar HTML. Si lo dejas vacío, el mapa muestra un pin en la ubicación del taller."
 - **Error del enlace:** "Pega el enlace de Google Maps: en la ficha del taller, Compartir → Copiar vínculo."
 - **Error del mapa:** "Pega el código de Google Maps: en la ficha del taller, Compartir → Insertar un mapa → Copiar HTML."
 

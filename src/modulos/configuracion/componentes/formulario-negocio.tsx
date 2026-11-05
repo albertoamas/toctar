@@ -108,7 +108,7 @@ export function FormularioNegocio(props: Props) {
           id="mapaInsertado"
           etiqueta="Mapa para la página"
           error={e.mapaInsertado}
-          ayuda="En la ficha del taller: Compartir → Insertar un mapa → Copiar HTML. Si lo dejas vacío, el mapa usa la ubicación del enlace."
+          ayuda="En la ficha del taller: Compartir → Insertar un mapa → Copiar HTML. Si lo dejas vacío, el mapa muestra un pin en la ubicación del taller."
         >
           <Textarea
             id="mapaInsertado"

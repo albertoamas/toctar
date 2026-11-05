@@ -80,6 +80,8 @@ const minutos = (h: string) => Number(h.slice(0, 2)) * 60 + Number(h.slice(3, 5)
  * turno en la semana, null: no se dice nada.
  */
 export function estadoDelTaller(dias: DiaHorario[], ahora: { dia: number; minutos: number }): { abierto: boolean; detalle: string } | null {
+  // Un día que no se pudo leer: no se dice nada antes que decir algo falso
+  if (!Number.isInteger(ahora.dia) || ahora.dia < 1 || ahora.dia > 7) return null;
   const turnosDe = (dia: number) => dias.find((d) => d.dia === dia)?.turnos ?? [];
   const actual = turnosDe(ahora.dia).find((t) => minutos(t.desde) <= ahora.minutos && ahora.minutos < minutos(t.hasta));
   if (actual) return { abierto: true, detalle: `cierra a las ${hora(actual.hasta)}` };

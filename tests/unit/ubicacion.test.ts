@@ -132,6 +132,10 @@ describe("abierto ahora", () => {
     expect(estadoDelTaller(soloMartes, a(2, "13:00"))).toEqual({ abierto: false, detalle: "abre el martes a las 8:00" });
   });
 
+  test("un día que no se pudo leer no dice nada", () => {
+    expect(estadoDelTaller(semana, { dia: 0, minutos: 600 })).toBeNull();
+  });
+
   test("sin ningún turno no dice nada", () => {
     expect(estadoDelTaller(semanaCerrada(), a(2, "10:00"))).toBeNull();
   });

@@ -38,9 +38,10 @@ export async function guardarNegocio(_previo: EstadoFormulario, datos: FormData)
   if (!entrada.success) return { errores: erroresDe(entrada.error), valores: valoresDe(datos) };
   const d = entrada.data;
   const autorId = Number(autor.id);
-  const { sucursalId } = await obtenerConfiguracionNegocio();
-  // Pedido 38: las coordenadas salen del enlace (el pin) o, si no las trae, del mapa
-  const coordenadas = d.enlaceMapa?.coordenadas ?? d.mapaInsertado?.coordenadas ?? null;
+  const { sucursalId, coordenadas: guardadas } = await obtenerConfiguracionNegocio();
+  // Pedido 38: las coordenadas salen del enlace (el pin) o, si no las trae, del mapa. El enlace corto de "Compartir" no
+  // las trae: con él se conservan las que ya estaban. Sin enlace ni mapa, no hay ubicación
+  const coordenadas = d.enlaceMapa?.coordenadas ?? d.mapaInsertado?.coordenadas ?? (d.enlaceMapa ? guardadas : null);
 
   await db.transaction(async (tx) => {
     await tx
@@ -85,7 +86,7 @@ export async function guardarNegocio(_previo: EstadoFormulario, datos: FormData)
       ...valoresDe(datos),
       whatsapp: whatsAppLocal(d.whatsapp),
       correo: d.correo ?? "",
-      enlaceMapa: textoEnlaceMapa(d.enlaceMapa?.enlace ?? null, coordenadas),
+      enlaceMapa: textoEnlaceMapa(d.enlaceMapa?.enlace ?? null, d.mapaInsertado ? null : coordenadas),
       mapaInsertado: d.mapaInsertado?.src ?? "",
       facebook: d.facebook ?? "",
       instagram: d.instagram ?? "",

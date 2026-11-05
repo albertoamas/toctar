@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -133,7 +133,7 @@ async function Datos() {
 }
 
 /** Una fila que se toca entera: garantía y correo (pedido 38). */
-function FilaEnlace({ href, icono, titulo, detalle }: { href: string; icono: React.ReactNode; titulo: string; detalle: string }) {
+function FilaEnlace({ href, icono, titulo, detalle }: { href: Route | `mailto:${string}`; icono: React.ReactNode; titulo: string; detalle: string }) {
   const clase = "flex min-h-18 items-center gap-4 bg-superficie p-4 hover:bg-superficie-alta [&>svg]:size-6 [&>svg]:shrink-0 [&>svg]:text-rojo-texto";
   const contenido = (
     <>
@@ -145,13 +145,13 @@ function FilaEnlace({ href, icono, titulo, detalle }: { href: string; icono: Rea
       <ChevronRightIcon aria-hidden className="ml-auto !size-5 !text-tinta-suave" />
     </>
   );
-  return href.startsWith("/") ? (
-    <Link href={href as "/garantia"} className={clase}>
-      {contenido}
-    </Link>
-  ) : (
+  return href.startsWith("mailto:") ? (
     <a href={href} className={clase}>
       {contenido}
     </a>
+  ) : (
+    <Link href={href as Route} className={clase}>
+      {contenido}
+    </Link>
   );
 }

@@ -32,7 +32,7 @@ test("el dueño cambia los datos y el pie del sitio los muestra al guardar", asy
   await page.getByRole("button", { name: "Quitar el segundo turno del sábado" }).click();
   await page.getByRole("button", { name: "Guardar cambios" }).click();
   await expect(page.getByText("Cambios guardados.")).toBeVisible();
-
+  try {
   // Se guardó normalizado
   await page.reload();
   await expect(page.getByLabel("WhatsApp")).toHaveValue("71234567");
@@ -58,12 +58,24 @@ test("el dueño cambia los datos y el pie del sitio los muestra al guardar", asy
   await expect(page.getByRole("main").getByRole("link", { name: "Cómo llegar" })).toHaveAttribute("href", FICHA);
   await expect(page.getByTitle("Mapa del taller de TocTar Detailing")).toHaveAttribute("src", MAPA);
 
-  // Vuelve a como lo dejó preparar.setup.ts, para las demás pruebas
+  // El enlace corto de Compartir no trae coordenadas: sin mapa pegado, se conservan las guardadas y Contacto sigue con mapa
   await page.goto("/panel/configuracion/negocio");
-  await page.getByLabel("Enlace de Google Maps").fill(PREPARADO);
+  await page.getByLabel("Enlace de Google Maps").fill("https://maps.app.goo.gl/AbCdEf123");
   await page.getByLabel("Mapa para la página").fill("");
   await page.getByRole("button", { name: "Guardar cambios" }).click();
   await expect(page.getByText("Cambios guardados.")).toBeVisible();
+  await page.goto("/contacto");
+  await expect(page.getByRole("main").getByRole("link", { name: "Cómo llegar" })).toHaveAttribute("href", "https://maps.app.goo.gl/AbCdEf123");
+  await expect(page.getByTitle("Mapa del taller de TocTar Detailing")).toHaveAttribute("src", /q=-21\.5355,-64\.7296/);
+
+  } finally {
+    // Vuelve a como lo dejó preparar.setup.ts, aunque algo de arriba falle: la fila del negocio es una sola
+    await page.goto("/panel/configuracion/negocio");
+    await page.getByLabel("Enlace de Google Maps").fill(PREPARADO);
+    await page.getByLabel("Mapa para la página").fill("");
+    await page.getByRole("button", { name: "Guardar cambios" }).click();
+    await expect(page.getByText("Cambios guardados.")).toBeVisible();
+  }
 });
 
 test("los datos mal escritos muestran el error junto al campo y no se guardan", async ({ page }) => {
