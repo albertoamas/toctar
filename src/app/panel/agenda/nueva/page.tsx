@@ -200,7 +200,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
         <Encabezado />
         <EstadoVacio>
           {!puedeVerModulo(usuario, "mantenimientos")
-            ? "Los mantenimientos los agenda el dueño o quien tiene «Mantenimientos»."
+            ? "Los mantenimientos los reserva el dueño o quien tiene «Mantenimientos»."
             : "La reserva del mantenimiento lleva precios: la arma el dueño o quien registra pagos."}
         </EstadoVacio>
       </>

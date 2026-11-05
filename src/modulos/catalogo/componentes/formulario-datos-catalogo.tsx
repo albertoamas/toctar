@@ -56,7 +56,7 @@ export function FormularioDatosCatalogo({ servicio: s, servicios }: Props) {
         id="duracionDias"
         etiqueta="Duración estimada"
         error={e.duracionDias}
-        ayuda="Los días que suele ocupar un espacio. Solo sugiere la entrega al agendar."
+        ayuda="Los días que suele ocupar un espacio. Solo sugiere la entrega al reservar."
       >
         <div className="flex items-center gap-2">
           <Input

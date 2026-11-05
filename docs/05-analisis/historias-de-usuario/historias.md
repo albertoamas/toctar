@@ -284,7 +284,7 @@ Como dueño, quiero ver quién me debe, para cobrarlo.
 Como personal, quiero ver a quién le toca mantenimiento, para traerlos de vuelta al taller.
 - Lista de mantenimientos vencidos y por vencer (próximos 15 días), ordenados por fecha.
 - "Avisar" abre WhatsApp con el mensaje escrito; luego marco avisado, agendado o no interesado.
-- "Agendar" abre una reserva directa del servicio de mantenimiento.
+- "Reservar" abre una reserva directa del servicio de mantenimiento.
 
 ### HU-39 Pantalla del día (deseable)
 Como dueño, quiero ver lo del día al abrir el sistema, para organizarme rápido.

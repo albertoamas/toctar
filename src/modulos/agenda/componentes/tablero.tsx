@@ -113,7 +113,7 @@ function DiaSinReserva({ fecha, espacio, cerrado, pasado, style }: { fecha: stri
       <PlusIcon className="size-3.5 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden />
       Libre
       <span className="sr-only">
-        : agendar en {espacio.nombre} el {textoDia(fecha)}
+        : reservar en {espacio.nombre} el {textoDia(fecha)}
       </span>
     </Link>
   );

@@ -33,7 +33,7 @@ async function limpiar(placas: string[]) {
   await consultar("delete from cliente where id = any($1)", [clientes.map((c) => c.id)]);
 }
 
-test("las reservas ocupan sus días en su espacio; un día libre lleva a agendar ahí", async ({ page }, info) => {
+test("las reservas ocupan sus días en su espacio; un día libre lleva a reservar ahí", async ({ page }, info) => {
   const s = sufijo(info);
   const lunes = await lunesPropio(info);
   await limpiar([`TB29${s}1`, `TB29${s}2`]);
@@ -66,9 +66,9 @@ test("las reservas ocupan sus días en su espacio; un día libre lleva a agendar
     await page.getByRole("link", { name: "Semana anterior", exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`\\?semana=${lunes}$`));
 
-    // Un día libre: el jueves del primer espacio lleva a agendar ese día en ese espacio
+    // Un día libre: el jueves del primer espacio lleva a reservar ese día en ese espacio
     const [{ jueves }] = await consultar<{ jueves: string }>("select to_char($1::date + 3, 'YYYY-MM-DD') as jueves", [lunes]);
-    await espacio1.getByRole("link", { name: new RegExp(`^Libre.*${primero} el Jueves`) }).click();
+    await espacio1.getByRole("link", { name: new RegExp(`^Libre.*reservar en ${primero} el Jueves`) }).click();
     await expect(page).toHaveURL(new RegExp(`/panel/agenda/nueva\\?fecha=${jueves}&espacio=${espacios[0].id}$`));
   } else {
     // Celular: un día a la vez. El martes, la reserva en el primer espacio y los demás libres

@@ -101,7 +101,7 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
     clienteId = d.clienteId;
     vehiculoId = d.vehiculoId;
     recordatorioId = d.recordatorioId;
-    if (recordatorioId && !puedeVerModulo(usuario, "mantenimientos")) return { mensaje: "Los mantenimientos los agenda el dueño o quien tiene «Mantenimientos»." };
+    if (recordatorioId && !puedeVerModulo(usuario, "mantenimientos")) return { mensaje: "Los mantenimientos los reserva el dueño o quien tiene «Mantenimientos»." };
     const opciones = await db
       .select({ id: variante.id, servicio: servicio.nombre, variante: variante.nombre })
       .from(variante)

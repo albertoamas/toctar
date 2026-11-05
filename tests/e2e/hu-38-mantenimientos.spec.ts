@@ -47,7 +47,7 @@ const mes = (fecha: string) => {
 const vencidos = (page: Page) => page.getByRole("list", { name: "Vencidos" });
 const proximos = (page: Page) => page.getByRole("list", { name: "Próximos 15 días" });
 
-test("vencidos y próximos; avisar, no le interesa y agendar (y al cancelar la reserva, vuelve)", async ({ page }, info) => {
+test("vencidos y próximos; avisar, no le interesa y reservar (y al cancelar la reserva, vuelve)", async ({ page }, info) => {
   const s = sufijo(info);
   const [placaV, placaP, placaN, placaL] = [1, 2, 3, 4].map((n) => `MT38${s.toUpperCase()}${n}`);
   const clienteV = await crearClienteEnBase({ nombre: `Lucía Vencida ${s}`, telefono: telefono(info, 1), placa: placaV });
@@ -190,7 +190,7 @@ test("solo con Mantenimientos se entra; sin Agenda y Pagos no se agenda; el perf
   // Con un enlace de "Reservar" (de otra persona), se dice por qué no
   const [{ vehiculoId }] = await consultar<{ vehiculoId: number }>('select vehiculo_id as "vehiculoId" from recordatorio_mantenimiento where id = $1', [id]);
   await page.goto(`/panel/agenda/nueva?cliente=${clienteId}&vehiculo=${vehiculoId}&recordatorio=${id}`);
-  await expect(page.getByText("Los mantenimientos los agenda el dueño o quien tiene «Mantenimientos».")).toBeVisible();
+  await expect(page.getByText("Los mantenimientos los reserva el dueño o quien tiene «Mantenimientos».")).toBeVisible();
 
   await page.context().clearCookies();
   await crearUsuario({ usuario: `taller-hu38-${s}`, nombre: "Chico del taller", contrasena: "taller-123", rol: "encargado", permisos: PERFIL_TALLER });

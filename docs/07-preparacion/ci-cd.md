@@ -5,7 +5,7 @@ Cómo se verifica y se publica cada cambio (25/10/2026). El workflow está en `.
 ## Resumen
 
 ```
-PR a develop o main ──► GitHub Actions: verificar + E2E + secretos (unos 10 min)
+PR a develop o main ──► GitHub Actions: verificar + E2E + secretos (unos 15 a 20 min)
                          │ los tres son obligatorios para unir (protección de ramas)
                          ▼
 Merge a develop ──► Actions vuelve a verificar ──► pide el despliegue a Coolify ──► pruebas.toctardetailing.com
@@ -63,7 +63,7 @@ Para apagarlo (por ejemplo, durante un problema con Coolify): cambiar `COOLIFY_D
 - **El CI falla en un PR:** abrir el job en rojo en la pestaña **Actions**, corregir en la misma rama y subir. El CI vuelve a correr solo.
 - **Una prueba E2E sale "flaky":** el PR se puede unir (pasó al reintentar), pero se abre una tarea para arreglarla.
 - **Un despliegue falla:** el job **Desplegar** queda en rojo y en línea sigue la versión anterior. Ver los logs del despliegue en Coolify. Para volver a una versión anterior: Coolify → la app → **Deployments** → **Rollback**.
-- **Una urgencia en producción:** rama `arreglo/...` desde `main`, PR y merge; el CI tarda unos 10 minutos. Si Actions no estuviera disponible, se puede desplegar a mano desde Coolify (**Deploy**), sabiendo que ese despliegue no pasó por el CI.
+- **Una urgencia en producción:** rama `arreglo/...` desde `main`, PR y merge; el CI tarda unos 15 a 20 minutos (hasta unos 35 si tiene que instalar el navegador). Si Actions no estuviera disponible, se puede desplegar a mano desde Coolify (**Deploy**), sabiendo que ese despliegue no pasó por el CI.
 
 ## Dependabot
 
