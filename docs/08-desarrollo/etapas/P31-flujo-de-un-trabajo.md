@@ -34,6 +34,16 @@ El dueño dijo que el camino de la cotización a la reserva "no se siente fluido
 
 - **No incluye:** cambiar las etapas del taller (recibir, checklist, fotos, avisar, entregar y firmar ya existen); una vista nueva para el taller (el perfil Taller ya ve "Para hoy" con el paso siguiente, C1); los avisos automáticos (pedido 22).
 
+### Cambió el 04/11: Cotizaciones cotiza y la Agenda reserva
+Con la parte 1 hecha, YankoSoft vio que dos botones parecidos y dos entradas confundían. Reemplaza a A2 y A4 (maqueta aprobada: https://claude.ai/artifact/7JNeFSikgG3Fzb9kiuAnVP):
+- **Cotización pendiente:** un solo botón, **"Aceptó"**, sin confirmación: se deshace con "Volver a pendiente". Queda aceptada con la insignia "Sin fecha".
+- **Aceptada sin fecha:** el atajo **"Reservar en Agenda"**, solo para quien ve la Agenda.
+- **Agenda:** **"Por reservar"** arriba del tablero, con las aceptadas sin reserva; las que esperan hace más tiempo, primero. Sin ninguna, no ocupa lugar. La Agenda es el único lugar donde se reserva: "Volver" de Nueva reserva siempre lleva a ella.
+- **Inicio:** las aceptadas sin fecha llevan directo a la reserva a quien ve la Agenda.
+- **Sin cambios:** Nueva reserva sigue ofreciendo las cotizaciones del vehículo (también las pendientes), y el tablero y Mantenimientos abren el mismo formulario.
+
+**Avisos:** los de éxito son flotantes y temporales, también al llegar a otra pantalla (`AvisoFlotante`); no se repiten al recargar. Reemplaza a `AvisoEnPagina`. Lo que pide hacer algo (el PDF que no se generó) queda a la vista.
+
 ## 3. Reglas que se cumplen
 - RN-02: una cotización enviada no cambia; reservar desde ella copia sus líneas y precios, nunca se vuelven a escribir.
 - RN-12: sin Pagos ni Cotizaciones no se ven montos: la oferta de cotizaciones en Nueva reserva muestra el total solo a quien los ve.
@@ -65,9 +75,9 @@ El dueño dijo que el camino de la cotización a la reserva "no se siente fluido
 - Todo con los tokens y componentes del panel (`EncabezadoPagina`, `Insignia`, `tt-tarjeta-panel`, `buttonVariants`), sin la estética de la maqueta.
 
 ## 8. Textos de la interfaz
-- Botones: "Aceptó: reservar", "Aceptó, sin fecha", "Reservar".
+- Botones: "Aceptó", "Reservar en Agenda".
 - Insignia: "Sin fecha".
-- Modal de "Aceptó, sin fecha": "La cotización queda aceptada. La reservas cuando el cliente tenga fecha." con "Sí, aceptada" y "Cancelar".
+- Aviso al aceptar: "Cotización aceptada. Queda en Por reservar hasta que tenga fecha."
 - Aviso al reservar: "Reservada para el {día} en el {espacio}." y, desde una cotización, "La cotización {número} quedó aceptada."
 - "Para atender": "Cotización aceptada de {cliente}", detalle "{total}, sin fecha" (sin total si no ve montos), acción "Reservar".
 
