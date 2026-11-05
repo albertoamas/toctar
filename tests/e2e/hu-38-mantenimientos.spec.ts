@@ -131,7 +131,7 @@ test("vencidos y próximos; avisar, no le interesa y agendar (y al cancelar la r
   await expect(espacio).toBeEnabled();
   await espacio.selectOption({ index: 1 });
   await page.getByRole("checkbox", { name: "Sin adelanto" }).check();
-  await page.getByRole("button", { name: "Agendar" }).click();
+  await page.getByRole("button", { name: "Reservar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1$/);
   const reservaId = Number(new URL(page.url()).pathname.split("/").at(-1));
   expect(await estadoDe(vencido)).toMatchObject({ estado: "agendado", trabajo: reservaId });

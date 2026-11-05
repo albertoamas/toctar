@@ -40,6 +40,7 @@ Con la parte 1 hecha, YankoSoft vio que dos botones parecidos y dos entradas con
 - **Aceptada sin fecha:** el atajo **"Reservar en Agenda"**, solo para quien ve la Agenda.
 - **Agenda:** **"Por reservar"** arriba del tablero, con las aceptadas sin reserva; las que esperan hace más tiempo, primero. Sin ninguna, no ocupa lugar. La Agenda es el único lugar donde se reserva: "Volver" de Nueva reserva siempre lleva a ella.
 - **Inicio:** las aceptadas sin fecha llevan directo a la reserva a quien ve la Agenda.
+- **Nueva reserva:** el botón final dice **"Reservar"**, igual que "Por reservar" y "Reservar en Agenda".
 - **Sin cambios:** Nueva reserva sigue ofreciendo las cotizaciones del vehículo (también las pendientes), y el tablero y Mantenimientos abren el mismo formulario.
 
 **Avisos:** los de éxito son flotantes y temporales, también al llegar a otra pantalla (`AvisoFlotante`); no se repiten al recargar, al volver atrás ni tras otra acción en la misma pantalla. Reemplaza a `AvisoEnPagina`. Lo que impide seguir (el PDF que no se generó) queda a la vista.

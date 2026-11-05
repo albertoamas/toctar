@@ -104,7 +104,7 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
   await expect(espacioReserva).toBeEnabled();
   await espacioReserva.selectOption({ index: 1 });
   await page.getByRole("checkbox", { name: "Sin adelanto" }).check();
-  await page.getByRole("button", { name: "Agendar" }).click();
+  await page.getByRole("button", { name: "Reservar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1$/);
   const reservaId = Number(new URL(page.url()).pathname.split("/").at(-1));
 

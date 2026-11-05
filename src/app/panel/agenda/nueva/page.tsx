@@ -34,7 +34,7 @@ export const metadata: Metadata = { title: "Nueva reserva" };
 // HU-38: `?recordatorio=` llega desde "Agendar" en Mantenimientos, con el cliente y el vehículo: al agendar, el
 // recordatorio queda "agendado". Pedido 21: la línea llega con su servicio de mantenimiento.
 // Pulido 10.2: el cliente y su vehículo en un recuadro de lectura (como en Nueva cotización), con "Cambiar" en su
-// cabecera; la hora y la nota plegadas, y "Agendar" fijo abajo en el celular (en FormularioReserva).
+// cabecera; la hora y la nota plegadas, y "Reservar" fijo abajo en el celular (en FormularioReserva).
 // Pedido 31 (P31-flujo-de-un-trabajo.md §5): la Agenda es donde se reserva, así que "Volver" lleva a ella desde cualquier
 // entrada; desde una cotización, arriba van los pasos del trabajo. En la directa, elegido el vehículo, se ofrecen primero sus cotizaciones para reservar (pendientes o aceptadas
 // sin fecha): así no se vuelven a escribir los precios. Quien no tiene Pagos (no arma directas) también elige al cliente

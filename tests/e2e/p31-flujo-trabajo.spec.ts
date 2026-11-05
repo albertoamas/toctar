@@ -66,7 +66,7 @@ async function reservar(page: Page, dia: string) {
   await espacio.selectOption({ index: 1 });
   const sinAdelanto = page.getByRole("checkbox", { name: "Sin adelanto" });
   if (await sinAdelanto.count()) await sinAdelanto.check();
-  await page.getByRole("button", { name: "Agendar" }).click();
+  await page.getByRole("button", { name: "Reservar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1$/);
 }
 
@@ -156,7 +156,7 @@ test("Nueva reserva ofrece las cotizaciones del vehículo: los precios llegan si
   // También se puede armar una sin cotización
   await expect(page.getByText("Reserva sin cotización", { exact: true })).toBeVisible();
   // Plegada: lo común es usar la cotización
-  await expect(page.getByRole("button", { name: "Agendar" })).toBeHidden();
+  await expect(page.getByRole("button", { name: "Reservar" })).toBeHidden();
   await suyas.getByRole("link").click();
   await expect(page).toHaveURL(new RegExp(`cotizacion=${c.cotizacionId}$`));
   await expect(page.getByRole("region", { name: new RegExp(`^Cotización ${c.numero}`) })).toContainText("700 Bs");

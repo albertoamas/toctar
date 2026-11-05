@@ -78,7 +78,7 @@ test("desde la cotización: la versión y la cotización quedan aceptadas, las l
   await expect(cotizada.getByText("800 Bs", { exact: true }).last()).toBeVisible();
 
   // Sin elegir espacio ni método: los errores
-  await page.getByRole("button", { name: "Agendar" }).click();
+  await page.getByRole("button", { name: "Reservar" }).click();
   await expect(page.getByText("Elige el espacio.")).toBeVisible();
   await expect(page.getByText("Elige cómo pagó.")).toBeVisible();
 
@@ -94,7 +94,7 @@ test("desde la cotización: la versión y la cotización quedan aceptadas, las l
   await expect(page.getByRole("img", { name: "Foto del comprobante elegida" })).toBeVisible();
   // El adelanto sugerido sale de Configuración (otra prueba lo cambia mientras esta corre): se usa el que trae
   const adelanto = Number(await page.getByLabel("Monto").inputValue());
-  await page.getByRole("button", { name: "Agendar" }).click();
+  await page.getByRole("button", { name: "Reservar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1$/);
   await expect(page.getByText(/^Reservada para el/)).toBeVisible();
   const saldo = page.locator("dl").filter({ hasText: "Saldo" });
@@ -174,7 +174,7 @@ test("solo se ofrecen los espacios libres; si dos personas agendan el mismo a la
   await abrir(page, a.cotizacionId);
   await abrir(otra.page, b.cotizacionId);
   // A la vez
-  await Promise.all([page.getByRole("button", { name: "Agendar" }).click(), otra.page.getByRole("button", { name: "Agendar" }).click()]);
+  await Promise.all([page.getByRole("button", { name: "Reservar" }).click(), otra.page.getByRole("button", { name: "Reservar" }).click()]);
   // Lo que ve cada persona: la redirección de la acción es una navegación interna (sin evento "load"), y esperar la
   // dirección con waitForURL a veces no terminaba aunque la reserva ya se mostraba (CI, 25/10)
   const resultado = async (p: Page) =>
@@ -219,7 +219,7 @@ test("reserva directa: cliente y vehículo registrados, servicio del catálogo c
   await expect(espacio(page)).toBeEnabled();
   await espacio(page).selectOption({ index: 1 });
   await page.getByRole("checkbox", { name: "Sin adelanto" }).check();
-  await page.getByRole("button", { name: "Agendar" }).click();
+  await page.getByRole("button", { name: "Reservar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1$/);
   await expect(page.getByRole("heading", { level: 1, name: `DI30${s}6` })).toBeVisible();
   await expect(page.getByText("Todavía no hay pagos.")).toBeVisible();
@@ -241,7 +241,7 @@ test("el encargado con Agenda sin Pagos agenda sin montos ni adelanto; sin Agend
   await page.getByLabel("Ingresa el").fill(dia);
   await expect(espacio(page)).toBeEnabled();
   await espacio(page).selectOption({ index: 1 });
-  await page.getByRole("button", { name: "Agendar" }).click();
+  await page.getByRole("button", { name: "Reservar" }).click();
   await expect(page).toHaveURL(/\?agendada=1$/);
   await expect(page.getByRole("heading", { name: "Saldo" })).toHaveCount(0);
   await expect(page.getByText("Saldo")).toHaveCount(0);
