@@ -14,6 +14,14 @@ export function fechaEnBolivia(instante: Date = new Date()): string {
   }).format(instante);
 }
 
+/** El día de la semana (1 = lunes … 7 = domingo) y los minutos desde la medianoche de un instante, en hora de Bolivia. */
+export function momentoEnBolivia(instante: Date = new Date()): { dia: number; minutos: number } {
+  const partes = new Intl.DateTimeFormat("en-US", { timeZone: ZONA_HORARIA, weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(instante);
+  const valor = (tipo: string) => partes.find((p) => p.type === tipo)?.value ?? "";
+  const dia = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(valor("weekday")) + 1;
+  return { dia, minutos: Number(valor("hour")) * 60 + Number(valor("minute")) };
+}
+
 /** Si es una fecha AAAA-MM-DD que existe ("2026-02-31" no). */
 export function fechaExiste(fecha: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(fecha) && !Number.isNaN(Date.parse(fecha)) && new Date(`${fecha}T00:00:00Z`).toISOString().slice(0, 10) === fecha;

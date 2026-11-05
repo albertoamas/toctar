@@ -55,21 +55,20 @@ test("Contacto muestra la dirección con el mapa, el horario y el WhatsApp", asy
   await expect(page.getByRole("main")).toContainText("+591 7123 4567");
 });
 
-test("en Contacto el mapa va junto a la dirección y los enlaces sueltos tienen 44 px para el dedo", async ({ page, isMobile }) => {
+test("en Contacto el mapa va junto a la dirección, dice si está abierto y los enlaces tienen 44 px para el dedo", async ({ page, isMobile }) => {
   await page.goto("/contacto");
-  const donde = (await page.getByRole("region", { name: "Dónde estamos" }).boundingBox())!;
-  const mapa = (await page.getByTitle("Mapa del taller de TocTar Detailing").boundingBox())!;
+  const donde = page.getByRole("region", { name: "Dónde estamos" });
+  const mapa = (await donde.getByTitle("Mapa del taller de TocTar Detailing").boundingBox())!;
   const horario = (await page.getByRole("region", { name: "Horario" }).boundingBox())!;
-  // En el celular, justo debajo de "Dónde estamos" y antes del horario; en la computadora, en la columna de la derecha (pulido 2.7)
-  if (isMobile) {
-    expect(mapa.y).toBeGreaterThan(donde.y + donde.height - 1);
-    expect(mapa.y).toBeLessThan(horario.y);
-  } else {
-    expect(mapa.x).toBeGreaterThan(donde.x + donde.width);
-  }
+  // Pedido 38: el mapa y la dirección van juntos. En el celular, antes del horario; en la computadora, a la derecha
+  if (isMobile) expect(mapa.y).toBeLessThan(horario.y);
+  else expect(mapa.x).toBeGreaterThan(horario.x + horario.width);
+  // Si está abierto ahora (con el horario de Configuración y la hora de Bolivia), y el día de hoy en el horario
+  await expect(page.getByRole("main").getByText(/^(Abierto|Cerrado) ahora/)).toBeVisible();
+  await expect(page.getByRole("region", { name: "Horario" }).getByText("Hoy", { exact: true })).toBeVisible();
   for (const nombre of ["Cómo llegar", "Garantía y reclamos", "toctartarija@gmail.com"]) {
-    const area = await page.getByRole("main").getByRole("link", { name: nombre }).evaluate((e) => getComputedStyle(e, "::after").height);
-    expect(area, nombre).toBe("44px");
+    const alto = (await page.getByRole("main").getByRole("link", { name: nombre }).boundingBox())!.height;
+    expect(alto, nombre).toBeGreaterThanOrEqual(44);
   }
 });
 

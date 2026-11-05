@@ -8,6 +8,8 @@ import {
   mapaDeContacto,
   textoEnlaceMapa,
 } from "@/lib/ubicacion";
+import { momentoEnBolivia } from "@/lib/fechas";
+import { estadoDelTaller, resumirHorariosConHoy, semanaCerrada } from "@/lib/horarios";
 import { datosNegocioLocal } from "@/modulos/sitio/negocio-local";
 
 // Pedido 38: la ficha del taller en Google Maps. Especificación: docs/08-desarrollo/etapas/P38-mapa-de-google.md §9.
@@ -102,5 +104,49 @@ describe("en el sitio", () => {
     const base = { nombre: "TocTar", direccion: "Calle 1", horarios: [], whatsapp: null, correo: null, redes: {} };
     expect(datosNegocioLocal({ ...base, coordenadas, enlaceMapa: "https://maps.app.goo.gl/AbC" }, "https://x")).toMatchObject({ hasMap: "https://maps.app.goo.gl/AbC" });
     expect(datosNegocioLocal({ ...base, coordenadas: null, enlaceMapa: null }, "https://x")).not.toHaveProperty("hasMap");
+  });
+});
+
+// Pedido 38: "Abierto ahora" y el día de hoy en el horario de Contacto
+describe("abierto ahora", () => {
+  const manana = { desde: "08:00", hasta: "12:00" };
+  const tarde = { desde: "14:00", hasta: "18:00" };
+  // Lunes a viernes mañana y tarde, sábado solo mañana, domingo cerrado
+  const semana = [1, 2, 3, 4, 5, 6, 7].map((dia) => ({ dia, turnos: dia <= 5 ? [manana, tarde] : dia === 6 ? [manana] : [] }));
+  const a = (dia: number, hhmm: string) => ({ dia, minutos: Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3)) });
+
+  test.each([
+    ["en un turno", a(2, "10:30"), { abierto: true, detalle: "cierra a las 12:00" }],
+    ["al abrir", a(2, "08:00"), { abierto: true, detalle: "cierra a las 12:00" }],
+    ["justo al cerrar ya está cerrado", a(2, "12:00"), { abierto: false, detalle: "abre hoy a las 14:00" }],
+    ["al mediodía", a(3, "13:00"), { abierto: false, detalle: "abre hoy a las 14:00" }],
+    ["de noche", a(4, "20:00"), { abierto: false, detalle: "abre mañana a las 8:00" }],
+    ["el sábado a la tarde", a(6, "15:00"), { abierto: false, detalle: "abre el lunes a las 8:00" }],
+    ["el domingo", a(7, "10:00"), { abierto: false, detalle: "abre mañana a las 8:00" }],
+  ])("%s", (_, ahora, esperado) => {
+    expect(estadoDelTaller(semana, ahora)).toEqual(esperado);
+  });
+
+  test("si solo abre un día y ya pasó, abre ese día de la semana que viene", () => {
+    const soloMartes = [1, 2, 3, 4, 5, 6, 7].map((dia) => ({ dia, turnos: dia === 2 ? [manana] : [] }));
+    expect(estadoDelTaller(soloMartes, a(2, "13:00"))).toEqual({ abierto: false, detalle: "abre el martes a las 8:00" });
+  });
+
+  test("sin ningún turno no dice nada", () => {
+    expect(estadoDelTaller(semanaCerrada(), a(2, "10:00"))).toBeNull();
+  });
+
+  test("el horario marca el grupo de hoy", () => {
+    expect(resumirHorariosConHoy(semana, 3)).toEqual([
+      { dias: "Lunes a viernes", horario: "8:00–12:00 y 14:00–18:00", hoy: true },
+      { dias: "Sábado", horario: "8:00–12:00", hoy: false },
+      { dias: "Domingo", horario: "cerrado", hoy: false },
+    ]);
+  });
+
+  test("la hora de Bolivia: UTC menos 4", () => {
+    // Martes 03:30 UTC = lunes 23:30 en Bolivia
+    expect(momentoEnBolivia(new Date("2026-11-03T03:30:00Z"))).toEqual({ dia: 1, minutos: 23 * 60 + 30 });
+    expect(momentoEnBolivia(new Date("2026-11-08T14:05:00Z"))).toEqual({ dia: 7, minutos: 10 * 60 + 5 });
   });
 });

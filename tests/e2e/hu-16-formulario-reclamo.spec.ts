@@ -70,9 +70,10 @@ test("con la trampa llena se ve la confirmación pero no se guarda", async ({ pa
 test("el pie y la página de contacto llevan a garantía y reclamos", async ({ page }) => {
   await page.goto("/contacto");
   await expect(page.getByRole("contentinfo").getByRole("link", { name: "Garantía y reclamos" })).toHaveAttribute("href", "/garantia");
-  const seccion = page.getByRole("region", { name: "¿Algo no quedó bien?" });
-  await expect(seccion.getByRole("link")).toHaveAttribute("href", "/garantia");
-  await seccion.getByRole("link").click();
+  // Pedido 38: en Contacto es una fila que se toca entera
+  const fila = page.getByRole("main").getByRole("link", { name: /¿Algo no quedó bien\?/ });
+  await expect(fila).toHaveAttribute("href", "/garantia");
+  await fila.click();
   await expect(page).toHaveURL(/\/garantia$/, { timeout: 15_000 });
 });
 
