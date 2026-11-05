@@ -6,7 +6,6 @@ import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
-import { Insignia } from "@/componentes/panel/insignia";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
@@ -66,9 +65,8 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
           ninguna, no ocupa lugar */}
       {porReservar.length > 0 && (
         <section aria-labelledby="por-reservar-titulo" className="flex flex-col gap-3">
-          <h2 id="por-reservar-titulo" className="flex items-center gap-2 tt-titulo-seccion">
-            Por reservar
-            <Insignia>{porReservar.length}</Insignia>
+          <h2 id="por-reservar-titulo" className="tt-titulo-seccion">
+            Por reservar ({porReservar.length})
           </h2>
           <ListaFilas
             etiqueta="Por reservar"
