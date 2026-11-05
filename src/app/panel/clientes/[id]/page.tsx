@@ -5,7 +5,7 @@ import { Fragment, Suspense } from "react";
 import { cn } from "cn";
 import { CalendarIcon, FileTextIcon } from "lucide-react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
-import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
+import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
@@ -115,12 +115,10 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
       >
         {!c.activo && "No sale en la lista ni en las búsquedas."}
       </EncabezadoPagina>
-      {creado && <AvisoEnPagina>Cliente {c.nombre} creado.</AvisoEnPagina>}
+      {creado && <AvisoFlotante mensaje={`Cliente ${c.nombre} creado.`} />}
       {/* Pedido 37: un vehículo que pasó a este cliente, solo si de verdad es suyo */}
       {typeof recibido === "string" && c.vehiculos.some((v) => v.activo && v.placa === recibido) && (
-        <AvisoEnPagina>
-          {recibido} ahora es de {c.nombre}, con su plan de mantenimiento.
-        </AvisoEnPagina>
+        <AvisoFlotante mensaje={`${recibido} ahora es de ${c.nombre}, con su plan de mantenimiento.`} />
       )}
 
       {/* Lado a lado y del mismo alto en la computadora (como en el catálogo); en el celular, primero los vehículos */}

@@ -3,7 +3,7 @@
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useActionState, useRef, useState } from "react";
-import { CalendarClockIcon } from "lucide-react";
+import { CheckIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
@@ -18,8 +18,7 @@ import { MOTIVOS, NOMBRE_MOTIVO } from "../reglas";
 
 // El menú "Más" de una cotización (pedido 23, como en las demás fichas): "Nueva versión" y "Rechazar" en una pendiente
 // (rechazar pide el motivo en un modal); "Volver a pendiente" en una rechazada; "Rechazar" y "Volver a pendiente" en
-// una aceptada sin fecha (pedido 31). Se usan poco: el paso siguiente ("Aceptó: reservar") va solo en el encabezado,
-// junto a "Aceptó, sin fecha" (`AceptoSinFecha`).
+// una aceptada sin fecha (pedido 31). Se usan poco: el paso siguiente ("Aceptó", `BotonAcepto`) va en el encabezado.
 
 type Props = {
   id: number;
@@ -124,42 +123,20 @@ function FormularioReabrir({ id }: { id: number }) {
 }
 
 /**
- * "Aceptó, sin fecha" (pedido 31): el cliente dijo que sí pero todavía no tiene día. La cotización queda aceptada, en su
- * pestaña con "Sin fecha", y se reserva después. Confirma en un modal: cambia el estado.
+ * "Aceptó" (pedido 31): la cotización queda aceptada y, sin fecha, en "Por reservar" de la Agenda. Sin confirmación: se
+ * deshace con "Volver a pendiente". El aviso sale flotante, como todo cambio en la misma pantalla.
  */
-export function AceptoSinFecha({ id }: { id: number }) {
-  const [abierto, setAbierto] = useState(false);
+export function BotonAcepto({ id }: { id: number }) {
+  const [resultado, accion, enviando] = useActionState<EstadoFormulario, FormData>(conAviso(cambiarEstadoCotizacion), {});
   return (
-    <>
-      <Button variant="outline" onClick={() => setAbierto(true)}>
-        <CalendarClockIcon />
-        Aceptó, sin fecha
-      </Button>
-      <ModalFormulario titulo="Aceptó, sin fecha" abierto={abierto} alCambiar={setAbierto}>
-        <FormularioAceptar id={id} />
-      </ModalFormulario>
-    </>
-  );
-}
-
-function FormularioAceptar({ id }: { id: number }) {
-  const cerrar = useCerrarModal();
-  const [resultado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
-    conAviso(cambiarEstadoCotizacion, (r) => r.ok && cerrar()),
-    {},
-  );
-  return (
-    <form action={accion} className="flex flex-col gap-5" aria-label="Aceptó, sin fecha">
+    <form action={accion} aria-label="Aceptó">
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="accion" value="aceptar" />
+      <Button type="submit" disabled={enviando}>
+        <CheckIcon />
+        {enviando ? "Guardando…" : "Aceptó"}
+      </Button>
       {resultado.mensaje && !resultado.ok && <MensajeError id="aceptar-error">{resultado.mensaje}</MensajeError>}
-      <p>La cotización queda aceptada. La reservas cuando el cliente tenga fecha.</p>
-      <PieModal>
-        <Button type="submit" disabled={enviando}>
-          {enviando ? "Guardando…" : "Sí, aceptada"}
-        </Button>
-        <CancelarModal focoInicial />
-      </PieModal>
     </form>
   );
 }

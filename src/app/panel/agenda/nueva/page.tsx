@@ -34,9 +34,9 @@ export const metadata: Metadata = { title: "Nueva reserva" };
 // HU-38: `?recordatorio=` llega desde "Agendar" en Mantenimientos, con el cliente y el vehículo: al agendar, el
 // recordatorio queda "agendado". Pedido 21: la línea llega con su servicio de mantenimiento.
 // Pulido 10.2: el cliente y su vehículo en un recuadro de lectura (como en Nueva cotización), con "Cambiar" en su
-// cabecera; la hora y la nota plegadas, y "Agendar" fijo abajo en el celular (en FormularioReserva).
-// Pedido 31 (P31-flujo-de-un-trabajo.md §5): desde una cotización, "Volver" lleva a ella y arriba van los pasos del
-// trabajo. En la directa, elegido el vehículo, se ofrecen primero sus cotizaciones para reservar (pendientes o aceptadas
+// cabecera; la hora y la nota plegadas, y "Reservar" fijo abajo en el celular (en FormularioReserva).
+// Pedido 31 (P31-flujo-de-un-trabajo.md §5): la Agenda es donde se reserva, así que "Volver" lleva a ella desde cualquier
+// entrada; desde una cotización, arriba van los pasos del trabajo. En la directa, elegido el vehículo, se ofrecen primero sus cotizaciones para reservar (pendientes o aceptadas
 // sin fecha): así no se vuelven a escribir los precios. Quien no tiene Pagos (no arma directas) también elige al cliente
 // y reserva una de sus cotizaciones.
 export default function PaginaNuevaReserva({ searchParams }: PageProps<"/panel/agenda/nueva">) {
@@ -56,11 +56,11 @@ export default function PaginaNuevaReserva({ searchParams }: PageProps<"/panel/a
   );
 }
 
-/** El encabezado: "Volver" a donde se vino (la cotización o la Agenda) y el título. */
-function Encabezado({ volver }: { volver?: { href: Route; texto: string } }) {
+/** El encabezado: la reserva vive en la Agenda, así que "Volver" lleva allí desde cualquier entrada (pedido 31). */
+function Encabezado() {
   return (
     <>
-      <EnlaceVolver href={volver?.href ?? "/panel/agenda"}>{volver?.texto ?? "Agenda"}</EnlaceVolver>
+      <EnlaceVolver href="/panel/agenda">Agenda</EnlaceVolver>
       <EncabezadoPagina titulo="Nueva reserva" />
     </>
   );
@@ -112,20 +112,29 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
         </>
       );
     }
-    // A la cotización solo si quien reserva la puede abrir (Agenda sin Cotizaciones vuelve a la Agenda)
-    const volver = puedeVerModulo(usuario, "cotizaciones") ? { href: `/panel/cotizaciones/${c.consultaId}` as Route, texto: `Cotización ${c.numero}` } : undefined;
     if (!c.agendable) {
       return (
         <>
-          <Encabezado volver={volver} />
+          <Encabezado />
           <EstadoVacio>Esa cotización ya tiene una reserva o una versión nueva.</EstadoVacio>
         </>
       );
     }
+    // Se dice antes de llenar el formulario, y no recién al guardar
+    if (!c.activos) {
+      return (
+        <>
+          <Encabezado />
+          <EstadoVacio>El cliente o el vehículo de esa cotización ya no está activo. Reactívalo en su ficha para reservarla.</EstadoVacio>
+        </>
+      );
+    }
     const duraciones = c.lineas.map((l) => l.duracion);
+    // Los precios de la cotización, con Pagos o con Cotizaciones (RN-12), como en "Por reservar"
+    const verMontos = conPagos || puedeVerModulo(usuario, "cotizaciones");
     return (
       <>
-        <Encabezado volver={volver} />
+        <Encabezado />
         <PasosTrabajo paso={c.aceptada ? 1 : 0} />
         <ClienteYVehiculo nombre={c.cliente.nombre} vehiculo={c.vehiculo} />
         {/* Los servicios de la cotización, en lectura: para cambiar precios se hace una versión nueva */}
@@ -136,17 +145,17 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
               {c.lineas.map((l, i) => (
                 <li key={i} className="flex justify-between gap-4">
                   <span>{l.descripcion}</span>
-                  {conPagos && <span className="shrink-0 tabular-nums">{mostrarMonto(l.precio)} Bs</span>}
+                  {verMontos && <span className="shrink-0 tabular-nums">{mostrarMonto(l.precio)} Bs</span>}
                 </li>
               ))}
             </ul>
-            {conPagos && (
+            {verMontos && (
               <p className="flex justify-between gap-4 border-t border-border pt-2 font-semibold">
                 <span>Total</span>
                 <span className="tabular-nums">{mostrarMonto(c.saldo.total)} Bs</span>
               </p>
             )}
-            <p className="text-sm text-tinta-suave">Al reservar, la cotización queda aceptada.</p>
+            {!c.aceptada && <p className="text-sm text-tinta-suave">Al reservar, la cotización queda aceptada.</p>}
           </div>
         </section>
         <Formulario

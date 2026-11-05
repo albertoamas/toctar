@@ -113,7 +113,8 @@ test("cancelar pide motivo, deja los pagos, libera el espacio y la consulta pasa
   await page.getByRole("menuitem", { name: "Volver a pendiente" }).click();
   await page.getByRole("button", { name: "Sí, volver a pendiente" }).click();
   await expect(page.getByText("La cotización volvió a pendiente.")).toBeVisible();
-  await page.getByRole("link", { name: "Aceptó: reservar" }).click();
+  await page.getByRole("button", { name: "Aceptó", exact: true }).click();
+  await page.getByRole("link", { name: "Reservar en Agenda" }).click();
   const d30 = await dia(info, 30);
   await page.getByLabel("Ingresa el").fill(d30);
   await page.getByLabel("Entrega aproximada").fill(d30);
@@ -121,7 +122,7 @@ test("cancelar pide motivo, deja los pagos, libera el espacio y la consulta pasa
   await expect(espacio.locator("option")).not.toHaveCount(1);
   await espacio.selectOption({ index: 1 });
   await page.getByText("Sin adelanto", { exact: true }).click();
-  await page.getByRole("button", { name: "Agendar" }).click();
+  await page.getByRole("button", { name: "Reservar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1$/);
   const [otra] = await consultar<{ reservas: number; cotizacion: string }>(
     "select count(*)::int as reservas, (select estado from cotizacion where id = $1) as cotizacion from trabajo where cotizacion_id = $1",

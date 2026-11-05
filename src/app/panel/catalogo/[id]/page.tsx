@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { cn } from "cn";
 import { GlobeIcon } from "lucide-react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
-import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
+import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
@@ -67,7 +67,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
           </Link>
         }
       />
-      {cargarPrecios && <AvisoEnPagina>Servicio creado. Carga sus precios.</AvisoEnPagina>}
+      {cargarPrecios && <AvisoFlotante mensaje="Servicio creado. Carga sus precios." />}
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-2 md:gap-4">
         <SeccionConEditar

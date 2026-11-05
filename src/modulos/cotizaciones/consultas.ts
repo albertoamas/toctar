@@ -273,6 +273,8 @@ export async function datosDocumento(consultaId: number, base: Pick<typeof db, "
 
 export type FilaCotizacion = {
   id: number;
+  /** La versión que vale: la que se reserva. */
+  cotizacionId: number;
   clienteId: number;
   cliente: string;
   placa: string;
@@ -283,7 +285,7 @@ export type FilaCotizacion = {
   numero: string;
   total: string;
   estado: EstadoConsulta;
-  /** Aceptada sin una reserva activa ("Aceptó, sin fecha", pedido 31): se reserva después. */
+  /** Aceptada sin una reserva activa (pedido 31): se reserva después. */
   sinFecha: boolean;
   ultimoMovimientoAt: Date;
 };
@@ -302,9 +304,14 @@ export async function tieneReservaActiva(consultaId: number, base: Pick<typeof d
   return !!fila?.activa;
 }
 
-/** Las aceptadas sin reserva (pedido 31), las que esperan fecha hace más tiempo primero: para Inicio. */
-export async function aceptadasSinFecha(): Promise<FilaCotizacion[]> {
-  return (await filas(sinFecha).orderBy(asc(consulta.ultimoMovimientoAt), asc(consulta.id))).map(aFila);
+/**
+ * "Por reservar" (pedido 31): las aceptadas sin reserva que se pueden reservar ya, con el cliente y el vehículo activos y
+ * el vehículo todavía de ese cliente; las que esperan hace más tiempo, primero. Para la Agenda y para Inicio. Los montos
+ * los muestra solo quien los ve (RN-12): lo decide la pantalla.
+ */
+export async function cotizacionesPorReservar(): Promise<FilaCotizacion[]> {
+  const donde = and(sinFecha, eq(cliente.activo, true), eq(vehiculo.activo, true), eq(vehiculo.clienteId, consulta.clienteId));
+  return (await filas(donde).orderBy(asc(consulta.ultimoMovimientoAt), asc(consulta.id))).map(aFila);
 }
 
 /**
@@ -313,7 +320,7 @@ export async function aceptadasSinFecha(): Promise<FilaCotizacion[]> {
  */
 export const cotizacionAbierta = sql`(${tieneVersiones} and (${consulta.estado} = 'cotizado' or (${consulta.estado} = 'confirmado' and not ${conReservaActiva})))`;
 
-/** Aceptada sin reserva activa: "Aceptó, sin fecha" (pedido 31, P31-flujo-de-un-trabajo.md §4). */
+/** Aceptada sin reserva activa (pedido 31, P31-flujo-de-un-trabajo.md §4). */
 const sinFecha = sql<boolean>`(${consulta.estado} = 'confirmado' and not ${conReservaActiva})`;
 
 /** La versión que vale de cada cotización: la vigente, o la aceptada. Las reemplazadas quedan solo en su ficha. */
@@ -321,6 +328,7 @@ const versionActual = and(eq(cotizacion.consultaId, consulta.id), ne(cotizacion.
 
 const columnasFila = {
   id: consulta.id,
+  cotizacionId: cotizacion.id,
   clienteId: consulta.clienteId,
   cliente: cliente.nombre,
   placa: vehiculo.placa,

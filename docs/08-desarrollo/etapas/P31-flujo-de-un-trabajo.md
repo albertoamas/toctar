@@ -19,12 +19,12 @@ El dueño dijo que el camino de la cotización a la reserva "no se siente fluido
 
 ### Parte 1
 - **A1. Los pasos del trabajo**, arriba de la cotización, de la reserva y de la orden: Cotizada, Aceptada, Reservada, En el taller, Lista y Entregada, con el paso actual marcado. Una reserva sin cotización empieza en Reservada.
-- **A2. Dos acciones claras en una cotización pendiente:**
+- **A2. Dos acciones claras en una cotización pendiente** (reemplazado el 04/11, ver "Cambió el 04/11"):
   - **"Aceptó: reservar"** (la principal, en lugar de "Agendar"): lleva a la reserva con la cotización.
   - **"Aceptó, sin fecha"**: la deja aceptada sin reserva. Queda en "Aceptadas" con la insignia "Sin fecha" y su principal pasa a ser **"Reservar"**.
   - Una aceptada sin fecha se puede rechazar o volver a pendiente (en "Más"), como una pendiente.
 - **A3. Nueva reserva conoce las cotizaciones:** al elegir el cliente y su vehículo, si tiene cotizaciones pendientes o aceptadas sin fecha, se ofrecen arriba ("Usar la cotización 2026-0002") antes de armar una directa. Quien no tiene Pagos (no arma directas) también llega a elegir al cliente y ve sus cotizaciones, en lugar del aviso de hoy.
-- **A4. El recorrido no se corta:** desde una cotización, "Volver" de la reserva lleva a esa cotización. El aviso al reservar dice qué pasó: "Reservada para el jueves 5/11 en el Espacio 2. La cotización 2026-0002 quedó aceptada."
+- **A4. El recorrido no se corta** ("Volver" y el aviso, reemplazados el 04/11): desde una cotización, "Volver" de la reserva lleva a esa cotización. El aviso al reservar dice qué pasó: "Reservada para el jueves 5/11 en el Espacio 2. La cotización 2026-0002 quedó aceptada."
 - **C1. Inicio:** "Para atender" suma las **aceptadas sin fecha** con "Reservar". "Para hoy" dice en cada fila **el paso siguiente** (Recibir, Empezar, Marcar lista, Avisar, Entregar).
 
 ### Parte 2
@@ -34,10 +34,21 @@ El dueño dijo que el camino de la cotización a la reserva "no se siente fluido
 
 - **No incluye:** cambiar las etapas del taller (recibir, checklist, fotos, avisar, entregar y firmar ya existen); una vista nueva para el taller (el perfil Taller ya ve "Para hoy" con el paso siguiente, C1); los avisos automáticos (pedido 22).
 
+### Cambió el 04/11: Cotizaciones cotiza y la Agenda reserva
+Con la parte 1 hecha, YankoSoft vio que dos botones parecidos y dos entradas confundían. Reemplaza a A2 y A4 (maqueta aprobada: https://claude.ai/artifact/7JNeFSikgG3Fzb9kiuAnVP):
+- **Cotización pendiente:** un solo botón, **"Aceptó"**, sin confirmación: se deshace con "Volver a pendiente". Queda aceptada con la insignia "Sin fecha".
+- **Aceptada sin fecha:** el atajo **"Reservar en Agenda"**, solo para quien ve la Agenda.
+- **Agenda:** **"Por reservar"** arriba del tablero, con las aceptadas sin reserva; las que esperan hace más tiempo, primero. Sin ninguna, no ocupa lugar. La Agenda es el único lugar donde se reserva: "Volver" de Nueva reserva siempre lleva a ella.
+- **Inicio:** las aceptadas sin fecha llevan directo a la reserva a quien ve la Agenda.
+- **Nueva reserva:** el botón final dice **"Reservar"**, igual que "Por reservar" y "Reservar en Agenda".
+- **Sin cambios:** Nueva reserva sigue ofreciendo las cotizaciones del vehículo (también las pendientes), y el tablero y Mantenimientos abren el mismo formulario.
+
+**Avisos:** los de éxito son flotantes y temporales, también al llegar a otra pantalla (`AvisoFlotante`); no se repiten al recargar, al volver atrás ni tras otra acción en la misma pantalla. Reemplaza a `AvisoEnPagina`. Lo que impide seguir (el PDF que no se generó) queda a la vista.
+
 ## 3. Reglas que se cumplen
 - RN-02: una cotización enviada no cambia; reservar desde ella copia sus líneas y precios, nunca se vuelven a escribir.
 - RN-12: sin Pagos ni Cotizaciones no se ven montos: la oferta de cotizaciones en Nueva reserva muestra el total solo a quien los ve.
-- RF-36: la cotización queda aceptada al reservar, o antes, con "Aceptó, sin fecha".
+- RF-36: la cotización queda aceptada con "Aceptó", o al reservarla.
 - Una cotización tiene como mucho una reserva activa: una aceptada sin fecha se reserva una vez; si se cancela la reserva, vuelve como hoy (C3).
 
 ## 4. Datos
@@ -48,9 +59,10 @@ El dueño dijo que el camino de la cotización a la reserva "no se siente fluido
 **Parte 2 (con migración, se detalla al empezarla):** `consulta.cliente_id` y `vehiculo_id` pasan a opcionales, con `nombre`, `telefono`, `vehiculo_texto` y `tamano_id` para la que no tiene cliente (una restricción exige uno u otro); `vehiculo.placa` opcional con `chasis`.
 
 ## 5. Pantallas y rutas (parte 1)
-- `/panel/cotizaciones/[id]`: los pasos arriba; en una pendiente, "Aceptó: reservar" (principal) y "Aceptó, sin fecha" (contorno); en una aceptada sin fecha, "Reservar" (principal) y la insignia "Sin fecha"; "Más" con Rechazar y Volver a pendiente.
+- `/panel/cotizaciones/[id]`: los pasos arriba; en una pendiente, "Aceptó" (principal); en una aceptada sin fecha, "Reservar en Agenda" (principal, solo con Agenda) y la insignia "Sin fecha"; "Más" con Rechazar y Volver a pendiente.
 - `/panel/cotizaciones?vista=aceptadas`: la insignia "Sin fecha" en las que no tienen reserva.
-- `/panel/agenda/nueva?cotizacion=`: acepta también la aceptada sin fecha; "Volver" a la cotización.
+- `/panel/agenda/nueva?cotizacion=`: acepta también la aceptada sin fecha; "Volver" a la Agenda. Con el cliente o el vehículo desactivados, lo dice antes del formulario. Los precios de la cotización, con Pagos o con Cotizaciones.
+- `/panel/agenda`: "Por reservar (N)" arriba del tablero, con las cinco que esperan hace más tiempo a la vista y las demás plegadas.
 - `/panel/agenda/nueva` (directa o sin Pagos): 768 px de ancho, como Nueva cotización. Después de elegir cliente y vehículo, "Sus cotizaciones" si las hay, y la reserva sin cotización plegada detrás de "＋ Reserva sin cotización" (sin cotizaciones, a la vista).
 - `/panel/agenda/[id]` y `/panel/ordenes/[id]`: los pasos arriba; el aviso de reserva con el día, el espacio y la cotización.
 - `/panel` (Inicio): aceptadas sin fecha en "Para atender"; el paso siguiente en "Para hoy".
@@ -65,15 +77,15 @@ El dueño dijo que el camino de la cotización a la reserva "no se siente fluido
 - Todo con los tokens y componentes del panel (`EncabezadoPagina`, `Insignia`, `tt-tarjeta-panel`, `buttonVariants`), sin la estética de la maqueta.
 
 ## 8. Textos de la interfaz
-- Botones: "Aceptó: reservar", "Aceptó, sin fecha", "Reservar".
+- Botones: "Aceptó", "Reservar en Agenda".
 - Insignia: "Sin fecha".
-- Modal de "Aceptó, sin fecha": "La cotización queda aceptada. La reservas cuando el cliente tenga fecha." con "Sí, aceptada" y "Cancelar".
+- Aviso al aceptar: "Cotización aceptada. Queda en Por reservar hasta que tenga fecha."
 - Aviso al reservar: "Reservada para el {día} en el {espacio}." y, desde una cotización, "La cotización {número} quedó aceptada."
 - "Para atender": "Cotización aceptada de {cliente}", detalle "{total}, sin fecha" (sin total si no ve montos), acción "Reservar".
 
 ## 9. Pruebas
 - **Unitarias:** `pasoDelTrabajo` (cada estado de cotización y de trabajo, con y sin cotización); `transicionPermitida` con la aceptada con y sin trabajo; el paso siguiente de cada fila de "Para hoy".
-- **E2E:** "Aceptó, sin fecha" la deja en Aceptadas con "Sin fecha" y después se reserva; desde Nueva reserva directa se elige un cliente con cotización y se usa (los precios llegan sin escribirlos); "Volver" desde la reserva vuelve a la cotización; el encargado sin Pagos elige al cliente y reserva su cotización; los pasos marcan el actual en la cotización, la reserva y la orden.
+- **E2E:** "Aceptó" la deja en Aceptadas con "Sin fecha" y en "Por reservar", y desde ahí se reserva; volver a pendiente la saca de la lista; desde Nueva reserva se elige un cliente con cotización y se usa (los precios llegan sin escribirlos); "Volver" lleva a la Agenda; el encargado sin Pagos elige al cliente y reserva su cotización; los pasos marcan el actual en la cotización, la reserva y la orden.
 
 ## 10. Orden de trabajo
 1. Parte 1, rama `pedido-31-flujo-de-un-trabajo`: esta especificación, reglas y unitarias, acciones, pantallas, E2E, revisión y PR.
@@ -87,4 +99,4 @@ El dueño dijo que el camino de la cotización a la reserva "no se siente fluido
 | Qué | De quién | Mientras tanto |
 |---|---|---|
 | ¿La parte 2 va incluida o cotizada? | Dueño | Se programa después de la parte 1, con su visto bueno |
-| ¿El encargado sin Cotizaciones puede marcar "Aceptó, sin fecha"? | Dueño | No: cambia el estado de la cotización, va con "Cotizaciones" |
+| ¿El encargado sin Cotizaciones puede marcar "Aceptó"? | Dueño | No: cambia el estado de la cotización, va con "Cotizaciones" |

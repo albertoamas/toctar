@@ -37,7 +37,7 @@ export const VISTAS = { pendientes: "cotizado", aceptadas: "confirmado", rechaza
 export type Vista = keyof typeof VISTAS;
 
 /**
- * Cambios de estado (RF-30): una pendiente se acepta (al reservarla o con "Aceptó, sin fecha", pedido 31), se rechaza o
+ * Cambios de estado (RF-30): una pendiente se acepta (con "Aceptó" o al reservarla, pedido 31), se rechaza o
  * recibe una versión nueva (sigue pendiente); una rechazada vuelve a pendiente. Una aceptada sin reserva activa se
  * rechaza o vuelve a pendiente como una pendiente; con reserva, no cambia desde aquí: si se cancela la reserva, la
  * agenda la pasa a rechazada.

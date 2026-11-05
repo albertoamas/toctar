@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { cn } from "cn";
 import { CalendarIcon } from "lucide-react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
-import { AvisoEnPagina } from "@/componentes/panel/aviso-en-pagina";
+import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Insignia } from "@/componentes/panel/insignia";
@@ -23,7 +23,7 @@ import { reservasDeConsulta } from "@/modulos/agenda/consultas";
 import { pasoDelTrabajo } from "@/modulos/agenda/pasos";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { DatosVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
-import { AceptoSinFecha, MasCotizacion } from "@/modulos/cotizaciones/componentes/estado-cotizacion";
+import { BotonAcepto, MasCotizacion } from "@/modulos/cotizaciones/componentes/estado-cotizacion";
 import { VersionesCotizacion } from "@/modulos/cotizaciones/componentes/versiones-cotizacion";
 import { obtenerCotizacion } from "@/modulos/cotizaciones/consultas";
 import { NOMBRE_ESTADO, NOMBRE_MOTIVO, TONO_ESTADO } from "@/modulos/cotizaciones/reglas";
@@ -33,8 +33,9 @@ export const metadata: Metadata = { title: "Cotización" };
 
 // Pedido 23 (P23-cotizacion-directa.md §5): una cotización con sus versiones y su PDF. Dueño o encargado con
 // "Cotizaciones" (pedido 24, RN-12). Pedido 31 (P31-flujo-de-un-trabajo.md §5): arriba, los pasos del trabajo; el paso
-// siguiente de una pendiente es "Aceptó: reservar" (queda aceptada al reservar, RF-36), con "Aceptó, sin fecha" al lado;
-// el de una aceptada sin fecha, "Reservar". "Nueva versión", "Rechazar" y "Volver a pendiente" van en "Más".
+// siguiente de una pendiente es "Aceptó"; el de una aceptada sin fecha, "Reservar en Agenda" (Cotizaciones cotiza y la
+// Agenda reserva; el botón es un atajo a su formulario, solo para quien ve la Agenda). "Nueva versión", "Rechazar" y
+// "Volver a pendiente" van en "Más".
 export default function PaginaCotizacion({ params, searchParams }: PageProps<"/panel/cotizaciones/[id]">) {
   return (
     <section className="flex flex-col gap-6">
@@ -57,8 +58,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
 
   const vigente = c.versiones.find((v) => v.estado === "enviada") ?? null;
   const pendiente = c.estado === "cotizado";
-  // La versión que se reserva: la vigente de una pendiente o la aceptada de una sin fecha
-  const aReservar = pendiente ? vigente : c.sinFecha ? (c.versiones.find((v) => v.estado === "aceptada") ?? null) : null;
+  // La versión que se reserva: la aceptada de una sin fecha
+  const aReservar = c.sinFecha ? (c.versiones.find((v) => v.estado === "aceptada") ?? null) : null;
   const activa = reservas.find((r) => r.estado !== "cancelado");
   // Sin ver la Agenda no se sabe en qué va su reserva: se queda en "Reservada"
   const paso = pasoDelTrabajo({ cotizacion: c.estado, trabajo: activa?.estado ?? (c.estado === "confirmado" && !c.sinFecha ? "agendado" : null) });
@@ -78,14 +79,14 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
         }
         accion={
           <div className="flex flex-wrap gap-2">
-            {/* El paso siguiente, uno solo: reservar (el cliente aceptó). Una pendiente también puede quedar aceptada sin fecha */}
+            {/* El paso siguiente, uno solo: en una pendiente, "Aceptó"; en una aceptada sin fecha, el atajo a la Agenda */}
             {aReservar && puedeAgendar && (
               <Link href={`/panel/agenda/nueva?cotizacion=${aReservar.id}`} className={cn(buttonVariants())}>
                 <CalendarIcon />
-                {pendiente ? "Aceptó: reservar" : "Reservar"}
+                Reservar en Agenda
               </Link>
             )}
-            {pendiente && vigente && <AceptoSinFecha id={c.id} />}
+            {pendiente && vigente && <BotonAcepto id={c.id} />}
             {/* Como en las demás fichas: escribirle al cliente, al lado del paso siguiente */}
             <a href={enlaceWhatsApp(c.telefono)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
               <IconoWhatsApp />
@@ -104,11 +105,13 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
       </EncabezadoPagina>
       {paso !== null && <PasosTrabajo paso={paso} />}
       {(creada || recienGuardada) && (
-        <AvisoEnPagina>
-          {creada ? "Cotización creada." : `Versión ${recienGuardada!.version} guardada.`}
-          {/* Con el PDF ya generado (por «Generar PDF»), el aviso deja de tener sentido aunque siga en la dirección */}
-          {sinPdf ? " El PDF no se pudo generar: usa «Generar PDF»." : " Comparte el PDF con el cliente."}
-        </AvisoEnPagina>
+        <AvisoFlotante mensaje={`${creada ? "Cotización creada." : `Versión ${recienGuardada!.version} guardada.`}${sinPdf ? "" : " Comparte el PDF con el cliente."}`} />
+      )}
+      {/* Lo que pide hacer algo no es temporal: queda a la vista hasta generarlo (con el PDF ya generado, se va solo) */}
+      {(creada || recienGuardada) && sinPdf && (
+        <p role="status" className="rounded-sm border border-aviso p-3 text-sm">
+          El PDF no se pudo generar: usa «Generar PDF».
+        </p>
       )}
 
       {/* En el celular, primero para quién es; en la computadora, el precio a la izquierda (es lo que decide) y el

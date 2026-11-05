@@ -33,7 +33,7 @@ test("los permisos del encargado: el perfil marca sus casillas, se ajustan y se 
   await casilla().check();
   await expect(perfil("Taller")).toHaveAttribute("aria-pressed", "false");
   await page.getByRole("button", { name: "Crear usuario" }).click();
-  await expect(page.getByRole("status")).toContainText(`Usuario ${nombre} creado`);
+  await expect(page.getByText(`Usuario ${nombre} creado`)).toBeVisible();
 
   // Al abrirlo, lo marcado sigue marcado
   await page.getByRole("link", { name: nombre }).first().click();
@@ -65,7 +65,7 @@ test("el encargado sin permisos solo ve el inicio y no entra a Usuarios", async 
   await page.getByRole("checkbox", { name: /^Agenda/ }).uncheck();
   await page.getByRole("checkbox", { name: /^Órdenes/ }).uncheck();
   await page.getByRole("button", { name: "Crear usuario" }).click();
-  await expect(page.getByRole("status")).toContainText(`Usuario ${nombre} creado`);
+  await expect(page.getByText(`Usuario ${nombre} creado`)).toBeVisible();
 
   const ctx = await browser.newContext(info.project.use);
   const encargado = await ctx.newPage();

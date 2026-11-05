@@ -28,7 +28,7 @@ import { useEspaciosLibres } from "./espacios-libres";
 // HU-30: agendar una reserva (RF-36, RF-37). Las fechas sugieren la entrega con la mayor duración de los servicios
 // (decisión del 20/10: es aproximada y se edita); al cambiarlas se vuelven a pedir los espacios libres (RN-06). El
 // servidor vuelve a mirar todo y la base rechaza un cruce aunque dos personas reserven a la vez.
-// Pulido 10.2: la hora y la nota plegadas (se usan a veces), sin las ayudas que repetían Configuración, y "Agendar" en
+// Pulido 10.2: la hora y la nota plegadas (se usan a veces), sin las ayudas que repetían Configuración, y "Reservar" en
 // PieFormulario: fijo abajo en el celular, con el total al lado en la reserva directa (como en Cotizar).
 
 type Origen =
@@ -115,7 +115,7 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
       {origen.tipo === "directa" && (
         <SeccionFormulario titulo="Servicios" claseContenido="gap-4">
           <LineasServicio opciones={origen.opciones} lineas={lineas} onChange={setLineas} errores={e} />
-          {/* El total, al pie con "Agendar" */}
+          {/* El total, al pie con "Reservar" */}
         </SeccionFormulario>
       )}
 
@@ -226,7 +226,7 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
             </p>
           )}
           <Button type="submit" disabled={enviando || buscando || preparando}>
-            {preparando ? "Preparando foto…" : enviando ? "Agendando…" : "Agendar"}
+            {preparando ? "Preparando foto…" : enviando ? "Reservando…" : "Reservar"}
           </Button>
         </div>
       </PieFormulario>
