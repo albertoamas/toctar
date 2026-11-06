@@ -1,7 +1,7 @@
 # P41 Nueva reserva en pasos — especificación
 
 - **Fase y semana:** cierre de la Entrega 2 · semana 4 (06/11/2026)
-- **Estado:** programada (06/11/2026); los cuatro pasos aprobados el 06/11, con el diseño de Nueva cotización (pedido 40)
+- **Estado:** hecha (06/11/2026, PR #152); los cuatro pasos aprobados el 06/11, con el diseño de Nueva cotización (pedido 40)
 - **Historias:** HU-30 (agendar), HU-38 (reservar un mantenimiento), pedido 31 (Nueva reserva con las cotizaciones del cliente)
 - **Base:** `C3-agenda-pagos.md`, `P31-flujo-de-un-trabajo.md`, `P40-cotizacion-en-pasos.md`, `registro-de-cambios.md` (pedido 41)
 
