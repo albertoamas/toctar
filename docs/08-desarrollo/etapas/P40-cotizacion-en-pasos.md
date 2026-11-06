@@ -1,7 +1,7 @@
 # P40 Nueva cotización en pasos — especificación
 
 - **Fase y semana:** cierre de la Entrega 2 · semana 4 (05/11/2026)
-- **Estado:** programada (05/11/2026); el flujo de la maqueta quedó aprobado, con el diseño de la app
+- **Estado:** hecha (06/11/2026, PR #151); el flujo de la maqueta quedó aprobado, con el diseño de la app
 - **Historias:** HU-25 (armar cotización), pedido 23 (cotización directa)
 - **Base:** `P23-cotizacion-directa.md`, `registro-de-cambios.md` (pedido 40), skill `pantallas-panel` (flujo de un paso)
 

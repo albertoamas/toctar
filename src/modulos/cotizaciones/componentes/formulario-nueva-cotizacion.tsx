@@ -1,11 +1,13 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import { useFocoDePaso } from "@/componentes/panel/foco-de-paso";
 import Link from "next/link";
-import { ArrowLeftRightIcon, SearchIcon } from "lucide-react";
+import { SearchIcon } from "lucide-react";
 import { MensajeError } from "@/componentes/panel/campo";
 import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
+import { ResumenPaso } from "@/componentes/panel/resumen-paso";
 import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
 import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { Button, buttonVariants } from "@/componentes/ui/button";
@@ -69,23 +71,27 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
   const [paso, setPaso] = useState(primerPaso);
   // El paso a la vista, para los que escuchan el historial (sin esperar al próximo dibujo)
   const pasoActual = useRef(primerPaso);
-  // Errores de "Siguiente", y los pasos ya revisados desde el último envío (sus errores de la acción ya no valen)
-  const [locales, setLocales] = useState<Record<string, string>>({});
-  const [revisados, setRevisados] = useState<Set<number>>(new Set());
+  // Errores de "Siguiente", y los pasos ya revisados desde el último envío (sus errores de la acción ya no valen). Atados
+  // al resultado de la acción con que se hicieron: con un envío nuevo dejan de valer solos (reiniciarlos tras el await
+  // se dibujaba antes que el resultado, y volvían un momento los errores viejos)
+  const [locales, setLocales] = useState<{ en: EstadoCliente | null; errores: Record<string, string> }>({ en: null, errores: {} });
+  const [revisados, setRevisados] = useState<{ en: EstadoCliente | null; pasos: Set<number> }>({ en: null, pasos: new Set() });
   // Lo elegido o escrito, para el resumen de arriba: se lee del formulario cada vez que se muestra un paso
   const [resumen, setResumen] = useState<{ cliente?: [string, string]; vehiculo?: { placa: string; detalle: (string | number)[] } }>({});
-  // El foco pedido. Tras un error de la acción, el paso y los errores pueden llegar en dibujos distintos: se espera un
-  // par de dibujos a que el campo con error esté en pantalla, y después se da por puesto
-  const [pedidoFoco, setPedidoFoco] = useState<{ n: number; error: boolean }>({ n: 0, error: false });
-  const focoPuesto = useRef(0);
-  const intentosFoco = useRef(0);
   const errorAlLlegar = useRef(false);
   const formulario = useRef<HTMLFormElement>(null);
 
-  function pedirFoco(error: boolean) {
-    intentosFoco.current = 0;
-    setPedidoFoco((p) => ({ n: p.n + 1, error }));
-  }
+  // Lo que devuelve la acción: los errores de nuevo, y la pantalla al primer paso con uno (como conAviso: al terminar la
+  // acción, no en un efecto). Lo que hace al terminar está más abajo (`alTerminar`): usa el foco, que necesita el
+  // resultado de la acción
+  const alTerminar = useRef<(r: EstadoCliente) => void>(() => {});
+  const [estado, accion, enviando] = useActionState<EstadoCliente, FormData>(async (previo, datos) => {
+    const r = await crearCotizacion(previo, datos);
+    alTerminar.current(r);
+    return r;
+  }, {});
+  // Al cambiar de paso, a su primer campo (no a "Buscar un cliente registrado")
+  const foco = useFocoDePaso(formulario, paso, estado, 'input:not([type="hidden"]), select, textarea, button[role="radio"]');
 
   /** Lo que se ve arriba del paso, con lo que tiene el formulario ahora. */
   function leerResumen() {
@@ -112,7 +118,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
     setPaso(nuevo);
     leerResumen();
     window.scrollTo({ top: 0 });
-    pedirFoco(errorAlLlegar.current);
+    foco.pedir(errorAlLlegar.current);
     errorAlLlegar.current = false;
   }
 
@@ -125,22 +131,18 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
     if (pasos > 0) window.history.go(-pasos);
   }
 
-  // Lo que devuelve la acción: los errores de nuevo, y la pantalla al primer paso con uno (como conAviso: al terminar la
-  // acción, no en un efecto)
-  const [estado, accion, enviando] = useActionState<EstadoCliente, FormData>(async (previo, datos) => {
-    const r = await crearCotizacion(previo, datos);
-    setLocales({});
-    setRevisados(new Set());
-    const conError = primerPasoConError(r.errores ?? {});
-    if (conError !== null) {
+  useEffect(() => {
+    alTerminar.current = (r) => {
+      const conError = primerPasoConError(r.errores ?? {});
+      if (conError === null) return;
+      foco.esperar(r);
       const destino = Math.max(conError, primerPaso);
       if (destino < pasoActual.current) {
         errorAlLlegar.current = true;
         volverA(destino);
-      } else pedirFoco(true);
-    }
-    return r;
-  }, {});
+      } else foco.pedir(true);
+    };
+  });
   const v = estado.valores ?? {};
 
   // Controlados, y su valor viaja en un campo oculto propio: React reinicia el formulario al terminar la acción y el
@@ -165,24 +167,6 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
     );
   }
 
-  // El foco, al cambiar de paso o tras un error: al primer campo con error del paso, o al primero del paso (sin mover la
-  // pantalla, que queda arriba con el indicador y el resumen)
-  useEffect(() => {
-    if (pedidoFoco.n === 0 || focoPuesto.current === pedidoFoco.n) return;
-    const visible = formulario.current?.querySelector<HTMLElement>(`[data-paso="${paso}"]`);
-    const objetivo = pedidoFoco.error
-      ? visible?.querySelector<HTMLElement>('[aria-invalid="true"], [data-invalido]')
-      : visible?.querySelector<HTMLElement>('input:not([type="hidden"]), select, textarea, button[role="radio"]');
-    if (!objetivo) {
-      intentosFoco.current += 1;
-      if (intentosFoco.current > 2) focoPuesto.current = pedidoFoco.n;
-      return;
-    }
-    focoPuesto.current = pedidoFoco.n;
-    if (pedidoFoco.error) objetivo.scrollIntoView({ block: "center" });
-    objetivo.focus({ preventScroll: true });
-  }, [pedidoFoco, paso, estado, locales]);
-
   // El historial: Atrás y Adelante del navegador (o del celular) cambian de paso. Adelante revisa los pasos que salta
   const alCambiarHistoria = useRef<() => void>(() => {});
   useEffect(() => {
@@ -194,7 +178,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
         for (let p = pasoActual.current; p < destino; p++) {
           const errores = erroresDelPaso(p, valores, clienteNuevo);
           if (Object.keys(errores).length === 0) continue;
-          setLocales(errores);
+          setLocales({ en: estado, errores });
           errorAlLlegar.current = true;
           window.history.go(p - destino);
           return;
@@ -213,22 +197,23 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
   function siguiente() {
     const valores = leerValores(new FormData(formulario.current!));
     const errores = erroresDelPaso(paso, valores, clienteNuevo);
-    setLocales(errores);
+    setLocales({ en: estado, errores });
     if (Object.keys(errores).length > 0) {
-      pedirFoco(true);
+      foco.pedir(true);
       return;
     }
-    setRevisados((r) => new Set(r).add(paso));
+    setRevisados((r) => ({ en: estado, pasos: new Set(r.en === estado ? r.pasos : []).add(paso) }));
     window.history.pushState(window.history.state, "", `#${ANCLAS[paso + 1]}`);
     mostrar(paso + 1);
   }
 
   // Los errores que se ven: los de la acción (salvo los de pasos ya revisados de nuevo) y los de "Siguiente". Lo mismo
   // con los datos repetidos: corregido el WhatsApp, ya no se ofrece "Usar a …"
-  const vigente = ([campo]: [string, unknown]) => !revisados.has(pasoDeCampo(campo));
+  const yaRevisados = revisados.en === estado ? revisados.pasos : new Set<number>();
+  const vigente = ([campo]: [string, unknown]) => !yaRevisados.has(pasoDeCampo(campo));
   const vista: EstadoCliente = {
     ...estado,
-    errores: { ...Object.fromEntries(Object.entries(estado.errores ?? {}).filter(vigente)), ...locales },
+    errores: { ...Object.fromEntries(Object.entries(estado.errores ?? {}).filter(vigente)), ...(locales.en === estado ? locales.errores : {}) },
     existentes: Object.fromEntries(Object.entries(estado.existentes ?? {}).filter(vigente)),
   };
   const e = vista.errores ?? {};
@@ -260,15 +245,15 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
 
       {/* Lo ya elegido, arriba, con "Cambiar" para volver a su paso */}
       {paso > PASO_CLIENTE && datosCliente && (
-        <Resumen id="resumen-cliente" titulo="Cliente" cambiar={clienteNuevo ? () => volverA(PASO_CLIENTE) : "/panel/cotizaciones/nueva"}>
+        <ResumenPaso id="resumen-cliente" titulo="Cliente" href={clienteNuevo ? undefined : "/panel/cotizaciones/nueva"} alCambiar={() => volverA(PASO_CLIENTE)}>
           <span className="font-semibold">{datosCliente[0]}</span>
           <span className="text-tinta-suave">{datosCliente[1]}</span>
-        </Resumen>
+        </ResumenPaso>
       )}
       {paso > PASO_VEHICULO && resumen.vehiculo && (
-        <Resumen id="resumen-vehiculo" titulo="Vehículo" cambiar={() => volverA(PASO_VEHICULO)}>
+        <ResumenPaso id="resumen-vehiculo" titulo="Vehículo" alCambiar={() => volverA(PASO_VEHICULO)}>
           <DatosVehiculo placa={resumen.vehiculo.placa} detalle={resumen.vehiculo.detalle} tamano={tamanos.find((t) => t.id === tamanoId)?.nombre ?? ""} />
-        </Resumen>
+        </ResumenPaso>
       )}
 
       <div data-paso={PASO_CLIENTE} hidden={paso !== PASO_CLIENTE} className="flex flex-col gap-3">
@@ -359,32 +344,6 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
         </div>
       </PieFormulario>
     </form>
-  );
-}
-
-/** Lo ya elegido en un paso, con "Cambiar": la misma cabecera y tarjeta que las fichas. */
-function Resumen({ id, titulo, cambiar, children }: { id: string; titulo: string; cambiar: (() => void) | "/panel/cotizaciones/nueva"; children: React.ReactNode }) {
-  const contenido = (
-    <>
-      <ArrowLeftRightIcon />
-      Cambiar
-    </>
-  );
-  return (
-    <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-3">
-      <CabeceraSeccion id={id} titulo={titulo}>
-        {typeof cambiar === "string" ? (
-          <Link href={cambiar} className={buttonVariants({ variant: "ghost" })} aria-label={`Cambiar ${titulo.toLowerCase()}`}>
-            {contenido}
-          </Link>
-        ) : (
-          <Button type="button" variant="ghost" onClick={cambiar} aria-label={`Cambiar ${titulo.toLowerCase()}`}>
-            {contenido}
-          </Button>
-        )}
-      </CabeceraSeccion>
-      <p className="flex flex-col tt-tarjeta-panel p-4">{children}</p>
-    </section>
   );
 }
 

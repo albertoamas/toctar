@@ -185,6 +185,7 @@
 | 30.3 | Registro el adelanto con el monto sugerido, editable (RN-04); no se asigna un técnico (pedido 32) | E2E `hu-30` "desde la cotización: …el adelanto registrado" | ✅ |
 | 30.4 | El encargado con Agenda y sin Pagos agenda sin ver montos; sin Agenda no entra | E2E `hu-30` "el encargado con Agenda sin Pagos agenda sin montos ni adelanto; sin Agenda no entra" | ✅ |
 | 30.5 | Desde el tablero, el día y el espacio llegan elegidos y "Cambiar" cliente no los pierde | E2E `hu-30` "«Cambiar» vuelve a elegir el cliente sin perder el día y el espacio…" | ✅ (agregado) |
+| 30.6 | Nueva reserva va en cuatro pasos (Cliente, Vehículo, Servicios y Fecha y adelanto) con lo elegido arriba y "Cambiar"; con un solo vehículo, una cotización o un mantenimiento con precio se salta lo ya elegido. "Siguiente" revisa los servicios, y Atrás, también el del celular, vuelve al paso anterior sin perder lo elegido ni reservar (pedido 41) | E2E `hu-30` "reserva directa…" y "con varios vehículos…"; E2E `p31-flujo-trabajo` "Nueva reserva ofrece las cotizaciones…"; unitarias `reserva-pasos` | ✅ |
 
 ## HU-31 Reprogramar o cancelar
 

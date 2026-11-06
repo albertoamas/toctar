@@ -59,6 +59,9 @@ async function consultaCotizada(info: TestInfo, n: number): Promise<{ consultaId
 }
 
 const espacio = (page: Page) => page.getByLabel("Espacio", { exact: true });
+/** El paso a la vista de Nueva reserva (pedido 41): el marcado en el indicador. */
+const pasoActual = (page: Page) => page.getByRole("navigation", { name: "Pasos de la reserva" }).locator('[aria-current="step"]');
+const siguiente = (page: Page) => page.getByRole("button", { name: "Siguiente: fecha y adelanto" });
 
 test("desde la cotización: la versión y la cotización quedan aceptadas, las líneas copiadas y el adelanto registrado", async ({ page }, info) => {
   const { consultaId, cotizacionId } = await consultaCotizada(info, 1);
@@ -211,10 +214,33 @@ test("reserva directa: cliente y vehículo registrados, servicio del catálogo c
   await expect(elegir.getByRole("link")).toHaveCount(1);
   await elegir.getByRole("link", { name: new RegExp(`Directa ${s}`) }).click();
   await expect(page).toHaveURL(new RegExp(`cliente=${clienteId}`));
-  // Con un solo vehículo, no hace falta elegirlo
+  // Con un solo vehículo, no hace falta elegirlo: pasa directo a los servicios (pedido 41)
+  await expect(pasoActual(page)).toHaveText("Servicios");
+  await expect(page.getByRole("region", { name: "Vehículo" })).toContainText(`DI30${s}6`);
+  // Sin servicios, "Siguiente" no avanza y dice qué falta
+  await siguiente(page).click();
+  await expect(page.getByText("Agrega al menos un servicio.")).toBeVisible();
+  await expect(pasoActual(page)).toHaveText("Servicios");
   await page.getByRole("button", { name: "Agregar servicio" }).click();
   await page.getByLabel("Servicio 1", { exact: true }).selectOption({ label: nombre });
   await expect(page.getByLabel("Precio del servicio 1")).toHaveValue("900");
+  // "Siguiente" no reserva: con el botón reusado, se volvía "Reservar" en el mismo toque (como en la cotización)
+  await siguiente(page).click();
+  await expect(pasoActual(page)).toHaveText("Fecha y adelanto");
+  await expect(page).toHaveURL(/#fecha$/);
+  await expect(page.getByRole("region", { name: "Servicios" })).toContainText("900 Bs");
+  const [{ reservas }] = await consultar<{ reservas: number }>("select count(*)::int as reservas from trabajo where cliente_id = $1", [clienteId]);
+  expect(reservas).toBe(0);
+  // Atrás, el del navegador y el de la pantalla, vuelve a los servicios sin perder lo elegido
+  await page.goBack();
+  await expect(pasoActual(page)).toHaveText("Servicios");
+  await expect(page.getByLabel("Precio del servicio 1")).toHaveValue("900");
+  await page.goForward();
+  await expect(pasoActual(page)).toHaveText("Fecha y adelanto");
+  await page.getByRole("button", { name: "Atrás" }).click();
+  await expect(pasoActual(page)).toHaveText("Servicios");
+  await siguiente(page).click();
+  await expect(pasoActual(page)).toHaveText("Fecha y adelanto");
   await page.getByLabel("Ingresa el").fill(dia);
   await expect(espacio(page)).toBeEnabled();
   await espacio(page).selectOption({ index: 1 });
@@ -268,6 +294,25 @@ test("«Cambiar» vuelve a elegir el cliente sin perder el día y el espacio que
   const clienteId = await crearClienteEnBase({ nombre: `Cambia cliente ${s}`, telefono: telefono(info, 9), placa: `CC30${s}9` });
   await ingresarComoDueno(page);
   await page.goto(`/panel/agenda/nueva?fecha=2030-01-02&espacio=1&cliente=${clienteId}`);
-  await expect(page.getByRole("link", { name: "Cambiar" })).toHaveAttribute("href", "/panel/agenda/nueva?fecha=2030-01-02&espacio=1");
+  await expect(page.getByRole("link", { name: "Cambiar cliente" })).toHaveAttribute("href", "/panel/agenda/nueva?fecha=2030-01-02&espacio=1");
+});
+
+test("con varios vehículos se elige uno en su paso, y «Cambiar vehículo» vuelve a él (pedido 41)", async ({ page }, info) => {
+  const s = sufijo(info);
+  const clienteId = await crearClienteEnBase({ nombre: `Dos autos ${s}`, telefono: telefono(info, 10), placa: `DA30${s}0` });
+  const [{ id: segundo }] = await consultar<{ id: number }>(
+    "insert into vehiculo (cliente_id, placa, tamano_id, created_by) select cliente_id, $2, tamano_id, created_by from vehiculo where cliente_id = $1 returning id",
+    [clienteId, `DB30${s}0`],
+  );
+  await ingresarComoDueno(page);
+  await page.goto("/panel/agenda/nueva");
+  await expect(pasoActual(page)).toHaveText("Cliente");
+  await page.goto(`/panel/agenda/nueva?cliente=${clienteId}`);
+  await expect(pasoActual(page)).toHaveText("Vehículo");
+  await page.getByRole("list", { name: "Elegir vehículo" }).getByRole("link", { name: new RegExp(`DB30${s}0`) }).click();
+  await expect(page).toHaveURL(new RegExp(`vehiculo=${segundo}$`));
+  await expect(pasoActual(page)).toHaveText("Servicios");
+  await expect(page.getByRole("region", { name: "Vehículo" })).toContainText(`DB30${s}0`);
+  await expect(page.getByRole("link", { name: "Cambiar vehículo" })).toHaveAttribute("href", `/panel/agenda/nueva?cliente=${clienteId}`);
 });
 
