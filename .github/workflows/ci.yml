@@ -149,8 +149,11 @@ jobs:
       - name: Instalar el navegador
         if: steps.cache-navegador.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium webkit
+      # Lo normal son 30 s. A veces el servidor de paquetes de Ubuntu entrega a menos de 250 kB/s y esto tardaba hasta 44 min:
+      # falla antes y se repite la corrida, que toma otra máquina
       - name: Dependencias del navegador
         if: steps.cache-navegador.outputs.cache-hit == 'true'
+        timeout-minutes: 10
         run: npx playwright install-deps chromium webkit
       - name: Buckets de almacenamiento
         run: node scripts/preparar-almacenamiento.mjs
