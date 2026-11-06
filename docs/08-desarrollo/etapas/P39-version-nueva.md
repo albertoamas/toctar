@@ -1,7 +1,7 @@
 # P39 Aviso de versión nueva — especificación
 
 - **Fase y semana:** cierre de la Entrega 2 · semana 4 (05/11/2026)
-- **Estado:** programada (05/11/2026), con la maqueta del aviso aprobada el mismo día
+- **Estado:** cerrada (05/11/2026, PR #148), con la maqueta del aviso aprobada el mismo día
 - **Historias:** HU-06 (app instalable)
 - **Base:** RNF-03, `registro-de-cambios.md` (pedido 39)
 

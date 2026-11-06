@@ -1,7 +1,7 @@
 # P38 La ubicación con la ficha de Google Maps — especificación
 
 - **Fase y semana:** cierre de la Entrega 2 · semana 4 (05/11/2026)
-- **Estado:** programada (05/11/2026), con la maqueta de Contacto aprobada el mismo día
+- **Estado:** cerrada (05/11/2026, PR #143), con la maqueta de Contacto aprobada el mismo día
 - **Historias:** HU-04 (datos del negocio), HU-14 (Contacto), HU-18 (datos para Google)
 - **Base:** RF-09, RNF-02, `registro-de-cambios.md` (pedido 38), `10-lanzamiento/perfil-de-google.md`
 
