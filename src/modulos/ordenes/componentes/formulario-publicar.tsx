@@ -51,7 +51,7 @@ export function FormularioPublicar({ id, despues, antes, servicios }: Props) {
         </Selector>
       </Campo>
 
-      <Campo id="descripcion" etiqueta="Descripción (opcional)" error={e.descripcion} ayuda='La leen Google y los lectores de pantalla. Ejemplo: "Pulido y nano cerámico 5 años en una Hilux".'>
+      <Campo id="descripcion" etiqueta="Descripción" opcional error={e.descripcion} ayuda='La leen Google y los lectores de pantalla. Ejemplo: "Pulido y nano cerámico 5 años en una Hilux".'>
         <Input id="descripcion" name="descripcion" autoComplete="off" defaultValue={v.descripcion} aria-invalid={!!e.descripcion} aria-describedby={e.descripcion ? "descripcion-error" : "descripcion-ayuda"} />
       </Campo>
 

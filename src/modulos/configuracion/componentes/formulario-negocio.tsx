@@ -62,7 +62,7 @@ export function FormularioNegocio(props: Props) {
             />
           </div>
         </Campo>
-        <Campo id="correo" etiqueta="Correo" error={e.correo}>
+        <Campo id="correo" etiqueta="Correo" opcional error={e.correo}>
           <Input id="correo" name="correo" type="email" autoCapitalize="none" spellCheck={false} defaultValue={v.correo} aria-invalid={!!e.correo} aria-describedby={describir("correo")} />
         </Campo>
       </SeccionFormulario>
@@ -132,17 +132,17 @@ export function FormularioNegocio(props: Props) {
 
       <SeccionFormulario titulo="Redes sociales" descripcion="Copia el enlace desde la página del negocio en cada red. Las que queden vacías no se muestran.">
         {REDES.map((red) => (
-          <Campo key={red} id={red} etiqueta={NOMBRE_RED[red]} error={e[red]}>
+          <Campo key={red} id={red} etiqueta={NOMBRE_RED[red]} opcional error={e[red]}>
             <Input id={red} name={red} type="url" autoCapitalize="none" spellCheck={false} placeholder={`https://www.${red}.com/…`} defaultValue={v[red]} aria-invalid={!!e[red]} aria-describedby={describir(red)} />
           </Campo>
         ))}
       </SeccionFormulario>
 
-      <SeccionFormulario titulo="Datos para facturar" descripcion="Opcionales. Salen en los documentos.">
-        <Campo id="nit" etiqueta="NIT" error={e.nit}>
+      <SeccionFormulario titulo="Datos para facturar" descripcion="Salen en los documentos.">
+        <Campo id="nit" etiqueta="NIT" opcional error={e.nit}>
           <Input id="nit" name="nit" inputMode="numeric" defaultValue={v.nit} aria-invalid={!!e.nit} aria-describedby={describir("nit")} className="max-w-60" />
         </Campo>
-        <Campo id="razonSocial" etiqueta="Razón social" error={e.razonSocial}>
+        <Campo id="razonSocial" etiqueta="Razón social" opcional error={e.razonSocial}>
           <Input id="razonSocial" name="razonSocial" defaultValue={v.razonSocial} aria-invalid={!!e.razonSocial} aria-describedby={describir("razonSocial")} />
         </Campo>
       </SeccionFormulario>

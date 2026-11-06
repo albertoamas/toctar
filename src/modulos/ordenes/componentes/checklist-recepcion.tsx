@@ -213,7 +213,7 @@ function FormularioDetalle({ trabajoId, parteId, detalle }: { trabajoId: number;
         </RadioGroup>
         {e.tipo && <MensajeError id="tipo-error">{e.tipo}</MensajeError>}
       </div>
-      <Campo id="nota" etiqueta="Nota" error={e.nota} ayuda={tipo === "otro" ? "Con «Otro», cuenta qué es." : "Dónde y cómo es. Opcional."}>
+      <Campo id="nota" etiqueta="Nota" opcional={tipo !== "otro"} error={e.nota} ayuda={tipo === "otro" ? "Con «Otro», cuenta qué es." : "Dónde y cómo es. Opcional."}>
         <Textarea id="nota" name="nota" rows={2} value={nota} onChange={(ev) => setNota(ev.target.value)} aria-invalid={!!e.nota} aria-describedby={e.nota ? "nota-error" : "nota-ayuda"} />
       </Campo>
       <div className="flex flex-col gap-2">

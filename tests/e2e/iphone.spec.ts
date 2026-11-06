@@ -42,8 +42,10 @@ const PNG_ANCHO = (() => {
 
 /** Cada tarjeta de formulario: su título, adentro del borde de arriba (no encima) y el primer campo, debajo del título. */
 async function titulosAdentro(page: Page) {
-  const tarjetas = page.locator("fieldset.tt-seccion-formulario");
-  expect(await tarjetas.count()).toBeGreaterThan(0);
+  // Las de la pantalla: en un flujo en pasos, las de los otros pasos están escondidas (pedido 40)
+  const tarjetas = page.locator("fieldset.tt-seccion-formulario:visible");
+  // Se espera a que se vea la primera: contar no espera, y en WebKit la página podía no estar dibujada todavía
+  await expect(tarjetas.first()).toBeVisible();
   for (const tarjeta of await tarjetas.all()) {
     const leyenda = tarjeta.locator(":scope > legend");
     if (await leyenda.evaluate((l) => l.classList.contains("sr-only"))) continue;
@@ -82,6 +84,13 @@ test("en Nueva cotización con un cliente nuevo los títulos van adentro de su t
   await page.goto("/panel/cotizaciones/nueva");
   await page.getByRole("link", { name: "Cliente nuevo" }).click();
   await expect(page.getByRole("heading", { name: "Cliente nuevo" })).toBeVisible();
+  await titulosAdentro(page);
+  expect(await anchoDePagina(page)).toBeLessThanOrEqual(page.viewportSize()!.width);
+  // El paso del vehículo, en su propia pantalla (pedido 40)
+  await page.getByLabel("Nombre", { exact: true }).fill("Cliente iPhone");
+  await page.getByRole("textbox", { name: "WhatsApp" }).fill("71234567");
+  await page.getByRole("button", { name: "Siguiente: vehículo" }).click();
+  await expect(page.getByRole("group", { name: "Vehículo nuevo" })).toBeVisible();
   await titulosAdentro(page);
   expect(await anchoDePagina(page)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });

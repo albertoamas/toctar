@@ -104,7 +104,7 @@
 | 23.2 | Muestra sus cotizaciones, sus reservas y órdenes y, a quien ve pagos, lo que debe | E2E `hu-25` "desde la ficha del cliente: …la cotización queda en su ficha" y `hu-32` (la ficha dice "Debe 300 Bs" con una entregada con saldo, y nada con una agendada) | ✅ |
 | 23.3 | Desde la ficha inicio una cotización o una reserva, o abro su WhatsApp | E2E `hu-25` (desde la ficha, el cliente llega elegido) y `hu-30` (reserva directa) | ✅ |
 | 23.4 | Un cliente se desactiva desde "Más", con confirmación, y se reactiva | E2E `hu-23` "un cliente se desactiva desde «Más» con confirmación…" | ✅ (agregado) |
-| 23.5 | Guardar un vehículo y reabrirlo enseguida trae lo guardado, con el color | A mano en el celular, también con la conexión lenta. La E2E `hu-23` lo revisa: falla de vez en cuando (el color vuelve vacío) y guarda el registro completo del primer fallo para encontrar la causa | ⏳ En investigación |
+| 23.7 | Guardar un vehículo y reabrirlo enseguida trae lo guardado, con el color | A mano en el celular, también con la conexión lenta. La E2E `hu-23` lo revisa: falla de vez en cuando (el color vuelve vacío) y guarda el registro completo del primer fallo para encontrar la causa | ⏳ En investigación |
 | 23.5 | Sus mantenimientos: agregar uno anterior al sistema, cambiar el plan y terminarlo | E2E `hu-38` "en la ficha del cliente: agregar un mantenimiento anterior al sistema…" | ✅ (agregado, pedidos 17 y 21) |
 | 23.6 | Un vehículo que cambió de dueño pasa al comprador con su plan de mantenimiento; se cierran las cotizaciones abiertas del anterior y lo suyo queda a su nombre; con una reserva activa no se pasa (pedido 37) | E2E `p37-cambio-de-dueno` (desde la edición, desde la placa repetida y frenado con una reserva) | ✅ |
 
@@ -116,17 +116,18 @@
 
 ## HU-25 Armar cotización
 
-> Como dueño o encargado con el permiso "Cotizaciones", quiero armar una cotización en una sola pantalla con precios sugeridos, para cotizar rápido sin equivocarme.
+> Como dueño o encargado con el permiso "Cotizaciones", quiero armar una cotización en tres pasos con precios sugeridos, para cotizar rápido sin equivocarme.
 
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
-| 25.1 | Elijo al cliente o lo registro ahí mismo, con su vehículo, en una sola pantalla | E2E `hu-25` "cliente nuevo en una sola pantalla…" y "un WhatsApp repetido avisa y ofrece cotizarle a ese cliente…" | ⚠️ Pedido 23 (antes, consulta y después cotización) |
+| 25.1 | Elijo al cliente o lo registro ahí mismo, con su vehículo, en tres pasos (Cliente, Vehículo y Servicios y precio, pedido 40) | E2E `hu-25` "cliente nuevo en tres pasos…" y "un WhatsApp repetido avisa y ofrece cotizarle a ese cliente…" | ⚠️ Pedido 23 (antes, consulta y después cotización) |
 | 25.2 | Agrego servicios y variantes; el precio se sugiere por el tamaño del vehículo y lo puedo cambiar | E2E `hu-25` "cliente nuevo…: …los servicios con el precio del tamaño…"; unitarias `cotizaciones` | ✅ |
 | 25.3 | Agrego descuento; se calculan el total y el adelanto sugerido. El descuento no pasa el subtotal ni el adelanto el total | E2E `hu-25` "el descuento no pasa el subtotal, el adelanto no pasa el total…"; unitarias `cotizaciones` | ✅ |
 | 25.4 | Indico cómo se cotizó: en persona o por fotos; por fotos es un estimado y el PDF lo dice (RN-03) | E2E `hu-25` "…y por fotos" y `hu-26`; unitarias `pdf-cotizacion` | ✅ |
 | 25.5 | La validez se sugiere desde Configuración y no puede ser anterior a hoy | E2E `hu-25` "…la validez no es anterior a hoy"; `hu-05` (el parámetro) | ✅ |
 | 25.6 | Cotizan el dueño y el encargado con "Cotizaciones"; el servidor rechaza a los demás (RN-01) | E2E `hu-25` "pedido 24: el encargado con Cotizaciones cotiza y ve los montos; sin el permiso no entra; el perfil Taller tampoco"; unitarias `permisos` | ⚠️ Pedido 24 (antes, solo el dueño) |
 | 25.7 | Un cambio a una cotización enviada crea una versión nueva con el mismo número; la anterior no cambia (RN-02) | E2E `hu-25` "nueva versión: el mismo número, la anterior queda reemplazada…" | ✅ |
+| 25.8 | Cada paso se revisa al seguir; si al crear hay un error (por ejemplo, un WhatsApp repetido), la pantalla vuelve a su paso con el foco en el campo. Atrás, también el del celular, vuelve al paso anterior sin perder lo escrito, y nada se registra hasta crear (pedido 40) | E2E `hu-25` "un WhatsApp repetido…" y "Atrás vuelve al paso anterior…" | ✅ |
 
 ## HU-26 PDF de la cotización
 

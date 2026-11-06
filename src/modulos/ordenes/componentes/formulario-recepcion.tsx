@@ -25,7 +25,7 @@ export function FormularioRecepcion({ trabajoId }: { trabajoId: number }) {
     <form ref={formulario} action={accion} className="tt-formulario-panel flex flex-col gap-5" noValidate aria-label="Recibir vehículo">
       <input type="hidden" name="id" value={trabajoId} />
       {estado.mensaje && !estado.ok && <MensajeError id="recepcion-error">{estado.mensaje}</MensajeError>}
-      <Campo id="observaciones" etiqueta="Observaciones" error={e.observaciones} ayuda="Lo que no está en el checklist: objetos que deja el cliente, lo que pidió…">
+      <Campo id="observaciones" etiqueta="Observaciones" opcional error={e.observaciones} ayuda="Lo que no está en el checklist: objetos que deja el cliente, lo que pidió…">
         <Textarea
           id="observaciones"
           name="observaciones"

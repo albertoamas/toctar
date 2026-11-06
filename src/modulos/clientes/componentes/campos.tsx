@@ -116,18 +116,18 @@ function MasDatosCliente({ estado, iniciales = {} }: PropsCampos) {
   const describir = (campo: string, ayuda = false) => (e[campo] ? `${campo}-error` : ayuda ? `${campo}-ayuda` : undefined);
   return (
     <>
-      <Campo id="correo" etiqueta="Correo" error={e.correo}>
+      <Campo id="correo" etiqueta="Correo" opcional error={e.correo}>
         <Input id="correo" name="correo" type="email" autoCapitalize="none" spellCheck={false} defaultValue={v.correo} aria-invalid={!!e.correo} aria-describedby={describir("correo")} />
       </Campo>
       <div className="grid gap-6 sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)]">
-        <Campo id="nit" etiqueta="NIT" error={e.nit}>
+        <Campo id="nit" etiqueta="NIT" opcional error={e.nit}>
           <Input id="nit" name="nit" inputMode="numeric" autoComplete="off" defaultValue={v.nit} aria-invalid={!!e.nit} aria-describedby={describir("nit")} />
         </Campo>
-        <Campo id="razonSocial" etiqueta="Razón social" error={e.razonSocial}>
+        <Campo id="razonSocial" etiqueta="Razón social" opcional error={e.razonSocial}>
           <Input id="razonSocial" name="razonSocial" autoComplete="off" defaultValue={v.razonSocial} aria-invalid={!!e.razonSocial} aria-describedby={describir("razonSocial")} />
         </Campo>
       </div>
-      <Campo id="notas" etiqueta="Notas" error={e.notas} ayuda="Por ejemplo, cómo prefiere que lo contacten.">
+      <Campo id="notas" etiqueta="Notas" opcional error={e.notas} ayuda="Por ejemplo, cómo prefiere que lo contacten.">
         <Textarea id="notas" name="notas" rows={2} defaultValue={v.notas} aria-invalid={!!e.notas} aria-describedby={describir("notas", true)} />
       </Campo>
     </>
@@ -148,16 +148,16 @@ export function CamposVehiculo({ estado, iniciales = {}, prefijo = "", compacto,
   // Marca, modelo, año y color: en la grilla, o plegados detrás de "Agregar …" en el alta
   const opcionales = !compacto && (
     <>
-      <Campo id={n("marca")} etiqueta="Marca" error={e[n("marca")]}>
+      <Campo id={n("marca")} etiqueta="Marca" opcional error={e[n("marca")]}>
         <Input id={n("marca")} name={n("marca")} autoComplete="off" defaultValue={v[n("marca")]} aria-invalid={!!e[n("marca")]} aria-describedby={describir("marca")} />
       </Campo>
-      <Campo id={n("modelo")} etiqueta="Modelo" error={e[n("modelo")]}>
+      <Campo id={n("modelo")} etiqueta="Modelo" opcional error={e[n("modelo")]}>
         <Input id={n("modelo")} name={n("modelo")} autoComplete="off" defaultValue={v[n("modelo")]} aria-invalid={!!e[n("modelo")]} aria-describedby={describir("modelo")} />
       </Campo>
-      <Campo id={n("anio")} etiqueta="Año" error={e[n("anio")]}>
+      <Campo id={n("anio")} etiqueta="Año" opcional error={e[n("anio")]}>
         <Input id={n("anio")} name={n("anio")} inputMode="numeric" autoComplete="off" defaultValue={v[n("anio")]} aria-invalid={!!e[n("anio")]} aria-describedby={describir("anio")} className="max-w-28" />
       </Campo>
-      <Campo id={n("color")} etiqueta="Color" error={e[n("color")]}>
+      <Campo id={n("color")} etiqueta="Color" opcional error={e[n("color")]}>
         <Input id={n("color")} name={n("color")} autoComplete="off" defaultValue={v[n("color")]} aria-invalid={!!e[n("color")]} aria-describedby={describir("color")} />
       </Campo>
     </>

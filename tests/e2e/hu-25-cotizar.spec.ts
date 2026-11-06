@@ -43,41 +43,73 @@ async function elegir(page: Page, i: number, nombre: string, variante: string) {
 }
 const precio = (page: Page, i: number) => page.getByLabel(`Precio del servicio ${i}`);
 const crear = (page: Page) => page.getByRole("button", { name: "Crear cotización" }).click();
+/** Pedido 40: con el cliente ya elegido se empieza en el vehículo; el suyo (si tiene uno) ya va marcado. */
+const aServicios = (page: Page) => page.getByRole("button", { name: "Siguiente: servicios" }).click();
+const aVehiculo = (page: Page) => page.getByRole("button", { name: "Siguiente: vehículo" }).click();
+/** El paso en que está la pantalla, como lo dice el indicador. */
+const pasoActual = (page: Page) => page.getByRole("navigation", { name: "Pasos de la cotización" }).locator('[aria-current="step"]');
 const idDeLaPagina = (page: Page) => Number(new URL(page.url()).pathname.split("/")[3]);
 
-test("cliente nuevo en una sola pantalla: su vehículo, los servicios con el precio del tamaño y por fotos", async ({ page }, info) => {
+test("cliente nuevo en tres pasos: sus datos completos, su vehículo, y los servicios con el precio del tamaño", async ({ page }, info) => {
   const s = sufijo(info);
   const nombre = await crearServicioConPrecios(info);
   await ingresarComoDueno(page);
   await page.goto("/panel/cotizaciones");
   await page.getByRole("link", { name: "Nueva cotización" }).click();
+  // Paso 1: el cliente; buscarlo o uno nuevo
+  await expect(pasoActual(page)).toContainText("Cliente");
   await page.getByRole("link", { name: "Cliente nuevo" }).click();
   await expect(page.getByRole("heading", { name: "Cliente nuevo" })).toBeVisible();
-  // Sin el tamaño del vehículo no hay precio sugerido: los servicios esperan
-  await expect(page.getByText("Elige el vehículo (o su tamaño) para ver los servicios con su precio.")).toBeVisible();
+  await expect(pasoActual(page)).toContainText("Cliente");
 
-  // Vacío: los errores del cliente, el vehículo y la cotización juntos; el foco, al primero
-  await crear(page);
+  // Vacío: los errores del cliente, sin pasar al vehículo; el foco, al primero
+  await aVehiculo(page);
   await expect(page.getByText("Escribe el nombre.")).toBeVisible();
-  await expect(page.getByText("Escribe la placa.")).toBeVisible();
-  await expect(page.getByText("Elige cómo se cotizó.")).toBeVisible();
-  await expect(page.getByText("Agrega al menos un servicio.")).toBeVisible();
   await expect(page.getByLabel("Nombre", { exact: true })).toBeFocused();
-
+  await expect(pasoActual(page)).toContainText("Cliente");
+  // Completo: también correo, NIT y notas
   await page.getByLabel("Nombre", { exact: true }).fill(`Nuevo cotizado ${s}`);
   await page.getByRole("textbox", { name: "WhatsApp" }).fill(local(info, 1));
+  await page.getByText("Agregar correo, NIT y notas").click();
+  await page.getByLabel("Correo").fill(`nuevo${s.toLowerCase()}@ejemplo.com`);
+  await page.getByLabel("NIT").fill("1234567");
+  await aVehiculo(page);
+
+  // Paso 2: el vehículo, con todo a la vista; arriba, el cliente
+  await expect(pasoActual(page)).toContainText("Vehículo");
+  await expect(page.getByRole("region", { name: "Cliente" })).toContainText(`Nuevo cotizado ${s}`);
+  await aServicios(page);
+  await expect(page.getByText("Escribe la placa.")).toBeVisible();
+  await expect(page.getByLabel("Placa", { exact: true })).toBeFocused();
   await page.getByLabel("Placa", { exact: true }).fill(`CN25${s}1`);
   await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
-  // Con el tamaño, los servicios con su precio sugerido
+  await page.getByLabel("Marca").fill("Nissan");
+  await page.getByLabel("Color").fill("Negro");
+  await aServicios(page);
+
+  // Paso 3: los servicios; arriba, el cliente y el vehículo
+  await expect(pasoActual(page)).toContainText("Servicios y precio");
+  await expect(page.getByRole("region", { name: "Vehículo" })).toContainText(`CN25${s}1`);
+  // "Siguiente" no envía: antes, el mismo botón pasaba a "Crear cotización" en el mismo toque y la mandaba vacía
+  await page.waitForTimeout(500);
+  await expect(page.getByText("Agrega al menos un servicio.")).toHaveCount(0);
+  await crear(page);
+  await expect(page.getByText("Elige cómo se cotizó.")).toBeVisible();
+  await expect(page.getByText("Agrega al menos un servicio.")).toBeVisible();
+  await expect(pasoActual(page)).toContainText("Servicios y precio");
   await page.getByRole("button", { name: "Agregar servicio" }).click();
   await elegir(page, 1, nombre, "Con precio");
   await expect(precio(page, 1)).toHaveValue("450");
   await expect(page.getByText("Precio sugerido: 450 Bs")).toBeVisible();
-  // Otro tamaño, otro precio sugerido: este no tiene, y vuelve al cambiar de nuevo
+  // Otro tamaño, otro precio sugerido: este no tiene, y vuelve al cambiar de nuevo (desde "Cambiar" del vehículo)
+  await page.getByRole("button", { name: "Cambiar vehículo" }).click();
   await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 2 });
+  await aServicios(page);
   await expect(precio(page, 1)).toHaveValue("");
   await expect(page.getByText("Sin precio en el catálogo para este tamaño: escribe el precio")).toBeVisible();
+  await page.getByRole("button", { name: "Cambiar vehículo" }).click();
   await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
+  await aServicios(page);
   await expect(precio(page, 1)).toHaveValue("450");
 
   await page.getByRole("button", { name: "Agregar servicio" }).click();
@@ -122,6 +154,12 @@ test("cliente nuevo en una sola pantalla: su vehículo, los servicios con el pre
   );
   expect(registro.accion).toBe("crear");
 
+  const [registrado] = await consultar<{ correo: string; nit: string; marca: string; color: string }>(
+    "select cl.correo, cl.nit, v.marca, v.color from consulta q join cliente cl on cl.id = q.cliente_id join vehiculo v on v.id = q.vehiculo_id where q.id = $1",
+    [id],
+  );
+  expect(registrado).toEqual({ correo: `nuevo${s.toLowerCase()}@ejemplo.com`, nit: "1234567", marca: "Nissan", color: "Negro" });
+
   // El cliente quedó registrado, con su vehículo y la cotización en su ficha
   await page.getByRole("link", { name: "Ver ficha del cliente" }).click();
   await expect(page.getByRole("list", { name: "Vehículos", exact: true })).toContainText(`CN25${s}1`);
@@ -136,16 +174,23 @@ test("un WhatsApp repetido avisa y ofrece cotizarle a ese cliente; lo escrito se
   await page.goto("/panel/cotizaciones/nueva?nuevo=1", { waitUntil: "networkidle" });
   await page.getByLabel("Nombre", { exact: true }).fill(`Repetido ${s}`);
   await page.getByRole("textbox", { name: "WhatsApp" }).fill(local(info, 2));
+  await aVehiculo(page);
   await page.getByLabel("Placa", { exact: true }).fill(`CR25${s}1`);
   await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
+  await aServicios(page);
   await page.getByRole("button", { name: "Agregar servicio" }).click();
   await elegir(page, 1, nombre, "Con precio");
   await page.getByRole("radio", { name: "En persona" }).check();
   await crear(page);
+  // El error es del cliente: la pantalla vuelve a su paso, con el foco en el WhatsApp
+  await expect(pasoActual(page)).toContainText("Cliente");
   await expect(page.getByText(`Ese número ya es de Ya registrado ${s}.`)).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "WhatsApp" })).toBeFocused();
   await expect(page.getByRole("link", { name: `Usar a Ya registrado ${s}` })).toHaveAttribute("href", `/panel/cotizaciones/nueva?cliente=${existente}`);
-  // Lo escrito se conserva tras el error: el tamaño, los servicios y cómo se cotizó
+  // Lo escrito se conserva tras el error: el vehículo, los servicios y cómo se cotizó
+  await aVehiculo(page);
   await expect(page.getByLabel("Tamaño", { exact: true })).not.toHaveValue("");
+  await aServicios(page);
   await expect(precio(page, 1)).toHaveValue("450");
   await expect(page.getByRole("radio", { name: "En persona" })).toBeChecked();
   expect(await consultar("select 1 from vehiculo where placa = $1", [`CR25${s}1`])).toEqual([]);
@@ -162,6 +207,8 @@ test("desde la ficha del cliente: llega elegido, con su vehículo marcado, y la 
   await expect(page).toHaveURL(new RegExp(`/panel/cotizaciones/nueva\\?cliente=${id}$`));
   await expect(page.getByRole("region", { name: "Cliente" })).toContainText(`Desde ficha ${s}`);
   await expect(page.getByRole("radio", { name: new RegExp(`CF25${s}1`) })).toBeChecked();
+  await expect(pasoActual(page)).toContainText("Vehículo");
+  await aServicios(page);
   // Con el vehículo elegido, los servicios ya muestran su precio
   await page.getByRole("button", { name: "Agregar servicio" }).click();
   await elegir(page, 1, nombre, "Con precio");
@@ -181,6 +228,7 @@ test("nueva versión: el mismo número, la anterior queda reemplazada y una viej
   const cliente = await crearClienteEnBase({ nombre: `Con versiones ${s}`, telefono: telefono(info, 4), placa: `CV25${s}1` });
   await ingresarComoDueno(page);
   await page.goto(`/panel/cotizaciones/nueva?cliente=${cliente}`, { waitUntil: "networkidle" });
+  await aServicios(page);
   await page.getByRole("button", { name: "Agregar servicio" }).click();
   await elegir(page, 1, nombre, "Con precio");
   await page.getByRole("radio", { name: /^Por fotos/ }).check();
@@ -230,6 +278,7 @@ test("el descuento no pasa el subtotal, el adelanto no pasa el total y la valide
   const cliente = await crearClienteEnBase({ nombre: `Con errores ${s}`, telefono: telefono(info, 5), placa: `CE25${s}1` });
   await ingresarComoDueno(page);
   await page.goto(`/panel/cotizaciones/nueva?cliente=${cliente}`, { waitUntil: "networkidle" });
+  await aServicios(page);
   await page.getByRole("radio", { name: "En persona" }).check();
   await crear(page);
   await expect(page.getByText("Agrega al menos un servicio.")).toBeVisible();
@@ -266,6 +315,7 @@ test("pedido 24: el encargado con Cotizaciones cotiza y ve los montos; sin el pe
   await expect(page.getByRole("link", { name: "Ver ficha del cliente" })).toHaveCount(0);
 
   await page.goto(`/panel/cotizaciones/nueva?cliente=${cliente}`, { waitUntil: "networkidle" });
+  await aServicios(page);
   await page.getByRole("button", { name: "Agregar servicio" }).click();
   await elegir(page, 1, nombre, "Con precio");
   await page.getByRole("radio", { name: "En persona" }).check();
@@ -296,4 +346,38 @@ test("pedido 24: el encargado con Cotizaciones cotiza y ve los montos; sin el pe
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto("/panel/cotizaciones/nueva");
   await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
+});
+
+test("Atrás vuelve al paso anterior sin perder lo escrito; nada se registra hasta crear", async ({ page }, info) => {
+  const s = sufijo(info);
+  await ingresarComoDueno(page);
+  await page.goto("/panel/cotizaciones/nueva?nuevo=1", { waitUntil: "networkidle" });
+  await page.getByLabel("Nombre", { exact: true }).fill(`Con atrás ${s}`);
+  await page.getByRole("textbox", { name: "WhatsApp" }).fill(local(info, 7));
+  await aVehiculo(page);
+  await page.getByLabel("Placa", { exact: true }).fill(`CA25${s}1`);
+  await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
+  await aServicios(page);
+  await expect(pasoActual(page)).toContainText("Servicios y precio");
+  // "Cambiar" vuelve en el historial: después, Atrás lleva al paso anterior y no de nuevo a Servicios
+  await page.getByRole("button", { name: "Cambiar vehículo" }).click();
+  await expect(pasoActual(page)).toContainText("Vehículo");
+  await expect(page.getByLabel("Placa", { exact: true })).toHaveValue(`CA25${s}1`);
+  await page.getByRole("button", { name: "Atrás" }).click();
+  await expect(pasoActual(page)).toContainText("Cliente");
+  await expect(page.getByLabel("Nombre", { exact: true })).toHaveValue(`Con atrás ${s}`);
+  await expect(page).toHaveURL(/\/panel\/cotizaciones\/nueva\?nuevo=1$/);
+  // Adelante del navegador revisa el paso que salta: sin nombre, se queda en Cliente con el error
+  await page.getByLabel("Nombre", { exact: true }).fill("");
+  await page.goForward();
+  await expect(page.getByText("Escribe el nombre.")).toBeVisible();
+  await expect(pasoActual(page)).toContainText("Cliente");
+  // Con el nombre, el del celular (o el navegador) avanza y retrocede de a un paso
+  await page.getByLabel("Nombre", { exact: true }).fill(`Con atrás ${s}`);
+  await aVehiculo(page);
+  await expect(page.getByRole("region", { name: "Cliente" })).toContainText(`Con atrás ${s}`);
+  await page.goBack();
+  await expect(pasoActual(page)).toContainText("Cliente");
+  // Hasta "Crear cotización" no se registró nada
+  expect(await consultar("select 1 from cliente where nombre = $1", [`Con atrás ${s}`])).toEqual([]);
 });

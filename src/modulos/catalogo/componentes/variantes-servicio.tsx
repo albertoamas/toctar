@@ -18,7 +18,7 @@ export function VariantesServicio({ servicioId, variantes }: { servicioId: numbe
         titulo="Variantes"
         conEncabezado={false}
         singular="variante"
-        campoDescripcion={{ etiqueta: "Descripción", ayuda: "Opcional. Se ve en la página del servicio.", ejemplo: "Capa más densa, más años de protección" }}
+        campoDescripcion={{ etiqueta: "Descripción", ayuda: "Se ve en la página del servicio.", ejemplo: "Capa más densa, más años de protección" }}
         camposOcultos={{ servicioId }}
         alEditar={setEditando}
         elementos={variantes}

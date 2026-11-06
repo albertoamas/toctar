@@ -49,7 +49,7 @@ export function FormularioNoLeInteresa({ id }: { id: number }) {
       <input type="hidden" name="id" value={id} />
       {estado.mensaje && !estado.ok && <MensajeError id={`${campo}-mensaje`}>{estado.mensaje}</MensajeError>}
       <p>No se le volverá a avisar de este mantenimiento.</p>
-      <Campo id={campo} etiqueta="Nota (opcional)" error={e.nota} ayuda="Por qué: ya lo hace en otro lado, vendió el vehículo…">
+      <Campo id={campo} etiqueta="Nota" opcional error={e.nota} ayuda="Por qué: ya lo hace en otro lado, vendió el vehículo…">
         <Textarea id={campo} name="nota" rows={2} maxLength={300} value={nota} onChange={(ev) => setNota(ev.target.value)} aria-invalid={!!e.nota} aria-describedby={e.nota ? `${campo}-error` : `${campo}-ayuda`} />
       </Campo>
       <PieModal>

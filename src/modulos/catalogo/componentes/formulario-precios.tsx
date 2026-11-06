@@ -76,7 +76,7 @@ export function FormularioPrecios({ variante: v, tamanos, duracionServicio }: Pr
         })}
       </div>
 
-      <Campo id={`${prefijo}-duracion`} etiqueta="Duración propia" error={e.duracionDias} ayuda={`Vacío: usa la del servicio (${textoDias(duracionServicio)}).`}>
+      <Campo id={`${prefijo}-duracion`} etiqueta="Duración propia" opcional error={e.duracionDias} ayuda={`Vacío: usa la del servicio (${textoDias(duracionServicio)}).`}>
         <div className="flex items-center gap-2">
           <Input
             id={`${prefijo}-duracion`}

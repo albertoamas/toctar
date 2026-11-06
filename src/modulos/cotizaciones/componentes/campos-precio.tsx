@@ -78,7 +78,7 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
       </SeccionFormulario>
 
       <SeccionFormulario titulo="Total">
-        <Campo id="descuento" etiqueta="Descuento" error={e.descuento} ayuda="Opcional.">
+        <Campo id="descuento" etiqueta="Descuento" opcional error={e.descuento}>
           <CampoMonto id="descuento" name="descuento" value={p.descuento} onChange={(ev) => p.setDescuento(ev.target.value)} aria-invalid={!!e.descuento} aria-describedby={e.descuento ? "descuento-error" : "descuento-ayuda"} />
         </Campo>
         <dl className="grid max-w-sm grid-cols-[1fr_auto] gap-x-6 gap-y-2 tt-tarjeta-panel p-4" aria-live="polite">
@@ -94,7 +94,7 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
       <SeccionFormulario titulo="Condiciones">
         {/* Vienen de Configuración y casi siempre se dejan así: sin ayudas que lo repitan */}
         <div className="grid gap-5 sm:grid-cols-2">
-          <Campo id="adelanto" etiqueta="Adelanto sugerido" error={e.adelanto}>
+          <Campo id="adelanto" etiqueta="Adelanto sugerido" opcional error={e.adelanto}>
             <CampoMonto id="adelanto" name="adelanto" value={p.adelanto} onChange={(ev) => p.setAdelanto(ev.target.value)} aria-invalid={!!e.adelanto} aria-describedby={e.adelanto ? "adelanto-error" : undefined} />
           </Campo>
           <Campo id="validaHasta" etiqueta="Válida hasta" error={e.validaHasta}>
