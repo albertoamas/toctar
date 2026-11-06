@@ -14,6 +14,9 @@ FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# El commit que se compila (Coolify lo pasa con "Include Source Commit in Build"): es la versión que el panel compara
+# para avisar que hay una nueva (pedido 39, next.config.ts). Sin él, la versión es la fecha del build.
+ARG SOURCE_COMMIT
 RUN npm run build
 
 FROM base AS runner

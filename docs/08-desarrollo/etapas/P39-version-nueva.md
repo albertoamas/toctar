@@ -20,11 +20,12 @@ Que el dueño y los encargados sepan cuándo se publicó una versión nueva del 
 ## 3. Reglas que se cumplen
 - **Nada fijo del negocio:** la versión sale de la compilación, no se escribe a mano.
 - **Sin costo para el servidor:** una consulta liviana, sin base de datos ni sesión, y solo con la pestaña a la vista.
-- **Un aviso a la vez:** si ya se mostró, no se repite cada 10 minutos.
+- **Un aviso por versión:** si ya se mostró, no se repite cada 10 minutos. Si se cerró, vuelve solo cuando se publica otra versión: la app instalada casi nunca se cierra.
 
 ## 4. Datos
 Sin cambios en la base. La versión es un texto de la compilación:
-- Al compilar, `next.config.ts` fija `NEXT_PUBLIC_VERSION_APP`: el commit (`SOURCE_COMMIT` en Coolify) o, si no hay, la fecha de la compilación.
+- Al compilar, `next.config.ts` fija `NEXT_PUBLIC_VERSION_APP`: el commit (`SOURCE_COMMIT` en Coolify, `GITHUB_SHA` en el CI) o, si no hay, la fecha de la compilación. Con el commit, recompilar el mismo código no avisa de más.
+- El Dockerfile declara `ARG SOURCE_COMMIT`. En Coolify hay que activar "Include Source Commit in Build" en la app; si no, la versión es la fecha de la compilación y avisa también cuando se recompila el mismo código, lo que no rompe nada.
 - El navegador la recibe dentro de su código. El servidor la devuelve en `GET /api/version`.
 
 ## 5. Pantallas y rutas
