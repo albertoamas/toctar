@@ -155,10 +155,14 @@ test("Nueva reserva ofrece las cotizaciones del vehículo: los precios llegan si
   await expect(suyas).toContainText("700 Bs");
   // También se puede armar una sin cotización
   await expect(page.getByText("Reserva sin cotización", { exact: true })).toBeVisible();
-  // Plegada: lo común es usar la cotización
+  // Plegada: lo común es usar la cotización, y no se ofrece seguir sin elegir los servicios
   await expect(page.getByRole("button", { name: "Reservar" })).toBeHidden();
+  await expect(page.getByRole("button", { name: /^Siguiente/ })).toBeHidden();
   await suyas.getByRole("link").click();
-  await expect(page).toHaveURL(new RegExp(`cotizacion=${c.cotizacionId}$`));
+  // Va al último paso de la reserva, con "Cambiar servicios" para volver a elegir (pedido 41)
+  await expect(page).toHaveURL(new RegExp(`cotizacion=${c.cotizacionId}&cliente=${c.clienteId}&vehiculo=${c.vehiculoId}$`));
+  await expect(page.getByRole("navigation", { name: "Pasos de la reserva" }).locator('[aria-current="step"]')).toHaveText("Fecha y adelanto");
+  await expect(page.getByRole("link", { name: "Cambiar servicios" })).toHaveAttribute("href", `/panel/agenda/nueva?cliente=${c.clienteId}&vehiculo=${c.vehiculoId}`);
   await expect(page.getByRole("region", { name: new RegExp(`^Cotización ${c.numero}`) })).toContainText("700 Bs");
   await reservar(page, dia);
   const [r] = await consultar<{ lineas: number; con: string }>(

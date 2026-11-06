@@ -98,6 +98,7 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
   // precio lo pone el dueño
   await expect(page.getByLabel("Servicio 1", { exact: true }).locator("option:checked")).toHaveText("Mantenimiento del nano cerámico");
   await page.getByLabel("Precio del servicio 1").fill("350");
+  await page.getByRole("button", { name: "Siguiente: fecha y adelanto" }).click();
   const [{ d }] = await consultar<{ d: string }>("select to_char($1::date + $2::int, 'YYYY-MM-DD') as d", [hoy(), info.project.name === "celular" ? 360 : 363]);
   await page.getByLabel("Ingresa el").fill(d);
   const espacioReserva = page.getByLabel("Espacio", { exact: true });

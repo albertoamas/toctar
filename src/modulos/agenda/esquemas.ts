@@ -46,6 +46,9 @@ const lineas = z
       .max(MAXIMO_LINEAS, `Hasta ${MAXIMO_LINEAS} servicios.`),
   );
 
+/** Solo los servicios: los revisa "Siguiente" en Nueva reserva (pedido 41), con los mismos mensajes que la acción. */
+export const esquemaServiciosReserva = z.object({ lineas });
+
 /** Las fechas de una reserva: el ingreso desde hoy (en Bolivia) y hasta un año; la entrega, no antes del ingreso. */
 export const esquemaFechas = z
   .object({

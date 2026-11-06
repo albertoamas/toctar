@@ -1,12 +1,13 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
-import { useFocoEnError } from "@/componentes/foco-en-error";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
 import { MasDatos } from "@/componentes/panel/mas-datos";
+import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
+import { ResumenPaso } from "@/componentes/panel/resumen-paso";
 import { Selector } from "@/componentes/panel/selector";
 import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
@@ -22,6 +23,7 @@ import { CampoComprobante, useEnvioConComprobante } from "@/modulos/pagos/compon
 import { METODOS, NOMBRE_METODO } from "@/modulos/pagos/reglas";
 import { agendarReserva } from "../acciones";
 import type { EspacioDisponible } from "../consultas";
+import { erroresServicios, PASO_FECHA, PASO_SERVICIOS, pasoDeCampoReserva, pasosNuevaReserva } from "../pasos-reserva";
 import { fechaEntregaSugerida } from "../reglas";
 import { useEspaciosLibres } from "./espacios-libres";
 
@@ -30,6 +32,10 @@ import { useEspaciosLibres } from "./espacios-libres";
 // servidor vuelve a mirar todo y la base rechaza un cruce aunque dos personas reserven a la vez.
 // Pulido 10.2: la hora y la nota plegadas (se usan a veces), sin las ayudas que repetían Configuración, y "Reservar" en
 // PieFormulario: fijo abajo en el celular, con el total al lado en la reserva directa (como en Cotizar).
+// Pedido 41 (etapas/P41-reserva-en-pasos.md): la reserva sin cotización son dos pasos de un mismo formulario, Servicios
+// y Fecha y adelanto, con el indicador de los cuatro pasos y lo ya elegido arriba. Como en Nueva cotización, el paso va
+// en la dirección (#servicios, #fecha), así el botón Atrás del celular vuelve al anterior, y un error de la acción
+// vuelve al paso que lo tiene. Desde una cotización hay un solo paso: la fecha.
 
 type Origen =
   | { tipo: "cotizacion"; cotizacionId: number; duraciones: number[] }
@@ -41,6 +47,8 @@ type Origen =
       recordatorioId?: number | null;
       /** Las líneas con que llega (un mantenimiento, con su servicio ya elegido: pedido 21). */
       lineasIniciales?: Linea[];
+      /** Servicios o, si ya llega con servicios con precio, la fecha (`pasoInicialReserva`). */
+      pasoInicial: typeof PASO_SERVICIOS | typeof PASO_FECHA;
     };
 
 type Props = {
@@ -52,14 +60,74 @@ type Props = {
   fechaInicial: string;
   espacioInicial: number | null;
   espaciosIniciales: EspacioDisponible[];
+  /** Lo ya elegido (el cliente y su vehículo) y sus avisos: en la reserva directa, debajo del indicador de pasos. */
+  arriba?: React.ReactNode;
+  /** Las cotizaciones del vehículo para reservar, en el paso Servicios: con ellas, la reserva sin cotización va plegada. */
+  cotizaciones?: React.ReactNode;
 };
 
+/** El paso en la dirección: el botón Atrás del celular vuelve al anterior sin salir de la pantalla. */
+const ANCLA: Record<number, string> = { [PASO_SERVICIOS]: "servicios", [PASO_FECHA]: "fecha" };
 
-export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fechaInicial, espacioInicial, espaciosIniciales }: Props) {
-  const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(agendarReserva, {});
+export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fechaInicial, espacioInicial, espaciosIniciales, arriba, cotizaciones }: Props) {
+  const directa = origen.tipo === "directa";
+  const inicial = origen.tipo === "directa" ? origen.pasoInicial : PASO_FECHA;
+  const [paso, setPaso] = useState<number>(inicial);
+  // El paso a la vista, para los que escuchan el historial (sin esperar al próximo dibujo)
+  const pasoActual = useRef<number>(inicial);
+  // Errores de "Siguiente", y si los servicios ya se revisaron de nuevo desde el último envío (sus errores de la acción
+  // ya no valen)
+  const [locales, setLocales] = useState<Record<string, string>>({});
+  const [serviciosRevisados, setServiciosRevisados] = useState(false);
+  // El foco pedido: al cambiar de paso, al primer campo; tras un error, al campo con error. El paso y los errores pueden
+  // llegar en dibujos distintos: se espera un par de dibujos a que el campo esté en pantalla
+  const [pedidoFoco, setPedidoFoco] = useState<{ n: number; error: boolean }>({ n: 0, error: false });
+  const focoPuesto = useRef(0);
+  const intentosFoco = useRef(0);
+  const errorAlLlegar = useRef(false);
   const formulario = useRef<HTMLFormElement>(null);
-  useFocoEnError(formulario, estado);
-  const e = estado.errores ?? {};
+
+  function pedirFoco(error: boolean) {
+    intentosFoco.current = 0;
+    setPedidoFoco((p) => ({ n: p.n + 1, error }));
+  }
+
+  /** Muestra un paso: lo que hace cada cambio de paso, venga de un botón o del historial. */
+  function mostrar(nuevo: number) {
+    pasoActual.current = nuevo;
+    setPaso(nuevo);
+    window.scrollTo({ top: 0 });
+    pedirFoco(errorAlLlegar.current);
+    errorAlLlegar.current = false;
+  }
+
+  /**
+   * Volver a los servicios. Si se empezó en ellos, la fecha es la entrada siguiente del historial y se retrocede; si se
+   * empezó en la fecha (un mantenimiento), los servicios son una entrada nueva.
+   */
+  function volverAServicios() {
+    if (inicial === PASO_SERVICIOS) window.history.back();
+    else {
+      window.history.pushState(window.history.state, "", `#${ANCLA[PASO_SERVICIOS]}`);
+      mostrar(PASO_SERVICIOS);
+    }
+  }
+
+  // Lo que devuelve la acción: los errores de nuevo y, si son de los servicios, la pantalla vuelve a ellos (como
+  // conAviso: al terminar la acción, no en un efecto)
+  const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(async (previo, datos) => {
+    const r = await agendarReserva(previo, datos);
+    setLocales({});
+    setServiciosRevisados(false);
+    const errores = Object.keys(r.errores ?? {});
+    if (errores.length > 0) {
+      if (directa && pasoActual.current === PASO_FECHA && errores.some((c) => pasoDeCampoReserva(c) === PASO_SERVICIOS)) {
+        errorAlLlegar.current = true;
+        volverAServicios();
+      } else pedirFoco(true);
+    }
+    return r;
+  }, {});
 
   // Todo controlado: React reinicia el formulario al terminar la acción y así nada se pierde tras un error
   const [lineas, setLineas] = useState<Linea[]>(origen.tipo === "directa" ? (origen.lineasIniciales ?? []) : []);
@@ -98,8 +166,91 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
         ).total
       : null;
 
+  // El foco, al cambiar de paso o tras un error: al primer campo con error del paso, o al primero del paso (sin mover la
+  // pantalla, que queda arriba con el indicador y el resumen)
+  useEffect(() => {
+    if (pedidoFoco.n === 0 || focoPuesto.current === pedidoFoco.n) return;
+    const visible = formulario.current?.querySelector<HTMLElement>(`[data-paso="${paso}"]`);
+    const objetivo = pedidoFoco.error
+      ? visible?.querySelector<HTMLElement>('[aria-invalid="true"], [data-invalido]')
+      : visible?.querySelector<HTMLElement>('a[href], input:not([type="hidden"]), select, textarea, button, summary');
+    if (!objetivo) {
+      intentosFoco.current += 1;
+      if (intentosFoco.current > 2) focoPuesto.current = pedidoFoco.n;
+      return;
+    }
+    focoPuesto.current = pedidoFoco.n;
+    if (pedidoFoco.error) objetivo.scrollIntoView({ block: "center" });
+    objetivo.focus({ preventScroll: true });
+  }, [pedidoFoco, paso, estado, locales]);
+
+  // El historial: Atrás y Adelante del navegador (o del celular) cambian de paso. Adelante a la fecha revisa los servicios
+  const alCambiarHistoria = useRef<() => void>(() => {});
+  useEffect(() => {
+    alCambiarHistoria.current = () => {
+      const ancla = window.location.hash.slice(1);
+      const destino = ancla === ANCLA[PASO_FECHA] ? PASO_FECHA : ancla === ANCLA[PASO_SERVICIOS] ? PASO_SERVICIOS : inicial;
+      if (ancla === ANCLA[PASO_FECHA] && pasoActual.current === PASO_SERVICIOS && formulario.current) {
+        const errores = erroresServicios(String(new FormData(formulario.current).get("lineas") ?? "[]"));
+        if (Object.keys(errores).length > 0) {
+          setLocales(errores);
+          errorAlLlegar.current = true;
+          window.history.back();
+          return;
+        }
+      }
+      mostrar(destino);
+    };
+  });
+  useEffect(() => {
+    if (!directa) return;
+    if (window.location.hash) window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+    const escuchar = () => alCambiarHistoria.current();
+    window.addEventListener("popstate", escuchar);
+    return () => window.removeEventListener("popstate", escuchar);
+  }, [directa]);
+
+  function siguiente() {
+    const errores = erroresServicios(String(new FormData(formulario.current!).get("lineas") ?? "[]"));
+    setLocales(errores);
+    if (Object.keys(errores).length > 0) {
+      pedirFoco(true);
+      return;
+    }
+    setServiciosRevisados(true);
+    window.history.pushState(window.history.state, "", `#${ANCLA[PASO_FECHA]}`);
+    mostrar(PASO_FECHA);
+  }
+
+  // Los errores que se ven: los de la acción (salvo los de los servicios si ya se revisaron de nuevo) y los de "Siguiente"
+  const vigente = ([campo]: [string, unknown]) => !(serviciosRevisados && pasoDeCampoReserva(campo) === PASO_SERVICIOS);
+  const e: Partial<Record<string, string>> = { ...Object.fromEntries(Object.entries(estado.errores ?? {}).filter(vigente)), ...locales };
+  const conErrorEnServicios = Object.keys(e).some((c) => pasoDeCampoReserva(c) === PASO_SERVICIOS && e[c]);
+  // Con cotizaciones del vehículo, lo común es usar una: "Siguiente" aparece recién al armar una sin cotización
+  const conSiguiente = !cotizaciones || lineas.length > 0 || conErrorEnServicios;
+
+  const servicios = origen.tipo === "directa" && (
+    <SeccionFormulario titulo="Servicios" claseContenido="gap-4">
+      <LineasServicio opciones={origen.opciones} lineas={lineas} onChange={setLineas} errores={e} />
+    </SeccionFormulario>
+  );
+
   return (
-    <form ref={formulario} action={accion} onSubmit={(ev) => enviar(ev, conPagos && !sinAdelanto)} className="flex max-w-3xl flex-col gap-6" noValidate>
+    <form
+      ref={formulario}
+      action={accion}
+      onSubmit={(ev) => enviar(ev, conPagos && !sinAdelanto)}
+      onKeyDown={(ev) => {
+        // Enter en un campo de los servicios sigue a la fecha, no reserva
+        if (ev.key !== "Enter" || paso !== PASO_SERVICIOS || !(ev.target instanceof HTMLInputElement)) return;
+        ev.preventDefault();
+        siguiente();
+      }}
+      className="flex max-w-3xl flex-col gap-6"
+      noValidate
+    >
+      {directa && <PasosFlujo pasos={pasosNuevaReserva(conPagos)} actual={paso} etiqueta="Pasos de la reserva" />}
+      {arriba}
       <input type="hidden" name="origen" value={origen.tipo} />
       {origen.tipo === "cotizacion" ? (
         <input type="hidden" name="cotizacionId" value={origen.cotizacionId} />
@@ -110,126 +261,167 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
           {origen.recordatorioId && <input type="hidden" name="recordatorioId" value={origen.recordatorioId} />}
         </>
       )}
+
+      {/* Los servicios elegidos, arriba de la fecha, con "Cambiar" para volver a ellos */}
+      {origen.tipo === "directa" && paso === PASO_FECHA && (
+        <ResumenPaso id="resumen-servicios" titulo="Servicios" cambiar={volverAServicios} claseContenido="gap-2">
+          <ul className="flex flex-col gap-1">
+            {lineas.map((l, i) => (
+              <li key={i} className="flex justify-between gap-4">
+                <span>{origen.opciones.find((o) => o.varianteId === l.varianteId)?.descripcion}</span>
+                <span className="shrink-0 tabular-nums">{mostrarMonto(leerMonto(l.precio) ?? "0")} Bs</span>
+              </li>
+            ))}
+          </ul>
+        </ResumenPaso>
+      )}
       {estado.mensaje && !estado.ok && <MensajeError id="reserva-error">{estado.mensaje}</MensajeError>}
 
       {origen.tipo === "directa" && (
-        <SeccionFormulario titulo="Servicios" claseContenido="gap-4">
-          <LineasServicio opciones={origen.opciones} lineas={lineas} onChange={setLineas} errores={e} />
-          {/* El total, al pie con "Reservar" */}
-        </SeccionFormulario>
+        <div data-paso={PASO_SERVICIOS} hidden={paso !== PASO_SERVICIOS} className="flex flex-col gap-6">
+          {cotizaciones}
+          {cotizaciones ? (
+            <MasDatos texto="Reserva sin cotización" abierto={lineas.length > 0 || conErrorEnServicios}>
+              {servicios}
+            </MasDatos>
+          ) : (
+            servicios
+          )}
+        </div>
       )}
 
-      <SeccionFormulario titulo="Fechas y espacio">
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Campo id="fechaInicio" etiqueta="Ingresa el" error={e.fechaInicio}>
-            <Input
-              id="fechaInicio"
-              name="fechaInicio"
-              type="date"
-              min={hoy}
-              value={fechaInicio}
-              onChange={(ev) => cambiarFechas(ev.target.value, fechaFinManual)}
-              aria-invalid={!!e.fechaInicio}
-              aria-describedby={e.fechaInicio ? "fechaInicio-error" : undefined}
-            />
+      <div data-paso={PASO_FECHA} hidden={paso !== PASO_FECHA} className="flex flex-col gap-6">
+        <SeccionFormulario titulo="Fechas y espacio">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Campo id="fechaInicio" etiqueta="Ingresa el" error={e.fechaInicio}>
+              <Input
+                id="fechaInicio"
+                name="fechaInicio"
+                type="date"
+                min={hoy}
+                value={fechaInicio}
+                onChange={(ev) => cambiarFechas(ev.target.value, fechaFinManual)}
+                aria-invalid={!!e.fechaInicio}
+                aria-describedby={e.fechaInicio ? "fechaInicio-error" : undefined}
+              />
+            </Campo>
+            <Campo id="fechaFin" etiqueta="Entrega aproximada" error={e.fechaFin} ayuda="Se le da al cliente como aproximada.">
+              <Input
+                id="fechaFin"
+                name="fechaFin"
+                type="date"
+                min={fechaInicio}
+                value={fechaFin}
+                onChange={(ev) => cambiarFechas(fechaInicio, ev.target.value)}
+                aria-invalid={!!e.fechaFin}
+                aria-describedby={e.fechaFin ? "fechaFin-error" : "fechaFin-ayuda"}
+              />
+            </Campo>
+          </div>
+          <Campo id="espacioId" etiqueta="Espacio" error={e.espacioId} ayuda={ayuda}>
+            <Selector
+              id="espacioId"
+              name="espacioId"
+              value={espacioId}
+              onChange={(ev) => setEspacioId(ev.target.value)}
+              disabled={buscando}
+              aria-invalid={!!e.espacioId}
+              aria-describedby={e.espacioId ? "espacioId-error" : "espacioId-ayuda"}
+              className="max-w-xs"
+            >
+              <option value="">Elige el espacio</option>
+              {libres.map((x) => (
+                <option key={x.id} value={x.id}>{x.nombre}</option>
+              ))}
+            </Selector>
           </Campo>
-          <Campo id="fechaFin" etiqueta="Entrega aproximada" error={e.fechaFin} ayuda="Se le da al cliente como aproximada.">
-            <Input
-              id="fechaFin"
-              name="fechaFin"
-              type="date"
-              min={fechaInicio}
-              value={fechaFin}
-              onChange={(ev) => cambiarFechas(fechaInicio, ev.target.value)}
-              aria-invalid={!!e.fechaFin}
-              aria-describedby={e.fechaFin ? "fechaFin-error" : "fechaFin-ayuda"}
-            />
-          </Campo>
-        </div>
-        <Campo
-          id="espacioId"
-          etiqueta="Espacio"
-          error={e.espacioId}
-          ayuda={ayuda}
-        >
-          <Selector
-            id="espacioId"
-            name="espacioId"
-            value={espacioId}
-            onChange={(ev) => setEspacioId(ev.target.value)}
-            disabled={buscando}
-            aria-invalid={!!e.espacioId}
-            aria-describedby={e.espacioId ? "espacioId-error" : "espacioId-ayuda"}
-            className="max-w-xs"
-          >
-            <option value="">Elige el espacio</option>
-            {libres.map((x) => (
-              <option key={x.id} value={x.id}>{x.nombre}</option>
-            ))}
-          </Selector>
-        </Campo>
-        {/* Se usan a veces: plegadas; se abren solas si traen algo escrito o un error */}
-        <MasDatos texto="Agregar hora y nota" abierto={!!horaIngreso || !!nota || !!e.horaIngreso || !!e.nota}>
-          <Campo id="horaIngreso" etiqueta="Hora aproximada" opcional error={e.horaIngreso} ayuda="Como lo dijo el cliente: «a las 9», «en la tarde».">
-            <Input id="horaIngreso" name="horaIngreso" autoComplete="off" value={horaIngreso} onChange={(ev) => setHoraIngreso(ev.target.value)} className="max-w-xs" aria-invalid={!!e.horaIngreso} />
-          </Campo>
-          <Campo id="nota" etiqueta="Nota" opcional error={e.nota}>
-            <Textarea id="nota" name="nota" rows={2} value={nota} onChange={(ev) => setNota(ev.target.value)} aria-invalid={!!e.nota} />
-          </Campo>
-        </MasDatos>
-      </SeccionFormulario>
-
-      {conPagos && (
-        <SeccionFormulario titulo="Adelanto">
-          {sinAdelanto && <input type="hidden" name="sinAdelanto" value="on" />}
-          <label htmlFor="sinAdelanto" className="flex min-h-11 cursor-pointer items-center gap-3">
-            <Checkbox id="sinAdelanto" checked={sinAdelanto} onCheckedChange={(si) => {
-                setSinAdelanto(si === true);
-                // El campo de la foto se va y vuelve vacío: la elegida no queda escondida para subirse igual
-                if (si === true) setComprobante(null);
-              }}
-            />
-            <span className="font-medium">Sin adelanto</span>
-          </label>
-          {!sinAdelanto && (
-            <>
-              <Campo id="adelanto" etiqueta="Monto" error={e.adelanto}>
-                <CampoMonto id="adelanto" name="adelanto" value={adelanto} onChange={(ev) => setAdelanto(ev.target.value)} aria-invalid={!!e.adelanto} />
-              </Campo>
-              <div className="flex flex-col gap-3">
-                <p id="metodo-titulo" className="text-sm font-medium">Método</p>
-                {/* El valor en un campo oculto propio: los radios de base-ui se vaciaban al reiniciarse el formulario */}
-                <input type="hidden" name="metodo" value={metodo} />
-                <RadioGroup value={metodo} onValueChange={(v) => setMetodo(String(v))} aria-labelledby="metodo-titulo" aria-describedby={e.metodo ? "metodo-error" : undefined} className="flex flex-wrap gap-2">
-                  {METODOS.map((m, i) => (
-                    <label key={m} htmlFor={`metodo-${m}`} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-border bg-fondo px-3 py-2 has-data-checked:border-tinta">
-                      <RadioGroupItem id={`metodo-${m}`} value={m} data-invalido={(!!e.metodo && i === 0) || undefined} />
-                      <span className="font-semibold">{NOMBRE_METODO[m]}</span>
-                    </label>
-                  ))}
-                </RadioGroup>
-                {e.metodo && <MensajeError id="metodo-error">{e.metodo}</MensajeError>}
-              </div>
-              <CampoComprobante onChange={setComprobante} error={errorFoto ?? e.comprobante} />
-            </>
-          )}
+          {/* Se usan a veces: plegadas; se abren solas si traen algo escrito o un error */}
+          <MasDatos texto="Agregar hora y nota" abierto={!!horaIngreso || !!nota || !!e.horaIngreso || !!e.nota}>
+            <Campo id="horaIngreso" etiqueta="Hora aproximada" opcional error={e.horaIngreso} ayuda="Como lo dijo el cliente: «a las 9», «en la tarde».">
+              <Input id="horaIngreso" name="horaIngreso" autoComplete="off" value={horaIngreso} onChange={(ev) => setHoraIngreso(ev.target.value)} className="max-w-xs" aria-invalid={!!e.horaIngreso} />
+            </Campo>
+            <Campo id="nota" etiqueta="Nota" opcional error={e.nota}>
+              <Textarea id="nota" name="nota" rows={2} value={nota} onChange={(ev) => setNota(ev.target.value)} aria-invalid={!!e.nota} />
+            </Campo>
+          </MasDatos>
         </SeccionFormulario>
-      )}
 
-      <PieFormulario>
-        <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:justify-start">
-          {/* El total de la reserva directa, a la vista mientras se cargan los precios */}
-          {total !== null && total !== "0.00" && (
-            <p className="flex items-baseline gap-2">
-              <span className="text-tinta-suave">Total</span>
-              <span className="text-lg font-bold tabular-nums">{mostrarMonto(total)} Bs</span>
-            </p>
-          )}
-          <Button type="submit" disabled={enviando || buscando || preparando}>
-            {preparando ? "Preparando foto…" : enviando ? "Reservando…" : "Reservar"}
-          </Button>
-        </div>
-      </PieFormulario>
+        {conPagos && (
+          <SeccionFormulario titulo="Adelanto">
+            {sinAdelanto && <input type="hidden" name="sinAdelanto" value="on" />}
+            <label htmlFor="sinAdelanto" className="flex min-h-11 cursor-pointer items-center gap-3">
+              <Checkbox id="sinAdelanto" checked={sinAdelanto} onCheckedChange={(si) => {
+                  setSinAdelanto(si === true);
+                  // El campo de la foto se va y vuelve vacío: la elegida no queda escondida para subirse igual
+                  if (si === true) setComprobante(null);
+                }}
+              />
+              <span className="font-medium">Sin adelanto</span>
+            </label>
+            {!sinAdelanto && (
+              <>
+                <Campo id="adelanto" etiqueta="Monto" error={e.adelanto}>
+                  <CampoMonto id="adelanto" name="adelanto" value={adelanto} onChange={(ev) => setAdelanto(ev.target.value)} aria-invalid={!!e.adelanto} />
+                </Campo>
+                <div className="flex flex-col gap-3">
+                  <p id="metodo-titulo" className="text-sm font-medium">Método</p>
+                  {/* El valor en un campo oculto propio: los radios de base-ui se vaciaban al reiniciarse el formulario */}
+                  <input type="hidden" name="metodo" value={metodo} />
+                  <RadioGroup value={metodo} onValueChange={(v) => setMetodo(String(v))} aria-labelledby="metodo-titulo" aria-describedby={e.metodo ? "metodo-error" : undefined} className="flex flex-wrap gap-2">
+                    {METODOS.map((m, i) => (
+                      <label key={m} htmlFor={`metodo-${m}`} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-border bg-fondo px-3 py-2 has-data-checked:border-tinta">
+                        <RadioGroupItem id={`metodo-${m}`} value={m} data-invalido={(!!e.metodo && i === 0) || undefined} />
+                        <span className="font-semibold">{NOMBRE_METODO[m]}</span>
+                      </label>
+                    ))}
+                  </RadioGroup>
+                  {e.metodo && <MensajeError id="metodo-error">{e.metodo}</MensajeError>}
+                </div>
+                <CampoComprobante onChange={setComprobante} error={errorFoto ?? e.comprobante} />
+              </>
+            )}
+          </SeccionFormulario>
+        )}
+      </div>
+
+      {(paso === PASO_FECHA || conSiguiente) && (
+        <PieFormulario>
+          <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:justify-start">
+            {/* El total de la reserva directa, a la vista mientras se cargan los precios */}
+            {total !== null && total !== "0.00" && (
+              <p className="flex items-baseline gap-2">
+                <span className="text-tinta-suave">Total</span>
+                <span className="text-lg font-bold tabular-nums">{mostrarMonto(total)} Bs</span>
+              </p>
+            )}
+            <div className="flex gap-2">
+              {directa && paso === PASO_FECHA && inicial === PASO_SERVICIOS && (
+                <Button type="button" variant="outline" disabled={enviando} onClick={volverAServicios}>
+                  Atrás
+                </Button>
+              )}
+              {/* Una key distinta en cada uno: si React reusara el botón, "Siguiente" se volvía "Reservar" durante el
+                  mismo toque y el navegador enviaba la reserva a medias (lo mismo que en Nueva cotización, pedido 40) */}
+              {paso === PASO_SERVICIOS ? (
+                <Button
+                  key="siguiente"
+                  type="button"
+                  onClick={(ev) => {
+                    ev.preventDefault();
+                    siguiente();
+                  }}
+                >
+                  {conPagos ? "Siguiente: fecha y adelanto" : "Siguiente: fecha"}
+                </Button>
+              ) : (
+                <Button key="reservar" type="submit" disabled={enviando || buscando || preparando}>
+                  {preparando ? "Preparando foto…" : enviando ? "Reservando…" : "Reservar"}
+                </Button>
+              )}
+            </div>
+          </div>
+        </PieFormulario>
+      )}
     </form>
   );
 }

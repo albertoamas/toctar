@@ -125,7 +125,9 @@ test("vencidos y próximos; avisar, no le interesa y reservar (y al cancelar la 
   // el que ponga el dueño (según evaluación)
   await expect(page.getByLabel("Servicio 1", { exact: true })).toHaveValue(/\d+/);
   await expect(page.getByLabel("Servicio 1", { exact: true }).locator("option:checked")).toHaveText("Mantenimiento del nano cerámico");
+  // Según evaluación, sin precio: empieza en Servicios para escribirlo (pedido 41)
   await page.getByLabel("Precio del servicio 1").fill("350");
+  await page.getByRole("button", { name: "Siguiente: fecha y adelanto" }).click();
   await page.getByLabel("Ingresa el").fill(await diaPropio(info));
   const espacio = page.getByLabel("Espacio", { exact: true });
   await expect(espacio).toBeEnabled();
