@@ -14,7 +14,14 @@ const ENCABEZADOS_SEGURIDAD = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
 ];
 
+// La versión de esta compilación (pedido 39): el commit (SOURCE_COMMIT en Coolify, GITHUB_SHA en el CI) y, solo si no
+// hay ninguno, la fecha del build. Con el commit, recompilar el mismo código no avisa de una versión nueva y la caché
+// de compilación del CI sigue sirviendo. Se fija una sola vez en process.env: el build lee esta configuración en más de
+// un proceso, y con la fecha cada uno tendría otra. El panel la compara con la de /api/version.
+process.env.NEXT_PUBLIC_VERSION_APP ||= process.env.SOURCE_COMMIT || process.env.GITHUB_SHA || new Date().toISOString();
+
 const nextConfig: NextConfig = {
+  env: { NEXT_PUBLIC_VERSION_APP: process.env.NEXT_PUBLIC_VERSION_APP },
   // Imagen de Docker chica: solo los archivos necesarios para correr (ver Dockerfile)
   output: "standalone",
   // No anunciar la tecnología del servidor.

@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Suspense } from "react";
 import { MenuDesplegable } from "@/componentes/menu-desplegable";
 import { AvisoConexion } from "@/componentes/panel/aviso-conexion";
+import { AvisoVersionNueva } from "@/componentes/panel/aviso-version-nueva";
 import { MenuPanel } from "@/componentes/panel/menu-panel";
 import { RegistrarServiceWorker } from "@/componentes/panel/registrar-service-worker";
 import { UsuarioSesion } from "@/componentes/panel/usuario-sesion";
@@ -57,6 +58,8 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
         {/* Los avisos ("Cambios guardados.") son solo del panel: en el diseño raíz, su código (sonner) se descargaba
             también en cada página del sitio, que no los usa (pulido 2, rendimiento). */}
         <Toaster />
+        {/* Pedido 39: "Hay una versión nueva del sistema", con "Actualizar" */}
+        <AvisoVersionNueva />
         <header data-theme="oscuro" className="sticky top-0 z-40 flex h-14 items-center gap-2 bg-fondo px-4 text-tinta lg:hidden">
           <MenuDesplegable lado="left" cabecera={<Marca />} className="[--radius:8px]">
             {/* Igual que la barra lateral: en un celular bajo se desplaza el menú y "Cerrar sesión" queda a la vista. Con el

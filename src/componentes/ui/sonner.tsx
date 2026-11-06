@@ -44,6 +44,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
         classNames: {
           toast: "cn-toast",
         },
+        // El botón de cerrar (pedido 39), con nombre en español para el lector de pantalla: el de sonner es "Close toast"
+        closeButtonAriaLabel: "Cerrar el aviso",
       }}
       {...props}
     />
