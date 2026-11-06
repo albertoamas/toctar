@@ -2,10 +2,11 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeftRightIcon, SearchIcon } from "lucide-react";
+import { SearchIcon } from "lucide-react";
 import { MensajeError } from "@/componentes/panel/campo";
 import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
+import { ResumenPaso } from "@/componentes/panel/resumen-paso";
 import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
 import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { Button, buttonVariants } from "@/componentes/ui/button";
@@ -260,15 +261,15 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
 
       {/* Lo ya elegido, arriba, con "Cambiar" para volver a su paso */}
       {paso > PASO_CLIENTE && datosCliente && (
-        <Resumen id="resumen-cliente" titulo="Cliente" cambiar={clienteNuevo ? () => volverA(PASO_CLIENTE) : "/panel/cotizaciones/nueva"}>
+        <ResumenPaso id="resumen-cliente" titulo="Cliente" cambiar={clienteNuevo ? () => volverA(PASO_CLIENTE) : "/panel/cotizaciones/nueva"}>
           <span className="font-semibold">{datosCliente[0]}</span>
           <span className="text-tinta-suave">{datosCliente[1]}</span>
-        </Resumen>
+        </ResumenPaso>
       )}
       {paso > PASO_VEHICULO && resumen.vehiculo && (
-        <Resumen id="resumen-vehiculo" titulo="Vehículo" cambiar={() => volverA(PASO_VEHICULO)}>
+        <ResumenPaso id="resumen-vehiculo" titulo="Vehículo" cambiar={() => volverA(PASO_VEHICULO)}>
           <DatosVehiculo placa={resumen.vehiculo.placa} detalle={resumen.vehiculo.detalle} tamano={tamanos.find((t) => t.id === tamanoId)?.nombre ?? ""} />
-        </Resumen>
+        </ResumenPaso>
       )}
 
       <div data-paso={PASO_CLIENTE} hidden={paso !== PASO_CLIENTE} className="flex flex-col gap-3">
@@ -359,32 +360,6 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
         </div>
       </PieFormulario>
     </form>
-  );
-}
-
-/** Lo ya elegido en un paso, con "Cambiar": la misma cabecera y tarjeta que las fichas. */
-function Resumen({ id, titulo, cambiar, children }: { id: string; titulo: string; cambiar: (() => void) | "/panel/cotizaciones/nueva"; children: React.ReactNode }) {
-  const contenido = (
-    <>
-      <ArrowLeftRightIcon />
-      Cambiar
-    </>
-  );
-  return (
-    <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-3">
-      <CabeceraSeccion id={id} titulo={titulo}>
-        {typeof cambiar === "string" ? (
-          <Link href={cambiar} className={buttonVariants({ variant: "ghost" })} aria-label={`Cambiar ${titulo.toLowerCase()}`}>
-            {contenido}
-          </Link>
-        ) : (
-          <Button type="button" variant="ghost" onClick={cambiar} aria-label={`Cambiar ${titulo.toLowerCase()}`}>
-            {contenido}
-          </Button>
-        )}
-      </CabeceraSeccion>
-      <p className="flex flex-col tt-tarjeta-panel p-4">{children}</p>
-    </section>
   );
 }
 
