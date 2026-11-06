@@ -44,7 +44,8 @@ const PNG_ANCHO = (() => {
 async function titulosAdentro(page: Page) {
   // Las de la pantalla: en un flujo en pasos, las de los otros pasos están escondidas (pedido 40)
   const tarjetas = page.locator("fieldset.tt-seccion-formulario:visible");
-  expect(await tarjetas.count()).toBeGreaterThan(0);
+  // Se espera a que se vea la primera: contar no espera, y en WebKit la página podía no estar dibujada todavía
+  await expect(tarjetas.first()).toBeVisible();
   for (const tarjeta of await tarjetas.all()) {
     const leyenda = tarjeta.locator(":scope > legend");
     if (await leyenda.evaluate((l) => l.classList.contains("sr-only"))) continue;
