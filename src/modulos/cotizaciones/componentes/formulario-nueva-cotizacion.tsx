@@ -14,6 +14,7 @@ import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import type { EstadoCliente } from "@/modulos/clientes/acciones";
 import { CamposCliente, CamposVehiculo } from "@/modulos/clientes/componentes/campos";
 import { DatosVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
+import { detalleVehiculo, normalizarPlaca } from "@/modulos/clientes/reglas";
 import { leerValores, PREFIJO_VEHICULO } from "@/modulos/clientes/valores";
 import type { Tamano } from "@/modulos/configuracion/consultas";
 import { formatearWhatsApp, normalizarWhatsApp } from "@/lib/whatsapp";
@@ -66,14 +67,64 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
   const clienteNuevo = !cliente;
   const primerPaso = clienteNuevo ? PASO_CLIENTE : PASO_VEHICULO;
   const [paso, setPaso] = useState(primerPaso);
+  // El paso a la vista, para los que escuchan el historial (sin esperar al próximo dibujo)
+  const pasoActual = useRef(primerPaso);
   // Errores de "Siguiente", y los pasos ya revisados desde el último envío (sus errores de la acción ya no valen)
   const [locales, setLocales] = useState<Record<string, string>>({});
   const [revisados, setRevisados] = useState<Set<number>>(new Set());
-  // Lo elegido o escrito, para el resumen de arriba
-  const [resumen, setResumen] = useState<{ cliente?: [string, string]; vehiculo?: { placa: string; detalle: string[] } }>({});
+  // Lo elegido o escrito, para el resumen de arriba: se lee del formulario cada vez que se muestra un paso
+  const [resumen, setResumen] = useState<{ cliente?: [string, string]; vehiculo?: { placa: string; detalle: (string | number)[] } }>({});
+  // El foco pedido. Tras un error de la acción, el paso y los errores pueden llegar en dibujos distintos: se espera un
+  // par de dibujos a que el campo con error esté en pantalla, y después se da por puesto
   const [pedidoFoco, setPedidoFoco] = useState<{ n: number; error: boolean }>({ n: 0, error: false });
-  // El último foco ya puesto: tras un error de la acción, el paso cambia antes de que lleguen los errores
   const focoPuesto = useRef(0);
+  const intentosFoco = useRef(0);
+  const errorAlLlegar = useRef(false);
+  const formulario = useRef<HTMLFormElement>(null);
+
+  function pedirFoco(error: boolean) {
+    intentosFoco.current = 0;
+    setPedidoFoco((p) => ({ n: p.n + 1, error }));
+  }
+
+  /** Lo que se ve arriba del paso, con lo que tiene el formulario ahora. */
+  function leerResumen() {
+    if (!formulario.current) return;
+    const valores = leerValores(new FormData(formulario.current));
+    const elegido = cliente?.vehiculos.find((x) => String(x.id) === valores.vehiculo);
+    const nuevo = (c: string) => valores[PREFIJO_VEHICULO + c]?.trim() || null;
+    const placa = valores[`${PREFIJO_VEHICULO}placa`] ?? "";
+    setResumen({
+      cliente: clienteNuevo ? [valores.nombre?.trim() ?? "", formatearWhatsApp(normalizarWhatsApp(valores.telefono ?? "") ?? valores.telefono ?? "")] : undefined,
+      vehiculo: elegido
+        ? { placa: elegido.placa, detalle: elegido.detalle }
+        : {
+            // Como la guarda el servidor
+            placa: normalizarPlaca(placa) ?? placa.trim().toUpperCase(),
+            detalle: detalleVehiculo({ marca: nuevo("marca"), modelo: nuevo("modelo"), anio: Number(nuevo("anio")) || null, color: nuevo("color") }),
+          },
+    });
+  }
+
+  /** Muestra un paso: lo que hace cada cambio de paso, venga de un botón o del historial. */
+  function mostrar(nuevo: number) {
+    pasoActual.current = nuevo;
+    setPaso(nuevo);
+    leerResumen();
+    window.scrollTo({ top: 0 });
+    pedirFoco(errorAlLlegar.current);
+    errorAlLlegar.current = false;
+  }
+
+  /**
+   * Un paso es una entrada del historial: avanzar agrega una ("#vehiculo", "#servicios") y volver retrocede (Atrás,
+   * "Cambiar" y la vuelta por un error), así el botón Atrás del celular siempre lleva al paso anterior.
+   */
+  function volverA(destino: number) {
+    const pasos = pasoActual.current - destino;
+    if (pasos > 0) window.history.go(-pasos);
+  }
+
   // Lo que devuelve la acción: los errores de nuevo, y la pantalla al primer paso con uno (como conAviso: al terminar la
   // acción, no en un efecto)
   const [estado, accion, enviando] = useActionState<EstadoCliente, FormData>(async (previo, datos) => {
@@ -82,12 +133,14 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
     setRevisados(new Set());
     const conError = primerPasoConError(r.errores ?? {});
     if (conError !== null) {
-      setPaso(Math.max(conError, primerPaso));
-      setPedidoFoco((p) => ({ n: p.n + 1, error: true }));
+      const destino = Math.max(conError, primerPaso);
+      if (destino < pasoActual.current) {
+        errorAlLlegar.current = true;
+        volverA(destino);
+      } else pedirFoco(true);
     }
     return r;
   }, {});
-  const formulario = useRef<HTMLFormElement>(null);
   const v = estado.valores ?? {};
 
   // Controlados, y su valor viaja en un campo oculto propio: React reinicia el formulario al terminar la acción y el
@@ -112,68 +165,72 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
     );
   }
 
-  // El foco, al cambiar de paso o tras un error: al primer campo con error del paso, o al primero del paso. Con un
-  // error, espera a que esté en pantalla (el paso y los errores de la acción pueden llegar en dibujos distintos)
+  // El foco, al cambiar de paso o tras un error: al primer campo con error del paso, o al primero del paso (sin mover la
+  // pantalla, que queda arriba con el indicador y el resumen)
   useEffect(() => {
     if (pedidoFoco.n === 0 || focoPuesto.current === pedidoFoco.n) return;
     const visible = formulario.current?.querySelector<HTMLElement>(`[data-paso="${paso}"]`);
     const objetivo = pedidoFoco.error
       ? visible?.querySelector<HTMLElement>('[aria-invalid="true"], [data-invalido]')
       : visible?.querySelector<HTMLElement>('input:not([type="hidden"]), select, textarea, button[role="radio"]');
-    if (!objetivo) return;
+    if (!objetivo) {
+      intentosFoco.current += 1;
+      if (intentosFoco.current > 2) focoPuesto.current = pedidoFoco.n;
+      return;
+    }
     focoPuesto.current = pedidoFoco.n;
-    objetivo.scrollIntoView({ block: "center" });
+    if (pedidoFoco.error) objetivo.scrollIntoView({ block: "center" });
     objetivo.focus({ preventScroll: true });
   }, [pedidoFoco, paso, estado, locales]);
 
-  // El paso en la dirección: Atrás (el del celular o el del navegador) vuelve al anterior
+  // El historial: Atrás y Adelante del navegador (o del celular) cambian de paso. Adelante revisa los pasos que salta
+  const alCambiarHistoria = useRef<() => void>(() => {});
+  useEffect(() => {
+    alCambiarHistoria.current = () => {
+      const i = ANCLAS.indexOf(window.location.hash.slice(1) as (typeof ANCLAS)[number]);
+      const destino = i >= primerPaso ? i : primerPaso;
+      if (destino > pasoActual.current && formulario.current) {
+        const valores = leerValores(new FormData(formulario.current));
+        for (let p = pasoActual.current; p < destino; p++) {
+          const errores = erroresDelPaso(p, valores, clienteNuevo);
+          if (Object.keys(errores).length === 0) continue;
+          setLocales(errores);
+          errorAlLlegar.current = true;
+          window.history.go(p - destino);
+          return;
+        }
+      }
+      mostrar(destino);
+    };
+  });
   useEffect(() => {
     if (window.location.hash) window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
-    const alVolver = () => {
-      const ancla = window.location.hash.slice(1);
-      const i = ANCLAS.indexOf(ancla as (typeof ANCLAS)[number]);
-      setPaso(i >= primerPaso ? i : primerPaso);
-    };
-    window.addEventListener("popstate", alVolver);
-    return () => window.removeEventListener("popstate", alVolver);
-  }, [primerPaso]);
-
-  function irA(nuevo: number, conHistoria: boolean) {
-    setPaso(nuevo);
-    if (conHistoria) window.history.pushState(window.history.state, "", `#${ANCLAS[nuevo]}`);
-    window.scrollTo({ top: 0 });
-    setPedidoFoco((p) => ({ n: p.n + 1, error: false }));
-  }
+    const escuchar = () => alCambiarHistoria.current();
+    window.addEventListener("popstate", escuchar);
+    return () => window.removeEventListener("popstate", escuchar);
+  }, []);
 
   function siguiente() {
     const valores = leerValores(new FormData(formulario.current!));
     const errores = erroresDelPaso(paso, valores, clienteNuevo);
     setLocales(errores);
     if (Object.keys(errores).length > 0) {
-      setPedidoFoco((p) => ({ n: p.n + 1, error: true }));
+      pedirFoco(true);
       return;
     }
     setRevisados((r) => new Set(r).add(paso));
-    if (paso === PASO_CLIENTE) setResumen((r) => ({ ...r, cliente: [valores.nombre.trim(), formatearWhatsApp(normalizarWhatsApp(valores.telefono) ?? valores.telefono)] }));
-    if (paso === PASO_VEHICULO) {
-      const elegido = cliente?.vehiculos.find((x) => String(x.id) === vehiculo);
-      setResumen((r) => ({
-        ...r,
-        vehiculo:
-          elegido && !vehiculoNuevo
-            ? { placa: elegido.placa, detalle: elegido.detalle.map(String) }
-            : {
-                placa: valores[`${PREFIJO_VEHICULO}placa`].trim().toUpperCase(),
-                detalle: ["marca", "modelo", "anio", "color"].map((c) => valores[PREFIJO_VEHICULO + c]?.trim()).filter(Boolean),
-              },
-      }));
-    }
-    irA(paso + 1, true);
+    window.history.pushState(window.history.state, "", `#${ANCLAS[paso + 1]}`);
+    mostrar(paso + 1);
   }
 
-  // Los errores que se ven: los de la acción (salvo los de pasos ya revisados de nuevo) y los de "Siguiente"
-  const deLaAccion = Object.fromEntries(Object.entries(estado.errores ?? {}).filter(([c]) => !revisados.has(pasoDeCampo(c))));
-  const vista: EstadoCliente = { ...estado, errores: { ...deLaAccion, ...locales } };
+  // Los errores que se ven: los de la acción (salvo los de pasos ya revisados de nuevo) y los de "Siguiente". Lo mismo
+  // con los datos repetidos: corregido el WhatsApp, ya no se ofrece "Usar a …"
+  const vigente = ([campo]: [string, unknown]) => !revisados.has(pasoDeCampo(campo));
+  const vista: EstadoCliente = {
+    ...estado,
+    errores: { ...Object.fromEntries(Object.entries(estado.errores ?? {}).filter(vigente)), ...locales },
+    existentes: Object.fromEntries(Object.entries(estado.existentes ?? {}).filter(vigente)),
+  };
   const e = vista.errores ?? {};
   const datosCliente = cliente ? [cliente.nombre, formatearWhatsApp(cliente.telefono)] : resumen.cliente;
 
@@ -203,13 +260,13 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
 
       {/* Lo ya elegido, arriba, con "Cambiar" para volver a su paso */}
       {paso > PASO_CLIENTE && datosCliente && (
-        <Resumen id="resumen-cliente" titulo="Cliente" cambiar={clienteNuevo ? () => irA(PASO_CLIENTE, true) : "/panel/cotizaciones/nueva"}>
+        <Resumen id="resumen-cliente" titulo="Cliente" cambiar={clienteNuevo ? () => volverA(PASO_CLIENTE) : "/panel/cotizaciones/nueva"}>
           <span className="font-semibold">{datosCliente[0]}</span>
           <span className="text-tinta-suave">{datosCliente[1]}</span>
         </Resumen>
       )}
       {paso > PASO_VEHICULO && resumen.vehiculo && (
-        <Resumen id="resumen-vehiculo" titulo="Vehículo" cambiar={() => irA(PASO_VEHICULO, true)}>
+        <Resumen id="resumen-vehiculo" titulo="Vehículo" cambiar={() => volverA(PASO_VEHICULO)}>
           <DatosVehiculo placa={resumen.vehiculo.placa} detalle={resumen.vehiculo.detalle} tamano={tamanos.find((t) => t.id === tamanoId)?.nombre ?? ""} />
         </Resumen>
       )}
@@ -276,7 +333,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
           {paso === PASO_SERVICIOS && <TotalEnPie total={precios.totales.total} />}
           <div className="flex gap-2">
             {paso > primerPaso && (
-              <Button type="button" variant="outline" disabled={enviando} onClick={() => window.history.back()}>
+              <Button type="button" variant="outline" disabled={enviando} onClick={() => volverA(paso - 1)}>
                 Atrás
               </Button>
             )}

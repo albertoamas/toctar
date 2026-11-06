@@ -12,15 +12,8 @@ import { cotizacionAbierta } from "@/modulos/cotizaciones/consultas";
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
 import { ESTADOS_RESERVA_ACTIVA } from "@/modulos/ordenes/reglas";
 import { clienteConPlaca, clienteConTelefono } from "./consultas";
-import {
-  camposConPrefijo,
-  erroresConPrefijo,
-  leerValores,
-  PREFIJO_VEHICULO,
-  revisarVehiculo,
-  type EstadoCliente,
-  type Existentes,
-} from "./servidor";
+import { revisarVehiculo, type EstadoCliente, type Existentes } from "./servidor";
+import { camposConPrefijo, erroresConPrefijo, leerValores, PREFIJO_VEHICULO } from "./valores";
 import { esquemaCambioDueno, esquemaCliente, esquemaEstado, esquemaEstadoVehiculo, esquemaVehiculo } from "./esquemas";
 import { prefijoVehiculo } from "./reglas";
 

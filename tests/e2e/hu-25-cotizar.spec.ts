@@ -359,14 +359,25 @@ test("Atrás vuelve al paso anterior sin perder lo escrito; nada se registra has
   await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
   await aServicios(page);
   await expect(pasoActual(page)).toContainText("Servicios y precio");
-  // El de la pantalla, y el del celular o el navegador
-  await page.getByRole("button", { name: "Atrás" }).click();
+  // "Cambiar" vuelve en el historial: después, Atrás lleva al paso anterior y no de nuevo a Servicios
+  await page.getByRole("button", { name: "Cambiar vehículo" }).click();
   await expect(pasoActual(page)).toContainText("Vehículo");
   await expect(page.getByLabel("Placa", { exact: true })).toHaveValue(`CA25${s}1`);
-  await page.goBack();
+  await page.getByRole("button", { name: "Atrás" }).click();
   await expect(pasoActual(page)).toContainText("Cliente");
   await expect(page.getByLabel("Nombre", { exact: true })).toHaveValue(`Con atrás ${s}`);
   await expect(page).toHaveURL(/\/panel\/cotizaciones\/nueva\?nuevo=1$/);
+  // Adelante del navegador revisa el paso que salta: sin nombre, se queda en Cliente con el error
+  await page.getByLabel("Nombre", { exact: true }).fill("");
+  await page.goForward();
+  await expect(page.getByText("Escribe el nombre.")).toBeVisible();
+  await expect(pasoActual(page)).toContainText("Cliente");
+  // Con el nombre, el del celular (o el navegador) avanza y retrocede de a un paso
+  await page.getByLabel("Nombre", { exact: true }).fill(`Con atrás ${s}`);
+  await aVehiculo(page);
+  await expect(page.getByRole("region", { name: "Cliente" })).toContainText(`Con atrás ${s}`);
+  await page.goBack();
+  await expect(pasoActual(page)).toContainText("Cliente");
   // Hasta "Crear cotización" no se registró nada
   expect(await consultar("select 1 from cliente where nombre = $1", [`Con atrás ${s}`])).toEqual([]);
 });

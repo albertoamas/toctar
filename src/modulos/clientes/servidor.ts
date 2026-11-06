@@ -15,8 +15,6 @@ import { clienteConPlaca } from "./consultas";
 export type EstadoCliente = EstadoFormulario & { existentes?: Record<string, { id: number; nombre: string; vehiculoId?: number }> };
 export type Existentes = NonNullable<EstadoCliente["existentes"]>;
 
-// Lo que se lee del formulario, sin nada del servidor: también lo usa el navegador (pedido 40)
-export { camposConPrefijo, erroresConPrefijo, leerValores, PREFIJO_VEHICULO } from "./valores";
 
 /**
  * Lo que el esquema no puede saber de un vehículo: si la placa ya es de otro vehículo activo (RF-23) y si el tamaño

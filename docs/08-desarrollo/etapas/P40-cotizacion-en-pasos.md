@@ -40,7 +40,7 @@ En el paso 3 van los servicios, ¿cómo se cotizó?, el total y las condiciones,
 
 **Detalles de la pantalla:**
 - **El pie:** fijo abajo en el celular (`PieFormulario`), con "Atrás" (contorno) y el botón principal en rojo.
-- **El botón Atrás del celular o del navegador:** vuelve al paso anterior. El paso va en la dirección (`#vehiculo`, `#servicios`).
+- **El historial:** cada paso es una entrada (`#vehiculo`, `#servicios`). Avanzar agrega una; volver retrocede, sea con "Atrás", con "Cambiar" o por un error de la acción. Así el botón Atrás del celular siempre lleva al paso anterior. Adelante del navegador revisa los pasos que salta.
 - **Enter en un campo** de los dos primeros pasos sigue al próximo, en lugar de crear la cotización.
 
 ## 6. Acciones del servidor

@@ -14,7 +14,8 @@ export const PASO_CLIENTE = 0;
 export const PASO_VEHICULO = 1;
 export const PASO_SERVICIOS = 2;
 
-const CAMPOS_CLIENTE = new Set(["nombre", "telefono", "correo", "nit", "razonSocial", "notas"]);
+// Los del esquema de Clientes: un campo nuevo del cliente vuelve a su paso sin tocar nada aquí
+const CAMPOS_CLIENTE = new Set(Object.keys(esquemaCliente.shape));
 
 /** En qué paso está el campo de un error que devolvió la acción: ahí vuelve la pantalla. */
 export function pasoDeCampo(campo: string): number {

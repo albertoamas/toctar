@@ -10,15 +10,8 @@ import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/form
 import { exigirAccion, exigirModulo } from "@/lib/sesion";
 import { clienteConTelefono } from "@/modulos/clientes/consultas";
 import { esquemaCliente, esquemaVehiculo } from "@/modulos/clientes/esquemas";
-import {
-  camposConPrefijo,
-  erroresConPrefijo,
-  leerValores,
-  PREFIJO_VEHICULO,
-  revisarVehiculo,
-  type EstadoCliente,
-  type Existentes,
-} from "@/modulos/clientes/servidor";
+import { revisarVehiculo, type EstadoCliente, type Existentes } from "@/modulos/clientes/servidor";
+import { camposConPrefijo, erroresConPrefijo, leerValores, PREFIJO_VEHICULO } from "@/modulos/clientes/valores";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { entradaPrecios, esquemaCambioEstado, esquemaClienteElegido, esquemaNuevaVersion, esquemaPreciosNuevos, esquemaVehiculoElegido } from "./esquemas";
 import { tieneReservaActiva, tieneVersiones } from "./consultas";
