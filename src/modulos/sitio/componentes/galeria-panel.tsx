@@ -222,7 +222,7 @@ function EditarItem({ item, servicios, alTerminar }: { item: ItemGaleria; servic
           ))}
         </Selector>
       </Campo>
-      <Campo id={`${prefijo}-descripcion`} etiqueta="Descripción (opcional)" error={e.descripcion}>
+      <Campo id={`${prefijo}-descripcion`} etiqueta="Descripción" opcional error={e.descripcion}>
         <Input id={`${prefijo}-descripcion`} name="descripcion" defaultValue={estado.valores?.descripcion ?? item.descripcion} aria-invalid={!!e.descripcion} aria-describedby={e.descripcion ? `${prefijo}-descripcion-error` : undefined} />
       </Campo>
       <div className="flex gap-2">
@@ -327,7 +327,7 @@ function SubirFotos({ servicios, alTerminar }: { servicios: Servicio[]; alTermin
           ))}
         </Selector>
       </Campo>
-      <Campo id="descripcion" etiqueta="Descripción (opcional)" error={e.descripcion} ayuda='La leen Google y los lectores de pantalla, y se ve debajo de la foto si va en la portada. Ejemplo: "Pulido y nano cerámico 5 años en una Hilux".'>
+      <Campo id="descripcion" etiqueta="Descripción" opcional error={e.descripcion} ayuda='La leen Google y los lectores de pantalla, y se ve debajo de la foto si va en la portada. Ejemplo: "Pulido y nano cerámico 5 años en una Hilux".'>
         <Input id="descripcion" name="descripcion" autoComplete="off" defaultValue={estado.valores?.descripcion} aria-invalid={!!e.descripcion} aria-describedby={e.descripcion ? "descripcion-error" : "descripcion-ayuda"} />
       </Campo>
 

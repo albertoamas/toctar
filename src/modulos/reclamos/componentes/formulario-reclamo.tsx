@@ -103,12 +103,12 @@ export function FormularioReclamo({ servicios }: { servicios: { id: number; nomb
         <Campo id="placa" etiqueta="Placa del vehículo" error={e.placa} ayuda="Por ejemplo, 2849XKT.">
           <Input id="placa" name="placa" autoCapitalize="characters" autoComplete="off" className={CAMPO} defaultValue={v?.placa} aria-invalid={!!e.placa} aria-describedby={describir("placa", true)} />
         </Campo>
-        <Campo id="fechaAproximada" etiqueta="Fecha aproximada del trabajo (opcional)" error={e.fechaAproximada}>
+        <Campo id="fechaAproximada" etiqueta="Fecha aproximada del trabajo" opcional error={e.fechaAproximada}>
           <Input id="fechaAproximada" name="fechaAproximada" type="date" className={CAMPO} defaultValue={v?.fechaAproximada} aria-invalid={!!e.fechaAproximada} aria-describedby={describir("fechaAproximada")} />
         </Campo>
       </div>
 
-      <Campo id="servicioId" etiqueta="Servicio (opcional)" error={e.servicioId}>
+      <Campo id="servicioId" etiqueta="Servicio" opcional error={e.servicioId}>
         <Selector id="servicioId" name="servicioId" className={CAMPO} defaultValue={v?.servicioId ?? ""} aria-invalid={!!e.servicioId} aria-describedby={describir("servicioId")}>
           <option value="">No sé o es otro</option>
           {servicios.map((s) => (

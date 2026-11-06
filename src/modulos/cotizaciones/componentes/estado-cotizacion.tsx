@@ -87,7 +87,7 @@ function FormularioRechazar({ id }: { id: number }) {
         </RadioGroup>
         {e.motivo && <MensajeError id="motivo-error">{e.motivo}</MensajeError>}
       </div>
-      <Campo id="detalle" etiqueta="Detalle" error={e.detalle} ayuda={elegido === "otro" ? "Con «Otro», escribe qué pasó." : "Opcional."}>
+      <Campo id="detalle" etiqueta="Detalle" opcional={elegido !== "otro"} error={e.detalle} ayuda={elegido === "otro" ? "Con «Otro», escribe qué pasó." : "Opcional."}>
         <Textarea id="detalle" name="detalle" rows={2} defaultValue={v.detalle} aria-invalid={!!e.detalle} aria-describedby={e.detalle ? "detalle-error" : "detalle-ayuda"} />
       </Campo>
       <PieModal>

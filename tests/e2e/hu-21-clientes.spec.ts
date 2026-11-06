@@ -32,7 +32,7 @@ test("el personal registra un cliente con su primer vehículo; los obligatorios 
   await page.getByLabel("Placa", { exact: true }).fill(`hu21 ${sufijo(info)}-01`);
   await page.getByLabel("Tamaño").selectOption({ label: "Compactos" });
   await page.getByLabel("Modelo").fill("Yaris");
-  await page.getByLabel("Año", { exact: true }).fill("2019");
+  await page.getByLabel("Año (opcional)", { exact: true }).fill("2019");
   await page.getByRole("button", { name: "Crear cliente" }).click();
 
   await expect(page).toHaveURL(/\/panel\/clientes\/\d+\?creado=1$/);

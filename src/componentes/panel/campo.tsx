@@ -14,12 +14,20 @@ import { Label } from "@/componentes/ui/label";
 type ContextoCampo = { base: string; id: string; descripcion: string | undefined };
 const Contexto = createContext<ContextoCampo | null>(null);
 
-export function Campo(props: { id: string; etiqueta: string; error?: string; ayuda?: React.ReactNode; children: React.ReactNode }) {
+/**
+ * `opcional`: se puede dejar vacío. La regla del panel (pulido 13.10): se marca lo opcional, no lo obligatorio, con
+ * "(opcional)" junto a la etiqueta, en gris y sin negrita. Es parte de la etiqueta: el lector de pantalla lo dice.
+ */
+export function Campo(props: { id: string; etiqueta: string; opcional?: boolean; error?: string; ayuda?: React.ReactNode; children: React.ReactNode }) {
   const id = `${props.id}-${useId()}`;
   const descripcion = props.error ? `${id}-error` : props.ayuda ? `${id}-ayuda` : undefined;
   return (
     <div className="flex flex-col gap-2">
-      <Label htmlFor={id}>{props.etiqueta}</Label>
+      <Label htmlFor={id}>
+        {props.etiqueta}
+        {/* El espacio, para el lector de pantalla (sin él diría "Marca(opcional)"); el margen lo descuenta del hueco de la etiqueta */}
+        {props.opcional && <span className="-ml-1 font-normal text-tinta-suave">{" (opcional)"}</span>}
+      </Label>
       <Contexto.Provider value={{ base: props.id, id, descripcion }}>{props.children}</Contexto.Provider>
       {props.error ? (
         <MensajeError id={`${id}-error`}>{props.error}</MensajeError>

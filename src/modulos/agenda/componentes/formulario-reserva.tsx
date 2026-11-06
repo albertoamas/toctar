@@ -170,10 +170,10 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
         </Campo>
         {/* Se usan a veces: plegadas; se abren solas si traen algo escrito o un error */}
         <MasDatos texto="Agregar hora y nota" abierto={!!horaIngreso || !!nota || !!e.horaIngreso || !!e.nota}>
-          <Campo id="horaIngreso" etiqueta="Hora aproximada" error={e.horaIngreso} ayuda="Como lo dijo el cliente: «a las 9», «en la tarde».">
+          <Campo id="horaIngreso" etiqueta="Hora aproximada" opcional error={e.horaIngreso} ayuda="Como lo dijo el cliente: «a las 9», «en la tarde».">
             <Input id="horaIngreso" name="horaIngreso" autoComplete="off" value={horaIngreso} onChange={(ev) => setHoraIngreso(ev.target.value)} className="max-w-xs" aria-invalid={!!e.horaIngreso} />
           </Campo>
-          <Campo id="nota" etiqueta="Nota" error={e.nota}>
+          <Campo id="nota" etiqueta="Nota" opcional error={e.nota}>
             <Textarea id="nota" name="nota" rows={2} value={nota} onChange={(ev) => setNota(ev.target.value)} aria-invalid={!!e.nota} />
           </Campo>
         </MasDatos>

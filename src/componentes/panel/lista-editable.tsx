@@ -171,7 +171,7 @@ function FormularioElemento(props: Props & { elemento?: ElementoLista; alTermina
         />
       </Campo>
       {campoDescripcion && (
-        <Campo id={`${prefijo}-descripcion`} etiqueta={campoDescripcion.etiqueta} error={e.descripcion} ayuda={campoDescripcion.ayuda}>
+        <Campo id={`${prefijo}-descripcion`} etiqueta={campoDescripcion.etiqueta} opcional error={e.descripcion} ayuda={campoDescripcion.ayuda}>
           <Input
             id={`${prefijo}-descripcion`}
             name="descripcion"
