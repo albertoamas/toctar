@@ -111,6 +111,7 @@
 | 6.2 | Se instala de verdad en Android (Chrome) y en iPhone (Safari, "Agregar a inicio"), y gira al poner el celular en horizontal | A mano en el entorno de pruebas: la instalación exige https | ⏳ con A3 (dominio) |
 | 6.3 | Sin conexión se muestra un aviso claro | E2E "sin internet, el panel muestra el aviso y una página nueva muestra «Sin conexión»": franja en el panel y página propia con "Reintentar" | ✅ |
 | 6.4 | Sin modo sin conexión (acuerdo): no se guarda nada para usar sin internet | Revisión del código: el service worker (`public/sw.js`) solo guarda la página de aviso | ✅ |
+| 6.5 | Cuando se publica una versión nueva, el panel abierto avisa "Hay una versión nueva del sistema" con "Actualizar" (pedido 39) | E2E `p39-version-nueva`: avisa con otra versión, "Actualizar" recarga, no avisa con la misma, revisa al volver a la app y no aparece en el sitio. A mano: con la app abierta en el celular, después de un despliegue en pruebas | ✅ (probar a mano después de un despliegue) |
 
 ## HU-07 Servicios del sitio
 

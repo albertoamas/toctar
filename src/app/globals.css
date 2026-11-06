@@ -209,6 +209,13 @@
 [data-sonner-toaster] [data-sonner-toast][data-type="success"] {
   border-left: 4px solid var(--exito);
 }
+/* La información (pedido 39: "Hay una versión nueva del sistema"), en azul */
+[data-sonner-toaster] [data-sonner-toast][data-type="info"] {
+  border-left: 4px solid var(--info);
+}
+[data-sonner-toaster] [data-sonner-toast][data-type="info"] [data-icon] {
+  color: var(--info);
+}
 
 /* Recursos gráficos de la marca (componentes del Design System). */
 @layer components {

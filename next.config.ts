@@ -14,7 +14,13 @@ const ENCABEZADOS_SEGURIDAD = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
 ];
 
+// La versión de esta compilación (pedido 39): el commit, si Coolify lo pasa, o la fecha del build. Se fija una sola vez
+// en process.env: el build lee esta configuración en más de un proceso, y cada uno heredaría una fecha distinta. El panel
+// la compara con la del servidor (/api/version) para avisar que hay una versión nueva.
+process.env.NEXT_PUBLIC_VERSION_APP ||= process.env.SOURCE_COMMIT || new Date().toISOString();
+
 const nextConfig: NextConfig = {
+  env: { NEXT_PUBLIC_VERSION_APP: process.env.NEXT_PUBLIC_VERSION_APP },
   // Imagen de Docker chica: solo los archivos necesarios para correr (ver Dockerfile)
   output: "standalone",
   // No anunciar la tecnología del servidor.
