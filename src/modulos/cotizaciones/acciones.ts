@@ -70,10 +70,11 @@ export async function crearCotizacion(_previo: EstadoCliente, datos: FormData): 
   const entrada = esquemaPreciosNuevos.safeParse(entradaPrecios(datos));
   if (!entrada.success) Object.assign(errores, erroresDe(entrada.error));
 
-  // Cliente nuevo: solo lo justo para atenderlo; el resto se completa en su ficha
-  let nuevoCliente: { nombre: string; telefono: string } | null = null;
+  // Cliente nuevo, con todo lo que se cargó en el paso del cliente (pedido 40): nombre y WhatsApp, y si se escribieron,
+  // correo, NIT, razón social y notas. El mismo esquema que el alta de Clientes
+  let nuevoCliente: z.output<typeof esquemaCliente> | null = null;
   if (elegido === CLIENTE_NUEVO) {
-    const c = esquemaCliente.pick({ nombre: true, telefono: true }).safeParse(valores);
+    const c = esquemaCliente.safeParse(valores);
     if (c.success) nuevoCliente = c.data;
     else Object.assign(errores, erroresDe(c.error));
   }

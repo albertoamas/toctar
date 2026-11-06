@@ -169,6 +169,8 @@ export async function crearCotizacionEnBase(datos: {
  */
 export async function cotizarEnPantalla(page: Page, clienteId: number, servicio: string, modo: "En persona" | "Por fotos" = "En persona"): Promise<number> {
   await page.goto(`/panel/cotizaciones/nueva?cliente=${clienteId}`, { waitUntil: "networkidle" });
+  // Pedido 40: empieza en el vehículo, con el suyo ya marcado
+  await page.getByRole("button", { name: "Siguiente: servicios" }).click();
   await page.getByRole("button", { name: "Agregar servicio" }).click();
   await page.getByLabel("Servicio 1", { exact: true }).selectOption({ label: servicio });
   await page.getByRole("radio", { name: new RegExp(`^${modo}`) }).check();
