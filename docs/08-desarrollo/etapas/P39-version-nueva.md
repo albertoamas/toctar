@@ -25,7 +25,7 @@ Que el dueño y los encargados sepan cuándo se publicó una versión nueva del 
 ## 4. Datos
 Sin cambios en la base. La versión es un texto de la compilación:
 - Al compilar, `next.config.ts` fija `NEXT_PUBLIC_VERSION_APP`: el commit (`SOURCE_COMMIT` en Coolify, `GITHUB_SHA` en el CI) o, si no hay, la fecha de la compilación. Con el commit, recompilar el mismo código no avisa de más.
-- El Dockerfile declara `ARG SOURCE_COMMIT`. En Coolify hay que activar "Include Source Commit in Build" en la app; si no, la versión es la fecha de la compilación y avisa también cuando se recompila el mismo código, lo que no rompe nada.
+- El Dockerfile declara `ARG SOURCE_COMMIT`. En Coolify, la opción es "Source commit availability" → **Available during build** (Advanced → Build & deploy), por ahora desactivada (§12); sin ella, la versión es la fecha de la compilación y avisa también cuando se recompila el mismo código, lo que no rompe nada.
 - El navegador la recibe dentro de su código. El servidor la devuelve en `GET /api/version`.
 
 ## 5. Pantallas y rutas
@@ -63,4 +63,4 @@ Rama `pedido-39-version-nueva`, un PR: especificación, maqueta aprobada y códi
 Con el panel abierto en el celular, después de un despliegue en pruebas, al volver a la app aparece el aviso y "Actualizar" carga la versión nueva.
 
 ## 12. Decisiones abiertas
-Ninguna.
+- **El commit como versión en Coolify:** el 05/11 se decidió dejar "Source commit availability" en **Runtime only**. Mientras tanto, la versión es la fecha de la compilación y el aviso sale también en un redeploy manual del mismo código. Para el futuro: **Available during build** en las dos apps (`07-preparacion/servidor.md`, Coolify).

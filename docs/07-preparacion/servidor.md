@@ -110,6 +110,7 @@ Instalado con el instalador oficial (`curl -fsSL https://cdn.coollabs.io/coolify
   - Secretas: `DATABASE_URL` (la URL interna de la base de **su** entorno), `BETTER_AUTH_SECRET` (**distinto** en cada entorno), `DUENO_INICIAL_CONTRASENA`, `S3_ACCESS_KEY_ID` y `S3_SECRET_ACCESS_KEY` (token `toctar-app`).
   - En todas: Runtime encendido e **Interpolation apagado** (si no, un `$` en un secreto se reemplaza sin avisar).
   - Producción: `DUENO_INICIAL_USUARIO=yerko.tejerina`. Convención de usuarios: `nombre.apellido`, en minúsculas, sin tildes ni ñ.
+- **Source commit availability** (Advanced → Build & deploy): **Runtime only**, por decisión del 05/11/2026. **Para el futuro:** pasarla a **Available during build** en las dos apps. Así el aviso de versión nueva del panel (pedido 39) usa el commit y no avisa cuando se recompila el mismo código (un redeploy manual o un cambio de variable). Mientras tanto usa la fecha de la compilación y avisa también en esos casos, sin romper nada. Para comprobarlo después: `https://pruebas.toctardetailing.com/api/version` muestra el commit en lugar de una fecha.
 - **Bases:** PostgreSQL 18 (`postgres:18-alpine`), **privadas** (sin acceso público ni port mappings). `btree_gist` viene en la imagen y la activan las migraciones.
 - **Respaldos:** almacenamiento S3 `toctar-respaldos` (bucket del mismo nombre, token de respaldos).
 
