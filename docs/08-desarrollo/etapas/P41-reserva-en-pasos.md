@@ -52,7 +52,8 @@ Sin cambios en la base ni en la acción `agendarReserva`.
 
 ## 7. Componentes y diseño
 - **`PasosFlujo`** (pedido 40), con los pasos de `pasosNuevaReserva`.
-- **`ResumenPaso`** (`componentes/panel/resumen-paso.tsx`): lo ya elegido con "Cambiar", sacado de Nueva cotización para que lo usen las dos pantallas.
+- **`ResumenPaso`** (`componentes/panel/resumen-paso.tsx`): lo ya elegido con "Cambiar", sacado de Nueva cotización para que lo usen las dos pantallas. `href` para un paso de la dirección (lo puede pasar una página del servidor) y `alCambiar` para un paso del mismo formulario.
+- **`useFocoDePaso`** (`componentes/panel/foco-de-paso.ts`): el foco al cambiar de paso y tras un error, común a las dos pantallas. Lo que se hace después del await de una acción se dibuja antes que su resultado: el foco espera a que el resultado nuevo esté a la vista y no cae en el error del envío anterior (lo encontró la revisión; también pasaba en la cotización). Por lo mismo, los errores de "Siguiente" quedan atados al resultado con que se hicieron, en lugar de reiniciarse tras el await.
 - **Lógica pura en `modulos/agenda/pasos-reserva.ts`:** los pasos, en qué paso está cada error, la revisión de los servicios y dónde empieza la reserva sin cotización.
 
 ## 8. Textos de la interfaz

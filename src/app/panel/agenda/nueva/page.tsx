@@ -79,11 +79,11 @@ const enlace = "font-semibold underline";
 function ClienteYVehiculo(props: { nombre: string; vehiculo: VehiculoReserva | null; cambiarCliente?: Route; cambiarVehiculo?: Route }) {
   return (
     <>
-      <ResumenPaso id="resumen-cliente" titulo="Cliente" cambiar={props.cambiarCliente}>
+      <ResumenPaso id="resumen-cliente" titulo="Cliente" href={props.cambiarCliente}>
         <span className="font-semibold">{props.nombre}</span>
       </ResumenPaso>
       {props.vehiculo && (
-        <ResumenPaso id="resumen-vehiculo" titulo="Vehículo" cambiar={props.cambiarVehiculo}>
+        <ResumenPaso id="resumen-vehiculo" titulo="Vehículo" href={props.cambiarVehiculo}>
           <DatosVehiculo placa={props.vehiculo.placa} detalle={props.vehiculo.detalle} tamano={props.vehiculo.tamano} />
         </ResumenPaso>
       )}
@@ -144,16 +144,23 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
     // Elegida en el paso Servicios de la reserva (llega con su cliente y vehículo): es el último paso y se puede volver.
     // Desde "Por reservar" o la cotización, arriba van los pasos del trabajo
     const enLosPasos = numero("cliente") === c.cliente.id && numero("vehiculo") === c.vehiculo.id;
+    // Con varios vehículos, también se vuelve a elegir el vehículo, como en el paso Servicios
+    const conVarios = enLosPasos && ((await datosDirecta(c.cliente.id, c.vehiculo.id))?.vehiculos.length ?? 0) > 1;
     return (
       <>
         <Encabezado />
         {enLosPasos ? indicador(PASO_FECHA) : <PasosTrabajo paso={c.aceptada ? 1 : 0} />}
-        <ClienteYVehiculo nombre={c.cliente.nombre} vehiculo={c.vehiculo} cambiarCliente={enLosPasos ? direccion({}) : undefined} />
+        <ClienteYVehiculo
+          nombre={c.cliente.nombre}
+          vehiculo={c.vehiculo}
+          cambiarCliente={enLosPasos ? direccion({}) : undefined}
+          cambiarVehiculo={conVarios ? direccion({ cliente: c.cliente.id }) : undefined}
+        />
         {/* Los servicios de la cotización, en lectura: para cambiar precios se hace una versión nueva */}
         <ResumenPaso
           id="cotizacion"
           titulo={`Cotización ${c.numero}${c.version > 1 ? `, versión ${c.version}` : ""}`}
-          cambiar={enLosPasos ? direccion({ cliente: c.cliente.id, vehiculo: c.vehiculo.id }) : undefined}
+          href={enLosPasos ? direccion({ cliente: c.cliente.id, vehiculo: c.vehiculo.id }) : undefined}
           etiquetaCambiar="Cambiar servicios"
           claseContenido="gap-2"
         >

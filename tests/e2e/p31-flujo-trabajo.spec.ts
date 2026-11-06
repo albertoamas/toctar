@@ -158,6 +158,12 @@ test("Nueva reserva ofrece las cotizaciones del vehículo: los precios llegan si
   // Plegada: lo común es usar la cotización, y no se ofrece seguir sin elegir los servicios
   await expect(page.getByRole("button", { name: "Reservar" })).toBeHidden();
   await expect(page.getByRole("button", { name: /^Siguiente/ })).toBeHidden();
+  // Empezada una sin cotización, "Siguiente" queda aunque se quite el último servicio, y dice qué falta
+  await page.getByText("Reserva sin cotización", { exact: true }).click();
+  await page.getByRole("button", { name: "Agregar servicio" }).click();
+  await page.getByRole("button", { name: "Quitar servicio 1" }).click();
+  await page.getByRole("button", { name: "Siguiente: fecha y adelanto" }).click();
+  await expect(page.getByText("Agrega al menos un servicio.")).toBeVisible();
   await suyas.getByRole("link").click();
   // Va al último paso de la reserva, con "Cambiar servicios" para volver a elegir (pedido 41)
   await expect(page).toHaveURL(new RegExp(`cotizacion=${c.cotizacionId}&cliente=${c.clienteId}&vehiculo=${c.vehiculoId}$`));

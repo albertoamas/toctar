@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import { useFocoDePaso } from "@/componentes/panel/foco-de-paso";
 import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
@@ -75,29 +76,30 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
   const [paso, setPaso] = useState<number>(inicial);
   // El paso a la vista, para los que escuchan el historial (sin esperar al próximo dibujo)
   const pasoActual = useRef<number>(inicial);
-  // Errores de "Siguiente", y si los servicios ya se revisaron de nuevo desde el último envío (sus errores de la acción
-  // ya no valen)
-  const [locales, setLocales] = useState<Record<string, string>>({});
-  const [serviciosRevisados, setServiciosRevisados] = useState(false);
-  // El foco pedido: al cambiar de paso, al primer campo; tras un error, al campo con error. El paso y los errores pueden
-  // llegar en dibujos distintos: se espera un par de dibujos a que el campo esté en pantalla
-  const [pedidoFoco, setPedidoFoco] = useState<{ n: number; error: boolean }>({ n: 0, error: false });
-  const focoPuesto = useRef(0);
-  const intentosFoco = useRef(0);
+  // Los errores de "Siguiente" y la revisión de los servicios, atados al resultado de la acción con que se hicieron: con
+  // un envío nuevo dejan de valer solos (sin reiniciarlos tras el await, que se dibujaba antes que el resultado)
+  const [locales, setLocales] = useState<{ en: EstadoFormulario | null; errores: Record<string, string> }>({ en: null, errores: {} });
+  const [revisadosEn, setRevisadosEn] = useState<EstadoFormulario | null>(null);
   const errorAlLlegar = useRef(false);
   const formulario = useRef<HTMLFormElement>(null);
 
-  function pedirFoco(error: boolean) {
-    intentosFoco.current = 0;
-    setPedidoFoco((p) => ({ n: p.n + 1, error }));
-  }
+  // Lo que devuelve la acción: los errores de nuevo y, si son de los servicios, la pantalla vuelve a ellos (como
+  // conAviso: al terminar la acción, no en un efecto). Lo que hace al terminar está más abajo (`alTerminar`): usa el
+  // foco, que necesita el resultado de la acción
+  const alTerminar = useRef<(r: EstadoFormulario) => void>(() => {});
+  const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(async (previo, datos) => {
+    const r = await agendarReserva(previo, datos);
+    alTerminar.current(r);
+    return r;
+  }, {});
+  const foco = useFocoDePaso(formulario, paso, estado);
 
   /** Muestra un paso: lo que hace cada cambio de paso, venga de un botón o del historial. */
   function mostrar(nuevo: number) {
     pasoActual.current = nuevo;
     setPaso(nuevo);
     window.scrollTo({ top: 0 });
-    pedirFoco(errorAlLlegar.current);
+    foco.pedir(errorAlLlegar.current);
     errorAlLlegar.current = false;
   }
 
@@ -113,21 +115,17 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
     }
   }
 
-  // Lo que devuelve la acción: los errores de nuevo y, si son de los servicios, la pantalla vuelve a ellos (como
-  // conAviso: al terminar la acción, no en un efecto)
-  const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(async (previo, datos) => {
-    const r = await agendarReserva(previo, datos);
-    setLocales({});
-    setServiciosRevisados(false);
-    const errores = Object.keys(r.errores ?? {});
-    if (errores.length > 0) {
+  useEffect(() => {
+    alTerminar.current = (r) => {
+      const errores = Object.keys(r.errores ?? {});
+      if (errores.length === 0) return;
+      foco.esperar(r);
       if (directa && pasoActual.current === PASO_FECHA && errores.some((c) => pasoDeCampoReserva(c) === PASO_SERVICIOS)) {
         errorAlLlegar.current = true;
         volverAServicios();
-      } else pedirFoco(true);
-    }
-    return r;
-  }, {});
+      } else foco.pedir(true);
+    };
+  });
 
   // Todo controlado: React reinicia el formulario al terminar la acción y así nada se pierde tras un error
   const [lineas, setLineas] = useState<Linea[]>(origen.tipo === "directa" ? (origen.lineasIniciales ?? []) : []);
@@ -166,24 +164,6 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
         ).total
       : null;
 
-  // El foco, al cambiar de paso o tras un error: al primer campo con error del paso, o al primero del paso (sin mover la
-  // pantalla, que queda arriba con el indicador y el resumen)
-  useEffect(() => {
-    if (pedidoFoco.n === 0 || focoPuesto.current === pedidoFoco.n) return;
-    const visible = formulario.current?.querySelector<HTMLElement>(`[data-paso="${paso}"]`);
-    const objetivo = pedidoFoco.error
-      ? visible?.querySelector<HTMLElement>('[aria-invalid="true"], [data-invalido]')
-      : visible?.querySelector<HTMLElement>('a[href], input:not([type="hidden"]), select, textarea, button, summary');
-    if (!objetivo) {
-      intentosFoco.current += 1;
-      if (intentosFoco.current > 2) focoPuesto.current = pedidoFoco.n;
-      return;
-    }
-    focoPuesto.current = pedidoFoco.n;
-    if (pedidoFoco.error) objetivo.scrollIntoView({ block: "center" });
-    objetivo.focus({ preventScroll: true });
-  }, [pedidoFoco, paso, estado, locales]);
-
   // El historial: Atrás y Adelante del navegador (o del celular) cambian de paso. Adelante a la fecha revisa los servicios
   const alCambiarHistoria = useRef<() => void>(() => {});
   useEffect(() => {
@@ -193,7 +173,7 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
       if (ancla === ANCLA[PASO_FECHA] && pasoActual.current === PASO_SERVICIOS && formulario.current) {
         const errores = erroresServicios(String(new FormData(formulario.current).get("lineas") ?? "[]"));
         if (Object.keys(errores).length > 0) {
-          setLocales(errores);
+          setLocales({ en: estado, errores });
           errorAlLlegar.current = true;
           window.history.back();
           return;
@@ -212,26 +192,39 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
 
   function siguiente() {
     const errores = erroresServicios(String(new FormData(formulario.current!).get("lineas") ?? "[]"));
-    setLocales(errores);
+    setLocales({ en: estado, errores });
     if (Object.keys(errores).length > 0) {
-      pedirFoco(true);
+      foco.pedir(true);
       return;
     }
-    setServiciosRevisados(true);
+    setRevisadosEn(estado);
     window.history.pushState(window.history.state, "", `#${ANCLA[PASO_FECHA]}`);
     mostrar(PASO_FECHA);
   }
 
   // Los errores que se ven: los de la acción (salvo los de los servicios si ya se revisaron de nuevo) y los de "Siguiente"
-  const vigente = ([campo]: [string, unknown]) => !(serviciosRevisados && pasoDeCampoReserva(campo) === PASO_SERVICIOS);
-  const e: Partial<Record<string, string>> = { ...Object.fromEntries(Object.entries(estado.errores ?? {}).filter(vigente)), ...locales };
+  const vigente = ([campo]: [string, unknown]) => !(revisadosEn === estado && pasoDeCampoReserva(campo) === PASO_SERVICIOS);
+  const e: Partial<Record<string, string>> = {
+    ...Object.fromEntries(Object.entries(estado.errores ?? {}).filter(vigente)),
+    ...(locales.en === estado ? locales.errores : {}),
+  };
   const conErrorEnServicios = Object.keys(e).some((c) => pasoDeCampoReserva(c) === PASO_SERVICIOS && e[c]);
-  // Con cotizaciones del vehículo, lo común es usar una: "Siguiente" aparece recién al armar una sin cotización
-  const conSiguiente = !cotizaciones || lineas.length > 0 || conErrorEnServicios;
+  // Con cotizaciones del vehículo, lo común es usar una: "Siguiente" aparece al empezar una sin cotización, y queda
+  // aunque se quite el último servicio (así dice qué falta)
+  const [armando, setArmando] = useState(lineas.length > 0);
+  const conSiguiente = !cotizaciones || armando || conErrorEnServicios;
 
   const servicios = origen.tipo === "directa" && (
     <SeccionFormulario titulo="Servicios" claseContenido="gap-4">
-      <LineasServicio opciones={origen.opciones} lineas={lineas} onChange={setLineas} errores={e} />
+      <LineasServicio
+        opciones={origen.opciones}
+        lineas={lineas}
+        onChange={(nuevas) => {
+          setLineas(nuevas);
+          if (nuevas.length > 0) setArmando(true);
+        }}
+        errores={e}
+      />
     </SeccionFormulario>
   );
 
@@ -264,11 +257,11 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
 
       {/* Los servicios elegidos, arriba de la fecha, con "Cambiar" para volver a ellos */}
       {origen.tipo === "directa" && paso === PASO_FECHA && (
-        <ResumenPaso id="resumen-servicios" titulo="Servicios" cambiar={volverAServicios} claseContenido="gap-2">
+        <ResumenPaso id="resumen-servicios" titulo="Servicios" alCambiar={volverAServicios} claseContenido="gap-2">
           <ul className="flex flex-col gap-1">
             {lineas.map((l, i) => (
               <li key={i} className="flex justify-between gap-4">
-                <span>{origen.opciones.find((o) => o.varianteId === l.varianteId)?.descripcion}</span>
+                <span>{origen.opciones.find((o) => o.varianteId === l.varianteId)?.descripcion ?? `Servicio ${i + 1}`}</span>
                 <span className="shrink-0 tabular-nums">{mostrarMonto(leerMonto(l.precio) ?? "0")} Bs</span>
               </li>
             ))}
@@ -411,7 +404,8 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
                     siguiente();
                   }}
                 >
-                  {conPagos ? "Siguiente: fecha y adelanto" : "Siguiente: fecha"}
+                  {/* La reserva sin cotización la arma quien ve pagos: el último paso siempre lleva el adelanto */}
+                  Siguiente: fecha y adelanto
                 </Button>
               ) : (
                 <Button key="reservar" type="submit" disabled={enviando || buscando || preparando}>
