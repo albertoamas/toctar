@@ -1,7 +1,8 @@
 "use client";
 
+import { cn } from "cn";
 import { useEffect, useId, useRef, useState } from "react";
-import { proporcionDe } from "@/lib/formato-fotos";
+import { proporcionDe, tienenMismaForma } from "@/lib/formato-fotos";
 import type { UrlsFoto } from "@/lib/fotos";
 
 // Comparador de antes y después de la galería pública: una sola foto partida por una línea que se arrastra. A la
@@ -10,9 +11,9 @@ import type { UrlsFoto } from "@/lib/fotos";
 //   Un gesto vertical desplaza la página y no mueve la línea (`touch-action: pan-y` y el umbral de abajo).
 // - Con el teclado y el lector de pantalla: un deslizador nativo (oculto) que mueve la misma línea con las flechas.
 // Las dos fotos se ven enteras (`object-contain`): si no tienen la misma forma, una queda con bordes, pero nunca recortada.
-// Con `marco` (la galería) va en un recuadro de 4:3, o cuadrado con `formaMarco` (pedido 34), y las fotos lo llenan (`object-cover`), salvo
+// Con `marco` (la galería y la portada) va en un recuadro de 4:3, o cuadrado con `formaMarco` (pedido 34), y las fotos lo llenan (`object-cover`), salvo
 // que el antes y el después tengan formas distintas: recortadas no coincidirían, y van enteras.
-// El alto máximo sale de la variable `--alto-comparador` (70dvh si nadie la pone): la portada lo achica en el celular.
+// Sin marco, el alto máximo sale de la variable `--alto-comparador` (70dvh si nadie la pone).
 // `sola` (la portada, pedido de YankoSoft del 24/10; desde el pedido 34, también el primer par de la galería): la línea va y viene sola unas veces hasta que el visitante la
 // arrastra, la toca o la enfoca con el teclado; se pausa fuera de la pantalla y no se mueve con "reducir movimiento".
 
@@ -39,6 +40,7 @@ export function ComparadorAntesDespues({
   conLeyenda = false,
   alFrente = false,
   sola = false,
+  conBorde = false,
   sinAyuda = false,
   marco = false,
   formaMarco = "4 / 3",
@@ -53,9 +55,11 @@ export function ComparadorAntesDespues({
   alFrente?: boolean;
   /** La línea se mueve sola hasta que el visitante la toca (la portada y el primer par de la galería, pedido 34). */
   sola?: boolean;
+  /** Un borde fino, para separarlo de lo que tiene detrás (la portada, sobre la foto del taller). */
+  conBorde?: boolean;
   /** "Arrastra la línea para comparar" solo para el lector de pantalla: la galería lo dice una vez, arriba. */
   sinAyuda?: boolean;
-  /** En un recuadro que las fotos llenan (la galería), de la forma de `formaMarco`. */
+  /** En un recuadro que las fotos llenan (la galería y la portada), de la forma de `formaMarco`. */
   marco?: boolean;
   /** La forma del marco: 4:3 por defecto; cuadrado para las fotos verticales del celular en la galería (pedido 34),
       así no quedan con franjas a los costados. */
@@ -72,8 +76,7 @@ export function ComparadorAntesDespues({
   // La caja toma la forma de la foto de después y nunca pasa del alto máximo
   const proporcion = proporcionDe(despues);
   // En el marco, las fotos lo llenan si tienen la misma forma (con 5 % de tolerancia); si no, van enteras
-  const mismaForma = Math.abs(proporcionDe(antes) / proporcion - 1) < 0.05;
-  const ajuste = marco && mismaForma ? "object-cover" : "object-contain";
+  const ajuste = marco && tienenMismaForma(antes, despues) ? "object-cover" : "object-contain";
   const estiloCaja: React.CSSProperties & Record<"--corte", number> = marco
     ? { "--corte": corte, aspectRatio: formaMarco }
     : { "--corte": corte, aspectRatio: proporcion, maxWidth: `calc(var(--alto-comparador, 70dvh) * ${proporcion})` };
@@ -160,7 +163,7 @@ export function ComparadorAntesDespues({
     <div className={sinAyuda ? "flex flex-col" : "flex flex-col gap-2"}>
       <div
         ref={caja}
-        className="group relative mx-auto w-full cursor-ew-resize touch-pan-y overflow-hidden bg-superficie select-none"
+        className={cn("group relative mx-auto w-full cursor-ew-resize touch-pan-y overflow-hidden bg-superficie select-none", conBorde && "ring-1 ring-border")}
         // --corte: dónde está la línea (en %), la lee todo lo de adentro; el movimiento solo la escribe directo
         style={estiloCaja}
         onPointerDown={(e) => {

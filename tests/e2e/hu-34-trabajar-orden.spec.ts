@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearUsuario, ingresar, PERFIL_TALLER, PNG } from "./apoyo";
+import { archivosArrastrados, consultar, crearClienteEnBase, crearUsuario, ingresar, PERFIL_TALLER, PNG } from "./apoyo";
 
 // HU-34 Trabajar una orden (flujo crítico 3). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §9 y,
 // desde el pedido 32 (sin técnico asignado), P32-roles-sin-tecnico.md. Las órdenes van directo a la base. Para no chocar
@@ -63,6 +63,14 @@ test("el perfil Taller trabaja cualquier orden, sin asignarla y sin ver precios:
   await expect(page.getByRole("button", { name: "Tomar foto" }).first()).toBeEnabled();
   await page.getByLabel("Cámara para fotos del inicio").setInputFiles({ name: "antes.png", mimeType: "image/png", buffer: PNG });
   await expect(page.getByRole("button", { name: "Ver la foto 1 del inicio" })).toBeVisible();
+  // En la computadora también se suelta encima (pulido 13.13)
+  const fotosInicio = page.locator("[data-zona-foto]").filter({ has: page.getByLabel("Cámara para fotos del inicio") });
+  const soltada = await archivosArrastrados(page, [{ name: "soltada.png", mimeType: "image/png", buffer: PNG }]);
+  await fotosInicio.dispatchEvent("dragenter", { dataTransfer: soltada });
+  await expect(fotosInicio.getByText("Suelta las fotos aquí")).toBeVisible();
+  await fotosInicio.dispatchEvent("drop", { dataTransfer: soltada });
+  await expect(page.getByRole("button", { name: "Ver la foto 2 del inicio" })).toBeVisible();
+  await expect(fotosInicio.getByText("Suelta las fotos aquí")).toHaveCount(0);
   await page.getByLabel("Escribir un avance").fill("Pulido de la puerta trasera, listo el primer paso.");
   await page.getByRole("button", { name: "Guardar avance" }).click();
   const historia = page.getByRole("list", { name: "Historia de la orden" });
@@ -85,7 +93,7 @@ test("el perfil Taller trabaja cualquier orden, sin asignarla y sin ver precios:
      from trabajo t where id = $1`,
     [id],
   );
-  expect(t).toEqual({ estado: "listo", fin: hoy(), listo: true, avances: 3, fotos: 1 });
+  expect(t).toEqual({ estado: "listo", fin: hoy(), listo: true, avances: 3, fotos: 2 });
   const auditoria = await consultar<{ accion: string }>("select accion from auditoria where entidad = 'trabajo' and entidad_id = $1 order by id", [id]);
   expect(auditoria.map((a) => a.accion)).toEqual(["estado", "estado"]);
 

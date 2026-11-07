@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearUsuario, ingresar, PNG } from "./apoyo";
+import { archivosArrastrados, consultar, crearClienteEnBase, crearUsuario, ingresar, PNG } from "./apoyo";
 
 // HU-32 Registrar pagos y saldo. Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §9.
 // Encargados por prueba (no el dueño: el límite de intentos de ingreso es por usuario). Días propios, a 320 (celular)
@@ -53,6 +53,14 @@ test("registrar un pago con comprobante, no pasar el saldo y anular con motivo",
   // 200 por QR, con la foto del comprobante
   await form.getByLabel("Monto").fill("200");
   await form.locator("#comprobante").setInputFiles({ name: "comprobante.png", mimeType: "image/png", buffer: PNG });
+  await expect(form.getByRole("img", { name: "Foto del comprobante elegida" })).toBeVisible();
+  // Se puede cambiar y quitar; la zona vuelve, y también se le puede soltar (pulido 13.13)
+  await form.getByRole("button", { name: "Quitar foto" }).click();
+  const zona = form.locator("[data-zona-foto]");
+  const soltado = await archivosArrastrados(page, [{ name: "comprobante.png", mimeType: "image/png", buffer: PNG }]);
+  await zona.dispatchEvent("dragenter", { dataTransfer: soltado });
+  await expect(zona).toContainText("Suelta la foto aquí");
+  await zona.dispatchEvent("drop", { dataTransfer: soltado });
   await expect(form.getByRole("img", { name: "Foto del comprobante elegida" })).toBeVisible();
   await form.getByRole("button", { name: "Registrar pago" }).click();
   await expect(page.getByText("Pago de 200 Bs registrado. Saldo: 150 Bs.")).toBeVisible();

@@ -1,11 +1,12 @@
-import Image from "next/image";
 import { useRef, useState, useTransition } from "react";
 import { useHidratado } from "@/componentes/hidratado";
-import { CameraIcon, ImageIcon, TrashIcon } from "lucide-react";
+import { CameraIcon, TrashIcon } from "lucide-react";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { MensajeError } from "@/componentes/panel/campo";
+import { AvisoFoto } from "@/componentes/panel/guia-foto";
+import { ZonaFoto } from "@/componentes/panel/zona-foto";
 import { Button } from "@/componentes/ui/button";
-import { TIPOS_FOTO } from "@/lib/formato-fotos";
+import { AVISO_FOTO_VERTICAL, esVertical, TIPOS_FOTO } from "@/lib/formato-fotos";
 
 // Componente de cliente: se usa dentro de otros componentes de cliente (recibe funciones como props).
 // Subida de una foto desde el panel (servicios, galería). Antes de enviarla se achica en el navegador
@@ -29,6 +30,18 @@ type Props = {
 };
 
 const LADO_MAXIMO = 2400;
+
+/** El ancho y el alto de una foto elegida, derecha según la cámara; null si el navegador no puede leerla. */
+export async function medidasDeFoto(archivo: File): Promise<{ ancho: number; alto: number } | null> {
+  try {
+    const imagen = await createImageBitmap(archivo, { imageOrientation: "from-image" });
+    const medidas = { ancho: imagen.width, alto: imagen.height };
+    imagen.close();
+    return medidas;
+  } catch {
+    return null;
+  }
+}
 
 /** Achica la foto en el navegador. Si no puede (formato raro), manda la original y decide el servidor. */
 export async function achicarFoto(archivo: File): Promise<File> {
@@ -81,52 +94,28 @@ export function SubidaFoto({ id, accion, camposOcultos, actual, textoVacio, quit
 
   return (
     <div className="flex flex-col gap-3">
-      {/* La foto llena la caja (fill: absolute adentro): con h-full, Safari no toma la altura de una caja con aspect-ratio
-          como fija y la foto estiraba la caja (como el logo de Negocio, 03/11) */}
-      <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-sm border border-border bg-superficie">
-        {actual ? (
-          <Image
-            src={actual.miniatura}
-            alt={actual.alt}
-            fill
-            sizes="(min-width: 1024px) 24rem, 100vw"
-            unoptimized
-            className={entera ? "object-contain" : "object-cover"}
-          />
-        ) : (
-          <span className="flex flex-col items-center gap-2 p-4 text-center text-sm text-tinta-suave">
-            <ImageIcon className="size-8" aria-hidden />
-            {textoVacio}
-          </span>
-        )}
-      </div>
-
-      <input
-        ref={entrada}
+      <ZonaFoto
         id={id}
-        type="file"
-        accept="image/*"
-        className="sr-only"
-        tabIndex={-1}
-        aria-label={nombre ? `Archivo de la foto: ${nombre}` : "Archivo de la foto"}
-        aria-describedby={error ? `${id}-error` : undefined}
-        onChange={(e) => {
-          const archivo = e.currentTarget.files?.[0];
-          if (archivo) void subir(archivo);
-        }}
+        entrada={entrada}
+        nombreEntrada={nombre ? `Archivo de la foto: ${nombre}` : "Archivo de la foto"}
+        etiquetaVacia={nombre ? `Subir foto: ${nombre}` : "Subir foto"}
+        vista={actual ? { src: actual.miniatura, alt: actual.alt } : null}
+        entera={entera}
+        textoVacio={textoVacio}
+        ocupada={etapa === "preparando" ? "Preparando foto…" : etapa === "subiendo" || pendiente ? "Subiendo…" : null}
+        deshabilitada={!listo}
+        describedBy={error ? `${id}-error` : undefined}
+        alElegir={(archivo) => void subir(archivo)}
       />
+      {/* Una vertical se recorta; un afiche (`entera`) se ve entero y no avisa */}
+      {actual && !entera && esVertical(actual) && <AvisoFoto>{AVISO_FOTO_VERTICAL}</AvisoFoto>}
+      {actual && (
       <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          disabled={ocupado}
-          onClick={() => entrada.current?.click()}
-          aria-label={nombre && !etapa ? `${actual ? "Cambiar foto" : "Subir foto"}: ${nombre}` : undefined}
-        >
+        <Button type="button" variant="outline" disabled={ocupado} onClick={() => entrada.current?.click()} aria-label={nombre ? `Cambiar foto: ${nombre}` : undefined}>
           <CameraIcon />
-          {etapa === "preparando" ? "Preparando foto…" : etapa === "subiendo" ? "Subiendo…" : actual ? "Cambiar foto" : "Subir foto"}
+          Cambiar foto
         </Button>
-        {actual && quitar && (
+        {quitar && (
           <Button
             type="button"
             variant="ghost"
@@ -143,6 +132,7 @@ export function SubidaFoto({ id, accion, camposOcultos, actual, textoVacio, quit
           </Button>
         )}
       </div>
+      )}
       {error && <MensajeError id={`${id}-error`}>{error}</MensajeError>}
     </div>
   );

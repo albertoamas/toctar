@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
-import { CameraIcon, CheckCircle2Icon, XIcon } from "lucide-react";
+import { CheckCircle2Icon, XIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
+import { AvisoFoto } from "@/componentes/panel/guia-foto";
 import { Selector } from "@/componentes/panel/selector";
 import { achicarFoto } from "@/componentes/panel/subida-foto";
+import { ZonaFoto } from "@/componentes/panel/zona-foto";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
@@ -23,6 +25,8 @@ const CAMPO = "h-11";
 export function FormularioReclamo({ servicios }: { servicios: { id: number; nombre: string }[] }) {
   const [estado, setEstado] = useState<EstadoFormulario>({});
   const [fotos, setFotos] = useState<Foto[]>([]);
+  // Las que no entraron en la última elección: se dice, no se pierden en silencio
+  const [fotosDeMas, setFotosDeMas] = useState(0);
   const [etapa, setEtapa] = useState<"preparando" | "enviando" | null>(null);
   const [, iniciar] = useTransition();
   const abiertoEn = useRef<number | null>(null);
@@ -56,9 +60,10 @@ export function FormularioReclamo({ servicios }: { servicios: { id: number; nomb
     );
   }
 
-  function agregarFotos(lista: FileList | null) {
-    if (!lista) return;
-    const nuevas = [...lista].slice(0, MAXIMO_FOTOS - fotos.length).map((archivo) => ({ archivo, vista: URL.createObjectURL(archivo) }));
+  function agregarFotos(lista: File[]) {
+    const lugares = MAXIMO_FOTOS - fotos.length;
+    setFotosDeMas(Math.max(0, lista.length - lugares));
+    const nuevas = lista.slice(0, lugares).map((archivo) => ({ archivo, vista: URL.createObjectURL(archivo) }));
     setFotos((f) => [...f, ...nuevas]);
     if (entradaFotos.current) entradaFotos.current.value = "";
   }
@@ -148,14 +153,20 @@ export function FormularioReclamo({ servicios }: { servicios: { id: number; nomb
           </ul>
         )}
         {fotos.length < MAXIMO_FOTOS && (
-          <div>
-            <button type="button" onClick={() => entradaFotos.current?.click()} className="tt-boton tt-boton--contorno">
-              <CameraIcon />
-              Agregar fotos
-            </button>
-          </div>
+          <ZonaFoto
+            id="fotos"
+            name="fotos"
+            enSitio
+            entrada={entradaFotos}
+            nombreEntrada="Archivos de las fotos"
+            etiquetaVacia="Agregar fotos"
+            pie={`JPG, PNG o WebP, hasta ${MAXIMO_FOTOS}`}
+            deshabilitada={!listo}
+            describedBy={e.fotos ? "fotos-error" : undefined}
+            alElegirVarias={agregarFotos}
+          />
         )}
-        <input ref={entradaFotos} id="fotos" name="fotos" type="file" accept="image/*" multiple className="sr-only" tabIndex={-1} aria-label="Archivos de las fotos" onChange={(ev) => agregarFotos(ev.currentTarget.files)} />
+        {fotosDeMas > 0 && <AvisoFoto>Hasta {MAXIMO_FOTOS} fotos: no se agregaron {fotosDeMas}.</AvisoFoto>}
         {e.fotos && <MensajeError id="fotos-error">{e.fotos}</MensajeError>}
       </fieldset>
 
