@@ -14,7 +14,7 @@
 - [x] `CLAUDE.md` con contexto, reglas del negocio, comandos y convenciones.
 - [x] Repositorio Git local (rama `main`) con `.gitattributes` para saltos de línea LF.
 - [x] Primer commit y rama `develop`.
-- [x] Repositorio privado en GitHub (`albertoamas/toctar`) con `main`, `develop` y convenciones de ramas y commits en `CLAUDE.md`.
+- [x] Repositorio en GitHub (`albertoamas/toctar`; público desde el 07/11/2026) con `main`, `develop` y convenciones de ramas y commits en `CLAUDE.md`.
 
 ## Pendiente
 

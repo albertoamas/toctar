@@ -84,7 +84,7 @@ Copiar `.env.example` a `.env` la primera vez y completar `BETTER_AUTH_SECRET` y
 
 ## Control de versiones
 
-Repositorio privado: `github.com/albertoamas/toctar`.
+Repositorio público desde el 07/11/2026, con el visto bueno del cliente: `github.com/albertoamas/toctar`. Nunca se versionan secretos ni datos personales del dueño (NIT, carnet, correo personal): lo público es todo el historial.
 
 | Rama | Para qué | Se despliega en |
 |---|---|---|
