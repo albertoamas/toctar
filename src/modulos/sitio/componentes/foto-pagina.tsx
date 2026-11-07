@@ -1,5 +1,6 @@
 "use client";
 
+import { GuiaFoto } from "@/componentes/panel/guia-foto";
 import { SubidaFoto } from "@/componentes/panel/subida-foto";
 import type { UrlsFoto } from "@/lib/fotos";
 import { quitarFotoDePagina, subirFotoDePagina } from "../acciones";
@@ -17,6 +18,7 @@ export function FotoDePagina({ pagina, foto }: { pagina: PaginaConFoto; foto: Ur
         <h3 id={titulo} className="text-sm font-semibold">{f.titulo}</h3>
         <p className="text-sm text-tinta-suave">{f.ayuda} Se guarda al momento, sin el botón de guardar de arriba.</p>
       </div>
+      <GuiaFoto {...f.guia} />
       <SubidaFoto
         id={`foto-${pagina}`}
         accion={subirFotoDePagina}

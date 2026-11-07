@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER, PNG } from "./apoyo";
+import { archivosArrastrados, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER, PNG } from "./apoyo";
 
 // HU-04 Datos del negocio. Criterios: docs/09-pruebas/criterios-entrega-1.md (4.1 a 4.6).
 // Los datos del negocio son una sola fila: las pruebas que guardan corren solo en escritorio,
@@ -137,6 +137,15 @@ test("el logo para documentos se sube y se ve; un archivo que no es imagen se re
   await page.getByLabel("Archivo del logo").setInputFiles({ name: "logo-nuevo.png", mimeType: "image/png", buffer: PNG });
   await expect(logo).not.toHaveAttribute("src", anterior);
   expect((await page.request.get(anterior)).status()).toBe(404);
+
+  // Soltar una foto encima también lo reemplaza: va en el formulario que se envía (pulido 13.13)
+  const antesDeSoltar = (await logo.getAttribute("src"))!;
+  const soltado = await archivosArrastrados(page, [{ name: "logo-soltado.png", mimeType: "image/png", buffer: PNG }]);
+  const zona = page.locator("[data-zona-foto]");
+  await zona.dispatchEvent("dragenter", { dataTransfer: soltado });
+  await expect(zona).toContainText("Suelta la foto para reemplazarla");
+  await zona.dispatchEvent("drop", { dataTransfer: soltado });
+  await expect(logo).not.toHaveAttribute("src", antesDeSoltar);
 });
 
 // Pulido 6.1: con ancho fijo, las horas del horario ensanchaban el formulario y a 360 px todo se salía por la derecha.

@@ -55,9 +55,10 @@ async function Contenido() {
     <>
       {/* El monograma detrás del título y del texto le da su toque a la página: se queda así (revisión de YankoSoft) */}
       <section className="relative overflow-hidden">
-        <Monograma className="pointer-events-none absolute -top-10 -right-24 w-[26rem] fill-superficie md:-right-12 md:w-[34rem]" />
+        {/* Con la foto del equipo, desde la tableta baja a "Cómo trabajamos": detrás de la foto parecía pegada encima (pulido 13.14) */}
+        <Monograma className={cn("pointer-events-none absolute -top-10 -right-24 w-[26rem] fill-superficie md:-right-12 md:w-[34rem]", equipo && "md:hidden")} />
         <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 py-12 md:gap-20 md:py-20">
-          <div className={cn("grid gap-10", equipo && "md:grid-cols-2 md:items-center md:gap-12")}>
+          <div className={cn("grid gap-10", equipo && "md:grid-cols-2 md:items-start md:gap-12")}>
             <div className="flex flex-col gap-8">
               <TituloPagina>Nosotros</TituloPagina>
               <div className="flex flex-col gap-4">
@@ -71,12 +72,14 @@ async function Contenido() {
                 alt={FOTOS_DE_PAGINA.nosotros.alt}
                 sizes="(min-width: 768px) 50vw, 100vw"
                 cargaDiferida={false}
-                className="h-auto max-h-[32rem] w-full object-cover"
+                // Siempre 4:3, como las demás fotos del sitio; el borde la separa del fondo (revisión de YankoSoft, 06/11)
+                className="aspect-[4/3] w-full border border-border object-cover"
               />
             )}
           </div>
 
-          <section aria-labelledby="como-trabajamos" className="flex flex-col gap-4">
+          <section aria-labelledby="como-trabajamos" className="relative isolate flex flex-col gap-4">
+            {equipo && <Monograma className="pointer-events-none absolute -top-8 -right-12 -z-10 hidden w-[24rem] fill-superficie md:block" />}
             <h2 id="como-trabajamos" className={TITULO_SECCION}>Cómo trabajamos</h2>
             <Parrafos texto={n.como_trabajamos as string} />
           </section>

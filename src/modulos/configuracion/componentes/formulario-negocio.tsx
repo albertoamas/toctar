@@ -6,7 +6,7 @@ import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
-import { Button } from "@/componentes/ui/button";
+import { BarraGuardar } from "@/componentes/panel/cambios-sin-guardar";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { DiaHorario } from "@/lib/horarios";
@@ -147,11 +147,7 @@ export function FormularioNegocio(props: Props) {
         </Campo>
       </SeccionFormulario>
 
-      <div>
-        <Button type="submit" disabled={enviando}>
-          {enviando ? "Guardando…" : "Guardar cambios"}
-        </Button>
-      </div>
+      <BarraGuardar formulario={formulario} estado={estado} texto="Guardar cambios" enviando={enviando} />
     </form>
   );
 }

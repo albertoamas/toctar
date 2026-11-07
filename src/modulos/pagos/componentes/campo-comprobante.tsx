@@ -1,8 +1,8 @@
-import Image from "next/image";
 import { startTransition, useEffect, useRef, useState } from "react";
 import { CameraIcon, XIcon } from "lucide-react";
 import { MensajeError } from "@/componentes/panel/campo";
 import { achicarFoto } from "@/componentes/panel/subida-foto";
+import { ZonaFoto } from "@/componentes/panel/zona-foto";
 import { Button } from "@/componentes/ui/button";
 import { BYTES_MAXIMOS_FOTO } from "@/lib/formato-fotos";
 import { ERROR_COMPROBANTE } from "../reglas";
@@ -32,21 +32,33 @@ export function CampoComprobante({ onChange, error }: { onChange: (archivo: File
       <p className="text-sm font-medium">
         Comprobante <span className="font-normal text-tinta-suave">(opcional)</span>
       </p>
-      {elegido && <Image src={elegido.vista} alt="Foto del comprobante elegida" width={160} height={160} unoptimized className="size-40 rounded-sm bg-superficie object-cover" />}
-      <input ref={entrada} id="comprobante" type="file" accept="image/*" className="sr-only" tabIndex={-1} aria-label="Archivo del comprobante" onChange={(ev) => elegir(ev.currentTarget.files?.[0])} />
-      <div className="flex flex-wrap gap-2">
-        {/* data-invalido: el foco va aquí si el comprobante tiene el error (useFocoEnError) */}
-        <Button type="button" variant="outline" onClick={() => entrada.current?.click()} data-invalido={error ? true : undefined} aria-describedby={error ? "comprobante-error" : undefined}>
-          <CameraIcon />
-          {elegido ? "Cambiar foto" : "Foto del comprobante"}
-        </Button>
-        {elegido && (
+      {/* Entero: suele ser una captura vertical, y tiene que leerse */}
+      <div className="w-full max-w-xs">
+        <ZonaFoto
+          id="comprobante"
+          entrada={entrada}
+          nombreEntrada="Archivo del comprobante"
+          etiquetaVacia="Foto del comprobante"
+          vista={elegido ? { src: elegido.vista, alt: "Foto del comprobante elegida" } : null}
+          entera
+          invalida={!!error}
+          describedBy={error ? "comprobante-error" : undefined}
+          alElegir={elegir}
+        />
+      </div>
+      {elegido && (
+        <div className="flex flex-wrap gap-2">
+          {/* data-invalido: el foco va aquí si el comprobante tiene el error (useFocoEnError) */}
+          <Button type="button" variant="outline" onClick={() => entrada.current?.click()} data-invalido={error ? true : undefined} aria-describedby={error ? "comprobante-error" : undefined}>
+            <CameraIcon />
+            Cambiar foto
+          </Button>
           <Button type="button" variant="ghost" onClick={() => elegir(undefined)}>
             <XIcon />
             Quitar foto
           </Button>
-        )}
-      </div>
+        </div>
+      )}
       {error && <MensajeError id="comprobante-error">{error}</MensajeError>}
     </div>
   );
@@ -77,5 +89,5 @@ export function useEnvioConComprobante(accion: (datos: FormData) => void) {
     startTransition(() => accion(datos));
   }
 
-  return { setComprobante, preparando, errorFoto, enviar };
+  return { comprobante, setComprobante, preparando, errorFoto, enviar };
 }

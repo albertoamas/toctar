@@ -1,5 +1,6 @@
 "use client";
 
+import { GuiaFoto } from "@/componentes/panel/guia-foto";
 import { SubidaFoto } from "@/componentes/panel/subida-foto";
 import { quitarFotoDeSeccion, subirFotoDeSeccion } from "../acciones";
 import { SECCIONES_FOTO, type SeccionFoto } from "../secciones-foto";
@@ -26,6 +27,7 @@ export function FotosServicio({ servicioId, fotos, sinContenido, ocultas = [] }:
         <h2 id="fotos-secciones-titulo" className="tt-titulo-seccion">Fotos de la página</h2>
         <p className="text-sm text-tinta-suave">Una foto al lado de cada parte de la página. Si es un afiche, lo que dice escríbelo también en la página: Google no lee la imagen.</p>
       </div>
+      <GuiaFoto titulo="Cómo sacar estas fotos" consejo="Un afiche puede tener cualquier forma: se ve entero." />
       <ul className="flex flex-col gap-6">
         {(Object.entries(SECCIONES_FOTO) as [SeccionFoto, string][]).filter(([seccion]) => !ocultas.includes(seccion)).map(([seccion, nombre]) => {
           const actual = fotos[seccion];

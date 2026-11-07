@@ -6,7 +6,7 @@ import { conAviso } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { EditorLista } from "@/componentes/panel/editor-lista";
 import { TextoCorto } from "@/componentes/panel/texto-corto";
-import { Button } from "@/componentes/ui/button";
+import { BarraGuardar } from "@/componentes/panel/cambios-sin-guardar";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
@@ -77,11 +77,7 @@ export function FormularioContenido({ pagina, contenido, tituloOculto = false }:
         );
       })}
 
-      <div>
-        <Button type="submit" disabled={enviando}>
-          {enviando ? "Guardando…" : `Guardar ${def.titulo.toLowerCase()}`}
-        </Button>
-      </div>
+      <BarraGuardar formulario={formulario} estado={estado} texto={`Guardar ${def.titulo.toLowerCase()}`} enviando={enviando} />
     </form>
   );
 }

@@ -90,8 +90,7 @@ async function PortadaConDatos() {
  * Cabecera de la portada: lema y presentación sobre la foto del taller (oscurecida), y la línea LED. Al lado, el
  * comparador de antes y después del trabajo elegido en el panel (pedido de la demo del 24/10: lo que más le gustó al
  * dueño); sin ningún trabajo con antes, el arte de la marca si no hay foto del taller (pulido 2.1, tercera revisión).
- * En el celular, el arte va arriba y el comparador debajo del texto, sin pasar del 45 % del alto (una foto vertical no
- * tapa la pantalla entera).
+ * En el celular, el arte va arriba y el comparador debajo del texto.
  * Mientras llegan los textos va `CabeceraCargando`: vacía, sin foto, sin arte y SIN la línea (con el arte, al llegar
  * una foto el texto subía de golpe en el celular). Ya cargada mide lo suyo. Medido con la red y el procesador frenados:
  * CLS 0 a 360, 412 y 480 px (lo de abajo de la cabecera se reemplaza entero al llegar, no se corre).
@@ -101,7 +100,7 @@ function Cabecera({ children, foto, trabajo }: { children: React.ReactNode; foto
   const lado = ladoDelLema({ hayFotoTaller: !!foto, hayComparador: !!trabajo });
   return (
     <>
-      {foto && <FotoTaller foto={foto} />}
+      {foto && <FotoTaller foto={foto} conComparador={lado === "comparador"} />}
       {/* La columna derecha es la del comparador o la del arte; sin ninguno, el texto usa todo el ancho (su máximo lo pone Presentacion). */}
       <div
         className={cn(
@@ -116,17 +115,18 @@ function Cabecera({ children, foto, trabajo }: { children: React.ReactNode; foto
         {/* Después del texto, también en el código: el teclado y el lector de pantalla llegan primero al lema y a
             "Pedir cotización". En el celular queda debajo, aún en la primera pantalla. */}
         {lado === "comparador" && trabajo && (
-          <div className="[--alto-comparador:45dvh] md:[--alto-comparador:60dvh]">
-            {/* La leyenda, solo si el trabajo tiene descripción (es opcional desde el 24/10) */}
-            <ComparadorAntesDespues
-              antes={trabajo.antes}
-              despues={trabajo.despues}
-              descripcion={nombreDelTrabajo(trabajo.descripcion, trabajo.servicio.nombre)}
-              conLeyenda={!!trabajo.descripcion.trim()}
-              alFrente
-              sola
-            />
-          </div>
+          // En un recuadro fijo de 4:3, sea cual sea la foto: la cabecera no cambia de tamaño (revisión de YankoSoft, 06/11).
+          // La leyenda, solo si el trabajo tiene descripción (es opcional desde el 24/10)
+          <ComparadorAntesDespues
+            antes={trabajo.antes}
+            despues={trabajo.despues}
+            descripcion={nombreDelTrabajo(trabajo.descripcion, trabajo.servicio.nombre)}
+            conLeyenda={!!trabajo.descripcion.trim()}
+            alFrente
+            sola
+            marco
+            conBorde
+          />
         )}
       </div>
       <hr className="tt-led tt-led--encender" />
@@ -160,15 +160,22 @@ function CabeceraCargando() {
  * el lema y la presentación se lean como sobre negro: contraste de 6:1 o más aun con una foto blanca (medido el 18/10).
  * En el celular va la versión de 640 px, con prioridad baja: oscurecida no se nota, y la de 1600 le quitaba red al
  * texto (rendimiento de 90 a 84 en Lighthouse).
+ * Con el comparador al lado, desde la tableta el velo es parejo y muy oscuro: la foto queda como textura y no compite con
+ * el antes y después, que es otra foto del mismo tema (revisión de YankoSoft, 06/11).
  */
-function FotoTaller({ foto }: { foto: UrlsFoto }) {
+function FotoTaller({ foto, conComparador }: { foto: UrlsFoto; conComparador: boolean }) {
   return (
     <div aria-hidden className="tt-portada-foto absolute inset-0">
       <picture>
         <source media="(min-width: 768px)" srcSet={foto.url} />
         <img src={foto.miniatura} alt="" fetchPriority="low" className="size-full object-cover opacity-50" />
       </picture>
-      <div className="absolute inset-0 bg-linear-to-t from-fondo from-35% via-fondo/80 to-fondo/40 md:bg-linear-to-r md:from-30% md:via-fondo/85 md:to-fondo/40" />
+      <div
+        className={cn(
+          "absolute inset-0 bg-linear-to-t from-fondo from-35% via-fondo/80 to-fondo/40",
+          conComparador ? "md:bg-fondo/90 md:bg-none" : "md:bg-linear-to-r md:from-30% md:via-fondo/85 md:to-fondo/40",
+        )}
+      />
     </div>
   );
 }

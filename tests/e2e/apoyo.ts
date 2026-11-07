@@ -104,6 +104,16 @@ export async function ingresar(page: Page, usuario: string, contrasena: string) 
   await page.getByRole("button", { name: "Ingresar" }).click();
 }
 
+/** Los archivos que se arrastran sobre una zona de foto: se pasa en `dispatchEvent` a dragenter y drop (pulido 13.13). */
+export function archivosArrastrados(page: Page, archivos: { name: string; mimeType: string; buffer: Buffer }[]) {
+  const lista = archivos.map((a) => ({ nombre: a.name, tipo: a.mimeType, base64: a.buffer.toString("base64") }));
+  return page.evaluateHandle((entrada) => {
+    const datos = new DataTransfer();
+    for (const a of entrada) datos.items.add(new File([Uint8Array.from(atob(a.base64), (c) => c.charCodeAt(0))], a.nombre, { type: a.tipo }));
+    return datos;
+  }, lista);
+}
+
 /** Mensaje de error del formulario (Next.js agrega otro role="alert" para anunciar rutas). */
 export function alertaDeIngreso(page: Page) {
   return page.locator("form").getByRole("alert");

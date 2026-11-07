@@ -4,6 +4,7 @@ import { useActionState, useRef, useState } from "react";
 import { ClipboardCheckIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
+import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { Button } from "@/componentes/ui/button";
 import { Textarea } from "@/componentes/ui/textarea";
@@ -37,6 +38,7 @@ export function FormularioRecepcion({ trabajoId }: { trabajoId: number }) {
         />
       </Campo>
       {/* En el celular, fijo abajo: a mano aunque el teclado esté abierto en las observaciones (pulido 11.3) */}
+      <AvisoAlSalir formulario={formulario} estado={estado} />
       <PieFormulario>
         <Button type="submit" disabled={enviando}>
           <ClipboardCheckIcon />

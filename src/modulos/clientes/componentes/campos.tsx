@@ -45,7 +45,8 @@ function Existente({ estado, campo, enlace = aLaFicha }: { estado: EstadoCliente
   const { href, texto } = enlace(existente);
   return (
     // Va debajo del Campo, después de su error: primero se lee qué pasó y después la salida
-    <Link href={href} className="-mt-4 inline-flex min-h-11 items-center self-start text-sm font-semibold underline">
+    // La salida que la misma pantalla propone: no pregunta (data-sin-preguntar, cambios-sin-guardar.tsx)
+    <Link href={href} data-sin-preguntar className="-mt-4 inline-flex min-h-11 items-center self-start text-sm font-semibold underline">
       {texto}
     </Link>
   );
@@ -59,7 +60,7 @@ function CambioDeDueno({ estado, campo, href }: { estado: EstadoCliente; campo: 
   const destino = href && existente?.vehiculoId ? href({ id: existente.id, vehiculoId: existente.vehiculoId }) : null;
   if (!destino) return null;
   return (
-    <Link href={destino} onClick={cerrar} className="-mt-4 inline-flex min-h-11 items-center self-start text-sm font-semibold underline">
+    <Link href={destino} onClick={cerrar} data-sin-preguntar className="-mt-4 inline-flex min-h-11 items-center self-start text-sm font-semibold underline">
       Cambiar de dueño a este cliente
     </Link>
   );

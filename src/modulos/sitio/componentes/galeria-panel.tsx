@@ -7,8 +7,10 @@ import { useFocoEnError } from "@/componentes/foco-en-error";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
+import { AvisoFoto, GuiaFoto } from "@/componentes/panel/guia-foto";
+import { ZonaFoto } from "@/componentes/panel/zona-foto";
 import { Selector } from "@/componentes/panel/selector";
-import { achicarFoto } from "@/componentes/panel/subida-foto";
+import { achicarFoto, medidasDeFoto } from "@/componentes/panel/subida-foto";
 import { Button } from "@/componentes/ui/button";
 import {
   Dialog,
@@ -21,6 +23,7 @@ import {
   DialogTrigger,
 } from "@/componentes/ui/dialog";
 import { Input } from "@/componentes/ui/input";
+import { avisosDeGaleria } from "@/lib/formato-fotos";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { nombreDelTrabajo } from "../galeria";
 import { cambiarVisibilidadGaleria, elegirParaPortada, eliminarGaleriaItem, guardarGaleriaItem, moverGaleriaItem, subirGaleria } from "../acciones";
@@ -273,6 +276,9 @@ const sinSuscripcion = () => () => {};
 function SubirFotos({ servicios, alTerminar }: { servicios: Servicio[]; alTerminar: () => void }) {
   const [despues, setDespues] = useState<File | null>(null);
   const [antes, setAntes] = useState<File | null>(null);
+  // Las medidas de cada foto elegida, para avisar antes de subir. Se leen aparte: la última elegida es la que vale
+  const [medidas, setMedidas] = useState<Record<"antes" | "despues", { ancho: number; alto: number } | null>>({ antes: null, despues: null });
+  const ultima = useRef<Record<"antes" | "despues", File | null>>({ antes: null, despues: null });
   const [etapa, setEtapa] = useState<"preparando" | "subiendo" | null>(null);
   const [estado, setEstado] = useState<EstadoFormulario>({});
   const [, iniciar] = useTransition();
@@ -280,6 +286,14 @@ function SubirFotos({ servicios, alTerminar }: { servicios: Servicio[]; alTermin
   const listo = useSyncExternalStore(sinSuscripcion, () => true, () => false);
   const e = estado.errores ?? {};
   useFocoEnError(formulario, estado);
+
+  async function elegir(lado: "antes" | "despues", archivo: File | null) {
+    (lado === "antes" ? setAntes : setDespues)(archivo);
+    ultima.current[lado] = archivo;
+    setMedidas((m) => ({ ...m, [lado]: null }));
+    const leidas = archivo ? await medidasDeFoto(archivo) : null;
+    if (ultima.current[lado] === archivo) setMedidas((m) => ({ ...m, [lado]: leidas }));
+  }
 
   async function enviar(evento: React.SyntheticEvent<HTMLFormElement, SubmitEvent>) {
     evento.preventDefault();
@@ -314,10 +328,15 @@ function SubirFotos({ servicios, alTerminar }: { servicios: Servicio[]; alTermin
         </Button>
       </div>
 
+      <GuiaFoto titulo="Cómo sacar estas fotos" consejo="El auto, al centro. Antes y después, desde el mismo lugar y la misma distancia." />
+
       <div className="grid grid-cols-2 gap-3">
-        <ElegirFoto id="foto-antes" etiqueta="Antes (opcional)" archivo={antes} onChange={setAntes} error={e.antes} />
-        <ElegirFoto id="foto-despues" etiqueta="Después" archivo={despues} onChange={setDespues} error={e.despues} />
+        <ElegirFoto id="foto-antes" etiqueta="Antes (opcional)" archivo={antes} onChange={(f) => void elegir("antes", f)} error={e.antes} />
+        <ElegirFoto id="foto-despues" etiqueta="Después" archivo={despues} onChange={(f) => void elegir("despues", f)} error={e.despues} />
       </div>
+      {avisosDeGaleria(medidas.antes, medidas.despues).map((aviso) => (
+        <AvisoFoto key={aviso}>{aviso}</AvisoFoto>
+      ))}
 
       <Campo id="servicio" etiqueta="Servicio" error={e.servicioId}>
         <Selector id="servicio" name="servicioId" defaultValue={estado.valores?.servicioId ?? ""} aria-invalid={!!e.servicioId} aria-describedby={e.servicioId ? "servicio-error" : undefined}>
@@ -344,37 +363,48 @@ function SubirFotos({ servicios, alTerminar }: { servicios: Servicio[]; alTermin
 function ElegirFoto({ id, etiqueta, archivo, onChange, error }: { id: string; etiqueta: string; archivo: File | null; onChange: (f: File | null) => void; error?: string }) {
   const [vista, setVista] = useState<string | null>(null);
   const entrada = useRef<HTMLInputElement>(null);
+
+  function cambiar(elegido: File | null) {
+    onChange(elegido);
+    setVista((anterior) => {
+      if (anterior) URL.revokeObjectURL(anterior);
+      return elegido ? URL.createObjectURL(elegido) : null;
+    });
+  }
+
   return (
     <div className="flex flex-col gap-2">
       <span className="text-sm font-semibold">{etiqueta}</span>
-      <button
-        type="button"
-        onClick={() => entrada.current?.click()}
-        className="flex aspect-square items-center justify-center overflow-hidden rounded-sm border border-dashed border-border bg-superficie data-invalido:border-solid data-invalido:border-destructive text-sm text-tinta-suave focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-        aria-label={`${archivo ? "Cambiar" : "Elegir"} foto: ${etiqueta}`}
-        data-invalido={error ? true : undefined}
-        aria-describedby={error ? `${id}-error` : undefined}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element -- vista previa local (blob:), no pasa por next/image */}
-        {vista ? <img src={vista} alt="" className="size-full object-cover" /> : <span className="flex flex-col items-center gap-1"><CameraIcon className="size-6" aria-hidden />Elegir foto</span>}
-      </button>
-      <input
-        ref={entrada}
+      <ZonaFoto
         id={id}
-        type="file"
-        accept="image/*"
-        className="sr-only"
-        tabIndex={-1}
-        aria-label={`Archivo: ${etiqueta}`}
-        onChange={(ev) => {
-          const elegido = ev.currentTarget.files?.[0] ?? null;
-          onChange(elegido);
-          setVista((anterior) => {
-            if (anterior) URL.revokeObjectURL(anterior);
-            return elegido ? URL.createObjectURL(elegido) : null;
-          });
-        }}
+        entrada={entrada}
+        nombreEntrada={`Archivo: ${etiqueta}`}
+        etiquetaVacia={`Elegir foto: ${etiqueta}`}
+        vista={vista ? { src: vista, alt: "" } : null}
+        invalida={!!error}
+        describedBy={error ? `${id}-error` : undefined}
+        alElegir={cambiar}
       />
+      {archivo && (
+        <div className="flex flex-wrap gap-1">
+          <Button type="button" variant="outline" data-invalido={error ? true : undefined} aria-label={`Cambiar foto: ${etiqueta}`} onClick={() => entrada.current?.click()}>
+            <CameraIcon />
+            Cambiar
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            aria-label={`Quitar foto: ${etiqueta}`}
+            onClick={() => {
+              if (entrada.current) entrada.current.value = "";
+              cambiar(null);
+            }}
+          >
+            <TrashIcon />
+            Quitar
+          </Button>
+        </div>
+      )}
       {error && <MensajeError id={`${id}-error`}>{error}</MensajeError>}
     </div>
   );

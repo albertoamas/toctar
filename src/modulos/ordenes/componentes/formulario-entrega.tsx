@@ -5,6 +5,7 @@ import { KeyRoundIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { PanelFirma } from "@/componentes/panel/panel-firma";
+import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
@@ -130,6 +131,7 @@ export function FormularioEntrega({ id, conDeuda, saldo, puedeAutorizar, cliente
           {e.conSaldo && <MensajeError id="conSaldo-error">{e.conSaldo}</MensajeError>}
         </>
       )}
+      <AvisoAlSalir formulario={formulario} estado={estado} ademas={!!firma} />
       <PieFormulario>
         <Button type="submit" disabled={enviando} className="h-14 w-full text-base sm:w-auto sm:px-8">
           <KeyRoundIcon />

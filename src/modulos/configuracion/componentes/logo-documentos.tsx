@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import { useActionState, useRef } from "react";
 import { useHidratado } from "@/componentes/hidratado";
-import { ImageIcon, UploadIcon } from "lucide-react";
+import { UploadIcon } from "lucide-react";
 import { conAviso } from "@/componentes/panel/avisos";
 import { MensajeError } from "@/componentes/panel/campo";
+import { ZonaFoto } from "@/componentes/panel/zona-foto";
 import { Button } from "@/componentes/ui/button";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { subirLogo } from "../acciones";
@@ -21,6 +21,7 @@ const subirConAviso = conAviso(subirLogo);
 export function LogoDocumentos({ logo }: Props) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(subirConAviso, {});
   const formulario = useRef<HTMLFormElement>(null);
+  const entrada = useRef<HTMLInputElement>(null);
   const error = estado.errores?.logo;
   // La subida necesita JavaScript (se envía al elegir el archivo): el botón se habilita al hidratar.
   const listo = useHidratado();
@@ -29,46 +30,36 @@ export function LogoDocumentos({ logo }: Props) {
     <form ref={formulario} action={accion} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <h2 className="tt-titulo-seccion">Logo para documentos</h2>
-        <p className="text-sm text-tinta-suave">Sale en las cotizaciones en PDF. PNG, JPG o WebP de hasta 5 MB; mejor con fondo transparente. Se guarda al momento, sin el botón Guardar cambios.</p>
+        <p className="text-sm text-tinta-suave">Sale en las cotizaciones en PDF. Mejor con fondo transparente. Se guarda al momento, sin el botón Guardar cambios.</p>
       </div>
 
-      {/* El logo llena la caja (fill: absolute adentro) y no va por su tamaño: Safari no toma la altura de una caja con
-          aspect-ratio como fija, así que con max-h-full el logo quedaba de su tamaño real y estiraba la tarjeta */}
-      <div className="relative flex aspect-[3/2] items-center justify-center overflow-hidden rounded-sm border border-border bg-superficie">
-        {logo ? (
-          <Image
-            src={logo.url}
-            alt="Logo actual para documentos"
-            fill
-            sizes="(min-width: 1024px) 20rem, 100vw"
-            unoptimized
-            className="object-contain p-6"
-          />
-        ) : (
-          <span className="flex flex-col items-center gap-2 text-sm text-tinta-suave">
-            <ImageIcon className="size-8" aria-hidden />
-            Todavía no hay logo
-          </span>
-        )}
-      </div>
-
-      <input
+      <ZonaFoto
         id="logo"
         name="logo"
-        type="file"
+        entrada={entrada}
+        nombreEntrada="Archivo del logo"
         accept={TIPOS_FOTO.join(",")}
-        className="sr-only"
-        tabIndex={-1}
-        aria-label="Archivo del logo"
-        aria-describedby={error ? "logo-error" : undefined}
-        onChange={(e) => e.currentTarget.files?.length && formulario.current?.requestSubmit()}
+        etiquetaVacia="Subir logo"
+        vista={logo ? { src: logo.url, alt: "Logo actual para documentos" } : null}
+        claseForma="aspect-[3/2]"
+        entera
+        claseFoto="p-6"
+        textoVacio="Todavía no hay logo"
+        pie="PNG, JPG o WebP, hasta 5 MB"
+        ocupada={enviando ? "Subiendo…" : null}
+        deshabilitada={!listo}
+        invalida={!!error}
+        describedBy={error ? "logo-error" : undefined}
+        alElegir={() => formulario.current?.requestSubmit()}
       />
-      <div>
-        <Button type="button" variant="outline" disabled={!listo || enviando} onClick={() => document.getElementById("logo")?.click()}>
-          <UploadIcon />
-          {enviando ? "Subiendo…" : logo ? "Cambiar logo" : "Subir logo"}
-        </Button>
-      </div>
+      {logo && (
+        <div>
+          <Button type="button" variant="outline" disabled={!listo || enviando} data-invalido={error ? true : undefined} onClick={() => entrada.current?.click()}>
+            <UploadIcon />
+            Cambiar logo
+          </Button>
+        </div>
+      )}
       {error && <MensajeError id="logo-error">{error}</MensajeError>}
     </form>
   );

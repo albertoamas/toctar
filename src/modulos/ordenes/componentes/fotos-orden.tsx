@@ -7,9 +7,11 @@ import { useHidratado } from "@/componentes/hidratado";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { MensajeError } from "@/componentes/panel/campo";
 import { achicarFoto } from "@/componentes/panel/subida-foto";
+import { useSoltarArchivos } from "@/componentes/panel/zona-foto";
 import { Button } from "@/componentes/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/componentes/ui/dialog";
 import type { EtapaFoto } from "@/db/esquema/trabajos";
+import { MENSAJE_NO_ES_FOTO, soloFotos } from "@/lib/formato-fotos";
 import type { UrlsFoto } from "@/lib/fotos";
 import { quitarFotoOrden, subirFotoOrden } from "../acciones";
 import { FRASE_ETAPA, MAXIMO_FOTOS_ETAPA, NOMBRE_ETAPA } from "../reglas";
@@ -87,10 +89,21 @@ export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio }: Pr
     if (elegidas.length > 0) void subir(elegidas);
   };
   const ocupado = !listo || subiendo !== null || lugares <= 0;
+  // En la computadora también se sueltan encima; en el celular siguen los dos botones (pulido 13.13)
+  const { arrastrando, propsArrastre } = useSoltarArchivos(!editable || ocupado, (archivos) => {
+    const soltadas = soloFotos(archivos);
+    if (soltadas.length > 0) void subir(soltadas);
+    else setError(MENSAJE_NO_ES_FOTO);
+  });
   const textoCamara = subiendo ? `Subiendo ${subiendo.actual} de ${subiendo.total}…` : lugares <= 0 ? `Ya tiene ${MAXIMO_FOTOS_ETAPA}` : "Tomar foto";
 
   return (
-    <div className="flex flex-col gap-3">
+    <div data-zona-foto className="relative flex flex-col gap-3" {...(editable ? propsArrastre : {})}>
+      {arrastrando && (
+        <span className="pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-lg border-2 border-dashed border-info bg-info-fondo/95 p-4 text-center text-sm font-semibold">
+          Suelta las fotos aquí
+        </span>
+      )}
       <h3 className="tt-titulo-sub">
         {nombre} <span className="text-sm font-normal text-tinta-suave">({fotos.length})</span>
       </h3>

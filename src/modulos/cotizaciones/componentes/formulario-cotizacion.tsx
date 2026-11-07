@@ -3,6 +3,7 @@
 import { useActionState, useRef } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { MensajeError } from "@/componentes/panel/campo";
+import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { Button } from "@/componentes/ui/button";
 import type { EstadoFormulario } from "@/lib/formularios";
@@ -28,6 +29,7 @@ export function FormularioNuevaVersion({ datos, hoy }: Props) {
       <input type="hidden" name="desde" value={datos.desde.id} />
       {estado.mensaje && !estado.ok && <MensajeError id="cotizacion-error">{estado.mensaje}</MensajeError>}
       <CamposPrecio precios={precios} opciones={datos.opciones} errores={estado.errores ?? {}} hoy={hoy} />
+      <AvisoAlSalir formulario={formulario} estado={estado} />
       <PieFormulario>
         <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:justify-start">
           <TotalEnPie total={precios.totales.total} />

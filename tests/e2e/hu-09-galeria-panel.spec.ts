@@ -1,5 +1,6 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { ingresarComoDueno, PNG } from "./apoyo";
+import sharp from "sharp";
+import { archivosArrastrados, ingresarComoDueno, PNG } from "./apoyo";
 
 // HU-09 Galería en el panel. Criterios: docs/09-pruebas/criterios-entrega-1.md (9.1 a 9.4).
 // La galería es compartida: las pruebas que guardan corren solo en escritorio.
@@ -17,6 +18,67 @@ test("sin servicio no se sube; la descripción es opcional", async ({ page }) =>
   await expect(page.getByText("Elige el servicio.")).toBeVisible();
   // Desde el 24/10 la descripción es opcional: no se ve en el sitio (la leen Google y los lectores de pantalla)
   await expect(page.getByLabel("Descripción (opcional)")).not.toHaveAttribute("aria-invalid", "true");
+});
+
+test("la guía dice cómo sacar las fotos, y elegir una vertical o dos de distinta forma avisa sin bloquear", async ({ page }) => {
+  const imagen = async (nombre: string, width: number, height: number) => ({
+    name: nombre,
+    mimeType: "image/png",
+    buffer: await sharp({ create: { width, height, channels: 3, background: "#808080" } }).png().toBuffer(),
+  });
+  const vertical = "Esta foto es vertical: se va a recortar arriba y abajo. Mejor sácala con el celular acostado.";
+  const distintas = "Las dos fotos tienen distinta forma: van a quedar con bandas a los costados. Mejor sácalas igual.";
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio/galeria");
+  await page.getByRole("button", { name: "Subir fotos" }).click();
+  await expect(page.getByRole("button", { name: "Guardar en la galería" })).toBeEnabled();
+  await expect(page.getByText(/^Formato 4:3, con el celular acostado\./)).toBeVisible();
+
+  await page.getByLabel("Archivo: Después").setInputFiles(await imagen("vertical.png", 30, 40));
+  await expect(page.getByText(vertical)).toBeVisible();
+  await page.getByLabel("Archivo: Antes (opcional)").setInputFiles(await imagen("horizontal.png", 40, 30));
+  await expect(page.getByText(distintas)).toBeVisible();
+  // Corregida, los avisos se van
+  await page.getByLabel("Archivo: Después").setInputFiles(await imagen("otra.png", 40, 30));
+  await expect(page.getByText(vertical)).toHaveCount(0);
+  await expect(page.getByText(distintas)).toHaveCount(0);
+  // No bloquea: el botón sigue habilitado con el aviso a la vista
+  await page.getByLabel("Archivo: Después").setInputFiles(await imagen("vertical.png", 30, 40));
+  await expect(page.getByText(vertical)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Guardar en la galería" })).toBeEnabled();
+});
+
+test("se puede soltar una foto en la zona, cambiarla y quitarla; lo que no es una foto se rechaza", async ({ page }) => {
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio/galeria");
+  await page.getByRole("button", { name: "Subir fotos" }).click();
+  await expect(page.getByRole("button", { name: "Guardar en la galería" })).toBeEnabled();
+  const zona = page.locator("[data-zona-foto]").first();
+  // Vacía invita a usarla, con lo que acepta
+  await expect(zona).toContainText("JPG, PNG o WebP");
+
+  const pdf = await archivosArrastrados(page, [{ name: "lista.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF") }]);
+  await zona.dispatchEvent("dragenter", { dataTransfer: pdf });
+  await expect(zona).toContainText("Suelta la foto aquí");
+  await zona.dispatchEvent("drop", { dataTransfer: pdf });
+  await expect(page.getByText("Eso no es una foto. Elige un JPG, PNG o WebP.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Quitar foto: Antes (opcional)" })).toHaveCount(0);
+  // Elegirlo con el selector de archivos da lo mismo
+  await page.getByLabel("Archivo: Antes (opcional)").setInputFiles({ name: "lista.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF") });
+  await expect(page.getByText("Eso no es una foto. Elige un JPG, PNG o WebP.")).toBeVisible();
+  await expect(zona.locator("img")).toHaveCount(0);
+
+  // Varias donde va una: se usa la primera y lo dice
+  const dos = await archivosArrastrados(page, [foto("una.png"), foto("otra.png")]);
+  await zona.dispatchEvent("dragenter", { dataTransfer: dos });
+  await zona.dispatchEvent("drop", { dataTransfer: dos });
+  await expect(page.getByText("Soltaste 2 archivos: se usó la primera foto.")).toBeVisible();
+  await expect(page.getByText("Eso no es una foto.", { exact: false })).toHaveCount(0);
+  await expect(zona.locator("img")).toHaveAttribute("src", /^blob:/);
+
+  await page.getByRole("button", { name: "Quitar foto: Antes (opcional)" }).click();
+  await expect(zona.locator("img")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Elegir foto: Antes (opcional)" })).toBeVisible();
 });
 
 test("sube un par antes y después y una foto sola; los ordena, oculta, edita y elimina", async ({ page }, info) => {
