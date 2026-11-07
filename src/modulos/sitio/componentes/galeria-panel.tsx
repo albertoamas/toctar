@@ -149,11 +149,13 @@ function PortadaElegida({ items, portadaId, nombreDe }: { items: ItemGaleria[]; 
   // Lo que se ve hoy en el sitio: el elegido o, sin elegir, el primero que puede ir
   const enSitio = elegida ?? posibles[0] ?? null;
   return (
-    <section aria-labelledby="portada-titulo" className="tt-tarjeta-panel flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+    // En una fila también en el celular: la foto chica al lado del texto, para que la sección no empuje la galería
+    <section aria-labelledby="portada-titulo" className="tt-tarjeta-panel flex flex-wrap items-center gap-3 p-4">
       {enSitio?.antes && (
-        <span className="grid aspect-[2/1] w-full shrink-0 grid-cols-2 gap-px overflow-hidden rounded-sm sm:w-48">
-          <Miniatura foto={enSitio.antes} alt="" etiqueta="Antes" />
-          <Miniatura foto={enSitio.despues} alt="" etiqueta="Después" />
+        <span className="grid aspect-[2/1] w-28 shrink-0 grid-cols-2 gap-px overflow-hidden rounded-sm sm:w-48">
+          {/* Sin etiquetas: en una miniatura tan chica no entran, y el par se entiende solo */}
+          <Miniatura foto={enSitio.antes} alt="" />
+          <Miniatura foto={enSitio.despues} alt="" />
         </span>
       )}
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -168,7 +170,7 @@ function PortadaElegida({ items, portadaId, nombreDe }: { items: ItemGaleria[]; 
         )}
       </div>
       {posibles.length > 0 && (
-        <Button type="button" variant="outline" onClick={() => setAbierto(true)} aria-label="Cambiar el trabajo de la portada" className="self-start sm:self-center">
+        <Button type="button" variant="outline" onClick={() => setAbierto(true)} aria-label="Cambiar el trabajo de la portada">
           Cambiar
         </Button>
       )}
