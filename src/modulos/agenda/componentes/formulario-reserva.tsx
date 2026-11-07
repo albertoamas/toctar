@@ -7,6 +7,7 @@ import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
 import { MasDatos } from "@/componentes/panel/mas-datos";
 import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
+import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { ResumenPaso } from "@/componentes/panel/resumen-paso";
 import { Selector } from "@/componentes/panel/selector";
@@ -244,6 +245,7 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
     >
       {directa && <PasosFlujo pasos={pasosNuevaReserva(conPagos)} actual={paso} etiqueta="Pasos de la reserva" />}
       {arriba}
+      <AvisoAlSalir formulario={formulario} estado={estado} />
       <input type="hidden" name="origen" value={origen.tipo} />
       {origen.tipo === "cotizacion" ? (
         <input type="hidden" name="cotizacionId" value={origen.cotizacionId} />

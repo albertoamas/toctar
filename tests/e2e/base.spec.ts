@@ -163,6 +163,12 @@ test("el aviso de guardado no tapa el botón de guardar", async ({ page }, info)
   await ingresarComoDueno(page);
   await page.goto("/panel/configuracion/parametros");
   const guardar = page.getByRole("button", { name: "Guardar cambios" });
+  // Con un cambio se activa (pulido 13.15). Un espacio al final: al guardar se quita, y no cambia lo que usan otras pruebas
+  const formas = page.getByLabel("Formas de pago");
+  await expect(formas).toBeVisible();
+  await page.waitForLoadState("networkidle");
+  await formas.fill(`${await formas.inputValue()} `);
+  await expect(guardar).toBeEnabled();
   await guardar.scrollIntoViewIfNeeded();
   await guardar.click();
   const aviso = page.locator("[data-sonner-toast]").first();

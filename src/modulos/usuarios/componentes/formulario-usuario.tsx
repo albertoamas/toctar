@@ -6,6 +6,7 @@ import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
+import { BarraGuardar } from "@/componentes/panel/cambios-sin-guardar";
 import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
@@ -145,11 +146,7 @@ export function FormularioUsuario(props: Props) {
         </fieldset>
       )}
 
-      <div>
-        <Button type="submit" disabled={enviando}>
-          {enviando ? "Guardando…" : editar ? "Guardar cambios" : "Crear usuario"}
-        </Button>
-      </div>
+      <BarraGuardar formulario={formulario} estado={estado} texto={editar ? "Guardar cambios" : "Crear usuario"} enviando={enviando} siempreActivo={!editar} />
     </form>
   );
 }

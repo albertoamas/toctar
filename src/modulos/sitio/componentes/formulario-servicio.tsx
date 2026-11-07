@@ -7,7 +7,7 @@ import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { Campo } from "@/componentes/panel/campo";
 import { EditorLista } from "@/componentes/panel/editor-lista";
 import { TextoCorto } from "@/componentes/panel/texto-corto";
-import { Button } from "@/componentes/ui/button";
+import { BarraGuardar } from "@/componentes/panel/cambios-sin-guardar";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
@@ -133,11 +133,7 @@ export function FormularioServicio({ servicio: s, conOpciones }: Props) {
         />
       </SeccionFormulario>
 
-      <div>
-        <Button type="submit" disabled={enviando}>
-          {enviando ? "Guardando…" : "Guardar cambios"}
-        </Button>
-      </div>
+      <BarraGuardar formulario={formulario} estado={estado} texto="Guardar cambios" enviando={enviando} />
     </form>
   );
 }

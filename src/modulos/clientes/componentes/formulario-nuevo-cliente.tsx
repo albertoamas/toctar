@@ -2,6 +2,7 @@
 
 import { useActionState, useRef } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
+import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { Button } from "@/componentes/ui/button";
 import type { Tamano } from "@/modulos/configuracion/consultas";
@@ -29,6 +30,7 @@ export function FormularioNuevoCliente({ tamanos }: { tamanos: Tamano[] }) {
           <CamposVehiculo estado={estado} prefijo="vehiculo-" tamanos={tamanos} plegar />
         </fieldset>
       </div>
+      <AvisoAlSalir formulario={formulario} estado={estado} />
       <PieFormulario>
         <Button type="submit" disabled={enviando}>
           {enviando ? "Creando…" : "Crear cliente"}

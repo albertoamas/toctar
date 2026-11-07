@@ -6,6 +6,7 @@ import Link from "next/link";
 import { SearchIcon } from "lucide-react";
 import { MensajeError } from "@/componentes/panel/campo";
 import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
+import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { ResumenPaso } from "@/componentes/panel/resumen-paso";
 import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
@@ -313,6 +314,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
         <CamposPrecio precios={precios} opciones={delTamano(tamanoId)} errores={e} hoy={hoy} />
       </div>
 
+      <AvisoAlSalir formulario={formulario} estado={estado} />
       <PieFormulario>
         <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:justify-start">
           {paso === PASO_SERVICIOS && <TotalEnPie total={precios.totales.total} />}

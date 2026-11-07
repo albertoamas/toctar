@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
+import { PreguntarAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { useHidratado } from "@/componentes/hidratado";
 import { conAviso } from "@/componentes/panel/avisos";
@@ -70,6 +71,7 @@ export function EditorPlantilla({ clave, guardado: inicial, negocio }: Props) {
         <p className="text-sm text-tinta-suave">{cuando}</p>
       </div>
 
+      <PreguntarAlSalir hay={sinGuardar} />
       <form
         ref={formulario}
         action={guardar}
