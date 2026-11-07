@@ -139,6 +139,7 @@ export function FormularioReclamo({ servicios }: { servicios: { id: number; nomb
                   onClick={() => {
                     URL.revokeObjectURL(f.vista);
                     setFotos((todas) => todas.filter((x) => x !== f));
+                    setFotosDeMas(0);
                   }}
                   className="absolute top-0 right-0 flex size-11 items-start justify-end p-1"
                   aria-label={`Quitar la foto ${i + 1}`}
@@ -162,6 +163,7 @@ export function FormularioReclamo({ servicios }: { servicios: { id: number; nomb
             etiquetaVacia="Agregar fotos"
             pie={`JPG, PNG o WebP, hasta ${MAXIMO_FOTOS}`}
             deshabilitada={!listo}
+            invalida={!!e.fotos}
             describedBy={e.fotos ? "fotos-error" : undefined}
             alElegirVarias={agregarFotos}
           />

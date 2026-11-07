@@ -48,6 +48,10 @@ function ponerEnCampo(campo: HTMLInputElement, archivo: File) {
   campo.files = datos.files;
 }
 
+function vaciarCampo(campo: HTMLInputElement) {
+  campo.value = "";
+}
+
 type Props = {
   id: string;
   /** El campo de archivo, para que "Cambiar foto" lo abra. */
@@ -91,20 +95,26 @@ export function ZonaFoto(props: Props) {
   const bloqueada = !!ocupada || !!deshabilitada;
   const varias = !!alElegirVarias;
 
-  const { arrastrando, propsArrastre } = useSoltarArchivos(bloqueada, (archivos) => {
+  /** Elegidas o soltadas: el mismo filtro. Lo que no es foto se rechaza y el campo queda vacío. */
+  function recibir(archivos: File[], soltadas: boolean) {
     const fotos = soloFotos(archivos);
     setRechazo(fotos.length === 0 ? MENSAJE_NO_ES_FOTO : undefined);
     setAviso(undefined);
-    if (fotos.length === 0) return;
+    if (fotos.length === 0) {
+      if (entrada.current) vaciarCampo(entrada.current);
+      return;
+    }
     if (varias) {
       if (fotos.length < archivos.length) setAviso(`Solo se agregan fotos: quedaron afuera ${archivos.length - fotos.length}.`);
       alElegirVarias(fotos);
       return;
     }
-    if (archivos.length > 1) setAviso(`Soltaste ${archivos.length} archivos: se usó la primera foto.`);
-    if (entrada.current) ponerEnCampo(entrada.current, fotos[0]);
+    if (soltadas && archivos.length > 1) setAviso(`Soltaste ${archivos.length} archivos: se usó la primera foto.`);
+    if (soltadas && entrada.current) ponerEnCampo(entrada.current, fotos[0]);
     alElegir?.(fotos[0]);
-  });
+  }
+
+  const { arrastrando, propsArrastre } = useSoltarArchivos(bloqueada, (archivos) => recibir(archivos, true));
 
   const abrir = () => entrada.current?.click();
 
@@ -188,11 +198,7 @@ export function ZonaFoto(props: Props) {
         aria-describedby={props.describedBy}
         onChange={(e) => {
           const archivos = [...(e.currentTarget.files ?? [])];
-          if (archivos.length === 0) return;
-          setRechazo(undefined);
-          setAviso(undefined);
-          if (varias) alElegirVarias(archivos);
-          else alElegir?.(archivos[0]);
+          if (archivos.length > 0) recibir(archivos, false);
         }}
       />
       {rechazo && <MensajeError id={`${id}-rechazo`}>{rechazo}</MensajeError>}

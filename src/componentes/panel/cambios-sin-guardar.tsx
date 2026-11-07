@@ -15,11 +15,28 @@ import { Button } from "@/componentes/ui/button";
 
 type Estado = { ok?: boolean };
 
-/** Lo que tiene el formulario ahora. Los archivos, por nombre y tamaño. */
+/**
+ * Lo que tiene el formulario ahora. Los archivos, por nombre y tamaño. Ordenado: el orden de campos repetidos no es un
+ * cambio (desmarcar y volver a marcar un permiso lo manda al final). El de las filas de una lista sí cuenta: va adentro
+ * de un solo campo.
+ */
 function contenido(formulario: HTMLFormElement): string {
-  const pares: [string, string][] = [];
-  for (const [campo, valor] of new FormData(formulario)) pares.push([campo, valor instanceof File ? `archivo:${valor.name}:${valor.size}` : valor]);
-  return JSON.stringify(pares);
+  const pares: string[] = [];
+  for (const [campo, valor] of new FormData(formulario)) pares.push(JSON.stringify([campo, valor instanceof File ? `archivo:${valor.name}:${valor.size}` : valor]));
+  return pares.sort().join();
+}
+
+/**
+ * Lo que tenía al dibujarse en el servidor, y no lo que tiene al hidratar: lo escrito antes de eso en un celular lento, o
+ * lo que restaura el navegador al recargar, sí es un cambio. Una copia sin tocar el formulario. Los menús van con su valor
+ * de ahora: React no marca la opción por defecto de uno controlado, y la copia caería en la primera.
+ */
+function contenidoAlDibujarse(formulario: HTMLFormElement): string {
+  const copia = formulario.cloneNode(true) as HTMLFormElement;
+  copia.reset();
+  const menus = formulario.querySelectorAll("select");
+  copia.querySelectorAll("select").forEach((menu, i) => (menu.value = menus[i].value));
+  return contenido(copia);
 }
 
 function useCambiosSinGuardar(formulario: RefObject<HTMLFormElement | null>, estado?: Estado): boolean {
@@ -29,7 +46,7 @@ function useCambiosSinGuardar(formulario: RefObject<HTMLFormElement | null>, est
   useEffect(() => {
     const form = formulario.current;
     if (!form) return;
-    base.current = contenido(form);
+    base.current = contenidoAlDibujarse(form);
     let cuadro = 0;
     const revisar = () => {
       cancelAnimationFrame(cuadro);
@@ -39,6 +56,7 @@ function useCambiosSinGuardar(formulario: RefObject<HTMLFormElement | null>, est
     const observador = new MutationObserver(revisar);
     observador.observe(form, { subtree: true, childList: true, attributes: true, attributeFilter: ["value", "checked", "data-checked"] });
     for (const evento of ["input", "change", "click", "reset"]) form.addEventListener(evento, revisar);
+    revisar();
     return () => {
       cancelAnimationFrame(cuadro);
       observador.disconnect();
@@ -70,23 +88,27 @@ function destinoDelClic(evento: MouseEvent): string | null {
   if (url.origin !== window.location.origin) return null;
   // Otra parte de la misma pantalla no saca de ella
   if (url.pathname === window.location.pathname && url.search === window.location.search) return null;
+  // Una dirección con // al inicio se leería como de otro sitio: no se pasa al router
+  if (url.pathname.startsWith("//")) return null;
   return url.pathname + url.search + url.hash;
 }
 
 /** Con cambios: pregunta antes de ir a otra pantalla del panel, y el navegador pregunta antes de recargar o cerrar. */
 export function PreguntarAlSalir({ hay }: { hay: boolean }) {
   const router = useRouter();
-  const [destino, setDestino] = useState<string | null>(null);
+  // A dónde se iba: otra pantalla, o un formulario que saca del panel ("Cerrar sesión")
+  const [destino, setDestino] = useState<string | HTMLFormElement | null>(null);
 
   useEffect(() => {
     if (!hay) return;
     const alSalir = (e: BeforeUnloadEvent) => e.preventDefault();
-    // En captura: llega antes que el enlace de Next, que si no cambiaría de pantalla
+    // En captura: antes que el enlace de Next, que no navega si ya está prevenido. Sin detener el evento: el menú del
+    // celular se cierra con este mismo clic
     const alClic = (e: MouseEvent) => {
-      const a = destinoDelClic(e);
+      const formularioSalida = (e.target as Element | null)?.closest?.<HTMLButtonElement>("button[data-preguntar-salir]")?.form;
+      const a = e.defaultPrevented ? null : (formularioSalida ?? destinoDelClic(e));
       if (!a) return;
       e.preventDefault();
-      e.stopPropagation();
       setDestino(a);
     };
     window.addEventListener("beforeunload", alSalir);
@@ -106,7 +128,8 @@ export function PreguntarAlSalir({ hay }: { hay: boolean }) {
           type="button"
           variant="destructive"
           onClick={() => {
-            if (destino) router.push(destino as Route);
+            if (destino instanceof HTMLFormElement) destino.requestSubmit();
+            else if (destino) router.push(destino as Route);
             setDestino(null);
           }}
         >
@@ -117,9 +140,10 @@ export function PreguntarAlSalir({ hay }: { hay: boolean }) {
   );
 }
 
-/** Para un flujo con su propio pie: solo pregunta al salir. */
-export function AvisoAlSalir({ formulario, estado }: { formulario: RefObject<HTMLFormElement | null>; estado?: Estado }) {
-  return <PreguntarAlSalir hay={useCambiosSinGuardar(formulario, estado)} />;
+/** Para un flujo con su propio pie: solo pregunta al salir. `ademas`: lo que no es un campo del formulario (la firma, una foto elegida). */
+export function AvisoAlSalir({ formulario, estado, ademas = false }: { formulario: RefObject<HTMLFormElement | null>; estado?: Estado; ademas?: boolean }) {
+  const hay = useCambiosSinGuardar(formulario, estado);
+  return <PreguntarAlSalir hay={hay || ademas} />;
 }
 
 /**

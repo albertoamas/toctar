@@ -22,9 +22,12 @@ export function esVertical(foto: Medidas): boolean {
 
 export const MENSAJE_NO_ES_FOTO = "Eso no es una foto. Elige un JPG, PNG o WebP.";
 
-/** De lo que se soltó, solo las fotos. El formato exacto lo revisa el servidor: una HEIC puede llegar convertida. */
+/**
+ * De lo elegido o soltado, solo las fotos. El formato exacto lo revisa el servidor: una HEIC puede llegar convertida, y
+ * algunos celulares no dicen el tipo (vacío): esa también pasa, y decide él.
+ */
 export function soloFotos<T extends { type: string }>(archivos: T[]): T[] {
-  return archivos.filter((a) => a.type.startsWith("image/"));
+  return archivos.filter((a) => !a.type || a.type.startsWith("image/"));
 }
 
 export const AVISO_FOTO_VERTICAL = "Esta foto es vertical: se va a recortar arriba y abajo. Mejor sácala con el celular acostado.";

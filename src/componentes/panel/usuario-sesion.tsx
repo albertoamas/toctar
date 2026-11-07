@@ -15,7 +15,7 @@ export async function UsuarioSesion() {
         <p className="text-xs text-muted-foreground">{NOMBRE_ROL[usuario.rol]}</p>
       </div>
       <form action={cerrarSesion}>
-        <Button type="submit" variant="ghost" size="icon" className="size-11" aria-label="Cerrar sesión">
+        <Button type="submit" variant="ghost" size="icon" className="size-11" aria-label="Cerrar sesión" data-preguntar-salir>
           <LogOutIcon />
         </Button>
       </form>

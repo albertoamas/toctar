@@ -131,7 +131,7 @@ export function FormularioEntrega({ id, conDeuda, saldo, puedeAutorizar, cliente
           {e.conSaldo && <MensajeError id="conSaldo-error">{e.conSaldo}</MensajeError>}
         </>
       )}
-      <AvisoAlSalir formulario={formulario} estado={estado} />
+      <AvisoAlSalir formulario={formulario} estado={estado} ademas={!!firma} />
       <PieFormulario>
         <Button type="submit" disabled={enviando} className="h-14 w-full text-base sm:w-auto sm:px-8">
           <KeyRoundIcon />

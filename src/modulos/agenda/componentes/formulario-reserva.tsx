@@ -149,7 +149,7 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
   const [adelanto, setAdelanto] = useState(mostrarMonto(adelantoSugerido));
   const [metodo, setMetodo] = useState<string>("");
   // El comprobante del adelanto va achicado; con "Sin adelanto" no va
-  const { setComprobante, preparando, errorFoto, enviar } = useEnvioConComprobante(accion);
+  const { comprobante, setComprobante, preparando, errorFoto, enviar } = useEnvioConComprobante(accion);
 
   function cambiarFechas(inicio: string, fin: string | null) {
     setFechaInicio(inicio);
@@ -245,7 +245,7 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
     >
       {directa && <PasosFlujo pasos={pasosNuevaReserva(conPagos)} actual={paso} etiqueta="Pasos de la reserva" />}
       {arriba}
-      <AvisoAlSalir formulario={formulario} estado={estado} />
+      <AvisoAlSalir formulario={formulario} estado={estado} ademas={!!comprobante} />
       <input type="hidden" name="origen" value={origen.tipo} />
       {origen.tipo === "cotizacion" ? (
         <input type="hidden" name="cotizacionId" value={origen.cotizacionId} />

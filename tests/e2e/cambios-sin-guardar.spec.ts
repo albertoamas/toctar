@@ -75,6 +75,61 @@ test("salir con cambios pregunta: se puede seguir editando o salir", async ({ pa
   await expect(page).not.toHaveURL(/\/panel\/configuracion\/parametros$/);
 });
 
+test("lo escrito antes de que la página termine de cargar también cuenta", async ({ page }) => {
+  await ingresarComoDueno(page);
+  // JavaScript lento, como un celular con mala señal: el formulario se ve antes de hidratar
+  await page.route("**/_next/static/chunks/**", async (ruta) => {
+    await new Promise((listo) => setTimeout(listo, 1500));
+    await ruta.continue();
+  });
+  await page.goto("/panel/configuracion/negocio", { waitUntil: "commit" });
+  const nombre = page.getByLabel("Nombre del negocio");
+  await nombre.waitFor({ state: "visible" });
+  const original = await nombre.inputValue();
+  await nombre.fill(`${original} escrito rápido`);
+  await hidratada(page);
+  await expect(nombre).toHaveValue(`${original} escrito rápido`);
+  await expect(page.getByRole("button", { name: "Guardar cambios" })).toBeEnabled();
+});
+
+test("en el menú del celular, salir con cambios pregunta y el menú se cierra", async ({ page }, info) => {
+  test.skip(info.project.name !== "celular", "El menú desplegable es del celular");
+  await ingresarComoDueno(page);
+  await page.goto("/panel/configuracion/negocio");
+  const nombre = page.getByLabel("Nombre del negocio");
+  await expect(nombre).toBeVisible();
+  await hidratada(page);
+  await nombre.fill(`${await nombre.inputValue()} 2`);
+  await expect(page.getByRole("button", { name: "Guardar cambios" })).toBeEnabled();
+  await page.getByRole("button", { name: /Abrir menú/ }).click();
+  await page.getByRole("dialog", { name: "Menú" }).getByRole("link", { name: "Agenda" }).click();
+  const pregunta = page.getByRole("dialog", { name: "¿Salir sin guardar?" });
+  await expect(pregunta).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Menú" })).toHaveCount(0);
+  await pregunta.getByRole("button", { name: "Salir sin guardar" }).click();
+  await expect(page).toHaveURL(/\/panel\/agenda$/);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("cerrar sesión con cambios también pregunta", async ({ page }, info) => {
+  test.skip(info.project.name !== "escritorio", "Se ve a la vista en la computadora");
+  await ingresarComoDueno(page);
+  await page.goto("/panel/configuracion/negocio");
+  const nombre = page.getByLabel("Nombre del negocio");
+  await expect(nombre).toBeVisible();
+  await hidratada(page);
+  await nombre.fill(`${await nombre.inputValue()} 2`);
+  await expect(page.getByRole("button", { name: "Guardar cambios" })).toBeEnabled();
+  await page.getByRole("button", { name: "Cerrar sesión" }).click();
+  const pregunta = page.getByRole("dialog", { name: "¿Salir sin guardar?" });
+  await expect(pregunta).toBeVisible();
+  await pregunta.getByRole("button", { name: "Seguir editando" }).click();
+  await expect(page).toHaveURL(/\/panel\/configuracion\/negocio$/);
+  await page.getByRole("button", { name: "Cerrar sesión" }).click();
+  await pregunta.getByRole("button", { name: "Salir sin guardar" }).click();
+  await expect(page).toHaveURL(/\/ingresar/);
+});
+
 test("guardar lo desactiva y ya no pregunta al salir", async ({ page }, info) => {
   const usuario = `cambios-${sufijo(info)}-${Date.now()}`.toLowerCase();
   await crearUsuario({ usuario, nombre: "Antes del cambio", contrasena: "encargado-123", rol: "encargado", permisos: ["agenda"] });

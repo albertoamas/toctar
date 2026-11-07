@@ -89,5 +89,5 @@ export function useEnvioConComprobante(accion: (datos: FormData) => void) {
     startTransition(() => accion(datos));
   }
 
-  return { setComprobante, preparando, errorFoto, enviar };
+  return { comprobante, setComprobante, preparando, errorFoto, enviar };
 }

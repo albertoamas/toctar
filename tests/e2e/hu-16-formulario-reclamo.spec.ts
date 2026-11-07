@@ -36,6 +36,7 @@ test("se pueden soltar varias fotos, hasta el máximo; las de más y lo que no e
   await expect(zona).toHaveCount(0);
   await page.getByRole("button", { name: "Quitar la foto 1" }).click();
   await expect(zona).toBeVisible();
+  await expect(page.getByText("Hasta 3 fotos: no se agregaron 1.")).toHaveCount(0);
 });
 
 test("se envía un reclamo con fotos y se ve la confirmación", async ({ page }, info) => {

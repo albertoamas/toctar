@@ -102,7 +102,7 @@ export function SubidaFoto({ id, accion, camposOcultos, actual, textoVacio, quit
         vista={actual ? { src: actual.miniatura, alt: actual.alt } : null}
         entera={entera}
         textoVacio={textoVacio}
-        ocupada={etapa === "preparando" ? "Preparando foto…" : etapa === "subiendo" || pendiente ? "Subiendo…" : null}
+        ocupada={etapa === "preparando" ? "Preparando foto…" : etapa === "subiendo" ? "Subiendo…" : pendiente ? "Quitando…" : null}
         deshabilitada={!listo}
         describedBy={error ? `${id}-error` : undefined}
         alElegir={(archivo) => void subir(archivo)}

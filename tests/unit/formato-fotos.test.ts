@@ -24,9 +24,9 @@ describe("tienenMismaForma", () => {
 });
 
 describe("soloFotos", () => {
-  test("deja lo que dice ser imagen, también HEIC (la decide el servidor), y saca lo demás", () => {
+  test("deja lo que dice ser imagen, también HEIC o sin tipo (lo decide el servidor), y saca lo demás", () => {
     const tipos = (lista: string[]) => soloFotos(lista.map((type) => ({ type }))).map((a) => a.type);
-    expect(tipos(["image/jpeg", "image/heic", "application/pdf", ""])).toEqual(["image/jpeg", "image/heic"]);
+    expect(tipos(["image/jpeg", "image/heic", "application/pdf", ""])).toEqual(["image/jpeg", "image/heic", ""]);
     expect(tipos(["text/plain"])).toEqual([]);
   });
 });

@@ -63,6 +63,10 @@ test("se puede soltar una foto en la zona, cambiarla y quitarla; lo que no es un
   await zona.dispatchEvent("drop", { dataTransfer: pdf });
   await expect(page.getByText("Eso no es una foto. Elige un JPG, PNG o WebP.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Quitar foto: Antes (opcional)" })).toHaveCount(0);
+  // Elegirlo con el selector de archivos da lo mismo
+  await page.getByLabel("Archivo: Antes (opcional)").setInputFiles({ name: "lista.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF") });
+  await expect(page.getByText("Eso no es una foto. Elige un JPG, PNG o WebP.")).toBeVisible();
+  await expect(zona.locator("img")).toHaveCount(0);
 
   // Varias donde va una: se usa la primera y lo dice
   const dos = await archivosArrastrados(page, [foto("una.png"), foto("otra.png")]);
