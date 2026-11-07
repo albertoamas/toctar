@@ -8,6 +8,7 @@ import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { AvisoFoto, GuiaFoto } from "@/componentes/panel/guia-foto";
+import { VisorFotos } from "@/componentes/panel/visor-fotos";
 import { ZonaFoto } from "@/componentes/panel/zona-foto";
 import { Selector } from "@/componentes/panel/selector";
 import { achicarFoto, medidasDeFoto } from "@/componentes/panel/subida-foto";
@@ -33,7 +34,7 @@ import { Insignia } from "@/componentes/panel/insignia";
 // y se ordena, oculta, edita o elimina. Las fotos se achican en el celular antes de subir.
 // Un trabajo con antes se elige para el comparador de la portada (pedido de la demo del 24/10).
 
-type Foto = { miniatura: string; ancho: number | null; alto: number | null };
+type Foto = { url: string; miniatura: string; ancho: number | null; alto: number | null };
 export type ItemGaleria = {
   id: number;
   servicioId: number;
@@ -51,6 +52,9 @@ export function GaleriaPanel({ items, servicios, portadaId }: { items: ItemGaler
   const [filtro, setFiltro] = useState("");
   const [subiendo, setSubiendo] = useState(false);
   const visibles = filtro ? items.filter((i) => String(i.servicioId) === filtro) : items;
+  // El trabajo que se ve en grande: con las flechas se pasa a los demás de la lista a la vista (pulido 13.16)
+  const [abierto, setAbierto] = useState<number | null>(null);
+  const nombreDe = (item: ItemGaleria) => nombreDelTrabajo(item.descripcion, item.servicio, items.indexOf(item) + 1);
 
   return (
     <div className="flex flex-col gap-6">
@@ -98,13 +102,41 @@ export function GaleriaPanel({ items, servicios, portadaId }: { items: ItemGaler
               ultimo={i === visibles.length - 1}
               ordenable={!filtro}
               enPortada={item.id === portadaId}
+              alAbrir={() => setAbierto(i)}
               // Su lugar en la lista completa (no cambia al filtrar): distingue a los que no tienen descripción
               numero={items.indexOf(item) + 1}
             />
           ))}
         </ol>
       )}
+      <VisorFotos
+        fotos={visibles.map((item) => ({ ...item.despues, alt: nombreDe(item), leyenda: `${item.servicio}: ${nombreDe(item)}` }))}
+        abierta={abierto}
+        alCambiar={setAbierto}
+        titulo="Galería"
+        cosa="trabajo"
+        contenido={(i) => <TrabajoEnGrande item={visibles[i]} nombre={nombreDe(visibles[i])} />}
+      />
     </div>
+  );
+}
+
+/** Un trabajo en el visor: el antes y el después lado a lado (uno sobre otro en el celular), o el resultado solo. */
+function TrabajoEnGrande({ item, nombre }: { item: ItemGaleria; nombre: string }) {
+  const foto = (f: Foto, alt: string, etiqueta?: string) => (
+    <figure className="relative bg-superficie">
+      {/* eslint-disable-next-line @next/next/no-img-element -- las fotos ya vienen en WebP, como en el resto del panel */}
+      <img src={f.url} alt={alt} width={f.ancho ?? undefined} height={f.alto ?? undefined} className="mx-auto max-h-[60dvh] w-full object-contain" />
+      {etiqueta && <figcaption className="absolute top-2 left-2 rounded-sm bg-negro/75 px-2 py-0.5 text-sm font-semibold text-blanco">{etiqueta}</figcaption>}
+    </figure>
+  );
+  return item.antes ? (
+    <div className="grid gap-2 sm:grid-cols-2">
+      {foto(item.antes, `Antes: ${nombre}`, "Antes")}
+      {foto(item.despues, `Después: ${nombre}`, "Después")}
+    </div>
+  ) : (
+    foto(item.despues, nombre)
   );
 }
 
@@ -125,6 +157,7 @@ function Tarjeta({
   ordenable,
   enPortada,
   numero,
+  alAbrir,
 }: {
   item: ItemGaleria;
   servicios: Servicio[];
@@ -133,6 +166,7 @@ function Tarjeta({
   ordenable: boolean;
   enPortada: boolean;
   numero: number;
+  alAbrir: () => void;
 }) {
   const nombre = nombreDelTrabajo(item.descripcion, item.servicio, numero);
   const [editando, setEditando] = useState(false);
@@ -142,10 +176,16 @@ function Tarjeta({
   return (
     <li className={`flex flex-col overflow-hidden tt-tarjeta-panel ${item.visible ? "" : "opacity-70"}`}>
       {/* Mismo recuadro (2:1) con par o con foto sola: las tarjetas quedan parejas. La sola se recorta solo aquí. */}
-      <div className={`grid aspect-[2/1] ${item.antes ? "grid-cols-2 gap-px" : ""}`}>
+      {/* Se toca para verlo en grande */}
+      <button
+        type="button"
+        onClick={alAbrir}
+        aria-label={`Ver en grande: ${nombre}`}
+        className={`grid aspect-[2/1] cursor-zoom-in focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--foco)] ${item.antes ? "grid-cols-2 gap-px" : ""}`}
+      >
         {item.antes && <Miniatura foto={item.antes} alt={`Antes: ${nombre}`} etiqueta="Antes" />}
         <Miniatura foto={item.despues} alt={item.antes ? `Después: ${nombre}` : nombre} etiqueta={item.antes ? "Después" : undefined} />
-      </div>
+      </button>
       <div className="flex flex-1 flex-col gap-2 p-2">
         {editando ? (
           <EditarItem item={item} servicios={servicios} alTerminar={() => setEditando(false)} />

@@ -56,6 +56,22 @@ test("el dueño ve el reclamo pendiente, le escribe por WhatsApp y lo marca aten
   const firmada = (await grande.getAttribute("src"))!;
   expect((await page.request.get(firmada)).status()).toBe(200);
   expect((await page.request.get(firmada.split("?")[0])).status()).toBe(403);
+  // Se pasa a la de al lado sin cerrar: con el botón, el teclado o el dedo (pulido 13.16)
+  const visor = page.getByRole("dialog", { name: "Reclamo: foto 1 de 2" });
+  await expect(visor).toBeVisible();
+  await expect(visor.getByRole("button", { name: "Foto anterior" })).toBeDisabled();
+  await visor.getByRole("button", { name: "Foto siguiente" }).click();
+  await expect(page.getByRole("dialog", { name: "Reclamo: foto 2 de 2" }).getByRole("img", { name: "Foto 2 del reclamo" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Foto siguiente" })).toBeDisabled();
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.getByRole("dialog", { name: "Reclamo: foto 1 de 2" })).toBeVisible();
+  // Deslizar hacia la izquierda, como con el dedo
+  const caja = (await page.getByRole("dialog").getByRole("img", { name: "Foto 1 del reclamo" }).boundingBox())!;
+  const gesto = (tipo: string, x: number) =>
+    page.getByRole("dialog").getByRole("img", { name: "Foto 1 del reclamo" }).dispatchEvent(tipo, { pointerType: "touch", isPrimary: true, clientX: x, clientY: caja.y + caja.height / 2, bubbles: true });
+  await gesto("pointerdown", caja.x + caja.width * 0.8);
+  await gesto("pointerup", caja.x + caja.width * 0.2);
+  await expect(page.getByRole("dialog", { name: "Reclamo: foto 2 de 2" })).toBeVisible();
   await page.keyboard.press("Escape");
 
   const whatsapp = page.getByRole("link", { name: "Escribir por WhatsApp" });

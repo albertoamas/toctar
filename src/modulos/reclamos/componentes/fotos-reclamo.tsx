@@ -2,14 +2,13 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogTitle } from "@/componentes/ui/dialog";
+import { VisorFotos } from "@/componentes/panel/visor-fotos";
 import type { UrlsFoto } from "@/lib/fotos";
 
-// HU-17: fotos del reclamo; al tocar una se ve en grande.
+// HU-17: fotos del reclamo; al tocar una se ve en grande, y desde ahí se pasa a las demás (pulido 13.16).
 
 export function FotosReclamo({ fotos }: { fotos: UrlsFoto[] }) {
   const [abierta, setAbierta] = useState<number | null>(null);
-  const foto = abierta === null ? null : fotos[abierta];
 
   return (
     <>
@@ -19,7 +18,7 @@ export function FotosReclamo({ fotos }: { fotos: UrlsFoto[] }) {
             <button
               type="button"
               onClick={() => setAbierta(i)}
-              className="block size-32 overflow-hidden rounded-sm bg-superficie focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]"
+              className="block size-32 cursor-zoom-in overflow-hidden rounded-sm bg-superficie focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]"
               aria-label={`Ampliar la foto ${i + 1}`}
             >
               <Image src={f.miniatura} alt="" width={f.ancho ?? 640} height={f.alto ?? 640} unoptimized className="size-full object-cover" />
@@ -27,14 +26,12 @@ export function FotosReclamo({ fotos }: { fotos: UrlsFoto[] }) {
           </li>
         ))}
       </ul>
-      <Dialog open={foto !== null} onOpenChange={(abrir) => !abrir && setAbierta(null)}>
-        {foto && (
-          <DialogContent className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto p-4 sm:max-w-4xl">
-            <DialogTitle>Foto {abierta! + 1} de {fotos.length}</DialogTitle>
-            <Image src={foto.url} alt={`Foto ${abierta! + 1} del reclamo`} width={foto.ancho ?? 1600} height={foto.alto ?? 1200} unoptimized className="max-h-[75dvh] w-full bg-superficie object-contain" />
-          </DialogContent>
-        )}
-      </Dialog>
+      <VisorFotos
+        fotos={fotos.map((f, i) => ({ url: f.url, ancho: f.ancho, alto: f.alto, alt: `Foto ${i + 1} del reclamo` }))}
+        abierta={abierta}
+        alCambiar={setAbierta}
+        titulo="Reclamo"
+      />
     </>
   );
 }

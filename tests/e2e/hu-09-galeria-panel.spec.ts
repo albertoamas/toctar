@@ -112,8 +112,21 @@ test("sube un par antes y después y una foto sola; los ordena, oculta, edita y 
   await expect(item("Vidrios sin manchas de ácido")).toHaveCount(1);
   await expect(item("Pulido y nano cerámico en una Hilux")).toHaveCount(1);
   // Los 5 íconos de la foto van en un solo renglón, también en el celular (pulido 4.7)
-  const renglones = await item("Pulido y nano cerámico en una Hilux").getByRole("button").evaluateAll((botones) => new Set(botones.map((b) => Math.round(b.getBoundingClientRect().top))).size);
+  // (sin la foto, que también es un botón: la abre en grande)
+  const renglones = await item("Pulido y nano cerámico en una Hilux").getByRole("button").evaluateAll((botones) => new Set(botones.filter((b) => !b.getAttribute("aria-label")?.startsWith("Ver en grande")).map((b) => Math.round(b.getBoundingClientRect().top))).size);
   expect(renglones).toBe(1);
+
+  // Al tocar la foto se ve en grande, con el antes y el después, y se pasa al trabajo de al lado (pulido 13.16)
+  await item("Pulido y nano cerámico en una Hilux").getByRole("button", { name: "Ver en grande: Pulido y nano cerámico en una Hilux" }).click();
+  const visor = page.getByRole("dialog", { name: /^Galería: trabajo \d+ de \d+$/ });
+  await expect(visor.getByRole("img", { name: "Antes: Pulido y nano cerámico en una Hilux" })).toBeVisible();
+  await expect(visor.getByRole("img", { name: "Después: Pulido y nano cerámico en una Hilux" })).toBeVisible();
+  const titulo = (await visor.getByRole("heading").innerText()).trim();
+  const [, n, total] = titulo.match(/trabajo (\d+) de (\d+)/)!.map(Number);
+  await page.keyboard.press(n < total ? "ArrowRight" : "ArrowLeft");
+  await expect(page.getByRole("dialog", { name: `Galería: trabajo ${n < total ? n + 1 : n - 1} de ${total}` })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
 
   // Ordenar: la foto sola pasa antes que el par
   const posicion = async (texto: string) => (await galeria.getByRole("listitem").allTextContents()).findIndex((t) => t.includes(texto));

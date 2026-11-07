@@ -1,10 +1,12 @@
 import Image from "next/image";
 import type { DetalleRevision } from "../consultas";
 import { NOMBRE_DETALLE } from "../reglas";
+import { AbrirFoto } from "@/componentes/panel/abrir-foto";
 import { Insignia } from "@/componentes/panel/insignia";
+import type { FotoVisor } from "@/componentes/panel/visor-fotos";
 
 // "Cómo llegó" en la orden (pedido 12; pedido 26): una tarjeta con el resumen del checklist arriba ("11 bien",
-// "2 con detalle"), los detalles con su foto (se abre en grande), las partes en bien plegadas ("El resto, bien") y las
+// "2 con detalle"), los detalles con su foto (se abre en grande y se pasa a las de los otros detalles, pulido 13.16), las partes en bien plegadas ("El resto, bien") y las
 // observaciones de ingreso. Lo ve todo el que trabaja la orden: no hay precios (RN-12).
 
 type Props = { revision: DetalleRevision[]; observaciones: string | null };
@@ -12,6 +14,8 @@ type Props = { revision: DetalleRevision[]; observaciones: string | null };
 export function ComoLlego({ revision, observaciones }: Props) {
   const detalles = revision.filter((d) => d.estado === "detalle");
   const bien = revision.filter((d) => d.estado === "bien");
+  const conFoto = detalles.filter((d) => d.foto);
+  const fotos: FotoVisor[] = conFoto.map((d) => ({ ...d.foto!, alt: `Foto: ${d.parte}`, leyenda: leyendaDe(d) }));
   return (
     <section aria-labelledby="como-llego-titulo" className="tt-tarjeta-panel overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
@@ -31,9 +35,9 @@ export function ComoLlego({ revision, observaciones }: Props) {
             {detalles.map((d) => (
               <li key={d.parteId} className="flex items-center gap-3 px-4 py-3">
                 {d.foto && (
-                  <a href={d.foto.url} target="_blank" rel="noreferrer" className="shrink-0" aria-label={`Ver la foto: ${d.parte}`}>
+                  <AbrirFoto fotos={fotos} indice={conFoto.indexOf(d)} titulo="Cómo llegó" etiqueta={`Ver la foto: ${d.parte}`} className="shrink-0 rounded-lg">
                     <Image src={d.foto.miniatura} alt="" width={64} height={64} unoptimized className="size-14 rounded-lg object-cover" />
-                  </a>
+                  </AbrirFoto>
                 )}
                 <span className="flex min-w-0 flex-col gap-0.5">
                   <span className="flex flex-wrap items-center gap-2">
@@ -68,4 +72,9 @@ export function ComoLlego({ revision, observaciones }: Props) {
       )}
     </section>
   );
+}
+
+/** Debajo de la foto en grande: la pieza, el detalle y la nota ("Puerta derecha: Rayón. Raspado en la manija"). */
+function leyendaDe(d: DetalleRevision) {
+  return `${d.parte}: ${d.tipo ? NOMBRE_DETALLE[d.tipo] : "Detalle"}${d.nota ? `. ${d.nota}` : ""}`;
 }

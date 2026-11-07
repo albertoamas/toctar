@@ -7,9 +7,9 @@ import { useHidratado } from "@/componentes/hidratado";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { MensajeError } from "@/componentes/panel/campo";
 import { achicarFoto } from "@/componentes/panel/subida-foto";
+import { VisorFotos } from "@/componentes/panel/visor-fotos";
 import { useSoltarArchivos } from "@/componentes/panel/zona-foto";
 import { Button } from "@/componentes/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "@/componentes/ui/dialog";
 import type { EtapaFoto } from "@/db/esquema/trabajos";
 import { MENSAJE_NO_ES_FOTO, soloFotos } from "@/lib/formato-fotos";
 import type { UrlsFoto } from "@/lib/fotos";
@@ -45,7 +45,6 @@ export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio }: Pr
   // Necesita JavaScript (se sube al elegir): se habilita al hidratar
   const listo = useHidratado();
   const lugares = MAXIMO_FOTOS_ETAPA - fotos.length;
-  const elegida = abierta === null ? null : fotos[abierta];
   const nombre = NOMBRE_ETAPA[etapa];
   const frase = FRASE_ETAPA[etapa];
   const id = `fotos-${etapa}`;
@@ -141,25 +140,23 @@ export function FotosOrden({ trabajoId, etapa, fotos, editable, textoVacio }: Pr
       )}
       {error && <MensajeError id={`${id}-error`}>{error}</MensajeError>}
 
-      <Dialog open={elegida !== null} onOpenChange={(abrir) => !abrir && setAbierta(null)}>
-        {elegida && (
-          <DialogContent className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto p-4 sm:max-w-4xl">
-            <DialogTitle>
-              {nombre}: foto {abierta! + 1} de {fotos.length}
-            </DialogTitle>
-            <Image src={elegida.url} alt={`Foto ${abierta! + 1} ${frase}`} width={elegida.ancho ?? 1600} height={elegida.alto ?? 1200} unoptimized className="max-h-[70dvh] w-full bg-superficie object-contain" />
-            {/* Quitar no depende de poder subir: una foto de durante (de antes del pedido 27) se quita mientras la orden esté abierta */}
-            {elegida.puedeQuitar && (
-              <div>
-                <Button type="button" variant="outline" disabled={quitando} onClick={() => quitar(elegida.id)}>
-                  <TrashIcon />
-                  {quitando ? "Quitando…" : "Quitar foto"}
-                </Button>
-              </div>
-            )}
-          </DialogContent>
-        )}
-      </Dialog>
+      <VisorFotos
+        fotos={fotos.map((f, i) => ({ url: f.url, ancho: f.ancho, alto: f.alto, alt: `Foto ${i + 1} ${frase}` }))}
+        abierta={abierta}
+        alCambiar={setAbierta}
+        titulo={nombre}
+        acciones={(i) =>
+          // Quitar no depende de poder subir: una foto de durante (de antes del pedido 27) se quita mientras la orden esté abierta
+          fotos[i].puedeQuitar && (
+            <div>
+              <Button type="button" variant="outline" disabled={quitando} onClick={() => quitar(fotos[i].id)}>
+                <TrashIcon />
+                {quitando ? "Quitando…" : "Quitar foto"}
+              </Button>
+            </div>
+          )
+        }
+      />
     </div>
   );
 }

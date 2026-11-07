@@ -10,6 +10,7 @@ import { avisarResultado, conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { achicarFoto } from "@/componentes/panel/subida-foto";
+import { VisorFotos } from "@/componentes/panel/visor-fotos";
 import { BYTES_MAXIMOS_FOTO } from "@/lib/formato-fotos";
 import { Button } from "@/componentes/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
@@ -47,6 +48,12 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
   const filas = [...partes, ...sueltas];
   const revisadas = filas.filter((p) => estadoDe(p.id) !== null).length;
   const completo = filas.length > 0 && revisadas === filas.length;
+  // Los detalles con foto, en el orden de la lista: el visor pasa de uno a otro
+  const conFoto = filas.flatMap((p) => {
+    const d = de(p.id);
+    return estadoDe(p.id) === "detalle" && d?.estado === "detalle" && d.foto ? [d] : [];
+  });
+  const [fotoAbierta, setFotoAbierta] = useState<number | null>(null);
 
   function tocarBien(parteId: number) {
     if (guardando.includes(parteId)) return;
@@ -94,6 +101,13 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
               />
             </div>
           </div>
+          {/* Las fotos de los detalles en el visor del panel, sin salir a otra pestaña (pulido 13.16) */}
+          <VisorFotos
+            fotos={conFoto.map((d) => ({ ...d.foto!, alt: `Foto: ${d.parte}`, leyenda: `${d.parte}: ${d.tipo ? NOMBRE_DETALLE[d.tipo] : "Detalle"}${d.nota ? `. ${d.nota}` : ""}` }))}
+            abierta={fotoAbierta}
+            alCambiar={setFotoAbierta}
+            titulo="Detalles de ingreso"
+          />
           <ul aria-label="Partes del checklist" className="flex flex-col divide-y divide-border">
             {filas.map((p) => {
               const estado = estadoDe(p.id);
@@ -145,9 +159,9 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
                   {detalle && (detalle.nota || detalle.foto) && (
                     <div className="flex items-center gap-3 rounded-lg bg-aviso-fondo/60 p-2">
                       {detalle.foto && (
-                        <a href={detalle.foto.url} target="_blank" rel="noreferrer" className="shrink-0" aria-label={`Ver la foto: ${p.nombre}`}>
+                        <button type="button" onClick={() => setFotoAbierta(conFoto.findIndex((x) => x.parteId === p.id))} className="shrink-0 cursor-zoom-in rounded-md" aria-label={`Ver la foto: ${p.nombre}`}>
                           <Image src={detalle.foto.miniatura} alt="" width={48} height={48} unoptimized className="size-12 rounded-md object-cover" />
-                        </a>
+                        </button>
                       )}
                       {detalle.nota && <span className="min-w-0 text-sm">{detalle.nota}</span>}
                     </div>
