@@ -1,4 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
+import sharp from "sharp";
 import { ingresarComoDueno, PNG } from "./apoyo";
 
 // HU-08 Textos del sitio. Criterios: docs/09-pruebas/criterios-entrega-1.md (8.1 a 8.5).
@@ -127,8 +128,21 @@ test("la foto del equipo se sube en Textos y va al lado de la historia de Nosotr
 
   await page.goto("/nosotros");
   await expect(page.getByRole("main").getByRole("img", { name: "El equipo de TocTar" })).toBeVisible();
+  // Siempre 4:3, como las demás fotos del sitio (revisión de YankoSoft, 06/11)
+  const equipo = (await page.getByRole("main").getByRole("img", { name: "El equipo de TocTar" }).boundingBox())!;
+  expect(Math.abs(equipo.width / equipo.height - 4 / 3)).toBeLessThan(0.02);
 
   await page.goto("/panel/sitio/textos");
+  await expect(bloque.getByText("Formato 4:3, con el celular acostado.", { exact: false })).toBeVisible();
+  // Una vertical se sube igual, y avisa que se va a recortar; una horizontal ya no avisa
+  const vertical = "Esta foto es vertical: se va a recortar arriba y abajo. Mejor sácala con el celular acostado.";
+  await expect(bloque.getByText(vertical)).toHaveCount(0);
+  await bloque.getByLabel("Archivo de la foto").setInputFiles({
+    name: "vertical.png",
+    mimeType: "image/png",
+    buffer: await sharp({ create: { width: 30, height: 40, channels: 3, background: "#808080" } }).png().toBuffer(),
+  });
+  await expect(bloque.getByText(vertical)).toBeVisible();
   await bloque.getByRole("button", { name: "Quitar foto" }).click();
   await expect(bloque.getByText("Sin foto: la historia va sola.")).toBeVisible();
   await page.goto("/nosotros");

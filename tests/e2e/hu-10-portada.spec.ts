@@ -148,6 +148,8 @@ test("el trabajo elegido en la galería del panel se compara arriba en la portad
     const espacio = c.y - (b.y + b.height);
     expect(espacio, `a ${ancho} px`).toBeGreaterThanOrEqual(0);
     expect(espacio, `a ${ancho} px`).toBeLessThan(60);
+    // Un recuadro fijo de 4:3, sea cual sea la foto (revisión de YankoSoft, 06/11)
+    expect(Math.abs(c.width / c.height - 4 / 3), `a ${ancho} px`).toBeLessThan(0.02);
   }
   await page.setViewportSize(pantalla);
   // TikTok, casi tan importante como WhatsApp (pedido 35): un bloque propio, con el usuario y su botón; y en el encabezado
