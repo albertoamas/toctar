@@ -30,7 +30,7 @@ Merge a main    ──► Actions vuelve a verificar ──► pide el despliegu
 - **Node:** la versión 24, la misma de la imagen de producción.
 - **Idioma y hora:** las E2E usan `es-BO` y `America/La_Paz` (`playwright.config.ts`), como los usuarios. Sin eso, el navegador del CI está en inglés y en UTC: las horas salen con AM/PM y las fechas en otro formato.
 - **Lo que encontró la primera corrida (25/10):** en Linux, Configuración se salía 7 px de la pantalla a 360 de ancho (una grilla "auto" y un `<fieldset>` que no se achicaba); en Windows no se notaba. Se corrigió para toda la app.
-- **Costo:** el repositorio es privado; el plan gratuito de GitHub trae 2000 minutos de Actions al mes. Cada PR y su merge gastan unos 20 a 25 minutos en total.
+- **Costo:** desde el 07/11/2026 el repositorio es público y las máquinas estándar de Actions no gastan minutos. Mientras fue privado, el plan gratuito traía unos 2000 al mes, y un PR con su merge gastaba unos 50 (el 06/11 se pasó ese límite). Si la cuenta tiene un problema de pago, GitHub la bloquea entera, también para los repositorios públicos: las corridas fallan sin empezar con "your account is locked due to a billing issue", y se resuelve en Settings → Billing o con soporte de GitHub.
 
 ## Qué se despliega
 
