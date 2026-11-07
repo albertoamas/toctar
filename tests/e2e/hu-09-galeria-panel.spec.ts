@@ -130,7 +130,8 @@ test("sube un par antes y después y una foto sola; los ordena, oculta, edita y 
 
   // Ordenar: la foto sola pasa antes que el par
   const posicion = async (texto: string) => (await galeria.getByRole("listitem").allTextContents()).findIndex((t) => t.includes(texto));
-  await page.getByRole("button", { name: "Subir: Vidrios sin manchas de ácido" }).click();
+  await page.getByRole("button", { name: "Más: Vidrios sin manchas de ácido" }).click();
+  await page.getByRole("menuitem", { name: "Mover antes" }).click();
   await expect.poll(async () => (await posicion("Vidrios sin manchas de ácido")) < (await posicion("Pulido y nano cerámico en una Hilux"))).toBe(true);
 
   // Filtrar por servicio
@@ -140,25 +141,33 @@ test("sube un par antes y después y una foto sola; los ordena, oculta, edita y 
   await page.getByLabel("Ver fotos de").selectOption({ label: "Todos los servicios" });
 
   // Ocultar y editar
-  await page.getByRole("button", { name: "Ocultar: Vidrios sin manchas de ácido" }).click();
+  await page.getByRole("button", { name: "Más: Vidrios sin manchas de ácido" }).click();
+  await page.getByRole("menuitem", { name: "Ocultar del sitio" }).click();
   await expect(item("Vidrios sin manchas de ácido")).toContainText("Oculta");
+  // Editar, en un modal: la tarjeta no cambia de forma (pulido 13.17)
   await page.getByRole("button", { name: "Editar: Vidrios sin manchas de ácido" }).click();
+  const edicion = page.getByRole("dialog", { name: "Editar trabajo" });
   // Tras un error, el servicio elegido se conserva (React reinicia el formulario y el selector volvía al original)
-  await galeria.getByLabel("Servicio").selectOption({ label: "Pulido y nano cerámico" });
+  await edicion.getByLabel("Servicio").selectOption({ label: "Pulido y nano cerámico" });
   // La descripción es opcional, pero tiene un largo máximo
-  await galeria.getByLabel("Descripción").fill("x".repeat(141));
-  await galeria.getByRole("button", { name: "Guardar" }).click();
-  await expect(galeria.getByLabel("Descripción")).toHaveAttribute("aria-invalid", "true");
-  await expect(galeria.getByLabel("Servicio").locator("option:checked")).toHaveText("Pulido y nano cerámico");
-  await galeria.getByLabel("Servicio").selectOption({ label: "Pulido de vidrios" });
-  await galeria.getByLabel("Descripción").fill("Parabrisas sin manchas de ácido");
-  await galeria.getByRole("button", { name: "Guardar" }).click();
+  await edicion.getByLabel("Descripción").fill("x".repeat(141));
+  await edicion.getByRole("button", { name: "Guardar trabajo" }).click();
+  await expect(edicion.getByLabel("Descripción")).toHaveAttribute("aria-invalid", "true");
+  await expect(edicion.getByLabel("Servicio").locator("option:checked")).toHaveText("Pulido y nano cerámico");
+  await edicion.getByLabel("Servicio").selectOption({ label: "Pulido de vidrios" });
+  await edicion.getByLabel("Descripción").fill("Parabrisas sin manchas de ácido");
+  await edicion.getByRole("button", { name: "Guardar trabajo" }).click();
+  await expect(edicion).toHaveCount(0);
   await expect(galeria).toContainText("Parabrisas sin manchas de ácido");
 
   // Eliminar, con confirmación; las fotos se borran del almacenamiento
   const src = await galeria.getByRole("img", { name: "Parabrisas sin manchas de ácido" }).getAttribute("src");
-  await page.getByRole("button", { name: "Eliminar: Parabrisas sin manchas de ácido" }).click();
-  await page.getByRole("button", { name: "Eliminar foto" }).click();
+  await page.getByRole("button", { name: "Más: Parabrisas sin manchas de ácido" }).click();
+  await page.getByRole("menuitem", { name: "Eliminar foto" }).click();
+  const confirmar = page.getByRole("dialog", { name: "¿Eliminar esta foto?" });
+  // El foco en Cancelar: un Enter no la borra
+  await expect(confirmar.getByRole("button", { name: "Cancelar" })).toBeFocused();
+  await confirmar.getByRole("button", { name: "Eliminar foto" }).click();
   await expect(page.getByText("Foto eliminada.")).toBeVisible();
   await expect(item("Parabrisas sin manchas de ácido")).toHaveCount(0);
   expect((await page.request.get(src!)).status()).toBe(404);

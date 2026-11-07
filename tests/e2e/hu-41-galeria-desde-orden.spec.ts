@@ -73,8 +73,9 @@ test("el dueño publica antes y después de una orden entregada: copias pública
 
   // Quitarla de la galería borra las copias, no las fotos de la orden
   await page.goto("/panel/sitio/galeria");
-  await page.getByRole("button", { name: `Eliminar: ${descripcion}` }).click();
-  await page.getByRole("button", { name: "Eliminar foto" }).click();
+  await page.getByRole("button", { name: `Más: ${descripcion}` }).click();
+  await page.getByRole("menuitem", { name: "Eliminar foto" }).click();
+  await page.getByRole("dialog", { name: "¿Eliminar esta foto?" }).getByRole("button", { name: "Eliminar foto" }).click();
   await expect(page.getByText("Foto eliminada.")).toBeVisible();
   expect(await consultar("select id from archivo where id = any($1::int[])", [[item.despues, item.antes]])).toEqual([]);
   expect(await consultar("select 1 from trabajo_foto where trabajo_id = $1", [id])).toHaveLength(2);

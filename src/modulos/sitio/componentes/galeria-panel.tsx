@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useActionState, useRef, useState, useSyncExternalStore, useTransition } from "react";
-import { ArrowDownIcon, ArrowUpIcon, CameraIcon, EyeIcon, EyeOffIcon, HouseIcon, PencilIcon, TrashIcon, UploadIcon, XIcon } from "lucide-react";
+import { CameraIcon, EyeOffIcon, PencilIcon, TrashIcon, UploadIcon, XIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { avisarResultado } from "@/componentes/panel/avisos";
@@ -13,22 +13,14 @@ import { ZonaFoto } from "@/componentes/panel/zona-foto";
 import { Selector } from "@/componentes/panel/selector";
 import { achicarFoto, medidasDeFoto } from "@/componentes/panel/subida-foto";
 import { Button } from "@/componentes/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/componentes/ui/dialog";
 import { Input } from "@/componentes/ui/input";
 import { avisosDeGaleria } from "@/lib/formato-fotos";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { nombreDelTrabajo } from "../galeria";
 import { cambiarVisibilidadGaleria, elegirParaPortada, eliminarGaleriaItem, guardarGaleriaItem, moverGaleriaItem, subirGaleria } from "../acciones";
 import { Insignia } from "@/componentes/panel/insignia";
+import { MenuMas, type AccionMas } from "@/componentes/panel/menu-mas";
+import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
 
 // HU-09: galería de antes y después (RF-12). Se sube un par o una foto sola, asociada a un servicio,
 // y se ordena, oculta, edita o elimina. Las fotos se achican en el celular antes de subir.
@@ -80,15 +72,11 @@ export function GaleriaPanel({ items, servicios, portadaId }: { items: ItemGaler
         </div>
       )}
 
+      {items.length > 0 && <PortadaElegida items={items} portadaId={portadaId} nombreDe={nombreDe} />}
+
       {items.length === 0 && !subiendo && <EstadoVacio>Todavía no hay fotos. Sube la primera de un trabajo terminado.</EstadoVacio>}
       {items.length > 0 && visibles.length === 0 && <EstadoVacio>No hay fotos de ese servicio todavía.</EstadoVacio>}
       {filtro && visibles.length > 1 && <p className="text-sm text-tinta-suave">Para cambiar el orden, mira todos los servicios.</p>}
-      {items.some((i) => i.antes) && (
-        <p className="flex items-center gap-2 text-sm text-tinta-suave">
-          <HouseIcon aria-hidden className="size-4 shrink-0" />
-          Arriba en la portada se compara el trabajo marcado &quot;En la portada&quot;. Para cambiarlo, toca la casa en otro con foto de antes.
-        </p>
-      )}
 
       {/* En el celular, una por renglón: así entran los 5 íconos y editar tiene lugar (pulido 4.7) */}
       {visibles.length > 0 && (
@@ -149,6 +137,105 @@ function Miniatura({ foto, alt, etiqueta }: { foto: Foto; alt: string; etiqueta?
   );
 }
 
+/**
+ * El trabajo de la portada, en su propia sección arriba (pulido 13.17): antes, una casa más entre los íconos de cada
+ * tarjeta, con un párrafo que la explicaba. "Cambiar" abre la lista de los que pueden ir: con antes y que se ven en el sitio.
+ * Sin elegir, el sitio muestra el primero con antes (2B.1).
+ */
+function PortadaElegida({ items, portadaId, nombreDe }: { items: ItemGaleria[]; portadaId: number | null; nombreDe: (item: ItemGaleria) => string }) {
+  const [abierto, setAbierto] = useState(false);
+  const posibles = items.filter((i) => i.antes && i.enSitio);
+  const elegida = items.find((i) => i.id === portadaId) ?? null;
+  // Lo que se ve hoy en el sitio: el elegido o, sin elegir, el primero que puede ir
+  const enSitio = elegida ?? posibles[0] ?? null;
+  return (
+    <section aria-labelledby="portada-titulo" className="tt-tarjeta-panel flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+      {enSitio?.antes && (
+        <span className="grid aspect-[2/1] w-full shrink-0 grid-cols-2 gap-px overflow-hidden rounded-sm sm:w-48">
+          <Miniatura foto={enSitio.antes} alt="" etiqueta="Antes" />
+          <Miniatura foto={enSitio.despues} alt="" etiqueta="Después" />
+        </span>
+      )}
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <h2 id="portada-titulo" className="tt-titulo-sub">En la portada</h2>
+        {enSitio ? (
+          <p className="text-sm">
+            {nombreDe(enSitio)}
+            {!elegida && <span className="text-tinta-suave"> (sin elegir: va el primero con antes y después)</span>}
+          </p>
+        ) : (
+          <p className="text-sm text-tinta-suave">Para la portada hace falta un trabajo con foto de antes que se vea en el sitio.</p>
+        )}
+      </div>
+      {posibles.length > 0 && (
+        <Button type="button" variant="outline" onClick={() => setAbierto(true)} aria-label="Cambiar el trabajo de la portada" className="self-start sm:self-center">
+          Cambiar
+        </Button>
+      )}
+      <ModalFormulario titulo="El trabajo de la portada" abierto={abierto} alCambiar={setAbierto}>
+        <ElegirPortada posibles={posibles} elegidaId={enSitio?.id ?? null} nombreDe={nombreDe} />
+      </ModalFormulario>
+    </section>
+  );
+}
+
+function ElegirPortada({ posibles, elegidaId, nombreDe }: { posibles: ItemGaleria[]; elegidaId: number | null; nombreDe: (item: ItemGaleria) => string }) {
+  const cerrar = useCerrarModal();
+  const [pendiente, iniciar] = useTransition();
+  return (
+    <>
+      <p className="text-sm text-tinta-suave">Arriba en la portada se compara un trabajo con antes y después. Solo los que se ven en el sitio.</p>
+      <ul aria-label="Trabajos para la portada" className="flex flex-col gap-2">
+        {posibles.map((item) => {
+          const nombre = nombreDe(item);
+          const actual = item.id === elegidaId;
+          const contenido = (
+            <>
+              <span className="grid aspect-[2/1] w-28 shrink-0 grid-cols-2 gap-px overflow-hidden rounded-sm">
+                <Miniatura foto={item.antes!} alt="" />
+                <Miniatura foto={item.despues} alt="" />
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col text-left">
+                <span className="text-xs font-semibold text-tinta-suave">{item.servicio}</span>
+                <span className="line-clamp-2 text-sm">{nombre}</span>
+              </span>
+            </>
+          );
+          return (
+            <li key={item.id}>
+              {actual ? (
+                <div className="flex items-center gap-3 rounded-lg border border-tinta p-2">
+                  {contenido}
+                  <Insignia tono="exito">En la portada</Insignia>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={pendiente}
+                  aria-label={`Mostrar en la portada: ${nombre}`}
+                  onClick={() =>
+                    iniciar(async () => {
+                      const r = await elegirParaPortada(item.id);
+                      avisarResultado(r);
+                      if (r.ok) cerrar();
+                    })
+                  }
+                  className="flex w-full items-center gap-3 rounded-lg border border-border p-2 hover:bg-superficie focus-visible:outline-2 focus-visible:outline-[var(--foco)] disabled:opacity-60"
+                >
+                  {contenido}
+                </button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      <PieModal>
+        <CancelarModal />
+      </PieModal>
+    </>
+  );
+}
+
 function Tarjeta({
   item,
   servicios,
@@ -170,77 +257,72 @@ function Tarjeta({
 }) {
   const nombre = nombreDelTrabajo(item.descripcion, item.servicio, numero);
   const [editando, setEditando] = useState(false);
+  const [eliminando, setEliminando] = useState(false);
   const [pendiente, iniciar] = useTransition();
   const ejecutar = (accion: () => Promise<EstadoFormulario>) => iniciar(async () => avisarResultado(await accion()));
+  // Lo que se usa poco, en "Más" (skill pantallas-panel, §3): ordenar, ocultar y eliminar (pulido 13.17)
+  const acciones: AccionMas[] = [
+    ...(ordenable && !primero ? [{ texto: "Mover antes", alElegir: () => ejecutar(() => moverGaleriaItem({ id: item.id, direccion: "subir" })) }] : []),
+    ...(ordenable && !ultimo ? [{ texto: "Mover después", alElegir: () => ejecutar(() => moverGaleriaItem({ id: item.id, direccion: "bajar" })) }] : []),
+    {
+      texto: item.visible ? "Ocultar del sitio" : "Mostrar en el sitio",
+      alElegir: () => ejecutar(() => cambiarVisibilidadGaleria({ id: item.id, visible: !item.visible })),
+    },
+    { texto: "Eliminar foto", alElegir: () => setEliminando(true) },
+  ];
 
   return (
     <li className={`flex flex-col overflow-hidden tt-tarjeta-panel ${item.visible ? "" : "opacity-70"}`}>
-      {/* Mismo recuadro (2:1) con par o con foto sola: las tarjetas quedan parejas. La sola se recorta solo aquí. */}
-      {/* Se toca para verlo en grande */}
-      <button
-        type="button"
-        onClick={alAbrir}
-        aria-label={`Ver en grande: ${nombre}`}
-        className={`grid aspect-[2/1] cursor-zoom-in focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--foco)] ${item.antes ? "grid-cols-2 gap-px" : ""}`}
-      >
-        {item.antes && <Miniatura foto={item.antes} alt={`Antes: ${nombre}`} etiqueta="Antes" />}
-        <Miniatura foto={item.despues} alt={item.antes ? `Después: ${nombre}` : nombre} etiqueta={item.antes ? "Después" : undefined} />
-      </button>
-      <div className="flex flex-1 flex-col gap-2 p-2">
-        {editando ? (
-          <EditarItem item={item} servicios={servicios} alTerminar={() => setEditando(false)} />
-        ) : (
-          <>
-            <span className="flex flex-wrap items-center gap-1 text-xs font-semibold text-tinta-suave">
-              {item.servicio}
-              {!item.visible && <Insignia>Oculta</Insignia>}
-              {enPortada && <Insignia>En la portada</Insignia>}
-            </span>
-            <span className="line-clamp-2 text-sm">{item.descripcion || <span className="text-tinta-suave">Sin descripción (n.º {numero})</span>}</span>
-            <span className="-mx-2 mt-auto flex flex-wrap justify-end">
-              {ordenable && (
-                <>
-                  <Button type="button" variant="ghost" size="icon" disabled={pendiente || primero} aria-label={`Subir: ${nombre}`} onClick={() => ejecutar(() => moverGaleriaItem({ id: item.id, direccion: "subir" }))}>
-                    <ArrowUpIcon />
-                  </Button>
-                  <Button type="button" variant="ghost" size="icon" disabled={pendiente || ultimo} aria-label={`Bajar: ${nombre}`} onClick={() => ejecutar(() => moverGaleriaItem({ id: item.id, direccion: "bajar" }))}>
-                    <ArrowDownIcon />
-                  </Button>
-                </>
-              )}
-              {/* Solo un trabajo con antes que se ve en el sitio puede ir a la portada; el que ya está no muestra el botón */}
-              {item.antes && item.enSitio && !enPortada && (
-                <Button type="button" variant="ghost" size="icon" disabled={pendiente} aria-label={`Mostrar en la portada: ${nombre}`} onClick={() => ejecutar(() => elegirParaPortada(item.id))}>
-                  <HouseIcon />
-                </Button>
-              )}
-              <Button type="button" variant="ghost" size="icon" aria-label={`Editar: ${nombre}`} onClick={() => setEditando(true)}>
-                <PencilIcon />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                disabled={pendiente}
-                aria-label={`${item.visible ? "Ocultar" : "Mostrar"}: ${nombre}`}
-                onClick={() => ejecutar(() => cambiarVisibilidadGaleria({ id: item.id, visible: !item.visible }))}
-              >
-                {item.visible ? <EyeOffIcon /> : <EyeIcon />}
-              </Button>
-              <Eliminar nombre={nombre} itemId={item.id} />
-            </span>
-          </>
+      {/* Mismo recuadro (2:1) con par o con foto sola: las tarjetas quedan parejas. La sola se recorta solo aquí. Se toca
+          para verla en grande */}
+      <span className="relative">
+        <button
+          type="button"
+          onClick={alAbrir}
+          aria-label={`Ver en grande: ${nombre}`}
+          className={`grid aspect-[2/1] w-full cursor-zoom-in focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--foco)] ${item.antes ? "grid-cols-2 gap-px" : ""}`}
+        >
+          {item.antes && <Miniatura foto={item.antes} alt={`Antes: ${nombre}`} etiqueta="Antes" />}
+          <Miniatura foto={item.despues} alt={item.antes ? `Después: ${nombre}` : nombre} etiqueta={item.antes ? "Después" : undefined} />
+        </button>
+        {/* Lo que no se ve en el sitio, sobre la foto: se nota de un vistazo */}
+        {!item.visible && (
+          <span className="pointer-events-none absolute top-1.5 right-1.5 flex items-center gap-1 rounded-sm bg-negro/80 px-1.5 py-0.5 text-xs font-semibold text-blanco">
+            <EyeOffIcon className="size-3.5" aria-hidden />
+            Oculta
+          </span>
         )}
+      </span>
+      <div className="flex flex-1 flex-col gap-2 p-3">
+        <span className="flex flex-wrap items-center gap-1 text-xs font-semibold text-tinta-suave">
+          {item.servicio}
+          {enPortada && <Insignia tono="exito">En la portada</Insignia>}
+        </span>
+        <span className="line-clamp-2 text-sm">{item.descripcion || <span className="text-tinta-suave">Sin descripción (n.º {numero})</span>}</span>
+        <span className="mt-auto flex flex-wrap items-center gap-2 pt-1">
+          <Button type="button" variant="outline" aria-label={`Editar: ${nombre}`} onClick={() => setEditando(true)}>
+            <PencilIcon />
+            Editar
+          </Button>
+          <MenuMas acciones={acciones} deshabilitado={pendiente} etiqueta={`Más: ${nombre}`} />
+        </span>
       </div>
+      <ModalFormulario titulo="Editar trabajo" abierto={editando} alCambiar={setEditando}>
+        <EditarItem item={item} servicios={servicios} />
+      </ModalFormulario>
+      <ModalFormulario titulo="¿Eliminar esta foto?" abierto={eliminando} alCambiar={setEliminando}>
+        <EliminarItem itemId={item.id} />
+      </ModalFormulario>
     </li>
   );
 }
 
-function EditarItem({ item, servicios, alTerminar }: { item: ItemGaleria; servicios: Servicio[]; alTerminar: () => void }) {
+function EditarItem({ item, servicios }: { item: ItemGaleria; servicios: Servicio[] }) {
+  const cerrar = useCerrarModal();
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(async (previo, datos) => {
     const r = await guardarGaleriaItem(previo, datos);
     avisarResultado(r);
-    if (r.ok) alTerminar();
+    if (r.ok) cerrar();
     return r;
   }, {});
   const e = estado.errores ?? {};
@@ -248,7 +330,7 @@ function EditarItem({ item, servicios, alTerminar }: { item: ItemGaleria; servic
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
   return (
-    <form ref={formulario} action={accion} className="flex flex-col gap-3" noValidate>
+    <form ref={formulario} action={accion} className="flex flex-col gap-4" noValidate>
       <input type="hidden" name="id" value={item.id} />
       <Campo id={`${prefijo}-servicio`} etiqueta="Servicio" error={e.servicioId}>
         {/* La key: React reinicia el formulario tras la acción y un <select> volvería al servicio con el que se montó */}
@@ -265,49 +347,48 @@ function EditarItem({ item, servicios, alTerminar }: { item: ItemGaleria; servic
           ))}
         </Selector>
       </Campo>
-      <Campo id={`${prefijo}-descripcion`} etiqueta="Descripción" opcional error={e.descripcion}>
-        <Input id={`${prefijo}-descripcion`} name="descripcion" defaultValue={estado.valores?.descripcion ?? item.descripcion} aria-invalid={!!e.descripcion} aria-describedby={e.descripcion ? `${prefijo}-descripcion-error` : undefined} />
+      <Campo id={`${prefijo}-descripcion`} etiqueta="Descripción" opcional error={e.descripcion} ayuda='La leen Google y los lectores de pantalla, y se ve debajo de la foto si va en la portada.'>
+        <Input
+          id={`${prefijo}-descripcion`}
+          name="descripcion"
+          autoComplete="off"
+          defaultValue={estado.valores?.descripcion ?? item.descripcion}
+          aria-invalid={!!e.descripcion}
+          aria-describedby={e.descripcion ? `${prefijo}-descripcion-error` : `${prefijo}-descripcion-ayuda`}
+        />
       </Campo>
-      <div className="flex gap-2">
-        <Button type="submit" disabled={enviando}>{enviando ? "Guardando…" : "Guardar"}</Button>
-        <Button type="button" variant="outline" onClick={alTerminar}>Cancelar</Button>
-      </div>
+      <PieModal>
+        <Button type="submit" disabled={enviando}>{enviando ? "Guardando…" : "Guardar trabajo"}</Button>
+        <CancelarModal />
+      </PieModal>
     </form>
   );
 }
 
-function Eliminar({ nombre, itemId }: { nombre: string; itemId: number }) {
-  const [abierto, setAbierto] = useState(false);
+function EliminarItem({ itemId }: { itemId: number }) {
+  const cerrar = useCerrarModal();
   const [pendiente, iniciar] = useTransition();
   return (
-    <Dialog open={abierto} onOpenChange={setAbierto}>
-      <DialogTrigger render={<Button type="button" variant="ghost" size="icon" aria-label={`Eliminar: ${nombre}`} />}>
-        <TrashIcon />
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>¿Eliminar esta foto?</DialogTitle>
-          <DialogDescription>No se puede deshacer. Si solo quieres que no se vea en el sitio, ocúltala.</DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <DialogClose render={<Button type="button" variant="outline" />}>Cancelar</DialogClose>
-          <Button
-            type="button"
-            variant="destructive"
-            disabled={pendiente}
-            onClick={() =>
-              iniciar(async () => {
-                const r = await eliminarGaleriaItem(itemId);
-                avisarResultado(r);
-                if (r.ok) setAbierto(false);
-              })
-            }
-          >
-            Eliminar foto
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <>
+      <p>No se puede deshacer. Si solo quieres que no se vea en el sitio, ocúltala.</p>
+      <PieModal>
+        <Button
+          type="button"
+          variant="destructive"
+          disabled={pendiente}
+          onClick={() =>
+            iniciar(async () => {
+              const r = await eliminarGaleriaItem(itemId);
+              avisarResultado(r);
+              if (r.ok) cerrar();
+            })
+          }
+        >
+          {pendiente ? "Eliminando…" : "Eliminar foto"}
+        </Button>
+        <CancelarModal focoInicial />
+      </PieModal>
+    </>
   );
 }
 
