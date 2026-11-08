@@ -49,8 +49,11 @@ export function EditorHorarios({ valor, onChange, errores }: Props) {
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
                   {!abierto && <span className="flex h-9 items-center text-sm text-tinta-suave pointer-coarse:h-11">Cerrado</span>}
                   {d.turnos.map((t, k) => (
-                    // Las horas se achican si no hay lugar: con ancho fijo, a 360 px el renglón ensanchaba todo el formulario (pulido 6.1)
-                    <div key={k} className="flex items-center gap-2">
+                    // Las horas se achican si no hay lugar: con ancho fijo, a 360 px el renglón ensanchaba todo el formulario (pulido 6.1).
+                    // En una grilla de columnas minmax(0, 1fr) y no en una fila flexible: la ✕ queda siempre adentro, aunque el
+                    // campo de hora no se achique de su ancho natural (en el CI, con las fuentes de Linux, la empujaba afuera del
+                    // modal a 360 px; pulido 13.26)
+                    <div key={k} className="grid max-w-80 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto] items-center gap-2">
                       <Input
                         type="time"
                         step={900}
@@ -58,7 +61,7 @@ export function EditorHorarios({ valor, onChange, errores }: Props) {
                         onChange={(e) => cambiarDia(i, { ...d, turnos: d.turnos.map((x, y) => (y === k ? { ...x, desde: e.target.value } : x)) })}
                         aria-label={`${nombre}, turno ${k + 1}, desde`}
                         aria-invalid={!!error}
-                        className="w-full max-w-32 min-w-0"
+                        className="w-full min-w-0"
                       />
                       <span aria-hidden className="text-tinta-suave">a</span>
                       <Input
@@ -68,7 +71,7 @@ export function EditorHorarios({ valor, onChange, errores }: Props) {
                         onChange={(e) => cambiarDia(i, { ...d, turnos: d.turnos.map((x, y) => (y === k ? { ...x, hasta: e.target.value } : x)) })}
                         aria-label={`${nombre}, turno ${k + 1}, hasta`}
                         aria-invalid={!!error}
-                        className="w-full max-w-32 min-w-0"
+                        className="w-full min-w-0"
                       />
                       {k === 1 && (
                         <Button

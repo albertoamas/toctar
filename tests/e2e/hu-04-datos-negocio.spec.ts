@@ -192,9 +192,13 @@ test("a 360 px ningún campo de Configuración se sale de la pantalla", async ({
   expect(enLaFicha).toEqual([]);
   const horario = await abrirParteNegocio(page, "Horario de atención");
   await expect(horario.getByLabel("Lunes, turno 1, desde")).toBeVisible();
-  const fuera = await horario.locator("input:not([type=hidden]), textarea, button").evaluateAll((campos) =>
-    campos.filter((c) => (c as HTMLElement).offsetParent && c.getBoundingClientRect().right > window.innerWidth).map((c) => c.getAttribute("aria-label") || c.id),
-  );
-  expect(fuera).toEqual([]);
+  // Con el modal quieto: entra con una animación y, medido mientras se mueve, algo puede quedar corrido un instante (el CI
+  // es más lento y lo agarraba a la mitad)
+  await expect(async () => {
+    const fuera = await horario.locator("input:not([type=hidden]), textarea, button").evaluateAll((campos) =>
+      campos.filter((c) => (c as HTMLElement).offsetParent && c.getBoundingClientRect().right > window.innerWidth).map((c) => c.getAttribute("aria-label") || c.id),
+    );
+    expect(fuera).toEqual([]);
+  }).toPass({ timeout: 3000 });
 });
 
