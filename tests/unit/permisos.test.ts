@@ -116,8 +116,14 @@ describe("menú en grupos (C5 §0)", () => {
       [null, ["inicio"]],
       ["Taller", ["agenda", "ordenes"]],
       ["Clientes", ["clientes", "cotizaciones", "pagos", "mantenimientos", "reclamos"]],
-      [null, ["sitio"]],
-      ["Administración", ["catalogo", "usuarios", "configuracion"]],
+      ["Administración", ["sitio", "catalogo", "usuarios", "configuracion"]],
+    ]);
+  });
+
+  test("Sitio web va en Administración; un encargado que solo lo tiene a él lo ve sin título (pulido 13.25)", () => {
+    expect(menuAgrupado(encargado(["sitio"]))).toEqual([
+      { titulo: null, modulos: ["inicio"] },
+      { titulo: null, modulos: ["sitio"] },
     ]);
   });
 
