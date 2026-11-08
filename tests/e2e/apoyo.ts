@@ -260,3 +260,14 @@ export async function mostrarServicio(page: Page, mostrar: boolean): Promise<voi
   await page.getByRole("menuitem", { name: mostrar ? "Mostrar en el sitio" : "Ocultar del sitio" }).click();
   await expect(page.getByText(mostrar ? "En el sitio" : "Oculto", { exact: true })).toBeVisible();
 }
+
+/**
+ * Configuración > Negocio (pulido 13.26): abre el modal de una parte ("Contacto", "Ubicación", "Horario de atención",
+ * "Redes sociales", "Datos para facturar") desde su "Editar". Devuelve el modal, para llenarlo y guardarlo.
+ */
+export async function abrirParteNegocio(page: Page, parte: string): Promise<Locator> {
+  await page.getByRole("button", { name: `Editar ${parte.toLowerCase()}` }).click();
+  const modal = page.getByRole("dialog", { name: parte });
+  await expect(modal).toBeVisible();
+  return modal;
+}

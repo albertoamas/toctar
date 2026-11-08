@@ -59,12 +59,14 @@ async function titulosAdentro(page: Page) {
 
 const anchoDePagina = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth);
 
-test("en Negocio y Parámetros los títulos van adentro de su tarjeta y nada se sale de la pantalla", async ({ page }) => {
+test("en Negocio y Parámetros nada se sale de la pantalla, y en Parámetros los títulos van adentro de su tarjeta", async ({ page }) => {
   await ingresarComoDueno(page);
   const ancho = page.viewportSize()!.width;
+  // Negocio es una ficha desde el pulido 13.26: sus títulos van arriba de la tarjeta, como en las demás fichas; Parámetros
+  // sigue siendo un formulario con el título adentro
   for (const ruta of ["/panel/configuracion/negocio", "/panel/configuracion/parametros"]) {
     await page.goto(ruta, { waitUntil: "networkidle" });
-    await titulosAdentro(page);
+    if (ruta.endsWith("parametros")) await titulosAdentro(page);
     expect(await anchoDePagina(page), ruta).toBeLessThanOrEqual(ancho);
   }
   // Con un logo mucho más ancho que la pantalla, la caja guarda su forma (3:2) y la página no se estira
@@ -73,7 +75,7 @@ test("en Negocio y Parámetros los títulos van adentro de su tarjeta y nada se 
   await page.getByLabel("Archivo del logo").setInputFiles({ name: "logo-ancho.png", mimeType: "image/png", buffer: PNG_ANCHO });
   await expect(page.getByRole("img", { name: "Logo actual para documentos" })).toBeVisible();
   expect(await anchoDePagina(page)).toBeLessThanOrEqual(ancho);
-  const logo = page.getByRole("heading", { name: "Logo para documentos" }).locator("xpath=ancestor::form[1]");
+  const logo = page.getByRole("region", { name: "Logo para documentos" });
   const caja = (await logo.locator(".aspect-\\[3\\/2\\]").boundingBox())!;
   expect(caja.width).toBeLessThanOrEqual(ancho);
   expect(Math.abs(caja.width / caja.height - 1.5)).toBeLessThan(0.05);
