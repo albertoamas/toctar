@@ -9,12 +9,13 @@ import { abrirWhatsApp, consultar, crearClienteEnBase, crearOrdenLista, crearUsu
 const ORIGINAL = "Hola {nombre}, tu {vehiculo} ya está listo en {negocio}. {saldo} Te esperamos en el taller.";
 const CAMBIADO = `${ORIGINAL} ¡Gracias por elegirnos!`;
 
-/** La sección de un mensaje, ya hidratada: tocar un campo o escribir antes de eso se perdería. */
+/** El modal de un mensaje (pulido 13.28), ya hidratado: tocar un campo o escribir antes de eso se perdería. */
 async function abrirMensaje(page: Page, titulo: string) {
   await page.goto("/panel/configuracion/mensajes", { waitUntil: "networkidle" });
-  const seccion = page.getByRole("region", { name: titulo });
-  await expect(seccion.getByRole("button", { name: "Agregar {nombre} al mensaje" })).toBeEnabled();
-  return seccion;
+  await page.getByRole("button", { name: `Editar mensaje: ${titulo}` }).click();
+  const modal = page.getByRole("dialog", { name: titulo });
+  await expect(modal.getByRole("button", { name: "Agregar {nombre} al mensaje" })).toBeEnabled();
+  return modal;
 }
 
 test("el dueño cambia el mensaje de listo, lo ve como le llega y el aviso de la orden lo usa; después vuelve al original", async ({ page }, info) => {
@@ -51,7 +52,9 @@ async function cambiarYVolver(page: Page, id: number, placa: string) {
   await expect(listo.getByText(/Saldo pendiente: 350 Bs\. Te esperamos en el taller\. ¡Gracias por elegirnos!$/)).toBeVisible();
   await listo.getByRole("button", { name: "Guardar" }).click();
   await expect(page.getByText("Mensaje guardado.")).toBeVisible();
-  await expect(listo.getByText("Hay cambios sin guardar.")).toBeHidden();
+  // Guardar cierra el modal; la ficha lo muestra como le llega
+  await expect(listo).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Vehículo listo" })).toContainText("¡Gracias por elegirnos!");
   expect(await consultar<{ texto: string }>("select texto from plantilla_mensaje where clave = 'listo'")).toEqual([{ texto: CAMBIADO }]);
 
   // El aviso de la orden lo usa
