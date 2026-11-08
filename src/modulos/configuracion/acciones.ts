@@ -56,15 +56,17 @@ export async function guardarParteNegocio(_previo: EstadoFormulario, datos: Form
   const d = entrada.data;
   const autorId = Number(autor.id);
   const { sucursalId, coordenadas: guardadas } = await obtenerConfiguracionNegocio();
-  const enNegocio = (cambios: Partial<typeof negocio.$inferInsert>) =>
-    db.update(negocio).set({ ...cambios, updatedAt: new Date(), updatedBy: autorId }).where(eq(negocio.id, 1));
-  const enSucursal = (cambios: Partial<typeof sucursal.$inferInsert>) =>
-    db.update(sucursal).set({ ...cambios, updatedAt: new Date(), updatedBy: autorId }).where(eq(sucursal.id, sucursalId));
+  // Quién y cuándo, en cada cambio; `ex`, la base o la transacción (el contacto toca las dos tablas a la vez)
+  type Ejecutor = Pick<typeof db, "update">;
+  const enNegocio = (cambios: Partial<typeof negocio.$inferInsert>, ex: Ejecutor = db) =>
+    ex.update(negocio).set({ ...cambios, updatedAt: new Date(), updatedBy: autorId }).where(eq(negocio.id, 1));
+  const enSucursal = (cambios: Partial<typeof sucursal.$inferInsert>, ex: Ejecutor = db) =>
+    ex.update(sucursal).set({ ...cambios, updatedAt: new Date(), updatedBy: autorId }).where(eq(sucursal.id, sucursalId));
 
   if (d.parte === "contacto") {
     await db.transaction(async (tx) => {
-      await tx.update(negocio).set({ nombre: d.nombre, correo: d.correo, updatedAt: new Date(), updatedBy: autorId }).where(eq(negocio.id, 1));
-      await tx.update(sucursal).set({ telefonoWhatsapp: d.whatsapp, updatedAt: new Date(), updatedBy: autorId }).where(eq(sucursal.id, sucursalId));
+      await enNegocio({ nombre: d.nombre, correo: d.correo }, tx);
+      await enSucursal({ telefonoWhatsapp: d.whatsapp }, tx);
     });
   } else if (d.parte === "ubicacion") {
     // Pedido 38: las coordenadas salen del enlace (el pin) o, si no las trae, del mapa. El enlace corto de "Compartir" no

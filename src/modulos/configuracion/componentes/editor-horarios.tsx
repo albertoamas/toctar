@@ -6,7 +6,7 @@ import { Input } from "@/componentes/ui/input";
 import { NOMBRE_DIA, type DiaHorario } from "@/lib/horarios";
 
 // Horario de atención: una fila por día, con hasta dos turnos (mañana y tarde).
-// Se usa dentro de FormularioNegocio (componente de cliente). El valor viaja al servidor como JSON en un campo oculto "horarios".
+// Se usa dentro de FormularioHorario, en su modal de Negocio (componente de cliente). El valor viaja al servidor como JSON en un campo oculto "horarios".
 
 const TURNO_NUEVO = [
   { desde: "08:00", hasta: "12:00" },

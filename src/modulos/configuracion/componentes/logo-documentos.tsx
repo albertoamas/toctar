@@ -52,7 +52,9 @@ export function LogoDocumentos({ logo }: Props) {
       />
       </div>
       <div className="flex min-w-40 flex-1 flex-col gap-2">
-        <p className="text-sm text-tinta-suave">Sale en las cotizaciones en PDF. Mejor con fondo transparente. PNG, JPG o WebP.</p>
+        <p className="text-sm text-tinta-suave">
+          {!logo && "Todavía no hay logo. "}Sale en las cotizaciones en PDF. Mejor con fondo transparente. PNG, JPG o WebP, hasta 5 MB.
+        </p>
         {logo && (
           <div>
             <Button type="button" variant="outline" disabled={!listo || enviando} data-invalido={error ? true : undefined} onClick={() => entrada.current?.click()}>

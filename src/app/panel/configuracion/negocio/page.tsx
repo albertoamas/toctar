@@ -102,7 +102,7 @@ async function Contenido() {
         tituloModal="Ubicación"
         lectura={
           <div className="flex flex-col gap-2">
-            <p>{c.direccion}</p>
+            <p>{c.direccion || sinCargar}</p>
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-tinta-suave">
               {verEnMapa ? (
                 <a href={verEnMapa} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-1 font-semibold text-tinta underline">
@@ -112,7 +112,10 @@ async function Contenido() {
               ) : (
                 <span>Sin ubicación en el mapa</span>
               )}
-              <span>{c.mapaInsertado ? "El mapa de la página está cargado." : "La página muestra un pin en la ubicación."}</span>
+              {/* El pin sale de las coordenadas: sin ellas ni mapa cargado, la página no muestra mapa */}
+              <span>
+                {c.mapaInsertado ? "El mapa de la página está cargado." : c.coordenadas ? "La página muestra un pin en la ubicación." : "La página no muestra mapa."}
+              </span>
             </p>
           </div>
         }
