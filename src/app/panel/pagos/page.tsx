@@ -6,7 +6,7 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
-import { FilaConAcciones, ListaConAcciones } from "@/componentes/panel/fila-lista";
+import { FilaConAcciones, ListaEnTarjeta } from "@/componentes/panel/fila-lista";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { Pestanas } from "@/componentes/panel/pestanas";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
@@ -95,7 +95,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
       {saldos.length === 0 ? (
         <EstadoVacio>Ningún saldo coincide con «{q.trim()}».</EstadoVacio>
       ) : (
-        <ListaConAcciones etiqueta="Órdenes con saldo">
+        <ListaEnTarjeta etiqueta="Órdenes con saldo">
           {saldos.map((s) => {
             const entregada = fechaEnBolivia(s.entregadoAt);
             const vehiculo = { marca: s.marca, modelo: s.modelo, placa: s.placa };
@@ -136,7 +136,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
               </FilaConAcciones>
             );
           })}
-        </ListaConAcciones>
+        </ListaEnTarjeta>
       )}
     </>
   );

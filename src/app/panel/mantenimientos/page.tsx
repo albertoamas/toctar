@@ -40,7 +40,7 @@ import {
 import { enlaceTrabajo } from "@/modulos/ordenes/reglas";
 import { mensajeMantenimiento } from "@/modulos/ordenes/mensajes";
 import { Insignia } from "@/componentes/panel/insignia";
-import { FilaConAcciones, ListaConAcciones } from "@/componentes/panel/fila-lista";
+import { FilaConAcciones, ListaEnTarjeta } from "@/componentes/panel/fila-lista";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 
 export const metadata: Metadata = { title: "Mantenimientos" };
@@ -139,11 +139,11 @@ async function cerrados(hoy: string, ve: { ordenes: boolean; agenda: boolean }) 
   const lista = await mantenimientosCerrados();
   if (lista.length === 0) return <EstadoVacio>Todavía no hay mantenimientos reservados ni cerrados.</EstadoVacio>;
   return (
-    <ListaConAcciones etiqueta="Cerrados">
+    <ListaEnTarjeta etiqueta="Cerrados">
       {lista.map((m) => (
         <FilaCerrada key={m.id} m={m} hoy={hoy} ve={ve} />
       ))}
-    </ListaConAcciones>
+    </ListaEnTarjeta>
   );
 }
 
@@ -157,7 +157,7 @@ function Seccion({ titulo, cantidad: n, vacio, children }: { titulo: string; can
       {n === 0 ? (
         <p className="text-tinta-suave">{vacio}</p>
       ) : (
-        <ListaConAcciones etiqueta={titulo}>{children}</ListaConAcciones>
+        <ListaEnTarjeta etiqueta={titulo}>{children}</ListaEnTarjeta>
       )}
     </section>
   );

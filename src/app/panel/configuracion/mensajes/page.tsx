@@ -35,7 +35,7 @@ async function Contenido() {
   return (
     <>
       <EncabezadoPagina titulo="Mensajes" volver={VOLVER} />
-      <PartesIguales>
+      <PartesIguales enTres>
         {CLAVES_PLANTILLA.map((c) => (
           <SeccionConEditar
             key={c}

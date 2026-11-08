@@ -8,7 +8,7 @@ import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioSeccionParametros } from "@/modulos/configuracion/componentes/formulario-parametros";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
-import { CLAVES_PARAMETRO, clavesDeSeccion, PARAMETROS, SECCIONES_PARAMETROS, type ClaveParametro, type SeccionParametros } from "@/modulos/configuracion/parametros";
+import { CLAVES_PARAMETRO, CLAVES_SECCION_PARAMETROS, clavesDeSeccion, PARAMETROS, SECCIONES_PARAMETROS, type ClaveParametro, type SeccionParametros } from "@/modulos/configuracion/parametros";
 
 export const metadata: Metadata = { title: "Parámetros" };
 
@@ -36,6 +36,7 @@ async function Contenido() {
     const { titulo } = SECCIONES_PARAMETROS[s];
     return (
       <SeccionConEditar
+        key={s}
         id={`parametros-${s}`}
         titulo={titulo}
         etiquetaEditar={`Editar ${titulo.toLowerCase()}`}
@@ -67,12 +68,8 @@ async function Contenido() {
   return (
     <>
       <EncabezadoPagina titulo="Parámetros" volver={VOLVER} />
-      <PartesIguales>
-        {seccion("plazos")}
-        {seccion("agenda")}
-      </PartesIguales>
-      {/* Largos: a todo el ancho */}
-      {seccion("pdf")}
+      <PartesIguales>{CLAVES_SECCION_PARAMETROS.filter((s) => !SECCIONES_PARAMETROS[s].ancha).map(seccion)}</PartesIguales>
+      {CLAVES_SECCION_PARAMETROS.filter((s) => SECCIONES_PARAMETROS[s].ancha).map(seccion)}
     </>
   );
 }

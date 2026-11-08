@@ -42,7 +42,7 @@ Toda pantalla del panel es de uno de estos tipos. El tipo decide su ancho.
 | Encabezado de la página | Otras acciones ("Escribir por WhatsApp", "Cambiar orden") | Con borde |
 | Encabezado de la página | Lo poco usado | En "Más" (`MenuMas`) |
 | Cabecera de una sección | "Editar", "Agregar", "Registrar pago" | Sin borde, con ícono |
-| Fila de una lista | Toda la fila abre su ficha o su modal | Sin botones, con la flecha › |
+| Fila de una lista | Toda la fila abre su ficha o su modal | Sin botones, con la flecha ›. Excepción: la acción de todos los días en Saldos y Mantenimientos (`FilaConAcciones`) |
 | Pie de un modal | Guardar y "Cancelar"; aparte, a la derecha, lo que se usa poco | Rojo y con borde; lo de la derecha, sin borde |
 
 - En una pantalla con varias listas iguales (Taller), "Agregar" va con borde: varias acciones rojas competirían.
@@ -63,6 +63,7 @@ Toda pantalla del panel es de uno de estos tipos. El tipo decide su ancho.
 | Tabla con columnas | `TablaLista` |
 | Filas que abren otra pantalla | `ListaFilas` |
 | Filas que abren un modal, y se agregan y ordenan | `ListaEditable` |
+| Filas con su acción de todos los días | `ListaEnTarjeta` y `FilaConAcciones` |
 | Cambiar el orden | `OrdenarLista`, en un modal |
 | Lista vacía | `EstadoVacio` |
 
@@ -75,11 +76,13 @@ La etiqueta a la izquierda y el valor a la derecha, con `ListaDatos`, para que l
 | Componente | Para qué | Estado |
 |---|---|---|
 | `PaginaPanel` | El tipo de pantalla, su ancho y su separación | Existe desde C6 |
+| `PartesIguales` | Las partes de a dos (o de a tres) de una ficha | Existe desde C6 |
 | `Seccion` | Título arriba de la tarjeta, con su acción | Existe desde C6, sobre `CabeceraSeccion` |
 | `SeccionConEditar` | Sección que se lee, con su modal | Existe |
 | `EncabezadoPagina` | Volver, título, estado y acciones | Existe |
 | `ModalFormulario`, `PieModal`, `CancelarModal` | Modales | Existen; la pregunta al cerrar se agrega en C6 |
 | `ListaDatos`, `ListaFilas`, `TablaLista`, `ListaEditable`, `OrdenarLista` | Datos y listas | Existen |
+| `ListaEnTarjeta`, `FilaConAcciones` | Filas con su acción de todos los días | Existen desde C6 |
 | `MenuMas`, `Insignia`, `EstadoVacio` | Acciones poco usadas, estados y vacíos | Existen |
 
 ## 8. Cómo se hace cumplir

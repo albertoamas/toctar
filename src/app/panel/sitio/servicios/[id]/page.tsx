@@ -103,7 +103,7 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
           tituloModal="Beneficios"
           lectura={
             s.beneficios.length > 0 ? (
-              <ul className="grid gap-3 sm:grid-cols-2">
+              <ul className="grid gap-3">
                 {s.beneficios.map((b, i) => (
                   <li key={i} className="flex items-center gap-3">
                     <IconoBeneficio icono={iconoDe(b.icono)} className="size-6 shrink-0 text-tinta" />

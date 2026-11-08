@@ -7,7 +7,7 @@ import { GlobeIcon } from "lucide-react";
 import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
-import { PaginaPanel } from "@/componentes/panel/pagina-panel";
+import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { buttonVariants } from "@/componentes/ui/button";
 import { cantidad } from "@/lib/cantidad";
@@ -69,7 +69,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
       />
       {cargarPrecios && <AvisoFlotante mensaje="Servicio creado. Carga sus precios." />}
 
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-2 md:gap-4">
+      <PartesIguales>
         <SeccionConEditar
           id="datos"
           titulo="Datos"
@@ -109,7 +109,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
         >
           <VariantesServicio servicioId={s.id} variantes={s.listaVariantes} />
         </SeccionConEditar>
-      </div>
+      </PartesIguales>
 
       <section aria-labelledby="precios-titulo" className="flex flex-col gap-3">
         <h2 id="precios-titulo" className="flex min-h-11 items-center tt-titulo-seccion">

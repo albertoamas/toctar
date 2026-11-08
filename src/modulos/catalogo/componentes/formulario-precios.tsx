@@ -105,6 +105,7 @@ function Historial({ variante }: { variante: VarianteCatalogo }) {
   const [cambios, setCambios] = useState<CambioPrecio[] | null>(null);
   const [cargando, iniciar] = useTransition();
   const [abierto, setAbierto] = useState(false);
+  const [fallo, setFallo] = useState(false);
   return (
     <>
       {/* -ml: el texto del botón sin fondo queda alineado con la línea de ayuda */}
@@ -114,7 +115,15 @@ function Historial({ variante }: { variante: VarianteCatalogo }) {
         className="-ml-2.5"
         onClick={() => {
           setAbierto(true);
-          iniciar(async () => setCambios(await verHistorialPrecios(variante.id)));
+          setFallo(false);
+          // Un error aquí no puede llegar a la pantalla de error: atrás están los precios que se estaban escribiendo
+          iniciar(async () => {
+            try {
+              setCambios(await verHistorialPrecios(variante.id));
+            } catch {
+              setFallo(true);
+            }
+          });
         }}
       >
         <HistoryIcon />
@@ -122,7 +131,9 @@ function Historial({ variante }: { variante: VarianteCatalogo }) {
       </Button>
       <ModalFormulario titulo={`Historial de precios: ${variante.nombre}`} abierto={abierto} alCambiar={setAbierto}>
         <p className="text-sm text-tinta-suave">Cada cambio queda guardado; los anteriores no se borran.</p>
-        {cargando || cambios === null ? (
+        {fallo ? (
+          <MensajeError id="historial-error">No se pudo cargar el historial. Revisa tu conexión y vuelve a intentar.</MensajeError>
+        ) : cargando || cambios === null ? (
           <p className="text-sm text-tinta-suave">Cargando…</p>
         ) : cambios.length === 0 ? (
           <p className="text-sm text-tinta-suave">Todavía no hay cambios de precio.</p>
