@@ -1,6 +1,7 @@
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { ChevronRightIcon, PlusIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
+import { useHidratado } from "@/componentes/hidratado";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { CancelarModal, ModalFormulario, PieModal } from "@/componentes/panel/modal-formulario";
@@ -17,8 +18,8 @@ import type { Direccion } from "@/lib/orden";
 // Pulido 13.27: como Preguntas frecuentes. La fila no lleva botones: tocarla abre su modal ("Editar espacio": el nombre,
 // "Guardar espacio" y, al pie y aparte, "Desactivar"); "Agregar" abre el mismo modal vacío. Antes cada fila llevaba
 // subir, bajar y un lápiz que la volvía formulario dentro de la lista. Con encabezado (una página, como Taller), el orden
-// va en "Cambiar orden"; sin él (las variantes, que ya van dentro de un modal), en flechas discretas en la fila, para no
-// abrir un modal sobre otro.
+// va en "Cambiar orden"; sin él (las variantes, que ya van dentro de un modal), en flechas discretas en la fila: editar
+// una abre su modal sobre el de las variantes, pero ordenar no suma un tercero.
 
 export type ElementoLista = { id: number; nombre: string; descripcion: string | null; orden: number; activo: boolean };
 
@@ -62,6 +63,11 @@ export function ListaEditable(props: Props) {
   const { alEditar } = props;
   useEffect(() => alEditar?.(abierto), [alEditar, abierto]);
   const [pendiente, iniciar] = useTransition();
+  const hidratado = useHidratado();
+  // Al desactivar uno, su fila (que abrió el modal y recibiría el foco al cerrarlo) se va: el foco vuelve a la lista
+  const lista = useRef<HTMLOListElement>(null);
+  // "Espacios del taller activos", "Variantes activas"
+  const activosTexto = femenino ? "activas" : "activos";
   const Titulo = props.nivel === 3 ? "h3" : "h2";
   const conEncabezado = props.conEncabezado !== false;
   const Contenedor = conEncabezado ? "section" : "div";
@@ -77,7 +83,7 @@ export function ListaEditable(props: Props) {
     });
   };
   const agregar = (
-    <Button type="button" variant="outline" onClick={() => abrir("nuevo")}>
+    <Button type="button" variant="outline" disabled={!hidratado} onClick={() => abrir("nuevo")}>
       <PlusIcon />
       Agregar {singular}
     </Button>
@@ -111,7 +117,7 @@ export function ListaEditable(props: Props) {
       {activos.length === 0 && <p className="text-sm font-semibold text-rojo-texto">Agrega al menos {femenino ? "una" : "un"} {singular}.</p>}
 
       {activos.length > 0 && (
-        <ol className="tt-tarjeta-panel flex flex-col divide-y divide-border overflow-hidden" aria-label={`${titulo} activos`}>
+        <ol ref={lista} tabIndex={-1} className="tt-tarjeta-panel flex flex-col divide-y divide-border overflow-hidden outline-none" aria-label={`${titulo} ${activosTexto}`}>
           {activos.map((e, i) => (
             <li key={e.id} className="flex items-center">
               <button
@@ -142,8 +148,8 @@ export function ListaEditable(props: Props) {
 
       {inactivos.length > 0 && (
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-semibold text-tinta-suave">Desactivados</p>
-          <ul className="flex flex-col divide-y divide-border rounded-sm border border-dashed border-border" aria-label={`${titulo} desactivados`}>
+          <p className="text-sm font-semibold text-tinta-suave">{femenino ? "Desactivadas" : "Desactivados"}</p>
+          <ul className="flex flex-col divide-y divide-border rounded-sm border border-dashed border-border" aria-label={`${titulo} ${femenino ? "desactivadas" : "desactivados"}`}>
             {inactivos.map((e) => (
               <li key={e.id} className="flex items-center gap-3 p-3 text-tinta-suave">
                 <span className="flex-1">{e.nombre}</span>
@@ -169,15 +175,24 @@ export function ListaEditable(props: Props) {
       >
         {/* La key: otro elemento, otro formulario (sin lo escrito en el anterior) */}
         {editando && (
-          <FormularioElemento key={editando === "nuevo" ? "nuevo" : editando.id} {...props} elemento={editando === "nuevo" ? undefined : editando} alTerminar={() => setAbierto(false)} />
+          <FormularioElemento
+            key={editando === "nuevo" ? "nuevo" : editando.id}
+            {...props}
+            elemento={editando === "nuevo" ? undefined : editando}
+            alTerminar={() => setAbierto(false)}
+            alDesactivar={() => {
+              setAbierto(false);
+              requestAnimationFrame(() => lista.current?.focus());
+            }}
+          />
         )}
       </ModalFormulario>
     </Contenedor>
   );
 }
 
-function FormularioElemento(props: Props & { elemento?: ElementoLista; alTerminar: () => void }) {
-  const { id, singular, femenino, campoDescripcion, camposOcultos, elemento, alTerminar } = props;
+function FormularioElemento(props: Props & { elemento?: ElementoLista; alTerminar: () => void; alDesactivar: () => void }) {
+  const { id, singular, femenino, campoDescripcion, camposOcultos, elemento, alTerminar, alDesactivar } = props;
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(async (previo, datos) => {
     const r = await props.acciones.guardar(previo, datos);
     avisarResultado(r);
@@ -194,7 +209,7 @@ function FormularioElemento(props: Props & { elemento?: ElementoLista; alTermina
     iniciar(async () => {
       const r = await props.acciones.cambiarEstado(el.id, false);
       avisarResultado(r);
-      if (r.ok) alTerminar();
+      if (r.ok) alDesactivar();
     });
 
   return (

@@ -114,7 +114,7 @@ test("las variantes se agregan, renombran y desactivan en el catálogo; una nuev
   await preciosUnica.getByRole("button", { name: "Cancelar" }).click();
 
   const variantes = page.getByRole("dialog", { name: "Variantes" });
-  const activas = variantes.getByRole("list", { name: "Variantes activos" });
+  const activas = variantes.getByRole("list", { name: "Variantes activas" });
   await page.getByRole("button", { name: "Editar variantes" }).click();
   await expect(activas).toContainText("Única");
   // Agregar y renombrar, cada una en su modal sobre el de las variantes (pulido 13.27)
@@ -141,13 +141,15 @@ test("las variantes se agregan, renombran y desactivan en el catálogo; una nuev
   await editar.getByRole("button", { name: "Desactivar Premium" }).click();
   await expect(page.getByText("Premium desactivada.")).toBeVisible();
   await variantes.getByRole("button", { name: "Editar Básico" }).click();
-  // Con su modal abierto, "Listo" no está: lo escrito sin guardar se perdería
-  await expect(variantes.getByRole("button", { name: "Listo" })).toHaveCount(0);
+  // Con su modal abierto, "Listo" no está (ni siquiera oculto detrás): lo escrito sin guardar se perdería
+  await expect(page.getByRole("button", { name: "Listo", includeHidden: true })).toHaveCount(0);
   await editar.getByRole("button", { name: "Desactivar Básico" }).click();
   await expect(page.getByText(/Debe quedar al menos una variante activa/)).toBeVisible();
 
   // "Listo" cierra el modal: en lectura, los nombres, y la desactivada ya no tiene precios en la ficha
   await editar.getByRole("button", { name: "Cancelar" }).click();
+  // Cerrado el de la variante, "Listo" vuelve
+  await expect(variantes.getByRole("button", { name: "Listo" })).toBeVisible();
   await variantes.getByRole("button", { name: "Listo" }).click();
   await expect(page.getByRole("region", { name: "Variantes" })).toContainText("Básico (1 desactivada)");
   await expect(page.getByRole("region", { name: "Premium" })).toHaveCount(0);
