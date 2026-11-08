@@ -1,24 +1,29 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
-import { exigirModulo } from "@/lib/sesion";
-import { FormularioParametros } from "@/modulos/configuracion/componentes/formulario-parametros";
-import { obtenerParametros } from "@/modulos/configuracion/consultas";
-import { CLAVES_PARAMETRO, type ClaveParametro } from "@/modulos/configuracion/parametros";
+import { ListaDatos } from "@/componentes/panel/lista-datos";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
+import { exigirModulo } from "@/lib/sesion";
+import { FormularioSeccionParametros } from "@/modulos/configuracion/componentes/formulario-parametros";
+import { obtenerParametros } from "@/modulos/configuracion/consultas";
+import { CLAVES_PARAMETRO, CLAVES_SECCION_PARAMETROS, clavesDeSeccion, PARAMETROS, SECCIONES_PARAMETROS, type ClaveParametro } from "@/modulos/configuracion/parametros";
 
 export const metadata: Metadata = { title: "Parámetros" };
 
-// HU-05: los parámetros del negocio por tema: consultas, cotizaciones (y los textos del PDF), agenda y mantenimiento
-// (C5 §0). Solo el dueño.
+// HU-05: los parámetros del negocio por tema (C5 §0). Solo el dueño. Pulido 13.29: una ficha como Negocio: los plazos de
+// las cotizaciones, los textos del PDF y la agenda se leen y cada uno se edita en su modal. Antes era el único formulario
+// abierto de Configuración, con los tres textos del PDF siempre a la vista.
+
+const VOLVER = { href: "/panel/configuracion", texto: "Configuración" } as const;
+
 export default function PaginaParametros() {
   return (
-    <>
-      <EncabezadoPagina titulo="Parámetros" volver={{ href: "/panel/configuracion", texto: "Configuración" }} />
-      <Suspense fallback={<Cargando />}>
+    <div className="flex max-w-3xl flex-col gap-8">
+      <Suspense fallback={<Cargando volver={VOLVER} />}>
         <Contenido />
       </Suspense>
-    </>
+    </div>
   );
 }
 
@@ -26,5 +31,42 @@ async function Contenido() {
   await exigirModulo("configuracion");
   const parametros = await obtenerParametros();
   const valores = Object.fromEntries(CLAVES_PARAMETRO.map((c) => [c, String(parametros[c])])) as Record<ClaveParametro, string>;
-  return <FormularioParametros valores={valores} />;
+  return (
+    <>
+      <EncabezadoPagina titulo="Parámetros" volver={VOLVER} />
+      {CLAVES_SECCION_PARAMETROS.map((s) => {
+        const { titulo } = SECCIONES_PARAMETROS[s];
+        return (
+          <SeccionConEditar
+            key={s}
+            id={`parametros-${s}`}
+            titulo={titulo}
+            etiquetaEditar={`Editar ${titulo.toLowerCase()}`}
+            tituloModal={titulo}
+            lectura={
+              <ListaDatos
+                filas={clavesDeSeccion(s).map((c) => {
+                  const p = PARAMETROS[c];
+                  return [
+                    p.etiqueta,
+                    p.unidad ? (
+                      <span className="tabular-nums">
+                        {valores[c]} {p.unidad}
+                      </span>
+                    ) : (
+                      // Los textos del PDF, en tres líneas: enteros, en su "Editar"
+                      <span className="line-clamp-3 whitespace-pre-line">{valores[c]}</span>
+                    ),
+                  ];
+                })}
+              />
+            }
+          >
+            {/* Solo los de su sección: los textos largos del PDF no viajan a los otros modales */}
+            <FormularioSeccionParametros seccion={s} valores={Object.fromEntries(clavesDeSeccion(s).map((c) => [c, valores[c]]))} />
+          </SeccionConEditar>
+        );
+      })}
+    </>
+  );
 }

@@ -59,14 +59,13 @@ async function titulosAdentro(page: Page) {
 
 const anchoDePagina = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth);
 
-test("en Negocio y Parámetros nada se sale de la pantalla, y en Parámetros los títulos van adentro de su tarjeta", async ({ page }) => {
+test("en Negocio y Parámetros nada se sale de la pantalla", async ({ page }) => {
   await ingresarComoDueno(page);
   const ancho = page.viewportSize()!.width;
-  // Negocio es una ficha desde el pulido 13.26: sus títulos van arriba de la tarjeta, como en las demás fichas; Parámetros
-  // sigue siendo un formulario con el título adentro
+  // Negocio y Parámetros son fichas desde los pulidos 13.26 y 13.29: sus títulos van arriba de la tarjeta, como en las
+  // demás fichas; aquí se mira que nada se salga
   for (const ruta of ["/panel/configuracion/negocio", "/panel/configuracion/parametros"]) {
     await page.goto(ruta, { waitUntil: "networkidle" });
-    if (ruta.endsWith("parametros")) await titulosAdentro(page);
     expect(await anchoDePagina(page), ruta).toBeLessThanOrEqual(ancho);
   }
   // Con un logo mucho más ancho que la pantalla, la caja guarda su forma (3:2) y la página no se estira

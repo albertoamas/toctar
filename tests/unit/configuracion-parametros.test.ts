@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
 import { nombreRepetido, puedeDesactivar, reordenar } from "@/lib/orden";
 import { esquemaElemento, type Elemento } from "@/modulos/configuracion/listas";
-import { CLAVES_PARAMETRO, esquemaParametros, leerParametros } from "@/modulos/configuracion/parametros";
+import { CLAVES_PARAMETRO, clavesDeSeccion, esquemaParametros, esquemaSeccionParametros, leerParametros } from "@/modulos/configuracion/parametros";
 
 // HU-05 Parámetros del sistema. Criterios: docs/09-pruebas/criterios-entrega-1.md (5.x).
 
@@ -95,5 +95,21 @@ describe("listas del taller", () => {
   test("el nombre es obligatorio", () => {
     const r = esquemaElemento.safeParse({ lista: "espacios", nombre: "  " });
     expect(erroresDe(r.error!)).toEqual({ nombre: "Escribe un nombre." });
+  });
+});
+
+// Pulido 13.29: cada modal de Parámetros guarda solo su sección
+describe("una sección de los parámetros", () => {
+  test("los plazos van aparte de los textos del PDF, y la agenda sola", () => {
+    expect(clavesDeSeccion("plazos")).toEqual(["validez_cotizacion_dias", "dias_cotizacion_sin_respuesta"]);
+    expect(clavesDeSeccion("pdf")).toEqual(["condiciones_cotizacion", "garantia_cotizacion", "formas_pago_cotizacion"]);
+    expect(clavesDeSeccion("agenda")).toEqual(["adelanto_sugerido"]);
+  });
+
+  test("guardar una sección no pide las otras y deja afuera lo que no es suyo", () => {
+    const r = esquemaSeccionParametros("agenda").parse({ adelanto_sugerido: "250", condiciones_cotizacion: "" });
+    expect(r).toEqual({ adelanto_sugerido: 250 });
+    const malo = esquemaSeccionParametros("plazos").safeParse({ validez_cotizacion_dias: "0", dias_cotizacion_sin_respuesta: "7" });
+    expect(malo.success).toBe(false);
   });
 });

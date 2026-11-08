@@ -27,10 +27,13 @@ function texto(nombre: string) {
 /**
  * Secciones de la pestaña Parámetros (C5 §0), en el orden del trabajo: la cotización y la agenda. La consulta ya no
  * existe (pedido 23) y el mantenimiento no tiene sección: cada servicio dice cada cuánto, en el catálogo (pedido 21).
+ * Pulido 13.29: cada sección se edita y se guarda en su modal; los plazos de la cotización van aparte de los textos del
+ * PDF (eran una sola sección con dos números y tres textos largos).
  */
 export const SECCIONES_PARAMETROS = {
-  cotizaciones: { titulo: "Cotizaciones", descripcion: "Las condiciones, la garantía y las formas de pago salen al pie de cada PDF." },
-  agenda: { titulo: "Agenda", descripcion: null },
+  plazos: { titulo: "Plazos de las cotizaciones", descripcion: null, boton: "Guardar plazos", guardado: "Plazos guardados." },
+  pdf: { titulo: "Textos del PDF", descripcion: "Salen al pie de cada cotización en PDF.", boton: "Guardar textos del PDF", guardado: "Textos del PDF guardados." },
+  agenda: { titulo: "Agenda", descripcion: null, boton: "Guardar agenda", guardado: "Agenda guardada." },
 } as const;
 export type SeccionParametros = keyof typeof SECCIONES_PARAMETROS;
 
@@ -44,35 +47,35 @@ export const PARAMETROS = {
     esquema: entero(1, 100_000, "Escribe un monto mayor a cero, hasta Bs 100 000."),
   },
   validez_cotizacion_dias: {
-    seccion: "cotizaciones",
+    seccion: "plazos",
     etiqueta: "Validez de la cotización",
     ayuda: "Días que vale una cotización si no se indica otra cosa.",
     unidad: "días",
     esquema: entero(1, 365, "Entre 1 y 365 días."),
   },
   dias_cotizacion_sin_respuesta: {
-    seccion: "cotizaciones",
+    seccion: "plazos",
     etiqueta: "Cotización sin respuesta",
     ayuda: "Días sin respuesta del cliente para resaltarla en Cotizaciones.",
     unidad: "días",
     esquema: entero(1, 90, "Entre 1 y 90 días."),
   },
   condiciones_cotizacion: {
-    seccion: "cotizaciones",
+    seccion: "pdf",
     etiqueta: "Condiciones",
     ayuda: "Lo que el cliente acepta al confirmar la cotización.",
     unidad: null,
     esquema: texto("las condiciones"),
   },
   garantia_cotizacion: {
-    seccion: "cotizaciones",
+    seccion: "pdf",
     etiqueta: "Garantía",
     ayuda: "Qué cubre la garantía y qué tiene que cuidar el cliente.",
     unidad: null,
     esquema: texto("la garantía"),
   },
   formas_pago_cotizacion: {
-    seccion: "cotizaciones",
+    seccion: "pdf",
     etiqueta: "Formas de pago",
     ayuda: "Cómo se puede pagar el adelanto y el saldo.",
     unidad: null,
@@ -90,6 +93,18 @@ export const esquemaParametros = z.object(
     [K in ClaveParametro]: (typeof PARAMETROS)[K]["esquema"];
   },
 );
+
+export const CLAVES_SECCION_PARAMETROS = Object.keys(SECCIONES_PARAMETROS) as [SeccionParametros, ...SeccionParametros[]];
+
+/** Los parámetros de una sección, en su orden: lo que guarda su modal (pulido 13.29). */
+export function clavesDeSeccion(seccion: SeccionParametros): ClaveParametro[] {
+  return CLAVES_PARAMETRO.filter((c) => PARAMETROS[c].seccion === seccion);
+}
+
+/** El esquema de una sección: solo sus parámetros, así guardar los plazos no pide los textos del PDF. */
+export function esquemaSeccionParametros(seccion: SeccionParametros) {
+  return esquemaParametros.pick(Object.fromEntries(clavesDeSeccion(seccion).map((c) => [c, true])) as { [K in ClaveParametro]?: true });
+}
 
 /** Lee lo guardado en la base. Si falta o es inválido, es un error de datos: falta la migración. */
 export function leerParametros(filas: { clave: string; valor: unknown }[]): Parametros {
