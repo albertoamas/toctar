@@ -1,18 +1,37 @@
 "use client"
 
+import { useSyncExternalStore } from "react"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
 
 // Avisos flotantes (pulido 1.5). Solo los usa el panel, que es claro: tema fijo, sin depender del sistema.
-// Van arriba: abajo, en el celular, tapaban el botón "Guardar cambios" y el último campo.
-// 64 px desde arriba: debajo de la barra del panel en el celular y la tableta.
+// En el celular van arriba: abajo tapaban el botón "Guardar cambios" y el último campo; 64 px desde arriba, debajo de la
+// barra del panel. Desde 600 px (donde sonner deja de usar `mobileOffset`), abajo a la derecha (pulido 13.23): arriba al
+// centro caían sobre los botones del encabezado ("Reservar en Agenda" después de "Aceptó") y, con el mouse encima, no se
+// iban (sonner los detiene).
 // El de error se distingue por su color y su borde (globals.css, "Avisos flotantes") y dura más.
+let ancha: MediaQueryList | undefined
+/** Una sola consulta para toda la página, creada la primera vez que se pide (en el navegador). */
+const consultaAncha = () => (ancha ??= window.matchMedia("(min-width: 600px)"))
+
+function usePantallaAncha(): boolean {
+  return useSyncExternalStore(
+    (avisar) => {
+      consultaAncha().addEventListener("change", avisar)
+      return () => consultaAncha().removeEventListener("change", avisar)
+    },
+    () => consultaAncha().matches,
+    () => false,
+  )
+}
+
 const Toaster = ({ ...props }: ToasterProps) => {
+  const pantallaAncha = usePantallaAncha()
   return (
     <Sonner
       theme="light"
-      position="top-center"
-      offset={{ top: 64 }}
+      position={pantallaAncha ? "bottom-right" : "top-center"}
+      offset={pantallaAncha ? 24 : { top: 64 }}
       mobileOffset={{ top: 64 }}
       className="toaster group"
       icons={{

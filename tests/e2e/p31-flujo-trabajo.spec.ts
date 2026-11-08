@@ -85,6 +85,16 @@ test("«Aceptó» la deja en Por reservar de la Agenda; desde ahí se reserva y 
   await expect(pasoActual(page)).toContainText("Aceptada");
   // El atajo, a la reserva de la Agenda
   await expect(page.getByRole("link", { name: "Reservar en Agenda" })).toHaveAttribute("href", `/panel/agenda/nueva?cotizacion=${c.cotizacionId}`);
+  // En la computadora el aviso no tapa el atajo (pulido 13.23): va abajo a la derecha. Antes caía encima y, con el mouse
+  // sobre él, no se iba: el clic esperaba hasta agotar el tiempo. En el celular sigue arriba, a propósito
+  if (info.project.name === "escritorio") {
+    const toast = page.locator("[data-sonner-toast]").first();
+    await expect(toast).toBeVisible();
+    const caja = (await toast.boundingBox())!;
+    const atajo = (await page.getByRole("link", { name: "Reservar en Agenda" }).boundingBox())!;
+    const sePisan = caja.x < atajo.x + atajo.width && atajo.x < caja.x + caja.width && caja.y < atajo.y + atajo.height && atajo.y < caja.y + caja.height;
+    expect(sePisan).toBe(false);
+  }
   const [antes] = await consultar<{ con: string; cot: string }>(
     "select q.estado as con, c.estado as cot from consulta q join cotizacion c on c.consulta_id = q.id where q.id = $1",
     [c.consultaId],
@@ -94,10 +104,15 @@ test("«Aceptó» la deja en Por reservar de la Agenda; desde ahí se reserva y 
   // En Aceptadas, con "Sin fecha"; en Inicio, directo a la reserva
   await page.goto("/panel/cotizaciones?vista=aceptadas");
   await expect(page.getByRole("link").filter({ hasText: c.numero })).toContainText("Sin fecha");
+  // Inicio muestra las 3 que esperan hace más: las que dejan otras pruebas pueden ir antes que esta. Cada una lleva
+  // directo a reservar; esta, si entra, a la suya, y si no, una fila "más" lleva a la Agenda
   await page.goto("/panel");
-  const enInicio = page.getByRole("link").filter({ hasText: `Cotización aceptada de ${c.cliente}` });
-  await expect(enInicio).toContainText("Reservar");
-  await expect(enInicio).toHaveAttribute("href", `/panel/agenda/nueva?cotizacion=${c.cotizacionId}`);
+  const aceptadas = page.getByRole("link").filter({ hasText: "Cotización aceptada de" });
+  await expect(aceptadas.first()).toContainText("Reservar");
+  await expect(aceptadas.first()).toHaveAttribute("href", /^\/panel\/agenda\/nueva\?cotizacion=\d+$/);
+  const enInicio = aceptadas.filter({ hasText: c.cliente });
+  if ((await enInicio.count()) > 0) await expect(enInicio).toHaveAttribute("href", `/panel/agenda/nueva?cotizacion=${c.cotizacionId}`);
+  else await expect(page.getByRole("link").filter({ hasText: "aceptadas sin fecha más" })).toHaveAttribute("href", "/panel/agenda");
 
   // En la Agenda, en "Por reservar", con el total para quien ve montos
   await page.goto("/panel/agenda");

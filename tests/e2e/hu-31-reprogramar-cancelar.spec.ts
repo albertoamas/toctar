@@ -6,12 +6,16 @@ import { consultar, crearClienteEnBase, ingresarComoDueno } from "./apoyo";
 // chocaban con el límite de intentos de ingreso (RNF-04).
 test.describe.configure({ mode: "serial" });
 
-const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "C" : "E");
-const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 5 : 6}3100${n}0`;
+// Con el número de reintento: uno nuevo no choca con los clientes y placas que dejó el intento anterior
+const sufijo = (info: TestInfo) => `${info.project.name === "celular" ? "C" : "E"}${info.retry || ""}`;
+const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 5 : 6}31${info.retry}0${n}0`;
 
-/** Un día propio: dentro de 240 (celular) o 290 (escritorio) días, más un desplazamiento (se agenda hasta un año adelante). */
+/**
+ * Un día propio: dentro de 240 (celular) o 290 (escritorio) días, más un desplazamiento (se agenda hasta un año adelante).
+ * Cada reintento corre 3 días: las reservas que dejó el intento anterior siguen en la base y no se cruzan con las nuevas.
+ */
 async function dia(info: TestInfo, mas: number): Promise<string> {
-  const [{ d }] = await consultar<{ d: string }>("select to_char(current_date + $1::int, 'YYYY-MM-DD') as d", [(info.project.name === "celular" ? 240 : 290) + mas]);
+  const [{ d }] = await consultar<{ d: string }>("select to_char(current_date + $1::int, 'YYYY-MM-DD') as d", [(info.project.name === "celular" ? 240 : 290) + mas + info.retry * 3]);
   return d;
 }
 
@@ -74,7 +78,7 @@ test("cancelar pide motivo, deja los pagos, libera el espacio y la consulta pasa
        select c.id, (select id from variante order by id limit 1), (select id from tamano_vehiculo order by id limit 1), 'Lavado', 500, 0 from c
      )
      select (select id from q) as consulta, (select id from c) as cotizacion`,
-    [`CA31${s}3`, `${s === "C" ? 1 : 2}000`],
+    [`CA31${s}3`, `${info.project.name === "celular" ? 1 : 2}${info.retry}00`],
   );
   const id = await reserva(`CA31${s}3`, 0, d20, d20, { consultaId: c.consulta, cotizacionId: c.cotizacion });
   await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, 150, 'efectivo', 'adelanto', current_date, created_by from trabajo where id = $1", [id]);
