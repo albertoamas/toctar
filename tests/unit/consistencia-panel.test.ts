@@ -33,56 +33,30 @@ function apariciones(patron: RegExp): Record<string, number> {
 const SIN_PAGINA_PANEL = [
   "src/app/panel/[...resto]/page.tsx",
   "src/app/panel/agenda/[id]/page.tsx",
-  "src/app/panel/clientes/[id]/page.tsx",
-  "src/app/panel/configuracion/mensajes/page.tsx",
-  "src/app/panel/configuracion/negocio/page.tsx",
-  "src/app/panel/configuracion/page.tsx",
-  "src/app/panel/configuracion/parametros/page.tsx",
-  "src/app/panel/configuracion/taller/page.tsx",
   "src/app/panel/cotizaciones/[id]/page.tsx",
-  "src/app/panel/mantenimientos/page.tsx",
   "src/app/panel/ordenes/[id]/page.tsx",
-  "src/app/panel/page.tsx",
-  "src/app/panel/pagos/page.tsx",
   "src/app/panel/reclamos/[id]/page.tsx",
   "src/app/panel/sin-acceso/page.tsx",
-  "src/app/panel/sitio/galeria/page.tsx",
-  "src/app/panel/sitio/page.tsx",
-  "src/app/panel/sitio/preguntas/page.tsx",
-  "src/app/panel/sitio/servicios/[id]/page.tsx",
-  "src/app/panel/sitio/servicios/page.tsx",
-  "src/app/panel/sitio/textos/page.tsx",
   "src/app/panel/usuarios/[id]/page.tsx",
 ];
 
 /** Anchos de pantalla escritos a mano. Los de un campo o un bloque chico (`max-w-xs`, `max-w-md`) sí valen (§1). */
 const ANCHOS_A_MANO: Record<string, number> = {
   "src/app/panel/agenda/[id]/page.tsx": 1,
-  "src/app/panel/clientes/[id]/page.tsx": 1,
-  "src/app/panel/configuracion/mensajes/page.tsx": 1,
-  "src/app/panel/configuracion/negocio/page.tsx": 1,
-  "src/app/panel/configuracion/parametros/page.tsx": 1,
-  "src/app/panel/configuracion/taller/page.tsx": 1,
   "src/app/panel/cotizaciones/[id]/page.tsx": 1,
   "src/app/panel/error.tsx": 1,
-  "src/app/panel/mantenimientos/page.tsx": 2,
   "src/app/panel/not-found.tsx": 1,
   "src/app/panel/ordenes/[id]/page.tsx": 2,
   "src/app/panel/page.tsx": 1,
-  "src/app/panel/pagos/page.tsx": 1,
   "src/app/panel/sin-acceso/page.tsx": 1,
-  "src/app/panel/sitio/preguntas/page.tsx": 1,
-  "src/app/panel/sitio/servicios/[id]/page.tsx": 1,
-  "src/app/panel/sitio/servicios/page.tsx": 1,
-  "src/app/panel/sitio/textos/page.tsx": 1,
   // El formulario público de reclamos: es del sitio, no del panel. Se queda, con este motivo
   "src/modulos/reclamos/componentes/formulario-reclamo.tsx": 2,
+  // "Subir fotos": un bloque dentro de la ficha (§1); más ancho, las fotos elegidas tapan el resto del formulario
   "src/modulos/sitio/componentes/galeria-panel.tsx": 1,
 };
 
 /** Modales armados a mano. Pasan a `ModalFormulario` en la fase 3. */
 const MODALES_A_MANO: Record<string, number> = {
-  "src/modulos/catalogo/componentes/formulario-precios.tsx": 3,
   "src/modulos/usuarios/componentes/acceso-usuario.tsx": 3,
 };
 
@@ -105,6 +79,7 @@ const TITULOS_A_MANO: Record<string, number> = {
   "src/modulos/ordenes/componentes/formulario-entrega.tsx": 1,
   "src/modulos/ordenes/componentes/formulario-publicar.tsx": 1,
   "src/modulos/pagos/componentes/montos-trabajo.tsx": 1,
+  // "Subir fotos": un bloque dentro de la ficha (§1); más ancho, las fotos elegidas tapan el resto del formulario
   "src/modulos/sitio/componentes/galeria-panel.tsx": 1,
   "src/modulos/usuarios/componentes/acceso-usuario.tsx": 3,
 };

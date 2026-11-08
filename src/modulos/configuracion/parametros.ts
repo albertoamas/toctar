@@ -28,12 +28,12 @@ function texto(nombre: string) {
  * Secciones de la pestaña Parámetros (C5 §0), en el orden del trabajo: la cotización y la agenda. La consulta ya no
  * existe (pedido 23) y el mantenimiento no tiene sección: cada servicio dice cada cuánto, en el catálogo (pedido 21).
  * Pulido 13.29: cada sección se edita y se guarda en su modal; los plazos de la cotización van aparte de los textos del
- * PDF (eran una sola sección con dos números y tres textos largos).
+ * PDF (eran una sola sección con dos números y tres textos largos). `ancha`: textos largos, a todo el ancho y al final (C6).
  */
 export const SECCIONES_PARAMETROS = {
-  plazos: { titulo: "Plazos de las cotizaciones", descripcion: null, boton: "Guardar plazos", guardado: "Plazos guardados." },
-  pdf: { titulo: "Textos del PDF", descripcion: "Salen al pie de cada cotización en PDF.", boton: "Guardar textos del PDF", guardado: "Textos del PDF guardados." },
-  agenda: { titulo: "Agenda", descripcion: null, boton: "Guardar agenda", guardado: "Agenda guardada." },
+  plazos: { titulo: "Plazos de las cotizaciones", descripcion: null, boton: "Guardar plazos", guardado: "Plazos guardados.", ancha: false },
+  agenda: { titulo: "Agenda", descripcion: null, boton: "Guardar agenda", guardado: "Agenda guardada.", ancha: false },
+  pdf: { titulo: "Textos del PDF", descripcion: "Salen al pie de cada cotización en PDF.", boton: "Guardar textos del PDF", guardado: "Textos del PDF guardados.", ancha: true },
 } as const;
 export type SeccionParametros = keyof typeof SECCIONES_PARAMETROS;
 

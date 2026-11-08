@@ -15,6 +15,14 @@ const FORMA = {
   portada: "gap-8",
 } as const;
 
+/**
+ * Partes cortas y parecidas de una ficha, del mismo alto (§2): de a dos o, si son tres (`enTres`), de a tres, así ninguna
+ * queda sola con un hueco al lado. Según el ancho del área de trabajo, no el de la pantalla: el menú lateral le quita lugar.
+ */
+export function PartesIguales({ enTres, children }: { enTres?: boolean; children: React.ReactNode }) {
+  return <div className={cn("grid grid-cols-[minmax(0,1fr)] gap-8 gap-x-4", enTres ? "@4xl:grid-cols-3" : "@3xl:grid-cols-2")}>{children}</div>;
+}
+
 export function PaginaPanel({ tipo, children }: { tipo: keyof typeof FORMA; children: React.ReactNode }) {
   return <div className={cn("flex flex-col", FORMA[tipo])}>{children}</div>;
 }

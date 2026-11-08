@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { MessageCircleIcon, SlidersHorizontalIcon, StoreIcon, WarehouseIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { TarjetasSeccion } from "@/componentes/panel/tarjetas-seccion";
 import { exigirModulo } from "@/lib/sesion";
 
@@ -12,9 +13,11 @@ export const metadata: Metadata = { title: "Configuración" };
 // Solo el dueño (módulo "configuracion").
 export default function PaginaConfiguracion() {
   return (
-    <Suspense fallback={<Cargando />}>
-      <Contenido />
-    </Suspense>
+    <PaginaPanel tipo="portada">
+      <Suspense fallback={<Cargando />}>
+        <Contenido />
+      </Suspense>
+    </PaginaPanel>
   );
 }
 

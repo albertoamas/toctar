@@ -53,7 +53,7 @@ export function Seccion({ id, titulo, accion, children }: { id: string; titulo: 
       <CabeceraSeccion id={id} titulo={titulo}>
         {accion}
       </CabeceraSeccion>
-      <div className="tt-tarjeta-panel p-4">{children}</div>
+      <div className="tt-tarjeta-panel flex-1 p-4">{children}</div>
     </section>
   );
 }

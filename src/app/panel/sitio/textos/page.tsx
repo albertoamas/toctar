@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { exigirModulo } from "@/lib/sesion";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { FormularioContenido, TextosDePagina } from "@/modulos/sitio/componentes/formulario-contenido";
@@ -22,9 +23,11 @@ export async function generateMetadata({ searchParams }: PageProps<"/panel/sitio
 // eran formularios abiertos, uno debajo de otro, con su botón gris y fotos grandes con su guía (4,3 pantallas en el celular).
 export default function PaginaTextos({ searchParams }: PageProps<"/panel/sitio/textos">) {
   return (
-    <Suspense fallback={<Cargando volver={{ href: "/panel/sitio", texto: "Sitio web" }} />}>
-      <Contenido searchParams={searchParams} />
-    </Suspense>
+    <PaginaPanel tipo="ficha">
+      <Suspense fallback={<Cargando volver={{ href: "/panel/sitio", texto: "Sitio web" }} />}>
+        <Contenido searchParams={searchParams} />
+      </Suspense>
+    </PaginaPanel>
   );
 }
 
@@ -39,7 +42,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/sitio/textos">
   return (
     <>
       <EncabezadoPagina titulo={elegida ? PAGINAS[elegida].titulo : "Textos del sitio"} volver={{ href: "/panel/sitio", texto: "Sitio web" }} />
-      <div className="flex max-w-3xl flex-col gap-8">
+      <div className="flex flex-col gap-8">
         {paginas.map((p) => (
           <SeccionConEditar
             key={p}

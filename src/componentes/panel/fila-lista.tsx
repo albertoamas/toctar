@@ -45,6 +45,23 @@ export function ListaFilas({ etiqueta, filas }: { etiqueta: string; filas: Datos
   );
 }
 
+/** La tarjeta de una lista con filas propias, que no son un enlace (Saldos, Mantenimientos). */
+export function ListaEnTarjeta({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) {
+  return (
+    <ul aria-label={etiqueta} className="flex flex-col divide-y divide-border tt-tarjeta-panel">
+      {children}
+    </ul>
+  );
+}
+
+/**
+ * Una fila con su acción de todos los días (escribir por WhatsApp, reservar): la excepción a "toda la fila abre su ficha"
+ * (sistema-del-panel.md §3). Lo que identifica a la izquierda y las acciones a la derecha; en el celular, debajo.
+ */
+export function FilaConAcciones({ children }: { children: React.ReactNode }) {
+  return <li className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:gap-6">{children}</li>;
+}
+
 function FilaLista({ href, titulo, tituloGrande, dato, detalles = [], aviso, estado, tonoEstado, atenuada, miniatura }: DatosFila) {
   return (
     <Link href={href} className={cn("flex min-h-11 items-center gap-3 px-4 py-3 hover:bg-superficie/60 focus-visible:-outline-offset-2", atenuada && "text-tinta-suave")}>

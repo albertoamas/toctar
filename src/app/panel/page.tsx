@@ -7,6 +7,7 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { ICONO_MODULO } from "@/componentes/panel/iconos-modulo";
 import { Insignia } from "@/componentes/panel/insignia";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { CeldaDoble, TablaLista } from "@/componentes/panel/tabla-lista";
 import { TarjetaNumero } from "@/componentes/panel/tarjeta-numero";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -37,9 +38,11 @@ import { reclamosPorAtender } from "@/modulos/reclamos/consultas";
 // reservarlas; "Para hoy" dice el paso siguiente de cada vehículo, con el texto del botón de su pantalla.
 export default function InicioPanel() {
   return (
-    <Suspense fallback={<Cargando />}>
-      <Contenido />
-    </Suspense>
+    <PaginaPanel tipo="portada">
+      <Suspense fallback={<Cargando />}>
+        <Contenido />
+      </Suspense>
+    </PaginaPanel>
   );
 }
 
