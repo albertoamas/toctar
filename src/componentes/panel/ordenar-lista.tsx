@@ -21,9 +21,13 @@ type Props = {
   mover: (datos: { id: number; direccion: Direccion }) => Promise<EstadoFormulario>;
   /** De qué es: "Orden de los servicios". */
   etiqueta: string;
+  /** Dónde se usa ese orden; por defecto, el sitio. */
+  descripcion?: string;
+  /** El título del modal; por defecto, "Orden en el sitio". */
+  titulo?: string;
 };
 
-export function OrdenarLista({ elementos, mover, etiqueta }: Props) {
+export function OrdenarLista({ elementos, mover, etiqueta, descripcion = "En este orden salen en el sitio. Las ocultas guardan su lugar.", titulo = "Orden en el sitio" }: Props) {
   const hidratado = useHidratado();
   const [abierto, setAbierto] = useState(false);
   const [pendiente, iniciar] = useTransition();
@@ -42,8 +46,8 @@ export function OrdenarLista({ elementos, mover, etiqueta }: Props) {
         <ArrowUpDownIcon />
         Cambiar orden
       </Button>
-      <ModalFormulario titulo="Orden en el sitio" abierto={abierto} alCambiar={setAbierto}>
-        <p className="text-sm text-tinta-suave">En este orden salen en el sitio. Las ocultas guardan su lugar.</p>
+      <ModalFormulario titulo={titulo} abierto={abierto} alCambiar={setAbierto}>
+        <p className="text-sm text-tinta-suave">{descripcion}</p>
         <ol aria-label={etiqueta} className="flex flex-col divide-y divide-border rounded-lg border border-border">
           {elementos.map((e, i) => (
             <li key={e.id} className="flex items-center gap-2 py-1 pr-1 pl-3">
@@ -73,7 +77,7 @@ export function OrdenarLista({ elementos, mover, etiqueta }: Props) {
  * aria-disabled y no disabled: un botón deshabilitado pierde el foco, y con el teclado habría que volver a buscar la
  * fila después de cada movimiento (como en el visor de fotos). En el tope, se atenúa y no hace nada.
  */
-function Flecha({ nombre, direccion, tope, alTocar }: { nombre: string; direccion: Direccion; tope: boolean; alTocar: () => void }) {
+export function Flecha({ nombre, direccion, tope, alTocar }: { nombre: string; direccion: Direccion; tope: boolean; alTocar: () => void }) {
   const Icono = direccion === "subir" ? ChevronUpIcon : ChevronDownIcon;
   return (
     <Button

@@ -1,19 +1,26 @@
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
-import { ArrowDownIcon, ArrowUpIcon, PencilIcon, PlusIcon } from "lucide-react";
+import { ChevronRightIcon, PlusIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
+import { CancelarModal, ModalFormulario, PieModal } from "@/componentes/panel/modal-formulario";
+import { Flecha, OrdenarLista } from "@/componentes/panel/ordenar-lista";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import type { EstadoFormulario } from "@/lib/formularios";
 import type { Direccion } from "@/lib/orden";
 
 // Componente de cliente: se usa dentro de otros componentes de cliente (recibe funciones como props).
-// Lista editable del panel: agregar, renombrar, subir y bajar, desactivar y reactivar; nunca se borra (D-6).
-// La usan los espacios del taller, los tamaños de vehículo (HU-05) y las variantes de un servicio (HU-19, en el catálogo).
+// Lista editable del panel: agregar, renombrar, ordenar, desactivar y reactivar; nunca se borra (D-6).
+// La usan los espacios del taller, los tamaños de vehículo, las partes del checklist (HU-05, pedido 12) y las variantes
+// de un servicio (HU-19, en el catálogo).
+// Pulido 13.27: como Preguntas frecuentes. La fila no lleva botones: tocarla abre su modal ("Editar espacio": el nombre,
+// "Guardar espacio" y, al pie y aparte, "Desactivar"); "Agregar" abre el mismo modal vacío. Antes cada fila llevaba
+// subir, bajar y un lápiz que la volvía formulario dentro de la lista. Con encabezado (una página, como Taller), el orden
+// va en "Cambiar orden"; sin él (las variantes, que ya van dentro de un modal), en flechas discretas en la fila, para no
+// abrir un modal sobre otro.
 
 export type ElementoLista = { id: number; nombre: string; descripcion: string | null; orden: number; activo: boolean };
-
 
 type AccionesLista = {
   /** Agrega (sin "id") o renombra (con "id"). Recibe "nombre", "descripcion" y los campos ocultos. */
@@ -37,7 +44,7 @@ type Props = {
   acciones: AccionesLista;
   /** Título de nivel 2 o 3, según dónde va la lista. */
   nivel?: 2 | 3;
-  /** Avisa si hay una fila abierta para agregar o renombrar (la sección que la contiene no se cierra mientras tanto). */
+  /** Avisa si hay un modal abierto para agregar o renombrar (la sección que la contiene no se cierra mientras tanto). */
   alEditar?: (editando: boolean) => void;
 } & (
   | { conEncabezado?: true; descripcion: string }
@@ -49,69 +56,89 @@ export function ListaEditable(props: Props) {
   const { id, titulo, singular, femenino, elementos, acciones } = props;
   const activos = elementos.filter((e) => e.activo);
   const inactivos = elementos.filter((e) => !e.activo);
-  const [editando, setEditando] = useState<number | "nuevo" | null>(null);
+  // El que se edita queda guardado aparte de si el modal está abierto: el formulario sigue a la vista mientras se cierra
+  const [editando, setEditando] = useState<ElementoLista | "nuevo" | null>(null);
+  const [abierto, setAbierto] = useState(false);
   const { alEditar } = props;
-  useEffect(() => alEditar?.(editando !== null), [alEditar, editando]);
+  useEffect(() => alEditar?.(abierto), [alEditar, abierto]);
   const [pendiente, iniciar] = useTransition();
   const Titulo = props.nivel === 3 ? "h3" : "h2";
   const conEncabezado = props.conEncabezado !== false;
   const Contenedor = conEncabezado ? "section" : "div";
-
-  const ejecutar = (accion: () => Promise<EstadoFormulario>) => iniciar(async () => avisarResultado(await accion()));
+  const abrir = (e: ElementoLista | "nuevo") => {
+    setEditando(e);
+    setAbierto(true);
+  };
+  const moverEnFila = (e: ElementoLista, direccion: Direccion) => {
+    if (pendiente) return;
+    iniciar(async () => {
+      const r = await acciones.mover(e.id, direccion);
+      if (!r.ok) avisarResultado(r);
+    });
+  };
+  const agregar = (
+    <Button type="button" variant="outline" onClick={() => abrir("nuevo")}>
+      <PlusIcon />
+      Agregar {singular}
+    </Button>
+  );
 
   return (
-    <Contenedor {...(conEncabezado ? { "aria-labelledby": `${id}-titulo` } : {})} className="flex flex-col gap-4">
+    <Contenedor {...(conEncabezado ? { "aria-labelledby": `${id}-titulo` } : {})} className="flex flex-col gap-3">
       {conEncabezado && (
-        <div className="flex flex-col gap-1">
-          <Titulo id={`${id}-titulo`} className="tt-titulo-seccion">{titulo}</Titulo>
-          <p className="text-sm text-tinta-suave">{props.descripcion}</p>
+        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+          <div className="flex min-w-0 flex-col gap-1">
+            <Titulo id={`${id}-titulo`} className="tt-titulo-seccion">
+              {titulo}
+            </Titulo>
+            <p className="text-sm text-tinta-suave">{props.descripcion}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {activos.length > 1 && (
+              <OrdenarLista
+                elementos={activos.map((e) => ({ id: e.id, nombre: e.nombre }))}
+                mover={(d) => acciones.mover(d.id, d.direccion)}
+                etiqueta={`Orden: ${titulo}`}
+                titulo={`Orden: ${titulo}`}
+                descripcion="En este orden aparecen en el panel."
+              />
+            )}
+            {agregar}
+          </div>
         </div>
       )}
 
       {activos.length === 0 && <p className="text-sm font-semibold text-rojo-texto">Agrega al menos {femenino ? "una" : "un"} {singular}.</p>}
 
-      <ol className="flex flex-col divide-y divide-border tt-tarjeta-panel" aria-label={`${titulo} activos`}>
-        {activos.map((e, i) =>
-          editando === e.id ? (
-            <li key={e.id} className="p-3">
-              <FormularioElemento {...props} elemento={e} alTerminar={() => setEditando(null)} />
+      {activos.length > 0 && (
+        <ol className="tt-tarjeta-panel flex flex-col divide-y divide-border overflow-hidden" aria-label={`${titulo} activos`}>
+          {activos.map((e, i) => (
+            <li key={e.id} className="flex items-center">
+              <button
+                type="button"
+                onClick={() => abrir(e)}
+                aria-label={`Editar ${e.nombre}`}
+                className="flex min-h-11 min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left hover:bg-superficie/60 focus-visible:-outline-offset-2"
+              >
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="font-semibold">{e.nombre}</span>
+                  {e.descripcion && <span className="text-sm text-tinta-suave">{e.descripcion}</span>}
+                </span>
+                {conEncabezado && <ChevronRightIcon className="size-5 shrink-0 text-tinta-suave" aria-hidden />}
+              </button>
+              {/* Sin encabezado (dentro de un modal): el orden en la fila, sin abrir otro modal encima */}
+              {!conEncabezado && activos.length > 1 && (
+                <span className="flex shrink-0 pr-1 text-tinta-suave">
+                  <Flecha nombre={e.nombre} direccion="subir" tope={i === 0} alTocar={() => moverEnFila(e, "subir")} />
+                  <Flecha nombre={e.nombre} direccion="bajar" tope={i === activos.length - 1} alTocar={() => moverEnFila(e, "bajar")} />
+                </span>
+              )}
             </li>
-          ) : (
-            // Un solo renglón: el nombre (que se parte si es largo) y ↑ ↓ ✎. "Desactivar" va dentro de la edición: se usa poco y
-            // con él en la fila, el nombre no cabía al lado y cada fila ocupaba dos renglones (pulido 6.2)
-            <li key={e.id} className="flex items-center gap-3 p-3">
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="font-semibold">{e.nombre}</span>
-                {e.descripcion && <span className="text-sm text-tinta-suave">{e.descripcion}</span>}
-              </span>
-              <span className="flex shrink-0 items-center gap-0.5">
-                <Button type="button" variant="ghost" size="icon" disabled={pendiente || i === 0} aria-label={`Subir ${e.nombre}`} onClick={() => ejecutar(() => acciones.mover(e.id, "subir"))}>
-                  <ArrowUpIcon />
-                </Button>
-                <Button type="button" variant="ghost" size="icon" disabled={pendiente || i === activos.length - 1} aria-label={`Bajar ${e.nombre}`} onClick={() => ejecutar(() => acciones.mover(e.id, "bajar"))}>
-                  <ArrowDownIcon />
-                </Button>
-                <Button type="button" variant="ghost" size="icon" aria-label={`Editar ${e.nombre}`} onClick={() => setEditando(e.id)}>
-                  <PencilIcon />
-                </Button>
-              </span>
-            </li>
-          ),
-        )}
-      </ol>
-
-      {editando === "nuevo" ? (
-        <div className="tt-tarjeta-panel p-3">
-          <FormularioElemento {...props} alTerminar={() => setEditando(null)} />
-        </div>
-      ) : (
-        <div>
-          <Button type="button" variant="outline" onClick={() => setEditando("nuevo")}>
-            <PlusIcon />
-            Agregar {singular}
-          </Button>
-        </div>
+          ))}
+        </ol>
       )}
+
+      {!conEncabezado && <div>{agregar}</div>}
 
       {inactivos.length > 0 && (
         <div className="flex flex-col gap-2">
@@ -120,7 +147,13 @@ export function ListaEditable(props: Props) {
             {inactivos.map((e) => (
               <li key={e.id} className="flex items-center gap-3 p-3 text-tinta-suave">
                 <span className="flex-1">{e.nombre}</span>
-                <Button type="button" variant="ghost" disabled={pendiente} onClick={() => ejecutar(() => acciones.cambiarEstado(e.id, true))} aria-label={`Reactivar ${e.nombre}`}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={pendiente}
+                  onClick={() => iniciar(async () => avisarResultado(await acciones.cambiarEstado(e.id, true)))}
+                  aria-label={`Reactivar ${e.nombre}`}
+                >
                   Reactivar
                 </Button>
               </li>
@@ -128,6 +161,17 @@ export function ListaEditable(props: Props) {
           </ul>
         </div>
       )}
+
+      <ModalFormulario
+        titulo={editando === "nuevo" ? `${femenino ? "Nueva" : "Nuevo"} ${singular}` : `Editar ${singular}`}
+        abierto={abierto}
+        alCambiar={setAbierto}
+      >
+        {/* La key: otro elemento, otro formulario (sin lo escrito en el anterior) */}
+        {editando && (
+          <FormularioElemento key={editando === "nuevo" ? "nuevo" : editando.id} {...props} elemento={editando === "nuevo" ? undefined : editando} alTerminar={() => setAbierto(false)} />
+        )}
+      </ModalFormulario>
     </Contenedor>
   );
 }
@@ -154,21 +198,13 @@ function FormularioElemento(props: Props & { elemento?: ElementoLista; alTermina
     });
 
   return (
-    <form ref={formulario} action={accion} className="flex flex-col gap-4" noValidate>
+    <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate>
       {Object.entries(camposOcultos).map(([nombre, valor]) => (
         <input key={nombre} type="hidden" name={nombre} value={valor} />
       ))}
       {elemento && <input type="hidden" name="id" value={elemento.id} />}
       <Campo id={`${prefijo}-nombre`} etiqueta={`Nombre ${femenino ? "de la" : "del"} ${singular}`} error={e.nombre}>
-        <Input
-          id={`${prefijo}-nombre`}
-          name="nombre"
-          autoFocus
-          autoComplete="off"
-          defaultValue={v?.nombre ?? elemento?.nombre}
-          aria-invalid={!!e.nombre}
-          aria-describedby={e.nombre ? `${prefijo}-nombre-error` : undefined}
-        />
+        <Input id={`${prefijo}-nombre`} name="nombre" autoComplete="off" defaultValue={v?.nombre ?? elemento?.nombre} aria-invalid={!!e.nombre} />
       </Campo>
       {campoDescripcion && (
         <Campo id={`${prefijo}-descripcion`} etiqueta={campoDescripcion.etiqueta} opcional error={e.descripcion} ayuda={campoDescripcion.ayuda}>
@@ -178,23 +214,22 @@ function FormularioElemento(props: Props & { elemento?: ElementoLista; alTermina
             autoComplete="off"
             placeholder={campoDescripcion.ejemplo}
             defaultValue={v?.descripcion ?? elemento?.descripcion ?? ""}
-            aria-describedby={e.descripcion ? `${prefijo}-descripcion-error` : `${prefijo}-descripcion-ayuda`}
+            aria-invalid={!!e.descripcion}
           />
         </Campo>
       )}
-      <div className="flex flex-wrap gap-2">
+      <PieModal>
         <Button type="submit" disabled={enviando}>
-          {enviando ? "Guardando…" : elemento ? "Guardar" : "Agregar"}
+          {enviando ? "Guardando…" : `${elemento ? "Guardar" : "Agregar"} ${singular}`}
         </Button>
-        <Button type="button" variant="outline" onClick={alTerminar}>
-          Cancelar
-        </Button>
+        <CancelarModal />
+        {/* Se usa poco y no borra nada (D-6): al pie, aparte, sin rojo; lo desactivado se reactiva debajo de la lista */}
         {elemento && (
-          <Button type="button" variant="outline" className="ml-auto" disabled={desactivando} onClick={() => desactivar(elemento)} aria-label={`Desactivar ${elemento.nombre}`}>
+          <Button type="button" variant="ghost" className="ml-auto" disabled={desactivando} onClick={() => desactivar(elemento)} aria-label={`Desactivar ${elemento.nombre}`}>
             Desactivar
           </Button>
         )}
-      </div>
+      </PieModal>
     </form>
   );
 }

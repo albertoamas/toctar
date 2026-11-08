@@ -117,32 +117,37 @@ test("las variantes se agregan, renombran y desactivan en el catálogo; una nuev
   const activas = variantes.getByRole("list", { name: "Variantes activos" });
   await page.getByRole("button", { name: "Editar variantes" }).click();
   await expect(activas).toContainText("Única");
+  // Agregar y renombrar, cada una en su modal sobre el de las variantes (pulido 13.27)
   await variantes.getByRole("button", { name: "Agregar variante" }).click();
-  await variantes.getByLabel("Nombre del variante").fill("Premium");
-  await variantes.getByRole("button", { name: "Agregar", exact: true }).click();
+  const nueva = page.getByRole("dialog", { name: "Nueva variante" });
+  await nueva.getByLabel("Nombre de la variante").fill("Premium");
+  await nueva.getByRole("button", { name: "Agregar variante" }).click();
   await expect(page.getByText("Variante Premium agregada.")).toBeVisible();
+  await expect(nueva).toHaveCount(0);
   await variantes.getByRole("button", { name: "Listo" }).click();
   // La nueva ya tiene sus precios en la ficha, sin cargar
   await expect(page.getByRole("region", { name: "Premium" })).toContainText("Sin cargar");
 
   await page.getByRole("button", { name: "Editar variantes" }).click();
+  const editar = page.getByRole("dialog", { name: "Editar variante" });
   await variantes.getByRole("button", { name: "Editar Única" }).click();
-  await variantes.getByLabel("Nombre del variante").fill("Básico");
-  await variantes.getByRole("button", { name: "Guardar", exact: true }).click();
+  await editar.getByLabel("Nombre de la variante").fill("Básico");
+  await editar.getByRole("button", { name: "Guardar variante" }).click();
+  await expect(editar).toHaveCount(0);
   await expect(activas.getByRole("listitem")).toHaveText([/Básico/, /Premium/]);
 
   // Desactivar no borra; la última activa no se desactiva
   await variantes.getByRole("button", { name: "Editar Premium" }).click();
-  await variantes.getByRole("button", { name: "Desactivar Premium" }).click();
+  await editar.getByRole("button", { name: "Desactivar Premium" }).click();
   await expect(page.getByText("Premium desactivada.")).toBeVisible();
   await variantes.getByRole("button", { name: "Editar Básico" }).click();
-  // Con una fila abierta, "Listo" no está: lo escrito sin guardar se perdería
+  // Con su modal abierto, "Listo" no está: lo escrito sin guardar se perdería
   await expect(variantes.getByRole("button", { name: "Listo" })).toHaveCount(0);
-  await variantes.getByRole("button", { name: "Desactivar Básico" }).click();
+  await editar.getByRole("button", { name: "Desactivar Básico" }).click();
   await expect(page.getByText(/Debe quedar al menos una variante activa/)).toBeVisible();
 
   // "Listo" cierra el modal: en lectura, los nombres, y la desactivada ya no tiene precios en la ficha
-  await variantes.getByRole("button", { name: "Cancelar" }).click();
+  await editar.getByRole("button", { name: "Cancelar" }).click();
   await variantes.getByRole("button", { name: "Listo" }).click();
   await expect(page.getByRole("region", { name: "Variantes" })).toContainText("Básico (1 desactivada)");
   await expect(page.getByRole("region", { name: "Premium" })).toHaveCount(0);
