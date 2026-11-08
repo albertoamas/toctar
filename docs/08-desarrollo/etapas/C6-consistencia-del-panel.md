@@ -114,7 +114,7 @@ Sin acciones nuevas en las fases 1 a 3. En la fase 4:
 
 ## 9. Pruebas
 
-- **Unitarias:** `tests/unit/consistencia-panel.test.ts` lee el código y falla si una página escribe `max-w-*` en lugar de usar `PaginaPanel`, si un archivo fuera de los componentes comunes usa `DialogContent` o arma un título de sección a mano. Su lista de excepciones se achica en cada fase y al final queda vacía o justificada.
+- **Unitarias:** `tests/unit/consistencia-panel.test.ts` lee el código y falla si una página no usa `PaginaPanel`, si un archivo fuera de los componentes comunes escribe un ancho de pantalla (`max-w-prose` o de `2xl` a `7xl`), usa `DialogContent` o `SheetContent`, o arma un título de sección a mano con `tt-titulo-seccion`. Sus listas de excepciones cuentan las apariciones por archivo, se achican en cada fase y al final quedan vacías o justificadas.
 - **De punta a punta:** una prueba de la pregunta al cerrar un modal (con cambios pregunta; sin cambios, no; "Seguir editando" conserva lo escrito). Las E2E de cada pantalla se adaptan al cambiar su forma.
 - **Capturas:** las pantallas principales en 390 y 1366 px quedan como archivos del CI para revisarlas a ojo. No se comparan píxel por píxel: Windows y Linux dibujan distinto.
 - **Fase 5:** recorrido por las 37 pantallas en 360, 390, 768 y 1366 px, con dueño, encargado con permisos y encargado con el perfil Taller, y `npm run test:e2e` completo dos veces seguidas.
