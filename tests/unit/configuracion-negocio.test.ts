@@ -3,7 +3,7 @@ import { esquemaHorarios, resumirHorarios, semanaCerrada, type DiaHorario } from
 import { ERROR_ENLACE_CORTO, ERROR_SIN_COORDENADAS, enlaceMapa, leerUbicacion } from "@/lib/ubicacion";
 import { enlaceWhatsApp, formatearWhatsApp, mensajeWhatsApp, normalizarWhatsApp, whatsAppLocal } from "@/lib/whatsapp";
 import { erroresDe } from "@/lib/formularios";
-import { esquemaNegocio, normalizarEnlaceRed } from "@/modulos/configuracion/esquemas";
+import { esquemaNegocio, esquemaParteNegocio, normalizarEnlaceRed } from "@/modulos/configuracion/esquemas";
 
 // HU-04 Datos del negocio. Criterios: docs/09-pruebas/criterios-entrega-1.md (4.x).
 
@@ -165,6 +165,25 @@ describe("esquema del negocio", () => {
   test("rechaza NIT con letras y correo mal escrito", () => {
     const r = esquemaNegocio.safeParse({ ...valido, nit: "12A45", correo: "toctar@" });
     expect(Object.keys(erroresDe(r.error!)).sort()).toEqual(["correo", "nit"]);
+  });
+});
+
+// Pulido 13.26: cada modal de Negocio guarda solo su parte
+describe("una parte de los datos del negocio", () => {
+  test("cada parte valida solo sus campos: guardar el horario no pide el WhatsApp", () => {
+    const r = esquemaParteNegocio.parse({ parte: "horario", horarios: JSON.stringify(semanaCerrada()), whatsapp: "", direccion: "" });
+    expect(r).toEqual({ parte: "horario", horarios: semanaCerrada() });
+  });
+
+  test("lo que no es de la parte no pasa, aunque venga en el formulario", () => {
+    const r = esquemaParteNegocio.parse({ parte: "facturacion", nit: "1234567", razonSocial: "", nombre: "Otro nombre" });
+    expect(r).toEqual({ parte: "facturacion", nit: "1234567", razonSocial: null });
+  });
+
+  test("cada parte con sus errores; una parte que no existe se rechaza", () => {
+    const r = esquemaParteNegocio.safeParse({ parte: "contacto", nombre: "TocTar", whatsapp: "7123", correo: "" });
+    expect(erroresDe(r.error!)).toEqual({ whatsapp: "Escribe los 8 dígitos del celular." });
+    expect(esquemaParteNegocio.safeParse({ parte: "logo" }).success).toBe(false);
   });
 });
 

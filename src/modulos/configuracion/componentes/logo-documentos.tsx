@@ -17,7 +17,8 @@ type Props = { logo: { url: string; ancho: number | null; alto: number | null } 
 const subirConAviso = conAviso(subirLogo);
 
 // Logo para el PDF de cotización y otros documentos (no cambia el logo del sitio, que es el de la marca).
-// Se sube apenas se elige el archivo.
+// Se sube apenas se elige el archivo. Pulido 13.26: en una fila compacta dentro de su sección de la ficha (la miniatura y,
+// al lado, para qué es y el botón), como las fotos del sitio; el título lo pone la sección.
 export function LogoDocumentos({ logo }: Props) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(subirConAviso, {});
   const formulario = useRef<HTMLFormElement>(null);
@@ -27,12 +28,8 @@ export function LogoDocumentos({ logo }: Props) {
   const listo = useHidratado();
 
   return (
-    <form ref={formulario} action={accion} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h2 className="tt-titulo-seccion">Logo para documentos</h2>
-        <p className="text-sm text-tinta-suave">Sale en las cotizaciones en PDF. Mejor con fondo transparente. Se guarda al momento, sin el botón Guardar cambios.</p>
-      </div>
-
+    <form ref={formulario} action={accion} className="flex flex-wrap items-start gap-x-4 gap-y-3">
+      <div className="w-40 shrink-0">
       <ZonaFoto
         id="logo"
         name="logo"
@@ -43,7 +40,7 @@ export function LogoDocumentos({ logo }: Props) {
         vista={logo ? { src: logo.url, alt: "Logo actual para documentos" } : null}
         claseForma="aspect-[3/2]"
         entera
-        claseFoto="p-6"
+        claseFoto="p-3"
         textoVacio="Todavía no hay logo"
         pie="PNG, JPG o WebP, hasta 5 MB"
         ocupada={enviando ? "Subiendo…" : null}
@@ -51,16 +48,21 @@ export function LogoDocumentos({ logo }: Props) {
         invalida={!!error}
         describedBy={error ? "logo-error" : undefined}
         alElegir={() => formulario.current?.requestSubmit()}
+        compacta={!logo}
       />
-      {logo && (
-        <div>
-          <Button type="button" variant="outline" disabled={!listo || enviando} data-invalido={error ? true : undefined} onClick={() => entrada.current?.click()}>
-            <UploadIcon />
-            Cambiar logo
-          </Button>
-        </div>
-      )}
-      {error && <MensajeError id="logo-error">{error}</MensajeError>}
+      </div>
+      <div className="flex min-w-40 flex-1 flex-col gap-2">
+        <p className="text-sm text-tinta-suave">Sale en las cotizaciones en PDF. Mejor con fondo transparente. PNG, JPG o WebP.</p>
+        {logo && (
+          <div>
+            <Button type="button" variant="outline" disabled={!listo || enviando} data-invalido={error ? true : undefined} onClick={() => entrada.current?.click()}>
+              <UploadIcon />
+              Cambiar logo
+            </Button>
+          </div>
+        )}
+        {error && <MensajeError id="logo-error">{error}</MensajeError>}
+      </div>
     </form>
   );
 }

@@ -1,27 +1,57 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { ExternalLinkIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { CabeceraSeccion, SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
+import { resumirHorarios } from "@/lib/horarios";
 import { exigirModulo } from "@/lib/sesion";
+import { enlaceMapa, textoEnlaceMapa } from "@/lib/ubicacion";
 import { whatsAppLocal } from "@/lib/whatsapp";
-import { textoEnlaceMapa } from "@/lib/ubicacion";
-import { FormularioNegocio } from "@/modulos/configuracion/componentes/formulario-negocio";
+import {
+  FormularioContacto,
+  FormularioFacturacion,
+  FormularioHorario,
+  FormularioRedes,
+  FormularioUbicacion,
+} from "@/modulos/configuracion/componentes/formulario-negocio";
 import { LogoDocumentos } from "@/modulos/configuracion/componentes/logo-documentos";
 import { obtenerConfiguracionNegocio } from "@/modulos/configuracion/consultas";
-import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { NOMBRE_RED, REDES } from "@/modulos/configuracion/esquemas";
 
 export const metadata: Metadata = { title: "Negocio" };
 
 // HU-04: datos del negocio, horario, redes y logo (Configuración > Negocio, pedido 26). Solo el dueño (módulo "configuracion").
+// Pulido 13.26: una ficha que se lee, con cada parte en su modal (como el servicio del sitio, 13.19): el horario resumido
+// ("Lunes a sábado"), el mapa como "Ver en el mapa" y no su código, el logo en su fila. Antes, 43 campos abiertos.
+
+const VOLVER = { href: "/panel/configuracion", texto: "Configuración" } as const;
+
 export default function PaginaNegocio() {
   return (
-    <>
-      <EncabezadoPagina titulo="Negocio" volver={{ href: "/panel/configuracion", texto: "Configuración" }} />
-      <Suspense fallback={<Cargando />}>
+    <div className="flex max-w-3xl flex-col gap-8">
+      <Suspense fallback={<Cargando volver={VOLVER} />}>
         <Contenido />
       </Suspense>
-    </>
+    </div>
   );
 }
+
+/** Una lista de datos: la etiqueta a la izquierda y el valor a la derecha (los valores quedan en columna). */
+function Datos({ filas }: { filas: [string, React.ReactNode][] }) {
+  return (
+    <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2">
+      {filas.map(([etiqueta, valor]) => (
+        <div key={etiqueta} className="contents">
+          <dt className="text-tinta-suave">{etiqueta}</dt>
+          <dd className="break-words">{valor}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+const sinCargar = <span className="text-tinta-suave">Sin cargar</span>;
 
 async function Contenido() {
   await exigirModulo("configuracion");
@@ -40,18 +70,114 @@ async function Contenido() {
     nit: c.nit ?? "",
     razonSocial: c.razonSocial ?? "",
   };
+  // "Ver en el mapa": lo guardado, para revisar que abre el taller
+  const verEnMapa = c.enlaceMapa ?? (c.coordenadas ? enlaceMapa(c.coordenadas) : null);
 
-  // Una columna que no pasa del ancho de la pantalla (minmax(0,1fr)): con "auto", el contenido más ancho la ensanchaba y
-  // en el Chromium de Linux los campos se salían 7 px a 360 de ancho (lo encontró el CI, 25/10)
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,42rem)_minmax(0,20rem)]">
-      <p className="text-sm text-tinta-suave lg:col-span-2">Datos del negocio que se muestran en la página y en los documentos.</p>
-      <FormularioNegocio valores={valores} horarios={c.horarios} />
-      {/* En el celular y la tableta va debajo de "Guardar cambios", que no lo guarda: en su propia tarjeta (pulido 6.1;
-          pedido 26) */}
-      <aside className="tt-tarjeta-panel p-4 sm:p-5 lg:sticky lg:top-8 lg:self-start">
-        <LogoDocumentos logo={c.logo} />
-      </aside>
-    </div>
+    <>
+      <EncabezadoPagina titulo="Negocio" volver={VOLVER} />
+
+      <SeccionConEditar
+        id="contacto"
+        titulo="Contacto"
+        etiquetaEditar="Editar contacto"
+        tituloModal="Contacto"
+        lectura={
+          <Datos
+            filas={[
+              ["Nombre", c.nombre],
+              ["WhatsApp", c.whatsapp ? `+591 ${whatsAppLocal(c.whatsapp)}` : sinCargar],
+              ["Correo", c.correo ?? sinCargar],
+            ]}
+          />
+        }
+      >
+        <FormularioContacto valores={valores} />
+      </SeccionConEditar>
+
+      <SeccionConEditar
+        id="ubicacion"
+        titulo="Ubicación"
+        etiquetaEditar="Editar ubicación"
+        tituloModal="Ubicación"
+        lectura={
+          <div className="flex flex-col gap-2">
+            <p>{c.direccion}</p>
+            <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-tinta-suave">
+              {verEnMapa ? (
+                <a href={verEnMapa} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-1 font-semibold text-tinta underline">
+                  Ver en el mapa
+                  <ExternalLinkIcon className="size-3.5" aria-hidden />
+                </a>
+              ) : (
+                <span>Sin ubicación en el mapa</span>
+              )}
+              <span>{c.mapaInsertado ? "El mapa de la página está cargado." : "La página muestra un pin en la ubicación."}</span>
+            </p>
+          </div>
+        }
+      >
+        <FormularioUbicacion valores={valores} />
+      </SeccionConEditar>
+
+      <SeccionConEditar
+        id="horario"
+        titulo="Horario de atención"
+        etiquetaEditar="Editar horario de atención"
+        tituloModal="Horario de atención"
+        lectura={<Datos filas={resumirHorarios(c.horarios).map((g) => [g.dias, g.horario === "cerrado" ? "Cerrado" : g.horario])} />}
+      >
+        <FormularioHorario horarios={c.horarios} />
+      </SeccionConEditar>
+
+      <SeccionConEditar
+        id="redes"
+        titulo="Redes sociales"
+        etiquetaEditar="Editar redes sociales"
+        tituloModal="Redes sociales"
+        lectura={
+          <Datos
+            filas={REDES.map((red) => [
+              NOMBRE_RED[red],
+              c.redes[red] ? (
+                // En una línea, con "…" si no entra: partido a la mitad de una palabra no se leía en el celular
+                <a href={c.redes[red]} target="_blank" rel="noreferrer" className="block truncate underline">
+                  {c.redes[red]!.replace(/^https?:\/\/(www\.)?/, "")}
+                </a>
+              ) : (
+                <span className="text-tinta-suave">No se muestra</span>
+              ),
+            ])}
+          />
+        }
+      >
+        <FormularioRedes valores={valores} />
+      </SeccionConEditar>
+
+      <SeccionConEditar
+        id="facturacion"
+        titulo="Datos para facturar"
+        etiquetaEditar="Editar datos para facturar"
+        tituloModal="Datos para facturar"
+        lectura={
+          <Datos
+            filas={[
+              ["NIT", c.nit ?? sinCargar],
+              ["Razón social", c.razonSocial ?? sinCargar],
+            ]}
+          />
+        }
+      >
+        <FormularioFacturacion valores={valores} />
+      </SeccionConEditar>
+
+      {/* Se guarda al momento, sin modal: el logo se cambia en su lugar */}
+      <section aria-labelledby="logo-titulo" className="flex flex-col gap-2">
+        <CabeceraSeccion id="logo" titulo="Logo para documentos" />
+        <div className="tt-tarjeta-panel p-4">
+          <LogoDocumentos logo={c.logo} />
+        </div>
+      </section>
+    </>
   );
 }

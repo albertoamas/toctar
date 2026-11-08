@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { archivosArrastrados, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER, PNG } from "./apoyo";
+import { abrirParteNegocio, archivosArrastrados, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER, PNG } from "./apoyo";
 
 // HU-04 Datos del negocio. Criterios: docs/09-pruebas/criterios-entrega-1.md (4.1 a 4.6).
 // Los datos del negocio son una sola fila: las pruebas que guardan corren solo en escritorio,
@@ -22,24 +22,39 @@ test("el dueño cambia los datos y el pie del sitio los muestra al guardar", asy
   await page.getByRole("navigation", { name: "Partes de la configuración" }).getByRole("link", { name: /^Negocio/ }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Negocio" })).toBeVisible();
 
-  await page.getByLabel("WhatsApp").fill("+591 712 34 567");
-  await page.getByLabel("Dirección").fill("Barrio Aeropuerto, calle Juan Pablo II, Tarija");
+  // Cada parte en su modal, con su botón (pulido 13.26)
+  const contacto = await abrirParteNegocio(page, "Contacto");
+  await contacto.getByLabel("WhatsApp").fill("+591 712 34 567");
+  await contacto.getByRole("button", { name: "Guardar contacto" }).click();
+  await expect(page.getByText("Contacto guardado.")).toBeVisible();
+  const ubicacion = await abrirParteNegocio(page, "Ubicación");
+  await ubicacion.getByLabel("Dirección").fill("Barrio Aeropuerto, calle Juan Pablo II, Tarija");
   // Pedido 38: el enlace y el mapa de la ficha (Compartir)
-  await page.getByLabel("Enlace de Google Maps").fill(FICHA);
-  await page.getByLabel("Mapa para la página").fill(`<iframe src="${MAPA}" width="600" height="450"></iframe>`);
-  await page.getByLabel("Instagram").fill("instagram.com/toctar.detailing");
+  await ubicacion.getByLabel("Enlace de Google Maps").fill(FICHA);
+  await ubicacion.getByLabel("Mapa para la página").fill(`<iframe src="${MAPA}" width="600" height="450"></iframe>`);
+  await ubicacion.getByRole("button", { name: "Guardar ubicación" }).click();
+  await expect(page.getByText("Ubicación guardada.")).toBeVisible();
+  const redes = await abrirParteNegocio(page, "Redes sociales");
+  await redes.getByLabel("Instagram").fill("instagram.com/toctar.detailing");
+  await redes.getByRole("button", { name: "Guardar redes" }).click();
+  await expect(page.getByText("Redes guardadas.")).toBeVisible();
   // El sábado solo abre a la mañana
-  await page.getByRole("button", { name: "Quitar el segundo turno del sábado" }).click();
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
-  await expect(page.getByText("Cambios guardados.")).toBeVisible();
+  const horario = await abrirParteNegocio(page, "Horario de atención");
+  await horario.getByRole("button", { name: "Quitar el segundo turno del sábado" }).click();
+  await horario.getByRole("button", { name: "Guardar horario" }).click();
+  await expect(page.getByText("Horario guardado.")).toBeVisible();
   try {
-  // Se guardó normalizado
+  // Se guardó normalizado; la ficha lo muestra leído
   await page.reload();
-  await expect(page.getByLabel("WhatsApp")).toHaveValue("71234567");
-  await expect(page.getByLabel("Enlace de Google Maps")).toHaveValue(FICHA);
+  await expect(page.getByRole("region", { name: "Contacto" })).toContainText("+591 71234567");
+  await expect(page.getByRole("region", { name: "Ubicación" }).getByRole("link", { name: "Ver en el mapa" })).toHaveAttribute("href", FICHA);
+  await expect(page.getByRole("region", { name: "Horario de atención" })).toContainText("Lunes a viernes");
+  await expect(page.getByRole("region", { name: "Redes sociales" }).getByRole("link", { name: "instagram.com/toctar.detailing" })).toHaveAttribute("href", "https://instagram.com/toctar.detailing");
+  const ubicacionGuardada = await abrirParteNegocio(page, "Ubicación");
+  await expect(ubicacionGuardada.getByLabel("Enlace de Google Maps")).toHaveValue(FICHA);
   // Del código pegado queda solo la dirección del mapa
-  await expect(page.getByLabel("Mapa para la página")).toHaveValue(MAPA);
-  await expect(page.getByLabel("Instagram")).toHaveValue("https://instagram.com/toctar.detailing");
+  await expect(ubicacionGuardada.getByLabel("Mapa para la página")).toHaveValue(MAPA);
+  await ubicacionGuardada.getByRole("button", { name: "Cancelar" }).click();
 
   // El sitio lo muestra sin volver a desplegar (RF-17)
   await page.goto("/");
@@ -60,10 +75,11 @@ test("el dueño cambia los datos y el pie del sitio los muestra al guardar", asy
 
   // El enlace corto de Compartir no trae coordenadas: sin mapa pegado, se conservan las guardadas y Contacto sigue con mapa
   await page.goto("/panel/configuracion/negocio");
-  await page.getByLabel("Enlace de Google Maps").fill("https://maps.app.goo.gl/AbCdEf123");
-  await page.getByLabel("Mapa para la página").fill("");
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
-  await expect(page.getByText("Cambios guardados.")).toBeVisible();
+  const corto = await abrirParteNegocio(page, "Ubicación");
+  await corto.getByLabel("Enlace de Google Maps").fill("https://maps.app.goo.gl/AbCdEf123");
+  await corto.getByLabel("Mapa para la página").fill("");
+  await corto.getByRole("button", { name: "Guardar ubicación" }).click();
+  await expect(page.getByText("Ubicación guardada.")).toBeVisible();
   await page.goto("/contacto");
   await expect(page.getByRole("main").getByRole("link", { name: "Cómo llegar" })).toHaveAttribute("href", "https://maps.app.goo.gl/AbCdEf123");
   await expect(page.getByTitle("Mapa del taller de TocTar Detailing")).toHaveAttribute("src", /q=-21\.5355,-64\.7296/);
@@ -71,10 +87,16 @@ test("el dueño cambia los datos y el pie del sitio los muestra al guardar", asy
   } finally {
     // Vuelve a como lo dejó preparar.setup.ts, aunque algo de arriba falle: la fila del negocio es una sola
     await page.goto("/panel/configuracion/negocio");
-    await page.getByLabel("Enlace de Google Maps").fill(PREPARADO);
-    await page.getByLabel("Mapa para la página").fill("");
-    await page.getByRole("button", { name: "Guardar cambios" }).click();
-    await expect(page.getByText("Cambios guardados.")).toBeVisible();
+    const vuelta = await abrirParteNegocio(page, "Ubicación");
+    await vuelta.getByLabel("Enlace de Google Maps").fill(PREPARADO);
+    await vuelta.getByLabel("Mapa para la página").fill("");
+    await vuelta.getByRole("button", { name: "Guardar ubicación" }).click();
+    await expect(page.getByText("Ubicación guardada.")).toBeVisible();
+    // Y el horario de lunes a sábado, como lo dejan los datos iniciales
+    const horarioVuelta = await abrirParteNegocio(page, "Horario de atención");
+    await horarioVuelta.getByRole("button", { name: "Copiar el lunes de martes a sábado" }).click();
+    await horarioVuelta.getByRole("button", { name: "Guardar horario" }).click();
+    await expect(page.getByText("Horario guardado.")).toBeVisible();
   }
 });
 
@@ -82,23 +104,33 @@ test("los datos mal escritos muestran el error junto al campo y no se guardan", 
   await ingresarComoDueno(page);
   await page.goto("/panel/configuracion/negocio");
 
-  await page.getByLabel("WhatsApp").fill("7123");
-  await page.getByLabel("Enlace de Google Maps").fill("https://example.com/mapa");
-  await page.getByLabel("Mapa para la página").fill(`<iframe src="https://example.com/maps/embed?pb=x"></iframe>`);
-  await page.getByLabel("Lunes, turno 1, desde").fill("13:00");
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
+  // En su modal: el error junto al campo, el foco en él y lo escrito sigue para corregirlo
+  const contacto = await abrirParteNegocio(page, "Contacto");
+  await contacto.getByLabel("WhatsApp").fill("7123");
+  await contacto.getByRole("button", { name: "Guardar contacto" }).click();
+  await expect(contacto.getByText("Escribe los 8 dígitos del celular.")).toBeVisible();
+  await expect(contacto.getByLabel("WhatsApp")).toHaveAttribute("aria-invalid", "true");
+  await expect(contacto.getByLabel("WhatsApp")).toBeFocused(); // el primer error recibe el foco (pulido 6.1)
+  await expect(contacto.getByLabel("WhatsApp")).toHaveValue("7123");
+  await contacto.getByRole("button", { name: "Cancelar" }).click();
 
-  await expect(page.getByText("Escribe los 8 dígitos del celular.")).toBeVisible();
-  await expect(page.getByText("Pega el enlace de Google Maps: en la ficha del taller, Compartir → Copiar vínculo.")).toBeVisible();
-  await expect(page.getByText("Pega el código de Google Maps: en la ficha del taller, Compartir → Insertar un mapa → Copiar HTML.")).toBeVisible();
-  await expect(page.getByText("El turno debe terminar después de empezar.")).toBeVisible();
-  await expect(page.getByLabel("WhatsApp")).toHaveAttribute("aria-invalid", "true");
-  await expect(page.getByLabel("WhatsApp")).toBeFocused(); // el primer error recibe el foco (pulido 6.1)
-  // Lo escrito sigue en el formulario para corregirlo
-  await expect(page.getByLabel("WhatsApp")).toHaveValue("7123");
+  const ubicacion = await abrirParteNegocio(page, "Ubicación");
+  await ubicacion.getByLabel("Enlace de Google Maps").fill("https://example.com/mapa");
+  await ubicacion.getByLabel("Mapa para la página").fill(`<iframe src="https://example.com/maps/embed?pb=x"></iframe>`);
+  await ubicacion.getByRole("button", { name: "Guardar ubicación" }).click();
+  await expect(ubicacion.getByText("Pega el enlace de Google Maps: en la ficha del taller, Compartir → Copiar vínculo.")).toBeVisible();
+  await expect(ubicacion.getByText("Pega el código de Google Maps: en la ficha del taller, Compartir → Insertar un mapa → Copiar HTML.")).toBeVisible();
+  await ubicacion.getByRole("button", { name: "Cancelar" }).click();
 
+  const horario = await abrirParteNegocio(page, "Horario de atención");
+  await horario.getByLabel("Lunes, turno 1, desde").fill("13:00");
+  await horario.getByRole("button", { name: "Guardar horario" }).click();
+  await expect(horario.getByText("El turno debe terminar después de empezar.")).toBeVisible();
+  await horario.getByRole("button", { name: "Cancelar" }).click();
+
+  // Nada se guardó
   await page.reload();
-  await expect(page.getByLabel("WhatsApp")).not.toHaveValue("7123");
+  await expect(page.getByRole("region", { name: "Contacto" })).toContainText("+591 71234567");
 });
 
 test("ningún encargado entra a la configuración, ni sin permisos ni con el perfil Taller", async ({ page }, info) => {
@@ -153,8 +185,14 @@ test("a 360 px ningún campo de Configuración se sale de la pantalla", async ({
   await page.setViewportSize({ width: 360, height: 740 });
   await ingresarComoDueno(page);
   await page.goto("/panel/configuracion/negocio");
-  await expect(page.getByLabel("Lunes, turno 1, desde")).toBeVisible();
-  const fuera = await page.getByRole("main").locator("input:not([type=hidden]), textarea, button").evaluateAll((campos) =>
+  // La ficha y, en su modal, el horario (lo más ancho)
+  const enLaFicha = await page.getByRole("main").locator("button, a").evaluateAll((els) =>
+    els.filter((c) => (c as HTMLElement).offsetParent && c.getBoundingClientRect().right > window.innerWidth).map((c) => c.getAttribute("aria-label") || c.textContent),
+  );
+  expect(enLaFicha).toEqual([]);
+  const horario = await abrirParteNegocio(page, "Horario de atención");
+  await expect(horario.getByLabel("Lunes, turno 1, desde")).toBeVisible();
+  const fuera = await horario.locator("input:not([type=hidden]), textarea, button").evaluateAll((campos) =>
     campos.filter((c) => (c as HTMLElement).offsetParent && c.getBoundingClientRect().right > window.innerWidth).map((c) => c.getAttribute("aria-label") || c.id),
   );
   expect(fuera).toEqual([]);
