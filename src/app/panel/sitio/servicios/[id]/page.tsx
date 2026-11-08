@@ -34,8 +34,8 @@ export default function PaginaServicio({ params }: PageProps<"/panel/sitio/servi
   );
 }
 
-/** El texto a la izquierda y su foto a la derecha, como en el sitio; en el celular, la foto debajo. */
-const CON_FOTO = "grid gap-6 md:grid-cols-[minmax(0,1fr)_18rem]";
+/** El texto a todo el ancho y su foto al pie, en una fila compacta: la tarjeta mide lo que su texto (pulido 13.19). */
+const CON_FOTO = "flex flex-col gap-4";
 
 async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">, "params">) {
   const usuario = await exigirModulo("sitio");
