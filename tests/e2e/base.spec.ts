@@ -201,7 +201,12 @@ test("los botones del panel miden 44 px con pantalla táctil y 36 con mouse", as
   await page.goto("/panel/catalogo");
   await medir(page.getByRole("button", { name: "Agregar servicio" }));
   await page.goto("/panel/sitio/servicios");
-  await medir(page.getByRole("button", { name: /^Bajar / }).first());
+  // Las flechas de ordenar van en su modal (pulido 13.21)
+  await page.getByRole("button", { name: "Cambiar orden" }).click();
+  // Se mide con el modal ya abierto: mientras se abre, una animación lo achica
+  const bajar = page.getByRole("dialog", { name: "Orden en el sitio" }).getByRole("button", { name: /^Bajar / }).first();
+  await expect(async () => medir(bajar)).toPass({ timeout: 3000 });
+  await page.getByRole("button", { name: "Listo" }).click();
   // Toda la fila abre el servicio, también la foto
   await page.getByRole("list", { name: "Servicios del sitio" }).getByRole("link").first().click();
   await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+$/);

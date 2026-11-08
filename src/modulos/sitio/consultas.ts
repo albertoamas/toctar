@@ -24,7 +24,8 @@ export type FilaServicio = {
   foto: UrlsFoto | null;
 };
 
-export async function listarServicios(): Promise<FilaServicio[]> {
+/** `cantidadPasos`: sin pasos, "Cómo lo hacemos" no sale en el sitio; la lista del panel lo avisa (pulido 13.21). */
+export async function listarServicios(): Promise<(FilaServicio & { cantidadPasos: number })[]> {
   const filas = await db
     .select({ servicio, foto: archivo })
     .from(servicio)
@@ -39,6 +40,7 @@ export async function listarServicios(): Promise<FilaServicio[]> {
     visible: s.visibleSitio,
     orden: s.orden,
     foto: foto ? urlsFoto(foto) : null,
+    cantidadPasos: s.pasos.length,
   }));
 }
 

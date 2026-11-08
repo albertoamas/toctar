@@ -153,3 +153,35 @@ test("el encargado con el permiso Sitio web entra; sin el permiso o con el perfi
     } else await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
   }
 });
+
+// Pulido 13.21: la lista dice si cada servicio está en el sitio y qué le falta a su página; ordenar va en un modal
+test("la lista avisa lo que le falta a una página, y el orden se cambia en su modal", async ({ page }, info) => {
+  soloEscritorio(info);
+  await ingresarComoDueno(page);
+  const nuevo = await abrirNuevoServicio(page);
+  await nuevo.getByLabel("Nombre del servicio").fill("Servicio sin completar");
+  await nuevo.getByRole("button", { name: "Crear servicio" }).click();
+  await expect(page.getByText("Servicio creado.")).toBeVisible();
+
+  await page.goto("/panel/sitio/servicios");
+  const lista = page.getByRole("list", { name: "Servicios del sitio" });
+  // Recién creado: oculto y sin resumen, que es lo que falta para mostrarlo
+  const fila = lista.getByRole("listitem").filter({ hasText: "Servicio sin completar" });
+  await expect(fila).toContainText("Oculto");
+  await expect(fila).toContainText("Falta el resumen");
+  await expect(lista.getByRole("listitem").filter({ hasText: "Pulido y nano cerámico" })).toContainText("En el sitio");
+  // Las filas no llevan flechas: se ordena en "Cambiar orden"
+  await expect(lista.getByRole("button")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Cambiar orden" }).click();
+  const orden = page.getByRole("dialog", { name: "Orden en el sitio" });
+  // Otras pruebas crean servicios a la vez: se compara su lugar antes y después
+  const lugar = async () => (await orden.getByRole("listitem").allTextContents()).findIndex((t) => t.includes("Servicio sin completar"));
+  const antes = await lugar();
+  expect(antes).toBeGreaterThan(0);
+  await orden.getByRole("button", { name: "Subir Servicio sin completar" }).click();
+  // Se guarda al momento: la lista del modal ya lo muestra un lugar más arriba
+  await expect.poll(lugar).toBe(antes - 1);
+  await orden.getByRole("button", { name: "Listo" }).click();
+  await expect(orden).toHaveCount(0);
+});
