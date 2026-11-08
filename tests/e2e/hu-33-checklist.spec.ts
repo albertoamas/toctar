@@ -63,7 +63,7 @@ test("se revisa parte por parte: bien o con un detalle y su foto; sin revisar to
   await expect(page.getByText("Detalle guardado.")).toBeVisible();
   await expect(modal).toBeHidden();
   await expect(fila(page, "Capó")).toContainText("Rayón largo al centro");
-  await expect(fila(page, "Capó").getByRole("link", { name: "Ver la foto: Capó" })).toBeVisible();
+  await expect(fila(page, "Capó").getByRole("button", { name: "Ver la foto: Capó" })).toBeVisible();
 
   // "Otro" pide la nota; después se pasa a "Bien" con el interruptor
   await page.getByRole("button", { name: "Detalle: Techo" }).click();

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { AbrirFoto } from "@/componentes/panel/abrir-foto";
 import type { FirmaEntrega } from "../consultas";
 
 // La entrega en la orden (pedido 13): la firma del cliente, en grande al tocarla, con "Recibido conforme por {nombre}", o
@@ -10,9 +11,16 @@ export function FirmaDeEntrega({ firma }: { firma: FirmaEntrega }) {
       <h2 id="firma-titulo" className="tt-titulo-seccion">Firma de entrega</h2>
       {firma.imagen ? (
         <>
-          <a href={firma.imagen.url} target="_blank" rel="noreferrer" className="self-start rounded-sm border border-border bg-fondo p-2" aria-label="Ver la firma en grande">
+          {/* En el visor del panel, y no en otra pestaña (pulido 13.16) */}
+          <AbrirFoto
+            fotos={[{ ...firma.imagen, alt: `Firma de ${firma.nombre ?? "el cliente"}` }]}
+            indice={0}
+            titulo="Firma de entrega"
+            etiqueta="Ver la firma en grande"
+            className="self-start rounded-sm border border-border bg-fondo p-2"
+          >
             <Image src={firma.imagen.url} alt={`Firma de ${firma.nombre ?? "el cliente"}`} width={320} height={120} unoptimized className="h-28 w-auto max-w-full object-contain" />
-          </a>
+          </AbrirFoto>
           <p>Recibido conforme por {firma.nombre}.</p>
         </>
       ) : (

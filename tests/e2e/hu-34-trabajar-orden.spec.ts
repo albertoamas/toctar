@@ -71,6 +71,11 @@ test("el perfil Taller trabaja cualquier orden, sin asignarla y sin ver precios:
   await fotosInicio.dispatchEvent("drop", { dataTransfer: soltada });
   await expect(page.getByRole("button", { name: "Ver la foto 2 del inicio" })).toBeVisible();
   await expect(fotosInicio.getByText("Suelta las fotos aquí")).toHaveCount(0);
+  // En grande se pasa a la de al lado sin cerrar (pulido 13.16)
+  await page.getByRole("button", { name: "Ver la foto 1 del inicio" }).click();
+  await page.getByRole("dialog", { name: "Inicio: foto 1 de 2" }).getByRole("button", { name: "Foto siguiente" }).click();
+  await expect(page.getByRole("dialog", { name: "Inicio: foto 2 de 2" }).getByRole("img", { name: "Foto 2 del inicio" })).toBeVisible();
+  await page.keyboard.press("Escape");
   await page.getByLabel("Escribir un avance").fill("Pulido de la puerta trasera, listo el primer paso.");
   await page.getByRole("button", { name: "Guardar avance" }).click();
   const historia = page.getByRole("list", { name: "Historia de la orden" });
