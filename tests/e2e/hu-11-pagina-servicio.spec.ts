@@ -51,7 +51,9 @@ test("los beneficios van primero, con ícono, y las opciones de menor a mayor se
   while (await quitar.isVisible()) await quitar.click();
   await beneficios.getByRole("button", { name: "Agregar beneficio" }).click();
   await beneficios.getByLabel("Beneficio 1", { exact: true }).fill("Protege del sol");
-  await beneficios.getByLabel("Beneficio 1, ícono").selectOption({ label: "Sol y rayos UV" });
+  await beneficios.getByRole("button", { name: /^Beneficio 1, ícono/ }).click();
+  await page.getByRole("menuitemradio", { name: "Sol y rayos UV" }).click();
+  await expect(beneficios.getByRole("button", { name: "Beneficio 1, ícono: Sol y rayos UV" })).toBeVisible();
   await beneficios.getByRole("button", { name: "Guardar beneficios" }).click();
   await expect(beneficios).toHaveCount(0);
   await page.getByRole("button", { name: "Editar cómo se ven las opciones" }).click();

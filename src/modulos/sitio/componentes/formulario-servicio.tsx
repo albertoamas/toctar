@@ -8,9 +8,7 @@ import { Campo } from "@/componentes/panel/campo";
 import { EditorLista } from "@/componentes/panel/editor-lista";
 import { MenuMas } from "@/componentes/panel/menu-mas";
 import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
-import { Selector } from "@/componentes/panel/selector";
 import { TextoCorto } from "@/componentes/panel/texto-corto";
-import { IconoBeneficio } from "@/componentes/sitio/icono-beneficio";
 import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
@@ -18,8 +16,9 @@ import { Textarea } from "@/componentes/ui/textarea";
 import type { Beneficio, Paso } from "@/db/esquema";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { cambiarVisibilidadServicio, guardarParteServicio } from "../acciones";
-import { ICONOS_BENEFICIO, iconoDe } from "../beneficios";
+import { iconoDe } from "../beneficios";
 import { LIMITES, type ParteServicio } from "../esquemas";
+import { ElegirIcono } from "./elegir-icono";
 
 // HU-07: la página del servicio en el sitio (RF-03). Sin precios (RN-10). El nombre y las variantes son del catálogo.
 // Pulido 13.19: la ficha se lee como el sitio y cada parte se edita en su modal, con su propio botón. Antes era un solo
@@ -96,19 +95,13 @@ export function FormularioBeneficios({ id, beneficios: iniciales }: { id: number
         textoAgregar="Agregar beneficio"
         errores={e}
         fila={(b, cambiar, i, marca) => (
-          <>
-            <TextoCorto value={b.texto} onChange={(ev) => cambiar({ ...b, texto: ev.target.value })} aria-label={`Beneficio ${i + 1}`} placeholder="Repele el agua y la suciedad" {...marca} />
-            <span className="flex items-center gap-2">
-              <IconoBeneficio icono={b.icono} className="size-6 shrink-0 text-rojo" />
-              <Selector value={b.icono} onChange={(ev) => cambiar({ ...b, icono: ev.target.value })} aria-label={`Beneficio ${i + 1}, ícono`} {...marca}>
-                {Object.entries(ICONOS_BENEFICIO).map(([clave, nombre]) => (
-                  <option key={clave} value={clave}>
-                    {nombre}
-                  </option>
-                ))}
-              </Selector>
+          // Un renglón, como en el sitio: el ícono a la izquierda del texto (pulido 13.22)
+          <span className="flex items-start gap-2">
+            <ElegirIcono valor={b.icono} alCambiar={(icono) => cambiar({ ...b, icono })} etiqueta={`Beneficio ${i + 1}, ícono`} />
+            <span className="min-w-0 flex-1">
+              <TextoCorto value={b.texto} onChange={(ev) => cambiar({ ...b, texto: ev.target.value })} aria-label={`Beneficio ${i + 1}`} placeholder="Repele el agua y la suciedad" {...marca} />
             </span>
-          </>
+          </span>
         )}
       />
       <Pie texto="Guardar beneficios" enviando={enviando} />
