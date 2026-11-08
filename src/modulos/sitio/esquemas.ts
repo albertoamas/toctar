@@ -87,6 +87,17 @@ export function motivoParaNoMostrar(servicio: { activo: boolean; resumen: string
   return null;
 }
 
+/**
+ * Lo que le falta a la página de un servicio, para la lista del panel (pulido 13.21), o null si está completa. Sin
+ * resumen no se puede mostrar: es lo primero. Si no, todo lo que falta junto ("Sin pasos ni foto"): sin pasos, "Cómo lo
+ * hacemos" no sale; sin foto, el sitio usa la de reemplazo.
+ */
+export function loQueFaltaEnPagina(servicio: { resumen: string; cantidadPasos: number; conFoto: boolean }): string | null {
+  if (!servicio.resumen.trim()) return "Falta el resumen";
+  const faltan = [servicio.cantidadPasos === 0 && "pasos", !servicio.conFoto && "foto"].filter(Boolean);
+  return faltan.length > 0 ? `Sin ${faltan.join(" ni ")}` : null;
+}
+
 // Acciones que reciben datos sueltos (no un formulario): también se validan, porque cualquiera puede llamarlas.
 const idRegistro = z.number().int().positive();
 export const esquemaId = idRegistro;

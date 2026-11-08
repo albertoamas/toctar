@@ -170,3 +170,40 @@ test("el encargado con el permiso Sitio web entra; sin el permiso o con el perfi
     } else await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
   }
 });
+
+// Pulido 13.21: la lista dice si cada servicio está en el sitio y qué le falta a su página; ordenar va en un modal
+test("la lista avisa lo que le falta a una página, y el orden se cambia en su modal", async ({ page }, info) => {
+  soloEscritorio(info);
+  await ingresarComoDueno(page);
+  const nuevo = await abrirNuevoServicio(page);
+  await nuevo.getByLabel("Nombre del servicio").fill("Servicio sin completar");
+  await nuevo.getByRole("button", { name: "Crear servicio" }).click();
+  await expect(page.getByText("Servicio creado.")).toBeVisible();
+
+  await page.goto("/panel/sitio/servicios");
+  const lista = page.getByRole("list", { name: "Servicios del sitio" });
+  // Recién creado: oculto y sin resumen, que es lo que falta para mostrarlo
+  const fila = lista.getByRole("listitem").filter({ hasText: "Servicio sin completar" });
+  await expect(fila).toContainText("Oculto");
+  await expect(fila).toContainText("Falta el resumen");
+  await expect(lista.getByRole("listitem").filter({ hasText: "Pulido y nano cerámico" })).toContainText("En el sitio");
+  // Las filas no llevan flechas: se ordena en "Cambiar orden"
+  await expect(lista.getByRole("button")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Cambiar orden" }).click();
+  const orden = page.getByRole("dialog", { name: "Orden en el sitio" });
+  // Otras pruebas cambian servicios a la vez: se compara con el que estaba justo arriba, no con posiciones fijas
+  const nombres = async () => (await orden.getByRole("listitem").allTextContents()).map((t) => t.replace(/^\d+\.\s*/, ""));
+  const lista0 = await nombres();
+  const mio = lista0.findIndex((t) => t.startsWith("Servicio sin completar"));
+  expect(mio).toBeGreaterThan(0);
+  const vecino = lista0[mio - 1];
+  await orden.getByRole("button", { name: "Subir Servicio sin completar" }).click();
+  // Se guarda al momento: en el modal ya queda antes que el que tenía arriba
+  await expect.poll(async () => {
+    const l = await nombres();
+    return l.findIndex((t) => t.startsWith("Servicio sin completar")) < l.indexOf(vecino);
+  }).toBe(true);
+  await orden.getByRole("button", { name: "Listo" }).click();
+  await expect(orden).toHaveCount(0);
+});

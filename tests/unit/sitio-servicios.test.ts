@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { iconoDe } from "@/modulos/sitio/beneficios";
 import { erroresDe } from "@/lib/formularios";
 import { PATRON_SLUG, crearSlug } from "@/lib/slug";
-import { esquemaId, esquemaIdFormulario, esquemaParteServicio, esquemaServicio, esquemaVisibilidad, motivoParaNoMostrar } from "@/modulos/sitio/esquemas";
+import { esquemaId, esquemaIdFormulario, esquemaParteServicio, esquemaServicio, esquemaVisibilidad, loQueFaltaEnPagina, motivoParaNoMostrar } from "@/modulos/sitio/esquemas";
 
 // HU-07 Servicios del sitio: la página de cada servicio. Criterios: docs/09-pruebas/criterios-entrega-1.md (7.x). El
 // alta, el nombre y las variantes son del catálogo (tests/unit/catalogo.test.ts).
@@ -102,6 +102,15 @@ describe("una parte de la página del servicio", () => {
     expect(motivoParaNoMostrar({ activo: true, resumen: "Pulimos." })).toBeNull();
     expect(motivoParaNoMostrar({ activo: true, resumen: "   " })).toBe("Escribe el resumen antes de mostrarlo en el sitio.");
     expect(motivoParaNoMostrar({ activo: false, resumen: "Pulimos." })).toBe("Está inactivo en el catálogo: actívalo ahí primero.");
+  });
+
+  test("la lista dice lo que le falta a una página: primero el resumen, después pasos y foto juntos", () => {
+    const completa = { resumen: "Pulimos.", cantidadPasos: 3, conFoto: true };
+    expect(loQueFaltaEnPagina(completa)).toBeNull();
+    expect(loQueFaltaEnPagina({ ...completa, resumen: "  ", cantidadPasos: 0, conFoto: false })).toBe("Falta el resumen");
+    expect(loQueFaltaEnPagina({ ...completa, cantidadPasos: 0 })).toBe("Sin pasos");
+    expect(loQueFaltaEnPagina({ ...completa, conFoto: false })).toBe("Sin foto");
+    expect(loQueFaltaEnPagina({ ...completa, cantidadPasos: 0, conFoto: false })).toBe("Sin pasos ni foto");
   });
 
   test("una parte que no existe se rechaza", () => {
