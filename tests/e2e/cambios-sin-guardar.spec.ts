@@ -35,16 +35,15 @@ test("sin cambios el botón está desactivado; con cambios se activa y queda fij
 
 test("una lista también cuenta: agregar una fila lo activa y quitarla lo deja como estaba", async ({ page }) => {
   await ingresarComoDueno(page);
-  await page.goto("/panel/sitio/servicios");
-  await page.getByRole("link", { name: /Polarizado de vidrios/ }).click();
-  const agregar = page.getByRole("button", { name: "Agregar beneficio" });
-  const guardar = page.getByRole("button", { name: "Guardar cambios" });
+  await page.goto("/panel/sitio/textos");
+  const agregar = page.getByRole("button", { name: "Agregar motivo" });
+  const guardar = page.getByRole("button", { name: "Guardar nosotros" });
   await expect(agregar).toBeEnabled();
   await hidratada(page);
   await expect(guardar).toBeDisabled();
   await agregar.click();
   await expect(guardar).toBeEnabled();
-  await page.getByRole("button", { name: /^Quitar beneficio \d+$/ }).last().click();
+  await page.getByRole("button", { name: /^Quitar motivo \d+$/ }).last().click();
   await expect(guardar).toBeDisabled();
 });
 
@@ -176,11 +175,15 @@ test("un flujo también pregunta: nuevo cliente, con su botón de siempre", asyn
 test("subir una foto, que se guarda al momento, no activa el botón", async ({ page }, info) => {
   test.skip(info.project.name !== "escritorio", "Cambia la foto compartida");
   await ingresarComoDueno(page);
-  await page.goto("/panel/sitio/servicios");
-  await page.getByRole("link", { name: /Lavado/ }).first().click();
-  await expect(page.getByRole("heading", { name: "Foto principal" })).toBeVisible();
+  await page.goto("/panel/sitio/textos");
+  const guardar = page.getByRole("button", { name: "Guardar portada" });
+  await expect(guardar).toBeVisible();
   await hidratada(page);
-  await page.getByLabel("Archivo de la foto", { exact: true }).setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
+  const bloque = page.getByRole("region", { name: "Foto del taller" });
+  await bloque.getByLabel("Archivo de la foto").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
   await expect(page.getByText("Foto guardada.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
+  await expect(guardar).toBeDisabled();
+  // Queda como estaba: otras pruebas esperan la portada sin foto
+  await bloque.getByRole("button", { name: "Quitar foto" }).click();
+  await expect(bloque.getByText("Sin foto: detrás del lema queda el fondo negro.")).toBeVisible();
 });

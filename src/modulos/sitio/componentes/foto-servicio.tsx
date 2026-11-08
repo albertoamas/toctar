@@ -2,24 +2,20 @@
 
 import { GuiaFoto } from "@/componentes/panel/guia-foto";
 import { SubidaFoto } from "@/componentes/panel/subida-foto";
-import { quitarFotoServicio, subirFotoServicio } from "../acciones";
+import { quitarFotoDeSeccion, quitarFotoServicio, subirFotoDeSeccion, subirFotoServicio } from "../acciones";
+import { SECCIONES_FOTO, type SeccionFoto } from "../secciones-foto";
 
-// HU-07: foto principal del servicio (columna derecha de su página). Las variantes son del catálogo.
+// Las fotos de la página de un servicio, cada una dentro de su parte de la ficha (pulido 13.19): la principal arriba,
+// junto al resumen; la de cada sección ("Cómo lo hacemos", "Opciones"), junto a su texto, como en el sitio. Se guardan
+// al momento. La guía, solo mientras no hay foto: con una ya puesta, ocupaba lugar en cada visita.
 
-type Props = {
-  servicioId: number;
-  nombre: string;
-  foto: { miniatura: string; ancho: number | null; alto: number | null } | null;
-};
+type Foto = { miniatura: string; ancho: number | null; alto: number | null };
 
-export function FotoServicio({ servicioId, nombre, foto }: Props) {
+export function FotoServicio({ servicioId, nombre, foto }: { servicioId: number; nombre: string; foto: Foto | null }) {
   return (
-    <section aria-labelledby="foto-titulo" className="tt-tarjeta-panel flex flex-col gap-4 p-4 sm:p-5">
-      <div className="flex flex-col gap-1">
-        <h2 id="foto-titulo" className="tt-titulo-seccion">Foto principal</h2>
-        <p className="text-sm text-tinta-suave">Se ve en la tarjeta y arriba de la página del servicio. Se guarda al momento, sin el botón Guardar cambios.</p>
-      </div>
-      <GuiaFoto consejo="El auto, al centro." />
+    <div className="flex flex-col gap-3">
+      <p className="text-sm font-semibold">Foto principal</p>
+      {!foto && <GuiaFoto consejo="El auto, al centro." />}
       <SubidaFoto
         id="foto-servicio"
         accion={subirFotoServicio}
@@ -28,6 +24,27 @@ export function FotoServicio({ servicioId, nombre, foto }: Props) {
         textoVacio="Sin foto: el sitio muestra la imagen de reemplazo de TocTar."
         quitar={() => quitarFotoServicio(servicioId)}
       />
-    </section>
+    </div>
+  );
+}
+
+/** La foto al lado de una sección. Decorativa: sin descripción (revisión de YankoSoft, 24/10). */
+export function FotoDeSeccion({ servicioId, seccion, foto }: { servicioId: number; seccion: SeccionFoto; foto: Foto | undefined }) {
+  const nombre = SECCIONES_FOTO[seccion];
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-sm font-semibold">Foto al lado</p>
+      {!foto && <GuiaFoto consejo="Un afiche se ve entero; lo que dice, escríbelo también en el texto: Google no lee la imagen." />}
+      <SubidaFoto
+        id={`foto-${seccion}`}
+        nombre={nombre}
+        entera
+        accion={subirFotoDeSeccion}
+        camposOcultos={{ servicioId, seccion }}
+        actual={foto ? { ...foto, alt: `Foto de "${nombre}"` } : null}
+        textoVacio="Sin foto: la sección va solo con su texto."
+        quitar={() => quitarFotoDeSeccion({ servicioId, seccion })}
+      />
+    </div>
   );
 }

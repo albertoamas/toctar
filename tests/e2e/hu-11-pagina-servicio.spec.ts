@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { crearServicioPublicado, ingresarComoDueno, PNG } from "./apoyo";
+import { crearServicioPublicado, ingresarComoDueno, mostrarServicio, PNG } from "./apoyo";
 
 // HU-11 Página de cada servicio y HU-15 (mensaje con el servicio). Criterios: docs/09-pruebas/criterios-entrega-1.md (11.x).
 
@@ -44,15 +44,22 @@ test("los beneficios van primero, con ícono, y las opciones de menor a mayor se
   await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+$/);
   const panel = page.url();
   // Empieza sin beneficios, aunque un intento anterior haya fallado a mitad de camino
-  const quitar = page.getByRole("button", { name: "Quitar beneficio 1" });
+  await page.getByRole("button", { name: "Editar beneficios" }).click();
+  const beneficios = page.getByRole("dialog", { name: "Beneficios" });
+  await expect(beneficios.getByRole("button", { name: "Agregar beneficio" })).toBeVisible();
+  const quitar = beneficios.getByRole("button", { name: "Quitar beneficio 1" });
   while (await quitar.isVisible()) await quitar.click();
-  await page.getByRole("button", { name: "Agregar beneficio" }).click();
-  await page.getByLabel("Beneficio 1", { exact: true }).fill("Protege del sol");
-  await page.getByLabel("Beneficio 1, ícono").selectOption({ label: "Sol y rayos UV" });
-  const escalera = page.getByRole("checkbox", { name: /Van de menor a mayor/ });
+  await beneficios.getByRole("button", { name: "Agregar beneficio" }).click();
+  await beneficios.getByLabel("Beneficio 1", { exact: true }).fill("Protege del sol");
+  await beneficios.getByLabel("Beneficio 1, ícono").selectOption({ label: "Sol y rayos UV" });
+  await beneficios.getByRole("button", { name: "Guardar beneficios" }).click();
+  await expect(beneficios).toHaveCount(0);
+  await page.getByRole("button", { name: "Editar cómo se ven las opciones" }).click();
+  const opcionesPanel = page.getByRole("dialog", { name: "Opciones" });
+  const escalera = opcionesPanel.getByRole("checkbox", { name: /Van de menor a mayor/ });
   await escalera.check();
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
-  await expect(page.getByText("Cambios guardados.")).toBeVisible();
+  await opcionesPanel.getByRole("button", { name: "Guardar opciones" }).click();
+  await expect(opcionesPanel).toHaveCount(0);
 
   await page.goto("/servicios/pulido-y-nano-ceramico");
   // El beneficio con su ícono (decorativo: el texto dice lo mismo)
@@ -68,10 +75,14 @@ test("los beneficios van primero, con ícono, y las opciones de menor a mayor se
 
   // Sin la casilla, vuelven a ser recuadros; se quita el beneficio de prueba
   await page.goto(panel);
+  await page.getByRole("button", { name: "Editar cómo se ven las opciones" }).click();
   await escalera.uncheck();
-  await page.getByRole("button", { name: "Quitar beneficio 1" }).click();
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
-  await expect(page.getByText("Cambios guardados.")).toBeVisible();
+  await opcionesPanel.getByRole("button", { name: "Guardar opciones" }).click();
+  await expect(opcionesPanel).toHaveCount(0);
+  await page.getByRole("button", { name: "Editar beneficios" }).click();
+  await beneficios.getByRole("button", { name: "Quitar beneficio 1" }).click();
+  await beneficios.getByRole("button", { name: "Guardar beneficios" }).click();
+  await expect(beneficios).toHaveCount(0);
   await page.goto("/servicios/pulido-y-nano-ceramico");
   await expect(opciones.getByRole("listitem")).toHaveCount(5);
   await expect(opciones.locator(".tt-escalon")).toHaveCount(0);
@@ -91,9 +102,7 @@ test("un servicio oculto o inexistente muestra la página no encontrada", async 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Servicio oculto con página");
 
   await page.goBack();
-  await page.getByRole("checkbox", { name: /Mostrar en el sitio/ }).uncheck();
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
-  await expect(page.getByText("Cambios guardados.")).toBeVisible();
+  await mostrarServicio(page, false);
   await page.goto("/servicios/servicio-oculto-con-pagina");
   await expect(page.getByRole("heading", { name: "No encontramos esta página" })).toBeVisible();
 });
@@ -136,23 +145,20 @@ test("cada sección de la página lleva su foto al lado, subida en su lugar del 
   test.setTimeout(60_000);
   await ingresarComoDueno(page);
   const { id, slug } = await crearServicioPublicado(page, `Servicio con fotos ${info.project.name}`);
-  // Recargada: el aviso del guardado anterior ya no está y el formulario no se reinicia bajo lo que se escribe
-  await page.reload();
-  await page.getByRole("button", { name: "Agregar paso" }).click();
-  await page.getByLabel("Paso 1, título", { exact: true }).fill("Lavado técnico");
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
-  await expect(page.getByText("Cambios guardados.")).toBeVisible();
-  await page.reload();
-  await expect(page.getByLabel("Paso 1, título", { exact: true })).toHaveValue("Lavado técnico");
+  await page.getByRole("button", { name: "Editar pasos" }).click();
+  const pasos = page.getByRole("dialog", { name: "Cómo lo hacemos" });
+  await pasos.getByRole("button", { name: "Agregar paso" }).click();
+  await pasos.getByLabel("Paso 1, título", { exact: true }).fill("Lavado técnico");
+  await pasos.getByRole("button", { name: "Guardar pasos" }).click();
+  await expect(pasos).toHaveCount(0);
 
-  const fotos = page.getByRole("region", { name: "Fotos de la página" });
-  // Un lugar por sección. Sin opciones en el catálogo, "Opciones" no sale en el sitio: ni su foto ni su casilla se
-  // ofrecen (pulido 13.2)
+  // La foto va dentro de su sección, como en el sitio (pulido 13.19). Sin opciones en el catálogo, "Opciones" no sale
+  // en el sitio: ni su foto ni su casilla se ofrecen (pulido 13.2)
+  const fotos = page.getByRole("region", { name: "Cómo lo hacemos" });
+  await expect(fotos).toContainText("Lavado técnico");
   await expect(fotos.getByRole("button", { name: "Subir foto: Cómo lo hacemos" })).toBeVisible();
-  await expect(fotos.getByRole("button", { name: "Subir foto: Opciones" })).toHaveCount(0);
-  await expect(page.getByText("Sin opciones en el catálogo: esta sección no sale en el sitio.")).toBeVisible();
-  await expect(page.getByRole("checkbox", { name: /Van de menor a mayor/ })).toHaveCount(0);
-  await expect(fotos.getByText("No se ve hasta que agregues pasos.")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Subir foto: Opciones" })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Opciones" })).toHaveCount(0);
   // Se sube al elegirla, sin descripción
   await page.getByLabel("Archivo de la foto: Cómo lo hacemos").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
   await expect(fotos.getByRole("img", { name: 'Foto de "Cómo lo hacemos"' })).toBeVisible();

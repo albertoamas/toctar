@@ -244,9 +244,19 @@ export async function crearServicioPublicado(page: Page, nombre: string, resumen
   await expect(page).toHaveURL(/\/panel\/catalogo\/\d+\?creado=1$/);
   const id = page.url().match(/catalogo\/(\d+)/)![1];
   await page.goto(`/panel/sitio/servicios/${id}`);
-  await page.getByLabel("Resumen").fill(resumen);
-  await page.getByRole("checkbox", { name: /Mostrar en el sitio/ }).check();
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
-  await expect(page.getByText("Cambios guardados.")).toBeVisible();
-  return { id, slug: await page.getByLabel("Dirección de la página").inputValue() };
+  await page.getByRole("button", { name: "Editar resumen" }).click();
+  const modal = page.getByRole("dialog", { name: "Resumen" });
+  await modal.getByLabel("Resumen").fill(resumen);
+  await modal.getByRole("button", { name: "Guardar resumen" }).click();
+  await expect(modal).toHaveCount(0);
+  await mostrarServicio(page, true);
+  const enlace = await page.getByRole("link", { name: "Ver en el sitio" }).getAttribute("href");
+  return { id, slug: enlace!.replace("/servicios/", "") };
+}
+
+/** Desde la ficha de un servicio del sitio: "Más" > mostrar u ocultar (pulido 13.19). */
+export async function mostrarServicio(page: Page, mostrar: boolean): Promise<void> {
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: mostrar ? "Mostrar en el sitio" : "Ocultar del sitio" }).click();
+  await expect(page.getByText(mostrar ? "En el sitio" : "Oculto", { exact: true })).toBeVisible();
 }

@@ -240,17 +240,21 @@ test("al enviar con errores el foco va al campo, y el enlace para volver mide 44
   expect(Math.round((await volver.boundingBox())!.height)).toBe(44);
 });
 
-test("en Editar servicio una fila vacía recibe el foco con su error, y en el celular sus botones van debajo", async ({ page, isMobile }) => {
+test("en los beneficios de un servicio una fila vacía recibe el foco con su error, y sus botones van al costado", async ({ page }) => {
   await ingresarComoDueno(page);
   await page.goto("/panel/sitio/servicios");
   await page.getByRole("list", { name: "Servicios del sitio" }).getByRole("link").first().click();
-  await page.getByRole("button", { name: "Agregar beneficio" }).click();
-  const beneficio = page.getByRole("textbox", { name: "Beneficio 1" });
+  await page.getByRole("button", { name: "Editar beneficios" }).click();
+  const modal = page.getByRole("dialog", { name: "Beneficios" });
+  await modal.getByRole("button", { name: "Agregar beneficio" }).click();
+  const n = await modal.getByRole("textbox", { name: /^Beneficio \d+$/ }).count();
+  const beneficio = modal.getByRole("textbox", { name: `Beneficio ${n}`, exact: true });
   const campo = (await beneficio.boundingBox())!;
-  const quitar = (await page.getByRole("button", { name: "Quitar beneficio 1" }).boundingBox())!;
-  // En el celular el campo usa todo el ancho y los botones van debajo; en la computadora, al costado
-  expect(quitar.y >= campo.y + campo.height).toBe(isMobile);
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
+  const quitar = (await modal.getByRole("button", { name: `Quitar beneficio ${n}` }).boundingBox())!;
+  // Ordenar es poco frecuente (pulido 13.19): los botones van al costado del campo, también en el celular
+  expect(quitar.y).toBeLessThan(campo.y + campo.height);
+  expect(quitar.x).toBeGreaterThan(campo.x + campo.width);
+  await modal.getByRole("button", { name: "Guardar beneficios" }).click();
   await expect(beneficio).toBeFocused();
   await expect(beneficio).toHaveAttribute("aria-invalid", "true");
   await expect(beneficio).toHaveAccessibleDescription(/Escribe el beneficio o quita la fila/);

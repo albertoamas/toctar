@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, inArray, isNotNull, max, TransactionRollbackError } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, max, ne, TransactionRollbackError } from "drizzle-orm";
 import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/db";
 import { contenidoPagina, faq, galeriaItem, servicio, servicioFoto } from "@/db/esquema";
@@ -13,7 +13,7 @@ import { agregarAGaleria } from "./agregar-a-galeria";
 import { ETIQUETA_CONTENIDO, listarGaleria, listarPreguntas, listarServicios, servicioEnSitio } from "./consultas";
 import { galeriaCambiada } from "./galeria-cambiada";
 import { servicioCambiado } from "./servicio-cambiado";
-import { esquemaEditarGaleria, esquemaFotoSeccion, esquemaGaleria, esquemaId, esquemaIdFormulario, esquemaMover, esquemaQuitarFotoSeccion, esquemaServicio, esquemaVisibilidad } from "./esquemas";
+import { esquemaEditarGaleria, esquemaFotoSeccion, esquemaGaleria, esquemaId, esquemaIdFormulario, esquemaMover, esquemaParteServicio, esquemaQuitarFotoSeccion, esquemaVisibilidad, type ParteServicio } from "./esquemas";
 
 // Servicios del sitio (HU-07, RF-11), textos (HU-08, RF-10) y galería (HU-09, RF-12). Entra el dueño o un encargado con el permiso "sitio".
 // Del servicio, aquí solo su página: el alta, el nombre y las variantes son del catálogo (catalogo/acciones.ts).
@@ -23,39 +23,53 @@ const RUTA = "/panel/sitio";
 
 const SLUG_REPETIDO = "Ya hay otra página con esa dirección.";
 
-/** La página del servicio en el sitio: dirección, resumen, beneficios con ícono, pasos, cómo se ven las opciones y si se muestra (HU-07). */
-export async function guardarServicio(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+const GUARDADO: Record<ParteServicio, string> = {
+  resumen: "Resumen guardado.",
+  beneficios: "Beneficios guardados.",
+  pasos: "Pasos guardados.",
+  opciones: "Opciones guardadas.",
+  direccion: "Dirección guardada.",
+};
+
+/**
+ * Una parte de la página del servicio en el sitio (HU-07): el resumen, los beneficios con ícono, los pasos, cómo se ven
+ * las opciones o la dirección. Cada modal de la ficha guarda la suya (pulido 13.19).
+ */
+export async function guardarParteServicio(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const autor = await exigirModulo("sitio");
-  const valores = Object.fromEntries(
-    ["id", "slug", "resumen", "beneficios", "pasos"].map((c) => [c, String(datos.get(c) ?? "")]),
-  );
-  const visible = datos.get("visible") === "on";
+  const valores: Record<string, string> = {};
+  for (const c of ["id", "parte", "slug", "resumen", "beneficios", "pasos"]) {
+    const valor = datos.get(c);
+    if (typeof valor === "string") valores[c] = valor;
+  }
   const opcionesEnEscalera = datos.get("opcionesEnEscalera") === "on";
   // Lo escrito vuelve al formulario si hay un error
-  const devolver = { ...valores, visible: visible ? "on" : "", opcionesEnEscalera: opcionesEnEscalera ? "on" : "" };
-  const entrada = esquemaServicio.safeParse({ ...valores, visible, opcionesEnEscalera });
+  const devolver = { ...valores, opcionesEnEscalera: opcionesEnEscalera ? "on" : "" };
+  const entrada = esquemaParteServicio.safeParse({ ...valores, opcionesEnEscalera });
   if (!entrada.success) return { errores: erroresDe(entrada.error), valores: devolver };
   const d = entrada.data;
 
-  const existentes = await db.select({ id: servicio.id, slug: servicio.slug }).from(servicio);
-  if (!existentes.some((s) => s.id === d.id)) return { mensaje: "Ese servicio ya no existe." };
-  if (existentes.some((s) => s.id !== d.id && s.slug === d.slug)) {
-    return { errores: { slug: SLUG_REPETIDO }, valores: devolver };
+  const [existe] = await db.select({ id: servicio.id }).from(servicio).where(eq(servicio.id, d.id));
+  if (!existe) return { mensaje: "Ese servicio ya no existe." };
+  if (d.parte === "direccion") {
+    const [otro] = await db.select({ id: servicio.id }).from(servicio).where(and(eq(servicio.slug, d.slug), ne(servicio.id, d.id)));
+    if (otro) return { errores: { slug: SLUG_REPETIDO }, valores: devolver };
   }
+  const cambios =
+    d.parte === "resumen"
+      ? { resumen: d.resumen }
+      : d.parte === "beneficios"
+        ? { beneficios: d.beneficios }
+        : d.parte === "pasos"
+          ? { pasos: d.pasos }
+          : d.parte === "opciones"
+            ? { opcionesEnEscalera: d.opcionesEnEscalera }
+            : { slug: d.slug };
 
   try {
     await db
       .update(servicio)
-      .set({
-        slug: d.slug,
-        resumen: d.resumen,
-        beneficios: d.beneficios,
-        pasos: d.pasos,
-        visibleSitio: d.visible,
-        opcionesEnEscalera: d.opcionesEnEscalera,
-        updatedAt: new Date(),
-        updatedBy: Number(autor.id),
-      })
+      .set({ ...cambios, updatedAt: new Date(), updatedBy: Number(autor.id) })
       .where(eq(servicio.id, d.id));
   } catch (error) {
     // Otra persona tomó la misma dirección recién: la base frena la segunda
@@ -64,7 +78,21 @@ export async function guardarServicio(_previo: EstadoFormulario, datos: FormData
   }
 
   servicioCambiado(d.id);
-  return { ok: true, mensaje: "Cambios guardados." };
+  return { ok: true, mensaje: GUARDADO[d.parte] };
+}
+
+/** Mostrar u ocultar la página del servicio en el sitio, desde "Más" de su ficha. Sin resumen no se muestra. */
+export async function cambiarVisibilidadServicio(datos: { id: number; visible: boolean }): Promise<EstadoFormulario> {
+  const autor = await exigirModulo("sitio");
+  const entrada = esquemaVisibilidad.safeParse(datos);
+  if (!entrada.success) return { mensaje: "Ese servicio ya no existe. Recarga la página." };
+  const { id, visible } = entrada.data;
+  const [actual] = await db.select({ resumen: servicio.resumen }).from(servicio).where(eq(servicio.id, id));
+  if (!actual) return { mensaje: "Ese servicio ya no existe. Recarga la página." };
+  if (visible && !actual.resumen.trim()) return { mensaje: "Escribe el resumen antes de mostrarlo en el sitio." };
+  await db.update(servicio).set({ visibleSitio: visible, updatedAt: new Date(), updatedBy: Number(autor.id) }).where(eq(servicio.id, id));
+  servicioCambiado(id);
+  return { ok: true, mensaje: visible ? "Se muestra en el sitio." : "Oculto en el sitio." };
 }
 
 const ERROR_FOTO = "La foto debe ser JPG, PNG o WebP de hasta 5 MB.";

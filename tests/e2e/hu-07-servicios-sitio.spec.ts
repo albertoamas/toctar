@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { abrirNuevoServicio, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER, PNG } from "./apoyo";
+import { abrirNuevoServicio, crearUsuario, ingresar, ingresarComoDueno, mostrarServicio, PERFIL_TALLER, PNG } from "./apoyo";
 
 // HU-07 Servicios del sitio. Criterios: docs/09-pruebas/criterios-entrega-1.md (7.1 a 7.6). Desde la reorganización del
 // panel (C5 §0), el servicio se crea y se nombra en el catálogo; aquí se edita su página.
@@ -33,41 +33,58 @@ test("el dueño crea el servicio en el catálogo y completa su página: benefici
   await page.getByRole("dialog", { name: "Precios de Única" }).getByRole("button", { name: "Cancelar" }).click();
   await page.getByRole("link", { name: "Su página en el sitio" }).click();
   await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+$/);
-  await expect(page.getByLabel("Dirección de la página")).toHaveValue(`encerado-de-prueba-${sufijo(info)}`);
-  // El nombre no se cambia aquí: es del catálogo
+  // El nombre no se cambia aquí: es del catálogo, a un toque desde "Más"
   await expect(page.getByRole("textbox", { name: "Nombre del servicio" })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Abrir en el catálogo" })).toBeVisible();
-
+  const mas = page.getByRole("button", { name: "Más" });
+  await mas.click();
+  await expect(page.getByRole("menuitem", { name: "Abrir en el catálogo" })).toBeVisible();
   // Sin resumen no se muestra en el sitio
-  await page.getByRole("checkbox", { name: /Mostrar en el sitio/ }).check();
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
-  await expect(page.getByText("Escribe un resumen de una o dos frases.")).toBeVisible();
+  await page.getByRole("menuitem", { name: "Mostrar en el sitio" }).click();
+  await expect(page.getByText("Escribe el resumen antes de mostrarlo en el sitio.")).toBeVisible();
+  // La dirección sale del nombre; se cambia en su modal, desde "Más"
+  await mas.click();
+  await page.getByRole("menuitem", { name: "Cambiar dirección de la página" }).click();
+  const direccion = page.getByRole("dialog", { name: "Dirección de la página" });
+  await expect(direccion.getByLabel("Dirección de la página")).toHaveValue(`encerado-de-prueba-${sufijo(info)}`);
+  await direccion.getByRole("button", { name: "Cancelar" }).click();
 
-  await page.getByLabel("Resumen").fill("Encerado a mano que protege la pintura.");
-  await page.getByRole("button", { name: "Agregar beneficio" }).click();
-  await page.getByLabel("Beneficio 1", { exact: true }).fill("Brillo profundo");
-  await page.getByRole("button", { name: "Agregar beneficio" }).click();
-  await page.getByLabel("Beneficio 2", { exact: true }).fill("Repele el agua");
+  // Cada parte se edita en su modal y se guarda sola (pulido 13.19)
+  await page.getByRole("button", { name: "Editar resumen" }).click();
+  const resumen = page.getByRole("dialog", { name: "Resumen" });
+  await resumen.getByLabel("Resumen").fill("Encerado a mano que protege la pintura.");
+  await resumen.getByRole("button", { name: "Guardar resumen" }).click();
+  await expect(resumen).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Arriba de la página" })).toContainText("Encerado a mano que protege la pintura.");
+
+  await page.getByRole("button", { name: "Editar beneficios" }).click();
+  const beneficios = page.getByRole("dialog", { name: "Beneficios" });
+  await beneficios.getByRole("button", { name: "Agregar beneficio" }).click();
+  await beneficios.getByLabel("Beneficio 1", { exact: true }).fill("Brillo profundo");
+  await beneficios.getByRole("button", { name: "Agregar beneficio" }).click();
+  await beneficios.getByLabel("Beneficio 2", { exact: true }).fill("Repele el agua");
   // Cada beneficio con su ícono, de una lista fija (pedido de la demo del 24/10); el nuevo empieza con el genérico
-  await expect(page.getByLabel("Beneficio 1, ícono")).toHaveValue("listo");
-  await page.getByLabel("Beneficio 2, ícono").selectOption({ label: "Agua" });
-  await page.getByRole("button", { name: "Agregar paso" }).click();
-  await page.getByLabel("Paso 1, título", { exact: true }).fill("Lavado técnico");
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
-  await expect(page.getByText("Cambios guardados.")).toBeVisible();
+  await expect(beneficios.getByLabel("Beneficio 1, ícono")).toHaveValue("listo");
+  await beneficios.getByLabel("Beneficio 2, ícono").selectOption({ label: "Agua" });
+  await beneficios.getByRole("button", { name: "Guardar beneficios" }).click();
+  await expect(beneficios).toHaveCount(0);
 
-  // Todo quedó guardado; después se oculta sin borrarlo
+  await page.getByRole("button", { name: "Editar pasos" }).click();
+  const pasos = page.getByRole("dialog", { name: "Cómo lo hacemos" });
+  await pasos.getByRole("button", { name: "Agregar paso" }).click();
+  await pasos.getByLabel("Paso 1, título", { exact: true }).fill("Lavado técnico");
+  await pasos.getByRole("button", { name: "Guardar pasos" }).click();
+  await expect(pasos).toHaveCount(0);
+
+  // Con resumen, se muestra; todo quedó guardado; después se oculta sin borrarlo
+  await mostrarServicio(page, true);
   await page.reload();
-  await expect(page.getByLabel("Beneficio 2", { exact: true })).toHaveValue("Repele el agua");
-  await expect(page.getByLabel("Beneficio 2, ícono")).toHaveValue("agua");
-  await expect(page.getByLabel("Paso 1, título", { exact: true })).toHaveValue("Lavado técnico");
-  await expect(page.getByRole("checkbox", { name: /Mostrar en el sitio/ })).toBeChecked();
-  await page.getByRole("checkbox", { name: /Mostrar en el sitio/ }).uncheck();
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
-  await expect(page.getByText("Cambios guardados.")).toBeVisible();
-  // En el celular el aviso sale arriba, sobre "‹ Servicios": se espera a que se vaya (con el mouse encima no se iría)
-  await expect(page.getByText("Cambios guardados.")).toBeHidden({ timeout: 10_000 });
-  await page.getByRole("link", { name: "Servicios" }).first().click();
+  await expect(page.getByRole("region", { name: "Beneficios" })).toContainText("Repele el agua");
+  await expect(page.getByRole("region", { name: "Cómo lo hacemos" })).toContainText("Lavado técnico");
+  await page.getByRole("button", { name: "Editar beneficios" }).click();
+  await expect(beneficios.getByLabel("Beneficio 2, ícono")).toHaveValue("agua");
+  await beneficios.getByRole("button", { name: "Cancelar" }).click();
+  await mostrarServicio(page, false);
+  await page.getByRole("link", { name: "Volver a Servicios" }).click();
   await expect(page.getByRole("listitem").filter({ hasText: nombre })).toContainText("Oculto");
 });
 
@@ -76,12 +93,15 @@ test("una dirección repetida da error junto al campo", async ({ page }, info) =
   await ingresarComoDueno(page);
   await page.goto("/panel/sitio/servicios");
   await page.getByRole("link", { name: /Pulido de vidrios/ }).click();
-  await page.getByLabel("Dirección de la página").fill("pulido-y-nano-ceramico");
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
-  await expect(page.getByText("Ya hay otra página con esa dirección.")).toBeVisible();
-  await page.getByLabel("Dirección de la página").fill("Pulido Vidrios");
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
-  await expect(page.getByText("La dirección solo lleva minúsculas, números y guiones.")).toBeVisible();
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Cambiar dirección de la página" }).click();
+  const modal = page.getByRole("dialog", { name: "Dirección de la página" });
+  await modal.getByLabel("Dirección de la página").fill("pulido-y-nano-ceramico");
+  await modal.getByRole("button", { name: "Guardar dirección" }).click();
+  await expect(modal.getByText("Ya hay otra página con esa dirección.")).toBeVisible();
+  await modal.getByLabel("Dirección de la página").fill("Pulido Vidrios");
+  await modal.getByRole("button", { name: "Guardar dirección" }).click();
+  await expect(modal.getByText("La dirección solo lleva minúsculas, números y guiones.")).toBeVisible();
 });
 
 test("la foto principal se sube y se ve; un archivo que no es imagen se rechaza", async ({ page }, info) => {
@@ -124,8 +144,10 @@ test("el encargado con el permiso Sitio web entra; sin el permiso o con el perfi
       await page.getByRole("navigation", { name: "Partes del sitio web" }).getByRole("link", { name: /^Servicios/ }).click();
       // Edita la página, pero el servicio (alta, nombre, precios) es del dueño
       await page.getByRole("list", { name: "Servicios del sitio" }).getByRole("link").first().click();
-      await expect(page.getByLabel("Dirección de la página")).toBeVisible();
-      await expect(page.getByRole("link", { name: "Abrir en el catálogo" })).toHaveCount(0);
+      await page.getByRole("button", { name: "Más" }).click();
+      await expect(page.getByRole("menuitem", { name: "Cambiar dirección de la página" })).toBeVisible();
+      await expect(page.getByRole("menuitem", { name: "Abrir en el catálogo" })).toHaveCount(0);
+      await page.keyboard.press("Escape");
       await page.goto("/panel/catalogo");
       await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
     } else await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
