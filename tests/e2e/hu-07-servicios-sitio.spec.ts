@@ -63,8 +63,25 @@ test("el dueño crea el servicio en el catálogo y completa su página: benefici
   await beneficios.getByRole("button", { name: "Agregar beneficio" }).click();
   await beneficios.getByLabel("Beneficio 2", { exact: true }).fill("Repele el agua");
   // Cada beneficio con su ícono, de una lista fija (pedido de la demo del 24/10); el nuevo empieza con el genérico
-  await expect(beneficios.getByLabel("Beneficio 1, ícono")).toHaveValue("listo");
-  await beneficios.getByLabel("Beneficio 2, ícono").selectOption({ label: "Agua" });
+  // Se elige viendo los dibujos, en una cuadrícula (pulido 13.22)
+  await expect(beneficios.getByRole("button", { name: "Beneficio 1, ícono: Listo (genérico)" })).toBeVisible();
+  await beneficios.getByRole("button", { name: /^Beneficio 2, ícono/ }).click();
+  await expect(page.getByRole("menuitemradio", { name: "Listo (genérico)" })).toHaveAttribute("aria-checked", "true");
+  await page.getByRole("menuitemradio", { name: "Agua" }).click();
+  await expect(beneficios.getByRole("button", { name: "Beneficio 2, ícono: Agua" })).toBeVisible();
+  // Con el teclado: las flechas recorren la cuadrícula (abajo, una fila) y Escape la cierra sin cerrar el modal
+  await expect(page.getByRole("menuitemradio")).toHaveCount(0);
+  await beneficios.getByRole("button", { name: /^Beneficio 1, ícono/ }).click();
+  const listo = page.getByRole("menuitemradio", { name: "Listo (genérico)" });
+  await listo.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByRole("menuitemradio", { name: "Protección" })).toBeFocused();
+  const columnas = info.project.name === "celular" ? 3 : 5;
+  await page.keyboard.press("ArrowDown");
+  await expect(page.getByRole("menuitemradio").nth(1 + columnas)).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("menuitemradio")).toHaveCount(0);
+  await expect(beneficios).toBeVisible();
   await beneficios.getByRole("button", { name: "Guardar beneficios" }).click();
   await expect(beneficios).toHaveCount(0);
 
@@ -81,7 +98,7 @@ test("el dueño crea el servicio en el catálogo y completa su página: benefici
   await expect(page.getByRole("region", { name: "Beneficios" })).toContainText("Repele el agua");
   await expect(page.getByRole("region", { name: "Cómo lo hacemos" })).toContainText("Lavado técnico");
   await page.getByRole("button", { name: "Editar beneficios" }).click();
-  await expect(beneficios.getByLabel("Beneficio 2, ícono")).toHaveValue("agua");
+  await expect(beneficios.getByRole("button", { name: "Beneficio 2, ícono: Agua" })).toBeVisible();
   await beneficios.getByRole("button", { name: "Cancelar" }).click();
   await mostrarServicio(page, false);
   await page.getByRole("link", { name: "Volver a Servicios" }).click();
