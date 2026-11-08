@@ -32,7 +32,6 @@ function apariciones(patron: RegExp): Record<string, number> {
 /** Páginas que todavía no dicen su tipo con `PaginaPanel`. Fases 3 y 4; las que solo redirigen se justifican al final. */
 const SIN_PAGINA_PANEL = [
   "src/app/panel/[...resto]/page.tsx",
-  "src/app/panel/agenda/[id]/page.tsx",
   "src/app/panel/cotizaciones/[id]/page.tsx",
   "src/app/panel/ordenes/[id]/page.tsx",
   "src/app/panel/reclamos/[id]/page.tsx",
@@ -42,7 +41,6 @@ const SIN_PAGINA_PANEL = [
 
 /** Anchos de pantalla escritos a mano. Los de un campo o un bloque chico (`max-w-xs`, `max-w-md`) sí valen (§1). */
 const ANCHOS_A_MANO: Record<string, number> = {
-  "src/app/panel/agenda/[id]/page.tsx": 1,
   "src/app/panel/cotizaciones/[id]/page.tsx": 1,
   "src/app/panel/error.tsx": 1,
   "src/app/panel/not-found.tsx": 1,
@@ -60,9 +58,8 @@ const MODALES_A_MANO: Record<string, number> = {
   "src/modulos/usuarios/componentes/acceso-usuario.tsx": 3,
 };
 
-/** Títulos de sección armados a mano. Los que no dicen su motivo se van en la fase 4. */
+/** Títulos de sección armados a mano. Pasan a `Seccion` o `SeccionConEditar` en las fases 3 y 4. */
 const TITULOS_A_MANO: Record<string, number> = {
-  "src/app/panel/agenda/[id]/page.tsx": 1,
   // La semana del tablero: no es un título de sección, solo usa su letra
   "src/app/panel/agenda/page.tsx": 1,
   "src/app/panel/ordenes/[id]/page.tsx": 2,
@@ -76,7 +73,6 @@ const TITULOS_A_MANO: Record<string, number> = {
   "src/modulos/ordenes/componentes/firma-entrega.tsx": 1,
   // La leyenda de un grupo de fotos
   "src/modulos/ordenes/componentes/formulario-publicar.tsx": 1,
-  "src/modulos/pagos/componentes/montos-trabajo.tsx": 1,
   // "Subir fotos": la cabecera dentro de su tarjeta, con su ayuda y el botón de cerrar
   "src/modulos/sitio/componentes/galeria-panel.tsx": 1,
   "src/modulos/usuarios/componentes/acceso-usuario.tsx": 3,
