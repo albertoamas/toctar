@@ -94,10 +94,11 @@ export function FormularioBeneficios({ id, beneficios: iniciales }: { id: number
         maximo={LIMITES.beneficios}
         textoAgregar="Agregar beneficio"
         errores={e}
+        flechasEnFila
         fila={(b, cambiar, i, marca) => (
           // Un renglón, como en el sitio: el ícono a la izquierda del texto (pulido 13.22)
           <span className="flex items-start gap-2">
-            <ElegirIcono valor={b.icono} alCambiar={(icono) => cambiar({ ...b, icono })} etiqueta={`Beneficio ${i + 1}, ícono`} />
+            <ElegirIcono valor={b.icono} alCambiar={(icono) => cambiar({ ...b, icono })} etiqueta={`Beneficio ${i + 1}, ícono`} describedBy={marca["aria-describedby"]} />
             <span className="min-w-0 flex-1">
               <TextoCorto value={b.texto} onChange={(ev) => cambiar({ ...b, texto: ev.target.value })} aria-label={`Beneficio ${i + 1}`} placeholder="Repele el agua y la suciedad" {...marca} />
             </span>
