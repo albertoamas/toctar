@@ -21,7 +21,7 @@ test("los parámetros vacíos o negativos muestran el error y no se guardan", as
   await page.getByRole("navigation", { name: "Partes de la configuración" }).getByRole("link", { name: /^Parámetros/ }).click();
   await expect(page).toHaveURL(/\/panel\/configuracion\/parametros$/);
   // Por tema, en el orden del trabajo (el mantenimiento, desde el pedido 21, es de cada servicio del catálogo; la
-  // consulta, desde el pedido 23, ya no existe: "Cotización sin respuesta" va en Cotizaciones)
+  // consulta, desde el pedido 23, ya no existe: "Cotización sin respuesta" va en los plazos de las cotizaciones)
   // Una ficha con tres partes, cada una en su modal (pulido 13.29)
   await expect(page.getByRole("main").getByRole("heading", { level: 2 })).toHaveText(["Plazos de las cotizaciones", "Textos del PDF", "Agenda"]);
   await expect(page.getByRole("region", { name: "Agenda" })).toContainText("Adelanto sugerido");
@@ -47,9 +47,11 @@ test("los parámetros vacíos o negativos muestran el error y no se guardan", as
   await expect(agenda.getByLabel("Adelanto sugerido")).toHaveValue("-5");
   await agenda.getByRole("button", { name: "Cancelar" }).click();
 
-  // Nada se guardó
+  // Nada se guardó: cada parte sigue con su valor
   await page.reload();
   await expect(page.getByRole("region", { name: "Agenda" })).not.toContainText("-5");
+  await expect(page.getByRole("region", { name: "Plazos de las cotizaciones" })).toContainText(/Validez de la cotización\s*\d+ días/);
+  await expect(page.getByRole("region", { name: "Textos del PDF" })).toContainText(/Condiciones\s*\S+/);
 
   // La dirección de antes de la reorganización (C5 §0) lleva a la nueva
   await page.goto("/panel/configuracion/cotizaciones");

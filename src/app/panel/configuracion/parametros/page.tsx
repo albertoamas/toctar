@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
+import { ListaDatos } from "@/componentes/panel/lista-datos";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { exigirModulo } from "@/lib/sesion";
@@ -43,28 +44,26 @@ async function Contenido() {
             etiquetaEditar={`Editar ${titulo.toLowerCase()}`}
             tituloModal={titulo}
             lectura={
-              // La etiqueta a la izquierda y el valor a la derecha: los números quedan en columna
-              <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-3">
-                {clavesDeSeccion(s).map((c) => {
+              <ListaDatos
+                filas={clavesDeSeccion(s).map((c) => {
                   const p = PARAMETROS[c];
-                  return (
-                    <div key={c} className="contents">
-                      <dt className="text-tinta-suave">{p.etiqueta}</dt>
-                      {p.unidad ? (
-                        <dd className="tabular-nums">
-                          {valores[c]} {p.unidad}
-                        </dd>
-                      ) : (
-                        // Los textos del PDF, en tres líneas: enteros, en su "Editar"
-                        <dd className="line-clamp-3 whitespace-pre-line">{valores[c]}</dd>
-                      )}
-                    </div>
-                  );
+                  return [
+                    p.etiqueta,
+                    p.unidad ? (
+                      <span className="tabular-nums">
+                        {valores[c]} {p.unidad}
+                      </span>
+                    ) : (
+                      // Los textos del PDF, en tres líneas: enteros, en su "Editar"
+                      <span className="line-clamp-3 whitespace-pre-line">{valores[c]}</span>
+                    ),
+                  ];
                 })}
-              </dl>
+              />
             }
           >
-            <FormularioSeccionParametros seccion={s} valores={valores} />
+            {/* Solo los de su sección: los textos largos del PDF no viajan a los otros modales */}
+            <FormularioSeccionParametros seccion={s} valores={Object.fromEntries(clavesDeSeccion(s).map((c) => [c, valores[c]]))} />
           </SeccionConEditar>
         );
       })}

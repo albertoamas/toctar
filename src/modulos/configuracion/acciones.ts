@@ -139,8 +139,12 @@ export async function subirLogo(_previo: EstadoFormulario, datos: FormData): Pro
 export async function guardarParametros(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const autor = await exigirModulo("configuracion");
   const seccion = z.enum(CLAVES_SECCION_PARAMETROS).safeParse(datos.get("seccion"));
-  // Sin una sección válida no hay campo donde mostrar el error: una pestaña abierta con la versión anterior
-  if (!seccion.success) return { mensaje: "No se pudo guardar. Recarga la página." };
+  // Sin una sección válida no hay campo donde mostrar el error: una pestaña abierta con la versión anterior. Lo escrito
+  // vuelve al formulario, que si no se vacía al terminar la acción
+  if (!seccion.success) {
+    const escrito = Object.fromEntries([...datos.entries()].filter(([, v]) => typeof v === "string").map(([c, v]) => [c, String(v)]));
+    return { mensaje: "No se pudo guardar. Recarga la página.", valores: escrito };
+  }
   const claves = clavesDeSeccion(seccion.data);
   const valores = Object.fromEntries(claves.map((c) => [c, String(datos.get(c) ?? "")]));
   const entrada = esquemaSeccionParametros(seccion.data).safeParse(valores);

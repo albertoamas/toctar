@@ -16,7 +16,7 @@ import { clavesDeSeccion, PARAMETROS, SECCIONES_PARAMETROS, type ClaveParametro,
 // cada sección va en el modal de "Editar" de la ficha de Parámetros y guarda solo lo suyo. Los campos de cada sección
 // salen de PARAMETROS: uno nuevo aparece solo en su sección.
 
-type Props = { seccion: SeccionParametros; valores: Record<ClaveParametro, string> };
+type Props = { seccion: SeccionParametros; valores: Partial<Record<ClaveParametro, string>> };
 
 export function FormularioSeccionParametros({ seccion, valores }: Props) {
   const cerrar = useCerrarModal();

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ExternalLinkIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
+import { ListaDatos } from "@/componentes/panel/lista-datos";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { CabeceraSeccion, SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { resumirHorarios } from "@/lib/horarios";
@@ -37,20 +38,6 @@ export default function PaginaNegocio() {
   );
 }
 
-/** Una lista de datos: la etiqueta a la izquierda y el valor a la derecha (los valores quedan en columna). */
-function Datos({ filas }: { filas: [string, React.ReactNode][] }) {
-  return (
-    <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2">
-      {filas.map(([etiqueta, valor]) => (
-        <div key={etiqueta} className="contents">
-          <dt className="text-tinta-suave">{etiqueta}</dt>
-          <dd className="break-words">{valor}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
 const sinCargar = <span className="text-tinta-suave">Sin cargar</span>;
 
 async function Contenido() {
@@ -83,7 +70,7 @@ async function Contenido() {
         etiquetaEditar="Editar contacto"
         tituloModal="Contacto"
         lectura={
-          <Datos
+          <ListaDatos
             filas={[
               ["Nombre", c.nombre],
               ["WhatsApp", c.whatsapp ? `+591 ${whatsAppLocal(c.whatsapp)}` : sinCargar],
@@ -128,7 +115,7 @@ async function Contenido() {
         titulo="Horario de atención"
         etiquetaEditar="Editar horario de atención"
         tituloModal="Horario de atención"
-        lectura={<Datos filas={resumirHorarios(c.horarios).map((g) => [g.dias, g.horario === "cerrado" ? "Cerrado" : g.horario])} />}
+        lectura={<ListaDatos filas={resumirHorarios(c.horarios).map((g) => [g.dias, g.horario === "cerrado" ? "Cerrado" : g.horario])} />}
       >
         <FormularioHorario horarios={c.horarios} />
       </SeccionConEditar>
@@ -139,7 +126,7 @@ async function Contenido() {
         etiquetaEditar="Editar redes sociales"
         tituloModal="Redes sociales"
         lectura={
-          <Datos
+          <ListaDatos
             filas={REDES.map((red) => [
               NOMBRE_RED[red],
               c.redes[red] ? (
@@ -163,7 +150,7 @@ async function Contenido() {
         etiquetaEditar="Editar datos para facturar"
         tituloModal="Datos para facturar"
         lectura={
-          <Datos
+          <ListaDatos
             filas={[
               ["NIT", c.nit ?? sinCargar],
               ["Razón social", c.razonSocial ?? sinCargar],
