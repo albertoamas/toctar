@@ -1,6 +1,7 @@
 "use server";
 
 import { eq, max } from "drizzle-orm";
+import { z } from "zod";
 import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/db";
 import { espacioTaller, negocio, parametro, parteRevision, plantillaMensaje, sucursal, tamanoVehiculo } from "@/db/esquema";
@@ -18,7 +19,7 @@ import {
   mensajeUltimoActivo,
   type Lista,
 } from "./listas";
-import { CLAVES_PARAMETRO, esquemaParametros } from "./parametros";
+import { CLAVES_SECCION_PARAMETROS, clavesDeSeccion, esquemaSeccionParametros, SECCIONES_PARAMETROS, type ClaveParametro } from "./parametros";
 import { esquemaClavePlantilla, esquemaPlantilla, PLANTILLAS } from "./plantillas";
 
 // Configuración del negocio (HU-04) y parámetros (HU-05). Solo el dueño entra al módulo "configuracion".
@@ -131,23 +132,32 @@ export async function subirLogo(_previo: EstadoFormulario, datos: FormData): Pro
 // ---------------------------------------------------------------------------------------------
 // HU-05 Parámetros
 
+/**
+ * Los parámetros de una sección (HU-05): los plazos de las cotizaciones, los textos del PDF o la agenda. Cada modal de la
+ * ficha guarda la suya (pulido 13.29); los de las otras secciones no se tocan.
+ */
 export async function guardarParametros(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const autor = await exigirModulo("configuracion");
-  const valores = Object.fromEntries(CLAVES_PARAMETRO.map((c) => [c, String(datos.get(c) ?? "")]));
-  const entrada = esquemaParametros.safeParse(valores);
+  const seccion = z.enum(CLAVES_SECCION_PARAMETROS).safeParse(datos.get("seccion"));
+  // Sin una sección válida no hay campo donde mostrar el error: una pestaña abierta con la versión anterior
+  if (!seccion.success) return { mensaje: "No se pudo guardar. Recarga la página." };
+  const claves = clavesDeSeccion(seccion.data);
+  const valores = Object.fromEntries(claves.map((c) => [c, String(datos.get(c) ?? "")]));
+  const entrada = esquemaSeccionParametros(seccion.data).safeParse(valores);
   if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
+  const datosValidos = entrada.data as Partial<Record<ClaveParametro, unknown>>;
 
   const ahora = new Date();
   await db.transaction(async (tx) => {
-    for (const clave of CLAVES_PARAMETRO) {
-      const fila = { clave, valor: entrada.data[clave], updatedAt: ahora, updatedBy: Number(autor.id) };
+    for (const clave of claves) {
+      const fila = { clave, valor: datosValidos[clave], updatedAt: ahora, updatedBy: Number(autor.id) };
       await tx.insert(parametro).values(fila).onConflictDoUpdate({ target: parametro.clave, set: fila });
     }
   });
 
   updateTag(ETIQUETA_PARAMETROS);
   revalidatePath(`${RUTA}/parametros`);
-  return { ok: true, mensaje: "Cambios guardados.", valores: Object.fromEntries(CLAVES_PARAMETRO.map((c) => [c, String(entrada.data[c])])) };
+  return { ok: true, mensaje: SECCIONES_PARAMETROS[seccion.data].guardado };
 }
 
 function despuesDeCambiarLista() {

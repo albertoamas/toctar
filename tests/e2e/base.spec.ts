@@ -1,5 +1,5 @@
 import { expect, test, type Locator } from "@playwright/test";
-import { abrirNuevoServicio, ingresarComoDueno } from "./apoyo";
+import { abrirNuevoServicio, consultar, crearUsuario, ingresarComoDueno } from "./apoyo";
 
 // Pruebas de humo de la iteración 0: la app arranca, conecta con la base y
 // las dos áreas (sitio y panel) cargan con su navegación.
@@ -161,14 +161,18 @@ test("el panel no se sale de la pantalla en el celular y su menú queda a mano",
 // Pulido visual 1.5
 test("el aviso de guardado no tapa el botón de guardar", async ({ page }, info) => {
   test.skip(info.project.name !== "celular", "En el celular es donde tapaba");
+  // En la edición de un usuario propio: es la que tiene la barra de guardar fija abajo (Parámetros ya va en modales)
+  const usuario = `aviso-${info.retry}-${Date.now()}`;
+  await crearUsuario({ usuario, nombre: "Aviso de prueba", contrasena: "encargado-123", rol: "encargado", permisos: ["agenda"] });
+  const [{ id }] = await consultar<{ id: number }>("select id from usuario where nombre_usuario = $1", [usuario]);
   await ingresarComoDueno(page);
-  await page.goto("/panel/configuracion/parametros");
-  const guardar = page.getByRole("button", { name: "Guardar cambios" });
-  // Con un cambio se activa (pulido 13.15). Un espacio al final: al guardar se quita, y no cambia lo que usan otras pruebas
-  const formas = page.getByLabel("Formas de pago");
-  await expect(formas).toBeVisible();
+  await page.goto(`/panel/usuarios/${id}`);
+  const guardar = page.getByRole("button", { name: "Guardar cambios" }).first();
+  // Con un cambio se activa (pulido 13.15)
+  const nombre = page.getByLabel("Nombre", { exact: true });
+  await expect(nombre).toBeVisible();
   await page.waitForLoadState("networkidle");
-  await formas.fill(`${await formas.inputValue()} `);
+  await nombre.fill("Aviso de prueba cambiado");
   await expect(guardar).toBeEnabled();
   await guardar.scrollIntoViewIfNeeded();
   await guardar.click();
