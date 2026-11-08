@@ -339,7 +339,7 @@ export async function guardarPregunta(_previo: EstadoFormulario, datos: FormData
   }
 
   despuesDeCambiarContenido("preguntas");
-  return { ok: true, mensaje: id ? "Cambios guardados." : "Pregunta agregada." };
+  return { ok: true, mensaje: id ? "Pregunta guardada." : "Pregunta agregada." };
 }
 
 export async function moverPregunta(datos: { id: number; direccion: Direccion }): Promise<EstadoFormulario> {
