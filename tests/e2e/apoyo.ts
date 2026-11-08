@@ -271,3 +271,10 @@ export async function abrirParteNegocio(page: Page, parte: string): Promise<Loca
   await expect(modal).toBeVisible();
   return modal;
 }
+
+/** Cancela un modal con cambios sin guardar: confirma "Salir sin guardar" y espera a que se cierre (C6). */
+export async function cancelarConCambios(page: Page, modal: Locator): Promise<void> {
+  await modal.getByRole("button", { name: "Cancelar" }).click();
+  await page.getByRole("dialog", { name: "¿Salir sin guardar?" }).getByRole("button", { name: "Salir sin guardar" }).click();
+  await expect(modal).toHaveCount(0);
+}

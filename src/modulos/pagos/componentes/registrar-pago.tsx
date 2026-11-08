@@ -7,7 +7,7 @@ import { useHidratado } from "@/componentes/hidratado";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
-import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, ModalFormulario, PieModal, useCambioFueraDelFormulario, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
@@ -84,7 +84,8 @@ function Formulario({ trabajoId, saldo, hoy, conPagos }: Props) {
   const [tipo, setTipo] = useState<TipoPago | "">(conPagos ? "saldo" : "adelanto");
   const [metodo, setMetodo] = useState<MetodoPago | "">("");
   const [fecha, setFecha] = useState(hoy);
-  const { setComprobante, preparando, errorFoto, enviar } = useEnvioConComprobante(accion);
+  const { comprobante, setComprobante, preparando, errorFoto, enviar } = useEnvioConComprobante(accion);
+  useCambioFueraDelFormulario(!!comprobante);
 
   const ocupado = enviando || preparando;
   return (
@@ -108,7 +109,7 @@ function Formulario({ trabajoId, saldo, hoy, conPagos }: Props) {
         <Button type="submit" disabled={ocupado}>
           {preparando ? "Preparando foto…" : enviando ? "Registrando…" : "Registrar pago"}
         </Button>
-        <CancelarModal />
+        <CancelarModal enviando={ocupado} />
       </PieModal>
     </form>
   );

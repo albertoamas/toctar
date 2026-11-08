@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { useRenovarBaseModal } from "@/componentes/panel/modal-formulario";
 import { consultarEspacios } from "../acciones";
 import type { EspacioDisponible } from "../consultas";
 import { DIAS_MAXIMOS_TRABAJO } from "../reglas";
@@ -50,6 +51,17 @@ export function useEspaciosLibres(
 
   const desactualizada = completas && claveLista !== `${fechaInicio}|${fechaFin}`;
   const buscando = pendiente || desactualizada;
+
+  // En un modal, la primera lista llega con el modal ya abierto y le da su valor al espacio: eso no lo cambió la persona.
+  // Solo si es para las fechas con que se abrió: si ya las movió, sí hay un cambio
+  const renovarBase = useRenovarBaseModal();
+  const fechasAlAbrir = useRef<string | null>(`${fechaInicio}|${fechaFin}`);
+  useEffect(() => {
+    if (fechasAlAbrir.current === null || buscando || claveLista !== fechasAlAbrir.current) return;
+    fechasAlAbrir.current = null;
+    renovarBase();
+  }, [buscando, claveLista, renovarBase]);
+
   const libres = completas ? (espacios ?? []).filter((x) => x.libre) : [];
   const ayuda =
     completas && (buscando || espacios === null)

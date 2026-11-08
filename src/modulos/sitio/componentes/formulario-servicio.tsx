@@ -1,20 +1,17 @@
 "use client";
 
-import { useActionState, useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useFocoEnError } from "@/componentes/foco-en-error";
-import { avisarResultado, conAviso } from "@/componentes/panel/avisos";
+import { avisarResultado } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { EditorLista } from "@/componentes/panel/editor-lista";
 import { MenuMas } from "@/componentes/panel/menu-mas";
-import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
+import { ModalFormulario, PieGuardar, useFormularioEnModal } from "@/componentes/panel/modal-formulario";
 import { TextoCorto } from "@/componentes/panel/texto-corto";
-import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { Beneficio, Paso } from "@/db/esquema";
-import type { EstadoFormulario } from "@/lib/formularios";
 import { cambiarVisibilidadServicio, guardarParteServicio } from "../acciones";
 import { iconoDe } from "../beneficios";
 import { LIMITES, type ParteServicio } from "../esquemas";
@@ -25,28 +22,7 @@ import { ElegirIcono } from "./elegir-icono";
 // formulario con todo abierto (cinco pantallas en el celular) y un "Guardar cambios" al final, mezclado con fotos que
 // se guardaban al momento.
 
-/** El formulario de una parte: se guarda sola y cierra su modal al guardar. */
-function useParte() {
-  const cerrar = useCerrarModal();
-  const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
-    conAviso(guardarParteServicio, (r) => r.ok && cerrar()),
-    {},
-  );
-  const formulario = useRef<HTMLFormElement>(null);
-  useFocoEnError(formulario, estado);
-  return { accion, enviando, formulario, e: estado.errores ?? {}, v: estado.valores };
-}
-
-function Pie({ texto, enviando }: { texto: string; enviando: boolean }) {
-  return (
-    <PieModal>
-      <Button type="submit" disabled={enviando}>
-        {enviando ? "Guardando…" : texto}
-      </Button>
-      <CancelarModal />
-    </PieModal>
-  );
-}
+const useParte = () => useFormularioEnModal(guardarParteServicio);
 
 function Ocultos({ id, parte }: { id: number; parte: ParteServicio }) {
   return (
@@ -72,7 +48,7 @@ export function FormularioResumen({ id, resumen }: { id: number; resumen: string
           aria-describedby={e.resumen ? "resumen-error" : "resumen-ayuda"}
         />
       </Campo>
-      <Pie texto="Guardar resumen" enviando={enviando} />
+      <PieGuardar texto="Guardar resumen" enviando={enviando} />
     </form>
   );
 }
@@ -105,7 +81,7 @@ export function FormularioBeneficios({ id, beneficios: iniciales }: { id: number
           </span>
         )}
       />
-      <Pie texto="Guardar beneficios" enviando={enviando} />
+      <PieGuardar texto="Guardar beneficios" enviando={enviando} />
     </form>
   );
 }
@@ -133,7 +109,7 @@ export function FormularioPasos({ id, pasos: iniciales }: { id: number; pasos: P
           </>
         )}
       />
-      <Pie texto="Guardar pasos" enviando={enviando} />
+      <PieGuardar texto="Guardar pasos" enviando={enviando} />
     </form>
   );
 }
@@ -151,7 +127,7 @@ export function FormularioOpciones({ id, escalera: inicial }: { id: number; esca
           <span className="text-sm text-tinta-suave">Por ejemplo 1, 2, 3, 5 y 10 años: el sitio las muestra como escalones, cada una con una capa más gruesa.</span>
         </span>
       </label>
-      <Pie texto="Guardar opciones" enviando={enviando} />
+      <PieGuardar texto="Guardar opciones" enviando={enviando} />
     </form>
   );
 }
@@ -176,7 +152,7 @@ function FormularioDireccion({ id, slug }: { id: number; slug: string }) {
           />
         </div>
       </Campo>
-      <Pie texto="Guardar dirección" enviando={enviando} />
+      <PieGuardar texto="Guardar dirección" enviando={enviando} />
     </form>
   );
 }

@@ -46,6 +46,14 @@ test("reprogramar solo ofrece espacios libres en las nuevas fechas y mueve la re
   await page.getByRole("button", { name: "Más" }).click();
   await page.getByRole("menuitem", { name: "Reprogramar" }).click();
   const form = page.getByRole("form", { name: "Reprogramar" });
+  // Los espacios libres llegan con el modal abierto: eso no es un cambio de la persona (C6, sistema-del-panel.md §4)
+  await expect(form.getByLabel("Espacio", { exact: true })).toBeEnabled();
+  await form.getByRole("button", { name: "Cancelar" }).click();
+  await expect(form).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "¿Salir sin guardar?" })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Reprogramar" }).click();
   await form.getByLabel("Ingresa el").fill(d10);
   await form.getByLabel("Entrega aproximada").fill(d10);
   const espacio = form.getByLabel("Espacio", { exact: true });

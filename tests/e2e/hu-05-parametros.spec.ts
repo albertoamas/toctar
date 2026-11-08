@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { ingresarComoDueno } from "./apoyo";
+import { cancelarConCambios, ingresarComoDueno } from "./apoyo";
 
 // HU-05 Parámetros del sistema. Criterios: docs/09-pruebas/criterios-entrega-1.md (5.1 a 5.5).
 // Los parámetros y las listas son únicos: las pruebas que guardan corren solo en escritorio.
@@ -32,20 +32,20 @@ test("los parámetros vacíos o negativos muestran el error y no se guardan", as
   await expect(plazos.getByText("Entre 1 y 365 días.")).toBeVisible();
   // El error recibe el foco (pulido 6.3)
   await expect(plazos.getByLabel("Validez de la cotización")).toBeFocused();
-  await plazos.getByRole("button", { name: "Cancelar" }).click();
+  await cancelarConCambios(page, plazos);
 
   const pdf = await abrir(page, "Textos del PDF");
   await pdf.getByLabel("Condiciones").fill("");
   await pdf.getByRole("button", { name: "Guardar textos del PDF" }).click();
   await expect(pdf.getByText("Escribe las condiciones: sale en el PDF de la cotización.")).toBeVisible();
-  await pdf.getByRole("button", { name: "Cancelar" }).click();
+  await cancelarConCambios(page, pdf);
 
   const agenda = await abrir(page, "Agenda");
   await agenda.getByLabel("Adelanto sugerido").fill("-5");
   await agenda.getByRole("button", { name: "Guardar agenda" }).click();
   await expect(agenda.getByText("Escribe un monto mayor a cero, hasta Bs 100 000.")).toBeVisible();
   await expect(agenda.getByLabel("Adelanto sugerido")).toHaveValue("-5");
-  await agenda.getByRole("button", { name: "Cancelar" }).click();
+  await cancelarConCambios(page, agenda);
 
   // Nada se guardó: cada parte sigue con su valor
   await page.reload();

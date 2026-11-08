@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { cn } from "cn";
-import { CancelarModal, ModalFormulario, PieModal } from "@/componentes/panel/modal-formulario";
+import { contenidoFormulario } from "@/componentes/panel/contenido-formulario";
+import { PreguntaSalir } from "@/componentes/panel/modal-formulario";
 import { Button } from "@/componentes/ui/button";
 
 // Componente de cliente: se usa dentro de otros componentes de cliente (recibe funciones como props).
@@ -16,17 +17,6 @@ import { Button } from "@/componentes/ui/button";
 type Estado = { ok?: boolean };
 
 /**
- * Lo que tiene el formulario ahora. Los archivos, por nombre y tamaño. Ordenado: el orden de campos repetidos no es un
- * cambio (desmarcar y volver a marcar un permiso lo manda al final). El de las filas de una lista sí cuenta: va adentro
- * de un solo campo.
- */
-function contenido(formulario: HTMLFormElement): string {
-  const pares: string[] = [];
-  for (const [campo, valor] of new FormData(formulario)) pares.push(JSON.stringify([campo, valor instanceof File ? `archivo:${valor.name}:${valor.size}` : valor]));
-  return pares.sort().join();
-}
-
-/**
  * Lo que tenía al dibujarse en el servidor, y no lo que tiene al hidratar: lo escrito antes de eso en un celular lento, o
  * lo que restaura el navegador al recargar, sí es un cambio. Una copia sin tocar el formulario. Los menús van con su valor
  * de ahora: React no marca la opción por defecto de uno controlado, y la copia caería en la primera.
@@ -36,7 +26,7 @@ function contenidoAlDibujarse(formulario: HTMLFormElement): string {
   copia.reset();
   const menus = formulario.querySelectorAll("select");
   copia.querySelectorAll("select").forEach((menu, i) => (menu.value = menus[i].value));
-  return contenido(copia);
+  return contenidoFormulario(copia);
 }
 
 function useCambiosSinGuardar(formulario: RefObject<HTMLFormElement | null>, estado?: Estado): boolean {
@@ -50,7 +40,7 @@ function useCambiosSinGuardar(formulario: RefObject<HTMLFormElement | null>, est
     let cuadro = 0;
     const revisar = () => {
       cancelAnimationFrame(cuadro);
-      cuadro = requestAnimationFrame(() => setHay(contenido(form) !== base.current));
+      cuadro = requestAnimationFrame(() => setHay(contenidoFormulario(form) !== base.current));
     };
     // Lo que se escribe avisa; una lista (EditorLista) y los menús propios cambian un campo oculto, sin evento
     const observador = new MutationObserver(revisar);
@@ -69,7 +59,7 @@ function useCambiosSinGuardar(formulario: RefObject<HTMLFormElement | null>, est
     const form = formulario.current;
     if (!estado?.ok || !form) return;
     const cuadro = requestAnimationFrame(() => {
-      base.current = contenido(form);
+      base.current = contenidoFormulario(form);
       setHay(false);
     });
     return () => cancelAnimationFrame(cuadro);
@@ -120,23 +110,16 @@ function PreguntarAlSalir({ hay }: { hay: boolean }) {
   }, [hay]);
 
   return (
-    <ModalFormulario titulo="¿Salir sin guardar?" abierto={destino !== null} alCambiar={(abierto) => !abierto && setDestino(null)}>
-      <p>Tienes cambios sin guardar en esta pantalla. Si sales, se pierden.</p>
-      <PieModal>
-        <CancelarModal texto="Seguir editando" focoInicial />
-        <Button
-          type="button"
-          variant="destructive"
-          onClick={() => {
-            if (destino instanceof HTMLFormElement) destino.requestSubmit();
-            else if (destino) router.push(destino as Route);
-            setDestino(null);
-          }}
-        >
-          Salir sin guardar
-        </Button>
-      </PieModal>
-    </ModalFormulario>
+    <PreguntaSalir
+      abierta={destino !== null}
+      texto="Tienes cambios sin guardar en esta pantalla. Si sales, se pierden."
+      alSeguir={() => setDestino(null)}
+      alSalir={() => {
+        if (destino instanceof HTMLFormElement) destino.requestSubmit();
+        else if (destino) router.push(destino as Route);
+        setDestino(null);
+      }}
+    />
   );
 }
 
