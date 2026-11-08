@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
@@ -25,8 +24,7 @@ export const metadata: Metadata = { title: "Nueva cotización" };
 export default function PaginaNuevaCotizacion({ searchParams }: PageProps<"/panel/cotizaciones/nueva">) {
   return (
     <section className="flex max-w-3xl flex-col gap-6">
-      <EnlaceVolver href="/panel/cotizaciones">Cotizaciones</EnlaceVolver>
-      <EncabezadoPagina titulo="Nueva cotización" />
+      <EncabezadoPagina titulo="Nueva cotización" volver={{ href: "/panel/cotizaciones", texto: "Cotizaciones" }} />
       <Suspense fallback={<Cargando />}>
         <Contenido searchParams={searchParams} />
       </Suspense>

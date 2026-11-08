@@ -2,7 +2,6 @@ import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { cn } from "cn";
-import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
@@ -49,7 +48,7 @@ export default function PaginaNuevaReserva({ searchParams }: PageProps<"/panel/a
       <Suspense
         fallback={
           <>
-            <EncabezadoPagina titulo="Nueva reserva" />
+            <EncabezadoPagina titulo="Nueva reserva" volver={{ href: "/panel/agenda", texto: "Agenda" }} />
             <Cargando />
           </>
         }
@@ -64,8 +63,7 @@ export default function PaginaNuevaReserva({ searchParams }: PageProps<"/panel/a
 function Encabezado() {
   return (
     <>
-      <EnlaceVolver href="/panel/agenda">Agenda</EnlaceVolver>
-      <EncabezadoPagina titulo="Nueva reserva" />
+      <EncabezadoPagina titulo="Nueva reserva" volver={{ href: "/panel/agenda", texto: "Agenda" }} />
     </>
   );
 }

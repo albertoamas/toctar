@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
-import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
@@ -50,8 +49,7 @@ async function Entrega({ params }: Pick<PageProps<"/panel/ordenes/[id]/entregar"
 
   return (
     <>
-      <EnlaceVolver href={`/panel/ordenes/${o.id}`}>Orden</EnlaceVolver>
-      <EncabezadoPagina titulo={`Entregar ${o.placa}`}>{[o.cliente, detalleVehiculo(o).join(" ")].filter(Boolean).join(", ")}</EncabezadoPagina>
+      <EncabezadoPagina titulo={`Entregar ${o.placa}`} volver={{ href: `/panel/ordenes/${o.id}`, texto: "Orden" }}>{[o.cliente, detalleVehiculo(o).join(" ")].filter(Boolean).join(", ")}</EncabezadoPagina>
 
       {conPagos ? (
         <MontosTrabajo trabajoId={o.id} montos={o.montos} cerrado={false} hoy={hoy} cobrar />

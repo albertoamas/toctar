@@ -1,7 +1,6 @@
 import type { Metadata, Route } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
@@ -47,8 +46,7 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/client
   const volver = parametros.desde === "comprador" && nuevo ? { href: `/panel/clientes/${nuevo.id}` as Route, texto: nuevo.nombre } : { href: `/panel/clientes/${clienteId}` as Route, texto: v.dueno };
   const encabezado = (contexto: string) => (
     <>
-      <EnlaceVolver href={volver.href}>{volver.texto}</EnlaceVolver>
-      <EncabezadoPagina titulo={`Cambiar de dueño ${v.placa}`}>{[detalle && `${detalle}.`, contexto].filter(Boolean).join(" ")}</EncabezadoPagina>
+      <EncabezadoPagina titulo={`Cambiar de dueño ${v.placa}`} volver={volver}>{[detalle && `${detalle}.`, contexto].filter(Boolean).join(" ")}</EncabezadoPagina>
     </>
   );
   const ahora = `Ahora es de ${v.dueno}.`;

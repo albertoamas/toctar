@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
-import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
@@ -51,8 +50,7 @@ async function Recepcion({ params }: Pick<PageProps<"/panel/ordenes/[id]/recibir
 
   return (
     <>
-      {verAgenda ? <EnlaceVolver href={`/panel/agenda/${o.id}`}>Reserva</EnlaceVolver> : <EnlaceVolver href="/panel/ordenes">Órdenes</EnlaceVolver>}
-      <EncabezadoPagina titulo={`Recibir ${o.placa}`}>
+      <EncabezadoPagina titulo={`Recibir ${o.placa}`} volver={verAgenda ? { href: `/panel/agenda/${o.id}`, texto: "Reserva" } : { href: "/panel/ordenes", texto: "Órdenes" }}>
         {o.cliente}, {detalle.length > 0 ? `${detalle.join(" ")} (tamaño: ${o.tamano})` : `tamaño: ${o.tamano}`}
       </EncabezadoPagina>
       {!puedeRecibirse(o, hoy) ? (

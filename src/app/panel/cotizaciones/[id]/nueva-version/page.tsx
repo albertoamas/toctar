@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
-import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
@@ -42,9 +41,8 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/cotiza
 
   return (
     <section className="flex flex-col gap-6">
-      <EnlaceVolver href={volver}>{datos.desde ? `Cotización ${datos.desde.numero}` : "Cotización"}</EnlaceVolver>
       <div className="flex flex-col gap-2">
-        <EncabezadoPagina titulo={datos.desde ? `Versión ${datos.desde.version + 1}` : "Nueva versión"}>
+        <EncabezadoPagina titulo={datos.desde ? `Versión ${datos.desde.version + 1}` : "Nueva versión"} volver={{ href: volver, texto: datos.desde ? `Cotización ${datos.desde.numero}` : "Cotización" }}>
           {datos.cliente}, {datos.placa} ({datos.tamano})
         </EncabezadoPagina>
         {datos.desde && <p className="text-sm text-tinta-suave">La versión {datos.desde.version} queda como estaba, con su PDF.</p>}

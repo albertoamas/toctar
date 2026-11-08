@@ -106,7 +106,7 @@ test("«Aceptó» la deja en Por reservar de la Agenda; desde ahí se reserva y 
   await expect(fila).toContainText("700 Bs");
   await fila.click();
   await expect(page).toHaveURL(new RegExp(`cotizacion=${c.cotizacionId}$`));
-  await expect(page.getByRole("main").getByRole("link", { name: "Agenda", exact: true })).toHaveAttribute("href", "/panel/agenda");
+  await expect(page.getByRole("main").getByRole("link", { name: "Volver a Agenda" })).toHaveAttribute("href", "/panel/agenda");
   await reservar(page, dia);
   // El aviso flotante dice qué pasó, y no se repite al recargar
   const aviso = page.getByText(/^Reservada para el /);
@@ -196,7 +196,7 @@ test("el encargado sin Pagos elige al cliente y reserva su cotización, sin ver 
   await expect(page.getByText("Reserva sin cotización", { exact: true })).toHaveCount(0);
   await suyas.getByRole("link").click();
   // Sin Cotizaciones, "Volver" lleva a la Agenda
-  await expect(page.getByRole("main").getByRole("link", { name: "Agenda", exact: true })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("link", { name: "Volver a Agenda" })).toBeVisible();
   await reservar(page, dia);
   await expect(page.getByText(/Bs/)).toHaveCount(0);
 });
