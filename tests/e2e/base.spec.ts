@@ -299,14 +299,17 @@ test("en Preguntas, Agregar va arriba y en rojo, el error recibe el foco y tocar
   expect((await agregar.boundingBox())!.y).toBeLessThan((await lista.boundingBox())!.y);
   await expect(agregar).toHaveCSS("background-color", "rgb(227, 6, 19)");
   await agregar.click();
-  await page.getByRole("button", { name: "Agregar", exact: true }).click();
-  await expect(page.getByLabel("Pregunta", { exact: true })).toBeFocused();
-  await page.getByRole("button", { name: "Cancelar" }).click();
-  // Tocar el texto de la primera pregunta abre su edición
+  // En su modal (pulido 13.24): enviar vacía deja el foco en la pregunta, con su error
+  const nueva = page.getByRole("dialog", { name: "Nueva pregunta" });
+  await nueva.getByRole("button", { name: "Agregar pregunta" }).click();
+  await expect(nueva.getByLabel("Pregunta", { exact: true })).toBeFocused();
+  await nueva.getByRole("button", { name: "Cancelar" }).click();
+  await expect(nueva).toHaveCount(0);
+  // Tocar la primera pregunta abre su edición
   const primera = lista.getByRole("listitem").first();
   const texto = (await primera.locator(".font-semibold").first().textContent())!.trim();
   await primera.locator(".font-semibold").first().click();
-  await expect(page.getByLabel("Pregunta", { exact: true })).toHaveValue(texto);
+  await expect(page.getByRole("dialog", { name: "Editar pregunta" }).getByLabel("Pregunta", { exact: true })).toHaveValue(texto);
 });
 
 test("en la Galería del panel, subir sin nada marca todo junto y el foco va a la foto", async ({ page }) => {

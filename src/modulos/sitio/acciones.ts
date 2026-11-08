@@ -326,12 +326,15 @@ export async function quitarFotoDePagina(pagina: string): Promise<EstadoFormular
 export async function guardarPregunta(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   await exigirModulo("sitio");
   const valores = { pregunta: String(datos.get("pregunta") ?? ""), respuesta: String(datos.get("respuesta") ?? "") };
-  const entrada = esquemaPregunta.safeParse({ ...valores, id: datos.get("id") || undefined });
+  // "Mostrar en el sitio" viene solo al editar: el texto y si se muestra se guardan juntos, en un solo cambio
+  const visible = datos.has("visible") ? datos.get("visible") === "on" : undefined;
+  const entrada = esquemaPregunta.safeParse({ ...valores, id: datos.get("id") || undefined, visible });
   if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
   const { id, pregunta, respuesta } = entrada.data;
 
   if (id) {
-    const [editada] = await db.update(faq).set({ pregunta, respuesta }).where(eq(faq.id, id)).returning({ id: faq.id });
+    const cambios = entrada.data.visible === undefined ? { pregunta, respuesta } : { pregunta, respuesta, visible: entrada.data.visible };
+    const [editada] = await db.update(faq).set(cambios).where(eq(faq.id, id)).returning({ id: faq.id });
     if (!editada) return { mensaje: "Esa pregunta ya no existe. Recarga la página." };
   } else {
     const [{ ultimo }] = await db.select({ ultimo: max(faq.orden) }).from(faq);
@@ -339,7 +342,7 @@ export async function guardarPregunta(_previo: EstadoFormulario, datos: FormData
   }
 
   despuesDeCambiarContenido("preguntas");
-  return { ok: true, mensaje: id ? "Cambios guardados." : "Pregunta agregada." };
+  return { ok: true, mensaje: id ? "Pregunta guardada." : "Pregunta agregada." };
 }
 
 export async function moverPregunta(datos: { id: number; direccion: Direccion }): Promise<EstadoFormulario> {
@@ -355,17 +358,6 @@ export async function moverPregunta(datos: { id: number; direccion: Direccion })
   });
   despuesDeCambiarContenido("preguntas");
   return { ok: true };
-}
-
-export async function cambiarVisibilidadPregunta(datos: { id: number; visible: boolean }): Promise<EstadoFormulario> {
-  await exigirModulo("sitio");
-  const entrada = esquemaVisibilidad.safeParse(datos);
-  if (!entrada.success) return { mensaje: "Esa pregunta ya no existe. Recarga la página." };
-  const { id, visible } = entrada.data;
-  const [fila] = await db.update(faq).set({ visible }).where(eq(faq.id, id)).returning({ id: faq.id });
-  if (!fila) return { mensaje: "Esa pregunta ya no existe. Recarga la página." };
-  despuesDeCambiarContenido("preguntas");
-  return { ok: true, mensaje: visible ? "La pregunta se ve en el sitio." : "Pregunta oculta: no se ve en el sitio." };
 }
 
 /** Las preguntas frecuentes no tienen historial: se eliminan de verdad. */

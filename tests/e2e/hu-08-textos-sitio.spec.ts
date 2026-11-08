@@ -65,32 +65,49 @@ test("preguntas frecuentes: agregar, editar, ordenar, ocultar y eliminar", async
   const lista = page.getByRole("list", { name: "Preguntas frecuentes" });
   await expect(lista.getByRole("listitem")).toHaveCount(5);
 
-  // Agregar: vacía da error
+  // Agregar, en su modal (pulido 13.24): vacía da error
   await page.getByRole("button", { name: "Agregar pregunta" }).click();
-  await page.getByRole("button", { name: "Agregar", exact: true }).click();
-  await expect(page.getByText("Escribe la pregunta.")).toBeVisible();
-  await page.getByLabel("Pregunta", { exact: true }).fill("¿Atienden los domingos?");
-  await page.getByLabel("Respuesta").fill("No, de lunes a sábado.");
-  await page.getByRole("button", { name: "Agregar", exact: true }).click();
+  const nueva = page.getByRole("dialog", { name: "Nueva pregunta" });
+  await nueva.getByRole("button", { name: "Agregar pregunta" }).click();
+  await expect(nueva.getByText("Escribe la pregunta.")).toBeVisible();
+  await nueva.getByLabel("Pregunta", { exact: true }).fill("¿Atienden los domingos?");
+  await nueva.getByLabel("Respuesta").fill("No, de lunes a sábado.");
+  await nueva.getByRole("button", { name: "Agregar pregunta" }).click();
   await expect(page.getByText("Pregunta agregada.")).toBeVisible();
+  await expect(nueva).toHaveCount(0);
   await expect(lista.getByRole("listitem")).toHaveCount(6);
 
-  // Editar y subir
+  // Editar: tocar la fila abre su modal
   await page.getByRole("button", { name: "Editar: ¿Atienden los domingos?" }).click();
-  await page.getByLabel("Respuesta").fill("No. Atendemos de lunes a sábado.");
-  await page.getByRole("button", { name: "Guardar", exact: true }).click();
+  const editar = page.getByRole("dialog", { name: "Editar pregunta" });
+  await editar.getByLabel("Respuesta").fill("No. Atendemos de lunes a sábado.");
+  await editar.getByRole("button", { name: "Guardar pregunta" }).click();
+  await expect(page.getByText("Pregunta guardada.")).toBeVisible();
   await expect(lista).toContainText("No. Atendemos de lunes a sábado.");
-  await page.getByRole("button", { name: "Subir: ¿Atienden los domingos?" }).click();
+
+  // Subir, en "Cambiar orden"
+  await page.getByRole("button", { name: "Cambiar orden" }).click();
+  const orden = page.getByRole("dialog", { name: "Orden en el sitio" });
+  await orden.getByRole("button", { name: "Subir ¿Atienden los domingos?" }).click();
+  await expect(orden.getByRole("listitem").nth(4)).toContainText("¿Atienden los domingos?");
+  await orden.getByRole("button", { name: "Listo" }).click();
   await expect(lista.getByRole("listitem").nth(4)).toContainText("¿Atienden los domingos?");
 
-  // Ocultar
-  await page.getByRole("button", { name: "Ocultar: ¿Atienden los domingos?" }).click();
+  // Ocultar: en su modal, sin "Mostrar en el sitio"
+  await page.getByRole("button", { name: "Editar: ¿Atienden los domingos?" }).click();
+  await editar.getByRole("checkbox", { name: /Mostrar en el sitio/ }).uncheck();
+  await editar.getByRole("button", { name: "Guardar pregunta" }).click();
+  await expect(editar).toHaveCount(0);
   await expect(lista.getByRole("listitem").nth(4)).toContainText("Oculta");
 
-  // Eliminar, con confirmación
-  await page.getByRole("button", { name: "Eliminar: ¿Atienden los domingos?" }).click();
-  await page.getByRole("button", { name: "Eliminar pregunta" }).click();
+  // Eliminar, al pie de su modal y con confirmación (el foco en "Cancelar")
+  await page.getByRole("button", { name: "Editar: ¿Atienden los domingos?" }).click();
+  await editar.getByRole("button", { name: "Eliminar", exact: true }).click();
+  const confirmar = page.getByRole("dialog", { name: "¿Eliminar esta pregunta?" });
+  await expect(confirmar.getByRole("button", { name: "Cancelar" })).toBeFocused();
+  await confirmar.getByRole("button", { name: "Eliminar pregunta" }).click();
   await expect(page.getByText("Pregunta eliminada.")).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(lista.getByRole("listitem")).toHaveCount(5);
 });
 

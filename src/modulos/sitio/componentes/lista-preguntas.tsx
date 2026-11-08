@@ -1,110 +1,120 @@
 "use client";
 
 import { useActionState, useRef, useState, useTransition } from "react";
-import { ArrowDownIcon, ArrowUpIcon, EyeIcon, EyeOffIcon, PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { ChevronRightIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
-import { EstadoVacio } from "@/componentes/panel/estado-vacio";
+import { useHidratado } from "@/componentes/hidratado";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
+import { EstadoVacio } from "@/componentes/panel/estado-vacio";
+import { Insignia } from "@/componentes/panel/insignia";
+import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
+import { OrdenarLista } from "@/componentes/panel/ordenar-lista";
 import { Button } from "@/componentes/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/componentes/ui/dialog";
+import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
-import { cambiarVisibilidadPregunta, eliminarPregunta, guardarPregunta, moverPregunta } from "../acciones";
-import { Insignia } from "@/componentes/panel/insignia";
+import { eliminarPregunta, guardarPregunta, moverPregunta } from "../acciones";
 
 // HU-08: preguntas frecuentes del sitio (RF-05). Se agregan, editan, ordenan, ocultan y eliminan.
+// Pulido 13.24: como la lista de servicios. Antes cada fila llevaba cinco botones de solo ícono (25 con cinco preguntas)
+// y se editaba dentro de la lista, con dos botones rojos a la vez. Ahora la fila no lleva botones: tocarla abre su modal
+// (pregunta, respuesta, si se muestra, y eliminar al pie); el orden va en "Cambiar orden" y agregar, arriba.
 
 type Pregunta = { id: number; pregunta: string; respuesta: string; visible: boolean };
 
-export function ListaPreguntas({ preguntas }: { preguntas: Pregunta[] }) {
-  const [editando, setEditando] = useState<number | "nueva" | null>(null);
-  const [pendiente, iniciar] = useTransition();
-  const ejecutar = (accion: () => Promise<EstadoFormulario>) => iniciar(async () => avisarResultado(await accion()));
-
+/** "Cambiar orden": llega con las preguntas. Las ocultas, marcadas: no salen en el sitio aunque tengan su lugar. */
+export function OrdenarPreguntas({ preguntas }: { preguntas: Pregunta[] }) {
+  if (preguntas.length < 2) return null;
   return (
-    <div className="flex max-w-3xl flex-col gap-4">
-      {/* La acción principal arriba y en rojo, como "Agregar servicio" (pulido 4.6) */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <p className="text-tinta-suave">Se abren y cierran una por una en el sitio. Sin precios.</p>
-        {editando !== "nueva" && (
-          <Button type="button" onClick={() => setEditando("nueva")}>
-            <PlusIcon />
-            Agregar pregunta
-          </Button>
-        )}
-      </div>
-      {editando === "nueva" && (
-        <div className="tt-tarjeta-panel p-3">
-          <FormularioPregunta alTerminar={() => setEditando(null)} />
-        </div>
-      )}
-      {preguntas.length === 0 && <EstadoVacio>Todavía no hay preguntas. Agrega las que más te hacen los clientes.</EstadoVacio>}
-
-      {preguntas.length > 0 && (
-        <ol aria-label="Preguntas frecuentes" className="flex flex-col divide-y divide-border tt-tarjeta-panel">
-          {preguntas.map((p, i) =>
-            editando === p.id ? (
-              <li key={p.id} className="p-3">
-                <FormularioPregunta pregunta={p} alTerminar={() => setEditando(null)} />
-              </li>
-            ) : (
-              <li key={p.id} className={`flex flex-wrap items-start justify-end gap-x-3 gap-y-1 p-3 ${p.visible ? "" : "text-tinta-suave"}`}>
-                {/* Tocar el texto abre la edición, como en Servicios (pulido 4.6). Con teclado y lector de pantalla, el lápiz. */}
-                <div className="group flex min-w-60 flex-1 cursor-pointer flex-col gap-1" onClick={() => setEditando(p.id)}>
-                  <span className="flex flex-wrap items-center gap-2 font-semibold group-hover:underline">
-                    {p.pregunta}
-                    {!p.visible && <Insignia>Oculta</Insignia>}
-                  </span>
-                  <span className="line-clamp-2 text-sm text-tinta-suave">{p.respuesta}</span>
-                </div>
-                <span className="flex shrink-0 items-center gap-0.5">
-                  <Button type="button" variant="ghost" size="icon" disabled={pendiente || i === 0} aria-label={`Subir: ${p.pregunta}`} onClick={() => ejecutar(() => moverPregunta({ id: p.id, direccion: "subir" }))}>
-                    <ArrowUpIcon />
-                  </Button>
-                  <Button type="button" variant="ghost" size="icon" disabled={pendiente || i === preguntas.length - 1} aria-label={`Bajar: ${p.pregunta}`} onClick={() => ejecutar(() => moverPregunta({ id: p.id, direccion: "bajar" }))}>
-                    <ArrowDownIcon />
-                  </Button>
-                  <Button type="button" variant="ghost" size="icon" aria-label={`Editar: ${p.pregunta}`} onClick={() => setEditando(p.id)}>
-                    <PencilIcon />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    disabled={pendiente}
-                    aria-label={`${p.visible ? "Ocultar" : "Mostrar"}: ${p.pregunta}`}
-                    onClick={() => ejecutar(() => cambiarVisibilidadPregunta({ id: p.id, visible: !p.visible }))}
-                  >
-                    {p.visible ? <EyeOffIcon /> : <EyeIcon />}
-                  </Button>
-                  <Eliminar pregunta={p} />
-                </span>
-              </li>
-            ),
-          )}
-        </ol>
-      )}
-
-    </div>
+    <OrdenarLista
+      elementos={preguntas.map((p) => ({ id: p.id, nombre: p.pregunta, oculto: !p.visible }))}
+      mover={moverPregunta}
+      etiqueta="Orden de las preguntas"
+    />
   );
 }
 
-function FormularioPregunta({ pregunta, alTerminar }: { pregunta?: Pregunta; alTerminar: () => void }) {
+/** La acción principal: no necesita las preguntas, así que se ve enseguida. */
+export function AgregarPregunta() {
+  const hidratado = useHidratado();
+  const [agregando, setAgregando] = useState(false);
+  return (
+    <>
+      <Button type="button" disabled={!hidratado} onClick={() => setAgregando(true)}>
+        <PlusIcon />
+        Agregar pregunta
+      </Button>
+      <ModalFormulario titulo="Nueva pregunta" abierto={agregando} alCambiar={setAgregando}>
+        <FormularioPregunta />
+      </ModalFormulario>
+    </>
+  );
+}
+
+export function ListaPreguntas({ preguntas }: { preguntas: Pregunta[] }) {
+  // La que se edita queda guardada aparte de si el modal está abierto: así el formulario sigue a la vista mientras el
+  // modal se cierra con su animación
+  const [editando, setEditando] = useState<Pregunta | null>(null);
+  const [abierto, setAbierto] = useState(false);
+  const lista = useRef<HTMLUListElement>(null);
+
+  if (preguntas.length === 0) return <EstadoVacio>Todavía no hay preguntas. Agrega las que más te hacen los clientes.</EstadoVacio>;
+
+  return (
+    <>
+      {/* tabIndex: al eliminar una, el foco vuelve aquí (su fila, que lo tenía, ya no existe) */}
+      <ul ref={lista} tabIndex={-1} aria-label="Preguntas frecuentes" className="tt-tarjeta-panel flex flex-col divide-y divide-border overflow-hidden outline-none">
+        {preguntas.map((p) => (
+          <li key={p.id}>
+            <button
+              type="button"
+              onClick={() => {
+                setEditando(p);
+                setAbierto(true);
+              }}
+              aria-label={`Editar: ${p.pregunta}`}
+              className="flex min-h-11 w-full items-center gap-3 px-4 py-3 text-left hover:bg-superficie/60 focus-visible:-outline-offset-2"
+            >
+              <span className={`flex min-w-0 flex-1 flex-col gap-1 ${p.visible ? "" : "text-tinta-suave"}`}>
+                <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span className="font-semibold">{p.pregunta}</span>
+                  {!p.visible && <Insignia>Oculta</Insignia>}
+                </span>
+                <span className="line-clamp-2 text-sm text-tinta-suave">{p.respuesta}</span>
+              </span>
+              <ChevronRightIcon className="size-5 shrink-0 text-tinta-suave" aria-hidden />
+            </button>
+          </li>
+        ))}
+      </ul>
+      <ModalFormulario titulo="Editar pregunta" abierto={abierto} alCambiar={setAbierto}>
+        {/* La key: otra pregunta, otro formulario (sin lo escrito en la anterior) */}
+        {editando && (
+          <FormularioPregunta
+            key={editando.id}
+            pregunta={editando}
+            alEliminar={() => {
+              setAbierto(false);
+              requestAnimationFrame(() => lista.current?.focus());
+            }}
+          />
+        )}
+      </ModalFormulario>
+    </>
+  );
+}
+
+/** Para una nueva, sin `pregunta`. Al editar, también si se muestra en el sitio y, al pie, eliminarla. */
+function FormularioPregunta({ pregunta, alEliminar }: { pregunta?: Pregunta; alEliminar?: () => void }) {
+  const cerrar = useCerrarModal();
+  // Si se muestra viaja con el texto (un campo oculto): se guarda todo junto, en un solo cambio
+  const [visible, setVisible] = useState(pregunta?.visible ?? true);
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(async (previo, datos) => {
     const r = await guardarPregunta(previo, datos);
     avisarResultado(r);
-    if (r.ok) alTerminar();
+    if (r.ok) cerrar();
     return r;
   }, {});
   const v = estado.valores;
@@ -114,41 +124,60 @@ function FormularioPregunta({ pregunta, alTerminar }: { pregunta?: Pregunta; alT
   useFocoEnError(formulario, estado);
 
   return (
-    <form ref={formulario} action={accion} className="flex flex-col gap-4" noValidate>
+    <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate>
       {pregunta && <input type="hidden" name="id" value={pregunta.id} />}
+      {/* En un campo propio: la casilla de base-ui se vacía al reiniciarse el formulario */}
+      {pregunta && <input type="hidden" name="visible" value={visible ? "on" : "off"} />}
       <Campo id={`${prefijo}-pregunta`} etiqueta="Pregunta" error={e.pregunta}>
-        <Input id={`${prefijo}-pregunta`} name="pregunta" autoFocus defaultValue={v?.pregunta ?? pregunta?.pregunta} aria-invalid={!!e.pregunta} aria-describedby={e.pregunta ? `${prefijo}-pregunta-error` : undefined} />
+        <Input
+          id={`${prefijo}-pregunta`}
+          name="pregunta"
+          defaultValue={v?.pregunta ?? pregunta?.pregunta}
+          aria-invalid={!!e.pregunta}
+        />
       </Campo>
-      <Campo id={`${prefijo}-respuesta`} etiqueta="Respuesta" error={e.respuesta}>
-        <Textarea id={`${prefijo}-respuesta`} name="respuesta" className="min-h-32" defaultValue={v?.respuesta ?? pregunta?.respuesta} aria-invalid={!!e.respuesta} aria-describedby={e.respuesta ? `${prefijo}-respuesta-error` : undefined} />
+      <Campo id={`${prefijo}-respuesta`} etiqueta="Respuesta" error={e.respuesta} ayuda="Sin precios: los da la cotización.">
+        <Textarea
+          id={`${prefijo}-respuesta`}
+          name="respuesta"
+          className="min-h-32"
+          defaultValue={v?.respuesta ?? pregunta?.respuesta}
+          aria-invalid={!!e.respuesta}
+        />
       </Campo>
-      <div className="flex gap-2">
+      {pregunta && (
+        <label className="flex cursor-pointer items-start gap-3">
+          <Checkbox checked={visible} onCheckedChange={(si) => setVisible(si === true)} className="mt-0.5" />
+          <span className="flex flex-col">
+            <span className="font-semibold">Mostrar en el sitio</span>
+            <span className="text-sm text-tinta-suave">Si la desmarcas, no se ve en el sitio, pero no se borra.</span>
+          </span>
+        </label>
+      )}
+      <PieModal>
         <Button type="submit" disabled={enviando}>
-          {enviando ? "Guardando…" : pregunta ? "Guardar" : "Agregar"}
+          {enviando ? "Guardando…" : pregunta ? "Guardar pregunta" : "Agregar pregunta"}
         </Button>
-        <Button type="button" variant="outline" onClick={alTerminar}>
-          Cancelar
-        </Button>
-      </div>
+        <CancelarModal />
+        {pregunta && alEliminar && <EliminarPregunta pregunta={pregunta} alEliminar={alEliminar} />}
+      </PieModal>
     </form>
   );
 }
 
-function Eliminar({ pregunta }: { pregunta: Pregunta }) {
+/** Al pie del modal de edición, aparte: no se deshace, así que pide confirmación (con el foco en "Cancelar"). */
+function EliminarPregunta({ pregunta, alEliminar }: { pregunta: Pregunta; alEliminar: () => void }) {
   const [abierto, setAbierto] = useState(false);
   const [pendiente, iniciar] = useTransition();
   return (
-    <Dialog open={abierto} onOpenChange={setAbierto}>
-      <DialogTrigger render={<Button type="button" variant="ghost" size="icon" aria-label={`Eliminar: ${pregunta.pregunta}`} />}>
+    <>
+      <Button type="button" variant="ghost" className="ml-auto" onClick={() => setAbierto(true)}>
         <TrashIcon />
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>¿Eliminar esta pregunta?</DialogTitle>
-          <DialogDescription>«{pregunta.pregunta}» se borra del sitio y no se puede deshacer. Si solo quieres que no se vea, ocúltala.</DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <DialogClose render={<Button type="button" variant="outline" />}>Cancelar</DialogClose>
+        Eliminar
+      </Button>
+      <ModalFormulario titulo="¿Eliminar esta pregunta?" abierto={abierto} alCambiar={setAbierto}>
+        <p>«{pregunta.pregunta}» se borra del sitio y no se puede deshacer. Si solo quieres que no se vea, desmarca «Mostrar en el sitio».</p>
+        <PieModal>
           <Button
             type="button"
             variant="destructive"
@@ -157,14 +186,18 @@ function Eliminar({ pregunta }: { pregunta: Pregunta }) {
               iniciar(async () => {
                 const r = await eliminarPregunta(pregunta.id);
                 avisarResultado(r);
-                if (r.ok) setAbierto(false);
+                if (r.ok) {
+                  setAbierto(false);
+                  alEliminar();
+                }
               })
             }
           >
             Eliminar pregunta
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <CancelarModal focoInicial />
+        </PieModal>
+      </ModalFormulario>
+    </>
   );
 }
