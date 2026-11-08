@@ -43,6 +43,15 @@ test("registrar un pago con comprobante, no pasar el saldo y anular con motivo",
   await expect(form.getByLabel("Monto")).toHaveValue("350");
   await expect(form.getByRole("radio", { name: "Saldo" })).toBeChecked();
 
+  // La foto elegida no es un campo del formulario, pero perderla también se pregunta (C6, sistema-del-panel.md §4)
+  await form.locator("#comprobante").setInputFiles({ name: "comprobante.png", mimeType: "image/png", buffer: PNG });
+  await expect(form.getByRole("img", { name: "Foto del comprobante elegida" })).toBeVisible();
+  await form.getByRole("button", { name: "Cancelar" }).click();
+  const pregunta = page.getByRole("dialog", { name: "¿Salir sin guardar?" });
+  await pregunta.getByRole("button", { name: "Seguir editando" }).click();
+  await expect(pregunta).toHaveCount(0);
+  await form.getByRole("button", { name: "Quitar foto" }).click();
+
   // No pasa el saldo
   await form.getByLabel("Monto").fill("400");
   await form.getByText("QR", { exact: true }).click();

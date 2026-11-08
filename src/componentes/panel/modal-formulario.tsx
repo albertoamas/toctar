@@ -1,4 +1,5 @@
-import { createContext, useActionState, useContext, useRef, useState } from "react";
+import { createContext, useActionState, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { contenidoFormulario } from "@/componentes/panel/contenido-formulario";
@@ -13,7 +14,8 @@ import type { EstadoFormulario } from "@/lib/formularios";
 // abrió al cerrar. El formulario de adentro lo cierra al guardar con useCerrarModal y pone sus botones en PieModal
 // ("Cancelar" o "Listo" con CancelarModal).
 // Ningún modal pierde lo escrito sin preguntar (C6, sistema-del-panel.md §4): si el formulario de adentro cambió desde que
-// se abrió, cerrarlo con "Cancelar", Escape o tocando afuera pregunta "¿Salir sin guardar?". Guardar no pregunta.
+// se abrió, cerrarlo con "Cancelar", Escape o tocando afuera pregunta "¿Salir sin guardar?". Guardar no pregunta. Mientras
+// se guarda no se puede cerrar: la pregunta diría que se pierde algo que igual se está guardando.
 
 type ContextoModal = {
   /** Cierra sin preguntar: ya se guardó. */
@@ -22,6 +24,10 @@ type ContextoModal = {
   pedirCierre: () => void;
   /** Lo que tiene ahora el formulario pasa a ser lo guardado (una acción que guarda sin cerrar el modal). */
   renovarBase: () => void;
+  /** Hay un cambio que no es un campo del formulario (una foto elegida). */
+  fijarAdemas: (hay: boolean) => void;
+  /** El formulario se está guardando. */
+  fijarEnviando: (enviando: boolean) => void;
 };
 
 const Modal = createContext<ContextoModal | null>(null);
@@ -49,19 +55,31 @@ export function ModalFormulario({ titulo, abierto, alCambiar, children }: Props)
   const modal = useRef<HTMLDivElement>(null);
   // Lo que tenía el formulario al abrirse. Sin formulario (una lista, una confirmación), null: nunca pregunta
   const base = useRef<string | null>(null);
+  const ademas = useRef(false);
+  const enviando = useRef(false);
   const [preguntando, setPreguntando] = useState(false);
+  // La pantalla puede cerrarlo por su cuenta (al terminar una acción): la pregunta no queda para la próxima vez
+  if (!abierto && preguntando) setPreguntando(false);
 
-  const tomarBase = () => {
+  const tomarBase = useCallback(() => {
     const formulario = modal.current?.querySelector("form");
     base.current = formulario ? contenidoFormulario(formulario) : null;
-  };
+  }, []);
+  const fijarAdemas = useCallback((hay: boolean) => {
+    ademas.current = hay;
+  }, []);
+  const fijarEnviando = useCallback((valor: boolean) => {
+    enviando.current = valor;
+  }, []);
   const cerrar = () => {
     setPreguntando(false);
     alCambiar(false);
   };
   const pedirCierre = () => {
+    if (enviando.current) return;
     const formulario = modal.current?.querySelector("form");
-    if (formulario && base.current !== null && contenidoFormulario(formulario) !== base.current) setPreguntando(true);
+    const cambio = !!formulario && base.current !== null && contenidoFormulario(formulario) !== base.current;
+    if (cambio || ademas.current) setPreguntando(true);
     else cerrar();
   };
 
@@ -78,18 +96,18 @@ export function ModalFormulario({ titulo, abierto, alCambiar, children }: Props)
         <DialogHeader>
           <DialogTitle>{titulo}</DialogTitle>
         </DialogHeader>
-        <Modal.Provider value={{ cerrar, pedirCierre, renovarBase: tomarBase }}>{children}</Modal.Provider>
-        <ModalFormularioPregunta abierta={preguntando} alSeguir={() => setPreguntando(false)} alSalir={cerrar} />
+        <Modal.Provider value={{ cerrar, pedirCierre, renovarBase: tomarBase, fijarAdemas, fijarEnviando }}>{children}</Modal.Provider>
+        <PreguntaSalir abierta={preguntando} texto="Tienes cambios sin guardar. Si sales, se pierden." alSeguir={() => setPreguntando(false)} alSalir={cerrar} />
       </DialogContent>
     </Dialog>
   );
 }
 
 /** "¿Salir sin guardar?", sobre el modal que tiene cambios. El foco, en la opción que no pierde nada. */
-function ModalFormularioPregunta({ abierta, alSeguir, alSalir }: { abierta: boolean; alSeguir: () => void; alSalir: () => void }) {
+export function PreguntaSalir({ abierta, texto, alSeguir, alSalir }: { abierta: boolean; texto: string; alSeguir: () => void; alSalir: () => void }) {
   return (
     <ModalFormulario titulo="¿Salir sin guardar?" abierto={abierta} alCambiar={(abrir) => !abrir && alSeguir()}>
-      <p>Tienes cambios sin guardar. Si sales, se pierden.</p>
+      <p>{texto}</p>
       <PieModal>
         <CancelarModal texto="Seguir editando" focoInicial />
         <Button type="button" variant="destructive" onClick={alSalir}>
@@ -105,7 +123,17 @@ export function useCerrarModal(): () => void {
   return useContext(Modal)?.cerrar ?? sinModal;
 }
 
-/** Para una acción que guarda sin cerrar el modal ("Volver al texto original"): lo que quedó ya no es un cambio. */
+/** Para lo que el modal no ve en el formulario (una foto que vive en el estado): elegirla también es un cambio. */
+export function useCambioFueraDelFormulario(hay: boolean) {
+  const fijarAdemas = useContext(Modal)?.fijarAdemas;
+  useEffect(() => fijarAdemas?.(hay), [fijarAdemas, hay]);
+}
+
+/**
+ * Lo que tiene ahora el formulario ya no es un cambio. Para una acción que guarda sin cerrar el modal ("Volver al texto
+ * original") y para lo que termina de cargar con el modal abierto (los espacios libres). Se llama desde un efecto, con los
+ * valores nuevos ya dibujados. Siempre es la misma función.
+ */
 export function useRenovarBaseModal(): () => void {
   return useContext(Modal)?.renovarBase ?? sinModal;
 }
@@ -148,11 +176,21 @@ export function PieGuardar({ texto, enviando }: { texto: string; enviando: boole
  * guardó al momento (una lista que se edita fila por fila). "Volver" si el principal ya dice "Cancelar…" ("Cancelar
  * reserva"). "Seguir editando" al preguntar antes de perder cambios. Fuera de un modal no se muestra.
  */
-export function CancelarModal({ texto = "Cancelar", focoInicial }: { texto?: "Cancelar" | "Listo" | "Volver" | "Seguir editando"; focoInicial?: boolean }) {
+export function CancelarModal(props: {
+  texto?: "Cancelar" | "Listo" | "Volver" | "Seguir editando";
+  focoInicial?: boolean;
+  /** Para un formulario que envía por su cuenta (con una foto que achicar): los demás lo avisan solos. */
+  enviando?: boolean;
+}) {
+  const { texto = "Cancelar", focoInicial, enviando = false } = props;
   const modal = useContext(Modal);
+  const { pending } = useFormStatus();
+  const ocupado = enviando || pending;
+  const fijarEnviando = modal?.fijarEnviando;
+  useEffect(() => fijarEnviando?.(ocupado), [fijarEnviando, ocupado]);
   if (!modal) return null;
   return (
-    <Button type="button" variant="outline" onClick={modal.pedirCierre} data-foco-inicial={focoInicial || undefined}>
+    <Button type="button" variant="outline" disabled={ocupado} onClick={modal.pedirCierre} data-foco-inicial={focoInicial || undefined}>
       {texto}
     </Button>
   );

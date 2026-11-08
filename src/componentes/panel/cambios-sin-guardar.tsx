@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { cn } from "cn";
 import { contenidoFormulario } from "@/componentes/panel/contenido-formulario";
-import { CancelarModal, ModalFormulario, PieModal } from "@/componentes/panel/modal-formulario";
+import { PreguntaSalir } from "@/componentes/panel/modal-formulario";
 import { Button } from "@/componentes/ui/button";
 
 // Componente de cliente: se usa dentro de otros componentes de cliente (recibe funciones como props).
@@ -110,23 +110,16 @@ function PreguntarAlSalir({ hay }: { hay: boolean }) {
   }, [hay]);
 
   return (
-    <ModalFormulario titulo="¿Salir sin guardar?" abierto={destino !== null} alCambiar={(abierto) => !abierto && setDestino(null)}>
-      <p>Tienes cambios sin guardar en esta pantalla. Si sales, se pierden.</p>
-      <PieModal>
-        <CancelarModal texto="Seguir editando" focoInicial />
-        <Button
-          type="button"
-          variant="destructive"
-          onClick={() => {
-            if (destino instanceof HTMLFormElement) destino.requestSubmit();
-            else if (destino) router.push(destino as Route);
-            setDestino(null);
-          }}
-        >
-          Salir sin guardar
-        </Button>
-      </PieModal>
-    </ModalFormulario>
+    <PreguntaSalir
+      abierta={destino !== null}
+      texto="Tienes cambios sin guardar en esta pantalla. Si sales, se pierden."
+      alSeguir={() => setDestino(null)}
+      alSalir={() => {
+        if (destino instanceof HTMLFormElement) destino.requestSubmit();
+        else if (destino) router.push(destino as Route);
+        setDestino(null);
+      }}
+    />
   );
 }
 

@@ -8,7 +8,7 @@ import { useFocoEnError } from "@/componentes/foco-en-error";
 import { useHidratado } from "@/componentes/hidratado";
 import { avisarResultado, conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
-import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, ModalFormulario, PieModal, useCambioFueraDelFormulario, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { achicarFoto } from "@/componentes/panel/subida-foto";
 import { VisorFotos } from "@/componentes/panel/visor-fotos";
 import { BYTES_MAXIMOS_FOTO } from "@/lib/formato-fotos";
@@ -185,6 +185,7 @@ function FormularioDetalle({ trabajoId, parteId, detalle }: { trabajoId: number;
   // La foto vive en el estado y no en el campo: React reinicia el formulario al terminar la acción (también con un error)
   // y el archivo se perdía mientras la vista previa lo seguía mostrando
   const [archivo, setArchivo] = useState<File | null>(null);
+  useCambioFueraDelFormulario(!!archivo);
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
     conAviso(async (previo: EstadoFormulario, datos: FormData) => {
       if (archivo) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { useHidratado } from "@/componentes/hidratado";
 import { conAviso } from "@/componentes/panel/avisos";
@@ -39,15 +39,10 @@ export function EditorPlantilla({ clave, guardado: inicial, negocio }: Props) {
     }),
     {},
   );
+  const [, restaurar, restaurando] = useActionState<EstadoFormulario, FormData>(conAviso(restaurarPlantilla, alTerminar), {});
+  // Volver al original guarda sin cerrar el modal: lo que quedó ya no es un cambio. En un efecto, con el texto ya escrito
   const renovarBase = useRenovarBaseModal();
-  const [, restaurar, restaurando] = useActionState<EstadoFormulario, FormData>(
-    conAviso(restaurarPlantilla, (r) => {
-      alTerminar(r);
-      // Guardó sin cerrar el modal: el original ya no es un cambio. Un cuadro después, con el texto nuevo ya escrito
-      if (r.ok) requestAnimationFrame(renovarBase);
-    }),
-    {},
-  );
+  useEffect(renovarBase, [guardado, renovarBase]);
   const formulario = useRef<HTMLFormElement>(null);
   const area = useRef<HTMLTextAreaElement>(null);
   // Volver al original borra el mensaje guardado y lo escrito: se confirma antes
