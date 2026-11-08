@@ -175,13 +175,18 @@ test("la lista avisa lo que le falta a una página, y el orden se cambia en su m
 
   await page.getByRole("button", { name: "Cambiar orden" }).click();
   const orden = page.getByRole("dialog", { name: "Orden en el sitio" });
-  // Otras pruebas crean servicios a la vez: se compara su lugar antes y después
-  const lugar = async () => (await orden.getByRole("listitem").allTextContents()).findIndex((t) => t.includes("Servicio sin completar"));
-  const antes = await lugar();
-  expect(antes).toBeGreaterThan(0);
+  // Otras pruebas cambian servicios a la vez: se compara con el que estaba justo arriba, no con posiciones fijas
+  const nombres = async () => (await orden.getByRole("listitem").allTextContents()).map((t) => t.replace(/^\d+\.\s*/, ""));
+  const lista0 = await nombres();
+  const mio = lista0.findIndex((t) => t.startsWith("Servicio sin completar"));
+  expect(mio).toBeGreaterThan(0);
+  const vecino = lista0[mio - 1];
   await orden.getByRole("button", { name: "Subir Servicio sin completar" }).click();
-  // Se guarda al momento: la lista del modal ya lo muestra un lugar más arriba
-  await expect.poll(lugar).toBe(antes - 1);
+  // Se guarda al momento: en el modal ya queda antes que el que tenía arriba
+  await expect.poll(async () => {
+    const l = await nombres();
+    return l.findIndex((t) => t.startsWith("Servicio sin completar")) < l.indexOf(vecino);
+  }).toBe(true);
   await orden.getByRole("button", { name: "Listo" }).click();
   await expect(orden).toHaveCount(0);
 });

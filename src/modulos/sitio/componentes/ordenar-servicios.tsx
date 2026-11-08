@@ -17,12 +17,14 @@ export function OrdenarServicios({ servicios }: { servicios: { id: number; nombr
   const hidratado = useHidratado();
   const [abierto, setAbierto] = useState(false);
   const [pendiente, iniciar] = useTransition();
-  const mover = (id: number, direccion: Direccion) =>
+  const mover = (id: number, direccion: Direccion) => {
+    if (pendiente) return;
     iniciar(async () => {
       const r = await moverServicio({ id, direccion });
       // Si sale bien no hace falta aviso: la lista se reordena a la vista
       if (!r.ok) avisarResultado(r);
     });
+  };
 
   return (
     <>
@@ -40,12 +42,8 @@ export function OrdenarServicios({ servicios }: { servicios: { id: number; nombr
               </span>
               <span className="min-w-0 flex-1">{s.nombre}</span>
               <span className="flex shrink-0 text-tinta-suave">
-                <Button type="button" variant="ghost" size="icon" disabled={pendiente || i === 0} aria-label={`Subir ${s.nombre}`} onClick={() => mover(s.id, "subir")}>
-                  <ChevronUpIcon />
-                </Button>
-                <Button type="button" variant="ghost" size="icon" disabled={pendiente || i === servicios.length - 1} aria-label={`Bajar ${s.nombre}`} onClick={() => mover(s.id, "bajar")}>
-                  <ChevronDownIcon />
-                </Button>
+                <Flecha nombre={s.nombre} direccion="subir" tope={i === 0} alTocar={() => mover(s.id, "subir")} />
+                <Flecha nombre={s.nombre} direccion="bajar" tope={i === servicios.length - 1} alTocar={() => mover(s.id, "bajar")} />
               </span>
             </li>
           ))}
@@ -55,5 +53,26 @@ export function OrdenarServicios({ servicios }: { servicios: { id: number; nombr
         </PieModal>
       </ModalFormulario>
     </>
+  );
+}
+
+/**
+ * aria-disabled y no disabled: un botón deshabilitado pierde el foco, y con el teclado habría que volver a buscar la
+ * fila después de cada movimiento (como en el visor de fotos). En el tope, se atenúa y no hace nada.
+ */
+function Flecha({ nombre, direccion, tope, alTocar }: { nombre: string; direccion: Direccion; tope: boolean; alTocar: () => void }) {
+  const Icono = direccion === "subir" ? ChevronUpIcon : ChevronDownIcon;
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      aria-disabled={tope || undefined}
+      aria-label={`${direccion === "subir" ? "Subir" : "Bajar"} ${nombre}`}
+      onClick={() => !tope && alTocar()}
+      className="aria-disabled:cursor-default aria-disabled:opacity-40"
+    >
+      <Icono />
+    </Button>
   );
 }
