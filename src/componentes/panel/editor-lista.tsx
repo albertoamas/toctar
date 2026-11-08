@@ -1,4 +1,5 @@
 import { ChevronDownIcon, ChevronUpIcon, PlusIcon, XIcon } from "lucide-react";
+import { cn } from "cn";
 import { MensajeError } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 
@@ -6,8 +7,9 @@ import { Button } from "@/componentes/ui/button";
 // Lista de filas dentro de un formulario (beneficios, pasos, "por qué elegirnos"): agregar, quitar y ordenar.
 // El valor viaja al servidor como JSON en un campo oculto. Cada fila se dibuja con `fila`, que recibe `marca` para
 // los campos de la fila: los marca con error y los enlaza a su mensaje.
-// Ordenar es poco frecuente (pulido 13.19): subir y bajar van apilados y en gris al costado de la fila, junto a "Quitar",
-// también en el celular; con una sola fila no se muestran.
+// Ordenar es poco frecuente (pulido 13.19): subir y bajar van en gris al costado de la fila, junto a "Quitar", también en
+// el celular; apilados, para dejarle el ancho al campo. Con `flechasEnFila`, desde 640 px van una al lado de la otra: una
+// fila de un renglón (los beneficios, pulido 13.22) no se estira. Con una sola fila no se muestran.
 
 type MarcaError = { "aria-invalid": boolean; "aria-describedby": string | undefined };
 
@@ -23,9 +25,11 @@ type Props<T> = {
   /** Errores por fila: "<nombre>.0" es la primera. */
   errores: Partial<Record<string, string>>;
   fila: (elemento: T, cambiar: (nuevo: T) => void, indice: number, marca: MarcaError) => React.ReactNode;
+  /** Filas de un renglón: desde 640 px, subir y bajar uno al lado del otro. */
+  flechasEnFila?: boolean;
 };
 
-export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maximo, textoAgregar, errores, fila }: Props<T>) {
+export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maximo, textoAgregar, errores, fila, flechasEnFila = false }: Props<T>) {
   const mover = (i: number, j: number) => {
     const copia = [...valor];
     [copia[i], copia[j]] = [copia[j], copia[i]];
@@ -48,7 +52,7 @@ export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maxim
                   <div className="flex flex-col gap-2">{fila(elemento, (nuevo) => onChange(valor.map((e, k) => (k === i ? nuevo : e))), i, marca)}</div>
                   <div className="flex items-start">
                     {valor.length > 1 && (
-                      <div className="flex flex-col text-tinta-suave">
+                      <div className={cn("flex flex-col text-tinta-suave", flechasEnFila && "sm:flex-row")}>
                         <Button type="button" variant="ghost" size="icon" disabled={i === 0} onClick={() => mover(i, i - 1)} aria-label={`Subir ${etiqueta.toLowerCase()} ${i + 1}`}>
                           <ChevronUpIcon />
                         </Button>

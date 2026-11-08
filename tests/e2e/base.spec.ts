@@ -243,7 +243,9 @@ test("al enviar con errores el foco va al campo, y el enlace para volver mide 44
   // El enlace para volver de una ficha mide 44 px
   await page.goto("/panel/catalogo/1");
   const volver = page.getByRole("main").getByRole("link", { name: "Volver a Catálogo y precios" });
-  expect(Math.round((await volver.boundingBox())!.height)).toBe(44);
+  // Mientras carga, el esqueleto tiene su propio botón y se reemplaza por el de la ficha: medido justo en el cambio da
+  // null. Se mide hasta tener uno quieto
+  await expect(async () => expect(Math.round((await volver.boundingBox())?.height ?? 0)).toBe(44)).toPass({ timeout: 5000 });
 });
 
 test("en los beneficios de un servicio una fila vacía recibe el foco con su error, y sus botones van al costado", async ({ page }) => {
