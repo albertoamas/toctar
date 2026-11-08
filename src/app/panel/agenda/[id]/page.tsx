@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { cn } from "cn";
 import { ClipboardCheckIcon, WrenchIcon } from "lucide-react";
-import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
@@ -35,8 +34,7 @@ export const metadata: Metadata = { title: "Reserva" };
 export default function PaginaReserva({ params, searchParams }: PageProps<"/panel/agenda/[id]">) {
   return (
     <section className="flex flex-col gap-6">
-      <EnlaceVolver href="/panel/agenda">Agenda</EnlaceVolver>
-      <Suspense fallback={<Cargando />}>
+      <Suspense fallback={<Cargando volver={{ href: "/panel/agenda", texto: "Agenda" }} />}>
         <Detalle params={params} searchParams={searchParams} />
       </Suspense>
     </section>
@@ -78,6 +76,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
   return (
     <div className="flex max-w-5xl flex-col gap-8">
       <EncabezadoPagina
+        volver={{ href: "/panel/agenda", texto: "Agenda" }}
         titulo={r.placa}
         estado={<Insignia tono={TONO_ESTADO_TRABAJO[r.estado]}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</Insignia>}
         accion={

@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { Fragment, Suspense } from "react";
 import { cn } from "cn";
 import { CalendarIcon, FileTextIcon } from "lucide-react";
-import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
@@ -44,8 +43,7 @@ export const metadata: Metadata = { title: "Cliente" };
 export default function PaginaCliente({ params, searchParams }: PageProps<"/panel/clientes/[id]">) {
   return (
     <section className="flex flex-col gap-6">
-      <EnlaceVolver href="/panel/clientes">Clientes</EnlaceVolver>
-      <Suspense fallback={<Cargando />}>
+      <Suspense fallback={<Cargando volver={{ href: "/panel/clientes", texto: "Clientes" }} />}>
         <Ficha params={params} searchParams={searchParams} />
       </Suspense>
     </section>
@@ -91,6 +89,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
   return (
     <div className="flex max-w-5xl flex-col gap-8">
       <EncabezadoPagina
+        volver={{ href: "/panel/clientes", texto: "Clientes" }}
         titulo={c.nombre}
         estado={
           (!c.activo || debe) && (

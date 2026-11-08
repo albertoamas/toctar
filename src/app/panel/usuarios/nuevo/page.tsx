@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { EnlaceVolver } from "@/componentes/enlace-volver";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
 import { permisosAsignables } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
@@ -12,8 +12,7 @@ export const metadata: Metadata = { title: "Crear usuario" };
 export default function PaginaNuevoUsuario() {
   return (
     <section className="flex flex-col gap-6">
-      <EnlaceVolver href="/panel/usuarios">Usuarios</EnlaceVolver>
-      <h1 className="tt-titulo-pagina">Crear usuario</h1>
+      <EncabezadoPagina titulo="Crear usuario" volver={{ href: "/panel/usuarios", texto: "Usuarios" }} />
       <Suspense fallback={<Cargando />}>
         <Formulario />
       </Suspense>

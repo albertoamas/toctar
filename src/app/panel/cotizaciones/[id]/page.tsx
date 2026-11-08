@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { cn } from "cn";
 import { CalendarIcon } from "lucide-react";
-import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
@@ -39,8 +38,7 @@ export const metadata: Metadata = { title: "Cotización" };
 export default function PaginaCotizacion({ params, searchParams }: PageProps<"/panel/cotizaciones/[id]">) {
   return (
     <section className="flex flex-col gap-6">
-      <EnlaceVolver href="/panel/cotizaciones">Cotizaciones</EnlaceVolver>
-      <Suspense fallback={<Cargando />}>
+      <Suspense fallback={<Cargando volver={{ href: "/panel/cotizaciones", texto: "Cotizaciones" }} />}>
         <Detalle params={params} searchParams={searchParams} />
       </Suspense>
     </section>
@@ -70,6 +68,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
   return (
     <div className="flex max-w-3xl flex-col gap-8">
       <EncabezadoPagina
+        volver={{ href: "/panel/cotizaciones", texto: "Cotizaciones" }}
         titulo={`Cotización ${c.numero}`}
         estado={
           <span className="flex flex-wrap gap-1.5">

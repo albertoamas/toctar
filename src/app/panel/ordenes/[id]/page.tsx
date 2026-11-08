@@ -4,7 +4,6 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { cn } from "cn";
 import { ImageUpIcon, KeyRoundIcon } from "lucide-react";
-import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { AvisarPorWhatsApp } from "@/componentes/panel/avisar-whatsapp";
 import { Cargando } from "@/componentes/panel/cargando";
@@ -45,8 +44,7 @@ export const metadata: Metadata = { title: "Orden" };
 export default function PaginaOrden({ params, searchParams }: PageProps<"/panel/ordenes/[id]">) {
   return (
     <section className="flex flex-col gap-6">
-      <EnlaceVolver href="/panel/ordenes">Órdenes</EnlaceVolver>
-      <Suspense fallback={<Cargando />}>
+      <Suspense fallback={<Cargando volver={{ href: "/panel/ordenes", texto: "Órdenes" }} />}>
         <Detalle params={params} searchParams={searchParams} />
       </Suspense>
     </section>
@@ -115,6 +113,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   return (
     <div className="flex max-w-5xl flex-col gap-8">
       <EncabezadoPagina
+        volver={{ href: "/panel/ordenes", texto: "Órdenes" }}
         titulo={o.placa}
         estado={
           <>

@@ -236,7 +236,7 @@ test("al enviar con errores el foco va al campo, y el enlace para volver mide 44
   await expect(nuevo.getByLabel("Nombre del servicio")).toHaveAttribute("aria-invalid", "true");
   // El enlace para volver de una ficha mide 44 px
   await page.goto("/panel/catalogo/1");
-  const volver = page.getByRole("main").getByRole("link", { name: "Catálogo y precios" });
+  const volver = page.getByRole("main").getByRole("link", { name: "Volver a Catálogo y precios" });
   expect(Math.round((await volver.boundingBox())!.height)).toBe(44);
 });
 

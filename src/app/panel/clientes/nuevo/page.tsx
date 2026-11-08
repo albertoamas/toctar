@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { exigirModulo } from "@/lib/sesion";
@@ -13,8 +12,7 @@ export const metadata: Metadata = { title: "Agregar cliente" };
 export default function PaginaNuevoCliente() {
   return (
     <section className="flex flex-col gap-6">
-      <EnlaceVolver href="/panel/clientes">Clientes</EnlaceVolver>
-      <EncabezadoPagina titulo="Agregar cliente" />
+      <EncabezadoPagina titulo="Agregar cliente" volver={{ href: "/panel/clientes", texto: "Clientes" }} />
       <Suspense fallback={<Cargando />}>
         <Formulario />
       </Suspense>

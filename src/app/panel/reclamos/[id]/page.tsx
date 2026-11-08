@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { cn } from "cn";
-import { EnlaceVolver } from "@/componentes/enlace-volver";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -21,8 +21,7 @@ export const metadata: Metadata = { title: "Reclamo" };
 export default function PaginaReclamo({ params }: PageProps<"/panel/reclamos/[id]">) {
   return (
     <section className="flex flex-col gap-6">
-      <EnlaceVolver href="/panel/reclamos">Reclamos</EnlaceVolver>
-      <Suspense fallback={<Cargando />}>
+      <Suspense fallback={<Cargando volver={{ href: "/panel/reclamos", texto: "Reclamos" }} />}>
         <Detalle params={params} />
       </Suspense>
     </section>
@@ -40,10 +39,7 @@ async function Detalle({ params }: Pick<PageProps<"/panel/reclamos/[id]">, "para
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="tt-titulo-pagina">{r.nombre}</h1>
-        <InsigniaEstado estado={r.estado} />
-      </div>
+      <EncabezadoPagina titulo={r.nombre} estado={<InsigniaEstado estado={r.estado} />} volver={{ href: "/panel/reclamos", texto: "Reclamos" }} />
 
       {/* Pedido 26: cada parte, una tarjeta. A la izquierda lo que mandó el cliente; a la derecha, responder y atender */}
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,36rem)_minmax(0,22rem)]">

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
-import { EnlaceVolver } from "@/componentes/enlace-volver";
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { exigirAccion } from "@/lib/sesion";
@@ -37,11 +37,9 @@ async function Publicar({ params }: Pick<PageProps<"/panel/ordenes/[id]/publicar
 
   return (
     <>
-      <EnlaceVolver href={volver}>Orden</EnlaceVolver>
-      <div className="flex flex-col gap-1">
-        <h1 className="tt-titulo-pagina">Publicar {o.placa}</h1>
-        <p className="text-tinta-suave">Las fotos que elijas se copian a la galería del sitio; las de la orden no cambian.</p>
-      </div>
+      <EncabezadoPagina titulo={`Publicar ${o.placa}`} volver={{ href: volver, texto: "Orden" }}>
+        Las fotos que elijas se copian a la galería del sitio; las de la orden no cambian.
+      </EncabezadoPagina>
       {servicios.length === 0 ? (
         <EstadoVacio>Los servicios de esta orden ya no están en el catálogo. Súbelas desde Sitio web &gt; Galería, con otro servicio.</EstadoVacio>
       ) : (

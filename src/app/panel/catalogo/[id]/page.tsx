@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { cn } from "cn";
 import { GlobeIcon } from "lucide-react";
-import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
@@ -31,8 +30,7 @@ export const metadata: Metadata = { title: "Servicio del catálogo" };
 export default function PaginaServicioCatalogo({ params, searchParams }: PageProps<"/panel/catalogo/[id]">) {
   return (
     <section className="flex flex-col gap-6">
-      <EnlaceVolver href="/panel/catalogo">Catálogo y precios</EnlaceVolver>
-      <Suspense fallback={<Cargando />}>
+      <Suspense fallback={<Cargando volver={{ href: "/panel/catalogo", texto: "Catálogo y precios" }} />}>
         <Detalle params={params} searchParams={searchParams} />
       </Suspense>
     </section>
@@ -57,6 +55,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
   return (
     <div className="flex max-w-5xl flex-col gap-8">
       <EncabezadoPagina
+        volver={{ href: "/panel/catalogo", texto: "Catálogo y precios" }}
         titulo={s.nombre}
         // Sale en el sitio si está activo y su página se muestra (publico.ts pide las dos)
         estado={<Insignia>{!s.activo ? "Inactivo" : s.visibleSitio ? "En el sitio" : "Oculto en el sitio"}</Insignia>}
