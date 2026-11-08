@@ -162,7 +162,7 @@ test("el panel no se sale de la pantalla en el celular y su menú queda a mano",
 test("el aviso de guardado no tapa el botón de guardar", async ({ page }, info) => {
   test.skip(info.project.name !== "celular", "En el celular es donde tapaba");
   // En la edición de un usuario propio: es la que tiene la barra de guardar fija abajo (Parámetros ya va en modales)
-  const usuario = `aviso-${info.retry}-${Date.now()}`;
+  const usuario = `aviso-${info.retry}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
   await crearUsuario({ usuario, nombre: "Aviso de prueba", contrasena: "encargado-123", rol: "encargado", permisos: ["agenda"] });
   const [{ id }] = await consultar<{ id: number }>("select id from usuario where nombre_usuario = $1", [usuario]);
   await ingresarComoDueno(page);

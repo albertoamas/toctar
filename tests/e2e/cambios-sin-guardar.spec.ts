@@ -14,7 +14,8 @@ const hidratada = async (page: Page) => {
 
 /** Un usuario encargado nuevo para la prueba: su edición tiene la barra de guardar. Devuelve su dirección. */
 async function usuarioDePrueba(info: TestInfo): Promise<string> {
-  const usuario = `barra-${sufijo(info)}-${Date.now()}`.toLowerCase();
+  // Con una parte al azar: dos pruebas que corren a la vez pueden caer en el mismo milisegundo y chocar
+  const usuario = `barra-${sufijo(info)}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`.toLowerCase();
   await crearUsuario({ usuario, nombre: "Usuario de prueba", contrasena: "encargado-123", rol: "encargado", permisos: ["agenda"] });
   const [{ id }] = await consultar<{ id: number }>("select id from usuario where nombre_usuario = $1", [usuario]);
   return `/panel/usuarios/${id}`;
