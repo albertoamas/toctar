@@ -4,7 +4,7 @@ import { ExternalLinkIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { ListaDatos } from "@/componentes/panel/lista-datos";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
-import { CabeceraSeccion, SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
+import { Seccion, SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { resumirHorarios } from "@/lib/horarios";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceMapa, textoEnlaceMapa } from "@/lib/ubicacion";
@@ -162,12 +162,9 @@ async function Contenido() {
       </SeccionConEditar>
 
       {/* Se guarda al momento, sin modal: el logo se cambia en su lugar */}
-      <section aria-labelledby="logo-titulo" className="flex flex-col gap-2">
-        <CabeceraSeccion id="logo" titulo="Logo para documentos" />
-        <div className="tt-tarjeta-panel p-4">
-          <LogoDocumentos logo={c.logo} />
-        </div>
-      </section>
+      <Seccion id="logo" titulo="Logo para documentos">
+        <LogoDocumentos logo={c.logo} />
+      </Seccion>
     </>
   );
 }

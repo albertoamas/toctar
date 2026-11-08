@@ -1,14 +1,9 @@
 "use client";
 
-import { useActionState, useRef } from "react";
-import { useFocoEnError } from "@/componentes/foco-en-error";
-import { conAviso } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
-import { CancelarModal, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
-import { Button } from "@/componentes/ui/button";
+import { PieGuardar, useFormularioEnModal } from "@/componentes/panel/modal-formulario";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
-import type { EstadoFormulario } from "@/lib/formularios";
 import { guardarParametros } from "../acciones";
 import { clavesDeSeccion, PARAMETROS, SECCIONES_PARAMETROS, type ClaveParametro, type SeccionParametros } from "../parametros";
 
@@ -19,15 +14,7 @@ import { clavesDeSeccion, PARAMETROS, SECCIONES_PARAMETROS, type ClaveParametro,
 type Props = { seccion: SeccionParametros; valores: Partial<Record<ClaveParametro, string>> };
 
 export function FormularioSeccionParametros({ seccion, valores }: Props) {
-  const cerrar = useCerrarModal();
-  const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
-    conAviso(guardarParametros, (r) => r.ok && cerrar()),
-    {},
-  );
-  const v = estado.valores;
-  const e = estado.errores ?? {};
-  const formulario = useRef<HTMLFormElement>(null);
-  useFocoEnError(formulario, estado);
+  const { accion, enviando, formulario, e, v } = useFormularioEnModal(guardarParametros);
   const { boton, descripcion } = SECCIONES_PARAMETROS[seccion];
 
   return (
@@ -54,12 +41,7 @@ export function FormularioSeccionParametros({ seccion, valores }: Props) {
           </Campo>
         );
       })}
-      <PieModal>
-        <Button type="submit" disabled={enviando}>
-          {enviando ? "Guardando…" : boton}
-        </Button>
-        <CancelarModal />
-      </PieModal>
+      <PieGuardar texto={boton} enviando={enviando} />
     </form>
   );
 }

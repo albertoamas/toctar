@@ -1,15 +1,11 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
-import { useFocoEnError } from "@/componentes/foco-en-error";
-import { conAviso } from "@/componentes/panel/avisos";
+import { useState } from "react";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
-import { CancelarModal, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
-import { Button } from "@/componentes/ui/button";
+import { PieGuardar, useFormularioEnModal } from "@/componentes/panel/modal-formulario";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { DiaHorario } from "@/lib/horarios";
-import type { EstadoFormulario } from "@/lib/formularios";
 import { guardarParteNegocio } from "../acciones";
 import { NOMBRE_RED, REDES, type ParteNegocio } from "../esquemas";
 import { EditorHorarios } from "./editor-horarios";
@@ -18,28 +14,7 @@ import { EditorHorarios } from "./editor-horarios";
 // con su propio botón. Antes era un solo formulario con 43 campos abiertos (4,5 pantallas en el celular) y "Guardar
 // cambios" al final, mezclado con el logo, que se guardaba al momento.
 
-/** El formulario de una parte: se guarda sola y cierra su modal al guardar. */
-function useParte() {
-  const cerrar = useCerrarModal();
-  const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
-    conAviso(guardarParteNegocio, (r) => r.ok && cerrar()),
-    {},
-  );
-  const formulario = useRef<HTMLFormElement>(null);
-  useFocoEnError(formulario, estado);
-  return { accion, enviando, formulario, e: estado.errores ?? {}, v: estado.valores };
-}
-
-function Pie({ texto, enviando }: { texto: string; enviando: boolean }) {
-  return (
-    <PieModal>
-      <Button type="submit" disabled={enviando}>
-        {enviando ? "Guardando…" : texto}
-      </Button>
-      <CancelarModal />
-    </PieModal>
-  );
-}
+const useParte = () => useFormularioEnModal(guardarParteNegocio);
 
 const Parte = ({ parte }: { parte: ParteNegocio }) => <input type="hidden" name="parte" value={parte} />;
 
@@ -63,7 +38,7 @@ export function FormularioContacto({ valores }: { valores: Valores }) {
       <Campo id="correo" etiqueta="Correo" opcional error={e.correo}>
         <Input id="correo" name="correo" type="email" autoCapitalize="none" spellCheck={false} defaultValue={valor("correo")} aria-invalid={!!e.correo} />
       </Campo>
-      <Pie texto="Guardar contacto" enviando={enviando} />
+      <PieGuardar texto="Guardar contacto" enviando={enviando} />
     </form>
   );
 }
@@ -110,7 +85,7 @@ export function FormularioUbicacion({ valores }: { valores: Valores }) {
           className="font-mono text-sm break-all"
         />
       </Campo>
-      <Pie texto="Guardar ubicación" enviando={enviando} />
+      <PieGuardar texto="Guardar ubicación" enviando={enviando} />
     </form>
   );
 }
@@ -124,7 +99,7 @@ export function FormularioHorario({ horarios: iniciales }: { horarios: DiaHorari
       <p className="text-sm text-tinta-suave">Se muestra en la página. Marca los días que abren.</p>
       <EditorHorarios valor={horarios} onChange={setHorarios} errores={e} />
       {e.horarios && <MensajeError id="horarios-error">{e.horarios}</MensajeError>}
-      <Pie texto="Guardar horario" enviando={enviando} />
+      <PieGuardar texto="Guardar horario" enviando={enviando} />
     </form>
   );
 }
@@ -140,7 +115,7 @@ export function FormularioRedes({ valores }: { valores: Valores }) {
           <Input id={red} name={red} type="url" autoCapitalize="none" spellCheck={false} placeholder={`https://www.${red}.com/…`} defaultValue={v?.[red] ?? valores[red]} aria-invalid={!!e[red]} />
         </Campo>
       ))}
-      <Pie texto="Guardar redes" enviando={enviando} />
+      <PieGuardar texto="Guardar redes" enviando={enviando} />
     </form>
   );
 }
@@ -158,7 +133,7 @@ export function FormularioFacturacion({ valores }: { valores: Valores }) {
       <Campo id="razonSocial" etiqueta="Razón social" opcional error={e.razonSocial}>
         <Input id="razonSocial" name="razonSocial" defaultValue={valor("razonSocial")} aria-invalid={!!e.razonSocial} />
       </Campo>
-      <Pie texto="Guardar datos para facturar" enviando={enviando} />
+      <PieGuardar texto="Guardar datos para facturar" enviando={enviando} />
     </form>
   );
 }

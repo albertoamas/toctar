@@ -7,6 +7,7 @@ import { GlobeIcon } from "lucide-react";
 import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { buttonVariants } from "@/componentes/ui/button";
 import { cantidad } from "@/lib/cantidad";
@@ -53,7 +54,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
   const cargarPrecios = !!creado && sinPrecios;
 
   return (
-    <div className="flex max-w-5xl flex-col gap-8">
+    <PaginaPanel tipo="ficha">
       <EncabezadoPagina
         volver={{ href: "/panel/catalogo", texto: "Catálogo y precios" }}
         titulo={s.nombre}
@@ -143,6 +144,6 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
           </div>
         )}
       </section>
-    </div>
+    </PaginaPanel>
   );
 }
