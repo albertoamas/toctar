@@ -1,11 +1,10 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
-import { PreguntarAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { useHidratado } from "@/componentes/hidratado";
 import { conAviso } from "@/componentes/panel/avisos";
-import { CancelarModal, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { Campo } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 import { Textarea } from "@/componentes/ui/textarea";
@@ -43,6 +42,9 @@ export function EditorPlantilla({ clave, guardado: inicial, negocio }: Props) {
   const [, restaurar, restaurando] = useActionState<EstadoFormulario, FormData>(conAviso(restaurarPlantilla, alTerminar), {});
   const formulario = useRef<HTMLFormElement>(null);
   const area = useRef<HTMLTextAreaElement>(null);
+  // Volver al original borra el mensaje guardado y lo escrito: se confirma antes
+  const [confirmar, setConfirmar] = useState(false);
+  const restaurarBoton = useRef<HTMLButtonElement>(null);
   // El texto empieza con el cursor al principio: hasta que la persona lo toque, ese cursor no es "donde está el cursor".
   // No cuenta el foco: el modal lo pone en el texto al abrirse, sin que la persona haya elegido un lugar
   const conCursor = useRef(false);
@@ -73,7 +75,6 @@ export function EditorPlantilla({ clave, guardado: inicial, negocio }: Props) {
 
   return (
     <>
-      <PreguntarAlSalir hay={sinGuardar} />
       <form ref={formulario} action={guardar} noValidate className="flex flex-col gap-5">
         <input type="hidden" name="clave" value={clave} />
         <Campo id={id} etiqueta="Mensaje" error={error}>
@@ -88,7 +89,7 @@ export function EditorPlantilla({ clave, guardado: inicial, negocio }: Props) {
               setTexto(e.target.value);
             }}
             onPointerUp={() => (conCursor.current = true)}
-            onKeyUp={() => (conCursor.current = true)}
+            onKeyDown={() => (conCursor.current = true)}
             aria-invalid={!!error}
             className="min-h-28"
           />
@@ -123,17 +124,43 @@ export function EditorPlantilla({ clave, guardado: inicial, negocio }: Props) {
           <p className="text-sm text-tinta-suave">Con los datos de un cliente de ejemplo.</p>
         </figure>
 
-        {sinGuardar && <p className="text-sm font-semibold text-aviso">Hay cambios sin guardar.</p>}
+        {/* Siempre en el documento, para que el lector de pantalla anuncie cuando aparece (como BarraGuardar) */}
+        <p role="status" className="text-sm font-semibold text-aviso empty:hidden">
+          {sinGuardar ? "Hay cambios sin guardar." : ""}
+        </p>
+        {/* El botón que de verdad vuelve al original: lo toca la confirmación */}
+        <button ref={restaurarBoton} type="submit" formAction={restaurar} hidden tabIndex={-1} aria-hidden />
         <PieModal>
           <Button type="submit" disabled={enviando || !sinGuardar}>
             {guardando ? "Guardando…" : "Guardar mensaje"}
           </Button>
           <CancelarModal />
-          <Button type="submit" variant="ghost" className="ml-auto" formAction={restaurar} disabled={enviando || (texto === original && guardado === original)}>
+          <Button
+            type="button"
+            variant="ghost"
+            className="ml-auto"
+            disabled={enviando || (texto === original && guardado === original)}
+            onClick={() => setConfirmar(true)}
+          >
             {restaurando ? "Volviendo…" : "Volver al texto original"}
           </Button>
         </PieModal>
       </form>
+      <ModalFormulario titulo="¿Volver al texto original?" abierto={confirmar} alCambiar={setConfirmar}>
+        <p>Se borra el mensaje que escribiste y vuelve el de TocTar. No se puede deshacer.</p>
+        <PieModal>
+          <Button
+            type="button"
+            onClick={() => {
+              setConfirmar(false);
+              restaurarBoton.current?.click();
+            }}
+          >
+            Sí, volver al original
+          </Button>
+          <CancelarModal focoInicial />
+        </PieModal>
+      </ModalFormulario>
     </>
   );
 }

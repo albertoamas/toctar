@@ -67,6 +67,10 @@ async function cambiarYVolver(page: Page, id: number, placa: string) {
   const otraVez = await abrirMensaje(page, "Vehículo listo");
   await expect(otraVez.getByLabel("Mensaje", { exact: true })).toHaveValue(CAMBIADO);
   await otraVez.getByRole("button", { name: "Volver al texto original" }).click();
+  // Borra lo guardado: se confirma, con el foco en "Cancelar"
+  const confirmar = page.getByRole("dialog", { name: "¿Volver al texto original?" });
+  await expect(confirmar.getByRole("button", { name: "Cancelar" })).toBeFocused();
+  await confirmar.getByRole("button", { name: "Sí, volver al original" }).click();
   await expect(page.getByText("Volvió el texto original.")).toBeVisible();
   await expect(otraVez.getByLabel("Mensaje", { exact: true })).toHaveValue(ORIGINAL);
   expect(await consultar("select 1 from plantilla_mensaje")).toEqual([]);

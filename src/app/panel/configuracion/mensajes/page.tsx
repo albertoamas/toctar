@@ -37,7 +37,8 @@ async function Contenido() {
       {CLAVES_PLANTILLA.map((c) => (
         <SeccionConEditar
           key={c}
-          id={`mensaje-${c}`}
+          // Otro prefijo que el del campo del editor ("mensaje-listo"): no se mezclan sus ids
+          id={`seccion-mensaje-${c}`}
           titulo={PLANTILLAS[c].titulo}
           etiquetaEditar={`Editar mensaje: ${PLANTILLAS[c].titulo}`}
           tituloModal={PLANTILLAS[c].titulo}
