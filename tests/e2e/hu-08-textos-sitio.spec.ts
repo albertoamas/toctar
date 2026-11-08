@@ -15,13 +15,16 @@ test("un texto vacío da error junto al campo y no se guarda", async ({ page }) 
   await expect(page).toHaveURL(/\/panel\/sitio\/textos\?pagina=inicio$/);
   await expect(page.getByRole("form", { name: "Nosotros" })).toHaveCount(0);
 
-  const portada = page.getByRole("form", { name: "Portada" });
+  // Los textos se leen en su tarjeta y se editan en un modal (pulido 13.20)
+  await expect(page.getByRole("region", { name: "Textos y foto" })).toContainText("Como ven tu auto, te ven a ti");
+  await page.getByRole("button", { name: "Editar portada" }).click();
+  const portada = page.getByRole("dialog", { name: "Portada" });
   await portada.getByLabel("Lema").fill("");
   await portada.getByRole("button", { name: "Guardar portada" }).click();
   await expect(portada.getByText("Escribe el lema.")).toBeVisible();
 
   await page.reload();
-  await expect(page.getByRole("form", { name: "Portada" }).getByLabel("Lema")).toHaveValue("Como ven tu auto, te ven a ti");
+  await expect(page.getByRole("region", { name: "Textos y foto" })).toContainText("Como ven tu auto, te ven a ti");
 });
 
 test("el dueño edita la portada y los motivos de Nosotros, y quedan guardados", async ({ page }, info) => {
@@ -32,23 +35,27 @@ test("el dueño edita la portada y los motivos de Nosotros, y quedan guardados",
   // mezclado con el texto anterior (pasó en el CI, en máquinas más lentas que la PC)
   await page.waitForLoadState("networkidle");
 
-  const portada = page.getByRole("form", { name: "Portada" });
+  await page.getByRole("button", { name: "Editar portada" }).click();
+  const portada = page.getByRole("dialog", { name: "Portada" });
   const presentacion = portada.getByLabel("Presentación");
   await presentacion.fill("Taller de detailing en Tarija. Texto de prueba.");
   await expect(presentacion).toHaveValue("Taller de detailing en Tarija. Texto de prueba.");
   await portada.getByRole("button", { name: "Guardar portada" }).click();
   await expect(page.getByText("Portada: cambios guardados.")).toBeVisible();
+  await expect(portada).toHaveCount(0);
 
-  const nosotros = page.getByRole("form", { name: "Nosotros" });
+  await page.getByRole("button", { name: "Editar nosotros" }).click();
+  const nosotros = page.getByRole("dialog", { name: "Nosotros" });
   await nosotros.getByRole("button", { name: "Agregar motivo" }).click();
   await nosotros.getByLabel("Motivo 5", { exact: true }).fill("Atención por WhatsApp");
   await nosotros.getByRole("button", { name: "Subir motivo 5" }).click();
   await nosotros.getByRole("button", { name: "Guardar nosotros" }).click();
   await expect(page.getByText("Nosotros: cambios guardados.")).toBeVisible();
+  await expect(nosotros).toHaveCount(0);
 
   await page.reload();
-  await expect(page.getByRole("form", { name: "Portada" }).getByLabel("Presentación")).toHaveValue("Taller de detailing en Tarija. Texto de prueba.");
-  await expect(page.getByRole("form", { name: "Nosotros" }).getByLabel("Motivo 4", { exact: true })).toHaveValue("Atención por WhatsApp");
+  await expect(page.getByRole("region", { name: "Portada" })).toContainText("Taller de detailing en Tarija. Texto de prueba.");
+  await expect(page.getByRole("region", { name: "Nosotros" }).getByRole("listitem").nth(3)).toHaveText("Atención por WhatsApp");
 });
 
 test("preguntas frecuentes: agregar, editar, ordenar, ocultar y eliminar", async ({ page }, info) => {
@@ -96,8 +103,6 @@ test("la foto del taller va detrás del lema de la portada; sin foto, al lado va
   await expect(bloque.getByRole("button", { name: "Subir foto" })).toBeEnabled();
   await bloque.getByLabel("Archivo de la foto").setInputFiles({ name: "taller.png", mimeType: "image/png", buffer: PNG });
   await expect(bloque.getByRole("img", { name: "Foto del taller" })).toHaveAttribute("src", /portada\/[\w-]+-640\.webp$/);
-  // Se guardó al momento: no cuenta como un cambio sin guardar de la portada (pulido 13.15)
-  await expect(page.getByRole("button", { name: "Guardar portada" })).toBeDisabled();
 
   // En el sitio: la foto detrás (decorativa) y el arte ya no
   await page.goto("/");
@@ -124,6 +129,8 @@ test("la foto del equipo se sube en Textos y va al lado de la historia de Nosotr
   await page.goto("/panel/sitio/textos");
   const bloque = page.getByRole("region", { name: "Foto del equipo" });
   await expect(bloque.getByText("Sin foto: la historia va sola.")).toBeVisible();
+  // Mientras falta, la guía en una línea junto al lugar de la foto (pulido 13.20)
+  await expect(bloque.getByText("Formato 4:3, con el celular acostado", { exact: false })).toBeVisible();
   await expect(bloque.getByRole("button", { name: "Subir foto" })).toBeEnabled();
   await bloque.getByLabel("Archivo de la foto").setInputFiles({ name: "equipo.png", mimeType: "image/png", buffer: PNG });
   await expect(bloque.getByRole("img", { name: "El equipo de TocTar" })).toHaveAttribute("src", /nosotros\/[\w-]+-640\.webp$/);
@@ -135,7 +142,6 @@ test("la foto del equipo se sube en Textos y va al lado de la historia de Nosotr
   expect(Math.abs(equipo.width / equipo.height - 4 / 3)).toBeLessThan(0.02);
 
   await page.goto("/panel/sitio/textos");
-  await expect(bloque.getByText("Formato 4:3, con el celular acostado.", { exact: false })).toBeVisible();
   // Una vertical se sube igual, y avisa que se va a recortar; una horizontal ya no avisa
   const vertical = "Esta foto es vertical: se va a recortar arriba y abajo. Mejor sácala con el celular acostado.";
   await expect(bloque.getByText(vertical)).toHaveCount(0);

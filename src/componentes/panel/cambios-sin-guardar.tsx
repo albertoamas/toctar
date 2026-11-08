@@ -52,7 +52,7 @@ function useCambiosSinGuardar(formulario: RefObject<HTMLFormElement | null>, est
       cancelAnimationFrame(cuadro);
       cuadro = requestAnimationFrame(() => setHay(contenido(form) !== base.current));
     };
-    // Lo que se escribe avisa; las listas (Beneficios, Pasos) y los menús propios cambian un campo oculto, sin evento
+    // Lo que se escribe avisa; una lista (EditorLista) y los menús propios cambian un campo oculto, sin evento
     const observador = new MutationObserver(revisar);
     observador.observe(form, { subtree: true, childList: true, attributes: true, attributeFilter: ["value", "checked", "data-checked"] });
     for (const evento of ["input", "change", "click", "reset"]) form.addEventListener(evento, revisar);
