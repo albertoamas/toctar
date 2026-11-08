@@ -44,7 +44,7 @@ function Grupo({ titulo, enlaces }: GrupoEnlaces) {
             href={m.href}
             aria-current={activo ? "page" : undefined}
             className={cn(
-              "group/enlace relative flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium text-tinta-suave hover:bg-superficie hover:text-tinta pointer-fine:min-h-9",
+              "group/enlace relative flex min-h-9 items-center gap-3 rounded-md px-3 text-sm font-medium text-tinta-suave hover:bg-superficie hover:text-tinta pointer-coarse:min-h-11",
               activo && "tt-modulo-actual bg-superficie-alta font-semibold text-tinta",
             )}
           >

@@ -188,7 +188,7 @@ test("en la computadora el menú entra entero en 768 px de alto, con Sitio web e
   await page.goto("/panel/ordenes");
   const menu = page.getByRole("navigation", { name: "Panel" });
   await expect(menu.getByRole("link", { name: "Configuración" })).toBeInViewport();
-  const caja = menu.locator("..");
+  const caja = page.locator("[data-menu-desplazable]").filter({ has: menu });
   expect(await caja.evaluate((el) => el.scrollHeight <= el.clientHeight)).toBe(true);
   expect(Math.round((await menu.getByRole("link", { name: "Órdenes" }).boundingBox())!.height)).toBe(36);
   await expect(menu.getByRole("group", { name: "Administración" }).getByRole("link", { name: "Sitio web" })).toBeVisible();

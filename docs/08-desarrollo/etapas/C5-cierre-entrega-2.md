@@ -26,8 +26,7 @@ Revisión de todas las rutas y flujos del panel (24 de octubre, aprobada por el 
    - Inicio;
    - **Taller:** Agenda y Órdenes;
    - **Clientes:** Clientes, Consultas, Saldos pendientes, Mantenimientos y Reclamos;
-   - **Sitio web;**
-   - **Administración:** Catálogo y precios, Usuarios y Configuración.
+   - **Administración:** Sitio web, Catálogo y precios, Usuarios y Configuración (Sitio web iba en su propio grupo hasta el pulido 13.25, 08/11: solo, sin título, quedaba suelto).
 
    El grupo se define en `MODULOS` (`src/lib/permisos.ts`). Un grupo sin módulos para quien entra no se muestra. Los accesos del inicio siguen el mismo orden.
 3. **Configuración: Negocio · Taller · Parámetros.** La pestaña "Cotizaciones y mantenimiento" mezclaba temas. Pasa a "Parámetros" (`/panel/configuracion/parametros`), con secciones:
