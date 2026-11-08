@@ -112,7 +112,7 @@ const TITULOS_A_MANO: Record<string, number> = {
 // Si una falla: con algo de más, usa la pieza común; con algo de menos, ya se migró y se baja de su lista.
 describe("estructura del panel (C6)", () => {
   it("toda página dice su tipo con PaginaPanel", () => {
-    const sinUsarla = [...codigo].filter(([a, lineas]) => a.endsWith("/page.tsx") && !lineas.some((l) => l.includes("PaginaPanel"))).map(([a]) => a);
+    const sinUsarla = [...codigo].filter(([a, lineas]) => a.endsWith("/page.tsx") && !lineas.some((l) => l.includes("<PaginaPanel"))).map(([a]) => a);
     expect(sinUsarla).toEqual(SIN_PAGINA_PANEL);
   });
 

@@ -47,6 +47,7 @@ export function FormularioUsuario(props: Props) {
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
 
+  // El ancho de "editar" se va en C6, fase 4, cuando Usuario pase a ser una ficha; "crear" toma el de su PaginaPanel
   return (
     <form ref={formulario} action={accion} className={cn("tt-formulario-panel flex flex-col gap-6", editar && "max-w-xl")} noValidate>
       {editar && <input type="hidden" name="id" value={editar.id} />}
