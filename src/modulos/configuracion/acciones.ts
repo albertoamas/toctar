@@ -8,10 +8,8 @@ import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/form
 import { eliminarFotosSinFallar, guardarFoto } from "@/lib/fotos";
 import { nombreRepetido, puedeDesactivar, reordenar, type Direccion } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
-import { whatsAppLocal } from "@/lib/whatsapp";
-import { textoEnlaceMapa } from "@/lib/ubicacion";
 import { ETIQUETA_NEGOCIO, ETIQUETA_PARAMETROS, ETIQUETA_PLANTILLAS, listarElementos, obtenerConfiguracionNegocio, sucursalPrincipal } from "./consultas";
-import { CAMPOS_NEGOCIO, esquemaNegocio } from "./esquemas";
+import { CAMPOS_NEGOCIO, esquemaParteNegocio, type ParteNegocio } from "./esquemas";
 import {
   esquemaElemento,
   esquemaEstado,
@@ -32,67 +30,72 @@ function valoresDe(datos: FormData): Record<string, string> {
   return Object.fromEntries(CAMPOS_NEGOCIO.map((c) => [c, String(datos.get(c) ?? "")]));
 }
 
-export async function guardarNegocio(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+const GUARDADO: Record<ParteNegocio, string> = {
+  contacto: "Contacto guardado.",
+  ubicacion: "Ubicación guardada.",
+  horario: "Horario guardado.",
+  redes: "Redes guardadas.",
+  facturacion: "Datos para facturar guardados.",
+};
+
+/**
+ * Una parte de los datos del negocio (HU-04): contacto, ubicación, horario, redes o datos para facturar. Cada modal de la
+ * ficha guarda la suya (pulido 13.26). El negocio vive en dos tablas: el nombre, el correo, las redes y la facturación en
+ * `negocio`; el WhatsApp, la dirección, el mapa y el horario en la sucursal.
+ */
+export async function guardarParteNegocio(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const autor = await exigirModulo("configuracion");
-  const entrada = esquemaNegocio.safeParse(valoresDe(datos));
-  if (!entrada.success) return { errores: erroresDe(entrada.error), valores: valoresDe(datos) };
+  const valores = { ...valoresDe(datos), parte: String(datos.get("parte") ?? "") };
+  const entrada = esquemaParteNegocio.safeParse(valores);
+  if (!entrada.success) {
+    const errores = erroresDe(entrada.error);
+    // Sin una parte válida no hay campo donde mostrar el error: una pestaña abierta con la versión anterior
+    if (errores.parte) return { mensaje: "No se pudo guardar. Recarga la página." };
+    return { errores, valores };
+  }
   const d = entrada.data;
   const autorId = Number(autor.id);
   const { sucursalId, coordenadas: guardadas } = await obtenerConfiguracionNegocio();
-  // Pedido 38: las coordenadas salen del enlace (el pin) o, si no las trae, del mapa. El enlace corto de "Compartir" no
-  // las trae: con él se conservan las que ya estaban. Sin enlace ni mapa, no hay ubicación
-  const coordenadas = d.enlaceMapa?.coordenadas ?? d.mapaInsertado?.coordenadas ?? (d.enlaceMapa ? guardadas : null);
+  // Quién y cuándo, en cada cambio; `ex`, la base o la transacción (el contacto toca las dos tablas a la vez)
+  type Ejecutor = Pick<typeof db, "update">;
+  const enNegocio = (cambios: Partial<typeof negocio.$inferInsert>, ex: Ejecutor = db) =>
+    ex.update(negocio).set({ ...cambios, updatedAt: new Date(), updatedBy: autorId }).where(eq(negocio.id, 1));
+  const enSucursal = (cambios: Partial<typeof sucursal.$inferInsert>, ex: Ejecutor = db) =>
+    ex.update(sucursal).set({ ...cambios, updatedAt: new Date(), updatedBy: autorId }).where(eq(sucursal.id, sucursalId));
 
-  await db.transaction(async (tx) => {
-    await tx
-      .update(negocio)
-      .set({
-        nombre: d.nombre,
-        correo: d.correo,
-        redes: {
-          ...(d.facebook && { facebook: d.facebook }),
-          ...(d.instagram && { instagram: d.instagram }),
-          ...(d.tiktok && { tiktok: d.tiktok }),
-        },
-        nit: d.nit,
-        razonSocial: d.razonSocial,
-        updatedAt: new Date(),
-        updatedBy: autorId,
-      })
-      .where(eq(negocio.id, 1));
-    await tx
-      .update(sucursal)
-      .set({
-        direccion: d.direccion,
-        lat: coordenadas?.lat ?? null,
-        lng: coordenadas?.lng ?? null,
-        enlaceMapa: d.enlaceMapa?.enlace ?? null,
-        mapaInsertado: d.mapaInsertado?.src ?? null,
-        horarios: d.horarios,
-        telefonoWhatsapp: d.whatsapp,
-        updatedAt: new Date(),
-        updatedBy: autorId,
-      })
-      .where(eq(sucursal.id, sucursalId));
-  });
+  if (d.parte === "contacto") {
+    await db.transaction(async (tx) => {
+      await enNegocio({ nombre: d.nombre, correo: d.correo }, tx);
+      await enSucursal({ telefonoWhatsapp: d.whatsapp }, tx);
+    });
+  } else if (d.parte === "ubicacion") {
+    // Pedido 38: las coordenadas salen del enlace (el pin) o, si no las trae, del mapa. El enlace corto de "Compartir" no
+    // las trae: con él se conservan las que ya estaban. Sin enlace ni mapa, no hay ubicación
+    const coordenadas = d.enlaceMapa?.coordenadas ?? d.mapaInsertado?.coordenadas ?? (d.enlaceMapa ? guardadas : null);
+    await enSucursal({
+      direccion: d.direccion,
+      lat: coordenadas?.lat ?? null,
+      lng: coordenadas?.lng ?? null,
+      enlaceMapa: d.enlaceMapa?.enlace ?? null,
+      mapaInsertado: d.mapaInsertado?.src ?? null,
+    });
+  } else if (d.parte === "horario") {
+    await enSucursal({ horarios: d.horarios });
+  } else if (d.parte === "redes") {
+    await enNegocio({
+      redes: {
+        ...(d.facebook && { facebook: d.facebook }),
+        ...(d.instagram && { instagram: d.instagram }),
+        ...(d.tiktok && { tiktok: d.tiktok }),
+      },
+    });
+  } else {
+    await enNegocio({ nit: d.nit, razonSocial: d.razonSocial });
+  }
 
   updateTag(ETIQUETA_NEGOCIO);
   revalidatePath(`${RUTA}/negocio`);
-  // Se devuelven los valores ya normalizados: el formulario muestra lo que quedó guardado.
-  return {
-    ok: true,
-    mensaje: "Cambios guardados.",
-    valores: {
-      ...valoresDe(datos),
-      whatsapp: whatsAppLocal(d.whatsapp),
-      correo: d.correo ?? "",
-      enlaceMapa: textoEnlaceMapa(d.enlaceMapa?.enlace ?? null, coordenadas, d.mapaInsertado?.src ?? null),
-      mapaInsertado: d.mapaInsertado?.src ?? "",
-      facebook: d.facebook ?? "",
-      instagram: d.instagram ?? "",
-      tiktok: d.tiktok ?? "",
-    },
-  };
+  return { ok: true, mensaje: GUARDADO[d.parte] };
 }
 
 const ERROR_LOGO = "El logo debe ser PNG, JPG o WebP de hasta 5 MB.";

@@ -2,6 +2,7 @@ import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { consultar, crearUsuario, ingresarComoDueno } from "./apoyo";
 
 // Pulido 13.15: el botón de guardar se activa y queda fijo abajo cuando hay algo que guardar, y salir con cambios pregunta.
+// En Parámetros: Negocio ya no tiene la barra (pulido 13.26, cada parte en su modal).
 
 const sufijo = (info: TestInfo) => `${info.project.name.slice(0, 3)}${info.retry}`;
 
@@ -12,8 +13,8 @@ const hidratada = async (page: Page) => {
 
 test("sin cambios el botón está desactivado; con cambios se activa y queda fijo, y vuelve al dejar todo como estaba", async ({ page }) => {
   await ingresarComoDueno(page);
-  await page.goto("/panel/configuracion/negocio");
-  const nombre = page.getByLabel("Nombre del negocio");
+  await page.goto("/panel/configuracion/parametros");
+  const nombre = page.getByLabel("Formas de pago");
   const guardar = page.getByRole("button", { name: "Guardar cambios" });
   await expect(nombre).toBeVisible();
   await hidratada(page);
@@ -67,8 +68,8 @@ test("lo escrito antes de que la página termine de cargar también cuenta", asy
     await new Promise((listo) => setTimeout(listo, 1500));
     await ruta.continue();
   });
-  await page.goto("/panel/configuracion/negocio", { waitUntil: "commit" });
-  const nombre = page.getByLabel("Nombre del negocio");
+  await page.goto("/panel/configuracion/parametros", { waitUntil: "commit" });
+  const nombre = page.getByLabel("Formas de pago");
   await nombre.waitFor({ state: "visible" });
   const original = await nombre.inputValue();
   await nombre.fill(`${original} escrito rápido`);
@@ -80,8 +81,8 @@ test("lo escrito antes de que la página termine de cargar también cuenta", asy
 test("en el menú del celular, salir con cambios pregunta y el menú se cierra", async ({ page }, info) => {
   test.skip(info.project.name !== "celular", "El menú desplegable es del celular");
   await ingresarComoDueno(page);
-  await page.goto("/panel/configuracion/negocio");
-  const nombre = page.getByLabel("Nombre del negocio");
+  await page.goto("/panel/configuracion/parametros");
+  const nombre = page.getByLabel("Formas de pago");
   await expect(nombre).toBeVisible();
   await hidratada(page);
   await nombre.fill(`${await nombre.inputValue()} 2`);
@@ -99,8 +100,8 @@ test("en el menú del celular, salir con cambios pregunta y el menú se cierra",
 test("cerrar sesión con cambios también pregunta", async ({ page }, info) => {
   test.skip(info.project.name !== "escritorio", "Se ve a la vista en la computadora");
   await ingresarComoDueno(page);
-  await page.goto("/panel/configuracion/negocio");
-  const nombre = page.getByLabel("Nombre del negocio");
+  await page.goto("/panel/configuracion/parametros");
+  const nombre = page.getByLabel("Formas de pago");
   await expect(nombre).toBeVisible();
   await hidratada(page);
   await nombre.fill(`${await nombre.inputValue()} 2`);
@@ -109,7 +110,7 @@ test("cerrar sesión con cambios también pregunta", async ({ page }, info) => {
   const pregunta = page.getByRole("dialog", { name: "¿Salir sin guardar?" });
   await expect(pregunta).toBeVisible();
   await pregunta.getByRole("button", { name: "Seguir editando" }).click();
-  await expect(page).toHaveURL(/\/panel\/configuracion\/negocio$/);
+  await expect(page).toHaveURL(/\/panel\/configuracion\/parametros$/);
   await page.getByRole("button", { name: "Cerrar sesión" }).click();
   await pregunta.getByRole("button", { name: "Salir sin guardar" }).click();
   await expect(page).toHaveURL(/\/ingresar/);
