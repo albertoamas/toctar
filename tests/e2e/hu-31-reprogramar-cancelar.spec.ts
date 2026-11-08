@@ -10,9 +10,12 @@ test.describe.configure({ mode: "serial" });
 const sufijo = (info: TestInfo) => `${info.project.name === "celular" ? "C" : "E"}${info.retry || ""}`;
 const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 5 : 6}31${info.retry}0${n}0`;
 
-/** Un día propio: dentro de 240 (celular) o 290 (escritorio) días, más un desplazamiento (se agenda hasta un año adelante). */
+/**
+ * Un día propio: dentro de 240 (celular) o 290 (escritorio) días, más un desplazamiento (se agenda hasta un año adelante).
+ * Cada reintento corre 3 días: las reservas que dejó el intento anterior siguen en la base y no se cruzan con las nuevas.
+ */
 async function dia(info: TestInfo, mas: number): Promise<string> {
-  const [{ d }] = await consultar<{ d: string }>("select to_char(current_date + $1::int, 'YYYY-MM-DD') as d", [(info.project.name === "celular" ? 240 : 290) + mas]);
+  const [{ d }] = await consultar<{ d: string }>("select to_char(current_date + $1::int, 'YYYY-MM-DD') as d", [(info.project.name === "celular" ? 240 : 290) + mas + info.retry * 3]);
   return d;
 }
 

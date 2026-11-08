@@ -85,12 +85,16 @@ test("«Aceptó» la deja en Por reservar de la Agenda; desde ahí se reserva y 
   await expect(pasoActual(page)).toContainText("Aceptada");
   // El atajo, a la reserva de la Agenda
   await expect(page.getByRole("link", { name: "Reservar en Agenda" })).toHaveAttribute("href", `/panel/agenda/nueva?cotizacion=${c.cotizacionId}`);
-  // El aviso no tapa el atajo (pulido 13.23): en la computadora va abajo a la derecha. Antes caía encima y, con el mouse
-  // sobre él, no se iba: el clic esperaba hasta agotar el tiempo
-  const caja = (await page.locator("[data-sonner-toast]").first().boundingBox())!;
-  const atajo = (await page.getByRole("link", { name: "Reservar en Agenda" }).boundingBox())!;
-  const sePisan = caja.x < atajo.x + atajo.width && atajo.x < caja.x + caja.width && caja.y < atajo.y + atajo.height && atajo.y < caja.y + caja.height;
-  expect(sePisan).toBe(false);
+  // En la computadora el aviso no tapa el atajo (pulido 13.23): va abajo a la derecha. Antes caía encima y, con el mouse
+  // sobre él, no se iba: el clic esperaba hasta agotar el tiempo. En el celular sigue arriba, a propósito
+  if (info.project.name === "escritorio") {
+    const toast = page.locator("[data-sonner-toast]").first();
+    await expect(toast).toBeVisible();
+    const caja = (await toast.boundingBox())!;
+    const atajo = (await page.getByRole("link", { name: "Reservar en Agenda" }).boundingBox())!;
+    const sePisan = caja.x < atajo.x + atajo.width && atajo.x < caja.x + caja.width && caja.y < atajo.y + atajo.height && atajo.y < caja.y + caja.height;
+    expect(sePisan).toBe(false);
+  }
   const [antes] = await consultar<{ con: string; cot: string }>(
     "select q.estado as con, c.estado as cot from consulta q join cotizacion c on c.consulta_id = q.id where q.id = $1",
     [c.consultaId],
