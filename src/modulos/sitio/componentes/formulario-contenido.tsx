@@ -103,8 +103,9 @@ export function TextosDePagina({ pagina, contenido }: { pagina: Pagina; contenid
                 </ul>
               </dd>
             ) : (
-              // Un texto largo (la historia) se ve en cuatro líneas: entero, en su "Editar"
-              <dd className={c.max > 500 ? "line-clamp-4" : undefined}>{valor}</dd>
+              // Con sus saltos de línea, como en el sitio. Los textos largos (la historia, cómo trabajan) en cuatro líneas:
+              // enteros, en su "Editar"
+              <dd className={c.max > 500 ? "line-clamp-4 whitespace-pre-line" : "whitespace-pre-line"}>{valor}</dd>
             )}
           </div>
         );

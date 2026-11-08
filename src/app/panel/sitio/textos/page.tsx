@@ -44,8 +44,8 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/sitio/textos">
           <SeccionConEditar
             key={p}
             id={p}
-            // Entrando a una sola, el título de la pantalla ya es su nombre
-            titulo={elegida ? "Textos" : PAGINAS[p].titulo}
+            // Entrando a una sola, el título de la pantalla ya es su nombre: la tarjeta dice lo que lleva
+            titulo={elegida ? (llevaFoto(p) ? "Textos y foto" : "Textos") : PAGINAS[p].titulo}
             etiquetaEditar={`Editar ${PAGINAS[p].titulo.toLowerCase()}`}
             tituloModal={PAGINAS[p].titulo}
             lectura={

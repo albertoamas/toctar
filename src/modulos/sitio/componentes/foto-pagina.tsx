@@ -20,7 +20,7 @@ export function FotoDePagina({ pagina, foto }: { pagina: PaginaConFoto; foto: Ur
         actual={foto ? { ...foto, alt: f.alt } : null}
         textoVacio={f.vacia}
         quitar={() => quitarFotoDePagina(pagina)}
-        compacta={{ titulo: f.titulo, guia: f.guia }}
+        compacta={{ titulo: f.titulo, guia: f.guia, guiaSiempre: f.guiaSiempre }}
       />
     </section>
   );

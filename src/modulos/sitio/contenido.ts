@@ -53,8 +53,9 @@ export const PORTADA = "inicio" satisfies Pagina;
 export const FOTOS_DE_PAGINA = {
   inicio: {
     titulo: "Foto del taller",
-    // Es un fondo: se recorta distinto según la pantalla, así que no se le pide 4:3
-    guia: "Va detrás del lema, oscurecida. Con el celular acostado y sin nada importante en los bordes.",
+    // Es un fondo: se recorta distinto según la pantalla, así que no se le pide 4:3. Se ve también con foto, para cambiarla
+    guia: "Va detrás del lema, oscurecida y recortada según la pantalla: con el celular acostado, en la cámara normal y sin nada importante en los bordes.",
+    guiaSiempre: true,
     vacia: "Sin foto: detrás del lema queda el fondo negro.",
     quitada: "Foto quitada. Detrás del lema queda el fondo negro.",
     alt: "Foto del taller",
@@ -63,12 +64,13 @@ export const FOTOS_DE_PAGINA = {
   nosotros: {
     titulo: "Foto del equipo",
     guia: "Va al lado de la historia. Formato 4:3, con el celular acostado y el equipo al centro.",
+    guiaSiempre: false,
     vacia: "Sin foto: la historia va sola.",
     quitada: "Foto quitada. La historia va sola.",
     alt: "El equipo de TocTar",
     carpeta: "nosotros",
   },
-} as const satisfies Partial<Record<Pagina, { titulo: string; /** En una línea, junto a la foto mientras falta. */ guia: string; vacia: string; quitada: string; alt: string; carpeta: string }>>;
+} as const satisfies Partial<Record<Pagina, { titulo: string; /** En una línea, junto a la foto mientras falta. */ guia: string; guiaSiempre: boolean; vacia: string; quitada: string; alt: string; carpeta: string }>>;
 
 export type PaginaConFoto = keyof typeof FOTOS_DE_PAGINA;
 const PAGINAS_CON_FOTO = Object.keys(FOTOS_DE_PAGINA) as [PaginaConFoto, ...PaginaConFoto[]];

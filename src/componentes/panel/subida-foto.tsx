@@ -33,7 +33,7 @@ type Props = {
    * Una fila al pie de una sección (pulido 13.19): la miniatura, y al lado su título y los botones o, sin foto, la guía
    * en una línea. Tocar la miniatura la abre en grande. Para fichas donde la foto acompaña a un texto.
    */
-  compacta?: { titulo: string; guia: string };
+  compacta?: { titulo: string; guia: string; /** La guía también con foto: importa al cambiarla (un fondo que se recorta). */ guiaSiempre?: boolean };
 };
 
 const LADO_MAXIMO = 2400;
@@ -152,7 +152,10 @@ export function SubidaFoto({ id, accion, camposOcultos, actual, textoVacio, quit
         <div className="flex min-w-40 flex-1 flex-col gap-2">
           <p className="text-sm font-semibold">{compacta.titulo}</p>
           {actual ? (
-            botones
+            <>
+              {compacta.guiaSiempre && <p className="text-sm text-tinta-suave">{compacta.guia}</p>}
+              {botones}
+            </>
           ) : (
             <p className="text-sm text-tinta-suave">
               {[compacta.guia, textoVacio].filter(Boolean).join(" ")}
