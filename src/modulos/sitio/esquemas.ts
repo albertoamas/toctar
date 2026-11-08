@@ -77,6 +77,16 @@ export const esquemaParteServicio = z.discriminatedUnion("parte", [
 
 export type ParteServicio = z.infer<typeof esquemaParteServicio>["parte"];
 
+/**
+ * Por qué un servicio no puede mostrarse en el sitio, o null si puede: inactivo en el catálogo no sale (publico.ts), y
+ * sin resumen su página queda vacía arriba y en Google.
+ */
+export function motivoParaNoMostrar(servicio: { activo: boolean; resumen: string }): string | null {
+  if (!servicio.activo) return "Está inactivo en el catálogo: actívalo ahí primero.";
+  if (!servicio.resumen.trim()) return "Escribe el resumen antes de mostrarlo en el sitio.";
+  return null;
+}
+
 // Acciones que reciben datos sueltos (no un formulario): también se validan, porque cualquiera puede llamarlas.
 const idRegistro = z.number().int().positive();
 export const esquemaId = idRegistro;

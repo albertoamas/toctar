@@ -13,7 +13,7 @@ import { agregarAGaleria } from "./agregar-a-galeria";
 import { ETIQUETA_CONTENIDO, listarGaleria, listarPreguntas, listarServicios, servicioEnSitio } from "./consultas";
 import { galeriaCambiada } from "./galeria-cambiada";
 import { servicioCambiado } from "./servicio-cambiado";
-import { esquemaEditarGaleria, esquemaFotoSeccion, esquemaGaleria, esquemaId, esquemaIdFormulario, esquemaMover, esquemaParteServicio, esquemaQuitarFotoSeccion, esquemaVisibilidad, type ParteServicio } from "./esquemas";
+import { esquemaEditarGaleria, esquemaFotoSeccion, esquemaGaleria, esquemaId, esquemaIdFormulario, esquemaMover, esquemaParteServicio, esquemaQuitarFotoSeccion, esquemaVisibilidad, motivoParaNoMostrar, type ParteServicio } from "./esquemas";
 
 // Servicios del sitio (HU-07, RF-11), textos (HU-08, RF-10) y galería (HU-09, RF-12). Entra el dueño o un encargado con el permiso "sitio".
 // Del servicio, aquí solo su página: el alta, el nombre y las variantes son del catálogo (catalogo/acciones.ts).
@@ -46,7 +46,12 @@ export async function guardarParteServicio(_previo: EstadoFormulario, datos: For
   // Lo escrito vuelve al formulario si hay un error
   const devolver = { ...valores, opcionesEnEscalera: opcionesEnEscalera ? "on" : "" };
   const entrada = esquemaParteServicio.safeParse({ ...valores, opcionesEnEscalera });
-  if (!entrada.success) return { errores: erroresDe(entrada.error), valores: devolver };
+  if (!entrada.success) {
+    const errores = erroresDe(entrada.error);
+    // Sin una parte válida no hay campo donde mostrar el error: una pestaña abierta con la versión anterior
+    if (errores.parte || errores.id) return { mensaje: "No se pudo guardar. Recarga la página." };
+    return { errores, valores: devolver };
+  }
   const d = entrada.data;
 
   const [existe] = await db.select({ id: servicio.id }).from(servicio).where(eq(servicio.id, d.id));
@@ -87,9 +92,10 @@ export async function cambiarVisibilidadServicio(datos: { id: number; visible: b
   const entrada = esquemaVisibilidad.safeParse(datos);
   if (!entrada.success) return { mensaje: "Ese servicio ya no existe. Recarga la página." };
   const { id, visible } = entrada.data;
-  const [actual] = await db.select({ resumen: servicio.resumen }).from(servicio).where(eq(servicio.id, id));
+  const [actual] = await db.select({ resumen: servicio.resumen, activo: servicio.activo }).from(servicio).where(eq(servicio.id, id));
   if (!actual) return { mensaje: "Ese servicio ya no existe. Recarga la página." };
-  if (visible && !actual.resumen.trim()) return { mensaje: "Escribe el resumen antes de mostrarlo en el sitio." };
+  const motivo = visible ? motivoParaNoMostrar(actual) : null;
+  if (motivo) return { mensaje: motivo };
   await db.update(servicio).set({ visibleSitio: visible, updatedAt: new Date(), updatedBy: Number(autor.id) }).where(eq(servicio.id, id));
   servicioCambiado(id);
   return { ok: true, mensaje: visible ? "Se muestra en el sitio." : "Oculto en el sitio." };

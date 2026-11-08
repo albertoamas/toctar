@@ -9,7 +9,7 @@ import { SECCIONES_FOTO, type SeccionFoto } from "../secciones-foto";
 // al momento. Una fila compacta al pie de su parte: una columna alta al costado dejaba huecos en blanco. La guía, en una
 // línea y solo mientras no hay foto.
 
-type Foto = { miniatura: string; ancho: number | null; alto: number | null };
+type Foto = { url: string; miniatura: string; ancho: number | null; alto: number | null };
 
 /** La fila de la foto, separada del texto de su parte. */
 const AL_PIE = "border-t border-border pt-4";

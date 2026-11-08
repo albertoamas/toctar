@@ -143,8 +143,9 @@ export function ZonaFoto(props: Props) {
               <button
                 type="button"
                 aria-label={`Ver en grande: ${vista.alt}`}
+                disabled={bloqueada}
                 onClick={props.alTocarFoto}
-                className="absolute inset-0 cursor-zoom-in focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--foco)]"
+                className="absolute inset-0 cursor-zoom-in disabled:cursor-default focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--foco)]"
               />
             ) : (
               // Un clic en la foto también la cambia. Con teclado y lector de pantalla está "Cambiar foto", debajo

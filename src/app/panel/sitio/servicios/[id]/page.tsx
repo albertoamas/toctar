@@ -71,7 +71,7 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
                 Ver en el sitio
               </a>
             )}
-            <MasServicio id={s.id} slug={s.slug} visible={s.visible} catalogo={puedeVerModulo(usuario, "catalogo")} />
+            <MasServicio id={s.id} slug={s.slug} visible={s.visible} activo={s.activo} catalogo={puedeVerModulo(usuario, "catalogo")} />
           </div>
         }
       >

@@ -191,15 +191,20 @@ function FormularioDireccion({ id, slug }: { id: number; slug: string }) {
  * "Más" del encabezado: lo que se usa poco. Mostrar u ocultar se hace al momento (se deshace con la misma opción); la
  * dirección se cambia en un modal, con su advertencia; el catálogo, si la persona lo ve.
  */
-export function MasServicio({ id, slug, visible, catalogo }: { id: number; slug: string; visible: boolean; catalogo: boolean }) {
+export function MasServicio({ id, slug, visible, activo, catalogo }: { id: number; slug: string; visible: boolean; activo: boolean; catalogo: boolean }) {
   const router = useRouter();
   const [enviando, iniciar] = useTransition();
   const [direccion, setDireccion] = useState(false);
+  // Inactivo en el catálogo no sale en el sitio: mostrarlo no cambiaría nada a la vista
   const acciones = [
-    {
-      texto: visible ? "Ocultar del sitio" : "Mostrar en el sitio",
-      alElegir: () => iniciar(async () => avisarResultado(await cambiarVisibilidadServicio({ id, visible: !visible }))),
-    },
+    ...(activo
+      ? [
+          {
+            texto: visible ? "Ocultar del sitio" : "Mostrar en el sitio",
+            alElegir: () => iniciar(async () => avisarResultado(await cambiarVisibilidadServicio({ id, visible: !visible }))),
+          },
+        ]
+      : []),
     { texto: "Cambiar dirección de la página", alElegir: () => setDireccion(true) },
     ...(catalogo ? [{ texto: "Abrir en el catálogo", alElegir: () => router.push(`/panel/catalogo/${id}`) }] : []),
   ];

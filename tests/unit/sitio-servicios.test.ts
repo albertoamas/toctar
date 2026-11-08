@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { iconoDe } from "@/modulos/sitio/beneficios";
 import { erroresDe } from "@/lib/formularios";
 import { PATRON_SLUG, crearSlug } from "@/lib/slug";
-import { esquemaId, esquemaIdFormulario, esquemaParteServicio, esquemaServicio, esquemaVisibilidad } from "@/modulos/sitio/esquemas";
+import { esquemaId, esquemaIdFormulario, esquemaParteServicio, esquemaServicio, esquemaVisibilidad, motivoParaNoMostrar } from "@/modulos/sitio/esquemas";
 
 // HU-07 Servicios del sitio: la página de cada servicio. Criterios: docs/09-pruebas/criterios-entrega-1.md (7.x). El
 // alta, el nombre y las variantes son del catálogo (tests/unit/catalogo.test.ts).
@@ -96,6 +96,12 @@ describe("una parte de la página del servicio", () => {
     const r = esquemaParteServicio.safeParse({ id: "3", ...cambio });
     expect(r.success).toBe(false);
     expect(erroresDe(r.error!)).toEqual(errores);
+  });
+
+  test("se muestra en el sitio solo activo y con resumen (uno de espacios no vale)", () => {
+    expect(motivoParaNoMostrar({ activo: true, resumen: "Pulimos." })).toBeNull();
+    expect(motivoParaNoMostrar({ activo: true, resumen: "   " })).toBe("Escribe el resumen antes de mostrarlo en el sitio.");
+    expect(motivoParaNoMostrar({ activo: false, resumen: "Pulimos." })).toBe("Está inactivo en el catálogo: actívalo ahí primero.");
   });
 
   test("una parte que no existe se rechaza", () => {

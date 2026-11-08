@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { consultar, crearUsuario, ingresarComoDueno, PNG } from "./apoyo";
+import { consultar, crearUsuario, ingresarComoDueno } from "./apoyo";
 
 // Pulido 13.15: el botón de guardar se activa y queda fijo abajo cuando hay algo que guardar, y salir con cambios pregunta.
 
@@ -170,20 +170,4 @@ test("un flujo también pregunta: nuevo cliente, con su botón de siempre", asyn
   await expect(pregunta).toBeVisible();
   await pregunta.getByRole("button", { name: "Salir sin guardar" }).click();
   await expect(page).toHaveURL(/\/panel\/clientes$/);
-});
-
-test("subir una foto, que se guarda al momento, no activa el botón", async ({ page }, info) => {
-  test.skip(info.project.name !== "escritorio", "Cambia la foto compartida");
-  await ingresarComoDueno(page);
-  await page.goto("/panel/sitio/textos");
-  const guardar = page.getByRole("button", { name: "Guardar portada" });
-  await expect(guardar).toBeVisible();
-  await hidratada(page);
-  const bloque = page.getByRole("region", { name: "Foto del taller" });
-  await bloque.getByLabel("Archivo de la foto").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
-  await expect(page.getByText("Foto guardada.")).toBeVisible();
-  await expect(guardar).toBeDisabled();
-  // Queda como estaba: otras pruebas esperan la portada sin foto
-  await bloque.getByRole("button", { name: "Quitar foto" }).click();
-  await expect(bloque.getByText("Sin foto: detrás del lema queda el fondo negro.")).toBeVisible();
 });

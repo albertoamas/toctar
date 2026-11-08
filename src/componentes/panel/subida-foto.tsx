@@ -21,7 +21,8 @@ type Props = {
   /** Acción que recibe la foto en el campo "foto" más los campos ocultos. */
   accion: (previo: Resultado, datos: FormData) => Promise<Resultado>;
   camposOcultos: Record<string, string | number>;
-  actual: { miniatura: string; ancho: number | null; alto: number | null; alt: string } | null;
+  /** `url`, la grande: la abre el visor de la variante compacta (la miniatura, si no viene). */
+  actual: { miniatura: string; url?: string; ancho: number | null; alto: number | null; alt: string } | null;
   textoVacio: string;
   quitar?: () => Promise<Resultado>;
   /** La vista previa entera (un afiche vertical), en lugar de recortada al recuadro. */
@@ -162,7 +163,7 @@ export function SubidaFoto({ id, accion, camposOcultos, actual, textoVacio, quit
         </div>
         {actual && (
           <VisorFotos
-            fotos={[{ url: actual.miniatura, ancho: actual.ancho, alto: actual.alto, alt: actual.alt }]}
+            fotos={[{ url: actual.url ?? actual.miniatura, ancho: actual.ancho, alto: actual.alto, alt: actual.alt }]}
             abierta={enGrande}
             alCambiar={setEnGrande}
             titulo={compacta.titulo}
