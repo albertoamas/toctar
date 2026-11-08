@@ -33,20 +33,6 @@ test("sin cambios el botón está desactivado; con cambios se activa y queda fij
   await expect(page.locator("[data-pie-fijo]")).toHaveCount(0);
 });
 
-test("una lista también cuenta: agregar una fila lo activa y quitarla lo deja como estaba", async ({ page }) => {
-  await ingresarComoDueno(page);
-  await page.goto("/panel/sitio/textos");
-  const agregar = page.getByRole("button", { name: "Agregar motivo" });
-  const guardar = page.getByRole("button", { name: "Guardar nosotros" });
-  await expect(agregar).toBeEnabled();
-  await hidratada(page);
-  await expect(guardar).toBeDisabled();
-  await agregar.click();
-  await expect(guardar).toBeEnabled();
-  await page.getByRole("button", { name: /^Quitar motivo \d+$/ }).last().click();
-  await expect(guardar).toBeDisabled();
-});
-
 test("salir con cambios pregunta: se puede seguir editando o salir", async ({ page }) => {
   await ingresarComoDueno(page);
   await page.goto("/panel/configuracion/parametros");

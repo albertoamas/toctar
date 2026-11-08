@@ -263,7 +263,8 @@ test("en los beneficios de un servicio una fila vacía recibe el foco con su err
 test("en Textos del sitio un motivo largo se lee entero, y Enter envía sin saltar de renglón", async ({ page }) => {
   await ingresarComoDueno(page);
   await page.goto("/panel/sitio/textos");
-  const primero = page.getByRole("textbox", { name: "Motivo 1" });
+  await page.getByRole("button", { name: "Editar nosotros" }).click();
+  const primero = page.getByRole("dialog", { name: "Nosotros" }).getByRole("textbox", { name: "Motivo 1" });
   const alto = (await primero.boundingBox())!.height;
   await primero.fill("Revisamos tu vehículo antes de darte un precio, con buena luz, y te mostramos lo que encontramos en la pintura.");
   // El campo crece en vez de cortar el texto
@@ -271,7 +272,8 @@ test("en Textos del sitio un motivo largo se lee entero, y Enter envía sin salt
   // "Agregar motivo" mide lo mismo que el botón de guardar (antes, 28 px con mouse)
   const agregar = page.getByRole("button", { name: "Agregar motivo" });
   const guardar = page.getByRole("button", { name: "Guardar nosotros" });
-  expect((await agregar.boundingBox())!.height).toBe((await guardar.boundingBox())!.height);
+  // Redondeado: el modal se abre con una animación de escala y deja diferencias de milésimas de píxel
+  expect(Math.round((await agregar.boundingBox())!.height)).toBe(Math.round((await guardar.boundingBox())!.height));
   await agregar.click();
   const nuevo = page.getByRole("list", { name: "Motivo" }).getByRole("textbox").last();
   await nuevo.press("Enter");
