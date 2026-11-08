@@ -15,6 +15,7 @@ La documentación vive en `docs/` y manda sobre cualquier supuesto:
 - `docs/05-analisis/`: casos de uso, historias de usuario (backlog) y flujos críticos.
 - `docs/06-diseno/modelo-de-datos/modelo-de-datos.md`: modelo de datos (decisiones D-n).
 - `docs/06-diseno/arquitectura/arquitectura.md`: stack, entornos y estructura de carpetas.
+- `docs/06-diseno/sistema-del-panel.md`: reglas de estructura del panel (tipos de pantalla, anchos, secciones, acciones y componentes).
 - `docs/03-cierre-comercial/`: alcance contratado (Web + Gestión). Lo que no esté ahí es un cambio: se anota en `registro-de-cambios.md`, no se programa directamente.
 
 ## Reglas del negocio que no se negocian
