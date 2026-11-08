@@ -301,8 +301,10 @@ test("en Textos del sitio un motivo largo se lee entero, y Enter envía sin salt
   // "Agregar motivo" mide lo mismo que el botón de guardar (antes, 28 px con mouse)
   const agregar = page.getByRole("button", { name: "Agregar motivo" });
   const guardar = page.getByRole("button", { name: "Guardar nosotros" });
-  // Redondeado: el modal se abre con una animación de escala y deja diferencias de milésimas de píxel
-  expect(Math.round((await agregar.boundingBox())!.height)).toBe(Math.round((await guardar.boundingBox())!.height));
+  // Con el modal quieto: se abre con una animación de escala y, medido a la mitad, los altos no coinciden
+  await expect(async () => {
+    expect(Math.round((await agregar.boundingBox())!.height)).toBe(Math.round((await guardar.boundingBox())!.height));
+  }).toPass({ timeout: 3000 });
   await agregar.click();
   const nuevo = page.getByRole("list", { name: "Motivo" }).getByRole("textbox").last();
   await nuevo.press("Enter");

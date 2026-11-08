@@ -7,7 +7,7 @@ import { cambiarEstadoVariante, guardarVariante, moverVariante } from "../accion
 
 // HU-19: las variantes de un servicio (D-2): agregar, renombrar, ordenar y desactivar. Va en el modal de "Editar" de la
 // ficha del servicio, que en lectura muestra sus nombres. Cada cambio se guarda al momento: el modal se cierra con
-// "Listo", que no aparece mientras una fila está abierta para agregar o renombrar (lo escrito sin guardar se perdería).
+// "Listo", que no aparece mientras está abierto el modal de agregar o renombrar una (lo escrito sin guardar se perdería).
 
 export function VariantesServicio({ servicioId, variantes }: { servicioId: number; variantes: ElementoLista[] }) {
   const [editando, setEditando] = useState(false);
@@ -18,6 +18,7 @@ export function VariantesServicio({ servicioId, variantes }: { servicioId: numbe
         titulo="Variantes"
         conEncabezado={false}
         singular="variante"
+        femenino
         campoDescripcion={{ etiqueta: "Descripción", ayuda: "Se ve en la página del servicio.", ejemplo: "Capa más densa, más años de protección" }}
         camposOcultos={{ servicioId }}
         alEditar={setEditando}

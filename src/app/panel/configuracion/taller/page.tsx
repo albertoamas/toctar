@@ -9,7 +9,7 @@ import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 export const metadata: Metadata = { title: "Configuración del taller" };
 
 // HU-05: espacios del taller (RN-06) y tamaños de vehículo (RN-07); pedido 12: las partes del checklist de recepción.
-// Solo el dueño.
+// Solo el dueño. Pulido 13.27: una lista debajo de la otra (en dos columnas, el checklist quedaba solo con un hueco al lado).
 export default function PaginaTaller() {
   return (
     <>
@@ -25,7 +25,7 @@ async function Contenido() {
   await exigirModulo("configuracion");
   const [espacios, tamanos, partes] = await Promise.all([listarElementos("espacios"), listarElementos("tamanos"), listarElementos("partes")]);
   return (
-    <div className="grid max-w-5xl gap-12 lg:grid-cols-2">
+    <div className="flex max-w-3xl flex-col gap-10">
       <ListaEditable
         lista="espacios"
         elementos={espacios}

@@ -57,11 +57,10 @@ test("el dueño cambia el adelanto y los textos del PDF, y quedan guardados", as
 
 const activos = (page: Page) => page.getByRole("list", { name: "Espacios del taller activos" });
 
-/** "Desactivar" está dentro de la edición (pulido 6.2): se abre con el lápiz si no está abierta. */
+/** "Desactivar" va al pie del modal de cada espacio (pulido 13.27): tocar la fila lo abre. */
 async function desactivar(page: Page, nombre: string) {
-  const boton = page.getByRole("button", { name: `Desactivar ${nombre}` });
-  if (!(await boton.isVisible())) await page.getByRole("button", { name: `Editar ${nombre}` }).click();
-  await boton.click();
+  await page.getByRole("button", { name: `Editar ${nombre}` }).click();
+  await page.getByRole("dialog", { name: "Editar espacio" }).getByRole("button", { name: `Desactivar ${nombre}` }).click();
 }
 
 test("espacios del taller: agregar, renombrar, ordenar y desactivar; el último activo no se desactiva", async ({ page }, info) => {
@@ -73,24 +72,32 @@ test("espacios del taller: agregar, renombrar, ordenar y desactivar; el último 
   await expect(activos(page).getByRole("listitem")).toHaveCount(3);
   await expect(page.getByRole("list", { name: "Tamaños de vehículo activos" }).getByRole("listitem")).toHaveCount(5);
 
-  // Agregar; un nombre repetido se rechaza
+  // Agregar, en su modal (pulido 13.27); un nombre repetido se rechaza
   await page.getByRole("button", { name: "Agregar espacio" }).click();
-  await page.getByLabel("Nombre del espacio").fill("espacio 1");
-  await page.getByRole("button", { name: "Agregar", exact: true }).click();
-  await expect(page.getByText("Ya existe un espacio con ese nombre.")).toBeVisible();
-  await page.getByLabel("Nombre del espacio").fill("Box nuevo");
-  await page.getByRole("button", { name: "Agregar", exact: true }).click();
+  const nuevo = page.getByRole("dialog", { name: "Nuevo espacio" });
+  await nuevo.getByLabel("Nombre del espacio").fill("espacio 1");
+  await nuevo.getByRole("button", { name: "Agregar espacio" }).click();
+  await expect(nuevo.getByText("Ya existe un espacio con ese nombre.")).toBeVisible();
+  await nuevo.getByLabel("Nombre del espacio").fill("Box nuevo");
+  await nuevo.getByRole("button", { name: "Agregar espacio" }).click();
   await expect(page.getByText("Box nuevo agregado.")).toBeVisible();
+  await expect(nuevo).toHaveCount(0);
   await expect(activos(page).getByRole("listitem")).toHaveCount(4);
 
-  // Renombrar
+  // Renombrar: tocar la fila abre su modal
   await page.getByRole("button", { name: "Editar Box nuevo" }).click();
-  await page.getByLabel("Nombre del espacio").fill("Box 4");
-  await page.getByRole("button", { name: "Guardar", exact: true }).click();
+  const editar = page.getByRole("dialog", { name: "Editar espacio" });
+  await editar.getByLabel("Nombre del espacio").fill("Box 4");
+  await editar.getByRole("button", { name: "Guardar espacio" }).click();
+  await expect(editar).toHaveCount(0);
   await expect(activos(page).getByRole("listitem").last()).toContainText("Box 4");
 
-  // Subir
-  await page.getByRole("button", { name: "Subir Box 4" }).click();
+  // Subir, en "Cambiar orden" de su lista
+  await page.getByRole("region", { name: "Espacios del taller" }).getByRole("button", { name: "Cambiar orden" }).click();
+  const orden = page.getByRole("dialog", { name: "Orden: Espacios del taller" });
+  await orden.getByRole("button", { name: "Subir Box 4" }).click();
+  await expect(orden.getByRole("listitem").nth(2)).toContainText("Box 4");
+  await orden.getByRole("button", { name: "Listo" }).click();
   await expect(activos(page).getByRole("listitem").nth(2)).toContainText("Box 4");
 
   // Desactivar todos menos uno: el último no se puede
@@ -100,6 +107,8 @@ test("espacios del taller: agregar, renombrar, ordenar y desactivar; el último 
   }
   await desactivar(page, "Box 4");
   await expect(page.getByText("Debe quedar al menos un espacio activo.")).toBeVisible();
+  // No se desactivó: el modal sigue abierto y se cierra sin cambios
+  await page.getByRole("dialog", { name: "Editar espacio" }).getByRole("button", { name: "Cancelar" }).click();
   await expect(activos(page).getByRole("listitem")).toHaveCount(1);
 
   // Se reactivan (no se borró nada) y se deja como estaba
