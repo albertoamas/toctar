@@ -3,6 +3,8 @@ import { ArrowUpDownIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { useHidratado } from "@/componentes/hidratado";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { CancelarModal, ModalFormulario, PieModal } from "@/componentes/panel/modal-formulario";
+import { cn } from "cn";
+import { Insignia } from "@/componentes/panel/insignia";
 import { Button } from "@/componentes/ui/button";
 import type { EstadoFormulario } from "@/lib/formularios";
 import type { Direccion } from "@/lib/orden";
@@ -13,7 +15,8 @@ import type { Direccion } from "@/lib/orden";
 // movimiento se guarda al momento ("Listo" cierra).
 
 type Props = {
-  elementos: { id: number; nombre: string }[];
+  /** `oculto`: tiene su lugar pero no sale en el sitio; se marca. */
+  elementos: { id: number; nombre: string; oculto?: boolean }[];
   /** La acción del servidor que mueve uno. */
   mover: (datos: { id: number; direccion: Direccion }) => Promise<EstadoFormulario>;
   /** De qué es: "Orden de los servicios". */
@@ -40,14 +43,17 @@ export function OrdenarLista({ elementos, mover, etiqueta }: Props) {
         Cambiar orden
       </Button>
       <ModalFormulario titulo="Orden en el sitio" abierto={abierto} alCambiar={setAbierto}>
-        <p className="text-sm text-tinta-suave">En este orden salen en el sitio.</p>
+        <p className="text-sm text-tinta-suave">En este orden salen en el sitio. Las ocultas guardan su lugar.</p>
         <ol aria-label={etiqueta} className="flex flex-col divide-y divide-border rounded-lg border border-border">
           {elementos.map((e, i) => (
             <li key={e.id} className="flex items-center gap-2 py-1 pr-1 pl-3">
               <span aria-hidden className="w-5 shrink-0 text-right text-sm text-tinta-suave tabular-nums">
                 {i + 1}.
               </span>
-              <span className="min-w-0 flex-1">{e.nombre}</span>
+              <span className={cn("flex min-w-0 flex-1 flex-wrap items-center gap-x-2", e.oculto && "text-tinta-suave")}>
+                {e.nombre}
+                {e.oculto && <Insignia>Oculta</Insignia>}
+              </span>
               <span className="flex shrink-0 text-tinta-suave">
                 <Flecha nombre={e.nombre} direccion="subir" tope={i === 0} alTocar={() => moverUno(e.id, "subir")} />
                 <Flecha nombre={e.nombre} direccion="bajar" tope={i === elementos.length - 1} alTocar={() => moverUno(e.id, "bajar")} />

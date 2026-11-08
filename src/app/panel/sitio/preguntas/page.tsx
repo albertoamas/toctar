@@ -3,13 +3,13 @@ import { cache, Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { exigirModulo } from "@/lib/sesion";
-import { AccionesPreguntas, ListaPreguntas } from "@/modulos/sitio/componentes/lista-preguntas";
+import { AgregarPregunta, ListaPreguntas, OrdenarPreguntas } from "@/modulos/sitio/componentes/lista-preguntas";
 import { listarPreguntas } from "@/modulos/sitio/consultas";
 
 export const metadata: Metadata = { title: "Preguntas frecuentes" };
 
 // HU-08: preguntas frecuentes del sitio. Dueño o encargado con el permiso "sitio".
-// Pulido 13.24: el título se ve enseguida; "Cambiar orden", "Agregar pregunta" y la lista llegan con las preguntas.
+// Pulido 13.24: el título y "Agregar pregunta" se ven enseguida; "Cambiar orden" y la lista llegan con las preguntas.
 export default function PaginaPreguntas() {
   return (
     <div className="flex max-w-3xl flex-col gap-6">
@@ -17,9 +17,13 @@ export default function PaginaPreguntas() {
         titulo="Preguntas frecuentes"
         volver={{ href: "/panel/sitio", texto: "Sitio web" }}
         accion={
-          <Suspense fallback={null}>
-            <Acciones />
-          </Suspense>
+          <div className="flex flex-wrap gap-2">
+            {/* "Cambiar orden" llega con las preguntas; "Agregar", la acción principal, se ve enseguida */}
+            <Suspense fallback={null}>
+              <Ordenar />
+            </Suspense>
+            <AgregarPregunta />
+          </div>
         }
       />
       <Suspense fallback={<Cargando />}>
@@ -35,8 +39,8 @@ const preguntas = cache(async () => {
   return (await listarPreguntas()).map(({ id, pregunta, respuesta, visible }) => ({ id, pregunta, respuesta, visible }));
 });
 
-async function Acciones() {
-  return <AccionesPreguntas preguntas={await preguntas()} />;
+async function Ordenar() {
+  return <OrdenarPreguntas preguntas={await preguntas()} />;
 }
 
 async function Lista() {

@@ -125,4 +125,6 @@ export const esquemaPregunta = z.object({
   id: z.coerce.number().int().positive().optional(),
   pregunta: z.string().trim().min(1, "Escribe la pregunta.").max(160, "Hasta 160 caracteres."),
   respuesta: z.string().trim().min(1, "Escribe la respuesta.").max(1000, "Hasta 1000 caracteres."),
+  /** Al editar, si se muestra en el sitio (pulido 13.24): se guarda junto con el texto. Una nueva siempre se muestra. */
+  visible: z.boolean().optional(),
 });

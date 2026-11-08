@@ -49,4 +49,10 @@ describe("preguntas frecuentes", () => {
     expect(esquemaPregunta.safeParse({ pregunta: "x".repeat(161), respuesta: "y" }).success).toBe(false);
     expect(esquemaPregunta.safeParse({ pregunta: "¿Hacen domicilio?", respuesta: "y".repeat(1000) }).success).toBe(true);
   });
+
+  test("al editar, si se muestra viaja con el texto (pulido 13.24); una nueva no lo lleva", () => {
+    expect(esquemaPregunta.parse({ id: "4", pregunta: "¿Atienden domingos?", respuesta: "No.", visible: false })).toEqual({ id: 4, pregunta: "¿Atienden domingos?", respuesta: "No.", visible: false });
+    expect(esquemaPregunta.parse({ pregunta: "¿Atienden domingos?", respuesta: "No." })).not.toHaveProperty("visible");
+    expect(esquemaPregunta.safeParse({ pregunta: "a", respuesta: "b", visible: "si" }).success).toBe(false);
+  });
 });

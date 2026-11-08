@@ -15,7 +15,7 @@ import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
-import { cambiarVisibilidadPregunta, eliminarPregunta, guardarPregunta, moverPregunta } from "../acciones";
+import { eliminarPregunta, guardarPregunta, moverPregunta } from "../acciones";
 
 // HU-08: preguntas frecuentes del sitio (RF-05). Se agregan, editan, ordenan, ocultan y eliminan.
 // Pulido 13.24: como la lista de servicios. Antes cada fila llevaba cinco botones de solo ícono (25 con cinco preguntas)
@@ -24,15 +24,24 @@ import { cambiarVisibilidadPregunta, eliminarPregunta, guardarPregunta, moverPre
 
 type Pregunta = { id: number; pregunta: string; respuesta: string; visible: boolean };
 
-/** Lo de arriba de la pantalla: cambiar el orden y agregar una (la acción principal). */
-export function AccionesPreguntas({ preguntas }: { preguntas: Pregunta[] }) {
+/** "Cambiar orden": llega con las preguntas. Las ocultas, marcadas: no salen en el sitio aunque tengan su lugar. */
+export function OrdenarPreguntas({ preguntas }: { preguntas: Pregunta[] }) {
+  if (preguntas.length < 2) return null;
+  return (
+    <OrdenarLista
+      elementos={preguntas.map((p) => ({ id: p.id, nombre: p.pregunta, oculto: !p.visible }))}
+      mover={moverPregunta}
+      etiqueta="Orden de las preguntas"
+    />
+  );
+}
+
+/** La acción principal: no necesita las preguntas, así que se ve enseguida. */
+export function AgregarPregunta() {
   const hidratado = useHidratado();
   const [agregando, setAgregando] = useState(false);
   return (
-    <div className="flex flex-wrap gap-2">
-      {preguntas.length > 1 && (
-        <OrdenarLista elementos={preguntas.map((p) => ({ id: p.id, nombre: p.pregunta }))} mover={moverPregunta} etiqueta="Orden de las preguntas" />
-      )}
+    <>
       <Button type="button" disabled={!hidratado} onClick={() => setAgregando(true)}>
         <PlusIcon />
         Agregar pregunta
@@ -40,23 +49,31 @@ export function AccionesPreguntas({ preguntas }: { preguntas: Pregunta[] }) {
       <ModalFormulario titulo="Nueva pregunta" abierto={agregando} alCambiar={setAgregando}>
         <FormularioPregunta />
       </ModalFormulario>
-    </div>
+    </>
   );
 }
 
 export function ListaPreguntas({ preguntas }: { preguntas: Pregunta[] }) {
+  // La que se edita queda guardada aparte de si el modal está abierto: así el formulario sigue a la vista mientras el
+  // modal se cierra con su animación
   const [editando, setEditando] = useState<Pregunta | null>(null);
+  const [abierto, setAbierto] = useState(false);
+  const lista = useRef<HTMLUListElement>(null);
 
   if (preguntas.length === 0) return <EstadoVacio>Todavía no hay preguntas. Agrega las que más te hacen los clientes.</EstadoVacio>;
 
   return (
     <>
-      <ul aria-label="Preguntas frecuentes" className="tt-tarjeta-panel flex flex-col divide-y divide-border overflow-hidden">
+      {/* tabIndex: al eliminar una, el foco vuelve aquí (su fila, que lo tenía, ya no existe) */}
+      <ul ref={lista} tabIndex={-1} aria-label="Preguntas frecuentes" className="tt-tarjeta-panel flex flex-col divide-y divide-border overflow-hidden outline-none">
         {preguntas.map((p) => (
           <li key={p.id}>
             <button
               type="button"
-              onClick={() => setEditando(p)}
+              onClick={() => {
+                setEditando(p);
+                setAbierto(true);
+              }}
               aria-label={`Editar: ${p.pregunta}`}
               className="flex min-h-11 w-full items-center gap-3 px-4 py-3 text-left hover:bg-superficie/60 focus-visible:-outline-offset-2"
             >
@@ -72,9 +89,18 @@ export function ListaPreguntas({ preguntas }: { preguntas: Pregunta[] }) {
           </li>
         ))}
       </ul>
-      <ModalFormulario titulo="Editar pregunta" abierto={editando !== null} alCambiar={(abrir) => !abrir && setEditando(null)}>
+      <ModalFormulario titulo="Editar pregunta" abierto={abierto} alCambiar={setAbierto}>
         {/* La key: otra pregunta, otro formulario (sin lo escrito en la anterior) */}
-        {editando && <FormularioPregunta key={editando.id} pregunta={editando} alEliminar={() => setEditando(null)} />}
+        {editando && (
+          <FormularioPregunta
+            key={editando.id}
+            pregunta={editando}
+            alEliminar={() => {
+              setAbierto(false);
+              requestAnimationFrame(() => lista.current?.focus());
+            }}
+          />
+        )}
       </ModalFormulario>
     </>
   );
@@ -83,14 +109,10 @@ export function ListaPreguntas({ preguntas }: { preguntas: Pregunta[] }) {
 /** Para una nueva, sin `pregunta`. Al editar, también si se muestra en el sitio y, al pie, eliminarla. */
 function FormularioPregunta({ pregunta, alEliminar }: { pregunta?: Pregunta; alEliminar?: () => void }) {
   const cerrar = useCerrarModal();
-  // Si se muestra va por su propia acción: se guarda después del texto, solo si cambió
+  // Si se muestra viaja con el texto (un campo oculto): se guarda todo junto, en un solo cambio
   const [visible, setVisible] = useState(pregunta?.visible ?? true);
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(async (previo, datos) => {
-    let r = await guardarPregunta(previo, datos);
-    if (r.ok && pregunta && visible !== pregunta.visible) {
-      const v = await cambiarVisibilidadPregunta({ id: pregunta.id, visible });
-      if (!v.ok) r = v;
-    }
+    const r = await guardarPregunta(previo, datos);
     avisarResultado(r);
     if (r.ok) cerrar();
     return r;
@@ -104,13 +126,14 @@ function FormularioPregunta({ pregunta, alEliminar }: { pregunta?: Pregunta; alE
   return (
     <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate>
       {pregunta && <input type="hidden" name="id" value={pregunta.id} />}
+      {/* En un campo propio: la casilla de base-ui se vacía al reiniciarse el formulario */}
+      {pregunta && <input type="hidden" name="visible" value={visible ? "on" : "off"} />}
       <Campo id={`${prefijo}-pregunta`} etiqueta="Pregunta" error={e.pregunta}>
         <Input
           id={`${prefijo}-pregunta`}
           name="pregunta"
           defaultValue={v?.pregunta ?? pregunta?.pregunta}
           aria-invalid={!!e.pregunta}
-          aria-describedby={e.pregunta ? `${prefijo}-pregunta-error` : undefined}
         />
       </Campo>
       <Campo id={`${prefijo}-respuesta`} etiqueta="Respuesta" error={e.respuesta} ayuda="Sin precios: los da la cotización.">
@@ -120,7 +143,6 @@ function FormularioPregunta({ pregunta, alEliminar }: { pregunta?: Pregunta; alE
           className="min-h-32"
           defaultValue={v?.respuesta ?? pregunta?.respuesta}
           aria-invalid={!!e.respuesta}
-          aria-describedby={e.respuesta ? `${prefijo}-respuesta-error` : `${prefijo}-respuesta-ayuda`}
         />
       </Campo>
       {pregunta && (
@@ -149,7 +171,7 @@ function EliminarPregunta({ pregunta, alEliminar }: { pregunta: Pregunta; alElim
   const [pendiente, iniciar] = useTransition();
   return (
     <>
-      <Button type="button" variant="ghost" className="ml-auto text-rojo-texto" onClick={() => setAbierto(true)}>
+      <Button type="button" variant="ghost" className="ml-auto" onClick={() => setAbierto(true)}>
         <TrashIcon />
         Eliminar
       </Button>
