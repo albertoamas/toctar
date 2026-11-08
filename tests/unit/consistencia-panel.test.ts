@@ -60,26 +60,24 @@ const MODALES_A_MANO: Record<string, number> = {
   "src/modulos/usuarios/componentes/acceso-usuario.tsx": 3,
 };
 
-/** Títulos de sección armados a mano. Pasan a `Seccion` o `SeccionConEditar` en las fases 3 y 4. */
+/** Títulos de sección armados a mano. Los que no dicen su motivo se van en la fase 4. */
 const TITULOS_A_MANO: Record<string, number> = {
   "src/app/panel/agenda/[id]/page.tsx": 1,
-  "src/app/panel/agenda/page.tsx": 2,
-  "src/app/panel/catalogo/[id]/page.tsx": 1,
-  "src/app/panel/clientes/[id]/page.tsx": 2,
-  "src/app/panel/mantenimientos/page.tsx": 1,
+  // La semana del tablero: no es un título de sección, solo usa su letra
+  "src/app/panel/agenda/page.tsx": 1,
   "src/app/panel/ordenes/[id]/page.tsx": 2,
-  "src/app/panel/page.tsx": 1,
   "src/app/panel/reclamos/[id]/page.tsx": 4,
+  // La leyenda de un grupo de campos
   "src/modulos/clientes/componentes/formulario-nuevo-cliente.tsx": 1,
+  // La cabecera dentro de su tarjeta, en la portada
   "src/modulos/inicio/componentes/para-atender.tsx": 1,
   "src/modulos/ordenes/componentes/avances-orden.tsx": 1,
-  "src/modulos/ordenes/componentes/checklist-recepcion.tsx": 1,
   "src/modulos/ordenes/componentes/como-llego.tsx": 1,
   "src/modulos/ordenes/componentes/firma-entrega.tsx": 1,
-  "src/modulos/ordenes/componentes/formulario-entrega.tsx": 1,
+  // La leyenda de un grupo de fotos
   "src/modulos/ordenes/componentes/formulario-publicar.tsx": 1,
   "src/modulos/pagos/componentes/montos-trabajo.tsx": 1,
-  // "Subir fotos": un bloque dentro de la ficha (§1); más ancho, las fotos elegidas tapan el resto del formulario
+  // "Subir fotos": la cabecera dentro de su tarjeta, con su ayuda y el botón de cerrar
   "src/modulos/sitio/componentes/galeria-panel.tsx": 1,
   "src/modulos/usuarios/componentes/acceso-usuario.tsx": 3,
 };
@@ -99,7 +97,7 @@ describe("estructura del panel (C6)", () => {
     expect(apariciones(/\b(Dialog|Sheet)Content\b/)).toEqual(MODALES_A_MANO);
   });
 
-  it("un título de sección lo pone Seccion o SeccionConEditar", () => {
+  it("un título de sección lo pone Seccion, SeccionConEditar o CabeceraSeccion", () => {
     expect(apariciones(/\btt-titulo-seccion\b/)).toEqual(TITULOS_A_MANO);
   });
 });

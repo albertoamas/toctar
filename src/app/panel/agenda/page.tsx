@@ -8,6 +8,7 @@ import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { MasDatos } from "@/componentes/panel/mas-datos";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
+import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
 import { cantidad } from "@/lib/cantidad";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
@@ -78,9 +79,7 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
           ninguna, no ocupa lugar */}
       {porReservar.length > 0 && (
         <section aria-labelledby="por-reservar-titulo" className="flex flex-col gap-3">
-          <h2 id="por-reservar-titulo" className="tt-titulo-seccion">
-            Por reservar ({porReservar.length})
-          </h2>
+          <CabeceraSeccion id="por-reservar" titulo={`Por reservar (${porReservar.length})`} />
           <ListaFilas etiqueta="Por reservar" filas={porReservar.slice(0, POR_RESERVAR_A_LA_VISTA).map(fila)} />
           {/* Con muchas, las demás plegadas: el tablero es lo principal de la Agenda y no queda abajo de una lista larga */}
           {porReservar.length > POR_RESERVAR_A_LA_VISTA && (

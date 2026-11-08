@@ -42,6 +42,7 @@ import { mensajeMantenimiento } from "@/modulos/ordenes/mensajes";
 import { Insignia } from "@/componentes/panel/insignia";
 import { FilaConAcciones, ListaEnTarjeta } from "@/componentes/panel/fila-lista";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
+import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
 
 export const metadata: Metadata = { title: "Mantenimientos" };
 
@@ -151,9 +152,14 @@ function Seccion({ titulo, cantidad: n, vacio, children }: { titulo: string; can
   return (
     // El lector oye la sección como "Vencidos, 2 mantenimientos"; a la vista, "Vencidos (2)"
     <section aria-label={`${titulo}, ${cantidad(n)}`} className="flex flex-col gap-3">
-      <h2 className="tt-titulo-seccion">
-        {titulo} <span className="tabular-nums text-tinta-suave">({n})</span>
-      </h2>
+      <CabeceraSeccion
+        id={titulo.toLowerCase().replaceAll(" ", "-")}
+        titulo={
+          <>
+            {titulo} <span className="tabular-nums text-tinta-suave">({n})</span>
+          </>
+        }
+      />
       {n === 0 ? (
         <p className="text-tinta-suave">{vacio}</p>
       ) : (

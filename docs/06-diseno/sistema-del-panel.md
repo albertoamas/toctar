@@ -78,6 +78,7 @@ La etiqueta a la izquierda y el valor a la derecha, con `ListaDatos`, para que l
 | `PaginaPanel` | El tipo de pantalla, su ancho y su separación | Existe desde C6 |
 | `PartesIguales` | Las partes de a dos (o de a tres) de una ficha | Existe desde C6 |
 | `Seccion` | Título arriba de la tarjeta, con su acción | Existe desde C6, sobre `CabeceraSeccion` |
+| `CabeceraSeccion` | Solo el título y su acción, si lo de abajo no es una tarjeta (una lista, un texto) | Existe |
 | `SeccionConEditar` | Sección que se lee, con su modal | Existe |
 | `EncabezadoPagina` | Volver, título, estado y acciones | Existe |
 | `ModalFormulario`, `PieModal`, `CancelarModal` | Modales | Existen; la pregunta al cerrar se agrega en C6 |

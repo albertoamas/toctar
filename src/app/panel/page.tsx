@@ -8,6 +8,7 @@ import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { ICONO_MODULO } from "@/componentes/panel/iconos-modulo";
 import { Insignia } from "@/componentes/panel/insignia";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
+import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
 import { CeldaDoble, TablaLista } from "@/componentes/panel/tabla-lista";
 import { TarjetaNumero } from "@/componentes/panel/tarjeta-numero";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -240,9 +241,7 @@ function Saludo({ nombre, hoy }: { nombre: string; hoy: string }) {
 function ParaHoy({ filas, verOrdenes }: { filas: FilaDelDia[]; verOrdenes: boolean }) {
   return (
     <section aria-labelledby="hoy-titulo" className="flex min-w-0 flex-col gap-3">
-      <h2 id="hoy-titulo" className="tt-titulo-seccion">
-        Para hoy
-      </h2>
+      <CabeceraSeccion id="hoy" titulo="Para hoy" />
       {filas.length === 0 ? (
         <EstadoVacio>Nada para hoy: no llega ni se entrega ningún vehículo.</EstadoVacio>
       ) : (

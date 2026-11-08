@@ -8,7 +8,7 @@ import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
-import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
+import { CabeceraSeccion, SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { buttonVariants } from "@/componentes/ui/button";
 import { cantidad } from "@/lib/cantidad";
 import { exigirModulo } from "@/lib/sesion";
@@ -112,9 +112,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
       </PartesIguales>
 
       <section aria-labelledby="precios-titulo" className="flex flex-col gap-3">
-        <h2 id="precios-titulo" className="flex min-h-11 items-center tt-titulo-seccion">
-          Precios
-        </h2>
+        <CabeceraSeccion id="precios" titulo="Precios" />
         {s.tamanos.length === 0 ? (
           <p className="text-tinta-suave">
             Faltan los tamaños de vehículo.{" "}

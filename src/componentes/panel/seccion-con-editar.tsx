@@ -34,7 +34,7 @@ type Props = {
  * La cabecera de una sección de ficha: el título y, en su misma fila, su acción sin borde ("Editar", "＋ Agregar"). La
  * usan SeccionConEditar y las secciones que son una lista (los vehículos del cliente), así las de al lado se ven igual.
  */
-export function CabeceraSeccion({ id, titulo, nivel = 2, children }: { id: string; titulo: string; nivel?: 2 | 3; children?: React.ReactNode }) {
+export function CabeceraSeccion({ id, titulo, nivel = 2, children }: { id: string; titulo: React.ReactNode; nivel?: 2 | 3; children?: React.ReactNode }) {
   const Titulo = nivel === 3 ? "h3" : "h2";
   return (
     <div className="flex min-h-11 items-center justify-between gap-3">
