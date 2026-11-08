@@ -152,8 +152,9 @@ test("el panel no se sale de la pantalla en el celular y su menú queda a mano",
   }
   const menu = page.getByRole("navigation", { name: "Panel" });
   await expect(menu.getByRole("link", { name: "Configuración" })).toHaveAttribute("aria-current", "page");
+  // 44 px con el dedo; con mouse, 36, como los botones del panel (pulido 13.25)
   for (const alto of await menu.getByRole("link").evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height))) {
-    expect(alto).toBeGreaterThanOrEqual(44);
+    expect(alto).toBeGreaterThanOrEqual(isMobile ? 44 : 36);
   }
 });
 
@@ -176,6 +177,26 @@ test("el aviso de guardado no tapa el botón de guardar", async ({ page }, info)
   const [a, b] = [(await aviso.boundingBox())!, (await guardar.boundingBox())!];
   const sePisan = a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
   expect(sePisan).toBe(false);
+});
+
+// Pulido 13.25: en una laptop común (768 px de alto) el menú entraba cortado y "Configuración" no se veía. Con mouse cada
+// opción mide 36 px y Sitio web va en Administración; si la pantalla es más baja, se desplaza y muestra la actual
+test("en la computadora el menú entra entero en 768 px de alto, con Sitio web en Administración", async ({ page }, info) => {
+  test.skip(info.project.name !== "escritorio", "La barra lateral es de la computadora");
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await ingresarComoDueno(page);
+  await page.goto("/panel/ordenes");
+  const menu = page.getByRole("navigation", { name: "Panel" });
+  await expect(menu.getByRole("link", { name: "Configuración" })).toBeInViewport();
+  const caja = page.locator("[data-menu-desplazable]").filter({ has: menu });
+  expect(await caja.evaluate((el) => el.scrollHeight <= el.clientHeight)).toBe(true);
+  expect(Math.round((await menu.getByRole("link", { name: "Órdenes" }).boundingBox())!.height)).toBe(36);
+  await expect(menu.getByRole("group", { name: "Administración" }).getByRole("link", { name: "Sitio web" })).toBeVisible();
+
+  // Más baja: se desplaza y la opción actual queda a la vista
+  await page.setViewportSize({ width: 1366, height: 560 });
+  await page.goto("/panel/configuracion/negocio");
+  await expect(menu.getByRole("link", { name: "Configuración" })).toBeInViewport();
 });
 
 test("las páginas interiores llegan enteras: el título no aparece antes que el resto", async ({ page }) => {

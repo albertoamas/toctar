@@ -10,7 +10,8 @@ import { ICONO_MODULO } from "./iconos-modulo";
 // Los módulos llegan ya filtrados por rol y permisos, y agrupados, desde MenuPanel (menuAgrupado, src/lib/permisos.ts).
 // El título del grupo, chico y gris, ordena sin competir con los enlaces, y el lector de pantalla lo anuncia. Cada enlace
 // lleva el ícono de su módulo (el mismo del inicio); el actual, con fondo marcado, una barra roja a la izquierda y su
-// ícono en rojo: lo único rojo del menú (pedido 26).
+// ícono en rojo: lo único rojo del menú (pedido 26). Cada enlace mide 44 px con el dedo y 36 con mouse, como los botones
+// del panel (pulido 13.25): con 44 también con mouse, en una pantalla de 768 px de alto el menú no entraba.
 type EnlaceModulo = { modulo: Modulo; href: string; texto: string };
 type GrupoEnlaces = { titulo: string | null; enlaces: EnlaceModulo[] };
 
@@ -43,7 +44,7 @@ function Grupo({ titulo, enlaces }: GrupoEnlaces) {
             href={m.href}
             aria-current={activo ? "page" : undefined}
             className={cn(
-              "group/enlace relative flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium text-tinta-suave hover:bg-superficie hover:text-tinta",
+              "group/enlace relative flex min-h-9 items-center gap-3 rounded-md px-3 text-sm font-medium text-tinta-suave hover:bg-superficie hover:text-tinta pointer-coarse:min-h-11",
               activo && "tt-modulo-actual bg-superficie-alta font-semibold text-tinta",
             )}
           >

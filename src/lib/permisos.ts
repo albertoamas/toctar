@@ -17,8 +17,11 @@ export const PERMISOS = [
 ] as const;
 export type Permiso = (typeof PERMISOS)[number];
 
-/** Grupos del menú, en su orden (C5 §0). Inicio va suelto, arriba. */
-const GRUPOS = { taller: "Taller", clientes: "Clientes", sitio: "Sitio web", administracion: "Administración" } as const;
+/**
+ * Grupos del menú, en su orden (C5 §0). Inicio va suelto, arriba. Sitio web va en Administración (pulido 13.25): solo en
+ * su grupo, sin título (un grupo de uno no lo lleva), quedaba suelto entre Clientes y Administración.
+ */
+const GRUPOS = { taller: "Taller", clientes: "Clientes", administracion: "Administración" } as const;
 type Grupo = keyof typeof GRUPOS;
 
 type DefinicionModulo = {
@@ -61,7 +64,7 @@ export const MODULOS = {
   mantenimientos: { ruta: "/panel/mantenimientos", nombre: "Mantenimientos", grupo: "clientes", permisoEncargado: "mantenimientos" },
   // Llegan desde el sitio, pero atenderlos es tratar con un cliente
   reclamos: { ruta: "/panel/reclamos", nombre: "Reclamos", grupo: "clientes", permisoEncargado: "reclamos" },
-  sitio: { ruta: "/panel/sitio", nombre: "Sitio web", grupo: "sitio", permisoEncargado: "sitio" },
+  sitio: { ruta: "/panel/sitio", nombre: "Sitio web", grupo: "administracion", permisoEncargado: "sitio" },
   catalogo: { ruta: "/panel/catalogo", nombre: "Catálogo y precios", grupo: "administracion", permisoEncargado: null },
   usuarios: { ruta: "/panel/usuarios", nombre: "Usuarios", grupo: "administracion", permisoEncargado: null },
   configuracion: { ruta: "/panel/configuracion", nombre: "Configuración", grupo: "administracion", permisoEncargado: null },

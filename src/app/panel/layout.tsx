@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { MenuDesplegable } from "@/componentes/menu-desplegable";
 import { AvisoConexion } from "@/componentes/panel/aviso-conexion";
 import { AvisoVersionNueva } from "@/componentes/panel/aviso-version-nueva";
+import { MenuDesplazable } from "@/componentes/panel/menu-desplazable";
 import { MenuPanel } from "@/componentes/panel/menu-panel";
 import { RegistrarServiceWorker } from "@/componentes/panel/registrar-service-worker";
 import { UsuarioSesion } from "@/componentes/panel/usuario-sesion";
@@ -46,7 +47,7 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
           </div>
           {/* Si el menú no entra (pantalla baja), se desplaza solo él: la marca y "Cerrar sesión" quedan a la vista.
               El margen negativo con su relleno deja ver el borde de foco de los enlaces */}
-          <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">{menu}</div>
+          <MenuDesplazable className="-mx-1 px-1">{menu}</MenuDesplazable>
           <div className="mt-4 border-t border-border pt-4">{sesion}</div>
         </aside>
       </div>
@@ -64,7 +65,7 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
           <MenuDesplegable lado="left" cabecera={<Marca />} className="[--radius:8px]">
             {/* Igual que la barra lateral: en un celular bajo se desplaza el menú y "Cerrar sesión" queda a la vista. Con el
                 mismo margen que la cabecera, los títulos de grupo quedan alineados con la marca */}
-            <div className="min-h-0 flex-1 overflow-y-auto px-4">{menu}</div>
+            <MenuDesplazable className="px-4">{menu}</MenuDesplazable>
             <div className="border-t border-border p-4">{sesion}</div>
           </MenuDesplegable>
           <Marca />
