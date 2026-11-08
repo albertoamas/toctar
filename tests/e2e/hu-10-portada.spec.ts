@@ -113,7 +113,11 @@ test("el trabajo elegido en la galería del panel se compara arriba en la portad
     await expect(lista.getByRole("listitem").filter({ hasText: descripcion })).toHaveCount(1);
   }
 
-  await page.getByRole("button", { name: `Mostrar en la portada: ${elegido}` }).click();
+  // La portada se elige en su propia sección, arriba (pulido 13.17)
+  await page.getByRole("button", { name: "Cambiar el trabajo de la portada" }).click();
+  await page.getByRole("dialog", { name: "El trabajo de la portada" }).getByRole("button", { name: `Mostrar en la portada: ${elegido}` }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "En la portada" })).toContainText(elegido);
   const tarjeta = lista.getByRole("listitem").filter({ hasText: elegido });
   await expect(tarjeta.getByText("En la portada")).toBeVisible();
   // El que está en la portada no ofrece elegirlo otra vez
@@ -177,7 +181,8 @@ test("el trabajo elegido en la galería del panel se compara arriba en la portad
 
   // Oculto, deja la portada: va otro trabajo con antes
   await page.goto("/panel/sitio/galeria");
-  await page.getByRole("button", { name: `Ocultar: ${elegido}` }).click();
+  await page.getByRole("button", { name: `Más: ${elegido}` }).click();
+  await page.getByRole("menuitem", { name: "Ocultar del sitio" }).click();
   await expect(tarjeta.getByText("Oculta")).toBeVisible();
   await page.goto("/");
   await expect(page.getByRole("slider", { name: "Comparar antes y después" })).toBeVisible();
@@ -185,10 +190,13 @@ test("el trabajo elegido en la galería del panel se compara arriba en la portad
 
   // Al ocultarlo dejó de ser el elegido: mostrarlo otra vez no cambia la portada sola
   await page.goto("/panel/sitio/galeria");
-  await page.getByRole("button", { name: `Mostrar: ${elegido}` }).click();
+  await page.getByRole("button", { name: `Más: ${elegido}` }).click();
+  await page.getByRole("menuitem", { name: "Mostrar en el sitio" }).click();
   await expect(tarjeta.getByText("Oculta")).toHaveCount(0);
   await expect(tarjeta.getByText("En la portada")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: `Mostrar en la portada: ${elegido}` })).toBeVisible();
+  await page.getByRole("button", { name: "Cambiar el trabajo de la portada" }).click();
+  await expect(page.getByRole("dialog", { name: "El trabajo de la portada" }).getByRole("button", { name: `Mostrar en la portada: ${elegido}` })).toBeVisible();
+  await page.keyboard.press("Escape");
 });
 
 // La cabecera de la portada no hace correr lo que se ve al llegar los datos (2B.10: la reserva de alto queda solo

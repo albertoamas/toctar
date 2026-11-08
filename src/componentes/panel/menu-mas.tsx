@@ -12,11 +12,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 
 export type AccionMas = { texto: string; alElegir: () => void };
 
-export function MenuMas({ acciones, deshabilitado = false }: { acciones: AccionMas[]; /** Mientras una de sus acciones corre. */ deshabilitado?: boolean }) {
+export function MenuMas({ acciones, deshabilitado = false, etiqueta }: { acciones: AccionMas[]; /** Mientras una de sus acciones corre. */ deshabilitado?: boolean; /** Con varios en la pantalla, de cuál es: "Más: Pulido en una Hilux". */ etiqueta?: string }) {
   const hidratado = useHidratado();
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button type="button" variant="outline" disabled={!hidratado || deshabilitado} />}>
+      <DropdownMenuTrigger render={<Button type="button" variant="outline" disabled={!hidratado || deshabilitado} aria-label={etiqueta} />}>
         Más
         <ChevronDownIcon />
       </DropdownMenuTrigger>
