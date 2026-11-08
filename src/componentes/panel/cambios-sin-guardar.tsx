@@ -94,7 +94,7 @@ function destinoDelClic(evento: MouseEvent): string | null {
 }
 
 /** Con cambios: pregunta antes de ir a otra pantalla del panel, y el navegador pregunta antes de recargar o cerrar. */
-export function PreguntarAlSalir({ hay }: { hay: boolean }) {
+function PreguntarAlSalir({ hay }: { hay: boolean }) {
   const router = useRouter();
   // A dónde se iba: otra pantalla, o un formulario que saca del panel ("Cerrar sesión")
   const [destino, setDestino] = useState<string | HTMLFormElement | null>(null);
