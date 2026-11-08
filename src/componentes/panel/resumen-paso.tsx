@@ -4,7 +4,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { ArrowLeftRightIcon } from "lucide-react";
 import { cn } from "cn";
-import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
+import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
 import { Button, buttonVariants } from "@/componentes/ui/button";
 
 // Lo ya elegido en un flujo en pasos (Nueva cotización, pedido 40; Nueva reserva, pedido 41), arriba del paso: la misma

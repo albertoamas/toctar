@@ -7,6 +7,7 @@ import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { PanelFirma } from "@/componentes/panel/panel-firma";
 import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
+import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
 import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
@@ -66,7 +67,7 @@ export function FormularioEntrega({ id, conDeuda, saldo, puedeAutorizar, cliente
 
       <section aria-labelledby="firma-titulo" className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <h2 id="firma-titulo" className="tt-titulo-seccion">Firma del cliente</h2>
+          <CabeceraSeccion id="firma" titulo="Firma del cliente" compacta />
           <p className="text-sm text-tinta-suave">El cliente firma con el dedo: recibe su vehículo conforme.</p>
         </div>
         {sinFirma && <input type="hidden" name="sinFirma" value="on" />}

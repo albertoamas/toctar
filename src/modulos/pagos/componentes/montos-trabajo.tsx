@@ -1,5 +1,5 @@
 import { cn } from "cn";
-import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
+import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
 import { formatearFecha } from "@/lib/fechas";
 import type { DetalleReserva } from "@/modulos/agenda/consultas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";

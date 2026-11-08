@@ -8,7 +8,8 @@ import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
-import { CabeceraSeccion, SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
+import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import { puede, puedeVerModulo } from "@/lib/permisos";
@@ -159,8 +160,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
 
       {verAgenda && (
         <section aria-labelledby="reservas-titulo" className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <h2 id="reservas-titulo" className="tt-titulo-seccion">Reservas</h2>
+          <CabeceraSeccion id="reservas" titulo="Reservas">
             {/* La reserva directa lleva precios: la arma quien ve pagos (las demás salen de una cotización) */}
             {c.activo && verPagos && (
               <Link href={`/panel/agenda/nueva?cliente=${c.id}`} className={cn(buttonVariants({ variant: "ghost" }))}>
@@ -168,7 +168,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
                 Nueva reserva
               </Link>
             )}
-          </div>
+          </CabeceraSeccion>
           {reservas.length === 0 ? (
             <p className="text-tinta-suave">Todavía no tiene reservas.</p>
           ) : (
@@ -190,8 +190,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
 
       {verCotizaciones && (
         <section aria-labelledby="cotizaciones-titulo" className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <h2 id="cotizaciones-titulo" className="tt-titulo-seccion">Cotizaciones</h2>
+          <CabeceraSeccion id="cotizaciones" titulo="Cotizaciones">
             {/* A un cliente desactivado no se le cotiza: se reactiva primero */}
             {c.activo && cotiza && (
               <Link href={`/panel/cotizaciones/nueva?cliente=${c.id}`} className={cn(buttonVariants({ variant: "ghost" }))}>
@@ -199,7 +198,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
                 Nueva cotización
               </Link>
             )}
-          </div>
+          </CabeceraSeccion>
           {cotizaciones.length > 0 ? (
             <ListaCotizaciones cotizaciones={cotizaciones} umbral={parametros.dias_cotizacion_sin_respuesta} sinCliente />
           ) : (

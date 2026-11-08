@@ -3,7 +3,7 @@ import Link from "next/link";
 import { cn } from "cn";
 import { UserPlusIcon } from "lucide-react";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
-import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
+import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
 import { buttonVariants } from "@/componentes/ui/button";
 import { buscarClientes } from "../consultas";
 import { normalizarBusqueda } from "../reglas";
