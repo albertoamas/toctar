@@ -1,6 +1,7 @@
+import Image from "next/image";
 import Link from "next/link";
 import { cn } from "cn";
-import { ChevronRightIcon } from "lucide-react";
+import { ChevronRightIcon, ImageOffIcon } from "lucide-react";
 import { Insignia } from "@/componentes/panel/insignia";
 import type { TonoEstado } from "@/lib/tonos";
 
@@ -28,6 +29,8 @@ export type DatosFila = {
   tonoEstado?: TonoEstado;
   /** Inactiva o desactivada: atenuada. */
   atenuada?: boolean;
+  /** Una foto a la izquierda (los servicios del sitio, pulido 13.21): null es "sin foto"; sin la clave, no va el lugar. */
+  miniatura?: string | null;
 };
 
 export function ListaFilas({ etiqueta, filas }: { etiqueta: string; filas: DatosFila[] }) {
@@ -42,9 +45,18 @@ export function ListaFilas({ etiqueta, filas }: { etiqueta: string; filas: Datos
   );
 }
 
-function FilaLista({ href, titulo, tituloGrande, dato, detalles = [], aviso, estado, tonoEstado, atenuada }: DatosFila) {
+function FilaLista({ href, titulo, tituloGrande, dato, detalles = [], aviso, estado, tonoEstado, atenuada, miniatura }: DatosFila) {
   return (
     <Link href={href} className={cn("flex min-h-11 items-center gap-3 px-4 py-3 hover:bg-superficie/60 focus-visible:-outline-offset-2", atenuada && "text-tinta-suave")}>
+      {miniatura !== undefined && (
+        <span className="flex aspect-[4/3] w-16 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-superficie">
+          {miniatura ? (
+            <Image src={miniatura} alt="" width={64} height={48} unoptimized className="size-full object-cover" />
+          ) : (
+            <ImageOffIcon className="size-5 text-tinta-suave" aria-hidden />
+          )}
+        </span>
+      )}
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span className={tituloGrande ? "tt-placa text-base" : "font-semibold"}>{titulo}</span>
