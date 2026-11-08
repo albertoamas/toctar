@@ -1,5 +1,5 @@
 import { expect, test as preparar } from "@playwright/test";
-import { ingresarComoDueno } from "./apoyo";
+import { abrirParteNegocio, ingresarComoDueno } from "./apoyo";
 
 // Corre una vez antes de todas las pruebas (proyecto "preparar" en playwright.config.ts).
 // Carga desde el panel lo que el sitio necesita y que los datos iniciales dejan vacío: el WhatsApp y la ubicación
@@ -10,9 +10,17 @@ import { ingresarComoDueno } from "./apoyo";
 preparar("cargar el WhatsApp, la ubicación y el TikTok del negocio", async ({ page }) => {
   await ingresarComoDueno(page);
   await page.goto("/panel/configuracion/negocio");
-  await page.getByLabel("WhatsApp").fill("71234567");
-  await page.getByLabel("Enlace de Google Maps").fill("https://www.google.com/maps/place/x/data=!3d-21.5355!4d-64.7296");
-  await page.getByLabel("TikTok").fill("https://www.tiktok.com/@toctar.detailing");
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
-  await expect(page.getByText("Cambios guardados.")).toBeVisible();
+  // Cada parte en su modal (pulido 13.26)
+  const contacto = await abrirParteNegocio(page, "Contacto");
+  await contacto.getByLabel("WhatsApp").fill("71234567");
+  await contacto.getByRole("button", { name: "Guardar contacto" }).click();
+  await expect(contacto).toHaveCount(0);
+  const ubicacion = await abrirParteNegocio(page, "Ubicación");
+  await ubicacion.getByLabel("Enlace de Google Maps").fill("https://www.google.com/maps/place/x/data=!3d-21.5355!4d-64.7296");
+  await ubicacion.getByRole("button", { name: "Guardar ubicación" }).click();
+  await expect(ubicacion).toHaveCount(0);
+  const redes = await abrirParteNegocio(page, "Redes sociales");
+  await redes.getByLabel("TikTok").fill("https://www.tiktok.com/@toctar.detailing");
+  await redes.getByRole("button", { name: "Guardar redes" }).click();
+  await expect(redes).toHaveCount(0);
 });

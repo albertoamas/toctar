@@ -127,3 +127,17 @@ export const esquemaNegocio = z.object({
 
 export const CAMPOS_NEGOCIO = Object.keys(esquemaNegocio.shape) as (keyof typeof esquemaNegocio.shape)[];
 
+/**
+ * Una parte de Configuración > Negocio, la que guarda cada modal de la ficha (pulido 13.26): solo sus campos, así guardar
+ * el horario no pide el resto ni lo pisa.
+ */
+export const esquemaParteNegocio = z.discriminatedUnion("parte", [
+  esquemaNegocio.pick({ nombre: true, whatsapp: true, correo: true }).extend({ parte: z.literal("contacto") }),
+  esquemaNegocio.pick({ direccion: true, enlaceMapa: true, mapaInsertado: true }).extend({ parte: z.literal("ubicacion") }),
+  esquemaNegocio.pick({ horarios: true }).extend({ parte: z.literal("horario") }),
+  esquemaNegocio.pick({ facebook: true, instagram: true, tiktok: true }).extend({ parte: z.literal("redes") }),
+  esquemaNegocio.pick({ nit: true, razonSocial: true }).extend({ parte: z.literal("facturacion") }),
+]);
+
+export type ParteNegocio = z.infer<typeof esquemaParteNegocio>["parte"];
+
