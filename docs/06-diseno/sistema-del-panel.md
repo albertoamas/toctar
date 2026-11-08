@@ -84,7 +84,7 @@ La etiqueta a la izquierda y el valor a la derecha, con `ListaDatos`, para que l
 
 ## 8. Cómo se hace cumplir
 
-Una prueba en el CI (`tests/unit/consistencia-panel.test.ts`, de C6) revisa el código de `src/app/panel` y de los módulos. Tiene una lista de excepciones que solo puede achicarse: lo nuevo no puede entrar en ella.
+Una prueba en el CI (`tests/unit/consistencia-panel.test.ts`, de C6) revisa el código de `src/app/panel` y de los módulos. Sus listas de excepciones cuentan las apariciones por archivo y solo pueden achicarse: lo nuevo no puede entrar en ellas.
 
 ## 9. Lo que no cambia
 
