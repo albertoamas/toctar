@@ -4,17 +4,17 @@ import { cn } from "cn";
 // §1). Las páginas no escriben su propio max-w: así dos fichas no pueden quedar de distinto ancho. No protege nada: cada
 // página sigue verificando la sesión y el permiso.
 
-const ANCHO = {
-  /** Una tabla con columnas o un tablero: todo el ancho. */
-  lista: "",
+const FORMA = {
+  /** Una tabla con columnas o un tablero: todo el ancho. Más junto: pestañas, buscador y lista van de la mano. */
+  lista: "gap-6",
   /** Ver y editar una cosa, o una lista de filas sin columnas. */
-  ficha: "max-w-5xl",
+  ficha: "max-w-5xl gap-8",
   /** Crear algo, o un paso que se hace de arriba abajo. */
-  formulario: "max-w-3xl",
+  formulario: "max-w-3xl gap-6",
   /** Elegir a dónde ir o ver el día: cada portada acomoda lo suyo. */
-  portada: "",
+  portada: "gap-8",
 } as const;
 
-export function PaginaPanel({ tipo, children }: { tipo: keyof typeof ANCHO; children: React.ReactNode }) {
-  return <div className={cn("flex flex-col gap-8", ANCHO[tipo])}>{children}</div>;
+export function PaginaPanel({ tipo, children }: { tipo: keyof typeof FORMA; children: React.ReactNode }) {
+  return <div className={cn("flex flex-col", FORMA[tipo])}>{children}</div>;
 }

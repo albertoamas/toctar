@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { fechaEnBolivia } from "@/lib/fechas";
 import { exigirAccion } from "@/lib/sesion";
 import { FormularioNuevaVersion } from "@/modulos/cotizaciones/componentes/formulario-cotizacion";
@@ -18,9 +19,11 @@ export const metadata: Metadata = { title: "Nueva versión" };
 // "Cotizaciones" (pedido 24).
 export default function PaginaNuevaVersion({ params, searchParams }: PageProps<"/panel/cotizaciones/[id]/nueva-version">) {
   return (
-    <Suspense fallback={<Cargando />}>
-      <Contenido params={params} searchParams={searchParams} />
-    </Suspense>
+    <PaginaPanel tipo="formulario">
+      <Suspense fallback={<Cargando />}>
+        <Contenido params={params} searchParams={searchParams} />
+      </Suspense>
+    </PaginaPanel>
   );
 }
 
@@ -40,7 +43,7 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/cotiza
   const enlace = "font-semibold underline";
 
   return (
-    <section className="flex flex-col gap-6">
+    <>
       <div className="flex flex-col gap-2">
         <EncabezadoPagina titulo={datos.desde ? `Versión ${datos.desde.version + 1}` : "Nueva versión"} volver={{ href: volver, texto: datos.desde ? `Cotización ${datos.desde.numero}` : "Cotización" }}>
           {datos.cliente}, {datos.placa} ({datos.tamano})
@@ -65,6 +68,6 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/cotiza
         // las líneas de la visita de antes
         <FormularioNuevaVersion key={datos.desde.id} datos={{ ...datos, desde: datos.desde }} hoy={fechaEnBolivia()} />
       )}
-    </section>
+    </>
   );
 }

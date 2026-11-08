@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
 import { fechaEnBolivia } from "@/lib/fechas";
 import { exigirAccion } from "@/lib/sesion";
@@ -23,12 +24,12 @@ export const metadata: Metadata = { title: "Nueva cotización" };
 // el dueño o el encargado con "Cotizaciones" (pedido 24).
 export default function PaginaNuevaCotizacion({ searchParams }: PageProps<"/panel/cotizaciones/nueva">) {
   return (
-    <section className="flex max-w-3xl flex-col gap-6">
+    <PaginaPanel tipo="formulario">
       <EncabezadoPagina titulo="Nueva cotización" volver={{ href: "/panel/cotizaciones", texto: "Cotizaciones" }} />
       <Suspense fallback={<Cargando />}>
         <Contenido searchParams={searchParams} />
       </Suspense>
-    </section>
+    </PaginaPanel>
   );
 }
 

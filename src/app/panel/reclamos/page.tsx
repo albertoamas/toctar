@@ -4,6 +4,7 @@ import { ImageIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { Pestanas } from "@/componentes/panel/pestanas";
 import { TablaLista } from "@/componentes/panel/tabla-lista";
 import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
@@ -17,12 +18,12 @@ export const metadata: Metadata = { title: "Reclamos" };
 // el estado; toda la fila abre el reclamo. Dueño y encargado con el módulo "reclamos".
 export default function PaginaReclamos({ searchParams }: PageProps<"/panel/reclamos">) {
   return (
-    <section className="flex max-w-5xl flex-col gap-6">
+    <PaginaPanel tipo="lista">
       <EncabezadoPagina titulo="Reclamos" />
       <Suspense fallback={<Cargando />}>
         <Lista searchParams={searchParams} />
       </Suspense>
-    </section>
+    </PaginaPanel>
   );
 }
 

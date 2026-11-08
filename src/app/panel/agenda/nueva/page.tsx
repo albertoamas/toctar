@@ -6,6 +6,7 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
 import { ResumenPaso } from "@/componentes/panel/resumen-paso";
@@ -44,7 +45,7 @@ export const metadata: Metadata = { title: "Nueva reserva" };
 // "Cambiar" para volver a su paso.
 export default function PaginaNuevaReserva({ searchParams }: PageProps<"/panel/agenda/nueva">) {
   return (
-    <section className="flex max-w-3xl flex-col gap-6">
+    <PaginaPanel tipo="formulario">
       <Suspense
         fallback={
           <>
@@ -55,7 +56,7 @@ export default function PaginaNuevaReserva({ searchParams }: PageProps<"/panel/a
       >
         <Contenido searchParams={searchParams} />
       </Suspense>
-    </section>
+    </PaginaPanel>
   );
 }
 

@@ -6,6 +6,7 @@ import { PlusIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { buttonVariants } from "@/componentes/ui/button";
 import { exigirModulo } from "@/lib/sesion";
 import { BuscadorClientes } from "@/modulos/clientes/componentes/buscador-clientes";
@@ -19,7 +20,7 @@ export const metadata: Metadata = { title: "Clientes" };
 // Pulido 8.1: la fila de un toque compartida, con las placas (como el taller nombra los autos) en negrita.
 export default function PaginaClientes({ searchParams }: PageProps<"/panel/clientes">) {
   return (
-    <section className="flex flex-col gap-6">
+    <PaginaPanel tipo="lista">
       <EncabezadoPagina
         titulo="Clientes"
         accion={
@@ -37,7 +38,7 @@ export default function PaginaClientes({ searchParams }: PageProps<"/panel/clien
       <Suspense fallback={<Cargando />}>
         <Lista searchParams={searchParams} />
       </Suspense>
-    </section>
+    </PaginaPanel>
   );
 }
 

@@ -33,32 +33,18 @@ function apariciones(patron: RegExp): Record<string, number> {
 const SIN_PAGINA_PANEL = [
   "src/app/panel/[...resto]/page.tsx",
   "src/app/panel/agenda/[id]/page.tsx",
-  "src/app/panel/agenda/nueva/page.tsx",
-  "src/app/panel/agenda/page.tsx",
-  "src/app/panel/catalogo/page.tsx",
   "src/app/panel/clientes/[id]/page.tsx",
-  "src/app/panel/clientes/[id]/vehiculos/[vehiculo]/dueno/page.tsx",
-  "src/app/panel/clientes/nuevo/page.tsx",
-  "src/app/panel/clientes/page.tsx",
   "src/app/panel/configuracion/mensajes/page.tsx",
   "src/app/panel/configuracion/negocio/page.tsx",
   "src/app/panel/configuracion/page.tsx",
   "src/app/panel/configuracion/parametros/page.tsx",
   "src/app/panel/configuracion/taller/page.tsx",
-  "src/app/panel/cotizaciones/[id]/nueva-version/page.tsx",
   "src/app/panel/cotizaciones/[id]/page.tsx",
-  "src/app/panel/cotizaciones/nueva/page.tsx",
-  "src/app/panel/cotizaciones/page.tsx",
   "src/app/panel/mantenimientos/page.tsx",
-  "src/app/panel/ordenes/[id]/entregar/page.tsx",
   "src/app/panel/ordenes/[id]/page.tsx",
-  "src/app/panel/ordenes/[id]/publicar/page.tsx",
-  "src/app/panel/ordenes/[id]/recibir/page.tsx",
-  "src/app/panel/ordenes/page.tsx",
   "src/app/panel/page.tsx",
   "src/app/panel/pagos/page.tsx",
   "src/app/panel/reclamos/[id]/page.tsx",
-  "src/app/panel/reclamos/page.tsx",
   "src/app/panel/sin-acceso/page.tsx",
   "src/app/panel/sitio/galeria/page.tsx",
   "src/app/panel/sitio/page.tsx",
@@ -67,43 +53,28 @@ const SIN_PAGINA_PANEL = [
   "src/app/panel/sitio/servicios/page.tsx",
   "src/app/panel/sitio/textos/page.tsx",
   "src/app/panel/usuarios/[id]/page.tsx",
-  "src/app/panel/usuarios/nuevo/page.tsx",
-  "src/app/panel/usuarios/page.tsx",
 ];
 
 /** Anchos de pantalla escritos a mano. Los de un campo o un bloque chico (`max-w-xs`, `max-w-md`) sí valen (§1). */
 const ANCHOS_A_MANO: Record<string, number> = {
   "src/app/panel/agenda/[id]/page.tsx": 1,
-  "src/app/panel/agenda/nueva/page.tsx": 1,
-  "src/app/panel/catalogo/page.tsx": 1,
   "src/app/panel/clientes/[id]/page.tsx": 1,
-  "src/app/panel/clientes/[id]/vehiculos/[vehiculo]/dueno/page.tsx": 1,
   "src/app/panel/configuracion/mensajes/page.tsx": 1,
   "src/app/panel/configuracion/negocio/page.tsx": 1,
   "src/app/panel/configuracion/parametros/page.tsx": 1,
   "src/app/panel/configuracion/taller/page.tsx": 1,
   "src/app/panel/cotizaciones/[id]/page.tsx": 1,
-  "src/app/panel/cotizaciones/nueva/page.tsx": 1,
   "src/app/panel/error.tsx": 1,
   "src/app/panel/mantenimientos/page.tsx": 2,
   "src/app/panel/not-found.tsx": 1,
-  "src/app/panel/ordenes/[id]/entregar/page.tsx": 1,
   "src/app/panel/ordenes/[id]/page.tsx": 2,
-  "src/app/panel/ordenes/[id]/publicar/page.tsx": 1,
-  "src/app/panel/ordenes/[id]/recibir/page.tsx": 1,
   "src/app/panel/page.tsx": 1,
   "src/app/panel/pagos/page.tsx": 1,
-  "src/app/panel/reclamos/page.tsx": 1,
   "src/app/panel/sin-acceso/page.tsx": 1,
   "src/app/panel/sitio/preguntas/page.tsx": 1,
   "src/app/panel/sitio/servicios/[id]/page.tsx": 1,
   "src/app/panel/sitio/servicios/page.tsx": 1,
   "src/app/panel/sitio/textos/page.tsx": 1,
-  "src/app/panel/usuarios/page.tsx": 1,
-  "src/modulos/agenda/componentes/formulario-reserva.tsx": 1,
-  "src/modulos/clientes/componentes/formulario-nuevo-cliente.tsx": 1,
-  "src/modulos/cotizaciones/componentes/formulario-cotizacion.tsx": 1,
-  "src/modulos/cotizaciones/componentes/formulario-nueva-cotizacion.tsx": 1,
   // El formulario público de reclamos: es del sitio, no del panel. Se queda, con este motivo
   "src/modulos/reclamos/componentes/formulario-reclamo.tsx": 2,
   "src/modulos/sitio/componentes/galeria-panel.tsx": 1,
@@ -141,7 +112,7 @@ const TITULOS_A_MANO: Record<string, number> = {
 // Si una falla: con algo de más, usa la pieza común; con algo de menos, ya se migró y se baja de su lista.
 describe("estructura del panel (C6)", () => {
   it("toda página dice su tipo con PaginaPanel", () => {
-    const sinUsarla = [...codigo].filter(([a, lineas]) => a.endsWith("/page.tsx") && !lineas.some((l) => l.includes("PaginaPanel"))).map(([a]) => a);
+    const sinUsarla = [...codigo].filter(([a, lineas]) => a.endsWith("/page.tsx") && !lineas.some((l) => l.includes("<PaginaPanel"))).map(([a]) => a);
     expect(sinUsarla).toEqual(SIN_PAGINA_PANEL);
   });
 

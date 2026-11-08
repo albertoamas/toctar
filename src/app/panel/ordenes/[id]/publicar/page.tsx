@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { exigirAccion } from "@/lib/sesion";
 import { FormularioPublicar } from "@/modulos/ordenes/componentes/formulario-publicar";
 import { fotosDeTrabajo, obtenerOrden, publicadaDeOrden, serviciosDeOrden } from "@/modulos/ordenes/consultas";
@@ -15,11 +16,11 @@ export const metadata: Metadata = { title: "Publicar en la galería" };
 // orden tiene al menos una foto de después. Las fotos se copian al sitio: las de la orden siguen privadas (RNF-05).
 export default function PaginaPublicar({ params }: PageProps<"/panel/ordenes/[id]/publicar">) {
   return (
-    <section className="flex max-w-3xl flex-col gap-6">
+    <PaginaPanel tipo="formulario">
       <Suspense fallback={<Cargando />}>
         <Publicar params={params} />
       </Suspense>
-    </section>
+    </PaginaPanel>
   );
 }
 

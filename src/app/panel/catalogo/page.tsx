@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Insignia } from "@/componentes/panel/insignia";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { CeldaDoble, TablaLista } from "@/componentes/panel/tabla-lista";
 import { cantidad } from "@/lib/cantidad";
 import { exigirModulo } from "@/lib/sesion";
@@ -16,7 +17,7 @@ export const metadata: Metadata = { title: "Catálogo y precios" };
 // dueño (RN-01). Una tabla (pedido 26) con lo que decide a la vista: desde cuánto cuesta y si faltan precios.
 export default function PaginaCatalogo() {
   return (
-    <section className="flex max-w-5xl flex-col gap-6">
+    <PaginaPanel tipo="lista">
       <EncabezadoPagina
         titulo="Catálogo y precios"
         // Un solo campo: un modal y no otra pantalla (pulido 7.2)
@@ -27,7 +28,7 @@ export default function PaginaCatalogo() {
       <Suspense fallback={<Cargando />}>
         <Lista />
       </Suspense>
-    </section>
+    </PaginaPanel>
   );
 }
 

@@ -24,7 +24,7 @@ export function FormularioNuevaVersion({ datos, hoy }: Props) {
   const precios = usePrecios({ ...datos.inicial, modo: modoDe(datos.inicial.esEstimado) });
 
   return (
-    <form ref={formulario} action={accion} className="flex max-w-3xl flex-col gap-6" noValidate>
+    <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate>
       <input type="hidden" name="consultaId" value={datos.consultaId} />
       <input type="hidden" name="desde" value={datos.desde.id} />
       {estado.mensaje && !estado.ok && <MensajeError id="cotizacion-error">{estado.mensaje}</MensajeError>}

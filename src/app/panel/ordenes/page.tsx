@@ -8,6 +8,7 @@ import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { Filtros } from "@/componentes/panel/filtros";
 import { Insignia } from "@/componentes/panel/insignia";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { Pestanas } from "@/componentes/panel/pestanas";
 import { CeldaDoble, TablaLista, type ColumnaTabla, type FilaTabla } from "@/componentes/panel/tabla-lista";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -27,11 +28,11 @@ export const metadata: Metadata = { title: "Órdenes" };
 // tienen "Órdenes" las ven todas.
 export default function PaginaOrdenes({ searchParams }: PageProps<"/panel/ordenes">) {
   return (
-    <section className="flex flex-col gap-5">
+    <PaginaPanel tipo="lista">
       <Suspense fallback={<Cargando />}>
         <Lista searchParams={searchParams} />
       </Suspense>
-    </section>
+    </PaginaPanel>
   );
 }
 

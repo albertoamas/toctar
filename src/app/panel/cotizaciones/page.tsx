@@ -6,6 +6,7 @@ import { PlusIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { Pestanas } from "@/componentes/panel/pestanas";
 import { buttonVariants } from "@/componentes/ui/button";
 import { exigirModulo } from "@/lib/sesion";
@@ -22,7 +23,7 @@ export const metadata: Metadata = { title: "Cotizaciones" };
 // Configuración. Dueño o encargado con "Cotizaciones" (RN-12: sin él, nada de precios).
 export default function PaginaCotizaciones({ searchParams }: PageProps<"/panel/cotizaciones">) {
   return (
-    <section className="flex flex-col gap-6">
+    <PaginaPanel tipo="lista">
       <EncabezadoPagina
         titulo="Cotizaciones"
         accion={
@@ -40,7 +41,7 @@ export default function PaginaCotizaciones({ searchParams }: PageProps<"/panel/c
       <Suspense fallback={<Cargando />}>
         <Lista searchParams={searchParams} />
       </Suspense>
-    </section>
+    </PaginaPanel>
   );
 }
 

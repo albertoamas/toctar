@@ -74,8 +74,8 @@ La etiqueta a la izquierda y el valor a la derecha, con `ListaDatos`, para que l
 
 | Componente | Para qué | Estado |
 |---|---|---|
-| `PaginaPanel` | El tipo de pantalla, su ancho y su separación | Se crea en C6 |
-| `Seccion` | Título arriba de la tarjeta, con su acción | Se crea en C6, sobre `CabeceraSeccion` |
+| `PaginaPanel` | El tipo de pantalla, su ancho y su separación | Existe desde C6 |
+| `Seccion` | Título arriba de la tarjeta, con su acción | Existe desde C6, sobre `CabeceraSeccion` |
 | `SeccionConEditar` | Sección que se lee, con su modal | Existe |
 | `EncabezadoPagina` | Volver, título, estado y acciones | Existe |
 | `ModalFormulario`, `PieModal`, `CancelarModal` | Modales | Existen; la pregunta al cerrar se agrega en C6 |
