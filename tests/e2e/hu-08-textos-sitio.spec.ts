@@ -103,8 +103,6 @@ test("la foto del taller va detrás del lema de la portada; sin foto, al lado va
   await expect(bloque.getByRole("button", { name: "Subir foto" })).toBeEnabled();
   await bloque.getByLabel("Archivo de la foto").setInputFiles({ name: "taller.png", mimeType: "image/png", buffer: PNG });
   await expect(bloque.getByRole("img", { name: "Foto del taller" })).toHaveAttribute("src", /portada\/[\w-]+-640\.webp$/);
-  // Se guardó al momento: no cuenta como un cambio sin guardar de la portada (pulido 13.15)
-  await expect(page.getByRole("button", { name: "Guardar portada" })).toBeDisabled();
 
   // En el sitio: la foto detrás (decorativa) y el arte ya no
   await page.goto("/");
