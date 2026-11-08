@@ -1,5 +1,7 @@
 # Pulido visual
 
+> **Historial y estándares generales (08/11/2026).** Aquí queda cómo y por qué se pulió cada pantalla hasta el 08/11, y los estándares de identidad, celular, accesibilidad, rendimiento y textos, que siguen vigentes. **Las reglas de estructura del panel están en `06-diseno/sistema-del-panel.md`, y el plan para aplicarlas en `etapas/C6-consistencia-del-panel.md`.** Las filas y registros describen cada pantalla como era en su fecha: algunas cambiaron o ya no existen (las consultas, desde el pedido 23; el técnico, desde el pedido 32). No se agregan filas nuevas del panel aquí.
+
 - **Parte 1, Entrega 1 (grupos 1 a 6):** del 16 al 19 de octubre de 2026, antes de la demo del 23 y del acta del 30. ✅
 - **Parte 2, Entrega 2 (grupos 7 a 13):** del 24 al 27 de octubre de 2026, después de la reorganización del panel (C5 §0) y antes de la demo y el acta de la Entrega 2. Mismo método, mismos estándares. ✅ (PR #99, #100, #102 a #105 y #108)
 - **Qué es:** se repasa cada pantalla de la Entrega 1, una por una, para que se vea y se use mejor. **No se agregan funciones.** Si aparece algo que el contrato no incluye, se anota en `03-cierre-comercial/registro-de-cambios.md` y no se programa.

@@ -7,7 +7,7 @@ description: Criterios de UI/UX y lista de QA para diseñar, ordenar o pulir cua
 
 El panel lo usa el dueño de un taller de detailing, casi siempre desde el celular, de pie, con las manos ocupadas y poco tiempo; a veces un encargado o uno de los chicos del taller (encargados con el perfil Taller). Abre una pantalla para hacer **una cosa**: ver quién debe, recibir un auto, cambiar un precio. Cada botón, texto o bloque de más le cuesta tiempo y le hace dudar. Por eso la regla de fondo es **menos es más**: lo que no ayuda a la tarea de esa pantalla se quita, se esconde o se lleva a otra pantalla.
 
-Esta skill complementa a `frontend-design` (el criterio visual) y a los estándares de `docs/08-desarrollo/pulido-visual.md` (identidad, tamaños, botones, accesibilidad). Aquí está **cómo se ordena una pantalla** y **cómo se prueba**.
+Esta skill complementa a `frontend-design` (el criterio visual), a los estándares de `docs/08-desarrollo/pulido-visual.md` (identidad, tamaños, botones, accesibilidad) y a **`docs/06-diseno/sistema-del-panel.md`, que manda sobre la estructura: tipos de pantalla, anchos, secciones, acciones y componentes**. Aquí está **cómo se ordena una pantalla** y **cómo se prueba**.
 
 ## 1. Antes de tocar nada: el inventario
 
@@ -56,13 +56,13 @@ Toda pantalla del panel es uno de estos tipos. Identificarlo decide su forma; no
 - Las filas no llevan formularios ni varios botones: las acciones viven en la ficha. Excepción: una acción que se hace desde la lista todos los días (como "Escribir por WhatsApp" en Saldos), una sola.
 - Vacía: una línea que dice qué falta y, si corresponde, cómo agregarlo.
 
-### Ficha (cliente, servicio del catálogo, consulta, reserva, orden)
+### Ficha (cliente, servicio del catálogo, cotización, reserva, orden)
 - **Encabezado:** quién o qué es (placa, nombre), su estado y **el paso siguiente** como única acción principal (recibir, marcar lista, avisar, entregar). Las acciones que se usan poco (extender, cancelar, anular, desactivar) van en un menú **"Más"**.
 - **Secciones en lectura, y la edición en un modal.** Cada sección es un recuadro con sus datos como texto (no como campos) y su título con **"Editar"** (sin borde) en la misma fila. "Editar" abre el formulario en un **modal** ("Guardar {lo que es}" y "Cancelar" al pie); en el celular, una hoja desde abajo con los botones fijos. La página no salta ni cambia mientras se edita, el modal ya es "una edición a la vez" y el foco va al primer campo para escribir y vuelve a "Editar" al cerrar. Todas las secciones con el mismo sistema (título fuera del recuadro, o dentro en su cabecera si es una parte de otra sección) y alineadas entre sí. El componente es `SeccionConEditar` (`src/componentes/panel/seccion-con-editar.tsx`, desde el pulido 7.3), con el modal común `ModalFormulario` (`modal-formulario.tsx`). Editar dentro de la página queda para lo que se edita fila por fila (las listas de Configuración).
 - **Orden de las secciones:** lo que decide primero (estado, montos, lo que falta), lo que se consulta después (datos, fotos), la historia al final y plegada si es larga ("Ver toda la historia").
 - Un dato vacío no ocupa una fila con un guion: no se muestra, o se ofrece cargarlo desde "Editar".
 
-### Crear (nuevo cliente, nueva reserva, nueva consulta)
+### Crear (nuevo cliente, nueva reserva, nueva cotización)
 - **¿Modal o pantalla?** Crear algo de **pocos campos (uno a tres)** va en un **modal** desde la lista ("Agregar servicio": solo el nombre), con `ModalFormulario`: no se pierde la lista de vista y no hay una página casi vacía. Un formulario largo (un cliente con su vehículo, una reserva) va en **su propia pantalla**. En los dos casos, al crear se llega a la ficha.
 - **Un formulario y un botón principal**, al final, que dice lo que crea ("Crear cliente"). En el celular el botón queda fijo abajo: `PieFormulario` (`src/componentes/panel/pie-formulario.tsx`).
 - Lo opcional se marca con `Campo opcional` ("(opcional)" junto a la etiqueta, en gris); lo obligatorio no lleva marca (pulido 13.10). Un campo que es obligatorio según otra elección dice "(opcional)" solo mientras lo es.
