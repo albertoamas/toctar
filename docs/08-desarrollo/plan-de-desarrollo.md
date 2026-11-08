@@ -59,7 +59,7 @@
 | Ajustes del 05/11 | ✅ "Reservar" y "Reservada" en toda la reserva (#142); "Cómo llegar" con la ficha de Google Maps y Contacto renovado, con "Abierto ahora" (pedido 38, #143); el menú del celular fluido desde el primer toque (#144); la app instalada gira en Android (#145); el ingreso renovado y sin bordes blancos (#146); el aviso de versión nueva (pedido 39, #148). `hu-23` reintenta con sus datos y guarda el registro del primer fallo (#147): el color vacío al reabrir un vehículo sigue sin causa (criterio 23.7) |
 | Ajustes del 06/11 | ✅ Nueva cotización en tres pasos y lo opcional marcado igual en todo el panel (pedido 40, #151); Nueva reserva en cuatro pasos, con el mismo indicador y resumen (pedido 41, #152) |
 | Pulido del panel (07 y 08/11) | ✅ Botón de volver, Sitio web y Configuración como fichas con modales, menú y avisos (PR #160 a #171; `pulido-visual.md`, 13.18 a 13.29) |
-| C6 Consistencia del panel | 🔵 Aprobada el 08/11, en fase 0 (`etapas/C6-consistencia-del-panel.md`; reglas en `06-diseno/sistema-del-panel.md`). Va antes de la capacitación y de la prueba en celulares reales |
+| C6 Consistencia del panel | 🔵 Aprobada el 08/11, fases 0 a 2 listas, sigue la 3 (`etapas/C6-consistencia-del-panel.md`; reglas en `06-diseno/sistema-del-panel.md`). Va antes de la capacitación y de la prueba en celulares reales |
 | Identidad visual aplicada a la app | ✅ En `develop` (PR #5 y #9, logos nítidos en tamaños chicos) |
 | Inicio del trabajo | 9 de octubre de 2026 (firma y primer pago) |
 | Día D (inicio del plazo del contrato) | 14 de octubre de 2026 (llegó el material) |
