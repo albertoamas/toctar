@@ -5,13 +5,13 @@ import { Suspense } from "react";
 import { cn } from "cn";
 import { ClipboardCheckIcon, WrenchIcon } from "lucide-react";
 import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Insignia } from "@/componentes/panel/insignia";
 import { ListaDatos } from "@/componentes/panel/lista-datos";
-import { PaginaPanel } from "@/componentes/panel/pagina-panel";
+import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
-import { Seccion } from "@/componentes/panel/seccion-con-editar";
 import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -166,22 +166,24 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
       )}
 
       {r.montos ? (
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
-          {/* En el celular, primero cuándo, dónde y quién; los montos después */}
-          <div className="flex flex-col gap-8 lg:col-start-2 lg:row-start-1">
+        // Principal y datos (§2), según el ancho del área de trabajo como Cotización. En el celular, primero cuándo, dónde y
+        // quién: es lo que el taller mira al abrir una reserva; los montos los ve solo quien tiene Pagos
+        <div className="grid items-start gap-8 @4xl:grid-cols-[minmax(0,1fr)_22rem]">
+          <div className="flex flex-col gap-8 @4xl:col-start-2 @4xl:row-start-1">
             {datos}
             {nota}
           </div>
-          <div className="flex flex-col gap-8 lg:col-start-1 lg:row-start-1">
+          <div className="flex flex-col gap-8 @4xl:col-start-1 @4xl:row-start-1">
             {/* Solo una cancelada queda sin acciones: una entregada con saldo se sigue cobrando (RN-13) */}
             <MontosTrabajo trabajoId={r.id} montos={r.montos} cerrado={cancelada} hoy={hoy} />
           </div>
         </div>
       ) : (
-        <div className="flex flex-col gap-8">
+        // Sin Pagos: los datos y la nota de a dos, sin una tarjeta de 1000 px ni un hueco al lado
+        <PartesIguales>
           {datos}
           {nota}
-        </div>
+        </PartesIguales>
       )}
     </>
   );

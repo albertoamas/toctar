@@ -31,18 +31,6 @@ type Props = {
   children: React.ReactNode;
 };
 
-/** Una sección de ficha sin "Editar" propio (el logo, que se guarda al momento): el título arriba de su tarjeta y su acción al lado. */
-export function Seccion({ id, titulo, accion, children }: { id: string; titulo: string; accion?: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-2">
-      <CabeceraSeccion id={id} titulo={titulo}>
-        {accion}
-      </CabeceraSeccion>
-      <div className="tt-tarjeta-panel flex-1 p-4">{children}</div>
-    </section>
-  );
-}
-
 export function SeccionConEditar({ id, titulo, nivel = 2, etiquetaEditar, tituloModal, abierta = false, claseRecuadro, lectura, children }: Props) {
   const hidratado = useHidratado();
   // Abierto si la persona lo abrió o, hasta que lo toque, si empieza abierta. La que empieza abierta se abre al cargar
