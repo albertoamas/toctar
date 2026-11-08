@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { abrirParteNegocio, archivosArrastrados, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER, PNG } from "./apoyo";
+import { abrirParteNegocio, archivosArrastrados, cancelarConCambios, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER, PNG } from "./apoyo";
 
 // HU-04 Datos del negocio. Criterios: docs/09-pruebas/criterios-entrega-1.md (4.1 a 4.6).
 // Los datos del negocio son una sola fila: las pruebas que guardan corren solo en escritorio,
@@ -112,7 +112,7 @@ test("los datos mal escritos muestran el error junto al campo y no se guardan", 
   await expect(contacto.getByLabel("WhatsApp")).toHaveAttribute("aria-invalid", "true");
   await expect(contacto.getByLabel("WhatsApp")).toBeFocused(); // el primer error recibe el foco (pulido 6.1)
   await expect(contacto.getByLabel("WhatsApp")).toHaveValue("7123");
-  await contacto.getByRole("button", { name: "Cancelar" }).click();
+  await cancelarConCambios(page, contacto);
 
   const ubicacion = await abrirParteNegocio(page, "Ubicación");
   await ubicacion.getByLabel("Enlace de Google Maps").fill("https://example.com/mapa");
@@ -120,13 +120,13 @@ test("los datos mal escritos muestran el error junto al campo y no se guardan", 
   await ubicacion.getByRole("button", { name: "Guardar ubicación" }).click();
   await expect(ubicacion.getByText("Pega el enlace de Google Maps: en la ficha del taller, Compartir → Copiar vínculo.")).toBeVisible();
   await expect(ubicacion.getByText("Pega el código de Google Maps: en la ficha del taller, Compartir → Insertar un mapa → Copiar HTML.")).toBeVisible();
-  await ubicacion.getByRole("button", { name: "Cancelar" }).click();
+  await cancelarConCambios(page, ubicacion);
 
   const horario = await abrirParteNegocio(page, "Horario de atención");
   await horario.getByLabel("Lunes, turno 1, desde").fill("13:00");
   await horario.getByRole("button", { name: "Guardar horario" }).click();
   await expect(horario.getByText("El turno debe terminar después de empezar.")).toBeVisible();
-  await horario.getByRole("button", { name: "Cancelar" }).click();
+  await cancelarConCambios(page, horario);
 
   // Nada se guardó
   await page.reload();
