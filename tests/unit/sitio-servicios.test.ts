@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { iconoDe } from "@/modulos/sitio/beneficios";
 import { erroresDe } from "@/lib/formularios";
 import { PATRON_SLUG, crearSlug } from "@/lib/slug";
-import { esquemaId, esquemaIdFormulario, esquemaServicio, esquemaVisibilidad } from "@/modulos/sitio/esquemas";
+import { esquemaId, esquemaIdFormulario, esquemaParteServicio, esquemaServicio, esquemaVisibilidad, motivoParaNoMostrar } from "@/modulos/sitio/esquemas";
 
 // HU-07 Servicios del sitio: la página de cada servicio. Criterios: docs/09-pruebas/criterios-entrega-1.md (7.x). El
 // alta, el nombre y las variantes son del catálogo (tests/unit/catalogo.test.ts).
@@ -73,6 +73,39 @@ describe("esquema del servicio", () => {
 
   test("el nombre no se cambia desde el sitio: es del catálogo", () => {
     expect(Object.keys(esquemaServicio.shape)).not.toContain("nombre");
+  });
+});
+
+// Pulido 13.19: cada modal de la ficha guarda solo su parte
+describe("una parte de la página del servicio", () => {
+  test("cada parte valida solo sus campos: guardar los pasos no pide el resumen", () => {
+    const r = esquemaParteServicio.parse({ id: "3", parte: "pasos", pasos: JSON.stringify([{ titulo: "Lavado", detalle: "" }]), resumen: "" });
+    expect(r).toEqual({ id: 3, parte: "pasos", pasos: [{ titulo: "Lavado", detalle: "" }] });
+  });
+
+  test("lo que no es de la parte no pasa, aunque venga en el formulario", () => {
+    const r = esquemaParteServicio.parse({ id: "3", parte: "resumen", resumen: "Pulimos.", slug: "otra-direccion", beneficios: "[]" });
+    expect(r).toEqual({ id: 3, parte: "resumen", resumen: "Pulimos." });
+  });
+
+  test.each([
+    ["resumen vacío", { parte: "resumen", resumen: " " }, { resumen: "Escribe un resumen de una o dos frases." }],
+    ["dirección con mayúsculas", { parte: "direccion", slug: "Pulido_Ceramico" }, { slug: "La dirección solo lleva minúsculas, números y guiones." }],
+    ["beneficio vacío", { parte: "beneficios", beneficios: JSON.stringify([{ texto: " ", icono: "listo" }]) }, { "beneficios.0": "Escribe el beneficio o quita la fila." }],
+  ])("rechaza %s", (_, cambio, errores) => {
+    const r = esquemaParteServicio.safeParse({ id: "3", ...cambio });
+    expect(r.success).toBe(false);
+    expect(erroresDe(r.error!)).toEqual(errores);
+  });
+
+  test("se muestra en el sitio solo activo y con resumen (uno de espacios no vale)", () => {
+    expect(motivoParaNoMostrar({ activo: true, resumen: "Pulimos." })).toBeNull();
+    expect(motivoParaNoMostrar({ activo: true, resumen: "   " })).toBe("Escribe el resumen antes de mostrarlo en el sitio.");
+    expect(motivoParaNoMostrar({ activo: false, resumen: "Pulimos." })).toBe("Está inactivo en el catálogo: actívalo ahí primero.");
+  });
+
+  test("una parte que no existe se rechaza", () => {
+    expect(esquemaParteServicio.safeParse({ id: "3", parte: "precios", precio: "100" }).success).toBe(false);
   });
 });
 

@@ -4,6 +4,7 @@ import { CameraIcon, TrashIcon } from "lucide-react";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { MensajeError } from "@/componentes/panel/campo";
 import { AvisoFoto } from "@/componentes/panel/guia-foto";
+import { VisorFotos } from "@/componentes/panel/visor-fotos";
 import { ZonaFoto } from "@/componentes/panel/zona-foto";
 import { Button } from "@/componentes/ui/button";
 import { AVISO_FOTO_VERTICAL, esVertical, TIPOS_FOTO } from "@/lib/formato-fotos";
@@ -20,13 +21,19 @@ type Props = {
   /** Acción que recibe la foto en el campo "foto" más los campos ocultos. */
   accion: (previo: Resultado, datos: FormData) => Promise<Resultado>;
   camposOcultos: Record<string, string | number>;
-  actual: { miniatura: string; ancho: number | null; alto: number | null; alt: string } | null;
+  /** `url`, la grande: la abre el visor de la variante compacta (la miniatura, si no viene). */
+  actual: { miniatura: string; url?: string; ancho: number | null; alto: number | null; alt: string } | null;
   textoVacio: string;
   quitar?: () => Promise<Resultado>;
   /** La vista previa entera (un afiche vertical), en lugar de recortada al recuadro. */
   entera?: boolean;
   /** Si hay varias en la misma pantalla, de cuál es: completa el nombre de sus botones ("Subir foto: Opciones"). */
   nombre?: string;
+  /**
+   * Una fila al pie de una sección (pulido 13.19): la miniatura, y al lado su título y los botones o, sin foto, la guía
+   * en una línea. Tocar la miniatura la abre en grande. Para fichas donde la foto acompaña a un texto.
+   */
+  compacta?: { titulo: string; guia: string };
 };
 
 const LADO_MAXIMO = 2400;
@@ -61,7 +68,8 @@ export async function achicarFoto(archivo: File): Promise<File> {
   }
 }
 
-export function SubidaFoto({ id, accion, camposOcultos, actual, textoVacio, quitar, entera, nombre }: Props) {
+export function SubidaFoto({ id, accion, camposOcultos, actual, textoVacio, quitar, entera, nombre, compacta }: Props) {
+  const [enGrande, setEnGrande] = useState<number | null>(null);
   const entrada = useRef<HTMLInputElement>(null);
   const [etapa, setEtapa] = useState<"preparando" | "subiendo" | null>(null);
   const [error, setError] = useState<string>();
@@ -92,48 +100,85 @@ export function SubidaFoto({ id, accion, camposOcultos, actual, textoVacio, quit
     });
   }
 
-  return (
-    <div className="flex flex-col gap-3">
-      <ZonaFoto
-        id={id}
-        entrada={entrada}
-        nombreEntrada={nombre ? `Archivo de la foto: ${nombre}` : "Archivo de la foto"}
-        etiquetaVacia={nombre ? `Subir foto: ${nombre}` : "Subir foto"}
-        vista={actual ? { src: actual.miniatura, alt: actual.alt } : null}
-        entera={entera}
-        textoVacio={textoVacio}
-        ocupada={etapa === "preparando" ? "Preparando foto…" : etapa === "subiendo" ? "Subiendo…" : pendiente ? "Quitando…" : null}
-        deshabilitada={!listo}
-        describedBy={error ? `${id}-error` : undefined}
-        alElegir={(archivo) => void subir(archivo)}
-      />
-      {/* Una vertical se recorta; un afiche (`entera`) se ve entero y no avisa */}
-      {actual && !entera && esVertical(actual) && <AvisoFoto>{AVISO_FOTO_VERTICAL}</AvisoFoto>}
-      {actual && (
-      <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="outline" disabled={ocupado} onClick={() => entrada.current?.click()} aria-label={nombre ? `Cambiar foto: ${nombre}` : undefined}>
-          <CameraIcon />
-          Cambiar foto
+  const zona = (
+    <ZonaFoto
+      id={id}
+      entrada={entrada}
+      nombreEntrada={nombre ? `Archivo de la foto: ${nombre}` : "Archivo de la foto"}
+      etiquetaVacia={nombre ? `Subir foto: ${nombre}` : "Subir foto"}
+      vista={actual ? { src: actual.miniatura, alt: actual.alt } : null}
+      entera={entera}
+      textoVacio={textoVacio}
+      ocupada={etapa === "preparando" ? "Preparando foto…" : etapa === "subiendo" ? "Subiendo…" : pendiente ? "Quitando…" : null}
+      deshabilitada={!listo}
+      describedBy={error ? `${id}-error` : undefined}
+      alElegir={(archivo) => void subir(archivo)}
+      compacta={!!compacta}
+      alTocarFoto={compacta && actual ? () => setEnGrande(0) : undefined}
+    />
+  );
+  // Una vertical se recorta; un afiche (`entera`) se ve entero y no avisa
+  const vertical = actual && !entera && esVertical(actual) && <AvisoFoto>{AVISO_FOTO_VERTICAL}</AvisoFoto>;
+  const botones = actual && (
+    <div className="flex flex-wrap gap-2">
+      <Button type="button" variant="outline" disabled={ocupado} onClick={() => entrada.current?.click()} aria-label={nombre ? `Cambiar foto: ${nombre}` : undefined}>
+        <CameraIcon />
+        Cambiar foto
+      </Button>
+      {quitar && (
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={ocupado}
+          aria-label={nombre ? `Quitar foto: ${nombre}` : undefined}
+          onClick={() =>
+            iniciar(async () => {
+              avisarResultado(await quitar());
+            })
+          }
+        >
+          <TrashIcon />
+          Quitar foto
         </Button>
-        {quitar && (
-          <Button
-            type="button"
-            variant="ghost"
-            disabled={ocupado}
-            aria-label={nombre ? `Quitar foto: ${nombre}` : undefined}
-            onClick={() =>
-              iniciar(async () => {
-                avisarResultado(await quitar());
-              })
-            }
-          >
-            <TrashIcon />
-            Quitar foto
-          </Button>
+      )}
+    </div>
+  );
+  const mensaje = error && <MensajeError id={`${id}-error`}>{error}</MensajeError>;
+
+  if (compacta) {
+    return (
+      <div className="flex flex-wrap items-start gap-x-4 gap-y-3">
+        <div className="w-32 shrink-0 sm:w-40">{zona}</div>
+        <div className="flex min-w-40 flex-1 flex-col gap-2">
+          <p className="text-sm font-semibold">{compacta.titulo}</p>
+          {actual ? (
+            botones
+          ) : (
+            <p className="text-sm text-tinta-suave">
+              {[compacta.guia, textoVacio].filter(Boolean).join(" ")}
+            </p>
+          )}
+          {vertical}
+          {mensaje}
+        </div>
+        {actual && (
+          <VisorFotos
+            fotos={[{ url: actual.url ?? actual.miniatura, ancho: actual.ancho, alto: actual.alto, alt: actual.alt }]}
+            abierta={enGrande}
+            alCambiar={setEnGrande}
+            titulo={compacta.titulo}
+          />
         )}
       </div>
-      )}
-      {error && <MensajeError id={`${id}-error`}>{error}</MensajeError>}
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {zona}
+      {vertical}
+      {botones}
+      {mensaje}
     </div>
   );
 }

@@ -86,6 +86,10 @@ type Props = {
   alElegir?: (archivo: File) => void;
   /** Varias fotos a la vez. */
   alElegirVarias?: (archivos: File[]) => void;
+  /** Una miniatura (pulido 13.19): vacía dice solo "Agregar foto"; lo demás lo pone quien la usa, al lado. */
+  compacta?: boolean;
+  /** Con foto, tocarla hace esto (verla en grande) en lugar de abrir el selector para cambiarla. */
+  alTocarFoto?: () => void;
 };
 
 export function ZonaFoto(props: Props) {
@@ -135,8 +139,18 @@ export function ZonaFoto(props: Props) {
           <>
             {/* eslint-disable-next-line @next/next/no-img-element -- también vistas previas locales (blob:); las guardadas ya vienen en WebP */}
             <img src={vista.src} alt={vista.alt} className={cn("absolute inset-0 size-full", props.entera ? "object-contain" : "object-cover", props.claseFoto)} />
-            {/* Un clic en la foto también la cambia. Con teclado y lector de pantalla está "Cambiar foto", debajo */}
-            <button type="button" aria-hidden tabIndex={-1} disabled={bloqueada} onClick={abrir} className="absolute inset-0 cursor-pointer disabled:cursor-default" />
+            {props.alTocarFoto ? (
+              <button
+                type="button"
+                aria-label={`Ver en grande: ${vista.alt}`}
+                disabled={bloqueada}
+                onClick={props.alTocarFoto}
+                className="absolute inset-0 cursor-zoom-in disabled:cursor-default focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--foco)]"
+              />
+            ) : (
+              // Un clic en la foto también la cambia. Con teclado y lector de pantalla está "Cambiar foto", debajo
+              <button type="button" aria-hidden tabIndex={-1} disabled={bloqueada} onClick={abrir} className="absolute inset-0 cursor-pointer disabled:cursor-default" />
+            )}
             {arrastrando && (
               <span className="absolute inset-0 grid place-items-center bg-info-fondo/90 p-4 text-center text-sm font-semibold">Suelta la foto para reemplazarla</span>
             )}
@@ -150,7 +164,8 @@ export function ZonaFoto(props: Props) {
             data-invalido={props.invalida || undefined}
             aria-describedby={props.describedBy}
             className={cn(
-              "flex min-h-40 w-full cursor-pointer flex-col items-center justify-center gap-2 border-2 border-dashed p-4 text-center text-sm transition-colors",
+              "flex w-full cursor-pointer flex-col items-center justify-center border-2 border-dashed text-center text-sm transition-colors",
+              props.compacta ? "aspect-[4/3] gap-1 p-2" : "min-h-40 gap-2 p-4",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)] disabled:cursor-default",
               enSitio ? "rounded-none bg-superficie" : "rounded-lg bg-fondo",
               arrastrando
@@ -168,6 +183,8 @@ export function ZonaFoto(props: Props) {
             </span>
             {arrastrando ? (
               <span className="font-semibold">{varias ? "Suelta las fotos aquí" : "Suelta la foto aquí"}</span>
+            ) : props.compacta ? (
+              <span className="font-semibold">Agregar foto</span>
             ) : (
               <>
                 <span className="font-semibold pointer-coarse:hidden">{varias ? "Arrastra tus fotos aquí o haz clic para elegirlas" : "Arrastra una foto aquí o haz clic para elegirla"}</span>

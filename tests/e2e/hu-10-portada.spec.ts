@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { crearServicioPublicado, ingresarComoDueno, PNG } from "./apoyo";
+import { crearServicioPublicado, ingresarComoDueno, mostrarServicio, PNG } from "./apoyo";
 
 // HU-10 Portada y HU-15 Botón de WhatsApp. Criterios: docs/09-pruebas/criterios-entrega-1.md (10.x y 15.x).
 // El WhatsApp lo carga tests/e2e/preparar.setup.ts antes de todas las pruebas.
@@ -45,9 +45,7 @@ test("ocultar un servicio en el panel lo saca del sitio sin volver a desplegar",
   await expect(page.getByRole("heading", { name: nombre })).toBeVisible();
 
   await page.goto(panel);
-  await page.getByRole("checkbox", { name: /Mostrar en el sitio/ }).uncheck();
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
-  await expect(page.getByText("Cambios guardados.")).toBeVisible();
+  await mostrarServicio(page, false);
 
   await page.goto("/servicios");
   await expect(page.getByRole("heading", { name: "Servicios", level: 1 })).toBeVisible();

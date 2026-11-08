@@ -63,6 +63,30 @@ export const esquemaServicio = z.object({
   opcionesEnEscalera: z.boolean(),
 });
 
+/**
+ * Una parte de esa página, la que guarda cada modal de su ficha (pulido 13.19): solo sus campos, así guardar los pasos
+ * no pide el resumen ni pisa los beneficios. Si se muestra en el sitio va aparte (cambiarVisibilidadServicio).
+ */
+export const esquemaParteServicio = z.discriminatedUnion("parte", [
+  esquemaServicio.pick({ id: true, resumen: true }).extend({ parte: z.literal("resumen") }),
+  esquemaServicio.pick({ id: true, beneficios: true }).extend({ parte: z.literal("beneficios") }),
+  esquemaServicio.pick({ id: true, pasos: true }).extend({ parte: z.literal("pasos") }),
+  esquemaServicio.pick({ id: true, opcionesEnEscalera: true }).extend({ parte: z.literal("opciones") }),
+  esquemaServicio.pick({ id: true, slug: true }).extend({ parte: z.literal("direccion") }),
+]);
+
+export type ParteServicio = z.infer<typeof esquemaParteServicio>["parte"];
+
+/**
+ * Por qué un servicio no puede mostrarse en el sitio, o null si puede: inactivo en el catálogo no sale (publico.ts), y
+ * sin resumen su página queda vacía arriba y en Google.
+ */
+export function motivoParaNoMostrar(servicio: { activo: boolean; resumen: string }): string | null {
+  if (!servicio.activo) return "Está inactivo en el catálogo: actívalo ahí primero.";
+  if (!servicio.resumen.trim()) return "Escribe el resumen antes de mostrarlo en el sitio.";
+  return null;
+}
+
 // Acciones que reciben datos sueltos (no un formulario): también se validan, porque cualquiera puede llamarlas.
 const idRegistro = z.number().int().positive();
 export const esquemaId = idRegistro;

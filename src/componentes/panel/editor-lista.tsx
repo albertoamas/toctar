@@ -1,4 +1,4 @@
-import { ArrowDownIcon, ArrowUpIcon, PlusIcon, XIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, PlusIcon, XIcon } from "lucide-react";
 import { MensajeError } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 
@@ -6,7 +6,8 @@ import { Button } from "@/componentes/ui/button";
 // Lista de filas dentro de un formulario (beneficios, pasos, "por qué elegirnos"): agregar, quitar y ordenar.
 // El valor viaja al servidor como JSON en un campo oculto. Cada fila se dibuja con `fila`, que recibe `marca` para
 // los campos de la fila: los marca con error y los enlaza a su mensaje.
-// En el celular los botones de la fila van debajo de sus campos, para que estos usen todo el ancho (pulido 4.4).
+// Ordenar es poco frecuente (pulido 13.19): subir y bajar van apilados y en gris al costado de la fila, junto a "Quitar",
+// también en el celular; con una sola fila no se muestran.
 
 type MarcaError = { "aria-invalid": boolean; "aria-describedby": string | undefined };
 
@@ -41,17 +42,21 @@ export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maxim
             const marca = { "aria-invalid": !!error, "aria-describedby": error ? `${nombre}-${i}-error` : undefined };
             return (
               <li key={i} className="flex flex-col gap-1">
-                <div className="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-x-2 gap-y-1 sm:grid-cols-[1.25rem_minmax(0,1fr)_auto]">
+                <div className="grid grid-cols-[1.25rem_minmax(0,1fr)_auto] gap-x-2">
                   {/* El número, a la altura del primer campo */}
                   <span aria-hidden className="flex h-9 items-center justify-end text-sm text-tinta-suave pointer-coarse:h-11">{i + 1}.</span>
                   <div className="flex flex-col gap-2">{fila(elemento, (nuevo) => onChange(valor.map((e, k) => (k === i ? nuevo : e))), i, marca)}</div>
-                  <div className="col-start-2 flex justify-self-end sm:col-start-auto sm:self-start">
-                    <Button type="button" variant="ghost" size="icon" disabled={i === 0} onClick={() => mover(i, i - 1)} aria-label={`Subir ${etiqueta.toLowerCase()} ${i + 1}`}>
-                      <ArrowUpIcon />
-                    </Button>
-                    <Button type="button" variant="ghost" size="icon" disabled={i === valor.length - 1} onClick={() => mover(i, i + 1)} aria-label={`Bajar ${etiqueta.toLowerCase()} ${i + 1}`}>
-                      <ArrowDownIcon />
-                    </Button>
+                  <div className="flex items-start">
+                    {valor.length > 1 && (
+                      <div className="flex flex-col text-tinta-suave">
+                        <Button type="button" variant="ghost" size="icon" disabled={i === 0} onClick={() => mover(i, i - 1)} aria-label={`Subir ${etiqueta.toLowerCase()} ${i + 1}`}>
+                          <ChevronUpIcon />
+                        </Button>
+                        <Button type="button" variant="ghost" size="icon" disabled={i === valor.length - 1} onClick={() => mover(i, i + 1)} aria-label={`Bajar ${etiqueta.toLowerCase()} ${i + 1}`}>
+                          <ChevronDownIcon />
+                        </Button>
+                      </div>
+                    )}
                     <Button type="button" variant="ghost" size="icon" onClick={() => onChange(valor.filter((_, k) => k !== i))} aria-label={`Quitar ${etiqueta.toLowerCase()} ${i + 1}`}>
                       <XIcon />
                     </Button>

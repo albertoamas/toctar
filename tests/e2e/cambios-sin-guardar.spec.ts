@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { consultar, crearUsuario, ingresarComoDueno, PNG } from "./apoyo";
+import { consultar, crearUsuario, ingresarComoDueno } from "./apoyo";
 
 // Pulido 13.15: el botón de guardar se activa y queda fijo abajo cuando hay algo que guardar, y salir con cambios pregunta.
 
@@ -35,16 +35,15 @@ test("sin cambios el botón está desactivado; con cambios se activa y queda fij
 
 test("una lista también cuenta: agregar una fila lo activa y quitarla lo deja como estaba", async ({ page }) => {
   await ingresarComoDueno(page);
-  await page.goto("/panel/sitio/servicios");
-  await page.getByRole("link", { name: /Polarizado de vidrios/ }).click();
-  const agregar = page.getByRole("button", { name: "Agregar beneficio" });
-  const guardar = page.getByRole("button", { name: "Guardar cambios" });
+  await page.goto("/panel/sitio/textos");
+  const agregar = page.getByRole("button", { name: "Agregar motivo" });
+  const guardar = page.getByRole("button", { name: "Guardar nosotros" });
   await expect(agregar).toBeEnabled();
   await hidratada(page);
   await expect(guardar).toBeDisabled();
   await agregar.click();
   await expect(guardar).toBeEnabled();
-  await page.getByRole("button", { name: /^Quitar beneficio \d+$/ }).last().click();
+  await page.getByRole("button", { name: /^Quitar motivo \d+$/ }).last().click();
   await expect(guardar).toBeDisabled();
 });
 
@@ -171,16 +170,4 @@ test("un flujo también pregunta: nuevo cliente, con su botón de siempre", asyn
   await expect(pregunta).toBeVisible();
   await pregunta.getByRole("button", { name: "Salir sin guardar" }).click();
   await expect(page).toHaveURL(/\/panel\/clientes$/);
-});
-
-test("subir una foto, que se guarda al momento, no activa el botón", async ({ page }, info) => {
-  test.skip(info.project.name !== "escritorio", "Cambia la foto compartida");
-  await ingresarComoDueno(page);
-  await page.goto("/panel/sitio/servicios");
-  await page.getByRole("link", { name: /Lavado/ }).first().click();
-  await expect(page.getByRole("heading", { name: "Foto principal" })).toBeVisible();
-  await hidratada(page);
-  await page.getByLabel("Archivo de la foto", { exact: true }).setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
-  await expect(page.getByText("Foto guardada.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Guardar cambios" })).toBeDisabled();
 });
