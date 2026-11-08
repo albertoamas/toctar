@@ -24,7 +24,7 @@ Toda pantalla del panel es de uno de estos tipos. El tipo decide su ancho.
 
 ## 2. Forma de una ficha
 
-- **Título arriba de la tarjeta**, con su acción en la misma fila. La lectura va dentro de la tarjeta.
+- **Título arriba de la tarjeta**, con su acción en la misma fila. La lectura va dentro de la tarjeta. El título va adentro solo si la tarjeta es un bloque aparte que no sigue la lectura de la página: un panel lateral de una portada ("Para atender") o un formulario que se abre en la misma pantalla ("Subir fotos").
 - **Se lee y se edita aparte:** cada parte tiene su "Editar", que abre un modal y guarda solo esa parte. No hay un "Guardar" general.
 - **Qué va en la ficha:** primero lo que decide (estado, montos, lo que falta), después lo que se consulta (datos, fotos) y al final la historia.
 - **Dos disposiciones en computadora.** Se elige una por ficha:

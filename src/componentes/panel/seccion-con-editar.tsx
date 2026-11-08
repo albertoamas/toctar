@@ -4,6 +4,7 @@ import { useState } from "react";
 import { cn } from "cn";
 import { PencilIcon } from "lucide-react";
 import { useHidratado } from "@/componentes/hidratado";
+import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
 import { ModalFormulario } from "@/componentes/panel/modal-formulario";
 import { Button } from "@/componentes/ui/button";
 
@@ -29,22 +30,6 @@ type Props = {
   /** El formulario, en el modal. */
   children: React.ReactNode;
 };
-
-/**
- * La cabecera de una sección de ficha: el título y, en su misma fila, su acción sin borde ("Editar", "＋ Agregar"). La
- * usan SeccionConEditar y las secciones que son una lista (los vehículos del cliente), así las de al lado se ven igual.
- */
-export function CabeceraSeccion({ id, titulo, nivel = 2, children }: { id: string; titulo: React.ReactNode; nivel?: 2 | 3; children?: React.ReactNode }) {
-  const Titulo = nivel === 3 ? "h3" : "h2";
-  return (
-    <div className="flex min-h-11 items-center justify-between gap-3">
-      <Titulo id={`${id}-titulo`} className={nivel === 3 ? "tt-titulo-sub" : "tt-titulo-seccion"}>
-        {titulo}
-      </Titulo>
-      {children}
-    </div>
-  );
-}
 
 /** Una sección de ficha sin "Editar" propio (el logo, que se guarda al momento): el título arriba de su tarjeta y su acción al lado. */
 export function Seccion({ id, titulo, accion, children }: { id: string; titulo: string; accion?: React.ReactNode; children: React.ReactNode }) {

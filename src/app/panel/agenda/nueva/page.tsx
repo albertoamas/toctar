@@ -10,7 +10,7 @@ import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
 import { ResumenPaso } from "@/componentes/panel/resumen-paso";
-import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
+import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
 import { fechaCorta, fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";

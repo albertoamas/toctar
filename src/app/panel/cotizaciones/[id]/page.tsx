@@ -11,7 +11,7 @@ import { Insignia } from "@/componentes/panel/insignia";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
 import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
-import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
+import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import { formatearFecha, formatearFechaHora } from "@/lib/fechas";

@@ -9,7 +9,7 @@ import { useHidratado } from "@/componentes/hidratado";
 import { avisarResultado, conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CancelarModal, ModalFormulario, PieModal, useCambioFueraDelFormulario, useCerrarModal } from "@/componentes/panel/modal-formulario";
-import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
+import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
 import { achicarFoto } from "@/componentes/panel/subida-foto";
 import { VisorFotos } from "@/componentes/panel/visor-fotos";
 import { BYTES_MAXIMOS_FOTO } from "@/lib/formato-fotos";
@@ -71,7 +71,7 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
   return (
     <section aria-labelledby="checklist-titulo" className="flex flex-col gap-3">
       <div className="flex flex-col gap-1">
-        <CabeceraSeccion id="checklist" titulo="Checklist" />
+        <CabeceraSeccion id="checklist" titulo="Checklist" compacta />
         <p className="text-sm text-tinta-suave">Revisa cada parte: bien, o con un detalle y su foto.</p>
       </div>
       {filas.length === 0 ? (

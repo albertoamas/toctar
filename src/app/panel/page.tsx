@@ -8,7 +8,7 @@ import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { ICONO_MODULO } from "@/componentes/panel/iconos-modulo";
 import { Insignia } from "@/componentes/panel/insignia";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
-import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
+import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
 import { CeldaDoble, TablaLista } from "@/componentes/panel/tabla-lista";
 import { TarjetaNumero } from "@/componentes/panel/tarjeta-numero";
 import { buttonVariants } from "@/componentes/ui/button";

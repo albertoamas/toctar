@@ -8,7 +8,7 @@ import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { MasDatos } from "@/componentes/panel/mas-datos";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
-import { CabeceraSeccion } from "@/componentes/panel/seccion-con-editar";
+import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
 import { cantidad } from "@/lib/cantidad";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
