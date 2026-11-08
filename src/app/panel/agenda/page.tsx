@@ -7,6 +7,7 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { MasDatos } from "@/componentes/panel/mas-datos";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { cantidad } from "@/lib/cantidad";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
@@ -26,7 +27,7 @@ export const metadata: Metadata = { title: "Agenda" };
 // La semana se recorre en un renglón: flecha, la semana (corta en el celular), flecha y "Hoy".
 export default function PaginaAgenda({ searchParams }: PageProps<"/panel/agenda">) {
   return (
-    <section className="flex flex-col gap-6">
+    <PaginaPanel tipo="lista">
       <EncabezadoPagina
         titulo="Agenda"
         accion={
@@ -40,7 +41,7 @@ export default function PaginaAgenda({ searchParams }: PageProps<"/panel/agenda"
       <Suspense fallback={<Cargando />}>
         <Tablero searchParams={searchParams} />
       </Suspense>
-    </section>
+    </PaginaPanel>
   );
 }
 

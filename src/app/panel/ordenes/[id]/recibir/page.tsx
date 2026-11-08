@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
@@ -22,11 +23,11 @@ export const metadata: Metadata = { title: "Recibir vehículo" };
 // celular.
 export default function PaginaRecibir({ params }: PageProps<"/panel/ordenes/[id]/recibir">) {
   return (
-    <section className="flex max-w-3xl flex-col gap-6">
+    <PaginaPanel tipo="formulario">
       <Suspense fallback={<Cargando />}>
         <Recepcion params={params} />
       </Suspense>
-    </section>
+    </PaginaPanel>
   );
 }
 

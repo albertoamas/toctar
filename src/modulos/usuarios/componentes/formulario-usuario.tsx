@@ -48,7 +48,7 @@ export function FormularioUsuario(props: Props) {
   useFocoEnError(formulario, estado);
 
   return (
-    <form ref={formulario} action={accion} className="tt-formulario-panel flex max-w-xl flex-col gap-6" noValidate>
+    <form ref={formulario} action={accion} className={cn("tt-formulario-panel flex flex-col gap-6", editar && "max-w-xl")} noValidate>
       {editar && <input type="hidden" name="id" value={editar.id} />}
 
       <Campo id="nombre" etiqueta="Nombre" error={e.nombre}>

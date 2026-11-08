@@ -240,7 +240,7 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
         ev.preventDefault();
         siguiente();
       }}
-      className="flex max-w-3xl flex-col gap-6"
+      className="flex flex-col gap-6"
       noValidate
     >
       {directa && <PasosFlujo pasos={pasosNuevaReserva(conPagos)} actual={paso} etiqueta="Pasos de la reserva" />}

@@ -8,6 +8,7 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { Insignia } from "@/componentes/panel/insignia";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { CeldaDoble, TablaLista } from "@/componentes/panel/tabla-lista";
 import { buttonVariants } from "@/componentes/ui/button";
 import { exigirModulo } from "@/lib/sesion";
@@ -20,7 +21,7 @@ export const metadata: Metadata = { title: "Usuarios" };
 // el propio dice "(tú)". Solo el dueño (módulo "usuarios").
 export default function PaginaUsuarios({ searchParams }: PageProps<"/panel/usuarios">) {
   return (
-    <section className="flex max-w-4xl flex-col gap-6">
+    <PaginaPanel tipo="lista">
       <EncabezadoPagina
         titulo="Usuarios"
         accion={
@@ -34,7 +35,7 @@ export default function PaginaUsuarios({ searchParams }: PageProps<"/panel/usuar
       <Suspense fallback={<Cargando />}>
         <Lista searchParams={searchParams} />
       </Suspense>
-    </section>
+    </PaginaPanel>
   );
 }
 

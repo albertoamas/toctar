@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { cantidad } from "@/lib/cantidad";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
@@ -19,11 +20,11 @@ export const metadata: Metadata = { title: "Cambiar de dueño" };
 // qué queda, y "Cambiar de dueño" al pie. Con el permiso de Clientes.
 export default function PaginaCambioDueno({ params, searchParams }: PageProps<"/panel/clientes/[id]/vehiculos/[vehiculo]/dueno">) {
   return (
-    <section className="flex max-w-3xl flex-col gap-6">
+    <PaginaPanel tipo="formulario">
       <Suspense fallback={<Cargando />}>
         <Contenido params={params} searchParams={searchParams} />
       </Suspense>
-    </section>
+    </PaginaPanel>
   );
 }
 

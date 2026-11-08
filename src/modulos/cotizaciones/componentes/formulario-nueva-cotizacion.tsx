@@ -224,7 +224,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
     <form
       ref={formulario}
       action={accion}
-      className="flex max-w-3xl flex-col gap-6"
+      className="flex flex-col gap-6"
       noValidate
       // El tamaño del vehículo nuevo es un menú de CamposVehiculo, sin control propio: se escucha su cambio
       onChange={(ev) => {
