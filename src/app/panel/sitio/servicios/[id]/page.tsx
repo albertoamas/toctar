@@ -6,6 +6,7 @@ import { ExternalLinkIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Insignia } from "@/componentes/panel/insignia";
+import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
 import { CabeceraSeccion, SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { IconoBeneficio } from "@/componentes/sitio/icono-beneficio";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -26,11 +27,11 @@ const VOLVER = { href: "/panel/sitio/servicios", texto: "Servicios" } as const;
 
 export default function PaginaServicio({ params }: PageProps<"/panel/sitio/servicios/[id]">) {
   return (
-    <div className="flex max-w-4xl flex-col gap-8">
+    <PaginaPanel tipo="ficha">
       <Suspense fallback={<Cargando volver={VOLVER} />}>
         <Detalle params={params} />
       </Suspense>
-    </div>
+    </PaginaPanel>
   );
 }
 
@@ -79,43 +80,45 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
         {!s.activo && "No sale en el sitio mientras esté inactivo en el catálogo."}
       </EncabezadoPagina>
 
-      <SeccionConEditar
-        id="arriba"
-        titulo="Arriba de la página"
-        etiquetaEditar="Editar resumen"
-        tituloModal="Resumen"
-        lectura={
-          <div className={CON_FOTO}>
-            {s.resumen ? <p>{s.resumen}</p> : <p className="text-tinta-suave">Sin resumen: escríbelo para poder mostrar el servicio en el sitio.</p>}
-            <FotoServicio servicioId={s.id} nombre={s.nombre} foto={s.foto} />
-          </div>
-        }
-      >
-        <FormularioResumen id={s.id} resumen={s.resumen} />
-      </SeccionConEditar>
+      <PartesIguales>
+        <SeccionConEditar
+          id="arriba"
+          titulo="Arriba de la página"
+          etiquetaEditar="Editar resumen"
+          tituloModal="Resumen"
+          lectura={
+            <div className={CON_FOTO}>
+              {s.resumen ? <p>{s.resumen}</p> : <p className="text-tinta-suave">Sin resumen: escríbelo para poder mostrar el servicio en el sitio.</p>}
+              <FotoServicio servicioId={s.id} nombre={s.nombre} foto={s.foto} />
+            </div>
+          }
+        >
+          <FormularioResumen id={s.id} resumen={s.resumen} />
+        </SeccionConEditar>
 
-      <SeccionConEditar
-        id="beneficios"
-        titulo="Beneficios"
-        etiquetaEditar="Editar beneficios"
-        tituloModal="Beneficios"
-        lectura={
-          s.beneficios.length > 0 ? (
-            <ul className="grid gap-3 sm:grid-cols-2">
-              {s.beneficios.map((b, i) => (
-                <li key={i} className="flex items-center gap-3">
-                  <IconoBeneficio icono={iconoDe(b.icono)} className="size-6 shrink-0 text-tinta" />
-                  {b.texto}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-tinta-suave">Sin beneficios: la fila de íconos no sale en el sitio.</p>
-          )
-        }
-      >
-        <FormularioBeneficios id={s.id} beneficios={s.beneficios} />
-      </SeccionConEditar>
+        <SeccionConEditar
+          id="beneficios"
+          titulo="Beneficios"
+          etiquetaEditar="Editar beneficios"
+          tituloModal="Beneficios"
+          lectura={
+            s.beneficios.length > 0 ? (
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {s.beneficios.map((b, i) => (
+                  <li key={i} className="flex items-center gap-3">
+                    <IconoBeneficio icono={iconoDe(b.icono)} className="size-6 shrink-0 text-tinta" />
+                    {b.texto}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-tinta-suave">Sin beneficios: la fila de íconos no sale en el sitio.</p>
+            )
+          }
+        >
+          <FormularioBeneficios id={s.id} beneficios={s.beneficios} />
+        </SeccionConEditar>
+      </PartesIguales>
 
       <SeccionConEditar
         id="proceso"

@@ -5,6 +5,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { ListaEditable } from "@/modulos/configuracion/componentes/lista-editable";
 import { listarElementos } from "@/modulos/configuracion/consultas";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 
 export const metadata: Metadata = { title: "Configuración del taller" };
 
@@ -12,12 +13,12 @@ export const metadata: Metadata = { title: "Configuración del taller" };
 // Solo el dueño. Pulido 13.27: una lista debajo de la otra (en dos columnas, el checklist quedaba solo con un hueco al lado).
 export default function PaginaTaller() {
   return (
-    <>
+    <PaginaPanel tipo="ficha">
       <EncabezadoPagina titulo="Taller" volver={{ href: "/panel/configuracion", texto: "Configuración" }} />
       <Suspense fallback={<Cargando />}>
         <Contenido />
       </Suspense>
-    </>
+    </PaginaPanel>
   );
 }
 
@@ -25,7 +26,7 @@ async function Contenido() {
   await exigirModulo("configuracion");
   const [espacios, tamanos, partes] = await Promise.all([listarElementos("espacios"), listarElementos("tamanos"), listarElementos("partes")]);
   return (
-    <div className="flex max-w-3xl flex-col gap-10">
+    <div className="flex flex-col gap-10">
       <ListaEditable
         lista="espacios"
         elementos={espacios}

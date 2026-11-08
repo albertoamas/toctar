@@ -5,10 +5,9 @@ import { HistoryIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
-import { CancelarModal, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
 import { Button } from "@/componentes/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/componentes/ui/dialog";
 import { Input } from "@/componentes/ui/input";
 import { Label } from "@/componentes/ui/label";
 import { formatearFechaHora } from "@/lib/fechas";
@@ -105,18 +104,24 @@ export function FormularioPrecios({ variante: v, tamanos, duracionServicio }: Pr
 function Historial({ variante }: { variante: VarianteCatalogo }) {
   const [cambios, setCambios] = useState<CambioPrecio[] | null>(null);
   const [cargando, iniciar] = useTransition();
+  const [abierto, setAbierto] = useState(false);
   return (
-    <Dialog onOpenChange={(abierto) => abierto && iniciar(async () => setCambios(await verHistorialPrecios(variante.id)))}>
+    <>
       {/* -ml: el texto del botón sin fondo queda alineado con la línea de ayuda */}
-      <DialogTrigger render={<Button type="button" variant="ghost" className="-ml-2.5" />}>
+      <Button
+        type="button"
+        variant="ghost"
+        className="-ml-2.5"
+        onClick={() => {
+          setAbierto(true);
+          iniciar(async () => setCambios(await verHistorialPrecios(variante.id)));
+        }}
+      >
         <HistoryIcon />
         Ver historial
-      </DialogTrigger>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Historial de precios: {variante.nombre}</DialogTitle>
-          <DialogDescription>Cada cambio queda guardado; los anteriores no se borran.</DialogDescription>
-        </DialogHeader>
+      </Button>
+      <ModalFormulario titulo={`Historial de precios: ${variante.nombre}`} abierto={abierto} alCambiar={setAbierto}>
+        <p className="text-sm text-tinta-suave">Cada cambio queda guardado; los anteriores no se borran.</p>
         {cargando || cambios === null ? (
           <p className="text-sm text-tinta-suave">Cargando…</p>
         ) : cambios.length === 0 ? (
@@ -136,8 +141,11 @@ function Historial({ variante }: { variante: VarianteCatalogo }) {
             ))}
           </ol>
         )}
-      </DialogContent>
-    </Dialog>
+        <PieModal>
+          <CancelarModal texto="Listo" />
+        </PieModal>
+      </ModalFormulario>
+    </>
   );
 }
 

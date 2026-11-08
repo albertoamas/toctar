@@ -6,6 +6,8 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
+import { FilaConAcciones, ListaConAcciones } from "@/componentes/panel/fila-lista";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { Pestanas } from "@/componentes/panel/pestanas";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -35,7 +37,7 @@ export const metadata: Metadata = { title: "Saldos pendientes" };
 // por cobrar sigue arriba, de todas.
 export default function PaginaSaldos({ searchParams }: PageProps<"/panel/pagos">) {
   return (
-    <section className="flex flex-col gap-6">
+    <PaginaPanel tipo="ficha">
       <EncabezadoPagina titulo="Saldos pendientes" />
       {/* Aparte de la lista: al buscar, el campo no se vuelve a montar y no pierde el foco */}
       <Suspense fallback={<div className="h-9 max-w-md pointer-coarse:h-11" />}>
@@ -44,7 +46,7 @@ export default function PaginaSaldos({ searchParams }: PageProps<"/panel/pagos">
       <Suspense fallback={<Cargando />}>
         <Lista searchParams={searchParams} />
       </Suspense>
-    </section>
+    </PaginaPanel>
   );
 }
 
@@ -93,13 +95,13 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
       {saldos.length === 0 ? (
         <EstadoVacio>Ningún saldo coincide con «{q.trim()}».</EstadoVacio>
       ) : (
-        <ul aria-label="Órdenes con saldo" className="flex max-w-3xl flex-col divide-y divide-border tt-tarjeta-panel">
+        <ListaConAcciones etiqueta="Órdenes con saldo">
           {saldos.map((s) => {
             const entregada = fechaEnBolivia(s.entregadoAt);
             const vehiculo = { marca: s.marca, modelo: s.modelo, placa: s.placa };
             const trabajo = enlaceTrabajo(s.id, "entregado", ve);
             return (
-              <li key={s.id} className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:gap-6">
+              <FilaConAcciones key={s.id}>
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex min-w-0 flex-col">
@@ -131,10 +133,10 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
                     </Link>
                   )}
                 </div>
-              </li>
+              </FilaConAcciones>
             );
           })}
-        </ul>
+        </ListaConAcciones>
       )}
     </>
   );

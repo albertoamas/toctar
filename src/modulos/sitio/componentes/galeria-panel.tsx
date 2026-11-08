@@ -440,7 +440,7 @@ function SubirFotos({ servicios, alTerminar }: { servicios: Servicio[]; alTermin
   }
 
   return (
-    <form ref={formulario} onSubmit={enviar} className="flex max-w-2xl flex-col gap-5 tt-tarjeta-panel p-4" noValidate aria-labelledby="subir-titulo">
+    <form ref={formulario} onSubmit={enviar} className="flex flex-col gap-5 tt-tarjeta-panel p-4" noValidate aria-labelledby="subir-titulo">
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h2 id="subir-titulo" className="tt-titulo-seccion">Subir fotos</h2>

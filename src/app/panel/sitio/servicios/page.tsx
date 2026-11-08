@@ -7,6 +7,7 @@ import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { OrdenarServicios } from "@/modulos/sitio/componentes/ordenar-servicios";
@@ -22,7 +23,7 @@ export const metadata: Metadata = { title: "Servicios del sitio" };
 // con flechas en cada fila; el catálogo, al pie y no en un párrafo arriba.
 export default function PaginaServicios() {
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
+    <PaginaPanel tipo="ficha">
       {/* El título se ve enseguida; "Cambiar orden" llega con los servicios */}
       <EncabezadoPagina
         titulo="Servicios"
@@ -36,7 +37,7 @@ export default function PaginaServicios() {
       <Suspense fallback={<Cargando />}>
         <Lista />
       </Suspense>
-    </div>
+    </PaginaPanel>
   );
 }
 

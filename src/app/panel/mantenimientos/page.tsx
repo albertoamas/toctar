@@ -40,6 +40,8 @@ import {
 import { enlaceTrabajo } from "@/modulos/ordenes/reglas";
 import { mensajeMantenimiento } from "@/modulos/ordenes/mensajes";
 import { Insignia } from "@/componentes/panel/insignia";
+import { FilaConAcciones, ListaConAcciones } from "@/componentes/panel/fila-lista";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 
 export const metadata: Metadata = { title: "Mantenimientos" };
 
@@ -53,12 +55,12 @@ export const metadata: Metadata = { title: "Mantenimientos" };
 // interesa", el más reciente primero, sin acciones). Los de un cliente o vehículo desactivado, en ninguna.
 export default function PaginaMantenimientos({ searchParams }: PageProps<"/panel/mantenimientos">) {
   return (
-    <section className="flex flex-col gap-6">
+    <PaginaPanel tipo="ficha">
       <EncabezadoPagina titulo="Mantenimientos" />
       <Suspense fallback={<Cargando />}>
         <Listas searchParams={searchParams} />
       </Suspense>
-    </section>
+    </PaginaPanel>
   );
 }
 
@@ -137,27 +139,25 @@ async function cerrados(hoy: string, ve: { ordenes: boolean; agenda: boolean }) 
   const lista = await mantenimientosCerrados();
   if (lista.length === 0) return <EstadoVacio>Todavía no hay mantenimientos reservados ni cerrados.</EstadoVacio>;
   return (
-    <ul aria-label="Cerrados" className="flex max-w-3xl flex-col divide-y divide-border tt-tarjeta-panel">
+    <ListaConAcciones etiqueta="Cerrados">
       {lista.map((m) => (
         <FilaCerrada key={m.id} m={m} hoy={hoy} ve={ve} />
       ))}
-    </ul>
+    </ListaConAcciones>
   );
 }
 
 function Seccion({ titulo, cantidad: n, vacio, children }: { titulo: string; cantidad: number; /** Si puede quedar vacía. */ vacio?: string; children: React.ReactNode }) {
   return (
     // El lector oye la sección como "Vencidos, 2 mantenimientos"; a la vista, "Vencidos (2)"
-    <section aria-label={`${titulo}, ${cantidad(n)}`} className="flex max-w-3xl flex-col gap-3">
+    <section aria-label={`${titulo}, ${cantidad(n)}`} className="flex flex-col gap-3">
       <h2 className="tt-titulo-seccion">
         {titulo} <span className="tabular-nums text-tinta-suave">({n})</span>
       </h2>
       {n === 0 ? (
         <p className="text-tinta-suave">{vacio}</p>
       ) : (
-        <ul aria-label={titulo} className="flex flex-col divide-y divide-border tt-tarjeta-panel">
-          {children}
-        </ul>
+        <ListaConAcciones etiqueta={titulo}>{children}</ListaConAcciones>
       )}
     </section>
   );
@@ -168,7 +168,7 @@ function Fila({ m, hoy, mensaje, puedeAgendar, conAviso }: { m: MantenimientoPor
   const avisado = m.avisadoAt ? `Avisado el ${diaYHora(m.avisadoAt)}${m.avisadoPor ? ` por ${m.avisadoPor}` : ""}` : null;
   const agendar = new URLSearchParams({ cliente: String(m.clienteId), vehiculo: String(m.vehiculoId), recordatorio: String(m.id) });
   return (
-    <li className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:gap-6">
+    <FilaConAcciones>
       <div className="flex min-w-0 flex-1 items-start justify-between gap-4">
         <div className="flex min-w-0 flex-col">
           <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -207,7 +207,7 @@ function Fila({ m, hoy, mensaje, puedeAgendar, conAviso }: { m: MantenimientoPor
         </div>
         <NoLeInteresa id={m.id} />
       </div>
-    </li>
+    </FilaConAcciones>
   );
 }
 

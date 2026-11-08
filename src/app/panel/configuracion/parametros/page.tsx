@@ -3,11 +3,12 @@ import { Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { ListaDatos } from "@/componentes/panel/lista-datos";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioSeccionParametros } from "@/modulos/configuracion/componentes/formulario-parametros";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
-import { CLAVES_PARAMETRO, CLAVES_SECCION_PARAMETROS, clavesDeSeccion, PARAMETROS, SECCIONES_PARAMETROS, type ClaveParametro } from "@/modulos/configuracion/parametros";
+import { CLAVES_PARAMETRO, clavesDeSeccion, PARAMETROS, SECCIONES_PARAMETROS, type ClaveParametro, type SeccionParametros } from "@/modulos/configuracion/parametros";
 
 export const metadata: Metadata = { title: "Parámetros" };
 
@@ -19,11 +20,11 @@ const VOLVER = { href: "/panel/configuracion", texto: "Configuración" } as cons
 
 export default function PaginaParametros() {
   return (
-    <div className="flex max-w-3xl flex-col gap-8">
+    <PaginaPanel tipo="ficha">
       <Suspense fallback={<Cargando volver={VOLVER} />}>
         <Contenido />
       </Suspense>
-    </div>
+    </PaginaPanel>
   );
 }
 
@@ -31,42 +32,47 @@ async function Contenido() {
   await exigirModulo("configuracion");
   const parametros = await obtenerParametros();
   const valores = Object.fromEntries(CLAVES_PARAMETRO.map((c) => [c, String(parametros[c])])) as Record<ClaveParametro, string>;
+  const seccion = (s: SeccionParametros) => {
+    const { titulo } = SECCIONES_PARAMETROS[s];
+    return (
+      <SeccionConEditar
+        id={`parametros-${s}`}
+        titulo={titulo}
+        etiquetaEditar={`Editar ${titulo.toLowerCase()}`}
+        tituloModal={titulo}
+        lectura={
+          <ListaDatos
+            filas={clavesDeSeccion(s).map((c) => {
+              const p = PARAMETROS[c];
+              return [
+                p.etiqueta,
+                p.unidad ? (
+                  <span className="tabular-nums">
+                    {valores[c]} {p.unidad}
+                  </span>
+                ) : (
+                  // Los textos del PDF, en tres líneas: enteros, en su "Editar"
+                  <span className="line-clamp-3 whitespace-pre-line">{valores[c]}</span>
+                ),
+              ];
+            })}
+          />
+        }
+      >
+        {/* Solo los de su sección: los textos largos del PDF no viajan a los otros modales */}
+        <FormularioSeccionParametros seccion={s} valores={Object.fromEntries(clavesDeSeccion(s).map((c) => [c, valores[c]]))} />
+      </SeccionConEditar>
+    );
+  };
   return (
     <>
       <EncabezadoPagina titulo="Parámetros" volver={VOLVER} />
-      {CLAVES_SECCION_PARAMETROS.map((s) => {
-        const { titulo } = SECCIONES_PARAMETROS[s];
-        return (
-          <SeccionConEditar
-            key={s}
-            id={`parametros-${s}`}
-            titulo={titulo}
-            etiquetaEditar={`Editar ${titulo.toLowerCase()}`}
-            tituloModal={titulo}
-            lectura={
-              <ListaDatos
-                filas={clavesDeSeccion(s).map((c) => {
-                  const p = PARAMETROS[c];
-                  return [
-                    p.etiqueta,
-                    p.unidad ? (
-                      <span className="tabular-nums">
-                        {valores[c]} {p.unidad}
-                      </span>
-                    ) : (
-                      // Los textos del PDF, en tres líneas: enteros, en su "Editar"
-                      <span className="line-clamp-3 whitespace-pre-line">{valores[c]}</span>
-                    ),
-                  ];
-                })}
-              />
-            }
-          >
-            {/* Solo los de su sección: los textos largos del PDF no viajan a los otros modales */}
-            <FormularioSeccionParametros seccion={s} valores={Object.fromEntries(clavesDeSeccion(s).map((c) => [c, valores[c]]))} />
-          </SeccionConEditar>
-        );
-      })}
+      <PartesIguales>
+        {seccion("plazos")}
+        {seccion("agenda")}
+      </PartesIguales>
+      {/* Largos: a todo el ancho */}
+      {seccion("pdf")}
     </>
   );
 }

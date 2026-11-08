@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { exigirModulo } from "@/lib/sesion";
 import { BurbujaMensaje } from "@/modulos/configuracion/componentes/burbuja-mensaje";
@@ -20,11 +21,11 @@ const VOLVER = { href: "/panel/configuracion", texto: "Configuración" } as cons
 
 export default function PaginaMensajes() {
   return (
-    <div className="flex max-w-3xl flex-col gap-8">
+    <PaginaPanel tipo="ficha">
       <Suspense fallback={<Cargando volver={VOLVER} />}>
         <Contenido />
       </Suspense>
-    </div>
+    </PaginaPanel>
   );
 }
 
@@ -34,24 +35,26 @@ async function Contenido() {
   return (
     <>
       <EncabezadoPagina titulo="Mensajes" volver={VOLVER} />
-      {CLAVES_PLANTILLA.map((c) => (
-        <SeccionConEditar
-          key={c}
-          // Otro prefijo que el del campo del editor ("mensaje-listo"): no se mezclan sus ids
-          id={`seccion-mensaje-${c}`}
-          titulo={PLANTILLAS[c].titulo}
-          etiquetaEditar={`Editar mensaje: ${PLANTILLAS[c].titulo}`}
-          tituloModal={PLANTILLAS[c].titulo}
-          lectura={
-            <div className="flex flex-col gap-3">
-              <p className="text-sm text-tinta-suave">{PLANTILLAS[c].cuando}</p>
-              <BurbujaMensaje texto={mensajeDeEjemplo(c, plantillas[c], negocio.nombre)} />
-            </div>
-          }
-        >
-          <EditorPlantilla clave={c} guardado={plantillas[c]} negocio={negocio.nombre} />
-        </SeccionConEditar>
-      ))}
+      <PartesIguales>
+        {CLAVES_PLANTILLA.map((c) => (
+          <SeccionConEditar
+            key={c}
+            // Otro prefijo que el del campo del editor ("mensaje-listo"): no se mezclan sus ids
+            id={`seccion-mensaje-${c}`}
+            titulo={PLANTILLAS[c].titulo}
+            etiquetaEditar={`Editar mensaje: ${PLANTILLAS[c].titulo}`}
+            tituloModal={PLANTILLAS[c].titulo}
+            lectura={
+              <div className="flex flex-col gap-3">
+                <p className="text-sm text-tinta-suave">{PLANTILLAS[c].cuando}</p>
+                <BurbujaMensaje texto={mensajeDeEjemplo(c, plantillas[c], negocio.nombre)} />
+              </div>
+            }
+          >
+            <EditorPlantilla clave={c} guardado={plantillas[c]} negocio={negocio.nombre} />
+          </SeccionConEditar>
+        ))}
+      </PartesIguales>
     </>
   );
 }

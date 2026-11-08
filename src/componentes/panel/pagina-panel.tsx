@@ -15,6 +15,11 @@ const FORMA = {
   portada: "gap-8",
 } as const;
 
+/** Partes cortas y parecidas de una ficha: de a dos y del mismo alto en la computadora; en el celular, una debajo de otra (§2). */
+export function PartesIguales({ children }: { children: React.ReactNode }) {
+  return <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-2 md:gap-x-4">{children}</div>;
+}
+
 export function PaginaPanel({ tipo, children }: { tipo: keyof typeof FORMA; children: React.ReactNode }) {
   return <div className={cn("flex flex-col", FORMA[tipo])}>{children}</div>;
 }

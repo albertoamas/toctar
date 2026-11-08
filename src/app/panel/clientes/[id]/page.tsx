@@ -31,6 +31,7 @@ import { mantenimientosDelCliente, serviciosConMantenimiento } from "@/modulos/m
 import { ESTADOS_RECORDATORIO_ABIERTO, NOMBRE_ESTADO_RECORDATORIO, textoCadaMeses } from "@/modulos/mantenimientos/reglas";
 import { enlaceTrabajo, rutaTrabajo } from "@/modulos/ordenes/reglas";
 import { Insignia } from "@/componentes/panel/insignia";
+import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
 
 export const metadata: Metadata = { title: "Cliente" };
 
@@ -42,11 +43,11 @@ export const metadata: Metadata = { title: "Cliente" };
 // en "Más"); vehículos y datos lado a lado, cada uno editado en un modal; después reservas, cotizaciones y mantenimientos.
 export default function PaginaCliente({ params, searchParams }: PageProps<"/panel/clientes/[id]">) {
   return (
-    <section className="flex flex-col gap-6">
+    <PaginaPanel tipo="ficha">
       <Suspense fallback={<Cargando volver={{ href: "/panel/clientes", texto: "Clientes" }} />}>
         <Ficha params={params} searchParams={searchParams} />
       </Suspense>
-    </section>
+    </PaginaPanel>
   );
 }
 
@@ -87,7 +88,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
   ];
 
   return (
-    <div className="flex max-w-5xl flex-col gap-8">
+    <>
       <EncabezadoPagina
         volver={{ href: "/panel/clientes", texto: "Clientes" }}
         titulo={c.nombre}
@@ -121,7 +122,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
       )}
 
       {/* Lado a lado y del mismo alto en la computadora (como en el catálogo); en el celular, primero los vehículos */}
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-2 md:gap-4">
+      <PartesIguales>
         <VehiculosCliente clienteId={c.id} vehiculos={c.vehiculos} tamanos={tamanos} />
         <SeccionConEditar
           id="datos"
@@ -154,7 +155,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
             }}
           />
         </SeccionConEditar>
-      </div>
+      </PartesIguales>
 
       {verAgenda && (
         <section aria-labelledby="reservas-titulo" className="flex flex-col gap-4">
@@ -162,7 +163,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
             <h2 id="reservas-titulo" className="tt-titulo-seccion">Reservas</h2>
             {/* La reserva directa lleva precios: la arma quien ve pagos (las demás salen de una cotización) */}
             {c.activo && verPagos && (
-              <Link href={`/panel/agenda/nueva?cliente=${c.id}`} className={cn(buttonVariants({ variant: "outline" }))}>
+              <Link href={`/panel/agenda/nueva?cliente=${c.id}`} className={cn(buttonVariants({ variant: "ghost" }))}>
                 <CalendarIcon />
                 Nueva reserva
               </Link>
@@ -193,7 +194,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
             <h2 id="cotizaciones-titulo" className="tt-titulo-seccion">Cotizaciones</h2>
             {/* A un cliente desactivado no se le cotiza: se reactiva primero */}
             {c.activo && cotiza && (
-              <Link href={`/panel/cotizaciones/nueva?cliente=${c.id}`} className={cn(buttonVariants({ variant: "outline" }))}>
+              <Link href={`/panel/cotizaciones/nueva?cliente=${c.id}`} className={cn(buttonVariants({ variant: "ghost" }))}>
                 <FileTextIcon />
                 Nueva cotización
               </Link>
@@ -253,6 +254,6 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
           )}
         </section>
       )}
-    </div>
+    </>
   );
 }

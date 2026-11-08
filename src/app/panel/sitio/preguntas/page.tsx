@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cache, Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { exigirModulo } from "@/lib/sesion";
 import { AgregarPregunta, ListaPreguntas, OrdenarPreguntas } from "@/modulos/sitio/componentes/lista-preguntas";
 import { listarPreguntas } from "@/modulos/sitio/consultas";
@@ -12,7 +13,7 @@ export const metadata: Metadata = { title: "Preguntas frecuentes" };
 // Pulido 13.24: el título y "Agregar pregunta" se ven enseguida; "Cambiar orden" y la lista llegan con las preguntas.
 export default function PaginaPreguntas() {
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
+    <PaginaPanel tipo="ficha">
       <EncabezadoPagina
         titulo="Preguntas frecuentes"
         volver={{ href: "/panel/sitio", texto: "Sitio web" }}
@@ -29,7 +30,7 @@ export default function PaginaPreguntas() {
       <Suspense fallback={<Cargando />}>
         <Lista />
       </Suspense>
-    </div>
+    </PaginaPanel>
   );
 }
 
