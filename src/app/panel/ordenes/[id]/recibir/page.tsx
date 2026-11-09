@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
+import { ListaDatos } from "@/componentes/panel/lista-datos";
 import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
@@ -51,9 +52,7 @@ async function Recepcion({ params }: Pick<PageProps<"/panel/ordenes/[id]/recibir
 
   return (
     <>
-      <EncabezadoPagina titulo={`Recibir ${o.placa}`} volver={verAgenda ? { href: `/panel/agenda/${o.id}`, texto: "Reserva" } : { href: "/panel/ordenes", texto: "Órdenes" }}>
-        {o.cliente}, {detalle.length > 0 ? `${detalle.join(" ")} (tamaño: ${o.tamano})` : `tamaño: ${o.tamano}`}
-      </EncabezadoPagina>
+      <EncabezadoPagina titulo={`Recibir ${o.placa}`} volver={verAgenda ? { href: `/panel/agenda/${o.id}`, texto: "Reserva" } : { href: "/panel/ordenes", texto: "Órdenes" }} />
       {!puedeRecibirse(o, hoy) ? (
         <p className="rounded-sm border border-aviso p-3">
           Esa reserva todavía no llega a su día de ingreso ({formatearFecha(o.fechaInicio)}): reprográmala.{" "}
@@ -65,11 +64,33 @@ async function Recepcion({ params }: Pick<PageProps<"/panel/ordenes/[id]/recibir
         </p>
       ) : (
         <>
-          <p>
-            <span className="text-tinta-suave">Servicios:</span> {o.servicios.join(", ")}
-          </p>
+          {/* Lo que se recibe, como los datos de Reserva y Orden (pulido de Recibir, 09/11). Sin servicios, sin esa fila */}
+          <div className="tt-tarjeta-panel p-4">
+            <ListaDatos
+              nombre="Lo que se recibe"
+              filas={[
+                ["Cliente", <span key="cliente" className="font-semibold">{o.cliente}</span>],
+                [
+                  "Vehículo",
+                  <span key="vehiculo" className="flex flex-col">
+                    {detalle.length > 0 && <span>{detalle.join(" ")}</span>}
+                    <span className="text-sm text-tinta-suave">Tamaño: {o.tamano}</span>
+                  </span>,
+                ],
+                o.servicios.length > 0 && [
+                  "Servicios",
+                  <ul key="servicios" className="flex flex-col">
+                    {o.servicios.map((s, i) => (
+                      <li key={i}>{s}</li>
+                    ))}
+                  </ul>,
+                ],
+              ]}
+            />
+          </div>
           <ChecklistRecepcion trabajoId={o.id} partes={partes} revision={revision} />
-          <FormularioRecepcion trabajoId={o.id} />
+          {/* Las que faltan: las activas sin revisar (una desactivada ya revisada no cuenta) */}
+          <FormularioRecepcion trabajoId={o.id} faltan={partes.filter((p) => !revision.some((r) => r.parteId === p.id)).length} />
         </>
       )}
     </>

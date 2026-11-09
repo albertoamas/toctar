@@ -32,10 +32,11 @@ import {
   esquemaFotoOrden,
   esquemaPublicar,
   esquemaMarcarBien,
+  esquemaMarcarRestoBien,
   esquemaQuitarFotoOrden,
   esquemaRecibir,
 } from "./esquemas";
-import { esFotoDeAntes, estaAbierta, etapaAbierta, puedeExtenderse, puedeQuitarFoto, MAXIMO_FOTOS_ETAPA, FRASE_ETAPA, puedeRecibirse, textoSinRevisar, transicionOrden } from "./reglas";
+import { esFotoDeAntes, estaAbierta, etapaAbierta, puedeExtenderse, puedeQuitarFoto, MAXIMO_FOTOS_ETAPA, FRASE_ETAPA, puedeRecibirse, textoRestoBien, textoSinRevisar, transicionOrden } from "./reglas";
 
 // Órdenes (C4). Entra el dueño o el encargado con "Órdenes", que trabaja todas: no hay técnico asignado (pedido 32).
 // Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md.
@@ -340,6 +341,50 @@ export async function marcarBien(datos: { trabajoId: number; parteId: number }):
  * Pedido 26: desmarcar una parte (se tocó por error): vuelve a "Sin revisar". Si tenía un detalle, se borran su nota y su
  * foto. Mismas reglas que marcarla: quien recibe, el día que llega y antes de recibir.
  */
+/**
+ * Pulido de Recibir (09/11): las partes activas que faltan revisar, todas "bien" de un toque (un vehículo que llega sin
+ * nada). No toca las ya revisadas: un detalle con su foto queda como está. Las mismas condiciones que marcar una: quien
+ * recibe, antes de recibir y el día de ingreso. Recibe datos sueltos: se validan.
+ */
+export async function marcarRestoBien(datos: { trabajoId: number }): Promise<EstadoFormulario> {
+  const usuario = await exigirModulo("ordenes");
+  if (!puede(usuario, "recibir_vehiculo")) return { mensaje: "El checklist lo hace quien recibe el vehículo." };
+  const entrada = esquemaMarcarRestoBien.safeParse(datos);
+  if (!entrada.success) return { mensaje: RECARGA };
+  const { trabajoId } = entrada.data;
+  const autorId = Number(usuario.id);
+
+  let resultado: { marcadas: number; clienteId: number } | null;
+  try {
+    resultado = await db.transaction(async (tx) => {
+      const [t] = await tx
+        .select({ estado: trabajo.estado, fechaInicio: trabajo.fechaInicio, clienteId: trabajo.clienteId })
+        .from(trabajo)
+        .where(eq(trabajo.id, trabajoId))
+        .for("update");
+      if (!t) return null;
+      if (t.estado !== "agendado") throw new Conflicto("El vehículo ya se recibió: el checklist no cambia.");
+      if (!puedeRecibirse(t, fechaEnBolivia())) throw new Conflicto("El checklist se hace el día que llega el vehículo.");
+      // Con el trabajo tomado: un toque de "Bien" o "Detalle" a la vez no se cruza con este
+      const marcadas = await tx.execute<{ id: number }>(sql`
+        insert into ${trabajoRevision} (trabajo_id, parte_id, parte, estado, created_by)
+        select ${trabajoId}, p.id, p.nombre, 'bien', ${autorId}
+        from ${parteRevision} p
+        where p.activo
+          and not exists (select 1 from ${trabajoRevision} r where r.trabajo_id = ${trabajoId} and r.parte_id = p.id)
+        on conflict do nothing
+        returning id`);
+      return { marcadas: marcadas.rows.length, clienteId: t.clienteId };
+    });
+  } catch (error) {
+    if (error instanceof Conflicto) return { mensaje: error.message };
+    throw error;
+  }
+  if (!resultado) return { mensaje: "Esa reserva ya no existe. Recarga la página." };
+  if (resultado.marcadas > 0) await despuesDelChecklist(trabajoId, { archivoId: null, clienteId: resultado.clienteId });
+  return { ok: true, mensaje: textoRestoBien(resultado.marcadas) };
+}
+
 export async function desmarcarParte(datos: { trabajoId: number; parteId: number }): Promise<EstadoFormulario> {
   const usuario = await exigirModulo("ordenes");
   if (!puede(usuario, "recibir_vehiculo")) return { mensaje: "El checklist lo hace quien recibe el vehículo." };

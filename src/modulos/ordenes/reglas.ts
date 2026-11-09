@@ -129,6 +129,10 @@ export function textoSinRevisar(partes: readonly string[]): string {
   return `Faltan revisar ${partes.length} partes del checklist: ${lista}.`;
 }
 
+/** El aviso de "Marcar el resto como bien": cuántas quedaron bien, o que ya estaban todas revisadas. */
+export const textoRestoBien = (marcadas: number) =>
+  marcadas === 0 ? "Ya estaban todas revisadas." : `${marcadas === 1 ? "1 parte marcada" : `${marcadas} partes marcadas`} como bien.`;
+
 /** Cuántas entregadas muestra cada página del historial (pedido 28). */
 export const ENTREGADAS_POR_PAGINA = 20;
 

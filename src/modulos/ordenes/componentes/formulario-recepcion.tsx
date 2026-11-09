@@ -6,6 +6,7 @@ import { useFocoEnError } from "@/componentes/foco-en-error";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
+import { BOTON_PASO } from "@/componentes/panel/paso-siguiente";
 import { Button } from "@/componentes/ui/button";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
@@ -14,7 +15,7 @@ import { recibirVehiculo } from "../acciones";
 // HU-33: recibir el vehículo (RF-40). Cómo llegó lo dice el checklist (pedido 12), con la foto de cada detalle; aquí van
 // las observaciones (pedido 32: sin técnico asignado). El servidor no recibe con partes del checklist sin revisar.
 
-export function FormularioRecepcion({ trabajoId }: { trabajoId: number }) {
+export function FormularioRecepcion({ trabajoId, faltan }: { trabajoId: number; /** Partes del checklist sin revisar. */ faltan: number }) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(recibirVehiculo, {});
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
@@ -40,10 +41,19 @@ export function FormularioRecepcion({ trabajoId }: { trabajoId: number }) {
       {/* En el celular, fijo abajo: a mano aunque el teclado esté abierto en las observaciones (pulido 11.3) */}
       <AvisoAlSalir formulario={formulario} estado={estado} />
       <PieFormulario>
-        <Button type="submit" disabled={enviando}>
-          <ClipboardCheckIcon />
-          {enviando ? "Recibiendo…" : "Recibir vehículo"}
-        </Button>
+        {/* El paso que cierra el flujo, grande como el paso siguiente de Reserva y Orden (pulido de Recibir, 09/11). No se
+            desactiva: tocado antes, el servidor dice qué falta; al lado, cuántas quedan */}
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+          <Button type="submit" disabled={enviando} className={BOTON_PASO}>
+            <ClipboardCheckIcon />
+            {enviando ? "Recibiendo…" : "Recibir vehículo"}
+          </Button>
+          {faltan > 0 && (
+            <p className="text-sm text-tinta-suave">
+              {faltan === 1 ? "Falta 1 parte del checklist" : `Faltan ${faltan} partes del checklist`}
+            </p>
+          )}
+        </div>
       </PieFormulario>
     </form>
   );
