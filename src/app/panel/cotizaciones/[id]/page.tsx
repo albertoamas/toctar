@@ -11,7 +11,10 @@ import { Insignia } from "@/componentes/panel/insignia";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
 import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { CabeceraSeccion, Seccion } from "@/componentes/panel/cabecera-seccion";
+import { ListaDatos } from "@/componentes/panel/lista-datos";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
+import { BOTON_PASO, PasoSiguiente } from "@/componentes/panel/paso-siguiente";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import { formatearFecha, formatearFechaHora } from "@/lib/fechas";
@@ -21,7 +24,6 @@ import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { reservasDeConsulta } from "@/modulos/agenda/consultas";
 import { pasoDelTrabajo } from "@/modulos/agenda/pasos";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
-import { DatosVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 import { BotonAcepto, MasCotizacion } from "@/modulos/cotizaciones/componentes/estado-cotizacion";
 import { VersionesCotizacion } from "@/modulos/cotizaciones/componentes/versiones-cotizacion";
 import { obtenerCotizacion } from "@/modulos/cotizaciones/consultas";
@@ -34,14 +36,15 @@ export const metadata: Metadata = { title: "Cotización" };
 // "Cotizaciones" (pedido 24, RN-12). Pedido 31 (P31-flujo-de-un-trabajo.md §5): arriba, los pasos del trabajo; el paso
 // siguiente de una pendiente es "Aceptó"; el de una aceptada sin fecha, "Reservar en Agenda" (Cotizaciones cotiza y la
 // Agenda reserva; el botón es un atajo a su formulario, solo para quien ve la Agenda). "Nueva versión", "Rechazar" y
-// "Volver a pendiente" van en "Más".
+// "Volver a pendiente" van en "Más". C6: una ficha de 1024 px; el paso siguiente, grande debajo de los pasos (como en
+// Reserva y Orden, PasoSiguiente) y los datos con ListaDatos, como en ellas.
 export default function PaginaCotizacion({ params, searchParams }: PageProps<"/panel/cotizaciones/[id]">) {
   return (
-    <section className="flex flex-col gap-6">
+    <PaginaPanel tipo="ficha">
       <Suspense fallback={<Cargando volver={{ href: "/panel/cotizaciones", texto: "Cotizaciones" }} />}>
         <Detalle params={params} searchParams={searchParams} />
       </Suspense>
-    </section>
+    </PaginaPanel>
   );
 }
 
@@ -60,13 +63,24 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
   const aReservar = c.sinFecha ? (c.versiones.find((v) => v.estado === "aceptada") ?? null) : null;
   const activa = reservas.find((r) => r.estado !== "cancelado");
   // Sin ver la Agenda no se sabe en qué va su reserva: se queda en "Reservada"
-  const paso = pasoDelTrabajo({ cotizacion: c.estado, trabajo: activa?.estado ?? (c.estado === "confirmado" && !c.sinFecha ? "agendado" : null) });
+  const pasoActual = pasoDelTrabajo({ cotizacion: c.estado, trabajo: activa?.estado ?? (c.estado === "confirmado" && !c.sinFecha ? "agendado" : null) });
   const cotiza = puede(usuario, "cotizar");
   const recienGuardada = typeof version === "string" ? c.versiones.find((v) => String(v.id) === version) : undefined;
   const sinPdf = sinpdf && !c.versiones[0].tienePdf;
 
+  // El paso siguiente, uno solo: en una pendiente, "Aceptó"; en una aceptada sin fecha, el atajo a la Agenda
+  const paso =
+    aReservar && puedeAgendar ? (
+      <Link href={`/panel/agenda/nueva?cotizacion=${aReservar.id}`} className={cn(buttonVariants(), BOTON_PASO)}>
+        <CalendarIcon />
+        Reservar en Agenda
+      </Link>
+    ) : pendiente && vigente ? (
+      <BotonAcepto id={c.id} />
+    ) : null;
+
   return (
-    <div className="flex max-w-3xl flex-col gap-8">
+    <>
       <EncabezadoPagina
         volver={{ href: "/panel/cotizaciones", texto: "Cotizaciones" }}
         titulo={`Cotización ${c.numero}`}
@@ -78,15 +92,6 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
         }
         accion={
           <div className="flex flex-wrap gap-2">
-            {/* El paso siguiente, uno solo: en una pendiente, "Aceptó"; en una aceptada sin fecha, el atajo a la Agenda */}
-            {aReservar && puedeAgendar && (
-              <Link href={`/panel/agenda/nueva?cotizacion=${aReservar.id}`} className={cn(buttonVariants())}>
-                <CalendarIcon />
-                Reservar en Agenda
-              </Link>
-            )}
-            {pendiente && vigente && <BotonAcepto id={c.id} />}
-            {/* Como en las demás fichas: escribirle al cliente, al lado del paso siguiente */}
             <a href={enlaceWhatsApp(c.telefono)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
               <IconoWhatsApp />
               Escribir por WhatsApp
@@ -102,7 +107,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
         {/* "Rechazada: Precio. Le pareció caro." */}
         {c.estado === "perdido" && c.motivoPerdida && `Rechazada: ${NOMBRE_MOTIVO[c.motivoPerdida]}.${c.detallePerdida ? ` ${c.detallePerdida}` : ""}`}
       </EncabezadoPagina>
-      {paso !== null && <PasosTrabajo paso={paso} />}
+      {pasoActual !== null && <PasosTrabajo paso={pasoActual} />}
+      {paso && <PasoSiguiente>{paso}</PasoSiguiente>}
       {(creada || recienGuardada) && (
         <AvisoFlotante mensaje={`${creada ? "Cotización creada." : `Versión ${recienGuardada!.version} guardada.`}${sinPdf ? "" : " Comparte el PDF con el cliente."}`} />
       )}
@@ -113,22 +119,38 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
         </p>
       )}
 
-      {/* En el celular, primero para quién es; en la computadora, el precio a la izquierda (es lo que decide) y el
-          cliente a la derecha (pedido 26) */}
-      <div className="grid items-start gap-6 @4xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <section aria-labelledby="cliente-titulo" className="flex flex-col gap-3">
-          <CabeceraSeccion id="cliente" titulo="Cliente y vehículo" />
-          <div className="tt-tarjeta-panel flex flex-col gap-3 p-4">
-            <p className="flex flex-col">
-              <span className="font-semibold">{c.cliente}</span>
-              <span className="text-tinta-suave">{formatearWhatsApp(c.telefono)}</span>
-            </p>
-            <p className="flex flex-col">
-              <DatosVehiculo placa={c.placa} detalle={c.detalle} tamano={c.tamano} />
-            </p>
-            <p className="text-sm text-tinta-suave">
-              Registrada el {formatearFechaHora(c.createdAt)} por {c.registradaPor}
-            </p>
+      {/* En el celular, primero los datos (para quién es); en la computadora, el precio a la izquierda (es lo que decide)
+          y los datos a la derecha (pedido 26). Título y tarjeta, a la misma distancia que en Seccion */}
+      <div className="grid items-start gap-8 @4xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <Seccion id="datos" titulo="Datos">
+          <div className="flex flex-col gap-2">
+            <ListaDatos
+              filas={[
+                [
+                  "Cliente",
+                  <span key="cliente" className="flex flex-col">
+                    <span className="font-semibold">{c.cliente}</span>
+                    <span className="text-sm text-tinta-suave">{formatearWhatsApp(c.telefono)}</span>
+                  </span>,
+                ],
+                [
+                  "Vehículo",
+                  // Como en Reserva y Orden, con la placa: aquí el título es el número de la cotización
+                  <span key="vehiculo" className="flex flex-col">
+                    <span className="font-semibold">{c.placa}</span>
+                    {c.detalle.length > 0 && <span>{c.detalle.join(" ")}</span>}
+                    <span className="text-sm text-tinta-suave">Tamaño: {c.tamano}</span>
+                  </span>,
+                ],
+                [
+                  "Registrada",
+                  <span key="registrada" className="flex flex-col">
+                    <span>{formatearFechaHora(c.createdAt)}</span>
+                    <span className="text-sm text-tinta-suave">por {c.registradaPor}</span>
+                  </span>,
+                ],
+              ]}
+            />
             {/* El encargado puede tener Cotizaciones sin Clientes: entonces no enlaza a una ficha que no puede abrir */}
             {puedeVerModulo(usuario, "clientes") && (
               <Link href={`/panel/clientes/${c.clienteId}`} className={ENLACE_TEXTO}>
@@ -136,16 +158,16 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
               </Link>
             )}
           </div>
-        </section>
+        </Seccion>
 
-        <section aria-labelledby="versiones-titulo" className="flex flex-col gap-3 @4xl:order-first">
+        <section aria-labelledby="versiones-titulo" className="flex flex-col gap-2 @4xl:order-first">
           <CabeceraSeccion id="versiones" titulo={c.versiones.length > 1 ? "Versiones" : "Precio"} />
           <VersionesCotizacion consultaId={c.id} versiones={c.versiones} />
         </section>
       </div>
 
       {reservas.length > 0 && (
-        <section aria-labelledby="reservas-titulo" className="flex flex-col gap-3">
+        <section aria-labelledby="reservas-titulo" className="flex flex-col gap-2">
           <CabeceraSeccion id="reservas" titulo="Reservas" />
           <ListaFilas
             etiqueta="Reservas"
@@ -158,6 +180,6 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
           />
         </section>
       )}
-    </div>
+    </>
   );
 }

@@ -2,9 +2,7 @@
 
 import { useActionState } from "react";
 import { conAviso } from "@/componentes/panel/avisos";
-import { MensajeError } from "@/componentes/panel/campo";
-import { BOTON_PASO } from "@/componentes/panel/paso-siguiente";
-import { Button } from "@/componentes/ui/button";
+import { FormularioPaso } from "@/componentes/panel/formulario-paso";
 import type { EstadoTrabajo } from "@/db/esquema/trabajos";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { cambiarEstadoOrden } from "../acciones";
@@ -21,13 +19,15 @@ export function EstadoOrden({ id, estado, editable }: { id: number; estado: Esta
   if (!editable || !siguiente) return null;
 
   return (
-    <form action={accion} aria-label="Estado de la orden" className="flex flex-col gap-2 sm:w-80">
-      <input type="hidden" name="id" value={id} />
-      <input type="hidden" name="estado" value={siguiente.estado} />
-      <Button type="submit" disabled={enviando} className={BOTON_PASO} aria-describedby={resultado.mensaje && !resultado.ok ? "estado-error" : undefined}>
-        {siguiente.texto}
-      </Button>
-      {resultado.mensaje && !resultado.ok && <MensajeError id="estado-error">{resultado.mensaje}</MensajeError>}
-    </form>
+    <FormularioPaso
+      etiqueta="Estado de la orden"
+      accion={accion}
+      ocultos={{ id, estado: siguiente.estado }}
+      enviando={enviando}
+      error={resultado.ok ? undefined : resultado.mensaje}
+      idError="estado-error"
+    >
+      {siguiente.texto}
+    </FormularioPaso>
   );
 }
