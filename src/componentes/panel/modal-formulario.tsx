@@ -141,7 +141,8 @@ const sinModal = () => {};
 
 /**
  * Un formulario dentro de un modal: envía la acción con su aviso, cierra el modal al guardar y lleva el foco al primer
- * error. `e` son los errores por campo y `v` lo escrito, que vuelve si el servidor rechaza el envío.
+ * error. `e` son los errores por campo, `v` lo escrito, que vuelve si el servidor rechaza el envío, y `m` el mensaje de un
+ * rechazo que no es de un campo ("Este reclamo ya estaba atendido").
  */
 export function useFormularioEnModal(accion: (previo: EstadoFormulario, datos: FormData) => Promise<EstadoFormulario>) {
   const cerrar = useCerrarModal();
@@ -151,7 +152,7 @@ export function useFormularioEnModal(accion: (previo: EstadoFormulario, datos: F
   );
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
-  return { accion: enviar, enviando, formulario, e: estado.errores ?? {}, v: estado.valores };
+  return { accion: enviar, enviando, formulario, e: estado.errores ?? {}, v: estado.valores, m: estado.ok ? undefined : estado.mensaje };
 }
 
 /** Los botones del formulario, al pie del modal: fijos abajo mientras el formulario se desplaza (en el celular, la hoja). */

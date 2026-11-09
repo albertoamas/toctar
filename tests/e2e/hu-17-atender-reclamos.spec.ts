@@ -79,13 +79,19 @@ test("el dueño ve el reclamo pendiente, le escribe por WhatsApp y lo marca aten
   // Se ve como botón con borde, no como texto suelto
   await expect(whatsapp).not.toHaveCSS("border-top-color", "rgba(0, 0, 0, 0)");
 
-  // La nota es obligatoria
+  // En el encabezado, y la nota en un modal (C6); la nota es obligatoria
   await page.getByRole("button", { name: "Marcar como atendido" }).click();
-  await expect(page.getByText("Escribe qué se hizo, para el registro.")).toBeVisible();
-  await expect(page.getByLabel("Qué se hizo")).toBeFocused(); // pulido 5.2
-  await page.getByLabel("Qué se hizo").fill("Se limpió el tablero sin costo.");
-  await page.getByRole("button", { name: "Marcar como atendido" }).click();
+  const atender = page.getByRole("dialog", { name: "Marcar como atendido" });
+  await expect(atender.getByLabel("Qué se hizo")).toBeFocused();
+  await atender.getByRole("button", { name: "Marcar como atendido" }).click();
+  await expect(atender.getByText("Escribe qué se hizo, para el registro.")).toBeVisible();
+  await expect(atender.getByLabel("Qué se hizo")).toBeFocused(); // pulido 5.2
+  await atender.getByLabel("Qué se hizo").fill("Se limpió el tablero sin costo.");
+  await atender.getByRole("button", { name: "Marcar como atendido" }).click();
   await expect(page.getByText("Reclamo marcado como atendido.")).toBeVisible();
+  await expect(atender).toHaveCount(0);
+  // Ya atendido, la acción no está
+  await expect(page.getByRole("button", { name: "Marcar como atendido" })).toHaveCount(0);
   await expect(page.getByText("Atendido", { exact: true }).locator("visible=true")).toBeVisible();
   await expect(page.getByText("Se limpió el tablero sin costo.").locator("visible=true")).toBeVisible();
 

@@ -32,7 +32,6 @@ function apariciones(patron: RegExp): Record<string, number> {
 /** Páginas que todavía no dicen su tipo con `PaginaPanel`. Fases 3 y 4; las que solo redirigen se justifican al final. */
 const SIN_PAGINA_PANEL = [
   "src/app/panel/[...resto]/page.tsx",
-  "src/app/panel/reclamos/[id]/page.tsx",
   "src/app/panel/sin-acceso/page.tsx",
   "src/app/panel/usuarios/[id]/page.tsx",
 ];
@@ -58,7 +57,6 @@ const MODALES_A_MANO: Record<string, number> = {
 const TITULOS_A_MANO: Record<string, number> = {
   // La semana del tablero: no es un título de sección, solo usa su letra
   "src/app/panel/agenda/page.tsx": 1,
-  "src/app/panel/reclamos/[id]/page.tsx": 4,
   // La leyenda de un grupo de campos
   "src/modulos/clientes/componentes/formulario-nuevo-cliente.tsx": 1,
   // La cabecera dentro de su tarjeta, en la portada
