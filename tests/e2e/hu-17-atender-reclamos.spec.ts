@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER, PNG } from "./apoyo";
+import { consultar, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER, PNG } from "./apoyo";
 
 // HU-17 Atender reclamos. Criterios: docs/09-pruebas/criterios-entrega-1.md (17.x).
 // Cada proyecto deja su propio reclamo por el sitio, con una IP inventada para no tocar el límite por hora de HU-16.
@@ -79,13 +79,19 @@ test("el dueño ve el reclamo pendiente, le escribe por WhatsApp y lo marca aten
   // Se ve como botón con borde, no como texto suelto
   await expect(whatsapp).not.toHaveCSS("border-top-color", "rgba(0, 0, 0, 0)");
 
-  // La nota es obligatoria
+  // En el encabezado, y la nota en un modal (C6); la nota es obligatoria
   await page.getByRole("button", { name: "Marcar como atendido" }).click();
-  await expect(page.getByText("Escribe qué se hizo, para el registro.")).toBeVisible();
-  await expect(page.getByLabel("Qué se hizo")).toBeFocused(); // pulido 5.2
-  await page.getByLabel("Qué se hizo").fill("Se limpió el tablero sin costo.");
-  await page.getByRole("button", { name: "Marcar como atendido" }).click();
+  const atender = page.getByRole("dialog", { name: "Marcar como atendido" });
+  await expect(atender.getByLabel("Qué se hizo")).toBeFocused();
+  await atender.getByRole("button", { name: "Marcar como atendido" }).click();
+  await expect(atender.getByText("Escribe qué se hizo, para el registro.")).toBeVisible();
+  await expect(atender.getByLabel("Qué se hizo")).toBeFocused(); // pulido 5.2
+  await atender.getByLabel("Qué se hizo").fill("Se limpió el tablero sin costo.");
+  await atender.getByRole("button", { name: "Marcar como atendido" }).click();
   await expect(page.getByText("Reclamo marcado como atendido.")).toBeVisible();
+  await expect(atender).toHaveCount(0);
+  // Ya atendido, la acción no está
+  await expect(page.getByRole("button", { name: "Marcar como atendido" })).toHaveCount(0);
   await expect(page.getByText("Atendido", { exact: true }).locator("visible=true")).toBeVisible();
   await expect(page.getByText("Se limpió el tablero sin costo.").locator("visible=true")).toBeVisible();
 
@@ -94,6 +100,27 @@ test("el dueño ve el reclamo pendiente, le escribe por WhatsApp y lo marca aten
   await expect(enLaLista(page, nombre)).toHaveCount(0);
   await page.goto("/panel/reclamos");
   await expect(enLaLista(page, nombre)).toBeVisible();
+});
+
+test("si otra persona lo atendió mientras tanto, lo avisa y muestra su atención", async ({ page }, info) => {
+  // El reclamo, directo en la base: cada proyecto y cada reintento con el suyo
+  const [{ id }] = await consultar<{ id: number }>(
+    "insert into reclamo (nombre, telefono, placa, descripcion, ip_hash) values ($1, '59176543210', '3311ABC', 'Prueba de dos a la vez.', 'e2e') returning id",
+    [`A la vez ${sufijo(info)}${info.retry}`],
+  );
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/reclamos/${id}`, { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Marcar como atendido" }).click();
+  const atender = page.getByRole("dialog", { name: "Marcar como atendido" });
+  await atender.getByLabel("Qué se hizo").fill("Lo que escribí yo.");
+  // Otra persona lo atiende antes
+  await consultar("update reclamo set estado = 'atendido', nota_atencion = 'Lo atendió otra persona.', atendido_at = now() where id = $1", [id]);
+  await atender.getByRole("button", { name: "Marcar como atendido" }).click();
+  await expect(page.getByText("Este reclamo ya estaba atendido.")).toBeVisible();
+  // La página se renueva: muestra la atención de la otra persona y ya no ofrece atenderlo (ni deja el modal abierto)
+  await expect(atender).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Atención" })).toContainText("Lo atendió otra persona.");
+  await expect(page.getByRole("button", { name: "Marcar como atendido" })).toHaveCount(0);
 });
 
 test("el encargado entra a reclamos solo con el permiso; sin él o con el perfil Taller, no", async ({ page }, info) => {

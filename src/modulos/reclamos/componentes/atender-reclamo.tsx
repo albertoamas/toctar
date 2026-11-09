@@ -1,34 +1,42 @@
 "use client";
 
-import { useActionState, useRef } from "react";
-import { useFocoEnError } from "@/componentes/foco-en-error";
-import { conAviso } from "@/componentes/panel/avisos";
+import { useState } from "react";
+import { useHidratado } from "@/componentes/hidratado";
 import { Campo } from "@/componentes/panel/campo";
+import { ModalFormulario, PieGuardar, useFormularioEnModal } from "@/componentes/panel/modal-formulario";
 import { Button } from "@/componentes/ui/button";
 import { Textarea } from "@/componentes/ui/textarea";
-import type { EstadoFormulario } from "@/lib/formularios";
 import { marcarAtendido } from "../acciones";
 
-// HU-17: marcar un reclamo como atendido, con la nota de qué se hizo.
-// El aviso sale desde la acción: al guardar, la página se recarga y este bloque desaparece.
-
-const marcarConAviso = conAviso(marcarAtendido);
+// HU-17: marcar un reclamo como atendido, con la nota de qué se hizo. C6: es la acción principal de la ficha y va en su
+// encabezado; la nota se escribe en un modal (pregunta antes de perderla). Al guardar, la página se renueva y el botón ya
+// no está: el reclamo muestra su "Atención".
 
 export function AtenderReclamo({ id }: { id: number }) {
-  const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(marcarConAviso, {});
-  const error = estado.errores?.nota;
-  const formulario = useRef<HTMLFormElement>(null);
-  useFocoEnError(formulario, estado);
-
+  const [abierto, setAbierto] = useState(false);
+  const hidratado = useHidratado();
   return (
-    <form ref={formulario} action={accion} className="flex flex-col items-start gap-4">
+    <>
+      <Button type="button" disabled={!hidratado} onClick={() => setAbierto(true)}>
+        Marcar como atendido
+      </Button>
+      <ModalFormulario titulo="Marcar como atendido" abierto={abierto} alCambiar={setAbierto}>
+        <Formulario id={id} />
+      </ModalFormulario>
+    </>
+  );
+}
+
+function Formulario({ id }: { id: number }) {
+  const { accion, enviando, formulario, e, v } = useFormularioEnModal(marcarAtendido);
+  return (
+    <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate>
       <input type="hidden" name="id" value={id} />
-      <div className="w-full">
-        <Campo id="nota" etiqueta="Qué se hizo" error={error} ayuda="Queda en el registro del reclamo.">
-          <Textarea id="nota" name="nota" rows={3} defaultValue={estado.valores?.nota} aria-invalid={!!error} aria-describedby={error ? "nota-error" : "nota-ayuda"} />
-        </Campo>
-      </div>
-      <Button type="submit" disabled={enviando}>{enviando ? "Guardando…" : "Marcar como atendido"}</Button>
+      {/* Si otra persona lo atendió mientras tanto, lo dice el aviso y la página ya muestra su atención: este modal se va */}
+      <Campo id="nota" etiqueta="Qué se hizo" error={e.nota} ayuda="Queda en el registro del reclamo.">
+        <Textarea id="nota" name="nota" rows={3} defaultValue={v?.nota} aria-invalid={!!e.nota} aria-describedby={e.nota ? "nota-error" : "nota-ayuda"} />
+      </Campo>
+      <PieGuardar texto="Marcar como atendido" enviando={enviando} />
     </form>
   );
 }

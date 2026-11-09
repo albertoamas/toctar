@@ -116,10 +116,10 @@ export async function marcarAtendido(_previo: EstadoFormulario, datos: FormData)
     .set({ estado: "atendido", notaAtencion: nota, atendidoPor: Number(autor.id), atendidoAt: new Date() })
     .where(and(eq(reclamo.id, id), eq(reclamo.estado, "pendiente")))
     .returning({ id: reclamo.id });
-  if (!actualizado) return { mensaje: "Este reclamo ya estaba atendido." };
-
+  // Ya lo atendió otra persona: la página se renueva igual, así muestra su atención y no ofrece volver a atenderlo
   revalidatePath("/panel");
   revalidatePath("/panel/reclamos");
   revalidatePath(`/panel/reclamos/${id}`);
+  if (!actualizado) return { mensaje: "Este reclamo ya estaba atendido." };
   return { ok: true, mensaje: "Reclamo marcado como atendido." };
 }
