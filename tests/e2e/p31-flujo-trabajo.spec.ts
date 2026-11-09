@@ -85,9 +85,9 @@ test("«Aceptó» la deja en Por reservar de la Agenda; desde ahí se reserva y 
   await expect(pasoActual(page)).toContainText("Aceptada");
   // El atajo, a la reserva de la Agenda
   await expect(page.getByRole("link", { name: "Reservar en Agenda" })).toHaveAttribute("href", `/panel/agenda/nueva?cotizacion=${c.cotizacionId}`);
-  // En la computadora el aviso no tapa el atajo (pulido 13.23): va abajo a la derecha. Antes caía encima y, con el mouse
-  // sobre él, no se iba: el clic esperaba hasta agotar el tiempo. En el celular sigue arriba, a propósito
-  if (info.project.name === "escritorio") {
+  // El aviso no tapa el atajo (pulido 13.23): en la computadora va abajo a la derecha (antes caía encima y, con el mouse
+  // sobre él, no se iba); en el celular va arriba, y el atajo, grande debajo de los pasos (C6), tampoco queda debajo
+  {
     const toast = page.locator("[data-sonner-toast]").first();
     await expect(toast).toBeVisible();
     const caja = (await toast.boundingBox())!;

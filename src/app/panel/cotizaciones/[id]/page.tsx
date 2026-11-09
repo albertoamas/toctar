@@ -24,7 +24,6 @@ import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
 import { reservasDeConsulta } from "@/modulos/agenda/consultas";
 import { pasoDelTrabajo } from "@/modulos/agenda/pasos";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
-import { DatosVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 import { BotonAcepto, MasCotizacion } from "@/modulos/cotizaciones/componentes/estado-cotizacion";
 import { VersionesCotizacion } from "@/modulos/cotizaciones/componentes/versiones-cotizacion";
 import { obtenerCotizacion } from "@/modulos/cotizaciones/consultas";
@@ -136,8 +135,11 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
                 ],
                 [
                   "Vehículo",
+                  // Como en Reserva y Orden, con la placa: aquí el título es el número de la cotización
                   <span key="vehiculo" className="flex flex-col">
-                    <DatosVehiculo placa={c.placa} detalle={c.detalle} tamano={c.tamano} />
+                    <span className="font-semibold">{c.placa}</span>
+                    {c.detalle.length > 0 && <span>{c.detalle.join(" ")}</span>}
+                    <span className="text-sm text-tinta-suave">Tamaño: {c.tamano}</span>
                   </span>,
                 ],
                 [
