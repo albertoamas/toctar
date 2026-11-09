@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { esquemaActualizarUsuario, esquemaCrearUsuario } from "@/modulos/usuarios/esquemas";
+import { esquemaCrearUsuario, esquemaDatosUsuario, esquemaRolUsuario } from "@/modulos/usuarios/esquemas";
 import { cambioDeRolDejaSinDueno, quedaOtroDuenoActivo } from "@/modulos/usuarios/reglas";
 
 // HU-02: siempre queda al menos un dueño activo (docs/08-desarrollo/etapas/B1-acceso.md §3).
@@ -38,6 +38,22 @@ describe("formulario de usuario", () => {
   });
 
   test("al editar, el id llega del formulario como texto", () => {
-    expect(esquemaActualizarUsuario.parse({ id: "7", nombre: "Ana", rol: "dueno", permisos: [] }).id).toBe(7);
+    expect(esquemaDatosUsuario.parse({ id: "7", nombre: "Ana" }).id).toBe(7);
+    expect(esquemaRolUsuario.parse({ id: "7", rol: "dueno", permisos: [] }).id).toBe(7);
+  });
+
+  // C6: la ficha se guarda por partes. Cada parte lleva solo lo suyo: un cambio de nombre no puede traer un rol o permisos
+  // viejos, ni un cambio de rol un nombre viejo
+  test("guardar los datos solo lleva el nombre", () => {
+    const datos = esquemaDatosUsuario.parse({ id: "7", nombre: "Ana", rol: "dueno", permisos: ["agenda"] });
+    expect(datos).toEqual({ id: 7, nombre: "Ana" });
+    expect(esquemaDatosUsuario.safeParse({ id: "7", nombre: "A" }).success).toBe(false);
+  });
+
+  test("guardar el rol y los permisos no lleva el nombre y rechaza un rol o un permiso inventado", () => {
+    expect(esquemaRolUsuario.parse({ id: "7", nombre: "Viejo", rol: "encargado", permisos: ["agenda"] })).toEqual({ id: 7, rol: "encargado", permisos: ["agenda"] });
+    expect(esquemaRolUsuario.safeParse({ id: "7", rol: "admin", permisos: [] }).success).toBe(false);
+    expect(esquemaRolUsuario.safeParse({ id: "7", rol: "encargado", permisos: ["consultas"] }).success).toBe(false);
+    expect(esquemaRolUsuario.safeParse({ id: "0", rol: "encargado", permisos: [] }).success).toBe(false);
   });
 });

@@ -9,7 +9,8 @@ import { Button } from "@/componentes/ui/button";
 // Componente de cliente: se usa dentro de otros componentes de cliente (recibe funciones como props).
 // Lo que falta guardar en un formulario del panel (pulido 13.15). Tres piezas:
 // - `useCambiosSinGuardar`: compara lo que tiene el formulario con lo que tenía al abrirse o al guardarse.
-// - `BarraGuardar`: en los formularios largos de editar, el botón se activa y queda fijo abajo solo con cambios.
+// - `BarraGuardar`: en un formulario largo (Crear usuario), el botón queda fijo abajo cuando hay algo escrito. Las fichas se
+//   editan por partes en modales (C6): ya no hay un formulario largo de editar con el botón desactivado hasta un cambio.
 // - `AvisoAlSalir`: pregunta antes de perderlos. En los flujos (crear, recibir, entregar), que siguen con su PieFormulario.
 // No cubre el botón Atrás del navegador: el navegador no deja detenerlo sin trucos con el historial, que además usan los
 // flujos en pasos.
@@ -130,14 +131,12 @@ export function AvisoAlSalir({ formulario, estado, ademas = false }: { formulari
 }
 
 /**
- * El botón de guardar de un formulario largo. Sin cambios, al pie, en gris y desactivado; con cambios, rojo y fijo abajo a
- * lo ancho del formulario: el botón que se activa ya dice que hay algo que guardar, como en Mensajes. `siempreActivo`: un
- * formulario de crear, donde tocarlo vacío muestra qué falta.
+ * El botón de un formulario largo de crear: siempre activo (tocarlo vacío muestra qué falta) y, con algo escrito, fijo abajo
+ * a lo ancho del formulario y preguntando antes de salir.
  */
-export function BarraGuardar(props: { formulario: RefObject<HTMLFormElement | null>; estado?: Estado; texto: string; enviando: boolean; siempreActivo?: boolean }) {
-  const { formulario, estado, texto, enviando, siempreActivo } = props;
+export function BarraGuardar(props: { formulario: RefObject<HTMLFormElement | null>; estado?: Estado; texto: string; enviando: boolean }) {
+  const { formulario, estado, texto, enviando } = props;
   const hay = useCambiosSinGuardar(formulario, estado);
-  const activo = hay || !!siempreActivo;
   return (
     <>
       <PreguntarAlSalir hay={hay} />
@@ -146,7 +145,7 @@ export function BarraGuardar(props: { formulario: RefObject<HTMLFormElement | nu
         <p role="status" className="sr-only">
           {hay && "Hay cambios sin guardar."}
         </p>
-        <Button type="submit" variant={activo ? "default" : "outline"} disabled={enviando || !activo}>
+        <Button type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : texto}
         </Button>
       </div>

@@ -1,5 +1,5 @@
 import { expect, test, type Locator } from "@playwright/test";
-import { abrirNuevoServicio, consultar, crearUsuario, ingresarComoDueno } from "./apoyo";
+import { abrirNuevoServicio, ingresarComoDueno } from "./apoyo";
 
 // Pruebas de humo de la iteración 0: la app arranca, conecta con la base y
 // las dos áreas (sitio y panel) cargan con su navegación.
@@ -156,31 +156,6 @@ test("el panel no se sale de la pantalla en el celular y su menú queda a mano",
   for (const alto of await menu.getByRole("link").evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height))) {
     expect(alto).toBeGreaterThanOrEqual(isMobile ? 44 : 36);
   }
-});
-
-// Pulido visual 1.5
-test("el aviso de guardado no tapa el botón de guardar", async ({ page }, info) => {
-  test.skip(info.project.name !== "celular", "En el celular es donde tapaba");
-  // En la edición de un usuario propio: es la que tiene la barra de guardar fija abajo (Parámetros ya va en modales)
-  const usuario = `aviso-${info.retry}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
-  await crearUsuario({ usuario, nombre: "Aviso de prueba", contrasena: "encargado-123", rol: "encargado", permisos: ["agenda"] });
-  const [{ id }] = await consultar<{ id: number }>("select id from usuario where nombre_usuario = $1", [usuario]);
-  await ingresarComoDueno(page);
-  await page.goto(`/panel/usuarios/${id}`);
-  const guardar = page.getByRole("button", { name: "Guardar cambios" }).first();
-  // Con un cambio se activa (pulido 13.15)
-  const nombre = page.getByLabel("Nombre", { exact: true });
-  await expect(nombre).toBeVisible();
-  await page.waitForLoadState("networkidle");
-  await nombre.fill("Aviso de prueba cambiado");
-  await expect(guardar).toBeEnabled();
-  await guardar.scrollIntoViewIfNeeded();
-  await guardar.click();
-  const aviso = page.locator("[data-sonner-toast]").first();
-  await expect(aviso).toContainText("Cambios guardados.");
-  const [a, b] = [(await aviso.boundingBox())!, (await guardar.boundingBox())!];
-  const sePisan = a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
-  expect(sePisan).toBe(false);
 });
 
 // Pulido 13.25: en una laptop común (768 px de alto) el menú entraba cortado y "Configuración" no se veía. Con mouse cada

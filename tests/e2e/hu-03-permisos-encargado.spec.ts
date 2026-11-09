@@ -35,20 +35,23 @@ test("los permisos del encargado: el perfil marca sus casillas, se ajustan y se 
   await page.getByRole("button", { name: "Crear usuario" }).click();
   await expect(page.getByText(`Usuario ${nombre} creado`)).toBeVisible();
 
-  // Al abrirlo, lo marcado sigue marcado
+  // En su ficha, lo marcado se lee (C6) y, al editar, sigue marcado
   await page.getByRole("link", { name: nombre }).first().click();
-  await expect(casilla()).toBeChecked();
-  await expect(page.getByRole("checkbox", { name: /^Agenda/ })).toBeChecked();
+  await expect(page.getByRole("list", { name: "Permisos" })).toContainText("Agenda");
+  await page.getByRole("button", { name: "Editar rol y permisos" }).click();
+  const modal = page.getByRole("dialog", { name: "Rol y permisos" });
+  await expect(modal.getByRole("checkbox", { name: /^Agenda/ })).toBeChecked();
+  await expect(modal.getByRole("checkbox", { name: /^Órdenes/ })).toBeChecked();
 
   // Se quitan todos: queda sin permisos (solo el inicio). No se lo pasa a dueño: las pruebas corren en paralelo y la del
   // único dueño (hu-02) dejaría de valer
-  await perfil("Taller").click();
-  await page.getByRole("checkbox", { name: /^Agenda/ }).uncheck();
-  await page.getByRole("checkbox", { name: /^Órdenes/ }).uncheck();
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
-  await expect(page.getByText("Cambios guardados.")).toBeVisible();
+  await modal.getByRole("button", { name: /^Taller/ }).click();
+  await modal.getByRole("checkbox", { name: /^Agenda/ }).uncheck();
+  await modal.getByRole("checkbox", { name: /^Órdenes/ }).uncheck();
+  await modal.getByRole("button", { name: "Guardar rol y permisos" }).click();
+  await expect(page.getByText("Rol y permisos guardados.")).toBeVisible();
   await page.reload();
-  await expect(page.getByRole("checkbox", { checked: true })).toHaveCount(0);
+  await expect(page.getByText("Sin permisos: solo ve el inicio.")).toBeVisible();
 });
 
 test("el encargado sin permisos solo ve el inicio y no entra a Usuarios", async ({ page, browser }, info) => {

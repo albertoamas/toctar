@@ -58,13 +58,17 @@ test("restablecer la contraseña: la anterior deja de servir y la nueva funciona
   await ingresarComoDueno(page);
   await page.goto("/panel/usuarios");
   await page.getByRole("link", { name: nombre }).first().click();
-  await page.getByRole("button", { name: "Restablecer contraseña" }).click();
+  // En "Más", con su modal (C6)
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Restablecer contraseña" }).click();
+  const modal = page.getByRole("dialog", { name: `Nueva contraseña para ${nombre}` });
   // Sin contraseña: el error y el foco van al campo (pulido 5.5)
-  await page.getByRole("button", { name: "Guardar", exact: true }).click();
-  await expect(page.getByLabel("Contraseña nueva")).toBeFocused();
-  await page.getByLabel("Contraseña nueva").fill("nueva-1234");
-  await page.getByRole("button", { name: "Guardar", exact: true }).click();
+  await modal.getByRole("button", { name: "Guardar contraseña" }).click();
+  await expect(modal.getByLabel("Contraseña nueva")).toBeFocused();
+  await modal.getByLabel("Contraseña nueva").fill("nueva-1234");
+  await modal.getByRole("button", { name: "Guardar contraseña" }).click();
   await expect(page.getByText("Contraseña cambiada")).toBeVisible();
+  await expect(modal).toHaveCount(0);
 
   const { ctx, page: otra } = await otraPersona(browser, info);
   await ingresar(otra, usuario, "vieja-1234");
@@ -86,14 +90,22 @@ test("desactivar a alguien con la sesión abierta lo saca del panel", async ({ p
   await ingresarComoDueno(page);
   await page.goto("/panel/usuarios");
   await page.getByRole("link", { name: nombre }).first().click();
-  // El foco va a la confirmación y, al cancelar, vuelve al botón (pulido 5.5)
-  await page.getByRole("button", { name: "Desactivar usuario" }).click();
-  await expect(page.getByText("no podrá ingresar")).toBeFocused();
-  await page.getByRole("button", { name: "Cancelar" }).click();
-  await expect(page.getByRole("button", { name: "Desactivar usuario" })).toBeFocused();
-  await page.getByRole("button", { name: "Desactivar usuario" }).click();
-  await page.getByRole("button", { name: "Sí, desactivar" }).click();
+  // En "Más", con su confirmación: el foco en "Cancelar", así un Enter no lo desactiva (C6)
+  const desactivar = async () => {
+    await page.getByRole("button", { name: "Más" }).click();
+    await page.getByRole("menuitem", { name: "Desactivar usuario" }).click();
+    return page.getByRole("dialog", { name: `¿Desactivar a ${nombre}?` });
+  };
+  let confirmar = await desactivar();
+  await expect(confirmar).toContainText("no podrá ingresar");
+  await expect(confirmar.getByRole("button", { name: "Cancelar" })).toBeFocused();
+  await confirmar.getByRole("button", { name: "Cancelar" }).click();
+  await expect(confirmar).toHaveCount(0);
+  confirmar = await desactivar();
+  await confirmar.getByRole("button", { name: "Sí, desactivar" }).click();
   await expect(page.getByText("Usuario desactivado")).toBeVisible();
+  // Desactivado, reactivarlo es la acción del encabezado
+  await expect(page.getByRole("button", { name: "Reactivar usuario" })).toBeVisible();
 
   await saliente.goto("/panel");
   await expect(saliente).toHaveURL(/\/ingresar$/);
@@ -104,12 +116,41 @@ test("el único dueño no puede desactivarse ni quitarse el rol", async ({ page 
   await ingresarComoDueno(page);
   await page.goto("/panel/usuarios");
   await page.getByRole("link", { name: "Dueño de prueba" }).first().click();
-  await expect(page.getByText("No puedes desactivar tu propio usuario")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Desactivar usuario" })).toHaveCount(0);
+  // A uno mismo, "Más" no le ofrece desactivarse, y la ficha dice por qué
+  await expect(page.getByText("Es tu usuario: no puedes desactivarlo")).toBeVisible();
+  await page.getByRole("button", { name: "Más" }).click();
+  await expect(page.getByRole("menuitem", { name: "Restablecer contraseña" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Desactivar usuario" })).toHaveCount(0);
+  await page.keyboard.press("Escape");
 
-  await page.getByRole("radio", { name: /Encargado/ }).check();
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
-  await expect(page.getByText("Es el único dueño activo: crea otro dueño antes de cambiarle el rol.")).toBeVisible();
+  await page.getByRole("button", { name: "Editar rol y permisos" }).click();
+  const rol = page.getByRole("dialog", { name: "Rol y permisos" });
+  await rol.getByRole("radio", { name: /Encargado/ }).check();
+  await rol.getByRole("button", { name: "Guardar rol y permisos" }).click();
+  await expect(rol.getByText("Es el único dueño activo: crea otro dueño antes de cambiarle el rol.")).toBeVisible();
+});
+
+// Pulido visual 1.5, desde C6 en la ficha: en el celular el aviso va arriba y no tapa las acciones de la ficha
+test("en el celular, el aviso de guardado no tapa las acciones de la ficha", async ({ page }, info) => {
+  test.skip(info.project.name !== "celular", "En el celular es donde el aviso va arriba");
+  const usuario = `aviso-${info.retry}-${Math.floor(Math.random() * 1e6)}`;
+  await crearUsuario({ usuario, nombre: "Aviso de prueba", contrasena: "encargado-123", rol: "encargado" });
+  await ingresarComoDueno(page);
+  await page.goto("/panel/usuarios");
+  await page.getByRole("link", { name: "Aviso de prueba" }).first().click();
+  await page.getByRole("button", { name: "Editar datos del usuario" }).click();
+  const datos = page.getByRole("dialog", { name: "Datos del usuario" });
+  await datos.getByLabel("Nombre").fill("Aviso de prueba cambiado");
+  await datos.getByRole("button", { name: "Guardar datos" }).click();
+  const aviso = page.locator("[data-sonner-toast]").first();
+  await expect(aviso).toContainText("Datos guardados.");
+  await expect(datos).toHaveCount(0);
+  const caja = (await aviso.boundingBox())!;
+  for (const nombre of ["Más", "Editar rol y permisos", "Editar datos del usuario"]) {
+    const boton = (await page.getByRole("button", { name: nombre }).boundingBox())!;
+    const sePisan = caja.x < boton.x + boton.width && boton.x < caja.x + caja.width && caja.y < boton.y + boton.height && boton.y < caja.y + caja.height;
+    expect(sePisan, nombre).toBe(false);
+  }
 });
 
 test("un usuario repetido muestra un error claro", async ({ page }, info) => {

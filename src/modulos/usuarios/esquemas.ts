@@ -18,12 +18,10 @@ export const esquemaCrearUsuario = z.object({
   permisos: esquemaPermisos,
 });
 
-export const esquemaActualizarUsuario = z.object({
-  id: esquemaId,
-  nombre: esquemaNombre,
-  rol: esquemaRol,
-  permisos: esquemaPermisos,
-});
+// La ficha del usuario se guarda por partes (C6): cada modal cambia solo lo suyo. Así un cambio de nombre no puede
+// devolver el rol o los permisos que otro dueño acaba de cambiar, ni al revés.
+export const esquemaDatosUsuario = z.object({ id: esquemaId, nombre: esquemaNombre });
+export const esquemaRolUsuario = z.object({ id: esquemaId, rol: esquemaRol, permisos: esquemaPermisos });
 
 export const esquemaRestablecer = z.object({ id: esquemaId, contrasena: esquemaContrasena });
 export const esquemaIdUsuario = z.object({ id: esquemaId });

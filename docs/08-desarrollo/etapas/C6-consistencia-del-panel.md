@@ -1,7 +1,7 @@
 # C6 Consistencia del panel: especificación
 
 - **Fase y semana:** C. Entrega 2 · desde el 8 de noviembre de 2026, antes de la capacitación y de la prueba en celulares reales
-- **Estado:** aprobada por YankoSoft el 08/11/2026 · en curso (fase 3 terminada; sigue la fase 4: Reserva, Orden, Cotización, Reclamo y Usuario)
+- **Estado:** aprobada por YankoSoft el 08/11/2026 · en curso (fases 0 a 4 terminadas el 08/11; sigue la fase 5, el recorrido final)
 - **Historias:** ninguna nueva. Cambia la forma de las pantallas de HU-04 a HU-41, no lo que hacen
 - **Base:** `06-diseno/sistema-del-panel.md` (las reglas), `P26-rediseno-panel.md` (el estilo), la skill `pantallas-panel`
 
@@ -105,7 +105,7 @@ Sin acciones nuevas en las fases 1 a 3. En la fase 4:
 - **Se unifica:** un hook para los formularios en modal, que reemplaza a los `useParte` de Negocio y del servicio del sitio.
 - **Se amplía:** `ModalFormulario` pregunta al cerrar si hay cambios. Reutiliza la detección de `useCambiosSinGuardar`.
 - **Se migran:** los 2 formularios que usan `DialogContent` directo (`formulario-precios` y `acceso-usuario`) y los `<dl>` y listas a mano donde corresponda.
-- **Al terminar Usuario:** se revisa si `BarraGuardar` sigue en uso; "Nuevo usuario" todavía la necesita para su botón.
+- **Al terminar Usuario (08/11):** `BarraGuardar` queda solo en "Crear usuario", siempre activa; se quitó su estado desactivado hasta un cambio, que ya no usaba nadie. La ficha del usuario se guarda por partes (`guardarDatosUsuario`, `guardarRolUsuario`), con su revisión de seguridad.
 
 ## 8. Textos de la interfaz
 
