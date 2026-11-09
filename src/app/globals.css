@@ -247,10 +247,10 @@
   html:has([data-pie-fijo]) {
     scroll-padding-bottom: 5rem;
   }
-  /* En el celular, lo que está fijo abajo (el pie de un flujo, la barra de guardar con cambios, el pie de un modal): los
-     avisos se ponen encima (sonner.tsx), así no tapan su botón */
+  /* En el celular, lo que está fijo abajo (el pie de un flujo, la barra de guardar con cambios): los avisos se ponen
+     encima (sonner.tsx), así no tapan su botón. Con un modal abierto, los avisos van arriba */
   @media (max-width: 639px) {
-    html:has([data-pie-movil], [data-pie-fijo], [data-slot="dialog-content"], [data-slot="sheet-content"]) {
+    html:has([data-pie-movil], [data-pie-fijo]) {
       --alto-pie-movil: 5.5rem;
     }
   }

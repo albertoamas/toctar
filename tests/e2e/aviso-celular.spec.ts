@@ -34,3 +34,28 @@ test("después de guardar, el aviso no tapa el botón de volver y se puede volve
   await volver.click();
   await expect(page).toHaveURL(/\/panel\/usuarios$/);
 });
+
+test("con un modal abierto el aviso va arriba y no tapa sus botones", async ({ page }, info) => {
+  const usuario = `aviso-modal-${info.retry}-${Math.floor(Math.random() * 1e6)}`;
+  await crearUsuario({ usuario, nombre: "Aviso con modal", contrasena: "encargado-123", rol: "encargado" });
+  await ingresarComoDueno(page);
+  await page.goto("/panel/usuarios");
+  await page.getByRole("link", { name: "Aviso con modal" }).first().click();
+  await page.getByRole("button", { name: "Editar datos del usuario" }).click();
+  const datos = page.getByRole("dialog", { name: "Datos del usuario" });
+  await datos.getByLabel("Nombre").fill("Aviso con modal cambiado");
+  await datos.getByRole("button", { name: "Guardar datos" }).click();
+  const aviso = page.locator("[data-sonner-toast]").first();
+  await expect(aviso).toContainText("Datos guardados.");
+  // Enseguida, otro modal (sube desde abajo): el aviso pasa arriba y sus botones se tocan
+  await page.getByRole("button", { name: "Editar rol y permisos" }).click();
+  const rol = page.getByRole("dialog", { name: "Rol y permisos" });
+  await expect(rol).toBeVisible();
+  await expect(aviso).toBeVisible();
+  await expect.poll(async () => (await aviso.boundingBox())!.y).toBeLessThan(page.viewportSize()!.height / 3);
+  for (const boton of [rol.getByRole("button", { name: "Guardar rol y permisos" }), rol.getByRole("button", { name: "Cancelar" })]) {
+    expect(await sePisan(aviso, boton)).toBe(false);
+  }
+  await rol.getByRole("button", { name: "Cancelar" }).click();
+  await expect(rol).toHaveCount(0);
+});
