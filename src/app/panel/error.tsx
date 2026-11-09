@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { cn } from "cn";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { Button, buttonVariants } from "@/componentes/ui/button";
 
 // Un error inesperado en una pantalla del panel (pulido 13.5): dentro del panel, con su menú. "Volver a intentar"
@@ -11,7 +12,7 @@ import { Button, buttonVariants } from "@/componentes/ui/button";
 export default function ErrorPanel({ error, retry }: { error: unknown; retry: () => void }) {
   const codigo = error instanceof Error && "digest" in error && typeof error.digest === "string" ? error.digest : null;
   return (
-    <section className="flex max-w-2xl flex-col gap-6">
+    <PaginaPanel tipo="formulario">
       <EncabezadoPagina titulo="Algo salió mal">
         No se pudo cargar esta pantalla. Vuelve a intentar; si sigue pasando, avisa a YankoSoft
         {codigo ? ` con este código: ${codigo}` : ""}.
@@ -25,6 +26,6 @@ export default function ErrorPanel({ error, retry }: { error: unknown; retry: ()
           Ir al inicio
         </Link>
       </div>
-    </section>
+    </PaginaPanel>
   );
 }

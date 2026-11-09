@@ -161,6 +161,15 @@ jobs:
       # se reintenta hasta 2 veces: si pasa al reintentar, el reporte la marca como "flaky" (intermitente) para arreglarla.
       - name: Pruebas E2E
         run: npx playwright test
+      # C6, fase 5: las capturas del recorrido del panel (390 y 1366 px, con 3 roles), siempre, para revisarlas a ojo
+      - name: Capturas del recorrido del panel
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: recorrido-panel
+          path: test-results/**/recorrido-*.jpg
+          retention-days: 14
+          if-no-files-found: ignore
       - name: Rastros de las pruebas que fallaron
         if: failure()
         uses: actions/upload-artifact@v4

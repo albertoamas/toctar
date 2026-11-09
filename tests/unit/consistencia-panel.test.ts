@@ -3,9 +3,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 // C6 (docs/06-diseno/sistema-del-panel.md): las reglas de estructura del panel, revisadas en el código. Las listas de abajo
-// son lo que todavía no se pasó a las piezas comunes, con cuántas veces aparece en cada archivo, y solo se achican: migrar
-// una pantalla es bajar su número o quitarla, y lo nuevo no entra. Lo que quede al terminar C6 tiene que tener su motivo
-// escrito. `src/componentes/` no se revisa: ahí viven las piezas comunes.
+// son lo que se aparta de las piezas comunes, con cuántas veces aparece en cada archivo y su motivo escrito (C6 terminó el
+// 08/11). Lo nuevo no entra: una pantalla nueva usa las piezas comunes. `src/componentes/` no se revisa: ahí viven ellas.
 
 const esComentario = (linea: string) => /^\s*(\/\/|\/\*|\*|\{\/\*)/.test(linea);
 
@@ -29,18 +28,16 @@ function apariciones(patron: RegExp): Record<string, number> {
   }));
 }
 
-/** Páginas que todavía no dicen su tipo con `PaginaPanel`. Fases 3 y 4; las que solo redirigen se justifican al final. */
+/** Páginas sin `PaginaPanel`, con su motivo. */
 const SIN_PAGINA_PANEL = [
+  // No dibuja nada: solo verifica la sesión y responde "no encontrado" (not-found.tsx sí usa PaginaPanel)
   "src/app/panel/[...resto]/page.tsx",
-  "src/app/panel/sin-acceso/page.tsx",
 ];
 
-/** Anchos de pantalla escritos a mano. Los de un campo o un bloque chico (`max-w-xs`, `max-w-md`) sí valen (§1). */
+/** Anchos de pantalla escritos a mano, con su motivo. Los de un campo o un bloque chico (`max-w-xs`, `max-w-md`) sí valen (§1). */
 const ANCHOS_A_MANO: Record<string, number> = {
-  "src/app/panel/error.tsx": 1,
-  "src/app/panel/not-found.tsx": 1,
+  // Los accesos de la portada, en dos columnas que no se estiran: cada portada acomoda lo suyo (§1)
   "src/app/panel/page.tsx": 1,
-  "src/app/panel/sin-acceso/page.tsx": 1,
   // El formulario público de reclamos: es del sitio, no del panel. Se queda, con este motivo
   "src/modulos/reclamos/componentes/formulario-reclamo.tsx": 2,
   // "Subir fotos": un bloque dentro de la ficha (§1); más ancho, las fotos elegidas tapan el resto del formulario
@@ -64,7 +61,7 @@ const TITULOS_A_MANO: Record<string, number> = {
   "src/modulos/sitio/componentes/galeria-panel.tsx": 1,
 };
 
-// Si una falla: con algo de más, usa la pieza común; con algo de menos, ya se migró y se baja de su lista.
+// Si una falla: con algo de más, usa la pieza común (o escribe aquí su motivo); con algo de menos, se baja de su lista.
 describe("estructura del panel (C6)", () => {
   it("toda página dice su tipo con PaginaPanel", () => {
     const sinUsarla = [...codigo].filter(([a, lineas]) => a.endsWith("/page.tsx") && !lineas.some((l) => l.includes("<PaginaPanel"))).map(([a]) => a);

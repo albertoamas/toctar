@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { cn } from "cn";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { buttonVariants } from "@/componentes/ui/button";
 import { exigirSesion } from "@/lib/sesion";
 
@@ -11,14 +12,16 @@ export const metadata: Metadata = { title: "Sin acceso" };
 // forbidden() de Next.js sigue experimental en la versión 16, por eso es una página propia.
 export default function SinAcceso() {
   return (
-    <section className="flex max-w-prose flex-col items-start gap-4">
+    <PaginaPanel tipo="formulario">
       <h1 className="tt-titulo-pagina">Sin acceso</h1>
       <Suspense fallback={null}>
         <Explicacion />
       </Suspense>
       {/* Enlace con forma de botón: lleva a otra pantalla, así que se anuncia como enlace (un Button con render de Link se anunciaba como botón) */}
-      <Link href="/panel" className={cn(buttonVariants())}>Volver al inicio</Link>
-    </section>
+      <div>
+        <Link href="/panel" className={cn(buttonVariants())}>Volver al inicio</Link>
+      </div>
+    </PaginaPanel>
   );
 }
 
