@@ -247,6 +247,13 @@
   html:has([data-pie-fijo]) {
     scroll-padding-bottom: 5rem;
   }
+  /* En el celular, lo que está fijo abajo (el pie de un flujo, la barra de guardar con cambios): los avisos se ponen
+     encima (sonner.tsx), así no tapan su botón. Con un modal abierto, los avisos van arriba */
+  @media (max-width: 639px) {
+    html:has([data-pie-movil], [data-pie-fijo]) {
+      --alto-pie-movil: 5.5rem;
+    }
+  }
 
   /* La franja de la marca del ingreso (pulido 3.2): superficie gris con un borde cortado a 60°, el único ángulo de la
      identidad. En el celular, el borde de abajo (28 px de alto por 16,17 de ancho: tan 60° = 1,732). En la computadora,
