@@ -9,6 +9,7 @@ import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { MenuMas, type AccionMas } from "@/componentes/panel/menu-mas";
 import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
+import { BOTON_PASO } from "@/componentes/panel/paso-siguiente";
 import { Button } from "@/componentes/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import { Textarea } from "@/componentes/ui/textarea";
@@ -129,10 +130,11 @@ function FormularioReabrir({ id }: { id: number }) {
 export function BotonAcepto({ id }: { id: number }) {
   const [resultado, accion, enviando] = useActionState<EstadoFormulario, FormData>(conAviso(cambiarEstadoCotizacion), {});
   return (
-    <form action={accion} aria-label="Aceptó">
+    // El paso siguiente de una pendiente: grande, como en Reserva y Orden (PasoSiguiente, C6)
+    <form action={accion} aria-label="Aceptó" className="flex flex-col gap-2 sm:w-80">
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="accion" value="aceptar" />
-      <Button type="submit" disabled={enviando}>
+      <Button type="submit" disabled={enviando} className={BOTON_PASO} aria-describedby={resultado.mensaje && !resultado.ok ? "aceptar-error" : undefined}>
         <CheckIcon />
         {enviando ? "Guardando…" : "Aceptó"}
       </Button>

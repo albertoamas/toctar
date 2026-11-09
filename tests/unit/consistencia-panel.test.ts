@@ -32,7 +32,6 @@ function apariciones(patron: RegExp): Record<string, number> {
 /** Páginas que todavía no dicen su tipo con `PaginaPanel`. Fases 3 y 4; las que solo redirigen se justifican al final. */
 const SIN_PAGINA_PANEL = [
   "src/app/panel/[...resto]/page.tsx",
-  "src/app/panel/cotizaciones/[id]/page.tsx",
   "src/app/panel/reclamos/[id]/page.tsx",
   "src/app/panel/sin-acceso/page.tsx",
   "src/app/panel/usuarios/[id]/page.tsx",
@@ -40,7 +39,6 @@ const SIN_PAGINA_PANEL = [
 
 /** Anchos de pantalla escritos a mano. Los de un campo o un bloque chico (`max-w-xs`, `max-w-md`) sí valen (§1). */
 const ANCHOS_A_MANO: Record<string, number> = {
-  "src/app/panel/cotizaciones/[id]/page.tsx": 1,
   "src/app/panel/error.tsx": 1,
   "src/app/panel/not-found.tsx": 1,
   "src/app/panel/page.tsx": 1,
