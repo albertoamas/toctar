@@ -174,8 +174,9 @@ test("Nueva reserva ofrece las cotizaciones del vehículo: los precios llegan si
   await expect(page.getByRole("button", { name: "Reservar" })).toBeHidden();
   await expect(page.getByRole("button", { name: /^Siguiente/ })).toBeHidden();
   // Empezada una sin cotización, "Siguiente" queda aunque se quite el último servicio, y dice qué falta
+  // Se abre con la primera fila lista para elegir (pulido final del 09/11)
   await page.getByText("Reserva sin cotización", { exact: true }).click();
-  await page.getByRole("button", { name: "Agregar servicio" }).click();
+  await expect(page.getByLabel("Servicio 1", { exact: true })).toBeFocused();
   await page.getByRole("button", { name: "Quitar servicio 1" }).click();
   await page.getByRole("button", { name: "Siguiente: fecha y adelanto" }).click();
   await expect(page.getByText("Agrega al menos un servicio.")).toBeVisible();

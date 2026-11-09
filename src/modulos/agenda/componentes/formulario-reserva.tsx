@@ -20,14 +20,14 @@ import type { EstadoFormulario } from "@/lib/formularios";
 import { leerMonto, mostrarMonto } from "@/modulos/catalogo/reglas";
 import { calcularTotales } from "@/modulos/cotizaciones/reglas";
 import type { OpcionServicio } from "@/modulos/cotizaciones/consultas";
-import { LineasServicio, type Linea } from "@/modulos/cotizaciones/componentes/lineas-servicio";
+import { LineasServicio, lineasQueCuentan, type Linea } from "@/modulos/cotizaciones/componentes/lineas-servicio";
 import { CampoComprobante, useEnvioConComprobante } from "@/modulos/pagos/componentes/campo-comprobante";
 import { METODOS, NOMBRE_METODO } from "@/modulos/pagos/reglas";
 import { agendarReserva } from "../acciones";
 import type { EspacioDisponible } from "../consultas";
 import { erroresServicios, PASO_FECHA, PASO_SERVICIOS, pasoDeCampoReserva, pasosNuevaReserva } from "../pasos-reserva";
 import { fechaEntregaSugerida } from "../reglas";
-import { useEspaciosLibres } from "./espacios-libres";
+import { espacioVigente, useEspaciosLibres } from "./espacios-libres";
 
 // HU-30: agendar una reserva (RF-36, RF-37). Las fechas sugieren la entrega con la mayor duración de los servicios
 // (decisión del 20/10: es aproximada y se edita); al cambiarlas se vuelven a pedir los espacios libres (RN-06). El
@@ -81,6 +81,8 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
   // un envío nuevo dejan de valer solos (sin reiniciarlos tras el await, que se dibujaba antes que el resultado)
   const [locales, setLocales] = useState<{ en: EstadoFormulario | null; errores: Record<string, string> }>({ en: null, errores: {} });
   const [revisadosEn, setRevisadosEn] = useState<EstadoFormulario | null>(null);
+  // "Agrega al menos un servicio." ya corregido (se agregó uno que cuenta), para el resultado de la acción de ahora
+  const [listaCorregidaEn, setListaCorregidaEn] = useState<EstadoFormulario | null>(null);
   const errorAlLlegar = useRef(false);
   const formulario = useRef<HTMLFormElement>(null);
 
@@ -128,8 +130,11 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
     };
   });
 
-  // Todo controlado: React reinicia el formulario al terminar la acción y así nada se pierde tras un error
-  const [lineas, setLineas] = useState<Linea[]>(origen.tipo === "directa" ? (origen.lineasIniciales ?? []) : []);
+  // Todo controlado: React reinicia el formulario al terminar la acción y así nada se pierde tras un error. Sin servicios
+  // con que llegar, la primera fila ya está para elegir (pulido final del 09/11): siempre se agrega al menos uno
+  const [lineas, setLineas] = useState<Linea[]>(
+    origen.tipo === "directa" ? (origen.lineasIniciales?.length ? origen.lineasIniciales : [{ varianteId: 0, precio: "" }]) : [],
+  );
   const duraciones =
     origen.tipo === "cotizacion"
       ? origen.duraciones
@@ -142,7 +147,8 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
   const { libres, buscando, ayuda } = useEspaciosLibres(fechaInicio, fechaFin, { iniciales: espaciosIniciales });
   // El elegido vale mientras siga libre en las fechas de ahora
   const [espacioElegido, setEspacioId] = useState(espacioInicial ? String(espacioInicial) : "");
-  const espacioId = libres.some((x) => String(x.id) === espacioElegido) ? espacioElegido : "";
+  // y, sin uno elegido, el único libre (espacioVigente)
+  const espacioId = espacioVigente(libres, espacioElegido);
   const [horaIngreso, setHoraIngreso] = useState("");
   const [nota, setNota] = useState("");
   const [sinAdelanto, setSinAdelanto] = useState(false);
@@ -175,6 +181,7 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
         const errores = erroresServicios(String(new FormData(formulario.current).get("lineas") ?? "[]"));
         if (Object.keys(errores).length > 0) {
           setLocales({ en: estado, errores });
+          setListaCorregidaEn(null);
           errorAlLlegar.current = true;
           window.history.back();
           return;
@@ -194,6 +201,7 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
   function siguiente() {
     const errores = erroresServicios(String(new FormData(formulario.current!).get("lineas") ?? "[]"));
     setLocales({ en: estado, errores });
+    setListaCorregidaEn(null);
     if (Object.keys(errores).length > 0) {
       foco.pedir(true);
       return;
@@ -209,10 +217,12 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
     ...Object.fromEntries(Object.entries(estado.errores ?? {}).filter(vigente)),
     ...(locales.en === estado ? locales.errores : {}),
   };
+  if (listaCorregidaEn === estado) delete e.lineas;
   const conErrorEnServicios = Object.keys(e).some((c) => pasoDeCampoReserva(c) === PASO_SERVICIOS && e[c]);
   // Con cotizaciones del vehículo, lo común es usar una: "Siguiente" aparece al empezar una sin cotización, y queda
   // aunque se quite el último servicio (así dice qué falta)
-  const [armando, setArmando] = useState(lineas.length > 0);
+  // (la fila vacía con que empieza no cuenta: se empieza al abrir "Reserva sin cotización" o al elegir un servicio)
+  const [armando, setArmando] = useState(origen.tipo === "directa" && (origen.lineasIniciales?.length ?? 0) > 0);
   const conSiguiente = !cotizaciones || armando || conErrorEnServicios;
 
   const servicios = origen.tipo === "directa" && (
@@ -223,8 +233,12 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
         onChange={(nuevas) => {
           setLineas(nuevas);
           if (nuevas.length > 0) setArmando(true);
+          // "Agrega al menos un servicio." se va al agregar uno que cuenta (seguía debajo del servicio elegido hasta el
+          // próximo "Siguiente"). Los de cada fila, y los que solo sabe el servidor, quedan hasta "Siguiente" o "Reservar"
+          if (e.lineas && lineasQueCuentan(nuevas).length > 0) setListaCorregidaEn(estado);
         }}
         errores={e}
+        conFilaLista
       />
     </SeccionFormulario>
   );
@@ -276,7 +290,7 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
         <div data-paso={PASO_SERVICIOS} hidden={paso !== PASO_SERVICIOS} className="flex flex-col gap-6">
           {cotizaciones}
           {cotizaciones ? (
-            <MasDatos texto="Reserva sin cotización" abierto={lineas.length > 0 || conErrorEnServicios}>
+            <MasDatos texto="Reserva sin cotización" abierto={armando || conErrorEnServicios} alAbrir={() => setArmando(true)}>
               {servicios}
             </MasDatos>
           ) : (

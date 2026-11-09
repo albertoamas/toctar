@@ -74,8 +74,8 @@ Todo lo programable está en `develop` y en `pruebas.toctardetailing.com`. Lo qu
 
 | Prioridad | Pantallas | Estado |
 |---|---|---|
-| 1. De pie en el taller | Recibir vehículo, Entregar vehículo | 🔵 Recibir en curso |
-| 2. Flujos en pasos | Nueva reserva, Nueva cotización, Nueva versión | ⏳ |
+| 1. De pie en el taller | Recibir vehículo, Entregar vehículo | ✅ 09/11 (pulido 13.30) |
+| 2. Flujos en pasos | Nueva reserva, Nueva cotización, Nueva versión | 🔵 Nueva reserva ✅ (13.31); sigue Nueva cotización |
 | 3. Todos los días | Inicio, Agenda, Saldos, Mantenimientos | ⏳ |
 | 4. Menos usadas | Ficha del cliente, Servicio del catálogo, Cambiar dueño, Publicar en la galería, Galería del panel | ⏳ |
 | 5. Listas | Órdenes, Clientes, Cotizaciones, Reclamos, Catálogo, Usuarios | ⏳ |

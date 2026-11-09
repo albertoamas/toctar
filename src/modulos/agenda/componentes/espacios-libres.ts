@@ -75,3 +75,13 @@ export function useEspaciosLibres(
   const activos = completas ? (espacios ?? []) : [];
   return { libres, activos, buscando, ayuda };
 }
+
+/**
+ * El espacio que vale en las fechas de ahora: el elegido mientras siga libre y, si no se eligió ninguno y hay uno solo
+ * libre, ese (no hay nada que decidir; pulido final del 09/11). Si el elegido se ocupó, queda vacío para que se elija
+ * otro a la vista, sin cambiarlo por otro sin avisar. Lo usan Nueva reserva y Reprogramar.
+ */
+export function espacioVigente(libres: EspacioDisponible[], elegido: string): string {
+  if (libres.some((x) => String(x.id) === elegido)) return elegido;
+  return elegido === "" && libres.length === 1 ? String(libres[0].id) : "";
+}

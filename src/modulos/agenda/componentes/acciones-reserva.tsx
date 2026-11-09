@@ -14,7 +14,7 @@ import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { cancelarReserva, reprogramarReserva } from "../acciones";
-import { useEspaciosLibres } from "./espacios-libres";
+import { espacioVigente, useEspaciosLibres } from "./espacios-libres";
 
 // HU-31: reprogramar o cancelar una reserva agendada (RF-39). Pulido 10.3: se usan poco y van en el menú "Más" del
 // encabezado, cada una con su formulario en un modal (como "Marcar como perdida"). Reprogramar ofrece solo los espacios
@@ -79,7 +79,7 @@ function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espac
   const { libres, buscando, ayuda } = useEspaciosLibres(fechaInicio, fechaFin, { excepto: id });
   // El elegido vale mientras siga libre en las fechas de ahora (el actual lo está: no se cuenta la propia reserva)
   const [espacioElegido, setEspacioId] = useState(String(espacioActual));
-  const espacioId = libres.some((x) => String(x.id) === espacioElegido) ? espacioElegido : "";
+  const espacioId = espacioVigente(libres, espacioElegido);
 
   return (
     <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-label="Reprogramar">

@@ -171,6 +171,8 @@ test("solo se ofrecen los espacios libres; si dos personas agendan el mismo a la
     await p.goto(`/panel/agenda/nueva?cotizacion=${cotizacionId}&fecha=${dia}`);
     await p.getByLabel("Entrega aproximada").fill(dia);
     await expect(espacio(p).locator("option")).toHaveText(["Elige el espacio", espacios.at(-1)!.nombre]);
+    // Con uno solo libre, ya va elegido (pulido final del 09/11)
+    await expect(espacio(p)).toHaveValue(String(espacios.at(-1)!.id));
     await espacio(p).selectOption({ label: espacios.at(-1)!.nombre });
     await p.getByRole("checkbox", { name: "Sin adelanto" }).check();
   };
@@ -216,13 +218,21 @@ test("reserva directa: cliente y vehículo registrados, servicio del catálogo c
   await expect(page).toHaveURL(new RegExp(`cliente=${clienteId}`));
   // Con un solo vehículo, no hace falta elegirlo: pasa directo a los servicios (pedido 41)
   await expect(pasoActual(page)).toHaveText("Servicios");
-  await expect(page.getByRole("region", { name: "Vehículo" })).toContainText(`DI30${s}6`);
-  // Sin servicios, "Siguiente" no avanza y dice qué falta
+  // El cliente y su vehículo, en una sola tarjeta (pulido final del 09/11)
+  await expect(page.getByRole("region", { name: "Reserva para" })).toContainText(`Directa ${s}`);
+  await expect(page.getByRole("region", { name: "Reserva para" })).toContainText(`DI30${s}6`);
+  // La primera fila ya está para elegir; sin servicios, "Siguiente" no avanza y dice qué falta
+  await expect(page.getByLabel("Servicio 1", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Quitar servicio 1" }).click();
   await siguiente(page).click();
   await expect(page.getByText("Agrega al menos un servicio.")).toBeVisible();
   await expect(pasoActual(page)).toHaveText("Servicios");
   await page.getByRole("button", { name: "Agregar servicio" }).click();
+  // Una fila sin tocar no cuenta: el error sigue hasta elegir el servicio, y entonces se va (antes seguía hasta el
+  // próximo "Siguiente")
+  await expect(page.getByText("Agrega al menos un servicio.")).toBeVisible();
   await page.getByLabel("Servicio 1", { exact: true }).selectOption({ label: nombre });
+  await expect(page.getByText("Agrega al menos un servicio.")).toHaveCount(0);
   await expect(page.getByLabel("Precio del servicio 1")).toHaveValue("900");
   // "Siguiente" no reserva: con el botón reusado, se volvía "Reservar" en el mismo toque (como en la cotización)
   await siguiente(page).click();
@@ -312,7 +322,7 @@ test("con varios vehículos se elige uno en su paso, y «Cambiar vehículo» vue
   await page.getByRole("list", { name: "Elegir vehículo" }).getByRole("link", { name: new RegExp(`DB30${s}0`) }).click();
   await expect(page).toHaveURL(new RegExp(`vehiculo=${segundo}$`));
   await expect(pasoActual(page)).toHaveText("Servicios");
-  await expect(page.getByRole("region", { name: "Vehículo" })).toContainText(`DB30${s}0`);
+  await expect(page.getByRole("region", { name: "Reserva para" })).toContainText(`DB30${s}0`);
   await expect(page.getByRole("link", { name: "Cambiar vehículo" })).toHaveAttribute("href", `/panel/agenda/nueva?cliente=${clienteId}`);
 });
 
