@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
+import { cn } from "cn";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
@@ -16,6 +17,7 @@ import { vistaPreviaPlanes } from "@/modulos/mantenimientos/planes";
 import { obtenerOrden } from "@/modulos/ordenes/consultas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
 import { estaPagada } from "@/modulos/pagos/reglas";
+import { filaVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 
 export const metadata: Metadata = { title: "Entregar vehículo" };
 
@@ -60,22 +62,17 @@ async function Entrega({ params }: Pick<PageProps<"/panel/ordenes/[id]/entregar"
           nombre="Lo que se entrega"
           filas={[
             ["Cliente", <span key="cliente" className="font-semibold">{o.cliente}</span>],
-            [
-              "Vehículo",
-              <span key="vehiculo" className="flex flex-col">
-                {detalle.length > 0 && <span>{detalle.join(" ")}</span>}
-                <span className="text-sm text-tinta-suave">Tamaño: {o.tamano}</span>
-              </span>,
-            ],
+            filaVehiculo(detalle, o.tamano),
           ]}
         />
       </div>
 
       {conPagos ? (
         <MontosTrabajo trabajoId={o.id} montos={o.montos} cerrado={false} hoy={hoy} cobrar />
-      ) : (
-        // Sin Pagos: el saldo no se muestra, pero se sabe si queda (como aviso, no como texto suelto)
-        <p role="status" className={conDeuda ? "rounded-sm border border-aviso p-3 font-semibold" : "rounded-sm border border-border p-3 font-semibold"}>
+      ) : conDeuda && !puede(usuario, "entrega_con_saldo") ? null : (
+        // Sin Pagos: el saldo no se muestra, pero se sabe si queda, con los colores de MontosTrabajo (ámbar si queda, verde
+        // si está pagado). Si además no puede entregar con saldo, lo dice una vez el formulario, con por qué
+        <p className={cn("rounded-sm border p-3 font-semibold", conDeuda ? "border-aviso bg-aviso-fondo text-aviso" : "border-transparent bg-exito-fondo text-exito")}>
           {conDeuda ? "Queda saldo pendiente." : "Pagado por completo."}
         </p>
       )}

@@ -39,6 +39,7 @@ import { avancesDeTrabajo, firmaDeTrabajo, revisionDeTrabajo, fotosDeTrabajo, ob
 import { mensajeListo } from "@/modulos/ordenes/mensajes";
 import { puedeQuitarFoto, esOrden, estaAbierta, estaAtrasada, pasosDeOrden, puedeExtenderse, puedePublicarse } from "@/modulos/ordenes/reglas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
+import { filaVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 
 export const metadata: Metadata = { title: "Orden" };
 
@@ -217,13 +218,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
                       <span className="text-sm text-tinta-suave">{formatearWhatsApp(o.telefono)}</span>
                     </span>,
                   ],
-                  [
-                    "Vehículo",
-                    <span key="vehiculo" className="flex flex-col">
-                      {detalle.length > 0 && <span>{detalle.join(" ")}</span>}
-                      <span className="text-sm text-tinta-suave">Tamaño: {o.tamano}</span>
-                    </span>,
-                  ],
+                  filaVehiculo(detalle, o.tamano),
                 ]}
               />
               {/* Los enlaces, de 44 px y fuera de la lista: la ficha del cliente (con Clientes) y la reserva (con Agenda) */}

@@ -73,50 +73,50 @@ export function FormularioEntrega({ id, conDeuda, saldo, puedeAutorizar, cliente
           <p className="text-sm text-tinta-suave">El cliente firma con el dedo: recibe su vehículo conforme.</p>
         </div>
         <div className="tt-tarjeta-panel flex flex-col gap-4 p-4">
-        {sinFirma && <input type="hidden" name="sinFirma" value="on" />}
-        {!sinFirma && (
-          <>
-            <PanelFirma alCambiar={alCambiarFirma} etiqueta="Recuadro para la firma del cliente" invalido={!!e.firma} describedBy={e.firma ? "firma-error" : undefined} />
-            {e.firma && <MensajeError id="firma-error">{e.firma}</MensajeError>}
-            <Campo id="firmaNombre" etiqueta="Nombre de quien recibe" error={e.firmaNombre}>
-              <Input
-                id="firmaNombre"
-                name="firmaNombre"
-                value={nombre}
-                onChange={(ev) => setNombre(ev.target.value)}
-                autoComplete="off"
-                aria-invalid={!!e.firmaNombre}
-                aria-describedby={e.firmaNombre ? "firmaNombre-error" : undefined}
-                className="max-w-md"
+          {sinFirma && <input type="hidden" name="sinFirma" value="on" />}
+          {!sinFirma && (
+            <>
+              <PanelFirma alCambiar={alCambiarFirma} etiqueta="Recuadro para la firma del cliente" invalido={!!e.firma} describedBy={e.firma ? "firma-error" : undefined} />
+              {e.firma && <MensajeError id="firma-error">{e.firma}</MensajeError>}
+              <Campo id="firmaNombre" etiqueta="Nombre de quien recibe" error={e.firmaNombre}>
+                <Input
+                  id="firmaNombre"
+                  name="firmaNombre"
+                  value={nombre}
+                  onChange={(ev) => setNombre(ev.target.value)}
+                  autoComplete="off"
+                  aria-invalid={!!e.firmaNombre}
+                  aria-describedby={e.firmaNombre ? "firmaNombre-error" : undefined}
+                  className="max-w-md"
+                />
+              </Campo>
+            </>
+          )}
+          <label htmlFor="sinFirma" className="flex min-h-11 cursor-pointer items-center gap-3 self-start">
+            <Checkbox
+              id="sinFirma"
+              checked={sinFirma}
+              onCheckedChange={(si) => {
+                setSinFirma(si === true);
+                // La firma que había no se envía: al volver, el recuadro empieza vacío
+                if (si) setFirma(null);
+              }}
+            />
+            <span className="font-medium">Entregar sin firma</span>
+          </label>
+          {sinFirma && (
+            <Campo id="sinFirmaMotivo" etiqueta="Motivo" error={e.sinFirmaMotivo} ayuda="Por ejemplo: retiró otra persona.">
+              <Textarea
+                id="sinFirmaMotivo"
+                name="sinFirmaMotivo"
+                rows={2}
+                value={motivo}
+                onChange={(ev) => setMotivo(ev.target.value)}
+                aria-invalid={!!e.sinFirmaMotivo}
+                aria-describedby={e.sinFirmaMotivo ? "sinFirmaMotivo-error" : "sinFirmaMotivo-ayuda"}
               />
             </Campo>
-          </>
-        )}
-        <label htmlFor="sinFirma" className="flex min-h-11 cursor-pointer items-center gap-3 self-start">
-          <Checkbox
-            id="sinFirma"
-            checked={sinFirma}
-            onCheckedChange={(si) => {
-              setSinFirma(si === true);
-              // La firma que había no se envía: al volver, el recuadro empieza vacío
-              if (si) setFirma(null);
-            }}
-          />
-          <span className="font-medium">Entregar sin firma</span>
-        </label>
-        {sinFirma && (
-          <Campo id="sinFirmaMotivo" etiqueta="Motivo" error={e.sinFirmaMotivo} ayuda="Por ejemplo: retiró otra persona.">
-            <Textarea
-              id="sinFirmaMotivo"
-              name="sinFirmaMotivo"
-              rows={2}
-              value={motivo}
-              onChange={(ev) => setMotivo(ev.target.value)}
-              aria-invalid={!!e.sinFirmaMotivo}
-              aria-describedby={e.sinFirmaMotivo ? "sinFirmaMotivo-error" : "sinFirmaMotivo-ayuda"}
-            />
-          </Campo>
-        )}
+          )}
         </div>
       </section>
 

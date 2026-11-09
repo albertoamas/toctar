@@ -27,6 +27,7 @@ import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reg
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { esOrden, puedeRecibirse } from "@/modulos/ordenes/reglas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
+import { filaVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 
 export const metadata: Metadata = { title: "Reserva" };
 
@@ -101,13 +102,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
                 <span className="text-sm text-tinta-suave">{formatearWhatsApp(r.telefono)}</span>
               </span>,
             ],
-            [
-              "Vehículo",
-              <span key="vehiculo" className="flex flex-col">
-                {detalle.length > 0 && <span>{detalle.join(" ")}</span>}
-                <span className="text-sm text-tinta-suave">Tamaño: {r.tamano}</span>
-              </span>,
-            ],
+            filaVehiculo(detalle, r.tamano),
             [
               "Reservada",
               <span key="reservada" className="flex flex-col">
