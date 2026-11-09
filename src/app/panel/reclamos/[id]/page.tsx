@@ -80,8 +80,8 @@ async function Detalle({ params }: Pick<PageProps<"/panel/reclamos/[id]">, "para
                 ["Placa", <span key="placa" className="font-semibold">{r.placa}</span>],
                 ["Servicio", r.servicio ?? <span key="servicio" className="text-tinta-suave">No indicó</span>],
                 [
-                  "Trabajo",
-                  r.fechaAproximada ? `${formatearFecha(r.fechaAproximada)}, aproximada` : <span key="trabajo" className="text-tinta-suave">No indicó la fecha</span>,
+                  "Fecha del trabajo",
+                  r.fechaAproximada ? `${formatearFecha(r.fechaAproximada)} (aproximada)` : <span key="fecha" className="text-tinta-suave">No la indicó</span>,
                 ],
               ]}
             />
