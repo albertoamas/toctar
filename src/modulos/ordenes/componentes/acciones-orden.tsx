@@ -32,7 +32,7 @@ export function MasOrden({ id, anterior, extender, avisada, escribir }: Props) {
   const acciones: AccionMas[] = [];
   if (extender) acciones.push({ texto: "Extender entrega", alElegir: () => setAbierta("extender") });
   if (anterior) acciones.push({ texto: anterior.texto, alElegir: () => setAbierta("volver") });
-  if (escribir) acciones.push({ texto: "Escribir por WhatsApp", alElegir: () => window.open(escribir, "_blank", "noopener,noreferrer") });
+  if (escribir) acciones.push({ texto: "Escribir por WhatsApp", href: escribir });
   if (acciones.length === 0) return null;
   return (
     <>

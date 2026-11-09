@@ -51,7 +51,7 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
   await ingresar(page, `taller-flujo-${s}`, "taller-123");
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto(`/panel/ordenes/${id}`);
-  const pasos = page.getByRole("region", { name: "Estado de la orden" });
+  const pasos = page.getByRole("form", { name: "Estado de la orden" });
   const pasoActual = page.getByRole("navigation", { name: "Pasos del trabajo" }).locator('[aria-current="step"]');
   await pasos.getByRole("button", { name: "Empezar trabajo" }).click();
   await expect(page.getByRole("main").getByText("En proceso", { exact: true }).first()).toBeVisible();

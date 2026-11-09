@@ -20,14 +20,12 @@ export function EstadoOrden({ id, estado, editable }: { id: number; estado: Esta
   if (!editable || !siguiente) return null;
 
   return (
-    <section aria-label="Estado de la orden" className="contents">
-      <form action={accion} className="contents">
-        <input type="hidden" name="id" value={id} />
-        <input type="hidden" name="estado" value={siguiente.estado} />
-        <Button type="submit" disabled={enviando}>
-          {siguiente.texto}
-        </Button>
-      </form>
-    </section>
+    <form action={accion} aria-label="Estado de la orden">
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="estado" value={siguiente.estado} />
+      <Button type="submit" disabled={enviando}>
+        {siguiente.texto}
+      </Button>
+    </form>
   );
 }

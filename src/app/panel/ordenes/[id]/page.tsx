@@ -112,7 +112,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
       : null;
   const entregar = o.estado === "listo" && puede(usuario, "entregar_vehiculo");
   // Con "Avisar" en el encabezado, escribir sin el mensaje de aviso queda en "Más": un solo WhatsApp a la vista
-  const escribirEnMas = aviso ? enlaceWhatsApp(o.telefono) : undefined;
+  const escribirEnMas = abierta && aviso ? enlaceWhatsApp(o.telefono) : undefined;
   // "Más" solo si tiene algo que ofrecer (una recibida que no se puede extender no tiene nada)
   const conMas = (abierta && (!!anterior || !!extender)) || !!escribirEnMas;
   const detalle = detalleVehiculo(o);
@@ -121,7 +121,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
     <div className="flex flex-wrap gap-2">
       {abierta && <EstadoOrden id={o.id} estado={o.estado} editable />}
       {entregar && (avisada || !aviso) && <EnlaceEntregar id={o.id} principal />}
-      {aviso && <AvisarPorWhatsApp enlace={aviso.enlace} avisado={aviso.avisado} conDetalle={false} registrarAction={registrarAvisoListo.bind(null, { id: o.id })} />}
+      {abierta && aviso && <AvisarPorWhatsApp enlace={aviso.enlace} avisado={aviso.avisado} conDetalle={false} registrarAction={registrarAvisoListo.bind(null, { id: o.id })} />}
       {entregar && aviso && !avisada && <EnlaceEntregar id={o.id} />}
       {sePuedePublicar && (
         <Link href={`/panel/ordenes/${o.id}/publicar`} className={cn(buttonVariants({ variant: "outline" }))}>
@@ -129,7 +129,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
           Publicar en la galería
         </Link>
       )}
-      {!aviso && (
+      {!escribirEnMas && (
         <a href={enlaceWhatsApp(o.telefono)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
           <IconoWhatsApp />
           Escribir por WhatsApp
@@ -145,7 +145,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
       {publicada && (
         <>
           {(entrega || aviso?.avisado) && " "}
-          <Link href="/panel/sitio/galeria" className="underline underline-offset-4">
+          <Link href="/panel/sitio/galeria" className="tt-area-toque underline underline-offset-4">
             Publicada en la galería ({publicada.fotos === 1 ? "1 foto" : `${publicada.fotos} fotos`}
             {publicada.visible ? "" : ", oculta"})
           </Link>
@@ -185,20 +185,16 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
             <div className="flex flex-col gap-2">
               {/* La placa ya está en el título: el vehículo dice su modelo y su tamaño (como la reserva) */}
               <ListaDatos
-                etiqueta="Datos de la orden"
+                nombre="Datos de la orden"
                 filas={[
                   // La entrega aproximada sirve mientras está en el taller; entregada, el encabezado ya dice cuándo
-                  ...(o.estado !== "entregado"
-                    ? ([
-                        [
-                          "Entrega",
-                          <span key="entrega" className="flex flex-col">
-                            <span className="font-semibold">{o.fechaFin === hoy ? "Hoy" : formatearFecha(o.fechaFin)}</span>
-                            <span className="text-sm text-tinta-suave">aproximada</span>
-                          </span>,
-                        ],
-                      ] as [string, React.ReactNode][])
-                    : []),
+                  o.estado !== "entregado" && [
+                    "Entrega",
+                    <span key="entrega" className="flex flex-col">
+                      <span className="font-semibold">{o.fechaFin === hoy ? "Hoy" : formatearFecha(o.fechaFin)}</span>
+                      <span className="text-sm text-tinta-suave">aproximada</span>
+                    </span>,
+                  ],
                   ["Espacio", <span key="espacio" className="font-semibold">{o.espacio}</span>],
                   [
                     "Ingresó",

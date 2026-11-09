@@ -24,6 +24,11 @@ test("avisar abre WhatsApp con nombre, vehículo y saldo, y queda quién avisó 
   await expect(page.getByRole("list", { name: "Órdenes en el taller" }).getByRole("link", { name: new RegExp(`^${placa}.*Lista.*Sin avisar`) })).toBeVisible();
 
   await page.goto(`/panel/ordenes/${id}`);
+  // Un solo WhatsApp a la vista (C6): escribir sin el aviso queda en "Más", y sigue siendo un enlace
+  await expect(page.getByRole("main").getByRole("link", { name: "Escribir por WhatsApp" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Más" }).click();
+  await expect(page.getByRole("menuitem", { name: "Escribir por WhatsApp" })).toHaveAttribute("href", /^https:\/\/wa\.me\/591\d{8}$/);
+  await page.keyboard.press("Escape");
   const enlace = await abrirWhatsApp(page, page.getByRole("button", { name: "Avisar por WhatsApp" }));
   expect(enlace).toMatch(/^https:\/\/wa\.me\/591\d{8}\?text=/);
   expect(enlace).toContain(`Hola Lucía, tu vehículo (placa ${placa}) ya está listo en`);
