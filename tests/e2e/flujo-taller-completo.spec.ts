@@ -34,7 +34,7 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
      where s.slug = 'pulido-y-nano-ceramico' order by v.id limit 1`,
     [id],
   );
-  await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, 300, 'qr', 'adelanto', current_date, created_by from trabajo where id = $1", [id]);
+  await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, 300, 'qr', 'adelanto', (now() at time zone 'America/La_Paz')::date, created_by from trabajo where id = $1", [id]);
 
   // 1. El dueño recibe el vehículo (el checklist, todo bien); no se asigna a nadie (pedido 32)
   await ingresarComoDueno(page);

@@ -11,7 +11,7 @@ const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "c" : "e")
 async function reserva(info: TestInfo, placa: string, conAdelanto: boolean): Promise<number> {
   const [{ id }] = await consultar<{ id: number }>(
     `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, created_by)
-     select e.sucursal_id, v.cliente_id, v.id, e.id, current_date + $2::int, current_date + $2::int, v.created_by
+     select e.sucursal_id, v.cliente_id, v.id, e.id, (now() at time zone 'America/La_Paz')::date + $2::int, (now() at time zone 'America/La_Paz')::date + $2::int, v.created_by
      from vehiculo v, (select * from espacio_taller where activo order by orden limit 1) e where v.placa = $1 returning id`,
     [placa, (info.project.name === "celular" ? 320 : 340) + (conAdelanto ? 0 : 5)],
   );
@@ -20,7 +20,7 @@ async function reserva(info: TestInfo, placa: string, conAdelanto: boolean): Pro
      select $1, (select id from variante order by id limit 1), 'Lavado completo', 500, 0`,
     [id],
   );
-  if (conAdelanto) await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, 150, 'efectivo', 'adelanto', current_date, created_by from trabajo where id = $1", [id]);
+  if (conAdelanto) await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, 150, 'efectivo', 'adelanto', (now() at time zone 'America/La_Paz')::date, created_by from trabajo where id = $1", [id]);
   return id;
 }
 
@@ -119,7 +119,7 @@ test("pagada por completo no ofrece más pagos; sin Pagos no se ven montos", asy
   const placa = `PG32${s.toUpperCase()}2`;
   const clienteId = await crearClienteEnBase({ nombre: `Sin deuda ${s}`, telefono: `5917${s === "c" ? 7 : 8}3200020`, placa });
   const id = await reserva(info, placa, false);
-  await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, 500, 'qr', 'saldo', current_date, created_by from trabajo where id = $1", [id]);
+  await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, 500, 'qr', 'saldo', (now() at time zone 'America/La_Paz')::date, created_by from trabajo where id = $1", [id]);
   await crearUsuario({ usuario: `caja2-hu32-${s}`, nombre: "Encargado de caja", contrasena: "encargado-123", rol: "encargado", permisos: ["agenda", "pagos"] });
   await ingresar(page, `caja2-hu32-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);

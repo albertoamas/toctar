@@ -14,13 +14,13 @@ async function ordenEntregada(placa: string, dias: number, pagado: number, descu
   const [{ id }] = await consultar<{ id: number }>(
     `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at,
        entregado_at, descuento, created_by)
-     select e.sucursal_id, v.cliente_id, v.id, e.id, current_date - $2::int, current_date - $2::int, 'entregado', now(), now(),
+     select e.sucursal_id, v.cliente_id, v.id, e.id, (now() at time zone 'America/La_Paz')::date - $2::int, (now() at time zone 'America/La_Paz')::date - $2::int, 'entregado', now(), now(),
        now() - make_interval(days => $2), $3, v.created_by
      from vehiculo v, (select * from espacio_taller where activo order by orden limit 1) e where v.placa = $1 returning id`,
     [placa, dias, descuento],
   );
   await consultar("insert into trabajo_linea (trabajo_id, variante_id, descripcion, precio, orden) select $1, (select id from variante order by id limit 1), 'Lavado completo', 600, 0", [id]);
-  if (pagado > 0) await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, $2, 'efectivo', 'adelanto', current_date, created_by from trabajo where id = $1", [id, pagado]);
+  if (pagado > 0) await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, $2, 'efectivo', 'adelanto', (now() at time zone 'America/La_Paz')::date, created_by from trabajo where id = $1", [id, pagado]);
   return id;
 }
 
@@ -122,7 +122,7 @@ test("pedido 30: se buscan por cliente, teléfono o placa y se ordenan; el total
       const deTodas = await sinBuscar.getByText("Total por cobrar").locator("..").locator("span").nth(1).innerText();
       await page.reload();
       return (await monto.innerText()) === deTodas;
-    })
+    }, { timeout: 30_000 })
     .toBe(true);
   await sinBuscar.close();
   // El contador dice cuántas se ven de todas

@@ -9,7 +9,7 @@ const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "C" : "E")
 /** El lunes de una semana propia: dentro de 400 (celular) o 500 (escritorio) días. */
 async function lunesPropio(info: TestInfo): Promise<string> {
   const [{ lunes }] = await consultar<{ lunes: string }>(
-    "select to_char(d - (extract(isodow from d)::int - 1), 'YYYY-MM-DD') as lunes from (select current_date + $1::int as d) x",
+    "select to_char(d - (extract(isodow from d)::int - 1), 'YYYY-MM-DD') as lunes from (select (now() at time zone 'America/La_Paz')::date + $1::int as d) x",
     [info.project.name === "celular" ? 400 : 500],
   );
   return lunes;

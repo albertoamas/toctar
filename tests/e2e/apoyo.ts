@@ -66,7 +66,7 @@ export async function consultar<T extends pg.QueryResultRow>(sql: string, valore
 export async function crearOrdenLista(datos: { placa: string; espacio: number; dias: number; precio: number; pagado: number; servicio?: string }): Promise<number> {
   const [{ id }] = await consultar<{ id: number }>(
     `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, created_by)
-     select e.sucursal_id, v.cliente_id, v.id, e.id, current_date + $3::int, current_date + $3::int, 'listo', now(), now(), v.created_by
+     select e.sucursal_id, v.cliente_id, v.id, e.id, (now() at time zone 'America/La_Paz')::date + $3::int, (now() at time zone 'America/La_Paz')::date + $3::int, 'listo', now(), now(), v.created_by
      from vehiculo v, (select * from espacio_taller where activo order by orden offset $2 limit 1) e where v.placa = $1 returning id`,
     [datos.placa, datos.espacio, datos.dias],
   );
@@ -77,7 +77,7 @@ export async function crearOrdenLista(datos: { placa: string; espacio: number; d
     [id, datos.precio, datos.servicio ?? "pulido-y-nano-ceramico"],
   );
   if (datos.pagado > 0) {
-    await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, $2, 'qr', 'adelanto', current_date, created_by from trabajo where id = $1", [
+    await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, $2, 'qr', 'adelanto', (now() at time zone 'America/La_Paz')::date, created_by from trabajo where id = $1", [
       id,
       datos.pagado,
     ]);
@@ -166,7 +166,7 @@ export async function crearCotizacionEnBase(datos: {
      )
      insert into cotizacion (consulta_id, numero, version, es_estimado, subtotal, descuento, total, adelanto_sugerido, valida_hasta,
        condiciones, garantia, formas_pago, estado, datos_documento, created_by)
-     select q.id, $4, 1, false, $5::numeric, 0, $5::numeric, 0, current_date + 15, 'c', 'g', 'f', case when $2 = 'confirmado' then 'aceptada' else 'enviada' end,
+     select q.id, $4, 1, false, $5::numeric, 0, $5::numeric, 0, (now() at time zone 'America/La_Paz')::date + 15, 'c', 'g', 'f', case when $2 = 'confirmado' then 'aceptada' else 'enviada' end,
        '{}'::jsonb, q.created_by from q returning consulta_id as id`,
     [datos.placa, estado, datos.dias ?? 0, datos.numero, datos.total ?? 500],
   );
