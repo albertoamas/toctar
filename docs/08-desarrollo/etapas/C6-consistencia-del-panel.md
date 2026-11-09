@@ -1,7 +1,7 @@
 # C6 Consistencia del panel: especificación
 
 - **Fase y semana:** C. Entrega 2 · desde el 8 de noviembre de 2026, antes de la capacitación y de la prueba en celulares reales
-- **Estado:** aprobada por YankoSoft el 08/11/2026 · en curso (fases 0 a 4 terminadas el 08/11; sigue la fase 5, el recorrido final)
+- **Estado:** aprobada por YankoSoft el 08/11/2026 · terminada el 08/11/2026 (PR #172 a #183). Sigue la guía de capacitación y la prueba en celulares reales
 - **Historias:** ninguna nueva. Cambia la forma de las pantallas de HU-04 a HU-41, no lo que hacen
 - **Base:** `06-diseno/sistema-del-panel.md` (las reglas), `P26-rediseno-panel.md` (el estilo), la skill `pantallas-panel`
 

@@ -3,7 +3,7 @@
 - **Fecha:** 8 de noviembre de 2026
 - **Alcance:** todas las pantallas de `/panel/**`. El sitio público y el ingreso siguen `identidad-visual.md`.
 - **Base:** pedido 26 (`08-desarrollo/etapas/P26-rediseno-panel.md`), que define el estilo: colores, tipografía, tarjetas e insignias.
-- **Cómo se llega aquí:** el plan para aplicar estas reglas está en `08-desarrollo/etapas/C6-consistencia-del-panel.md`. Hasta que termine, lo que todavía no cumple figura en su inventario.
+- **Cómo se llegó aquí:** con `08-desarrollo/etapas/C6-consistencia-del-panel.md`, terminado el 08/11/2026. Todas las pantallas cumplen estas reglas; lo que se aparta tiene su motivo escrito en `tests/unit/consistencia-panel.test.ts`, y `tests/e2e/recorrido-panel.spec.ts` recorre el panel en 4 tamaños con 3 roles.
 
 Este documento dice **qué forma tiene cada pantalla**. Si una regla no alcanza, se cambia aquí primero y después en el código: una pantalla no inventa su propia forma.
 
