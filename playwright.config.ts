@@ -17,7 +17,10 @@ export default defineConfig({
   reporter: "list",
   use: {
     baseURL: `http://localhost:${puerto}`,
-    trace: "on-first-retry",
+    // En el CI, el registro completo (red, pantalla y pasos) del primer intento que falla, aunque el reintento pase: una
+    // prueba intermitente deja así qué pasó (antes solo quedaba el del reintento, que pasaba). Graba todas las pruebas: en
+    // una PC con 6 en paralelo la carga sube (6,8 a 8,9 min) y hace fallar las que esperan 5 s; en local, solo el reintento
+    trace: process.env.CI ? "retain-on-first-failure" : "on-first-retry",
     // Como los usuarios reales: español de Bolivia y su hora. Sin esto, en CI (Linux, en inglés y en UTC) las horas se
     // ven con AM/PM y las fechas en otro formato que en la PC y en el teléfono del taller.
     locale: "es-BO",

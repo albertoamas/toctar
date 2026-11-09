@@ -170,13 +170,16 @@ jobs:
           path: test-results/**/recorrido-*.jpg
           retention-days: 14
           if-no-files-found: ignore
+      # Siempre: una prueba que falla y pasa al reintentar deja el job en verde, y su registro del primer fallo
+      # (trace.zip) es lo único que cuenta qué pasó. Sin fallos, no hay nada que subir
       - name: Rastros de las pruebas que fallaron
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: e2e-rastros
-          path: test-results/
-          retention-days: 7
+          path: test-results/**/trace.zip
+          retention-days: 14
+          if-no-files-found: ignore
 
   secretos:
     name: Secretos
