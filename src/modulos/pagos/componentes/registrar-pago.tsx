@@ -16,8 +16,8 @@ import type { MetodoPago, TipoPago } from "@/db/esquema/trabajos";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { registrarPago } from "../acciones";
-import { CampoComprobante, useEnvioConComprobante } from "./campo-comprobante";
-import { ElegirMetodo, llevaComprobante } from "./elegir-metodo";
+import { useEnvioConComprobante } from "./campo-comprobante";
+import { MetodoYComprobante } from "./elegir-metodo";
 import { NOMBRE_TIPO_PAGO, TIPOS } from "../reglas";
 
 // HU-32: registrar un pago (RF-45). Se cobra en el taller, con el celular en la mano: el monto viene con el saldo
@@ -100,17 +100,9 @@ function Formulario({ trabajoId, saldo, hoy, conPagos }: Props) {
       <Campo id="monto" etiqueta="Monto" error={e.monto} ayuda={`Saldo: ${mostrarMonto(saldo)} Bs.`}>
         <CampoMonto id="monto" name="monto" value={monto} onChange={(ev) => setMonto(ev.target.value)} aria-invalid={!!e.monto} aria-describedby={e.monto ? "monto-error" : "monto-ayuda"} />
       </Campo>
-      <ElegirMetodo
-        valor={metodo}
-        cambiar={(m) => {
-          setMetodo(m);
-          // En efectivo no hay comprobante: la foto elegida antes no queda escondida para subirse igual
-          if (!llevaComprobante(m)) setComprobante(null);
-        }}
-        error={e.metodo}
-      />
-      {llevaComprobante(metodo) && <CampoComprobante onChange={setComprobante} error={errorFoto ?? e.comprobante} />}
-      <MasDatos texto="Otra fecha o tipo" abierto={!!e.fecha || !!e.tipo}>
+      <MetodoYComprobante metodo={metodo} alCambiarMetodo={setMetodo} alCambiarComprobante={setComprobante} errorMetodo={e.metodo} errorComprobante={errorFoto ?? e.comprobante} />
+      {/* Plegados, pero a la vista lo que se va a guardar: un pago completo sin pagos antes se registraría como adelanto */}
+      <MasDatos texto={`Otra fecha o tipo (ahora: ${tipo ? NOMBRE_TIPO_PAGO[tipo].toLowerCase() : "sin tipo"}, ${fecha === hoy ? "hoy" : "otra fecha"})`} abierto={!!e.fecha || !!e.tipo}>
         <Campo id="fecha" etiqueta="Fecha" error={e.fecha}>
           <Input id="fecha" name="fecha" type="date" max={hoy} value={fecha} onChange={(ev) => setFecha(ev.target.value)} className="max-w-xs" aria-invalid={!!e.fecha} aria-describedby={e.fecha ? "fecha-error" : undefined} />
         </Campo>

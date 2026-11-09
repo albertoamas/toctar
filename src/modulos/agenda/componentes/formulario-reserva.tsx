@@ -15,13 +15,14 @@ import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
+import type { MetodoPago } from "@/db/esquema/trabajos";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { leerMonto, mostrarMonto } from "@/modulos/catalogo/reglas";
 import { calcularTotales } from "@/modulos/cotizaciones/reglas";
 import type { OpcionServicio } from "@/modulos/cotizaciones/consultas";
 import { LineasServicio, lineasQueCuentan, type Linea } from "@/modulos/cotizaciones/componentes/lineas-servicio";
-import { CampoComprobante, useEnvioConComprobante } from "@/modulos/pagos/componentes/campo-comprobante";
-import { ElegirMetodo, llevaComprobante } from "@/modulos/pagos/componentes/elegir-metodo";
+import { useEnvioConComprobante } from "@/modulos/pagos/componentes/campo-comprobante";
+import { MetodoYComprobante } from "@/modulos/pagos/componentes/elegir-metodo";
 import { agendarReserva } from "../acciones";
 import type { EspacioDisponible } from "../consultas";
 import { erroresServicios, PASO_FECHA, PASO_SERVICIOS, pasoDeCampoReserva, pasosNuevaReserva } from "../pasos-reserva";
@@ -152,7 +153,7 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
   const [nota, setNota] = useState("");
   const [sinAdelanto, setSinAdelanto] = useState(false);
   const [adelanto, setAdelanto] = useState(mostrarMonto(adelantoSugerido));
-  const [metodo, setMetodo] = useState<string>("");
+  const [metodo, setMetodo] = useState<MetodoPago | "">("");
   // El comprobante del adelanto va achicado; con "Sin adelanto" no va
   const { comprobante, setComprobante, preparando, errorFoto, enviar } = useEnvioConComprobante(accion);
 
@@ -372,15 +373,7 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
                   <CampoMonto id="adelanto" name="adelanto" value={adelanto} onChange={(ev) => setAdelanto(ev.target.value)} aria-invalid={!!e.adelanto} />
                 </Campo>
                 {/* Lo mismo que "Registrar pago" (pulido final de los pagos, 09/11): el comprobante, solo con QR o transferencia */}
-                <ElegirMetodo
-                  valor={metodo}
-                  cambiar={(m) => {
-                    setMetodo(m);
-                    if (!llevaComprobante(m)) setComprobante(null);
-                  }}
-                  error={e.metodo}
-                />
-                {llevaComprobante(metodo) && <CampoComprobante onChange={setComprobante} error={errorFoto ?? e.comprobante} />}
+                <MetodoYComprobante metodo={metodo} alCambiarMetodo={setMetodo} alCambiarComprobante={setComprobante} errorMetodo={e.metodo} errorComprobante={errorFoto ?? e.comprobante} />
               </>
             )}
           </SeccionFormulario>
