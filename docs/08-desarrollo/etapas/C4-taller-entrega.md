@@ -172,7 +172,7 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel (44 px t
 - **Entregada:** todo en solo lectura, con quién entregó, cuándo y, si fue con saldo, quién lo autorizó.
 
 ### `/panel/ordenes/[id]/entregar` — Entregar vehículo
-- Resumen: servicios y precio final, pagado y **saldo** grande (con "Pagos"; sin "Pagos", solo "Queda saldo pendiente" o "Pagado").
+- Resumen: servicios y precio final, pagado y **saldo** grande (con "Pagos"; sin "Pagos", solo "Queda saldo pendiente" o "Pagado por completo", desde el pulido del 09/11; si además no puede entregar con saldo, lo dice una vez el formulario).
 - Con saldo y "Pagos": "Registrar pago" en la misma pantalla.
 - **Sin saldo:** "Entregar vehículo".
 - **Con saldo:**

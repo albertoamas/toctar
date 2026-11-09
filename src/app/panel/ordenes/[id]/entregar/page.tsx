@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
+import { cn } from "cn";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
+import { ListaDatos } from "@/componentes/panel/lista-datos";
 import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
@@ -14,6 +17,7 @@ import { vistaPreviaPlanes } from "@/modulos/mantenimientos/planes";
 import { obtenerOrden } from "@/modulos/ordenes/consultas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
 import { estaPagada } from "@/modulos/pagos/reglas";
+import { filaVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 
 export const metadata: Metadata = { title: "Entregar vehículo" };
 
@@ -47,29 +51,47 @@ async function Entrega({ params }: Pick<PageProps<"/panel/ordenes/[id]/entregar"
   const planes = await vistaPreviaPlanes(o.id, o.vehiculoId, hoy);
   const saldo = o.montos.saldo.saldo;
   const conDeuda = !estaPagada(saldo);
+  const detalle = detalleVehiculo(o);
 
   return (
     <>
-      <EncabezadoPagina titulo={`Entregar ${o.placa}`} volver={{ href: `/panel/ordenes/${o.id}`, texto: "Orden" }}>{[o.cliente, detalleVehiculo(o).join(" ")].filter(Boolean).join(", ")}</EncabezadoPagina>
+      <EncabezadoPagina titulo={`Entregar ${o.placa}`} volver={{ href: `/panel/ordenes/${o.id}`, texto: "Orden" }} />
+      {/* Lo que se entrega, como en Recibir (pulido de Entregar, 09/11) */}
+      <div className="tt-tarjeta-panel p-4">
+        <ListaDatos
+          nombre="Lo que se entrega"
+          filas={[
+            ["Cliente", <span key="cliente" className="font-semibold">{o.cliente}</span>],
+            filaVehiculo(detalle, o.tamano),
+          ]}
+        />
+      </div>
 
       {conPagos ? (
         <MontosTrabajo trabajoId={o.id} montos={o.montos} cerrado={false} hoy={hoy} cobrar />
-      ) : (
-        <p className="text-lg font-semibold">{conDeuda ? "Queda saldo pendiente." : "Pagado."}</p>
+      ) : conDeuda && !puede(usuario, "entrega_con_saldo") ? null : (
+        // Sin Pagos: el saldo no se muestra, pero se sabe si queda, con los colores de MontosTrabajo (ámbar si queda, verde
+        // si está pagado). Si además no puede entregar con saldo, lo dice una vez el formulario, con por qué
+        <p className={cn("rounded-sm border p-3 font-semibold", conDeuda ? "border-aviso bg-aviso-fondo text-aviso" : "border-transparent bg-exito-fondo text-exito")}>
+          {conDeuda ? "Queda saldo pendiente." : "Pagado por completo."}
+        </p>
       )}
 
+      {/* Lo que la entrega hace con los planes de mantenimiento: una sección con su título, para que se vea */}
       {(planes.programa.length > 0 || planes.hechos.length > 0) && (
-        <div className="flex flex-col gap-1 tt-tarjeta-panel p-3 text-sm">
-          {/* Por posición: dos planes pueden decir lo mismo (dos servicios con el mismo mantenimiento) */}
-          {planes.hechos.map((servicio, i) => (
-            <p key={`hecho-${i}`}>Queda hecho el mantenimiento de {servicio}.</p>
-          ))}
-          {planes.programa.map((p, i) => (
-            <p key={`programa-${i}`}>
-              Se programará: {p.servicio}, el {formatearFecha(p.fecha)}.
-            </p>
-          ))}
-        </div>
+        <Seccion id="mantenimiento" titulo="Mantenimiento">
+          <ul className="flex flex-col gap-1">
+            {/* Por posición: dos planes pueden decir lo mismo (dos servicios con el mismo mantenimiento) */}
+            {planes.hechos.map((servicio, i) => (
+              <li key={`hecho-${i}`}>Queda hecho el mantenimiento de {servicio}.</li>
+            ))}
+            {planes.programa.map((p, i) => (
+              <li key={`programa-${i}`}>
+                Se programará: {p.servicio}, el {formatearFecha(p.fecha)}.
+              </li>
+            ))}
+          </ul>
+        </Seccion>
       )}
 
       <FormularioEntrega id={o.id} conDeuda={conDeuda} saldo={conPagos ? `${mostrarMonto(saldo)} Bs` : null} puedeAutorizar={puede(usuario, "entrega_con_saldo")} cliente={o.cliente} />

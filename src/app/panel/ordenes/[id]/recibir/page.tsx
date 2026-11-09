@@ -14,6 +14,7 @@ import { AvanceRecepcion, ChecklistRecepcion } from "@/modulos/ordenes/component
 import { FormularioRecepcion } from "@/modulos/ordenes/componentes/formulario-recepcion";
 import { obtenerOrden, partesDelChecklist, revisionDeTrabajo } from "@/modulos/ordenes/consultas";
 import { esOrden, puedeRecibirse } from "@/modulos/ordenes/reglas";
+import { filaVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 
 export const metadata: Metadata = { title: "Recibir vehículo" };
 
@@ -70,13 +71,7 @@ async function Recepcion({ params }: Pick<PageProps<"/panel/ordenes/[id]/recibir
               nombre="Lo que se recibe"
               filas={[
                 ["Cliente", <span key="cliente" className="font-semibold">{o.cliente}</span>],
-                [
-                  "Vehículo",
-                  <span key="vehiculo" className="flex flex-col">
-                    {detalle.length > 0 && <span>{detalle.join(" ")}</span>}
-                    <span className="text-sm text-tinta-suave">Tamaño: {o.tamano}</span>
-                  </span>,
-                ],
+                filaVehiculo(detalle, o.tamano),
                 o.servicios.length > 0 && [
                   "Servicios",
                   <ul key="servicios" className="flex flex-col">

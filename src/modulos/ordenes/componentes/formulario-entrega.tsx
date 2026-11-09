@@ -8,6 +8,7 @@ import { PanelFirma } from "@/componentes/panel/panel-firma";
 import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { BOTON_PASO } from "@/componentes/panel/paso-siguiente";
 import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
@@ -61,59 +62,62 @@ export function FormularioEntrega({ id, conDeuda, saldo, puedeAutorizar, cliente
   }
 
   return (
-    <form ref={formulario} action={accion} className="tt-formulario-panel flex flex-col gap-5" noValidate aria-label="Entregar vehículo">
+    // Pulido de Entregar (09/11): la firma con su título arriba de su tarjeta; entregar con saldo, aparte (es la excepción)
+    <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate aria-label="Entregar vehículo">
       <input type="hidden" name="id" value={id} />
       {estado.mensaje && <MensajeError id="entrega-error">{estado.mensaje}</MensajeError>}
 
-      <section aria-labelledby="firma-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="firma-titulo" className="flex flex-col gap-2">
         <div className="flex flex-col gap-1">
           <CabeceraSeccion id="firma" titulo="Firma del cliente" compacta />
           <p className="text-sm text-tinta-suave">El cliente firma con el dedo: recibe su vehículo conforme.</p>
         </div>
-        {sinFirma && <input type="hidden" name="sinFirma" value="on" />}
-        {!sinFirma && (
-          <>
-            <PanelFirma alCambiar={alCambiarFirma} etiqueta="Recuadro para la firma del cliente" invalido={!!e.firma} describedBy={e.firma ? "firma-error" : undefined} />
-            {e.firma && <MensajeError id="firma-error">{e.firma}</MensajeError>}
-            <Campo id="firmaNombre" etiqueta="Nombre de quien recibe" error={e.firmaNombre}>
-              <Input
-                id="firmaNombre"
-                name="firmaNombre"
-                value={nombre}
-                onChange={(ev) => setNombre(ev.target.value)}
-                autoComplete="off"
-                aria-invalid={!!e.firmaNombre}
-                aria-describedby={e.firmaNombre ? "firmaNombre-error" : undefined}
-                className="max-w-md"
+        <div className="tt-tarjeta-panel flex flex-col gap-4 p-4">
+          {sinFirma && <input type="hidden" name="sinFirma" value="on" />}
+          {!sinFirma && (
+            <>
+              <PanelFirma alCambiar={alCambiarFirma} etiqueta="Recuadro para la firma del cliente" invalido={!!e.firma} describedBy={e.firma ? "firma-error" : undefined} />
+              {e.firma && <MensajeError id="firma-error">{e.firma}</MensajeError>}
+              <Campo id="firmaNombre" etiqueta="Nombre de quien recibe" error={e.firmaNombre}>
+                <Input
+                  id="firmaNombre"
+                  name="firmaNombre"
+                  value={nombre}
+                  onChange={(ev) => setNombre(ev.target.value)}
+                  autoComplete="off"
+                  aria-invalid={!!e.firmaNombre}
+                  aria-describedby={e.firmaNombre ? "firmaNombre-error" : undefined}
+                  className="max-w-md"
+                />
+              </Campo>
+            </>
+          )}
+          <label htmlFor="sinFirma" className="flex min-h-11 cursor-pointer items-center gap-3 self-start">
+            <Checkbox
+              id="sinFirma"
+              checked={sinFirma}
+              onCheckedChange={(si) => {
+                setSinFirma(si === true);
+                // La firma que había no se envía: al volver, el recuadro empieza vacío
+                if (si) setFirma(null);
+              }}
+            />
+            <span className="font-medium">Entregar sin firma</span>
+          </label>
+          {sinFirma && (
+            <Campo id="sinFirmaMotivo" etiqueta="Motivo" error={e.sinFirmaMotivo} ayuda="Por ejemplo: retiró otra persona.">
+              <Textarea
+                id="sinFirmaMotivo"
+                name="sinFirmaMotivo"
+                rows={2}
+                value={motivo}
+                onChange={(ev) => setMotivo(ev.target.value)}
+                aria-invalid={!!e.sinFirmaMotivo}
+                aria-describedby={e.sinFirmaMotivo ? "sinFirmaMotivo-error" : "sinFirmaMotivo-ayuda"}
               />
             </Campo>
-          </>
-        )}
-        <label htmlFor="sinFirma" className="flex min-h-11 cursor-pointer items-center gap-3 self-start">
-          <Checkbox
-            id="sinFirma"
-            checked={sinFirma}
-            onCheckedChange={(si) => {
-              setSinFirma(si === true);
-              // La firma que había no se envía: al volver, el recuadro empieza vacío
-              if (si) setFirma(null);
-            }}
-          />
-          <span className="font-medium">Entregar sin firma</span>
-        </label>
-        {sinFirma && (
-          <Campo id="sinFirmaMotivo" etiqueta="Motivo" error={e.sinFirmaMotivo} ayuda="Por ejemplo: retiró otra persona.">
-            <Textarea
-              id="sinFirmaMotivo"
-              name="sinFirmaMotivo"
-              rows={2}
-              value={motivo}
-              onChange={(ev) => setMotivo(ev.target.value)}
-              aria-invalid={!!e.sinFirmaMotivo}
-              aria-describedby={e.sinFirmaMotivo ? "sinFirmaMotivo-error" : "sinFirmaMotivo-ayuda"}
-            />
-          </Campo>
-        )}
+          )}
+        </div>
       </section>
 
       {conCasilla && (
@@ -134,7 +138,7 @@ export function FormularioEntrega({ id, conDeuda, saldo, puedeAutorizar, cliente
       )}
       <AvisoAlSalir formulario={formulario} estado={estado} ademas={!!firma} />
       <PieFormulario>
-        <Button type="submit" disabled={enviando} className="h-14 w-full text-base sm:w-auto sm:px-8">
+        <Button type="submit" size="paso" disabled={enviando} className={BOTON_PASO}>
           <KeyRoundIcon />
           {enviando ? "Entregando…" : "Entregar vehículo"}
         </Button>

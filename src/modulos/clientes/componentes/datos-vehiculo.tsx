@@ -21,3 +21,17 @@ export function DatosVehiculo({ placa, detalle, tamano }: Props) {
     </>
   );
 }
+
+/**
+ * El vehículo como fila de una lista de datos (`ListaDatos`), donde la placa ya está en el título de la pantalla: lo que se
+ * sepa (marca, modelo, año, color) y, debajo, el tamaño con su etiqueta. Lo usan Reserva, Orden, Recibir y Entregar.
+ */
+export function filaVehiculo(detalle: (string | number)[], tamano: string): [string, React.ReactNode] {
+  return [
+    "Vehículo",
+    <span key="vehiculo" className="flex flex-col">
+      {detalle.length > 0 && <span>{detalle.join(" ")}</span>}
+      <span className="text-sm text-tinta-suave">Tamaño: {tamano}</span>
+    </span>,
+  ];
+}
