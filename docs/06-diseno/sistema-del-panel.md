@@ -39,6 +39,7 @@ Toda pantalla del panel es de uno de estos tipos. El tipo decide su ancho.
 | Dónde | Qué va | Cómo se ve |
 |---|---|---|
 | Encabezado de la página | La acción principal | Roja, **una sola**, que cambia según el estado si hace falta |
+| Debajo del encabezado, en una ficha de trabajo (Reserva, Orden) | El paso siguiente que avanza el trabajo: recibir, empezar, marcar listo, avisar, entregar. Va aquí y no en el encabezado | Rojo y grande (56 px, a todo el ancho en el celular), con `PasoSiguiente`; lo que lo acompaña, al lado con borde. Se toca de pie en el taller. Si falla, el motivo queda debajo del botón |
 | Encabezado de la página | Otras acciones ("Escribir por WhatsApp", "Cambiar orden") | Con borde |
 | Encabezado de la página | Lo poco usado | En "Más" (`MenuMas`) |
 | Cabecera de una sección | "Editar", "Agregar", "Registrar pago" | Sin borde, con ícono |

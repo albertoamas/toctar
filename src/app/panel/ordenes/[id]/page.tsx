@@ -11,6 +11,7 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { ListaDatos } from "@/componentes/panel/lista-datos";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
+import { BOTON_PASO, PasoSiguiente } from "@/componentes/panel/paso-siguiente";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
 import { Insignia } from "@/componentes/panel/insignia";
 import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
@@ -44,8 +45,8 @@ export const metadata: Metadata = { title: "Orden" };
 // HU-33 y HU-34: la orden (RF-40 a RF-42). El dueño y el encargado con "Órdenes" ven todas (pedido 32: sin técnico
 // asignado); los precios y los pagos, solo con "Pagos" (RN-12). Arriba, el paso siguiente; después, cómo llegó, las fotos
 // por etapa y la historia. Pulido 11.2: lo poco usado (extender la entrega, volver un paso) en "Más", con modales.
-// C6 (sistema-del-panel.md §2 y §3): el paso siguiente, uno solo en rojo, en el encabezado (empezar, marcar lista, avisar,
-// entregar); un solo WhatsApp a la vista; cada parte con su título arriba de su tarjeta.
+// C6 (sistema-del-panel.md §2 y §3): el paso siguiente, uno solo en rojo y grande debajo del encabezado (empezar, marcar
+// listo, avisar, entregar); un solo WhatsApp a la vista; cada parte con su título arriba de su tarjeta.
 export default function PaginaOrden({ params, searchParams }: PageProps<"/panel/ordenes/[id]">) {
   return (
     <PaginaPanel tipo="ficha">
@@ -116,13 +117,18 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   // "Más" solo si tiene algo que ofrecer (una recibida que no se puede extender no tiene nada)
   const conMas = (abierta && (!!anterior || !!extender)) || !!escribirEnMas;
   const detalle = detalleVehiculo(o);
-  // El paso siguiente, uno solo en rojo, y lo demás con borde. Lista: avisar y, ya avisada, entregar
+  // El paso siguiente, uno solo en rojo y grande, y lo que lo acompaña con borde. Lista: avisar y, ya avisada, entregar
+  const paso = abierta && (
+    <PasoSiguiente>
+      <EstadoOrden id={o.id} estado={o.estado} editable />
+      {entregar && (avisada || !aviso) && <EnlaceEntregar id={o.id} principal />}
+      {aviso && <AvisarPorWhatsApp enlace={aviso.enlace} avisado={aviso.avisado} conDetalle={false} grande registrarAction={registrarAvisoListo.bind(null, { id: o.id })} />}
+      {entregar && aviso && !avisada && <EnlaceEntregar id={o.id} />}
+    </PasoSiguiente>
+  );
+  // En el encabezado, lo demás: publicar ya entregada, escribirle al cliente y "Más"
   const acciones = (
     <div className="flex flex-wrap gap-2">
-      {abierta && <EstadoOrden id={o.id} estado={o.estado} editable />}
-      {entregar && (avisada || !aviso) && <EnlaceEntregar id={o.id} principal />}
-      {abierta && aviso && <AvisarPorWhatsApp enlace={aviso.enlace} avisado={aviso.avisado} conDetalle={false} registrarAction={registrarAvisoListo.bind(null, { id: o.id })} />}
-      {entregar && aviso && !avisada && <EnlaceEntregar id={o.id} />}
       {sePuedePublicar && (
         <Link href={`/panel/ordenes/${o.id}/publicar`} className={cn(buttonVariants({ variant: "outline" }))}>
           <ImageUpIcon />
@@ -171,6 +177,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
       </EncabezadoPagina>
       {/* Los pasos del trabajo (pedido 31): sin cotización, empieza en "Reservada" */}
       {o.estado !== "cancelado" && <PasosTrabajo paso={pasoDelTrabajo({ trabajo: o.estado }) ?? 0} conCotizacion={o.consultaId !== null} />}
+      {paso}
       {recibido && o.estado === "recibido" && <AvisoFlotante mensaje="Vehículo recibido. La orden está en «Recibidas»." />}
       {entregado && o.estado === "entregado" && (
         <AvisoFlotante mensaje={o.saldoAlEntregar && o.montos && o.autorizoSaldo ? `Vehículo entregado con saldo de ${mostrarMonto(o.saldoAlEntregar)} Bs.` : "Vehículo entregado."} />
@@ -279,7 +286,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
 /** "Entregar vehículo": un enlace con forma de botón que lleva a la entrega, con el saldo y el cobro. */
 function EnlaceEntregar({ id, principal }: { id: number; principal?: boolean }) {
   return (
-    <Link href={`/panel/ordenes/${id}/entregar`} className={cn(buttonVariants({ variant: principal ? "default" : "outline" }))}>
+    <Link href={`/panel/ordenes/${id}/entregar`} className={cn(buttonVariants({ variant: principal ? "default" : "outline" }), principal && BOTON_PASO)}>
       <KeyRoundIcon />
       Entregar vehículo
     </Link>
