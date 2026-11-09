@@ -3,9 +3,9 @@ import { sumarMeses } from "@/lib/fechas";
 import { precioCotizadoYFinal } from "@/modulos/pagos/reglas";
 import { erroresDe } from "@/lib/formularios";
 import { TIPOS_DETALLE } from "@/db/esquema/trabajos";
-import { esquemaAvance, esquemaDetalle, esquemaEntregar, esquemaFotoOrden, esquemaPublicar, esquemaMarcarBien, esquemaRecibir } from "@/modulos/ordenes/esquemas";
+import { esquemaAvance, esquemaDetalle, esquemaEntregar, esquemaFotoOrden, esquemaPublicar, esquemaMarcarBien, esquemaMarcarRestoBien, esquemaRecibir } from "@/modulos/ordenes/esquemas";
 import { puede } from "@/lib/permisos";
-import {
+import { textoRestoBien,
   enlaceTrabajo,
   esFotoDeAntes,
   esOrden,
@@ -275,4 +275,17 @@ test("el avance del checklist dice cuántas faltan, en singular o plural, o que 
   expect(textoAvanceChecklist(12, 13)).toBe("Falta 1");
   expect(textoAvanceChecklist(13, 13)).toBe("Todas revisadas");
   expect(textoAvanceChecklist(0, 0)).toBe("Todas revisadas");
+});
+
+// Pulido de Recibir (09/11): "Marcar el resto como bien" valida su trabajo y dice cuántas marcó
+test("marcar el resto como bien pide un trabajo válido y avisa cuántas", () => {
+  expect(esquemaMarcarRestoBien.parse({ trabajoId: "12", parteIds: ["3", 4] })).toEqual({ trabajoId: 12, parteIds: [3, 4] });
+  expect(esquemaMarcarRestoBien.safeParse({ trabajoId: "abc", parteIds: [3] }).success).toBe(false);
+  // Sin partes, o con algo que no es una parte, no se marca nada
+  expect(esquemaMarcarRestoBien.safeParse({ trabajoId: 12, parteIds: [] }).success).toBe(false);
+  expect(esquemaMarcarRestoBien.safeParse({ trabajoId: 12, parteIds: ["1; drop"] }).success).toBe(false);
+  expect(esquemaMarcarRestoBien.safeParse({ trabajoId: 12 }).success).toBe(false);
+  expect(textoRestoBien(0)).toBe("Ya estaban todas revisadas.");
+  expect(textoRestoBien(1)).toBe("1 parte marcada como bien.");
+  expect(textoRestoBien(11)).toBe("11 partes marcadas como bien.");
 });

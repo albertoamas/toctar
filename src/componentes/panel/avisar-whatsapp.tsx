@@ -59,6 +59,7 @@ export function AvisarPorWhatsApp({ enlace, avisado, conDetalle = true, enLista,
       <Button
         type="button"
         variant={avisado || enLista ? "outline" : "default"}
+        size={grande && !avisado ? "paso" : "default"}
         className={grande && !avisado ? BOTON_PASO : "self-start"}
         disabled={!listo || enCurso || registrando} onClick={avisar}>
         <IconoWhatsApp />

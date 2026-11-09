@@ -71,7 +71,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
   // El paso siguiente, uno solo: en una pendiente, "Aceptó"; en una aceptada sin fecha, el atajo a la Agenda
   const paso =
     aReservar && puedeAgendar ? (
-      <Link href={`/panel/agenda/nueva?cotizacion=${aReservar.id}`} className={cn(buttonVariants(), BOTON_PASO)}>
+      <Link href={`/panel/agenda/nueva?cotizacion=${aReservar.id}`} className={cn(buttonVariants({ size: "paso" }), BOTON_PASO)}>
         <CalendarIcon />
         Reservar en Agenda
       </Link>
