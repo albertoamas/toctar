@@ -25,7 +25,8 @@ export function AnularPago({ id, descripcion }: { id: number; /** "Adelanto en e
 
   if (!abierto) {
     return (
-      <Button type="button" variant="outline" className="self-start" onClick={() => setAbierto(true)}>
+      // Chico y sin borde (pulido final de los pagos, 09/11): se usa poco y no compite con el pago; pide su motivo al tocarlo
+      <Button type="button" variant="ghost" size="sm" className="-ml-2.5 self-start text-tinta-suave" onClick={() => setAbierto(true)}>
         Anular
         <span className="sr-only"> {descripcion}</span>
       </Button>

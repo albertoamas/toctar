@@ -14,7 +14,6 @@ import { Selector } from "@/componentes/panel/selector";
 import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { leerMonto, mostrarMonto } from "@/modulos/catalogo/reglas";
@@ -22,7 +21,7 @@ import { calcularTotales } from "@/modulos/cotizaciones/reglas";
 import type { OpcionServicio } from "@/modulos/cotizaciones/consultas";
 import { LineasServicio, lineasQueCuentan, type Linea } from "@/modulos/cotizaciones/componentes/lineas-servicio";
 import { CampoComprobante, useEnvioConComprobante } from "@/modulos/pagos/componentes/campo-comprobante";
-import { METODOS, NOMBRE_METODO } from "@/modulos/pagos/reglas";
+import { ElegirMetodo, llevaComprobante } from "@/modulos/pagos/componentes/elegir-metodo";
 import { agendarReserva } from "../acciones";
 import type { EspacioDisponible } from "../consultas";
 import { erroresServicios, PASO_FECHA, PASO_SERVICIOS, pasoDeCampoReserva, pasosNuevaReserva } from "../pasos-reserva";
@@ -372,21 +371,16 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
                 <Campo id="adelanto" etiqueta="Monto" error={e.adelanto}>
                   <CampoMonto id="adelanto" name="adelanto" value={adelanto} onChange={(ev) => setAdelanto(ev.target.value)} aria-invalid={!!e.adelanto} />
                 </Campo>
-                <div className="flex flex-col gap-3">
-                  <p id="metodo-titulo" className="text-sm font-medium">Método</p>
-                  {/* El valor en un campo oculto propio: los radios de base-ui se vaciaban al reiniciarse el formulario */}
-                  <input type="hidden" name="metodo" value={metodo} />
-                  <RadioGroup value={metodo} onValueChange={(v) => setMetodo(String(v))} aria-labelledby="metodo-titulo" aria-describedby={e.metodo ? "metodo-error" : undefined} className="flex flex-wrap gap-2">
-                    {METODOS.map((m, i) => (
-                      <label key={m} htmlFor={`metodo-${m}`} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-border bg-fondo px-3 py-2 has-data-checked:border-tinta">
-                        <RadioGroupItem id={`metodo-${m}`} value={m} data-invalido={(!!e.metodo && i === 0) || undefined} />
-                        <span className="font-semibold">{NOMBRE_METODO[m]}</span>
-                      </label>
-                    ))}
-                  </RadioGroup>
-                  {e.metodo && <MensajeError id="metodo-error">{e.metodo}</MensajeError>}
-                </div>
-                <CampoComprobante onChange={setComprobante} error={errorFoto ?? e.comprobante} />
+                {/* Lo mismo que "Registrar pago" (pulido final de los pagos, 09/11): el comprobante, solo con QR o transferencia */}
+                <ElegirMetodo
+                  valor={metodo}
+                  cambiar={(m) => {
+                    setMetodo(m);
+                    if (!llevaComprobante(m)) setComprobante(null);
+                  }}
+                  error={e.metodo}
+                />
+                {llevaComprobante(metodo) && <CampoComprobante onChange={setComprobante} error={errorFoto ?? e.comprobante} />}
               </>
             )}
           </SeccionFormulario>
