@@ -33,6 +33,8 @@ const buttonVariants = cva(
         "icon-sm":
           "size-7 pointer-coarse:size-11 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
         "icon-lg": "size-10 pointer-coarse:size-11",
+        // El paso siguiente de una ficha de trabajo (PasoSiguiente): 56 px con mouse y con el dedo
+        paso: "h-14 gap-2 px-6 text-base",
       },
     },
     defaultVariants: {

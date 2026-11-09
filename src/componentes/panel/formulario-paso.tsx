@@ -26,7 +26,7 @@ export function FormularioPaso(props: {
       {Object.entries(ocultos).map(([nombre, valor]) => (
         <input key={nombre} type="hidden" name={nombre} value={valor} />
       ))}
-      <Button type="submit" disabled={enviando} className={BOTON_PASO} aria-describedby={error ? idError : undefined}>
+      <Button type="submit" size="paso" disabled={enviando} className={BOTON_PASO} aria-describedby={error ? idError : undefined}>
         {children}
       </Button>
       {error && <MensajeError id={idError}>{error}</MensajeError>}

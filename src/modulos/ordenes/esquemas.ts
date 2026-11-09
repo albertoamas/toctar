@@ -128,3 +128,6 @@ export const esquemaDetalle = z
 
 /** Marcar una parte "bien" (también una que tenía un detalle): datos sueltos, se validan. */
 export const esquemaMarcarBien = z.object({ trabajoId: id, parteId: id });
+/** Pulido de Recibir (09/11): las partes que faltan, todas bien de un toque. Las que se veían en pantalla: una parte
+ * agregada en Configuración mientras tanto no queda "bien" sin que nadie la mire. */
+export const esquemaMarcarRestoBien = z.object({ trabajoId: id, parteIds: z.array(id).min(1).max(200) });

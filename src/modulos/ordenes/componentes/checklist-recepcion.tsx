@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState, useEffect, useOptimistic, useRef, useState, useTransition } from "react";
-import { CameraIcon, CheckIcon, TriangleAlertIcon } from "lucide-react";
+import { createContext, useActionState, useContext, useEffect, useOptimistic, useRef, useState, useTransition } from "react";
+import { CameraIcon, CheckCheckIcon, CheckIcon, TriangleAlertIcon, XIcon } from "lucide-react";
 import { cn } from "cn";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { useHidratado } from "@/componentes/hidratado";
@@ -17,7 +17,7 @@ import { Button } from "@/componentes/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
-import { desmarcarParte, guardarDetalle, marcarBien } from "../acciones";
+import { desmarcarParte, guardarDetalle, marcarBien, marcarRestoBien } from "../acciones";
 import type { DetalleRevision } from "../consultas";
 import type { EstadoRevision } from "@/db/esquema/trabajos";
 import { alTocarBien, NOMBRE_DETALLE, textoAvanceChecklist, TIPOS_DE_DETALLE } from "../reglas";
@@ -30,6 +30,20 @@ import { alTocarBien, NOMBRE_DETALLE, textoAvanceChecklist, TIPOS_DE_DETALLE } f
 
 type Props = { trabajoId: number; partes: { id: number; nombre: string }[]; revision: DetalleRevision[] };
 type Marca = { parteId: number; estado: EstadoRevision | null };
+
+/**
+ * Cuántas faltan, para "Recibir vehículo": del mismo estado que el avance del checklist (lo tocado se ve al momento), así
+ * el botón y la barra no dicen cosas distintas mientras se guarda.
+ */
+const FaltanChecklist = createContext<{ faltan: number | null; avisar: (faltan: number) => void }>({ faltan: null, avisar: () => {} });
+
+export function AvanceRecepcion({ children }: { children: React.ReactNode }) {
+  const [faltan, setFaltan] = useState<number | null>(null);
+  return <FaltanChecklist.Provider value={{ faltan, avisar: setFaltan }}>{children}</FaltanChecklist.Provider>;
+}
+
+/** Las que faltan según el checklist; antes de que se dibuje, las que dijo el servidor. */
+export const useFaltanChecklist = (delServidor: number) => useContext(FaltanChecklist).faltan ?? delServidor;
 
 export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
   const [abierta, setAbierta] = useState<{ id: number; nombre: string } | null>(null);
@@ -49,12 +63,33 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
   const filas = [...partes, ...sueltas];
   const revisadas = filas.filter((p) => estadoDe(p.id) !== null).length;
   const completo = filas.length > 0 && revisadas === filas.length;
+  const { avisar } = useContext(FaltanChecklist);
+  const faltanAhora = partes.filter((p) => estadoDe(p.id) === null).length;
+  useEffect(() => avisar(faltanAhora), [avisar, faltanAhora]);
   // Los detalles con foto, en el orden de la lista: el visor pasa de uno a otro
   const conFoto = filas.flatMap((p) => {
     const d = de(p.id);
     return estadoDe(p.id) === "detalle" && d?.estado === "detalle" && d.foto ? [d] : [];
   });
   const [fotoAbierta, setFotoAbierta] = useState<number | null>(null);
+
+  // Las que faltan, todas bien de un toque: se ven al momento y se guardan juntas
+  const [marcandoResto, setMarcandoResto] = useState(false);
+  function marcarResto() {
+    const faltan = filas.filter((p) => estadoDe(p.id) === null && partes.some((a) => a.id === p.id));
+    if (faltan.length === 0 || marcandoResto) return;
+    setMarcandoResto(true);
+    iniciar(async () => {
+      for (const p of faltan) marcar({ parteId: p.id, estado: "bien" });
+      try {
+        avisarResultado(await marcarRestoBien({ trabajoId, parteIds: faltan.map((p) => p.id) }));
+      } catch {
+        avisarResultado({ mensaje: "No se pudo guardar. Revisa tu conexión y vuelve a intentar." });
+      } finally {
+        setMarcandoResto(false);
+      }
+    });
+  }
 
   function tocarBien(parteId: number) {
     if (guardando.includes(parteId)) return;
@@ -99,6 +134,13 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
                 style={{ width: `${(revisadas / filas.length) * 100}%` }}
               />
             </div>
+            {/* Un vehículo que llega sin nada: lo que falta, bien de un toque. Lo ya revisado (un detalle) no cambia */}
+            {!completo && (
+              <Button type="button" variant="outline" className="self-start" disabled={!hidratado || marcandoResto || guardando.length > 0} onClick={marcarResto}>
+                <CheckCheckIcon />
+                {marcandoResto ? "Marcando…" : revisadas === 0 ? "Marcar todas como bien" : "Marcar el resto como bien"}
+              </Button>
+            )}
           </div>
           {/* Las fotos de los detalles en el visor del panel, sin salir a otra pestaña (pulido 13.16) */}
           <VisorFotos
@@ -110,7 +152,8 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
           <ul aria-label="Partes del checklist" className="flex flex-col divide-y divide-border">
             {filas.map((p) => {
               const estado = estadoDe(p.id);
-              const ocupada = !hidratado || guardando.includes(p.id);
+              // También mientras "Marcar el resto" guarda: un toque en una parte no se cruza con ese
+              const ocupada = !hidratado || marcandoResto || guardando.includes(p.id);
               const d = de(p.id);
               // El detalle guardado, solo si sigue siendo detalle (un "Bien" recién tocado ya lo reemplazó)
               const detalle = estado === "detalle" && d?.estado === "detalle" ? d : null;
@@ -119,11 +162,9 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
                   {/* El nombre a la izquierda (si es largo, en dos renglones) y el interruptor siempre a la derecha: la
                       lista queda pareja también en el celular */}
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3">
-                    <span className="flex min-w-0 flex-col">
-                      <span className="font-semibold">{p.nombre}</span>
-                      {/* El estado también escrito, para quien no ve los colores */}
-                      {estado === null && <span className="text-sm text-tinta-suave">Sin revisar</span>}
-                    </span>
+                    {/* Sin revisar no lleva texto (pulido de Recibir, 09/11): lo dicen el avance y el interruptor apagado, que
+                        el lector oye como "Bien, no presionado"; revisada, el interruptor prendido y, si es un detalle, debajo */}
+                    <span className="min-w-0 font-semibold">{p.nombre}</span>
                     <span role="group" aria-label={p.nombre} className="flex shrink-0 overflow-hidden rounded-lg border border-border">
                       <button
                         type="button"
@@ -171,7 +212,7 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
           </ul>
         </div>
       )}
-      <ModalFormulario titulo={abierta ? abierta.nombre : "Parte"} abierto={!!abierta} alCambiar={(a) => !a && setAbierta(null)}>
+      <ModalFormulario titulo={abierta ? `Detalle: ${abierta.nombre}` : "Detalle"} abierto={!!abierta} alCambiar={(a) => !a && setAbierta(null)}>
         {/* Con lo que se ve: si la parte se acaba de pasar a bien, el modal empieza vacío y no con el detalle de antes */}
         {abierta && <FormularioDetalle key={abierta.id} trabajoId={trabajoId} parteId={abierta.id} detalle={estadoDe(abierta.id) === "detalle" ? (de(abierta.id) ?? null) : null} />}
       </ModalFormulario>
@@ -206,7 +247,19 @@ function FormularioDetalle({ trabajoId, parteId, detalle }: { trabajoId: number;
   const [nota, setNota] = useState(estado.valores?.nota ?? detalle?.nota ?? "");
   const [vistaPrevia, setVistaPrevia] = useState<string | null>(null);
   const camara = useRef<HTMLInputElement>(null);
+  const galeria = useRef<HTMLInputElement>(null);
   useEffect(() => () => void (vistaPrevia && URL.revokeObjectURL(vistaPrevia)), [vistaPrevia]);
+  const elegirFoto = (elegido: File | null) => {
+    setArchivo(elegido);
+    setVistaPrevia(elegido ? URL.createObjectURL(elegido) : null);
+    // Vacíos: así elegir otra vez la misma foto (después de quitarla) vuelve a avisar
+    for (const entrada of [camara.current, galeria.current]) if (entrada) entrada.value = "";
+  };
+  // Cancelar la cámara o la galería no quita la foto que ya estaba
+  const alElegir = (ev: React.ChangeEvent<HTMLInputElement>) => {
+    const elegido = ev.target.files?.[0];
+    if (elegido) elegirFoto(elegido);
+  };
 
   const foto = vistaPrevia ?? detalle?.foto?.miniatura ?? null;
   return (
@@ -214,12 +267,18 @@ function FormularioDetalle({ trabajoId, parteId, detalle }: { trabajoId: number;
       <input type="hidden" name="trabajoId" value={trabajoId} />
       <input type="hidden" name="parteId" value={parteId} />
       {estado.mensaje && !estado.ok && <MensajeError id="detalle-error">{estado.mensaje}</MensajeError>}
+      {/* Pulido de Recibir (09/11): qué tiene, como botones iguales (de a 3 en el celular); la elegida, marcada. Por dentro
+          siguen siendo opciones de radio. Después la foto, que es la prueba, y al final la nota */}
       <div className="flex flex-col gap-3">
         <p id="tipo-titulo" className="text-sm font-medium">Qué tiene</p>
         <input type="hidden" name="tipo" value={tipo} />
-        <RadioGroup value={tipo} onValueChange={(v) => setTipo(String(v))} aria-labelledby="tipo-titulo" aria-describedby={e.tipo ? "tipo-error" : undefined} className="flex flex-wrap gap-2">
+        <RadioGroup value={tipo} onValueChange={(v) => setTipo(String(v))} aria-labelledby="tipo-titulo" aria-describedby={e.tipo ? "tipo-error" : undefined} className="grid grid-cols-3 gap-2 sm:grid-cols-5">
           {TIPOS_DE_DETALLE.map((t, i) => (
-            <label key={t} htmlFor={`tipo-${t}`} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-border bg-fondo px-3 py-2 has-data-checked:border-tinta">
+            <label
+              key={t}
+              htmlFor={`tipo-${t}`}
+              className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-fondo px-2 py-2 transition-colors hover:bg-superficie has-data-checked:border-tinta has-data-checked:bg-neutro-fondo"
+            >
               <RadioGroupItem id={`tipo-${t}`} value={t} data-invalido={(!!e.tipo && i === 0) || undefined} />
               <span className="font-semibold">{NOMBRE_DETALLE[t]}</span>
             </label>
@@ -227,12 +286,13 @@ function FormularioDetalle({ trabajoId, parteId, detalle }: { trabajoId: number;
         </RadioGroup>
         {e.tipo && <MensajeError id="tipo-error">{e.tipo}</MensajeError>}
       </div>
-      <Campo id="nota" etiqueta="Nota" opcional={tipo !== "otro"} error={e.nota} ayuda={tipo === "otro" ? "Con «Otro», cuenta qué es." : "Dónde y cómo es. Opcional."}>
-        <Textarea id="nota" name="nota" rows={2} value={nota} onChange={(ev) => setNota(ev.target.value)} aria-invalid={!!e.nota} aria-describedby={e.nota ? "nota-error" : "nota-ayuda"} />
-      </Campo>
-      <div className="flex flex-col gap-2">
-        <p className="text-sm font-medium">Foto</p>
-        {foto && <Image src={foto} alt="Foto del detalle" width={160} height={160} unoptimized className="size-40 rounded-sm object-cover" />}
+      <div className="flex flex-col gap-3">
+        <p className="text-sm font-medium">
+          Foto <span className="font-normal text-tinta-suave">(opcional)</span>
+        </p>
+        {/* Dos botones juntos, como las fotos de la orden (pulido 13.13): "Tomar foto" abre directo la cámara trasera
+            (`capture`) y "Elegir de la galería", las fotos del teléfono. Una sola zona no sirve: en Android el selector de
+            fotos no ofrece la cámara */}
         <input
           ref={camara}
           id="foto"
@@ -240,19 +300,42 @@ function FormularioDetalle({ trabajoId, parteId, detalle }: { trabajoId: number;
           accept="image/*"
           capture="environment"
           className="sr-only"
+          tabIndex={-1}
           aria-label="Cámara para la foto del detalle"
-          onChange={(ev) => {
-            const elegido = ev.target.files?.[0] ?? null;
-            setArchivo(elegido);
-            setVistaPrevia(elegido ? URL.createObjectURL(elegido) : null);
-          }}
+          onChange={alElegir}
         />
-        <Button type="button" variant="outline" className="self-start" onClick={() => camara.current?.click()}>
-          <CameraIcon />
-          {foto ? "Tomar otra foto" : "Tomar foto"}
-        </Button>
+        <input
+          ref={galeria}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          tabIndex={-1}
+          aria-label="Galería para la foto del detalle"
+          onChange={alElegir}
+        />
+        {foto && <Image src={foto} alt="Foto del detalle" width={320} height={240} unoptimized className="aspect-[4/3] w-full max-w-xs rounded-lg border border-border object-cover" />}
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" onClick={() => camara.current?.click()} aria-describedby={e.foto ? "foto-error" : undefined}>
+            <CameraIcon />
+            {foto ? "Tomar otra foto" : "Tomar foto"}
+          </Button>
+          {/* Como en las fotos de la orden: "Elegir de la galería", sin ícono */}
+          <Button type="button" variant="outline" onClick={() => galeria.current?.click()}>
+            {foto ? "Elegir otra de la galería" : "Elegir de la galería"}
+          </Button>
+          {/* Solo la recién elegida: la ya guardada se reemplaza con otra */}
+          {vistaPrevia && (
+            <Button type="button" variant="ghost" onClick={() => elegirFoto(null)}>
+              <XIcon />
+              Quitar foto
+            </Button>
+          )}
+        </div>
         {e.foto && <MensajeError id="foto-error">{e.foto}</MensajeError>}
       </div>
+      <Campo id="nota" etiqueta="Nota" opcional={tipo !== "otro"} error={e.nota} ayuda={tipo === "otro" ? "Con «Otro», cuenta qué es." : "Dónde y cómo es."}>
+        <Textarea id="nota" name="nota" rows={2} value={nota} onChange={(ev) => setNota(ev.target.value)} aria-invalid={!!e.nota} aria-describedby={e.nota ? "nota-error" : "nota-ayuda"} />
+      </Campo>
       <PieModal>
         <Button type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : "Guardar detalle"}

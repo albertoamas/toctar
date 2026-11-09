@@ -147,7 +147,7 @@ test("si la reserva se cancela, el checklist y sus fotos que se alcanzaron a tom
   await page.goto(`/panel/ordenes/${id}/recibir`, { waitUntil: "networkidle" });
   // Un detalle con su foto
   await page.getByRole("button", { name: "Detalle: Capó" }).click();
-  const detalle = page.getByRole("dialog", { name: "Capó" });
+  const detalle = page.getByRole("dialog", { name: "Detalle: Capó" });
   await detalle.getByRole("radio", { name: "Golpe" }).check();
   await detalle.getByLabel("Cámara para la foto del detalle").setInputFiles({ name: "capo.png", mimeType: "image/png", buffer: PNG });
   await expect(detalle.getByRole("img", { name: "Foto del detalle" })).toBeVisible();

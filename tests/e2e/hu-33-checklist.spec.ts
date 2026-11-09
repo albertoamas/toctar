@@ -48,11 +48,13 @@ test("se revisa parte por parte: bien o con un detalle y su foto; sin revisar to
   // Al recibir, cada parte empieza sin revisar
   await page.goto(`/panel/ordenes/${id}/recibir`, { waitUntil: "networkidle" });
   await expect(page.getByText(`Revisadas 0 de ${total}`)).toBeVisible();
-  await expect(fila(page, "Capó")).toContainText("Sin revisar");
+  // Sin revisar: el interruptor apagado, sin texto (pulido de Recibir, 09/11)
+  await expect(fila(page, "Capó").getByRole("button", { name: "Bien: Capó" })).toHaveAttribute("aria-pressed", "false");
+  await expect(fila(page, "Capó")).toHaveText("CapóBienDetalle");
 
   // Un detalle con su foto
   await page.getByRole("button", { name: "Detalle: Capó" }).click();
-  const modal = page.getByRole("dialog", { name: "Capó" });
+  const modal = page.getByRole("dialog", { name: "Detalle: Capó" });
   await modal.getByRole("button", { name: "Guardar detalle" }).click();
   await expect(modal.getByText("Elige qué tiene.")).toBeVisible();
   await modal.getByRole("radio", { name: "Rayón" }).check();
@@ -67,7 +69,7 @@ test("se revisa parte por parte: bien o con un detalle y su foto; sin revisar to
 
   // "Otro" pide la nota; después se pasa a "Bien" con el interruptor
   await page.getByRole("button", { name: "Detalle: Techo" }).click();
-  const techo = page.getByRole("dialog", { name: "Techo" });
+  const techo = page.getByRole("dialog", { name: "Detalle: Techo" });
   await techo.getByRole("radio", { name: "Otro" }).check();
   await techo.getByRole("button", { name: "Guardar detalle" }).click();
   await expect(techo.getByText("Con «Otro», cuenta qué es.")).toBeVisible();
@@ -79,10 +81,9 @@ test("se revisa parte por parte: bien o con un detalle y su foto; sin revisar to
   await bienTecho.click();
   await expect(bienTecho).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByText(`Revisadas 2 de ${total}`)).toBeVisible();
-  // Otro toque la desmarca: vuelve a "Sin revisar" (y queda así en la base)
+  // Otro toque la desmarca: vuelve a estar sin revisar (y queda así en la base)
   await bienTecho.click();
   await expect(bienTecho).toHaveAttribute("aria-pressed", "false");
-  await expect(fila(page, "Techo")).toContainText("Sin revisar");
   await expect(page.getByText(`Revisadas 1 de ${total}`)).toBeVisible();
   await expect
     .poll(async () => (await consultar("select 1 from trabajo_revision r join parte_revision p on p.id = r.parte_id where r.trabajo_id = $1 and p.nombre = 'Techo'", [id])).length)
@@ -90,19 +91,20 @@ test("se revisa parte por parte: bien o con un detalle y su foto; sin revisar to
   await bienTecho.click();
   await expect(page.getByText(`Revisadas 2 de ${total}`)).toBeVisible();
 
-  // Sin revisar todo, no se recibe: dice qué falta
+  // Sin revisar todo, no se recibe: al lado del botón dice cuántas faltan y, si se toca igual, cuáles
   const form = page.getByRole("form", { name: "Recibir vehículo" });
+  await expect(form.getByText(`Faltan ${total - 2} partes del checklist`)).toBeVisible();
   await form.getByRole("button", { name: "Recibir vehículo" }).click();
   await expect(form.getByText(`Faltan revisar ${total - 2} partes del checklist: Maletero,`)).toBeVisible();
 
-  // Una por una, "Bien"
-  // Las partes que siguen sin revisar: cada "Bien" saca una de la cuenta
-  const sinRevisar = page.getByRole("list", { name: "Partes del checklist" }).getByRole("listitem").filter({ hasText: "Sin revisar" });
-  for (let quedan = total - 2; quedan > 0; quedan--) {
-    await sinRevisar.first().getByRole("button", { name: /^Bien: / }).click();
-    await expect(sinRevisar).toHaveCount(quedan - 1);
-  }
+  // El resto, bien de un toque (pulido de Recibir, 09/11): lo ya revisado (el detalle del capó) no cambia
+  await page.getByRole("button", { name: "Marcar el resto como bien" }).click();
+  await expect(page.getByText(`${total - 2} partes marcadas como bien.`)).toBeVisible();
   await expect(page.getByText(`Revisadas ${total} de ${total}`)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Marcar el resto como bien" })).toHaveCount(0);
+  await expect(form.getByText(/partes? del checklist$/)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Bien: Maletero" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Bien: Capó" })).toHaveAttribute("aria-pressed", "false");
 
   // Revisado todo, se recibe
   await form.getByRole("button", { name: "Recibir vehículo" }).click();

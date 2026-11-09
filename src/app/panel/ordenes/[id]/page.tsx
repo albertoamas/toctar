@@ -286,7 +286,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
 /** "Entregar vehículo": un enlace con forma de botón que lleva a la entrega, con el saldo y el cobro. */
 function EnlaceEntregar({ id, principal }: { id: number; principal?: boolean }) {
   return (
-    <Link href={`/panel/ordenes/${id}/entregar`} className={cn(buttonVariants({ variant: principal ? "default" : "outline" }), principal && BOTON_PASO)}>
+    <Link href={`/panel/ordenes/${id}/entregar`} className={cn(buttonVariants({ variant: principal ? "default" : "outline", size: principal ? "paso" : "default" }), principal && BOTON_PASO)}>
       <KeyRoundIcon />
       Entregar vehículo
     </Link>
