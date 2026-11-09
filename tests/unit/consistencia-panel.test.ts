@@ -33,7 +33,6 @@ function apariciones(patron: RegExp): Record<string, number> {
 const SIN_PAGINA_PANEL = [
   "src/app/panel/[...resto]/page.tsx",
   "src/app/panel/cotizaciones/[id]/page.tsx",
-  "src/app/panel/ordenes/[id]/page.tsx",
   "src/app/panel/reclamos/[id]/page.tsx",
   "src/app/panel/sin-acceso/page.tsx",
   "src/app/panel/usuarios/[id]/page.tsx",
@@ -44,7 +43,6 @@ const ANCHOS_A_MANO: Record<string, number> = {
   "src/app/panel/cotizaciones/[id]/page.tsx": 1,
   "src/app/panel/error.tsx": 1,
   "src/app/panel/not-found.tsx": 1,
-  "src/app/panel/ordenes/[id]/page.tsx": 2,
   "src/app/panel/page.tsx": 1,
   "src/app/panel/sin-acceso/page.tsx": 1,
   // El formulario público de reclamos: es del sitio, no del panel. Se queda, con este motivo
@@ -62,15 +60,11 @@ const MODALES_A_MANO: Record<string, number> = {
 const TITULOS_A_MANO: Record<string, number> = {
   // La semana del tablero: no es un título de sección, solo usa su letra
   "src/app/panel/agenda/page.tsx": 1,
-  "src/app/panel/ordenes/[id]/page.tsx": 2,
   "src/app/panel/reclamos/[id]/page.tsx": 4,
   // La leyenda de un grupo de campos
   "src/modulos/clientes/componentes/formulario-nuevo-cliente.tsx": 1,
   // La cabecera dentro de su tarjeta, en la portada
   "src/modulos/inicio/componentes/para-atender.tsx": 1,
-  "src/modulos/ordenes/componentes/avances-orden.tsx": 1,
-  "src/modulos/ordenes/componentes/como-llego.tsx": 1,
-  "src/modulos/ordenes/componentes/firma-entrega.tsx": 1,
   // La leyenda de un grupo de fotos
   "src/modulos/ordenes/componentes/formulario-publicar.tsx": 1,
   // "Subir fotos": la cabecera dentro de su tarjeta, con su ayuda y el botón de cerrar
