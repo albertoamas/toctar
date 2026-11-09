@@ -120,8 +120,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
         </p>
       )}
 
-      {/* En el celular, primero para quién es; en la computadora, el precio a la izquierda (es lo que decide) y el
-          cliente a la derecha (pedido 26) */}
+      {/* En el celular, primero los datos (para quién es); en la computadora, el precio a la izquierda (es lo que decide)
+          y los datos a la derecha (pedido 26). Título y tarjeta, a la misma distancia que en Seccion */}
       <div className="grid items-start gap-8 @4xl:grid-cols-[minmax(0,1fr)_22rem]">
         <Seccion id="datos" titulo="Datos">
           <div className="flex flex-col gap-2">
@@ -158,14 +158,14 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
           </div>
         </Seccion>
 
-        <section aria-labelledby="versiones-titulo" className="flex flex-col gap-3 @4xl:order-first">
+        <section aria-labelledby="versiones-titulo" className="flex flex-col gap-2 @4xl:order-first">
           <CabeceraSeccion id="versiones" titulo={c.versiones.length > 1 ? "Versiones" : "Precio"} />
           <VersionesCotizacion consultaId={c.id} versiones={c.versiones} />
         </section>
       </div>
 
       {reservas.length > 0 && (
-        <section aria-labelledby="reservas-titulo" className="flex flex-col gap-3">
+        <section aria-labelledby="reservas-titulo" className="flex flex-col gap-2">
           <CabeceraSeccion id="reservas" titulo="Reservas" />
           <ListaFilas
             etiqueta="Reservas"

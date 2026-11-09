@@ -9,7 +9,7 @@ import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { MenuMas, type AccionMas } from "@/componentes/panel/menu-mas";
 import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
-import { BOTON_PASO } from "@/componentes/panel/paso-siguiente";
+import { FormularioPaso } from "@/componentes/panel/formulario-paso";
 import { Button } from "@/componentes/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import { Textarea } from "@/componentes/ui/textarea";
@@ -19,7 +19,8 @@ import { MOTIVOS, NOMBRE_MOTIVO } from "../reglas";
 
 // El menú "Más" de una cotización (pedido 23, como en las demás fichas): "Nueva versión" y "Rechazar" en una pendiente
 // (rechazar pide el motivo en un modal); "Volver a pendiente" en una rechazada; "Rechazar" y "Volver a pendiente" en
-// una aceptada sin fecha (pedido 31). Se usan poco: el paso siguiente ("Aceptó", `BotonAcepto`) va en el encabezado.
+// una aceptada sin fecha (pedido 31). Se usan poco: el paso siguiente ("Aceptó", `BotonAcepto`) va grande debajo de los
+// pasos (PasoSiguiente, C6).
 
 type Props = {
   id: number;
@@ -131,14 +132,16 @@ export function BotonAcepto({ id }: { id: number }) {
   const [resultado, accion, enviando] = useActionState<EstadoFormulario, FormData>(conAviso(cambiarEstadoCotizacion), {});
   return (
     // El paso siguiente de una pendiente: grande, como en Reserva y Orden (PasoSiguiente, C6)
-    <form action={accion} aria-label="Aceptó" className="flex flex-col gap-2 sm:w-80">
-      <input type="hidden" name="id" value={id} />
-      <input type="hidden" name="accion" value="aceptar" />
-      <Button type="submit" disabled={enviando} className={BOTON_PASO} aria-describedby={resultado.mensaje && !resultado.ok ? "aceptar-error" : undefined}>
-        <CheckIcon />
-        {enviando ? "Guardando…" : "Aceptó"}
-      </Button>
-      {resultado.mensaje && !resultado.ok && <MensajeError id="aceptar-error">{resultado.mensaje}</MensajeError>}
-    </form>
+    <FormularioPaso
+      etiqueta="Aceptó"
+      accion={accion}
+      ocultos={{ id, accion: "aceptar" }}
+      enviando={enviando}
+      error={resultado.ok ? undefined : resultado.mensaje}
+      idError="aceptar-error"
+    >
+      <CheckIcon />
+      {enviando ? "Guardando…" : "Aceptó"}
+    </FormularioPaso>
   );
 }
