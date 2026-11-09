@@ -68,12 +68,12 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
   const principal =
     puede(usuario, "recibir_vehiculo") && puedeRecibirse(r, hoy) ? (
       // Enlace con forma de botón: lleva a la recepción, con el checklist
-      <Link href={`/panel/ordenes/${r.id}/recibir`} className={cn(buttonVariants(), BOTON_PASO)}>
+      <Link href={`/panel/ordenes/${r.id}/recibir`} className={cn(buttonVariants({ size: "paso" }), BOTON_PASO)}>
         <ClipboardCheckIcon />
         Recibir vehículo
       </Link>
     ) : orden && verOrdenes ? (
-      <Link href={`/panel/ordenes/${r.id}`} className={cn(buttonVariants(), BOTON_PASO)}>
+      <Link href={`/panel/ordenes/${r.id}`} className={cn(buttonVariants({ size: "paso" }), BOTON_PASO)}>
         <WrenchIcon />
         Ver la orden
       </Link>

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState, useEffect, useOptimistic, useRef, useState, useTransition } from "react";
+import { createContext, useActionState, useContext, useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import { CameraIcon, CheckCheckIcon, CheckIcon, TriangleAlertIcon, XIcon } from "lucide-react";
 import { cn } from "cn";
 import { useFocoEnError } from "@/componentes/foco-en-error";
@@ -31,6 +31,20 @@ import { alTocarBien, NOMBRE_DETALLE, textoAvanceChecklist, TIPOS_DE_DETALLE } f
 type Props = { trabajoId: number; partes: { id: number; nombre: string }[]; revision: DetalleRevision[] };
 type Marca = { parteId: number; estado: EstadoRevision | null };
 
+/**
+ * Cuántas faltan, para "Recibir vehículo": del mismo estado que el avance del checklist (lo tocado se ve al momento), así
+ * el botón y la barra no dicen cosas distintas mientras se guarda.
+ */
+const FaltanChecklist = createContext<{ faltan: number | null; avisar: (faltan: number) => void }>({ faltan: null, avisar: () => {} });
+
+export function AvanceRecepcion({ children }: { children: React.ReactNode }) {
+  const [faltan, setFaltan] = useState<number | null>(null);
+  return <FaltanChecklist.Provider value={{ faltan, avisar: setFaltan }}>{children}</FaltanChecklist.Provider>;
+}
+
+/** Las que faltan según el checklist; antes de que se dibuje, las que dijo el servidor. */
+export const useFaltanChecklist = (delServidor: number) => useContext(FaltanChecklist).faltan ?? delServidor;
+
 export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
   const [abierta, setAbierta] = useState<{ id: number; nombre: string } | null>(null);
   const hidratado = useHidratado();
@@ -49,6 +63,9 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
   const filas = [...partes, ...sueltas];
   const revisadas = filas.filter((p) => estadoDe(p.id) !== null).length;
   const completo = filas.length > 0 && revisadas === filas.length;
+  const { avisar } = useContext(FaltanChecklist);
+  const faltanAhora = partes.filter((p) => estadoDe(p.id) === null).length;
+  useEffect(() => avisar(faltanAhora), [avisar, faltanAhora]);
   // Los detalles con foto, en el orden de la lista: el visor pasa de uno a otro
   const conFoto = filas.flatMap((p) => {
     const d = de(p.id);
@@ -65,7 +82,7 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
     iniciar(async () => {
       for (const p of faltan) marcar({ parteId: p.id, estado: "bien" });
       try {
-        avisarResultado(await marcarRestoBien({ trabajoId }));
+        avisarResultado(await marcarRestoBien({ trabajoId, parteIds: faltan.map((p) => p.id) }));
       } catch {
         avisarResultado({ mensaje: "No se pudo guardar. Revisa tu conexión y vuelve a intentar." });
       } finally {
@@ -135,7 +152,8 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
           <ul aria-label="Partes del checklist" className="flex flex-col divide-y divide-border">
             {filas.map((p) => {
               const estado = estadoDe(p.id);
-              const ocupada = !hidratado || guardando.includes(p.id);
+              // También mientras "Marcar el resto" guarda: un toque en una parte no se cruza con ese
+              const ocupada = !hidratado || marcandoResto || guardando.includes(p.id);
               const d = de(p.id);
               // El detalle guardado, solo si sigue siendo detalle (un "Bien" recién tocado ya lo reemplazó)
               const detalle = estado === "detalle" && d?.estado === "detalle" ? d : null;
@@ -234,6 +252,13 @@ function FormularioDetalle({ trabajoId, parteId, detalle }: { trabajoId: number;
   const elegirFoto = (elegido: File | null) => {
     setArchivo(elegido);
     setVistaPrevia(elegido ? URL.createObjectURL(elegido) : null);
+    // Vacíos: así elegir otra vez la misma foto (después de quitarla) vuelve a avisar
+    for (const entrada of [camara.current, galeria.current]) if (entrada) entrada.value = "";
+  };
+  // Cancelar la cámara o la galería no quita la foto que ya estaba
+  const alElegir = (ev: React.ChangeEvent<HTMLInputElement>) => {
+    const elegido = ev.target.files?.[0];
+    if (elegido) elegirFoto(elegido);
   };
 
   const foto = vistaPrevia ?? detalle?.foto?.miniatura ?? null;
@@ -277,7 +302,7 @@ function FormularioDetalle({ trabajoId, parteId, detalle }: { trabajoId: number;
           className="sr-only"
           tabIndex={-1}
           aria-label="Cámara para la foto del detalle"
-          onChange={(ev) => elegirFoto(ev.target.files?.[0] ?? null)}
+          onChange={alElegir}
         />
         <input
           ref={galeria}
@@ -286,7 +311,7 @@ function FormularioDetalle({ trabajoId, parteId, detalle }: { trabajoId: number;
           className="sr-only"
           tabIndex={-1}
           aria-label="Galería para la foto del detalle"
-          onChange={(ev) => elegirFoto(ev.target.files?.[0] ?? null)}
+          onChange={alElegir}
         />
         {foto && <Image src={foto} alt="Foto del detalle" width={320} height={240} unoptimized className="aspect-[4/3] w-full max-w-xs rounded-lg border border-border object-cover" />}
         <div className="flex flex-wrap gap-2">
