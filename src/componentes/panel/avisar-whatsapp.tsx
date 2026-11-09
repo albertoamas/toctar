@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useHidratado } from "@/componentes/hidratado";
 import { avisarResultado } from "@/componentes/panel/avisos";
+import { BOTON_PASO } from "@/componentes/panel/paso-siguiente";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { Button } from "@/componentes/ui/button";
 import type { EstadoFormulario } from "@/lib/formularios";
@@ -21,6 +22,8 @@ type Props = {
   conDetalle?: boolean;
   /** En una lista, siempre con borde: un rojo por fila competiría con los demás (pulido 12.2). */
   enLista?: boolean;
+  /** Es el paso siguiente de la orden: grande mientras falte avisar (PasoSiguiente). */
+  grande?: boolean;
   /**
    * La acción del servidor que registra el aviso, ya atada a lo que se avisa (`accion.bind(null, { id })`). Termina en
    * "Action" por la convención de Next para las acciones que se pasan a un componente de cliente.
@@ -30,7 +33,7 @@ type Props = {
 
 const NO_SE_REGISTRO = "WhatsApp se abrió, pero el aviso no quedó registrado. Revisa tu conexión y vuelve a avisar.";
 
-export function AvisarPorWhatsApp({ enlace, avisado, conDetalle = true, enLista, registrarAction }: Props) {
+export function AvisarPorWhatsApp({ enlace, avisado, conDetalle = true, enLista, grande, registrarAction }: Props) {
   const listo = useHidratado();
   const [registrando, iniciar] = useTransition();
   // Desde el toque hasta la respuesta: un segundo toque no abre otro chat ni registra otro aviso
@@ -53,7 +56,11 @@ export function AvisarPorWhatsApp({ enlace, avisado, conDetalle = true, enLista,
 
   return (
     <div className="flex flex-col gap-2">
-      <Button type="button" variant={avisado || enLista ? "outline" : "default"} className="self-start" disabled={!listo || enCurso || registrando} onClick={avisar}>
+      <Button
+        type="button"
+        variant={avisado || enLista ? "outline" : "default"}
+        className={grande && !avisado ? BOTON_PASO : "self-start"}
+        disabled={!listo || enCurso || registrando} onClick={avisar}>
         <IconoWhatsApp />
         {avisado ? "Volver a avisar" : "Avisar por WhatsApp"}
       </Button>

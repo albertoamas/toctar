@@ -11,6 +11,7 @@ import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Insignia } from "@/componentes/panel/insignia";
 import { ListaDatos } from "@/componentes/panel/lista-datos";
 import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
+import { BOTON_PASO, PasoSiguiente } from "@/componentes/panel/paso-siguiente";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
 import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
@@ -67,12 +68,12 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
   const principal =
     puede(usuario, "recibir_vehiculo") && puedeRecibirse(r, hoy) ? (
       // Enlace con forma de botón: lleva a la recepción, con el checklist
-      <Link href={`/panel/ordenes/${r.id}/recibir`} className={cn(buttonVariants())}>
+      <Link href={`/panel/ordenes/${r.id}/recibir`} className={cn(buttonVariants(), BOTON_PASO)}>
         <ClipboardCheckIcon />
         Recibir vehículo
       </Link>
     ) : orden && verOrdenes ? (
-      <Link href={`/panel/ordenes/${r.id}`} className={cn(buttonVariants())}>
+      <Link href={`/panel/ordenes/${r.id}`} className={cn(buttonVariants(), BOTON_PASO)}>
         <WrenchIcon />
         Ver la orden
       </Link>
@@ -145,7 +146,6 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
         estado={<Insignia tono={TONO_ESTADO_TRABAJO[r.estado]}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</Insignia>}
         accion={
           <div className="flex flex-wrap gap-2">
-            {principal}
             <a href={enlaceWhatsApp(r.telefono)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
               <IconoWhatsApp />
               Escribir por WhatsApp
@@ -160,6 +160,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
       </EncabezadoPagina>
       {/* Los pasos del trabajo (pedido 31): una reserva sin cotización empieza en "Reservada"; una cancelada no avanza */}
       {!cancelada && <PasosTrabajo paso={pasoDelTrabajo({ trabajo: r.estado }) ?? 0} conCotizacion={r.consultaId !== null} />}
+      {/* El paso siguiente, grande debajo del encabezado (§3): recibir el vehículo, o ir a la orden si ya se recibió */}
+      {principal && <PasoSiguiente>{principal}</PasoSiguiente>}
       {/* Solo mientras siga agendada: tras cancelarla (o en un enlace viejo) ya no corresponde */}
       {agendada && r.estado === "agendado" && (
         <AvisoFlotante mensaje={`Reservada para el ${fechaConDia(r.fechaInicio).toLowerCase()} en el ${r.espacio}.`} />

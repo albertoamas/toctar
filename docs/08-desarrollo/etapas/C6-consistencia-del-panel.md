@@ -59,7 +59,7 @@ Las 37 pantallas del panel, sin contar "sin acceso" ni "no encontrada". "Ancho h
 | Nueva reserva | formulario | 3xl | 3xl | `PaginaPanel` | 3 |
 | Reserva | ficha | 5xl | 5xl | Títulos arriba de la tarjeta | 4 |
 | Órdenes | lista | todo | todo | `PaginaPanel` | 3 |
-| Orden | ficha | 5xl | 5xl | Títulos arriba; "Avisar" y "Entregar" al encabezado | 4 |
+| Orden | ficha | 5xl | 5xl | Títulos arriba; "Avisar" y "Entregar" con el paso siguiente, grande debajo del encabezado (`PasoSiguiente`, decidido el 08/11) | 4 |
 | Recibir | formulario | 3xl | 3xl | `PaginaPanel` | 3 |
 | Entregar | formulario | 3xl | 3xl | `PaginaPanel` | 3 |
 | Publicar en la galería | formulario | 3xl | 3xl | `PaginaPanel` | 3 |

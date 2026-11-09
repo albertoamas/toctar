@@ -22,14 +22,17 @@ type Props = {
   extender?: Omit<React.ComponentProps<typeof ExtenderEntrega>, "id">;
   /** Ya se avisó al cliente que estaba lista: al volver, el aviso se borra. */
   avisada: boolean;
+  /** El chat con el cliente, cuando el encabezado ya tiene "Avisar por WhatsApp": un solo WhatsApp a la vista (C6). */
+  escribir?: string;
 };
 
-export function MasOrden({ id, anterior, extender, avisada }: Props) {
+export function MasOrden({ id, anterior, extender, avisada, escribir }: Props) {
   const [abierta, setAbierta] = useState<"extender" | "volver" | null>(null);
   const cambiar = (abierto: boolean) => !abierto && setAbierta(null);
   const acciones: AccionMas[] = [];
   if (extender) acciones.push({ texto: "Extender entrega", alElegir: () => setAbierta("extender") });
   if (anterior) acciones.push({ texto: anterior.texto, alElegir: () => setAbierta("volver") });
+  if (escribir) acciones.push({ texto: "Escribir por WhatsApp", href: escribir });
   if (acciones.length === 0) return null;
   return (
     <>

@@ -45,7 +45,7 @@ test("el perfil Taller trabaja cualquier orden, sin asignarla y sin ver precios:
   await page.goto("/panel/ordenes");
   await page.getByRole("link", { name: new RegExp(`^${placa}`) }).click();
   await expect(page.getByRole("heading", { level: 1, name: placa })).toBeVisible();
-  const pasos = page.getByRole("region", { name: "Estado de la orden" });
+  const pasos = page.getByRole("form", { name: "Estado de la orden" });
   // Los pasos del trabajo (pedido 31): recibida y en proceso son "En el taller"; la insignia dice cuál
   const pasoActual = page.getByRole("navigation", { name: "Pasos del trabajo" }).locator('[aria-current="step"]');
   await expect(pasoActual).toHaveText("En el taller");

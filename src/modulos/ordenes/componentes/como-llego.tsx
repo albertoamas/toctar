@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { DetalleRevision } from "../consultas";
 import { NOMBRE_DETALLE } from "../reglas";
 import { AbrirFoto } from "@/componentes/panel/abrir-foto";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { Insignia } from "@/componentes/panel/insignia";
 import type { FotoVisor } from "@/componentes/panel/visor-fotos";
 
@@ -17,18 +18,19 @@ export function ComoLlego({ revision, observaciones }: Props) {
   const conFoto = detalles.filter((d) => d.foto);
   const fotos: FotoVisor[] = conFoto.map((d) => ({ ...d.foto!, alt: `Foto: ${d.parte}`, leyenda: leyendaDe(d) }));
   return (
-    <section aria-labelledby="como-llego-titulo" className="tt-tarjeta-panel overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
-        <h2 id="como-llego-titulo" className="tt-titulo-seccion">
-          Cómo llegó
-        </h2>
-        {revision.length > 0 && (
+    <Seccion
+      id="como-llego"
+      titulo="Cómo llegó"
+      sinRelleno
+      accion={
+        revision.length > 0 && (
           <span className="flex flex-wrap gap-1.5">
             {bien.length > 0 && <Insignia tono="exito">{bien.length} bien</Insignia>}
             {detalles.length > 0 && <Insignia tono="aviso">{detalles.length} con detalle</Insignia>}
           </span>
-        )}
-      </div>
+        )
+      }
+    >
       {detalles.length > 0 ? (
         <>
           <ul aria-label="Detalles de ingreso" className="flex flex-col divide-y divide-border border-b border-border">
@@ -70,7 +72,7 @@ export function ComoLlego({ revision, observaciones }: Props) {
           <p className="whitespace-pre-line">{observaciones}</p>
         </div>
       )}
-    </section>
+    </Seccion>
   );
 }
 
