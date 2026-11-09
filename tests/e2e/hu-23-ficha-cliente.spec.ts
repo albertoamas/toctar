@@ -8,10 +8,8 @@ import { crearClienteEnBase, ingresarComoDueno } from "./apoyo";
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "C" : "E") + (info.retry ? String(info.retry) : "");
 const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 5 : 6}000${info.retry}${n}0`;
 
-// El registro completo (red, pantalla y pasos) también del primer fallo, no solo del reintento: el color vacío al
-// reabrir un vehículo recién guardado sale de vez en cuando y hace falta ver qué pasó en ese intento
-// (criterio 23.7 de docs/09-pruebas/criterios-entrega-2.md).
-test.use({ trace: "retain-on-failure" });
+// El color vacío al reabrir un vehículo recién guardado salió de vez en cuando (criterio 23.7 de
+// docs/09-pruebas/criterios-entrega-2.md): el registro del primer fallo lo guarda playwright.config.ts para todas.
 
 test("en la ficha los datos se leen y se editan en un modal; un teléfono de otro cliente se avisa", async ({ page }, info) => {
   const s = sufijo(info);
