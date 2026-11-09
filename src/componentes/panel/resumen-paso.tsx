@@ -24,29 +24,38 @@ type Props = {
 };
 
 export function ResumenPaso({ id, titulo, href, alCambiar, etiquetaCambiar, claseContenido, children }: Props) {
-  const etiqueta = etiquetaCambiar ?? `Cambiar ${titulo.toLowerCase()}`;
+  return (
+    <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-3">
+      <CabeceraSeccion id={id} titulo={titulo}>
+        <BotonCambiar href={href} alCambiar={alCambiar} etiqueta={etiquetaCambiar ?? `Cambiar ${titulo.toLowerCase()}`} />
+      </CabeceraSeccion>
+      <div className={cn("flex flex-col tt-tarjeta-panel p-4", claseContenido)}>{children}</div>
+    </section>
+  );
+}
+
+/**
+ * "Cambiar" de lo ya elegido, sin borde: un enlace a su paso (`href`) o un botón del mismo formulario (`alCambiar`). Sin
+ * ninguno, nada. Lo usan `ResumenPaso` y la tarjeta del cliente y su vehículo (`ResumenClienteVehiculo`).
+ */
+export function BotonCambiar({ href, alCambiar, etiqueta }: { href?: Route; alCambiar?: () => void; etiqueta: string }) {
   const contenido = (
     <>
       <ArrowLeftRightIcon />
       Cambiar
     </>
   );
+  if (href) {
+    return (
+      <Link href={href} className={buttonVariants({ variant: "ghost" })} aria-label={etiqueta}>
+        {contenido}
+      </Link>
+    );
+  }
+  if (!alCambiar) return null;
   return (
-    <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-3">
-      <CabeceraSeccion id={id} titulo={titulo}>
-        {href ? (
-          <Link href={href} className={buttonVariants({ variant: "ghost" })} aria-label={etiqueta}>
-            {contenido}
-          </Link>
-        ) : (
-          alCambiar && (
-            <Button type="button" variant="ghost" onClick={alCambiar} aria-label={etiqueta}>
-              {contenido}
-            </Button>
-          )
-        )}
-      </CabeceraSeccion>
-      <div className={cn("flex flex-col tt-tarjeta-panel p-4", claseContenido)}>{children}</div>
-    </section>
+    <Button type="button" variant="ghost" onClick={alCambiar} aria-label={etiqueta}>
+      {contenido}
+    </Button>
   );
 }

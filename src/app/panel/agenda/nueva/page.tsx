@@ -20,8 +20,8 @@ import { FormularioReserva } from "@/modulos/agenda/componentes/formulario-reser
 import { cotizacionesParaReservar, datosDeCotizacion, datosDirecta, espaciosEnFechas, type CotizacionParaReservar, type VehiculoReserva } from "@/modulos/agenda/consultas";
 import { PASO_CLIENTE, PASO_FECHA, PASO_SERVICIOS, PASO_VEHICULO, pasoInicialReserva, pasosNuevaReserva } from "@/modulos/agenda/pasos-reserva";
 import { fechaEntregaSugerida } from "@/modulos/agenda/reglas";
-import { DatosVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 import { ElegirCliente } from "@/modulos/clientes/componentes/elegir-cliente";
+import { ResumenClienteVehiculo } from "@/modulos/clientes/componentes/resumen-cliente-vehiculo";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { recordatorioParaAgendar } from "@/modulos/mantenimientos/consultas";
 import { lineaDelMantenimiento } from "@/modulos/mantenimientos/reglas";
@@ -72,21 +72,16 @@ function Encabezado() {
 const enlace = "font-semibold underline";
 
 /**
- * El cliente y su vehículo, en lectura, cada uno con "Cambiar" si se puede volver a elegir (`cambiarCliente`,
- * `cambiarVehiculo`: a dónde lleva, con el día y el espacio que llegaron del tablero).
+ * El cliente y su vehículo, en lectura y en una sola tarjeta ("Reserva para", pulido final del 09/11), cada uno con
+ * "Cambiar" si se puede volver a elegir (`cambiarCliente`, `cambiarVehiculo`: a dónde lleva, con el día y el espacio que
+ * llegaron del tablero).
  */
 function ClienteYVehiculo(props: { nombre: string; vehiculo: VehiculoReserva | null; cambiarCliente?: Route; cambiarVehiculo?: Route }) {
   return (
-    <>
-      <ResumenPaso id="resumen-cliente" titulo="Cliente" href={props.cambiarCliente}>
-        <span className="font-semibold">{props.nombre}</span>
-      </ResumenPaso>
-      {props.vehiculo && (
-        <ResumenPaso id="resumen-vehiculo" titulo="Vehículo" href={props.cambiarVehiculo}>
-          <DatosVehiculo placa={props.vehiculo.placa} detalle={props.vehiculo.detalle} tamano={props.vehiculo.tamano} />
-        </ResumenPaso>
-      )}
-    </>
+    <ResumenClienteVehiculo
+      cliente={{ nombre: props.nombre, href: props.cambiarCliente }}
+      vehiculo={props.vehiculo && { ...props.vehiculo, href: props.cambiarVehiculo }}
+    />
   );
 }
 
@@ -293,7 +288,8 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
       )}
       {/* Su servicio de mantenimiento ya no se ofrece (inactivo o sin precio para ese tamaño): se dice por qué falta la línea */}
       {recordatorio && !lineaDelMantenimiento(d.opciones, recordatorio.servicioMantenimientoId) && (
-        <p role="status" className="rounded-sm border border-aviso p-3 text-sm">
+        // En ámbar, como los avisos de Entregar y de los montos (pulido final del 09/11)
+        <p className="rounded-sm border border-aviso bg-aviso-fondo p-3 text-sm font-medium text-aviso">
           Su servicio de mantenimiento ya no se ofrece en el catálogo: elige el servicio que se hará.
         </p>
       )}
