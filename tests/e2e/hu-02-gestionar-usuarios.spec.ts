@@ -58,13 +58,17 @@ test("restablecer la contraseña: la anterior deja de servir y la nueva funciona
   await ingresarComoDueno(page);
   await page.goto("/panel/usuarios");
   await page.getByRole("link", { name: nombre }).first().click();
-  await page.getByRole("button", { name: "Restablecer contraseña" }).click();
+  // En "Más", con su modal (C6)
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Restablecer contraseña" }).click();
+  const modal = page.getByRole("dialog", { name: `Nueva contraseña para ${nombre}` });
   // Sin contraseña: el error y el foco van al campo (pulido 5.5)
-  await page.getByRole("button", { name: "Guardar", exact: true }).click();
-  await expect(page.getByLabel("Contraseña nueva")).toBeFocused();
-  await page.getByLabel("Contraseña nueva").fill("nueva-1234");
-  await page.getByRole("button", { name: "Guardar", exact: true }).click();
+  await modal.getByRole("button", { name: "Guardar contraseña" }).click();
+  await expect(modal.getByLabel("Contraseña nueva")).toBeFocused();
+  await modal.getByLabel("Contraseña nueva").fill("nueva-1234");
+  await modal.getByRole("button", { name: "Guardar contraseña" }).click();
   await expect(page.getByText("Contraseña cambiada")).toBeVisible();
+  await expect(modal).toHaveCount(0);
 
   const { ctx, page: otra } = await otraPersona(browser, info);
   await ingresar(otra, usuario, "vieja-1234");
@@ -86,14 +90,22 @@ test("desactivar a alguien con la sesión abierta lo saca del panel", async ({ p
   await ingresarComoDueno(page);
   await page.goto("/panel/usuarios");
   await page.getByRole("link", { name: nombre }).first().click();
-  // El foco va a la confirmación y, al cancelar, vuelve al botón (pulido 5.5)
-  await page.getByRole("button", { name: "Desactivar usuario" }).click();
-  await expect(page.getByText("no podrá ingresar")).toBeFocused();
-  await page.getByRole("button", { name: "Cancelar" }).click();
-  await expect(page.getByRole("button", { name: "Desactivar usuario" })).toBeFocused();
-  await page.getByRole("button", { name: "Desactivar usuario" }).click();
-  await page.getByRole("button", { name: "Sí, desactivar" }).click();
+  // En "Más", con su confirmación: el foco en "Cancelar", así un Enter no lo desactiva (C6)
+  const desactivar = async () => {
+    await page.getByRole("button", { name: "Más" }).click();
+    await page.getByRole("menuitem", { name: "Desactivar usuario" }).click();
+    return page.getByRole("dialog", { name: `¿Desactivar a ${nombre}?` });
+  };
+  let confirmar = await desactivar();
+  await expect(confirmar).toContainText("no podrá ingresar");
+  await expect(confirmar.getByRole("button", { name: "Cancelar" })).toBeFocused();
+  await confirmar.getByRole("button", { name: "Cancelar" }).click();
+  await expect(confirmar).toHaveCount(0);
+  confirmar = await desactivar();
+  await confirmar.getByRole("button", { name: "Sí, desactivar" }).click();
   await expect(page.getByText("Usuario desactivado")).toBeVisible();
+  // Desactivado, reactivarlo es la acción del encabezado
+  await expect(page.getByRole("button", { name: "Reactivar usuario" })).toBeVisible();
 
   await saliente.goto("/panel");
   await expect(saliente).toHaveURL(/\/ingresar$/);
@@ -104,12 +116,17 @@ test("el único dueño no puede desactivarse ni quitarse el rol", async ({ page 
   await ingresarComoDueno(page);
   await page.goto("/panel/usuarios");
   await page.getByRole("link", { name: "Dueño de prueba" }).first().click();
-  await expect(page.getByText("No puedes desactivar tu propio usuario")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Desactivar usuario" })).toHaveCount(0);
+  // A uno mismo, "Más" no le ofrece desactivarse
+  await page.getByRole("button", { name: "Más" }).click();
+  await expect(page.getByRole("menuitem", { name: "Restablecer contraseña" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Desactivar usuario" })).toHaveCount(0);
+  await page.keyboard.press("Escape");
 
-  await page.getByRole("radio", { name: /Encargado/ }).check();
-  await page.getByRole("button", { name: "Guardar cambios" }).click();
-  await expect(page.getByText("Es el único dueño activo: crea otro dueño antes de cambiarle el rol.")).toBeVisible();
+  await page.getByRole("button", { name: "Editar rol y permisos" }).click();
+  const rol = page.getByRole("dialog", { name: "Rol y permisos" });
+  await rol.getByRole("radio", { name: /Encargado/ }).check();
+  await rol.getByRole("button", { name: "Guardar rol y permisos" }).click();
+  await expect(rol.getByText("Es el único dueño activo: crea otro dueño antes de cambiarle el rol.")).toBeVisible();
 });
 
 test("un usuario repetido muestra un error claro", async ({ page }, info) => {

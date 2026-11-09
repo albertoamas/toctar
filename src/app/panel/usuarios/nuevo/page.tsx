@@ -23,5 +23,5 @@ export default function PaginaNuevoUsuario() {
 
 async function Formulario() {
   await exigirModulo("usuarios");
-  return <FormularioUsuario modo="crear" asignables={permisosAsignables()} />;
+  return <FormularioUsuario asignables={permisosAsignables()} />;
 }

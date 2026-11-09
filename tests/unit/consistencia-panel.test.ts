@@ -33,7 +33,6 @@ function apariciones(patron: RegExp): Record<string, number> {
 const SIN_PAGINA_PANEL = [
   "src/app/panel/[...resto]/page.tsx",
   "src/app/panel/sin-acceso/page.tsx",
-  "src/app/panel/usuarios/[id]/page.tsx",
 ];
 
 /** Anchos de pantalla escritos a mano. Los de un campo o un bloque chico (`max-w-xs`, `max-w-md`) sí valen (§1). */
@@ -50,7 +49,7 @@ const ANCHOS_A_MANO: Record<string, number> = {
 
 /** Modales armados a mano. Pasan a `ModalFormulario` en la fase 3. */
 const MODALES_A_MANO: Record<string, number> = {
-  "src/modulos/usuarios/componentes/acceso-usuario.tsx": 3,
+
 };
 
 /** Títulos de sección armados a mano. Pasan a `Seccion` o `SeccionConEditar` en las fases 3 y 4. */
@@ -65,7 +64,6 @@ const TITULOS_A_MANO: Record<string, number> = {
   "src/modulos/ordenes/componentes/formulario-publicar.tsx": 1,
   // "Subir fotos": la cabecera dentro de su tarjeta, con su ayuda y el botón de cerrar
   "src/modulos/sitio/componentes/galeria-panel.tsx": 1,
-  "src/modulos/usuarios/componentes/acceso-usuario.tsx": 3,
 };
 
 // Si una falla: con algo de más, usa la pieza común; con algo de menos, ya se migró y se baja de su lista.
