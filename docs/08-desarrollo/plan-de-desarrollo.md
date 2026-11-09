@@ -70,6 +70,16 @@ Todo lo programable está en `develop` y en `pruebas.toctardetailing.com`. Lo qu
 
 **Lo hace YankoSoft (no depende del dueño):**
 
+**0. Pulido final del panel (desde el 09/11, después de C6).** C6 dejó las 37 pantallas con la misma estructura; estas, migradas sin revisar su diseño desde octubre (antes del pedido 26 y de los pedidos 31, 37, 40 y 41), pasan una por una por la revisión de diseño (`pulido-visual.md`, skill `pantallas-panel`: análisis, propuesta, aprobación, programación). En orden:
+
+| Prioridad | Pantallas | Estado |
+|---|---|---|
+| 1. De pie en el taller | Recibir vehículo, Entregar vehículo | 🔵 Recibir en curso |
+| 2. Flujos en pasos | Nueva reserva, Nueva cotización, Nueva versión | ⏳ |
+| 3. Todos los días | Inicio, Agenda, Saldos, Mantenimientos | ⏳ |
+| 4. Menos usadas | Ficha del cliente, Servicio del catálogo, Cambiar dueño, Publicar en la galería, Galería del panel | ⏳ |
+| 5. Listas | Órdenes, Clientes, Cotizaciones, Reclamos, Catálogo, Usuarios | ⏳ |
+
 1. **Prueba completa a mano** con `09-pruebas/criterios-entrega-2.md` (y los ⚠️/⏳ de `criterios-entrega-1.md`) en pruebas, con https: dueño y encargado con cada perfil (Taller, Atención, Todo), en un Android y un iPhone. Cubre los ⏳ de celular real: compartir el PDF (27.3), comprobante con la cámara (32.5), checklist con fotos (33.6), PDF impreso en A4 (26.4) e instalar la app (B2).
 2. **Datos de demostración en pruebas** (`datos:demo`), para la demo y la capacitación.
 3. **Guía de capacitación** `10-lanzamiento/capacitacion.md`, corta y por rol (ver C5, punto 3).
