@@ -13,12 +13,13 @@ import type { Permiso } from "@/lib/permisos";
 import type { Rol } from "@/lib/roles";
 import { exigirModulo } from "@/lib/sesion";
 import { correoInterno } from "@/lib/usuarios";
-import { listarUsuarios, type FilaUsuario } from "./consultas";
+import { listarUsuarios, obtenerUsuario, type FilaUsuario } from "./consultas";
 import {
-  esquemaActualizarUsuario,
   esquemaCrearUsuario,
+  esquemaDatosUsuario,
   esquemaIdUsuario,
   esquemaRestablecer,
+  esquemaRolUsuario,
 } from "./esquemas";
 import { cambioDeRolDejaSinDueno } from "./reglas";
 
@@ -100,23 +101,34 @@ export async function crearUsuario(_previo: EstadoFormulario, datos: FormData): 
   redirect(`${RUTA}?creado=${encodeURIComponent(nombre)}`);
 }
 
-export async function actualizarUsuario(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
-  const autor = await exigirModulo("usuarios");
-  const entrada = esquemaActualizarUsuario.safeParse({
-    id: datos.get("id"),
-    nombre: datos.get("nombre"),
-    rol: datos.get("rol"),
-    permisos: datos.getAll("permisos"),
-  });
+/** El nombre de un usuario (la parte "Datos" de su ficha, C6). No toca el rol ni los permisos. */
+export async function guardarDatosUsuario(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  await exigirModulo("usuarios");
+  const entrada = esquemaDatosUsuario.safeParse({ id: datos.get("id"), nombre: datos.get("nombre") });
   if (!entrada.success) return { errores: erroresDe(entrada.error), valores: valoresDe(datos) };
-  const { id, nombre, rol, permisos } = entrada.data;
+  const { id, nombre } = entrada.data;
+
+  const h = await headers();
+  if (!(await obtenerUsuario(id))) return { mensaje: "Ese usuario ya no existe." };
+  await auth.api.adminUpdateUser({ body: { userId: String(id), data: { name: nombre } }, headers: h });
+
+  revalidatePath(RUTA);
+  revalidatePath(`${RUTA}/${id}`);
+  return { ok: true, mensaje: "Datos guardados." };
+}
+
+/** El rol y los permisos de un usuario (la parte "Rol y permisos" de su ficha, C6). No toca el nombre. */
+export async function guardarRolUsuario(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  const autor = await exigirModulo("usuarios");
+  const entrada = esquemaRolUsuario.safeParse({ id: datos.get("id"), rol: datos.get("rol"), permisos: datos.getAll("permisos") });
+  if (!entrada.success) return { errores: erroresDe(entrada.error), valores: valoresDe(datos) };
+  const { id, rol, permisos } = entrada.data;
 
   const h = await headers();
   const resultado = await deAUnoConLosDuenos(Number(autor.id), async (usuarios, tx) => {
     const actual = usuarios.find((u) => u.id === id);
     if (!actual) return "no-existe" as const;
     if (cambioDeRolDejaSinDueno(usuarios, id, rol)) return "sin-dueno" as const;
-    await auth.api.adminUpdateUser({ body: { userId: String(id), data: { name: nombre } }, headers: h });
     if (rol !== actual.rol) await auth.api.setRole({ body: { userId: String(id), role: rol }, headers: h });
     // Con el candado tomado: otro cambio de rol del mismo usuario no deja permisos de un rol que ya no tiene
     await guardarPermisos(tx, id, rol, permisos, Number(autor.id));
@@ -130,7 +142,7 @@ export async function actualizarUsuario(_previo: EstadoFormulario, datos: FormDa
 
   revalidatePath(RUTA);
   revalidatePath(`${RUTA}/${id}`);
-  return { ok: true, mensaje: "Cambios guardados." };
+  return { ok: true, mensaje: "Rol y permisos guardados." };
 }
 
 export async function restablecerContrasena(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {

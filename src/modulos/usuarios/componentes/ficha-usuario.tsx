@@ -1,43 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { useHidratado } from "@/componentes/hidratado";
+import { conAviso } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { MenuMas, type AccionMas } from "@/componentes/panel/menu-mas";
 import { CancelarModal, ModalFormulario, PieGuardar, PieModal, useFormularioEnModal } from "@/componentes/panel/modal-formulario";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
+import type { EstadoFormulario } from "@/lib/formularios";
 import type { Permiso } from "@/lib/permisos";
 import type { Rol } from "@/lib/roles";
-import { actualizarUsuario, desactivarUsuario, reactivarUsuario, restablecerContrasena } from "../acciones";
+import { desactivarUsuario, guardarDatosUsuario, guardarRolUsuario, reactivarUsuario, restablecerContrasena } from "../acciones";
 import { CamposRolPermisos } from "./campos-rol-permisos";
 
-// HU-02 y HU-03: la ficha de un usuario (C6, fase 4). Cada parte se edita en su modal con la acción de siempre
-// (actualizarUsuario): el modal de una parte manda también lo guardado de la otra, sin mostrarlo, así el servidor recibe lo
-// mismo que con el formulario de antes y no hace falta otra acción. Lo poco usado (restablecer la contraseña, desactivar)
-// va en "Más", cada cosa con su modal.
+// HU-02 y HU-03: la ficha de un usuario (C6, fase 4). Cada parte se edita en su modal y se guarda sola (guardarDatosUsuario,
+// guardarRolUsuario): un cambio de nombre no devuelve el rol o los permisos que otro dueño acaba de cambiar. Lo poco usado
+// (restablecer la contraseña, desactivar) va en "Más", cada cosa con su modal.
 
 type Usuario = { id: number; nombre: string; usuario: string; rol: Rol; permisos: Permiso[] };
 
-/** Lo guardado del rol y los permisos, sin mostrarlo: el modal de Datos solo cambia el nombre. */
-function RolYPermisosGuardados({ usuario }: { usuario: Usuario }) {
-  return (
-    <>
-      <input type="hidden" name="rol" value={usuario.rol} />
-      {usuario.permisos.map((p) => (
-        <input key={p} type="hidden" name="permisos" value={p} />
-      ))}
-    </>
-  );
-}
-
 export function FormularioDatosUsuario({ usuario }: { usuario: Usuario }) {
-  const { accion, enviando, formulario, e, v } = useFormularioEnModal(actualizarUsuario);
+  const { accion, enviando, formulario, e, v } = useFormularioEnModal(guardarDatosUsuario);
   return (
     <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate>
       <input type="hidden" name="id" value={usuario.id} />
-      <RolYPermisosGuardados usuario={usuario} />
       <Campo id="nombre" etiqueta="Nombre" error={e.nombre}>
         <Input id="nombre" name="nombre" autoComplete="off" defaultValue={v?.nombre ?? usuario.nombre} aria-invalid={!!e.nombre} aria-describedby={e.nombre ? "nombre-error" : undefined} />
       </Campo>
@@ -48,12 +36,10 @@ export function FormularioDatosUsuario({ usuario }: { usuario: Usuario }) {
 }
 
 export function FormularioRolPermisos({ usuario, asignables }: { usuario: Usuario; asignables: { permiso: Permiso; nombre: string }[] }) {
-  const { accion, enviando, formulario, e, v } = useFormularioEnModal(actualizarUsuario);
+  const { accion, enviando, formulario, e, v } = useFormularioEnModal(guardarRolUsuario);
   return (
     <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate>
       <input type="hidden" name="id" value={usuario.id} />
-      {/* El nombre guardado: este modal solo cambia el rol y los permisos */}
-      <input type="hidden" name="nombre" value={usuario.nombre} />
       <CamposRolPermisos asignables={asignables} rolInicial={(v?.rol as Rol) || usuario.rol} permisosIniciales={usuario.permisos} error={e.rol} />
       <PieGuardar texto="Guardar rol y permisos" enviando={enviando} />
     </form>
@@ -110,21 +96,26 @@ function Desactivar({ id, nombre }: { id: number; nombre: string }) {
   );
 }
 
+const reactivarConAviso = conAviso(reactivarUsuario);
+
+/** Como "Reactivar cliente" (acceso-cliente.tsx): un formulario con su botón, sin modal. */
 function Reactivar({ id }: { id: number }) {
   const hidratado = useHidratado();
-  const { accion } = useFormularioEnModal(reactivarUsuario);
+  const [, accion, enviando] = useActionState<EstadoFormulario, FormData>(reactivarConAviso, {});
   return (
     <form action={accion}>
       <input type="hidden" name="id" value={id} />
-      <BotonEnviar texto="Reactivar usuario" enviando="Reactivando…" deshabilitado={!hidratado} />
+      <Button type="submit" disabled={enviando || !hidratado}>
+        {enviando ? "Reactivando…" : "Reactivar usuario"}
+      </Button>
     </form>
   );
 }
 
-function BotonEnviar({ texto, enviando, variante = "default", deshabilitado }: { texto: string; enviando: string; variante?: "default" | "destructive"; deshabilitado?: boolean }) {
+function BotonEnviar({ texto, enviando, variante = "default" }: { texto: string; enviando: string; variante?: "default" | "destructive" }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" variant={variante} disabled={pending || deshabilitado}>
+    <Button type="submit" variant={variante} disabled={pending}>
       {pending ? enviando : texto}
     </Button>
   );

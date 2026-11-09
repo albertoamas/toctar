@@ -45,7 +45,7 @@ export function FormularioUsuario({ asignables }: { asignables: { permiso: Permi
       </Campo>
       {/* Un encargado nuevo empieza con el perfil Taller, el más común (pedido 32: los que reciben y trabajan los vehículos) */}
       <CamposRolPermisos asignables={asignables} rolInicial={(valores?.rol as Rol) || "encargado"} permisosIniciales={PERFILES[0].permisos} error={e.rol} />
-      <BarraGuardar formulario={formulario} estado={estado} texto="Crear usuario" enviando={enviando} siempreActivo />
+      <BarraGuardar formulario={formulario} estado={estado} texto="Crear usuario" enviando={enviando} />
     </form>
   );
 }

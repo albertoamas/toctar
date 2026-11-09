@@ -116,7 +116,8 @@ test("el único dueño no puede desactivarse ni quitarse el rol", async ({ page 
   await ingresarComoDueno(page);
   await page.goto("/panel/usuarios");
   await page.getByRole("link", { name: "Dueño de prueba" }).first().click();
-  // A uno mismo, "Más" no le ofrece desactivarse
+  // A uno mismo, "Más" no le ofrece desactivarse, y la ficha dice por qué
+  await expect(page.getByText("Es tu usuario: no puedes desactivarlo")).toBeVisible();
   await page.getByRole("button", { name: "Más" }).click();
   await expect(page.getByRole("menuitem", { name: "Restablecer contraseña" })).toBeVisible();
   await expect(page.getByRole("menuitem", { name: "Desactivar usuario" })).toHaveCount(0);
@@ -127,6 +128,29 @@ test("el único dueño no puede desactivarse ni quitarse el rol", async ({ page 
   await rol.getByRole("radio", { name: /Encargado/ }).check();
   await rol.getByRole("button", { name: "Guardar rol y permisos" }).click();
   await expect(rol.getByText("Es el único dueño activo: crea otro dueño antes de cambiarle el rol.")).toBeVisible();
+});
+
+// Pulido visual 1.5, desde C6 en la ficha: en el celular el aviso va arriba y no tapa las acciones de la ficha
+test("en el celular, el aviso de guardado no tapa las acciones de la ficha", async ({ page }, info) => {
+  test.skip(info.project.name !== "celular", "En el celular es donde el aviso va arriba");
+  const usuario = `aviso-${info.retry}-${Math.floor(Math.random() * 1e6)}`;
+  await crearUsuario({ usuario, nombre: "Aviso de prueba", contrasena: "encargado-123", rol: "encargado" });
+  await ingresarComoDueno(page);
+  await page.goto("/panel/usuarios");
+  await page.getByRole("link", { name: "Aviso de prueba" }).first().click();
+  await page.getByRole("button", { name: "Editar datos del usuario" }).click();
+  const datos = page.getByRole("dialog", { name: "Datos del usuario" });
+  await datos.getByLabel("Nombre").fill("Aviso de prueba cambiado");
+  await datos.getByRole("button", { name: "Guardar datos" }).click();
+  const aviso = page.locator("[data-sonner-toast]").first();
+  await expect(aviso).toContainText("Datos guardados.");
+  await expect(datos).toHaveCount(0);
+  const caja = (await aviso.boundingBox())!;
+  for (const nombre of ["Más", "Editar rol y permisos", "Editar datos del usuario"]) {
+    const boton = (await page.getByRole("button", { name: nombre }).boundingBox())!;
+    const sePisan = caja.x < boton.x + boton.width && boton.x < caja.x + caja.width && caja.y < boton.y + boton.height && boton.y < caja.y + caja.height;
+    expect(sePisan, nombre).toBe(false);
+  }
 });
 
 test("un usuario repetido muestra un error claro", async ({ page }, info) => {

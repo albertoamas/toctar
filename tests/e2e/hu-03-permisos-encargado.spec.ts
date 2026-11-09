@@ -49,7 +49,7 @@ test("los permisos del encargado: el perfil marca sus casillas, se ajustan y se 
   await modal.getByRole("checkbox", { name: /^Agenda/ }).uncheck();
   await modal.getByRole("checkbox", { name: /^Órdenes/ }).uncheck();
   await modal.getByRole("button", { name: "Guardar rol y permisos" }).click();
-  await expect(page.getByText("Cambios guardados.")).toBeVisible();
+  await expect(page.getByText("Rol y permisos guardados.")).toBeVisible();
   await page.reload();
   await expect(page.getByText("Sin permisos: solo ve el inicio.")).toBeVisible();
 });

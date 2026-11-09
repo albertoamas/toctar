@@ -36,6 +36,7 @@ async function Detalle({ params }: Pick<PageProps<"/panel/usuarios/[id]">, "para
   const usuario = await obtenerUsuario(numero);
   if (!usuario) notFound();
   const asignables = permisosAsignables();
+  const esUnoMismo = String(usuario.id) === yo.id;
   const suyos = asignables.filter((a) => usuario.permisos.includes(a.permiso));
 
   return (
@@ -44,9 +45,11 @@ async function Detalle({ params }: Pick<PageProps<"/panel/usuarios/[id]">, "para
         titulo={usuario.nombre}
         estado={usuario.desactivado ? <Insignia>Desactivado</Insignia> : <Insignia tono="exito">Activo</Insignia>}
         volver={{ href: "/panel/usuarios", texto: "Usuarios" }}
-        accion={<MasUsuario id={usuario.id} nombre={usuario.nombre} desactivado={usuario.desactivado} esUnoMismo={String(usuario.id) === yo.id} />}
+        accion={<MasUsuario id={usuario.id} nombre={usuario.nombre} desactivado={usuario.desactivado} esUnoMismo={esUnoMismo} />}
       >
-        {usuario.desactivado && "No puede ingresar. Su historial se conserva."}
+        {usuario.desactivado
+          ? "No puede ingresar. Su historial se conserva."
+          : esUnoMismo && "Es tu usuario: no puedes desactivarlo. Si hace falta, pídeselo a otro dueño."}
       </EncabezadoPagina>
 
       <PartesIguales>

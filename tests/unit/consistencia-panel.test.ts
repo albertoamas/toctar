@@ -47,12 +47,10 @@ const ANCHOS_A_MANO: Record<string, number> = {
   "src/modulos/sitio/componentes/galeria-panel.tsx": 1,
 };
 
-/** Modales armados a mano. Pasan a `ModalFormulario` en la fase 3. */
-const MODALES_A_MANO: Record<string, number> = {
+/** Modales armados a mano: ninguno. Todo modal es `ModalFormulario` (C6, terminado el 08/11). */
+const MODALES_A_MANO: Record<string, number> = {};
 
-};
-
-/** Títulos de sección armados a mano. Pasan a `Seccion` o `SeccionConEditar` en las fases 3 y 4. */
+/** Títulos de sección armados a mano, cada uno con su motivo: no son la cabecera de una sección de ficha. */
 const TITULOS_A_MANO: Record<string, number> = {
   // La semana del tablero: no es un título de sección, solo usa su letra
   "src/app/panel/agenda/page.tsx": 1,
