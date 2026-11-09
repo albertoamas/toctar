@@ -25,6 +25,11 @@ type Props = {
 
 const sinTocar = (l: Linea) => !l.varianteId && !l.servicioId && !l.precio.trim();
 
+/** Los servicios que cuentan: ninguno si todas las filas están sin tocar (lo que se envía con `conFilaLista`). */
+export function lineasQueCuentan(lineas: Linea[]): Linea[] {
+  return lineas.every(sinTocar) ? [] : lineas;
+}
+
 const textoSugerencia = (s: Sugerencia) =>
   s.tipo === "monto"
     ? `Precio sugerido: ${mostrarMonto(s.monto)} Bs`

@@ -228,9 +228,11 @@ test("reserva directa: cliente y vehículo registrados, servicio del catálogo c
   await expect(page.getByText("Agrega al menos un servicio.")).toBeVisible();
   await expect(pasoActual(page)).toHaveText("Servicios");
   await page.getByRole("button", { name: "Agregar servicio" }).click();
-  // Con el servicio agregado, el error ya no está (antes seguía hasta el próximo "Siguiente")
-  await expect(page.getByText("Agrega al menos un servicio.")).toHaveCount(0);
+  // Una fila sin tocar no cuenta: el error sigue hasta elegir el servicio, y entonces se va (antes seguía hasta el
+  // próximo "Siguiente")
+  await expect(page.getByText("Agrega al menos un servicio.")).toBeVisible();
   await page.getByLabel("Servicio 1", { exact: true }).selectOption({ label: nombre });
+  await expect(page.getByText("Agrega al menos un servicio.")).toHaveCount(0);
   await expect(page.getByLabel("Precio del servicio 1")).toHaveValue("900");
   // "Siguiente" no reserva: con el botón reusado, se volvía "Reservar" en el mismo toque (como en la cotización)
   await siguiente(page).click();

@@ -289,7 +289,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
       {/* Su servicio de mantenimiento ya no se ofrece (inactivo o sin precio para ese tamaño): se dice por qué falta la línea */}
       {recordatorio && !lineaDelMantenimiento(d.opciones, recordatorio.servicioMantenimientoId) && (
         // En ámbar, como los avisos de Entregar y de los montos (pulido final del 09/11)
-        <p className="rounded-sm border border-aviso bg-aviso-fondo p-3 text-sm font-medium text-aviso">
+        <p role="status" className="rounded-sm border border-aviso bg-aviso-fondo p-3 text-sm font-medium text-aviso">
           Su servicio de mantenimiento ya no se ofrece en el catálogo: elige el servicio que se hará.
         </p>
       )}
