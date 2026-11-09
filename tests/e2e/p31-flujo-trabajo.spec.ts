@@ -14,7 +14,7 @@ const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "ce
  * los 320 días): no choca en los espacios.
  */
 async function diaPropio(info: TestInfo, n: number): Promise<string> {
-  const [{ dia }] = await consultar<{ dia: string }>("select to_char(current_date + $1::int, 'YYYY-MM-DD') as dia", [
+  const [{ dia }] = await consultar<{ dia: string }>("select to_char((now() at time zone 'America/La_Paz')::date + $1::int, 'YYYY-MM-DD') as dia", [
     (info.project.name === "celular" ? 345 : 355) + n * 2 + info.retry,
   ]);
   return dia;
@@ -44,7 +44,7 @@ async function cotizacionPendiente(info: TestInfo, n: number): Promise<{ consult
      ), c as (
        insert into cotizacion (consulta_id, numero, version, es_estimado, subtotal, descuento, total, adelanto_sugerido, valida_hasta,
          condiciones, garantia, formas_pago, datos_documento, created_by)
-       select q.id, $2, 1, false, 700, 0, 700, 0, current_date + 15, 'c', 'g', 'f', '{}'::jsonb, q.created_by from q returning id
+       select q.id, $2, 1, false, 700, 0, 700, 0, (now() at time zone 'America/La_Paz')::date + 15, 'c', 'g', 'f', '{}'::jsonb, q.created_by from q returning id
      ), l as (
        insert into cotizacion_linea (cotizacion_id, variante_id, tamano_id, descripcion, precio_sugerido, precio, orden)
        select c.id, (select v.id from variante v join servicio s on s.id = v.servicio_id where s.nombre = $3),

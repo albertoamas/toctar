@@ -12,7 +12,7 @@ const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "ce
 
 /** Un día propio de cada prueba: dentro de 100 a 300 días, según el proyecto y el número de prueba (y el intento). */
 async function diaPropio(info: TestInfo, n: number): Promise<string> {
-  const [{ dia }] = await consultar<{ dia: string }>("select to_char(current_date + $1::int, 'YYYY-MM-DD') as dia", [
+  const [{ dia }] = await consultar<{ dia: string }>("select to_char((now() at time zone 'America/La_Paz')::date + $1::int, 'YYYY-MM-DD') as dia", [
     (info.project.name === "celular" ? 100 : 200) + n * 5 + info.retry * 2000,
   ]);
   return dia;
@@ -47,7 +47,7 @@ async function consultaCotizada(info: TestInfo, n: number): Promise<{ consultaId
      ), c as (
        insert into cotizacion (consulta_id, numero, version, es_estimado, subtotal, descuento, total, adelanto_sugerido, valida_hasta,
          condiciones, garantia, formas_pago, datos_documento, created_by)
-       select q.id, '2030-' || $2, 1, false, 900, 100, 800, 200, current_date + 15, 'c', 'g', 'f', '{}'::jsonb, q.created_by from q returning id
+       select q.id, '2030-' || $2, 1, false, 900, 100, 800, 200, (now() at time zone 'America/La_Paz')::date + 15, 'c', 'g', 'f', '{}'::jsonb, q.created_by from q returning id
      ), l as (
        insert into cotizacion_linea (cotizacion_id, variante_id, tamano_id, descripcion, precio_sugerido, precio, orden)
        select c.id, $3, (select id from tamano_vehiculo order by orden limit 1), $4, 900, 900, 0 from c returning cotizacion_id

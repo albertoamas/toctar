@@ -15,7 +15,7 @@ const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "ce
  * Cada reintento corre 3 días: las reservas que dejó el intento anterior siguen en la base y no se cruzan con las nuevas.
  */
 async function dia(info: TestInfo, mas: number): Promise<string> {
-  const [{ d }] = await consultar<{ d: string }>("select to_char(current_date + $1::int, 'YYYY-MM-DD') as d", [(info.project.name === "celular" ? 240 : 290) + mas + info.retry * 3]);
+  const [{ d }] = await consultar<{ d: string }>("select to_char((now() at time zone 'America/La_Paz')::date + $1::int, 'YYYY-MM-DD') as d", [(info.project.name === "celular" ? 240 : 290) + mas + info.retry * 3]);
   return d;
 }
 
@@ -80,7 +80,7 @@ test("cancelar pide motivo, deja los pagos, libera el espacio y la consulta pasa
      ), c as (
        insert into cotizacion (consulta_id, numero, version, es_estimado, subtotal, descuento, total, adelanto_sugerido, valida_hasta,
          condiciones, garantia, formas_pago, estado, datos_documento, created_by)
-       select q.id, '2031-' || $2, 1, false, 500, 0, 500, 150, current_date + 15, 'c', 'g', 'f', 'aceptada', '{}'::jsonb, q.created_by from q returning id
+       select q.id, '2031-' || $2, 1, false, 500, 0, 500, 150, (now() at time zone 'America/La_Paz')::date + 15, 'c', 'g', 'f', 'aceptada', '{}'::jsonb, q.created_by from q returning id
      ), l as (
        insert into cotizacion_linea (cotizacion_id, variante_id, tamano_id, descripcion, precio, orden)
        select c.id, (select id from variante order by id limit 1), (select id from tamano_vehiculo order by id limit 1), 'Lavado', 500, 0 from c
@@ -89,7 +89,7 @@ test("cancelar pide motivo, deja los pagos, libera el espacio y la consulta pasa
     [`CA31${s}3`, `${info.project.name === "celular" ? 1 : 2}${info.retry}00`],
   );
   const id = await reserva(`CA31${s}3`, 0, d20, d20, { consultaId: c.consulta, cotizacionId: c.cotizacion });
-  await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, 150, 'efectivo', 'adelanto', current_date, created_by from trabajo where id = $1", [id]);
+  await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, 150, 'efectivo', 'adelanto', (now() at time zone 'America/La_Paz')::date, created_by from trabajo where id = $1", [id]);
 
   await ingresarComoDueno(page);
   await page.goto(`/panel/agenda/${id}`);

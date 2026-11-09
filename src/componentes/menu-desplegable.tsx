@@ -26,6 +26,9 @@ export function MenuDesplegable(props: PropsMenu) {
   // La hoja ya descargada. Montada (cerrada) desde entonces y no se desmonta: así se ven las animaciones de abrir y cerrar
   const [HojaMenu, setHojaMenu] = useState<Hoja | null>(null);
   const cargada = useRef<Hoja | null>(null);
+  // La hoja ya dibujada (cerrada) en la pantalla. Descargada no alcanza: si la descarga en segundo plano termina justo antes
+  // del primer toque, React dibujaría la hoja ya abierta, de golpe y sin deslizarse (lo vio menu-celular con la máquina cargada)
+  const dibujada = useRef(false);
   const vigente = useRef(true);
   const boton = useRef<HTMLButtonElement>(null);
 
@@ -48,6 +51,10 @@ export function MenuDesplegable(props: PropsMenu) {
   }
 
   useEffect(() => {
+    if (HojaMenu) dibujada.current = true;
+  }, [HojaMenu]);
+
+  useEffect(() => {
     vigente.current = true;
     let espera: number | undefined;
     // En un momento libre del navegador (Safari no tiene requestIdleCallback: va enseguida después de cargar)
@@ -68,7 +75,7 @@ export function MenuDesplegable(props: PropsMenu) {
   }, []);
 
   async function abrir() {
-    if (!cargada.current) {
+    if (!dibujada.current) {
       if (!(await montar())) return;
       await despuesDeDibujar();
     }
