@@ -8,6 +8,7 @@ import { PanelFirma } from "@/componentes/panel/panel-firma";
 import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { BOTON_PASO } from "@/componentes/panel/paso-siguiente";
 import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
@@ -61,15 +62,17 @@ export function FormularioEntrega({ id, conDeuda, saldo, puedeAutorizar, cliente
   }
 
   return (
-    <form ref={formulario} action={accion} className="tt-formulario-panel flex flex-col gap-5" noValidate aria-label="Entregar vehículo">
+    // Pulido de Entregar (09/11): la firma con su título arriba de su tarjeta; entregar con saldo, aparte (es la excepción)
+    <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate aria-label="Entregar vehículo">
       <input type="hidden" name="id" value={id} />
       {estado.mensaje && <MensajeError id="entrega-error">{estado.mensaje}</MensajeError>}
 
-      <section aria-labelledby="firma-titulo" className="flex flex-col gap-3">
+      <section aria-labelledby="firma-titulo" className="flex flex-col gap-2">
         <div className="flex flex-col gap-1">
           <CabeceraSeccion id="firma" titulo="Firma del cliente" compacta />
           <p className="text-sm text-tinta-suave">El cliente firma con el dedo: recibe su vehículo conforme.</p>
         </div>
+        <div className="tt-tarjeta-panel flex flex-col gap-4 p-4">
         {sinFirma && <input type="hidden" name="sinFirma" value="on" />}
         {!sinFirma && (
           <>
@@ -114,6 +117,7 @@ export function FormularioEntrega({ id, conDeuda, saldo, puedeAutorizar, cliente
             />
           </Campo>
         )}
+        </div>
       </section>
 
       {conCasilla && (
@@ -134,7 +138,7 @@ export function FormularioEntrega({ id, conDeuda, saldo, puedeAutorizar, cliente
       )}
       <AvisoAlSalir formulario={formulario} estado={estado} ademas={!!firma} />
       <PieFormulario>
-        <Button type="submit" disabled={enviando} className="h-14 w-full text-base sm:w-auto sm:px-8">
+        <Button type="submit" size="paso" disabled={enviando} className={BOTON_PASO}>
           <KeyRoundIcon />
           {enviando ? "Entregando…" : "Entregar vehículo"}
         </Button>
