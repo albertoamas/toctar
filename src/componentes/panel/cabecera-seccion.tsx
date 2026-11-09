@@ -19,3 +19,20 @@ export function CabeceraSeccion(props: { id?: string; titulo: React.ReactNode; n
     </div>
   );
 }
+
+/**
+ * Una sección que se lee, sin "Editar" propio (el logo, que se guarda al momento; los datos de una reserva): el título
+ * arriba de su tarjeta y su acción al lado (sistema-del-panel.md §2). `sinRelleno`: la tarjeta lleva filas que llegan al
+ * borde (los servicios y los pagos de un trabajo) y cada una pone su propio relleno.
+ */
+export function Seccion(props: { id: string; titulo: string; accion?: React.ReactNode; sinRelleno?: boolean; children: React.ReactNode }) {
+  const { id, titulo, accion, sinRelleno, children } = props;
+  return (
+    <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-2">
+      <CabeceraSeccion id={id} titulo={titulo}>
+        {accion}
+      </CabeceraSeccion>
+      <div className={cn("tt-tarjeta-panel flex-1", sinRelleno ? "flex flex-col overflow-hidden" : "p-4")}>{children}</div>
+    </section>
+  );
+}

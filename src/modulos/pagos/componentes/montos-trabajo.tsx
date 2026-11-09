@@ -1,5 +1,5 @@
 import { cn } from "cn";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { formatearFecha } from "@/lib/fechas";
 import type { DetalleReserva } from "@/modulos/agenda/consultas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
@@ -11,8 +11,8 @@ import { estaPagada, METODO_EN_FRASE, NOMBRE_TIPO_PAGO, precioCotizadoYFinal } f
 // Servicios, saldo y pagos de un trabajo (C3, HU-32): en la reserva, en la orden (C4) y al entregar. Solo para quien ve
 // pagos: quien lo usa ya lo verificó (`montos` llega null si no). Una reserva cancelada, sin acciones; una entregada con
 // saldo se sigue cobrando (RN-13). Con servicios sumados en el taller (HU-36), el precio cotizado y el final por separado
-// (RF-43). Pedido 26: dos tarjetas con su título adentro; en la de servicios, los totales al pie y el saldo resaltado
-// (ámbar si se puede cobrar, verde y "Pagado por completo" si está pagado).
+// (RF-43). Pedido 26: dos tarjetas; en la de servicios, los totales al pie y el saldo resaltado (ámbar si se puede cobrar,
+// verde y "Pagado por completo" si está pagado). C6: el título de cada una arriba de su tarjeta, como en las fichas.
 
 const bs = (monto: string) => `${mostrarMonto(monto)} Bs`;
 
@@ -40,10 +40,7 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar, cobrar
   );
   return (
       <>
-        <section aria-labelledby="servicios-titulo" className="tt-tarjeta-panel flex flex-col overflow-hidden">
-          <h2 id="servicios-titulo" className="tt-titulo-seccion border-b border-border px-4 py-3">
-            Servicios
-          </h2>
+        <Seccion id="servicios" titulo="Servicios" sinRelleno>
           <ul className="flex flex-col divide-y divide-border">
             {montos.lineas.map((l, i) => (
               <li key={i} className="flex justify-between gap-4 px-4 py-3">
@@ -96,15 +93,10 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar, cobrar
               {pagada && <dd className="col-span-2 text-sm font-semibold">Pagado por completo.</dd>}
             </div>
           </dl>
-        </section>
-        <section aria-labelledby="pagos-titulo" className="tt-tarjeta-panel flex flex-col overflow-hidden">
-          {/* "Registrar pago" sin fondo en la cabecera, como "Editar" (pulido 10.3): el rojo de la pantalla es su paso
-              siguiente (recibir, entregar) */}
-          <div className="border-b border-border px-4 py-1">
-            <CabeceraSeccion id="pagos" titulo="Pagos">
-              {porCobrar && !cobrar && registrar("ghost")}
-            </CabeceraSeccion>
-          </div>
+        </Seccion>
+        {/* "Registrar pago" sin fondo en la cabecera, como "Editar" (pulido 10.3): el rojo de la pantalla es su paso
+            siguiente (recibir, entregar) */}
+        <Seccion id="pagos" titulo="Pagos" sinRelleno accion={porCobrar && !cobrar && registrar("ghost")}>
           {montos.pagos.length === 0 ? (
             <p className="px-4 py-3 text-sm text-tinta-suave">Todavía no hay pagos.</p>
           ) : (
@@ -141,7 +133,7 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar, cobrar
               {registrar("outline")}
             </div>
           )}
-        </section>
+        </Seccion>
       </>
   );
 }
