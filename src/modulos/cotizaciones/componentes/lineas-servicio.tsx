@@ -19,7 +19,11 @@ type Props = {
   lineas: Linea[];
   onChange: (lineas: Linea[]) => void;
   errores: Partial<Record<string, string>>;
+  /** La pantalla trae una fila lista para elegir (Nueva reserva): sola y sin tocar, no cuenta como un servicio. */
+  conFilaLista?: boolean;
 };
+
+const sinTocar = (l: Linea) => !l.varianteId && !l.servicioId && !l.precio.trim();
 
 const textoSugerencia = (s: Sugerencia) =>
   s.tipo === "monto"
@@ -28,7 +32,7 @@ const textoSugerencia = (s: Sugerencia) =>
       ? "Según evaluación: escribe el precio"
       : "Sin precio en el catálogo para este tamaño: escribe el precio";
 
-export function LineasServicio({ opciones, lineas, onChange, errores }: Props) {
+export function LineasServicio({ opciones, lineas, onChange, errores, conFilaLista }: Props) {
   const opcion = (varianteId: number) => opciones.find((o) => o.varianteId === varianteId);
   const grupos = serviciosConOpciones(opciones);
 
@@ -42,6 +46,7 @@ export function LineasServicio({ opciones, lineas, onChange, errores }: Props) {
       maximo={MAXIMO_LINEAS}
       textoAgregar="Agregar servicio"
       errores={errores}
+      vacia={conFilaLista ? sinTocar : undefined}
       fila={(l, cambiar, i, marca) => {
         const elegida = opcion(l.varianteId);
         const servicioId = elegida?.servicioId ?? l.servicioId ?? 0;

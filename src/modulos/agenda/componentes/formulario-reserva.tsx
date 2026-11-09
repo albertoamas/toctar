@@ -128,8 +128,11 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
     };
   });
 
-  // Todo controlado: React reinicia el formulario al terminar la acción y así nada se pierde tras un error
-  const [lineas, setLineas] = useState<Linea[]>(origen.tipo === "directa" ? (origen.lineasIniciales ?? []) : []);
+  // Todo controlado: React reinicia el formulario al terminar la acción y así nada se pierde tras un error. Sin servicios
+  // con que llegar, la primera fila ya está para elegir (pulido final del 09/11): siempre se agrega al menos uno
+  const [lineas, setLineas] = useState<Linea[]>(
+    origen.tipo === "directa" ? (origen.lineasIniciales?.length ? origen.lineasIniciales : [{ varianteId: 0, precio: "" }]) : [],
+  );
   const duraciones =
     origen.tipo === "cotizacion"
       ? origen.duraciones
@@ -142,7 +145,8 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
   const { libres, buscando, ayuda } = useEspaciosLibres(fechaInicio, fechaFin, { iniciales: espaciosIniciales });
   // El elegido vale mientras siga libre en las fechas de ahora
   const [espacioElegido, setEspacioId] = useState(espacioInicial ? String(espacioInicial) : "");
-  const espacioId = libres.some((x) => String(x.id) === espacioElegido) ? espacioElegido : "";
+  // y, si hay uno solo libre, ya va elegido: no hay nada que decidir (pulido final del 09/11)
+  const espacioId = libres.some((x) => String(x.id) === espacioElegido) ? espacioElegido : libres.length === 1 ? String(libres[0].id) : "";
   const [horaIngreso, setHoraIngreso] = useState("");
   const [nota, setNota] = useState("");
   const [sinAdelanto, setSinAdelanto] = useState(false);
@@ -212,7 +216,8 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
   const conErrorEnServicios = Object.keys(e).some((c) => pasoDeCampoReserva(c) === PASO_SERVICIOS && e[c]);
   // Con cotizaciones del vehículo, lo común es usar una: "Siguiente" aparece al empezar una sin cotización, y queda
   // aunque se quite el último servicio (así dice qué falta)
-  const [armando, setArmando] = useState(lineas.length > 0);
+  // (la fila vacía con que empieza no cuenta: se empieza al abrir "Reserva sin cotización" o al elegir un servicio)
+  const [armando, setArmando] = useState(origen.tipo === "directa" && (origen.lineasIniciales?.length ?? 0) > 0);
   const conSiguiente = !cotizaciones || armando || conErrorEnServicios;
 
   const servicios = origen.tipo === "directa" && (
@@ -223,8 +228,16 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
         onChange={(nuevas) => {
           setLineas(nuevas);
           if (nuevas.length > 0) setArmando(true);
+          // Un error de los servicios que ya se corrigió se va al cambiarlos ("Agrega al menos un servicio" seguía debajo
+          // del servicio elegido hasta el próximo "Siguiente"); uno nuevo espera a "Siguiente" o a "Reservar"
+          if (conErrorEnServicios) {
+            const siguen = erroresServicios(JSON.stringify(nuevas));
+            setLocales({ en: estado, errores: Object.fromEntries(Object.entries(siguen).filter(([campo]) => e[campo])) });
+            setRevisadosEn(estado);
+          }
         }}
         errores={e}
+        conFilaLista
       />
     </SeccionFormulario>
   );
@@ -276,7 +289,7 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
         <div data-paso={PASO_SERVICIOS} hidden={paso !== PASO_SERVICIOS} className="flex flex-col gap-6">
           {cotizaciones}
           {cotizaciones ? (
-            <MasDatos texto="Reserva sin cotización" abierto={lineas.length > 0 || conErrorEnServicios}>
+            <MasDatos texto="Reserva sin cotización" abierto={armando || conErrorEnServicios} alAbrir={() => setArmando(true)}>
               {servicios}
             </MasDatos>
           ) : (

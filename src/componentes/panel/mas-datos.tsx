@@ -13,10 +13,12 @@ type Props = {
   /** Lo que se agrega: "Agregar correo, NIT y notas". */
   texto: string;
   abierto: boolean;
+  /** Al abrirlo la persona (la reserva sin cotización muestra entonces su "Siguiente"). */
+  alAbrir?: () => void;
   children: React.ReactNode;
 };
 
-export function MasDatos({ texto, abierto, children }: Props) {
+export function MasDatos({ texto, abierto, alAbrir, children }: Props) {
   const tocado = useRef(false);
   // Solo pasa de cerrado a abierto: si `abierto` vuelve a false después de un envío, sigue abierto
   const [fijo, setFijo] = useState(abierto);
@@ -28,6 +30,7 @@ export function MasDatos({ texto, abierto, children }: Props) {
         // Solo si lo abrió la persona, y una vez: el que se abre por un error deja el foco a useFocoEnError
         if (!tocado.current || !e.currentTarget.open) return;
         tocado.current = false;
+        alAbrir?.();
         e.currentTarget.querySelector<HTMLElement>("input:not([type=hidden]), textarea, select")?.focus();
       }}
       className="group"

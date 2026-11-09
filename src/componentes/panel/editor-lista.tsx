@@ -27,9 +27,14 @@ type Props<T> = {
   fila: (elemento: T, cambiar: (nuevo: T) => void, indice: number, marca: MarcaError) => React.ReactNode;
   /** Filas de un renglón: desde 640 px, subir y bajar uno al lado del otro. */
   flechasEnFila?: boolean;
+  /**
+   * Una fila sin nada elegido ni escrito. Si todas lo están, se envía la lista vacía: una fila que la pantalla ya trae
+   * lista para elegir (Nueva reserva) no es un cambio sin guardar y el servidor dice "Agrega al menos …".
+   */
+  vacia?: (elemento: T) => boolean;
 };
 
-export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maximo, textoAgregar, errores, fila, flechasEnFila = false }: Props<T>) {
+export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maximo, textoAgregar, errores, fila, flechasEnFila = false, vacia }: Props<T>) {
   const mover = (i: number, j: number) => {
     const copia = [...valor];
     [copia[i], copia[j]] = [copia[j], copia[i]];
@@ -38,7 +43,7 @@ export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maxim
 
   return (
     <div className="flex flex-col gap-3">
-      <input type="hidden" name={nombre} value={JSON.stringify(valor)} />
+      <input type="hidden" name={nombre} value={JSON.stringify(vacia && valor.every(vacia) ? [] : valor)} />
       {valor.length > 0 && (
         <ol className="flex flex-col gap-3" aria-label={etiqueta}>
           {valor.map((elemento, i) => {
