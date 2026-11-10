@@ -68,6 +68,7 @@ function CambioDeDueno({ estado, campo, href }: { estado: EstadoCliente; campo: 
 
 /** Algún campo trae un valor (lo enviado, o el guardado al editar) o un error: lo plegado empieza abierto. */
 const conAlgo = (valores: Partial<Record<string, string>>, errores: Partial<Record<string, string>>, campos: string[]) => campos.some((c) => !!valores[c] || !!errores[c]);
+const conError = (errores: Partial<Record<string, string>>, campos: string[]) => campos.some((c) => !!errores[c]);
 
 export function CamposCliente({ estado, iniciales = {}, compacto, plegar, enlaceExistente }: PropsCampos) {
   const v = estado.valores ?? iniciales;
@@ -101,7 +102,7 @@ export function CamposCliente({ estado, iniciales = {}, compacto, plegar, enlace
       </div>
       <Existente estado={estado} campo="telefono" enlace={enlaceExistente} />
       {plegar && mas ? (
-        <MasDatos texto="Agregar correo, NIT y notas" titulo="Correo, NIT y notas" abierto={conAlgo(v, e, ["correo", "nit", "razonSocial", "notas"])}>
+        <MasDatos texto="Agregar correo, NIT y notas" titulo="Correo, NIT y notas" modo={Object.keys(iniciales).length > 0 ? "cambiar" : "agregar"} abierto={conAlgo(v, e, ["correo", "nit", "razonSocial", "notas"])} conError={conError(e, ["correo", "nit", "razonSocial", "notas"])}>
           {mas}
         </MasDatos>
       ) : (
@@ -205,7 +206,14 @@ export function CamposVehiculo({ estado, iniciales = {}, prefijo = "", compacto,
   return (
     <>
       {grilla}
-      <MasDatos texto="Agregar marca, modelo, año y color" titulo="Marca, modelo, año y color" abierto={conAlgo(v, e, ["marca", "modelo", "anio", "color"].map(n))}>
+      {/* Al editar un vehículo, lo guardado no se borra al cerrar: "Listo" en lugar de "Quitar" */}
+      <MasDatos
+        texto="Agregar marca, modelo, año y color"
+        titulo="Marca, modelo, año y color"
+        modo={Object.keys(iniciales).length > 0 ? "cambiar" : "agregar"}
+        abierto={conAlgo(v, e, ["marca", "modelo", "anio", "color"].map(n))}
+        conError={conError(e, ["marca", "modelo", "anio", "color"].map(n))}
+      >
         <div className="grid gap-6 sm:grid-cols-2">{opcionales}</div>
       </MasDatos>
     </>

@@ -10,8 +10,8 @@ import { Input } from "@/componentes/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import { leerMonto, mostrarMonto } from "@/modulos/catalogo/reglas";
 import type { OpcionServicio } from "../consultas";
-import { bs, calcularTotales, leerMontoOCero, MODOS, NOMBRE_MODO, SIN_SERVICIOS, type Modo } from "../reglas";
-import { LineasServicio, lineasQueCuentan, type Linea } from "./lineas-servicio";
+import { bs, calcularTotales, leerMontoOCero, MODOS, NOMBRE_MODO, type Modo } from "../reglas";
+import { LineasServicio, type Linea } from "./lineas-servicio";
 
 // Lo que lleva cada versión de una cotización (pedido 23): los servicios con su precio, el total, cómo se cotizó y las
 // condiciones del PDF. Lo comparten la nueva cotización y la versión nueva. Todo controlado: React reinicia el
@@ -51,13 +51,11 @@ type Props = {
 };
 
 export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
-  // Con un servicio que cuenta, la lista ya no está vacía: su error se va sin esperar a "Crear"
-  const deLaLista = e.lineas === SIN_SERVICIOS && lineasQueCuentan(p.lineas).length > 0 ? { ...e, lineas: undefined } : e;
   return (
     <>
       <SeccionFormulario titulo="Servicios" claseContenido="gap-4">
         {opciones ? (
-          <LineasServicio opciones={opciones} lineas={p.lineas} onChange={p.setLineas} errores={deLaLista} conFilaLista />
+          <LineasServicio opciones={opciones} lineas={p.lineas} onChange={p.setLineas} errores={e} conFilaLista />
         ) : (
           // Sin tamaño no hay precio sugerido: primero el vehículo
           <p className="text-tinta-suave">Elige el vehículo (o su tamaño) para ver los servicios con su precio.</p>
@@ -112,8 +110,9 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
         <MasDatos
           texto="Cambiar adelanto o validez"
           titulo="Adelanto y validez"
-          detalle={`Ahora: ${p.adelanto.trim() ? `${p.adelanto.trim()} Bs` : "sin adelanto"}, hasta el ${p.validaHasta ? fechaCorta(p.validaHasta, hoy) : "…"}`}
+          detalle={`Ahora: ${(leerMontoOCero(p.adelanto) ?? "0.00") !== "0.00" ? `${p.adelanto.trim()} Bs` : "sin adelanto"}, hasta el ${p.validaHasta ? fechaCorta(p.validaHasta, hoy) : "…"}`}
           abierto={!!e.adelanto || !!e.validaHasta}
+          conError={!!e.adelanto || !!e.validaHasta}
         >
           <div className="grid gap-5 sm:grid-cols-2">
             <Campo id="adelanto" etiqueta="Adelanto sugerido" opcional error={e.adelanto}>

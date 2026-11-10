@@ -20,7 +20,7 @@ import type { EstadoFormulario } from "@/lib/formularios";
 import { leerMonto, mostrarMonto } from "@/modulos/catalogo/reglas";
 import { calcularTotales } from "@/modulos/cotizaciones/reglas";
 import type { OpcionServicio } from "@/modulos/cotizaciones/consultas";
-import { LineasServicio, lineasQueCuentan, type Linea } from "@/modulos/cotizaciones/componentes/lineas-servicio";
+import { LineasServicio, type Linea } from "@/modulos/cotizaciones/componentes/lineas-servicio";
 import { useEnvioConComprobante } from "@/modulos/pagos/componentes/campo-comprobante";
 import { MetodoYComprobante } from "@/modulos/pagos/componentes/elegir-metodo";
 import { agendarReserva } from "../acciones";
@@ -81,8 +81,6 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
   // un envío nuevo dejan de valer solos (sin reiniciarlos tras el await, que se dibujaba antes que el resultado)
   const [locales, setLocales] = useState<{ en: EstadoFormulario | null; errores: Record<string, string> }>({ en: null, errores: {} });
   const [revisadosEn, setRevisadosEn] = useState<EstadoFormulario | null>(null);
-  // "Agrega al menos un servicio." ya corregido (se agregó uno que cuenta), para el resultado de la acción de ahora
-  const [listaCorregidaEn, setListaCorregidaEn] = useState<EstadoFormulario | null>(null);
   const errorAlLlegar = useRef(false);
   const formulario = useRef<HTMLFormElement>(null);
 
@@ -181,7 +179,6 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
         const errores = erroresServicios(String(new FormData(formulario.current).get("lineas") ?? "[]"));
         if (Object.keys(errores).length > 0) {
           setLocales({ en: estado, errores });
-          setListaCorregidaEn(null);
           errorAlLlegar.current = true;
           window.history.back();
           return;
@@ -201,7 +198,6 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
   function siguiente() {
     const errores = erroresServicios(String(new FormData(formulario.current!).get("lineas") ?? "[]"));
     setLocales({ en: estado, errores });
-    setListaCorregidaEn(null);
     if (Object.keys(errores).length > 0) {
       foco.pedir(true);
       return;
@@ -217,7 +213,6 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
     ...Object.fromEntries(Object.entries(estado.errores ?? {}).filter(vigente)),
     ...(locales.en === estado ? locales.errores : {}),
   };
-  if (listaCorregidaEn === estado) delete e.lineas;
   const conErrorEnServicios = Object.keys(e).some((c) => pasoDeCampoReserva(c) === PASO_SERVICIOS && e[c]);
   // Con cotizaciones del vehículo, lo común es usar una: "Siguiente" aparece al empezar una sin cotización, y queda
   // aunque se quite el último servicio (así dice qué falta)
@@ -233,9 +228,7 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
         onChange={(nuevas) => {
           setLineas(nuevas);
           if (nuevas.length > 0) setArmando(true);
-          // "Agrega al menos un servicio." se va al agregar uno que cuenta (seguía debajo del servicio elegido hasta el
-          // próximo "Siguiente"). Los de cada fila, y los que solo sabe el servidor, quedan hasta "Siguiente" o "Reservar"
-          if (e.lineas && lineasQueCuentan(nuevas).length > 0) setListaCorregidaEn(estado);
+
         }}
         errores={e}
         conFilaLista
@@ -298,6 +291,9 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
               alQuitar={() => {
                 setLineas([{ varianteId: 0, precio: "" }]);
                 setArmando(false);
+                // Sus errores, ya sin nada que corregir: los de "Siguiente" y los de la acción
+                setLocales({ en: null, errores: {} });
+                setRevisadosEn(estado);
               }}
             >
               {servicios}

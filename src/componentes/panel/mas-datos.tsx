@@ -25,9 +25,14 @@ type Props = {
   titulo?: string;
   /** Lo que ya viene puesto y se guarda si no se abre: "Ahora: 200 Bs, hasta el 24/11". */
   detalle?: string;
-  /** "cambiar" si hay `detalle`; si no, "agregar". */
+  /**
+   * "agregar": datos nuevos, y "Quitar" los borra. "cambiar": lo que ya viene puesto o ya está guardado (al editar), y
+   * "Listo" lo cierra sin borrar nada. Si no se dice, "cambiar" con `detalle` y "agregar" sin él.
+   */
   modo?: "agregar" | "cambiar" | "ver";
   abierto: boolean;
+  /** Alguno de sus campos tiene un error: en el modo "cambiar", no se cierra hasta corregirlo. */
+  conError?: boolean;
   /** Al abrirlo la persona (la reserva sin cotización muestra entonces su "Siguiente"). */
   alAbrir?: () => void;
   /**
@@ -38,14 +43,18 @@ type Props = {
   children: React.ReactNode;
 };
 
-/** Vacía un campo como si lo borrara la persona: el formulario controlado y el aviso de cambios sin guardar se enteran. */
+/**
+ * Vacía un campo como si lo borrara la persona: el formulario controlado y el aviso de cambios sin guardar se enteran. Un
+ * menú, solo si tiene una opción vacía (si no, quedaría sin ninguna elegida).
+ */
 function vaciar(campo: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement) {
+  if (campo instanceof HTMLSelectElement && ![...campo.options].some((o) => o.value === "")) return;
   const prototipo = Object.getPrototypeOf(campo) as object;
   Object.getOwnPropertyDescriptor(prototipo, "value")?.set?.call(campo, "");
   campo.dispatchEvent(new Event(campo instanceof HTMLSelectElement ? "change" : "input", { bubbles: true }));
 }
 
-export function MasDatos({ texto, titulo, detalle, modo = detalle ? "cambiar" : "agregar", abierto, alAbrir, alQuitar, children }: Props) {
+export function MasDatos({ texto, titulo, detalle, modo = detalle ? "cambiar" : "agregar", abierto, conError = false, alAbrir, alQuitar, children }: Props) {
   const tocado = useRef(false);
   const caja = useRef<HTMLDetailsElement>(null);
   const [abiertoAhora, setAbiertoAhora] = useState(abierto);
@@ -70,6 +79,9 @@ export function MasDatos({ texto, titulo, detalle, modo = detalle ? "cambiar" : 
   const cierre =
     modo === "agregar" ? { texto: "Quitar", Icono: XIcon } : modo === "cambiar" ? { texto: "Listo", Icono: CheckIcon } : { texto: "Ver menos", Icono: ChevronUpIcon };
   const nombre = titulo ?? texto;
+  // Lo que cambia algo que ya viene puesto, con un error (`conError`), queda abierto hasta corregirlo: cerrado, el
+  // siguiente envío devolvería el mismo error escondido. Lo nuevo sí se quita: al borrarlo, el error se va con el envío
+  const fijoPorError = conError && modo === "cambiar";
   const botonCerrar = (
     <Button type="button" variant="ghost" onClick={cerrar}>
       <cierre.Icono />
@@ -82,7 +94,7 @@ export function MasDatos({ texto, titulo, detalle, modo = detalle ? "cambiar" : 
   return (
     <details
       ref={caja}
-      open={abiertoAhora}
+      open={abiertoAhora || fijoPorError}
       onToggle={(e) => {
         const ahora = e.currentTarget.open;
         setAbiertoAhora(ahora);
@@ -118,9 +130,9 @@ export function MasDatos({ texto, titulo, detalle, modo = detalle ? "cambiar" : 
         </div>
       ) : (
         <div className="flex flex-col gap-4 border-t border-border pt-4">
-          <div className="-my-1 -mr-2 flex items-center justify-between gap-3">
+          <div className="-my-1 -mr-2 flex min-h-11 items-center justify-between gap-3">
             <p className="font-semibold">{nombre}</p>
-            {botonCerrar}
+            {!fijoPorError && botonCerrar}
           </div>
           <div className="flex flex-col gap-6">{children}</div>
         </div>
