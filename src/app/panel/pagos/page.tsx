@@ -112,7 +112,8 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
                   </div>
                   <span className="flex shrink-0 items-center gap-1">
                     <span className="tt-placa text-xl whitespace-nowrap">{mostrarMonto(s.saldo)} Bs</span>
-                    {trabajo && <ChevronRightIcon className="size-5 text-tinta-suave" aria-hidden />}
+                    {/* Solo en el celular: en la computadora, a la derecha vienen los botones y parecería apuntarles */}
+                    {trabajo && <ChevronRightIcon className="size-5 text-tinta-suave lg:hidden" aria-hidden />}
                   </span>
                 </div>
                 <p className="text-sm">
@@ -123,16 +124,20 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
             return (
               <FilaConAcciones key={s.id}>
                 {trabajo ? (
-                  <Link href={trabajo.href} className="-m-2 flex min-w-0 flex-1 flex-col gap-1 rounded-lg p-2 hover:bg-superficie/60">
+                  <Link
+                    href={trabajo.href}
+                    // Qué abre y de quién, corto: el lector no lee toda la fila antes de decirlo
+                    aria-label={`${trabajo.texto}: ${s.cliente}, ${mostrarMonto(s.saldo)} Bs`}
+                    className="flex min-h-11 min-w-0 flex-1 flex-col gap-1 rounded-lg hover:bg-superficie/60 focus-visible:outline-offset-4"
+                  >
                     {datos}
-                    {/* Qué abre: "Ver la orden" o "Ver la reserva" */}
-                    <span className="sr-only">, {trabajo.texto.toLowerCase()}</span>
                   </Link>
                 ) : (
                   <div className="flex min-w-0 flex-1 flex-col gap-1">{datos}</div>
                 )}
-                {/* Lado a lado también en el celular: en el celular, "WhatsApp" a secas para que entren los dos */}
-                <div className="grid grid-cols-2 gap-2 lg:flex">
+                {/* Lado a lado también en el celular ("WhatsApp" a secas para que entren); si no entran (320 px), uno por
+                    renglón, a lo ancho */}
+                <div className="flex flex-wrap gap-2 *:flex-1 lg:flex-nowrap lg:*:flex-none">
                   <a
                     href={enlaceWhatsApp(s.telefono, mensajeSaldo({ plantilla: plantillas.saldo, negocio: negocio.nombre, cliente: s.cliente, vehiculo, saldo: s.saldo }))}
                     target="_blank"
