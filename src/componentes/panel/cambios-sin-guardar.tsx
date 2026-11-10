@@ -1,17 +1,15 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
-import { cn } from "cn";
 import { contenidoFormulario } from "@/componentes/panel/contenido-formulario";
 import { PreguntaSalir } from "@/componentes/panel/modal-formulario";
-import { Button } from "@/componentes/ui/button";
 
 // Componente de cliente: se usa dentro de otros componentes de cliente (recibe funciones como props).
-// Lo que falta guardar en un formulario del panel (pulido 13.15). Tres piezas:
+// Lo que falta guardar en un formulario del panel (pulido 13.15). Dos piezas:
 // - `useCambiosSinGuardar`: compara lo que tiene el formulario con lo que tenía al abrirse o al guardarse.
-// - `BarraGuardar`: en un formulario largo (Crear usuario), el botón queda fijo abajo cuando hay algo escrito. Las fichas se
-//   editan por partes en modales (C6): ya no hay un formulario largo de editar con el botón desactivado hasta un cambio.
-// - `AvisoAlSalir`: pregunta antes de perderlos. En los flujos (crear, recibir, entregar), que siguen con su PieFormulario.
+// - `AvisoAlSalir`: pregunta antes de perderlos y le dice al lector de pantalla que hay cambios. En todo formulario de crear
+//   y en los flujos (recibir, entregar), con su PieFormulario. Hasta el 10/11, Crear usuario tenía su propia barra que se
+//   fijaba abajo al escribir (BarraGuardar): era la única pantalla de crear con otro pie (inventario-pantallas.md, cambio 2).
 // No cubre el botón Atrás del navegador: el navegador no deja detenerlo sin trucos con el historial, que además usan los
 // flujos en pasos.
 
@@ -126,29 +124,14 @@ function PreguntarAlSalir({ hay }: { hay: boolean }) {
 
 /** Para un flujo con su propio pie: solo pregunta al salir. `ademas`: lo que no es un campo del formulario (la firma, una foto elegida). */
 export function AvisoAlSalir({ formulario, estado, ademas = false }: { formulario: RefObject<HTMLFormElement | null>; estado?: Estado; ademas?: boolean }) {
-  const hay = useCambiosSinGuardar(formulario, estado);
-  return <PreguntarAlSalir hay={hay || ademas} />;
-}
-
-/**
- * El botón de un formulario largo de crear: siempre activo (tocarlo vacío muestra qué falta) y, con algo escrito, fijo abajo
- * a lo ancho del formulario y preguntando antes de salir.
- */
-export function BarraGuardar(props: { formulario: RefObject<HTMLFormElement | null>; estado?: Estado; texto: string; enviando: boolean }) {
-  const { formulario, estado, texto, enviando } = props;
-  const hay = useCambiosSinGuardar(formulario, estado);
+  const hay = useCambiosSinGuardar(formulario, estado) || ademas;
   return (
     <>
       <PreguntarAlSalir hay={hay} />
-      <div data-pie-fijo={hay || undefined} className={cn("flex flex-wrap items-center gap-2", hay && "sticky bottom-0 z-10 border-t border-border bg-background px-4 py-3 max-sm:-mx-4")}>
-        {/* Siempre en el documento: el lector de pantalla anuncia cuando cambia */}
-        <p role="status" className="sr-only">
-          {hay && "Hay cambios sin guardar."}
-        </p>
-        <Button type="submit" disabled={enviando}>
-          {enviando ? "Guardando…" : texto}
-        </Button>
-      </div>
+      {/* Siempre en el documento: el lector de pantalla anuncia cuando cambia */}
+      <p role="status" className="sr-only">
+        {hay && "Hay cambios sin guardar."}
+      </p>
     </>
   );
 }

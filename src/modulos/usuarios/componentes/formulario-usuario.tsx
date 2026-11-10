@@ -5,7 +5,8 @@ import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
-import { BarraGuardar } from "@/componentes/panel/cambios-sin-guardar";
+import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
+import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import type { EstadoFormulario } from "@/lib/formularios";
@@ -14,8 +15,9 @@ import type { Rol } from "@/lib/roles";
 import { crearUsuario } from "../acciones";
 import { CamposRolPermisos } from "./campos-rol-permisos";
 
-// HU-02: crear un usuario. Un formulario largo, con su botón al pie que queda fijo abajo con cambios (BarraGuardar). La
-// ficha de un usuario se edita por partes, en modales (ficha-usuario.tsx, C6).
+// HU-02: crear un usuario. Como toda pantalla de crear, "Crear usuario" al pie (PieFormulario: fijo abajo en el celular) y
+// pregunta antes de salir con algo escrito (inventario-pantallas.md, cambio 2: tenía su propia barra). La ficha de un
+// usuario se edita por partes, en modales (ficha-usuario.tsx, C6).
 
 const crearConAviso = conAviso(crearUsuario);
 
@@ -45,7 +47,12 @@ export function FormularioUsuario({ asignables }: { asignables: { permiso: Permi
       </Campo>
       {/* Un encargado nuevo empieza con el perfil Taller, el más común (pedido 32: los que reciben y trabajan los vehículos) */}
       <CamposRolPermisos asignables={asignables} rolInicial={(valores?.rol as Rol) || "encargado"} permisosIniciales={PERFILES[0].permisos} error={e.rol} />
-      <BarraGuardar formulario={formulario} estado={estado} texto="Crear usuario" enviando={enviando} />
+      <AvisoAlSalir formulario={formulario} estado={estado} />
+      <PieFormulario>
+        <Button type="submit" disabled={enviando}>
+          {enviando ? "Creando…" : "Crear usuario"}
+        </Button>
+      </PieFormulario>
     </form>
   );
 }
