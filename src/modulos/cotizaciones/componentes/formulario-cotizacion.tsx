@@ -28,7 +28,13 @@ export function FormularioNuevaVersion({ datos, hoy }: Props) {
       <input type="hidden" name="consultaId" value={datos.consultaId} />
       <input type="hidden" name="desde" value={datos.desde.id} />
       {estado.mensaje && !estado.ok && <MensajeError id="cotizacion-error">{estado.mensaje}</MensajeError>}
-      <CamposPrecio precios={precios} opciones={datos.opciones} errores={estado.errores ?? {}} hoy={hoy} />
+      <CamposPrecio
+        precios={precios}
+        opciones={datos.opciones}
+        errores={estado.errores ?? {}}
+        hoy={hoy}
+        anterior={datos.totalAnterior ? { version: datos.desde.version, total: datos.totalAnterior } : undefined}
+      />
       <AvisoAlSalir formulario={formulario} estado={estado} />
       <PieFormulario>
         <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:justify-start">

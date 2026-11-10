@@ -11,6 +11,8 @@ import { exigirAccion } from "@/lib/sesion";
 import { FormularioNuevaVersion } from "@/modulos/cotizaciones/componentes/formulario-cotizacion";
 import { datosNuevaVersion } from "@/modulos/cotizaciones/consultas";
 import { NOMBRE_ESTADO } from "@/modulos/cotizaciones/reglas";
+import { formatearWhatsApp } from "@/lib/whatsapp";
+import { ResumenClienteVehiculo } from "@/modulos/clientes/componentes/resumen-cliente-vehiculo";
 
 export const metadata: Metadata = { title: "Nueva versión" };
 
@@ -45,9 +47,7 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/cotiza
   return (
     <>
       <div className="flex flex-col gap-2">
-        <EncabezadoPagina titulo={datos.desde ? `Versión ${datos.desde.version + 1}` : "Nueva versión"} volver={{ href: volver, texto: datos.desde ? `Cotización ${datos.desde.numero}` : "Cotización" }}>
-          {datos.cliente}, {datos.placa} ({datos.tamano})
-        </EncabezadoPagina>
+        <EncabezadoPagina titulo={datos.desde ? `Versión ${datos.desde.version + 1}` : "Nueva versión"} volver={{ href: volver, texto: datos.desde ? `Cotización ${datos.desde.numero}` : "Cotización" }} />
         {datos.desde && <p className="text-sm text-tinta-suave">La versión {datos.desde.version} queda como estaba, con su PDF.</p>}
       </div>
 
@@ -64,9 +64,19 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/cotiza
       ) : datos.opciones.length === 0 ? (
         <EstadoVacio>No hay servicios activos para cotizar: se activan en Catálogo y precios.</EstadoVacio>
       ) : (
-        // La key lo vuelve a montar al cambiar de versión: Next conserva la página anterior y el formulario guardaba
-        // las líneas de la visita de antes
-        <FormularioNuevaVersion key={datos.desde.id} datos={{ ...datos, desde: datos.desde }} hoy={fechaEnBolivia()} />
+        <>
+          {/* Para quién, en su tarjeta como en Nueva cotización (pulido final, 10/11: era una línea suelta bajo el título);
+              sin "Cambiar": una versión es de la misma cotización */}
+          <ResumenClienteVehiculo
+            id="version-para"
+            titulo="Cotización para"
+            cliente={{ nombre: datos.cliente, detalle: formatearWhatsApp(datos.telefono) }}
+            vehiculo={{ placa: datos.placa, detalle: datos.detalle, tamano: datos.tamano }}
+          />
+          {/* La key lo vuelve a montar al cambiar de versión: Next conserva la página anterior y el formulario guardaba
+              las líneas de la visita de antes */}
+          <FormularioNuevaVersion key={datos.desde.id} datos={{ ...datos, desde: datos.desde }} hoy={fechaEnBolivia()} />
+        </>
       )}
     </>
   );

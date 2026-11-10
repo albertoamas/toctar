@@ -8,7 +8,7 @@ import { preciosVigentes } from "@/modulos/catalogo/consultas";
 import { duracionEfectiva, type Monto } from "@/modulos/catalogo/reglas";
 import { detalleVehiculo, escaparLike, nombreVehiculo, normalizarBusqueda } from "@/modulos/clientes/reglas";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
-import { descripcionLinea, fechaValidez, precioSugerido, VISTAS, type Sugerencia, type Vista } from "./reglas";
+import { calcularTotales, descripcionLinea, fechaValidez, precioSugerido, VISTAS, type Sugerencia, type Vista } from "./reglas";
 
 // Lecturas de las cotizaciones (pedido 23, P23-cotizacion-directa.md §5). Quien las llama ya pasó por
 // exigirModulo("cotizaciones"): el dueño o el encargado con ese permiso, que también cotiza (pedido 24, RN-12).
@@ -91,9 +91,14 @@ export type DatosNuevaVersion = {
   consultaId: number;
   estado: EstadoConsulta;
   cliente: string;
+  telefono: string;
   placa: string;
+  /** Marca y modelo, año, color: lo que se sepa. */
+  detalle: (string | number)[];
   tamano: string;
   opciones: OpcionServicio[];
+  /** El total de la versión que se reemplaza, para compararlo mientras se cambian los precios. */
+  totalAnterior: string | null;
   /** Valores con los que arranca el formulario: los de la versión que se reemplaza, con la validez de hoy. */
   inicial: { validaHasta: string; adelanto: string; esEstimado: boolean; descuento: string; lineas: { varianteId: number; precio: string }[] };
   /** La versión que se reemplaza (la vigente), si `desde` lo es. */
@@ -111,7 +116,12 @@ export async function datosNuevaVersion(consultaId: number, desdeId: number | nu
       consultaId: consulta.id,
       estado: consulta.estado,
       cliente: cliente.nombre,
+      telefono: cliente.telefono,
       placa: vehiculo.placa,
+      marca: vehiculo.marca,
+      modelo: vehiculo.modelo,
+      anio: vehiculo.anio,
+      color: vehiculo.color,
       tamanoId: vehiculo.tamanoId,
       tamano: tamanoVehiculo.nombre,
     })
@@ -142,9 +152,13 @@ export async function datosNuevaVersion(consultaId: number, desdeId: number | nu
     consultaId: c.consultaId,
     estado: c.estado,
     cliente: c.cliente,
+    telefono: c.telefono,
     placa: c.placa,
+    detalle: detalleVehiculo(c),
     tamano: c.tamano,
     opciones,
+    // Con todas sus líneas, también las que ya no se ofrecen: es lo que dice su PDF
+    totalAnterior: desde ? calcularTotales(desde.lineas.map((l) => l.precio), desde.descuento).total : null,
     inicial: desde
       ? {
           validaHasta: inicio.validaHasta,
