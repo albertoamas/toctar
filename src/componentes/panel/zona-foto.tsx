@@ -88,6 +88,8 @@ type Props = {
   alElegirVarias?: (archivos: File[]) => void;
   /** Una miniatura (pulido 13.19): vacía dice solo "Agregar foto"; lo demás lo pone quien la usa, al lado. */
   compacta?: boolean;
+  /** El ancho de la zona (`w-32`), sin achicar sus avisos, que siguen a todo el ancho. */
+  claseZona?: string;
   /** Con foto, tocarla hace esto (verla en grande) en lugar de abrir el selector para cambiarla. */
   alTocarFoto?: () => void;
 };
@@ -129,6 +131,7 @@ export function ZonaFoto(props: Props) {
         data-arrastrando={arrastrando || undefined}
         className={cn(
           "relative overflow-hidden",
+          props.claseZona,
           enSitio ? "rounded-none" : "rounded-lg",
           vista && cn("border border-border bg-superficie", props.claseForma ?? "aspect-[4/3]"),
           vista && arrastrando && "ring-2 ring-info",

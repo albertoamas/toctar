@@ -13,6 +13,11 @@ export const NOMBRE_TIPO_PAGO: Record<TipoPago, string> = { adelanto: "Adelanto"
 export const METODOS = Object.keys(NOMBRE_METODO) as MetodoPago[];
 export const TIPOS = Object.keys(NOMBRE_TIPO_PAGO) as TipoPago[];
 
+/** Con QR o transferencia hay un comprobante que guardar; en efectivo, no (el formulario no lo ofrece). */
+export function llevaComprobante(metodo: MetodoPago | ""): boolean {
+  return metodo === "qr" || metodo === "transferencia";
+}
+
 /** El mismo aviso en el navegador (antes de enviar) y en el servidor. */
 export const ERROR_COMPROBANTE = "El comprobante debe ser una foto JPG, PNG o WebP de hasta 5 MB.";
 

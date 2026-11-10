@@ -41,7 +41,22 @@ test("registrar un pago con comprobante, no pasar el saldo y anular con motivo",
   const form = page.getByRole("form", { name: "Registrar pago" });
   // El monto viene con el saldo y el tipo, "Saldo" (ya dejó adelanto)
   await expect(form.getByLabel("Monto")).toHaveValue("350");
+  // La fecha y el tipo, plegados (pulido final de los pagos, 09/11): ya vienen bien
+  await expect(form.getByLabel("Fecha")).toBeHidden();
+  // Plegados, pero dice qué se va a guardar
+  await form.getByText("Otra fecha o tipo (ahora: saldo, hoy)", { exact: true }).click();
   await expect(form.getByRole("radio", { name: "Saldo" })).toBeChecked();
+  // El comprobante, solo con QR o transferencia; en efectivo no se ofrece
+  await expect(form.locator("#comprobante")).toHaveCount(0);
+  await form.getByText("Efectivo", { exact: true }).click();
+  await expect(form.locator("#comprobante")).toHaveCount(0);
+  await form.getByText("QR", { exact: true }).click();
+  // Una foto elegida con QR no queda escondida al pasar a efectivo: al volver a QR, el campo está vacío
+  await form.locator("#comprobante").setInputFiles({ name: "comprobante.png", mimeType: "image/png", buffer: PNG });
+  await expect(form.getByRole("img", { name: "Foto del comprobante elegida" })).toBeVisible();
+  await form.getByText("Efectivo", { exact: true }).click();
+  await form.getByText("QR", { exact: true }).click();
+  await expect(form.getByRole("img", { name: "Foto del comprobante elegida" })).toHaveCount(0);
 
   // La foto elegida no es un campo del formulario, pero perderla también se pregunta (C6, sistema-del-panel.md §4)
   await form.locator("#comprobante").setInputFiles({ name: "comprobante.png", mimeType: "image/png", buffer: PNG });

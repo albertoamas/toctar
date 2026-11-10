@@ -3,7 +3,7 @@ import { erroresDe } from "@/lib/formularios";
 import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
 import { esquemaAnularPago, esquemaPago } from "@/modulos/pagos/esquemas";
 import { normalizarBusqueda } from "@/modulos/clientes/reglas";
-import { estaPagada, filtrarSaldos, ordenarSaldos, saldoPendiente } from "@/modulos/pagos/reglas";
+import { estaPagada, filtrarSaldos, llevaComprobante, ordenarSaldos, saldoPendiente } from "@/modulos/pagos/reglas";
 
 // C3 Pagos (HU-32, RF-45): validación del pago y de su anulación. El saldo (calcularSaldo) se prueba en agenda.test.ts.
 
@@ -87,4 +87,11 @@ test("se ordenan por la más antigua, el mayor monto o el cliente; a igualdad, l
   expect(ids("antiguas")).toEqual([3, 1, 2]);
   expect(ids("monto")).toEqual([2, 3, 1]);
   expect(ids("cliente")).toEqual([2, 3, 1]);
+});
+
+test("el comprobante se ofrece con QR y transferencia, no en efectivo ni sin método (pulido 13.32)", () => {
+  expect(llevaComprobante("qr")).toBe(true);
+  expect(llevaComprobante("transferencia")).toBe(true);
+  expect(llevaComprobante("efectivo")).toBe(false);
+  expect(llevaComprobante("")).toBe(false);
 });

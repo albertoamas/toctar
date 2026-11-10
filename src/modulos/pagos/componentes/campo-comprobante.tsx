@@ -32,7 +32,8 @@ export function CampoComprobante({ onChange, error }: { onChange: (archivo: File
       <p className="text-sm font-medium">
         Comprobante <span className="font-normal text-tinta-suave">(opcional)</span>
       </p>
-      {/* Entero: suele ser una captura vertical, y tiene que leerse */}
+      {/* Vacía, una miniatura (pulido final de los pagos, 09/11; era un recuadro de 160 px siempre abierto). Elegida, grande
+          y entera: suele ser una captura vertical, y tiene que leerse antes de guardar */}
       <div className="w-full max-w-xs">
         <ZonaFoto
           id="comprobante"
@@ -41,6 +42,8 @@ export function CampoComprobante({ onChange, error }: { onChange: (archivo: File
           etiquetaVacia="Foto del comprobante"
           vista={elegido ? { src: elegido.vista, alt: "Foto del comprobante elegida" } : null}
           entera
+          compacta={!elegido}
+          claseZona={elegido ? undefined : "w-32"}
           invalida={!!error}
           describedBy={error ? "comprobante-error" : undefined}
           alElegir={elegir}
