@@ -50,15 +50,16 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/client
   const nuevoId = numero(parametros.nuevo);
   const nuevo = nuevoId && nuevoId !== clienteId ? await obtenerCliente(nuevoId) : null;
   // "Volver" y "Cancelar", a donde se vino: la ficha del comprador si se llegó desde su placa repetida (`?desde=comprador`)
-  const volver = parametros.desde === "comprador" && nuevo ? { href: `/panel/clientes/${nuevo.id}` as Route, texto: nuevo.nombre } : { href: `/panel/clientes/${clienteId}` as Route, texto: v.dueno };
-  const encabezado = () => (
+  const desdeComprador = parametros.desde === "comprador" && !!nuevo;
+  const volver = desdeComprador && nuevo ? { href: `/panel/clientes/${nuevo.id}` as Route, texto: nuevo.nombre } : { href: `/panel/clientes/${clienteId}` as Route, texto: v.dueno };
+  const encabezado = (
     <>
       <EncabezadoPagina titulo={`Cambiar de dueño ${v.placa}`} volver={volver} />
       <Seccion id="vehiculo" titulo="Vehículo">
         <span className="flex flex-col">
           <DatosVehiculo placa={v.placa} detalle={detalleVehiculo(v)} tamano={v.tamano} />
           {/* El dueño ya está debajo del título cuando se vuelve a su ficha; si se vino del comprador, aquí */}
-          {volver.texto !== v.dueno && <span className="text-sm text-tinta-suave">Ahora es de {v.dueno}</span>}
+          {desdeComprador && <span className="text-sm text-tinta-suave">Ahora es de {v.dueno}</span>}
         </span>
       </Seccion>
     </>
@@ -68,8 +69,9 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/client
   if (!v.activo) {
     return (
       <>
-        {encabezado()}
-        <Bloqueo accion={{ href: `/panel/clientes/${clienteId}` as Route, texto: "Ir a la ficha" }}>{v.placa} está desactivado: reactívalo en la ficha antes de cambiarle el dueño.</Bloqueo>
+        {encabezado}
+        {/* "Volver" ya lleva a su ficha, salvo si se vino del comprador */}
+        <Bloqueo accion={desdeComprador ? { href: `/panel/clientes/${clienteId}` as Route, texto: `Ir a la ficha de ${v.dueno}` } : null}>{v.placa} está desactivado: reactívalo en la ficha antes de cambiarle el dueño.</Bloqueo>
       </>
     );
   }
@@ -78,7 +80,7 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/client
     const trabajo = enlaceTrabajo(v.reservaActiva.id, v.reservaActiva.estado, ve);
     return (
       <>
-        {encabezado()}
+        {encabezado}
         <Bloqueo accion={trabajo}>{v.placa} tiene una reserva o está en el taller: entrégalo o cancela la reserva antes de cambiarle el dueño.</Bloqueo>
       </>
     );
@@ -88,7 +90,7 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/client
   if (v.cotizacionesAbiertas > 0 && !puedeVerModulo(usuario, "cotizaciones")) {
     return (
       <>
-        {encabezado()}
+        {encabezado}
         <Bloqueo>{v.placa} tiene cotizaciones abiertas que se cierran al cambiarle el dueño: lo hace el dueño o quien tiene «Cotizaciones».</Bloqueo>
       </>
     );
@@ -96,7 +98,7 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/client
   if (!nuevo || !nuevo.activo) {
     return (
       <>
-        {encabezado()}
+        {encabezado}
         {/* Un ?nuevo= que no sirve (el mismo dueño, uno desactivado o que no existe) dice por qué se vuelve a elegir */}
         {nuevoId !== null && <p role="status">{nuevoId === clienteId ? "Ya es su dueño: elige a otro cliente." : "Ese cliente ya no está activo: elige a otro."}</p>}
         <ElegirCliente titulo="Nuevo dueño" q={typeof parametros.q === "string" ? parametros.q : ""} excepto={clienteId} hrefCliente={(otro) => `${base}?nuevo=${otro}` as Route} />
@@ -122,7 +124,7 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/client
   ];
   return (
     <>
-      {encabezado()}
+      {encabezado}
       <dl aria-label="Qué pasa al cambiar de dueño" className="tt-tarjeta-panel grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3 p-4">
         {filas.map(([etiqueta, texto]) => (
           <div key={etiqueta} className="contents">

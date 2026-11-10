@@ -158,36 +158,39 @@ export type DatosCambioDueno = {
  * vehículo no existe o no es de ese cliente.
  */
 export async function datosCambioDueno(vehiculoId: number, clienteId: number): Promise<DatosCambioDueno | null> {
-  const [v] = await db
-    .select({
-      placa: vehiculo.placa,
-      marca: vehiculo.marca,
-      modelo: vehiculo.modelo,
-      anio: vehiculo.anio,
-      color: vehiculo.color,
-      tamano: tamanoVehiculo.nombre,
-      activo: vehiculo.activo,
-      dueno: cliente.nombre,
-      cotizacionesAbiertas: sql<number>`(${db
-        .select({ n: count() })
-        .from(consulta)
-        .where(and(eq(consulta.vehiculoId, vehiculo.id), eq(consulta.clienteId, vehiculo.clienteId), cotizacionAbierta))})`.mapWith(Number),
-      mantenimientosAbiertos: sql<number>`(${db
-        .select({ n: count() })
-        .from(recordatorioMantenimiento)
-        .where(and(eq(recordatorioMantenimiento.vehiculoId, vehiculo.id), inArray(recordatorioMantenimiento.estado, [...ESTADOS_RECORDATORIO_ABIERTO])))})`.mapWith(Number),
-    })
-    .from(vehiculo)
-    .innerJoin(cliente, eq(vehiculo.clienteId, cliente.id))
-    .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
-    .where(and(eq(vehiculo.id, vehiculoId), eq(vehiculo.clienteId, clienteId)));
+  // Las dos a la vez: la del trabajo que lo frena solo necesita el vehículo
+  const [[v], [reservaActiva]] = await Promise.all([
+    db
+      .select({
+        placa: vehiculo.placa,
+        marca: vehiculo.marca,
+        modelo: vehiculo.modelo,
+        anio: vehiculo.anio,
+        color: vehiculo.color,
+        tamano: tamanoVehiculo.nombre,
+        activo: vehiculo.activo,
+        dueno: cliente.nombre,
+        cotizacionesAbiertas: sql<number>`(${db
+          .select({ n: count() })
+          .from(consulta)
+          .where(and(eq(consulta.vehiculoId, vehiculo.id), eq(consulta.clienteId, vehiculo.clienteId), cotizacionAbierta))})`.mapWith(Number),
+        mantenimientosAbiertos: sql<number>`(${db
+          .select({ n: count() })
+          .from(recordatorioMantenimiento)
+          .where(and(eq(recordatorioMantenimiento.vehiculoId, vehiculo.id), inArray(recordatorioMantenimiento.estado, [...ESTADOS_RECORDATORIO_ABIERTO])))})`.mapWith(Number),
+      })
+      .from(vehiculo)
+      .innerJoin(cliente, eq(vehiculo.clienteId, cliente.id))
+      .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
+      .where(and(eq(vehiculo.id, vehiculoId), eq(vehiculo.clienteId, clienteId))),
+    // Si hay varios, primero el que está en el taller (es el que hay que entregar), después la reserva más cercana
+    db
+      .select({ id: trabajo.id, estado: trabajo.estado })
+      .from(trabajo)
+      .where(and(eq(trabajo.vehiculoId, vehiculoId), inArray(trabajo.estado, [...ESTADOS_RESERVA_ACTIVA])))
+      .orderBy(sql`${trabajo.estado} = 'agendado'`, asc(trabajo.fechaInicio), asc(trabajo.id))
+      .limit(1),
+  ]);
   if (!v) return null;
-  // La más cercana, si hay varias
-  const [reservaActiva] = await db
-    .select({ id: trabajo.id, estado: trabajo.estado })
-    .from(trabajo)
-    .where(and(eq(trabajo.vehiculoId, vehiculoId), inArray(trabajo.estado, [...ESTADOS_RESERVA_ACTIVA])))
-    .orderBy(asc(trabajo.fechaInicio), asc(trabajo.id))
-    .limit(1);
   return { ...v, reservaActiva: reservaActiva ?? null };
 }
