@@ -7,7 +7,6 @@ import { CalendarIcon, FileTextIcon } from "lucide-react";
 import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
-import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
@@ -17,9 +16,9 @@ import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp, whatsAppLocal } from "@/lib/whatsapp";
 import { reservasDelCliente } from "@/modulos/agenda/consultas";
-import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
+import { ReservasCliente } from "@/modulos/agenda/componentes/reservas-cliente";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
-import { estaPagada, saldoPendiente } from "@/modulos/pagos/reglas";
+import { saldoPendiente } from "@/modulos/pagos/reglas";
 import { MasCliente, ReactivarCliente } from "@/modulos/clientes/componentes/acceso-cliente";
 import { FormularioDatosCliente } from "@/modulos/clientes/componentes/formulario-datos-cliente";
 import { VehiculosCliente } from "@/modulos/clientes/componentes/vehiculos-cliente";
@@ -30,7 +29,7 @@ import { cotizacionesDelCliente } from "@/modulos/cotizaciones/consultas";
 import { AgregarMantenimiento, MasPlan } from "@/modulos/mantenimientos/componentes/planes";
 import { mantenimientosDelCliente, serviciosConMantenimiento } from "@/modulos/mantenimientos/consultas";
 import { ESTADOS_RECORDATORIO_ABIERTO, NOMBRE_ESTADO_RECORDATORIO, textoCadaMeses } from "@/modulos/mantenimientos/reglas";
-import { enlaceTrabajo, rutaTrabajo } from "@/modulos/ordenes/reglas";
+import { enlaceTrabajo } from "@/modulos/ordenes/reglas";
 import { Insignia } from "@/componentes/panel/insignia";
 import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
 
@@ -172,18 +171,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
           {reservas.length === 0 ? (
             <p className="text-tinta-suave">Todavía no tiene reservas.</p>
           ) : (
-            <ListaFilas
-              etiqueta="Reservas"
-              filas={reservas.map((r) => ({
-                href: rutaTrabajo(r.id, r.estado, verOrdenes),
-                titulo: `${formatearFecha(r.fechaInicio)} en ${r.espacio}`,
-                // El saldo de una cancelada no se cobra: no se muestra
-                dato: r.saldo && r.estado !== "cancelado" ? (estaPagada(r.saldo.saldo) ? "Pagado" : `Saldo: ${mostrarMonto(r.saldo.saldo)} Bs`) : null,
-                detalles: [r.placa],
-                estado: NOMBRE_ESTADO_TRABAJO[r.estado],
-                tonoEstado: TONO_ESTADO_TRABAJO[r.estado],
-              }))}
-            />
+            <ReservasCliente reservas={reservas} verOrdenes={verOrdenes} conSaldo={verPagos} />
           )}
         </section>
       )}

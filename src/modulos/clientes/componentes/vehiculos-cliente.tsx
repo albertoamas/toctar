@@ -19,7 +19,7 @@ import { CamposVehiculo } from "./campos";
 import { DatosVehiculo } from "./datos-vehiculo";
 
 // HU-23: vehículos de un cliente, en su ficha. Pulido 8.3 (skill pantallas-panel): la lista en lectura, con la placa
-// grande; el lápiz abre "Editar {placa}" y "＋ Agregar" abre "Agregar vehículo", en un modal (ModalFormulario), con
+// grande; "Editar" abre "Editar {placa}" y "＋ Agregar" abre "Agregar vehículo", en un modal (ModalFormulario), con
 // placa y tamaño a la vista y lo demás plegado como en el alta. "Desactivar" y "Cambiar de dueño" (pedido 37) van en "Más",
 // dentro de la edición: se usan poco y así no se tocan sin querer. Nada se borra (RN-14). Al agregar una placa que es de
 // otro cliente, el enlace para pasarla a este.
@@ -65,8 +65,10 @@ export function VehiculosCliente({ clienteId, vehiculos, tamanos }: Props) {
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <DatosVehiculo placa={v.placa} detalle={detalle(v)} tamano={v.tamano} />
               </span>
-              <Button type="button" variant="ghost" size="icon" disabled={!hidratado} aria-label={`Editar ${v.placa}`} onClick={() => abrir(v)}>
+              {/* "Editar" con su texto, como toda sección de una ficha (inventario-pantallas.md, cambio 4: era un lápiz solo) */}
+              <Button type="button" variant="ghost" disabled={!hidratado} aria-label={`Editar ${v.placa}`} onClick={() => abrir(v)}>
                 <PencilIcon />
+                Editar
               </Button>
             </li>
           ))}
