@@ -115,25 +115,30 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
           <TableroSemana semana={semana} dias={dias} hoy={hoy} conOrdenes={conOrdenes} />
 
           {/* Celular y tableta: los siete días como pestañas (enlaces: el día va en la dirección). La marcada dice qué
-              día se ve y, si es hoy, su número va en rojo */}
+              día se ve; el número de hoy va en azul, se vea o no; debajo, un punto en los días con alguna reserva (pulido
+              final, 10/11: para saber si un día está ocupado había que tocarlo) */}
           <nav aria-label="Días de la semana" className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0 lg:hidden">
             <ul className="grid min-w-max grid-cols-7 gap-1">
-              {dias.map((d, i) => (
-                <li key={d}>
-                  <Link
-                    href={enlaceSemana(lunes, d)}
-                    aria-current={d === dia ? "date" : undefined}
-                    aria-label={`${textoDia(d)}${d === hoy ? ", hoy" : ""}`}
-                    className={cn(
-                      "flex min-h-11 min-w-11 flex-col items-center justify-center border-b-2 px-1 text-xs",
-                      d === dia ? "border-tinta font-semibold text-tinta" : "border-transparent text-tinta-suave",
-                    )}
-                  >
-                    <span>{DIA_CORTO[i]}</span>
-                    <span className={cn("text-base", d === hoy && "font-bold text-info")}>{numeroDia(d)}</span>
-                  </Link>
-                </li>
-              ))}
+              {dias.map((d, i) => {
+                const conReservas = semana.reservas.some((r) => r.inicio <= d && d <= r.fin);
+                return (
+                  <li key={d}>
+                    <Link
+                      href={enlaceSemana(lunes, d)}
+                      aria-current={d === dia ? "date" : undefined}
+                      aria-label={`${textoDia(d)}${d === hoy ? ", hoy" : ""}${conReservas ? ", con reservas" : ""}`}
+                      className={cn(
+                        "flex min-h-11 min-w-11 flex-col items-center justify-center border-b-2 px-1 text-xs",
+                        d === dia ? "border-tinta font-semibold text-tinta" : "border-transparent text-tinta-suave",
+                      )}
+                    >
+                      <span>{DIA_CORTO[i]}</span>
+                      <span className={cn("text-base", d === hoy && "font-bold text-info")}>{numeroDia(d)}</span>
+                      <span aria-hidden className={cn("mt-0.5 size-1.5 rounded-full", conReservas ? "bg-tinta-suave" : "bg-transparent")} />
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </nav>
           <AgendaDelDia semana={semana} dia={dia} hoy={hoy} conOrdenes={conOrdenes} />

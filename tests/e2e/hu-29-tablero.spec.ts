@@ -72,6 +72,8 @@ test("las reservas ocupan sus días en su espacio; un día libre lleva a reserva
     await expect(page).toHaveURL(new RegExp(`/panel/agenda/nueva\\?fecha=${jueves}&espacio=${espacios[0].id}$`));
   } else {
     // Celular: un día a la vez. El martes, la reserva en el primer espacio y los demás libres
+    // El martes tiene una reserva: su pestaña lo dice (pulido final del 10/11, un punto debajo del número)
+    await expect(page.getByRole("navigation", { name: "Días de la semana" }).getByRole("link").nth(1)).toHaveAccessibleName(/, con reservas$/);
     await page.getByRole("navigation", { name: "Días de la semana" }).getByRole("link").nth(1).click();
     await expect(page).toHaveURL(/&dia=\d{4}-\d{2}-\d{2}$/);
     const dia = page.getByRole("list", { name: /^Espacios el Martes/ });

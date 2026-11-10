@@ -94,7 +94,11 @@ function Cinta({
   );
 }
 
-/** Un día sin reserva: libre (se agenda ahí), cerrado o ya pasado. */
+/**
+ * Un día sin reserva: libre (se agenda ahí), cerrado o ya pasado. Libre, el recuadro punteado con un "+" y, al pasar el
+ * mouse o con el foco, "Reservar" (pulido final, 10/11: decía "Libre" en cada uno, 15 a 18 por semana, y lo reservado se
+ * perdía entre ellos). El lector de pantalla oye "Libre: reservar en …".
+ */
 function DiaSinReserva({ fecha, espacio, cerrado, pasado, style }: { fecha: string; espacio: { id: number; nombre: string }; cerrado: boolean; pasado: boolean; style?: React.CSSProperties }) {
   if (cerrado) {
     return (
@@ -110,10 +114,12 @@ function DiaSinReserva({ fecha, espacio, cerrado, pasado, style }: { fecha: stri
       style={style}
       className="group flex min-h-14 items-center justify-center gap-1 rounded-lg border border-dashed border-border text-xs text-tinta-suave hover:border-tinta-suave hover:bg-superficie/60 hover:text-tinta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]"
     >
-      <PlusIcon className="size-3.5 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden />
-      Libre
+      <PlusIcon className="size-4 opacity-60 group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden />
+      <span aria-hidden className="hidden font-semibold group-hover:inline group-focus-visible:inline">
+        Reservar
+      </span>
       <span className="sr-only">
-        : reservar en {espacio.nombre} el {textoDia(fecha)}
+        Libre: reservar en {espacio.nombre} el {textoDia(fecha)}
       </span>
     </Link>
   );
