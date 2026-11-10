@@ -174,8 +174,18 @@ async function Contenido() {
         )}
       </div>
 
-      {/* Una tarjeta sola al final de la grilla de dos ocupa el ancho: no queda un hueco */}
-      <section aria-label="Resumen de hoy" className="grid grid-cols-2 gap-3 *:last:odd:col-span-2 @4xl:grid-cols-5 @4xl:*:last:odd:col-span-1">
+      {/* En el celular, de a dos; con un número impar, la primera ("Por cobrar", la cifra más larga) va a todo el ancho y
+          no queda un hueco (pulido final, 10/11: antes era la última, sola) */}
+      <section aria-label="Resumen de hoy" className="grid grid-cols-2 gap-3 [&>*:first-child:nth-last-child(odd)]:col-span-2 @4xl:grid-cols-5 @4xl:[&>*:first-child:nth-last-child(odd)]:col-span-1">
+        {saldos && (
+          <TarjetaNumero
+            href="/panel/pagos"
+            icono={ICONO_MODULO.pagos}
+            titulo="Por cobrar"
+            valor={bs(porCobrar.toFixed(2))}
+            nota={saldos.length > 0 ? cantidad(saldos.length, "entregada con saldo", "entregadas con saldo") : "Nadie debe"}
+          />
+        )}
         {abiertas && (
           <TarjetaNumero href="/panel/ordenes" icono={ICONO_MODULO.ordenes} titulo="En el taller" valor={abiertas.length} nota={notaTaller || "Nada atrasado"} aviso={notaTaller !== ""} />
         )}
@@ -187,15 +197,6 @@ async function Contenido() {
             valor={llegaHoy}
             nota={debianLlegar > 0 ? `${cantidad(debianLlegar, "debía", "debían")} llegar antes` : llegaHoy > 0 ? "Por recibir" : "Nada para hoy"}
             aviso={debianLlegar > 0}
-          />
-        )}
-        {saldos && (
-          <TarjetaNumero
-            href="/panel/pagos"
-            icono={ICONO_MODULO.pagos}
-            titulo="Por cobrar"
-            valor={bs(porCobrar.toFixed(2))}
-            nota={saldos.length > 0 ? cantidad(saldos.length, "entregada con saldo", "entregadas con saldo") : "Nadie debe"}
           />
         )}
         {pendientes && (
@@ -249,7 +250,8 @@ function ParaHoy({ filas, verOrdenes }: { filas: FilaDelDia[]; verOrdenes: boole
           etiqueta="Para hoy"
           columnas={[
             { titulo: "Vehículo", ancho: "minmax(0,1fr)", movil: "titulo" },
-            { titulo: "Estado", ancho: "minmax(0,1.3fr)", movil: "estado" },
+            // En el celular, en su renglón debajo de la placa: dos insignias al lado partían el nombre del cliente
+            { titulo: "Estado", ancho: "minmax(0,1.3fr)", movil: "detalle" },
             { titulo: "Cuándo", ancho: "minmax(0,1fr)", movil: "detalle" },
             { titulo: "Siguiente paso", ancho: "minmax(0,1fr)", movil: "oculta" },
           ]}
@@ -257,7 +259,7 @@ function ParaHoy({ filas, verOrdenes }: { filas: FilaDelDia[]; verOrdenes: boole
             href: rutaTrabajo(f.id, f.estado, verOrdenes),
             celdas: [
               <CeldaDoble key="v" principal={f.placa} secundario={f.cliente} marcada />,
-              <span key="e" className="flex flex-wrap justify-end gap-1.5 @2xl:justify-start">
+              <span key="e" className="flex flex-wrap gap-1.5">
                 <Insignia tono={TONO_ESTADO_TRABAJO[f.estado]}>{NOMBRE_ESTADO_TRABAJO[f.estado]}</Insignia>
                 {f.avisos.map((a) => (
                   <Insignia key={a} tono="aviso">
