@@ -16,7 +16,7 @@ import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { AgendaDelDia, TableroSemana } from "@/modulos/agenda/componentes/tablero";
 import { semanaDeAgenda } from "@/modulos/agenda/consultas";
-import { DIA_CORTO, diasDeLaSemana, lunesDeLaSemana, numeroDia, textoDia, textoSemana, textoSemanaCorto } from "@/modulos/agenda/reglas";
+import { DIA_CORTO, diasDeLaSemana, lunesDeLaSemana, numeroDia, seCruzan, textoDia, textoSemana, textoSemanaCorto } from "@/modulos/agenda/reglas";
 import { cotizacionesPorReservar, type FilaCotizacion } from "@/modulos/cotizaciones/consultas";
 import { bs, diasDesde, textoDias } from "@/modulos/cotizaciones/reglas";
 
@@ -120,7 +120,8 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
           <nav aria-label="Días de la semana" className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0 lg:hidden">
             <ul className="grid min-w-max grid-cols-7 gap-1">
               {dias.map((d, i) => {
-                const conReservas = semana.reservas.some((r) => r.inicio <= d && d <= r.fin);
+                // Lo que ocupa el día: una entregada ya no (el tablero la muestra como historia)
+                const conReservas = semana.reservas.some((r) => r.estado !== "entregado" && seCruzan({ inicio: r.inicio, fin: r.fin }, { inicio: d, fin: d }));
                 return (
                   <li key={d}>
                     <Link
