@@ -151,6 +151,8 @@ async function Contenido() {
   const notaTaller = [atrasadas > 0 && cantidad(atrasadas, "atrasada", "atrasadas"), sinAvisar > 0 && cantidad(sinAvisar, "lista sin avisar", "listas sin avisar")].filter(Boolean).join(", ");
   const llegaHoy = ingresos?.filter((i) => i.fechaInicio === hoy).length ?? 0;
   const debianLlegar = (ingresos?.length ?? 0) - llegaHoy;
+  // Cuántas tarjetas se ven: con un número impar, una va a todo el ancho en el celular
+  const tarjetasImpar = [abiertas, ingresos, saldos, pendientes, mantenimientos].filter(Boolean).length % 2 === 1;
 
   return (
     <section className="flex flex-col gap-6">
@@ -174,8 +176,19 @@ async function Contenido() {
         )}
       </div>
 
-      {/* Una tarjeta sola al final de la grilla de dos ocupa el ancho: no queda un hueco */}
-      <section aria-label="Resumen de hoy" className="grid grid-cols-2 gap-3 *:last:odd:col-span-2 @4xl:grid-cols-5 @4xl:*:last:odd:col-span-1">
+      {/* En el celular, de a dos; con un número impar, una va a todo el ancho y no queda un hueco: "Por cobrar", la cifra más
+          larga, si se ve (con Pagos; pulido final, 10/11); si no, la última */}
+      <section aria-label="Resumen de hoy" className={cn("grid grid-cols-2 gap-3 @4xl:grid-cols-5", !saldos && "*:last:odd:col-span-2 @4xl:*:last:odd:col-span-1")}>
+        {saldos && (
+          <TarjetaNumero
+            href="/panel/pagos"
+            className={tarjetasImpar ? "col-span-2 @4xl:col-span-1" : undefined}
+            icono={ICONO_MODULO.pagos}
+            titulo="Por cobrar"
+            valor={bs(porCobrar.toFixed(2))}
+            nota={saldos.length > 0 ? cantidad(saldos.length, "entregada con saldo", "entregadas con saldo") : "Nadie debe"}
+          />
+        )}
         {abiertas && (
           <TarjetaNumero href="/panel/ordenes" icono={ICONO_MODULO.ordenes} titulo="En el taller" valor={abiertas.length} nota={notaTaller || "Nada atrasado"} aviso={notaTaller !== ""} />
         )}
@@ -187,15 +200,6 @@ async function Contenido() {
             valor={llegaHoy}
             nota={debianLlegar > 0 ? `${cantidad(debianLlegar, "debía", "debían")} llegar antes` : llegaHoy > 0 ? "Por recibir" : "Nada para hoy"}
             aviso={debianLlegar > 0}
-          />
-        )}
-        {saldos && (
-          <TarjetaNumero
-            href="/panel/pagos"
-            icono={ICONO_MODULO.pagos}
-            titulo="Por cobrar"
-            valor={bs(porCobrar.toFixed(2))}
-            nota={saldos.length > 0 ? cantidad(saldos.length, "entregada con saldo", "entregadas con saldo") : "Nadie debe"}
           />
         )}
         {pendientes && (
@@ -249,7 +253,8 @@ function ParaHoy({ filas, verOrdenes }: { filas: FilaDelDia[]; verOrdenes: boole
           etiqueta="Para hoy"
           columnas={[
             { titulo: "Vehículo", ancho: "minmax(0,1fr)", movil: "titulo" },
-            { titulo: "Estado", ancho: "minmax(0,1.3fr)", movil: "estado" },
+            // En el celular, en su renglón debajo de la placa: dos insignias al lado partían el nombre del cliente
+            { titulo: "Estado", ancho: "minmax(0,1.3fr)", movil: "detalle" },
             { titulo: "Cuándo", ancho: "minmax(0,1fr)", movil: "detalle" },
             { titulo: "Siguiente paso", ancho: "minmax(0,1fr)", movil: "oculta" },
           ]}
@@ -257,7 +262,7 @@ function ParaHoy({ filas, verOrdenes }: { filas: FilaDelDia[]; verOrdenes: boole
             href: rutaTrabajo(f.id, f.estado, verOrdenes),
             celdas: [
               <CeldaDoble key="v" principal={f.placa} secundario={f.cliente} marcada />,
-              <span key="e" className="flex flex-wrap justify-end gap-1.5 @2xl:justify-start">
+              <span key="e" className="flex flex-wrap gap-1.5">
                 <Insignia tono={TONO_ESTADO_TRABAJO[f.estado]}>{NOMBRE_ESTADO_TRABAJO[f.estado]}</Insignia>
                 {f.avisos.map((a) => (
                   <Insignia key={a} tono="aviso">

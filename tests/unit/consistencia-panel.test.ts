@@ -53,8 +53,6 @@ const TITULOS_A_MANO: Record<string, number> = {
   "src/app/panel/agenda/page.tsx": 1,
   // La leyenda de un grupo de campos
   "src/modulos/clientes/componentes/formulario-nuevo-cliente.tsx": 1,
-  // La cabecera dentro de su tarjeta, en la portada
-  "src/modulos/inicio/componentes/para-atender.tsx": 1,
   // La leyenda de un grupo de fotos
   "src/modulos/ordenes/componentes/formulario-publicar.tsx": 1,
   // "Subir fotos": la cabecera dentro de su tarjeta, con su ayuda y el botón de cerrar
