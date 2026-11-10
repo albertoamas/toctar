@@ -6,13 +6,14 @@ import { SearchIcon, XIcon } from "lucide-react";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 
-// HU-22: los resultados aparecen mientras se escribe. El texto va a la dirección (?q=) y la lista la arma el servidor;
+// El buscador de las listas del panel (HU-22; antes BuscadorClientes, aunque busca también placas, números y fechas): va
+// en la barra de la lista (BarraLista). Los resultados aparecen mientras se escribe. El texto va a la dirección (?q=) y la lista la arma el servidor;
 // la pausa evita una consulta por cada tecla. La dirección se puede compartir o recargar sin perder la búsqueda.
 
 const PAUSA_MS = 300;
 
 /** `etiqueta` y `ejemplo`: lo que se puede buscar, si no es solo un cliente (Cotizaciones también busca por número). */
-export function BuscadorClientes({ etiqueta = "Buscar por nombre, teléfono o placa", ejemplo = "Nombre, teléfono o placa" }: { etiqueta?: string; ejemplo?: string }) {
+export function Buscador({ etiqueta = "Buscar por nombre, teléfono o placa", ejemplo = "Nombre, teléfono o placa" }: { etiqueta?: string; ejemplo?: string }) {
   const router = useRouter();
   const ruta = usePathname();
   const parametros = useSearchParams();
@@ -39,7 +40,7 @@ export function BuscadorClientes({ etiqueta = "Buscar por nombre, teléfono o pl
   }
 
   return (
-    <div className="relative w-full max-w-md">
+    <div className="relative w-full">
       <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-tinta-suave" aria-hidden />
       <Input
         ref={campo}

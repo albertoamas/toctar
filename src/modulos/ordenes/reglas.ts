@@ -1,5 +1,6 @@
 import type { EstadoRevision, EstadoTrabajo, EtapaFoto, TipoDetalle } from "@/db/esquema/trabajos";
 import { fechaCorta, sumarDias } from "@/lib/fechas";
+import { sinTildes, type Busqueda } from "@/modulos/clientes/reglas";
 
 // Reglas puras de las órdenes (C4). Una orden es una reserva ya recibida (D-1): el mismo `trabajo`.
 // Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md.
@@ -158,4 +159,16 @@ export function fechaBuscada(texto: string): { dia: number; mes: number; anio: n
   if (dia < 1 || dia > 31 || mes < 1 || mes > 12) return null;
   const anio = m[3] ? Number(m[3].length === 2 ? `20${m[3]}` : m[3]) : null;
   return { dia, mes, anio };
+}
+
+/**
+ * Las órdenes del taller que coinciden con lo buscado (barra de las listas, 10/11: antes solo se buscaba en "Entregadas"):
+ * por cliente o vehículo (sin tildes) o por placa (desde 3 caracteres, como en Saldos: con menos, casi todas coincidirían).
+ */
+export function filtrarOrdenes<T extends { placa: string; cliente: string; vehiculo: string }>(ordenes: readonly T[], busqueda: Busqueda | null): T[] {
+  if (!busqueda) return [...ordenes];
+  const texto = sinTildes(busqueda.texto);
+  return ordenes.filter(
+    (o) => sinTildes(o.cliente).includes(texto) || sinTildes(o.vehiculo).includes(texto) || (!!busqueda.placa && busqueda.placa.length >= 3 && o.placa.includes(busqueda.placa)),
+  );
 }

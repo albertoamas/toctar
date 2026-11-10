@@ -82,8 +82,31 @@ Hasta una laptop de 1280 px (con el menú, el área de trabajo mide unos 970 px)
 | # | Cambio | Pantallas | Estado |
 |---|---|---|---|
 | 1 | Listas de acciones como tabla en la computadora: una variante de `TablaLista` con columna de acciones (las filas de hoy no admiten botones adentro). En el celular, las tarjetas de siempre | Saldos, Mantenimientos | ✅ 10/11 |
+| 1b | **La barra de las listas** (ver abajo): las mismas piezas y en el mismo orden en toda lista | Clientes, Cotizaciones, Órdenes, Saldos, Reclamos, Mantenimientos, Usuarios, Catálogo, Galería | ✅ 10/11 |
 | 2 | Nuevo usuario con `PieFormulario` | Nuevo usuario | ⏳ |
 | 3 | Publicar en la galería con `PieFormulario` | Publicar en la galería | ⏳ |
 | 4 | Revisar en pantalla las de la prioridad 4 (Ficha del cliente, Servicio del catálogo, Cambiar de dueño) y las listas de la prioridad 5 | 17, 18, 37 y 4 a 9 | ⏳ Después de 1 a 3 |
 
 Al cerrar cada cambio: su entrada en `pulido-visual.md`, el estado aquí y en el plan.
+
+## La barra de las listas (10/11)
+
+Antes cada lista armaba su buscador, sus filtros y su orden a su manera. Prototipo aprobado: https://claude.ai/artifact/BuaNKqHYZpoavPxjE5SDNU. Ahora, en toda lista y en este orden:
+
+1. **Encabezado** (`EncabezadoPagina`): el título y el botón principal a su derecha, también en el celular (el título se parte en dos renglones antes que mover el botón).
+2. **Pestañas** (`Pestanas`): solo para ver otra parte de la lista, nunca para ordenar; la cuenta en gris después del nombre ("Pendientes 1"), y lo buscado se conserva al cambiar.
+3. **Barra** (`BarraLista`): el buscador (`Buscador`, 320 px; a todo el ancho en el celular), los filtros al lado (`Filtros`, píldoras con su cuenta; en el celular, una fila que se desliza) y a la derecha `Ordenar` o la píldora de los desactivados (`PildoraVista`).
+4. **Resumen** (`ResumenLista`): "980 Bs por cobrar en 2 órdenes"; buscando, cuántas se ven.
+5. **Tabla o filas.**
+
+| Pantalla | Pestañas | Buscador | Filtros | A la derecha | Resumen |
+|---|---|---|---|---|---|
+| Clientes | — | ✓ | — | Desactivados | — |
+| Cotizaciones | Pendientes, Aceptadas, Rechazadas (con cuenta) | ✓ | — | — | — |
+| Órdenes | En el taller, Entregadas | ✓ en las dos (en el taller, nuevo) | Por estado, en el taller | — | — |
+| Saldos | — | ✓ | — | Ordenar | El total y cuántas |
+| Reclamos | Todos, Pendientes (con cuenta) | — | — | — | — |
+| Mantenimientos | Por avisar, Más adelante, Cerrados (con cuenta) | — | — | — | — |
+| Usuarios | — | — | — | Desactivados | — |
+| Catálogo | — | — | — | Inactivos | — |
+| Galería del panel | — | — | Por servicio (antes, un menú) | — | — |

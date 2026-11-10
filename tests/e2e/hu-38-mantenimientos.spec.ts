@@ -72,14 +72,14 @@ test("vencidos y próximos; avisar, no le interesa y reservar (y al cancelar la 
   await expect(proximos(page).getByRole("listitem").filter({ hasText: placaP })).toContainText("vence en 5 días");
   // A 16 días todavía no se avisa: está en "Más adelante", bajo su mes (pedido 20)
   await expect(page.getByText(placaL)).toHaveCount(0);
-  await page.getByRole("link", { name: /^Más adelante \(\d+\)$/ }).click();
+  await page.getByRole("link", { name: /^Más adelante \d+$/ }).click();
   const lejano = page.getByRole("region", { name: new RegExp(`^${mes(await dia(16))}, \\d+ mantenimientos?$`) }).getByRole("listitem").filter({ hasText: placaL });
   await expect(lejano).toContainText("vence en 16 días");
   // Todavía no le toca: no se avisa (se agenda o se cierra)
   await expect(lejano.getByRole("button", { name: "Avisar por WhatsApp" })).toHaveCount(0);
   await expect(lejano.getByRole("link", { name: "Reservar" })).toBeVisible();
   await expect(page.getByText(placaV)).toHaveCount(0);
-  await page.getByRole("link", { name: /^Por avisar \(\d+\)$/ }).click();
+  await page.getByRole("link", { name: /^Por avisar \d+$/ }).click();
   await expect(vencidos(page)).toBeVisible();
 
   // Avisar: abre WhatsApp con el mensaje y queda registrado

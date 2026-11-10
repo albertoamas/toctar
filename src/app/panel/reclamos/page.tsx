@@ -43,7 +43,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/reclamos">, "searc
         activa={soloPendientes ? "/panel/reclamos?ver=pendientes" : "/panel/reclamos"}
         pestanas={[
           { href: "/panel/reclamos", texto: "Todos" },
-          { href: "/panel/reclamos?ver=pendientes", texto: pendientes > 0 ? `Pendientes (${pendientes})` : "Pendientes" },
+          { href: "/panel/reclamos?ver=pendientes", texto: "Pendientes", cuenta: pendientes },
         ]}
       />
       {reclamos.length === 0 ? (

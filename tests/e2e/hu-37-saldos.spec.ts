@@ -45,7 +45,8 @@ test("la entregada con saldo aparece, con su WhatsApp, y se cobra desde la lista
   if (info.project.name === "celular") await page.getByRole("button", { name: "Abrir menú" }).click();
   await page.getByRole("navigation", { name: "Panel" }).getByRole("link", { name: "Saldos pendientes" }).click();
   await expect(page).toHaveURL(/\/panel\/pagos$/);
-  await expect(page.getByText(/^Total por cobrar/)).toBeVisible();
+  // El total, en el resumen de la lista (barra de las listas, 10/11)
+  await expect(page.getByText(/ por cobrar en /)).toBeVisible();
 
   const lista = page.getByRole("list", { name: "Órdenes con saldo" });
   const fila = lista.getByRole("listitem").filter({ hasText: debe });
@@ -105,8 +106,9 @@ test("pedido 30: se buscan por cliente, teléfono o placa y se ordenan; el total
   await ingresar(page, `caja2-hu37-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto("/panel/pagos");
-  const renglon = page.getByText("Total por cobrar").locator("..");
-  const monto = renglon.locator("span").nth(1);
+  // El resumen de la lista: "980 Bs por cobrar en 2 órdenes" (y, buscando, cuántas se ven)
+  const renglon = page.getByText(/ por cobrar en /);
+  const monto = renglon.locator("strong");
 
   // Por cliente: las dos de esta prueba (y de este proyecto)
   const buscador = page.getByLabel("Buscar por nombre, teléfono o placa");
@@ -120,25 +122,29 @@ test("pedido 30: se buscan por cliente, teléfono o placa y se ordenan; el total
   await expect
     .poll(async () => {
       await sinBuscar.goto("/panel/pagos");
-      const deTodas = await sinBuscar.getByText("Total por cobrar").locator("..").locator("span").nth(1).innerText();
+      const deTodas = await sinBuscar.getByText(/ por cobrar en /).locator("strong").innerText();
       await page.reload();
       return (await monto.innerText()) === deTodas;
     }, { timeout: 30_000 })
     .toBe(true);
   await sinBuscar.close();
   // El contador dice cuántas se ven de todas
-  await expect(renglon).toContainText(/2 de \d+/);
+  await expect(renglon).toContainText("se ven 2");
 
   // Más antigua primero (lo de siempre); por mayor monto; por cliente
   // El primer texto destacado de cada fila: el cliente, en la tarjeta y en la tabla de la computadora
   const nombres = () => lista.getByRole("listitem").evaluateAll((filas) => filas.map((f) => f.querySelector(".font-semibold, .font-medium")?.textContent?.trim() ?? ""));
   await expect.poll(nombres).toEqual([`Zoila Busca ${s}`, `Alberto Busca ${s}`]);
-  const orden = page.getByRole("navigation", { name: "Ordenar saldos" });
-  await orden.getByRole("link", { name: "Mayor monto" }).click();
+  // "Ordenar" en la barra (10/11; antes, pestañas)
+  const ordenar = async (texto: string) => {
+    await page.getByRole("button", { name: /^Ordenar:/ }).click();
+    await page.getByRole("menuitem", { name: texto }).click();
+  };
+  await ordenar("Mayor monto");
   await expect(page).toHaveURL(/orden=monto/);
   await expect(page).toHaveURL(/q=busca/);
   await expect.poll(nombres).toEqual([`Alberto Busca ${s}`, `Zoila Busca ${s}`]);
-  await orden.getByRole("link", { name: "Cliente" }).click();
+  await ordenar("Cliente");
   await expect.poll(nombres).toEqual([`Alberto Busca ${s}`, `Zoila Busca ${s}`]);
 
   // Por placa y por teléfono

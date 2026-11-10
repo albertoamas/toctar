@@ -10,7 +10,7 @@ Que el dueño encuentre una orden pasada (por placa, cliente o fecha) y que en l
 
 ## 2. Qué cambia
 - **Órdenes:** dos pestañas.
-  - **"En el taller"** (la de siempre): recibidas, en proceso y listas.
+  - **"En el taller"** (la de siempre): recibidas, en proceso y listas. Desde el 10/11 (la barra de las listas) también se busca, por placa, cliente o vehículo (`filtrarOrdenes`), y los filtros por estado cuentan lo buscado; lo buscado no pasa a "Entregadas", que busca también fechas.
   - **"Entregadas"**: el historial, la más reciente primero, de a 20 por página ("Más recientes" y "Anteriores"), con una búsqueda por **placa**, **cliente** o **fecha de entrega** ("5/10" o "5/10/2026", en hora de Bolivia). Cada fila: la placa, "Entregada el …", los servicios y el cliente (y el técnico, para quien ve todas), con la insignia verde "Entregada".
   - El técnico ve solo las suyas, también en "Entregadas" (RN-12).
 - **Agenda:** las entregadas **siguen en el tablero**, en verde y con "Entregada", en los días que estuvieron. Ya no ocupan el espacio, así que:

@@ -181,7 +181,7 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel (44 px t
 - Si algún servicio genera mantenimiento, una línea lo anticipa: "Se programará el mantenimiento para el 22/01/2027."
 
 ### `/panel/pagos` — Saldos pendientes (dueño y encargado con "Pagos")
-- Arriba, "Total por cobrar: X Bs".
+- Arriba, la barra de la lista (buscador y "Ordenar: Más antiguas, Mayor monto, Cliente", desde el 10/11; antes, pestañas) y debajo el resumen: "X Bs por cobrar en N órdenes" (buscando, también cuántas se ven).
 - Lista de las órdenes entregadas con saldo, la más antigua primero: cliente, placa, saldo, entregada el dd/mm (con el año, si es de otro) y "hace N días". Cada una tiene "Escribir por WhatsApp" (mensaje de saldo, §8) y **"Registrar pago" ahí mismo**: el encargado con "Pagos" y sin "Órdenes" no podría cobrar desde la orden. "Ver la orden", para quien ve órdenes.
 - Vacío: "Nadie debe nada."
 
@@ -273,7 +273,7 @@ Todas validan con Zod (también las de datos sueltos) y empiezan con `exigirModu
   - Entrega: "Extender entrega" · "Avisar por WhatsApp" · "Avisado el {fecha} por {nombre}" · "Entregar vehículo".
   - Montos: "Agregar servicio" · "Precio cotizado" · "Adicionales" · "Precio final".
 - **Entrega:** "Entregar con saldo pendiente ({saldo} Bs)" · "Queda saldo pendiente. La entrega con saldo la autoriza el dueño o quien tenga el permiso." · "Se programará el mantenimiento para el {fecha}."
-- **Saldos:** "Saldos pendientes" · "Total por cobrar" · "Entregada el {fecha}, hace {n} días" · "Nadie debe nada."
+- **Saldos:** "Saldos pendientes" · "X Bs por cobrar en N órdenes" · "Ordenar:" · "Entregada el {fecha}, hace {n} días" · "Nadie debe nada."
 - **Mantenimientos:** "Vencidos" · "Próximos 15 días" · "Avisar por WhatsApp" · "Agendar" · "No le interesa" · "No hay mantenimientos por avisar."
 - **Mensajes de WhatsApp** (fijos hasta la HU-40; el saldo solo si quien avisa ve pagos y hay saldo):
   - **Listo:** "Hola {nombre}, tu {vehículo} ya está listo en TocTar Detailing. {Saldo pendiente: {saldo} Bs. }Te esperamos en el taller."

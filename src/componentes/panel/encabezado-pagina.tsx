@@ -20,9 +20,12 @@ type Props = {
 export function EncabezadoPagina({ titulo, estado, accion, volver, children }: Props) {
   return (
     <div className="flex flex-col gap-1">
+      {/* El botón principal, a la derecha del título, también en el celular (10/11: bajaba a otra fila cuando el título era
+          largo, como en Catálogo y precios): el título se parte en dos renglones antes que moverlo. Solo si las acciones no
+          entran ni así (dos botones, como en un reclamo), bajan a su fila, a la derecha */}
       <div className="flex flex-wrap items-center gap-3">
         {/* El botón va con el título y su contexto, no con las acciones: en el celular, ellas bajan a su fila */}
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 flex-1 basis-40 items-center gap-3">
           {volver && <BotonVolver href={volver.href} texto={volver.texto} />}
           <div className="flex min-w-0 flex-col">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -32,7 +35,7 @@ export function EncabezadoPagina({ titulo, estado, accion, volver, children }: P
             {volver && <p className="text-sm text-tinta-suave">{volver.texto}</p>}
           </div>
         </div>
-        {accion && <div className="sm:ml-auto">{accion}</div>}
+        {accion && <div className="ml-auto max-w-full">{accion}</div>}
       </div>
       {children && <p className="text-sm text-tinta-suave">{children}</p>}
     </div>

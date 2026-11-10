@@ -88,7 +88,7 @@ async function Listas({ searchParams }: Pick<PageProps<"/panel/mantenimientos">,
       <Pestanas
         etiqueta="Mantenimientos"
         activa={enlace(vista)}
-        pestanas={VISTAS_MANTENIMIENTOS.map((v) => ({ href: enlace(v), texto: `${TITULOS[v]} (${cantidades[v]})` }))}
+        pestanas={VISTAS_MANTENIMIENTOS.map((v) => ({ href: enlace(v), texto: TITULOS[v], cuenta: cantidades[v] }))}
       />
       {contenido}
       {vista === "cerrados" && cantidades.cerrados > MAXIMO_CERRADOS && (

@@ -1,4 +1,4 @@
-import type { Metadata, Route } from "next";
+import type { Metadata } from "next";
 import { ChevronRightIcon } from "lucide-react";
 import { Suspense } from "react";
 import { cn } from "cn";
@@ -7,7 +7,6 @@ import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { DatosDeFila, FilaConAcciones, ListaEnTarjeta } from "@/componentes/panel/fila-lista";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
-import { Pestanas } from "@/componentes/panel/pestanas";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaCorta, fechaEnBolivia, textoHace } from "@/lib/fechas";
@@ -15,7 +14,7 @@ import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp } from "@/lib/whatsapp";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
-import { BuscadorClientes } from "@/modulos/clientes/componentes/buscador-clientes";
+import { Buscador } from "@/componentes/panel/buscador";
 import { normalizarBusqueda, vehiculoEnLista } from "@/modulos/clientes/reglas";
 import { obtenerDatosPublicos, obtenerPlantillas } from "@/modulos/configuracion/consultas";
 import { calcularTotales } from "@/modulos/cotizaciones/reglas";
@@ -26,6 +25,8 @@ import { saldosPendientes } from "@/modulos/pagos/consultas";
 import { filtrarSaldos, ORDENES_SALDOS, ordenarSaldos, type OrdenSaldos } from "@/modulos/pagos/reglas";
 import { TablaAcciones } from "@/componentes/panel/tabla-acciones";
 import { CeldaDoble } from "@/componentes/panel/tabla-lista";
+import { BarraLista, ResumenLista } from "@/componentes/panel/barra-lista";
+import { Ordenar } from "@/componentes/panel/ordenar";
 
 export const metadata: Metadata = { title: "Saldos pendientes" };
 
@@ -44,8 +45,8 @@ export default function PaginaSaldos({ searchParams }: PageProps<"/panel/pagos">
     <PaginaPanel tipo="lista">
       <EncabezadoPagina titulo="Saldos pendientes" />
       {/* Aparte de la lista: al buscar, el campo no se vuelve a montar y no pierde el foco */}
-      <Suspense fallback={<div className="h-9 max-w-md pointer-coarse:h-11" />}>
-        <BuscadorClientes />
+      <Suspense fallback={<div className="h-9 pointer-coarse:h-11" />}>
+        <BarraLista buscador={<Buscador />} derecha={<Ordenar opciones={(Object.keys(ORDENES_SALDOS) as OrdenSaldos[]).map((o) => ({ valor: o, texto: ORDENES_SALDOS[o] }))} />} />
       </Suspense>
       <Suspense fallback={<Cargando />}>
         <Lista searchParams={searchParams} />
@@ -70,14 +71,6 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
     "0",
   );
   const saldos = ordenarSaldos(filtrarSaldos(todos, normalizarBusqueda(q)), orden);
-  // Los enlaces del orden conservan la búsqueda escrita
-  const enlace = (o: OrdenSaldos) => {
-    const p = new URLSearchParams();
-    if (q.trim()) p.set("q", q);
-    if (o !== "antiguas") p.set("orden", o);
-    const consulta = p.toString();
-    return (consulta ? `/panel/pagos?${consulta}` : "/panel/pagos") as Route;
-  };
 
   // En la tabla y en las tarjetas: en el celular, "WhatsApp" a secas para que entren los dos botones
   const botonWhatsApp = (s: (typeof saldos)[number], vehiculo: { marca: string | null; modelo: string | null; placa: string }) => (
@@ -96,20 +89,12 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
 
   return (
     <>
-      <p className="flex flex-wrap items-baseline gap-x-3">
-        <span className="text-tinta-suave">Total por cobrar</span>
-        <span className="tt-titulo-pagina tabular-nums">{mostrarMonto(total)} Bs</span>
-        <span className="text-sm text-tinta-suave">
-          {/* Buscando, cuántas se ven de todas; el total es siempre el de todas */}
-          {q.trim() ? `${saldos.length} de ${todos.length}` : todos.length === 1 ? "1 orden" : `${todos.length} órdenes`}
-        </span>
-      </p>
-
-      <Pestanas
-        etiqueta="Ordenar saldos"
-        activa={enlace(orden)}
-        pestanas={(Object.keys(ORDENES_SALDOS) as OrdenSaldos[]).map((o) => ({ href: enlace(o), texto: ORDENES_SALDOS[o] }))}
-      />
+      {/* El resumen de la lista: el total es siempre el de todas; buscando, cuántas se ven */}
+      <ResumenLista>
+        <strong className="font-semibold text-tinta tabular-nums">{mostrarMonto(total)} Bs</strong> por cobrar en{" "}
+        {todos.length === 1 ? "1 orden" : `${todos.length} órdenes`}
+        {q.trim() && `; se ven ${saldos.length}`}
+      </ResumenLista>
 
       {saldos.length === 0 ? (
         <EstadoVacio>Ningún saldo coincide con «{q.trim()}».</EstadoVacio>
