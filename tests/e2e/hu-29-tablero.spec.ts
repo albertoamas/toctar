@@ -68,10 +68,16 @@ test("las reservas ocupan sus días en su espacio; un día libre lleva a reserva
 
     // Un día libre: el jueves del primer espacio lleva a reservar ese día en ese espacio
     const [{ jueves }] = await consultar<{ jueves: string }>("select to_char($1::date + 3, 'YYYY-MM-DD') as jueves", [lunes]);
-    await espacio1.getByRole("link", { name: new RegExp(`^Libre.*reservar en ${primero} el Jueves`) }).click();
+    await espacio1.getByRole("link", { name: new RegExp(`^Reservar en ${primero} el Jueves.*, libre$`) }).click();
     await expect(page).toHaveURL(new RegExp(`/panel/agenda/nueva\\?fecha=${jueves}&espacio=${espacios[0].id}$`));
   } else {
     // Celular: un día a la vez. El martes, la reserva en el primer espacio y los demás libres
+    // El martes tiene una reserva: su pestaña lo dice (pulido final del 10/11, un punto debajo del número)
+    const pestanas = page.getByRole("navigation", { name: "Días de la semana" }).getByRole("link");
+    await expect(pestanas.nth(1)).toHaveAccessibleName(/, con reservas$/);
+    // Y no todas: un día sin reservas no lo dice
+    const nombres = await pestanas.evaluateAll((ps) => ps.map((p) => p.getAttribute("aria-label") ?? ""));
+    expect(nombres.some((n) => !n.endsWith(", con reservas"))).toBe(true);
     await page.getByRole("navigation", { name: "Días de la semana" }).getByRole("link").nth(1).click();
     await expect(page).toHaveURL(/&dia=\d{4}-\d{2}-\d{2}$/);
     const dia = page.getByRole("list", { name: /^Espacios el Martes/ });
