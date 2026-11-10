@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { ChevronRightIcon, type LucideIcon } from "lucide-react";
 import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 
 // "Para atender" en el inicio (pedido 26): lo que espera una acción de la persona (un reclamo, una cotización sin
 // respuesta, un saldo, los mantenimientos vencidos), cada uno con su acción a la derecha. Toda la fila lleva a donde se
@@ -13,11 +14,12 @@ export function ParaAtender({ pendientes }: { pendientes: Pendiente[] }) {
   return (
     <section aria-labelledby="atender-titulo" className="flex min-w-0 flex-col gap-3">
       <CabeceraSeccion id="atender" titulo="Para atender" />
-      <div className="tt-tarjeta-panel overflow-hidden">
-        {pendientes.length === 0 ? (
-          <p className="px-4 py-4 text-sm text-tinta-suave">Nada pendiente.</p>
-        ) : (
-          <ul aria-label="Para atender" className="flex flex-col divide-y divide-border">
+      {/* Vacío, como "Para hoy" al lado (EstadoVacio); la lista la nombra el título de la sección */}
+      {pendientes.length === 0 ? (
+        <EstadoVacio>Nada pendiente.</EstadoVacio>
+      ) : (
+        <div className="tt-tarjeta-panel overflow-hidden">
+          <ul className="flex flex-col divide-y divide-border">
             {pendientes.map((p) => (
               <li key={p.href}>
                 <Link href={p.href} className="flex min-h-11 items-center gap-3 px-4 py-3 hover:bg-superficie/60 focus-visible:-outline-offset-2">
@@ -36,8 +38,8 @@ export function ParaAtender({ pendientes }: { pendientes: Pendiente[] }) {
               </li>
             ))}
           </ul>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }

@@ -151,6 +151,8 @@ async function Contenido() {
   const notaTaller = [atrasadas > 0 && cantidad(atrasadas, "atrasada", "atrasadas"), sinAvisar > 0 && cantidad(sinAvisar, "lista sin avisar", "listas sin avisar")].filter(Boolean).join(", ");
   const llegaHoy = ingresos?.filter((i) => i.fechaInicio === hoy).length ?? 0;
   const debianLlegar = (ingresos?.length ?? 0) - llegaHoy;
+  // Cuántas tarjetas se ven: con un número impar, una va a todo el ancho en el celular
+  const tarjetasImpar = [abiertas, ingresos, saldos, pendientes, mantenimientos].filter(Boolean).length % 2 === 1;
 
   return (
     <section className="flex flex-col gap-6">
@@ -174,12 +176,13 @@ async function Contenido() {
         )}
       </div>
 
-      {/* En el celular, de a dos; con un número impar, la primera ("Por cobrar", la cifra más larga) va a todo el ancho y
-          no queda un hueco (pulido final, 10/11: antes era la última, sola) */}
-      <section aria-label="Resumen de hoy" className="grid grid-cols-2 gap-3 [&>*:first-child:nth-last-child(odd)]:col-span-2 @4xl:grid-cols-5 @4xl:[&>*:first-child:nth-last-child(odd)]:col-span-1">
+      {/* En el celular, de a dos; con un número impar, una va a todo el ancho y no queda un hueco: "Por cobrar", la cifra más
+          larga, si se ve (con Pagos; pulido final, 10/11); si no, la última */}
+      <section aria-label="Resumen de hoy" className={cn("grid grid-cols-2 gap-3 @4xl:grid-cols-5", !saldos && "*:last:odd:col-span-2 @4xl:*:last:odd:col-span-1")}>
         {saldos && (
           <TarjetaNumero
             href="/panel/pagos"
+            className={tarjetasImpar ? "col-span-2 @4xl:col-span-1" : undefined}
             icono={ICONO_MODULO.pagos}
             titulo="Por cobrar"
             valor={bs(porCobrar.toFixed(2))}
