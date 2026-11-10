@@ -74,7 +74,7 @@ export function GaleriaPanel({ items, servicios, portadaId }: { items: ItemGaler
           filtros={
             <div role="group" aria-label="Ver fotos de" className="flex w-max gap-2 sm:w-auto sm:flex-wrap">
               {[{ id: "", nombre: "Todas", cuenta: items.length }, ...servicios.map((s) => ({ id: String(s.id), nombre: s.nombre, cuenta: items.filter((i) => String(i.servicioId) === String(s.id)).length }))]
-                .filter((o) => o.id === "" || o.cuenta > 0)
+                .filter((o) => o.id === "" || o.cuenta > 0 || o.id === filtro)
                 .map((o) => (
                   <button key={o.id} type="button" aria-pressed={filtro === o.id} onClick={() => setFiltro(o.id)} className={cn(CLASE_PILDORA, filtro === o.id && CLASE_PILDORA_ACTIVA)}>
                     {o.nombre}

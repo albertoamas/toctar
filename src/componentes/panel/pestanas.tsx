@@ -11,9 +11,17 @@ import { cn } from "cn";
 export type Pestana = { href: string; texto: string; cuenta?: number };
 
 /** `activa`: el href de la pestaña elegida, cuando las pestañas cambian la búsqueda (?vista=) y no la ruta. */
-export function Pestanas({ etiqueta, pestanas, activa: elegida }: { etiqueta: string; pestanas: Pestana[]; activa?: string }) {
+export function Pestanas(props: {
+  etiqueta: string;
+  pestanas: Pestana[];
+  activa?: string;
+  /** Lo buscado sigue al cambiar de pestaña: solo si todas buscan lo mismo (no en Órdenes, donde "Entregadas" busca fechas). */
+  conservarBusqueda?: boolean;
+}) {
+  const { etiqueta, pestanas, activa: elegida, conservarBusqueda = false } = props;
   const ruta = usePathname();
-  const q = useSearchParams().get("q");
+  const busqueda = useSearchParams().get("q");
+  const q = conservarBusqueda ? busqueda : null;
   // Lo buscado sigue al cambiar de vista (el buscador lo sigue mostrando)
   const conBusqueda = (href: string) => {
     if (!q?.trim()) return href;

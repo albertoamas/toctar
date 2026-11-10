@@ -145,9 +145,9 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel (44 px c
 
 ### `/panel/clientes` — Clientes (dueño y encargado con "Clientes")
 - Arriba: el encabezado compartido con "Agregar cliente" (enlace con forma de botón, rojo) y el buscador (etiqueta "Buscar por nombre, teléfono o placa"; en el campo, "Nombre, teléfono o placa", que entra entero a 360 px).
-- La búsqueda actualiza la dirección (`?q=`) con una pausa de 300 ms mientras se escribe; la lista se calcula en el servidor. Una ✕ propia de 44 px borra la búsqueda y devuelve el foco al campo. "Ver desactivados" y "Ver los activos" conservan lo escrito. Sin búsqueda, los 30 más recientes; con búsqueda, hasta 30 resultados y "Hay más: escribe algo más preciso" si se pasan.
+- La búsqueda actualiza la dirección (`?q=`) con una pausa de 300 ms mientras se escribe; la lista se calcula en el servidor. Una ✕ propia de 44 px borra la búsqueda y devuelve el foco al campo. La píldora "Desactivados" de la barra y las pestañas conservan lo escrito. Sin búsqueda, los 30 más recientes; con búsqueda, hasta 30 resultados y "Hay más: escribe algo más preciso" si se pasan.
 - La fila de un toque compartida (`ListaFilas`, pulido 8.1, 26/10) en todos los tamaños: el nombre; debajo, en negrita, las placas (como el taller nombra los autos); en tinta suave, el WhatsApp y "Sin vehículos" si no tiene. Con varios vehículos, hasta tres placas y "y 2 más" (`placasEnFila`); si se buscó una placa, las que coinciden van primero, así la buscada se ve aunque sea la quinta.
-- Los desactivados no salen; un enlace "Ver desactivados" (`?ver=desactivados`), al final, los lista. Viéndolos, una línea arriba dice "Desactivados." con "Ver los activos", y las filas van atenuadas.
+- Los desactivados no salen; la píldora "Desactivados" de la barra de la lista (`?ver=desactivados`, desde el 10/11; antes, un enlace al final) los lista, y tocándola de nuevo se vuelve a los activos. Las filas de los desactivados van atenuadas. Igual en Usuarios y, como "Inactivos", en el Catálogo (`inventario-pantallas.md`, la barra de las listas).
 - Estados vacíos: "Todavía no hay clientes. Agrega el primero con Agregar cliente." · "No hay clientes con «<búsqueda>»."
 
 ### `/panel/clientes/nuevo` — Agregar cliente
@@ -188,7 +188,7 @@ Todas validan con Zod (también las que reciben datos sueltos) y empiezan con `e
 - Reutiliza: `Campo`, `Input`, `Selector`, `Checkbox`, `Button`, `Dialog`, `EnlaceVolver`, `EstadoVacio`, `Cargando`, `useFocoEnError`, `conAviso`, la tabla y tarjetas de Reclamos y Usuarios, y el patrón de lista editable de 6.2 para los vehículos.
 - Nuevos:
   - `CampoMonto` (`src/componentes/panel/campo-monto.tsx`): número con "Bs" después (como 6.3), `inputMode="decimal"`, acepta coma o punto.
-  - `BuscadorClientes` (cliente): campo de búsqueda que actualiza `?q=` con pausa, sin perder el foco ni la posición del cursor.
+  - `Buscador` (cliente; `src/componentes/panel/buscador.tsx`, antes `BuscadorClientes`): campo de búsqueda que actualiza `?q=` con pausa, sin perder el foco ni la posición del cursor. Va en la barra de la lista (`BarraLista`).
 - Módulos: `src/modulos/catalogo/` y `src/modulos/clientes/` (acciones, consultas, esquemas, componentes), según la estructura del proyecto.
 - `MODULOS.catalogo.construido` y `MODULOS.clientes.construido` pasan a `true`.
 
@@ -198,7 +198,7 @@ Todas validan con Zod (también las que reciben datos sueltos) y empiezan con `e
 - Catálogo: "Los precios no salen en el sitio." · "Desde N Bs" · "Según evaluación" · "Faltan N precios" · "Con mantenimiento" · "Inactivo".
 - Servicio: "Duración estimada" (ayuda: "Los días que suele ocupar un espacio. Solo sugiere la entrega al agendar.") · "Genera recordatorio de mantenimiento" (ayuda: "Al entregarlo, se programa el aviso.") · "Activo en el catálogo" (ayuda: "Inactivo, no se cotiza ni sale en el sitio. No se borra nada.") · "Guardar datos".
 - Precios: "Precios" · "Vacío: «Según evaluación», cuando depende de ver el vehículo." · "Según evaluación" · "Sin cargar" · "Duración propia" (ayuda: "Vacío: usa la del servicio (N días).") · "Guardar precios" · "Ver historial" · historial vacío: "Todavía no hay cambios de precio."
-- Clientes: "Buscar por nombre, teléfono o placa" · "Agregar cliente" · "Ver desactivados".
+- Clientes: "Buscar por nombre, teléfono o placa" · "Agregar cliente" · "Desactivados".
 - Cliente: "Nombre" · "WhatsApp" (ayuda: "Celular de Bolivia, 8 dígitos.") · "Correo" · "NIT" · "Razón social" · "Notas" (ayuda: "Lo que convenga recordar: cómo prefiere que lo contacten, detalles del vehículo…").
 - Vehículo: "Placa" · "Tamaño" (ayuda con los modelos de ejemplo del tamaño elegido) · "Marca" · "Modelo" · "Año" · "Color" · "Agregar vehículo" · "Primer vehículo (opcional)".
 - Errores: "Escribe el nombre." · "Escribe los 8 dígitos del celular." · "Escribe la placa." · "Elige el tamaño." · "Escribe un año entre 1950 y <año siguiente>." · "Escribe un correo válido." · "El NIT lleva solo números."
@@ -224,7 +224,7 @@ Una rama y un PR por historia, desde `develop`:
 1. `hu-19-catalogo-variantes`: esta especificación, migración de `servicio` (duración y mantenimiento), módulo `catalogo` con la lista y la página del servicio (datos del catálogo). La duración entra aquí porque es una columna del servicio.
 2. `hu-20-precios-duracion`: tabla `precio`, `CampoMonto`, formularios de precios por variante con duración propia, historial.
 3. `hu-21-clientes-vehiculos`: tablas `cliente` y `vehiculo`, módulo `clientes`, agregar cliente con primer vehículo, duplicados. Trae una lista sin buscador (los 30 más recientes) y una ficha de solo lectura (datos y vehículos), para tener dónde llegar al crear; HU-22 y HU-23 las completan.
-4. `hu-22-buscar-clientes`: lista con `BuscadorClientes`, `unaccent`.
+4. `hu-22-buscar-clientes`: lista con `Buscador`, `unaccent`.
 5. `hu-23-ficha-cliente`: ficha con edición, vehículos y desactivar.
 
 Cada PR: lint, typecheck, unitarias, E2E completo y knip; capturas a 360 y 1280 px.

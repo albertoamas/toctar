@@ -67,6 +67,7 @@ function PestanasCotizaciones({ vista, cantidades }: { vista: Vista; cantidades:
     <Pestanas
       etiqueta="Cotizaciones por estado"
       activa={enlaceVista(vista)}
+      conservarBusqueda
       pestanas={(Object.keys(VISTAS) as Vista[]).map((v) => ({ href: enlaceVista(v), texto: TITULOS[v], cuenta: cantidades[v] }))}
     />
   );

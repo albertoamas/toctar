@@ -11,7 +11,7 @@ import { AgregarServicio } from "@/modulos/catalogo/componentes/agregar-servicio
 import { listarCatalogo } from "@/modulos/catalogo/consultas";
 import { mostrarMonto, textoDias } from "@/modulos/catalogo/reglas";
 import { BarraLista } from "@/componentes/panel/barra-lista";
-import { PildoraVista } from "@/componentes/panel/filtros";
+import { PildoraVista } from "@/componentes/panel/pildora-vista";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 
 export const metadata: Metadata = { title: "Catálogo y precios" };
@@ -46,7 +46,13 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/catalogo">, "searc
     <>
     <BarraLista derecha={<PildoraVista texto="Inactivos" valor="inactivos" />} />
     {servicios.length === 0 ? (
-      <EstadoVacio>{inactivos ? "No hay servicios inactivos." : "Todavía no hay servicios. Agrega el primero con «Agregar servicio»."}</EstadoVacio>
+      <EstadoVacio>
+        {inactivos
+          ? "No hay servicios inactivos."
+          : todos.length > 0
+            ? "No hay servicios activos: los demás están en «Inactivos»."
+            : "Todavía no hay servicios. Agrega el primero con «Agregar servicio»."}
+      </EstadoVacio>
     ) : (
     <TablaLista
       etiqueta="Servicios del catálogo"
@@ -59,7 +65,6 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/catalogo">, "searc
       ]}
       filas={servicios.map((s) => ({
         href: `/panel/catalogo/${s.id}`,
-        atenuada: !s.activo,
         celdas: [
           <CeldaDoble key="s" principal={s.nombre} secundario={s.conMantenimiento ? "Con mantenimiento" : undefined} peso="fuerte" />,
           // Sin precios cargados, nada: lo dice "Faltan precios"
@@ -70,10 +75,8 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/catalogo">, "searc
           ),
           cantidad(s.variantes, "variante", "variantes"),
           textoDias(s.duracionDias),
-          // Solo lo que pide atención: lo que falta cargar o si está inactivo; completo, no dice nada (pulido 7.1)
-          !s.activo ? (
-            <Insignia key="e">Inactivo</Insignia>
-          ) : s.preciosFaltantes > 0 ? (
+          // Solo lo que pide atención: lo que falta cargar; completo, no dice nada (pulido 7.1). Inactivo ya lo dice la píldora
+          s.preciosFaltantes > 0 ? (
             <Insignia key="e" tono="aviso">
               {s.preciosFaltantes === 1 ? "Falta" : "Faltan"} {cantidad(s.preciosFaltantes, "precio", "precios")}
             </Insignia>

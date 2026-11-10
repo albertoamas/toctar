@@ -1,6 +1,7 @@
 import type { MetodoPago, TipoPago } from "@/db/esquema/trabajos";
 import { calcularTotales, montoNoMayor, restarMontos } from "@/modulos/cotizaciones/reglas";
 import type { Busqueda } from "@/modulos/clientes/reglas";
+import { sinTildes } from "@/modulos/clientes/reglas";
 
 // Reglas puras de los pagos (C3, HU-32). Montos como los guarda numeric(10,2) ("250.50"); las cuentas son las de las
 // cotizaciones, en centavos enteros. Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md.
@@ -74,8 +75,6 @@ export const ORDENES_SALDOS = { antiguas: "Más antiguas", monto: "Mayor monto",
 export type OrdenSaldos = keyof typeof ORDENES_SALDOS;
 
 /** Sin tildes, mayúsculas ni espacios de más: "José  Pérez" y "jose perez" son lo mismo. */
-/** Para comparar textos al buscar: sin tildes, en minúsculas y sin espacios de más. */
-export const sinTildes = (texto: string) => texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim().replace(/\s+/g, " ");
 
 /** Los saldos de quien coincide con lo buscado: el nombre del cliente, su teléfono o la placa (3 caracteres o más cada uno). */
 export function filtrarSaldos<T extends { cliente: string; telefono: string; placa: string }>(saldos: readonly T[], busqueda: Busqueda | null): T[] {

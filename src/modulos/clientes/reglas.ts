@@ -31,6 +31,9 @@ export type Busqueda = {
  * Lo que se escribe en el buscador de clientes (HU-22) se busca a la vez en el nombre, el teléfono y la placa:
  * "7123" encuentra el teléfono, "1234-abc" la placa y "jose" el nombre. Null si está vacío.
  */
+/** Para comparar textos al buscar: sin tildes, en minúsculas y sin espacios de más. */
+export const sinTildes = (texto: string) => texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim().replace(/\s+/g, " ");
+
 export function normalizarBusqueda(q: string): Busqueda | null {
   const texto = q.trim().replace(/\s+/g, " ");
   if (!texto) return null;

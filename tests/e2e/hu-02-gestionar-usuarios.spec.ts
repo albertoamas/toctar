@@ -209,9 +209,10 @@ test("la lista de usuarios: Agregar usuario, (tú) y la fila que abre el usuario
   await page.goto("/panel/usuarios");
   await expect(page.getByText("(tú)").locator("visible=true")).toBeVisible();
   if (info.project.name !== "escritorio") return;
-  // Se toca con el mouse donde está el rol, no el nombre: toda la fila es el enlace (pedido 26, TablaLista)
+  // Se toca con el mouse donde está el rol, no el nombre: toda la fila es el enlace (pedido 26, TablaLista). El rol es la
+  // última columna desde el 10/11 (sin "Estado": lo dice la píldora "Desactivados"), sin la coma que separa las celdas
   // A la vista primero: con muchos usuarios de prueba antes por nombre, la fila del dueño queda más abajo de la pantalla
-  const celda = page.getByRole("list", { name: "Usuarios" }).getByRole("link").filter({ hasText: "(tú)" }).getByText(/^Dueño,\s*$/);
+  const celda = page.getByRole("list", { name: "Usuarios" }).getByRole("link").filter({ hasText: "(tú)" }).getByText(/^Dueño,?\s*$/);
   await celda.scrollIntoViewIfNeeded();
   const rol = (await celda.boundingBox())!;
   await page.mouse.click(rol.x + rol.width / 2, rol.y + rol.height / 2);

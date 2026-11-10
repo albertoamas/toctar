@@ -103,7 +103,11 @@ async function EnElTaller({ filtro, q }: { filtro: (typeof ESTADOS_ORDEN_ABIERTA
         }
       />
       {visibles.length === 0 ? (
-        <EstadoVacio>{busqueda ? `Ninguna orden en el taller coincide con «${q.trim()}».` : `Ninguna orden ${NOMBRE_FILTRO[filtro!].toLowerCase()} ahora.`}</EstadoVacio>
+        <EstadoVacio>
+          {busqueda
+            ? `Ninguna orden ${filtro ? NOMBRE_FILTRO[filtro].toLowerCase() : "en el taller"} coincide con «${q.trim()}».`
+            : `Ninguna orden ${NOMBRE_FILTRO[filtro!].toLowerCase()} ahora.`}
+        </EstadoVacio>
       ) : (
         <TablaLista etiqueta="Órdenes en el taller" columnas={COLUMNAS_TALLER} filas={visibles.map((o) => filaOrden(o, hoy))} />
       )}

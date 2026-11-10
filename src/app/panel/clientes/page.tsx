@@ -14,7 +14,7 @@ import { TablaClientes } from "@/modulos/clientes/componentes/tabla-clientes";
 import { buscarClientes } from "@/modulos/clientes/consultas";
 import { normalizarBusqueda } from "@/modulos/clientes/reglas";
 import { BarraLista } from "@/componentes/panel/barra-lista";
-import { PildoraVista } from "@/componentes/panel/filtros";
+import { PildoraVista } from "@/componentes/panel/pildora-vista";
 
 export const metadata: Metadata = { title: "Clientes" };
 

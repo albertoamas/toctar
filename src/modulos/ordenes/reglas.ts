@@ -1,7 +1,6 @@
 import type { EstadoRevision, EstadoTrabajo, EtapaFoto, TipoDetalle } from "@/db/esquema/trabajos";
 import { fechaCorta, sumarDias } from "@/lib/fechas";
-import type { Busqueda } from "@/modulos/clientes/reglas";
-import { sinTildes } from "@/modulos/pagos/reglas";
+import { sinTildes, type Busqueda } from "@/modulos/clientes/reglas";
 
 // Reglas puras de las órdenes (C4). Una orden es una reserva ya recibida (D-1): el mismo `trabajo`.
 // Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md.

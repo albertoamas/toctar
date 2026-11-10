@@ -7,7 +7,6 @@ import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
-import { Insignia } from "@/componentes/panel/insignia";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { CeldaDoble, TablaLista } from "@/componentes/panel/tabla-lista";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -15,7 +14,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { listarUsuarios } from "@/modulos/usuarios/consultas";
 import { NOMBRE_ROL } from "@/modulos/usuarios/textos";
 import { BarraLista } from "@/componentes/panel/barra-lista";
-import { PildoraVista } from "@/componentes/panel/filtros";
+import { PildoraVista } from "@/componentes/panel/pildora-vista";
 
 export const metadata: Metadata = { title: "Usuarios" };
 
@@ -63,11 +62,9 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/usuarios">, "searc
           { titulo: "Nombre", ancho: "minmax(0,1.4fr)", movil: "titulo" },
           { titulo: "Usuario", movil: "par" },
           { titulo: "Rol", movil: "par" },
-          { titulo: "Estado", ancho: "8rem", movil: "estado" },
         ]}
         filas={usuarios.map((u) => ({
           href: `/panel/usuarios/${u.id}`,
-          atenuada: u.desactivado,
           celdas: [
             <CeldaDoble
               key="n"
@@ -84,7 +81,6 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/usuarios">, "searc
             </span>,
             // El rol es un dato, no un estado: texto, como las demás columnas
             NOMBRE_ROL[u.rol],
-            u.desactivado ? <Insignia key="e">Desactivado</Insignia> : <Insignia key="e" tono="exito">Activo</Insignia>,
           ],
         }))}
       />
