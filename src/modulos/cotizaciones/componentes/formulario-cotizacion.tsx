@@ -33,7 +33,7 @@ export function FormularioNuevaVersion({ datos, hoy }: Props) {
         opciones={datos.opciones}
         errores={estado.errores ?? {}}
         hoy={hoy}
-        anterior={datos.totalAnterior ? { version: datos.desde.version, total: datos.totalAnterior } : undefined}
+        anterior={{ version: datos.desde.version, total: datos.desde.total, quitados: datos.quitados }}
       />
       <AvisoAlSalir formulario={formulario} estado={estado} />
       <PieFormulario>

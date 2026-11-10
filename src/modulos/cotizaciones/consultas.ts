@@ -8,7 +8,7 @@ import { preciosVigentes } from "@/modulos/catalogo/consultas";
 import { duracionEfectiva, type Monto } from "@/modulos/catalogo/reglas";
 import { detalleVehiculo, escaparLike, nombreVehiculo, normalizarBusqueda } from "@/modulos/clientes/reglas";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
-import { calcularTotales, descripcionLinea, fechaValidez, precioSugerido, VISTAS, type Sugerencia, type Vista } from "./reglas";
+import { descripcionLinea, fechaValidez, precioSugerido, VISTAS, type Sugerencia, type Vista } from "./reglas";
 
 // Lecturas de las cotizaciones (pedido 23, P23-cotizacion-directa.md §5). Quien las llama ya pasó por
 // exigirModulo("cotizaciones"): el dueño o el encargado con ese permiso, que también cotiza (pedido 24, RN-12).
@@ -81,6 +81,8 @@ export async function inicioCotizacion(): Promise<{ validaHasta: string; adelant
 type BaseVersion = {
   numero: string;
   version: number;
+  /** El total guardado: el que dice su PDF. */
+  total: string;
   lineas: { varianteId: number; precio: string }[];
   descuento: string;
   adelanto: string;
@@ -97,8 +99,8 @@ export type DatosNuevaVersion = {
   detalle: (string | number)[];
   tamano: string;
   opciones: OpcionServicio[];
-  /** El total de la versión que se reemplaza, para compararlo mientras se cambian los precios. */
-  totalAnterior: string | null;
+  /** Los servicios de la versión que se reemplaza que ya no se ofrecen (no vuelven): por qué el total arranca distinto. */
+  quitados: number;
   /** Valores con los que arranca el formulario: los de la versión que se reemplaza, con la validez de hoy. */
   inicial: { validaHasta: string; adelanto: string; esEstimado: boolean; descuento: string; lineas: { varianteId: number; precio: string }[] };
   /** La versión que se reemplaza (la vigente), si `desde` lo es. */
@@ -157,8 +159,7 @@ export async function datosNuevaVersion(consultaId: number, desdeId: number | nu
     detalle: detalleVehiculo(c),
     tamano: c.tamano,
     opciones,
-    // Con todas sus líneas, también las que ya no se ofrecen: es lo que dice su PDF
-    totalAnterior: desde ? calcularTotales(desde.lineas.map((l) => l.precio), desde.descuento).total : null,
+    quitados: desde ? desde.lineas.filter((l) => !opciones.some((o) => o.varianteId === l.varianteId)).length : 0,
     inicial: desde
       ? {
           validaHasta: inicio.validaHasta,
@@ -181,6 +182,7 @@ async function baseDeVersion(consultaId: number, id: number): Promise<BaseVersio
     .select({
       numero: cotizacion.numero,
       version: cotizacion.version,
+      total: cotizacion.total,
       descuento: cotizacion.descuento,
       adelanto: cotizacion.adelantoSugerido,
       esEstimado: cotizacion.esEstimado,

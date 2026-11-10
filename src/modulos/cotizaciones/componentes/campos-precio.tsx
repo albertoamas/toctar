@@ -48,8 +48,11 @@ type Props = {
   opciones: OpcionServicio[] | null;
   errores: Partial<Record<string, string>>;
   hoy: string;
-  /** En una versión nueva, el total de la que reemplaza: se ve debajo del total cuando cambió. */
-  anterior?: { version: number; total: string };
+  /**
+   * En una versión nueva, el total de la que reemplaza (el de su PDF): se ve debajo del total cuando cambió, y por qué
+   * si arranca distinto (`quitados`: sus servicios que ya no se ofrecen).
+   */
+  anterior?: { version: number; total: string; quitados: number };
 };
 
 export function CamposPrecio({ precios: p, opciones, errores: e, hoy, anterior }: Props) {
@@ -91,8 +94,9 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy, anterior }
           tarjeta no se sabía a qué pertenecían). El descuento, que casi no se usa, y las condiciones, que vienen de
           Configuración, plegados */}
       <SeccionFormulario titulo="Total y condiciones" claseContenido="gap-4">
-        <div className="flex flex-col gap-0.5" aria-live="polite">
-          <p className="flex items-baseline justify-between gap-4">
+        <div className="flex flex-col gap-0.5">
+          {/* Solo el total se anuncia al cambiar: la comparación aparece y se va */}
+          <p className="flex items-baseline justify-between gap-4" aria-live="polite">
             <span className="font-semibold">Total</span>
             <span className="text-lg font-bold tabular-nums">{bs(p.totales.total)}</span>
           </p>
@@ -100,6 +104,7 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy, anterior }
           {anterior && anterior.total !== p.totales.total && (
             <p className="text-sm text-tinta-suave tabular-nums">
               Versión {anterior.version}: {bs(anterior.total)}
+              {anterior.quitados > 0 && `, con ${anterior.quitados === 1 ? "un servicio que ya no se ofrece" : `${anterior.quitados} servicios que ya no se ofrecen`}`}
             </p>
           )}
         </div>
