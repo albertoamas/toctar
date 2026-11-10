@@ -1,3 +1,4 @@
+import type { Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "cn";
@@ -91,6 +92,21 @@ function FilaLista({ href, titulo, tituloGrande, dato, detalles = [], aviso, est
         )}
       </span>
       <ChevronRightIcon className="size-5 shrink-0 text-tinta-suave" aria-hidden />
+    </Link>
+  );
+}
+
+/**
+ * Lo que identifica a una fila y abre su orden o reserva (pulido final, 10/11: era un "Ver la orden" suelto debajo, en
+ * Saldos y en Mantenimientos): un enlace con su nombre corto (`etiqueta`, "Ver la orden: Valeria, 120 Bs"), o solo los
+ * datos si quien mira no puede abrirla (sin `href`). Lo usan las filas con acciones y las de solo consulta.
+ */
+export function DatosDeFila({ href, etiqueta, children }: { href?: string; etiqueta?: string; children: React.ReactNode }) {
+  const clase = "flex min-w-0 flex-1 flex-col gap-1";
+  if (!href) return <div className={clase}>{children}</div>;
+  return (
+    <Link href={href as Route} aria-label={etiqueta} className={cn(clase, "min-h-11 rounded-lg hover:bg-superficie/60 focus-visible:outline-offset-4")}>
+      {children}
     </Link>
   );
 }

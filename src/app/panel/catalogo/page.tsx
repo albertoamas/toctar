@@ -49,7 +49,7 @@ async function Lista() {
         href: `/panel/catalogo/${s.id}`,
         atenuada: !s.activo,
         celdas: [
-          <CeldaDoble key="s" principal={s.nombre} secundario={s.conMantenimiento ? "Con mantenimiento" : undefined} />,
+          <CeldaDoble key="s" principal={s.nombre} secundario={s.conMantenimiento ? "Con mantenimiento" : undefined} fuerte />,
           // Sin precios cargados, nada: lo dice "Faltan precios"
           s.desde === undefined ? null : (
             <span key="p" className="font-semibold tabular-nums">

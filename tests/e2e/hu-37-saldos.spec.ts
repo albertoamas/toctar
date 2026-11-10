@@ -51,7 +51,8 @@ test("la entregada con saldo aparece, con su WhatsApp, y se cobra desde la lista
   const fila = lista.getByRole("listitem").filter({ hasText: debe });
   await expect(fila).toContainText(`Debe Saldo ${s}`);
   await expect(fila).toContainText("400 Bs");
-  await expect(fila).toContainText(/Entregada el \d{2}\/\d{2}(\/\d{4})?, hace 40 días/);
+  // En la tarjeta "Entregada el …"; en la tabla de la computadora, la fecha sola bajo "Entregada"
+  await expect(fila).toContainText(/(Entregada el )?\d{2}\/\d{2}(\/\d{4})?, hace 40 días/);
   // La que pagó todo y la del descuento mayor que el servicio no están
   await expect(lista.getByRole("listitem").filter({ hasText: pago })).toHaveCount(0);
   await expect(lista.getByRole("listitem").filter({ hasText: rebaja })).toHaveCount(0);
@@ -129,7 +130,8 @@ test("pedido 30: se buscan por cliente, teléfono o placa y se ordenan; el total
   await expect(renglon).toContainText(/2 de \d+/);
 
   // Más antigua primero (lo de siempre); por mayor monto; por cliente
-  const nombres = () => lista.getByRole("listitem").locator("span.font-semibold").allInnerTexts();
+  // El primer texto destacado de cada fila: el cliente, en la tarjeta y en la tabla de la computadora
+  const nombres = () => lista.getByRole("listitem").evaluateAll((filas) => filas.map((f) => f.querySelector(".font-semibold, .font-medium")?.textContent?.trim() ?? ""));
   await expect.poll(nombres).toEqual([`Zoila Busca ${s}`, `Alberto Busca ${s}`]);
   const orden = page.getByRole("navigation", { name: "Ordenar saldos" });
   await orden.getByRole("link", { name: "Mayor monto" }).click();

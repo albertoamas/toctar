@@ -36,6 +36,18 @@ const CELDA_MOVIL: Record<ColumnaTabla["movil"], string> = {
   par: "text-tinta-suave",
   oculta: "hidden",
 };
+/**
+ * Las medidas de toda tabla del panel (pulido final, 10/11: la de acciones se había hecho con otras): los títulos de las
+ * columnas y cada fila, con lugar a la derecha para la "›" (`FlechaFila`). Las usan TablaLista y TablaAcciones.
+ */
+export const ENCABEZADO_TABLA = "gap-4 border-b border-border bg-superficie/50 py-2.5 pr-11 pl-4 text-xs font-semibold text-tinta-suave";
+export const FILA_TABLA = "min-h-11 items-center gap-x-4 gap-y-1 py-3 pr-11 pl-4 text-sm";
+
+/** La "›" de una fila que se abre, a la derecha y centrada: en toda tabla del panel, en el mismo lugar. */
+export function FlechaFila() {
+  return <ChevronRightIcon className="pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2 text-tinta-suave" aria-hidden />;
+}
+
 // Con espacio, todas en su columna, en una sola línea de la grilla
 const CELDA_TABLA = "@2xl:col-auto @2xl:col-span-1 @2xl:row-auto @2xl:block @2xl:justify-self-auto @2xl:text-tinta";
 
@@ -44,7 +56,7 @@ export function TablaLista({ etiqueta, columnas, filas }: { etiqueta: string; co
   return (
     <div className="tt-tarjeta-panel overflow-hidden" style={plantilla}>
       {/* Los títulos de las columnas, solo a la vista: cada fila es un enlace que ya dice todo */}
-      <div aria-hidden className="hidden gap-4 border-b border-border bg-superficie/50 py-2.5 pr-11 pl-4 text-xs font-semibold text-tinta-suave @2xl:grid @2xl:grid-cols-[var(--columnas)]">
+      <div aria-hidden className={cn("hidden @2xl:grid @2xl:grid-cols-[var(--columnas)]", ENCABEZADO_TABLA)}>
         {columnas.map((c) => (
           <span key={c.titulo} className={cn(c.alinear === "derecha" && "text-right")}>
             {c.titulo}
@@ -57,7 +69,8 @@ export function TablaLista({ etiqueta, columnas, filas }: { etiqueta: string; co
             <Link
               href={f.href}
               className={cn(
-                "grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 py-3 pr-11 pl-4 text-sm hover:bg-superficie/60 focus-visible:-outline-offset-2 @2xl:grid-cols-[var(--columnas)]",
+                "grid grid-cols-[minmax(0,1fr)_auto] hover:bg-superficie/60 focus-visible:-outline-offset-2 @2xl:grid-cols-[var(--columnas)]",
+                FILA_TABLA,
                 f.atenuada && "text-tinta-suave [&_*]:text-tinta-suave",
               )}
             >
@@ -73,7 +86,7 @@ export function TablaLista({ etiqueta, columnas, filas }: { etiqueta: string; co
                 </span>
               ))}
             </Link>
-            <ChevronRightIcon className="pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2 text-tinta-suave" aria-hidden />
+            <FlechaFila />
           </li>
         ))}
       </ul>
@@ -83,11 +96,16 @@ export function TablaLista({ etiqueta, columnas, filas }: { etiqueta: string; co
 
 const tieneAlgo = (celda: React.ReactNode) => celda !== null && celda !== undefined && celda !== false && celda !== "";
 
-/** Una celda de dos renglones: lo principal y, debajo, un dato en tinta suave ("6789TRS" y "Toyota Hilux"). */
-export function CeldaDoble({ principal, secundario, marcada = false }: { principal: React.ReactNode; secundario?: React.ReactNode; marcada?: boolean }) {
+/**
+ * Una celda de dos renglones: lo principal y, debajo, un dato en tinta suave ("6789TRS" y "Toyota Hilux"). Lo principal,
+ * según lo que es: `marcada`, una placa; `fuerte`, lo que identifica a la fila cuando no es una placa (el cliente, el
+ * servicio, el usuario: en negrita, como en toda tabla del panel); `normal`, un dato (una fecha); si no, medio.
+ */
+export function CeldaDoble(props: { principal: React.ReactNode; secundario?: React.ReactNode; marcada?: boolean; fuerte?: boolean; normal?: boolean }) {
+  const { principal, secundario, marcada = false, fuerte = false, normal = false } = props;
   return (
     <span className="flex flex-col">
-      <span className={marcada ? "tt-placa text-[0.95rem]" : "font-medium"}>{principal}</span>
+      <span className={marcada ? "tt-placa text-[0.95rem]" : fuerte ? "font-semibold" : normal ? undefined : "font-medium"}>{principal}</span>
       {secundario && (
         <span className="text-xs text-tinta-suave">
           <span className="sr-only">, </span>
