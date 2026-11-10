@@ -52,7 +52,7 @@ Hasta una laptop de 1280 px (con el menú, el área de trabajo mide unos 970 px)
 | 14 | Reserva (ficha) | Igual que la cotización | Apilado | Mantener | — | Sí | — |
 | 15 | Orden (ficha) | Igual que la cotización | Apilado | Mantener | — | Sí | — |
 | 16 | Reclamo (ficha) | Datos y responder | Apilado | Mantener | — | Sí | — |
-| 17 | Ficha del cliente | Secciones de a dos (datos, vehículos, cotizaciones); "Editar" en modal | Una columna | Revisar en la prioridad 4 | No revisada en esta ronda | Sí | — |
+| 17 | Ficha del cliente | Vehículos y Datos de a dos; Reservas y Cotizaciones en tabla; "Editar" en modal | Una columna | Revisada (cambio 4a) | — | Sí | — |
 | 18 | Servicio del catálogo | Datos y precios por tamaño; "Editar" en modal | Una columna | Revisar en la prioridad 4 | No revisada en esta ronda | Sí | — |
 | 19 | Usuario (ficha) | Datos, y Rol y permisos; "Editar" en modal | Una columna | Mantener | — | Sí | — |
 | 20 | Servicio del sitio | Secciones con "Editar" | Una columna | Mantener | — | Sí | — |
@@ -85,7 +85,10 @@ Hasta una laptop de 1280 px (con el menú, el área de trabajo mide unos 970 px)
 | 1b | **La barra de las listas** (ver abajo): las mismas piezas y en el mismo orden en toda lista | Clientes, Cotizaciones, Órdenes, Saldos, Reclamos, Mantenimientos, Usuarios, Catálogo, Galería | ✅ 10/11 |
 | 2 | Nuevo usuario con `PieFormulario` | Nuevo usuario | ⏳ |
 | 3 | Publicar en la galería con `PieFormulario` | Publicar en la galería | ⏳ |
-| 4 | Revisar en pantalla las de la prioridad 4 (Ficha del cliente, Servicio del catálogo, Cambiar de dueño) y las listas de la prioridad 5 | 17, 18, 37 y 4 a 9 | ⏳ Después de 1 a 3 |
+| 4 | Revisar en pantalla las de la prioridad 4 (Ficha del cliente, Servicio del catálogo, Cambiar de dueño) y las listas de la prioridad 5 | 17, 18, 37 y 4 a 9 | ⏳ Sigue |
+| 4a | Ficha del cliente: Reservas en tabla como Cotizaciones; la placa en cada fila solo con más de un vehículo; el número arriba en el celular; "Editar" con texto en cada vehículo | Ficha del cliente | ✅ 10/11 |
+| 4b | Servicio del catálogo: sin la tarjeta Variantes ("Editar variantes" en el título de Precios); "Catálogo" solo si está inactivo | Servicio del catálogo | ⏳ |
+| 4c | Cambiar de dueño: la tarjeta "Vehículo" (`ResumenClienteVehiculo`), sin el dueño repetido; los bloqueos como aviso con su botón para resolverlos; la línea de contexto de `EncabezadoPagina` alineada con el título | Cambiar de dueño | ⏳ |
 
 Al cerrar cada cambio: su entrada en `pulido-visual.md`, el estado aquí y en el plan.
 
