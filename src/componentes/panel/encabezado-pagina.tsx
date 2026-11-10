@@ -1,4 +1,5 @@
 import type { Route } from "next";
+import { cn } from "cn";
 import { BotonVolver } from "@/componentes/panel/boton-volver";
 
 // El encabezado de una pantalla del panel (skill pantallas-panel): el título, junto a él su estado si es una ficha (una
@@ -37,7 +38,8 @@ export function EncabezadoPagina({ titulo, estado, accion, volver, children }: P
         </div>
         {accion && <div className="ml-auto max-w-full">{accion}</div>}
       </div>
-      {children && <p className="text-sm text-tinta-suave">{children}</p>}
+      {/* Con el botón de volver, alineada con el título (no debajo del botón) */}
+      {children && <p className={cn("text-sm text-tinta-suave", volver && "pl-14")}>{children}</p>}
     </div>
   );
 }

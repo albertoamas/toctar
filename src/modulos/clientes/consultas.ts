@@ -1,7 +1,8 @@
 import "server-only";
-import { and, asc, count, desc, eq, exists, inArray, like, ne, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, like, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { cliente, consulta, recordatorioMantenimiento, tamanoVehiculo, trabajo, vehiculo } from "@/db/esquema";
+import type { EstadoTrabajo } from "@/db/esquema/trabajos";
 import { cotizacionAbierta } from "@/modulos/cotizaciones/consultas";
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
 import { ESTADOS_RESERVA_ACTIVA } from "@/modulos/ordenes/reglas";
@@ -144,8 +145,8 @@ export type DatosCambioDueno = {
   tamano: string;
   activo: boolean;
   dueno: string;
-  /** Agendada, en el taller o lista: frena el cambio. */
-  reservaActiva: boolean;
+  /** Agendada, en el taller o lista: frena el cambio. Con su id y estado, para el enlace que lleva a resolverla. */
+  reservaActiva: { id: number; estado: EstadoTrabajo } | null;
   /** Cotizaciones del dueño actual para este vehículo que siguen abiertas (pendientes o aceptadas sin fecha). */
   cotizacionesAbiertas: number;
   /** Mantenimientos pendientes o avisados: pasan al nuevo dueño. */
@@ -167,7 +168,6 @@ export async function datosCambioDueno(vehiculoId: number, clienteId: number): P
       tamano: tamanoVehiculo.nombre,
       activo: vehiculo.activo,
       dueno: cliente.nombre,
-      reservaActiva: sql<boolean>`${exists(db.select({ id: trabajo.id }).from(trabajo).where(and(eq(trabajo.vehiculoId, vehiculo.id), inArray(trabajo.estado, [...ESTADOS_RESERVA_ACTIVA]))))}`,
       cotizacionesAbiertas: sql<number>`(${db
         .select({ n: count() })
         .from(consulta)
@@ -181,5 +181,13 @@ export async function datosCambioDueno(vehiculoId: number, clienteId: number): P
     .innerJoin(cliente, eq(vehiculo.clienteId, cliente.id))
     .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
     .where(and(eq(vehiculo.id, vehiculoId), eq(vehiculo.clienteId, clienteId)));
-  return v ?? null;
+  if (!v) return null;
+  // La más cercana, si hay varias
+  const [reservaActiva] = await db
+    .select({ id: trabajo.id, estado: trabajo.estado })
+    .from(trabajo)
+    .where(and(eq(trabajo.vehiculoId, vehiculoId), inArray(trabajo.estado, [...ESTADOS_RESERVA_ACTIVA])))
+    .orderBy(asc(trabajo.fechaInicio), asc(trabajo.id))
+    .limit(1);
+  return { ...v, reservaActiva: reservaActiva ?? null };
 }
