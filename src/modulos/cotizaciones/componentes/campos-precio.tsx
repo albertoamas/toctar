@@ -4,23 +4,31 @@ import { useState } from "react";
 import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
+import { MasDatos } from "@/componentes/panel/mas-datos";
+import { fechaCorta } from "@/lib/fechas";
 import { Input } from "@/componentes/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import { leerMonto, mostrarMonto } from "@/modulos/catalogo/reglas";
 import type { OpcionServicio } from "../consultas";
-import { bs, calcularTotales, leerMontoOCero, MODOS, NOMBRE_MODO, type Modo } from "../reglas";
-import { LineasServicio, type Linea } from "./lineas-servicio";
+import { bs, calcularTotales, leerMontoOCero, MODOS, NOMBRE_MODO, SIN_SERVICIOS, type Modo } from "../reglas";
+import { LineasServicio, lineasQueCuentan, type Linea } from "./lineas-servicio";
 
 // Lo que lleva cada versión de una cotización (pedido 23): los servicios con su precio, el total, cómo se cotizó y las
 // condiciones del PDF. Lo comparten la nueva cotización y la versión nueva. Todo controlado: React reinicia el
 // formulario al terminar la acción y así nada se pierde tras un error.
+// Pulido final (09/11): en el celular ocupaban casi dos pantallas. Ahora la primera fila de servicio llega lista (sola y
+// sin tocar no cuenta: `conFilaLista`) y "Agrega al menos un servicio." se va al elegir uno; el descuento, que casi no
+// se usa, y las condiciones, que vienen de Configuración, van plegados (las condiciones, diciendo cuáles van al PDF). El
+// total va en el pie, en todos los tamaños; el desglose, solo si hay descuento.
 
 type Inicial = { lineas: { varianteId: number; precio: string }[]; descuento: string; adelanto: string; validaHasta: string; modo: Modo | "" };
 
 /** El estado de los campos de precio y el total que sale de ellos, mientras se escribe (el servidor lo recalcula). */
 export function usePrecios(inicial: Inicial) {
   const mostrar = (monto: string) => (monto === "0.00" ? "" : mostrarMonto(monto));
-  const [lineas, setLineas] = useState<Linea[]>(inicial.lineas.map((l) => ({ ...l, precio: mostrarMonto(l.precio) })));
+  const [lineas, setLineas] = useState<Linea[]>(
+    inicial.lineas.length > 0 ? inicial.lineas.map((l) => ({ ...l, precio: mostrarMonto(l.precio) })) : [{ varianteId: 0, precio: "" }],
+  );
   const [descuento, setDescuento] = useState(mostrar(inicial.descuento));
   const [adelanto, setAdelanto] = useState(mostrarMonto(inicial.adelanto));
   const [validaHasta, setValidaHasta] = useState(inicial.validaHasta);
@@ -43,11 +51,13 @@ type Props = {
 };
 
 export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
+  // Con un servicio que cuenta, la lista ya no está vacía: su error se va sin esperar a "Crear"
+  const deLaLista = e.lineas === SIN_SERVICIOS && lineasQueCuentan(p.lineas).length > 0 ? { ...e, lineas: undefined } : e;
   return (
     <>
       <SeccionFormulario titulo="Servicios" claseContenido="gap-4">
         {opciones ? (
-          <LineasServicio opciones={opciones} lineas={p.lineas} onChange={p.setLineas} errores={e} />
+          <LineasServicio opciones={opciones} lineas={p.lineas} onChange={p.setLineas} errores={deLaLista} conFilaLista />
         ) : (
           // Sin tamaño no hay precio sugerido: primero el vehículo
           <p className="text-tinta-suave">Elige el vehículo (o su tamaño) para ver los servicios con su precio.</p>
@@ -77,36 +87,49 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
         {e.modo && <MensajeError id="modo-error">{e.modo}</MensajeError>}
       </SeccionFormulario>
 
-      <SeccionFormulario titulo="Total">
-        <Campo id="descuento" etiqueta="Descuento" opcional error={e.descuento}>
-          <CampoMonto id="descuento" name="descuento" value={p.descuento} onChange={(ev) => p.setDescuento(ev.target.value)} aria-invalid={!!e.descuento} aria-describedby={e.descuento ? "descuento-error" : "descuento-ayuda"} />
-        </Campo>
-        <dl className="grid max-w-sm grid-cols-[1fr_auto] gap-x-6 gap-y-2 tt-tarjeta-panel p-4" aria-live="polite">
-          <dt className="text-tinta-suave">Subtotal</dt>
-          <dd className="text-right tabular-nums">{bs(p.totales.subtotal)}</dd>
-          <dt className="text-tinta-suave">Descuento</dt>
-          <dd className="text-right tabular-nums">{p.totales.descuento === "0.00" ? "Sin descuento" : `− ${bs(p.totales.descuento)}`}</dd>
-          <dt className="font-semibold">Total</dt>
-          <dd className="text-right text-lg font-bold tabular-nums">{bs(p.totales.total)}</dd>
-        </dl>
-      </SeccionFormulario>
-
-      <SeccionFormulario titulo="Condiciones">
-        {/* Vienen de Configuración y casi siempre se dejan así: sin ayudas que lo repitan */}
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Campo id="adelanto" etiqueta="Adelanto sugerido" opcional error={e.adelanto}>
-            <CampoMonto id="adelanto" name="adelanto" value={p.adelanto} onChange={(ev) => p.setAdelanto(ev.target.value)} aria-invalid={!!e.adelanto} aria-describedby={e.adelanto ? "adelanto-error" : undefined} />
+      {/* El total y lo que va al PDF, juntos en su tarjeta (pulido final, 10/11: plegados sueltos debajo de la última
+          tarjeta no se sabía a qué pertenecían). El descuento, que casi no se usa, y las condiciones, que vienen de
+          Configuración, plegados */}
+      <SeccionFormulario titulo="Total y condiciones" claseContenido="gap-4">
+        <p className="flex items-baseline justify-between gap-4" aria-live="polite">
+          <span className="font-semibold">Total</span>
+          <span className="text-lg font-bold tabular-nums">{bs(p.totales.total)}</span>
+        </p>
+        <MasDatos texto="Agregar descuento" titulo="Descuento" abierto={!!p.descuento || !!e.descuento}>
+          <Campo id="descuento" etiqueta="Monto del descuento" error={e.descuento}>
+            <CampoMonto id="descuento" name="descuento" value={p.descuento} onChange={(ev) => p.setDescuento(ev.target.value)} aria-invalid={!!e.descuento} aria-describedby={e.descuento ? "descuento-error" : undefined} />
           </Campo>
-          <Campo id="validaHasta" etiqueta="Válida hasta" error={e.validaHasta}>
-            <Input id="validaHasta" name="validaHasta" type="date" min={hoy} value={p.validaHasta} onChange={(ev) => p.setValidaHasta(ev.target.value)} aria-invalid={!!e.validaHasta} aria-describedby={e.validaHasta ? "validaHasta-error" : undefined} className="max-w-48" />
-          </Campo>
-        </div>
+          {/* El desglose, con descuento: el total va arriba */}
+          {p.totales.descuento !== "0.00" && (
+            <dl className="grid max-w-sm grid-cols-[1fr_auto] gap-x-6 gap-y-1 text-sm">
+              <dt className="text-tinta-suave">Subtotal</dt>
+              <dd className="text-right tabular-nums">{bs(p.totales.subtotal)}</dd>
+              <dt className="text-tinta-suave">Descuento</dt>
+              <dd className="text-right tabular-nums">− {bs(p.totales.descuento)}</dd>
+            </dl>
+          )}
+        </MasDatos>
+        <MasDatos
+          texto="Cambiar adelanto o validez"
+          titulo="Adelanto y validez"
+          detalle={`Ahora: ${p.adelanto.trim() ? `${p.adelanto.trim()} Bs` : "sin adelanto"}, hasta el ${p.validaHasta ? fechaCorta(p.validaHasta, hoy) : "…"}`}
+          abierto={!!e.adelanto || !!e.validaHasta}
+        >
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Campo id="adelanto" etiqueta="Adelanto sugerido" opcional error={e.adelanto}>
+              <CampoMonto id="adelanto" name="adelanto" value={p.adelanto} onChange={(ev) => p.setAdelanto(ev.target.value)} aria-invalid={!!e.adelanto} aria-describedby={e.adelanto ? "adelanto-error" : undefined} />
+            </Campo>
+            <Campo id="validaHasta" etiqueta="Válida hasta" error={e.validaHasta}>
+              <Input id="validaHasta" name="validaHasta" type="date" min={hoy} value={p.validaHasta} onChange={(ev) => p.setValidaHasta(ev.target.value)} aria-invalid={!!e.validaHasta} aria-describedby={e.validaHasta ? "validaHasta-error" : undefined} className="max-w-48" />
+            </Campo>
+          </div>
+        </MasDatos>
       </SeccionFormulario>
     </>
   );
 }
 
-/** El total a la vista en el pie fijo del celular, junto al botón. El resumen de arriba ya lo anuncia (aria-live). */
+/** El total a la vista en el pie fijo del celular, junto al botón. "Total y condiciones" ya lo anuncia (aria-live). */
 export function TotalEnPie({ total }: { total: string }) {
   return (
     <p className="flex items-baseline gap-2 sm:hidden" aria-hidden>

@@ -34,14 +34,16 @@ async function crearServicioConPrecios(info: TestInfo): Promise<string> {
   return nombre;
 }
 
-const servicio = (page: Page, i: number) => page.getByLabel(`Servicio ${i}`, { exact: true });
-const opcion = (page: Page, i: number) => page.getByLabel(`Opción del servicio ${i}`);
+const servicio = (page: Page, i: number) => page.getByLabel(`Servicio ${i}`, { exact: true }).filter({ visible: true });
+const opcion = (page: Page, i: number) => page.getByLabel(`Opción del servicio ${i}`).filter({ visible: true });
 /** Elige el servicio y su opción en sus dos menús (pulido 9.4). */
 async function elegir(page: Page, i: number, nombre: string, variante: string) {
   await servicio(page, i).selectOption({ label: nombre });
   await opcion(page, i).selectOption({ label: variante });
 }
-const precio = (page: Page, i: number) => page.getByLabel(`Precio del servicio ${i}`);
+// Solo los visibles: Next guarda escondida la pantalla anterior (Nueva cotización, con su primera fila lista) al ir a
+// la versión nueva
+const precio = (page: Page, i: number) => page.getByLabel(`Precio del servicio ${i}`).filter({ visible: true });
 const crear = (page: Page) => page.getByRole("button", { name: "Crear cotización" }).click();
 /** Pedido 40: con el cliente ya elegido se empieza en el vehículo; el suyo (si tiene uno) ya va marcado. */
 const aServicios = (page: Page) => page.getByRole("button", { name: "Siguiente: servicios" }).click();
@@ -77,7 +79,7 @@ test("cliente nuevo en tres pasos: sus datos completos, su vehículo, y los serv
 
   // Paso 2: el vehículo, con todo a la vista; arriba, el cliente
   await expect(pasoActual(page)).toContainText("Vehículo");
-  await expect(page.getByRole("region", { name: "Cliente" })).toContainText(`Nuevo cotizado ${s}`);
+  await expect(page.getByRole("region", { name: "Cotización para" })).toContainText(`Nuevo cotizado ${s}`);
   await aServicios(page);
   await expect(page.getByText("Escribe la placa.")).toBeVisible();
   await expect(page.getByLabel("Placa", { exact: true })).toBeFocused();
@@ -89,7 +91,7 @@ test("cliente nuevo en tres pasos: sus datos completos, su vehículo, y los serv
 
   // Paso 3: los servicios; arriba, el cliente y el vehículo
   await expect(pasoActual(page)).toContainText("Servicios y precio");
-  await expect(page.getByRole("region", { name: "Vehículo" })).toContainText(`CN25${s}1`);
+  await expect(page.getByRole("region", { name: "Cotización para" })).toContainText(`CN25${s}1`);
   // "Siguiente" no envía: antes, el mismo botón pasaba a "Crear cotización" en el mismo toque y la mandaba vacía
   await page.waitForTimeout(500);
   await expect(page.getByText("Agrega al menos un servicio.")).toHaveCount(0);
@@ -97,8 +99,9 @@ test("cliente nuevo en tres pasos: sus datos completos, su vehículo, y los serv
   await expect(page.getByText("Elige cómo se cotizó.")).toBeVisible();
   await expect(page.getByText("Agrega al menos un servicio.")).toBeVisible();
   await expect(pasoActual(page)).toContainText("Servicios y precio");
-  await page.getByRole("button", { name: "Agregar servicio" }).click();
+  // La primera fila ya está (pulido final del 09/11); elegido el servicio, el error se va sin esperar a "Crear"
   await elegir(page, 1, nombre, "Con precio");
+  await expect(page.getByText("Agrega al menos un servicio.")).toHaveCount(0);
   await expect(precio(page, 1)).toHaveValue("450");
   await expect(page.getByText("Precio sugerido: 450 Bs")).toBeVisible();
   // Otro tamaño, otro precio sugerido: este no tiene, y vuelve al cambiar de nuevo (desde "Cambiar" del vehículo)
@@ -116,11 +119,19 @@ test("cliente nuevo en tres pasos: sus datos completos, su vehículo, y los serv
   await elegir(page, 2, nombre, "Por evaluar");
   await expect(page.getByText("Según evaluación: escribe el precio")).toBeVisible();
   await precio(page, 2).fill("200,50");
-  await page.getByLabel("Descuento").fill("50");
+  // Abierto se puede cerrar (pulido final del 10/11): "Quitar" borra lo escrito, así no se guarda escondido
+  await page.getByText("Agregar descuento", { exact: true }).click();
+  await page.getByLabel("Monto del descuento").fill("30");
+  await page.getByRole("button", { name: "Quitar Descuento" }).click();
+  await expect(page.getByLabel("Monto del descuento")).toBeHidden();
+  await page.getByText("Agregar descuento", { exact: true }).click();
+  await expect(page.getByLabel("Monto del descuento")).toHaveValue("");
+  await page.getByLabel("Monto del descuento").fill("50");
   await page.getByRole("radio", { name: /^Por fotos/ }).check();
   const totales = page.locator("dl").filter({ hasText: "Subtotal" });
   await expect(totales).toContainText("650,50 Bs");
-  await expect(totales).toContainText("600,50 Bs");
+  // El total, arriba en "Total y condiciones" (pulido final del 10/11); el desglose, en el recuadro del descuento
+  await expect(page.getByRole("group", { name: "Total y condiciones" }).getByText("600,50 Bs", { exact: true })).toBeVisible();
   await crear(page);
 
   await expect(page).toHaveURL(/\/panel\/cotizaciones\/\d+\?creada=1$/);
@@ -178,7 +189,6 @@ test("un WhatsApp repetido avisa y ofrece cotizarle a ese cliente; lo escrito se
   await page.getByLabel("Placa", { exact: true }).fill(`CR25${s}1`);
   await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
   await aServicios(page);
-  await page.getByRole("button", { name: "Agregar servicio" }).click();
   await elegir(page, 1, nombre, "Con precio");
   await page.getByRole("radio", { name: "En persona" }).check();
   await crear(page);
@@ -205,12 +215,11 @@ test("desde la ficha del cliente: llega elegido, con su vehículo marcado, y la 
   await expect(page.getByText("Todavía no tiene cotizaciones.")).toBeVisible();
   await page.getByRole("link", { name: "Nueva cotización" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/cotizaciones/nueva\\?cliente=${id}$`));
-  await expect(page.getByRole("region", { name: "Cliente" })).toContainText(`Desde ficha ${s}`);
+  await expect(page.getByRole("region", { name: "Cotización para" })).toContainText(`Desde ficha ${s}`);
   await expect(page.getByRole("radio", { name: new RegExp(`CF25${s}1`) })).toBeChecked();
   await expect(pasoActual(page)).toContainText("Vehículo");
   await aServicios(page);
   // Con el vehículo elegido, los servicios ya muestran su precio
-  await page.getByRole("button", { name: "Agregar servicio" }).click();
   await elegir(page, 1, nombre, "Con precio");
   await expect(precio(page, 1)).toHaveValue("450");
   await page.getByRole("radio", { name: "En persona" }).check();
@@ -229,7 +238,6 @@ test("nueva versión: el mismo número, la anterior queda reemplazada y una viej
   await ingresarComoDueno(page);
   await page.goto(`/panel/cotizaciones/nueva?cliente=${cliente}`, { waitUntil: "networkidle" });
   await aServicios(page);
-  await page.getByRole("button", { name: "Agregar servicio" }).click();
   await elegir(page, 1, nombre, "Con precio");
   await page.getByRole("radio", { name: /^Por fotos/ }).check();
   await crear(page);
@@ -283,14 +291,17 @@ test("el descuento no pasa el subtotal, el adelanto no pasa el total y la valide
   await crear(page);
   await expect(page.getByText("Agrega al menos un servicio.")).toBeVisible();
 
-  await page.getByRole("button", { name: "Agregar servicio" }).click();
   await elegir(page, 1, nombre, "Con precio");
-  await page.getByLabel("Descuento").fill("500");
+  await page.getByText("Agregar descuento", { exact: true }).click();
+  await page.getByLabel("Monto del descuento").fill("500");
   await crear(page);
   await expect(page.getByText("El descuento no puede ser mayor que el subtotal.")).toBeVisible();
-  await expect(page.getByLabel("Descuento")).toBeFocused();
+  await expect(page.getByLabel("Monto del descuento")).toBeFocused();
 
-  await page.getByLabel("Descuento").fill("");
+  await page.getByLabel("Monto del descuento").fill("");
+  // Plegadas, diciendo lo que va al PDF (el adelanto de Configuración y la validez)
+  await expect(page.getByText(/^Ahora: \d+ Bs, hasta el /)).toBeVisible();
+  await page.getByText("Cambiar adelanto o validez", { exact: true }).click();
   await page.getByLabel("Adelanto sugerido").fill("451");
   await crear(page);
   await expect(page.getByText("El adelanto no puede ser mayor que el total.")).toBeVisible();
@@ -316,7 +327,6 @@ test("pedido 24: el encargado con Cotizaciones cotiza y ve los montos; sin el pe
 
   await page.goto(`/panel/cotizaciones/nueva?cliente=${cliente}`, { waitUntil: "networkidle" });
   await aServicios(page);
-  await page.getByRole("button", { name: "Agregar servicio" }).click();
   await elegir(page, 1, nombre, "Con precio");
   await page.getByRole("radio", { name: "En persona" }).check();
   await crear(page);
@@ -375,7 +385,7 @@ test("Atrás vuelve al paso anterior sin perder lo escrito; nada se registra has
   // Con el nombre, el del celular (o el navegador) avanza y retrocede de a un paso
   await page.getByLabel("Nombre", { exact: true }).fill(`Con atrás ${s}`);
   await aVehiculo(page);
-  await expect(page.getByRole("region", { name: "Cliente" })).toContainText(`Con atrás ${s}`);
+  await expect(page.getByRole("region", { name: "Cotización para" })).toContainText(`Con atrás ${s}`);
   await page.goBack();
   await expect(pasoActual(page)).toContainText("Cliente");
   // Hasta "Crear cotización" no se registró nada

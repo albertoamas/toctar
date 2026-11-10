@@ -8,7 +8,6 @@ import { MensajeError } from "@/componentes/panel/campo";
 import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
 import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
-import { ResumenPaso } from "@/componentes/panel/resumen-paso";
 import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
 import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { Button, buttonVariants } from "@/componentes/ui/button";
@@ -17,6 +16,7 @@ import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import type { EstadoCliente } from "@/modulos/clientes/acciones";
 import { CamposCliente, CamposVehiculo } from "@/modulos/clientes/componentes/campos";
 import { DatosVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
+import { ResumenClienteVehiculo } from "@/modulos/clientes/componentes/resumen-cliente-vehiculo";
 import { detalleVehiculo, normalizarPlaca } from "@/modulos/clientes/reglas";
 import { leerValores, PREFIJO_VEHICULO } from "@/modulos/clientes/valores";
 import type { Tamano } from "@/modulos/configuracion/consultas";
@@ -244,17 +244,19 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
       <input type="hidden" name="cliente" value={cliente ? cliente.id : CLIENTE_NUEVO} />
       {estado.mensaje && !estado.ok && <MensajeError id="cotizacion-error">{estado.mensaje}</MensajeError>}
 
-      {/* Lo ya elegido, arriba, con "Cambiar" para volver a su paso */}
+      {/* Lo ya elegido, arriba y en una sola tarjeta (pulido final del 09/11, como Nueva reserva), con "Cambiar" para
+          volver a su paso: el cliente registrado, a buscar otro; el nuevo, a sus datos */}
       {paso > PASO_CLIENTE && datosCliente && (
-        <ResumenPaso id="resumen-cliente" titulo="Cliente" href={clienteNuevo ? undefined : "/panel/cotizaciones/nueva"} alCambiar={() => volverA(PASO_CLIENTE)}>
-          <span className="font-semibold">{datosCliente[0]}</span>
-          <span className="text-tinta-suave">{datosCliente[1]}</span>
-        </ResumenPaso>
-      )}
-      {paso > PASO_VEHICULO && resumen.vehiculo && (
-        <ResumenPaso id="resumen-vehiculo" titulo="Vehículo" alCambiar={() => volverA(PASO_VEHICULO)}>
-          <DatosVehiculo placa={resumen.vehiculo.placa} detalle={resumen.vehiculo.detalle} tamano={tamanos.find((t) => t.id === tamanoId)?.nombre ?? ""} />
-        </ResumenPaso>
+        <ResumenClienteVehiculo
+          id="cotizacion-para"
+          titulo="Cotización para"
+          cliente={{ nombre: datosCliente[0], detalle: datosCliente[1], href: clienteNuevo ? undefined : "/panel/cotizaciones/nueva", alCambiar: () => volverA(PASO_CLIENTE) }}
+          vehiculo={
+            paso > PASO_VEHICULO && resumen.vehiculo
+              ? { ...resumen.vehiculo, tamano: tamanos.find((t) => t.id === tamanoId)?.nombre ?? "", alCambiar: () => volverA(PASO_VEHICULO) }
+              : null
+          }
+        />
       )}
 
       <div data-paso={PASO_CLIENTE} hidden={paso !== PASO_CLIENTE} className="flex flex-col gap-3">
