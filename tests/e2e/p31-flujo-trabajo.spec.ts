@@ -169,13 +169,13 @@ test("Nueva reserva ofrece las cotizaciones del vehículo: los precios llegan si
   await expect(suyas.getByRole("link")).toHaveCount(1);
   await expect(suyas).toContainText("700 Bs");
   // También se puede armar una sin cotización
-  await expect(page.getByText("Reserva sin cotización", { exact: true })).toBeVisible();
+  await expect(page.locator("summary", { hasText: "Reserva sin cotización" })).toBeVisible();
   // Plegada: lo común es usar la cotización, y no se ofrece seguir sin elegir los servicios
   await expect(page.getByRole("button", { name: "Reservar" })).toBeHidden();
   await expect(page.getByRole("button", { name: /^Siguiente/ })).toBeHidden();
   // Empezada una sin cotización, "Siguiente" queda aunque se quite el último servicio, y dice qué falta
   // Se abre con la primera fila lista para elegir (pulido final del 09/11)
-  await page.getByText("Reserva sin cotización", { exact: true }).click();
+  await page.locator("summary", { hasText: "Reserva sin cotización" }).click();
   await expect(page.getByLabel("Servicio 1", { exact: true })).toBeFocused();
   await page.getByRole("button", { name: "Quitar servicio 1" }).click();
   await page.getByRole("button", { name: "Siguiente: fecha y adelanto" }).click();
@@ -209,7 +209,7 @@ test("el encargado sin Pagos elige al cliente y reserva su cotización, sin ver 
   await expect(suyas.getByRole("link")).toHaveCount(1);
   await expect(suyas).not.toContainText("Bs");
   // Sin Pagos no arma una sin cotización
-  await expect(page.getByText("Reserva sin cotización", { exact: true })).toHaveCount(0);
+  await expect(page.locator("summary", { hasText: "Reserva sin cotización" })).toHaveCount(0);
   await suyas.getByRole("link").click();
   // Sin Cotizaciones, "Volver" lleva a la Agenda
   await expect(page.getByRole("main").getByRole("link", { name: "Volver a Agenda" })).toBeVisible();

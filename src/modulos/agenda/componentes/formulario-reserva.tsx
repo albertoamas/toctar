@@ -290,7 +290,16 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
         <div data-paso={PASO_SERVICIOS} hidden={paso !== PASO_SERVICIOS} className="flex flex-col gap-6">
           {cotizaciones}
           {cotizaciones ? (
-            <MasDatos texto="Reserva sin cotización" abierto={armando || conErrorEnServicios} alAbrir={() => setArmando(true)}>
+            <MasDatos
+              texto="Reserva sin cotización"
+              abierto={armando || conErrorEnServicios}
+              alAbrir={() => setArmando(true)}
+              // Quitarla vuelve a la fila lista, sin tocar (no cuenta como servicio)
+              alQuitar={() => {
+                setLineas([{ varianteId: 0, precio: "" }]);
+                setArmando(false);
+              }}
+            >
               {servicios}
             </MasDatos>
           ) : (
@@ -345,7 +354,7 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
             </Selector>
           </Campo>
           {/* Se usan a veces: plegadas; se abren solas si traen algo escrito o un error */}
-          <MasDatos texto="Agregar hora y nota" abierto={!!horaIngreso || !!nota || !!e.horaIngreso || !!e.nota}>
+          <MasDatos texto="Agregar hora y nota" titulo="Hora y nota" abierto={!!horaIngreso || !!nota || !!e.horaIngreso || !!e.nota}>
             <Campo id="horaIngreso" etiqueta="Hora aproximada" opcional error={e.horaIngreso} ayuda="Como lo dijo el cliente: «a las 9», «en la tarde».">
               <Input id="horaIngreso" name="horaIngreso" autoComplete="off" value={horaIngreso} onChange={(ev) => setHoraIngreso(ev.target.value)} className="max-w-xs" aria-invalid={!!e.horaIngreso} />
             </Campo>

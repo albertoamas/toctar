@@ -90,7 +90,8 @@ test("lo opcional está plegado: se abre con un toque, el foco va a su primer ca
   // A la vista, solo nombre, WhatsApp, placa y tamaño
   await expect(page.getByLabel("Correo")).toBeHidden();
   await expect(page.getByLabel("Marca")).toBeHidden();
-  const agregar = page.getByText("Agregar correo, NIT y notas");
+  // El botón entero (pulido final del 10/11: con borde; el texto va adentro)
+  const agregar = page.locator("summary", { hasText: "Agregar correo, NIT y notas" });
   expect(Math.round((await agregar.boundingBox())!.height)).toBeGreaterThanOrEqual(44);
   await agregar.click();
   await expect(page.getByLabel("Correo")).toBeFocused();

@@ -44,7 +44,8 @@ test("registrar un pago con comprobante, no pasar el saldo y anular con motivo",
   // La fecha y el tipo, plegados (pulido final de los pagos, 09/11): ya vienen bien
   await expect(form.getByLabel("Fecha")).toBeHidden();
   // Plegados, pero dice qué se va a guardar
-  await form.getByText("Otra fecha o tipo (ahora: saldo, hoy)", { exact: true }).click();
+  await expect(form.getByText("Ahora: saldo, hoy", { exact: true })).toBeVisible();
+  await form.getByText("Cambiar fecha o tipo", { exact: true }).click();
   await expect(form.getByRole("radio", { name: "Saldo" })).toBeChecked();
   // El comprobante, solo con QR o transferencia; en efectivo no se ofrece
   await expect(form.locator("#comprobante")).toHaveCount(0);

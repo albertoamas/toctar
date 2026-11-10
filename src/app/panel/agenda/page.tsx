@@ -83,7 +83,7 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
           <ListaFilas etiqueta="Por reservar" filas={porReservar.slice(0, POR_RESERVAR_A_LA_VISTA).map(fila)} />
           {/* Con muchas, las demás plegadas: el tablero es lo principal de la Agenda y no queda abajo de una lista larga */}
           {porReservar.length > POR_RESERVAR_A_LA_VISTA && (
-            <MasDatos texto={`Ver ${cantidad(porReservar.length - POR_RESERVAR_A_LA_VISTA, "más", "más")}`} abierto={false}>
+            <MasDatos texto={`Ver ${cantidad(porReservar.length - POR_RESERVAR_A_LA_VISTA, "más", "más")}`} modo="ver" abierto={false}>
               <ListaFilas etiqueta="Más por reservar" filas={porReservar.slice(POR_RESERVAR_A_LA_VISTA).map(fila)} />
             </MasDatos>
           )}

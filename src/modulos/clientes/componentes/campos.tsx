@@ -101,7 +101,7 @@ export function CamposCliente({ estado, iniciales = {}, compacto, plegar, enlace
       </div>
       <Existente estado={estado} campo="telefono" enlace={enlaceExistente} />
       {plegar && mas ? (
-        <MasDatos texto="Agregar correo, NIT y notas" abierto={conAlgo(v, e, ["correo", "nit", "razonSocial", "notas"])}>
+        <MasDatos texto="Agregar correo, NIT y notas" titulo="Correo, NIT y notas" abierto={conAlgo(v, e, ["correo", "nit", "razonSocial", "notas"])}>
           {mas}
         </MasDatos>
       ) : (
@@ -205,7 +205,7 @@ export function CamposVehiculo({ estado, iniciales = {}, prefijo = "", compacto,
   return (
     <>
       {grilla}
-      <MasDatos texto="Agregar marca, modelo, año y color" abierto={conAlgo(v, e, ["marca", "modelo", "anio", "color"].map(n))}>
+      <MasDatos texto="Agregar marca, modelo, año y color" titulo="Marca, modelo, año y color" abierto={conAlgo(v, e, ["marca", "modelo", "anio", "color"].map(n))}>
         <div className="grid gap-6 sm:grid-cols-2">{opcionales}</div>
       </MasDatos>
     </>

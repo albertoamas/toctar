@@ -102,7 +102,7 @@ function Formulario({ trabajoId, saldo, hoy, conPagos }: Props) {
       </Campo>
       <MetodoYComprobante metodo={metodo} alCambiarMetodo={setMetodo} alCambiarComprobante={setComprobante} errorMetodo={e.metodo} errorComprobante={errorFoto ?? e.comprobante} />
       {/* Plegados, pero a la vista lo que se va a guardar: un pago completo sin pagos antes se registraría como adelanto */}
-      <MasDatos texto={`Otra fecha o tipo (ahora: ${tipo ? NOMBRE_TIPO_PAGO[tipo].toLowerCase() : "sin tipo"}, ${fecha === hoy ? "hoy" : "otra fecha"})`} abierto={!!e.fecha || !!e.tipo}>
+      <MasDatos texto="Cambiar fecha o tipo" titulo="Fecha y tipo" detalle={`Ahora: ${tipo ? NOMBRE_TIPO_PAGO[tipo].toLowerCase() : "sin tipo"}, ${fecha === hoy ? "hoy" : "otra fecha"}`} abierto={!!e.fecha || !!e.tipo}>
         <Campo id="fecha" etiqueta="Fecha" error={e.fecha}>
           <Input id="fecha" name="fecha" type="date" max={hoy} value={fecha} onChange={(ev) => setFecha(ev.target.value)} className="max-w-xs" aria-invalid={!!e.fecha} aria-describedby={e.fecha ? "fecha-error" : undefined} />
         </Campo>
