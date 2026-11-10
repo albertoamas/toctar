@@ -86,7 +86,7 @@ Hasta una laptop de 1280 px (con el menú, el área de trabajo mide unos 970 px)
 | 2 | Nuevo usuario con `PieFormulario` | Nuevo usuario | ⏳ |
 | 3 | Publicar en la galería con `PieFormulario` | Publicar en la galería | ⏳ |
 | 4 | Revisar en pantalla las de la prioridad 4 (Ficha del cliente, Servicio del catálogo, Cambiar de dueño) y las listas de la prioridad 5 | 17, 18, 37 y 4 a 9 | ⏳ Sigue |
-| 4a | Ficha del cliente: Reservas en tabla como Cotizaciones; la placa en cada fila solo con más de un vehículo; el número arriba en el celular; "Editar" con texto en cada vehículo | Ficha del cliente | ✅ 10/11 |
+| 4a | Ficha del cliente: Reservas en tabla como Cotizaciones, las dos con la placa en cada fila; el número arriba en el celular; "Editar" con texto en cada vehículo | Ficha del cliente | ✅ 10/11 |
 | 4b | Servicio del catálogo: sin la tarjeta Variantes ("Editar variantes" en el título de Precios); "Catálogo" solo si está inactivo | Servicio del catálogo | ⏳ |
 | 4c | Cambiar de dueño: la tarjeta "Vehículo" (`ResumenClienteVehiculo`), sin el dueño repetido; los bloqueos como aviso con su botón para resolverlos; la línea de contexto de `EncabezadoPagina` alineada con el título | Cambiar de dueño | ⏳ |
 

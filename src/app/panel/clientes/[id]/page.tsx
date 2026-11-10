@@ -78,9 +78,6 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
 
   const debe = saldoPendiente(reservas);
   const hoy = fechaEnBolivia();
-  // La placa en cada reserva y cotización, solo si tiene o tuvo más de un vehículo (inventario-pantallas.md, cambio 4). Cada
-  // lista cuenta con lo suyo: así una no cambia según el permiso de ver la otra
-  const variosVehiculos = (filas: { placa: string | null }[]) => new Set([...c.vehiculos, ...filas].map((x) => x.placa).filter(Boolean)).size > 1;
   const vehiculosActivos = c.vehiculos.filter((v) => v.activo).map((v) => ({ id: v.id, placa: v.placa }));
   const datos: [string, string | null][] = [
     ["WhatsApp", formatearWhatsApp(c.telefono)],
@@ -174,7 +171,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
           {reservas.length === 0 ? (
             <p className="text-tinta-suave">Todavía no tiene reservas.</p>
           ) : (
-            <ReservasCliente reservas={reservas} verOrdenes={verOrdenes} conSaldo={verPagos} conVehiculo={variosVehiculos(reservas)} />
+            <ReservasCliente reservas={reservas} verOrdenes={verOrdenes} conSaldo={verPagos} />
           )}
         </section>
       )}
@@ -191,7 +188,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
             )}
           </CabeceraSeccion>
           {cotizaciones.length > 0 ? (
-            <ListaCotizaciones cotizaciones={cotizaciones} umbral={parametros.dias_cotizacion_sin_respuesta} sinCliente conVehiculo={variosVehiculos(cotizaciones)} />
+            <ListaCotizaciones cotizaciones={cotizaciones} umbral={parametros.dias_cotizacion_sin_respuesta} sinCliente />
           ) : (
             <p className="text-tinta-suave">Todavía no tiene cotizaciones.</p>
           )}

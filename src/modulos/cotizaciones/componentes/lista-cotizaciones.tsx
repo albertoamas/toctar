@@ -8,15 +8,12 @@ import { bs, diasDesde, NOMBRE_ESTADO, sinRespuesta, textoDias, TONO_ESTADO } fr
 // cliente con su vehículo (en la ficha del cliente, solo el vehículo: ya se sabe de quién son), los servicios, el total y
 // hace cuánto. Desde `umbral` días (Configuración) una pendiente espera respuesta y lo dice en una insignia de aviso.
 // En el celular, el cliente y el total arriba. Una aceptada sin reserva lleva "Sin fecha" (pedido 31). En la ficha del
-// cliente, el número arriba (como en la computadora) y el vehículo solo si tiene más de uno (inventario-pantallas.md,
-// cambio 4: con uno, cada fila repetía su placa).
+// cliente, el número arriba, como en la computadora (inventario-pantallas.md, cambio 4), y la placa siempre.
 
 type Props = {
   cotizaciones: FilaCotizacion[];
   umbral: number;
   sinCliente?: boolean;
-  /** Con `sinCliente`: el vehículo en cada fila. Sin él, el cliente tiene uno solo y ya se sabe cuál es. */
-  conVehiculo?: boolean;
   /** El estado en cada fila. Sin él, en una pestaña que ya lo dice: no se repite. */
   conEstado?: boolean;
 };
@@ -24,7 +21,7 @@ type Props = {
 /** Una columna con lo que pone en cada fila: van juntas, así una celda no cae bajo el título de otra. */
 type Columna = ColumnaTabla & { celda: (c: FilaCotizacion) => React.ReactNode };
 
-export function ListaCotizaciones({ cotizaciones, umbral, sinCliente = false, conVehiculo = true, conEstado = true }: Props) {
+export function ListaCotizaciones({ cotizaciones, umbral, sinCliente = false, conEstado = true }: Props) {
   const hoy = new Date();
   const columnas: (Columna | false)[] = [
     // En la ficha del cliente, el número es lo que identifica a la fila, también en el celular
@@ -35,7 +32,8 @@ export function ListaCotizaciones({ cotizaciones, umbral, sinCliente = false, co
       movil: "titulo",
       celda: (c) => <CeldaDoble principal={c.cliente} secundario={[c.placa, c.vehiculo].filter(Boolean).join(", ")} />,
     },
-    sinCliente && conVehiculo && { titulo: "Vehículo", ancho: "minmax(0,1.3fr)", movil: "detalle", celda: (c) => <CeldaDoble principal={c.placa} secundario={c.vehiculo} peso="placa" /> },
+    // De ancho fijo: la placa y el modelo entran, y el estado queda en una línea
+    sinCliente && { titulo: "Vehículo", ancho: "8.5rem", movil: "detalle", celda: (c) => <CeldaDoble principal={c.placa} secundario={c.vehiculo} peso="placa" /> },
     { titulo: "Servicios", ancho: "minmax(0,1.3fr)", movil: "detalle", celda: (c) => c.servicios },
     { titulo: "Total", ancho: "7rem", alinear: "derecha", movil: "estado", celda: (c) => <span className="font-semibold tabular-nums">{bs(c.total)}</span> },
     {

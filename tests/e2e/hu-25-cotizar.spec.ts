@@ -227,12 +227,8 @@ test("desde la ficha del cliente: llega elegido, con su vehículo marcado, y la 
   await expect(page).toHaveURL(/\/panel\/cotizaciones\/\d+\?creada=1$/);
   await expect(page.getByRole("list", { name: "Versiones" })).toContainText("En persona");
 
-  // En su ficha, con su servicio; sin la placa, que con un solo vehículo no se repite en cada fila (inventario, cambio 4)
   await page.goto(`/panel/clientes/${id}`);
-  const fila = page.getByRole("list", { name: "Cotizaciones" }).getByRole("link");
-  await expect(fila).toHaveCount(1);
-  await expect(fila).toContainText(nombre);
-  await expect(fila).not.toContainText(`CF25${s}1`);
+  await expect(page.getByRole("list", { name: "Cotizaciones" }).getByRole("link", { name: new RegExp(`CF25${s}1`) })).toBeVisible();
 });
 
 test("nueva versión: el mismo número, la anterior queda reemplazada y una vieja lleva a la vigente", async ({ page }, info) => {

@@ -8,16 +8,14 @@ import type { ReservaDelCliente } from "../consultas";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "../reglas";
 
 // Las reservas de un cliente, en su ficha (HU-32), en una tabla como sus cotizaciones (inventario-pantallas.md, cambio 4:
-// eran tarjetas al lado de la tabla de cotizaciones). Cada fila: la fecha, el espacio, el vehículo si tiene más de uno, el
-// saldo para quien ve pagos y el estado. Una ya recibida abre su orden, si quien mira ve órdenes.
+// eran tarjetas al lado de la tabla de cotizaciones). Cada fila: la fecha, el espacio, el vehículo (siempre, aunque tenga
+// uno solo: la placa es como se reconoce un trabajo en el taller), el saldo para quien ve pagos y el estado. Una ya recibida abre su orden, si quien mira ve órdenes.
 
 type Props = {
   reservas: ReservaDelCliente[];
   verOrdenes: boolean;
   /** El saldo de cada una: para quien ve pagos (sin el permiso, las reservas llegan sin él). */
   conSaldo: boolean;
-  /** La placa en cada fila: solo si el cliente tiene o tuvo más de un vehículo. Con uno, ya se sabe cuál es. */
-  conVehiculo: boolean;
 };
 
 /** Una columna con lo que pone en cada fila: van juntas, así una celda no cae bajo el título de otra. */
@@ -39,7 +37,7 @@ function Saldo({ saldo }: { saldo: string }) {
   );
 }
 
-export function ReservasCliente({ reservas, verOrdenes, conSaldo, conVehiculo }: Props) {
+export function ReservasCliente({ reservas, verOrdenes, conSaldo }: Props) {
   const columnas: (Columna | false)[] = [
     {
       titulo: "Fecha",
@@ -48,7 +46,7 @@ export function ReservasCliente({ reservas, verOrdenes, conSaldo, conVehiculo }:
       celda: (r) => <span className="font-semibold tabular-nums">{formatearFecha(r.fechaInicio)}</span>,
     },
     { titulo: "Espacio", ancho: "minmax(0,1fr)", movil: "detalle", celda: (r) => r.espacio },
-    conVehiculo && { titulo: "Vehículo", ancho: "minmax(0,1fr)", movil: "detalle", celda: (r) => <CeldaDoble principal={r.placa} peso="placa" /> },
+    { titulo: "Vehículo", ancho: "minmax(0,1fr)", movil: "detalle", celda: (r) => <CeldaDoble principal={r.placa} peso="placa" /> },
     // El saldo de una cancelada no se cobra: no se muestra
     conSaldo && { titulo: "Saldo", ancho: "7rem", alinear: "derecha", movil: "estado", celda: (r) => (r.saldo && r.estado !== "cancelado" ? <Saldo saldo={r.saldo.saldo} /> : null) },
     {
