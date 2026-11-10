@@ -14,51 +14,59 @@ import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "../reglas";
 type Props = {
   reservas: ReservaDelCliente[];
   verOrdenes: boolean;
+  /** El saldo de cada una: para quien ve pagos (sin el permiso, las reservas llegan sin él). */
+  conSaldo: boolean;
   /** La placa en cada fila: solo si el cliente tiene o tuvo más de un vehículo. Con uno, ya se sabe cuál es. */
   conVehiculo: boolean;
 };
 
-export function ReservasCliente({ reservas, verOrdenes, conVehiculo }: Props) {
-  // Sin Pagos, las reservas llegan sin saldo: la columna no se muestra
-  const conSaldo = reservas.some((r) => r.saldo);
-  const columnas: (ColumnaTabla | false)[] = [
-    { titulo: "Fecha", ancho: "7rem", movil: "titulo" },
-    { titulo: "Espacio", ancho: "minmax(0,1fr)", movil: "detalle" },
-    conVehiculo && { titulo: "Vehículo", ancho: "minmax(0,1fr)", movil: "detalle" },
-    conSaldo && { titulo: "Saldo", ancho: "7rem", alinear: "derecha", movil: "estado" },
-    { titulo: "Estado", ancho: "minmax(0,1fr)", movil: "detalle" },
+/** Una columna con lo que pone en cada fila: van juntas, así una celda no cae bajo el título de otra. */
+type Columna = ColumnaTabla & { celda: (r: ReservaDelCliente) => React.ReactNode };
+
+/** En el celular, sin el título de la columna, dice qué es: "Saldo: 1900 Bs". */
+function Saldo({ saldo }: { saldo: string }) {
+  return (
+    <span className="font-semibold tabular-nums">
+      {estaPagada(saldo) ? (
+        "Pagado"
+      ) : (
+        <>
+          <span className="@2xl:sr-only">Saldo: </span>
+          {mostrarMonto(saldo)} Bs
+        </>
+      )}
+    </span>
+  );
+}
+
+export function ReservasCliente({ reservas, verOrdenes, conSaldo, conVehiculo }: Props) {
+  const columnas: (Columna | false)[] = [
+    {
+      titulo: "Fecha",
+      ancho: "7rem",
+      movil: "titulo",
+      celda: (r) => <span className="font-semibold tabular-nums">{formatearFecha(r.fechaInicio)}</span>,
+    },
+    { titulo: "Espacio", ancho: "minmax(0,1fr)", movil: "detalle", celda: (r) => r.espacio },
+    conVehiculo && { titulo: "Vehículo", ancho: "minmax(0,1fr)", movil: "detalle", celda: (r) => <CeldaDoble principal={r.placa} peso="placa" /> },
+    // El saldo de una cancelada no se cobra: no se muestra
+    conSaldo && { titulo: "Saldo", ancho: "7rem", alinear: "derecha", movil: "estado", celda: (r) => (r.saldo && r.estado !== "cancelado" ? <Saldo saldo={r.saldo.saldo} /> : null) },
+    {
+      titulo: "Estado",
+      ancho: "minmax(0,1fr)",
+      movil: "detalle",
+      celda: (r) => <Insignia tono={TONO_ESTADO_TRABAJO[r.estado]}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</Insignia>,
+    },
   ];
+  const visibles = columnas.filter((c) => c !== false);
   return (
     <TablaLista
       etiqueta="Reservas"
-      columnas={columnas.filter((c) => c !== false)}
-      filas={reservas.map((r) => {
-        const celdas: (React.ReactNode | false)[] = [
-          <span key="f" className="font-semibold tabular-nums">
-            {formatearFecha(r.fechaInicio)}
-          </span>,
-          r.espacio,
-          conVehiculo && <CeldaDoble key="v" principal={r.placa} peso="placa" />,
-          // El saldo de una cancelada no se cobra: no se muestra. En el celular, sin el título de la columna, dice qué es
-          conSaldo &&
-            (r.saldo && r.estado !== "cancelado" ? (
-              <span key="s" className="font-semibold tabular-nums">
-                {estaPagada(r.saldo.saldo) ? (
-                  "Pagado"
-                ) : (
-                  <>
-                    <span className="@2xl:sr-only">Saldo: </span>
-                    {mostrarMonto(r.saldo.saldo)} Bs
-                  </>
-                )}
-              </span>
-            ) : null),
-          <Insignia key="e" tono={TONO_ESTADO_TRABAJO[r.estado]}>
-            {NOMBRE_ESTADO_TRABAJO[r.estado]}
-          </Insignia>,
-        ];
-        return { href: rutaTrabajo(r.id, r.estado, verOrdenes), celdas: celdas.filter((c) => c !== false) };
-      })}
+      columnas={visibles}
+      filas={reservas.map((r) => ({
+        href: rutaTrabajo(r.id, r.estado, verOrdenes),
+        celdas: visibles.map((c) => c.celda(r)),
+      }))}
     />
   );
 }

@@ -21,45 +21,51 @@ type Props = {
   conEstado?: boolean;
 };
 
+/** Una columna con lo que pone en cada fila: van juntas, así una celda no cae bajo el título de otra. */
+type Columna = ColumnaTabla & { celda: (c: FilaCotizacion) => React.ReactNode };
+
 export function ListaCotizaciones({ cotizaciones, umbral, sinCliente = false, conVehiculo = true, conEstado = true }: Props) {
   const hoy = new Date();
-  const segunda = !sinCliente || conVehiculo;
-  const columnas: ColumnaTabla[] = [
-    { titulo: "Número", ancho: "6.5rem", movil: sinCliente ? "titulo" : "detalle" },
-    ...(segunda ? [{ titulo: sinCliente ? "Vehículo" : "Cliente", ancho: "minmax(0,1.3fr)", movil: sinCliente ? "detalle" : "titulo" } as const] : []),
-    { titulo: "Servicios", ancho: "minmax(0,1.3fr)", movil: "detalle" },
-    { titulo: "Total", ancho: "7rem", alinear: "derecha", movil: "estado" },
-    { titulo: conEstado ? "Estado" : "Movimiento", ancho: "minmax(0,1.1fr)", movil: "detalle" },
+  const columnas: (Columna | false)[] = [
+    // En la ficha del cliente, el número es lo que identifica a la fila, también en el celular
+    { titulo: "Número", ancho: "6.5rem", movil: sinCliente ? "titulo" : "detalle", celda: (c) => <span className="font-semibold tabular-nums">{c.numero}</span> },
+    !sinCliente && {
+      titulo: "Cliente",
+      ancho: "minmax(0,1.3fr)",
+      movil: "titulo",
+      celda: (c) => <CeldaDoble principal={c.cliente} secundario={[c.placa, c.vehiculo].filter(Boolean).join(", ")} />,
+    },
+    sinCliente && conVehiculo && { titulo: "Vehículo", ancho: "minmax(0,1.3fr)", movil: "detalle", celda: (c) => <CeldaDoble principal={c.placa} secundario={c.vehiculo} peso="placa" /> },
+    { titulo: "Servicios", ancho: "minmax(0,1.3fr)", movil: "detalle", celda: (c) => c.servicios },
+    { titulo: "Total", ancho: "7rem", alinear: "derecha", movil: "estado", celda: (c) => <span className="font-semibold tabular-nums">{bs(c.total)}</span> },
+    {
+      titulo: conEstado ? "Estado" : "Movimiento",
+      ancho: "minmax(0,1.1fr)",
+      movil: "detalle",
+      celda: (c) => {
+        const dias = diasDesde(c.ultimoMovimientoAt, hoy);
+        return (
+          <span className="flex flex-wrap items-center gap-1.5">
+            {conEstado && <Insignia tono={TONO_ESTADO[c.estado]}>{NOMBRE_ESTADO[c.estado]}</Insignia>}
+            {/* Aceptada sin reserva (pedido 31): falta darle fecha */}
+            {c.sinFecha && <Insignia tono="aviso">Sin fecha</Insignia>}
+            {/* Esperando respuesta, los días van en el aviso: no se repiten */}
+            {sinRespuesta(c.estado, dias, umbral) ? (
+              <Insignia tono="aviso">Sin respuesta hace {cantidad(dias, "día", "días")}</Insignia>
+            ) : (
+              <span className="inline-block text-tinta-suave first-letter:uppercase">{textoDias(dias)}</span>
+            )}
+          </span>
+        );
+      },
+    },
   ];
+  const visibles = columnas.filter((c) => c !== false);
   return (
     <TablaLista
       etiqueta="Cotizaciones"
-      columnas={columnas}
-      filas={cotizaciones.map((c) => {
-        const dias = diasDesde(c.ultimoMovimientoAt, hoy);
-        const esperando = sinRespuesta(c.estado, dias, umbral);
-        const vehiculo = [c.placa, c.vehiculo].filter(Boolean).join(", ");
-        return {
-          href: `/panel/cotizaciones/${c.id}`,
-          celdas: [
-            <span key="n" className="font-semibold tabular-nums">
-              {c.numero}
-            </span>,
-            ...(!segunda ? [] : sinCliente ? [<CeldaDoble key="c" principal={c.placa} secundario={c.vehiculo} peso="placa" />] : [<CeldaDoble key="c" principal={c.cliente} secundario={vehiculo} />]),
-            c.servicios,
-            <span key="t" className="font-semibold tabular-nums">
-              {bs(c.total)}
-            </span>,
-            <span key="e" className="flex flex-wrap items-center gap-1.5">
-              {conEstado && <Insignia tono={TONO_ESTADO[c.estado]}>{NOMBRE_ESTADO[c.estado]}</Insignia>}
-              {/* Aceptada sin reserva (pedido 31): falta darle fecha */}
-              {c.sinFecha && <Insignia tono="aviso">Sin fecha</Insignia>}
-              {/* Esperando respuesta, los días van en el aviso: no se repiten */}
-              {esperando ? <Insignia tono="aviso">Sin respuesta hace {cantidad(dias, "día", "días")}</Insignia> : <span className="inline-block text-tinta-suave first-letter:uppercase">{textoDias(dias)}</span>}
-            </span>,
-          ],
-        };
-      })}
+      columnas={visibles}
+      filas={cotizaciones.map((c) => ({ href: `/panel/cotizaciones/${c.id}`, celdas: visibles.map((col) => col.celda(c)) }))}
     />
   );
 }
