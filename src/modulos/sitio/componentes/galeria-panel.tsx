@@ -21,6 +21,9 @@ import { cambiarVisibilidadGaleria, elegirParaPortada, eliminarGaleriaItem, guar
 import { Insignia } from "@/componentes/panel/insignia";
 import { MenuMas, type AccionMas } from "@/componentes/panel/menu-mas";
 import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
+import { BarraLista } from "@/componentes/panel/barra-lista";
+import { CLASE_PILDORA, CLASE_PILDORA_ACTIVA } from "@/componentes/panel/filtros";
+import { cn } from "cn";
 
 // HU-09: galería de antes y después (RF-12). Se sube un par o una foto sola, asociada a un servicio,
 // y se ordena, oculta, edita o elimina. Las fotos se achican en el celular antes de subir.
@@ -58,21 +61,30 @@ export function GaleriaPanel({ items, servicios, portadaId }: { items: ItemGaler
             <UploadIcon />
             Subir fotos
           </Button>
-          {items.length > 0 && (
-            <div className="flex w-full max-w-xs flex-col gap-1 sm:w-auto">
-              <label htmlFor="filtro-servicio" className="text-sm font-semibold">Ver fotos de</label>
-              <Selector id="filtro-servicio" value={filtro} onChange={(e) => setFiltro(e.target.value)}>
-                <option value="">Todos los servicios</option>
-                {servicios.map((s) => (
-                  <option key={s.id} value={s.id}>{s.nombre}</option>
-                ))}
-              </Selector>
-            </div>
-          )}
+
         </div>
       )}
 
       {items.length > 0 && <PortadaElegida items={items} portadaId={portadaId} nombreDe={nombreDe} />}
+
+      {/* Barra de las listas (10/11): qué fotos se ven, en píldoras con su cuenta como los filtros de Órdenes (antes, un
+          menú del sistema "Ver fotos de" a la derecha) */}
+      {items.length > 0 && (
+        <BarraLista
+          filtros={
+            <div role="group" aria-label="Ver fotos de" className="flex w-max gap-2 sm:w-auto sm:flex-wrap">
+              {[{ id: "", nombre: "Todas", cuenta: items.length }, ...servicios.map((s) => ({ id: String(s.id), nombre: s.nombre, cuenta: items.filter((i) => String(i.servicioId) === String(s.id)).length }))]
+                .filter((o) => o.id === "" || o.cuenta > 0)
+                .map((o) => (
+                  <button key={o.id} type="button" aria-pressed={filtro === o.id} onClick={() => setFiltro(o.id)} className={cn(CLASE_PILDORA, filtro === o.id && CLASE_PILDORA_ACTIVA)}>
+                    {o.nombre}
+                    <span className={cn("font-medium tabular-nums", filtro === o.id ? "text-fondo/75" : "text-tinta-suave")}> {o.cuenta}</span>
+                  </button>
+                ))}
+            </div>
+          }
+        />
+      )}
 
       {items.length === 0 && !subiendo && <EstadoVacio>Todavía no hay fotos. Sube la primera de un trabajo terminado.</EstadoVacio>}
       {items.length > 0 && visibles.length === 0 && <EstadoVacio>No hay fotos de ese servicio todavía.</EstadoVacio>}

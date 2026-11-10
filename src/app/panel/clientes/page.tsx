@@ -1,4 +1,4 @@
-import type { Metadata, Route } from "next";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { cn } from "cn";
@@ -9,10 +9,12 @@ import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { buttonVariants } from "@/componentes/ui/button";
 import { exigirModulo } from "@/lib/sesion";
-import { BuscadorClientes } from "@/modulos/clientes/componentes/buscador-clientes";
+import { Buscador } from "@/componentes/panel/buscador";
 import { TablaClientes } from "@/modulos/clientes/componentes/tabla-clientes";
 import { buscarClientes } from "@/modulos/clientes/consultas";
 import { normalizarBusqueda } from "@/modulos/clientes/reglas";
+import { BarraLista } from "@/componentes/panel/barra-lista";
+import { PildoraVista } from "@/componentes/panel/filtros";
 
 export const metadata: Metadata = { title: "Clientes" };
 
@@ -32,8 +34,8 @@ export default function PaginaClientes({ searchParams }: PageProps<"/panel/clien
         }
       />
       {/* Aparte de la lista: al buscar, el campo no se vuelve a montar y no pierde el foco */}
-      <Suspense fallback={<div className="h-9 max-w-md pointer-coarse:h-11" />}>
-        <BuscadorClientes />
+      <Suspense fallback={<div className="h-9 pointer-coarse:h-11" />}>
+        <BarraLista buscador={<Buscador />} derecha={<PildoraVista texto="Desactivados" valor="desactivados" />} />
       </Suspense>
       <Suspense fallback={<Cargando />}>
         <Lista searchParams={searchParams} />
@@ -49,34 +51,9 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/clientes">, "searc
   const desactivados = parametros.ver === "desactivados";
   const { clientes, hayMas } = await buscarClientes(q, desactivados);
   const busqueda = normalizarBusqueda(q);
-  // Los enlaces conservan la búsqueda escrita: el campo la sigue mostrando
-  const conBusqueda = (ver?: string) => {
-    const p = new URLSearchParams();
-    if (q.trim()) p.set("q", q);
-    if (ver) p.set("ver", ver);
-    const consulta = p.toString();
-    return (consulta ? `/panel/clientes?${consulta}` : "/panel/clientes") as Route;
-  };
-  const enlace = "inline-flex min-h-11 items-center self-start text-sm underline";
-  // Los desactivados se ven rara vez: el enlace va al final. Viéndolos, se dice arriba y se vuelve desde ahí
-  const verDesactivados = !desactivados && (
-    <Link href={conBusqueda("desactivados")} className={cn(enlace, "text-tinta-suave")}>
-      Ver desactivados
-    </Link>
-  );
-  const vistaDesactivados = desactivados && (
-    <p className="-mt-3 flex flex-wrap items-center gap-x-2 text-tinta-suave">
-      Desactivados.
-      <Link href={conBusqueda()} className={cn(enlace, "font-semibold text-tinta")}>
-        Ver los activos
-      </Link>
-    </p>
-  );
-
   if (clientes.length === 0) {
     return (
       <>
-        {vistaDesactivados}
         <EstadoVacio>
           {q
             ? `No hay clientes${desactivados ? " desactivados" : ""} con «${q.trim()}».`
@@ -84,14 +61,12 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/clientes">, "searc
               ? "No hay clientes desactivados."
               : "Todavía no hay clientes. Agrega el primero con «Agregar cliente»."}
         </EstadoVacio>
-        {verDesactivados}
       </>
     );
   }
 
   return (
     <>
-      {vistaDesactivados}
       <TablaClientes
         etiqueta={desactivados ? "Clientes desactivados" : "Clientes"}
         clientes={clientes}
@@ -100,7 +75,6 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/clientes">, "searc
         atenuadas={desactivados}
       />
       {hayMas && <p className="text-sm text-tinta-suave">Hay más clientes: escribe algo más preciso para encontrar el que buscas.</p>}
-      {verDesactivados}
     </>
   );
 }

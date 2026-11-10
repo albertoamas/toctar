@@ -7,7 +7,7 @@ import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
 import { buttonVariants } from "@/componentes/ui/button";
 import { buscarClientes } from "../consultas";
 import { normalizarBusqueda } from "../reglas";
-import { BuscadorClientes } from "./buscador-clientes";
+import { Buscador } from "@/componentes/panel/buscador";
 import { TablaClientes } from "./tabla-clientes";
 
 // Elegir al cliente con el buscador de Clientes (HU-22): la nueva cotización (pedido 23) y la reserva directa (HU-30). La
@@ -41,7 +41,7 @@ export async function ElegirCliente({ q, hrefCliente, hrefNuevo, titulo = "Clien
           </Link>
         )}
       </CabeceraSeccion>
-      <BuscadorClientes />
+      <Buscador />
       {clientes.length === 0 ? (
         <EstadoVacio>{q ? `No hay ${otros} con «${q.trim()}».${sugerencia}` : `Todavía no hay ${otros}.${sugerencia}`}</EstadoVacio>
       ) : (

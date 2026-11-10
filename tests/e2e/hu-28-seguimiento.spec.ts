@@ -36,7 +36,7 @@ test("pendientes por antigüedad, con su total y su número; las que esperan res
   await ingresarComoEncargado(page, info, 1);
   await page.goto("/panel/cotizaciones");
 
-  await expect(pestanas(page).getByRole("link", { name: /^Pendientes \(\d+\)$/ })).toHaveAttribute("aria-current", "page");
+  await expect(pestanas(page).getByRole("link", { name: /^Pendientes \d+$/ })).toHaveAttribute("aria-current", "page");
   await expect(fila(page, `Sin respuesta ${s}`)).toContainText("Sin respuesta hace 9 días");
   await expect(fila(page, `Sin respuesta ${s}`)).toContainText("500 Bs");
   await expect(fila(page, `Sin respuesta ${s}`)).toContainText(`2040-${n}001`);
@@ -74,17 +74,17 @@ test("se busca por placa o número, y las pestañas cuentan lo encontrado", asyn
   await expect(page).toHaveURL(new RegExp(`q=bu28${s}`));
   await expect(filas(page)).toHaveCount(1);
   await expect(fila(page, `Buscada ${s}`)).toBeVisible();
-  await expect(pestanas(page).getByRole("link", { name: "Pendientes (1)" })).toBeVisible();
-  await expect(pestanas(page).getByRole("link", { name: "Aceptadas (1)" })).toBeVisible();
+  await expect(pestanas(page).getByRole("link", { name: "Pendientes 1" })).toBeVisible();
+  await expect(pestanas(page).getByRole("link", { name: "Aceptadas 1" })).toBeVisible();
   // La pestaña conserva la búsqueda
-  await pestanas(page).getByRole("link", { name: "Aceptadas (1)" }).click();
+  await pestanas(page).getByRole("link", { name: "Aceptadas 1" }).click();
   await expect(fila(page, `Aceptada buscada ${s}`)).toBeVisible();
   await expect(buscador).toHaveValue(`bu28${s}`);
 
   await buscador.fill(`2041-${n}001`);
   await expect(page).toHaveURL(new RegExp(`q=2041-${n}001`));
   await expect(page.getByText(`Ninguna cotización aceptada coincide con «2041-${n}001».`)).toBeVisible();
-  await expect(pestanas(page).getByRole("link", { name: "Pendientes (1)" })).toBeVisible();
+  await expect(pestanas(page).getByRole("link", { name: "Pendientes 1" })).toBeVisible();
 });
 
 test("rechazar desde «Más», con motivo, y volver a pendiente; «Otro» pide el detalle", async ({ page }, info) => {

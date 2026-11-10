@@ -74,7 +74,8 @@ export const ORDENES_SALDOS = { antiguas: "Más antiguas", monto: "Mayor monto",
 export type OrdenSaldos = keyof typeof ORDENES_SALDOS;
 
 /** Sin tildes, mayúsculas ni espacios de más: "José  Pérez" y "jose perez" son lo mismo. */
-const sinTildes = (texto: string) => texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim().replace(/\s+/g, " ");
+/** Para comparar textos al buscar: sin tildes, en minúsculas y sin espacios de más. */
+export const sinTildes = (texto: string) => texto.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim().replace(/\s+/g, " ");
 
 /** Los saldos de quien coincide con lo buscado: el nombre del cliente, su teléfono o la placa (3 caracteres o más cada uno). */
 export function filtrarSaldos<T extends { cliente: string; telefono: string; placa: string }>(saldos: readonly T[], busqueda: Busqueda | null): T[] {

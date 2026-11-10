@@ -15,9 +15,11 @@ import { buttonVariants } from "@/componentes/ui/button";
 import { diaYHora, fechaEnBolivia } from "@/lib/fechas";
 import { exigirModulo } from "@/lib/sesion";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
-import { BuscadorClientes } from "@/modulos/clientes/componentes/buscador-clientes";
+import { Buscador } from "@/componentes/panel/buscador";
 import { ordenesAbiertas, ordenesEntregadas, type OrdenEnLista, type OrdenEntregada } from "@/modulos/ordenes/consultas";
-import { ENTREGADAS_POR_PAGINA, ESTADOS_ORDEN_ABIERTA, estadoFiltrado, estaAtrasada, textoEntrega } from "@/modulos/ordenes/reglas";
+import { ENTREGADAS_POR_PAGINA, ESTADOS_ORDEN_ABIERTA, estaAtrasada, estadoFiltrado, filtrarOrdenes, textoEntrega } from "@/modulos/ordenes/reglas";
+import { BarraLista } from "@/componentes/panel/barra-lista";
+import { normalizarBusqueda } from "@/modulos/clientes/reglas";
 
 export const metadata: Metadata = { title: "Órdenes" };
 
@@ -57,41 +59,51 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/ordenes">, "search
       {entregadas ? (
         <>
           {/* Fuera de la lista: al buscar, el campo no se vuelve a montar y no pierde el foco */}
-          <BuscadorClientes etiqueta="Buscar por placa, cliente o fecha de entrega" ejemplo="Placa, cliente o fecha (5/10)" />
+          <BarraLista buscador={<Buscador etiqueta="Buscar por placa, cliente o fecha de entrega" ejemplo="Placa, cliente o fecha (5/10)" />} />
           <Suspense fallback={<Cargando />}>
             <Entregadas q={typeof parametros.q === "string" ? parametros.q : ""} pagina={Number(parametros.pagina)} />
           </Suspense>
         </>
       ) : (
-        <EnElTaller filtro={estadoFiltrado(parametros.estado)} />
+        <EnElTaller filtro={estadoFiltrado(parametros.estado)} q={typeof parametros.q === "string" ? parametros.q : ""} />
       )}
     </>
   );
 }
 
-async function EnElTaller({ filtro }: { filtro: (typeof ESTADOS_ORDEN_ABIERTA)[number] | null }) {
-  const ordenes = await ordenesAbiertas();
+async function EnElTaller({ filtro, q }: { filtro: (typeof ESTADOS_ORDEN_ABIERTA)[number] | null; q: string }) {
+  const todas = await ordenesAbiertas();
   const hoy = fechaEnBolivia();
-  if (ordenes.length === 0) {
+  if (todas.length === 0) {
     return <EstadoVacio>No hay órdenes abiertas. Se abren al recibir un vehículo desde la agenda.</EstadoVacio>;
   }
+  // También se busca en el taller (antes, solo en "Entregadas"), por placa, cliente o vehículo; los filtros cuentan lo buscado
+  const busqueda = normalizarBusqueda(q);
+  const ordenes = filtrarOrdenes(todas, busqueda);
   const visibles = filtro ? ordenes.filter((o) => o.estado === filtro) : ordenes;
+  const conBusqueda = (estado?: string) => {
+    const p = new URLSearchParams();
+    if (estado) p.set("estado", estado);
+    if (q.trim()) p.set("q", q);
+    const consulta = p.toString();
+    return (consulta ? `/panel/ordenes?${consulta}` : "/panel/ordenes") as Route;
+  };
   return (
     <>
-      <Filtros
-        etiqueta="Filtrar por estado"
-        filtros={[
-          { href: "/panel/ordenes", texto: "Todas", cuenta: ordenes.length, activo: filtro === null },
-          ...ESTADOS_ORDEN_ABIERTA.map((e) => ({
-            href: `/panel/ordenes?estado=${e}` as Route,
-            texto: NOMBRE_FILTRO[e],
-            cuenta: ordenes.filter((o) => o.estado === e).length,
-            activo: filtro === e,
-          })),
-        ]}
+      <BarraLista
+        buscador={<Buscador etiqueta="Buscar por placa, cliente o vehículo" ejemplo="Placa o cliente" />}
+        filtros={
+          <Filtros
+            etiqueta="Filtrar por estado"
+            filtros={[
+              { href: conBusqueda(), texto: "Todas", cuenta: ordenes.length, activo: filtro === null },
+              ...ESTADOS_ORDEN_ABIERTA.map((e) => ({ href: conBusqueda(e), texto: NOMBRE_FILTRO[e], cuenta: ordenes.filter((o) => o.estado === e).length, activo: filtro === e })),
+            ]}
+          />
+        }
       />
       {visibles.length === 0 ? (
-        <EstadoVacio>Ninguna orden {NOMBRE_FILTRO[filtro!].toLowerCase()} ahora.</EstadoVacio>
+        <EstadoVacio>{busqueda ? `Ninguna orden en el taller coincide con «${q.trim()}».` : `Ninguna orden ${NOMBRE_FILTRO[filtro!].toLowerCase()} ahora.`}</EstadoVacio>
       ) : (
         <TablaLista etiqueta="Órdenes en el taller" columnas={COLUMNAS_TALLER} filas={visibles.map((o) => filaOrden(o, hoy))} />
       )}

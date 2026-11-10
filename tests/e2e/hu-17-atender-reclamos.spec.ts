@@ -34,7 +34,7 @@ test("el dueño ve el reclamo pendiente, le escribe por WhatsApp y lo marca aten
   await expect(page.getByRole("region", { name: "Para atender" }).getByRole("link", { name: /^(Reclamo de .*Responder|\d+ reclamos pendientes más)/ }).first()).toBeVisible();
   await page.goto("/panel/reclamos?ver=pendientes");
   // La pestaña dice cuántos hay por atender (pulido 5.1)
-  await expect(page.getByRole("navigation", { name: "Filtrar reclamos" }).getByRole("link", { name: /^Pendientes \(\d+\)$/ })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Filtrar reclamos" }).getByRole("link", { name: /^Pendientes \d+$/ })).toBeVisible();
   if (info.project.name === "escritorio") {
     // En la tabla toda la fila abre el reclamo: se toca con el mouse donde está la placa, no el nombre (pulido 5.1;
     // pedido 26, TablaLista: la fila entera es el enlace)

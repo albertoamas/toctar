@@ -1,11 +1,12 @@
 import { expect, test } from "vitest";
+import { normalizarBusqueda } from "@/modulos/clientes/reglas";
 import { sumarMeses } from "@/lib/fechas";
 import { precioCotizadoYFinal } from "@/modulos/pagos/reglas";
 import { erroresDe } from "@/lib/formularios";
 import { TIPOS_DETALLE } from "@/db/esquema/trabajos";
 import { esquemaAvance, esquemaDetalle, esquemaEntregar, esquemaFotoOrden, esquemaPublicar, esquemaMarcarBien, esquemaMarcarRestoBien, esquemaRecibir } from "@/modulos/ordenes/esquemas";
 import { puede } from "@/lib/permisos";
-import { textoRestoBien,
+import { filtrarOrdenes, textoRestoBien,
   enlaceTrabajo,
   esFotoDeAntes,
   esOrden,
@@ -288,4 +289,17 @@ test("marcar el resto como bien pide un trabajo válido y avisa cuántas", () =>
   expect(textoRestoBien(0)).toBe("Ya estaban todas revisadas.");
   expect(textoRestoBien(1)).toBe("1 parte marcada como bien.");
   expect(textoRestoBien(11)).toBe("11 partes marcadas como bien.");
+});
+
+test("en el taller se busca por cliente, vehículo o placa, sin tildes; la placa desde 3 caracteres (barra de las listas)", () => {
+  const ordenes = [
+    { placa: "5678JKR", cliente: "Rodrigo Mendoza", vehiculo: "Hyundai Tucson" },
+    { placa: "1890PLM", cliente: "Daniela Ortíz", vehiculo: "Suzuki Swift" },
+  ];
+  expect(filtrarOrdenes(ordenes, null)).toHaveLength(2);
+  expect(filtrarOrdenes(ordenes, normalizarBusqueda("ortiz")).map((o) => o.placa)).toEqual(["1890PLM"]);
+  expect(filtrarOrdenes(ordenes, normalizarBusqueda("tucson")).map((o) => o.placa)).toEqual(["5678JKR"]);
+  expect(filtrarOrdenes(ordenes, normalizarBusqueda("5678-jkr")).map((o) => o.placa)).toEqual(["5678JKR"]);
+  // Con dos caracteres la placa no cuenta (casi todas coincidirían)
+  expect(filtrarOrdenes(ordenes, normalizarBusqueda("JK"))).toHaveLength(0);
 });

@@ -135,10 +135,12 @@ test("sube un par antes y después y una foto sola; los ordena, oculta, edita y 
   await expect.poll(async () => (await posicion("Vidrios sin manchas de ácido")) < (await posicion("Pulido y nano cerámico en una Hilux"))).toBe(true);
 
   // Filtrar por servicio
-  await page.getByLabel("Ver fotos de").selectOption({ label: "Pulido de vidrios" });
+  // En píldoras con su cuenta (barra de las listas, 10/11; antes un menú "Ver fotos de")
+  const verFotos = page.getByRole("group", { name: "Ver fotos de" });
+  await verFotos.getByRole("button", { name: /^Pulido de vidrios \d+$/ }).click();
   await expect(item("Vidrios sin manchas de ácido")).toHaveCount(1);
   await expect(item("Pulido y nano cerámico en una Hilux")).toHaveCount(0);
-  await page.getByLabel("Ver fotos de").selectOption({ label: "Todos los servicios" });
+  await verFotos.getByRole("button", { name: /^Todas \d+$/ }).click();
 
   // Ocultar y editar
   await page.getByRole("button", { name: "Más: Vidrios sin manchas de ácido" }).click();
