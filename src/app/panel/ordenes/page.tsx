@@ -113,7 +113,7 @@ function filaOrden(o: OrdenEnLista, hoy: string): FilaTabla {
   return {
     href: `/panel/ordenes/${o.id}`,
     celdas: [
-      <CeldaDoble key="v" principal={o.placa} secundario={o.vehiculo} marcada />,
+      <CeldaDoble key="v" principal={o.placa} secundario={o.vehiculo} peso="placa" />,
       o.cliente,
       o.servicios.join(", "),
       <span key="e" className="flex flex-wrap justify-end gap-1.5 @2xl:justify-start">
@@ -189,7 +189,7 @@ function filaEntregada(o: OrdenEntregada): FilaTabla {
   return {
     href: `/panel/ordenes/${o.id}`,
     celdas: [
-      <CeldaDoble key="v" principal={o.placa} secundario={o.vehiculo} marcada />,
+      <CeldaDoble key="v" principal={o.placa} secundario={o.vehiculo} peso="placa" />,
       o.cliente,
       o.servicios.join(", "),
       <span key="f">

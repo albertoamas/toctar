@@ -132,10 +132,10 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
               return {
                 clave: s.id,
                 href: trabajo?.href,
-                etiqueta: trabajo ? `${trabajo.texto}: ${s.cliente}, ${mostrarMonto(s.saldo)} Bs` : undefined,
+                etiqueta: etiquetaSaldo(s, trabajo, hoy),
                 celdas: [
-                  <CeldaDoble key="c" principal={s.cliente} secundario={vehiculoEnLista(vehiculo)} fuerte />,
-                  <CeldaDoble key="e" principal={fechaCorta(entregada, hoy)} secundario={textoHace(entregada, hoy)} normal />,
+                  <CeldaDoble key="c" principal={s.cliente} secundario={vehiculoEnLista(vehiculo)} peso="fuerte" />,
+                  <CeldaDoble key="e" principal={fechaCorta(entregada, hoy)} secundario={textoHace(entregada, hoy)} peso="normal" />,
                   <span key="s" className="font-semibold whitespace-nowrap tabular-nums">
                     {mostrarMonto(s.saldo)} Bs
                   </span>,
@@ -164,8 +164,8 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
                     </div>
                     <span className="flex shrink-0 items-center gap-1">
                       <span className="tt-placa text-xl whitespace-nowrap">{mostrarMonto(s.saldo)} Bs</span>
-                      {/* Solo en el celular: en la computadora, a la derecha vienen los botones y parecería apuntarles */}
-                      {trabajo && <ChevronRightIcon className="size-5 text-tinta-suave lg:hidden" aria-hidden />}
+                      {/* La tarjeta se ve solo sin la tabla: lleva su "›" siempre */}
+                      {trabajo && <ChevronRightIcon className="size-5 text-tinta-suave" aria-hidden />}
                     </span>
                   </div>
                   <p className="text-sm">
@@ -176,7 +176,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
               return (
                 <FilaConAcciones key={s.id}>
                   {/* Qué abre y de quién, corto: el lector no lee toda la fila antes de decirlo */}
-                  <DatosDeFila href={trabajo?.href} etiqueta={trabajo ? `${trabajo.texto}: ${s.cliente}, ${mostrarMonto(s.saldo)} Bs` : undefined}>
+                  <DatosDeFila href={trabajo?.href} etiqueta={etiquetaSaldo(s, trabajo, hoy)}>
                     {datos}
                   </DatosDeFila>
                   {/* Lado a lado también en el celular ("WhatsApp" a secas para que entren); si no entran (320 px), uno por
@@ -194,4 +194,12 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
       )}
     </>
   );
+}
+
+/**
+ * El nombre del enlace de una fila de Saldos, el mismo en la tabla y en la tarjeta: qué abre, de quién, cuánto debe y
+ * desde cuándo. Corto, para que el lector de pantalla no lea toda la fila antes de decir qué hace.
+ */
+function etiquetaSaldo(s: { cliente: string; saldo: string; entregadoAt: Date }, trabajo: { texto: string } | null, hoy: string): string | undefined {
+  return trabajo ? `${trabajo.texto}: ${s.cliente}, ${mostrarMonto(s.saldo)} Bs, entregada ${textoHace(fechaEnBolivia(s.entregadoAt), hoy)}` : undefined;
 }

@@ -109,13 +109,13 @@ async function abiertos(vista: "por-avisar" | "mas-adelante", hoy: string, puede
     obtenerPlantillas(),
   ]);
   if (lista.length === 0) {
-    return <EstadoVacio>{vista === "por-avisar" ? `Nadie para avisar en los próximos ${DIAS_PROXIMOS} días.` : `Ninguno vence después de los próximos ${DIAS_PROXIMOS} días.`}</EstadoVacio>;
+    return <EstadoVacio>{vista === "por-avisar" ? `Nadie para avisar: ningún mantenimiento vencido ni que venza en los próximos ${DIAS_PROXIMOS} días.` : `Ninguno vence después de los próximos ${DIAS_PROXIMOS} días.`}</EstadoVacio>;
   }
   const mensaje = { plantilla: plantillas.mantenimiento, negocio: negocio.nombre };
   // Un mantenimiento no tiene ficha propia: la fila abre la del cliente, donde están sus mantenimientos y sus vehículos
   // (pulido final, 10/11: toda fila de una tabla abre algo), si quien mira ve Clientes
   const aCliente = (m: MantenimientoPorAvisar) =>
-    verClientes ? { href: `/panel/clientes/${m.clienteId}`, etiqueta: `Ver el cliente: ${m.cliente}, ${m.placa}` } : {};
+    verClientes ? { href: `/panel/clientes/${m.clienteId}`, etiqueta: etiquetaAbierto(m, hoy, conAviso) } : {};
   const conAviso = vista === "por-avisar";
   const fila = (m: MantenimientoPorAvisar) => <Fila key={m.id} m={m} hoy={hoy} mensaje={mensaje} puedeAgendar={puedeAgendar} conAviso={conAviso} {...aCliente(m)} />;
   // En la computadora, una tabla con sus acciones, como Saldos (inventario-pantallas.md, cambio 1)
@@ -130,10 +130,10 @@ async function abiertos(vista: "por-avisar" | "mas-adelante", hoy: string, puede
           clave: m.id,
           ...aCliente(m),
           celdas: [
-            <CeldaDoble key="c" principal={m.cliente} secundario={vehiculoEnLista({ marca: m.marca, modelo: m.modelo, placa: m.placa })} fuerte />,
-            <CeldaDoble key="m" principal={m.servicio} secundario={textoCadaMeses(m.intervaloMeses)} normal />,
+            <CeldaDoble key="c" principal={m.cliente} secundario={vehiculoEnLista({ marca: m.marca, modelo: m.modelo, placa: m.placa })} peso="fuerte" />,
+            <CeldaDoble key="m" principal={m.servicio} secundario={textoCadaMeses(m.intervaloMeses)} peso="normal" />,
             <span key="v" className="flex flex-col items-start gap-1">
-              <CeldaDoble principal={fechaCorta(m.fechaProgramada, hoy)} secundario={textoVencimiento(m.fechaProgramada, hoy)} normal />
+              <CeldaDoble principal={fechaCorta(m.fechaProgramada, hoy)} secundario={textoVencimiento(m.fechaProgramada, hoy)} peso="normal" />
               {conAviso && !avisado ? <Insignia tono="aviso">Sin avisar</Insignia> : avisado && <span className="text-xs text-tinta-suave">{avisado}</span>}
             </span>,
           ],
@@ -185,9 +185,9 @@ async function cerrados(hoy: string, ve: { ordenes: boolean; agenda: boolean }) 
           return {
             clave: m.id,
             href: trabajo?.href,
-            etiqueta: trabajo ? `${trabajo.texto}: ${m.cliente}, ${m.placa}` : undefined,
+            etiqueta: etiquetaCerrado(m, trabajo),
             celdas: [
-              <CeldaDoble key="c" principal={m.cliente} secundario={vehiculoEnLista({ marca: m.marca, modelo: m.modelo, placa: m.placa })} fuerte />,
+              <CeldaDoble key="c" principal={m.cliente} secundario={vehiculoEnLista({ marca: m.marca, modelo: m.modelo, placa: m.placa })} peso="fuerte" />,
               <span key="m">{m.servicio}</span>,
               <span key="p">{fechaCorta(m.fechaProgramada, hoy)}</span>,
               <span key="e" className="flex flex-col items-start gap-1">
@@ -272,7 +272,7 @@ function Fila(props: { m: MantenimientoPorAvisar; hoy: string; mensaje: { planti
             <span className="tt-placa text-xl whitespace-nowrap">{fechaCorta(m.fechaProgramada, hoy)}</span>
             <span className="text-sm whitespace-nowrap text-tinta-suave">{textoVencimiento(m.fechaProgramada, hoy)}</span>
           </span>
-          {href && <ChevronRightIcon className="size-5 shrink-0 self-center text-tinta-suave lg:hidden" aria-hidden />}
+          {href && <ChevronRightIcon className="size-5 shrink-0 self-center text-tinta-suave" aria-hidden />}
         </div>
       </DatosDeFila>
       <div className="flex flex-col gap-1 lg:items-end">
@@ -305,18 +305,14 @@ function Acciones({ m, mensaje, puedeAgendar, conAviso, enTabla = false }: { m: 
       )}
     </>
   );
-  if (enTabla) {
-    return (
-      <>
-        {botones}
-        <NoLeInteresa id={m.id} />
-      </>
-    );
-  }
+  // En la tabla, todo en una fila y centrado (NoLeInteresa se alinea solo en la tarjeta); en la tarjeta, los botones en su
+  // fila y "No le interesa" debajo
   return (
     <>
-      <div className="flex flex-wrap gap-2">{botones}</div>
-      <NoLeInteresa id={m.id} />
+      <div className={enTabla ? "contents" : "flex flex-wrap gap-2"}>{botones}</div>
+      <span className={enTabla ? "flex items-center" : "contents"}>
+        <NoLeInteresa id={m.id} />
+      </span>
     </>
   );
 }
@@ -327,7 +323,7 @@ function FilaCerrada({ m, hoy, ve }: { m: MantenimientoCerrado; hoy: string; ve:
   return (
     <li className="p-4">
       {/* Toda la fila abre su reserva u orden, como en Saldos (pulido final, 10/11: era un "Ver la orden" suelto debajo) */}
-      <DatosDeFila href={trabajo?.href} etiqueta={trabajo ? `${trabajo.texto}: ${m.cliente}, ${m.placa}` : undefined}>
+      <DatosDeFila href={trabajo?.href} etiqueta={etiquetaCerrado(m, trabajo)}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 flex-col">
             <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -347,4 +343,18 @@ function FilaCerrada({ m, hoy, ve }: { m: MantenimientoCerrado; hoy: string; ve:
       </DatosDeFila>
     </li>
   );
+}
+
+/**
+ * El nombre del enlace de un mantenimiento abierto (a la ficha del cliente), el mismo en la tabla y en la tarjeta: de
+ * quién, cuándo vence y si falta avisar, así el lector de pantalla oye lo que decide la fila sin leerla entera.
+ */
+function etiquetaAbierto(m: MantenimientoPorAvisar, hoy: string, conAviso: boolean): string {
+  const aviso = conAviso ? (m.avisadoAt ? ", avisado" : ", sin avisar") : "";
+  return `Ver el cliente: ${m.cliente}, ${m.placa}, ${m.servicio}, ${textoVencimiento(m.fechaProgramada, hoy)}${aviso}`;
+}
+
+/** El de uno cerrado (a su reserva u orden): de quién, el servicio y cómo se cerró. */
+function etiquetaCerrado(m: MantenimientoCerrado, trabajo: { texto: string } | null): string | undefined {
+  return trabajo ? `${trabajo.texto}: ${m.cliente}, ${m.placa}, ${m.servicio}, ${NOMBRE_ESTADO_RECORDATORIO[m.estado].toLowerCase()}` : undefined;
 }

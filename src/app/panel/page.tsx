@@ -261,7 +261,7 @@ function ParaHoy({ filas, verOrdenes }: { filas: FilaDelDia[]; verOrdenes: boole
           filas={filas.map((f) => ({
             href: rutaTrabajo(f.id, f.estado, verOrdenes),
             celdas: [
-              <CeldaDoble key="v" principal={f.placa} secundario={f.cliente} marcada />,
+              <CeldaDoble key="v" principal={f.placa} secundario={f.cliente} peso="placa" />,
               <span key="e" className="flex flex-wrap gap-1.5">
                 <Insignia tono={TONO_ESTADO_TRABAJO[f.estado]}>{NOMBRE_ESTADO_TRABAJO[f.estado]}</Insignia>
                 {f.avisos.map((a) => (

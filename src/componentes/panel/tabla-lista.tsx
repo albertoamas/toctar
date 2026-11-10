@@ -96,16 +96,23 @@ export function TablaLista({ etiqueta, columnas, filas }: { etiqueta: string; co
 
 const tieneAlgo = (celda: React.ReactNode) => celda !== null && celda !== undefined && celda !== false && celda !== "";
 
-/**
- * Una celda de dos renglones: lo principal y, debajo, un dato en tinta suave ("6789TRS" y "Toyota Hilux"). Lo principal,
- * según lo que es: `marcada`, una placa; `fuerte`, lo que identifica a la fila cuando no es una placa (el cliente, el
- * servicio, el usuario: en negrita, como en toda tabla del panel); `normal`, un dato (una fecha); si no, medio.
- */
-export function CeldaDoble(props: { principal: React.ReactNode; secundario?: React.ReactNode; marcada?: boolean; fuerte?: boolean; normal?: boolean }) {
-  const { principal, secundario, marcada = false, fuerte = false, normal = false } = props;
+/** Cómo se lee lo principal de una celda. */
+const PESO_CELDA = {
+  /** Una placa, con su letra. */
+  placa: "tt-placa text-[0.95rem]",
+  /** Lo que identifica a la fila cuando no es una placa (el cliente, el servicio, el usuario): en negrita, como en toda tabla. */
+  fuerte: "font-semibold",
+  /** Un dato que acompaña (el cliente al lado de la placa). */
+  medio: "font-medium",
+  /** Un dato más (una fecha, un servicio). */
+  normal: undefined,
+} as const;
+
+/** Una celda de dos renglones: lo principal y, debajo, un dato en tinta suave ("6789TRS" y "Toyota Hilux"). */
+export function CeldaDoble({ principal, secundario, peso = "medio" }: { principal: React.ReactNode; secundario?: React.ReactNode; peso?: keyof typeof PESO_CELDA }) {
   return (
     <span className="flex flex-col">
-      <span className={marcada ? "tt-placa text-[0.95rem]" : fuerte ? "font-semibold" : normal ? undefined : "font-medium"}>{principal}</span>
+      <span className={PESO_CELDA[peso]}>{principal}</span>
       {secundario && (
         <span className="text-xs text-tinta-suave">
           <span className="sr-only">, </span>

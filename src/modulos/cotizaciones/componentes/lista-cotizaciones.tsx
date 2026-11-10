@@ -40,7 +40,7 @@ export function ListaCotizaciones({ cotizaciones, umbral, sinCliente = false, co
             <span key="n" className="font-semibold tabular-nums">
               {c.numero}
             </span>,
-            sinCliente ? <CeldaDoble key="c" principal={c.placa} secundario={c.vehiculo} marcada /> : <CeldaDoble key="c" principal={c.cliente} secundario={vehiculo} />,
+            sinCliente ? <CeldaDoble key="c" principal={c.placa} secundario={c.vehiculo} peso="placa" /> : <CeldaDoble key="c" principal={c.cliente} secundario={vehiculo} />,
             c.servicios,
             <span key="t" className="font-semibold tabular-nums">
               {bs(c.total)}
