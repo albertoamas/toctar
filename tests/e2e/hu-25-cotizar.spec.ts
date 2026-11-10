@@ -251,7 +251,11 @@ test("nueva versión: el mismo número, la anterior queda reemplazada y una viej
   // Arranca con lo de la versión 1, también cómo se cotizó
   await expect(precio(page, 1)).toHaveValue("450");
   await expect(page.getByRole("radio", { name: /^Por fotos/ })).toBeChecked();
+  // El cliente y el vehículo, en su tarjeta; el total de la versión 1 aparece al cambiar el precio (pulido final del 10/11)
+  await expect(page.getByRole("region", { name: "Cotización para" })).toContainText(`CV25${s}1`);
+  await expect(page.getByText("Versión 1: 450 Bs")).toHaveCount(0);
   await precio(page, 1).fill("400");
+  await expect(page.getByText("Versión 1: 450 Bs")).toBeVisible();
   await page.getByRole("radio", { name: "En persona" }).check();
   await page.getByRole("button", { name: "Guardar versión 2" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/cotizaciones/${id}\\?version=\\d+$`));

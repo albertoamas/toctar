@@ -7,7 +7,8 @@ import { DatosVehiculo } from "./datos-vehiculo";
 // una sola tarjeta, cada fila con su "Cambiar" (por su dirección o, desde un formulario, `alCambiar`). En dos tarjetas
 // con su título ocupaban unos 300 px del celular, la del cliente solo para un nombre, y las fechas del último paso
 // quedaban abajo. Sin estado: se usa desde el servidor con `href`; `alCambiar`, solo desde un componente de cliente.
-// También en Nueva cotización ("Cotización para", con el WhatsApp del cliente debajo de su nombre).
+// También en Nueva cotización ("Cotización para", con el WhatsApp del cliente debajo de su nombre) y en Nueva versión, sin
+// "Cambiar" (sin `href` ni `alCambiar`, la fila no lo muestra): una versión es de la misma cotización.
 
 type Cambio = { href?: Route; alCambiar?: () => void };
 

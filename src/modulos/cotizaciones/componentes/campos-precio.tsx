@@ -48,9 +48,14 @@ type Props = {
   opciones: OpcionServicio[] | null;
   errores: Partial<Record<string, string>>;
   hoy: string;
+  /**
+   * En una versión nueva, el total de la que reemplaza (el de su PDF): se ve debajo del total cuando cambió, y por qué
+   * si arranca distinto (`quitados`: sus servicios que ya no se ofrecen).
+   */
+  anterior?: { version: number; total: string; quitados: number };
 };
 
-export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
+export function CamposPrecio({ precios: p, opciones, errores: e, hoy, anterior }: Props) {
   return (
     <>
       <SeccionFormulario titulo="Servicios" claseContenido="gap-4">
@@ -89,10 +94,20 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy }: Props) {
           tarjeta no se sabía a qué pertenecían). El descuento, que casi no se usa, y las condiciones, que vienen de
           Configuración, plegados */}
       <SeccionFormulario titulo="Total y condiciones" claseContenido="gap-4">
-        <p className="flex items-baseline justify-between gap-4" aria-live="polite">
-          <span className="font-semibold">Total</span>
-          <span className="text-lg font-bold tabular-nums">{bs(p.totales.total)}</span>
-        </p>
+        <div className="flex flex-col gap-0.5">
+          {/* Solo el total se anuncia al cambiar: la comparación aparece y se va */}
+          <p className="flex items-baseline justify-between gap-4" aria-live="polite">
+            <span className="font-semibold">Total</span>
+            <span className="text-lg font-bold tabular-nums">{bs(p.totales.total)}</span>
+          </p>
+          {/* En una versión nueva, con cuánto se compara al cambiar los precios */}
+          {anterior && anterior.total !== p.totales.total && (
+            <p className="text-sm text-tinta-suave tabular-nums">
+              Versión {anterior.version}: {bs(anterior.total)}
+              {anterior.quitados > 0 && `, con ${anterior.quitados === 1 ? "un servicio que ya no se ofrece" : `${anterior.quitados} servicios que ya no se ofrecen`}`}
+            </p>
+          )}
+        </div>
         <MasDatos texto="Agregar descuento" titulo="Descuento" abierto={!!p.descuento || !!e.descuento}>
           <Campo id="descuento" etiqueta="Monto del descuento" error={e.descuento}>
             <CampoMonto id="descuento" name="descuento" value={p.descuento} onChange={(ev) => p.setDescuento(ev.target.value)} aria-invalid={!!e.descuento} aria-describedby={e.descuento ? "descuento-error" : undefined} />
