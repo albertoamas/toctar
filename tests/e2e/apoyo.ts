@@ -181,7 +181,7 @@ export async function cotizarEnPantalla(page: Page, clienteId: number, servicio:
   await page.goto(`/panel/cotizaciones/nueva?cliente=${clienteId}`, { waitUntil: "networkidle" });
   // Pedido 40: empieza en el vehículo, con el suyo ya marcado
   await page.getByRole("button", { name: "Siguiente: servicios" }).click();
-  await page.getByRole("button", { name: "Agregar servicio" }).click();
+  // La primera fila de servicio ya está para elegir (pulido final del 09/11)
   await page.getByLabel("Servicio 1", { exact: true }).selectOption({ label: servicio });
   await page.getByRole("radio", { name: new RegExp(`^${modo}`) }).check();
   await page.getByRole("button", { name: "Crear cotización" }).click();

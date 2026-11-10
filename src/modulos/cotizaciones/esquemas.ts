@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
 import { leerMonto } from "@/modulos/catalogo/reglas";
-import { calcularTotales, CLIENTE_NUEVO, leerMontoOCero, MAXIMO_LINEAS, MODOS, montoNoMayor, MOTIVOS, VEHICULO_OTRO } from "./reglas";
+import { calcularTotales, CLIENTE_NUEVO, leerMontoOCero, MAXIMO_LINEAS, MODOS, montoNoMayor, MOTIVOS, SIN_SERVICIOS, VEHICULO_OTRO } from "./reglas";
 
 // Validación de la cotización. Especificación: docs/08-desarrollo/etapas/P23-cotizacion-directa.md §6.
 // Las líneas llegan como JSON en un campo oculto (EditorLista); los errores de cada una van en "lineas.0", "lineas.1"…
@@ -48,7 +48,7 @@ const lineas = z
       return z.NEVER;
     }
   })
-  .pipe(z.array(lineaServicio).min(1, "Agrega al menos un servicio.").max(MAXIMO_LINEAS, `Hasta ${MAXIMO_LINEAS} servicios.`));
+  .pipe(z.array(lineaServicio).min(1, SIN_SERVICIOS).max(MAXIMO_LINEAS, `Hasta ${MAXIMO_LINEAS} servicios.`));
 
 /** Lo que lleva cada versión: servicios, montos, validez y cómo se cotizó (RN-03). */
 const camposPrecio = {

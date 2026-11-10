@@ -91,6 +91,12 @@ test("los vehículos se agregan, editan, desactivan y reactivan desde la ficha, 
   // Al volver a abrirlo trae lo guardado, ya desplegado
   await page.getByRole("button", { name: `Editar FIC${s}1` }).click();
   await expect(edicion.getByLabel("Color")).toHaveValue("Rojo");
+  // Al editar, cerrarlo es "Listo" y no borra lo guardado (pulido final del 10/11: "Quitar" lo habría vaciado)
+  await expect(edicion.getByRole("button", { name: /^Quitar/ })).toHaveCount(0);
+  await edicion.getByRole("button", { name: "Listo Marca, modelo, año y color" }).click();
+  await expect(edicion.getByLabel("Color")).toBeHidden();
+  await edicion.getByText("Agregar marca, modelo, año y color").click();
+  await expect(edicion.getByLabel("Color")).toHaveValue("Rojo");
 
   // Desactivar desde la edición y reactivar
   await edicion.getByRole("button", { name: "Más" }).click();

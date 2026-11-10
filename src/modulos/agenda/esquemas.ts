@@ -3,7 +3,7 @@ import { METODOS_PAGO } from "@/db/esquema/trabajos";
 import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
 import { leerMonto } from "@/modulos/catalogo/reglas";
 import { lineaServicio } from "@/modulos/cotizaciones/esquemas";
-import { MAXIMO_LINEAS } from "@/modulos/cotizaciones/reglas";
+import { MAXIMO_LINEAS, SIN_SERVICIOS } from "@/modulos/cotizaciones/reglas";
 import { DIAS_MAXIMOS_TRABAJO } from "./reglas";
 
 // Validación de las reservas (HU-30). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §6 y §8.
@@ -42,7 +42,7 @@ const lineas = z
   .pipe(
     z
       .array(lineaServicio)
-      .min(1, "Agrega al menos un servicio.")
+      .min(1, SIN_SERVICIOS)
       .max(MAXIMO_LINEAS, `Hasta ${MAXIMO_LINEAS} servicios.`),
   );
 

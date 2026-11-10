@@ -63,7 +63,7 @@ test("al guardar se genera el PDF; se ve, se descarga con su nombre y una versi�
   // Versión 2: un PDF nuevo; el de la 1 sigue igual, byte por byte (RN-02)
   await page.getByRole("button", { name: "Más" }).click();
   await page.getByRole("menuitem", { name: "Nueva versión" }).click();
-  await page.getByLabel("Precio del servicio 1").fill("1700");
+  await page.getByLabel("Precio del servicio 1").filter({ visible: true }).fill("1700");
   await page.getByRole("button", { name: "Guardar versión 2" }).click();
   await expect(page).toHaveURL(/\?version=\d+$/);
   const [v2] = await consultar<{ id: number }>("select id from cotizacion where consulta_id = $1 and version = 2", [consultaId]);

@@ -10,6 +10,8 @@ import { leerMonto, mostrarMonto, type Monto } from "@/modulos/catalogo/reglas";
 // centavos enteros: con decimales de coma flotante, 0,1 + 0,2 no da 0,3.
 
 export const MAXIMO_LINEAS = 20;
+/** El error de una cotización sin servicios. */
+export const SIN_SERVICIOS = "Agrega al menos un servicio.";
 
 /** "1250,50 Bs": el mismo formato en la lista, la ficha y el formulario (no depende del idioma del servidor o del teléfono). */
 export const bs = (monto: string) => `${mostrarMonto(monto)} Bs`;

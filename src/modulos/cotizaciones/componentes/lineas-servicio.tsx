@@ -2,7 +2,7 @@ import { CampoMonto } from "@/componentes/panel/campo-monto";
 import { EditorLista } from "@/componentes/panel/editor-lista";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import type { OpcionServicio } from "../consultas";
-import { MAXIMO_LINEAS, serviciosConOpciones, type Sugerencia } from "../reglas";
+import { MAXIMO_LINEAS, serviciosConOpciones, SIN_SERVICIOS, type Sugerencia } from "../reglas";
 import { ElegirServicio } from "./elegir-servicio";
 
 // Componente de cliente: se usa dentro de otros componentes de cliente (recibe funciones como props).
@@ -26,7 +26,7 @@ type Props = {
 const sinTocar = (l: Linea) => !l.varianteId && !l.servicioId && !l.precio.trim();
 
 /** Los servicios que cuentan: ninguno si todas las filas están sin tocar (lo que se envía con `conFilaLista`). */
-export function lineasQueCuentan(lineas: Linea[]): Linea[] {
+function lineasQueCuentan(lineas: Linea[]): Linea[] {
   return lineas.every(sinTocar) ? [] : lineas;
 }
 
@@ -37,7 +37,10 @@ const textoSugerencia = (s: Sugerencia) =>
       ? "Según evaluación: escribe el precio"
       : "Sin precio en el catálogo para este tamaño: escribe el precio";
 
-export function LineasServicio({ opciones, lineas, onChange, errores, conFilaLista }: Props) {
+export function LineasServicio({ opciones, lineas, onChange, errores: todos, conFilaLista }: Props) {
+  // "Agrega al menos un servicio." se va en cuanto hay uno que cuenta, sin esperar a enviar (seguía debajo del servicio
+  // elegido). Los de cada fila, y los que solo sabe el servidor, quedan hasta el próximo envío
+  const errores = todos.lineas === SIN_SERVICIOS && lineasQueCuentan(lineas).length > 0 ? { ...todos, lineas: undefined } : todos;
   const opcion = (varianteId: number) => opciones.find((o) => o.varianteId === varianteId);
   const grupos = serviciosConOpciones(opciones);
 
