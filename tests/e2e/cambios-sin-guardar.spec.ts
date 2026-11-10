@@ -1,9 +1,9 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { ingresarComoDueno } from "./apoyo";
 
-// Pulido 13.15: el botón de guardar queda fijo abajo cuando hay algo que guardar, y salir con cambios pregunta. En Crear
-// usuario, el formulario largo que la tiene: Negocio, Parámetros (pulidos 13.26 y 13.29) y la ficha del usuario (C6) ya
-// se editan por partes, en modales.
+// Pulido 13.15: salir con cambios pregunta, y el lector de pantalla oye "Hay cambios sin guardar." (AvisoAlSalir). En
+// Crear usuario, un formulario largo de crear; desde el 10/11 con el pie común (PieFormulario, fijo abajo en el celular),
+// como toda pantalla de crear (inventario-pantallas.md, cambio 2: tenía su propia barra que se fijaba al escribir).
 
 const sufijo = (info: TestInfo) => `${info.project.name.slice(0, 3)}${info.retry}`;
 
@@ -14,23 +14,27 @@ const hidratada = async (page: Page) => {
 
 const NUEVO = "/panel/usuarios/nuevo";
 const nombreDe = (page: Page) => page.getByLabel("Nombre", { exact: true });
+/** El aviso para el lector de pantalla: dice si hay algo sin guardar. */
+const hayCambios = (page: Page) => page.locator("[data-cambios-sin-guardar]");
 
-test("con cambios el botón queda fijo abajo, y vuelve a su lugar al dejar todo como estaba", async ({ page }) => {
+test("con algo escrito se avisa que hay cambios, y deja de avisarse al dejar todo como estaba; en el celular, el botón fijo abajo", async ({ page }, info) => {
   await ingresarComoDueno(page);
   await page.goto(NUEVO);
   const guardar = page.getByRole("button", { name: "Crear usuario" });
   await expect(nombreDe(page)).toBeVisible();
   await hidratada(page);
-  await expect(page.locator("[data-pie-fijo]")).toHaveCount(0);
+  await expect(hayCambios(page)).toHaveText("");
 
   await nombreDe(page).fill("A medio escribir");
-  // Fijo abajo: se ve aunque la pantalla esté arriba
-  await expect(page.locator("[data-pie-fijo]")).toBeVisible();
-  const barra = (await guardar.boundingBox())!;
-  expect(barra.y + barra.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+  await expect(hayCambios(page)).toHaveText("Hay cambios sin guardar.");
+  // En el celular, el pie común: fijo abajo, se ve aunque la pantalla esté arriba
+  if (info.project.name !== "escritorio") {
+    const pie = (await guardar.boundingBox())!;
+    expect(pie.y + pie.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+  }
 
   await nombreDe(page).fill("");
-  await expect(page.locator("[data-pie-fijo]")).toHaveCount(0);
+  await expect(hayCambios(page)).toHaveText("");
 });
 
 test("salir con cambios pregunta: se puede seguir editando o salir", async ({ page }) => {
@@ -39,7 +43,7 @@ test("salir con cambios pregunta: se puede seguir editando o salir", async ({ pa
   await expect(nombreDe(page)).toBeVisible();
   await hidratada(page);
   await nombreDe(page).fill("A medio escribir");
-  await expect(page.locator("[data-pie-fijo]")).toBeVisible();
+  await expect(hayCambios(page)).toHaveText("Hay cambios sin guardar.");
 
   // "Volver": se ve en los dos tamaños
   const salir = page.locator('main a[href="/panel/usuarios"]').first();
@@ -70,7 +74,7 @@ test("lo escrito antes de que la página termine de cargar también cuenta", asy
   await nombreDe(page).fill("Escrito rápido");
   await hidratada(page);
   await expect(nombreDe(page)).toHaveValue("Escrito rápido");
-  await expect(page.locator("[data-pie-fijo]")).toBeVisible();
+  await expect(hayCambios(page)).toHaveText("Hay cambios sin guardar.");
 });
 
 test("en el menú del celular, salir con cambios pregunta y el menú se cierra", async ({ page }, info) => {
@@ -80,7 +84,7 @@ test("en el menú del celular, salir con cambios pregunta y el menú se cierra",
   await expect(nombreDe(page)).toBeVisible();
   await hidratada(page);
   await nombreDe(page).fill("A medio escribir");
-  await expect(page.locator("[data-pie-fijo]")).toBeVisible();
+  await expect(hayCambios(page)).toHaveText("Hay cambios sin guardar.");
   await page.getByRole("button", { name: /Abrir menú/ }).click();
   await page.getByRole("dialog", { name: "Menú" }).getByRole("link", { name: "Agenda" }).click();
   const pregunta = page.getByRole("dialog", { name: "¿Salir sin guardar?" });
@@ -98,7 +102,7 @@ test("cerrar sesión con cambios también pregunta", async ({ page }, info) => {
   await expect(nombreDe(page)).toBeVisible();
   await hidratada(page);
   await nombreDe(page).fill("A medio escribir");
-  await expect(page.locator("[data-pie-fijo]")).toBeVisible();
+  await expect(hayCambios(page)).toHaveText("Hay cambios sin guardar.");
   await page.getByRole("button", { name: "Cerrar sesión" }).click();
   const pregunta = page.getByRole("dialog", { name: "¿Salir sin guardar?" });
   await expect(pregunta).toBeVisible();

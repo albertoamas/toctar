@@ -68,10 +68,10 @@ Hasta una laptop de 1280 px (con el menú, el área de trabajo mide unos 970 px)
 | 30 | Nueva cotización ✓ | 3 pasos, pie con el total | Igual, pie fijo | Mantener | — | Sí | — |
 | 31 | Nueva versión ✓ | Formulario, pie con el total | Igual, pie fijo | Mantener | — | Sí | — |
 | 32 | Nuevo cliente | Formulario, lo opcional plegado, pie | Igual, pie fijo | Mantener | — | Sí | — |
-| 33 | **Nuevo usuario** | Formulario con una barra de guardar propia (`BarraGuardar`) | La barra se fija recién al escribir | **Cambiar: el pie común (`PieFormulario`)** | La única pantalla de crear con otro pie: el botón no está donde el usuario lo busca | No | ⏳ Cambio 2 |
+| 33 | **Nuevo usuario** | Formulario con una barra de guardar propia (`BarraGuardar`) | La barra se fija recién al escribir | **Cambiar: el pie común (`PieFormulario`)** | La única pantalla de crear con otro pie: el botón no está donde el usuario lo busca | Sí | ✅ 10/11 (cambio 2) |
 | 34 | Recibir vehículo ✓ | Un paso del taller con el botón grande | Igual, pie fijo | Mantener | — | Sí | — |
 | 35 | Entregar vehículo ✓ | Un paso del taller con el botón grande | Igual, pie fijo | Mantener | — | Sí | — |
-| 36 | **Publicar en la galería** | Elegir las fotos y un botón grande propio al final | El botón no queda fijo abajo | **Cambiar: el pie común, como Recibir y Entregar** | El único paso del taller sin pie fijo | A medias | ⏳ Cambio 3 |
+| 36 | **Publicar en la galería** | Elegir las fotos y un botón grande propio al final | El botón no queda fijo abajo | **Cambiar: el pie común, como Recibir y Entregar** | El único paso del taller sin pie fijo | Sí | ✅ 10/11 (cambio 3) |
 | 37 | Cambiar de dueño | Un paso de tres filas y el pie | Igual, pie fijo | Revisar en la prioridad 4 | No revisada en esta ronda | Sí | — |
 | 38 | Sin acceso | Un mensaje y volver | Igual | Mantener | — | Sí | — |
 | 39 | No encontrado (panel) | Un mensaje y volver | Igual | Mantener | — | Sí | — |
@@ -83,8 +83,8 @@ Hasta una laptop de 1280 px (con el menú, el área de trabajo mide unos 970 px)
 |---|---|---|---|
 | 1 | Listas de acciones como tabla en la computadora: una variante de `TablaLista` con columna de acciones (las filas de hoy no admiten botones adentro). En el celular, las tarjetas de siempre | Saldos, Mantenimientos | ✅ 10/11 |
 | 1b | **La barra de las listas** (ver abajo): las mismas piezas y en el mismo orden en toda lista | Clientes, Cotizaciones, Órdenes, Saldos, Reclamos, Mantenimientos, Usuarios, Catálogo, Galería | ✅ 10/11 |
-| 2 | Nuevo usuario con `PieFormulario` | Nuevo usuario | ⏳ |
-| 3 | Publicar en la galería con `PieFormulario` | Publicar en la galería | ⏳ |
+| 2 | Nuevo usuario con `PieFormulario` (y `AvisoAlSalir`, que ahora también anuncia "Hay cambios sin guardar."); `BarraGuardar` se va | Nuevo usuario | ✅ 10/11 |
+| 3 | Publicar en la galería con `PieFormulario` y el botón grande del taller (`size="paso"`) | Publicar en la galería | ✅ 10/11 |
 | 4 | Revisar en pantalla las de la prioridad 4 (Ficha del cliente, Servicio del catálogo, Cambiar de dueño) y las listas de la prioridad 5 | 17, 18, 37 y 4 a 9 | ⏳ Sigue |
 | 4a | Ficha del cliente: Reservas en tabla como Cotizaciones, las dos con la placa en cada fila; el número arriba en el celular; "Editar" con texto en cada vehículo | Ficha del cliente | ✅ 10/11 |
 | 4b | Servicio del catálogo: sin la tarjeta Variantes ("Editar variantes" en el título de Precios); "Catálogo" solo si está inactivo | Servicio del catálogo | ⏳ |

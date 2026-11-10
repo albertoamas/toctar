@@ -105,7 +105,7 @@ Sin acciones nuevas en las fases 1 a 3. En la fase 4:
 - **Se unifica:** un hook para los formularios en modal, que reemplaza a los `useParte` de Negocio y del servicio del sitio.
 - **Se amplía:** `ModalFormulario` pregunta al cerrar si hay cambios. Reutiliza la detección de `useCambiosSinGuardar`.
 - **Se migran:** los 2 formularios que usan `DialogContent` directo (`formulario-precios` y `acceso-usuario`) y los `<dl>` y listas a mano donde corresponda.
-- **Al terminar Usuario (08/11):** `BarraGuardar` queda solo en "Crear usuario", siempre activa; se quitó su estado desactivado hasta un cambio, que ya no usaba nadie. La ficha del usuario se guarda por partes (`guardarDatosUsuario`, `guardarRolUsuario`), con su revisión de seguridad.
+- **Al terminar Usuario (08/11):** `BarraGuardar` queda solo en "Crear usuario", siempre activa (el 10/11 se va también de ahí: Crear usuario usa `PieFormulario` y `AvisoAlSalir` con `anunciar`, como las demás pantallas de crear; inventario-pantallas.md, cambio 2); se quitó su estado desactivado hasta un cambio, que ya no usaba nadie. La ficha del usuario se guarda por partes (`guardarDatosUsuario`, `guardarRolUsuario`), con su revisión de seguridad.
 
 ## 8. Textos de la interfaz
 

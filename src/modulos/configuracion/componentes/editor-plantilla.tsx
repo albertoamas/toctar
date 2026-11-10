@@ -127,7 +127,7 @@ export function EditorPlantilla({ clave, guardado: inicial, negocio }: Props) {
           <p className="text-sm text-tinta-suave">Con los datos de un cliente de ejemplo.</p>
         </figure>
 
-        {/* Siempre en el documento, para que el lector de pantalla anuncie cuando aparece (como BarraGuardar) */}
+        {/* Siempre en el documento, para que el lector de pantalla anuncie cuando aparece (como AvisoAlSalir con `anunciar`) */}
         <p role="status" className="text-sm font-semibold text-aviso empty:hidden">
           {sinGuardar ? "Hay cambios sin guardar." : ""}
         </p>

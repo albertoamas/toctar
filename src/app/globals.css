@@ -243,14 +243,11 @@
     }
   }
 
-  /* Con la barra de guardar fija abajo (BarraGuardar), un campo al que se llega con el teclado no queda tapado por él. */
-  html:has([data-pie-fijo]) {
-    scroll-padding-bottom: 5rem;
-  }
-  /* En el celular, lo que está fijo abajo (el pie de un flujo, la barra de guardar con cambios): los avisos se ponen
-     encima (sonner.tsx), así no tapan su botón. Con un modal abierto, los avisos van arriba */
+  /* En el celular, el pie fijo de un formulario (PieFormulario): un campo al que se llega con el teclado no queda tapado
+     por él, y los avisos se ponen encima (sonner.tsx), así no tapan su botón. Con un modal abierto, los avisos van arriba */
   @media (max-width: 639px) {
-    html:has([data-pie-movil], [data-pie-fijo]) {
+    html:has([data-pie-movil]) {
+      scroll-padding-bottom: 5rem;
       --alto-pie-movil: 5.5rem;
     }
   }
