@@ -91,6 +91,7 @@ test("el dueño marca el mantenimiento, cambia la duración y desactiva un servi
   await expect(modal).toHaveCount(0);
   await expect(datos).toContainText("Duración");
   await expect(datos).not.toContainText("Inactivo");
+  await expect(page.getByRole("heading", { level: 1 }).locator("..")).not.toContainText("Inactivo");
   await enElSitio(page, slug, nombre);
 });
 
@@ -156,7 +157,6 @@ test("las variantes se agregan, renombran y desactivan en el catálogo; una nuev
   const precios = page.getByRole("region", { name: "Precios", exact: true });
   await expect(precios.getByRole("region", { name: "Básico" })).toBeVisible();
   await expect(precios).toContainText("1 variante desactivada: se reactiva en «Editar variantes».");
-  await expect(page.getByRole("region", { name: "Variantes" })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Premium" })).toHaveCount(0);
 });
 

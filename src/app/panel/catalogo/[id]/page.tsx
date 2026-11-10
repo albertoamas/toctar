@@ -107,15 +107,19 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
           <EditarVariantes servicioId={s.id} variantes={s.listaVariantes} />
         </CabeceraSeccion>
         {/* Las desactivadas no tienen recuadro: se dice cuántas hay, así no parece que se perdieron */}
-        {desactivadas > 0 && (
+        {desactivadas > 0 && s.variantes.length > 0 && (
           <p className="-mt-2 text-sm text-tinta-suave">
             {cantidad(desactivadas, "variante desactivada", "variantes desactivadas")}: se reactiva{desactivadas > 1 && "n"} en «Editar variantes».
           </p>
         )}
         {s.variantes.length === 0 ? (
-          <p className="text-tinta-suave">Sin variantes: agrega al menos una en «Editar variantes».</p>
+          <p className="text-tinta-suave">
+            {desactivadas > 0 ? "Sin variantes activas: reactiva una en «Editar variantes»." : "Sin variantes: agrega al menos una en «Editar variantes»."}
+          </p>
         ) : s.tamanos.length === 0 ? (
           <p className="text-tinta-suave">
+            {/* Sin tamaños no hay recuadros: las variantes se nombran aquí */}
+            {new Intl.ListFormat("es").format(s.variantes.map((v) => v.nombre))}.{" "}
             Faltan los tamaños de vehículo.{" "}
             <Link href="/panel/configuracion/taller" className="font-semibold text-tinta underline">
               Agrégalos en Configuración
