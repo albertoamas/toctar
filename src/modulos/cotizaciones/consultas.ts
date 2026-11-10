@@ -81,6 +81,8 @@ export async function inicioCotizacion(): Promise<{ validaHasta: string; adelant
 type BaseVersion = {
   numero: string;
   version: number;
+  /** El total guardado: el que dice su PDF. */
+  total: string;
   lineas: { varianteId: number; precio: string }[];
   descuento: string;
   adelanto: string;
@@ -91,9 +93,14 @@ export type DatosNuevaVersion = {
   consultaId: number;
   estado: EstadoConsulta;
   cliente: string;
+  telefono: string;
   placa: string;
+  /** Marca y modelo, año, color: lo que se sepa. */
+  detalle: (string | number)[];
   tamano: string;
   opciones: OpcionServicio[];
+  /** Los servicios de la versión que se reemplaza que ya no se ofrecen (no vuelven): por qué el total arranca distinto. */
+  quitados: number;
   /** Valores con los que arranca el formulario: los de la versión que se reemplaza, con la validez de hoy. */
   inicial: { validaHasta: string; adelanto: string; esEstimado: boolean; descuento: string; lineas: { varianteId: number; precio: string }[] };
   /** La versión que se reemplaza (la vigente), si `desde` lo es. */
@@ -111,7 +118,12 @@ export async function datosNuevaVersion(consultaId: number, desdeId: number | nu
       consultaId: consulta.id,
       estado: consulta.estado,
       cliente: cliente.nombre,
+      telefono: cliente.telefono,
       placa: vehiculo.placa,
+      marca: vehiculo.marca,
+      modelo: vehiculo.modelo,
+      anio: vehiculo.anio,
+      color: vehiculo.color,
       tamanoId: vehiculo.tamanoId,
       tamano: tamanoVehiculo.nombre,
     })
@@ -142,9 +154,12 @@ export async function datosNuevaVersion(consultaId: number, desdeId: number | nu
     consultaId: c.consultaId,
     estado: c.estado,
     cliente: c.cliente,
+    telefono: c.telefono,
     placa: c.placa,
+    detalle: detalleVehiculo(c),
     tamano: c.tamano,
     opciones,
+    quitados: desde ? desde.lineas.filter((l) => !opciones.some((o) => o.varianteId === l.varianteId)).length : 0,
     inicial: desde
       ? {
           validaHasta: inicio.validaHasta,
@@ -167,6 +182,7 @@ async function baseDeVersion(consultaId: number, id: number): Promise<BaseVersio
     .select({
       numero: cotizacion.numero,
       version: cotizacion.version,
+      total: cotizacion.total,
       descuento: cotizacion.descuento,
       adelanto: cotizacion.adelantoSugerido,
       esEstimado: cotizacion.esEstimado,

@@ -8,6 +8,8 @@ import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { fechaEnBolivia } from "@/lib/fechas";
 import { exigirAccion } from "@/lib/sesion";
+import { formatearWhatsApp } from "@/lib/whatsapp";
+import { ResumenClienteVehiculo } from "@/modulos/clientes/componentes/resumen-cliente-vehiculo";
 import { FormularioNuevaVersion } from "@/modulos/cotizaciones/componentes/formulario-cotizacion";
 import { datosNuevaVersion } from "@/modulos/cotizaciones/consultas";
 import { NOMBRE_ESTADO } from "@/modulos/cotizaciones/reglas";
@@ -45,11 +47,18 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/cotiza
   return (
     <>
       <div className="flex flex-col gap-2">
-        <EncabezadoPagina titulo={datos.desde ? `Versión ${datos.desde.version + 1}` : "Nueva versión"} volver={{ href: volver, texto: datos.desde ? `Cotización ${datos.desde.numero}` : "Cotización" }}>
-          {datos.cliente}, {datos.placa} ({datos.tamano})
-        </EncabezadoPagina>
+        <EncabezadoPagina titulo={datos.desde ? `Versión ${datos.desde.version + 1}` : "Nueva versión"} volver={{ href: volver, texto: datos.desde ? `Cotización ${datos.desde.numero}` : "Cotización" }} />
         {datos.desde && <p className="text-sm text-tinta-suave">La versión {datos.desde.version} queda como estaba, con su PDF.</p>}
       </div>
+
+      {/* Para quién, en su tarjeta como en Nueva cotización (pulido final, 10/11: era una línea suelta bajo el título), también
+          cuando no se puede hacer la versión; sin "Cambiar": una versión es de la misma cotización */}
+      <ResumenClienteVehiculo
+        id="version-para"
+        titulo="Cotización para"
+        cliente={{ nombre: datos.cliente, detalle: formatearWhatsApp(datos.telefono) }}
+        vehiculo={{ placa: datos.placa, detalle: datos.detalle, tamano: datos.tamano }}
+      />
 
       {datos.estado !== "cotizado" ? (
         <EstadoVacio>
