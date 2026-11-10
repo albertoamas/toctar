@@ -7,7 +7,7 @@ import { GlobeIcon } from "lucide-react";
 import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
-import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -16,7 +16,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { FormularioDatosCatalogo } from "@/modulos/catalogo/componentes/formulario-datos-catalogo";
 import { FormularioPrecios } from "@/modulos/catalogo/componentes/formulario-precios";
 import { PreciosVariante } from "@/modulos/catalogo/componentes/precios-variante";
-import { VariantesServicio } from "@/modulos/catalogo/componentes/variantes-servicio";
+import { EditarVariantes } from "@/modulos/catalogo/componentes/variantes-servicio";
 import { obtenerServicioCatalogo } from "@/modulos/catalogo/consultas";
 import { textoDias } from "@/modulos/catalogo/reglas";
 import { textoCadaMeses } from "@/modulos/mantenimientos/reglas";
@@ -25,9 +25,10 @@ import { Insignia } from "@/componentes/panel/insignia";
 export const metadata: Metadata = { title: "Servicio del catálogo" };
 
 // HU-19 y HU-20: datos, variantes y precios de un servicio. Solo el dueño (RN-01). Una ficha en lectura (pulido 7.3,
-// skill pantallas-panel): arriba, datos y variantes lado a lado (el contexto en pocas líneas: cuánto dura y qué
-// variantes tiene); debajo, los precios, un recuadro por variante en ese orden (de a dos en la computadora). Cada
-// recuadro se edita con "Editar", en un modal.
+// skill pantallas-panel): arriba, los datos (cuánto dura y qué mantenimiento programa); debajo, los precios, un recuadro
+// por variante en ese orden (de a dos en la computadora), cada uno con su "Editar" en un modal. Las variantes se editan
+// desde el título de Precios: sus nombres ya son los de cada recuadro (inventario-pantallas.md, cambio 4b: tenían su
+// propia tarjeta, que los repetía).
 // Su página en el sitio (textos y foto) se edita en Sitio web: el enlace lleva ahí.
 export default function PaginaServicioCatalogo({ params, searchParams }: PageProps<"/panel/catalogo/[id]">) {
   return (
@@ -70,51 +71,50 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
       />
       {cargarPrecios && <AvisoFlotante mensaje="Servicio creado. Carga sus precios." />}
 
-      <PartesIguales>
-        <SeccionConEditar
-          id="datos"
-          titulo="Datos"
-          etiquetaEditar="Editar datos del servicio"
-          tituloModal="Datos del servicio"
-          lectura={
-            <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2">
-              <dt className="text-tinta-suave">Duración</dt>
-              <dd>{textoDias(s.duracionDias)}</dd>
-              <dt className="text-tinta-suave">Mantenimiento</dt>
-              <dd>
-                {!s.mantenimiento
-                  ? "No programa mantenimiento"
-                  : `${s.mantenimiento.servicioId === s.id ? "Él mismo" : s.mantenimiento.servicio}, ${textoCadaMeses(s.mantenimiento.meses)}`}
-              </dd>
-              <dt className="text-tinta-suave">Catálogo</dt>
-              <dd>{s.activo ? "Activo" : "Inactivo: no se cotiza ni sale en el sitio"}</dd>
-            </dl>
-          }
-        >
-          <FormularioDatosCatalogo
-            servicio={{ id: s.id, nombre: s.nombre, duracionDias: s.duracionDias, mantenimiento: s.mantenimiento, activo: s.activo }}
-            servicios={s.serviciosParaMantenimiento}
-          />
-        </SeccionConEditar>
-        <SeccionConEditar
-          id="variantes-seccion"
-          titulo="Variantes"
-          etiquetaEditar="Editar variantes"
-          tituloModal="Variantes"
-          lectura={
-            <p>
-              {s.variantes.length === 0 ? "Sin variantes: agrega al menos una." : new Intl.ListFormat("es").format(s.variantes.map((v) => v.nombre))}
-              {desactivadas > 0 && <span className="text-tinta-suave"> ({cantidad(desactivadas, "desactivada", "desactivadas")})</span>}
-            </p>
-          }
-        >
-          <VariantesServicio servicioId={s.id} variantes={s.listaVariantes} />
-        </SeccionConEditar>
-      </PartesIguales>
+      <SeccionConEditar
+        id="datos"
+        titulo="Datos"
+        etiquetaEditar="Editar datos del servicio"
+        tituloModal="Datos del servicio"
+        lectura={
+          <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2">
+            <dt className="text-tinta-suave">Duración</dt>
+            <dd>{textoDias(s.duracionDias)}</dd>
+            <dt className="text-tinta-suave">Mantenimiento</dt>
+            <dd>
+              {!s.mantenimiento
+                ? "No programa mantenimiento"
+                : `${s.mantenimiento.servicioId === s.id ? "Él mismo" : s.mantenimiento.servicio}, ${textoCadaMeses(s.mantenimiento.meses)}`}
+            </dd>
+            {/* Solo lo que pide atención: activo, no dice nada (como en la lista, pulido 7.1) */}
+            {!s.activo && (
+              <>
+                <dt className="text-tinta-suave">Catálogo</dt>
+                <dd>Inactivo: no se cotiza ni sale en el sitio</dd>
+              </>
+            )}
+          </dl>
+        }
+      >
+        <FormularioDatosCatalogo
+          servicio={{ id: s.id, nombre: s.nombre, duracionDias: s.duracionDias, mantenimiento: s.mantenimiento, activo: s.activo }}
+          servicios={s.serviciosParaMantenimiento}
+        />
+      </SeccionConEditar>
 
       <section aria-labelledby="precios-titulo" className="flex flex-col gap-3">
-        <CabeceraSeccion id="precios" titulo="Precios" />
-        {s.tamanos.length === 0 ? (
+        <CabeceraSeccion id="precios" titulo="Precios">
+          <EditarVariantes servicioId={s.id} variantes={s.listaVariantes} />
+        </CabeceraSeccion>
+        {/* Las desactivadas no tienen recuadro: se dice cuántas hay, así no parece que se perdieron */}
+        {desactivadas > 0 && (
+          <p className="-mt-2 text-sm text-tinta-suave">
+            {cantidad(desactivadas, "variante desactivada", "variantes desactivadas")}: se reactiva{desactivadas > 1 && "n"} en «Editar variantes».
+          </p>
+        )}
+        {s.variantes.length === 0 ? (
+          <p className="text-tinta-suave">Sin variantes: agrega al menos una en «Editar variantes».</p>
+        ) : s.tamanos.length === 0 ? (
           <p className="text-tinta-suave">
             Faltan los tamaños de vehículo.{" "}
             <Link href="/panel/configuracion/taller" className="font-semibold text-tinta underline">
