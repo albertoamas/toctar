@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { crearClienteEnBase, ingresarComoDueno } from "./apoyo";
+import { consultar, crearClienteEnBase, crearCotizacionEnBase, ingresarComoDueno } from "./apoyo";
 
 // HU-23 Ficha del cliente. Especificación: docs/08-desarrollo/etapas/C1-catalogo-clientes.md §9.
 // Cada proyecto (celular o escritorio) usa sus propios teléfonos y placas, y cada reintento los suyos: con los mismos, el
@@ -142,4 +142,23 @@ test("un cliente se desactiva desde «Más» con confirmación, deja de salir en
   await expect(page.getByText("Cliente reactivado.")).toBeVisible();
   await page.goto(`/panel/clientes?q=${encodeURIComponent(nombre)}`);
   await expect(page.getByRole("link", { name: nombre })).toBeVisible();
+});
+
+test("la placa en cada cotización solo si el cliente tiene más de un vehículo", async ({ page }, info) => {
+  const s = sufijo(info);
+  const id = await crearClienteEnBase({ nombre: `Dos autos ${s}`, telefono: telefono(info, 7), placa: `DA23${s}1` });
+  await crearCotizacionEnBase({ placa: `DA23${s}1`, numero: `2023-${s}71` });
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/clientes/${id}`);
+  const filas = page.getByRole("list", { name: "Cotizaciones" }).getByRole("link");
+  // Con uno, ya se sabe cuál es: no se repite en cada fila (inventario-pantallas.md, cambio 4)
+  await expect(filas).toHaveCount(1);
+  await expect(filas).not.toContainText(`DA23${s}1`);
+
+  await consultar("insert into vehiculo (cliente_id, placa, tamano_id, created_by) select $1, $2, tamano_id, created_by from vehiculo where placa = $3", [id, `DA23${s}2`, `DA23${s}1`]);
+  await crearCotizacionEnBase({ placa: `DA23${s}2`, numero: `2023-${s}72` });
+  await page.reload();
+  await expect(filas).toHaveCount(2);
+  await expect(filas.filter({ hasText: `2023-${s}71` })).toContainText(`DA23${s}1`);
+  await expect(filas.filter({ hasText: `2023-${s}72` })).toContainText(`DA23${s}2`);
 });

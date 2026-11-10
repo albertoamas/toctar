@@ -7,21 +7,26 @@ import { bs, diasDesde, NOMBRE_ESTADO, sinRespuesta, textoDias, TONO_ESTADO } fr
 // Cotizaciones en una tabla (pedido 23; pedido 26): en Cotizaciones y en la ficha del cliente. Cada fila: el número, el
 // cliente con su vehículo (en la ficha del cliente, solo el vehículo: ya se sabe de quién son), los servicios, el total y
 // hace cuánto. Desde `umbral` días (Configuración) una pendiente espera respuesta y lo dice en una insignia de aviso.
-// En el celular, el cliente y el total arriba. Una aceptada sin reserva lleva "Sin fecha" (pedido 31).
+// En el celular, el cliente y el total arriba. Una aceptada sin reserva lleva "Sin fecha" (pedido 31). En la ficha del
+// cliente, el número arriba (como en la computadora) y el vehículo solo si tiene más de uno (inventario-pantallas.md,
+// cambio 4: con uno, cada fila repetía su placa).
 
 type Props = {
   cotizaciones: FilaCotizacion[];
   umbral: number;
   sinCliente?: boolean;
+  /** Con `sinCliente`: el vehículo en cada fila. Sin él, el cliente tiene uno solo y ya se sabe cuál es. */
+  conVehiculo?: boolean;
   /** El estado en cada fila. Sin él, en una pestaña que ya lo dice: no se repite. */
   conEstado?: boolean;
 };
 
-export function ListaCotizaciones({ cotizaciones, umbral, sinCliente = false, conEstado = true }: Props) {
+export function ListaCotizaciones({ cotizaciones, umbral, sinCliente = false, conVehiculo = true, conEstado = true }: Props) {
   const hoy = new Date();
+  const segunda = !sinCliente || conVehiculo;
   const columnas: ColumnaTabla[] = [
-    { titulo: "Número", ancho: "6.5rem", movil: "detalle" },
-    { titulo: sinCliente ? "Vehículo" : "Cliente", ancho: "minmax(0,1.3fr)", movil: "titulo" },
+    { titulo: "Número", ancho: "6.5rem", movil: sinCliente ? "titulo" : "detalle" },
+    ...(segunda ? [{ titulo: sinCliente ? "Vehículo" : "Cliente", ancho: "minmax(0,1.3fr)", movil: sinCliente ? "detalle" : "titulo" } as const] : []),
     { titulo: "Servicios", ancho: "minmax(0,1.3fr)", movil: "detalle" },
     { titulo: "Total", ancho: "7rem", alinear: "derecha", movil: "estado" },
     { titulo: conEstado ? "Estado" : "Movimiento", ancho: "minmax(0,1.1fr)", movil: "detalle" },
@@ -40,7 +45,7 @@ export function ListaCotizaciones({ cotizaciones, umbral, sinCliente = false, co
             <span key="n" className="font-semibold tabular-nums">
               {c.numero}
             </span>,
-            sinCliente ? <CeldaDoble key="c" principal={c.placa} secundario={c.vehiculo} peso="placa" /> : <CeldaDoble key="c" principal={c.cliente} secundario={vehiculo} />,
+            ...(!segunda ? [] : sinCliente ? [<CeldaDoble key="c" principal={c.placa} secundario={c.vehiculo} peso="placa" />] : [<CeldaDoble key="c" principal={c.cliente} secundario={vehiculo} />]),
             c.servicios,
             <span key="t" className="font-semibold tabular-nums">
               {bs(c.total)}
