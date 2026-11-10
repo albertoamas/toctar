@@ -1,10 +1,10 @@
 import type { Metadata, Route } from "next";
 import Link from "next/link";
+import { ChevronRightIcon } from "lucide-react";
 import { Suspense } from "react";
 import { cn } from "cn";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
-import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { FilaConAcciones, ListaEnTarjeta } from "@/componentes/panel/fila-lista";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
@@ -35,6 +35,9 @@ export const metadata: Metadata = { title: "Saldos pendientes" };
 // "Ver la orden" como enlace; en la computadora, las acciones a la derecha del texto.
 // Pedido 30: se busca por cliente, teléfono o placa y se ordena por la más antigua, el mayor monto o el cliente. El total
 // por cobrar sigue arriba, de todas.
+// Pulido final (10/11): en el celular cada fila ocupaba unos 255 px, con WhatsApp, "Registrar pago" y "Ver la orden"
+// uno debajo del otro. Ahora el cliente, el auto y la fecha son el enlace a la orden (con "›", como toda fila del
+// panel; sin enlace si quien mira no puede abrirla) y los dos botones van lado a lado.
 export default function PaginaSaldos({ searchParams }: PageProps<"/panel/pagos">) {
   return (
     <PaginaPanel tipo="ficha">
@@ -100,38 +103,53 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
             const entregada = fechaEnBolivia(s.entregadoAt);
             const vehiculo = { marca: s.marca, modelo: s.modelo, placa: s.placa };
             const trabajo = enlaceTrabajo(s.id, "entregado", ve);
+            const datos = (
+              <>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex min-w-0 flex-col">
+                    <span className="font-semibold">{s.cliente}</span>
+                    <span className="text-sm text-tinta-suave">{vehiculoEnLista(vehiculo)}</span>
+                  </div>
+                  <span className="flex shrink-0 items-center gap-1">
+                    <span className="tt-placa text-xl whitespace-nowrap">{mostrarMonto(s.saldo)} Bs</span>
+                    {/* Solo en el celular: en la computadora, a la derecha vienen los botones y parecería apuntarles */}
+                    {trabajo && <ChevronRightIcon className="size-5 text-tinta-suave lg:hidden" aria-hidden />}
+                  </span>
+                </div>
+                <p className="text-sm">
+                  Entregada el {fechaCorta(entregada, hoy)}, {textoHace(entregada, hoy)}
+                </p>
+              </>
+            );
             return (
               <FilaConAcciones key={s.id}>
-                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex min-w-0 flex-col">
-                      <span className="font-semibold">{s.cliente}</span>
-                      <span className="text-sm text-tinta-suave">{vehiculoEnLista(vehiculo)}</span>
-                    </div>
-                    <span className="shrink-0 tt-placa text-xl whitespace-nowrap">{mostrarMonto(s.saldo)} Bs</span>
-                  </div>
-                  <p className="text-sm">
-                    Entregada el {fechaCorta(entregada, hoy)}, {textoHace(entregada, hoy)}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-1 lg:items-end">
-                  <div className="flex flex-wrap gap-2">
-                    <a
-                      href={enlaceWhatsApp(s.telefono, mensajeSaldo({ plantilla: plantillas.saldo, negocio: negocio.nombre, cliente: s.cliente, vehiculo, saldo: s.saldo }))}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={cn(buttonVariants({ variant: "outline" }))}
-                    >
-                      <IconoWhatsApp />
-                      Escribir por WhatsApp
-                    </a>
-                    <RegistrarPago trabajoId={s.id} saldo={s.saldo} hoy={hoy} conPagos />
-                  </div>
-                  {trabajo && (
-                    <Link href={trabajo.href} className={cn(ENLACE_TEXTO, "lg:self-end")}>
-                      {trabajo.texto}
-                    </Link>
-                  )}
+                {trabajo ? (
+                  <Link
+                    href={trabajo.href}
+                    // Qué abre y de quién, corto: el lector no lee toda la fila antes de decirlo
+                    aria-label={`${trabajo.texto}: ${s.cliente}, ${mostrarMonto(s.saldo)} Bs`}
+                    className="flex min-h-11 min-w-0 flex-1 flex-col gap-1 rounded-lg hover:bg-superficie/60 focus-visible:outline-offset-4"
+                  >
+                    {datos}
+                  </Link>
+                ) : (
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">{datos}</div>
+                )}
+                {/* Lado a lado también en el celular ("WhatsApp" a secas para que entren); si no entran (320 px), uno por
+                    renglón, a lo ancho */}
+                <div className="flex flex-wrap gap-2 *:flex-1 lg:flex-nowrap lg:*:flex-none">
+                  <a
+                    href={enlaceWhatsApp(s.telefono, mensajeSaldo({ plantilla: plantillas.saldo, negocio: negocio.nombre, cliente: s.cliente, vehiculo, saldo: s.saldo }))}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={cn(buttonVariants({ variant: "outline" }))}
+                  >
+                    <IconoWhatsApp />
+                    <span>
+                      <span className="sr-only sm:not-sr-only">Escribir por </span>WhatsApp
+                    </span>
+                  </a>
+                  <RegistrarPago trabajoId={s.id} saldo={s.saldo} hoy={hoy} conPagos />
                 </div>
               </FilaConAcciones>
             );

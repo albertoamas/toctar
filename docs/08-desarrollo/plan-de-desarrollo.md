@@ -76,7 +76,7 @@ Todo lo programable está en `develop` y en `pruebas.toctardetailing.com`. Lo qu
 |---|---|---|
 | 1. De pie en el taller | Recibir vehículo, Entregar vehículo | ✅ 09/11 (pulido 13.30) |
 | 2. Flujos en pasos | Nueva reserva, Nueva cotización, Nueva versión | ✅ 10/11 (pulido 13.31, 13.33 y 13.35; cobrar 13.32 y los plegados 13.34) |
-| 3. Todos los días | Inicio, Agenda, Saldos, Mantenimientos | 🔵 Inicio ✅ (13.36), Agenda ✅ (13.37); sigue Saldos |
+| 3. Todos los días | Inicio, Agenda, Saldos, Mantenimientos | 🔵 Inicio ✅ (13.36), Agenda ✅ (13.37), Saldos ✅ (13.38); sigue Mantenimientos |
 | 4. Menos usadas | Ficha del cliente, Servicio del catálogo, Cambiar dueño, Publicar en la galería, Galería del panel | ⏳ |
 | 5. Listas | Órdenes, Clientes, Cotizaciones, Reclamos, Catálogo, Usuarios | ⏳ |
 

@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearUsuario, ingresar, PERFIL_TALLER } from "./apoyo";
+import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER } from "./apoyo";
 
 // HU-37 Saldos pendientes (flujo crítico 4, el cobro después de la entrega). Especificación:
 // docs/08-desarrollo/etapas/C4-taller-entrega.md §9. Las órdenes van directo a la base, ya entregadas (no ocupan
@@ -147,4 +147,18 @@ test("pedido 30: se buscan por cliente, teléfono o placa y se ordenan; el total
   await expect.poll(nombres).toEqual([`Alberto Busca ${s}`]);
   await buscador.fill("nadie-debe-esto");
   await expect(page.getByText("Ningún saldo coincide con «nadie-debe-esto».")).toBeVisible();
+});
+
+test("con Órdenes, la fila lleva a su orden (pulido final del 10/11: ya no hay un \u00abVer la orden\u00bb aparte)", async ({ page }, info) => {
+  const s = sufijo(info);
+  const placa = `SL37${s.toUpperCase()}9`;
+  await crearClienteEnBase({ nombre: `Fila enlace ${s}`, telefono: telefono(info, 9), placa });
+  const id = await ordenEntregada(placa, 4, 100);
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/pagos?q=${placa}`);
+  const fila = page.getByRole("list", { name: "Órdenes con saldo" }).getByRole("listitem").filter({ hasText: placa });
+  await expect(fila.getByRole("link", { name: `Ver la orden: Fila enlace ${s}, 500 Bs` })).toHaveAttribute("href", `/panel/ordenes/${id}`);
+  // Los botones siguen en la fila, fuera del enlace
+  await expect(fila.getByRole("button", { name: "Registrar pago" })).toBeVisible();
+  await expect(fila.getByRole("link", { name: "Escribir por WhatsApp" })).toBeVisible();
 });
