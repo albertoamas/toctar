@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { crearClienteEnBase, ingresarComoDueno } from "./apoyo";
+import { crearClienteEnBase, crearCotizacionEnBase, crearOrdenLista, ingresarComoDueno } from "./apoyo";
 
 // HU-23 Ficha del cliente. Especificación: docs/08-desarrollo/etapas/C1-catalogo-clientes.md §9.
 // Cada proyecto (celular o escritorio) usa sus propios teléfonos y placas, y cada reintento los suyos: con los mismos, el
@@ -142,4 +142,24 @@ test("un cliente se desactiva desde «Más» con confirmación, deja de salir en
   await expect(page.getByText("Cliente reactivado.")).toBeVisible();
   await page.goto(`/panel/clientes?q=${encodeURIComponent(nombre)}`);
   await expect(page.getByRole("link", { name: nombre })).toBeVisible();
+});
+
+test("reservas y cotizaciones en tabla, cada fila con su placa aunque tenga un solo vehículo", async ({ page }, info) => {
+  const s = sufijo(info);
+  // Días lejos de hoy y propios de cada proyecto y reintento: los espacios del taller no chocan con otras pruebas
+  const dias = 1700 + (info.project.name === "celular" ? 0 : 10) + info.retry * 2;
+  const id = await crearClienteEnBase({ nombre: `Un auto ${s}`, telefono: telefono(info, 7), placa: `DA23${s}1` });
+  await crearCotizacionEnBase({ placa: `DA23${s}1`, numero: `2023-${s}71` });
+  await crearOrdenLista({ placa: `DA23${s}1`, espacio: 0, dias, precio: 500, pagado: 100 });
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/clientes/${id}`);
+  // La placa siempre: es como se reconoce un trabajo en el taller (inventario-pantallas.md, cambio 4)
+  const cotizaciones = page.getByRole("list", { name: "Cotizaciones" }).getByRole("link");
+  await expect(cotizaciones).toHaveCount(1);
+  await expect(cotizaciones).toContainText(`2023-${s}71`);
+  await expect(cotizaciones).toContainText(`DA23${s}1`);
+  const reservas = page.getByRole("list", { name: "Reservas" }).getByRole("link");
+  await expect(reservas).toHaveCount(1);
+  await expect(reservas).toContainText(`DA23${s}1`);
+  await expect(reservas).toContainText("Saldo: 400 Bs");
 });
