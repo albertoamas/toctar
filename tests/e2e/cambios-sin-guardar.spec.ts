@@ -15,7 +15,7 @@ const hidratada = async (page: Page) => {
 const NUEVO = "/panel/usuarios/nuevo";
 const nombreDe = (page: Page) => page.getByLabel("Nombre", { exact: true });
 /** El aviso para el lector de pantalla: dice si hay algo sin guardar. */
-const hayCambios = (page: Page) => page.getByRole("status").filter({ hasText: /^(Hay cambios sin guardar\.)?$/ }).first();
+const hayCambios = (page: Page) => page.locator("[data-cambios-sin-guardar]");
 
 test("con algo escrito se avisa que hay cambios, y deja de avisarse al dejar todo como estaba; en el celular, el botón fijo abajo", async ({ page }, info) => {
   await ingresarComoDueno(page);

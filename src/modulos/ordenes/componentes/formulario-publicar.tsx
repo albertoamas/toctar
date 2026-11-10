@@ -6,6 +6,7 @@ import { ImageUpIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { BOTON_PASO } from "@/componentes/panel/paso-siguiente";
+import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { Selector } from "@/componentes/panel/selector";
 import { Button } from "@/componentes/ui/button";
@@ -74,6 +75,7 @@ export function FormularioPublicar({ id, despues, antes, servicios }: Props) {
 
       {/* El pie común, fijo abajo en el celular, con el botón grande del taller, como Recibir y Entregar
           (inventario-pantallas.md, cambio 3: era el único paso del taller con el botón suelto al final) */}
+      <AvisoAlSalir formulario={formulario} estado={estado} />
       <PieFormulario>
         <Button type="submit" size="paso" disabled={enviando} className={BOTON_PASO}>
           <ImageUpIcon />
