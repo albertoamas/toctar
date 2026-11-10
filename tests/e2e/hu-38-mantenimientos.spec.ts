@@ -65,7 +65,8 @@ test("vencidos y próximos; avisar, no le interesa y reservar (y al cancelar la 
 
   const filaV = vencidos(page).getByRole("listitem").filter({ hasText: placaV });
   await expect(filaV).toContainText(`Lucía Vencida ${s}`);
-  await expect(filaV).toContainText("Mantenimiento de Pulido y nano cerámico");
+  // En la tarjeta "Mantenimiento de …"; en la tabla de la computadora, el servicio en su columna
+  await expect(filaV).toContainText("Pulido y nano cerámico");
   await expect(filaV).toContainText("venció hace 10 días");
   await expect(filaV).toContainText("Sin avisar");
   await expect(proximos(page).getByRole("listitem").filter({ hasText: placaP })).toContainText("vence en 5 días");

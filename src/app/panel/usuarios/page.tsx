@@ -62,6 +62,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/usuarios">, "searc
           celdas: [
             <CeldaDoble
               key="n"
+              peso="fuerte"
               principal={
                 <>
                   {u.nombre}

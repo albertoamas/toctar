@@ -1,12 +1,11 @@
 import type { Metadata, Route } from "next";
-import Link from "next/link";
 import { ChevronRightIcon } from "lucide-react";
 import { Suspense } from "react";
 import { cn } from "cn";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
-import { FilaConAcciones, ListaEnTarjeta } from "@/componentes/panel/fila-lista";
+import { DatosDeFila, FilaConAcciones, ListaEnTarjeta } from "@/componentes/panel/fila-lista";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { Pestanas } from "@/componentes/panel/pestanas";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
@@ -25,6 +24,8 @@ import { enlaceTrabajo } from "@/modulos/ordenes/reglas";
 import { RegistrarPago } from "@/modulos/pagos/componentes/registrar-pago";
 import { saldosPendientes } from "@/modulos/pagos/consultas";
 import { filtrarSaldos, ORDENES_SALDOS, ordenarSaldos, type OrdenSaldos } from "@/modulos/pagos/reglas";
+import { TablaAcciones } from "@/componentes/panel/tabla-acciones";
+import { CeldaDoble } from "@/componentes/panel/tabla-lista";
 
 export const metadata: Metadata = { title: "Saldos pendientes" };
 
@@ -40,7 +41,7 @@ export const metadata: Metadata = { title: "Saldos pendientes" };
 // panel; sin enlace si quien mira no puede abrirla) y los dos botones van lado a lado.
 export default function PaginaSaldos({ searchParams }: PageProps<"/panel/pagos">) {
   return (
-    <PaginaPanel tipo="ficha">
+    <PaginaPanel tipo="lista">
       <EncabezadoPagina titulo="Saldos pendientes" />
       {/* Aparte de la lista: al buscar, el campo no se vuelve a montar y no pierde el foco */}
       <Suspense fallback={<div className="h-9 max-w-md pointer-coarse:h-11" />}>
@@ -78,6 +79,21 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
     return (consulta ? `/panel/pagos?${consulta}` : "/panel/pagos") as Route;
   };
 
+  // En la tabla y en las tarjetas: en el celular, "WhatsApp" a secas para que entren los dos botones
+  const botonWhatsApp = (s: (typeof saldos)[number], vehiculo: { marca: string | null; modelo: string | null; placa: string }) => (
+    <a
+      href={enlaceWhatsApp(s.telefono, mensajeSaldo({ plantilla: plantillas.saldo, negocio: negocio.nombre, cliente: s.cliente, vehiculo, saldo: s.saldo }))}
+      target="_blank"
+      rel="noreferrer"
+      className={cn(buttonVariants({ variant: "outline" }))}
+    >
+      <IconoWhatsApp />
+      <span>
+        <span className="sr-only sm:not-sr-only">Escribir por </span>WhatsApp
+      </span>
+    </a>
+  );
+
   return (
     <>
       <p className="flex flex-wrap items-baseline gap-x-3">
@@ -98,64 +114,92 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
       {saldos.length === 0 ? (
         <EstadoVacio>Ningún saldo coincide con «{q.trim()}».</EstadoVacio>
       ) : (
-        <ListaEnTarjeta etiqueta="Órdenes con saldo">
-          {saldos.map((s) => {
-            const entregada = fechaEnBolivia(s.entregadoAt);
-            const vehiculo = { marca: s.marca, modelo: s.modelo, placa: s.placa };
-            const trabajo = enlaceTrabajo(s.id, "entregado", ve);
-            const datos = (
-              <>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex min-w-0 flex-col">
-                    <span className="font-semibold">{s.cliente}</span>
-                    <span className="text-sm text-tinta-suave">{vehiculoEnLista(vehiculo)}</span>
-                  </div>
-                  <span className="flex shrink-0 items-center gap-1">
-                    <span className="tt-placa text-xl whitespace-nowrap">{mostrarMonto(s.saldo)} Bs</span>
-                    {/* Solo en el celular: en la computadora, a la derecha vienen los botones y parecería apuntarles */}
-                    {trabajo && <ChevronRightIcon className="size-5 text-tinta-suave lg:hidden" aria-hidden />}
-                  </span>
-                </div>
-                <p className="text-sm">
-                  Entregada el {fechaCorta(entregada, hoy)}, {textoHace(entregada, hoy)}
-                </p>
-              </>
-            );
-            return (
-              <FilaConAcciones key={s.id}>
-                {trabajo ? (
-                  <Link
-                    href={trabajo.href}
-                    // Qué abre y de quién, corto: el lector no lee toda la fila antes de decirlo
-                    aria-label={`${trabajo.texto}: ${s.cliente}, ${mostrarMonto(s.saldo)} Bs`}
-                    className="flex min-h-11 min-w-0 flex-1 flex-col gap-1 rounded-lg hover:bg-superficie/60 focus-visible:outline-offset-4"
-                  >
-                    {datos}
-                  </Link>
-                ) : (
-                  <div className="flex min-w-0 flex-1 flex-col gap-1">{datos}</div>
-                )}
-                {/* Lado a lado también en el celular ("WhatsApp" a secas para que entren); si no entran (320 px), uno por
-                    renglón, a lo ancho */}
-                <div className="flex flex-wrap gap-2 *:flex-1 lg:flex-nowrap lg:*:flex-none">
-                  <a
-                    href={enlaceWhatsApp(s.telefono, mensajeSaldo({ plantilla: plantillas.saldo, negocio: negocio.nombre, cliente: s.cliente, vehiculo, saldo: s.saldo }))}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={cn(buttonVariants({ variant: "outline" }))}
-                  >
-                    <IconoWhatsApp />
-                    <span>
-                      <span className="sr-only sm:not-sr-only">Escribir por </span>WhatsApp
+        <>
+          {/* En la computadora, una tabla con sus acciones, como las otras listas del panel (inventario-pantallas.md,
+              cambio 1); más angosto, las tarjetas */}
+          <TablaAcciones
+            etiqueta="Órdenes con saldo"
+            columnas={[
+              { titulo: "Cliente y vehículo", ancho: "minmax(0,1.4fr)" },
+              { titulo: "Entregada", ancho: "minmax(0,1fr)" },
+              { titulo: "Saldo", ancho: "7rem", alinear: "derecha" },
+            ]}
+            anchoAcciones="23rem"
+            filas={saldos.map((s) => {
+              const entregada = fechaEnBolivia(s.entregadoAt);
+              const vehiculo = { marca: s.marca, modelo: s.modelo, placa: s.placa };
+              const trabajo = enlaceTrabajo(s.id, "entregado", ve);
+              return {
+                clave: s.id,
+                href: trabajo?.href,
+                etiqueta: etiquetaSaldo(s, trabajo, hoy),
+                celdas: [
+                  <CeldaDoble key="c" principal={s.cliente} secundario={vehiculoEnLista(vehiculo)} peso="fuerte" />,
+                  <CeldaDoble key="e" principal={fechaCorta(entregada, hoy)} secundario={textoHace(entregada, hoy)} peso="normal" />,
+                  <span key="s" className="font-semibold whitespace-nowrap tabular-nums">
+                    {mostrarMonto(s.saldo)} Bs
+                  </span>,
+                ],
+                acciones: (
+                  <>
+                    {botonWhatsApp(s, vehiculo)}
+                    <RegistrarPago trabajoId={s.id} saldo={s.saldo} hoy={hoy} conPagos />
+                  </>
+                ),
+              };
+            })}
+          />
+          <div className="@4xl:hidden">
+          <ListaEnTarjeta etiqueta="Órdenes con saldo">
+            {saldos.map((s) => {
+              const entregada = fechaEnBolivia(s.entregadoAt);
+              const vehiculo = { marca: s.marca, modelo: s.modelo, placa: s.placa };
+              const trabajo = enlaceTrabajo(s.id, "entregado", ve);
+              const datos = (
+                <>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex min-w-0 flex-col">
+                      <span className="font-semibold">{s.cliente}</span>
+                      <span className="text-sm text-tinta-suave">{vehiculoEnLista(vehiculo)}</span>
+                    </div>
+                    <span className="flex shrink-0 items-center gap-1">
+                      <span className="tt-placa text-xl whitespace-nowrap">{mostrarMonto(s.saldo)} Bs</span>
+                      {/* La tarjeta se ve solo sin la tabla: lleva su "›" siempre */}
+                      {trabajo && <ChevronRightIcon className="size-5 text-tinta-suave" aria-hidden />}
                     </span>
-                  </a>
-                  <RegistrarPago trabajoId={s.id} saldo={s.saldo} hoy={hoy} conPagos />
-                </div>
-              </FilaConAcciones>
-            );
-          })}
-        </ListaEnTarjeta>
+                  </div>
+                  <p className="text-sm">
+                    Entregada el {fechaCorta(entregada, hoy)}, {textoHace(entregada, hoy)}
+                  </p>
+                </>
+              );
+              return (
+                <FilaConAcciones key={s.id}>
+                  {/* Qué abre y de quién, corto: el lector no lee toda la fila antes de decirlo */}
+                  <DatosDeFila href={trabajo?.href} etiqueta={etiquetaSaldo(s, trabajo, hoy)}>
+                    {datos}
+                  </DatosDeFila>
+                  {/* Lado a lado también en el celular ("WhatsApp" a secas para que entren); si no entran (320 px), uno por
+                      renglón, a lo ancho */}
+                  <div className="flex flex-wrap gap-2 *:flex-1 lg:flex-nowrap lg:*:flex-none">
+                    {botonWhatsApp(s, vehiculo)}
+                    <RegistrarPago trabajoId={s.id} saldo={s.saldo} hoy={hoy} conPagos />
+                  </div>
+                </FilaConAcciones>
+              );
+            })}
+          </ListaEnTarjeta>
+          </div>
+        </>
       )}
     </>
   );
+}
+
+/**
+ * El nombre del enlace de una fila de Saldos, el mismo en la tabla y en la tarjeta: qué abre, de quién, cuánto debe y
+ * desde cuándo. Corto, para que el lector de pantalla no lea toda la fila antes de decir qué hace.
+ */
+function etiquetaSaldo(s: { cliente: string; saldo: string; entregadoAt: Date }, trabajo: { texto: string } | null, hoy: string): string | undefined {
+  return trabajo ? `${trabajo.texto}: ${s.cliente}, ${mostrarMonto(s.saldo)} Bs, entregada ${textoHace(fechaEnBolivia(s.entregadoAt), hoy)}` : undefined;
 }

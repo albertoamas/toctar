@@ -76,9 +76,11 @@ Todo lo programable está en `develop` y en `pruebas.toctardetailing.com`. Lo qu
 |---|---|---|
 | 1. De pie en el taller | Recibir vehículo, Entregar vehículo | ✅ 09/11 (pulido 13.30) |
 | 2. Flujos en pasos | Nueva reserva, Nueva cotización, Nueva versión | ✅ 10/11 (pulido 13.31, 13.33 y 13.35; cobrar 13.32 y los plegados 13.34) |
-| 3. Todos los días | Inicio, Agenda, Saldos, Mantenimientos | 🔵 Inicio ✅ (13.36), Agenda ✅ (13.37), Saldos ✅ (13.38); sigue Mantenimientos |
+| 3. Todos los días | Inicio, Agenda, Saldos, Mantenimientos | 🔵 Inicio ✅ (13.36), Agenda ✅ (13.37), Saldos ✅ (13.38), Mantenimientos ✅ (13.39) |
 | 4. Menos usadas | Ficha del cliente, Servicio del catálogo, Cambiar dueño, Publicar en la galería, Galería del panel | ⏳ |
 | 5. Listas | Órdenes, Clientes, Cotizaciones, Reclamos, Catálogo, Usuarios | ⏳ |
+
+**Desde el 10/11, el inventario de las 40 pantallas manda:** `inventario-pantallas.md` (formato en la computadora y en el celular, qué se cambia y por qué, para que todo el panel sea consistente). Mientras tenga cambios abiertos, las prioridades 4 y 5 quedan en pausa.
 
 1. **Prueba completa a mano** con `09-pruebas/criterios-entrega-2.md` (y los ⚠️/⏳ de `criterios-entrega-1.md`) en pruebas, con https: dueño y encargado con cada perfil (Taller, Atención, Todo), en un Android y un iPhone. Cubre los ⏳ de celular real: compartir el PDF (27.3), comprobante con la cámara (32.5), checklist con fotos (33.6), PDF impreso en A4 (26.4) e instalar la app (B2).
 2. **Datos de demostración en pruebas** (`datos:demo`), para la demo y la capacitación.
