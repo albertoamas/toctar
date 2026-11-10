@@ -147,7 +147,7 @@ test("un cliente se desactiva desde «Más» con confirmación, deja de salir en
 test("la placa en cada reserva y cotización solo si el cliente tiene más de un vehículo", async ({ page }, info) => {
   const s = sufijo(info);
   // Días lejos de hoy y propios de cada proyecto y reintento: los espacios del taller no chocan con otras pruebas
-  const dias = 700 + (info.project.name === "celular" ? 0 : 10) + info.retry * 2;
+  const dias = 1700 + (info.project.name === "celular" ? 0 : 10) + info.retry * 2;
   const id = await crearClienteEnBase({ nombre: `Dos autos ${s}`, telefono: telefono(info, 7), placa: `DA23${s}1` });
   await crearCotizacionEnBase({ placa: `DA23${s}1`, numero: `2023-${s}71` });
   await crearOrdenLista({ placa: `DA23${s}1`, espacio: 0, dias, precio: 500, pagado: 100 });
