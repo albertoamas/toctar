@@ -103,7 +103,7 @@ async function Contenido() {
       detalle: [r.servicio ?? r.placa, `llegó ${textoDias(diasDesde(r.createdAt, ahora))}`].join(", "),
       accion: "Responder",
     })),
-    ...masDe(reclamos?.total ?? 0, "/panel/reclamos?ver=pendientes", MessageSquareWarningIcon, "reclamos pendientes"),
+    ...masDe(reclamos?.total ?? 0, "/panel/reclamos", MessageSquareWarningIcon, "reclamos pendientes"),
     ...sinResponder.slice(0, POR_TIPO).map((c) => ({
       href: `/panel/cotizaciones/${c.id}` as Route,
       icono: ICONO_MODULO.cotizaciones,

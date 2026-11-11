@@ -21,6 +21,9 @@ export type ColumnaTabla = {
    * renglón (datos cortos: "5 variantes" y "1 día") o no se muestra.
    */
   movil: "titulo" | "estado" | "detalle" | "par" | "oculta";
+  /** Si ninguna fila tiene algo en ella, la columna no se muestra (inventario-pantallas.md, cambio 4d: "Sin fotos" o una
+   * columna en blanco en cada fila no decían nada). */
+  ocultarSiVacia?: boolean;
 };
 
 /**
@@ -51,7 +54,11 @@ export function FlechaFila() {
 // Con espacio, todas en su columna, en una sola línea de la grilla
 const CELDA_TABLA = "@2xl:col-auto @2xl:col-span-1 @2xl:row-auto @2xl:block @2xl:justify-self-auto @2xl:text-tinta";
 
-export function TablaLista({ etiqueta, columnas, filas }: { etiqueta: string; columnas: ColumnaTabla[]; filas: FilaTabla[] }) {
+export function TablaLista({ etiqueta, columnas: todas, filas: todasLasFilas }: { etiqueta: string; columnas: ColumnaTabla[]; filas: FilaTabla[] }) {
+  // Las columnas que se quedan, con sus celdas: así una celda nunca cae bajo el título de otra
+  const quedan = todas.map((c, i) => !c.ocultarSiVacia || todasLasFilas.some((f) => tieneAlgo(f.celdas[i])));
+  const columnas = todas.filter((_, i) => quedan[i]);
+  const filas = todasLasFilas.map((f) => ({ ...f, celdas: f.celdas.filter((_, i) => quedan[i]) }));
   const plantilla = { "--columnas": columnas.map((c) => c.ancho ?? "minmax(0,1fr)").join(" ") } as React.CSSProperties;
   return (
     <div className="tt-tarjeta-panel overflow-hidden" style={plantilla}>

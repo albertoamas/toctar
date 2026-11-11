@@ -86,7 +86,7 @@ Migración `0011_reclamos`.
 |---|---|---|
 | `/garantia` | Visitante | **"Garantía y reclamos":** un texto corto ("Si algo no quedó como esperabas, cuéntanos y te respondemos por WhatsApp"), el formulario y el botón "Enviar reclamo". Al enviar, el formulario se reemplaza por la confirmación: "Recibimos tu reclamo. Te escribiremos al WhatsApp que dejaste." Va en tema oscuro, con los mismos componentes que el resto del sitio |
 | `/panel` | Dueño, encargado con el módulo | Tarjeta "Reclamos pendientes: N" con enlace. Si no hay pendientes: "No hay reclamos pendientes." |
-| `/panel/reclamos` | Dueño, encargado con el módulo | Lista con los pendientes primero y los más nuevos arriba: fecha, nombre, placa, servicio, estado y si trae fotos. Filtro: pendientes o todos |
+| `/panel/reclamos` | Dueño, encargado con el módulo | Lista con los pendientes primero y los más nuevos arriba: fecha, nombre, placa, servicio, estado y cuántas fotos trae (la columna, solo si alguno trae). Pestañas: "Pendientes", la que abre (desde el 10/11, inventario-pantallas.md, cambio 4d), y "Todos" (`?ver=todos`) |
 | `/panel/reclamos/[id]` | Ídem | Datos del cliente, servicio, fecha aproximada, descripción y fotos (se amplían al tocarlas). Botones "Escribir por WhatsApp" y "Marcar como atendido" (pide la nota). Si ya está atendido: la nota, quién y cuándo |
 
 **Enlaces al formulario:** el pie del sitio ("Garantía y reclamos"), la página de contacto, y la respuesta "¿Qué cubre la garantía?" de las preguntas frecuentes (la edita el dueño; se sugiere el enlace en la demo).
