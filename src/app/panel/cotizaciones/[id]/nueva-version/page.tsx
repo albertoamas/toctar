@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -13,6 +13,7 @@ import { ResumenClienteVehiculo } from "@/modulos/clientes/componentes/resumen-c
 import { FormularioNuevaVersion } from "@/modulos/cotizaciones/componentes/formulario-cotizacion";
 import { datosNuevaVersion } from "@/modulos/cotizaciones/consultas";
 import { NOMBRE_ESTADO } from "@/modulos/cotizaciones/reglas";
+import { conDesde, leerDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Nueva versión" };
 
@@ -31,7 +32,8 @@ export default function PaginaNuevaVersion({ params, searchParams }: PageProps<"
 
 async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/cotizaciones/[id]/nueva-version">, "params" | "searchParams">) {
   await exigirAccion("cotizar");
-  const [{ id }, { desde }] = await Promise.all([params, searchParams]);
+  const [{ id }, parametros] = await Promise.all([params, searchParams]);
+  const { desde } = parametros;
   const consultaId = Number(id);
   if (!Number.isInteger(consultaId) || consultaId <= 0) notFound();
   const desdeId = typeof desde === "string" && /^\d+$/.test(desde) ? Number(desde) : null;
@@ -39,9 +41,11 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/cotiza
   // Una consulta de antes sin cotizar no tiene versiones: no es una cotización
   if (!datos || datos.estado === "consulto") notFound();
   // Sin `desde` (o con uno de otra cotización), a la vigente
-  if (!datos.desde && !datos.desdeReemplazado && datos.vigenteId) redirect(`/panel/cotizaciones/${consultaId}/nueva-version?desde=${datos.vigenteId}`);
+  if (!datos.desde && !datos.desdeReemplazado && datos.vigenteId) redirect(conDesde(`/panel/cotizaciones/${consultaId}/nueva-version?desde=${datos.vigenteId}`, leerDesde(parametros.volver)));
 
-  const volver = `/panel/cotizaciones/${consultaId}` as const;
+  // A la cotización, con su propio origen si se vino de ella (pedido 43): al guardar, vuelve a donde se estaba antes
+  const llegada = leerDesde(parametros.volver);
+  const volver = llegada?.split("?")[0] === `/panel/cotizaciones/${consultaId}` ? llegada : (`/panel/cotizaciones/${consultaId}` as Route);
   const enlace = "font-semibold underline";
 
   return (
@@ -75,7 +79,7 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/cotiza
       ) : (
         // La key lo vuelve a montar al cambiar de versión: Next conserva la página anterior y el formulario guardaba
         // las líneas de la visita de antes
-        <FormularioNuevaVersion key={datos.desde.id} datos={{ ...datos, desde: datos.desde }} hoy={fechaEnBolivia()} />
+        <FormularioNuevaVersion volver={volver} key={datos.desde.id} datos={{ ...datos, desde: datos.desde }} hoy={fechaEnBolivia()} />
       )}
     </>
   );

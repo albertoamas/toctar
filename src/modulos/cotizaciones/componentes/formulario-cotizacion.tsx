@@ -15,9 +15,14 @@ import { CamposPrecio, TotalEnPie, usePrecios } from "./campos-precio";
 // Versión nueva de una cotización pendiente (RN-02): arranca con los servicios, precios y condiciones de la vigente, con
 // la validez de hoy. El cliente y el vehículo no cambian. Guardar es enviar: la anterior queda con su PDF.
 
-type Props = { datos: DatosNuevaVersion & { desde: NonNullable<DatosNuevaVersion["desde"]> }; hoy: string };
+type Props = {
+  datos: DatosNuevaVersion & { desde: NonNullable<DatosNuevaVersion["desde"]> };
+  hoy: string;
+  /** La cotización con su origen: al guardar, vuelve a donde se estaba antes de abrirla (pedido 43). */
+  volver: string;
+};
 
-export function FormularioNuevaVersion({ datos, hoy }: Props) {
+export function FormularioNuevaVersion({ datos, hoy, volver }: Props) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(guardarVersion, {});
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
@@ -27,6 +32,7 @@ export function FormularioNuevaVersion({ datos, hoy }: Props) {
     <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate>
       <input type="hidden" name="consultaId" value={datos.consultaId} />
       <input type="hidden" name="desde" value={datos.desde.id} />
+      <input type="hidden" name="volver" value={volver} />
       {estado.mensaje && !estado.ok && <MensajeError id="cotizacion-error">{estado.mensaje}</MensajeError>}
       <CamposPrecio
         precios={precios}
