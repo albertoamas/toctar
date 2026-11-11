@@ -48,7 +48,7 @@ test("salir con cambios pregunta: se puede seguir editando o salir", async ({ pa
   // "Volver": se ve en los dos tamaños
   const salir = page.locator('main a[href="/panel/usuarios"]').first();
   await salir.click();
-  const pregunta = page.getByRole("dialog", { name: "¿Salir sin guardar?" });
+  const pregunta = page.getByRole("alertdialog", { name: "¿Salir sin guardar?" });
   await expect(pregunta).toBeVisible();
   // Con el foco en la opción que no pierde nada
   await expect(pregunta.getByRole("button", { name: "Seguir editando" })).toBeFocused();
@@ -87,7 +87,7 @@ test("en el menú del celular, salir con cambios pregunta y el menú se cierra",
   await expect(hayCambios(page)).toHaveText("Hay cambios sin guardar.");
   await page.getByRole("button", { name: /Abrir menú/ }).click();
   await page.getByRole("dialog", { name: "Menú" }).getByRole("link", { name: "Agenda" }).click();
-  const pregunta = page.getByRole("dialog", { name: "¿Salir sin guardar?" });
+  const pregunta = page.getByRole("alertdialog", { name: "¿Salir sin guardar?" });
   await expect(pregunta).toBeVisible();
   await expect(page.getByRole("dialog", { name: "Menú" })).toHaveCount(0);
   await pregunta.getByRole("button", { name: "Salir sin guardar" }).click();
@@ -104,7 +104,7 @@ test("cerrar sesión con cambios también pregunta", async ({ page }, info) => {
   await nombreDe(page).fill("A medio escribir");
   await expect(hayCambios(page)).toHaveText("Hay cambios sin guardar.");
   await page.getByRole("button", { name: "Cerrar sesión" }).click();
-  const pregunta = page.getByRole("dialog", { name: "¿Salir sin guardar?" });
+  const pregunta = page.getByRole("alertdialog", { name: "¿Salir sin guardar?" });
   await expect(pregunta).toBeVisible();
   await pregunta.getByRole("button", { name: "Seguir editando" }).click();
   await expect(page).toHaveURL(/\/panel\/usuarios\/nuevo$/);
@@ -124,7 +124,7 @@ test("crear no pregunta al salir: lleva a la lista con su aviso", async ({ page 
   await page.getByLabel("Contraseña inicial").fill("encargado-123");
   await page.getByRole("button", { name: "Crear usuario" }).click();
   await expect(page).toHaveURL(/\/panel\/usuarios\?creado=/);
-  await expect(page.getByRole("dialog", { name: "¿Salir sin guardar?" })).toHaveCount(0);
+  await expect(page.getByRole("alertdialog", { name: "¿Salir sin guardar?" })).toHaveCount(0);
 });
 
 test("crear un usuario sigue activo vacío: tocarlo muestra qué falta", async ({ page }) => {
@@ -144,7 +144,7 @@ test("un flujo también pregunta: nuevo cliente, con su botón de siempre", asyn
   await hidratada(page);
   await page.getByLabel("Nombre", { exact: true }).fill("A medio escribir");
   await page.locator('main a[href="/panel/clientes"]').first().click();
-  const pregunta = page.getByRole("dialog", { name: "¿Salir sin guardar?" });
+  const pregunta = page.getByRole("alertdialog", { name: "¿Salir sin guardar?" });
   await expect(pregunta).toBeVisible();
   await pregunta.getByRole("button", { name: "Salir sin guardar" }).click();
   await expect(page).toHaveURL(/\/panel\/clientes$/);
