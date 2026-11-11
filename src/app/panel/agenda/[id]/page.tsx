@@ -28,7 +28,7 @@ import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { esOrden, puedeRecibirse } from "@/modulos/ordenes/reglas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
 import { filaVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
-import { aqui, conDesde, leerDesde, volverDesde } from "@/lib/volver";
+import { aqui, conDesde, sinElTrabajo, volverDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Reserva" };
 
@@ -79,7 +79,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
         Recibir vehículo
       </Link>
     ) : orden && verOrdenes ? (
-      <Link href={conDesde(`/panel/ordenes/${r.id}`, leerDesde(parametros.volver))} className={cn(buttonVariants({ size: "paso" }), BOTON_PASO)}>
+      <Link href={conDesde(`/panel/ordenes/${r.id}`, sinElTrabajo(String(parametros.volver ?? ""), r.id))} className={cn(buttonVariants({ size: "paso" }), BOTON_PASO)}>
         <WrenchIcon />
         Ver la orden
       </Link>

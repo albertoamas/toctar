@@ -9,7 +9,7 @@ import { exigirAccion } from "@/lib/sesion";
 import { FormularioPublicar } from "@/modulos/ordenes/componentes/formulario-publicar";
 import { fotosDeTrabajo, obtenerOrden, publicadaDeOrden, serviciosDeOrden } from "@/modulos/ordenes/consultas";
 import { esFotoDeAntes, ETAPAS_FOTO_ANTES, puedePublicarse } from "@/modulos/ordenes/reglas";
-import { leerDesde, volverDesde } from "@/lib/volver";
+import { conDesde, leerDesde, sinElTrabajo, volverDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Publicar en la galería" };
 
@@ -32,10 +32,12 @@ async function Publicar({ params, searchParams }: Pick<PageProps<"/panel/ordenes
   const o = await obtenerOrden(Number(id), false);
   if (!o) notFound();
   const volver = `/panel/ordenes/${o.id}` as const;
-  if (o.estado !== "entregado" || (await publicadaDeOrden(o.id))) redirect(volver);
+  // Si ya no se publica: a la orden, con el origen de antes (pedido 43)
+  const aLaOrden = conDesde(volver, sinElTrabajo(String(busqueda.volver ?? ""), o.id));
+  if (o.estado !== "entregado" || (await publicadaDeOrden(o.id))) redirect(aLaOrden);
   // Recién con el acceso verificado se firman los enlaces, y solo de las fotos que se pueden elegir
   const [fotos, servicios] = await Promise.all([fotosDeTrabajo(o.id, ["despues", ...ETAPAS_FOTO_ANTES]), serviciosDeOrden(o.id, { soloActivos: true })]);
-  if (!puedePublicarse(o.estado, fotos.map((f) => f.etapa))) redirect(volver);
+  if (!puedePublicarse(o.estado, fotos.map((f) => f.etapa))) redirect(aLaOrden);
 
   return (
     <>

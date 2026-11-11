@@ -25,7 +25,7 @@ import { ResumenClienteVehiculo } from "@/modulos/clientes/componentes/resumen-c
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { recordatorioParaAgendar } from "@/modulos/mantenimientos/consultas";
 import { lineaDelMantenimiento } from "@/modulos/mantenimientos/reglas";
-import { leerDesde, PARAMETRO_VOLVER, volverDesde, type Volver } from "@/lib/volver";
+import { conDesde, leerDesde, PARAMETRO_VOLVER, volverDesde, type Volver } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Nueva reserva" };
 
@@ -236,7 +236,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
     return (
       <>
         <Encabezado volver={volver} />
-        <EstadoVacio>Ese cliente ya no está activo. <Link href={direccion({})} className={enlace}>Elegir otro</Link></EstadoVacio>
+        <EstadoVacio>Ese cliente ya no está activo. <Link href={conDesde("/panel/agenda/nueva", origen)} className={enlace}>Elegir otro</Link></EstadoVacio>
       </>
     );
   }

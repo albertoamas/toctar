@@ -18,7 +18,7 @@ import { obtenerOrden } from "@/modulos/ordenes/consultas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
 import { estaPagada } from "@/modulos/pagos/reglas";
 import { filaVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
-import { leerDesde, volverDesde } from "@/lib/volver";
+import { conDesde, leerDesde, sinElTrabajo, volverDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Entregar vehículo" };
 
@@ -46,7 +46,8 @@ async function Entrega({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   // Con los montos siempre, para saber si queda saldo; se muestran solo a quien ve pagos
   const o = await obtenerOrden(Number(id), true);
   if (!o || !o.montos) notFound();
-  if (o.estado !== "listo") redirect(`/panel/ordenes/${o.id}`);
+  // Ya entregada o todavía no lista: a la orden, con el origen de antes (pedido 43)
+  if (o.estado !== "listo") redirect(conDesde(`/panel/ordenes/${o.id}`, sinElTrabajo(String(busqueda.volver ?? ""), o.id)));
   const hoy = fechaEnBolivia();
   // Lo que la entrega va a hacer con los planes de mantenimiento del vehículo: la misma regla que la acción (pedido 21)
   const planes = await vistaPreviaPlanes(o.id, o.vehiculoId, hoy);

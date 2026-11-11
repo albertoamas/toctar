@@ -15,7 +15,7 @@ import { FormularioRecepcion } from "@/modulos/ordenes/componentes/formulario-re
 import { obtenerOrden, partesDelChecklist, revisionDeTrabajo } from "@/modulos/ordenes/consultas";
 import { esOrden, puedeRecibirse } from "@/modulos/ordenes/reglas";
 import { filaVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
-import { leerDesde, volverDesde } from "@/lib/volver";
+import { conDesde, leerDesde, sinElTrabajo, volverDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Recibir vehículo" };
 
@@ -42,11 +42,13 @@ async function Recepcion({ params, searchParams }: Pick<PageProps<"/panel/ordene
   if (!/^\d+$/.test(id)) notFound();
   const o = await obtenerOrden(Number(id), false);
   if (!o) notFound();
-  if (esOrden(o.estado)) redirect(`/panel/ordenes/${o.id}`);
+  // Ya recibida o cancelada: a su pantalla, con el origen de antes del trabajo (pedido 43)
+  const origen = sinElTrabajo(String(busqueda.volver ?? ""), o.id);
+  if (esOrden(o.estado)) redirect(conDesde(`/panel/ordenes/${o.id}`, origen));
   // Cancelada: no hay nada que recibir; se ve en la agenda, si quien entra la ve
   if (o.estado !== "agendado") {
     if (!verAgenda) notFound();
-    redirect(`/panel/agenda/${o.id}`);
+    redirect(conDesde(`/panel/agenda/${o.id}`, origen));
   }
   const hoy = fechaEnBolivia();
   const detalle = detalleVehiculo(o);

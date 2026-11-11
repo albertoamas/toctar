@@ -48,6 +48,8 @@ export default function PaginaClientes({ searchParams }: PageProps<"/panel/clien
 async function Lista({ searchParams }: Pick<PageProps<"/panel/clientes">, "searchParams">) {
   await exigirModulo("clientes");
   const parametros = await searchParams;
+  // Pedido 43: cada ficha vuelve a esta lista, con su búsqueda
+  const desdeAqui = aqui("/panel/clientes", parametros);
   const q = typeof parametros.q === "string" ? parametros.q : "";
   const desactivados = parametros.ver === "desactivados";
   const { clientes, hayMas } = await buscarClientes(q, desactivados);
@@ -72,7 +74,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/clientes">, "searc
         etiqueta={desactivados ? "Clientes desactivados" : "Clientes"}
         clientes={clientes}
         busqueda={busqueda}
-        href={(id) => conDesde(`/panel/clientes/${id}` as Route, aqui("/panel/clientes", parametros))}
+        href={(id) => conDesde(`/panel/clientes/${id}` as Route, desdeAqui)}
         atenuadas={desactivados}
       />
       {hayMas && <p className="text-sm text-tinta-suave">Hay más clientes: escribe algo más preciso para encontrar el que buscas.</p>}
