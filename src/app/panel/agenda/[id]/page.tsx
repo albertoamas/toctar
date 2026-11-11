@@ -9,7 +9,7 @@ import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Insignia } from "@/componentes/panel/insignia";
-import { FilaCliente, FilaDato, FilaEnlace } from "@/componentes/panel/datos-en-bloques";
+import { FilaCliente, FilaCotizacion, FilaDato } from "@/componentes/panel/datos-en-bloques";
 import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
 import { BOTON_PASO, PasoSiguiente } from "@/componentes/panel/paso-siguiente";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
@@ -33,9 +33,10 @@ export const metadata: Metadata = { title: "Reserva" };
 
 // HU-30: una reserva. Con "Pagos" (o el dueño), sus servicios, el total, lo pagado y el saldo. HU-31: reprogramarla o
 // cancelarla mientras está agendada. HU-32: registrar y anular pagos, con el comprobante; una cancelada, sin acciones.
-// HU-33: desde su día de ingreso, "Recibir vehículo" (con "Órdenes"); recibida, es una orden y lleva a ella.
-// Pulido 10.3 (skill pantallas-panel): el paso siguiente en el encabezado (recibir o ver la orden), reprogramar y
-// cancelar en "Más" con sus modales, y "Registrar pago" sin fondo en la cabecera de Pagos.
+// HU-33: desde su día de ingreso, "Recibir vehículo" (con "Órdenes"). Recibida, es una orden: quien ve las órdenes va a
+// ella (una pantalla por trabajo, pulido 13.52); quien no, sigue viendo la reserva para cobrar.
+// Pulido 10.3 (skill pantallas-panel): el paso siguiente en el encabezado (recibir), reprogramar y cancelar en "Más" con
+// sus modales, y "Registrar pago" sin fondo en la cabecera de Pagos.
 // C6 (sistema-del-panel.md §2, "Principal y datos"): los montos en la columna ancha; los datos y la nota, cada uno con su
 // título arriba de su tarjeta, en la angosta. Sin Pagos no hay montos: los datos toman el lugar y no queda un hueco.
 export default function PaginaReserva({ params, searchParams }: PageProps<"/panel/agenda/[id]">) {
@@ -119,14 +120,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
         <p className="px-4 py-3 text-sm text-tinta-suave">
           Reservada por {r.agendadaPor} el {formatearFechaHora(r.createdAt)}
         </p>
-        {cotizacion && (
-          <FilaEnlace href={conDesde(`/panel/cotizaciones/${r.consultaId}`, desdeAqui)}>
-            <span className="font-semibold">
-              Ver la cotización {cotizacion.numero}
-              {cotizacion.version > 1 && `, versión ${cotizacion.version}`}
-            </span>
-          </FilaEnlace>
-        )}
+        {cotizacion && <FilaCotizacion href={conDesde(`/panel/cotizaciones/${r.consultaId}`, desdeAqui)} numero={cotizacion.numero} version={cotizacion.version} />}
       </div>
     </Seccion>
   );

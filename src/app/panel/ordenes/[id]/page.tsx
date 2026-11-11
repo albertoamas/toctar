@@ -8,7 +8,7 @@ import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { AvisarPorWhatsApp } from "@/componentes/panel/avisar-whatsapp";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { Cargando } from "@/componentes/panel/cargando";
-import { FilaCliente, FilaDato, FilaEnlace } from "@/componentes/panel/datos-en-bloques";
+import { FilaCliente, FilaCotizacion, FilaDato } from "@/componentes/panel/datos-en-bloques";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { BOTON_PASO, PasoSiguiente } from "@/componentes/panel/paso-siguiente";
@@ -214,13 +214,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
               {/* Una pantalla por trabajo: recibido, la reserva ya no se abre (lleva aquí); lo que solo ella tenía viene a la
                   orden: su cotización, su nota y, en el historial, quién la reservó. Cuándo ingresó y quién lo recibió, en el
                   historial ("Vehículo recibido.", pedido 45) */}
-              {o.consultaId !== null && o.cotizacion && verCotizacion && (
-                <FilaEnlace href={conDesde(`/panel/cotizaciones/${o.consultaId}`, desdeAqui)}>
-                  <span className="font-semibold">
-                    Ver la cotización {o.cotizacion.numero}
-                    {o.cotizacion.version > 1 && `, versión ${o.cotizacion.version}`}
-                  </span>
-                </FilaEnlace>
+              {o.cotizacion && verCotizacion && (
+                <FilaCotizacion href={conDesde(`/panel/cotizaciones/${o.consultaId}`, desdeAqui)} numero={o.cotizacion.numero} version={o.cotizacion.version} />
               )}
             </div>
           </Seccion>
