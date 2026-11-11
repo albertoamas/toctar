@@ -25,6 +25,7 @@ import { ResumenClienteVehiculo } from "@/modulos/clientes/componentes/resumen-c
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { recordatorioParaAgendar } from "@/modulos/mantenimientos/consultas";
 import { lineaDelMantenimiento } from "@/modulos/mantenimientos/reglas";
+import { leerDesde, PARAMETRO_VOLVER, volverDesde, type Volver } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Nueva reserva" };
 
@@ -60,13 +61,12 @@ export default function PaginaNuevaReserva({ searchParams }: PageProps<"/panel/a
   );
 }
 
-/** El encabezado: la reserva vive en la Agenda, así que "Volver" lleva allí desde cualquier entrada (pedido 31). */
-function Encabezado() {
-  return (
-    <>
-      <EncabezadoPagina titulo="Nueva reserva" volver={{ href: "/panel/agenda", texto: "Agenda" }} />
-    </>
-  );
+/**
+ * El encabezado. "Volver" lleva a la pantalla de la que se vino (pedido 43: la ficha del cliente, la cotización, Inicio,
+ * Mantenimientos); sin ella, a la Agenda, donde vive la reserva (pedido 31).
+ */
+function Encabezado({ volver }: { volver: Volver }) {
+  return <EncabezadoPagina titulo="Nueva reserva" volver={volver} />;
 }
 
 const enlace = "font-semibold underline";
@@ -90,6 +90,9 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   const conPagos = puedeVerModulo(usuario, "pagos");
   const parametros = await searchParams;
   const texto = (clave: string) => (typeof parametros[clave] === "string" ? (parametros[clave] as string) : "");
+  const volver = volverDesde(parametros.volver, { href: "/panel/agenda", texto: "Agenda" }, usuario);
+  // El origen va en cada paso y en el formulario: la reserva creada vuelve ahí (pedido 43)
+  const origen = leerDesde(parametros.volver);
   const numero = (clave: string) => (/^\d+$/.test(texto(clave)) ? Number(texto(clave)) : null);
   const hoy = fechaEnBolivia();
   // El día pedido (desde el tablero) si no es pasado; si no, mañana
@@ -101,6 +104,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
     const p = new URLSearchParams(Object.entries(datos).map(([k, v]) => [k, String(v)]));
     if (texto("fecha")) p.set("fecha", texto("fecha"));
     if (texto("espacio")) p.set("espacio", texto("espacio"));
+    if (origen) p.set(PARAMETRO_VOLVER, origen);
     return `/panel/agenda/nueva${p.size ? `?${p.toString()}` : ""}` as Route;
   };
   const cotizacionId = numero("cotizacion");
@@ -110,7 +114,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
     if (!c) {
       return (
         <>
-          <Encabezado />
+          <Encabezado volver={volver} />
           <EstadoVacio>Esa cotización ya no existe.</EstadoVacio>
         </>
       );
@@ -118,7 +122,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
     if (!c.agendable) {
       return (
         <>
-          <Encabezado />
+          <Encabezado volver={volver} />
           <EstadoVacio>Esa cotización ya tiene una reserva o una versión nueva.</EstadoVacio>
         </>
       );
@@ -127,7 +131,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
     if (!c.activos) {
       return (
         <>
-          <Encabezado />
+          <Encabezado volver={volver} />
           <EstadoVacio>El cliente o el vehículo de esa cotización ya no está activo. Reactívalo en su ficha para reservarla.</EstadoVacio>
         </>
       );
@@ -142,7 +146,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
     const conVarios = enLosPasos && ((await datosDirecta(c.cliente.id, c.vehiculo.id))?.vehiculos.length ?? 0) > 1;
     return (
       <>
-        <Encabezado />
+        <Encabezado volver={volver} />
         {enLosPasos ? indicador(PASO_FECHA) : <PasosTrabajo paso={c.aceptada ? 1 : 0} />}
         <ClienteYVehiculo
           nombre={c.cliente.nombre}
@@ -175,6 +179,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
           {!c.aceptada && <p className="text-sm text-tinta-suave">Al reservar, la cotización queda aceptada.</p>}
         </ResumenPaso>
         <Formulario
+          volver={origen}
           origen={{ tipo: "cotizacion", cotizacionId: c.cotizacionId, duraciones }}
           conPagos={conPagos}
           hoy={hoy}
@@ -192,7 +197,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   if (!clienteId) {
     return (
       <>
-        <Encabezado />
+        <Encabezado volver={volver} />
         {indicador(PASO_CLIENTE)}
         <ElegirCliente q={texto("q")} hrefCliente={(id) => direccion({ cliente: id })} />
       </>
@@ -204,7 +209,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   if (recordatorioId && (!puedeVerModulo(usuario, "mantenimientos") || !conPagos)) {
     return (
       <>
-        <Encabezado />
+        <Encabezado volver={volver} />
         <EstadoVacio>
           {!puedeVerModulo(usuario, "mantenimientos")
             ? "Los mantenimientos los reserva el dueño o quien tiene «Mantenimientos»."
@@ -217,7 +222,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   if (recordatorioId && (!recordatorio || recordatorio.clienteId !== clienteId || recordatorio.vehiculoId !== numero("vehiculo"))) {
     return (
       <>
-        <Encabezado />
+        <Encabezado volver={volver} />
         <EstadoVacio>
           Ese mantenimiento ya se reservó o se cerró. <Link href="/panel/mantenimientos" className={enlace}>Volver a Mantenimientos</Link>
         </EstadoVacio>
@@ -230,15 +235,15 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   if (!d) {
     return (
       <>
-        <Encabezado />
-        <EstadoVacio>Ese cliente ya no está activo. <Link href="/panel/agenda/nueva" className={enlace}>Elegir otro</Link></EstadoVacio>
+        <Encabezado volver={volver} />
+        <EstadoVacio>Ese cliente ya no está activo. <Link href={direccion({})} className={enlace}>Elegir otro</Link></EstadoVacio>
       </>
     );
   }
   if (d.vehiculos.length === 0) {
     return (
       <>
-        <Encabezado />
+        <Encabezado volver={volver} />
         <EstadoVacio>
           {d.cliente.nombre} no tiene vehículos activos. <Link href={`/panel/clientes/${d.cliente.id}`} className={enlace}>Agregar uno en su ficha</Link>
         </EstadoVacio>
@@ -253,7 +258,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   if (!d.vehiculo) {
     return (
       <>
-        <Encabezado />
+        <Encabezado volver={volver} />
         {indicador(PASO_VEHICULO)}
         <ClienteYVehiculo nombre={d.cliente.nombre} vehiculo={null} cambiarCliente={cambiarCliente} />
         <section aria-labelledby="vehiculo-titulo" className="flex flex-col gap-3">
@@ -303,7 +308,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   if (!conPagos) {
     return (
       <>
-        <Encabezado />
+        <Encabezado volver={volver} />
         {indicador(PASO_SERVICIOS)}
         {arriba}
         {suyas ?? <EstadoVacio>Este vehículo no tiene cotizaciones para reservar. La reserva sin cotización lleva precios: la arma el dueño o quien registra pagos.</EstadoVacio>}
@@ -314,8 +319,9 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   const lineasIniciales = recordatorio ? [lineaDelMantenimiento(d.opciones, recordatorio.servicioMantenimientoId)].filter((l) => l !== null) : [];
   return (
     <>
-      <Encabezado />
+      <Encabezado volver={volver} />
       <Formulario
+        volver={origen}
         origen={{
           tipo: "directa",
           clienteId: d.cliente.id,
@@ -361,6 +367,8 @@ function CotizacionesDelCliente({ cotizaciones, conMontos, enlace }: { cotizacio
 }
 
 async function Formulario(props: {
+  /** La pantalla de origen: la reserva creada vuelve ahí (pedido 43). */
+  volver: string | null;
   origen: React.ComponentProps<typeof FormularioReserva>["origen"];
   conPagos: boolean;
   hoy: string;
@@ -373,6 +381,7 @@ async function Formulario(props: {
   const [parametros, espacios] = await Promise.all([obtenerParametros(), espaciosEnFechas(props.fechaInicial, props.fechaFin)]);
   return (
     <FormularioReserva
+      volver={props.volver}
       origen={props.origen}
       conPagos={props.conPagos}
       adelantoSugerido={parametros.adelanto_sugerido.toFixed(2)}

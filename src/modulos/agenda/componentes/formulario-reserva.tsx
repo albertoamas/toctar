@@ -54,6 +54,8 @@ type Origen =
     };
 
 type Props = {
+  /** La pantalla de origen (pedido 43): va en el formulario y la reserva creada vuelve ahí. */
+  volver?: string | null;
   origen: Origen;
   /** Quien ve pagos registra el adelanto (RN-04); los demás agendan "sin adelanto". */
   conPagos: boolean;
@@ -71,7 +73,7 @@ type Props = {
 /** El paso en la dirección: el botón Atrás del celular vuelve al anterior sin salir de la pantalla. */
 const ANCLA: Record<number, string> = { [PASO_SERVICIOS]: "servicios", [PASO_FECHA]: "fecha" };
 
-export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fechaInicial, espacioInicial, espaciosIniciales, arriba, cotizaciones }: Props) {
+export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, hoy, fechaInicial, espacioInicial, espaciosIniciales, arriba, cotizaciones }: Props) {
   const directa = origen.tipo === "directa";
   const inicial = origen.tipo === "directa" ? origen.pasoInicial : PASO_FECHA;
   const [paso, setPaso] = useState<number>(inicial);
@@ -254,6 +256,7 @@ export function FormularioReserva({ origen, conPagos, adelantoSugerido, hoy, fec
       {arriba}
       <AvisoAlSalir formulario={formulario} estado={estado} ademas={!!comprobante} />
       <input type="hidden" name="origen" value={origen.tipo} />
+      {volver && <input type="hidden" name="volver" value={volver} />}
       {origen.tipo === "cotizacion" ? (
         <input type="hidden" name="cotizacionId" value={origen.cotizacionId} />
       ) : (
