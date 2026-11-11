@@ -209,6 +209,14 @@
 [data-sonner-toaster] [data-sonner-toast][data-type="success"] {
   border-left: 4px solid var(--exito);
 }
+/* En el celular, los avisos de éxito y de error solo informan (no tienen botones): no atrapan el toque. Abajo caían sobre
+   lo que se quería tocar después ("Ver el comprobante" al registrar un pago) y el toque no llegaba mientras duraba el
+   aviso (10/11, lo vio hu-32). El de versión nueva (info) sí tiene "Actualizar": ese se toca. */
+@media (max-width: 639px) {
+  [data-sonner-toaster] [data-sonner-toast]:is([data-type="success"], [data-type="error"]) {
+    pointer-events: none;
+  }
+}
 /* La información (pedido 39: "Hay una versión nueva del sistema"), en azul */
 [data-sonner-toaster] [data-sonner-toast][data-type="info"] {
   border-left: 4px solid var(--info);
