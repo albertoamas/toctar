@@ -60,7 +60,7 @@ export function urlArchivo(clave: string): string {
  * Encabezado Content-Disposition: abrir o descargar, con el nombre del archivo. El nombre, solo con letras sin tildes,
  * números, punto, guion y guion bajo: nada que rompa el encabezado.
  */
-export function disposicion(nombre: string, descargar = false): string {
+function disposicion(nombre: string, descargar = false): string {
   return `${descargar ? "attachment" : "inline"}; filename="${nombre.replace(/[^A-Za-z0-9._-]/g, "_")}"`;
 }
 
@@ -84,8 +84,26 @@ export async function leerArchivo(clave: string, visibilidad: Visibilidad): Prom
   return Buffer.from(await r.Body.transformToByteArray());
 }
 
+/**
+ * Un PDF privado (de un cliente) entregado por la app, sin pasar por una dirección del almacenamiento: como flujo, sin
+ * tenerlo entero en memoria, y sin cachés intermedias ni buscadores. null si no está en el almacenamiento.
+ */
+export async function respuestaPdfPrivado(clave: string, nombre: string): Promise<Response | null> {
+  const flujo = await flujoArchivoPrivado(clave);
+  if (!flujo) return null;
+  return new Response(flujo, {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": disposicion(nombre),
+      "Cache-Control": "private, no-store",
+      "X-Robots-Tag": "noindex, nofollow",
+      "Referrer-Policy": "no-referrer",
+    },
+  });
+}
+
 /** El contenido de un archivo privado como flujo, para entregarlo sin tenerlo entero en memoria; null si no está. */
-export async function flujoArchivoPrivado(clave: string): Promise<ReadableStream | null> {
+async function flujoArchivoPrivado(clave: string): Promise<ReadableStream | null> {
   try {
     const r = await obtenerCliente().send(new GetObjectCommand({ Bucket: bucket("privado"), Key: clave }));
     return r.Body ? r.Body.transformToWebStream() : null;

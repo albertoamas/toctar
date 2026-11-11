@@ -7,6 +7,8 @@ import {
   calcularTotales,
   claveCorrelativo,
   descripcionLinea,
+  esCodigoEnlace,
+  estadoEnlace,
   diasDesde,
   fechaValidez,
   leerMontoOCero,
@@ -238,4 +240,19 @@ test("las opciones del catálogo se agrupan por servicio, en su orden, para eleg
     ["Pulido y nano cerámico", [21, 22]],
     ["Pulido de vidrios", [11]],
   ]);
+});
+
+test("el enlace del cliente vale mientras la cotización vale (pedido 47)", () => {
+  const v = (estado: "enviada" | "aceptada" | "reemplazada", rechazada = false) => ({ estado, validaHasta: "2026-11-25", rechazada });
+  // Vigente: hasta su fecha de validez, inclusive
+  expect(estadoEnlace(v("enviada"), "2026-11-25")).toBe("vale");
+  expect(estadoEnlace(v("enviada"), "2026-11-26")).toBe("vencida");
+  // Aceptada: siempre; reemplazada: nunca (tiene una versión nueva)
+  expect(estadoEnlace(v("aceptada"), "2027-01-10")).toBe("vale");
+  expect(estadoEnlace(v("reemplazada"), "2026-11-20")).toBe("reemplazada");
+  // Rechazada (la consulta, perdida): nunca, aunque la versión siga vigente
+  expect(estadoEnlace(v("enviada", true), "2026-11-20")).toBe("rechazada");
+  // Solo se busca un código bien formado
+  expect(esCodigoEnlace("0123456789abcdef0123456789abcdef")).toBe(true);
+  for (const malo of ["", "abc", "0123456789ABCDEF0123456789ABCDEF", "0123456789abcdef0123456789abcdeg", "../../panel"]) expect(esCodigoEnlace(malo)).toBe(false);
 });

@@ -29,6 +29,15 @@ export function mensajeListo(datos: Datos & { saldo: string | null }): string {
   return armarMensaje(datos.plantilla, { ...comunes(datos), saldo: saldo && !estaPagada(saldo) ? `Saldo pendiente: ${mostrarMonto(saldo)} Bs.` : "" });
 }
 
+/**
+ * La cotización con su enlace (pedido 47): se manda desde la ficha de la cotización. El enlace nunca falta: si el dueño
+ * quitó {enlace} de la plantilla, va al final.
+ */
+export function mensajeCotizacion(datos: Datos & { numero: string; enlace: string }): string {
+  const texto = armarMensaje(datos.plantilla, { ...comunes(datos), numero: datos.numero, enlace: datos.enlace });
+  return texto.includes(datos.enlace) ? texto : `${texto} ${datos.enlace}`;
+}
+
 /** Le toca el mantenimiento (HU-38, RF-50): para avisarle y ofrecerle un día. */
 export function mensajeMantenimiento(datos: Datos & { servicio: string }): string {
   return armarMensaje(datos.plantilla, { ...comunes(datos), servicio: datos.servicio });
@@ -41,5 +50,6 @@ export function mensajeDeEjemplo(clave: ClavePlantilla, plantilla: string, negoc
   const datos = { ...EJEMPLO, plantilla, negocio };
   if (clave === "listo") return mensajeListo({ ...datos, saldo: "350.00" });
   if (clave === "saldo") return mensajeSaldo({ ...datos, saldo: "350.00" });
+  if (clave === "cotizacion") return mensajeCotizacion({ ...datos, numero: "2026-0042", enlace: "(el enlace a la cotización)" });
   return mensajeMantenimiento({ ...datos, servicio: "Nano cerámico" });
 }

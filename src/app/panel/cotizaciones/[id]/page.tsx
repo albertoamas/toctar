@@ -16,7 +16,7 @@ import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { BOTON_PASO, PasoSiguiente } from "@/componentes/panel/paso-siguiente";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
-import { formatearFecha } from "@/lib/fechas";
+import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
@@ -26,9 +26,12 @@ import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reg
 import { BotonAcepto, MasCotizacion } from "@/modulos/cotizaciones/componentes/estado-cotizacion";
 import { VersionesCotizacion } from "@/modulos/cotizaciones/componentes/versiones-cotizacion";
 import { obtenerCotizacion } from "@/modulos/cotizaciones/consultas";
-import { NOMBRE_ESTADO, NOMBRE_MOTIVO, TONO_ESTADO } from "@/modulos/cotizaciones/reglas";
+import { estadoEnlace, NOMBRE_ESTADO, NOMBRE_MOTIVO, rutaEnlace, TONO_ESTADO } from "@/modulos/cotizaciones/reglas";
 import { rutaTrabajo } from "@/modulos/ordenes/reglas";
 import { aqui, conDesde, volverDesde } from "@/lib/volver";
+import { urlSitio } from "@/lib/sitio";
+import { obtenerDatosPublicos, obtenerPlantillas } from "@/modulos/configuracion/consultas";
+import { mensajeCotizacion } from "@/modulos/ordenes/mensajes";
 
 export const metadata: Metadata = { title: "Cotización" };
 
@@ -55,7 +58,14 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
   const numero = Number(id);
   if (!Number.isInteger(numero) || numero <= 0) notFound();
   const puedeAgendar = puedeVerModulo(usuario, "agenda");
-  const [c, reservas] = await Promise.all([obtenerCotizacion(numero), puedeAgendar ? reservasDeConsulta(numero) : []]);
+  // Las plantillas y el negocio, para "Enviar por WhatsApp" (pedido 47), junto con la cotización: están en caché
+  const conEnvio = puede(usuario, "cotizar");
+  const [c, reservas, plantillas, negocio] = await Promise.all([
+    obtenerCotizacion(numero),
+    puedeAgendar ? reservasDeConsulta(numero) : [],
+    conEnvio ? obtenerPlantillas() : null,
+    conEnvio ? obtenerDatosPublicos() : null,
+  ]);
   if (!c) notFound();
   // Pedido 43: "Volver" a la pantalla de la que se vino; los enlaces que salen de aquí dicen que vienen de esta cotización
   const volver = volverDesde(parametros.volver, { href: "/panel/cotizaciones", texto: "Cotizaciones" }, usuario);
@@ -72,6 +82,31 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
   const cotiza = puede(usuario, "cotizar");
   const recienGuardada = typeof version === "string" ? c.versiones.find((v) => String(v.id) === version) : undefined;
   const sinPdf = sinpdf && !c.versiones[0].tienePdf;
+  // Pedido 47: "Enviar por WhatsApp" en cada versión que se puede mandar (vale y tiene su PDF), con la plantilla de
+  // Configuración > Mensajes y el enlace para el cliente
+  const hoy = fechaEnBolivia();
+  const rechazada = c.estado === "perdido";
+  const aEnviar = cotiza ? c.versiones.filter((v) => v.tienePdf && estadoEnlace({ ...v, rechazada }, hoy) === "vale") : [];
+  const enviar = new Map(
+    plantillas && negocio
+      ? aEnviar.map((v) => [
+          v.id,
+          enlaceWhatsApp(
+            c.telefono,
+            mensajeCotizacion({
+              plantilla: plantillas.cotizacion,
+              negocio: negocio.nombre,
+              cliente: c.cliente,
+              vehiculo: { marca: c.marca, modelo: c.modelo, placa: c.placa },
+              numero: v.numero,
+              enlace: `${urlSitio()}${rutaEnlace(v.enlace)}`,
+            }),
+          ),
+        ])
+      : [],
+  );
+  // Un solo WhatsApp a la vista (C6): con "Enviar por WhatsApp" en una versión, escribir sin el mensaje queda en "Más"
+  const escribir = enlaceWhatsApp(c.telefono);
 
   // El paso siguiente, uno solo: en una pendiente, "Aceptó"; en una aceptada sin fecha, el atajo a la Agenda
   const paso =
@@ -97,12 +132,15 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
         }
         accion={
           <div className="flex flex-wrap gap-2">
-            <a href={enlaceWhatsApp(c.telefono)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
-              <IconoWhatsApp />
-              Escribir por WhatsApp
-            </a>
+            {enviar.size === 0 && (
+              <a href={escribir} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
+                <IconoWhatsApp />
+                Escribir por WhatsApp
+              </a>
+            )}
             <MasCotizacion
               id={c.id}
+              escribir={enviar.size > 0 ? escribir : null}
               nuevaVersion={pendiente && vigente && cotiza ? conDesde(`/panel/cotizaciones/${c.id}/nueva-version?desde=${vigente.id}`, desdeAqui) : null}
               cambios={pendiente ? ["rechazar"] : c.sinFecha ? ["rechazar", "reabrir"] : c.estado === "perdido" ? ["reabrir"] : []}
             />
@@ -115,7 +153,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
       {pasoActual !== null && <PasosTrabajo paso={pasoActual} />}
       {paso && <PasoSiguiente>{paso}</PasoSiguiente>}
       {(creada || recienGuardada) && (
-        <AvisoFlotante mensaje={`${creada ? "Cotización creada." : `Versión ${recienGuardada!.version} guardada.`}${sinPdf ? "" : " Comparte el PDF con el cliente."}`} />
+        <AvisoFlotante mensaje={`${creada ? "Cotización creada." : `Versión ${recienGuardada!.version} guardada.`}${sinPdf ? "" : " Envíasela al cliente por WhatsApp."}`} />
       )}
       {/* Lo que pide hacer algo no es temporal: queda a la vista hasta generarlo (con el PDF ya generado, se va solo) */}
       {(creada || recienGuardada) && sinPdf && (
@@ -151,7 +189,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
 
         <section aria-labelledby="versiones-titulo" className="flex flex-col gap-2 @4xl:order-first">
           <CabeceraSeccion id="versiones" titulo={c.versiones.length > 1 ? "Versiones" : "Precio"} />
-          <VersionesCotizacion consultaId={c.id} versiones={c.versiones} />
+          <VersionesCotizacion consultaId={c.id} versiones={c.versiones} enviar={enviar} />
         </section>
       </div>
 

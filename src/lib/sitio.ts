@@ -30,4 +30,5 @@ export const PAGINAS_SECUNDARIAS: EnlaceSitio[] = [
 export const PAGINAS_SITIO = ["/", ...PAGINAS_PRINCIPALES.map((p) => p.href), ...PAGINAS_SECUNDARIAS.map((p) => p.href)];
 
 /** Lo que nunca va a Google: el panel, el ingreso y la API. */
-export const RUTAS_PRIVADAS = ["/panel", "/ingresar", "/api"] as const;
+// "/c/": los enlaces de las cotizaciones que se mandan a cada cliente (pedido 47)
+export const RUTAS_PRIVADAS = ["/panel", "/ingresar", "/api", "/c/"] as const;

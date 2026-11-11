@@ -83,7 +83,7 @@ Cada requisito tiene un código para rastrearlo hasta su historia de usuario y s
 | RF-30 | Cada cotización tiene un estado: pendiente, aceptada (al agendarla) o rechazada (con motivo: precio, no respondió u otro). Una rechazada puede volver a pendiente (pedido 23; antes, el de la consulta). | 2 | Imprescindible | Prop, pedido 23 |
 | RF-31 | El dueño o el encargado con el permiso crea la cotización: servicios con precio sugerido del catálogo según el tamaño del vehículo, que puede ajustar, descuento, total, adelanto sugerido y validez (pedidos 23 y 24: sin consulta antes y sin fotos). | 2 | Imprescindible | Acl-2, Enc-13, pedidos 23 y 24 |
 | RF-32 | La cotización se genera en PDF con logo, datos del cliente y del vehículo, detalle, total, validez, condiciones y garantía, formas de pago, adelanto y fotos. | 2 | Imprescindible | Enc-19 |
-| RF-33 | El PDF se puede descargar o imprimir; desde el celular se comparte directo a WhatsApp o correo con el menú de compartir del teléfono. | 2 | Imprescindible | Acl-2, Cot |
+| RF-33 | El PDF se puede descargar o imprimir; desde el celular se comparte directo a WhatsApp o correo con el menú de compartir del teléfono. "Enviar por WhatsApp" abre el chat del cliente con un mensaje y un enlace al PDF, que se ve sin cuenta mientras la cotización vale (pedido 47). | 2 | Imprescindible | Acl-2, Cot |
 | RF-34 | Modificar una cotización enviada crea una nueva versión; las anteriores conservan sus precios. | 2 | Imprescindible | Prop |
 | RF-35 | El personal ve la lista de cotizaciones por estado, con búsqueda y los días transcurridos desde el último movimiento; las pendientes sin respuesta se resaltan. | 2 | Imprescindible | Cot, pedido 23 |
 

@@ -1,20 +1,22 @@
 import { cn } from "cn";
 import { FileTextIcon } from "lucide-react";
-import { MenuMas } from "@/componentes/panel/menu-mas";
+import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import type { EstadoCotizacion } from "@/db/esquema/cotizaciones";
 import { formatearFecha, formatearFechaHora } from "@/lib/fechas";
 import type { FilaVersion } from "../consultas";
 import { bs, nombreArchivoPdf, rutaPdf } from "../reglas";
-import { CompartirPdf } from "./compartir-pdf";
+import { MasPdf } from "./compartir-pdf";
 import { GenerarPdf } from "./generar-pdf";
 
 // Las versiones de una cotización, de la más nueva a la más vieja (RN-02): cada una con su total, su validez, si fue
 // por fotos (RN-03) y su PDF, que se ve, se comparte con el menú del teléfono (HU-27) o se descarga. La reemplazada
 // queda tal como se envió, en tinta suave.
 // Pulido 13.50: cada servicio con su opción en gris debajo (como en la orden) y su precio sin negrita (la negrita, para el
-// total); cada versión dice quién la cotizó. La que vale (vigente o aceptada) se comparte y se ve; descargarla, en su
-// "⋯". Una reemplazada ya no se comparte: "Ver PDF" y, en su "⋯", descargarla (lo que se envió, con su nombre).
+// total); cada versión dice quién la cotizó. Una reemplazada ya no se comparte: "Ver PDF" y, en su "⋯", descargarla (lo
+// que se envió, con su nombre).
+// Pedido 47: la que vale lleva "Enviar por WhatsApp" (el chat del cliente con el mensaje y el enlace al PDF) y "Ver PDF";
+// compartir el archivo y descargarlo, en su "⋯".
 
 const NOMBRE: Record<EstadoCotizacion, string> = { enviada: "Vigente", reemplazada: "Reemplazada", aceptada: "Aceptada" };
 const INSIGNIA: Record<EstadoCotizacion, string> = {
@@ -23,7 +25,14 @@ const INSIGNIA: Record<EstadoCotizacion, string> = {
   aceptada: "tt-estado tt-estado--exito",
 };
 
-export function VersionesCotizacion({ consultaId, versiones }: { consultaId: number; versiones: FilaVersion[] }) {
+type Props = {
+  consultaId: number;
+  versiones: FilaVersion[];
+  /** El chat del cliente con el mensaje y el enlace, por versión: solo las que se mandan (valen y tienen PDF). */
+  enviar: Map<number, string>;
+};
+
+export function VersionesCotizacion({ consultaId, versiones, enviar }: Props) {
   // Con una sola versión, su nombre no aporta: es "la cotización"
   const varias = versiones.length > 1;
   return (
@@ -73,18 +82,23 @@ export function VersionesCotizacion({ consultaId, versiones }: { consultaId: num
             <span className="flex flex-wrap gap-2 pt-2">
               {c.tienePdf ? (
                 <>
-                  {c.estado !== "reemplazada" && (
-                    <CompartirPdf ruta={ruta} nombre={nombreArchivoPdf(c.numero, c.version)} titulo={`Cotización ${c.numero}${c.version > 1 ? `, versión ${c.version}` : ""}`} />
+                  {enviar.has(c.id) && (
+                    <a href={enviar.get(c.id)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
+                      <IconoWhatsApp />
+                      Enviar por WhatsApp
+                    </a>
                   )}
                   {/* La ruta lleva al enlace firmado; en otra pestaña, para volver a la ficha */}
                   <a href={ruta} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
                     <FileTextIcon />
                     Ver PDF
                   </a>
-                  <MenuMas
-                    icono
+                  <MasPdf
+                    ruta={ruta}
+                    nombre={nombreArchivoPdf(c.numero, c.version)}
+                    titulo={`Cotización ${c.numero}${c.version > 1 ? `, versión ${c.version}` : ""}`}
+                    conCompartir={c.estado !== "reemplazada"}
                     etiqueta={`Opciones del PDF${varias ? ` de la versión ${c.version}` : ""}`}
-                    acciones={[{ texto: "Descargar PDF", href: `${ruta}?descargar=1`, descarga: true }]}
                   />
                 </>
               ) : (

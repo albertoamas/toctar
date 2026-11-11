@@ -56,7 +56,7 @@ El perfil **Taller** recibe, trabaja, avisa y entrega los vehículos. **No ve pr
 ### Cotizar
 1. **"Nueva cotización"** (en Cotizaciones o en la ficha del cliente), en tres pasos: **Cliente**, **Vehículo** y **Servicios y precio**.
 2. Cada servicio trae el precio del catálogo para el tamaño del vehículo. Se puede ajustar, y se puede sumar un descuento.
-3. Al crearla queda su **PDF**. Con **"Compartir"** se manda por WhatsApp.
+3. Al crearla queda su **PDF**. Con **"Enviar por WhatsApp"** se abre el chat del cliente con un mensaje y el enlace al PDF: solo hay que tocar Enviar. Para mandar el archivo, **"Compartir el PDF"** en el "⋯" de la versión.
 4. Cuando el cliente responde: **"Aceptó"** (queda en **"Por reservar"** de la Agenda) o **"Rechazar"** (en "Más", con el motivo).
 5. **Una cotización enviada no cambia su precio ni su PDF.** Si hay que cambiar algo, **"Nueva versión"** (en "Más"): la anterior queda como estaba.
 

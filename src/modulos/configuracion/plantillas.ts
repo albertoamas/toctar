@@ -15,6 +15,8 @@ const CAMPOS = {
   saldo: "«Saldo pendiente: 350 Bs.» si debe algo y quien avisa ve los pagos. Si no, se quita.",
   monto: "Lo que debe: «350 Bs».",
   servicio: "El servicio que toca mantener.",
+  numero: "El número de la cotización: «2026-0042».",
+  enlace: "El enlace para ver la cotización en PDF. Si lo quitas, va al final del mensaje.",
 } as const;
 export type Campo = keyof typeof CAMPOS;
 
@@ -31,6 +33,12 @@ export const PLANTILLAS = {
     campos: ["nombre", "vehiculo", "negocio", "monto"],
     original:
       "Hola {nombre}, te escribimos de {negocio} por el saldo de {monto} del servicio de tu {vehiculo}. Puedes pagarlo en el taller, por QR o por transferencia.",
+  },
+  cotizacion: {
+    titulo: "Cotización",
+    cuando: "Se envía desde la cotización, con el enlace para verla en PDF.",
+    campos: ["nombre", "vehiculo", "negocio", "numero", "enlace"],
+    original: "Hola {nombre}, te mandamos la cotización {numero} de {negocio} para tu {vehiculo}: {enlace}",
   },
   mantenimiento: {
     titulo: "Mantenimiento",

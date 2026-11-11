@@ -49,6 +49,13 @@ export const cotizacion = pgTable(
     estado: text("estado").$type<EstadoCotizacion>().default("enviada").notNull(),
     /** El PDF guardado (HU-26). Vacío solo mientras se genera. */
     pdfArchivoId: integer("pdf_archivo_id").references(() => archivo.id),
+    /**
+     * Pedido 47: el código del enlace que se le manda al cliente por WhatsApp (`/c/<código>`), para ver el PDF sin cuenta.
+     * 122 bits aleatorios: no se adivina. Lo pone la base al crear la versión.
+     */
+    enlace: text("enlace")
+      .default(sql`replace(gen_random_uuid()::text, '-', '')`)
+      .notNull(),
     createdAt: momento("created_at").defaultNow().notNull(),
     createdBy: integer("created_by")
       .notNull()
@@ -56,6 +63,7 @@ export const cotizacion = pgTable(
   },
   (t) => [
     uniqueIndex("cotizacion_numero_version").on(t.numero, t.version),
+    uniqueIndex("cotizacion_enlace_unico").on(t.enlace),
     index("cotizacion_por_consulta").on(t.consultaId),
     check("cotizacion_estado_valido", sql`${t.estado} in ('enviada', 'reemplazada', 'aceptada')`),
     check("cotizacion_descuento_valido", sql`${t.descuento} >= 0`),
