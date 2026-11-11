@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "Reclamos" };
 
 // HU-17: reclamos que llegan desde el sitio, en una tabla (pedido 26): quién, cuándo, la placa, el servicio, las fotos y
 // el estado; toda la fila abre el reclamo. Dueño y encargado con el módulo "reclamos". Abre en "Pendientes", lo que hay que
-// atender, como Cotizaciones (inventario-pantallas.md, cambio 5); "Todos", con `?ver=todos`.
+// atender, como Cotizaciones (inventario-pantallas.md, cambio 4d); "Todos", con `?ver=todos`.
 export default function PaginaReclamos({ searchParams }: PageProps<"/panel/reclamos">) {
   return (
     <PaginaPanel tipo="lista">
@@ -36,7 +36,6 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/reclamos">, "searc
   const reclamos = await listarReclamos(soloPendientes);
   const fecha = (d: Date) => formatearFecha(fechaEnBolivia(d));
   // Cuántos hay por atender, a la vista en su pestaña (pulido 5.1). Sale de la misma lista.
-  const conFotos = reclamos.some((r) => r.fotos > 0);
   const pendientes = soloPendientes ? reclamos.length : reclamos.filter((r) => r.estado === "pendiente").length;
 
   return (
@@ -61,8 +60,8 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/reclamos">, "searc
             { titulo: "Fecha", ancho: "6.5rem", movil: "par" },
             { titulo: "Placa", ancho: "6.5rem", movil: "par" },
             { titulo: "Servicio", ancho: "minmax(0,1.4fr)", movil: "detalle" },
-            // Solo si alguno trae fotos: sin ninguna, una columna vacía (inventario-pantallas.md, cambio 5)
-            ...(conFotos ? [{ titulo: "Fotos", ancho: "5rem", movil: "detalle" } as const] : []),
+            // Solo si alguno trae fotos: sin ninguna, era una columna vacía (inventario-pantallas.md, cambio 4d)
+            { titulo: "Fotos", ancho: "5rem", movil: "detalle", ocultarSiVacia: true },
             { titulo: "Estado", ancho: "7rem", movil: "estado" },
           ]}
           filas={reclamos.map((r) => ({
@@ -82,17 +81,13 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/reclamos">, "searc
                   <span className="hidden @2xl:inline">No indicó</span>
                 </span>
               ),
-              ...(conFotos
-                ? [
-                    // Sin fotos, nada: "Sin fotos" en cada fila no decía nada
-                    r.fotos > 0 ? (
-                      <span key="f" className="inline-flex items-center gap-1">
-                        <ImageIcon className="size-4 text-tinta-suave" aria-hidden />
-                        {r.fotos === 1 ? "1 foto" : `${r.fotos} fotos`}
-                      </span>
-                    ) : null,
-                  ]
-                : []),
+              // Sin fotos, nada: "Sin fotos" en cada fila no decía nada
+              r.fotos > 0 ? (
+                <span key="f" className="inline-flex items-center gap-1">
+                  <ImageIcon className="size-4 text-tinta-suave" aria-hidden />
+                  {r.fotos === 1 ? "1 foto" : `${r.fotos} fotos`}
+                </span>
+              ) : null,
               <InsigniaEstado key="e" estado={r.estado} />,
             ],
           }))}
