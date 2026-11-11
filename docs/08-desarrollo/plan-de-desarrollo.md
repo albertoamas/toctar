@@ -77,8 +77,8 @@ Todo lo programable está en `develop` y en `pruebas.toctardetailing.com`. Lo qu
 | 1. De pie en el taller | Recibir vehículo, Entregar vehículo | ✅ 09/11 (pulido 13.30) |
 | 2. Flujos en pasos | Nueva reserva, Nueva cotización, Nueva versión | ✅ 10/11 (pulido 13.31, 13.33 y 13.35; cobrar 13.32 y los plegados 13.34) |
 | 3. Todos los días | Inicio, Agenda, Saldos, Mantenimientos | 🔵 Inicio ✅ (13.36), Agenda ✅ (13.37), Saldos ✅ (13.38), Mantenimientos ✅ (13.39) |
-| 4. Menos usadas | Ficha del cliente, Servicio del catálogo, Cambiar dueño, Publicar en la galería, Galería del panel | ⏳ |
-| 5. Listas | Órdenes, Clientes, Cotizaciones, Reclamos, Catálogo, Usuarios | ⏳ |
+| 4. Menos usadas | Ficha del cliente, Servicio del catálogo, Cambiar dueño, Publicar en la galería, Galería del panel | ✅ 10/11 (pulido 13.40 a 13.44; inventario, cambios 1b a 4c) |
+| 5. Listas | Órdenes, Clientes, Cotizaciones, Reclamos, Catálogo, Usuarios | ✅ 10/11 (la barra común, 13.40; Reclamos y Catálogo, 13.45) |
 
 **Desde el 10/11, el inventario de las 40 pantallas manda:** `inventario-pantallas.md` (formato en la computadora y en el celular, qué se cambia y por qué, para que todo el panel sea consistente). Mientras tenga cambios abiertos, las prioridades 4 y 5 quedan en pausa.
 

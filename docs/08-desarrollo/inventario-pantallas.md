@@ -39,12 +39,12 @@ Hasta una laptop de 1280 px (con el menú, el área de trabajo mide unos 970 px)
 | 1 | Inicio ✓ | 5 tarjetas de números, "Para hoy" en tabla, "Para atender" al costado | Tarjetas compactas, filas | Mantener | — | Sí | — |
 | 2 | Configuración | Portada con tarjetas | Tarjetas apiladas | Mantener | — | Sí | — |
 | 3 | Sitio web | Portada con tarjetas | Tarjetas apiladas | Mantener | — | Sí | — |
-| 4 | Órdenes | Tabla, pestañas y búsqueda | Filas | Mantener; mirarla en la prioridad 5 | — | Sí | — |
-| 5 | Clientes | Tabla y búsqueda | Filas | Mantener; prioridad 5 | — | Sí | — |
-| 6 | Cotizaciones | Tabla y pestañas | Filas | Mantener; prioridad 5 | — | Sí | — |
-| 7 | Reclamos | Tabla y pestañas | Filas | Mantener; prioridad 5 | — | Sí | — |
-| 8 | Catálogo y precios | Tabla; "Agregar servicio" en un modal | Filas | Mantener; prioridad 5 | — | Sí | — |
-| 9 | Usuarios | Tabla | Filas | Mantener; prioridad 5 | — | Sí | — |
+| 4 | Órdenes | Tabla, pestañas y búsqueda | Filas | Revisada (cambio 4d): sin cambios | — | Sí | — |
+| 5 | Clientes | Tabla y búsqueda | Filas | Revisada (cambio 4d): sin cambios | — | Sí | — |
+| 6 | Cotizaciones | Tabla y pestañas | Filas | Revisada (cambio 4d): sin cambios | — | Sí | — |
+| 7 | Reclamos | Tabla y pestañas; abre en Pendientes | Filas | Revisada (cambio 4d) | — | Sí | — |
+| 8 | Catálogo y precios | Tabla; "Agregar servicio" en un modal | Filas | Revisada (cambio 4d) | — | Sí | — |
+| 9 | Usuarios | Tabla | Filas | Revisada (cambio 4d): sin cambios | — | Sí | — |
 | 10 | Agenda ✓ | Tablero de la semana y "Por reservar" | Un día a la vez, con pestañas | Mantener | El único calendario del panel, a propósito | Sí | — |
 | 11 | **Saldos pendientes** ✓ | Filas con botones a la derecha | Tarjetas con los botones lado a lado | **Cambiar en la computadora: tabla con columna de acciones** | Con Mantenimientos, las únicas listas que no son tabla en la computadora | Sí | ✅ 10/11 (cambio 1) |
 | 12 | **Mantenimientos** | Tarjetas | Tarjetas | **Cambiar en la computadora: tabla con acciones, como Saldos; sin calendario** (la Agenda ya lo es, y sus fechas son aproximadas). Además: sin "Vencidos (0)" vacío y "Cerrados" con la fila como enlace | La misma | Sí | ✅ 10/11 (cambio 1) |
@@ -85,10 +85,11 @@ Hasta una laptop de 1280 px (con el menú, el área de trabajo mide unos 970 px)
 | 1b | **La barra de las listas** (ver abajo): las mismas piezas y en el mismo orden en toda lista | Clientes, Cotizaciones, Órdenes, Saldos, Reclamos, Mantenimientos, Usuarios, Catálogo, Galería | ✅ 10/11 |
 | 2 | Nuevo usuario con `PieFormulario` (y `AvisoAlSalir`, que ahora también anuncia "Hay cambios sin guardar."); `BarraGuardar` se va | Nuevo usuario | ✅ 10/11 |
 | 3 | Publicar en la galería con `PieFormulario` y el botón grande del taller (`size="paso"`) | Publicar en la galería | ✅ 10/11 |
-| 4 | Revisar en pantalla las de la prioridad 4 (Ficha del cliente, Servicio del catálogo, Cambiar de dueño) y las listas de la prioridad 5 | 17, 18, 37 y 4 a 9 | ⏳ Sigue |
+| 4 | Revisar en pantalla las de la prioridad 4 (Ficha del cliente, Servicio del catálogo, Cambiar de dueño) y las listas de la prioridad 5 | 17, 18, 37 y 4 a 9 | ✅ 10/11 |
 | 4a | Ficha del cliente: Reservas en tabla como Cotizaciones, las dos con la placa en cada fila; el número arriba en el celular; "Editar" con texto en cada vehículo | Ficha del cliente | ✅ 10/11 |
 | 4b | Servicio del catálogo: sin la tarjeta Variantes ("Editar variantes" en el título de Precios); "Catálogo" solo si está inactivo | Servicio del catálogo | ✅ 10/11 |
 | 4c | Cambiar de dueño: la tarjeta "Vehículo" (`Seccion` con `DatosVehiculo`), sin el dueño repetido; los bloqueos como aviso con su botón para resolverlos; la línea de contexto de `EncabezadoPagina` alineada con el título | Cambiar de dueño | ✅ 10/11 |
+| 4d | Listas de la prioridad 5: Reclamos abre en "Pendientes" (la que se atiende, como Cotizaciones; un enlace viejo con `?ver=pendientes` también) y "Todos" con `?ver=todos`; sin columnas vacías: Fotos en Reclamos y "Falta" (antes "Estado") en Catálogo, solo si alguna fila tiene algo. Órdenes, Clientes, Cotizaciones y Usuarios, sin cambios | Reclamos, Catálogo | ✅ 10/11 |
 
 Al cerrar cada cambio: su entrada en `pulido-visual.md`, el estado aquí y en el plan.
 
@@ -108,7 +109,7 @@ Antes cada lista armaba su buscador, sus filtros y su orden a su manera. Prototi
 | Cotizaciones | Pendientes, Aceptadas, Rechazadas (con cuenta) | ✓ | — | — | — |
 | Órdenes | En el taller, Entregadas | ✓ en las dos (en el taller, nuevo) | Por estado, en el taller | — | — |
 | Saldos | — | ✓ | — | Ordenar | El total y cuántas |
-| Reclamos | Todos, Pendientes (con cuenta) | — | — | — | — |
+| Reclamos | Pendientes (con cuenta, la que abre), Todos | — | — | — | — |
 | Mantenimientos | Por avisar, Más adelante, Cerrados (con cuenta) | — | — | — | — |
 | Usuarios | — | — | — | Desactivados | — |
 | Catálogo | — | — | — | Inactivos | — |
