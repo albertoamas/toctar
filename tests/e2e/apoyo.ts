@@ -272,10 +272,18 @@ export async function abrirParteNegocio(page: Page, parte: string): Promise<Loca
   return modal;
 }
 
-/** Cancela un modal con cambios sin guardar: confirma "Salir sin guardar" y espera a que se cierre (C6). */
+/**
+ * Cierra un modal con cambios sin guardar como un cierre sin querer (un toque afuera, sobre el fondo oscuro): el pie
+ * pregunta y se descartan (C6, pulido 13.48). "Cancelar" ya cierra sin preguntar. No con Escape: un campo de hora se lo
+ * queda.
+ */
 export async function cancelarConCambios(page: Page, modal: Locator): Promise<void> {
-  await modal.getByRole("button", { name: "Cancelar" }).click();
-  await page.getByRole("dialog", { name: "¿Salir sin guardar?" }).getByRole("button", { name: "Salir sin guardar" }).click();
+  await page.mouse.click(8, 8);
+  // Si la prueba escribió antes de que el modal tomara lo que tenía al abrirse (con la máquina cargada), no hay cambio
+  // que preguntar y ya se cerró; si no, pregunta y se descarta
+  const descartar = modal.getByRole("button", { name: "Descartar cambios" });
+  await expect(descartar.or(page.locator("body:not(:has([data-slot=dialog-content]:not([data-closed])))"))).toBeVisible();
+  if (await descartar.isVisible()) await descartar.click();
   await expect(modal).toHaveCount(0);
 }
 

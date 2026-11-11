@@ -74,10 +74,10 @@ async function cambiarYVolver(page: Page, id: number, placa: string) {
   await expect(page.getByText("Volvió el texto original.")).toBeVisible();
   await expect(otraVez.getByLabel("Mensaje", { exact: true })).toHaveValue(ORIGINAL);
   expect(await consultar("select 1 from plantilla_mensaje")).toEqual([]);
-  // Ya quedó guardado: cerrar no pregunta nada
-  await otraVez.getByRole("button", { name: "Cancelar" }).click();
+  // Ya quedó guardado: cerrarlo con Escape (que preguntaría con cambios) no pregunta nada
+  await page.keyboard.press("Escape");
   await expect(otraVez).toHaveCount(0);
-  await expect(page.getByRole("dialog", { name: "¿Salir sin guardar?" })).toHaveCount(0);
+  await expect(page.locator("[data-pregunta-salir]")).toHaveCount(0);
 }
 
 test("tocar un campo lo agrega donde está el cursor (o al final, si no se tocó el texto), y la vista previa lo muestra", async ({ page }) => {
