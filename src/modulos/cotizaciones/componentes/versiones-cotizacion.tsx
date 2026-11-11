@@ -1,5 +1,6 @@
 import { cn } from "cn";
-import { DownloadIcon, FileTextIcon } from "lucide-react";
+import { FileTextIcon } from "lucide-react";
+import { MenuMas } from "@/componentes/panel/menu-mas";
 import { buttonVariants } from "@/componentes/ui/button";
 import type { EstadoCotizacion } from "@/db/esquema/cotizaciones";
 import { formatearFecha, formatearFechaHora } from "@/lib/fechas";
@@ -11,6 +12,9 @@ import { GenerarPdf } from "./generar-pdf";
 // Las versiones de una cotización, de la más nueva a la más vieja (RN-02): cada una con su total, su validez, si fue
 // por fotos (RN-03) y su PDF, que se ve, se comparte con el menú del teléfono (HU-27) o se descarga. La reemplazada
 // queda tal como se envió, en tinta suave.
+// Pulido 13.50: cada servicio con su opción en gris debajo (como en la orden) y su precio sin negrita (la negrita, para el
+// total); cada versión dice quién la cotizó. La que vale (vigente o aceptada) se comparte y se ve; descargarla, en su
+// "⋯". Una reemplazada ya no se manda: solo "Ver PDF", para consultar lo que se envió.
 
 const NOMBRE: Record<EstadoCotizacion, string> = { enviada: "Vigente", reemplazada: "Reemplazada", aceptada: "Aceptada" };
 const INSIGNIA: Record<EstadoCotizacion, string> = {
@@ -42,8 +46,11 @@ export function VersionesCotizacion({ consultaId, versiones }: { consultaId: num
               <dl className="mb-1 flex flex-col divide-y divide-border text-sm">
                 {c.lineas.map((l, i) => (
                   <div key={i} className="flex justify-between gap-4 py-2 first:pt-0">
-                    <dt>{l.descripcion}</dt>
-                    <dd className="shrink-0 font-semibold tabular-nums">{bs(l.precio)}</dd>
+                    <dt className="flex min-w-0 flex-col">
+                      {l.servicio}
+                      {l.opcion && <span className="text-tinta-suave">{l.opcion}</span>}
+                    </dt>
+                    <dd className="shrink-0 tabular-nums">{bs(l.precio)}</dd>
                   </div>
                 ))}
                 {Number(c.descuento) > 0 && (
@@ -60,20 +67,27 @@ export function VersionesCotizacion({ consultaId, versiones }: { consultaId: num
               <span>Válida hasta {formatearFecha(c.validaHasta)}</span>
               <span>{c.esEstimado ? "Por fotos (estimado)" : "En persona"}</span>
             </span>
-            <span className="text-sm text-tinta-suave">{formatearFechaHora(c.createdAt)}</span>
+            <span className="text-sm text-tinta-suave">
+              {formatearFechaHora(c.createdAt)}, {c.autor}
+            </span>
             <span className="flex flex-wrap gap-2 pt-2">
               {c.tienePdf ? (
                 <>
+                  {c.estado !== "reemplazada" && (
+                    <CompartirPdf ruta={ruta} nombre={nombreArchivoPdf(c.numero, c.version)} titulo={`Cotización ${c.numero}${c.version > 1 ? `, versión ${c.version}` : ""}`} />
+                  )}
                   {/* La ruta lleva al enlace firmado; en otra pestaña, para volver a la ficha */}
                   <a href={ruta} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
                     <FileTextIcon />
                     Ver PDF
                   </a>
-                  <CompartirPdf ruta={ruta} nombre={nombreArchivoPdf(c.numero, c.version)} titulo={`Cotización ${c.numero}${c.version > 1 ? `, versión ${c.version}` : ""}`} />
-                  <a href={`${ruta}?descargar=1`} className={cn(buttonVariants({ variant: "outline" }))}>
-                    <DownloadIcon />
-                    Descargar
-                  </a>
+                  {c.estado !== "reemplazada" && (
+                    <MenuMas
+                      icono
+                      etiqueta={`Opciones del PDF${varias ? ` de la versión ${c.version}` : ""}`}
+                      acciones={[{ texto: "Descargar PDF", href: `${ruta}?descargar=1`, descarga: true }]}
+                    />
+                  )}
                 </>
               ) : (
                 // Cualquier versión sin PDF lo puede generar: sale de lo copiado al cotizarla

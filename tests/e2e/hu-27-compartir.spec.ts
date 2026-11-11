@@ -84,7 +84,7 @@ test("si el teléfono no lo permite ni al segundo toque, avisa y no queda trabad
   await cotizada(page, info, 4);
   await page.getByRole("button", { name: "Compartir" }).click();
   await page.getByRole("button", { name: "Compartir ahora" }).click();
-  await expect(page.getByText("No se pudo compartir el PDF. Usa «Descargar» y mándalo desde WhatsApp.")).toBeVisible();
+  await expect(page.getByText("No se pudo compartir el PDF. Descárgalo desde «⋯» y mándalo desde WhatsApp.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Compartir", exact: true })).toBeEnabled();
 });
 

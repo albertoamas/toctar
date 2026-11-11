@@ -71,8 +71,14 @@ test("al guardar se genera el PDF; se ve, se descarga con su nombre y una versi�
   expect(nuevo.r.headers()["content-disposition"]).toBe(`inline; filename="Cotizacion-${v1.numero}-v2.pdf"`);
   expect(huella(nuevo.cuerpo)).not.toBe(antes);
   expect(huella((await bajarPdf(page.request, consultaId, v1.id)).cuerpo)).toBe(antes);
-  // Las dos versiones muestran su PDF en la ficha
+  // Las dos versiones muestran su PDF en la ficha; la reemplazada solo se ve: compartir y descargar, en la que vale, con
+  // descargar en su "⋯" (pulido 13.50)
   await expect(page.getByRole("link", { name: "Ver PDF" })).toHaveCount(2);
+  await expect(page.getByRole("button", { name: "Compartir" })).toHaveCount(1);
+  await page.getByRole("button", { name: "Opciones del PDF de la versión 2" }).click();
+  await expect(page.getByRole("menuitem", { name: "Descargar PDF" })).toHaveAttribute("href", `/panel/cotizaciones/${consultaId}/pdf/${v2.id}?descargar=1`);
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: /^Opciones del PDF/ })).toHaveCount(1);
   // Un enlace de antes del pedido 23 (/cotizaciones/<versión>/pdf) lleva al de ahora
   expect((await page.request.get(`/panel/cotizaciones/${v1.id}/pdf?descargar=1`)).headers()["content-disposition"]).toBe(`attachment; filename="Cotizacion-${v1.numero}.pdf"`);
   // Una versión pedida con otra cotización en la dirección no se encuentra (pedido 23)
