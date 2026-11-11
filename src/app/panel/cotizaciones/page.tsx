@@ -16,6 +16,7 @@ import { ListaCotizaciones } from "@/modulos/cotizaciones/componentes/lista-coti
 import { contarPorVista, LIMITE_HISTORIA, listarCotizaciones } from "@/modulos/cotizaciones/consultas";
 import { VISTAS, type Vista } from "@/modulos/cotizaciones/reglas";
 import { BarraLista } from "@/componentes/panel/barra-lista";
+import { aqui } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Cotizaciones" };
 
@@ -94,7 +95,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/cotizaciones">, "s
       ) : (
         <>
           {/* En cada pestaña el estado ya se sabe: no se repite en las filas */}
-          <ListaCotizaciones cotizaciones={cotizaciones} umbral={parametrosNegocio.dias_cotizacion_sin_respuesta} conEstado={false} />
+          <ListaCotizaciones cotizaciones={cotizaciones} umbral={parametrosNegocio.dias_cotizacion_sin_respuesta} conEstado={false} desde={aqui("/panel/cotizaciones", parametros)} />
           {hayMas && <p className="text-sm text-tinta-suave">Se muestran las {LIMITE_HISTORIA} más recientes. Busca para encontrar otra.</p>}
         </>
       )}

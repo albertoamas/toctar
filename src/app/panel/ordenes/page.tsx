@@ -20,6 +20,7 @@ import { ordenesAbiertas, ordenesEntregadas, type OrdenEnLista, type OrdenEntreg
 import { ENTREGADAS_POR_PAGINA, ESTADOS_ORDEN_ABIERTA, estaAtrasada, estadoFiltrado, filtrarOrdenes, textoEntrega } from "@/modulos/ordenes/reglas";
 import { BarraLista } from "@/componentes/panel/barra-lista";
 import { normalizarBusqueda } from "@/modulos/clientes/reglas";
+import { aqui } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Órdenes" };
 
@@ -61,17 +62,17 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/ordenes">, "search
           {/* Fuera de la lista: al buscar, el campo no se vuelve a montar y no pierde el foco */}
           <BarraLista buscador={<Buscador etiqueta="Buscar por placa, cliente o fecha de entrega" ejemplo="Placa, cliente o fecha (5/10)" />} />
           <Suspense fallback={<Cargando />}>
-            <Entregadas q={typeof parametros.q === "string" ? parametros.q : ""} pagina={Number(parametros.pagina)} />
+            <Entregadas q={typeof parametros.q === "string" ? parametros.q : ""} pagina={Number(parametros.pagina)} desde={aqui("/panel/ordenes", parametros)} />
           </Suspense>
         </>
       ) : (
-        <EnElTaller filtro={estadoFiltrado(parametros.estado)} q={typeof parametros.q === "string" ? parametros.q : ""} />
+        <EnElTaller filtro={estadoFiltrado(parametros.estado)} q={typeof parametros.q === "string" ? parametros.q : ""} desde={aqui("/panel/ordenes", parametros)} />
       )}
     </>
   );
 }
 
-async function EnElTaller({ filtro, q }: { filtro: (typeof ESTADOS_ORDEN_ABIERTA)[number] | null; q: string }) {
+async function EnElTaller({ filtro, q, desde }: { filtro: (typeof ESTADOS_ORDEN_ABIERTA)[number] | null; q: string; /** Esta lista, para "Volver" (pedido 43). */ desde: string }) {
   const todas = await ordenesAbiertas();
   const hoy = fechaEnBolivia();
   if (todas.length === 0) {
@@ -109,7 +110,7 @@ async function EnElTaller({ filtro, q }: { filtro: (typeof ESTADOS_ORDEN_ABIERTA
             : `Ninguna orden ${NOMBRE_FILTRO[filtro!].toLowerCase()} ahora.`}
         </EstadoVacio>
       ) : (
-        <TablaLista etiqueta="Órdenes en el taller" columnas={COLUMNAS_TALLER} filas={visibles.map((o) => filaOrden(o, hoy))} />
+        <TablaLista etiqueta="Órdenes en el taller" columnas={COLUMNAS_TALLER} filas={visibles.map((o) => filaOrden(o, hoy))} desde={desde} />
       )}
     </>
   );
@@ -146,7 +147,7 @@ function filaOrden(o: OrdenEnLista, hoy: string): FilaTabla {
 }
 
 /** El historial (pedido 28): la más reciente primero, con su búsqueda y de a páginas. */
-async function Entregadas({ q, pagina }: { q: string; pagina: number }) {
+async function Entregadas({ q, pagina, desde }: { q: string; pagina: number; /** Esta lista, para "Volver" (pedido 43). */ desde: string }) {
   // Una página rara (texto, 0, Infinity) es la primera; una después de la última, la última
   let pedida = Number.isSafeInteger(pagina) && pagina > 1 ? pagina : 1;
   let { ordenes, total } = await ordenesEntregadas({ q, pagina: pedida });
@@ -167,7 +168,7 @@ async function Entregadas({ q, pagina }: { q: string; pagina: number }) {
         <EstadoVacio>{q.trim() ? `Ninguna entregada coincide con «${q.trim()}».` : "Todavía no se entregó ninguna orden."}</EstadoVacio>
       ) : (
         <>
-          <TablaLista etiqueta="Órdenes entregadas" columnas={COLUMNAS_ENTREGADAS} filas={ordenes.map(filaEntregada)} />
+          <TablaLista etiqueta="Órdenes entregadas" columnas={COLUMNAS_ENTREGADAS} filas={ordenes.map(filaEntregada)} desde={desde} />
           {paginas > 1 && (
             <nav aria-label="Páginas" className="flex flex-wrap items-center gap-3">
               {pedida > 1 && (

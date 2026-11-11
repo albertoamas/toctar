@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { cn } from "cn";
@@ -15,6 +15,7 @@ import { buscarClientes } from "@/modulos/clientes/consultas";
 import { normalizarBusqueda } from "@/modulos/clientes/reglas";
 import { BarraLista } from "@/componentes/panel/barra-lista";
 import { PildoraVista } from "@/componentes/panel/pildora-vista";
+import { aqui, conDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Clientes" };
 
@@ -71,7 +72,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/clientes">, "searc
         etiqueta={desactivados ? "Clientes desactivados" : "Clientes"}
         clientes={clientes}
         busqueda={busqueda}
-        href={(id) => `/panel/clientes/${id}`}
+        href={(id) => conDesde(`/panel/clientes/${id}` as Route, aqui("/panel/clientes", parametros))}
         atenuadas={desactivados}
       />
       {hayMas && <p className="text-sm text-tinta-suave">Hay más clientes: escribe algo más preciso para encontrar el que buscas.</p>}

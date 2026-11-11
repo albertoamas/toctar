@@ -20,6 +20,7 @@ test("una orden vuelve a la pantalla de la que se abrió, y sin origen (o con un
   await page.goto(`/panel/clientes/${clienteId}`);
   await page.getByRole("list", { name: "Reservas" }).getByRole("link").first().click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?volver=`));
+  await expect(volverA(page, "Cliente")).toHaveAttribute("href", `/panel/clientes/${clienteId}`);
   await volverA(page, "Cliente").click();
   await expect(page).toHaveURL(new RegExp(`/panel/clientes/${clienteId}$`));
 
@@ -40,11 +41,13 @@ test("una lista vuelve con su filtro y su búsqueda", async ({ page }, info) => 
   await crearClienteEnBase({ nombre: `Volver lista ${s}`, telefono: telefono(info, 2), placa });
   const id = await crearOrdenLista({ placa, espacio: 0, dias: dias(info, 2), precio: 300, pagado: 0 });
   await ingresarComoDueno(page);
-  await page.goto(`/panel/ordenes?filtro=listo&q=${placa}`);
+  await page.goto(`/panel/ordenes?estado=listo&q=${placa}`);
   await page.getByRole("list", { name: "Órdenes en el taller" }).getByRole("link", { name: new RegExp(placa) }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?volver=`));
+  // Ya cargada: el esqueleto de carga tiene su propio "Volver", sin el origen
+  await expect(volverA(page, "Órdenes")).toHaveAttribute("href", `/panel/ordenes?estado=listo&q=${placa}`);
   await volverA(page, "Órdenes").click();
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes\\?filtro=listo&q=${placa}$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes\\?estado=listo&q=${placa}$`));
   await expect(page.getByRole("searchbox")).toHaveValue(placa);
 });
 

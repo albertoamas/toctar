@@ -11,6 +11,7 @@ import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { exigirModulo } from "@/lib/sesion";
 import { InsigniaEstado } from "@/modulos/reclamos/componentes/estado-reclamo";
 import { listarReclamos } from "@/modulos/reclamos/consultas";
+import { aqui } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Reclamos" };
 
@@ -54,6 +55,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/reclamos">, "searc
         </EstadoVacio>
       ) : (
         <TablaLista
+          desde={aqui("/panel/reclamos", { ver })}
           etiqueta="Reclamos"
           columnas={[
             { titulo: "Nombre", ancho: "minmax(0,1.3fr)", movil: "titulo" },

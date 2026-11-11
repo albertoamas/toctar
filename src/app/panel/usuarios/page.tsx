@@ -15,6 +15,7 @@ import { listarUsuarios } from "@/modulos/usuarios/consultas";
 import { NOMBRE_ROL } from "@/modulos/usuarios/textos";
 import { BarraLista } from "@/componentes/panel/barra-lista";
 import { PildoraVista } from "@/componentes/panel/pildora-vista";
+import { aqui } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Usuarios" };
 
@@ -57,6 +58,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/usuarios">, "searc
         <EstadoVacio>No hay usuarios desactivados.</EstadoVacio>
       ) : (
       <TablaLista
+        desde={aqui("/panel/usuarios", { ver })}
         etiqueta="Usuarios"
         columnas={[
           { titulo: "Nombre", ancho: "minmax(0,1.4fr)", movil: "titulo" },
