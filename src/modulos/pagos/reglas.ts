@@ -1,4 +1,4 @@
-import type { MetodoPago, TipoPago } from "@/db/esquema/trabajos";
+import type { EstadoTrabajo, MetodoPago, TipoPago } from "@/db/esquema/trabajos";
 import { calcularTotales, montoNoMayor, restarMontos } from "@/modulos/cotizaciones/reglas";
 import type { Busqueda } from "@/modulos/clientes/reglas";
 import { sinTildes } from "@/modulos/clientes/reglas";
@@ -12,7 +12,16 @@ export const METODO_EN_FRASE: Record<MetodoPago, string> = { efectivo: "en efect
 export const NOMBRE_TIPO_PAGO: Record<TipoPago, string> = { adelanto: "Adelanto", saldo: "Saldo" };
 /** Las mismas de la base, en el orden de los formularios (aquí y no desde el esquema: un componente de cliente no carga Drizzle). */
 export const METODOS = Object.keys(NOMBRE_METODO) as MetodoPago[];
-export const TIPOS = Object.keys(NOMBRE_TIPO_PAGO) as TipoPago[];
+
+/**
+ * Pedido 46: el tipo de un pago no se elige, lo dice cuándo se pagó. Antes de que el vehículo llegue al taller (la reserva
+ * agendada) es un adelanto: el que no se devuelve si cancela (RN-05), sea el sugerido, más o el total. Ya en el taller o
+ * al entregar, es un pago del saldo (también el total, si no dejó adelanto). El tipo solo nombra el pago: el saldo suma
+ * todos por igual.
+ */
+export function tipoDePago(estado: EstadoTrabajo): TipoPago {
+  return estado === "agendado" ? "adelanto" : "saldo";
+}
 
 /** Con QR o transferencia hay un comprobante que guardar; en efectivo, no (el formulario no lo ofrece). */
 export function llevaComprobante(metodo: MetodoPago | ""): boolean {

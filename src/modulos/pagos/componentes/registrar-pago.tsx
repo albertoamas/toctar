@@ -11,14 +11,12 @@ import { MasDatos } from "@/componentes/panel/mas-datos";
 import { CancelarModal, ModalFormulario, PieModal, useCambioFueraDelFormulario, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
-import type { MetodoPago, TipoPago } from "@/db/esquema/trabajos";
+import type { MetodoPago } from "@/db/esquema/trabajos";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { registrarPago } from "../acciones";
 import { useEnvioConComprobante } from "./campo-comprobante";
 import { MetodoYComprobante } from "./elegir-metodo";
-import { NOMBRE_TIPO_PAGO, TIPOS } from "../reglas";
 
 // HU-32: registrar un pago (RF-45). Se cobra en el taller, con el celular en la mano: el monto viene con el saldo
 // (lo que más se cobra) y el tipo, según lo que ya pagó. La foto del comprobante es opcional y se achica antes de
@@ -27,14 +25,14 @@ import { NOMBRE_TIPO_PAGO, TIPOS } from "../reglas";
 // fila). En la cabecera de Pagos el botón va sin fondo, como "Editar"; en una lista, el principal de la fila.
 // Pulido final de los pagos (09/11): ocupaba una pantalla entera del celular para "cobré 120 Bs en efectivo". Ahora, el
 // monto y cómo pagó (ElegirMetodo); el comprobante, solo con QR o transferencia y en una miniatura; la fecha (casi siempre
-// hoy) y el tipo (ya elegido según lo que pagó) plegados en "Otra fecha o tipo", que se abre solo si traen un error.
+// hoy) plegada en "Cambiar fecha", que se abre sola si trae un error.
+// Pedido 46: el tipo (adelanto o saldo) no se elige: lo pone el servidor según cuándo se paga (`tipoDePago`). Se cobra lo
+// que traiga el cliente, del adelanto sugerido al total: el tope es el saldo.
 
 type Props = {
   trabajoId: number;
   saldo: string;
   hoy: string;
-  /** Sin pagos todavía, lo más probable es el adelanto; con pagos, el saldo. */
-  conPagos: boolean;
 };
 
 export function RegistrarPago({
@@ -56,26 +54,7 @@ export function RegistrarPago({
   );
 }
 
-function Opciones<T extends string>({ nombre, titulo, valores, etiquetas, valor, cambiar, error }: { nombre: string; titulo: string; valores: readonly T[]; etiquetas: Record<T, string>; valor: string; cambiar: (v: string) => void; error?: string }) {
-  return (
-    <div className="flex flex-col gap-3">
-      <p id={`${nombre}-titulo`} className="text-sm font-medium">{titulo}</p>
-      {/* El valor en un campo oculto propio: los radios de base-ui se vaciaban al reiniciarse el formulario */}
-      <input type="hidden" name={nombre} value={valor} />
-      <RadioGroup value={valor} onValueChange={(v) => cambiar(String(v))} aria-labelledby={`${nombre}-titulo`} aria-describedby={error ? `${nombre}-error` : undefined} className="flex flex-wrap gap-2">
-        {valores.map((v, i) => (
-          <label key={v} htmlFor={`${nombre}-${v}`} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-border bg-fondo px-3 py-2 has-data-checked:border-tinta">
-            <RadioGroupItem id={`${nombre}-${v}`} value={v} data-invalido={(!!error && i === 0) || undefined} />
-            <span className="font-semibold">{etiquetas[v]}</span>
-          </label>
-        ))}
-      </RadioGroup>
-      {error && <MensajeError id={`${nombre}-error`}>{error}</MensajeError>}
-    </div>
-  );
-}
-
-function Formulario({ trabajoId, saldo, hoy, conPagos }: Props) {
+function Formulario({ trabajoId, saldo, hoy }: Props) {
   const cerrar = useCerrarModal();
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
     conAviso(registrarPago, (r) => r.ok && cerrar()),
@@ -86,7 +65,6 @@ function Formulario({ trabajoId, saldo, hoy, conPagos }: Props) {
   const e = estado.errores ?? {};
   // Controlados: React reinicia el formulario al terminar la acción y así nada se pierde tras un error
   const [monto, setMonto] = useState(mostrarMonto(saldo));
-  const [tipo, setTipo] = useState<TipoPago | "">(conPagos ? "saldo" : "adelanto");
   const [metodo, setMetodo] = useState<MetodoPago | "">("");
   const [fecha, setFecha] = useState(hoy);
   const { comprobante, setComprobante, preparando, errorFoto, enviar } = useEnvioConComprobante(accion);
@@ -101,12 +79,11 @@ function Formulario({ trabajoId, saldo, hoy, conPagos }: Props) {
         <CampoMonto id="monto" name="monto" value={monto} onChange={(ev) => setMonto(ev.target.value)} aria-invalid={!!e.monto} aria-describedby={e.monto ? "monto-error" : "monto-ayuda"} />
       </Campo>
       <MetodoYComprobante metodo={metodo} alCambiarMetodo={setMetodo} alCambiarComprobante={setComprobante} errorMetodo={e.metodo} errorComprobante={errorFoto ?? e.comprobante} />
-      {/* Plegados, pero a la vista lo que se va a guardar: un pago completo sin pagos antes se registraría como adelanto */}
-      <MasDatos texto="Cambiar fecha o tipo" titulo="Fecha y tipo" detalle={`Ahora: ${tipo ? NOMBRE_TIPO_PAGO[tipo].toLowerCase() : "sin tipo"}, ${fecha === hoy ? "hoy" : "otra fecha"}`} abierto={!!e.fecha || !!e.tipo} conError={!!e.fecha || !!e.tipo}>
+      {/* Plegada, pero a la vista la que se va a guardar */}
+      <MasDatos texto="Cambiar fecha" titulo="Fecha" detalle={`Ahora: ${fecha === hoy ? "hoy" : "otra fecha"}`} abierto={!!e.fecha} conError={!!e.fecha}>
         <Campo id="fecha" etiqueta="Fecha" error={e.fecha}>
           <Input id="fecha" name="fecha" type="date" max={hoy} value={fecha} onChange={(ev) => setFecha(ev.target.value)} className="max-w-xs" aria-invalid={!!e.fecha} aria-describedby={e.fecha ? "fecha-error" : undefined} />
         </Campo>
-        <Opciones nombre="tipo" titulo="Tipo" valores={TIPOS} etiquetas={NOMBRE_TIPO_PAGO} valor={tipo} cambiar={(v) => setTipo(v as TipoPago)} error={e.tipo} />
       </MasDatos>
 
       <PieModal>

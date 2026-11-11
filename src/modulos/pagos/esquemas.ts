@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { METODOS_PAGO, TIPOS_PAGO } from "@/db/esquema/trabajos";
+import { METODOS_PAGO } from "@/db/esquema/trabajos";
 import { fechaEnBolivia, fechaExiste } from "@/lib/fechas";
 import { leerMonto } from "@/modulos/catalogo/reglas";
 
@@ -8,7 +8,7 @@ import { leerMonto } from "@/modulos/catalogo/reglas";
 
 const id = z.coerce.number().int().positive();
 
-/** Un pago: monto, tipo, método y fecha (en Bolivia, no futura). El comprobante es una foto aparte. */
+/** Un pago: monto, método y fecha (en Bolivia, no futura). El tipo lo pone la acción (pedido 46); el comprobante es una foto aparte. */
 export const esquemaPago = z.object({
   trabajoId: id,
   monto: z.string().transform((v, ctx) => {
@@ -19,7 +19,6 @@ export const esquemaPago = z.object({
     }
     return m;
   }),
-  tipo: z.enum(TIPOS_PAGO, { message: "Elige si es adelanto o saldo." }),
   metodo: z.enum(METODOS_PAGO, { message: "Elige cómo pagó." }),
   fecha: z.string().superRefine((f, ctx) => {
     // Desde el 2000: con años extremos las fechas dejan de tener cuatro cifras y la base las rechaza

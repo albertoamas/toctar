@@ -38,7 +38,7 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar, cobrar
   const porCobrar = !cerrado && !estaPagada(montos.saldo.saldo);
   const pagada = !cerrado && estaPagada(montos.saldo.saldo);
   const registrar = (variante: "ghost" | "outline") => (
-    <RegistrarPago trabajoId={trabajoId} saldo={montos.saldo.saldo} hoy={hoy} conPagos={montos.pagos.some((p) => !p.anulado)} variante={variante} />
+    <RegistrarPago trabajoId={trabajoId} saldo={montos.saldo.saldo} hoy={hoy} variante={variante} />
   );
   return (
       <>
