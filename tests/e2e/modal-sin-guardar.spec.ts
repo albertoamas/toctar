@@ -40,6 +40,8 @@ test("con cambios, Escape pregunta en el mismo modal: seguir editando conserva l
   await expect(preguntaEn(page)).toHaveCount(0);
   await expect(contacto.getByRole("button", { name: "Guardar contacto" })).toBeVisible();
   await expect(nombre).toHaveValue(`${original} cambiado`);
+  // El foco vuelve al campo que se estaba editando
+  await expect(nombre).toBeFocused();
 
   // Otro Escape con la pregunta abierta es seguir editando, no salir
   await nombre.focus();
@@ -49,10 +51,19 @@ test("con cambios, Escape pregunta en el mismo modal: seguir editando conserva l
   await expect(preguntaEn(page)).toHaveCount(0);
   await expect(contacto).toBeVisible();
 
+  // Con la pregunta a la vista y el cambio deshecho, Escape cierra: ya no hay nada que perder
+  await page.keyboard.press("Escape");
+  await expect(preguntaEn(page)).toBeVisible();
+  await nombre.fill(original);
+  await page.keyboard.press("Escape");
+  await expect(contacto).toHaveCount(0);
+  const deNuevo = await abrirParteNegocio(page, "Contacto");
+  await deNuevo.getByLabel("Nombre del negocio").fill(`${original} cambiado`);
+
   // Descartar lo pierde
   await page.keyboard.press("Escape");
-  await contacto.getByRole("button", { name: "Descartar cambios" }).click();
-  await expect(contacto).toHaveCount(0);
+  await deNuevo.getByRole("button", { name: "Descartar cambios" }).click();
+  await expect(deNuevo).toHaveCount(0);
   const otraVez = await abrirParteNegocio(page, "Contacto");
   await expect(otraVez.getByLabel("Nombre del negocio")).toHaveValue(original);
 });

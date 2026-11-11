@@ -109,7 +109,7 @@ Sin acciones nuevas en las fases 1 a 3. En la fase 4:
 
 ## 8. Textos de la interfaz
 
-- Al cerrar un modal con cambios por un cierre sin querer (afuera, Escape, "atrás"): en el pie del mismo modal, "Tienes cambios sin guardar." con "Seguir editando" (con el foco) y "Descartar cambios" (pulido 13.48; hasta el 11/11 era un segundo modal "¿Salir sin guardar?"). Al salir de una pantalla con cambios: "¿Salir sin guardar?", con "Seguir editando" y "Salir sin guardar".
+- Al cerrar un modal con cambios por un cierre sin querer (afuera, Escape, el "atrás" de Android): en el pie del mismo modal, "Tienes cambios sin guardar." con "Seguir editando" (con el foco) y "Descartar cambios" (pulido 13.48; hasta el 11/11 era un segundo modal "¿Salir sin guardar?"). Al salir de una pantalla con cambios: "¿Salir sin guardar?", con "Seguir editando" y "Salir sin guardar".
 - Los demás textos no cambian, salvo los que se definan en cada propuesta de la fase 4.
 
 ## 9. Pruebas

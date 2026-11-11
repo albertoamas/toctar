@@ -4,6 +4,7 @@ import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { contenidoFormulario } from "@/componentes/panel/contenido-formulario";
 import { Button } from "@/componentes/ui/button";
+import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/componentes/ui/dialog";
 import type { EstadoFormulario } from "@/lib/formularios";
 
@@ -14,7 +15,7 @@ import type { EstadoFormulario } from "@/lib/formularios";
 // abrió al cerrar. El formulario de adentro lo cierra al guardar con useCerrarModal y pone sus botones en PieModal
 // ("Cancelar" o "Listo" con CancelarModal).
 // Ningún modal pierde lo escrito por un cierre sin querer (C6, sistema-del-panel.md §4; pulido 13.48): si el formulario de
-// adentro cambió desde que se abrió, tocar afuera, Escape o el "atrás" del celular no cierran: el pie del mismo modal pasa
+// adentro cambió desde que se abrió, tocar afuera, Escape o el "atrás" de Android (Chrome lo avisa al diálogo) no cierran: el pie pasa
 // a "Tienes cambios sin guardar." con "Seguir editando" y "Descartar cambios". Nunca otro modal encima (hasta el 11/11 era
 // un segundo modal sobre el primero: en el celular, una hoja sobre otra). "Cancelar" y la X cierran sin preguntar: son una
 // decisión. Guardar no pregunta. Mientras se guarda no se puede cerrar.
@@ -65,6 +66,8 @@ export function ModalFormulario({ titulo, abierto, alCambiar, children }: Props)
   const base = useRef<string | null>(null);
   const ademas = useRef(false);
   const enviando = useRef(false);
+  // El último lugar del modal con el foco, fuera de la pregunta: "Seguir editando" lo devuelve ahí (el campo que se estaba editando)
+  const focoPrevio = useRef<HTMLElement | null>(null);
   const [preguntando, setPreguntando] = useState(false);
   const [hayPie, setHayPie] = useState(false);
   // La pantalla puede cerrarlo por su cuenta (al terminar una acción): la pregunta no queda para la próxima vez
@@ -85,14 +88,21 @@ export function ModalFormulario({ titulo, abierto, alCambiar, children }: Props)
     setPreguntando(false);
     alCambiar(false);
   };
-  const pedirCierre = () => {
-    if (enviando.current) return;
+  const hayCambios = () => {
     const formulario = modal.current?.querySelector("form");
     const cambio = !!formulario && base.current !== null && contenidoFormulario(formulario) !== base.current;
-    if (cambio || ademas.current) setPreguntando(true);
-    else cerrar();
+    return cambio || ademas.current;
   };
-  const seguir = useCallback(() => setPreguntando(false), []);
+  const pedirCierre = () => {
+    if (enviando.current) return;
+    if (!hayCambios()) return cerrar();
+    setPreguntando(true);
+  };
+  const seguir = useCallback(() => {
+    setPreguntando(false);
+    // Al cuadro siguiente, con el pie de siempre ya de vuelta
+    requestAnimationFrame(() => focoPrevio.current?.isConnected && focoPrevio.current.focus());
+  }, []);
   const conPie = useCallback((hay: boolean) => setHayPie(hay), []);
 
   return (
@@ -102,14 +112,18 @@ export function ModalFormulario({ titulo, abierto, alCambiar, children }: Props)
         if (abrir) return alCambiar(true);
         // La X es una decisión, como "Cancelar": cierra sin preguntar (no mientras se guarda)
         if (detalles.reason === "close-press") return enviando.current ? undefined : cerrar();
-        // Ya preguntando, otro Escape (o "atrás") es seguir editando: el modal no se va con lo escrito
-        if (preguntando) return seguir();
+        // Ya preguntando, otro Escape (o "atrás") es seguir editando, salvo que ya no quede nada sin guardar
+        if (preguntando) return hayCambios() ? seguir() : cerrar();
         // Tocar afuera, Escape o el "atrás" del celular pueden ser sin querer
         pedirCierre();
       }}
     >
       <DialogContent
         ref={modal}
+        onFocusCapture={(e) => {
+          const elemento = e.target as HTMLElement;
+          if (!elemento.closest("[data-pregunta-salir]")) focoPrevio.current = elemento;
+        }}
         initialFocus={() => {
           tomarBase();
           return primerControl(modal.current);
@@ -122,7 +136,7 @@ export function ModalFormulario({ titulo, abierto, alCambiar, children }: Props)
         <Modal.Provider value={{ cerrar, pedirCierre, preguntando, seguir, conPie, renovarBase: tomarBase, fijarAdemas, fijarEnviando }}>
           {children}
           {/* Sin pie propio (raro): la pregunta va al final del modal */}
-          {preguntando && !hayPie && <PieModal>{null}</PieModal>}
+          {preguntando && !hayPie && <PieModal respaldo>{null}</PieModal>}
         </Modal.Provider>
       </DialogContent>
     </Dialog>
@@ -137,22 +151,28 @@ export function ModalFormulario({ titulo, abierto, alCambiar, children }: Props)
 export function PreguntaSalir({ abierta, texto, alSeguir, alSalir }: { abierta: boolean; texto: string; alSeguir: () => void; alSalir: () => void }) {
   const seguir = useRef<HTMLButtonElement>(null);
   return (
-    <Dialog open={abierta} onOpenChange={(abrir) => !abrir && alSeguir()}>
-      <DialogContent role="alertdialog" initialFocus={seguir} showCloseButton={false} className="max-w-[calc(100%-2rem)] gap-4 text-base sm:max-w-sm">
-        <DialogHeader>
-          <DialogTitle>¿Salir sin guardar?</DialogTitle>
-        </DialogHeader>
-        <p>{texto}</p>
-        <div className="flex flex-wrap gap-2">
-          <Button ref={seguir} type="button" variant="outline" onClick={alSeguir}>
-            Seguir editando
-          </Button>
-          <Button type="button" variant="destructive" onClick={alSalir}>
-            Salir sin guardar
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <AlertDialog.Root open={abierta} onOpenChange={(abrir) => !abrir && alSeguir()}>
+      <AlertDialog.Portal>
+        <AlertDialog.Backdrop className="fixed inset-0 isolate z-50 bg-black/10 supports-backdrop-filter:backdrop-blur-xs" />
+        {/* data-slot como el de los modales: los avisos flotantes lo ven abierto (sonner.tsx) */}
+        <AlertDialog.Popup
+          data-slot="dialog-content"
+          initialFocus={seguir}
+          className="fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-base text-popover-foreground ring-1 ring-foreground/10 outline-none sm:max-w-sm"
+        >
+          <AlertDialog.Title className="font-heading text-base leading-none font-medium">¿Salir sin guardar?</AlertDialog.Title>
+          <AlertDialog.Description>{texto}</AlertDialog.Description>
+          <div className="flex flex-wrap gap-2">
+            <Button ref={seguir} type="button" variant="outline" onClick={alSeguir}>
+              Seguir editando
+            </Button>
+            <Button type="button" variant="destructive" onClick={alSalir}>
+              Salir sin guardar
+            </Button>
+          </div>
+        </AlertDialog.Popup>
+      </AlertDialog.Portal>
+    </AlertDialog.Root>
   );
 }
 
@@ -197,9 +217,9 @@ export function useFormularioEnModal(accion: (previo: EstadoFormulario, datos: F
  * Si el modal está preguntando (un cierre sin querer con cambios), el pie pasa a "Tienes cambios sin guardar." con
  * "Seguir editando" (con el foco) y "Descartar cambios": la pregunta, en el mismo modal (pulido 13.48).
  */
-export function PieModal({ children }: { children: React.ReactNode }) {
+export function PieModal({ children, respaldo = false }: { children: React.ReactNode; /** El del modal sin pie propio: no se cuenta. */ respaldo?: boolean }) {
   const modal = useContext(Modal);
-  const conPie = modal?.conPie;
+  const conPie = respaldo ? undefined : modal?.conPie;
   useEffect(() => {
     conPie?.(true);
     return () => conPie?.(false);
@@ -209,22 +229,31 @@ export function PieModal({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (preguntando) seguir.current?.focus();
   }, [preguntando]);
-  if (modal && preguntando) {
-    return (
-      <div role="alert" data-pregunta-salir className="sticky -bottom-4 -mx-4 -mb-4 flex flex-col gap-3 border-t border-aviso bg-aviso-fondo p-4">
-        <p className="font-semibold text-aviso">Tienes cambios sin guardar.</p>
-        <div className="flex flex-wrap gap-2">
-          <Button ref={seguir} type="button" variant="outline" className="bg-popover" onClick={modal.seguir}>
-            Seguir editando
-          </Button>
-          <Button type="button" variant="destructive" onClick={modal.cerrar}>
-            Descartar cambios
-          </Button>
-        </div>
+  const pregunta = modal && preguntando && (
+    // Un grupo con su título (no "alert": el foco ya va a "Seguir editando" y se oiría dos veces)
+    <div role="group" aria-labelledby="pregunta-salir-titulo" data-pregunta-salir className="sticky -bottom-4 -mx-4 -mb-4 flex flex-col gap-3 border-t border-aviso bg-aviso-fondo p-4">
+      <p id="pregunta-salir-titulo" className="font-semibold text-aviso">
+        Tienes cambios sin guardar.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Button ref={seguir} type="button" variant="outline" className="bg-popover" onClick={modal.seguir}>
+          Seguir editando
+        </Button>
+        <Button type="button" variant="destructive" onClick={modal.cerrar}>
+          Descartar cambios
+        </Button>
       </div>
-    );
-  }
-  return <div className="sticky -bottom-4 -mx-4 -mb-4 flex flex-wrap gap-2 border-t border-border bg-popover p-4">{children}</div>;
+    </div>
+  );
+  return (
+    <>
+      {pregunta}
+      {/* Mientras pregunta, el pie de siempre queda montado pero oculto: su botón sigue diciendo si se está guardando */}
+      <div hidden={!!pregunta} className="sticky -bottom-4 -mx-4 -mb-4 flex flex-wrap gap-2 border-t border-border bg-popover p-4">
+        {children}
+      </div>
+    </>
+  );
 }
 
 /** El pie de un formulario de edición: guardar, que dice qué guarda, y "Cancelar". */
@@ -257,8 +286,9 @@ export function CancelarModal(props: {
   const fijarEnviando = modal?.fijarEnviando;
   useEffect(() => fijarEnviando?.(ocupado), [fijarEnviando, ocupado]);
   if (!modal) return null;
+  // "Volver" acompaña a una acción que pide escribir (el motivo de "Cancelar reserva"): no parece descartar, así que pregunta
   return (
-    <Button type="button" variant="outline" disabled={ocupado} onClick={modal.cerrar} data-foco-inicial={focoInicial || undefined}>
+    <Button type="button" variant="outline" disabled={ocupado} onClick={texto === "Volver" ? modal.pedirCierre : modal.cerrar} data-foco-inicial={focoInicial || undefined}>
       {texto}
     </Button>
   );
