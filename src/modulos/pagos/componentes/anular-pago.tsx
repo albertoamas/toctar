@@ -18,7 +18,7 @@ export function AnularPago({ id, descripcion }: Props) {
   const [abierto, setAbierto] = useState(false);
   return (
     <>
-      <MenuMas icono etiqueta={`Más: ${descripcion}`} acciones={[{ texto: "Anular pago", alElegir: () => setAbierto(true) }]} />
+      <MenuMas icono etiqueta={`Opciones del pago: ${descripcion}`} acciones={[{ texto: "Anular pago", alElegir: () => setAbierto(true) }]} />
       <ModalFormulario titulo="Anular pago" abierto={abierto} alCambiar={setAbierto}>
         <Formulario id={id} descripcion={descripcion} />
       </ModalFormulario>

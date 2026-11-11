@@ -27,7 +27,7 @@ import { obtenerDatosPublicos, obtenerPlantillas } from "@/modulos/configuracion
 import { opcionesDeServicio } from "@/modulos/cotizaciones/consultas";
 import { MasOrden } from "@/modulos/ordenes/componentes/acciones-orden";
 import { AgregarAdicional } from "@/modulos/ordenes/componentes/agregar-adicional";
-import { AvancesOrden } from "@/modulos/ordenes/componentes/avances-orden";
+import { HistorialOrden } from "@/modulos/ordenes/componentes/historial-orden";
 import { EstadoOrden } from "@/modulos/ordenes/componentes/estado-orden";
 import { ComoLlego } from "@/modulos/ordenes/componentes/como-llego";
 import { FirmaDeEntrega } from "@/modulos/ordenes/componentes/firma-entrega";
@@ -110,11 +110,6 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   const { anterior } = pasosDeOrden(o.estado);
   const extender =
     puedeExtenderse(o.estado) && puede(usuario, "extender_entrega") ? { fechaInicio: o.fechaInicio, fechaFin: o.fechaFin, espacioId: o.espacioId, espacio: o.espacio, hoy } : undefined;
-  // Entregada: cuándo, quién y, para quien ve pagos, el saldo que quedó y quién lo autorizó (RN-13)
-  const entrega =
-    o.estado === "entregado" && o.entregadoAt
-      ? `Entregado el ${diaYHora(o.entregadoAt)}${o.entregadoPor ? ` por ${o.entregadoPor}` : ""}.${o.montos && o.autorizoSaldo && o.saldoAlEntregar ? ` Con saldo de ${mostrarMonto(o.saldoAlEntregar)} Bs, autorizado por ${o.autorizoSaldo}.` : ""}`
-      : null;
   const entregar = o.estado === "listo" && puede(usuario, "entregar_vehiculo");
   // Con "Avisar" en el encabezado, escribir sin el mensaje de aviso queda en "Más": un solo WhatsApp a la vista
   const escribirEnMas = abierta && aviso ? enlaceWhatsApp(o.telefono) : undefined;
@@ -148,13 +143,14 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
       {conMas && <MasOrden id={o.id} anterior={anterior} extender={extender} avisada={avisada} escribir={escribirEnMas} />}
     </div>
   );
-  // Debajo del título: cuándo se entregó o se avisó, y si ya está en la galería
-  const contexto = (entrega || aviso?.avisado || publicada) && (
+  // Debajo del título: cuándo se avisó y si ya está en la galería. Cuándo y quién la entregó (con saldo o no) está en el
+  // historial, y el saldo que quedó, en la tarjeta de montos (pedido 45)
+  const contexto = (aviso?.avisado || publicada) && (
     <>
-      {entrega ?? aviso?.avisado}
+      {aviso?.avisado}
       {publicada && (
         <>
-          {(entrega || aviso?.avisado) && " "}
+          {aviso?.avisado && " "}
           <Link href="/panel/sitio/galeria" className="tt-area-toque underline underline-offset-4">
             Publicada en la galería ({publicada.fotos === 1 ? "1 foto" : `${publicada.fotos} fotos`}
             {publicada.visible ? "" : ", oculta"})
@@ -192,8 +188,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
           avances); a la derecha los datos y, debajo, los montos. En el celular, en ese orden: datos, trabajo y montos */}
       <div className="grid items-start gap-8 @4xl:grid-cols-[minmax(0,1fr)_24rem] @4xl:grid-rows-[auto_1fr]">
         <div className="@4xl:col-start-2 @4xl:row-start-1">
-          {/* Pulido 13.49: en bloques, de lo que se mira primero (cuándo sale y dónde está) a lo que es historia (cuándo
-              ingresó y la reserva); el cliente y la reserva son filas que se tocan, no enlaces subrayados sueltos al pie */}
+          {/* Pulido 13.49: en bloques, de lo que se mira primero (cuándo sale y dónde está) al cliente, el vehículo y la
+              reserva; el cliente y la reserva son filas que se tocan, no enlaces subrayados sueltos al pie */}
           <Seccion id="datos" titulo="Datos" sinRelleno>
             {/* El nombre, en toda la tarjeta: lo que dice de la orden (también el cliente y el vehículo) */}
             <div role="group" aria-label="Datos de la orden" className="flex flex-col divide-y divide-border">
@@ -220,19 +216,11 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
                   {valorVehiculo(detalle, o.tamano)}
                 </FilaDato>
               </div>
-              {(o.recibidoAt || o.recibidoPor || verAgenda) && (
-                <div className="flex flex-col">
-                  {(o.recibidoAt || o.recibidoPor) && (
-                    <p className={cn("px-4 text-sm text-tinta-suave", verAgenda ? "pt-3" : "py-3")}>
-                      {[o.recibidoAt && `Ingresó el ${formatearFechaHora(o.recibidoAt)}`, o.recibidoPor && `recibió ${o.recibidoPor}`].filter(Boolean).join(", ")}
-                    </p>
-                  )}
-                  {verAgenda && (
-                    <FilaEnlace href={conDesde(`/panel/agenda/${o.id}`, desdeAqui)}>
-                      <span className="font-semibold">Ver la reserva</span>
-                    </FilaEnlace>
-                  )}
-                </div>
+              {/* Cuándo ingresó y quién lo recibió ya está en el historial ("Vehículo recibido.", pedido 45) */}
+              {verAgenda && (
+                <FilaEnlace href={conDesde(`/panel/agenda/${o.id}`, desdeAqui)}>
+                  <span className="font-semibold">Ver la reserva</span>
+                </FilaEnlace>
               )}
             </div>
           </Seccion>
@@ -266,7 +254,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
               </div>
             )}
           </Seccion>
-          <AvancesOrden id={o.id} avances={avances.map((a) => ({ id: a.id, nota: a.nota, autor: a.autor, cuando: formatearFechaHora(a.createdAt) }))} editable={abierta} />
+          <HistorialOrden avances={avances.map((a) => ({ id: a.id, nota: a.nota, autor: a.autor, cuando: formatearFechaHora(a.createdAt) }))} />
         </div>
 
         {/* Abierta también después de la entrega: una entregada con saldo se cobra aquí (RN-13, HU-37) */}

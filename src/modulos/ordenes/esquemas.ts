@@ -25,7 +25,6 @@ export const esquemaFotoOrden = z.object({ trabajoId: id, etapa: z.enum(ETAPAS_C
 export const esquemaEstadoOrden = z.object({ id, estado: z.enum(["recibido", "en_proceso", "listo"]) });
 
 /** Un avance de la orden (RF-42). */
-export const esquemaAvance = z.object({ id, nota: z.string().trim().min(1, "Escribe el avance.").max(1000, "Hasta 1000 caracteres.") });
 
 /** Extender la entrega: la nueva fecha y el espacio (el mismo, si sigue libre). El resto lo mira la acción. */
 export const esquemaExtender = z.object({

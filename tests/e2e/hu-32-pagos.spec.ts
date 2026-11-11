@@ -103,7 +103,7 @@ test("registrar un pago con comprobante, no pasar el saldo y anular con motivo",
   await page.keyboard.press("Escape");
 
   // Anular el adelanto, desde el "⋯" del pago (pulido 13.49): pide motivo, queda tachado y deja de contar
-  await page.getByRole("button", { name: /^Más: Adelanto en efectivo de 150 Bs/ }).click();
+  await page.getByRole("button", { name: /^Opciones del pago: Adelanto en efectivo de 150 Bs/ }).click();
   await page.getByRole("menuitem", { name: "Anular pago" }).click();
   const anular = page.getByRole("dialog", { name: "Anular pago" }).getByRole("form", { name: /^Anular Adelanto en efectivo/ });
   await anular.getByRole("button", { name: "Anular pago" }).click();

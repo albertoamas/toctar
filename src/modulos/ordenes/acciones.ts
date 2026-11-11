@@ -23,7 +23,6 @@ import { aplicarPlanesAlEntregar } from "@/modulos/mantenimientos/planes";
 import { publicadaDeOrden, serviciosDeOrden } from "./consultas";
 import {
   esquemaAdicional,
-  esquemaAvance,
   esquemaAvisoListo,
   esquemaDetalle,
   esquemaEntregar,
@@ -487,26 +486,6 @@ export async function cambiarEstadoOrden(_previo: EstadoFormulario, datos: FormD
   despuesDeCambiar(id, resultado.clienteId);
   if (resultado.sinEntrega) return { ok: true, mensaje: "La orden está en proceso, pero su espacio ya se tomó desde mañana: extiende la entrega." };
   return { ok: true, mensaje: MENSAJE_ESTADO[estado] };
-}
-
-/** Escribe un avance en la historia de la orden (HU-34, RF-42), mientras esté abierta. */
-export async function agregarAvance(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
-  const usuario = await exigirModulo("ordenes");
-  const valores = { nota: String(datos.get("nota") ?? "") };
-  const r = esquemaAvance.safeParse({ id: datos.get("id"), ...valores });
-  if (!r.success) {
-    const errores = erroresDe(r.error);
-    return errores.id ? { mensaje: RECARGA } : { errores, valores };
-  }
-  const { id, nota } = r.data;
-
-  const [t] = await db.select({ estado: trabajo.estado, clienteId: trabajo.clienteId }).from(trabajo).where(eq(trabajo.id, id));
-  if (!t) return { mensaje: "Esa orden ya no existe." };
-  if (!estaAbierta(t.estado)) return { mensaje: "Esa orden ya no está abierta." };
-  await db.insert(trabajoAvance).values({ trabajoId: id, usuarioId: Number(usuario.id), nota });
-
-  despuesDeCambiar(id, t.clienteId);
-  return { ok: true, mensaje: "Avance guardado." };
 }
 
 /** Las fechas para extender una orden: desde su ingreso (ya pasó) hasta la nueva entrega; null si no valen. */

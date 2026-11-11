@@ -228,7 +228,7 @@
 | # | Criterio | Cómo se comprueba | Estado |
 |---|---|---|---|
 | 34.1 | Con el permiso de Órdenes se ven todas, sin técnico asignado; sin Pagos, sin precios (RN-12) | E2E `hu-33-recibir` (otro del perfil Taller la ve sin precios), `hu-34-historial` "el perfil Taller ve en «Entregadas» todas, sin precios"; unitarias `permisos` | ✅ |
-| 34.2 | Cambia el estado (en proceso, listo), sube fotos de inicio y del final, y escribe avances; al marcarla lista, el espacio se libera | E2E `hu-34-trabajar-orden` "el perfil Taller trabaja cualquier orden: empieza, sube fotos, escribe avances y la marca lista…" | ⚠️ Pedido 27: fotos de inicio y del final, sin fotos "durante" |
+| 34.2 | Cambia el estado (en proceso, listo) y sube fotos de inicio y del final; el historial lo escribe el sistema; al marcarla lista, el espacio se libera | E2E `hu-34-trabajar-orden` "el perfil Taller trabaja cualquier orden… el historial se escribe solo y la marca lista" | ⚠️ Pedido 27: fotos de inicio y del final, sin fotos "durante". Pedido 45: sin avances escritos a mano |
 | 34.3 | Se puede extender la entrega a otro espacio libre; el dueño ve las órdenes agrupadas por estado | E2E `hu-34-trabajar-orden` "extender la entrega…; las listas del dueño por estado" | ✅ (agregado) |
 | 34.4 | Las órdenes entregadas se buscan por placa, cliente o fecha | E2E `hu-34-historial` "en «Entregadas» se buscan por placa, cliente o fecha…" | ✅ (agregado, pedido 28) |
 | 34.5 | No se asigna un técnico: la reserva, recibir y la orden no lo piden, y la orden dice quién hizo cada paso | E2E `hu-33-recibir` (sin el campo), `hu-34-trabajar-orden` (la orden no dice a quién está asignada) y `flujo-taller-completo` | ⚠️ Pedido 32 (antes, técnico opcional) |

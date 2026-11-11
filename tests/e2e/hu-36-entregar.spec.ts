@@ -60,7 +60,9 @@ test("pagada: el dueño suma un adicional, se cobra y se entrega; queda programa
   await expect(datos).not.toContainText("aproximada");
   // El aviso flotante (la historia de la orden dice lo mismo)
   await expect(page.getByLabel(/Notifications/).getByText("Vehículo entregado.")).toBeVisible();
-  await expect(page.getByText(/^Entregado el /)).toBeVisible();
+  // Cuándo y quién, en el historial; debajo de la placa ya no se repite (pedido 45)
+  await expect(page.getByRole("list", { name: "Historial de la orden" }).getByText("Vehículo entregado.", { exact: true })).toBeVisible();
+  await expect(page.getByText(/^Entregado el /)).toHaveCount(0);
   const firma = page.getByRole("region", { name: "Firma de entrega" });
   await expect(firma).toContainText(`Recibido conforme por Hermana de Entrega ${s}.`);
   await expect(firma.getByRole("img", { name: `Firma de Hermana de Entrega ${s}` })).toBeVisible();
@@ -140,7 +142,9 @@ test("con saldo: el encargado sin el permiso no entrega; con el permiso sí, y q
   await entrega.getByRole("button", { name: "Entregar vehículo" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?entregado=1(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByText("Vehículo entregado con saldo de 300 Bs.")).toBeVisible();
-  await expect(page.getByText(/Con saldo de 300 Bs, autorizado por Encargada con permiso\.$/)).toBeVisible();
+  // Quién lo entregó con saldo, en el historial; el saldo que queda, en su tarjeta
+  await expect(page.getByRole("list", { name: "Historial de la orden" }).getByText("Vehículo entregado con saldo pendiente.")).toBeVisible();
+  await expect(page.getByRole("list", { name: "Historial de la orden" })).toContainText("Encargada con permiso");
   await expect(page.getByRole("region", { name: "Firma de entrega" })).toContainText("Entregado sin firma: Se lo lleva el chofer de la empresa.")
   // Entregada con saldo: se sigue cobrando (HU-37)
   await expect(page.getByRole("button", { name: "Registrar pago" })).toBeVisible();

@@ -26,7 +26,7 @@ async function orden(placa: string, espacioId: number, desde: string, hasta: str
   return id;
 }
 
-test("el perfil Taller trabaja cualquier orden, sin asignarla y sin ver precios: empieza, sube fotos, escribe avances y la marca lista", async ({ page }, info) => {
+test("el perfil Taller trabaja cualquier orden, sin asignarla y sin ver precios: empieza, sube fotos, el historial se escribe solo y la marca lista", async ({ page }, info) => {
   const s = sufijo(info);
   const placa = `OT34${s.toUpperCase()}1`;
   await crearClienteEnBase({ nombre: `Trabajo ${s}`, telefono: telefono(info, 1), placa });
@@ -62,7 +62,7 @@ test("el perfil Taller trabaja cualquier orden, sin asignarla y sin ver precios:
   await expect(pasoActual).toHaveText("En el taller");
   await expect(page.getByRole("main").getByText("En proceso", { exact: true }).first()).toBeVisible();
 
-  // Una foto del inicio y un avance
+  // Fotos del inicio
   await expect(page.getByRole("button", { name: "Tomar foto" }).first()).toBeEnabled();
   await page.getByLabel("Cámara para fotos del inicio").setInputFiles({ name: "antes.png", mimeType: "image/png", buffer: PNG });
   await expect(page.getByRole("button", { name: "Ver la foto 1 del inicio" })).toBeVisible();
@@ -79,11 +79,10 @@ test("el perfil Taller trabaja cualquier orden, sin asignarla y sin ver precios:
   await page.getByRole("dialog", { name: "Inicio: foto 1 de 2" }).getByRole("button", { name: "Foto siguiente" }).click();
   await expect(page.getByRole("dialog", { name: "Inicio: foto 2 de 2" }).getByRole("img", { name: "Foto 2 del inicio" })).toBeVisible();
   await page.keyboard.press("Escape");
-  await page.getByLabel("Escribir un avance").fill("Pulido de la puerta trasera, listo el primer paso.");
-  await page.getByRole("button", { name: "Guardar avance" }).click();
-  const historia = page.getByRole("list", { name: "Historia de la orden" });
-  await expect(historia.getByText("Pulido de la puerta trasera, listo el primer paso.")).toBeVisible();
-  await expect(page.getByLabel("Escribir un avance")).toHaveValue("");
+  // El historial lo escribe el sistema; ya no se escriben notas a mano (pedido 45)
+  const historia = page.getByRole("list", { name: "Historial de la orden" });
+  await expect(historia.getByText("Pasó a en proceso.")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Historial" }).getByRole("textbox")).toHaveCount(0);
 
   await pasos.getByRole("button", { name: "Marcar listo" }).click();
   await expect(page.getByText("La orden está lista. Avisa al cliente.")).toBeVisible();
@@ -101,7 +100,7 @@ test("el perfil Taller trabaja cualquier orden, sin asignarla y sin ver precios:
      from trabajo t where id = $1`,
     [id],
   );
-  expect(t).toEqual({ estado: "listo", fin: hoy(), listo: true, avances: 3, fotos: 2 });
+  expect(t).toEqual({ estado: "listo", fin: hoy(), listo: true, avances: 2, fotos: 2 });
   const auditoria = await consultar<{ accion: string }>("select accion from auditoria where entidad = 'trabajo' and entidad_id = $1 order by id", [id]);
   expect(auditoria.map((a) => a.accion)).toEqual(["estado", "estado"]);
 
@@ -153,7 +152,7 @@ test("extender la entrega: con el espacio ocupado se elige otro libre; las lista
   await expect(page.getByText(new RegExp(`^Entrega movida al .* en ${espacios[1].nombre}\\.$`))).toBeVisible();
   const [t] = await consultar<{ fin: string; espacio: number }>("select to_char(fecha_fin, 'YYYY-MM-DD') as fin, espacio_id as espacio from trabajo where id = $1", [id]);
   expect(t).toEqual({ fin: d3, espacio: espacios[1].id });
-  await expect(page.getByRole("list", { name: "Historia de la orden" }).getByText(/^Entrega extendida al/)).toBeVisible();
+  await expect(page.getByRole("list", { name: "Historial de la orden" }).getByText(/^Entrega extendida al/)).toBeVisible();
 
   // La lista del encargado: una tabla con filtros por estado y su conteo (pedido 26)
   await page.goto("/panel/ordenes");
