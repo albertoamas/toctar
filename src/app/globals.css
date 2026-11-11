@@ -244,7 +244,8 @@
   }
 
   /* En el celular, el pie fijo de un formulario (PieFormulario): un campo al que se llega con el teclado no queda tapado
-     por él, y los avisos se ponen encima (sonner.tsx), así no tapan su botón. Con un modal abierto, los avisos van arriba */
+     por él, y los avisos se ponen encima (sonner.tsx), así no tapan su botón. Con un modal abierto, los avisos van arriba.
+     Esta medida vale hasta que carga JavaScript: después, el pie dice cuánto ocupa desde abajo (pie-formulario.tsx) */
   @media (max-width: 639px) {
     html:has([data-pie-movil]) {
       scroll-padding-bottom: 5rem;
