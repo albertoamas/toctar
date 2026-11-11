@@ -87,9 +87,11 @@ test("el dueño marca el mantenimiento, cambia la duración y desactiva un servi
   await editar.click();
   await modal.getByText("Activo en el catálogo").click();
   await modal.getByRole("button", { name: "Guardar datos" }).click();
-  // Guardado de verdad: el modal se cerró y la lectura dice "Activo"
+  // Guardado de verdad: el modal se cerró y la lectura ya no dice "Inactivo" (activo, no dice nada: cambio 4b)
   await expect(modal).toHaveCount(0);
-  await expect(datos).toContainText("Activo");
+  await expect(datos).toContainText("Duración");
+  await expect(datos).not.toContainText("Inactivo");
+  await expect(page.getByRole("heading", { level: 1 }).locator("..")).not.toContainText("Inactivo");
   await enElSitio(page, slug, nombre);
 });
 
@@ -151,7 +153,10 @@ test("las variantes se agregan, renombran y desactivan en el catálogo; una nuev
   // Cerrado el de la variante, "Listo" vuelve
   await expect(variantes.getByRole("button", { name: "Listo" })).toBeVisible();
   await variantes.getByRole("button", { name: "Listo" }).click();
-  await expect(page.getByRole("region", { name: "Variantes" })).toContainText("Básico (1 desactivada)");
+  // Sin tarjeta propia (cambio 4b): cada variante activa es su recuadro de precios y la desactivada se cuenta en Precios
+  const precios = page.getByRole("region", { name: "Precios", exact: true });
+  await expect(precios.getByRole("region", { name: "Básico" })).toBeVisible();
+  await expect(precios).toContainText("1 variante desactivada: se reactiva en «Editar variantes».");
   await expect(page.getByRole("region", { name: "Premium" })).toHaveCount(0);
 });
 
