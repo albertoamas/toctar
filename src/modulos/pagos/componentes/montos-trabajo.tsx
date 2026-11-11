@@ -13,6 +13,8 @@ import { estaPagada, METODO_EN_FRASE, NOMBRE_TIPO_PAGO, precioCotizadoYFinal } f
 // saldo se sigue cobrando (RN-13). Con servicios sumados en el taller (HU-36), el precio cotizado y el final por separado
 // (RF-43). Pedido 26: dos tarjetas; en la de servicios, los totales al pie y el saldo resaltado (ámbar si se puede cobrar,
 // verde y "Pagado por completo" si está pagado). C6: el título de cada una arriba de su tarjeta, como en las fichas.
+// Pulido 13.49: las dos tarjetas con su acción sin fondo en la cabecera ("Agregar servicio", "Registrar pago"); la opción
+// del servicio en gris debajo de su nombre; "Anular", en el "⋯" de cada pago.
 
 const bs = (monto: string) => `${mostrarMonto(monto)} Bs`;
 
@@ -21,7 +23,7 @@ type Props = {
   montos: NonNullable<DetalleReserva["montos"]>;
   cerrado: boolean;
   hoy: string;
-  /** Debajo de los servicios: por ejemplo, "Agregar servicio" para el dueño en la orden. */
+  /** En la cabecera de Servicios, sin fondo: "Agregar servicio" para el dueño en la orden. */
   agregar?: React.ReactNode;
   /**
    * Al entregar (pulido 11.4): cobrar el saldo es lo primero, así que va destacado al pie de los pagos ("Falta cobrar")
@@ -40,20 +42,27 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar, cobrar
   );
   return (
       <>
-        <Seccion id="servicios" titulo="Servicios" sinRelleno>
+        <Seccion id="servicios" titulo="Servicios" sinRelleno accion={agregar}>
           <ul className="flex flex-col divide-y divide-border">
-            {montos.lineas.map((l, i) => (
-              <li key={i} className="flex justify-between gap-4 px-4 py-3">
-                <span className="flex flex-col">
-                  {l.descripcion}
-                  {l.esAdicional && <span className="text-sm text-tinta-suave">Adicional</span>}
-                </span>
-                {/* El monto nunca se corta: con un servicio de nombre largo, se acomoda el nombre */}
-                <span className="shrink-0 whitespace-nowrap tabular-nums">{bs(l.precio)}</span>
-              </li>
-            ))}
+            {montos.lineas.map((l, i) => {
+              const { servicio, opcion } = l;
+              return (
+                <li key={i} className="flex justify-between gap-4 px-4 py-3">
+                  <span className="flex min-w-0 flex-col">
+                    {servicio}
+                    {(opcion || l.esAdicional) && (
+                      <span className="flex flex-wrap gap-x-3 text-sm text-tinta-suave">
+                        {opcion && <span>{opcion}</span>}
+                        {l.esAdicional && <span>Adicional</span>}
+                      </span>
+                    )}
+                  </span>
+                  {/* El monto nunca se corta: con un servicio de nombre largo, se acomoda el nombre */}
+                  <span className="shrink-0 whitespace-nowrap tabular-nums">{bs(l.precio)}</span>
+                </li>
+              );
+            })}
           </ul>
-          {agregar && <div className="px-4 pb-3">{agregar}</div>}
           {/* Una sola lista: los totales y, al pie, el saldo resaltado (cada grupo de pares, en un div) */}
           <dl className="flex flex-col border-t border-border">
             <div className="grid grid-cols-[1fr_auto] gap-x-6 gap-y-1 px-4 py-3">
@@ -104,8 +113,8 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar, cobrar
               {montos.pagos.map((p) => {
                 const descripcion = `${NOMBRE_TIPO_PAGO[p.tipo]} ${METODO_EN_FRASE[p.metodo]} de ${bs(p.monto)}, ${formatearFecha(p.fecha)}`;
                 return (
-                  <li key={p.id} className="flex flex-col gap-3 px-4 py-3">
-                    <div className="flex gap-3">
+                  <li key={p.id} className="flex flex-col gap-3 py-3 pl-4 pr-2">
+                    <div className="flex items-start gap-3">
                       {p.comprobante && <VerComprobante foto={p.comprobante} descripcion={descripcion} />}
                       <div className={cn("flex min-w-0 flex-1 flex-col gap-0.5", p.anulado && "text-tinta-suave")}>
                         <span className="flex justify-between gap-4">
@@ -119,8 +128,9 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar, cobrar
                         </span>
                         {p.anulado && <span className="text-sm text-tinta">Anulado: {p.motivoAnulacion}</span>}
                       </div>
+                      {/* "⋯" a la derecha del monto; sin él (anulado o cerrado), el mismo ancho para que los montos queden en columna */}
+                      {!p.anulado && !cerrado ? <div className="-my-1.5"><AnularPago id={p.id} descripcion={descripcion} /></div> : <span aria-hidden className="w-9 shrink-0 pointer-coarse:w-11" />}
                     </div>
-                    {!p.anulado && !cerrado && <AnularPago id={p.id} descripcion={descripcion} />}
                   </li>
                 );
               })}

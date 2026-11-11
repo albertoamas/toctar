@@ -13,6 +13,7 @@ import {
   modoDe,
   NOMBRE_ESTADO,
   numeroCotizacion,
+  partirDescripcion,
   precioSugerido,
   rutaPdf,
   serviciosConOpciones,
@@ -62,6 +63,16 @@ test("la descripción copia servicio y variante; la variante «Única» no se re
   // La opción entre paréntesis, sin guion largo (pulido 9.4)
   expect(descripcionLinea("Pulido y nano cerámico", "5 años")).toBe("Pulido y nano cerámico (5 años)");
   expect(descripcionLinea("Pulido de vidrios", "Única")).toBe("Pulido de vidrios");
+});
+
+test("la descripción se parte en servicio y opción para mostrarla en dos líneas", () => {
+  expect(partirDescripcion("Pulido y nano cerámico (1 año)", "1 año")).toEqual({ servicio: "Pulido y nano cerámico", opcion: "1 año" });
+  expect(partirDescripcion("Pulido de vidrios", "Única")).toEqual({ servicio: "Pulido de vidrios", opcion: null });
+  // Los paréntesis del nombre no son la opción: solo se parte con la opción de la línea
+  expect(partirDescripcion("Lavado (motor)", "Única")).toEqual({ servicio: "Lavado (motor)", opcion: null });
+  expect(partirDescripcion("Lavado (motor) (Básico)", "Básico")).toEqual({ servicio: "Lavado (motor)", opcion: "Básico" });
+  // Una opción renombrada después: el texto guardado queda entero
+  expect(partirDescripcion("Pulido (1 año)", "Un año")).toEqual({ servicio: "Pulido (1 año)", opcion: null });
 });
 
 test("descuento y adelanto aceptan cero o vacío", () => {

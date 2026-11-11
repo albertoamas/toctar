@@ -27,11 +27,15 @@ export function DatosVehiculo({ placa, detalle, tamano }: Props) {
  * sepa (marca, modelo, año, color) y, debajo, el tamaño con su etiqueta. Lo usan Reserva, Orden, Recibir y Entregar.
  */
 export function filaVehiculo(detalle: (string | number)[], tamano: string): [string, React.ReactNode] {
-  return [
-    "Vehículo",
+  return ["Vehículo", valorVehiculo(detalle, tamano)];
+}
+
+/** Lo que dice la fila "Vehículo" (su modelo y su tamaño), para una tarjeta que arma sus propias filas (la orden). */
+export function valorVehiculo(detalle: (string | number)[], tamano: string): React.ReactNode {
+  return (
     <span key="vehiculo" className="flex flex-col">
       {detalle.length > 0 && <span>{detalle.join(" ")}</span>}
       <span className="text-sm text-tinta-suave">Tamaño: {tamano}</span>
-    </span>,
-  ];
+    </span>
+  );
 }

@@ -170,7 +170,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
       {r.montos ? (
         // Principal y datos (§2), según el ancho del área de trabajo como Cotización. En el celular, primero cuándo, dónde y
         // quién: es lo que el taller mira al abrir una reserva; los montos los ve solo quien tiene Pagos
-        <div className="grid items-start gap-8 @4xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="grid items-start gap-8 @4xl:grid-cols-[minmax(0,1fr)_24rem]">
           <div className="flex flex-col gap-8 @4xl:col-start-2 @4xl:row-start-1">
             {datos}
             {nota}

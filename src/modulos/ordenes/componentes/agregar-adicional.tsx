@@ -1,13 +1,12 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useState } from "react";
 import { PlusIcon } from "lucide-react";
-import { useFocoEnError } from "@/componentes/foco-en-error";
-import { conAviso } from "@/componentes/panel/avisos";
-import { Campo, MensajeError } from "@/componentes/panel/campo";
+import { useHidratado } from "@/componentes/hidratado";
+import { Campo } from "@/componentes/panel/campo";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
+import { CancelarModal, ModalFormulario, PieModal, useFormularioEnModal } from "@/componentes/panel/modal-formulario";
 import { Button } from "@/componentes/ui/button";
-import type { EstadoFormulario } from "@/lib/formularios";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { ElegirServicio } from "@/modulos/cotizaciones/componentes/elegir-servicio";
 import type { OpcionServicio } from "@/modulos/cotizaciones/consultas";
@@ -17,30 +16,27 @@ import { agregarAdicional } from "../acciones";
 // HU-36: sumar un servicio a la orden (RF-43). Solo el dueño, que es quien pone precios (RN-01): del catálogo, con el
 // precio vigente para el tamaño del vehículo; si es "según evaluación", lo escribe él. Se elige el servicio y, si tiene
 // varias opciones, cuál (ElegirServicio, como en la cotización).
+// Pulido 13.49: el botón va sin fondo en la cabecera de Servicios, como "Registrar pago" en la de Pagos (antes cortaba la
+// cuenta entre los servicios y el total), y el formulario se abre en un modal.
 
 export function AgregarAdicional({ id, opciones }: { id: number; opciones: OpcionServicio[] }) {
   const [abierto, setAbierto] = useState(false);
-  if (!abierto) {
-    return (
-      <div>
-        <Button type="button" variant="outline" onClick={() => setAbierto(true)}>
-          <PlusIcon />
-          Agregar servicio
-        </Button>
-      </div>
-    );
-  }
-  return <Formulario id={id} opciones={opciones} cerrar={() => setAbierto(false)} />;
+  const hidratado = useHidratado();
+  return (
+    <>
+      <Button type="button" variant="ghost" disabled={!hidratado} onClick={() => setAbierto(true)}>
+        <PlusIcon />
+        Agregar servicio
+      </Button>
+      <ModalFormulario titulo="Agregar servicio" abierto={abierto} alCambiar={setAbierto}>
+        <Formulario id={id} opciones={opciones} />
+      </ModalFormulario>
+    </>
+  );
 }
 
-function Formulario({ id, opciones, cerrar }: { id: number; opciones: OpcionServicio[]; cerrar: () => void }) {
-  const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
-    conAviso(agregarAdicional, (r) => r.ok && cerrar()),
-    {},
-  );
-  const formulario = useRef<HTMLFormElement>(null);
-  useFocoEnError(formulario, estado);
-  const e = estado.errores ?? {};
+function Formulario({ id, opciones }: { id: number; opciones: OpcionServicio[] }) {
+  const { accion, enviando, formulario, e } = useFormularioEnModal(agregarAdicional);
   const [servicioId, setServicioId] = useState(0);
   const [varianteId, setVarianteId] = useState(0);
   const [precio, setPrecio] = useState("");
@@ -50,10 +46,8 @@ function Formulario({ id, opciones, cerrar }: { id: number; opciones: OpcionServ
   const sinMarca = { "aria-invalid": false };
 
   return (
-    <form ref={formulario} action={accion} className="flex flex-col gap-4 tt-tarjeta-panel p-4" noValidate aria-labelledby="adicional-titulo">
-      <h3 id="adicional-titulo" className="tt-titulo-sub">Agregar servicio</h3>
+    <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-label="Agregar servicio">
       <input type="hidden" name="id" value={id} />
-      {estado.mensaje && !estado.ok && <MensajeError id="adicional-error">{estado.mensaje}</MensajeError>}
       <input type="hidden" name="servicioId" value={servicioId || ""} />
       <input type="hidden" name="varianteId" value={varianteId || ""} />
       <Campo id="servicioId" etiqueta="Servicio" error={e.varianteId}>
@@ -76,14 +70,12 @@ function Formulario({ id, opciones, cerrar }: { id: number; opciones: OpcionServ
       <Campo id="precio" etiqueta="Precio" error={e.precio}>
         <CampoMonto id="precio" name="precio" value={precio} onChange={(ev) => setPrecio(ev.target.value)} aria-invalid={!!e.precio} aria-describedby={e.precio ? "precio-error" : undefined} />
       </Campo>
-      <div className="flex flex-wrap gap-2">
+      <PieModal>
         <Button type="submit" disabled={enviando}>
           {enviando ? "Agregando…" : "Agregar"}
         </Button>
-        <Button type="button" variant="outline" onClick={cerrar}>
-          Volver
-        </Button>
-      </div>
+        <CancelarModal />
+      </PieModal>
     </form>
   );
 }

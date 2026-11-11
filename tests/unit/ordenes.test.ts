@@ -4,7 +4,7 @@ import { sumarMeses } from "@/lib/fechas";
 import { precioCotizadoYFinal } from "@/modulos/pagos/reglas";
 import { erroresDe } from "@/lib/formularios";
 import { TIPOS_DETALLE } from "@/db/esquema/trabajos";
-import { esquemaAvance, esquemaDetalle, esquemaEntregar, esquemaFotoOrden, esquemaPublicar, esquemaMarcarBien, esquemaMarcarRestoBien, esquemaRecibir } from "@/modulos/ordenes/esquemas";
+import { esquemaDetalle, esquemaEntregar, esquemaFotoOrden, esquemaPublicar, esquemaMarcarBien, esquemaMarcarRestoBien, esquemaRecibir } from "@/modulos/ordenes/esquemas";
 import { puede } from "@/lib/permisos";
 import { filtrarOrdenes, textoRestoBien,
   enlaceTrabajo,
@@ -116,7 +116,6 @@ test("atrasada: abierta y con la entrega ya pasada; una lista espera al cliente"
 test("extender la entrega: el dueño o el encargado con Órdenes", () => {
   expect(puede({ rol: "encargado", permisos: ["ordenes"] }, "extender_entrega")).toBe(true);
   expect(puede({ rol: "encargado", permisos: ["agenda"] }, "extender_entrega")).toBe(false);
-  expect(esquemaAvance.safeParse({ id: "1", nota: "  " }).success).toBe(false);
 });
 
 test("se extiende mientras se trabaja; una lista ya liberó su espacio", () => {

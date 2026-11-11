@@ -25,7 +25,7 @@ import { duracionEfectiva } from "@/modulos/catalogo/reglas";
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { sucursalPrincipal } from "@/modulos/configuracion/consultas";
 import { conReservaActiva, opcionesDeServicio, type OpcionServicio } from "@/modulos/cotizaciones/consultas";
-import { sePuedeReservar } from "@/modulos/cotizaciones/reglas";
+import { partirDescripcion, sePuedeReservar } from "@/modulos/cotizaciones/reglas";
 import { calcularSaldo, type Saldo } from "@/modulos/pagos/reglas";
 import { entregadasALaVista, ocupaEspacio, seCruzan } from "./reglas";
 
@@ -294,7 +294,8 @@ export type DetalleReserva = {
   /** El vehículo: sus planes de mantenimiento al entregar (pedido 21). */
   vehiculoId: number;
   /** Solo para quien ve pagos (RN-01 y RN-12). */
-  montos: { lineas: { descripcion: string; precio: string; esAdicional: boolean }[]; descuento: string; saldo: Saldo; pagos: PagoReserva[] } | null;
+  /** Cada línea con su servicio y, aparte, su opción (para mostrarla en gris debajo, pulido 13.49). */
+  montos: { lineas: { descripcion: string; servicio: string; opcion: string | null; precio: string; esAdicional: boolean }[]; descuento: string; saldo: Saldo; pagos: PagoReserva[] } | null;
 };
 
 const registrador = alias(usuario, "registrador");
@@ -362,8 +363,9 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
   if (conMontos) {
     const [lineas, filas] = await Promise.all([
       db
-        .select({ descripcion: trabajoLinea.descripcion, precio: trabajoLinea.precio, esAdicional: trabajoLinea.esAdicional })
+        .select({ descripcion: trabajoLinea.descripcion, variante: variante.nombre, precio: trabajoLinea.precio, esAdicional: trabajoLinea.esAdicional })
         .from(trabajoLinea)
+        .innerJoin(variante, eq(variante.id, trabajoLinea.varianteId))
         .where(eq(trabajoLinea.trabajoId, id))
         .orderBy(asc(trabajoLinea.orden)),
       db
@@ -395,7 +397,7 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
       })),
     );
     montos = {
-      lineas,
+      lineas: lineas.map(({ variante: opcionDeLaLinea, ...l }) => ({ ...l, ...partirDescripcion(l.descripcion, opcionDeLaLinea) })),
       descuento,
       saldo: calcularSaldo(
         lineas.map((l) => l.precio),

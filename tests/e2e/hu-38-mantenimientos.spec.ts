@@ -225,7 +225,7 @@ test("entregar el mantenimiento lo deja hecho y programa el siguiente con la fre
   await expect(page.getByText(`Se programará: Mantenimiento del nano cerámico, el ${proximo}.`)).toBeVisible();
   await entregarSinFirma(page);
   await page.getByRole("form", { name: "Entregar vehículo" }).getByRole("button", { name: "Entregar vehículo" }).click();
-  await expect(page.getByText(/^Entregado el /)).toBeVisible();
+  await expect(page.getByRole("list", { name: "Historial de la orden" }).getByText("Vehículo entregado.", { exact: true })).toBeVisible();
 
   const filas = await consultar<{ id: number; estado: string; hecho: number | null; cada: number; fecha: string }>(
     `select id, estado, trabajo_hecho_id as hecho, intervalo_meses as cada, to_char(fecha_programada, 'YYYY-MM-DD') as fecha

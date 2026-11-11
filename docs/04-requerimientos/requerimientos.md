@@ -102,7 +102,7 @@ Cada requisito tiene un código para rastrearlo hasta su historia de usuario y s
 |---|---|---|---|---|
 | RF-40 | Al ingresar el vehículo, la reserva pasa a orden de trabajo con una inspección de ingreso: un checklist de partes que arma el dueño, revisado parte por parte, con el detalle de cada una (rayón, golpe, raspón, roto u otro), su nota y su foto (pedidos 12 y 27), y observaciones. | 2 | Imprescindible | Prop, pedido 12 |
 | RF-41 | La orden tiene estados: recibido, en proceso, listo y entregado. | 2 | Imprescindible | Cot |
-| RF-42 | Quien tiene el permiso de Órdenes ve las órdenes del taller (sin técnico asignado, pedido 32), sube las fotos de inicio y del final (pedido 27), registra avances y notas, y marca la orden como lista. | 2 | Imprescindible | Prop |
+| RF-42 | Quien tiene el permiso de Órdenes ve las órdenes del taller (sin técnico asignado, pedido 32), sube las fotos de inicio y del final (pedido 27) y marca la orden como lista. El historial de la orden lo escribe el sistema (pedido 45: sin notas a mano). | 2 | Imprescindible | Prop |
 | RF-43 | La orden muestra el precio cotizado y el precio final; el dueño puede sumar servicios adicionales. | 2 | Imprescindible | Prop |
 | RF-44 | Desde una orden entregada, el dueño elige fotos de antes y después para publicarlas en la galería del sitio. | 2 | Deseable | Prop |
 

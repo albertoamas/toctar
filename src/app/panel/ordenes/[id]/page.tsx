@@ -3,18 +3,16 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { cn } from "cn";
-import { ImageUpIcon, KeyRoundIcon } from "lucide-react";
+import { ChevronRightIcon, ImageUpIcon, KeyRoundIcon } from "lucide-react";
 import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { AvisarPorWhatsApp } from "@/componentes/panel/avisar-whatsapp";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
-import { ListaDatos } from "@/componentes/panel/lista-datos";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { BOTON_PASO, PasoSiguiente } from "@/componentes/panel/paso-siguiente";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
 import { Insignia } from "@/componentes/panel/insignia";
-import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import { diaYHora, fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/lib/fechas";
@@ -29,7 +27,7 @@ import { obtenerDatosPublicos, obtenerPlantillas } from "@/modulos/configuracion
 import { opcionesDeServicio } from "@/modulos/cotizaciones/consultas";
 import { MasOrden } from "@/modulos/ordenes/componentes/acciones-orden";
 import { AgregarAdicional } from "@/modulos/ordenes/componentes/agregar-adicional";
-import { AvancesOrden } from "@/modulos/ordenes/componentes/avances-orden";
+import { HistorialOrden } from "@/modulos/ordenes/componentes/historial-orden";
 import { EstadoOrden } from "@/modulos/ordenes/componentes/estado-orden";
 import { ComoLlego } from "@/modulos/ordenes/componentes/como-llego";
 import { FirmaDeEntrega } from "@/modulos/ordenes/componentes/firma-entrega";
@@ -39,7 +37,7 @@ import { avancesDeTrabajo, firmaDeTrabajo, revisionDeTrabajo, fotosDeTrabajo, ob
 import { mensajeListo } from "@/modulos/ordenes/mensajes";
 import { puedeQuitarFoto, esOrden, estaAbierta, estaAtrasada, pasosDeOrden, puedeExtenderse, puedePublicarse } from "@/modulos/ordenes/reglas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
-import { filaVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
+import { valorVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 import { aqui, conDesde, leerDesde, volverDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Orden" };
@@ -112,11 +110,6 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   const { anterior } = pasosDeOrden(o.estado);
   const extender =
     puedeExtenderse(o.estado) && puede(usuario, "extender_entrega") ? { fechaInicio: o.fechaInicio, fechaFin: o.fechaFin, espacioId: o.espacioId, espacio: o.espacio, hoy } : undefined;
-  // Entregada: cuándo, quién y, para quien ve pagos, el saldo que quedó y quién lo autorizó (RN-13)
-  const entrega =
-    o.estado === "entregado" && o.entregadoAt
-      ? `Entregado el ${diaYHora(o.entregadoAt)}${o.entregadoPor ? ` por ${o.entregadoPor}` : ""}.${o.montos && o.autorizoSaldo && o.saldoAlEntregar ? ` Con saldo de ${mostrarMonto(o.saldoAlEntregar)} Bs, autorizado por ${o.autorizoSaldo}.` : ""}`
-      : null;
   const entregar = o.estado === "listo" && puede(usuario, "entregar_vehiculo");
   // Con "Avisar" en el encabezado, escribir sin el mensaje de aviso queda en "Más": un solo WhatsApp a la vista
   const escribirEnMas = abierta && aviso ? enlaceWhatsApp(o.telefono) : undefined;
@@ -150,13 +143,14 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
       {conMas && <MasOrden id={o.id} anterior={anterior} extender={extender} avisada={avisada} escribir={escribirEnMas} />}
     </div>
   );
-  // Debajo del título: cuándo se entregó o se avisó, y si ya está en la galería
-  const contexto = (entrega || aviso?.avisado || publicada) && (
+  // Debajo del título: cuándo se avisó y si ya está en la galería. Cuándo y quién la entregó (con saldo o no) está en el
+  // historial, y el saldo que quedó, en la tarjeta de montos (pedido 45)
+  const contexto = (aviso?.avisado || publicada) && (
     <>
-      {entrega ?? aviso?.avisado}
+      {aviso?.avisado}
       {publicada && (
         <>
-          {(entrega || aviso?.avisado) && " "}
+          {aviso?.avisado && " "}
           <Link href="/panel/sitio/galeria" className="tt-area-toque underline underline-offset-4">
             Publicada en la galería ({publicada.fotos === 1 ? "1 foto" : `${publicada.fotos} fotos`}
             {publicada.visible ? "" : ", oculta"})
@@ -192,50 +186,41 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
 
       {/* Principal y datos (§2), según el ancho del área de trabajo: a la izquierda el trabajo (cómo llegó, fotos y
           avances); a la derecha los datos y, debajo, los montos. En el celular, en ese orden: datos, trabajo y montos */}
-      <div className="grid items-start gap-8 @4xl:grid-cols-[minmax(0,1fr)_22rem] @4xl:grid-rows-[auto_1fr]">
+      <div className="grid items-start gap-8 @4xl:grid-cols-[minmax(0,1fr)_24rem] @4xl:grid-rows-[auto_1fr]">
         <div className="@4xl:col-start-2 @4xl:row-start-1">
-          <Seccion id="datos" titulo="Datos">
-            <div className="flex flex-col gap-2">
-              {/* La placa ya está en el título: el vehículo dice su modelo y su tamaño (como la reserva) */}
-              <ListaDatos
-                nombre="Datos de la orden"
-                filas={[
+          {/* Pulido 13.49: en bloques, de lo que se mira primero (cuándo sale y dónde está) al cliente, el vehículo y la
+              reserva; el cliente y la reserva son filas que se tocan, no enlaces subrayados sueltos al pie */}
+          <Seccion id="datos" titulo="Datos" sinRelleno>
+            {/* El nombre, en toda la tarjeta: lo que dice de la orden (también el cliente y el vehículo) */}
+            <div role="group" aria-label="Datos de la orden" className="flex flex-col divide-y divide-border">
+              <dl className="flex flex-col gap-2 px-4 py-3">
+                {o.estado !== "entregado" && (
                   // La entrega aproximada sirve mientras está en el taller; entregada, el encabezado ya dice cuándo
-                  o.estado !== "entregado" && [
-                    "Entrega",
-                    <span key="entrega" className="flex flex-col">
-                      <span className="font-semibold">{o.fechaFin === hoy ? "Hoy" : formatearFecha(o.fechaFin)}</span>
-                      <span className="text-sm text-tinta-suave">aproximada</span>
-                    </span>,
-                  ],
-                  ["Espacio", <span key="espacio" className="font-semibold">{o.espacio}</span>],
-                  [
-                    "Ingresó",
-                    <span key="ingreso" className="flex flex-col">
-                      {o.recibidoAt && <span>{formatearFechaHora(o.recibidoAt)}</span>}
-                      {o.recibidoPor && <span className="text-sm text-tinta-suave">recibió {o.recibidoPor}</span>}
-                    </span>,
-                  ],
-                  [
-                    "Cliente",
-                    <span key="cliente" className="flex flex-col">
-                      <span className="font-semibold">{o.cliente}</span>
-                      <span className="text-sm text-tinta-suave">{formatearWhatsApp(o.telefono)}</span>
-                    </span>,
-                  ],
-                  filaVehiculo(detalle, o.tamano),
-                ]}
-              />
-              {/* Los enlaces, de 44 px y fuera de la lista: la ficha del cliente (con Clientes) y la reserva (con Agenda) */}
-              {verFicha && (
-                <Link href={conDesde(`/panel/clientes/${o.clienteId}`, desdeAqui)} className={ENLACE_TEXTO}>
-                  Ver ficha del cliente
-                </Link>
-              )}
+                  <FilaDato etiqueta="Entrega">
+                    <span className="font-semibold">{o.fechaFin === hoy ? "Hoy" : formatearFecha(o.fechaFin)}</span>
+                    <span className="text-sm text-tinta-suave">aproximada</span>
+                  </FilaDato>
+                )}
+                <FilaDato etiqueta="Espacio">
+                  <span className="font-semibold">{o.espacio}</span>
+                </FilaDato>
+              </dl>
+              <FilaEnlace href={verFicha ? conDesde(`/panel/clientes/${o.clienteId}`, desdeAqui) : null} oculto="Ver ficha del cliente: ">
+                <FilaDato etiqueta="Cliente" como="span" enEnlace={verFicha}>
+                  <span className="font-semibold">{o.cliente}</span>
+                  <span className="text-sm text-tinta-suave">{formatearWhatsApp(o.telefono)}</span>
+                </FilaDato>
+              </FilaEnlace>
+              <div className="px-4 py-3">
+                <FilaDato etiqueta="Vehículo" como="span">
+                  {valorVehiculo(detalle, o.tamano)}
+                </FilaDato>
+              </div>
+              {/* Cuándo ingresó y quién lo recibió ya está en el historial ("Vehículo recibido.", pedido 45) */}
               {verAgenda && (
-                <Link href={conDesde(`/panel/agenda/${o.id}`, desdeAqui)} className={ENLACE_TEXTO}>
-                  Ver la reserva
-                </Link>
+                <FilaEnlace href={conDesde(`/panel/agenda/${o.id}`, desdeAqui)}>
+                  <span className="font-semibold">Ver la reserva</span>
+                </FilaEnlace>
               )}
             </div>
           </Seccion>
@@ -269,7 +254,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
               </div>
             )}
           </Seccion>
-          <AvancesOrden id={o.id} avances={avances.map((a) => ({ id: a.id, nota: a.nota, autor: a.autor, cuando: formatearFechaHora(a.createdAt) }))} editable={abierta} />
+          <HistorialOrden avances={avances.map((a) => ({ id: a.id, nota: a.nota, autor: a.autor, cuando: formatearFechaHora(a.createdAt) }))} />
         </div>
 
         {/* Abierta también después de la entrega: una entregada con saldo se cobra aquí (RN-13, HU-37) */}
@@ -289,6 +274,46 @@ function EnlaceEntregar({ id, desde, principal }: { id: number; desde: string; p
     <Link href={conDesde(`/panel/ordenes/${id}/entregar`, desde)} className={cn(buttonVariants({ variant: principal ? "default" : "outline", size: principal ? "paso" : "default" }), principal && BOTON_PASO)}>
       <KeyRoundIcon />
       Entregar vehículo
+    </Link>
+  );
+}
+
+/** Una fila de Datos: la etiqueta de ancho fijo, así los valores quedan en columna entre bloques. */
+function FilaDato(props: {
+  etiqueta: string;
+  /** "span" fuera de una lista de datos (un enlace no puede llevar un dl). */
+  como?: "div" | "span";
+  /** Dentro de un enlace que ya dice qué es ("Ver ficha del cliente:"): la etiqueta no se lee dos veces. */
+  enEnlace?: boolean;
+  children: React.ReactNode;
+}) {
+  const { etiqueta, como = "div", enEnlace, children } = props;
+  if (como === "span") {
+    return (
+      <span className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-x-3">
+        <span aria-hidden={enEnlace || undefined} className="text-tinta-suave">{etiqueta}</span>
+        <span className="flex min-w-0 flex-col break-words">{children}</span>
+      </span>
+    );
+  }
+  return (
+    <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-x-3">
+      <dt className="text-tinta-suave">{etiqueta}</dt>
+      <dd className="flex min-w-0 flex-col break-words">{children}</dd>
+    </div>
+  );
+}
+
+/** Una fila de la tarjeta que lleva a otra pantalla, con "›"; sin `href` (quien mira no tiene ese módulo), solo la fila. */
+function FilaEnlace({ href, oculto, children }: { href: string | null; /** Lo que oye el lector antes del contenido. */ oculto?: string; children: React.ReactNode }) {
+  if (!href) return <div className="px-4 py-3">{children}</div>;
+  return (
+    <Link href={href} className="flex min-h-11 items-center justify-between gap-3 px-4 py-3 hover:bg-fondo-panel focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring">
+      <span className="min-w-0 flex-1">
+        {oculto && <span className="sr-only">{oculto}</span>}
+        {children}
+      </span>
+      <ChevronRightIcon aria-hidden className="size-4 shrink-0 text-tinta-suave" />
     </Link>
   );
 }

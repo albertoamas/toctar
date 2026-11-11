@@ -44,6 +44,7 @@ Toda pantalla del panel es de uno de estos tipos. El tipo decide su ancho.
 | Encabezado de la página | Lo poco usado | En "Más" (`MenuMas`) |
 | Cabecera de una sección | "Editar", "Agregar", "Registrar pago" | Sin borde, con ícono |
 | Fila de una lista | Toda la fila abre su ficha o su modal | Sin botones, con la flecha ›. Excepción: la acción de todos los días en Saldos y Mantenimientos (`FilaConAcciones`) |
+| Fila de una tarjeta que se lee (un pago) | Lo poco usado que no se deshace (anular) | En su "⋯" (`MenuMas icono`), a la derecha, con su confirmación en un modal |
 | Pie de un modal | Guardar y "Cancelar"; aparte, a la derecha, lo que se usa poco | Rojo y con borde; lo de la derecha, sin borde |
 
 - En una pantalla con varias listas iguales (Taller), "Agregar" va con borde: varias acciones rojas competirían.

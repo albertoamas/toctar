@@ -102,9 +102,10 @@ test("registrar un pago con comprobante, no pasar el saldo y anular con motivo",
   await expect(page.getByRole("dialog").getByRole("img", { name: /^Comprobante: Saldo por QR/ })).toBeVisible();
   await page.keyboard.press("Escape");
 
-  // Anular el adelanto: pide motivo, queda tachado y deja de contar
-  await page.getByRole("button", { name: /^Anular Adelanto en efectivo de 150 Bs/ }).click();
-  const anular = page.getByRole("form", { name: /^Anular Adelanto en efectivo/ });
+  // Anular el adelanto, desde el "⋯" del pago (pulido 13.49): pide motivo, queda tachado y deja de contar
+  await page.getByRole("button", { name: /^Opciones del pago: Adelanto en efectivo de 150 Bs/ }).click();
+  await page.getByRole("menuitem", { name: "Anular pago" }).click();
+  const anular = page.getByRole("dialog", { name: "Anular pago" }).getByRole("form", { name: /^Anular Adelanto en efectivo/ });
   await anular.getByRole("button", { name: "Anular pago" }).click();
   await expect(anular.getByText("Escribe el motivo.")).toBeVisible();
   await anular.getByLabel("Motivo").fill("Se cargó por error");
