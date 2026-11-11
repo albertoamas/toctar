@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Manual del panel TocTar</title>
+<style>
+  @font-face { font-family: "Montserrat"; src: url("/fuentes/montserrat-variable-latin.woff2") format("woff2"); font-weight: 100 900; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Barlow Condensed"; src: url("/fuentes/barlow-condensed-800-italica-latin.woff2") format("woff2"); font-weight: 700 800; font-style: italic; font-display: swap; }
+</style>
+</head>
+<body>
+<style>
+  /* Manual de taller con la identidad de TocTar: portada negra con la línea roja, el resto claro como el panel.
+     Un solo aspecto a propósito (el panel es claro): todos los colores están puestos, sin tema oscuro. */
+  :root {
+    --negro: #000000;
+    --fondo: #ffffff;
+    --fondo-panel: #f3f4f6;
+    --tinta: #1a1a1a;
+    --tinta-suave: #595959;
+    --rojo: #e30613;
+    --rojo-texto: #c40511;
+    --borde: #e3e4e8;
+    --aviso-fondo: #fdf1e0;
+    --aviso: #7a4f00;
+    --titular: "Barlow Condensed", "Arial Narrow", Impact, sans-serif;
+    --texto: "Montserrat", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--fondo-panel);
+    color: var(--tinta);
+    font: 400 16px/1.6 var(--texto);
+    -webkit-font-smoothing: antialiased;
+  }
+  .ancho {
+    max-width: 1040px;
+    margin-inline: auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+
+  /* Portada */
+  .portada { background: var(--negro); color: #fff; overflow: hidden; position: relative; }
+  .portada .ancho { padding-block: 40px 48px; display: grid; gap: 20px; }
+  .portada img.logo { width: min(260px, 70%); height: auto; }
+  .portada h1 {
+    font: 800 italic clamp(44px, 9vw, 84px)/0.95 var(--titular);
+    margin: 8px 0 0;
+    letter-spacing: 0.5px;
+    text-wrap: balance;
+  }
+  .portada p { margin: 0; color: #d4d4d4; max-width: 46ch; font-size: 17px; }
+  .portada .led { height: 3px; background: var(--rojo); width: 100%; position: absolute; bottom: 0; left: 0; }
+  /* El único ángulo de la marca: 60° */
+  .portada::after {
+    content: "";
+    position: absolute;
+    right: -60px; top: 0; bottom: 0;
+    width: 220px;
+    background: var(--rojo);
+    transform: skewX(-30deg);
+    opacity: 0.9;
+  }
+  @media (max-width: 640px) { .portada::after { width: 90px; right: -50px; } }
+  .portada .ancho > * { position: relative; z-index: 1; }
+
+  /* Índice por rol */
+  nav.roles { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--fondo); border-bottom: 1px solid var(--borde); }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--fondo); }
+  nav.roles .ancho { display: flex; gap: 8px; overflow-x: auto; padding-block: 10px; }
+  nav.roles a {
+    flex: none;
+    text-decoration: none;
+    color: var(--tinta);
+    font-weight: 600;
+    font-size: 15px;
+    padding: 8px 14px;
+    border: 1px solid var(--borde);
+    border-radius: 999px;
+    background: var(--fondo);
+  }
+  nav.roles a:hover { border-color: var(--tinta-suave); }
+  nav.roles a:focus-visible, a:focus-visible { outline: 2px solid var(--rojo); outline-offset: 2px; }
+
+  /* Secciones */
+  section.rol { padding-block: 48px 8px; scroll-margin-top: 64px; }
+  .cabecera-rol { display: grid; gap: 6px; margin-bottom: 24px; }
+  .etiqueta {
+    font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rojo-texto);
+  }
+  h2 {
+    font: 800 italic clamp(34px, 6vw, 52px)/1 var(--titular);
+    margin: 0;
+    text-wrap: balance;
+  }
+  .cabecera-rol p { margin: 0; color: var(--tinta-suave); max-width: 62ch; }
+  .permisos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .permisos span { font-size: 13px; font-weight: 600; background: var(--fondo); border: 1px solid var(--borde); border-radius: 999px; padding: 3px 10px; }
+
+  /* Un tema (recibir, cotizar…): título y sus pasos */
+  .tema { background: var(--fondo); border-radius: 16px; border: 1px solid var(--borde); padding: 24px; margin-bottom: 20px; }
+  .tema h3 { font: 700 21px/1.3 var(--texto); margin: 0 0 4px; }
+  .tema > p { margin: 0 0 16px; color: var(--tinta-suave); max-width: 62ch; }
+  .tema-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 32px; align-items: start; }
+  .tema-cuerpo.sin-foto { grid-template-columns: minmax(0, 1fr); }
+  @media (max-width: 760px) { .tema-cuerpo { grid-template-columns: minmax(0, 1fr); } .tema { padding: 20px 16px; } }
+
+  ol.pasos { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; counter-reset: paso; }
+  ol.pasos li { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; counter-increment: paso; }
+  ol.pasos li::before {
+    content: counter(paso);
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--negro); color: #fff;
+    font: 800 italic 18px/32px var(--titular);
+    text-align: center;
+  }
+  ul.puntos { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+  .boton {
+    display: inline-block;
+    font-weight: 600;
+    font-size: 0.92em;
+    padding: 0 8px;
+    border-radius: 6px;
+    border: 1px solid var(--borde);
+    background: var(--fondo-panel);
+    white-space: nowrap;
+  }
+  .boton.rojo { background: var(--rojo); border-color: var(--rojo); color: #fff; }
+  .nota { margin-top: 16px; padding: 12px 14px; border-radius: 10px; background: var(--aviso-fondo); color: var(--aviso); font-size: 15px; }
+
+  /* La captura en un marco de celular */
+  figure.celular { margin: 0; display: grid; gap: 8px; justify-items: center; }
+  figure.celular .marco {
+    width: 100%; max-width: 270px;
+    border-radius: 28px; padding: 8px; background: var(--negro);
+    box-shadow: 0 10px 30px rgb(0 0 0 / 0.18);
+  }
+  figure.celular img { display: block; width: 100%; height: auto; border-radius: 20px; aspect-ratio: 390 / 844; background: var(--fondo-panel); }
+  figure.celular figcaption { font-size: 13px; color: var(--tinta-suave); text-align: center; max-width: 270px; }
+  @media (max-width: 760px) { figure.celular .marco { max-width: 240px; } }
+  .dos-fotos { display: grid; gap: 16px; }
+
+  /* Saber */
+  .saber { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  .saber div { background: var(--fondo); border: 1px solid var(--borde); border-radius: 14px; padding: 16px; }
+  .saber strong { display: block; margin-bottom: 4px; }
+  .saber p { margin: 0; color: var(--tinta-suave); font-size: 15px; }
+
+  footer { background: var(--negro); color: #d4d4d4; margin-top: 48px; }
+  footer .ancho { padding-block: 28px; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; font-size: 14px; }
+  footer img { width: 140px; height: auto; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  html { scroll-behavior: smooth; }
+  /* Quién hace cada paso */
+  .quien { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; border: 1px solid; white-space: nowrap; }
+  .quien.taller { color: #1f3a8a; border-color: #c7d2fe; background: #eef2ff; }
+  .quien.atencion { color: #1b6e43; border-color: #bfe3cc; background: #e6f4ea; }
+  .quien.dueno { color: #ffffff; border-color: var(--negro); background: var(--negro); }
+  .paso-titulo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 14px; }
+  .paso-titulo h3 { margin: 0 6px 0 0; }
+  .paso-titulo .num { width: 40px; height: 40px; border-radius: 10px; background: var(--rojo); color: #fff; font: 800 italic 26px/40px var(--titular); text-align: center; flex: none; }
+  /* La barra de seis pasos, como en el panel */
+  ol.ciclo { list-style: none; padding: 0; margin: 10px 0 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; counter-reset: c; }
+  ol.ciclo li { counter-increment: c; font-size: 13px; font-weight: 600; color: var(--tinta-suave); border-top: 5px solid var(--negro); padding-top: 6px; }
+  ol.ciclo li::before { content: counter(c) ". "; color: var(--tinta); }
+  @media (max-width: 560px) { ol.ciclo { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 12px; } }
+  /* Quién hace qué */
+  .tabla-roles { overflow-x: auto; }
+  .tabla-roles table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 520px; }
+  .tabla-roles th, .tabla-roles td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--borde); }
+  .tabla-roles thead th { font-size: 13px; color: var(--tinta-suave); font-weight: 600; }
+  /* Botón de descarga del PDF (capacidad downloads) */
+  .descargar {
+    justify-self: start;
+    display: inline-flex; align-items: center; gap: 10px;
+    font: 700 16px/1 var(--texto);
+    color: #fff; background: var(--rojo); border: 0; border-radius: 10px;
+    padding: 14px 20px; cursor: pointer; min-height: 48px;
+  }
+  .descargar:hover { background: #c40511; }
+  .descargar:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+  .descargar[disabled] { opacity: 0.7; cursor: progress; }
+  .estado-descarga { font-size: 14px; color: #d4d4d4; min-height: 1.2em; }
+
+  /* Para imprimir y para el PDF: A4, sin el índice ni el botón, cada tema entero en su página */
+  @page { size: A4; margin: 14mm 12mm; }
+  @media print {
+    html, body { background: #fff; }
+    body { font-size: 12.5px; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    nav.roles, .descargar, .estado-descarga, body::before { display: none !important; }
+    .portada .ancho { padding-block: 28px 32px; }
+    .portada h1 { font-size: 64px; }
+    section.rol { padding-block: 22px 0; }
+    .cabecera-rol { break-after: avoid; }
+    .cabecera-rol { margin-bottom: 12px; }
+    h2 { font-size: 38px; }
+    .tema { break-inside: avoid; padding: 16px 18px; margin-bottom: 12px; box-shadow: none; }
+    .tema-cuerpo, .tema-cuerpo.sin-foto { gap: 18px; }
+    .tema-cuerpo { grid-template-columns: minmax(0, 1fr) 150px; }
+    .tema-cuerpo:has(.dos-fotos) { grid-template-columns: minmax(0, 1fr) 290px; }
+    .tema-cuerpo.sin-foto { grid-template-columns: minmax(0, 1fr); }
+    .dos-fotos { grid-template-columns: 1fr 1fr; gap: 10px; }
+    figure.celular .marco { max-width: 150px; border-radius: 18px; padding: 5px; box-shadow: none; }
+    figure.celular img { border-radius: 13px; }
+    figure.celular figcaption { font-size: 11px; }
+    ol.pasos { gap: 9px; }
+    .saber { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .saber div { break-inside: avoid; }
+    footer { margin-top: 24px; }
+    .tabla-roles table { min-width: 0; font-size: 12px; }
+  }
+  .portada-arriba { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+  .volver-panel { color: #fff; font-weight: 600; font-size: 15px; text-decoration: none; border: 1px solid rgb(255 255 255 / 0.4); border-radius: 999px; padding: 8px 14px; }
+  .volver-panel:hover { border-color: #fff; }
+  .volver-panel:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  a.descargar { text-decoration: none; }
+  @media print { .volver-panel { display: none; } }
+</style>
+
+<header class="portada">
+  <div class="ancho">
+    <div class="portada-arriba"><img class="logo" src="/panel/manual/logo.svg" alt="TocTar Detailing"><a class="volver-panel" href="/panel">Volver al panel</a></div>
+    <h1>Manual del panel</h1>
+    <p>Para el dueño y los encargados de TocTar Detailing. Cada paso, con la pantalla tal como se ve en el celular.</p>
+    <a class="descargar" href="/panel/manual/manual-del-panel-toctar.pdf" download="Manual del panel TocTar.pdf">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+      Descargar PDF
+    </a>
+  </div>
+  <div class="led" aria-hidden="true"></div>
+</header>
+
+<nav class="roles" aria-label="Partes del manual">
+  <div class="ancho">
+    <a href="#todos">Para todos</a>
+    <a href="#ciclo">El ciclo de un trabajo</a>
+    <a href="#clientes">Clientes y cobros</a>
+    <a href="#dueno">Solo el dueño</a>
+    <a href="#saber">Conviene saber</a>
+  </div>
+</nav>
+
+<main>
+  <!-- PARA TODOS -->
+  <section class="rol ancho" id="todos" aria-labelledby="t-todos">
+    <div class="cabecera-rol">
+      <span class="etiqueta">Para todos</span>
+      <h2 id="t-todos">Entrar y moverse</h2>
+      <p>Lo mismo para el dueño y para cada encargado. El cliente no usa el sistema: todo lo registra el personal.</p>
+    </div>
+
+    <article class="tema">
+      <h3>Quién hace qué</h3>
+      <p>Cada persona ve en el menú solo lo que le toca. El dueño arma los permisos de cada encargado con un perfil.</p>
+      <div class="tabla-roles">
+        <table>
+          <thead><tr><th scope="col">Quién</th><th scope="col">Qué hace</th><th scope="col">Ve en el menú</th></tr></thead>
+          <tbody>
+            <tr><th scope="row"><span class="quien taller">Taller</span></th><td>Recibe los vehículos, los trabaja, avisa que están listos y los entrega. No ve precios ni pagos.</td><td>Inicio, Agenda, Órdenes</td></tr>
+            <tr><th scope="row"><span class="quien atencion">Atención</span></th><td>Todo lo de Taller y además trata con los clientes: los registra, les cotiza, reserva, cobra y avisa el mantenimiento.</td><td>Además: Clientes, Cotizaciones, Saldos pendientes, Mantenimientos</td></tr>
+            <tr><th scope="row"><span class="quien dueno">Dueño</span></th><td>Todo, y lo que es solo suyo: precios, sitio web, reclamos, usuarios y configuración.</td><td>Todo el menú</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="tema">
+      <h3>Instalar la app e ingresar</h3>
+      <div class="tema-cuerpo">
+        <ol class="pasos">
+          <li><span>En el celular, abre la dirección del panel en el navegador y elige <b>Agregar a la pantalla de inicio</b> (en el iPhone, desde <b>Compartir</b>). Queda un ícono de TocTar y se abre como una app.</span></li>
+          <li><span>Ingresa con el usuario y la contraseña que te dio el dueño.</span></li>
+          <li><span>Si te equivocas varias veces seguidas, el ingreso se bloquea unos minutos. Si olvidaste tu contraseña, el dueño te la cambia en Usuarios.</span></li>
+        </ol>
+        <figure class="celular"><div class="marco"><img src="/panel/manual/capturas/01-ingresar.jpg" alt="Pantalla de ingreso del panel, con usuario y contraseña" loading="lazy" width="390" height="844"></div><figcaption>El ingreso</figcaption></figure>
+      </div>
+    </article>
+
+    <article class="tema">
+      <h3>El inicio y el menú</h3>
+      <div class="tema-cuerpo">
+        <ol class="pasos">
+          <li><span><b>Inicio</b> muestra lo del día: lo que hay por cobrar, los vehículos en el taller, los que llegan hoy y lo que pide atención. Cada tarjeta y cada fila se tocan para abrir su pantalla.</span></li>
+          <li><span>El menú está en el botón de tres rayas, arriba a la izquierda.</span></li>
+          <li><span>La flecha redonda junto al título es <b>Volver</b>: lleva a la pantalla de la que viniste. Debajo del título dice adónde ("Cliente", "Agenda", "Inicio"…).</span></li>
+        </ol>
+        <div class="dos-fotos">
+          <figure class="celular"><div class="marco"><img src="/panel/manual/capturas/02-inicio.jpg" alt="Inicio con los números del día y la lista Para hoy" loading="lazy" width="390" height="844"></div><figcaption>Inicio</figcaption></figure>
+          <figure class="celular"><div class="marco"><img src="/panel/manual/capturas/03-menu.jpg" alt="El menú del panel abierto en el celular" loading="lazy" width="390" height="844"></div><figcaption>El menú</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="tema">
+      <h3>Guardar, los avisos y salir sin guardar</h3>
+      <div class="tema-cuerpo sin-foto">
+        <ul class="puntos">
+          <li>Después de guardar sale un aviso corto abajo ("Pago registrado.", "Cliente creado."). Desaparece solo.</li>
+          <li>Si falta algo, el aviso dice <b>"Revisa los campos marcados."</b> y el campo queda en rojo con lo que hay que corregir.</li>
+          <li>Si intentas salir de un formulario con algo escrito, el sistema pregunta <b>"¿Salir sin guardar?"</b>. <span class="boton">Seguir editando</span> no pierde nada.</li>
+          <li>Cuando hay una mejora del sistema aparece <b>"Hay una versión nueva del sistema"</b> con <span class="boton">Actualizar</span>. Tócalo cuando no estés a mitad de un formulario.</li>
+        </ul>
+      </div>
+    </article>
+  </section>
+
+  <!-- EL CICLO -->
+  <section class="rol ancho" id="ciclo" aria-labelledby="t-ciclo">
+    <div class="cabecera-rol">
+      <span class="etiqueta">Paso a paso</span>
+      <h2 id="t-ciclo">El ciclo de un trabajo</h2>
+      <p>Un trabajo pasa por seis pasos, los mismos que muestra el panel arriba de cada cotización, reserva y orden ("Paso 3 de 6: Recibida"). Cada paso dice quién lo hace.</p>
+      <ol class="ciclo" aria-label="Los pasos de un trabajo"><li>Cotizada</li><li>Reservada</li><li>Recibida</li><li>En proceso</li><li>Lista</li><li>Entregada</li></ol>
+    </div>
+
+    <article class="tema">
+      <div class="paso-titulo"><span class="num">1</span><h3>Cotizar</h3><span class="quien atencion">Atención</span><span class="quien dueno">Dueño</span></div>
+      <div class="tema-cuerpo">
+        <ol class="pasos">
+          <li><span><span class="boton rojo">Nueva cotización</span> (en Cotizaciones, en Inicio o en la ficha del cliente) va en tres pasos: <b>Cliente</b>, <b>Vehículo</b> y <b>Servicios y precio</b>.</span></li>
+          <li><span>Cada servicio trae el precio del catálogo para el tamaño del vehículo. Se puede ajustar y sumar un descuento.</span></li>
+          <li><span>Al crearla queda su PDF. Con <span class="boton">Compartir</span> se manda por WhatsApp.</span></li>
+          <li><span>Cuando el cliente responde: <span class="boton rojo">Aceptó</span> (queda en <b>Por reservar</b> de la Agenda) o <b>Rechazar</b> en <span class="boton">Más</span>, con el motivo.</span></li>
+        </ol>
+        <div class="dos-fotos">
+          <figure class="celular"><div class="marco"><img src="/panel/manual/capturas/13-nueva-cotizacion.jpg" alt="Nueva cotización, paso Vehículo" loading="lazy" width="390" height="844"></div><figcaption>Nueva cotización</figcaption></figure>
+          <figure class="celular"><div class="marco"><img src="/panel/manual/capturas/14-cotizacion.jpg" alt="Una cotización pendiente con el botón Aceptó" loading="lazy" width="390" height="844"></div><figcaption>La cotización enviada</figcaption></figure>
+        </div>
+      </div>
+      <p class="nota"><b>Una cotización enviada no cambia su precio ni su PDF.</b> Para cambiar algo, <b>Nueva versión</b> en "Más": la anterior queda como estaba.</p>
+    </article>
+
+    <article class="tema">
+      <div class="paso-titulo"><span class="num">2</span><h3>Reservar</h3><span class="quien atencion">Atención</span><span class="quien dueno">Dueño</span></div>
+      <div class="tema-cuerpo">
+        <ol class="pasos">
+          <li><span>Desde una cotización aceptada, <span class="boton rojo">Reservar en Agenda</span>. O <span class="boton rojo">Nueva reserva</span> desde la Agenda, Inicio o la ficha del cliente, o tocando un día libre del tablero.</span></li>
+          <li><span>Son cuatro pasos: <b>Cliente</b>, <b>Vehículo</b>, <b>Servicios</b> y <b>Fecha y adelanto</b>. En Servicios, si el cliente tiene cotizaciones, se reserva una de ellas con sus precios; si no, <span class="boton">Reserva sin cotización</span> arma una <b>reserva directa</b>.</span></li>
+          <li><span>El sistema solo ofrece los espacios libres en esas fechas.</span></li>
+          <li><span>El adelanto: el monto, cómo pagó y la foto del comprobante. O <span class="boton">Sin adelanto</span>.</span></li>
+        </ol>
+        <figure class="celular"><div class="marco"><img src="/panel/manual/capturas/15-nueva-reserva.jpg" alt="Nueva reserva, paso Servicios, con las cotizaciones del cliente" loading="lazy" width="390" height="844"></div><figcaption>Nueva reserva</figcaption></figure>
+      </div>
+      <p class="nota">Desde la reserva se puede <b>Reprogramar</b> o <b>Cancelar reserva</b> (en "Más", con el motivo). Los pagos quedan registrados.</p>
+    </article>
+
+    <article class="tema">
+      <div class="paso-titulo"><span class="num">3</span><h3>Recibir el vehículo</h3><span class="quien taller">Taller</span><span class="quien atencion">Atención</span><span class="quien dueno">Dueño</span></div>
+      <div class="tema-cuerpo">
+        <ol class="pasos">
+          <li><span>En <b>Agenda</b> (o desde Inicio) abre la reserva del día y toca <span class="boton rojo">Recibir vehículo</span>.</span></li>
+          <li><span>Revisa el vehículo parte por parte: <span class="boton">Bien</span> con un toque, o <span class="boton">Detalle</span> si tiene un rayón, un golpe u otra cosa, con su foto. Si todo está bien, <span class="boton">Marcar todas como bien</span>.</span></li>
+          <li><span>En <b>Observaciones</b> va lo que no está en el checklist: objetos que deja el cliente, lo que pidió.</span></li>
+          <li><span>Toca <span class="boton rojo">Recibir vehículo</span>. La reserva pasa a ser una <b>orden</b> y se abre.</span></li>
+        </ol>
+        <div class="dos-fotos">
+          <figure class="celular"><div class="marco"><img src="/panel/manual/capturas/04-agenda.jpg" alt="La agenda de un día con sus espacios" loading="lazy" width="390" height="844"></div><figcaption>La agenda del día</figcaption></figure>
+          <figure class="celular"><div class="marco"><img src="/panel/manual/capturas/06-recibir.jpg" alt="Recibir un vehículo con el checklist parte por parte" loading="lazy" width="390" height="844"></div><figcaption>El checklist al recibir</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="tema">
+      <div class="paso-titulo"><span class="num">4</span><h3>Trabajar</h3><span class="quien taller">Taller</span><span class="quien atencion">Atención</span><span class="quien dueno">Dueño</span></div>
+      <div class="tema-cuerpo sin-foto">
+        <ol class="pasos">
+          <li><span>En la orden, el botón grande de arriba es siempre el paso siguiente: <span class="boton rojo">Empezar trabajo</span> y, al terminar, <span class="boton rojo">Marcar listo</span>.</span></li>
+          <li><span>Agrega en la orden las fotos del inicio y las del final del trabajo.</span></li>
+          <li><span>En <span class="boton">Más</span>: <b>Extender entrega</b> si el trabajo se atrasa, o volver un paso si algo se marcó por error.</span></li>
+        </ol>
+      </div>
+    </article>
+
+    <article class="tema">
+      <div class="paso-titulo"><span class="num">5</span><h3>Lista: avisar al cliente</h3><span class="quien taller">Taller</span><span class="quien atencion">Atención</span><span class="quien dueno">Dueño</span></div>
+      <div class="tema-cuerpo">
+        <ol class="pasos">
+          <li><span>Con la orden lista, <span class="boton rojo">Avisar por WhatsApp</span> abre el WhatsApp con el mensaje armado para el cliente.</span></li>
+          <li><span>Inicio muestra las órdenes listas que todavía no se avisaron.</span></li>
+        </ol>
+        <figure class="celular"><div class="marco"><img src="/panel/manual/capturas/08-orden.jpg" alt="Una orden lista con Avisar por WhatsApp y Entregar vehículo" loading="lazy" width="390" height="844"></div><figcaption>La orden, lista para avisar</figcaption></figure>
+      </div>
+    </article>
+
+    <article class="tema">
+      <div class="paso-titulo"><span class="num">6</span><h3>Entregar y cobrar</h3><span class="quien taller">Taller</span><span class="quien atencion">Atención</span><span class="quien dueno">Dueño</span></div>
+      <div class="tema-cuerpo">
+        <ol class="pasos">
+          <li><span>Cuando viene el cliente, en la orden toca <span class="boton">Entregar vehículo</span>.</span></li>
+          <li><span>Si debe, se cobra ahí con <span class="boton rojo">Registrar pago</span>: el monto (nunca más que el saldo), cómo pagó (efectivo, QR o transferencia) y el comprobante. Esto lo hace quien tiene Pagos (Atención o el dueño).</span></li>
+          <li><span>El cliente firma en la pantalla. Si no puede firmar, <span class="boton">Entregar sin firma</span> pide el motivo.</span></li>
+          <li><span>Si el cliente se lleva el vehículo debiendo, la entrega solo la autoriza quien tiene ese permiso (<b>Autorizar entrega con saldo</b>).</span></li>
+        </ol>
+        <div class="dos-fotos">
+          <figure class="celular"><div class="marco"><img src="/panel/manual/capturas/09-entregar.jpg" alt="Entregar un vehículo con la firma del cliente" loading="lazy" width="390" height="844"></div><figcaption>La entrega</figcaption></figure>
+          <figure class="celular"><div class="marco"><img src="/panel/manual/capturas/16-registrar-pago.jpg" alt="Registrar un pago con el monto y cómo pagó" loading="lazy" width="390" height="844"></div><figcaption>Registrar pago</figcaption></figure>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- CLIENTES Y COBROS -->
+  <section class="rol ancho" id="clientes" aria-labelledby="t-clientes">
+    <div class="cabecera-rol">
+      <span class="etiqueta">Atención y dueño</span>
+      <h2 id="t-clientes">Clientes, saldos y mantenimientos</h2>
+    </div>
+
+    <article class="tema">
+      <h3>Clientes</h3>
+      <div class="tema-cuerpo">
+        <ol class="pasos">
+          <li><span><span class="boton rojo">Agregar cliente</span>: nombre, WhatsApp y su vehículo (la placa y el tamaño). El correo, el NIT y las notas son opcionales.</span></li>
+          <li><span>Si el teléfono o la placa ya existen, el sistema lo avisa y ofrece abrir la ficha que ya está, para no tener al mismo cliente dos veces.</span></li>
+          <li><span>En la <b>ficha del cliente</b> están sus vehículos, sus reservas, sus cotizaciones y sus mantenimientos.</span></li>
+        </ol>
+        <figure class="celular"><div class="marco"><img src="/panel/manual/capturas/12-ficha-cliente.jpg" alt="La ficha de un cliente con sus vehículos, reservas y cotizaciones" loading="lazy" width="390" height="844"></div><figcaption>La ficha del cliente</figcaption></figure>
+      </div>
+    </article>
+
+    <article class="tema">
+      <h3>Saldos pendientes</h3>
+      <div class="tema-cuerpo">
+        <ol class="pasos">
+          <li><span>Quién debe y cuánto, de las órdenes ya entregadas, de la más antigua a la más nueva.</span></li>
+          <li><span>Desde cada fila se le escribe por WhatsApp o se registra el pago.</span></li>
+          <li><span>Un pago mal cargado no se borra: se <b>anula</b> con el motivo.</span></li>
+        </ol>
+        <figure class="celular"><div class="marco"><img src="/panel/manual/capturas/17-saldos.jpg" alt="La lista de saldos pendientes" loading="lazy" width="390" height="844"></div><figcaption>Saldos pendientes</figcaption></figure>
+      </div>
+    </article>
+
+    <article class="tema">
+      <h3>Mantenimientos</h3>
+      <div class="tema-cuerpo">
+        <ol class="pasos">
+          <li><span>Los servicios con mantenimiento programan el próximo al entregarse (por ejemplo, el nano cerámico cada 3 meses).</span></li>
+          <li><span>En <b>Por avisar</b>: <span class="boton">Avisar</span> abre el WhatsApp con el mensaje, <span class="boton">Reservar</span> arma la reserva y <span class="boton">No le interesa</span> lo cierra.</span></li>
+        </ol>
+        <figure class="celular"><div class="marco"><img src="/panel/manual/capturas/18-mantenimientos.jpg" alt="Mantenimientos por avisar" loading="lazy" width="390" height="844"></div><figcaption>Mantenimientos</figcaption></figure>
+      </div>
+    </article>
+  </section>
+
+  <!-- DUEÑO -->
+  <section class="rol ancho" id="dueno" aria-labelledby="t-dueno">
+    <div class="cabecera-rol">
+      <span class="etiqueta">Solo el dueño</span>
+      <h2 id="t-dueno">Precios, sitio, usuarios y configuración</h2>
+    </div>
+
+    <article class="tema">
+      <h3>Catálogo y precios</h3>
+      <div class="tema-cuerpo">
+        <ol class="pasos">
+          <li><span>Cada servicio tiene sus <b>variantes</b> (por ejemplo 1, 2, 3, 5 y 10 años) y su precio para cada tamaño de vehículo.</span></li>
+          <li><span><span class="boton rojo">Agregar servicio</span> pide solo el nombre. Después se cargan las variantes y los precios. Un precio vacío se muestra como "Según evaluación".</span></li>
+          <li><span>Cambiar un precio no cambia las cotizaciones ya enviadas. El historial de cada precio queda guardado (<b>Ver historial</b>).</span></li>
+        </ol>
+        <figure class="celular"><div class="marco"><img src="/panel/manual/capturas/20-servicio-catalogo.jpg" alt="Un servicio del catálogo con sus precios por variante y tamaño" loading="lazy" width="390" height="844"></div><figcaption>Precios de un servicio</figcaption></figure>
+      </div>
+      <p class="nota">Los precios <b>nunca</b> salen en el sitio web.</p>
+    </article>
+
+    <article class="tema">
+      <h3>Sitio web y reclamos</h3>
+      <div class="tema-cuerpo">
+        <ul class="puntos">
+          <li><b>Servicios:</b> la página de cada servicio en el sitio, con sus beneficios, sus pasos y su foto, y si se muestra o no.</li>
+          <li><b>Galería:</b> las fotos de antes y después. Desde una orden entregada, <span class="boton">Publicar en la galería</span> las pasa sin volver a subirlas.</li>
+          <li><b>Textos</b> y <b>Preguntas frecuentes</b> del sitio.</li>
+          <li><b>Reclamos:</b> llegan desde la página "Garantía y reclamos" del sitio. La lista abre en <b>Pendientes</b>. En cada uno: <span class="boton">Escribir por WhatsApp</span> y, al resolverlo, <span class="boton rojo">Marcar como atendido</span> con lo que se hizo.</li>
+        </ul>
+        <div class="dos-fotos">
+          <figure class="celular"><div class="marco"><img src="/panel/manual/capturas/26-sitio.jpg" alt="El módulo Sitio web" loading="lazy" width="390" height="844"></div><figcaption>Sitio web</figcaption></figure>
+          <figure class="celular"><div class="marco"><img src="/panel/manual/capturas/21-reclamo.jpg" alt="Un reclamo pendiente" loading="lazy" width="390" height="844"></div><figcaption>Un reclamo</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="tema">
+      <h3>Usuarios</h3>
+      <div class="tema-cuerpo">
+        <ol class="pasos">
+          <li><span><span class="boton rojo">Agregar usuario</span>: nombre, usuario, contraseña inicial y rol.</span></li>
+          <li><span>Al encargado se le arman los permisos de un toque con un <b>perfil</b>: <span class="boton">Taller</span>, <span class="boton">Atención</span> o <span class="boton">Todo</span>. Después se puede ajustar cada casilla. <b>Entrega con saldo</b> es un permiso aparte.</span></li>
+          <li><span>Un usuario que ya no trabaja se <b>desactiva</b> (no se borra). Desde su ficha también se le cambia la contraseña.</span></li>
+        </ol>
+        <figure class="celular"><div class="marco"><img src="/panel/manual/capturas/23-usuario-perfil.jpg" alt="Rol y permisos de un encargado, con los perfiles Taller, Atención y Todo" loading="lazy" width="390" height="844"></div><figcaption>Rol, perfil y permisos</figcaption></figure>
+      </div>
+    </article>
+
+    <article class="tema">
+      <h3>Configuración</h3>
+      <div class="tema-cuerpo">
+        <ul class="puntos">
+          <li><b>Negocio:</b> nombre, WhatsApp, dirección, horarios, redes y el logo de los documentos.</li>
+          <li><b>Taller:</b> los espacios del taller, los tamaños de vehículo con sus ejemplos y las partes del checklist.</li>
+          <li><b>Parámetros:</b> el adelanto sugerido, cuántos días vale una cotización y a los cuántos días una sin respuesta pide atención.</li>
+          <li><b>Mensajes:</b> el texto de cada mensaje de WhatsApp ("listo", saldo, mantenimiento…), con su propio tono.</li>
+        </ul>
+        <figure class="celular"><div class="marco"><img src="/panel/manual/capturas/25-mensajes.jpg" alt="Los mensajes de WhatsApp en Configuración" loading="lazy" width="390" height="844"></div><figcaption>Mensajes de WhatsApp</figcaption></figure>
+      </div>
+    </article>
+  </section>
+
+  <!-- CONVIENE SABER -->
+  <section class="rol ancho" id="saber" aria-labelledby="t-saber">
+    <div class="cabecera-rol">
+      <span class="etiqueta">Para todos</span>
+      <h2 id="t-saber">Conviene saber</h2>
+    </div>
+    <div class="saber">
+      <div><strong>Nada se borra</strong><p>Clientes, vehículos, servicios y usuarios se desactivan. Los pagos se anulan con su motivo. Así siempre queda la historia.</p></div>
+      <div><strong>Sin internet no se guarda</strong><p>Arriba sale "Sin conexión". Espera a que vuelva la señal y recién entonces guarda.</p></div>
+      <div><strong>Las fotos de los clientes son privadas</strong><p>Comprobantes, reclamos y checklist solo se ven dentro del panel. Al sitio solo llega lo que el dueño publica en la galería.</p></div>
+      <div><strong>Hora de Bolivia</strong><p>Todas las fechas y horas se muestran en la hora de Bolivia.</p></div>
+      <div><strong>Ante una duda o un error</strong><p>Una captura de pantalla por WhatsApp a YankoSoft, con lo que estabas haciendo.</p></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="ancho">
+    <img src="/panel/manual/logo.svg" alt="TocTar Detailing">
+    <span>Manual del panel · Noviembre de 2026 · Hecho por YankoSoft</span>
+  </div>
+</footer>
+</body>
+</html>

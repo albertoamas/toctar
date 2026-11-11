@@ -1,6 +1,6 @@
 # Capacitación del sistema de gestión — guía por rol
 
-> **Para entregar al dueño y a los encargados:** el [Manual del panel](https://claude.ai/artifact/TsmLggAGJyzf7h4eHWcLdN), una página con la marca TocTar y una captura del celular en cada paso, por rol. Esta guía es la interna: cómo dar la sesión. Si una pantalla cambia, se actualizan las dos (las capturas salen de `material/manual/`, que no se versiona).
+> **Para entregar al dueño y a los encargados:** el **Manual del panel**, dentro del propio sistema: el libro junto a "Cerrar sesión" abre `/panel/manual` (pedido 44), con su PDF para descargar. Es una página con la marca TocTar y una captura del celular en cada paso, en el orden del ciclo de un trabajo. Su fuente es `contenido/manual/` (el HTML, las capturas, el logo y el PDF); una copia para compartir por enlace está en claude.ai ([Manual del panel](https://claude.ai/artifact/TsmLggAGJyzf7h4eHWcLdN)). Esta guía es la interna: cómo dar la sesión. Si una pantalla del manual cambia, se vuelve a capturar, se regenera el PDF y se actualiza `contenido/manual/`.
 
 Guía corta para enseñar el panel a quien lo va a usar: el **dueño** y los **encargados**, según su perfil (**Taller** o **Atención**). Va en el orden en que se hace el trabajo en el taller. Cada parte dice qué se toca y dónde, con los nombres de los botones tal como aparecen.
 
