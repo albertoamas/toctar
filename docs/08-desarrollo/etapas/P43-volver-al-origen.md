@@ -1,7 +1,7 @@
 # P43 Volver a la pantalla de origen — especificación
 
 - **Fase y semana:** cierre de la Entrega 2 · semana 5 (10/11/2026)
-- **Estado:** aprobada (10/11/2026, la propuesta completa: puntos 1, 2 y 3)
+- **Estado:** hecha (11/11/2026, rama `volver-al-origen`); aprobada el 10/11, la propuesta completa (puntos 1, 2 y 3)
 - **Historias:** todas las pantallas del panel con "Volver" (pulido 13.18: el botón de volver a la izquierda del título)
 - **Base:** `inventario-pantallas.md`, `P37-cambio-de-dueno.md` (el primer origen en la dirección, `?desde=comprador`), `registro-de-cambios.md` (pedido 43)
 
@@ -66,6 +66,8 @@ Las que redirigen al terminar reciben `volver` (campo oculto del formulario), lo
 - **`volverDesde(parametros, porDefecto, usuario)`** (servidor, `src/lib/volver-servidor.ts`): lee `desde`, comprueba el permiso del módulo y devuelve `{ href, texto }` para `EncabezadoPagina`.
 - **`aqui(ruta, parametros)`**: la dirección actual de una pantalla del servidor (su ruta y sus parámetros), para los enlaces que salen de ella.
 - `EncabezadoPagina` y `BotonVolver` no cambian: reciben `volver` como hasta ahora.
+- **`TablaLista`** recibe `desde` (la lista con su pestaña, filtros y búsqueda) y lo agrega a cada fila; `ListaCotizaciones` y `ReservasCliente`, lo mismo para la ficha del cliente. El tablero de la Agenda (`TableroSemana`, `AgendaDelDia`) lo pasa a cada reserva y a cada "Reservar".
+- **Crear servicio** (modal sobre el Catálogo) sigue con `push`: con `replace`, la lista saldría del historial.
 
 ## 8. Textos de la interfaz
 - Debajo del título: "Inicio", "Agenda", "Órdenes", "Cotizaciones", "Clientes", "Saldos pendientes", "Mantenimientos", "Reclamos", "Catálogo y precios", "Usuarios", "Servicios", "Reserva", "Orden", "Cotización", "Cliente", "Servicio del catálogo", "Su página en el sitio".
