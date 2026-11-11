@@ -99,9 +99,9 @@ export function ModalFormulario({ titulo, abierto, alCambiar, children }: Props)
     setPreguntando(true);
   };
   const seguir = useCallback(() => {
+    // Primero el foco al campo (sigue a la vista): si se esperara a que se vaya la pregunta, el diálogo lo tomaría antes
+    if (focoPrevio.current?.isConnected) focoPrevio.current.focus();
     setPreguntando(false);
-    // Al cuadro siguiente, con el pie de siempre ya de vuelta
-    requestAnimationFrame(() => focoPrevio.current?.isConnected && focoPrevio.current.focus());
   }, []);
   const conPie = useCallback((hay: boolean) => setHayPie(hay), []);
 
