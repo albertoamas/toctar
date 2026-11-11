@@ -1,7 +1,8 @@
 import "server-only";
-import { and, asc, count, desc, eq, exists, inArray, like, ne, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, like, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { cliente, consulta, recordatorioMantenimiento, tamanoVehiculo, trabajo, vehiculo } from "@/db/esquema";
+import type { EstadoTrabajo } from "@/db/esquema/trabajos";
 import { cotizacionAbierta } from "@/modulos/cotizaciones/consultas";
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
 import { ESTADOS_RESERVA_ACTIVA } from "@/modulos/ordenes/reglas";
@@ -144,8 +145,8 @@ export type DatosCambioDueno = {
   tamano: string;
   activo: boolean;
   dueno: string;
-  /** Agendada, en el taller o lista: frena el cambio. */
-  reservaActiva: boolean;
+  /** Agendada, en el taller o lista: frena el cambio. Con su id y estado, para el enlace que lleva a resolverla. */
+  reservaActiva: { id: number; estado: EstadoTrabajo } | null;
   /** Cotizaciones del dueño actual para este vehículo que siguen abiertas (pendientes o aceptadas sin fecha). */
   cotizacionesAbiertas: number;
   /** Mantenimientos pendientes o avisados: pasan al nuevo dueño. */
@@ -157,29 +158,39 @@ export type DatosCambioDueno = {
  * vehículo no existe o no es de ese cliente.
  */
 export async function datosCambioDueno(vehiculoId: number, clienteId: number): Promise<DatosCambioDueno | null> {
-  const [v] = await db
-    .select({
-      placa: vehiculo.placa,
-      marca: vehiculo.marca,
-      modelo: vehiculo.modelo,
-      anio: vehiculo.anio,
-      color: vehiculo.color,
-      tamano: tamanoVehiculo.nombre,
-      activo: vehiculo.activo,
-      dueno: cliente.nombre,
-      reservaActiva: sql<boolean>`${exists(db.select({ id: trabajo.id }).from(trabajo).where(and(eq(trabajo.vehiculoId, vehiculo.id), inArray(trabajo.estado, [...ESTADOS_RESERVA_ACTIVA]))))}`,
-      cotizacionesAbiertas: sql<number>`(${db
-        .select({ n: count() })
-        .from(consulta)
-        .where(and(eq(consulta.vehiculoId, vehiculo.id), eq(consulta.clienteId, vehiculo.clienteId), cotizacionAbierta))})`.mapWith(Number),
-      mantenimientosAbiertos: sql<number>`(${db
-        .select({ n: count() })
-        .from(recordatorioMantenimiento)
-        .where(and(eq(recordatorioMantenimiento.vehiculoId, vehiculo.id), inArray(recordatorioMantenimiento.estado, [...ESTADOS_RECORDATORIO_ABIERTO])))})`.mapWith(Number),
-    })
-    .from(vehiculo)
-    .innerJoin(cliente, eq(vehiculo.clienteId, cliente.id))
-    .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
-    .where(and(eq(vehiculo.id, vehiculoId), eq(vehiculo.clienteId, clienteId)));
-  return v ?? null;
+  // Las dos a la vez: la del trabajo que lo frena solo necesita el vehículo
+  const [[v], [reservaActiva]] = await Promise.all([
+    db
+      .select({
+        placa: vehiculo.placa,
+        marca: vehiculo.marca,
+        modelo: vehiculo.modelo,
+        anio: vehiculo.anio,
+        color: vehiculo.color,
+        tamano: tamanoVehiculo.nombre,
+        activo: vehiculo.activo,
+        dueno: cliente.nombre,
+        cotizacionesAbiertas: sql<number>`(${db
+          .select({ n: count() })
+          .from(consulta)
+          .where(and(eq(consulta.vehiculoId, vehiculo.id), eq(consulta.clienteId, vehiculo.clienteId), cotizacionAbierta))})`.mapWith(Number),
+        mantenimientosAbiertos: sql<number>`(${db
+          .select({ n: count() })
+          .from(recordatorioMantenimiento)
+          .where(and(eq(recordatorioMantenimiento.vehiculoId, vehiculo.id), inArray(recordatorioMantenimiento.estado, [...ESTADOS_RECORDATORIO_ABIERTO])))})`.mapWith(Number),
+      })
+      .from(vehiculo)
+      .innerJoin(cliente, eq(vehiculo.clienteId, cliente.id))
+      .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
+      .where(and(eq(vehiculo.id, vehiculoId), eq(vehiculo.clienteId, clienteId))),
+    // Si hay varios, primero el que está en el taller (es el que hay que entregar), después la reserva más cercana
+    db
+      .select({ id: trabajo.id, estado: trabajo.estado })
+      .from(trabajo)
+      .where(and(eq(trabajo.vehiculoId, vehiculoId), inArray(trabajo.estado, [...ESTADOS_RESERVA_ACTIVA])))
+      .orderBy(sql`${trabajo.estado} = 'agendado'`, asc(trabajo.fechaInicio), asc(trabajo.id))
+      .limit(1),
+  ]);
+  if (!v) return null;
+  return { ...v, reservaActiva: reservaActiva ?? null };
 }

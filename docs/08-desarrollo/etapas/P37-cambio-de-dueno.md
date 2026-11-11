@@ -34,7 +34,7 @@ Sin migración. Cambia `vehiculo.cliente_id`, `recordatorio_mantenimiento.client
 - Bloqueos, en el orden del resto de la app: primero las consultas del vehículo, después el vehículo (`FOR UPDATE`, que frena una reserva nueva sobre él mientras se cambia).
 
 ## 5. Pantallas y rutas
-- `/panel/clientes/[id]/vehiculos/[vehiculo]/dueno`: "Cambiar de dueño {placa}", un flujo de un paso a 768 px. Sin `?nuevo=`, el buscador de clientes con el título "Nuevo dueño", sin el dueño actual; con él, una tarjeta con tres filas (Pasa, Se cierra, Queda) y al pie "Cambiar de dueño" y "Cancelar", fijos abajo en el celular. Al terminar, la ficha del nuevo dueño con el aviso "{placa} ahora es de {cliente}."
+- `/panel/clientes/[id]/vehiculos/[vehiculo]/dueno`: "Cambiar de dueño {placa}", un flujo de un paso a 768 px. Debajo del título, la tarjeta "Vehículo" (placa, modelo y tamaño; desde el 10/11, inventario-pantallas.md, cambio 4c). Sin `?nuevo=`, el buscador de clientes con el título "Nuevo dueño", sin el dueño actual; con él, una tarjeta con sus filas (Nuevo dueño, Pasa, Se cierra, Queda). Lo que lo frena va en un aviso con su botón para resolverlo: "Ver la reserva" o "Ver la orden" (si quien mira puede abrirla) o "Ir a la ficha" con el vehículo desactivado y al pie "Cambiar de dueño" y "Cancelar", fijos abajo en el celular. Al terminar, la ficha del nuevo dueño con el aviso "{placa} ahora es de {cliente}."
 
 ## 6. Acciones del servidor
 - `cambiarDuenoVehiculo`: con el permiso de Clientes; `vehiculoId`, `clienteActualId` y `clienteNuevoId` validados con Zod.

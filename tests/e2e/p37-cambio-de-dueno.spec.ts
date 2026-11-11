@@ -61,7 +61,9 @@ test("desde la edición del vehículo: pasa al comprador con su mantenimiento y 
   await expect(page.getByRole("list", { name: "Elegir cliente" })).toHaveCount(0);
   await page.goto(`${new URL(page.url()).pathname}?q=${encodeURIComponent(d.nuevo)}`);
   await page.getByRole("list", { name: "Elegir cliente" }).getByRole("link").filter({ hasText: d.nuevo }).click();
-  await expect(page.getByText(`De ${d.anterior} a ${d.nuevo}.`)).toBeVisible();
+  // El vehículo en su tarjeta y, en lo que pasa, a quién (cambio 4c: "De … a …" iba en el encabezado)
+  await expect(page.getByRole("region", { name: "Vehículo" })).toContainText(d.placa);
+  await expect(page.locator('dt:text-is("Nuevo dueño") + dd')).toHaveText(d.nuevo);
   await expect(page.getByText("1 mantenimiento por avisar")).toBeVisible();
   await expect(page.getByText("1 cotización abierta")).toBeVisible();
   await page.getByRole("button", { name: "Cambiar de dueño" }).click();
@@ -105,7 +107,9 @@ test("desde la placa repetida al agregar un vehículo en la ficha del comprador"
   await dialogo.getByRole("link", { name: "Cambiar de dueño a este cliente" }).click();
   // Desde su placa repetida, "Cancelar" vuelve a la ficha del comprador
   await expect(page.getByRole("link", { name: "Cancelar" })).toHaveAttribute("href", `/panel/clientes/${d.nuevoId}`);
-  await expect(page.getByText(`De ${d.anterior} a ${d.nuevo}.`)).toBeVisible();
+  // El vehículo en su tarjeta y, en lo que pasa, a quién (cambio 4c: "De … a …" iba en el encabezado)
+  await expect(page.getByRole("region", { name: "Vehículo" })).toContainText(d.placa);
+  await expect(page.locator('dt:text-is("Nuevo dueño") + dd')).toHaveText(d.nuevo);
   await page.getByRole("button", { name: "Cambiar de dueño" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/clientes/${d.nuevoId}\\?recibido=${d.placa}$`));
   await expect(page.getByRole("list", { name: "Vehículos" })).toContainText(d.placa);
@@ -122,7 +126,10 @@ test("con una reserva activa no se pasa: primero se entrega o se cancela", async
   );
   await ingresarComoDueno(page);
   await page.goto(`/panel/clientes/${d.anteriorId}/vehiculos/${d.vehiculoId}/dueno?nuevo=${d.nuevoId}`);
-  await expect(page.getByText(`${d.placa} tiene una reserva o está en el taller`)).toBeVisible();
+  // Un aviso con el camino para resolverlo: la reserva que lo frena (cambio 4c)
+  const aviso = page.getByRole("status").filter({ hasText: `${d.placa} tiene una reserva o está en el taller` });
+  await expect(aviso).toBeVisible();
+  await expect(aviso.getByRole("link", { name: "Ver la reserva" })).toHaveAttribute("href", /\/panel\/agenda\/\d+$/);
   await expect(page.getByRole("button", { name: "Cambiar de dueño" })).toHaveCount(0);
   const [{ cliente }] = await consultar<{ cliente: number }>("select cliente_id as cliente from vehiculo where id = $1", [d.vehiculoId]);
   expect(cliente).toBe(d.anteriorId);

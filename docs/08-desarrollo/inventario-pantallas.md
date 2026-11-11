@@ -72,7 +72,7 @@ Hasta una laptop de 1280 px (con el menú, el área de trabajo mide unos 970 px)
 | 34 | Recibir vehículo ✓ | Un paso del taller con el botón grande | Igual, pie fijo | Mantener | — | Sí | — |
 | 35 | Entregar vehículo ✓ | Un paso del taller con el botón grande | Igual, pie fijo | Mantener | — | Sí | — |
 | 36 | **Publicar en la galería** | Elegir las fotos y un botón grande propio al final | El botón no queda fijo abajo | **Cambiar: el pie común, como Recibir y Entregar** | El único paso del taller sin pie fijo | Sí | ✅ 10/11 (cambio 3) |
-| 37 | Cambiar de dueño | Un paso de tres filas y el pie | Igual, pie fijo | Revisar en la prioridad 4 | No revisada en esta ronda | Sí | — |
+| 37 | Cambiar de dueño | La tarjeta del vehículo, un paso con sus filas y el pie; lo que lo frena, en un aviso con su botón | Igual, pie fijo | Revisada (cambio 4c) | — | Sí | — |
 | 38 | Sin acceso | Un mensaje y volver | Igual | Mantener | — | Sí | — |
 | 39 | No encontrado (panel) | Un mensaje y volver | Igual | Mantener | — | Sí | — |
 | 40 | Error inesperado (panel) | Un mensaje y reintentar | Igual | Mantener | — | Sí | — |
@@ -88,7 +88,7 @@ Hasta una laptop de 1280 px (con el menú, el área de trabajo mide unos 970 px)
 | 4 | Revisar en pantalla las de la prioridad 4 (Ficha del cliente, Servicio del catálogo, Cambiar de dueño) y las listas de la prioridad 5 | 17, 18, 37 y 4 a 9 | ⏳ Sigue |
 | 4a | Ficha del cliente: Reservas en tabla como Cotizaciones, las dos con la placa en cada fila; el número arriba en el celular; "Editar" con texto en cada vehículo | Ficha del cliente | ✅ 10/11 |
 | 4b | Servicio del catálogo: sin la tarjeta Variantes ("Editar variantes" en el título de Precios); "Catálogo" solo si está inactivo | Servicio del catálogo | ✅ 10/11 |
-| 4c | Cambiar de dueño: la tarjeta "Vehículo" (`ResumenClienteVehiculo`), sin el dueño repetido; los bloqueos como aviso con su botón para resolverlos; la línea de contexto de `EncabezadoPagina` alineada con el título | Cambiar de dueño | ⏳ |
+| 4c | Cambiar de dueño: la tarjeta "Vehículo" (`Seccion` con `DatosVehiculo`), sin el dueño repetido; los bloqueos como aviso con su botón para resolverlos; la línea de contexto de `EncabezadoPagina` alineada con el título | Cambiar de dueño | ✅ 10/11 |
 
 Al cerrar cada cambio: su entrada en `pulido-visual.md`, el estado aquí y en el plan.
 
