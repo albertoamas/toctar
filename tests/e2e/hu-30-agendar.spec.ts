@@ -104,6 +104,11 @@ test("desde la cotización: la versión y la cotización quedan aceptadas, las l
   await expect(saldo).toContainText("800 Bs");
   await expect(saldo).toContainText(`${800 - adelanto} Bs`);
   await expect(page.getByRole("button", { name: /^Ver el comprobante: Adelanto por QR/ })).toBeVisible();
+  // Datos en bloques (pulido 13.51): el cliente y la cotización son filas que llevan a su ficha, y al pie quién la reservó
+  const datos = page.getByRole("group", { name: "Datos de la reserva" });
+  await expect(datos.getByRole("link", { name: /^Ver ficha del cliente: / })).toHaveAttribute("href", /^\/panel\/clientes\/\d+\?volver=/);
+  await expect(datos.getByRole("link", { name: /^Ver la cotización \d{4}-\d{4}/ })).toHaveAttribute("href", new RegExp(`^/panel/cotizaciones/${consultaId}\\?volver=`));
+  await expect(datos).toContainText(/Reservada por .+ el /);
 
   const [r] = await consultar<{ trabajo: number; descuento: string; cot: string; con: string; lineas: number; adelanto: string; metodo: string; privado: boolean }>(
     `select t.id as trabajo, t.descuento, c.estado as cot, q.estado as con,

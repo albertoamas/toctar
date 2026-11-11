@@ -11,7 +11,7 @@ import { Insignia } from "@/componentes/panel/insignia";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { CabeceraSeccion, Seccion } from "@/componentes/panel/cabecera-seccion";
-import { FilaDato, FilaEnlace } from "@/componentes/panel/datos-en-bloques";
+import { FilaCliente, FilaDato } from "@/componentes/panel/datos-en-bloques";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { BOTON_PASO, PasoSiguiente } from "@/componentes/panel/paso-siguiente";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
@@ -19,7 +19,7 @@ import { buttonVariants } from "@/componentes/ui/button";
 import { formatearFecha } from "@/lib/fechas";
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
-import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
+import { enlaceWhatsApp } from "@/lib/whatsapp";
 import { reservasDeConsulta } from "@/modulos/agenda/consultas";
 import { pasoDelTrabajo } from "@/modulos/agenda/pasos";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
@@ -132,12 +132,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
         <Seccion id="datos" titulo="Datos" sinRelleno>
           <div role="group" aria-label="Datos de la cotización" className="flex flex-col divide-y divide-border">
             {/* El encargado puede tener Cotizaciones sin Clientes: entonces no enlaza a una ficha que no puede abrir */}
-            <FilaEnlace href={verFicha ? conDesde(`/panel/clientes/${c.clienteId}`, desdeAqui) : null} oculto="Ver ficha del cliente: ">
-              <FilaDato etiqueta="Cliente" como="span" enEnlace={verFicha}>
-                <span className="font-semibold">{c.cliente}</span>
-                <span className="text-sm text-tinta-suave">{formatearWhatsApp(c.telefono)}</span>
-              </FilaDato>
-            </FilaEnlace>
+            <FilaCliente href={verFicha ? conDesde(`/panel/clientes/${c.clienteId}`, desdeAqui) : null} nombre={c.cliente} telefono={c.telefono} />
             {/* Como en Reserva y Orden, con la placa: aquí el título es el número de la cotización */}
             <dl className="px-4 py-3">
               <FilaDato etiqueta="Vehículo">

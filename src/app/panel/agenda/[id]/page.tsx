@@ -9,7 +9,7 @@ import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Insignia } from "@/componentes/panel/insignia";
-import { FilaDato, FilaEnlace } from "@/componentes/panel/datos-en-bloques";
+import { FilaCliente, FilaDato, FilaEnlace } from "@/componentes/panel/datos-en-bloques";
 import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
 import { BOTON_PASO, PasoSiguiente } from "@/componentes/panel/paso-siguiente";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
@@ -18,7 +18,7 @@ import { buttonVariants } from "@/componentes/ui/button";
 import { fechaConDia, fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/lib/fechas";
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
-import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
+import { enlaceWhatsApp } from "@/lib/whatsapp";
 import { MasReserva } from "@/modulos/agenda/componentes/acciones-reserva";
 import { obtenerReserva } from "@/modulos/agenda/consultas";
 import { pasoDelTrabajo } from "@/modulos/agenda/pasos";
@@ -87,7 +87,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
   // Pulido 13.51, como en la orden y la cotización: en bloques, de lo que se mira primero (cuándo y dónde) al cliente, una
   // fila que lleva a su ficha, y el vehículo; al pie y en chico, cuándo y quién la reservó (una reserva no tiene historial)
   // y su cotización como otra fila
-  const cotizacion = r.consultaId && r.cotizacion;
+  // Sin Cotizaciones, ni se nombra la cotización
+  const cotizacion = verCotizacion && r.consultaId !== null ? r.cotizacion : null;
   const datos = (
     <Seccion id="datos" titulo="Datos" sinRelleno>
       <div role="group" aria-label="Datos de la reserva" className="flex flex-col divide-y divide-border">
@@ -96,44 +97,39 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
             <span className="font-semibold">{formatearFecha(r.fechaInicio)}</span>
             {r.horaIngreso && <span className="text-sm text-tinta-suave">{r.horaIngreso}</span>}
           </FilaDato>
-          <FilaDato etiqueta="Entrega">
-            {unDia ? (
-              <span className="font-semibold">El mismo día</span>
-            ) : (
-              <>
-                <span className="font-semibold">{formatearFecha(r.fechaFin)}</span>
-                <span className="text-sm text-tinta-suave">aproximada</span>
-              </>
-            )}
-          </FilaDato>
+          {/* Entregada, la entrega aproximada ya no sirve (como en la orden) */}
+          {r.estado !== "entregado" && (
+            <FilaDato etiqueta="Entrega">
+              {unDia ? (
+                <span className="font-semibold">El mismo día</span>
+              ) : (
+                <>
+                  <span className="font-semibold">{formatearFecha(r.fechaFin)}</span>
+                  <span className="text-sm text-tinta-suave">aproximada</span>
+                </>
+              )}
+            </FilaDato>
+          )}
           <FilaDato etiqueta="Espacio">
             <span className="font-semibold">{r.espacio}</span>
           </FilaDato>
         </dl>
-        <FilaEnlace href={verFicha ? conDesde(`/panel/clientes/${r.clienteId}`, desdeAqui) : null} oculto="Ver ficha del cliente: ">
-          <FilaDato etiqueta="Cliente" como="span" enEnlace={verFicha}>
-            <span className="font-semibold">{r.cliente}</span>
-            <span className="text-sm text-tinta-suave">{formatearWhatsApp(r.telefono)}</span>
-          </FilaDato>
-        </FilaEnlace>
+        <FilaCliente href={verFicha ? conDesde(`/panel/clientes/${r.clienteId}`, desdeAqui) : null} nombre={r.cliente} telefono={r.telefono} />
         {/* La placa ya está en el título: el vehículo dice su modelo y su tamaño */}
         <dl className="px-4 py-3">
           <FilaDato etiqueta="Vehículo">{valorVehiculo(detalle, r.tamano)}</FilaDato>
         </dl>
-        <div className="flex flex-col">
-          <p className={cn("px-4 text-sm text-tinta-suave", cotizacion ? "pt-3" : "py-3")}>
-            Reservada el {formatearFechaHora(r.createdAt)}, por {r.agendadaPor}
-          </p>
-          {/* Sin Cotizaciones, no lleva a una cotización que no puede abrir */}
-          {cotizacion && (
-            <FilaEnlace href={verCotizacion ? conDesde(`/panel/cotizaciones/${r.consultaId}`, desdeAqui) : null}>
-              <span className="font-semibold">
-                {verCotizacion ? "Ver la cotización" : "Cotización"} {cotizacion.numero}
-                {cotizacion.version > 1 && `, versión ${cotizacion.version}`}
-              </span>
-            </FilaEnlace>
-          )}
-        </div>
+        <p className="px-4 py-3 text-sm text-tinta-suave">
+          Reservada por {r.agendadaPor} el {formatearFechaHora(r.createdAt)}
+        </p>
+        {cotizacion && (
+          <FilaEnlace href={conDesde(`/panel/cotizaciones/${r.consultaId}`, desdeAqui)}>
+            <span className="font-semibold">
+              Ver la cotización {cotizacion.numero}
+              {cotizacion.version > 1 && `, versión ${cotizacion.version}`}
+            </span>
+          </FilaEnlace>
+        )}
       </div>
     </Seccion>
   );
