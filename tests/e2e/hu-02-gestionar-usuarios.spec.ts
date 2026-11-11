@@ -216,6 +216,6 @@ test("la lista de usuarios: Agregar usuario, (tú) y la fila que abre el usuario
   await celda.scrollIntoViewIfNeeded();
   const rol = (await celda.boundingBox())!;
   await page.mouse.click(rol.x + rol.width / 2, rol.y + rol.height / 2);
-  await expect(page).toHaveURL(/\/panel\/usuarios\/\d+$/);
+  await expect(page).toHaveURL(/\/panel\/usuarios\/\d+(?:[?&]volver=[^&#]*)?$/);
 });
 

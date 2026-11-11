@@ -2,7 +2,7 @@
 
 import { and, count, eq, inArray, isNull, lte, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { db } from "@/db";
 import { auditoria, pago, parteRevision, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, trabajoRevision, vehiculo as tablaVehiculo } from "@/db/esquema";
 import { fechaEnBolivia, formatearFecha, sumarDias } from "@/lib/fechas";
@@ -37,6 +37,7 @@ import {
   esquemaRecibir,
 } from "./esquemas";
 import { esFotoDeAntes, estaAbierta, etapaAbierta, puedeExtenderse, puedeQuitarFoto, MAXIMO_FOTOS_ETAPA, FRASE_ETAPA, puedeRecibirse, textoRestoBien, textoSinRevisar, transicionOrden } from "./reglas";
+import { conDesde, sinElTrabajo } from "@/lib/volver";
 
 // Órdenes (C4). Entra el dueño o el encargado con "Órdenes", que trabaja todas: no hay técnico asignado (pedido 32).
 // Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md.
@@ -198,7 +199,8 @@ export async function recibirVehiculo(_previo: EstadoFormulario, datos: FormData
   }
 
   despuesDeCambiar(id, clienteId);
-  redirect(`/panel/ordenes/${id}?recibido=1`);
+  // A donde se estaba antes de abrir la reserva (pedido 43), sin Recibir en el historial: "atrás" no vuelve a él
+  redirect(conDesde(`/panel/ordenes/${id}?recibido=1`, sinElTrabajo(String(datos.get("volver") ?? ""), id)), RedirectType.replace);
 }
 
 /**
@@ -780,7 +782,7 @@ export async function entregarVehiculo(_previo: EstadoFormulario, datos: FormDat
 
   despuesDeCambiar(id, resultado.clienteId);
   if (resultado.conMantenimiento) revalidatePath("/panel/mantenimientos");
-  redirect(`/panel/ordenes/${id}?entregado=1`);
+  redirect(conDesde(`/panel/ordenes/${id}?entregado=1`, sinElTrabajo(String(datos.get("volver") ?? ""), id)), RedirectType.replace);
 }
 
 const YA_PUBLICADA = "Esta orden ya se publicó en la galería. La ordenas u ocultas en Sitio web > Galería.";
@@ -841,5 +843,5 @@ export async function publicarEnGaleria(_previo: EstadoFormulario, datos: FormDa
 
   galeriaCambiada();
   revalidatePath(`/panel/ordenes/${id}`);
-  redirect(`/panel/ordenes/${id}?publicado=1`);
+  redirect(conDesde(`/panel/ordenes/${id}?publicado=1`, sinElTrabajo(String(datos.get("volver") ?? ""), id)), RedirectType.replace);
 }

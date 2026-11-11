@@ -17,6 +17,7 @@ import { InsigniaEstado } from "@/modulos/reclamos/componentes/estado-reclamo";
 import { FotosReclamo } from "@/modulos/reclamos/componentes/fotos-reclamo";
 import { obtenerReclamo } from "@/modulos/reclamos/consultas";
 import { mensajeAlCliente } from "@/modulos/reclamos/reglas";
+import { volverDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Reclamo" };
 
@@ -24,19 +25,21 @@ export const metadata: Metadata = { title: "Reclamo" };
 // las dos acciones en el encabezado ("Marcar como atendido", con su nota en un modal, y "Escribir por WhatsApp" con el
 // saludo ya escrito); a la izquierda lo que mandó el cliente (qué pasó y sus fotos), que es lo que se viene a leer; a la
 // derecha sus datos y, ya atendido, la atención.
-export default function PaginaReclamo({ params }: PageProps<"/panel/reclamos/[id]">) {
+export default function PaginaReclamo({ params, searchParams }: PageProps<"/panel/reclamos/[id]">) {
   return (
     <PaginaPanel tipo="ficha">
       <Suspense fallback={<Cargando volver={{ href: "/panel/reclamos", texto: "Reclamos" }} />}>
-        <Detalle params={params} />
+        <Detalle params={params} searchParams={searchParams} />
       </Suspense>
     </PaginaPanel>
   );
 }
 
-async function Detalle({ params }: Pick<PageProps<"/panel/reclamos/[id]">, "params">) {
-  await exigirModulo("reclamos");
-  const { id } = await params;
+async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/reclamos/[id]">, "params" | "searchParams">) {
+  const usuario = await exigirModulo("reclamos");
+  const [{ id }, busqueda] = await Promise.all([params, searchParams]);
+  // Pedido 43: "Volver" a la pantalla de la que se vino (Reclamos con su pestaña, o Inicio)
+  const volver = volverDesde(busqueda.volver, { href: "/panel/reclamos", texto: "Reclamos" }, usuario);
   const numero = Number(id);
   if (!Number.isInteger(numero) || numero <= 0) notFound();
   const r = await obtenerReclamo(numero);
@@ -48,7 +51,7 @@ async function Detalle({ params }: Pick<PageProps<"/panel/reclamos/[id]">, "para
       <EncabezadoPagina
         titulo={r.nombre}
         estado={<InsigniaEstado estado={r.estado} />}
-        volver={{ href: "/panel/reclamos", texto: "Reclamos" }}
+        volver={volver}
         accion={
           <div className="flex flex-wrap gap-2">
             {r.estado === "pendiente" && <AtenderReclamo id={r.id} />}

@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { abrirWhatsApp, consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, entregarSinFirma, ingresar, ingresarComoDueno, PERFIL_TALLER } from "./apoyo";
+import { abrirWhatsApp, consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, entregarSinFirma, ingresar, ingresarComoDueno, PERFIL_TALLER, conVolver } from "./apoyo";
 
 // HU-38 Recordatorios de mantenimiento (flujo crítico 5). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §9.
 // Los recordatorios van directo a la base, colgados de una orden entregada en el pasado (no ocupa espacio). Las reservas
@@ -115,7 +115,7 @@ test("vencidos y próximos; avisar, no le interesa y reservar (y al cancelar la 
   // Reservar: una reserva directa del cliente y su vehículo, con el aviso del mantenimiento
   await page.goto("/panel/mantenimientos");
   await filaV.getByRole("link", { name: "Reservar" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/agenda/nueva\\?cliente=${clienteV}&vehiculo=\\d+&recordatorio=${vencido}$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/agenda/nueva\\?cliente=${clienteV}&vehiculo=\\d+&recordatorio=${vencido}(?:[?&]volver=[^&#]*)?$`));
   // El mantenimiento que se agenda, con su vencimiento en una insignia (pulido 10.2)
   // Solo lo visible: Next deja la página de Mantenimientos oculta en el documento, con el mismo texto
   await expect(page.getByText("Mantenimiento de Pulido y nano cerámico", { exact: true }).filter({ visible: true })).toBeVisible();
@@ -135,7 +135,7 @@ test("vencidos y próximos; avisar, no le interesa y reservar (y al cancelar la 
   await espacio.selectOption({ index: 1 });
   await page.getByRole("checkbox", { name: "Sin adelanto" }).check();
   await page.getByRole("button", { name: "Reservar" }).click();
-  await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1$/);
+  await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1(?:[?&]volver=[^&#]*)?$/);
   const reservaId = Number(new URL(page.url()).pathname.split("/").at(-1));
   expect(await estadoDe(vencido)).toMatchObject({ estado: "agendado", trabajo: reservaId });
 
@@ -147,12 +147,12 @@ test("vencidos y próximos; avisar, no le interesa y reservar (y al cancelar la 
   await page.goto("/panel/mantenimientos?vista=cerrados");
   const cerradoV = page.getByRole("list", { name: "Cerrados" }).getByRole("listitem").filter({ hasText: placaV });
   await expect(cerradoV).toContainText("Reservado");
-  await expect(cerradoV.getByRole("link", { name: "Ver la reserva" })).toHaveAttribute("href", `/panel/agenda/${reservaId}`);
+  await expect(cerradoV.getByRole("link", { name: "Ver la reserva" })).toHaveAttribute("href", conVolver(`/panel/agenda/${reservaId}`));
   await page.goto(`/panel/clientes/${clienteV}`);
   const delCliente = page.getByRole("list", { name: "Mantenimientos" }).getByRole("listitem");
   await expect(delCliente).toContainText("Pulido y nano cerámico");
   await expect(delCliente).toContainText("Reservado");
-  await expect(delCliente.getByRole("link", { name: "Ver la reserva" })).toHaveAttribute("href", `/panel/agenda/${reservaId}`);
+  await expect(delCliente.getByRole("link", { name: "Ver la reserva" })).toHaveAttribute("href", conVolver(`/panel/agenda/${reservaId}`));
 
   // Si la reserva se cancela, el mantenimiento vuelve a la lista como estaba: avisado
   await page.goto(`/panel/agenda/${reservaId}`);
@@ -240,7 +240,7 @@ test("entregar el mantenimiento lo deja hecho y programa el siguiente con la fre
   await page.goto("/panel/mantenimientos?vista=cerrados");
   const cerrado = page.getByRole("list", { name: "Cerrados" }).getByRole("listitem").filter({ hasText: placa });
   await expect(cerrado).toContainText("Hecho");
-  await expect(cerrado.getByRole("link", { name: "Ver la orden" })).toHaveAttribute("href", `/panel/ordenes/${orden}`);
+  await expect(cerrado.getByRole("link", { name: "Ver la orden" })).toHaveAttribute("href", conVolver(`/panel/ordenes/${orden}`));
 });
 
 test("en la ficha del cliente: agregar un mantenimiento anterior al sistema, editar el plan y terminarlo", async ({ page }, info) => {

@@ -68,7 +68,7 @@ test("desde la edición del vehículo: pasa al comprador con su mantenimiento y 
   await expect(page.getByText("1 cotización abierta")).toBeVisible();
   await page.getByRole("button", { name: "Cambiar de dueño" }).click();
 
-  await expect(page).toHaveURL(new RegExp(`/panel/clientes/${d.nuevoId}\\?recibido=${d.placa}$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/clientes/${d.nuevoId}\\?recibido=${d.placa}(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByText(`${d.placa} ahora es de ${d.nuevo}, con su plan de mantenimiento.`)).toBeVisible();
   await expect(page.getByRole("list", { name: "Vehículos" })).toContainText(d.placa);
 
@@ -111,7 +111,7 @@ test("desde la placa repetida al agregar un vehículo en la ficha del comprador"
   await expect(page.getByRole("region", { name: "Vehículo" })).toContainText(d.placa);
   await expect(page.locator('dt:text-is("Nuevo dueño") + dd')).toHaveText(d.nuevo);
   await page.getByRole("button", { name: "Cambiar de dueño" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/clientes/${d.nuevoId}\\?recibido=${d.placa}$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/clientes/${d.nuevoId}\\?recibido=${d.placa}(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByRole("list", { name: "Vehículos" })).toContainText(d.placa);
 });
 

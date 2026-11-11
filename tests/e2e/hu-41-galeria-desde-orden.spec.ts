@@ -30,7 +30,7 @@ test("el dueño publica antes y después de una orden entregada: copias pública
   await consultar("update trabajo set estado = 'entregado', entregado_at = now() where id = $1", [id]);
   await page.goto(`/panel/ordenes/${id}`);
   await page.getByRole("link", { name: "Publicar en la galería" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}/publicar$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}/publicar(?:[?&]volver=[^&#]*)?$`));
   await page.waitForLoadState("networkidle");
   await expect(page.getByRole("radio", { name: "Foto de después, 1 de 1" })).toBeChecked();
   await expect(page.getByRole("radio", { name: "Sin foto de antes" })).toBeChecked();
@@ -46,13 +46,13 @@ test("el dueño publica antes y después de una orden entregada: copias pública
   await expect(page.getByText("Marca que en las fotos no se lee la placa ni se ve a nadie.")).toBeVisible();
   await page.getByRole("checkbox", { name: "En las fotos no se lee la placa ni se ve a nadie" }).click();
   await page.getByRole("button", { name: "Publicar" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?publicado=1$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?publicado=1(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByText("Publicado en la galería. Lo ordenas u ocultas en Sitio web > Galería.")).toBeVisible();
   await expect(page.getByRole("link", { name: "Publicada en la galería (2 fotos)" })).toBeVisible();
   // Una vez por orden: ya no ofrece publicar y la dirección vuelve a la orden
   await expect(page.getByRole("link", { name: "Publicar en la galería" })).toHaveCount(0);
   await page.goto(`/panel/ordenes/${id}/publicar`);
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}(?:[?&]volver=[^&#]*)?$`));
 
   // Las copias son públicas y distintas de las fotos de la orden, que siguen privadas (RNF-05)
   const [item] = await consultar<{ id: number; despues: number; antes: number; publicas: boolean }>(

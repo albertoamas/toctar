@@ -2,7 +2,7 @@
 
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { db } from "@/db";
 import { auditoria, cliente, consulta, cotizacion, pago, recordatorioMantenimiento, servicio, trabajo, trabajoLinea, variante, vehiculo } from "@/db/esquema";
 import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
@@ -19,6 +19,7 @@ import { descartarComprobante, guardarComprobante } from "@/modulos/pagos/compro
 import { calcularSaldo } from "@/modulos/pagos/reglas";
 import { bloquearEspacio, datosDeCotizacion, espaciosEnFechas, type EspacioDisponible } from "./consultas";
 import { entradaReserva, esquemaAdelanto, esquemaCancelar, esquemaConsultaEspacios, esquemaFechas, esquemaReprogramar, esquemaReserva } from "./esquemas";
+import { conDesde, leerDesde } from "@/lib/volver";
 
 // Agenda (HU-30). Entra el dueño o un encargado con "Agenda"; el adelanto, solo con "Pagos" (o el dueño, RN-12). Un
 // espacio no tiene dos vehículos el mismo día (RN-06): la pantalla solo ofrece los libres y la base
@@ -233,7 +234,8 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
 
   despuesDeCambiar(resultado.id, clienteId, consultaId);
   if (recordatorioId) revalidatePath("/panel/mantenimientos");
-  redirect(`/panel/agenda/${resultado.id}?agendada=1`);
+  // La reserva vuelve a donde se empezó (pedido 43) y reemplaza al formulario en el historial: "atrás" no vuelve a él
+  redirect(conDesde(`/panel/agenda/${resultado.id}?agendada=1`, leerDesde(datos.get("volver"))), RedirectType.replace);
 }
 
 /** Revalida lo que muestra una reserva (y lo que depende de ella) después de agendarla o cambiarla. */

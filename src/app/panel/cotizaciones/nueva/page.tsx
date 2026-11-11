@@ -14,6 +14,7 @@ import { tamanosActivos } from "@/modulos/configuracion/consultas";
 import { FormularioNuevaCotizacion, type ClienteElegido } from "@/modulos/cotizaciones/componentes/formulario-nueva-cotizacion";
 import { inicioCotizacion, opcionesPorTamano } from "@/modulos/cotizaciones/consultas";
 import { PASO_CLIENTE, PASOS_NUEVA_COTIZACION } from "@/modulos/cotizaciones/pasos";
+import { conDesde, leerDesde, volverDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Nueva cotización" };
 
@@ -22,11 +23,19 @@ export const metadata: Metadata = { title: "Nueva cotización" };
 // registra con "Cliente nuevo". La elección va en la dirección (?cliente=, ?nuevo=1): la ficha del cliente enlaza acá con
 // el cliente ya elegido, y Atrás vuelve a la búsqueda. Los pasos siguientes están en FormularioNuevaCotizacion. Cotiza
 // el dueño o el encargado con "Cotizaciones" (pedido 24).
+const COTIZACIONES = { href: "/panel/cotizaciones", texto: "Cotizaciones" } as const;
+
 export default function PaginaNuevaCotizacion({ searchParams }: PageProps<"/panel/cotizaciones/nueva">) {
   return (
     <PaginaPanel tipo="formulario">
-      <EncabezadoPagina titulo="Nueva cotización" volver={{ href: "/panel/cotizaciones", texto: "Cotizaciones" }} />
-      <Suspense fallback={<Cargando />}>
+      <Suspense
+        fallback={
+          <>
+            <EncabezadoPagina titulo="Nueva cotización" volver={COTIZACIONES} />
+            <Cargando />
+          </>
+        }
+      >
         <Contenido searchParams={searchParams} />
       </Suspense>
     </PaginaPanel>
@@ -34,9 +43,12 @@ export default function PaginaNuevaCotizacion({ searchParams }: PageProps<"/pane
 }
 
 async function Contenido({ searchParams }: Pick<PageProps<"/panel/cotizaciones/nueva">, "searchParams">) {
-  await exigirAccion("cotizar");
+  const usuario = await exigirAccion("cotizar");
   const parametros = await searchParams;
   const texto = (clave: string) => (typeof parametros[clave] === "string" ? (parametros[clave] as string) : "");
+  // Pedido 43: "Volver" a la pantalla de la que se vino; el origen va en cada paso y en el formulario
+  const origen = leerDesde(parametros.volver);
+  const encabezado = <EncabezadoPagina titulo="Nueva cotización" volver={volverDesde(origen, COTIZACIONES, usuario)} />;
   const clienteId = Number(texto("cliente"));
 
   if (Number.isInteger(clienteId) && clienteId > 0) {
@@ -50,22 +62,34 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/cotizaciones/n
           .filter((v) => v.activo)
           .map((v) => ({ id: v.id, placa: v.placa, tamanoId: v.tamanoId, tamano: v.tamano, detalle: detalleVehiculo(v) })),
       };
-      return <Formulario cliente={elegido} />;
+      return (
+        <>
+          {encabezado}
+          <Formulario cliente={elegido} volver={origen} />
+        </>
+      );
     }
   }
 
-  if (texto("nuevo")) return <Formulario cliente={null} />;
+  if (texto("nuevo"))
+    return (
+      <>
+        {encabezado}
+        <Formulario cliente={null} volver={origen} />
+      </>
+    );
 
   // Paso 1: elegir el cliente (o "Cliente nuevo", que sigue en el formulario)
   return (
     <>
+      {encabezado}
       <PasosFlujo pasos={PASOS_NUEVA_COTIZACION} actual={PASO_CLIENTE} etiqueta="Pasos de la cotización" />
-      <ElegirCliente q={texto("q")} hrefCliente={(id) => `/panel/cotizaciones/nueva?cliente=${id}`} hrefNuevo="/panel/cotizaciones/nueva?nuevo=1" />
+      <ElegirCliente q={texto("q")} hrefCliente={(id) => conDesde(`/panel/cotizaciones/nueva?cliente=${id}`, origen)} hrefNuevo={conDesde("/panel/cotizaciones/nueva?nuevo=1", origen)} />
     </>
   );
 }
 
-async function Formulario({ cliente }: { cliente: ClienteElegido | null }) {
+async function Formulario({ cliente, volver }: { cliente: ClienteElegido | null; volver: string | null }) {
   const tamanos = await tamanosActivos();
   // Los precios de cada tamaño activo y de los de sus vehículos (un tamaño desactivado sigue valiendo para un auto que ya lo tiene)
   const [opciones, inicio] = await Promise.all([opcionesPorTamano([...tamanos.map((t) => t.id), ...(cliente?.vehiculos.map((v) => v.tamanoId) ?? [])]), inicioCotizacion()]);
@@ -73,5 +97,5 @@ async function Formulario({ cliente }: { cliente: ClienteElegido | null }) {
     // El catálogo es del dueño: el encargado no tiene a dónde ir, así que no se enlaza
     return <EstadoVacio>No hay servicios activos para cotizar: se activan en Catálogo y precios.</EstadoVacio>;
   }
-  return <FormularioNuevaCotizacion cliente={cliente} tamanos={tamanos} opciones={opciones} inicio={inicio} hoy={fechaEnBolivia()} />;
+  return <FormularioNuevaCotizacion cliente={cliente} tamanos={tamanos} opciones={opciones} inicio={inicio} hoy={fechaEnBolivia()} volver={volver} />;
 }

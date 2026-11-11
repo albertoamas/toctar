@@ -17,6 +17,7 @@ import { FotoDeSeccion, FotoServicio } from "@/modulos/sitio/componentes/foto-se
 import { FormularioBeneficios, FormularioOpciones, FormularioPasos, FormularioResumen, MasServicio } from "@/modulos/sitio/componentes/formulario-servicio";
 import { iconoDe } from "@/modulos/sitio/beneficios";
 import { fotosDeSecciones, obtenerServicio, opcionesDelSitio } from "@/modulos/sitio/consultas";
+import { aqui, volverDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Servicio" };
 
@@ -26,11 +27,11 @@ export const metadata: Metadata = { title: "Servicio" };
 
 const VOLVER = { href: "/panel/sitio/servicios", texto: "Servicios" } as const;
 
-export default function PaginaServicio({ params }: PageProps<"/panel/sitio/servicios/[id]">) {
+export default function PaginaServicio({ params, searchParams }: PageProps<"/panel/sitio/servicios/[id]">) {
   return (
     <PaginaPanel tipo="ficha">
       <Suspense fallback={<Cargando volver={VOLVER} />}>
-        <Detalle params={params} />
+        <Detalle params={params} searchParams={searchParams} />
       </Suspense>
     </PaginaPanel>
   );
@@ -39,13 +40,16 @@ export default function PaginaServicio({ params }: PageProps<"/panel/sitio/servi
 /** El texto a todo el ancho y su foto al pie, en una fila compacta: la tarjeta mide lo que su texto (pulido 13.19). */
 const CON_FOTO = "flex flex-col gap-4";
 
-async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">, "params">) {
+async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/sitio/servicios/[id]">, "params" | "searchParams">) {
   const usuario = await exigirModulo("sitio");
-  const { id } = await params;
+  const [{ id }, busqueda] = await Promise.all([params, searchParams]);
   const numero = Number(id);
   if (!Number.isInteger(numero) || numero <= 0) notFound();
   const [s, fotos, opciones] = await Promise.all([obtenerServicio(numero), fotosDeSecciones(numero), opcionesDelSitio(numero)]);
   if (!s) notFound();
+  // Pedido 43: "Volver" a Servicios, o al servicio del catálogo si se vino de ahí
+  const volver = volverDesde(busqueda.volver, VOLVER, usuario);
+  const desdeAqui = aqui(`/panel/sitio/servicios/${s.id}`, busqueda);
   const enElSitio = s.activo && s.visible;
   // Sin opciones en el catálogo, "Opciones" no sale en el sitio (pulido 13.2): no se ofrece. Si ya tenía una foto, queda
   // a la vista con su aviso, para poder quitarla
@@ -55,7 +59,7 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
     <>
       <EncabezadoPagina
         titulo={s.nombre}
-        volver={VOLVER}
+        volver={volver}
         estado={
           !s.activo ? (
             <Insignia tono="aviso">Inactivo en el catálogo</Insignia>
@@ -73,7 +77,7 @@ async function Detalle({ params }: Pick<PageProps<"/panel/sitio/servicios/[id]">
                 Ver en el sitio
               </a>
             )}
-            <MasServicio id={s.id} slug={s.slug} visible={s.visible} activo={s.activo} catalogo={puedeVerModulo(usuario, "catalogo")} />
+            <MasServicio id={s.id} slug={s.slug} visible={s.visible} activo={s.activo} catalogo={puedeVerModulo(usuario, "catalogo")} desde={desdeAqui} />
           </div>
         }
       >

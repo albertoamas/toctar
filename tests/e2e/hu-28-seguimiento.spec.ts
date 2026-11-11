@@ -146,10 +146,10 @@ test("las direcciones de Consultas llevan a Cotizaciones; una consulta vieja sin
   await expect(page).toHaveURL(/\/panel\/cotizaciones$/);
   await expect(fila(page, `Solo consultó ${s}`)).toHaveCount(0);
   await page.goto(`/panel/consultas/${id}`);
-  await expect(page).toHaveURL(new RegExp(`/panel/cotizaciones/${id}$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/cotizaciones/${id}(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByRole("heading", { level: 1, name: `Cotización 2043-${n}001` })).toBeVisible();
   await page.goto(`/panel/consultas/${id}/cotizar`);
-  await expect(page).toHaveURL(new RegExp(`/panel/cotizaciones/${id}$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/cotizaciones/${id}(?:[?&]volver=[^&#]*)?$`));
   // La vieja no es una cotización: no se encuentra, dentro del panel
   await page.goto(`/panel/cotizaciones/${vieja.id}`);
   await expect(page.getByRole("heading", { level: 1, name: "No encontramos esto" })).toBeVisible();

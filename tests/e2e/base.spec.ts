@@ -210,7 +210,7 @@ test("los botones del panel miden 44 px con pantalla táctil y 36 con mouse", as
   await orden.getByRole("button", { name: "Listo" }).click();
   // Toda la fila abre el servicio, también la foto
   await page.getByRole("list", { name: "Servicios del sitio" }).getByRole("link").first().click();
-  await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+$/);
+  await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+(?:[?&]volver=[^&#]*)?$/);
 });
 
 // Estándar de botones del panel: ninguno usa los tamaños chicos (antes, 28 px con mouse en variantes, galería y horarios).

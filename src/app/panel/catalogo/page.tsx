@@ -13,6 +13,7 @@ import { mostrarMonto, textoDias } from "@/modulos/catalogo/reglas";
 import { BarraLista } from "@/componentes/panel/barra-lista";
 import { PildoraVista } from "@/componentes/panel/pildora-vista";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
+import { aqui } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Catálogo y precios" };
 
@@ -55,6 +56,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/catalogo">, "searc
       </EstadoVacio>
     ) : (
     <TablaLista
+      desde={aqui("/panel/catalogo", { ver })}
       etiqueta="Servicios del catálogo"
       columnas={[
         { titulo: "Servicio", ancho: "minmax(0,1.6fr)", movil: "titulo" },

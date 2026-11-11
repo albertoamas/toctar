@@ -3,6 +3,7 @@ import { CeldaDoble, TablaLista, type ColumnaTabla } from "@/componentes/panel/t
 import { cantidad } from "@/lib/cantidad";
 import type { FilaCotizacion } from "../consultas";
 import { bs, diasDesde, NOMBRE_ESTADO, sinRespuesta, textoDias, TONO_ESTADO } from "../reglas";
+import { conDesde } from "@/lib/volver";
 
 // Cotizaciones en una tabla (pedido 23; pedido 26): en Cotizaciones y en la ficha del cliente. Cada fila: el número, el
 // cliente con su vehículo (en la ficha del cliente, solo el vehículo: ya se sabe de quién son), los servicios, el total y
@@ -16,12 +17,14 @@ type Props = {
   sinCliente?: boolean;
   /** El estado en cada fila. Sin él, en una pestaña que ya lo dice: no se repite. */
   conEstado?: boolean;
+  /** La pantalla de la que salen sus enlaces: "Volver" lleva ahí, con su pestaña y búsqueda (pedido 43). */
+  desde?: string;
 };
 
 /** Una columna con lo que pone en cada fila: van juntas, así una celda no cae bajo el título de otra. */
 type Columna = ColumnaTabla & { celda: (c: FilaCotizacion) => React.ReactNode };
 
-export function ListaCotizaciones({ cotizaciones, umbral, sinCliente = false, conEstado = true }: Props) {
+export function ListaCotizaciones({ cotizaciones, umbral, sinCliente = false, conEstado = true, desde }: Props) {
   const hoy = new Date();
   const columnas: (Columna | false)[] = [
     // En la ficha del cliente, el número es lo que identifica a la fila, también en el celular
@@ -63,7 +66,7 @@ export function ListaCotizaciones({ cotizaciones, umbral, sinCliente = false, co
     <TablaLista
       etiqueta="Cotizaciones"
       columnas={visibles}
-      filas={cotizaciones.map((c) => ({ href: `/panel/cotizaciones/${c.id}`, celdas: visibles.map((col) => col.celda(c)) }))}
+      filas={cotizaciones.map((c) => ({ href: conDesde(`/panel/cotizaciones/${c.id}`, desde), celdas: visibles.map((col) => col.celda(c)) }))}
     />
   );
 }

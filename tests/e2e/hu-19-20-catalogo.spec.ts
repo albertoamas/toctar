@@ -42,7 +42,7 @@ test("el dueño marca el mantenimiento, cambia la duración y desactiva un servi
   // Sin precios en la base de pruebas: lo que falta, en el aviso (cuántos depende de los tamaños activos, que hu-05 cambia)
   await expect(ceramico).toContainText(/Faltan \d+ precios/);
   await lista.getByRole("link", { name: new RegExp(nombre) }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/catalogo/${id}$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/catalogo/${id}(?:[?&]volver=[^&#]*)?$`));
   await abrirFicha(page, id);
 
   // En lectura; "Editar" abre el formulario de los datos en un modal

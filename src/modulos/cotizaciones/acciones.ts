@@ -2,7 +2,7 @@
 
 import { and, eq, max, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
 import { cliente, consulta, cotizacion, vehiculo } from "@/db/esquema";
@@ -18,6 +18,7 @@ import { tieneReservaActiva, tieneVersiones } from "./consultas";
 import { generarPdf } from "./pdf/generar";
 import { CLIENTE_NUEVO, NOMBRE_ESTADO, transicionPermitida, VEHICULO_OTRO } from "./reglas";
 import { escribirVersion, numeroNuevo, prepararLineas } from "./servidor";
+import { conDesde, leerDesde, sinLaCotizacion } from "@/lib/volver";
 
 // Cotizaciones (pedido 23, P23-cotizacion-directa.md §6). Cotiza el dueño o el encargado con "Cotizaciones" (pedido 24,
 // RN-01): exigirAccion("cotizar"). Una cotización enviada no cambia (RN-02): una versión nueva la reemplaza con el
@@ -174,7 +175,8 @@ export async function crearCotizacion(_previo: EstadoCliente, datos: FormData): 
   const pdf = await conPdf(ids.version, autorId);
   despuesDeCambiar(ids.consulta, ids.cliente);
   revalidatePath("/panel/clientes");
-  redirect(`/panel/cotizaciones/${ids.consulta}?creada=1${pdf ? "" : "&sinpdf=1"}`);
+  // Vuelve a donde se empezó (pedido 43) y reemplaza al formulario en el historial: "atrás" no vuelve a él
+  redirect(conDesde(`/panel/cotizaciones/${ids.consulta}?creada=1${pdf ? "" : "&sinpdf=1"}`, leerDesde(datos.get("volver"))), RedirectType.replace);
 }
 
 /**
@@ -235,7 +237,8 @@ export async function guardarVersion(_previo: EstadoFormulario, datos: FormData)
 
   const pdf = await conPdf(resultado.id, autorId);
   despuesDeCambiar(d.consultaId, c.clienteId);
-  redirect(`/panel/cotizaciones/${d.consultaId}?version=${resultado.id}${pdf ? "" : "&sinpdf=1"}`);
+  // La cotización vuelve a donde se estaba antes de abrirla (pedido 43), sin la nueva versión en el historial
+  redirect(conDesde(`/panel/cotizaciones/${d.consultaId}?version=${resultado.id}${pdf ? "" : "&sinpdf=1"}`, sinLaCotizacion(String(datos.get("volver") ?? ""), d.consultaId)), RedirectType.replace);
 }
 
 /** El vehículo elegido cambió de dueño o se desactivó mientras se cotizaba (pedido 37): se deshace la transacción. */

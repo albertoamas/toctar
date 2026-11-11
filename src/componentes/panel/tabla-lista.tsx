@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronRightIcon } from "lucide-react";
 import { cn } from "cn";
+import { conDesde } from "@/lib/volver";
 
 // Una lista que en la computadora se lee como tabla (pedido 26): una tarjeta con una fila por elemento y cada fila abre
 // su pantalla, igual que ListaFilas. Es una sola estructura: con espacio (el área de trabajo desde 672 px) las celdas se
@@ -54,7 +55,14 @@ export function FlechaFila() {
 // Con espacio, todas en su columna, en una sola línea de la grilla
 const CELDA_TABLA = "@2xl:col-auto @2xl:col-span-1 @2xl:row-auto @2xl:block @2xl:justify-self-auto @2xl:text-tinta";
 
-export function TablaLista({ etiqueta, columnas: todas, filas: todasLasFilas }: { etiqueta: string; columnas: ColumnaTabla[]; filas: FilaTabla[] }) {
+export function TablaLista(props: {
+  etiqueta: string;
+  columnas: ColumnaTabla[];
+  filas: FilaTabla[];
+  /** La pantalla de la lista, con su pestaña, filtros y búsqueda: cada fila la lleva para "Volver" (pedido 43). */
+  desde?: string;
+}) {
+  const { etiqueta, columnas: todas, filas: todasLasFilas, desde } = props;
   // Las columnas que se quedan, con sus celdas: así una celda nunca cae bajo el título de otra
   const quedan = todas.map((c, i) => !c.ocultarSiVacia || todasLasFilas.some((f) => tieneAlgo(f.celdas[i])));
   const columnas = todas.filter((_, i) => quedan[i]);
@@ -74,7 +82,7 @@ export function TablaLista({ etiqueta, columnas: todas, filas: todasLasFilas }: 
         {filas.map((f) => (
           <li key={f.href} className="relative">
             <Link
-              href={f.href}
+              href={conDesde(f.href, desde)}
               className={cn(
                 "grid grid-cols-[minmax(0,1fr)_auto] hover:bg-superficie/60 focus-visible:-outline-offset-2 @2xl:grid-cols-[var(--columnas)]",
                 FILA_TABLA,

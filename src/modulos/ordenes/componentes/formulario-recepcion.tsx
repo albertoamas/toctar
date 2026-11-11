@@ -16,7 +16,14 @@ import { useFaltanChecklist } from "./checklist-recepcion";
 // HU-33: recibir el vehículo (RF-40). Cómo llegó lo dice el checklist (pedido 12), con la foto de cada detalle; aquí van
 // las observaciones (pedido 32: sin técnico asignado). El servidor no recibe con partes del checklist sin revisar.
 
-export function FormularioRecepcion({ trabajoId, faltan }: { trabajoId: number; /** Partes del checklist sin revisar. */ faltan: number }) {
+export function FormularioRecepcion(props: {
+  trabajoId: number;
+  /** Partes del checklist sin revisar. */
+  faltan: number;
+  /** De dónde se vino: la orden recibida vuelve ahí (pedido 43). */
+  volver: string | null;
+}) {
+  const { trabajoId, faltan, volver } = props;
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(recibirVehiculo, {});
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
@@ -28,6 +35,7 @@ export function FormularioRecepcion({ trabajoId, faltan }: { trabajoId: number; 
   return (
     <form ref={formulario} action={accion} className="tt-formulario-panel flex flex-col gap-5" noValidate aria-label="Recibir vehículo">
       <input type="hidden" name="id" value={trabajoId} />
+      {volver && <input type="hidden" name="volver" value={volver} />}
       {estado.mensaje && !estado.ok && <MensajeError id="recepcion-error">{estado.mensaje}</MensajeError>}
       <Campo id="observaciones" etiqueta="Observaciones" opcional error={e.observaciones} ayuda="Lo que no está en el checklist: objetos que deja el cliente, lo que pidió…">
         <Textarea

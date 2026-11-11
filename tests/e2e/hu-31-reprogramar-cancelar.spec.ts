@@ -135,7 +135,7 @@ test("cancelar pide motivo, deja los pagos, libera el espacio y la consulta pasa
   await espacio.selectOption({ index: 1 });
   await page.getByText("Sin adelanto", { exact: true }).click();
   await page.getByRole("button", { name: "Reservar" }).click();
-  await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1$/);
+  await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1(?:[?&]volver=[^&#]*)?$/);
   const [otra] = await consultar<{ reservas: number; cotizacion: string }>(
     "select count(*)::int as reservas, (select estado from cotizacion where id = $1) as cotizacion from trabajo where cotizacion_id = $1",
     [c.cotizacion],

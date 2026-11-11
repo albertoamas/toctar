@@ -35,7 +35,7 @@ test("el personal registra un cliente con su primer vehículo; los obligatorios 
   await page.getByLabel("Año (opcional)", { exact: true }).fill("2019");
   await page.getByRole("button", { name: "Crear cliente" }).click();
 
-  await expect(page).toHaveURL(/\/panel\/clientes\/\d+\?creado=1$/);
+  await expect(page).toHaveURL(/\/panel\/clientes\/\d+\?creado=1(?:[?&]volver=[^&#]*)?$/);
   await expect(page.getByText(`Cliente ${nombre} creado.`)).toBeVisible();
   await expect(page.getByRole("heading", { level: 1, name: nombre })).toBeVisible();
   // La placa se guarda normalizada: mayúsculas, sin espacios ni guiones
@@ -63,7 +63,7 @@ test("un teléfono o una placa repetidos avisan de quién son y llevan a su fich
   await page.getByLabel("Placa", { exact: true }).fill(`REP${sufijo(info)}1`);
   await page.getByLabel("Tamaño").selectOption({ label: "Compactos" });
   await page.getByRole("button", { name: "Crear cliente" }).click();
-  await expect(page).toHaveURL(/\/panel\/clientes\/\d+\?creado=1$/);
+  await expect(page).toHaveURL(/\/panel\/clientes\/\d+\?creado=1(?:[?&]volver=[^&#]*)?$/);
   const ficha = page.url().replace("?creado=1", "");
 
   // El mismo número, escrito con el código de país y espacios
@@ -112,7 +112,7 @@ test("un cliente se registra sin vehículo", async ({ page }, info) => {
   await page.getByLabel("Nombre", { exact: true }).fill(`Sin auto ${sufijo(info)}`);
   await page.getByLabel("WhatsApp").fill(telefono(info, 4));
   await page.getByRole("button", { name: "Crear cliente" }).click();
-  await expect(page).toHaveURL(/\/panel\/clientes\/\d+\?creado=1$/);
+  await expect(page).toHaveURL(/\/panel\/clientes\/\d+\?creado=1(?:[?&]volver=[^&#]*)?$/);
   await expect(page.getByText("Todavía no tiene vehículos.")).toBeVisible();
 });
 

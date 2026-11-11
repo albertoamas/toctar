@@ -61,7 +61,7 @@ test("en «Entregadas» se buscan por placa, cliente o fecha; la agenda las mues
 
   // Abre la orden de hace tiempo
   await lista.getByRole("link").filter({ hasText: a.placa }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${a.id}$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${a.id}(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByText(/^Entregado el /)).toBeVisible();
 
   // En la agenda de esa semana, en verde y con "Entregada"

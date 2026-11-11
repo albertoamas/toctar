@@ -29,6 +29,7 @@ import { VersionesCotizacion } from "@/modulos/cotizaciones/componentes/versione
 import { obtenerCotizacion } from "@/modulos/cotizaciones/consultas";
 import { NOMBRE_ESTADO, NOMBRE_MOTIVO, TONO_ESTADO } from "@/modulos/cotizaciones/reglas";
 import { rutaTrabajo } from "@/modulos/ordenes/reglas";
+import { aqui, conDesde, volverDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Cotización" };
 
@@ -50,12 +51,16 @@ export default function PaginaCotizacion({ params, searchParams }: PageProps<"/p
 
 async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaciones/[id]">, "params" | "searchParams">) {
   const usuario = await exigirModulo("cotizaciones");
-  const [{ id }, { creada, version, sinpdf }] = await Promise.all([params, searchParams]);
+  const [{ id }, parametros] = await Promise.all([params, searchParams]);
+  const { creada, version, sinpdf } = parametros;
   const numero = Number(id);
   if (!Number.isInteger(numero) || numero <= 0) notFound();
   const puedeAgendar = puedeVerModulo(usuario, "agenda");
   const [c, reservas] = await Promise.all([obtenerCotizacion(numero), puedeAgendar ? reservasDeConsulta(numero) : []]);
   if (!c) notFound();
+  // Pedido 43: "Volver" a la pantalla de la que se vino; los enlaces que salen de aquí dicen que vienen de esta cotización
+  const volver = volverDesde(parametros.volver, { href: "/panel/cotizaciones", texto: "Cotizaciones" }, usuario);
+  const desdeAqui = aqui(`/panel/cotizaciones/${c.id}`, parametros);
 
   const vigente = c.versiones.find((v) => v.estado === "enviada") ?? null;
   const pendiente = c.estado === "cotizado";
@@ -71,7 +76,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
   // El paso siguiente, uno solo: en una pendiente, "Aceptó"; en una aceptada sin fecha, el atajo a la Agenda
   const paso =
     aReservar && puedeAgendar ? (
-      <Link href={`/panel/agenda/nueva?cotizacion=${aReservar.id}`} className={cn(buttonVariants({ size: "paso" }), BOTON_PASO)}>
+      <Link href={conDesde(`/panel/agenda/nueva?cotizacion=${aReservar.id}`, desdeAqui)} className={cn(buttonVariants({ size: "paso" }), BOTON_PASO)}>
         <CalendarIcon />
         Reservar en Agenda
       </Link>
@@ -82,7 +87,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
   return (
     <>
       <EncabezadoPagina
-        volver={{ href: "/panel/cotizaciones", texto: "Cotizaciones" }}
+        volver={volver}
         titulo={`Cotización ${c.numero}`}
         estado={
           <span className="flex flex-wrap gap-1.5">
@@ -98,7 +103,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
             </a>
             <MasCotizacion
               id={c.id}
-              nuevaVersion={pendiente && vigente && cotiza ? `/panel/cotizaciones/${c.id}/nueva-version?desde=${vigente.id}` : null}
+              nuevaVersion={pendiente && vigente && cotiza ? conDesde(`/panel/cotizaciones/${c.id}/nueva-version?desde=${vigente.id}`, desdeAqui) : null}
               cambios={pendiente ? ["rechazar"] : c.sinFecha ? ["rechazar", "reabrir"] : c.estado === "perdido" ? ["reabrir"] : []}
             />
           </div>
@@ -153,7 +158,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
             />
             {/* El encargado puede tener Cotizaciones sin Clientes: entonces no enlaza a una ficha que no puede abrir */}
             {puedeVerModulo(usuario, "clientes") && (
-              <Link href={`/panel/clientes/${c.clienteId}`} className={ENLACE_TEXTO}>
+              <Link href={conDesde(`/panel/clientes/${c.clienteId}`, desdeAqui)} className={ENLACE_TEXTO}>
                 Ver ficha del cliente
               </Link>
             )}
@@ -172,7 +177,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
           <ListaFilas
             etiqueta="Reservas"
             filas={reservas.map((r) => ({
-              href: rutaTrabajo(r.id, r.estado, puedeVerModulo(usuario, "ordenes")),
+              href: conDesde(rutaTrabajo(r.id, r.estado, puedeVerModulo(usuario, "ordenes")), desdeAqui),
               titulo: `Reserva del ${formatearFecha(r.fechaInicio).slice(0, 5)} en ${r.espacio}`,
               estado: NOMBRE_ESTADO_TRABAJO[r.estado],
               tonoEstado: TONO_ESTADO_TRABAJO[r.estado],

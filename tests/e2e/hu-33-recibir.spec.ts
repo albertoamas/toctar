@@ -41,7 +41,7 @@ test("recibir con observaciones: la reserva pasa a orden, sin fotos de ingreso s
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto(`/panel/agenda/${id}`);
   await page.getByRole("link", { name: "Recibir vehículo" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}/recibir$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}/recibir(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByRole("heading", { level: 1, name: `Recibir ${placa}` })).toBeVisible();
 
   // Pedido 27: al recibir, las fotos son las de los detalles del checklist; no hay otras
@@ -55,7 +55,7 @@ test("recibir con observaciones: la reserva pasa a orden, sin fotos de ingreso s
   // El checklist (pedido 12) se prueba en hu-33-checklist: aquí, todas las partes bien
   await revisarChecklistEnBase(id);
   await form.getByRole("button", { name: "Recibir vehículo" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?recibido=1$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?recibido=1(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByText("Vehículo recibido. La orden está en «Recibidas».")).toBeVisible();
   // Acotado a la orden: Next.js deja oculta la página anterior (el formulario de recibir, con el mismo texto)
   await expect(page.getByRole("region", { name: "Cómo llegó" }).getByText("Rayón en la puerta trasera; deja una silla de bebé.")).toBeVisible();
@@ -73,7 +73,7 @@ test("recibir con observaciones: la reserva pasa a orden, sin fotos de ingreso s
 
   // En la ficha del cliente, ya recibida, lleva a la orden (C5 §0)
   await page.goto(`/panel/clientes/${clienteId}`);
-  await expect(page.getByRole("list", { name: "Reservas" }).getByRole("link")).toHaveAttribute("href", `/panel/ordenes/${id}`);
+  await expect(page.getByRole("list", { name: "Reservas" }).getByRole("link")).toHaveAttribute("href", new RegExp(`^/panel/ordenes/${id}\\?volver=%2Fpanel%2Fclientes`));
 
   // La reserva ya es una orden: sin acciones de reserva
   await page.goto(`/panel/agenda/${id}`);
@@ -82,7 +82,7 @@ test("recibir con observaciones: la reserva pasa a orden, sin fotos de ingreso s
   await expect(page.getByRole("button", { name: "Más" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Recibir vehículo" })).toHaveCount(0);
   await page.getByRole("link", { name: "Ver la orden" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}(?:[?&]volver=[^&#]*)?$`));
   // En la orden, dos momentos de fotos: inicio y final (pedido 27)
   await expect(page.getByRole("button", { name: "Tomar foto" })).toHaveCount(2);
   await expect(page.getByLabel("Cámara para fotos del inicio")).toBeAttached();
@@ -127,11 +127,11 @@ test("antes de su día no se recibe; tarde, se recibe sin pedir fotos", async ({
   await revisarChecklistEnBase(idSinFotos);
   const form = page.getByRole("form", { name: "Recibir vehículo" });
   await form.getByRole("button", { name: "Recibir vehículo" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${idSinFotos}\\?recibido=1$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${idSinFotos}\\?recibido=1(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByRole("region", { name: "Cómo llegó" })).toContainText("Revisada parte por parte: todas bien.");
   // Recibida, la recepción ya no se abre: lleva a la orden
   await page.goto(`/panel/ordenes/${idSinFotos}/recibir`);
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${idSinFotos}$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${idSinFotos}(?:[?&]volver=[^&#]*)?$`));
 });
 
 test("si la reserva se cancela, el checklist y sus fotos que se alcanzaron a tomar se descartan", async ({ page }, info) => {

@@ -165,7 +165,7 @@ test("con Órdenes, la fila lleva a su orden (pulido final del 10/11: ya no hay 
   await ingresarComoDueno(page);
   await page.goto(`/panel/pagos?q=${placa}`);
   const fila = page.getByRole("list", { name: "Órdenes con saldo" }).getByRole("listitem").filter({ hasText: placa });
-  await expect(fila.getByRole("link", { name: `Ver la orden: Fila enlace ${s}, 500 Bs, entregada hace 4 días` })).toHaveAttribute("href", `/panel/ordenes/${id}`);
+  await expect(fila.getByRole("link", { name: `Ver la orden: Fila enlace ${s}, 500 Bs, entregada hace 4 días` })).toHaveAttribute("href", new RegExp(`^/panel/ordenes/${id}\\?volver=%2Fpanel%2Fpagos`));
   // Los botones siguen en la fila, fuera del enlace
   await expect(fila.getByRole("button", { name: "Registrar pago" })).toBeVisible();
   await expect(fila.getByRole("link", { name: "Escribir por WhatsApp" })).toBeVisible();

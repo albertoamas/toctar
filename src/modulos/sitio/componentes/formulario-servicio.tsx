@@ -16,6 +16,7 @@ import { cambiarVisibilidadServicio, guardarParteServicio } from "../acciones";
 import { iconoDe } from "../beneficios";
 import { LIMITES, type ParteServicio } from "../esquemas";
 import { ElegirIcono } from "./elegir-icono";
+import { conDesde } from "@/lib/volver";
 
 // HU-07: la página del servicio en el sitio (RF-03). Sin precios (RN-10). El nombre y las variantes son del catálogo.
 // Pulido 13.19: la ficha se lee como el sitio y cada parte se edita en su modal, con su propio botón. Antes era un solo
@@ -161,7 +162,8 @@ function FormularioDireccion({ id, slug }: { id: number; slug: string }) {
  * "Más" del encabezado: lo que se usa poco. Mostrar u ocultar se hace al momento (se deshace con la misma opción); la
  * dirección se cambia en un modal, con su advertencia; el catálogo, si la persona lo ve.
  */
-export function MasServicio({ id, slug, visible, activo, catalogo }: { id: number; slug: string; visible: boolean; activo: boolean; catalogo: boolean }) {
+export function MasServicio(props: { id: number; slug: string; visible: boolean; activo: boolean; catalogo: boolean; /** Esta pantalla: el catálogo vuelve aquí (pedido 43). */ desde: string }) {
+  const { id, slug, visible, activo, catalogo, desde } = props;
   const router = useRouter();
   const [enviando, iniciar] = useTransition();
   const [direccion, setDireccion] = useState(false);
@@ -176,7 +178,7 @@ export function MasServicio({ id, slug, visible, activo, catalogo }: { id: numbe
         ]
       : []),
     { texto: "Cambiar dirección de la página", alElegir: () => setDireccion(true) },
-    ...(catalogo ? [{ texto: "Abrir en el catálogo", alElegir: () => router.push(`/panel/catalogo/${id}`) }] : []),
+    ...(catalogo ? [{ texto: "Abrir en el catálogo", alElegir: () => router.push(conDesde(`/panel/catalogo/${id}`, desde)) }] : []),
   ];
   return (
     <>

@@ -6,6 +6,7 @@ import { rutaTrabajo } from "@/modulos/ordenes/reglas";
 import { estaPagada } from "@/modulos/pagos/reglas";
 import type { ReservaDelCliente } from "../consultas";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "../reglas";
+import { conDesde } from "@/lib/volver";
 
 // Las reservas de un cliente, en su ficha (HU-32), en una tabla como sus cotizaciones (inventario-pantallas.md, cambio 4:
 // eran tarjetas al lado de la tabla de cotizaciones). Cada fila: la fecha, el espacio, el vehículo (siempre, aunque tenga
@@ -16,6 +17,8 @@ type Props = {
   verOrdenes: boolean;
   /** El saldo de cada una: para quien ve pagos (sin el permiso, las reservas llegan sin él). */
   conSaldo: boolean;
+  /** La ficha de la que salen sus enlaces: "Volver" lleva ahí (pedido 43). */
+  desde: string;
 };
 
 /** Una columna con lo que pone en cada fila: van juntas, así una celda no cae bajo el título de otra. */
@@ -37,7 +40,7 @@ function Saldo({ saldo }: { saldo: string }) {
   );
 }
 
-export function ReservasCliente({ reservas, verOrdenes, conSaldo }: Props) {
+export function ReservasCliente({ reservas, verOrdenes, conSaldo, desde }: Props) {
   const columnas: (Columna | false)[] = [
     {
       titulo: "Fecha",
@@ -62,7 +65,7 @@ export function ReservasCliente({ reservas, verOrdenes, conSaldo }: Props) {
       etiqueta="Reservas"
       columnas={visibles}
       filas={reservas.map((r) => ({
-        href: rutaTrabajo(r.id, r.estado, verOrdenes),
+        href: conDesde(rutaTrabajo(r.id, r.estado, verOrdenes), desde),
         celdas: visibles.map((c) => c.celda(r)),
       }))}
     />

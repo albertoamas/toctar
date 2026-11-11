@@ -44,6 +44,7 @@ import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
 import { TablaAcciones, type ColumnaAcciones } from "@/componentes/panel/tabla-acciones";
 import { CeldaDoble } from "@/componentes/panel/tabla-lista";
+import { conDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Mantenimientos" };
 
@@ -68,6 +69,11 @@ export default function PaginaMantenimientos({ searchParams }: PageProps<"/panel
 
 const TITULOS: Record<VistaMantenimientos, string> = { "por-avisar": "Por avisar", "mas-adelante": "Más adelante", cerrados: "Cerrados" };
 const enlace = (vista: VistaMantenimientos) => (vista === "por-avisar" ? "/panel/mantenimientos" : `/panel/mantenimientos?vista=${vista}`);
+/** Su reserva u orden, si quien mira puede abrirla, y que vuelva a "Cerrados" (pedido 43). */
+function trabajoCerrado(m: MantenimientoCerrado, ve: { ordenes: boolean; agenda: boolean }) {
+  const t = m.trabajo && enlaceTrabajo(m.trabajo.id, m.trabajo.estado, ve);
+  return t ? { ...t, href: conDesde(t.href, enlace("cerrados")) } : null;
+}
 const cantidad = (n: number) => (n === 1 ? "1 mantenimiento" : `${n} mantenimientos`);
 
 async function Listas({ searchParams }: Pick<PageProps<"/panel/mantenimientos">, "searchParams">) {
@@ -115,7 +121,7 @@ async function abiertos(vista: "por-avisar" | "mas-adelante", hoy: string, puede
   // Un mantenimiento no tiene ficha propia: la fila abre la del cliente, donde están sus mantenimientos y sus vehículos
   // (pulido final, 10/11: toda fila de una tabla abre algo), si quien mira ve Clientes
   const aCliente = (m: MantenimientoPorAvisar) =>
-    verClientes ? { href: `/panel/clientes/${m.clienteId}`, etiqueta: etiquetaAbierto(m, hoy, conAviso) } : {};
+    verClientes ? { href: conDesde(`/panel/clientes/${m.clienteId}`, enlace(vista)), etiqueta: etiquetaAbierto(m, hoy, conAviso) } : {};
   const conAviso = vista === "por-avisar";
   const fila = (m: MantenimientoPorAvisar) => <Fila key={m.id} m={m} hoy={hoy} mensaje={mensaje} puedeAgendar={puedeAgendar} conAviso={conAviso} {...aCliente(m)} />;
   // En la computadora, una tabla con sus acciones, como Saldos (inventario-pantallas.md, cambio 1)
@@ -181,7 +187,7 @@ async function cerrados(hoy: string, ve: { ordenes: boolean; agenda: boolean }) 
         etiqueta="Cerrados"
         columnas={COLUMNAS_CERRADOS}
         filas={lista.map((m) => {
-          const trabajo = m.trabajo && enlaceTrabajo(m.trabajo.id, m.trabajo.estado, ve);
+          const trabajo = trabajoCerrado(m, ve);
           return {
             clave: m.id,
             href: trabajo?.href,
@@ -298,7 +304,7 @@ function Acciones({ m, mensaje, puedeAgendar, conAviso, enTabla = false }: { m: 
         />
       )}
       {puedeAgendar && (
-        <Link href={`/panel/agenda/nueva?${agendar.toString()}`} className={cn(buttonVariants({ variant: "outline" }))}>
+        <Link href={conDesde(`/panel/agenda/nueva?${agendar.toString()}`, enlace(conAviso ? "por-avisar" : "mas-adelante"))} className={cn(buttonVariants({ variant: "outline" }))}>
           <CalendarIcon />
           Reservar
         </Link>
@@ -319,7 +325,7 @@ function Acciones({ m, mensaje, puedeAgendar, conAviso, enTabla = false }: { m: 
 
 function FilaCerrada({ m, hoy, ve }: { m: MantenimientoCerrado; hoy: string; ve: { ordenes: boolean; agenda: boolean } }) {
   // Agendado: a su reserva, o a su orden si ya se recibió; hecho: a la orden que lo hizo (si quien mira puede abrirla)
-  const trabajo = m.trabajo && enlaceTrabajo(m.trabajo.id, m.trabajo.estado, ve);
+  const trabajo = trabajoCerrado(m, ve);
   return (
     <li className="p-4">
       {/* Toda la fila abre su reserva u orden, como en Saldos (pulido final, 10/11: era un "Ver la orden" suelto debajo) */}

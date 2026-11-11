@@ -4,7 +4,7 @@ import { eq, sql } from "drizzle-orm";
 import { APIError } from "better-auth/api";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { db, type Transaccion } from "@/db";
 import { usuarioPermiso } from "@/db/esquema";
 import { auth } from "@/lib/auth";
@@ -98,7 +98,8 @@ export async function crearUsuario(_previo: EstadoFormulario, datos: FormData): 
 
   await db.transaction((tx) => guardarPermisos(tx, id, rol, permisos, Number(autor.id)));
   revalidatePath(RUTA);
-  redirect(`${RUTA}?creado=${encodeURIComponent(nombre)}`);
+  // Reemplaza al formulario en el historial: "atrás" no vuelve a él (pedido 43)
+  redirect(`${RUTA}?creado=${encodeURIComponent(nombre)}`, RedirectType.replace);
 }
 
 /** El nombre de un usuario (la parte "Datos" de su ficha, C6). No toca el rol ni los permisos. */

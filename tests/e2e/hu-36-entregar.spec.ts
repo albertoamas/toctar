@@ -33,7 +33,7 @@ test("pagada: el dueño suma un adicional, se cobra y se entrega; queda programa
 
   // El saldo de 200 se cobra en la entrega
   await page.getByRole("link", { name: "Entregar vehículo" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}/entregar$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}/entregar(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByText(/^Se programará: Mantenimiento del nano cerámico, el \d{2}\/\d{2}\/\d{4}\.$/)).toBeVisible();
   await page.getByRole("button", { name: "Registrar pago" }).click();
   const pagoForm = page.getByRole("form", { name: "Registrar pago" });
@@ -50,7 +50,7 @@ test("pagada: el dueño suma un adicional, se cobra y se entrega; queda programa
   await firmarEnRecuadro(page);
   await entrega.getByLabel("Nombre de quien recibe").fill(`Hermana de Entrega ${s}`);
   await entrega.getByRole("button", { name: "Entregar vehículo" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?entregado=1$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?entregado=1(?:[?&]volver=[^&#]*)?$`));
   // Entregada, el encabezado dice cuándo: la entrega "aproximada" ya no se muestra (recorrido de la Entrega 2)
   const datos = page.getByLabel("Datos de la orden");
   await expect(datos).toContainText("Espacio");
@@ -136,7 +136,7 @@ test("con saldo: el encargado sin el permiso no entrega; con el permiso sí, y q
   await expect(entrega.getByText("Queda un saldo de 300 Bs: marca «Entregar con saldo pendiente» para confirmar.")).toBeVisible();
   await entrega.getByText("Entregar con saldo pendiente (300 Bs)").click();
   await entrega.getByRole("button", { name: "Entregar vehículo" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?entregado=1$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?entregado=1(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByText("Vehículo entregado con saldo de 300 Bs.")).toBeVisible();
   await expect(page.getByText(/Con saldo de 300 Bs, autorizado por Encargada con permiso\.$/)).toBeVisible();
   await expect(page.getByRole("region", { name: "Firma de entrega" })).toContainText("Entregado sin firma: Se lo lleva el chofer de la empresa.")
@@ -173,7 +173,7 @@ test("sin firma ni «Entregar sin firma» no se entrega; sin firma pide el motiv
   await expect(entrega.getByText("Cuenta por qué no firma.")).toBeVisible();
   await entrega.getByLabel("Motivo").fill("El cliente mandó a su hijo.");
   await entrega.getByRole("button", { name: "Entregar vehículo" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?entregado=1$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?entregado=1(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByRole("region", { name: "Firma de entrega" })).toContainText("Entregado sin firma: El cliente mandó a su hijo.");
   const [t] = await consultar<{ firma: number | null; nombre: string | null; motivo: string; conFirma: boolean }>(
     `select t.firma_archivo_id as firma, t.firma_nombre as nombre, t.sin_firma_motivo as motivo, (a.datos->>'conFirma')::boolean as "conFirma"

@@ -15,6 +15,7 @@ import { FormularioRecepcion } from "@/modulos/ordenes/componentes/formulario-re
 import { obtenerOrden, partesDelChecklist, revisionDeTrabajo } from "@/modulos/ordenes/consultas";
 import { esOrden, puedeRecibirse } from "@/modulos/ordenes/reglas";
 import { filaVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
+import { conDesde, leerDesde, sinElTrabajo, volverDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Recibir vehículo" };
 
@@ -23,29 +24,31 @@ export const metadata: Metadata = { title: "Recibir vehículo" };
 // y las observaciones. Al recibirlo, la reserva pasa a orden. Pulido 11.3 y pulido de Recibir (09/11): arriba, en un
 // recuadro, quién, qué vehículo (para confirmar que es el auto correcto) y sus servicios; al final, "Recibir vehículo"
 // grande (fijo abajo en el celular) con cuántas partes faltan.
-export default function PaginaRecibir({ params }: PageProps<"/panel/ordenes/[id]/recibir">) {
+export default function PaginaRecibir({ params, searchParams }: PageProps<"/panel/ordenes/[id]/recibir">) {
   return (
     <PaginaPanel tipo="formulario">
       <Suspense fallback={<Cargando />}>
-        <Recepcion params={params} />
+        <Recepcion params={params} searchParams={searchParams} />
       </Suspense>
     </PaginaPanel>
   );
 }
 
-async function Recepcion({ params }: Pick<PageProps<"/panel/ordenes/[id]/recibir">, "params">) {
+async function Recepcion({ params, searchParams }: Pick<PageProps<"/panel/ordenes/[id]/recibir">, "params" | "searchParams">) {
   const usuario = await exigirModulo("ordenes");
   if (!puede(usuario, "recibir_vehiculo")) redirect("/panel/sin-acceso");
   const verAgenda = puedeVerModulo(usuario, "agenda");
-  const { id } = await params;
+  const [{ id }, busqueda] = await Promise.all([params, searchParams]);
   if (!/^\d+$/.test(id)) notFound();
   const o = await obtenerOrden(Number(id), false);
   if (!o) notFound();
-  if (esOrden(o.estado)) redirect(`/panel/ordenes/${o.id}`);
+  // Ya recibida o cancelada: a su pantalla, con el origen de antes del trabajo (pedido 43)
+  const origen = sinElTrabajo(String(busqueda.volver ?? ""), o.id);
+  if (esOrden(o.estado)) redirect(conDesde(`/panel/ordenes/${o.id}`, origen));
   // Cancelada: no hay nada que recibir; se ve en la agenda, si quien entra la ve
   if (o.estado !== "agendado") {
     if (!verAgenda) notFound();
-    redirect(`/panel/agenda/${o.id}`);
+    redirect(conDesde(`/panel/agenda/${o.id}`, origen));
   }
   const hoy = fechaEnBolivia();
   const detalle = detalleVehiculo(o);
@@ -53,7 +56,7 @@ async function Recepcion({ params }: Pick<PageProps<"/panel/ordenes/[id]/recibir
 
   return (
     <>
-      <EncabezadoPagina titulo={`Recibir ${o.placa}`} volver={verAgenda ? { href: `/panel/agenda/${o.id}`, texto: "Reserva" } : { href: "/panel/ordenes", texto: "Órdenes" }} />
+      <EncabezadoPagina titulo={`Recibir ${o.placa}`} volver={volverDesde(busqueda.volver, verAgenda ? { href: `/panel/agenda/${o.id}`, texto: "Reserva" } : { href: "/panel/ordenes", texto: "Órdenes" }, usuario)} />
       {!puedeRecibirse(o, hoy) ? (
         <p className="rounded-sm border border-aviso p-3">
           Esa reserva todavía no llega a su día de ingreso ({formatearFecha(o.fechaInicio)}): reprográmala.{" "}
@@ -86,7 +89,7 @@ async function Recepcion({ params }: Pick<PageProps<"/panel/ordenes/[id]/recibir
           <AvanceRecepcion>
             <ChecklistRecepcion trabajoId={o.id} partes={partes} revision={revision} />
             {/* Las que faltan: las activas sin revisar (una desactivada ya revisada no cuenta) */}
-            <FormularioRecepcion trabajoId={o.id} faltan={partes.filter((p) => !revision.some((r) => r.parteId === p.id)).length} />
+            <FormularioRecepcion trabajoId={o.id} volver={leerDesde(busqueda.volver)} faltan={partes.filter((p) => !revision.some((r) => r.parteId === p.id)).length} />
           </AvanceRecepcion>
         </>
       )}

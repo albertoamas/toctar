@@ -27,6 +27,7 @@ import { erroresDelPaso, PASO_CLIENTE, PASO_SERVICIOS, PASO_VEHICULO, PASOS_NUEV
 import { CLIENTE_NUEVO, VEHICULO_OTRO } from "../reglas";
 import { CamposPrecio, TotalEnPie, usePrecios } from "./campos-precio";
 import type { Linea } from "./lineas-servicio";
+import { conDesde } from "@/lib/volver";
 
 // Nueva cotización en pasos (pedido 40, etapas/P40-cotizacion-en-pasos.md): el cliente, su vehículo y los servicios con
 // su precio, un paso por pantalla. Un solo formulario: los pasos que no están a la vista se esconden y se envían igual,
@@ -51,6 +52,8 @@ type Props = {
   opciones: Record<number, OpcionServicio[]>;
   inicio: { validaHasta: string; adelanto: string };
   hoy: string;
+  /** La pantalla de origen (pedido 43): va en el formulario y la cotización creada vuelve ahí. */
+  volver?: string | null;
 };
 
 const CAMPO_TAMANO = `${PREFIJO_VEHICULO}tamanoId`;
@@ -66,7 +69,7 @@ function sugerido(opciones: OpcionServicio[] | null, varianteId: number): string
   return o?.sugerencia.tipo === "monto" ? mostrarMonto(o.sugerencia.monto) : "";
 }
 
-export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, hoy }: Props) {
+export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, hoy, volver }: Props) {
   const clienteNuevo = !cliente;
   const primerPaso = clienteNuevo ? PASO_CLIENTE : PASO_VEHICULO;
   const [paso, setPaso] = useState(primerPaso);
@@ -242,6 +245,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
     >
       <PasosFlujo pasos={PASOS_NUEVA_COTIZACION} actual={paso} etiqueta="Pasos de la cotización" />
       <input type="hidden" name="cliente" value={cliente ? cliente.id : CLIENTE_NUEVO} />
+      {volver && <input type="hidden" name="volver" value={volver} />}
       {estado.mensaje && !estado.ok && <MensajeError id="cotizacion-error">{estado.mensaje}</MensajeError>}
 
       {/* Lo ya elegido, arriba y en una sola tarjeta (pulido final del 09/11, como Nueva reserva), con "Cambiar" para
@@ -250,7 +254,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
         <ResumenClienteVehiculo
           id="cotizacion-para"
           titulo="Cotización para"
-          cliente={{ nombre: datosCliente[0], detalle: datosCliente[1], href: clienteNuevo ? undefined : "/panel/cotizaciones/nueva", alCambiar: () => volverA(PASO_CLIENTE) }}
+          cliente={{ nombre: datosCliente[0], detalle: datosCliente[1], href: clienteNuevo ? undefined : conDesde("/panel/cotizaciones/nueva", volver), alCambiar: () => volverA(PASO_CLIENTE) }}
           vehiculo={
             paso > PASO_VEHICULO && resumen.vehiculo
               ? { ...resumen.vehiculo, tamano: tamanos.find((t) => t.id === tamanoId)?.nombre ?? "", alCambiar: () => volverA(PASO_VEHICULO) }
@@ -263,7 +267,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
         {clienteNuevo && (
           <>
             <CabeceraSeccion id="cliente" titulo="Cliente nuevo">
-              <Link href="/panel/cotizaciones/nueva" className={buttonVariants({ variant: "ghost" })}>
+              <Link href={conDesde("/panel/cotizaciones/nueva", volver)} className={buttonVariants({ variant: "ghost" })}>
                 <SearchIcon />
                 Buscar un cliente registrado
               </Link>

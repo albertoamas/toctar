@@ -21,6 +21,7 @@ import { obtenerServicioCatalogo } from "@/modulos/catalogo/consultas";
 import { textoDias } from "@/modulos/catalogo/reglas";
 import { textoCadaMeses } from "@/modulos/mantenimientos/reglas";
 import { Insignia } from "@/componentes/panel/insignia";
+import { aqui, conDesde, volverDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Servicio del catálogo" };
 
@@ -41,12 +42,16 @@ export default function PaginaServicioCatalogo({ params, searchParams }: PagePro
 }
 
 async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo/[id]">, "params" | "searchParams">) {
-  await exigirModulo("catalogo");
-  const [{ id }, { creado }] = await Promise.all([params, searchParams]);
+  const usuario = await exigirModulo("catalogo");
+  const [{ id }, busqueda] = await Promise.all([params, searchParams]);
+  const { creado } = busqueda;
   const numero = Number(id);
   if (!Number.isInteger(numero) || numero <= 0) notFound();
   const s = await obtenerServicioCatalogo(numero);
   if (!s) notFound();
+  // Pedido 43: "Volver" al Catálogo (con "Inactivos") o a su página del sitio si se vino de ahí
+  const volver = volverDesde(busqueda.volver, { href: "/panel/catalogo", texto: "Catálogo y precios" }, usuario);
+  const desdeAqui = aqui(`/panel/catalogo/${s.id}`, busqueda);
   // s.variantes son las activas (con sus precios); listaVariantes, todas
   const desactivadas = s.listaVariantes.length - s.variantes.length;
   // Recién creado y todavía sin precios: se abren los de su primera variante. Si ya los tiene (se recargó la página con
@@ -58,12 +63,12 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
   return (
     <PaginaPanel tipo="ficha">
       <EncabezadoPagina
-        volver={{ href: "/panel/catalogo", texto: "Catálogo y precios" }}
+        volver={volver}
         titulo={s.nombre}
         // Sale en el sitio si está activo y su página se muestra (publico.ts pide las dos)
         estado={<Insignia>{!s.activo ? "Inactivo" : s.visibleSitio ? "En el sitio" : "Oculto en el sitio"}</Insignia>}
         accion={
-          <Link href={`/panel/sitio/servicios/${s.id}`} className={cn(buttonVariants({ variant: "outline" }))}>
+          <Link href={conDesde(`/panel/sitio/servicios/${s.id}`, desdeAqui)} className={cn(buttonVariants({ variant: "outline" }))}>
             <GlobeIcon />
             Su página en el sitio
           </Link>

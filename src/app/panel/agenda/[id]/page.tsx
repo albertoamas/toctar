@@ -28,6 +28,7 @@ import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { esOrden, puedeRecibirse } from "@/modulos/ordenes/reglas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
 import { filaVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
+import { aqui, conDesde, sinElTrabajo, volverDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Reserva" };
 
@@ -50,7 +51,8 @@ export default function PaginaReserva({ params, searchParams }: PageProps<"/pane
 
 async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[id]">, "params" | "searchParams">) {
   const usuario = await exigirModulo("agenda");
-  const [{ id }, { agendada }] = await Promise.all([params, searchParams]);
+  const [{ id }, parametros] = await Promise.all([params, searchParams]);
+  const { agendada } = parametros;
   if (!/^\d+$/.test(id)) notFound();
   const conPagos = puedeVerModulo(usuario, "pagos");
   const r = await obtenerReserva(Number(id), conPagos);
@@ -62,6 +64,9 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
   const cancelada = r.estado === "cancelado";
   const verOrdenes = puedeVerModulo(usuario, "ordenes");
   const orden = esOrden(r.estado);
+  // Pedido 43: "Volver" a la pantalla de la que se vino; los enlaces que salen de aquí dicen que vienen de esta reserva
+  const volver = volverDesde(parametros.volver, { href: "/panel/agenda", texto: "Agenda" }, usuario);
+  const desdeAqui = aqui(`/panel/agenda/${r.id}`, parametros);
 
   const detalle = detalleVehiculo(r);
   // El paso siguiente, uno solo, en el encabezado: recibir el vehículo desde su día de ingreso, o ir a la orden si ya se
@@ -69,12 +74,12 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
   const principal =
     puede(usuario, "recibir_vehiculo") && puedeRecibirse(r, hoy) ? (
       // Enlace con forma de botón: lleva a la recepción, con el checklist
-      <Link href={`/panel/ordenes/${r.id}/recibir`} className={cn(buttonVariants({ size: "paso" }), BOTON_PASO)}>
+      <Link href={conDesde(`/panel/ordenes/${r.id}/recibir`, desdeAqui)} className={cn(buttonVariants({ size: "paso" }), BOTON_PASO)}>
         <ClipboardCheckIcon />
         Recibir vehículo
       </Link>
     ) : orden && verOrdenes ? (
-      <Link href={`/panel/ordenes/${r.id}`} className={cn(buttonVariants({ size: "paso" }), BOTON_PASO)}>
+      <Link href={conDesde(`/panel/ordenes/${r.id}`, sinElTrabajo(String(parametros.volver ?? ""), r.id))} className={cn(buttonVariants({ size: "paso" }), BOTON_PASO)}>
         <WrenchIcon />
         Ver la orden
       </Link>
@@ -114,12 +119,12 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
         />
         {/* Los enlaces, de 44 px y fuera de la lista: la ficha del cliente (con Clientes) y su cotización (con Cotizaciones) */}
         {verFicha && (
-          <Link href={`/panel/clientes/${r.clienteId}`} className={ENLACE_TEXTO}>
+          <Link href={conDesde(`/panel/clientes/${r.clienteId}`, desdeAqui)} className={ENLACE_TEXTO}>
             Ver ficha del cliente
           </Link>
         )}
         {r.consultaId && r.cotizacion && verCotizacion && (
-          <Link href={`/panel/cotizaciones/${r.consultaId}`} className={ENLACE_TEXTO}>
+          <Link href={conDesde(`/panel/cotizaciones/${r.consultaId}`, desdeAqui)} className={ENLACE_TEXTO}>
             Ver la cotización {r.cotizacion.numero}
             {r.cotizacion.version > 1 && `, versión ${r.cotizacion.version}`}
           </Link>
@@ -136,7 +141,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
   return (
     <>
       <EncabezadoPagina
-        volver={{ href: "/panel/agenda", texto: "Agenda" }}
+        volver={volver}
         titulo={r.placa}
         estado={<Insignia tono={TONO_ESTADO_TRABAJO[r.estado]}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</Insignia>}
         accion={

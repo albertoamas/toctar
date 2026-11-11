@@ -134,7 +134,7 @@ test("cliente nuevo en tres pasos: sus datos completos, su vehículo, y los serv
   await expect(page.getByRole("group", { name: "Total y condiciones" }).getByText("600,50 Bs", { exact: true })).toBeVisible();
   await crear(page);
 
-  await expect(page).toHaveURL(/\/panel\/cotizaciones\/\d+\?creada=1$/);
+  await expect(page).toHaveURL(/\/panel\/cotizaciones\/\d+\?creada=1(?:[?&]volver=[^&#]*)?$/);
   const id = idDeLaPagina(page);
   const [c] = await consultar<{ numero: string; es_estimado: boolean; canal: string | null; estado: string; cliente: string; placa: string }>(
     `select k.numero, k.es_estimado, q.canal, q.estado, cl.nombre as cliente, v.placa
@@ -214,7 +214,7 @@ test("desde la ficha del cliente: llega elegido, con su vehículo marcado, y la 
   await page.goto(`/panel/clientes/${id}`);
   await expect(page.getByText("Todavía no tiene cotizaciones.")).toBeVisible();
   await page.getByRole("link", { name: "Nueva cotización" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/cotizaciones/nueva\\?cliente=${id}$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/cotizaciones/nueva\\?cliente=${id}(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByRole("region", { name: "Cotización para" })).toContainText(`Desde ficha ${s}`);
   await expect(page.getByRole("radio", { name: new RegExp(`CF25${s}1`) })).toBeChecked();
   await expect(pasoActual(page)).toContainText("Vehículo");
@@ -224,7 +224,7 @@ test("desde la ficha del cliente: llega elegido, con su vehículo marcado, y la 
   await expect(precio(page, 1)).toHaveValue("450");
   await page.getByRole("radio", { name: "En persona" }).check();
   await crear(page);
-  await expect(page).toHaveURL(/\/panel\/cotizaciones\/\d+\?creada=1$/);
+  await expect(page).toHaveURL(/\/panel\/cotizaciones\/\d+\?creada=1(?:[?&]volver=[^&#]*)?$/);
   await expect(page.getByRole("list", { name: "Versiones" })).toContainText("En persona");
 
   await page.goto(`/panel/clientes/${id}`);
@@ -246,7 +246,7 @@ test("nueva versión: el mismo número, la anterior queda reemplazada y una viej
 
   await page.getByRole("button", { name: "Más" }).click();
   await page.getByRole("menuitem", { name: "Nueva versión" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/cotizaciones/${id}/nueva-version\\?desde=\\d+$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/cotizaciones/${id}/nueva-version\\?desde=\\d+(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByRole("heading", { level: 1, name: "Versión 2" })).toBeVisible();
   // Arranca con lo de la versión 1, también cómo se cotizó
   await expect(precio(page, 1)).toHaveValue("450");
@@ -258,7 +258,7 @@ test("nueva versión: el mismo número, la anterior queda reemplazada y una viej
   await expect(page.getByText("Versión 1: 450 Bs")).toBeVisible();
   await page.getByRole("radio", { name: "En persona" }).check();
   await page.getByRole("button", { name: "Guardar versión 2" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/cotizaciones/${id}\\?version=\\d+$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/cotizaciones/${id}\\?version=\\d+(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByText(/^Versión 2 guardada\./)).toBeVisible();
 
   const versiones = await consultar<{ id: number; numero: string; version: number; estado: string; total: string; es_estimado: boolean }>(
@@ -334,7 +334,7 @@ test("pedido 24: el encargado con Cotizaciones cotiza y ve los montos; sin el pe
   await elegir(page, 1, nombre, "Con precio");
   await page.getByRole("radio", { name: "En persona" }).check();
   await crear(page);
-  await expect(page).toHaveURL(/\/panel\/cotizaciones\/\d+\?creada=1$/);
+  await expect(page).toHaveURL(/\/panel\/cotizaciones\/\d+\?creada=1(?:[?&]volver=[^&#]*)?$/);
   const [{ autor }] = await consultar<{ autor: string }>(
     "select u.nombre as autor from cotizacion c join usuario u on u.id = c.created_by where c.consulta_id = $1",
     [idDeLaPagina(page)],
