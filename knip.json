@@ -1,5 +1,5 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": ["scripts/*.mjs", "tests/e2e/*.setup.ts"],
-  "ignore": ["src/componentes/ui/**", "src/lib/utils.ts", "public/sw.js"]
+  "ignore": ["src/componentes/ui/**", "src/lib/utils.ts", "public/sw.js", "scripts/manual/estilo.css"]
 }
