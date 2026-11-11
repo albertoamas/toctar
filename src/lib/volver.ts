@@ -2,8 +2,14 @@ import type { Route } from "next";
 import { MODULOS, puedeVerModulo, type Modulo, type SujetoPermisos } from "@/lib/permisos";
 
 // Pedido 43 (etapas/P43-volver-al-origen.md): "Volver" lleva a la pantalla de la que se vino. Cada enlace que abre otra
-// pantalla lleva `?desde=` con la dirección de donde sale (con la pestaña, los filtros y la búsqueda de una lista), y la
+// pantalla lleva `?volver=` con la dirección de donde sale (con la pestaña, los filtros y la búsqueda de una lista), y la
 // pantalla que llega lo usa para su botón de volver. Sin "desde", o con uno que no sirve, vuelve a su lista de siempre.
+
+/**
+ * El parámetro con la pantalla de origen. No es `desde`: Nueva versión ya lo usa para la versión de la que parte, y
+ * Cambiar de dueño para `desde=comprador`.
+ */
+export const PARAMETRO_VOLVER = "volver";
 
 /** Hasta cuánto mide una dirección con su "desde": si se pasa, se quita el "desde" anidado más adentro. */
 const LARGO_MAXIMO = 1000;
@@ -56,13 +62,13 @@ export function leerDesde(valor: unknown): Route | null {
 
 /** El "desde" que trae una dirección, ya validado, o null. */
 function desdeDe(direccion: string): Route | null {
-  return leerDesde(new URL(direccion, BASE).searchParams.get("desde"));
+  return leerDesde(new URL(direccion, BASE).searchParams.get(PARAMETRO_VOLVER));
 }
 
 /** La dirección sin su "desde". */
 function sinDesde(direccion: string): string {
   const url = new URL(direccion, BASE);
-  url.searchParams.delete("desde");
+  url.searchParams.delete(PARAMETRO_VOLVER);
   return `${url.pathname}${url.search}`;
 }
 
@@ -74,7 +80,7 @@ export function conDesde<T extends string>(href: T, desde: string | null | undef
   if (!desde) return href;
   const armar = (d: string) => {
     const url = new URL(href, BASE);
-    url.searchParams.set("desde", d);
+    url.searchParams.set(PARAMETRO_VOLVER, d);
     return `${url.pathname}${url.search}${url.hash}`;
   };
   const completo = armar(desde);

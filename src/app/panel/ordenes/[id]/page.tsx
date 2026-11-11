@@ -40,6 +40,7 @@ import { mensajeListo } from "@/modulos/ordenes/mensajes";
 import { puedeQuitarFoto, esOrden, estaAbierta, estaAtrasada, pasosDeOrden, puedeExtenderse, puedePublicarse } from "@/modulos/ordenes/reglas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
 import { filaVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
+import { aqui, conDesde, leerDesde, volverDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Orden" };
 
@@ -60,7 +61,8 @@ export default function PaginaOrden({ params, searchParams }: PageProps<"/panel/
 
 async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/[id]">, "params" | "searchParams">) {
   const usuario = await exigirModulo("ordenes");
-  const [{ id }, { recibido, entregado, publicado }] = await Promise.all([params, searchParams]);
+  const [{ id }, parametros] = await Promise.all([params, searchParams]);
+  const { recibido, entregado, publicado } = parametros;
   if (!/^\d+$/.test(id)) notFound();
   const o = await obtenerOrden(Number(id), puedeVerModulo(usuario, "pagos"));
   if (!o) notFound();
@@ -68,9 +70,12 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   // Todavía es una reserva (o se canceló): se ve en la agenda, si quien entra la ve
   if (!esOrden(o.estado)) {
     if (!verAgenda) notFound();
-    redirect(`/panel/agenda/${o.id}`);
+    redirect(conDesde(`/panel/agenda/${o.id}`, leerDesde(parametros.volver)));
   }
   const verFicha = puedeVerModulo(usuario, "clientes");
+  // Pedido 43: "Volver" a la pantalla de la que se vino; los enlaces que salen de aquí dicen que vienen de esta orden
+  const volver = volverDesde(parametros.volver, { href: "/panel/ordenes", texto: "Órdenes" }, usuario);
+  const desdeAqui = aqui(`/panel/ordenes/${o.id}`, parametros);
   const abierta = estaAbierta(o.estado);
   const hoy = fechaEnBolivia();
   const yo = Number(usuario.id);
@@ -122,16 +127,16 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   const paso = abierta && (
     <PasoSiguiente>
       <EstadoOrden id={o.id} estado={o.estado} editable />
-      {entregar && (avisada || !aviso) && <EnlaceEntregar id={o.id} principal />}
+      {entregar && (avisada || !aviso) && <EnlaceEntregar id={o.id} desde={desdeAqui} principal />}
       {aviso && <AvisarPorWhatsApp enlace={aviso.enlace} avisado={aviso.avisado} conDetalle={false} grande registrarAction={registrarAvisoListo.bind(null, { id: o.id })} />}
-      {entregar && aviso && !avisada && <EnlaceEntregar id={o.id} />}
+      {entregar && aviso && !avisada && <EnlaceEntregar id={o.id} desde={desdeAqui} />}
     </PasoSiguiente>
   );
   // En el encabezado, lo demás: publicar ya entregada, escribirle al cliente y "Más"
   const acciones = (
     <div className="flex flex-wrap gap-2">
       {sePuedePublicar && (
-        <Link href={`/panel/ordenes/${o.id}/publicar`} className={cn(buttonVariants({ variant: "outline" }))}>
+        <Link href={conDesde(`/panel/ordenes/${o.id}/publicar`, desdeAqui)} className={cn(buttonVariants({ variant: "outline" }))}>
           <ImageUpIcon />
           Publicar en la galería
         </Link>
@@ -164,7 +169,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   return (
     <>
       <EncabezadoPagina
-        volver={{ href: "/panel/ordenes", texto: "Órdenes" }}
+        volver={volver}
         titulo={o.placa}
         estado={
           <>
@@ -223,12 +228,12 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
               />
               {/* Los enlaces, de 44 px y fuera de la lista: la ficha del cliente (con Clientes) y la reserva (con Agenda) */}
               {verFicha && (
-                <Link href={`/panel/clientes/${o.clienteId}`} className={ENLACE_TEXTO}>
+                <Link href={conDesde(`/panel/clientes/${o.clienteId}`, desdeAqui)} className={ENLACE_TEXTO}>
                   Ver ficha del cliente
                 </Link>
               )}
               {verAgenda && (
-                <Link href={`/panel/agenda/${o.id}`} className={ENLACE_TEXTO}>
+                <Link href={conDesde(`/panel/agenda/${o.id}`, desdeAqui)} className={ENLACE_TEXTO}>
                   Ver la reserva
                 </Link>
               )}
@@ -279,9 +284,9 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
 }
 
 /** "Entregar vehículo": un enlace con forma de botón que lleva a la entrega, con el saldo y el cobro. */
-function EnlaceEntregar({ id, principal }: { id: number; principal?: boolean }) {
+function EnlaceEntregar({ id, desde, principal }: { id: number; desde: string; principal?: boolean }) {
   return (
-    <Link href={`/panel/ordenes/${id}/entregar`} className={cn(buttonVariants({ variant: principal ? "default" : "outline", size: principal ? "paso" : "default" }), principal && BOTON_PASO)}>
+    <Link href={conDesde(`/panel/ordenes/${id}/entregar`, desde)} className={cn(buttonVariants({ variant: principal ? "default" : "outline", size: principal ? "paso" : "default" }), principal && BOTON_PASO)}>
       <KeyRoundIcon />
       Entregar vehículo
     </Link>

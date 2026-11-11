@@ -32,6 +32,7 @@ import { ESTADOS_RECORDATORIO_ABIERTO, NOMBRE_ESTADO_RECORDATORIO, textoCadaMese
 import { enlaceTrabajo } from "@/modulos/ordenes/reglas";
 import { Insignia } from "@/componentes/panel/insignia";
 import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
+import { aqui, conDesde, volverDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Cliente" };
 
@@ -53,7 +54,8 @@ export default function PaginaCliente({ params, searchParams }: PageProps<"/pane
 
 async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[id]">, "params" | "searchParams">) {
   const usuario = await exigirModulo("clientes");
-  const [{ id }, { creado, recibido }] = await Promise.all([params, searchParams]);
+  const [{ id }, busqueda] = await Promise.all([params, searchParams]);
+  const { creado, recibido } = busqueda;
   const numero = Number(id);
   if (!Number.isInteger(numero) || numero <= 0) notFound();
   const verCotizaciones = puedeVerModulo(usuario, "cotizaciones");
@@ -75,6 +77,9 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
     verMantenimientos ? serviciosConMantenimiento() : [],
   ]);
   if (!c) notFound();
+  // Pedido 43: "Volver" a la pantalla de la que se vino; los enlaces que salen de aquí dicen que vienen de este cliente
+  const volver = volverDesde(busqueda.volver, { href: "/panel/clientes", texto: "Clientes" }, usuario);
+  const desdeAqui = aqui(`/panel/clientes/${c.id}`, busqueda);
 
   const debe = saldoPendiente(reservas);
   const hoy = fechaEnBolivia();
@@ -90,7 +95,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
   return (
     <>
       <EncabezadoPagina
-        volver={{ href: "/panel/clientes", texto: "Clientes" }}
+        volver={volver}
         titulo={c.nombre}
         estado={
           (!c.activo || debe) && (
@@ -162,7 +167,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
           <CabeceraSeccion id="reservas" titulo="Reservas">
             {/* La reserva directa lleva precios: la arma quien ve pagos (las demás salen de una cotización) */}
             {c.activo && verPagos && (
-              <Link href={`/panel/agenda/nueva?cliente=${c.id}`} className={cn(buttonVariants({ variant: "ghost" }))}>
+              <Link href={conDesde(`/panel/agenda/nueva?cliente=${c.id}`, desdeAqui)} className={cn(buttonVariants({ variant: "ghost" }))}>
                 <CalendarIcon />
                 Nueva reserva
               </Link>
@@ -171,7 +176,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
           {reservas.length === 0 ? (
             <p className="text-tinta-suave">Todavía no tiene reservas.</p>
           ) : (
-            <ReservasCliente reservas={reservas} verOrdenes={verOrdenes} conSaldo={verPagos} />
+            <ReservasCliente reservas={reservas} verOrdenes={verOrdenes} conSaldo={verPagos} desde={desdeAqui} />
           )}
         </section>
       )}
@@ -181,14 +186,14 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
           <CabeceraSeccion id="cotizaciones" titulo="Cotizaciones">
             {/* A un cliente desactivado no se le cotiza: se reactiva primero */}
             {c.activo && cotiza && (
-              <Link href={`/panel/cotizaciones/nueva?cliente=${c.id}`} className={cn(buttonVariants({ variant: "ghost" }))}>
+              <Link href={conDesde(`/panel/cotizaciones/nueva?cliente=${c.id}`, desdeAqui)} className={cn(buttonVariants({ variant: "ghost" }))}>
                 <FileTextIcon />
                 Nueva cotización
               </Link>
             )}
           </CabeceraSeccion>
           {cotizaciones.length > 0 ? (
-            <ListaCotizaciones cotizaciones={cotizaciones} umbral={parametros.dias_cotizacion_sin_respuesta} sinCliente />
+            <ListaCotizaciones cotizaciones={cotizaciones} umbral={parametros.dias_cotizacion_sin_respuesta} sinCliente desde={desdeAqui} />
           ) : (
             <p className="text-tinta-suave">Todavía no tiene cotizaciones.</p>
           )}
@@ -227,7 +232,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
                     </span>
                     <span className="flex flex-wrap items-center gap-3">
                       {trabajo && (
-                        <Link href={trabajo.href} className="inline-flex min-h-11 items-center text-sm font-semibold underline">
+                        <Link href={conDesde(trabajo.href, desdeAqui)} className="inline-flex min-h-11 items-center text-sm font-semibold underline">
                           {trabajo.texto}
                         </Link>
                       )}

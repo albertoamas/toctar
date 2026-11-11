@@ -47,31 +47,31 @@ test("textoVolver dice a dónde se vuelve", () => {
 });
 
 test("conDesde codifica, reemplaza el anterior y recorta lo anidado si queda largo", () => {
-  expect(conDesde("/panel/ordenes/5", "/panel/ordenes?filtro=listo")).toBe("/panel/ordenes/5?desde=%2Fpanel%2Fordenes%3Ffiltro%3Dlisto");
-  expect(conDesde("/panel/ordenes/5?x=1", "/panel")).toBe("/panel/ordenes/5?x=1&desde=%2Fpanel");
-  expect(conDesde("/panel/ordenes/5?desde=%2Fpanel", "/panel/pagos")).toBe("/panel/ordenes/5?desde=%2Fpanel%2Fpagos");
+  expect(conDesde("/panel/ordenes/5", "/panel/ordenes?filtro=listo")).toBe("/panel/ordenes/5?volver=%2Fpanel%2Fordenes%3Ffiltro%3Dlisto");
+  expect(conDesde("/panel/ordenes/5?x=1", "/panel")).toBe("/panel/ordenes/5?x=1&volver=%2Fpanel");
+  expect(conDesde("/panel/ordenes/5?volver=%2Fpanel", "/panel/pagos")).toBe("/panel/ordenes/5?volver=%2Fpanel%2Fpagos");
   expect(conDesde("/panel/ordenes/5", null)).toBe("/panel/ordenes/5");
   // Ida y vuelta: lo que se pone se lee igual
-  const href = conDesde("/panel/clientes/8", "/panel/ordenes/5?desde=%2Fpanel");
-  expect(leerDesde(new URL(href, "http://x").searchParams.get("desde"))).toBe("/panel/ordenes/5?desde=%2Fpanel");
+  const href = conDesde("/panel/clientes/8", "/panel/ordenes/5?volver=%2Fpanel");
+  expect(leerDesde(new URL(href, "http://x").searchParams.get("volver"))).toBe("/panel/ordenes/5?volver=%2Fpanel");
   // Largo: se quita el "desde" de adentro
-  const largo = `/panel/ordenes/5?desde=${encodeURIComponent(`/panel/ordenes?q=${"a".repeat(950)}`)}`;
-  expect(conDesde("/panel/clientes/8", largo)).toBe("/panel/clientes/8?desde=%2Fpanel%2Fordenes%2F5");
+  const largo = `/panel/ordenes/5?volver=${encodeURIComponent(`/panel/ordenes?q=${"a".repeat(950)}`)}`;
+  expect(conDesde("/panel/clientes/8", largo)).toBe("/panel/clientes/8?volver=%2Fpanel%2Fordenes%2F5");
 });
 
 test("aqui arma la dirección actual sin los avisos de una sola vez", () => {
   expect(aqui("/panel/ordenes", { filtro: "listo", q: "abc" })).toBe("/panel/ordenes?filtro=listo&q=abc");
-  expect(aqui("/panel/clientes/8", { creado: "1", desde: "/panel" })).toBe("/panel/clientes/8?desde=%2Fpanel");
+  expect(aqui("/panel/clientes/8", { creado: "1", volver: "/panel" })).toBe("/panel/clientes/8?volver=%2Fpanel");
   expect(aqui("/panel")).toBe("/panel");
 });
 
 test("al terminar un paso del trabajo, se vuelve a donde se estaba antes de abrirlo", () => {
-  expect(sinElTrabajo("/panel/agenda/7?desde=%2Fpanel%2Fagenda", 7)).toBe("/panel/agenda");
-  expect(sinElTrabajo("/panel/ordenes/7?desde=%2Fpanel", 7)).toBe("/panel");
+  expect(sinElTrabajo("/panel/agenda/7?volver=%2Fpanel%2Fagenda", 7)).toBe("/panel/agenda");
+  expect(sinElTrabajo("/panel/ordenes/7?volver=%2Fpanel", 7)).toBe("/panel");
   expect(sinElTrabajo("/panel/ordenes/7", 7)).toBeNull();
   expect(sinElTrabajo("/panel/clientes/3", 7)).toBe("/panel/clientes/3");
   expect(sinElTrabajo("https://otro.com", 7)).toBeNull();
-  expect(sinLaCotizacion("/panel/cotizaciones/4?desde=%2Fpanel%2Fclientes%2F3", 4)).toBe("/panel/clientes/3");
+  expect(sinLaCotizacion("/panel/cotizaciones/4?volver=%2Fpanel%2Fclientes%2F3", 4)).toBe("/panel/clientes/3");
 });
 
 test("volverDesde respeta el permiso del módulo y si no, vuelve a la de siempre", () => {
