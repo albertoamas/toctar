@@ -1,5 +1,7 @@
 # Capacitación del sistema de gestión — guía por rol
 
+> **Para entregar al dueño y a los encargados:** el [Manual del panel](https://claude.ai/artifact/TsmLggAGJyzf7h4eHWcLdN), una página con la marca TocTar y una captura del celular en cada paso, por rol. Esta guía es la interna: cómo dar la sesión. Si una pantalla cambia, se actualizan las dos (las capturas salen de `material/manual/`, que no se versiona).
+
 Guía corta para enseñar el panel a quien lo va a usar: el **dueño** y los **encargados**, según su perfil (**Taller** o **Atención**). Va en el orden en que se hace el trabajo en el taller. Cada parte dice qué se toca y dónde, con los nombres de los botones tal como aparecen.
 
 - **Para quién:** el dueño de TocTar y sus encargados. El cliente no usa el sistema: no reserva ni tiene cuenta. Todo lo registra el personal.
