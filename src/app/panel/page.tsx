@@ -29,6 +29,10 @@ import { ordenesAbiertas } from "@/modulos/ordenes/consultas";
 import { enlaceTrabajo, estaAtrasada, rutaTrabajo } from "@/modulos/ordenes/reglas";
 import { saldosPendientes } from "@/modulos/pagos/consultas";
 import { reclamosPorAtender } from "@/modulos/reclamos/consultas";
+import { conDesde } from "@/lib/volver";
+
+/** Lo que se abre desde Inicio vuelve a Inicio (pedido 43). */
+const INICIO = "/panel";
 
 // Inicio del panel (HU-39, RF-52; pedido 26, etapas/P26-rediseno-panel.md). Para el dueño y el encargado: arriba sus dos
 // tareas de todos los días (nueva reserva, nueva cotización); los números del día en tarjetas que llevan a su lista;
@@ -97,7 +101,7 @@ async function Contenido() {
     total > POR_TIPO ? [{ href, icono, titulo: `${total - POR_TIPO} ${que} más`, detalle: `${total} en total`, accion: "Ver todos" }] : [];
   const atender: Pendiente[] = [
     ...(reclamos?.primeros ?? []).map((r) => ({
-      href: `/panel/reclamos/${r.id}` as Route,
+      href: conDesde(`/panel/reclamos/${r.id}` as Route, INICIO),
       icono: MessageSquareWarningIcon,
       titulo: `Reclamo de ${r.nombre}`,
       detalle: [r.servicio ?? r.placa, `llegó ${textoDias(diasDesde(r.createdAt, ahora))}`].join(", "),
@@ -105,7 +109,7 @@ async function Contenido() {
     })),
     ...masDe(reclamos?.total ?? 0, "/panel/reclamos?ver=pendientes", MessageSquareWarningIcon, "reclamos pendientes"),
     ...sinResponder.slice(0, POR_TIPO).map((c) => ({
-      href: `/panel/cotizaciones/${c.id}` as Route,
+      href: conDesde(`/panel/cotizaciones/${c.id}` as Route, INICIO),
       icono: ICONO_MODULO.cotizaciones,
       titulo: `Cotización de ${c.cliente}`,
       detalle: `${bs(c.total)}, sin respuesta hace ${cantidad(diasDesde(c.ultimoMovimientoAt, ahora), "día", "días")}`,
@@ -115,7 +119,7 @@ async function Contenido() {
     // Aceptadas sin fecha (pedido 31): falta reservarlas
     ...(aceptadas ?? []).slice(0, POR_TIPO).map((c) => ({
       // A la reserva, para quien ve la Agenda; si no, a la cotización
-      href: (ve("agenda") ? `/panel/agenda/nueva?cotizacion=${c.cotizacionId}` : `/panel/cotizaciones/${c.id}`) as Route,
+      href: conDesde((ve("agenda") ? `/panel/agenda/nueva?cotizacion=${c.cotizacionId}` : `/panel/cotizaciones/${c.id}`) as Route, INICIO),
       icono: CalendarClockIcon,
       titulo: `Cotización aceptada de ${c.cliente}`,
       detalle: `${bs(c.total)}, sin fecha`,
@@ -125,7 +129,7 @@ async function Contenido() {
     ...masDe(aceptadas?.length ?? 0, ve("agenda") ? "/panel/agenda" : "/panel/cotizaciones?vista=aceptadas", CalendarClockIcon, "aceptadas sin fecha"),
     ...(saldos ?? []).slice(0, POR_TIPO).map((s) => ({
       // A la orden si quien mira puede abrirla; si no (Pagos sin Órdenes), a Saldos pendientes, donde se cobra
-      href: (enlaceTrabajo(s.id, "entregado", { ordenes: ve("ordenes"), agenda: ve("agenda") })?.href ?? "/panel/pagos") as Route,
+      href: conDesde((enlaceTrabajo(s.id, "entregado", { ordenes: ve("ordenes"), agenda: ve("agenda") })?.href ?? "/panel/pagos") as Route, INICIO),
       icono: ICONO_MODULO.pagos,
       titulo: `Saldo de ${s.cliente}`,
       detalle: `${bs(s.saldo)}, entregada ${textoDias(diasDesde(s.entregadoAt, ahora))}`,
@@ -161,13 +165,13 @@ async function Contenido() {
         {(ve("cotizaciones") || ve("agenda")) && (
           <div className="grid grid-cols-2 gap-2 @xl:flex">
             {ve("cotizaciones") && (
-              <Link href="/panel/cotizaciones/nueva" className={cn(buttonVariants({ variant: "outline" }), !ve("agenda") && "col-span-2")}>
+              <Link href={conDesde("/panel/cotizaciones/nueva", INICIO)} className={cn(buttonVariants({ variant: "outline" }), !ve("agenda") && "col-span-2")}>
                 <FilePlusIcon />
                 Nueva cotización
               </Link>
             )}
             {ve("agenda") && (
-              <Link href="/panel/agenda/nueva" className={cn(buttonVariants(), !ve("cotizaciones") && "col-span-2")}>
+              <Link href={conDesde("/panel/agenda/nueva", INICIO)} className={cn(buttonVariants(), !ve("cotizaciones") && "col-span-2")}>
                 <CalendarPlusIcon />
                 Nueva reserva
               </Link>
@@ -259,7 +263,7 @@ function ParaHoy({ filas, verOrdenes }: { filas: FilaDelDia[]; verOrdenes: boole
             { titulo: "Siguiente paso", ancho: "minmax(0,1fr)", movil: "oculta" },
           ]}
           filas={filas.map((f) => ({
-            href: rutaTrabajo(f.id, f.estado, verOrdenes),
+            href: conDesde(rutaTrabajo(f.id, f.estado, verOrdenes), INICIO),
             celdas: [
               <CeldaDoble key="v" principal={f.placa} secundario={f.cliente} peso="placa" />,
               <span key="e" className="flex flex-wrap gap-1.5">

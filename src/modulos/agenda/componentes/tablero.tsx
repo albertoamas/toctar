@@ -5,6 +5,7 @@ import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
 import type { ReservaTablero, SemanaDeAgenda } from "../consultas";
 import { rutaTrabajo } from "@/modulos/ordenes/reglas";
 import { bloquesDeLaSemana, DIA_CORTO, diaDeLaSemana, NOMBRE_ESTADO_TRABAJO, numeroDia, seCruzan, textoDia, TONO_ESTADO_TRABAJO } from "../reglas";
+import { conDesde } from "@/lib/volver";
 
 // HU-29: el tablero de la agenda (RF-38). Una fila por espacio y una columna por día (S-3: por día, sin horas). Cada
 // reserva es un bloque que abarca sus días, del color de su estado (pedido 26: el mismo tono que su insignia, con una
@@ -20,9 +21,11 @@ type Props = {
   hoy: string;
   /** Quien mira ve las órdenes: una reserva ya recibida lleva directo a su orden (C4). */
   conOrdenes: boolean;
+  /** La Agenda con su semana y día: lo que se abre desde aquí vuelve ahí (pedido 43). */
+  desde: string;
 };
 
-const agendarEn = (fecha: string, espacioId: number) => `/panel/agenda/nueva?fecha=${fecha}&espacio=${espacioId}` as Route;
+const agendarEn = (fecha: string, espacioId: number, desde: string) => conDesde(`/panel/agenda/nueva?fecha=${fecha}&espacio=${espacioId}` as Route, desde);
 
 function textoFechas(r: ReservaTablero) {
   return r.inicio === r.fin ? textoDia(r.inicio) : `${textoDia(r.inicio)} al ${textoDia(r.fin)}`;
@@ -49,6 +52,7 @@ function Cinta({
   empiezaAntes,
   terminaDespues,
   conOrdenes,
+  desde,
   className,
   style,
 }: {
@@ -56,13 +60,14 @@ function Cinta({
   empiezaAntes: boolean;
   terminaDespues: boolean;
   conOrdenes: boolean;
+  desde: string;
   className?: string;
   style?: React.CSSProperties;
 }) {
   const color = colorBloque(r.estado);
   return (
     <Link
-      href={rutaTrabajo(r.id, r.estado, conOrdenes)}
+      href={conDesde(rutaTrabajo(r.id, r.estado, conOrdenes), desde)}
       style={style}
       // El tono, también como dato: la entregada va en verde (pedido 28)
       data-tono={color.tono}
@@ -100,7 +105,8 @@ function Cinta({
  * "Libre" en cada uno, 15 a 18 por semana, y lo reservado se perdía entre ellos). El lector de pantalla oye "Reservar en
  * …, libre": empieza con lo que se ve.
  */
-function DiaSinReserva({ fecha, espacio, cerrado, pasado, style }: { fecha: string; espacio: { id: number; nombre: string }; cerrado: boolean; pasado: boolean; style?: React.CSSProperties }) {
+function DiaSinReserva(props: { fecha: string; espacio: { id: number; nombre: string }; cerrado: boolean; pasado: boolean; desde: string; style?: React.CSSProperties }) {
+  const { fecha, espacio, cerrado, pasado, desde, style } = props;
   if (cerrado) {
     return (
       <div style={style} className={cn(CERRADO, "text-xs")}>
@@ -111,7 +117,7 @@ function DiaSinReserva({ fecha, espacio, cerrado, pasado, style }: { fecha: stri
   if (pasado) return <div style={style} className="min-h-14" aria-hidden />;
   return (
     <Link
-      href={agendarEn(fecha, espacio.id)}
+      href={agendarEn(fecha, espacio.id, desde)}
       style={style}
       className="group flex min-h-14 items-center justify-center gap-1 rounded-lg border border-dashed border-border text-xs text-tinta-suave hover:border-tinta-suave hover:bg-superficie/60 hover:text-tinta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]"
     >
@@ -127,7 +133,7 @@ function DiaSinReserva({ fecha, espacio, cerrado, pasado, style }: { fecha: stri
 }
 
 /** Computadora: la semana entera. */
-export function TableroSemana({ semana, dias, hoy, conOrdenes }: Props) {
+export function TableroSemana({ semana, dias, hoy, conOrdenes, desde }: Props) {
   const lunes = dias[0];
   return (
     // En una tarjeta, como el resto del panel
@@ -165,6 +171,7 @@ export function TableroSemana({ semana, dias, hoy, conOrdenes }: Props) {
               {dias.map((fecha, i) =>
                 ocupado(fecha) || !espacio.activo ? null : (
                   <DiaSinReserva
+                    desde={desde}
                     key={fecha}
                     fecha={fecha}
                     espacio={espacio}
@@ -175,7 +182,7 @@ export function TableroSemana({ semana, dias, hoy, conOrdenes }: Props) {
                 ),
               )}
               {deEspacio.map((b) => (
-                <Cinta key={`${b.id}-${b.inicio}`} r={b} empiezaAntes={b.empiezaAntes} terminaDespues={b.terminaDespues} conOrdenes={conOrdenes} style={{ gridRow, gridColumn: `${b.columna + 2} / span ${b.dias}` }} />
+                <Cinta key={`${b.id}-${b.inicio}`} r={b} empiezaAntes={b.empiezaAntes} terminaDespues={b.terminaDespues} conOrdenes={conOrdenes} desde={desde} style={{ gridRow, gridColumn: `${b.columna + 2} / span ${b.dias}` }} />
               ))}
             </section>
           );
@@ -186,7 +193,7 @@ export function TableroSemana({ semana, dias, hoy, conOrdenes }: Props) {
 }
 
 /** Celular y tableta: un día, una tarjeta por espacio. Las pestañas de los días van en la página (son enlaces). */
-export function AgendaDelDia({ semana, dia, hoy, conOrdenes }: { semana: SemanaDeAgenda; dia: string; hoy: string; conOrdenes: boolean }) {
+export function AgendaDelDia({ semana, dia, hoy, conOrdenes, desde }: { semana: SemanaDeAgenda; dia: string; hoy: string; conOrdenes: boolean; desde: string }) {
   const cerrado = semana.diasCerrados.includes(diaDeLaSemana(dia));
   return (
     <ul aria-label={`Espacios el ${textoDia(dia)}`} className="flex flex-col gap-2 lg:hidden">
@@ -199,14 +206,14 @@ export function AgendaDelDia({ semana, dia, hoy, conOrdenes }: { semana: SemanaD
               {!espacio.activo && <span className="ml-2 text-xs font-normal text-tinta-suave">Desactivado</span>}
             </h2>
             {r ? (
-              <Cinta r={r} empiezaAntes={r.inicio < dia} terminaDespues={r.fin > dia} conOrdenes={conOrdenes} />
+              <Cinta r={r} empiezaAntes={r.inicio < dia} terminaDespues={r.fin > dia} conOrdenes={conOrdenes} desde={desde} />
             ) : cerrado ? (
               <p className={cn(CERRADO, "text-sm")}>Cerrado</p>
             ) : dia < hoy || !espacio.activo ? (
               <p className="flex min-h-14 items-center px-3 text-sm text-tinta-suave">Sin reserva</p>
             ) : (
               <Link
-                href={agendarEn(dia, espacio.id)}
+                href={agendarEn(dia, espacio.id, desde)}
                 className="flex min-h-14 items-center justify-between gap-3 rounded-lg border border-dashed border-border bg-fondo px-3 text-sm hover:border-tinta-suave"
               >
                 <span className="text-tinta-suave">Libre</span>

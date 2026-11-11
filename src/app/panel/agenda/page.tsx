@@ -19,6 +19,7 @@ import { semanaDeAgenda } from "@/modulos/agenda/consultas";
 import { DIA_CORTO, diasDeLaSemana, lunesDeLaSemana, numeroDia, seCruzan, textoDia, textoSemana, textoSemanaCorto } from "@/modulos/agenda/reglas";
 import { cotizacionesPorReservar, type FilaCotizacion } from "@/modulos/cotizaciones/consultas";
 import { bs, diasDesde, textoDias } from "@/modulos/cotizaciones/reglas";
+import { aqui, conDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Agenda" };
 
@@ -54,7 +55,10 @@ const enlaceSemana = (lunes: string, dia?: string) => `/panel/agenda?semana=${lu
 async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searchParams">) {
   const usuario = await exigirModulo("agenda");
   const conOrdenes = puedeVerModulo(usuario, "ordenes");
-  const { semana: pedida, dia: diaPedido } = await searchParams;
+  const parametros = await searchParams;
+  const { semana: pedida, dia: diaPedido } = parametros;
+  // Pedido 43: lo que se abre desde la Agenda vuelve a esta semana y este día
+  const desdeAqui = aqui("/panel/agenda", parametros);
   const hoy = fechaEnBolivia();
   // Del 2000 al 2100: con años extremos las fechas dejan de tener cuatro cifras y la base las rechaza
   const valida = typeof pedida === "string" && fechaExiste(pedida) && pedida >= "2000-01-01" && pedida <= "2100-12-31";
@@ -66,7 +70,7 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
   const conMontos = puedeVerModulo(usuario, "pagos") || puedeVerModulo(usuario, "cotizaciones");
   const ahora = new Date();
   const fila = (c: FilaCotizacion) => ({
-    href: `/panel/agenda/nueva?cotizacion=${c.cotizacionId}`,
+    href: conDesde(`/panel/agenda/nueva?cotizacion=${c.cotizacionId}`, desdeAqui),
     titulo: c.placa,
     tituloGrande: true,
     detalles: [c.cliente, c.servicios, ...(conMontos ? [bs(c.total)] : []), `Aceptada ${textoDias(diasDesde(c.ultimoMovimientoAt, ahora))}`].filter(Boolean),
@@ -112,7 +116,7 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
         <p className="text-tinta-suave">No hay espacios activos. Agrégalos en Configuración, «Taller».</p>
       ) : (
         <>
-          <TableroSemana semana={semana} dias={dias} hoy={hoy} conOrdenes={conOrdenes} />
+          <TableroSemana semana={semana} dias={dias} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
 
           {/* Celular y tableta: los siete días como pestañas (enlaces: el día va en la dirección). La marcada dice qué
               día se ve; el número de hoy va en azul, se vea o no; debajo, un punto en los días con alguna reserva (pulido
@@ -142,7 +146,7 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
               })}
             </ul>
           </nav>
-          <AgendaDelDia semana={semana} dia={dia} hoy={hoy} conOrdenes={conOrdenes} />
+          <AgendaDelDia semana={semana} dia={dia} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
         </>
       )}
     </>

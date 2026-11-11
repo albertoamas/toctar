@@ -27,6 +27,7 @@ import { TablaAcciones } from "@/componentes/panel/tabla-acciones";
 import { CeldaDoble } from "@/componentes/panel/tabla-lista";
 import { BarraLista, ResumenLista } from "@/componentes/panel/barra-lista";
 import { Ordenar } from "@/componentes/panel/ordenar";
+import { aqui, conDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Saldos pendientes" };
 
@@ -59,6 +60,12 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
   const usuario = await exigirModulo("pagos");
   const ve = { ordenes: puedeVerModulo(usuario, "ordenes"), agenda: puedeVerModulo(usuario, "agenda") };
   const parametros = await searchParams;
+  // Pedido 43: la orden que se abre desde aquí vuelve a Saldos, con su búsqueda y su orden
+  const desdeAqui = aqui("/panel/pagos", parametros);
+  const enlaceDe = (id: number) => {
+    const t = enlaceTrabajo(id, "entregado", ve);
+    return t && { ...t, href: conDesde(t.href, desdeAqui) };
+  };
   const q = typeof parametros.q === "string" ? parametros.q : "";
   // hasOwn y no `in`: `?orden=__proto__` no es un orden
   const orden: OrdenSaldos = typeof parametros.orden === "string" && Object.hasOwn(ORDENES_SALDOS, parametros.orden) ? (parametros.orden as OrdenSaldos) : "antiguas";
@@ -113,7 +120,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
             filas={saldos.map((s) => {
               const entregada = fechaEnBolivia(s.entregadoAt);
               const vehiculo = { marca: s.marca, modelo: s.modelo, placa: s.placa };
-              const trabajo = enlaceTrabajo(s.id, "entregado", ve);
+              const trabajo = enlaceDe(s.id);
               return {
                 clave: s.id,
                 href: trabajo?.href,
@@ -139,7 +146,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
             {saldos.map((s) => {
               const entregada = fechaEnBolivia(s.entregadoAt);
               const vehiculo = { marca: s.marca, modelo: s.modelo, placa: s.placa };
-              const trabajo = enlaceTrabajo(s.id, "entregado", ve);
+              const trabajo = enlaceDe(s.id);
               const datos = (
                 <>
                   <div className="flex items-start justify-between gap-4">
