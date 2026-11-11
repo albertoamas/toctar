@@ -19,15 +19,14 @@ import { useEnvioConComprobante } from "./campo-comprobante";
 import { MetodoYComprobante } from "./elegir-metodo";
 
 // HU-32: registrar un pago (RF-45). Se cobra en el taller, con el celular en la mano: el monto viene con el saldo
-// (lo que más se cobra) y el tipo, según lo que ya pagó. La foto del comprobante es opcional y se achica antes de
-// subirla. El servidor vuelve a mirar el saldo: dos pagos a la vez no lo pasan.
+// (lo que más se cobra). La foto del comprobante es opcional y se achica antes de subirla. El servidor vuelve a mirar el saldo: dos pagos a la vez no lo pasan.
 // Pulido 10.3: el formulario se abre en un modal (en la página empujaba lo demás, y en una lista se abría dentro de la
 // fila). En la cabecera de Pagos el botón va sin fondo, como "Editar"; en una lista, el principal de la fila.
 // Pulido final de los pagos (09/11): ocupaba una pantalla entera del celular para "cobré 120 Bs en efectivo". Ahora, el
 // monto y cómo pagó (ElegirMetodo); el comprobante, solo con QR o transferencia y en una miniatura; la fecha (casi siempre
 // hoy) plegada en "Cambiar fecha", que se abre sola si trae un error.
-// Pedido 46: el tipo (adelanto o saldo) no se elige: lo pone el servidor según cuándo se paga (`tipoDePago`). Se cobra lo
-// que traiga el cliente, del adelanto sugerido al total: el tope es el saldo.
+// Pedido 46: el tipo (adelanto o saldo) no se elige: lo pone el servidor según la fecha del pago (`tipoDePago`). Se cobra
+// lo que traiga el cliente, del adelanto sugerido al total: el tope es el saldo.
 
 type Props = {
   trabajoId: number;

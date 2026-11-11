@@ -77,7 +77,7 @@ export async function crearOrdenLista(datos: { placa: string; espacio: number; d
     [id, datos.precio, datos.servicio ?? "pulido-y-nano-ceramico"],
   );
   if (datos.pagado > 0) {
-    await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, $2, 'qr', 'adelanto', (now() at time zone 'America/La_Paz')::date, created_by from trabajo where id = $1", [
+    await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, $2, 'qr', 'saldo', (now() at time zone 'America/La_Paz')::date, created_by from trabajo where id = $1", [
       id,
       datos.pagado,
     ]);

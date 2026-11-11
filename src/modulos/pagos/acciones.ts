@@ -4,6 +4,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { auditoria, pago, trabajo, trabajoLinea } from "@/db/esquema";
+import { fechaEnBolivia } from "@/lib/fechas";
 import { erroresDe, type EstadoFormulario } from "@/lib/formularios";
 import { exigirModulo } from "@/lib/sesion";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
@@ -60,7 +61,7 @@ export async function registrarPago(_previo: EstadoFormulario, datos: FormData):
     resultado = await db.transaction(async (tx) => {
       // Bloquea la reserva: dos pagos a la vez no pasan juntos el saldo
       const [t] = await tx
-        .select({ estado: trabajo.estado, clienteId: trabajo.clienteId, descuento: trabajo.descuento })
+        .select({ estado: trabajo.estado, clienteId: trabajo.clienteId, descuento: trabajo.descuento, recibidoAt: trabajo.recibidoAt })
         .from(trabajo)
         .where(eq(trabajo.id, trabajoId))
         .for("update");
@@ -77,8 +78,8 @@ export async function registrarPago(_previo: EstadoFormulario, datos: FormData):
       );
       if (estaPagada(saldo)) throw new Conflicto("Esa reserva ya está pagada.");
       if (!montoNoMayor(monto, saldo)) throw new Conflicto(`El pago no puede ser mayor que el saldo (${mostrarMonto(saldo)} Bs).`, "monto");
-      // El tipo, por el estado de la reserva bloqueada (pedido 46): nadie lo elige
-      const tipo = tipoDePago(t.estado);
+      // El tipo, por la fecha del pago frente al día en que llegó el vehículo (pedido 46): nadie lo elige
+      const tipo = tipoDePago(fecha, t.recibidoAt && fechaEnBolivia(t.recibidoAt));
 
       const [nuevo] = await tx
         .insert(pago)

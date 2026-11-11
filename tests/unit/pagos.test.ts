@@ -96,8 +96,11 @@ test("el comprobante se ofrece con QR y transferencia, no en efectivo ni sin mé
 });
 
 test("el tipo del pago lo dice cuándo se paga, no quien lo registra (pedido 46)", () => {
-  // Antes de que el vehículo llegue: adelanto (el que no se devuelve si cancela, RN-05), sea el sugerido, más o el total
-  expect(tipoDePago("agendado")).toBe("adelanto");
-  // En el taller o al retirarlo: saldo, también si paga todo de una vez sin haber dejado adelanto
-  for (const estado of ["recibido", "en_proceso", "listo", "entregado"] as const) expect(tipoDePago(estado)).toBe("saldo");
+  // Sin llegar todavía: adelanto (el que no se devuelve si cancela, RN-05), sea el sugerido, más o el total
+  expect(tipoDePago("2026-11-10", null)).toBe("adelanto");
+  // Desde el día en que llegó: saldo, también si paga todo de una vez sin haber dejado adelanto
+  expect(tipoDePago("2026-11-12", "2026-11-12")).toBe("saldo");
+  expect(tipoDePago("2026-11-15", "2026-11-12")).toBe("saldo");
+  // Un adelanto que se anota tarde, con la fecha en que se pagó, sigue siendo adelanto
+  expect(tipoDePago("2026-11-09", "2026-11-12")).toBe("adelanto");
 });
