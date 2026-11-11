@@ -3,22 +3,21 @@ import { erroresDe } from "@/lib/formularios";
 import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
 import { esquemaAnularPago, esquemaPago } from "@/modulos/pagos/esquemas";
 import { normalizarBusqueda } from "@/modulos/clientes/reglas";
-import { estaPagada, filtrarSaldos, llevaComprobante, ordenarSaldos, saldoPendiente } from "@/modulos/pagos/reglas";
+import { estaPagada, filtrarSaldos, llevaComprobante, ordenarSaldos, saldoPendiente, tipoDePago } from "@/modulos/pagos/reglas";
 
 // C3 Pagos (HU-32, RF-45): validación del pago y de su anulación. El saldo (calcularSaldo) se prueba en agenda.test.ts.
 
-const valido = { trabajoId: "7", monto: "300", tipo: "saldo", metodo: "qr", fecha: fechaEnBolivia() };
+const valido = { trabajoId: "7", monto: "300", metodo: "qr", fecha: fechaEnBolivia() };
 
 test("un pago válido sale con el monto en dos decimales", () => {
   const r = esquemaPago.safeParse({ ...valido, monto: "300,5" });
-  expect(r.success && r.data).toEqual({ trabajoId: 7, monto: "300.50", tipo: "saldo", metodo: "qr", fecha: valido.fecha });
+  expect(r.success && r.data).toEqual({ trabajoId: 7, monto: "300.50", metodo: "qr", fecha: valido.fecha });
 });
 
-test("el pago pide monto, tipo, método y una fecha que no sea futura", () => {
-  const vacio = esquemaPago.safeParse({ trabajoId: "7", monto: "", tipo: "", metodo: "", fecha: "" });
+test("el pago pide monto, método y una fecha que no sea futura", () => {
+  const vacio = esquemaPago.safeParse({ trabajoId: "7", monto: "", metodo: "", fecha: "" });
   expect(!vacio.success && erroresDe(vacio.error)).toEqual({
     monto: "Escribe el monto.",
-    tipo: "Elige si es adelanto o saldo.",
     metodo: "Elige cómo pagó.",
     fecha: "Elige el día del pago.",
   });
@@ -94,4 +93,14 @@ test("el comprobante se ofrece con QR y transferencia, no en efectivo ni sin mé
   expect(llevaComprobante("transferencia")).toBe(true);
   expect(llevaComprobante("efectivo")).toBe(false);
   expect(llevaComprobante("")).toBe(false);
+});
+
+test("el tipo del pago lo dice cuándo se paga, no quien lo registra (pedido 46)", () => {
+  // Sin llegar todavía: adelanto (el que no se devuelve si cancela, RN-05), sea el sugerido, más o el total
+  expect(tipoDePago("2026-11-10", null)).toBe("adelanto");
+  // Desde el día en que llegó: saldo, también si paga todo de una vez sin haber dejado adelanto
+  expect(tipoDePago("2026-11-12", "2026-11-12")).toBe("saldo");
+  expect(tipoDePago("2026-11-15", "2026-11-12")).toBe("saldo");
+  // Un adelanto que se anota tarde, con la fecha en que se pagó, sigue siendo adelanto
+  expect(tipoDePago("2026-11-09", "2026-11-12")).toBe("adelanto");
 });

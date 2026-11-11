@@ -12,7 +12,17 @@ export const METODO_EN_FRASE: Record<MetodoPago, string> = { efectivo: "en efect
 export const NOMBRE_TIPO_PAGO: Record<TipoPago, string> = { adelanto: "Adelanto", saldo: "Saldo" };
 /** Las mismas de la base, en el orden de los formularios (aquí y no desde el esquema: un componente de cliente no carga Drizzle). */
 export const METODOS = Object.keys(NOMBRE_METODO) as MetodoPago[];
-export const TIPOS = Object.keys(NOMBRE_TIPO_PAGO) as TipoPago[];
+
+/**
+ * Pedido 46: el tipo de un pago no se elige, lo dice cuándo se pagó. Antes del día en que el vehículo llegó al taller es un
+ * adelanto: el que no se devuelve si cancela (RN-05), sea el sugerido, más o el total. Desde ese día, es un pago del saldo
+ * (también el total, si no dejó adelanto). Cuenta la fecha del pago y no el día en que se registra: un adelanto que se anota
+ * tarde sigue siendo adelanto. El tipo solo nombra el pago: el saldo suma todos por igual.
+ * `ingreso`: el día en Bolivia en que se recibió el vehículo, o null si todavía no llegó.
+ */
+export function tipoDePago(fecha: string, ingreso: string | null): TipoPago {
+  return ingreso === null || fecha < ingreso ? "adelanto" : "saldo";
+}
 
 /** Con QR o transferencia hay un comprobante que guardar; en efectivo, no (el formulario no lo ofrece). */
 export function llevaComprobante(metodo: MetodoPago | ""): boolean {

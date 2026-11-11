@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { archivosArrastrados, consultar, crearClienteEnBase, crearUsuario, ingresar, PNG } from "./apoyo";
+import { archivosArrastrados, consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, ingresar, PNG } from "./apoyo";
 
 // HU-32 Registrar pagos y saldo. Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §9.
 // Encargados por prueba (no el dueño: el límite de intentos de ingreso es por usuario). Días propios, a 320 (celular)
@@ -7,13 +7,13 @@ import { archivosArrastrados, consultar, crearClienteEnBase, crearUsuario, ingre
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "c" : "e");
 
-/** Una reserva agendada en la base, con un servicio de 500 Bs y, si se pide, un adelanto de 150 en efectivo. */
-async function reserva(info: TestInfo, placa: string, conAdelanto: boolean): Promise<number> {
+/** Una reserva agendada en la base, con un servicio de 500 Bs y, si se pide, un adelanto de 150 en efectivo. `dia`: cada prueba, el suyo. */
+async function reserva(info: TestInfo, placa: string, conAdelanto: boolean, dia = conAdelanto ? 0 : 5): Promise<number> {
   const [{ id }] = await consultar<{ id: number }>(
     `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, created_by)
      select e.sucursal_id, v.cliente_id, v.id, e.id, (now() at time zone 'America/La_Paz')::date + $2::int, (now() at time zone 'America/La_Paz')::date + $2::int, v.created_by
      from vehiculo v, (select * from espacio_taller where activo order by orden limit 1) e where v.placa = $1 returning id`,
-    [placa, (info.project.name === "celular" ? 320 : 340) + (conAdelanto ? 0 : 5)],
+    [placa, (info.project.name === "celular" ? 320 : 340) + dia],
   );
   await consultar(
     `insert into trabajo_linea (trabajo_id, variante_id, descripcion, precio, orden)
@@ -39,14 +39,14 @@ test("registrar un pago con comprobante, no pasar el saldo y anular con motivo",
   await expect(saldo(page)).toHaveText("350 Bs");
   await page.getByRole("button", { name: "Registrar pago" }).click();
   const form = page.getByRole("form", { name: "Registrar pago" });
-  // El monto viene con el saldo y el tipo, "Saldo" (ya dejó adelanto)
+  // El monto viene con el saldo
   await expect(form.getByLabel("Monto")).toHaveValue("350");
-  // La fecha y el tipo, plegados (pulido final de los pagos, 09/11): ya vienen bien
+  // La fecha, plegada (pulido final de los pagos, 09/11), pero dice cuál se va a guardar; el tipo no se elige (pedido 46)
   await expect(form.getByLabel("Fecha")).toBeHidden();
-  // Plegados, pero dice qué se va a guardar
-  await expect(form.getByText("Ahora: saldo, hoy", { exact: true })).toBeVisible();
-  await form.getByText("Cambiar fecha o tipo", { exact: true }).click();
-  await expect(form.getByRole("radio", { name: "Saldo" })).toBeChecked();
+  await expect(form.getByText("Ahora: hoy", { exact: true })).toBeVisible();
+  await form.getByText("Cambiar fecha", { exact: true }).click();
+  await expect(form.getByLabel("Fecha")).toBeVisible();
+  await expect(form.getByRole("radio", { name: /^(Adelanto|Saldo)$/ })).toHaveCount(0);
   // El comprobante, solo con QR o transferencia; en efectivo no se ofrece
   await expect(form.locator("#comprobante")).toHaveCount(0);
   await form.getByText("Efectivo", { exact: true }).click();
@@ -98,8 +98,9 @@ test("registrar un pago con comprobante, no pasar el saldo y anular con motivo",
   expect(c.privado).toBe(true);
   expect(c.clave).toMatch(/^comprobantes\//);
   // El comprobante se ve en grande
-  await page.getByRole("button", { name: /^Ver el comprobante: Saldo por QR de 200 Bs/ }).click();
-  await expect(page.getByRole("dialog").getByRole("img", { name: /^Comprobante: Saldo por QR/ })).toBeVisible();
+  // Pagado antes de que llegue el vehículo: es adelanto, aunque sea más que el sugerido (pedido 46)
+  await page.getByRole("button", { name: /^Ver el comprobante: Adelanto por QR de 200 Bs/ }).click();
+  await expect(page.getByRole("dialog").getByRole("img", { name: /^Comprobante: Adelanto por QR/ })).toBeVisible();
   await page.keyboard.press("Escape");
 
   // Anular el adelanto, desde el "⋯" del pago (pulido 13.49): pide motivo, queda tachado y deja de contar
@@ -159,4 +160,59 @@ test("pagada por completo no ofrece más pagos; sin Pagos no se ven montos", asy
   await expect(page.getByText(/Saldo|Pagado/)).toHaveCount(0);
   // La reserva directa lleva precios: sin Pagos no se ofrece
   await expect(page.getByRole("link", { name: "Nueva reserva" })).toHaveCount(0);
+});
+
+// Pedido 46: el tipo lo dice cuándo se pagó, y se cobra lo que traiga el cliente (del adelanto al total; el tope es el saldo)
+test("se cobra el total de una vez: antes de llegar es adelanto; al retirar, saldo", async ({ page }, info) => {
+  const s = sufijo(info);
+  const placaReserva = `PG32${s.toUpperCase()}3`;
+  const placaOrden = `PG32${s.toUpperCase()}4`;
+  await crearClienteEnBase({ nombre: `Paga todo ${s}`, telefono: `5917${s === "c" ? 7 : 8}3200030`, placa: placaReserva });
+  await crearClienteEnBase({ nombre: `Paga al retirar ${s}`, telefono: `5917${s === "c" ? 7 : 8}3200040`, placa: placaOrden });
+  const reservaId = await reserva(info, placaReserva, false, 8);
+  const ordenId = await crearOrdenLista({ placa: placaOrden, espacio: 1, dias: info.project.name === "celular" ? 330 : 350, precio: 1000, pagado: 0 });
+  await crearUsuario({ usuario: `caja3-hu32-${s}`, nombre: "Encargado de caja", contrasena: "encargado-123", rol: "encargado", permisos: ["agenda", "ordenes", "pagos"] });
+  await ingresar(page, `caja3-hu32-${s}`, "encargado-123");
+  await expect(page).toHaveURL(/\/panel$/);
+
+  // La reserva sin adelanto: el cliente paga todo antes de traer el vehículo
+  await page.goto(`/panel/agenda/${reservaId}`);
+  await page.getByRole("button", { name: "Registrar pago" }).click();
+  let form = page.getByRole("form", { name: "Registrar pago" });
+  await expect(form.getByLabel("Monto")).toHaveValue("500");
+  await form.getByText("Efectivo", { exact: true }).click();
+  await form.getByRole("button", { name: "Registrar pago" }).click();
+  await expect(page.getByText("Pago de 500 Bs registrado. Saldo: 0 Bs.")).toBeVisible();
+  await expect(page.getByText("Pagado por completo.")).toBeVisible();
+  await expect(page.getByRole("list", { name: "Pagos" })).toContainText("Adelanto en efectivo");
+
+  // La orden lista, sin pagos: deja una parte y paga el resto al retirar; los dos son saldo
+  await page.goto(`/panel/ordenes/${ordenId}`);
+  await page.getByRole("button", { name: "Registrar pago" }).click();
+  form = page.getByRole("form", { name: "Registrar pago" });
+  await expect(form.getByLabel("Monto")).toHaveValue("1000");
+  await form.getByLabel("Monto").fill("300");
+  await expect(form.getByLabel("Monto")).toHaveValue("300");
+  await form.getByText("Efectivo", { exact: true }).click();
+  await form.getByRole("button", { name: "Registrar pago" }).click();
+  await expect(page.getByText("Pago de 300 Bs registrado. Saldo: 700 Bs.")).toBeVisible();
+  // El modal del primer pago ya se cerró
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("main").getByRole("button", { name: "Registrar pago" }).click();
+  form = page.getByRole("form", { name: "Registrar pago" });
+  await expect(form.getByLabel("Monto")).toHaveValue("700");
+  await form.getByText("Efectivo", { exact: true }).click();
+  await form.getByRole("button", { name: "Registrar pago" }).click();
+  await expect(page.getByText("Pago de 700 Bs registrado. Saldo: 0 Bs.")).toBeVisible();
+  await expect(page.getByText("Pagado por completo.")).toBeVisible();
+
+  const tipos = await consultar<{ trabajo: number; tipo: string; monto: string }>(
+    "select trabajo_id as trabajo, tipo, monto from pago where trabajo_id in ($1, $2) order by id",
+    [reservaId, ordenId],
+  );
+  expect(tipos).toEqual([
+    { trabajo: reservaId, tipo: "adelanto", monto: "500.00" },
+    { trabajo: ordenId, tipo: "saldo", monto: "300.00" },
+    { trabajo: ordenId, tipo: "saldo", monto: "700.00" },
+  ]);
 });

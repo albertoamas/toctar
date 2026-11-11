@@ -247,7 +247,7 @@ Como personal, quiero mover o cancelar una reserva, para reflejar lo que pide el
 
 ### HU-32 Registrar pagos y saldo
 Como personal, quiero registrar cada pago, para saber cuánto falta cobrar.
-- Registro monto, método (QR, efectivo, transferencia), fecha, tipo (adelanto o saldo) y foto opcional del comprobante.
+- Registro monto, método (QR, efectivo, transferencia), fecha y foto opcional del comprobante; el tipo (adelanto si se paga antes de que llegue el vehículo, saldo después) lo pone el sistema (pedido 46).
 - El saldo de la orden se recalcula al instante.
 - Un pago registrado no se borra; se anula con motivo y queda en el historial.
 

@@ -16,7 +16,7 @@ import { descripcionLinea, montoNoMayor } from "@/modulos/cotizaciones/reglas";
 import { borrarFotosSueltas, soltarFotosIngreso } from "@/modulos/ordenes/fotos";
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
 import { descartarComprobante, guardarComprobante } from "@/modulos/pagos/comprobante";
-import { calcularSaldo } from "@/modulos/pagos/reglas";
+import { calcularSaldo, tipoDePago } from "@/modulos/pagos/reglas";
 import { bloquearEspacio, datosDeCotizacion, espaciosEnFechas, type EspacioDisponible } from "./consultas";
 import { entradaReserva, esquemaAdelanto, esquemaCancelar, esquemaConsultaEspacios, esquemaFechas, esquemaReprogramar, esquemaReserva } from "./esquemas";
 import { conDesde, leerDesde } from "@/lib/volver";
@@ -198,9 +198,9 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
       if (adelanto) {
         const [p] = await tx
           .insert(pago)
-          .values({ trabajoId: nuevo.id, monto: adelanto.monto, metodo: adelanto.metodo, tipo: "adelanto", fecha: fechaEnBolivia(), comprobanteArchivoId: comprobanteId, createdBy: autorId })
+          .values({ trabajoId: nuevo.id, monto: adelanto.monto, metodo: adelanto.metodo, tipo: tipoDePago(fechaEnBolivia(), null), fecha: fechaEnBolivia(), comprobanteArchivoId: comprobanteId, createdBy: autorId })
           .returning({ id: pago.id });
-        await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "pago", entidadId: p.id, accion: "crear", datos: { trabajoId: nuevo.id, monto: adelanto.monto, tipo: "adelanto", metodo: adelanto.metodo, fecha: fechaEnBolivia(), comprobanteArchivoId: comprobanteId } });
+        await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "pago", entidadId: p.id, accion: "crear", datos: { trabajoId: nuevo.id, monto: adelanto.monto, tipo: tipoDePago(fechaEnBolivia(), null), metodo: adelanto.metodo, fecha: fechaEnBolivia(), comprobanteArchivoId: comprobanteId } });
       }
       if (recordatorioId) {
         // Solo uno abierto y de este cliente y vehículo: si otra persona lo agendó o lo cerró recién, no se reserva

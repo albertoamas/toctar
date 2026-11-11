@@ -110,7 +110,7 @@ Cada requisito tiene un código para rastrearlo hasta su historia de usuario y s
 
 | Código | Requisito | Entrega | Prioridad | Origen |
 |---|---|---|---|---|
-| RF-45 | El personal registra pagos de una reserva u orden: monto, método (QR, efectivo o transferencia), fecha, tipo (adelanto o saldo) y foto opcional del comprobante. | 2 | Imprescindible | Cot, Enc-5 |
+| RF-45 | El personal registra pagos de una reserva u orden: monto, método (QR, efectivo o transferencia), fecha y foto opcional del comprobante; el tipo (adelanto si se paga antes de que llegue el vehículo, saldo después) lo pone el sistema (pedido 46). | 2 | Imprescindible | Cot, Enc-5 |
 | RF-46 | El sistema calcula el saldo pendiente de cada orden: precio final menos pagos. | 2 | Imprescindible | Cot |
 | RF-47 | El personal ve la lista de clientes con saldo pendiente. | 2 | Imprescindible | Cot |
 

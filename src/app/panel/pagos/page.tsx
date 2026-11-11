@@ -135,7 +135,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
                 acciones: (
                   <>
                     {botonWhatsApp(s, vehiculo)}
-                    <RegistrarPago trabajoId={s.id} saldo={s.saldo} hoy={hoy} conPagos />
+                    <RegistrarPago trabajoId={s.id} saldo={s.saldo} hoy={hoy} />
                   </>
                 ),
               };
@@ -175,7 +175,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
                       renglón, a lo ancho */}
                   <div className="flex flex-wrap gap-2 *:flex-1 lg:flex-nowrap lg:*:flex-none">
                     {botonWhatsApp(s, vehiculo)}
-                    <RegistrarPago trabajoId={s.id} saldo={s.saldo} hoy={hoy} conPagos />
+                    <RegistrarPago trabajoId={s.id} saldo={s.saldo} hoy={hoy} />
                   </div>
                 </FilaConAcciones>
               );

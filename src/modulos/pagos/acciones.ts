@@ -4,13 +4,14 @@ import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { auditoria, pago, trabajo, trabajoLinea } from "@/db/esquema";
+import { fechaEnBolivia } from "@/lib/fechas";
 import { erroresDe, type EstadoFormulario } from "@/lib/formularios";
 import { exigirModulo } from "@/lib/sesion";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { montoNoMayor } from "@/modulos/cotizaciones/reglas";
 import { descartarComprobante, guardarComprobante } from "./comprobante";
 import { esquemaAnularPago, esquemaPago } from "./esquemas";
-import { calcularSaldo, estaPagada } from "./reglas";
+import { calcularSaldo, estaPagada, tipoDePago } from "./reglas";
 
 // Pagos de una reserva (HU-32, RF-45, RF-46). Dueño o encargado con "Pagos" (RN-12). Un pago no
 // pasa el saldo pendiente y no se borra: se anula con motivo (D-6). Todo queda en la auditoría (RNF-10).
@@ -39,7 +40,6 @@ export async function registrarPago(_previo: EstadoFormulario, datos: FormData):
   const usuario = await exigirModulo("pagos");
   const valores = {
     monto: String(datos.get("monto") ?? ""),
-    tipo: String(datos.get("tipo") ?? ""),
     metodo: String(datos.get("metodo") ?? ""),
     fecha: String(datos.get("fecha") ?? ""),
   };
@@ -48,7 +48,7 @@ export async function registrarPago(_previo: EstadoFormulario, datos: FormData):
     const errores = erroresDe(r.error);
     return errores.trabajoId ? { mensaje: RECARGA } : { errores, valores };
   }
-  const { trabajoId, monto, tipo, metodo, fecha } = r.data;
+  const { trabajoId, monto, metodo, fecha } = r.data;
   const autorId = Number(usuario.id);
 
   // La foto se sube antes de la transacción; si el pago no se guarda, se borra
@@ -61,7 +61,7 @@ export async function registrarPago(_previo: EstadoFormulario, datos: FormData):
     resultado = await db.transaction(async (tx) => {
       // Bloquea la reserva: dos pagos a la vez no pasan juntos el saldo
       const [t] = await tx
-        .select({ estado: trabajo.estado, clienteId: trabajo.clienteId, descuento: trabajo.descuento })
+        .select({ estado: trabajo.estado, clienteId: trabajo.clienteId, descuento: trabajo.descuento, recibidoAt: trabajo.recibidoAt })
         .from(trabajo)
         .where(eq(trabajo.id, trabajoId))
         .for("update");
@@ -78,6 +78,8 @@ export async function registrarPago(_previo: EstadoFormulario, datos: FormData):
       );
       if (estaPagada(saldo)) throw new Conflicto("Esa reserva ya está pagada.");
       if (!montoNoMayor(monto, saldo)) throw new Conflicto(`El pago no puede ser mayor que el saldo (${mostrarMonto(saldo)} Bs).`, "monto");
+      // El tipo, por la fecha del pago frente al día en que llegó el vehículo (pedido 46): nadie lo elige
+      const tipo = tipoDePago(fecha, t.recibidoAt && fechaEnBolivia(t.recibidoAt));
 
       const [nuevo] = await tx
         .insert(pago)
