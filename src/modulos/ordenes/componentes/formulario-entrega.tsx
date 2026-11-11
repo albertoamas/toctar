@@ -23,6 +23,8 @@ import { entregarVehiculo } from "../acciones";
 // cliente, cambiable si retira otra persona); o "Entregar sin firma" con el motivo.
 
 type Props = {
+  /** De dónde se vino: la orden entregada vuelve ahí (pedido 43). */
+  volver: string | null;
   id: number;
   /** Queda saldo pendiente. */
   conDeuda: boolean;
@@ -33,7 +35,7 @@ type Props = {
   cliente: string;
 };
 
-export function FormularioEntrega({ id, conDeuda, saldo, puedeAutorizar, cliente }: Props) {
+export function FormularioEntrega({ id, volver, conDeuda, saldo, puedeAutorizar, cliente }: Props) {
   // La firma vive en el estado (no es un campo del formulario): se suma al enviar, como archivo
   const [firma, setFirma] = useState<Blob | null>(null);
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(async (previo, datos) => {
@@ -65,6 +67,7 @@ export function FormularioEntrega({ id, conDeuda, saldo, puedeAutorizar, cliente
     // Pulido de Entregar (09/11): la firma con su título arriba de su tarjeta; entregar con saldo, aparte (es la excepción)
     <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate aria-label="Entregar vehículo">
       <input type="hidden" name="id" value={id} />
+      {volver && <input type="hidden" name="volver" value={volver} />}
       {estado.mensaje && <MensajeError id="entrega-error">{estado.mensaje}</MensajeError>}
 
       <section aria-labelledby="firma-titulo" className="flex flex-col gap-2">

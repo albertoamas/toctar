@@ -2,7 +2,7 @@
 
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { db } from "@/db";
 import { auditoria, cliente, consulta, cotizacion, recordatorioMantenimiento, trabajo, vehiculo } from "@/db/esquema";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
@@ -68,7 +68,8 @@ export async function crearCliente(_previo: EstadoCliente, datos: FormData): Pro
   }
 
   revalidatePath("/panel/clientes");
-  redirect(`/panel/clientes/${id}?creado=1`);
+  // Reemplaza al formulario en el historial: "atrás" no vuelve a él (pedido 43)
+  redirect(`/panel/clientes/${id}?creado=1`, RedirectType.replace);
 }
 
 /** Edita los datos de un cliente (HU-23). El teléfono no puede ser el de otro cliente (RF-23). */
@@ -282,5 +283,5 @@ export async function cambiarDuenoVehiculo(_previo: EstadoFormulario, datos: For
   for (const id of resultado.cerradas) revalidatePath(`/panel/cotizaciones/${id}`);
   revalidatePath("/panel/mantenimientos");
   revalidatePath("/panel");
-  redirect(`/panel/clientes/${clienteNuevoId}?recibido=${encodeURIComponent(resultado.placa)}`);
+  redirect(`/panel/clientes/${clienteNuevoId}?recibido=${encodeURIComponent(resultado.placa)}`, RedirectType.replace);
 }

@@ -21,13 +21,15 @@ import type { FotoOrden } from "../consultas";
 // La foto de antes es opcional: "Sin foto de antes" es una opción más, la primera.
 
 type Props = {
+  /** De dónde se vino: la orden vuelve ahí al publicar (pedido 43). */
+  volver: string | null;
   id: number;
   despues: FotoOrden[];
   antes: FotoOrden[];
   servicios: { id: number; nombre: string }[];
 };
 
-export function FormularioPublicar({ id, despues, antes, servicios }: Props) {
+export function FormularioPublicar({ id, volver, despues, antes, servicios }: Props) {
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(publicarEnGaleria, {});
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
@@ -39,6 +41,7 @@ export function FormularioPublicar({ id, despues, antes, servicios }: Props) {
   return (
     <form ref={formulario} action={accion} className="tt-formulario-panel flex flex-col gap-8" noValidate aria-label="Publicar en la galería">
       <input type="hidden" name="id" value={id} />
+      {volver && <input type="hidden" name="volver" value={volver} />}
       {estado.mensaje && <MensajeError id="publicar-error">{estado.mensaje}</MensajeError>}
 
       <GrillaFotos nombre="fotoDespues" titulo="Foto de después" foto="Foto de después" fotos={despues} elegida={v.fotoDespues ?? String(despues[0].id)} error={e.fotoDespues} />

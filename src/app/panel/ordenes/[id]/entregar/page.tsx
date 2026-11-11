@@ -18,6 +18,7 @@ import { obtenerOrden } from "@/modulos/ordenes/consultas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
 import { estaPagada } from "@/modulos/pagos/reglas";
 import { filaVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
+import { leerDesde, volverDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Entregar vehículo" };
 
@@ -26,20 +27,20 @@ export const metadata: Metadata = { title: "Entregar vehículo" };
 // saldo, solo quien puede autorizarlo (RN-13). Se anticipa lo que pasa con los planes de mantenimiento del vehículo (RN-08, pedido 21).
 // Pulido 11.4: con saldo, "Falta cobrar" y "Registrar pago" van antes de la casilla de entregar con saldo, que es la
 // excepción; el botón, fijo abajo en el celular.
-export default function PaginaEntregar({ params }: PageProps<"/panel/ordenes/[id]/entregar">) {
+export default function PaginaEntregar({ params, searchParams }: PageProps<"/panel/ordenes/[id]/entregar">) {
   return (
     <PaginaPanel tipo="formulario">
       <Suspense fallback={<Cargando />}>
-        <Entrega params={params} />
+        <Entrega params={params} searchParams={searchParams} />
       </Suspense>
     </PaginaPanel>
   );
 }
 
-async function Entrega({ params }: Pick<PageProps<"/panel/ordenes/[id]/entregar">, "params">) {
+async function Entrega({ params, searchParams }: Pick<PageProps<"/panel/ordenes/[id]/entregar">, "params" | "searchParams">) {
   const usuario = await exigirModulo("ordenes");
   if (!puede(usuario, "entregar_vehiculo")) redirect("/panel/sin-acceso");
-  const { id } = await params;
+  const [{ id }, busqueda] = await Promise.all([params, searchParams]);
   if (!/^\d+$/.test(id)) notFound();
   const conPagos = puedeVerModulo(usuario, "pagos");
   // Con los montos siempre, para saber si queda saldo; se muestran solo a quien ve pagos
@@ -55,7 +56,7 @@ async function Entrega({ params }: Pick<PageProps<"/panel/ordenes/[id]/entregar"
 
   return (
     <>
-      <EncabezadoPagina titulo={`Entregar ${o.placa}`} volver={{ href: `/panel/ordenes/${o.id}`, texto: "Orden" }} />
+      <EncabezadoPagina titulo={`Entregar ${o.placa}`} volver={volverDesde(busqueda.volver, { href: `/panel/ordenes/${o.id}`, texto: "Orden" }, usuario)} />
       {/* Lo que se entrega, como en Recibir (pulido de Entregar, 09/11) */}
       <div className="tt-tarjeta-panel p-4">
         <ListaDatos
@@ -94,7 +95,7 @@ async function Entrega({ params }: Pick<PageProps<"/panel/ordenes/[id]/entregar"
         </Seccion>
       )}
 
-      <FormularioEntrega id={o.id} conDeuda={conDeuda} saldo={conPagos ? `${mostrarMonto(saldo)} Bs` : null} puedeAutorizar={puede(usuario, "entrega_con_saldo")} cliente={o.cliente} />
+      <FormularioEntrega id={o.id} volver={leerDesde(busqueda.volver)} conDeuda={conDeuda} saldo={conPagos ? `${mostrarMonto(saldo)} Bs` : null} puedeAutorizar={puede(usuario, "entrega_con_saldo")} cliente={o.cliente} />
     </>
   );
 }

@@ -9,24 +9,25 @@ import { exigirAccion } from "@/lib/sesion";
 import { FormularioPublicar } from "@/modulos/ordenes/componentes/formulario-publicar";
 import { fotosDeTrabajo, obtenerOrden, publicadaDeOrden, serviciosDeOrden } from "@/modulos/ordenes/consultas";
 import { esFotoDeAntes, ETAPAS_FOTO_ANTES, puedePublicarse } from "@/modulos/ordenes/reglas";
+import { leerDesde, volverDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Publicar en la galería" };
 
 // HU-41: publicar en la galería del sitio las fotos de una orden entregada (RF-44). Solo el dueño (RN-01), y solo si la
 // orden tiene al menos una foto de después. Las fotos se copian al sitio: las de la orden siguen privadas (RNF-05).
-export default function PaginaPublicar({ params }: PageProps<"/panel/ordenes/[id]/publicar">) {
+export default function PaginaPublicar({ params, searchParams }: PageProps<"/panel/ordenes/[id]/publicar">) {
   return (
     <PaginaPanel tipo="formulario">
       <Suspense fallback={<Cargando />}>
-        <Publicar params={params} />
+        <Publicar params={params} searchParams={searchParams} />
       </Suspense>
     </PaginaPanel>
   );
 }
 
-async function Publicar({ params }: Pick<PageProps<"/panel/ordenes/[id]/publicar">, "params">) {
-  await exigirAccion("publicar_en_galeria");
-  const { id } = await params;
+async function Publicar({ params, searchParams }: Pick<PageProps<"/panel/ordenes/[id]/publicar">, "params" | "searchParams">) {
+  const usuario = await exigirAccion("publicar_en_galeria");
+  const [{ id }, busqueda] = await Promise.all([params, searchParams]);
   if (!/^\d+$/.test(id)) notFound();
   const o = await obtenerOrden(Number(id), false);
   if (!o) notFound();
@@ -38,13 +39,13 @@ async function Publicar({ params }: Pick<PageProps<"/panel/ordenes/[id]/publicar
 
   return (
     <>
-      <EncabezadoPagina titulo={`Publicar ${o.placa}`} volver={{ href: volver, texto: "Orden" }}>
+      <EncabezadoPagina titulo={`Publicar ${o.placa}`} volver={volverDesde(busqueda.volver, { href: volver, texto: "Orden" }, usuario)}>
         Las fotos que elijas se copian a la galería del sitio; las de la orden no cambian.
       </EncabezadoPagina>
       {servicios.length === 0 ? (
         <EstadoVacio>Los servicios de esta orden ya no están en el catálogo. Súbelas desde Sitio web &gt; Galería, con otro servicio.</EstadoVacio>
       ) : (
-        <FormularioPublicar id={o.id} despues={fotos.filter((f) => f.etapa === "despues")} antes={fotos.filter((f) => esFotoDeAntes(f.etapa))} servicios={servicios} />
+        <FormularioPublicar id={o.id} volver={leerDesde(busqueda.volver)} despues={fotos.filter((f) => f.etapa === "despues")} antes={fotos.filter((f) => esFotoDeAntes(f.etapa))} servicios={servicios} />
       )}
     </>
   );
