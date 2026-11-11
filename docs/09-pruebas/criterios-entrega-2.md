@@ -150,6 +150,7 @@
 |---|---|---|---|
 | 27.1 | En el celular, "Compartir" abre el menú del teléfono con el PDF adjunto | E2E `hu-27` "con el menú del teléfono, comparte el PDF con su nombre", "si el teléfono pide otro toque…" y "…avisa y no queda trabado" | ✅ |
 | 27.2 | En la computadora, el PDF se descarga o se imprime | E2E `hu-27` "sin menú de compartir archivos, lo descarga" | ✅ |
+| 27.4 | "Enviar por WhatsApp" abre el chat del cliente con el mensaje y el enlace; el cliente ve el PDF sin cuenta; vencida o reemplazada, una página lo dice sin montos (pedido 47) | E2E `p47-enviar-cotizacion` | ✅ |
 | 27.3 | Compartirlo por WhatsApp desde un celular real, Android y iPhone | Revisión a mano en `pruebas.toctardetailing.com` (necesita https) | ⏳ |
 
 ## HU-28 Seguimiento de cotizaciones

@@ -94,7 +94,6 @@ Todo lo programable está en `develop` y en `pruebas.toctardetailing.com`. Lo qu
 |---|---|
 | Pedido 29 y pedido 31, parte 2: vehículos sin placa y cotizar sin registrar al cliente (van juntos) | `etapas/P31-flujo-de-un-trabajo.md`, parte 2 |
 | Pedidos 14 (Bs 200), 19 y 22 (avisos automáticos, por cotizar); la constancia en PDF de la entrega (pedido 13, +2 h) | `registro-de-cambios.md` |
-| Pedido 47: "Enviar por WhatsApp" con un enlace al PDF de la cotización (unas 3 h; cobrarlo o no) | `registro-de-cambios.md` |
 | Pedidos 15 y 16: van en el Sistema completo | `registro-de-cambios.md` |
 | Decisiones abiertas de C5 (permiso del cliente para publicar fotos, qué ve el encargado en Inicio, más mensajes editables) | `etapas/C5-cierre-entrega-2.md`, §12 |
 | Sus datos: lista de precios real (20.4), servicios con mantenimiento y su frecuencia, textos del PDF (formas de pago, condiciones, garantía; 26.6), contenido del sitio (trabajo de la portada, fotos, TikTok, WhatsApp real) | Panel, en producción al publicar |
