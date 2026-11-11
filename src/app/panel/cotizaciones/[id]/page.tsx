@@ -37,7 +37,7 @@ export const metadata: Metadata = { title: "Cotización" };
 // siguiente de una pendiente es "Aceptó"; el de una aceptada sin fecha, "Reservar en Agenda" (Cotizaciones cotiza y la
 // Agenda reserva; el botón es un atajo a su formulario, solo para quien ve la Agenda). "Nueva versión", "Rechazar" y
 // "Volver a pendiente" van en "Más". C6: una ficha de 1024 px; el paso siguiente, grande debajo de los pasos (como en
-// Reserva y Orden, PasoSiguiente) y los datos en bloques (`datos-en-bloques.tsx`), como en ellas.
+// Reserva y Orden, PasoSiguiente) y los datos en bloques (`datos-en-bloques.tsx`), como en la orden.
 export default function PaginaCotizacion({ params, searchParams }: PageProps<"/panel/cotizaciones/[id]">) {
   return (
     <PaginaPanel tipo="ficha">

@@ -14,7 +14,7 @@ import { GenerarPdf } from "./generar-pdf";
 // queda tal como se envió, en tinta suave.
 // Pulido 13.50: cada servicio con su opción en gris debajo (como en la orden) y su precio sin negrita (la negrita, para el
 // total); cada versión dice quién la cotizó. La que vale (vigente o aceptada) se comparte y se ve; descargarla, en su
-// "⋯". Una reemplazada ya no se manda: solo "Ver PDF", para consultar lo que se envió.
+// "⋯". Una reemplazada ya no se comparte: "Ver PDF" y, en su "⋯", descargarla (lo que se envió, con su nombre).
 
 const NOMBRE: Record<EstadoCotizacion, string> = { enviada: "Vigente", reemplazada: "Reemplazada", aceptada: "Aceptada" };
 const INSIGNIA: Record<EstadoCotizacion, string> = {
@@ -81,13 +81,11 @@ export function VersionesCotizacion({ consultaId, versiones }: { consultaId: num
                     <FileTextIcon />
                     Ver PDF
                   </a>
-                  {c.estado !== "reemplazada" && (
-                    <MenuMas
-                      icono
-                      etiqueta={`Opciones del PDF${varias ? ` de la versión ${c.version}` : ""}`}
-                      acciones={[{ texto: "Descargar PDF", href: `${ruta}?descargar=1`, descarga: true }]}
-                    />
-                  )}
+                  <MenuMas
+                    icono
+                    etiqueta={`Opciones del PDF${varias ? ` de la versión ${c.version}` : ""}`}
+                    acciones={[{ texto: "Descargar PDF", href: `${ruta}?descargar=1`, descarga: true }]}
+                  />
                 </>
               ) : (
                 // Cualquier versión sin PDF lo puede generar: sale de lo copiado al cotizarla

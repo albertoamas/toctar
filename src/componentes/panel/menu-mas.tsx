@@ -44,7 +44,7 @@ export function MenuMas({ acciones, deshabilitado = false, etiqueta, icono = fal
           <DropdownMenuItem
             key={a.texto}
             onClick={a.alElegir}
-            render={a.href ? a.descarga ? <a href={a.href} /> : <a href={a.href} target="_blank" rel="noreferrer" /> : undefined}
+            render={a.href ? a.descarga ? <a href={a.href} download /> : <a href={a.href} target="_blank" rel="noreferrer" /> : undefined}
             className="min-h-9 px-3 text-base pointer-coarse:min-h-11"
           >
             {a.texto}

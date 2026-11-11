@@ -365,7 +365,7 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
       db
         .select({ descripcion: trabajoLinea.descripcion, variante: variante.nombre, precio: trabajoLinea.precio, esAdicional: trabajoLinea.esAdicional })
         .from(trabajoLinea)
-        .innerJoin(variante, eq(variante.id, trabajoLinea.varianteId))
+        .leftJoin(variante, eq(variante.id, trabajoLinea.varianteId))
         .where(eq(trabajoLinea.trabajoId, id))
         .orderBy(asc(trabajoLinea.orden)),
       db
@@ -397,7 +397,7 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
       })),
     );
     montos = {
-      lineas: lineas.map(({ variante: opcionDeLaLinea, ...l }) => ({ ...l, ...partirDescripcion(l.descripcion, opcionDeLaLinea) })),
+      lineas: lineas.map(({ variante: opcionDeLaLinea, ...l }) => ({ ...l, ...partirDescripcion(l.descripcion, opcionDeLaLinea ?? "") })),
       descuento,
       saldo: calcularSaldo(
         lineas.map((l) => l.precio),

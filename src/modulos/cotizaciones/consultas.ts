@@ -246,11 +246,11 @@ async function versionesDeCotizacion(consultaId: number): Promise<FilaVersion[]>
     const lineas = await db
       .select({ cotizacionId: cotizacionLinea.cotizacionId, descripcion: cotizacionLinea.descripcion, opcion: variante.nombre, precio: cotizacionLinea.precio })
       .from(cotizacionLinea)
-      .innerJoin(variante, eq(variante.id, cotizacionLinea.varianteId))
+      .leftJoin(variante, eq(variante.id, cotizacionLinea.varianteId))
       .where(inArray(cotizacionLinea.cotizacionId, conLineas))
       .orderBy(asc(cotizacionLinea.orden), asc(cotizacionLinea.id));
     for (const { cotizacionId, descripcion, opcion, precio } of lineas) {
-      porVersion.set(cotizacionId, [...(porVersion.get(cotizacionId) ?? []), { ...partirDescripcion(descripcion, opcion), precio }]);
+      porVersion.set(cotizacionId, [...(porVersion.get(cotizacionId) ?? []), { ...partirDescripcion(descripcion, opcion ?? ""), precio }]);
     }
   }
   return filas.map(({ pdf, ...f }) => ({ ...f, tienePdf: pdf !== null, lineas: porVersion.get(f.id) ?? [] }));
@@ -452,8 +452,6 @@ export type DetalleCotizacion = {
   sinFecha: boolean;
   motivoPerdida: MotivoPerdida | null;
   detallePerdida: string | null;
-  createdAt: Date;
-  registradaPor: string;
   versiones: FilaVersion[];
 };
 
@@ -476,14 +474,11 @@ export async function obtenerCotizacion(id: number): Promise<DetalleCotizacion |
         sinFecha,
         motivoPerdida: consulta.motivoPerdida,
         detallePerdida: consulta.detallePerdida,
-        createdAt: consulta.createdAt,
-        registradaPor: usuario.name,
       })
       .from(consulta)
       .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
       .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
       .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
-      .innerJoin(usuario, eq(consulta.createdBy, usuario.id))
       .where(eq(consulta.id, id)),
     versionesDeCotizacion(id),
   ]);
