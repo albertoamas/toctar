@@ -84,7 +84,7 @@ Todo lo programable está en `develop` y en `pruebas.toctardetailing.com`. Lo qu
 
 1. **Prueba completa a mano** con `09-pruebas/criterios-entrega-2.md` (y los ⚠️/⏳ de `criterios-entrega-1.md`) en pruebas, con https: dueño y encargado con cada perfil (Taller, Atención, Todo), en un Android y un iPhone. Cubre los ⏳ de celular real: compartir el PDF (27.3), comprobante con la cámara (32.5), checklist con fotos (33.6), PDF impreso en A4 (26.4) e instalar la app (B2).
 2. **Datos de demostración en pruebas** (`datos:demo`), para la demo y la capacitación.
-3. **Guía de capacitación** `10-lanzamiento/capacitacion.md`, corta y por rol (ver C5, punto 3).
+3. **Guía de capacitación** `10-lanzamiento/capacitacion.md`, corta y por rol (ver C5, punto 3). ✅ Escrita el 11/11: Taller, Atención y dueño, con la lista para la sesión; falta darla con el dueño y los encargados.
 4. **Borradores de las actas** `09-pruebas/actas-de-aceptacion/entrega-1.md` y `entrega-2.md`.
 5. **En el servidor** (con el acceso SSH de YankoSoft): confirmar que Traefik pone `x-real-ip` y que el puerto de la app no está abierto; la restauración de prueba antes de publicar (RNF-06, `07-preparacion/servidor.md`); Lighthouse y JSON-LD con https.
 
