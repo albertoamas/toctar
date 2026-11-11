@@ -42,6 +42,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/catalogo">, "searc
   const [todos, { ver }] = await Promise.all([listarCatalogo(), searchParams]);
   const inactivos = ver === "inactivos";
   const servicios = todos.filter((s) => s.activo !== inactivos);
+  const faltan = servicios.some((s) => s.preciosFaltantes > 0);
   return (
     <>
     <BarraLista derecha={<PildoraVista texto="Inactivos" valor="inactivos" />} />
@@ -61,7 +62,8 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/catalogo">, "searc
         { titulo: "Precio", ancho: "minmax(0,1fr)", alinear: "derecha", movil: "estado" },
         { titulo: "Variantes", ancho: "6.5rem", movil: "par" },
         { titulo: "Duración", ancho: "5.5rem", movil: "par" },
-        { titulo: "Estado", ancho: "minmax(0,1fr)", movil: "detalle" },
+        // Solo si a alguno le faltan precios: con todo cargado, una columna vacía (inventario-pantallas.md, cambio 5)
+        ...(faltan ? [{ titulo: "Falta", ancho: "minmax(0,1fr)", movil: "detalle" } as const] : []),
       ]}
       filas={servicios.map((s) => ({
         href: `/panel/catalogo/${s.id}`,
@@ -76,11 +78,15 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/catalogo">, "searc
           cantidad(s.variantes, "variante", "variantes"),
           textoDias(s.duracionDias),
           // Solo lo que pide atención: lo que falta cargar; completo, no dice nada (pulido 7.1). Inactivo ya lo dice la píldora
-          s.preciosFaltantes > 0 ? (
-            <Insignia key="e" tono="aviso">
-              {s.preciosFaltantes === 1 ? "Falta" : "Faltan"} {cantidad(s.preciosFaltantes, "precio", "precios")}
-            </Insignia>
-          ) : null,
+          ...(faltan
+            ? [
+                s.preciosFaltantes > 0 ? (
+                  <Insignia key="e" tono="aviso">
+                    {s.preciosFaltantes === 1 ? "Falta" : "Faltan"} {cantidad(s.preciosFaltantes, "precio", "precios")}
+                  </Insignia>
+                ) : null,
+              ]
+            : []),
         ],
       }))}
     />

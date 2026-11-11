@@ -96,10 +96,16 @@ test("el dueño ve el reclamo pendiente, le escribe por WhatsApp y lo marca aten
   await expect(page.getByText("Se limpió el tablero sin costo.").locator("visible=true")).toBeVisible();
 
   // Ya no está entre los pendientes, sí entre todos
-  await page.goto("/panel/reclamos?ver=pendientes");
-  await expect(enLaLista(page, nombre)).toHaveCount(0);
-  await page.goto("/panel/reclamos");
+  // La lista abre en los pendientes (cambio 5); un enlace viejo con ?ver=pendientes, también
+  for (const ruta of ["/panel/reclamos", "/panel/reclamos?ver=pendientes"]) {
+    await page.goto(ruta);
+    await expect(page.getByRole("navigation", { name: "Filtrar reclamos" }).getByRole("link", { name: /^Pendientes/ })).toHaveAttribute("aria-current", "page");
+    await expect(enLaLista(page, nombre)).toHaveCount(0);
+  }
+  await page.goto("/panel/reclamos?ver=todos");
   await expect(enLaLista(page, nombre)).toBeVisible();
+  // Sin fotos, la fila no lo repite
+  await expect(enLaLista(page, nombre)).not.toContainText("Sin fotos");
 });
 
 test("si otra persona lo atendió mientras tanto, lo avisa y muestra su atención", async ({ page }, info) => {
