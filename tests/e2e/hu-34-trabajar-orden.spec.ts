@@ -53,6 +53,9 @@ test("el perfil Taller trabaja cualquier orden, sin asignarla y sin ver precios:
   // Sin Pagos: los servicios sin precio (RN-12); y nada dice a quién está asignada (pedido 32)
   await expect(page.getByRole("main")).not.toContainText(" Bs");
   await expect(page.getByLabel("Datos de la orden")).not.toContainText("Técnico");
+  // Sin Clientes, el cliente se ve pero no lleva a su ficha; con Agenda, "Ver la reserva" sí (pulido 13.49)
+  await expect(page.getByRole("link", { name: /^Ver ficha del cliente/ })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Ver la reserva" })).toHaveAttribute("href", new RegExp(`^/panel/agenda/${id}\\?volver=`));
 
   await pasos.getByRole("button", { name: "Empezar trabajo" }).click();
   await expect(page.getByText("La orden está en proceso.")).toBeVisible();

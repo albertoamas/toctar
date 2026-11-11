@@ -3,18 +3,16 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { cn } from "cn";
-import { ImageUpIcon, KeyRoundIcon } from "lucide-react";
+import { ChevronRightIcon, ImageUpIcon, KeyRoundIcon } from "lucide-react";
 import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { AvisarPorWhatsApp } from "@/componentes/panel/avisar-whatsapp";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
-import { ListaDatos } from "@/componentes/panel/lista-datos";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { BOTON_PASO, PasoSiguiente } from "@/componentes/panel/paso-siguiente";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
 import { Insignia } from "@/componentes/panel/insignia";
-import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import { diaYHora, fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/lib/fechas";
@@ -39,7 +37,7 @@ import { avancesDeTrabajo, firmaDeTrabajo, revisionDeTrabajo, fotosDeTrabajo, ob
 import { mensajeListo } from "@/modulos/ordenes/mensajes";
 import { puedeQuitarFoto, esOrden, estaAbierta, estaAtrasada, pasosDeOrden, puedeExtenderse, puedePublicarse } from "@/modulos/ordenes/reglas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
-import { filaVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
+import { valorVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 import { aqui, conDesde, leerDesde, volverDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Orden" };
@@ -192,50 +190,49 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
 
       {/* Principal y datos (§2), según el ancho del área de trabajo: a la izquierda el trabajo (cómo llegó, fotos y
           avances); a la derecha los datos y, debajo, los montos. En el celular, en ese orden: datos, trabajo y montos */}
-      <div className="grid items-start gap-8 @4xl:grid-cols-[minmax(0,1fr)_22rem] @4xl:grid-rows-[auto_1fr]">
+      <div className="grid items-start gap-8 @4xl:grid-cols-[minmax(0,1fr)_24rem] @4xl:grid-rows-[auto_1fr]">
         <div className="@4xl:col-start-2 @4xl:row-start-1">
-          <Seccion id="datos" titulo="Datos">
-            <div className="flex flex-col gap-2">
-              {/* La placa ya está en el título: el vehículo dice su modelo y su tamaño (como la reserva) */}
-              <ListaDatos
-                nombre="Datos de la orden"
-                filas={[
+          {/* Pulido 13.49: en bloques, de lo que se mira primero (cuándo sale y dónde está) a lo que es historia (cuándo
+              ingresó y la reserva); el cliente y la reserva son filas que se tocan, no enlaces subrayados sueltos al pie */}
+          <Seccion id="datos" titulo="Datos" sinRelleno>
+            {/* El nombre, en toda la tarjeta: lo que dice de la orden (también el cliente y el vehículo) */}
+            <div role="group" aria-label="Datos de la orden" className="flex flex-col divide-y divide-border">
+              <dl className="flex flex-col gap-2 px-4 py-3">
+                {o.estado !== "entregado" && (
                   // La entrega aproximada sirve mientras está en el taller; entregada, el encabezado ya dice cuándo
-                  o.estado !== "entregado" && [
-                    "Entrega",
-                    <span key="entrega" className="flex flex-col">
-                      <span className="font-semibold">{o.fechaFin === hoy ? "Hoy" : formatearFecha(o.fechaFin)}</span>
-                      <span className="text-sm text-tinta-suave">aproximada</span>
-                    </span>,
-                  ],
-                  ["Espacio", <span key="espacio" className="font-semibold">{o.espacio}</span>],
-                  [
-                    "Ingresó",
-                    <span key="ingreso" className="flex flex-col">
-                      {o.recibidoAt && <span>{formatearFechaHora(o.recibidoAt)}</span>}
-                      {o.recibidoPor && <span className="text-sm text-tinta-suave">recibió {o.recibidoPor}</span>}
-                    </span>,
-                  ],
-                  [
-                    "Cliente",
-                    <span key="cliente" className="flex flex-col">
-                      <span className="font-semibold">{o.cliente}</span>
-                      <span className="text-sm text-tinta-suave">{formatearWhatsApp(o.telefono)}</span>
-                    </span>,
-                  ],
-                  filaVehiculo(detalle, o.tamano),
-                ]}
-              />
-              {/* Los enlaces, de 44 px y fuera de la lista: la ficha del cliente (con Clientes) y la reserva (con Agenda) */}
-              {verFicha && (
-                <Link href={conDesde(`/panel/clientes/${o.clienteId}`, desdeAqui)} className={ENLACE_TEXTO}>
-                  Ver ficha del cliente
-                </Link>
-              )}
-              {verAgenda && (
-                <Link href={conDesde(`/panel/agenda/${o.id}`, desdeAqui)} className={ENLACE_TEXTO}>
-                  Ver la reserva
-                </Link>
+                  <FilaDato etiqueta="Entrega">
+                    <span className="font-semibold">{o.fechaFin === hoy ? "Hoy" : formatearFecha(o.fechaFin)}</span>
+                    <span className="text-sm text-tinta-suave">aproximada</span>
+                  </FilaDato>
+                )}
+                <FilaDato etiqueta="Espacio">
+                  <span className="font-semibold">{o.espacio}</span>
+                </FilaDato>
+              </dl>
+              <FilaEnlace href={verFicha ? conDesde(`/panel/clientes/${o.clienteId}`, desdeAqui) : null} oculto="Ver ficha del cliente: ">
+                <FilaDato etiqueta="Cliente" como="span" enEnlace={verFicha}>
+                  <span className="font-semibold">{o.cliente}</span>
+                  <span className="text-sm text-tinta-suave">{formatearWhatsApp(o.telefono)}</span>
+                </FilaDato>
+              </FilaEnlace>
+              <div className="px-4 py-3">
+                <FilaDato etiqueta="Vehículo" como="span">
+                  {valorVehiculo(detalle, o.tamano)}
+                </FilaDato>
+              </div>
+              {(o.recibidoAt || o.recibidoPor || verAgenda) && (
+                <div className="flex flex-col">
+                  {(o.recibidoAt || o.recibidoPor) && (
+                    <p className={cn("px-4 text-sm text-tinta-suave", verAgenda ? "pt-3" : "py-3")}>
+                      {[o.recibidoAt && `Ingresó el ${formatearFechaHora(o.recibidoAt)}`, o.recibidoPor && `recibió ${o.recibidoPor}`].filter(Boolean).join(", ")}
+                    </p>
+                  )}
+                  {verAgenda && (
+                    <FilaEnlace href={conDesde(`/panel/agenda/${o.id}`, desdeAqui)}>
+                      <span className="font-semibold">Ver la reserva</span>
+                    </FilaEnlace>
+                  )}
+                </div>
               )}
             </div>
           </Seccion>
@@ -289,6 +286,46 @@ function EnlaceEntregar({ id, desde, principal }: { id: number; desde: string; p
     <Link href={conDesde(`/panel/ordenes/${id}/entregar`, desde)} className={cn(buttonVariants({ variant: principal ? "default" : "outline", size: principal ? "paso" : "default" }), principal && BOTON_PASO)}>
       <KeyRoundIcon />
       Entregar vehículo
+    </Link>
+  );
+}
+
+/** Una fila de Datos: la etiqueta de ancho fijo, así los valores quedan en columna entre bloques. */
+function FilaDato(props: {
+  etiqueta: string;
+  /** "span" fuera de una lista de datos (un enlace no puede llevar un dl). */
+  como?: "div" | "span";
+  /** Dentro de un enlace que ya dice qué es ("Ver ficha del cliente:"): la etiqueta no se lee dos veces. */
+  enEnlace?: boolean;
+  children: React.ReactNode;
+}) {
+  const { etiqueta, como = "div", enEnlace, children } = props;
+  if (como === "span") {
+    return (
+      <span className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-x-3">
+        <span aria-hidden={enEnlace || undefined} className="text-tinta-suave">{etiqueta}</span>
+        <span className="flex min-w-0 flex-col break-words">{children}</span>
+      </span>
+    );
+  }
+  return (
+    <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-x-3">
+      <dt className="text-tinta-suave">{etiqueta}</dt>
+      <dd className="flex min-w-0 flex-col break-words">{children}</dd>
+    </div>
+  );
+}
+
+/** Una fila de la tarjeta que lleva a otra pantalla, con "›"; sin `href` (quien mira no tiene ese módulo), solo la fila. */
+function FilaEnlace({ href, oculto, children }: { href: string | null; /** Lo que oye el lector antes del contenido. */ oculto?: string; children: React.ReactNode }) {
+  if (!href) return <div className="px-4 py-3">{children}</div>;
+  return (
+    <Link href={href} className="flex min-h-11 items-center justify-between gap-3 px-4 py-3 hover:bg-fondo-panel focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring">
+      <span className="min-w-0 flex-1">
+        {oculto && <span className="sr-only">{oculto}</span>}
+        {children}
+      </span>
+      <ChevronRightIcon aria-hidden className="size-4 shrink-0 text-tinta-suave" />
     </Link>
   );
 }

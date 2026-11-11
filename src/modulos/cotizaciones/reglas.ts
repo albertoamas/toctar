@@ -131,6 +131,18 @@ export const fechaValidez = (hoy: Date, dias: number) => sumarDias(fechaEnBolivi
 export const descripcionLinea = (servicio: string, variante: string) => (variante.trim().toLowerCase() === "única" ? servicio : `${servicio} (${variante})`);
 
 /**
+ * Al revés de `descripcionLinea`, para mostrarla en dos líneas (el servicio y, debajo, la opción en gris). Se parte solo si
+ * el texto guardado termina con esa opción entre paréntesis: un nombre con paréntesis propios, una "Única", una opción
+ * renombrada después o un texto escrito a mano quedan enteros.
+ */
+export function partirDescripcion(descripcion: string, variante: string): { servicio: string; opcion: string | null } {
+  const fin = ` (${variante})`;
+  return variante.trim().toLowerCase() !== "única" && descripcion.endsWith(fin) && descripcion.length > fin.length
+    ? { servicio: descripcion.slice(0, -fin.length), opcion: variante }
+    : { servicio: descripcion, opcion: null };
+}
+
+/**
  * Las opciones del catálogo agrupadas por servicio, en su orden (pulido 9.4): se elige primero el servicio y, si tiene
  * varias, la opción en otro menú. Así se distingue a simple vista cuál tiene opciones.
  */

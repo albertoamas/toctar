@@ -18,6 +18,8 @@ test("pagada: el dueño suma un adicional, se cobra y se entrega; queda programa
 
   await ingresarComoDueno(page);
   await page.goto(`/panel/ordenes/${id}`);
+  // El cliente es una fila que lleva a su ficha (pulido 13.49)
+  await expect(page.getByRole("link", { name: new RegExp(`^Ver ficha del cliente: Entrega ${s}`) })).toHaveAttribute("href", /^\/panel\/clientes\/\d+\?volver=/);
   // Un adicional: sube el precio final (RF-43)
   await page.getByRole("button", { name: "Agregar servicio" }).click();
   const form = page.getByRole("form", { name: "Agregar servicio" });
