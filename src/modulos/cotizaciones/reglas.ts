@@ -178,14 +178,16 @@ export const rutaEnlace = (codigo: string) => `/c/${codigo}`;
 /** Un código de enlace bien formado (32 hexadecimales): lo demás no se busca en la base. */
 export const esCodigoEnlace = (codigo: string) => /^[0-9a-f]{32}$/.test(codigo);
 
-export type EstadoEnlace = "vale" | "vencida" | "reemplazada";
+export type EstadoEnlace = "vale" | "vencida" | "reemplazada" | "rechazada";
 
 /**
- * Pedido 47: si el enlace todavía muestra el PDF. Una aceptada, siempre (el cliente puede querer verla después); una
- * vigente, hasta su fecha de validez inclusive (día de Bolivia); una reemplazada, nunca: tiene una versión nueva.
+ * Pedido 47: si el enlace todavía muestra el PDF. Una cotización rechazada (la consulta, perdida), nunca; una versión
+ * reemplazada, nunca: tiene una versión nueva; una aceptada, siempre (el cliente puede querer verla después); una
+ * vigente, hasta su fecha de validez inclusive (día de Bolivia).
  */
-export function estadoEnlace(estado: EstadoCotizacion, validaHasta: string, hoy: string): EstadoEnlace {
-  if (estado === "reemplazada") return "reemplazada";
-  if (estado === "aceptada") return "vale";
-  return validaHasta < hoy ? "vencida" : "vale";
+export function estadoEnlace(v: { estado: EstadoCotizacion; validaHasta: string; rechazada: boolean }, hoy: string): EstadoEnlace {
+  if (v.rechazada) return "rechazada";
+  if (v.estado === "reemplazada") return "reemplazada";
+  if (v.estado === "aceptada") return "vale";
+  return v.validaHasta < hoy ? "vencida" : "vale";
 }

@@ -84,5 +84,13 @@ test("una versión que ya no vale lleva a una página que lo dice, sin montos; y
   await cliente.goto(`/c/${c.enlace}`);
   await expect(cliente.getByRole("heading", { level: 1 })).toHaveText("Esta cotización tiene una versión nueva");
   await expect(cliente.getByRole("main")).not.toContainText("Bs");
+
+  // Rechazada: la versión sigue vigente, pero la cotización se perdió
+  await consultar("update cotizacion set estado = 'enviada' where id = $1", [c.id]);
+  await consultar("update consulta set estado = 'perdido', motivo_perdida = 'precio' where id = $1", [c.consultaId]);
+  await cliente.goto(`/c/${c.enlace}`);
+  await expect(cliente.getByRole("heading", { level: 1 })).toHaveText("Esta cotización ya no está vigente");
+  await page.reload();
+  await expect(page.getByRole("link", { name: "Enviar por WhatsApp" })).toHaveCount(0);
   await anonimo.close();
 });

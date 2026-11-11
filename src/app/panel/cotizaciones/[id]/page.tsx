@@ -58,7 +58,14 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
   const numero = Number(id);
   if (!Number.isInteger(numero) || numero <= 0) notFound();
   const puedeAgendar = puedeVerModulo(usuario, "agenda");
-  const [c, reservas] = await Promise.all([obtenerCotizacion(numero), puedeAgendar ? reservasDeConsulta(numero) : []]);
+  // Las plantillas y el negocio, para "Enviar por WhatsApp" (pedido 47), junto con la cotización: están en caché
+  const conEnvio = puede(usuario, "cotizar");
+  const [c, reservas, plantillas, negocio] = await Promise.all([
+    obtenerCotizacion(numero),
+    puedeAgendar ? reservasDeConsulta(numero) : [],
+    conEnvio ? obtenerPlantillas() : null,
+    conEnvio ? obtenerDatosPublicos() : null,
+  ]);
   if (!c) notFound();
   // Pedido 43: "Volver" a la pantalla de la que se vino; los enlaces que salen de aquí dicen que vienen de esta cotización
   const volver = volverDesde(parametros.volver, { href: "/panel/cotizaciones", texto: "Cotizaciones" }, usuario);
@@ -78,8 +85,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
   // Pedido 47: "Enviar por WhatsApp" en cada versión que se puede mandar (vale y tiene su PDF), con la plantilla de
   // Configuración > Mensajes y el enlace para el cliente
   const hoy = fechaEnBolivia();
-  const aEnviar = cotiza ? c.versiones.filter((v) => v.tienePdf && estadoEnlace(v.estado, v.validaHasta, hoy) === "vale") : [];
-  const [plantillas, negocio] = aEnviar.length > 0 ? await Promise.all([obtenerPlantillas(), obtenerDatosPublicos()]) : [null, null];
+  const rechazada = c.estado === "perdido";
+  const aEnviar = cotiza ? c.versiones.filter((v) => v.tienePdf && estadoEnlace({ ...v, rechazada }, hoy) === "vale") : [];
   const enviar = new Map(
     plantillas && negocio
       ? aEnviar.map((v) => [

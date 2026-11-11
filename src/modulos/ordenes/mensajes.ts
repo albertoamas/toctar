@@ -50,6 +50,6 @@ export function mensajeDeEjemplo(clave: ClavePlantilla, plantilla: string, negoc
   const datos = { ...EJEMPLO, plantilla, negocio };
   if (clave === "listo") return mensajeListo({ ...datos, saldo: "350.00" });
   if (clave === "saldo") return mensajeSaldo({ ...datos, saldo: "350.00" });
-  if (clave === "cotizacion") return mensajeCotizacion({ ...datos, numero: "2026-0042", enlace: "https://toctardetailing.com/c/…" });
+  if (clave === "cotizacion") return mensajeCotizacion({ ...datos, numero: "2026-0042", enlace: "(el enlace a la cotización)" });
   return mensajeMantenimiento({ ...datos, servicio: "Nano cerámico" });
 }

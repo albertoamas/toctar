@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { MenuMas, type AccionMas } from "@/componentes/panel/menu-mas";
 
@@ -24,8 +25,14 @@ const OTRO_TOQUE = "El PDF está listo: vuelve a elegir «Compartir el PDF».";
 
 /** Compartir el PDF con el menú del teléfono: baja el archivo (una vez) y abre el menú. */
 function useCompartirPdf({ ruta, nombre, titulo }: Props) {
-  // El PDF bajado se guarda solo para el segundo toque; después de compartir se suelta
+  // El PDF bajado se guarda solo para el segundo toque, un minuto como mucho (después podría ser otro); compartido, se suelta
   const archivo = useRef<File | null>(null);
+  const soltar = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const guardar = (f: File | null) => {
+    if (soltar.current) clearTimeout(soltar.current);
+    archivo.current = f;
+    if (f) soltar.current = setTimeout(() => (archivo.current = null), 60_000);
+  };
   const [ocupado, setOcupado] = useState(false);
 
   async function compartir() {
@@ -41,17 +48,19 @@ function useCompartirPdf({ ruta, nombre, titulo }: Props) {
     try {
       setOcupado(true);
       if (!archivo.current) {
-        const respuesta = await fetch(`${ruta}?para=compartir`);
+        // El menú ya se cerró: mientras baja, un aviso dice que está en camino
+        toast.loading("Preparando el PDF…", { id: ruta });
+        const respuesta = await fetch(`${ruta}?para=compartir`).finally(() => toast.dismiss(ruta));
         // Con la sesión vencida, la ruta lleva a la pantalla de ingreso y llega una página, no el PDF
         if (!respuesta.ok || respuesta.headers.get("content-type") !== "application/pdf") {
           avisarResultado({ mensaje: respuesta.status === 404 ? "Ese PDF ya no está. Usa «Generar PDF»." : "No se pudo traer el PDF. Recarga la página; si sigue, vuelve a ingresar." });
           return;
         }
-        archivo.current = new File([await respuesta.blob()], nombre, { type: "application/pdf" });
+        guardar(new File([await respuesta.blob()], nombre, { type: "application/pdf" }));
         bajadoAhora = true;
       }
-      await navigator.share({ files: [archivo.current], title: titulo });
-      archivo.current = null;
+      await navigator.share({ files: [archivo.current!], title: titulo });
+      guardar(null);
     } catch (error) {
       const nombreError = error instanceof DOMException ? error.name : "";
       // Cerró el menú sin elegir: no es un error
@@ -59,7 +68,7 @@ function useCompartirPdf({ ruta, nombre, titulo }: Props) {
       // Pasó demasiado tiempo desde el toque mientras bajaba: el archivo ya está y elegirlo de nuevo lo abre al instante.
       // Solo una vez: si también falla al instante, el navegador no lo permite
       if (nombreError === "NotAllowedError" && bajadoAhora) return avisarResultado({ ok: true, mensaje: OTRO_TOQUE });
-      archivo.current = null;
+      guardar(null);
       avisarResultado({ mensaje: NO_SE_PUDO });
     } finally {
       setOcupado(false);

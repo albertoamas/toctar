@@ -33,6 +33,7 @@ Fuera: el envío automático (lo hace una persona), avisar cuando el cliente lo 
   - **aceptada**: entrega el PDF siempre (el cliente puede querer verla después);
   - **vencida** (vigente pasada su fecha): una página "Esta cotización venció el …" con el WhatsApp del negocio;
   - **reemplazada**: una página "Esta cotización tiene una versión nueva" con el WhatsApp del negocio;
+  - **rechazada** (la consulta, perdida): una página "Esta cotización ya no está vigente";
   - **un código que no existe**: la página de no encontrada del sitio.
 - **Sin precios en el sitio público:** el enlace no es una página del sitio ni se enlaza desde él. Es el documento que se le manda al cliente.
 
@@ -43,7 +44,7 @@ Fuera: el envío automático (lo hace una persona), avisar cuando el cliente lo 
 
 ## 5. Pantallas y rutas
 
-- **`GET /c/[codigo]`** (`src/app/c/[codigo]/route.ts`), pública:
+- **`GET /c/[codigo]`** (`src/app/(sitio)/c/[codigo]/route.ts`), pública:
   - si vale, el PDF en línea, con `Content-Disposition: inline` y su nombre;
   - si no, redirige a `/c/[codigo]/no-vigente`.
 - **`/c/[codigo]/no-vigente`**: una página del sitio (fondo oscuro, la marca) que dice por qué ya no vale, con "Escribir por WhatsApp" al negocio. Sin datos del cliente ni montos.
@@ -56,7 +57,7 @@ Fuera: el envío automático (lo hace una persona), avisar cuando el cliente lo 
 
 ## 6. Acciones del servidor
 
-No hay acciones nuevas: el enlace se arma al dibujar la ficha, que ya exige el permiso "Cotizaciones" (`exigirAccion("cotizar")` en la página).
+No hay acciones nuevas: el enlace se arma al dibujar la ficha (`exigirModulo("cotizaciones")`), solo para quien puede cotizar (`puede(usuario, "cotizar")`). El PDF lo entrega `respuestaPdfPrivado` (`src/lib/almacenamiento.ts`), el mismo de "Compartir el PDF".
 
 ## 7. Componentes y diseño
 
