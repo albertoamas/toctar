@@ -8,7 +8,7 @@ import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { AvisarPorWhatsApp } from "@/componentes/panel/avisar-whatsapp";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { Cargando } from "@/componentes/panel/cargando";
-import { FilaDato, FilaEnlace } from "@/componentes/panel/datos-en-bloques";
+import { FilaCliente, FilaDato, FilaEnlace } from "@/componentes/panel/datos-en-bloques";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { BOTON_PASO, PasoSiguiente } from "@/componentes/panel/paso-siguiente";
@@ -19,7 +19,7 @@ import { buttonVariants } from "@/componentes/ui/button";
 import { diaYHora, fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/lib/fechas";
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
-import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
+import { enlaceWhatsApp } from "@/lib/whatsapp";
 import { pasoDelTrabajo } from "@/modulos/agenda/pasos";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
@@ -206,17 +206,10 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
                   <span className="font-semibold">{o.espacio}</span>
                 </FilaDato>
               </dl>
-              <FilaEnlace href={verFicha ? conDesde(`/panel/clientes/${o.clienteId}`, desdeAqui) : null} oculto="Ver ficha del cliente: ">
-                <FilaDato etiqueta="Cliente" como="span" enEnlace={verFicha}>
-                  <span className="font-semibold">{o.cliente}</span>
-                  <span className="text-sm text-tinta-suave">{formatearWhatsApp(o.telefono)}</span>
-                </FilaDato>
-              </FilaEnlace>
-              <div className="px-4 py-3">
-                <FilaDato etiqueta="Vehículo" como="span">
-                  {valorVehiculo(detalle, o.tamano)}
-                </FilaDato>
-              </div>
+              <FilaCliente href={verFicha ? conDesde(`/panel/clientes/${o.clienteId}`, desdeAqui) : null} nombre={o.cliente} telefono={o.telefono} />
+              <dl className="px-4 py-3">
+                <FilaDato etiqueta="Vehículo">{valorVehiculo(detalle, o.tamano)}</FilaDato>
+              </dl>
               {/* Cuándo ingresó y quién lo recibió ya está en el historial ("Vehículo recibido.", pedido 45) */}
               {verAgenda && (
                 <FilaEnlace href={conDesde(`/panel/agenda/${o.id}`, desdeAqui)}>

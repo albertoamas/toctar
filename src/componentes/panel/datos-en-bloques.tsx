@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronRightIcon } from "lucide-react";
+import { formatearWhatsApp } from "@/lib/whatsapp";
 
 // La tarjeta "Datos" de una ficha de trabajo, en bloques separados por una línea (pulido 13.49, en la orden; 13.50, en la
 // cotización): cada bloque con sus filas de etiqueta y valor, y lo que lleva a otra pantalla (la ficha del cliente, la
@@ -43,5 +44,20 @@ export function FilaEnlace({ href, oculto, children }: { href: string | null; /*
       </span>
       <ChevronRightIcon aria-hidden className="size-4 shrink-0 text-tinta-suave" />
     </Link>
+  );
+}
+
+/**
+ * El cliente de una ficha de trabajo: su nombre y su WhatsApp, como una fila que lleva a su ficha. `href` null: quien mira
+ * no tiene Clientes, y la fila se ve pero no lleva a ningún lado.
+ */
+export function FilaCliente({ href, nombre, telefono }: { href: string | null; nombre: string; telefono: string }) {
+  return (
+    <FilaEnlace href={href} oculto="Ver ficha del cliente: ">
+      <FilaDato etiqueta="Cliente" como="span" enEnlace={href !== null}>
+        <span className="font-semibold">{nombre}</span>
+        <span className="text-sm text-tinta-suave">{formatearWhatsApp(telefono)}</span>
+      </FilaDato>
+    </FilaEnlace>
   );
 }
