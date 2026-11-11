@@ -1,7 +1,8 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { consultar, cotizarEnPantalla, crearClienteEnBase, ingresarComoDueno } from "./apoyo";
 
-// HU-27 Compartir el PDF (flujo crítico 1). Especificación: docs/08-desarrollo/etapas/P23-cotizacion-directa.md §9.
+// HU-27 Compartir el PDF (flujo crítico 1). Especificación: docs/08-desarrollo/etapas/P23-cotizacion-directa.md §9; desde
+// el pedido 47, en el "⋯" del PDF (P47-enviar-cotizacion.md).
 // El menú de compartir del teléfono no se puede abrir en una prueba: se reemplaza navigator.share por uno que anota lo
 // que recibe. En serie: las del dueño entran con el mismo usuario y, a la vez, chocaban con el límite de intentos.
 test.describe.configure({ mode: "serial" });
@@ -54,11 +55,17 @@ async function simularCompartir(page: Page, rechazar: "nunca" | "primero" | "sie
 
 const compartido = (page: Page) => page.evaluate(() => (window as unknown as { __compartido?: Compartido }).__compartido);
 
+/** Pedido 47: compartir el archivo va en el "⋯" del PDF (lo de todos los días es "Enviar por WhatsApp"). */
+async function compartirDesdeElMenu(page: Page) {
+  await page.getByRole("button", { name: "Opciones del PDF" }).click();
+  await page.getByRole("menuitem", { name: "Compartir el PDF" }).click();
+}
+
 test("con el menú del teléfono, comparte el PDF con su nombre", async ({ page }, info) => {
   await simularCompartir(page);
   await ingresarComoDueno(page);
   const numero = await cotizada(page, info, 1);
-  await page.getByRole("button", { name: "Compartir" }).click();
+  await compartirDesdeElMenu(page);
   await expect.poll(() => compartido(page)).toMatchObject({
     nombre: `Cotizacion-${numero}.pdf`,
     tipo: "application/pdf",
@@ -66,15 +73,16 @@ test("con el menú del teléfono, comparte el PDF con su nombre", async ({ page 
     titulo: `Cotización ${numero}`,
   });
   expect((await compartido(page))!.tamano).toBeGreaterThan(20_000);
-  await expect(page.getByRole("button", { name: "Compartir" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Opciones del PDF" })).toBeEnabled();
 });
 
-test("si el teléfono pide otro toque, el segundo lo comparte", async ({ page }, info) => {
+test("si el teléfono pide otro toque, elegirlo de nuevo lo comparte", async ({ page }, info) => {
   await simularCompartir(page, "primero");
   await ingresarComoDueno(page);
   const numero = await cotizada(page, info, 2);
-  await page.getByRole("button", { name: "Compartir" }).click();
-  await page.getByRole("button", { name: "Compartir ahora" }).click();
+  await compartirDesdeElMenu(page);
+  await expect(page.getByText("El PDF está listo: vuelve a elegir «Compartir el PDF».")).toBeVisible();
+  await compartirDesdeElMenu(page);
   await expect.poll(() => compartido(page)).toMatchObject({ nombre: `Cotizacion-${numero}.pdf`, inicio: "%PDF-" });
 });
 
@@ -82,10 +90,11 @@ test("si el teléfono no lo permite ni al segundo toque, avisa y no queda trabad
   await simularCompartir(page, "siempre");
   await ingresarComoDueno(page);
   await cotizada(page, info, 4);
-  await page.getByRole("button", { name: "Compartir" }).click();
-  await page.getByRole("button", { name: "Compartir ahora" }).click();
-  await expect(page.getByText("No se pudo compartir el PDF. Descárgalo desde «⋯» y mándalo desde WhatsApp.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Compartir", exact: true })).toBeEnabled();
+  await compartirDesdeElMenu(page);
+  await expect(page.getByText("El PDF está listo: vuelve a elegir «Compartir el PDF».")).toBeVisible();
+  await compartirDesdeElMenu(page);
+  await expect(page.getByText("No se pudo compartir el PDF. Usa «Descargar PDF» y mándalo desde WhatsApp.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Opciones del PDF" })).toBeEnabled();
 });
 
 test("sin menú de compartir archivos, lo descarga", async ({ page }, info) => {
@@ -96,6 +105,6 @@ test("sin menú de compartir archivos, lo descarga", async ({ page }, info) => {
   await ingresarComoDueno(page);
   const numero = await cotizada(page, info, 3);
   const descarga = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Compartir" }).click();
+  await compartirDesdeElMenu(page);
   expect((await descarga).suggestedFilename()).toBe(`Cotizacion-${numero}.pdf`);
 });

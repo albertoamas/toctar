@@ -71,11 +71,16 @@ test("al guardar se genera el PDF; se ve, se descarga con su nombre y una versi�
   expect(nuevo.r.headers()["content-disposition"]).toBe(`inline; filename="Cotizacion-${v1.numero}-v2.pdf"`);
   expect(huella(nuevo.cuerpo)).not.toBe(antes);
   expect(huella((await bajarPdf(page.request, consultaId, v1.id)).cuerpo)).toBe(antes);
-  // Las dos versiones muestran su PDF en la ficha y se descargan desde su "⋯"; compartir, solo la que vale (pulido 13.50)
+  // Las dos versiones muestran su PDF en la ficha y se descargan desde su "⋯"; enviar y compartir, solo la que vale
+  // (pulido 13.50, pedido 47)
   await expect(page.getByRole("link", { name: "Ver PDF" })).toHaveCount(2);
-  await expect(page.getByRole("button", { name: "Compartir" })).toHaveCount(1);
+  await expect(page.getByRole("link", { name: "Enviar por WhatsApp" })).toHaveCount(1);
   await page.getByRole("button", { name: "Opciones del PDF de la versión 2" }).click();
+  await expect(page.getByRole("menuitem", { name: "Compartir el PDF" })).toBeVisible();
   await expect(page.getByRole("menuitem", { name: "Descargar PDF" })).toHaveAttribute("href", `/panel/cotizaciones/${consultaId}/pdf/${v2.id}?descargar=1`);
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Opciones del PDF de la versión 1" }).click();
+  await expect(page.getByRole("menuitem")).toHaveText(["Descargar PDF"]);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("button", { name: /^Opciones del PDF/ })).toHaveCount(2);
   // Un enlace de antes del pedido 23 (/cotizaciones/<versión>/pdf) lleva al de ahora

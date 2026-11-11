@@ -212,6 +212,8 @@ export type FilaVersion = {
   tienePdf: boolean;
   /** Quién la cotizó (pulido 13.50: lo dice cada versión, en vez de "Registrada por" en Datos). */
   autor: string;
+  /** El código del enlace para el cliente (pedido 47): `/c/<enlace>`. */
+  enlace: string;
   /**
    * Lo cotizado, en su orden (pedido 26: se ve en la ficha, como en el PDF), con el servicio y su opción por separado
    * para mostrarla en gris debajo (como en la orden). Vacío en una reemplazada.
@@ -234,6 +236,7 @@ async function versionesDeCotizacion(consultaId: number): Promise<FilaVersion[]>
       esEstimado: cotizacion.esEstimado,
       pdf: cotizacion.pdfArchivoId,
       autor: usuario.name,
+      enlace: cotizacion.enlace,
     })
     .from(cotizacion)
     .innerJoin(usuario, eq(cotizacion.createdBy, usuario.id))
@@ -452,6 +455,9 @@ export type DetalleCotizacion = {
   sinFecha: boolean;
   motivoPerdida: MotivoPerdida | null;
   detallePerdida: string | null;
+  /** Para nombrar el vehículo en el mensaje de WhatsApp (pedido 47). */
+  marca: string | null;
+  modelo: string | null;
   versiones: FilaVersion[];
 };
 
@@ -486,6 +492,8 @@ export async function obtenerCotizacion(id: number): Promise<DetalleCotizacion |
   const { marca, modelo, anio, color, ...datos } = c;
   return {
     ...datos,
+    marca,
+    modelo,
     numero: versiones[0].numero,
     detalle: detalleVehiculo({ marca, modelo, anio, color }),
     versiones,

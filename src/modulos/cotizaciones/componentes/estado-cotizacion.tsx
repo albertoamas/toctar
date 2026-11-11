@@ -28,9 +28,11 @@ type Props = {
   nuevaVersion: Route | null;
   /** "rechazar": una pendiente; "reabrir": una rechazada; los dos: una aceptada sin fecha. */
   cambios: ("rechazar" | "reabrir")[];
+  /** El chat del cliente sin mensaje, cuando una versión ya lleva "Enviar por WhatsApp" (un solo WhatsApp a la vista, C6). */
+  escribir: string | null;
 };
 
-export function MasCotizacion({ id, nuevaVersion, cambios }: Props) {
+export function MasCotizacion({ id, nuevaVersion, cambios, escribir }: Props) {
   const router = useRouter();
   const [abierta, setAbierta] = useState<"rechazar" | "reabrir" | null>(null);
   const cerrar = (abierto: boolean) => !abierto && setAbierta(null);
@@ -38,6 +40,7 @@ export function MasCotizacion({ id, nuevaVersion, cambios }: Props) {
   if (nuevaVersion) acciones.push({ texto: "Nueva versión", alElegir: () => router.push(nuevaVersion) });
   if (cambios.includes("rechazar")) acciones.push({ texto: "Rechazar", alElegir: () => setAbierta("rechazar") });
   if (cambios.includes("reabrir")) acciones.push({ texto: "Volver a pendiente", alElegir: () => setAbierta("reabrir") });
+  if (escribir) acciones.push({ texto: "Escribir por WhatsApp", href: escribir });
   if (acciones.length === 0) return null;
   return (
     <>

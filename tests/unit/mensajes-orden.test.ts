@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { diaYHora, fechaCorta, textoHace } from "@/lib/fechas";
 import { nombreVehiculo, primerNombre, vehiculoEnLista } from "@/modulos/clientes/reglas";
 import { PLANTILLAS } from "@/modulos/configuracion/plantillas";
-import { mensajeListo, mensajeSaldo, textoVehiculo } from "@/modulos/ordenes/mensajes";
+import { mensajeCotizacion, mensajeListo, mensajeSaldo, textoVehiculo } from "@/modulos/ordenes/mensajes";
 
 // C4 (HU-35, RF-48): el mensaje de "listo" lleva nombre, vehículo y, si hay y quien avisa lo ve, el saldo. Con la
 // plantilla original de la HU-40 da el mismo texto que antes de que fuera editable (C5 §9).
@@ -54,4 +54,20 @@ test("fecha corta: sin el año si es de este año; el vehículo en una lista", (
   expect(fechaCorta("2025-10-15", "2026-10-24")).toBe("15/10/2025");
   expect(vehiculoEnLista({ marca: "Toyota", modelo: "Corolla", placa: "1234ABC" })).toBe("Toyota Corolla, 1234ABC");
   expect(vehiculoEnLista({ marca: null, modelo: null, placa: "1234ABC" })).toBe("1234ABC");
+});
+
+test("la cotización va con su número y su enlace; si la plantilla perdió el enlace, va al final (pedido 47)", () => {
+  const datos = {
+    negocio: "TocTar",
+    cliente: "Gabriela Soliz",
+    vehiculo: { marca: "Mazda", modelo: "3", placa: "3901MZD" },
+    numero: "2026-0006",
+    enlace: "https://toctardetailing.com/c/0123456789abcdef0123456789abcdef",
+  };
+  expect(mensajeCotizacion({ ...datos, plantilla: PLANTILLAS.cotizacion.original })).toBe(
+    "Hola Gabriela, te mandamos la cotización 2026-0006 de TocTar para tu Mazda 3 (placa 3901MZD): https://toctardetailing.com/c/0123456789abcdef0123456789abcdef",
+  );
+  expect(mensajeCotizacion({ ...datos, plantilla: "Hola {nombre}, aquí va tu cotización." })).toBe(
+    "Hola Gabriela, aquí va tu cotización. https://toctardetailing.com/c/0123456789abcdef0123456789abcdef",
+  );
 });

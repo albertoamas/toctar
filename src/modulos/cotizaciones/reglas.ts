@@ -171,3 +171,21 @@ export const nombreArchivoPdf = (numero: string, version: number) => `Cotizacion
 
 /** El PDF de una versión, dentro de su cotización (pedido 23): la ruta comprueba que la versión sea de esa cotización. */
 export const rutaPdf = (consultaId: number, versionId: number) => `/panel/cotizaciones/${consultaId}/pdf/${versionId}` as const;
+
+/** Pedido 47: la dirección del enlace que se le manda al cliente, para ver el PDF de una versión sin cuenta. */
+export const rutaEnlace = (codigo: string) => `/c/${codigo}`;
+
+/** Un código de enlace bien formado (32 hexadecimales): lo demás no se busca en la base. */
+export const esCodigoEnlace = (codigo: string) => /^[0-9a-f]{32}$/.test(codigo);
+
+export type EstadoEnlace = "vale" | "vencida" | "reemplazada";
+
+/**
+ * Pedido 47: si el enlace todavía muestra el PDF. Una aceptada, siempre (el cliente puede querer verla después); una
+ * vigente, hasta su fecha de validez inclusive (día de Bolivia); una reemplazada, nunca: tiene una versión nueva.
+ */
+export function estadoEnlace(estado: EstadoCotizacion, validaHasta: string, hoy: string): EstadoEnlace {
+  if (estado === "reemplazada") return "reemplazada";
+  if (estado === "aceptada") return "vale";
+  return validaHasta < hoy ? "vencida" : "vale";
+}

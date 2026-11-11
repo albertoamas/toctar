@@ -69,6 +69,7 @@ test("vale la guardada si la hay; si no, la original", () => {
   expect(plantillasVigentes([{ clave: "saldo", texto: "Debes {monto}" }])).toEqual({
     listo: PLANTILLAS.listo.original,
     saldo: "Debes {monto}",
+    cotizacion: PLANTILLAS.cotizacion.original,
     mantenimiento: PLANTILLAS.mantenimiento.original,
   });
 });
