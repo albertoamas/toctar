@@ -75,7 +75,8 @@ test("se revisa parte por parte: bien o con un detalle y su foto; sin revisar to
   await expect(techo.getByText("Con «Otro», cuenta qué es.")).toBeVisible();
   await techo.getByLabel("Nota").fill("Falta la antena");
   await techo.getByRole("button", { name: "Guardar detalle" }).click();
-  await expect(page.getByText("Detalle guardado.")).toBeVisible();
+  // El aviso del Capó puede seguir a la vista (dura 3 s): el nuevo es el último
+  await expect(page.getByText("Detalle guardado.").last()).toBeVisible();
   // Con el interruptor (pedido 26): "Bien" la pasa a bien de un toque, sin abrir el modal
   const bienTecho = page.getByRole("button", { name: "Bien: Techo" });
   await bienTecho.click();
