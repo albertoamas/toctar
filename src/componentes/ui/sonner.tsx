@@ -8,13 +8,14 @@ import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon
 // Abajo, en todos los tamaños: arriba caían sobre el encabezado. En la computadora tapaban "Reservar en Agenda" después de
 // "Aceptó" (pulido 13.23); en el celular, el botón de volver, que no se podía tocar mientras duraba el aviso (09/11, lo vio
 // hu-07). En el celular, abajo al centro y encima del botón fijo del pie cuando la pantalla lo tiene (`--alto-pie-movil`,
-// globals.css): así no tapa "Recibir vehículo", "Crear …" ni el pie de un modal. Desde 600 px (donde sonner deja de usar
-// `mobileOffset`), abajo a la derecha. Con un modal abierto en el celular, arriba: el modal sube desde abajo y el aviso
+// globals.css y pie-formulario.tsx): así no tapa "Recibir vehículo", "Crear …" ni el pie de un modal. Desde 640 px, donde
+// el pie deja de estar fijo abajo, abajo a la derecha (hasta el 10/11 era desde 600, donde sonner deja de usar
+// `mobileOffset`: entre 600 y 639 el aviso iba a la derecha sobre el pie fijo; ahora ahí se le pasa `offset` con el pie). Con un modal abierto en el celular, arriba: el modal sube desde abajo y el aviso
 // tapaba sus botones ("Agregar paso" después de crear un servicio, lo vio hu-11); arriba queda sobre la página oscurecida.
 // El de error se distingue por su color y su borde (globals.css, "Avisos flotantes") y dura más.
 let ancha: MediaQueryList | undefined
 /** Una sola consulta para toda la página, creada la primera vez que se pide (en el navegador). */
-const consultaAncha = () => (ancha ??= window.matchMedia("(min-width: 600px)"))
+const consultaAncha = () => (ancha ??= window.matchMedia("(min-width: 640px)"))
 
 function usePantallaAncha(): boolean {
   return useSyncExternalStore(
@@ -30,15 +31,19 @@ function usePantallaAncha(): boolean {
 /** En el celular, el aviso queda 16 px encima del pie fijo de la pantalla (o del borde, si no tiene). */
 const ENCIMA_DEL_PIE = "calc(16px + var(--alto-pie-movil, 0px))"
 
-/** Si hay un modal abierto: se mira el documento, porque los modales van en un portal fuera de este componente. */
+/**
+ * Si hay un modal abierto: se mira el documento, porque los modales van en un portal fuera de este componente. Uno que se
+ * está cerrando sigue un momento en la página (`data-closed`, su animación): no cuenta. Si contaba, el aviso de "Detalle
+ * guardado." se iba arriba, medio fuera de la pantalla (10/11).
+ */
 function useModalAbierto(): boolean {
   return useSyncExternalStore(
     (avisar) => {
       const observador = new MutationObserver(avisar)
-      observador.observe(document.body, { childList: true, subtree: true })
+      observador.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-closed", "data-open"] })
       return () => observador.disconnect()
     },
-    () => document.querySelector('[data-slot="dialog-content"]') !== null,
+    () => document.querySelector('[data-slot="dialog-content"]:not([data-closed])') !== null,
     () => false,
   )
 }
