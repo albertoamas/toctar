@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { cn } from "cn";
-import { ClipboardCheckIcon, WrenchIcon } from "lucide-react";
+import { ClipboardCheckIcon } from "lucide-react";
 import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { Cargando } from "@/componentes/panel/cargando";
@@ -68,21 +68,18 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
   const desdeAqui = aqui(`/panel/agenda/${r.id}`, parametros);
 
   const detalle = detalleVehiculo(r);
-  // El paso siguiente, uno solo, en el encabezado: recibir el vehículo desde su día de ingreso, o ir a la orden si ya se
-  // recibió. Reprogramar y cancelar, en "Más", mientras siga agendada
-  const principal =
-    puede(usuario, "recibir_vehiculo") && puedeRecibirse(r, hoy) ? (
-      // Enlace con forma de botón: lleva a la recepción, con el checklist
-      <Link href={conDesde(`/panel/ordenes/${r.id}/recibir`, desdeAqui)} className={cn(buttonVariants({ size: "paso" }), BOTON_PASO)}>
-        <ClipboardCheckIcon />
-        Recibir vehículo
-      </Link>
-    ) : orden && verOrdenes ? (
-      <Link href={conDesde(`/panel/ordenes/${r.id}`, sinElTrabajo(String(parametros.volver ?? ""), r.id))} className={cn(buttonVariants({ size: "paso" }), BOTON_PASO)}>
-        <WrenchIcon />
-        Ver la orden
-      </Link>
-    ) : null;
+  // Una pantalla por trabajo: recibido, quien ve las órdenes trabaja en la orden (lo que solo tenía la reserva, también
+  // está ahí). Quien no las ve (agenda y cobra) sigue aquí, para ver su saldo y cobrarlo
+  if (orden && verOrdenes) redirect(conDesde(`/panel/ordenes/${r.id}`, sinElTrabajo(String(parametros.volver ?? ""), r.id)));
+  // El paso siguiente, uno solo, en el encabezado: recibir el vehículo desde su día de ingreso. Reprogramar y cancelar, en
+  // "Más", mientras siga agendada
+  const principal = puede(usuario, "recibir_vehiculo") && puedeRecibirse(r, hoy) && (
+    // Enlace con forma de botón: lleva a la recepción, con el checklist
+    <Link href={conDesde(`/panel/ordenes/${r.id}/recibir`, desdeAqui)} className={cn(buttonVariants({ size: "paso" }), BOTON_PASO)}>
+      <ClipboardCheckIcon />
+      Recibir vehículo
+    </Link>
+  );
 
   // Pulido 13.51, como en la orden y la cotización: en bloques, de lo que se mira primero (cuándo y dónde) al cliente, una
   // fila que lleva a su ficha, y el vehículo; al pie y en chico, cuándo y quién la reservó (una reserva no tiene historial)
@@ -161,7 +158,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
       </EncabezadoPagina>
       {/* Los pasos del trabajo (pedido 31): una reserva sin cotización empieza en "Reservada"; una cancelada no avanza */}
       {!cancelada && <PasosTrabajo paso={pasoDelTrabajo({ trabajo: r.estado }) ?? 0} conCotizacion={r.consultaId !== null} />}
-      {/* El paso siguiente, grande debajo del encabezado (§3): recibir el vehículo, o ir a la orden si ya se recibió */}
+      {/* El paso siguiente, grande debajo del encabezado (§3): recibir el vehículo */}
       {principal && <PasoSiguiente>{principal}</PasoSiguiente>}
       {/* Solo mientras siga agendada: tras cancelarla (o en un enlace viejo) ya no corresponde */}
       {agendada && r.estado === "agendado" && (
