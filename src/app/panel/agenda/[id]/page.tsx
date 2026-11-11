@@ -9,11 +9,10 @@ import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Insignia } from "@/componentes/panel/insignia";
-import { ListaDatos } from "@/componentes/panel/lista-datos";
+import { FilaDato, FilaEnlace } from "@/componentes/panel/datos-en-bloques";
 import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
 import { BOTON_PASO, PasoSiguiente } from "@/componentes/panel/paso-siguiente";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
-import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaConDia, fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/lib/fechas";
@@ -27,7 +26,7 @@ import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reg
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { esOrden, puedeRecibirse } from "@/modulos/ordenes/reglas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
-import { filaVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
+import { valorVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 import { aqui, conDesde, sinElTrabajo, volverDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Reserva" };
@@ -85,50 +84,56 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
       </Link>
     ) : null;
 
+  // Pulido 13.51, como en la orden y la cotización: en bloques, de lo que se mira primero (cuándo y dónde) al cliente, una
+  // fila que lleva a su ficha, y el vehículo; al pie y en chico, cuándo y quién la reservó (una reserva no tiene historial)
+  // y su cotización como otra fila
+  const cotizacion = r.consultaId && r.cotizacion;
   const datos = (
-    <Seccion id="datos" titulo="Datos">
-      <div className="flex flex-col gap-2">
+    <Seccion id="datos" titulo="Datos" sinRelleno>
+      <div role="group" aria-label="Datos de la reserva" className="flex flex-col divide-y divide-border">
+        <dl className="flex flex-col gap-2 px-4 py-3">
+          <FilaDato etiqueta="Ingresa">
+            <span className="font-semibold">{formatearFecha(r.fechaInicio)}</span>
+            {r.horaIngreso && <span className="text-sm text-tinta-suave">{r.horaIngreso}</span>}
+          </FilaDato>
+          <FilaDato etiqueta="Entrega">
+            {unDia ? (
+              <span className="font-semibold">El mismo día</span>
+            ) : (
+              <>
+                <span className="font-semibold">{formatearFecha(r.fechaFin)}</span>
+                <span className="text-sm text-tinta-suave">aproximada</span>
+              </>
+            )}
+          </FilaDato>
+          <FilaDato etiqueta="Espacio">
+            <span className="font-semibold">{r.espacio}</span>
+          </FilaDato>
+        </dl>
+        <FilaEnlace href={verFicha ? conDesde(`/panel/clientes/${r.clienteId}`, desdeAqui) : null} oculto="Ver ficha del cliente: ">
+          <FilaDato etiqueta="Cliente" como="span" enEnlace={verFicha}>
+            <span className="font-semibold">{r.cliente}</span>
+            <span className="text-sm text-tinta-suave">{formatearWhatsApp(r.telefono)}</span>
+          </FilaDato>
+        </FilaEnlace>
         {/* La placa ya está en el título: el vehículo dice su modelo y su tamaño */}
-        <ListaDatos
-          filas={[
-            [
-              "Ingresa",
-              <span key="ingresa" className="flex flex-col">
-                <span className="font-semibold">{formatearFecha(r.fechaInicio)}</span>
-                {r.horaIngreso && <span className="text-sm text-tinta-suave">{r.horaIngreso}</span>}
-              </span>,
-            ],
-            ["Entrega", unDia ? "El mismo día" : `${formatearFecha(r.fechaFin)}, aproximada`],
-            ["Espacio", <span key="espacio" className="font-semibold">{r.espacio}</span>],
-            [
-              "Cliente",
-              <span key="cliente" className="flex flex-col">
-                <span className="font-semibold">{r.cliente}</span>
-                <span className="text-sm text-tinta-suave">{formatearWhatsApp(r.telefono)}</span>
-              </span>,
-            ],
-            filaVehiculo(detalle, r.tamano),
-            [
-              "Reservada",
-              <span key="reservada" className="flex flex-col">
-                <span>{formatearFechaHora(r.createdAt)}</span>
-                <span className="text-sm text-tinta-suave">por {r.agendadaPor}</span>
-              </span>,
-            ],
-          ]}
-        />
-        {/* Los enlaces, de 44 px y fuera de la lista: la ficha del cliente (con Clientes) y su cotización (con Cotizaciones) */}
-        {verFicha && (
-          <Link href={conDesde(`/panel/clientes/${r.clienteId}`, desdeAqui)} className={ENLACE_TEXTO}>
-            Ver ficha del cliente
-          </Link>
-        )}
-        {r.consultaId && r.cotizacion && verCotizacion && (
-          <Link href={conDesde(`/panel/cotizaciones/${r.consultaId}`, desdeAqui)} className={ENLACE_TEXTO}>
-            Ver la cotización {r.cotizacion.numero}
-            {r.cotizacion.version > 1 && `, versión ${r.cotizacion.version}`}
-          </Link>
-        )}
+        <dl className="px-4 py-3">
+          <FilaDato etiqueta="Vehículo">{valorVehiculo(detalle, r.tamano)}</FilaDato>
+        </dl>
+        <div className="flex flex-col">
+          <p className={cn("px-4 text-sm text-tinta-suave", cotizacion ? "pt-3" : "py-3")}>
+            Reservada el {formatearFechaHora(r.createdAt)}, por {r.agendadaPor}
+          </p>
+          {/* Sin Cotizaciones, no lleva a una cotización que no puede abrir */}
+          {cotizacion && (
+            <FilaEnlace href={verCotizacion ? conDesde(`/panel/cotizaciones/${r.consultaId}`, desdeAqui) : null}>
+              <span className="font-semibold">
+                {verCotizacion ? "Ver la cotización" : "Cotización"} {cotizacion.numero}
+                {cotizacion.version > 1 && `, versión ${cotizacion.version}`}
+              </span>
+            </FilaEnlace>
+          )}
+        </div>
       </div>
     </Seccion>
   );
