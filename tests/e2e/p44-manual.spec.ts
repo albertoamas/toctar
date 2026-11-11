@@ -30,6 +30,10 @@ test("el dueño lo abre desde el menú, con sus capturas y el PDF", async ({ pag
   const pdf = await page.request.get("/panel/manual/manual-del-panel-toctar.pdf");
   expect(pdf.status()).toBe(200);
   expect(pdf.headers()["content-type"]).toBe("application/pdf");
+  // Se revalida cada vez (pasa por la sesión) y no se baja de nuevo si no cambió
+  expect(pdf.headers()["cache-control"]).toBe("private, no-cache");
+  const igual = await page.request.get("/panel/manual/manual-del-panel-toctar.pdf", { headers: { "if-none-match": pdf.headers()["etag"] } });
+  expect(igual.status()).toBe(304);
   // "Volver al panel"
   await page.getByRole("link", { name: "Volver al panel" }).click();
   await expect(page).toHaveURL(/\/panel$/);
@@ -47,7 +51,7 @@ test("un encargado con el perfil Taller también lo abre", async ({ page }, info
 
 test("solo sirve sus propios archivos: nada fuera de la carpeta del manual", async ({ page }) => {
   await ingresarComoDueno(page);
-  for (const ruta of ["/panel/manual/..%2F..%2Fpackage.json", "/panel/manual/capturas/..%2F..%2F..%2F.env", "/panel/manual/otro.html", "/panel/manual/capturas/06-recibir.jpg/x"]) {
+  for (const ruta of ["/panel/manual/..%2F..%2Fpackage.json", "/panel/manual/capturas/..%2F..%2F..%2F.env", "/panel/manual/otro.html", "/panel/manual/capturas/06-recibir.jpg/x", "/panel/manual/logo.svg"]) {
     const r = await page.request.get(ruta);
     expect(r.status(), ruta).toBe(404);
   }

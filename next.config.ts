@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
   // Imagen de Docker chica: solo los archivos necesarios para correr (ver Dockerfile)
   output: "standalone",
   // El manual del panel (pedido 44) se lee de contenido/manual al servirlo: la imagen de Docker lo lleva con su ruta
-  outputFileTracingIncludes: { "/panel/manual/[[...archivo]]": ["./contenido/manual/**/*"] },
+  outputFileTracingIncludes: { "/panel/manual/**": ["./contenido/manual/**/*"] },
   // No anunciar la tecnología del servidor.
   poweredByHeader: false,
   // Solo en desarrollo (npm run dev): permite probar desde el celular por la red local (http://192.168.x.x:3000).
