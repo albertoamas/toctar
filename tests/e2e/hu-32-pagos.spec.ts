@@ -62,8 +62,9 @@ test("registrar un pago con comprobante, no pasar el saldo y anular con motivo",
   // La foto elegida no es un campo del formulario, pero perderla también se pregunta (C6, sistema-del-panel.md §4)
   await form.locator("#comprobante").setInputFiles({ name: "comprobante.png", mimeType: "image/png", buffer: PNG });
   await expect(form.getByRole("img", { name: "Foto del comprobante elegida" })).toBeVisible();
-  await form.getByRole("button", { name: "Cancelar" }).click();
-  const pregunta = page.getByRole("dialog", { name: "¿Salir sin guardar?" });
+  // Un cierre que puede ser sin querer (Escape) pregunta en el pie del mismo modal (pulido 13.48)
+  await page.keyboard.press("Escape");
+  const pregunta = page.locator("[data-pregunta-salir]");
   await pregunta.getByRole("button", { name: "Seguir editando" }).click();
   await expect(pregunta).toHaveCount(0);
   await form.getByRole("button", { name: "Quitar foto" }).click();
