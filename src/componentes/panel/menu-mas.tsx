@@ -11,8 +11,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 // No es menu-desplegable.tsx, que es la navegación del celular. `icono`: en una fila de una lista (cada pago), solo "⋯" sin
 // fondo, para no repetir "Más" en cada fila; su nombre para el lector dice de cuál es.
 
-/** Lo que hace al elegirla, o `href`: un enlace que se abre en otra pestaña (el chat de WhatsApp), que sigue siendo un enlace. */
-export type AccionMas = { texto: string } & ({ alElegir: () => void; href?: never } | { href: string; alElegir?: never });
+/**
+ * Lo que hace al elegirla, o `href`: un enlace que se abre en otra pestaña (el chat de WhatsApp), que sigue siendo un enlace.
+ * `descarga`: el enlace baja un archivo en la misma pestaña (el PDF de una cotización).
+ */
+export type AccionMas = { texto: string } & ({ alElegir: () => void; href?: never; descarga?: never } | { href: string; alElegir?: never; descarga?: boolean });
 
 type Props = {
   acciones: AccionMas[];
@@ -41,7 +44,7 @@ export function MenuMas({ acciones, deshabilitado = false, etiqueta, icono = fal
           <DropdownMenuItem
             key={a.texto}
             onClick={a.alElegir}
-            render={a.href ? <a href={a.href} target="_blank" rel="noreferrer" /> : undefined}
+            render={a.href ? a.descarga ? <a href={a.href} download /> : <a href={a.href} target="_blank" rel="noreferrer" /> : undefined}
             className="min-h-9 px-3 text-base pointer-coarse:min-h-11"
           >
             {a.texto}

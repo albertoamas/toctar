@@ -19,7 +19,7 @@ type Estado = "listo" | "bajando" | "compartiendo" | "falta-tocar";
 /** Si el navegador comparte PDF, sin bajar nada todavía: se pregunta con un archivo vacío del mismo tipo. */
 const comparteArchivos = (nombre: string) => !!navigator.canShare?.({ files: [new File([], nombre, { type: "application/pdf" })] });
 
-const NO_SE_PUDO = "No se pudo compartir el PDF. Usa «Descargar» y mándalo desde WhatsApp.";
+const NO_SE_PUDO = "No se pudo compartir el PDF. Descárgalo desde «⋯» y mándalo desde WhatsApp.";
 
 export function CompartirPdf({ ruta, nombre, titulo }: Props) {
   // El PDF bajado se guarda solo para el segundo toque; después de compartir se suelta

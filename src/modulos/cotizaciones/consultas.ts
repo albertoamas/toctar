@@ -8,7 +8,7 @@ import { preciosVigentes } from "@/modulos/catalogo/consultas";
 import { duracionEfectiva, type Monto } from "@/modulos/catalogo/reglas";
 import { detalleVehiculo, escaparLike, nombreVehiculo, normalizarBusqueda } from "@/modulos/clientes/reglas";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
-import { descripcionLinea, fechaValidez, precioSugerido, VISTAS, type Sugerencia, type Vista } from "./reglas";
+import { descripcionLinea, fechaValidez, partirDescripcion, precioSugerido, VISTAS, type Sugerencia, type Vista } from "./reglas";
 
 // Lecturas de las cotizaciones (pedido 23, P23-cotizacion-directa.md §5). Quien las llama ya pasó por
 // exigirModulo("cotizaciones"): el dueño o el encargado con ese permiso, que también cotiza (pedido 24, RN-12).
@@ -210,8 +210,13 @@ export type FilaVersion = {
   validaHasta: string;
   esEstimado: boolean;
   tienePdf: boolean;
-  /** Lo cotizado, en su orden (pedido 26: se ve en la ficha, como en el PDF). Vacío en una reemplazada. */
-  lineas: { descripcion: string; precio: string }[];
+  /** Quién la cotizó (pulido 13.50: lo dice cada versión, en vez de "Registrada por" en Datos). */
+  autor: string;
+  /**
+   * Lo cotizado, en su orden (pedido 26: se ve en la ficha, como en el PDF), con el servicio y su opción por separado
+   * para mostrarla en gris debajo (como en la orden). Vacío en una reemplazada.
+   */
+  lineas: { servicio: string; opcion: string | null; precio: string }[];
 };
 
 /** Las versiones de una cotización, de la más nueva a la más vieja, con sus líneas. */
@@ -228,8 +233,10 @@ async function versionesDeCotizacion(consultaId: number): Promise<FilaVersion[]>
       validaHasta: cotizacion.validaHasta,
       esEstimado: cotizacion.esEstimado,
       pdf: cotizacion.pdfArchivoId,
+      autor: usuario.name,
     })
     .from(cotizacion)
+    .innerJoin(usuario, eq(cotizacion.createdBy, usuario.id))
     .where(eq(cotizacion.consultaId, consultaId))
     .orderBy(desc(cotizacion.version), desc(cotizacion.id));
   // Las líneas, en una sola consulta y solo de las que las muestran: una reemplazada ya no vale y se ve solo su total
@@ -237,11 +244,14 @@ async function versionesDeCotizacion(consultaId: number): Promise<FilaVersion[]>
   const porVersion = new Map<number, FilaVersion["lineas"]>();
   if (conLineas.length > 0) {
     const lineas = await db
-      .select({ cotizacionId: cotizacionLinea.cotizacionId, descripcion: cotizacionLinea.descripcion, precio: cotizacionLinea.precio })
+      .select({ cotizacionId: cotizacionLinea.cotizacionId, descripcion: cotizacionLinea.descripcion, opcion: variante.nombre, precio: cotizacionLinea.precio })
       .from(cotizacionLinea)
+      .leftJoin(variante, eq(variante.id, cotizacionLinea.varianteId))
       .where(inArray(cotizacionLinea.cotizacionId, conLineas))
       .orderBy(asc(cotizacionLinea.orden), asc(cotizacionLinea.id));
-    for (const { cotizacionId, ...l } of lineas) porVersion.set(cotizacionId, [...(porVersion.get(cotizacionId) ?? []), l]);
+    for (const { cotizacionId, descripcion, opcion, precio } of lineas) {
+      porVersion.set(cotizacionId, [...(porVersion.get(cotizacionId) ?? []), { ...partirDescripcion(descripcion, opcion ?? ""), precio }]);
+    }
   }
   return filas.map(({ pdf, ...f }) => ({ ...f, tienePdf: pdf !== null, lineas: porVersion.get(f.id) ?? [] }));
 }
@@ -442,8 +452,6 @@ export type DetalleCotizacion = {
   sinFecha: boolean;
   motivoPerdida: MotivoPerdida | null;
   detallePerdida: string | null;
-  createdAt: Date;
-  registradaPor: string;
   versiones: FilaVersion[];
 };
 
@@ -466,14 +474,11 @@ export async function obtenerCotizacion(id: number): Promise<DetalleCotizacion |
         sinFecha,
         motivoPerdida: consulta.motivoPerdida,
         detallePerdida: consulta.detallePerdida,
-        createdAt: consulta.createdAt,
-        registradaPor: usuario.name,
       })
       .from(consulta)
       .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
       .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
       .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
-      .innerJoin(usuario, eq(consulta.createdBy, usuario.id))
       .where(eq(consulta.id, id)),
     versionesDeCotizacion(id),
   ]);

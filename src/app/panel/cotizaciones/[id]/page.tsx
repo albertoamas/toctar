@@ -9,15 +9,14 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Insignia } from "@/componentes/panel/insignia";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
-import { ENLACE_TEXTO } from "@/componentes/panel/enlace-texto";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { CabeceraSeccion, Seccion } from "@/componentes/panel/cabecera-seccion";
-import { ListaDatos } from "@/componentes/panel/lista-datos";
+import { FilaDato, FilaEnlace } from "@/componentes/panel/datos-en-bloques";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { BOTON_PASO, PasoSiguiente } from "@/componentes/panel/paso-siguiente";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
-import { formatearFecha, formatearFechaHora } from "@/lib/fechas";
+import { formatearFecha } from "@/lib/fechas";
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
@@ -38,7 +37,7 @@ export const metadata: Metadata = { title: "Cotización" };
 // siguiente de una pendiente es "Aceptó"; el de una aceptada sin fecha, "Reservar en Agenda" (Cotizaciones cotiza y la
 // Agenda reserva; el botón es un atajo a su formulario, solo para quien ve la Agenda). "Nueva versión", "Rechazar" y
 // "Volver a pendiente" van en "Más". C6: una ficha de 1024 px; el paso siguiente, grande debajo de los pasos (como en
-// Reserva y Orden, PasoSiguiente) y los datos con ListaDatos, como en ellas.
+// Reserva y Orden, PasoSiguiente) y los datos en bloques (`datos-en-bloques.tsx`), como en la orden.
 export default function PaginaCotizacion({ params, searchParams }: PageProps<"/panel/cotizaciones/[id]">) {
   return (
     <PaginaPanel tipo="ficha">
@@ -61,6 +60,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
   // Pedido 43: "Volver" a la pantalla de la que se vino; los enlaces que salen de aquí dicen que vienen de esta cotización
   const volver = volverDesde(parametros.volver, { href: "/panel/cotizaciones", texto: "Cotizaciones" }, usuario);
   const desdeAqui = aqui(`/panel/cotizaciones/${c.id}`, parametros);
+  const verFicha = puedeVerModulo(usuario, "clientes");
 
   const vigente = c.versiones.find((v) => v.estado === "enviada") ?? null;
   const pendiente = c.estado === "cotizado";
@@ -126,42 +126,26 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
 
       {/* En el celular, primero los datos (para quién es); en la computadora, el precio a la izquierda (es lo que decide)
           y los datos a la derecha (pedido 26). Título y tarjeta, a la misma distancia que en Seccion */}
-      <div className="grid items-start gap-8 @4xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <Seccion id="datos" titulo="Datos">
-          <div className="flex flex-col gap-2">
-            <ListaDatos
-              filas={[
-                [
-                  "Cliente",
-                  <span key="cliente" className="flex flex-col">
-                    <span className="font-semibold">{c.cliente}</span>
-                    <span className="text-sm text-tinta-suave">{formatearWhatsApp(c.telefono)}</span>
-                  </span>,
-                ],
-                [
-                  "Vehículo",
-                  // Como en Reserva y Orden, con la placa: aquí el título es el número de la cotización
-                  <span key="vehiculo" className="flex flex-col">
-                    <span className="font-semibold">{c.placa}</span>
-                    {c.detalle.length > 0 && <span>{c.detalle.join(" ")}</span>}
-                    <span className="text-sm text-tinta-suave">Tamaño: {c.tamano}</span>
-                  </span>,
-                ],
-                [
-                  "Registrada",
-                  <span key="registrada" className="flex flex-col">
-                    <span>{formatearFechaHora(c.createdAt)}</span>
-                    <span className="text-sm text-tinta-suave">por {c.registradaPor}</span>
-                  </span>,
-                ],
-              ]}
-            />
+      <div className="grid items-start gap-8 @4xl:grid-cols-[minmax(0,1fr)_24rem]">
+        {/* Pulido 13.50, como en la orden: en bloques, el cliente como una fila que lleva a su ficha. Cuándo y quién la
+            cotizó lo dice cada versión (la primera es la de cuando se registró) */}
+        <Seccion id="datos" titulo="Datos" sinRelleno>
+          <div role="group" aria-label="Datos de la cotización" className="flex flex-col divide-y divide-border">
             {/* El encargado puede tener Cotizaciones sin Clientes: entonces no enlaza a una ficha que no puede abrir */}
-            {puedeVerModulo(usuario, "clientes") && (
-              <Link href={conDesde(`/panel/clientes/${c.clienteId}`, desdeAqui)} className={ENLACE_TEXTO}>
-                Ver ficha del cliente
-              </Link>
-            )}
+            <FilaEnlace href={verFicha ? conDesde(`/panel/clientes/${c.clienteId}`, desdeAqui) : null} oculto="Ver ficha del cliente: ">
+              <FilaDato etiqueta="Cliente" como="span" enEnlace={verFicha}>
+                <span className="font-semibold">{c.cliente}</span>
+                <span className="text-sm text-tinta-suave">{formatearWhatsApp(c.telefono)}</span>
+              </FilaDato>
+            </FilaEnlace>
+            {/* Como en Reserva y Orden, con la placa: aquí el título es el número de la cotización */}
+            <dl className="px-4 py-3">
+              <FilaDato etiqueta="Vehículo">
+                <span className="font-semibold">{c.placa}</span>
+                {c.detalle.length > 0 && <span>{c.detalle.join(" ")}</span>}
+                <span className="text-sm text-tinta-suave">Tamaño: {c.tamano}</span>
+              </FilaDato>
+            </dl>
           </div>
         </Seccion>
 

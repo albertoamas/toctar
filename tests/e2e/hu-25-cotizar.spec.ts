@@ -172,7 +172,8 @@ test("cliente nuevo en tres pasos: sus datos completos, su vehículo, y los serv
   expect(registrado).toEqual({ correo: `nuevo${s.toLowerCase()}@ejemplo.com`, nit: "1234567", marca: "Nissan", color: "Negro" });
 
   // El cliente quedó registrado, con su vehículo y la cotización en su ficha
-  await page.getByRole("link", { name: "Ver ficha del cliente" }).click();
+  // El cliente es una fila que lleva a su ficha (pulido 13.50)
+  await page.getByRole("link", { name: /^Ver ficha del cliente: / }).click();
   await expect(page.getByRole("list", { name: "Vehículos", exact: true })).toContainText(`CN25${s}1`);
   await expect(page.getByRole("list", { name: "Cotizaciones" })).toContainText("600,50 Bs");
 });
@@ -327,7 +328,8 @@ test("pedido 24: el encargado con Cotizaciones cotiza y ve los montos; sin el pe
   await page.goto(`/panel/cotizaciones/${otra}`);
   await expect(page.getByRole("list", { name: "Versiones" })).toContainText("300 Bs");
   // Sin Clientes no se enlaza a la ficha
-  await expect(page.getByRole("link", { name: "Ver ficha del cliente" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /^Ver ficha del cliente/ })).toHaveCount(0);
+  await expect(page.getByRole("group", { name: "Datos de la cotización" })).toContainText("Cliente");
 
   await page.goto(`/panel/cotizaciones/nueva?cliente=${cliente}`, { waitUntil: "networkidle" });
   await aServicios(page);
