@@ -41,7 +41,7 @@ test("los beneficios van primero, con ícono, y las opciones de menor a mayor se
   await ingresarComoDueno(page);
   await page.goto("/panel/sitio/servicios");
   await page.getByRole("link", { name: /Pulido y nano cerámico/ }).click();
-  await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+$/);
+  await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+(?:[?&]volver=[^&#]*)?$/);
   const panel = page.url();
   // Empieza sin beneficios, aunque un intento anterior haya fallado a mitad de camino
   await page.getByRole("button", { name: "Editar beneficios" }).click();

@@ -185,7 +185,7 @@ export async function cotizarEnPantalla(page: Page, clienteId: number, servicio:
   await page.getByLabel("Servicio 1", { exact: true }).selectOption({ label: servicio });
   await page.getByRole("radio", { name: new RegExp(`^${modo}`) }).check();
   await page.getByRole("button", { name: "Crear cotización" }).click();
-  await expect(page).toHaveURL(/\/panel\/cotizaciones\/\d+\?creada=1$/);
+  await expect(page).toHaveURL(/\/panel\/cotizaciones\/\d+\?creada=1(?:[?&]volver=[^&#]*)?$/);
   return Number(new URL(page.url()).pathname.split("/").at(-1));
 }
 
@@ -241,7 +241,7 @@ export async function crearServicioPublicado(page: Page, nombre: string, resumen
   const nuevo = await abrirNuevoServicio(page);
   await nuevo.getByLabel("Nombre del servicio").fill(nombre);
   await nuevo.getByRole("button", { name: "Crear servicio" }).click();
-  await expect(page).toHaveURL(/\/panel\/catalogo\/\d+\?creado=1$/);
+  await expect(page).toHaveURL(/\/panel\/catalogo\/\d+\?creado=1(?:[?&]volver=[^&#]*)?$/);
   const id = page.url().match(/catalogo\/(\d+)/)![1];
   await page.goto(`/panel/sitio/servicios/${id}`);
   await page.getByRole("button", { name: "Editar resumen" }).click();
@@ -277,4 +277,13 @@ export async function cancelarConCambios(page: Page, modal: Locator): Promise<vo
   await modal.getByRole("button", { name: "Cancelar" }).click();
   await page.getByRole("dialog", { name: "¿Salir sin guardar?" }).getByRole("button", { name: "Salir sin guardar" }).click();
   await expect(modal).toHaveCount(0);
+}
+
+/**
+ * Un enlace con o sin la pantalla de origen (pedido 43, `?volver=`): para comprobar a dónde lleva sin depender de por
+ * dónde se entró.
+ */
+export function conVolver(href: string): RegExp {
+  const exacto = href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`^${exacto}(?:[?&]volver=[^&#]*)?$`);
 }

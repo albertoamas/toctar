@@ -22,7 +22,7 @@ test("una orden vuelve a la pantalla de la que se abrió, y sin origen (o con un
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?volver=`));
   await expect(volverA(page, "Cliente")).toHaveAttribute("href", `/panel/clientes/${clienteId}`);
   await volverA(page, "Cliente").click();
-  await expect(page).toHaveURL(new RegExp(`/panel/clientes/${clienteId}$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/clientes/${clienteId}(?:[?&]volver=[^&#]*)?$`));
 
   // Desde Inicio
   await page.goto(`/panel/ordenes/${id}?volver=%2Fpanel`);
@@ -47,7 +47,7 @@ test("una lista vuelve con su filtro y su búsqueda", async ({ page }, info) => 
   // Ya cargada: el esqueleto de carga tiene su propio "Volver", sin el origen
   await expect(volverA(page, "Órdenes")).toHaveAttribute("href", `/panel/ordenes?estado=listo&q=${placa}`);
   await volverA(page, "Órdenes").click();
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes\\?estado=listo&q=${placa}$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes\\?estado=listo&q=${placa}(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByRole("searchbox")).toHaveValue(placa);
 });
 

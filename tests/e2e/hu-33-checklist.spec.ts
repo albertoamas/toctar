@@ -108,7 +108,7 @@ test("se revisa parte por parte: bien o con un detalle y su foto; sin revisar to
 
   // Revisado todo, se recibe
   await form.getByRole("button", { name: "Recibir vehículo" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?recibido=1$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?recibido=1(?:[?&]volver=[^&#]*)?$`));
   const comoLlego = page.getByRole("region", { name: "Cómo llegó" });
   await expect(comoLlego.getByRole("list", { name: "Detalles de ingreso" }).getByRole("listitem")).toHaveCount(1);
   await expect(comoLlego).toContainText("Rayón largo al centro");
@@ -147,10 +147,10 @@ test("todas bien se recibe al primer toque; después de recibir el checklist no 
   await revisarChecklistEnBase(id);
   const form = page.getByRole("form", { name: "Recibir vehículo" });
   await form.getByRole("button", { name: "Recibir vehículo" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?recibido=1$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?recibido=1(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByRole("region", { name: "Cómo llegó" })).toContainText("Revisada parte por parte: todas bien.");
 
   // Ya recibida, la recepción lleva a la orden
   await page.goto(`/panel/ordenes/${id}/recibir`);
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}(?:[?&]volver=[^&#]*)?$`));
 });

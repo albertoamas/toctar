@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PNG } from "./apoyo";
+import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PNG, conVolver } from "./apoyo";
 
 // HU-30 Agendar reserva (flujo crítico 2). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §9.
 // Cada prueba usa sus propios días (lejos de hoy y distintos por proyecto) para no chocar con las demás en los
@@ -98,7 +98,7 @@ test("desde la cotización: la versión y la cotización quedan aceptadas, las l
   // El adelanto sugerido sale de Configuración (otra prueba lo cambia mientras esta corre): se usa el que trae
   const adelanto = Number(await page.getByLabel("Monto").inputValue());
   await page.getByRole("button", { name: "Reservar" }).click();
-  await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1$/);
+  await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1(?:[?&]volver=[^&#]*)?$/);
   await expect(page.getByText(/^Reservada para el/)).toBeVisible();
   const saldo = page.locator("dl").filter({ hasText: "Saldo" });
   await expect(saldo).toContainText("800 Bs");
@@ -256,7 +256,7 @@ test("reserva directa: cliente y vehículo registrados, servicio del catálogo c
   await espacio(page).selectOption({ index: 1 });
   await page.getByRole("checkbox", { name: "Sin adelanto" }).check();
   await page.getByRole("button", { name: "Reservar" }).click();
-  await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1$/);
+  await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1(?:[?&]volver=[^&#]*)?$/);
   await expect(page.getByRole("heading", { level: 1, name: `DI30${s}6` })).toBeVisible();
   await expect(page.getByText("Todavía no hay pagos.")).toBeVisible();
   await expect(page.locator("dl").filter({ hasText: "Saldo" })).toContainText("900 Bs");
@@ -278,7 +278,7 @@ test("el encargado con Agenda sin Pagos agenda sin montos ni adelanto; sin Agend
   await expect(espacio(page)).toBeEnabled();
   await espacio(page).selectOption({ index: 1 });
   await page.getByRole("button", { name: "Reservar" }).click();
-  await expect(page).toHaveURL(/\?agendada=1$/);
+  await expect(page).toHaveURL(/\?agendada=1(?:[?&]volver=[^&#]*)?$/);
   await expect(page.getByRole("heading", { name: "Saldo" })).toHaveCount(0);
   await expect(page.getByText("Saldo")).toHaveCount(0);
   const [{ pagos }] = await consultar<{ pagos: number }>("select count(*)::int as pagos from pago p join trabajo t on t.id = p.trabajo_id where t.cotizacion_id = $1", [cotizacionId]);
@@ -304,7 +304,7 @@ test("«Cambiar» vuelve a elegir el cliente sin perder el día y el espacio que
   const clienteId = await crearClienteEnBase({ nombre: `Cambia cliente ${s}`, telefono: telefono(info, 9), placa: `CC30${s}9` });
   await ingresarComoDueno(page);
   await page.goto(`/panel/agenda/nueva?fecha=2030-01-02&espacio=1&cliente=${clienteId}`);
-  await expect(page.getByRole("link", { name: "Cambiar cliente" })).toHaveAttribute("href", "/panel/agenda/nueva?fecha=2030-01-02&espacio=1");
+  await expect(page.getByRole("link", { name: "Cambiar cliente" })).toHaveAttribute("href", conVolver("/panel/agenda/nueva?fecha=2030-01-02&espacio=1"));
 });
 
 test("con varios vehículos se elige uno en su paso, y «Cambiar vehículo» vuelve a él (pedido 41)", async ({ page }, info) => {
@@ -323,6 +323,6 @@ test("con varios vehículos se elige uno en su paso, y «Cambiar vehículo» vue
   await expect(page).toHaveURL(new RegExp(`vehiculo=${segundo}$`));
   await expect(pasoActual(page)).toHaveText("Servicios");
   await expect(page.getByRole("region", { name: "Reserva para" })).toContainText(`DB30${s}0`);
-  await expect(page.getByRole("link", { name: "Cambiar vehículo" })).toHaveAttribute("href", `/panel/agenda/nueva?cliente=${clienteId}`);
+  await expect(page.getByRole("link", { name: "Cambiar vehículo" })).toHaveAttribute("href", conVolver(`/panel/agenda/nueva?cliente=${clienteId}`));
 });
 

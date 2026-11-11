@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
+import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, conVolver } from "./apoyo";
 
 // Pedido 31: un trabajo, de la cotización a la entrega (etapas/P31-flujo-de-un-trabajo.md §9). Cotizaciones cotiza y la
 // Agenda reserva: "Aceptó", "Por reservar", la Nueva reserva que ofrece las cotizaciones del cliente y los pasos.
@@ -67,7 +67,7 @@ async function reservar(page: Page, dia: string) {
   const sinAdelanto = page.getByRole("checkbox", { name: "Sin adelanto" });
   if (await sinAdelanto.count()) await sinAdelanto.check();
   await page.getByRole("button", { name: "Reservar" }).click();
-  await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1$/);
+  await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1(?:[?&]volver=[^&#]*)?$/);
 }
 
 test("«Aceptó» la deja en Por reservar de la Agenda; desde ahí se reserva y «Volver» lleva a la Agenda", async ({ page }, info) => {
@@ -84,7 +84,7 @@ test("«Aceptó» la deja en Por reservar de la Agenda; desde ahí se reserva y 
   await expect(page.getByRole("main").getByText("Sin fecha", { exact: true })).toBeVisible();
   await expect(pasoActual(page)).toContainText("Aceptada");
   // El atajo, a la reserva de la Agenda
-  await expect(page.getByRole("link", { name: "Reservar en Agenda" })).toHaveAttribute("href", `/panel/agenda/nueva?cotizacion=${c.cotizacionId}`);
+  await expect(page.getByRole("link", { name: "Reservar en Agenda" })).toHaveAttribute("href", new RegExp(`^/panel/agenda/nueva\\?cotizacion=${c.cotizacionId}&volver=`));
   // El aviso no tapa el atajo (pulido 13.23): en la computadora va abajo a la derecha (antes caía encima y, con el mouse
   // sobre él, no se iba); en el celular va arriba, y el atajo, grande debajo de los pasos (C6), tampoco queda debajo
   {
@@ -109,9 +109,9 @@ test("«Aceptó» la deja en Por reservar de la Agenda; desde ahí se reserva y 
   await page.goto("/panel");
   const aceptadas = page.getByRole("link").filter({ hasText: "Cotización aceptada de" });
   await expect(aceptadas.first()).toContainText("Reservar");
-  await expect(aceptadas.first()).toHaveAttribute("href", /^\/panel\/agenda\/nueva\?cotizacion=\d+$/);
+  await expect(aceptadas.first()).toHaveAttribute("href", /^\/panel\/agenda\/nueva\?cotizacion=\d+(?:&volver=[^&#]*)?$/);
   const enInicio = aceptadas.filter({ hasText: c.cliente });
-  if ((await enInicio.count()) > 0) await expect(enInicio).toHaveAttribute("href", `/panel/agenda/nueva?cotizacion=${c.cotizacionId}`);
+  if ((await enInicio.count()) > 0) await expect(enInicio).toHaveAttribute("href", conVolver(`/panel/agenda/nueva?cotizacion=${c.cotizacionId}`));
   else await expect(page.getByRole("link").filter({ hasText: "aceptadas sin fecha más" })).toHaveAttribute("href", "/panel/agenda");
 
   // En la Agenda, en "Por reservar", con el total para quien ve montos
@@ -120,7 +120,7 @@ test("«Aceptó» la deja en Por reservar de la Agenda; desde ahí se reserva y 
   const fila = porReservar.getByRole("link").filter({ hasText: c.cliente });
   await expect(fila).toContainText("700 Bs");
   await fila.click();
-  await expect(page).toHaveURL(new RegExp(`cotizacion=${c.cotizacionId}$`));
+  await expect(page).toHaveURL(new RegExp(`cotizacion=${c.cotizacionId}&volver=%2Fpanel%2Fagenda$`));
   await expect(page.getByRole("main").getByRole("link", { name: "Volver a Agenda" })).toHaveAttribute("href", "/panel/agenda");
   await reservar(page, dia);
   // El aviso flotante dice qué pasó, y no se repite al recargar
@@ -182,9 +182,9 @@ test("Nueva reserva ofrece las cotizaciones del vehículo: los precios llegan si
   await expect(page.getByText("Agrega al menos un servicio.")).toBeVisible();
   await suyas.getByRole("link").click();
   // Va al último paso de la reserva, con "Cambiar servicios" para volver a elegir (pedido 41)
-  await expect(page).toHaveURL(new RegExp(`cotizacion=${c.cotizacionId}&cliente=${c.clienteId}&vehiculo=${c.vehiculoId}$`));
+  await expect(page).toHaveURL(new RegExp(`cotizacion=${c.cotizacionId}&cliente=${c.clienteId}&vehiculo=${c.vehiculoId}(?:&volver=[^&#]*)?$`));
   await expect(page.getByRole("navigation", { name: "Pasos de la reserva" }).locator('[aria-current="step"]')).toHaveText("Fecha y adelanto");
-  await expect(page.getByRole("link", { name: "Cambiar servicios" })).toHaveAttribute("href", `/panel/agenda/nueva?cliente=${c.clienteId}&vehiculo=${c.vehiculoId}`);
+  await expect(page.getByRole("link", { name: "Cambiar servicios" })).toHaveAttribute("href", conVolver(`/panel/agenda/nueva?cliente=${c.clienteId}&vehiculo=${c.vehiculoId}`));
   await expect(page.getByRole("region", { name: new RegExp(`^Cotización ${c.numero}`) })).toContainText("700 Bs");
   await reservar(page, dia);
   const [r] = await consultar<{ lineas: number; con: string }>(

@@ -77,14 +77,14 @@ test("el dueño ve los números del día, lo que llega (y el atrasado), las entr
   await expect(resumen(page).getByRole("link", { name: /^Por cobrar [\d.,]+ Bs/ })).toBeVisible();
   await expect(page.getByRole("region", { name: "Para atender" }).getByRole("link", { name: /mantenimientos? vencidos?/ })).toBeVisible();
   // Sus dos tareas de todos los días
-  await expect(page.getByRole("link", { name: "Nueva reserva" })).toHaveAttribute("href", "/panel/agenda/nueva");
-  await expect(page.getByRole("link", { name: "Nueva cotización" })).toHaveAttribute("href", "/panel/cotizaciones/nueva");
+  await expect(page.getByRole("link", { name: "Nueva reserva" })).toHaveAttribute("href", "/panel/agenda/nueva?volver=%2Fpanel");
+  await expect(page.getByRole("link", { name: "Nueva cotización" })).toHaveAttribute("href", "/panel/cotizaciones/nueva?volver=%2Fpanel");
 
   await fila(placas.hoy).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/agenda/${ids.hoy}$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/agenda/${ids.hoy}(?:[?&]volver=[^&#]*)?$`));
   await page.goto("/panel");
   await fila(placas.entrega).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${ids.entrega}$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${ids.entrega}(?:[?&]volver=[^&#]*)?$`));
 });
 
 test("un encargado solo con Agenda ve solo lo que llega, sin montos; el perfil Taller, también el taller", async ({ page }, info) => {

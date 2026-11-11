@@ -44,7 +44,7 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
   const recepcion = page.getByRole("form", { name: "Recibir vehículo" });
   await revisarChecklistEnBase(id);
   await recepcion.getByRole("button", { name: "Recibir vehículo" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?recibido=1$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?recibido=1(?:[?&]volver=[^&#]*)?$`));
 
   // 2. Un chico del taller (perfil Taller) la trabaja y la marca lista
   await page.context().clearCookies();
@@ -85,7 +85,7 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
   // El cliente firma que lo recibe conforme (pedido 13)
   await firmarEnRecuadro(page);
   await page.getByRole("form", { name: "Entregar vehículo" }).getByRole("button", { name: "Entregar vehículo" }).click();
-  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?entregado=1$`));
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?entregado=1(?:[?&]volver=[^&#]*)?$`));
   const [{ recordatorioId }] = await consultar<{ recordatorioId: number }>('select id as "recordatorioId" from recordatorio_mantenimiento where trabajo_origen_id = $1', [id]);
 
   // 5. Pasan los meses (se adelanta la fecha en la base): le toca el mantenimiento y se agenda
@@ -106,7 +106,7 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
   await espacioReserva.selectOption({ index: 1 });
   await page.getByRole("checkbox", { name: "Sin adelanto" }).check();
   await page.getByRole("button", { name: "Reservar" }).click();
-  await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1$/);
+  await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1(?:[?&]volver=[^&#]*)?$/);
   const reservaId = Number(new URL(page.url()).pathname.split("/").at(-1));
 
   const [r] = await consultar<{ estado: string; trabajo: number; cliente: number }>(

@@ -32,7 +32,7 @@ test("el dueño crea el servicio en el catálogo y completa su página: benefici
   // Recién creado se abre el modal de sus precios (es lo que falta cargar): se cierra para ir a su página
   await page.getByRole("dialog", { name: "Precios de Única" }).getByRole("button", { name: "Cancelar" }).click();
   await page.getByRole("link", { name: "Su página en el sitio" }).click();
-  await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+$/);
+  await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+(?:[?&]volver=[^&#]*)?$/);
   // El nombre no se cambia aquí: es del catálogo, a un toque desde "Más"
   await expect(page.getByRole("textbox", { name: "Nombre del servicio" })).toHaveCount(0);
   const mas = page.getByRole("button", { name: "Más" });
@@ -101,7 +101,9 @@ test("el dueño crea el servicio en el catálogo y completa su página: benefici
   await expect(beneficios.getByRole("button", { name: "Beneficio 2, ícono: Agua" })).toBeVisible();
   await beneficios.getByRole("button", { name: "Cancelar" }).click();
   await mostrarServicio(page, false);
-  await page.getByRole("link", { name: "Volver a Servicios" }).click();
+  // Se vino del catálogo ("Su página en el sitio"): "Volver" lleva ahí (pedido 43). La lista del sitio, aparte
+  await expect(page.getByRole("link", { name: "Volver a Servicio del catálogo" })).toBeVisible();
+  await page.goto("/panel/sitio/servicios");
   await expect(page.getByRole("listitem").filter({ hasText: nombre })).toContainText("Oculto");
 });
 
