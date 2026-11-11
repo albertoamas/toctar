@@ -96,10 +96,15 @@ test("el dueño ve el reclamo pendiente, le escribe por WhatsApp y lo marca aten
   await expect(page.getByText("Se limpió el tablero sin costo.").locator("visible=true")).toBeVisible();
 
   // Ya no está entre los pendientes, sí entre todos
-  await page.goto("/panel/reclamos?ver=pendientes");
-  await expect(enLaLista(page, nombre)).toHaveCount(0);
-  await page.goto("/panel/reclamos");
+  // La lista abre en los pendientes (cambio 4d); un enlace viejo con ?ver=pendientes, también
+  for (const ruta of ["/panel/reclamos", "/panel/reclamos?ver=pendientes"]) {
+    await page.goto(ruta);
+    await expect(page.getByRole("navigation", { name: "Filtrar reclamos" }).getByRole("link", { name: /^Pendientes/ })).toHaveAttribute("aria-current", "page");
+    await expect(enLaLista(page, nombre)).toHaveCount(0);
+  }
+  await page.goto("/panel/reclamos?ver=todos");
   await expect(enLaLista(page, nombre)).toBeVisible();
+  await expect(enLaLista(page, nombre)).toContainText("2 fotos");
 });
 
 test("si otra persona lo atendió mientras tanto, lo avisa y muestra su atención", async ({ page }, info) => {
@@ -143,4 +148,13 @@ test("el encargado entra a reclamos solo con el permiso; sin él o con el perfil
     await page.goto("/panel/reclamos");
     await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
   }
+});
+
+test("un reclamo sin fotos no lo repite en su fila (cambio 4d)", async ({ page }, info) => {
+  const nombre = `Sin imagenes ${sufijo(info)}${info.retry}`;
+  await consultar("insert into reclamo (nombre, telefono, placa, descripcion, ip_hash) values ($1, '59176543210', '3312ABC', 'Prueba sin fotos.', 'e2e')", [nombre]);
+  await ingresarComoDueno(page);
+  await page.goto("/panel/reclamos");
+  await expect(enLaLista(page, nombre)).toBeVisible();
+  await expect(enLaLista(page, nombre)).not.toContainText("foto");
 });

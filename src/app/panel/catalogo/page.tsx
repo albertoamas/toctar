@@ -61,7 +61,8 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/catalogo">, "searc
         { titulo: "Precio", ancho: "minmax(0,1fr)", alinear: "derecha", movil: "estado" },
         { titulo: "Variantes", ancho: "6.5rem", movil: "par" },
         { titulo: "Duración", ancho: "5.5rem", movil: "par" },
-        { titulo: "Estado", ancho: "minmax(0,1fr)", movil: "detalle" },
+        // Solo si a alguno le faltan precios: con todo cargado, era una columna vacía (inventario-pantallas.md, cambio 4d)
+        { titulo: "Falta", ancho: "minmax(0,1fr)", movil: "detalle", ocultarSiVacia: true },
       ]}
       filas={servicios.map((s) => ({
         href: `/panel/catalogo/${s.id}`,
