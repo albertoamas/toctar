@@ -8,32 +8,48 @@ import { useEffect, useRef } from "react";
 // Los avisos flotantes del celular se ponen encima del pie (`--alto-pie-movil`, sonner.tsx). El pie no siempre está
 // pegado abajo: al final de la pantalla queda en su lugar, al cierre de la tarjeta, más arriba. Con una medida fija, el
 // aviso caía sobre "Recibir vehículo" y no se podía tocar mientras duraba (10/11, lo vio hu-33-checklist en el CI). Por
-// eso el pie dice cuánto ocupa desde el borde de abajo cada vez que se mueve. La regla de globals.css queda para antes de
-// que cargue JavaScript.
+// eso el pie dice cuánto ocupa desde el borde de abajo cada vez que se mueve: al desplazar, al cambiar el tamaño de la
+// pantalla y cuando algo de la página lo corre. La regla de globals.css queda para antes de que cargue JavaScript.
 
-/** Cuánto ocupa el pie desde el borde de abajo de la pantalla, en px (0 si está fuera de la vista, más abajo). */
+const CELULAR = "(max-width: 639px)";
+
+/**
+ * Cuánto ocupa el pie desde el borde de abajo de la pantalla, en px. Contra el alto del diseño (`clientHeight`, no
+ * `innerHeight`, que cambia con el teclado y el zoom): es contra lo que se ubican el pie y el aviso. 0 si el pie no está
+ * a la vista (más abajo o ya pasado arriba): el aviso va al borde.
+ */
 function altoDesdeAbajo(pie: HTMLElement) {
-  return Math.max(0, Math.round(window.innerHeight - pie.getBoundingClientRect().top));
+  const alto = document.documentElement.clientHeight;
+  const { top, bottom } = pie.getBoundingClientRect();
+  if (top >= alto || bottom <= 0) return 0;
+  return Math.round(Math.min(alto, alto - top));
 }
 
 export function PieFormulario({ children }: { children: React.ReactNode }) {
   const pie = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const elemento = pie.current;
-    if (!elemento) return;
     const raiz = document.documentElement;
-    const celular = window.matchMedia("(max-width: 639px)");
+    const celular = window.matchMedia(CELULAR);
     let cuadro = 0;
+    let ultimo: string | null = null;
     const medir = () => {
       cancelAnimationFrame(cuadro);
       cuadro = requestAnimationFrame(() => {
-        if (celular.matches) raiz.style.setProperty("--alto-pie-movil", `${altoDesdeAbajo(elemento)}px`);
+        // El pie de ahora (no uno guardado al montar: React puede haberlo reemplazado)
+        const elemento = pie.current;
+        const valor = celular.matches && elemento?.isConnected ? `${altoDesdeAbajo(elemento)}px` : null;
+        // Solo si cambió: escribir en <html> recalcula los estilos de toda la página
+        if (valor === ultimo) return;
+        ultimo = valor;
+        if (valor) raiz.style.setProperty("--alto-pie-movil", valor);
         else raiz.style.removeProperty("--alto-pie-movil");
       });
     };
     medir();
+    // El pie y la página: si algo de arriba crece o se achica (un error, una foto, un plegado), el pie se corre
     const tamano = new ResizeObserver(medir);
-    tamano.observe(elemento);
+    if (pie.current) tamano.observe(pie.current);
+    tamano.observe(document.body);
     window.addEventListener("scroll", medir, { passive: true });
     window.addEventListener("resize", medir);
     celular.addEventListener("change", medir);
@@ -43,7 +59,8 @@ export function PieFormulario({ children }: { children: React.ReactNode }) {
       window.removeEventListener("scroll", medir);
       window.removeEventListener("resize", medir);
       celular.removeEventListener("change", medir);
-      raiz.style.removeProperty("--alto-pie-movil");
+      // Si en la pantalla queda otro pie (al cambiar de paso o de página), su medida sigue
+      if (!document.querySelector("[data-pie-movil]")) raiz.style.removeProperty("--alto-pie-movil");
     };
   }, []);
 

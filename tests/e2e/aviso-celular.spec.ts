@@ -77,9 +77,8 @@ test("al final de Recibir, el aviso de error va encima del pie aunque el pie ya 
   await page.goto(`/panel/ordenes/${id}/recibir`, { waitUntil: "networkidle" });
   const recibir = page.getByRole("button", { name: "Recibir vehículo" });
   await expect(recibir).toBeEnabled();
-  // Con la página ya hidratada: si no, el formulario se envía sin JavaScript y no hay aviso
+  // Con la página ya hidratada: "Detalle" se habilita con JavaScript
   await expect(page.getByRole("button", { name: "Detalle: Capó" })).toBeEnabled();
-  await page.waitForTimeout(500);
   // Un detalle guardado: su aviso sale abajo, sobre la página
   await page.getByRole("button", { name: "Detalle: Techo" }).click();
   const techo = page.getByRole("dialog", { name: "Detalle: Techo" });
@@ -91,8 +90,15 @@ test("al final de Recibir, el aviso de error va encima del pie aunque el pie ya 
   await expect(aviso).toBeVisible();
   // Al final de la pantalla, el pie está en su lugar: más arriba que el borde
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-  await expect.poll(async () => page.viewportSize()!.height - ((await recibir.boundingBox())!.y + (await recibir.boundingBox())!.height)).toBeGreaterThan(40);
-  await expect.poll(() => sePisan(aviso, recibir)).toBe(false);
-  // Con el aviso a la vista, el botón se puede tocar
+  await expect
+    .poll(async () => {
+      const caja = (await recibir.boundingBox())!;
+      return page.viewportSize()!.height - (caja.y + caja.height);
+    })
+    .toBeGreaterThan(40);
+  // Con el aviso todavía a la vista: abajo (el modal ya se cerró), encima del botón, y el botón se puede tocar
+  await expect(aviso).toBeVisible();
+  await expect.poll(async () => (await aviso.boundingBox())!.y).toBeGreaterThan(page.viewportSize()!.height / 2);
+  await expect.poll(async () => (await aviso.boundingBox())!.y + (await aviso.boundingBox())!.height).toBeLessThanOrEqual((await recibir.boundingBox())!.y);
   await recibir.click({ trial: true, timeout: 2000 });
 });
