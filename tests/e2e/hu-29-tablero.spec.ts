@@ -95,7 +95,7 @@ test("el tablero arranca en la semana de hoy y la marca", async ({ page }, info)
   await page.goto("/panel/agenda");
   if (info.project.name === "escritorio") await expect(page.getByText("Hoy", { exact: true })).toBeVisible();
   // En el celular, la pestaña de hoy es la elegida (pulido 10.1: ya no se repite el día debajo)
-  else await expect(page.getByRole("navigation", { name: "Días de la semana" }).getByRole("link", { name: /, hoy$/ })).toHaveAttribute("aria-current", "date");
+  else await expect(page.getByRole("navigation", { name: "Días de la semana" }).getByRole("link", { name: /, hoy(,|$)/ })).toHaveAttribute("aria-current", "date");
   // Lejos de hoy aparece el atajo para volver
   await page.getByRole("link", { name: "Semana siguiente", exact: true }).click();
   await page.getByRole("link", { name: "Hoy", exact: true }).click();
