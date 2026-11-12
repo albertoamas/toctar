@@ -16,6 +16,15 @@ test("el dueño lo abre desde el menú, con sus capturas y el PDF", async ({ pag
   await page.getByRole("link", { name: "Manual del panel" }).first().click();
   await expect(page).toHaveURL(/\/panel\/manual$/);
   await expect(page.getByRole("heading", { level: 1, name: "Manual del panel" })).toBeVisible();
+  // Un libro: una página a la vez, con el índice y los botones para pasar (scripts/manual/libro.js)
+  await page.getByRole("link", { name: "Empezar a leer" }).click();
+  await expect(page.getByRole("heading", { level: 2, name: "Índice" })).toBeVisible();
+  await page.getByRole("link", { name: /^El ciclo de un trabajo/ }).click();
+  await expect(page.getByRole("heading", { level: 2, name: "El ciclo de un trabajo" })).toBeVisible();
+  await expect(page.locator(".libro-numero")).toHaveText(/^\d+ de \d+$/);
+  await page.getByRole("button", { name: "Siguiente" }).click();
+  await expect(page.getByRole("heading", { level: 3, name: "Cotizar" })).toBeVisible();
+  await page.goBack();
   await expect(page.getByRole("heading", { level: 2, name: "El ciclo de un trabajo" })).toBeVisible();
   // Las capturas y el logo cargan (también las que esperan a que se baje)
   const rotas = await page.evaluate(async () => {
@@ -24,7 +33,8 @@ test("el dueño lo abre desde el menú, con sus capturas y el PDF", async ({ pag
     return [...document.images].filter((i) => i.naturalWidth === 0).map((i) => i.src);
   });
   expect(rotas).toEqual([]);
-  // El PDF se baja directo
+  // El PDF se baja directo, desde la portada
+  await page.goto("/panel/manual#portada");
   const enlace = page.getByRole("link", { name: "Descargar PDF" });
   await expect(enlace).toHaveAttribute("href", "/panel/manual/manual-del-panel-toctar.pdf");
   const pdf = await page.request.get("/panel/manual/manual-del-panel-toctar.pdf");
@@ -34,7 +44,7 @@ test("el dueño lo abre desde el menú, con sus capturas y el PDF", async ({ pag
   expect(pdf.headers()["cache-control"]).toBe("private, no-cache");
   const igual = await page.request.get("/panel/manual/manual-del-panel-toctar.pdf", { headers: { "if-none-match": pdf.headers()["etag"] } });
   expect(igual.status()).toBe(304);
-  // "Volver al panel"
+  // "Volver al panel", también en la portada
   await page.getByRole("link", { name: "Volver al panel" }).click();
   await expect(page).toHaveURL(/\/panel$/);
 });
