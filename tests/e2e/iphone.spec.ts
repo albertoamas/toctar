@@ -96,20 +96,23 @@ test("en Nueva cotización con un cliente nuevo los títulos van adentro de su t
   expect(await anchoDePagina(page)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 
-// Pulido 13.53: la portada nueva en Safari. Los servicios de a dos por fila, el celular de TikTok con su forma (el
-// aspect-ratio y el recorte de la pantalla) y nada que estire la página hacia la derecha.
-test("en la portada los servicios van de a dos y nada se sale de la pantalla", async ({ page }) => {
+// La portada en Safari: los servicios de a dos por fila con su foto a la vista, el video de TikTok vertical (si hay) y
+// nada que estire la página hacia la derecha. Pulido 13.54: en Safari, el recuadro de la foto del mosaico medía 0 px
+// (estirado a lo alto de la fila, sin su proporción) y la foto, con carga diferida, nunca se pedía.
+test("en la portada los servicios van de a dos con su foto y nada se sale de la pantalla", async ({ page }) => {
   await page.goto("/");
   const tarjetas = page.getByRole("region", { name: "Servicios" }).locator(".tt-tarjeta");
   await expect(tarjetas.first()).toBeVisible();
   const [a, b] = [(await tarjetas.nth(0).boundingBox())!, (await tarjetas.nth(1).boundingBox())!];
   expect(Math.abs(a.y - b.y)).toBeLessThan(2);
-  // El celular sale solo con TikTok cargado y algún trabajo en la galería (las pruebas de escritorio suben fotos)
-  const celular = page.locator(".tt-celular");
-  if (await celular.count()) {
-    await celular.scrollIntoViewIfNeeded();
-    const caja = (await celular.boundingBox())!;
-    expect(caja.height / caja.width).toBeGreaterThan(1.9);
+  const foto = (await tarjetas.first().locator(".tt-tarjeta__media").boundingBox())!;
+  expect(foto.height).toBeGreaterThan(100);
+  // El video sale solo si el dueño subió uno (pedido 48)
+  const video = page.locator(".tt-video-tiktok");
+  if (await video.count()) {
+    await video.scrollIntoViewIfNeeded();
+    const caja = (await video.boundingBox())!;
+    expect(caja.height / caja.width).toBeGreaterThan(1.7);
   }
   expect(await anchoDePagina(page)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });

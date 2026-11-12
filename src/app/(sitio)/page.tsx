@@ -8,7 +8,7 @@ import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { ComparadorAntesDespues } from "@/componentes/sitio/comparador-antes-despues";
 import { EnlaceTikTok } from "@/componentes/sitio/enlace-tiktok";
 import { EstadoDelTaller } from "@/componentes/sitio/estado-del-taller";
-import { BotonReproducir, VideoDelCelular } from "@/componentes/sitio/video-del-celular";
+import { VideoTikTok } from "@/componentes/sitio/video-tiktok";
 import { PortadaArte } from "@/componentes/sitio/portada-arte";
 import { TITULO_SECCION } from "@/componentes/sitio/titulo-pagina";
 import { TarjetaServicio } from "@/componentes/sitio/tarjeta-servicio";
@@ -19,7 +19,7 @@ import { estadoDelTaller } from "@/lib/horarios";
 import { usuarioDeTikTok } from "@/lib/tiktok";
 import { enlaceComoLlegar } from "@/lib/ubicacion";
 import { PORTADA } from "@/modulos/sitio/contenido";
-import { ladoDelLema, nombreDelTrabajo, trabajoDePortada, trabajoParaTikTok } from "@/modulos/sitio/galeria";
+import { ladoDelLema, nombreDelTrabajo, trabajoDePortada } from "@/modulos/sitio/galeria";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
 import type { VideoPortada } from "@/modulos/sitio/consultas";
 import { contenidoPublico, fotoDePaginaPublica, galeriaPublica, serviciosPublicos, videoDePortadaPublico, type FotoGaleria, type ServicioPublico } from "@/modulos/sitio/publico";
@@ -36,8 +36,8 @@ const SERVICIOS_EN_PORTADA = 6;
 // HU-10 Portada: lema, presentación y WhatsApp, con el comparador de antes y después al lado (pedido de la demo del
 // 24/10); servicios; TikTok; cierre. Sin "Trabajos recientes" desde el pedido 36: las fotos están en la Galería.
 // Pulido 13.53 (maqueta aprobada el 12/11): la foto del taller visible detrás del lema, más grande, con cuándo atiende y
-// cómo llegar; las secciones separadas por un escalón a 60°; los dos primeros servicios destacados; y TikTok con un
-// celular que muestra un trabajo de la galería. Todo sale del panel: nada nuevo que cargar.
+// cómo llegar; las secciones separadas por la línea LED; los dos primeros servicios destacados (en el celular, de a
+// dos por fila); y en TikTok, el video que sube el dueño (pedido 48), sin marco y solo si hay uno.
 // Los textos y las listas salen del panel (B3) y se leen al atender la visita (el build no tiene base).
 // Toda la portada aparece de una vez (pulido 2.1): antes, los títulos fijos ("Servicios", el cierre) salían
 // en el primer envío y su contenido después, y se veían títulos sueltos. Mientras llegan los datos se ve
@@ -99,7 +99,7 @@ async function PortadaConDatos() {
         {negocio.redes.tiktok && <hr className="tt-led" />}
       </section>
 
-      <BloqueTikTok enlace={negocio.redes.tiktok} trabajo={trabajoParaTikTok(fotos, trabajo)} video={video} />
+      <BloqueTikTok enlace={negocio.redes.tiktok} video={video} />
 
       <CierreWhatsApp
         titulo="Cuéntanos qué necesita tu vehículo"
@@ -260,14 +260,17 @@ const SERVICIOS_DESTACADOS = 2;
 
 /**
  * TikTok en la portada (pedido 35): un bloque propio después de los servicios, con su título, el usuario y un botón
- * blanco grande. Pulido 13.53: al lado, un celular con un trabajo de la galería y el botón de reproducir, como un video
- * (decorativo: el enlace es el botón). Solo si el dueño cargó el enlace; sin trabajos en la galería, sin el celular.
+ * blanco grande. Solo si el dueño cargó el enlace. Al lado (debajo en el celular), el video que subió en Sitio web >
+ * Textos > Portada (pedido 48), vertical y sin marco; sin video no va nada y el texto usa todo el ancho (pulido 13.54).
  */
-function BloqueTikTok({ enlace, trabajo, video }: { enlace?: string; trabajo: FotoGaleria | null; video: VideoPortada | null }) {
+function BloqueTikTok({ enlace, video }: { enlace?: string; video: VideoPortada | null }) {
   if (!enlace) return null;
   const usuario = usuarioDeTikTok(enlace);
   return (
-    <section aria-labelledby="tiktok-titulo" className="mx-auto grid w-full max-w-6xl items-center gap-10 px-4 pt-14 pb-16 md:grid-cols-[minmax(0,1fr)_auto] md:gap-16 md:pt-20 md:pb-24">
+    <section
+      aria-labelledby="tiktok-titulo"
+      className={cn("mx-auto grid w-full max-w-6xl items-center gap-10 px-4 pt-14 pb-16 md:gap-16 md:pt-20 md:pb-24", video && "md:grid-cols-[minmax(0,1fr)_auto]")}
+    >
       <div className="flex flex-col items-start gap-3">
         <h2 id="tiktok-titulo" className={TITULO_SECCION}>
           Mira cómo trabajamos
@@ -276,26 +279,12 @@ function BloqueTikTok({ enlace, trabajo, video }: { enlace?: string; trabajo: Fo
         {usuario && <p className="text-sm font-semibold text-tinta-suave">{usuario}</p>}
         <EnlaceTikTok enlace={enlace} texto="Ver en TikTok" className="mt-2" />
       </div>
-      {(video || trabajo) && (
-        // Un toque en el celular también abre TikTok (con el botón de reproducir, sería raro que no hiciera nada); para
-        // el teclado y el lector de pantalla basta "Ver en TikTok": este enlace, igual, queda fuera de los dos
-        <a href={enlace} target="_blank" rel="noreferrer" tabIndex={-1} aria-hidden className="tt-celular justify-self-center">
-          <div className="tt-celular__pantalla">
-            {video ? (
-              // Pedido 48: el video que subió el dueño, con la foto del trabajo mientras no se mueve
-              <VideoDelCelular src={video.url} tipo={video.tipo} poster={trabajo?.despues.miniatura ?? null} />
-            ) : (
-              <>
-                {/* eslint-disable-next-line @next/next/no-img-element -- la miniatura ya es de 640 px, como la foto del taller */}
-                <img src={trabajo!.despues.miniatura} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
-                <BotonReproducir />
-              </>
-            )}
-            <span className="tt-celular__pie">
-              {usuario && <b>{usuario}</b>}
-              <span>{trabajo && !video ? `${trabajo.servicio.nombre}, del antes al después` : "Del antes al después"}</span>
-            </span>
-          </div>
+      {video && (
+        // Pedido 48: el video que subió el dueño. Un toque también abre TikTok (con el botón de reproducir, sería raro
+        // que no hiciera nada); para el teclado y el lector de pantalla basta "Ver en TikTok"
+        <a href={enlace} target="_blank" rel="noreferrer" tabIndex={-1} aria-hidden className="tt-video-tiktok justify-self-center">
+          <VideoTikTok src={video.url} tipo={video.tipo} />
+          {usuario && <span className="tt-video-tiktok__pie">{usuario}</span>}
         </a>
       )}
     </section>

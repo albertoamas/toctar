@@ -28,15 +28,6 @@ export function trabajoDePortada<T extends ConAntes>(fotos: T[]): (T & { antes: 
 }
 
 /**
- * La foto del celular de "Mira cómo trabajamos" en la portada (pulido 13.53): el primer trabajo de la galería, en el orden
- * que le da el dueño, que no sea el del comparador de arriba (así no se repite la misma foto). Si no hay otro, el mismo;
- * sin trabajos, ninguna (el bloque va sin el celular).
- */
-export function trabajoParaTikTok<T extends { id: number }>(fotos: T[], deLaPortada: { id: number } | null): T | null {
-  return fotos.find((f) => f.id !== deLaPortada?.id) ?? fotos[0] ?? null;
-}
-
-/**
  * Qué va al lado del lema de la portada: el comparador si hay un trabajo con antes; si no, el arte de la marca, pero
  * solo sin foto del taller (con foto, el texto usa todo el ancho sobre ella).
  */
