@@ -38,10 +38,12 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
 
   return (
     <div className="flex flex-1">
-      {/* La columna pinta el fondo negro de arriba abajo, aunque la página sea más larga que la pantalla; adentro, el menú
-          queda fijo al bajar (sticky, del alto de la pantalla). Con el fondo en el menú, debajo quedaba un hueco blanco */}
+      {/* La columna pinta el fondo negro de arriba abajo, aunque la página sea más larga que la pantalla, y reserva el ancho;
+          el menú queda fijo, sujeto al borde de arriba y al de abajo de la ventana. No con un alto en unidades de pantalla
+          (h-dvh): en la app instalada de Android, después de actualizar (deslizar o Ctrl + R), el navegador calcula ese alto
+          más grande que la ventana y lo de abajo (quién entró, el manual, "Cerrar sesión") quedaba fuera, hasta cerrar la app */}
       <div data-theme="oscuro" className="hidden w-62 shrink-0 bg-fondo lg:block">
-        <aside className="sticky top-0 flex h-dvh flex-col p-4 text-tinta [--radius:8px]">
+        <aside className="fixed inset-y-0 left-0 z-30 flex w-62 flex-col bg-fondo p-4 text-tinta [--radius:8px]">
           <div className="mt-1 mb-6">
             <Marca />
           </div>
