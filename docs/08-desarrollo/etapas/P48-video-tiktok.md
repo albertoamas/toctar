@@ -3,7 +3,7 @@
 - **Pedido:** 48 (`03-cierre-comercial/registro-de-cambios.md`), aprobado el 12/11/2026, **sin costo** (incluido; RNF-07 ya preveía videos con tamaño máximo).
 - **Historias:** HU-08 (textos y fotos del sitio) y HU-10 (portada).
 - **Base:** pedido 35 (TikTok casi tan importante como WhatsApp) y pulido 13.53 (el celular de "Mira cómo trabajamos").
-- **Estado:** en curso (rama `pedido-48-video-tiktok`).
+- **Estado:** hecho el 12/11/2026 (PR #220). Falta probarlo con un video real del dueño en pruebas.
 
 ## 1. Objetivo
 
