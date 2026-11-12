@@ -237,17 +237,45 @@
     background: var(--rojo);
     transform-origin: left center;
   }
-  .tt-led--encender {
-    animation: tt-encender 600ms ease-out both;
-  }
-  /* La foto del taller de la portada entra junto con la línea, sin aparecer de golpe. */
+  /* La foto del taller de la portada entra sin aparecer de golpe, y el lema sube apenas al llegar: el único momento con
+     movimiento de la portada, además del comparador (pulido 13.53). Sube sin empezar invisible: es lo que Chrome mide
+     como la carga de la página (LCP), y un lema transparente la demoraría. */
   .tt-portada-foto {
     animation: tt-aparecer 600ms ease-out both;
   }
+  .tt-portada-lema {
+    animation: tt-subir 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
   @media (prefers-reduced-motion: reduce) {
-    .tt-led--encender,
-    .tt-portada-foto {
+    .tt-portada-foto,
+    .tt-portada-lema {
       animation: none;
+    }
+  }
+
+  /* El paso de una sección de la portada a la siguiente (pulido 13.53): el color de la que sigue sube en un escalón a la
+     izquierda, con la línea LED arriba, y su borde baja a 60° (el único ángulo de la marca): 48 px de alto, 27,7 px de
+     corrida. Sin un corte largo en diagonal, que no tendría 60°. */
+  .tt-corte-seccion {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 48px;
+    background: linear-gradient(var(--rojo) 0 3px, var(--superficie) 3px);
+    clip-path: polygon(0 0, 42% 0, calc(42% + 27.7px) 100%, 0 100%);
+  }
+  .tt-corte-seccion--fondo {
+    background: linear-gradient(var(--rojo) 0 3px, var(--fondo) 3px);
+    clip-path: polygon(0 0, 58% 0, calc(58% + 27.7px) 100%, 0 100%);
+  }
+  @media (width < 48rem) {
+    .tt-corte-seccion {
+      height: 28px;
+      clip-path: polygon(0 0, 58% 0, calc(58% + 16.2px) 100%, 0 100%);
+    }
+    .tt-corte-seccion--fondo {
+      clip-path: polygon(0 0, 72% 0, calc(72% + 16.2px) 100%, 0 100%);
     }
   }
 
@@ -519,39 +547,6 @@
   .tt-boton--contorno:hover {
     --tt-relleno: var(--superficie);
   }
-  /* El bloque de TikTok de la portada (pedido 35): su superficie, una barra blanca al costado y el ícono grande, apenas
-     visible, de marca de agua */
-  .tt-bloque-tiktok {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 40px 24px 40px 28px;
-    background: var(--superficie);
-    border-top: 1px solid var(--borde);
-    border-bottom: 1px solid var(--borde);
-  }
-  .tt-bloque-tiktok::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: var(--blanco);
-  }
-  .tt-bloque-tiktok__marca {
-    position: absolute;
-    z-index: -1;
-    right: -32px;
-    bottom: -48px;
-    width: 240px;
-    height: 240px;
-    color: var(--superficie-alta);
-  }
-
   /* Botón fijo de WhatsApp (componente BotonWhatsApp): rojo de marca, no verde. */
   .tt-whatsapp {
     display: inline-grid;
@@ -941,8 +936,8 @@
   /* Celular (menos de 640 px, el sm de Tailwind): fila compacta, foto chica a la izquierda y el texto a la derecha.
      Así se ven todos los servicios de un vistazo; con la tarjeta grande, 6 servicios eran casi 4000 px (pulido 2.1).
      Mismo componente y mismo corte a 60°: solo cambia la disposición. Sin el resumen: cortado en dos renglones con
-     "…" no decía nada ("menos es más", pedido de la demo del 24/10); la foto y el nombre bastan. Vale para la lista de
-     Servicios y para la de la portada. */
+     "…" no decía nada ("menos es más", pedido de la demo del 24/10); la foto y el nombre bastan. Es la lista de
+     Servicios: la portada va en mosaico (`.tt-tarjeta--portada`, pulido 13.53). */
   @media (width < 40rem) {
     .tt-tarjeta {
       grid-template-rows: none;
@@ -989,14 +984,155 @@
       margin-top: 4px;
     }
   }
+
+  /* Los servicios de la portada (pulido 13.53). En el celular, los seis del mismo tamaño en dos columnas, con su foto y su
+     nombre (en filas eran casi tres pantallas); desde la tableta, cuatro columnas y los dos primeros ocupan dos cada uno,
+     más grandes y con su resumen. La lista de Servicios no cambia: sigue en filas en el celular. */
+  .tt-servicios-portada {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  @media (width >= 48rem) {
+    .tt-servicios-portada {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 20px;
+    }
+    .tt-servicios-portada > li:nth-child(-n + 2) {
+      grid-column: span 2;
+    }
+  }
+  /* Sobre el gris de la sección, la tarjeta va un escalón más clara */
+  .tt-tarjeta--portada {
+    background: linear-gradient(119.74deg, var(--superficie-alta) calc(100% - 14.39px), transparent calc(100% - 13.39px));
+  }
+  .tt-tarjeta--portada .tt-tarjeta__cuerpo {
+    padding: 16px 18px 20px;
+    gap: 6px;
+  }
+  .tt-tarjeta--portada .tt-tarjeta__titulo {
+    font-size: 24px;
+    line-height: 27px;
+  }
+  /* Las chicas, sin el resumen: la foto y el nombre bastan, y el enlace ya dice qué servicio es */
+  .tt-tarjeta--portada:not(.tt-tarjeta--destacada) .tt-tarjeta__resumen {
+    display: none;
+  }
+  @media (width >= 48rem) {
+    .tt-tarjeta--destacada .tt-tarjeta__media {
+      aspect-ratio: 16 / 9;
+    }
+    .tt-tarjeta--destacada .tt-tarjeta__cuerpo {
+      padding: 24px 28px 28px;
+      gap: 10px;
+    }
+    .tt-tarjeta--destacada .tt-tarjeta__titulo {
+      font-size: 36px;
+      line-height: 38px;
+    }
+  }
+  /* En el celular, la tarjeta de la portada es un mosaico (foto cuadrada arriba, el nombre abajo), no la fila de la lista */
+  @media (width < 48rem) {
+    .tt-tarjeta.tt-tarjeta--portada {
+      grid-template-columns: none;
+      grid-template-rows: auto 1fr;
+      align-items: stretch;
+    }
+    .tt-tarjeta.tt-tarjeta--portada::before {
+      display: none;
+    }
+    .tt-tarjeta--portada .tt-tarjeta__media {
+      margin: 0;
+      aspect-ratio: 1 / 1;
+    }
+    .tt-tarjeta--portada .tt-tarjeta__media::after {
+      display: block;
+    }
+    .tt-tarjeta--portada .tt-tarjeta__cuerpo {
+      grid-template-rows: auto 1fr auto;
+      align-content: start;
+      padding: 12px 12px 16px;
+      gap: 4px;
+    }
+    .tt-tarjeta--portada .tt-tarjeta__titulo {
+      font-size: 19px;
+      line-height: 22px;
+    }
+    .tt-tarjeta--portada .tt-tarjeta__resumen {
+      display: none;
+    }
+    .tt-tarjeta--portada .tt-tarjeta__enlace {
+      font-size: 14px;
+    }
+  }
+
+  /* "Mira cómo trabajamos" (pulido 13.53): un celular con un trabajo de la galería y el botón de reproducir, como un
+     video de TikTok. Decorativo: el enlace es el botón. Sin brillo ni neón: el marco y una sombra negra. */
+  .tt-celular {
+    display: block;
+    width: min(17.5rem, 72vw);
+    aspect-ratio: 9 / 18.5;
+    padding: 10px;
+    border-radius: 40px;
+    background: var(--superficie);
+    box-shadow:
+      0 0 0 1px var(--borde),
+      0 30px 60px rgb(0 0 0 / 0.6);
+  }
+  .tt-celular__pantalla {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 30px;
+    background: var(--fondo);
+  }
+  .tt-celular__pantalla::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 55%, rgb(0 0 0 / 0.8));
+  }
+  .tt-celular__reproducir {
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    left: 50%;
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    margin: -32px 0 0 -32px;
+    border-radius: 9999px;
+    border: 2px solid var(--blanco);
+    background: rgb(0 0 0 / 0.55);
+    color: var(--blanco);
+  }
+  .tt-celular__reproducir svg {
+    width: 26px;
+    height: 26px;
+    margin-left: 3px;
+  }
+  .tt-celular__pie {
+    position: absolute;
+    z-index: 1;
+    left: 16px;
+    right: 16px;
+    bottom: 18px;
+    display: grid;
+    gap: 2px;
+    font-size: 13px;
+    line-height: 1.35;
+    color: var(--blanco);
+  }
 }
 
-@keyframes tt-encender {
+@keyframes tt-subir {
   from {
-    transform: scaleX(0);
+    transform: translateY(18px);
   }
   to {
-    transform: scaleX(1);
+    opacity: 1;
+    transform: none;
   }
 }
 

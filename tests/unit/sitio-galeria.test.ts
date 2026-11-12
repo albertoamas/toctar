@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { filtrarPorServicio, formaDelPar, ladoDelLema, nombreDelTrabajo, separarPares, serviciosConFotos, trabajoDePortada } from "@/modulos/sitio/galeria";
+import { filtrarPorServicio, formaDelPar, ladoDelLema, nombreDelTrabajo, separarPares, serviciosConFotos, trabajoDePortada, trabajoParaTikTok } from "@/modulos/sitio/galeria";
 
 // HU-12 Galería pública. Criterios: docs/09-pruebas/criterios-entrega-1.md (12.x).
 
@@ -80,5 +80,17 @@ describe("vitrina de la galería", () => {
     // En el panel, con su número: varios sin descripción se distinguen
     expect(nombreDelTrabajo("", "Pulido de vidrios", 7)).toBe("Trabajo de Pulido de vidrios (n.º 7)");
     expect(nombreDelTrabajo("Hilux con nano cerámico", "Pulido y nano cerámico")).toBe("Hilux con nano cerámico");
+  });
+});
+
+describe("la foto del celular de TikTok en la portada", () => {
+  test("el primero de la galería que no es el del comparador", () => {
+    expect(trabajoParaTikTok([{ id: 1 }, { id: 2 }, { id: 3 }], { id: 1 })?.id).toBe(2);
+    expect(trabajoParaTikTok([{ id: 1 }, { id: 2 }], null)?.id).toBe(1);
+  });
+
+  test("si es el único, el mismo; sin trabajos, ninguno", () => {
+    expect(trabajoParaTikTok([{ id: 4 }], { id: 4 })?.id).toBe(4);
+    expect(trabajoParaTikTok([], null)).toBeNull();
   });
 });
