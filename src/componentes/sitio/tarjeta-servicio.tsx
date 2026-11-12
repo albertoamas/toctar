@@ -5,8 +5,7 @@ import { FotoOReemplazo } from "./foto-o-reemplazo";
 
 // Componente TarjetaServicio del Design System (HU-10). Sin precios (RN-10). Toda la tarjeta se toca.
 // `variante`, solo en la portada (pulido 13.53): "destacada" para los dos primeros servicios (en la computadora, grandes
-// y con su resumen) y "mosaico" para los demás; en el celular, las dos van del mismo tamaño en dos columnas, con su foto
-// y su nombre. Sin variante, la tarjeta de siempre (la lista de Servicios: en el celular, en filas).
+// y con su resumen) y "mosaico" para los demás, más chicos. En el celular, todas en filas, como la lista de Servicios.
 export function TarjetaServicio({ servicio, nivel = 3, variante }: { servicio: ServicioPublico; nivel?: 2 | 3; variante?: "destacada" | "mosaico" }) {
   const Titulo = nivel === 2 ? "h2" : "h3";
   return (

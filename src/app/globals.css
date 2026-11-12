@@ -910,8 +910,8 @@
   /* Celular (menos de 640 px, el sm de Tailwind): fila compacta, foto chica a la izquierda y el texto a la derecha.
      Así se ven todos los servicios de un vistazo; con la tarjeta grande, 6 servicios eran casi 4000 px (pulido 2.1).
      Mismo componente y mismo corte a 60°: solo cambia la disposición. Sin el resumen: cortado en dos renglones con
-     "…" no decía nada ("menos es más", pedido de la demo del 24/10); la foto y el nombre bastan. Es la lista de
-     Servicios: la portada va en mosaico (`.tt-tarjeta--portada`, pulido 13.53). */
+     "…" no decía nada ("menos es más", pedido de la demo del 24/10); la foto y el nombre bastan. Vale para la lista de
+     Servicios y para la de la portada. */
   @media (width < 40rem) {
     .tt-tarjeta {
       grid-template-rows: none;
@@ -959,13 +959,30 @@
     }
   }
 
-  /* Los servicios de la portada (pulido 13.53). En el celular, los seis del mismo tamaño en dos columnas, con su foto y su
-     nombre (en filas eran casi tres pantallas); desde la tableta, cuatro columnas y los dos primeros ocupan dos cada uno,
-     más grandes y con su resumen. La lista de Servicios no cambia: sigue en filas en el celular. */
+  /* Los servicios de la portada (pulido 13.53). En el celular, en filas como la lista de Servicios (el mosaico de dos
+     columnas no se vio en el celular del desarrollador el 12/11: se volvió a lo que ya andaba). Desde 640 px, dos
+     columnas; desde la tableta, cuatro, y los dos primeros ocupan dos cada uno, más grandes y con su resumen. */
   .tt-servicios-portada {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
+  }
+  @media (width >= 40rem) {
+    .tt-servicios-portada {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .tt-tarjeta--portada .tt-tarjeta__cuerpo {
+      padding: 16px 18px 20px;
+      gap: 6px;
+    }
+    .tt-tarjeta--portada .tt-tarjeta__titulo {
+      font-size: 24px;
+      line-height: 27px;
+    }
+    /* Las chicas, sin el resumen: la foto y el nombre bastan, y el enlace ya dice qué servicio es */
+    .tt-tarjeta--portada:not(.tt-tarjeta--destacada) .tt-tarjeta__resumen {
+      display: none;
+    }
   }
   @media (width >= 48rem) {
     .tt-servicios-portada {
@@ -980,17 +997,12 @@
   .tt-tarjeta--portada {
     background: linear-gradient(119.74deg, var(--superficie-alta) calc(100% - 14.39px), transparent calc(100% - 13.39px));
   }
-  .tt-tarjeta--portada .tt-tarjeta__cuerpo {
-    padding: 16px 18px 20px;
-    gap: 6px;
-  }
-  .tt-tarjeta--portada .tt-tarjeta__titulo {
-    font-size: 24px;
-    line-height: 27px;
-  }
-  /* Las chicas, sin el resumen: la foto y el nombre bastan, y el enlace ya dice qué servicio es */
-  .tt-tarjeta--portada:not(.tt-tarjeta--destacada) .tt-tarjeta__resumen {
-    display: none;
+  /* En la tableta, las chicas miden poco más de 150 px: el nombre, un poco menor para no ocupar cuatro líneas */
+  @media (48rem <= width < 64rem) {
+    .tt-tarjeta--portada:not(.tt-tarjeta--destacada) .tt-tarjeta__titulo {
+      font-size: 20px;
+      line-height: 23px;
+    }
   }
   @media (width >= 48rem) {
     .tt-tarjeta--destacada .tt-tarjeta__media {
@@ -1005,70 +1017,38 @@
       line-height: 38px;
     }
   }
-  /* En el celular, la tarjeta de la portada es un mosaico (foto cuadrada arriba, el nombre abajo), no la fila de la lista */
-  @media (width < 48rem) {
-    .tt-tarjeta.tt-tarjeta--portada {
-      grid-template-columns: none;
-      grid-template-rows: auto 1fr;
-      align-items: stretch;
-    }
-    .tt-tarjeta.tt-tarjeta--portada::before {
-      display: none;
-    }
-    .tt-tarjeta--portada .tt-tarjeta__media {
-      margin: 0;
-      aspect-ratio: 1 / 1;
-    }
-    .tt-tarjeta--portada .tt-tarjeta__media::after {
-      display: block;
-    }
-    .tt-tarjeta--portada .tt-tarjeta__cuerpo {
-      grid-template-rows: auto 1fr auto;
-      align-content: start;
-      padding: 12px 12px 16px;
-      gap: 4px;
-    }
-    .tt-tarjeta--portada .tt-tarjeta__titulo {
-      font-size: 19px;
-      line-height: 22px;
-    }
-    .tt-tarjeta--portada .tt-tarjeta__resumen {
-      display: none;
-    }
-    .tt-tarjeta--portada .tt-tarjeta__enlace {
-      font-size: 14px;
-    }
-  }
 
-  /* "Mira cómo trabajamos" (pulido 13.53): un celular con un trabajo de la galería y el botón de reproducir, como un
-     video de TikTok. Decorativo: el enlace es el botón. Sin brillo ni neón: el marco y una sombra negra. */
-  .tt-celular {
+  /* "Mira cómo trabajamos" (pedido 48): el video que sube el dueño, vertical como en TikTok, sin marco de celular
+     (revisión del 12/11). Con la franja roja abajo a la izquierda, como la foto de una tarjeta. Sin video, no hay nada. */
+  .tt-video-tiktok {
+    position: relative;
     display: block;
     width: min(17.5rem, 72vw);
-    aspect-ratio: 9 / 18.5;
-    padding: 10px;
-    border-radius: 40px;
-    background: var(--superficie);
-    box-shadow:
-      0 0 0 1px var(--borde),
-      0 30px 60px rgb(0 0 0 / 0.6);
-  }
-  .tt-celular__pantalla {
-    position: relative;
-    height: 100%;
+    aspect-ratio: 9 / 16;
     overflow: hidden;
-    border-radius: 30px;
-    background: var(--fondo);
+    background: var(--superficie);
   }
-  .tt-celular__pantalla::after {
+  .tt-video-tiktok::before {
     content: "";
     position: absolute;
-    inset: 0;
-    background: linear-gradient(to bottom, transparent 55%, rgb(0 0 0 / 0.8));
-  }
-  .tt-celular__reproducir {
-    position: absolute;
     z-index: 1;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(to bottom, transparent 60%, rgb(0 0 0 / 0.75));
+  }
+  .tt-video-tiktok::after {
+    content: "";
+    position: absolute;
+    z-index: 2;
+    left: 0;
+    bottom: 0;
+    width: 76px;
+    height: 5px;
+    background: linear-gradient(119.74deg, var(--rojo) calc(100% - 3.1px), transparent calc(100% - 2.1px));
+  }
+  .tt-video-tiktok__reproducir {
+    position: absolute;
+    z-index: 2;
     top: 50%;
     left: 50%;
     display: grid;
@@ -1081,21 +1061,19 @@
     background: rgb(0 0 0 / 0.55);
     color: var(--blanco);
   }
-  .tt-celular__reproducir svg {
+  .tt-video-tiktok__reproducir svg {
     width: 26px;
     height: 26px;
     margin-left: 3px;
   }
-  .tt-celular__pie {
+  .tt-video-tiktok__pie {
     position: absolute;
-    z-index: 1;
+    z-index: 2;
     left: 16px;
     right: 16px;
     bottom: 18px;
-    display: grid;
-    gap: 2px;
     font-size: 13px;
-    line-height: 1.35;
+    font-weight: 700;
     color: var(--blanco);
   }
 }

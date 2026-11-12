@@ -11,7 +11,7 @@ const soloEscritorio = (info: TestInfo) => test.skip(info.project.name !== "escr
 const MP4 = Buffer.concat([Buffer.from([0, 0, 0, 0x18]), Buffer.from("ftypisom"), Buffer.alloc(4), Buffer.from("isommp41"), Buffer.alloc(2048)]);
 const TEXTOS_PORTADA = "/panel/sitio/textos?pagina=inicio";
 
-test("el dueño sube el video de TikTok, se ve en la portada y al quitarlo vuelve la foto", async ({ page }, info) => {
+test("el dueño sube el video de TikTok, se ve en la portada y al quitarlo no queda nada en su lugar", async ({ page }, info) => {
   soloEscritorio(info);
   test.setTimeout(60_000);
   await ingresarComoDueno(page);
@@ -29,14 +29,14 @@ test("el dueño sube el video de TikTok, se ve en la portada y al quitarlo vuelv
   await expect(fila.getByRole("button", { name: "Cambiar video" })).toBeVisible();
 
   // El sitio se renueva en segundo plano: se visita hasta verlo
-  const video = page.locator(".tt-celular video source");
+  const video = page.locator(".tt-video-tiktok video source");
   await expect(async () => {
     await page.goto("/");
-    await expect(video).toHaveAttribute("src", /\/portada\/video-[\w-]+\.mp4(#t=0\.1)?$/, { timeout: 1000 });
+    await expect(video).toHaveAttribute("src", /\/portada\/video-[\w-]+\.mp4#t=0\.1$/, { timeout: 1000 });
   }).toPass({ timeout: 20_000 });
   await expect(video).toHaveAttribute("type", "video/mp4");
   // Sin sonido, en bucle y sin pedirse hasta que se ve
-  const etiqueta = page.locator(".tt-celular video");
+  const etiqueta = page.locator(".tt-video-tiktok video");
   await expect(etiqueta).toHaveJSProperty("muted", true);
   await expect(etiqueta).toHaveJSProperty("loop", true);
 
@@ -46,7 +46,8 @@ test("el dueño sube el video de TikTok, se ve en la portada y al quitarlo vuelv
   await expect(fila.getByRole("button", { name: "Subir video" })).toBeVisible();
   await expect(async () => {
     await page.goto("/");
-    await expect(page.locator(".tt-celular video")).toHaveCount(0, { timeout: 1000 });
+    // Sin video, ni la foto de la galería: el bloque queda con su texto y su botón (revisión del 12/11)
+    await expect(page.locator(".tt-video-tiktok")).toHaveCount(0, { timeout: 1000 });
   }).toPass({ timeout: 20_000 });
 });
 

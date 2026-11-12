@@ -63,16 +63,17 @@ test("una dirección que no existe muestra la página no encontrada", async ({ p
   await expect(page).toHaveTitle("Página no encontrada · TocTar Detailing");
 });
 
-// Pulido 13.53: en el celular, dos servicios por fila y del mismo tamaño (en filas de a uno había que bajar demasiado);
-// en la computadora, los dos primeros más grandes que los demás
-test("en el celular los servicios van de a dos por fila; en la computadora, los dos primeros más grandes", async ({ page, isMobile }) => {
+// En el celular, los servicios en filas, uno debajo del otro, como la lista de Servicios (el mosaico de dos columnas
+// del pulido 13.53 no se vio en un celular real el 12/11); en la computadora, los dos primeros más grandes
+test("en el celular los servicios van en filas; en la computadora, los dos primeros más grandes", async ({ page, isMobile }) => {
   await page.goto("/");
   const tarjetas = page.getByRole("region", { name: "Servicios" }).locator(".tt-tarjeta");
   const [a, b, c] = await Promise.all([0, 1, 2].map(async (i) => (await tarjetas.nth(i).boundingBox())!));
   if (isMobile) {
-    expect(Math.abs(a.y - b.y)).toBeLessThan(2);
-    expect(Math.abs(a.width - b.width)).toBeLessThan(2);
-    expect(c.y).toBeGreaterThan(a.y + a.height);
+    expect(b.y).toBeGreaterThanOrEqual(a.y + a.height);
+    expect(a.height).toBeLessThan(220);
+    // Con el lugar de su foto a la vista (la foto, o la imagen de reemplazo si el servicio no tiene)
+    expect((await tarjetas.first().locator(".tt-tarjeta__media").boundingBox())!.height).toBeGreaterThan(40);
   } else {
     expect(a.width).toBeGreaterThan(c.width * 1.5);
   }
