@@ -8,7 +8,7 @@ import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { AvisarPorWhatsApp } from "@/componentes/panel/avisar-whatsapp";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { Cargando } from "@/componentes/panel/cargando";
-import { FilaCliente, FilaDato, FilaEnlace } from "@/componentes/panel/datos-en-bloques";
+import { FilaCliente, FilaCotizacion, FilaDato } from "@/componentes/panel/datos-en-bloques";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { BOTON_PASO, PasoSiguiente } from "@/componentes/panel/paso-siguiente";
@@ -66,6 +66,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   const o = await obtenerOrden(Number(id), puedeVerModulo(usuario, "pagos"));
   if (!o) notFound();
   const verAgenda = puedeVerModulo(usuario, "agenda");
+  const verCotizacion = puedeVerModulo(usuario, "cotizaciones");
   // Todavía es una reserva (o se canceló): se ve en la agenda, si quien entra la ve
   if (!esOrden(o.estado)) {
     if (!verAgenda) notFound();
@@ -210,14 +211,21 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
               <dl className="px-4 py-3">
                 <FilaDato etiqueta="Vehículo">{valorVehiculo(detalle, o.tamano)}</FilaDato>
               </dl>
-              {/* Cuándo ingresó y quién lo recibió ya está en el historial ("Vehículo recibido.", pedido 45) */}
-              {verAgenda && (
-                <FilaEnlace href={conDesde(`/panel/agenda/${o.id}`, desdeAqui)}>
-                  <span className="font-semibold">Ver la reserva</span>
-                </FilaEnlace>
+              {/* Una pantalla por trabajo: recibido, la reserva ya no se abre (lleva aquí); lo que solo ella tenía viene a la
+                  orden: su cotización, su nota y, en el historial, quién la reservó. Cuándo ingresó y quién lo recibió, en el
+                  historial ("Vehículo recibido.", pedido 45) */}
+              {o.cotizacion && verCotizacion && (
+                <FilaCotizacion href={conDesde(`/panel/cotizaciones/${o.consultaId}`, desdeAqui)} numero={o.cotizacion.numero} version={o.cotizacion.version} />
               )}
             </div>
           </Seccion>
+          {o.nota && (
+            <div className="mt-8">
+              <Seccion id="nota" titulo="Nota de la reserva">
+                <p className="whitespace-pre-line">{o.nota}</p>
+              </Seccion>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col gap-8 @4xl:col-start-1 @4xl:row-span-2 @4xl:row-start-1">
@@ -248,7 +256,13 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
               </div>
             )}
           </Seccion>
-          <HistorialOrden avances={avances.map((a) => ({ id: a.id, nota: a.nota, autor: a.autor, cuando: formatearFechaHora(a.createdAt) }))} />
+          {/* El historial empieza donde empieza el trabajo: cuando se reservó (lo más viejo, al final) */}
+          <HistorialOrden
+            avances={[
+              ...avances.map((a) => ({ id: a.id, nota: a.nota, autor: a.autor, cuando: formatearFechaHora(a.createdAt) })),
+              { id: 0, nota: "Reservada.", autor: o.agendadaPor, cuando: formatearFechaHora(o.createdAt) },
+            ]}
+          />
         </div>
 
         {/* Abierta también después de la entrega: una entregada con saldo se cobra aquí (RN-13, HU-37) */}

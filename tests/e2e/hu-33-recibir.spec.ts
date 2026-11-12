@@ -75,14 +75,10 @@ test("recibir con observaciones: la reserva pasa a orden, sin fotos de ingreso s
   await page.goto(`/panel/clientes/${clienteId}`);
   await expect(page.getByRole("list", { name: "Reservas" }).getByRole("link")).toHaveAttribute("href", new RegExp(`^/panel/ordenes/${id}\\?volver=%2Fpanel%2Fclientes`));
 
-  // La reserva ya es una orden: sin acciones de reserva
+  // La reserva ya es una orden: una pantalla por trabajo, su dirección lleva a la orden (pulido 13.52)
   await page.goto(`/panel/agenda/${id}`);
-  // "Ver la orden" es el paso siguiente, en el encabezado
-  // Sin "Más": ya no se reprograma ni se cancela
-  await expect(page.getByRole("button", { name: "Más" })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Recibir vehículo" })).toHaveCount(0);
-  await page.getByRole("link", { name: "Ver la orden" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}(?:[?&]volver=[^&#]*)?$`));
+  await expect(page.getByRole("link", { name: "Recibir vehículo" })).toHaveCount(0);
   // En la orden, dos momentos de fotos: inicio y final (pedido 27)
   await expect(page.getByRole("button", { name: "Tomar foto" })).toHaveCount(2);
   await expect(page.getByLabel("Cámara para fotos del inicio")).toBeAttached();
