@@ -92,8 +92,8 @@ async function PortadaConDatos() {
           <h2 id="servicios-titulo" className={TITULO_SECCION}>Servicios</h2>
           <Servicios servicios={servicios} />
         </div>
-        {/* Baja hacia el negro de TikTok; sin TikTok sigue el cierre, gris como Servicios, y no hace falta */}
-        {negocio.redes.tiktok && <CorteDeSeccion hacia="fondo" />}
+        {/* Antes del negro de TikTok; sin TikTok sigue el cierre, gris como Servicios, y no hace falta */}
+        {negocio.redes.tiktok && <hr className="tt-led" />}
       </section>
 
       <BloqueTikTok enlace={negocio.redes.tiktok} trabajo={trabajoParaTikTok(fotos, trabajo)} />
@@ -148,7 +148,8 @@ function Cabecera({ children, foto, trabajo }: { children: React.ReactNode; foto
           />
         )}
       </div>
-      <CorteDeSeccion hacia="superficie" />
+      {/* Sobre la foto, que va posicionada detrás de todo */}
+      <hr className="tt-led relative" />
     </>
   );
 }
@@ -158,8 +159,8 @@ const CONTENEDOR_CABECERA = "mx-auto max-w-6xl px-4 pt-10 pb-20 md:pt-20 md:pb-2
 
 /**
  * La cabecera mientras llegan los datos: vacía, con el alto que ocupa el texto (medido el 12/11 con los textos de la
- * demostración: 513 px a 360 de ancho, 547 a 1280; entre 430 y 580 en otros anchos) y sin el corte, que llega con el
- * texto. Ya cargada, la cabecera mide lo suyo.
+ * demostración: 513 px a 360 de ancho, 547 a 1280; entre 430 y 580 en otros anchos) y el lugar de la línea, sin la
+ * línea, que llega con el texto. Ya cargada, la cabecera mide lo suyo.
  */
 function CabeceraCargando() {
   return (
@@ -167,15 +168,16 @@ function CabeceraCargando() {
       <div className={CONTENEDOR_CABECERA}>
         <div className="min-h-[32rem] md:min-h-[34rem]" />
       </div>
+      <div className="h-[3px]" />
     </div>
   );
 }
 
 /**
  * Foto del taller detrás del texto. Decorativa (el texto dice quiénes son): va oculta para los lectores de pantalla.
- * Pulido 13.53: visible, con un velo que oscurece solo donde va el texto (abajo en el celular, a la izquierda desde la
- * tableta), así el lema y la presentación se leen como sobre negro (6:1 o más aun con una foto blanca) y a la derecha se
- * ve el taller. En el celular va la versión de 640 px, con prioridad baja: la de 1600 le quitaba red al texto
+ * Pulido 13.53: visible. En el celular el velo oscurece abajo, donde va el texto; desde la tableta, como en la maqueta,
+ * es casi negro a la izquierda y se aclara hacia la derecha, y la foto se ve apenas también detrás del lema. Aun con una
+ * foto blanca, el texto más claro queda sobre un gris de #2a2a2a o más oscuro: 10:1 la presentación y 7:1 lo chico. En el celular va la versión de 640 px, con prioridad baja: la de 1600 le quitaba red al texto
  * (rendimiento de 90 a 84 en Lighthouse).
  */
 function FotoTaller({ foto }: { foto: UrlsFoto }) {
@@ -183,9 +185,9 @@ function FotoTaller({ foto }: { foto: UrlsFoto }) {
     <div aria-hidden className="tt-portada-foto absolute inset-0">
       <picture>
         <source media="(min-width: 768px)" srcSet={foto.url} />
-        <img src={foto.miniatura} alt="" fetchPriority="low" className="size-full object-cover opacity-60" />
+        <img src={foto.miniatura} alt="" fetchPriority="low" className="size-full object-cover opacity-60 md:opacity-55" />
       </picture>
-      <div className="absolute inset-0 bg-linear-to-t from-fondo from-40% via-fondo/80 to-fondo/35 md:bg-linear-to-r md:from-25% md:via-fondo/80 md:to-fondo/20" />
+      <div className="absolute inset-0 bg-linear-to-t from-fondo from-40% via-fondo/80 to-fondo/35 md:bg-linear-to-r md:from-fondo/90 md:from-0% md:via-fondo/70 md:via-45% md:to-fondo/25" />
     </div>
   );
 }
@@ -228,14 +230,6 @@ function AtencionDelTaller({ estado, direccion, comoLlegar }: { estado: ReturnTy
       )}
     </div>
   );
-}
-
-/**
- * El paso de una sección a la siguiente (pulido 13.53): el color de la que sigue sube en un escalón cuyo borde baja a
- * 60°, el único ángulo de la marca, con la línea LED roja arriba. Decorativo.
- */
-function CorteDeSeccion({ hacia }: { hacia: "superficie" | "fondo" }) {
-  return <div aria-hidden className={cn("tt-corte-seccion", hacia === "fondo" && "tt-corte-seccion--fondo")} />;
 }
 
 function Servicios({ servicios }: { servicios: ServicioPublico[] }) {

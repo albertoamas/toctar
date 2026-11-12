@@ -253,32 +253,6 @@
     }
   }
 
-  /* El paso de una sección de la portada a la siguiente (pulido 13.53): el color de la que sigue sube en un escalón a la
-     izquierda, con la línea LED arriba, y su borde baja a 60° (el único ángulo de la marca): 48 px de alto, 27,7 px de
-     corrida. Sin un corte largo en diagonal, que no tendría 60°. */
-  .tt-corte-seccion {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: -1px;
-    height: 48px;
-    background: linear-gradient(var(--rojo) 0 3px, var(--superficie) 3px);
-    clip-path: polygon(0 0, 42% 0, calc(42% + 27.7px) 100%, 0 100%);
-  }
-  .tt-corte-seccion--fondo {
-    background: linear-gradient(var(--rojo) 0 3px, var(--fondo) 3px);
-    clip-path: polygon(0 0, 58% 0, calc(58% + 27.7px) 100%, 0 100%);
-  }
-  @media (width < 48rem) {
-    .tt-corte-seccion {
-      height: 28px;
-      clip-path: polygon(0 0, 58% 0, calc(58% + 16.2px) 100%, 0 100%);
-    }
-    .tt-corte-seccion--fondo {
-      clip-path: polygon(0 0, 72% 0, calc(72% + 16.2px) 100%, 0 100%);
-    }
-  }
-
   /* En el celular, el pie fijo de un formulario (PieFormulario): un campo al que se llega con el teclado no queda tapado
      por él, y los avisos se ponen encima (sonner.tsx), así no tapan su botón. Con un modal abierto, los avisos van arriba.
      Esta medida vale hasta que carga JavaScript: después, el pie dice cuánto ocupa desde abajo (pie-formulario.tsx) */
