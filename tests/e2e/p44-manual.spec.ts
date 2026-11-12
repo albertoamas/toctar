@@ -6,8 +6,8 @@ import { crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER } from "./apoy
 test("sin sesión, el manual lleva al ingreso", async ({ page }) => {
   await page.goto("/panel/manual");
   await expect(page).toHaveURL(/\/ingresar/);
-  const pdf = await page.request.get("/panel/manual/manual-del-panel-toctar.pdf", { maxRedirects: 0 });
-  expect(pdf.status()).not.toBe(200);
+  const captura = await page.request.get("/panel/manual/capturas/15-orden.jpg", { maxRedirects: 0 });
+  expect(captura.status()).not.toBe(200);
 });
 
 test("el dueño lo abre desde el menú, con sus capturas y el PDF", async ({ page }, info) => {
@@ -16,6 +16,15 @@ test("el dueño lo abre desde el menú, con sus capturas y el PDF", async ({ pag
   await page.getByRole("link", { name: "Manual del panel" }).first().click();
   await expect(page).toHaveURL(/\/panel\/manual$/);
   await expect(page.getByRole("heading", { level: 1, name: "Manual del panel" })).toBeVisible();
+  // Un libro: una página a la vez, con el índice y los botones para pasar (scripts/manual/libro.js)
+  await page.getByRole("link", { name: "Empezar a leer" }).click();
+  await expect(page.getByRole("heading", { level: 2, name: "Índice" })).toBeVisible();
+  await page.getByRole("link", { name: /^El ciclo de un trabajo/ }).click();
+  await expect(page.getByRole("heading", { level: 2, name: "El ciclo de un trabajo" })).toBeVisible();
+  await expect(page.locator(".libro-numero")).toHaveText(/^\d+ de \d+$/);
+  await page.getByRole("button", { name: "Siguiente" }).click();
+  await expect(page.getByRole("heading", { level: 3, name: "Cotizar" })).toBeVisible();
+  await page.goBack();
   await expect(page.getByRole("heading", { level: 2, name: "El ciclo de un trabajo" })).toBeVisible();
   // Las capturas y el logo cargan (también las que esperan a que se baje)
   const rotas = await page.evaluate(async () => {
@@ -24,17 +33,17 @@ test("el dueño lo abre desde el menú, con sus capturas y el PDF", async ({ pag
     return [...document.images].filter((i) => i.naturalWidth === 0).map((i) => i.src);
   });
   expect(rotas).toEqual([]);
-  // El PDF se baja directo
-  const enlace = page.getByRole("link", { name: "Descargar PDF" });
-  await expect(enlace).toHaveAttribute("href", "/panel/manual/manual-del-panel-toctar.pdf");
-  const pdf = await page.request.get("/panel/manual/manual-del-panel-toctar.pdf");
-  expect(pdf.status()).toBe(200);
-  expect(pdf.headers()["content-type"]).toBe("application/pdf");
-  // Se revalida cada vez (pasa por la sesión) y no se baja de nuevo si no cambió
-  expect(pdf.headers()["cache-control"]).toBe("private, no-cache");
-  const igual = await page.request.get("/panel/manual/manual-del-panel-toctar.pdf", { headers: { "if-none-match": pdf.headers()["etag"] } });
+  // Por ahora, solo en la web: sin PDF
+  await page.goto("/panel/manual#portada");
+  await expect(page.getByRole("link", { name: "Descargar PDF" })).toHaveCount(0);
+  expect((await page.request.get("/panel/manual/manual-del-panel-toctar.pdf")).status()).toBe(404);
+  // Cada archivo se revalida (pasa por la sesión) y no se baja de nuevo si no cambió
+  const captura = await page.request.get("/panel/manual/capturas/15-orden.jpg");
+  expect(captura.headers()["content-type"]).toBe("image/jpeg");
+  expect(captura.headers()["cache-control"]).toBe("private, no-cache");
+  const igual = await page.request.get("/panel/manual/capturas/15-orden.jpg", { headers: { "if-none-match": captura.headers()["etag"] } });
   expect(igual.status()).toBe(304);
-  // "Volver al panel"
+  // "Volver al panel", también en la portada
   await page.getByRole("link", { name: "Volver al panel" }).click();
   await expect(page).toHaveURL(/\/panel$/);
 });
