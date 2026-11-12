@@ -31,7 +31,7 @@ En la portada, "Mira cómo trabajamos" mostraba una foto de la galería dentro d
   Si no es ninguno, se rechaza, aunque el navegador diga `video/mp4`. Se guarda con el tipo que corresponde a su firma.
 - **Solo quien ve Sitio web** (`exigirModulo("sitio")`) sube o quita el video.
 - **Rendimiento (RNF-02) y datos del visitante:**
-  - Al cargar la página se pide solo lo justo para el primer cuadro (`preload="metadata"`); se reproduce al entrar en pantalla.
+  - No se pide nada hasta que el video se acerca a la pantalla (a 300 px): recién ahí se le pone su archivo, y se pide lo justo para el primer cuadro (`preload="metadata"`). Se reproduce al entrar en pantalla.
   - Se pausa al salir de la pantalla.
   - Con "reducir movimiento" o con "ahorro de datos" del navegador no se reproduce solo: queda el primer cuadro con el botón de reproducir. Tocar el video abre TikTok.
 - **Bucket público:** el video es contenido del sitio, como las fotos de la galería.

@@ -36,8 +36,8 @@ const SERVICIOS_EN_PORTADA = 6;
 // HU-10 Portada: lema, presentación y WhatsApp, con el comparador de antes y después al lado (pedido de la demo del
 // 24/10); servicios; TikTok; cierre. Sin "Trabajos recientes" desde el pedido 36: las fotos están en la Galería.
 // Pulido 13.53 (maqueta aprobada el 12/11): la foto del taller visible detrás del lema, más grande, con cuándo atiende y
-// cómo llegar; las secciones separadas por un escalón a 60°; los dos primeros servicios destacados; y TikTok con un
-// celular que muestra un trabajo de la galería. Todo sale del panel: nada nuevo que cargar.
+// cómo llegar; las secciones separadas por la línea LED; los dos primeros servicios destacados (en el celular, en
+// filas: pulido 13.54); y en TikTok, el video que sube el dueño (pedido 48), sin marco y solo si hay uno.
 // Los textos y las listas salen del panel (B3) y se leen al atender la visita (el build no tiene base).
 // Toda la portada aparece de una vez (pulido 2.1): antes, los títulos fijos ("Servicios", el cierre) salían
 // en el primer envío y su contenido después, y se veían títulos sueltos. Mientras llegan los datos se ve
@@ -238,8 +238,8 @@ function AtencionDelTaller({ estado, direccion, comoLlegar }: { estado: ReturnTy
 function Servicios({ servicios }: { servicios: ServicioPublico[] }) {
   return (
     <>
-      {/* Los dos primeros, destacados (el orden lo pone el dueño en Sitio web > Servicios); en el celular, todos iguales
-          en dos columnas (pulido 13.53) */}
+      {/* Los dos primeros, destacados (el orden lo pone el dueño en Sitio web > Servicios); en el celular, todos en
+          filas, como la lista de Servicios (pulido 13.54) */}
       <ul className="tt-servicios-portada mt-8">
         {servicios.slice(0, SERVICIOS_EN_PORTADA).map((s, i) => (
           <li key={s.slug} className="grid">
@@ -260,8 +260,8 @@ const SERVICIOS_DESTACADOS = 2;
 
 /**
  * TikTok en la portada (pedido 35): un bloque propio después de los servicios, con su título, el usuario y un botón
- * blanco grande. Pulido 13.53: al lado, un celular con un trabajo de la galería y el botón de reproducir, como un video
- * (decorativo: el enlace es el botón). Solo si el dueño cargó el enlace; sin trabajos en la galería, sin el celular.
+ * blanco grande. Solo si el dueño cargó el enlace. Al lado (debajo en el celular), el video que subió en Sitio web >
+ * Textos > Portada (pedido 48), vertical y sin marco; sin video no va nada y el texto usa todo el ancho (pulido 13.54).
  */
 function BloqueTikTok({ enlace, video }: { enlace?: string; video: VideoPortada | null }) {
   if (!enlace) return null;
