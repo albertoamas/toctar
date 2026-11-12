@@ -6,8 +6,8 @@ import { crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER } from "./apoy
 test("sin sesión, el manual lleva al ingreso", async ({ page }) => {
   await page.goto("/panel/manual");
   await expect(page).toHaveURL(/\/ingresar/);
-  const pdf = await page.request.get("/panel/manual/manual-del-panel-toctar.pdf", { maxRedirects: 0 });
-  expect(pdf.status()).not.toBe(200);
+  const captura = await page.request.get("/panel/manual/capturas/15-orden.jpg", { maxRedirects: 0 });
+  expect(captura.status()).not.toBe(200);
 });
 
 test("el dueño lo abre desde el menú, con sus capturas y el PDF", async ({ page }, info) => {
@@ -33,16 +33,15 @@ test("el dueño lo abre desde el menú, con sus capturas y el PDF", async ({ pag
     return [...document.images].filter((i) => i.naturalWidth === 0).map((i) => i.src);
   });
   expect(rotas).toEqual([]);
-  // El PDF se baja directo, desde la portada
+  // Por ahora, solo en la web: sin PDF
   await page.goto("/panel/manual#portada");
-  const enlace = page.getByRole("link", { name: "Descargar PDF" });
-  await expect(enlace).toHaveAttribute("href", "/panel/manual/manual-del-panel-toctar.pdf");
-  const pdf = await page.request.get("/panel/manual/manual-del-panel-toctar.pdf");
-  expect(pdf.status()).toBe(200);
-  expect(pdf.headers()["content-type"]).toBe("application/pdf");
-  // Se revalida cada vez (pasa por la sesión) y no se baja de nuevo si no cambió
-  expect(pdf.headers()["cache-control"]).toBe("private, no-cache");
-  const igual = await page.request.get("/panel/manual/manual-del-panel-toctar.pdf", { headers: { "if-none-match": pdf.headers()["etag"] } });
+  await expect(page.getByRole("link", { name: "Descargar PDF" })).toHaveCount(0);
+  expect((await page.request.get("/panel/manual/manual-del-panel-toctar.pdf")).status()).toBe(404);
+  // Cada archivo se revalida (pasa por la sesión) y no se baja de nuevo si no cambió
+  const captura = await page.request.get("/panel/manual/capturas/15-orden.jpg");
+  expect(captura.headers()["content-type"]).toBe("image/jpeg");
+  expect(captura.headers()["cache-control"]).toBe("private, no-cache");
+  const igual = await page.request.get("/panel/manual/capturas/15-orden.jpg", { headers: { "if-none-match": captura.headers()["etag"] } });
   expect(igual.status()).toBe(304);
   // "Volver al panel", también en la portada
   await page.getByRole("link", { name: "Volver al panel" }).click();

@@ -1,11 +1,11 @@
 // Arma contenido/manual/manual.html, el Manual del panel que se abre en /panel/manual (pedido 44), desde el contenido de
 // scripts/manual/contenido.mjs y las posiciones de los números de contenido/manual/marcas.json (las saca
-// `npm run manual:capturas`). Uso: `npm run manual:armar`; después, `npm run manual:pdf` para su PDF.
+// `npm run manual:capturas`). Uso: `npm run manual:armar`. Por ahora el manual se lee solo en la web (sin PDF).
 // El contenido es nuestro (no de los usuarios): sus textos pueden llevar <b> y los botones como <span class="boton">.
 //
 // En la pantalla es un libro: una página a la vez (la portada, el índice, la portada de cada capítulo y un tema por
-// página), que se pasa con los botones, deslizando el dedo o con las flechas (scripts/manual/libro.js). Sin JavaScript,
-// al imprimir y en el PDF se ven todas, una tras otra.
+// página), que se pasa con los botones, deslizando el dedo o con las flechas (scripts/manual/libro.js). Sin JavaScript
+// y al imprimir se ven todas, una tras otra.
 
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -110,10 +110,6 @@ pagina(
     <p>Para el dueño y los encargados de TocTar Detailing: cada pantalla, en una tablet, con números que señalan qué tocar.</p>
     <div class="portada-acciones">
       <a class="empezar" href="#indice">Empezar a leer</a>
-      <a class="descargar" href="${RUTA}/manual-del-panel-toctar.pdf" download="Manual del panel TocTar.pdf">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
-        Descargar PDF
-      </a>
     </div>
     <p class="como-se-lee"><span class="marca marca--suelta" aria-hidden="true">1</span> En cada captura, el número señala lo que se explica debajo. Pasa de página con los botones de abajo o deslizando el dedo.</p>
   </header>`,

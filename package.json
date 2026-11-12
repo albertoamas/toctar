@@ -19,8 +19,7 @@
     "datos:demo": "node --env-file=.env scripts/datos-demo.mjs",
     "datos:reiniciar": "npm run db:reiniciar-local && npm run db:migrate && npm run datos:demo",
     "manual:capturas": "node --env-file=.env scripts/manual-capturas.mjs",
-    "manual:armar": "node scripts/manual-armar.mjs",
-    "manual:pdf": "node --env-file=.env scripts/manual-pdf.mjs"
+    "manual:armar": "node scripts/manual-armar.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1149.0",

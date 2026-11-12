@@ -44,8 +44,6 @@
   .leyenda-portada { display: inline-flex; align-items: center; gap: 10px; color: #d4d4d4; font-size: 15px; }
   .volver-panel { color: #fff; font-weight: 600; font-size: 15px; text-decoration: none; border: 1px solid rgb(255 255 255 / 0.4); border-radius: 999px; padding: 8px 14px; }
   .volver-panel:hover { border-color: #fff; }
-  .descargar { display: inline-flex; align-items: center; gap: 10px; font: 700 16px/1 var(--texto); color: #fff; background: var(--rojo); border-radius: 10px; padding: 14px 20px; min-height: 48px; text-decoration: none; }
-  .descargar:hover { background: var(--rojo-texto); }
 
 
   /* Índice */
@@ -140,7 +138,7 @@
     html, body { background: #fff; }
     body { font-size: 11.5px; }
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .descargar, .volver-panel, .empezar { display: none !important; }
+    .volver-panel, .empezar { display: none !important; }
     .portada { padding-block: 24px 28px; }
     .portada h1 { font-size: 60px; }
     .indice { padding-block: 16px 0; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -177,8 +175,6 @@
   .portada .como-se-lee .marca--suelta { flex: none; width: 28px; height: 28px; font-size: 17px; }
   .empezar { display: inline-flex; align-items: center; min-height: 48px; padding: 14px 22px; border-radius: 10px; background: #fff; color: var(--negro); font-weight: 700; text-decoration: none; }
   .empezar:hover { background: #e9e9e9; }
-  .portada .descargar { background: transparent; border: 1px solid rgb(255 255 255 / 0.5); }
-  .portada .descargar:hover { background: rgb(255 255 255 / 0.08); }
 
   .titulo-indice { font: 800 italic clamp(40px, 7vw, 60px)/1 var(--titular); margin: 0 0 20px; }
   .indice { padding: 0; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
@@ -277,10 +273,6 @@
     <p>Para el dueño y los encargados de TocTar Detailing: cada pantalla, en una tablet, con números que señalan qué tocar.</p>
     <div class="portada-acciones">
       <a class="empezar" href="#indice">Empezar a leer</a>
-      <a class="descargar" href="/panel/manual/manual-del-panel-toctar.pdf" download="Manual del panel TocTar.pdf">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
-        Descargar PDF
-      </a>
     </div>
     <p class="como-se-lee"><span class="marca marca--suelta" aria-hidden="true">1</span> En cada captura, el número señala lo que se explica debajo. Pasa de página con los botones de abajo o deslizando el dedo.</p>
   </header>
