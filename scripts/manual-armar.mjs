@@ -40,7 +40,7 @@ function tema(t) {
   const partes = [encabezado];
   if (t.intro) partes.push(`<p class="intro">${t.intro}</p>`);
   if (t.captura) partes.push(figura(t.captura));
-  if (t.pasos) partes.push(`<div class="bloque"><h4>Paso a paso</h4><ol class="pasos">${t.pasos.map((p) => `<li>${p}</li>`).join("")}</ol></div>`);
+  if (t.pasos) partes.push(`<div class="bloque"><h4>Paso a paso</h4><ol class="pasos">${t.pasos.map((p) => `<li><span>${p}</span></li>`).join("")}</ol></div>`);
   if (t.puntos) partes.push(`<ul class="puntos">${t.puntos.map((p) => `<li>${p}</li>`).join("")}</ul>`);
   if (t.claves) partes.push(`<dl class="claves">${t.claves.map(([a, b]) => `<div><dt>${a}</dt><dd>${b}</dd></div>`).join("")}</dl>`);
   if (t.nota) partes.push(`<p class="nota">${t.nota}</p>`);
@@ -74,7 +74,7 @@ const indice = [
   .map((i) => `<a class="indice-item" href="${i.href}"><span class="cap-num" aria-hidden="true">${i.num}</span><span><b>${i.titulo}</b><span>${i.texto}</span></span></a>`)
   .join("");
 
-const si = (v) => (v ? '<span class="si" aria-label="Sí">✓</span>' : '<span class="no" aria-label="No">—</span>');
+const si = (v) => (v ? '<span class="si">Sí</span>' : '<span class="no">No</span>');
 const permisos = `
       <div class="tabla"><table>
         <thead><tr><th scope="col">Lo que se puede hacer</th>${PERMISOS.columnas.map((c) => `<th scope="col">${c}</th>`).join("")}</tr></thead>
@@ -145,7 +145,7 @@ ${capitulos}
 <footer>
   <div class="ancho">
     <img src="/marca/toctar-horizontal-sin-lema-sobre-oscuro.svg" alt="TocTar Detailing">
-    <span>Manual del panel · Noviembre de 2026 · Hecho por YankoSoft</span>
+    <span>Manual del panel, noviembre de 2026. Hecho por YankoSoft.</span>
   </div>
 </footer>
 </body>

@@ -4,7 +4,7 @@
 //
 // Una captura: `ruta` y, si hace falta, `pasos` antes de sacarla (abrir un modal o un menú; nunca guardar nada) y `ver`
 // (lo que tiene que quedar arriba). Cada marca dice dónde está en la pantalla (`en`) y qué es (`texto`):
-//   { rol, nombre, exacto }  un botón, enlace, título… por su nombre (lo que lee el lector de pantalla)
+//   { rol, nombre, exacto }  un botón, un enlace o un título, por su nombre (lo que lee el lector de pantalla)
 //   { etiqueta }             un campo por su etiqueta
 //   { texto, exacto }        un texto a la vista
 //   { css }                  lo demás
@@ -37,11 +37,11 @@ export const CAPITULOS = [
         },
         pasos: [
           "Abre la dirección del panel en el navegador.",
-          "Para instalarla: en Android, el menú del navegador → <b>Agregar a la pantalla de inicio</b>; en el iPhone o el iPad, <b>Compartir</b> → <b>Agregar a inicio</b>.",
+          "Para instalarla: en Android, abre el menú del navegador y elige <b>Agregar a la pantalla de inicio</b>. En el iPhone o el iPad, toca <b>Compartir</b> y elige <b>Agregar a inicio</b>.",
           "Ingresa con tu usuario y tu contraseña.",
         ],
         siAlgoFalla: [
-          ["«Demasiados intentos»", "Te equivocaste varias veces seguidas: espera unos minutos y vuelve a intentar."],
+          ["“Demasiados intentos”", "Te equivocaste varias veces seguidas: espera unos minutos y vuelve a intentar."],
           ["Olvidé mi contraseña", "El dueño te pone una nueva desde Usuarios."],
         ],
       },
@@ -75,14 +75,14 @@ export const CAPITULOS = [
             { en: { rol: "navigation", nombre: "Pasos del trabajo" }, texto: "En qué paso va el trabajo." },
             { en: boton("Marcar listo", true), texto: "El paso siguiente: el botón grande y rojo. Siempre hay uno solo." },
             { en: boton("Más", true), texto: "Lo que se usa poco: extender la entrega, volver un paso.", lado: "arriba" },
-            { en: titulo("Datos"), texto: "Los datos. Las filas con «›» llevan a otra pantalla (la ficha del cliente, la cotización)." },
+            { en: titulo("Datos"), texto: "Los datos. Las filas con una flechita al final llevan a otra pantalla (la ficha del cliente, la cotización)." },
           ],
         },
         claves: [
           ["Botón rojo", "Lo principal de la pantalla: guardar, crear o el paso siguiente."],
-          ["Botón con borde", "Otra acción a la vista, como «Escribir por WhatsApp»."],
-          ["«Editar», «＋ Agregar»", "Junto al título de una sección: cambian esa sección, en una ventana."],
-          ["«⋯»", "Las opciones de una fila (un pago, un PDF)."],
+          ["Botón con borde", "Otra acción a la vista, como “Escribir por WhatsApp”."],
+          ["Editar y Agregar", "Junto al título de una sección: cambian esa sección, en una ventana."],
+          ["Tres puntos", "Las opciones de una fila: un pago, un PDF."],
         ],
       },
       {
@@ -90,12 +90,12 @@ export const CAPITULOS = [
         quien: ["todos"],
         sinCaptura: true,
         puntos: [
-          "Después de guardar sale un aviso corto («Pago registrado.», «Cliente creado.»). Se va solo.",
-          "Si falta algo, el aviso dice <b>«Revisa los campos marcados.»</b> y el campo queda en rojo con lo que hay que corregir.",
-          "Si cierras una ventana con cambios tocando afuera, con Escape o con el «atrás» del celular, abajo pregunta <b>«Tienes cambios sin guardar.»</b>: <span class='boton'>Seguir editando</span> no pierde nada; <span class='boton'>Descartar cambios</span> los borra.",
+          "Después de guardar sale un aviso corto (“Pago registrado.”, “Cliente creado.”). Se va solo.",
+          "Si falta algo, el aviso dice <b>“Revisa los campos marcados.”</b> y el campo queda en rojo con lo que hay que corregir.",
+          "Si cierras una ventana con cambios tocando afuera, con Escape o con el “atrás” del celular, abajo pregunta <b>“Tienes cambios sin guardar.”</b>: <span class='boton'>Seguir editando</span> no pierde nada; <span class='boton'>Descartar cambios</span> los borra.",
           "<span class='boton'>Cancelar</span> y la X cierran sin preguntar: ya es una decisión.",
-          "Si se cae el internet, arriba sale <b>«Sin conexión»</b>: espera a que vuelva para guardar.",
-          "Con una mejora del sistema sale <b>«Hay una versión nueva del sistema»</b> con <span class='boton'>Actualizar</span>. Tócalo cuando no estés a mitad de un formulario.",
+          "Si se cae el internet, arriba sale <b>“Sin conexión”</b>: espera a que vuelva para guardar.",
+          "Con una mejora del sistema sale <b>“Hay una versión nueva del sistema”</b> con <span class='boton'>Actualizar</span>. Tócalo cuando no estés a mitad de un formulario.",
         ],
       },
     ],
@@ -118,15 +118,15 @@ export const CAPITULOS = [
           ruta: "/panel/cotizaciones/nueva?cliente=8",
           marcas: [
             { en: { texto: "Servicios y precio", exacto: true }, texto: "Los tres pasos: cliente, vehículo y servicios. Se vuelve atrás sin perder lo escrito." },
-            { en: { texto: "Cambiar" }, texto: "Para quién es. «Cambiar» vuelve a elegir el cliente." },
-            { en: { css: "main [role=radiogroup]" }, texto: "Su vehículo, u «Otro vehículo» para registrar uno nuevo." },
-            { en: boton("Siguiente"), texto: "Sigue a los servicios; al final, «Crear cotización»." },
+            { en: { texto: "Cambiar" }, texto: "Para quién es. “Cambiar” vuelve a elegir el cliente." },
+            { en: { css: "main [role=radiogroup]" }, texto: "Su vehículo, u “Otro vehículo” para registrar uno nuevo." },
+            { en: boton("Siguiente"), texto: "Sigue a los servicios; al final, “Crear cotización”." },
           ],
         },
         pasos: [
           "<span class='boton rojo'>Nueva cotización</span> desde Inicio, Cotizaciones o la ficha del cliente.",
           "Elige el cliente y el vehículo (o regístralos ahí mismo).",
-          "Elige los servicios. Si un servicio tiene opciones (1 año, 2 años…), elige cuál. Ajusta el precio o suma un descuento si hace falta.",
+          "Elige los servicios. Si un servicio tiene opciones (por ejemplo, 1 año o 2 años), elige cuál. Ajusta el precio o suma un descuento si hace falta.",
           "Revisa la validez y el adelanto sugerido, y <span class='boton rojo'>Crear cotización</span>. Queda su PDF.",
         ],
       },
@@ -142,7 +142,7 @@ export const CAPITULOS = [
           marcas: [
             { en: enlace("Enviar por WhatsApp", true), texto: "Abre el chat del cliente con el mensaje y el enlace al PDF: solo toca Enviar." },
             { en: enlace("Ver PDF", true), lado: "arriba", texto: "El PDF, como lo ve el cliente." },
-            { en: boton("Opciones del PDF de la versión 2"), lado: "arriba", texto: "«⋯»: compartir el archivo o descargarlo." },
+            { en: boton("Opciones del PDF de la versión 2"), lado: "arriba", texto: "Los tres puntos: compartir el archivo o descargarlo." },
             { en: titulo("Versiones"), texto: "Cada versión, de la más nueva a la más vieja. La reemplazada queda en gris." },
             { en: enlace("Reservar en Agenda", true), texto: "Aceptada: el paso siguiente es reservarle un día." },
             { en: boton("Más", true), lado: "arriba", texto: "Nueva versión, Rechazar o Volver a pendiente." },
@@ -150,8 +150,8 @@ export const CAPITULOS = [
         },
         pasos: [
           "<span class='boton'>Enviar por WhatsApp</span>: el cliente recibe el mensaje con un enlace y ve la cotización sin cuenta.",
-          "Cuando responde que sí: <span class='boton rojo'>Aceptó</span>. Si dice que no: <b>Rechazar</b> en «Más», con el motivo.",
-          "Para cambiar un precio o un servicio: <b>Nueva versión</b> en «Más». Se manda la nueva; el enlace de la vieja ya no la muestra.",
+          "Cuando responde que sí: <span class='boton rojo'>Aceptó</span>. Si dice que no: <b>Rechazar</b> en “Más”, con el motivo.",
+          "Para cambiar un precio o un servicio: <b>Nueva versión</b> en “Más”. Se manda la nueva; el enlace de la vieja ya no la muestra.",
         ],
         nota: "El enlace del PDF vale mientras la cotización vale: hasta su fecha de validez (una aceptada, siempre). Vencida, reemplazada o rechazada, el cliente ve una página que lo dice, sin precios.",
       },
@@ -206,8 +206,8 @@ export const CAPITULOS = [
           ruta: "/panel/ordenes/10/recibir",
           marcas: [
             { en: boton("Marcar todas como bien"), texto: "Si todo está bien, de un toque." },
-            { en: boton("Bien: Capó", true), lado: "arriba", texto: "«Bien»: la parte no tiene nada." },
-            { en: boton("Detalle: Capó", true), lado: "arriba", texto: "«Detalle»: un rayón, un golpe u otra cosa, con su nota y su foto." },
+            { en: boton("Bien: Capó", true), lado: "arriba", texto: "“Bien”: la parte no tiene nada." },
+            { en: boton("Detalle: Capó", true), lado: "arriba", texto: "“Detalle”: un rayón, un golpe u otra cosa, con su nota y su foto." },
           ],
           ver: titulo("Checklist"),
         },
@@ -230,15 +230,15 @@ export const CAPITULOS = [
           marcas: [
             { en: titulo("Cómo llegó"), texto: "Cómo llegó: el checklist de la recepción, con los detalles y sus fotos." },
             { en: boton("Tomar foto", true), texto: "Las fotos del inicio y del final del trabajo." },
-            { en: titulo("Historial"), texto: "El historial: lo escribe el sistema (reservada, recibido, en proceso, listo…)." },
+            { en: titulo("Historial"), texto: "El historial: lo escribe el sistema (reservada, recibido, en proceso, lista y entregada)." },
           ],
         },
         pasos: [
           "<span class='boton rojo'>Empezar trabajo</span> y, al terminar, <span class='boton rojo'>Marcar listo</span>.",
           "Toma las fotos del inicio y las del final: sirven para la galería del sitio.",
-          "Si se atrasa: <b>Extender entrega</b> en «Más». Si se marcó algo por error: volver un paso, en «Más».",
+          "Si se atrasa: <b>Extender entrega</b> en “Más”. Si se marcó algo por error: volver un paso, en “Más”.",
         ],
-        nota: "Si el trabajo vino de una reserva con nota («trae llaves de repuesto»), la nota está en la orden.",
+        nota: "Si el trabajo vino de una reserva con nota (“trae llaves de repuesto”), la nota está en la orden.",
       },
       {
         paso: 5,
@@ -248,7 +248,7 @@ export const CAPITULOS = [
           id: "16-orden-lista",
           ruta: "/panel/ordenes/9",
           marcas: [
-            { en: boton("Avisar por WhatsApp", true), texto: "Abre el WhatsApp con el mensaje armado: «tu vehículo está listo». Queda quién avisó y cuándo." },
+            { en: boton("Avisar por WhatsApp", true), texto: "Abre el WhatsApp con el mensaje armado: “tu vehículo está listo”. Queda quién avisó y cuándo." },
             { en: enlace("Entregar vehículo", true), texto: "Cuando viene el cliente." },
             { en: enlace("Ver la cotización"), texto: "La cotización de la que salió." },
           ],
@@ -266,11 +266,11 @@ export const CAPITULOS = [
           ruta: "/panel/ordenes/9/entregar",
           marcas: [
             { en: titulo("Pagos"), texto: "Lo que falta cobrar, y Registrar pago (quien tiene Pagos)." },
-            { en: titulo("Firma del cliente"), texto: "El cliente firma con el dedo. Si no puede, «Entregar sin firma» con el motivo." },
+            { en: titulo("Firma del cliente"), texto: "El cliente firma con el dedo. Si no puede, “Entregar sin firma” con el motivo." },
             { en: { rol: "button", nombre: "Entregar vehículo", exacto: true }, texto: "Entrega el vehículo." },
           ],
         },
-        nota: "Si el cliente se lleva el vehículo debiendo, solo lo autoriza quien tiene el permiso «Entrega con saldo». El saldo se sigue cobrando después, desde Saldos pendientes.",
+        nota: "Si el cliente se lleva el vehículo debiendo, solo lo autoriza quien tiene el permiso “Entrega con saldo”. El saldo se sigue cobrando después, desde Saldos pendientes.",
       },
     ],
   },
@@ -301,7 +301,7 @@ export const CAPITULOS = [
           ["Saldo", "Lo que se paga desde que llega el vehículo, también al retirarlo."],
           ["¿Quién decide cuál es?", "El sistema, por la fecha del pago. No hay que elegirlo."],
         ],
-        nota: "Un pago mal cargado no se borra: «⋯» del pago → <b>Anular pago</b>, con el motivo. Queda tachado y deja de contar.",
+        nota: "Un pago mal cargado no se borra: toca los tres puntos del pago y elige <b>Anular pago</b>, con el motivo. Queda tachado y deja de contar.",
       },
       {
         titulo: "Saldos pendientes",
@@ -312,7 +312,7 @@ export const CAPITULOS = [
           alto: 1000,
           ruta: "/panel/pagos",
           marcas: [
-            { en: boton("Ordenar"), texto: "Ordenar: las más antiguas, las de más monto…" },
+            { en: boton("Ordenar"), texto: "Ordenar: las más antiguas primero, o las de más monto." },
             { en: enlace("Escribir por WhatsApp"), texto: "Le escribe con el mensaje del saldo.", lado: "arriba" },
             { en: boton("Registrar pago"), texto: "Cobra desde la misma fila.", lado: "arriba" },
           ],
@@ -349,7 +349,7 @@ export const CAPITULOS = [
           id: "31-ficha-cliente",
           ruta: "/panel/clientes/8",
           marcas: [
-            { en: titulo("Vehículos"), texto: "Sus vehículos. En «Editar» de cada uno: cambiar de dueño o desactivarlo." },
+            { en: titulo("Vehículos"), texto: "Sus vehículos. En “Editar” de cada uno: cambiar de dueño o desactivarlo." },
             { en: titulo("Reservas"), texto: "Sus reservas y órdenes, con su saldo." },
             { en: titulo("Cotizaciones"), texto: "Sus cotizaciones." },
             { en: enlace("Nueva cotización"), texto: "Cotizar o reservar para este cliente, sin volver a elegirlo." },
@@ -391,8 +391,8 @@ export const CAPITULOS = [
           marcas: [
             { en: { css: "main h1" }, texto: "El servicio y si se muestra en el sitio." },
             { en: titulo("Datos"), texto: "Cuántos días dura y su mantenimiento (cada cuánto vuelve)." },
-            { en: boton("Editar variantes"), texto: "Sus opciones: 1 año, 2 años, Básico, Premium…" },
-            { en: { texto: "1 año", exacto: true }, texto: "Cada opción con un precio por tamaño. «Editar» los cambia; uno vacío dice «Según evaluación»." },
+            { en: boton("Editar variantes"), texto: "Sus opciones: 1 año, 2 años, Básico o Premium." },
+            { en: { texto: "1 año", exacto: true }, texto: "Cada opción con un precio por tamaño. “Editar” los cambia; uno vacío dice “Según evaluación”." },
           ],
         },
         nota: "Cambiar un precio no cambia las cotizaciones ya enviadas, y cada precio guarda su historial.",
@@ -406,11 +406,11 @@ export const CAPITULOS = [
           marcas: [
             { en: enlace("Portada"), texto: "La portada: el título, la frase y la foto." },
             { en: enlace("Servicios"), texto: "La página de cada servicio: textos, beneficios, pasos y foto, y si se muestra." },
-            { en: enlace("Galería"), texto: "Las fotos de antes y después. Desde una orden entregada, «Publicar en la galería»." },
+            { en: enlace("Galería"), texto: "Las fotos de antes y después. Desde una orden entregada, “Publicar en la galería”." },
           ],
         },
         puntos: [
-          "Los <b>reclamos</b> llegan desde la página «Garantía y reclamos» del sitio. La lista abre en <b>Pendientes</b>.",
+          "Los <b>reclamos</b> llegan desde la página “Garantía y reclamos” del sitio. La lista abre en <b>Pendientes</b>.",
           "En cada reclamo: <span class='boton'>Escribir por WhatsApp</span> y, al resolverlo, <span class='boton rojo'>Marcar como atendido</span> con lo que se hizo.",
         ],
       },
@@ -477,7 +477,7 @@ export const ESTADOS = [
   { grupo: "Cotización", filas: [
     ["Pendiente", "Enviada, sin respuesta del cliente."],
     ["Aceptada", "El cliente dijo que sí."],
-    ["Sin fecha", "Aceptada, pero todavía sin reserva: está en «Por reservar»."],
+    ["Sin fecha", "Aceptada, pero todavía sin reserva: está en “Por reservar”."],
     ["Rechazada", "El cliente dijo que no (con su motivo)."],
     ["Reemplazada", "Una versión vieja: vale la más nueva."],
   ] },
@@ -494,8 +494,8 @@ export const ESTADOS = [
 
 /** Un día cualquiera, por perfil. */
 export const DIA = [
-  { quien: "taller", titulo: "En el taller", pasos: ["Abre Inicio: «Para hoy» dice qué llega y qué toca.", "Recibe los vehículos del día con el checklist.", "Trabaja cada orden: empieza, toma las fotos, márcala lista.", "Avisa al cliente y, cuando viene, entrega."] },
-  { quien: "atencion", titulo: "En atención", pasos: ["Revisa «Para atender» en Inicio: cotizaciones aceptadas sin fecha, saldos, reclamos.", "Cotiza y envía por WhatsApp.", "Reserva las aceptadas y cobra los adelantos.", "Cobra al entregar y avisa los mantenimientos."] },
+  { quien: "taller", titulo: "En el taller", pasos: ["Abre Inicio: “Para hoy” dice qué llega y qué toca.", "Recibe los vehículos del día con el checklist.", "Trabaja cada orden: empieza, toma las fotos, márcala lista.", "Avisa al cliente y, cuando viene, entrega."] },
+  { quien: "atencion", titulo: "En atención", pasos: ["Revisa “Para atender” en Inicio: cotizaciones aceptadas sin fecha, saldos, reclamos.", "Cotiza y envía por WhatsApp.", "Reserva las aceptadas y cobra los adelantos.", "Cobra al entregar y avisa los mantenimientos."] },
   { quien: "dueno", titulo: "El dueño", pasos: ["Mira el resumen de Inicio: por cobrar, en el taller, atrasadas.", "Responde los reclamos.", "Ajusta precios, servicios o mensajes cuando hace falta.", "Revisa Saldos pendientes."] },
 ];
 
@@ -503,12 +503,12 @@ export const DIA = [
 export const PROBLEMAS = [
   ["No veo un módulo en el menú", "No tienes ese permiso. El dueño lo da en Usuarios."],
   ["No veo los precios", "Ver precios va con el permiso de Cotizaciones o de Pagos."],
-  ["«Recibir vehículo» no aparece", "Aparece desde el día de ingreso de la reserva. Si llegó antes, reprograma la reserva."],
+  ["“Recibir vehículo” no aparece", "Aparece desde el día de ingreso de la reserva. Si llegó antes, reprograma la reserva."],
   ["No me deja reservar en un espacio", "Ya está ocupado en esas fechas: el sistema solo ofrece los libres."],
-  ["Me equivoqué en un pago", "«⋯» del pago → Anular pago, con el motivo. Después regístralo bien."],
-  ["Hay que cambiar una cotización ya enviada", "«Más» → Nueva versión. La anterior queda como se mandó."],
-  ["El cliente no puede abrir el enlace", "Puede que haya vencido o tenga una versión nueva: mándale la vigente con «Enviar por WhatsApp»."],
-  ["Sale «Sin conexión»", "No se guarda sin internet: espera a que vuelva la señal."],
+  ["Me equivoqué en un pago", "Toca los tres puntos del pago y elige Anular pago, con el motivo. Después regístralo bien."],
+  ["Hay que cambiar una cotización ya enviada", "En “Más”, elige Nueva versión. La anterior queda como se mandó."],
+  ["El cliente no puede abrir el enlace", "Puede que haya vencido o tenga una versión nueva: mándale la vigente con “Enviar por WhatsApp”."],
+  ["Sale “Sin conexión”", "No se guarda sin internet: espera a que vuelva la señal."],
   ["Otra duda o un error", "Una captura de pantalla por WhatsApp a YankoSoft, con lo que estabas haciendo."],
 ];
 
@@ -516,8 +516,8 @@ export const PROBLEMAS = [
 export const GLOSARIO = [
   ["Orden", "El trabajo de un vehículo desde que se recibe hasta que se entrega."],
   ["Reserva", "El día y el espacio apartados para un vehículo, antes de que llegue."],
-  ["Espacio", "Un lugar de trabajo del taller. Se configuran en Configuración → Taller."],
-  ["Variante u opción", "Una forma del mismo servicio: 1 año, 2 años, Básico, Premium."],
+  ["Espacio", "Un lugar de trabajo del taller. Se configuran en Configuración, en la parte Taller."],
+  ["Variante u opción", "Una forma del mismo servicio: 1 año, 2 años, Básico o Premium."],
   ["Tamaño", "El tamaño del vehículo: define el precio de cada servicio."],
   ["Checklist", "La revisión parte por parte al recibir."],
   ["Adelanto / Saldo", "Lo que se paga antes de que llegue el vehículo / después."],
