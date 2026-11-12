@@ -6,7 +6,7 @@ import { db } from "@/db";
 import { archivo, contenidoPagina, faq, galeriaItem, servicio, type Beneficio, type Paso } from "@/db/esquema";
 import { urlsFoto, type UrlsFoto } from "@/lib/fotos";
 import { leerContenido, type ContenidoPagina, type Pagina, type PaginaConFoto } from "./contenido";
-import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, ETIQUETA_SERVICIOS, fotosDeSecciones, obtenerFotoDePagina, opcionesDelSitio, type FotosDeSecciones } from "./consultas";
+import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, ETIQUETA_SERVICIOS, fotosDeSecciones, obtenerFotoDePagina, obtenerVideoDePortada, opcionesDelSitio, type FotosDeSecciones, type VideoPortada } from "./consultas";
 
 // Lecturas del sitio público (B4). Van en caché hasta que el panel guarda un cambio: las acciones
 // de B3 invalidan estas etiquetas (updateTag). Solo devuelven lo visible.
@@ -121,6 +121,14 @@ export async function fotoDePaginaPublica(pagina: PaginaConFoto): Promise<UrlsFo
   cacheTag(ETIQUETA_CONTENIDO);
   cacheLife("max");
   return obtenerFotoDePagina(pagina);
+}
+
+/** El video de "Mira cómo trabajamos" (pedido 48), o null. */
+export async function videoDePortadaPublico(): Promise<VideoPortada | null> {
+  "use cache";
+  cacheTag(ETIQUETA_CONTENIDO);
+  cacheLife("max");
+  return obtenerVideoDePortada();
 }
 
 export async function preguntasPublicas(): Promise<{ pregunta: string; respuesta: string }[]> {

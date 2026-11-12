@@ -11,5 +11,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/panel", "/panel/:path*"],
+  // Menos la subida del video de la portada (pedido 48): con proxy, Next guarda en memoria el cuerpo de cada pedido y lo
+  // corta a los 10 MB (proxyClientMaxBodySize), y el video llega hasta 20. La ruta verifica sola la sesión y el permiso.
+  matcher: ["/panel", "/panel/((?!sitio/video$).*)"],
 };

@@ -106,6 +106,8 @@ export const contenidoPagina = pgTable("contenido_pagina", {
   datos: jsonb("datos").$type<Record<string, unknown>>().notNull(),
   /** Foto de la página, opcional. Hoy solo la portada: la foto del taller detrás del lema. */
   fotoArchivoId: integer("foto_archivo_id").references(() => archivo.id),
+  /** Video corto, opcional. Solo la portada: el de "Mira cómo trabajamos" (pedido 48). */
+  videoArchivoId: integer("video_archivo_id").references(() => archivo.id),
   updatedAt: momento("updated_at").defaultNow().notNull(),
   updatedBy: integer("updated_by").references(() => usuario.id),
 });

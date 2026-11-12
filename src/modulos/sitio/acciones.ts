@@ -13,6 +13,7 @@ import { agregarAGaleria } from "./agregar-a-galeria";
 import { ETIQUETA_CONTENIDO, listarGaleria, listarPreguntas, listarServicios, servicioEnSitio } from "./consultas";
 import { galeriaCambiada } from "./galeria-cambiada";
 import { servicioCambiado } from "./servicio-cambiado";
+import { BORRAR_VIDEO_FALLO, cambiarVideoDePortada } from "./video";
 import { esquemaEditarGaleria, esquemaFotoSeccion, esquemaGaleria, esquemaId, esquemaIdFormulario, esquemaMover, esquemaParteServicio, esquemaQuitarFotoSeccion, esquemaVisibilidad, motivoParaNoMostrar, type ParteServicio } from "./esquemas";
 
 // Servicios del sitio (HU-07, RF-11), textos (HU-08, RF-10) y galería (HU-09, RF-12). Entra el dueño o un encargado con el permiso "sitio".
@@ -320,6 +321,15 @@ export async function quitarFotoDePagina(pagina: string): Promise<EstadoFormular
   const anterior = await cambiarFotoDe(entrada.data, null, Number(autor.id));
   if (anterior) await eliminarFoto(anterior).catch((e) => console.error(BORRAR_FOTO_PAGINA_FALLO, e));
   return { ok: true, mensaje: FOTOS_DE_PAGINA[entrada.data].quitada };
+}
+
+/** Quita el video de "Mira cómo trabajamos" (pedido 48). Subirlo va por la ruta /panel/sitio/video (`video.ts`). */
+export async function quitarVideoDePortada(): Promise<EstadoFormulario> {
+  const autor = await exigirModulo("sitio");
+  const anterior = await cambiarVideoDePortada(null, Number(autor.id));
+  despuesDeCambiarContenido("textos");
+  if (anterior) await eliminarFoto(anterior).catch((e) => console.error(BORRAR_VIDEO_FALLO, e));
+  return { ok: true, mensaje: "Video quitado." };
 }
 
 /** Agrega (sin id) o edita (con id) una pregunta frecuente. */

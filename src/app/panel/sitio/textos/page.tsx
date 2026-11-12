@@ -7,8 +7,10 @@ import { exigirModulo } from "@/lib/sesion";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { FormularioContenido, TextosDePagina } from "@/modulos/sitio/componentes/formulario-contenido";
 import { FotoDePagina } from "@/modulos/sitio/componentes/foto-pagina";
-import { CLAVES_PAGINA, llevaFoto, PAGINAS, type Pagina } from "@/modulos/sitio/contenido";
-import { obtenerContenidos, obtenerFotosDePaginas } from "@/modulos/sitio/consultas";
+import { VideoDePortada } from "@/modulos/sitio/componentes/video-portada";
+import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
+import { CLAVES_PAGINA, llevaFoto, PAGINAS, PORTADA, type Pagina } from "@/modulos/sitio/contenido";
+import { obtenerContenidos, obtenerFotosDePaginas, obtenerVideoDePortada } from "@/modulos/sitio/consultas";
 
 /** El título de la pestaña del navegador, el mismo que el de la pantalla: "Portada", o "Textos del sitio" si se ven todas. */
 export async function generateMetadata({ searchParams }: PageProps<"/panel/sitio/textos">): Promise<Metadata> {
@@ -38,7 +40,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/sitio/textos">
   const { pagina } = await searchParams;
   const elegida = esPagina(pagina) ? pagina : null;
   const paginas = elegida ? [elegida] : CLAVES_PAGINA;
-  const [contenidos, fotos] = await Promise.all([obtenerContenidos(), obtenerFotosDePaginas()]);
+  const [contenidos, fotos, video, { redes }] = await Promise.all([obtenerContenidos(), obtenerFotosDePaginas(), obtenerVideoDePortada(), obtenerDatosPublicos()]);
   return (
     <>
       <EncabezadoPagina titulo={elegida ? PAGINAS[elegida].titulo : "Textos del sitio"} volver={{ href: "/panel/sitio", texto: "Sitio web" }} />
@@ -48,7 +50,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/sitio/textos">
             key={p}
             id={p}
             // Entrando a una sola, el título de la pantalla ya es su nombre: la tarjeta dice lo que lleva
-            titulo={elegida ? (llevaFoto(p) ? "Textos y foto" : "Textos") : PAGINAS[p].titulo}
+            titulo={elegida ? (p === PORTADA ? "Textos, foto y video" : llevaFoto(p) ? "Textos y foto" : "Textos") : PAGINAS[p].titulo}
             etiquetaEditar={`Editar ${PAGINAS[p].titulo.toLowerCase()}`}
             tituloModal={PAGINAS[p].titulo}
             lectura={
@@ -56,6 +58,8 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/sitio/textos">
                 <TextosDePagina pagina={p} contenido={contenidos[p]} />
                 {/* La portada lleva la foto del taller y Nosotros la del equipo, al pie de sus textos */}
                 {llevaFoto(p) && <FotoDePagina pagina={p} foto={fotos[p] ?? null} />}
+                {/* Y la portada, el video de "Mira cómo trabajamos" (pedido 48) */}
+                {p === PORTADA && <VideoDePortada video={video} hayTikTok={!!redes.tiktok} />}
               </div>
             }
           >

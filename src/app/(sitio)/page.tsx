@@ -8,6 +8,7 @@ import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { ComparadorAntesDespues } from "@/componentes/sitio/comparador-antes-despues";
 import { EnlaceTikTok } from "@/componentes/sitio/enlace-tiktok";
 import { EstadoDelTaller } from "@/componentes/sitio/estado-del-taller";
+import { BotonReproducir, VideoDelCelular } from "@/componentes/sitio/video-del-celular";
 import { PortadaArte } from "@/componentes/sitio/portada-arte";
 import { TITULO_SECCION } from "@/componentes/sitio/titulo-pagina";
 import { TarjetaServicio } from "@/componentes/sitio/tarjeta-servicio";
@@ -20,7 +21,8 @@ import { enlaceComoLlegar } from "@/lib/ubicacion";
 import { PORTADA } from "@/modulos/sitio/contenido";
 import { ladoDelLema, nombreDelTrabajo, trabajoDePortada, trabajoParaTikTok } from "@/modulos/sitio/galeria";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
-import { contenidoPublico, fotoDePaginaPublica, galeriaPublica, serviciosPublicos, type FotoGaleria, type ServicioPublico } from "@/modulos/sitio/publico";
+import type { VideoPortada } from "@/modulos/sitio/consultas";
+import { contenidoPublico, fotoDePaginaPublica, galeriaPublica, serviciosPublicos, videoDePortadaPublico, type FotoGaleria, type ServicioPublico } from "@/modulos/sitio/publico";
 
 // Las descripciones para Google van fijas (dentro del <head>, que es donde las lee Google) y sin nombrar
 // servicios concretos: así no quedan desactualizadas cuando el dueño agrega o quita uno.
@@ -62,12 +64,13 @@ export default function Portada() {
 
 async function PortadaConDatos() {
   await connection();
-  const [inicio, foto, servicios, fotos, negocio] = await Promise.all([
+  const [inicio, foto, servicios, fotos, negocio, video] = await Promise.all([
     contenidoPublico("inicio"),
     fotoDePaginaPublica(PORTADA),
     serviciosPublicos(),
     galeriaPublica(),
     obtenerDatosPublicos(),
+    videoDePortadaPublico(),
   ]);
   const trabajo = trabajoDePortada(fotos);
   // Se lee al atender la visita (connection): el estado es el de este momento, en hora de Bolivia
@@ -96,7 +99,7 @@ async function PortadaConDatos() {
         {negocio.redes.tiktok && <hr className="tt-led" />}
       </section>
 
-      <BloqueTikTok enlace={negocio.redes.tiktok} trabajo={trabajoParaTikTok(fotos, trabajo)} />
+      <BloqueTikTok enlace={negocio.redes.tiktok} trabajo={trabajoParaTikTok(fotos, trabajo)} video={video} />
 
       <CierreWhatsApp
         titulo="Cuéntanos qué necesita tu vehículo"
@@ -260,7 +263,7 @@ const SERVICIOS_DESTACADOS = 2;
  * blanco grande. Pulido 13.53: al lado, un celular con un trabajo de la galería y el botón de reproducir, como un video
  * (decorativo: el enlace es el botón). Solo si el dueño cargó el enlace; sin trabajos en la galería, sin el celular.
  */
-function BloqueTikTok({ enlace, trabajo }: { enlace?: string; trabajo: FotoGaleria | null }) {
+function BloqueTikTok({ enlace, trabajo, video }: { enlace?: string; trabajo: FotoGaleria | null; video: VideoPortada | null }) {
   if (!enlace) return null;
   const usuario = usuarioDeTikTok(enlace);
   return (
@@ -273,21 +276,24 @@ function BloqueTikTok({ enlace, trabajo }: { enlace?: string; trabajo: FotoGaler
         {usuario && <p className="text-sm font-semibold text-tinta-suave">{usuario}</p>}
         <EnlaceTikTok enlace={enlace} texto="Ver en TikTok" className="mt-2" />
       </div>
-      {trabajo && (
+      {(video || trabajo) && (
         // Un toque en el celular también abre TikTok (con el botón de reproducir, sería raro que no hiciera nada); para
         // el teclado y el lector de pantalla basta "Ver en TikTok": este enlace, igual, queda fuera de los dos
         <a href={enlace} target="_blank" rel="noreferrer" tabIndex={-1} aria-hidden className="tt-celular justify-self-center">
           <div className="tt-celular__pantalla">
-            {/* eslint-disable-next-line @next/next/no-img-element -- la miniatura ya es de 640 px, como la foto del taller */}
-            <img src={trabajo.despues.miniatura} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
-            <span className="tt-celular__reproducir">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M8 5v14l11-7Z" />
-              </svg>
-            </span>
+            {video ? (
+              // Pedido 48: el video que subió el dueño, con la foto del trabajo mientras no se mueve
+              <VideoDelCelular src={video.url} tipo={video.tipo} poster={trabajo?.despues.miniatura ?? null} />
+            ) : (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element -- la miniatura ya es de 640 px, como la foto del taller */}
+                <img src={trabajo!.despues.miniatura} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
+                <BotonReproducir />
+              </>
+            )}
             <span className="tt-celular__pie">
               {usuario && <b>{usuario}</b>}
-              <span>{trabajo.servicio.nombre}, del antes al después</span>
+              <span>{trabajo && !video ? `${trabajo.servicio.nombre}, del antes al después` : "Del antes al después"}</span>
             </span>
           </div>
         </a>

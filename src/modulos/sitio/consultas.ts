@@ -3,6 +3,7 @@ import { and, asc, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { archivo, contenidoPagina, faq, galeriaItem, servicio, servicioFoto, variante, type Beneficio, type Paso } from "@/db/esquema";
+import { urlArchivo } from "@/lib/almacenamiento";
 import { urlsFoto, type UrlsFoto } from "@/lib/fotos";
 import { CLAVES_PAGINA, leerContenido, type ContenidoPagina, type Pagina, type PaginaConFoto } from "./contenido";
 import type { SeccionFoto } from "./secciones-foto";
@@ -112,6 +113,18 @@ export async function obtenerFotoDePagina(pagina: PaginaConFoto): Promise<UrlsFo
     .innerJoin(archivo, eq(contenidoPagina.fotoArchivoId, archivo.id))
     .where(eq(contenidoPagina.clave, pagina));
   return fila ? urlsFoto(fila.foto) : null;
+}
+
+/** El video de la portada (pedido 48): de qué tipo es y su dirección pública, o null. Público, como la foto. */
+export type VideoPortada = { url: string; tipo: string };
+
+export async function obtenerVideoDePortada(): Promise<VideoPortada | null> {
+  const [fila] = await db
+    .select({ clave: archivo.clave, tipo: archivo.tipoMime })
+    .from(contenidoPagina)
+    .innerJoin(archivo, eq(contenidoPagina.videoArchivoId, archivo.id))
+    .where(eq(contenidoPagina.clave, "inicio"));
+  return fila ? { url: urlArchivo(fila.clave), tipo: fila.tipo } : null;
 }
 
 /** Las fotos de las páginas de textos que tienen (panel de Textos), en una sola consulta. */
