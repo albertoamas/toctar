@@ -41,14 +41,15 @@ export function VideoDelCelular({ src, tipo, poster }: { src: string; tipo: stri
         muted
         loop
         playsInline
-        // Sin foto de la galería, que cargue el primer cuadro para no dejar la pantalla negra
+        // Sin foto de la galería, que cargue el primer cuadro para no dejar la pantalla negra (Safari lo dibuja solo
+        // si se le pide un momento del video: #t=0.1)
         preload={poster ? "none" : "metadata"}
         poster={poster ?? undefined}
         onPlaying={() => setMoviendose(true)}
         onPause={() => setMoviendose(false)}
         className="size-full object-cover"
       >
-        <source src={src} type={tipo} />
+        <source src={poster ? src : `${src}#t=0.1`} type={tipo} />
       </video>
       {!moviendose && <BotonReproducir />}
     </>

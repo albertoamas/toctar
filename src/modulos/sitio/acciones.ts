@@ -10,6 +10,7 @@ import { reordenar, type Direccion } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
 import { CLAVES_PAGINA, FOTOS_DE_PAGINA, PAGINAS, datosDelFormulario, esquemaPagina, esquemaPaginaConFoto, esquemaPregunta, type Pagina, type PaginaConFoto } from "./contenido";
 import { agregarAGaleria } from "./agregar-a-galeria";
+import { cambiarArchivoDePagina } from "./archivo-de-pagina";
 import { ETIQUETA_CONTENIDO, listarGaleria, listarPreguntas, listarServicios, servicioEnSitio } from "./consultas";
 import { galeriaCambiada } from "./galeria-cambiada";
 import { servicioCambiado } from "./servicio-cambiado";
@@ -270,18 +271,9 @@ export async function guardarContenido(_previo: EstadoFormulario, datos: FormDat
   return { ok: true, mensaje: `${PAGINAS[pagina].titulo}: cambios guardados.` };
 }
 
-/**
- * Pone la foto de una página (o ninguna) y devuelve la que tenía, en una transacción con la fila bloqueada: dos
- * cambios a la vez no dejan una foto sin borrar. Si falta la fila, es un error de datos (como en `leerContenido`).
- */
+/** Pone la foto de una página (o ninguna) y devuelve la que tenía (`cambiarArchivoDePagina`). */
 async function cambiarFotoDe(pagina: PaginaConFoto, fotoArchivoId: number | null, autorId: number): Promise<number | null> {
-  const anterior = await db.transaction(async (tx) => {
-    const donde = eq(contenidoPagina.clave, pagina);
-    const [fila] = await tx.select({ fotoArchivoId: contenidoPagina.fotoArchivoId }).from(contenidoPagina).where(donde).for("update");
-    if (!fila) throw new Error(`Falta la fila "${pagina}" en contenido_pagina: aplica las migraciones.`);
-    await tx.update(contenidoPagina).set({ fotoArchivoId, updatedAt: new Date(), updatedBy: autorId }).where(donde);
-    return fila.fotoArchivoId;
-  });
+  const anterior = await cambiarArchivoDePagina(pagina, "fotoArchivoId", fotoArchivoId, autorId);
   despuesDeCambiarContenido("textos");
   return anterior;
 }

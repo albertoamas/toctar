@@ -5,7 +5,7 @@ import { db } from "@/db";
 import { archivo, contenidoPagina, faq, galeriaItem, servicio, servicioFoto, variante, type Beneficio, type Paso } from "@/db/esquema";
 import { urlArchivo } from "@/lib/almacenamiento";
 import { urlsFoto, type UrlsFoto } from "@/lib/fotos";
-import { CLAVES_PAGINA, leerContenido, type ContenidoPagina, type Pagina, type PaginaConFoto } from "./contenido";
+import { CLAVES_PAGINA, PORTADA, leerContenido, type ContenidoPagina, type Pagina, type PaginaConFoto } from "./contenido";
 import type { SeccionFoto } from "./secciones-foto";
 
 // Lecturas del módulo Sitio web para el panel. Quien las llama ya pasó por exigirModulo("sitio").
@@ -123,7 +123,7 @@ export async function obtenerVideoDePortada(): Promise<VideoPortada | null> {
     .select({ clave: archivo.clave, tipo: archivo.tipoMime })
     .from(contenidoPagina)
     .innerJoin(archivo, eq(contenidoPagina.videoArchivoId, archivo.id))
-    .where(eq(contenidoPagina.clave, "inicio"));
+    .where(eq(contenidoPagina.clave, PORTADA));
   return fila ? { url: urlArchivo(fila.clave), tipo: fila.tipo } : null;
 }
 

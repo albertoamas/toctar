@@ -32,7 +32,7 @@ test("el dueño sube el video de TikTok, se ve en la portada y al quitarlo vuelv
   const video = page.locator(".tt-celular video source");
   await expect(async () => {
     await page.goto("/");
-    await expect(video).toHaveAttribute("src", /\/portada\/video-[\w-]+\.mp4$/, { timeout: 1000 });
+    await expect(video).toHaveAttribute("src", /\/portada\/video-[\w-]+\.mp4(#t=0\.1)?$/, { timeout: 1000 });
   }).toPass({ timeout: 20_000 });
   await expect(video).toHaveAttribute("type", "video/mp4");
   // Sin sonido, en bucle y sin pedirse hasta que se ve
@@ -85,20 +85,19 @@ test("la ruta del video no acepta pedidos sin sesión, sin el permiso Sitio web 
   soloEscritorio(info);
   const cabeceras = { "content-type": "video/mp4", origin: baseURL! };
 
-  // Sin sesión: al ingreso
+  // Sin sesión: 401, sin redirigir (el navegador volvería a mandar el video entero)
   const anonimo = await playwright.request.newContext({ baseURL });
   const sinSesion = await anonimo.post("/panel/sitio/video", { data: MP4, headers: cabeceras, maxRedirects: 0 });
-  expect(sinSesion.status()).toBeGreaterThanOrEqual(300);
-  expect(sinSesion.status()).toBeLessThan(400);
-  expect(sinSesion.headers()["location"]).toMatch(/\/ingresar/);
+  expect(sinSesion.status()).toBe(401);
+  expect((await sinSesion.json()).mensaje).toBe("Tu sesión terminó. Vuelve a ingresar.");
   await anonimo.dispose();
 
-  // Un encargado sin el permiso Sitio web: a "Sin acceso"
+  // Un encargado sin el permiso Sitio web: 403
   await crearUsuario({ usuario: "p48-sin-sitio", nombre: "Encargado sin sitio", contrasena: "p48-sin-sitio-123", rol: "encargado", permisos: ["agenda"] });
   await ingresar(page, "p48-sin-sitio", "p48-sin-sitio-123");
   await expect(page).toHaveURL(/\/panel/);
   const sinPermiso = await page.request.post("/panel/sitio/video", { data: MP4, headers: cabeceras, maxRedirects: 0 });
-  expect(sinPermiso.headers()["location"]).toMatch(/\/panel\/sin-acceso/);
+  expect(sinPermiso.status()).toBe(403);
 
   // El dueño, pero desde otra página: no
   await page.context().clearCookies();

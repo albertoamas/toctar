@@ -33,7 +33,7 @@ En la portada, el celular de "Mira cómo trabajamos" muestra hoy una foto de la 
 - **Rendimiento (RNF-02) y datos del visitante:**
   - El video se pide recién cuando el celular está a la vista (`preload="none"` y se reproduce al entrar en pantalla).
   - Se pausa al salir de la pantalla.
-  - Con "reducir movimiento" o con "ahorro de datos" del navegador no se reproduce solo: queda la foto con el botón, y tocar el botón lo reproduce.
+  - Con "reducir movimiento" o con "ahorro de datos" del navegador no se reproduce solo: queda la foto con el botón. Tocar el celular abre TikTok, como sin video.
 - **Bucket público:** el video es contenido del sitio, como las fotos de la galería.
 
 ## 4. Datos

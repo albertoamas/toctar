@@ -16,8 +16,8 @@ describe("tipoDeVideo", () => {
     expect(tipoDeVideo(bytes([0x1a, 0x45, 0xdf, 0xa3, 0x9f, 0x42]))).toBe("video/webm");
   });
 
-  it("no acepta el .mov de QuickTime, que no todos los navegadores reproducen", () => {
-    expect(tipoDeVideo(bytes([0, 0, 0, 0x14], "ftypqt  ", [0, 0, 0, 0]))).toBeNull();
+  it("no acepta lo que también lleva ftyp sin ser un video MP4: .mov, fotos HEIC o AVIF y audio M4A", () => {
+    for (const marca of ["qt  ", "heic", "mif1", "avif", "M4A "]) expect(tipoDeVideo(bytes([0, 0, 0, 0x14], `ftyp${marca}`, [0, 0, 0, 0])), marca).toBeNull();
   });
 
   it("rechaza una foto, un texto o un archivo vacío", () => {

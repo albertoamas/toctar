@@ -29,9 +29,7 @@ function enviar(archivo: File, alAvanzar: (porcentaje: number) => void): Promise
     xhr.setRequestHeader("Content-Type", archivo.type || "application/octet-stream");
     xhr.upload.onprogress = (e) => e.lengthComputable && alAvanzar(Math.round((e.loaded / e.total) * 100));
     xhr.onload = () => {
-      // Sin sesión o sin permiso, la ruta redirige a una página: no llega JSON
-      if (xhr.responseURL.includes("/ingresar")) return listo({ ok: false, mensaje: "Tu sesión terminó. Vuelve a ingresar." });
-      if (xhr.responseURL.includes("/sin-acceso")) return listo({ ok: false, mensaje: "No tienes permiso para cambiar el sitio web." });
+      // La ruta siempre responde JSON con su mensaje, también sin sesión o sin permiso (401 y 403)
       try {
         const r = JSON.parse(xhr.responseText) as Resultado;
         listo(typeof r.mensaje === "string" ? r : { ok: false, mensaje: SIN_CONEXION });
@@ -55,6 +53,8 @@ export function VideoDePortada({ video, hayTikTok }: { video: VideoPortada | nul
 
   async function subir(archivo: File) {
     setError(undefined);
+    // Así elegir otra vez el mismo archivo (ya achicado, con el mismo nombre) vuelve a avisar
+    if (entrada.current) entrada.current.value = "";
     // El tope lo cuenta el servidor; aquí solo se evita mandar 50 MB para enterarse después
     if (archivo.size > BYTES_MAXIMOS_VIDEO) {
       setError(MENSAJE_VIDEO_PESADO);
@@ -63,7 +63,6 @@ export function VideoDePortada({ video, hayTikTok }: { video: VideoPortada | nul
     setAvance(0);
     const r = await enviar(archivo, setAvance);
     setAvance(null);
-    if (entrada.current) entrada.current.value = "";
     if (!r.ok) {
       setError(r.mensaje);
       return;
