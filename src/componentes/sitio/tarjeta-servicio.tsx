@@ -1,12 +1,16 @@
 import Link from "next/link";
+import { cn } from "cn";
 import type { ServicioPublico } from "@/modulos/sitio/publico";
 import { FotoOReemplazo } from "./foto-o-reemplazo";
 
 // Componente TarjetaServicio del Design System (HU-10). Sin precios (RN-10). Toda la tarjeta se toca.
-export function TarjetaServicio({ servicio, nivel = 3 }: { servicio: ServicioPublico; nivel?: 2 | 3 }) {
+// `variante`, solo en la portada (pulido 13.53): "destacada" para los dos primeros servicios (en la computadora, grandes
+// y con su resumen) y "mosaico" para los demás; en el celular, las dos van del mismo tamaño en dos columnas, con su foto
+// y su nombre. Sin variante, la tarjeta de siempre (la lista de Servicios: en el celular, en filas).
+export function TarjetaServicio({ servicio, nivel = 3, variante }: { servicio: ServicioPublico; nivel?: 2 | 3; variante?: "destacada" | "mosaico" }) {
   const Titulo = nivel === 2 ? "h2" : "h3";
   return (
-    <article className="tt-tarjeta">
+    <article className={cn("tt-tarjeta", variante && "tt-tarjeta--portada", variante === "destacada" && "tt-tarjeta--destacada")}>
       <div className="tt-tarjeta__media">
         <FotoOReemplazo foto={servicio.foto} alt={servicio.nombre} miniatura />
       </div>

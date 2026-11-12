@@ -3,6 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { ChevronRightIcon, MailIcon, MapPinIcon, ShieldCheckIcon } from "lucide-react";
+import { EstadoDelTaller } from "@/componentes/sitio/estado-del-taller";
 import { TituloPagina } from "@/componentes/sitio/titulo-pagina";
 import { RedesSociales } from "@/componentes/sitio/redes-sociales";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
@@ -53,13 +54,7 @@ async function Datos() {
       <div className="flex flex-col items-start gap-4">
         <TituloPagina>Contacto</TituloPagina>
         <p className="max-w-prose text-lg text-tinta-suave">{contacto.bienvenida as string}</p>
-        {estado && (
-          <p className="flex items-center gap-2 text-sm font-semibold">
-            <span aria-hidden className={cn("size-2 rounded-full", estado.abierto ? "bg-exito" : "bg-tinta-suave")} />
-            {estado.abierto ? "Abierto ahora" : "Cerrado ahora"}
-            <span className="font-medium text-tinta-suave">· {estado.detalle}</span>
-          </p>
-        )}
+        {estado && <EstadoDelTaller estado={estado} />}
         {d.whatsapp && (
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             {/* El texto dice lo que gana el cliente; el nombre accesible suma "por WhatsApp" (pulido 2.1) */}

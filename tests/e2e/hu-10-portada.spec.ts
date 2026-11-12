@@ -63,13 +63,29 @@ test("una dirección que no existe muestra la página no encontrada", async ({ p
   await expect(page).toHaveTitle("Página no encontrada · TocTar Detailing");
 });
 
-// Pulido visual 2.1
-test("en el celular los servicios van en filas compactas; en la computadora, en tarjetas", async ({ page, isMobile }) => {
+// Pulido 13.53: en el celular, dos servicios por fila y del mismo tamaño (en filas de a uno había que bajar demasiado);
+// en la computadora, los dos primeros más grandes que los demás
+test("en el celular los servicios van de a dos por fila; en la computadora, los dos primeros más grandes", async ({ page, isMobile }) => {
   await page.goto("/");
-  const tarjeta = page.getByRole("region", { name: "Servicios" }).locator(".tt-tarjeta").first();
-  const caja = (await tarjeta.boundingBox())!;
-  if (isMobile) expect(caja.height).toBeLessThan(220);
-  else expect(caja.height).toBeGreaterThan(300);
+  const tarjetas = page.getByRole("region", { name: "Servicios" }).locator(".tt-tarjeta");
+  const [a, b, c] = await Promise.all([0, 1, 2].map(async (i) => (await tarjetas.nth(i).boundingBox())!));
+  if (isMobile) {
+    expect(Math.abs(a.y - b.y)).toBeLessThan(2);
+    expect(Math.abs(a.width - b.width)).toBeLessThan(2);
+    expect(c.y).toBeGreaterThan(a.y + a.height);
+  } else {
+    expect(a.width).toBeGreaterThan(c.width * 1.5);
+  }
+  // Nada se sale de la pantalla
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
+});
+
+// Pulido 13.53: debajo del lema, si el taller atiende ahora (lo mismo que dice Contacto) y cómo llegar
+test("la portada dice si el taller está abierto y ofrece cómo llegar", async ({ page }) => {
+  await page.goto("/");
+  const cabecera = page.getByRole("main");
+  await expect(cabecera.getByText(/^(Abierto|Cerrado) ahora/)).toBeVisible();
+  await expect(cabecera.getByRole("link", { name: /^Cómo llegar/ })).toHaveAttribute("href", /google\.com\/maps|goo\.gl/);
 });
 
 test("al llegar al cierre de la portada se ve un solo botón de WhatsApp", async ({ page }) => {
@@ -138,11 +154,12 @@ test("el trabajo elegido en la galería del panel se compara arriba en la portad
   await page.waitForTimeout(1500);
   expect(await posicion()).toBe(tocada);
   await expect(page.getByText(elegido, { exact: true })).toBeVisible();
-  // En un celular ancho no queda un hueco entre los botones y el comparador, ni se enciman (revisión de YankoSoft, 24/10)
+  // En un celular ancho no queda un hueco entre el texto y el comparador, ni se enciman (revisión de YankoSoft, 24/10)
   const pantalla = page.viewportSize()!;
   for (const ancho of [390, 480]) {
     await page.setViewportSize({ width: ancho, height: 900 });
-    const boton = page.getByRole("main").getByRole("link", { name: "Ver los servicios" });
+    // Lo último del texto es "Cómo llegar" (pulido 13.53), debajo de los botones
+    const boton = page.getByRole("main").getByRole("link", { name: /^Cómo llegar/ });
     const despues = page.getByRole("img", { name: `Después: ${elegido}` });
     await expect(boton).toBeVisible();
     await expect(despues).toBeVisible();
