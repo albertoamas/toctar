@@ -16,7 +16,7 @@ test("un texto vacío da error junto al campo y no se guarda", async ({ page }) 
   await expect(page.getByRole("form", { name: "Nosotros" })).toHaveCount(0);
 
   // Los textos se leen en su tarjeta y se editan en un modal (pulido 13.20)
-  await expect(page.getByRole("region", { name: "Textos y foto" })).toContainText("Como ven tu auto, te ven a ti");
+  await expect(page.getByRole("region", { name: "Textos, foto y video" })).toContainText("Como ven tu auto, te ven a ti");
   await page.getByRole("button", { name: "Editar portada" }).click();
   const portada = page.getByRole("dialog", { name: "Portada" });
   await portada.getByLabel("Lema").fill("");
@@ -24,7 +24,7 @@ test("un texto vacío da error junto al campo y no se guarda", async ({ page }) 
   await expect(portada.getByText("Escribe el lema.")).toBeVisible();
 
   await page.reload();
-  await expect(page.getByRole("region", { name: "Textos y foto" })).toContainText("Como ven tu auto, te ven a ti");
+  await expect(page.getByRole("region", { name: "Textos, foto y video" })).toContainText("Como ven tu auto, te ven a ti");
 });
 
 test("el dueño edita la portada y los motivos de Nosotros, y quedan guardados", async ({ page }, info) => {

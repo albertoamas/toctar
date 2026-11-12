@@ -44,6 +44,15 @@ const obtenerUsuarioActual = cache(async (): Promise<UsuarioActual | null> => {
   };
 });
 
+/**
+ * Usuario de la sesión, o null, sin redirigir. Solo para rutas que responden JSON a un pedido del panel, como la subida
+ * del video (pedido 48): ante una redirección, el navegador volvería a mandar el archivo entero. Verificar el permiso
+ * después, con `puedeVerModulo` o `puede`. Las páginas y las acciones usan `exigirSesion`.
+ */
+export function usuarioDeLaSesion(): Promise<UsuarioActual | null> {
+  return obtenerUsuarioActual();
+}
+
 /** Usuario de la sesión; si no hay, lleva a la pantalla de ingreso. */
 export async function exigirSesion(): Promise<UsuarioActual> {
   const usuario = await obtenerUsuarioActual();
