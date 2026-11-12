@@ -36,8 +36,8 @@ const SERVICIOS_EN_PORTADA = 6;
 // HU-10 Portada: lema, presentación y WhatsApp, con el comparador de antes y después al lado (pedido de la demo del
 // 24/10); servicios; TikTok; cierre. Sin "Trabajos recientes" desde el pedido 36: las fotos están en la Galería.
 // Pulido 13.53 (maqueta aprobada el 12/11): la foto del taller visible detrás del lema, más grande, con cuándo atiende y
-// cómo llegar; las secciones separadas por la línea LED; los dos primeros servicios destacados (en el celular, en
-// filas: pulido 13.54); y en TikTok, el video que sube el dueño (pedido 48), sin marco y solo si hay uno.
+// cómo llegar; las secciones separadas por la línea LED; los dos primeros servicios destacados (en el celular, de a
+// dos por fila); y en TikTok, el video que sube el dueño (pedido 48), sin marco y solo si hay uno.
 // Los textos y las listas salen del panel (B3) y se leen al atender la visita (el build no tiene base).
 // Toda la portada aparece de una vez (pulido 2.1): antes, los títulos fijos ("Servicios", el cierre) salían
 // en el primer envío y su contenido después, y se veían títulos sueltos. Mientras llegan los datos se ve
@@ -238,8 +238,8 @@ function AtencionDelTaller({ estado, direccion, comoLlegar }: { estado: ReturnTy
 function Servicios({ servicios }: { servicios: ServicioPublico[] }) {
   return (
     <>
-      {/* Los dos primeros, destacados (el orden lo pone el dueño en Sitio web > Servicios); en el celular, todos en
-          filas, como la lista de Servicios (pulido 13.54) */}
+      {/* Los dos primeros, destacados (el orden lo pone el dueño en Sitio web > Servicios); en el celular, todos iguales
+          en dos columnas (pulido 13.53) */}
       <ul className="tt-servicios-portada mt-8">
         {servicios.slice(0, SERVICIOS_EN_PORTADA).map((s, i) => (
           <li key={s.slug} className="grid">

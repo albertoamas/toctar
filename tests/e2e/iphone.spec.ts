@@ -96,16 +96,17 @@ test("en Nueva cotización con un cliente nuevo los títulos van adentro de su t
   expect(await anchoDePagina(page)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
 
-// La portada en Safari: los servicios en filas con su foto a la vista, el video de TikTok vertical (si hay) y nada que
-// estire la página hacia la derecha.
-test("en la portada los servicios van en filas con su foto y nada se sale de la pantalla", async ({ page }) => {
+// La portada en Safari: los servicios de a dos por fila con su foto a la vista, el video de TikTok vertical (si hay) y
+// nada que estire la página hacia la derecha. Pulido 13.54: en Safari, el recuadro de la foto del mosaico medía 0 px
+// (estirado a lo alto de la fila, sin su proporción) y la foto, con carga diferida, nunca se pedía.
+test("en la portada los servicios van de a dos con su foto y nada se sale de la pantalla", async ({ page }) => {
   await page.goto("/");
   const tarjetas = page.getByRole("region", { name: "Servicios" }).locator(".tt-tarjeta");
   await expect(tarjetas.first()).toBeVisible();
   const [a, b] = [(await tarjetas.nth(0).boundingBox())!, (await tarjetas.nth(1).boundingBox())!];
-  expect(b.y).toBeGreaterThanOrEqual(a.y + a.height);
+  expect(Math.abs(a.y - b.y)).toBeLessThan(2);
   const foto = (await tarjetas.first().locator(".tt-tarjeta__media").boundingBox())!;
-  expect(foto.height).toBeGreaterThan(40);
+  expect(foto.height).toBeGreaterThan(100);
   // El video sale solo si el dueño subió uno (pedido 48)
   const video = page.locator(".tt-video-tiktok");
   if (await video.count()) {

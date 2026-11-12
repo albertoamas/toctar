@@ -63,17 +63,18 @@ test("una dirección que no existe muestra la página no encontrada", async ({ p
   await expect(page).toHaveTitle("Página no encontrada · TocTar Detailing");
 });
 
-// En el celular, los servicios en filas, uno debajo del otro, como la lista de Servicios (el mosaico de dos columnas
-// del pulido 13.53 no se vio en un celular real el 12/11); en la computadora, los dos primeros más grandes
-test("en el celular los servicios van en filas; en la computadora, los dos primeros más grandes", async ({ page, isMobile }) => {
+// Pulido 13.53: en el celular, dos servicios por fila y del mismo tamaño; en la computadora, los dos primeros más
+// grandes. El recuadro de la foto, con su alto también en Safari: lo mide la prueba de iphone.spec.ts (pulido 13.54)
+test("en el celular los servicios van de a dos por fila; en la computadora, los dos primeros más grandes", async ({ page, isMobile }) => {
   await page.goto("/");
   const tarjetas = page.getByRole("region", { name: "Servicios" }).locator(".tt-tarjeta");
   const [a, b, c] = await Promise.all([0, 1, 2].map(async (i) => (await tarjetas.nth(i).boundingBox())!));
   if (isMobile) {
-    expect(b.y).toBeGreaterThanOrEqual(a.y + a.height);
-    expect(a.height).toBeLessThan(220);
+    expect(Math.abs(a.y - b.y)).toBeLessThan(2);
+    expect(Math.abs(a.width - b.width)).toBeLessThan(2);
+    expect(c.y).toBeGreaterThan(a.y + a.height);
     // Con el lugar de su foto a la vista (la foto, o la imagen de reemplazo si el servicio no tiene)
-    expect((await tarjetas.first().locator(".tt-tarjeta__media").boundingBox())!.height).toBeGreaterThan(40);
+    expect((await tarjetas.first().locator(".tt-tarjeta__media").boundingBox())!.height).toBeGreaterThan(100);
   } else {
     expect(a.width).toBeGreaterThan(c.width * 1.5);
   }
