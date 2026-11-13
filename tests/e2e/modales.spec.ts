@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
-import { consultar, crearUsuario, ingresarComoDueno } from "./apoyo";
+import { consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, ingresarComoDueno } from "./apoyo";
 
 // Los modales del panel (ModalFormulario), de la revisión del 13/11: en el celular, una hoja que sube desde abajo; el
 // título deja lugar a la X. Con el teclado del iPhone, ver iphone.spec.ts.
@@ -59,4 +59,26 @@ test("la X no tapa un título largo, y en el celular la hoja sube desde abajo", 
     await expect(dialogo).toBeVisible();
     expect(await dialogo.evaluate((d) => getComputedStyle(d).getPropertyValue("--tw-enter-translate-y").trim())).not.toBe("100%");
   }
+});
+
+// Revisión del 13/11: en el celular, "Registrar pago" se abre sin el foco en el monto (que ya viene con el saldo): en
+// Android eso abría solo el teclado y el primer toque en "Efectivo" se perdía. Donde lo primero es escribir, el foco sigue
+// en el campo.
+test("en el celular, Registrar pago se abre sin el teclado; Nuevo servicio, en su campo", async ({ page, isMobile }, info) => {
+  test.skip(!isMobile, "Solo con pantalla táctil");
+  const placa = `MDP${sufijo(info).toUpperCase()}1`;
+  await crearClienteEnBase({ nombre: `Cobro sin teclado ${sufijo(info)}`, telefono: "59171880010", placa });
+  const id = await crearOrdenLista({ placa, espacio: 1, dias: 681, precio: 500, pagado: 0 });
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/ordenes/${id}`);
+  await page.getByRole("main").getByRole("button", { name: "Registrar pago" }).click();
+  const pago = page.getByRole("dialog", { name: "Registrar pago" });
+  await expect(pago).toBeVisible();
+  await expect(pago).toBeFocused();
+  await expect(pago.getByLabel("Monto")).not.toBeFocused();
+  await pago.getByRole("button", { name: "Cancelar" }).click();
+
+  await page.goto("/panel/catalogo");
+  await page.getByRole("main").getByRole("button", { name: "Agregar servicio" }).click();
+  await expect(page.getByRole("dialog", { name: "Nuevo servicio" }).getByLabel("Nombre del servicio")).toBeFocused();
 });

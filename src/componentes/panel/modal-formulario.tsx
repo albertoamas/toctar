@@ -12,14 +12,14 @@ import type { EstadoFormulario } from "@/lib/formularios";
 // Componente de cliente: se usa dentro de otros componentes de cliente (recibe funciones como props).
 // Un formulario corto en un modal (skill pantallas-panel): editar una sección de una ficha (SeccionConEditar) o crear
 // algo de pocos campos ("Agregar servicio"). En el celular es una hoja que sube desde abajo, con los botones fijos al pie;
-// desde 640 px, el modal centrado. Revisión de los modales del 13/11:
+// desde 640 px, el modal centrado. Revisión de los modales del 13/11 (y la de "Registrar pago", el mismo día):
 // - la hoja sube y baja deslizándose (antes aparecía agrandándose desde el centro, como el modal de la computadora);
 // - el título deja lugar a la X (con un nombre largo, "¿Desactivar a …?", la X tapaba su final);
 // - con el teclado del iPhone abierto, la hoja se apoya sobre el teclado (`useSobreElTeclado`): Safari no achica la
 //   pantalla al abrirlo, y la hoja pegada abajo quedaba detrás, con "Guardar" tapado.
-// El foco va al primer campo para escribir al abrir y el diálogo lo devuelve al botón que lo abrió al cerrar. El
-// formulario de adentro lo cierra al guardar con useCerrarModal y pone sus botones en PieModal ("Cancelar" o "Listo" con
-// CancelarModal).
+// El foco va al primer campo para escribir al abrir (con `sinTeclado` y pantalla táctil, a la hoja) y el diálogo lo
+// devuelve al botón que lo abrió al cerrar. El formulario de adentro lo cierra al guardar con useCerrarModal y
+// pone sus botones en PieModal ("Cancelar" o "Listo" con CancelarModal).
 // Ningún modal pierde lo escrito por un cierre sin querer (C6, sistema-del-panel.md §4; pulido 13.48): si el formulario de
 // adentro cambió desde que se abrió, tocar afuera, Escape o el "atrás" de Android (Chrome lo avisa al diálogo) no cierran: el pie pasa
 // a "Tienes cambios sin guardar." con "Seguir editando" y "Descartar cambios". Nunca otro modal encima (hasta el 11/11 era
@@ -107,23 +107,30 @@ function useSobreElTeclado(modal: React.RefObject<HTMLDivElement | null>, abiert
 /**
  * Dónde va el foco al abrir: el primer campo para escribir; si no hay (una lista), el primer botón habilitado. Una
  * confirmación de algo destructivo lo pone en "Cancelar" (`CancelarModal focoInicial`): un Enter no la confirma.
+ * `sinTeclado`: con pantalla táctil, en la hoja misma (revisión del 13/11, "Registrar pago"). Ahí el campo ya viene
+ * escrito (el monto, con el saldo) y lo primero es tocar otra cosa (cómo pagó): el foco en el campo abría solo el teclado
+ * en Android, el primer toque lo cerraba, la hoja se movía bajo el dedo y el toque se perdía. Donde lo primero es
+ * escribir (un nombre, una placa), el teclado abierto ayuda: queda en el campo.
  */
 const habilitado = (selectores: string[]) => selectores.map((c) => `${c}:not(:disabled)`).join(", ");
-const primerControl = (modal: HTMLElement | null) =>
+const primerControl = (modal: HTMLElement | null, sinTeclado: boolean) =>
   modal?.querySelector<HTMLElement>("[data-foco-inicial]") ??
+  (sinTeclado && window.matchMedia("(pointer: coarse)").matches ? modal : null) ??
   modal?.querySelector<HTMLElement>(habilitado(["input:not([type=hidden])", "textarea", "select"])) ??
   modal?.querySelector<HTMLElement>(habilitado(["button"])) ??
   true;
 
 type Props = {
   titulo: string;
+  /** Con pantalla táctil, abrir sin poner el foco en un campo (no abre solo el teclado): ver `primerControl`. */
+  sinTeclado?: boolean;
   abierto: boolean;
   alCambiar: (abierto: boolean) => void;
   /** El formulario. */
   children: React.ReactNode;
 };
 
-export function ModalFormulario({ titulo, abierto, alCambiar, children }: Props) {
+export function ModalFormulario({ titulo, abierto, alCambiar, sinTeclado = false, children }: Props) {
   const modal = useRef<HTMLDivElement>(null);
   // Lo que tenía el formulario al abrirse. Sin formulario (una lista, una confirmación), null: nunca pregunta
   const base = useRef<string | null>(null);
@@ -190,7 +197,7 @@ export function ModalFormulario({ titulo, abierto, alCambiar, children }: Props)
         }}
         initialFocus={() => {
           tomarBase();
-          return primerControl(modal.current);
+          return primerControl(modal.current, sinTeclado);
         }}
         className={[
           "max-h-[calc(100dvh-2rem)] gap-5 overflow-y-auto text-base sm:max-w-lg",

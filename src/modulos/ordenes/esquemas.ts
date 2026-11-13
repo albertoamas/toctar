@@ -109,8 +109,8 @@ export const esquemaPublicar = esquemaGaleria.extend({
 });
 
 /**
- * Un detalle del checklist de recepción (pedido 12): la parte, qué tiene y una nota (con "Otro", obligatoria). La foto,
- * si la hay, va aparte en el campo "foto".
+ * Un detalle del checklist de recepción (pedido 12): la parte y qué tiene; con "Otro", qué es (obligatorio; con otro tipo
+ * no lleva texto, revisión del 13/11). La foto, si la hay, va aparte en el campo "foto".
  */
 export const esquemaDetalle = z
   .object({
@@ -123,7 +123,9 @@ export const esquemaDetalle = z
       .max(300, "Hasta 300 caracteres.")
       .transform((v) => v || null),
   })
-  .refine((d) => d.tipo !== "otro" || d.nota, { path: ["nota"], message: "Con «Otro», cuenta qué es." });
+  .refine((d) => d.tipo !== "otro" || d.nota, { path: ["nota"], message: "Escribe qué es." })
+  // Solo "Otro" lleva texto (revisión del 13/11): con otro tipo, una nota que quedó de antes se borra
+  .transform((d) => ({ ...d, nota: d.tipo === "otro" ? d.nota : null }));
 
 /** Marcar una parte "bien" (también una que tenía un detalle): datos sueltos, se validan. */
 export const esquemaMarcarBien = z.object({ trabajoId: id, parteId: id });
