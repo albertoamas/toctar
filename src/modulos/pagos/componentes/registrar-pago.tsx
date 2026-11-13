@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { PlusIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { useHidratado } from "@/componentes/hidratado";
@@ -8,7 +8,7 @@ import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
 import { MasDatos } from "@/componentes/panel/mas-datos";
-import { CancelarModal, ModalFormulario, PieModal, useCambioFueraDelFormulario, useCerrarModal } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, ModalFormulario, PieModal, useCambioFueraDelFormulario, useCerrarModal, useRenovarBaseModal } from "@/componentes/panel/modal-formulario";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import type { MetodoPago } from "@/db/esquema/trabajos";
@@ -47,10 +47,7 @@ export function RegistrarPago({
         Registrar pago
       </Button>
       <ModalFormulario titulo="Registrar pago" abierto={abierto} alCambiar={setAbierto}>
-        {/* Con el saldo de clave: el monto sugerido se calcula al abrir. Si se abre justo después de otro pago, antes de
-            que llegue el saldo nuevo, sugería el de antes y no cambiaba (13/11: 1000 en vez de 700). Ahora, al llegar el
-            saldo nuevo, el formulario se renueva con él */}
-        <Formulario key={props.saldo} {...props} />
+        <Formulario {...props} />
       </ModalFormulario>
     </>
   );
@@ -71,6 +68,24 @@ function Formulario({ trabajoId, saldo, hoy }: Props) {
   const [fecha, setFecha] = useState(hoy);
   const { comprobante, setComprobante, preparando, errorFoto, enviar } = useEnvioConComprobante(accion);
   useCambioFueraDelFormulario(!!comprobante);
+
+  // El monto sugerido sigue al saldo mientras no se tocó (12/11): abierto justo después de otro pago, antes de que
+  // llegara el saldo nuevo, sugería el de antes (1000 en vez de 700) y no cambiaba. Lo que ya se eligió no se pierde.
+  const [saldoVisto, setSaldoVisto] = useState(saldo);
+  // El saldo con el que el formulario quedó como recién abierto: sin tocar nada más, el monto nuevo no es un cambio de
+  // quien cobra y cerrar no pregunta "¿Salir sin guardar?"
+  const [baseRenovada, setBaseRenovada] = useState<string | null>(null);
+  if (saldo !== saldoVisto) {
+    setSaldoVisto(saldo);
+    if (monto === mostrarMonto(saldoVisto)) {
+      setMonto(mostrarMonto(saldo));
+      if (metodo === "" && !comprobante && fecha === hoy) setBaseRenovada(saldo);
+    }
+  }
+  const renovar = useRenovarBaseModal();
+  useEffect(() => {
+    if (baseRenovada !== null) renovar();
+  }, [baseRenovada, renovar]);
 
   const ocupado = enviando || preparando;
   return (

@@ -198,7 +198,7 @@ test("se cobra el total de una vez: antes de llegar es adelanto; al retirar, sal
   await expect(page.getByText("Pago de 300 Bs registrado. Saldo: 700 Bs.")).toBeVisible();
   // El modal del primer pago ya se cerró
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  // Y la orden ya dice el saldo nuevo, sin recargar: al cobrar desde la orden se quedaba con el de antes (13/11)
+  // Y la orden ya dice el saldo nuevo, sin recargar: lo renueva saldoCambiado (12/11)
   await expect(saldo(page)).toHaveText(/700/);
   await page.getByRole("main").getByRole("button", { name: "Registrar pago" }).click();
   form = page.getByRole("form", { name: "Registrar pago" });

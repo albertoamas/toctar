@@ -1,7 +1,6 @@
 "use server";
 
 import { and, eq, sql } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { auditoria, pago, trabajo, trabajoLinea } from "@/db/esquema";
 import { fechaEnBolivia } from "@/lib/fechas";
@@ -12,6 +11,7 @@ import { montoNoMayor } from "@/modulos/cotizaciones/reglas";
 import { descartarComprobante, guardarComprobante } from "./comprobante";
 import { esquemaAnularPago, esquemaPago } from "./esquemas";
 import { calcularSaldo, estaPagada, tipoDePago } from "./reglas";
+import { saldoCambiado } from "./saldo-cambiado";
 
 // Pagos de una reserva (HU-32, RF-45, RF-46). Dueño o encargado con "Pagos" (RN-12). Un pago no
 // pasa el saldo pendiente y no se borra: se anula con motivo (D-6). Todo queda en la auditoría (RNF-10).
@@ -30,24 +30,6 @@ class Conflicto extends Error {
   }
 }
 
-/**
- * Las pantallas que muestran el saldo de un trabajo. La guía de Next dice que revalidatePath actualiza al momento la
- * pantalla que se está viendo si la nombra; hoy también refresca las demás, pero lo avisa como temporal. Hasta el 13/11
- * eran solo la reserva y el cliente, de antes de las órdenes (C3), y se cobra sobre todo desde la orden (pulido 13.52),
- * al entregar y en Saldos: ahora van todas.
- */
-function despuesDePagar(trabajoId: number, clienteId: number) {
-  for (const ruta of [
-    `/panel/agenda/${trabajoId}`,
-    `/panel/ordenes/${trabajoId}`,
-    `/panel/ordenes/${trabajoId}/entregar`,
-    "/panel/pagos",
-    "/panel",
-    `/panel/clientes/${clienteId}`,
-  ]) {
-    revalidatePath(ruta);
-  }
-}
 
 /** Registra un pago con su comprobante opcional (foto en el bucket privado: es un dato del cliente). */
 export async function registrarPago(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
@@ -105,11 +87,15 @@ export async function registrarPago(_previo: EstadoFormulario, datos: FormData):
     });
   } catch (error) {
     await descartarComprobante(comprobanteId);
-    if (error instanceof Conflicto) return error.campo ? { errores: { [error.campo]: error.message }, valores } : { mensaje: error.message };
+    if (error instanceof Conflicto) {
+      // Otro pago ya cambió el saldo (otro celular): que la pantalla y el formulario muestren el de ahora
+      saldoCambiado(trabajoId);
+      return error.campo ? { errores: { [error.campo]: error.message }, valores } : { mensaje: error.message };
+    }
     throw error;
   }
 
-  despuesDePagar(trabajoId, resultado.clienteId);
+  saldoCambiado(trabajoId, resultado.clienteId);
   return { ok: true, mensaje: `Pago de ${mostrarMonto(monto)} Bs registrado. Saldo: ${mostrarMonto(resultado.saldo)} Bs.` };
 }
 
@@ -151,6 +137,6 @@ export async function anularPago(_previo: EstadoFormulario, datos: FormData): Pr
     throw error;
   }
 
-  despuesDePagar(suyo.trabajoId, suyo.clienteId);
+  saldoCambiado(suyo.trabajoId, suyo.clienteId);
   return { ok: true, mensaje: "Pago anulado." };
 }
