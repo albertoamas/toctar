@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { CELULAR } from "./celular";
 
 // El botón principal de un formulario de crear (skill pantallas-panel, §2 "Crear"): al pie, y en el celular fijo abajo
 // mientras el formulario se desplaza, así "Crear …" está siempre a mano del pulgar. Desde 640 px, al pie sin más.
@@ -11,7 +12,6 @@ import { useEffect, useRef } from "react";
 // eso el pie dice cuánto ocupa desde el borde de abajo cada vez que se mueve: al desplazar, al cambiar el tamaño de la
 // pantalla y cuando algo de la página lo corre. La regla de globals.css queda para antes de que cargue JavaScript.
 
-const CELULAR = "(max-width: 639px)";
 
 /**
  * Cuánto ocupa el pie desde el borde de abajo de la pantalla, en px. Contra el alto del diseño (`clientHeight`, no

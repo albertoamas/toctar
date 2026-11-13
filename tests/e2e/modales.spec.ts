@@ -48,4 +48,15 @@ test("la X no tapa un título largo, y en el celular la hoja sube desde abajo", 
     return { finTitulo: rango.getBoundingClientRect().right, inicioX: d.querySelector("[data-slot=dialog-close]")!.getBoundingClientRect().left };
   });
   expect(finTitulo).toBeLessThanOrEqual(inicioX);
+
+  // Con "reducir movimiento", solo aparece: no se desliza
+  if (isMobile) {
+    await page.keyboard.press("Escape");
+    await expect(dialogo).toHaveCount(0);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.getByRole("main").getByRole("button", { name: /^Más/ }).first().click();
+    await page.getByRole("menuitem", { name: "Desactivar usuario" }).click();
+    await expect(dialogo).toBeVisible();
+    expect(await dialogo.evaluate((d) => getComputedStyle(d).getPropertyValue("--tw-enter-translate-y").trim())).not.toBe("100%");
+  }
 });

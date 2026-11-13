@@ -124,8 +124,9 @@ test("con el teclado abierto, la hoja del modal se apoya sobre él y su botón s
   await page.addInitScript(() => {
     const falso = new EventTarget();
     let tapado = 0;
-    Object.defineProperty(falso, "height", { get: () => window.innerHeight - tapado });
+    Object.defineProperty(falso, "height", { get: () => document.documentElement.clientHeight - tapado });
     Object.defineProperty(falso, "offsetTop", { get: () => 0 });
+    Object.defineProperty(falso, "scale", { get: () => 1 });
     Object.defineProperty(window, "visualViewport", { get: () => falso, configurable: true });
     (window as unknown as { abrirTeclado: (px: number) => void }).abrirTeclado = (px) => {
       tapado = px;
@@ -138,20 +139,21 @@ test("con el teclado abierto, la hoja del modal se apoya sobre él y su botón s
   const dialogo = page.getByRole("dialog", { name: "Nuevo servicio" });
   await expect(dialogo).toBeVisible();
   const alto = page.viewportSize()!.height;
+  const abajo = async () => {
+    const caja = (await dialogo.boundingBox())!;
+    return Math.round(caja.y + caja.height);
+  };
   // Sin teclado, pegada abajo
-  await expect.poll(async () => Math.round((await dialogo.boundingBox())!.y + (await dialogo.boundingBox())!.height)).toBeGreaterThanOrEqual(alto - 2);
+  await expect.poll(abajo).toBeGreaterThanOrEqual(alto - 2);
 
   await page.evaluate(() => (window as unknown as { abrirTeclado: (px: number) => void }).abrirTeclado(300));
   const sobreElTeclado = alto - 300;
-  await expect.poll(async () => {
-    const caja = (await dialogo.boundingBox())!;
-    return Math.round(caja.y + caja.height);
-  }).toBeLessThanOrEqual(sobreElTeclado + 2);
+  await expect.poll(abajo).toBeLessThanOrEqual(sobreElTeclado + 2);
   const crear = (await dialogo.getByRole("button", { name: "Crear servicio" }).boundingBox())!;
   expect(crear.y + crear.height).toBeLessThanOrEqual(sobreElTeclado);
   expect((await dialogo.boundingBox())!.y).toBeGreaterThanOrEqual(0);
 
   // Al cerrarse el teclado, vuelve abajo
   await page.evaluate(() => (window as unknown as { abrirTeclado: (px: number) => void }).abrirTeclado(0));
-  await expect.poll(async () => Math.round((await dialogo.boundingBox())!.y + (await dialogo.boundingBox())!.height)).toBeGreaterThanOrEqual(alto - 2);
+  await expect.poll(abajo).toBeGreaterThanOrEqual(alto - 2);
 });
