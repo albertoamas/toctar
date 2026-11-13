@@ -10,8 +10,12 @@ import type { EstadoFormulario } from "@/lib/formularios";
 
 // Componente de cliente: se usa dentro de otros componentes de cliente (recibe funciones como props).
 // Un formulario corto en un modal (skill pantallas-panel): editar una sección de una ficha (SeccionConEditar) o crear
-// algo de pocos campos ("Agregar servicio"). En el celular es una hoja desde abajo con los botones fijos al pie; desde
-// 640 px, el modal centrado. El foco va al primer campo para escribir al abrir y el diálogo lo devuelve al botón que lo
+// algo de pocos campos ("Agregar servicio"). En el celular es una hoja que sube desde abajo, con los botones fijos al pie;
+// desde 640 px, el modal centrado. Revisión de los modales del 13/11:
+// - la hoja sube y baja deslizándose (antes aparecía agrandándose desde el centro, como el modal de la computadora);
+// - el título deja lugar a la X (con un nombre largo, "¿Desactivar a …?", la X tapaba su final);
+// - con el teclado del iPhone abierto, la hoja se apoya sobre el teclado (`useSobreElTeclado`): Safari no achica la
+//   pantalla al abrirlo, y la hoja pegada abajo quedaba detrás, con "Guardar" tapado. El foco va al primer campo para escribir al abrir y el diálogo lo devuelve al botón que lo
 // abrió al cerrar. El formulario de adentro lo cierra al guardar con useCerrarModal y pone sus botones en PieModal
 // ("Cancelar" o "Listo" con CancelarModal).
 // Ningún modal pierde lo escrito por un cierre sin querer (C6, sistema-del-panel.md §4; pulido 13.48): si el formulario de
@@ -40,6 +44,47 @@ type ContextoModal = {
 };
 
 const Modal = createContext<ContextoModal | null>(null);
+
+/** El celular: hasta 640 px, donde el modal es una hoja desde abajo (el `sm` de Tailwind). */
+const CELULAR = "(width < 40rem)";
+
+/**
+ * Con el teclado abierto, la hoja se apoya sobre él. Safari (y todo navegador del iPhone) no achica la pantalla al
+ * abrir el teclado: solo la parte visible (`visualViewport`). Se miden cuánto tapa el teclado y cuánto alto queda, y la
+ * hoja los usa (`--tt-teclado` y `--tt-alto-visible`, en sus clases). En Android el navegador ya achica la pantalla: el
+ * teclado mide 0 y no cambia nada. Sin `visualViewport` (navegadores viejos), queda como siempre.
+ */
+function useSobreElTeclado(modal: React.RefObject<HTMLDivElement | null>, abierto: boolean) {
+  useEffect(() => {
+    const vista = window.visualViewport;
+    if (!abierto || !vista) return;
+    let cuadro = 0;
+    const medir = () => {
+      const hoja = modal.current;
+      // Todavía no se dibujó (se abre en un portal): se vuelve a probar en el próximo cuadro
+      if (!hoja) {
+        cuadro = requestAnimationFrame(medir);
+        return;
+      }
+      if (!window.matchMedia(CELULAR).matches) {
+        hoja.style.removeProperty("--tt-teclado");
+        hoja.style.removeProperty("--tt-alto-visible");
+        return;
+      }
+      const teclado = Math.max(0, Math.round(window.innerHeight - vista.height - vista.offsetTop));
+      hoja.style.setProperty("--tt-teclado", `${teclado}px`);
+      hoja.style.setProperty("--tt-alto-visible", `${Math.round(vista.height)}px`);
+    };
+    medir();
+    vista.addEventListener("resize", medir);
+    vista.addEventListener("scroll", medir);
+    return () => {
+      cancelAnimationFrame(cuadro);
+      vista.removeEventListener("resize", medir);
+      vista.removeEventListener("scroll", medir);
+    };
+  }, [modal, abierto]);
+}
 
 /**
  * Dónde va el foco al abrir: el primer campo para escribir; si no hay (una lista), el primer botón habilitado. Una
@@ -104,6 +149,7 @@ export function ModalFormulario({ titulo, abierto, alCambiar, children }: Props)
     setPreguntando(false);
   }, []);
   const conPie = useCallback((hay: boolean) => setHayPie(hay), []);
+  useSobreElTeclado(modal, abierto);
 
   return (
     <Dialog
@@ -128,9 +174,17 @@ export function ModalFormulario({ titulo, abierto, alCambiar, children }: Props)
           tomarBase();
           return primerControl(modal.current);
         }}
-        className="max-h-[calc(100dvh-2rem)] gap-5 overflow-y-auto text-base max-sm:top-auto max-sm:bottom-0 max-sm:max-w-full max-sm:translate-y-0 max-sm:rounded-b-none sm:max-w-lg"
+        className={[
+          "max-h-[calc(100dvh-2rem)] gap-5 overflow-y-auto text-base sm:max-w-lg",
+          // En el celular, la hoja: pegada abajo (sobre el teclado, si está abierto), de borde a borde y hasta donde se ve
+          "max-sm:top-auto max-sm:bottom-[var(--tt-teclado,0px)] max-sm:max-h-[calc(var(--tt-alto-visible,100dvh)-1rem)] max-sm:max-w-full max-sm:translate-y-0 max-sm:rounded-b-none",
+          // Sube deslizándose desde abajo y baja al cerrarse, sin agrandarse; con "reducir movimiento", solo aparece
+          "max-sm:duration-200 max-sm:data-open:zoom-in-100 max-sm:data-closed:zoom-out-100 max-sm:data-open:slide-in-from-bottom max-sm:data-closed:slide-out-to-bottom",
+          "max-sm:motion-reduce:data-open:slide-in-from-bottom-0 max-sm:motion-reduce:data-closed:slide-out-to-bottom-0",
+        ].join(" ")}
       >
-        <DialogHeader>
+        {/* Con lugar a la derecha para la X (44 px desde el borde): un título largo no queda debajo */}
+        <DialogHeader className="pr-9">
           <DialogTitle>{titulo}</DialogTitle>
         </DialogHeader>
         <Modal.Provider value={{ cerrar, pedirCierre, preguntando, seguir, conPie, renovarBase: tomarBase, fijarAdemas, fijarEnviando }}>

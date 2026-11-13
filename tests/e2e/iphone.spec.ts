@@ -116,3 +116,42 @@ test("en la portada los servicios van de a dos con su foto y nada se sale de la 
   }
   expect(await anchoDePagina(page)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
+
+// Revisión de los modales (13/11): Safari no achica la pantalla al abrir el teclado (solo la parte visible,
+// visualViewport) y la hoja de un modal, pegada abajo, quedaba detrás con "Guardar" tapado. Ahora se apoya sobre el
+// teclado. Playwright no abre el teclado del iPhone: se simula su visualViewport, con 300 px tapados.
+test("con el teclado abierto, la hoja del modal se apoya sobre él y su botón se ve", async ({ page }) => {
+  await page.addInitScript(() => {
+    const falso = new EventTarget();
+    let tapado = 0;
+    Object.defineProperty(falso, "height", { get: () => window.innerHeight - tapado });
+    Object.defineProperty(falso, "offsetTop", { get: () => 0 });
+    Object.defineProperty(window, "visualViewport", { get: () => falso, configurable: true });
+    (window as unknown as { abrirTeclado: (px: number) => void }).abrirTeclado = (px) => {
+      tapado = px;
+      falso.dispatchEvent(new Event("resize"));
+    };
+  });
+  await ingresarComoDueno(page);
+  await page.goto("/panel/catalogo");
+  await page.getByRole("main").getByRole("button", { name: "Agregar servicio" }).click();
+  const dialogo = page.getByRole("dialog", { name: "Nuevo servicio" });
+  await expect(dialogo).toBeVisible();
+  const alto = page.viewportSize()!.height;
+  // Sin teclado, pegada abajo
+  await expect.poll(async () => Math.round((await dialogo.boundingBox())!.y + (await dialogo.boundingBox())!.height)).toBeGreaterThanOrEqual(alto - 2);
+
+  await page.evaluate(() => (window as unknown as { abrirTeclado: (px: number) => void }).abrirTeclado(300));
+  const sobreElTeclado = alto - 300;
+  await expect.poll(async () => {
+    const caja = (await dialogo.boundingBox())!;
+    return Math.round(caja.y + caja.height);
+  }).toBeLessThanOrEqual(sobreElTeclado + 2);
+  const crear = (await dialogo.getByRole("button", { name: "Crear servicio" }).boundingBox())!;
+  expect(crear.y + crear.height).toBeLessThanOrEqual(sobreElTeclado);
+  expect((await dialogo.boundingBox())!.y).toBeGreaterThanOrEqual(0);
+
+  // Al cerrarse el teclado, vuelve abajo
+  await page.evaluate(() => (window as unknown as { abrirTeclado: (px: number) => void }).abrirTeclado(0));
+  await expect.poll(async () => Math.round((await dialogo.boundingBox())!.y + (await dialogo.boundingBox())!.height)).toBeGreaterThanOrEqual(alto - 2);
+});
