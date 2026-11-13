@@ -1,7 +1,7 @@
 # P23 Cotización directa, sin consulta: especificación
 
-- **Fase y semana:** C. Entrega 2 · desde el 1 de noviembre de 2026, primero de los ajustes de la reunión con el dueño (`../ajustes-reunion-dueno.md`, punto 1)
-- **Estado:** aprobada (01/11/2026) y en curso en la rama `pedido-23-cotizacion-directa`
+- **Fase y semana:** C. Entrega 2 · desde el 1 de noviembre de 2026, primero de los ajustes de la reunión con el dueño del 01/11 (su pedido, en `03-cierre-comercial/registro-de-cambios.md`, punto 1)
+- **Estado:** aprobada y hecha (01/11/2026, PR #113)
 - **Pedidos:** 23 y 24 de `03-cierre-comercial/registro-de-cambios.md`. El 25 (editar en lugar de versiones) queda descartado: el dueño prefiere las versiones.
 - **Historias que cambian:** HU-24 (consultas, desaparece), HU-25 (cotizar), HU-28 (seguimiento), HU-23 (ficha del cliente), HU-30 (agendar desde la cotización), HU-02 (permisos del encargado)
 - **Base:**

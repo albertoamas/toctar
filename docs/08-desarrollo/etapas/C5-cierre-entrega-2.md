@@ -1,7 +1,7 @@
 # C5 Cierre de la Entrega 2 — especificación
 
 - **Fase y semana:** C. Entrega 2 · se adelanta a la semana 2 (desde el 23 de octubre); en el plan era la semana 5, con margen en la 6 y la 7
-- **Estado:** aprobada (23 de octubre de 2026). §0 terminado el 24/10 (PR #74); HU-40 (PR #92), HU-39 (PR #93) y HU-41 (PR #94) el 25/10; el pulido visual de la Entrega 2 y los pedidos 20 y 21 el 27/10. Antes del cierre (criterios, capacitación y acta) van los ajustes de la reunión con el dueño (`../ajustes-reunion-dueno.md`): seis hechos el 01/11 (PR #113 a #118); quedan vehículos sin placa, los avisos automáticos y el rediseño del panel
+- **Estado:** aprobada (23 de octubre de 2026). §0 terminado el 24/10 (PR #74); HU-40 (PR #92), HU-39 (PR #93) y HU-41 (PR #94) el 25/10; el pulido visual de la Entrega 2 y los pedidos 20 y 21 el 27/10. Antes del cierre (criterios, capacitación y acta) van los ajustes de la reunión con el dueño del 01/11 (su pedido, en `03-cierre-comercial/registro-de-cambios.md`): seis hechos el 01/11 (PR #113 a #118); quedan vehículos sin placa, los avisos automáticos y el rediseño del panel
 - **Historias:** HU-39 Pantalla del día · HU-40 Plantillas de WhatsApp · HU-41 Fotos de órdenes a la galería (las tres deseables) · cierre: criterios de HU-19 a HU-38, capacitación y acta
 - **Base:**
   - Requisitos: RF-44, RF-51, RF-52; RNF-01, RNF-05, RNF-11, RNF-14.
@@ -9,6 +9,8 @@
   - Modelo: `plantilla_mensaje` (clave, texto) y `galeria_item.trabajo_id` (`06-diseno/modelo-de-datos/modelo-de-datos.md`).
   - Lo que dejó C4 (`C4-taller-entrega.md` §13): los mensajes de WhatsApp fijos en `src/modulos/ordenes/mensajes.ts`, el botón `AvisarPorWhatsApp`, las fotos de las órdenes en el bucket privado y las consultas de órdenes, saldos y mantenimientos.
   - Lo que dejó B3: la galería del panel (`/panel/sitio/galeria`), que guarda fotos públicas y las borra al quitar el ítem.
+
+> **Vigencia (13/11/2026):** se escribió antes de pedidos posteriores que cambiaron parte de lo que dice: donde dice «técnico», hoy es un encargado con el perfil Taller (dos roles, dueño y encargado: `P32-roles-sin-tecnico.md`). Si algo de aquí contradice esas especificaciones, valen ellas.
 
 Esta especificación se escribe al empezar la etapa, con lo aprendido en las anteriores. Se programa contra ella; si algo cambia durante la etapa, se corrige aquí primero.
 

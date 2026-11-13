@@ -9,6 +9,8 @@
   - Casos de uso: CU-00 y CU-06.
   - Modelo: tablas `usuario` y `usuario_permiso`.
 
+> **Vigencia (13/11/2026):** se escribió antes de pedidos posteriores que cambiaron parte de lo que dice: donde dice «técnico», hoy es un encargado con el perfil Taller (dos roles, dueño y encargado: `P32-roles-sin-tecnico.md`); el rol dueño ya no se da ni se cambia desde el panel (`P50-cuenta-del-dueno-protegida.md`). Si algo de aquí contradice esas especificaciones, valen ellas.
+
 > **Cambió después (02/11/2026, pedido 32):** ya no hay rol Técnico. Quedan Dueño y Encargado, con perfiles que marcan sus permisos (Taller, Atención, Todo); la matriz vive en `src/lib/permisos.ts` y `tests/unit/permisos.test.ts`. Especificación: `P32-roles-sin-tecnico.md`.
 
 ## 1. Objetivo

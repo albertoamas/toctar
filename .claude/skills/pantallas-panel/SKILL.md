@@ -117,4 +117,4 @@ Los tipos de botón (rojo para guardar o crear, contorno para lo secundario, ros
 
 ## 7. Registro
 
-Cada pantalla deja en `pulido-visual.md` su inventario (§1), qué se cambió y por qué, y las capturas. Lo que aparezca y no sea pulido (una función nueva) va a `03-cierre-comercial/registro-de-cambios.md`, no se programa.
+Cada pantalla deja en `pulido-visual.md` su fila con el inventario (§1) y qué se cambió y por qué. Las capturas de antes y después van en el Pull Request, no en el repositorio (público: pesan y envejecen con la pantalla). Lo que aparezca y no sea pulido (una función nueva) va a `03-cierre-comercial/registro-de-cambios.md`, no se programa.

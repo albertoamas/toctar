@@ -1,11 +1,13 @@
 # P12 Checklist al recibir el vehículo: especificación
 
-- **Fase y semana:** C. Entrega 2 · desde el 1 de noviembre de 2026, punto 2 de los ajustes de la reunión con el dueño (`../ajustes-reunion-dueno.md`)
-- **Estado:** aprobada (01/11/2026) y en curso en la rama `pedido-12-checklist-recepcion`
+- **Fase y semana:** C. Entrega 2 · desde el 1 de noviembre de 2026, punto 2 de los ajustes de la reunión con el dueño del 01/11 (su pedido, en `03-cierre-comercial/registro-de-cambios.md`)
+- **Estado:** aprobada y hecha (01/11/2026, PR #114)
 - **Pedido:** 12 de `03-cierre-comercial/registro-de-cambios.md`. Tratamiento: incluido en el plan de ajustes (decisión del 01/11, no se cotiza aparte)
 - **Historias que cambian:** HU-33 (recibir), HU-34 (la orden), HU-05 (configuración del taller)
 - **Cambió después (02/11, pedido 26):** el checklist es un interruptor por parte, que se ve prendido o apagado: "Bien" se prende en verde al tocarlo (al momento, se guarda por detrás) y otro toque lo apaga (la parte vuelve a "Sin revisar": acción `desmarcarParte`, con las mismas reglas que marcar; si tenía detalle, se borran su nota y su foto). "Detalle" abre el modal; guardado, queda en ámbar con el tipo y la nota y la foto debajo. De detalle a bien, un toque en "Bien" (el modal ya no tiene "Está bien"). Arriba, una barra de avance con "Faltan N". Reglas puras `alTocarBien` y `textoAvanceChecklist` (`tests/unit/ordenes.test.ts`). En el mismo cambio, el formulario de recibir manda el técnico y las observaciones en campos ocultos: tras un envío que fallaba (partes sin revisar), React reiniciaba el formulario y a veces se recibía sin técnico.
 - **Base:** RF-40 (recibir con fotos y observaciones), RN-12 (el técnico no ve precios ni teléfonos), RNF-11 (todo configurable), D-4 (lo registrado copia el nombre), D-6 (se desactiva, no se borra), D-10 (archivos)
+
+> **Vigencia (13/11/2026):** se escribió antes de pedidos posteriores que cambiaron parte de lo que dice: donde dice «técnico», hoy es un encargado con el perfil Taller (dos roles, dueño y encargado: `P32-roles-sin-tecnico.md`). Si algo de aquí contradice esas especificaciones, valen ellas.
 
 ## 1. Objetivo
 Que al recibir un vehículo el dueño o el encargado **revisen parte por parte** en el celular y marquen cada una **"Bien"** o **"Detalle"** (rayón, golpe, raspón, roto u otro, con una nota y una foto). No se recibe con partes sin revisar: así ninguna se pasa por alto (ajuste pedido el 01/11, al probarlo; antes, todo arrancaba en "Bien"). En la orden se ve "Cómo llegó": los detalles con su foto y "El resto, bien".

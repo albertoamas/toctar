@@ -1,7 +1,7 @@
 # P32 Dos roles, sin técnico asignado — especificación
 
 - **Fase y semana:** C. Entrega 2 · 2 de noviembre de 2026, después del recorrido manual de la Entrega 2
-- **Estado:** aprobada (02/11/2026, enfoque A) y programada en la rama `pedido-32-roles-sin-tecnico`
+- **Estado:** aprobada (02/11/2026, enfoque A) y hecha (PR #129)
 - **Pedido:** 32 de `03-cierre-comercial/registro-de-cambios.md`
 - **Historias que cambian:** HU-02 (roles), HU-03 (permisos del encargado), HU-30 (agendar), HU-33 (recibir), HU-34 (órdenes del técnico, pasa a "Trabajar una orden"), HU-39 (inicio)
 - **Base:**

@@ -1,7 +1,7 @@
 # P50 La cuenta del dueño, protegida — especificación
 
 - **Fase y semana:** C. Entrega 2 · 13 de noviembre de 2026, antes de publicar
-- **Estado:** aprobada por YankoSoft y hecha (13/11/2026, rama `p50-usuarios-dueno-protegido`); falta contárselo al dueño (le quita una opción del RF-15)
+- **Estado:** aprobada por YankoSoft y hecha (13/11/2026, PR #231); falta contárselo al dueño (le quita una opción del RF-15)
 - **Pedido:** 50 de `03-cierre-comercial/registro-de-cambios.md`
 - **Historias que cambian:** HU-02 (gestionar usuarios), HU-03 (permisos del encargado)
 - **Base:** B1 (`B1-acceso.md`): el dueño crea usuarios, les da un rol, restablece su contraseña y los desactiva (RF-15). P32 (`P32-roles-sin-tecnico.md`): dos roles, dueño y encargado.

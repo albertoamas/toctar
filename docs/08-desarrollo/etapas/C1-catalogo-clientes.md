@@ -10,6 +10,8 @@
   - Modelo: D-2, D-3, D-6, D-9. Tablas `servicio` y `variante` (cambian), `precio`, `cliente` y `vehiculo` (nuevas).
   - Material: clasificación de vehículos en 5 tamaños (`01-descubrimiento/material-recibido.md`). La lista de precios todavía no llegó: se cargan precios de prueba solo en la base de pruebas E2E, nunca como datos iniciales.
 
+> **Vigencia (13/11/2026):** se escribió antes de pedidos posteriores que cambiaron parte de lo que dice: donde dice «técnico», hoy es un encargado con el perfil Taller (dos roles, dueño y encargado: `P32-roles-sin-tecnico.md`). Si algo de aquí contradice esas especificaciones, valen ellas.
+
 Esta especificación se escribe al empezar la etapa, con lo aprendido en las anteriores. Se programa contra ella; si algo cambia durante la etapa, se corrige aquí primero.
 
 ## 1. Objetivo

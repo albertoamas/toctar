@@ -3,7 +3,7 @@
 - **Fuente:**
   - `05-analisis/historias-de-usuario/historias.md` (HU-19 a HU-41).
   - Las especificaciones de etapa en `08-desarrollo/etapas/` (C1 a C5).
-  - Los ajustes de la reunión con el dueño (`08-desarrollo/ajustes-reunion-dueno.md`, pedidos 12, 13, 21, 23, 24, 26, 27, 28 y 30) y el pedido 32 (dos roles, sin técnico asignado).
+  - Los ajustes de la reunión con el dueño (pedidos 12, 13, 21, 23, 24, 26, 27, 28 y 30 de `03-cierre-comercial/registro-de-cambios.md`) y el pedido 32 (dos roles, sin técnico asignado).
 - **Uso:**
   - Es la lista con la que el dueño revisa y firma el acta de la entrega 2 (`actas-de-aceptacion/entrega-2.md`).
   - Con ella se hace la prueba completa en `pruebas.toctardetailing.com` y se arma la capacitación por rol.

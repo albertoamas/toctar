@@ -63,7 +63,7 @@ Las que redirigen al terminar reciben `volver` (campo oculto del formulario), lo
   - `conDesde(href, desde)`: el enlace con `desde` (codificado). Si el resultado supera los 1000 caracteres, se quita el `desde` anidado más adentro.
   - `textoVolver(ruta)`: el texto de §5, o `null` si la ruta no es una pantalla conocida (entonces se ignora).
   - `sinElTrabajo(desde, trabajoId)`: si `desde` es la reserva u orden de ese trabajo (o uno de sus pasos), devuelve el `desde` de esa pantalla.
-- **`volverDesde(parametros, porDefecto, usuario)`** (servidor, `src/lib/volver-servidor.ts`): lee `desde`, comprueba el permiso del módulo y devuelve `{ href, texto }` para `EncabezadoPagina`.
+- **`volverDesde(parametros, porDefecto, usuario)`** (`src/lib/volver.ts`; al principio estaba aparte, en `volver-servidor.ts`): lee `desde`, comprueba el permiso del módulo y devuelve `{ href, texto }` para `EncabezadoPagina`.
 - **`aqui(ruta, parametros)`**: la dirección actual de una pantalla del servidor (su ruta y sus parámetros), para los enlaces que salen de ella.
 - `EncabezadoPagina` y `BotonVolver` no cambian: reciben `volver` como hasta ahora.
 - **`TablaLista`** recibe `desde` (la lista con su pestaña, filtros y búsqueda) y lo agrega a cada fila; `ListaCotizaciones` y `ReservasCliente`, lo mismo para la ficha del cliente. El tablero de la Agenda (`TableroSemana`, `AgendaDelDia`) lo pasa a cada reserva y a cada "Reservar".

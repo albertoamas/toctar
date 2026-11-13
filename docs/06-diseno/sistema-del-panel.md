@@ -1,6 +1,6 @@
 # Sistema del panel: reglas de estructura
 
-- **Fecha:** 8 de noviembre de 2026
+- **Fecha:** 8 de noviembre de 2026 (al día el 13/11: los anchos de las listas y las portadas, y cómo se ve cada forma)
 - **Alcance:** todas las pantallas de `/panel/**`. El sitio público y el ingreso siguen `identidad-visual.md`.
 - **Base:** pedido 26 (`08-desarrollo/etapas/P26-rediseno-panel.md`), que define el estilo: colores, tipografía, tarjetas e insignias.
 - **Cómo se llegó aquí:** con `08-desarrollo/etapas/C6-consistencia-del-panel.md`, terminado el 08/11/2026. Todas las pantallas cumplen estas reglas; lo que se aparta tiene su motivo escrito en `tests/unit/consistencia-panel.test.ts`, y `tests/e2e/recorrido-panel.spec.ts` recorre el panel en 4 tamaños con 3 roles.
@@ -13,14 +13,29 @@ Toda pantalla del panel es de uno de estos tipos. El tipo decide su ancho.
 
 | Tipo | Para qué | Ancho máximo | Ejemplos |
 |---|---|---|---|
-| `lista` | Una tabla con columnas, o un tablero | Todo el ancho | Clientes, Órdenes, Cotizaciones, Agenda |
+| `lista` | Una tabla con columnas, o un tablero | `7xl` (1280 px) | Clientes, Órdenes, Cotizaciones, Agenda |
 | `ficha` | Ver y editar una cosa, o una lista de filas sin columnas | `5xl` (1024 px) | Cliente, Orden, Negocio, Preguntas frecuentes |
 | `formulario` | Crear algo, o un paso que se hace de arriba abajo | `3xl` (768 px) | Nueva reserva, Recibir, Entregar, Nuevo cliente |
-| `portada` | Elegir a dónde ir o ver el día | La propia de la portada | Inicio, Sitio web, Configuración |
+| `portada` | Elegir a dónde ir o ver el día | `7xl` (1280 px) | Inicio, Sitio web, Configuración |
 
 - El ancho sale del tipo, en `PaginaPanel`. Las páginas no escriben `max-w-*`.
 - Dentro de una ficha, un campo puede ser más angosto que su tarjeta (`max-w-32` para un número). Esa medida es del campo, no de la pantalla.
 - En el celular todo va en una columna.
+- Hasta una laptop de 1280 px (con el menú, el área de trabajo mide unos 970 px) todas ocupan el ancho que hay: la
+  diferencia se ve en monitores grandes. Hasta el 10/11 las listas y las portadas se estiraban a todo el monitor.
+
+**Cómo se ve cada forma** (revisión de las 40 pantallas del 10/11, `08-desarrollo/inventario-pantallas.md`):
+
+| Forma | Computadora | Celular |
+|---|---|---|
+| **Lista** | Tabla con columnas (`TablaLista`); la fila abre su ficha | Filas: lo que identifica arriba, el estado a la derecha, el resto abajo |
+| **Lista de acciones** (cobrar, avisar) | Tabla con una columna de acciones (`TablaAcciones`) | Tarjetas con los botones abajo |
+| **Ficha de un trabajo** (cotización, reserva, orden) | Pasos del trabajo, el paso siguiente grande, secciones y "Más" | Lo mismo, apilado |
+| **Ficha editable** | Secciones en tarjetas, de a dos (`PartesIguales`); "Editar" abre un modal | Una columna; el modal sube desde abajo |
+| **Crear o un paso del taller** | Formulario angosto, en pasos si hace falta, botón al pie (`PieFormulario`) | Igual, con el botón fijo abajo |
+| **Portada** | Tarjetas para elegir a dónde ir | Una debajo de la otra |
+
+Una pantalla nueva o cambiada toma una de estas formas; si ninguna sirve, se discute antes de inventar otra.
 
 ## 2. Forma de una ficha
 

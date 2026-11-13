@@ -1,9 +1,11 @@
 # P28 Órdenes con historial y entregadas en la agenda: especificación
 
-- **Fase y semana:** C. Entrega 2 · 1 de noviembre de 2026, punto 6 de los ajustes de la reunión con el dueño (`../ajustes-reunion-dueno.md`)
-- **Estado:** aprobada (01/11/2026) y en curso en la rama `pedido-28-ordenes-historial`
+- **Fase y semana:** C. Entrega 2 · 1 de noviembre de 2026, punto 6 de los ajustes de la reunión con el dueño del 01/11 (su pedido, en `03-cierre-comercial/registro-de-cambios.md`)
+- **Estado:** aprobada y hecha (01/11/2026, PR #117)
 - **Pedido:** 28 de `03-cierre-comercial/registro-de-cambios.md`
 - **Historias que cambian:** HU-34 (órdenes), HU-29 (tablero de la agenda)
+
+> **Vigencia (13/11/2026):** se escribió antes de pedidos posteriores que cambiaron parte de lo que dice: donde dice «técnico», hoy es un encargado con el perfil Taller (dos roles, dueño y encargado: `P32-roles-sin-tecnico.md`). Si algo de aquí contradice esas especificaciones, valen ellas.
 
 ## 1. Objetivo
 Que el dueño encuentre una orden pasada (por placa, cliente o fecha) y que en la agenda se vean los autos que ya se entregaron, en verde, sin tapar las reservas que siguen.

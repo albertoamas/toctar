@@ -67,16 +67,15 @@ Como usuario del panel, quiero entrar con mi usuario y contraseña, para usar so
 - La sesión vence tras un tiempo sin uso y puedo cerrarla cuando quiera.
 
 ### HU-02 Gestionar usuarios y roles
-Como dueño, quiero crear usuarios con su rol, para que cada persona tenga su acceso.
-- Creo un usuario con nombre, usuario, contraseña inicial y rol (dueño o encargado; pedido 32: no hay rol Técnico).
-- Restablezco la contraseña de cualquier usuario.
-- Desactivo un usuario sin borrar lo que registró.
-- No puedo desactivarme a mí mismo si soy el único dueño activo.
+Como dueño, quiero crear usuarios para cada persona del taller, para que cada una tenga su acceso.
+- Creo un encargado con nombre, usuario, contraseña inicial y sus permisos (pedido 32: no hay rol Técnico). Desde el pedido 50 no se crea un dueño desde el panel: lo crea o lo recupera YankoSoft en el servidor.
+- Restablezco la contraseña de un encargado. La mía la cambio con la actual ("Cambiar mi contraseña", pedido 50); la de otro dueño no se cambia desde el panel.
+- Desactivo un encargado sin borrar lo que registró. Un dueño no se desactiva desde el panel: siempre queda uno activo.
 
 ### HU-03 Permisos del encargado
 Como dueño, quiero elegir qué módulos ve el encargado, para darle acceso sin mostrarle todo.
-- Marco o desmarco módulos (clientes, consultas, agenda, órdenes, pagos, mantenimientos, sitio, reclamos) y el permiso "autorizar entrega con saldo" (RN-13).
-- El encargado nunca puede cotizar (RN-01) ni cambiar la configuración.
+- Marco o desmarco módulos (sitio, reclamos, clientes, cotizaciones, agenda, órdenes, pagos, mantenimientos) y el permiso "autorizar entrega con saldo" (RN-13), de a uno o con un perfil (Taller, Atención, Todo; pedido 32).
+- Con el permiso de Cotizaciones, el encargado cotiza (RN-01, pedido 24). Nunca cambia la configuración, el catálogo ni los usuarios.
 - El permiso se valida en el servidor: entrar por la URL de un módulo no habilitado muestra "sin acceso".
 - Un perfil marca sus casillas de un toque: Taller (agenda y órdenes), Atención (además clientes, cotizaciones, pagos y mantenimientos) o Todo; después se ajustan (pedido 32).
 

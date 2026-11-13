@@ -88,8 +88,8 @@ Se verifica el precio real al contratar y se le informa al dueño antes (acuerdo
 
 ### Fotos
 - El celular sube la foto; el servidor la redimensiona (lado mayor 1600 px), la convierte a WebP y la guarda en R2. Se guarda también una miniatura. El servidor rechaza imágenes de más de 70 megapíxeles (`src/lib/imagen.ts`).
-- Dos buckets por entorno. **Público** (`S3_BUCKET`): lo que muestra el sitio, servido desde `S3_URL_PUBLICA`. **Privado** (`S3_BUCKET_PRIVADO`): datos de clientes, como las fotos de los reclamos; sin acceso público, el panel las muestra con enlaces firmados que vencen a los 15 minutos (`src/lib/almacenamiento.ts`). `archivo.privado` dice en cuál está cada archivo.
-- Videos de consultas: hasta 50 MB y 60 segundos, sin procesar (RNF-07). Se revisa si el espacio de R2 crece demasiado.
+- Dos buckets por entorno. **Público** (`S3_BUCKET`): lo que muestra el sitio, servido desde `S3_URL_PUBLICA`. **Privado** (`S3_BUCKET_PRIVADO`): datos de clientes (fotos de las órdenes, firmas, comprobantes de pago, fotos de los reclamos y los PDF de las cotizaciones); sin acceso público, el panel las muestra con enlaces firmados que vencen a los 15 minutos (`src/lib/almacenamiento.ts`). `archivo.privado` dice en cuál está cada archivo.
+- El único video es el de la portada (pedido 48): hasta 20 MB, MP4 o MOV con H.264, o WebM, sin procesar. Se sube por su propia ruta (`panel/sitio/video`), no por una server action, por su tamaño (RNF-07).
 
 ### PDF de cotización
 - Se genera al guardar la cotización y se guarda en R2; no se regenera después, así el PDF enviado nunca cambia (RN-02).
@@ -145,8 +145,8 @@ toctar/
 │   │   ├── panel/            panel interno (requiere sesión); el PDF de una cotización es una ruta de aquí
 │   │   │                     (panel/cotizaciones/[id]/pdf)
 │   │   └── api/salud/        estado de la app, para Docker, Coolify y UptimeRobot
-│   ├── modulos/              un directorio por módulo: acceso, usuarios, configuracion, sitio, reclamos,
-│   │                         catalogo, clientes, consultas, cotizaciones, agenda, ordenes, pagos, mantenimientos
+│   ├── modulos/              un directorio por módulo: acceso, usuarios, configuracion, sitio, reclamos, inicio,
+│   │                         catalogo, clientes, cotizaciones, agenda, ordenes, pagos, mantenimientos
 │   │   └── <modulo>/         acciones.ts (servidor), consultas.ts, esquemas.ts (zod), reglas.ts (puras), componentes/
 │   ├── db/                   esquema de Drizzle, migraciones y la conexión (src/db/index.ts)
 │   ├── lib/                  sesión y permisos, almacenamiento y fotos, fechas, WhatsApp, formularios

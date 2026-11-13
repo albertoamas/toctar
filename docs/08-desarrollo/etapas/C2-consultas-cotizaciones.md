@@ -12,6 +12,8 @@
   - Casos de uso: CU-10, CU-11, CU-12. Flujo crítico 1 de `05-analisis/diagramas-de-secuencia/flujos-criticos.md`.
   - Arquitectura: PDF con `@react-pdf/renderer` en el servidor, guardado en R2 y nunca regenerado; compartir con la Web Share API (con archivo), y si no se puede, descarga.
 
+> **Vigencia (13/11/2026):** se escribió antes de pedidos posteriores que cambiaron parte de lo que dice: donde dice «consulta», hoy es la cotización directa, sin consulta aparte (`P23-cotizacion-directa.md`); donde dice «técnico», hoy es un encargado con el perfil Taller (dos roles, dueño y encargado: `P32-roles-sin-tecnico.md`). Si algo de aquí contradice esas especificaciones, valen ellas.
+
 Esta especificación se escribe al empezar la etapa, con lo aprendido en las anteriores. Se programa contra ella; si algo cambia durante la etapa, se corrige aquí primero.
 
 ## 1. Objetivo

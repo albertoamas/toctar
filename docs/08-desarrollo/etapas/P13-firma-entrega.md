@@ -1,10 +1,12 @@
 # P13 Firma del cliente al entregar: especificación
 
-- **Fase y semana:** C. Entrega 2 · desde el 1 de noviembre de 2026, punto 3 de los ajustes de la reunión con el dueño (`../ajustes-reunion-dueno.md`)
-- **Estado:** aprobada (01/11/2026) y en curso en la rama `pedido-13-firma-entrega`
+- **Fase y semana:** C. Entrega 2 · desde el 1 de noviembre de 2026, punto 3 de los ajustes de la reunión con el dueño del 01/11 (su pedido, en `03-cierre-comercial/registro-de-cambios.md`)
+- **Estado:** aprobada y hecha (01/11/2026, PR #115)
 - **Pedido:** 13 de `03-cierre-comercial/registro-de-cambios.md`. Decisiones del 01/11: firma **al entregar**; se puede entregar **sin firma, con el motivo**; la constancia en PDF queda aparte (no se hace ahora)
 - **Historias que cambian:** HU-36 (entregar), HU-34 (la orden)
 - **Base:** RF-49 (entregar), RN-12 (el técnico no ve precios ni teléfonos), D-10 (archivos), datos de clientes en el bucket privado
+
+> **Vigencia (13/11/2026):** se escribió antes de pedidos posteriores que cambiaron parte de lo que dice: donde dice «técnico», hoy es un encargado con el perfil Taller (dos roles, dueño y encargado: `P32-roles-sin-tecnico.md`). Si algo de aquí contradice esas especificaciones, valen ellas.
 
 ## 1. Objetivo
 Que al llevarse su vehículo el cliente firme con el dedo en el celular del taller, como constancia de que lo recibe conforme. La firma queda en la orden con su nombre, la fecha y quién entregó. No es una firma digital certificada: es una constancia de conformidad.

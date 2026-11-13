@@ -1,9 +1,11 @@
 # P26 Rediseño del panel: administrativo estándar: especificación
 
-- **Fase y semana:** C. Entrega 2 · desde el 2 de noviembre de 2026, punto 5 de los ajustes de la reunión con el dueño (`../ajustes-reunion-dueno.md`)
+- **Fase y semana:** C. Entrega 2 · desde el 2 de noviembre de 2026, punto 5 de los ajustes de la reunión con el dueño del 01/11 (su pedido, en `03-cierre-comercial/registro-de-cambios.md`)
 - **Estado:** hecha. El dueño aprobó el rediseño el 02/11/2026; las 7 fases entran a `develop` en un solo commit (PR #125, que reúne los PR #121 a #124). Prototipo: https://claude.ai/artifact/WDzpNpxYmNBX961B98LqMU (Inicio, Órdenes con la ficha de una orden y Cotizaciones con su ficha)
 - **Pedido:** 26 de `03-cierre-comercial/registro-de-cambios.md`
 - **Historias que cambian:** la apariencia de todas las del panel (HU-04 a HU-41); ninguna regla de negocio cambia
+
+> **Vigencia (13/11/2026):** se escribió antes de pedidos posteriores que cambiaron parte de lo que dice: donde dice «técnico», hoy es un encargado con el perfil Taller (dos roles, dueño y encargado: `P32-roles-sin-tecnico.md`). Si algo de aquí contradice esas especificaciones, valen ellas.
 
 ## 1. Objetivo
 Que el panel sea un panel administrativo conocido y amigable ("que un tonto pueda usarlo"): cada bloque se separa del fondo, el estado de cada cosa se ve de un vistazo y hay menos texto. La marca queda en el sitio público y en el ingreso.

@@ -1,7 +1,7 @@
 # P27 Fotos solo donde sirven: especificación
 
-- **Fase y semana:** C. Entrega 2 · 1 de noviembre de 2026, punto 4 de los ajustes de la reunión con el dueño (`../ajustes-reunion-dueno.md`)
-- **Estado:** aprobada (01/11/2026) y en curso en la rama `pedido-27-fotos` (sale de la del pedido 13: tocan las mismas pantallas)
+- **Fase y semana:** C. Entrega 2 · 1 de noviembre de 2026, punto 4 de los ajustes de la reunión con el dueño del 01/11 (su pedido, en `03-cierre-comercial/registro-de-cambios.md`)
+- **Estado:** aprobada y hecha (01/11/2026, PR #116)
 - **Pedido:** 27 de `03-cierre-comercial/registro-de-cambios.md`
 - **Historias que cambian:** HU-33 (recibir), HU-34 (la orden), HU-41 (publicar en la galería: sin cambios de fondo)
 
