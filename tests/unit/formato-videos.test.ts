@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MENSAJE_NO_ES_VIDEO, MENSAJE_VIDEO_HEVC, revisarVideo } from "@/lib/formato-videos";
+import { MENSAJE_NO_ES_VIDEO, MENSAJE_VIDEO_FORMATO, MENSAJE_VIDEO_HEVC, revisarVideo } from "@/lib/formato-videos";
 import { audioDePrueba, caja, videoDePrueba } from "../videos-de-prueba";
 
 // Pedido 48: el servidor mira qué es el archivo por dentro, no lo que dice el navegador. Revisión del 12/11: el iPhone
@@ -18,9 +18,14 @@ describe("revisarVideo", () => {
     expect(revisarVideo(videoDePrueba({ marca: "qt  " }))).toEqual({ ok: true, tipo: "video/mp4" });
   });
 
-  it("acepta un MOV viejo sin caja ftyp", () => {
+  it("acepta un H.264 de otras cámaras o del Android viejo (3GP)", () => {
+    for (const marca of ["3gp4", "3gp5", "MSNV", "XAVC", "M4VP"]) expect(revisarVideo(videoDePrueba({ marca })), marca).toEqual({ ok: true, tipo: "video/mp4" });
+  });
+
+  it("acepta un MOV viejo sin caja ftyp, empiece con la caja que empiece", () => {
     const sinFtyp = videoDePrueba().subarray(caja("ftyp", Buffer.alloc(12)).length);
     expect(revisarVideo(sinFtyp)).toEqual({ ok: true, tipo: "video/mp4" });
+    expect(revisarVideo(Buffer.concat([caja("free", Buffer.alloc(16)), sinFtyp]))).toEqual({ ok: true, tipo: "video/mp4" });
   });
 
   it("acepta un WebM por su cabecera EBML", () => {
@@ -30,6 +35,10 @@ describe("revisarVideo", () => {
   it("rechaza un video en HEVC (la cámara del iPhone) con su propio mensaje", () => {
     expect(revisarVideo(videoDePrueba({ marca: "qt  ", codec: "hvc1" }))).toEqual({ ok: false, mensaje: MENSAJE_VIDEO_HEVC });
     expect(revisarVideo(videoDePrueba({ codec: "hev1" }))).toEqual({ ok: false, mensaje: MENSAJE_VIDEO_HEVC });
+  });
+
+  it("un video en otro códec (ProRes, AV1, VP9) dice que el formato no se ve en todos lados", () => {
+    for (const codec of ["apcn", "av01", "vp09"]) expect(revisarVideo(videoDePrueba({ marca: "qt  ", codec })), codec).toEqual({ ok: false, mensaje: MENSAJE_VIDEO_FORMATO });
   });
 
   it("rechaza lo que tiene ftyp sin ser un video: fotos HEIC o AVIF y audio M4A", () => {

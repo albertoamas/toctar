@@ -16,7 +16,7 @@ import type { VideoPortada } from "../consultas";
 // (fetch no lo hace con una subida): 20 MB con datos del celular tardan, y sin la barra parece trabado.
 
 const ID = "video-portada";
-const GUIA = 'Opcional. Se ve en "Mira cómo trabajamos", en la portada; sin video, ahí va solo el texto. MP4 o MOV de hasta 30 segundos y 20 MB.';
+const GUIA = 'Opcional. Se ve en "Mira cómo trabajamos", en la portada; sin video, ahí va solo el texto. MP4 de hasta 30 segundos y 20 MB.';
 const SIN_CONEXION = "No se pudo subir el video. Revisa la conexión y vuelve a intentar.";
 
 type Resultado = { ok: boolean; mensaje: string };

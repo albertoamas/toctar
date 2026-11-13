@@ -8,6 +8,8 @@ import { consultar, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
 // la computadora, para que los dos proyectos no se pisen.
 
 const soloEscritorio = (info: TestInfo) => test.skip(info.project.name !== "escritorio", "El video de la portada es uno solo");
+// Uno detrás del otro: todas tocan el mismo video (si una quita el video mientras otra lo sube, la primera falla)
+test.describe.configure({ mode: "serial" });
 
 /** Un MP4 mínimo en H.264 (sus cajas, `tests/videos-de-prueba.ts`). No se reproduce, pero el sitio lo pone igual. */
 const MP4 = videoDePrueba();
