@@ -330,6 +330,13 @@
       "when": 1794460419297,
       "tag": "0046_video_de_portada",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1794588711938,
+      "tag": "0047_datos_privacidad",
+      "breakpoints": true
     }
   ]
 }

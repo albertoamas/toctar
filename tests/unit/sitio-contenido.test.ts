@@ -11,8 +11,8 @@ describe("textos de las páginas", () => {
     por_que_elegirnos: JSON.stringify(["Productos profesionales"]),
   };
 
-  test("hay textos de portada, nosotros y contacto (RF-10)", () => {
-    expect(CLAVES_PAGINA).toEqual(["inicio", "nosotros", "contacto"]);
+  test("hay textos de portada, nosotros, contacto (RF-10) y la política de privacidad (pedido 49)", () => {
+    expect(CLAVES_PAGINA).toEqual(["inicio", "nosotros", "contacto", "privacidad"]);
   });
 
   test("los campos de lista llegan como JSON y se validan como lista", () => {

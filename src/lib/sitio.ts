@@ -26,8 +26,11 @@ export const PAGINAS_SECUNDARIAS: EnlaceSitio[] = [
   { href: "/garantia", texto: "Garantía y reclamos" },
 ];
 
+/** Páginas legales (pedido 49): solo en el pie, no en el menú del celular. Se consultan, no se navegan. */
+export const PAGINAS_LEGALES: EnlaceSitio[] = [{ href: "/privacidad", texto: "Política de privacidad" }];
+
 /** Todas las páginas fijas del sitio público (para el mapa del sitio). */
-export const PAGINAS_SITIO = ["/", ...PAGINAS_PRINCIPALES.map((p) => p.href), ...PAGINAS_SECUNDARIAS.map((p) => p.href)];
+export const PAGINAS_SITIO = ["/", ...[...PAGINAS_PRINCIPALES, ...PAGINAS_SECUNDARIAS, ...PAGINAS_LEGALES].map((p) => p.href)];
 
 /** Lo que nunca va a Google: el panel, el ingreso y la API. */
 // "/c/": los enlaces de las cotizaciones que se mandan a cada cliente (pedido 47)

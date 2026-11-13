@@ -39,6 +39,30 @@ export const PAGINAS = {
     descripcion: "La dirección, el horario y el WhatsApp salen de Configuración.",
     campos: [{ tipo: "parrafo", clave: "bienvenida", etiqueta: "Texto de bienvenida", vacio: "Escribe el texto de bienvenida.", max: 300 }],
   },
+  // Pedido 49 (P49-politica-de-privacidad.md): una sección por campo, con su título fijo (la etiqueta). Los datos del negocio
+  // van entre llaves y los completa el sitio con Configuración (texto-con-formato.ts)
+  privacidad: {
+    titulo: "Política de privacidad",
+    descripcion: "Qué datos guarda el taller y para qué. Los datos del negocio salen de Configuración.",
+    campos: [
+      {
+        tipo: "parrafo",
+        clave: "presentacion",
+        etiqueta: "Presentación",
+        vacio: "Escribe la presentación.",
+        max: 600,
+        ayuda: "Los datos del negocio van entre llaves y se completan con Configuración > Negocio: {negocio}, {direccion}, {whatsapp} y {correo}. Un renglón vacío separa párrafos; las líneas que empiezan con «- » forman una lista.",
+      },
+      { tipo: "parrafo", clave: "quienes_somos", etiqueta: "Quiénes somos", vacio: "Escribe quiénes son.", max: 600 },
+      { tipo: "parrafo", clave: "que_datos", etiqueta: "Qué datos guardamos", vacio: "Escribe qué datos guardan.", max: 2500 },
+      { tipo: "parrafo", clave: "para_que", etiqueta: "Para qué los usamos", vacio: "Escribe para qué los usan.", max: 2000 },
+      { tipo: "parrafo", clave: "quien_los_ve", etiqueta: "Quién más los ve", vacio: "Escribe quién más los ve.", max: 2000 },
+      { tipo: "parrafo", clave: "cuanto_tiempo", etiqueta: "Cuánto tiempo los guardamos", vacio: "Escribe cuánto tiempo los guardan.", max: 1000 },
+      { tipo: "parrafo", clave: "cookies", etiqueta: "Cookies y lo que guarda tu navegador", vacio: "Escribe qué cookies hay.", max: 1500 },
+      { tipo: "parrafo", clave: "derechos", etiqueta: "Tus derechos", vacio: "Escribe cómo pedir sus datos.", max: 1500 },
+      { tipo: "parrafo", clave: "cambios", etiqueta: "Cambios a esta política", vacio: "Escribe cómo avisan los cambios.", max: 600 },
+    ],
+  },
 } as const satisfies Record<string, { titulo: string; descripcion: string; campos: readonly CampoContenido[] }>;
 
 export type Pagina = keyof typeof PAGINAS;

@@ -69,7 +69,8 @@ test("el panel y el ingreso no se indexan en Google", async ({ page }) => {
 test("los enlaces del pie tienen 44 px para el dedo", async ({ page }) => {
   await page.goto("/nosotros");
   const enlaces = page.getByRole("navigation", { name: "Pie" }).getByRole("link");
-  await expect(enlaces).toHaveCount(6);
+  // Las 6 páginas y la política de privacidad (pedido 49)
+  await expect(enlaces).toHaveCount(7);
   for (const caja of await enlaces.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height))) {
     expect(caja).toBeGreaterThanOrEqual(44);
   }

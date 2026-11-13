@@ -115,6 +115,16 @@ export async function contenidoPublico(pagina: Pagina): Promise<ContenidoPagina>
   return leerContenido(pagina, fila?.datos);
 }
 
+/** Cuándo se guardó por última vez el texto de una página: la "Última actualización" de la privacidad (pedido 49). */
+export async function actualizacionDePagina(pagina: Pagina): Promise<string | null> {
+  "use cache";
+  cacheTag(ETIQUETA_CONTENIDO);
+  cacheLife("max");
+  const [fila] = await db.select({ cuando: contenidoPagina.updatedAt }).from(contenidoPagina).where(eq(contenidoPagina.clave, pagina));
+  // En texto: lo que se guarda en la caché, así no depende de cómo se guarda una fecha
+  return fila?.cuando.toISOString() ?? null;
+}
+
 /** La foto de la portada (el taller) o de Nosotros (el equipo), o null. */
 export async function fotoDePaginaPublica(pagina: PaginaConFoto): Promise<UrlsFoto | null> {
   "use cache";
