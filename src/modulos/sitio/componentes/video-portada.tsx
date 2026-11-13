@@ -7,7 +7,7 @@ import { useHidratado } from "@/componentes/hidratado";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { MensajeError } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
-import { BYTES_MAXIMOS_VIDEO, MENSAJE_VIDEO_PESADO, TIPOS_VIDEO } from "@/lib/formato-videos";
+import { ACEPTA_VIDEO, BYTES_MAXIMOS_VIDEO, MENSAJE_VIDEO_PESADO } from "@/lib/formato-videos";
 import { quitarVideoDePortada } from "../acciones";
 import type { VideoPortada } from "../consultas";
 
@@ -93,7 +93,7 @@ export function VideoDePortada({ video, hayTikTok }: { video: VideoPortada | nul
             ref={entrada}
             id={ID}
             type="file"
-            accept={TIPOS_VIDEO.join(",")}
+            accept={ACEPTA_VIDEO}
             className="sr-only"
             tabIndex={-1}
             aria-label="Archivo del video de TikTok"

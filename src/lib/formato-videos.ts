@@ -1,31 +1,103 @@
 // Videos aceptados al subir (pedido 48: el de "Mira cómo trabajamos" en la portada). Archivo aparte de videos.ts para
 // usarlo también en el navegador (el atributo accept y el tope antes de subir).
 
-export const TIPOS_VIDEO = ["video/mp4", "video/webm"] as const;
-export type TipoVideo = (typeof TIPOS_VIDEO)[number];
+export type TipoVideo = "video/mp4" | "video/webm";
+
+/**
+ * Lo que ofrece el selector de archivos. Sin `video/quicktime` a propósito: así el iPhone convierte el video elegido de la
+ * galería a uno compatible (H.264, aunque lo entregue como .MOV); si se le acepta el MOV, puede mandar el original de la
+ * cámara, en HEVC. Lo que de verdad vale lo decide `revisarVideo`.
+ */
+export const ACEPTA_VIDEO = "video/mp4,video/webm";
 
 /** Tope de un video (RNF-07): 20 MB. Se cuenta en el servidor con lo que llega, no con lo que dice el navegador. */
 export const BYTES_MAXIMOS_VIDEO = 20 * 1024 * 1024;
 
 export const MENSAJE_VIDEO_PESADO = "El video pesa más de 20 MB. Usa uno más corto o guárdalo en menor calidad.";
-export const MENSAJE_NO_ES_VIDEO = "Ese archivo no es un video MP4 o WebM.";
+export const MENSAJE_NO_ES_VIDEO = "Ese archivo no es un video. Elige un MP4 o MOV, como el que se baja de TikTok.";
+export const MENSAJE_VIDEO_HEVC =
+  "Ese video está en HEVC, el formato de la cámara del iPhone, y no se ve en todos los navegadores. Bájalo desde TikTok o, en el iPhone, elige Ajustes > Cámara > Formatos > Más compatible y grábalo de nuevo.";
+export const MENSAJE_VIDEO_FORMATO = "Ese video está en un formato que no todos los navegadores pueden ver. Bájalo desde TikTok o guárdalo en MP4 (H.264).";
 
 /**
- * Las marcas de MP4 de video (bytes 8 a 11). La caja `ftyp` también la tienen las fotos HEIC y AVIF del iPhone, el audio
- * M4A y el .mov de QuickTime (`qt  `, que no todos los navegadores reproducen): esas no.
+ * Las marcas de la caja `ftyp` (bytes 8 a 11) de las fotos HEIC y AVIF del iPhone, que también tienen esa caja: esas no.
+ * Las de video son muchas (MP4, MOV, 3GP, cámaras): no se listan, decide la pista de video y su códec.
  */
-const MARCAS_MP4 = new Set(["isom", "iso2", "iso3", "iso4", "iso5", "iso6", "mp41", "mp42", "avc1", "M4V ", "mmp4", "dash"]);
+const MARCAS_DE_FOTO = new Set(["heic", "heix", "heim", "heis", "hevc", "hevx", "mif1", "msf1", "avif", "avis"]);
+
+/** H.264: lo reproducen todos los navegadores. HEVC (`hvc1`, `hev1`): Chrome en Windows y en muchos Android, no. */
+const CODECS_H264 = new Set(["avc1", "avc3"]);
+const CODECS_HEVC = new Set(["hvc1", "hev1"]);
+
+const MAXIMO_CAJAS = 10_000;
+
+type Caja = { tipo: string; desde: number; hasta: number };
+
+const texto = (b: Uint8Array, desde: number, hasta: number) => String.fromCharCode(...b.subarray(desde, hasta));
+
+/** Las cajas de un tramo del archivo (MP4 y MOV son cajas: tamaño, tipo y contenido). Si una está rota, corta ahí. */
+function cajas(b: Uint8Array, desde: number, hasta: number): Caja[] {
+  const vista = new DataView(b.buffer, b.byteOffset, b.byteLength);
+  const lista: Caja[] = [];
+  let i = desde;
+  while (i + 8 <= hasta && lista.length < MAXIMO_CAJAS) {
+    let tamano = vista.getUint32(i);
+    let cabecera = 8;
+    if (tamano === 1) {
+      if (i + 16 > hasta) break;
+      tamano = Number(vista.getBigUint64(i + 8));
+      cabecera = 16;
+    } else if (tamano === 0) {
+      tamano = hasta - i;
+    }
+    if (tamano < cabecera || i + tamano > hasta) break;
+    lista.push({ tipo: texto(b, i + 4, i + 8), desde: i + cabecera, hasta: i + tamano });
+    i += tamano;
+  }
+  return lista;
+}
+
+/** Los códecs de las pistas de video: el formato de cada entrada de `stsd` en las pistas cuyo `hdlr` dice `vide`. */
+function codecsDeVideo(b: Uint8Array, moov: Caja): string[] {
+  const codecs: string[] = [];
+  for (const trak of cajas(b, moov.desde, moov.hasta).filter((c) => c.tipo === "trak")) {
+    const mdia = cajas(b, trak.desde, trak.hasta).find((c) => c.tipo === "mdia");
+    if (!mdia) continue;
+    const enMdia = cajas(b, mdia.desde, mdia.hasta);
+    const hdlr = enMdia.find((c) => c.tipo === "hdlr");
+    // hdlr: versión y banderas (4), pre_defined (4), handler_type (4)
+    if (!hdlr || hdlr.hasta - hdlr.desde < 12 || texto(b, hdlr.desde + 8, hdlr.desde + 12) !== "vide") continue;
+    let actual: Caja | undefined = enMdia.find((c) => c.tipo === "minf");
+    for (const siguiente of ["stbl", "stsd"]) actual = actual && cajas(b, actual.desde, actual.hasta).find((c) => c.tipo === siguiente);
+    // stsd: versión y banderas (4), cantidad (4), y cada entrada con su tamaño (4) y su formato (4)
+    if (actual && actual.hasta - actual.desde >= 16) codecs.push(texto(b, actual.desde + 12, actual.desde + 16));
+  }
+  return codecs;
+}
+
+export type RevisionVideo = { ok: true; tipo: TipoVideo } | { ok: false; mensaje: string };
 
 /**
- * El tipo de un video por la firma de sus primeros bytes, o null si no es uno que se acepte. El tipo que dice el
- * navegador no basta: cualquiera puede mandar otra cosa con `video/mp4`.
- * - MP4: una caja `ftyp` al inicio (bytes 4 a 7) con una marca de video (`MARCAS_MP4`).
+ * Si el archivo es un video que se puede mostrar en el sitio, y de qué tipo. El tipo que dice el navegador no basta:
+ * cualquiera puede mandar otra cosa con `video/mp4`, y el iPhone manda como .MOV un video común.
  * - WebM: la cabecera EBML `1A 45 DF A3`.
+ * - MP4, MOV o 3GP: sus cajas. Una `moov` (con o sin `ftyp`, que en un MOV viejo falta; si está, que no sea de una
+ *   foto) con alguna pista de video en H.264. Se guarda como `video/mp4`: un MOV con H.264 es el mismo formato por dentro
+ *   y así lo reproduce todo navegador.
+ * - En HEVC, se rechaza con su propio mensaje: es lo que graba la cámara del iPhone y no se ve en todos lados. En otro
+ *   códec (ProRes, AV1, VP9), con el suyo. Sin pista de video (un audio M4A), no es un video.
  */
-export function tipoDeVideo(inicio: Uint8Array): TipoVideo | null {
-  if (inicio.length >= 4 && inicio[0] === 0x1a && inicio[1] === 0x45 && inicio[2] === 0xdf && inicio[3] === 0xa3) return "video/webm";
-  if (inicio.length < 12) return null;
-  const texto = (desde: number, hasta: number) => String.fromCharCode(...inicio.subarray(desde, hasta));
-  if (texto(4, 8) !== "ftyp") return null;
-  return MARCAS_MP4.has(texto(8, 12)) ? "video/mp4" : null;
+export function revisarVideo(contenido: Uint8Array): RevisionVideo {
+  const b = contenido;
+  if (b.length >= 4 && b[0] === 0x1a && b[1] === 0x45 && b[2] === 0xdf && b[3] === 0xa3) return { ok: true, tipo: "video/webm" };
+  const raiz = cajas(b, 0, b.length);
+  const ftyp = raiz.find((c) => c.tipo === "ftyp");
+  const moov = raiz.find((c) => c.tipo === "moov");
+  const deFoto = ftyp !== undefined && ftyp.hasta - ftyp.desde >= 4 && MARCAS_DE_FOTO.has(texto(b, ftyp.desde, ftyp.desde + 4));
+  if (deFoto || !moov) return { ok: false, mensaje: MENSAJE_NO_ES_VIDEO };
+  const codecs = codecsDeVideo(b, moov);
+  if (codecs.length === 0) return { ok: false, mensaje: MENSAJE_NO_ES_VIDEO };
+  if (codecs.some((c) => CODECS_H264.has(c))) return { ok: true, tipo: "video/mp4" };
+  if (codecs.some((c) => CODECS_HEVC.has(c))) return { ok: false, mensaje: MENSAJE_VIDEO_HEVC };
+  return { ok: false, mensaje: MENSAJE_VIDEO_FORMATO };
 }
