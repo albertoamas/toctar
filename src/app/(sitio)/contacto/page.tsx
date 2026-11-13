@@ -119,7 +119,7 @@ async function Datos() {
       </section>
 
       <section aria-label="Más formas de contacto" className="flex flex-col gap-3">
-        <FilaEnlace href="/garantia" icono={<ShieldCheckIcon aria-hidden />} titulo="¿Algo no quedó bien?" detalle="Garantía y reclamos: te respondemos por WhatsApp" />
+        <FilaEnlace href="/garantia" icono={<ShieldCheckIcon aria-hidden />} titulo="Garantía de cada trabajo" detalle="Si necesitas que revisemos algo, te respondemos por WhatsApp" />
         {d.correo && <FilaEnlace href={`mailto:${d.correo}`} icono={<MailIcon aria-hidden />} titulo="Correo" detalle={d.correo} />}
         {hayRedes && <RedesSociales redes={d.redes} variante="con-nombre" />}
       </section>

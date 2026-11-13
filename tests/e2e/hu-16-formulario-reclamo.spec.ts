@@ -93,7 +93,7 @@ test("el pie y la página de contacto llevan a garantía y reclamos", async ({ p
   await page.goto("/contacto");
   await expect(page.getByRole("contentinfo").getByRole("link", { name: "Garantía y reclamos" })).toHaveAttribute("href", "/garantia");
   // Pedido 38: en Contacto es una fila que se toca entera
-  const fila = page.getByRole("main").getByRole("link", { name: /¿Algo no quedó bien\?/ });
+  const fila = page.getByRole("main").getByRole("link", { name: /^Garantía de cada trabajo/ });
   await expect(fila).toHaveAttribute("href", "/garantia");
   // Primero a la vista: en el celular, bajar y tocar en el mismo instante perdía el toque (0 clics en la página, 4 a 9 de
   // cada 25 veces, y nada se había movido); con la fila ya a la vista, 40 de 40. Una persona no toca tan rápido

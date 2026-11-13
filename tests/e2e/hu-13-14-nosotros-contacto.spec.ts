@@ -66,7 +66,7 @@ test("en Contacto el mapa va junto a la dirección, dice si está abierto y los 
   // Si está abierto ahora (con el horario de Configuración y la hora de Bolivia), y el día de hoy en el horario
   await expect(page.getByRole("main").getByText(/^(Abierto|Cerrado) ahora/)).toBeVisible();
   await expect(page.getByRole("region", { name: "Horario" }).getByText("Hoy", { exact: true })).toBeVisible();
-  for (const nombre of ["Cómo llegar", "Garantía y reclamos", "toctartarija@gmail.com"]) {
+  for (const nombre of ["Cómo llegar", "Garantía de cada trabajo", "toctartarija@gmail.com"]) {
     const alto = (await page.getByRole("main").getByRole("link", { name: nombre }).boundingBox())!.height;
     expect(alto, nombre).toBeGreaterThanOrEqual(44);
   }
