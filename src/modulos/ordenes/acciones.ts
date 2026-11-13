@@ -10,6 +10,7 @@ import { copiarFotoAlPublico, eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { erroresDe, exclusionViolada, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirAccion, exigirModulo } from "@/lib/sesion";
+import { saldoCambiado } from "@/modulos/pagos/saldo-cambiado";
 import type { EstadoTrabajo, EtapaFoto } from "@/db/esquema/trabajos";
 import { bloquearEspacio, espaciosEnFechas, type EspacioDisponible } from "@/modulos/agenda/consultas";
 import { DIAS_MAXIMOS_TRABAJO, NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
@@ -74,10 +75,9 @@ const contarFotos = (base: Pick<typeof db, "select">, trabajoId: number, etapa: 
 
 function despuesDeCambiar(id: number, clienteId: number) {
   revalidatePath("/panel/ordenes");
-  revalidatePath(`/panel/ordenes/${id}`);
-  revalidatePath(`/panel/agenda/${id}`);
   revalidatePath("/panel/agenda");
-  revalidatePath(`/panel/clientes/${clienteId}`);
+  // Los servicios o el descuento cambian el saldo: también Saldos e Inicio (saldoCambiado)
+  saldoCambiado(id, clienteId);
 }
 
 /** Agrega una foto a una etapa de la orden (RF-40, RF-42): achicada en el navegador, WebP en el servidor, bucket privado. */
