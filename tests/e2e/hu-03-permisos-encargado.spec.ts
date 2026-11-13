@@ -18,10 +18,8 @@ test("los permisos del encargado: el perfil marca sus casillas, se ajustan y se 
   await page.getByLabel("Usuario", { exact: true }).fill(usuario);
   await page.getByLabel("Contraseña inicial").fill("encargado-123");
 
-  // Las casillas solo aparecen para el encargado
-  await page.getByRole("radio", { name: /Dueño/ }).check();
-  await expect(casilla()).toHaveCount(0);
-  await page.getByRole("radio", { name: /Encargado/ }).check();
+  // Pedido 50: siempre un encargado, sin rol que elegir: los permisos se ven de entrada
+  await expect(page.getByRole("radio")).toHaveCount(0);
   // El perfil Taller marca la agenda y las órdenes; Todo, todas; ajustar una casilla deja de ser un perfil
   const perfil = (nombre: string) => page.getByRole("button", { name: new RegExp(`^${nombre}`) });
   await expect(perfil("Taller")).toHaveAttribute("aria-pressed", "true");
@@ -38,18 +36,17 @@ test("los permisos del encargado: el perfil marca sus casillas, se ajustan y se 
   // En su ficha, lo marcado se lee (C6) y, al editar, sigue marcado
   await page.getByRole("link", { name: nombre }).first().click();
   await expect(page.getByRole("list", { name: "Permisos" })).toContainText("Agenda");
-  await page.getByRole("button", { name: "Editar rol y permisos" }).click();
-  const modal = page.getByRole("dialog", { name: "Rol y permisos" });
+  await page.getByRole("button", { name: "Editar permisos" }).click();
+  const modal = page.getByRole("dialog", { name: "Permisos" });
   await expect(modal.getByRole("checkbox", { name: /^Agenda/ })).toBeChecked();
   await expect(modal.getByRole("checkbox", { name: /^Órdenes/ })).toBeChecked();
 
-  // Se quitan todos: queda sin permisos (solo el inicio). No se lo pasa a dueño: las pruebas corren en paralelo y la del
-  // único dueño (hu-02) dejaría de valer
+  // Se quitan todos: queda sin permisos (solo el inicio)
   await modal.getByRole("button", { name: /^Taller/ }).click();
   await modal.getByRole("checkbox", { name: /^Agenda/ }).uncheck();
   await modal.getByRole("checkbox", { name: /^Órdenes/ }).uncheck();
-  await modal.getByRole("button", { name: "Guardar rol y permisos" }).click();
-  await expect(page.getByText("Rol y permisos guardados.")).toBeVisible();
+  await modal.getByRole("button", { name: "Guardar permisos" }).click();
+  await expect(page.getByText("Permisos guardados.")).toBeVisible();
   await page.reload();
   await expect(page.getByText("Sin permisos: solo ve el inicio.")).toBeVisible();
 });
@@ -63,7 +60,6 @@ test("el encargado sin permisos solo ve el inicio y no entra a Usuarios", async 
   await page.getByLabel("Nombre").fill(nombre);
   await page.getByLabel("Usuario", { exact: true }).fill(usuario);
   await page.getByLabel("Contraseña inicial").fill("encargado-123");
-  await page.getByRole("radio", { name: /Encargado/ }).check();
   // Empieza con el perfil Taller: se desmarca para dejarlo sin permisos
   await page.getByRole("checkbox", { name: /^Agenda/ }).uncheck();
   await page.getByRole("checkbox", { name: /^Órdenes/ }).uncheck();

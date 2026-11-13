@@ -2,19 +2,18 @@ import type { Rol } from "@/lib/roles";
 
 // Reglas de gestión de usuarios (HU-02), como funciones puras para probarlas sin base de datos.
 
-type Resumen = { id: number; rol: Rol; desactivado: boolean };
+/** Lo que se cambia de una cuenta desde el panel. */
+export type CambioDeCuenta = "nombre" | "permisos" | "contrasena" | "acceso";
 
 /**
- * Siempre debe quedar al menos un dueño activo. ¿Queda alguno si el usuario `idAfectado`
- * deja de ser dueño o deja de estar activo?
+ * RN-15 (pedido 50): desde el panel, la cuenta de un dueño no se cambia. Su nombre lo cambia él mismo, y su contraseña
+ * también, pero con la actual (`cambiarMiContrasena`, no esta regla). A un encargado, el dueño le cambia todo, menos el
+ * acceso a sí mismo (no hay encargado que entre a Usuarios). Así siempre queda un dueño activo sin candados: nada del
+ * panel le quita el rol o el acceso a un dueño.
  */
-export function quedaOtroDuenoActivo(usuarios: readonly Resumen[], idAfectado: number): boolean {
-  return usuarios.some((u) => u.id !== idAfectado && u.rol === "dueno" && !u.desactivado);
+export function puedeCambiar(objetivo: { id: number; rol: Rol }, autorId: number, cambio: CambioDeCuenta): boolean {
+  if (objetivo.rol === "encargado") return objetivo.id !== autorId || cambio === "nombre";
+  return cambio === "nombre" && objetivo.id === autorId;
 }
 
-/** ¿Este cambio de rol dejaría al sistema sin dueño activo? */
-export function cambioDeRolDejaSinDueno(usuarios: readonly Resumen[], id: number, rolNuevo: Rol): boolean {
-  const actual = usuarios.find((u) => u.id === id);
-  if (!actual || actual.rol !== "dueno" || rolNuevo === "dueno" || actual.desactivado) return false;
-  return !quedaOtroDuenoActivo(usuarios, id);
-}
+export const NO_SE_CAMBIA_DUENO = "La cuenta de un dueño solo la cambia él mismo.";

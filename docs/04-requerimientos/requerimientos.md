@@ -50,7 +50,7 @@ Cada requisito tiene un código para rastrearlo hasta su historia de usuario y s
 | Código | Requisito | Entrega | Prioridad | Origen |
 |---|---|---|---|---|
 | RF-14 | Los usuarios entran con usuario y contraseña, y pueden cerrar sesión. | 1 | Imprescindible | Cot |
-| RF-15 | El dueño crea usuarios, les asigna un rol (dueño o encargado; pedido 32), restablece su contraseña y los desactiva. | 1 | Imprescindible | Acl-7 |
+| RF-15 | El dueño crea encargados, restablece su contraseña y los desactiva. Cambia su propia contraseña con la actual. Un dueño se crea o se recupera solo desde el servidor (pedido 50, 13/11/2026; antes, el dueño asignaba el rol dueño o encargado, pedido 32). | 1 | Imprescindible | Acl-7 |
 | RF-16 | El dueño define a qué módulos accede el encargado. | 1 | Imprescindible | Acl-7, Prop |
 | RF-17 | El dueño edita los datos del negocio: nombre, logo, WhatsApp, dirección, horarios, correo y redes; se usan en el sitio y en el PDF. | 1 | Imprescindible | Acl-8 |
 | RF-18 | El dueño configura los parámetros: espacios del taller, tamaños de vehículo, adelanto sugerido, validez de la cotización, condiciones y garantía del PDF, intervalo de mantenimiento y servicios que lo generan. | 1 | Imprescindible | Acl-8, Acl-9 |
@@ -161,6 +161,7 @@ Cada requisito tiene un código para rastrearlo hasta su historia de usuario y s
 | RN-12 | Quien no tiene el permiso de Pagos ni el de Cotizaciones no ve precios, montos ni saldos; cada módulo, solo con su permiso. (Hasta el 02/11/2026 decía: el técnico no ve precios, pagos ni datos de otros módulos; solo sus órdenes. Cambió con el pedido 32: no hay rol Técnico.) | Prop; confirmado 14/10; cambió el 02/11 (pedido 32) |
 | RN-13 | Una orden con saldo pendiente solo se marca como entregada si la autoriza el dueño o un encargado con el permiso "autorizar entrega con saldo". | Confirmado 14/10 ("el dueño o la persona a cargo del taller") |
 | RN-14 | Los registros con historial (clientes, servicios, usuarios) se desactivan, no se borran. | Prop |
+| RN-15 | Desde el panel no se crea un dueño ni se le cambia el rol, la contraseña o el acceso a un dueño. Su nombre y su contraseña los cambia él mismo; la contraseña, con la actual (pedido 50). | YankoSoft, 13/11/2026 |
 
 ## 5. Fuera de alcance
 

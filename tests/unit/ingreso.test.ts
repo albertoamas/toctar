@@ -33,4 +33,10 @@ describe("datos de ingreso", () => {
     const r = esquemaIngreso.safeParse({ usuario: "dueno", contrasena: "x".repeat(129) });
     expect(r.error?.issues[0].message).toBe("Usuario o contraseña incorrectos.");
   });
+
+  // Pedido 50: "cambio:<usuario>" es la clave de los intentos de Cambiar mi contraseña; no se escribe al ingresar
+  test("un usuario con caracteres que ningún usuario tiene da el mensaje de siempre", () => {
+    const r = esquemaIngreso.safeParse({ usuario: "cambio:dueno", contrasena: "x" });
+    expect(r.error?.issues[0].message).toBe("Usuario o contraseña incorrectos.");
+  });
 });

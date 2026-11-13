@@ -48,12 +48,12 @@ test("con un modal abierto el aviso va arriba y no tapa sus botones", async ({ p
   const aviso = page.locator("[data-sonner-toast]").first();
   await expect(aviso).toContainText("Datos guardados.");
   // Enseguida, otro modal (sube desde abajo): el aviso pasa arriba y sus botones se tocan
-  await page.getByRole("button", { name: "Editar rol y permisos" }).click();
-  const rol = page.getByRole("dialog", { name: "Rol y permisos" });
+  await page.getByRole("button", { name: "Editar permisos" }).click();
+  const rol = page.getByRole("dialog", { name: "Permisos" });
   await expect(rol).toBeVisible();
   await expect(aviso).toBeVisible();
   await expect.poll(async () => (await aviso.boundingBox())!.y).toBeLessThan(page.viewportSize()!.height / 3);
-  for (const boton of [rol.getByRole("button", { name: "Guardar rol y permisos" }), rol.getByRole("button", { name: "Cancelar" })]) {
+  for (const boton of [rol.getByRole("button", { name: "Guardar permisos" }), rol.getByRole("button", { name: "Cancelar" })]) {
     expect(await sePisan(aviso, boton)).toBe(false);
   }
   await rol.getByRole("button", { name: "Cancelar" }).click();

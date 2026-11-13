@@ -11,11 +11,10 @@ import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { PERFILES, type Permiso } from "@/lib/permisos";
-import type { Rol } from "@/lib/roles";
 import { crearUsuario } from "../acciones";
-import { CamposRolPermisos } from "./campos-rol-permisos";
+import { CamposPermisos } from "./campos-permisos";
 
-// HU-02: crear un usuario. Como toda pantalla de crear, "Crear usuario" al pie (PieFormulario: fijo abajo en el celular) y
+// HU-02: crear un usuario, siempre un encargado (pedido 50: un dueño se crea desde el servidor). Como toda pantalla de crear, "Crear usuario" al pie (PieFormulario: fijo abajo en el celular) y
 // pregunta antes de salir con algo escrito (inventario-pantallas.md, cambio 2: tenía su propia barra). La ficha de un
 // usuario se edita por partes, en modales (ficha-usuario.tsx, C6).
 
@@ -45,8 +44,8 @@ export function FormularioUsuario({ asignables }: { asignables: { permiso: Permi
           </Button>
         </div>
       </Campo>
-      {/* Un encargado nuevo empieza con el perfil Taller, el más común (pedido 32: los que reciben y trabajan los vehículos) */}
-      <CamposRolPermisos asignables={asignables} rolInicial={(valores?.rol as Rol) || "encargado"} permisosIniciales={PERFILES[0].permisos} error={e.rol} />
+      {/* Empieza con el perfil Taller, el más común (pedido 32: los que reciben y trabajan los vehículos) */}
+      <CamposPermisos asignables={asignables} permisosIniciales={PERFILES[0].permisos} />
       <AvisoAlSalir formulario={formulario} estado={estado} anunciar />
       <PieFormulario>
         <Button type="submit" disabled={enviando}>
