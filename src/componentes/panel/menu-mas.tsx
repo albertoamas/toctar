@@ -1,5 +1,7 @@
 "use client";
 
+import type { Route } from "next";
+import Link from "next/link";
 import { ChevronDownIcon, EllipsisIcon } from "lucide-react";
 import { useHidratado } from "@/componentes/hidratado";
 import { Button } from "@/componentes/ui/button";
@@ -13,9 +15,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 
 /**
  * Lo que hace al elegirla, o `href`: un enlace que se abre en otra pestaña (el chat de WhatsApp), que sigue siendo un enlace.
- * `descarga`: el enlace baja un archivo en la misma pestaña (el PDF de una cotización).
+ * `descarga`: el enlace baja un archivo en la misma pestaña (el PDF de una cotización). `mismaPestana`: otra pantalla del
+ * panel, en la misma pestaña ("Su página en el sitio" desde el catálogo).
  */
-export type AccionMas = { texto: string } & ({ alElegir: () => void; href?: never; descarga?: never } | { href: string; alElegir?: never; descarga?: boolean });
+export type AccionMas = { texto: string } & (
+  | { alElegir: () => void; href?: never; descarga?: never; mismaPestana?: never }
+  | { href: string; alElegir?: never; descarga?: boolean; mismaPestana?: false }
+  | { href: Route; alElegir?: never; descarga?: never; mismaPestana: true }
+);
 
 type Props = {
   acciones: AccionMas[];
@@ -44,7 +51,9 @@ export function MenuMas({ acciones, deshabilitado = false, etiqueta, icono = fal
           <DropdownMenuItem
             key={a.texto}
             onClick={a.alElegir}
-            render={a.href ? a.descarga ? <a href={a.href} download /> : <a href={a.href} target="_blank" rel="noreferrer" /> : undefined}
+            render={
+              a.mismaPestana ? <Link href={a.href} /> : a.href ? a.descarga ? <a href={a.href} download /> : <a href={a.href} target="_blank" rel="noreferrer" /> : undefined
+            }
             className="min-h-9 px-3 text-base pointer-coarse:min-h-11"
           >
             {a.texto}

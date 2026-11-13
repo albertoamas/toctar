@@ -39,6 +39,8 @@ type ContextoModal = {
   conPie: (hay: boolean) => void;
   /** Lo que tiene ahora el formulario pasa a ser lo guardado (una acción que guarda sin cerrar el modal). */
   renovarBase: () => void;
+  /** El formulario tiene algo distinto de lo que tenía al abrirse (o de la última base). */
+  hayCambios: () => boolean;
   /** Hay un cambio que no es un campo del formulario (una foto elegida). */
   fijarAdemas: (hay: boolean) => void;
   /** El formulario se está guardando. */
@@ -212,7 +214,7 @@ export function ModalFormulario({ titulo, abierto, alCambiar, sinTeclado = false
         <DialogHeader className="pr-9">
           <DialogTitle>{titulo}</DialogTitle>
         </DialogHeader>
-        <Modal.Provider value={{ cerrar, pedirCierre, preguntando, seguir, conPie, renovarBase: tomarBase, fijarAdemas, fijarEnviando }}>
+        <Modal.Provider value={{ cerrar, pedirCierre, preguntando, seguir, conPie, renovarBase: tomarBase, hayCambios, fijarAdemas, fijarEnviando }}>
           {children}
           {/* Sin pie propio (raro): la pregunta va al final del modal */}
           {preguntando && !hayPie && <PieModal respaldo>{null}</PieModal>}
@@ -275,6 +277,12 @@ export function useRenovarBaseModal(): () => void {
   return useContext(Modal)?.renovarBase ?? sinModal;
 }
 const sinModal = () => {};
+
+/** Si el formulario del modal tiene cambios sin guardar, con la misma cuenta que usa el modal para preguntar al cerrar. */
+export function useHayCambiosModal(): () => boolean {
+  return useContext(Modal)?.hayCambios ?? sinCambios;
+}
+const sinCambios = () => false;
 
 /**
  * Un formulario dentro de un modal: envía la acción con su aviso, cierra el modal al guardar y lleva el foco al primer
