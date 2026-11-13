@@ -1,11 +1,11 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { count } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { db } from "@/db";
-import { usuario } from "@/db/esquema";
+import { usuario, usuarioPermiso } from "@/db/esquema";
 import { auth } from "@/lib/auth";
-import { correoInterno, esquemaNombreUsuario } from "@/lib/usuarios";
+import { correoInterno, esquemaContrasena, esquemaNombreUsuario } from "@/lib/usuarios";
 
 // Tareas de arranque del servidor (src/instrumentation.ts).
 
@@ -19,6 +19,7 @@ export async function prepararAlArrancar() {
     await migrate(db, { migrationsFolder: carpeta });
   }
   await crearDuenoInicial();
+  await recuperarDueno();
 }
 
 /**
@@ -47,4 +48,40 @@ async function crearDuenoInicial() {
     },
   });
   console.log(`[arranque] Usuario dueño inicial "${usuarioValido}" creado.`);
+}
+
+/**
+ * Pedido 50: desde el panel no se crea un dueño ni se le cambia la contraseña sin la actual. YankoSoft lo hace aquí, con
+ * DUENO_RECUPERAR_USUARIO y DUENO_RECUPERAR_CONTRASENA (y DUENO_RECUPERAR_NOMBRE para crearlo), en el entorno de Coolify:
+ * al arrancar le pone esa contraseña, lo deja como dueño activo y cierra sus sesiones; si no existe, lo crea. Se borran
+ * del entorno después de usarlas: mientras estén, cada arranque lo vuelve a hacer (docs/07-preparacion/guia-de-despliegue.md).
+ */
+async function recuperarDueno() {
+  const nombreUsuario = process.env.DUENO_RECUPERAR_USUARIO;
+  const contrasena = process.env.DUENO_RECUPERAR_CONTRASENA;
+  if (!nombreUsuario || !contrasena) return;
+  const usuarioValido = esquemaNombreUsuario.parse(nombreUsuario);
+  // Las reglas de toda contraseña (de 8 a 128): una más larga no se podría escribir al ingresar
+  if (!esquemaContrasena.safeParse(contrasena).success) throw new Error("[arranque] DUENO_RECUPERAR_CONTRASENA debe tener de 8 a 128 caracteres.");
+
+  const [existente] = await db.select({ id: usuario.id }).from(usuario).where(eq(usuario.username, usuarioValido));
+  // Sin headers: es una tarea del servidor, no un pedido de un usuario (createUser lo permite).
+  if (!existente) {
+    const nombre = process.env.DUENO_RECUPERAR_NOMBRE;
+    if (!nombre) throw new Error(`[arranque] No existe "${usuarioValido}": para crearlo falta DUENO_RECUPERAR_NOMBRE.`);
+    await auth.api.createUser({ body: { email: correoInterno(usuarioValido), name: nombre, password: contrasena, role: "dueno", data: { username: usuarioValido } } });
+    console.warn(`[arranque] Dueño "${usuarioValido}" creado con DUENO_RECUPERAR_*. Borra esas variables del entorno.`);
+    return;
+  }
+  // Las funciones del plugin admin, salvo createUser, piden una sesión: se usa lo mismo que ellas usan por dentro
+  const userId = String(existente.id);
+  const ctx = await auth.$context;
+  await ctx.internalAdapter.updateUser(userId, { role: "dueno", banned: false, banReason: null, banExpires: null });
+  // Un dueño no tiene permisos propios (los de un encargado que pasa a dueño no quedan guardados)
+  await db.delete(usuarioPermiso).where(eq(usuarioPermiso.usuarioId, existente.id));
+  const hash = await ctx.password.hash(contrasena);
+  if (await ctx.internalAdapter.findCredentialAccount(userId)) await ctx.internalAdapter.updatePassword(userId, hash);
+  else await ctx.internalAdapter.createAccount({ userId, providerId: "credential", accountId: userId, password: hash });
+  await ctx.internalAdapter.deleteUserSessions(userId);
+  console.warn(`[arranque] Dueño "${usuarioValido}" recuperado con DUENO_RECUPERAR_* (contraseña nueva, activo, sin sesiones). Borra esas variables del entorno.`);
 }

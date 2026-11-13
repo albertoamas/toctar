@@ -75,7 +75,8 @@ Copiar `.env.example` a `.env` la primera vez y completar `BETTER_AUTH_SECRET` y
 - Estructura por módulo en `src/modulos/<modulo>/`: `acciones.ts` (server actions), `consultas.ts`, `esquemas.ts` (Zod), `componentes/`.
 - Toda página y acción del panel verifica la sesión con `src/lib/sesion.ts` (`exigirSesion`) y el rol o módulo con `src/lib/permisos.ts`. El layout del panel NO protege a sus páginas y `src/proxy.ts` solo redirige rápido.
 - La sesión se lee siempre dentro de `<Suspense>` (Cache Components): leerla fuera rompe el build.
-- **Seguridad:** las funciones de `auth.api.*` del plugin admin (`createUser`, `banUser`, `setUserPassword`…) solo verifican permisos si reciben `headers: await headers()`. Sin headers actúan como el sistema: solo se usan así en `src/lib/arranque.ts`.
+- **Seguridad:** las funciones de `auth.api.*` del plugin admin (`createUser`, `banUser`, `setUserPassword`…) verifican permisos con `headers: await headers()`. Sin headers, `createUser` actúa como el sistema y las demás fallan (piden sesión): el arranque (`src/lib/arranque.ts`) es el único que las llama así, y para lo demás usa `auth.$context.internalAdapter`.
+- **Seguridad:** desde el panel no se crea un dueño ni se cambia la cuenta de un dueño (RN-15, pedido 50): `puedeCambiar` en `src/modulos/usuarios/reglas.ts`.
 - **Seguridad:** Better Auth se usa solo desde el servidor; no hay ruta `/api/auth` (expondría su API pública). Su límite de intentos no cubre el ingreso del panel: el límite es propio (`src/modulos/acceso/`).
 - Las acciones que reciben datos sueltos (no un formulario) también los validan con Zod: cualquiera puede llamarlas.
 - Datos de clientes (fotos de reclamos y, más adelante, documentos) van al bucket privado (`guardarFoto(..., { privado: true })`) y se muestran con `urlsFotoPrivada`. El público es solo para lo que muestra el sitio.

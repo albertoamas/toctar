@@ -1,6 +1,6 @@
 import "server-only";
 import { asc, eq } from "drizzle-orm";
-import { db, type Transaccion } from "@/db";
+import { db } from "@/db";
 import { usuario, usuarioPermiso } from "@/db/esquema";
 import type { Permiso } from "@/lib/permisos";
 import type { Rol } from "@/lib/roles";
@@ -30,9 +30,9 @@ const aFila = (u: { id: number; nombre: string; usuario: string | null; rol: str
   desactivado: u.desactivado ?? false,
 });
 
-/** Todos los usuarios: activos primero, después por nombre. Con `con`, dentro de una transacción. */
-export async function listarUsuarios(con: typeof db | Transaccion = db): Promise<FilaUsuario[]> {
-  const filas = await con.select(columnas).from(usuario).orderBy(asc(usuario.banned), asc(usuario.name));
+/** Todos los usuarios: activos primero, después por nombre. */
+export async function listarUsuarios(): Promise<FilaUsuario[]> {
+  const filas = await db.select(columnas).from(usuario).orderBy(asc(usuario.banned), asc(usuario.name));
   return filas.map(aFila);
 }
 

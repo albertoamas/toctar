@@ -11,15 +11,15 @@ import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import type { EstadoFormulario } from "@/lib/formularios";
 import type { Permiso } from "@/lib/permisos";
-import type { Rol } from "@/lib/roles";
-import { desactivarUsuario, guardarDatosUsuario, guardarRolUsuario, reactivarUsuario, restablecerContrasena } from "../acciones";
-import { CamposRolPermisos } from "./campos-rol-permisos";
+import { cambiarMiContrasena, desactivarUsuario, guardarDatosUsuario, guardarPermisosUsuario, reactivarUsuario, restablecerContrasena } from "../acciones";
+import { CamposPermisos } from "./campos-permisos";
 
 // HU-02 y HU-03: la ficha de un usuario (C6, fase 4). Cada parte se edita en su modal y se guarda sola (guardarDatosUsuario,
-// guardarRolUsuario): un cambio de nombre no devuelve el rol o los permisos que otro dueño acaba de cambiar. Lo poco usado
-// (restablecer la contraseña, desactivar) va en "Más", cada cosa con su modal.
+// guardarPermisosUsuario): un cambio de nombre no devuelve los permisos que otro dueño acaba de cambiar. Lo poco usado va
+// en "Más", cada cosa con su modal: de un encargado, restablecer la contraseña y desactivarlo; del propio dueño, cambiar
+// su contraseña con la actual (pedido 50: la cuenta de un dueño no la cambia nadie más).
 
-type Usuario = { id: number; nombre: string; usuario: string; rol: Rol; permisos: Permiso[] };
+type Usuario = { id: number; nombre: string; usuario: string; permisos: Permiso[] };
 
 export function FormularioDatosUsuario({ usuario }: { usuario: Usuario }) {
   const { accion, enviando, formulario, e, v } = useFormularioEnModal(guardarDatosUsuario);
@@ -35,24 +35,51 @@ export function FormularioDatosUsuario({ usuario }: { usuario: Usuario }) {
   );
 }
 
-export function FormularioRolPermisos({ usuario, asignables }: { usuario: Usuario; asignables: { permiso: Permiso; nombre: string }[] }) {
-  const { accion, enviando, formulario, e, v } = useFormularioEnModal(guardarRolUsuario);
+export function FormularioPermisos({ usuario, asignables }: { usuario: Usuario; asignables: { permiso: Permiso; nombre: string }[] }) {
+  const { accion, enviando, formulario } = useFormularioEnModal(guardarPermisosUsuario);
   return (
     <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate>
       <input type="hidden" name="id" value={usuario.id} />
-      <CamposRolPermisos asignables={asignables} rolInicial={(v?.rol as Rol) || usuario.rol} permisosIniciales={usuario.permisos} error={e.rol} />
-      <PieGuardar texto="Guardar rol y permisos" enviando={enviando} />
+      <CamposPermisos asignables={asignables} permisosIniciales={usuario.permisos} />
+      <PieGuardar texto="Guardar permisos" enviando={enviando} />
     </form>
   );
 }
 
-/** "Más" del encabezado: restablecer la contraseña y desactivar. Desactivado, "Reactivar usuario" es la acción principal. */
-export function MasUsuario({ id, nombre, desactivado, esUnoMismo }: { id: number; nombre: string; desactivado: boolean; esUnoMismo: boolean }) {
+/** "Más" del propio dueño: cambiar su contraseña, con la actual (pedido 50). */
+export function MasMiCuenta() {
+  const [abierto, setAbierto] = useState(false);
+  return (
+    <>
+      <MenuMas acciones={[{ texto: "Cambiar mi contraseña", alElegir: () => setAbierto(true) }]} />
+      <ModalFormulario titulo="Cambiar mi contraseña" abierto={abierto} alCambiar={setAbierto}>
+        <CambiarMiContrasena />
+      </ModalFormulario>
+    </>
+  );
+}
+
+function CambiarMiContrasena() {
+  const { accion, enviando, formulario, e } = useFormularioEnModal(cambiarMiContrasena);
+  return (
+    <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate>
+      <Campo id="contrasena-actual" etiqueta="Contraseña actual" error={e.actual}>
+        <Input id="contrasena-actual" name="actual" type="password" autoComplete="current-password" aria-invalid={!!e.actual} aria-describedby={e.actual ? "contrasena-actual-error" : undefined} />
+      </Campo>
+      <Campo id="contrasena-nueva" etiqueta="Contraseña nueva" error={e.nueva} ayuda="Al menos 8 caracteres. Se cierran tus sesiones en otros equipos.">
+        <Input id="contrasena-nueva" name="nueva" type="password" autoComplete="new-password" aria-invalid={!!e.nueva} aria-describedby={e.nueva ? "contrasena-nueva-error" : "contrasena-nueva-ayuda"} />
+      </Campo>
+      <PieGuardar texto="Guardar contraseña" enviando={enviando} />
+    </form>
+  );
+}
+
+/** "Más" de un encargado: restablecer la contraseña y desactivar. Desactivado, "Reactivar usuario" es la acción principal. */
+export function MasUsuario({ id, nombre, desactivado }: { id: number; nombre: string; desactivado: boolean }) {
   const [abierto, setAbierto] = useState<"contrasena" | "desactivar" | null>(null);
   const cambiar = (abrir: boolean) => !abrir && setAbierto(null);
   const acciones: AccionMas[] = [{ texto: "Restablecer contraseña", alElegir: () => setAbierto("contrasena") }];
-  // Better Auth no permite desactivarse a uno mismo: a uno mismo no se le ofrece
-  if (!desactivado && !esUnoMismo) acciones.push({ texto: "Desactivar usuario", alElegir: () => setAbierto("desactivar") });
+  if (!desactivado) acciones.push({ texto: "Desactivar usuario", alElegir: () => setAbierto("desactivar") });
   return (
     <div className="flex flex-wrap gap-2">
       {desactivado && <Reactivar id={id} />}

@@ -130,7 +130,7 @@ En cada entorno: + New → Application → el repositorio desde la GitHub App.
 | `SITIO_INDEXABLE` (*build*) | `false` | `true` |
 | `DUENO_INICIAL_USUARIO` | `dueno` | `dueno` |
 | `DUENO_INICIAL_NOMBRE` | `Dueño de prueba` | nombre real del dueño |
-| `DUENO_INICIAL_CONTRASENA` | una temporal | una temporal, que el dueño cambia al entrar |
+| `DUENO_INICIAL_CONTRASENA` | una temporal | una temporal, que el dueño cambia al entrar (en su ficha, "Cambiar mi contraseña") |
 | `S3_ENDPOINT` | `https://<id>.r2.cloudflarestorage.com` | ídem |
 | `S3_REGION` | `auto` | `auto` |
 | `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` | token de la app | ídem |
@@ -141,6 +141,11 @@ En cada entorno: + New → Application → el repositorio desde la GitHub App.
 - **Secreto nuevo:** `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
 - **Los secretos no se versionan ni se pegan en chats:** solo en Coolify y en el gestor de contraseñas de YankoSoft.
 - Al primer arranque, la app aplica las migraciones y crea el dueño inicial (`src/lib/arranque.ts`). Después se pueden borrar las tres `DUENO_INICIAL_*`.
+- **Recuperar o crear un dueño** (pedido 50: desde el panel no se puede). Si el dueño olvidó su contraseña, o hay que sumar un socio como dueño:
+  1. En Coolify, en el entorno que corresponde, se agregan `DUENO_RECUPERAR_USUARIO` (su usuario) y `DUENO_RECUPERAR_CONTRASENA` (una temporal, secreta). Para crearlo, también `DUENO_RECUPERAR_NOMBRE`.
+  2. Se reinicia la app. Al arrancar, le pone esa contraseña, lo reactiva y cierra sus sesiones; si no existía, lo crea como dueño. Si el usuario es un encargado, lo pasa a dueño. El registro dice qué hizo, sin la contraseña.
+  3. **Se borran las tres variables** y se reinicia otra vez: mientras estén, cada arranque le vuelve a poner esa contraseña.
+  4. La temporal se le pasa al dueño aparte, nunca por el repositorio, y él la cambia en su ficha ("Más", "Cambiar mi contraseña").
 
 **Primer despliegue:** Deploy en pruebas → mirar los logs → abrir `https://pruebas.<dominio>/api/salud` (tiene que responder 200).
 
