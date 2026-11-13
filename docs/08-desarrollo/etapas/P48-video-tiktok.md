@@ -24,11 +24,12 @@ En la portada, "Mira cómo trabajamos" mostraba una foto de la galería dentro d
 
 - **Todo se configura desde el panel** (CLAUDE.md): el video lo sube el dueño. Sin video no se muestra nada en su lugar: el bloque queda con su texto y "Ver en TikTok".
 - **Tamaño máximo de un video** (RNF-07): **20 MB**. Se comprueba en el servidor contando los bytes que llegan, no con lo que dice el navegador. La ayuda pide un video de hasta 30 segundos. La duración no se verifica en el servidor (no hay ffmpeg); el tope de bytes es el que cuenta.
-- **El archivo es de verdad un video:** el servidor mira la firma de los primeros bytes.
-  - **MP4:** `ftyp` en los bytes 4 a 7.
+- **El archivo es de verdad un video que se ve en todos lados** (`revisarVideo`, `src/lib/formato-videos.ts`). El servidor mira qué es por dentro, no lo que dice el navegador:
+  - **MP4 o MOV:** sus cajas. Una `ftyp` con una marca de video (las de MP4 y la `qt  ` del MOV; no las de fotos HEIC o AVIF), o ninguna en un MOV viejo, y una `moov` con alguna pista de video (`hdlr` = `vide`) en **H.264** (`avc1` o `avc3` en su `stsd`).
   - **WebM:** `1A 45 DF A3` al inicio.
 
-  Si no es ninguno, se rechaza, aunque el navegador diga `video/mp4`. Se guarda con el tipo que corresponde a su firma.
+  Un MP4 o MOV con H.264 se guarda como `video/mp4` y `.mp4`: por dentro es el mismo formato, y así lo reproduce todo navegador.
+- **El .MOV del iPhone** (revisión del 12/11): al elegir un video de la galería, también uno bajado de TikTok, el iPhone lo entrega como .MOV. En H.264 vale. En **HEVC** (`hvc1`, `hev1`, lo que graba la cámara del iPhone) se rechaza con su propio mensaje: Chrome en Windows y en muchos Android no lo reproduce. Un audio M4A tiene `ftyp` y `moov`, pero ninguna pista de video: se rechaza.
 - **Solo quien ve Sitio web** (`exigirModulo("sitio")`) sube o quita el video.
 - **Rendimiento (RNF-02) y datos del visitante:**
   - No se pide nada hasta que el video se acerca a la pantalla (a 300 px): recién ahí se le pone su archivo, y se pide lo justo para el primer cuadro (`preload="metadata"`). Se reproduce al entrar en pantalla.
@@ -43,7 +44,7 @@ Migración `0046_video_de_portada`:
 - `contenido_pagina.video_archivo_id integer null references archivo(id)`. Solo lo usa la fila `inicio`.
 - El archivo se registra en `archivo`:
   - `clave`: `portada/video-<uuid>.mp4` o `.webm`;
-  - `tipo_mime`: según la firma;
+  - `tipo_mime`: `video/mp4` o `video/webm`, según lo que es por dentro;
   - `bytes`;
   - `created_by`.
 
@@ -57,7 +58,7 @@ Migración `0046_video_de_portada`:
 Debajo de "Foto del taller", una fila compacta igual a la de la foto: "Video de TikTok".
 
 - **Sin video:**
-  - la guía en una línea: "Opcional. Se ve en "Mira cómo trabajamos", en la portada; sin video, ahí va solo el texto. MP4 de hasta 30 segundos y 20 MB.";
+  - la guía en una línea: "Opcional. Se ve en "Mira cómo trabajamos", en la portada; sin video, ahí va solo el texto. MP4 o MOV de hasta 30 segundos y 20 MB.";
   - el botón "Subir video".
 - **Con video:**
   - el video chico, sin sonido, con controles;
@@ -73,7 +74,7 @@ Recibe el archivo crudo en el cuerpo (no un formulario).
 2. El origen del pedido es el mismo sitio (`Origin` igual a `Host`). Si no, 403.
 3. `Content-Length` hasta 20 MB.
 4. Se lee el cuerpo contando bytes y se corta al pasar el tope.
-5. Se mira la firma.
+5. Se mira qué es por dentro (`revisarVideo`).
 6. Se sube al bucket público, se registra en `archivo`, se pone en `contenido_pagina` (`inicio`) con la fila bloqueada y se borra el anterior.
 7. `revalidateTag(ETIQUETA_CONTENIDO, { expire: 0 })` (como `updateTag`, que en una ruta no se puede usar) y `revalidatePath` de Textos.
 
@@ -108,22 +109,24 @@ Responde JSON: `{ ok: true, mensaje }` o `{ ok: false, mensaje }` con 400, 403 o
 ## 8. Textos de la interfaz
 
 - Título de la fila: "Video de TikTok".
-- Guía: "Opcional. Se ve en "Mira cómo trabajamos", en la portada; sin video, ahí va solo el texto. MP4 de hasta 30 segundos y 20 MB."
+- Guía: "Opcional. Se ve en "Mira cómo trabajamos", en la portada; sin video, ahí va solo el texto. MP4 o MOV de hasta 30 segundos y 20 MB."
 - Botones: "Subir video", "Cambiar video", "Quitar video".
 - Avance: "Subiendo el video: 45 %".
 - Éxito: "Video guardado." y "Video quitado.".
 - Errores:
   - "El video pesa más de 20 MB. Usa uno más corto o guárdalo en menor calidad."
-  - "Ese archivo no es un video MP4 o WebM."
+  - "Ese archivo no es un video. Elige un MP4 o MOV, como el que se baja de TikTok."
+  - "Ese video está en HEVC, el formato de la cámara del iPhone, y no se ve en todos los navegadores. Bájalo desde TikTok o, en el iPhone, elige Ajustes > Cámara > Formatos > Más compatible y grábalo de nuevo."
   - "No se pudo subir el video. Revisa la conexión y vuelve a intentar."
   - "Tu sesión terminó. Vuelve a ingresar."
 
 ## 9. Pruebas
 
-- **Unitarias:** `tipoDeVideo(bytes)`:
-  - MP4 con `ftyp` → `video/mp4`;
+- **Unitarias:** `revisarVideo(bytes)`, con videos de prueba armados caja por caja (`tests/videos-de-prueba.ts`):
+  - MP4 y MOV del iPhone en H.264, y un MOV viejo sin `ftyp` → `video/mp4`;
   - WebM → `video/webm`;
-  - una foto, un texto o un archivo vacío → null.
+  - HEVC → su mensaje;
+  - fotos HEIC o AVIF, audio M4A, una `ftyp` sola, un texto, un archivo vacío o cajas rotas → no es un video.
 - **E2E:**
   - El dueño sube un video en Textos > Portada, lo ve en el panel y la portada lo muestra. Al quitarlo no queda nada en su lugar.
   - Un archivo que no es video da su error.

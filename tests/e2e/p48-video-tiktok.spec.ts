@@ -1,4 +1,6 @@
 import { expect, test, type TestInfo } from "@playwright/test";
+import { MENSAJE_NO_ES_VIDEO, MENSAJE_VIDEO_HEVC } from "@/lib/formato-videos";
+import { videoDePrueba } from "../videos-de-prueba";
 import { consultar, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
 
 // Pedido 48 (`docs/08-desarrollo/etapas/P48-video-tiktok.md` §9): el video de "Mira cómo trabajamos" se sube en
@@ -7,8 +9,9 @@ import { consultar, crearUsuario, ingresar, ingresarComoDueno } from "./apoyo";
 
 const soloEscritorio = (info: TestInfo) => test.skip(info.project.name !== "escritorio", "El video de la portada es uno solo");
 
-/** Un MP4 mínimo: la caja ftyp que mira el servidor y relleno. No se reproduce, pero el sitio lo pone igual. */
-const MP4 = Buffer.concat([Buffer.from([0, 0, 0, 0x18]), Buffer.from("ftypisom"), Buffer.alloc(4), Buffer.from("isommp41"), Buffer.alloc(2048)]);
+/** Un MP4 mínimo en H.264 (sus cajas, `tests/videos-de-prueba.ts`). No se reproduce, pero el sitio lo pone igual. */
+const MP4 = videoDePrueba();
+const MB = 1024 * 1024;
 const TEXTOS_PORTADA = "/panel/sitio/textos?pagina=inicio";
 
 test("el dueño sube el video de TikTok, se ve en la portada y al quitarlo no queda nada en su lugar", async ({ page }, info) => {
@@ -56,6 +59,19 @@ test("el dueño sube el video de TikTok, se ve en la portada y al quitarlo no qu
   }).toPass({ timeout: 20_000 });
 });
 
+// Revisión del 12/11: el iPhone entrega como .MOV el video que se elige de la galería (también uno bajado de TikTok)
+test("el .MOV del iPhone en H.264 se sube y se guarda como MP4", async ({ page }, info) => {
+  soloEscritorio(info);
+  await ingresarComoDueno(page);
+  await page.goto(TEXTOS_PORTADA);
+  const fila = page.getByRole("region", { name: "Video de TikTok" });
+  await expect(fila.getByRole("button", { name: /^(Subir|Cambiar) video$/ })).toBeEnabled();
+  await fila.getByLabel("Archivo del video de TikTok").setInputFiles({ name: "trim.4F2A.MOV", mimeType: "video/quicktime", buffer: videoDePrueba({ marca: "qt  " }) });
+  await expect(page.getByText("Video guardado.")).toBeVisible();
+  const [registro] = await consultar<{ clave: string; tipo: string }>("select a.clave, a.tipo_mime as tipo from contenido_pagina c join archivo a on a.id = c.video_archivo_id where c.clave = 'inicio'");
+  expect(registro).toEqual({ clave: expect.stringMatching(/^portada\/video-[\w-]+\.mp4$/), tipo: "video/mp4" });
+});
+
 test("un archivo que no es video o que pesa más de 20 MB da su error y no se sube", async ({ page }, info) => {
   soloEscritorio(info);
   await ingresarComoDueno(page);
@@ -66,21 +82,25 @@ test("un archivo que no es video o que pesa más de 20 MB da su error y no se su
 
   // Dice ser MP4, pero es un texto: lo revisa el servidor por su firma
   await entrada.setInputFiles({ name: "falso.mp4", mimeType: "video/mp4", buffer: Buffer.from("<html>no soy un video</html>") });
-  await expect(fila.getByText("Ese archivo no es un video MP4 o WebM.")).toBeVisible();
+  await expect(fila.getByText(MENSAJE_NO_ES_VIDEO)).toBeVisible();
+
+  // Un video de la cámara del iPhone, en HEVC: no se ve en todos los navegadores, y lo dice
+  await entrada.setInputFiles({ name: "IMG_0001.MOV", mimeType: "video/quicktime", buffer: videoDePrueba({ marca: "qt  ", codec: "hvc1" }) });
+  await expect(fila.getByText(MENSAJE_VIDEO_HEVC)).toBeVisible();
 
   // Más de 20 MB: se avisa sin mandarlo
-  await entrada.setInputFiles({ name: "largo.mp4", mimeType: "video/mp4", buffer: Buffer.concat([MP4, Buffer.alloc(20 * 1024 * 1024)]) });
+  await entrada.setInputFiles({ name: "largo.mp4", mimeType: "video/mp4", buffer: videoDePrueba({ relleno: 20 * MB }) });
   await expect(fila.getByText("El video pesa más de 20 MB. Usa uno más corto o guárdalo en menor calidad.")).toBeVisible();
 
   // Y el servidor lo corta aunque la página no lo frene
   const grande = await page.request.post("/panel/sitio/video", {
-    data: Buffer.concat([MP4, Buffer.alloc(20 * 1024 * 1024)]),
+    data: videoDePrueba({ relleno: 20 * MB }),
     headers: { "content-type": "video/mp4", origin: new URL(page.url()).origin },
   });
   expect(grande.status()).toBe(413);
 
   // Uno de 15 MB llega entero: el proxy del panel no lo corta a los 10 MB (no pasa por él)
-  const quince = Buffer.concat([MP4, Buffer.alloc(15 * 1024 * 1024)]);
+  const quince = videoDePrueba({ relleno: 15 * MB });
   const guardado = await page.request.post("/panel/sitio/video", { data: quince, headers: { "content-type": "video/mp4", origin: new URL(page.url()).origin } });
   expect(guardado.status()).toBe(200);
   const [registro] = await consultar<{ bytes: number }>("select a.bytes from contenido_pagina c join archivo a on a.id = c.video_archivo_id where c.clave = 'inicio'");

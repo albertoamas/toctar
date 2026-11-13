@@ -7,7 +7,7 @@ import { useHidratado } from "@/componentes/hidratado";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { MensajeError } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
-import { BYTES_MAXIMOS_VIDEO, MENSAJE_VIDEO_PESADO, TIPOS_VIDEO } from "@/lib/formato-videos";
+import { ACEPTA_VIDEO, BYTES_MAXIMOS_VIDEO, MENSAJE_VIDEO_PESADO } from "@/lib/formato-videos";
 import { quitarVideoDePortada } from "../acciones";
 import type { VideoPortada } from "../consultas";
 
@@ -16,7 +16,7 @@ import type { VideoPortada } from "../consultas";
 // (fetch no lo hace con una subida): 20 MB con datos del celular tardan, y sin la barra parece trabado.
 
 const ID = "video-portada";
-const GUIA = 'Opcional. Se ve en "Mira cómo trabajamos", en la portada; sin video, ahí va solo el texto. MP4 de hasta 30 segundos y 20 MB.';
+const GUIA = 'Opcional. Se ve en "Mira cómo trabajamos", en la portada; sin video, ahí va solo el texto. MP4 o MOV de hasta 30 segundos y 20 MB.';
 const SIN_CONEXION = "No se pudo subir el video. Revisa la conexión y vuelve a intentar.";
 
 type Resultado = { ok: boolean; mensaje: string };
@@ -93,7 +93,7 @@ export function VideoDePortada({ video, hayTikTok }: { video: VideoPortada | nul
             ref={entrada}
             id={ID}
             type="file"
-            accept={TIPOS_VIDEO.join(",")}
+            accept={ACEPTA_VIDEO}
             className="sr-only"
             tabIndex={-1}
             aria-label="Archivo del video de TikTok"

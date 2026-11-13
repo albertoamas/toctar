@@ -1,5 +1,5 @@
 import { revalidatePath, revalidateTag } from "next/cache";
-import { BYTES_MAXIMOS_VIDEO, MENSAJE_NO_ES_VIDEO, MENSAJE_VIDEO_PESADO, tipoDeVideo } from "@/lib/formato-videos";
+import { BYTES_MAXIMOS_VIDEO, MENSAJE_VIDEO_PESADO, revisarVideo } from "@/lib/formato-videos";
 import { puedeVerModulo } from "@/lib/permisos";
 import { usuarioDeLaSesion } from "@/lib/sesion";
 import { ETIQUETA_CONTENIDO } from "@/modulos/sitio/consultas";
@@ -64,8 +64,10 @@ export async function POST(peticion: Request) {
   const contenido = await leerConTope(peticion, BYTES_MAXIMOS_VIDEO);
   if (!contenido) return responder({ ok: false, mensaje: MENSAJE_VIDEO_PESADO }, 413);
   if (contenido.byteLength === 0) return responder({ ok: false, mensaje: "Elige un video." }, 400);
-  const tipo = tipoDeVideo(contenido.subarray(0, 12));
-  if (!tipo) return responder({ ok: false, mensaje: MENSAJE_NO_ES_VIDEO }, 400);
+  // Qué es por dentro: MP4 o MOV con H.264, o WebM (revisarVideo); el tipo que dice el navegador no cuenta
+  const revision = revisarVideo(contenido);
+  if (!revision.ok) return responder({ ok: false, mensaje: revision.mensaje }, 400);
+  const { tipo } = revision;
 
   try {
     await guardarVideoDePortada(contenido, tipo, Number(autor.id));
