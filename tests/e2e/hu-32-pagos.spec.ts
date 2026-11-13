@@ -54,14 +54,14 @@ test("registrar un pago con comprobante, no pasar el saldo y anular con motivo",
   await form.getByText("QR", { exact: true }).click();
   // Una foto elegida con QR no queda escondida al pasar a efectivo: al volver a QR, el campo está vacío
   await form.locator("#comprobante").setInputFiles({ name: "comprobante.png", mimeType: "image/png", buffer: PNG });
-  await expect(form.getByRole("img", { name: "Foto del comprobante elegida" })).toBeVisible();
+  await expect(form.getByRole("img", { name: "Foto del comprobante" })).toBeVisible();
   await form.getByText("Efectivo", { exact: true }).click();
   await form.getByText("QR", { exact: true }).click();
-  await expect(form.getByRole("img", { name: "Foto del comprobante elegida" })).toHaveCount(0);
+  await expect(form.getByRole("img", { name: "Foto del comprobante" })).toHaveCount(0);
 
   // La foto elegida no es un campo del formulario, pero perderla también se pregunta (C6, sistema-del-panel.md §4)
   await form.locator("#comprobante").setInputFiles({ name: "comprobante.png", mimeType: "image/png", buffer: PNG });
-  await expect(form.getByRole("img", { name: "Foto del comprobante elegida" })).toBeVisible();
+  await expect(form.getByRole("img", { name: "Foto del comprobante" })).toBeVisible();
   // Un cierre que puede ser sin querer (Escape) pregunta en el pie del mismo modal (pulido 13.48)
   await page.keyboard.press("Escape");
   const pregunta = page.locator("[data-pregunta-salir]");
@@ -79,7 +79,7 @@ test("registrar un pago con comprobante, no pasar el saldo y anular con motivo",
   // 200 por QR, con la foto del comprobante
   await form.getByLabel("Monto").fill("200");
   await form.locator("#comprobante").setInputFiles({ name: "comprobante.png", mimeType: "image/png", buffer: PNG });
-  await expect(form.getByRole("img", { name: "Foto del comprobante elegida" })).toBeVisible();
+  await expect(form.getByRole("img", { name: "Foto del comprobante" })).toBeVisible();
   // Se puede cambiar y quitar; la zona vuelve, y también se le puede soltar (pulido 13.13)
   await form.getByRole("button", { name: "Quitar foto" }).click();
   const zona = form.locator("[data-zona-foto]");
@@ -87,7 +87,7 @@ test("registrar un pago con comprobante, no pasar el saldo y anular con motivo",
   await zona.dispatchEvent("dragenter", { dataTransfer: soltado });
   await expect(zona).toContainText("Suelta la foto aquí");
   await zona.dispatchEvent("drop", { dataTransfer: soltado });
-  await expect(form.getByRole("img", { name: "Foto del comprobante elegida" })).toBeVisible();
+  await expect(form.getByRole("img", { name: "Foto del comprobante" })).toBeVisible();
   await form.getByRole("button", { name: "Registrar pago" }).click();
   await expect(page.getByText("Pago de 200 Bs registrado. Saldo: 150 Bs.")).toBeVisible();
   await expect(saldo(page)).toHaveText("150 Bs");

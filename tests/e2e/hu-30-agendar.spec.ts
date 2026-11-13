@@ -94,7 +94,7 @@ test("desde la cotización: la versión y la cotización quedan aceptadas, las l
   await page.getByLabel("Hora aproximada").fill("a las 9");
   // El adelanto con la foto del comprobante (HU-32): queda privada y se ve en la reserva
   await page.locator("#comprobante").setInputFiles({ name: "comprobante.png", mimeType: "image/png", buffer: PNG });
-  await expect(page.getByRole("img", { name: "Foto del comprobante elegida" })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Foto del comprobante" })).toBeVisible();
   // El adelanto sugerido sale de Configuración (otra prueba lo cambia mientras esta corre): se usa el que trae
   const adelanto = Number(await page.getByLabel("Monto").inputValue());
   await page.getByRole("button", { name: "Reservar" }).click();

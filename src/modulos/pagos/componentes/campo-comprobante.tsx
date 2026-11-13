@@ -1,9 +1,6 @@
-import { startTransition, useEffect, useRef, useState } from "react";
-import { CameraIcon, XIcon } from "lucide-react";
-import { MensajeError } from "@/componentes/panel/campo";
+import { startTransition, useEffect, useState } from "react";
+import { ElegirFoto } from "@/componentes/panel/elegir-foto";
 import { achicarFoto } from "@/componentes/panel/subida-foto";
-import { ZonaFoto } from "@/componentes/panel/zona-foto";
-import { Button } from "@/componentes/ui/button";
 import { BYTES_MAXIMOS_FOTO } from "@/lib/formato-fotos";
 import { ERROR_COMPROBANTE } from "../reglas";
 
@@ -11,20 +8,14 @@ import { ERROR_COMPROBANTE } from "../reglas";
 // HU-32: la foto opcional del comprobante de un pago, al registrarlo o con el adelanto al agendar. Se elige con vista
 // previa y se manda al enviar el formulario (`adjuntarComprobante`), achicada en el navegador.
 
-type Elegido = { archivo: File; vista: string };
-
 export function CampoComprobante({ onChange, error }: { onChange: (archivo: File | null) => void; error?: string }) {
-  const [elegido, setElegido] = useState<Elegido | null>(null);
-  const entrada = useRef<HTMLInputElement>(null);
+  const [vista, setVista] = useState<string | null>(null);
   // La vista previa ocupa memoria mientras exista: se libera al cambiarla y al cerrar el formulario
-  useEffect(() => () => {
-    if (elegido) URL.revokeObjectURL(elegido.vista);
-  }, [elegido]);
+  useEffect(() => () => void (vista && URL.revokeObjectURL(vista)), [vista]);
 
-  function elegir(archivo: File | undefined) {
-    setElegido(archivo ? { archivo, vista: URL.createObjectURL(archivo) } : null);
-    onChange(archivo ?? null);
-    if (entrada.current) entrada.current.value = "";
+  function elegir(archivo: File | null) {
+    setVista(archivo ? URL.createObjectURL(archivo) : null);
+    onChange(archivo);
   }
 
   return (
@@ -32,37 +23,9 @@ export function CampoComprobante({ onChange, error }: { onChange: (archivo: File
       <p className="text-sm font-medium">
         Comprobante <span className="font-normal text-tinta-suave">(opcional)</span>
       </p>
-      {/* Vacía, una miniatura (pulido final de los pagos, 09/11; era un recuadro de 160 px siempre abierto). Elegida, grande
-          y entera: suele ser una captura vertical, y tiene que leerse antes de guardar */}
-      <div className="w-full max-w-xs">
-        <ZonaFoto
-          id="comprobante"
-          entrada={entrada}
-          nombreEntrada="Archivo del comprobante"
-          etiquetaVacia="Foto del comprobante"
-          vista={elegido ? { src: elegido.vista, alt: "Foto del comprobante elegida" } : null}
-          entera
-          compacta={!elegido}
-          claseZona={elegido ? undefined : "w-32"}
-          invalida={!!error}
-          describedBy={error ? "comprobante-error" : undefined}
-          alElegir={elegir}
-        />
-      </div>
-      {elegido && (
-        <div className="flex flex-wrap gap-2">
-          {/* data-invalido: el foco va aquí si el comprobante tiene el error (useFocoEnError) */}
-          <Button type="button" variant="outline" onClick={() => entrada.current?.click()} data-invalido={error ? true : undefined} aria-describedby={error ? "comprobante-error" : undefined}>
-            <CameraIcon />
-            Cambiar foto
-          </Button>
-          <Button type="button" variant="ghost" onClick={() => elegir(undefined)}>
-            <XIcon />
-            Quitar foto
-          </Button>
-        </div>
-      )}
-      {error && <MensajeError id="comprobante-error">{error}</MensajeError>}
+      {/* Revisión del 13/11: "Tomar foto" y "Elegir de la galería", como en el checklist y las fotos de la orden (era un
+          recuadro punteado). Elegida, se ve entera: suele ser una captura vertical, y tiene que leerse antes de guardar */}
+      <ElegirFoto id="comprobante" de="del comprobante" vista={vista} alElegir={elegir} quitable entera error={error} />
     </div>
   );
 }

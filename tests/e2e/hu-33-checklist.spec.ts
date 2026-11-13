@@ -57,8 +57,12 @@ test("se revisa parte por parte: bien o con un detalle y su foto; sin revisar to
   const modal = page.getByRole("dialog", { name: "Detalle: Capó" });
   await modal.getByRole("button", { name: "Guardar detalle" }).click();
   await expect(modal.getByText("Elige qué tiene.")).toBeVisible();
+  // Sin nota (revisión del 13/11): con un tipo, no hay nada que escribir; solo "Otro" pide qué es
   await modal.getByRole("radio", { name: "Rayón" }).check();
-  await modal.getByLabel("Nota").fill("Rayón largo al centro");
+  await expect(modal.getByLabel("Qué es")).toHaveCount(0);
+  await modal.getByRole("radio", { name: "Otro" }).check();
+  await expect(modal.getByLabel("Qué es")).toBeFocused();
+  await modal.getByLabel("Qué es").fill("Rayón largo al centro");
   await modal.getByLabel("Cámara para la foto del detalle").setInputFiles({ name: "capo.png", mimeType: "image/png", buffer: PNG });
   await expect(modal.getByRole("img", { name: "Foto del detalle" })).toBeVisible();
   await modal.getByRole("button", { name: "Guardar detalle" }).click();
@@ -72,8 +76,8 @@ test("se revisa parte por parte: bien o con un detalle y su foto; sin revisar to
   const techo = page.getByRole("dialog", { name: "Detalle: Techo" });
   await techo.getByRole("radio", { name: "Otro" }).check();
   await techo.getByRole("button", { name: "Guardar detalle" }).click();
-  await expect(techo.getByText("Con «Otro», cuenta qué es.")).toBeVisible();
-  await techo.getByLabel("Nota").fill("Falta la antena");
+  await expect(techo.getByText("Escribe qué es.")).toBeVisible();
+  await techo.getByLabel("Qué es").fill("Falta la antena");
   await techo.getByRole("button", { name: "Guardar detalle" }).click();
   // El aviso del Capó puede seguir a la vista (dura 3 s): el nuevo es el último
   await expect(page.getByText("Detalle guardado.").last()).toBeVisible();

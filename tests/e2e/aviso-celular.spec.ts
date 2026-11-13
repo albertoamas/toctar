@@ -83,7 +83,7 @@ test("al final de Recibir, el aviso de error va encima del pie aunque el pie ya 
   await page.getByRole("button", { name: "Detalle: Techo" }).click();
   const techo = page.getByRole("dialog", { name: "Detalle: Techo" });
   await techo.getByRole("radio", { name: "Otro" }).check();
-  await techo.getByLabel("Nota").fill("Falta la antena");
+  await techo.getByLabel("Qué es").fill("Falta la antena");
   await techo.getByRole("button", { name: "Guardar detalle" }).click();
   await expect(techo).toBeHidden();
   const aviso = page.locator("[data-sonner-toast]").filter({ hasText: "Detalle guardado." });

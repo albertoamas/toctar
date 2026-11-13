@@ -46,7 +46,8 @@ export function RegistrarPago({
         <PlusIcon />
         Registrar pago
       </Button>
-      <ModalFormulario titulo="Registrar pago" abierto={abierto} alCambiar={setAbierto}>
+      {/* Sin teclado al abrir: el monto ya viene con el saldo y lo primero es elegir cómo pagó (revisión del 13/11) */}
+      <ModalFormulario titulo="Registrar pago" abierto={abierto} alCambiar={setAbierto} sinTeclado>
         <Formulario {...props} />
       </ModalFormulario>
     </>

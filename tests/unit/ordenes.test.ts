@@ -197,13 +197,15 @@ test("publicar pide la foto de después, la casilla y las reglas de la galería;
 
 // Pedido 12: el checklist de recepción.
 
-test("un detalle pide qué tiene; con «Otro», la nota; la nota vacía es null", () => {
+test("un detalle pide qué tiene; con «Otro», qué es; con otro tipo no lleva texto", () => {
   const base = { trabajoId: "4", parteId: "2", tipo: "rayon", nota: "  " };
   expect(esquemaDetalle.parse(base)).toEqual({ trabajoId: 4, parteId: 2, tipo: "rayon", nota: null });
   expect(esquemaDetalle.safeParse({ ...base, tipo: "" }).error?.issues[0]).toMatchObject({ path: ["tipo"], message: "Elige qué tiene." });
   expect(esquemaDetalle.safeParse({ ...base, tipo: "abollado" }).error?.issues[0].message).toBe("Elige qué tiene.");
-  expect(esquemaDetalle.safeParse({ ...base, tipo: "otro" }).error?.issues[0]).toMatchObject({ path: ["nota"], message: "Con «Otro», cuenta qué es." });
+  expect(esquemaDetalle.safeParse({ ...base, tipo: "otro" }).error?.issues[0]).toMatchObject({ path: ["nota"], message: "Escribe qué es." });
   expect(esquemaDetalle.parse({ ...base, tipo: "otro", nota: "Falta la antena" }).nota).toBe("Falta la antena");
+  // Revisión del 13/11: solo "Otro" lleva texto; una nota que llegue con otro tipo (una que quedó de antes) se borra
+  expect(esquemaDetalle.parse({ ...base, nota: "Rayón largo" }).nota).toBeNull();
   expect(esquemaDetalle.safeParse({ ...base, nota: "x".repeat(301) }).error?.issues[0].message).toBe("Hasta 300 caracteres.");
   // Marcar una parte bien recibe datos sueltos
   expect(esquemaMarcarBien.safeParse({ trabajoId: 1, parteId: "x" }).success).toBe(false);

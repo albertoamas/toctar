@@ -188,3 +188,22 @@ test("sin firma ni «Entregar sin firma» no se entrega; sin firma pide el motiv
   );
   expect(t).toEqual({ firma: null, nombre: null, motivo: "El cliente mandó a su hijo.", conFirma: false });
 });
+
+// Revisión del 13/11: "Entregar con saldo pendiente" solo con saldo. Al cobrar todo ahí mismo, en Entregar, la casilla se
+// va sin recargar (antes del 12/11, cobrar no renovaba esta pantalla y la casilla seguía con todo pagado)
+test("al cobrar todo en Entregar, ya no ofrece entregar con saldo pendiente", async ({ page }, info) => {
+  const placa = `EN36${sufijo(info).toUpperCase()}9`;
+  await crearClienteEnBase({ nombre: `Paga al entregar ${sufijo(info)}`, telefono: `5917${sufijo(info) === "c" ? 1 : 2}3600090`, placa });
+  const id = await crearOrdenLista({ placa, espacio: 1, dias: info.project.name === "celular" ? 361 : 362, precio: 800, pagado: 0 });
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/ordenes/${id}/entregar`);
+  const casilla = page.getByText(/^Entregar con saldo pendiente/);
+  await expect(casilla).toBeVisible();
+  await page.getByRole("main").getByRole("button", { name: "Registrar pago" }).click();
+  const form = page.getByRole("form", { name: "Registrar pago" });
+  await form.getByRole("radio", { name: "Efectivo" }).check();
+  await form.getByRole("button", { name: "Registrar pago" }).click();
+  await expect(page.getByText("Pago de 800 Bs registrado. Saldo: 0 Bs.")).toBeVisible();
+  await expect(casilla).toHaveCount(0);
+  await expect(page.getByText("Pagado por completo.")).toBeVisible();
+});
