@@ -43,6 +43,10 @@ test("el dueño sube el video de TikTok, se ve en la portada y al quitarlo no qu
   const video = bloque.locator("video source");
   await expect(video).toHaveCount(0);
   await bloque.scrollIntoViewIfNeeded();
+  // Al centro de su columna, no pegado al borde derecho (revisión del 13/11)
+  const caja = (await bloque.boundingBox())!;
+  const ancho = page.viewportSize()!.width;
+  expect(ancho - (caja.x + caja.width)).toBeGreaterThan(100);
   await expect(video).toHaveAttribute("src", /\/portada\/video-[\w-]+\.mp4#t=0\.1$/);
   await expect(video).toHaveAttribute("type", "video/mp4");
   // Sin sonido y en bucle
