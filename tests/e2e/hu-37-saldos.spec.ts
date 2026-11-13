@@ -71,7 +71,7 @@ test("la entregada con saldo aparece, con su WhatsApp, y se cobra desde la lista
   await form.getByText("QR", { exact: true }).click();
   await form.getByRole("button", { name: "Registrar pago" }).click();
   await expect(page.getByText("Pago de 400 Bs registrado. Saldo: 0 Bs.")).toBeVisible();
-  await page.goto("/panel/pagos");
+  // Sin recargar: la lista se actualiza con la respuesta del pago (hasta el 13/11 seguía con el saldo viejo)
   await expect(page.getByRole("heading", { level: 1, name: "Saldos pendientes" })).toBeVisible();
   await expect(page.getByText(debe)).toHaveCount(0);
 });

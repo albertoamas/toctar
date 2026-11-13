@@ -30,9 +30,23 @@ class Conflicto extends Error {
   }
 }
 
+/**
+ * Las pantallas que muestran el saldo de un trabajo. La guía de Next dice que revalidatePath actualiza al momento la
+ * pantalla que se está viendo si la nombra; hoy también refresca las demás, pero lo avisa como temporal. Hasta el 13/11
+ * eran solo la reserva y el cliente, de antes de las órdenes (C3), y se cobra sobre todo desde la orden (pulido 13.52),
+ * al entregar y en Saldos: ahora van todas.
+ */
 function despuesDePagar(trabajoId: number, clienteId: number) {
-  revalidatePath(`/panel/agenda/${trabajoId}`);
-  revalidatePath(`/panel/clientes/${clienteId}`);
+  for (const ruta of [
+    `/panel/agenda/${trabajoId}`,
+    `/panel/ordenes/${trabajoId}`,
+    `/panel/ordenes/${trabajoId}/entregar`,
+    "/panel/pagos",
+    "/panel",
+    `/panel/clientes/${clienteId}`,
+  ]) {
+    revalidatePath(ruta);
+  }
 }
 
 /** Registra un pago con su comprobante opcional (foto en el bucket privado: es un dato del cliente). */

@@ -47,7 +47,10 @@ export function RegistrarPago({
         Registrar pago
       </Button>
       <ModalFormulario titulo="Registrar pago" abierto={abierto} alCambiar={setAbierto}>
-        <Formulario {...props} />
+        {/* Con el saldo de clave: el monto sugerido se calcula al abrir. Si se abre justo después de otro pago, antes de
+            que llegue el saldo nuevo, sugería el de antes y no cambiaba (13/11: 1000 en vez de 700). Ahora, al llegar el
+            saldo nuevo, el formulario se renueva con él */}
+        <Formulario key={props.saldo} {...props} />
       </ModalFormulario>
     </>
   );
