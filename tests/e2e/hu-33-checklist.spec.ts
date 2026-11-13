@@ -57,9 +57,16 @@ test("se revisa parte por parte: bien o con un detalle y su foto; sin revisar to
   const modal = page.getByRole("dialog", { name: "Detalle: Capó" });
   await modal.getByRole("button", { name: "Guardar detalle" }).click();
   await expect(modal.getByText("Elige qué tiene.")).toBeVisible();
-  // Sin nota (revisión del 13/11): con un tipo, no hay nada que escribir; solo "Otro" pide qué es
+  // Sin nota (revisión del 13/11): con un tipo, no hay nada que escribir y se guarda así
   await modal.getByRole("radio", { name: "Rayón" }).check();
   await expect(modal.getByLabel("Qué es")).toHaveCount(0);
+  await modal.getByRole("button", { name: "Guardar detalle" }).click();
+  await expect(page.getByText("Detalle guardado.")).toBeVisible();
+  await expect(modal).toBeHidden();
+  await expect(fila(page, "Capó").getByRole("button", { name: "Detalle: Capó" })).toHaveText("Rayón");
+  // Solo "Otro" pide qué es, y al elegirlo va directo a escribir
+  await page.getByRole("button", { name: "Detalle: Capó" }).click();
+  await expect(modal.getByRole("radio", { name: "Rayón" })).toBeChecked();
   await modal.getByRole("radio", { name: "Otro" }).check();
   await expect(modal.getByLabel("Qué es")).toBeFocused();
   await modal.getByLabel("Qué es").fill("Rayón largo al centro");

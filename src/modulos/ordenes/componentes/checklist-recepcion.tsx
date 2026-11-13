@@ -30,6 +30,12 @@ import { alTocarBien, NOMBRE_DETALLE, textoAvanceChecklist, TIPOS_DE_DETALLE } f
 // avance con su barra: el vehículo se recibe con todas revisadas. Solo antes de recibir: después, es prueba de cómo llegó.
 
 type Props = { trabajoId: number; partes: { id: number; nombre: string }[]; revision: DetalleRevision[] };
+
+/**
+ * El texto de un detalle: solo con "Otro" (revisión del 13/11). Uno de otro tipo guardado antes con nota no la muestra:
+ * así la lista dice lo mismo que el modal, que ya no la ofrece, y que lo que queda al volver a guardarlo.
+ */
+const notaDe = (d: Pick<DetalleRevision, "tipo" | "nota">) => (d.tipo === "otro" ? d.nota : null);
 type Marca = { parteId: number; estado: EstadoRevision | null };
 
 /**
@@ -145,7 +151,7 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
           </div>
           {/* Las fotos de los detalles en el visor del panel, sin salir a otra pestaña (pulido 13.16) */}
           <VisorFotos
-            fotos={conFoto.map((d) => ({ ...d.foto!, alt: `Foto: ${d.parte}`, leyenda: `${d.parte}: ${d.tipo ? NOMBRE_DETALLE[d.tipo] : "Detalle"}${d.nota ? `. ${d.nota}` : ""}` }))}
+            fotos={conFoto.map((d) => ({ ...d.foto!, alt: `Foto: ${d.parte}`, leyenda: `${d.parte}: ${d.tipo ? NOMBRE_DETALLE[d.tipo] : "Detalle"}${notaDe(d) ? `. ${notaDe(d)}` : ""}` }))}
             abierta={fotoAbierta}
             alCambiar={setFotoAbierta}
             titulo="Detalles de ingreso"
@@ -197,14 +203,14 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
                       </button>
                     </span>
                   </div>
-                  {detalle && (detalle.nota || detalle.foto) && (
+                  {detalle && (notaDe(detalle) || detalle.foto) && (
                     <div className="flex items-center gap-3 rounded-lg bg-aviso-fondo/60 p-2">
                       {detalle.foto && (
                         <button type="button" onClick={() => setFotoAbierta(conFoto.findIndex((x) => x.parteId === p.id))} className="shrink-0 cursor-zoom-in rounded-md" aria-label={`Ver la foto: ${p.nombre}`}>
                           <Image src={detalle.foto.miniatura} alt="" width={48} height={48} unoptimized className="size-12 rounded-md object-cover" />
                         </button>
                       )}
-                      {detalle.nota && <span className="min-w-0 text-sm">{detalle.nota}</span>}
+                      {notaDe(detalle) && <span className="min-w-0 text-sm">{notaDe(detalle)}</span>}
                     </div>
                   )}
                 </li>
@@ -245,7 +251,8 @@ function FormularioDetalle({ trabajoId, parteId, detalle }: { trabajoId: number;
   const e = estado.errores ?? {};
   // Controlados, con su campo oculto: React reinicia el formulario tras un error y los radios de base-ui se vaciaban
   const [tipo, setTipo] = useState<string>(estado.valores?.tipo ?? detalle?.tipo ?? "");
-  const [nota, setNota] = useState(estado.valores?.nota ?? detalle?.nota ?? "");
+  const [nota, setNota] = useState(estado.valores?.nota ?? (detalle ? notaDe(detalle) : null) ?? "");
+  const [escribir, setEscribir] = useState(false);
   const [vistaPrevia, setVistaPrevia] = useState<string | null>(null);
   useEffect(() => () => void (vistaPrevia && URL.revokeObjectURL(vistaPrevia)), [vistaPrevia]);
   const elegirFoto = (elegido: File | null) => {
@@ -266,15 +273,18 @@ function FormularioDetalle({ trabajoId, parteId, detalle }: { trabajoId: number;
         titulo="Qué tiene"
         nombre="tipo"
         valor={tipo as TipoDetalle | ""}
-        cambiar={setTipo}
+        cambiar={(t) => {
+          setTipo(t);
+          // Al elegir "Otro", directo a escribir; al abrir uno que ya era "Otro", no (no abre solo el teclado)
+          setEscribir(t === "otro");
+        }}
         opciones={TIPOS_DE_DETALLE.map((t) => ({ valor: t, texto: NOMBRE_DETALLE[t] }))}
         error={e.tipo}
         className="grid-cols-3 sm:grid-cols-5"
       />
       {tipo === "otro" && (
         <Campo id="nota" etiqueta="Qué es" error={e.nota}>
-          {/* Al elegir "Otro", directo a escribir: es lo único que falta */}
-          <Input id="nota" name="nota" autoFocus maxLength={300} value={nota} onChange={(ev) => setNota(ev.target.value)} placeholder="Por ejemplo: espejo flojo" aria-invalid={!!e.nota} aria-describedby={e.nota ? "nota-error" : undefined} />
+          <Input id="nota" name="nota" autoFocus={escribir} maxLength={300} value={nota} onChange={(ev) => setNota(ev.target.value)} placeholder="Por ejemplo: espejo flojo" aria-invalid={!!e.nota} aria-describedby={e.nota ? "nota-error" : undefined} />
         </Campo>
       )}
       <div className="flex flex-col gap-3">

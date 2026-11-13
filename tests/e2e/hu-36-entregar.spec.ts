@@ -193,8 +193,9 @@ test("sin firma ni «Entregar sin firma» no se entrega; sin firma pide el motiv
 // va sin recargar (antes del 12/11, cobrar no renovaba esta pantalla y la casilla seguía con todo pagado)
 test("al cobrar todo en Entregar, ya no ofrece entregar con saldo pendiente", async ({ page }, info) => {
   const placa = `EN36${sufijo(info).toUpperCase()}9`;
-  await crearClienteEnBase({ nombre: `Paga al entregar ${sufijo(info)}`, telefono: `5917${sufijo(info) === "c" ? 1 : 2}3600090`, placa });
-  const id = await crearOrdenLista({ placa, espacio: 1, dias: info.project.name === "celular" ? 361 : 362, precio: 800, pagado: 0 });
+  await crearClienteEnBase({ nombre: `Paga al entregar ${sufijo(info)}`, telefono: telefono(info, 4), placa });
+  // El día siguiente al de las demás pruebas del archivo: no se cruza con sus espacios
+  const id = await crearOrdenLista({ placa, espacio: 0, dias: dias(info) + 1, precio: 800, pagado: 0 });
   await ingresarComoDueno(page);
   await page.goto(`/panel/ordenes/${id}/entregar`);
   const casilla = page.getByText(/^Entregar con saldo pendiente/);

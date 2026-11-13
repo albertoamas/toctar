@@ -80,7 +80,14 @@ export function ElegirFoto({
           {vista ? "Elegir otra" : "Elegir de la galería"}
         </Button>
         {quitable && vista && (
-          <Button type="button" variant="ghost" onClick={() => alElegir(null)}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              setNoEsFoto(false);
+              alElegir(null);
+            }}
+          >
             <XIcon />
             Quitar foto
           </Button>

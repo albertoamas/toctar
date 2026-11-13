@@ -61,7 +61,8 @@ export function OpcionesEnTarjetas<V extends string>({
                 "hover:bg-superficie focus-visible:ring-3 focus-visible:ring-ring/50",
                 "data-checked:border-tinta data-checked:bg-neutro-fondo data-checked:ring-1 data-checked:ring-tinta",
                 Icono && "min-h-20",
-                error && "border-destructive",
+                // En rojo mientras falta elegir: elegida una, ya no
+                error && !valor && "border-destructive",
               )}
             >
               {Icono && <Icono className="size-6" aria-hidden />}
