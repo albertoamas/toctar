@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, inArray, isNotNull, max, ne, TransactionRollbackError } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, max, ne, sql, TransactionRollbackError } from "drizzle-orm";
 import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/db";
 import { contenidoPagina, faq, galeriaItem, servicio, servicioFoto } from "@/db/esquema";
@@ -265,7 +265,11 @@ export async function guardarContenido(_previo: EstadoFormulario, datos: FormDat
   if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
 
   const fila = { clave: pagina, datos: entrada.data, updatedAt: new Date(), updatedBy: Number(autor.id) };
-  await db.insert(contenidoPagina).values(fila).onConflictDoUpdate({ target: contenidoPagina.clave, set: fila });
+  // Solo si cambió algo: guardar sin tocar nada no mueve la fecha (la "Última actualización" de la privacidad, pedido 49)
+  await db
+    .insert(contenidoPagina)
+    .values(fila)
+    .onConflictDoUpdate({ target: contenidoPagina.clave, set: fila, setWhere: sql`${contenidoPagina.datos} is distinct from excluded.datos` });
 
   despuesDeCambiarContenido("textos");
   return { ok: true, mensaje: `${PAGINAS[pagina].titulo}: cambios guardados.` };

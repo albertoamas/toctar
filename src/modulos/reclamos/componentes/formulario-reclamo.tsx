@@ -177,7 +177,7 @@ export function FormularioReclamo({ servicios }: { servicios: { id: number; nomb
 
       {/* Pedido 49: dónde se dice qué se hace con sus datos, junto a donde los entrega */}
       <p className="text-sm text-tinta-suave">
-        Usamos tus datos solo para responder tu reclamo.{" "}
+        Usamos tus datos para atender tu reclamo y no los compartimos con nadie.{" "}
         <Link href="/privacidad" className="font-semibold text-tinta underline underline-offset-4">
           Política de privacidad
         </Link>

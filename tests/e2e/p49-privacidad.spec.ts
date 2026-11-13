@@ -31,7 +31,7 @@ test("el pie y el formulario de reclamo llevan a la política; el menú del celu
     await page.keyboard.press("Escape");
   }
   await page.goto("/garantia");
-  await expect(page.getByText("Usamos tus datos solo para responder tu reclamo.")).toBeVisible();
+  await expect(page.getByText("Usamos tus datos para atender tu reclamo y no los compartimos con nadie.")).toBeVisible();
   await expect(page.getByRole("main").getByRole("link", { name: "Política de privacidad" })).toHaveAttribute("href", "/privacidad");
 });
 
@@ -57,17 +57,19 @@ test("el dueño cambia un texto de la política en el panel y el sitio lo muestr
   await modal.getByRole("button", { name: "Guardar política de privacidad" }).click();
   await expect(modal).toBeHidden();
 
-  // El sitio se renueva al guardar: se visita hasta verlo, con el nombre del negocio ya puesto
-  const seccion = page.getByRole("region", { name: "Cambios a esta política" });
-  await expect(async () => {
-    await page.goto("/privacidad");
-    await expect(seccion).toContainText("Contáctanos en TocTar Detailing.", { timeout: 1000 });
-  }).toPass({ timeout: 20_000 });
-
-  // Vuelve el texto de antes
-  await page.goto("/panel/sitio/textos?pagina=privacidad");
-  await page.getByRole("button", { name: "Editar política de privacidad" }).click();
-  await modal.getByLabel("Cambios a esta política").fill(original);
-  await modal.getByRole("button", { name: "Guardar política de privacidad" }).click();
-  await expect(modal).toBeHidden();
+  try {
+    // El sitio se renueva al guardar: se visita hasta verlo, con el nombre del negocio ya puesto
+    const seccion = page.getByRole("region", { name: "Cambios a esta política" });
+    await expect(async () => {
+      await page.goto("/privacidad");
+      await expect(seccion).toContainText("Contáctanos en TocTar Detailing.", { timeout: 1000 });
+    }).toPass({ timeout: 20_000 });
+  } finally {
+    // Vuelve el texto de antes, también si algo falló arriba: la página es una sola para todas las pruebas
+    await page.goto("/panel/sitio/textos?pagina=privacidad");
+    await page.getByRole("button", { name: "Editar política de privacidad" }).click();
+    await modal.getByLabel("Cambios a esta política").fill(original);
+    await modal.getByRole("button", { name: "Guardar política de privacidad" }).click();
+    await expect(modal).toBeHidden();
+  }
 });

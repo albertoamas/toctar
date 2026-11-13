@@ -4,11 +4,11 @@
 INSERT INTO "contenido_pagina" ("clave", "datos") VALUES
   ('privacidad', jsonb_build_object(
     'presentacion', 'En {negocio} cuidamos los datos que nos confías. Aquí te contamos qué datos guardamos, para qué los usamos y cómo puedes pedir que los cambiemos o los borremos.',
-    'quienes_somos', '{negocio}, taller de detailing automotriz en {direccion}. Para cualquier consulta sobre tus datos, escríbenos por WhatsApp al {whatsapp} o al correo {correo}.',
+    'quienes_somos', '{negocio}, taller de detailing automotriz en {direccion}. Para cualquier consulta sobre tus datos, escríbenos {contacto}.',
     'que_datos', 'Si nos dejas un reclamo en la página Garantía y reclamos:
 - tu nombre, tu teléfono y la placa de tu vehículo;
 - el servicio y lo que nos cuentas;
-- las fotos que adjuntes, hasta 3.
+- las fotos que adjuntes.
 
 Para evitar envíos automáticos y abusos, también guardamos un código de tu conexión: una versión cifrada de tu dirección de internet (IP), que no sirve para saber quién eres.
 

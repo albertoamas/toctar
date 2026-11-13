@@ -4,15 +4,26 @@
 /** Los datos del negocio que un texto puede nombrar entre llaves. Salen de Configuración > Negocio. */
 export type DatosParaTexto = { negocio: string; direccion: string; whatsapp: string | null; correo: string | null };
 
-/** Los campos entre llaves que se completan: `{negocio}`, `{direccion}`, `{whatsapp}` y `{correo}`. */
-type CampoDelNegocio = keyof DatosParaTexto;
+/**
+ * Cómo escribirles, con lo que haya en Configuración: "por WhatsApp al … o al correo …", uno solo, o, sin ninguno, el
+ * taller. Así la frase no queda rota si falta el correo (`{contacto}`).
+ */
+export function formaDeContacto({ whatsapp, correo, direccion }: DatosParaTexto): string {
+  if (whatsapp && correo) return `por WhatsApp al ${whatsapp} o al correo ${correo}`;
+  if (whatsapp) return `por WhatsApp al ${whatsapp}`;
+  if (correo) return `al correo ${correo}`;
+  return `en el taller, en ${direccion}`;
+}
 
 /**
- * Completa los campos entre llaves con los datos del negocio, así el texto no queda desactualizado si cambian. Uno que
- * falta en Configuración (el correo, por ejemplo) queda vacío; unas llaves con otra cosa adentro quedan como están.
+ * Completa los campos entre llaves con los datos del negocio, así el texto no queda desactualizado si cambian:
+ * `{negocio}`, `{direccion}`, `{whatsapp}`, `{correo}` y `{contacto}` (`formaDeContacto`). Uno que falta en Configuración
+ * queda vacío (por eso la frase de contacto va con `{contacto}`); unas llaves con otra cosa adentro quedan como están.
  */
 export function conDatosDelNegocio(texto: string, datos: DatosParaTexto): string {
-  return texto.replace(/\{(negocio|direccion|whatsapp|correo)\}/g, (_, campo: CampoDelNegocio) => datos[campo] ?? "");
+  return texto.replace(/\{(negocio|direccion|whatsapp|correo|contacto)\}/g, (_, campo: keyof DatosParaTexto | "contacto") =>
+    campo === "contacto" ? formaDeContacto(datos) : (datos[campo] ?? ""),
+  );
 }
 
 export type BloqueTexto = { tipo: "parrafo"; texto: string } | { tipo: "lista"; items: string[] };

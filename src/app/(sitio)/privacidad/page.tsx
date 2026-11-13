@@ -6,12 +6,12 @@ import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { formatearWhatsApp } from "@/lib/whatsapp";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
 import { PAGINAS } from "@/modulos/sitio/contenido";
-import { actualizacionDePagina, contenidoPublico } from "@/modulos/sitio/publico";
+import { contenidoConFechaPublico } from "@/modulos/sitio/publico";
 import { bloquesDeTexto, conDatosDelNegocio, type DatosParaTexto } from "@/modulos/sitio/texto-con-formato";
 
 export const metadata: Metadata = {
   title: "Política de privacidad",
-  description: "Qué datos guarda TocTar Detailing, para qué los usa, quién los ve y cómo pedir que se corrijan o se borren.",
+  description: "Qué datos guarda el taller, para qué los usa, quién los ve y cómo pedir que se corrijan o se borren.",
 };
 
 // Pedido 49 (P49-politica-de-privacidad.md). El texto sale del panel (Sitio web > Textos > Privacidad), una sección por
@@ -27,7 +27,7 @@ export default function PaginaPrivacidad() {
 
 async function Contenido() {
   await connection();
-  const [texto, negocio, actualizada] = await Promise.all([contenidoPublico("privacidad"), obtenerDatosPublicos(), actualizacionDePagina("privacidad")]);
+  const [{ datos: texto, actualizada }, negocio] = await Promise.all([contenidoConFechaPublico("privacidad"), obtenerDatosPublicos()]);
   const datos: DatosParaTexto = {
     negocio: negocio.nombre,
     direccion: negocio.direccion,
@@ -38,7 +38,7 @@ async function Contenido() {
   return (
     <article className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-4 py-12 md:py-20">
       <header className="flex flex-col gap-3">
-        <TituloPagina>Política de privacidad</TituloPagina>
+        <TituloPagina>{PAGINAS.privacidad.titulo}</TituloPagina>
         {actualizada && <p className="text-sm text-tinta-suave">Última actualización: {formatearFecha(fechaEnBolivia(new Date(actualizada)))}</p>}
         <Bloques texto={conDatosDelNegocio(texto[presentacion.clave] as string, datos)} entrada />
       </header>

@@ -7,6 +7,11 @@ type CampoTexto = { tipo: "linea" | "parrafo"; clave: string; etiqueta: string; 
 type CampoLista = { tipo: "lista"; clave: string; etiqueta: string; ayuda?: string; vacio: string; max: number; maxItems: number; agregar: string };
 export type CampoContenido = CampoTexto | CampoLista;
 
+/** La ayuda de los textos de la privacidad (pedido 49): los datos del negocio y el formato. */
+const AYUDA_PRIVACIDAD =
+  "Los datos del negocio van entre llaves y salen de Configuración > Negocio: {negocio}, {direccion}, {whatsapp}, {correo} y {contacto} (cómo escribirles, con lo que haya). Un renglón vacío separa párrafos; las líneas que empiezan con «- » forman una lista.";
+const AYUDA_LISTA = "Un renglón vacío separa párrafos; las líneas que empiezan con «- » forman una lista.";
+
 export const PAGINAS = {
   inicio: {
     titulo: "Portada",
@@ -51,15 +56,15 @@ export const PAGINAS = {
         etiqueta: "Presentación",
         vacio: "Escribe la presentación.",
         max: 600,
-        ayuda: "Los datos del negocio van entre llaves y se completan con Configuración > Negocio: {negocio}, {direccion}, {whatsapp} y {correo}. Un renglón vacío separa párrafos; las líneas que empiezan con «- » forman una lista.",
+        ayuda: AYUDA_PRIVACIDAD,
       },
-      { tipo: "parrafo", clave: "quienes_somos", etiqueta: "Quiénes somos", vacio: "Escribe quiénes son.", max: 600 },
-      { tipo: "parrafo", clave: "que_datos", etiqueta: "Qué datos guardamos", vacio: "Escribe qué datos guardan.", max: 2500 },
-      { tipo: "parrafo", clave: "para_que", etiqueta: "Para qué los usamos", vacio: "Escribe para qué los usan.", max: 2000 },
-      { tipo: "parrafo", clave: "quien_los_ve", etiqueta: "Quién más los ve", vacio: "Escribe quién más los ve.", max: 2000 },
-      { tipo: "parrafo", clave: "cuanto_tiempo", etiqueta: "Cuánto tiempo los guardamos", vacio: "Escribe cuánto tiempo los guardan.", max: 1000 },
-      { tipo: "parrafo", clave: "cookies", etiqueta: "Cookies y lo que guarda tu navegador", vacio: "Escribe qué cookies hay.", max: 1500 },
-      { tipo: "parrafo", clave: "derechos", etiqueta: "Tus derechos", vacio: "Escribe cómo pedir sus datos.", max: 1500 },
+      { tipo: "parrafo", clave: "quienes_somos", etiqueta: "Quiénes somos", vacio: "Escribe quiénes son.", max: 600, ayuda: AYUDA_PRIVACIDAD },
+      { tipo: "parrafo", clave: "que_datos", etiqueta: "Qué datos guardamos", vacio: "Escribe qué datos guardan.", max: 2500, ayuda: AYUDA_LISTA },
+      { tipo: "parrafo", clave: "para_que", etiqueta: "Para qué los usamos", vacio: "Escribe para qué los usan.", max: 2000, ayuda: AYUDA_LISTA },
+      { tipo: "parrafo", clave: "quien_los_ve", etiqueta: "Quién más los ve", vacio: "Escribe quién más los ve.", max: 2000, ayuda: AYUDA_LISTA },
+      { tipo: "parrafo", clave: "cuanto_tiempo", etiqueta: "Cuánto tiempo los guardamos", vacio: "Escribe cuánto tiempo los guardan.", max: 1000, ayuda: AYUDA_LISTA },
+      { tipo: "parrafo", clave: "cookies", etiqueta: "Cookies y lo que guarda tu navegador", vacio: "Escribe qué cookies hay.", max: 1500, ayuda: AYUDA_LISTA },
+      { tipo: "parrafo", clave: "derechos", etiqueta: "Tus derechos", vacio: "Escribe cómo pedir sus datos.", max: 1500, ayuda: AYUDA_LISTA },
       { tipo: "parrafo", clave: "cambios", etiqueta: "Cambios a esta política", vacio: "Escribe cómo avisan los cambios.", max: 600 },
     ],
   },

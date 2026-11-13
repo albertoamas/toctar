@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bloquesDeTexto, conDatosDelNegocio } from "@/modulos/sitio/texto-con-formato";
+import { bloquesDeTexto, conDatosDelNegocio, formaDeContacto } from "@/modulos/sitio/texto-con-formato";
 
 // Pedido 49: la política de privacidad se escribe en el panel con los datos del negocio entre llaves y un formato mínimo.
 
@@ -12,6 +12,17 @@ describe("conDatosDelNegocio", () => {
 
   it("un dato que falta en Configuración queda vacío, y otras llaves quedan como están", () => {
     expect(conDatosDelNegocio("Correo: {correo}. {otro} se queda.", datos)).toBe("Correo: . {otro} se queda.");
+  });
+});
+
+describe("formaDeContacto ({contacto})", () => {
+  it("arma la frase con lo que haya, sin quedar rota si falta un dato", () => {
+    const base = { negocio: "TocTar", direccion: "Barrio Aeropuerto" };
+    expect(formaDeContacto({ ...base, whatsapp: "+591 7123 4567", correo: "taller@ejemplo.com" })).toBe("por WhatsApp al +591 7123 4567 o al correo taller@ejemplo.com");
+    expect(formaDeContacto({ ...base, whatsapp: "+591 7123 4567", correo: null })).toBe("por WhatsApp al +591 7123 4567");
+    expect(formaDeContacto({ ...base, whatsapp: null, correo: "taller@ejemplo.com" })).toBe("al correo taller@ejemplo.com");
+    expect(formaDeContacto({ ...base, whatsapp: null, correo: null })).toBe("en el taller, en Barrio Aeropuerto");
+    expect(conDatosDelNegocio("Escríbenos {contacto}.", { ...base, whatsapp: null, correo: null })).toBe("Escríbenos en el taller, en Barrio Aeropuerto.");
   });
 });
 
