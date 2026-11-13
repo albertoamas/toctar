@@ -44,7 +44,9 @@ const CELDA_MOVIL: Record<ColumnaTabla["movil"], string> = {
  * Las medidas de toda tabla del panel (pulido final, 10/11: la de acciones se había hecho con otras): los títulos de las
  * columnas y cada fila, con lugar a la derecha para la "›" (`FlechaFila`). Las usan TablaLista y TablaAcciones.
  */
-export const ENCABEZADO_TABLA = "gap-4 border-b border-border bg-superficie/50 py-2.5 pr-11 pl-4 text-xs font-semibold text-tinta-suave";
+/** Los colores y la letra del encabezado; sin el relleno, para una `<table>` que lo pone en cada celda (PreciosServicio). */
+export const ESTILO_ENCABEZADO_TABLA = "border-b border-border bg-superficie/50 text-xs font-semibold text-tinta-suave";
+export const ENCABEZADO_TABLA = `gap-4 py-2.5 pr-11 pl-4 ${ESTILO_ENCABEZADO_TABLA}`;
 export const FILA_TABLA = "min-h-11 items-center gap-x-4 gap-y-1 py-3 pr-11 pl-4 text-sm";
 
 /** La "›" de una fila que se abre, a la derecha y centrada: en toda tabla del panel, en el mismo lugar. */
