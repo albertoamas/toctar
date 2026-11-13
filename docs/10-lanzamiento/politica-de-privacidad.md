@@ -2,6 +2,8 @@
 
 > **Pedido 49** (`03-cierre-comercial/registro-de-cambios.md`), escrito el 13/11/2026 por YankoSoft.
 >
+> **Ya publicado (13/11/2026):** este texto es el inicial de la página `/privacidad`, que se edita en Sitio web > Privacidad. Lo que estaba entre corchetes salió con valores iniciales: 5 años y 2 años, 10 días hábiles, Hetzner y "no se ve la placa ni a nadie" en la galería. El dueño los cambia ahí si no le sirven. Desde ahora, lo que vale es lo del panel, no este archivo.
+>
 > **Es un borrador.** Lo revisa y lo aprueba el dueño. Lo ideal es que también lo lea un abogado o un contador, porque YankoSoft no da asesoría legal. Hasta donde sabemos, Bolivia no tiene una ley general de protección de datos personales: aplican la Constitución (la acción de protección de privacidad) y la Ley 453, de derechos de los consumidores. Si eso cambió, el texto se ajusta.
 >
 > **Cómo se usa:**

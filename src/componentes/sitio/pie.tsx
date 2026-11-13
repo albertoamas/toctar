@@ -4,7 +4,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { resumirHorarios } from "@/lib/horarios";
-import { PAGINAS_PRINCIPALES, PAGINAS_SECUNDARIAS } from "@/lib/sitio";
+import { PAGINAS_LEGALES, PAGINAS_PRINCIPALES, PAGINAS_SECUNDARIAS } from "@/lib/sitio";
 import { enlaceComoLlegar } from "@/lib/ubicacion";
 import { urlSitio } from "@/lib/sitio";
 import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
@@ -17,7 +17,8 @@ import { RedesSociales } from "./redes-sociales";
 // El build no tiene base de datos: los datos se leen al atender el pedido (connection) y quedan
 // en caché con la etiqueta "negocio" hasta que se editen. Los mismos datos van a Google como JSON-LD (HU-18).
 
-const ENLACES = [...PAGINAS_PRINCIPALES, ...PAGINAS_SECUNDARIAS];
+// Con la política de privacidad al final (pedido 49): en el pie, no en el menú
+const ENLACES = [...PAGINAS_PRINCIPALES, ...PAGINAS_SECUNDARIAS, ...PAGINAS_LEGALES];
 
 export function Pie() {
   // Sin línea LED: es el recurso de la portada.

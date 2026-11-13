@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { CircleHelpIcon, HouseIcon, ImagesIcon, MapPinIcon, TagIcon, UsersIcon } from "lucide-react";
+import { CircleHelpIcon, HouseIcon, ImagesIcon, MapPinIcon, ShieldCheckIcon, TagIcon, UsersIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
@@ -36,6 +36,8 @@ async function Contenido() {
           { href: "/panel/sitio/textos?pagina=contacto", icono: MapPinIcon, titulo: "Contacto", descripcion: "El texto de la página de contacto." },
           { href: "/panel/sitio/preguntas", icono: CircleHelpIcon, titulo: "Preguntas frecuentes", descripcion: "Las preguntas y respuestas que se ven en el sitio." },
           { href: "/panel/sitio/galeria", icono: ImagesIcon, titulo: "Galería", descripcion: "Las fotos de los trabajos y cuáles van en la portada." },
+          // Pedido 49: al final, como en el pie del sitio
+          { href: "/panel/sitio/textos?pagina=privacidad", icono: ShieldCheckIcon, titulo: "Privacidad", descripcion: "Qué datos guarda el taller y para qué." },
         ]}
       />
     </>

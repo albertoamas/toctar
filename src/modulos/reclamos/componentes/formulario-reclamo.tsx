@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
+import Link from "next/link";
 import { CheckCircle2Icon, XIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
@@ -173,6 +174,14 @@ export function FormularioReclamo({ servicios }: { servicios: { id: number; nomb
       </fieldset>
 
       {estado.mensaje && !estado.ok && <MensajeError id="reclamo-error">{estado.mensaje}</MensajeError>}
+
+      {/* Pedido 49: dónde se dice qué se hace con sus datos, junto a donde los entrega */}
+      <p className="text-sm text-tinta-suave">
+        Usamos tus datos para atender tu reclamo y no los compartimos con nadie.{" "}
+        <Link href="/privacidad" className="font-semibold text-tinta underline underline-offset-4">
+          Política de privacidad
+        </Link>
+      </p>
 
       <div>
         <button type="submit" disabled={!listo || etapa !== null} className="tt-boton tt-boton--principal disabled:opacity-60">

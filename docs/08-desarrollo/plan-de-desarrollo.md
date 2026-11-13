@@ -352,7 +352,7 @@ Una rama `hu-XX-…` por historia, desde `develop`, con commits chicos por tipo 
 
 ### D1. Lanzamiento
 - **Antes de publicar:** restauración de prueba de un respaldo, documentada en `07-preparacion/servidor.md` (RNF-06).
-- **Antes de publicar:** la política de privacidad (pedido 49): el dueño aprueba el borrador de `10-lanzamiento/politica-de-privacidad.md` y se programa la página.
+- **Antes de publicar:** la política de privacidad (pedido 49) ya está en `/privacidad`, con el texto del borrador y valores iniciales en lo que quedaba por decidir. El dueño la revisa y la ajusta en Sitio web > Privacidad.
 - **Carga de datos reales:** precios, servicios con mantenimiento, textos del PDF, contenido del sitio y, si el dueño quiere, los clientes del cuaderno. Se coordina con él antes de publicar.
 - **Primera semana de uso:** acompañamiento. Las correcciones entran como `arreglo/…` desde `main`.
 
