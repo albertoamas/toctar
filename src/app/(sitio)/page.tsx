@@ -269,7 +269,9 @@ function BloqueTikTok({ enlace, video }: { enlace?: string; video: VideoPortada 
   return (
     <section
       aria-labelledby="tiktok-titulo"
-      className={cn("mx-auto grid w-full max-w-6xl items-center gap-10 px-4 pt-14 pb-16 md:gap-16 md:pt-20 md:pb-24", video && "md:grid-cols-[minmax(0,1fr)_auto]")}
+      // Con video, dos columnas iguales y el video al centro de la suya: alineado al borde derecho quedaba pegado a la
+      // pantalla en la tableta y lejos del texto en la computadora (revisión del 13/11)
+      className={cn("mx-auto grid w-full max-w-6xl items-center gap-10 px-4 pt-14 pb-16 md:gap-16 md:pt-20 md:pb-24", video && "md:grid-cols-2")}
     >
       <div className="flex flex-col items-start gap-3">
         <h2 id="tiktok-titulo" className={TITULO_SECCION}>
