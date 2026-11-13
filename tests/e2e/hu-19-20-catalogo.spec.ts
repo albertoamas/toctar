@@ -71,7 +71,10 @@ test("el dueño marca el mantenimiento, cambia la duración y desactiva un servi
   // Guardado, el modal se cierra, la lectura muestra los datos nuevos y el foco vuelve a "Editar"
   await expect(modal).toHaveCount(0);
   await expect(datos).toContainText("3 días");
-  await expect(datos).toContainText("Él mismo, cada 6 meses");
+  // En bloques (pulido 13.57): el servicio y cada cuánto, cada uno en su fila
+  const mantenimiento = datos.getByRole("group", { name: "Datos del servicio" });
+  await expect(mantenimiento.getByText("Servicio", { exact: true }).locator("xpath=following-sibling::dd[1]")).toHaveText("Él mismo");
+  await expect(mantenimiento.getByText("Cada", { exact: true }).locator("xpath=following-sibling::dd[1]")).toHaveText("6 meses");
   await expect(editar).toBeFocused();
 
   // Inactivo: no sale en el sitio (su página no existe) y queda marcado en el catálogo
@@ -95,7 +98,7 @@ test("el dueño marca el mantenimiento, cambia la duración y desactiva un servi
   await enElSitio(page, slug, nombre);
 });
 
-test("las variantes se agregan, renombran y desactivan en el catálogo; una nueva pide sus precios", async ({ page }, info) => {
+test("las variantes se agregan, renombran y desactivan en el catálogo; una nueva pide sus precios", async ({ page, isMobile }, info) => {
   await ingresarComoDueno(page);
   await page.goto("/panel/catalogo");
   // Cuenta las variantes activas del servicio (datos iniciales: 1, 2, 3, 5 y 10 años)
@@ -127,8 +130,17 @@ test("las variantes se agregan, renombran y desactivan en el catálogo; una nuev
   await expect(page.getByText("Variante Premium agregada.")).toBeVisible();
   await expect(nueva).toHaveCount(0);
   await variantes.getByRole("button", { name: "Listo" }).click();
-  // La nueva ya tiene sus precios en la ficha, sin cargar
-  await expect(page.getByRole("region", { name: "Premium" })).toContainText("Sin cargar");
+  // La nueva ya tiene su lugar en los precios, todavía sin cargar (pulido 13.57): en la computadora, su columna de la
+  // tabla; en el celular, su píldora y su tarjeta
+  if (isMobile) {
+    await page.getByRole("group", { name: "Variante" }).getByRole("button", { name: "Premium" }).click();
+    await expect(page.getByRole("region", { name: "Premium" })).toContainText("Sin precios cargados.");
+    await expect(page.getByRole("button", { name: "Cargar precios de Premium" })).toBeVisible();
+  } else {
+    await expect(page.getByRole("table").getByRole("columnheader", { name: /^Premium/ })).toBeVisible();
+    // Una vez por variante sin precios: la "Única" del servicio nuevo y la recién agregada
+    await expect(page.getByRole("table").getByText("Sin precios cargados")).toHaveCount(2);
+  }
 
   await page.getByRole("button", { name: "Editar variantes" }).click();
   const editar = page.getByRole("dialog", { name: "Editar variante" });
@@ -188,10 +200,13 @@ test("el dueño carga precios por tamaño; vacío es según evaluación y cada c
   await ingresarComoDueno(page);
   const { id } = await crearServicioPublicado(page, nombre);
   await abrirFicha(page, id);
-  // Un servicio nuevo tiene la variante "Única" (D-2), todavía sin precios: en lectura, "Sin cargar"
+  // Un servicio nuevo tiene la variante "Única" (D-2), todavía sin precios: una sola línea, y su botón "Cargar precios"
+  // (pulido 13.57; antes, "Sin cargar" en cada tamaño)
   const unica = page.getByRole("region", { name: "Única" });
-  await expect(unica.getByText("Sin cargar")).toHaveCount(5);
-  const editar = unica.getByRole("button", { name: "Editar precios de Única" });
+  await expect(unica.getByText("Sin precios cargados.")).toBeVisible();
+  await expect(unica.getByText("Sin cargar")).toHaveCount(0);
+  const editar = unica.getByRole("button", { name: /^(Cargar|Editar) precios de Única$/ });
+  await expect(editar).toHaveText("Cargar precios");
   const precios = page.getByRole("dialog", { name: "Precios de Única" });
 
   // Un monto con separador de miles se rechaza, con el foco en el campo

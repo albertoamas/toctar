@@ -31,7 +31,9 @@ test("el dueño crea el servicio en el catálogo y completa su página: benefici
   await expect(page.getByText("Oculto en el sitio", { exact: true })).toBeVisible();
   // Recién creado se abre el modal de sus precios (es lo que falta cargar): se cierra para ir a su página
   await page.getByRole("dialog", { name: "Precios de Única" }).getByRole("button", { name: "Cancelar" }).click();
-  await page.getByRole("link", { name: "Su página en el sitio" }).click();
+  // En "Más" desde el pulido 13.57: el título de la ficha, con todo el ancho
+  await page.getByRole("main").getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Su página en el sitio" }).click();
   await expect(page).toHaveURL(/\/panel\/sitio\/servicios\/\d+(?:[?&]volver=[^&#]*)?$/);
   // El nombre no se cambia aquí: es del catálogo, a un toque desde "Más"
   await expect(page.getByRole("textbox", { name: "Nombre del servicio" })).toHaveCount(0);
