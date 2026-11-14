@@ -20,4 +20,17 @@ await sharp(interior).extend({ top: 56, bottom: 56, left: 56, right: 56, backgro
 // iPhone: "Agregar a inicio" usa el apple-icon (convención de Next.js en src/app).
 await png(180).toFile("src/app/apple-icon.png");
 
-console.log("Íconos generados en public/iconos y src/app/apple-icon.png");
+// La imagen al compartir un enlace del sitio por WhatsApp o Facebook (og:image, 1200 x 630, pulido de SEO del 13/11):
+// el logo con su lema sobre negro, y la línea roja de la marca abajo. Se vuelve a correr solo si cambia el logo.
+const logo = await sharp(await readFile("public/marca/toctar-horizontal-sobre-oscuro.svg"), { density: 300 }).resize({ width: 760 }).png().toBuffer();
+const { height: altoLogo } = await sharp(logo).metadata();
+const linea = await sharp({ create: { width: 1200, height: 10, channels: 4, background: { r: 227, g: 6, b: 19, alpha: 1 } } }).png().toBuffer();
+await sharp({ create: { width: 1200, height: 630, channels: 4, background: negro } })
+  .composite([
+    { input: logo, top: Math.round((630 - altoLogo) / 2) - 10, left: 220 },
+    { input: linea, top: 620, left: 0 },
+  ])
+  .jpeg({ quality: 90 })
+  .toFile("public/compartir.jpg");
+
+console.log("Íconos generados en public/iconos y src/app/apple-icon.png; la imagen para compartir, en public/compartir.jpg");

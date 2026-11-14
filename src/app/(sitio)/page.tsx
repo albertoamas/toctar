@@ -23,13 +23,15 @@ import { ladoDelLema, nombreDelTrabajo, trabajoDePortada } from "@/modulos/sitio
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
 import type { VideoPortada } from "@/modulos/sitio/consultas";
 import { contenidoPublico, fotoDePaginaPublica, galeriaPublica, serviciosPublicos, videoDePortadaPublico, type FotoGaleria, type ServicioPublico } from "@/modulos/sitio/publico";
+import { metadatosPagina } from "@/lib/sitio";
 
 // Las descripciones para Google van fijas (dentro del <head>, que es donde las lee Google) y sin nombrar
 // servicios concretos: así no quedan desactualizadas cuando el dueño agrega o quita uno.
-export const metadata: Metadata = {
-  title: { absolute: "TocTar Detailing · Detailing automotriz en Tarija" },
-  description: "Detailing automotriz en Tarija: cuidamos la pintura, el interior y los detalles de tu vehículo. Escríbenos por WhatsApp y te cotizamos.",
-};
+export const metadata: Metadata = metadatosPagina({
+  titulo: { absolute: "TocTar Detailing · Detailing automotriz en Tarija" },
+  descripcion: "Detailing automotriz en Tarija: cuidamos la pintura, el interior y los detalles de tu vehículo. Escríbenos por WhatsApp y te cotizamos.",
+  ruta: "/",
+});
 
 const SERVICIOS_EN_PORTADA = 6;
 
@@ -145,6 +147,7 @@ function Cabecera({ children, foto, trabajo }: { children: React.ReactNode; foto
             descripcion={nombreDelTrabajo(trabajo.descripcion, trabajo.servicio.nombre)}
             conLeyenda={!!trabajo.descripcion.trim()}
             alFrente
+            prioritaria
             sola
             marco
             conBorde

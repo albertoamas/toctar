@@ -40,3 +40,25 @@ export function avisosDeGaleria(antes: Medidas | null, despues: Medidas | null):
   if (antes && despues && !tienenMismaForma(antes, despues)) avisos.push(AVISO_FORMAS_DISTINTAS);
   return avisos;
 }
+
+/** Las direcciones de una foto que necesita `srcSetFoto` (las de `UrlsFoto`, src/lib/fotos.ts). */
+type VersionesFoto = { url: string; miniatura: string; mediana?: string; ancho: number | null; alto: number | null };
+
+/** El ancho de la versión de `lado` px de lado mayor (sharp con `fit: inside`); sin medidas, el lado. */
+function anchoDeVersion(foto: VersionesFoto, lado: number): number {
+  if (!foto.ancho || !foto.alto) return lado;
+  return Math.round(foto.ancho * Math.min(1, lado / Math.max(foto.ancho, foto.alto)));
+}
+
+/**
+ * Las versiones de una foto del sitio para el atributo `srcSet`: la de 640, la de 1080 si la tiene (pulido de
+ * rendimiento, 13/11: un celular de alta densidad bajaba la de 1600, más del doble de lo que muestra) y la grande. Todas
+ * con la misma calidad (WebP 85): cambia el tamaño, no la compresión. Sin miniatura, nada: la foto va sola.
+ */
+export function srcSetFoto(foto: VersionesFoto): string | undefined {
+  if (foto.miniatura === foto.url) return undefined;
+  // El descriptor es el ANCHO real de cada versión: 640 y 1080 son su lado mayor, y en una foto vertical el ancho es menor
+  return [`${foto.miniatura} ${anchoDeVersion(foto, 640)}w`, foto.mediana && `${foto.mediana} ${anchoDeVersion(foto, 1080)}w`, `${foto.url} ${foto.ancho ?? 1600}w`]
+    .filter(Boolean)
+    .join(", ");
+}

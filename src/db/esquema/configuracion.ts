@@ -20,6 +20,11 @@ export const archivo = pgTable("archivo", {
   alto: integer("alto"),
   /** Versión de 640 px de una foto (tarjetas y grillas del sitio). */
   miniaturaClave: text("miniatura_clave").unique(),
+  /**
+   * Versión de 1080 px de una foto del sitio (bucket público): la que baja un celular, que no necesita la de 1600 ni ve
+   * bien la de 640 (pulido de rendimiento, 13/11). Misma calidad que las otras; nula en las privadas.
+   */
+  medianaClave: text("mediana_clave").unique(),
   /** En el bucket privado (datos de clientes, como las fotos de reclamos): se ve solo con enlace firmado. */
   privado: boolean("privado").default(false).notNull(),
   /** Solo videos (consultas, C2): la duración que informa el navegador al subir. */

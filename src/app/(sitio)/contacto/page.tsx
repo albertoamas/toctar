@@ -15,11 +15,13 @@ import { formatearWhatsApp } from "@/lib/whatsapp";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
 import { REDES } from "@/modulos/configuracion/esquemas";
 import { contenidoPublico } from "@/modulos/sitio/publico";
+import { metadatosPagina } from "@/lib/sitio";
 
-export const metadata: Metadata = {
-  title: "Contacto",
-  description: "Dirección, mapa, horario y WhatsApp de TocTar Detailing en Tarija.",
-};
+export const metadata: Metadata = metadatosPagina({
+  titulo: "Contacto",
+  descripcion: "Dirección, mapa, horario y WhatsApp de TocTar Detailing en Tarija.",
+  ruta: "/contacto",
+});
 
 const TITULO = "font-heading text-[26px] leading-7 font-extrabold italic";
 

@@ -337,6 +337,13 @@
       "when": 1794588711938,
       "tag": "0047_datos_privacidad",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1794626109207,
+      "tag": "0048_archivo_mediana",
+      "breakpoints": true
     }
   ]
 }

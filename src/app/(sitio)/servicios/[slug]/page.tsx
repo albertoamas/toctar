@@ -13,6 +13,7 @@ import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import type { UrlsFoto } from "@/lib/fotos";
 import { servicioPublico, type DetalleServicioPublico } from "@/modulos/sitio/publico";
 import { ladosDeFotos } from "@/modulos/sitio/secciones-foto";
+import { metadatosPagina } from "@/lib/sitio";
 
 // HU-11 Página de cada servicio (RF-03): resumen, beneficios, proceso y variantes, sin precios (RN-10).
 // Más simple desde la demo del 24/10 ("para tontos"): los beneficios van primero, como una fila de íconos, y las
@@ -23,12 +24,7 @@ export async function generateMetadata({ params }: PageProps<"/servicios/[slug]"
   const { slug } = await params;
   const s = await servicioPublico(slug);
   if (!s) return { title: "Servicio no encontrado" };
-  return {
-    title: s.nombre,
-    description: s.resumen,
-    alternates: { canonical: `/servicios/${s.slug}` },
-    openGraph: { title: `${s.nombre} · TocTar Detailing`, description: s.resumen, images: s.foto ? [s.foto.url] : undefined },
-  };
+  return metadatosPagina({ titulo: s.nombre, descripcion: s.resumen, ruta: `/servicios/${s.slug}`, imagen: s.foto });
 }
 
 export default function PaginaServicio({ params }: PageProps<"/servicios/[slug]">) {

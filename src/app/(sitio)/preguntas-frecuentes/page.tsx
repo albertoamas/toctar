@@ -6,11 +6,13 @@ import { TituloPagina } from "@/componentes/sitio/titulo-pagina";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import { preguntasPublicas } from "@/modulos/sitio/publico";
+import { metadatosPagina } from "@/lib/sitio";
 
-export const metadata: Metadata = {
-  title: "Preguntas frecuentes",
-  description: "Cuánto tiempo se queda tu vehículo, cómo reservar, qué cubre la garantía y otras dudas sobre los servicios de TocTar Detailing.",
-};
+export const metadata: Metadata = metadatosPagina({
+  titulo: "Preguntas frecuentes",
+  descripcion: "Cuánto tiempo se queda tu vehículo, cómo reservar, qué cubre la garantía y otras dudas sobre los servicios de TocTar Detailing.",
+  ruta: "/preguntas-frecuentes",
+});
 
 // HU-13 Preguntas frecuentes (RF-05). Cada una se abre y se cierra con <details>: funciona sin JavaScript.
 // Llega entera, con el título: nada aparece suelto antes que el resto (pulido 2.1 y 2.5, revisión de YankoSoft).

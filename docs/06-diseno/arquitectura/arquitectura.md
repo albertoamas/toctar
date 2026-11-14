@@ -87,7 +87,7 @@ Se verifica el precio real al contratar y se le informa al dueño antes (acuerdo
 - La API de WhatsApp queda fuera del alcance; el diseño la permite después sin cambiar las plantillas.
 
 ### Fotos
-- El celular sube la foto; el servidor la redimensiona (lado mayor 1600 px), la convierte a WebP y la guarda en R2. Se guarda también una miniatura. El servidor rechaza imágenes de más de 70 megapíxeles (`src/lib/imagen.ts`).
+- El celular sube la foto; el servidor la redimensiona (lado mayor 1600 px; las del sitio, también una de 1080 px para el celular, con la misma calidad, pulido 13.59), la convierte a WebP y la guarda en R2. Se guarda también una miniatura. El servidor rechaza imágenes de más de 70 megapíxeles (`src/lib/imagen.ts`).
 - Dos buckets por entorno. **Público** (`S3_BUCKET`): lo que muestra el sitio, servido desde `S3_URL_PUBLICA`. **Privado** (`S3_BUCKET_PRIVADO`): datos de clientes (fotos de las órdenes, firmas, comprobantes de pago, fotos de los reclamos y los PDF de las cotizaciones); sin acceso público, el panel las muestra con enlaces firmados que vencen a los 15 minutos (`src/lib/almacenamiento.ts`). `archivo.privado` dice en cuál está cada archivo.
 - El único video es el de la portada (pedido 48): hasta 20 MB, MP4 o MOV con H.264, o WebM, sin procesar. Se sube por su propia ruta (`panel/sitio/video`), no por una server action, por su tamaño (RNF-07).
 
