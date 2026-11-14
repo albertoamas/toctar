@@ -50,7 +50,7 @@ Aplicado al servidor `toctar`. Todo lo que no está en la lista se descarta: un 
 - Salientes: todo permitido.
 - **El 8000** (panel de Coolify) estuvo abierto solo mientras se configuraba; se cerró el 24/10, cuando Coolify tuvo su dominio con https.
 - **El 3000 nunca se abre:** la app solo se alcanza por el proxy de Coolify.
-- **Con el proxy de Cloudflare (nube naranja, `guia-de-despliegue.md`, paso 3b):** el 80 y el 443 aceptan solo los rangos de Cloudflare; el 22 sigue abierto para SSH.
+- **Con el proxy de Cloudflare (nube naranja, `guia-de-despliegue.md`, paso 3b), aplicado el 14/11/2026:** el 80 y el 443 aceptan solo los rangos de Cloudflare (los 22 de https://www.cloudflare.com/ips-v4 y /ips-v6); el 22 sigue abierto para SSH, solo con llave. `pruebas` y `coolify` en naranja; `@` y `www` pasan a naranja al publicar, con la regla de su secreto (si no, con este firewall no responden).
 - Cuando se creó, el firewall no traía la regla del 22 y SSH no respondía. Se agregó a mano.
 
 ## Qué se le hizo (23/10/2026)

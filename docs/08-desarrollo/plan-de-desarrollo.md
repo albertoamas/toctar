@@ -21,7 +21,7 @@ unir. Como se decidió el 21/10, las dos entregas se aceptan y se publican junta
 | Etapas 1 a 4 (descubrimiento, propuesta, cierre comercial, requerimientos) | ✅ Cerradas |
 | Etapa 5 (análisis) | 🟡 Criterios de HU-01 a HU-41 escritos (`09-pruebas/criterios-entrega-1.md` y `-2.md`). Falta que el dueño los valide, en la demo del cierre |
 | Etapa 6 (diseño) | ✅ Modelo de datos, arquitectura, identidad visual y reglas del panel (`06-diseno/sistema-del-panel.md`) |
-| Etapa 7 (preparación) | 🟡 Dominio, VPS, Coolify, R2, respaldos y CI/CD listos (`07-preparacion/servidor.md`, `ci-cd.md`); producción configurada, sin publicar. Revisado desde afuera el 13/11: puertos internos cerrados, SSH solo con llave y encabezados de seguridad. Falta la reunión de accesos con el dueño y la restauración de prueba (RNF-06) |
+| Etapa 7 (preparación) | 🟡 Dominio, VPS, Coolify, R2, respaldos y CI/CD listos (`07-preparacion/servidor.md`, `ci-cd.md`); producción configurada, sin publicar. Revisado desde afuera el 13/11: puertos internos cerrados, SSH solo con llave y encabezados de seguridad. Desde el 14/11, pruebas y Coolify detrás del proxy de Cloudflare, y el firewall solo para Cloudflare. Falta la reunión de accesos con el dueño y la restauración de prueba (RNF-06) |
 | Entrega 1: Web (B1 a B6) | ✅ Programada, pulida y ajustada con los pedidos del dueño (1 a 11, 33 a 36, 38, 48 y 49) |
 | Entrega 2: Gestión (C1 a C6) | ✅ Programada, con la consistencia del panel (C6, 08/11) y el pulido final de sus pantallas, una por una (09 al 13/11, `pulido-visual.md`, 13.30 a 13.58) |
 | Pedidos del dueño (`03-cierre-comercial/registro-de-cambios.md`) | ✅ **Hechos:** 1 a 13, 17, 20, 21, 23, 24, 26 a 28, 30, 31 (parte 1) y 32 a 50. **Descartado:** 25. **Ya no aplica:** 18. **Esperan al dueño:** 14, 15 y 16 (Sistema completo), 19, 22, 29 y 31 (parte 2) |
@@ -34,13 +34,13 @@ Con la Entrega 2 se acepta también la Entrega 1. Lo que falta, en orden.
 
 **Lo hace YankoSoft (no depende del dueño):**
 
-1. **SEO y rendimiento antes de publicar** (pulido 13.59, 13/11): ✅ canonical e imagen para compartir en todas las páginas, la foto de la portada con prioridad alta y la versión de 1080 px para el celular. Lighthouse móvil, en la build local: 91 y 92 con el frenado real y 83 a 86 simulado (la portada llega en dos partes, por «Abierto ahora»). Falta medirlo en pruebas y en producción.
+1. **SEO y rendimiento antes de publicar** (pulido 13.59, 13/11): ✅ canonical e imagen para compartir en todas las páginas, la foto de la portada con prioridad alta y la versión de 1080 px para el celular. Lighthouse móvil de la portada en pruebas, con Cloudflare (14/11): 83 simulado y 83–85 con el frenado real (91–92 en la build local). Lo que falta para 90 en pruebas es la distancia: el HTML de la portada se arma en cada visita (por «Abierto ahora») en el servidor de Alemania. Se vuelve a medir en producción.
 2. **Prueba completa a mano** con `09-pruebas/criterios-entrega-2.md` (y los ⚠️/⏳ de `criterios-entrega-1.md`) en pruebas: dueño y encargado con cada perfil (Taller, Atención, Todo), en un Android y un iPhone. Cubre lo que solo se ve en un celular real: compartir el PDF (27.3), comprobante con la cámara (32.5), checklist con fotos (33.6), PDF impreso en A4 (26.4), instalar la app (B2), los modales con el teclado del iPhone y subir el video de la portada.
 3. **Datos de demostración en pruebas** (`datos:demo`), para la demo y la capacitación.
 4. **Capacitación:** la guía (`10-lanzamiento/capacitacion.md`) y el Manual del panel con capturas (`/panel/manual`, pedido 44) están escritos (11/11). Falta darla con el dueño y los encargados.
 5. **Actas:** los borradores (`09-pruebas/actas-de-aceptacion/`) están escritos (11/11), sin datos personales del dueño. Falta revisarlos con lo que salga de la prueba a mano y acordar la fecha de la demo y la firma.
 6. **En el servidor** (con el acceso SSH de YankoSoft): la restauración de prueba (RNF-06, `07-preparacion/servidor.md`), confirmar que Traefik pone `x-real-ip` y validar el JSON-LD con https en la herramienta de Google.
-7. **Con el dueño, decidir el proxy de Cloudflare** (hoy, solo DNS): protege contra ataques masivos y sirve las fotos más cerca de Bolivia. Necesita que los límites de intentos lean `CF-Connecting-IP` y que el servidor solo acepte a Cloudflare.
+7. **El proxy de Cloudflare:** ✅ encendido en pruebas el 14/11 (`07-preparacion/guia-de-despliegue.md`, paso 3b, con su estado): protección contra ataques masivos, la conexión segura cerca de Bolivia y el firewall de Hetzner solo para Cloudflare. Gratis. Al publicar, `@` y `www` en naranja con su secreto.
 
 **Lo decide o lo carga el dueño** (sin apuro: se avanza con lo de arriba mientras tanto):
 
