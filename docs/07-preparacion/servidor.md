@@ -50,6 +50,7 @@ Aplicado al servidor `toctar`. Todo lo que no está en la lista se descarta: un 
 - Salientes: todo permitido.
 - **El 8000** (panel de Coolify) estuvo abierto solo mientras se configuraba; se cerró el 24/10, cuando Coolify tuvo su dominio con https.
 - **El 3000 nunca se abre:** la app solo se alcanza por el proxy de Coolify.
+- **Con el proxy de Cloudflare (nube naranja, `guia-de-despliegue.md`, paso 3b):** el 80 y el 443 aceptan solo los rangos de Cloudflare; el 22 sigue abierto para SSH.
 - Cuando se creó, el firewall no traía la regla del 22 y SSH no respondía. Se agregó a mano.
 
 ## Qué se le hizo (23/10/2026)
@@ -107,7 +108,7 @@ Instalado con el instalador oficial (`curl -fsSL https://cdn.coollabs.io/coolify
 - **Variables de entorno** (15 por app; los valores secretos están solo en Coolify y en el gestor):
   - `SITIO_URL` y `SITIO_INDEXABLE`: las únicas con **Build time** encendido, porque la app las lee al compilar.
   - `BETTER_AUTH_URL`, `DUENO_INICIAL_USUARIO`, `DUENO_INICIAL_NOMBRE`, `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_BUCKET_PRIVADO`, `S3_URL_PUBLICA`.
-  - Secretas: `DATABASE_URL` (la URL interna de la base de **su** entorno), `BETTER_AUTH_SECRET` (**distinto** en cada entorno), `DUENO_INICIAL_CONTRASENA`, `S3_ACCESS_KEY_ID` y `S3_SECRET_ACCESS_KEY` (token `toctar-app`).
+  - Secretas: `DATABASE_URL` (la URL interna de la base de **su** entorno), `BETTER_AUTH_SECRET` (**distinto** en cada entorno), `ORIGEN_CLOUDFLARE_SECRETO` (con el proxy de Cloudflare, distinto en cada entorno; guía, paso 3b), `DUENO_INICIAL_CONTRASENA`, `S3_ACCESS_KEY_ID` y `S3_SECRET_ACCESS_KEY` (token `toctar-app`).
   - En todas: Runtime encendido e **Interpolation apagado** (si no, un `$` en un secreto se reemplaza sin avisar).
   - Producción: `DUENO_INICIAL_USUARIO=yerko.tejerina`. Convención de usuarios: `nombre.apellido`, en minúsculas, sin tildes ni ñ.
 - **Source commit availability** (Advanced → Build & deploy): **Runtime only**, por decisión del 05/11/2026. **Para el futuro:** pasarla a **Available during build** en las dos apps. Así el aviso de versión nueva del panel (pedido 39) usa el commit y no avisa cuando se recompila el mismo código (un redeploy manual o un cambio de variable). Mientras tanto usa la fecha de la compilación y avisa también en esos casos, sin romper nada. Para comprobarlo después: `https://pruebas.toctardetailing.com/api/version` muestra el commit en lugar de una fecha.
