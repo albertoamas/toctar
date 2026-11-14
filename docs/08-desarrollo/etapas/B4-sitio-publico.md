@@ -94,7 +94,7 @@ Ninguna nueva. Las acciones del panel (B2 y B3) ya invalidan las etiquetas que l
 
 - **Componentes nuevos** en `src/componentes/sitio/`, siguiendo el Design System:
   - `tarjeta-servicio.tsx`, con la imagen de reemplazo;
-  - `boton-whatsapp.tsx`, con el glifo oficial de WhatsApp en una tinta;
+  - `boton-whatsapp.tsx` (hoy `whatsapp.tsx`, `BotonWhatsApp`), con el glifo oficial de WhatsApp en una tinta;
   - `portada-arte.tsx`, con el arte de `Cover`;
   - `visor-galeria.tsx`, el único componente de cliente: un diálogo con el antes y el después (se quitó el 25/10: ver "Cambió después").
 - **Estilos:** las clases del Design System que faltan (`tt-boton`, `tt-tarjeta`, `tt-whatsapp`) se agregan a `globals.css`, con los mismos valores del `bundle.css` publicado.

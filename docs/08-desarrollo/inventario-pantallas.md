@@ -1,5 +1,9 @@
 # Inventario de pantallas del panel
 
+> **Revisión cerrada (10/11/2026), registro histórico.** Todos sus cambios (1 a 4d) están hechos y el código los cita por
+> número ("cambio 4b") como el porqué de cada pantalla. Las reglas que siguen valiendo (los tipos, los anchos y cómo se ve
+> cada forma) están en `06-diseno/sistema-del-panel.md`, que manda; si algo de aquí lo contradice, vale ese documento.
+
 Revisión del 10/11/2026, a pedido del desarrollador: las 40 pantallas del panel, con su formato en la computadora y en el celular, si se mantienen o cambian y si son consistentes con el resto. El objetivo es que todo el panel hable el mismo idioma y el usuario no se pierda. Es el documento de trabajo del pulido final: **mientras queden cambios abiertos aquí, las prioridades 4 y 5 de `plan-de-desarrollo.md` (punto 0) quedan en pausa**.
 
 El formato sale del código (las piezas que usa cada página) y del recorrido E2E (`recorrido-panel.spec.ts`: 37 pantallas en 4 anchos y 3 roles, sin desplazamiento horizontal). Las pantallas sin ✓ no se miraron en pantalla en esta ronda.

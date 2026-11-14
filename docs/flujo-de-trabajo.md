@@ -100,12 +100,11 @@ docs/
 │   ├── casos-de-uso/
 │   ├── historias-de-usuario/
 │   └── diagramas-de-secuencia/
-├── 06-diseno/
+├── 06-diseno/                   identidad visual y reglas del panel (el prototipo es el Design System, un artefacto)
 │   ├── modelo-de-datos/
-│   ├── arquitectura/
-│   └── prototipos/
-├── 07-preparacion/              entornos, dominio, hosting, cuentas
-├── 08-desarrollo/               planificación de ciclos y notas de avance
+│   └── arquitectura/
+├── 07-preparacion/              servidor, guía de despliegue y CI/CD
+├── 08-desarrollo/               plan, especificación de cada etapa y pedido (etapas/), pulido visual
 ├── 09-pruebas/
 │   └── actas-de-aceptacion/
 ├── 10-lanzamiento/              carga de datos, capacitación, manuales
@@ -114,12 +113,14 @@ docs/
 
 ## Estado actual
 
+Al 13/11/2026. El detalle, en `08-desarrollo/plan-de-desarrollo.md` ("Dónde estamos" y "Para cerrar la Entrega 2").
+
 - [x] 1. Descubrimiento
 - [x] 2. Propuesta
 - [x] 3. Cierre comercial: Web + Gestión (Bs 3.900), firmado y primer pago recibido (`acuerdo.md`)
-- [x] 4. Requerimientos: aprobados por el dueño
-- [ ] 5. Análisis: supuestos S-1 a S-5 respondidos (14/10); criterios de HU-01 a HU-18 se validan en la demo del 23/10 y HU-19 a HU-41 antes del 3/11
-- [x] 6. Diseño: modelo de datos, arquitectura (stack aprobado, con Docker) e identidad visual (`06-diseno/identidad-visual.md`); sin prototipo por decisión del usuario
-- [ ] 7. Preparación: dominio, VPS, Coolify, R2 y respaldos listos; pruebas en línea y producción sin publicar (`07-preparacion/servidor.md`). Falta darle sus accesos al dueño
-- [ ] 8. Desarrollo iterativo ← en curso: entrega 1 programada y pulida; entrega 2 programada (C1 a C4, la reorganización del panel, HU-39 a HU-41 y los pedidos 20 y 21) y pulida (grupos 7 a 13). Ajustes de la reunión con el dueño (`08-desarrollo/ajustes-reunion-dueno.md`), hechos el 01/11: cotización directa (PR #113), checklist al recibir (#114), firma al entregar (#115), fotos justas (#116), órdenes con historial (#117) y saldos con búsqueda (#118). Hechos después: el rediseño del panel (pedido 26, PR #125), dos roles sin técnico asignado (pedido 32, #129), los ajustes del sitio (pedidos 33 a 36, #131 a #134) y las correcciones de la auditoría QA (#135), el flujo del trabajo (pedido 31, parte 1, #137) y el cambio de dueño de un vehículo (pedido 37, #138). Cotizar sin registrar y vehículos sin placa (pedidos 31, parte 2, y 29) y los avisos automáticos (pedido 22, por cotizar) esperan al dueño. Sigue el cierre de C5: la lista "Para cerrar la Entrega 2" de `08-desarrollo/plan-de-desarrollo.md`
+- [x] 4. Requerimientos: aprobados por el dueño; los cambios posteriores, en `03-cierre-comercial/registro-de-cambios.md` (pedidos 1 a 50)
+- [ ] 5. Análisis: supuestos respondidos (14/10) y criterios de HU-01 a HU-41 escritos; falta que el dueño los valide en la demo del cierre
+- [x] 6. Diseño: modelo de datos, arquitectura (con Docker), identidad visual y reglas del panel; sin prototipo aparte por decisión del usuario (el Design System hace de prototipo)
+- [ ] 7. Preparación: dominio, VPS, Coolify, R2, respaldos y CI/CD listos; pruebas en línea y producción sin publicar (`07-preparacion/servidor.md`). Falta la reunión de accesos con el dueño y la restauración de prueba
+- [ ] 8. Desarrollo iterativo ← al cierre: todo lo programable de las dos entregas está en `develop`. Quedan SEO y rendimiento antes de publicar y lo que decide o carga el dueño
 - [ ] 9–11. Pruebas, lanzamiento y soporte (por entrega)

@@ -3,7 +3,7 @@
 - **Pedido:** 49 (`03-cierre-comercial/registro-de-cambios.md`), aprobado el 13/11/2026, **incluido** (sin costo).
 - **Historias:** HU-08 (textos del sitio), HU-16 (formulario de reclamo) y HU-18 (Google).
 - **Base:** el borrador `10-lanzamiento/politica-de-privacidad.md`.
-- **Estado:** hecho el 13/11/2026 (rama `pedido-49-privacidad`). Falta que el dueño revise el texto en el panel.
+- **Estado:** hecho el 13/11/2026 (PR #229). Falta que el dueño revise el texto en el panel.
 
 ## 1. Objetivo
 

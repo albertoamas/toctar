@@ -1,7 +1,7 @@
 # P21 Planes de mantenimiento por vehículo: especificación
 
 - **Fase y semana:** C. Entrega 2 · 27 de octubre de 2026, antes del grupo 13 del pulido y del cierre (C5)
-- **Estado:** aprobada (27/10/2026) y programada en la rama `pedido-21-planes-mantenimiento`
+- **Estado:** aprobada (27/10/2026) y hecha (PR #107)
 - **Pedido:** 21 de `03-cierre-comercial/registro-de-cambios.md` (absorbe el pedido 17 y el error del mantenimiento repetido)
 - **Historias que cambian:** HU-19 (catálogo), HU-36 (entregar), HU-38 (mantenimientos), HU-05 (parámetros), HU-23 (ficha del cliente)
 - **Base:**

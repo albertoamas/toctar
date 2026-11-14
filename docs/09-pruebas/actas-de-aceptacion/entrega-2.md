@@ -33,7 +33,7 @@ Los cambios que pidió el dueño durante el desarrollo y que quedaron hechos est
 
 - **Pruebas automáticas** en un celular (Pixel 7) y en una computadora, en cada cambio, con los flujos críticos de punta a punta: más de 430 pruebas, y ningún cambio entra si alguna falla.
 - **Revisión manual de YankoSoft** del ciclo completo con cada rol, a 390 y 1280 px (`criterios-entrega-2.md`).
-- **Reunión de revisión con el dueño** (01/11/2026): sus ajustes están hechos (`08-desarrollo/ajustes-reunion-dueno.md`).
+- **Reunión de revisión con el dueño** (01/11/2026): sus ajustes están hechos (pedidos 12, 13, 21, 23, 24, 26, 27, 28 y 30 de `03-cierre-comercial/registro-de-cambios.md`).
 - **Revisiones de seguridad y la auditoría de calidad** del 03/11/2026 (`09-pruebas/auditoria-qa-2026-11-03.md`).
 
 ## 3. Lo que queda pendiente al firmar

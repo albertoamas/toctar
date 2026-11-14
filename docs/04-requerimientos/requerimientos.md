@@ -64,7 +64,7 @@ Cada requisito tiene un código para rastrearlo hasta su historia de usuario y s
 | RF-21 | El personal registra vehículos de un cliente con placa, marca, modelo, año, color y tamaño. | 2 | Imprescindible | Cot, Enc-16 |
 | RF-22 | El personal busca clientes por nombre, teléfono o placa. | 2 | Imprescindible | Prop |
 | RF-23 | El sistema avisa si el teléfono o la placa ya están registrados, para evitar duplicados. | 2 | Imprescindible | — |
-| RF-24 | La ficha del cliente muestra sus vehículos y el historial de consultas, cotizaciones, órdenes y pagos. | 2 | Imprescindible | Cot |
+| RF-24 | La ficha del cliente muestra sus vehículos y el historial de cotizaciones, reservas, órdenes y pagos (sin consultas aparte desde el pedido 23). | 2 | Imprescindible | Cot |
 
 ### 2.5 Catálogo de servicios y precios (CA)
 
@@ -134,7 +134,7 @@ Cada requisito tiene un código para rastrearlo hasta su historia de usuario y s
 | RNF-04 | Todo el tráfico va por https; las contraseñas se guardan cifradas (hash); las sesiones vencen por inactividad. | Revisión de configuración |
 | RNF-05 | Los permisos se validan en el servidor, no solo ocultando botones. | Pruebas automáticas por rol |
 | RNF-06 | Se respalda a diario la base de datos y las fotos; se prueba una restauración antes del lanzamiento. | Restauración de prueba documentada |
-| RNF-07 | Las fotos se comprimen al subirlas; los videos tienen un tamaño máximo (a definir en el diseño). | Subida de prueba |
+| RNF-07 | Las fotos se comprimen al subirlas (WebP, con miniatura). El único video es el de la portada: hasta 20 MB, MP4 o MOV con H.264, o WebM (pedido 48; las consultas con video se quitaron con el pedido 23). | Subida de prueba |
 | RNF-08 | Todo en español, montos en Bs, fechas dd/mm/aaaa y hora de Bolivia (America/La_Paz). | Revisión |
 | RNF-09 | Funciona en las 2 últimas versiones de Chrome (Android y PC), Safari (iPhone) y Edge. | Revisión en cada navegador |
 | RNF-10 | Quedan registrados quién y cuándo crea o cambia cotizaciones, pagos y precios. | Revisión del historial |
@@ -157,7 +157,7 @@ Cada requisito tiene un código para rastrearlo hasta su historia de usuario y s
 | RN-08 | El recordatorio de mantenimiento solo aplica a los servicios que tienen uno en el catálogo (hoy el pulido y nano cerámico). Cada servicio dice cuál es su mantenimiento (otro servicio o él mismo) y cada cuántos meses, contados desde la entrega; cada vehículo tiene su plan, que se puede ajustar (otra frecuencia, otra fecha) y se repite al entregar cada mantenimiento. Cambió el 27/10/2026 (pedido 21): antes era un intervalo único para todo el negocio (3 meses). | Enc-7, pedido 21 |
 | RN-09 | El mantenimiento es un servicio cobrado del catálogo. | Enc-8 |
 | RN-10 | El sitio público no muestra precios ni testimonios. | Enc-20, Acl-3 |
-| RN-11 | El cliente no tiene cuenta ni reserva por su cuenta; el personal registra consultas y reservas. | Acl-5 |
+| RN-11 | El cliente no tiene cuenta ni reserva por su cuenta; el personal registra cotizaciones y reservas. | Acl-5 |
 | RN-12 | Quien no tiene el permiso de Pagos ni el de Cotizaciones no ve precios, montos ni saldos; cada módulo, solo con su permiso. (Hasta el 02/11/2026 decía: el técnico no ve precios, pagos ni datos de otros módulos; solo sus órdenes. Cambió con el pedido 32: no hay rol Técnico.) | Prop; confirmado 14/10; cambió el 02/11 (pedido 32) |
 | RN-13 | Una orden con saldo pendiente solo se marca como entregada si la autoriza el dueño o un encargado con el permiso "autorizar entrega con saldo". | Confirmado 14/10 ("el dueño o la persona a cargo del taller") |
 | RN-14 | Los registros con historial (clientes, servicios, usuarios) se desactivan, no se borran. | Prop |

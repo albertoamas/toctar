@@ -11,6 +11,8 @@
   - Casos de uso: CU-13, CU-14, CU-17. Flujo crítico 2 de `05-analisis/diagramas-de-secuencia/flujos-criticos.md`.
   - Decisión del 20/10 (`C1-catalogo-clientes.md` §12): la duración del catálogo es una estimación; solo sugiere la fecha de entrega, que se edita en cada reserva y se le da al cliente como aproximada.
 
+> **Vigencia (13/11/2026):** se escribió antes de pedidos posteriores que cambiaron parte de lo que dice: donde dice «consulta», hoy es la cotización directa, sin consulta aparte (`P23-cotizacion-directa.md`); donde dice «técnico», hoy es un encargado con el perfil Taller (dos roles, dueño y encargado: `P32-roles-sin-tecnico.md`). Si algo de aquí contradice esas especificaciones, valen ellas.
+
 Esta especificación se escribe al empezar la etapa, con lo aprendido en las anteriores. Se programa contra ella; si algo cambia durante la etapa, se corrige aquí primero.
 
 ## 1. Objetivo

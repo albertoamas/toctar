@@ -12,6 +12,8 @@
   - Decisión del 20/10 (`C1-catalogo-clientes.md` §12): "Extender la entrega" corre la fecha de fin y, si el espacio está ocupado, propone otro libre; si el trabajo termina antes, se marca listo y el espacio se libera.
   - Lo que dejó C3 (`C3-agenda-pagos.md` §13): pagos con comprobante, `estaPagada`, `RegistrarPago`, `CampoComprobante` y el tablero, que ya muestra el estado escrito cuando no es "agendado".
 
+> **Vigencia (13/11/2026):** se escribió antes de pedidos posteriores que cambiaron parte de lo que dice: donde dice «técnico», hoy es un encargado con el perfil Taller (dos roles, dueño y encargado: `P32-roles-sin-tecnico.md`). Si algo de aquí contradice esas especificaciones, valen ellas.
+
 Esta especificación se escribe al empezar la etapa, con lo aprendido en las anteriores. Se programa contra ella; si algo cambia durante la etapa, se corrige aquí primero.
 
 > **Cambió después (02/11/2026, pedido 32):** no se asigna un técnico a la reserva ni a la orden (se borró `trabajo.tecnico_id`) y no hay rol Técnico: todas las órdenes las ve y trabaja quien tiene el permiso de Órdenes. Especificación: `P32-roles-sin-tecnico.md`.

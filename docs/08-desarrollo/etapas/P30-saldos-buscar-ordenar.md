@@ -1,7 +1,7 @@
 # P30 Saldos pendientes: buscar y ordenar: especificación
 
-- **Fase y semana:** C. Entrega 2 · 1 de noviembre de 2026, punto 7 de los ajustes de la reunión con el dueño (`../ajustes-reunion-dueno.md`)
-- **Estado:** aprobada (01/11/2026) y en curso en la rama `pedido-30-saldos`
+- **Fase y semana:** C. Entrega 2 · 1 de noviembre de 2026, punto 7 de los ajustes de la reunión con el dueño del 01/11 (su pedido, en `03-cierre-comercial/registro-de-cambios.md`)
+- **Estado:** aprobada y hecha (01/11/2026, PR #118)
 - **Pedido:** 30 de `03-cierre-comercial/registro-de-cambios.md` ("le falta orden, buscar")
 - **Historia que cambia:** HU-37 (saldos pendientes)
 
