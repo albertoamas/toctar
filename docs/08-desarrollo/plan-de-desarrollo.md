@@ -40,7 +40,7 @@ Con la Entrega 2 se acepta también la Entrega 1. Lo que falta, en orden.
 4. **Capacitación:** la guía (`10-lanzamiento/capacitacion.md`) y el Manual del panel con capturas (`/panel/manual`, pedido 44) están escritos (11/11). Falta darla con el dueño y los encargados.
 5. **Actas:** los borradores (`09-pruebas/actas-de-aceptacion/`) están escritos (11/11), sin datos personales del dueño. Falta revisarlos con lo que salga de la prueba a mano y acordar la fecha de la demo y la firma.
 6. **En el servidor** (con el acceso SSH de YankoSoft): la restauración de prueba (RNF-06, `07-preparacion/servidor.md`), confirmar que Traefik pone `x-real-ip` y validar el JSON-LD con https en la herramienta de Google.
-7. **El proxy de Cloudflare:** ✅ encendido en pruebas el 14/11 (`07-preparacion/guia-de-despliegue.md`, paso 3b, con su estado): protección contra ataques masivos, la conexión segura cerca de Bolivia y el firewall de Hetzner solo para Cloudflare. Gratis. Al publicar, `@` y `www` en naranja con su secreto.
+7. **El proxy de Cloudflare:** ✅ encendido en pruebas el 14/11 (`07-preparacion/guia-de-despliegue.md`, paso 3b, con su estado): protección contra ataques masivos, la conexión segura cerca de Bolivia y el firewall de Hetzner solo para Cloudflare. Gratis. Producción quedó preparada el mismo día (`@` y `www` en naranja con su propio secreto): al publicar, solo desplegar.
 
 **Lo decide o lo carga el dueño** (sin apuro: se avanza con lo de arriba mientras tanto):
 
