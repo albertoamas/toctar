@@ -40,22 +40,30 @@ test("la política está en el mapa del sitio para Google", async ({ request }) 
   expect(mapa).toMatch(/<loc>[^<]+\/privacidad<\/loc>/);
 });
 
-test("el dueño cambia un texto de la política en el panel y el sitio lo muestra", async ({ page }, info) => {
+test("el dueño cambia una sección de la política en el panel, sin tocar las otras, y el sitio la muestra", async ({ page }, info) => {
   soloEscritorio(info);
   test.setTimeout(60_000);
   await ingresarComoDueno(page);
   await page.goto("/panel/sitio");
   await page.getByRole("navigation", { name: "Partes del sitio web" }).getByRole("link", { name: /^Privacidad/ }).click();
   await expect(page).toHaveURL(/\/panel\/sitio\/textos\?pagina=privacidad$/);
-  await page.getByRole("button", { name: "Editar política de privacidad" }).click();
-  const modal = page.getByRole("dialog", { name: "Política de privacidad" });
+  // Pulido 13.60: cada sección con su "Editar" y su modal con ese texto solo (antes, un modal con los 9)
+  await expect(page.getByRole("button", { name: /^Editar / })).toHaveCount(9);
+  const derechos = await page.getByRole("region", { name: "Tus derechos" }).textContent();
+  await page.getByRole("button", { name: "Editar cambios a esta política" }).click();
+  const modal = page.getByRole("dialog", { name: "Cambios a esta política" });
+  await expect(modal.getByRole("textbox")).toHaveCount(1);
   const campo = modal.getByLabel("Cambios a esta política");
   const original = await campo.inputValue();
   const nuevo = "Si cambiamos algo, lo publicamos aquí. Contáctanos en {negocio}.";
   await campo.fill(nuevo);
   await expect(campo).toHaveValue(nuevo);
-  await modal.getByRole("button", { name: "Guardar política de privacidad" }).click();
+  await modal.getByRole("button", { name: "Guardar sección" }).click();
   await expect(modal).toBeHidden();
+  await expect(page.getByText("Cambios a esta política: cambios guardados.")).toBeVisible();
+  // Las demás secciones quedan como estaban: se mira lo guardado (recargando), no lo que la pantalla tenía
+  await page.reload();
+  expect(await page.getByRole("region", { name: "Tus derechos" }).textContent()).toBe(derechos);
 
   try {
     // El sitio se renueva al guardar: se visita hasta verlo, con el nombre del negocio ya puesto
@@ -67,9 +75,25 @@ test("el dueño cambia un texto de la política en el panel y el sitio lo muestr
   } finally {
     // Vuelve el texto de antes, también si algo falló arriba: la página es una sola para todas las pruebas
     await page.goto("/panel/sitio/textos?pagina=privacidad");
-    await page.getByRole("button", { name: "Editar política de privacidad" }).click();
+    await page.getByRole("button", { name: "Editar cambios a esta política" }).click();
     await modal.getByLabel("Cambios a esta política").fill(original);
-    await modal.getByRole("button", { name: "Guardar política de privacidad" }).click();
+    await modal.getByRole("button", { name: "Guardar sección" }).click();
     await expect(modal).toBeHidden();
   }
+});
+
+test("una sección vacía da su error en el modal y no se guarda", async ({ page }, info) => {
+  soloEscritorio(info);
+  await ingresarComoDueno(page);
+  await page.goto("/panel/sitio/textos?pagina=privacidad");
+  // Se habilita al cargar la página (useHidratado): un toque antes no abriría el modal
+  await expect(page.getByRole("button", { name: "Editar quiénes somos" })).toBeEnabled();
+  await page.getByRole("button", { name: "Editar quiénes somos" }).click();
+  const modal = page.getByRole("dialog", { name: "Quiénes somos" });
+  await modal.getByLabel("Quiénes somos").fill("");
+  await modal.getByRole("button", { name: "Guardar sección" }).click();
+  await expect(modal.getByText("Escribe quiénes son.")).toBeVisible();
+  await expect(modal.getByLabel("Quiénes somos")).toBeFocused();
+  await modal.getByRole("button", { name: "Cancelar" }).click();
+  await expect(page.getByRole("region", { name: "Quiénes somos" })).not.toBeEmpty();
 });

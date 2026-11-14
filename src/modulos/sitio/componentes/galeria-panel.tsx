@@ -1,15 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState, useRef, useState, useSyncExternalStore, useTransition } from "react";
-import { CameraIcon, EyeOffIcon, PencilIcon, TrashIcon, UploadIcon, XIcon } from "lucide-react";
+import { useActionState, useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
+import { EyeOffIcon, PencilIcon, UploadIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { AvisoFoto, GuiaFoto } from "@/componentes/panel/guia-foto";
 import { VisorFotos } from "@/componentes/panel/visor-fotos";
-import { ZonaFoto } from "@/componentes/panel/zona-foto";
 import { Selector } from "@/componentes/panel/selector";
 import { achicarFoto, medidasDeFoto } from "@/componentes/panel/subida-foto";
 import { Button } from "@/componentes/ui/button";
@@ -20,7 +19,8 @@ import { nombreDelTrabajo } from "../galeria";
 import { cambiarVisibilidadGaleria, elegirParaPortada, eliminarGaleriaItem, guardarGaleriaItem, moverGaleriaItem, subirGaleria } from "../acciones";
 import { Insignia } from "@/componentes/panel/insignia";
 import { MenuMas, type AccionMas } from "@/componentes/panel/menu-mas";
-import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, ModalFormulario, PieModal, useCambioFueraDelFormulario, useCerrarModal } from "@/componentes/panel/modal-formulario";
+import { ElegirFoto } from "@/componentes/panel/elegir-foto";
 import { BarraLista } from "@/componentes/panel/barra-lista";
 import { CLASE_PILDORA, CLASE_PILDORA_ACTIVA } from "@/componentes/panel/filtros";
 import { cn } from "cn";
@@ -53,17 +53,17 @@ export function GaleriaPanel({ items, servicios, portadaId }: { items: ItemGaler
 
   return (
     <div className="flex flex-col gap-6">
-      {subiendo ? (
-        <SubirFotos servicios={servicios} alTerminar={() => setSubiendo(false)} />
-      ) : (
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <Button type="button" onClick={() => setSubiendo(true)}>
-            <UploadIcon />
-            Subir fotos
-          </Button>
-
-        </div>
-      )}
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <Button type="button" onClick={() => setSubiendo(true)}>
+          <UploadIcon />
+          Subir fotos
+        </Button>
+      </div>
+      {/* Pulido 13.61 (14/11): en un modal, que en el celular sube desde abajo. Antes, el formulario reemplazaba el botón
+          en medio de la página y empujaba la portada elegida y la lista */}
+      <ModalFormulario titulo="Subir fotos" abierto={subiendo} alCambiar={setSubiendo}>
+        <SubirFotos servicios={servicios} />
+      </ModalFormulario>
 
       {items.length > 0 && <PortadaElegida items={items} portadaId={portadaId} nombreDe={nombreDe} />}
 
@@ -408,9 +408,22 @@ function EliminarItem({ itemId }: { itemId: number }) {
 
 const sinSuscripcion = () => () => {};
 
-function SubirFotos({ servicios, alTerminar }: { servicios: Servicio[]; alTerminar: () => void }) {
+/** La vista previa de una foto elegida: un enlace local, que se libera al cambiar la foto o al desmontarse. */
+function useVistaDe(archivo: File | null): string | null {
+  const vista = useMemo(() => (archivo ? URL.createObjectURL(archivo) : null), [archivo]);
+  useEffect(() => () => {
+    if (vista) URL.revokeObjectURL(vista);
+  }, [vista]);
+  return vista;
+}
+
+function SubirFotos({ servicios }: { servicios: Servicio[] }) {
+  const cerrar = useCerrarModal();
   const [despues, setDespues] = useState<File | null>(null);
   const [antes, setAntes] = useState<File | null>(null);
+  // La vista de cada foto elegida: un enlace local del navegador, que se libera al cambiarla y al cerrar el modal
+  const vistaAntes = useVistaDe(antes);
+  const vistaDespues = useVistaDe(despues);
   // Las medidas de cada foto elegida, para avisar antes de subir. Se leen aparte: la última elegida es la que vale
   const [medidas, setMedidas] = useState<Record<"antes" | "despues", { ancho: number; alto: number } | null>>({ antes: null, despues: null });
   const ultima = useRef<Record<"antes" | "despues", File | null>>({ antes: null, despues: null });
@@ -421,6 +434,8 @@ function SubirFotos({ servicios, alTerminar }: { servicios: Servicio[]; alTermin
   const listo = useSyncExternalStore(sinSuscripcion, () => true, () => false);
   const e = estado.errores ?? {};
   useFocoEnError(formulario, estado);
+  // Las fotos no son campos del formulario: elegidas, el modal pregunta antes de cerrarse sin querer
+  useCambioFueraDelFormulario(!!antes || !!despues);
 
   async function elegir(lado: "antes" | "despues", archivo: File | null) {
     (lado === "antes" ? setAntes : setDespues)(archivo);
@@ -442,7 +457,7 @@ function SubirFotos({ servicios, alTerminar }: { servicios: Servicio[]; alTermin
         const r = await subirGaleria({}, datos);
         setEstado(r);
         avisarResultado(r);
-        if (r.ok) alTerminar();
+        if (r.ok) cerrar();
       } catch {
         setEstado({ mensaje: "No se pudieron subir las fotos. Revisa tu conexión y vuelve a intentar." });
       } finally {
@@ -452,22 +467,22 @@ function SubirFotos({ servicios, alTerminar }: { servicios: Servicio[]; alTermin
   }
 
   return (
-    <form ref={formulario} onSubmit={enviar} className="flex max-w-2xl flex-col gap-5 tt-tarjeta-panel p-4" noValidate aria-labelledby="subir-titulo">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <h2 id="subir-titulo" className="tt-titulo-seccion">Subir fotos</h2>
-          <p className="text-sm text-tinta-suave">Un par de antes y después, o solo la foto del resultado.</p>
-        </div>
-        <Button type="button" variant="ghost" size="icon" onClick={alTerminar} aria-label="Cerrar">
-          <XIcon />
-        </Button>
-      </div>
-
+    <form ref={formulario} onSubmit={enviar} className="flex flex-col gap-5" noValidate>
+      <p className="text-sm text-tinta-suave">Un par de antes y después, o solo la foto del resultado.</p>
       <GuiaFoto titulo="Cómo sacar estas fotos" consejo="El auto, al centro. Antes y después, desde el mismo lugar y la misma distancia." />
 
-      <div className="grid grid-cols-2 gap-3">
-        <ElegirFoto id="foto-antes" etiqueta="Antes (opcional)" archivo={antes} onChange={(f) => void elegir("antes", f)} error={e.antes} />
-        <ElegirFoto id="foto-despues" etiqueta="Después" archivo={despues} onChange={(f) => void elegir("despues", f)} error={e.despues} />
+      {/* Lado a lado desde la tableta; en el celular, una debajo de la otra (dos botones cada una no entran de a dos) */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-2">
+          <span className="text-sm font-semibold">
+            Antes <span className="font-normal text-tinta-suave">(opcional)</span>
+          </span>
+          <ElegirFoto id="foto-antes" de="del antes" vista={vistaAntes} alElegir={(f) => void elegir("antes", f)} quitable error={e.antes} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <span className="text-sm font-semibold">Después</span>
+          <ElegirFoto id="foto-despues" de="del después" vista={vistaDespues} alElegir={(f) => void elegir("despues", f)} quitable error={e.despues} />
+        </div>
       </div>
       {avisosDeGaleria(medidas.antes, medidas.despues).map((aviso) => (
         <AvisoFoto key={aviso}>{aviso}</AvisoFoto>
@@ -486,61 +501,13 @@ function SubirFotos({ servicios, alTerminar }: { servicios: Servicio[]; alTermin
       </Campo>
 
       {estado.mensaje && !estado.ok && <MensajeError id="subir-error">{estado.mensaje}</MensajeError>}
-      <div>
+      <PieModal>
         <Button type="submit" disabled={!listo || etapa !== null}>
           {etapa === "preparando" ? "Preparando fotos…" : etapa === "subiendo" ? "Subiendo…" : "Guardar en la galería"}
         </Button>
-      </div>
+        {/* Mientras achica y sube, no se cierra: se perdería la subida a medias */}
+        <CancelarModal enviando={etapa !== null} />
+      </PieModal>
     </form>
-  );
-}
-
-function ElegirFoto({ id, etiqueta, archivo, onChange, error }: { id: string; etiqueta: string; archivo: File | null; onChange: (f: File | null) => void; error?: string }) {
-  const [vista, setVista] = useState<string | null>(null);
-  const entrada = useRef<HTMLInputElement>(null);
-
-  function cambiar(elegido: File | null) {
-    onChange(elegido);
-    setVista((anterior) => {
-      if (anterior) URL.revokeObjectURL(anterior);
-      return elegido ? URL.createObjectURL(elegido) : null;
-    });
-  }
-
-  return (
-    <div className="flex flex-col gap-2">
-      <span className="text-sm font-semibold">{etiqueta}</span>
-      <ZonaFoto
-        id={id}
-        entrada={entrada}
-        nombreEntrada={`Archivo: ${etiqueta}`}
-        etiquetaVacia={`Elegir foto: ${etiqueta}`}
-        vista={vista ? { src: vista, alt: "" } : null}
-        invalida={!!error}
-        describedBy={error ? `${id}-error` : undefined}
-        alElegir={cambiar}
-      />
-      {archivo && (
-        <div className="flex flex-wrap gap-1">
-          <Button type="button" variant="outline" data-invalido={error ? true : undefined} aria-label={`Cambiar foto: ${etiqueta}`} onClick={() => entrada.current?.click()}>
-            <CameraIcon />
-            Cambiar
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            aria-label={`Quitar foto: ${etiqueta}`}
-            onClick={() => {
-              if (entrada.current) entrada.current.value = "";
-              cambiar(null);
-            }}
-          >
-            <TrashIcon />
-            Quitar
-          </Button>
-        </div>
-      )}
-      {error && <MensajeError id={`${id}-error`}>{error}</MensajeError>}
-    </div>
   );
 }

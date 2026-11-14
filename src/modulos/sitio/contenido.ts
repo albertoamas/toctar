@@ -76,6 +76,27 @@ export const CLAVES_PAGINA = Object.keys(PAGINAS) as Pagina[];
 export const PORTADA = "inicio" satisfies Pagina;
 
 /**
+ * Las páginas largas se editan sección por sección (pulido 13.60, 14/11): la privacidad tiene 9 textos, algunos de hasta
+ * 2.500 caracteres, y en un solo modal había que bajar por todo para corregir una palabra. Las demás tienen pocos campos
+ * cortos y siguen con un modal para toda la página.
+ */
+const PAGINAS_POR_SECCION: readonly Pagina[] = ["privacidad"];
+export const editaPorSeccion = (pagina: Pagina) => PAGINAS_POR_SECCION.includes(pagina);
+
+/** El campo de texto de una sección de una página que se edita por sección; null si no es una de ellas. */
+export function campoDeSeccion(pagina: Pagina, clave: string): CampoContenido | null {
+  if (!editaPorSeccion(pagina)) return null;
+  const campo = (PAGINAS[pagina].campos as readonly CampoContenido[]).find((c) => c.clave === clave);
+  return campo && campo.tipo !== "lista" ? campo : null;
+}
+
+/** La sección con su esquema, para validarla en el servidor. */
+export function seccionDePagina(pagina: Pagina, clave: string) {
+  const campo = campoDeSeccion(pagina, clave);
+  return campo ? { campo, esquema: esquemaCampo(campo) } : null;
+}
+
+/**
  * Las páginas con foto (`contenido_pagina.foto_archivo_id`): la portada lleva la foto del taller detrás del lema (HU-08),
  * y Nosotros la del equipo al lado de la historia (pedido de YankoSoft del 24/10). Sus textos en el panel.
  */

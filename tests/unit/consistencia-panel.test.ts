@@ -40,8 +40,6 @@ const ANCHOS_A_MANO: Record<string, number> = {
   "src/app/panel/page.tsx": 1,
   // El formulario público de reclamos: es del sitio, no del panel. Se queda, con este motivo
   "src/modulos/reclamos/componentes/formulario-reclamo.tsx": 2,
-  // "Subir fotos": un bloque dentro de la ficha (§1); más ancho, las fotos elegidas tapan el resto del formulario
-  "src/modulos/sitio/componentes/galeria-panel.tsx": 1,
 };
 
 /** Modales armados a mano: ninguno. Todo modal es `ModalFormulario` (C6, terminado el 08/11). */
@@ -55,8 +53,6 @@ const TITULOS_A_MANO: Record<string, number> = {
   "src/modulos/clientes/componentes/formulario-nuevo-cliente.tsx": 1,
   // La leyenda de un grupo de fotos
   "src/modulos/ordenes/componentes/formulario-publicar.tsx": 1,
-  // "Subir fotos": la cabecera dentro de su tarjeta, con su ayuda y el botón de cerrar
-  "src/modulos/sitio/componentes/galeria-panel.tsx": 1,
 };
 
 // Si una falla: con algo de más, usa la pieza común (o escribe aquí su motivo); con algo de menos, se baja de su lista.

@@ -11,8 +11,8 @@ import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
-import { guardarContenido } from "../acciones";
-import { PAGINAS, type CampoContenido, type ContenidoPagina, type Pagina } from "../contenido";
+import { guardarContenido, guardarSeccionContenido } from "../acciones";
+import { PAGINAS, campoDeSeccion, type CampoContenido, type ContenidoPagina, type Pagina } from "../contenido";
 
 // HU-08: textos de una página del sitio. Los campos salen del registro (src/modulos/sitio/contenido.ts).
 // Pulido 13.20: va en el modal de "Editar" de su página y lo cierra al guardar; la pantalla los muestra como texto.
@@ -77,6 +77,47 @@ export function FormularioContenido({ pagina, contenido }: { pagina: Pagina; con
       <PieModal>
         <Button type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : `Guardar ${def.titulo.toLowerCase()}`}
+        </Button>
+        <CancelarModal />
+      </PieModal>
+    </form>
+  );
+}
+
+/**
+ * Una sección de una página que se edita por sección (la privacidad, pulido 13.60): su texto solo, con su ayuda, en el
+ * modal de su "Editar". Guarda esa sección y no toca las demás (guardarSeccionContenido).
+ */
+export function FormularioSeccion({ pagina, clave, valor }: { pagina: Pagina; clave: string; valor: string }) {
+  const campo = campoDeSeccion(pagina, clave);
+  const cerrar = useCerrarModal();
+  const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
+    conAviso(guardarSeccionContenido, (r) => r.ok && cerrar()),
+    {},
+  );
+  const formulario = useRef<HTMLFormElement>(null);
+  useFocoEnError(formulario, estado);
+  if (!campo) return null;
+  const id = `${pagina}-${clave}`;
+  const error = estado.errores?.[clave];
+  return (
+    <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate>
+      <input type="hidden" name="pagina" value={pagina} />
+      <input type="hidden" name="seccion" value={clave} />
+      <Campo id={id} etiqueta={campo.etiqueta} error={error} ayuda={campo.ayuda}>
+        {/* Una sola sección: el campo con lugar para leerla entera mientras se corrige */}
+        <Textarea
+          id={id}
+          name={clave}
+          rows={campo.max > 1000 ? 12 : 6}
+          defaultValue={estado.valores?.[clave] ?? valor}
+          aria-invalid={!!error}
+          aria-describedby={error ? `${id}-error` : campo.ayuda ? `${id}-ayuda` : undefined}
+        />
+      </Campo>
+      <PieModal>
+        <Button type="submit" disabled={enviando}>
+          {enviando ? "Guardando…" : "Guardar sección"}
         </Button>
         <CancelarModal />
       </PieModal>

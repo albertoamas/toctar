@@ -5,11 +5,12 @@ import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { exigirModulo } from "@/lib/sesion";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
-import { FormularioContenido, TextosDePagina } from "@/modulos/sitio/componentes/formulario-contenido";
+import { FormularioContenido, FormularioSeccion, TextosDePagina } from "@/modulos/sitio/componentes/formulario-contenido";
 import { FotoDePagina } from "@/modulos/sitio/componentes/foto-pagina";
 import { VideoDePortada } from "@/modulos/sitio/componentes/video-portada";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
-import { CLAVES_PAGINA, llevaFoto, PAGINAS, PORTADA, type Pagina } from "@/modulos/sitio/contenido";
+import { CLAVES_PAGINA, editaPorSeccion, llevaFoto, PAGINAS, PORTADA, type CampoContenido, type ContenidoPagina, type Pagina } from "@/modulos/sitio/contenido";
+import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
 import { obtenerContenidos, obtenerFotosDePaginas, obtenerVideoDePortada } from "@/modulos/sitio/consultas";
 
 /** El título de la pestaña del navegador, el mismo que el de la pantalla: "Portada", o "Textos del sitio" si se ven todas. */
@@ -45,7 +46,9 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/sitio/textos">
     <>
       <EncabezadoPagina titulo={elegida ? PAGINAS[elegida].titulo : "Textos del sitio"} volver={{ href: "/panel/sitio", texto: "Sitio web" }} />
       <div className="flex flex-col gap-8">
-        {paginas.map((p) => (
+        {paginas.map((p) => editaPorSeccion(p) ? (
+          <SeccionesDePagina key={p} pagina={p} contenido={contenidos[p]} conTitulo={!elegida} />
+        ) : (
           <SeccionConEditar
             key={p}
             id={p}
@@ -68,5 +71,34 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/sitio/textos">
         ))}
       </div>
     </>
+  );
+}
+
+/**
+ * Una página larga (la privacidad), sección por sección (pulido 13.60): cada texto en su tarjeta, con su "Editar" y su
+ * modal con ese texto solo. Antes, un modal con los 9 textos. Con todas las páginas a la vista, su título arriba.
+ */
+function SeccionesDePagina({ pagina, contenido, conTitulo }: { pagina: Pagina; contenido: ContenidoPagina; conTitulo: boolean }) {
+  const campos = PAGINAS[pagina].campos as readonly CampoContenido[];
+  return (
+    <section aria-labelledby={conTitulo ? `${pagina}-titulo` : undefined} aria-label={conTitulo ? undefined : PAGINAS[pagina].titulo} className="flex flex-col gap-6">
+      {conTitulo && <CabeceraSeccion id={pagina} titulo={PAGINAS[pagina].titulo} />}
+      <p className="text-sm text-tinta-suave">{PAGINAS[pagina].descripcion} Cada sección se edita por separado.</p>
+      {campos.map((c) => (
+        <SeccionConEditar
+          key={c.clave}
+          id={`${pagina}-${c.clave}`}
+          titulo={c.etiqueta}
+          nivel={conTitulo ? 3 : 2}
+          claseRecuadro={conTitulo ? "bg-fondo" : undefined}
+          etiquetaEditar={`Editar ${c.etiqueta.toLowerCase()}`}
+          tituloModal={c.etiqueta}
+          // Los textos largos, en cuatro líneas: enteros en su "Editar" (como los de las demás páginas)
+          lectura={<p className="line-clamp-4 whitespace-pre-line">{contenido[c.clave] as string}</p>}
+        >
+          <FormularioSeccion pagina={pagina} clave={c.clave} valor={contenido[c.clave] as string} />
+        </SeccionConEditar>
+      ))}
+    </section>
   );
 }
