@@ -2,7 +2,7 @@
 
 import { cn } from "cn";
 import { useEffect, useId, useRef, useState } from "react";
-import { proporcionDe, tienenMismaForma } from "@/lib/formato-fotos";
+import { proporcionDe, srcSetFoto, tienenMismaForma } from "@/lib/formato-fotos";
 import type { UrlsFoto } from "@/lib/fotos";
 
 // Comparador de antes y después de la galería pública: una sola foto partida por una línea que se arrastra. A la
@@ -17,7 +17,7 @@ import type { UrlsFoto } from "@/lib/fotos";
 // `sola` (la portada, pedido de YankoSoft del 24/10; desde el pedido 34, también el primer par de la galería): la línea va y viene sola unas veces hasta que el visitante la
 // arrastra, la toca o la enfoca con el teclado; se pausa fuera de la pantalla y no se mueve con "reducir movimiento".
 
-type Foto = Pick<UrlsFoto, "url" | "miniatura" | "ancho" | "alto">;
+type Foto = Pick<UrlsFoto, "url" | "miniatura" | "mediana" | "ancho" | "alto">;
 
 const INICIO = 50;
 /** Píxeles de movimiento antes de decidir si el gesto es un arrastre de costado (línea) o un desplazamiento (página). */
@@ -44,6 +44,7 @@ export function ComparadorAntesDespues({
   sinAyuda = false,
   marco = false,
   formaMarco = "4 / 3",
+  prioritaria = false,
   sizes = "(min-width: 768px) 50vw, 100vw",
 }: {
   antes: Foto;
@@ -64,8 +65,10 @@ export function ComparadorAntesDespues({
   /** La forma del marco: 4:3 por defecto; cuadrado para las fotos verticales del celular en la galería (pedido 34),
       así no quedan con franjas a los costados. */
   formaMarco?: "4 / 3" | "1 / 1";
-  /** Qué ancho ocupa en la pantalla (atributo `sizes`): el navegador elige la versión de 640 px o la grande. */
+  /** Qué ancho ocupa en la pantalla (atributo `sizes`): el navegador elige la versión de 640, la de 1080 o la grande. */
   sizes?: string;
+  /** La foto más importante de la página (la portada): el navegador la pide antes que lo demás. Solo una por página. */
+  prioritaria?: boolean;
 }) {
   const [corte, setCorte] = useState(INICIO);
   // Una vez que el visitante la toca, la línea queda donde la deja: ya no se mueve sola
@@ -196,7 +199,8 @@ export function ComparadorAntesDespues({
         // El navegador tomó el gesto para desplazar la página: la línea no se toca
         onPointerCancel={() => (gesto.current = null)}
       >
-        <FotoComparada foto={despues} alt={`Después: ${descripcion}`} alFrente={alFrente} sizes={sizes} className={ajuste} />
+        {/* El después es lo primero que se ve: al frente (la portada), el navegador lo pide antes que lo demás */}
+        <FotoComparada foto={despues} alt={`Después: ${descripcion}`} alFrente={alFrente} prioritaria={prioritaria} sizes={sizes} className={ajuste} />
         {/* El antes encima, recortado hasta la línea */}
         <FotoComparada
           foto={antes}
@@ -258,9 +262,9 @@ export function ComparadorAntesDespues({
  * Una de las dos fotos, a todo el recuadro. Con sus dos versiones (640 px y la grande): el navegador elige según el
  * ancho que ocupa (`sizes`) y la densidad de la pantalla. Al frente carga enseguida; si no, al acercarse a la pantalla.
  */
-function FotoComparada(props: { foto: Foto; alt: string; alFrente: boolean; sizes: string; className: string; style?: React.CSSProperties }) {
-  const { foto, alt, alFrente, sizes, className, style } = props;
-  const srcSet = foto.miniatura === foto.url ? undefined : `${foto.miniatura} 640w, ${foto.url} ${foto.ancho ?? 1600}w`;
+function FotoComparada(props: { foto: Foto; alt: string; alFrente: boolean; prioritaria?: boolean; sizes: string; className: string; style?: React.CSSProperties }) {
+  const { foto, alt, alFrente, prioritaria = false, sizes, className, style } = props;
+  const srcSet = srcSetFoto(foto);
   return (
     // eslint-disable-next-line @next/next/no-img-element -- next/image no arma este srcSet (las fotos van sin su optimizador)
     <img
@@ -270,6 +274,7 @@ function FotoComparada(props: { foto: Foto; alt: string; alFrente: boolean; size
       alt={alt}
       draggable={false}
       loading={alFrente ? undefined : "lazy"}
+      fetchPriority={prioritaria ? "high" : undefined}
       className={`absolute inset-0 size-full ${className}`}
       style={style}
     />

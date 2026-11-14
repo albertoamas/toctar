@@ -13,11 +13,13 @@ import { proporcionDe } from "@/lib/formato-fotos";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
 import { filtrarPorServicio, formaDelPar, nombreDelTrabajo, separarPares, serviciosConFotos } from "@/modulos/sitio/galeria";
 import { galeriaPublica, type FotoGaleria } from "@/modulos/sitio/publico";
+import { metadatosPagina } from "@/lib/sitio";
 
-export const metadata: Metadata = {
-  title: "Galería",
-  description: "Trabajos reales de TocTar Detailing en Tarija: fotos de antes y después de cada servicio.",
-};
+export const metadata: Metadata = metadatosPagina({
+  titulo: "Galería",
+  descripcion: "Trabajos reales de TocTar Detailing en Tarija: fotos de antes y después de cada servicio.",
+  ruta: "/galeria",
+});
 
 // HU-12 Galería pública (RF-04): fotos visibles de servicios visibles, filtrables por servicio, y un cierre para
 // pedir lo mismo. El filtro son enlaces (?servicio=<slug>): funciona sin JavaScript.

@@ -8,11 +8,13 @@ import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
 import { PAGINAS } from "@/modulos/sitio/contenido";
 import { contenidoConFechaPublico } from "@/modulos/sitio/publico";
 import { bloquesDeTexto, conDatosDelNegocio, type DatosParaTexto } from "@/modulos/sitio/texto-con-formato";
+import { metadatosPagina } from "@/lib/sitio";
 
-export const metadata: Metadata = {
-  title: "Política de privacidad",
-  description: "Qué datos guarda el taller, para qué los usa, quién los ve y cómo pedir que se corrijan o se borren.",
-};
+export const metadata: Metadata = metadatosPagina({
+  titulo: "Política de privacidad",
+  descripcion: "Qué datos guarda el taller, para qué los usa, quién los ve y cómo pedir que se corrijan o se borren.",
+  ruta: "/privacidad",
+});
 
 // Pedido 49 (P49-politica-de-privacidad.md). El texto sale del panel (Sitio web > Textos > Privacidad), una sección por
 // campo con su título; los datos del negocio, entre llaves, de Configuración. "Última actualización": cuándo se guardó.

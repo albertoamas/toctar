@@ -5,6 +5,7 @@ import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { db } from "@/db";
 import { usuario, usuarioPermiso } from "@/db/esquema";
 import { auth } from "@/lib/auth";
+import { completarMedianas } from "@/lib/fotos";
 import { correoInterno, esquemaContrasena, esquemaNombreUsuario } from "@/lib/usuarios";
 
 // Tareas de arranque del servidor (src/instrumentation.ts).
@@ -20,6 +21,21 @@ export async function prepararAlArrancar() {
   }
   await crearDuenoInicial();
   await recuperarDueno();
+  await completarVersionesDelCelular();
+}
+
+/**
+ * Las fotos del sitio sin la versión de 1080 px (las subidas antes del 13/11) la reciben antes de atender, hasta 15 s:
+ * las páginas que guarda la caché ya salen con ella. Un error no frena el arranque: el sitio sigue con las de antes.
+ */
+async function completarVersionesDelCelular() {
+  try {
+    const { hechas, quedan } = await completarMedianas(15_000);
+    if (hechas > 0) console.log(`[arranque] ${hechas} fotos del sitio con su versión para el celular.`);
+    if (quedan > 0) console.log(`[arranque] Quedan ${quedan} fotos para el próximo arranque.`);
+  } catch (error) {
+    console.error("[arranque] No se completaron las versiones para el celular", error);
+  }
 }
 
 /**

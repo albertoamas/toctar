@@ -69,7 +69,8 @@ function sumarMeses(fecha, meses) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Fotos: como guardarFoto (src/lib/fotos.ts): WebP de 1600 px y miniatura de 640, registradas en `archivo`
+// Fotos: como guardarFoto (src/lib/fotos.ts): WebP de 1600 px, miniatura de 640 y, en las del sitio, la de 1080 para el
+// celular (si la foto es bastante más grande que eso), registradas en `archivo`
 
 const EXTENSIONES = [".webp", ".jpg", ".jpeg", ".png"];
 
@@ -87,15 +88,18 @@ async function subirFoto(nombre, carpeta, autorId, { imagen = null, privado = fa
   const bucket = privado ? process.env.S3_BUCKET_PRIVADO : process.env.S3_BUCKET;
   const convertir = (lado) =>
     sharp(original).rotate().resize({ width: lado, height: lado, fit: "inside", withoutEnlargement: true }).webp({ quality: 85 }).toBuffer({ resolveWithObject: true });
-  const [grande, chica] = await Promise.all([convertir(1600), convertir(640)]);
+  // La regla de llevaMediana (src/lib/fotos.ts): un .mjs no importa TypeScript. Si cambia allá, cambia aquí
+  const [grande, chica, mediana] = await Promise.all([convertir(1600), convertir(640), privado ? null : convertir(1080)]);
+  const conMediana = !!mediana && Math.max(grande.info.width, grande.info.height) > 1080 * 1.15;
   const clave = `${carpeta}/${randomUUID()}`;
   const subir = (k, cuerpo) => s3.send(new PutObjectCommand({ Bucket: bucket, Key: k, Body: cuerpo, ContentType: "image/webp" }));
   await subir(`${clave}.webp`, grande.data);
   await subir(`${clave}-640.webp`, chica.data);
+  if (conMediana) await subir(`${clave}-1080.webp`, mediana.data);
   const fila = await uno(
-    `insert into archivo (clave, tipo_mime, bytes, ancho, alto, miniatura_clave, privado, created_by)
-     values ($1, 'image/webp', $2, $3, $4, $5, $6, $7) returning id`,
-    [`${clave}.webp`, grande.info.size, grande.info.width, grande.info.height, `${clave}-640.webp`, privado, autorId],
+    `insert into archivo (clave, tipo_mime, bytes, ancho, alto, miniatura_clave, mediana_clave, privado, created_by)
+     values ($1, 'image/webp', $2, $3, $4, $5, $6, $7, $8) returning id`,
+    [`${clave}.webp`, grande.info.size, grande.info.width, grande.info.height, `${clave}-640.webp`, conMediana ? `${clave}-1080.webp` : null, privado, autorId],
   );
   return fila.id;
 }

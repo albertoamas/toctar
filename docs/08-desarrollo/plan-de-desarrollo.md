@@ -34,7 +34,7 @@ Con la Entrega 2 se acepta también la Entrega 1. Lo que falta, en orden.
 
 **Lo hace YankoSoft (no depende del dueño):**
 
-1. **SEO y rendimiento antes de publicar.** Lighthouse móvil de la portada en pruebas, el 13/11: 85 de rendimiento (RNF-02 pide 90), 100 de accesibilidad y de buenas prácticas (el SEO da 66 solo porque pruebas no se indexa, a propósito). La foto del trabajo destacado se descubre tarde y pesa de más. Además, las páginas principales no tienen etiqueta canónica ni imagen para compartir (`og:image`): la portada mandada por WhatsApp sale sin foto.
+1. **SEO y rendimiento antes de publicar** (pulido 13.59, 13/11): ✅ canonical e imagen para compartir en todas las páginas, la foto de la portada con prioridad alta y la versión de 1080 px para el celular. Lighthouse móvil, en la build local: 91 y 92 con el frenado real y 83 a 86 simulado (la portada llega en dos partes, por «Abierto ahora»). Falta medirlo en pruebas y en producción.
 2. **Prueba completa a mano** con `09-pruebas/criterios-entrega-2.md` (y los ⚠️/⏳ de `criterios-entrega-1.md`) en pruebas: dueño y encargado con cada perfil (Taller, Atención, Todo), en un Android y un iPhone. Cubre lo que solo se ve en un celular real: compartir el PDF (27.3), comprobante con la cámara (32.5), checklist con fotos (33.6), PDF impreso en A4 (26.4), instalar la app (B2), los modales con el teclado del iPhone y subir el video de la portada.
 3. **Datos de demostración en pruebas** (`datos:demo`), para la demo y la capacitación.
 4. **Capacitación:** la guía (`10-lanzamiento/capacitacion.md`) y el Manual del panel con capturas (`/panel/manual`, pedido 44) están escritos (11/11). Falta darla con el dueño y los encargados.

@@ -4,11 +4,13 @@ import { Suspense } from "react";
 import { TituloPagina } from "@/componentes/sitio/titulo-pagina";
 import { FormularioReclamo } from "@/modulos/reclamos/componentes/formulario-reclamo";
 import { serviciosPublicos } from "@/modulos/sitio/publico";
+import { metadatosPagina } from "@/lib/sitio";
 
-export const metadata: Metadata = {
-  title: "Garantía y reclamos",
-  description: "Respaldamos cada trabajo. Si necesitas que revisemos algo, cuéntanos y te respondemos por WhatsApp.",
-};
+export const metadata: Metadata = metadatosPagina({
+  titulo: "Garantía y reclamos",
+  descripcion: "Respaldamos cada trabajo. Si necesitas que revisemos algo, cuéntanos y te respondemos por WhatsApp.",
+  ruta: "/garantia",
+});
 
 // HU-16 Formulario de reclamo (RF-07). El reclamo queda pendiente en el panel (HU-17).
 // Llega entera, con el título: nada aparece suelto antes que el resto (pulido 2.1 y 2.5, revisión de YankoSoft).

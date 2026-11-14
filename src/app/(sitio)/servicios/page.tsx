@@ -6,11 +6,13 @@ import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { TarjetaServicio } from "@/componentes/sitio/tarjeta-servicio";
 import { WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import { serviciosPublicos } from "@/modulos/sitio/publico";
+import { metadatosPagina } from "@/lib/sitio";
 
-export const metadata: Metadata = {
-  title: "Servicios",
-  description: "Los servicios de detailing de TocTar Detailing en Tarija: en qué consiste cada uno y cómo lo hacemos. Escríbenos por WhatsApp para cotizar.",
-};
+export const metadata: Metadata = metadatosPagina({
+  titulo: "Servicios",
+  descripcion: "Los servicios de detailing de TocTar Detailing en Tarija: en qué consiste cada uno y cómo lo hacemos. Escríbenos por WhatsApp para cotizar.",
+  ruta: "/servicios",
+});
 
 // Todos los servicios visibles del sitio (HU-10, HU-11), y un cierre para quien no sabe cuál elegir.
 // Llega entera, con el título: nada aparece suelto antes que el resto (pulido 2.1 y 2.5, revisión de YankoSoft).

@@ -54,6 +54,25 @@ test("cada página pública lleva su título y su descripción dentro del head, 
   expect(descripciones.size).toBe(7); // ninguna repetida
 });
 
+// Pulido de SEO (13/11): cada página dice su dirección canónica y lleva su tarjeta para compartir. Antes solo la página de
+// un servicio: la portada mandada por WhatsApp salía sin foto. Con el agente de WhatsApp, que recibe el head completo
+test("cada página pública lleva su dirección canónica y su imagen para compartir por WhatsApp", async ({ request }) => {
+  for (const ruta of ["/", "/servicios", "/galeria", "/nosotros", "/preguntas-frecuentes", "/contacto", "/garantia", "/privacidad"]) {
+    const html = await (await request.get(ruta, { headers: { "user-agent": "WhatsApp/2.24.1 A" } })).text();
+    const head = html.slice(0, html.indexOf("</head>"));
+    const canonica = head.match(/<link rel="canonical" href="([^"]+)"/)?.[1];
+    // Next la escribe sin la barra final ("https://dominio" en la portada): es la misma dirección
+    expect(canonica?.replace(/\/$/, ""), ruta).toBe(new URL(ruta, canonica).toString().replace(/\/$/, ""));
+    expect(head, ruta).toMatch(/<meta property="og:image" content="[^"]+\/compartir\.jpg"/);
+    expect(head, ruta).toContain('<meta property="og:image:width" content="1200"');
+    expect(head, ruta).toContain('<meta name="twitter:card" content="summary_large_image"');
+  }
+  // La imagen existe y es la de 1200 x 630
+  const imagen = await request.get("/compartir.jpg");
+  expect(imagen.status()).toBe(200);
+  expect(imagen.headers()["content-type"]).toBe("image/jpeg");
+});
+
 test("la página de un servicio entrega título, descripción y vista previa dentro del head a WhatsApp y a los buscadores", async ({ request }) => {
   // Lee la base: Next manda la metadata en streaming a los navegadores y bloqueando a los bots que solo leen el
   // head (su lista incluye WhatsApp, Facebook, Bing y los rastreadores de Google). Googlebot ejecuta JavaScript y

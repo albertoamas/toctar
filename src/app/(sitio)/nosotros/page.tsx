@@ -9,11 +9,13 @@ import { Monograma } from "@/componentes/sitio/iconos-marca";
 import { WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import { FOTOS_DE_PAGINA } from "@/modulos/sitio/contenido";
 import { contenidoPublico, fotoDePaginaPublica } from "@/modulos/sitio/publico";
+import { metadatosPagina } from "@/lib/sitio";
 
-export const metadata: Metadata = {
-  title: "Nosotros",
-  description: "Quiénes somos, cómo trabajamos y por qué elegir TocTar Detailing en Tarija.",
-};
+export const metadata: Metadata = metadatosPagina({
+  titulo: "Nosotros",
+  descripcion: "Quiénes somos, cómo trabajamos y por qué elegir TocTar Detailing en Tarija.",
+  ruta: "/nosotros",
+});
 
 // HU-13 Nosotros (RF-02): historia, cómo trabajan y por qué elegirlos. Los textos salen del panel (HU-08), y la foto del
 // equipo también (pedido de YankoSoft del 24/10): al lado de la historia en la computadora, debajo en el celular.
