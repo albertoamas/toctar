@@ -363,7 +363,7 @@ Los errores del 26 y 27 de octubre (pulido visual de la Entrega 2) están en `cr
 ## Lo que falta para el acta
 
 1. La revisión manual de YankoSoft con esta lista, en `pruebas.toctardetailing.com`, con los dos roles (el encargado con cada perfil; pedido 32).
-2. Las pruebas en un celular real (⏳ de 26.4, 27.3, 32.5, 33.6, 36.5 y el ciclo completo).
+2. Las pruebas en un celular real (⏳ de 26.4, 27.3, 32.5, 33.6, 36.5 y el ciclo completo), paso por paso en `prueba-en-celulares.md`.
 3. Lo que carga o confirma el dueño (⏳ de 20.4, 26.6 y 38.6).
 4. Los pedidos que el dueño apruebe antes del acta (29, 31, 19), con sus criterios en esta lista.
 5. La validación de esta lista por el dueño en la demo, y el acta (`actas-de-aceptacion/entrega-2.md`).
