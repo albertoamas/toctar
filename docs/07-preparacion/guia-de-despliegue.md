@@ -63,8 +63,8 @@ En el dominio → DNS → Records, crear registros **A** apuntando a la IP del V
 |---|---|---|
 | `@` | IP del VPS | **DNS only** (nube gris) |
 | `www` | IP del VPS | DNS only |
-| `pruebas` | IP del VPS | DNS only |
-| `coolify` | IP del VPS | DNS only |
+| `pruebas` | IP del VPS | DNS only (desde el 14/11, Proxied: paso 3b) |
+| `coolify` | IP del VPS | DNS only (desde el 14/11, Proxied: paso 3b) |
 
 **Al crearlos, con el proxy apagado (nube gris):** Coolify saca los certificados https solo, y así se comprueba que el servidor responde. El proxy se enciende después, en el paso 3b.
 
@@ -98,6 +98,8 @@ Comprobar desde la PC: `nslookup pruebas.<dominio>` devuelve la IP del VPS.
 - Un despliegue desde GitHub Actions termina bien.
 - Lighthouse móvil de la portada, para comparar con lo medido sin proxy (pulido 13.59).
 - Después del paso 6: `curl -m 5 https://<IP del servidor>/ -k` desde la PC **no** responde.
+
+**Estado (14/11/2026): hecho en pruebas.** El secreto de origen en Coolify (Literal, solo en Runtime) y su regla para `pruebas.<dominio>`; SSL en Full (strict), "Always Use HTTPS" apagado, TLS mínimo 1.2 y Bot Fight Mode apagado; `pruebas` y `coolify` en naranja (el despliegue desde GitHub Actions anduvo sin regla de excepción); y el firewall de Hetzner con 80 y 443 solo para Cloudflare (22 sin tocar). Comprobado: el sitio, el panel, `/api/salud` y Coolify responden por Cloudflare; por la IP del servidor, 80 y 443 ya no responden; SSH sigue con llave. Medido desde Bolivia: la conexión segura bajó de 0,49 a 0,27 s y la portada completa de 1,4–1,7 a 1,0–1,1 s; Lighthouse móvil de la portada, 76 → 83 simulado y 83 → 83–85 con el frenado real (el HTML de la portada sigue yendo a Alemania en cada visita: se arma al momento por «Abierto ahora»). **Falta, al publicar:** `@` y `www` en naranja, cada uno con la regla del secreto de producción (su propio `ORIGEN_CLOUDFLARE_SECRETO` en la app de producción). Con el firewall puesto, en gris no responderían.
 
 **Volver atrás:** en Cloudflare → DNS, el registro a "DNS only" (nube gris): cambia en un par de minutos. Si ya se hizo el paso 6, devolver también las reglas de 80 y 443 a "Any" (si no, con la nube gris el sitio deja de responder; y el despliegue desde GitHub llega a Coolify por la nube gris solo con esas reglas abiertas). El secreto en Coolify puede quedar: sin la regla de Cloudflare, no hace nada.
 

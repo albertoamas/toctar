@@ -255,7 +255,7 @@
 | Requisito | Cómo se comprueba | Estado |
 |---|---|---|
 | RNF-01 Celular desde 360 px y computadora | Todas las pruebas E2E corren en celular (Pixel 7) y en escritorio; revisión visual en cada etapa | 🟢 al día |
-| RNF-02 Sitio rápido en 4G (Lighthouse ≥ 90) | Lighthouse móvil local (14/10): portada, servicio, galería, nosotros y contacto con 91 de rendimiento. 13/11, con la portada nueva: 85 en pruebas; tras el pulido 13.59, en la build local, 91 y 92 con la red y el procesador frenados de verdad y 83 a 86 con la simulación (la portada llega en dos partes, por «Abierto ahora»). Se vuelve a medir en producción | ⚠️ (91 real, 85 simulado) |
+| RNF-02 Sitio rápido en 4G (Lighthouse ≥ 90) | Lighthouse móvil local (14/10): portada, servicio, galería, nosotros y contacto con 91 de rendimiento. 13/11, con la portada nueva: 85 en pruebas; tras el pulido 13.59, en la build local, 91 y 92 con el frenado real y 83 a 86 simulado. 14/11, en pruebas detrás de Cloudflare: 83 simulado y 83 a 85 con el frenado real (el HTML de la portada se arma en cada visita en Alemania, por «Abierto ahora»). Se vuelve a medir en producción | ⚠️ (91 local; 83–85 en pruebas) |
 | RNF-03 Instalable; aviso claro sin conexión | E2E `hu-06`; instalación real con https en A3 | ✅ (falta la prueba en el celular) |
 | RNF-04 https, contraseñas con hash, sesión que vence | Hash scrypt de Better Auth; sesión de 7 días; límite de intentos de ingreso (1.6); encabezados de seguridad, incluido HSTS (E2E `seguridad`); https en el entorno de pruebas (A3) | 🟢 parcial (falta https, A3) |
 | RNF-05 Permisos validados en el servidor | Unitarias `permisos` (matriz completa) y E2E de acceso por URL | ✅ |
