@@ -121,8 +121,8 @@ test("el trabajo elegido en la galería del panel se compara arriba en la portad
   for (const descripcion of [primero, elegido]) {
     await page.getByRole("button", { name: "Subir fotos" }).click();
     await expect(page.getByRole("button", { name: "Guardar en la galería" })).toBeEnabled();
-    await page.getByLabel("Archivo: Antes (opcional)").setInputFiles(foto("antes.png"));
-    await page.getByLabel("Archivo: Después").setInputFiles(foto("despues.png"));
+    await page.getByLabel("Galería para la foto del antes").setInputFiles(foto("antes.png"));
+    await page.getByLabel("Galería para la foto del después").setInputFiles(foto("despues.png"));
     await page.getByLabel("Servicio").selectOption({ label: "Pulido y nano cerámico" });
     await page.getByLabel("Descripción").fill(descripcion);
     await page.getByRole("button", { name: "Guardar en la galería" }).click();

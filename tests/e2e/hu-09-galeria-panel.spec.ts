@@ -34,16 +34,16 @@ test("la guía dice cómo sacar las fotos, y elegir una vertical o dos de distin
   await expect(page.getByRole("button", { name: "Guardar en la galería" })).toBeEnabled();
   await expect(page.getByText(/^Formato 4:3, con el celular acostado\./)).toBeVisible();
 
-  await page.getByLabel("Archivo: Después").setInputFiles(await imagen("vertical.png", 30, 40));
+  await page.getByLabel("Galería para la foto del después").setInputFiles(await imagen("vertical.png", 30, 40));
   await expect(page.getByText(vertical)).toBeVisible();
-  await page.getByLabel("Archivo: Antes (opcional)").setInputFiles(await imagen("horizontal.png", 40, 30));
+  await page.getByLabel("Galería para la foto del antes").setInputFiles(await imagen("horizontal.png", 40, 30));
   await expect(page.getByText(distintas)).toBeVisible();
   // Corregida, los avisos se van
-  await page.getByLabel("Archivo: Después").setInputFiles(await imagen("otra.png", 40, 30));
+  await page.getByLabel("Galería para la foto del después").setInputFiles(await imagen("otra.png", 40, 30));
   await expect(page.getByText(vertical)).toHaveCount(0);
   await expect(page.getByText(distintas)).toHaveCount(0);
   // No bloquea: el botón sigue habilitado con el aviso a la vista
-  await page.getByLabel("Archivo: Después").setInputFiles(await imagen("vertical.png", 30, 40));
+  await page.getByLabel("Galería para la foto del después").setInputFiles(await imagen("vertical.png", 30, 40));
   await expect(page.getByText(vertical)).toBeVisible();
   await expect(page.getByRole("button", { name: "Guardar en la galería" })).toBeEnabled();
 });
@@ -54,17 +54,18 @@ test("se puede soltar una foto en la zona, cambiarla y quitarla; lo que no es un
   await page.getByRole("button", { name: "Subir fotos" }).click();
   await expect(page.getByRole("button", { name: "Guardar en la galería" })).toBeEnabled();
   const zona = page.locator("[data-zona-foto]").first();
-  // Vacía invita a usarla, con lo que acepta
-  await expect(zona).toContainText("JPG, PNG o WebP");
+  // Vacía, los dos botones del selector (pulido 13.61): la cámara y la galería del teléfono
+  await expect(zona.getByRole("button", { name: "Tomar foto del antes" })).toBeVisible();
+  await expect(zona.getByRole("button", { name: "Elegir de la galería del antes" })).toBeVisible();
 
   const pdf = await archivosArrastrados(page, [{ name: "lista.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF") }]);
   await zona.dispatchEvent("dragenter", { dataTransfer: pdf });
   await expect(zona).toContainText("Suelta la foto aquí");
   await zona.dispatchEvent("drop", { dataTransfer: pdf });
   await expect(page.getByText("Eso no es una foto. Elige un JPG, PNG o WebP.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Quitar foto: Antes (opcional)" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Quitar foto del antes" })).toHaveCount(0);
   // Elegirlo con el selector de archivos da lo mismo
-  await page.getByLabel("Archivo: Antes (opcional)").setInputFiles({ name: "lista.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF") });
+  await page.getByLabel("Galería para la foto del antes").setInputFiles({ name: "lista.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF") });
   await expect(page.getByText("Eso no es una foto. Elige un JPG, PNG o WebP.")).toBeVisible();
   await expect(zona.locator("img")).toHaveCount(0);
 
@@ -76,9 +77,9 @@ test("se puede soltar una foto en la zona, cambiarla y quitarla; lo que no es un
   await expect(page.getByText("Eso no es una foto.", { exact: false })).toHaveCount(0);
   await expect(zona.locator("img")).toHaveAttribute("src", /^blob:/);
 
-  await page.getByRole("button", { name: "Quitar foto: Antes (opcional)" }).click();
+  await page.getByRole("button", { name: "Quitar foto del antes" }).click();
   await expect(zona.locator("img")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Elegir foto: Antes (opcional)" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Elegir de la galería del antes" })).toBeVisible();
 });
 
 test("sube un par antes y después y una foto sola; los ordena, oculta, edita y elimina", async ({ page }, info) => {
@@ -90,8 +91,8 @@ test("sube un par antes y después y una foto sola; los ordena, oculta, edita y 
   // Par antes y después
   await page.getByRole("button", { name: "Subir fotos" }).click();
   await expect(page.getByRole("button", { name: "Guardar en la galería" })).toBeEnabled();
-  await page.getByLabel("Archivo: Antes (opcional)").setInputFiles(foto("antes.png"));
-  await page.getByLabel("Archivo: Después").setInputFiles(foto("despues.png"));
+  await page.getByLabel("Galería para la foto del antes").setInputFiles(foto("antes.png"));
+  await page.getByLabel("Galería para la foto del después").setInputFiles(foto("despues.png"));
   await page.getByLabel("Servicio").selectOption({ label: "Pulido y nano cerámico" });
   await page.getByLabel("Descripción").fill("Pulido y nano cerámico en una Hilux");
   await page.getByRole("button", { name: "Guardar en la galería" }).click();
@@ -104,7 +105,7 @@ test("sube un par antes y después y una foto sola; los ordena, oculta, edita y 
   await page.getByLabel("Descripción").fill("Vidrios sin manchas de ácido");
   await page.getByRole("button", { name: "Guardar en la galería" }).click();
   await expect(page.getByText("Elige la foto del resultado.")).toBeVisible();
-  await page.getByLabel("Archivo: Después").setInputFiles(foto("vidrio.png"));
+  await page.getByLabel("Galería para la foto del después").setInputFiles(foto("vidrio.png"));
   await page.getByRole("button", { name: "Guardar en la galería" }).click();
   await expect(page.getByText("Foto guardada.")).toBeVisible();
   // Otras pruebas suben fotos al mismo tiempo: se miran solo las de esta prueba, por su descripción.

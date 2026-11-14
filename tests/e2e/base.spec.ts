@@ -323,7 +323,7 @@ test("en la Galería del panel, subir sin nada marca todo junto y el foco va a l
   // La foto del resultado se pide junto con los demás campos, y el foco va a ella
   await expect(page.getByText("Elige la foto del resultado.")).toBeVisible();
   await expect(page.getByText("Elige el servicio.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Elegir foto: Después" })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Tomar foto del después" })).toBeFocused();
 });
 
 // Pedido del 24/10: en una página corta, la sección de cierre (la invitación a escribir) queda pegada al pie, sin un

@@ -36,21 +36,23 @@ export function ElegirFoto({
 }) {
   const camara = useRef<HTMLInputElement>(null);
   const galeria = useRef<HTMLInputElement>(null);
-  const elegir = (ev: React.ChangeEvent<HTMLInputElement>) => {
-    const archivo = ev.target.files?.[0];
-    // Vacío: así elegir otra vez la misma foto (después de quitarla) vuelve a avisar
-    ev.target.value = "";
-    if (archivo) {
-      setNoEsFoto(false);
-      alElegir(archivo);
-    }
-  };
   const [noEsFoto, setNoEsFoto] = useState(false);
-  const { arrastrando, propsArrastre } = useSoltarArchivos(false, (archivos) => {
+  const [aviso, setAviso] = useState<string | null>(null);
+  // Elegida o soltada, igual: lo que no es una foto se rechaza y no reemplaza la que ya estaba (la cámara y la galería
+  // filtran por `accept`, pero un archivo puede llegar igual; pulido 13.61, como la zona de la galería)
+  const recibir = (archivos: File[], soltadas: boolean) => {
     const [foto] = soloFotos(archivos);
     setNoEsFoto(!foto);
+    setAviso(foto && soltadas && archivos.length > 1 ? `Soltaste ${archivos.length} archivos: se usó la primera foto.` : null);
     if (foto) alElegir(foto);
-  });
+  };
+  const elegir = (ev: React.ChangeEvent<HTMLInputElement>) => {
+    const archivos = Array.from(ev.target.files ?? []);
+    // Vacío: así elegir otra vez la misma foto (después de quitarla) vuelve a avisar
+    ev.target.value = "";
+    if (archivos.length > 0) recibir(archivos, false);
+  };
+  const { arrastrando, propsArrastre } = useSoltarArchivos(false, (archivos) => recibir(archivos, true));
   const mensaje = error ?? (noEsFoto ? MENSAJE_NO_ES_FOTO : undefined);
   const describe = mensaje ? `${id}-error` : undefined;
   return (
@@ -74,10 +76,13 @@ export function ElegirFoto({
         <Button type="button" variant="outline" onClick={() => camara.current?.click()} data-invalido={error ? true : undefined} aria-describedby={describe}>
           <CameraIcon />
           {vista ? "Tomar otra" : "Tomar foto"}
+          {/* De qué foto: con dos en el mismo formulario (el antes y el después de la galería), el lector los distingue */}
+          <span className="sr-only"> {de}</span>
         </Button>
         <Button type="button" variant="outline" onClick={() => galeria.current?.click()} aria-describedby={describe}>
           <ImageIcon />
           {vista ? "Elegir otra" : "Elegir de la galería"}
+          <span className="sr-only"> {de}</span>
         </Button>
         {quitable && vista && (
           <Button
@@ -85,15 +90,22 @@ export function ElegirFoto({
             variant="ghost"
             onClick={() => {
               setNoEsFoto(false);
+              setAviso(null);
               alElegir(null);
             }}
           >
             <XIcon />
             Quitar foto
+            <span className="sr-only"> {de}</span>
           </Button>
         )}
       </div>
       {mensaje && <MensajeError id={`${id}-error`}>{mensaje}</MensajeError>}
+      {aviso && !mensaje && (
+        <p role="status" className="text-sm text-tinta-suave">
+          {aviso}
+        </p>
+      )}
     </div>
   );
 }

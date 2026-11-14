@@ -17,8 +17,8 @@ test("la galería muestra los trabajos en una vitrina pareja, se filtra y los pa
   for (const [servicio, descripcion, antes] of [["Restauración de faroles con polímero", conPar, true], ["Polarizado de vidrios", sola, false]] as const) {
     await page.getByRole("button", { name: "Subir fotos" }).click();
     await expect(page.getByRole("button", { name: "Guardar en la galería" })).toBeEnabled();
-    if (antes) await page.getByLabel("Archivo: Antes (opcional)").setInputFiles(foto("antes.png"));
-    await page.getByLabel("Archivo: Después").setInputFiles(foto("despues.png"));
+    if (antes) await page.getByLabel("Galería para la foto del antes").setInputFiles(foto("antes.png"));
+    await page.getByLabel("Galería para la foto del después").setInputFiles(foto("despues.png"));
     await page.getByLabel("Servicio").selectOption({ label: servicio });
     await page.getByLabel("Descripción").fill(descripcion);
     await page.getByRole("button", { name: "Guardar en la galería" }).click();
