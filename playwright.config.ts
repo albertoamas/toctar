@@ -52,6 +52,8 @@ export default defineConfig({
       // Como en producción: el sitio se indexa (HU-18)
       SITIO_URL: `http://localhost:${puerto}`,
       SITIO_INDEXABLE: "true",
+      // El secreto de origen de Cloudflare (guía de despliegue, paso 3b): un valor de prueba, no el de los entornos
+      ORIGEN_CLOUDFLARE_SECRETO: "secreto-e2e-de-cloudflare",
     },
   },
 });

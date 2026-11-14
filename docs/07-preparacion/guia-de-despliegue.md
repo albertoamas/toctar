@@ -66,9 +66,40 @@ En el dominio → DNS → Records, crear registros **A** apuntando a la IP del V
 | `pruebas` | IP del VPS | DNS only |
 | `coolify` | IP del VPS | DNS only |
 
-**Proxy apagado (nube gris), a propósito.** Coolify saca los certificados https solo, y el límite de reclamos (HU-16) usa la IP real que pone Traefik en `x-real-ip`. Con el proxy de Cloudflare encendido, todos los visitantes llegarían con IP de Cloudflare y compartirían el mismo límite.
+**Al crearlos, con el proxy apagado (nube gris):** Coolify saca los certificados https solo, y así se comprueba que el servidor responde. El proxy se enciende después, en el paso 3b.
 
 Comprobar desde la PC: `nslookup pruebas.<dominio>` devuelve la IP del VPS.
+
+## 3b. Proxy de Cloudflare: la nube naranja (14/11/2026, unos 30 minutos)
+
+**Por qué:** el servidor está en Alemania y cada ida y vuelta desde Bolivia cuesta unos 240 ms. Medido el 14/11 en pruebas, hasta un archivo estático tardaba 0,72 s en empezar a llegar. Con el proxy, la conexión segura se arma en un servidor de Cloudflare cercano y los archivos que no cambian se sirven desde ahí. Además protege contra ataques masivos y oculta la IP del servidor. **Es gratis** (el plan Free alcanza).
+
+**Lo que ya hace la app** (`src/lib/ip-visitante.ts`): con el proxy, quien se conecta es Cloudflare, y la IP del visitante viene en `CF-Connecting-IP`. La app la usa solo si el pedido trae **dos pruebas** de que pasó por el proxy de nuestra zona: llega desde una IP de Cloudflare **y** trae el **secreto de origen** (el encabezado `x-origen-cloudflare`, que agrega una regla de Cloudflare). La IP sola no alcanza: WARP (la VPN gratis de Cloudflare) y los Workers con conexiones directas salen desde esos mismos rangos y podrían escribir `CF-Connecting-IP` a mano para saltarse los límites de intentos. Además, de una IPv6 cuenta su bloque /64 (cada cliente tiene uno entero). Sin el secreto configurado, la app usa la IP directa, como antes.
+
+**Pasos, primero en pruebas y después en producción. El 0 va ANTES de encender el proxy:** con la nube naranja y sin el secreto, todos los visitantes compartirían un mismo límite (el del servidor de Cloudflare).
+
+0. **El secreto de origen:**
+   1. Generarlo: `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`. Va al gestor de contraseñas de YankoSoft; **nunca al repositorio ni a un chat**.
+   2. **Coolify → la app de pruebas (y después la de producción) → Environment Variables:** `ORIGEN_CLOUDFLARE_SECRETO` = ese valor, marcada como secreta. Redesplegar la app.
+   3. **Cloudflare → Rules → Transform Rules → Modify Request Header → Create rule:** nombre "Secreto de origen"; "If incoming requests match": Hostname equals `pruebas.<dominio>` (después, uno por cada dominio, o "All incoming requests"); acción **Set static**, encabezado `x-origen-cloudflare`, valor: el secreto. Guardar. "Set" reemplaza el que mande el visitante.
+   4. Si un día se filtra: generar otro, cambiarlo en Coolify y en la regla, en ese orden (mientras tanto, la app usa la IP del servidor de Cloudflare: los límites se comparten un rato, pero nadie se los salta).
+1. **Cloudflare → SSL/TLS → Overview:** modo **Full (strict)**. Nunca "Flexible": Traefik ya habla https y el sitio quedaría en un bucle de redirecciones.
+2. **Cloudflare → SSL/TLS → Edge Certificates:** **"Always Use HTTPS" apagado.** Traefik ya redirige a https y deja pasar la renovación del certificado (Let's Encrypt la pide por http, en `/.well-known/acme-challenge/`): con esa opción encendida, la renovación falla a los 90 días. "Minimum TLS Version": 1.2.
+3. **Cloudflare → Security → Bots:** **"Bot Fight Mode" apagado.** En el plan Free no se puede limitar a una parte del sitio, y bloquearía las llamadas de GitHub Actions a Coolify (el despliegue automático) y a UptimeRobot.
+4. **Cloudflare → DNS:** pasar `pruebas` a **Proxied** (nube naranja). Esperar unos minutos y probar (abajo, "Comprobar").
+5. Con pruebas funcionando: pasar `coolify` a Proxied y **probar un despliegue desde GitHub Actions** (unir algo a `develop`). Si Cloudflare lo frena con un desafío ("Just a moment…"), crear en Security → WAF → Custom rules una regla que **omita** las comprobaciones (Skip) para el Hostname `coolify.<dominio>`: el plan Free trae 5 reglas. No seguir al paso 6 hasta que el despliegue ande. Al publicar, `@` y `www`, cada uno con su regla del secreto (paso 0.3).
+6. **Hetzner → Firewalls → el firewall del servidor → Inbound rules:** las reglas de **80 y 443** pasan de "Any IPv4 / Any IPv6" a **solo los rangos de Cloudflare** (https://www.cloudflare.com/ips-v4 y /ips-v6, los mismos que tiene `src/lib/ip-visitante.ts`). La del **22 (SSH) no se toca.** Así no se llega al sitio por la IP del servidor sin pasar por Cloudflare (salvo desde las IPs de Cloudflare mismas, como WARP: para eso está el secreto del paso 0). Se hace después del paso 5: con algún registro todavía en gris, ese dominio dejaría de responder.
+
+**Comprobar** (después del paso 4 y del 6):
+
+- `curl -sI https://pruebas.<dominio>/` responde 200 y trae `server: cloudflare` y un `cf-ray`.
+- El sitio y el panel cargan, se puede ingresar y la subida del video de la portada funciona (20 MB; el plan Free deja hasta 100 MB por pedido).
+- `GET /api/salud` responde 200 (UptimeRobot sigue en verde).
+- Un despliegue desde GitHub Actions termina bien.
+- Lighthouse móvil de la portada, para comparar con lo medido sin proxy (pulido 13.59).
+- Después del paso 6: `curl -m 5 https://<IP del servidor>/ -k` desde la PC **no** responde.
+
+**Volver atrás:** en Cloudflare → DNS, el registro a "DNS only" (nube gris): cambia en un par de minutos. Si ya se hizo el paso 6, devolver también las reglas de 80 y 443 a "Any" (si no, con la nube gris el sitio deja de responder; y el despliegue desde GitHub llega a Coolify por la nube gris solo con esas reglas abiertas). El secreto en Coolify puede quedar: sin la regla de Cloudflare, no hace nada.
 
 ## 4. Coolify (unos 30 minutos)
 
@@ -125,6 +156,7 @@ En cada entorno: + New → Application → el repositorio desde la GitHub App.
 |---|---|---|
 | `DATABASE_URL` | URL interna de `toctar-db-pruebas` | URL interna de `toctar-db-produccion` |
 | `BETTER_AUTH_SECRET` | una nueva (ver abajo) | **otra distinta** |
+| `ORIGEN_CLOUDFLARE_SECRETO` | uno nuevo, al encender el proxy (paso 3b) | **otro distinto** |
 | `BETTER_AUTH_URL` | `https://pruebas.<dominio>` | `https://<dominio>` |
 | `SITIO_URL` (*build*) | `https://pruebas.<dominio>` | `https://<dominio>` |
 | `SITIO_INDEXABLE` (*build*) | `false` | `true` |
@@ -183,6 +215,7 @@ En el gestor de contraseñas de YankoSoft, en una entrada "TocTar":
 - IP del VPS y acceso SSH;
 - usuario de Coolify;
 - los dos `BETTER_AUTH_SECRET`;
+- los dos `ORIGEN_CLOUDFLARE_SECRETO` (paso 3b);
 - los tokens de R2;
 - las contraseñas iniciales.
 
