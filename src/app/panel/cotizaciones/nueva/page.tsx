@@ -15,6 +15,7 @@ import { FormularioNuevaCotizacion, type ClienteElegido } from "@/modulos/cotiza
 import { inicioCotizacion, opcionesPorTamano } from "@/modulos/cotizaciones/consultas";
 import { PASO_CLIENTE, PASOS_NUEVA_COTIZACION } from "@/modulos/cotizaciones/pasos";
 import { conDesde, leerDesde, volverDesde } from "@/lib/volver";
+import { EmpiezaDeCero } from "@/componentes/panel/empieza-de-cero";
 
 export const metadata: Metadata = { title: "Nueva cotización" };
 
@@ -97,5 +98,9 @@ async function Formulario({ cliente, volver }: { cliente: ClienteElegido | null;
     // El catálogo es del dueño: el encargado no tiene a dónde ir, así que no se enlaza
     return <EstadoVacio>No hay servicios activos para cotizar: se activan en Catálogo y precios.</EstadoVacio>;
   }
-  return <FormularioNuevaCotizacion cliente={cliente} tamanos={tamanos} opciones={opciones} inicio={inicio} hoy={fechaEnBolivia()} volver={volver} />;
+  return (
+    <EmpiezaDeCero key={cliente?.id ?? "sin-cliente"}>
+      <FormularioNuevaCotizacion cliente={cliente} tamanos={tamanos} opciones={opciones} inicio={inicio} hoy={fechaEnBolivia()} volver={volver} />
+    </EmpiezaDeCero>
+  );
 }

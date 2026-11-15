@@ -10,6 +10,7 @@ import { FormularioPublicar } from "@/modulos/ordenes/componentes/formulario-pub
 import { fotosDeTrabajo, obtenerOrden, publicadaDeOrden, serviciosDeOrden } from "@/modulos/ordenes/consultas";
 import { esFotoDeAntes, ETAPAS_FOTO_ANTES, puedePublicarse } from "@/modulos/ordenes/reglas";
 import { conDesde, leerDesde, sinElTrabajo, volverDesde } from "@/lib/volver";
+import { EmpiezaDeCero } from "@/componentes/panel/empieza-de-cero";
 
 export const metadata: Metadata = { title: "Publicar en la galería" };
 
@@ -47,7 +48,9 @@ async function Publicar({ params, searchParams }: Pick<PageProps<"/panel/ordenes
       {servicios.length === 0 ? (
         <EstadoVacio>Los servicios de esta orden ya no están en el catálogo. Súbelas desde Sitio web &gt; Galería, con otro servicio.</EstadoVacio>
       ) : (
-        <FormularioPublicar id={o.id} volver={leerDesde(busqueda.volver)} despues={fotos.filter((f) => f.etapa === "despues")} antes={fotos.filter((f) => esFotoDeAntes(f.etapa))} servicios={servicios} />
+        <EmpiezaDeCero key={o.id}>
+          <FormularioPublicar id={o.id} volver={leerDesde(busqueda.volver)} despues={fotos.filter((f) => f.etapa === "despues")} antes={fotos.filter((f) => esFotoDeAntes(f.etapa))} servicios={servicios} />
+        </EmpiezaDeCero>
       )}
     </>
   );

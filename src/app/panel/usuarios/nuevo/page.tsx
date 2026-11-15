@@ -6,6 +6,7 @@ import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { permisosAsignables } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioUsuario } from "@/modulos/usuarios/componentes/formulario-usuario";
+import { EmpiezaDeCero } from "@/componentes/panel/empieza-de-cero";
 
 export const metadata: Metadata = { title: "Crear usuario" };
 
@@ -23,5 +24,9 @@ export default function PaginaNuevoUsuario() {
 
 async function Formulario() {
   await exigirModulo("usuarios");
-  return <FormularioUsuario asignables={permisosAsignables()} />;
+  return (
+    <EmpiezaDeCero>
+      <FormularioUsuario asignables={permisosAsignables()} />
+    </EmpiezaDeCero>
+  );
 }

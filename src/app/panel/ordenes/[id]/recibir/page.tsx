@@ -16,6 +16,7 @@ import { obtenerOrden, partesDelChecklist, revisionDeTrabajo } from "@/modulos/o
 import { esOrden, puedeRecibirse } from "@/modulos/ordenes/reglas";
 import { filaVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 import { conDesde, leerDesde, sinElTrabajo, volverDesde } from "@/lib/volver";
+import { EmpiezaDeCero } from "@/componentes/panel/empieza-de-cero";
 
 export const metadata: Metadata = { title: "Recibir vehículo" };
 
@@ -89,7 +90,9 @@ async function Recepcion({ params, searchParams }: Pick<PageProps<"/panel/ordene
           <AvanceRecepcion>
             <ChecklistRecepcion trabajoId={o.id} partes={partes} revision={revision} />
             {/* Las que faltan: las activas sin revisar (una desactivada ya revisada no cuenta) */}
-            <FormularioRecepcion trabajoId={o.id} volver={leerDesde(busqueda.volver)} faltan={partes.filter((p) => !revision.some((r) => r.parteId === p.id)).length} />
+            <EmpiezaDeCero key={o.id}>
+              <FormularioRecepcion trabajoId={o.id} volver={leerDesde(busqueda.volver)} faltan={partes.filter((p) => !revision.some((r) => r.parteId === p.id)).length} />
+            </EmpiezaDeCero>
           </AvanceRecepcion>
         </>
       )}
