@@ -14,7 +14,6 @@ import { FormularioNuevaVersion } from "@/modulos/cotizaciones/componentes/formu
 import { datosNuevaVersion } from "@/modulos/cotizaciones/consultas";
 import { NOMBRE_ESTADO } from "@/modulos/cotizaciones/reglas";
 import { conDesde, leerDesde } from "@/lib/volver";
-import { EmpiezaDeCero } from "@/componentes/panel/empieza-de-cero";
 
 export const metadata: Metadata = { title: "Nueva versión" };
 
@@ -78,11 +77,9 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/cotiza
       ) : datos.opciones.length === 0 ? (
         <EstadoVacio>No hay servicios activos para cotizar: se activan en Catálogo y precios.</EstadoVacio>
       ) : (
-        // La key lo vuelve a montar al cambiar de versión, y EmpiezaDeCero al volver a entrar: Next conserva la página anterior y el formulario guardaba
+        // La key lo vuelve a montar al cambiar de versión: Next conserva la página anterior y el formulario guardaba
         // las líneas de la visita de antes
-        <EmpiezaDeCero key={datos.desde.id}>
-          <FormularioNuevaVersion volver={volver} datos={{ ...datos, desde: datos.desde }} hoy={fechaEnBolivia()} />
-        </EmpiezaDeCero>
+        <FormularioNuevaVersion volver={volver} key={datos.desde.id} datos={{ ...datos, desde: datos.desde }} hoy={fechaEnBolivia()} />
       )}
     </>
   );

@@ -4,6 +4,9 @@ import { crearClienteEnBase, ingresarComoDueno } from "./apoyo";
 // La causa del hallazgo 9 (prueba en celulares, 15/11) en las demás pantallas de crear: Next guarda oculta la última
 // pantalla de cada ruta con lo que tenía escrito. Salir sin guardar y volver a entrar por el panel tiene que mostrar el
 // formulario de cero, sin lo descartado. Nunca se envía nada.
+// En fila: todas ingresan como el dueño, y el límite de intentos cuenta también los ingresos simultáneos (más de 5 a la
+// vez desde la misma conexión, bloqueado).
+test.describe.configure({ mode: "serial" });
 
 /** Sale por "Volver" (el enlace de la pantalla a su lista) y descarta. */
 async function salirSinGuardar(page: Page, lista: string) {
@@ -52,4 +55,26 @@ test("Nueva cotización: al volver a entrar desde la ficha del cliente, los serv
   await salirSinGuardar(page, `/panel/clientes/${id}`);
   await entrar();
   await expect(page.getByLabel("Servicio 1", { exact: true })).toHaveValue("");
+});
+
+test("una ficha con un modal de editar abierto: al salir con Atrás y volver, el modal está cerrado y sin lo escrito", async ({ page }) => {
+  await ingresarComoDueno(page);
+  await page.goto("/panel/configuracion");
+  const entrar = async () => {
+    await page.locator('main a[href="/panel/configuracion/negocio"]').filter({ visible: true }).first().click();
+    await expect(page).toHaveURL(/\/panel\/configuracion\/negocio$/);
+  };
+  await entrar();
+  await page.getByRole("button", { name: "Editar contacto" }).click();
+  const modal = page.getByRole("dialog");
+  await expect(modal).toBeVisible();
+  const campo = modal.getByRole("textbox").first();
+  await campo.fill("Lo que se descarta");
+  // El gesto de Atrás del celular: no pregunta (no se puede detener) y deja el modal abierto en la pantalla oculta
+  await page.goBack();
+  await expect(page).toHaveURL(/\/panel\/configuracion$/);
+  await entrar();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "Editar contacto" }).click();
+  await expect(page.getByRole("dialog").getByRole("textbox").first()).not.toHaveValue("Lo que se descarta");
 });

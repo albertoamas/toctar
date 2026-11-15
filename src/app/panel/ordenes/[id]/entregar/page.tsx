@@ -19,7 +19,6 @@ import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
 import { estaPagada } from "@/modulos/pagos/reglas";
 import { filaVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 import { conDesde, leerDesde, sinElTrabajo, volverDesde } from "@/lib/volver";
-import { EmpiezaDeCero } from "@/componentes/panel/empieza-de-cero";
 
 export const metadata: Metadata = { title: "Entregar vehículo" };
 
@@ -97,9 +96,7 @@ async function Entrega({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
         </Seccion>
       )}
 
-      <EmpiezaDeCero key={o.id}>
-        <FormularioEntrega id={o.id} volver={leerDesde(busqueda.volver)} conDeuda={conDeuda} saldo={conPagos ? `${mostrarMonto(saldo)} Bs` : null} puedeAutorizar={puede(usuario, "entrega_con_saldo")} cliente={o.cliente} />
-      </EmpiezaDeCero>
+      <FormularioEntrega id={o.id} volver={leerDesde(busqueda.volver)} conDeuda={conDeuda} saldo={conPagos ? `${mostrarMonto(saldo)} Bs` : null} puedeAutorizar={puede(usuario, "entrega_con_saldo")} cliente={o.cliente} />
     </>
   );
 }

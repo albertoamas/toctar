@@ -16,7 +16,6 @@ import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { bs } from "@/modulos/cotizaciones/reglas";
-import { EmpiezaDeCero } from "@/componentes/panel/empieza-de-cero";
 import { FormularioReserva } from "@/modulos/agenda/componentes/formulario-reserva";
 import { cotizacionesParaReservar, datosDeCotizacion, datosDirecta, espaciosEnFechas, type CotizacionParaReservar, type VehiculoReserva } from "@/modulos/agenda/consultas";
 import { PASO_CLIENTE, PASO_FECHA, PASO_SERVICIOS, PASO_VEHICULO, pasoInicialReserva, pasosNuevaReserva } from "@/modulos/agenda/pasos-reserva";
@@ -110,7 +109,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   };
   const cotizacionId = numero("cotizacion");
   // Lo que se reserva (hallazgo 9 de la prueba en celulares, 15/11). La misma pantalla sirve a los tres caminos y solo
-  // cambia la dirección: al salir y volver, EmpiezaDeCero rearma el formulario; esta clave lo rearma también sin salir,
+  // cambia la dirección: al salir y volver, PaginaPanel lo rearma (EmpiezaDeCero); esta clave lo rearma también sin salir,
   // cuando lo reservado cambia en la misma pantalla ("Usar la cotización" en una reserva directa)
   const clave = ["cotizacion", "cliente", "vehiculo", "recordatorio", "fecha", "espacio"].map(texto).join("|");
 
@@ -387,20 +386,17 @@ async function Formulario(props: {
 }) {
   const [parametros, espacios] = await Promise.all([obtenerParametros(), espaciosEnFechas(props.fechaInicial, props.fechaFin)]);
   return (
-    // Al volver a entrar, aunque sea a la misma reserva, lo descartado no vuelve (hallazgo 9)
-    <EmpiezaDeCero>
-      <FormularioReserva
-        volver={props.volver}
-        origen={props.origen}
-        conPagos={props.conPagos}
-        adelantoSugerido={parametros.adelanto_sugerido.toFixed(2)}
-        hoy={props.hoy}
-        fechaInicial={props.fechaInicial}
-        espacioInicial={props.espacio}
-        espaciosIniciales={espacios}
-        arriba={props.arriba}
-        cotizaciones={props.cotizaciones}
-      />
-    </EmpiezaDeCero>
+    <FormularioReserva
+      volver={props.volver}
+      origen={props.origen}
+      conPagos={props.conPagos}
+      adelantoSugerido={parametros.adelanto_sugerido.toFixed(2)}
+      hoy={props.hoy}
+      fechaInicial={props.fechaInicial}
+      espacioInicial={props.espacio}
+      espaciosIniciales={espacios}
+      arriba={props.arriba}
+      cotizaciones={props.cotizaciones}
+    />
   );
 }

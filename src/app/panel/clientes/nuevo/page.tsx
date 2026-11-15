@@ -6,7 +6,6 @@ import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioNuevoCliente } from "@/modulos/clientes/componentes/formulario-nuevo-cliente";
 import { tamanosActivos } from "@/modulos/configuracion/consultas";
-import { EmpiezaDeCero } from "@/componentes/panel/empieza-de-cero";
 
 export const metadata: Metadata = { title: "Agregar cliente" };
 
@@ -24,9 +23,5 @@ export default function PaginaNuevoCliente() {
 
 async function Formulario() {
   await exigirModulo("clientes");
-  return (
-    <EmpiezaDeCero>
-      <FormularioNuevoCliente tamanos={await tamanosActivos()} />
-    </EmpiezaDeCero>
-  );
+  return <FormularioNuevoCliente tamanos={await tamanosActivos()} />;
 }

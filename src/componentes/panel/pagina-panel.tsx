@@ -1,4 +1,5 @@
 import { cn } from "cn";
+import { EmpiezaDeCero } from "@/componentes/panel/empieza-de-cero";
 
 // El tipo de una pantalla del panel decide su ancho y la separación entre sus partes (docs/06-diseno/sistema-del-panel.md
 // §1). Las páginas no escriben su propio max-w: así dos fichas no pueden quedar de distinto ancho. No protege nada: cada
@@ -25,6 +26,13 @@ export function PartesIguales({ enTres, children }: { enTres?: boolean; children
   return <div className={cn("grid grid-cols-[minmax(0,1fr)] gap-8 gap-x-4", enTres ? "@4xl:grid-cols-3" : "@3xl:grid-cols-2")}>{children}</div>;
 }
 
+/**
+ * Toda pantalla del panel, con su ancho. Las fichas y los formularios, además, dentro de EmpiezaDeCero: Next guarda
+ * oculta la última pantalla de cada ruta con lo que tenía escrito, y al volver a entrar aparecía lo descartado: un
+ * formulario a medio llenar, un modal abierto (hallazgo 9 de la prueba en celulares, 15/11). Así ninguna pantalla nueva
+ * lo tiene que recordar. Las listas y las portadas no: al volver a ellas se espera encontrarlas como estaban (p43).
+ */
 export function PaginaPanel({ tipo, children }: { tipo: keyof typeof FORMA; children: React.ReactNode }) {
-  return <div className={cn("flex flex-col", FORMA[tipo])}>{children}</div>;
+  const deCero = tipo === "ficha" || tipo === "formulario";
+  return <div className={cn("flex flex-col", FORMA[tipo])}>{deCero ? <EmpiezaDeCero>{children}</EmpiezaDeCero> : children}</div>;
 }
