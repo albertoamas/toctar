@@ -97,5 +97,6 @@ async function Formulario({ cliente, volver }: { cliente: ClienteElegido | null;
     // El catálogo es del dueño: el encargado no tiene a dónde ir, así que no se enlaza
     return <EstadoVacio>No hay servicios activos para cotizar: se activan en Catálogo y precios.</EstadoVacio>;
   }
-  return <FormularioNuevaCotizacion cliente={cliente} tamanos={tamanos} opciones={opciones} inicio={inicio} hoy={fechaEnBolivia()} volver={volver} />;
+  // La key lo rearma si cambia el cliente sin salir de la pantalla ("Usar a …", ya registrado)
+  return <FormularioNuevaCotizacion key={cliente?.id} cliente={cliente} tamanos={tamanos} opciones={opciones} inicio={inicio} hoy={fechaEnBolivia()} volver={volver} />;
 }

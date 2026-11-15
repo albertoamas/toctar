@@ -108,6 +108,10 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
     return `/panel/agenda/nueva${p.size ? `?${p.toString()}` : ""}` as Route;
   };
   const cotizacionId = numero("cotizacion");
+  // Lo que se reserva (hallazgo 9 de la prueba en celulares, 15/11). La misma pantalla sirve a los tres caminos y solo
+  // cambia la dirección: al salir y volver, PaginaPanel lo rearma (EmpiezaDeCero); esta clave lo rearma también sin salir,
+  // cuando lo reservado cambia en la misma pantalla ("Usar la cotización" en una reserva directa)
+  const clave = ["cotizacion", "cliente", "vehiculo", "recordatorio", "fecha", "espacio"].map(texto).join("|");
 
   if (cotizacionId) {
     const c = await datosDeCotizacion(cotizacionId);
@@ -179,6 +183,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
           {!c.aceptada && <p className="text-sm text-tinta-suave">Al reservar, la cotización queda aceptada.</p>}
         </ResumenPaso>
         <Formulario
+          key={clave}
           volver={origen}
           origen={{ tipo: "cotizacion", cotizacionId: c.cotizacionId, duraciones }}
           conPagos={conPagos}
@@ -321,6 +326,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
     <>
       <Encabezado volver={volver} />
       <Formulario
+        key={clave}
         volver={origen}
         origen={{
           tipo: "directa",
