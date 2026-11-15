@@ -1,0 +1,47 @@
+# Hallazgos de la prueba en celulares (15/11/2026)
+
+Lo que salió de la prueba a mano en un iPhone 14 Pro Max y una tablet Redmi Pad 2 Pro (`09-pruebas/prueba-en-celulares.md`, puntos 0 a 6). No son fallas propias del celular: son de la app, y se ven usándola de verdad.
+
+**Estado:** ⏳ sin empezar · 🔵 en curso · ✅ unido a `develop` · 📝 va al registro de cambios
+
+## Cómo se trabaja cada punto
+
+Uno por uno, en este orden. Cada punto pasa por los mismos pasos:
+
+1. **Preguntar.** Antes de tocar el código, las preguntas para saber dónde está el error: en qué equipo, en qué pantalla, qué se tocó y qué se esperaba.
+2. **Reproducir.** Hacer que falle aquí, con una prueba automática (E2E en Chrome y, si es del celular, en WebKit, el motor de Safari). Sin reproducirlo no se arregla: se arreglaría a ciegas.
+3. **Proponer.** La causa y el arreglo en pocas líneas. Si cambia una pantalla, con captura y la skill `pantallas-panel`. Se programa con el visto bueno.
+4. **Arreglar** en una rama propia (`arreglo-…` o `pulido-…`), con la prueba del paso 2 ahora en verde.
+5. **Revisar:** lint, tipos, unitarias, E2E del módulo y `code-review`; `security-review` si toca contraseñas o permisos.
+6. **PR** con el tipo en el título, CI en verde y merge con el visto bueno.
+7. **Probarlo otra vez en el celular**, en pruebas, y marcarlo ✅ aquí.
+
+## Errores (primero)
+
+| Orden | # | Qué pasa | Causa (lo que se sabe) | Arreglo propuesto | Estado |
+|---|---|---|---|---|---|
+| 1 | 9 | Al reservar un mantenimiento, salir sin guardar y entrar a reservar otro, el formulario aparece lleno con los datos del anterior. Se arregla recargando | Los tres caminos usan la misma pantalla (Nueva reserva) y solo cambia la dirección: la app reutiliza el formulario que ya estaba en pantalla, con lo que se había llenado | El formulario empieza de cero cada vez que cambia lo que se reserva (mantenimiento, cotización o directa) | ⏳ |
+| 2 | 7 | Al editar un vehículo con cambios, Cancelar o la X muestran "Tienes cambios sin guardar" y el modal se cierra al mismo tiempo | Por confirmar. Lo esperado: tocar afuera, Escape o Atrás preguntan; Cancelar y la X cierran sin preguntar. Sospecha: en el celular, el mismo toque cuenta dos veces (Cancelar y "tocar afuera"), porque el modal se mueve al cerrarse el teclado | Un toque que ya está cerrando el modal no hace aparecer el aviso | ⏳ |
+| 3 | 2 | La duración estimada no se guarda al crear el servicio | Por confirmar. Sospecha: se escribió en "Duración propia" (de la variante, en el modal de precios), y la ficha muestra la del servicio | Con una sola variante, sin "Duración propia": solo la del servicio | ⏳ |
+| 4 | 4 | El reclamo se queda en "Recibimos tu reclamo"; en el panel, Reclamos no lo muestra hasta recargar | El sitio muestra la confirmación a propósito. El panel no se entera de lo que cambia otra persona | "Enviar otro reclamo" en la confirmación; el panel se actualiza solo al volver a la app | ⏳ |
+
+## Mejoras chicas (pulido, dentro de lo contratado)
+
+| Orden | # | Qué pasa | Propuesta | Estado |
+|---|---|---|---|---|
+| 5 | 1 | "Activo en el catálogo" (Catálogo) y "Mostrar u ocultar del sitio" (Sitio web) se pisan: un servicio inactivo tampoco sale en el sitio, y no se entiende | "Desactivar servicio" pasa al menú Más del Catálogo, con su confirmación ("Ya no se ofrece: no se cotiza, no se reserva y no sale en el sitio"). En Sitio web, si está inactivo, se dice y no se ofrece "Mostrar" | ⏳ |
+| 6 | 3 | El servicio de mantenimiento puede ser el mismo servicio, pero no se reconoce en la lista ("Este mismo servicio") y no se explica cómo funciona | La opción dice su nombre ("Este mismo servicio (Cerámico)") y una línea explica: al entregar un vehículo con este servicio, en N meses le toca el elegido, y aparece en Mantenimientos | ⏳ |
+| 7 | 5 | Al crear un usuario, al restablecer una contraseña y en "Cambiar mi contraseña", la contraseña nueva se escribe una sola vez | "Repite la contraseña" en los tres, con "No coinciden" junto al campo (el mismo esquema Zod en el formulario y el servidor) | ⏳ |
+| 8 | 8 | En la cotización, el adelanto y la validez están plegados detrás de "Cambiar adelanto o validez" | Los dos campos siempre a la vista | ⏳ |
+| 9 | 10 | Las tres formas de reservar (desde una cotización, directa y desde un mantenimiento) muestran las tarjetas en distinto orden | Un solo orden: Cliente y vehículo, Servicios, Fecha y espacio, Adelanto y nota. Lo que ya viene elegido, arriba como resumen, en el mismo lugar. Con capturas de las tres antes de programar | ⏳ |
+
+## Función nueva (registro de cambios)
+
+| # | Qué | Qué se hace | Estado |
+|---|---|---|---|
+| 6 | Una ficha de cada vehículo, con su historial (órdenes, cotizaciones, fotos y mantenimientos). Hoy los vehículos viven dentro de la ficha del cliente | Pedido 51 en `03-cierre-comercial/registro-de-cambios.md` y una cotización corta para el dueño. No se programa sin su aprobación | 📝 |
+
+## Después
+
+- La prueba en celulares sigue con el punto 7 de la lista (cada perfil de encargado) cuando estos estén unidos.
+- Lo que no se pudo probar en Android de tamaño celular (solo hubo tablet) se prueba en la capacitación, con el celular del dueño.
