@@ -25,6 +25,12 @@ export function rangoDelMes(mes: string): { inicio: string; fin: string } {
   return { inicio: `${mes}-01`, fin: sumarDias(`${sumarMeses(mes, 1)}-01`, -1) };
 }
 
+/** "noviembre", sin el año. */
+export const nombreMesSolo = (mes: string) => NOMBRE_MES[Number(mes.slice(5)) - 1];
+
+/** "Nov", para las barras. */
+export const mesCorto = (mes: string) => nombreMesSolo(mes).slice(0, 3).replace(/^./, (l) => l.toUpperCase());
+
 /** "noviembre de 2026". */
 export function nombreMes(mes: string): string {
   const [anio, numero] = mes.split("-").map(Number);
@@ -51,7 +57,8 @@ export const quedo = (entro: number, salio: number) => Math.round((entro - salio
  * si el mes anterior no dejó nada (cero o pérdida): un porcentaje sobre eso no dice nada.
  */
 export function cambioFrenteAlAnterior(actual: number, anterior: number): { porcentaje: number; sentido: "más" | "menos" | "igual" } | null {
-  if (anterior <= 0) return null;
+  // Un mes con pérdida tampoco se compara: "120 % menos" junto a una pérdida confunde
+  if (anterior <= 0 || actual < 0) return null;
   const porcentaje = Math.round(((actual - anterior) / anterior) * 100);
   return { porcentaje: Math.abs(porcentaje), sentido: porcentaje > 0 ? "más" : porcentaje < 0 ? "menos" : "igual" };
 }
@@ -61,7 +68,8 @@ export const parteQueQuedo = (entro: number, salio: number) => (entro > 0 ? Math
 
 /** "11.330 Bs": los montos grandes de los reportes, con punto de miles y sin decimales (se leen de un vistazo). */
 export function bsRedondo(monto: number): string {
-  const entero = Math.round(Math.abs(monto));
-  const texto = String(entero).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return `${monto < 0 ? "−" : ""}${texto} Bs`;
+  const redondo = Math.round(monto);
+  const texto = String(Math.abs(redondo)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  // El signo, del monto ya redondeado: una pérdida de 0,30 Bs no es "−0 Bs"
+  return `${redondo < 0 ? "−" : ""}${texto} Bs`;
 }

@@ -1,12 +1,10 @@
 import { cn } from "cn";
 import type { MovimientoDelMes } from "../consultas";
-import { bsRedondo, nombreMes, quedo } from "../reglas";
+import { bsRedondo, mesCorto, nombreMes, quedo } from "../reglas";
 
 // Pedido 16: los últimos 6 meses en barras, lo que entró (tinta) y lo que salió (rojo de peligro) lado a lado, con lo que
 // quedó escrito arriba de cada mes. Sin librería: barras de HTML con su alto en por ciento. Los colores se distinguen
 // también por la leyenda escrita, y el lector de pantalla oye una lista con los números de cada mes.
-
-const MES_CORTO = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
 export function BarrasMeses({ meses, elegido }: { meses: MovimientoDelMes[]; elegido: string }) {
   const tope = Math.max(1, ...meses.flatMap((m) => [m.entro, m.salio]));
@@ -32,7 +30,7 @@ export function BarrasMeses({ meses, elegido }: { meses: MovimientoDelMes[]; ele
               <span className="w-full max-w-5 rounded-t-sm bg-tinta" style={{ height: alto(m.entro) }} />
               <span className="w-full max-w-5 rounded-t-sm bg-peligro" style={{ height: alto(m.salio) }} />
             </div>
-            <span className={cn("text-xs", m.mes === elegido ? "font-bold text-tinta" : "text-tinta-suave")}>{MES_CORTO[Number(m.mes.slice(5)) - 1]}</span>
+            <span className={cn("text-xs", m.mes === elegido ? "font-bold text-tinta" : "text-tinta-suave")}>{mesCorto(m.mes)}</span>
           </div>
         ))}
       </div>

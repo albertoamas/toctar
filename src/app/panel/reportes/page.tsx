@@ -9,14 +9,14 @@ import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { Filtros } from "@/componentes/panel/filtros";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
-import { cantidad } from "@/lib/cantidad";
+import { cantidad, palabra } from "@/lib/cantidad";
 import { fechaEnBolivia } from "@/lib/fechas";
 import { exigirModulo } from "@/lib/sesion";
 import { NOMBRE_MOTIVO } from "@/modulos/cotizaciones/reglas";
 import { BarrasMeses } from "@/modulos/reportes/componentes/barras-meses";
 import { RegistrarGasto } from "@/modulos/reportes/componentes/registrar-gasto";
 import { categoriasActivas, elTallerEnElMes, movimientosPorMes, resumenDelMes } from "@/modulos/reportes/consultas";
-import { bsRedondo, cambioFrenteAlAnterior, mesDe, nombreMes, parteQueQuedo, quedo, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
+import { bsRedondo, cambioFrenteAlAnterior, mesDe, nombreMes, nombreMesSolo, parteQueQuedo, quedo, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
 
 export const metadata: Metadata = { title: "Reportes" };
 
@@ -80,11 +80,11 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes">, "s
               <h2 id="ganancia-titulo" className="text-2xl leading-tight font-semibold sm:text-3xl">
                 {ganancia >= 0 ? "Ganaste " : "Perdiste "}
                 <span className={cn("font-bold tabular-nums", ganancia < 0 && "text-peligro")}>{bsRedondo(Math.abs(ganancia))}</span>
-                {cambio && cambio.sentido !== "igual" ? `, ${cambio.porcentaje} % ${cambio.sentido} que en ${nombreMes(anterior).replace(/ de \d+$/, "")}.` : "."}
+                {cambio && cambio.sentido !== "igual" ? `, ${cambio.porcentaje} % ${cambio.sentido} que en ${nombreMesSolo(anterior)}.` : "."}
               </h2>
             </div>
             <dl className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-start gap-x-2 gap-y-1 sm:gap-x-4">
-              <Cuenta etiqueta="Entró" monto={entro} detalle={cantidad(resumen.vehiculosConPagos, "vehículo", "vehículos").replace(/^/, "de ")} />
+              <Cuenta etiqueta="Entró" monto={entro} detalle={`de ${cantidad(resumen.vehiculosConPagos, "vehículo", "vehículos")}`} />
               <span aria-hidden className="pt-6 text-xl text-tinta-suave">−</span>
               <Cuenta etiqueta="Salió" monto={salio} detalle={`en ${cantidad(resumen.cuantosGastos, "gasto", "gastos")}`} />
               <span aria-hidden className="pt-6 text-xl text-tinta-suave">=</span>
@@ -128,10 +128,10 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes">, "s
 
             <Bloque id="taller" titulo="El taller en el mes">
               <dl className="grid grid-cols-2 gap-4">
-                <Numero n={taller.entregados} texto={taller.entregados === 1 ? "vehículo entregado" : "vehículos entregados"} />
-                <Numero n={taller.volvieron} texto={taller.volvieron === 1 ? "cliente volvió" : "clientes volvieron"} />
-                <Numero n={taller.nuevos} texto={taller.nuevos === 1 ? "vino por primera vez" : "vinieron por primera vez"} />
-                <Numero n={taller.avisados} texto={taller.avisados === 1 ? "mantenimiento avisado" : "mantenimientos avisados"} detalle={taller.avisados > 0 ? `${taller.reservaron} ya reservaron` : undefined} />
+                <Numero n={taller.entregados} texto={palabra(taller.entregados, "vehículo entregado", "vehículos entregados")} />
+                <Numero n={taller.volvieron} texto={palabra(taller.volvieron, "cliente volvió", "clientes volvieron")} />
+                <Numero n={taller.nuevos} texto={palabra(taller.nuevos, "vino por primera vez", "vinieron por primera vez")} />
+                <Numero n={taller.avisados} texto={palabra(taller.avisados, "mantenimiento avisado", "mantenimientos avisados")} detalle={taller.avisados > 0 ? `${taller.reservaron} ya ${palabra(taller.reservaron, "reservó", "reservaron")}` : undefined} />
               </dl>
             </Bloque>
 

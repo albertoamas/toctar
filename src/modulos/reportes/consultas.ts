@@ -147,7 +147,7 @@ export type ElTallerEnElMes = {
   servicios: { nombre: string; veces: number }[];
   /** Las cotizaciones que se enviaron por primera vez en el mes, cuántas ya se aceptaron y por qué no las otras. */
   cotizaciones: { enviadas: number; aceptadas: number; motivos: { motivo: MotivoPerdida; veces: number }[] };
-  /** De los clientes que se llevaron su vehículo en el mes: los que ya habían venido antes y los nuevos. */
+  /** De los clientes que se llevaron su vehículo en el mes: los que ya habían venido (antes o en el mismo mes) y los nuevos. */
   volvieron: number;
   nuevos: number;
   /** Los mantenimientos avisados en el mes y cuántos de ellos ya reservaron. */
@@ -174,14 +174,14 @@ export async function elTallerEnElMes(mes: string): Promise<ElTallerEnElMes> {
   const [[entregados], servicios, cotizaciones, clientes, [avisos]] = await Promise.all([
     db.select({ n: count() }).from(trabajo).where(entregadoEnElMes),
     db
-      .select({ nombre: servicio.nombre, veces: count() })
+      .select({ nombre: servicio.nombre, veces: countDistinct(trabajo.id) })
       .from(trabajoLinea)
       .innerJoin(trabajo, eq(trabajoLinea.trabajoId, trabajo.id))
       .innerJoin(variante, eq(trabajoLinea.varianteId, variante.id))
       .innerJoin(servicio, eq(variante.servicioId, servicio.id))
       .where(entregadoEnElMes)
       .groupBy(servicio.id, servicio.nombre)
-      .orderBy(desc(count()), asc(servicio.nombre))
+      .orderBy(desc(countDistinct(trabajo.id)), asc(servicio.nombre))
       .limit(5),
     db
       .select({ estado: consulta.estado, motivo: consulta.motivoPerdida, n: count() })
@@ -190,16 +190,19 @@ export async function elTallerEnElMes(mes: string): Promise<ElTallerEnElMes> {
       .where(and(gte(enBolivia(primeraVersion.enviada), inicio), lte(enBolivia(primeraVersion.enviada), fin)))
       .groupBy(consulta.estado, consulta.motivoPerdida),
     db
-      .selectDistinct({
+      .select({
         clienteId: trabajo.clienteId,
+        veces: count(),
         // Volvió: ya se había llevado otro vehículo antes de este mes. Nombres fijos de tabla: el alias de Drizzle no se
         // escribe calificado dentro de un sql
         volvio: sql<boolean>`exists (select 1 from trabajo anterior where anterior.cliente_id = "trabajo"."cliente_id" and anterior.estado = 'entregado' and (anterior.entregado_at at time zone 'America/La_Paz')::date < ${inicio}::date)`,
       })
       .from(trabajo)
-      .where(entregadoEnElMes),
+      .where(entregadoEnElMes)
+      .groupBy(trabajo.clienteId),
     db
-      .select({ avisados: count(), reservaron: count(recordatorioMantenimiento.trabajoAgendadoId) })
+      // Reservó: lo tiene agendado o ya se hizo (al hacerse, la reserva pasa a trabajo_hecho_id)
+      .select({ avisados: count(), reservaron: count(sql`coalesce(${recordatorioMantenimiento.trabajoAgendadoId}, ${recordatorioMantenimiento.trabajoHechoId})`) })
       .from(recordatorioMantenimiento)
       .where(and(gte(enBolivia(recordatorioMantenimiento.avisadoAt), inicio), lte(enBolivia(recordatorioMantenimiento.avisadoAt), fin))),
   ]);
@@ -214,8 +217,9 @@ export async function elTallerEnElMes(mes: string): Promise<ElTallerEnElMes> {
       aceptadas: cotizaciones.filter((c) => c.estado === "confirmado").reduce((suma, c) => suma + c.n, 0),
       motivos: [...motivos.entries()].map(([motivo, veces]) => ({ motivo, veces })).sort((a, b) => b.veces - a.veces),
     },
-    volvieron: clientes.filter((c) => c.volvio).length,
-    nuevos: clientes.filter((c) => !c.volvio).length,
+    // Volvió: ya se había llevado un vehículo antes del mes, o se llevó más de uno en el mes
+    volvieron: clientes.filter((c) => c.volvio || c.veces > 1).length,
+    nuevos: clientes.filter((c) => !c.volvio && c.veces === 1).length,
     avisados: avisos?.avisados ?? 0,
     reservaron: avisos?.reservaron ?? 0,
   };

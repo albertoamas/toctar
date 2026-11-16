@@ -22,8 +22,8 @@ test("los parámetros vacíos o negativos muestran el error y no se guardan", as
   await expect(page).toHaveURL(/\/panel\/configuracion\/parametros$/);
   // Por tema, en el orden del trabajo (el mantenimiento, desde el pedido 21, es de cada servicio del catálogo; la
   // consulta, desde el pedido 23, ya no existe: "Cotización sin respuesta" va en los plazos de las cotizaciones)
-  // Una ficha con tres partes, cada una en su modal (pulido 13.29)
-  await expect(page.getByRole("main").getByRole("heading", { level: 2 })).toHaveText(["Plazos de las cotizaciones", "Agenda", "Textos del PDF"]);
+  // Una ficha con tres partes, cada una en su modal (pulido 13.29), y las categorías de gasto (pedido 16)
+  await expect(page.getByRole("main").getByRole("heading", { level: 2 })).toHaveText(["Plazos de las cotizaciones", "Agenda", "Textos del PDF", "Categorías de gasto"]);
   await expect(page.getByRole("region", { name: "Agenda" })).toContainText("Adelanto sugerido");
 
   const plazos = await abrir(page, "Plazos de las cotizaciones");
