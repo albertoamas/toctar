@@ -37,7 +37,7 @@ async function mantenimientoAbierto(placa: string): Promise<number> {
   return id;
 }
 
-test("desde la edición del vehículo: pasa al comprador con su mantenimiento y se cierra la cotización abierta del anterior", async ({ page }, info) => {
+test("desde la ficha del vehículo: pasa al comprador con su mantenimiento y se cierra la cotización abierta del anterior", async ({ page }, info) => {
   const d = await dosClientes(info, 1);
   const recordatorioId = await mantenimientoAbierto(d.placa);
   // Ya se le avisó al anterior: al comprador todavía no
@@ -45,13 +45,16 @@ test("desde la edición del vehículo: pasa al comprador con su mantenimiento y 
   const consultaId = await crearCotizacionEnBase({ placa: d.placa, numero: `2037-${sufijo(info)}1` });
   await ingresarComoDueno(page);
   await page.goto(`/panel/clientes/${d.anteriorId}`, { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: `Editar ${d.placa}` }).click();
-  await page.getByRole("button", { name: "Más" }).click();
+  // Desde su ficha (pedido 51): "Más", "Cambiar de dueño"
+  await page.getByRole("list", { name: "Vehículos", exact: true }).getByRole("link", { name: new RegExp(d.placa) }).click();
+  await expect(page.getByRole("heading", { level: 1, name: d.placa })).toBeVisible();
+  // El del encabezado (el plan de mantenimiento tiene el suyo)
+  await page.getByRole("main").getByRole("button", { name: "Más" }).first().click();
   // Con la máquina muy cargada, un toque justo al abrirse el menú puede no contar: se repite mientras el menú siga abierto
   const opcion = page.getByRole("menuitem", { name: "Cambiar de dueño" });
   await expect(async () => {
     if (await opcion.isVisible()) await opcion.click({ timeout: 1000 });
-    await expect(page).toHaveURL(/\/dueno$/, { timeout: 1000 });
+    await expect(page).toHaveURL(/\/dueno(?:\?|$)/, { timeout: 1000 });
   }).toPass({ timeout: 10000 });
   await expect(page.getByRole("heading", { name: `Cambiar de dueño ${d.placa}` })).toBeVisible();
 

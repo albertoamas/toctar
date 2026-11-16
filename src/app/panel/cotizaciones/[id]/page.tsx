@@ -11,7 +11,8 @@ import { Insignia } from "@/componentes/panel/insignia";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { CabeceraSeccion, Seccion } from "@/componentes/panel/cabecera-seccion";
-import { FilaCliente, FilaDato } from "@/componentes/panel/datos-en-bloques";
+import { FilaCliente, FilaVehiculo } from "@/componentes/panel/datos-en-bloques";
+import { rutaVehiculo } from "@/modulos/clientes/reglas";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { BOTON_PASO, PasoSiguiente } from "@/componentes/panel/paso-siguiente";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
@@ -172,13 +173,12 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
             {/* El encargado puede tener Cotizaciones sin Clientes: entonces no enlaza a una ficha que no puede abrir */}
             <FilaCliente href={verFicha ? conDesde(`/panel/clientes/${c.clienteId}`, desdeAqui) : null} nombre={c.cliente} telefono={c.telefono} />
             {/* Como en Reserva y Orden, con la placa: aquí el título es el número de la cotización */}
-            <dl className="px-4 py-3">
-              <FilaDato etiqueta="Vehículo">
-                <span className="font-semibold">{c.placa}</span>
-                {c.detalle.length > 0 && <span>{c.detalle.join(" ")}</span>}
-                <span className="text-sm text-tinta-suave">Tamaño: {c.tamano}</span>
-              </FilaDato>
-            </dl>
+            {/* La ficha del vehículo, para quien ve Clientes (pedido 51) */}
+            <FilaVehiculo href={verFicha ? conDesde(rutaVehiculo(c.clienteId, c.vehiculoId), desdeAqui) : null}>
+              <span className="font-semibold">{c.placa}</span>
+              {c.detalle.length > 0 && <span>{c.detalle.join(" ")}</span>}
+              <span className="text-sm text-tinta-suave">Tamaño: {c.tamano}</span>
+            </FilaVehiculo>
           </div>
         </Seccion>
 

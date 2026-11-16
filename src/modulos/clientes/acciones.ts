@@ -23,7 +23,8 @@ export type { EstadoCliente };
 
 function despuesDeCambiar(clienteId: number) {
   revalidatePath("/panel/clientes");
-  revalidatePath(`/panel/clientes/${clienteId}`);
+  // "layout": también las fichas de sus vehículos (pedido 51), que cuelgan de la del cliente
+  revalidatePath(`/panel/clientes/${clienteId}`, "layout");
 }
 
 /** Registra un cliente y, si se cargó, su primer vehículo (HU-21, RF-20, RF-21). Repetidos: avisa y ofrece abrir (RF-23). */

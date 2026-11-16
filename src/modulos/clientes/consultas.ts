@@ -6,7 +6,7 @@ import type { EstadoTrabajo } from "@/db/esquema/trabajos";
 import { cotizacionAbierta } from "@/modulos/cotizaciones/consultas";
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
 import { ESTADOS_RESERVA_ACTIVA } from "@/modulos/ordenes/reglas";
-import { escaparLike, normalizarBusqueda } from "./reglas";
+import { escaparLike, normalizarBusqueda, normalizarPlaca } from "./reglas";
 
 // Lecturas de clientes (C1). Quien las llama ya pasó por exigirModulo("clientes"): el dueño o un encargado con el
 // permiso.
@@ -112,6 +112,51 @@ export async function obtenerCliente(id: number): Promise<DetalleCliente | null>
     .where(eq(vehiculo.clienteId, id))
     .orderBy(desc(vehiculo.activo), asc(vehiculo.id));
   return { ...c, vehiculos };
+}
+
+export type FichaVehiculo = VehiculoCliente & {
+  /** Su dueño de ahora. Lo de antes de un cambio de dueño (P37) sigue a nombre del anterior, en su historial. */
+  dueno: { id: number; nombre: string; telefono: string; activo: boolean };
+};
+
+/**
+ * Un vehículo con su dueño de ahora, para su ficha (pedido 51), o null si no existe. Su historial (reservas, cotizaciones y
+ * mantenimientos) sale de las consultas de cada módulo, por `vehiculo_id`: así incluye lo hecho con un dueño anterior.
+ */
+export async function fichaVehiculo(id: number): Promise<FichaVehiculo | null> {
+  const [v] = await db
+    .select({
+      id: vehiculo.id,
+      placa: vehiculo.placa,
+      tamanoId: vehiculo.tamanoId,
+      tamano: tamanoVehiculo.nombre,
+      marca: vehiculo.marca,
+      modelo: vehiculo.modelo,
+      anio: vehiculo.anio,
+      color: vehiculo.color,
+      activo: vehiculo.activo,
+      dueno: { id: cliente.id, nombre: cliente.nombre, telefono: cliente.telefono, activo: cliente.activo },
+    })
+    .from(vehiculo)
+    .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
+    .innerJoin(cliente, eq(vehiculo.clienteId, cliente.id))
+    .where(eq(vehiculo.id, id));
+  return v ?? null;
+}
+
+/**
+ * Si una búsqueda de Clientes es la placa de un vehículo activo (pedido 51): su id y su dueño, para llevar directo a su
+ * ficha. La placa es única entre los activos (RF-23); se compara normalizada, como se guarda.
+ */
+export async function vehiculoConPlacaExacta(q: string): Promise<{ id: number; placa: string; clienteId: number; cliente: string } | null> {
+  const placa = normalizarPlaca(q);
+  if (!placa || placa.length < 4) return null;
+  const [v] = await db
+    .select({ id: vehiculo.id, placa: vehiculo.placa, clienteId: vehiculo.clienteId, cliente: cliente.nombre })
+    .from(vehiculo)
+    .innerJoin(cliente, eq(vehiculo.clienteId, cliente.id))
+    .where(and(eq(vehiculo.placa, placa), eq(vehiculo.activo, true)));
+  return v ?? null;
 }
 
 /** Quién tiene ya ese teléfono, para avisar el duplicado (RF-23). `excepto`: el cliente que se está editando. */

@@ -62,6 +62,20 @@ export function FilaCliente({ href, nombre, telefono }: { href: string | null; n
   );
 }
 
+/**
+ * El vehículo, como una fila que lleva a su ficha (pedido 51), como la del cliente. Sin `href` (sin el permiso de
+ * Clientes), en lectura.
+ */
+export function FilaVehiculo({ href, children }: { href: string | null; children: React.ReactNode }) {
+  return (
+    <FilaEnlace href={href} oculto="Ver ficha del vehículo: ">
+      <FilaDato etiqueta="Vehículo" como="span" enEnlace={href !== null}>
+        {children}
+      </FilaDato>
+    </FilaEnlace>
+  );
+}
+
 /** La cotización de la que salió un trabajo, como una fila que lleva a ella: "Ver la cotización 2026-0004, versión 2 ›". */
 export function FilaCotizacion({ href, numero, version }: { href: string; numero: string; version: number }) {
   return (

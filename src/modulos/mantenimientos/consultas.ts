@@ -159,6 +159,15 @@ const hechoEn = alias(trabajo, "hecho_en");
 
 /** Todos los del cliente, para su ficha: primero los planes abiertos (el más cercano arriba), después la historia. */
 export async function mantenimientosDelCliente(clienteId: number): Promise<MantenimientoDelCliente[]> {
+  return mantenimientosDonde(eq(recordatorio.clienteId, clienteId));
+}
+
+/** Los de un vehículo, para su ficha (pedido 51): el plan es del vehículo (P21), también con un dueño anterior. */
+export async function mantenimientosDelVehiculo(vehiculoId: number): Promise<MantenimientoDelCliente[]> {
+  return mantenimientosDonde(eq(recordatorio.vehiculoId, vehiculoId));
+}
+
+async function mantenimientosDonde(donde: SQL): Promise<MantenimientoDelCliente[]> {
   const filas = await db
     .select({
       id: recordatorio.id,
@@ -179,7 +188,7 @@ export async function mantenimientosDelCliente(clienteId: number): Promise<Mante
     .innerJoin(servicio, eq(recordatorio.servicioId, servicio.id))
     .leftJoin(trabajo, eq(recordatorio.trabajoAgendadoId, trabajo.id))
     .leftJoin(hechoEn, eq(recordatorio.trabajoHechoId, hechoEn.id))
-    .where(eq(recordatorio.clienteId, clienteId))
+    .where(donde)
     .orderBy(
       desc(inArray(recordatorio.estado, [...ESTADOS_PLAN_ABIERTO])),
       sql`case when ${inArray(recordatorio.estado, [...ESTADOS_PLAN_ABIERTO])} then ${recordatorio.fechaProgramada} end asc`,
