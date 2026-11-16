@@ -71,7 +71,7 @@ Se conservan `recordatorio_unico_por_servicio` (`trabajo_origen_id`, `servicio_i
 ## 5. Pantallas y rutas
 
 ### `/panel/catalogo/[id]`: Servicio del catálogo (solo el dueño)
-- **Datos, en lectura:** "Mantenimiento: Mantenimiento del nano cerámico, cada 3 meses" o "No programa mantenimiento". Si es él mismo: "Él mismo, cada 6 meses".
+- **Datos, en lectura:** "Mantenimiento: Mantenimiento del nano cerámico, cada 3 meses" o "No programa mantenimiento". Si es él mismo: "Este mismo servicio, cada 6 meses" (desde el 15/11, hallazgo 3; antes "Él mismo"). En la lista, la opción dice "Este mismo servicio ({nombre})" y la casilla explica cómo funciona.
 - **Editar datos (modal):** en lugar de la casilla, "Programa un mantenimiento al entregarlo" (casilla) y, marcada:
   - "Servicio de mantenimiento": menú con los servicios activos del catálogo, este primero como "Este mismo servicio".
   - "Cada" [N] "meses", de 1 a 24.
@@ -118,7 +118,7 @@ Se conservan `recordatorio_unico_por_servicio` (`trabajo_origen_id`, `servicio_i
 - Nuevos: `FormularioPlan` (agregar y editar, `mantenimientos/componentes/`) y `MasPlan` (el menú de cada plan en la ficha).
 
 ## 8. Textos de la interfaz
-- **Catálogo:** "Programa un mantenimiento al entregarlo" · "Servicio de mantenimiento" · "Este mismo servicio" · "Cada" · "meses" · lectura "Mantenimiento del nano cerámico, cada 3 meses" · "Él mismo, cada 6 meses" · "No programa mantenimiento".
+- **Catálogo:** "Programa un mantenimiento al entregarlo" · "Servicio de mantenimiento" · "Este mismo servicio" · "Cada" · "meses" · lectura "Mantenimiento del nano cerámico, cada 3 meses" · "Este mismo servicio, cada 6 meses" · "No programa mantenimiento".
 - **Entregar:** "Se programará: {servicio}, el {fecha}." · "Queda hecho el mantenimiento de {servicio base}."
 - **Ficha:** "Agregar" (para el lector de pantalla, "Agregar mantenimiento": el texto entero no entra a 360 px, como "Agregar" en Vehículos) · "Servicio que se hizo" · "Cuándo se hizo" · "Próximo mantenimiento" · "Guardar plan" · "cada {N} meses" · "Mantenimiento agregado." · "Plan guardado."
 - **Mantenimientos:** "cada {N} meses" · "Hecho".
