@@ -7,11 +7,11 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
-import { MenuMas } from "@/componentes/panel/menu-mas";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { cantidad } from "@/lib/cantidad";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioDatosCatalogo } from "@/modulos/catalogo/componentes/formulario-datos-catalogo";
+import { MasServicio } from "@/modulos/catalogo/componentes/mas-servicio";
 import { PreciosServicio } from "@/modulos/catalogo/componentes/precios-servicio";
 import { EditarVariantes } from "@/modulos/catalogo/componentes/variantes-servicio";
 import { obtenerServicioCatalogo } from "@/modulos/catalogo/consultas";
@@ -66,8 +66,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
         // Solo lo que pide atención (pulido 13.57, como en la lista): inactivo, u oculto en el sitio. Sale en el sitio si
         // está activo y su página se muestra (publico.ts pide las dos)
         estado={!s.activo ? <Insignia>Inactivo</Insignia> : !s.visibleSitio ? <Insignia>Oculto en el sitio</Insignia> : undefined}
-        // Su página del sitio se edita poco desde aquí: en "Más", y el título con todo el ancho en el celular
-        accion={<MenuMas acciones={[{ texto: "Su página en el sitio", href: conDesde(`/panel/sitio/servicios/${s.id}`, desdeAqui), mismaPestana: true }]} />}
+        // En "Más": su página del sitio y desactivarlo, con confirmación (hallazgo 1); inactivo, "Reactivar servicio"
+        accion={<MasServicio id={s.id} nombre={s.nombre} activo={s.activo} hrefSitio={conDesde(`/panel/sitio/servicios/${s.id}`, desdeAqui)} />}
       />
       {cargarPrecios && <AvisoFlotante mensaje="Servicio creado. Carga sus precios." />}
 
@@ -95,7 +95,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
               {s.mantenimiento ? (
                 <dl className="flex flex-col gap-2">
                   <FilaDato etiqueta="Servicio">
-                    <span className="font-semibold">{s.mantenimiento.servicioId === s.id ? "Él mismo" : s.mantenimiento.servicio}</span>
+                    <span className="font-semibold">{s.mantenimiento.servicioId === s.id ? "Este mismo servicio" : s.mantenimiento.servicio}</span>
                   </FilaDato>
                   <FilaDato etiqueta="Cada">
                     <span className="font-semibold">{cantidad(s.mantenimiento.meses, "mes", "meses")}</span>
@@ -110,7 +110,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
               <dl className="px-4 py-3">
                 <FilaDato etiqueta="Catálogo">
                   <span className="font-semibold">Inactivo</span>
-                  <span className="text-sm text-tinta-suave">No se cotiza ni sale en el sitio.</span>
+                  <span className="text-sm text-tinta-suave">No se cotiza, no se reserva ni sale en el sitio.</span>
                 </FilaDato>
               </dl>
             )}
@@ -118,7 +118,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
         }
       >
         <FormularioDatosCatalogo
-          servicio={{ id: s.id, nombre: s.nombre, duracionDias: s.duracionDias, mantenimiento: s.mantenimiento, activo: s.activo }}
+          servicio={{ id: s.id, nombre: s.nombre, duracionDias: s.duracionDias, mantenimiento: s.mantenimiento }}
           servicios={s.serviciosParaMantenimiento}
         />
       </SeccionConEditar>

@@ -24,15 +24,14 @@ const duracionDias = z.coerce
 export const esquemaCrearServicio = z.object({ nombre, duracionDias });
 
 /**
- * Nombre, duración, si está activo y su mantenimiento (RN-08, pedido 21): con la casilla marcada, el servicio que se
- * agenda (puede ser él mismo) y cada cuántos meses; sin ella, ninguno.
+ * Nombre, duración y su mantenimiento (RN-08, pedido 21): con la casilla marcada, el servicio que se agenda (puede ser
+ * él mismo) y cada cuántos meses; sin ella, ninguno. Desactivarlo va aparte, en "Más" (hallazgo 1, esquemaIdServicio).
  */
 export const esquemaDatosCatalogo = z
   .object({
     id,
     nombre,
     duracionDias,
-    activo: z.boolean(),
     conMantenimiento: z.boolean(),
     mantenimientoServicioId: z.string(),
     mantenimientoMeses: z.string(),
@@ -47,6 +46,9 @@ export const esquemaDatosCatalogo = z
     ...d,
     mantenimiento: conMantenimiento ? { servicioId: Number(mantenimientoServicioId), meses: Number(mantenimientoMeses) } : null,
   }));
+
+/** Desactivar o reactivar un servicio, desde "Más" de su ficha (hallazgo 1 de la prueba en celulares). */
+export const esquemaIdServicio = z.object({ id });
 
 /** Duración propia de una variante: vacía usa la del servicio (HU-20). */
 const duracionOpcional = z.preprocess((v) => (v === "" || v === null || v === undefined ? null : v), duracionDias.nullable());

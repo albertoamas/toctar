@@ -65,7 +65,7 @@ test("el dueño marca el mantenimiento, cambia la duración y desactiva un servi
   await modal.getByRole("button", { name: "Guardar datos" }).click();
   await expect(modal.getByText("Elige el servicio de mantenimiento.")).toBeVisible();
   await expect(modal.getByText("Escribe los meses, de 1 a 24.")).toBeVisible();
-  await modal.getByLabel("Servicio de mantenimiento").selectOption({ label: "Este mismo servicio" });
+  await modal.getByLabel("Servicio de mantenimiento").selectOption({ label: `Este mismo servicio (${nombre})` });
   await modal.getByLabel("Cada", { exact: true }).fill("6");
   await modal.getByRole("button", { name: "Guardar datos" }).click();
   await expect(page.getByText("Cambios guardados.")).toBeVisible();
@@ -74,25 +74,26 @@ test("el dueño marca el mantenimiento, cambia la duración y desactiva un servi
   await expect(datos).toContainText("3 días");
   // En bloques (pulido 13.57): el servicio y cada cuánto, cada uno en su fila
   const mantenimiento = datos.getByRole("group", { name: "Datos del servicio" });
-  await expect(mantenimiento.getByText("Servicio", { exact: true }).locator("xpath=following-sibling::dd[1]")).toHaveText("Él mismo");
+  await expect(mantenimiento.getByText("Servicio", { exact: true }).locator("xpath=following-sibling::dd[1]")).toHaveText("Este mismo servicio");
   await expect(mantenimiento.getByText("Cada", { exact: true }).locator("xpath=following-sibling::dd[1]")).toHaveText("6 meses");
   await expect(editar).toBeFocused();
 
-  // Inactivo: no sale en el sitio (su página no existe) y queda marcado en el catálogo
-  await editar.click();
-  await modal.getByText("Activo en el catálogo").click();
-  await modal.getByRole("button", { name: "Guardar datos" }).click();
-  await expect(modal).toHaveCount(0);
+  // Inactivo, desde "Más" y con confirmación (hallazgo 1): no sale en el sitio (su página no existe) y queda marcado
+  await page.getByRole("main").getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Desactivar servicio" }).click();
+  const desactivar = page.getByRole("dialog", { name: `¿Desactivar ${nombre}?` });
+  await expect(desactivar).toContainText("no se cotiza, no se reserva y no sale en el sitio");
+  // El foco en "Cancelar": un Enter no lo desactiva
+  await expect(desactivar.getByRole("button", { name: "Cancelar" })).toBeFocused();
+  await desactivar.getByRole("button", { name: "Sí, desactivar" }).click();
+  await expect(page.getByText(`${nombre} desactivado.`)).toBeVisible();
   await expect(page.getByRole("heading", { level: 1 }).locator("..")).toContainText("Inactivo");
   await enElSitio(page, slug, "No encontramos esta página");
 
-  // Se reactiva: vuelve al sitio
+  // Se reactiva con su botón: vuelve al sitio
   await abrirFicha(page, id);
-  await editar.click();
-  await modal.getByText("Activo en el catálogo").click();
-  await modal.getByRole("button", { name: "Guardar datos" }).click();
-  // Guardado de verdad: el modal se cerró y la lectura ya no dice "Inactivo" (activo, no dice nada: cambio 4b)
-  await expect(modal).toHaveCount(0);
+  await page.getByRole("button", { name: "Reactivar servicio" }).click();
+  await expect(page.getByText(`${nombre} reactivado.`)).toBeVisible();
   await expect(datos).toContainText("Duración");
   await expect(datos).not.toContainText("Inactivo");
   await expect(page.getByRole("heading", { level: 1 }).locator("..")).not.toContainText("Inactivo");
@@ -270,11 +271,10 @@ test("un servicio que otro usa como su mantenimiento no se desactiva (pedido 21)
   await ingresarComoDueno(page);
   const [{ id }] = await consultar<{ id: number }>("select id from servicio where slug = 'mantenimiento-del-nano-ceramico'");
   await page.goto(`/panel/catalogo/${id}`);
-  await page.getByRole("button", { name: "Editar datos del servicio" }).click();
-  const modal = page.getByRole("dialog", { name: "Datos del servicio" });
-  await modal.getByText("Activo en el catálogo").click();
-  await modal.getByRole("button", { name: "Guardar datos" }).click();
-  await expect(modal.getByText("Es el mantenimiento de Pulido y nano cerámico: cámbialo ahí primero.")).toBeVisible();
+  await page.getByRole("main").getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Desactivar servicio" }).click();
+  await page.getByRole("dialog", { name: /^¿Desactivar / }).getByRole("button", { name: "Sí, desactivar" }).click();
+  await expect(page.getByText("Es el mantenimiento de Pulido y nano cerámico: cámbialo ahí primero.")).toBeVisible();
   const [{ activo }] = await consultar<{ activo: boolean }>("select activo from servicio where id = $1", [id]);
   expect(activo).toBe(true);
 });

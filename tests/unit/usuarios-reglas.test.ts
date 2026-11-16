@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { esquemaCrearUsuario, esquemaDatosUsuario, esquemaMiContrasena, esquemaPermisosUsuario } from "@/modulos/usuarios/esquemas";
+import { erroresDe } from "@/lib/formularios";
+import { esquemaCrearUsuario, esquemaDatosUsuario, esquemaMiContrasena, esquemaPermisosUsuario, esquemaRestablecer } from "@/modulos/usuarios/esquemas";
 import { puedeCambiar, type CambioDeCuenta } from "@/modulos/usuarios/reglas";
 
 // HU-02 y RN-15 (pedido 50, docs/08-desarrollo/etapas/P50-cuenta-del-dueno-protegida.md): desde el panel, la cuenta de un
@@ -25,14 +26,14 @@ describe("puedeCambiar (RN-15)", () => {
 });
 
 describe("formulario de usuario", () => {
-  const valido = { nombre: "Juan Pérez", usuario: "Juan.Perez", contrasena: "clave-123", permisos: ["agenda", "ordenes"] };
+  const valido = { nombre: "Juan Pérez", usuario: "Juan.Perez", contrasena: "clave-123", repetir: "clave-123", permisos: ["agenda", "ordenes"] };
 
   test("normaliza el usuario a minúsculas", () => {
     expect(esquemaCrearUsuario.parse(valido).usuario).toBe("juan.perez");
   });
 
   test("rechaza contraseña corta y permiso inexistente", () => {
-    expect(esquemaCrearUsuario.safeParse({ ...valido, contrasena: "1234" }).success).toBe(false);
+    expect(esquemaCrearUsuario.safeParse({ ...valido, contrasena: "1234", repetir: "1234" }).success).toBe(false);
     expect(esquemaCrearUsuario.safeParse({ ...valido, permisos: ["consultas"] }).success).toBe(false);
   });
 
@@ -61,8 +62,17 @@ describe("formulario de usuario", () => {
   });
 
   test("cambiar mi contraseña pide la actual y una nueva de al menos 8", () => {
-    expect(esquemaMiContrasena.safeParse({ actual: "", nueva: "nueva-1234" }).success).toBe(false);
-    expect(esquemaMiContrasena.safeParse({ actual: "vieja", nueva: "1234" }).success).toBe(false);
-    expect(esquemaMiContrasena.safeParse({ actual: "vieja", nueva: "nueva-1234" }).success).toBe(true);
+    expect(esquemaMiContrasena.safeParse({ actual: "", nueva: "nueva-1234", repetir: "nueva-1234" }).success).toBe(false);
+    expect(esquemaMiContrasena.safeParse({ actual: "vieja", nueva: "1234", repetir: "1234" }).success).toBe(false);
+    expect(esquemaMiContrasena.safeParse({ actual: "vieja", nueva: "nueva-1234", repetir: "nueva-1234" }).success).toBe(true);
+  });
+
+  // Hallazgo 5 de la prueba en celulares: una contraseña nueva se escribe dos veces, y el error va en la repetida
+  test("la contraseña nueva, repetida igual", () => {
+    const error = { repetir: "Las contraseñas no coinciden: escríbela igual en los dos campos." };
+    expect(erroresDe(esquemaCrearUsuario.safeParse({ ...valido, repetir: "clave-124" }).error!)).toEqual(error);
+    expect(erroresDe(esquemaRestablecer.safeParse({ id: "3", contrasena: "nueva-1234", repetir: "" }).error!)).toEqual(error);
+    expect(erroresDe(esquemaMiContrasena.safeParse({ actual: "vieja", nueva: "nueva-1234", repetir: "nueva-1235" }).error!)).toEqual(error);
+    expect(esquemaRestablecer.safeParse({ id: "3", contrasena: "nueva-1234", repetir: "nueva-1234" }).success).toBe(true);
   });
 });

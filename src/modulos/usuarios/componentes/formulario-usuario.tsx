@@ -24,6 +24,10 @@ export function FormularioUsuario({ asignables }: { asignables: { permiso: Permi
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(crearConAviso, {});
   const valores = estado.valores;
   const [verContrasena, setVerContrasena] = useState(false);
+  // Controladas: React vacía los campos del formulario después de un error, y la contraseña no vuelve del servidor.
+  // Con "no coinciden" se perdían las dos (hallazgo 5)
+  const [contrasena, setContrasena] = useState("");
+  const [repetida, setRepetida] = useState("");
   const e = estado.errores ?? {};
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
@@ -38,11 +42,15 @@ export function FormularioUsuario({ asignables }: { asignables: { permiso: Permi
       </Campo>
       <Campo id="contrasena" etiqueta="Contraseña inicial" error={e.contrasena} ayuda="Al menos 8 caracteres. Pásasela a la persona en mano o por WhatsApp.">
         <div className="flex gap-2">
-          <Input id="contrasena" name="contrasena" type={verContrasena ? "text" : "password"} autoComplete="new-password" aria-invalid={!!e.contrasena} aria-describedby={e.contrasena ? "contrasena-error" : "contrasena-ayuda"} />
+          <Input id="contrasena" name="contrasena" type={verContrasena ? "text" : "password"} autoComplete="new-password" value={contrasena} onChange={(ev) => setContrasena(ev.target.value)} aria-invalid={!!e.contrasena} aria-describedby={e.contrasena ? "contrasena-error" : "contrasena-ayuda"} />
           <Button type="button" variant="outline" size="icon" onClick={() => setVerContrasena((v) => !v)} aria-label={verContrasena ? "Ocultar contraseña" : "Mostrar contraseña"}>
             {verContrasena ? <EyeOffIcon /> : <EyeIcon />}
           </Button>
         </div>
+      </Campo>
+      {/* Hallazgo 5: dos veces, un error de tipeo en el celular la dejaba sin poder entrar. El ojo muestra las dos */}
+      <Campo id="repetir" etiqueta="Repite la contraseña" error={e.repetir}>
+        <Input id="repetir" name="repetir" type={verContrasena ? "text" : "password"} autoComplete="new-password" value={repetida} onChange={(ev) => setRepetida(ev.target.value)} aria-invalid={!!e.repetir} aria-describedby={e.repetir ? "repetir-error" : undefined} />
       </Campo>
       {/* Empieza con el perfil Taller, el más común (pedido 32: los que reciben y trabajan los vehículos) */}
       <CamposPermisos asignables={asignables} permisosIniciales={PERFILES[0].permisos} />
