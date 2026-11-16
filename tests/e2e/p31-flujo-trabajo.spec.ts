@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, conVolver } from "./apoyo";
+import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, conVolver, enPorReservar, verPorReservar } from "./apoyo";
 
 // Pedido 31: un trabajo, de la cotización a la entrega (etapas/P31-flujo-de-un-trabajo.md §9). Cotizaciones cotiza y la
 // Agenda reserva: "Aceptó", "Por reservar", la Nueva reserva que ofrece las cotizaciones del cliente y los pasos.
@@ -116,7 +116,7 @@ test("«Aceptó» la deja en Por reservar de la Agenda; desde ahí se reserva y 
 
   // En la Agenda, en "Por reservar", con el total para quien ve montos
   await page.goto("/panel/agenda");
-  const porReservar = page.getByRole("list", { name: "Por reservar" });
+  const porReservar = await verPorReservar(page);
   const fila = porReservar.getByRole("link").filter({ hasText: c.cliente });
   await expect(fila).toContainText("700 Bs");
   await fila.click();
@@ -133,7 +133,7 @@ test("«Aceptó» la deja en Por reservar de la Agenda; desde ahí se reserva y 
 
   // Reservada: sale de "Por reservar" y no se vuelve a reservar ni a cambiar desde la cotización
   await page.goto("/panel/agenda");
-  await expect(page.getByRole("list", { name: "Por reservar" }).getByRole("link").filter({ hasText: c.cliente })).toHaveCount(0);
+  await expect(await enPorReservar(page, c.cliente)).toHaveCount(0);
   await page.goto(`/panel/cotizaciones/${c.consultaId}`);
   await expect(page.getByRole("link", { name: /reservar/i })).toHaveCount(0);
   await expect(page.getByRole("main").getByText("Sin fecha", { exact: true })).toHaveCount(0);
@@ -157,7 +157,7 @@ test("una aceptada sin fecha vuelve a pendiente desde «Más», con su versión 
   );
   expect(r).toEqual({ con: "cotizado", cot: "enviada" });
   await page.goto("/panel/agenda");
-  await expect(page.getByRole("main").getByRole("link").filter({ hasText: c.cliente })).toHaveCount(0);
+  await expect(await enPorReservar(page, c.cliente)).toHaveCount(0);
 });
 
 test("Nueva reserva ofrece las cotizaciones del vehículo: los precios llegan sin escribirlos", async ({ page }, info) => {

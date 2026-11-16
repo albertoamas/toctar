@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearCotizacionEnBase, ingresarComoDueno } from "./apoyo";
+import { consultar, crearClienteEnBase, crearCotizacionEnBase, ingresarComoDueno, verPorReservar } from "./apoyo";
 
 // Hallazgo 9 de la prueba en celulares (15/11, 08-desarrollo/hallazgos-prueba-celulares.md): Nueva reserva es una sola
 // pantalla para los tres caminos y solo cambia la dirección. Al reservar un mantenimiento, salir sin guardar (con Atrás o
@@ -108,7 +108,7 @@ test("desde una cotización (Por reservar de la Agenda), también empieza de cer
   await ingresarComoDueno(page);
   const reservar = async () => {
     await page.goto("/panel/agenda");
-    await page.getByRole("list", { name: "Por reservar" }).getByRole("link").filter({ hasText: nombre }).click();
+    await (await verPorReservar(page)).getByRole("link").filter({ hasText: nombre }).click();
     await expect(page.getByLabel("Espacio", { exact: true })).toBeEnabled();
   };
 
@@ -123,7 +123,7 @@ test("desde una cotización (Por reservar de la Agenda), también empieza de cer
   await expect(page).toHaveURL(/\/panel\/agenda$/);
 
   // La misma cotización otra vez: sin el espacio elegido antes
-  await page.getByRole("list", { name: "Por reservar" }).getByRole("link").filter({ hasText: nombre }).click();
+  await (await verPorReservar(page)).getByRole("link").filter({ hasText: nombre }).click();
   await expect(page.getByLabel("Espacio", { exact: true })).toBeEnabled();
   await expect(page.getByLabel("Espacio", { exact: true })).toHaveValue("");
 });

@@ -2,31 +2,36 @@ import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { cn } from "cn";
-import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
+import { BarraLista, ResumenLista } from "@/componentes/panel/barra-lista";
+import { Buscador } from "@/componentes/panel/buscador";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
-import { MasDatos } from "@/componentes/panel/mas-datos";
+import { Insignia } from "@/componentes/panel/insignia";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { CeldaDoble, TablaLista, type ColumnaTabla } from "@/componentes/panel/tabla-lista";
 import { cantidad } from "@/lib/cantidad";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
-import { AgendaDelDia, TableroSemana } from "@/modulos/agenda/componentes/tablero";
-import { semanaDeAgenda } from "@/modulos/agenda/consultas";
-import { DIA_CORTO, diasDeLaSemana, lunesDeLaSemana, numeroDia, seCruzan, textoDia, textoSemana, textoSemanaCorto } from "@/modulos/agenda/reglas";
+import { AgendaDelDia, PestanasDias, SemanaEnLista, TableroSemana } from "@/modulos/agenda/componentes/tablero";
+import { buscarReservas, resumenDeHoy, semanaDeAgenda, type ResumenDeHoy } from "@/modulos/agenda/consultas";
+import { diasDeLaSemana, fechaCorta, lunesDeLaSemana, NOMBRE_ESTADO_TRABAJO, textoSemana, textoServicio, textoSemanaCorto, tituloDia, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { cotizacionesPorReservar, type FilaCotizacion } from "@/modulos/cotizaciones/consultas";
 import { bs, diasDesde, textoDias } from "@/modulos/cotizaciones/reglas";
+import { rutaTrabajo } from "@/modulos/ordenes/reglas";
 import { aqui, conDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Agenda" };
 
 // HU-29: el tablero de la agenda (RF-38). `?semana=` (cualquier día de la semana; se toma su lunes) y, en el celular,
 // `?dia=` (el día que se ve). Dueño o encargado con "Agenda".
-// Pulido 10.1: el tablero de la semana desde 1024 px (en la tableta las cintas no se leían); hasta ahí, un día a la vez.
-// La semana se recorre en un renglón: flecha, la semana (corta en el celular), flecha y "Hoy".
+// Pulido 10.1: el tablero de la semana solo con espacio (desde 1280 px desde el 16/11). Lavado de cara (16/11,
+// prototipo aprobado): un buscador de reservas de cualquier semana (?q=), lo de hoy en una línea, "Por reservar" plegado
+// y, en la tableta, la semana como lista por día; en el celular, un día a la vez.
 export default function PaginaAgenda({ searchParams }: PageProps<"/panel/agenda">) {
   return (
     <PaginaPanel tipo="lista">
@@ -47,9 +52,6 @@ export default function PaginaAgenda({ searchParams }: PageProps<"/panel/agenda"
   );
 }
 
-/** Cuántas de "Por reservar" se ven sin desplegar. */
-const POR_RESERVAR_A_LA_VISTA = 5;
-
 const enlaceSemana = (lunes: string, dia?: string) => `/panel/agenda?semana=${lunes}${dia ? `&dia=${dia}` : ""}` as Route;
 
 async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searchParams">) {
@@ -57,7 +59,8 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
   const conOrdenes = puedeVerModulo(usuario, "ordenes");
   const parametros = await searchParams;
   const { semana: pedida, dia: diaPedido } = parametros;
-  // Pedido 43: lo que se abre desde la Agenda vuelve a esta semana y este día
+  const q = typeof parametros.q === "string" ? parametros.q.trim() : "";
+  // Pedido 43: lo que se abre desde la Agenda vuelve a esta semana y este día (o a esta búsqueda)
   const desdeAqui = aqui("/panel/agenda", parametros);
   const hoy = fechaEnBolivia();
   // Del 2000 al 2100: con años extremos las fechas dejan de tener cuatro cifras y la base las rechaza
@@ -66,8 +69,56 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
   const dias = diasDeLaSemana(lunes);
   // En el celular: el día pedido si es de esta semana; si no, hoy (si cae en ella) o el lunes
   const dia = typeof diaPedido === "string" && dias.includes(diaPedido) ? diaPedido : dias.includes(hoy) ? hoy : lunes;
-  const [semana, porReservar] = await Promise.all([semanaDeAgenda(lunes, dias[6]), cotizacionesPorReservar()]);
+  const estaSemana = dias.includes(hoy);
+
+  const barra = (
+    <BarraLista
+      buscador={<Buscador etiqueta="Buscar reservas por placa, cliente o teléfono" ejemplo="Placa o cliente" />}
+      derecha={
+        q ? undefined : (
+          // Un renglón: la semana entre las flechas; en el celular, corta ("16 al 22 nov") para que entre
+          <nav aria-label="Semanas" className="flex w-full items-center gap-2 sm:w-auto">
+            <Link href={enlaceSemana(sumarDias(lunes, -7))} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Semana anterior">
+              <ChevronLeftIcon />
+            </Link>
+            <p className="min-w-0 flex-1 text-center tt-titulo-seccion sm:min-w-56" aria-live="polite">
+              <span className="sm:hidden">{textoSemanaCorto(lunes)}</span>
+              <span className="hidden sm:inline">{textoSemana(lunes)}</span>
+            </p>
+            <Link href={enlaceSemana(sumarDias(lunes, 7))} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Semana siguiente">
+              <ChevronRightIcon />
+            </Link>
+            {!estaSemana && (
+              <Link href="/panel/agenda" className={cn(buttonVariants({ variant: "outline" }), "shrink-0")}>
+                Hoy
+              </Link>
+            )}
+          </nav>
+        )
+      }
+    />
+  );
+
   const conMontos = puedeVerModulo(usuario, "pagos") || puedeVerModulo(usuario, "cotizaciones");
+  return (
+    <>
+      {/* Fuera de lo que se recarga: al buscar, el campo no se vuelve a montar y no pierde el foco (como en Órdenes) */}
+      {barra}
+      <Suspense fallback={<Cargando />}>
+        {q ? (
+          <Resultados q={q} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
+        ) : (
+          <Semana lunes={lunes} dias={dias} dia={dia} hoy={hoy} conOrdenes={conOrdenes} conMontos={conMontos} desde={desdeAqui} />
+        )}
+      </Suspense>
+    </>
+  );
+}
+
+/** Lo de hoy, "Por reservar" y la semana en sus tres vistas (computadora, tableta y celular). */
+async function Semana(props: { lunes: string; dias: string[]; dia: string; hoy: string; conOrdenes: boolean; conMontos: boolean; desde: string }) {
+  const { lunes, dias, dia, hoy, conOrdenes, conMontos, desde: desdeAqui } = props;
+  const [semana, porReservar, resumen] = await Promise.all([semanaDeAgenda(lunes, dias[6]), cotizacionesPorReservar(), resumenDeHoy(hoy)]);
   const ahora = new Date();
   const fila = (c: FilaCotizacion) => ({
     href: conDesde(`/panel/agenda/nueva?cotizacion=${c.cotizacionId}`, desdeAqui),
@@ -75,80 +126,116 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
     tituloGrande: true,
     detalles: [c.cliente, c.servicios, ...(conMontos ? [bs(c.total)] : []), `Aceptada ${textoDias(diasDesde(c.ultimoMovimientoAt, ahora))}`].filter(Boolean),
   });
-  const estaSemana = dias.includes(hoy);
 
   return (
     <>
-      {/* Pedido 31: las cotizaciones aceptadas que esperan fecha, arriba del tablero. La Agenda es donde se reserva; sin
-          ninguna, no ocupa lugar */}
-      {porReservar.length > 0 && (
-        <section aria-labelledby="por-reservar-titulo" className="flex flex-col gap-3">
-          <CabeceraSeccion id="por-reservar" titulo={`Por reservar (${porReservar.length})`} />
-          <ListaFilas etiqueta="Por reservar" filas={porReservar.slice(0, POR_RESERVAR_A_LA_VISTA).map(fila)} />
-          {/* Con muchas, las demás plegadas: el tablero es lo principal de la Agenda y no queda abajo de una lista larga */}
-          {porReservar.length > POR_RESERVAR_A_LA_VISTA && (
-            <MasDatos texto={`Ver ${cantidad(porReservar.length - POR_RESERVAR_A_LA_VISTA, "más", "más")}`} modo="ver" abierto={false}>
-              <ListaFilas etiqueta="Más por reservar" filas={porReservar.slice(POR_RESERVAR_A_LA_VISTA).map(fila)} />
-            </MasDatos>
-          )}
-        </section>
-      )}
-      {/* Un renglón: la semana entre las flechas; en el celular, corta ("26 oct al 1 nov") para que entre */}
-      <nav aria-label="Semanas" className="flex items-center gap-2">
-        <Link href={enlaceSemana(sumarDias(lunes, -7))} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Semana anterior">
-          <ChevronLeftIcon />
-        </Link>
-        <p className="min-w-0 text-center tt-titulo-seccion" aria-live="polite">
-          <span className="sm:hidden">{textoSemanaCorto(lunes)}</span>
-          <span className="hidden sm:inline">{textoSemana(lunes)}</span>
-        </p>
-        <Link href={enlaceSemana(sumarDias(lunes, 7))} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Semana siguiente">
-          <ChevronRightIcon />
-        </Link>
-        {!estaSemana && (
-          <Link href="/panel/agenda" className={cn(buttonVariants({ variant: "outline" }), "ml-auto shrink-0")}>
-            Hoy
-          </Link>
+      <div className={cn("grid gap-3", porReservar.length > 0 && "lg:grid-cols-[minmax(0,1fr)_auto]")}>
+        <ResumenHoy resumen={resumen} hoy={hoy} conOrdenes={conOrdenes} />
+        {/* Pedido 31: las cotizaciones aceptadas que esperan fecha. Lavado de cara (16/11): plegadas en una fila, así el
+            tablero, que es lo principal de la Agenda, no queda abajo de una lista larga; sin ninguna, no ocupa lugar */}
+        {porReservar.length > 0 && (
+          <details className="group lg:open:col-span-full">
+            <summary className="tt-tarjeta-panel flex min-h-12 cursor-pointer list-none items-center gap-3 px-4 py-3 hover:bg-superficie/50 [&::-webkit-details-marker]:hidden">
+              <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-aviso-fondo px-1.5 text-sm font-bold text-aviso">{porReservar.length}</span>
+              <span className="flex-1 text-sm font-semibold">{porReservar.length === 1 ? "Cotización por reservar" : "Cotizaciones por reservar"}</span>
+              <ChevronDownIcon className="size-4 shrink-0 text-tinta-suave group-open:rotate-180" aria-hidden />
+            </summary>
+            <div className="mt-2">
+              <ListaFilas etiqueta="Por reservar" filas={porReservar.map(fila)} />
+            </div>
+          </details>
         )}
-      </nav>
+      </div>
 
       {semana.espacios.length === 0 ? (
         <p className="text-tinta-suave">No hay espacios activos. Agrégalos en Configuración, «Taller».</p>
       ) : (
         <>
           <TableroSemana semana={semana} dias={dias} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
-
-          {/* Celular y tableta: los siete días como pestañas (enlaces: el día va en la dirección). La marcada dice qué
-              día se ve; el número de hoy va en azul, se vea o no; debajo, un punto en los días con alguna reserva (pulido
-              final, 10/11: para saber si un día está ocupado había que tocarlo) */}
-          <nav aria-label="Días de la semana" className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0 lg:hidden">
-            <ul className="grid min-w-max grid-cols-7 gap-1">
-              {dias.map((d, i) => {
-                // Lo que ocupa el día: una entregada ya no (el tablero la muestra como historia)
-                const conReservas = semana.reservas.some((r) => r.estado !== "entregado" && seCruzan({ inicio: r.inicio, fin: r.fin }, { inicio: d, fin: d }));
-                return (
-                  <li key={d}>
-                    <Link
-                      href={enlaceSemana(lunes, d)}
-                      aria-current={d === dia ? "date" : undefined}
-                      aria-label={`${textoDia(d)}${d === hoy ? ", hoy" : ""}${conReservas ? ", con reservas" : ""}`}
-                      className={cn(
-                        "flex min-h-11 min-w-11 flex-col items-center justify-center border-b-2 px-1 text-xs",
-                        d === dia ? "border-tinta font-semibold text-tinta" : "border-transparent text-tinta-suave",
-                      )}
-                    >
-                      <span>{DIA_CORTO[i]}</span>
-                      <span className={cn("text-base", d === hoy && "font-bold text-info")}>{numeroDia(d)}</span>
-                      <span aria-hidden className={cn("mt-0.5 size-1.5 rounded-full", conReservas ? "bg-tinta-suave" : "bg-transparent")} />
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
+          <SemanaEnLista semana={semana} dias={dias} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
+          <PestanasDias semana={semana} dias={dias} hoy={hoy} dia={dia} enlace={(d) => enlaceSemana(lunes, d)} />
           <AgendaDelDia semana={semana} dia={dia} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
         </>
       )}
+    </>
+  );
+}
+
+/**
+ * Lo de hoy en una línea: cuántas faltan recibir, cuántas están en el taller y cuántas para entregar. Con permiso de
+ * Órdenes, las dos últimas llevan a su lista; "por recibir", al Inicio, que las lista con su espacio.
+ */
+function ResumenHoy({ resumen, hoy, conOrdenes }: { resumen: ResumenDeHoy; hoy: string; conOrdenes: boolean }) {
+  const datos: { n: number; texto: string; href: Route | null }[] = [
+    { n: resumen.porRecibir, texto: "por recibir", href: "/panel" },
+    { n: resumen.enElTaller, texto: "en el taller", href: conOrdenes ? "/panel/ordenes" : null },
+    { n: resumen.paraEntregar, texto: "para entregar", href: conOrdenes ? ("/panel/ordenes?estado=listo" as Route) : null },
+  ];
+  return (
+    <section aria-labelledby="hoy-titulo" className="tt-tarjeta-panel flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-8">
+      <h2 id="hoy-titulo" className="tt-titulo-sub">
+        {tituloDia(hoy, hoy)}
+      </h2>
+      <ul className="grid grid-cols-3 gap-2 sm:flex sm:gap-8">
+        {datos.map((d) => {
+          const contenido = (
+            <>
+              <span className="text-xl font-bold tabular-nums">{d.n}</span>
+              <span className="text-[0.8125rem] text-tinta-media sm:text-sm">{d.texto}</span>
+            </>
+          );
+          const clase = "flex flex-col sm:flex-row sm:items-baseline sm:gap-2";
+          return (
+            <li key={d.texto}>
+              {d.href && d.n > 0 ? (
+                <Link href={d.href} className={cn(clase, "rounded-md hover:underline")}>
+                  {contenido}
+                </Link>
+              ) : (
+                <span className={clase}>{contenido}</span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+const COLUMNAS_RESULTADOS: ColumnaTabla[] = [
+  { titulo: "Vehículo", ancho: "minmax(0,1fr)", movil: "titulo" },
+  { titulo: "Fecha", ancho: "minmax(0,1.2fr)", movil: "detalle" },
+  { titulo: "Servicio", ancho: "minmax(0,1.3fr)", movil: "detalle" },
+  { titulo: "Espacio", ancho: "6.5rem", movil: "detalle" },
+  { titulo: "Estado", ancho: "7.5rem", movil: "estado" },
+];
+
+/** Las reservas que coinciden con la búsqueda, de cualquier semana: las que vienen primero y después las pasadas. */
+async function Resultados({ q, hoy, conOrdenes, desde }: { q: string; hoy: string; conOrdenes: boolean; desde: string }) {
+  const { reservas, hayMas } = await buscarReservas(q);
+  if (reservas.length === 0) return <EstadoVacio>{`Ninguna reserva coincide con «${q}». Revisa la placa o el nombre.`}</EstadoVacio>;
+  return (
+    <>
+      <ResumenLista>
+        {cantidad(reservas.length, "reserva", "reservas")} con «{q}»{hayMas && ": se ven las primeras; escribe más para encontrar la que buscas"}
+      </ResumenLista>
+      <TablaLista
+        etiqueta="Reservas encontradas"
+        columnas={COLUMNAS_RESULTADOS}
+        desde={desde}
+        filas={reservas.map((r) => ({
+          href: rutaTrabajo(r.id, r.estado, conOrdenes),
+          celdas: [
+            <CeldaDoble key="v" principal={r.placa} secundario={r.cliente} peso="placa" />,
+            `${r.inicio === r.fin ? fechaCorta(r.inicio, hoy) : `${fechaCorta(r.inicio, hoy)} al ${fechaCorta(r.fin, hoy)}`}${r.hora ? `, ${r.hora}` : ""}`,
+            textoServicio(r),
+            r.espacio,
+            <Insignia key="e" tono={TONO_ESTADO_TRABAJO[r.estado]}>
+              {NOMBRE_ESTADO_TRABAJO[r.estado]}
+            </Insignia>,
+          ],
+        }))}
+      />
     </>
   );
 }
