@@ -300,3 +300,18 @@ export function conVolver(href: string): RegExp {
   const exacto = href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(`^${exacto}(?:[?&]volver=[^&#]*)?$`);
 }
+
+/**
+ * La lista "Por reservar" de la Agenda, abierta: desde el lavado de cara (16/11) va plegada en una fila
+ * ("N cotizaciones por reservar") para no empujar el tablero hacia abajo.
+ */
+export async function verPorReservar(page: Page): Promise<Locator> {
+  const fila = page.getByText(/^Cotizaci(ón|ones) por reservar$/).filter({ visible: true });
+  await expect(fila).toBeVisible();
+  // Al volver a la Agenda puede seguir abierta (la pantalla anterior queda guardada): tocarla la cerraría
+  const abierta = await page.locator("details").filter({ has: fila }).evaluate((d) => (d as HTMLDetailsElement).open);
+  if (!abierta) await fila.click();
+  const lista = page.getByRole("list", { name: "Por reservar" });
+  await expect(lista).toBeVisible();
+  return lista;
+}

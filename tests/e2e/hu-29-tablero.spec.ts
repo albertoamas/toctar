@@ -72,12 +72,13 @@ test("las reservas ocupan sus días en su espacio; un día libre lleva a reserva
     await expect(page).toHaveURL(new RegExp(`/panel/agenda/nueva\\?fecha=${jueves}&espacio=${espacios[0].id}(?:[?&]volver=[^&#]*)?$`));
   } else {
     // Celular: un día a la vez. El martes, la reserva en el primer espacio y los demás libres
-    // El martes tiene una reserva: su pestaña lo dice (pulido final del 10/11, un punto debajo del número)
+    // El martes tiene una reserva: su pestaña dice cuántas (lavado de cara del 16/11; antes, un punto debajo del número)
     const pestanas = page.getByRole("navigation", { name: "Días de la semana" }).getByRole("link");
-    await expect(pestanas.nth(1)).toHaveAccessibleName(/, con reservas$/);
-    // Y no todas: un día sin reservas no lo dice
+    await expect(pestanas.nth(1)).toHaveAccessibleName(/, 1 reserva$/);
+    await expect(pestanas.nth(1)).toContainText("1");
+    // Y no todas: un día sin reservas lo dice
     const nombres = await pestanas.evaluateAll((ps) => ps.map((p) => p.getAttribute("aria-label") ?? ""));
-    expect(nombres.some((n) => !n.endsWith(", con reservas"))).toBe(true);
+    expect(nombres.some((n) => n.endsWith(", sin reservas") || n.endsWith(", cerrado"))).toBe(true);
     await page.getByRole("navigation", { name: "Días de la semana" }).getByRole("link").nth(1).click();
     await expect(page).toHaveURL(/&dia=\d{4}-\d{2}-\d{2}$/);
     const dia = page.getByRole("list", { name: /^Espacios el Martes/ });
@@ -100,4 +101,34 @@ test("el tablero arranca en la semana de hoy y la marca", async ({ page }, info)
   await page.getByRole("link", { name: "Semana siguiente", exact: true }).click();
   await page.getByRole("link", { name: "Hoy", exact: true }).click();
   await expect(page).toHaveURL(/\/panel\/agenda$/);
+});
+
+test("el buscador encuentra una reserva de otra semana por su placa y la abre; volver regresa a la búsqueda", async ({ page }, info) => {
+  const s = sufijo(info);
+  const placa = `BU29${s}1`;
+  const lunes = await lunesPropio(info);
+  await limpiar([placa]);
+  await crearClienteEnBase({ nombre: `Buscada en agenda ${s}`, telefono: `5917${s === "C" ? 3 : 4}2900030`, placa });
+  // El viernes del primer espacio: el martes y el miércoles son de la primera prueba y el jueves queda libre para ella
+  await reserva(placa, 0, lunes, 4, 4);
+  await ingresarComoDueno(page);
+  await page.goto("/panel/agenda");
+  // Lo de hoy, en una línea arriba del tablero
+  await expect(page.getByRole("region", { name: /^Hoy, / }).filter({ hasText: "en el taller" })).toContainText("por recibir");
+
+  await page.getByRole("searchbox", { name: "Buscar reservas por placa, cliente o teléfono" }).fill(placa.toLowerCase());
+  const fila = page.getByRole("link", { name: new RegExp(`^${placa}`) });
+  await expect(fila).toBeVisible();
+  await expect(page.getByText(`1 reserva con «${placa.toLowerCase()}»`)).toBeVisible();
+  // Mientras se busca, la semana no se ve
+  await expect(page.getByRole("navigation", { name: "Semanas" })).toHaveCount(0);
+  await fila.click();
+  await expect(page.getByRole("heading", { level: 1, name: placa })).toBeVisible();
+  await page.getByRole("main").getByRole("link", { name: "Volver a Agenda" }).click();
+  await expect(page).toHaveURL(/\/panel\/agenda\?q=/);
+  await expect(page.getByRole("link", { name: new RegExp(`^${placa}`) })).toBeVisible();
+
+  // Sin coincidencias, lo dice
+  await page.getByRole("searchbox", { name: "Buscar reservas por placa, cliente o teléfono" }).fill("ZZZZ999");
+  await expect(page.getByText("Ninguna reserva coincide con «ZZZZ999». Revisa la placa o el nombre.")).toBeVisible();
 });

@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, conVolver } from "./apoyo";
+import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, conVolver, verPorReservar } from "./apoyo";
 
 // Pedido 31: un trabajo, de la cotización a la entrega (etapas/P31-flujo-de-un-trabajo.md §9). Cotizaciones cotiza y la
 // Agenda reserva: "Aceptó", "Por reservar", la Nueva reserva que ofrece las cotizaciones del cliente y los pasos.
@@ -116,7 +116,7 @@ test("«Aceptó» la deja en Por reservar de la Agenda; desde ahí se reserva y 
 
   // En la Agenda, en "Por reservar", con el total para quien ve montos
   await page.goto("/panel/agenda");
-  const porReservar = page.getByRole("list", { name: "Por reservar" });
+  const porReservar = await verPorReservar(page);
   const fila = porReservar.getByRole("link").filter({ hasText: c.cliente });
   await expect(fila).toContainText("700 Bs");
   await fila.click();

@@ -143,3 +143,28 @@ export function textoDia(fecha: string): string {
 
 /** El número del día ("24") para la cabecera del tablero. */
 export const numeroDia = (fecha: string) => String(partes(fecha).dia);
+
+/**
+ * El título de un día en la lista de la Agenda (lavado de cara, 16/11): "Hoy, lunes 16", "Mañana, martes 17" o
+ * "Miércoles 18". Así se sabe de un vistazo qué es hoy sin buscar la fecha.
+ */
+export function tituloDia(fecha: string, hoy: string): string {
+  const nombre = `${NOMBRE_DIA[diaDeLaSemana(fecha) - 1]} ${numeroDia(fecha)}`;
+  if (fecha === hoy) return `Hoy, ${nombre.toLowerCase()}`;
+  if (fecha === sumarDias(hoy, 1)) return `Mañana, ${nombre.toLowerCase()}`;
+  return nombre;
+}
+
+/** "Espacio 1", "Espacio 1 y Espacio 3", "Espacio 1, Espacio 2 y Espacio 3". */
+export function unirConY(nombres: readonly string[]): string {
+  return nombres.length <= 1 ? (nombres[0] ?? "") : `${nombres.slice(0, -1).join(", ")} y ${nombres[nombres.length - 1]}`;
+}
+
+/** "martes 17": el día dentro de una frase ("Hasta el martes 17"). */
+export const diaEnFrase = (fecha: string) => `${NOMBRE_DIA[diaDeLaSemana(fecha) - 1].toLowerCase()} ${numeroDia(fecha)}`;
+
+/** "Lun 16 nov", con el año si no es el de hoy ("Lun 12 oct 2025"): las fechas de la búsqueda, cortas para la tabla. */
+export function fechaCorta(fecha: string, hoy: string): string {
+  const { dia, mes, anio } = partes(fecha);
+  return `${DIA_CORTO[diaDeLaSemana(fecha) - 1]} ${dia} ${MESES[mes - 1].slice(0, 3)}${anio !== partes(hoy).anio ? ` ${anio}` : ""}`;
+}

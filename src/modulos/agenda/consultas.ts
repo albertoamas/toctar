@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, gte, inArray, lte, ne, not, notInArray, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, like, lte, ne, not, notInArray, or, sql, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db, type Transaccion } from "@/db";
 import {
@@ -22,7 +22,7 @@ import { ESTADOS_TRABAJO, type EstadoTrabajo, type MetodoPago, type TipoPago } f
 import { fechaEnBolivia } from "@/lib/fechas";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { duracionEfectiva } from "@/modulos/catalogo/reglas";
-import { detalleVehiculo } from "@/modulos/clientes/reglas";
+import { detalleVehiculo, escaparLike, normalizarBusqueda } from "@/modulos/clientes/reglas";
 import { sucursalPrincipal } from "@/modulos/configuracion/consultas";
 import { conReservaActiva, opcionesDeServicio, type OpcionServicio } from "@/modulos/cotizaciones/consultas";
 import { partirDescripcion, sePuedeReservar } from "@/modulos/cotizaciones/reglas";
@@ -492,6 +492,8 @@ export type ReservaTablero = {
   estado: EstadoTrabajo;
   placa: string;
   cliente: string;
+  /** La hora de ingreso acordada ("09:00"), si se cargó. */
+  hora: string | null;
   /** El primer servicio y cuántos más lleva ("Pulido y nano cerámico — 5 años", 1). */
   servicio: string | null;
   masServicios: number;
@@ -527,6 +529,7 @@ export async function semanaDeAgenda(lunes: string, domingo: string): Promise<Se
         estado: trabajo.estado,
         placa: vehiculo.placa,
         cliente: cliente.nombre,
+        hora: trabajo.horaIngreso,
       })
       .from(trabajo)
       .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
@@ -556,5 +559,80 @@ export async function semanaDeAgenda(lunes: string, domingo: string): Promise<Se
       return { ...r, servicio: suyas[0] ?? null, masServicios: Math.max(0, suyas.length - 1) };
     }),
     diasCerrados: s.horarios.filter((d) => d.turnos.length === 0).map((d) => d.dia),
+  };
+}
+
+/** Lo de hoy arriba de la Agenda (lavado de cara, 16/11): cuántas faltan recibir, cuántas están en el taller y cuántas listas. */
+export type ResumenDeHoy = { porRecibir: number; enElTaller: number; paraEntregar: number };
+
+/**
+ * Por recibir: las agendadas de hoy y las de días pasados que todavía no se recibieron (como el Inicio, `ingresosDeHoy`).
+ * En el taller: recibidas, en proceso o listas. Para entregar: las listas.
+ */
+export async function resumenDeHoy(hoy: string): Promise<ResumenDeHoy> {
+  const s = await sucursalPrincipal();
+  const [fila] = await db
+    .select({
+      porRecibir: sql<number>`count(*) filter (where ${trabajo.estado} = 'agendado' and ${trabajo.fechaInicio} <= ${hoy})`.mapWith(Number),
+      enElTaller: sql<number>`count(*) filter (where ${trabajo.estado} in ('recibido', 'en_proceso', 'listo'))`.mapWith(Number),
+      paraEntregar: sql<number>`count(*) filter (where ${trabajo.estado} = 'listo')`.mapWith(Number),
+    })
+    .from(trabajo)
+    .where(eq(trabajo.sucursalId, s.id));
+  return fila ?? { porRecibir: 0, enElTaller: 0, paraEntregar: 0 };
+}
+
+export type ReservaEncontrada = Omit<ReservaTablero, "espacioId"> & { espacio: string };
+
+/** Cuántas reservas muestra la búsqueda de la Agenda: si hay más, se pide escribir más. */
+const RESERVAS_POR_BUSQUEDA = 30;
+
+/**
+ * El buscador de la Agenda (lavado de cara, 16/11): las reservas de cualquier semana por placa, nombre del cliente (sin
+ * importar tildes ni mayúsculas) o parte del teléfono, sin las canceladas. Primero las que vienen o siguen (de la más
+ * próxima a la más lejana) y después las pasadas (de la más reciente a la más vieja).
+ */
+export async function buscarReservas(q: string, hoy: string): Promise<{ reservas: ReservaEncontrada[]; hayMas: boolean }> {
+  const busqueda = normalizarBusqueda(q);
+  if (!busqueda) return { reservas: [], hayMas: false };
+  const s = await sucursalPrincipal();
+  const coincide = or(
+    sql`unaccent(lower(${cliente.nombre})) like unaccent(lower(${`%${escaparLike(busqueda.texto)}%`}))`,
+    busqueda.digitos ? like(cliente.telefono, `%${escaparLike(busqueda.digitos)}%`) : undefined,
+    busqueda.placa ? like(vehiculo.placa, `%${escaparLike(busqueda.placa)}%`) : undefined,
+  );
+  const viene = sql`${trabajo.fechaFin} >= ${hoy}`;
+  const filas = await db
+    .select({
+      id: trabajo.id,
+      inicio: trabajo.fechaInicio,
+      fin: trabajo.fechaFin,
+      estado: trabajo.estado,
+      placa: vehiculo.placa,
+      cliente: cliente.nombre,
+      hora: trabajo.horaIngreso,
+      espacio: espacioTaller.nombre,
+    })
+    .from(trabajo)
+    .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
+    .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
+    .innerJoin(espacioTaller, eq(trabajo.espacioId, espacioTaller.id))
+    .where(and(eq(trabajo.sucursalId, s.id), ne(trabajo.estado, "cancelado"), coincide))
+    .orderBy(sql`case when ${viene} then 0 else 1 end`, sql`case when ${viene} then ${trabajo.fechaInicio} end asc`, desc(trabajo.fechaInicio), desc(trabajo.id))
+    .limit(RESERVAS_POR_BUSQUEDA + 1);
+  const reservas = filas.slice(0, RESERVAS_POR_BUSQUEDA);
+  const lineas = reservas.length
+    ? await db
+        .select({ trabajoId: trabajoLinea.trabajoId, descripcion: trabajoLinea.descripcion })
+        .from(trabajoLinea)
+        .where(inArray(trabajoLinea.trabajoId, reservas.map((r) => r.id)))
+        .orderBy(asc(trabajoLinea.orden))
+    : [];
+  return {
+    reservas: reservas.map((r) => {
+      const suyas = lineas.filter((l) => l.trabajoId === r.id).map((l) => l.descripcion);
+      return { ...r, servicio: suyas[0] ?? null, masServicios: Math.max(0, suyas.length - 1) };
+    }),
+    hayMas: filas.length > RESERVAS_POR_BUSQUEDA,
   };
 }
