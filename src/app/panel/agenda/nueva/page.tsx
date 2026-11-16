@@ -8,7 +8,6 @@ import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
-import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
 import { ResumenPaso } from "@/componentes/panel/resumen-paso";
 import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
 import { fechaCorta, fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
@@ -76,11 +75,12 @@ const enlace = "font-semibold underline";
  * "Cambiar" si se puede volver a elegir (`cambiarCliente`, `cambiarVehiculo`: a dónde lleva, con el día y el espacio que
  * llegaron del tablero).
  */
-function ClienteYVehiculo(props: { nombre: string; vehiculo: VehiculoReserva | null; cambiarCliente?: Route; cambiarVehiculo?: Route }) {
+function ClienteYVehiculo(props: { nombre: string; vehiculo: VehiculoReserva | null; cambiarCliente?: Route; cambiarVehiculo?: Route; extra?: React.ReactNode }) {
   return (
     <ResumenClienteVehiculo
       cliente={{ nombre: props.nombre, href: props.cambiarCliente }}
       vehiculo={props.vehiculo && { ...props.vehiculo, href: props.cambiarVehiculo }}
+      extra={props.extra}
     />
   );
 }
@@ -151,7 +151,9 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
     return (
       <>
         <Encabezado volver={volver} />
-        {enLosPasos ? indicador(PASO_FECHA) : <PasosTrabajo paso={c.aceptada ? 1 : 0} />}
+        {/* El mismo indicador que la directa y el mantenimiento (hallazgo 10): los pasos del trabajo se ven en la
+            cotización y en la reserva ya creada */}
+        {indicador(PASO_FECHA)}
         <ClienteYVehiculo
           nombre={c.cliente.nombre}
           vehiculo={c.vehiculo}
@@ -161,11 +163,16 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
         {/* Los servicios de la cotización, en lectura: para cambiar precios se hace una versión nueva */}
         <ResumenPaso
           id="cotizacion"
-          titulo={`Cotización ${c.numero}${c.version > 1 ? `, versión ${c.version}` : ""}`}
+          titulo="Servicios"
           href={enLosPasos ? direccion({ cliente: c.cliente.id, vehiculo: c.vehiculo.id }) : undefined}
           etiquetaCambiar="Cambiar servicios"
           claseContenido="gap-2"
         >
+          {/* De dónde vienen: siempre "Servicios", como en los otros caminos (hallazgo 10) */}
+          <p className="text-sm text-tinta-suave">
+            De la cotización {c.numero}
+            {c.version > 1 ? `, versión ${c.version}` : ""}
+          </p>
           <ul className="flex flex-col gap-1">
             {c.lineas.map((l, i) => (
               <li key={i} className="flex justify-between gap-4">
@@ -174,23 +181,20 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
               </li>
             ))}
           </ul>
-          {verMontos && (
-            <p className="flex justify-between gap-4 border-t border-border pt-2 font-semibold">
-              <span>Total</span>
-              <span className="tabular-nums">{mostrarMonto(c.saldo.total)} Bs</span>
-            </p>
-          )}
+          {/* El total va en la barra de abajo, como en los otros caminos (hallazgo 10): no dos veces */}
           {!c.aceptada && <p className="text-sm text-tinta-suave">Al reservar, la cotización queda aceptada.</p>}
         </ResumenPaso>
         <Formulario
           key={clave}
           volver={origen}
-          origen={{ tipo: "cotizacion", cotizacionId: c.cotizacionId, duraciones }}
+          // El total, en la barra de abajo como en los otros caminos (hallazgo 10); solo a quien ve montos (RN-12)
+          origen={{ tipo: "cotizacion", cotizacionId: c.cotizacionId, duraciones, total: verMontos ? c.saldo.total : null }}
           conPagos={conPagos}
           hoy={hoy}
           fechaInicial={fechaInicial}
           fechaFin={fechaEntregaSugerida(fechaInicial, duraciones)}
           espacio={numero("espacio")}
+          atras={enLosPasos ? direccion({ cliente: c.cliente.id, vehiculo: c.vehiculo.id }) : undefined}
         />
       </>
     );
@@ -286,16 +290,23 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   const vehiculo = d.vehiculo;
   const arriba = (
     <>
-      <ClienteYVehiculo nombre={d.cliente.nombre} vehiculo={vehiculo} cambiarCliente={cambiarCliente} cambiarVehiculo={cambiarVehiculo} />
-      {/* El mantenimiento que se agenda: vencido, en una insignia de aviso */}
-      {recordatorio && (
-        <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span>Mantenimiento de {recordatorio.servicio}</span>
-          <span className={cn("tt-estado", recordatorio.fechaProgramada < hoy && "tt-estado--aviso")}>
-            {recordatorio.fechaProgramada < hoy ? "Venció" : "Vence"} el {fechaCorta(recordatorio.fechaProgramada, hoy)}
-          </span>
-        </p>
-      )}
+      <ClienteYVehiculo
+        nombre={d.cliente.nombre}
+        vehiculo={vehiculo}
+        cambiarCliente={cambiarCliente}
+        cambiarVehiculo={cambiarVehiculo}
+        // El mantenimiento que se agenda, dentro de la tarjeta (hallazgo 10: iba suelto entre tarjetas); vencido, en aviso
+        extra={
+          recordatorio && (
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span>Mantenimiento de {recordatorio.servicio}</span>
+              <span className={cn("tt-estado", recordatorio.fechaProgramada < hoy && "tt-estado--aviso")}>
+                {recordatorio.fechaProgramada < hoy ? "Venció" : "Vence"} el {fechaCorta(recordatorio.fechaProgramada, hoy)}
+              </span>
+            </p>
+          )
+        }
+      />
       {/* Su servicio de mantenimiento ya no se ofrece (inactivo o sin precio para ese tamaño): se dice por qué falta la línea */}
       {recordatorio && !lineaDelMantenimiento(d.opciones, recordatorio.servicioMantenimientoId) && (
         // En ámbar, como los avisos de Entregar y de los montos (pulido final del 09/11)
@@ -383,6 +394,7 @@ async function Formulario(props: {
   espacio: number | null;
   arriba?: React.ReactNode;
   cotizaciones?: React.ReactNode;
+  atras?: Route;
 }) {
   const [parametros, espacios] = await Promise.all([obtenerParametros(), espaciosEnFechas(props.fechaInicial, props.fechaFin)]);
   return (
@@ -397,6 +409,7 @@ async function Formulario(props: {
       espaciosIniciales={espacios}
       arriba={props.arriba}
       cotizaciones={props.cotizaciones}
+      atras={props.atras}
     />
   );
 }
