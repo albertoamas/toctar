@@ -12,7 +12,7 @@ import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import { puede, puedeVerModulo } from "@/lib/permisos";
-import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
+import { fechaEnBolivia } from "@/lib/fechas";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp, whatsAppLocal } from "@/lib/whatsapp";
 import { reservasDelCliente } from "@/modulos/agenda/consultas";
@@ -26,10 +26,9 @@ import { obtenerCliente } from "@/modulos/clientes/consultas";
 import { obtenerParametros, tamanosActivos } from "@/modulos/configuracion/consultas";
 import { ListaCotizaciones } from "@/modulos/cotizaciones/componentes/lista-cotizaciones";
 import { cotizacionesDelCliente } from "@/modulos/cotizaciones/consultas";
-import { AgregarMantenimiento, MasPlan } from "@/modulos/mantenimientos/componentes/planes";
+import { ListaMantenimientos } from "@/modulos/mantenimientos/componentes/lista-mantenimientos";
+import { AgregarMantenimiento } from "@/modulos/mantenimientos/componentes/planes";
 import { mantenimientosDelCliente, serviciosConMantenimiento } from "@/modulos/mantenimientos/consultas";
-import { ESTADOS_RECORDATORIO_ABIERTO, NOMBRE_ESTADO_RECORDATORIO, textoCadaMeses } from "@/modulos/mantenimientos/reglas";
-import { enlaceTrabajo } from "@/modulos/ordenes/reglas";
 import { Insignia } from "@/componentes/panel/insignia";
 import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
 import { aqui, conDesde, volverDesde } from "@/lib/volver";
@@ -128,7 +127,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
 
       {/* Lado a lado y del mismo alto en la computadora (como en el catálogo); en el celular, primero los vehículos */}
       <PartesIguales>
-        <VehiculosCliente clienteId={c.id} vehiculos={c.vehiculos} tamanos={tamanos} />
+        <VehiculosCliente clienteId={c.id} vehiculos={c.vehiculos} tamanos={tamanos} desde={desdeAqui} />
         <SeccionConEditar
           id="datos"
           titulo="Datos"
@@ -211,38 +210,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
           {mantenimientos.length === 0 ? (
             <p className="text-tinta-suave">No tiene mantenimientos programados.</p>
           ) : (
-            <ul aria-label="Mantenimientos" className="flex flex-col divide-y divide-border tt-tarjeta-panel">
-              {mantenimientos.map((m) => {
-                const ve = { ordenes: verOrdenes, agenda: verAgenda };
-                // Agendado: a su reserva, o a su orden si ya se recibió; hecho: a la orden que lo hizo
-                const trabajo = (m.agendado && enlaceTrabajo(m.agendado.id, m.agendado.estado, ve)) || (m.hecho && enlaceTrabajo(m.hecho.id, m.hecho.estado, ve));
-                // Sin agendar y de un vehículo activo: se edita o se termina
-                const editable = m.vehiculoActivo && c.activo && (ESTADOS_RECORDATORIO_ABIERTO as readonly string[]).includes(m.estado);
-                return (
-                  <li key={m.id} className="flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-1 p-3">
-                    <span className="flex flex-col">
-                      <span className="font-semibold">
-                        {formatearFecha(m.fechaProgramada)}: Mantenimiento de {m.servicio}
-                      </span>
-                      <span className="text-sm text-tinta-suave">
-                        {m.placa}, {textoCadaMeses(m.intervaloMeses)}
-                        {!m.vehiculoActivo && ", vehículo desactivado: no se avisa"}
-                      </span>
-                      {m.nota && <span className="text-sm text-tinta-suave">Nota: {m.nota}</span>}
-                    </span>
-                    <span className="flex flex-wrap items-center gap-3">
-                      {trabajo && (
-                        <Link href={conDesde(trabajo.href, desdeAqui)} className="inline-flex min-h-11 items-center text-sm font-semibold underline">
-                          {trabajo.texto}
-                        </Link>
-                      )}
-                      <Insignia>{NOMBRE_ESTADO_RECORDATORIO[m.estado]}</Insignia>
-                      {editable && <MasPlan plan={{ id: m.id, intervaloMeses: m.intervaloMeses, fechaProgramada: m.fechaProgramada, servicio: m.servicio }} hoy={hoy} />}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
+            <ListaMantenimientos mantenimientos={mantenimientos} editables={c.activo} ve={{ ordenes: verOrdenes, agenda: verAgenda }} desde={desdeAqui} hoy={hoy} />
           )}
         </section>
       )}

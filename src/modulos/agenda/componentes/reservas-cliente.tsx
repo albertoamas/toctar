@@ -19,6 +19,12 @@ type Props = {
   conSaldo: boolean;
   /** La ficha de la que salen sus enlaces: "Volver" lleva ahí (pedido 43). */
   desde: string;
+  /**
+   * En la ficha de un vehículo (pedido 51), su dueño de ahora: en lugar de la placa, cada fila dice "Con {dueño}" solo si
+   * fue con otro (un trabajo de antes de un cambio de dueño sigue a nombre del anterior). Sin él, la placa (la ficha del
+   * cliente: puede tener varios vehículos).
+   */
+  duenoActual?: number;
 };
 
 /** Una columna con lo que pone en cada fila: van juntas, así una celda no cae bajo el título de otra. */
@@ -40,7 +46,7 @@ function Saldo({ saldo }: { saldo: string }) {
   );
 }
 
-export function ReservasCliente({ reservas, verOrdenes, conSaldo, desde }: Props) {
+export function ReservasCliente({ reservas, verOrdenes, conSaldo, desde, duenoActual }: Props) {
   const columnas: (Columna | false)[] = [
     {
       titulo: "Fecha",
@@ -49,7 +55,9 @@ export function ReservasCliente({ reservas, verOrdenes, conSaldo, desde }: Props
       celda: (r) => <span className="font-semibold tabular-nums">{formatearFecha(r.fechaInicio)}</span>,
     },
     { titulo: "Espacio", ancho: "minmax(0,1fr)", movil: "detalle", celda: (r) => r.espacio },
-    { titulo: "Vehículo", ancho: "minmax(0,1fr)", movil: "detalle", celda: (r) => <CeldaDoble principal={r.placa} peso="placa" /> },
+    duenoActual === undefined
+      ? { titulo: "Vehículo", ancho: "minmax(0,1fr)", movil: "detalle", celda: (r) => <CeldaDoble principal={r.placa} peso="placa" /> }
+      : { titulo: "Dueño", ancho: "minmax(0,1fr)", movil: "detalle", celda: (r) => (r.clienteId === duenoActual ? null : `Con ${r.cliente}`) },
     // El saldo de una cancelada no se cobra: no se muestra
     conSaldo && { titulo: "Saldo", ancho: "7rem", alinear: "derecha", movil: "estado", celda: (r) => (r.saldo && r.estado !== "cancelado" ? <Saldo saldo={r.saldo.saldo} /> : null) },
     {

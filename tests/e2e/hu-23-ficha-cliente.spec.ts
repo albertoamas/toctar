@@ -55,7 +55,7 @@ test("en la ficha los datos se leen y se editan en un modal; un teléfono de otr
   await expect(datos).toContainText("ficha@example.com");
 });
 
-test("los vehículos se agregan, editan, desactivan y reactivan desde la ficha, en modales", async ({ page }, info) => {
+test("los vehículos se agregan en la ficha del cliente y se editan, desactivan y reactivan en la suya (pedido 51)", async ({ page }, info) => {
   const s = sufijo(info);
   const id = await crearClienteEnBase({ nombre: `Con autos ${s}`, telefono: telefono(info, 3) });
   // Otro cliente con una placa: la de la ficha no puede repetirla
@@ -80,6 +80,10 @@ test("los vehículos se agregan, editan, desactivan y reactivan desde la ficha, 
   await expect(nuevo).toBeHidden();
   await expect(vehiculos).toContainText(`FIC${s}1`);
 
+  // Tocar el vehículo abre su ficha (pedido 51): ahí se edita
+  await vehiculos.getByRole("link", { name: new RegExp(`FIC${s}1`) }).click();
+  await expect(page.getByRole("heading", { level: 1, name: `FIC${s}1` })).toBeVisible();
+  const datos = page.getByRole("region", { name: "Datos" });
   // Editar: marca, modelo, año y color están plegados porque el vehículo no los tiene
   await page.getByRole("button", { name: `Editar FIC${s}1` }).click();
   const edicion = page.getByRole("dialog", { name: `Editar FIC${s}1` });
@@ -87,7 +91,7 @@ test("los vehículos se agregan, editan, desactivan y reactivan desde la ficha, 
   await edicion.getByLabel("Color").fill("Rojo");
   await edicion.getByRole("button", { name: "Guardar vehículo" }).click();
   await expect(edicion).toBeHidden();
-  await expect(vehiculos).toContainText("Rojo");
+  await expect(datos).toContainText("Rojo");
   // Al volver a abrirlo trae lo guardado, ya desplegado
   await page.getByRole("button", { name: `Editar FIC${s}1` }).click();
   await expect(edicion.getByLabel("Color")).toHaveValue("Rojo");
@@ -98,16 +102,25 @@ test("los vehículos se agregan, editan, desactivan y reactivan desde la ficha, 
   await edicion.getByText("Agregar marca, modelo, año y color").click();
   await expect(edicion.getByLabel("Color")).toHaveValue("Rojo");
 
-  // Desactivar desde la edición y reactivar
-  await edicion.getByRole("button", { name: "Más" }).click();
+  await edicion.getByRole("button", { name: "Cancelar" }).click();
+  await expect(edicion).toBeHidden();
+
+  // Desactivar desde "Más" de su ficha, con confirmación, y reactivar
+  await page.getByRole("main").getByRole("button", { name: "Más" }).click();
   // Con la máquina muy cargada, un toque justo al abrirse el menú puede no contar: se repite mientras el menú siga abierto
-  const desactivar = page.getByRole("menuitem", { name: `Desactivar FIC${s}1` });
+  const desactivar = page.getByRole("menuitem", { name: "Desactivar vehículo" });
+  const confirmar = page.getByRole("dialog", { name: `¿Desactivar FIC${s}1?` });
   await expect(async () => {
     if (await desactivar.isVisible()) await desactivar.click({ timeout: 1000 });
-    await expect(edicion).toBeHidden({ timeout: 2000 });
+    await expect(confirmar).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 15000 });
-  await expect(page.getByRole("list", { name: "Vehículos desactivados" })).toContainText(`FIC${s}1`);
-  await page.getByRole("button", { name: `Reactivar FIC${s}1` }).click();
+  await expect(confirmar.getByRole("button", { name: "Cancelar" })).toBeFocused();
+  await confirmar.getByRole("button", { name: "Sí, desactivar" }).click();
+  await expect(page.getByText(`FIC${s}1 desactivado.`)).toBeVisible();
+  await page.getByRole("button", { name: "Reactivar vehículo" }).click();
+  await expect(page.getByText(`FIC${s}1 reactivado.`)).toBeVisible();
+  // En la ficha del cliente, otra vez entre los activos
+  await page.goto(`/panel/clientes/${id}`, { waitUntil: "networkidle" });
   await expect(vehiculos).toContainText(`FIC${s}1`);
 });
 

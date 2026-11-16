@@ -8,7 +8,8 @@ import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { AvisarPorWhatsApp } from "@/componentes/panel/avisar-whatsapp";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { Cargando } from "@/componentes/panel/cargando";
-import { FilaCliente, FilaCotizacion, FilaDato } from "@/componentes/panel/datos-en-bloques";
+import { FilaCliente, FilaCotizacion, FilaDato, FilaVehiculo } from "@/componentes/panel/datos-en-bloques";
+import { rutaVehiculo } from "@/modulos/clientes/reglas";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { BOTON_PASO, PasoSiguiente } from "@/componentes/panel/paso-siguiente";
@@ -208,9 +209,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
                 </FilaDato>
               </dl>
               <FilaCliente href={verFicha ? conDesde(`/panel/clientes/${o.clienteId}`, desdeAqui) : null} nombre={o.cliente} telefono={o.telefono} />
-              <dl className="px-4 py-3">
-                <FilaDato etiqueta="Vehículo">{valorVehiculo(detalle, o.tamano)}</FilaDato>
-              </dl>
+              {/* La ficha del vehículo, para quien ve Clientes (pedido 51) */}
+              <FilaVehiculo href={verFicha ? conDesde(rutaVehiculo(o.clienteId, o.vehiculoId), desdeAqui) : null}>{valorVehiculo(detalle, o.tamano)}</FilaVehiculo>
               {/* Una pantalla por trabajo: recibido, la reserva ya no se abre (lleva aquí); lo que solo ella tenía viene a la
                   orden: su cotización, su nota y, en el historial, quién la reservó. Cuándo ingresó y quién lo recibió, en el
                   historial ("Vehículo recibido.", pedido 45) */}

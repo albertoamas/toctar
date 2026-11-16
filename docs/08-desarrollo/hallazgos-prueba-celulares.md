@@ -41,7 +41,7 @@ Uno por uno, en este orden. Cada punto pasa por los mismos pasos:
 
 | # | Qué | Qué se hace | Estado |
 |---|---|---|---|
-| 6 | Una ficha de cada vehículo, con su historial (órdenes, cotizaciones, fotos y mantenimientos). Hoy los vehículos viven dentro de la ficha del cliente | Pedido 51 en `03-cierre-comercial/registro-de-cambios.md`: **incluido** (16/11, los vehículos debieron estar separados desde el inicio). Se programa con su especificación y su propuesta aprobada | 📝 |
+| 6 | Una ficha de cada vehículo, con su historial (órdenes, cotizaciones, fotos y mantenimientos). Hoy los vehículos viven dentro de la ficha del cliente | Pedido 51 en `03-cierre-comercial/registro-de-cambios.md`: **incluido** (16/11, los vehículos debieron estar separados desde el inicio). Se programa con su especificación y su propuesta aprobada | 🔵 Programado con la opción B (la ficha del vehículo dentro de Clientes, `etapas/P51-ficha-del-vehiculo.md`) |
 
 ## Después
 

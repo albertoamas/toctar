@@ -29,7 +29,7 @@ const abierto = (id: number) =>
 
 function despuesDeCambiar(clienteId: number) {
   revalidatePath("/panel/mantenimientos");
-  revalidatePath(`/panel/clientes/${clienteId}`);
+  revalidatePath(`/panel/clientes/${clienteId}`, "layout"); // también las fichas de sus vehículos (pedido 51)
 }
 
 /** Registra quién avisó y cuándo (el chat de WhatsApp lo abre el navegador en el mismo toque). Se puede volver a avisar. */

@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, gte, inArray, lte, ne, not, notInArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lte, ne, not, notInArray, or, sql, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db, type Transaccion } from "@/db";
 import {
@@ -410,7 +410,7 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
   return { ...resto, cotizacion: numero && version ? { numero, version } : null, montos };
 }
 
-export type ReservaCorta = { id: number; estado: EstadoTrabajo; fechaInicio: string; fechaFin: string; espacio: string; placa: string; cliente: string };
+export type ReservaCorta = { id: number; estado: EstadoTrabajo; fechaInicio: string; fechaFin: string; espacio: string; placa: string; clienteId: number; cliente: string };
 
 const columnasCortas = {
   id: trabajo.id,
@@ -419,6 +419,7 @@ const columnasCortas = {
   fechaFin: trabajo.fechaFin,
   espacio: espacioTaller.nombre,
   placa: vehiculo.placa,
+  clienteId: cliente.id,
   cliente: cliente.nombre,
 };
 
@@ -442,6 +443,18 @@ export type ReservaDelCliente = ReservaCorta & { saldo: Saldo | null };
  * reserva (`calcularSaldo`).
  */
 export async function reservasDelCliente(clienteId: number, conMontos: boolean): Promise<ReservaDelCliente[]> {
+  return reservasDonde(eq(trabajo.clienteId, clienteId), conMontos);
+}
+
+/**
+ * Las reservas y órdenes de un vehículo, para su ficha (pedido 51): las mismas que las de un cliente, por `vehiculo_id`.
+ * Incluye las de un dueño anterior (P37: el vehículo es el mismo); cada una dice de quién era en ese momento (`cliente`).
+ */
+export async function reservasDelVehiculo(vehiculoId: number, conMontos: boolean): Promise<ReservaDelCliente[]> {
+  return reservasDonde(eq(trabajo.vehiculoId, vehiculoId), conMontos);
+}
+
+async function reservasDonde(donde: SQL, conMontos: boolean): Promise<ReservaDelCliente[]> {
   const hoy = fechaEnBolivia();
   const reservas = await db
     .select({ ...columnasCortas, descuento: trabajo.descuento })
@@ -449,7 +462,7 @@ export async function reservasDelCliente(clienteId: number, conMontos: boolean):
     .innerJoin(espacioTaller, eq(trabajo.espacioId, espacioTaller.id))
     .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
     .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
-    .where(eq(trabajo.clienteId, clienteId))
+    .where(donde)
     .orderBy(asc(trabajo.fechaInicio), asc(trabajo.id));
   const proximas = reservas.filter((r) => r.fechaFin >= hoy);
   const pasadas = reservas.filter((r) => r.fechaFin < hoy).reverse();

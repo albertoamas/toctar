@@ -1,112 +1,96 @@
 "use client";
 
-import { useActionState, useRef, useState, useTransition } from "react";
+import { useActionState, useRef, useState } from "react";
 import type { Route } from "next";
-import { useRouter } from "next/navigation";
-import { PencilIcon, PlusIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { useHidratado } from "@/componentes/hidratado";
-import { avisarResultado, conAviso } from "@/componentes/panel/avisos";
-import { MenuMas } from "@/componentes/panel/menu-mas";
+import { conAviso } from "@/componentes/panel/avisos";
 import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { Button } from "@/componentes/ui/button";
 import type { Tamano } from "@/modulos/configuracion/consultas";
-import { cambiarEstadoVehiculo, guardarVehiculo, type EstadoCliente } from "../acciones";
+import { conDesde } from "@/lib/volver";
+import { guardarVehiculo, type EstadoCliente } from "../acciones";
 import type { VehiculoCliente } from "../consultas";
-import { detalleVehiculo, prefijoVehiculo } from "../reglas";
+import { detalleVehiculo, prefijoVehiculo, rutaVehiculo } from "../reglas";
 import { CamposVehiculo } from "./campos";
-import { DatosVehiculo } from "./datos-vehiculo";
 
-// HU-23: vehículos de un cliente, en su ficha. Pulido 8.3 (skill pantallas-panel): la lista en lectura, con la placa
-// grande; "Editar" abre "Editar {placa}" y "＋ Agregar" abre "Agregar vehículo", en un modal (ModalFormulario), con
-// placa y tamaño a la vista y lo demás plegado como en el alta. "Desactivar" y "Cambiar de dueño" (pedido 37) van en "Más",
-// dentro de la edición: se usan poco y así no se tocan sin querer. Nada se borra (RN-14). Al agregar una placa que es de
-// otro cliente, el enlace para pasarla a este.
+// HU-23: los vehículos de un cliente, en su ficha. Desde el pedido 51, cada uno es una fila de un toque que abre SU ficha
+// (`/panel/clientes/{id}/vehiculos/{vehiculo}`), con sus datos, su historial y "Editar", "Cambiar de dueño" y
+// "Desactivar": antes, "Editar" abría un modal en la fila y el historial del auto quedaba mezclado con el de sus otros
+// autos. "Agregar" sigue aquí, en un modal (pulido 8.3). Nada se borra (RN-14): los desactivados, aparte, también abren
+// su ficha (ahí se reactivan). Al agregar una placa que es de otro cliente, el enlace para pasarla a este (pedido 37).
 
-type Props = { clienteId: number; vehiculos: VehiculoCliente[]; tamanos: Tamano[] };
+type Props = {
+  clienteId: number;
+  vehiculos: VehiculoCliente[];
+  tamanos: Tamano[];
+  /** La ficha del cliente: "Volver" desde la del vehículo lleva ahí (pedido 43). */
+  desde: string;
+};
 
-/** "Toyota Yaris 2019 Blanco": lo que se sabe del vehículo, además de la placa. El tamaño va aparte (DatosVehiculo). */
-const detalle = (v: VehiculoCliente) => detalleVehiculo(v);
-
-export function VehiculosCliente({ clienteId, vehiculos, tamanos }: Props) {
+export function VehiculosCliente({ clienteId, vehiculos, tamanos, desde }: Props) {
   const hidratado = useHidratado();
-  // El modal guarda el vehículo elegido aparte de si está abierto: al cerrarse, el contenido no cambia mientras se va.
-  // Se busca por id en la lista, que llega actualizada después de guardar
-  const [abierto, setAbierto] = useState(false);
-  const [elegidoId, setElegidoId] = useState<number | null>(null);
+  const [agregando, setAgregando] = useState(false);
+  // Cada apertura empieza con el formulario limpio, sin los errores de la vez anterior
   const [aperturas, setAperturas] = useState(0);
-  const elegido = vehiculos.find((v) => v.id === elegidoId) ?? null;
-  const [pendiente, iniciar] = useTransition();
   const activos = vehiculos.filter((v) => v.activo);
   const inactivos = vehiculos.filter((v) => !v.activo);
-  const abrir = (v: VehiculoCliente | null) => {
-    setElegidoId(v?.id ?? null);
-    setAperturas((n) => n + 1);
-    setAbierto(true);
+  const fila = (v: VehiculoCliente) => {
+    const detalle = detalleVehiculo(v);
+    return {
+      href: conDesde(rutaVehiculo(clienteId, v.id), desde),
+      titulo: v.placa,
+      tituloGrande: true,
+      detalles: [...(detalle.length > 0 ? [detalle.join(" ")] : []), `Tamaño: ${v.tamano}`],
+    };
   };
-  const reactivar = (id: number) => iniciar(async () => avisarResultado(await cambiarEstadoVehiculo({ clienteId, id, activo: true })));
 
   return (
     <section aria-labelledby="vehiculos-titulo" className="flex flex-col gap-3">
       {/* La misma cabecera que SeccionConEditar: Datos, al lado, se ve igual */}
       <CabeceraSeccion id="vehiculos" titulo="Vehículos">
-        <Button type="button" variant="ghost" disabled={!hidratado} aria-label="Agregar vehículo" onClick={() => abrir(null)}>
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={!hidratado}
+          onClick={() => {
+            setAperturas((n) => n + 1);
+            setAgregando(true);
+          }}
+        >
           <PlusIcon />
-          Agregar
+          Agregar vehículo
         </Button>
       </CabeceraSeccion>
-      {activos.length === 0 ? (
-        <p className="flex-1 tt-tarjeta-panel p-4 text-tinta-suave">Todavía no tiene vehículos.</p>
-      ) : (
-        <ul aria-label="Vehículos" className="flex flex-1 flex-col divide-y divide-border tt-tarjeta-panel">
-          {activos.map((v) => (
-            <li key={v.id} className="flex items-center gap-3 p-3">
-              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <DatosVehiculo placa={v.placa} detalle={detalle(v)} tamano={v.tamano} />
-              </span>
-              {/* "Editar" con su texto, como toda sección de una ficha (inventario-pantallas.md, cambio 4: era un lápiz solo) */}
-              <Button type="button" variant="ghost" disabled={!hidratado} aria-label={`Editar ${v.placa}`} onClick={() => abrir(v)}>
-                <PencilIcon />
-                Editar
-              </Button>
-            </li>
-          ))}
-        </ul>
-      )}
+      {activos.length === 0 ? <p className="tt-tarjeta-panel p-4 text-tinta-suave">Todavía no tiene vehículos.</p> : <ListaFilas etiqueta="Vehículos" filas={activos.map(fila)} />}
 
       {inactivos.length > 0 && (
         <div className="flex flex-col gap-2">
           <p className="text-sm font-semibold text-tinta-suave">Desactivados</p>
-          <ul aria-label="Vehículos desactivados" className="flex flex-col divide-y divide-border rounded-sm border border-dashed border-border">
-            {inactivos.map((v) => (
-              <li key={v.id} className="flex items-center gap-3 p-3 text-tinta-suave">
-                <span className="flex-1">{v.placa}</span>
-                <Button type="button" variant="ghost" disabled={pendiente} onClick={() => reactivar(v.id)} aria-label={`Reactivar ${v.placa}`}>
-                  Reactivar
-                </Button>
-              </li>
-            ))}
-          </ul>
+          <ListaFilas etiqueta="Vehículos desactivados" filas={inactivos.map((v) => ({ ...fila(v), atenuada: true, estado: "Desactivado" }))} />
         </div>
       )}
 
-      <ModalFormulario titulo={elegido ? `Editar ${elegido.placa}` : "Agregar vehículo"} abierto={abierto} alCambiar={setAbierto}>
-        {/* La key: cada apertura empieza con el formulario limpio, con lo guardado y sin errores de la vez anterior */}
-        <FormularioVehiculo key={aperturas} clienteId={clienteId} vehiculo={elegido ?? undefined} tamanos={tamanos} />
+      <ModalFormulario titulo="Agregar vehículo" abierto={agregando} alCambiar={setAgregando}>
+        <FormularioVehiculo key={aperturas} clienteId={clienteId} tamanos={tamanos} />
       </ModalFormulario>
     </section>
   );
 }
 
-function FormularioVehiculo({ clienteId, vehiculo, tamanos }: { clienteId: number; vehiculo?: VehiculoCliente; tamanos: Tamano[] }) {
+/**
+ * Agregar un vehículo (en la ficha del cliente) o editarlo (en la suya, pedido 51), en un modal: placa y tamaño a la vista
+ * y lo demás plegado, como en el alta. Lo poco usado (cambiar de dueño, desactivar) va en "Más" de su ficha.
+ */
+export function FormularioVehiculo({ clienteId, vehiculo, tamanos }: { clienteId: number; vehiculo?: VehiculoCliente; tamanos: Tamano[] }) {
   const alTerminar = useCerrarModal();
   const [estado, accion, enviando] = useActionState<EstadoCliente, FormData>(
     conAviso(guardarVehiculo, (r) => r.ok && alTerminar()),
     {},
   );
-  const [desactivando, iniciar] = useTransition();
-  const router = useRouter();
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
   const prefijo = prefijoVehiculo(vehiculo?.id);
@@ -138,36 +122,10 @@ function FormularioVehiculo({ clienteId, vehiculo, tamanos }: { clienteId: numbe
         cambioDeDueno={vehiculo ? undefined : (e) => (e.id === clienteId ? null : (`/panel/clientes/${e.id}/vehiculos/${e.vehiculoId}/dueno?nuevo=${clienteId}&desde=comprador` as Route))}
       />
       <PieModal>
-        <Button type="submit" disabled={enviando || desactivando}>
+        <Button type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : vehiculo ? "Guardar vehículo" : "Agregar vehículo"}
         </Button>
         <CancelarModal />
-        {/* Lo poco usado, en "Más": pasarlo a otro cliente (pedido 37) y desactivarlo */}
-        {vehiculo && (
-          <div className="ml-auto">
-            <MenuMas
-              deshabilitado={desactivando}
-              acciones={[
-                {
-                  texto: "Cambiar de dueño",
-                  alElegir: () => {
-                    alTerminar();
-                    router.push(`/panel/clientes/${clienteId}/vehiculos/${vehiculo.id}/dueno`);
-                  },
-                },
-                {
-                  texto: `Desactivar ${vehiculo.placa}`,
-                  alElegir: () =>
-                    iniciar(async () => {
-                      const r = await cambiarEstadoVehiculo({ clienteId, id: vehiculo.id, activo: false });
-                      avisarResultado(r);
-                      if (r.ok) alTerminar();
-                    }),
-                },
-              ]}
-            />
-          </div>
-        )}
       </PieModal>
     </form>
   );

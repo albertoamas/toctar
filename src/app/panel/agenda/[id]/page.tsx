@@ -9,7 +9,8 @@ import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Insignia } from "@/componentes/panel/insignia";
-import { FilaCliente, FilaCotizacion, FilaDato } from "@/componentes/panel/datos-en-bloques";
+import { FilaCliente, FilaCotizacion, FilaDato, FilaVehiculo } from "@/componentes/panel/datos-en-bloques";
+import { rutaVehiculo } from "@/modulos/clientes/reglas";
 import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
 import { BOTON_PASO, PasoSiguiente } from "@/componentes/panel/paso-siguiente";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
@@ -114,9 +115,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
         </dl>
         <FilaCliente href={verFicha ? conDesde(`/panel/clientes/${r.clienteId}`, desdeAqui) : null} nombre={r.cliente} telefono={r.telefono} />
         {/* La placa ya está en el título: el vehículo dice su modelo y su tamaño */}
-        <dl className="px-4 py-3">
-          <FilaDato etiqueta="Vehículo">{valorVehiculo(detalle, r.tamano)}</FilaDato>
-        </dl>
+        {/* La ficha del vehículo, para quien ve Clientes (pedido 51) */}
+        <FilaVehiculo href={verFicha ? conDesde(rutaVehiculo(r.clienteId, r.vehiculoId), desdeAqui) : null}>{valorVehiculo(detalle, r.tamano)}</FilaVehiculo>
         <p className="px-4 py-3 text-sm text-tinta-suave">
           Reservada por {r.agendadaPor} el {formatearFechaHora(r.createdAt)}
         </p>

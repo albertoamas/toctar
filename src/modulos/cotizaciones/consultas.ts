@@ -440,12 +440,19 @@ export async function cotizacionesDelCliente(clienteId: number): Promise<FilaCot
   return (await filas(eq(consulta.clienteId, clienteId)).orderBy(desc(consulta.createdAt), desc(consulta.id))).map(aFila);
 }
 
+/** Las cotizaciones de un vehículo, para su ficha (pedido 51), también las de un dueño anterior. */
+export async function cotizacionesDelVehiculo(vehiculoId: number): Promise<FilaCotizacion[]> {
+  return (await filas(eq(consulta.vehiculoId, vehiculoId)).orderBy(desc(consulta.createdAt), desc(consulta.id))).map(aFila);
+}
+
 export type DetalleCotizacion = {
   id: number;
   numero: string;
   clienteId: number;
   cliente: string;
   telefono: string;
+  /** Para enlazar a su ficha (pedido 51). */
+  vehiculoId: number;
   placa: string;
   /** Marca y modelo, año y color: lo que se sepa (DatosVehiculo). */
   detalle: (string | number)[];
@@ -470,6 +477,7 @@ export async function obtenerCotizacion(id: number): Promise<DetalleCotizacion |
         clienteId: consulta.clienteId,
         cliente: cliente.nombre,
         telefono: cliente.telefono,
+        vehiculoId: vehiculo.id,
         placa: vehiculo.placa,
         marca: vehiculo.marca,
         modelo: vehiculo.modelo,

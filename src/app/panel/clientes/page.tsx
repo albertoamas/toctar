@@ -11,8 +11,9 @@ import { buttonVariants } from "@/componentes/ui/button";
 import { exigirModulo } from "@/lib/sesion";
 import { Buscador } from "@/componentes/panel/buscador";
 import { TablaClientes } from "@/modulos/clientes/componentes/tabla-clientes";
-import { buscarClientes } from "@/modulos/clientes/consultas";
-import { normalizarBusqueda } from "@/modulos/clientes/reglas";
+import { buscarClientes, vehiculoConPlacaExacta } from "@/modulos/clientes/consultas";
+import { normalizarBusqueda, rutaVehiculo } from "@/modulos/clientes/reglas";
+import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { BarraLista } from "@/componentes/panel/barra-lista";
 import { PildoraVista } from "@/componentes/panel/pildora-vista";
 import { aqui, conDesde } from "@/lib/volver";
@@ -52,11 +53,30 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/clientes">, "searc
   const desdeAqui = aqui("/panel/clientes", parametros);
   const q = typeof parametros.q === "string" ? parametros.q : "";
   const desactivados = parametros.ver === "desactivados";
-  const { clientes, hayMas } = await buscarClientes(q, desactivados);
+  const [{ clientes, hayMas }, delVehiculo] = await Promise.all([
+    buscarClientes(q, desactivados),
+    // Pedido 51: una placa exacta lleva directo a la ficha de ese vehículo (la placa es única entre los activos)
+    q && !desactivados ? vehiculoConPlacaExacta(q) : null,
+  ]);
   const busqueda = normalizarBusqueda(q);
+  // Pedido 51: una placa exacta, arriba, también si su dueño no sale en la lista (desactivado)
+  const atajo = delVehiculo && (
+    <ListaFilas
+      etiqueta="Vehículo con esa placa"
+      filas={[
+        {
+          href: conDesde(rutaVehiculo(delVehiculo.clienteId, delVehiculo.id), desdeAqui),
+          titulo: delVehiculo.placa,
+          tituloGrande: true,
+          detalles: [`De ${delVehiculo.cliente}: ver su ficha`],
+        },
+      ]}
+    />
+  );
   if (clientes.length === 0) {
     return (
       <>
+        {atajo}
         <EstadoVacio>
           {q
             ? `No hay clientes${desactivados ? " desactivados" : ""} con «${q.trim()}».`
@@ -70,6 +90,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/clientes">, "searc
 
   return (
     <>
+      {atajo}
       <TablaClientes
         etiqueta={desactivados ? "Clientes desactivados" : "Clientes"}
         clientes={clientes}
