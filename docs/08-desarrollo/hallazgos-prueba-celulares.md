@@ -4,7 +4,7 @@ Lo que salió de la prueba a mano en un iPhone 14 Pro Max y una tablet Redmi Pad
 
 **Estado:** ⏳ sin empezar · 🔵 en curso · ✅ unido a `develop` · 📝 va al registro de cambios
 
-**Cierre (16/11/2026):** los 9 hallazgos de la app están unidos a `develop` (PR #242 a #247); el 6 (ficha del vehículo y separar clientes y vehículos) quedó como pedido 51, para cotizar. Sigue volver a probarlos en el celular, en pruebas.
+**Cierre (16/11/2026):** los 9 hallazgos de la app están unidos a `develop` (PR #242 a #247); el 6 (ficha del vehículo y separar clientes y vehículos) quedó como pedido 51, incluido (decisión del desarrollador, 16/11). Sigue volver a probarlos en el celular, en pruebas.
 
 ## Cómo se trabaja cada punto
 
@@ -41,7 +41,7 @@ Uno por uno, en este orden. Cada punto pasa por los mismos pasos:
 
 | # | Qué | Qué se hace | Estado |
 |---|---|---|---|
-| 6 | Una ficha de cada vehículo, con su historial (órdenes, cotizaciones, fotos y mantenimientos). Hoy los vehículos viven dentro de la ficha del cliente | Pedido 51 en `03-cierre-comercial/registro-de-cambios.md` y una cotización corta para el dueño. No se programa sin su aprobación | 📝 |
+| 6 | Una ficha de cada vehículo, con su historial (órdenes, cotizaciones, fotos y mantenimientos). Hoy los vehículos viven dentro de la ficha del cliente | Pedido 51 en `03-cierre-comercial/registro-de-cambios.md`: **incluido** (16/11, los vehículos debieron estar separados desde el inicio). Se programa con su especificación y su propuesta aprobada | 📝 |
 
 ## Después
 
