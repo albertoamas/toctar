@@ -31,7 +31,7 @@ export default function PaginaUsuarios({ searchParams }: PageProps<"/panel/usuar
           // Enlace con forma de botón: lleva a otra pantalla, así que se anuncia como enlace
           <Link href="/panel/usuarios/nuevo" className={cn(buttonVariants())}>
             <PlusIcon />
-            Agregar usuario
+            Nuevo usuario
           </Link>
         }
       />

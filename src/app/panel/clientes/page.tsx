@@ -30,7 +30,7 @@ export default function PaginaClientes({ searchParams }: PageProps<"/panel/clien
           // Enlace con forma de botón: lleva a otra pantalla (cliente y vehículo: un formulario largo)
           <Link href="/panel/clientes/nuevo" className={cn(buttonVariants())}>
             <PlusIcon />
-            Agregar cliente
+            Nuevo cliente
           </Link>
         }
       />
@@ -62,7 +62,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/clientes">, "searc
             ? `No hay clientes${desactivados ? " desactivados" : ""} con «${q.trim()}».`
             : desactivados
               ? "No hay clientes desactivados."
-              : "Todavía no hay clientes. Agrega el primero con «Agregar cliente»."}
+              : "Todavía no hay clientes. Agrega el primero con «Nuevo cliente»."}
         </EstadoVacio>
       </>
     );

@@ -17,12 +17,22 @@ import type { Tamano } from "@/modulos/configuracion/consultas";
 import type { CambioPrecio, VarianteCatalogo } from "../consultas";
 import { mostrarMonto, textoDias, type Monto } from "../reglas";
 
-// HU-20: precios de una variante por tamaño de vehículo y su duración propia. Va en el modal de "Editar" de la ficha
-// del servicio (PreciosVariante, en lectura) y lo cierra al guardar.
+// HU-20: precios de una variante por tamaño de vehículo y, si el servicio tiene varias, su duración propia. Va en el
+// modal de "Editar" de la ficha del servicio (PreciosVariante, en lectura) y lo cierra al guardar.
+// Hallazgo 2 de la prueba en celulares (15/11): con una sola variante (la "Única" de un servicio nuevo) no hay
+// "Duración propia": se escribía aquí creyendo que era la del servicio, y la ficha seguía mostrando la del servicio.
 
-type Props = { variante: VarianteCatalogo; tamanos: Tamano[]; duracionServicio: number };
+type Props = {
+  variante: VarianteCatalogo;
+  tamanos: Tamano[];
+  duracionServicio: number;
+  /** Lo que dice el formulario: el nombre del servicio si tiene una sola variante, el de la variante si tiene varias. */
+  titulo: string;
+  /** Con varias variantes: cada una puede tardar distinto. Con una, la duración es solo la del servicio. */
+  conDuracion: boolean;
+};
 
-export function FormularioPrecios({ variante: v, tamanos, duracionServicio }: Props) {
+export function FormularioPrecios({ variante: v, tamanos, duracionServicio, titulo, conDuracion }: Props) {
   const cerrar = useCerrarModal();
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
     conAviso(guardarPreciosVariante, (r) => r.ok && cerrar()),
@@ -35,7 +45,7 @@ export function FormularioPrecios({ variante: v, tamanos, duracionServicio }: Pr
   const prefijo = `variante-${v.id}`;
 
   return (
-    <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-label={`Precios de ${v.nombre}`}>
+    <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-label={`Precios de ${titulo}`}>
       <input type="hidden" name="varianteId" value={v.id} />
       {/* El historial se consulta, no guarda: arriba, y en el pie solo guardar o cancelar */}
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -75,21 +85,29 @@ export function FormularioPrecios({ variante: v, tamanos, duracionServicio }: Pr
         })}
       </div>
 
-      <Campo id={`${prefijo}-duracion`} etiqueta="Duración propia" opcional error={e.duracionDias} ayuda={`Vacío: usa la del servicio (${textoDias(duracionServicio)}).`}>
-        <div className="flex items-center gap-2">
-          <Input
-            id={`${prefijo}-duracion`}
-            name="duracionDias"
-            inputMode="numeric"
-            autoComplete="off"
-            defaultValue={valores ? valores.duracionDias : (v.duracionDias ?? "")}
-            aria-invalid={!!e.duracionDias}
-            aria-describedby={e.duracionDias ? `${prefijo}-duracion-error` : `${prefijo}-duracion-ayuda`}
-            className="max-w-24"
-          />
-          <span className="text-tinta-suave">días</span>
-        </div>
-      </Campo>
+      {conDuracion && (
+        <Campo
+          id={`${prefijo}-duracion`}
+          etiqueta="Duración propia"
+          opcional
+          error={e.duracionDias}
+          ayuda={`Solo si esta opción tarda distinto. Vacío: ${textoDias(duracionServicio)}, la del servicio.`}
+        >
+          <div className="flex items-center gap-2">
+            <Input
+              id={`${prefijo}-duracion`}
+              name="duracionDias"
+              inputMode="numeric"
+              autoComplete="off"
+              defaultValue={valores ? valores.duracionDias : (v.duracionDias ?? "")}
+              aria-invalid={!!e.duracionDias}
+              aria-describedby={e.duracionDias ? `${prefijo}-duracion-error` : `${prefijo}-duracion-ayuda`}
+              className="max-w-24"
+            />
+            <span className="text-tinta-suave">días</span>
+          </div>
+        </Campo>
+      )}
 
       <PieModal>
         <Button type="submit" disabled={enviando}>

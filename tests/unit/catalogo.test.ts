@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
 import { nombreRepetido, puedeDesactivar } from "@/lib/orden";
 import { esquemaCrearServicio, esquemaDatosCatalogo, esquemaEstadoVariante, esquemaMoverVariante, esquemaVariante } from "@/modulos/catalogo/esquemas";
-import { clavePrecio, duracionEfectiva, leerMonto, mostrarMonto, precioDesde, preciosCambiados, preciosFaltantes, textoDias, type Monto } from "@/modulos/catalogo/reglas";
+import { algunaTardaDistinto, clavePrecio, duracionEfectiva, leerMonto, mostrarMonto, precioDesde, preciosCambiados, preciosFaltantes, textoDias, type Monto } from "@/modulos/catalogo/reglas";
 
 // C1 Catálogo: reglas de precios (RF-26, RF-28, D-3) y duración (RF-27).
 
@@ -55,16 +55,26 @@ test("preciosFaltantes cuenta los pares sin ninguna fila", () => {
   expect(preciosFaltantes([], [10, 11], cargados)).toBe(0);
 });
 
+test("algunaTardaDistinto: solo una variante con su propia duración, distinta de la del servicio (hallazgo 2)", () => {
+  expect(algunaTardaDistinto([{ duracionDias: null }, { duracionDias: null }], 2)).toBe(false);
+  expect(algunaTardaDistinto([{ duracionDias: 2 }, { duracionDias: null }], 2)).toBe(false);
+  expect(algunaTardaDistinto([{ duracionDias: 3 }, { duracionDias: null }], 2)).toBe(true);
+});
+
 test("duracionEfectiva: la de la variante pisa la del servicio", () => {
   expect(duracionEfectiva({ duracionDias: 2 }, { duracionDias: null })).toBe(2);
   expect(duracionEfectiva({ duracionDias: 2 }, { duracionDias: 3 })).toBe(3);
 });
 
 describe("el servicio en el catálogo (alta y nombre)", () => {
-  test("el alta pide solo el nombre", () => {
-    expect(esquemaCrearServicio.parse({ nombre: "  Mantenimiento del nano cerámico " })).toEqual({ nombre: "Mantenimiento del nano cerámico" });
-    expect(erroresDe(esquemaCrearServicio.safeParse({ nombre: " " }).error!)).toEqual({ nombre: "Escribe el nombre del servicio." });
-    expect(erroresDe(esquemaCrearServicio.safeParse({ nombre: "x".repeat(61) }).error!)).toEqual({ nombre: "Hasta 60 caracteres." });
+  test("el alta pide el nombre y la duración (hallazgo 2: sin ella nacía con 1 día que nadie eligió)", () => {
+    expect(esquemaCrearServicio.parse({ nombre: "  Mantenimiento del nano cerámico ", duracionDias: "2" })).toEqual({ nombre: "Mantenimiento del nano cerámico", duracionDias: 2 });
+    expect(erroresDe(esquemaCrearServicio.safeParse({ nombre: " ", duracionDias: "2" }).error!)).toEqual({ nombre: "Escribe el nombre del servicio." });
+    expect(erroresDe(esquemaCrearServicio.safeParse({ nombre: "x".repeat(61), duracionDias: "2" }).error!)).toEqual({ nombre: "Hasta 60 caracteres." });
+    const dias = "Escribe los días, de 1 a 60.";
+    for (const duracionDias of ["", "0", "61", "1,5"]) {
+      expect(erroresDe(esquemaCrearServicio.safeParse({ nombre: "Pulido", duracionDias }).error!)).toEqual({ duracionDias: dias });
+    }
   });
 
   test("los datos del catálogo llevan el nombre", () => {

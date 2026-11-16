@@ -17,7 +17,7 @@ async function salirSinGuardar(page: Page, lista: string) {
 
 const PANTALLAS = [
   { nombre: "Nuevo cliente", lista: "/panel/clientes", crear: "/panel/clientes/nuevo", campo: "Nombre" },
-  { nombre: "Crear usuario", lista: "/panel/usuarios", crear: "/panel/usuarios/nuevo", campo: "Nombre" },
+  { nombre: "Nuevo usuario", lista: "/panel/usuarios", crear: "/panel/usuarios/nuevo", campo: "Nombre" },
 ];
 
 for (const p of PANTALLAS) {

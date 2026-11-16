@@ -30,7 +30,7 @@ test("el dueño crea el servicio en el catálogo y completa su página: benefici
   // Nace oculto en el sitio, hasta que se complete su página
   await expect(page.getByText("Oculto en el sitio", { exact: true })).toBeVisible();
   // Recién creado se abre el modal de sus precios (es lo que falta cargar): se cierra para ir a su página
-  await page.getByRole("dialog", { name: "Precios de Única" }).getByRole("button", { name: "Cancelar" }).click();
+  await page.getByRole("dialog", { name: `Precios de ${nombre}` }).getByRole("button", { name: "Cancelar" }).click();
   // En "Más" desde el pulido 13.57: el título de la ficha, con todo el ancho
   await page.getByRole("main").getByRole("button", { name: "Más" }).click();
   await page.getByRole("menuitem", { name: "Su página en el sitio" }).click();

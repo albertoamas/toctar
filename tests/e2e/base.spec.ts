@@ -200,7 +200,7 @@ test("los botones del panel miden 44 px con pantalla táctil y 36 con mouse", as
   const alto = isMobile ? 44 : 36;
   const medir = async (boton: Locator) => expect(Math.round((await boton.boundingBox())!.height)).toBe(alto);
   await page.goto("/panel/catalogo");
-  await medir(page.getByRole("button", { name: "Agregar servicio" }));
+  await medir(page.getByRole("button", { name: "Nuevo servicio" }));
   await page.goto("/panel/sitio/servicios");
   // Las flechas de ordenar van en su modal (pulido 13.21)
   await page.getByRole("button", { name: "Cambiar orden" }).click();
@@ -233,10 +233,9 @@ test("ningún botón del panel mide menos que el tamaño normal", async ({ page,
 
 test("al enviar con errores el foco va al campo, y el enlace para volver mide 44 px", async ({ page }) => {
   await ingresarComoDueno(page);
-  // El modal de Nuevo servicio (pulido 7.2) abre con el foco en el nombre: se lo saca, para que la prueba vea que el
-  // error lo devuelve
+  // El modal de Nuevo servicio (pulido 7.2), con el foco fuera del nombre (abrirNuevoServicio escribe la duración): la
+  // prueba ve que el error lo devuelve
   const nuevo = await abrirNuevoServicio(page);
-  await expect(nuevo.getByLabel("Nombre del servicio")).toBeFocused();
   await nuevo.getByRole("button", { name: "Crear servicio" }).focus();
   await page.keyboard.press("Enter");
   await expect(nuevo.getByLabel("Nombre del servicio")).toBeFocused();
@@ -303,7 +302,7 @@ test("en Preguntas, Agregar va arriba y en rojo, el error recibe el foco y tocar
   await expect(agregar).toHaveCSS("background-color", "rgb(227, 6, 19)");
   await agregar.click();
   // En su modal (pulido 13.24): enviar vacía deja el foco en la pregunta, con su error
-  const nueva = page.getByRole("dialog", { name: "Nueva pregunta" });
+  const nueva = page.getByRole("dialog", { name: "Agregar pregunta" });
   await nueva.getByRole("button", { name: "Agregar pregunta" }).click();
   await expect(nueva.getByLabel("Pregunta", { exact: true })).toBeFocused();
   await nueva.getByRole("button", { name: "Cancelar" }).click();

@@ -135,7 +135,7 @@ test("con el teclado abierto, la hoja del modal se apoya sobre él y su botón s
   });
   await ingresarComoDueno(page);
   await page.goto("/panel/catalogo");
-  await page.getByRole("main").getByRole("button", { name: "Agregar servicio" }).click();
+  await page.getByRole("main").getByRole("button", { name: "Nuevo servicio" }).click();
   const dialogo = page.getByRole("dialog", { name: "Nuevo servicio" });
   await expect(dialogo).toBeVisible();
   const alto = page.viewportSize()!.height;
