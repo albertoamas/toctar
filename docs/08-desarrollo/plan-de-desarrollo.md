@@ -36,11 +36,13 @@ Con la Entrega 2 se acepta también la Entrega 1. Lo que falta, en orden.
 
 1. **SEO y rendimiento antes de publicar** (pulido 13.59, 13/11): ✅ canonical e imagen para compartir en todas las páginas, la foto de la portada con prioridad alta y la versión de 1080 px para el celular. Lighthouse móvil de la portada en pruebas, con Cloudflare (14/11): 83 simulado y 83–85 con el frenado real (91–92 en la build local). Lo que falta para 90 en pruebas es la distancia: el HTML de la portada se arma en cada visita (por «Abierto ahora») en el servidor de Alemania. Se vuelve a medir en producción.
 2. **Prueba completa a mano** con `09-pruebas/criterios-entrega-2.md` (y los ⚠️/⏳ de `criterios-entrega-1.md`) en pruebas: dueño y encargado con cada perfil (Taller, Atención, Todo), en un Android y un iPhone. Cubre lo que solo se ve en un celular real: compartir el PDF (27.3), comprobante con la cámara (32.5), checklist con fotos (33.6), PDF impreso en A4 (26.4), instalar la app (B2), los modales con el teclado del iPhone y subir el video de la portada.
-3. **Datos de demostración en pruebas** (`datos:demo`), para la demo y la capacitación.
+3. **Datos de demostración en pruebas:** ✅ cargados el 16/11, con fotos (`07-preparacion/servidor.md`). El dueño prueba la Entrega 2 ahí con lo de `10-lanzamiento/prueba-del-dueno.md`.
 4. **Capacitación:** la guía (`10-lanzamiento/capacitacion.md`) y el Manual del panel con capturas (`/panel/manual`, pedido 44) están escritos (11/11). Falta darla con el dueño y los encargados.
 5. **Actas:** los borradores (`09-pruebas/actas-de-aceptacion/`) están escritos (11/11), sin datos personales del dueño. Falta revisarlos con lo que salga de la prueba a mano y acordar la fecha de la demo y la firma.
 6. **En el servidor** (con el acceso SSH de YankoSoft): la restauración de prueba (RNF-06, `07-preparacion/servidor.md`), confirmar que Traefik pone `x-real-ip` y validar el JSON-LD con https en la herramienta de Google.
 7. **El proxy de Cloudflare:** ✅ encendido en pruebas el 14/11 (`07-preparacion/guia-de-despliegue.md`, paso 3b, con su estado): protección contra ataques masivos, la conexión segura cerca de Bolivia y el firewall de Hetzner solo para Cloudflare. Gratis. Producción quedó preparada el mismo día (`@` y `www` en naranja con su propio secreto): al publicar, solo desplegar.
+8. **Reportes y gastos (pedido 16, opción B):** aprobada el 16/11 (Bs 720, la mitad ya pagada); se programa ahora y se entrega con la Entrega 2. Especificación: `etapas/P16-reportes-y-gastos.md`, en dos PR (primero los gastos, después los reportes).
+9. **Lo que salió de la prueba en celulares** (14 al 16/11): ✅ los 10 hallazgos (`hallazgos-prueba-celulares.md`, PR #242 a #248), la ficha del vehículo (pedido 51, #249), el lavado de cara de la Agenda (#251) y Next.js 16.4.6 por un aviso de seguridad (#253).
 
 **Lo decide o lo carga el dueño** (sin apuro: se avanza con lo de arriba mientras tanto):
 
@@ -48,13 +50,13 @@ Con la Entrega 2 se acepta también la Entrega 1. Lo que falta, en orden.
 |---|---|
 | Pedido 29 y pedido 31, parte 2: vehículos sin placa y cotizar sin registrar al cliente (van juntos) | `etapas/P31-flujo-de-un-trabajo.md`, parte 2 |
 | Pedidos 14 (Bs 200), 19 y 22 (avisos automáticos, por cotizar); la constancia en PDF de la entrega (pedido 13, +2 h) | `registro-de-cambios.md` |
-| Pedidos 15 y 16: van en el Sistema completo | `registro-de-cambios.md` |
+| Pedido 15 (sueldos): va en el Sistema completo. El 16 ya está aprobado (punto 8 de arriba) | `registro-de-cambios.md` |
 | Decisiones abiertas de C5 (permiso del cliente para publicar fotos, qué ve el encargado en Inicio, más mensajes editables) | `etapas/C5-cierre-entrega-2.md`, §12 |
 | Revisar el texto de la política de privacidad (pedido 49) y saber que un dueño nuevo o recuperado se pide a YankoSoft (pedido 50) | Panel, Sitio web > Privacidad; `etapas/P50-cuenta-del-dueno-protegida.md` |
 | Sus datos: lista de precios real (20.4), servicios con mantenimiento y su frecuencia, textos del PDF (formas de pago, condiciones, garantía; 26.6), contenido del sitio (fotos que faltan, como la de "Instalación de PPF"; TikTok; WhatsApp real) y una contraseña larga para su usuario | Panel, en producción al publicar |
 | Reunión de accesos: sus dos pasos en Cloudflare y Hetzner, su tarjeta y el equipo en Coolify | `07-preparacion/servidor.md` |
 
-**Al aceptar:** demo, capacitación, actas confirmadas, merge de `develop` a `main`, etiquetas `v1.0.0` y `v2.0.0`, publicación en producción y cobro (Bs 700 + Bs 2.000).
+**Al aceptar:** demo, capacitación, actas confirmadas, merge de `develop` a `main`, etiquetas `v1.0.0` y `v2.0.0`, publicación en producción y cobro (Bs 700 + Bs 2.000, y el 50 % que falta del pedido 16, Bs 360).
 
 ## Calendario
 
@@ -297,7 +299,7 @@ Una rama `hu-XX-…` por historia, desde `develop`, con commits chicos por tipo 
 2. Prueba completa a mano con la lista de criterios de HU-19 a HU-41 (y los pendientes de HU-01 a HU-18).
 3. Capacitación por rol: dueño (cotizar, agenda, saldos, mensajes y usuarios) y encargado según su perfil (Taller: recibir, trabajar y entregar; Atención: además clientes, cotizaciones y saldos). Sin técnico desde el pedido 32.
 4. Demo del ciclo completo (fecha a acordar con el dueño) y actas de las dos entregas (`09-pruebas/actas-de-aceptacion/`).
-5. Merge a `main`, etiquetas `v1.0.0` y `v2.0.0`, publicación y cobro (Bs 700 + Bs 2.000). Al completar el pago, TocTar recibe una copia del código.
+5. Merge a `main`, etiquetas `v1.0.0` y `v2.0.0`, publicación y cobro (Bs 700 + Bs 2.000, y el 50 % que falta del pedido 16, Bs 360). Al completar el pago, TocTar recibe una copia del código.
 
 **Criterio de salida de la fase C:** acta firmada antes del 1 de diciembre y pago recibido.
 
