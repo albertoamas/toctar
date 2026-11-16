@@ -7,13 +7,13 @@ import { permisosAsignables } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioUsuario } from "@/modulos/usuarios/componentes/formulario-usuario";
 
-export const metadata: Metadata = { title: "Crear usuario" };
+export const metadata: Metadata = { title: "Nuevo usuario" };
 
 // HU-02: crear un usuario con su rol; si es encargado, con sus módulos (HU-03).
 export default function PaginaNuevoUsuario() {
   return (
     <PaginaPanel tipo="formulario">
-      <EncabezadoPagina titulo="Crear usuario" volver={{ href: "/panel/usuarios", texto: "Usuarios" }} />
+      <EncabezadoPagina titulo="Nuevo usuario" volver={{ href: "/panel/usuarios", texto: "Usuarios" }} />
       <Suspense fallback={<Cargando />}>
         <Formulario />
       </Suspense>

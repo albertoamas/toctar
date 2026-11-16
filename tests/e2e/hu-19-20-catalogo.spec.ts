@@ -47,7 +47,8 @@ test("el dueño marca el mantenimiento, cambia la duración y desactiva un servi
 
   // En lectura; "Editar" abre el formulario de los datos en un modal
   const datos = page.getByRole("region", { name: "Datos" });
-  await expect(datos).toContainText("1 día");
+  // La duración que se eligió al crearlo (abrirNuevoServicio: 2 días, hallazgo 2)
+  await expect(datos).toContainText("2 días");
   await expect(datos).toContainText("No programa mantenimiento");
   const editar = page.getByRole("button", { name: "Editar datos del servicio" });
   const modal = page.getByRole("dialog", { name: "Datos del servicio" });
@@ -104,7 +105,7 @@ test("las variantes se agregan, renombran y desactivan en el catálogo; una nuev
   // Cuenta las variantes activas del servicio (datos iniciales: 1, 2, 3, 5 y 10 años)
   await expect(page.getByRole("list", { name: "Servicios del catálogo" }).getByRole("link", { name: /Pulido y nano cerámico/ })).toContainText("5 variantes");
 
-  // "Agregar servicio" es un modal en la lista (pulido 7.2): las direcciones viejas de la pantalla de alta llevan ahí
+  // "Nuevo servicio" es un modal en la lista (pulido 7.2): las direcciones viejas de la pantalla de alta llevan ahí
   for (const vieja of ["/panel/catalogo/nuevo", "/panel/sitio/servicios/nuevo"]) {
     await page.goto(vieja);
     await expect(page).toHaveURL(/\/panel\/catalogo$/);
@@ -113,8 +114,9 @@ test("las variantes se agregan, renombran y desactivan en el catálogo; una nuev
   await nuevo.getByLabel("Nombre del servicio").fill(`Variantes de prueba ${sufijo(info)}`);
   await nuevo.getByRole("button", { name: "Crear servicio" }).click();
   await expect(page.getByText("Servicio creado. Carga sus precios.")).toBeVisible();
-  // D-2: nace con la variante "Única", y la ficha se abre en el modal de sus precios, con el foco en el primero
-  const preciosUnica = page.getByRole("dialog", { name: "Precios de Única" });
+  // D-2: nace con la variante "Única", y la ficha se abre en el modal de sus precios, con el foco en el primero. Con una
+  // sola variante, los precios se nombran por el servicio (hallazgo 2)
+  const preciosUnica = page.getByRole("dialog", { name: `Precios de Variantes de prueba ${sufijo(info)}` });
   await expect(preciosUnica.getByLabel("Compactos")).toBeFocused();
   await preciosUnica.getByRole("button", { name: "Cancelar" }).click();
 
@@ -165,9 +167,10 @@ test("las variantes se agregan, renombran y desactivan en el catálogo; una nuev
   // Cerrado el de la variante, "Listo" vuelve
   await expect(variantes.getByRole("button", { name: "Listo" })).toBeVisible();
   await variantes.getByRole("button", { name: "Listo" }).click();
-  // Sin tarjeta propia (cambio 4b): cada variante activa es su recuadro de precios y la desactivada se cuenta en Precios
+  // Sin tarjeta propia (cambio 4b): cada variante activa es su recuadro de precios y la desactivada se cuenta en Precios.
+  // Queda una sola activa: sus precios son los del servicio, sin el nombre de la variante (hallazgo 2)
   const precios = page.getByRole("region", { name: "Precios", exact: true });
-  await expect(precios.getByRole("region", { name: "Básico" })).toBeVisible();
+  await expect(precios.getByRole("region", { name: "Por tamaño de vehículo" })).toBeVisible();
   await expect(precios).toContainText("1 variante desactivada: se reactiva en «Editar variantes».");
   await expect(page.getByRole("region", { name: "Premium" })).toHaveCount(0);
 });
@@ -202,12 +205,12 @@ test("el dueño carga precios por tamaño; vacío es según evaluación y cada c
   await abrirFicha(page, id);
   // Un servicio nuevo tiene la variante "Única" (D-2), todavía sin precios: una sola línea, y su botón "Cargar precios"
   // (pulido 13.57; antes, "Sin cargar" en cada tamaño)
-  const unica = page.getByRole("region", { name: "Única" });
+  const unica = page.getByRole("region", { name: "Por tamaño de vehículo" });
   await expect(unica.getByText("Sin precios cargados.")).toBeVisible();
   await expect(unica.getByText("Sin cargar")).toHaveCount(0);
-  const editar = unica.getByRole("button", { name: /^(Cargar|Editar) precios de Única$/ });
+  const editar = unica.getByRole("button", { name: new RegExp(`^(Cargar|Editar) precios de ${nombre}$`) });
   await expect(editar).toHaveText("Cargar precios");
-  const precios = page.getByRole("dialog", { name: "Precios de Única" });
+  const precios = page.getByRole("dialog", { name: `Precios de ${nombre}` });
 
   // Un monto con separador de miles se rechaza, con el foco en el campo
   await editar.click();
@@ -251,11 +254,10 @@ test("el dueño carga precios por tamaño; vacío es según evaluación y cada c
   await expect(cambios).toContainText("Sin cargar → 250 Bs");
   await page.keyboard.press("Escape");
 
-  // Duración propia de la variante: en lectura, solo si es distinta de la del servicio
-  await precios.getByLabel("Duración propia").fill("2");
-  await precios.getByRole("button", { name: "Guardar precios" }).click();
-  await expect.poll(() => consultar<{ d: number | null }>("select duracion_dias as d from variante where servicio_id = $1", [id])).toEqual([{ d: 2 }]);
-  await expect(unica).toContainText("Ocupa 2 días.");
+  // Con una sola variante no hay "Duración propia": la duración es solo la del servicio (hallazgo 2)
+  await expect(precios.getByLabel("Duración propia")).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(precios).toHaveCount(0);
 
   // En la lista (pulido 7.1): desde cuánto cuesta (el menor de sus precios) y ya no dice que le faltan
   await page.goto("/panel/catalogo");

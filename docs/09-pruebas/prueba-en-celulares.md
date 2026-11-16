@@ -53,7 +53,7 @@ En los dos celulares, primero en vertical y después en horizontal:
 Es la prueba más importante: el recorrido de todos los días, de punta a punta, en el celular.
 
 ### Cliente y vehículo
-- [ ] **Clientes**, **Agregar cliente** con su vehículo (marca, modelo, color y placa). Con el teclado abierto se ve el campo que se está escribiendo, y el de WhatsApp abre el teclado de números.
+- [ ] **Clientes**, **Nuevo cliente** con su vehículo (marca, modelo, color y placa). Con el teclado abierto se ve el campo que se está escribiendo, y el de WhatsApp abre el teclado de números.
 - [ ] Guardar y, enseguida, volver a abrir la ficha: el vehículo está con **su color** (23.7). Repetirlo una vez con los datos móviles en lugar de wifi.
 
 ### Cotización

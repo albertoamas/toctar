@@ -240,11 +240,11 @@ test("tras un error, el perfil elegido se conserva y es el que se guarda", async
   expect(permisos.map((p) => p.permiso)).toEqual(["agenda", "clientes", "cotizaciones", "mantenimientos", "ordenes", "pagos"]);
 });
 
-// Pulido 5.3: "Agregar usuario" en la lista, "(tú)" en el propio y, en la computadora, toda la fila abre el usuario.
-test("la lista de usuarios: Agregar usuario, (tú) y la fila que abre el usuario", async ({ page }, info) => {
+// Pulido 5.3: "Nuevo usuario" en la lista, "(tú)" en el propio y, en la computadora, toda la fila abre el usuario.
+test("la lista de usuarios: Nuevo usuario, (tú) y la fila que abre el usuario", async ({ page }, info) => {
   await ingresarComoDueno(page);
   await page.goto("/panel/usuarios");
-  await page.getByRole("link", { name: "Agregar usuario" }).click();
+  await page.getByRole("link", { name: "Nuevo usuario" }).click();
   await expect(page).toHaveURL(/\/panel\/usuarios\/nuevo$/);
   await page.goto("/panel/usuarios");
   await expect(page.getByText("(tú)").locator("visible=true")).toBeVisible();

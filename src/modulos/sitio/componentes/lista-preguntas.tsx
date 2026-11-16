@@ -46,7 +46,7 @@ export function AgregarPregunta() {
         <PlusIcon />
         Agregar pregunta
       </Button>
-      <ModalFormulario titulo="Nueva pregunta" abierto={agregando} alCambiar={setAgregando}>
+      <ModalFormulario titulo="Agregar pregunta" abierto={agregando} alCambiar={setAgregando}>
         <FormularioPregunta />
       </ModalFormulario>
     </>

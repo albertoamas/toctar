@@ -17,8 +17,11 @@ const duracionDias = z.coerce
   .min(DURACION.minima, `Escribe los días, de ${DURACION.minima} a ${DURACION.maxima}.`)
   .max(DURACION.maxima, `Escribe los días, de ${DURACION.minima} a ${DURACION.maxima}.`);
 
-/** Alta de un servicio: solo el nombre. Nace oculto en el sitio, hasta que se complete su página. */
-export const esquemaCrearServicio = z.object({ nombre });
+/**
+ * Alta de un servicio: el nombre y cuánto tarda (hallazgo 2 de la prueba en celulares: sin la duración, nacía con 1 día
+ * que nadie eligió). Nace oculto en el sitio, hasta que se complete su página.
+ */
+export const esquemaCrearServicio = z.object({ nombre, duracionDias });
 
 /**
  * Nombre, duración, si está activo y su mantenimiento (RN-08, pedido 21): con la casilla marcada, el servicio que se

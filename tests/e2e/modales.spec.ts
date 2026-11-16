@@ -79,6 +79,6 @@ test("en el celular, Registrar pago se abre sin el teclado; Nuevo servicio, en s
   await pago.getByRole("button", { name: "Cancelar" }).click();
 
   await page.goto("/panel/catalogo");
-  await page.getByRole("main").getByRole("button", { name: "Agregar servicio" }).click();
+  await page.getByRole("main").getByRole("button", { name: "Nuevo servicio" }).click();
   await expect(page.getByRole("dialog", { name: "Nuevo servicio" }).getByLabel("Nombre del servicio")).toBeFocused();
 });

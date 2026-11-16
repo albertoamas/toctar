@@ -12,7 +12,7 @@ test("el personal registra un cliente con su primer vehículo; los obligatorios 
   await ingresarComoDueno(page);
   if (info.project.name === "celular") await page.getByRole("button", { name: "Abrir menú" }).click();
   await page.getByRole("navigation", { name: "Panel" }).getByRole("link", { name: "Clientes" }).click();
-  await page.getByRole("link", { name: "Agregar cliente" }).click();
+  await page.getByRole("link", { name: "Nuevo cliente" }).click();
 
   // Vacío: nombre y WhatsApp son obligatorios; el foco va al primero
   await page.getByRole("button", { name: "Crear cliente" }).click();
@@ -45,7 +45,7 @@ test("el personal registra un cliente con su primer vehículo; los obligatorios 
   await expect(vehiculos).toContainText("Tamaño: Compactos");
   await expect(vehiculos).toContainText("Toyota Yaris");
 
-  // Next deja "Agregar cliente" oculta en el documento, con sus campos "nombre" y "telefono": los del modal de Datos
+  // Next deja "Nuevo cliente" oculta en el documento, con sus campos "nombre" y "telefono": los del modal de Datos
   // tienen su propio id y su etiqueta los nombra (antes, la etiqueta apuntaba al campo oculto)
   await page.getByRole("button", { name: "Editar datos del cliente" }).click();
   const datos = page.getByRole("dialog", { name: "Datos del cliente" });
@@ -128,7 +128,7 @@ test("el encargado entra a Clientes solo con el permiso; el perfil Taller no", a
     await ingresar(page, c.usuario, "clave-clientes-1");
     await expect(page).toHaveURL(/\/panel$/);
     await page.goto("/panel/clientes/nuevo");
-    if (c.entra) await expect(page.getByRole("heading", { level: 1, name: "Agregar cliente" })).toBeVisible();
+    if (c.entra) await expect(page.getByRole("heading", { level: 1, name: "Nuevo cliente" })).toBeVisible();
     else await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
   }
 });

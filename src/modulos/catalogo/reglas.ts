@@ -66,3 +66,8 @@ export const clavePrecio = (varianteId: number, tamanoId: number) => `${variante
 export function duracionEfectiva(servicio: { duracionDias: number }, variante: { duracionDias: number | null }): number {
   return variante.duracionDias ?? servicio.duracionDias;
 }
+
+/** Si alguna variante tarda distinto que el servicio: la ficha lo avisa y los precios dicen cuánto ocupa cada una. */
+export function algunaTardaDistinto(variantes: { duracionDias: number | null }[], duracionServicio: number): boolean {
+  return variantes.some((v) => v.duracionDias !== null && v.duracionDias !== duracionServicio);
+}
