@@ -20,9 +20,11 @@ type Props = {
   cliente: { nombre: string; detalle?: string } & Cambio;
   /** Todavía sin elegir (el paso Vehículo): solo la fila del cliente. */
   vehiculo: ({ placa: string; detalle: (string | number)[]; tamano: string } & Cambio) | null;
+  /** Una última fila de la misma tarjeta: el mantenimiento que se reserva (hallazgo 10, antes iba suelto entre tarjetas). */
+  extra?: React.ReactNode;
 };
 
-export function ResumenClienteVehiculo({ id = "para-quien", titulo = "Reserva para", cliente, vehiculo }: Props) {
+export function ResumenClienteVehiculo({ id = "para-quien", titulo = "Reserva para", cliente, vehiculo, extra }: Props) {
   return (
     <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-3">
       <CabeceraSeccion id={id} titulo={titulo} />
@@ -42,6 +44,7 @@ export function ResumenClienteVehiculo({ id = "para-quien", titulo = "Reserva pa
             <BotonCambiar href={vehiculo.href} alCambiar={vehiculo.alCambiar} etiqueta="Cambiar vehículo" />
           </div>
         )}
+        {extra && <div className="flex flex-col gap-2 py-2 pr-2 pl-4">{extra}</div>}
       </div>
     </section>
   );

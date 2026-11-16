@@ -120,6 +120,8 @@ test("vencidos y próximos; avisar, no le interesa y reservar (y al cancelar la 
   // Solo lo visible: Next deja la página de Mantenimientos oculta en el documento, con el mismo texto
   await expect(page.getByText("Mantenimiento de Pulido y nano cerámico", { exact: true }).filter({ visible: true })).toBeVisible();
   await expect(page.getByText(/^Venció el \d{2}\/\d{2}(\/\d{4})?$/)).toBeVisible();
+  // Dentro de la tarjeta "Reserva para", no suelto entre tarjetas (hallazgo 10)
+  await expect(page.getByRole("region", { name: "Reserva para" })).toContainText("Mantenimiento de Pulido y nano cerámico");
   // Desde un mantenimiento no se cambia el cliente: el recordatorio es suyo
   await expect(page.getByRole("link", { name: "Cambiar" })).toHaveCount(0);
   // Llega con su servicio de mantenimiento ya elegido (pedido 21). Es un servicio cobrado del catálogo (RN-09); el precio,
@@ -129,6 +131,8 @@ test("vencidos y próximos; avisar, no le interesa y reservar (y al cancelar la 
   // Según evaluación, sin precio: empieza en Servicios para escribirlo (pedido 41)
   await page.getByLabel("Precio del servicio 1").fill("350");
   await page.getByRole("button", { name: "Siguiente: fecha y adelanto" }).click();
+  // Empezó en los servicios (sin precio): "Atrás" vuelve a ellos (hallazgo 10)
+  await expect(page.getByRole("button", { name: "Atrás" })).toBeVisible();
   await page.getByLabel("Ingresa el").fill(await diaPropio(info));
   const espacio = page.getByLabel("Espacio", { exact: true });
   await expect(espacio).toBeEnabled();

@@ -185,7 +185,11 @@ test("Nueva reserva ofrece las cotizaciones del vehículo: los precios llegan si
   await expect(page).toHaveURL(new RegExp(`cotizacion=${c.cotizacionId}&cliente=${c.clienteId}&vehiculo=${c.vehiculoId}(?:&volver=[^&#]*)?$`));
   await expect(page.getByRole("navigation", { name: "Pasos de la reserva" }).locator('[aria-current="step"]')).toHaveText("Fecha y adelanto");
   await expect(page.getByRole("link", { name: "Cambiar servicios" })).toHaveAttribute("href", conVolver(`/panel/agenda/nueva?cliente=${c.clienteId}&vehiculo=${c.vehiculoId}`));
-  await expect(page.getByRole("region", { name: new RegExp(`^Cotización ${c.numero}`) })).toContainText("700 Bs");
+  const servicios = page.getByRole("region", { name: "Servicios" });
+  await expect(servicios).toContainText(`De la cotización ${c.numero}`);
+  await expect(servicios).toContainText("700 Bs");
+  // "Atrás" vuelve a ese paso, como en los otros caminos (hallazgo 10)
+  await expect(page.getByRole("link", { name: "Atrás" })).toHaveAttribute("href", conVolver(`/panel/agenda/nueva?cliente=${c.clienteId}&vehiculo=${c.vehiculoId}`));
   await reservar(page, dia);
   const [r] = await consultar<{ lineas: number; con: string }>(
     "select (select count(*)::int from trabajo_linea l where l.trabajo_id = t.id) as lineas, q.estado as con from trabajo t join consulta q on q.id = t.consulta_id where t.cotizacion_id = $1",

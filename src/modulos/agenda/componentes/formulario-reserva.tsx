@@ -1,6 +1,9 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import { cn } from "cn";
+import Link from "next/link";
+import type { Route } from "next";
 import { useFocoDePaso } from "@/componentes/panel/foco-de-paso";
 import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
@@ -11,7 +14,7 @@ import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { ResumenPaso } from "@/componentes/panel/resumen-paso";
 import { Selector } from "@/componentes/panel/selector";
-import { Button } from "@/componentes/ui/button";
+import { Button, buttonVariants } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
@@ -40,7 +43,7 @@ import { espacioVigente, useEspaciosLibres } from "./espacios-libres";
 // vuelve al paso que lo tiene. Desde una cotización hay un solo paso: la fecha.
 
 type Origen =
-  | { tipo: "cotizacion"; cotizacionId: number; duraciones: number[] }
+  | { tipo: "cotizacion"; cotizacionId: number; duraciones: number[]; /** Para la barra de abajo; null sin permiso de ver montos. */ total: string | null }
   | {
       tipo: "directa";
       clienteId: number;
@@ -68,12 +71,14 @@ type Props = {
   arriba?: React.ReactNode;
   /** Las cotizaciones del vehículo para reservar, en el paso Servicios: con ellas, la reserva sin cotización va plegada. */
   cotizaciones?: React.ReactNode;
+  /** Desde una cotización elegida en el paso Servicios: a dónde vuelve "Atrás" (ese paso). */
+  atras?: Route;
 };
 
 /** El paso en la dirección: el botón Atrás del celular vuelve al anterior sin salir de la pantalla. */
 const ANCLA: Record<number, string> = { [PASO_SERVICIOS]: "servicios", [PASO_FECHA]: "fecha" };
 
-export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, hoy, fechaInicial, espacioInicial, espaciosIniciales, arriba, cotizaciones }: Props) {
+export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, hoy, fechaInicial, espacioInicial, espaciosIniciales, arriba, cotizaciones, atras }: Props) {
   const directa = origen.tipo === "directa";
   const inicial = origen.tipo === "directa" ? origen.pasoInicial : PASO_FECHA;
   const [paso, setPaso] = useState<number>(inicial);
@@ -169,7 +174,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
           lineas.map((l) => leerMonto(l.precio) ?? "0"),
           "0",
         ).total
-      : null;
+      : origen.total;
 
   // El historial: Atrás y Adelante del navegador (o del celular) cambian de paso. Adelante a la fecha revisa los servicios
   const alCambiarHistoria = useRef<() => void>(() => {});
@@ -399,10 +404,24 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
               </p>
             )}
             <div className="flex gap-2">
+              {/* Atrás cuando se llegó a la fecha desde los servicios (hallazgo 10): en la directa y en el mantenimiento que
+                  empezó en ellos, vuelve atrás en el historial; desde una cotización elegida en Servicios, a ese paso
+                  (atras). Un mantenimiento que ya empieza en la fecha no lo lleva: su Atrás agregaba pasos falsos al
+                  historial del celular; vuelve con "Cambiar" en Servicios */}
               {directa && paso === PASO_FECHA && inicial === PASO_SERVICIOS && (
                 <Button type="button" variant="outline" disabled={enviando} onClick={volverAServicios}>
                   Atrás
                 </Button>
+              )}
+              {!directa && atras && (
+                // Mientras se reserva no se sale: la reserva se crearía sin que la persona lo vea
+                <Link
+                  href={atras}
+                  aria-disabled={enviando || undefined}
+                  className={cn(buttonVariants({ variant: "outline" }), enviando && "pointer-events-none opacity-50")}
+                >
+                  Atrás
+                </Link>
               )}
               {/* Una key distinta en cada uno: si React reusara el botón, "Siguiente" se volvía "Reservar" durante el
                   mismo toque y el navegador enviaba la reserva a medias (lo mismo que en Nueva cotización, pedido 40) */}

@@ -75,10 +75,14 @@ test("desde la cotización: la versión y la cotización quedan aceptadas, las l
   await expect(page.getByLabel("Ingresa el")).toHaveValue(dia);
   const [{ fin }] = await consultar<{ fin: string }>("select to_char($1::date + 1, 'YYYY-MM-DD') as fin", [dia]);
   await expect(page.getByLabel("Entrega aproximada")).toHaveValue(fin);
-  // Los servicios de la cotización con su total, en su recuadro (pulido 10.2)
-  const cotizada = page.getByRole("region", { name: /^Cotización/ });
-  await expect(cotizada.getByText("Total", { exact: true })).toBeVisible();
-  await expect(cotizada.getByText("800 Bs", { exact: true }).last()).toBeVisible();
+  // Los servicios de la cotización con su total, en su recuadro (pulido 10.2). "Servicios", como en los otros caminos, con
+  // de dónde vienen; el mismo indicador de la reserva (hallazgo 10)
+  const cotizada = page.getByRole("region", { name: "Servicios" });
+  await expect(cotizada).toContainText(/De la cotización \d{4}-\d{4}/);
+  await expect(page.getByRole("navigation", { name: "Pasos de la reserva" }).locator('[aria-current="step"]')).toHaveText("Fecha y adelanto");
+  // El total (con el descuento de la cotización), en la barra de abajo como en los otros caminos, y no también en la tarjeta
+  await expect(page.getByText("800 Bs", { exact: true }).filter({ visible: true }).first()).toBeVisible();
+  await expect(cotizada.getByText("Total", { exact: true })).toHaveCount(0);
 
   // Sin elegir espacio ni método: los errores
   await page.getByRole("button", { name: "Reservar" }).click();
