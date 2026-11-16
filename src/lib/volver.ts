@@ -33,6 +33,8 @@ const PANTALLAS: { ruta: RegExp; texto: string; modulo: Modulo }[] = [
   { ruta: /^\/panel\/reclamos$/, texto: "Reclamos", modulo: "reclamos" },
   { ruta: /^\/panel\/catalogo$/, texto: "Catálogo y precios", modulo: "catalogo" },
   { ruta: /^\/panel\/catalogo\/\d+$/, texto: "Servicio del catálogo", modulo: "catalogo" },
+  { ruta: /^\/panel\/reportes$/, texto: "Reportes", modulo: "reportes" },
+  { ruta: /^\/panel\/reportes\/gastos$/, texto: "Gastos", modulo: "reportes" },
   { ruta: /^\/panel\/sitio\/servicios$/, texto: "Servicios", modulo: "sitio" },
   { ruta: /^\/panel\/sitio\/servicios\/\d+$/, texto: "Su página en el sitio", modulo: "sitio" },
   { ruta: /^\/panel\/usuarios$/, texto: "Usuarios", modulo: "usuarios" },

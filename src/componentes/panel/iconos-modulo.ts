@@ -1,5 +1,6 @@
 import {
   CalendarClockIcon,
+  ChartColumnIcon,
   CalendarIcon,
   ContactIcon,
   FileTextIcon,
@@ -27,6 +28,7 @@ export const ICONO_MODULO: Record<Modulo, LucideIcon> = {
   reclamos: MessageSquareWarningIcon,
   sitio: GlobeIcon,
   catalogo: TagIcon,
+  reportes: ChartColumnIcon,
   usuarios: UsersIcon,
   configuracion: SettingsIcon,
 };

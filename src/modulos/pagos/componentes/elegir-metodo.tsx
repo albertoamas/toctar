@@ -39,11 +39,12 @@ export function MetodoYComprobante(props: {
   );
 }
 
-function ElegirMetodo({ valor, cambiar, error }: { valor: MetodoPago | ""; cambiar: (metodo: MetodoPago) => void; error?: string }) {
+/** Las tres formas de pago en tarjetas. `titulo`: "¿Cómo pagó?" al cobrar; "Cómo se pagó" en un gasto (pedido 16). */
+export function ElegirMetodo({ valor, cambiar, error, titulo = "¿Cómo pagó?" }: { valor: MetodoPago | ""; cambiar: (metodo: MetodoPago) => void; error?: string; titulo?: string }) {
   return (
     <OpcionesEnTarjetas
       id="metodo"
-      titulo="¿Cómo pagó?"
+      titulo={titulo}
       nombre="metodo"
       valor={valor}
       cambiar={cambiar}

@@ -351,6 +351,13 @@
       "when": 1794792030892,
       "tag": "0049_duracion_de_una_variante",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1794862896674,
+      "tag": "0050_gastos",
+      "breakpoints": true
     }
   ]
 }

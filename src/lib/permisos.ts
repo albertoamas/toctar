@@ -66,6 +66,8 @@ export const MODULOS = {
   reclamos: { ruta: "/panel/reclamos", nombre: "Reclamos", grupo: "clientes", permisoEncargado: "reclamos" },
   sitio: { ruta: "/panel/sitio", nombre: "Sitio web", grupo: "administracion", permisoEncargado: "sitio" },
   catalogo: { ruta: "/panel/catalogo", nombre: "Catálogo y precios", grupo: "administracion", permisoEncargado: null },
+  // Pedido 16: cuánto entró, cuánto salió y cuánto quedó, y los gastos que lo explican. Solo el dueño (sin permiso de encargado)
+  reportes: { ruta: "/panel/reportes", nombre: "Reportes", grupo: "administracion", permisoEncargado: null },
   usuarios: { ruta: "/panel/usuarios", nombre: "Usuarios", grupo: "administracion", permisoEncargado: null },
   configuracion: { ruta: "/panel/configuracion", nombre: "Configuración", grupo: "administracion", permisoEncargado: null },
 } as const satisfies Record<string, DefinicionModulo>;
@@ -81,7 +83,7 @@ export function puedeVerModulo(sujeto: SujetoPermisos, modulo: Modulo): boolean 
       return true;
     case "encargado":
       if (modulo === "inicio") return true;
-      // Usuarios, configuración y catálogo no tienen permiso de encargado: aunque la base tuviera algo raro guardado,
+      // Usuarios, configuración, catálogo y reportes no tienen permiso de encargado: aunque la base tuviera algo raro guardado,
       // se niegan (RN-01).
       return def.permisoEncargado !== null && sujeto.permisos.includes(def.permisoEncargado);
     default:

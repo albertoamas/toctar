@@ -32,6 +32,8 @@ function apariciones(patron: RegExp): Record<string, number> {
 const SIN_PAGINA_PANEL = [
   // No dibuja nada: solo verifica la sesión y responde "no encontrado" (not-found.tsx sí usa PaginaPanel)
   "src/app/panel/[...resto]/page.tsx",
+  // Pedido 16: lleva a los gastos hasta que llegue la pantalla de Reportes (segundo PR de P16)
+  "src/app/panel/reportes/page.tsx",
 ];
 
 /** Anchos de pantalla escritos a mano, con su motivo. Los de un campo o un bloque chico (`max-w-xs`, `max-w-md`) sí valen (§1). */
@@ -51,6 +53,8 @@ const TITULOS_A_MANO: Record<string, number> = {
   "src/app/panel/agenda/page.tsx": 1,
   // La leyenda de un grupo de campos
   "src/modulos/clientes/componentes/formulario-nuevo-cliente.tsx": 1,
+  // El mes de los gastos, entre sus flechas: como la semana de la Agenda
+  "src/app/panel/reportes/gastos/page.tsx": 1,
   // La leyenda de un grupo de fotos
   "src/modulos/ordenes/componentes/formulario-publicar.tsx": 1,
 };

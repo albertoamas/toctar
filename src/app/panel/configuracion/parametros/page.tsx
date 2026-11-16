@@ -7,14 +7,15 @@ import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioSeccionParametros } from "@/modulos/configuracion/componentes/formulario-parametros";
-import { obtenerParametros } from "@/modulos/configuracion/consultas";
+import { ListaEditable } from "@/modulos/configuracion/componentes/lista-editable";
+import { listarElementos, obtenerParametros } from "@/modulos/configuracion/consultas";
 import { CLAVES_PARAMETRO, CLAVES_SECCION_PARAMETROS, clavesDeSeccion, PARAMETROS, SECCIONES_PARAMETROS, type ClaveParametro, type SeccionParametros } from "@/modulos/configuracion/parametros";
 
 export const metadata: Metadata = { title: "Parámetros" };
 
 // HU-05: los parámetros del negocio por tema (C5 §0). Solo el dueño. Pulido 13.29: una ficha como Negocio: los plazos de
 // las cotizaciones, los textos del PDF y la agenda se leen y cada uno se edita en su modal. Antes era el único formulario
-// abierto de Configuración, con los tres textos del PDF siempre a la vista.
+// abierto de Configuración, con los tres textos del PDF siempre a la vista. Pedido 16: al final, las categorías de gasto.
 
 const VOLVER = { href: "/panel/configuracion", texto: "Configuración" } as const;
 
@@ -30,7 +31,7 @@ export default function PaginaParametros() {
 
 async function Contenido() {
   await exigirModulo("configuracion");
-  const parametros = await obtenerParametros();
+  const [parametros, categorias] = await Promise.all([obtenerParametros(), listarElementos("categorias")]);
   const valores = Object.fromEntries(CLAVES_PARAMETRO.map((c) => [c, String(parametros[c])])) as Record<ClaveParametro, string>;
   const seccion = (s: SeccionParametros) => {
     const { titulo } = SECCIONES_PARAMETROS[s];
@@ -70,6 +71,8 @@ async function Contenido() {
       <EncabezadoPagina titulo="Parámetros" volver={VOLVER} />
       <PartesIguales>{CLAVES_SECCION_PARAMETROS.filter((s) => !SECCIONES_PARAMETROS[s].ancha).map(seccion)}</PartesIguales>
       {CLAVES_SECCION_PARAMETROS.filter((s) => SECCIONES_PARAMETROS[s].ancha).map(seccion)}
+      {/* Pedido 16: en qué se gasta, para los gastos de Reportes */}
+      <ListaEditable lista="categorias" elementos={categorias} descripcion="Para registrar cada gasto y ver en qué se fue la plata en Reportes." />
     </>
   );
 }

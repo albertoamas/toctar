@@ -10,3 +10,4 @@ export * from "./cotizaciones";
 export * from "./trabajos";
 export * from "./reclamos";
 export * from "./mantenimientos";
+export * from "./gastos";

@@ -4,7 +4,7 @@ import { eq, max } from "drizzle-orm";
 import { z } from "zod";
 import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/db";
-import { espacioTaller, negocio, parametro, parteRevision, plantillaMensaje, sucursal, tamanoVehiculo } from "@/db/esquema";
+import { categoriaGasto, espacioTaller, negocio, parametro, parteRevision, plantillaMensaje, sucursal, tamanoVehiculo } from "@/db/esquema";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { eliminarFotosSinFallar, guardarFoto } from "@/lib/fotos";
 import { nombreRepetido, puedeDesactivar, reordenar, type Direccion } from "@/lib/orden";
@@ -15,6 +15,7 @@ import {
   esquemaElemento,
   esquemaEstado,
   esquemaMover,
+  LISTAS,
   mensajeRepetido,
   mensajeUltimoActivo,
   type Lista,
@@ -167,6 +168,9 @@ export async function guardarParametros(_previo: EstadoFormulario, datos: FormDa
 function despuesDeCambiarLista() {
   updateTag(ETIQUETA_PARAMETROS);
   revalidatePath(`${RUTA}/taller`);
+  // Las categorías de gasto (pedido 16): en Parámetros y al registrar un gasto
+  revalidatePath(`${RUTA}/parametros`);
+  revalidatePath("/panel/reportes", "layout");
 }
 
 /** Agrega (sin id) o renombra (con id) un espacio del taller, un tamaño de vehículo o una parte del checklist. */
@@ -187,7 +191,13 @@ export async function guardarElemento(_previo: EstadoFormulario, datos: FormData
   if (id && !elementos.some((e) => e.id === id)) return { mensaje: "Ese elemento ya no existe. Recarga la página." };
 
   try {
-    if (lista === "partes") {
+    if (lista === "categorias") {
+      if (id) await db.update(categoriaGasto).set({ nombre }).where(eq(categoriaGasto.id, id));
+      else {
+        const [{ ultimo }] = await db.select({ ultimo: max(categoriaGasto.orden) }).from(categoriaGasto);
+        await db.insert(categoriaGasto).values({ nombre, orden: (ultimo ?? 0) + 1 });
+      }
+    } else if (lista === "partes") {
       if (id) await db.update(parteRevision).set({ nombre }).where(eq(parteRevision.id, id));
       else {
         const [{ ultimo }] = await db.select({ ultimo: max(parteRevision.orden) }).from(parteRevision);
@@ -216,13 +226,14 @@ export async function guardarElemento(_previo: EstadoFormulario, datos: FormData
   }
 
   despuesDeCambiarLista();
-  return { ok: true, mensaje: id ? "Cambios guardados." : `${nombre} ${lista === "partes" ? "agregada" : "agregado"}.` };
+  return { ok: true, mensaje: id ? "Cambios guardados." : `${nombre} ${"femenino" in LISTAS[lista] ? "agregada" : "agregado"}.` };
 }
 
 async function actualizarOrden(lista: Lista, orden: { id: number; orden: number }[]) {
   await db.transaction(async (tx) => {
     for (const o of orden) {
-      if (lista === "partes") await tx.update(parteRevision).set({ orden: o.orden }).where(eq(parteRevision.id, o.id));
+      if (lista === "categorias") await tx.update(categoriaGasto).set({ orden: o.orden }).where(eq(categoriaGasto.id, o.id));
+      else if (lista === "partes") await tx.update(parteRevision).set({ orden: o.orden }).where(eq(parteRevision.id, o.id));
       else if (lista === "tamanos") await tx.update(tamanoVehiculo).set({ orden: o.orden }).where(eq(tamanoVehiculo.id, o.id));
       else await tx.update(espacioTaller).set({ orden: o.orden }).where(eq(espacioTaller.id, o.id));
     }
@@ -256,12 +267,13 @@ export async function cambiarEstadoElemento(datos: { lista: Lista; id: number; a
 
   // Al reactivarlo, vuelve al final de la lista.
   const orden = activo ? Math.max(0, ...elementos.filter((e) => e.activo).map((e) => e.orden)) + 1 : elemento.orden;
-  if (lista === "partes") await db.update(parteRevision).set({ activo, orden }).where(eq(parteRevision.id, id));
+  if (lista === "categorias") await db.update(categoriaGasto).set({ activo, orden }).where(eq(categoriaGasto.id, id));
+  else if (lista === "partes") await db.update(parteRevision).set({ activo, orden }).where(eq(parteRevision.id, id));
   else if (lista === "tamanos") await db.update(tamanoVehiculo).set({ activo, orden }).where(eq(tamanoVehiculo.id, id));
   else await db.update(espacioTaller).set({ activo, orden }).where(eq(espacioTaller.id, id));
 
   despuesDeCambiarLista();
-  const a = lista === "partes" ? "a" : "o";
+  const a = "femenino" in LISTAS[lista] ? "a" : "o";
   return { ok: true, mensaje: activo ? `${elemento.nombre} reactivad${a}.` : `${elemento.nombre} desactivad${a}.` };
 }
 

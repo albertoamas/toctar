@@ -83,6 +83,12 @@ Los meses llegan como `AAAA-MM` y se convierten a rango de fechas en Bolivia.
 - **Configuración → Parámetros:** la sección "Categorías de gasto" (`ListaEditable`), para agregar, renombrar, ordenar y desactivar. Una categoría con gastos no se borra: se desactiva.
 - **El menú:** "Reportes", con un ícono de barras, en Administración, solo para el dueño.
 
+- **Ajustes al programar los gastos (16/11):**
+  - cada gasto va en una fila, como un pago en la orden (pulido 13.49): con su comprobante a la izquierda y "Anular gasto" en su "⋯". No hay un modal de detalle, porque la fila ya dice todo;
+  - los montos se escriben como en el resto del panel: "1180,50 Bs";
+  - el mes va primero en la barra y los filtros por categoría solo aparecen si hay gastos de más de una;
+  - mientras llega la pantalla de Reportes, `/panel/reportes` lleva a los gastos.
+
 ## 6. Acciones del servidor
 Todas en `modulos/reportes/acciones.ts`, con `exigirModulo("reportes")` y Zod (el mismo esquema en el formulario y en el servidor):
 - **`registrarGasto(formData)`:**

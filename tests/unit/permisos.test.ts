@@ -116,7 +116,7 @@ describe("menú en grupos (C5 §0)", () => {
       [null, ["inicio"]],
       ["Taller", ["agenda", "ordenes"]],
       ["Clientes", ["clientes", "cotizaciones", "pagos", "mantenimientos", "reclamos"]],
-      ["Administración", ["sitio", "catalogo", "usuarios", "configuracion"]],
+      ["Administración", ["sitio", "catalogo", "reportes", "usuarios", "configuracion"]],
     ]);
   });
 
@@ -159,4 +159,13 @@ test("Pagos se llama «Saldos pendientes» en el menú y su casilla dice lo que 
   expect(nombreEnMenu("agenda")).toBe("Agenda");
   expect(nombreEnMenu("ordenes")).toBe("Órdenes");
   expect(modulosDelMenu({ rol: "encargado", permisos: ["pagos"] })).toEqual(["inicio", "pagos"]);
+});
+
+// Pedido 16: los reportes muestran cuánto ganó el taller. Solo el dueño, aunque el encargado tenga todos sus permisos
+// (y aunque la base tuviera guardado algo raro como "reportes")
+test("Reportes es solo del dueño", () => {
+  expect(puedeVerModulo({ rol: "dueno", permisos: [] }, "reportes")).toBe(true);
+  expect(puedeVerModulo(encargado([...PERMISOS]), "reportes")).toBe(false);
+  expect(puedeVerModulo(encargado(["reportes" as Permiso]), "reportes")).toBe(false);
+  expect(permisosAsignables()).not.toContain("reportes");
 });
