@@ -82,6 +82,9 @@ function destinoDelClic(evento: MouseEvent): string | null {
   return url.pathname + url.search + url.hash;
 }
 
+/** Cuántas pantallas tienen cambios sin guardar ahora (ActualizarAlVolver no actualiza mientras haya alguna). */
+let pantallasConCambios = 0;
+
 /** Con cambios: pregunta antes de ir a otra pantalla del panel, y el navegador pregunta antes de recargar o cerrar. */
 function PreguntarAlSalir({ hay }: { hay: boolean }) {
   const router = useRouter();
@@ -102,9 +105,16 @@ function PreguntarAlSalir({ hay }: { hay: boolean }) {
     };
     window.addEventListener("beforeunload", alSalir);
     document.addEventListener("click", alClic, true);
+    // Para ActualizarAlVolver: con cambios, volver a la app no pone la pantalla al día (hallazgo 4). Una cuenta: con dos
+    // pantallas a la vez (la que se va y la que llega), la que se limpia no borra la marca de la otra
+    pantallasConCambios++;
+    document.documentElement.setAttribute("data-pantalla-con-cambios", String(pantallasConCambios));
     return () => {
       window.removeEventListener("beforeunload", alSalir);
       document.removeEventListener("click", alClic, true);
+      pantallasConCambios--;
+      if (pantallasConCambios > 0) document.documentElement.setAttribute("data-pantalla-con-cambios", String(pantallasConCambios));
+      else document.documentElement.removeAttribute("data-pantalla-con-cambios");
     };
   }, [hay]);
 
