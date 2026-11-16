@@ -87,7 +87,6 @@ Los meses llegan como `AAAA-MM` y se convierten a rango de fechas en Bolivia.
   - cada gasto va en una fila, como un pago en la orden (pulido 13.49): con su comprobante a la izquierda y "Anular gasto" en su "⋯". No hay un modal de detalle, porque la fila ya dice todo;
   - los montos se escriben como en el resto del panel: "1180,50 Bs";
   - el mes va primero en la barra y los filtros por categoría solo aparecen si hay gastos de más de una;
-  - mientras llega la pantalla de Reportes, `/panel/reportes` lleva a los gastos;
   - el monto es `numeric(10,2)`, como el de un pago (hasta 99.999.999,99 Bs por gasto): las sumas del mes se hacen en la consulta y no tienen ese tope;
   - con un filtro, el total es el de esa categoría y se queda al cambiar de mes. Los meses van desde enero del año pasado, igual que las fechas de un gasto.
 

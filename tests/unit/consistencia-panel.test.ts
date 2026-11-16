@@ -32,8 +32,6 @@ function apariciones(patron: RegExp): Record<string, number> {
 const SIN_PAGINA_PANEL = [
   // No dibuja nada: solo verifica la sesión y responde "no encontrado" (not-found.tsx sí usa PaginaPanel)
   "src/app/panel/[...resto]/page.tsx",
-  // Pedido 16: lleva a los gastos hasta que llegue la pantalla de Reportes (segundo PR de P16)
-  "src/app/panel/reportes/page.tsx",
 ];
 
 /** Anchos de pantalla escritos a mano, con su motivo. Los de un campo o un bloque chico (`max-w-xs`, `max-w-md`) sí valen (§1). */

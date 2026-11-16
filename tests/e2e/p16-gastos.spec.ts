@@ -44,9 +44,6 @@ test("registrar gastos con su comprobante, filtrarlos y anular uno: el total los
   const sufijo = info.project.name;
   await ingresarComoDueno(page);
 
-  // "Reportes" está en el menú del dueño y, por ahora, lleva a los gastos
-  await page.goto("/panel/reportes");
-  await expect(page.getByRole("heading", { level: 1, name: "Gastos" })).toBeVisible();
   await page.goto(`/panel/reportes/gastos?mes=${mes}`);
   await expect(page.getByText(/^Todavía no hay gastos en /)).toBeVisible();
 

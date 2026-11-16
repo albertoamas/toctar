@@ -1,6 +1,6 @@
 import { describe, expect, test, vi, afterEach } from "vitest";
 import { esquemaAnularGasto, esquemaGasto } from "@/modulos/reportes/esquemas";
-import { esMes, mesDe, nombreMes, primerDiaDeGastos, rangoDelMes, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
+import { bsRedondo, cambioFrenteAlAnterior, esMes, mesDe, nombreMes, parteQueQuedo, primerDiaDeGastos, quedo, rangoDelMes, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
 
 // Pedido 16 (P16-reportes-y-gastos.md §9): los meses de los gastos y el esquema de un gasto.
 
@@ -77,5 +77,32 @@ describe("el esquema de un gasto", () => {
   test("anular pide el motivo", () => {
     expect(esquemaAnularGasto.safeParse({ id: "5", motivo: " " }).success).toBe(false);
     expect(esquemaAnularGasto.safeParse({ id: "5", motivo: "Se cargó dos veces" }).success).toBe(true);
+  });
+});
+
+describe("la ganancia del mes", () => {
+  test("quedó es lo que entró menos lo que salió, también negativo", () => {
+    expect(quedo(18450, 7120)).toBe(11330);
+    expect(quedo(100.1, 100.3)).toBe(-0.2);
+  });
+
+  test("el cambio frente al mes anterior, sin comparación si el anterior no dejó nada", () => {
+    expect(cambioFrenteAlAnterior(11330, 9590)).toEqual({ porcentaje: 18, sentido: "más" });
+    expect(cambioFrenteAlAnterior(900, 1000)).toEqual({ porcentaje: 10, sentido: "menos" });
+    expect(cambioFrenteAlAnterior(1000, 1000)).toEqual({ porcentaje: 0, sentido: "igual" });
+    expect(cambioFrenteAlAnterior(500, 0)).toBeNull();
+    expect(cambioFrenteAlAnterior(500, -200)).toBeNull();
+  });
+
+  test("qué parte de lo que entró quedó", () => {
+    expect(parteQueQuedo(18450, 7120)).toBe(61);
+    expect(parteQueQuedo(0, 300)).toBeNull();
+  });
+
+  test("los montos redondos, con punto de miles y el signo de una pérdida", () => {
+    expect(bsRedondo(11330)).toBe("11.330 Bs");
+    expect(bsRedondo(1234567.6)).toBe("1.234.568 Bs");
+    expect(bsRedondo(-250)).toBe("−250 Bs");
+    expect(bsRedondo(0)).toBe("0 Bs");
   });
 });

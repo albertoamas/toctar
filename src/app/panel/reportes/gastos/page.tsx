@@ -70,7 +70,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes/gasto
 
   return (
     <>
-      <EncabezadoPagina titulo="Gastos" accion={<RegistrarGasto categorias={categorias} hoy={hoy} />} />
+      <EncabezadoPagina titulo="Gastos" volver={{ href: "/panel/reportes", texto: "Reportes" }} accion={<RegistrarGasto categorias={categorias} hoy={hoy} />} />
       <BarraLista
         // El mes primero: es lo que decide qué se ve; los filtros, al lado
         buscador={

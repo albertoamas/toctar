@@ -42,3 +42,26 @@ export const primerDiaDeGastos = (hoy: string) => `${Number(hoy.slice(0, 4)) - 1
 
 /** Hasta cuántos caracteres llevan el detalle de un gasto y el motivo de su anulación. */
 export const LARGO_DETALLE = 200;
+
+/** Cuánto quedó: lo que entró menos lo que salió (puede ser negativo: un mes con más gastos que cobros). */
+export const quedo = (entro: number, salio: number) => Math.round((entro - salio) * 100) / 100;
+
+/**
+ * Cuánto cambió lo que quedó frente al mes anterior, en por ciento redondeado: "18 % más", "5 % menos". Sin comparación
+ * si el mes anterior no dejó nada (cero o pérdida): un porcentaje sobre eso no dice nada.
+ */
+export function cambioFrenteAlAnterior(actual: number, anterior: number): { porcentaje: number; sentido: "más" | "menos" | "igual" } | null {
+  if (anterior <= 0) return null;
+  const porcentaje = Math.round(((actual - anterior) / anterior) * 100);
+  return { porcentaje: Math.abs(porcentaje), sentido: porcentaje > 0 ? "más" : porcentaje < 0 ? "menos" : "igual" };
+}
+
+/** Qué parte de lo que entró quedó, en por ciento redondeado; null si no entró nada. */
+export const parteQueQuedo = (entro: number, salio: number) => (entro > 0 ? Math.round((quedo(entro, salio) / entro) * 100) : null);
+
+/** "11.330 Bs": los montos grandes de los reportes, con punto de miles y sin decimales (se leen de un vistazo). */
+export function bsRedondo(monto: number): string {
+  const entero = Math.round(Math.abs(monto));
+  const texto = String(entero).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `${monto < 0 ? "−" : ""}${texto} Bs`;
+}
