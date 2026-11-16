@@ -167,6 +167,27 @@ Configurado el 23/10/2026 en la cuenta de Cloudflare del negocio (`toctartarija@
 - **Quién intentó entrar:** `fail2ban-client status sshd`.
 - **Costo:** la factura llega todos los meses a la cuenta del negocio. Hetzner acumula los montos menores a 10 hasta pasarlo; desde el 1/10/2026 cambió las fechas de facturación de todos sus clientes.
 
+## Cargar los datos de demostración en pruebas (16/11/2026)
+
+Para que el dueño pruebe la Entrega 2 en `pruebas.<dominio>` con clientes, órdenes y fotos de ejemplo. El script (`scripts/datos-demo.mjs`) solo corre sobre una base **sin clientes ni trabajos**, para no pisar datos de verdad. Lo corre el desarrollador desde su PC, con su llave SSH y las claves de R2 de pruebas, que nunca pasan por un chat ni por el repositorio.
+
+1. **Vaciar la base de pruebas.** Borra todo lo de pruebas, también el usuario dueño: la app lo vuelve a crear al arrancar, con `DUENO_INICIAL_*` de Coolify. Por SSH en el servidor:
+   - `docker ps --format "{{.Names}}" | grep -i postgres` muestra el contenedor de la base de pruebas. Es el que Coolify asocia a `toctar-pruebas`, **nunca el de producción**.
+   - `docker exec -it <contenedor> psql -U <usuario> -d <base> -c "drop schema public cascade; create schema public; drop schema if exists drizzle cascade;"`. El usuario y la base son los del `DATABASE_URL` de la app de pruebas en Coolify.
+2. **Coolify, `toctar-pruebas` → Restart.** Al arrancar aplica las migraciones y crea el dueño. Comprobar que `/api/salud` responde y que se puede ingresar.
+3. **Abrir un túnel a esa base**, desde la PC, en otra ventana que queda abierta:
+   - la IP interna del contenedor: `docker inspect -f "{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}" <contenedor>`, en el servidor;
+   - `ssh -N -L 15432:<IP interna>:5432 <usuario>@<servidor>`.
+4. **Un `.env.pruebas` en la PC.** Está fuera de Git por `.env*`. Lleva:
+   - `DATABASE_URL`: el de la app de pruebas, cambiando el host y el puerto por `localhost:15432`;
+   - las `S3_*`: las de R2 de **pruebas**, desde el gestor de contraseñas;
+   - las `DUENO_INICIAL_*` de pruebas.
+5. **Cargar:** `node --env-file=.env.pruebas scripts/datos-demo.mjs`. Toma las fotos de `material/fotos-demo`. Si la base tiene clientes, se niega y no toca nada.
+6. **Coolify, `toctar-pruebas` → Restart otra vez:** el sitio guarda en caché los servicios y la galería, y el script escribe directo en la base.
+7. **Cerrar el túnel y borrar `.env.pruebas`.**
+
+Para volver a empezar, se repite desde el paso 1.
+
 ## Lo que falta
 
 - [ ] Verificación en dos pasos en Coolify (YankoSoft) e invitar al dueño en **Team**.
