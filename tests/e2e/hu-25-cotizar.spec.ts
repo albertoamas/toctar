@@ -304,9 +304,9 @@ test("el descuento no pasa el subtotal, el adelanto no pasa el total y la valide
   await expect(page.getByLabel("Monto del descuento")).toBeFocused();
 
   await page.getByLabel("Monto del descuento").fill("");
-  // Plegadas, diciendo lo que va al PDF (el adelanto de Configuración y la validez)
-  await expect(page.getByText(/^Ahora: \d+ Bs, hasta el /)).toBeVisible();
-  await page.getByText("Cambiar adelanto o validez", { exact: true }).click();
+  // Siempre a la vista (hallazgo 8), con lo que va al PDF: el adelanto de Configuración y la validez
+  await expect(page.getByLabel("Adelanto sugerido")).toHaveValue(/^\d+/);
+  await expect(page.getByLabel("Válida hasta")).toHaveValue(/^\d{4}-\d{2}-\d{2}$/);
   await page.getByLabel("Adelanto sugerido").fill("451");
   await crear(page);
   await expect(page.getByText("El adelanto no puede ser mayor que el total.")).toBeVisible();

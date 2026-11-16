@@ -122,6 +122,7 @@ test("crear no pregunta al salir: lleva a la lista con su aviso", async ({ page 
   await nombreDe(page).fill(`Barra ${usuario}`);
   await page.getByLabel("Usuario", { exact: true }).fill(usuario);
   await page.getByLabel("Contraseña inicial").fill("encargado-123");
+  await page.getByLabel("Repite la contraseña").fill("encargado-123");
   await page.getByRole("button", { name: "Crear usuario" }).click();
   await expect(page).toHaveURL(/\/panel\/usuarios\?creado=/);
   await expect(page.getByRole("alertdialog", { name: "¿Salir sin guardar?" })).toHaveCount(0);

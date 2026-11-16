@@ -61,13 +61,20 @@ export function MasMiCuenta() {
 
 function CambiarMiContrasena() {
   const { accion, enviando, formulario, e } = useFormularioEnModal(cambiarMiContrasena);
+  // Controladas: después de un error ("no coinciden", la actual equivocada) la nueva no se pierde (hallazgo 5)
+  const [nueva, setNueva] = useState("");
+  const [repetida, setRepetida] = useState("");
   return (
     <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate>
       <Campo id="contrasena-actual" etiqueta="Contraseña actual" error={e.actual}>
         <Input id="contrasena-actual" name="actual" type="password" autoComplete="current-password" aria-invalid={!!e.actual} aria-describedby={e.actual ? "contrasena-actual-error" : undefined} />
       </Campo>
       <Campo id="contrasena-nueva" etiqueta="Contraseña nueva" error={e.nueva} ayuda="Al menos 8 caracteres. Se cierran tus sesiones en otros equipos.">
-        <Input id="contrasena-nueva" name="nueva" type="password" autoComplete="new-password" aria-invalid={!!e.nueva} aria-describedby={e.nueva ? "contrasena-nueva-error" : "contrasena-nueva-ayuda"} />
+        <Input id="contrasena-nueva" name="nueva" type="password" autoComplete="new-password" value={nueva} onChange={(ev) => setNueva(ev.target.value)} aria-invalid={!!e.nueva} aria-describedby={e.nueva ? "contrasena-nueva-error" : "contrasena-nueva-ayuda"} />
+      </Campo>
+      {/* Hallazgo 5: dos veces */}
+      <Campo id="contrasena-repetir" etiqueta="Repite la contraseña" error={e.repetir}>
+        <Input id="contrasena-repetir" name="repetir" type="password" autoComplete="new-password" value={repetida} onChange={(ev) => setRepetida(ev.target.value)} aria-invalid={!!e.repetir} aria-describedby={e.repetir ? "contrasena-repetir-error" : undefined} />
       </Campo>
       <PieGuardar texto="Guardar contraseña" enviando={enviando} />
     </form>
@@ -96,12 +103,19 @@ export function MasUsuario({ id, nombre, desactivado }: { id: number; nombre: st
 
 function RestablecerContrasena({ id }: { id: number }) {
   const { accion, enviando, formulario, e } = useFormularioEnModal(restablecerContrasena);
+  // Controladas: después de "no coinciden" no se pierden (hallazgo 5)
+  const [contrasena, setContrasena] = useState("");
+  const [repetida, setRepetida] = useState("");
   return (
     <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate>
       <input type="hidden" name="id" value={id} />
       <p className="text-sm text-tinta-suave">La anterior deja de funcionar y se cierran sus sesiones abiertas. Pásale la nueva.</p>
       <Campo id="nueva-contrasena" etiqueta="Contraseña nueva" error={e.contrasena}>
-        <Input id="nueva-contrasena" name="contrasena" type="text" autoComplete="new-password" aria-invalid={!!e.contrasena} aria-describedby={e.contrasena ? "nueva-contrasena-error" : undefined} />
+        <Input id="nueva-contrasena" name="contrasena" type="text" autoComplete="new-password" value={contrasena} onChange={(ev) => setContrasena(ev.target.value)} aria-invalid={!!e.contrasena} aria-describedby={e.contrasena ? "nueva-contrasena-error" : undefined} />
+      </Campo>
+      {/* Hallazgo 5: dos veces */}
+      <Campo id="nueva-repetir" etiqueta="Repite la contraseña" error={e.repetir}>
+        <Input id="nueva-repetir" name="repetir" type="text" autoComplete="new-password" value={repetida} onChange={(ev) => setRepetida(ev.target.value)} aria-invalid={!!e.repetir} aria-describedby={e.repetir ? "nueva-repetir-error" : undefined} />
       </Campo>
       <PieGuardar texto="Guardar contraseña" enviando={enviando} />
     </form>

@@ -5,7 +5,6 @@ import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
 import { MasDatos } from "@/componentes/panel/mas-datos";
-import { fechaCorta } from "@/lib/fechas";
 import { Input } from "@/componentes/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import { leerMonto, mostrarMonto } from "@/modulos/catalogo/reglas";
@@ -122,22 +121,16 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy, anterior }
             </dl>
           )}
         </MasDatos>
-        <MasDatos
-          texto="Cambiar adelanto o validez"
-          titulo="Adelanto y validez"
-          detalle={`Ahora: ${(leerMontoOCero(p.adelanto) ?? "0.00") !== "0.00" ? `${p.adelanto.trim()} Bs` : "sin adelanto"}, hasta el ${p.validaHasta ? fechaCorta(p.validaHasta, hoy) : "…"}`}
-          abierto={!!e.adelanto || !!e.validaHasta}
-          conError={!!e.adelanto || !!e.validaHasta}
-        >
-          <div className="grid gap-5 sm:grid-cols-2">
-            <Campo id="adelanto" etiqueta="Adelanto sugerido" opcional error={e.adelanto}>
-              <CampoMonto id="adelanto" name="adelanto" value={p.adelanto} onChange={(ev) => p.setAdelanto(ev.target.value)} aria-invalid={!!e.adelanto} aria-describedby={e.adelanto ? "adelanto-error" : undefined} />
-            </Campo>
-            <Campo id="validaHasta" etiqueta="Válida hasta" error={e.validaHasta}>
-              <Input id="validaHasta" name="validaHasta" type="date" min={hoy} value={p.validaHasta} onChange={(ev) => p.setValidaHasta(ev.target.value)} aria-invalid={!!e.validaHasta} aria-describedby={e.validaHasta ? "validaHasta-error" : undefined} className="max-w-48" />
-            </Campo>
-          </div>
-        </MasDatos>
+        {/* Siempre a la vista (hallazgo 8 de la prueba en celulares, 15/11): el adelanto y la validez se revisan en cada
+            cotización, y plegados detrás de "Cambiar adelanto o validez" se pasaban por alto */}
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Campo id="adelanto" etiqueta="Adelanto sugerido" opcional error={e.adelanto}>
+            <CampoMonto id="adelanto" name="adelanto" value={p.adelanto} onChange={(ev) => p.setAdelanto(ev.target.value)} aria-invalid={!!e.adelanto} aria-describedby={e.adelanto ? "adelanto-error" : undefined} />
+          </Campo>
+          <Campo id="validaHasta" etiqueta="Válida hasta" error={e.validaHasta}>
+            <Input id="validaHasta" name="validaHasta" type="date" min={hoy} value={p.validaHasta} onChange={(ev) => p.setValidaHasta(ev.target.value)} aria-invalid={!!e.validaHasta} aria-describedby={e.validaHasta ? "validaHasta-error" : undefined} className="max-w-48" />
+          </Campo>
+        </div>
       </SeccionFormulario>
     </>
   );

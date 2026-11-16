@@ -1,10 +1,10 @@
 "use server";
 
-import { and, count, eq, max, ne } from "drizzle-orm";
+import { and, count, eq, max, ne, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db, type Transaccion } from "@/db";
-import { precio, servicio, variante } from "@/db/esquema";
+import { precio, recordatorioMantenimiento, servicio, variante } from "@/db/esquema";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { nombreRepetido, puedeDesactivar, reordenar, type Direccion } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
@@ -12,7 +12,7 @@ import { crearSlug } from "@/lib/slug";
 import { servicioCambiado } from "@/modulos/sitio/servicio-cambiado";
 import { tamanosActivos } from "@/modulos/configuracion/consultas";
 import { historialPrecios, listarVariantes, preciosVigentes, type CambioPrecio } from "./consultas";
-import { esquemaCrearServicio, esquemaDatosCatalogo, esquemaEstadoVariante, esquemaIdVariante, esquemaMoverVariante, esquemaVariante, esquemaVarianteCatalogo } from "./esquemas";
+import { esquemaCrearServicio, esquemaDatosCatalogo, esquemaIdServicio, esquemaEstadoVariante, esquemaIdVariante, esquemaMoverVariante, esquemaVariante, esquemaVarianteCatalogo } from "./esquemas";
 import { leerMonto, MONTO_MAXIMO, preciosCambiados, type Monto } from "./reglas";
 
 // Catálogo y precios (HU-19, HU-20). Solo el dueño (módulo "catalogo", RN-01). Aquí vive el servicio: se crea, se
@@ -68,11 +68,10 @@ export async function crearServicio(_previo: EstadoFormulario, datos: FormData):
   redirect(`/panel/catalogo/${id}?creado=1`);
 }
 
-/** Nombre, duración, su mantenimiento y si el servicio está activo (HU-19, RF-27, RF-28, RN-08, pedido 21). */
+/** Nombre, duración y su mantenimiento (HU-19, RF-27, RF-28, RN-08, pedido 21). Desactivar va aparte (hallazgo 1). */
 export async function guardarDatosCatalogo(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const autor = await exigirModulo("catalogo");
   const conMantenimiento = datos.get("conMantenimiento") === "on";
-  const activo = datos.get("activo") === "on";
   const valores = {
     id: String(datos.get("id") ?? ""),
     nombre: String(datos.get("nombre") ?? ""),
@@ -80,9 +79,8 @@ export async function guardarDatosCatalogo(_previo: EstadoFormulario, datos: For
     conMantenimiento: conMantenimiento ? "on" : "",
     mantenimientoServicioId: String(datos.get("mantenimientoServicioId") ?? ""),
     mantenimientoMeses: String(datos.get("mantenimientoMeses") ?? ""),
-    activo: activo ? "on" : "",
   };
-  const entrada = esquemaDatosCatalogo.safeParse({ ...valores, conMantenimiento, activo });
+  const entrada = esquemaDatosCatalogo.safeParse({ ...valores, conMantenimiento });
   if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
   const { id, nombre, duracionDias, mantenimiento } = entrada.data;
   // El servicio de mantenimiento tiene que existir (puede ser él mismo); uno inactivo no se agenda. Si no cambió, no se
@@ -92,17 +90,6 @@ export async function guardarDatosCatalogo(_previo: EstadoFormulario, datos: For
     const [suyo] = await db.select({ activo: servicio.activo }).from(servicio).where(eq(servicio.id, mantenimiento.servicioId));
     if (!suyo?.activo) return { errores: { mantenimientoServicioId: "Ese servicio ya no está activo: elige otro." }, valores };
   }
-  // Uno que otros usan como su mantenimiento no se desactiva: sus planes no se podrían agendar
-  if (!activo) {
-    const usan = await db
-      .select({ nombre: servicio.nombre })
-      .from(servicio)
-      .where(and(eq(servicio.mantenimientoServicioId, id), ne(servicio.id, id), eq(servicio.activo, true)));
-    if (usan.length > 0) {
-      return { errores: { activo: `Es el mantenimiento de ${new Intl.ListFormat("es").format(usan.map((u) => u.nombre))}: cámbialo ahí primero.` }, valores };
-    }
-  }
-
   const otros = await db.select({ id: servicio.id, nombre: servicio.nombre }).from(servicio).where(ne(servicio.id, id));
   if (nombreRepetido(otros, nombre)) return { errores: { nombre: NOMBRE_REPETIDO }, valores };
 
@@ -113,7 +100,6 @@ export async function guardarDatosCatalogo(_previo: EstadoFormulario, datos: For
       .set({
         nombre,
         duracionDias,
-        activo,
         mantenimientoServicioId: mantenimiento?.servicioId ?? null,
         mantenimientoMeses: mantenimiento?.meses ?? null,
         updatedAt: new Date(),
@@ -127,9 +113,58 @@ export async function guardarDatosCatalogo(_previo: EstadoFormulario, datos: For
   }
   if (!actualizado) return { mensaje: "Ese servicio ya no existe. Recarga la página." };
 
-  // El nombre sale en el sitio y un servicio inactivo deja de salir: se invalida su caché
+  // El nombre sale en el sitio: se invalida su caché
   servicioCambiado(id);
   return { ok: true, mensaje: "Cambios guardados." };
+}
+
+/**
+ * Desactivar un servicio, desde "Más" de su ficha y con confirmación (hallazgo 1 de la prueba en celulares: la casilla
+ * "Activo en el catálogo" en los datos se confundía con "Mostrar en el sitio"). Ya no se cotiza, no se reserva y no sale
+ * en el sitio; no se borra nada. Uno que otros usan como su mantenimiento no se desactiva: sus planes no se agendarían.
+ */
+export async function desactivarServicio(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  return cambiarActivoServicio(datos, false);
+}
+
+/** Reactivar un servicio: vuelve a cotizarse y, si su página está completa, al sitio. */
+export async function reactivarServicio(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+  return cambiarActivoServicio(datos, true);
+}
+
+async function cambiarActivoServicio(datos: FormData, activo: boolean): Promise<EstadoFormulario> {
+  const autor = await exigirModulo("catalogo");
+  const entrada = esquemaIdServicio.safeParse({ id: datos.get("id") });
+  if (!entrada.success) return { mensaje: "No se pudo cambiar el servicio. Recarga la página." };
+  const { id } = entrada.data;
+  if (!activo) {
+    const usan = await db
+      .select({ nombre: servicio.nombre })
+      .from(servicio)
+      .where(and(eq(servicio.mantenimientoServicioId, id), ne(servicio.id, id), eq(servicio.activo, true)));
+    if (usan.length > 0) {
+      return { mensaje: `Es el mantenimiento de ${new Intl.ListFormat("es").format(usan.map((u) => u.nombre))}: cámbialo ahí primero.` };
+    }
+    // Vehículos con su mantenimiento de este servicio todavía abierto: inactivo, no se podrían reservar
+    const [{ pendientes }] = await db
+      .select({ pendientes: count() })
+      .from(recordatorioMantenimiento)
+      .where(and(eq(recordatorioMantenimiento.servicioMantenimientoId, id), sql`${recordatorioMantenimiento.estado} in ('pendiente', 'avisado')`));
+    if (pendientes > 0) {
+      return {
+        mensaje: `${pendientes === 1 ? "Un vehículo tiene" : `${pendientes} vehículos tienen`} su mantenimiento de este servicio pendiente: ciérralo o resérvalo en Mantenimientos primero.`,
+      };
+    }
+  }
+  const [cambiado] = await db
+    .update(servicio)
+    .set({ activo, updatedAt: new Date(), updatedBy: Number(autor.id) })
+    .where(eq(servicio.id, id))
+    .returning({ nombre: servicio.nombre });
+  if (!cambiado) return { mensaje: "Ese servicio ya no existe. Recarga la página." };
+  // Inactivo deja de salir en el sitio: se invalida su caché
+  servicioCambiado(id);
+  return { ok: true, mensaje: activo ? `${cambiado.nombre} reactivado.` : `${cambiado.nombre} desactivado.` };
 }
 
 const ERROR_MONTO = `Escribe solo números, mayor a cero y hasta ${MONTO_MAXIMO}, por ejemplo 250 o 250,50.`;

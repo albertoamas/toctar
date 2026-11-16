@@ -13,6 +13,7 @@ async function crearPorPantalla(page: Page, d: { nombre: string; usuario: string
   await page.getByLabel("Nombre").fill(d.nombre);
   await page.getByLabel("Usuario", { exact: true }).fill(d.usuario);
   await page.getByLabel("Contraseña inicial").fill(d.contrasena);
+  await page.getByLabel("Repite la contraseña").fill(d.contrasena);
   await page.getByRole("button", { name: "Crear usuario" }).click();
 }
 
@@ -66,6 +67,14 @@ test("restablecer la contraseña: la anterior deja de servir y la nueva funciona
   await modal.getByRole("button", { name: "Guardar contraseña" }).click();
   await expect(modal.getByLabel("Contraseña nueva")).toBeFocused();
   await modal.getByLabel("Contraseña nueva").fill("nueva-1234");
+  // Repetida distinta: no se cambia, y el error va en el campo de repetirla (hallazgo 5)
+  await modal.getByLabel("Repite la contraseña").fill("nueva-1243");
+  await modal.getByRole("button", { name: "Guardar contraseña" }).click();
+  await expect(modal.getByText("Las contraseñas no coinciden: escríbela igual en los dos campos.")).toBeVisible();
+  await expect(modal.getByLabel("Repite la contraseña")).toBeFocused();
+  // La primera sigue escrita: solo se corrige la repetida
+  await expect(modal.getByLabel("Contraseña nueva")).toHaveValue("nueva-1234");
+  await modal.getByLabel("Repite la contraseña").fill("nueva-1234");
   await modal.getByRole("button", { name: "Guardar contraseña" }).click();
   await expect(page.getByText("Contraseña cambiada")).toBeVisible();
   await expect(modal).toHaveCount(0);
@@ -138,10 +147,12 @@ test("en su ficha, el dueño solo cambia su nombre y su contraseña, con la actu
   // Con la actual equivocada no cambia
   await modal.getByLabel("Contraseña actual").fill("no-es-esta-1");
   await modal.getByLabel("Contraseña nueva").fill("dueno-nueva-1");
+  await modal.getByLabel("Repite la contraseña").fill("dueno-nueva-1");
   await modal.getByRole("button", { name: "Guardar contraseña" }).click();
   await expect(modal.getByText("La contraseña actual no es correcta.")).toBeVisible();
   await modal.getByLabel("Contraseña actual").fill("dueno-vieja-1");
   await modal.getByLabel("Contraseña nueva").fill("dueno-nueva-1");
+  await modal.getByLabel("Repite la contraseña").fill("dueno-nueva-1");
   await modal.getByRole("button", { name: "Guardar contraseña" }).click();
   await expect(page.getByText("Contraseña cambiada. Se cerraron tus otras sesiones.")).toBeVisible();
   await expect(modal).toHaveCount(0);
@@ -228,6 +239,8 @@ test("tras un error, el perfil elegido se conserva y es el que se guarda", async
   await expect(page.getByRole("button", { name: /^Atención/ })).toHaveAttribute("aria-pressed", "true");
 
   await page.getByLabel("Contraseña inicial").fill("encargado-123");
+
+  await page.getByLabel("Repite la contraseña").fill("encargado-123");
   await page.getByRole("button", { name: "Crear usuario" }).click();
   await expect(page.getByText(`Usuario ${nombre} creado`)).toBeVisible();
   // Fila de la tabla (computadora) o tarjeta (celular): la que se ve

@@ -17,6 +17,7 @@ test("los permisos del encargado: el perfil marca sus casillas, se ajustan y se 
   await page.getByLabel("Nombre").fill(nombre);
   await page.getByLabel("Usuario", { exact: true }).fill(usuario);
   await page.getByLabel("Contraseña inicial").fill("encargado-123");
+  await page.getByLabel("Repite la contraseña").fill("encargado-123");
 
   // Pedido 50: siempre un encargado, sin rol que elegir: los permisos se ven de entrada
   await expect(page.getByRole("radio")).toHaveCount(0);
@@ -60,6 +61,7 @@ test("el encargado sin permisos solo ve el inicio y no entra a Usuarios", async 
   await page.getByLabel("Nombre").fill(nombre);
   await page.getByLabel("Usuario", { exact: true }).fill(usuario);
   await page.getByLabel("Contraseña inicial").fill("encargado-123");
+  await page.getByLabel("Repite la contraseña").fill("encargado-123");
   // Empieza con el perfil Taller: se desmarca para dejarlo sin permisos
   await page.getByRole("checkbox", { name: /^Agenda/ }).uncheck();
   await page.getByRole("checkbox", { name: /^Órdenes/ }).uncheck();
