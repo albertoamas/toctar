@@ -78,13 +78,14 @@ describe("el servicio en el catálogo (alta y nombre)", () => {
   });
 
   test("los datos del catálogo llevan el nombre", () => {
-    const datos = { id: "4", nombre: "Pulido", duracionDias: "2", activo: true, conMantenimiento: false, mantenimientoServicioId: "", mantenimientoMeses: "" };
-    expect(esquemaDatosCatalogo.parse(datos)).toEqual({ id: 4, nombre: "Pulido", duracionDias: 2, activo: true, mantenimiento: null });
+    // Sin "activo": desactivar va aparte, en "Más" (hallazgo 1)
+    const datos = { id: "4", nombre: "Pulido", duracionDias: "2", conMantenimiento: false, mantenimientoServicioId: "", mantenimientoMeses: "" };
+    expect(esquemaDatosCatalogo.parse(datos)).toEqual({ id: 4, nombre: "Pulido", duracionDias: 2, mantenimiento: null });
     expect(erroresDe(esquemaDatosCatalogo.safeParse({ ...datos, nombre: "" }).error!)).toEqual({ nombre: "Escribe el nombre del servicio." });
   });
 
   test("su mantenimiento (pedido 21): con la casilla, el servicio y los meses; sin ella, ninguno aunque lleguen", () => {
-    const datos = { id: "1", nombre: "Pulido y nano cerámico", duracionDias: "2", activo: true, conMantenimiento: true, mantenimientoServicioId: "8", mantenimientoMeses: "3" };
+    const datos = { id: "1", nombre: "Pulido y nano cerámico", duracionDias: "2", conMantenimiento: true, mantenimientoServicioId: "8", mantenimientoMeses: "3" };
     expect(esquemaDatosCatalogo.parse(datos).mantenimiento).toEqual({ servicioId: 8, meses: 3 });
     expect(esquemaDatosCatalogo.parse({ ...datos, conMantenimiento: false }).mantenimiento).toBeNull();
     expect(erroresDe(esquemaDatosCatalogo.safeParse({ ...datos, mantenimientoServicioId: "" }).error!)).toEqual({ mantenimientoServicioId: "Elige el servicio de mantenimiento." });

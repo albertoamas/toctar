@@ -3,7 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
-import { Campo, MensajeError } from "@/componentes/panel/campo";
+import { Campo } from "@/componentes/panel/campo";
 import { CancelarModal, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { Selector } from "@/componentes/panel/selector";
 import { Button } from "@/componentes/ui/button";
@@ -17,7 +17,7 @@ import { guardarDatosCatalogo } from "../acciones";
 // mismo) y cada cuántos meses; los campos aparecen al marcar la casilla.
 
 type Props = {
-  servicio: { id: number; nombre: string; duracionDias: number; mantenimiento: { servicioId: number; meses: number } | null; activo: boolean };
+  servicio: { id: number; nombre: string; duracionDias: number; mantenimiento: { servicioId: number; meses: number } | null };
   /** Los servicios activos para elegir su mantenimiento, este primero. */
   servicios: { id: number; nombre: string }[];
 };
@@ -32,8 +32,9 @@ export function FormularioDatosCatalogo({ servicio: s, servicios }: Props) {
   useFocoEnError(formulario, estado);
   const v = estado.valores;
   const e = estado.errores ?? {};
-  const activo = v ? v.activo === "on" : s.activo;
   // Controlados: los campos del mantenimiento aparecen con la casilla, y nada se pierde tras un error
+  // El nombre que se está escribiendo: "Este mismo servicio (…)" lo sigue, no el guardado (hallazgo 3)
+  const [nombreEscrito, setNombreEscrito] = useState(v?.nombre ?? s.nombre);
   const [conMantenimiento, setConMantenimiento] = useState(v ? v.conMantenimiento === "on" : !!s.mantenimiento);
   const [servicioMantenimiento, setServicioMantenimiento] = useState(v?.mantenimientoServicioId ?? String(s.mantenimiento?.servicioId ?? ""));
   const [meses, setMeses] = useState(v?.mantenimientoMeses ?? String(s.mantenimiento?.meses ?? ""));
@@ -47,6 +48,7 @@ export function FormularioDatosCatalogo({ servicio: s, servicios }: Props) {
           name="nombre"
           autoComplete="off"
           defaultValue={v?.nombre ?? s.nombre}
+          onChange={(ev) => setNombreEscrito(ev.target.value)}
           aria-invalid={!!e.nombre}
           aria-describedby={e.nombre ? "nombre-error" : undefined}
           className="max-w-md"
@@ -80,7 +82,8 @@ export function FormularioDatosCatalogo({ servicio: s, servicios }: Props) {
           <Checkbox checked={conMantenimiento} onCheckedChange={(si) => setConMantenimiento(si === true)} className="mt-0.5" />
           <span className="flex flex-col">
             <span className="font-semibold">Programa un mantenimiento al entregarlo</span>
-            <span className="text-sm text-tinta-suave">Cada vehículo queda con su plan; se ajusta en la ficha del cliente.</span>
+            {/* Hallazgo 3 de la prueba en celulares: cómo funciona, en una línea */}
+            <span className="text-sm text-tinta-suave">Al entregar un vehículo con este servicio, se anota cuándo le toca y aparece en Mantenimientos para avisarle y reservarle.</span>
           </span>
         </label>
         {conMantenimiento && (
@@ -98,7 +101,7 @@ export function FormularioDatosCatalogo({ servicio: s, servicios }: Props) {
                 <option value="">Elige el servicio</option>
                 {servicios.map((x) => (
                   <option key={x.id} value={x.id}>
-                    {x.id === s.id ? "Este mismo servicio" : x.nombre}
+                    {x.id === s.id ? `Este mismo servicio (${nombreEscrito.trim() || s.nombre})` : x.nombre}
                   </option>
                 ))}
               </Selector>
@@ -123,16 +126,6 @@ export function FormularioDatosCatalogo({ servicio: s, servicios }: Props) {
         )}
       </div>
 
-      <label className="flex cursor-pointer items-start gap-3">
-        {/* La key reinicia la casilla si el servidor devuelve otro valor */}
-        <Checkbox key={String(activo)} name="activo" defaultChecked={activo} className="mt-0.5" />
-        <span className="flex flex-col">
-          <span className="font-semibold">Activo en el catálogo</span>
-          <span className="text-sm text-tinta-suave">Inactivo, no se cotiza ni sale en el sitio. No se borra nada.</span>
-        </span>
-      </label>
-      {/* No se desactiva si otro servicio lo usa como su mantenimiento (pedido 21) */}
-      {e.activo && <MensajeError id="activo-error">{e.activo}</MensajeError>}
       <PieModal>
         <Button type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : "Guardar datos"}

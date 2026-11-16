@@ -66,6 +66,7 @@ export async function crearUsuario(_previo: EstadoFormulario, datos: FormData): 
     nombre: datos.get("nombre"),
     usuario: datos.get("usuario"),
     contrasena: datos.get("contrasena"),
+    repetir: datos.get("repetir"),
     permisos: datos.getAll("permisos"),
   });
   if (!entrada.success) return { errores: erroresDe(entrada.error), valores: valoresDe(datos) };
@@ -125,7 +126,7 @@ export async function guardarPermisosUsuario(_previo: EstadoFormulario, datos: F
 /** La contraseña de un encargado. La de un dueño, también la propia, no se restablece: se cambia con la actual. */
 export async function restablecerContrasena(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const autor = await exigirModulo("usuarios");
-  const entrada = esquemaRestablecer.safeParse({ id: datos.get("id"), contrasena: datos.get("contrasena") });
+  const entrada = esquemaRestablecer.safeParse({ id: datos.get("id"), contrasena: datos.get("contrasena"), repetir: datos.get("repetir") });
   if (!entrada.success) return { errores: erroresDe(entrada.error) };
   const { id, contrasena } = entrada.data;
 
@@ -144,7 +145,7 @@ export async function restablecerContrasena(_previo: EstadoFormulario, datos: Fo
  */
 export async function cambiarMiContrasena(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const autor = await exigirModulo("usuarios");
-  const entrada = esquemaMiContrasena.safeParse({ actual: datos.get("actual"), nueva: datos.get("nueva") });
+  const entrada = esquemaMiContrasena.safeParse({ actual: datos.get("actual"), nueva: datos.get("nueva"), repetir: datos.get("repetir") });
   if (!entrada.success) return { errores: erroresDe(entrada.error) };
   const { actual, nueva } = entrada.data;
 
