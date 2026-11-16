@@ -4,6 +4,8 @@ Lo que salió de la prueba a mano en un iPhone 14 Pro Max y una tablet Redmi Pad
 
 **Estado:** ⏳ sin empezar · 🔵 en curso · ✅ unido a `develop` · 📝 va al registro de cambios
 
+**Cierre (16/11/2026):** los 9 hallazgos de la app están unidos a `develop` (PR #242 a #247); el 6 (ficha del vehículo y separar clientes y vehículos) quedó como pedido 51, para cotizar. Sigue volver a probarlos en el celular, en pruebas.
+
 ## Cómo se trabaja cada punto
 
 Uno por uno, en este orden. Cada punto pasa por los mismos pasos:
@@ -33,7 +35,7 @@ Uno por uno, en este orden. Cada punto pasa por los mismos pasos:
 | 6 | 3 | El servicio de mantenimiento puede ser el mismo servicio, pero no se reconoce en la lista ("Este mismo servicio") y no se explica cómo funciona | La opción dice su nombre ("Este mismo servicio (Cerámico)") y una línea explica: al entregar un vehículo con este servicio, en N meses le toca el elegido, y aparece en Mantenimientos | ✅ PR #246. La opción dice "Este mismo servicio ({nombre})" y la casilla explica: al entregar un vehículo con este servicio, se anota cuándo le toca y aparece en Mantenimientos |
 | 7 | 5 | Al crear un usuario, al restablecer una contraseña y en "Cambiar mi contraseña", la contraseña nueva se escribe una sola vez | "Repite la contraseña" en los tres, con "No coinciden" junto al campo (el mismo esquema Zod en el formulario y el servidor) | ✅ PR #246. "Repite la contraseña" al crear un usuario, al restablecerla y en "Cambiar mi contraseña"; si no coinciden, el error va en la repetida y lo escrito no se pierde |
 | 8 | 8 | En la cotización, el adelanto y la validez están plegados detrás de "Cambiar adelanto o validez" | Los dos campos siempre a la vista | ✅ PR #246. El adelanto y la validez, siempre a la vista en la cotización |
-| 9 | 10 | Las tres formas de reservar (desde una cotización, directa y desde un mantenimiento) muestran las tarjetas en distinto orden | Un solo orden: Cliente y vehículo, Servicios, Fecha y espacio, Adelanto y nota. Lo que ya viene elegido, arriba como resumen, en el mismo lugar. Con capturas de las tres antes de programar | 🔵 Aprobado con las capturas de los tres caminos: el mismo indicador ("Paso 4 de 4: Fecha y adelanto"), siempre "Servicios" (desde una cotización, con "De la cotización N"), el aviso del mantenimiento dentro de "Reserva para", el Total en la barra de abajo y "Atrás" cuando hay un paso anterior. Capturas: `pulido-visual/h10-*` |
+| 9 | 10 | Las tres formas de reservar (desde una cotización, directa y desde un mantenimiento) muestran las tarjetas en distinto orden | Un solo orden: Cliente y vehículo, Servicios, Fecha y espacio, Adelanto y nota. Lo que ya viene elegido, arriba como resumen, en el mismo lugar. Con capturas de las tres antes de programar | ✅ PR #247. Aprobado con las capturas de los tres caminos: el mismo indicador ("Paso 4 de 4: Fecha y adelanto"), siempre "Servicios" (desde una cotización, con "De la cotización N"), el aviso del mantenimiento dentro de "Reserva para", el Total en la barra de abajo y "Atrás" cuando hay un paso anterior. Capturas: `pulido-visual/h10-*` |
 
 ## Función nueva (registro de cambios)
 
