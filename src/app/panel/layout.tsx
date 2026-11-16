@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { Suspense } from "react";
 import { MenuDesplegable } from "@/componentes/menu-desplegable";
+import { ActualizarAlVolver } from "@/componentes/panel/actualizar-al-volver";
 import { AvisoConexion } from "@/componentes/panel/aviso-conexion";
 import { AvisoVersionNueva } from "@/componentes/panel/aviso-version-nueva";
 import { MenuDesplazable } from "@/componentes/panel/menu-desplazable";
@@ -63,6 +64,8 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
         <Toaster />
         {/* Pedido 39: "Hay una versión nueva del sistema", con "Actualizar" */}
         <AvisoVersionNueva />
+        {/* Hallazgo 4: al volver a la app después de un rato, la pantalla se pone al día */}
+        <ActualizarAlVolver />
         <header data-theme="oscuro" className="sticky top-0 z-40 flex h-14 items-center gap-2 bg-fondo px-4 text-tinta lg:hidden">
           <MenuDesplegable lado="left" cabecera={<Marca />} className="[--radius:8px]">
             {/* Igual que la barra lateral: en un celular bajo se desplaza el menú y "Cerrar sesión" queda a la vista. Con el
