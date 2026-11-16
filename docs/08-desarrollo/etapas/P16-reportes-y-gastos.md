@@ -1,7 +1,7 @@
 # P16 Reportes y gastos — especificación
 
 - **Fase y semana:** C. Entrega 2 · del 16 al 27 de noviembre de 2026, junto con el cierre (se entrega con la Entrega 2)
-- **Estado:** borrador, para aprobar antes de programar
+- **Estado:** aprobada por YankoSoft el 16/11/2026, con las dos decisiones de §12 como se proponen (los gastos, solo el dueño; las categorías, en Configuración → Parámetros). Se programa después del lavado de cara de la Agenda.
 - **Pedido:** 16 de `03-cierre-comercial/registro-de-cambios.md`. Aprobada el 16/11/2026 la **opción B**: reportes y gastos con la ganancia del mes, Bs 720. Pagado el 50 %; el otro 50 %, al entregar.
 - **Prototipo aprobado por el dueño:** el de la cotización (opción B: "Reportes con gastos", "Gastos del mes" y "Registrar gasto", en el celular y en la computadora). Está en `out/prototipo-reportes` (local) y en el artifact de la cotización.
 - **Base:**
