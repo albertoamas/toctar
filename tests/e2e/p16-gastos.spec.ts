@@ -88,6 +88,9 @@ test("registrar gastos con su comprobante, filtrarlos y anular uno: el total los
   await filtros.getByRole("link", { name: /^Otros/ }).click();
   await expect(lista.getByRole("listitem")).toHaveCount(1);
   await expect(lista).toContainText(`Bolsas ${sufijo}`);
+  // El total es el de la categoría elegida
+  await expect(total).toContainText("Total de Otros en ");
+  await expect(total).toContainText("200 Bs");
   await filtros.getByRole("link", { name: /^Todos/ }).click();
   await expect(lista.getByRole("listitem")).toHaveCount(2);
 

@@ -19,7 +19,7 @@ import { VerComprobante } from "@/modulos/pagos/componentes/ver-comprobante";
 import { AnularGasto } from "@/modulos/reportes/componentes/anular-gasto";
 import { RegistrarGasto } from "@/modulos/reportes/componentes/registrar-gasto";
 import { categoriasActivas, gastosDelMes, type GastoEnLista } from "@/modulos/reportes/consultas";
-import { esMes, mesDe, nombreMes, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
+import { esMes, mesDe, nombreMes, primerDiaDeGastos, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
 
 export const metadata: Metadata = { title: "Gastos" };
 
@@ -45,17 +45,20 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes/gasto
   const parametros = await searchParams;
   const hoy = fechaEnBolivia();
   const esteMes = mesDe(hoy);
-  // Un mes raro en la dirección, o uno que todavía no llegó: el de hoy
-  const mes = esMes(parametros.mes) && parametros.mes <= esteMes ? parametros.mes : esteMes;
+  // Desde el mes más viejo en que se registra un gasto (enero del año pasado) hasta el de hoy; uno raro, el de hoy
+  const primerMes = mesDe(primerDiaDeGastos(hoy));
+  const mes = esMes(parametros.mes) && parametros.mes <= esteMes && parametros.mes >= primerMes ? parametros.mes : esteMes;
   const [gastos, categorias] = await Promise.all([gastosDelMes(mes), categoriasActivas()]);
 
   const categoriaPedida = Number(parametros.categoria);
-  const vigentes = gastos.filter((g) => !g.anulado);
-  // Las categorías con algún gasto en el mes, con su cuenta (también una ya desactivada que tuvo gastos)
-  const enElMes = [...new Map(vigentes.map((g) => [g.categoriaId, g.categoria])).entries()];
+  // Las categorías con algún gasto en el mes (también uno anulado, o una categoría ya desactivada). La cuenta de cada
+  // filtro es la de filas que muestra; el total, solo lo que cuenta (sin los anulados) y de lo que se ve
+  const enElMes = [...new Map(gastos.map((g) => [g.categoriaId, g.categoria])).entries()];
   const filtro = enElMes.some(([id]) => id === categoriaPedida) ? categoriaPedida : null;
   const visibles = filtro ? gastos.filter((g) => g.categoriaId === filtro) : gastos;
+  const vigentes = visibles.filter((g) => !g.anulado);
   const total = vigentes.reduce((suma, g) => suma + Number(g.monto), 0);
+  const deQue = filtro ? `${enElMes.find(([id]) => id === filtro)![1]} en ${nombreMes(mes)}` : nombreMes(mes);
 
   const enlace = (m: string, categoria?: number | null) => {
     const p = new URLSearchParams();
@@ -72,14 +75,19 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes/gasto
         // El mes primero: es lo que decide qué se ve; los filtros, al lado
         buscador={
           <nav aria-label="Meses" className="flex w-full items-center gap-2">
-            <Link href={enlace(sumarMeses(mes, -1))} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Mes anterior">
-              <ChevronLeftIcon />
-            </Link>
+            {mes > primerMes ? (
+              // Al cambiar de mes, el filtro se queda (si en el otro mes no hay de esa categoría, se ven todos)
+              <Link href={enlace(sumarMeses(mes, -1), filtro)} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Mes anterior">
+                <ChevronLeftIcon />
+              </Link>
+            ) : (
+              <span aria-hidden className="size-9 shrink-0 pointer-coarse:size-11" />
+            )}
             <p className="min-w-0 flex-1 text-center tt-titulo-seccion" aria-live="polite">
               {tituloMes(mes)}
             </p>
             {mes < esteMes ? (
-              <Link href={enlace(sumarMeses(mes, 1))} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Mes siguiente">
+              <Link href={enlace(sumarMeses(mes, 1), filtro)} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Mes siguiente">
                 <ChevronRightIcon />
               </Link>
             ) : (
@@ -93,8 +101,8 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes/gasto
             <Filtros
               etiqueta="Filtrar por categoría"
               filtros={[
-                { href: enlace(mes), texto: "Todos", cuenta: vigentes.length, activo: filtro === null },
-                ...enElMes.map(([id, nombre]) => ({ href: enlace(mes, id), texto: nombre, cuenta: vigentes.filter((g) => g.categoriaId === id).length, activo: filtro === id })),
+                { href: enlace(mes), texto: "Todos", cuenta: gastos.length, activo: filtro === null },
+                ...enElMes.map(([id, nombre]) => ({ href: enlace(mes, id), texto: nombre, cuenta: gastos.filter((g) => g.categoriaId === id).length, activo: filtro === id })),
               ]}
             />
           ) : undefined
@@ -102,7 +110,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes/gasto
       />
 
       <section aria-label="Total del mes" className="tt-tarjeta-panel flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-4 py-3">
-        <span className="text-sm text-tinta-media">Total de {nombreMes(mes)}</span>
+        <span className="text-sm text-tinta-media">Total de {deQue}</span>
         <span className="text-2xl font-bold tabular-nums">
           {bs(total.toFixed(2))}
           <span className="ml-2 text-sm font-normal text-tinta-suave">en {cantidad(vigentes.length, "gasto", "gastos")}</span>

@@ -16,6 +16,9 @@ import { esquemaAnularGasto, esquemaGasto } from "./esquemas";
 
 const RECARGA = "No se pudo leer el pedido. Recarga la página.";
 
+/** La categoría elegida se desactivó o ya no existe: se lanza dentro de la transacción para deshacerla. */
+class CategoriaNoActiva extends Error {}
+
 function despuesDeCambiarGastos() {
   revalidatePath("/panel/reportes", "layout");
 }
@@ -35,33 +38,37 @@ export async function registrarGasto(_previo: EstadoFormulario, datos: FormData)
   const { categoriaId, monto, metodo, fecha, detalle } = r.data;
   const autorId = Number(usuario.id);
 
-  const [categoria] = await db
-    .select({ nombre: categoriaGasto.nombre })
-    .from(categoriaGasto)
-    .where(and(eq(categoriaGasto.id, categoriaId), eq(categoriaGasto.activo, true)));
-  if (!categoria) return { errores: { categoriaId: "Esa categoría ya no está. Elige otra." }, valores };
-
   // La foto se sube antes de guardar; si el gasto no se guarda, se borra
   const foto = await guardarComprobante(datos.get("comprobante"), autorId);
   if (!foto.ok) return { errores: { comprobante: foto.error }, valores };
   const comprobanteId = foto.archivoId;
 
+  let categoria: string;
   try {
     const { id: sucursalId } = await sucursalPrincipal();
-    await db.transaction(async (tx) => {
+    categoria = await db.transaction(async (tx) => {
+      // Activa al guardar: la fila queda tomada, así desactivarla en Configuración espera a que el gasto se guarde
+      const [c] = await tx
+        .select({ nombre: categoriaGasto.nombre })
+        .from(categoriaGasto)
+        .where(and(eq(categoriaGasto.id, categoriaId), eq(categoriaGasto.activo, true)))
+        .for("share");
+      if (!c) throw new CategoriaNoActiva();
       const [nuevo] = await tx
         .insert(gasto)
         .values({ sucursalId, categoriaId, monto, metodo, fecha, detalle, comprobanteArchivoId: comprobanteId, createdBy: autorId })
         .returning({ id: gasto.id });
       await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "gasto", entidadId: nuevo.id, accion: "crear", datos: { categoriaId, monto, metodo, fecha, detalle, comprobanteArchivoId: comprobanteId } });
+      return c.nombre;
     });
   } catch (error) {
     await descartarComprobante(comprobanteId);
+    if (error instanceof CategoriaNoActiva) return { errores: { categoriaId: "Esa categoría ya no está. Elige otra." }, valores };
     throw error;
   }
 
   despuesDeCambiarGastos();
-  return { ok: true, mensaje: `Gasto registrado: ${categoria.nombre}, ${mostrarMonto(monto)} Bs.` };
+  return { ok: true, mensaje: `Gasto registrado: ${categoria}, ${mostrarMonto(monto)} Bs.` };
 }
 
 /** Anula un gasto con su motivo: queda tachado y deja de contar. Uno ya anulado no se vuelve a anular. */
