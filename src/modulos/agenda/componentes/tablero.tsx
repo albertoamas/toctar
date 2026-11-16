@@ -16,6 +16,7 @@ import {
   numeroDia,
   seCruzan,
   textoDia,
+  textoServicio,
   tituloDia,
   TONO_ESTADO_TRABAJO,
   unirConY,
@@ -49,14 +50,19 @@ function textoFechas(r: Pick<ReservaTablero, "inicio" | "fin">) {
 /** El día cerrado: rayas a 60° (el único ángulo de la marca), igual en las tres vistas. */
 const RAYAS_CERRADO: React.CSSProperties = { backgroundImage: "repeating-linear-gradient(60deg, var(--neutro-fondo) 0 6px, var(--fondo-panel) 6px 12px)" };
 
-/** Lo que ocupa un día: una entregada ya no (se ve como historia, pedido 28). */
-const ocupanElDia = (semana: SemanaDeAgenda, dia: string) => semana.reservas.filter((r) => r.estado !== "entregado" && seCruzan(r, { inicio: dia, fin: dia }));
-
 /** La reserva de un espacio en un día: gana la que ocupa sobre la entregada (vienen en ese orden). */
 const reservaDelDia = (semana: SemanaDeAgenda, espacioId: number, dia: string) => semana.reservas.find((x) => x.espacioId === espacioId && seCruzan(x, { inicio: dia, fin: dia }));
 
-/** "Pulido y nano cerámico y 1 más". */
-const textoServicio = (r: Pick<ReservaTablero, "servicio" | "masServicios">) => (r.servicio ? `${r.servicio}${r.masServicios > 0 ? ` y ${r.masServicios} más` : ""}` : null);
+/**
+ * Las reservas que se ven en un día, una por espacio (también una entregada, como historia, pedido 28): las mismas que
+ * cuentan la cabecera y la pestaña de ese día, así nunca dice "Sin reservas" arriba de un vehículo.
+ */
+const delDia = (semana: SemanaDeAgenda, dia: string) =>
+  semana.espacios.flatMap((e) => {
+    const r = reservaDelDia(semana, e.id, dia);
+    return r ? [{ r, espacio: e.nombre }] : [];
+  });
+
 
 /** Hasta o desde cuándo sigue una reserva de varios días, mirada desde un día. */
 function textoTramo(r: Pick<ReservaTablero, "inicio" | "fin">, dia: string) {
@@ -252,14 +258,11 @@ export function SemanaEnLista({ semana, dias, hoy, conOrdenes, desde }: Props) {
     <div className="hidden flex-col gap-6 md:flex xl:hidden">
       {dias.map((fecha) => {
         const cerrado = semana.diasCerrados.includes(diaDeLaSemana(fecha));
-        const del = semana.espacios.flatMap((e) => {
-          const r = reservaDelDia(semana, e.id, fecha);
-          return r ? [{ r, espacio: e.nombre }] : [];
-        });
+        const del = delDia(semana, fecha);
         const libres = fecha < hoy || cerrado ? [] : semana.espacios.filter((e) => e.activo && !del.some((d) => d.r.espacioId === e.id));
         return (
           <section key={fecha} aria-label={tituloDia(fecha, hoy)} className="flex flex-col gap-2">
-            <CabeceraDia fecha={fecha} hoy={hoy} cuantas={ocupanElDia(semana, fecha).length} cerrado={cerrado && del.length === 0} />
+            <CabeceraDia fecha={fecha} hoy={hoy} cuantas={del.length} cerrado={cerrado && del.length === 0} />
             {cerrado && del.length === 0 ? (
               <DiaCerrado />
             ) : del.length === 0 && libres.length === 0 ? null : (
@@ -280,7 +283,7 @@ export function SemanaEnLista({ semana, dias, hoy, conOrdenes, desde }: Props) {
                                 {r.cliente}
                                 {r.hora && <span className="font-normal text-tinta-suave">, {r.hora}</span>}
                               </span>
-                              {textoServicio(r) && <span className="truncate text-[0.8125rem] text-tinta-media">{textoServicio(r)}</span>}
+                              {r.servicio && <span className="truncate text-[0.8125rem] text-tinta-media">{textoServicio(r)}</span>}
                               {tramo && <span className="text-xs text-tinta-suave">{tramo}</span>}
                             </span>
                             <Insignia tono={TONO_ESTADO_TRABAJO[r.estado]}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</Insignia>
@@ -305,14 +308,15 @@ export function SemanaEnLista({ semana, dias, hoy, conOrdenes, desde }: Props) {
  * día, o "libre" (antes un punto, que salía en casi todos los días y no decía cuál estaba lleno). Hoy, en azul.
  */
 export function PestanasDias({ semana, dias, hoy, dia, enlace }: { semana: SemanaDeAgenda; dias: string[]; hoy: string; dia: string; enlace: (dia: string) => Route }) {
+  const conActivos = semana.espacios.some((e) => e.activo);
   return (
     <nav aria-label="Días de la semana" className="-mx-4 overflow-x-auto px-4 md:hidden">
       <ul className="grid min-w-max grid-cols-7 gap-1">
         {dias.map((d, i) => {
-          const cerrado = semana.diasCerrados.includes(i + 1);
-          const n = ocupanElDia(semana, d).length;
+          const cerrado = semana.diasCerrados.includes(diaDeLaSemana(d));
+          const n = delDia(semana, d).length;
           const elegido = d === dia;
-          const cuenta = n > 0 ? String(n) : cerrado || d < hoy ? "" : "libre";
+          const cuenta = n > 0 ? String(n) : cerrado || d < hoy || !conActivos ? "" : "libre";
           return (
             <li key={d}>
               <Link
@@ -342,10 +346,11 @@ export function PestanasDias({ semana, dias, hoy, dia, enlace }: { semana: Seman
 /** Celular: un día en una tarjeta, una fila por espacio. Las pestañas de los días van arriba (PestanasDias). */
 export function AgendaDelDia({ semana, dia, hoy, conOrdenes, desde }: { semana: SemanaDeAgenda; dia: string; hoy: string; conOrdenes: boolean; desde: string }) {
   const cerrado = semana.diasCerrados.includes(diaDeLaSemana(dia));
+  const cuantas = delDia(semana, dia).length;
   return (
     <section aria-label={tituloDia(dia, hoy)} className="flex flex-col gap-2 md:hidden">
-      <CabeceraDia fecha={dia} hoy={hoy} cuantas={ocupanElDia(semana, dia).length} cerrado={cerrado} />
-      {cerrado && !semana.espacios.some((e) => reservaDelDia(semana, e.id, dia)) ? (
+      <CabeceraDia fecha={dia} hoy={hoy} cuantas={cuantas} cerrado={cerrado && cuantas === 0} />
+      {cerrado && cuantas === 0 ? (
         <DiaCerrado texto="Cerrado ese día" />
       ) : (
         <ul aria-label={`Espacios el ${textoDia(dia)}`} className="tt-tarjeta-panel overflow-hidden">

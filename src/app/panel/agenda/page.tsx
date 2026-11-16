@@ -19,7 +19,7 @@ import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { AgendaDelDia, PestanasDias, SemanaEnLista, TableroSemana } from "@/modulos/agenda/componentes/tablero";
 import { buscarReservas, resumenDeHoy, semanaDeAgenda, type ResumenDeHoy } from "@/modulos/agenda/consultas";
-import { diasDeLaSemana, fechaCorta, lunesDeLaSemana, NOMBRE_ESTADO_TRABAJO, textoSemana, textoSemanaCorto, tituloDia, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
+import { diasDeLaSemana, fechaCorta, lunesDeLaSemana, NOMBRE_ESTADO_TRABAJO, textoSemana, textoServicio, textoSemanaCorto, tituloDia, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { cotizacionesPorReservar, type FilaCotizacion } from "@/modulos/cotizaciones/consultas";
 import { bs, diasDesde, textoDias } from "@/modulos/cotizaciones/reglas";
 import { rutaTrabajo } from "@/modulos/ordenes/reglas";
@@ -99,17 +99,26 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
     />
   );
 
-  if (q) {
-    return (
-      <>
-        {barra}
-        <Resultados q={q} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
-      </>
-    );
-  }
-
-  const [semana, porReservar, resumen] = await Promise.all([semanaDeAgenda(lunes, dias[6]), cotizacionesPorReservar(), resumenDeHoy(hoy)]);
   const conMontos = puedeVerModulo(usuario, "pagos") || puedeVerModulo(usuario, "cotizaciones");
+  return (
+    <>
+      {/* Fuera de lo que se recarga: al buscar, el campo no se vuelve a montar y no pierde el foco (como en Órdenes) */}
+      {barra}
+      <Suspense fallback={<Cargando />}>
+        {q ? (
+          <Resultados q={q} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
+        ) : (
+          <Semana lunes={lunes} dias={dias} dia={dia} hoy={hoy} conOrdenes={conOrdenes} conMontos={conMontos} desde={desdeAqui} />
+        )}
+      </Suspense>
+    </>
+  );
+}
+
+/** Lo de hoy, "Por reservar" y la semana en sus tres vistas (computadora, tableta y celular). */
+async function Semana(props: { lunes: string; dias: string[]; dia: string; hoy: string; conOrdenes: boolean; conMontos: boolean; desde: string }) {
+  const { lunes, dias, dia, hoy, conOrdenes, conMontos, desde: desdeAqui } = props;
+  const [semana, porReservar, resumen] = await Promise.all([semanaDeAgenda(lunes, dias[6]), cotizacionesPorReservar(), resumenDeHoy(hoy)]);
   const ahora = new Date();
   const fila = (c: FilaCotizacion) => ({
     href: conDesde(`/panel/agenda/nueva?cotizacion=${c.cotizacionId}`, desdeAqui),
@@ -120,7 +129,6 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
 
   return (
     <>
-      {barra}
       <div className={cn("grid gap-3", porReservar.length > 0 && "lg:grid-cols-[minmax(0,1fr)_auto]")}>
         <ResumenHoy resumen={resumen} hoy={hoy} conOrdenes={conOrdenes} />
         {/* Pedido 31: las cotizaciones aceptadas que esperan fecha. Lavado de cara (16/11): plegadas en una fila, así el
@@ -204,7 +212,7 @@ const COLUMNAS_RESULTADOS: ColumnaTabla[] = [
 
 /** Las reservas que coinciden con la búsqueda, de cualquier semana: las que vienen primero y después las pasadas. */
 async function Resultados({ q, hoy, conOrdenes, desde }: { q: string; hoy: string; conOrdenes: boolean; desde: string }) {
-  const { reservas, hayMas } = await buscarReservas(q, hoy);
+  const { reservas, hayMas } = await buscarReservas(q);
   if (reservas.length === 0) return <EstadoVacio>{`Ninguna reserva coincide con «${q}». Revisa la placa o el nombre.`}</EstadoVacio>;
   return (
     <>
@@ -220,7 +228,7 @@ async function Resultados({ q, hoy, conOrdenes, desde }: { q: string; hoy: strin
           celdas: [
             <CeldaDoble key="v" principal={r.placa} secundario={r.cliente} peso="placa" />,
             `${r.inicio === r.fin ? fechaCorta(r.inicio, hoy) : `${fechaCorta(r.inicio, hoy)} al ${fechaCorta(r.fin, hoy)}`}${r.hora ? `, ${r.hora}` : ""}`,
-            r.servicio ? `${r.servicio}${r.masServicios > 0 ? ` y ${r.masServicios} más` : ""}` : null,
+            textoServicio(r),
             r.espacio,
             <Insignia key="e" tono={TONO_ESTADO_TRABAJO[r.estado]}>
               {NOMBRE_ESTADO_TRABAJO[r.estado]}

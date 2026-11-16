@@ -578,7 +578,8 @@ export async function resumenDeHoy(hoy: string): Promise<ResumenDeHoy> {
       paraEntregar: sql<number>`count(*) filter (where ${trabajo.estado} = 'listo')`.mapWith(Number),
     })
     .from(trabajo)
-    .where(eq(trabajo.sucursalId, s.id));
+    // Solo las abiertas: las entregadas y canceladas se juntan con los años y no cuentan aquí
+    .where(and(eq(trabajo.sucursalId, s.id), inArray(trabajo.estado, ["agendado", "recibido", "en_proceso", "listo"])));
   return fila ?? { porRecibir: 0, enElTaller: 0, paraEntregar: 0 };
 }
 
@@ -589,10 +590,11 @@ const RESERVAS_POR_BUSQUEDA = 30;
 
 /**
  * El buscador de la Agenda (lavado de cara, 16/11): las reservas de cualquier semana por placa, nombre del cliente (sin
- * importar tildes ni mayúsculas) o parte del teléfono, sin las canceladas. Primero las que vienen o siguen (de la más
- * próxima a la más lejana) y después las pasadas (de la más reciente a la más vieja).
+ * importar tildes ni mayúsculas) o parte del teléfono, sin las canceladas. Primero las abiertas (en el taller o por
+ * recibir, también una atrasada que no vino) y las que vienen, de la más próxima a la más lejana; después las
+ * entregadas, de la más reciente a la más vieja.
  */
-export async function buscarReservas(q: string, hoy: string): Promise<{ reservas: ReservaEncontrada[]; hayMas: boolean }> {
+export async function buscarReservas(q: string): Promise<{ reservas: ReservaEncontrada[]; hayMas: boolean }> {
   const busqueda = normalizarBusqueda(q);
   if (!busqueda) return { reservas: [], hayMas: false };
   const s = await sucursalPrincipal();
@@ -601,7 +603,8 @@ export async function buscarReservas(q: string, hoy: string): Promise<{ reservas
     busqueda.digitos ? like(cliente.telefono, `%${escaparLike(busqueda.digitos)}%`) : undefined,
     busqueda.placa ? like(vehiculo.placa, `%${escaparLike(busqueda.placa)}%`) : undefined,
   );
-  const viene = sql`${trabajo.fechaFin} >= ${hoy}`;
+  // Abierta: todo lo que no se entregó (las canceladas ya no están)
+  const viene = sql`${trabajo.estado} <> 'entregado'`;
   const filas = await db
     .select({
       id: trabajo.id,
@@ -628,9 +631,11 @@ export async function buscarReservas(q: string, hoy: string): Promise<{ reservas
         .where(inArray(trabajoLinea.trabajoId, reservas.map((r) => r.id)))
         .orderBy(asc(trabajoLinea.orden))
     : [];
+  const porTrabajo = new Map<number, string[]>();
+  for (const l of lineas) porTrabajo.set(l.trabajoId, [...(porTrabajo.get(l.trabajoId) ?? []), l.descripcion]);
   return {
     reservas: reservas.map((r) => {
-      const suyas = lineas.filter((l) => l.trabajoId === r.id).map((l) => l.descripcion);
+      const suyas = porTrabajo.get(r.id) ?? [];
       return { ...r, servicio: suyas[0] ?? null, masServicios: Math.max(0, suyas.length - 1) };
     }),
     hayMas: filas.length > RESERVAS_POR_BUSQUEDA,

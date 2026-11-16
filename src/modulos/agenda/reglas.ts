@@ -168,3 +168,7 @@ export function fechaCorta(fecha: string, hoy: string): string {
   const { dia, mes, anio } = partes(fecha);
   return `${DIA_CORTO[diaDeLaSemana(fecha) - 1]} ${dia} ${MESES[mes - 1].slice(0, 3)}${anio !== partes(hoy).anio ? ` ${anio}` : ""}`;
 }
+
+/** "Pulido y nano cerámico y 1 más": el primer servicio de un trabajo y cuántos más lleva, o null sin servicios. */
+export const textoServicio = (r: { servicio: string | null; masServicios: number }) =>
+  r.servicio ? `${r.servicio}${r.masServicios > 0 ? ` y ${r.masServicios} más` : ""}` : null;

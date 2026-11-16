@@ -315,3 +315,15 @@ export async function verPorReservar(page: Page): Promise<Locator> {
   await expect(lista).toBeVisible();
   return lista;
 }
+
+/**
+ * Las filas de "Por reservar" con un texto, con la lista abierta (plegada no se ven y la cuenta daría 0 siempre). Sin
+ * ninguna por reservar, la fila no está: el localizador no encuentra nada.
+ */
+export async function enPorReservar(page: Page, texto: string): Promise<Locator> {
+  await page.getByRole("heading", { level: 1, name: "Agenda" }).waitFor();
+  await page.waitForLoadState("networkidle");
+  const hay = await page.getByText(/^Cotizaci(ón|ones) por reservar$/).filter({ visible: true }).count();
+  if (hay > 0) await verPorReservar(page);
+  return page.getByRole("list", { name: "Por reservar" }).getByRole("link").filter({ hasText: texto });
+}
