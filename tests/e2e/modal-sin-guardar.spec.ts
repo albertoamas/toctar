@@ -2,8 +2,8 @@ import { expect, test, type Page } from "@playwright/test";
 import { abrirParteNegocio, ingresarComoDueno } from "./apoyo";
 
 // C6 (sistema-del-panel.md §4) y pulido 13.48: ningún modal pierde lo escrito por un cierre sin querer. Con cambios, tocar
-// afuera o Escape no cierran: el pie del mismo modal pregunta (nunca otro modal encima). "Cancelar" y la X cierran sin
-// preguntar: son una decisión. Se prueba con el modal de Contacto de Negocio; ninguna prueba guarda.
+// afuera, Escape, "Cancelar" y la X no cierran: el pie del mismo modal pregunta (nunca otro modal encima; hallazgo 7 de la
+// prueba en celulares, 15/11, para "Cancelar" y la X). Se prueba con el modal de Contacto de Negocio; ninguna prueba guarda.
 
 const entrar = async (page: Page) => {
   await ingresarComoDueno(page);
@@ -68,7 +68,7 @@ test("con cambios, Escape pregunta en el mismo modal: seguir editando conserva l
   await expect(otraVez.getByLabel("Nombre del negocio")).toHaveValue(original);
 });
 
-test("con cambios, Cancelar y la X cierran sin preguntar: son una decisión", async ({ page }) => {
+test("con cambios, Cancelar y la X también preguntan; el modal queda abierto hasta elegir", async ({ page }) => {
   await entrar(page);
   for (const cerrarCon of ["Cancelar", "Cerrar"]) {
     const contacto = await abrirParteNegocio(page, "Contacto");
@@ -76,13 +76,38 @@ test("con cambios, Cancelar y la X cierran sin preguntar: son una decisión", as
     const original = await nombre.inputValue();
     await nombre.fill(`${original} cambiado`);
     await contacto.getByRole("button", { name: cerrarCon, exact: true }).click();
+    // Pregunta en el pie y el modal sigue abierto, con lo escrito
+    await expect(preguntaEn(page)).toContainText("Tienes cambios sin guardar.");
+    await expect(contacto).toBeVisible();
+    await expect(nombre).toHaveValue(`${original} cambiado`);
+    await contacto.getByRole("button", { name: "Descartar cambios" }).click();
     await expect(contacto).toHaveCount(0);
-    await expect(preguntaEn(page)).toHaveCount(0);
     const otraVez = await abrirParteNegocio(page, "Contacto");
     await expect(otraVez.getByLabel("Nombre del negocio")).toHaveValue(original);
+    // Sin cambios, Cancelar cierra directo
     await otraVez.getByRole("button", { name: "Cancelar" }).click();
     await expect(otraVez).toHaveCount(0);
+    await expect(preguntaEn(page)).toHaveCount(0);
   }
+});
+
+test("en el iPhone un toque llega dos veces: el repetido no esconde la pregunta ni descarta", async ({ page }) => {
+  await entrar(page);
+  const contacto = await abrirParteNegocio(page, "Contacto");
+  const nombre = contacto.getByLabel("Nombre del negocio");
+  const original = await nombre.inputValue();
+  await nombre.fill(`${original} cambiado`);
+  // "Cancelar" y, enseguida, el mismo dedo como un toque afuera (el modal bajó al cerrarse el teclado)
+  await contacto.getByRole("button", { name: "Cancelar" }).click();
+  await page.mouse.click(8, 8);
+  await expect(preguntaEn(page)).toContainText("Tienes cambios sin guardar.");
+  // El clic de ese toque, que cae en "Descartar cambios" sin haberse apoyado ahí: no descarta
+  await contacto.getByRole("button", { name: "Descartar cambios" }).dispatchEvent("click", { detail: 1 });
+  await expect(contacto).toBeVisible();
+  await expect(nombre).toHaveValue(`${original} cambiado`);
+  // Un toque de verdad sobre "Descartar cambios", sí
+  await contacto.getByRole("button", { name: "Descartar cambios" }).click();
+  await expect(contacto).toHaveCount(0);
 });
 
 test("volver a dejar el texto como estaba no cuenta como un cambio", async ({ page }) => {

@@ -69,7 +69,7 @@ Una pantalla nueva o cambiada toma una de estas formas; si ninguna sirve, se dis
 
 - Todo modal de edición usa `ModalFormulario`, con sus botones en `PieModal`.
 - El botón dice qué guarda: "Guardar horario", "Guardar pregunta".
-- **Ningún modal pierde lo escrito por un cierre sin querer** (pulido 13.48): con cambios, tocar afuera, Escape o el "atrás" de Android (Chrome se lo avisa al diálogo) no cierran; el **pie del mismo modal** pasa a "Tienes cambios sin guardar." con "Seguir editando" (con el foco) y "Descartar cambios". **Nunca otro modal encima.** "Cancelar" y la X cierran sin preguntar: son una decisión. Sin cambios, todo cierra directo. Al salir de una pantalla con cambios (un formulario de crear, Recibir, Entregar), la pregunta es un diálogo chico y centrado (`alertdialog`) con "Seguir editando" y "Salir sin guardar".
+- **Ningún modal pierde lo escrito por un cierre sin querer** (pulido 13.48): con cambios, tocar afuera, Escape o el "atrás" de Android (Chrome se lo avisa al diálogo) no cierran; el **pie del mismo modal** pasa a "Tienes cambios sin guardar." con "Seguir editando" (con el foco) y "Descartar cambios". **Nunca otro modal encima.** "Cancelar" y la X también preguntan, como en iOS y Android (hallazgo 7 de la prueba en celulares, 15/11): cerrar con cambios nunca los descarta sin avisar. "Listo" no pregunta (cada cambio ya se guardó). Sin cambios, todo cierra directo. Al salir de una pantalla con cambios (un formulario de crear, Recibir, Entregar), la pregunta es un diálogo chico y centrado (`alertdialog`) con "Seguir editando" y "Salir sin guardar".
 - Al guardar, el modal se cierra y la ficha muestra el dato nuevo.
 - Las fotos se guardan al momento y van en la fila compacta de su sección.
 

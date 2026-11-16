@@ -23,14 +23,20 @@ import type { EstadoFormulario } from "@/lib/formularios";
 // Ningún modal pierde lo escrito por un cierre sin querer (C6, sistema-del-panel.md §4; pulido 13.48): si el formulario de
 // adentro cambió desde que se abrió, tocar afuera, Escape o el "atrás" de Android (Chrome lo avisa al diálogo) no cierran: el pie pasa
 // a "Tienes cambios sin guardar." con "Seguir editando" y "Descartar cambios". Nunca otro modal encima (hasta el 11/11 era
-// un segundo modal sobre el primero: en el celular, una hoja sobre otra). "Cancelar" y la X cierran sin preguntar: son una
-// decisión. Guardar no pregunta. Mientras se guarda no se puede cerrar.
+// un segundo modal sobre el primero: en el celular, una hoja sobre otra). "Cancelar" y la X también preguntan (hallazgo 7
+// de la prueba en celulares, 15/11: como en iOS y Android, cerrar con cambios nunca los descarta sin avisar; antes cerraban
+// directo y en el iPhone la pregunta se veía un instante mientras el modal se iba). Sin cambios, todo cierra directo.
+// "Listo" no pregunta: ahí cada cambio ya se guardó. Guardar no pregunta. Mientras se guarda no se puede cerrar.
 
 type ContextoModal = {
-  /** Cierra sin preguntar: ya se guardó, o la persona eligió "Cancelar". */
+  /** Cierra sin preguntar: ya se guardó, o la persona eligió "Descartar cambios". */
   cerrar: () => void;
+  /** "Descartar cambios": cierra, salvo que sea el mismo toque que hizo aparecer la pregunta. */
+  descartar: (conToque: boolean, apoyadoEn: number | null) => void;
   /** Un cierre que puede ser sin querer: con cambios, pregunta en el pie del modal. */
   pedirCierre: () => void;
+  /** "Cancelar" o la X: con cambios, pregunta; y el toque "afuera" que lo repite no cuenta. */
+  pedirCierreConBoton: () => void;
   /** Está preguntando: el pie muestra "Seguir editando" y "Descartar cambios" en lugar de sus botones. */
   preguntando: boolean;
   /** "Seguir editando": vuelve el pie de siempre. */
@@ -48,6 +54,9 @@ type ContextoModal = {
 };
 
 const Modal = createContext<ContextoModal | null>(null);
+
+/** Lo que dura un toque repetido: el mismo dedo llega como dos eventos casi juntos (hallazgo 7, iPhone). */
+const TOQUE_REPETIDO_MS = 400;
 
 /**
  * Con el teclado abierto, la hoja se apoya sobre él. Safari (y todo navegador del iPhone) no achica la pantalla al
@@ -155,7 +164,12 @@ export function ModalFormulario({ titulo, abierto, alCambiar, sinTeclado = false
   const fijarEnviando = useCallback((valor: boolean) => {
     enviando.current = valor;
   }, []);
-  // Cierra: después de guardar, o por decisión ("Cancelar" está desactivado mientras se guarda)
+  // Cuándo se pidió cerrar con un botón del modal ("Cancelar", la X) y cuándo apareció la pregunta (hallazgo 7). En el
+  // iPhone, con el teclado abierto, un mismo toque llega dos veces: el botón y, como el modal baja al cerrarse el teclado,
+  // un toque "afuera". Ese segundo no cuenta, y el toque que hizo aparecer la pregunta no cae en "Descartar cambios"
+  const pedidoConBoton = useRef(0);
+  const preguntaDesde = useRef(0);
+  // Cierra sin preguntar: después de guardar, con "Listo" o con "Descartar cambios"
   const cerrar = () => {
     setPreguntando(false);
     alCambiar(false);
@@ -168,7 +182,22 @@ export function ModalFormulario({ titulo, abierto, alCambiar, sinTeclado = false
   const pedirCierre = () => {
     if (enviando.current) return;
     if (!hayCambios()) return cerrar();
+    preguntaDesde.current = Date.now();
     setPreguntando(true);
+  };
+  /** "Cancelar" o la X: lo mismo que un cierre sin querer, pero anotando que fue un botón. */
+  const pedirCierreConBoton = () => {
+    pedidoConBoton.current = Date.now();
+    pedirCierre();
+  };
+  /**
+   * "Descartar cambios": no si es el mismo toque que hizo aparecer la pregunta. Un toque que empezó en otro lado (en
+   * "Cancelar", antes de que el pie cambiara) o antes de que apareciera la pregunta no cuenta. `apoyadoEn`: cuándo se
+   * apoyó el dedo sobre este botón (null si no se apoyó); con el teclado (`conToque` falso) siempre descarta.
+   */
+  const descartar = (conToque: boolean, apoyadoEn: number | null) => {
+    if (conToque && (apoyadoEn === null || apoyadoEn < preguntaDesde.current)) return;
+    cerrar();
   };
   const seguir = useCallback(() => {
     // Primero el foco al campo (sigue a la vista): si se esperara a que se vaya la pregunta, el diálogo lo tomaría antes
@@ -183,10 +212,12 @@ export function ModalFormulario({ titulo, abierto, alCambiar, sinTeclado = false
       open={abierto}
       onOpenChange={(abrir, detalles) => {
         if (abrir) return alCambiar(true);
-        // La X es una decisión, como "Cancelar": cierra sin preguntar (no mientras se guarda)
-        if (detalles.reason === "close-press") return enviando.current ? undefined : cerrar();
-        // Ya preguntando, otro Escape (o "atrás") es seguir editando, salvo que ya no quede nada sin guardar
+        // El toque "afuera" que repite al de un botón del modal (iPhone): no cuenta
+        if (detalles.reason === "outside-press" && Date.now() - pedidoConBoton.current < TOQUE_REPETIDO_MS) return;
+        // Ya preguntando, la X, otro Escape o "atrás" es seguir editando, salvo que ya no quede nada sin guardar
         if (preguntando) return hayCambios() ? seguir() : cerrar();
+        // La X, como "Cancelar": con cambios, pregunta (hallazgo 7). Mientras se guarda, nada
+        if (detalles.reason === "close-press") return pedirCierreConBoton();
         // Tocar afuera, Escape o el "atrás" del celular pueden ser sin querer
         pedirCierre();
       }}
@@ -214,7 +245,7 @@ export function ModalFormulario({ titulo, abierto, alCambiar, sinTeclado = false
         <DialogHeader className="pr-9">
           <DialogTitle>{titulo}</DialogTitle>
         </DialogHeader>
-        <Modal.Provider value={{ cerrar, pedirCierre, preguntando, seguir, conPie, renovarBase: tomarBase, hayCambios, fijarAdemas, fijarEnviando }}>
+        <Modal.Provider value={{ cerrar, descartar, pedirCierre, pedirCierreConBoton, preguntando, seguir, conPie, renovarBase: tomarBase, hayCambios, fijarAdemas, fijarEnviando }}>
           {children}
           {/* Sin pie propio (raro): la pregunta va al final del modal */}
           {preguntando && !hayPie && <PieModal respaldo>{null}</PieModal>}
@@ -312,6 +343,8 @@ export function PieModal({ children, respaldo = false }: { children: React.React
     return () => conPie?.(false);
   }, [conPie]);
   const seguir = useRef<HTMLButtonElement>(null);
+  // Cuándo se apoyó el dedo sobre "Descartar cambios" (hallazgo 7)
+  const apoyado = useRef<number | null>(null);
   const preguntando = modal?.preguntando ?? false;
   useEffect(() => {
     if (preguntando) seguir.current?.focus();
@@ -326,7 +359,16 @@ export function PieModal({ children, respaldo = false }: { children: React.React
         <Button ref={seguir} type="button" variant="outline" className="bg-popover" onClick={modal.seguir}>
           Seguir editando
         </Button>
-        <Button type="button" variant="destructive" onClick={modal.cerrar}>
+        <Button
+          type="button"
+          variant="destructive"
+          onPointerDown={() => (apoyado.current = Date.now())}
+          onClick={(e) => {
+            // detail: cuántos toques o clics; 0 si lo activó el teclado
+            modal.descartar(e.detail > 0, apoyado.current);
+            apoyado.current = null;
+          }}
+        >
           Descartar cambios
         </Button>
       </div>
@@ -356,7 +398,7 @@ export function PieGuardar({ texto, enviando }: { texto: string; enviando: boole
 }
 
 /**
- * "Cancelar" al lado del botón principal: cierra sin guardar y sin preguntar (es una decisión, pulido 13.48). "Listo"
+ * "Cancelar" al lado del botón principal: cierra sin guardar; con cambios, antes pregunta (hallazgo 7). "Listo"
  * donde cada cambio ya se guardó al momento (una lista que se edita fila por fila). "Volver" si el principal ya dice
  * "Cancelar…" ("Cancelar reserva"). Fuera de un modal no se muestra.
  */
@@ -373,9 +415,9 @@ export function CancelarModal(props: {
   const fijarEnviando = modal?.fijarEnviando;
   useEffect(() => fijarEnviando?.(ocupado), [fijarEnviando, ocupado]);
   if (!modal) return null;
-  // "Volver" acompaña a una acción que pide escribir (el motivo de "Cancelar reserva"): no parece descartar, así que pregunta
+  // "Cancelar" y "Volver", con cambios, preguntan antes de descartarlos (hallazgo 7). "Listo": cada cambio ya se guardó
   return (
-    <Button type="button" variant="outline" disabled={ocupado} onClick={texto === "Volver" ? modal.pedirCierre : modal.cerrar} data-foco-inicial={focoInicial || undefined}>
+    <Button type="button" variant="outline" disabled={ocupado} onClick={texto === "Listo" ? modal.cerrar : modal.pedirCierreConBoton} data-foco-inicial={focoInicial || undefined}>
       {texto}
     </Button>
   );
