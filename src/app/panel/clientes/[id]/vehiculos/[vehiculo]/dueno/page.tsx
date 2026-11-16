@@ -11,6 +11,7 @@ import { buttonVariants } from "@/componentes/ui/button";
 import { cantidad } from "@/lib/cantidad";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
+import { conDesde, leerDesde, volverDesde } from "@/lib/volver";
 import { ConfirmarCambioDueno } from "@/modulos/clientes/componentes/cambiar-dueno";
 import { DatosVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 import { ElegirCliente } from "@/modulos/clientes/componentes/elegir-cliente";
@@ -51,7 +52,11 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/client
   const nuevo = nuevoId && nuevoId !== clienteId ? await obtenerCliente(nuevoId) : null;
   // "Volver" y "Cancelar", a donde se vino: la ficha del comprador si se llegó desde su placa repetida (`?desde=comprador`)
   const desdeComprador = parametros.desde === "comprador" && !!nuevo;
-  const volver = desdeComprador && nuevo ? { href: `/panel/clientes/${nuevo.id}` as Route, texto: nuevo.nombre } : { href: `/panel/clientes/${clienteId}` as Route, texto: v.dueno };
+  // Si no, a la pantalla de origen (pedido 43: la ficha del vehículo, pedido 51) o a la ficha del dueño
+  const origen = leerDesde(parametros.volver);
+  const volver = desdeComprador && nuevo
+    ? { href: `/panel/clientes/${nuevo.id}` as Route, texto: nuevo.nombre }
+    : volverDesde(parametros.volver, { href: `/panel/clientes/${clienteId}` as Route, texto: v.dueno }, usuario);
   const encabezado = (
     <>
       <EncabezadoPagina titulo={`Cambiar de dueño ${v.placa}`} volver={volver} />
@@ -101,7 +106,7 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/client
         {encabezado}
         {/* Un ?nuevo= que no sirve (el mismo dueño, uno desactivado o que no existe) dice por qué se vuelve a elegir */}
         {nuevoId !== null && <p role="status">{nuevoId === clienteId ? "Ya es su dueño: elige a otro cliente." : "Ese cliente ya no está activo: elige a otro."}</p>}
-        <ElegirCliente titulo="Nuevo dueño" q={typeof parametros.q === "string" ? parametros.q : ""} excepto={clienteId} hrefCliente={(otro) => `${base}?nuevo=${otro}` as Route} />
+        <ElegirCliente titulo="Nuevo dueño" q={typeof parametros.q === "string" ? parametros.q : ""} excepto={clienteId} hrefCliente={(otro) => conDesde(`${base}?nuevo=${otro}`, origen) as Route} />
       </>
     );
   }

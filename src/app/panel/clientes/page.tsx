@@ -59,9 +59,24 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/clientes">, "searc
     q && !desactivados ? vehiculoConPlacaExacta(q) : null,
   ]);
   const busqueda = normalizarBusqueda(q);
+  // Pedido 51: una placa exacta, arriba, también si su dueño no sale en la lista (desactivado)
+  const atajo = delVehiculo && (
+    <ListaFilas
+      etiqueta="Vehículo con esa placa"
+      filas={[
+        {
+          href: conDesde(rutaVehiculo(delVehiculo.clienteId, delVehiculo.id), desdeAqui),
+          titulo: delVehiculo.placa,
+          tituloGrande: true,
+          detalles: [`De ${delVehiculo.cliente}: ver su ficha`],
+        },
+      ]}
+    />
+  );
   if (clientes.length === 0) {
     return (
       <>
+        {atajo}
         <EstadoVacio>
           {q
             ? `No hay clientes${desactivados ? " desactivados" : ""} con «${q.trim()}».`
@@ -75,19 +90,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/clientes">, "searc
 
   return (
     <>
-      {delVehiculo && (
-        <ListaFilas
-          etiqueta="Vehículo con esa placa"
-          filas={[
-            {
-              href: conDesde(rutaVehiculo(delVehiculo.clienteId, delVehiculo.id), desdeAqui),
-              titulo: delVehiculo.placa,
-              tituloGrande: true,
-              detalles: [`De ${delVehiculo.cliente}: ver su ficha`],
-            },
-          ]}
-        />
-      )}
+      {atajo}
       <TablaClientes
         etiqueta={desactivados ? "Clientes desactivados" : "Clientes"}
         clientes={clientes}

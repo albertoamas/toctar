@@ -41,6 +41,9 @@ test("textoVolver dice a dónde se vuelve", () => {
   expect(textoVolver("/panel/ordenes/3")).toBe("Orden");
   expect(textoVolver("/panel/cotizaciones/3")).toBe("Cotización");
   expect(textoVolver("/panel/clientes/3")).toBe("Cliente");
+  // Pedido 51: la ficha de un vehículo; el cambio de dueño no es un origen
+  expect(textoVolver("/panel/clientes/3/vehiculos/9")).toBe("Vehículo");
+  expect(textoVolver("/panel/clientes/3/vehiculos/9/dueno")).toBeNull();
   expect(textoVolver("/panel/catalogo/3")).toBe("Servicio del catálogo");
   expect(textoVolver("/panel/sitio/servicios/3")).toBe("Su página en el sitio");
   expect(textoVolver("/panel/usuarios/3")).toBeNull();

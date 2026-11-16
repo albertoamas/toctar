@@ -29,7 +29,7 @@ const PEDIDO_ILEGIBLE = "No se pudo leer el pedido. Recarga la página.";
 function despuesDeCambiar(id: number, clienteId?: number) {
   revalidatePath("/panel/cotizaciones");
   revalidatePath(`/panel/cotizaciones/${id}`);
-  if (clienteId) revalidatePath(`/panel/clientes/${clienteId}`);
+  if (clienteId) revalidatePath(`/panel/clientes/${clienteId}`, "layout"); // también las fichas de sus vehículos (pedido 51)
   // Una aceptada sin fecha aparece en "Por reservar" de la Agenda y en Inicio (pedido 31)
   revalidatePath("/panel/agenda");
   revalidatePath("/panel");

@@ -26,6 +26,8 @@ const PANTALLAS: { ruta: RegExp; texto: string; modulo: Modulo }[] = [
   { ruta: /^\/panel\/cotizaciones\/\d+$/, texto: "Cotización", modulo: "cotizaciones" },
   { ruta: /^\/panel\/clientes$/, texto: "Clientes", modulo: "clientes" },
   { ruta: /^\/panel\/clientes\/\d+$/, texto: "Cliente", modulo: "clientes" },
+  // La ficha de un vehículo (pedido 51): una orden o una cotización abierta desde ella vuelve ahí
+  { ruta: /^\/panel\/clientes\/\d+\/vehiculos\/\d+$/, texto: "Vehículo", modulo: "clientes" },
   { ruta: /^\/panel\/pagos$/, texto: MODULOS.pagos.nombreMenu, modulo: "pagos" },
   { ruta: /^\/panel\/mantenimientos$/, texto: "Mantenimientos", modulo: "mantenimientos" },
   { ruta: /^\/panel\/reclamos$/, texto: "Reclamos", modulo: "reclamos" },

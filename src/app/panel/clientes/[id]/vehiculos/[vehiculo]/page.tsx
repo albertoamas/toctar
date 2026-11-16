@@ -38,6 +38,9 @@ export const metadata: Metadata = { title: "Vehículo" };
 // su historial sigue a nombre de quien era dueño). En la ficha del cliente, sus reservas y cotizaciones van mezcladas
 // entre todos sus autos. Los montos, solo para quien los ve (RN-12): las mismas listas que la ficha del cliente.
 
+/** Un id de la dirección: solo dígitos y dentro de lo que guarda la base (uno mayor, no existe), como en "Cambiar de dueño". */
+const numero = (texto: unknown) => (typeof texto === "string" && /^\d{1,10}$/.test(texto) && Number(texto) <= 2147483647 ? Number(texto) : null);
+
 /** Cuántos trabajos se ven antes de "Ver todo el historial". */
 const HISTORIAL_CORTO = 5;
 
@@ -54,9 +57,9 @@ export default function PaginaVehiculo({ params, searchParams }: PageProps<"/pan
 async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[id]/vehiculos/[vehiculo]">, "params" | "searchParams">) {
   const usuario = await exigirModulo("clientes");
   const [{ id, vehiculo: vehiculoTexto }, busqueda] = await Promise.all([params, searchParams]);
-  const clienteId = Number(id);
-  const vehiculoId = Number(vehiculoTexto);
-  if (![clienteId, vehiculoId].every((n) => Number.isInteger(n) && n > 0)) notFound();
+  const clienteId = numero(id);
+  const vehiculoId = numero(vehiculoTexto);
+  if (!clienteId || !vehiculoId) notFound();
   const v = await fichaVehiculo(vehiculoId);
   if (!v) notFound();
   // La dirección es la del dueño de ahora: un enlace de antes de un cambio de dueño lleva a la de hoy, con lo que traía
@@ -75,7 +78,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
     verAgenda ? reservasDelVehiculo(v.id, verPagos) : [],
     verCotizaciones ? cotizacionesDelVehiculo(v.id) : [],
     verMantenimientos ? mantenimientosDelVehiculo(v.id) : [],
-    obtenerParametros(),
+    verCotizaciones ? obtenerParametros() : null,
   ]);
 
   const fichaCliente = `/panel/clientes/${v.dueno.id}`;
@@ -102,15 +105,14 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
                 Nueva reserva
               </Link>
             )}
-            {v.dueno.activo && (
-              <MasVehiculo
-                clienteId={v.dueno.id}
-                vehiculoId={v.id}
-                placa={v.placa}
-                activo={v.activo}
-                cambiarDueno={conDesde(`${rutaVehiculo(v.dueno.id, v.id)}/dueno`, desdeAqui)}
-              />
-            )}
+            {/* También con el dueño desactivado: el vehículo se reactiva o se pasa a otro */}
+            <MasVehiculo
+              clienteId={v.dueno.id}
+              vehiculoId={v.id}
+              placa={v.placa}
+              activo={v.activo}
+              cambiarDueno={conDesde(`${rutaVehiculo(v.dueno.id, v.id)}/dueno`, desdeAqui)}
+            />
           </div>
         }
       >
@@ -187,7 +189,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
         </section>
       )}
 
-      {verCotizaciones && cotizaciones.length > 0 && (
+      {parametros && cotizaciones.length > 0 && (
         <section aria-labelledby="cotizaciones-titulo" className="flex flex-col gap-4">
           <CabeceraSeccion id="cotizaciones" titulo="Cotizaciones" />
           <ListaCotizaciones cotizaciones={cotizaciones} umbral={parametros.dias_cotizacion_sin_respuesta} desde={desdeAqui} />

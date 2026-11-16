@@ -242,7 +242,7 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
 function despuesDeCambiar(id: number, clienteId: number, consultaId: number | null) {
   revalidatePath("/panel/agenda");
   revalidatePath(`/panel/agenda/${id}`);
-  revalidatePath(`/panel/clientes/${clienteId}`);
+  revalidatePath(`/panel/clientes/${clienteId}`, "layout"); // también las fichas de sus vehículos (pedido 51)
   if (consultaId) {
     revalidatePath("/panel/cotizaciones");
     revalidatePath(`/panel/cotizaciones/${consultaId}`);

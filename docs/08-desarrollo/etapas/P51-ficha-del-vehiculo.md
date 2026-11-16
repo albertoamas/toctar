@@ -1,7 +1,7 @@
 # P51 La ficha del vehículo — especificación
 
 - **Fase y semana:** C. Entrega 2 · 16 de noviembre de 2026, antes del cierre
-- **Estado:** borrador, con su prototipo para aprobar
+- **Estado:** aprobada con su prototipo (16/11/2026, https://claude.ai/artifact/VxT6a14hV54eF535xvSiW1) y programada en la rama `p51-ficha-del-vehiculo`
 - **Pedido:** 51 de `03-cierre-comercial/registro-de-cambios.md`. Incluido: decisión del desarrollador del 16/11, porque los vehículos debieron estar separados de los clientes desde el inicio. Salió de la prueba en celulares (`08-desarrollo/hallazgos-prueba-celulares.md`, hallazgo 6)
 - **Historias que cambian:** HU-21 (registrar vehículos), HU-23 (ficha del cliente)
 - **Base:**
@@ -58,15 +58,15 @@ De tipo `ficha` (`PaginaPanel`), a 1024 px. En el celular, una columna.
    - Inactivo: la insignia "Inactivo".
    - **Acción principal: "Nueva reserva"**, con el cliente y el vehículo ya elegidos. Si está inactivo, "Reactivar vehículo" en su lugar.
    - **"Más":** Cambiar de dueño (P37) y Desactivar vehículo, que hoy están en el modal de edición.
-2. **Datos** (`SeccionConEditar`): placa, tamaño, marca, modelo, año y color. "Editar" abre el modal de siempre (`FormularioVehiculo`), sin "Más" adentro: esas acciones pasaron al encabezado.
+2. **Datos** (`SeccionConEditar`): el vehículo (marca, modelo, año y color) y el tamaño; la placa ya es el título. "Editar" abre el modal de siempre (`FormularioVehiculo`), sin "Más" adentro: esas acciones pasaron al encabezado.
 3. **Dueño:** una fila de un toque con el nombre y el WhatsApp, que abre la ficha del cliente.
 4. **Mantenimiento:** su plan, si tiene, con el servicio, cada cuántos meses, el próximo y su estado. Se ajusta igual que hoy en la ficha del cliente (`MasPlan`). Sin plan: "No tiene mantenimiento programado."
-5. **Historial:** las reservas y órdenes, del más reciente al más viejo. Cada fila abre su orden o su reserva y muestra:
-   - las fechas, los servicios y el estado (`NOMBRE_ESTADO_TRABAJO`);
-   - el total, solo con permiso (RN-12);
-   - "Con {dueño anterior}" si era de otro cliente en ese momento.
+5. **Historial:** las reservas y órdenes, con la misma tabla que la ficha del cliente (`ReservasCliente`, con `duenoActual`): las próximas primero y después las pasadas. Cada fila abre su orden o su reserva y muestra:
+   - la fecha, el espacio y el estado (`NOMBRE_ESTADO_TRABAJO`);
+   - el saldo, solo con Pagos (RN-12);
+   - "Con {dueño anterior}" si era de otro cliente en ese momento (comparado por id).
 
-   Más de 5: "Ver todo el historial" (plegado). Vacío: "Todavía no tiene trabajos."
+   Más de 5: "Ver todo el historial ({n})", que muestra todas (`?historial=todo`). Vacío: "Todavía no tiene trabajos."
 6. **Cotizaciones:** igual que el historial, con `ListaCotizaciones`. Vacío: sin la sección.
 
 ### La ficha del cliente
@@ -88,7 +88,13 @@ Con las piezas del panel (`sistema-del-panel.md`):
 - `ListaFilas` para el dueño, los vehículos del cliente y el historial.
 - `ListaCotizaciones`, `Insignia` con `TONO_ESTADO_TRABAJO`, `MenuMas` y `ModalFormulario`.
 
-No hay componentes nuevos, salvo `HistorialVehiculo`, que arma las filas del historial. Prototipo para aprobar: celular y computadora.
+Componentes nuevos o compartidos:
+- `MasVehiculo`: "Reactivar vehículo", o "Más" con "Cambiar de dueño" y "Desactivar vehículo", con confirmación.
+- `ListaMantenimientos`: sale de la ficha del cliente y ahora la usan las dos fichas.
+- `FilaVehiculo`: la fila que enlaza a la ficha desde la orden, la reserva y la cotización.
+- `FormularioVehiculo` se exporta, sin su "Más" interno.
+
+Las consultas por vehículo reutilizan las del cliente con otro filtro: `reservasDelVehiculo`, `cotizacionesDelVehiculo`, `mantenimientosDelVehiculo`, más `fichaVehiculo` y `vehiculoConPlacaExacta`.
 
 ## 8. Textos de la interfaz
 - **Secciones:** "Datos", "Dueño", "Mantenimiento", "Historial" y "Cotizaciones".

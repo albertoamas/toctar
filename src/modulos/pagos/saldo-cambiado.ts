@@ -13,5 +13,5 @@ export function saldoCambiado(trabajoId: number, clienteId?: number): void {
   for (const ruta of [`/panel/agenda/${trabajoId}`, `/panel/ordenes/${trabajoId}`, `/panel/ordenes/${trabajoId}/entregar`, "/panel/pagos", "/panel"]) {
     revalidatePath(ruta);
   }
-  if (clienteId !== undefined) revalidatePath(`/panel/clientes/${clienteId}`);
+  if (clienteId !== undefined) revalidatePath(`/panel/clientes/${clienteId}`, "layout"); // también las fichas de sus vehículos (pedido 51)
 }

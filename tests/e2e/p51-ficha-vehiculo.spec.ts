@@ -53,8 +53,11 @@ test("la dirección de antes del cambio de dueño lleva a la de hoy, y la placa 
   await expect(page).toHaveURL(new RegExp(`/panel/clientes/${a.actualId}/vehiculos/${a.vehiculoId}$`));
   await expect(page.getByRole("heading", { level: 1, name: placa })).toBeVisible();
   // Un vehículo que no existe: no encontrado
-  await page.goto(`/panel/clientes/${a.actualId}/vehiculos/999999`);
-  await expect(page.getByRole("heading", { level: 1, name: a.placa })).toHaveCount(0);
+  // Un vehículo que no existe, o un número fuera de lo que guarda la base: no encontrado (no un error)
+  for (const id of ["999999", "99999999999"]) {
+    await page.goto(`/panel/clientes/${a.actualId}/vehiculos/${id}`);
+    await expect(page.getByRole("heading", { level: 1, name: "No encontramos esto" })).toBeVisible();
+  }
 
   // Buscar la placa (como sea que se escriba) lleva directo a su ficha
   await page.goto(`/panel/clientes?q=${placa.toLowerCase()}`, { waitUntil: "networkidle" });

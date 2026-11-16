@@ -38,12 +38,15 @@ export function VehiculosCliente({ clienteId, vehiculos, tamanos, desde }: Props
   const [aperturas, setAperturas] = useState(0);
   const activos = vehiculos.filter((v) => v.activo);
   const inactivos = vehiculos.filter((v) => !v.activo);
-  const fila = (v: VehiculoCliente) => ({
-    href: conDesde(rutaVehiculo(clienteId, v.id), desde),
-    titulo: v.placa,
-    tituloGrande: true,
-    detalles: [...(detalleVehiculo(v).length > 0 ? [detalleVehiculo(v).join(" ")] : []), `Tamaño: ${v.tamano}`],
-  });
+  const fila = (v: VehiculoCliente) => {
+    const detalle = detalleVehiculo(v);
+    return {
+      href: conDesde(rutaVehiculo(clienteId, v.id), desde),
+      titulo: v.placa,
+      tituloGrande: true,
+      detalles: [...(detalle.length > 0 ? [detalle.join(" ")] : []), `Tamaño: ${v.tamano}`],
+    };
+  };
 
   return (
     <section aria-labelledby="vehiculos-titulo" className="flex flex-col gap-3">

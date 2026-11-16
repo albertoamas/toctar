@@ -81,5 +81,8 @@ test("un cliente con cinco vehículos muestra tres placas y cuántas más; la bu
   await page.goto(`/panel/clientes?q=${encodeURIComponent(nombre)}`);
   await expect(page.getByRole("link", { name: nombre })).toContainText(`FL${s}1, FL${s}2, FL${s}3 y 2 más`);
   await page.goto(`/panel/clientes?q=fl-${s.toLowerCase()}5`);
-  await expect(page.getByRole("link", { name: nombre })).toContainText(`FL${s}5, FL${s}1, FL${s}2 y 2 más`);
+  // Una placa exacta, además, arriba lleva a la ficha de ese vehículo (pedido 51)
+  await expect(page.getByRole("list", { name: "Vehículo con esa placa" })).toContainText(`FL${s}5`);
+  const enLaLista = page.getByRole("table", { name: "Clientes" }).or(page.getByRole("list", { name: "Clientes", exact: true }));
+  await expect(enLaLista.getByRole("link", { name: nombre })).toContainText(`FL${s}5, FL${s}1, FL${s}2 y 2 más`);
 });
