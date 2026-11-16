@@ -12,14 +12,14 @@ import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { Insignia } from "@/componentes/panel/insignia";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { CeldaDoble, TablaLista, type ColumnaTabla } from "@/componentes/panel/tabla-lista";
-import { cantidad } from "@/lib/cantidad";
+import { cantidad, palabra } from "@/lib/cantidad";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { AgendaDelDia, PestanasDias, SemanaEnLista, TableroSemana } from "@/modulos/agenda/componentes/tablero";
 import { buscarReservas, resumenDeHoy, semanaDeAgenda, type ResumenDeHoy } from "@/modulos/agenda/consultas";
-import { diasDeLaSemana, fechaCorta, lunesDeLaSemana, NOMBRE_ESTADO_TRABAJO, textoSemana, textoServicio, textoSemanaCorto, tituloDia, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
+import { diasDeLaSemana, fechaCorta, lunesDeLaSemana, NOMBRE_ESTADO_TRABAJO, textoSemana, textoServicio, textoSemanaCorto, TONO_ESTADO_TRABAJO, unirConY } from "@/modulos/agenda/reglas";
 import { cotizacionesPorReservar, type FilaCotizacion } from "@/modulos/cotizaciones/consultas";
 import { bs, diasDesde, textoDias } from "@/modulos/cotizaciones/reglas";
 import { rutaTrabajo } from "@/modulos/ordenes/reglas";
@@ -129,12 +129,12 @@ async function Semana(props: { lunes: string; dias: string[]; dia: string; hoy: 
 
   return (
     <>
-      <div className={cn("grid gap-3", porReservar.length > 0 && "lg:grid-cols-[minmax(0,1fr)_auto]")}>
-        <ResumenHoy resumen={resumen} hoy={hoy} conOrdenes={conOrdenes} />
+      <div className="flex flex-col gap-3">
+        <ResumenHoy resumen={resumen} />
         {/* Pedido 31: las cotizaciones aceptadas que esperan fecha. Lavado de cara (16/11): plegadas en una fila, así el
             tablero, que es lo principal de la Agenda, no queda abajo de una lista larga; sin ninguna, no ocupa lugar */}
         {porReservar.length > 0 && (
-          <details className="group lg:open:col-span-full">
+          <details className="group">
             <summary className="tt-tarjeta-panel flex min-h-12 cursor-pointer list-none items-center gap-3 px-4 py-3 hover:bg-superficie/50 [&::-webkit-details-marker]:hidden">
               <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-aviso-fondo px-1.5 text-sm font-bold text-aviso">{porReservar.length}</span>
               <span className="flex-1 text-sm font-semibold">{porReservar.length === 1 ? "Cotización por reservar" : "Cotizaciones por reservar"}</span>
@@ -162,43 +162,20 @@ async function Semana(props: { lunes: string; dias: string[]; dia: string; hoy: 
 }
 
 /**
- * Lo de hoy en una línea: cuántas faltan recibir, cuántas están en el taller y cuántas para entregar. Con permiso de
- * Órdenes, las dos últimas llevan a su lista; "por recibir", al Inicio, que las lista con su espacio.
+ * Lo de hoy en una línea de texto (revisión del desarrollador, 16/11): antes eran tres números en una tarjeta que
+ * llevaban a otras pantallas; ahora solo se lee. "Hoy: 1 vehículo por recibir, 2 en el taller y 1 listo para
+ * entregar." Lo que está en cero no se nombra.
  */
-function ResumenHoy({ resumen, hoy, conOrdenes }: { resumen: ResumenDeHoy; hoy: string; conOrdenes: boolean }) {
-  const datos: { n: number; texto: string; href: Route | null }[] = [
-    { n: resumen.porRecibir, texto: "por recibir", href: "/panel" },
-    { n: resumen.enElTaller, texto: "en el taller", href: conOrdenes ? "/panel/ordenes" : null },
-    { n: resumen.paraEntregar, texto: "para entregar", href: conOrdenes ? ("/panel/ordenes?estado=listo" as Route) : null },
-  ];
+function ResumenHoy({ resumen }: { resumen: ResumenDeHoy }) {
+  const partes = [
+    resumen.porRecibir > 0 && `${cantidad(resumen.porRecibir, "vehículo", "vehículos")} por recibir`,
+    resumen.enElTaller > 0 && `${resumen.enElTaller} en el taller`,
+    resumen.paraEntregar > 0 && `${resumen.paraEntregar} ${palabra(resumen.paraEntregar, "listo", "listos")} para entregar`,
+  ].filter((p): p is string => !!p);
   return (
-    <section aria-labelledby="hoy-titulo" className="tt-tarjeta-panel flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-8">
-      <h2 id="hoy-titulo" className="tt-titulo-sub">
-        {tituloDia(hoy, hoy)}
-      </h2>
-      <ul className="grid grid-cols-3 gap-2 sm:flex sm:gap-8">
-        {datos.map((d) => {
-          const contenido = (
-            <>
-              <span className="text-xl font-bold tabular-nums">{d.n}</span>
-              <span className="text-[0.8125rem] text-tinta-media sm:text-sm">{d.texto}</span>
-            </>
-          );
-          const clase = "flex flex-col sm:flex-row sm:items-baseline sm:gap-2";
-          return (
-            <li key={d.texto}>
-              {d.href && d.n > 0 ? (
-                <Link href={d.href} className={cn(clase, "rounded-md hover:underline")}>
-                  {contenido}
-                </Link>
-              ) : (
-                <span className={clase}>{contenido}</span>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </section>
+    <p className="text-sm text-tinta-media">
+      <span className="font-semibold text-tinta">Hoy:</span> {partes.length > 0 ? unirConY(partes) : "nada por recibir ni en el taller"}.
+    </p>
   );
 }
 
