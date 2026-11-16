@@ -12,14 +12,14 @@ import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { Insignia } from "@/componentes/panel/insignia";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { CeldaDoble, TablaLista, type ColumnaTabla } from "@/componentes/panel/tabla-lista";
-import { cantidad, palabra } from "@/lib/cantidad";
+import { cantidad } from "@/lib/cantidad";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { AgendaDelDia, PestanasDias, SemanaEnLista, TableroSemana } from "@/modulos/agenda/componentes/tablero";
-import { buscarReservas, resumenDeHoy, semanaDeAgenda, type ResumenDeHoy } from "@/modulos/agenda/consultas";
-import { diasDeLaSemana, fechaCorta, lunesDeLaSemana, NOMBRE_ESTADO_TRABAJO, textoSemana, textoServicio, textoSemanaCorto, TONO_ESTADO_TRABAJO, unirConY } from "@/modulos/agenda/reglas";
+import { buscarReservas, semanaDeAgenda } from "@/modulos/agenda/consultas";
+import { diasDeLaSemana, fechaCorta, lunesDeLaSemana, NOMBRE_ESTADO_TRABAJO, textoSemana, textoServicio, textoSemanaCorto, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { cotizacionesPorReservar, type FilaCotizacion } from "@/modulos/cotizaciones/consultas";
 import { bs, diasDesde, textoDias } from "@/modulos/cotizaciones/reglas";
 import { rutaTrabajo } from "@/modulos/ordenes/reglas";
@@ -30,7 +30,7 @@ export const metadata: Metadata = { title: "Agenda" };
 // HU-29: el tablero de la agenda (RF-38). `?semana=` (cualquier día de la semana; se toma su lunes) y, en el celular,
 // `?dia=` (el día que se ve). Dueño o encargado con "Agenda".
 // Pulido 10.1: el tablero de la semana solo con espacio (desde 1280 px desde el 16/11). Lavado de cara (16/11,
-// prototipo aprobado): un buscador de reservas de cualquier semana (?q=), lo de hoy en una línea, "Por reservar" plegado
+// prototipo aprobado): un buscador de reservas de cualquier semana (?q=), "Por reservar" plegado
 // y, en la tableta, la semana como lista por día; en el celular, un día a la vez.
 export default function PaginaAgenda({ searchParams }: PageProps<"/panel/agenda">) {
   return (
@@ -118,7 +118,7 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
 /** Lo de hoy, "Por reservar" y la semana en sus tres vistas (computadora, tableta y celular). */
 async function Semana(props: { lunes: string; dias: string[]; dia: string; hoy: string; conOrdenes: boolean; conMontos: boolean; desde: string }) {
   const { lunes, dias, dia, hoy, conOrdenes, conMontos, desde: desdeAqui } = props;
-  const [semana, porReservar, resumen] = await Promise.all([semanaDeAgenda(lunes, dias[6]), cotizacionesPorReservar(), resumenDeHoy(hoy)]);
+  const [semana, porReservar] = await Promise.all([semanaDeAgenda(lunes, dias[6]), cotizacionesPorReservar()]);
   const ahora = new Date();
   const fila = (c: FilaCotizacion) => ({
     href: conDesde(`/panel/agenda/nueva?cotizacion=${c.cotizacionId}`, desdeAqui),
@@ -129,23 +129,20 @@ async function Semana(props: { lunes: string; dias: string[]; dia: string; hoy: 
 
   return (
     <>
-      <div className="flex flex-col gap-3">
-        <ResumenHoy resumen={resumen} />
-        {/* Pedido 31: las cotizaciones aceptadas que esperan fecha. Lavado de cara (16/11): plegadas en una fila, así el
-            tablero, que es lo principal de la Agenda, no queda abajo de una lista larga; sin ninguna, no ocupa lugar */}
-        {porReservar.length > 0 && (
-          <details className="group">
-            <summary className="tt-tarjeta-panel flex min-h-12 cursor-pointer list-none items-center gap-3 px-4 py-3 hover:bg-superficie/50 [&::-webkit-details-marker]:hidden">
-              <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-aviso-fondo px-1.5 text-sm font-bold text-aviso">{porReservar.length}</span>
-              <span className="flex-1 text-sm font-semibold">{porReservar.length === 1 ? "Cotización por reservar" : "Cotizaciones por reservar"}</span>
-              <ChevronDownIcon className="size-4 shrink-0 text-tinta-suave group-open:rotate-180" aria-hidden />
-            </summary>
-            <div className="mt-2">
-              <ListaFilas etiqueta="Por reservar" filas={porReservar.map(fila)} />
-            </div>
-          </details>
-        )}
-      </div>
+      {/* Pedido 31: las cotizaciones aceptadas que esperan fecha. Lavado de cara (16/11): plegadas en una fila, así el
+          tablero, que es lo principal de la Agenda, no queda abajo de una lista larga; sin ninguna, no ocupa lugar */}
+      {porReservar.length > 0 && (
+        <details className="group">
+          <summary className="tt-tarjeta-panel flex min-h-12 cursor-pointer list-none items-center gap-3 px-4 py-3 hover:bg-superficie/50 [&::-webkit-details-marker]:hidden">
+            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-aviso-fondo px-1.5 text-sm font-bold text-aviso">{porReservar.length}</span>
+            <span className="flex-1 text-sm font-semibold">{porReservar.length === 1 ? "Cotización por reservar" : "Cotizaciones por reservar"}</span>
+            <ChevronDownIcon className="size-4 shrink-0 text-tinta-suave group-open:rotate-180" aria-hidden />
+          </summary>
+          <div className="mt-2">
+            <ListaFilas etiqueta="Por reservar" filas={porReservar.map(fila)} />
+          </div>
+        </details>
+      )}
 
       {semana.espacios.length === 0 ? (
         <p className="text-tinta-suave">No hay espacios activos. Agrégalos en Configuración, «Taller».</p>
@@ -158,24 +155,6 @@ async function Semana(props: { lunes: string; dias: string[]; dia: string; hoy: 
         </>
       )}
     </>
-  );
-}
-
-/**
- * Lo de hoy en una línea de texto (revisión del desarrollador, 16/11): antes eran tres números en una tarjeta que
- * llevaban a otras pantallas; ahora solo se lee. "Hoy: 1 vehículo por recibir, 2 en el taller y 1 listo para
- * entregar." Lo que está en cero no se nombra.
- */
-function ResumenHoy({ resumen }: { resumen: ResumenDeHoy }) {
-  const partes = [
-    resumen.porRecibir > 0 && `${cantidad(resumen.porRecibir, "vehículo", "vehículos")} por recibir`,
-    resumen.enElTaller > 0 && `${resumen.enElTaller} en el taller`,
-    resumen.paraEntregar > 0 && `${resumen.paraEntregar} ${palabra(resumen.paraEntregar, "listo", "listos")} para entregar`,
-  ].filter((p): p is string => !!p);
-  return (
-    <p className="text-sm text-tinta-media">
-      <span className="font-semibold text-tinta">Hoy:</span> {partes.length > 0 ? unirConY(partes) : "nada por recibir ni en el taller"}.
-    </p>
   );
 }
 

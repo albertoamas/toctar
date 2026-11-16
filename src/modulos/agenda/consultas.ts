@@ -562,27 +562,6 @@ export async function semanaDeAgenda(lunes: string, domingo: string): Promise<Se
   };
 }
 
-/** Lo de hoy arriba de la Agenda (lavado de cara, 16/11): cuántas faltan recibir, cuántas están en el taller y cuántas listas. */
-export type ResumenDeHoy = { porRecibir: number; enElTaller: number; paraEntregar: number };
-
-/**
- * Por recibir: las agendadas de hoy y las de días pasados que todavía no se recibieron (como el Inicio, `ingresosDeHoy`).
- * En el taller: recibidas, en proceso o listas. Para entregar: las listas.
- */
-export async function resumenDeHoy(hoy: string): Promise<ResumenDeHoy> {
-  const s = await sucursalPrincipal();
-  const [fila] = await db
-    .select({
-      porRecibir: sql<number>`count(*) filter (where ${trabajo.estado} = 'agendado' and ${trabajo.fechaInicio} <= ${hoy})`.mapWith(Number),
-      enElTaller: sql<number>`count(*) filter (where ${trabajo.estado} in ('recibido', 'en_proceso', 'listo'))`.mapWith(Number),
-      paraEntregar: sql<number>`count(*) filter (where ${trabajo.estado} = 'listo')`.mapWith(Number),
-    })
-    .from(trabajo)
-    // Solo las abiertas: las entregadas y canceladas se juntan con los años y no cuentan aquí
-    .where(and(eq(trabajo.sucursalId, s.id), inArray(trabajo.estado, ["agendado", "recibido", "en_proceso", "listo"])));
-  return fila ?? { porRecibir: 0, enElTaller: 0, paraEntregar: 0 };
-}
-
 export type ReservaEncontrada = Omit<ReservaTablero, "espacioId"> & { espacio: string };
 
 /** Cuántas reservas muestra la búsqueda de la Agenda: si hay más, se pide escribir más. */

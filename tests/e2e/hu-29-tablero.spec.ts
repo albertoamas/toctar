@@ -113,10 +113,6 @@ test("el buscador encuentra una reserva de otra semana por su placa y la abre; v
   await reserva(placa, 0, lunes, 4, 4);
   await ingresarComoDueno(page);
   await page.goto("/panel/agenda");
-  // Lo de hoy, en una línea de texto arriba del tablero, sin enlaces
-  const hoy = page.getByText(/^Hoy: /);
-  await expect(hoy).toBeVisible();
-  await expect(hoy.getByRole("link")).toHaveCount(0);
 
   await page.getByRole("searchbox", { name: "Buscar reservas por placa, cliente o teléfono" }).fill(placa.toLowerCase());
   const fila = page.getByRole("link", { name: new RegExp(`^${placa}`) });
