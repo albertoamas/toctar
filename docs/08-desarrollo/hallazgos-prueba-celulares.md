@@ -22,7 +22,7 @@ Uno por uno, en este orden. Cada punto pasa por los mismos pasos:
 |---|---|---|---|---|---|
 | 1 | 9 | Al reservar un mantenimiento, salir sin guardar y entrar a reservar otro, el formulario aparece lleno con los datos del anterior. Se arregla recargando | Los tres caminos usan la misma pantalla (Nueva reserva) y solo cambia la dirección: la app reutiliza el formulario que ya estaba en pantalla, con lo que se había llenado | El formulario empieza de cero cada vez que cambia lo que se reserva (mantenimiento, cotización o directa) | ⏳ |
 | 2 | 7 | Al editar un vehículo con cambios, Cancelar o la X muestran "Tienes cambios sin guardar" y el modal se cierra al mismo tiempo | Por confirmar. Lo esperado: tocar afuera, Escape o Atrás preguntan; Cancelar y la X cierran sin preguntar. Sospecha: en el celular, el mismo toque cuenta dos veces (Cancelar y "tocar afuera"), porque el modal se mueve al cerrarse el teclado | Un toque que ya está cerrando el modal no hace aparecer el aviso | ⏳ |
-| 3 | 2 | La duración estimada no se guarda al crear el servicio | Por confirmar. Sospecha: se escribió en "Duración propia" (de la variante, en el modal de precios), y la ficha muestra la del servicio | Con una sola variante, sin "Duración propia": solo la del servicio | ⏳ |
+| 3 | 2 | La duración estimada no se guarda al crear el servicio | Confirmado con el desarrollador: "Nuevo servicio" pedía solo el nombre (la duración nacía en 1 día) y abría "Precios de Única", con "Duración propia". Los días quedaban en la variante y la ficha mostraba los del servicio: dos duraciones que se pisan | "Nuevo servicio" pide nombre y duración; con una sola variante, los precios se llaman "Precios de {servicio}" y no hay "Duración propia"; con varias, sigue, con una ayuda clara; la ficha avisa si alguna tarda distinto; la migración 0049 pasa a su servicio la duración de las variantes únicas. Con esto, la regla de crear y sus nombres (`sistema-del-panel.md` §3b): "Nuevo …" para un registro principal y "Agregar …" para algo dentro de otra cosa | 🔵 |
 | 4 | 4 | El reclamo se queda en "Recibimos tu reclamo"; en el panel, Reclamos no lo muestra hasta recargar | El sitio muestra la confirmación a propósito. El panel no se entera de lo que cambia otra persona | "Enviar otro reclamo" en la confirmación; el panel se actualiza solo al volver a la app | ⏳ |
 
 ## Mejoras chicas (pulido, dentro de lo contratado)
@@ -42,6 +42,8 @@ Uno por uno, en este orden. Cada punto pasa por los mismos pasos:
 | 6 | Una ficha de cada vehículo, con su historial (órdenes, cotizaciones, fotos y mantenimientos). Hoy los vehículos viven dentro de la ficha del cliente | Pedido 51 en `03-cierre-comercial/registro-de-cambios.md` y una cotización corta para el dueño. No se programa sin su aprobación | 📝 |
 
 ## Después
+
+- **Separar clientes y vehículos** (pedido del desarrollador, 15/11): que los vehículos tengan su propia lista y su ficha, aparte de los clientes. Se analiza junto con el pedido 51 (la ficha del vehículo), al terminar estos hallazgos.
 
 - La prueba en celulares sigue con el punto 7 de la lista (cada perfil de encargado) cuando estos estén unidos.
 - Lo que no se pudo probar en Android de tamaño celular (solo hubo tablet) se prueba en la capacitación, con el celular del dueño.

@@ -65,6 +65,22 @@ Una pantalla nueva o cambiada toma una de estas formas; si ninguna sirve, se dis
 - En una pantalla con varias listas iguales (Taller), "Agregar" va con borde: varias acciones rojas competirían.
 - Lo que no se deshace pide confirmación, con el foco en "Cancelar".
 
+## 3b. Crear: modal o pantalla, y cómo se nombra (15/11)
+
+Decidido al revisar los hallazgos de la prueba en celulares: el mismo acto se decía "Agregar", "Nuevo", "Crear" y "Guardar" según la pantalla. Es el criterio de Material, Apple y Shopify Polaris: la consistencia es que el criterio sea siempre el mismo, no que todo sea igual.
+
+| Cuándo | Formato | Ejemplos |
+|---|---|---|
+| Hasta unos 4 campos cortos, sin pasos ni fotos | Modal (`ModalFormulario`) | Nuevo servicio (nombre y duración), Agregar pregunta, Agregar variante, Agregar vehículo, Registrar pago |
+| Con secciones, pasos, permisos, fotos o firma | Pantalla propia (`PaginaPanel tipo="formulario"`) | Nuevo cliente (con su vehículo), Nuevo usuario (con sus permisos), Nueva cotización, Nueva reserva |
+
+| Qué se crea | Botón | Título | Botón final |
+|---|---|---|---|
+| Un registro principal, desde su lista | **Nuevo** … | **Nuevo** … | **Crear** … (la reserva: **Reservar**) |
+| Algo dentro de otra cosa, desde una ficha o sección | **Agregar** … | **Agregar** … | **Agregar** … (un pago: **Registrar pago**) |
+
+En los dos casos, al crear se llega a la ficha de lo creado (o se ve en la sección), con un aviso corto.
+
 ## 4. Editar y guardar
 
 - Todo modal de edición usa `ModalFormulario`, con sus botones en `PieModal`.
