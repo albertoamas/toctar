@@ -237,7 +237,7 @@ function FormularioElemento(props: Props & { elemento?: ElementoLista; alTermina
         <Button type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : `${elemento ? "Guardar" : "Agregar"} ${singular}`}
         </Button>
-        <CancelarModal />
+        <CancelarModal enviando={desactivando} />
         {/* Se usa poco y no borra nada (D-6): al pie, aparte, sin rojo; lo desactivado se reactiva debajo de la lista */}
         {elemento && (
           <Button type="button" variant="ghost" className="ml-auto" disabled={desactivando} onClick={() => desactivar(elemento)} aria-label={`Desactivar ${elemento.nombre}`}>

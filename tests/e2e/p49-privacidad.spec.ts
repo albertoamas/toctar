@@ -94,6 +94,9 @@ test("una sección vacía da su error en el modal y no se guarda", async ({ page
   await modal.getByRole("button", { name: "Guardar sección" }).click();
   await expect(modal.getByText("Escribe quiénes son.")).toBeVisible();
   await expect(modal.getByLabel("Quiénes somos")).toBeFocused();
+  // Con el campo vaciado, Cancelar pregunta antes de descartarlo (hallazgo 7)
   await modal.getByRole("button", { name: "Cancelar" }).click();
+  await modal.getByRole("button", { name: "Descartar cambios" }).click();
+  await expect(modal).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Quiénes somos" })).not.toBeEmpty();
 });

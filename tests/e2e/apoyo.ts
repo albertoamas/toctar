@@ -274,7 +274,7 @@ export async function abrirParteNegocio(page: Page, parte: string): Promise<Loca
 
 /**
  * Cierra un modal con cambios sin guardar como un cierre sin querer (un toque afuera, sobre el fondo oscuro): el pie
- * pregunta y se descartan (C6, pulido 13.48). "Cancelar" ya cierra sin preguntar. No con Escape: un campo de hora se lo
+ * pregunta y se descartan (C6, pulido 13.48). "Cancelar" pregunta igual (hallazgo 7). No con Escape: un campo de hora se lo
  * queda.
  */
 export async function cancelarConCambios(page: Page, modal: Locator): Promise<void> {
