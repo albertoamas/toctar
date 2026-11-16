@@ -334,7 +334,7 @@ export const CAPITULOS = [
           id: "30-clientes",
           ruta: "/panel/clientes",
           marcas: [
-            { en: enlace("Agregar cliente"), texto: "Nombre, WhatsApp y su vehículo (placa y tamaño). El correo, el NIT y las notas son opcionales." },
+            { en: enlace("Nuevo cliente"), texto: "Nombre, WhatsApp y su vehículo (placa y tamaño). El correo, el NIT y las notas son opcionales." },
             { en: { css: "main input[type=search]" }, texto: "Buscar por nombre, teléfono o placa." },
             { en: { css: "main ul li a, main table tbody tr a" }, texto: "Cada cliente: toca para abrir su ficha." },
           ],

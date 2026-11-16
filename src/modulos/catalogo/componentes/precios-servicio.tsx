@@ -13,7 +13,7 @@ import { ESTILO_ENCABEZADO_TABLA } from "@/componentes/panel/tabla-lista";
 import { Button } from "@/componentes/ui/button";
 import type { Tamano } from "@/modulos/configuracion/consultas";
 import type { VarianteCatalogo } from "../consultas";
-import { mostrarMonto, textoDias } from "../reglas";
+import { algunaTardaDistinto, mostrarMonto, textoDias } from "../reglas";
 import { FormularioPrecios } from "./formulario-precios";
 import { PreciosVariante, SegunEvaluacion } from "./precios-variante";
 
@@ -30,6 +30,8 @@ import { PreciosVariante, SegunEvaluacion } from "./precios-variante";
 // en gris. Igual en la tabla y en la tarjeta.
 
 type Props = {
+  /** El nombre del servicio: con una sola variante, sus precios se nombran por él y no por "Única" (hallazgo 2). */
+  servicio: string;
   variantes: VarianteCatalogo[];
   tamanos: Tamano[];
   duracionServicio: number;
@@ -41,7 +43,7 @@ type Props = {
   nota?: React.ReactNode;
 };
 
-export function PreciosServicio({ variantes, tamanos, duracionServicio, abrirPrimera, acciones, nota }: Props) {
+export function PreciosServicio({ servicio, variantes, tamanos, duracionServicio, abrirPrimera, acciones, nota }: Props) {
   const hidratado = useHidratado();
   const [elegida, setElegida] = useState(variantes[0].id);
   // La variante del modal, si está abierto. Hasta que la persona toque algo, la primera si empieza abierta (al cargar: el
@@ -51,8 +53,10 @@ export function PreciosServicio({ variantes, tamanos, duracionServicio, abrirPri
   const varianteEnModal = variantes.find((v) => v.id === enModal);
   const variante = variantes.find((v) => v.id === elegida) ?? variantes[0];
   const varias = variantes.length > 1;
+  // Con una sola variante (la "Única" de un servicio nuevo), el dueño no ve variantes: los precios son del servicio
+  const nombreDe = (v: VarianteCatalogo) => (varias ? v.nombre : servicio);
   // La duración propia solo se dice si alguna variante ocupa distinto que el servicio
-  const conDuracionPropia = variantes.some((v) => v.duracionDias !== null && v.duracionDias !== duracionServicio);
+  const conDuracionPropia = algunaTardaDistinto(variantes, duracionServicio);
 
   // Las variantes sin ningún precio: lo dicen una vez
   const vacias = new Set(variantes.filter((v) => tamanos.every((t) => v.precios[t.id] === undefined)).map((v) => v.id));
@@ -147,8 +151,8 @@ export function PreciosServicio({ variantes, tamanos, duracionServicio, abrirPri
 
       {/* La tarjeta de una variante: la única, o en el celular la elegida */}
       <section aria-labelledby={`precios-${variante.id}-titulo`} className={cn("tt-tarjeta-panel flex flex-col gap-2 p-4", varias && "md:hidden")}>
-        <CabeceraSeccion id={`precios-${variante.id}`} titulo={variante.nombre} nivel={3}>
-          <Button type="button" variant="ghost" disabled={!hidratado} aria-label={`${cargar ? "Cargar" : "Editar"} precios de ${variante.nombre}`} onClick={() => abrir(variante.id)}>
+        <CabeceraSeccion id={`precios-${variante.id}`} titulo={varias ? variante.nombre : "Por tamaño de vehículo"} nivel={3}>
+          <Button type="button" variant="ghost" disabled={!hidratado} aria-label={`${cargar ? "Cargar" : "Editar"} precios de ${nombreDe(variante)}`} onClick={() => abrir(variante.id)}>
             {cargar ? <PlusIcon /> : <PencilIcon />}
             {cargar ? "Cargar precios" : "Editar"}
           </Button>
@@ -156,11 +160,18 @@ export function PreciosServicio({ variantes, tamanos, duracionServicio, abrirPri
         {cargar ? <p className="text-tinta-suave">Sin precios cargados.</p> : <PreciosVariante variante={variante} tamanos={tamanos} duracionServicio={duracionServicio} />}
       </section>
 
-      <ModalFormulario titulo={varianteEnModal ? `Precios de ${varianteEnModal.nombre}` : "Precios"} abierto={!!varianteEnModal} alCambiar={(a) => !a && setAbierta(null)}>
+      <ModalFormulario titulo={varianteEnModal ? `Precios de ${nombreDe(varianteEnModal)}` : "Precios"} abierto={!!varianteEnModal} alCambiar={(a) => !a && setAbierta(null)}>
         {varianteEnModal && (
           <div className="flex flex-col gap-4">
             {varias && <VariantesEnModal variantes={variantes} elegida={varianteEnModal} alElegir={abrir} />}
-            <FormularioPrecios key={varianteEnModal.id} variante={varianteEnModal} tamanos={tamanos} duracionServicio={duracionServicio} />
+            <FormularioPrecios
+              key={varianteEnModal.id}
+              variante={varianteEnModal}
+              tamanos={tamanos}
+              duracionServicio={duracionServicio}
+              titulo={nombreDe(varianteEnModal)}
+              conDuracion={varias}
+            />
           </div>
         )}
       </ModalFormulario>

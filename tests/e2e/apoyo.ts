@@ -226,11 +226,16 @@ export async function entregarSinFirma(page: Page, motivo = "Prueba: retira otra
   await expect(form.getByLabel("Motivo")).toHaveValue(motivo);
 }
 
-/** El modal "Nuevo servicio" de la lista del catálogo, abierto (el botón se habilita al cargar la página). */
+/**
+ * El modal "Nuevo servicio" de la lista del catálogo, abierto (el botón se habilita al cargar la página), con la
+ * duración ya escrita (2 días, hallazgo 2): las pruebas escriben el nombre y crean.
+ */
 export async function abrirNuevoServicio(page: Page): Promise<Locator> {
   await page.goto("/panel/catalogo", { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: "Agregar servicio" }).click();
-  return page.getByRole("dialog", { name: "Nuevo servicio" });
+  await page.getByRole("button", { name: "Nuevo servicio" }).click();
+  const modal = page.getByRole("dialog", { name: "Nuevo servicio" });
+  await modal.getByLabel("Duración estimada").fill("2");
+  return modal;
 }
 
 /**

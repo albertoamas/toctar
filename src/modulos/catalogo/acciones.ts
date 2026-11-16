@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, max, ne } from "drizzle-orm";
+import { and, count, eq, max, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db, type Transaccion } from "@/db";
@@ -30,16 +30,16 @@ async function slugLibre(tx: Transaccion, nombre: string): Promise<string> {
 }
 
 /**
- * Alta de un servicio (HU-19): con su nombre y la variante "Única" (D-2). Nace oculto en el sitio y sin resumen: se
+ * Alta de un servicio (HU-19): con su nombre, su duración y la variante "Única" (D-2). Nace oculto en el sitio y sin resumen: se
  * muestra cuando se completa su página en Sitio web. Así un servicio interno (el mantenimiento del cerámico) no
  * necesita textos para el sitio.
  */
 export async function crearServicio(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const autor = await exigirModulo("catalogo");
-  const valores = { nombre: String(datos.get("nombre") ?? "") };
+  const valores = { nombre: String(datos.get("nombre") ?? ""), duracionDias: String(datos.get("duracionDias") ?? "") };
   const entrada = esquemaCrearServicio.safeParse(valores);
   if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
-  const { nombre } = entrada.data;
+  const { nombre, duracionDias } = entrada.data;
 
   const existentes = await db.select({ id: servicio.id, nombre: servicio.nombre }).from(servicio);
   if (nombreRepetido(existentes, nombre)) return { errores: { nombre: NOMBRE_REPETIDO }, valores };
@@ -50,7 +50,7 @@ export async function crearServicio(_previo: EstadoFormulario, datos: FormData):
       const [{ ultimo }] = await tx.select({ ultimo: max(servicio.orden) }).from(servicio);
       const [nuevo] = await tx
         .insert(servicio)
-        .values({ nombre, resumen: "", slug: await slugLibre(tx, nombre), orden: (ultimo ?? 0) + 1, visibleSitio: false, updatedBy: Number(autor.id) })
+        .values({ nombre, duracionDias, resumen: "", slug: await slugLibre(tx, nombre), orden: (ultimo ?? 0) + 1, visibleSitio: false, updatedBy: Number(autor.id) })
         .returning({ id: servicio.id });
       await tx.insert(variante).values({ servicioId: nuevo.id, nombre: "Única", orden: 1 });
       return nuevo.id;
@@ -154,7 +154,7 @@ export async function guardarPreciosVariante(_previo: EstadoFormulario, datos: F
     else enviados.set(t.id, monto);
   }
   if (!entrada.success || Object.keys(errores).length > 0) return { errores, valores };
-  const { varianteId, duracionDias } = entrada.data;
+  const { varianteId } = entrada.data;
 
   const [elegida] = await db
     .select({ servicioId: variante.servicioId })
@@ -165,6 +165,13 @@ export async function guardarPreciosVariante(_previo: EstadoFormulario, datos: F
   const vigentes = new Map((await preciosVigentes([varianteId])).map((p) => [p.tamanoId, p.monto]));
   const cambios = preciosCambiados(vigentes, enviados);
   const [antes] = await db.select({ duracionDias: variante.duracionDias }).from(variante).where(eq(variante.id, varianteId));
+  // Con una sola variante activa no hay duración propia (hallazgo 2): lo decide la base, no el formulario (uno abierto
+  // desde antes de desactivar la otra todavía la mandaría)
+  const [{ activas }] = await db
+    .select({ activas: count() })
+    .from(variante)
+    .where(and(eq(variante.servicioId, elegida.servicioId), eq(variante.activo, true)));
+  const duracionDias = activas > 1 && "duracionDias" in valores ? entrada.data.duracionDias : activas > 1 ? antes.duracionDias : null;
   if (cambios.length === 0 && antes.duracionDias === duracionDias) return { ok: true, mensaje: "No había cambios." };
 
   await db.transaction(async (tx) => {
@@ -252,10 +259,20 @@ export async function cambiarEstadoVariante(datos: { servicioId: number; id: num
     return { mensaje: "Debe quedar al menos una variante activa. Si el servicio no tiene opciones, deja una llamada Única." };
   }
   const orden = activo ? Math.max(0, ...variantes.filter((v) => v.activo).map((v) => v.orden)) + 1 : elegida.orden;
-  await db
-    .update(variante)
-    .set({ activo, orden })
-    .where(and(eq(variante.id, id), eq(variante.servicioId, servicioId)));
+  // Si queda una sola activa, su duración propia pasa a ser la del servicio (hallazgo 2): con una sola variante no se
+  // muestra ni se edita, y quedaría escondida decidiendo la entrega de la reserva
+  const quedaSola = !activo ? variantes.filter((v) => v.activo && v.id !== id) : [];
+  await db.transaction(async (tx) => {
+    await tx
+      .update(variante)
+      .set({ activo, orden })
+      .where(and(eq(variante.id, id), eq(variante.servicioId, servicioId)));
+    const [sola] = quedaSola;
+    if (quedaSola.length === 1 && sola.duracionDias !== null) {
+      await tx.update(servicio).set({ duracionDias: sola.duracionDias, updatedAt: new Date() }).where(eq(servicio.id, servicioId));
+      await tx.update(variante).set({ duracionDias: null }).where(eq(variante.id, sola.id));
+    }
+  });
   servicioCambiado(servicioId);
   return { ok: true, mensaje: activo ? `${elegida.nombre} reactivada.` : `${elegida.nombre} desactivada.` };
 }

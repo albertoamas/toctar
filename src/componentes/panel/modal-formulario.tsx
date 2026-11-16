@@ -11,7 +11,7 @@ import type { EstadoFormulario } from "@/lib/formularios";
 
 // Componente de cliente: se usa dentro de otros componentes de cliente (recibe funciones como props).
 // Un formulario corto en un modal (skill pantallas-panel): editar una sección de una ficha (SeccionConEditar) o crear
-// algo de pocos campos ("Agregar servicio"). En el celular es una hoja que sube desde abajo, con los botones fijos al pie;
+// algo de pocos campos ("Nuevo servicio"). En el celular es una hoja que sube desde abajo, con los botones fijos al pie;
 // desde 640 px, el modal centrado. Revisión de los modales del 13/11 (y la de "Registrar pago", el mismo día):
 // - la hoja sube y baja deslizándose (antes aparecía agrandándose desde el centro, como el modal de la computadora);
 // - el título deja lugar a la X (con un nombre largo, "¿Desactivar a …?", la X tapaba su final);

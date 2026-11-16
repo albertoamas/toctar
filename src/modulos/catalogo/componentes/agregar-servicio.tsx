@@ -11,9 +11,10 @@ import { Input } from "@/componentes/ui/input";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { crearServicio } from "../acciones";
 
-// HU-19: alta de un servicio con su nombre, en un modal desde la lista del catálogo (pulido 7.2: un solo campo no
-// necesita una pantalla). Al crearlo se abre su ficha, con sus precios para cargar; su página en el sitio se completa en
-// Sitio web.
+// HU-19: alta de un servicio con su nombre y su duración, en un modal desde la lista del catálogo (pulido 7.2: dos
+// campos no necesitan una pantalla). Al crearlo se abre su ficha, con sus precios para cargar; su página en el sitio se
+// completa en Sitio web. La duración va aquí desde el hallazgo 2 de la prueba en celulares (15/11): sin ella nacía con 1
+// día, y el dueño la escribía en los precios, como la de la variante.
 export function AgregarServicio() {
   const [abierto, setAbierto] = useState(false);
   const hidratado = useHidratado();
@@ -21,7 +22,7 @@ export function AgregarServicio() {
     <>
       <Button type="button" disabled={!hidratado} onClick={() => setAbierto(true)}>
         <PlusIcon />
-        Agregar servicio
+        Nuevo servicio
       </Button>
       <ModalFormulario titulo="Nuevo servicio" abierto={abierto} alCambiar={setAbierto}>
         <FormularioNuevoServicio />
@@ -46,6 +47,21 @@ function FormularioNuevoServicio() {
           aria-invalid={!!e.nombre}
           aria-describedby={e.nombre ? "nuevo-nombre-error" : "nuevo-nombre-ayuda"}
         />
+      </Campo>
+      <Campo id="nuevo-duracion" etiqueta="Duración estimada" error={e.duracionDias} ayuda="Los días que suele ocupar un espacio del taller.">
+        <div className="flex items-center gap-2">
+          <Input
+            id="nuevo-duracion"
+            name="duracionDias"
+            inputMode="numeric"
+            autoComplete="off"
+            defaultValue={estado.valores?.duracionDias}
+            aria-invalid={!!e.duracionDias}
+            aria-describedby={e.duracionDias ? "nuevo-duracion-error" : "nuevo-duracion-ayuda"}
+            className="max-w-24"
+          />
+          <span className="text-tinta-suave">días</span>
+        </div>
       </Campo>
       <PieModal>
         <Button type="submit" disabled={enviando}>

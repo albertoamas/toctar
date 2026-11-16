@@ -15,7 +15,7 @@ import { FormularioDatosCatalogo } from "@/modulos/catalogo/componentes/formular
 import { PreciosServicio } from "@/modulos/catalogo/componentes/precios-servicio";
 import { EditarVariantes } from "@/modulos/catalogo/componentes/variantes-servicio";
 import { obtenerServicioCatalogo } from "@/modulos/catalogo/consultas";
-import { textoDias } from "@/modulos/catalogo/reglas";
+import { algunaTardaDistinto, textoDias } from "@/modulos/catalogo/reglas";
 import { FilaDato } from "@/componentes/panel/datos-en-bloques";
 import { Insignia } from "@/componentes/panel/insignia";
 import { aqui, conDesde, volverDesde } from "@/lib/volver";
@@ -84,6 +84,10 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
             <dl className="px-4 py-3">
               <FilaDato etiqueta="Duración">
                 <span className="font-semibold">{textoDias(s.duracionDias)}</span>
+                {/* Una variante con su propia duración (hallazgo 2): se dice, así la de arriba no parece la de todas */}
+                {algunaTardaDistinto(s.variantes, s.duracionDias) && (
+                  <span className="text-sm text-tinta-suave">Algunas opciones tardan distinto: ver Precios.</span>
+                )}
               </FilaDato>
             </dl>
             <div className="flex flex-col gap-2 px-4 py-3">
@@ -122,6 +126,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
       {s.variantes.length > 0 && s.tamanos.length > 0 ? (
         // Los precios (pulido 13.57): con su título, "Editar variantes" y, con varias, "Editar precios"
         <PreciosServicio
+          servicio={s.nombre}
           variantes={s.variantes}
           tamanos={s.tamanos}
           duracionServicio={s.duracionDias}

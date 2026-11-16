@@ -67,7 +67,7 @@ test("preguntas frecuentes: agregar, editar, ordenar, ocultar y eliminar", async
 
   // Agregar, en su modal (pulido 13.24): vacía da error
   await page.getByRole("button", { name: "Agregar pregunta" }).click();
-  const nueva = page.getByRole("dialog", { name: "Nueva pregunta" });
+  const nueva = page.getByRole("dialog", { name: "Agregar pregunta" });
   await nueva.getByRole("button", { name: "Agregar pregunta" }).click();
   await expect(nueva.getByText("Escribe la pregunta.")).toBeVisible();
   await nueva.getByLabel("Pregunta", { exact: true }).fill("¿Atienden los domingos?");
