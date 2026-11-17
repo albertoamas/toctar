@@ -105,6 +105,19 @@ En los dos casos, al crear se llega a la ficha de lo creado (o se ve en la secci
 | Cambiar el orden | `OrdenarLista`, en un modal |
 | Lista vacía | `EstadoVacio` |
 
+## 5b. Navegar: respuesta al instante (17/11)
+
+El servidor está lejos (Alemania): cada pantalla, filtro o pestaña tarda al menos medio segundo en llegar. Para que el
+toque no parezca perdido, `NavegacionPendiente` (en el diseño del panel) hace dos cosas en el mismo instante del toque en
+cualquier enlace del panel:
+
+- **Una barra de progreso fina arriba** (azul de "información"), desde los 120 ms y hasta que llega la pantalla.
+- **Lo tocado se marca enseguida**: el filtro (`Filtros`), la pestaña (`Pestanas`) y el módulo del menú leen
+  `useDestinoPendiente()` y se ven elegidos antes de la respuesta. Un enlace nuevo que elige entre opciones hace lo mismo.
+
+No hace falta nada en cada pantalla: cualquier `Link` del panel ya lo tiene. Lo prueba `tests/e2e/respuesta-instantanea.spec.ts`
+con el servidor demorado a propósito.
+
 ## 6. Datos en lectura
 
 La etiqueta a la izquierda y el valor a la derecha, con `ListaDatos`, para que los valores queden en columna. Un dato vacío dice "Sin cargar" o no se muestra.

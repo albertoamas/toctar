@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { cn } from "cn";
+import { direccion, useDestinoPendiente } from "./navegacion-pendiente";
 
 // Pestañas de un módulo del panel. Cada pestaña tiene su ruta, para poder enlazarla. La activa, subrayada en tinta: el
 // rojo es del botón principal y del menú (pedido 26). Barra de las listas (10/11): la cuenta, en gris después del nombre
@@ -30,11 +31,14 @@ export function Pestanas(props: {
     p.set("q", q);
     return `${camino}?${p.toString()}`;
   };
+  // La pestaña tocada se marca al instante, sin esperar al servidor (NavegacionPendiente, 17/11)
+  const destino = useDestinoPendiente();
+  const tocada = destino ? pestanas.find((p) => direccion(conBusqueda(p.href)) === destino) : undefined;
   return (
     <nav aria-label={etiqueta} className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
       <ul className="flex min-w-max gap-6 border-b border-border">
         {pestanas.map((p) => {
-          const activa = elegida !== undefined ? elegida === p.href : ruta === p.href;
+          const activa = tocada ? p === tocada : elegida !== undefined ? elegida === p.href : ruta === p.href;
           return (
             <li key={p.href}>
               <Link

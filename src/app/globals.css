@@ -1180,3 +1180,42 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
 }
+
+/* La barra de progreso del panel al navegar (NavegacionPendiente, 17/11): fina, arriba de todo, en el azul de
+   "información" (el rojo es del botón principal y del módulo activo). Aparece a los 120 ms, así una respuesta inmediata
+   no la hace parpadear, y avanza rápido al principio y cada vez más lento, sin llegar al final hasta que la pantalla
+   llega (entonces se quita). Con "reducir movimiento", quieta. */
+@layer components {
+  .tt-progreso-navegacion {
+    position: fixed;
+    inset: 0 auto auto 0;
+    z-index: 60;
+    height: 3px;
+    width: 0;
+    background: var(--info);
+    opacity: 0;
+    pointer-events: none;
+    animation:
+      tt-progreso-aparece 0s linear 120ms forwards,
+      tt-progreso-avanza 8s cubic-bezier(0.1, 0.7, 0.2, 1) 120ms forwards;
+  }
+  @keyframes tt-progreso-aparece {
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes tt-progreso-avanza {
+    from {
+      width: 8%;
+    }
+    to {
+      width: 92%;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tt-progreso-navegacion {
+      width: 100%;
+      animation: tt-progreso-aparece 0s linear 120ms forwards;
+    }
+  }
+}

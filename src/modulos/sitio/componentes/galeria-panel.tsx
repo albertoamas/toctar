@@ -22,7 +22,7 @@ import { MenuMas, type AccionMas } from "@/componentes/panel/menu-mas";
 import { CancelarModal, ModalFormulario, PieModal, useCambioFueraDelFormulario, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { ElegirFoto } from "@/componentes/panel/elegir-foto";
 import { BarraLista } from "@/componentes/panel/barra-lista";
-import { CLASE_PILDORA, CLASE_PILDORA_ACTIVA } from "@/componentes/panel/filtros";
+import { CLASE_PILDORA, CLASE_PILDORA_ACTIVA } from "@/componentes/panel/pildora";
 import { cn } from "cn";
 
 // HU-09: galería de antes y después (RF-12). Se sube un par o una foto sola, asociada a un servicio,

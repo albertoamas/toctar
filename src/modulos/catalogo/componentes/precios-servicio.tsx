@@ -6,7 +6,7 @@ import { PencilIcon, PlusIcon } from "lucide-react";
 import { useHidratado } from "@/componentes/hidratado";
 import { MensajeError } from "@/componentes/panel/campo";
 import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
-import { CLASE_PILDORA, CLASE_PILDORA_ACTIVA } from "@/componentes/panel/filtros";
+import { CLASE_PILDORA, CLASE_PILDORA_ACTIVA } from "@/componentes/panel/pildora";
 import { Insignia } from "@/componentes/panel/insignia";
 import { ModalFormulario, useHayCambiosModal, useRenovarBaseModal } from "@/componentes/panel/modal-formulario";
 import { ESTILO_ENCABEZADO_TABLA } from "@/componentes/panel/tabla-lista";

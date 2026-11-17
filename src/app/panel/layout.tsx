@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Suspense } from "react";
+import { NavegacionPendiente } from "@/componentes/panel/navegacion-pendiente";
 import { MenuDesplegable } from "@/componentes/menu-desplegable";
 import { ActualizarAlVolver } from "@/componentes/panel/actualizar-al-volver";
 import { AvisoConexion } from "@/componentes/panel/aviso-conexion";
@@ -38,51 +39,54 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
   );
 
   return (
-    <div className="flex flex-1">
-      {/* La columna pinta el fondo negro de arriba abajo, aunque la página sea más larga que la pantalla, y reserva el ancho;
-          el menú queda fijo, sujeto al borde de arriba y al de abajo de la ventana. No con un alto en unidades de pantalla
-          (h-dvh): en la app instalada de Android, después de actualizar (deslizar o Ctrl + R), el navegador calcula ese alto
-          más grande que la ventana y lo de abajo (quién entró, el manual, "Cerrar sesión") quedaba fuera, hasta cerrar la app */}
-      <div data-theme="oscuro" className="hidden w-62 shrink-0 bg-fondo lg:block">
-        <aside className="fixed inset-y-0 left-0 z-30 flex w-62 flex-col bg-fondo p-4 text-tinta [--radius:8px]">
-          <div className="mt-1 mb-6">
-            <Marca />
-          </div>
-          {/* Si el menú no entra (pantalla baja), se desplaza solo él: la marca y "Cerrar sesión" quedan a la vista.
-              El margen negativo con su relleno deja ver el borde de foco de los enlaces */}
-          <MenuDesplazable className="-mx-1 px-1">{menu}</MenuDesplazable>
-          <div className="mt-4 border-t border-border pt-4">{sesion}</div>
-        </aside>
-      </div>
-
-      {/* min-w-0: sin esto, lo ancho del contenido (como la tira de pestañas) estira la columna y la pantalla
-          se sale por la derecha en el celular. */}
-      <div className="flex min-w-0 flex-1 flex-col bg-fondo-panel">
-        <RegistrarServiceWorker />
-        {/* Los avisos ("Cambios guardados.") son solo del panel: en el diseño raíz, su código (sonner) se descargaba
-            también en cada página del sitio, que no los usa (pulido 2, rendimiento). */}
-        <Toaster />
-        {/* Pedido 39: "Hay una versión nueva del sistema", con "Actualizar" */}
-        <AvisoVersionNueva />
-        {/* Hallazgo 4: al volver a la app después de un rato, la pantalla se pone al día */}
-        <ActualizarAlVolver />
-        <header data-theme="oscuro" className="sticky top-0 z-40 flex h-14 items-center gap-2 bg-fondo px-4 text-tinta lg:hidden">
-          <MenuDesplegable lado="left" cabecera={<Marca />} className="[--radius:8px]">
-            {/* Igual que la barra lateral: en un celular bajo se desplaza el menú y "Cerrar sesión" queda a la vista. Con el
-                mismo margen que la cabecera, los títulos de grupo quedan alineados con la marca */}
-            <MenuDesplazable className="px-4">{menu}</MenuDesplazable>
-            <div className="border-t border-border p-4">{sesion}</div>
-          </MenuDesplegable>
-          <Marca />
-        </header>
-
-        <div className="sticky top-14 z-40 lg:top-0">
-          <AvisoConexion />
+    // NavegacionPendiente: la barra de progreso y la marca al instante del filtro, la pestaña o el módulo tocado
+    <NavegacionPendiente>
+      <div className="flex flex-1">
+        {/* La columna pinta el fondo negro de arriba abajo, aunque la página sea más larga que la pantalla, y reserva el ancho;
+            el menú queda fijo, sujeto al borde de arriba y al de abajo de la ventana. No con un alto en unidades de pantalla
+            (h-dvh): en la app instalada de Android, después de actualizar (deslizar o Ctrl + R), el navegador calcula ese alto
+            más grande que la ventana y lo de abajo (quién entró, el manual, "Cerrar sesión") quedaba fuera, hasta cerrar la app */}
+        <div data-theme="oscuro" className="hidden w-62 shrink-0 bg-fondo lg:block">
+          <aside className="fixed inset-y-0 left-0 z-30 flex w-62 flex-col bg-fondo p-4 text-tinta [--radius:8px]">
+            <div className="mt-1 mb-6">
+              <Marca />
+            </div>
+            {/* Si el menú no entra (pantalla baja), se desplaza solo él: la marca y "Cerrar sesión" quedan a la vista.
+                El margen negativo con su relleno deja ver el borde de foco de los enlaces */}
+            <MenuDesplazable className="-mx-1 px-1">{menu}</MenuDesplazable>
+            <div className="mt-4 border-t border-border pt-4">{sesion}</div>
+          </aside>
         </div>
-        {/* @container: las tablas del panel (TablaLista) se acomodan al ancho del área de trabajo, no al de la pantalla */}
-        <main className="@container flex-1 px-4 py-5 md:px-8 md:py-7">{children}</main>
+
+        {/* min-w-0: sin esto, lo ancho del contenido (como la tira de pestañas) estira la columna y la pantalla
+            se sale por la derecha en el celular. */}
+        <div className="flex min-w-0 flex-1 flex-col bg-fondo-panel">
+          <RegistrarServiceWorker />
+          {/* Los avisos ("Cambios guardados.") son solo del panel: en el diseño raíz, su código (sonner) se descargaba
+              también en cada página del sitio, que no los usa (pulido 2, rendimiento). */}
+          <Toaster />
+          {/* Pedido 39: "Hay una versión nueva del sistema", con "Actualizar" */}
+          <AvisoVersionNueva />
+          {/* Hallazgo 4: al volver a la app después de un rato, la pantalla se pone al día */}
+          <ActualizarAlVolver />
+          <header data-theme="oscuro" className="sticky top-0 z-40 flex h-14 items-center gap-2 bg-fondo px-4 text-tinta lg:hidden">
+            <MenuDesplegable lado="left" cabecera={<Marca />} className="[--radius:8px]">
+              {/* Igual que la barra lateral: en un celular bajo se desplaza el menú y "Cerrar sesión" queda a la vista. Con el
+                  mismo margen que la cabecera, los títulos de grupo quedan alineados con la marca */}
+              <MenuDesplazable className="px-4">{menu}</MenuDesplazable>
+              <div className="border-t border-border p-4">{sesion}</div>
+            </MenuDesplegable>
+            <Marca />
+          </header>
+
+          <div className="sticky top-14 z-40 lg:top-0">
+            <AvisoConexion />
+          </div>
+          {/* @container: las tablas del panel (TablaLista) se acomodan al ancho del área de trabajo, no al de la pantalla */}
+          <main className="@container flex-1 px-4 py-5 md:px-8 md:py-7">{children}</main>
+        </div>
       </div>
-    </div>
+    </NavegacionPendiente>
   );
 }
 
