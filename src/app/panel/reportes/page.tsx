@@ -159,7 +159,7 @@ async function Resumen({ ctx }: { ctx: Contexto }) {
       </section>
       {/* Las secciones como en todo el panel: el título afuera, arriba de su tarjeta (Seccion) */}
       <div className="grid gap-x-4 gap-y-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.75fr)]">
-        <Seccion id="neto" titulo="Lo neto">
+        <Seccion id="neto" titulo="Ganancia y gastos">
           <div className="flex h-full flex-col justify-center gap-3">
             {entro === 0 && salio === 0 ? (
               <p className="py-10 text-center text-sm text-tinta-suave">Sin ingresos ni gastos en estas fechas.</p>
@@ -229,12 +229,12 @@ async function Ingresos({ ctx }: { ctx: Contexto }) {
       <section aria-label="Ingresos del período" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <TarjetaNumero icono={BanknoteIcon} titulo="Ingresos" valor={bsRedondo(este.total)} nota={<Cambio cambio={cambioPorcentual(este.total, antes.total)} contra={vs} />} />
         <TarjetaNumero icono={CarFrontIcon} titulo="Vehículos entregados" valor={entregados.vehiculos} nota={<Cambio cambio={cambioPorcentual(entregados.vehiculos, entregadosAntes.vehiculos)} contra={vs} />} />
-        <TarjetaNumero icono={CalculatorIcon} titulo="Promedio por vehículo" valor={promedio === null ? "—" : bsRedondo(promedio)} nota={promedio === null ? "Sin entregas en estas fechas" : <Cambio cambio={cambioPorcentual(promedio, promedioAntes)} contra={vs} />} />
+        <TarjetaNumero icono={CalculatorIcon} titulo="Ingreso por vehículo" valor={promedio === null ? "—" : bsRedondo(promedio)} nota={promedio === null ? "Sin entregas en estas fechas" : <Cambio cambio={cambioPorcentual(promedio, promedioAntes)} contra={vs} />} />
         <TarjetaNumero href="/panel/pagos" icono={HandCoinsIcon} titulo="Por cobrar hoy" valor={bsRedondo(porCobrar)} aviso={saldos.length > 0} nota={saldos.length > 0 ? `En ${cantidad(saldos.length, "orden", "órdenes")}` : "Nadie debe"} />
       </section>
       <div className="grid gap-x-4 gap-y-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <ComoVan de="ingresos" periodo={periodo} comparar={comparar} este={este.porDia} antes={linea.porDia} />
-        <Seccion id="formas" titulo="Por forma de pago">
+        <Seccion id="formas" titulo="Ingresos por forma de pago">
           {este.porMetodo.length === 0 ? (
             <p className="py-10 text-center text-sm text-tinta-suave">Sin pagos en estas fechas.</p>
           ) : (
@@ -269,10 +269,10 @@ function nombresDelAcumulado(periodo: Periodo, comparar: { inicio: string }): [s
   return ["Estas fechas", "Período anterior"];
 }
 
-/** Lo que cambia entre "Cómo van los ingresos" y "Cómo van los gastos": el color de la línea y las palabras. */
+/** Lo que cambia entre "Ingresos acumulados" y "Gastos acumulados": el color de la línea y las palabras. */
 const ACUMULADO = {
-  ingresos: { id: "acumulado", titulo: "Cómo van los ingresos", color: "var(--grafico-ingreso)", hecho: "Entraron", descripcion: "Ingresos acumulados día a día" },
-  gastos: { id: "acumulado-gastos", titulo: "Cómo van los gastos", color: "var(--grafico-gasto)", hecho: "Se gastaron", descripcion: "Gastos acumulados día a día" },
+  ingresos: { id: "acumulado", titulo: "Ingresos acumulados", color: "var(--grafico-ingreso)", hecho: "Entraron", descripcion: "Ingresos acumulados día a día" },
+  gastos: { id: "acumulado-gastos", titulo: "Gastos acumulados", color: "var(--grafico-gasto)", hecho: "Se gastaron", descripcion: "Gastos acumulados día a día" },
 } as const;
 
 type PorDia = readonly { fecha: string; total: number }[];
@@ -340,13 +340,13 @@ async function Gastos({ ctx }: { ctx: Contexto }) {
       <section aria-label="Gastos del período" className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <TarjetaNumero icono={ReceiptTextIcon} titulo="Gastos" valor={bsRedondo(este.total)} nota={<Cambio cambio={cambioPorcentual(este.total, antes.total)} contra={vs} subirEsMalo />} />
         <TarjetaNumero icono={CarFrontIcon} titulo="Gasto por vehículo" valor={porVehiculo === null ? "—" : bsRedondo(porVehiculo)} nota={porVehiculo === null ? "Sin entregas en estas fechas" : <Cambio cambio={cambioPorcentual(porVehiculo, porVehiculoAntes)} contra={vs} subirEsMalo />} />
-        <TarjetaNumero className="col-span-2 lg:col-span-1" icono={ChartPieIcon} titulo="Lo que más pesa" valor={mayor ? bsRedondo(mayor.total) : "—"} nota={mayor ? `${mayor.nombre}, ${parte(mayor.total)} % del total` : "Sin gastos en estas fechas"} />
+        <TarjetaNumero className="col-span-2 lg:col-span-1" icono={ChartPieIcon} titulo="Mayor gasto" valor={mayor ? bsRedondo(mayor.total) : "—"} nota={mayor ? `${mayor.nombre}, ${parte(mayor.total)} % del total` : "Sin gastos en estas fechas"} />
       </section>
       <div className="grid gap-x-4 gap-y-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <ComoVan de="gastos" periodo={periodo} comparar={comparar} este={este.porDia} antes={linea.porDia} />
         <Seccion
           id="categorias"
-          titulo="Por categoría"
+          titulo="Gastos por categoría"
           accion={
             lista && (
               <Link href={lista} className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold hover:underline">
@@ -421,7 +421,7 @@ async function TallerYClientes({ ctx }: { ctx: Contexto }) {
             <BarrasHorizontales filas={taller.servicios.map((s) => ({ nombre: s.nombre, valor: s.veces, clase: "bg-grafico-1", texto: <span className="font-semibold whitespace-nowrap">{cantidad(s.veces, "vez", "veces")}</span> }))} />
           )}
         </Seccion>
-        <Seccion id="cotizaciones" titulo="Cotizaciones">
+        <Seccion id="cotizaciones" titulo="Resultado de las cotizaciones">
           {enviadas === 0 ? (
             <p className="py-10 text-center text-sm text-tinta-suave">Sin cotizaciones enviadas en estas fechas.</p>
           ) : (

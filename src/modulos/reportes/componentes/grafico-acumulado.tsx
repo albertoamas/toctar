@@ -5,7 +5,7 @@ import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartToo
 import { bsRedondo, escalaBonita, textoEje } from "../reglas";
 import { ANIMACION, FilaDetalle } from "./grafico-comun";
 
-// "Cómo van los ingresos" y "Cómo van los gastos" (17/11): lo que se va juntando día a día en las fechas elegidas (línea llena) contra
+// "Ingresos acumulados" y "Gastos acumulados" (17/11): lo que se va juntando día a día en las fechas elegidas (línea llena) contra
 // el período con que se compara (punteada), con shadcn/ui Charts como Resumen. El eje cuenta los días del período
 // ("Día 1", "Día 8"…) y el detalle dice la fecha de cada uno. Una sola animación corta al cargar, sin ella con "reducir
 // movimiento" (Recharts, "auto").

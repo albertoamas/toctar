@@ -166,6 +166,10 @@ Todas en `modulos/reportes/acciones.ts`, con `exigirModulo("reportes")` y Zod (e
   línea de la ganancia (ya está en la tarjeta y la torta); Cotizaciones sin la fila "Enviadas" (Aceptadas y Reservadas,
   medidas contra las enviadas, con su %); los nombres de las listas, leyendas y detalles en grosor 500 (en 400,
   Montserrat se veía floja junto al número en 600).
+- **Títulos (17/11):** dicen qué se mide y, tras una coma, cómo se corta; sin frases de conversación y con el mismo
+  nombre en Ingresos y en Gastos: "Ganancia y gastos" (antes "Lo neto"), "Ingresos acumulados" y "Gastos acumulados"
+  (antes "Cómo van…"), "Ingresos por forma de pago", "Gastos por categoría", "Ingreso por vehículo" (antes "Promedio por
+  vehículo", como "Gasto por vehículo"), "Mayor gasto" (antes "Lo que más pesa") y "Resultado de las cotizaciones".
 - **Datos para probar:** `npm run datos:reportes` carga seis meses de trabajos, pagos, gastos, cotizaciones y
   mantenimientos sobre la base local (se rehace al volver a correrlo; `-- --quitar` lo saca).
 

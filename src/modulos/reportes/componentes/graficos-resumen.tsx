@@ -44,11 +44,11 @@ export function GraficoIngresosGastos({ tramos: meses }: { tramos: TramoDelGrafi
 }
 
 const configTorta = {
-  quedo: { label: "Quedó", color: "var(--grafico-ingreso)" },
+  quedo: { label: "Ganancia", color: "var(--grafico-ingreso)" },
   gastos: { label: "Gastos", color: "var(--grafico-gasto)" },
 } satisfies ChartConfig;
 
-/** Lo neto del período: de lo que entró, qué parte quedó y qué parte se fue en gastos, con el % que quedó al centro. */
+/** "Ganancia y gastos" del período: de lo que entró, qué parte quedó y qué parte se fue en gastos, con el % que quedó al centro. */
 export function TortaNeto({ entro, salio }: { entro: number; salio: number }) {
   const quedo = Math.max(0, entro - salio);
   const parte = entro > 0 ? Math.round((quedo / entro) * 100) : 0;
@@ -82,7 +82,7 @@ export function TortaNeto({ entro, salio }: { entro: number; salio: number }) {
       </ChartContainer>
       <dl className="flex flex-col gap-2 text-sm">
         {[
-          { nombre: "Quedó", monto: quedo, parte, color: "var(--grafico-ingreso)" },
+          { nombre: "Ganancia", monto: quedo, parte, color: "var(--grafico-ingreso)" },
           { nombre: "Gastos", monto: salio, parte: entro > 0 ? 100 - parte : 0, color: "var(--grafico-gasto)" },
         ].map((f) => (
           <div key={f.nombre} className="flex justify-between gap-3">

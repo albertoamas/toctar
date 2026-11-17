@@ -58,25 +58,25 @@ test("el mes pasado: lo que entró, salió y quedó salen de los pagos y gastos 
   await expect(tarjetas).toContainText(`Ingresos${miles(Number(entro))}`);
   await expect(tarjetas).toContainText(`Gastos${miles(Number(salio))}`);
   await expect(tarjetas).toContainText(`Ganancia${miles(ganancia)}`);
-  // Lo neto: la torta y sus dos montos
-  await expect(page.getByRole("region", { name: "Lo neto" })).toContainText(`De los ${miles(Number(entro))} que entraron`);
+  // Ganancia y gastos: la torta y sus dos montos
+  await expect(page.getByRole("region", { name: "Ganancia y gastos" })).toContainText(`De los ${miles(Number(entro))} que entraron`);
   await expect(page.getByRole("region", { name: "Ingresos y gastos, por día" }).locator(".recharts-surface").first()).toBeVisible();
 
   // Ingresos: el acumulado y la forma de pago (efectivo, del pago de 500)
   await page.getByRole("navigation", { name: "Partes de los reportes" }).getByRole("link", { name: "Ingresos" }).click();
   await expect(page).toHaveURL(/vista=ingresos&periodo=mes-pasado$/);
-  await expect(page.getByRole("region", { name: "Por forma de pago" })).toContainText("Efectivo");
+  await expect(page.getByRole("region", { name: "Ingresos por forma de pago" })).toContainText("Efectivo");
   await expect(page.getByRole("region", { name: "Ingresos del período" })).toContainText(`Ingresos${miles(Number(entro))}`);
-  await expect(page.getByRole("region", { name: "Cómo van los ingresos" })).toContainText(`Entraron ${miles(Number(entro))}`);
-  await expect(page.getByRole("region", { name: "Cómo van los ingresos" }).locator(".recharts-surface").first()).toBeVisible();
+  await expect(page.getByRole("region", { name: "Ingresos acumulados" })).toContainText(`Entraron ${miles(Number(entro))}`);
+  await expect(page.getByRole("region", { name: "Ingresos acumulados" }).locator(".recharts-surface").first()).toBeVisible();
   // "Hoy" ya no es una opción de fechas
   await expect(page.getByRole("navigation", { name: "Fechas" }).getByRole("link", { name: "Hoy" })).toHaveCount(0);
 
   // Gastos: el reporte (lo que salió, cómo van y por categoría, sin el anulado) y el enlace a la lista de gastos
   await page.getByRole("navigation", { name: "Partes de los reportes" }).getByRole("link", { name: "Gastos" }).click();
   await expect(page.getByRole("region", { name: "Gastos del período" })).toContainText(`Gastos${miles(Number(salio))}`);
-  await expect(page.getByRole("region", { name: "Cómo van los gastos" })).toContainText(`Se gastaron ${miles(Number(salio))}`);
-  const categorias = page.getByRole("region", { name: "Por categoría" });
+  await expect(page.getByRole("region", { name: "Gastos acumulados" })).toContainText(`Se gastaron ${miles(Number(salio))}`);
+  const categorias = page.getByRole("region", { name: "Gastos por categoría" });
   await expect(categorias).toContainText("Otros");
   await categorias.getByRole("link", { name: "Ver la lista de gastos" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Gastos" })).toBeVisible();
@@ -85,7 +85,7 @@ test("el mes pasado: lo que entró, salió y quedó salen de los pagos y gastos 
   // Y vuelve a la pestaña Gastos de Reportes
   await page.getByRole("main").getByRole("link", { name: "Volver a Reportes" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Reportes" })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Por categoría" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Gastos por categoría" })).toBeVisible();
   // Con las mismas fechas con que se fue (el mes pasado), no con "Este mes"
   await expect(page).toHaveURL(/vista=gastos&periodo=mes-pasado$/);
   await expect(page.getByRole("navigation", { name: "Fechas" }).getByRole("link", { name: "Mes pasado" })).toHaveAttribute("aria-current", "page");
