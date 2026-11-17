@@ -25,7 +25,7 @@ import { conDesde } from "@/lib/volver";
 
 // HU-29: el tablero de la agenda (RF-38), por día y sin horas (S-3). Lavado de cara del 16/11 (prototipo aprobado):
 // - Computadora (desde 1280 px; en una laptop de 1024, con el menú, cada día medía 80 px y no se leía): la semana en una grilla, una fila por espacio. Los días libres quedan limpios (el
-//   "Reservar" aparece al pasar el mouse o con el foco), hoy se marca en toda su columna y un día cerrado, una sola vez.
+//   "Reservar" aparece al pasar el mouse o con el foco), hoy se marca en su encabezado y un día cerrado, una sola vez.
 //   Cada reserva dice placa, cliente, servicio y estado (con palabra, no solo color).
 // - Tableta y laptop chica (768 a 1279 px): la semana como lista por día ("Hoy", "Mañana", "Miércoles 18"), sin tocar pestañas.
 // - Celular: los siete días como pestañas con cuántas reservas tiene cada uno, y el día elegido en una tarjeta.
@@ -155,13 +155,14 @@ export function TableroSemana({ semana, dias, hoy, conOrdenes, desde }: Props) {
   return (
     <div className="tt-tarjeta-panel hidden p-3 xl:block">
       <div className="grid grid-cols-[8rem_repeat(7,minmax(0,1fr))] gap-y-1.5" style={{ gridTemplateRows: `3rem repeat(${filas}, minmax(6.75rem, auto))` }}>
-        {/* Debajo de todo, las columnas de los días: una línea fina entre ellos y hoy enmarcado de arriba abajo */}
+        {/* Debajo de todo, las columnas de los días: una línea fina entre ellos. Hoy se marca solo en su encabezado (16/11:
+            el marco de toda la columna quedaba debajo de las reservas y se cortaba donde una cruzaba al día siguiente) */}
         {dias.map((fecha, i) => (
           <div
             key={`columna-${fecha}`}
             aria-hidden
             style={{ gridRow: `1 / span ${filas + 1}`, gridColumn: i + 2 }}
-            className={fecha === hoy ? "rounded-xl border-2 border-info" : "border-l border-border"}
+            className="border-l border-border"
           />
         ))}
         {dias.map((fecha, i) => {
