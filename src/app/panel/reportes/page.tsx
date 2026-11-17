@@ -109,7 +109,7 @@ function seisMeses(mes: string) {
 
 async function Resumen({ ctx }: { ctx: Contexto }) {
   const meses = seisMeses(ctx.mes);
-  const [movimientos, categorias] = await Promise.all([movimientosPorMes(meses[0].mes, ctx.mes), categoriasActivas()]);
+  const movimientos = await movimientosPorMes(meses[0].mes, ctx.mes);
   const { entro, salio } = movimientos[5];
   const antes = movimientos[4];
   if (movimientos.every((m) => m.entro === 0 && m.salio === 0)) return <EstadoVacio>{`Todavía no hay movimientos en ${nombreMes(ctx.mes)}.`}</EstadoVacio>;
@@ -131,13 +131,6 @@ async function Resumen({ ctx }: { ctx: Contexto }) {
         {/* Sin gastos el margen saldría 100 %: se muestra "—" hasta que se carguen */}
         <TarjetaNumero icono={PercentIcon} titulo="Margen" valor={margen === null || sinGastos ? "—" : `${margen} %`} nota={sinGastos ? "Faltan los gastos" : <Cambio cambio={margen !== null && margenAntes !== null ? margen - margenAntes : null} unidad="pts" contra={vsAnterior} />} />
       </section>
-      {/* Sin gastos registrados, la ganancia y el margen salen iguales a lo que entró: se avisa, con cómo arreglarlo */}
-      {sinGastos && (
-        <div role="status" className="flex flex-col items-start gap-3 rounded-sm border border-aviso bg-aviso-fondo p-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm font-medium text-aviso">Todavía no hay gastos registrados en {nombreMesSolo(ctx.mes)}. Sin ellos, la ganancia y el margen salen iguales a lo que entró.</p>
-          <RegistrarGasto categorias={categorias} hoy={ctx.hoy} variante="outline" />
-        </div>
-      )}
       {/* Las secciones como en todo el panel: el título afuera, arriba de su tarjeta (Seccion) */}
       <div className="grid gap-x-4 gap-y-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.75fr)]">
         <Seccion id="neto" titulo="Lo neto del mes">
