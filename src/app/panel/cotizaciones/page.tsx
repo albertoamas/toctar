@@ -13,7 +13,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { Buscador } from "@/componentes/panel/buscador";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { ListaCotizaciones } from "@/modulos/cotizaciones/componentes/lista-cotizaciones";
-import { contarPorVista, LIMITE_HISTORIA, listarCotizaciones } from "@/modulos/cotizaciones/consultas";
+import { contarPorVista, LIMITE_HISTORIA, listarCotizaciones } from "@/modulos/cotizaciones/consultas/lista";
 import { VISTAS, type Vista } from "@/modulos/cotizaciones/reglas";
 import { BarraLista } from "@/componentes/panel/barra-lista";
 import { aqui } from "@/lib/volver";

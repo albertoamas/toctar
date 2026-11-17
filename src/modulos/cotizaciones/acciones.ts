@@ -14,7 +14,8 @@ import { revisarVehiculo, type EstadoCliente, type Existentes } from "@/modulos/
 import { camposConPrefijo, erroresConPrefijo, leerValores, PREFIJO_VEHICULO } from "@/modulos/clientes/valores";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { entradaPrecios, esquemaCambioEstado, esquemaClienteElegido, esquemaNuevaVersion, esquemaPreciosNuevos, esquemaVehiculoElegido } from "./esquemas";
-import { tieneReservaActiva, tieneVersiones } from "./consultas";
+import { tieneVersiones } from "./consultas/comun";
+import { tieneReservaActiva } from "./consultas/lista";
 import { generarPdf } from "./pdf/generar";
 import { CLIENTE_NUEVO, NOMBRE_ESTADO, transicionPermitida, VEHICULO_OTRO } from "./reglas";
 import { escribirVersion, numeroNuevo, prepararLineas } from "./servidor";

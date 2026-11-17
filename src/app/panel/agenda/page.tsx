@@ -20,7 +20,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { AgendaDelDia, GuiaColores, PestanasDias, SemanaEnLista, TableroSemana } from "@/modulos/agenda/componentes/tablero";
 import { buscarReservas, semanaDeAgenda } from "@/modulos/agenda/consultas/tablero";
 import { diasDeLaSemana, fechaCorta, lunesDeLaSemana, NOMBRE_ESTADO_TRABAJO, textoSemana, textoServicio, textoSemanaCorto, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
-import { cotizacionesPorReservar, type FilaCotizacion } from "@/modulos/cotizaciones/consultas";
+import { cotizacionesPorReservar, type FilaCotizacion } from "@/modulos/cotizaciones/consultas/lista";
 import { bs, diasDesde, textoDias } from "@/modulos/cotizaciones/reglas";
 import { rutaTrabajo } from "@/modulos/ordenes/reglas";
 import { aqui, conDesde } from "@/lib/volver";

@@ -1,7 +1,7 @@
 import { Insignia } from "@/componentes/panel/insignia";
 import { CeldaDoble, TablaLista, type ColumnaTabla } from "@/componentes/panel/tabla-lista";
 import { cantidad } from "@/lib/cantidad";
-import type { FilaCotizacion } from "../consultas";
+import type { FilaCotizacion } from "../consultas/lista";
 import { bs, diasDesde, NOMBRE_ESTADO, sinRespuesta, textoDias, TONO_ESTADO } from "../reglas";
 import { conDesde } from "@/lib/volver";
 

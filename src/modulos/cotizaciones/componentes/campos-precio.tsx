@@ -8,7 +8,7 @@ import { MasDatos } from "@/componentes/panel/mas-datos";
 import { Input } from "@/componentes/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import { leerMonto, mostrarMonto } from "@/modulos/catalogo/reglas";
-import type { OpcionServicio } from "../consultas";
+import type { OpcionServicio } from "../consultas/servicios";
 import { bs, calcularTotales, leerMontoOCero, MODOS, NOMBRE_MODO, type Modo } from "../reglas";
 import { LineasServicio, type Linea } from "./lineas-servicio";
 

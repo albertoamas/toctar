@@ -5,7 +5,8 @@ import { db } from "@/db";
 import { cliente, consulta, cotizacion, cotizacionLinea, servicio, tamanoVehiculo, variante, vehiculo } from "@/db/esquema";
 import { duracionEfectiva } from "@/modulos/catalogo/reglas";
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
-import { conReservaActiva, opcionesDeServicio, type OpcionServicio } from "@/modulos/cotizaciones/consultas";
+import { conReservaActiva } from "@/modulos/cotizaciones/consultas/comun";
+import { opcionesDeServicio, type OpcionServicio } from "@/modulos/cotizaciones/consultas/servicios";
 import { sePuedeReservar } from "@/modulos/cotizaciones/reglas";
 import { calcularSaldo, type Saldo } from "@/modulos/pagos/reglas";
 
