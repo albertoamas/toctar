@@ -21,7 +21,7 @@ import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp } from "@/lib/whatsapp";
 import { MasReserva } from "@/modulos/agenda/componentes/acciones-reserva";
-import { obtenerReserva } from "@/modulos/agenda/consultas";
+import { obtenerReserva } from "@/modulos/agenda/consultas/reserva";
 import { pasoDelTrabajo } from "@/modulos/agenda/pasos";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
