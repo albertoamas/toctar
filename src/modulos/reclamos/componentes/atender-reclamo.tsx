@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useHidratado } from "@/componentes/hidratado";
 import { Campo } from "@/componentes/panel/campo";
-import { ModalFormulario, PieGuardar, useFormularioEnModal } from "@/componentes/panel/modal-formulario";
+import { useFormularioEnModal } from "@/componentes/panel/modal-contexto";
+import { ModalFormulario } from "@/componentes/panel/modal-formulario";
+import { PieGuardar } from "@/componentes/panel/modal-pie";
 import { Button } from "@/componentes/ui/button";
 import { Textarea } from "@/componentes/ui/textarea";
 import { marcarAtendido } from "../acciones";

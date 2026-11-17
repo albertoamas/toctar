@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
-import { PieGuardar, useFormularioEnModal } from "@/componentes/panel/modal-formulario";
+import { useFormularioEnModal } from "@/componentes/panel/modal-contexto";
+import { PieGuardar } from "@/componentes/panel/modal-pie";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { DiaHorario } from "@/lib/horarios";

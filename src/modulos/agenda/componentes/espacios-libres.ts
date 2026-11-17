@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { useRenovarBaseModal } from "@/componentes/panel/modal-formulario";
+import { useRenovarBaseModal } from "@/componentes/panel/modal-contexto";
 import { consultarEspacios } from "../acciones";
 import type { EspacioDisponible } from "../consultas/espacios";
 import { DIAS_MAXIMOS_TRABAJO } from "../reglas";

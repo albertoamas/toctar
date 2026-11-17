@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Campo } from "@/componentes/panel/campo";
 import { MasDatos } from "@/componentes/panel/mas-datos";
-import { useCerrarModal } from "@/componentes/panel/modal-formulario";
+import { useCerrarModal } from "@/componentes/panel/modal-contexto";
 import { Selector } from "@/componentes/panel/selector";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
