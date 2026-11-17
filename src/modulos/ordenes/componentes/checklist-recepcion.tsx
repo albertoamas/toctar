@@ -18,7 +18,7 @@ import { BYTES_MAXIMOS_FOTO } from "@/lib/formato-fotos";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import type { EstadoFormulario } from "@/lib/formularios";
-import { desmarcarParte, guardarDetalle, marcarBien, marcarRestoBien } from "../acciones";
+import { desmarcarParte, guardarDetalle, marcarBien, marcarRestoBien } from "../acciones/recepcion";
 import type { DetalleRevision } from "../consultas";
 import type { EstadoRevision, TipoDetalle } from "@/db/esquema/trabajos";
 import { alTocarBien, NOMBRE_DETALLE, textoAvanceChecklist, TIPOS_DE_DETALLE } from "../reglas";

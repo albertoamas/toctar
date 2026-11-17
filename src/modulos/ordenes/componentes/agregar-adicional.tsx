@@ -11,7 +11,7 @@ import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { ElegirServicio } from "@/modulos/cotizaciones/componentes/elegir-servicio";
 import type { OpcionServicio } from "@/modulos/cotizaciones/consultas";
 import { serviciosConOpciones } from "@/modulos/cotizaciones/reglas";
-import { agregarAdicional } from "../acciones";
+import { agregarAdicional } from "../acciones/estado";
 
 // HU-36: sumar un servicio a la orden (RF-43). Solo el dueño, que es quien pone precios (RN-01): del catálogo, con el
 // precio vigente para el tamaño del vehículo; si es "según evaluación", lo escribe él. Se elige el servicio y, si tiene

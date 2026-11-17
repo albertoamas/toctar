@@ -10,7 +10,7 @@ import { BOTON_PASO } from "@/componentes/panel/paso-siguiente";
 import { Button } from "@/componentes/ui/button";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
-import { recibirVehiculo } from "../acciones";
+import { recibirVehiculo } from "../acciones/recepcion";
 import { useFaltanChecklist } from "./checklist-recepcion";
 
 // HU-33: recibir el vehículo (RF-40). Cómo llegó lo dice el checklist (pedido 12), con la foto de cada detalle; aquí van
