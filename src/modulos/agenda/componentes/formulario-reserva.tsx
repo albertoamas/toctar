@@ -4,19 +4,16 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { cn } from "cn";
 import Link from "next/link";
 import type { Route } from "next";
+import { usePasosEnHistorial } from "@/componentes/panel/pasos-en-historial";
 import { useFocoDePaso } from "@/componentes/panel/foco-de-paso";
 import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
-import { Campo, MensajeError } from "@/componentes/panel/campo";
-import { CampoMonto } from "@/componentes/panel/campo-monto";
+import { MensajeError } from "@/componentes/panel/campo";
 import { MasDatos } from "@/componentes/panel/mas-datos";
 import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
 import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { ResumenPaso } from "@/componentes/panel/resumen-paso";
 import { Button, buttonVariants } from "@/componentes/ui/button";
-import { Checkbox } from "@/componentes/ui/checkbox";
-import { Input } from "@/componentes/ui/input";
-import { Textarea } from "@/componentes/ui/textarea";
 import type { MetodoPago } from "@/db/esquema/trabajos";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { leerMonto, mostrarMonto } from "@/modulos/catalogo/reglas";
@@ -24,13 +21,13 @@ import { calcularTotales } from "@/modulos/cotizaciones/reglas";
 import type { OpcionServicio } from "@/modulos/cotizaciones/consultas";
 import { LineasServicio, type Linea } from "@/modulos/cotizaciones/componentes/lineas-servicio";
 import { useEnvioConComprobante } from "@/modulos/pagos/componentes/campo-comprobante";
-import { MetodoYComprobante } from "@/modulos/pagos/componentes/elegir-metodo";
 import { agendarReserva } from "../acciones";
 import type { EspacioDisponible } from "../consultas/espacios";
 import { erroresServicios, PASO_FECHA, PASO_SERVICIOS, pasoDeCampoReserva, pasosNuevaReserva } from "../pasos-reserva";
 import { fechaEntregaSugerida } from "../reglas";
 import { espacioVigente, useEspaciosLibres } from "./espacios-libres";
-import { CampoEspacio } from "./campo-espacio";
+import { SeccionAdelanto } from "./seccion-adelanto";
+import { SeccionFechasReserva } from "./seccion-fechas-reserva";
 
 // HU-30: agendar una reserva (RF-36, RF-37). Las fechas sugieren la entrega con la mayor duración de los servicios
 // (decisión del 20/10: es aproximada y se edita); al cambiarlas se vuelven a pedir los espacios libres (RN-06). El
@@ -176,31 +173,22 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
         ).total
       : origen.total;
 
-  // El historial: Atrás y Adelante del navegador (o del celular) cambian de paso. Adelante a la fecha revisa los servicios
-  const alCambiarHistoria = useRef<() => void>(() => {});
-  useEffect(() => {
-    alCambiarHistoria.current = () => {
-      const ancla = window.location.hash.slice(1);
-      const destino = ancla === ANCLA[PASO_FECHA] ? PASO_FECHA : ancla === ANCLA[PASO_SERVICIOS] ? PASO_SERVICIOS : inicial;
-      if (ancla === ANCLA[PASO_FECHA] && pasoActual.current === PASO_SERVICIOS && formulario.current) {
-        const errores = erroresServicios(String(new FormData(formulario.current).get("lineas") ?? "[]"));
-        if (Object.keys(errores).length > 0) {
-          setLocales({ en: estado, errores });
-          errorAlLlegar.current = true;
-          window.history.back();
-          return;
-        }
+  // El historial: Atrás y Adelante del navegador (o del celular) cambian de paso (solo la directa tiene pasos). Adelante
+  // a la fecha revisa los servicios
+  usePasosEnHistorial(() => {
+    const ancla = window.location.hash.slice(1);
+    const destino = ancla === ANCLA[PASO_FECHA] ? PASO_FECHA : ancla === ANCLA[PASO_SERVICIOS] ? PASO_SERVICIOS : inicial;
+    if (ancla === ANCLA[PASO_FECHA] && pasoActual.current === PASO_SERVICIOS && formulario.current) {
+      const errores = erroresServicios(String(new FormData(formulario.current).get("lineas") ?? "[]"));
+      if (Object.keys(errores).length > 0) {
+        setLocales({ en: estado, errores });
+        errorAlLlegar.current = true;
+        window.history.back();
+        return;
       }
-      mostrar(destino);
-    };
-  });
-  useEffect(() => {
-    if (!directa) return;
-    if (window.location.hash) window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
-    const escuchar = () => alCambiarHistoria.current();
-    window.addEventListener("popstate", escuchar);
-    return () => window.removeEventListener("popstate", escuchar);
-  }, [directa]);
+    }
+    mostrar(destino);
+  }, directa);
 
   function siguiente() {
     const errores = erroresServicios(String(new FormData(formulario.current!).get("lineas") ?? "[]"));
@@ -313,67 +301,32 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
       )}
 
       <div data-paso={PASO_FECHA} hidden={paso !== PASO_FECHA} className="flex flex-col gap-6">
-        <SeccionFormulario titulo="Fechas y espacio">
-          <div className="grid gap-5 sm:grid-cols-2">
-            <Campo id="fechaInicio" etiqueta="Ingresa el" error={e.fechaInicio}>
-              <Input
-                id="fechaInicio"
-                name="fechaInicio"
-                type="date"
-                min={hoy}
-                value={fechaInicio}
-                onChange={(ev) => cambiarFechas(ev.target.value, fechaFinManual)}
-                aria-invalid={!!e.fechaInicio}
-                aria-describedby={e.fechaInicio ? "fechaInicio-error" : undefined}
-              />
-            </Campo>
-            <Campo id="fechaFin" etiqueta="Entrega aproximada" error={e.fechaFin} ayuda="Se le da al cliente como aproximada.">
-              <Input
-                id="fechaFin"
-                name="fechaFin"
-                type="date"
-                min={fechaInicio}
-                value={fechaFin}
-                onChange={(ev) => cambiarFechas(fechaInicio, ev.target.value)}
-                aria-invalid={!!e.fechaFin}
-                aria-describedby={e.fechaFin ? "fechaFin-error" : "fechaFin-ayuda"}
-              />
-            </Campo>
-          </div>
-          <CampoEspacio valor={espacioId} alCambiar={setEspacioId} libres={libres} buscando={buscando} ayuda={ayuda} error={e.espacioId} />
-          {/* Se usan a veces: plegadas; se abren solas si traen algo escrito o un error */}
-          <MasDatos texto="Agregar hora y nota" titulo="Hora y nota" abierto={!!horaIngreso || !!nota || !!e.horaIngreso || !!e.nota}>
-            <Campo id="horaIngreso" etiqueta="Hora aproximada" opcional error={e.horaIngreso} ayuda="Como lo dijo el cliente: «a las 9», «en la tarde».">
-              <Input id="horaIngreso" name="horaIngreso" autoComplete="off" value={horaIngreso} onChange={(ev) => setHoraIngreso(ev.target.value)} className="max-w-xs" aria-invalid={!!e.horaIngreso} />
-            </Campo>
-            <Campo id="nota" etiqueta="Nota" opcional error={e.nota}>
-              <Textarea id="nota" name="nota" rows={2} value={nota} onChange={(ev) => setNota(ev.target.value)} aria-invalid={!!e.nota} />
-            </Campo>
-          </MasDatos>
-        </SeccionFormulario>
+        <SeccionFechasReserva
+          hoy={hoy}
+          fechaInicio={fechaInicio}
+          fechaFin={fechaFin}
+          alCambiarIngreso={(valor) => cambiarFechas(valor, fechaFinManual)}
+          alCambiarEntrega={(valor) => cambiarFechas(fechaInicio, valor)}
+          espacio={{ valor: espacioId, alCambiar: setEspacioId, libres, buscando, ayuda }}
+          horaIngreso={horaIngreso}
+          alCambiarHora={setHoraIngreso}
+          nota={nota}
+          alCambiarNota={setNota}
+          errores={e}
+        />
 
         {conPagos && (
-          <SeccionFormulario titulo="Adelanto">
-            {sinAdelanto && <input type="hidden" name="sinAdelanto" value="on" />}
-            <label htmlFor="sinAdelanto" className="flex min-h-11 cursor-pointer items-center gap-3">
-              <Checkbox id="sinAdelanto" checked={sinAdelanto} onCheckedChange={(si) => {
-                  setSinAdelanto(si === true);
-                  // El campo de la foto se va y vuelve vacío: la elegida no queda escondida para subirse igual
-                  if (si === true) setComprobante(null);
-                }}
-              />
-              <span className="font-medium">Sin adelanto</span>
-            </label>
-            {!sinAdelanto && (
-              <>
-                <Campo id="adelanto" etiqueta="Monto" error={e.adelanto}>
-                  <CampoMonto id="adelanto" name="adelanto" value={adelanto} onChange={(ev) => setAdelanto(ev.target.value)} aria-invalid={!!e.adelanto} />
-                </Campo>
-                {/* Lo mismo que "Registrar pago" (pulido final de los pagos, 09/11): el comprobante, solo con QR o transferencia */}
-                <MetodoYComprobante metodo={metodo} alCambiarMetodo={setMetodo} alCambiarComprobante={setComprobante} errorMetodo={e.metodo} errorComprobante={errorFoto ?? e.comprobante} />
-              </>
-            )}
-          </SeccionFormulario>
+          <SeccionAdelanto
+            sinAdelanto={sinAdelanto}
+            alCambiarSinAdelanto={setSinAdelanto}
+            adelanto={adelanto}
+            alCambiarAdelanto={setAdelanto}
+            metodo={metodo}
+            alCambiarMetodo={setMetodo}
+            alCambiarComprobante={setComprobante}
+            errores={e}
+            errorFoto={errorFoto}
+          />
         )}
       </div>
 
