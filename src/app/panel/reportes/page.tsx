@@ -69,7 +69,6 @@ async function BotonRegistrarGasto({ hoy }: { hoy: string }) {
 
 /** Las opciones de fechas, en el orden en que se usan: lo de hoy primero. */
 const OPCIONES_PERIODO: { clave: ClavePeriodo; texto: string }[] = [
-  { clave: "hoy", texto: "Hoy" },
   { clave: "semana", texto: "Esta semana" },
   { clave: "mes", texto: "Este mes" },
   { clave: "mes-pasado", texto: "Mes pasado" },
@@ -109,9 +108,9 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes">, "s
         <div className="-mx-4 -my-1 overflow-x-auto px-4 py-1 sm:mx-0 sm:overflow-visible sm:px-0">
           <Filtros etiqueta="Fechas" filtros={OPCIONES_PERIODO.map((o) => ({ href: enlace(vista, o.clave), texto: o.texto, activo: periodo.clave === o.clave }))} />
         </div>
-        {/* Un rango: desde y hasta, con "Ver" (un formulario GET: la dirección se comparte y Atrás funciona) */}
+        {/* Un rango: desde y hasta; al cambiarlos se actualiza solo */}
         {periodo.clave === "rango" && (
-          <ElegirFechas vista={vista === "resumen" ? null : vista} desde={periodo.inicio} hasta={periodo.fin} hoy={hoy} />
+          <ElegirFechas key={`${periodo.inicio}-${periodo.fin}`} vista={vista === "resumen" ? null : vista} desde={periodo.inicio} hasta={periodo.fin} hoy={hoy} />
         )}
       </div>
       {vista === "resumen" && <Resumen ctx={ctx} />}
@@ -159,7 +158,7 @@ async function Resumen({ ctx }: { ctx: Contexto }) {
         <TarjetaNumero icono={PercentIcon} titulo="Margen" valor={margen === null || sinGastos ? "—" : `${margen} %`} nota={sinGastos ? "Faltan los gastos" : <Cambio cambio={margen !== null && margenAntes !== null ? margen - margenAntes : null} unidad="pts" contra={vs} sinCambio={sinGastosAntes ? sinGastosDeAntes : undefined} />} />
       </section>
       {/* Las secciones como en todo el panel: el título afuera, arriba de su tarjeta (Seccion) */}
-      <div className={cn("grid gap-x-4 gap-y-6", periodo.clave !== "hoy" && "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.75fr)]")}>
+      <div className="grid gap-x-4 gap-y-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.75fr)]">
         <Seccion id="neto" titulo="Lo neto">
           <div className="flex h-full flex-col justify-center gap-3">
             {entro === 0 && salio === 0 ? (
@@ -174,16 +173,14 @@ async function Resumen({ ctx }: { ctx: Contexto }) {
             )}
           </div>
         </Seccion>
-        {/* La tendencia sigue las fechas (por día, semana o mes); un solo día no tiene */}
-        {periodo.clave !== "hoy" && (
-          <Seccion id="tendencia" titulo={`Ingresos y gastos, ${POR_UNIDAD[unidad]}`}>
-            {entro === 0 && salio === 0 ? (
-              <p className="py-10 text-center text-sm text-tinta-suave">Sin ingresos ni gastos en estas fechas.</p>
-            ) : (
-              <GraficoIngresosGastos conGanancia={unidad === "mes"} tramos={tramos.map((t, i) => ({ corto: t.corto, nombre: t.nombre, entro: entroPorTramo[i], salio: salioPorTramo[i] }))} />
-            )}
-          </Seccion>
-        )}
+        {/* La tendencia sigue las fechas: por día, semana o mes */}
+        <Seccion id="tendencia" titulo={`Ingresos y gastos, ${POR_UNIDAD[unidad]}`}>
+          {entro === 0 && salio === 0 ? (
+            <p className="py-10 text-center text-sm text-tinta-suave">Sin ingresos ni gastos en estas fechas.</p>
+          ) : (
+            <GraficoIngresosGastos tramos={tramos.map((t, i) => ({ corto: t.corto, nombre: t.nombre, entro: entroPorTramo[i], salio: salioPorTramo[i] }))} />
+          )}
+        </Seccion>
       </div>
     </>
   );
@@ -235,9 +232,8 @@ async function Ingresos({ ctx }: { ctx: Contexto }) {
         <TarjetaNumero icono={CalculatorIcon} titulo="Promedio por vehículo" valor={promedio === null ? "—" : bsRedondo(promedio)} nota={promedio === null ? "Sin entregas en estas fechas" : <Cambio cambio={cambioPorcentual(promedio, promedioAntes)} contra={vs} />} />
         <TarjetaNumero href="/panel/pagos" icono={HandCoinsIcon} titulo="Por cobrar hoy" valor={bsRedondo(porCobrar)} aviso={saldos.length > 0} nota={saldos.length > 0 ? `En ${cantidad(saldos.length, "orden", "órdenes")}` : "Nadie debe"} />
       </section>
-      <div className={cn("grid gap-x-4 gap-y-6", periodo.clave !== "hoy" && "lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]")}>
-        {/* Un solo día no tiene recorrido: con "Hoy" no hay línea, y la forma de pago ocupa todo el ancho */}
-        {periodo.clave !== "hoy" && <ComoVan de="ingresos" periodo={periodo} comparar={comparar} este={este.porDia} antes={linea.porDia} />}
+      <div className="grid gap-x-4 gap-y-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <ComoVan de="ingresos" periodo={periodo} comparar={comparar} este={este.porDia} antes={linea.porDia} />
         <Seccion id="formas" titulo="Por forma de pago">
           {este.porMetodo.length === 0 ? (
             <p className="py-10 text-center text-sm text-tinta-suave">Sin pagos en estas fechas.</p>
@@ -346,9 +342,8 @@ async function Gastos({ ctx }: { ctx: Contexto }) {
         <TarjetaNumero icono={CarFrontIcon} titulo="Gasto por vehículo" valor={porVehiculo === null ? "—" : bsRedondo(porVehiculo)} nota={porVehiculo === null ? "Sin entregas en estas fechas" : <Cambio cambio={cambioPorcentual(porVehiculo, porVehiculoAntes)} contra={vs} subirEsMalo />} />
         <TarjetaNumero className="col-span-2 lg:col-span-1" icono={ChartPieIcon} titulo="Lo que más pesa" valor={mayor ? bsRedondo(mayor.total) : "—"} nota={mayor ? `${mayor.nombre}, ${parte(mayor.total)} % del total` : "Sin gastos en estas fechas"} />
       </section>
-      <div className={cn("grid gap-x-4 gap-y-6", periodo.clave !== "hoy" && "lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]")}>
-        {/* Un solo día no tiene recorrido: con "Hoy" no hay línea, y las categorías ocupan todo el ancho */}
-        {periodo.clave !== "hoy" && <ComoVan de="gastos" periodo={periodo} comparar={comparar} este={este.porDia} antes={linea.porDia} />}
+      <div className="grid gap-x-4 gap-y-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <ComoVan de="gastos" periodo={periodo} comparar={comparar} este={este.porDia} antes={linea.porDia} />
         <Seccion
           id="categorias"
           titulo="Por categoría"
@@ -410,16 +405,14 @@ async function TallerYClientes({ ctx }: { ctx: Contexto }) {
         <TarjetaNumero icono={FileCheckIcon} titulo="Cotizaciones aceptadas" valor={aceptadasPct === null ? "—" : `${aceptadasPct} %`} nota={aceptadasPct === null ? "Ninguna enviada" : <Cambio cambio={antesPct === null ? null : aceptadasPct - antesPct} unidad="pts" contra={vs} />} />
         <TarjetaNumero icono={BellRingIcon} titulo="Mantenimientos avisados" valor={taller.avisados} nota={taller.avisados === 0 ? "Ninguno en estas fechas" : `${taller.reservaron} ya ${taller.reservaron === 1 ? "reservó" : "reservaron"}`} />
       </section>
-      {/* La tendencia sigue las fechas (por día, semana o mes); un solo día no tiene */}
-      {periodo.clave !== "hoy" && (
-        <Seccion id="clientes" titulo={`Clientes atendidos, ${POR_UNIDAD[unidad]}`}>
-          {porTramo.every((t) => t.nuevos + t.volvieron === 0) ? (
-            <p className="py-10 text-center text-sm text-tinta-suave">Sin vehículos entregados en estas fechas.</p>
-          ) : (
-            <GraficoClientes tramos={tramos.map((t, i) => ({ corto: t.corto, nombre: t.nombre, nuevos: porTramo[i].nuevos, volvieron: porTramo[i].volvieron }))} />
-          )}
-        </Seccion>
-      )}
+      {/* La tendencia sigue las fechas: por día, semana o mes */}
+      <Seccion id="clientes" titulo={`Clientes atendidos, ${POR_UNIDAD[unidad]}`}>
+        {porTramo.every((t) => t.nuevos + t.volvieron === 0) ? (
+          <p className="py-10 text-center text-sm text-tinta-suave">Sin vehículos entregados en estas fechas.</p>
+        ) : (
+          <GraficoClientes tramos={tramos.map((t, i) => ({ corto: t.corto, nombre: t.nombre, nuevos: porTramo[i].nuevos, volvieron: porTramo[i].volvieron }))} />
+        )}
+      </Seccion>
       <div className="grid gap-x-4 gap-y-6 lg:grid-cols-2">
         <Seccion id="servicios" titulo="Servicios más pedidos">
           {taller.servicios.length === 0 ? (
@@ -433,13 +426,23 @@ async function TallerYClientes({ ctx }: { ctx: Contexto }) {
             <p className="py-10 text-center text-sm text-tinta-suave">Sin cotizaciones enviadas en estas fechas.</p>
           ) : (
             <div className="flex flex-col gap-4">
+              {/* Sin la fila "Enviadas" (17/11): cada barra se mide contra las enviadas y dice su parte */}
               <BarrasHorizontales
                 alta
+                de={enviadas}
                 filas={[
-                  { nombre: "Enviadas", valor: enviadas },
                   { nombre: "Aceptadas", valor: aceptadas },
                   { nombre: "Reservadas", valor: reservadas },
-                ].map((f) => ({ ...f, clase: "bg-grafico-1", texto: <span className="font-semibold">{f.valor}</span> }))}
+                ].map((f) => ({
+                  ...f,
+                  clase: "bg-grafico-1",
+                  texto: (
+                    <>
+                      <span className="font-semibold">{f.valor}</span>
+                      <span className="text-tinta-suave"> · {Math.round((f.valor / enviadas) * 100)} %</span>
+                    </>
+                  ),
+                }))}
               />
               {motivos.length > 0 && (
                 <p className="text-[0.8125rem] text-tinta-media">

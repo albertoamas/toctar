@@ -132,8 +132,8 @@ describe("los períodos", () => {
     // Un 31 contra un mes de 30 días: hasta su último día
     expect(periodoDe({}, "2026-12-31").antes).toEqual({ inicio: "2026-11-01", fin: "2026-11-30" });
   });
-  test("hoy contra ayer y esta semana contra la misma parte de la pasada", () => {
-    expect(periodoDe({ periodo: "hoy" }, hoy)).toMatchObject({ inicio: hoy, fin: hoy, antes: { inicio: "2026-11-16", fin: "2026-11-16" }, vs: "vs. ayer" });
+  test("esta semana contra la misma parte de la pasada; \"hoy\" ya no es un período (este mes)", () => {
+    expect(periodoDe({ periodo: "hoy" }, hoy).clave).toBe("mes");
     expect(periodoDe({ periodo: "semana" }, hoy)).toMatchObject({ inicio: "2026-11-16", fin: hoy, antes: { inicio: "2026-11-09", fin: "2026-11-10" } });
   });
   test("el mes pasado entero contra el anterior", () => {

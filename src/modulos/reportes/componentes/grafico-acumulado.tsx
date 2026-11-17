@@ -46,7 +46,7 @@ export function GraficoAcumulado({ dias, color, nombreEste, nombreAntes, descrip
             />
           )}
         />
-        <ChartLegend content={<ChartLegendContent />} itemSorter={(item) => (item.dataKey === "este" ? 0 : 1)} />
+        <ChartLegend content={<ChartLegendContent className="font-medium" />} itemSorter={(item) => (item.dataKey === "este" ? 0 : 1)} />
         <Line dataKey="antes" type="linear" stroke="var(--color-antes)" strokeWidth={2} strokeDasharray="5 4" dot={false} activeDot={{ r: 4, fill: "var(--color-antes)", stroke: "var(--fondo)", strokeWidth: 2 }} connectNulls={false} {...ANIMACION} />
         <Line dataKey="este" type="linear" stroke="var(--color-este)" strokeWidth={2.5} dot={false} activeDot={{ r: 4.5, fill: "var(--color-este)", stroke: "var(--fondo)", strokeWidth: 2 }} connectNulls={false} {...ANIMACION} />
       </LineChart>

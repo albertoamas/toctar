@@ -11,7 +11,7 @@ export const mayuscula = (texto: string) => texto.charAt(0).toUpperCase() + text
 export function FilaDetalle({ color, nombre, valor }: { color?: string; nombre: React.ReactNode; valor: React.ReactNode }) {
   return (
     <span className="flex w-full items-center justify-between gap-4">
-      <span className="flex items-center gap-1.5">
+      <span className="flex items-center gap-1.5 font-medium">
         <span aria-hidden className="size-2.5 rounded-[3px]" style={{ background: color }} />
         {nombre}
       </span>

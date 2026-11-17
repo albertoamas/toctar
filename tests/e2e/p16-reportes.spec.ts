@@ -69,12 +69,8 @@ test("el mes pasado: lo que entró, salió y quedó salen de los pagos y gastos 
   await expect(page.getByRole("region", { name: "Ingresos del período" })).toContainText(`Ingresos${miles(Number(entro))}`);
   await expect(page.getByRole("region", { name: "Cómo van los ingresos" })).toContainText(`Entraron ${miles(Number(entro))}`);
   await expect(page.getByRole("region", { name: "Cómo van los ingresos" }).locator(".recharts-surface").first()).toBeVisible();
-  // Con "Hoy" no hay línea: un día no tiene recorrido
-  await page.getByRole("navigation", { name: "Fechas" }).getByRole("link", { name: "Hoy" }).click();
-  await expect(page.getByRole("navigation", { name: "Fechas" }).getByRole("link", { name: "Hoy" })).toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("region", { name: "Cómo van los ingresos" })).toHaveCount(0);
-  await page.getByRole("navigation", { name: "Fechas" }).getByRole("link", { name: "Mes pasado" }).click();
-  await expect(page.getByRole("region", { name: "Cómo van los ingresos" })).toBeVisible();
+  // "Hoy" ya no es una opción de fechas
+  await expect(page.getByRole("navigation", { name: "Fechas" }).getByRole("link", { name: "Hoy" })).toHaveCount(0);
 
   // Gastos: el reporte (lo que salió, cómo van y por categoría, sin el anulado) y el enlace a la lista de gastos
   await page.getByRole("navigation", { name: "Partes de los reportes" }).getByRole("link", { name: "Gastos" }).click();
@@ -111,12 +107,26 @@ test("este mes en el celular y en la computadora: se lee sin salirse de la panta
   await expect(page.getByRole("heading", { level: 1, name: "Reportes" })).toBeVisible();
   await expect(page.getByText("Los ingresos salen de los pagos registrados; los gastos, de los gastos registrados. Los anulados no cuentan.")).toBeVisible();
   // Cada pestaña entra en la pantalla, también en el celular
-  for (const vista of ["", "?periodo=hoy", "?periodo=semana", "?periodo=6-meses", "?periodo=rango&desde=2026-01-01&hasta=2026-03-31", "?vista=ingresos", "?vista=gastos", "?vista=taller"]) {
+  for (const vista of ["", "?periodo=semana", "?periodo=6-meses", "?periodo=rango&desde=2026-01-01&hasta=2026-03-31", "?vista=ingresos", "?vista=gastos", "?vista=taller"]) {
     await page.goto(`/panel/reportes${vista}`);
     await expect(page.getByRole("heading", { level: 1, name: "Reportes" })).toBeVisible();
     const desborde = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(desborde, vista || "resumen").toBeLessThanOrEqual(0);
   }
+});
+
+test("elegir fechas: al cambiarlas se actualiza solo, y si no sirven lo dice", async ({ page }) => {
+  await ingresarComoDueno(page);
+  await page.goto("/panel/reportes?vista=ingresos&periodo=rango&desde=2026-08-01&hasta=2026-08-31");
+  const desde = page.getByLabel("Desde").filter({ visible: true });
+  await expect(desde).toBeEnabled();
+  await desde.fill("2026-08-10");
+  await expect(page).toHaveURL(/vista=ingresos&periodo=rango&desde=2026-08-10&hasta=2026-08-31$/);
+  await expect(page.getByText("Del 10 al 31 de agosto", { exact: true }).filter({ visible: true })).toBeVisible();
+  // "Desde" después de "Hasta": el aviso, y la dirección no cambia
+  await page.getByLabel("Desde").filter({ visible: true }).fill("2026-09-05");
+  await expect(page.getByRole("alert").filter({ hasText: "«Desde» tiene que ser antes de «Hasta»." })).toBeVisible();
+  await expect(page).toHaveURL(/desde=2026-08-10&hasta=2026-08-31$/);
 });
 
 test("un encargado con todos los permisos no entra a Reportes", async ({ page }, info) => {

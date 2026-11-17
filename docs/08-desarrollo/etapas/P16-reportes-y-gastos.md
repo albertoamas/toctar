@@ -161,6 +161,11 @@ Todas en `modulos/reportes/acciones.ts`, con `exigirModulo("reportes")` y Zod (e
   en lugar de las dos líneas de 6 meses. "Servicios más pedidos" y "Cotizaciones" (el embudo y por qué no aceptaron),
   como listas con barras. Ya no queda ningún gráfico hecho a mano: `graficos.tsx` se borró y la lista con barras quedó
   en `barras-horizontales.tsx`.
+- **Ajustes del dueño (17/11):** sin "Hoy" en las fechas (un día no tiene tendencia y lo del día está en el Inicio);
+  "Elegir fechas" se aplica solo al cambiar una fecha (sin "Ver"), con un aviso si no sirven; "Ingresos y gastos" sin la
+  línea de la ganancia (ya está en la tarjeta y la torta); Cotizaciones sin la fila "Enviadas" (Aceptadas y Reservadas,
+  medidas contra las enviadas, con su %); los nombres de las listas, leyendas y detalles en grosor 500 (en 400,
+  Montserrat se veía floja junto al número en 600).
 - **Datos para probar:** `npm run datos:reportes` carga seis meses de trabajos, pagos, gastos, cotizaciones y
   mantenimientos sobre la base local (se rehace al volver a correrlo; `-- --quitar` lo saca).
 

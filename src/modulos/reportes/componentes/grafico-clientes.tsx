@@ -44,7 +44,7 @@ export function GraficoClientes({ tramos }: { tramos: TramoClientes[] }) {
             />
           )}
         />
-        <ChartLegend content={<ChartLegendContent />} itemSorter={(item) => (item.dataKey === "nuevos" ? 0 : 1)} />
+        <ChartLegend content={<ChartLegendContent className="font-medium" />} itemSorter={(item) => (item.dataKey === "nuevos" ? 0 : 1)} />
         {/* Las partes apiladas, con 2 px del fondo entre ellas; la de arriba, con la punta redondeada */}
         <Bar dataKey="nuevos" stackId="clientes" fill="var(--color-nuevos)" stroke="var(--fondo)" strokeWidth={2} maxBarSize={32} {...ANIMACION} />
         <Bar dataKey="volvieron" stackId="clientes" fill="var(--color-volvieron)" stroke="var(--fondo)" strokeWidth={2} radius={[4, 4, 0, 0]} maxBarSize={32} {...ANIMACION} />

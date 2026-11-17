@@ -98,11 +98,12 @@ export const textoEje = (v: number) => `${v < 0 ? "−" : ""}${Math.abs(v) >= 10
 export const cambioPorcentual = (actual: number, anterior: number) => (anterior > 0 ? Math.round(((actual - anterior) / anterior) * 100) : null);
 
 // ---------------------------------------------------------------------------------------------
-// Los períodos de Reportes (17/11): hoy, esta semana, este mes, el mes pasado o un rango de fechas. Cada uno se compara
+// Los períodos de Reportes (17/11): esta semana, este mes, el mes pasado, 6 meses o un rango de fechas. Cada uno se compara
 // con el anterior del mismo largo, así la comparación es justa: "este mes" (del 1 a hoy) contra los mismos días del mes
 // pasado, no contra el mes pasado entero.
 
-const PERIODOS = ["hoy", "semana", "mes", "mes-pasado", "6-meses", "rango"] as const;
+// Sin "Hoy" (17/11): un día no tiene tendencia y lo del día ya está en el Inicio del panel
+const PERIODOS = ["semana", "mes", "mes-pasado", "6-meses", "rango"] as const;
 export type ClavePeriodo = (typeof PERIODOS)[number];
 
 export type Periodo = {
@@ -113,7 +114,7 @@ export type Periodo = {
   antes: { inicio: string; fin: string };
   /** "Hoy, 17 de noviembre", "Del 1 al 17 de noviembre"… */
   titulo: string;
-  /** Lo que va en la tarjeta tras el cambio: "vs. ayer", "vs. semana pasada", "vs. oct.", "vs. período anterior". */
+  /** Lo que va en la tarjeta tras el cambio: "vs. semana pasada", "vs. oct.", "vs. período anterior". */
   vs: string;
   /** El mes en que termina el período: hasta él llegan las tendencias de 6 meses. */
   mes: string;
@@ -150,8 +151,6 @@ export function periodoDe(parametros: { periodo?: unknown; desde?: unknown; hast
   const mesHoy = mesDe(hoy);
   const corto = (mes: string) => `vs. ${nombreMesSolo(mes).slice(0, 3)}.`;
   switch (clave) {
-    case "hoy":
-      return { clave, inicio: hoy, fin: hoy, antes: { inicio: sumarDias(hoy, -1), fin: sumarDias(hoy, -1) }, titulo: `Hoy, ${diaYMes(hoy)}`, vs: "vs. ayer", mes: mesHoy };
     case "semana": {
       const lunes = sumarDias(hoy, 1 - diaDeLaSemanaIso(hoy));
       return { clave, inicio: lunes, fin: hoy, antes: { inicio: sumarDias(lunes, -7), fin: sumarDias(hoy, -7) }, titulo: `Esta semana: ${textoRango(lunes, hoy).replace(/^Del /, "del ")}`, vs: "vs. semana pasada", mes: mesHoy };
