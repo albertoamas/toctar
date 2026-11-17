@@ -4,7 +4,8 @@ import { useState } from "react";
 import { PencilIcon } from "lucide-react";
 import { useHidratado } from "@/componentes/hidratado";
 import { ListaEditable, type ElementoLista } from "@/componentes/panel/lista-editable";
-import { CancelarModal, ModalFormulario, PieModal } from "@/componentes/panel/modal-formulario";
+import { ModalFormulario } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, PieModal } from "@/componentes/panel/modal-pie";
 import { Button } from "@/componentes/ui/button";
 import { cambiarEstadoVariante, guardarVariante, moverVariante } from "../acciones";
 

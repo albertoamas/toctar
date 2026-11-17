@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { Campo } from "@/componentes/panel/campo";
 import { MenuMas } from "@/componentes/panel/menu-mas";
-import { CancelarModal, ModalFormulario, PieModal, useFormularioEnModal } from "@/componentes/panel/modal-formulario";
+import { useFormularioEnModal } from "@/componentes/panel/modal-contexto";
+import { ModalFormulario } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, PieModal } from "@/componentes/panel/modal-pie";
 import { Button } from "@/componentes/ui/button";
 import { Textarea } from "@/componentes/ui/textarea";
 import { anularPago } from "../acciones";

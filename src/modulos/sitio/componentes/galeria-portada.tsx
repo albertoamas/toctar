@@ -5,7 +5,9 @@ import { avisarResultado } from "@/componentes/panel/avisos";
 import { Button } from "@/componentes/ui/button";
 import { elegirParaPortada } from "../acciones/galeria";
 import { Insignia } from "@/componentes/panel/insignia";
-import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
+import { useCerrarModal } from "@/componentes/panel/modal-contexto";
+import { ModalFormulario } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, PieModal } from "@/componentes/panel/modal-pie";
 import { ItemGaleria, Miniatura } from "./galeria-comun";
 
 // Galería (HU-09): qué trabajo con antes va en el comparador de la portada, y elegirlo (demo del 24/10).
