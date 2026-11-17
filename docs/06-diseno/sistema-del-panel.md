@@ -9,20 +9,25 @@ Este documento dice **qué forma tiene cada pantalla**. Si una regla no alcanza,
 
 ## 1. Tipos de pantalla
 
-Toda pantalla del panel es de uno de estos tipos. El tipo decide su ancho.
+Toda pantalla del panel es de uno de estos tipos. Todas tienen **el mismo ancho** (17/11, pedido del dueño): todo el
+espacio, sin tope, también en un monitor grande. El tipo decide la forma y la separación entre partes.
 
-| Tipo | Para qué | Ancho máximo | Ejemplos |
-|---|---|---|---|
-| `lista` | Una tabla con columnas, o un tablero | `7xl` (1280 px) | Clientes, Órdenes, Cotizaciones, Agenda |
-| `ficha` | Ver y editar una cosa, o una lista de filas sin columnas | `5xl` (1024 px) | Cliente, Orden, Negocio, Preguntas frecuentes |
-| `formulario` | Crear algo, o un paso que se hace de arriba abajo | `3xl` (768 px) | Nueva reserva, Recibir, Entregar, Nuevo cliente |
-| `portada` | Elegir a dónde ir o ver el día | `7xl` (1280 px) | Inicio, Sitio web, Configuración |
+| Tipo | Para qué | Ejemplos |
+|---|---|---|
+| `lista` | Una tabla con columnas, o un tablero | Clientes, Órdenes, Cotizaciones, Agenda |
+| `ficha` | Ver y editar una cosa, o una lista de filas sin columnas | Cliente, Orden, Negocio, Preguntas frecuentes |
+| `formulario` | Crear algo, o un paso que se hace de arriba abajo | Nueva reserva, Recibir, Entregar, Nuevo cliente |
+| `portada` | Elegir a dónde ir o ver el día | Inicio, Sitio web, Configuración |
 
-- El ancho sale del tipo, en `PaginaPanel`. Las páginas no escriben `max-w-*`.
-- Dentro de una ficha, un campo puede ser más angosto que su tarjeta (`max-w-32` para un número). Esa medida es del campo, no de la pantalla.
-- En el celular todo va en una columna.
-- Hasta una laptop de 1280 px (con el menú, el área de trabajo mide unos 970 px) todas ocupan el ancho que hay: la
-  diferencia se ve en monitores grandes. Hasta el 10/11 las listas y las portadas se estiraban a todo el monitor.
+- El ancho sale de `PaginaPanel`. Las páginas no escriben `max-w-*`.
+- Antes (10/11) eran cuatro anchos (1280, 1024 y 768 px): en un monitor grande el formulario usaba un tercio de la
+  pantalla, la ficha la mitad, y el título y el botón principal cambiaban de lugar de una pantalla a otra.
+- **Con todo el ancho, el contenido se acomoda adentro**: las fichas en partes de a 2 o 3 (`PartesIguales`); un
+  formulario con dos partes las pone lado a lado desde `@6xl` (Nuevo cliente: el cliente y su primer vehículo; Nuevo
+  usuario: la cuenta y sus permisos). Los campos ocupan su lugar en la grilla, sin tope general
+  (se probó uno de 28rem el 17/11 y no convenció al dueño); un campo puede llevar el suyo si lo necesita (`max-w-*`,
+  como el número de un monto). El recuadro de la firma, hasta 640 px.
+- En el celular todo va en una columna. Hasta una laptop de 1280 px no cambia nada: la diferencia se ve en monitores grandes.
 
 **Cómo se ve cada forma** (revisión de las 40 pantallas del 10/11, `08-desarrollo/inventario-pantallas.md`):
 
@@ -32,7 +37,7 @@ Toda pantalla del panel es de uno de estos tipos. El tipo decide su ancho.
 | **Lista de acciones** (cobrar, avisar) | Tabla con una columna de acciones (`TablaAcciones`) | Tarjetas con los botones abajo |
 | **Ficha de un trabajo** (cotización, reserva, orden) | Pasos del trabajo, el paso siguiente grande, secciones y "Más" | Lo mismo, apilado |
 | **Ficha editable** | Secciones en tarjetas, de a dos (`PartesIguales`); "Editar" abre un modal | Una columna; el modal sube desde abajo |
-| **Crear o un paso del taller** | Formulario angosto, en pasos si hace falta, botón al pie (`PieFormulario`) | Igual, con el botón fijo abajo |
+| **Crear o un paso del taller** | Formulario a todo el ancho, con sus partes lado a lado si son dos; en pasos si hace falta, botón al pie (`PieFormulario`) | Igual, con el botón fijo abajo |
 | **Portada** | Tarjetas para elegir a dónde ir | Una debajo de la otra |
 
 Una pantalla nueva o cambiada toma una de estas formas; si ninguna sirve, se discute antes de inventar otra.
