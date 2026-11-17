@@ -1,5 +1,5 @@
 import { cn } from "cn";
-import { bsRedondo, escalaBonita, textoEje } from "../reglas";
+import { escalaBonita, textoEje } from "../reglas";
 
 // Los gráficos de Reportes (pedido 16, prototipo aprobado el 16/11). SVG simples, dibujados en el servidor, sin librería:
 // eje con números redondos, líneas guía suaves, la punta de las barras redondeada sobre su base y el valor escrito en las
@@ -8,9 +8,6 @@ import { bsRedondo, escalaBonita, textoEje } from "../reglas";
 // Medidas: un viewBox de ~420 de ancho, que se ve bien de 320 px (celular) a 600 px (media computadora).
 
 const FUENTE = { fontFamily: "Montserrat, system-ui, sans-serif" } as const;
-
-/** "6,8 mil", "950": el total arriba de una barra apilada, con un decimal como mucho. */
-const totalCorto = (v: number) => (v >= 1000 ? `${(Math.round(v / 100) / 10).toString().replace(".", ",")} mil` : String(Math.round(v)));
 
 type Eje = { y: (v: number) => number; lineas: { v: number; y: number }[] };
 
@@ -81,44 +78,6 @@ export function LineasMeses({ meses, series, elegido, conValores }: { meses: { m
           ))}
         </g>
       ))}
-    </svg>
-  );
-}
-
-/** Barras apiladas por mes (los gastos de cada categoría), con el total arriba; 2 px entre partes. */
-export function BarrasApiladas({ meses, categorias }: { meses: { mes: string; corto: string; nombre: string; partes: number[] }[]; categorias: { nombre: string; clase: string }[] }) {
-  const x0 = 44, x1 = 416, y0 = 184, yTope = 22;
-  const e = eje(Math.max(...meses.map((m) => m.partes.reduce((a, b) => a + b, 0)), 0), y0, yTope);
-  const grupo = (x1 - x0) / meses.length;
-  const ancho = Math.min(34, grupo - 12);
-  return (
-    <svg viewBox="0 0 420 206" role="img" aria-label={`Gastos por categoría: ${meses.map((m) => `${m.nombre}, ${categorias.map((c, k) => `${c.nombre} ${bsRedondo(m.partes[k])}`).join(", ")}`).join("; ")}`} className="block w-full">
-      <Guias e={e} x0={x0} x1={x1} />
-      {meses.map((m, i) => {
-        const xc = x0 + grupo * i + grupo / 2;
-        let base = y0;
-        const total = m.partes.reduce((a, b) => a + b, 0);
-        return (
-          <g key={m.mes}>
-            <title>{`${m.nombre}: ${categorias.map((c, k) => `${c.nombre} ${bsRedondo(m.partes[k])}`).join(", ")}`}</title>
-            {m.partes.map((v, k) => {
-              const alto = y0 - e.y(v);
-              if (alto <= 0) return null;
-              const rect = <rect key={k} x={xc - ancho / 2} y={base - alto + 1} width={ancho} height={Math.max(alto - 2, 1)} rx={2} className={categorias[k].clase} />;
-              base -= alto;
-              return rect;
-            })}
-            {total > 0 && (
-              <text x={xc} y={e.y(total) - 7} textAnchor="middle" fontSize={11} fontWeight={600} className="fill-tinta" style={FUENTE}>
-                {totalCorto(total)}
-              </text>
-            )}
-            <text x={xc} y={y0 + 18} textAnchor="middle" fontSize={13} className="fill-tinta-suave" style={FUENTE}>
-              {m.corto}
-            </text>
-          </g>
-        );
-      })}
     </svg>
   );
 }

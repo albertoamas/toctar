@@ -4,7 +4,7 @@ import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/componentes/ui/chart";
 import { bsRedondo, escalaBonita, textoEje } from "../reglas";
 
-// Ingresos, "Cómo van los ingresos" (17/11): lo que se va juntando día a día en las fechas elegidas (línea llena) contra
+// "Cómo van los ingresos" y "Cómo van los gastos" (17/11): lo que se va juntando día a día en las fechas elegidas (línea llena) contra
 // el período con que se compara (punteada), con shadcn/ui Charts como Resumen. El eje cuenta los días del período
 // ("Día 1", "Día 8"…) y el detalle dice la fecha de cada uno. Una sola animación corta al cargar, sin ella con "reducir
 // movimiento" (Recharts, "auto").
@@ -13,9 +13,10 @@ const ANIMACION = { isAnimationActive: "auto", animationDuration: 700, animation
 
 export type DiaAcumulado = { dia: number; este: number | null; antes: number | null; fechaEste: string | null; fechaAntes: string | null };
 
-export function GraficoAcumulado({ dias, nombreEste, nombreAntes, descripcion }: { dias: DiaAcumulado[]; nombreEste: string; nombreAntes: string; descripcion: string }) {
+/** `color`: el de las fechas elegidas (esmeralda para los ingresos, rojo para los gastos); el anterior va gris y punteado. */
+export function GraficoAcumulado({ dias, color, nombreEste, nombreAntes, descripcion }: { dias: DiaAcumulado[]; color: string; nombreEste: string; nombreAntes: string; descripcion: string }) {
   const config = {
-    este: { label: nombreEste, color: "var(--grafico-ingreso)" },
+    este: { label: nombreEste, color },
     antes: { label: nombreAntes, color: "var(--tinta-suave)" },
   } satisfies ChartConfig;
   const { tope, paso } = escalaBonita(Math.max(0, ...dias.map((d) => Math.max(d.este ?? 0, d.antes ?? 0))));

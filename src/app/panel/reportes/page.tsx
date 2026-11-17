@@ -2,7 +2,7 @@ import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { cn } from "cn";
-import { BanknoteIcon, CalculatorIcon, CarFrontIcon, ChevronRightIcon, HandCoinsIcon, PercentIcon, PiggyBankIcon, ReceiptTextIcon } from "lucide-react";
+import { BanknoteIcon, CalculatorIcon, CarFrontIcon, ChartPieIcon, ChevronRightIcon, HandCoinsIcon, PercentIcon, PiggyBankIcon, ReceiptTextIcon } from "lucide-react";
 import { CabeceraSeccion, Seccion } from "@/componentes/panel/cabecera-seccion";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
@@ -18,8 +18,7 @@ import { NOMBRE_MOTIVO } from "@/modulos/cotizaciones/reglas";
 import { saldosPendientes } from "@/modulos/pagos/consultas";
 import { NOMBRE_METODO } from "@/modulos/pagos/reglas";
 import { ElegirFechas } from "@/modulos/reportes/componentes/elegir-fechas";
-import { FilaGasto } from "@/modulos/reportes/componentes/fila-gasto";
-import { BarrasApiladas, BarrasHorizontales, Leyenda, LineasMeses } from "@/modulos/reportes/componentes/graficos";
+import { BarrasHorizontales, Leyenda, LineasMeses } from "@/modulos/reportes/componentes/graficos";
 import { GraficoAcumulado, type DiaAcumulado } from "@/modulos/reportes/componentes/grafico-acumulado";
 import { GraficoMeses, TortaNeto } from "@/modulos/reportes/componentes/graficos-resumen";
 import { RegistrarGasto } from "@/modulos/reportes/componentes/registrar-gasto";
@@ -27,13 +26,10 @@ import {
   categoriasActivas,
   elTallerEnElMes,
   entregasHasta,
-  gastosDelMes,
-  gastosPorCategoriaYMes,
   entregadosEntre,
+  gastosEntre,
   ingresosEntre,
-  type IngresosEntre,
   movimientosPorMes,
-  resumenDelMes,
   totalesEntre,
 } from "@/modulos/reportes/consultas";
 import { acumuladoDesde, bsRedondo, cambioPorcentual, comparacionDelAcumulado, diaYMes, diasEntre, entregasPorMes, mesCorto, mesDe, nombreMes, nombreMesSolo, periodoDe, sumarMeses, tituloMes, type ClavePeriodo, type Periodo } from "@/modulos/reportes/reglas";
@@ -41,18 +37,15 @@ import { acumuladoDesde, bsRedondo, cambioPorcentual, comparacionDelAcumulado, d
 export const metadata: Metadata = { title: "Reportes" };
 
 // Pedido 16 (P16-reportes-y-gastos.md; prototipo aprobado el 16/11 con la opción A, registro-de-cambios.md): cuatro
-// pestañas (?vista=) para el mes elegido (?mes=pasado o este): Resumen (lo neto en una torta y los 6 meses en barras con
-// la línea de la ganancia), Ingresos (lo acumulado día a día frente al mes anterior y por forma de pago), Gastos (por
-// categoría, sus 6 meses apilados y la lista) y Taller y clientes (entregados, servicios, cotizaciones, clientes y
-// mantenimientos). Solo el dueño. Lo que entró sale de los pagos sin anular, por su día; lo que salió, de los gastos.
+// pestañas (?vista=) para las fechas elegidas (?periodo=, 17/11): Resumen (lo neto en una torta y los 6 meses en barras
+// con la línea de la ganancia), Ingresos (cómo van frente al período anterior y por forma de pago), Gastos (el reporte:
+// cómo van y por categoría; la lista de gastos es su propia pantalla) y Taller y clientes (entregados, servicios,
+// cotizaciones, clientes y mantenimientos). Solo el dueño. Lo que entró sale de los pagos sin anular, por su día; lo que
+// salió, de los gastos.
 
 const VISTAS = ["resumen", "ingresos", "gastos", "taller"] as const;
 type Vista = (typeof VISTAS)[number];
 const NOMBRE_VISTA: Record<Vista, string> = { resumen: "Resumen", ingresos: "Ingresos", gastos: "Gastos", taller: "Taller y clientes" };
-
-/** Los colores de las series, en orden fijo: la quinta categoría en adelante se junta en "Las demás". */
-const SERIES = ["bg-grafico-1", "bg-grafico-2", "bg-grafico-3", "bg-grafico-4"] as const;
-const SERIES_SVG = ["fill-grafico-1", "fill-grafico-2", "fill-grafico-3", "fill-grafico-4"] as const;
 
 export default function PaginaReportes({ searchParams }: PageProps<"/panel/reportes">) {
   return (
@@ -241,7 +234,7 @@ async function Ingresos({ ctx }: { ctx: Contexto }) {
       </section>
       <div className={cn("grid gap-x-4 gap-y-6", periodo.clave !== "hoy" && "lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]")}>
         {/* Un solo día no tiene recorrido: con "Hoy" no hay línea, y la forma de pago ocupa todo el ancho */}
-        {periodo.clave !== "hoy" && <ComoVanLosIngresos periodo={periodo} comparar={comparar} este={este} antes={linea} />}
+        {periodo.clave !== "hoy" && <ComoVan de="ingresos" periodo={periodo} comparar={comparar} este={este.porDia} antes={linea.porDia} />}
         <Seccion id="formas" titulo="Por forma de pago">
           {este.porMetodo.length === 0 ? (
             <p className="py-10 text-center text-sm text-tinta-suave">Sin pagos en estas fechas.</p>
@@ -275,12 +268,21 @@ function nombresDelAcumulado(periodo: Periodo, comparar: { inicio: string }): [s
   return ["Estas fechas", "Período anterior"];
 }
 
+/** Lo que cambia entre "Cómo van los ingresos" y "Cómo van los gastos": el color de la línea y las palabras. */
+const ACUMULADO = {
+  ingresos: { id: "acumulado", titulo: "Cómo van los ingresos", color: "var(--grafico-ingreso)", hecho: "Entraron", descripcion: "Ingresos acumulados día a día" },
+  gastos: { id: "acumulado-gastos", titulo: "Cómo van los gastos", color: "var(--grafico-gasto)", hecho: "Se gastaron", descripcion: "Gastos acumulados día a día" },
+} as const;
+
+type PorDia = readonly { fecha: string; total: number }[];
+
 /** La línea de lo que se va juntando, con una frase que dice cómo va frente al período con que se compara. */
-function ComoVanLosIngresos({ periodo, comparar, este, antes }: { periodo: Periodo; comparar: { inicio: string; fin: string }; este: IngresosEntre; antes: IngresosEntre }) {
+function ComoVan({ de, periodo, comparar, este, antes }: { de: keyof typeof ACUMULADO; periodo: Periodo; comparar: { inicio: string; fin: string }; este: PorDia; antes: PorDia }) {
+  const textos = ACUMULADO[de];
   const largoEste = diasEntre(periodo.inicio, periodo.fin);
   const largoAntes = diasEntre(comparar.inicio, comparar.fin);
-  const acumEste = acumuladoDesde(este.porDia, periodo.inicio, largoEste);
-  const acumAntes = acumuladoDesde(antes.porDia, comparar.inicio, largoAntes);
+  const acumEste = acumuladoDesde(este, periodo.inicio, largoEste);
+  const acumAntes = acumuladoDesde(antes, comparar.inicio, largoAntes);
   const [nombreEste, nombreAntes] = nombresDelAcumulado(periodo, comparar);
   const dias: DiaAcumulado[] = Array.from({ length: Math.max(largoEste, largoAntes) }, (_, i) => ({
     dia: i + 1,
@@ -296,11 +298,11 @@ function ComoVanLosIngresos({ periodo, comparar, este, antes }: { periodo: Perio
   const enCurso = periodo.clave === "mes" || periodo.clave === "semana";
   const frase = enCurso
     ? `${periodo.clave === "mes" ? `Al día ${largoEste}` : "En lo que va de la semana"} van ${bsRedondo(van)}${dif === null ? "." : `: ${Math.abs(dif)} % ${dif >= 0 ? "más" : "menos"} que ${periodo.clave === "mes" ? `en ${nombreAntes.toLowerCase()}` : "la semana pasada"} a esta altura.`}`
-    : `Entraron ${bsRedondo(van)}; en ${periodo.clave === "mes-pasado" ? nombreAntes.toLowerCase() : "el período anterior"}, ${bsRedondo(acumAntes.at(-1) ?? 0)}.`;
+    : `${textos.hecho} ${bsRedondo(van)}; en ${periodo.clave === "mes-pasado" ? nombreAntes.toLowerCase() : "el período anterior"}, ${bsRedondo(acumAntes.at(-1) ?? 0)}.`;
   return (
-    <Seccion id="acumulado" titulo="Cómo van los ingresos">
+    <Seccion id={textos.id} titulo={textos.titulo}>
       <div className="flex flex-col gap-3">
-        <GraficoAcumulado dias={dias} nombreEste={nombreEste} nombreAntes={nombreAntes} descripcion={`Ingresos acumulados día a día: ${nombreEste} ${bsRedondo(van)}, ${nombreAntes} ${bsRedondo(acumAntes.at(-1) ?? 0)}`} />
+        <GraficoAcumulado dias={dias} color={textos.color} nombreEste={nombreEste} nombreAntes={nombreAntes} descripcion={`${textos.descripcion}: ${nombreEste} ${bsRedondo(van)}, ${nombreAntes} ${bsRedondo(acumAntes.at(-1) ?? 0)}`} />
         <p className="text-[0.8125rem] text-tinta-media">{frase}</p>
       </div>
     </Seccion>
@@ -311,66 +313,62 @@ function ComoVanLosIngresos({ periodo, comparar, este, antes }: { periodo: Perio
 // Gastos
 
 async function Gastos({ ctx }: { ctx: Contexto }) {
-  const meses = seisMeses(ctx.mes);
-  const [resumen, porMes, lista] = await Promise.all([resumenDelMes(ctx.mes), gastosPorCategoriaYMes(meses[0].mes, ctx.mes), gastosDelMes(ctx.mes)]);
-  // Las categorías de los 6 meses, de la que más se gastó a la que menos: cada una con su color fijo; desde la quinta,
-  // juntas en "Las demás" (un color nunca se repite ni se inventa)
-  const totales = new Map<string, number>();
-  for (const f of porMes) totales.set(f.categoria, (totales.get(f.categoria) ?? 0) + f.total);
-  const orden = [...totales.entries()].sort((a, b) => b[1] - a[1]).map(([n]) => n);
-  const grupos = orden.length > 4 ? [...orden.slice(0, 3), "Las demás"] : orden;
-  const grupoDe = (categoria: string) => (grupos.includes(categoria) ? categoria : "Las demás");
-  const claseDe = (categoria: string) => SERIES[grupos.indexOf(grupoDe(categoria))] ?? SERIES[3];
-  const totalMes = resumen.porCategoria.reduce((s, c) => s + c.total, 0);
-  const visibles = lista.slice(0, 8);
+  const { periodo } = ctx;
+  const comparar = comparacionDelAcumulado(periodo);
+  const [este, antes, linea, entregados, entregadosAntes] = await Promise.all([
+    gastosEntre(periodo.inicio, periodo.fin),
+    totalesEntre(periodo.antes.inicio, periodo.antes.fin),
+    gastosEntre(comparar.inicio, comparar.fin),
+    entregadosEntre(periodo.inicio, periodo.fin),
+    entregadosEntre(periodo.antes.inicio, periodo.antes.fin),
+  ]);
+  const porVehiculo = entregados.vehiculos > 0 ? este.total / entregados.vehiculos : null;
+  const porVehiculoAntes = entregadosAntes.vehiculos > 0 ? antes.salio / entregadosAntes.vehiculos : 0;
+  const mayor = este.porCategoria[0];
+  const parte = (monto: number) => Math.round((monto / este.total) * 100);
+  const vs = periodo.vs;
+  // La lista de gastos (buscar, anular, ver un comprobante) es su propia pantalla, por mes: la del mes en que termina el período
+  const lista = `/panel/reportes/gastos${ctx.pasado ? `?mes=${ctx.mes}` : ""}` as Route;
   return (
     <>
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-        <Bloque id="categorias" titulo="Por categoría" detalle={`${bsRedondo(totalMes)} en ${cantidad(resumen.cuantosGastos, "gasto", "gastos")}`}>
-          {resumen.porCategoria.length === 0 ? (
-            <p className="text-sm text-tinta-suave">Sin gastos en {nombreMes(ctx.mes)}.</p>
+      <section aria-label="Gastos del período" className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+        <TarjetaNumero icono={ReceiptTextIcon} titulo="Gastos" valor={bsRedondo(este.total)} nota={<Cambio cambio={cambioPorcentual(este.total, antes.salio)} contra={vs} subirEsMalo />} />
+        <TarjetaNumero icono={CarFrontIcon} titulo="Gasto por vehículo" valor={porVehiculo === null ? "—" : bsRedondo(porVehiculo)} nota={porVehiculo === null ? "Sin entregas en estas fechas" : <Cambio cambio={cambioPorcentual(porVehiculo, porVehiculoAntes)} contra={vs} subirEsMalo />} />
+        <TarjetaNumero className="col-span-2 lg:col-span-1" icono={ChartPieIcon} titulo="Lo que más pesa" valor={mayor ? bsRedondo(mayor.total) : "—"} nota={mayor ? `${mayor.nombre}, ${parte(mayor.total)} % del total` : "Sin gastos en estas fechas"} />
+      </section>
+      <div className={cn("grid gap-x-4 gap-y-6", periodo.clave !== "hoy" && "lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]")}>
+        {/* Un solo día no tiene recorrido: con "Hoy" no hay línea, y las categorías ocupan todo el ancho */}
+        {periodo.clave !== "hoy" && <ComoVan de="gastos" periodo={periodo} comparar={comparar} este={este.porDia} antes={linea.porDia} />}
+        <Seccion
+          id="categorias"
+          titulo="Por categoría"
+          accion={
+            <Link href={lista} className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold hover:underline">
+              Ver la lista de gastos
+              <ChevronRightIcon className="size-4" aria-hidden />
+            </Link>
+          }
+        >
+          {este.porCategoria.length === 0 ? (
+            <p className="py-10 text-center text-sm text-tinta-suave">Sin gastos en estas fechas.</p>
           ) : (
             <BarrasHorizontales
-              filas={resumen.porCategoria.map((c) => ({
+              alta
+              filas={este.porCategoria.map((c) => ({
                 nombre: c.nombre,
                 valor: c.total,
-                clase: claseDe(c.nombre),
+                clase: "bg-grafico-gasto",
                 texto: (
                   <>
                     <span className="font-semibold">{bsRedondo(c.total)}</span>
-                    <span className="text-tinta-suave"> · {Math.round((c.total / totalMes) * 100)} %</span>
+                    <span className="text-tinta-suave"> · {parte(c.total)} %</span>
                   </>
                 ),
               }))}
             />
           )}
-        </Bloque>
-        <Bloque id="categorias-meses" titulo="Gastos de los últimos 6 meses">
-          {grupos.length > 0 && <Leyenda items={grupos.map((g, k) => ({ nombre: g, clase: SERIES[k] }))} />}
-          <BarrasApiladas
-            categorias={grupos.map((g, k) => ({ nombre: g, clase: SERIES_SVG[k] }))}
-            meses={meses.map((m) => ({ ...m, partes: grupos.map((g) => porMes.filter((f) => f.mes === m.mes && grupoDe(f.categoria) === g).reduce((s, f) => s + f.total, 0)) }))}
-          />
-        </Bloque>
+        </Seccion>
       </div>
-      <section aria-labelledby="lista-titulo" className="flex flex-col gap-2">
-        <CabeceraSeccion id="lista" titulo={`Gastos de ${nombreMes(ctx.mes)}`}>
-          <Link href={`/panel/reportes/gastos${ctx.pasado ? `?mes=${ctx.mes}` : ""}` as Route} className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold hover:underline">
-            Ver todos y filtrar
-            <ChevronRightIcon className="size-4" aria-hidden />
-          </Link>
-        </CabeceraSeccion>
-        {lista.length === 0 ? (
-          <EstadoVacio>{`Todavía no hay gastos en ${nombreMes(ctx.mes)}.`}</EstadoVacio>
-        ) : (
-          <ul aria-label={`Gastos de ${nombreMes(ctx.mes)}`} className="tt-tarjeta-panel divide-y divide-border">
-            {visibles.map((g) => (
-              <FilaGasto key={g.id} g={g} />
-            ))}
-          </ul>
-        )}
-        {lista.length > visibles.length && <p className="text-sm text-tinta-suave">Se ven los últimos {visibles.length}; los demás, en «Ver todos y filtrar».</p>}
-      </section>
     </>
   );
 }

@@ -143,6 +143,12 @@ Todas en `modulos/reportes/acciones.ts`, con `exigirModulo("reportes")` y Zod (e
   un vehículo) y Por cobrar hoy (no depende de las fechas; lleva a Saldos pendientes; "Nadie debe" en cero). "Cómo van los
   ingresos": lo juntado día a día contra el mes o la semana anterior enteros (este mes, esta semana) o el período anterior
   del mismo largo (lo demás), con shadcn Charts; con "Hoy" no se muestra. "Por forma de pago" sigue como lista con barras.
+- **Gastos (17/11):** es el reporte de los gastos, no su lista (buscar, anular o ver un comprobante sigue en su propia
+  pantalla, por mes, con "Ver la lista de gastos"). Respeta las fechas y va en rojo (`grafico-gasto`, no el rojo de marca):
+  tarjetas Gastos, Gasto por vehículo (los gastos entre los vehículos entregados) y Lo que más pesa (la categoría mayor y
+  su %); "Cómo van los gastos", el mismo gráfico que el de los ingresos, en rojo (sin él con "Hoy"); y "Por categoría", la
+  lista con barras rojas. Se quitan la lista de los últimos gastos y las barras apiladas de 6 meses (ya están en Resumen).
+  Los montos de la lista de gastos siguen como en todo el panel ("1180,50 Bs", sin punto de miles).
 - **Datos para probar:** `npm run datos:reportes` carga seis meses de trabajos, pagos, gastos, cotizaciones y
   mantenimientos sobre la base local (se rehace al volver a correrlo; `-- --quitar` lo saca).
 

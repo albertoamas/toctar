@@ -105,42 +105,6 @@ export async function movimientosPorMes(desde: string, hasta: string): Promise<M
   return meses;
 }
 
-export type ResumenDelMes = {
-  /** De cuántos vehículos (trabajos) vino lo que entró. */
-  vehiculosConPagos: number;
-  cuantosGastos: number;
-  /** Lo que se gastó por categoría, de mayor a menor. */
-  porCategoria: { nombre: string; total: number }[];
-};
-
-export async function resumenDelMes(mes: string): Promise<ResumenDelMes> {
-  const s = await sucursalPrincipal();
-  const { inicio, fin } = rangoDelMes(mes);
-  const [[vehiculos], [gastos], porCategoria] = await Promise.all([
-    db
-      .select({ n: countDistinct(pago.trabajoId) })
-      .from(pago)
-      .innerJoin(trabajo, eq(pago.trabajoId, trabajo.id))
-      .where(and(eq(trabajo.sucursalId, s.id), eq(pago.anulado, false), gte(pago.fecha, inicio), lte(pago.fecha, fin))),
-    db
-      .select({ n: count() })
-      .from(gasto)
-      .where(and(eq(gasto.sucursalId, s.id), eq(gasto.anulado, false), gte(gasto.fecha, inicio), lte(gasto.fecha, fin))),
-    db
-      .select({ nombre: categoriaGasto.nombre, total: sql<string>`sum(${gasto.monto})` })
-      .from(gasto)
-      .innerJoin(categoriaGasto, eq(gasto.categoriaId, categoriaGasto.id))
-      .where(and(eq(gasto.sucursalId, s.id), eq(gasto.anulado, false), gte(gasto.fecha, inicio), lte(gasto.fecha, fin)))
-      .groupBy(categoriaGasto.id, categoriaGasto.nombre)
-      .orderBy(desc(sql`sum(${gasto.monto})`)),
-  ]);
-  return {
-    vehiculosConPagos: vehiculos?.n ?? 0,
-    cuantosGastos: gastos?.n ?? 0,
-    porCategoria: porCategoria.map((c) => ({ nombre: c.nombre, total: Number(c.total) })),
-  };
-}
-
 export type ElTallerEnElMes = {
   /** Los servicios de los vehículos entregados, los más pedidos primero (hasta 5). */
   servicios: { nombre: string; veces: number }[];
@@ -226,18 +190,6 @@ export async function entregasHasta(mes: string): Promise<Entrega[]> {
   return filas;
 }
 
-/** Lo que se gastó por categoría en cada mes de un rango (sin anulados). */
-export async function gastosPorCategoriaYMes(desde: string, hasta: string): Promise<{ mes: string; categoria: string; total: number }[]> {
-  const s = await sucursalPrincipal();
-  const filas = await db
-    .select({ mes: sql<string>`to_char(${gasto.fecha}, 'YYYY-MM')`, categoria: categoriaGasto.nombre, total: sql<string>`sum(${gasto.monto})` })
-    .from(gasto)
-    .innerJoin(categoriaGasto, eq(gasto.categoriaId, categoriaGasto.id))
-    .where(and(eq(gasto.sucursalId, s.id), eq(gasto.anulado, false), gte(gasto.fecha, rangoDelMes(desde).inicio), lte(gasto.fecha, rangoDelMes(hasta).fin)))
-    .groupBy(sql`1`, categoriaGasto.nombre);
-  return filas.map((f) => ({ mes: f.mes, categoria: f.categoria, total: Number(f.total) }));
-}
-
 /** Lo que entró y salió entre dos días (incluidos): los pagos y los gastos sin anular de cualquier período. */
 export async function totalesEntre(inicio: string, fin: string): Promise<{ entro: number; salio: number }> {
   const s = await sucursalPrincipal();
@@ -298,4 +250,28 @@ export async function entregadosEntre(inicio: string, fin: string): Promise<{ ve
     .leftJoin(lineas, eq(lineas.trabajoId, trabajo.id))
     .where(and(eq(trabajo.sucursalId, s.id), eq(trabajo.estado, "entregado"), sql`${dia} between ${inicio}::date and ${fin}::date`));
   return { vehiculos: fila?.vehiculos ?? 0, monto: Number(fila?.monto ?? 0) };
+}
+
+export type GastosEntre = { total: number; porCategoria: { nombre: string; total: number }[]; porDia: { fecha: string; total: number }[] };
+
+/** Los gastos sin anular entre dos días (incluidos): el total, por categoría (de mayor a menor) y por día. */
+export async function gastosEntre(inicio: string, fin: string): Promise<GastosEntre> {
+  const s = await sucursalPrincipal();
+  const donde = and(eq(gasto.sucursalId, s.id), eq(gasto.anulado, false), gte(gasto.fecha, inicio), lte(gasto.fecha, fin));
+  const [porCategoria, porDia] = await Promise.all([
+    db
+      .select({ nombre: categoriaGasto.nombre, total: sql<string>`sum(${gasto.monto})` })
+      .from(gasto)
+      .innerJoin(categoriaGasto, eq(gasto.categoriaId, categoriaGasto.id))
+      .where(donde)
+      .groupBy(categoriaGasto.nombre)
+      .orderBy(desc(sql`sum(${gasto.monto})`)),
+    db
+      .select({ fecha: sql<string>`${gasto.fecha}::text`, total: sql<string>`sum(${gasto.monto})` })
+      .from(gasto)
+      .where(donde)
+      .groupBy(gasto.fecha),
+  ]);
+  const categorias = porCategoria.map((c) => ({ nombre: c.nombre, total: Number(c.total) }));
+  return { total: categorias.reduce((t, c) => t + c.total, 0), porCategoria: categorias, porDia: porDia.map((d) => ({ fecha: d.fecha, total: Number(d.total) })) };
 }

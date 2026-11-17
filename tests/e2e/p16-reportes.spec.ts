@@ -76,12 +76,13 @@ test("el mes pasado: lo que entró, salió y quedó salen de los pagos y gastos 
   await page.getByRole("navigation", { name: "Fechas" }).getByRole("link", { name: "Mes pasado" }).click();
   await expect(page.getByRole("region", { name: "Cómo van los ingresos" })).toBeVisible();
 
-  // Gastos: Otros, sin el anulado, y la lista
+  // Gastos: el reporte (lo que salió, cómo van y por categoría, sin el anulado) y el enlace a la lista de gastos
   await page.getByRole("navigation", { name: "Partes de los reportes" }).getByRole("link", { name: "Gastos" }).click();
+  await expect(page.getByRole("region", { name: "Gastos del período" })).toContainText(`Gastos${miles(Number(salio))}`);
+  await expect(page.getByRole("region", { name: "Cómo van los gastos" })).toContainText(`Se gastaron ${miles(Number(salio))}`);
   const categorias = page.getByRole("region", { name: "Por categoría" });
   await expect(categorias).toContainText("Otros");
-  await expect(page.getByRole("list", { name: /^Gastos de / })).toContainText("Reporte p16 bolsas");
-  await page.getByRole("link", { name: "Ver todos y filtrar" }).click();
+  await categorias.getByRole("link", { name: "Ver la lista de gastos" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Gastos" })).toBeVisible();
   await expect(page).toHaveURL((url) => url.pathname === "/panel/reportes/gastos" && url.searchParams.get("mes") === mes);
   await expect(page.getByText("Anulado: Prueba").filter({ visible: true })).toBeVisible();
