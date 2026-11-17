@@ -68,7 +68,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes/gasto
 
   return (
     <>
-      <EncabezadoPagina titulo="Gastos" volver={{ href: "/panel/reportes?vista=gastos", texto: "Reportes" }} accion={<RegistrarGasto categorias={categorias} hoy={hoy} />} />
+      <EncabezadoPagina titulo="Gastos" volver={{ href: (mes === sumarMeses(esteMes, -1) ? "/panel/reportes?vista=gastos&mes=pasado" : "/panel/reportes?vista=gastos") as Route, texto: "Reportes" }} accion={<RegistrarGasto categorias={categorias} hoy={hoy} />} />
       <BarraLista
         // El mes primero: es lo que decide qué se ve; los filtros, al lado
         buscador={

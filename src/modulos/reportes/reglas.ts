@@ -63,13 +63,16 @@ export function bsRedondo(monto: number): string {
  * llevó más de uno en él, y nuevo el resto.
  */
 export function entregasPorMes(entregas: readonly { clienteId: number; dia: string }[], meses: readonly string[]) {
+  // La primera vez que vino cada cliente: una pasada, no una búsqueda por cliente y mes
+  const primera = new Map<number, string>();
+  for (const e of entregas) if (!primera.has(e.clienteId) || e.dia < primera.get(e.clienteId)!) primera.set(e.clienteId, e.dia);
   return meses.map((mes) => {
     const delMes = entregas.filter((e) => mesDe(e.dia) === mes);
     const veces = new Map<number, number>();
     for (const e of delMes) veces.set(e.clienteId, (veces.get(e.clienteId) ?? 0) + 1);
     let volvieron = 0;
     for (const [clienteId, n] of veces) {
-      const antes = entregas.some((e) => e.clienteId === clienteId && e.dia < `${mes}-01`);
+      const antes = primera.get(clienteId)! < `${mes}-01`;
       if (antes || n > 1) volvieron++;
     }
     return { mes, entregados: delMes.length, volvieron, nuevos: veces.size - volvieron };
@@ -94,11 +97,13 @@ export const diasDelMes = (mes: string) => Number(rangoDelMes(mes).fin.slice(8))
  * Un eje con números redondos para el valor más alto: el tope y el paso entre líneas guía (1, 2 o 5 por una potencia
  * de 10, con unas 4 líneas). 18.450 → tope 20.000 cada 5.000; 42 → 50 cada 10. Sin datos, de 0 a 4.
  */
-export function escalaBonita(maximo: number, lineas = 4): { tope: number; paso: number } {
+export function escalaBonita(maximo: number, lineas = 4, entero = false): { tope: number; paso: number } {
   if (!(maximo > 0)) return { tope: 4, paso: 1 };
   const bruto = maximo / lineas;
   const potencia = 10 ** Math.floor(Math.log10(bruto));
-  const paso = [1, 2, 2.5, 5, 10].map((m) => m * potencia).find((p) => p >= bruto)!;
+  const elegido = [1, 2, 2.5, 5, 10].map((m) => m * potencia).find((p) => p >= bruto)!;
+  // Para cantidades (vehículos, clientes), de a 1 como mínimo y sin medios
+  const paso = entero ? Math.max(1, Math.ceil(elegido)) : elegido;
   return { tope: Math.ceil(maximo / paso) * paso, paso };
 }
 

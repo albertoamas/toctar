@@ -122,8 +122,9 @@ async function Resumen({ ctx }: { ctx: Contexto }) {
       <ul aria-label="Resumen del mes" className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
         <Tarjeta etiqueta="Ingresos" marca="bg-grafico-ingreso" valor={bsRedondo(entro)} cambio={cambioPorcentual(entro, antes.entro)} contra={delAnterior} />
         <Tarjeta etiqueta="Gastos" marca="bg-grafico-gasto" valor={bsRedondo(salio)} cambio={cambioPorcentual(salio, antes.salio)} contra={delAnterior} subirEsMalo />
-        <Tarjeta etiqueta="Ganancia" valor={bsRedondo(ganancia)} cambio={cambioPorcentual(ganancia, antes.entro - antes.salio)} contra={delAnterior} />
-        <Tarjeta etiqueta="Margen" valor={margen === null ? "—" : `${margen} %`} cambio={margen !== null && margenAntes !== null ? margen - margenAntes : null} unidad="pts" contra="de lo que entró queda" />
+        {/* Con pérdida, sin %: "▼ 150 %" junto a una pérdida confunde */}
+        <Tarjeta etiqueta="Ganancia" valor={bsRedondo(ganancia)} cambio={ganancia < 0 ? null : cambioPorcentual(ganancia, antes.entro - antes.salio)} contra={delAnterior} />
+        <Tarjeta etiqueta="Margen" valor={margen === null ? "—" : `${margen} %`} cambio={margen !== null && margenAntes !== null ? margen - margenAntes : null} unidad="pts" contra={delAnterior} />
       </ul>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.75fr)]">
         <Bloque id="neto" titulo="Lo neto del mes" detalle={`De los ${bsRedondo(entro)} que entraron`}>
@@ -183,7 +184,7 @@ function Bloque({ id, titulo, detalle, accion, children, className }: { id: stri
 // Ingresos
 
 async function Ingresos({ ctx }: { ctx: Contexto }) {
-  const [este, antes, resumen, saldos] = await Promise.all([ingresosDelMes(ctx.mes), ingresosDelMes(ctx.anterior), resumenDelMes(ctx.mes), saldosPendientes()]);
+  const [este, antes, saldos] = await Promise.all([ingresosDelMes(ctx.mes), ingresosDelMes(ctx.anterior), saldosPendientes()]);
   const total = este.porMetodo.reduce((s, m) => s + m.total, 0);
   const porCobrar = saldos.reduce((s, x) => s + Number(x.saldo), 0);
   // Este mes, hasta hoy; un mes pasado, entero. El anterior, entero
@@ -196,10 +197,11 @@ async function Ingresos({ ctx }: { ctx: Contexto }) {
     <>
       <ul aria-label="Ingresos del mes" className="grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4">
         <Tarjeta etiqueta="Ingresos del mes" marca="bg-grafico-ingreso" valor={bsRedondo(total)} cambio={null} contra="" />
-        <Tarjeta etiqueta="Promedio por vehículo" valor={resumen.vehiculosConPagos > 0 ? bsRedondo(total / resumen.vehiculosConPagos) : "—"} cambio={null} contra="" />
+        <Tarjeta etiqueta="Promedio por vehículo" valor={este.vehiculos > 0 ? bsRedondo(total / este.vehiculos) : "—"} cambio={null} contra="" />
         <li className="col-span-2 lg:col-span-1">
           <Link href="/panel/pagos" className="tt-tarjeta-panel flex h-full flex-col gap-1.5 p-4 hover:bg-superficie/40 lg:p-5">
-            <span className="text-[0.8125rem] font-medium text-tinta-media">Por cobrar</span>
+            {/* Los saldos de hoy, también en "Mes pasado": no es de un mes */}
+            <span className="text-[0.8125rem] font-medium text-tinta-media">Por cobrar hoy</span>
             <span className="text-[1.375rem] font-bold tabular-nums lg:text-[1.75rem]">{bsRedondo(porCobrar)}</span>
             <span className="flex items-center gap-1 text-xs font-semibold">
               En {cantidad(saldos.length, "orden", "órdenes")}. Ver saldos

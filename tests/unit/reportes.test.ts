@@ -123,3 +123,8 @@ describe("las pestañas de Reportes", () => {
     ]);
   });
 });
+
+test("los ejes de cantidades van de a enteros", () => {
+  expect(escalaBonita(1, 4, true)).toEqual({ tope: 1, paso: 1 });
+  expect(escalaBonita(2, 4, true)).toEqual({ tope: 2, paso: 1 });
+});

@@ -167,6 +167,8 @@ export async function elTallerEnElMes(mes: string): Promise<ElTallerEnElMes> {
     .groupBy(cotizacion.consultaId)
     .as("primera");
 
+  // Reservada: tiene una reserva que no se canceló (el último paso del embudo). Una sola expresión en el select y el group by
+  const reservada = sql<boolean>`exists (select 1 from trabajo reserva where reserva.consulta_id = "consulta"."id" and reserva.estado <> 'cancelado')`;
   const [servicios, cotizaciones, [avisos]] = await Promise.all([
     db
       .select({ nombre: servicio.nombre, veces: countDistinct(trabajo.id) })
@@ -179,17 +181,11 @@ export async function elTallerEnElMes(mes: string): Promise<ElTallerEnElMes> {
       .orderBy(desc(countDistinct(trabajo.id)), asc(servicio.nombre))
       .limit(5),
     db
-      .select({
-        estado: consulta.estado,
-        motivo: consulta.motivoPerdida,
-        // Reservada: tiene una reserva que no se canceló (el último paso del embudo)
-        reservada: sql<boolean>`exists (select 1 from trabajo reserva where reserva.consulta_id = "consulta"."id" and reserva.estado <> 'cancelado')`,
-        n: count(),
-      })
+      .select({ estado: consulta.estado, motivo: consulta.motivoPerdida, reservada, n: count() })
       .from(primeraVersion)
       .innerJoin(consulta, eq(primeraVersion.consultaId, consulta.id))
       .where(and(gte(enBolivia(primeraVersion.enviada), inicio), lte(enBolivia(primeraVersion.enviada), fin)))
-      .groupBy(consulta.estado, consulta.motivoPerdida, sql`3`),
+      .groupBy(consulta.estado, consulta.motivoPerdida, reservada),
     db
       // Reservó: lo tiene agendado o ya se hizo (al hacerse, la reserva pasa a trabajo_hecho_id)
       .select({ avisados: count(), reservaron: count(sql`coalesce(${recordatorioMantenimiento.trabajoAgendadoId}, ${recordatorioMantenimiento.trabajoHechoId})`) })
@@ -217,6 +213,8 @@ export async function elTallerEnElMes(mes: string): Promise<ElTallerEnElMes> {
 // clientes, con sus tendencias.
 
 export type IngresosDelMes = {
+  /** De cuántos vehículos (trabajos) vino lo que entró. */
+  vehiculos: number;
   porMetodo: { metodo: MetodoPago; total: number }[];
   /** Lo que entró cada día del mes (1 al último), para la línea acumulada. */
   porDia: { dia: number; total: number }[];
@@ -227,7 +225,8 @@ export async function ingresosDelMes(mes: string): Promise<IngresosDelMes> {
   const s = await sucursalPrincipal();
   const { inicio, fin } = rangoDelMes(mes);
   const donde = and(eq(trabajo.sucursalId, s.id), eq(pago.anulado, false), gte(pago.fecha, inicio), lte(pago.fecha, fin));
-  const [porMetodo, porDia] = await Promise.all([
+  const [[vehiculos], porMetodo, porDia] = await Promise.all([
+    db.select({ n: countDistinct(pago.trabajoId) }).from(pago).innerJoin(trabajo, eq(pago.trabajoId, trabajo.id)).where(donde),
     db
       .select({ metodo: pago.metodo, total: sql<string>`sum(${pago.monto})` })
       .from(pago)
@@ -243,6 +242,7 @@ export async function ingresosDelMes(mes: string): Promise<IngresosDelMes> {
       .groupBy(sql`1`),
   ]);
   return {
+    vehiculos: vehiculos?.n ?? 0,
     porMetodo: porMetodo.map((m) => ({ metodo: m.metodo, total: Number(m.total) })),
     porDia: porDia.map((d) => ({ dia: Number(d.dia), total: Number(d.total) })),
   };

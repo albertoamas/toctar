@@ -14,8 +14,8 @@ const totalCorto = (v: number) => (v >= 1000 ? `${(Math.round(v / 100) / 10).toS
 
 type Eje = { y: (v: number) => number; lineas: { v: number; y: number }[] };
 
-function eje(maximo: number, y0: number, yTope: number): Eje {
-  const { tope, paso } = escalaBonita(maximo);
+function eje(maximo: number, y0: number, yTope: number, entero = false): Eje {
+  const { tope, paso } = escalaBonita(maximo, 4, entero);
   const y = (v: number) => y0 - (v / tope) * (y0 - yTope);
   const lineas = [];
   for (let v = 0; v <= tope; v += paso) lineas.push({ v, y: y(v) });
@@ -63,6 +63,7 @@ export function Leyenda({ items }: { items: { nombre: string; clase: string; lin
  * partes con el % que quedó en el centro. Con pérdida, toda la dona es gasto y lo dice.
  */
 export function TortaNeto({ entro, salio }: { entro: number; salio: number }) {
+  if (entro === 0 && salio === 0) return <p className="py-10 text-center text-sm text-tinta-suave">Sin ingresos ni gastos en el mes.</p>;
   const quedo = Math.max(0, entro - salio);
   const fraccion = entro > 0 ? quedo / entro : 0;
   const C = 2 * Math.PI * 76;
@@ -111,7 +112,8 @@ export function BarrasConLinea({ meses, elegido }: { meses: MesConMontos[]; eleg
   const grupo = (x1 - x0) / meses.length;
   const ancho = Math.min(20, grupo / 2 - 4);
   const xc = (i: number) => x0 + grupo * i + grupo / 2;
-  const ganancia = meses.map((m, i) => ({ x: xc(i), y: e.y(Math.max(0, m.entro - m.salio)) }));
+  // La ganancia; un mes con pérdida, en la línea de 0 y con su punto en rojo (el monto, en el detalle del mes)
+  const ganancia = meses.map((m, i) => ({ x: xc(i), y: e.y(Math.max(0, m.entro - m.salio)), perdida: m.entro - m.salio < 0 }));
   return (
     <svg viewBox="0 0 420 228" role="img" aria-label={`Ingresos, gastos y ganancia: ${meses.map((m) => `${m.nombre}, entró ${bsRedondo(m.entro)} y salió ${bsRedondo(m.salio)}`).join("; ")}`} className="block w-full">
       <Guias e={e} x0={x0} x1={x1} />
@@ -128,7 +130,7 @@ export function BarrasConLinea({ meses, elegido }: { meses: MesConMontos[]; eleg
       ))}
       <path d={ganancia.map((p, i) => `${i ? "L" : "M"}${p.x} ${p.y}`).join("")} fill="none" strokeWidth={2} strokeLinejoin="round" className="stroke-tinta" pointerEvents="none" />
       {ganancia.map((p) => (
-        <circle key={p.x} cx={p.x} cy={p.y} r={3.5} strokeWidth={2} className="fill-tinta stroke-fondo" pointerEvents="none" />
+        <circle key={p.x} cx={p.x} cy={p.y} r={p.perdida ? 4.5 : 3.5} strokeWidth={2} className={cn(p.perdida ? "fill-peligro" : "fill-tinta", "stroke-fondo")} pointerEvents="none" />
       ))}
     </svg>
   );
@@ -163,7 +165,8 @@ export function LineasAcumuladas({ este, antes, descripcion }: { este: number[];
 /** Varias series en líneas con puntos, una por mes (los entregados; los clientes nuevos y los que volvieron). */
 export function LineasMeses({ meses, series, elegido, conValores }: { meses: { mes: string; corto: string }[]; series: { nombre: string; clase: string; claseRelleno: string; valores: number[] }[]; elegido: string; conValores?: boolean }) {
   const x0 = 36, x1 = 416, y0 = 170, yTope = 18;
-  const e = eje(Math.max(...series.flatMap((s) => s.valores), 0), y0, yTope);
+  // Cantidades (vehículos, clientes): el eje va de a enteros, nunca "0,25 vehículos"
+  const e = eje(Math.max(...series.flatMap((s) => s.valores), 0), y0, yTope, true);
   const grupo = (x1 - x0) / meses.length;
   const x = (i: number) => x0 + grupo * i + grupo / 2;
   return (
