@@ -12,7 +12,7 @@ import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { Beneficio, Paso } from "@/db/esquema";
-import { cambiarVisibilidadServicio, guardarParteServicio } from "../acciones";
+import { cambiarVisibilidadServicio, guardarParteServicio } from "../acciones/servicios";
 import { iconoDe } from "../beneficios";
 import { LIMITES, type ParteServicio } from "../esquemas";
 import { ElegirIcono } from "./elegir-icono";

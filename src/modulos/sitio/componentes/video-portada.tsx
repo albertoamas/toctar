@@ -8,7 +8,7 @@ import { avisarResultado } from "@/componentes/panel/avisos";
 import { MensajeError } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 import { ACEPTA_VIDEO, BYTES_MAXIMOS_VIDEO, MENSAJE_VIDEO_PESADO } from "@/lib/formato-videos";
-import { quitarVideoDePortada } from "../acciones";
+import { quitarVideoDePortada } from "../acciones/textos";
 import type { VideoPortada } from "../consultas";
 
 // El video de "Mira cómo trabajamos" (pedido 48, `etapas/P48-video-tiktok.md` §5): una fila compacta al pie de la

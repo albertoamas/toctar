@@ -16,7 +16,7 @@ import { Input } from "@/componentes/ui/input";
 import { avisosDeGaleria } from "@/lib/formato-fotos";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { nombreDelTrabajo } from "../galeria";
-import { cambiarVisibilidadGaleria, elegirParaPortada, eliminarGaleriaItem, guardarGaleriaItem, moverGaleriaItem, subirGaleria } from "../acciones";
+import { cambiarVisibilidadGaleria, elegirParaPortada, eliminarGaleriaItem, guardarGaleriaItem, moverGaleriaItem, subirGaleria } from "../acciones/galeria";
 import { Insignia } from "@/componentes/panel/insignia";
 import { MenuMas, type AccionMas } from "@/componentes/panel/menu-mas";
 import { CancelarModal, ModalFormulario, PieModal, useCambioFueraDelFormulario, useCerrarModal } from "@/componentes/panel/modal-formulario";

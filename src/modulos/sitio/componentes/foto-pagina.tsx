@@ -2,7 +2,7 @@
 
 import { SubidaFoto } from "@/componentes/panel/subida-foto";
 import type { UrlsFoto } from "@/lib/fotos";
-import { quitarFotoDePagina, subirFotoDePagina } from "../acciones";
+import { quitarFotoDePagina, subirFotoDePagina } from "../acciones/textos";
 import { FOTOS_DE_PAGINA, type PaginaConFoto } from "../contenido";
 
 // La foto de una página de textos (`FOTOS_DE_PAGINA`): el taller detrás del lema de la portada (HU-08) o el equipo en
