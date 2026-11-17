@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { cn } from "cn";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
-import { BarraLista } from "@/componentes/panel/barra-lista";
+import { BarraLista, ResumenLista } from "@/componentes/panel/barra-lista";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
@@ -13,7 +13,9 @@ import { buttonVariants } from "@/componentes/ui/button";
 import { cantidad } from "@/lib/cantidad";
 import { fechaEnBolivia } from "@/lib/fechas";
 import { exigirModulo } from "@/lib/sesion";
-import { FilaGasto } from "@/modulos/reportes/componentes/fila-gasto";
+import { AccionesDeGasto, celdasDeGasto, TarjetaGasto } from "@/modulos/reportes/componentes/fila-gasto";
+import { TablaAcciones } from "@/componentes/panel/tabla-acciones";
+import { ListaEnTarjeta } from "@/componentes/panel/fila-lista";
 import { RegistrarGasto } from "@/modulos/reportes/componentes/registrar-gasto";
 import { categoriasActivas, gastosDelMes } from "@/modulos/reportes/consultas";
 import { bsExacto, esMes, mesDe, nombreMes, parametrosDelPeriodo, periodoDe, primerDiaDeGastos, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
@@ -70,31 +72,20 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes/gasto
   return (
     <>
       <EncabezadoPagina titulo="Gastos" volver={{ href: volver, texto: "Reportes" }} accion={<RegistrarGasto categorias={categorias} hoy={hoy} />} />
+      {/* El mes, centrado y con sus dos flechas siempre en su lugar: la que no se puede usar queda apagada (antes
+          desaparecía y el mes quedaba corrido) */}
+      <nav aria-label="Meses" className="flex items-center justify-center gap-3">
+        <FlechaMes href={mes > primerMes ? enlace(sumarMeses(mes, -1), filtro) : null} etiqueta="Mes anterior">
+          <ChevronLeftIcon />
+        </FlechaMes>
+        <p className="w-52 text-center tt-titulo-seccion" aria-live="polite">
+          {tituloMes(mes)}
+        </p>
+        <FlechaMes href={mes < esteMes ? enlace(sumarMeses(mes, 1), filtro) : null} etiqueta="Mes siguiente">
+          <ChevronRightIcon />
+        </FlechaMes>
+      </nav>
       <BarraLista
-        // El mes primero: es lo que decide qué se ve; los filtros, al lado
-        buscador={
-          <nav aria-label="Meses" className="flex w-full items-center gap-2">
-            {mes > primerMes ? (
-              // Al cambiar de mes, el filtro se queda (si en el otro mes no hay de esa categoría, se ven todos)
-              <Link href={enlace(sumarMeses(mes, -1), filtro)} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Mes anterior">
-                <ChevronLeftIcon />
-              </Link>
-            ) : (
-              <span aria-hidden className="size-9 shrink-0 pointer-coarse:size-11" />
-            )}
-            <p className="min-w-0 flex-1 text-center tt-titulo-seccion" aria-live="polite">
-              {tituloMes(mes)}
-            </p>
-            {mes < esteMes ? (
-              <Link href={enlace(sumarMeses(mes, 1), filtro)} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Mes siguiente">
-                <ChevronRightIcon />
-              </Link>
-            ) : (
-              // El mes que viene todavía no tiene gastos: el lugar queda, así el mes no se mueve
-              <span aria-hidden className="size-9 shrink-0 pointer-coarse:size-11" />
-            )}
-          </nav>
-        }
         filtros={
           enElMes.length > 1 ? (
             <Filtros
@@ -107,24 +98,54 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes/gasto
           ) : undefined
         }
       />
-
-      <section aria-label="Total del mes" className="tt-tarjeta-panel flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-4 py-3">
-        <span className="text-sm text-tinta-media">Total de {deQue}</span>
-        <span className="text-2xl font-bold tabular-nums">
-          {bsExacto(total.toFixed(2))}
-          <span className="ml-2 text-sm font-normal text-tinta-suave">en {cantidad(vigentes.length, "gasto", "gastos")}</span>
-        </span>
-      </section>
+      {/* El total, como en las otras listas (Saldos): una línea arriba de la lista */}
+      {visibles.length > 0 && (
+        <ResumenLista>
+          <strong className="font-semibold text-tinta tabular-nums">{bsExacto(total.toFixed(2))}</strong> en {cantidad(vigentes.length, "gasto", "gastos")} de {deQue}
+          {vigentes.length < visibles.length && ` (y ${cantidad(visibles.length - vigentes.length, "anulado", "anulados")}, que no cuentan)`}
+        </ResumenLista>
+      )}
 
       {visibles.length === 0 ? (
         <EstadoVacio>{`Todavía no hay gastos en ${nombreMes(mes)}.`}</EstadoVacio>
       ) : (
-        <ul aria-label={`Gastos de ${nombreMes(mes)}`} className="tt-tarjeta-panel divide-y divide-border">
-          {visibles.map((g) => (
-            <FilaGasto key={g.id} g={g} />
-          ))}
-        </ul>
+        <>
+          {/* En la computadora, una tabla como Saldos y Mantenimientos; más angosto, sus tarjetas */}
+          <TablaAcciones
+            etiqueta={`Gastos de ${nombreMes(mes)}`}
+            columnas={[
+              { titulo: "Fecha", ancho: "4.5rem" },
+              { titulo: "Gasto", ancho: "minmax(0,1.6fr)" },
+              { titulo: "Categoría", ancho: "minmax(0,1fr)" },
+              { titulo: "Cómo se pagó", ancho: "8rem" },
+              { titulo: "Monto", ancho: "7rem", alinear: "derecha" },
+            ]}
+            anchoAcciones="6rem"
+            filas={visibles.map((g) => ({ clave: g.id, celdas: celdasDeGasto(g, hoy), acciones: <AccionesDeGasto g={g} /> }))}
+          />
+          <div className="@4xl:hidden">
+            <ListaEnTarjeta etiqueta={`Gastos de ${nombreMes(mes)}`}>
+              {visibles.map((g) => (
+                <TarjetaGasto key={g.id} g={g} hoy={hoy} />
+              ))}
+            </ListaEnTarjeta>
+          </div>
+        </>
       )}
     </>
+  );
+}
+
+/** Una flecha del mes: un enlace, o apagada en su mismo lugar si no hay a dónde ir (antes del primer mes o después de hoy). */
+function FlechaMes({ href, etiqueta, children }: { href: Route | null; etiqueta: string; children: React.ReactNode }) {
+  const clase = cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0");
+  return href ? (
+    <Link href={href} className={clase} aria-label={etiqueta}>
+      {children}
+    </Link>
+  ) : (
+    <span aria-hidden className={cn(clase, "pointer-events-none opacity-40")}>
+      {children}
+    </span>
   );
 }

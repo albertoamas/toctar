@@ -81,7 +81,7 @@ test("el mes pasado: lo que entró, salió y quedó salen de los pagos y gastos 
   await categorias.getByRole("link", { name: "Ver la lista de gastos" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Gastos" })).toBeVisible();
   await expect(page).toHaveURL((url) => url.pathname === "/panel/reportes/gastos" && url.searchParams.get("mes") === mes);
-  await expect(page.getByText("Anulado: Prueba").filter({ visible: true })).toBeVisible();
+  await expect(page.getByText("Motivo: Prueba").filter({ visible: true })).toBeVisible();
   // Y vuelve a la pestaña Gastos de Reportes
   await page.getByRole("main").getByRole("link", { name: "Volver a Reportes" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Reportes" })).toBeVisible();

@@ -66,7 +66,8 @@ test("registrar gastos con su comprobante, filtrarlos y anular uno: el total los
   await expect(page.getByText("Gasto registrado: Otros, 200 Bs.")).toBeVisible();
 
   await page.goto(`/panel/reportes/gastos?mes=${mes}`);
-  const total = page.getByRole("region", { name: "Total del mes" });
+  // El total, en la línea de arriba de la lista, como en Saldos
+  const total = page.locator("p", { hasText: / Bs en \d+ gastos? de / }).filter({ visible: true });
   await expect(total).toContainText("1380,50 Bs");
   await expect(total).toContainText("en 2 gastos");
   const lista = page.getByRole("list", { name: /^Gastos de / });
@@ -76,8 +77,8 @@ test("registrar gastos con su comprobante, filtrarlos y anular uno: el total los
   // El comprobante va al bucket privado y se ve en grande
   const [c] = await consultar<{ privado: boolean }>("select a.privado from gasto g join archivo a on a.id = g.comprobante_archivo_id where g.detalle = $1", [`Cera ${sufijo}`]);
   expect(c.privado).toBe(true);
-  await page.getByRole("button", { name: /^Ver el comprobante: Insumos y productos, 1180,50 Bs/ }).click();
-  await expect(page.getByRole("dialog").getByRole("img", { name: /^Comprobante: Insumos y productos/ })).toBeVisible();
+  await page.getByRole("button", { name: new RegExp(`^Ver el comprobante: Cera ${sufijo}, 1180,50 Bs`) }).click();
+  await expect(page.getByRole("dialog").getByRole("img", { name: new RegExp(`^Comprobante: Cera ${sufijo}`) })).toBeVisible();
   await page.keyboard.press("Escape");
 
   // Por categoría
@@ -86,21 +87,22 @@ test("registrar gastos con su comprobante, filtrarlos y anular uno: el total los
   await expect(lista.getByRole("listitem")).toHaveCount(1);
   await expect(lista).toContainText(`Bolsas ${sufijo}`);
   // El total es el de la categoría elegida
-  await expect(total).toContainText("Total de Otros en ");
+  await expect(total).toContainText("de Otros en ");
   await expect(total).toContainText("200 Bs");
   await filtros.getByRole("link", { name: /^Todos/ }).click();
   await expect(lista.getByRole("listitem")).toHaveCount(2);
 
   // Anular el de Otros: pide motivo, queda tachado y deja de contar
-  await page.getByRole("button", { name: /^Opciones del gasto: Otros, 200 Bs/ }).click();
+  await page.getByRole("button", { name: new RegExp(`^Opciones del gasto: Bolsas ${sufijo}, 200 Bs`) }).click();
   await page.getByRole("menuitem", { name: "Anular gasto" }).click();
-  const anular = page.getByRole("dialog", { name: "Anular gasto" }).getByRole("form", { name: /^Anular Otros/ });
+  const anular = page.getByRole("dialog", { name: "Anular gasto" }).getByRole("form", { name: new RegExp(`^Anular Bolsas ${sufijo}`) });
   await anular.getByRole("button", { name: "Anular gasto" }).click();
   await expect(anular.getByText("Escribe el motivo.")).toBeVisible();
   await anular.getByLabel("Motivo").fill("Se cargó dos veces");
   await anular.getByRole("button", { name: "Anular gasto" }).click();
   await expect(page.getByText("Gasto anulado.")).toBeVisible();
-  await expect(page.getByText("Anulado: Se cargó dos veces")).toBeVisible();
+  await expect(page.getByText("Motivo: Se cargó dos veces").filter({ visible: true })).toBeVisible();
+  await expect(lista.getByText("Anulado", { exact: true })).toBeVisible();
   await expect(total).toContainText("1180,50 Bs");
   await expect(total).toContainText("en 1 gasto");
 

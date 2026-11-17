@@ -170,6 +170,12 @@ Todas en `modulos/reportes/acciones.ts`, con `exigirModulo("reportes")` y Zod (e
   nombre en Ingresos y en Gastos: "Ganancia y gastos" (antes "Lo neto"), "Ingresos acumulados" y "Gastos acumulados"
   (antes "Cómo van…"), "Ingresos por forma de pago", "Gastos por categoría", "Ingreso por vehículo" (antes "Promedio por
   vehículo", como "Gasto por vehículo"), "Mayor gasto" (antes "Lo que más pesa") y "Resultado de las cotizaciones".
+- **Lista de gastos (17/11), como las otras listas del panel:** el mes centrado con sus dos flechas siempre en su lugar
+  (la que no se puede usar, apagada); los filtros por categoría; el total en la línea de arriba (`ResumenLista`, como
+  Saldos: "4862 Bs en 7 gastos de noviembre de 2026", y los anulados aparte); en la computadora, una tabla
+  (`TablaAcciones`, como Saldos y Mantenimientos: Fecha, Gasto, Categoría, Cómo se pagó, Monto y el comprobante y "⋯");
+  más angosto, tarjetas. El detalle es el título de cada gasto (sin él, la categoría); la fecha, corta ("12/11"); un
+  anulado, tachado con la insignia "Anulado" y su motivo.
 - **Datos para probar:** `npm run datos:reportes` carga seis meses de trabajos, pagos, gastos, cotizaciones y
   mantenimientos sobre la base local (se rehace al volver a correrlo; `-- --quitar` lo saca).
 
