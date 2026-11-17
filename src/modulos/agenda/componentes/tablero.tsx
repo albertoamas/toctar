@@ -28,7 +28,8 @@ import { conDesde } from "@/lib/volver";
 //   "Reservar" aparece al pasar el mouse o con el foco), hoy se marca en su encabezado y un día cerrado, una sola vez.
 //   Cada reserva dice placa, cliente, servicio y estado (con palabra, no solo color).
 // - Tableta y laptop chica (768 a 1279 px): la semana como lista por día ("Hoy", "Mañana", "Miércoles 18"), sin tocar pestañas.
-// - Celular: los siete días como pestañas con cuántas reservas tiene cada uno, y el día elegido en una tarjeta.
+// - Celular: la tira de los siete días (un punto en los que tienen reservas), fija arriba, y el día elegido en una
+//   tarjeta, con los espacios libres juntos en una fila.
 // Todo es texto y enlaces: se lee igual con lector de pantalla.
 
 type Props = {
@@ -73,13 +74,12 @@ function textoTramo(r: Pick<ReservaTablero, "inicio" | "fin">, dia: string) {
 
 /**
  * El color de un bloque en la grilla: el de su estado (las clases tt-tono-* de globals.css, las mismas de las
- * insignias). La reservada, gris con borde (16/11: blanca, no se distinguía bien). La entregada, sólida en verde
- * (pedido 28). La guía de colores (GuiaColores) usa estos mismos.
+ * insignias). La reservada, en ámbar (16/11: blanca no se distinguía de un día libre; gris, de uno cerrado). La
+ * entregada, sólida en verde (pedido 28). La guía de colores (GuiaColores) usa estos mismos.
  */
 function colorBloque(estado: ReservaTablero["estado"]) {
   const tono = TONO_ESTADO_TRABAJO[estado] ?? "neutro";
   if (estado === "entregado") return { tono, clase: "tt-tono-exito border-transparent bg-exito text-fondo", texto: "text-fondo", punto: "bg-fondo" };
-  // La reservada, en el gris de su insignia y con borde: no se confunde con un día libre (blanco) ni con uno cerrado (rayas)
   if (tono === "neutro") return { tono, clase: "tt-tono-neutro border-input bg-neutro-fondo", texto: "text-tinta-suave", punto: "bg-tinta-suave" };
   return { tono, clase: `tt-tono-${tono} border-transparent bg-[var(--tono-fondo)]`, texto: "text-[var(--tono)]", punto: "bg-[var(--tono)]" };
 }
@@ -306,36 +306,33 @@ export function SemanaEnLista({ semana, dias, hoy, conOrdenes, desde }: Props) {
 }
 
 /**
- * Celular: los siete días como pestañas (enlaces: el día va en la dirección). Cada una dice cuántas reservas tiene ese
- * día, o "libre" (antes un punto, que salía en casi todos los días y no decía cuál estaba lleno). Hoy, en azul.
+ * Celular: la tira de los siete días (prototipo aprobado el 16/11): el día de la semana en chico, el número y un punto en
+ * los días con reservas. Hoy, en azul; el elegido, en negro. Queda fija arriba al bajar. Cada día es un enlace (el día va
+ * en la dirección).
  */
 export function PestanasDias({ semana, dias, hoy, dia, enlace }: { semana: SemanaDeAgenda; dias: string[]; hoy: string; dia: string; enlace: (dia: string) => Route }) {
-  const conActivos = semana.espacios.some((e) => e.activo);
   return (
-    <nav aria-label="Días de la semana" className="-mx-4 overflow-x-auto px-4 md:hidden">
-      <ul className="grid min-w-max grid-cols-7 gap-1">
+    <nav aria-label="Días de la semana" className="sticky top-0 z-20 -mx-4 border-b border-border bg-fondo-panel px-4 py-2 md:hidden">
+      <ul className="grid grid-cols-7">
         {dias.map((d, i) => {
           const cerrado = semana.diasCerrados.includes(diaDeLaSemana(d));
           const n = delDia(semana, d).length;
           const elegido = d === dia;
-          const cuenta = n > 0 ? String(n) : cerrado || d < hoy || !conActivos ? "" : "libre";
+          const esHoy = d === hoy;
           return (
             <li key={d}>
               <Link
                 href={enlace(d)}
                 aria-current={elegido ? "date" : undefined}
-                aria-label={`${textoDia(d)}${d === hoy ? ", hoy" : ""}${n > 0 ? `, ${cantidad(n, "reserva", "reservas")}` : cerrado ? ", cerrado" : ", sin reservas"}`}
+                aria-label={`${textoDia(d)}${esHoy ? ", hoy" : ""}${n > 0 ? `, ${cantidad(n, "reserva", "reservas")}` : cerrado ? ", cerrado" : ", sin reservas"}`}
                 className={cn(
-                  "flex min-h-16 min-w-11 flex-col items-center justify-center gap-0.5 rounded-lg border px-1",
-                  elegido ? "border-tinta bg-tinta text-fondo" : "border-border bg-fondo",
-                  !elegido && cerrado && "text-tinta-suave",
+                  "flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-lg",
+                  elegido ? "bg-tinta text-fondo" : esHoy ? "bg-info-fondo text-info" : cerrado ? "text-tinta-suave" : "text-tinta",
                 )}
               >
-                <span className="text-xs">{DIA_CORTO[i]}</span>
-                <span className={cn("text-[1.0625rem] tabular-nums", d === hoy || elegido ? "font-bold" : "font-medium", d === hoy && !elegido && "text-info")}>{numeroDia(d)}</span>
-                <span aria-hidden className={cn("min-h-4 text-[0.6875rem]", n > 0 ? "font-semibold" : elegido ? "text-fondo/80" : "text-tinta-suave")}>
-                  {cuenta}
-                </span>
+                <span className="text-[0.6875rem]">{DIA_CORTO[i]}</span>
+                <span className={cn("text-base tabular-nums", esHoy || elegido ? "font-bold" : "font-medium")}>{numeroDia(d)}</span>
+                <span aria-hidden className={cn("size-[5px] rounded-full", n > 0 ? (elegido ? "bg-fondo" : "bg-tinta-media") : "bg-transparent")} />
               </Link>
             </li>
           );
@@ -345,67 +342,52 @@ export function PestanasDias({ semana, dias, hoy, dia, enlace }: { semana: Seman
   );
 }
 
-/** Celular: un día en una tarjeta, una fila por espacio. Las pestañas de los días van arriba (PestanasDias). */
+/**
+ * Celular: el día elegido en una tarjeta (prototipo del 16/11): las reservas por espacio (placa y estado; cliente y
+ * servicio; el espacio, la hora y hasta cuándo sigue) y, al final, los espacios libres juntos en una sola fila con
+ * "Reservar". Las pestañas de los días van arriba (PestanasDias).
+ */
 export function AgendaDelDia({ semana, dia, hoy, conOrdenes, desde }: { semana: SemanaDeAgenda; dia: string; hoy: string; conOrdenes: boolean; desde: string }) {
   const cerrado = semana.diasCerrados.includes(diaDeLaSemana(dia));
-  const cuantas = delDia(semana, dia).length;
+  const del = delDia(semana, dia);
+  const libres = dia < hoy || cerrado ? [] : semana.espacios.filter((e) => e.activo && !del.some((d) => d.r.espacioId === e.id));
   return (
     <section aria-label={tituloDia(dia, hoy)} className="flex flex-col gap-2 md:hidden">
-      <CabeceraDia fecha={dia} hoy={hoy} cuantas={cuantas} cerrado={cerrado && cuantas === 0} />
-      {cerrado && cuantas === 0 ? (
+      <CabeceraDia fecha={dia} hoy={hoy} cuantas={del.length} cerrado={cerrado && del.length === 0} />
+      {cerrado && del.length === 0 ? (
         <DiaCerrado texto="Cerrado ese día" />
+      ) : del.length === 0 && libres.length === 0 ? (
+        <p className="tt-tarjeta-panel px-3.5 py-3 text-sm text-tinta-suave">Sin reservas.</p>
       ) : (
         <ul aria-label={`Espacios el ${textoDia(dia)}`} className="tt-tarjeta-panel overflow-hidden">
-          {semana.espacios.map((espacio, n) => {
-            const r = reservaDelDia(semana, espacio.id, dia);
-            const borde = n > 0 && "border-t border-border";
-            if (r) {
-              const tramo = textoTramo(r, dia);
-              const servicio = textoServicio(r);
-              return (
-                <li key={espacio.id} className={cn(borde)}>
-                  <Link href={conDesde(rutaTrabajo(r.id, r.estado, conOrdenes), desde)} data-tono={TONO_ESTADO_TRABAJO[r.estado] ?? "neutro"} className="flex flex-col gap-1 px-3.5 py-3 hover:bg-superficie/50">
-                    <span className="flex items-center justify-between gap-2">
-                      <span className="tt-placa text-[1.0625rem]">{r.placa}</span>
-                      <Insignia tono={TONO_ESTADO_TRABAJO[r.estado]}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</Insignia>
-                    </span>
-                    <span className="truncate text-sm">
-                      <span className="font-medium">{r.cliente}</span>
-                      {servicio && <span className="text-tinta-media">, {servicio}</span>}
-                    </span>
-                    <span className="text-xs text-tinta-suave">
-                      {espacio.nombre}
-                      {r.hora && `, a las ${r.hora}`}
-                      {tramo && `. ${tramo}`}
-                    </span>
-                  </Link>
-                </li>
-              );
-            }
-            if (cerrado || dia < hoy || !espacio.activo) {
-              return (
-                <li key={espacio.id} className={cn("flex min-h-12 items-center px-3.5 text-sm", borde)}>
-                  <span className="font-semibold">{espacio.nombre}</span>
-                  <span className="text-tinta-suave">: {!espacio.activo ? "desactivado" : "sin reserva"}</span>
-                </li>
-              );
-            }
+          {del.map(({ r, espacio }, n) => {
+            const tramo = textoTramo(r, dia);
+            const servicio = textoServicio(r);
             return (
-              <li key={espacio.id} className={cn(borde)}>
-                <Link href={agendarEn(dia, espacio.id, desde)} className="flex min-h-13 items-center justify-between gap-3 bg-superficie/50 px-3.5 text-sm hover:bg-superficie">
-                  <span>
-                    <span className="font-semibold">{espacio.nombre}</span>
-                    <span className="text-tinta-suave">: libre</span>
+              <li key={r.id} className={cn(n > 0 && "border-t border-border")}>
+                <Link href={conDesde(rutaTrabajo(r.id, r.estado, conOrdenes), desde)} data-tono={TONO_ESTADO_TRABAJO[r.estado] ?? "neutro"} className="flex flex-col gap-0.5 px-3.5 py-3 hover:bg-superficie/50">
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="tt-placa text-base">{r.placa}</span>
+                    <Insignia tono={TONO_ESTADO_TRABAJO[r.estado]}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</Insignia>
                   </span>
-                  <span className="inline-flex items-center gap-1 font-semibold">
-                    <PlusIcon className="size-4" aria-hidden />
-                    Reservar
-                    <span className="sr-only"> el {textoDia(dia)}</span>
+                  <span className="truncate text-sm">
+                    <span className="font-medium">{r.cliente}</span>
+                    {servicio && <span className="text-tinta-media">, {servicio}</span>}
+                  </span>
+                  <span className="text-xs text-tinta-suave">
+                    {espacio}
+                    {r.hora && `, a las ${r.hora}`}
+                    {tramo && `. ${tramo}`}
                   </span>
                 </Link>
               </li>
             );
           })}
+          {libres.length > 0 && (
+            <li>
+              <FilaLibres libres={libres} total={semana.espacios.filter((e) => e.activo).length} fecha={dia} desde={desde} conBorde={del.length > 0} />
+            </li>
+          )}
         </ul>
       )}
     </section>
@@ -417,11 +399,12 @@ const ESTADOS_EN_LA_GUIA = ["agendado", "recibido", "en_proceso", "listo", "entr
 
 /**
  * La guía de colores de la Agenda (pedido del desarrollador, 16/11): qué estado es cada color, y el día cerrado. Los
- * mismos colores que las reservas del tablero y las insignias de la lista. Arriba, en una línea, en todos los tamaños.
+ * mismos colores que las reservas del tablero y las insignias de la lista. Arriba, en una línea, desde la tableta: en el
+ * celular cada reserva ya dice su estado escrito, en su insignia.
  */
 export function GuiaColores() {
   return (
-    <ul aria-label="Colores de la agenda" className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-tinta-media">
+    <ul aria-label="Colores de la agenda" className="hidden flex-wrap gap-x-4 gap-y-1.5 text-xs text-tinta-media md:flex">
       {ESTADOS_EN_LA_GUIA.map((e) => (
         <li key={e} className="flex items-center gap-1.5">
           {/* El fondo de la reserva y el borde en el color fuerte del estado: un fondo pastel solo no se ve en chico */}

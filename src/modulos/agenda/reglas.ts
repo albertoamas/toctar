@@ -19,16 +19,16 @@ export const NOMBRE_ESTADO_TRABAJO: Record<EstadoTrabajo, string> = {
 };
 
 /**
- * El color de la insignia de cada estado (pedido 26), igual en todo el panel: agendada en gris, recibida en violeta, en
- * proceso en azul, lista y entregada en verde, cancelada en ámbar.
+ * El color de la insignia de cada estado (pedido 26), igual en todo el panel: reservada en ámbar (pendiente, por llegar;
+ * 16/11), recibida en violeta, en proceso en azul, lista y entregada en verde, cancelada en rojo suave.
  */
 export const TONO_ESTADO_TRABAJO: Record<EstadoTrabajo, TonoEstado | undefined> = {
-  agendado: undefined,
+  agendado: "aviso",
   recibido: "violeta",
   en_proceso: "info",
   listo: "exito",
   entregado: "exito",
-  cancelado: "aviso",
+  cancelado: "peligro",
 };
 
 /** Día de la semana de una fecha: 1 = lunes … 7 = domingo (ISO 8601, como los horarios de Configuración). */

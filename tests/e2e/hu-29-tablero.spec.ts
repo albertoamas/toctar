@@ -72,10 +72,9 @@ test("las reservas ocupan sus días en su espacio; un día libre lleva a reserva
     await expect(page).toHaveURL(new RegExp(`/panel/agenda/nueva\\?fecha=${jueves}&espacio=${espacios[0].id}(?:[?&]volver=[^&#]*)?$`));
   } else {
     // Celular: un día a la vez. El martes, la reserva en el primer espacio y los demás libres
-    // El martes tiene una reserva: su pestaña dice cuántas (lavado de cara del 16/11; antes, un punto debajo del número)
+    // El martes tiene una reserva: su día lo dice (en la tira, un punto debajo del número)
     const pestanas = page.getByRole("navigation", { name: "Días de la semana" }).getByRole("link");
     await expect(pestanas.nth(1)).toHaveAccessibleName(/, 1 reserva$/);
-    await expect(pestanas.nth(1)).toContainText("1");
     // Y no todas: un día sin reservas lo dice
     const nombres = await pestanas.evaluateAll((ps) => ps.map((p) => p.getAttribute("aria-label") ?? ""));
     expect(nombres.some((n) => n.endsWith(", sin reservas") || n.endsWith(", cerrado"))).toBe(true);
@@ -83,7 +82,8 @@ test("las reservas ocupan sus días en su espacio; un día libre lleva a reserva
     await expect(page).toHaveURL(/&dia=\d{4}-\d{2}-\d{2}$/);
     const dia = page.getByRole("list", { name: /^Espacios el Martes/ });
     await expect(dia.getByRole("link", { name: new RegExp(`^TB29${s}1`) })).toBeVisible();
-    await expect(dia.getByRole("link", { name: /Reservar/ })).toHaveCount(espacios.length - 1);
+    // Los espacios libres, juntos en una sola fila con "Reservar"
+    await expect(dia.getByRole("link", { name: /Reservar/ })).toHaveCount(1);
     // Tocar la reserva la abre
     await dia.getByRole("link", { name: new RegExp(`^TB29${s}1`) }).click();
     await expect(page).toHaveURL(/\/panel\/agenda\/\d+(?:[?&]volver=[^&#]*)?$/);
@@ -94,8 +94,11 @@ test("las reservas ocupan sus días en su espacio; un día libre lleva a reserva
 test("el tablero arranca en la semana de hoy y la marca", async ({ page }, info) => {
   await ingresarComoDueno(page);
   await page.goto("/panel/agenda");
-  // La guía de colores: los cinco estados, en el orden del trabajo, y el día cerrado (16/11)
-  await expect(page.getByRole("list", { name: "Colores de la agenda" }).getByRole("listitem")).toHaveText(["Reservada", "Recibida", "En proceso", "Lista", "Entregada", "Cerrado"]);
+  // La guía de colores: los cinco estados, en el orden del trabajo, y el día cerrado (16/11). En el celular no va: cada
+  // reserva ya dice su estado escrito
+  const guia = page.getByRole("list", { name: "Colores de la agenda" });
+  if (info.project.name === "escritorio") await expect(guia.getByRole("listitem")).toHaveText(["Reservada", "Recibida", "En proceso", "Lista", "Entregada", "Cerrado"]);
+  else await expect(guia).toBeHidden();
   if (info.project.name === "escritorio") await expect(page.getByText("Hoy", { exact: true })).toBeVisible();
   // En el celular, la pestaña de hoy es la elegida (pulido 10.1: ya no se repite el día debajo)
   else await expect(page.getByRole("navigation", { name: "Días de la semana" }).getByRole("link", { name: /, hoy(,|$)/ })).toHaveAttribute("aria-current", "date");
