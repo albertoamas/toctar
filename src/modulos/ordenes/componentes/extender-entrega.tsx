@@ -5,12 +5,12 @@ import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CancelarModal, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
-import { Selector } from "@/componentes/panel/selector";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import { sumarDias } from "@/lib/fechas";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { useEspaciosLibres } from "@/modulos/agenda/componentes/espacios-libres";
+import { CampoEspacio } from "@/modulos/agenda/componentes/campo-espacio";
 import { DIAS_MAXIMOS_TRABAJO } from "@/modulos/agenda/reglas";
 import { espaciosParaExtender, extenderEntrega } from "../acciones/estado";
 
@@ -66,23 +66,7 @@ export function ExtenderEntrega({ id, fechaInicio, fechaFin: finActual, espacioI
           {nombreActual} está {suyo}: muévela a un espacio libre.
         </p>
       )}
-      <Campo id="espacioId" etiqueta="Espacio" error={e.espacioId} ayuda={ayuda}>
-        <Selector
-          id="espacioId"
-          name="espacioId"
-          value={espacioId}
-          onChange={(ev) => setEspacioId(ev.target.value)}
-          disabled={buscando}
-          aria-invalid={!!e.espacioId}
-          aria-describedby={e.espacioId ? "espacioId-error" : "espacioId-ayuda"}
-          className="max-w-xs"
-        >
-          <option value="">Elige el espacio</option>
-          {libres.map((x) => (
-            <option key={x.id} value={x.id}>{x.nombre}</option>
-          ))}
-        </Selector>
-      </Campo>
+      <CampoEspacio valor={espacioId} alCambiar={setEspacioId} libres={libres} buscando={buscando} ayuda={ayuda} error={e.espacioId} />
       <PieModal>
         <Button type="submit" disabled={enviando || buscando}>
           {enviando ? "Guardando…" : "Extender entrega"}
