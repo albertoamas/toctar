@@ -60,7 +60,7 @@ test("el mes pasado: lo que entró, salió y quedó salen de los pagos y gastos 
   await expect(tarjetas).toContainText(`Ganancia${miles(ganancia)}`);
   // Lo neto: la torta y sus dos montos
   await expect(page.getByRole("region", { name: "Lo neto" })).toContainText(`De los ${miles(Number(entro))} que entraron`);
-  await expect(page.getByRole("region", { name: "Ingresos y gastos, últimos 6 meses" }).locator(".recharts-surface").first()).toBeVisible();
+  await expect(page.getByRole("region", { name: "Ingresos y gastos, por día" }).locator(".recharts-surface").first()).toBeVisible();
 
   // Ingresos: el acumulado y la forma de pago (efectivo, del pago de 500)
   await page.getByRole("navigation", { name: "Partes de los reportes" }).getByRole("link", { name: "Ingresos" }).click();
@@ -91,11 +91,15 @@ test("el mes pasado: lo que entró, salió y quedó salen de los pagos y gastos 
   await expect(page.getByRole("heading", { level: 1, name: "Reportes" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Por categoría" })).toBeVisible();
 
-  // Taller y clientes: los cuatro bloques
+  // Taller y clientes: las tarjetas y las tres secciones; la tendencia, por día en un mes y por mes en "6 meses"
   await page.getByRole("navigation", { name: "Partes de los reportes" }).getByRole("link", { name: "Taller y clientes" }).click();
-  for (const nombre of ["Vehículos entregados, últimos 6 meses", "Servicios más pedidos", "Cotizaciones", "Clientes, últimos 6 meses"]) {
+  for (const nombre of ["El taller en el período", "Clientes atendidos, por día", "Servicios más pedidos", "Cotizaciones"]) {
     await expect(page.getByRole("region", { name: nombre })).toBeVisible();
   }
+  await page.getByRole("navigation", { name: "Fechas" }).getByRole("link", { name: "6 meses" }).click();
+  await expect(page.getByRole("region", { name: "Clientes atendidos, por mes" })).toBeVisible();
+  await page.getByRole("navigation", { name: "Partes de los reportes" }).getByRole("link", { name: "Resumen" }).click();
+  await expect(page.getByRole("region", { name: "Ingresos y gastos, por mes" })).toBeVisible();
 });
 
 test("este mes en el celular y en la computadora: se lee sin salirse de la pantalla", async ({ page }) => {
@@ -104,7 +108,7 @@ test("este mes en el celular y en la computadora: se lee sin salirse de la panta
   await expect(page.getByRole("heading", { level: 1, name: "Reportes" })).toBeVisible();
   await expect(page.getByText("Los ingresos salen de los pagos registrados; los gastos, de los gastos registrados. Los anulados no cuentan.")).toBeVisible();
   // Cada pestaña entra en la pantalla, también en el celular
-  for (const vista of ["", "?periodo=hoy", "?periodo=semana", "?periodo=rango&desde=2026-01-01&hasta=2026-03-31", "?vista=ingresos", "?vista=gastos", "?vista=taller"]) {
+  for (const vista of ["", "?periodo=hoy", "?periodo=semana", "?periodo=6-meses", "?periodo=rango&desde=2026-01-01&hasta=2026-03-31", "?vista=ingresos", "?vista=gastos", "?vista=taller"]) {
     await page.goto(`/panel/reportes${vista}`);
     await expect(page.getByRole("heading", { level: 1, name: "Reportes" })).toBeVisible();
     const desborde = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

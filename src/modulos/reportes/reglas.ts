@@ -26,10 +26,10 @@ export function rangoDelMes(mes: string): { inicio: string; fin: string } {
 }
 
 /** "noviembre", sin el año. */
-export const nombreMesSolo = (mes: string) => NOMBRE_MES[Number(mes.slice(5)) - 1];
+const nombreMesSolo = (mes: string) => NOMBRE_MES[Number(mes.slice(5)) - 1];
 
 /** "Nov", para las barras. */
-export const mesCorto = (mes: string) => nombreMesSolo(mes).slice(0, 3).replace(/^./, (l) => l.toUpperCase());
+const mesCorto = (mes: string) => nombreMesSolo(mes).slice(0, 3).replace(/^./, (l) => l.toUpperCase());
 
 /** "noviembre de 2026". */
 export function nombreMes(mes: string): string {
@@ -58,24 +58,21 @@ export function bsRedondo(monto: number): string {
 }
 
 /**
- * Los vehículos entregados y los clientes de cada mes, a partir de todas las entregas: entregados es cuántas hubo en el
- * mes; de los clientes que se llevaron un vehículo en el mes, volvió el que ya se había llevado uno antes del mes o se
- * llevó más de uno en él, y nuevo el resto.
+ * Los vehículos entregados y los clientes de cada tramo, a partir de todas las entregas hasta el final: entregados es
+ * cuántas hubo en el tramo; de los clientes que se llevaron un vehículo en él, volvió el que ya se había llevado uno
+ * antes del tramo o se llevó más de uno en él, y nuevo el resto.
  */
-export function entregasPorMes(entregas: readonly { clienteId: number; dia: string }[], meses: readonly string[]) {
-  // La primera vez que vino cada cliente: una pasada, no una búsqueda por cliente y mes
+export function clientesPorTramo(entregas: readonly { clienteId: number; dia: string }[], tramos: readonly { desde: string; hasta: string }[]) {
+  // La primera vez que vino cada cliente: una pasada, no una búsqueda por cliente y tramo
   const primera = new Map<number, string>();
   for (const e of entregas) if (!primera.has(e.clienteId) || e.dia < primera.get(e.clienteId)!) primera.set(e.clienteId, e.dia);
-  return meses.map((mes) => {
-    const delMes = entregas.filter((e) => mesDe(e.dia) === mes);
+  return tramos.map(({ desde, hasta }) => {
+    const delTramo = entregas.filter((e) => e.dia >= desde && e.dia <= hasta);
     const veces = new Map<number, number>();
-    for (const e of delMes) veces.set(e.clienteId, (veces.get(e.clienteId) ?? 0) + 1);
+    for (const e of delTramo) veces.set(e.clienteId, (veces.get(e.clienteId) ?? 0) + 1);
     let volvieron = 0;
-    for (const [clienteId, n] of veces) {
-      const antes = primera.get(clienteId)! < `${mes}-01`;
-      if (antes || n > 1) volvieron++;
-    }
-    return { mes, entregados: delMes.length, volvieron, nuevos: veces.size - volvieron };
+    for (const [clienteId, n] of veces) if (primera.get(clienteId)! < desde || n > 1) volvieron++;
+    return { entregados: delTramo.length, volvieron, nuevos: veces.size - volvieron };
   });
 }
 
@@ -93,8 +90,8 @@ export function escalaBonita(maximo: number, lineas = 4, entero = false): { tope
   return { tope: Math.ceil(maximo / paso) * paso, paso };
 }
 
-/** "5 mil", "12,5 mil", "800": las etiquetas del eje de montos. */
-export const textoEje = (v: number) => (v >= 1000 ? `${String(v / 1000).replace(".", ",")} mil` : String(v));
+/** "5 mil", "12,5 mil", "800", "−5 mil": las etiquetas del eje de montos. */
+export const textoEje = (v: number) => `${v < 0 ? "−" : ""}${Math.abs(v) >= 1000 ? `${String(Math.abs(v) / 1000).replace(".", ",")} mil` : String(Math.abs(v))}`;
 
 /** Cuánto cambió algo frente al mes anterior, en por ciento redondeado; null si el anterior fue cero o menos. */
 export const cambioPorcentual = (actual: number, anterior: number) => (anterior > 0 ? Math.round(((actual - anterior) / anterior) * 100) : null);
@@ -104,7 +101,7 @@ export const cambioPorcentual = (actual: number, anterior: number) => (anterior 
 // con el anterior del mismo largo, así la comparación es justa: "este mes" (del 1 a hoy) contra los mismos días del mes
 // pasado, no contra el mes pasado entero.
 
-const PERIODOS = ["hoy", "semana", "mes", "mes-pasado", "rango"] as const;
+const PERIODOS = ["hoy", "semana", "mes", "mes-pasado", "6-meses", "rango"] as const;
 export type ClavePeriodo = (typeof PERIODOS)[number];
 
 export type Periodo = {
@@ -163,6 +160,12 @@ export function periodoDe(parametros: { periodo?: unknown; desde?: unknown; hast
       const antes = sumarMeses(mes, -1);
       return { clave, ...rangoDelMes(mes), antes: rangoDelMes(antes), titulo: tituloMes(mes), vs: corto(antes), mes };
     }
+    case "6-meses": {
+      // Los 6 meses hasta hoy, con el mes en curso: la tendencia larga con un toque
+      const inicio = `${sumarMeses(mesHoy, -5)}-01`;
+      const dias = largo(inicio, hoy);
+      return { clave, inicio, fin: hoy, antes: { inicio: sumarDias(inicio, -dias), fin: sumarDias(inicio, -1) }, titulo: `Últimos 6 meses: ${textoRango(inicio, hoy).replace(/^Del /, "del ")}`, vs: "vs. 6 meses anteriores", mes: mesHoy };
+    }
     case "rango": {
       const valido = rangoValido(parametros.desde, parametros.hasta, hoy);
       const inicio = valido ? (parametros.desde as string) : sumarDias(hoy, -29);
@@ -214,3 +217,54 @@ export function comparacionDelAcumulado(periodo: Periodo): { inicio: string; fin
   if (periodo.clave === "semana") return { inicio: periodo.antes.inicio, fin: sumarDias(periodo.antes.inicio, 6) };
   return periodo.antes;
 }
+
+// ---------------------------------------------------------------------------------------------
+// Los tramos de las tendencias (17/11): los gráficos siguen las fechas elegidas y agrupan solos, como Shopify o Stripe:
+// hasta un mes, por día; hasta 3 meses, por semana (de lunes a domingo, recortada a las fechas); más, por mes.
+
+export type UnidadTramo = "dia" | "semana" | "mes";
+export type Tramo = { desde: string; hasta: string; corto: string; nombre: string };
+
+const DIAS_SEMANA = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+
+/** Los tramos de las fechas elegidas, con su nombre corto (el eje) y el largo (el detalle). */
+export function tramosDe(inicio: string, fin: string): { unidad: UnidadTramo; tramos: Tramo[] } {
+  const dias = largo(inicio, fin);
+  if (dias <= 31) {
+    // Una semana o menos: con el día de la semana ("lun 16"); más, solo el número
+    const tramos = Array.from({ length: dias }, (_, i) => {
+      const d = sumarDias(inicio, i);
+      const corto = dias <= 8 ? `${DIAS_SEMANA[new Date(`${d}T12:00:00Z`).getUTCDay()]} ${Number(d.slice(8))}` : String(Number(d.slice(8)));
+      return { desde: d, hasta: d, corto, nombre: diaYMes(d) };
+    });
+    return { unidad: "dia", tramos };
+  }
+  if (dias <= 92) {
+    const tramos: Tramo[] = [];
+    for (let desde = inicio; desde <= fin; ) {
+      const domingo = sumarDias(desde, 7 - diaDeLaSemanaIso(desde));
+      const hasta = domingo < fin ? domingo : fin;
+      tramos.push({ desde, hasta, corto: `${Number(desde.slice(8))} ${mesCorto(desde.slice(0, 7)).toLowerCase()}`, nombre: textoRango(desde, hasta) });
+      desde = sumarDias(hasta, 1);
+    }
+    return { unidad: "semana", tramos };
+  }
+  const tramos: Tramo[] = [];
+  for (let mes = mesDe(inicio); mes <= mesDe(fin); mes = sumarMeses(mes, 1)) {
+    const entero = rangoDelMes(mes);
+    const desde = entero.inicio < inicio ? inicio : entero.inicio;
+    const hasta = entero.fin > fin ? fin : entero.fin;
+    // Un mes recortado (el de hoy, o el borde de un rango) lo dice: "Del 1 al 17 de noviembre", no parece una caída
+    const nombre = desde === entero.inicio && hasta === entero.fin ? tituloMes(mes) : textoRango(desde, hasta);
+    tramos.push({ desde, hasta, corto: mesCorto(mes), nombre });
+  }
+  return { unidad: "mes", tramos };
+}
+
+/** Lo de cada tramo, sumando los días que caen en él. */
+export function sumarPorTramo(porDia: readonly { fecha: string; total: number }[], tramos: readonly { desde: string; hasta: string }[]): number[] {
+  return tramos.map((t) => porDia.reduce((suma, d) => (d.fecha >= t.desde && d.fecha <= t.hasta ? suma + d.total : suma), 0));
+}
+
+/** "por día", "por semana", "por mes": lo que va en el título del gráfico. */
+export const POR_UNIDAD: Record<UnidadTramo, string> = { dia: "por día", semana: "por semana", mes: "por mes" };

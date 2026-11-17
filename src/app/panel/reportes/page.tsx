@@ -2,11 +2,10 @@ import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { cn } from "cn";
-import { BanknoteIcon, CalculatorIcon, CarFrontIcon, ChartPieIcon, ChevronRightIcon, HandCoinsIcon, PercentIcon, PiggyBankIcon, ReceiptTextIcon } from "lucide-react";
-import { CabeceraSeccion, Seccion } from "@/componentes/panel/cabecera-seccion";
+import { BanknoteIcon, BellRingIcon, CalculatorIcon, CarFrontIcon, ChartPieIcon, FileCheckIcon, UsersIcon, ChevronRightIcon, HandCoinsIcon, PercentIcon, PiggyBankIcon, ReceiptTextIcon } from "lucide-react";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
-import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { Filtros } from "@/componentes/panel/filtros";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { Pestanas } from "@/componentes/panel/pestanas";
@@ -18,21 +17,21 @@ import { NOMBRE_MOTIVO } from "@/modulos/cotizaciones/reglas";
 import { saldosPendientes } from "@/modulos/pagos/consultas";
 import { NOMBRE_METODO } from "@/modulos/pagos/reglas";
 import { ElegirFechas } from "@/modulos/reportes/componentes/elegir-fechas";
-import { BarrasHorizontales, Leyenda, LineasMeses } from "@/modulos/reportes/componentes/graficos";
+import { BarrasHorizontales } from "@/modulos/reportes/componentes/barras-horizontales";
 import { GraficoAcumulado, type DiaAcumulado } from "@/modulos/reportes/componentes/grafico-acumulado";
-import { GraficoMeses, TortaNeto } from "@/modulos/reportes/componentes/graficos-resumen";
+import { GraficoClientes } from "@/modulos/reportes/componentes/grafico-clientes";
+import { GraficoIngresosGastos, TortaNeto } from "@/modulos/reportes/componentes/graficos-resumen";
 import { RegistrarGasto } from "@/modulos/reportes/componentes/registrar-gasto";
 import {
   categoriasActivas,
-  elTallerEnElMes,
+  elTallerEntre,
   entregasHasta,
   entregadosEntre,
   gastosEntre,
   ingresosEntre,
-  movimientosPorMes,
   totalesEntre,
 } from "@/modulos/reportes/consultas";
-import { acumuladoDesde, bsRedondo, cambioPorcentual, comparacionDelAcumulado, diaYMes, diasEntre, entregasPorMes, mesCorto, mesDe, nombreMes, nombreMesSolo, periodoDe, sumarMeses, tituloMes, type ClavePeriodo, type Periodo } from "@/modulos/reportes/reglas";
+import { acumuladoDesde, bsRedondo, clientesPorTramo, POR_UNIDAD, sumarPorTramo, tramosDe, cambioPorcentual, comparacionDelAcumulado, diaYMes, diasEntre, mesDe, periodoDe, sumarMeses, tituloMes, type ClavePeriodo, type Periodo } from "@/modulos/reportes/reglas";
 
 export const metadata: Metadata = { title: "Reportes" };
 
@@ -69,6 +68,7 @@ const OPCIONES_PERIODO: { clave: ClavePeriodo; texto: string }[] = [
   { clave: "semana", texto: "Esta semana" },
   { clave: "mes", texto: "Este mes" },
   { clave: "mes-pasado", texto: "Mes pasado" },
+  { clave: "6-meses", texto: "6 meses" },
   { clave: "rango", texto: "Elegir fechas" },
 ];
 
@@ -118,26 +118,21 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes">, "s
   );
 }
 
-/** Los últimos 6 meses hasta el elegido, con su nombre. */
-function seisMeses(mes: string) {
-  return Array.from({ length: 6 }, (_, i) => sumarMeses(mes, i - 5)).map((m) => ({ mes: m, corto: mesCorto(m), nombre: nombreMes(m) }));
-}
-
 // ---------------------------------------------------------------------------------------------
 // Resumen
 
 async function Resumen({ ctx }: { ctx: Contexto }) {
   const { periodo } = ctx;
-  const meses = seisMeses(ctx.mes);
-  const [movimientos, total, antes] = await Promise.all([
-    movimientosPorMes(meses[0].mes, ctx.mes),
-    totalesEntre(periodo.inicio, periodo.fin),
+  const { unidad, tramos } = tramosDe(periodo.inicio, periodo.fin);
+  const [ingresos, gastos, antes] = await Promise.all([
+    ingresosEntre(periodo.inicio, periodo.fin),
+    gastosEntre(periodo.inicio, periodo.fin),
     totalesEntre(periodo.antes.inicio, periodo.antes.fin),
   ]);
-  if (movimientos.every((m) => m.entro === 0 && m.salio === 0) && total.entro === 0 && total.salio === 0) {
-    return <EstadoVacio>{`Todavía no hay ingresos ni gastos registrados en los últimos 6 meses.`}</EstadoVacio>;
-  }
-  const { entro, salio } = total;
+  const entro = ingresos.total;
+  const salio = gastos.total;
+  const entroPorTramo = sumarPorTramo(ingresos.porDia, tramos);
+  const salioPorTramo = sumarPorTramo(gastos.porDia, tramos);
   const ganancia = entro - salio;
   const sinGastos = salio === 0 && entro > 0;
   const margen = entro > 0 ? Math.round((ganancia / entro) * 100) : null;
@@ -155,7 +150,7 @@ async function Resumen({ ctx }: { ctx: Contexto }) {
         <TarjetaNumero icono={PercentIcon} titulo="Margen" valor={margen === null || sinGastos ? "—" : `${margen} %`} nota={sinGastos ? "Faltan los gastos" : <Cambio cambio={margen !== null && margenAntes !== null ? margen - margenAntes : null} unidad="pts" contra={vs} />} />
       </section>
       {/* Las secciones como en todo el panel: el título afuera, arriba de su tarjeta (Seccion) */}
-      <div className="grid gap-x-4 gap-y-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.75fr)]">
+      <div className={cn("grid gap-x-4 gap-y-6", periodo.clave !== "hoy" && "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.75fr)]")}>
         <Seccion id="neto" titulo="Lo neto">
           <div className="flex h-full flex-col justify-center gap-3">
             {entro === 0 && salio === 0 ? (
@@ -170,9 +165,16 @@ async function Resumen({ ctx }: { ctx: Contexto }) {
             )}
           </div>
         </Seccion>
-        <Seccion id="meses" titulo="Ingresos y gastos, últimos 6 meses">
-          <GraficoMeses meses={meses.map((m, i) => ({ corto: m.corto, nombre: m.nombre, entro: movimientos[i].entro, salio: movimientos[i].salio }))} />
-        </Seccion>
+        {/* La tendencia sigue las fechas (por día, semana o mes); un solo día no tiene */}
+        {periodo.clave !== "hoy" && (
+          <Seccion id="tendencia" titulo={`Ingresos y gastos, ${POR_UNIDAD[unidad]}`}>
+            {entro === 0 && salio === 0 ? (
+              <p className="py-10 text-center text-sm text-tinta-suave">Sin ingresos ni gastos en estas fechas.</p>
+            ) : (
+              <GraficoIngresosGastos conGanancia={unidad === "mes"} tramos={tramos.map((t, i) => ({ corto: t.corto, nombre: t.nombre, entro: entroPorTramo[i], salio: salioPorTramo[i] }))} />
+            )}
+          </Seccion>
+        )}
       </div>
     </>
   );
@@ -189,19 +191,6 @@ function Cambio({ cambio, contra, subirEsMalo, unidad = "%" }: { cambio: number 
       </span>{" "}
       {contra}
     </>
-  );
-}
-
-/** Una sección del reporte: su título (y un detalle) arriba de su tarjeta. */
-function Bloque({ id, titulo, detalle, accion, children, className }: { id: string; titulo: string; detalle?: string; accion?: React.ReactNode; children: React.ReactNode; className?: string }) {
-  return (
-    <section aria-labelledby={`${id}-titulo`} className={cn("tt-tarjeta-panel flex flex-col gap-3 p-4 lg:p-5", className)}>
-      <CabeceraSeccion id={id} titulo={titulo} nivel={3} compacta>
-        {accion}
-      </CabeceraSeccion>
-      {detalle && <p className="-mt-1 text-[0.8125rem] text-tinta-suave">{detalle}</p>}
-      {children}
-    </section>
   );
 }
 
@@ -377,66 +366,67 @@ async function Gastos({ ctx }: { ctx: Contexto }) {
 // Taller y clientes
 
 async function TallerYClientes({ ctx }: { ctx: Contexto }) {
-  const meses = seisMeses(ctx.mes);
-  const [taller, entregas] = await Promise.all([elTallerEnElMes(ctx.mes), entregasHasta(ctx.mes)]);
-  const porMes = entregasPorMes(
-    entregas,
-    meses.map((m) => m.mes),
-  );
-  const delMes = porMes[5];
+  const { periodo } = ctx;
+  const { unidad, tramos } = tramosDe(periodo.inicio, periodo.fin);
+  const [taller, tallerAntes, entregas] = await Promise.all([elTallerEntre(periodo.inicio, periodo.fin), elTallerEntre(periodo.antes.inicio, periodo.antes.fin), entregasHasta(periodo.fin)]);
+  const [este, antes] = clientesPorTramo(entregas, [
+    { desde: periodo.inicio, hasta: periodo.fin },
+    { desde: periodo.antes.inicio, hasta: periodo.antes.fin },
+  ]);
+  const porTramo = clientesPorTramo(entregas, tramos);
   const { enviadas, aceptadas, reservadas, motivos } = taller.cotizaciones;
+  const aceptadasPct = enviadas > 0 ? Math.round((aceptadas / enviadas) * 100) : null;
+  const antesPct = tallerAntes.cotizaciones.enviadas > 0 ? Math.round((tallerAntes.cotizaciones.aceptadas / tallerAntes.cotizaciones.enviadas) * 100) : null;
+  const clientes = este.nuevos + este.volvieron;
+  const vs = periodo.vs;
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <Bloque id="entregados" titulo="Vehículos entregados, últimos 6 meses" detalle={`${cantidad(delMes.entregados, "vehículo", "vehículos")} en ${nombreMesSolo(ctx.mes)}`}>
-        <LineasMeses meses={meses} elegido={ctx.mes} conValores series={[{ nombre: "Entregados", clase: "stroke-grafico-1", claseRelleno: "fill-grafico-1", valores: porMes.map((m) => m.entregados) }]} />
-      </Bloque>
-      <Bloque id="servicios" titulo="Servicios más pedidos" detalle={`De los vehículos entregados en ${nombreMesSolo(ctx.mes)}`}>
-        {taller.servicios.length === 0 ? (
-          <p className="text-sm text-tinta-suave">Sin vehículos entregados en {nombreMes(ctx.mes)}.</p>
-        ) : (
-          <BarrasHorizontales filas={taller.servicios.map((s) => ({ nombre: s.nombre, valor: s.veces, clase: "bg-grafico-1", texto: <span className="font-semibold">{cantidad(s.veces, "vez", "veces")}</span> }))} />
-        )}
-      </Bloque>
-      <Bloque id="cotizaciones" titulo="Cotizaciones" detalle={enviadas > 0 ? `${Math.round((aceptadas / enviadas) * 100)} % aceptadas` : undefined}>
-        {enviadas === 0 ? (
-          <p className="text-sm text-tinta-suave">Sin cotizaciones enviadas en {nombreMes(ctx.mes)}.</p>
-        ) : (
-          <>
-            <BarrasHorizontales
-              alta
-              filas={[
-                { nombre: "Enviadas", valor: enviadas },
-                { nombre: "Aceptadas", valor: aceptadas },
-                { nombre: "Reservadas", valor: reservadas },
-              ].map((f) => ({ ...f, clase: "bg-grafico-1", texto: <span className="font-semibold">{f.valor}</span> }))}
-            />
-            {motivos.length > 0 && (
-              <p className="text-[0.8125rem] text-tinta-media">
-                Por qué no aceptaron: {motivos.map((m) => `${NOMBRE_MOTIVO[m.motivo].toLowerCase()} (${m.veces})`).join(", ")}.
-              </p>
-            )}
-          </>
-        )}
-      </Bloque>
-      <Bloque id="clientes" titulo="Clientes, últimos 6 meses" detalle={`En ${nombreMesSolo(ctx.mes)}: ${cantidad(delMes.nuevos, "nuevo", "nuevos")} y ${delMes.volvieron} ${delMes.volvieron === 1 ? "volvió" : "volvieron"}`}>
-        <Leyenda
-          items={[
-            { nombre: "Nuevos", clase: "bg-grafico-1" },
-            { nombre: "Volvieron", clase: "bg-grafico-3" },
-          ]}
-        />
-        <LineasMeses
-          meses={meses}
-          elegido={ctx.mes}
-          series={[
-            { nombre: "Nuevos", clase: "stroke-grafico-1", claseRelleno: "fill-grafico-1", valores: porMes.map((m) => m.nuevos) },
-            { nombre: "Volvieron", clase: "stroke-grafico-3", claseRelleno: "fill-grafico-3", valores: porMes.map((m) => m.volvieron) },
-          ]}
-        />
-        <p className="text-[0.8125rem] text-tinta-media">
-          Mantenimientos: <strong>{taller.avisados}</strong> {taller.avisados === 1 ? "avisado" : "avisados"}, <strong>{taller.reservaron}</strong> ya {taller.reservaron === 1 ? "reservó" : "reservaron"}.
-        </p>
-      </Bloque>
-    </div>
+    <>
+      <section aria-label="El taller en el período" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <TarjetaNumero icono={CarFrontIcon} titulo="Vehículos entregados" valor={este.entregados} nota={<Cambio cambio={cambioPorcentual(este.entregados, antes.entregados)} contra={vs} />} />
+        <TarjetaNumero icono={UsersIcon} titulo="Clientes" valor={clientes} nota={clientes === 0 ? "Ninguno en estas fechas" : `${cantidad(este.nuevos, "nuevo", "nuevos")}, ${este.volvieron} ${este.volvieron === 1 ? "volvió" : "volvieron"}`} />
+        <TarjetaNumero icono={FileCheckIcon} titulo="Cotizaciones aceptadas" valor={aceptadasPct === null ? "—" : `${aceptadasPct} %`} nota={aceptadasPct === null ? "Ninguna enviada" : <Cambio cambio={antesPct === null ? null : aceptadasPct - antesPct} unidad="pts" contra={vs} />} />
+        <TarjetaNumero icono={BellRingIcon} titulo="Mantenimientos avisados" valor={taller.avisados} nota={taller.avisados === 0 ? "Ninguno en estas fechas" : `${taller.reservaron} ya ${taller.reservaron === 1 ? "reservó" : "reservaron"}`} />
+      </section>
+      {/* La tendencia sigue las fechas (por día, semana o mes); un solo día no tiene */}
+      {periodo.clave !== "hoy" && (
+        <Seccion id="clientes" titulo={`Clientes atendidos, ${POR_UNIDAD[unidad]}`}>
+          {porTramo.every((t) => t.nuevos + t.volvieron === 0) ? (
+            <p className="py-10 text-center text-sm text-tinta-suave">Sin vehículos entregados en estas fechas.</p>
+          ) : (
+            <GraficoClientes tramos={tramos.map((t, i) => ({ corto: t.corto, nombre: t.nombre, nuevos: porTramo[i].nuevos, volvieron: porTramo[i].volvieron }))} />
+          )}
+        </Seccion>
+      )}
+      <div className="grid gap-x-4 gap-y-6 lg:grid-cols-2">
+        <Seccion id="servicios" titulo="Servicios más pedidos">
+          {taller.servicios.length === 0 ? (
+            <p className="py-10 text-center text-sm text-tinta-suave">Sin vehículos entregados en estas fechas.</p>
+          ) : (
+            <BarrasHorizontales filas={taller.servicios.map((s) => ({ nombre: s.nombre, valor: s.veces, clase: "bg-grafico-1", texto: <span className="font-semibold whitespace-nowrap">{cantidad(s.veces, "vez", "veces")}</span> }))} />
+          )}
+        </Seccion>
+        <Seccion id="cotizaciones" titulo="Cotizaciones">
+          {enviadas === 0 ? (
+            <p className="py-10 text-center text-sm text-tinta-suave">Sin cotizaciones enviadas en estas fechas.</p>
+          ) : (
+            <div className="flex flex-col gap-4">
+              <BarrasHorizontales
+                alta
+                filas={[
+                  { nombre: "Enviadas", valor: enviadas },
+                  { nombre: "Aceptadas", valor: aceptadas },
+                  { nombre: "Reservadas", valor: reservadas },
+                ].map((f) => ({ ...f, clase: "bg-grafico-1", texto: <span className="font-semibold">{f.valor}</span> }))}
+              />
+              {motivos.length > 0 && (
+                <p className="text-[0.8125rem] text-tinta-media">
+                  Por qué no aceptaron: {motivos.map((m) => `${NOMBRE_MOTIVO[m.motivo].toLowerCase()} (${m.veces})`).join(", ")}.
+                </p>
+              )}
+            </div>
+          )}
+        </Seccion>
+      </div>
+    </>
   );
 }

@@ -1,6 +1,6 @@
 import { describe, expect, test, vi, afterEach } from "vitest";
 import { esquemaAnularGasto, esquemaGasto } from "@/modulos/reportes/esquemas";
-import { acumuladoDesde, comparacionDelAcumulado, periodoDe, rangoValido, textoRango, bsRedondo, cambioPorcentual, entregasPorMes, escalaBonita, esMes, mesDe, nombreMes, primerDiaDeGastos, rangoDelMes, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
+import { textoEje, clientesPorTramo, sumarPorTramo, tramosDe, acumuladoDesde, comparacionDelAcumulado, periodoDe, rangoValido, textoRango, bsRedondo, cambioPorcentual, escalaBonita, esMes, mesDe, nombreMes, primerDiaDeGastos, rangoDelMes, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
 
 // Pedido 16 (P16-reportes-y-gastos.md §9): los meses de los gastos y el esquema de un gasto.
 
@@ -113,9 +113,9 @@ describe("las pestañas de Reportes", () => {
       { clienteId: 3, dia: "2026-10-08" },
       { clienteId: 3, dia: "2026-10-28" }, // vino dos veces en el mes: volvió
     ];
-    expect(entregasPorMes(entregas, ["2026-09", "2026-10"])).toEqual([
-      { mes: "2026-09", entregados: 1, volvieron: 0, nuevos: 1 },
-      { mes: "2026-10", entregados: 4, volvieron: 2, nuevos: 1 },
+    expect(clientesPorTramo(entregas, [rangoDelMes("2026-09"), rangoDelMes("2026-10")].map((r) => ({ desde: r.inicio, hasta: r.fin })))).toEqual([
+      { entregados: 1, volvieron: 0, nuevos: 1 },
+      { entregados: 4, volvieron: 2, nuevos: 1 },
     ]);
   });
 });
@@ -167,5 +167,49 @@ describe("el acumulado de los ingresos", () => {
     expect(comparacionDelAcumulado(periodoDe({}, hoy))).toEqual({ inicio: "2026-10-01", fin: "2026-10-31" });
     expect(comparacionDelAcumulado(periodoDe({ periodo: "semana" }, hoy))).toEqual({ inicio: "2026-11-09", fin: "2026-11-15" });
     expect(comparacionDelAcumulado(periodoDe({ periodo: "rango", desde: "2026-10-10", hasta: "2026-10-19" }, hoy))).toEqual({ inicio: "2026-09-30", fin: "2026-10-09" });
+  });
+});
+
+describe("los tramos de las tendencias", () => {
+  test("hasta un mes, por día (una semana, con el día de la semana)", () => {
+    const semana = tramosDe("2026-11-16", "2026-11-17");
+    expect(semana.unidad).toBe("dia");
+    expect(semana.tramos).toEqual([
+      { desde: "2026-11-16", hasta: "2026-11-16", corto: "lun 16", nombre: "16 de noviembre" },
+      { desde: "2026-11-17", hasta: "2026-11-17", corto: "mar 17", nombre: "17 de noviembre" },
+    ]);
+    const mes = tramosDe("2026-10-01", "2026-10-31");
+    expect(mes.tramos).toHaveLength(31);
+    expect(mes.tramos[9].corto).toBe("10");
+  });
+  test("hasta 3 meses, por semana de lunes a domingo, recortada a las fechas", () => {
+    const { unidad, tramos } = tramosDe("2026-08-01", "2026-10-31");
+    expect(unidad).toBe("semana");
+    expect(tramos[0]).toEqual({ desde: "2026-08-01", hasta: "2026-08-02", corto: "1 ago", nombre: "Del 1 al 2 de agosto" });
+    expect(tramos[1]).toMatchObject({ desde: "2026-08-03", hasta: "2026-08-09" });
+    expect(tramos.at(-1)).toMatchObject({ desde: "2026-10-26", hasta: "2026-10-31" });
+  });
+  test("más, por mes, y el mes recortado lo dice", () => {
+    const { unidad, tramos } = tramosDe("2026-06-01", "2026-11-17");
+    expect(unidad).toBe("mes");
+    expect(tramos.map((t) => t.corto)).toEqual(["Jun", "Jul", "Ago", "Sep", "Oct", "Nov"]);
+    expect(tramos[0].nombre).toBe("Junio de 2026");
+    expect(tramos.at(-1)).toEqual({ desde: "2026-11-01", hasta: "2026-11-17", corto: "Nov", nombre: "Del 1 al 17 de noviembre" });
+  });
+  test("se suma lo de cada tramo", () => {
+    const tramos = [{ desde: "2026-11-01", hasta: "2026-11-02" }, { desde: "2026-11-03", hasta: "2026-11-09" }];
+    expect(sumarPorTramo([{ fecha: "2026-11-02", total: 100 }, { fecha: "2026-11-03", total: 50 }, { fecha: "2026-11-09", total: 5 }, { fecha: "2026-11-10", total: 9 }], tramos)).toEqual([100, 55]);
+  });
+  test("6 meses: del día 1 de hace 5 meses a hoy, contra el mismo largo antes", () => {
+    expect(periodoDe({ periodo: "6-meses" }, "2026-11-17")).toMatchObject({ inicio: "2026-06-01", fin: "2026-11-17", antes: { inicio: "2025-12-13", fin: "2026-05-31" }, vs: "vs. 6 meses anteriores" });
+  });
+});
+
+describe("las etiquetas del eje de montos", () => {
+  test("en miles, con coma, y con signo si es pérdida", () => {
+    expect(textoEje(0)).toBe("0");
+    expect(textoEje(800)).toBe("800");
+    expect(textoEje(12500)).toBe("12,5 mil");
+    expect(textoEje(-5000)).toBe("−5 mil");
   });
 });

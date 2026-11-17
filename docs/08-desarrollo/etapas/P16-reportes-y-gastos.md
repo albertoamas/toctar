@@ -149,6 +149,18 @@ Todas en `modulos/reportes/acciones.ts`, con `exigirModulo("reportes")` y Zod (e
   su %); "Cómo van los gastos", el mismo gráfico que el de los ingresos, en rojo (sin él con "Hoy"); y "Por categoría", la
   lista con barras rojas. Se quitan la lista de los últimos gastos y las barras apiladas de 6 meses (ya están en Resumen).
   Los montos de la lista de gastos siguen como en todo el panel ("1180,50 Bs", sin punto de miles).
+- **Las tendencias siguen las fechas (17/11):** el gráfico de Resumen ("Ingresos y gastos") y el de Taller y clientes
+  ya no son siempre "los últimos 6 meses": agrupan solos según el largo de las fechas (`tramosDe`): hasta un mes, por día;
+  hasta 3 meses, por semana (de lunes a domingo, recortada); más, por mes, y un mes recortado lo dice en su detalle ("Del
+  1 al 17 de noviembre"). Con "Hoy" no hay tendencia. El filtro suma **"6 meses"** (del día 1 de hace 5 meses a hoy) para
+  ver la tendencia larga con un toque. La línea de la ganancia, solo por mes (por día o semana es ruido); el eje baja del
+  0 si un mes tuvo pérdida.
+- **Taller y clientes (17/11):** respeta las fechas. Tarjetas: Vehículos entregados, Clientes (nuevos y los que
+  volvieron), Cotizaciones aceptadas (%, con el cambio en puntos) y Mantenimientos avisados (y cuántos reservaron).
+  "Clientes atendidos": barras apiladas, nuevos y volvieron (azul y violeta; el verde y el rojo son de ingresos y gastos),
+  en lugar de las dos líneas de 6 meses. "Servicios más pedidos" y "Cotizaciones" (el embudo y por qué no aceptaron),
+  como listas con barras. Ya no queda ningún gráfico hecho a mano: `graficos.tsx` se borró y la lista con barras quedó
+  en `barras-horizontales.tsx`.
 - **Datos para probar:** `npm run datos:reportes` carga seis meses de trabajos, pagos, gastos, cotizaciones y
   mantenimientos sobre la base local (se rehace al volver a correrlo; `-- --quitar` lo saca).
 

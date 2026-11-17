@@ -6,7 +6,7 @@ import type { MotivoPerdida } from "@/db/esquema/consultas";
 import type { MetodoPago } from "@/db/esquema/trabajos";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { sucursalPrincipal } from "@/modulos/configuracion/consultas";
-import { rangoDelMes, sumarMeses } from "./reglas";
+import { rangoDelMes } from "./reglas";
 
 // Pedido 16 (P16-reportes-y-gastos.md §4): los gastos del taller. Solo el dueño: quien llama ya lo verificó.
 
@@ -74,50 +74,18 @@ export async function gastosDelMes(mes: string): Promise<GastoEnLista[]> {
 
 const enBolivia = (columna: SQL | SQL.Aliased | AnyColumn) => sql`(${columna} at time zone 'America/La_Paz')::date`;
 
-export type MovimientoDelMes = { mes: string; entro: number; salio: number };
-
-/** Lo que entró y salió en cada mes, del más viejo al más nuevo (los que no tuvieron nada, en cero). */
-export async function movimientosPorMes(desde: string, hasta: string): Promise<MovimientoDelMes[]> {
-  const s = await sucursalPrincipal();
-  const inicio = rangoDelMes(desde).inicio;
-  const fin = rangoDelMes(hasta).fin;
-  const [entradas, salidas] = await Promise.all([
-    db
-      .select({ mes: sql<string>`to_char(${pago.fecha}, 'YYYY-MM')`, total: sql<string>`sum(${pago.monto})` })
-      .from(pago)
-      .innerJoin(trabajo, eq(pago.trabajoId, trabajo.id))
-      .where(and(eq(trabajo.sucursalId, s.id), eq(pago.anulado, false), gte(pago.fecha, inicio), lte(pago.fecha, fin)))
-      .groupBy(sql`1`),
-    db
-      .select({ mes: sql<string>`to_char(${gasto.fecha}, 'YYYY-MM')`, total: sql<string>`sum(${gasto.monto})` })
-      .from(gasto)
-      .where(and(eq(gasto.sucursalId, s.id), eq(gasto.anulado, false), gte(gasto.fecha, inicio), lte(gasto.fecha, fin)))
-      .groupBy(sql`1`),
-  ]);
-  const meses: MovimientoDelMes[] = [];
-  for (let m = desde; m <= hasta; m = sumarMeses(m, 1)) {
-    meses.push({
-      mes: m,
-      entro: Number(entradas.find((e) => e.mes === m)?.total ?? 0),
-      salio: Number(salidas.find((e) => e.mes === m)?.total ?? 0),
-    });
-  }
-  return meses;
-}
-
-export type ElTallerEnElMes = {
+export type ElTallerEntre = {
   /** Los servicios de los vehículos entregados, los más pedidos primero (hasta 5). */
   servicios: { nombre: string; veces: number }[];
-  /** Las cotizaciones que se enviaron por primera vez en el mes, cuántas se aceptaron y reservaron, y por qué no las otras. */
+  /** Las cotizaciones que se enviaron por primera vez en las fechas, cuántas se aceptaron y reservaron, y por qué no las otras. */
   cotizaciones: { enviadas: number; aceptadas: number; reservadas: number; motivos: { motivo: MotivoPerdida; veces: number }[] };
-  /** Los mantenimientos avisados en el mes y cuántos de ellos ya reservaron. */
+  /** Los mantenimientos avisados en las fechas y cuántos de ellos ya reservaron. */
   avisados: number;
   reservaron: number;
 };
 
-export async function elTallerEnElMes(mes: string): Promise<ElTallerEnElMes> {
+export async function elTallerEntre(inicio: string, fin: string): Promise<ElTallerEntre> {
   const s = await sucursalPrincipal();
-  const { inicio, fin } = rangoDelMes(mes);
   const entregadoEnElMes = and(
     eq(trabajo.sucursalId, s.id),
     eq(trabajo.estado, "entregado"),
@@ -176,13 +144,12 @@ export async function elTallerEnElMes(mes: string): Promise<ElTallerEnElMes> {
 // Las pestañas de Reportes (16/11, opción A del desarrollador, registro-de-cambios.md, pedido 16): Ingresos y Taller y
 // clientes, con sus tendencias.
 
-/** Cada entrega: de qué cliente y qué día (en Bolivia). Base de los entregados y los clientes de cada mes. */
+/** Cada entrega: de qué cliente y qué día (en Bolivia). Base de los entregados y los clientes de cada tramo. */
 export type Entrega = { clienteId: number; dia: string };
 
-/** Las entregas hasta el último día de un mes (las de antes cuentan para saber quién volvió). */
-export async function entregasHasta(mes: string): Promise<Entrega[]> {
+/** Las entregas hasta un día (las de antes cuentan para saber quién volvió). */
+export async function entregasHasta(fin: string): Promise<Entrega[]> {
   const s = await sucursalPrincipal();
-  const { fin } = rangoDelMes(mes);
   const filas = await db
     .select({ clienteId: trabajo.clienteId, dia: sql<string>`to_char(${enBolivia(trabajo.entregadoAt)}, 'YYYY-MM-DD')` })
     .from(trabajo)
