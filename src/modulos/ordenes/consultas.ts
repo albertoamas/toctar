@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { archivo, cliente, galeriaItem, parteRevision, servicio, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, trabajoRevision, usuario, variante, vehiculo } from "@/db/esquema";
 import type { EstadoRevision, EstadoTrabajo, EtapaFoto, TipoDetalle } from "@/db/esquema/trabajos";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
-import { obtenerReserva, type DetalleReserva } from "@/modulos/agenda/consultas";
+import { obtenerReserva, type DetalleReserva } from "@/modulos/agenda/consultas/reserva";
 import { escaparLike, nombreVehiculo, normalizarBusqueda } from "@/modulos/clientes/reglas";
 import { ENTREGADAS_POR_PAGINA, ESTADOS_ORDEN_ABIERTA, fechaBuscada } from "./reglas";
 

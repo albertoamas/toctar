@@ -8,7 +8,7 @@ import { erroresDe, exclusionViolada, type EstadoFormulario } from "@/lib/formul
 import { puede } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import type { EstadoTrabajo } from "@/db/esquema/trabajos";
-import { bloquearEspacio, espaciosEnFechas, type EspacioDisponible } from "@/modulos/agenda/consultas";
+import { bloquearEspacio, espaciosEnFechas, type EspacioDisponible } from "@/modulos/agenda/consultas/espacios";
 import { DIAS_MAXIMOS_TRABAJO, NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { opcionesDeServicio } from "@/modulos/cotizaciones/consultas/servicios";

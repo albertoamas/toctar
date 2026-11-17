@@ -17,7 +17,8 @@ import { borrarFotosSueltas, soltarFotosIngreso } from "@/modulos/ordenes/fotos"
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
 import { descartarComprobante, guardarComprobante } from "@/modulos/pagos/comprobante";
 import { calcularSaldo, tipoDePago } from "@/modulos/pagos/reglas";
-import { bloquearEspacio, datosDeCotizacion, espaciosEnFechas, type EspacioDisponible } from "./consultas";
+import { bloquearEspacio, espaciosEnFechas, type EspacioDisponible } from "./consultas/espacios";
+import { datosDeCotizacion } from "./consultas/reservar";
 import { entradaReserva, esquemaAdelanto, esquemaCancelar, esquemaConsultaEspacios, esquemaFechas, esquemaReprogramar, esquemaReserva } from "./esquemas";
 import { conDesde, leerDesde } from "@/lib/volver";
 

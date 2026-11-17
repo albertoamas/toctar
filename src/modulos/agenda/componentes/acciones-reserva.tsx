@@ -7,7 +7,6 @@ import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { MenuMas } from "@/componentes/panel/menu-mas";
 import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
-import { Selector } from "@/componentes/panel/selector";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
@@ -15,6 +14,7 @@ import type { EstadoFormulario } from "@/lib/formularios";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { cancelarReserva, reprogramarReserva } from "../acciones";
 import { espacioVigente, useEspaciosLibres } from "./espacios-libres";
+import { CampoEspacio } from "./campo-espacio";
 
 // HU-31: reprogramar o cancelar una reserva agendada (RF-39). Pulido 10.3: se usan poco y van en el menú "Más" del
 // encabezado, cada una con su formulario en un modal (como "Marcar como perdida"). Reprogramar ofrece solo los espacios
@@ -93,28 +93,7 @@ function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espac
           <Input id="fechaFin" name="fechaFin" type="date" min={fechaInicio} value={fechaFin} onChange={(ev) => setFechaFin(ev.target.value)} aria-invalid={!!e.fechaFin} aria-describedby={e.fechaFin ? "fechaFin-error" : undefined} />
         </Campo>
       </div>
-      <Campo
-        id="espacioId"
-        etiqueta="Espacio"
-        error={e.espacioId}
-        ayuda={ayuda}
-      >
-        <Selector
-          id="espacioId"
-          name="espacioId"
-          value={espacioId}
-          onChange={(ev) => setEspacioId(ev.target.value)}
-          disabled={buscando}
-          aria-invalid={!!e.espacioId}
-          aria-describedby={e.espacioId ? "espacioId-error" : "espacioId-ayuda"}
-          className="max-w-xs"
-        >
-          <option value="">Elige el espacio</option>
-          {libres.map((x) => (
-            <option key={x.id} value={x.id}>{x.nombre}</option>
-          ))}
-        </Selector>
-      </Campo>
+      <CampoEspacio valor={espacioId} alCambiar={setEspacioId} libres={libres} buscando={buscando} ayuda={ayuda} error={e.espacioId} />
       <PieModal>
         <Button type="submit" disabled={enviando || buscando}>
           {enviando ? "Moviendo…" : "Mover reserva"}

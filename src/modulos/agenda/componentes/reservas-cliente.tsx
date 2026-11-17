@@ -4,7 +4,7 @@ import { formatearFecha } from "@/lib/fechas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { rutaTrabajo } from "@/modulos/ordenes/reglas";
 import { estaPagada } from "@/modulos/pagos/reglas";
-import type { ReservaDelCliente } from "../consultas";
+import type { ReservaDelCliente } from "../consultas/listas";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "../reglas";
 import { conDesde } from "@/lib/volver";
 

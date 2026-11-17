@@ -1,7 +1,7 @@
 "use client";
 
 import { OrdenarLista } from "@/componentes/panel/ordenar-lista";
-import { moverServicio } from "../acciones";
+import { moverServicio } from "../acciones/servicios";
 
 // HU-07: el orden en que salen los servicios en el sitio (pulido 13.21), con el modal común de "Cambiar orden".
 

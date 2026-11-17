@@ -13,7 +13,6 @@ import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
 import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { ResumenPaso } from "@/componentes/panel/resumen-paso";
-import { Selector } from "@/componentes/panel/selector";
 import { Button, buttonVariants } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
@@ -27,10 +26,11 @@ import { LineasServicio, type Linea } from "@/modulos/cotizaciones/componentes/l
 import { useEnvioConComprobante } from "@/modulos/pagos/componentes/campo-comprobante";
 import { MetodoYComprobante } from "@/modulos/pagos/componentes/elegir-metodo";
 import { agendarReserva } from "../acciones";
-import type { EspacioDisponible } from "../consultas";
+import type { EspacioDisponible } from "../consultas/espacios";
 import { erroresServicios, PASO_FECHA, PASO_SERVICIOS, pasoDeCampoReserva, pasosNuevaReserva } from "../pasos-reserva";
 import { fechaEntregaSugerida } from "../reglas";
 import { espacioVigente, useEspaciosLibres } from "./espacios-libres";
+import { CampoEspacio } from "./campo-espacio";
 
 // HU-30: agendar una reserva (RF-36, RF-37). Las fechas sugieren la entrega con la mayor duración de los servicios
 // (decisión del 20/10: es aproximada y se edita); al cambiarlas se vuelven a pedir los espacios libres (RN-06). El
@@ -340,23 +340,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
               />
             </Campo>
           </div>
-          <Campo id="espacioId" etiqueta="Espacio" error={e.espacioId} ayuda={ayuda}>
-            <Selector
-              id="espacioId"
-              name="espacioId"
-              value={espacioId}
-              onChange={(ev) => setEspacioId(ev.target.value)}
-              disabled={buscando}
-              aria-invalid={!!e.espacioId}
-              aria-describedby={e.espacioId ? "espacioId-error" : "espacioId-ayuda"}
-              className="max-w-xs"
-            >
-              <option value="">Elige el espacio</option>
-              {libres.map((x) => (
-                <option key={x.id} value={x.id}>{x.nombre}</option>
-              ))}
-            </Selector>
-          </Campo>
+          <CampoEspacio valor={espacioId} alCambiar={setEspacioId} libres={libres} buscando={buscando} ayuda={ayuda} error={e.espacioId} />
           {/* Se usan a veces: plegadas; se abren solas si traen algo escrito o un error */}
           <MasDatos texto="Agregar hora y nota" titulo="Hora y nota" abierto={!!horaIngreso || !!nota || !!e.horaIngreso || !!e.nota}>
             <Campo id="horaIngreso" etiqueta="Hora aproximada" opcional error={e.horaIngreso} ayuda="Como lo dijo el cliente: «a las 9», «en la tarde».">
