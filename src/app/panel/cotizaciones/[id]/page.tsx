@@ -21,7 +21,7 @@ import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp } from "@/lib/whatsapp";
-import { reservasDeConsulta } from "@/modulos/agenda/consultas";
+import { reservasDeConsulta } from "@/modulos/agenda/consultas/listas";
 import { pasoDelTrabajo } from "@/modulos/agenda/pasos";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { BotonAcepto, MasCotizacion } from "@/modulos/cotizaciones/componentes/estado-cotizacion";

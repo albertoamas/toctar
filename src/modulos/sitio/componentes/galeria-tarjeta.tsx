@@ -10,7 +10,7 @@ import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { nombreDelTrabajo } from "../galeria";
-import { cambiarVisibilidadGaleria, eliminarGaleriaItem, guardarGaleriaItem, moverGaleriaItem } from "../acciones";
+import { cambiarVisibilidadGaleria, eliminarGaleriaItem, guardarGaleriaItem, moverGaleriaItem } from "../acciones/galeria";
 import { Insignia } from "@/componentes/panel/insignia";
 import { MenuMas, type AccionMas } from "@/componentes/panel/menu-mas";
 import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";

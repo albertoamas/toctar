@@ -11,7 +11,7 @@ import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import { avisosDeGaleria } from "@/lib/formato-fotos";
 import type { EstadoFormulario } from "@/lib/formularios";
-import { subirGaleria } from "../acciones";
+import { subirGaleria } from "../acciones/galeria";
 import { CancelarModal, PieModal, useCambioFueraDelFormulario, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { ElegirFoto } from "@/componentes/panel/elegir-foto";
 import type { Servicio } from "./galeria-comun";

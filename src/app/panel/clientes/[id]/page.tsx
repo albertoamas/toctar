@@ -15,7 +15,7 @@ import { puede, puedeVerModulo } from "@/lib/permisos";
 import { fechaEnBolivia } from "@/lib/fechas";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp, whatsAppLocal } from "@/lib/whatsapp";
-import { reservasDelCliente } from "@/modulos/agenda/consultas";
+import { reservasDelCliente } from "@/modulos/agenda/consultas/listas";
 import { ReservasCliente } from "@/modulos/agenda/componentes/reservas-cliente";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { saldoPendiente } from "@/modulos/pagos/reglas";

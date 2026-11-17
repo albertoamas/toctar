@@ -11,7 +11,7 @@ import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
-import { guardarContenido, guardarSeccionContenido } from "../acciones";
+import { guardarContenido, guardarSeccionContenido } from "../acciones/textos";
 import { PAGINAS, campoDeSeccion, type CampoContenido, type ContenidoPagina, type Pagina } from "../contenido";
 
 // HU-08: textos de una página del sitio. Los campos salen del registro (src/modulos/sitio/contenido.ts).

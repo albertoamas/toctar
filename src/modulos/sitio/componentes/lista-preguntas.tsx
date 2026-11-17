@@ -15,7 +15,7 @@ import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
-import { eliminarPregunta, guardarPregunta, moverPregunta } from "../acciones";
+import { eliminarPregunta, guardarPregunta, moverPregunta } from "../acciones/preguntas";
 
 // HU-08: preguntas frecuentes del sitio (RF-05). Se agregan, editan, ordenan, ocultan y eliminan.
 // Pulido 13.24: como la lista de servicios. Antes cada fila llevaba cinco botones de solo ícono (25 con cinco preguntas)

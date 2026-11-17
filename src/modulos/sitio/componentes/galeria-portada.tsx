@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { Button } from "@/componentes/ui/button";
-import { elegirParaPortada } from "../acciones";
+import { elegirParaPortada } from "../acciones/galeria";
 import { Insignia } from "@/componentes/panel/insignia";
 import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
 import { ItemGaleria, Miniatura } from "./galeria-comun";

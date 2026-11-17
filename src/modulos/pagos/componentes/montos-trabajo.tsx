@@ -1,7 +1,7 @@
 import { cn } from "cn";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { formatearFecha } from "@/lib/fechas";
-import type { DetalleReserva } from "@/modulos/agenda/consultas";
+import type { DetalleReserva } from "@/modulos/agenda/consultas/reserva";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { AnularPago } from "./anular-pago";
 import { RegistrarPago } from "./registrar-pago";

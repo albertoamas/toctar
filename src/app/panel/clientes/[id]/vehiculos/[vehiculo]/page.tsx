@@ -18,7 +18,7 @@ import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { aqui, conDesde, volverDesde } from "@/lib/volver";
 import { formatearWhatsApp } from "@/lib/whatsapp";
-import { reservasDelVehiculo } from "@/modulos/agenda/consultas";
+import { reservasDelVehiculo } from "@/modulos/agenda/consultas/listas";
 import { ReservasCliente } from "@/modulos/agenda/componentes/reservas-cliente";
 import { MasVehiculo } from "@/modulos/clientes/componentes/mas-vehiculo";
 import { FormularioVehiculo } from "@/modulos/clientes/componentes/vehiculos-cliente";

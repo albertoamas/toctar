@@ -2,7 +2,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { cn } from "cn";
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
-import type { ReservaTablero, SemanaDeAgenda } from "../consultas";
+import type { ReservaTablero, SemanaDeAgenda } from "../consultas/tablero";
 import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
 import { Insignia } from "@/componentes/panel/insignia";
 import { cantidad } from "@/lib/cantidad";
