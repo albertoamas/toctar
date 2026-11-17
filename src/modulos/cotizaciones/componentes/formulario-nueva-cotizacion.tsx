@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import { usePasosEnHistorial } from "@/componentes/panel/pasos-en-historial";
 import { useFocoDePaso } from "@/componentes/panel/foco-de-paso";
 import Link from "next/link";
 import { SearchIcon } from "lucide-react";
@@ -172,31 +173,22 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
   }
 
   // El historial: Atrás y Adelante del navegador (o del celular) cambian de paso. Adelante revisa los pasos que salta
-  const alCambiarHistoria = useRef<() => void>(() => {});
-  useEffect(() => {
-    alCambiarHistoria.current = () => {
-      const i = ANCLAS.indexOf(window.location.hash.slice(1) as (typeof ANCLAS)[number]);
-      const destino = i >= primerPaso ? i : primerPaso;
-      if (destino > pasoActual.current && formulario.current) {
-        const valores = leerValores(new FormData(formulario.current));
-        for (let p = pasoActual.current; p < destino; p++) {
-          const errores = erroresDelPaso(p, valores, clienteNuevo);
-          if (Object.keys(errores).length === 0) continue;
-          setLocales({ en: estado, errores });
-          errorAlLlegar.current = true;
-          window.history.go(p - destino);
-          return;
-        }
+  usePasosEnHistorial(() => {
+    const i = ANCLAS.indexOf(window.location.hash.slice(1) as (typeof ANCLAS)[number]);
+    const destino = i >= primerPaso ? i : primerPaso;
+    if (destino > pasoActual.current && formulario.current) {
+      const valores = leerValores(new FormData(formulario.current));
+      for (let p = pasoActual.current; p < destino; p++) {
+        const errores = erroresDelPaso(p, valores, clienteNuevo);
+        if (Object.keys(errores).length === 0) continue;
+        setLocales({ en: estado, errores });
+        errorAlLlegar.current = true;
+        window.history.go(p - destino);
+        return;
       }
-      mostrar(destino);
-    };
+    }
+    mostrar(destino);
   });
-  useEffect(() => {
-    if (window.location.hash) window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
-    const escuchar = () => alCambiarHistoria.current();
-    window.addEventListener("popstate", escuchar);
-    return () => window.removeEventListener("popstate", escuchar);
-  }, []);
 
   function siguiente() {
     const valores = leerValores(new FormData(formulario.current!));
