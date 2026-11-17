@@ -148,13 +148,26 @@ jobs:
           key: playwright-${{ steps.playwright.outputs.imagen }}-${{ steps.playwright.outputs.version }}-webkit
       - name: Instalar el navegador
         if: steps.cache-navegador.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium webkit
-      # Lo normal son 30 s. A veces el servidor de paquetes de Ubuntu entrega a menos de 250 kB/s y esto tardaba hasta 44 min:
-      # falla antes y se repite la corrida, que toma otra máquina
+        run: npx playwright install chromium webkit
+      # Las librerías del sistema que piden Chromium y WebKit (apt). Lo normal son 30 s, pero a veces un servidor de paquetes
+      # de Ubuntu entrega a menos de 250 kB/s (llegó a tardar 44 min; el 17/11 falló 4 veces en una tarde). Cada intento se
+      # corta a los 4 min y el siguiente baja de otro servidor oficial: apt verifica la firma de Ubuntu en cada paquete,
+      # venga de donde venga. Si un intento se cortó a mitad de instalar, dpkg --configure -a lo deja en orden.
       - name: Dependencias del navegador
-        if: steps.cache-navegador.outputs.cache-hit == 'true'
-        timeout-minutes: 10
-        run: npx playwright install-deps chromium webkit
+        timeout-minutes: 14
+        run: |
+          espejos=("" "http://archive.ubuntu.com/ubuntu" "http://mirrors.edge.kernel.org/ubuntu")
+          for intento in 1 2 3; do
+            espejo="${espejos[$((intento - 1))]}"
+            if [ -n "$espejo" ]; then
+              echo "Intento $intento, desde $espejo"
+              sudo sed -i -E "s#https?://[a-z0-9.-]+/ubuntu/?#$espejo/#g" /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list 2>/dev/null || true
+              sudo dpkg --configure -a || true
+            fi
+            if timeout 240 npx playwright install-deps chromium webkit; then exit 0; fi
+            echo "::warning::Las dependencias del navegador no se instalaron en el intento $intento: se prueba con otro servidor"
+          done
+          exit 1
       - name: Buckets de almacenamiento
         run: node scripts/preparar-almacenamiento.mjs
       # Recrea la base toctar_e2e, compila y levanta la app en :3200 (playwright.config.ts). En CI cada prueba que falla
