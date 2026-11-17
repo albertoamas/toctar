@@ -138,6 +138,11 @@ Todas en `modulos/reportes/acciones.ts`, con `exigirModulo("reportes")` y Zod (e
 - **Gráficos:** shadcn/ui Charts (Recharts) en Resumen (`graficos-resumen.tsx`): detalle al pasar el mouse o tocar, eje
   con números redondos (`escalaBonita`), leyenda en el orden Ingresos, Gastos, Ganancia, sin animación al cargar. Las otras
   pestañas siguen por mes y con los gráficos propios hasta su revisión.
+- **Ingresos (17/11):** respeta las fechas. Tarjetas como Resumen: Ingresos, Vehículos entregados, Promedio por
+  vehículo (lo que suman los trabajos entregados, menos su descuento, entre cuántos son: un adelanto suelto no cuenta como
+  un vehículo) y Por cobrar hoy (no depende de las fechas; lleva a Saldos pendientes; "Nadie debe" en cero). "Cómo van los
+  ingresos": lo juntado día a día contra el mes o la semana anterior enteros (este mes, esta semana) o el período anterior
+  del mismo largo (lo demás), con shadcn Charts; con "Hoy" no se muestra. "Por forma de pago" sigue como lista con barras.
 - **Datos para probar:** `npm run datos:reportes` carga seis meses de trabajos, pagos, gastos, cotizaciones y
   mantenimientos sobre la base local (se rehace al volver a correrlo; `-- --quitar` lo saca).
 

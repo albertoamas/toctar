@@ -1,6 +1,6 @@
 import { describe, expect, test, vi, afterEach } from "vitest";
 import { esquemaAnularGasto, esquemaGasto } from "@/modulos/reportes/esquemas";
-import { periodoDe, rangoValido, textoRango, bsRedondo, cambioPorcentual, entregasPorMes, escalaBonita, acumularPorDia, esMes, mesDe, nombreMes, primerDiaDeGastos, rangoDelMes, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
+import { acumuladoDesde, comparacionDelAcumulado, periodoDe, rangoValido, textoRango, bsRedondo, cambioPorcentual, entregasPorMes, escalaBonita, esMes, mesDe, nombreMes, primerDiaDeGastos, rangoDelMes, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
 
 // Pedido 16 (P16-reportes-y-gastos.md §9): los meses de los gastos y el esquema de un gasto.
 
@@ -105,10 +105,6 @@ describe("las pestañas de Reportes", () => {
     expect(escalaBonita(0)).toEqual({ tope: 4, paso: 1 });
   });
 
-  test("lo acumulado día a día, con los días sin pagos", () => {
-    expect(acumularPorDia([{ dia: 1, total: 100 }, { dia: 3, total: 50.5 }], 4)).toEqual([100, 100, 150.5, 150.5]);
-  });
-
   test("entregados, nuevos y los que volvieron de cada mes", () => {
     const entregas = [
       { clienteId: 1, dia: "2026-09-10" },
@@ -156,5 +152,20 @@ describe("los períodos", () => {
     expect(textoRango("2026-11-17", "2026-11-17")).toBe("17 de noviembre");
     expect(textoRango("2026-10-28", "2026-11-03")).toBe("Del 28 de octubre al 3 de noviembre");
     expect(textoRango("2025-12-20", "2026-01-05")).toBe("Del 20 de diciembre de 2025 al 5 de enero de 2026");
+  });
+});
+
+describe("el acumulado de los ingresos", () => {
+  test("suma día a día desde el inicio, y los días sin pagos repiten la suma", () => {
+    const porDia = [{ fecha: "2026-10-31", total: 500 }, { fecha: "2026-11-01", total: 100 }, { fecha: "2026-11-03", total: 250 }];
+    expect(acumuladoDesde(porDia, "2026-11-01", 4)).toEqual([100, 100, 350, 350]);
+    expect(acumuladoDesde(porDia, "2026-10-31", 2)).toEqual([500, 600]);
+    expect(acumuladoDesde([], "2026-11-01", 0)).toEqual([]);
+  });
+  test("este mes y esta semana, contra el anterior entero; lo demás, contra el del mismo largo", () => {
+    const hoy = "2026-11-17";
+    expect(comparacionDelAcumulado(periodoDe({}, hoy))).toEqual({ inicio: "2026-10-01", fin: "2026-10-31" });
+    expect(comparacionDelAcumulado(periodoDe({ periodo: "semana" }, hoy))).toEqual({ inicio: "2026-11-09", fin: "2026-11-15" });
+    expect(comparacionDelAcumulado(periodoDe({ periodo: "rango", desde: "2026-10-10", hasta: "2026-10-19" }, hoy))).toEqual({ inicio: "2026-09-30", fin: "2026-10-09" });
   });
 });

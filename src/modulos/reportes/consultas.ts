@@ -212,42 +212,6 @@ export async function elTallerEnElMes(mes: string): Promise<ElTallerEnElMes> {
 // Las pestañas de Reportes (16/11, opción A del desarrollador, registro-de-cambios.md, pedido 16): Ingresos y Taller y
 // clientes, con sus tendencias.
 
-export type IngresosDelMes = {
-  /** De cuántos vehículos (trabajos) vino lo que entró. */
-  vehiculos: number;
-  porMetodo: { metodo: MetodoPago; total: number }[];
-  /** Lo que entró cada día del mes (1 al último), para la línea acumulada. */
-  porDia: { dia: number; total: number }[];
-};
-
-/** Lo que entró en un mes, por forma de pago y por día (pagos sin anular, por su día). */
-export async function ingresosDelMes(mes: string): Promise<IngresosDelMes> {
-  const s = await sucursalPrincipal();
-  const { inicio, fin } = rangoDelMes(mes);
-  const donde = and(eq(trabajo.sucursalId, s.id), eq(pago.anulado, false), gte(pago.fecha, inicio), lte(pago.fecha, fin));
-  const [[vehiculos], porMetodo, porDia] = await Promise.all([
-    db.select({ n: countDistinct(pago.trabajoId) }).from(pago).innerJoin(trabajo, eq(pago.trabajoId, trabajo.id)).where(donde),
-    db
-      .select({ metodo: pago.metodo, total: sql<string>`sum(${pago.monto})` })
-      .from(pago)
-      .innerJoin(trabajo, eq(pago.trabajoId, trabajo.id))
-      .where(donde)
-      .groupBy(pago.metodo)
-      .orderBy(desc(sql`sum(${pago.monto})`)),
-    db
-      .select({ dia: sql<number>`extract(day from ${pago.fecha})::int`, total: sql<string>`sum(${pago.monto})` })
-      .from(pago)
-      .innerJoin(trabajo, eq(pago.trabajoId, trabajo.id))
-      .where(donde)
-      .groupBy(sql`1`),
-  ]);
-  return {
-    vehiculos: vehiculos?.n ?? 0,
-    porMetodo: porMetodo.map((m) => ({ metodo: m.metodo, total: Number(m.total) })),
-    porDia: porDia.map((d) => ({ dia: Number(d.dia), total: Number(d.total) })),
-  };
-}
-
 /** Cada entrega: de qué cliente y qué día (en Bolivia). Base de los entregados y los clientes de cada mes. */
 export type Entrega = { clienteId: number; dia: string };
 
@@ -289,4 +253,49 @@ export async function totalesEntre(inicio: string, fin: string): Promise<{ entro
       .where(and(eq(gasto.sucursalId, s.id), eq(gasto.anulado, false), gte(gasto.fecha, inicio), lte(gasto.fecha, fin))),
   ]);
   return { entro: Number(entro?.total ?? 0), salio: Number(salio?.total ?? 0) };
+}
+
+export type IngresosEntre = { total: number; porMetodo: { metodo: MetodoPago; total: number }[]; porDia: { fecha: string; total: number }[] };
+
+/** Los pagos sin anular entre dos días (incluidos): el total, por forma de pago (de mayor a menor) y por día. */
+export async function ingresosEntre(inicio: string, fin: string): Promise<IngresosEntre> {
+  const s = await sucursalPrincipal();
+  const donde = and(eq(trabajo.sucursalId, s.id), eq(pago.anulado, false), gte(pago.fecha, inicio), lte(pago.fecha, fin));
+  const [porMetodo, porDia] = await Promise.all([
+    db
+      .select({ metodo: pago.metodo, total: sql<string>`sum(${pago.monto})` })
+      .from(pago)
+      .innerJoin(trabajo, eq(pago.trabajoId, trabajo.id))
+      .where(donde)
+      .groupBy(pago.metodo)
+      .orderBy(desc(sql`sum(${pago.monto})`)),
+    db
+      .select({ fecha: sql<string>`${pago.fecha}::text`, total: sql<string>`sum(${pago.monto})` })
+      .from(pago)
+      .innerJoin(trabajo, eq(pago.trabajoId, trabajo.id))
+      .where(donde)
+      .groupBy(pago.fecha),
+  ]);
+  const metodos = porMetodo.map((m) => ({ metodo: m.metodo, total: Number(m.total) }));
+  return { total: metodos.reduce((t, m) => t + m.total, 0), porMetodo: metodos, porDia: porDia.map((d) => ({ fecha: d.fecha, total: Number(d.total) })) };
+}
+
+/**
+ * Los vehículos entregados entre dos días (en hora de Bolivia) y lo que suman sus trabajos (las líneas menos el
+ * descuento): para el promedio por vehículo, sin que un adelanto suelto cuente como un vehículo.
+ */
+export async function entregadosEntre(inicio: string, fin: string): Promise<{ vehiculos: number; monto: number }> {
+  const s = await sucursalPrincipal();
+  const dia = sql`(${trabajo.entregadoAt} at time zone 'America/La_Paz')::date`;
+  const lineas = db
+    .select({ trabajoId: trabajoLinea.trabajoId, suma: sql<string>`sum(${trabajoLinea.precio})`.as("suma") })
+    .from(trabajoLinea)
+    .groupBy(trabajoLinea.trabajoId)
+    .as("lineas");
+  const [fila] = await db
+    .select({ vehiculos: count(), monto: sql<string>`coalesce(sum(coalesce(${lineas.suma}, 0) - ${trabajo.descuento}), 0)` })
+    .from(trabajo)
+    .leftJoin(lineas, eq(lineas.trabajoId, trabajo.id))
+    .where(and(eq(trabajo.sucursalId, s.id), eq(trabajo.estado, "entregado"), sql`${dia} between ${inicio}::date and ${fin}::date`));
+  return { vehiculos: fila?.vehiculos ?? 0, monto: Number(fila?.monto ?? 0) };
 }

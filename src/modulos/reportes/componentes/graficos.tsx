@@ -51,32 +51,6 @@ export function Leyenda({ items }: { items: { nombre: string; clase: string; lin
   );
 }
 
-/** Lo que entró acumulado día a día: este mes (hasta hoy) en esmeralda y el anterior entero, gris y punteado. */
-export function LineasAcumuladas({ este, antes, descripcion }: { este: number[]; antes: number[]; descripcion: string }) {
-  const x0 = 44, x1 = 416, y0 = 184, yTope = 14;
-  const e = eje(Math.max(...este, ...antes, 0), y0, yTope);
-  const x = (dia: number) => x0 + ((dia - 1) / 30) * (x1 - x0);
-  const linea = (vals: number[]) => vals.map((v, i) => `${i ? "L" : "M"}${x(i + 1).toFixed(1)} ${e.y(v).toFixed(1)}`).join("");
-  const fin = este.length;
-  return (
-    <svg viewBox="0 0 420 206" role="img" aria-label={descripcion} className="block w-full">
-      <Guias e={e} x0={x0} x1={x1} />
-      {[1, 8, 15, 22, 29].map((d) => (
-        <text key={d} x={x(d)} y={y0 + 18} textAnchor="middle" fontSize={11} className="fill-tinta-suave" style={FUENTE}>
-          Día {d}
-        </text>
-      ))}
-      {antes.length > 0 && <path d={linea(antes)} fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-tinta-suave" />}
-      {fin > 0 && (
-        <>
-          <path d={linea(este)} fill="none" strokeWidth={2.5} strokeLinejoin="round" className="stroke-grafico-ingreso" />
-          <circle cx={x(fin)} cy={e.y(este[fin - 1])} r={4.5} strokeWidth={2} className="fill-grafico-ingreso stroke-fondo" />
-        </>
-      )}
-    </svg>
-  );
-}
-
 /** Varias series en líneas con puntos, una por mes (los entregados; los clientes nuevos y los que volvieron). */
 export function LineasMeses({ meses, series, elegido, conValores }: { meses: { mes: string; corto: string }[]; series: { nombre: string; clase: string; claseRelleno: string; valores: number[] }[]; elegido: string; conValores?: boolean }) {
   const x0 = 36, x1 = 416, y0 = 170, yTope = 18;

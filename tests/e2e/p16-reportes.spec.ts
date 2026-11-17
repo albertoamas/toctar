@@ -66,7 +66,15 @@ test("el mes pasado: lo que entró, salió y quedó salen de los pagos y gastos 
   await page.getByRole("navigation", { name: "Partes de los reportes" }).getByRole("link", { name: "Ingresos" }).click();
   await expect(page).toHaveURL(/vista=ingresos&periodo=mes-pasado$/);
   await expect(page.getByRole("region", { name: "Por forma de pago" })).toContainText("Efectivo");
-  await expect(page.getByRole("region", { name: "Ingresos acumulados, día a día" })).toContainText(/^.*entraron/);
+  await expect(page.getByRole("region", { name: "Ingresos del período" })).toContainText(`Ingresos${miles(Number(entro))}`);
+  await expect(page.getByRole("region", { name: "Cómo van los ingresos" })).toContainText(`Entraron ${miles(Number(entro))}`);
+  await expect(page.getByRole("region", { name: "Cómo van los ingresos" }).locator(".recharts-surface").first()).toBeVisible();
+  // Con "Hoy" no hay línea: un día no tiene recorrido
+  await page.getByRole("navigation", { name: "Fechas" }).getByRole("link", { name: "Hoy" }).click();
+  await expect(page.getByRole("navigation", { name: "Fechas" }).getByRole("link", { name: "Hoy" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("region", { name: "Cómo van los ingresos" })).toHaveCount(0);
+  await page.getByRole("navigation", { name: "Fechas" }).getByRole("link", { name: "Mes pasado" }).click();
+  await expect(page.getByRole("region", { name: "Cómo van los ingresos" })).toBeVisible();
 
   // Gastos: Otros, sin el anulado, y la lista
   await page.getByRole("navigation", { name: "Partes de los reportes" }).getByRole("link", { name: "Gastos" }).click();

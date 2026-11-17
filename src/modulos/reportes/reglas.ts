@@ -79,20 +79,6 @@ export function entregasPorMes(entregas: readonly { clienteId: number; dia: stri
   });
 }
 
-/** Lo acumulado día a día de lo que entró: [lo del día 1, lo del 1 y el 2, …] hasta `dias`. */
-export function acumularPorDia(porDia: readonly { dia: number; total: number }[], dias: number): number[] {
-  const resultado: number[] = [];
-  let suma = 0;
-  for (let d = 1; d <= dias; d++) {
-    suma += porDia.find((x) => x.dia === d)?.total ?? 0;
-    resultado.push(Math.round(suma * 100) / 100);
-  }
-  return resultado;
-}
-
-/** Cuántos días tiene un mes ("2026-11" → 30). */
-export const diasDelMes = (mes: string) => Number(rangoDelMes(mes).fin.slice(8));
-
 /**
  * Un eje con números redondos para el valor más alto: el tope y el paso entre líneas guía (1, 2 o 5 por una potencia
  * de 10, con unas 4 líneas). 18.450 → tope 20.000 cada 5.000; 42 → 50 cada 10. Sin datos, de 0 a 4.
@@ -138,7 +124,8 @@ export type Periodo = {
 /** Días entre dos fechas, contando las dos ("2026-11-01" y "2026-11-17": 17). */
 const largo = (inicio: string, fin: string) => Math.round((Date.parse(`${fin}T00:00:00Z`) - Date.parse(`${inicio}T00:00:00Z`)) / 86_400_000) + 1;
 
-const diaYMes = (fecha: string) => `${Number(fecha.slice(8))} de ${nombreMesSolo(fecha.slice(0, 7))}`;
+/** "17 de noviembre". */
+export const diaYMes = (fecha: string) => `${Number(fecha.slice(8))} de ${nombreMesSolo(fecha.slice(0, 7))}`;
 
 /** "Del 1 al 17 de noviembre", "Del 28 de octubre al 3 de noviembre", "17 de noviembre". */
 export function textoRango(inicio: string, fin: string): string {
@@ -198,4 +185,32 @@ export function periodoDe(parametros: { periodo?: unknown; desde?: unknown; hast
 function diaDeLaSemanaIso(fecha: string): number {
   const d = new Date(`${fecha}T12:00:00Z`).getUTCDay();
   return d === 0 ? 7 : d;
+}
+
+/** Días entre dos fechas, contando las dos ("2026-11-01" a "2026-11-17": 17). */
+export const diasEntre = largo;
+
+/**
+ * Lo que se va juntando día a día desde `inicio`, por `dias` días: cada valor es la suma hasta ese día. Los días sin
+ * pagos repiten la suma anterior.
+ */
+export function acumuladoDesde(porDia: readonly { fecha: string; total: number }[], inicio: string, dias: number): number[] {
+  const delDia = new Map(porDia.map((d) => [d.fecha, d.total]));
+  const resultado: number[] = [];
+  let suma = 0;
+  for (let i = 0; i < dias; i++) {
+    suma += delDia.get(sumarDias(inicio, i)) ?? 0;
+    resultado.push(suma);
+  }
+  return resultado;
+}
+
+/**
+ * Contra qué se dibuja la línea punteada del acumulado: este mes y esta semana, contra el mes o la semana anterior
+ * enteros (se ve a dónde llegó); lo demás, contra el período anterior del mismo largo.
+ */
+export function comparacionDelAcumulado(periodo: Periodo): { inicio: string; fin: string } {
+  if (periodo.clave === "mes") return rangoDelMes(sumarMeses(periodo.mes, -1));
+  if (periodo.clave === "semana") return { inicio: periodo.antes.inicio, fin: sumarDias(periodo.antes.inicio, 6) };
+  return periodo.antes;
 }

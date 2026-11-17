@@ -2,7 +2,7 @@ import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { cn } from "cn";
-import { BanknoteIcon, ChevronRightIcon, PercentIcon, PiggyBankIcon, ReceiptTextIcon } from "lucide-react";
+import { BanknoteIcon, CalculatorIcon, CarFrontIcon, ChevronRightIcon, HandCoinsIcon, PercentIcon, PiggyBankIcon, ReceiptTextIcon } from "lucide-react";
 import { CabeceraSeccion, Seccion } from "@/componentes/panel/cabecera-seccion";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
@@ -19,7 +19,8 @@ import { saldosPendientes } from "@/modulos/pagos/consultas";
 import { NOMBRE_METODO } from "@/modulos/pagos/reglas";
 import { ElegirFechas } from "@/modulos/reportes/componentes/elegir-fechas";
 import { FilaGasto } from "@/modulos/reportes/componentes/fila-gasto";
-import { BarrasApiladas, BarrasHorizontales, Leyenda, LineasAcumuladas, LineasMeses } from "@/modulos/reportes/componentes/graficos";
+import { BarrasApiladas, BarrasHorizontales, Leyenda, LineasMeses } from "@/modulos/reportes/componentes/graficos";
+import { GraficoAcumulado, type DiaAcumulado } from "@/modulos/reportes/componentes/grafico-acumulado";
 import { GraficoMeses, TortaNeto } from "@/modulos/reportes/componentes/graficos-resumen";
 import { RegistrarGasto } from "@/modulos/reportes/componentes/registrar-gasto";
 import {
@@ -28,12 +29,14 @@ import {
   entregasHasta,
   gastosDelMes,
   gastosPorCategoriaYMes,
-  ingresosDelMes,
+  entregadosEntre,
+  ingresosEntre,
+  type IngresosEntre,
   movimientosPorMes,
   resumenDelMes,
   totalesEntre,
 } from "@/modulos/reportes/consultas";
-import { acumularPorDia, bsRedondo, cambioPorcentual, diasDelMes, entregasPorMes, mesCorto, mesDe, nombreMes, nombreMesSolo, periodoDe, sumarMeses, tituloMes, type ClavePeriodo, type Periodo } from "@/modulos/reportes/reglas";
+import { acumuladoDesde, bsRedondo, cambioPorcentual, comparacionDelAcumulado, diaYMes, diasEntre, entregasPorMes, mesCorto, mesDe, nombreMes, nombreMesSolo, periodoDe, sumarMeses, tituloMes, type ClavePeriodo, type Periodo } from "@/modulos/reportes/reglas";
 
 export const metadata: Metadata = { title: "Reportes" };
 
@@ -196,28 +199,6 @@ function Cambio({ cambio, contra, subirEsMalo, unidad = "%" }: { cambio: number 
   );
 }
 
-/** Una tarjeta de número: su nombre, el valor y cuánto cambió (verde si es bueno, rojo si es malo, con flecha). */
-function Tarjeta({ etiqueta, valor, cambio, contra, marca, subirEsMalo, unidad = "%" }: { etiqueta: string; valor: string; cambio: number | null; contra: string; marca?: string; subirEsMalo?: boolean; unidad?: string }) {
-  const bueno = cambio !== null && (subirEsMalo ? cambio <= 0 : cambio >= 0);
-  return (
-    <li className="tt-tarjeta-panel flex flex-col gap-1.5 p-4 lg:p-5">
-      <span className="flex items-center gap-2 text-[0.8125rem] font-medium text-tinta-media">
-        {marca && <span aria-hidden className={cn("size-2.5 rounded-[3px]", marca)} />}
-        {etiqueta}
-      </span>
-      <span className="text-[1.375rem] font-bold whitespace-nowrap tabular-nums lg:text-[1.75rem]">{valor}</span>
-      {cambio !== null && (
-        <span className="text-xs text-tinta-suave">
-          <span className={cn("font-semibold", bueno ? "text-exito" : "text-peligro")}>
-            {cambio >= 0 ? "▲" : "▼"} {Math.abs(cambio)} {unidad}
-          </span>{" "}
-          {contra}
-        </span>
-      )}
-    </li>
-  );
-}
-
 /** Una sección del reporte: su título (y un detalle) arriba de su tarjeta. */
 function Bloque({ id, titulo, detalle, accion, children, className }: { id: string; titulo: string; detalle?: string; accion?: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
@@ -235,50 +216,35 @@ function Bloque({ id, titulo, detalle, accion, children, className }: { id: stri
 // Ingresos
 
 async function Ingresos({ ctx }: { ctx: Contexto }) {
-  const [este, antes, saldos] = await Promise.all([ingresosDelMes(ctx.mes), ingresosDelMes(ctx.anterior), saldosPendientes()]);
-  const total = este.porMetodo.reduce((s, m) => s + m.total, 0);
+  const { periodo } = ctx;
+  const comparar = comparacionDelAcumulado(periodo);
+  const [este, antes, linea, entregados, entregadosAntes, saldos] = await Promise.all([
+    ingresosEntre(periodo.inicio, periodo.fin),
+    totalesEntre(periodo.antes.inicio, periodo.antes.fin),
+    ingresosEntre(comparar.inicio, comparar.fin),
+    entregadosEntre(periodo.inicio, periodo.fin),
+    entregadosEntre(periodo.antes.inicio, periodo.antes.fin),
+    saldosPendientes(),
+  ]);
   const porCobrar = saldos.reduce((s, x) => s + Number(x.saldo), 0);
-  // Este mes, hasta hoy; un mes pasado, entero. El anterior, entero
-  const hastaDia = ctx.pasado ? diasDelMes(ctx.mes) : Number(ctx.hoy.slice(8));
-  const acumEste = acumularPorDia(este.porDia, hastaDia);
-  const acumAntes = acumularPorDia(antes.porDia, diasDelMes(ctx.anterior));
-  const aEstaAltura = acumAntes[Math.min(hastaDia, acumAntes.length) - 1] ?? 0;
-  const dif = cambioPorcentual(acumEste[hastaDia - 1] ?? 0, aEstaAltura);
+  const promedio = entregados.vehiculos > 0 ? entregados.monto / entregados.vehiculos : null;
+  const promedioAntes = entregadosAntes.vehiculos > 0 ? entregadosAntes.monto / entregadosAntes.vehiculos : 0;
+  const vs = periodo.vs;
   return (
     <>
-      <ul aria-label="Ingresos del mes" className="grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4">
-        <Tarjeta etiqueta="Ingresos del mes" marca="bg-grafico-ingreso" valor={bsRedondo(total)} cambio={null} contra="" />
-        <Tarjeta etiqueta="Promedio por vehículo" valor={este.vehiculos > 0 ? bsRedondo(total / este.vehiculos) : "—"} cambio={null} contra="" />
-        <li className="col-span-2 lg:col-span-1">
-          <Link href="/panel/pagos" className="tt-tarjeta-panel flex h-full flex-col gap-1.5 p-4 hover:bg-superficie/40 lg:p-5">
-            {/* Los saldos de hoy, también en "Mes pasado": no es de un mes */}
-            <span className="text-[0.8125rem] font-medium text-tinta-media">Por cobrar hoy</span>
-            <span className="text-[1.375rem] font-bold tabular-nums lg:text-[1.75rem]">{bsRedondo(porCobrar)}</span>
-            <span className="flex items-center gap-1 text-xs font-semibold">
-              En {cantidad(saldos.length, "orden", "órdenes")}. Ver saldos
-              <ChevronRightIcon className="size-3.5" aria-hidden />
-            </span>
-          </Link>
-        </li>
-      </ul>
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-        <Bloque id="acumulado" titulo="Ingresos acumulados, día a día">
-          <Leyenda
-            items={[
-              { nombre: tituloMes(ctx.mes).replace(/ de \d+$/, ""), clase: "bg-grafico-ingreso", linea: true },
-              { nombre: tituloMes(ctx.anterior).replace(/ de \d+$/, ""), clase: "border-tinta-suave", linea: true, punteada: true },
-            ]}
-          />
-          <LineasAcumuladas este={acumEste} antes={acumAntes} descripcion={`Ingresos acumulados día a día de ${nombreMes(ctx.mes)} frente a ${nombreMes(ctx.anterior)}`} />
-          <p className="text-[0.8125rem] text-tinta-media">
-            {ctx.pasado
-              ? `En ${nombreMesSolo(ctx.mes)} entraron ${bsRedondo(acumEste.at(-1) ?? 0)}; en ${nombreMesSolo(ctx.anterior)}, ${bsRedondo(acumAntes.at(-1) ?? 0)}.`
-              : `Al día ${hastaDia} entraron ${bsRedondo(acumEste.at(-1) ?? 0)}${dif === null ? "." : `: ${Math.abs(dif)} % ${dif >= 0 ? "más" : "menos"} que en ${nombreMesSolo(ctx.anterior)} a esta altura.`}`}
-          </p>
-        </Bloque>
-        <Bloque id="formas" titulo="Por forma de pago">
+      {/* Las mismas tarjetas que Resumen; "Por cobrar hoy" no depende de las fechas y lleva a Saldos pendientes */}
+      <section aria-label="Ingresos del período" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <TarjetaNumero icono={BanknoteIcon} titulo="Ingresos" valor={bsRedondo(este.total)} nota={<Cambio cambio={cambioPorcentual(este.total, antes.entro)} contra={vs} />} />
+        <TarjetaNumero icono={CarFrontIcon} titulo="Vehículos entregados" valor={entregados.vehiculos} nota={<Cambio cambio={cambioPorcentual(entregados.vehiculos, entregadosAntes.vehiculos)} contra={vs} />} />
+        <TarjetaNumero icono={CalculatorIcon} titulo="Promedio por vehículo" valor={promedio === null ? "—" : bsRedondo(promedio)} nota={promedio === null ? "Sin entregas en estas fechas" : <Cambio cambio={cambioPorcentual(promedio, promedioAntes)} contra={vs} />} />
+        <TarjetaNumero href="/panel/pagos" icono={HandCoinsIcon} titulo="Por cobrar hoy" valor={bsRedondo(porCobrar)} aviso={saldos.length > 0} nota={saldos.length > 0 ? `En ${cantidad(saldos.length, "orden", "órdenes")}` : "Nadie debe"} />
+      </section>
+      <div className={cn("grid gap-x-4 gap-y-6", periodo.clave !== "hoy" && "lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]")}>
+        {/* Un solo día no tiene recorrido: con "Hoy" no hay línea, y la forma de pago ocupa todo el ancho */}
+        {periodo.clave !== "hoy" && <ComoVanLosIngresos periodo={periodo} comparar={comparar} este={este} antes={linea} />}
+        <Seccion id="formas" titulo="Por forma de pago">
           {este.porMetodo.length === 0 ? (
-            <p className="text-sm text-tinta-suave">Sin pagos en {nombreMes(ctx.mes)}.</p>
+            <p className="py-10 text-center text-sm text-tinta-suave">Sin pagos en estas fechas.</p>
           ) : (
             <BarrasHorizontales
               alta
@@ -289,15 +255,55 @@ async function Ingresos({ ctx }: { ctx: Contexto }) {
                 texto: (
                   <>
                     <span className="font-semibold">{bsRedondo(m.total)}</span>
-                    <span className="text-tinta-suave"> · {Math.round((m.total / total) * 100)} %</span>
+                    <span className="text-tinta-suave"> · {Math.round((m.total / este.total) * 100)} %</span>
                   </>
                 ),
               }))}
             />
           )}
-        </Bloque>
+        </Seccion>
       </div>
     </>
+  );
+}
+
+/** Los nombres de las dos líneas del acumulado: "Noviembre" y "Octubre", "Esta semana" y "Semana pasada"… */
+function nombresDelAcumulado(periodo: Periodo, comparar: { inicio: string }): [string, string] {
+  const mes = (fecha: string) => tituloMes(mesDe(fecha)).replace(/ de \d+$/, "");
+  if (periodo.clave === "mes" || periodo.clave === "mes-pasado") return [mes(periodo.inicio), mes(comparar.inicio)];
+  if (periodo.clave === "semana") return ["Esta semana", "Semana pasada"];
+  return ["Estas fechas", "Período anterior"];
+}
+
+/** La línea de lo que se va juntando, con una frase que dice cómo va frente al período con que se compara. */
+function ComoVanLosIngresos({ periodo, comparar, este, antes }: { periodo: Periodo; comparar: { inicio: string; fin: string }; este: IngresosEntre; antes: IngresosEntre }) {
+  const largoEste = diasEntre(periodo.inicio, periodo.fin);
+  const largoAntes = diasEntre(comparar.inicio, comparar.fin);
+  const acumEste = acumuladoDesde(este.porDia, periodo.inicio, largoEste);
+  const acumAntes = acumuladoDesde(antes.porDia, comparar.inicio, largoAntes);
+  const [nombreEste, nombreAntes] = nombresDelAcumulado(periodo, comparar);
+  const dias: DiaAcumulado[] = Array.from({ length: Math.max(largoEste, largoAntes) }, (_, i) => ({
+    dia: i + 1,
+    este: i < largoEste ? acumEste[i] : null,
+    antes: i < largoAntes ? acumAntes[i] : null,
+    fechaEste: i < largoEste ? diaYMes(sumarDias(periodo.inicio, i)) : null,
+    fechaAntes: i < largoAntes ? diaYMes(sumarDias(comparar.inicio, i)) : null,
+  }));
+  const van = acumEste.at(-1) ?? 0;
+  // A esta altura: lo que se había juntado en el anterior el mismo día del período
+  const aEstaAltura = acumAntes[Math.min(largoEste, largoAntes) - 1] ?? 0;
+  const dif = cambioPorcentual(van, aEstaAltura);
+  const enCurso = periodo.clave === "mes" || periodo.clave === "semana";
+  const frase = enCurso
+    ? `${periodo.clave === "mes" ? `Al día ${largoEste}` : "En lo que va de la semana"} van ${bsRedondo(van)}${dif === null ? "." : `: ${Math.abs(dif)} % ${dif >= 0 ? "más" : "menos"} que ${periodo.clave === "mes" ? `en ${nombreAntes.toLowerCase()}` : "la semana pasada"} a esta altura.`}`
+    : `Entraron ${bsRedondo(van)}; en ${periodo.clave === "mes-pasado" ? nombreAntes.toLowerCase() : "el período anterior"}, ${bsRedondo(acumAntes.at(-1) ?? 0)}.`;
+  return (
+    <Seccion id="acumulado" titulo="Cómo van los ingresos">
+      <div className="flex flex-col gap-3">
+        <GraficoAcumulado dias={dias} nombreEste={nombreEste} nombreAntes={nombreAntes} descripcion={`Ingresos acumulados día a día: ${nombreEste} ${bsRedondo(van)}, ${nombreAntes} ${bsRedondo(acumAntes.at(-1) ?? 0)}`} />
+        <p className="text-[0.8125rem] text-tinta-media">{frase}</p>
+      </div>
+    </Seccion>
   );
 }
 
