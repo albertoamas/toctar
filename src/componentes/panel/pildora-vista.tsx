@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { usePathname, useSearchParams } from "next/navigation";
 import { cn } from "cn";
-import { CLASE_PILDORA, CLASE_PILDORA_ACTIVA } from "./filtros";
+import { CLASE_PILDORA, CLASE_PILDORA_ACTIVA } from "./pildora";
 
 /**
  * Una píldora que prende y apaga una vista de la lista por la dirección (`?ver=desactivados`), sin perder lo buscado:

@@ -3,6 +3,7 @@
 import { useId } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useDestinoPendiente } from "./navegacion-pendiente";
 import { cn } from "cn";
 import type { Modulo } from "@/lib/permisos";
 import { ICONO_MODULO } from "./iconos-modulo";
@@ -27,7 +28,10 @@ export function NavegacionPanel({ grupos }: { grupos: GrupoEnlaces[] }) {
 
 function Grupo({ titulo, enlaces }: GrupoEnlaces) {
   const id = useId();
-  const ruta = usePathname();
+  // El módulo tocado se marca al instante, sin esperar al servidor (NavegacionPendiente, 17/11)
+  const destino = useDestinoPendiente();
+  const actual = usePathname();
+  const ruta = destino ? destino.split("?")[0] : actual;
   return (
     <div role={titulo ? "group" : undefined} aria-labelledby={titulo ? id : undefined} className="flex flex-col gap-0.5">
       {titulo && (
