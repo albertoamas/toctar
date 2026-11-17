@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { useRouter } from "next/navigation";
 import type { Route } from "next";
 import { contenidoFormulario } from "@/componentes/panel/contenido-formulario";
-import { PreguntaSalir } from "@/componentes/panel/modal-formulario";
+import { PreguntaSalir } from "@/componentes/panel/pregunta-salir";
 
 // Componente de cliente: se usa dentro de otros componentes de cliente (recibe funciones como props).
 // Lo que falta guardar en un formulario del panel (pulido 13.15). Dos piezas:
