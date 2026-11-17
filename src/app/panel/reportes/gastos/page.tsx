@@ -13,11 +13,10 @@ import { buttonVariants } from "@/componentes/ui/button";
 import { cantidad } from "@/lib/cantidad";
 import { fechaEnBolivia } from "@/lib/fechas";
 import { exigirModulo } from "@/lib/sesion";
-import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { FilaGasto } from "@/modulos/reportes/componentes/fila-gasto";
 import { RegistrarGasto } from "@/modulos/reportes/componentes/registrar-gasto";
 import { categoriasActivas, gastosDelMes } from "@/modulos/reportes/consultas";
-import { esMes, mesDe, nombreMes, primerDiaDeGastos, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
+import { bsExacto, esMes, mesDe, nombreMes, parametrosDelPeriodo, periodoDe, primerDiaDeGastos, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
 
 export const metadata: Metadata = { title: "Gastos" };
 
@@ -25,8 +24,6 @@ export const metadata: Metadata = { title: "Gastos" };
 // el filtro por categoría (`?categoria=`). Cada gasto con su comprobante y "Anular gasto" en su "⋯", como un pago. Solo
 // el dueño.
 
-// Como en todo el panel: "1180,50 Bs"
-const bs = (monto: string) => `${mostrarMonto(monto)} Bs`;
 
 export default function PaginaGastos({ searchParams }: PageProps<"/panel/reportes/gastos">) {
   return (
@@ -58,17 +55,21 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes/gasto
   const total = vigentes.reduce((suma, g) => suma + Number(g.monto), 0);
   const deQue = filtro ? `${enElMes.find(([id]) => id === filtro)![1]} en ${nombreMes(mes)}` : nombreMes(mes);
 
+  // Las fechas del reporte del que se vino (Reportes › Gastos): "Volver" regresa a ellas, también al cambiar de mes aquí
+  const delReporte = parametros.periodo ? parametrosDelPeriodo(periodoDe(parametros, hoy)) : [];
+  const volver = `/panel/reportes?${new URLSearchParams([["vista", "gastos"], ...delReporte]).toString()}` as Route;
   const enlace = (m: string, categoria?: number | null) => {
     const p = new URLSearchParams();
     if (m !== esteMes) p.set("mes", m);
     if (categoria) p.set("categoria", String(categoria));
+    for (const [clave, valor] of delReporte) p.set(clave, valor);
     const texto = p.toString();
     return `/panel/reportes/gastos${texto ? `?${texto}` : ""}` as Route;
   };
 
   return (
     <>
-      <EncabezadoPagina titulo="Gastos" volver={{ href: (mes === sumarMeses(esteMes, -1) ? "/panel/reportes?vista=gastos&mes=pasado" : "/panel/reportes?vista=gastos") as Route, texto: "Reportes" }} accion={<RegistrarGasto categorias={categorias} hoy={hoy} />} />
+      <EncabezadoPagina titulo="Gastos" volver={{ href: volver, texto: "Reportes" }} accion={<RegistrarGasto categorias={categorias} hoy={hoy} />} />
       <BarraLista
         // El mes primero: es lo que decide qué se ve; los filtros, al lado
         buscador={
@@ -110,7 +111,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes/gasto
       <section aria-label="Total del mes" className="tt-tarjeta-panel flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-4 py-3">
         <span className="text-sm text-tinta-media">Total de {deQue}</span>
         <span className="text-2xl font-bold tabular-nums">
-          {bs(total.toFixed(2))}
+          {bsExacto(total.toFixed(2))}
           <span className="ml-2 text-sm font-normal text-tinta-suave">en {cantidad(vigentes.length, "gasto", "gastos")}</span>
         </span>
       </section>

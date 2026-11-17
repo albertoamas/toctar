@@ -31,7 +31,7 @@ import {
   ingresosEntre,
   totalesEntre,
 } from "@/modulos/reportes/consultas";
-import { acumuladoDesde, bsRedondo, clientesPorTramo, POR_UNIDAD, sumarPorTramo, tramosDe, cambioPorcentual, comparacionDelAcumulado, diaYMes, diasEntre, mesDe, periodoDe, sumarMeses, tituloMes, type ClavePeriodo, type Periodo } from "@/modulos/reportes/reglas";
+import { acumuladoDesde, bsRedondo, parametrosDelPeriodo, primerDiaDeGastos, clientesPorTramo, POR_UNIDAD, sumarPorTramo, tramosDe, cambioPorcentual, comparacionDelAcumulado, diaYMes, diasEntre, mesDe, periodoDe, sumarMeses, tituloMes, type ClavePeriodo, type Periodo } from "@/modulos/reportes/reglas";
 
 export const metadata: Metadata = { title: "Reportes" };
 
@@ -62,6 +62,11 @@ export default function PaginaReportes({ searchParams }: PageProps<"/panel/repor
  */
 type Contexto = { periodo: Periodo; mes: string; anterior: string; hoy: string; pasado: boolean };
 
+/** "Registrar gasto", con sus categorías: espera solo, así las consultas de la pestaña no esperan a las categorías. */
+async function BotonRegistrarGasto({ hoy }: { hoy: string }) {
+  return <RegistrarGasto categorias={await categoriasActivas()} hoy={hoy} />;
+}
+
 /** Las opciones de fechas, en el orden en que se usan: lo de hoy primero. */
 const OPCIONES_PERIODO: { clave: ClavePeriodo; texto: string }[] = [
   { clave: "hoy", texto: "Hoy" },
@@ -81,21 +86,21 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes">, "s
   const ctx: Contexto = { periodo, mes: periodo.mes, anterior: sumarMeses(periodo.mes, -1), hoy, pasado: periodo.mes !== mesDe(hoy) };
   // Las direcciones: la pestaña y el período (con sus fechas, si es un rango); lo de siempre, sin parámetros
   const enlace = (v: Vista, clave: ClavePeriodo = periodo.clave) => {
-    const p = new URLSearchParams();
-    if (v !== "resumen") p.set("vista", v);
-    if (clave !== "mes") p.set("periodo", clave);
-    if (clave === "rango") {
-      p.set("desde", periodo.clave === "rango" ? periodo.inicio : sumarDias(hoy, -29));
-      p.set("hasta", periodo.clave === "rango" ? periodo.fin : hoy);
-    }
+    // Otro período: su clave; un rango nuevo empieza en los últimos 30 días
+    const elegido = clave === periodo.clave ? periodo : { clave, inicio: sumarDias(hoy, -29), fin: hoy };
+    const p = new URLSearchParams([...(v !== "resumen" ? [["vista", v] as [string, string]] : []), ...parametrosDelPeriodo(elegido)]);
     const texto = p.toString();
     return `/panel/reportes${texto ? `?${texto}` : ""}` as Route;
   };
-  const categorias = await categoriasActivas();
 
   return (
     <>
-      <EncabezadoPagina titulo="Reportes" accion={<RegistrarGasto categorias={categorias} hoy={hoy} />}>
+      <EncabezadoPagina titulo="Reportes" accion={
+          <Suspense fallback={null}>
+            <BotonRegistrarGasto hoy={hoy} />
+          </Suspense>
+        }
+      >
         {periodo.titulo}
       </EncabezadoPagina>
       <Pestanas etiqueta="Partes de los reportes" activa={enlace(vista)} pestanas={VISTAS.map((v) => ({ href: enlace(v), texto: NOMBRE_VISTA[v] }))} />
@@ -136,8 +141,12 @@ async function Resumen({ ctx }: { ctx: Contexto }) {
   const ganancia = entro - salio;
   const sinGastos = salio === 0 && entro > 0;
   const margen = entro > 0 ? Math.round((ganancia / entro) * 100) : null;
-  const margenAntes = antes.entro > 0 ? Math.round(((antes.entro - antes.salio) / antes.entro) * 100) : null;
   const vs = periodo.vs;
+  // El anterior sin gastos registrados (con ingresos) daría un margen de 100 % y una "caída" falsa: no se compara
+  const sinGastosAntes = antes.salio === 0 && antes.entro > 0;
+  const margenAntes = antes.entro > 0 && !sinGastosAntes ? Math.round(((antes.entro - antes.salio) / antes.entro) * 100) : null;
+  const gananciaAntes = antes.entro - antes.salio;
+  const sinGastosDeAntes = `Sin gastos ${vs.replace(/^vs\. /, "de ")}`;
   return (
     <>
       {/* Las tarjetas de número del panel (las del Inicio), sin enlace: aquí solo se leen */}
@@ -145,9 +154,9 @@ async function Resumen({ ctx }: { ctx: Contexto }) {
         <TarjetaNumero icono={BanknoteIcon} titulo="Ingresos" valor={bsRedondo(entro)} nota={<Cambio cambio={cambioPorcentual(entro, antes.entro)} contra={vs} />} />
         <TarjetaNumero icono={ReceiptTextIcon} titulo="Gastos" valor={bsRedondo(salio)} aviso={sinGastos} nota={sinGastos ? "Ninguno registrado" : <Cambio cambio={cambioPorcentual(salio, antes.salio)} contra={vs} subirEsMalo />} />
         {/* Con pérdida, sin %: "▼ 150 %" junto a una pérdida confunde */}
-        <TarjetaNumero icono={PiggyBankIcon} titulo="Ganancia" valor={bsRedondo(ganancia)} nota={<Cambio cambio={ganancia < 0 ? null : cambioPorcentual(ganancia, antes.entro - antes.salio)} contra={vs} />} />
+        <TarjetaNumero icono={PiggyBankIcon} titulo="Ganancia" valor={bsRedondo(ganancia)} nota={<Cambio cambio={ganancia < 0 || sinGastosAntes ? null : cambioPorcentual(ganancia, gananciaAntes)} contra={vs} sinCambio={sinGastosAntes ? sinGastosDeAntes : ganancia < 0 ? "Hubo pérdida" : gananciaAntes < 0 ? "Antes hubo pérdida" : undefined} />} />
         {/* Sin gastos el margen saldría 100 %: se muestra "—" hasta que se carguen */}
-        <TarjetaNumero icono={PercentIcon} titulo="Margen" valor={margen === null || sinGastos ? "—" : `${margen} %`} nota={sinGastos ? "Faltan los gastos" : <Cambio cambio={margen !== null && margenAntes !== null ? margen - margenAntes : null} unidad="pts" contra={vs} />} />
+        <TarjetaNumero icono={PercentIcon} titulo="Margen" valor={margen === null || sinGastos ? "—" : `${margen} %`} nota={sinGastos ? "Faltan los gastos" : <Cambio cambio={margen !== null && margenAntes !== null ? margen - margenAntes : null} unidad="pts" contra={vs} sinCambio={sinGastosAntes ? sinGastosDeAntes : undefined} />} />
       </section>
       {/* Las secciones como en todo el panel: el título afuera, arriba de su tarjeta (Seccion) */}
       <div className={cn("grid gap-x-4 gap-y-6", periodo.clave !== "hoy" && "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.75fr)]")}>
@@ -181,8 +190,10 @@ async function Resumen({ ctx }: { ctx: Contexto }) {
 }
 
 /** El cambio frente al mes anterior, para la nota de una tarjeta: "▲ 12 % vs. oct.", en verde si es bueno y rojo si es malo. */
-function Cambio({ cambio, contra, subirEsMalo, unidad = "%" }: { cambio: number | null; contra: string; subirEsMalo?: boolean; unidad?: string }) {
-  if (cambio === null) return <>Sin datos {contra.replace(/^vs\. /, "de ")}</>;
+function Cambio(props: { cambio: number | null; contra: string; subirEsMalo?: boolean; unidad?: string; sinCambio?: string }) {
+  const { cambio, contra, subirEsMalo, unidad = "%", sinCambio } = props;
+  // Sin comparación: por qué ("Sin gastos de oct.", "Antes hubo pérdida") o, si no se sabe, que no hay datos
+  if (cambio === null) return <>{sinCambio ?? `Sin datos ${contra.replace(/^vs\. /, "de ")}`}</>;
   const bueno = subirEsMalo ? cambio <= 0 : cambio >= 0;
   return (
     <>
@@ -200,10 +211,13 @@ function Cambio({ cambio, contra, subirEsMalo, unidad = "%" }: { cambio: number 
 async function Ingresos({ ctx }: { ctx: Contexto }) {
   const { periodo } = ctx;
   const comparar = comparacionDelAcumulado(periodo);
+  // El anterior y la línea punteada: una sola consulta cuando son el mismo rango (mes pasado, 6 meses, un rango)
+  const lineaP = ingresosEntre(comparar.inicio, comparar.fin);
+  const antesP = mismoRango(comparar, periodo.antes) ? lineaP : ingresosEntre(periodo.antes.inicio, periodo.antes.fin);
   const [este, antes, linea, entregados, entregadosAntes, saldos] = await Promise.all([
     ingresosEntre(periodo.inicio, periodo.fin),
-    totalesEntre(periodo.antes.inicio, periodo.antes.fin),
-    ingresosEntre(comparar.inicio, comparar.fin),
+    antesP,
+    lineaP,
     entregadosEntre(periodo.inicio, periodo.fin),
     entregadosEntre(periodo.antes.inicio, periodo.antes.fin),
     saldosPendientes(),
@@ -216,7 +230,7 @@ async function Ingresos({ ctx }: { ctx: Contexto }) {
     <>
       {/* Las mismas tarjetas que Resumen; "Por cobrar hoy" no depende de las fechas y lleva a Saldos pendientes */}
       <section aria-label="Ingresos del período" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <TarjetaNumero icono={BanknoteIcon} titulo="Ingresos" valor={bsRedondo(este.total)} nota={<Cambio cambio={cambioPorcentual(este.total, antes.entro)} contra={vs} />} />
+        <TarjetaNumero icono={BanknoteIcon} titulo="Ingresos" valor={bsRedondo(este.total)} nota={<Cambio cambio={cambioPorcentual(este.total, antes.total)} contra={vs} />} />
         <TarjetaNumero icono={CarFrontIcon} titulo="Vehículos entregados" valor={entregados.vehiculos} nota={<Cambio cambio={cambioPorcentual(entregados.vehiculos, entregadosAntes.vehiculos)} contra={vs} />} />
         <TarjetaNumero icono={CalculatorIcon} titulo="Promedio por vehículo" valor={promedio === null ? "—" : bsRedondo(promedio)} nota={promedio === null ? "Sin entregas en estas fechas" : <Cambio cambio={cambioPorcentual(promedio, promedioAntes)} contra={vs} />} />
         <TarjetaNumero href="/panel/pagos" icono={HandCoinsIcon} titulo="Por cobrar hoy" valor={bsRedondo(porCobrar)} aviso={saldos.length > 0} nota={saldos.length > 0 ? `En ${cantidad(saldos.length, "orden", "órdenes")}` : "Nadie debe"} />
@@ -248,6 +262,8 @@ async function Ingresos({ ctx }: { ctx: Contexto }) {
     </>
   );
 }
+
+const mismoRango = (a: { inicio: string; fin: string }, b: { inicio: string; fin: string }) => a.inicio === b.inicio && a.fin === b.fin;
 
 /** Los nombres de las dos líneas del acumulado: "Noviembre" y "Octubre", "Esta semana" y "Semana pasada"… */
 function nombresDelAcumulado(periodo: Periodo, comparar: { inicio: string }): [string, string] {
@@ -304,24 +320,29 @@ function ComoVan({ de, periodo, comparar, este, antes }: { de: keyof typeof ACUM
 async function Gastos({ ctx }: { ctx: Contexto }) {
   const { periodo } = ctx;
   const comparar = comparacionDelAcumulado(periodo);
+  const lineaP = gastosEntre(comparar.inicio, comparar.fin);
+  const antesP = mismoRango(comparar, periodo.antes) ? lineaP : gastosEntre(periodo.antes.inicio, periodo.antes.fin);
   const [este, antes, linea, entregados, entregadosAntes] = await Promise.all([
     gastosEntre(periodo.inicio, periodo.fin),
-    totalesEntre(periodo.antes.inicio, periodo.antes.fin),
-    gastosEntre(comparar.inicio, comparar.fin),
+    antesP,
+    lineaP,
     entregadosEntre(periodo.inicio, periodo.fin),
     entregadosEntre(periodo.antes.inicio, periodo.antes.fin),
   ]);
   const porVehiculo = entregados.vehiculos > 0 ? este.total / entregados.vehiculos : null;
-  const porVehiculoAntes = entregadosAntes.vehiculos > 0 ? antes.salio / entregadosAntes.vehiculos : 0;
+  const porVehiculoAntes = entregadosAntes.vehiculos > 0 ? antes.total / entregadosAntes.vehiculos : 0;
   const mayor = este.porCategoria[0];
   const parte = (monto: number) => Math.round((monto / este.total) * 100);
   const vs = periodo.vs;
-  // La lista de gastos (buscar, anular, ver un comprobante) es su propia pantalla, por mes: la del mes en que termina el período
-  const lista = `/panel/reportes/gastos${ctx.pasado ? `?mes=${ctx.mes}` : ""}` as Route;
+  // La lista de gastos (buscar, anular, ver un comprobante) es su propia pantalla, por mes: la del mes en que termina el
+  // período, y el período, para que "Volver" traiga las mismas fechas. Antes de enero del año pasado no se registran
+  // gastos: sin enlace (llevaría a otro mes)
+  const consulta = new URLSearchParams([...(ctx.pasado ? [["mes", ctx.mes] as [string, string]] : []), ...parametrosDelPeriodo(periodo)]).toString();
+  const lista = periodo.fin >= primerDiaDeGastos(ctx.hoy) ? (`/panel/reportes/gastos${consulta ? `?${consulta}` : ""}` as Route) : null;
   return (
     <>
       <section aria-label="Gastos del período" className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        <TarjetaNumero icono={ReceiptTextIcon} titulo="Gastos" valor={bsRedondo(este.total)} nota={<Cambio cambio={cambioPorcentual(este.total, antes.salio)} contra={vs} subirEsMalo />} />
+        <TarjetaNumero icono={ReceiptTextIcon} titulo="Gastos" valor={bsRedondo(este.total)} nota={<Cambio cambio={cambioPorcentual(este.total, antes.total)} contra={vs} subirEsMalo />} />
         <TarjetaNumero icono={CarFrontIcon} titulo="Gasto por vehículo" valor={porVehiculo === null ? "—" : bsRedondo(porVehiculo)} nota={porVehiculo === null ? "Sin entregas en estas fechas" : <Cambio cambio={cambioPorcentual(porVehiculo, porVehiculoAntes)} contra={vs} subirEsMalo />} />
         <TarjetaNumero className="col-span-2 lg:col-span-1" icono={ChartPieIcon} titulo="Lo que más pesa" valor={mayor ? bsRedondo(mayor.total) : "—"} nota={mayor ? `${mayor.nombre}, ${parte(mayor.total)} % del total` : "Sin gastos en estas fechas"} />
       </section>
@@ -332,10 +353,12 @@ async function Gastos({ ctx }: { ctx: Contexto }) {
           id="categorias"
           titulo="Por categoría"
           accion={
-            <Link href={lista} className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold hover:underline">
-              Ver la lista de gastos
-              <ChevronRightIcon className="size-4" aria-hidden />
-            </Link>
+            lista && (
+              <Link href={lista} className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold hover:underline">
+                Ver la lista de gastos
+                <ChevronRightIcon className="size-4" aria-hidden />
+              </Link>
+            )
           }
         >
           {este.porCategoria.length === 0 ? (

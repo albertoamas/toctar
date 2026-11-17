@@ -90,6 +90,9 @@ test("el mes pasado: lo que entró, salió y quedó salen de los pagos y gastos 
   await page.getByRole("main").getByRole("link", { name: "Volver a Reportes" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Reportes" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Por categoría" })).toBeVisible();
+  // Con las mismas fechas con que se fue (el mes pasado), no con "Este mes"
+  await expect(page).toHaveURL(/vista=gastos&periodo=mes-pasado$/);
+  await expect(page.getByRole("navigation", { name: "Fechas" }).getByRole("link", { name: "Mes pasado" })).toHaveAttribute("aria-current", "page");
 
   // Taller y clientes: las tarjetas y las tres secciones; la tendencia, por día en un mes y por mes en "6 meses"
   await page.getByRole("navigation", { name: "Partes de los reportes" }).getByRole("link", { name: "Taller y clientes" }).click();

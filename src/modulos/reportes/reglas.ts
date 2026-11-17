@@ -1,4 +1,5 @@
 import { fechaExiste, sumarDias } from "@/lib/fechas";
+import { mostrarMonto } from "@/modulos/catalogo/reglas";
 
 // Pedido 16 (P16-reportes-y-gastos.md): los meses de los gastos y los reportes. Las fechas ya están en hora de Bolivia
 // (un pago o un gasto guarda su día, no su instante): un mes es del día 1 al último, sin pasar por UTC.
@@ -268,3 +269,16 @@ export function sumarPorTramo(porDia: readonly { fecha: string; total: number }[
 
 /** "por día", "por semana", "por mes": lo que va en el título del gráfico. */
 export const POR_UNIDAD: Record<UnidadTramo, string> = { dia: "por día", semana: "por semana", mes: "por mes" };
+
+/** Un monto exacto, como en todo el panel ("1180,50 Bs"): el de la lista de gastos. Reportes redondea (bsRedondo). */
+export const bsExacto = (monto: string) => `${mostrarMonto(monto)} Bs`;
+
+/**
+ * Los parámetros de la dirección que llevan un período (`periodo`, y `desde` y `hasta` si es un rango). "Este mes" no
+ * lleva ninguno: es el de siempre. Los usan Reportes y la lista de gastos, para volver con las mismas fechas.
+ */
+export function parametrosDelPeriodo(periodo: Pick<Periodo, "clave" | "inicio" | "fin">): [string, string][] {
+  if (periodo.clave === "mes") return [];
+  if (periodo.clave === "rango") return [["periodo", "rango"], ["desde", periodo.inicio], ["hasta", periodo.fin]];
+  return [["periodo", periodo.clave]];
+}

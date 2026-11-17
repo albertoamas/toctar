@@ -201,21 +201,21 @@ export async function ingresosEntre(inicio: string, fin: string): Promise<Ingres
 
 /**
  * Los vehículos entregados entre dos días (en hora de Bolivia) y lo que suman sus trabajos (las líneas menos el
- * descuento): para el promedio por vehículo, sin que un adelanto suelto cuente como un vehículo.
+ * descuento, sin bajar de 0, como en Saldos): para el promedio por vehículo, sin que un adelanto suelto cuente como un
+ * vehículo.
  */
 export async function entregadosEntre(inicio: string, fin: string): Promise<{ vehiculos: number; monto: number }> {
   const s = await sucursalPrincipal();
-  const dia = sql`(${trabajo.entregadoAt} at time zone 'America/La_Paz')::date`;
   const lineas = db
     .select({ trabajoId: trabajoLinea.trabajoId, suma: sql<string>`sum(${trabajoLinea.precio})`.as("suma") })
     .from(trabajoLinea)
     .groupBy(trabajoLinea.trabajoId)
     .as("lineas");
   const [fila] = await db
-    .select({ vehiculos: count(), monto: sql<string>`coalesce(sum(coalesce(${lineas.suma}, 0) - ${trabajo.descuento}), 0)` })
+    .select({ vehiculos: count(), monto: sql<string>`coalesce(sum(greatest(coalesce(${lineas.suma}, 0) - ${trabajo.descuento}, 0)), 0)` })
     .from(trabajo)
     .leftJoin(lineas, eq(lineas.trabajoId, trabajo.id))
-    .where(and(eq(trabajo.sucursalId, s.id), eq(trabajo.estado, "entregado"), sql`${dia} between ${inicio}::date and ${fin}::date`));
+    .where(and(eq(trabajo.sucursalId, s.id), eq(trabajo.estado, "entregado"), gte(enBolivia(trabajo.entregadoAt), inicio), lte(enBolivia(trabajo.entregadoAt), fin)));
   return { vehiculos: fila?.vehiculos ?? 0, monto: Number(fila?.monto ?? 0) };
 }
 

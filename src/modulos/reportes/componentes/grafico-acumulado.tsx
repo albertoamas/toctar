@@ -3,13 +3,12 @@
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/componentes/ui/chart";
 import { bsRedondo, escalaBonita, textoEje } from "../reglas";
+import { ANIMACION, FilaDetalle } from "./grafico-comun";
 
 // "Cómo van los ingresos" y "Cómo van los gastos" (17/11): lo que se va juntando día a día en las fechas elegidas (línea llena) contra
 // el período con que se compara (punteada), con shadcn/ui Charts como Resumen. El eje cuenta los días del período
 // ("Día 1", "Día 8"…) y el detalle dice la fecha de cada uno. Una sola animación corta al cargar, sin ella con "reducir
 // movimiento" (Recharts, "auto").
-
-const ANIMACION = { isAnimationActive: "auto", animationDuration: 700, animationEasing: "ease-out" } as const;
 
 export type DiaAcumulado = { dia: number; este: number | null; antes: number | null; fechaEste: string | null; fechaAntes: string | null };
 
@@ -42,15 +41,7 @@ export function GraficoAcumulado({ dias, color, nombreEste, nombreAntes, descrip
               formatter={(valor, nombre, item) => {
                 const clave = String(nombre) as keyof typeof config;
                 const fecha = clave === "este" ? item.payload.fechaEste : item.payload.fechaAntes;
-                return (
-                  <span className="flex w-full items-center justify-between gap-4">
-                    <span className="flex items-center gap-1.5">
-                      <span aria-hidden className="size-2.5 rounded-[3px]" style={{ background: config[clave]?.color }} />
-                      {fecha ?? config[clave]?.label}
-                    </span>
-                    <span className="font-semibold tabular-nums">{bsRedondo(Number(valor))}</span>
-                  </span>
-                );
+                return <FilaDetalle color={config[clave]?.color} nombre={fecha ?? config[clave]?.label} valor={bsRedondo(Number(valor))} />;
               }}
             />
           )}

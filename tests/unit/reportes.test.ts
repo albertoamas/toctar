@@ -1,6 +1,6 @@
 import { describe, expect, test, vi, afterEach } from "vitest";
 import { esquemaAnularGasto, esquemaGasto } from "@/modulos/reportes/esquemas";
-import { textoEje, clientesPorTramo, sumarPorTramo, tramosDe, acumuladoDesde, comparacionDelAcumulado, periodoDe, rangoValido, textoRango, bsRedondo, cambioPorcentual, escalaBonita, esMes, mesDe, nombreMes, primerDiaDeGastos, rangoDelMes, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
+import { parametrosDelPeriodo, textoEje, clientesPorTramo, sumarPorTramo, tramosDe, acumuladoDesde, comparacionDelAcumulado, periodoDe, rangoValido, textoRango, bsRedondo, cambioPorcentual, escalaBonita, esMes, mesDe, nombreMes, primerDiaDeGastos, rangoDelMes, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
 
 // Pedido 16 (P16-reportes-y-gastos.md §9): los meses de los gastos y el esquema de un gasto.
 
@@ -211,5 +211,18 @@ describe("las etiquetas del eje de montos", () => {
     expect(textoEje(800)).toBe("800");
     expect(textoEje(12500)).toBe("12,5 mil");
     expect(textoEje(-5000)).toBe("−5 mil");
+  });
+});
+
+describe("el período en la dirección", () => {
+  test("este mes no lleva nada; un rango lleva sus fechas; lo demás, su clave", () => {
+    const hoy = "2026-11-17";
+    expect(parametrosDelPeriodo(periodoDe({}, hoy))).toEqual([]);
+    expect(parametrosDelPeriodo(periodoDe({ periodo: "mes-pasado" }, hoy))).toEqual([["periodo", "mes-pasado"]]);
+    expect(parametrosDelPeriodo(periodoDe({ periodo: "rango", desde: "2026-08-01", hasta: "2026-10-31" }, hoy))).toEqual([
+      ["periodo", "rango"],
+      ["desde", "2026-08-01"],
+      ["hasta", "2026-10-31"],
+    ]);
   });
 });

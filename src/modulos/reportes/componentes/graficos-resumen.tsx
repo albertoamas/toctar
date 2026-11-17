@@ -3,14 +3,13 @@
 import { Bar, CartesianGrid, ComposedChart, Label, Line, Pie, PieChart, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/componentes/ui/chart";
 import { bsRedondo, escalaBonita, textoEje } from "../reglas";
+import { ANIMACION, FilaDetalle, mayuscula } from "./grafico-comun";
 
 // Los gráficos de Resumen con shadcn/ui Charts (Recharts, 17/11): el componente de gráficos del mismo shadcn que usa el
 // panel. Recharts mide en píxeles (la letra no se agranda ni se achica con la pantalla), trae el detalle al pasar el
 // mouse o tocar y la leyenda. Al cargar, una sola animación corta (las barras suben; la torta y la línea se dibujan);
 // con "reducir movimiento" en el equipo, Recharts no anima ("auto"). La línea, sin puntos fijos (aparecían antes que ella
 // al animar): el punto se ve al pasar el mouse o tocar el mes.
-
-const ANIMACION = { isAnimationActive: "auto", animationDuration: 700, animationEasing: "ease-out" } as const;
 
 const configMeses = {
   entro: { label: "Ingresos", color: "var(--grafico-ingreso)" },
@@ -43,29 +42,13 @@ export function GraficoIngresosGastos({ tramos: meses, conGanancia }: { tramos: 
         <CartesianGrid vertical={false} />
         <XAxis dataKey="corto" tickLine={false} axisLine={false} tickMargin={8} interval="preserveStartEnd" minTickGap={8} />
         <YAxis tickLine={false} axisLine={false} width={56} domain={[piso, tope]} ticks={marcas} interval={0} tickFormatter={(v: number) => textoEje(v)} />
-        <ChartTooltip cursor={{ fill: "var(--fondo-panel)" }} content={<ChartTooltipContent labelFormatter={(_, p) => mayuscula(String(p?.[0]?.payload?.nombre ?? ""))} formatter={(valor, nombre) => <FilaDetalle nombre={nombre} valor={valor} />} />} />
+        <ChartTooltip cursor={{ fill: "var(--fondo-panel)" }} content={<ChartTooltipContent labelFormatter={(_, p) => mayuscula(String(p?.[0]?.payload?.nombre ?? ""))} formatter={(valor, nombre) => <FilaDetalle color={configMeses[String(nombre) as keyof typeof configMeses]?.color} nombre={configMeses[String(nombre) as keyof typeof configMeses]?.label ?? String(nombre)} valor={bsRedondo(Number(valor))} />} />} />
         <ChartLegend content={<ChartLegendContent />} itemSorter={(item) => ORDEN.indexOf(String(item.dataKey))} />
         <Bar dataKey="entro" fill="var(--color-entro)" radius={[4, 4, 0, 0]} maxBarSize={28} {...ANIMACION} />
         <Bar dataKey="salio" fill="var(--color-salio)" radius={[4, 4, 0, 0]} maxBarSize={28} {...ANIMACION} />
         {conLinea && <Line dataKey="ganancia" type="monotone" stroke="var(--color-ganancia)" strokeWidth={2} dot={false} activeDot={{ r: 4.5, fill: "var(--color-ganancia)", stroke: "var(--fondo)", strokeWidth: 2 }} connectNulls={false} {...ANIMACION} />}
       </ComposedChart>
     </ChartContainer>
-  );
-}
-
-const mayuscula = (texto: string) => texto.charAt(0).toUpperCase() + texto.slice(1);
-
-/** Una fila del detalle: el color, el nombre y el monto en Bs. */
-function FilaDetalle({ nombre, valor }: { nombre: unknown; valor: unknown }) {
-  const clave = String(nombre) as keyof typeof configMeses;
-  return (
-    <span className="flex w-full items-center justify-between gap-4">
-      <span className="flex items-center gap-1.5">
-        <span aria-hidden className="size-2.5 rounded-[3px]" style={{ background: configMeses[clave]?.color }} />
-        {configMeses[clave]?.label ?? String(nombre)}
-      </span>
-      <span className="font-semibold tabular-nums">{bsRedondo(Number(valor))}</span>
-    </span>
   );
 }
 
@@ -86,7 +69,7 @@ export function TortaNeto({ entro, salio }: { entro: number; salio: number }) {
     <div className="flex flex-col gap-4">
       <ChartContainer config={configTorta} className="mx-auto aspect-square w-full max-w-52" aria-label={`De ${bsRedondo(entro)} que entraron, quedaron ${bsRedondo(quedo)} (${parte} %) y se gastaron ${bsRedondo(salio)}`}>
         <PieChart>
-          <ChartTooltip content={<ChartTooltipContent hideLabel nameKey="clave" formatter={(valor, _n, item) => <FilaTorta clave={String(item.payload.clave)} valor={Number(valor)} />} />} />
+          <ChartTooltip content={<ChartTooltipContent hideLabel nameKey="clave" formatter={(valor, _n, item) => <FilaDetalle color={configTorta[String(item.payload.clave) as keyof typeof configTorta]?.color} nombre={configTorta[String(item.payload.clave) as keyof typeof configTorta]?.label} valor={bsRedondo(Number(valor))} />} />} />
           <Pie data={datos} dataKey="valor" nameKey="clave" innerRadius="62%" outerRadius="92%" paddingAngle={datos.length > 1 ? 2 : 0} strokeWidth={0} {...ANIMACION}>
             <Label
               content={({ viewBox }) => {
@@ -124,18 +107,5 @@ export function TortaNeto({ entro, salio }: { entro: number; salio: number }) {
         ))}
       </dl>
     </div>
-  );
-}
-
-function FilaTorta({ clave, valor }: { clave: string; valor: number }) {
-  const c = configTorta[clave as keyof typeof configTorta];
-  return (
-    <span className="flex w-full items-center justify-between gap-4">
-      <span className="flex items-center gap-1.5">
-        <span aria-hidden className="size-2.5 rounded-[3px]" style={{ background: c?.color }} />
-        {c?.label ?? clave}
-      </span>
-      <span className="font-semibold tabular-nums">{bsRedondo(valor)}</span>
-    </span>
   );
 }

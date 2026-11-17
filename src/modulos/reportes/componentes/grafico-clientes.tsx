@@ -4,19 +4,16 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/componentes/ui/chart";
 import { cantidad } from "@/lib/cantidad";
 import { escalaBonita } from "../reglas";
+import { ANIMACION, FilaDetalle, mayuscula } from "./grafico-comun";
 
 // Taller y clientes, "Clientes atendidos" (17/11): los clientes de cada tramo (día, semana o mes, según las fechas), en
 // barras apiladas: los nuevos abajo y los que volvieron encima, con shadcn/ui Charts. Azul y violeta de los gráficos:
 // el verde y el rojo son de los ingresos y los gastos. 2 px entre las partes; la animación, como las otras pestañas.
 
-const ANIMACION = { isAnimationActive: "auto", animationDuration: 700, animationEasing: "ease-out" } as const;
-
 const config = {
   nuevos: { label: "Nuevos", color: "var(--grafico-1)" },
   volvieron: { label: "Volvieron", color: "var(--grafico-3)" },
 } satisfies ChartConfig;
-
-const mayuscula = (texto: string) => texto.charAt(0).toUpperCase() + texto.slice(1);
 
 export type TramoClientes = { corto: string; nombre: string; nuevos: number; volvieron: number };
 
@@ -42,15 +39,7 @@ export function GraficoClientes({ tramos }: { tramos: TramoClientes[] }) {
               }}
               formatter={(valor, nombre) => {
                 const c = config[String(nombre) as keyof typeof config];
-                return (
-                  <span className="flex w-full items-center justify-between gap-4">
-                    <span className="flex items-center gap-1.5">
-                      <span aria-hidden className="size-2.5 rounded-[3px]" style={{ background: c?.color }} />
-                      {c?.label ?? String(nombre)}
-                    </span>
-                    <span className="font-semibold tabular-nums">{Number(valor)}</span>
-                  </span>
-                );
+                return <FilaDetalle color={c?.color} nombre={c?.label ?? String(nombre)} valor={Number(valor)} />;
               }}
             />
           )}
