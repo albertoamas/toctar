@@ -22,13 +22,6 @@ function eje(maximo: number, y0: number, yTope: number, entero = false): Eje {
   return { y, lineas };
 }
 
-/** La punta redondeada (4) y la base recta, sobre la línea de 0. */
-function barra(x: number, ancho: number, base: number, tope: number) {
-  if (base - tope < 0.5) return "";
-  const r = Math.min(4, (base - tope) / 2, ancho / 2);
-  return `M${x} ${base}V${tope + r}Q${x} ${tope} ${x + r} ${tope}H${x + ancho - r}Q${x + ancho} ${tope} ${x + ancho} ${tope + r}V${base}Z`;
-}
-
 function Guias({ e, x0, x1, formato = textoEje }: { e: Eje; x0: number; x1: number; formato?: (v: number) => string }) {
   return (
     <g aria-hidden>
@@ -55,115 +48,6 @@ export function Leyenda({ items }: { items: { nombre: string; clase: string; lin
         </li>
       ))}
     </ul>
-  );
-}
-
-/**
- * Lo neto del mes: de lo que entró, qué parte quedó (esmeralda) y qué parte se fue en gastos (rojo). Una dona de dos
- * partes con el % que quedó en el centro. Con pérdida, toda la dona es gasto y lo dice.
- */
-export function TortaNeto({ entro, salio }: { entro: number; salio: number }) {
-  if (entro === 0 && salio === 0) return <p className="py-10 text-center text-sm text-tinta-suave">Sin ingresos ni gastos en el mes.</p>;
-  // Sin gastos cargados, "100 % quedó" engaña: no es que no se gastó, es que no se registró
-  if (salio === 0) return <p className="py-10 text-center text-sm text-tinta-suave">Faltan los gastos del mes para ver qué parte quedó.</p>;
-  const quedo = Math.max(0, entro - salio);
-  const fraccion = entro > 0 ? quedo / entro : 0;
-  const C = 2 * Math.PI * 76;
-  const hueco = fraccion > 0 && fraccion < 1 ? 4 : 0;
-  const largoQuedo = C * fraccion;
-  const parte = Math.round(fraccion * 100);
-  return (
-    <div className="flex flex-col gap-4">
-      <svg viewBox="0 0 200 200" role="img" aria-label={`De ${bsRedondo(entro)} que entraron, quedaron ${bsRedondo(quedo)} (${parte} %) y se gastaron ${bsRedondo(salio)}`} className="mx-auto block w-full max-w-48">
-        <circle cx={100} cy={100} r={76} fill="none" strokeWidth={28} className="stroke-grafico-gasto" strokeDasharray={`${Math.max(C - largoQuedo - hueco, 0)} ${C}`} strokeDashoffset={-largoQuedo} transform="rotate(-90 100 100)" />
-        {fraccion > 0 && <circle cx={100} cy={100} r={76} fill="none" strokeWidth={28} className="stroke-grafico-ingreso" strokeDasharray={`${Math.max(largoQuedo - hueco, 0)} ${C}`} transform="rotate(-90 100 100)" />}
-        <text x={100} y={100} textAnchor="middle" fontSize={30} fontWeight={700} className="fill-tinta" style={FUENTE}>
-          {parte} %
-        </text>
-        <text x={100} y={123} textAnchor="middle" fontSize={13} className="fill-tinta-media" style={FUENTE}>
-          {entro - salio < 0 ? "hubo pérdida" : "quedó"}
-        </text>
-      </svg>
-      <dl className="flex flex-col gap-2 text-sm">
-        {[
-          { nombre: "Quedó", monto: quedo, parte, clase: "bg-grafico-ingreso" },
-          { nombre: "Gastos", monto: salio, parte: entro > 0 ? 100 - parte : 0, clase: "bg-grafico-gasto" },
-        ].map((f) => (
-          <div key={f.nombre} className="flex justify-between gap-3">
-            <dt className="flex items-center gap-2">
-              <span aria-hidden className={cn("size-2.5 rounded-[3px]", f.clase)} />
-              {f.nombre}
-            </dt>
-            <dd className="tabular-nums">
-              <span className="font-bold">{bsRedondo(f.monto)}</span>
-              <span className="text-tinta-suave"> · {f.parte} %</span>
-            </dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  );
-}
-
-export type MesConMontos = { mes: string; corto: string; nombre: string; entro: number; salio: number };
-
-/**
- * Ingresos y gastos de cada mes en barras, con la línea de la ganancia encima (todo en Bs, en un solo eje). Dibujado en
- * dos medidas (angosta en el celular, ancha desde la tableta): el SVG se escala con su caja, y así la letra del eje queda
- * siempre en unos 11 a 13 px (Resumen, 17/11: en la tableta salía enorme y en el celular diminuta).
- */
-export function BarrasConLinea(props: { meses: MesConMontos[]; elegido: string }) {
-  // La leyenda, con el gráfico: sin gastos en los 6 meses no hay línea de ganancia (repetiría los ingresos)
-  const conGastos = props.meses.some((m) => m.salio > 0);
-  return (
-    <>
-      <Leyenda
-        items={[
-          { nombre: "Ingresos", clase: "bg-grafico-ingreso" },
-          { nombre: "Gastos", clase: "bg-grafico-gasto" },
-          ...(conGastos ? [{ nombre: "Ganancia", clase: "bg-tinta", linea: true }] : []),
-        ]}
-      />
-      <div className="md:hidden">
-        <BarrasConLineaSvg {...props} ancho={340} alto={220} />
-      </div>
-      <div className="hidden md:block">
-        <BarrasConLineaSvg {...props} ancho={640} alto={260} />
-      </div>
-    </>
-  );
-}
-
-function BarrasConLineaSvg({ meses, elegido, ancho: w, alto: h }: { meses: MesConMontos[]; elegido: string; ancho: number; alto: number }) {
-  const x0 = 44, x1 = w - 4, y0 = h - 28, yTope = 14;
-  const e = eje(Math.max(...meses.flatMap((m) => [m.entro, m.salio])), y0, yTope);
-  const grupo = (x1 - x0) / meses.length;
-  const ancho = Math.min(22, grupo / 2 - 4);
-  const xc = (i: number) => x0 + grupo * i + grupo / 2;
-  // La ganancia; un mes con pérdida, en la línea de 0 y con su punto en rojo (el monto, en el detalle del mes). Un mes
-  // sin ningún movimiento no tiene punto: la línea se corta ahí (caer a 0 diría que se ganó 0, y no hubo datos)
-  const conGastos = meses.some((m) => m.salio > 0);
-  const ganancia = !conGastos ? [] : meses.flatMap((m, i) => (m.entro === 0 && m.salio === 0 ? [] : [{ i, x: xc(i), y: e.y(Math.max(0, m.entro - m.salio)), perdida: m.entro - m.salio < 0 }]));
-  const linea = ganancia.map((p, k) => `${k > 0 && ganancia[k - 1].i === p.i - 1 ? "L" : "M"}${p.x} ${p.y}`).join("");
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label={`Ingresos, gastos y ganancia: ${meses.map((m) => `${m.nombre}, entró ${bsRedondo(m.entro)} y salió ${bsRedondo(m.salio)}`).join("; ")}`} className="block w-full">
-      <Guias e={e} x0={x0} x1={x1} />
-      {meses.map((m, i) => (
-        <g key={m.mes}>
-          <title>{`${m.nombre}: entró ${bsRedondo(m.entro)}, salió ${bsRedondo(m.salio)}, quedó ${bsRedondo(m.entro - m.salio)}`}</title>
-          <rect x={x0 + grupo * i + 2} y={yTope - 6} width={grupo - 4} height={y0 - yTope + 6} rx={6} className={m.mes === elegido ? "fill-fondo-panel" : "fill-transparent"} />
-          <path d={barra(xc(i) - ancho - 1, ancho, y0, e.y(m.entro))} className="fill-grafico-ingreso" />
-          <path d={barra(xc(i) + 1, ancho, y0, e.y(m.salio))} className="fill-grafico-gasto" />
-          <text x={xc(i)} y={y0 + 19} textAnchor="middle" fontSize={12} fontWeight={m.mes === elegido ? 700 : 500} className={m.mes === elegido ? "fill-tinta" : "fill-tinta-suave"} style={FUENTE}>
-            {m.corto}
-          </text>
-        </g>
-      ))}
-      <path d={linea} fill="none" strokeWidth={2} strokeLinejoin="round" className="stroke-tinta" pointerEvents="none" />
-      {ganancia.map((p) => (
-        <circle key={p.x} cx={p.x} cy={p.y} r={p.perdida ? 4.5 : 3.5} strokeWidth={2} className={cn(p.perdida ? "fill-peligro" : "fill-tinta", "stroke-fondo")} pointerEvents="none" />
-      ))}
-    </svg>
   );
 }
 

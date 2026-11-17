@@ -273,3 +273,20 @@ export async function gastosPorCategoriaYMes(desde: string, hasta: string): Prom
     .groupBy(sql`1`, categoriaGasto.nombre);
   return filas.map((f) => ({ mes: f.mes, categoria: f.categoria, total: Number(f.total) }));
 }
+
+/** Lo que entró y salió entre dos días (incluidos): los pagos y los gastos sin anular de cualquier período. */
+export async function totalesEntre(inicio: string, fin: string): Promise<{ entro: number; salio: number }> {
+  const s = await sucursalPrincipal();
+  const [[entro], [salio]] = await Promise.all([
+    db
+      .select({ total: sql<string>`coalesce(sum(${pago.monto}), 0)` })
+      .from(pago)
+      .innerJoin(trabajo, eq(pago.trabajoId, trabajo.id))
+      .where(and(eq(trabajo.sucursalId, s.id), eq(pago.anulado, false), gte(pago.fecha, inicio), lte(pago.fecha, fin))),
+    db
+      .select({ total: sql<string>`coalesce(sum(${gasto.monto}), 0)` })
+      .from(gasto)
+      .where(and(eq(gasto.sucursalId, s.id), eq(gasto.anulado, false), gte(gasto.fecha, inicio), lte(gasto.fecha, fin))),
+  ]);
+  return { entro: Number(entro?.total ?? 0), salio: Number(salio?.total ?? 0) };
+}

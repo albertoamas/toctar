@@ -1,6 +1,6 @@
 import { describe, expect, test, vi, afterEach } from "vitest";
 import { esquemaAnularGasto, esquemaGasto } from "@/modulos/reportes/esquemas";
-import { bsRedondo, cambioPorcentual, entregasPorMes, escalaBonita, acumularPorDia, esMes, mesDe, nombreMes, primerDiaDeGastos, rangoDelMes, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
+import { periodoDe, rangoValido, textoRango, bsRedondo, cambioPorcentual, entregasPorMes, escalaBonita, acumularPorDia, esMes, mesDe, nombreMes, primerDiaDeGastos, rangoDelMes, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
 
 // Pedido 16 (P16-reportes-y-gastos.md §9): los meses de los gastos y el esquema de un gasto.
 
@@ -127,4 +127,34 @@ describe("las pestañas de Reportes", () => {
 test("los ejes de cantidades van de a enteros", () => {
   expect(escalaBonita(1, 4, true)).toEqual({ tope: 1, paso: 1 });
   expect(escalaBonita(2, 4, true)).toEqual({ tope: 2, paso: 1 });
+});
+
+describe("los períodos", () => {
+  const hoy = "2026-11-17"; // martes
+  test("este mes, del 1 a hoy, contra los mismos días del mes pasado", () => {
+    expect(periodoDe({}, hoy)).toMatchObject({ clave: "mes", inicio: "2026-11-01", fin: "2026-11-17", antes: { inicio: "2026-10-01", fin: "2026-10-17" }, titulo: "Noviembre de 2026, del 1 al 17", vs: "vs. oct.", mes: "2026-11" });
+    // Un 31 contra un mes de 30 días: hasta su último día
+    expect(periodoDe({}, "2026-12-31").antes).toEqual({ inicio: "2026-11-01", fin: "2026-11-30" });
+  });
+  test("hoy contra ayer y esta semana contra la misma parte de la pasada", () => {
+    expect(periodoDe({ periodo: "hoy" }, hoy)).toMatchObject({ inicio: hoy, fin: hoy, antes: { inicio: "2026-11-16", fin: "2026-11-16" }, vs: "vs. ayer" });
+    expect(periodoDe({ periodo: "semana" }, hoy)).toMatchObject({ inicio: "2026-11-16", fin: hoy, antes: { inicio: "2026-11-09", fin: "2026-11-10" } });
+  });
+  test("el mes pasado entero contra el anterior", () => {
+    expect(periodoDe({ periodo: "mes-pasado" }, hoy)).toMatchObject({ inicio: "2026-10-01", fin: "2026-10-31", antes: { inicio: "2026-09-01", fin: "2026-09-30" }, titulo: "Octubre de 2026", mes: "2026-10" });
+  });
+  test("un rango, contra el anterior del mismo largo; uno que no sirve, los últimos 30 días", () => {
+    expect(periodoDe({ periodo: "rango", desde: "2026-10-10", hasta: "2026-10-19" }, hoy)).toMatchObject({ inicio: "2026-10-10", fin: "2026-10-19", antes: { inicio: "2026-09-30", fin: "2026-10-09" }, titulo: "Del 10 al 19 de octubre" });
+    expect(periodoDe({ periodo: "rango", desde: "2026-11-20", hasta: "2026-11-01" }, hoy)).toMatchObject({ inicio: "2026-10-19", fin: hoy });
+    expect(periodoDe({ periodo: "raro" }, hoy).clave).toBe("mes");
+  });
+  test("qué rangos sirven", () => {
+    expect(rangoValido("2026-01-01", "2026-11-17", hoy)).toBe(true);
+    for (const [d, h] of [["2026-11-18", "2026-11-18"], ["2026-11-10", "2026-11-01"], ["2024-01-01", "2026-11-17"], ["1999-12-31", "2000-01-02"], ["2026-02-30", "2026-03-01"], [1, 2]]) expect(rangoValido(d, h, hoy)).toBe(false);
+  });
+  test("cómo se escribe un rango", () => {
+    expect(textoRango("2026-11-17", "2026-11-17")).toBe("17 de noviembre");
+    expect(textoRango("2026-10-28", "2026-11-03")).toBe("Del 28 de octubre al 3 de noviembre");
+    expect(textoRango("2025-12-20", "2026-01-05")).toBe("Del 20 de diciembre de 2025 al 5 de enero de 2026");
+  });
 });

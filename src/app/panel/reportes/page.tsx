@@ -12,13 +12,15 @@ import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { Pestanas } from "@/componentes/panel/pestanas";
 import { TarjetaNumero } from "@/componentes/panel/tarjeta-numero";
 import { cantidad } from "@/lib/cantidad";
-import { fechaEnBolivia } from "@/lib/fechas";
+import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
 import { exigirModulo } from "@/lib/sesion";
 import { NOMBRE_MOTIVO } from "@/modulos/cotizaciones/reglas";
 import { saldosPendientes } from "@/modulos/pagos/consultas";
 import { NOMBRE_METODO } from "@/modulos/pagos/reglas";
+import { ElegirFechas } from "@/modulos/reportes/componentes/elegir-fechas";
 import { FilaGasto } from "@/modulos/reportes/componentes/fila-gasto";
-import { BarrasApiladas, BarrasConLinea, BarrasHorizontales, Leyenda, LineasAcumuladas, LineasMeses, TortaNeto, type MesConMontos } from "@/modulos/reportes/componentes/graficos";
+import { BarrasApiladas, BarrasHorizontales, Leyenda, LineasAcumuladas, LineasMeses } from "@/modulos/reportes/componentes/graficos";
+import { GraficoMeses, TortaNeto } from "@/modulos/reportes/componentes/graficos-resumen";
 import { RegistrarGasto } from "@/modulos/reportes/componentes/registrar-gasto";
 import {
   categoriasActivas,
@@ -29,8 +31,9 @@ import {
   ingresosDelMes,
   movimientosPorMes,
   resumenDelMes,
+  totalesEntre,
 } from "@/modulos/reportes/consultas";
-import { acumularPorDia, bsRedondo, cambioPorcentual, diasDelMes, entregasPorMes, mesCorto, mesDe, nombreMes, nombreMesSolo, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
+import { acumularPorDia, bsRedondo, cambioPorcentual, diasDelMes, entregasPorMes, mesCorto, mesDe, nombreMes, nombreMesSolo, periodoDe, sumarMeses, tituloMes, type ClavePeriodo, type Periodo } from "@/modulos/reportes/reglas";
 
 export const metadata: Metadata = { title: "Reportes" };
 
@@ -58,20 +61,37 @@ export default function PaginaReportes({ searchParams }: PageProps<"/panel/repor
   );
 }
 
-type Contexto = { mes: string; anterior: string; hoy: string; pasado: boolean };
+/**
+ * Lo que comparten las pestañas: el período elegido (Resumen lo usa entero) y, para las que todavía van por mes
+ * (Ingresos, Gastos, Taller y clientes, que se revisan una por una), el mes en que termina.
+ */
+type Contexto = { periodo: Periodo; mes: string; anterior: string; hoy: string; pasado: boolean };
+
+/** Las opciones de fechas, en el orden en que se usan: lo de hoy primero. */
+const OPCIONES_PERIODO: { clave: ClavePeriodo; texto: string }[] = [
+  { clave: "hoy", texto: "Hoy" },
+  { clave: "semana", texto: "Esta semana" },
+  { clave: "mes", texto: "Este mes" },
+  { clave: "mes-pasado", texto: "Mes pasado" },
+  { clave: "rango", texto: "Elegir fechas" },
+];
 
 async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes">, "searchParams">) {
   await exigirModulo("reportes");
   const parametros = await searchParams;
   const hoy = fechaEnBolivia();
-  const pasado = parametros.mes === "pasado";
-  const mes = pasado ? sumarMeses(mesDe(hoy), -1) : mesDe(hoy);
+  const periodo = periodoDe(parametros, hoy);
   const vista: Vista = VISTAS.includes(parametros.vista as Vista) ? (parametros.vista as Vista) : "resumen";
-  const ctx: Contexto = { mes, anterior: sumarMeses(mes, -1), hoy, pasado };
-  const enlace = (v: Vista, conPasado = pasado) => {
+  const ctx: Contexto = { periodo, mes: periodo.mes, anterior: sumarMeses(periodo.mes, -1), hoy, pasado: periodo.mes !== mesDe(hoy) };
+  // Las direcciones: la pestaña y el período (con sus fechas, si es un rango); lo de siempre, sin parámetros
+  const enlace = (v: Vista, clave: ClavePeriodo = periodo.clave) => {
     const p = new URLSearchParams();
     if (v !== "resumen") p.set("vista", v);
-    if (conPasado) p.set("mes", "pasado");
+    if (clave !== "mes") p.set("periodo", clave);
+    if (clave === "rango") {
+      p.set("desde", periodo.clave === "rango" ? periodo.inicio : sumarDias(hoy, -29));
+      p.set("hasta", periodo.clave === "rango" ? periodo.fin : hoy);
+    }
     const texto = p.toString();
     return `/panel/reportes${texto ? `?${texto}` : ""}` as Route;
   };
@@ -80,16 +100,18 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes">, "s
   return (
     <>
       <EncabezadoPagina titulo="Reportes" accion={<RegistrarGasto categorias={categorias} hoy={hoy} />}>
-        {tituloMes(mes)}
+        {periodo.titulo}
       </EncabezadoPagina>
       <Pestanas etiqueta="Partes de los reportes" activa={enlace(vista)} pestanas={VISTAS.map((v) => ({ href: enlace(v), texto: NOMBRE_VISTA[v] }))} />
-      <Filtros
-        etiqueta="Mes"
-        filtros={[
-          { href: enlace(vista, false), texto: "Este mes", activo: !pasado },
-          { href: enlace(vista, true), texto: "Mes pasado", activo: pasado },
-        ]}
-      />
+      <div className="flex flex-col gap-3">
+        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+          <Filtros etiqueta="Fechas" filtros={OPCIONES_PERIODO.map((o) => ({ href: enlace(vista, o.clave), texto: o.texto, activo: periodo.clave === o.clave }))} />
+        </div>
+        {/* Un rango: desde y hasta, con "Ver" (un formulario GET: la dirección se comparte y Atrás funciona) */}
+        {periodo.clave === "rango" && (
+          <ElegirFechas vista={vista === "resumen" ? null : vista} desde={periodo.inicio} hasta={periodo.fin} hoy={hoy} />
+        )}
+      </div>
       {vista === "resumen" && <Resumen ctx={ctx} />}
       {vista === "ingresos" && <Ingresos ctx={ctx} />}
       {vista === "gastos" && <Gastos ctx={ctx} />}
@@ -108,41 +130,51 @@ function seisMeses(mes: string) {
 // Resumen
 
 async function Resumen({ ctx }: { ctx: Contexto }) {
+  const { periodo } = ctx;
   const meses = seisMeses(ctx.mes);
-  const movimientos = await movimientosPorMes(meses[0].mes, ctx.mes);
-  const { entro, salio } = movimientos[5];
-  const antes = movimientos[4];
-  if (movimientos.every((m) => m.entro === 0 && m.salio === 0)) return <EstadoVacio>{`Todavía no hay movimientos en ${nombreMes(ctx.mes)}.`}</EstadoVacio>;
+  const [movimientos, total, antes] = await Promise.all([
+    movimientosPorMes(meses[0].mes, ctx.mes),
+    totalesEntre(periodo.inicio, periodo.fin),
+    totalesEntre(periodo.antes.inicio, periodo.antes.fin),
+  ]);
+  if (movimientos.every((m) => m.entro === 0 && m.salio === 0) && total.entro === 0 && total.salio === 0) {
+    return <EstadoVacio>{`Todavía no hay ingresos ni gastos registrados en los últimos 6 meses.`}</EstadoVacio>;
+  }
+  const { entro, salio } = total;
   const ganancia = entro - salio;
   const sinGastos = salio === 0 && entro > 0;
   const margen = entro > 0 ? Math.round((ganancia / entro) * 100) : null;
   const margenAntes = antes.entro > 0 ? Math.round(((antes.entro - antes.salio) / antes.entro) * 100) : null;
-  // Corto, así entra en una línea en el celular: "vs. oct."
-  const vsAnterior = `vs. ${nombreMesSolo(ctx.anterior).slice(0, 3)}.`;
-  const conMontos: MesConMontos[] = meses.map((m, i) => ({ ...m, entro: movimientos[i].entro, salio: movimientos[i].salio }));
+  const vs = periodo.vs;
   return (
     <>
       {/* Las tarjetas de número del panel (las del Inicio), sin enlace: aquí solo se leen */}
-      <section aria-label="Resumen del mes" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <TarjetaNumero icono={BanknoteIcon} titulo="Ingresos" valor={bsRedondo(entro)} nota={<Cambio cambio={cambioPorcentual(entro, antes.entro)} contra={vsAnterior} />} />
-        <TarjetaNumero icono={ReceiptTextIcon} titulo="Gastos" valor={bsRedondo(salio)} aviso={sinGastos} nota={sinGastos ? "Ninguno registrado" : <Cambio cambio={cambioPorcentual(salio, antes.salio)} contra={vsAnterior} subirEsMalo />} />
+      <section aria-label="Resumen del período" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <TarjetaNumero icono={BanknoteIcon} titulo="Ingresos" valor={bsRedondo(entro)} nota={<Cambio cambio={cambioPorcentual(entro, antes.entro)} contra={vs} />} />
+        <TarjetaNumero icono={ReceiptTextIcon} titulo="Gastos" valor={bsRedondo(salio)} aviso={sinGastos} nota={sinGastos ? "Ninguno registrado" : <Cambio cambio={cambioPorcentual(salio, antes.salio)} contra={vs} subirEsMalo />} />
         {/* Con pérdida, sin %: "▼ 150 %" junto a una pérdida confunde */}
-        <TarjetaNumero icono={PiggyBankIcon} titulo="Ganancia" valor={bsRedondo(ganancia)} nota={<Cambio cambio={ganancia < 0 ? null : cambioPorcentual(ganancia, antes.entro - antes.salio)} contra={vsAnterior} />} />
+        <TarjetaNumero icono={PiggyBankIcon} titulo="Ganancia" valor={bsRedondo(ganancia)} nota={<Cambio cambio={ganancia < 0 ? null : cambioPorcentual(ganancia, antes.entro - antes.salio)} contra={vs} />} />
         {/* Sin gastos el margen saldría 100 %: se muestra "—" hasta que se carguen */}
-        <TarjetaNumero icono={PercentIcon} titulo="Margen" valor={margen === null || sinGastos ? "—" : `${margen} %`} nota={sinGastos ? "Faltan los gastos" : <Cambio cambio={margen !== null && margenAntes !== null ? margen - margenAntes : null} unidad="pts" contra={vsAnterior} />} />
+        <TarjetaNumero icono={PercentIcon} titulo="Margen" valor={margen === null || sinGastos ? "—" : `${margen} %`} nota={sinGastos ? "Faltan los gastos" : <Cambio cambio={margen !== null && margenAntes !== null ? margen - margenAntes : null} unidad="pts" contra={vs} />} />
       </section>
       {/* Las secciones como en todo el panel: el título afuera, arriba de su tarjeta (Seccion) */}
       <div className="grid gap-x-4 gap-y-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.75fr)]">
-        <Seccion id="neto" titulo="Lo neto del mes">
+        <Seccion id="neto" titulo="Lo neto">
           <div className="flex h-full flex-col justify-center gap-3">
-            {salio > 0 && <p className="text-[0.8125rem] text-tinta-suave">De los {bsRedondo(entro)} que entraron</p>}
-            <TortaNeto entro={entro} salio={salio} />
+            {entro === 0 && salio === 0 ? (
+              <p className="py-10 text-center text-sm text-tinta-suave">Sin ingresos ni gastos en estas fechas.</p>
+            ) : sinGastos ? (
+              <p className="py-10 text-center text-sm text-tinta-suave">Faltan los gastos de estas fechas para ver qué parte quedó.</p>
+            ) : (
+              <>
+                <p className="text-[0.8125rem] text-tinta-suave">De los {bsRedondo(entro)} que entraron</p>
+                <TortaNeto entro={entro} salio={salio} />
+              </>
+            )}
           </div>
         </Seccion>
         <Seccion id="meses" titulo="Ingresos y gastos, últimos 6 meses">
-          <div className="flex flex-col gap-3">
-            <BarrasConLinea meses={conMontos} elegido={ctx.mes} />
-          </div>
+          <GraficoMeses meses={meses.map((m, i) => ({ corto: m.corto, nombre: m.nombre, entro: movimientos[i].entro, salio: movimientos[i].salio }))} />
         </Seccion>
       </div>
     </>

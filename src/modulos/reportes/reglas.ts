@@ -1,4 +1,4 @@
-import { sumarDias } from "@/lib/fechas";
+import { fechaExiste, sumarDias } from "@/lib/fechas";
 
 // Pedido 16 (P16-reportes-y-gastos.md): los meses de los gastos y los reportes. Las fechas ya están en hora de Bolivia
 // (un pago o un gasto guarda su día, no su instante): un mes es del día 1 al último, sin pasar por UTC.
@@ -112,3 +112,90 @@ export const textoEje = (v: number) => (v >= 1000 ? `${String(v / 1000).replace(
 
 /** Cuánto cambió algo frente al mes anterior, en por ciento redondeado; null si el anterior fue cero o menos. */
 export const cambioPorcentual = (actual: number, anterior: number) => (anterior > 0 ? Math.round(((actual - anterior) / anterior) * 100) : null);
+
+// ---------------------------------------------------------------------------------------------
+// Los períodos de Reportes (17/11): hoy, esta semana, este mes, el mes pasado o un rango de fechas. Cada uno se compara
+// con el anterior del mismo largo, así la comparación es justa: "este mes" (del 1 a hoy) contra los mismos días del mes
+// pasado, no contra el mes pasado entero.
+
+const PERIODOS = ["hoy", "semana", "mes", "mes-pasado", "rango"] as const;
+export type ClavePeriodo = (typeof PERIODOS)[number];
+
+export type Periodo = {
+  clave: ClavePeriodo;
+  inicio: string;
+  fin: string;
+  /** El anterior del mismo largo, para comparar. */
+  antes: { inicio: string; fin: string };
+  /** "Hoy, 17 de noviembre", "Del 1 al 17 de noviembre"… */
+  titulo: string;
+  /** Lo que va en la tarjeta tras el cambio: "vs. ayer", "vs. semana pasada", "vs. oct.", "vs. período anterior". */
+  vs: string;
+  /** El mes en que termina el período: hasta él llegan las tendencias de 6 meses. */
+  mes: string;
+};
+
+/** Días entre dos fechas, contando las dos ("2026-11-01" y "2026-11-17": 17). */
+const largo = (inicio: string, fin: string) => Math.round((Date.parse(`${fin}T00:00:00Z`) - Date.parse(`${inicio}T00:00:00Z`)) / 86_400_000) + 1;
+
+const diaYMes = (fecha: string) => `${Number(fecha.slice(8))} de ${nombreMesSolo(fecha.slice(0, 7))}`;
+
+/** "Del 1 al 17 de noviembre", "Del 28 de octubre al 3 de noviembre", "17 de noviembre". */
+export function textoRango(inicio: string, fin: string): string {
+  if (inicio === fin) return diaYMes(inicio);
+  const otroAnio = inicio.slice(0, 4) !== fin.slice(0, 4);
+  const ini = otroAnio ? `${diaYMes(inicio)} de ${inicio.slice(0, 4)}` : inicio.slice(0, 7) === fin.slice(0, 7) ? String(Number(inicio.slice(8))) : diaYMes(inicio);
+  return `Del ${ini} al ${diaYMes(fin)}${otroAnio ? ` de ${fin.slice(0, 4)}` : ""}`;
+}
+
+/** Un rango pedido sirve si son fechas reales, en orden, no futuras, desde el 2000 y de hasta un año. */
+export function rangoValido(desde: unknown, hasta: unknown, hoy: string): desde is string {
+  if (typeof desde !== "string" || typeof hasta !== "string") return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(desde) || !/^\d{4}-\d{2}-\d{2}$/.test(hasta)) return false;
+  if (!fechaExiste(desde) || !fechaExiste(hasta) || desde < "2000-01-01" || desde > hasta || hasta > hoy) return false;
+  return largo(desde, hasta) <= 366;
+}
+
+/**
+ * El período elegido en la dirección (`?periodo=`, y `desde` y `hasta` para un rango). Sin período o con uno raro, este
+ * mes; un rango que no sirve, los últimos 30 días.
+ */
+export function periodoDe(parametros: { periodo?: unknown; desde?: unknown; hasta?: unknown }, hoy: string): Periodo {
+  const clave: ClavePeriodo = PERIODOS.includes(parametros.periodo as ClavePeriodo) ? (parametros.periodo as ClavePeriodo) : "mes";
+  const mesHoy = mesDe(hoy);
+  const corto = (mes: string) => `vs. ${nombreMesSolo(mes).slice(0, 3)}.`;
+  switch (clave) {
+    case "hoy":
+      return { clave, inicio: hoy, fin: hoy, antes: { inicio: sumarDias(hoy, -1), fin: sumarDias(hoy, -1) }, titulo: `Hoy, ${diaYMes(hoy)}`, vs: "vs. ayer", mes: mesHoy };
+    case "semana": {
+      const lunes = sumarDias(hoy, 1 - diaDeLaSemanaIso(hoy));
+      return { clave, inicio: lunes, fin: hoy, antes: { inicio: sumarDias(lunes, -7), fin: sumarDias(hoy, -7) }, titulo: `Esta semana: ${textoRango(lunes, hoy).replace(/^Del /, "del ")}`, vs: "vs. semana pasada", mes: mesHoy };
+    }
+    case "mes-pasado": {
+      const mes = sumarMeses(mesHoy, -1);
+      const antes = sumarMeses(mes, -1);
+      return { clave, ...rangoDelMes(mes), antes: rangoDelMes(antes), titulo: tituloMes(mes), vs: corto(antes), mes };
+    }
+    case "rango": {
+      const valido = rangoValido(parametros.desde, parametros.hasta, hoy);
+      const inicio = valido ? (parametros.desde as string) : sumarDias(hoy, -29);
+      const fin = valido ? (parametros.hasta as string) : hoy;
+      const dias = largo(inicio, fin);
+      return { clave, inicio, fin, antes: { inicio: sumarDias(inicio, -dias), fin: sumarDias(inicio, -1) }, titulo: textoRango(inicio, fin), vs: "vs. período anterior", mes: mesDe(fin) };
+    }
+    default: {
+      // Este mes, del 1 a hoy, contra los mismos días del mes pasado (hasta su último día, si es más corto)
+      const inicio = `${mesHoy}-01`;
+      const antes = sumarMeses(mesHoy, -1);
+      const finAntes = rangoDelMes(antes).fin;
+      const mismoDia = `${antes}-${hoy.slice(8)}`;
+      return { clave: "mes", inicio, fin: hoy, antes: { inicio: `${antes}-01`, fin: mismoDia < finAntes ? mismoDia : finAntes }, titulo: hoy.slice(8) === "01" ? `${tituloMes(mesHoy)}, día 1` : `${tituloMes(mesHoy)}, del 1 al ${Number(hoy.slice(8))}`, vs: corto(antes), mes: mesHoy };
+    }
+  }
+}
+
+/** Día de la semana de una fecha: 1 = lunes … 7 = domingo. */
+function diaDeLaSemanaIso(fecha: string): number {
+  const d = new Date(`${fecha}T12:00:00Z`).getUTCDay();
+  return d === 0 ? 7 : d;
+}

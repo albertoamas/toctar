@@ -128,6 +128,19 @@ Todas en `modulos/reportes/acciones.ts`, con `exigirModulo("reportes")` y Zod (e
 - **Errores:** "Escribe el monto del gasto." y "Elige qué se pagó."
 - **Pie de los reportes:** "Lo que entró sale de los pagos registrados; lo que salió, de los gastos."
 
+### Fechas y gráficos de Resumen (17/11)
+
+- **Fechas:** Hoy · Esta semana · Este mes (por omisión) · Mes pasado · Elegir fechas (desde y hasta, hasta un año, sin
+  fechas futuras). Van en la dirección (`?periodo=hoy|semana|mes-pasado|rango&desde=&hasta=`); un rango que no sirve
+  muestra los últimos 30 días. Cada período se compara con el anterior **del mismo largo**: este mes (del 1 a hoy) contra
+  los mismos días del mes pasado, hoy contra ayer, esta semana contra la misma parte de la pasada, un rango contra los días
+  justo antes (`periodoDe` en `reglas.ts`, con pruebas). El gráfico de 6 meses llega hasta el mes en que termina el período.
+- **Gráficos:** shadcn/ui Charts (Recharts) en Resumen (`graficos-resumen.tsx`): detalle al pasar el mouse o tocar, eje
+  con números redondos (`escalaBonita`), leyenda en el orden Ingresos, Gastos, Ganancia, sin animación al cargar. Las otras
+  pestañas siguen por mes y con los gráficos propios hasta su revisión.
+- **Datos para probar:** `npm run datos:reportes` carga seis meses de trabajos, pagos, gastos, cotizaciones y
+  mantenimientos sobre la base local (se rehace al volver a correrlo; `-- --quitar` lo saca).
+
 ## 9. Pruebas
 - **Unitarias** (`tests/unit/reportes.test.ts`):
   - los meses en hora de Bolivia, también un pago a las 23:30 del último día;
