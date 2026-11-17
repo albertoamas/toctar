@@ -5,17 +5,21 @@ import { EmpiezaDeCero } from "@/componentes/panel/empieza-de-cero";
 // §1). Las páginas no escriben su propio max-w: así dos fichas no pueden quedar de distinto ancho. No protege nada: cada
 // página sigue verificando la sesión y el permiso.
 
-// Tres anchos, uno por tipo (pulido final, 10/11): en un monitor grande las tablas se estiraban a todo el ancho (1600 px,
-// columnas muy separadas) y las fichas y los formularios no. Hasta una laptop de 1280 no cambia nada.
+// Un solo ancho para todas (17/11, pedido del dueño): todo el espacio, sin tope (en un monitor de 2560 un tope dejaba otra
+// vez un hueco a la derecha). Antes eran cuatro (1280, 1024 y 768 px): en un monitor grande el
+// formulario usaba un tercio, la ficha la mitad, y el título y el botón principal cambiaban de lugar de una pantalla a
+// otra. Ahora el contenido se acomoda adentro (las fichas de a 2 o 3 partes, los formularios con sus campos de a 2 o 3).
+// El tipo solo decide la separación entre partes. Hasta una laptop de 1280 no cambia nada.
+const ANCHO = "w-full";
 const FORMA = {
-  /** Una tabla con columnas o un tablero, hasta 1280 px. Más junto: pestañas, buscador y lista van de la mano. */
-  lista: "max-w-7xl gap-6",
+  /** Una tabla con columnas o un tablero. Más junto: pestañas, buscador y lista van de la mano. */
+  lista: "gap-6",
   /** Ver y editar una cosa, o una lista de filas sin columnas. */
-  ficha: "max-w-5xl gap-8",
+  ficha: "gap-8",
   /** Crear algo, o un paso que se hace de arriba abajo. */
-  formulario: "max-w-3xl gap-6",
-  /** Elegir a dónde ir o ver el día, hasta 1280 px como las listas: cada portada acomoda lo suyo. */
-  portada: "max-w-7xl gap-8",
+  formulario: "gap-6",
+  /** Elegir a dónde ir o ver el día: cada portada acomoda lo suyo. */
+  portada: "gap-8",
 } as const;
 
 /**
@@ -34,5 +38,5 @@ export function PartesIguales({ enTres, children }: { enTres?: boolean; children
  */
 export function PaginaPanel({ tipo, children }: { tipo: keyof typeof FORMA; children: React.ReactNode }) {
   const deCero = tipo === "ficha" || tipo === "formulario";
-  return <div className={cn("flex flex-col", FORMA[tipo])}>{deCero ? <EmpiezaDeCero>{children}</EmpiezaDeCero> : children}</div>;
+  return <div className={cn("flex flex-col", ANCHO, FORMA[tipo])}>{deCero ? <EmpiezaDeCero>{children}</EmpiezaDeCero> : children}</div>;
 }

@@ -19,16 +19,22 @@ export function FormularioNuevoCliente({ tamanos }: { tamanos: Tamano[] }) {
 
   return (
     <form ref={formulario} action={accion} className="tt-formulario-panel flex flex-col gap-6" noValidate>
-      <CamposCliente estado={estado} plegar />
-      {/* La línea va afuera: en el borde de un fieldset, la legend lo corta */}
-      <div className="border-t border-border pt-8">
-        <fieldset className="flex flex-col gap-6">
-          <legend className="mb-5 flex flex-col gap-1">
-            <span className="tt-titulo-seccion">Primer vehículo</span>
-            <span className="text-sm text-tinta-suave">Opcional. Más vehículos, desde su ficha.</span>
-          </legend>
-          <CamposVehiculo estado={estado} prefijo="vehiculo-" tamanos={tamanos} plegar />
-        </fieldset>
+      {/* Con espacio (pantalla grande, 17/11), el cliente y su primer vehículo lado a lado: el formulario ocupa todo el
+          ancho y los campos no quedan de 800 px. Más angosto, uno debajo del otro, con la línea entre los dos */}
+      <div className="grid gap-8 @6xl:grid-cols-2">
+        <div className="flex flex-col gap-6">
+          <CamposCliente estado={estado} plegar />
+        </div>
+        {/* La línea va afuera: en el borde de un fieldset, la legend lo corta */}
+        <div className="border-t border-border pt-8 @6xl:border-t-0 @6xl:border-l @6xl:pt-0 @6xl:pl-8">
+          <fieldset className="flex flex-col gap-6">
+            <legend className="mb-5 flex flex-col gap-1">
+              <span className="tt-titulo-seccion">Primer vehículo</span>
+              <span className="text-sm text-tinta-suave">Opcional. Más vehículos, desde su ficha.</span>
+            </legend>
+            <CamposVehiculo estado={estado} prefijo="vehiculo-" tamanos={tamanos} plegar />
+          </fieldset>
+        </div>
       </div>
       <AvisoAlSalir formulario={formulario} estado={estado} />
       <PieFormulario>

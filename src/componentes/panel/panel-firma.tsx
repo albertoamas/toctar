@@ -126,7 +126,9 @@ export function PanelFirma({ alCambiar, etiqueta, invalido, describedBy }: Props
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    // Hasta 640 px de ancho (17/11): con la pantalla a todo el ancho, el recuadro se estiraba a 1500 px; la firma se guarda
+    // con la forma del recuadro, así queda como en una tablet o un celular
+    <div className="flex max-w-2xl flex-col gap-2">
       <canvas
         ref={lienzo}
         role="img"
