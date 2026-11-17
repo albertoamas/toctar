@@ -34,7 +34,7 @@ import { EstadoOrden } from "@/modulos/ordenes/componentes/estado-orden";
 import { ComoLlego } from "@/modulos/ordenes/componentes/como-llego";
 import { FirmaDeEntrega } from "@/modulos/ordenes/componentes/firma-entrega";
 import { FotosOrden } from "@/modulos/ordenes/componentes/fotos-orden";
-import { registrarAvisoListo } from "@/modulos/ordenes/acciones";
+import { registrarAvisoListo } from "@/modulos/ordenes/acciones/estado";
 import { avancesDeTrabajo, firmaDeTrabajo, revisionDeTrabajo, fotosDeTrabajo, obtenerOrden, publicadaDeOrden } from "@/modulos/ordenes/consultas";
 import { mensajeListo } from "@/modulos/ordenes/mensajes";
 import { puedeQuitarFoto, esOrden, estaAbierta, estaAtrasada, pasosDeOrden, puedeExtenderse, puedePublicarse } from "@/modulos/ordenes/reglas";

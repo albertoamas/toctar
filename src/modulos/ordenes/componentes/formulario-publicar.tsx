@@ -13,7 +13,7 @@ import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
 import type { EstadoFormulario } from "@/lib/formularios";
-import { publicarEnGaleria } from "../acciones";
+import { publicarEnGaleria } from "../acciones/galeria";
 import type { FotoOrden } from "../consultas";
 
 // HU-41: publicar en la galería las fotos de una orden entregada. Cada foto es una opción (un radio nativo: flechas,

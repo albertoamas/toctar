@@ -12,7 +12,7 @@ import { sumarDias } from "@/lib/fechas";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { useEspaciosLibres } from "@/modulos/agenda/componentes/espacios-libres";
 import { DIAS_MAXIMOS_TRABAJO } from "@/modulos/agenda/reglas";
-import { espaciosParaExtender, extenderEntrega } from "../acciones";
+import { espaciosParaExtender, extenderEntrega } from "../acciones/estado";
 
 // HU-34: extender la entrega de una orden que se atrasa (decisión del 20/10). Se queda en su espacio si sigue libre en
 // los días nuevos; si no, se ofrecen los libres para todo el período, desde el ingreso. La base frena un cruce (D-5).

@@ -14,7 +14,7 @@ import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
-import { entregarVehiculo } from "../acciones";
+import { entregarVehiculo } from "../acciones/entrega";
 
 // HU-36: confirmar la entrega (CU-19). Sin saldo, un botón. Con saldo, solo quien puede autorizarlo (el dueño o un
 // encargado con el permiso, RN-13) ve la casilla que lo confirma; quien no, ve por qué no puede. El servidor lo vuelve
