@@ -104,7 +104,8 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes">, "s
       </EncabezadoPagina>
       <Pestanas etiqueta="Partes de los reportes" activa={enlace(vista)} pestanas={VISTAS.map((v) => ({ href: enlace(v), texto: NOMBRE_VISTA[v] }))} />
       <div className="flex flex-col gap-3">
-        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+        {/* Como en BarraLista: en el celular se desliza; el py-1 deja lugar al foco del teclado, que si no se recorta */}
+        <div className="-mx-4 -my-1 overflow-x-auto px-4 py-1 sm:mx-0 sm:overflow-visible sm:px-0">
           <Filtros etiqueta="Fechas" filtros={OPCIONES_PERIODO.map((o) => ({ href: enlace(vista, o.clave), texto: o.texto, activo: periodo.clave === o.clave }))} />
         </div>
         {/* Un rango: desde y hasta, con "Ver" (un formulario GET: la dirección se comparte y Atrás funciona) */}

@@ -7,6 +7,7 @@ import { cn } from "cn";
 // Pestañas de un módulo del panel. Cada pestaña tiene su ruta, para poder enlazarla. La activa, subrayada en tinta: el
 // rojo es del botón principal y del menú (pedido 26). Barra de las listas (10/11): la cuenta, en gris después del nombre
 // ("Pendientes 1"), igual en todas (antes, "(1)" en unas y nada en otras); y al cambiar de pestaña sigue lo buscado.
+// El foco del teclado, por dentro de la pestaña (17/11): la barra se desliza en el celular y recortaba el de afuera.
 
 export type Pestana = { href: string; texto: string; cuenta?: number };
 
@@ -41,7 +42,7 @@ export function Pestanas(props: {
                 href={conBusqueda(p.href)}
                 aria-current={activa ? "page" : undefined}
                 className={cn(
-                  "-mb-px block border-b-2 border-transparent px-1 py-3 text-sm font-semibold text-tinta-suave hover:text-tinta",
+                  "-mb-px block border-b-2 border-transparent px-1 py-3 text-sm font-semibold text-tinta-suave hover:text-tinta focus-visible:-outline-offset-2",
                   activa && "border-tinta text-tinta",
                 )}
               >
