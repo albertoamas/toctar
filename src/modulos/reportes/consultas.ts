@@ -142,14 +142,10 @@ export async function resumenDelMes(mes: string): Promise<ResumenDelMes> {
 }
 
 export type ElTallerEnElMes = {
-  entregados: number;
   /** Los servicios de los vehículos entregados, los más pedidos primero (hasta 5). */
   servicios: { nombre: string; veces: number }[];
-  /** Las cotizaciones que se enviaron por primera vez en el mes, cuántas ya se aceptaron y por qué no las otras. */
-  cotizaciones: { enviadas: number; aceptadas: number; motivos: { motivo: MotivoPerdida; veces: number }[] };
-  /** De los clientes que se llevaron su vehículo en el mes: los que ya habían venido (antes o en el mismo mes) y los nuevos. */
-  volvieron: number;
-  nuevos: number;
+  /** Las cotizaciones que se enviaron por primera vez en el mes, cuántas se aceptaron y reservaron, y por qué no las otras. */
+  cotizaciones: { enviadas: number; aceptadas: number; reservadas: number; motivos: { motivo: MotivoPerdida; veces: number }[] };
   /** Los mantenimientos avisados en el mes y cuántos de ellos ya reservaron. */
   avisados: number;
   reservaron: number;
@@ -171,8 +167,7 @@ export async function elTallerEnElMes(mes: string): Promise<ElTallerEnElMes> {
     .groupBy(cotizacion.consultaId)
     .as("primera");
 
-  const [[entregados], servicios, cotizaciones, clientes, [avisos]] = await Promise.all([
-    db.select({ n: count() }).from(trabajo).where(entregadoEnElMes),
+  const [servicios, cotizaciones, [avisos]] = await Promise.all([
     db
       .select({ nombre: servicio.nombre, veces: countDistinct(trabajo.id) })
       .from(trabajoLinea)
@@ -184,22 +179,17 @@ export async function elTallerEnElMes(mes: string): Promise<ElTallerEnElMes> {
       .orderBy(desc(countDistinct(trabajo.id)), asc(servicio.nombre))
       .limit(5),
     db
-      .select({ estado: consulta.estado, motivo: consulta.motivoPerdida, n: count() })
+      .select({
+        estado: consulta.estado,
+        motivo: consulta.motivoPerdida,
+        // Reservada: tiene una reserva que no se canceló (el último paso del embudo)
+        reservada: sql<boolean>`exists (select 1 from trabajo reserva where reserva.consulta_id = "consulta"."id" and reserva.estado <> 'cancelado')`,
+        n: count(),
+      })
       .from(primeraVersion)
       .innerJoin(consulta, eq(primeraVersion.consultaId, consulta.id))
       .where(and(gte(enBolivia(primeraVersion.enviada), inicio), lte(enBolivia(primeraVersion.enviada), fin)))
-      .groupBy(consulta.estado, consulta.motivoPerdida),
-    db
-      .select({
-        clienteId: trabajo.clienteId,
-        veces: count(),
-        // Volvió: ya se había llevado otro vehículo antes de este mes. Nombres fijos de tabla: el alias de Drizzle no se
-        // escribe calificado dentro de un sql
-        volvio: sql<boolean>`exists (select 1 from trabajo anterior where anterior.cliente_id = "trabajo"."cliente_id" and anterior.estado = 'entregado' and (anterior.entregado_at at time zone 'America/La_Paz')::date < ${inicio}::date)`,
-      })
-      .from(trabajo)
-      .where(entregadoEnElMes)
-      .groupBy(trabajo.clienteId),
+      .groupBy(consulta.estado, consulta.motivoPerdida, sql`3`),
     db
       // Reservó: lo tiene agendado o ya se hizo (al hacerse, la reserva pasa a trabajo_hecho_id)
       .select({ avisados: count(), reservaron: count(sql`coalesce(${recordatorioMantenimiento.trabajoAgendadoId}, ${recordatorioMantenimiento.trabajoHechoId})`) })
@@ -210,17 +200,76 @@ export async function elTallerEnElMes(mes: string): Promise<ElTallerEnElMes> {
   const motivos = new Map<MotivoPerdida, number>();
   for (const c of cotizaciones) if (c.motivo) motivos.set(c.motivo, (motivos.get(c.motivo) ?? 0) + c.n);
   return {
-    entregados: entregados?.n ?? 0,
     servicios: servicios.map((x) => ({ nombre: x.nombre, veces: x.veces })),
     cotizaciones: {
       enviadas: cotizaciones.reduce((suma, c) => suma + c.n, 0),
       aceptadas: cotizaciones.filter((c) => c.estado === "confirmado").reduce((suma, c) => suma + c.n, 0),
+      reservadas: cotizaciones.filter((c) => c.reservada).reduce((suma, c) => suma + c.n, 0),
       motivos: [...motivos.entries()].map(([motivo, veces]) => ({ motivo, veces })).sort((a, b) => b.veces - a.veces),
     },
-    // Volvió: ya se había llevado un vehículo antes del mes, o se llevó más de uno en el mes
-    volvieron: clientes.filter((c) => c.volvio || c.veces > 1).length,
-    nuevos: clientes.filter((c) => !c.volvio && c.veces === 1).length,
     avisados: avisos?.avisados ?? 0,
     reservaron: avisos?.reservaron ?? 0,
   };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Las pestañas de Reportes (16/11, opción A del desarrollador, registro-de-cambios.md, pedido 16): Ingresos y Taller y
+// clientes, con sus tendencias.
+
+export type IngresosDelMes = {
+  porMetodo: { metodo: MetodoPago; total: number }[];
+  /** Lo que entró cada día del mes (1 al último), para la línea acumulada. */
+  porDia: { dia: number; total: number }[];
+};
+
+/** Lo que entró en un mes, por forma de pago y por día (pagos sin anular, por su día). */
+export async function ingresosDelMes(mes: string): Promise<IngresosDelMes> {
+  const s = await sucursalPrincipal();
+  const { inicio, fin } = rangoDelMes(mes);
+  const donde = and(eq(trabajo.sucursalId, s.id), eq(pago.anulado, false), gte(pago.fecha, inicio), lte(pago.fecha, fin));
+  const [porMetodo, porDia] = await Promise.all([
+    db
+      .select({ metodo: pago.metodo, total: sql<string>`sum(${pago.monto})` })
+      .from(pago)
+      .innerJoin(trabajo, eq(pago.trabajoId, trabajo.id))
+      .where(donde)
+      .groupBy(pago.metodo)
+      .orderBy(desc(sql`sum(${pago.monto})`)),
+    db
+      .select({ dia: sql<number>`extract(day from ${pago.fecha})::int`, total: sql<string>`sum(${pago.monto})` })
+      .from(pago)
+      .innerJoin(trabajo, eq(pago.trabajoId, trabajo.id))
+      .where(donde)
+      .groupBy(sql`1`),
+  ]);
+  return {
+    porMetodo: porMetodo.map((m) => ({ metodo: m.metodo, total: Number(m.total) })),
+    porDia: porDia.map((d) => ({ dia: Number(d.dia), total: Number(d.total) })),
+  };
+}
+
+/** Cada entrega: de qué cliente y qué día (en Bolivia). Base de los entregados y los clientes de cada mes. */
+export type Entrega = { clienteId: number; dia: string };
+
+/** Las entregas hasta el último día de un mes (las de antes cuentan para saber quién volvió). */
+export async function entregasHasta(mes: string): Promise<Entrega[]> {
+  const s = await sucursalPrincipal();
+  const { fin } = rangoDelMes(mes);
+  const filas = await db
+    .select({ clienteId: trabajo.clienteId, dia: sql<string>`to_char(${enBolivia(trabajo.entregadoAt)}, 'YYYY-MM-DD')` })
+    .from(trabajo)
+    .where(and(eq(trabajo.sucursalId, s.id), eq(trabajo.estado, "entregado"), lte(enBolivia(trabajo.entregadoAt), fin)));
+  return filas;
+}
+
+/** Lo que se gastó por categoría en cada mes de un rango (sin anulados). */
+export async function gastosPorCategoriaYMes(desde: string, hasta: string): Promise<{ mes: string; categoria: string; total: number }[]> {
+  const s = await sucursalPrincipal();
+  const filas = await db
+    .select({ mes: sql<string>`to_char(${gasto.fecha}, 'YYYY-MM')`, categoria: categoriaGasto.nombre, total: sql<string>`sum(${gasto.monto})` })
+    .from(gasto)
+    .innerJoin(categoriaGasto, eq(gasto.categoriaId, categoriaGasto.id))
+    .where(and(eq(gasto.sucursalId, s.id), eq(gasto.anulado, false), gte(gasto.fecha, rangoDelMes(desde).inicio), lte(gasto.fecha, rangoDelMes(hasta).fin)))
+    .groupBy(sql`1`, categoriaGasto.nombre);
+  return filas.map((f) => ({ mes: f.mes, categoria: f.categoria, total: Number(f.total) }));
 }

@@ -11,14 +11,12 @@ import { Filtros } from "@/componentes/panel/filtros";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { buttonVariants } from "@/componentes/ui/button";
 import { cantidad } from "@/lib/cantidad";
-import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
+import { fechaEnBolivia } from "@/lib/fechas";
 import { exigirModulo } from "@/lib/sesion";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
-import { METODO_EN_FRASE } from "@/modulos/pagos/reglas";
-import { VerComprobante } from "@/modulos/pagos/componentes/ver-comprobante";
-import { AnularGasto } from "@/modulos/reportes/componentes/anular-gasto";
+import { FilaGasto } from "@/modulos/reportes/componentes/fila-gasto";
 import { RegistrarGasto } from "@/modulos/reportes/componentes/registrar-gasto";
-import { categoriasActivas, gastosDelMes, type GastoEnLista } from "@/modulos/reportes/consultas";
+import { categoriasActivas, gastosDelMes } from "@/modulos/reportes/consultas";
 import { esMes, mesDe, nombreMes, primerDiaDeGastos, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
 
 export const metadata: Metadata = { title: "Gastos" };
@@ -70,7 +68,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes/gasto
 
   return (
     <>
-      <EncabezadoPagina titulo="Gastos" volver={{ href: "/panel/reportes", texto: "Reportes" }} accion={<RegistrarGasto categorias={categorias} hoy={hoy} />} />
+      <EncabezadoPagina titulo="Gastos" volver={{ href: "/panel/reportes?vista=gastos", texto: "Reportes" }} accion={<RegistrarGasto categorias={categorias} hoy={hoy} />} />
       <BarraLista
         // El mes primero: es lo que decide qué se ve; los filtros, al lado
         buscador={
@@ -127,34 +125,5 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes/gasto
         </ul>
       )}
     </>
-  );
-}
-
-/** Un gasto: su comprobante (si tiene), qué se pagó y el detalle, la fecha y cómo, y el monto; anulado, tachado. */
-function FilaGasto({ g }: { g: GastoEnLista }) {
-  const descripcion = `${g.categoria}, ${bs(g.monto)}, del ${formatearFecha(g.fecha)}`;
-  return (
-    <li className="flex items-start gap-3 py-3 pr-2 pl-4">
-      {g.comprobante && <VerComprobante foto={g.comprobante} descripcion={descripcion} />}
-      <div className={cn("flex min-w-0 flex-1 flex-col gap-0.5", g.anulado && "text-tinta-suave")}>
-        <span className="flex justify-between gap-4">
-          <span className={cn("font-semibold", g.anulado && "line-through")}>{g.categoria}</span>
-          <span className={cn("shrink-0 font-semibold whitespace-nowrap tabular-nums", g.anulado && "line-through")}>{bs(g.monto)}</span>
-        </span>
-        {g.detalle && <span className={cn("text-sm", g.anulado && "line-through")}>{g.detalle}</span>}
-        <span className="text-sm text-tinta-suave">
-          {formatearFecha(g.fecha)}, {METODO_EN_FRASE[g.metodo]}
-        </span>
-        {g.anulado && <span className="text-sm text-tinta">Anulado: {g.motivoAnulacion}</span>}
-      </div>
-      {/* Sin "⋯" (anulado), el mismo ancho: los montos quedan en columna */}
-      {g.anulado ? (
-        <span aria-hidden className="w-9 shrink-0 pointer-coarse:w-11" />
-      ) : (
-        <div className="-my-1.5">
-          <AnularGasto id={g.id} descripcion={descripcion} />
-        </div>
-      )}
-    </li>
   );
 }

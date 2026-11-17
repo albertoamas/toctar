@@ -90,6 +90,13 @@ Los meses llegan como `AAAA-MM` y se convierten a rango de fechas en Bolivia.
   - el monto es `numeric(10,2)`, como el de un pago (hasta 99.999.999,99 Bs por gasto): las sumas del mes se hacen en la consulta y no tienen ese tope;
   - con un filtro, el total es el de esa categoría y se queda al cambiar de mes. Los meses van desde enero del año pasado, igual que las fechas de un gasto.
 
+- **Reportes con pestañas (16/11, prototipo aprobado ese día, opción A del registro de cambios):** `?vista=` resumen, ingresos, gastos o taller, y `?mes=pasado`.
+  - **Resumen:** Ingresos, Gastos, Ganancia y Margen con su cambio frente al mes anterior; **lo neto del mes** en una torta (lo que quedó y lo que se fue en gastos, primero) y los **6 meses** en barras de ingresos y gastos con la línea de la ganancia.
+  - **Ingresos:** ingresos del mes, promedio por vehículo y por cobrar (lleva a Saldos); **lo acumulado día a día** frente al mes anterior y **por forma de pago**.
+  - **Gastos:** por categoría, **los 6 meses en barras apiladas** por categoría y la lista del mes (con "Ver todos y filtrar").
+  - **Taller y clientes:** **entregados** y **clientes nuevos y los que volvieron** en 6 meses (líneas), servicios más pedidos, **el embudo de cotizaciones** (enviadas, aceptadas, reservadas) y los mantenimientos.
+  - Colores (tokens `grafico-*` de `globals.css`, revisados con el validador de la skill dataviz): esmeralda para lo que entra, rojo para lo que sale y, para series, azul, ámbar, violeta y rosa en ese orden (desde la quinta categoría, "Las demás"). Cada marca lleva su nombre o su número escrito.
+
 ## 6. Acciones del servidor
 Todas en `modulos/reportes/acciones.ts`, con `exigirModulo("reportes")` y Zod (el mismo esquema en el formulario y en el servidor):
 - **`registrarGasto(formData)`:**

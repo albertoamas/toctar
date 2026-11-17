@@ -1,6 +1,6 @@
 import { describe, expect, test, vi, afterEach } from "vitest";
 import { esquemaAnularGasto, esquemaGasto } from "@/modulos/reportes/esquemas";
-import { bsRedondo, cambioFrenteAlAnterior, esMes, mesDe, nombreMes, parteQueQuedo, primerDiaDeGastos, quedo, rangoDelMes, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
+import { bsRedondo, cambioPorcentual, entregasPorMes, escalaBonita, acumularPorDia, esMes, mesDe, nombreMes, primerDiaDeGastos, rangoDelMes, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
 
 // Pedido 16 (P16-reportes-y-gastos.md §9): los meses de los gastos y el esquema de un gasto.
 
@@ -81,28 +81,45 @@ describe("el esquema de un gasto", () => {
 });
 
 describe("la ganancia del mes", () => {
-  test("quedó es lo que entró menos lo que salió, también negativo", () => {
-    expect(quedo(18450, 7120)).toBe(11330);
-    expect(quedo(100.1, 100.3)).toBe(-0.2);
-  });
 
-  test("el cambio frente al mes anterior, sin comparación si el anterior no dejó nada", () => {
-    expect(cambioFrenteAlAnterior(11330, 9590)).toEqual({ porcentaje: 18, sentido: "más" });
-    expect(cambioFrenteAlAnterior(900, 1000)).toEqual({ porcentaje: 10, sentido: "menos" });
-    expect(cambioFrenteAlAnterior(1000, 1000)).toEqual({ porcentaje: 0, sentido: "igual" });
-    expect(cambioFrenteAlAnterior(500, 0)).toBeNull();
-    expect(cambioFrenteAlAnterior(500, -200)).toBeNull();
-  });
 
-  test("qué parte de lo que entró quedó", () => {
-    expect(parteQueQuedo(18450, 7120)).toBe(61);
-    expect(parteQueQuedo(0, 300)).toBeNull();
-  });
 
   test("los montos redondos, con punto de miles y el signo de una pérdida", () => {
     expect(bsRedondo(11330)).toBe("11.330 Bs");
     expect(bsRedondo(1234567.6)).toBe("1.234.568 Bs");
     expect(bsRedondo(-250)).toBe("−250 Bs");
     expect(bsRedondo(0)).toBe("0 Bs");
+  });
+});
+
+describe("las pestañas de Reportes", () => {
+  test("el cambio en por ciento, sin comparación si el mes anterior fue cero", () => {
+    expect(cambioPorcentual(18450, 16470)).toBe(12);
+    expect(cambioPorcentual(900, 1000)).toBe(-10);
+    expect(cambioPorcentual(500, 0)).toBeNull();
+  });
+
+  test("un eje con números redondos", () => {
+    expect(escalaBonita(18450)).toEqual({ tope: 20000, paso: 5000 });
+    expect(escalaBonita(42)).toEqual({ tope: 60, paso: 20 });
+    expect(escalaBonita(0)).toEqual({ tope: 4, paso: 1 });
+  });
+
+  test("lo acumulado día a día, con los días sin pagos", () => {
+    expect(acumularPorDia([{ dia: 1, total: 100 }, { dia: 3, total: 50.5 }], 4)).toEqual([100, 100, 150.5, 150.5]);
+  });
+
+  test("entregados, nuevos y los que volvieron de cada mes", () => {
+    const entregas = [
+      { clienteId: 1, dia: "2026-09-10" },
+      { clienteId: 1, dia: "2026-10-05" }, // volvió (ya vino en septiembre)
+      { clienteId: 2, dia: "2026-10-07" }, // nuevo
+      { clienteId: 3, dia: "2026-10-08" },
+      { clienteId: 3, dia: "2026-10-28" }, // vino dos veces en el mes: volvió
+    ];
+    expect(entregasPorMes(entregas, ["2026-09", "2026-10"])).toEqual([
+      { mes: "2026-09", entregados: 1, volvieron: 0, nuevos: 1 },
+      { mes: "2026-10", entregados: 4, volvieron: 2, nuevos: 1 },
+    ]);
   });
 });

@@ -3,26 +3,49 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { cn } from "cn";
 import { ChevronRightIcon } from "lucide-react";
-import { Cargando } from "@/componentes/panel/cargando";
 import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { Filtros } from "@/componentes/panel/filtros";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
-import { cantidad, palabra } from "@/lib/cantidad";
+import { Pestanas } from "@/componentes/panel/pestanas";
+import { cantidad } from "@/lib/cantidad";
 import { fechaEnBolivia } from "@/lib/fechas";
 import { exigirModulo } from "@/lib/sesion";
 import { NOMBRE_MOTIVO } from "@/modulos/cotizaciones/reglas";
-import { BarrasMeses } from "@/modulos/reportes/componentes/barras-meses";
+import { saldosPendientes } from "@/modulos/pagos/consultas";
+import { NOMBRE_METODO } from "@/modulos/pagos/reglas";
+import { FilaGasto } from "@/modulos/reportes/componentes/fila-gasto";
+import { BarrasApiladas, BarrasConLinea, BarrasHorizontales, Leyenda, LineasAcumuladas, LineasMeses, TortaNeto, type MesConMontos } from "@/modulos/reportes/componentes/graficos";
 import { RegistrarGasto } from "@/modulos/reportes/componentes/registrar-gasto";
-import { categoriasActivas, elTallerEnElMes, movimientosPorMes, resumenDelMes } from "@/modulos/reportes/consultas";
-import { bsRedondo, cambioFrenteAlAnterior, mesDe, nombreMes, nombreMesSolo, parteQueQuedo, quedo, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
+import {
+  categoriasActivas,
+  elTallerEnElMes,
+  entregasHasta,
+  gastosDelMes,
+  gastosPorCategoriaYMes,
+  ingresosDelMes,
+  movimientosPorMes,
+  resumenDelMes,
+} from "@/modulos/reportes/consultas";
+import { acumularPorDia, bsRedondo, cambioPorcentual, diasDelMes, entregasPorMes, mesCorto, mesDe, nombreMes, nombreMesSolo, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
 
 export const metadata: Metadata = { title: "Reportes" };
 
-// Pedido 16, opción B (P16-reportes-y-gastos.md §5, prototipo aprobado por el dueño): cuánto entró, cuánto salió y cuánto
-// quedó en el mes, en qué se gastó y cómo le fue al taller. "Este mes" o "Mes pasado" (`?mes=pasado`). Solo el dueño.
-// Lo que entró sale de los pagos registrados (sin los anulados), por su día; lo que salió, de los gastos.
+// Pedido 16 (P16-reportes-y-gastos.md; prototipo aprobado el 16/11 con la opción A, registro-de-cambios.md): cuatro
+// pestañas (?vista=) para el mes elegido (?mes=pasado o este): Resumen (lo neto en una torta y los 6 meses en barras con
+// la línea de la ganancia), Ingresos (lo acumulado día a día frente al mes anterior y por forma de pago), Gastos (por
+// categoría, sus 6 meses apilados y la lista) y Taller y clientes (entregados, servicios, cotizaciones, clientes y
+// mantenimientos). Solo el dueño. Lo que entró sale de los pagos sin anular, por su día; lo que salió, de los gastos.
+
+const VISTAS = ["resumen", "ingresos", "gastos", "taller"] as const;
+type Vista = (typeof VISTAS)[number];
+const NOMBRE_VISTA: Record<Vista, string> = { resumen: "Resumen", ingresos: "Ingresos", gastos: "Gastos", taller: "Taller y clientes" };
+
+/** Los colores de las series, en orden fijo: la quinta categoría en adelante se junta en "Las demás". */
+const SERIES = ["bg-grafico-1", "bg-grafico-2", "bg-grafico-3", "bg-grafico-4"] as const;
+const SERIES_SVG = ["fill-grafico-1", "fill-grafico-2", "fill-grafico-3", "fill-grafico-4"] as const;
 
 export default function PaginaReportes({ searchParams }: PageProps<"/panel/reportes">) {
   return (
@@ -34,186 +57,329 @@ export default function PaginaReportes({ searchParams }: PageProps<"/panel/repor
   );
 }
 
+type Contexto = { mes: string; anterior: string; hoy: string; pasado: boolean };
+
 async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes">, "searchParams">) {
   await exigirModulo("reportes");
   const parametros = await searchParams;
   const hoy = fechaEnBolivia();
   const pasado = parametros.mes === "pasado";
   const mes = pasado ? sumarMeses(mesDe(hoy), -1) : mesDe(hoy);
-  const anterior = sumarMeses(mes, -1);
-
-  const [movimientos, resumen, taller, categorias] = await Promise.all([
-    movimientosPorMes(sumarMeses(mes, -5), mes),
-    resumenDelMes(mes),
-    elTallerEnElMes(mes),
-    categoriasActivas(),
-  ]);
-  const { entro, salio } = movimientos[movimientos.length - 1];
-  const delAnterior = movimientos[movimientos.length - 2];
-  const ganancia = quedo(entro, salio);
-  const cambio = cambioFrenteAlAnterior(ganancia, quedo(delAnterior.entro, delAnterior.salio));
-  const parte = parteQueQuedo(entro, salio);
-  const sinNada = entro === 0 && salio === 0 && taller.entregados === 0 && taller.cotizaciones.enviadas === 0;
-  const verGastos = `/panel/reportes/gastos${pasado ? `?mes=${mes}` : ""}` as Route;
+  const vista: Vista = VISTAS.includes(parametros.vista as Vista) ? (parametros.vista as Vista) : "resumen";
+  const ctx: Contexto = { mes, anterior: sumarMeses(mes, -1), hoy, pasado };
+  const enlace = (v: Vista, conPasado = pasado) => {
+    const p = new URLSearchParams();
+    if (v !== "resumen") p.set("vista", v);
+    if (conPasado) p.set("mes", "pasado");
+    const texto = p.toString();
+    return `/panel/reportes${texto ? `?${texto}` : ""}` as Route;
+  };
+  const categorias = await categoriasActivas();
 
   return (
     <>
       <EncabezadoPagina titulo="Reportes" accion={<RegistrarGasto categorias={categorias} hoy={hoy} />}>
-        Cuánto entró, cuánto salió y cuánto quedó
+        {tituloMes(mes)}
       </EncabezadoPagina>
+      <Pestanas etiqueta="Partes de los reportes" activa={enlace(vista)} pestanas={VISTAS.map((v) => ({ href: enlace(v), texto: NOMBRE_VISTA[v] }))} />
       <Filtros
         etiqueta="Mes"
         filtros={[
-          { href: "/panel/reportes", texto: "Este mes", activo: !pasado },
-          { href: "/panel/reportes?mes=pasado" as Route, texto: "Mes pasado", activo: pasado },
+          { href: enlace(vista, false), texto: "Este mes", activo: !pasado },
+          { href: enlace(vista, true), texto: "Mes pasado", activo: pasado },
         ]}
       />
-
-      {sinNada ? (
-        <EstadoVacio>{`Todavía no hay movimientos en ${nombreMes(mes)}.`}</EstadoVacio>
-      ) : (
-        <>
-          {/* Lo primero que se lee: cuánto le quedó, y de dónde sale */}
-          <section aria-labelledby="ganancia-titulo" className="tt-tarjeta-panel flex flex-col gap-5 p-5">
-            <div className="flex flex-col gap-1">
-              <p className="text-sm text-tinta-suave">{tituloMes(mes)}</p>
-              <h2 id="ganancia-titulo" className="text-2xl leading-tight font-semibold sm:text-3xl">
-                {ganancia >= 0 ? "Ganaste " : "Perdiste "}
-                <span className={cn("font-bold tabular-nums", ganancia < 0 && "text-peligro")}>{bsRedondo(Math.abs(ganancia))}</span>
-                {cambio && cambio.sentido !== "igual" ? `, ${cambio.porcentaje} % ${cambio.sentido} que en ${nombreMesSolo(anterior)}.` : "."}
-              </h2>
-            </div>
-            <dl className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-start gap-x-2 gap-y-1 sm:gap-x-4">
-              <Cuenta etiqueta="Entró" monto={entro} detalle={`de ${cantidad(resumen.vehiculosConPagos, "vehículo", "vehículos")}`} />
-              <span aria-hidden className="pt-6 text-xl text-tinta-suave">−</span>
-              <Cuenta etiqueta="Salió" monto={salio} detalle={`en ${cantidad(resumen.cuantosGastos, "gasto", "gastos")}`} />
-              <span aria-hidden className="pt-6 text-xl text-tinta-suave">=</span>
-              <Cuenta etiqueta="Quedó" monto={ganancia} detalle={parte !== null ? `${parte} % de lo que entró` : undefined} fuerte />
-            </dl>
-          </section>
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Bloque id="meses" titulo="Últimos 6 meses">
-              <BarrasMeses meses={movimientos} elegido={mes} />
-            </Bloque>
-
-            <Bloque
-              id="gastos"
-              titulo="En qué se gastó"
-              accion={
-                <Link href={verGastos} className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold hover:underline">
-                  Ver todos los gastos
-                  <ChevronRightIcon className="size-4" aria-hidden />
-                </Link>
-              }
-            >
-              {resumen.porCategoria.length === 0 ? (
-                <p className="text-sm text-tinta-suave">Sin gastos registrados en {nombreMes(mes)}.</p>
-              ) : (
-                <ul className="flex flex-col gap-3">
-                  {resumen.porCategoria.map((c) => (
-                    <li key={c.nombre} className="flex flex-col gap-1">
-                      <span className="flex justify-between gap-4 text-sm">
-                        <span>{c.nombre}</span>
-                        <span className="font-semibold tabular-nums">{bsRedondo(c.total)}</span>
-                      </span>
-                      <span aria-hidden className="h-2 overflow-hidden rounded-full bg-neutro-fondo">
-                        <span className="block h-full rounded-full bg-peligro" style={{ width: `${Math.round((c.total / resumen.porCategoria[0].total) * 100)}%` }} />
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Bloque>
-
-            <Bloque id="taller" titulo="El taller en el mes">
-              <dl className="grid grid-cols-2 gap-4">
-                <Numero n={taller.entregados} texto={palabra(taller.entregados, "vehículo entregado", "vehículos entregados")} />
-                <Numero n={taller.volvieron} texto={palabra(taller.volvieron, "cliente volvió", "clientes volvieron")} />
-                <Numero n={taller.nuevos} texto={palabra(taller.nuevos, "vino por primera vez", "vinieron por primera vez")} />
-                <Numero n={taller.avisados} texto={palabra(taller.avisados, "mantenimiento avisado", "mantenimientos avisados")} detalle={taller.avisados > 0 ? `${taller.reservaron} ya ${palabra(taller.reservaron, "reservó", "reservaron")}` : undefined} />
-              </dl>
-            </Bloque>
-
-            <Bloque id="servicios" titulo="Servicios más pedidos">
-              {taller.servicios.length === 0 ? (
-                <p className="text-sm text-tinta-suave">Sin vehículos entregados en {nombreMes(mes)}.</p>
-              ) : (
-                <ol className="flex flex-col divide-y divide-border">
-                  {taller.servicios.map((s, i) => (
-                    <li key={s.nombre} className="flex items-baseline justify-between gap-4 py-2 first:pt-0 last:pb-0">
-                      <span className="text-sm">
-                        {s.nombre}
-                        {i === 0 && taller.servicios.length > 1 && <span className="ml-2 text-xs font-semibold text-exito">El más pedido</span>}
-                      </span>
-                      <span className="text-sm font-semibold tabular-nums">{cantidad(s.veces, "vez", "veces")}</span>
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </Bloque>
-
-            <Bloque id="cotizaciones" titulo="Cotizaciones">
-              {taller.cotizaciones.enviadas === 0 ? (
-                <p className="text-sm text-tinta-suave">Sin cotizaciones enviadas en {nombreMes(mes)}.</p>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  <p className="text-sm">
-                    De <strong className="tabular-nums">{taller.cotizaciones.enviadas}</strong> que enviaste, aceptaron <strong className="tabular-nums">{taller.cotizaciones.aceptadas}</strong>.
-                    {taller.cotizaciones.motivos[0] && ` La razón más común para no aceptar fue ${NOMBRE_MOTIVO[taller.cotizaciones.motivos[0].motivo].toLowerCase()}.`}
-                  </p>
-                  {taller.cotizaciones.motivos.length > 0 && (
-                    <dl className="flex flex-col gap-1 text-sm">
-                      {taller.cotizaciones.motivos.map((m) => (
-                        <div key={m.motivo} className="flex justify-between gap-4">
-                          <dt className="text-tinta-media">{NOMBRE_MOTIVO[m.motivo]}</dt>
-                          <dd className="font-semibold tabular-nums">{m.veces}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                  )}
-                </div>
-              )}
-            </Bloque>
-          </div>
-        </>
-      )}
-      <p className="text-xs text-tinta-suave">Lo que entró sale de los pagos registrados; lo que salió, de los gastos.</p>
+      {vista === "resumen" && <Resumen ctx={ctx} />}
+      {vista === "ingresos" && <Ingresos ctx={ctx} />}
+      {vista === "gastos" && <Gastos ctx={ctx} />}
+      {vista === "taller" && <TallerYClientes ctx={ctx} />}
+      <p className="text-xs text-tinta-suave">Los ingresos salen de los pagos registrados; los gastos, de los gastos registrados. Los anulados no cuentan.</p>
     </>
   );
 }
 
-/** Una sección del reporte: su título arriba y su tarjeta, como en las fichas. */
-function Bloque({ id, titulo, accion, children }: { id: string; titulo: string; accion?: React.ReactNode; children: React.ReactNode }) {
+/** Los últimos 6 meses hasta el elegido, con su nombre. */
+function seisMeses(mes: string) {
+  return Array.from({ length: 6 }, (_, i) => sumarMeses(mes, i - 5)).map((m) => ({ mes: m, corto: mesCorto(m), nombre: nombreMes(m) }));
+}
+
+// ---------------------------------------------------------------------------------------------
+// Resumen
+
+async function Resumen({ ctx }: { ctx: Contexto }) {
+  const meses = seisMeses(ctx.mes);
+  const movimientos = await movimientosPorMes(meses[0].mes, ctx.mes);
+  const { entro, salio } = movimientos[5];
+  const antes = movimientos[4];
+  if (movimientos.every((m) => m.entro === 0 && m.salio === 0)) return <EstadoVacio>{`Todavía no hay movimientos en ${nombreMes(ctx.mes)}.`}</EstadoVacio>;
+  const ganancia = entro - salio;
+  const margen = entro > 0 ? Math.round((ganancia / entro) * 100) : null;
+  const margenAntes = antes.entro > 0 ? Math.round(((antes.entro - antes.salio) / antes.entro) * 100) : null;
+  const delAnterior = `frente a ${nombreMesSolo(ctx.anterior)}`;
+  const conMontos: MesConMontos[] = meses.map((m, i) => ({ ...m, entro: movimientos[i].entro, salio: movimientos[i].salio }));
   return (
-    <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-2">
-      <CabeceraSeccion id={id} titulo={titulo}>
+    <>
+      <ul aria-label="Resumen del mes" className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+        <Tarjeta etiqueta="Ingresos" marca="bg-grafico-ingreso" valor={bsRedondo(entro)} cambio={cambioPorcentual(entro, antes.entro)} contra={delAnterior} />
+        <Tarjeta etiqueta="Gastos" marca="bg-grafico-gasto" valor={bsRedondo(salio)} cambio={cambioPorcentual(salio, antes.salio)} contra={delAnterior} subirEsMalo />
+        <Tarjeta etiqueta="Ganancia" valor={bsRedondo(ganancia)} cambio={cambioPorcentual(ganancia, antes.entro - antes.salio)} contra={delAnterior} />
+        <Tarjeta etiqueta="Margen" valor={margen === null ? "—" : `${margen} %`} cambio={margen !== null && margenAntes !== null ? margen - margenAntes : null} unidad="pts" contra="de lo que entró queda" />
+      </ul>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.75fr)]">
+        <Bloque id="neto" titulo="Lo neto del mes" detalle={`De los ${bsRedondo(entro)} que entraron`}>
+          <TortaNeto entro={entro} salio={salio} />
+        </Bloque>
+        <Bloque id="meses" titulo="Ingresos y gastos, últimos 6 meses">
+          <Leyenda
+            items={[
+              { nombre: "Ingresos", clase: "bg-grafico-ingreso" },
+              { nombre: "Gastos", clase: "bg-grafico-gasto" },
+              { nombre: "Ganancia", clase: "bg-tinta", linea: true },
+            ]}
+          />
+          <BarrasConLinea meses={conMontos} elegido={ctx.mes} />
+        </Bloque>
+      </div>
+    </>
+  );
+}
+
+/** Una tarjeta de número: su nombre, el valor y cuánto cambió (verde si es bueno, rojo si es malo, con flecha). */
+function Tarjeta({ etiqueta, valor, cambio, contra, marca, subirEsMalo, unidad = "%" }: { etiqueta: string; valor: string; cambio: number | null; contra: string; marca?: string; subirEsMalo?: boolean; unidad?: string }) {
+  const bueno = cambio !== null && (subirEsMalo ? cambio <= 0 : cambio >= 0);
+  return (
+    <li className="tt-tarjeta-panel flex flex-col gap-1.5 p-4 lg:p-5">
+      <span className="flex items-center gap-2 text-[0.8125rem] font-medium text-tinta-media">
+        {marca && <span aria-hidden className={cn("size-2.5 rounded-[3px]", marca)} />}
+        {etiqueta}
+      </span>
+      <span className="text-[1.375rem] font-bold whitespace-nowrap tabular-nums lg:text-[1.75rem]">{valor}</span>
+      {cambio !== null && (
+        <span className="text-xs text-tinta-suave">
+          <span className={cn("font-semibold", bueno ? "text-exito" : "text-peligro")}>
+            {cambio >= 0 ? "▲" : "▼"} {Math.abs(cambio)} {unidad}
+          </span>{" "}
+          {contra}
+        </span>
+      )}
+    </li>
+  );
+}
+
+/** Una sección del reporte: su título (y un detalle) arriba de su tarjeta. */
+function Bloque({ id, titulo, detalle, accion, children, className }: { id: string; titulo: string; detalle?: string; accion?: React.ReactNode; children: React.ReactNode; className?: string }) {
+  return (
+    <section aria-labelledby={`${id}-titulo`} className={cn("tt-tarjeta-panel flex flex-col gap-3 p-4 lg:p-5", className)}>
+      <CabeceraSeccion id={id} titulo={titulo} nivel={3} compacta>
         {accion}
       </CabeceraSeccion>
-      <div className="tt-tarjeta-panel flex-1 p-4">{children}</div>
+      {detalle && <p className="-mt-1 text-[0.8125rem] text-tinta-suave">{detalle}</p>}
+      {children}
     </section>
   );
 }
 
-/** Entró, salió o quedó: la etiqueta, el monto grande y de dónde sale. */
-function Cuenta({ etiqueta, monto, detalle, fuerte }: { etiqueta: string; monto: number; detalle?: string; fuerte?: boolean }) {
+// ---------------------------------------------------------------------------------------------
+// Ingresos
+
+async function Ingresos({ ctx }: { ctx: Contexto }) {
+  const [este, antes, resumen, saldos] = await Promise.all([ingresosDelMes(ctx.mes), ingresosDelMes(ctx.anterior), resumenDelMes(ctx.mes), saldosPendientes()]);
+  const total = este.porMetodo.reduce((s, m) => s + m.total, 0);
+  const porCobrar = saldos.reduce((s, x) => s + Number(x.saldo), 0);
+  // Este mes, hasta hoy; un mes pasado, entero. El anterior, entero
+  const hastaDia = ctx.pasado ? diasDelMes(ctx.mes) : Number(ctx.hoy.slice(8));
+  const acumEste = acumularPorDia(este.porDia, hastaDia);
+  const acumAntes = acumularPorDia(antes.porDia, diasDelMes(ctx.anterior));
+  const aEstaAltura = acumAntes[Math.min(hastaDia, acumAntes.length) - 1] ?? 0;
+  const dif = cambioPorcentual(acumEste[hastaDia - 1] ?? 0, aEstaAltura);
   return (
-    <div className="flex min-w-0 flex-col gap-0.5">
-      <dt className="text-sm text-tinta-suave">{etiqueta}</dt>
-      <dd className={cn("text-base font-bold whitespace-nowrap tabular-nums sm:text-2xl", fuerte && monto < 0 && "text-peligro")}>{bsRedondo(monto)}</dd>
-      {detalle && <dd className="text-xs text-tinta-suave">{detalle}</dd>}
-    </div>
+    <>
+      <ul aria-label="Ingresos del mes" className="grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4">
+        <Tarjeta etiqueta="Ingresos del mes" marca="bg-grafico-ingreso" valor={bsRedondo(total)} cambio={null} contra="" />
+        <Tarjeta etiqueta="Promedio por vehículo" valor={resumen.vehiculosConPagos > 0 ? bsRedondo(total / resumen.vehiculosConPagos) : "—"} cambio={null} contra="" />
+        <li className="col-span-2 lg:col-span-1">
+          <Link href="/panel/pagos" className="tt-tarjeta-panel flex h-full flex-col gap-1.5 p-4 hover:bg-superficie/40 lg:p-5">
+            <span className="text-[0.8125rem] font-medium text-tinta-media">Por cobrar</span>
+            <span className="text-[1.375rem] font-bold tabular-nums lg:text-[1.75rem]">{bsRedondo(porCobrar)}</span>
+            <span className="flex items-center gap-1 text-xs font-semibold">
+              En {cantidad(saldos.length, "orden", "órdenes")}. Ver saldos
+              <ChevronRightIcon className="size-3.5" aria-hidden />
+            </span>
+          </Link>
+        </li>
+      </ul>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        <Bloque id="acumulado" titulo="Ingresos acumulados, día a día">
+          <Leyenda
+            items={[
+              { nombre: tituloMes(ctx.mes).replace(/ de \d+$/, ""), clase: "bg-grafico-ingreso", linea: true },
+              { nombre: tituloMes(ctx.anterior).replace(/ de \d+$/, ""), clase: "border-tinta-suave", linea: true, punteada: true },
+            ]}
+          />
+          <LineasAcumuladas este={acumEste} antes={acumAntes} descripcion={`Ingresos acumulados día a día de ${nombreMes(ctx.mes)} frente a ${nombreMes(ctx.anterior)}`} />
+          <p className="text-[0.8125rem] text-tinta-media">
+            {ctx.pasado
+              ? `En ${nombreMesSolo(ctx.mes)} entraron ${bsRedondo(acumEste.at(-1) ?? 0)}; en ${nombreMesSolo(ctx.anterior)}, ${bsRedondo(acumAntes.at(-1) ?? 0)}.`
+              : `Al día ${hastaDia} entraron ${bsRedondo(acumEste.at(-1) ?? 0)}${dif === null ? "." : `: ${Math.abs(dif)} % ${dif >= 0 ? "más" : "menos"} que en ${nombreMesSolo(ctx.anterior)} a esta altura.`}`}
+          </p>
+        </Bloque>
+        <Bloque id="formas" titulo="Por forma de pago">
+          {este.porMetodo.length === 0 ? (
+            <p className="text-sm text-tinta-suave">Sin pagos en {nombreMes(ctx.mes)}.</p>
+          ) : (
+            <BarrasHorizontales
+              alta
+              filas={este.porMetodo.map((m) => ({
+                nombre: NOMBRE_METODO[m.metodo],
+                valor: m.total,
+                clase: "bg-grafico-ingreso",
+                texto: (
+                  <>
+                    <span className="font-semibold">{bsRedondo(m.total)}</span>
+                    <span className="text-tinta-suave"> · {Math.round((m.total / total) * 100)} %</span>
+                  </>
+                ),
+              }))}
+            />
+          )}
+        </Bloque>
+      </div>
+    </>
   );
 }
 
-/** Un número del taller con lo que cuenta. */
-function Numero({ n, texto, detalle }: { n: number; texto: string; detalle?: string }) {
+// ---------------------------------------------------------------------------------------------
+// Gastos
+
+async function Gastos({ ctx }: { ctx: Contexto }) {
+  const meses = seisMeses(ctx.mes);
+  const [resumen, porMes, lista] = await Promise.all([resumenDelMes(ctx.mes), gastosPorCategoriaYMes(meses[0].mes, ctx.mes), gastosDelMes(ctx.mes)]);
+  // Las categorías de los 6 meses, de la que más se gastó a la que menos: cada una con su color fijo; desde la quinta,
+  // juntas en "Las demás" (un color nunca se repite ni se inventa)
+  const totales = new Map<string, number>();
+  for (const f of porMes) totales.set(f.categoria, (totales.get(f.categoria) ?? 0) + f.total);
+  const orden = [...totales.entries()].sort((a, b) => b[1] - a[1]).map(([n]) => n);
+  const grupos = orden.length > 4 ? [...orden.slice(0, 3), "Las demás"] : orden;
+  const grupoDe = (categoria: string) => (grupos.includes(categoria) ? categoria : "Las demás");
+  const claseDe = (categoria: string) => SERIES[grupos.indexOf(grupoDe(categoria))] ?? SERIES[3];
+  const totalMes = resumen.porCategoria.reduce((s, c) => s + c.total, 0);
+  const visibles = lista.slice(0, 8);
   return (
-    <div className="flex flex-col">
-      <dt className="sr-only">{texto}</dt>
-      <dd className="text-2xl font-bold tabular-nums">{n}</dd>
-      <dd className="text-sm text-tinta-media">{texto}</dd>
-      {detalle && <dd className="text-xs text-tinta-suave">{detalle}</dd>}
+    <>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+        <Bloque id="categorias" titulo="Por categoría" detalle={`${bsRedondo(totalMes)} en ${cantidad(resumen.cuantosGastos, "gasto", "gastos")}`}>
+          {resumen.porCategoria.length === 0 ? (
+            <p className="text-sm text-tinta-suave">Sin gastos en {nombreMes(ctx.mes)}.</p>
+          ) : (
+            <BarrasHorizontales
+              filas={resumen.porCategoria.map((c) => ({
+                nombre: c.nombre,
+                valor: c.total,
+                clase: claseDe(c.nombre),
+                texto: (
+                  <>
+                    <span className="font-semibold">{bsRedondo(c.total)}</span>
+                    <span className="text-tinta-suave"> · {Math.round((c.total / totalMes) * 100)} %</span>
+                  </>
+                ),
+              }))}
+            />
+          )}
+        </Bloque>
+        <Bloque id="categorias-meses" titulo="Gastos de los últimos 6 meses">
+          {grupos.length > 0 && <Leyenda items={grupos.map((g, k) => ({ nombre: g, clase: SERIES[k] }))} />}
+          <BarrasApiladas
+            categorias={grupos.map((g, k) => ({ nombre: g, clase: SERIES_SVG[k] }))}
+            meses={meses.map((m) => ({ ...m, partes: grupos.map((g) => porMes.filter((f) => f.mes === m.mes && grupoDe(f.categoria) === g).reduce((s, f) => s + f.total, 0)) }))}
+          />
+        </Bloque>
+      </div>
+      <section aria-labelledby="lista-titulo" className="flex flex-col gap-2">
+        <CabeceraSeccion id="lista" titulo={`Gastos de ${nombreMes(ctx.mes)}`}>
+          <Link href={`/panel/reportes/gastos${ctx.pasado ? `?mes=${ctx.mes}` : ""}` as Route} className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold hover:underline">
+            Ver todos y filtrar
+            <ChevronRightIcon className="size-4" aria-hidden />
+          </Link>
+        </CabeceraSeccion>
+        {lista.length === 0 ? (
+          <EstadoVacio>{`Todavía no hay gastos en ${nombreMes(ctx.mes)}.`}</EstadoVacio>
+        ) : (
+          <ul aria-label={`Gastos de ${nombreMes(ctx.mes)}`} className="tt-tarjeta-panel divide-y divide-border">
+            {visibles.map((g) => (
+              <FilaGasto key={g.id} g={g} />
+            ))}
+          </ul>
+        )}
+        {lista.length > visibles.length && <p className="text-sm text-tinta-suave">Se ven los últimos {visibles.length}; los demás, en «Ver todos y filtrar».</p>}
+      </section>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Taller y clientes
+
+async function TallerYClientes({ ctx }: { ctx: Contexto }) {
+  const meses = seisMeses(ctx.mes);
+  const [taller, entregas] = await Promise.all([elTallerEnElMes(ctx.mes), entregasHasta(ctx.mes)]);
+  const porMes = entregasPorMes(
+    entregas,
+    meses.map((m) => m.mes),
+  );
+  const delMes = porMes[5];
+  const { enviadas, aceptadas, reservadas, motivos } = taller.cotizaciones;
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <Bloque id="entregados" titulo="Vehículos entregados, últimos 6 meses" detalle={`${cantidad(delMes.entregados, "vehículo", "vehículos")} en ${nombreMesSolo(ctx.mes)}`}>
+        <LineasMeses meses={meses} elegido={ctx.mes} conValores series={[{ nombre: "Entregados", clase: "stroke-grafico-1", claseRelleno: "fill-grafico-1", valores: porMes.map((m) => m.entregados) }]} />
+      </Bloque>
+      <Bloque id="servicios" titulo="Servicios más pedidos" detalle={`De los vehículos entregados en ${nombreMesSolo(ctx.mes)}`}>
+        {taller.servicios.length === 0 ? (
+          <p className="text-sm text-tinta-suave">Sin vehículos entregados en {nombreMes(ctx.mes)}.</p>
+        ) : (
+          <BarrasHorizontales filas={taller.servicios.map((s) => ({ nombre: s.nombre, valor: s.veces, clase: "bg-grafico-1", texto: <span className="font-semibold">{cantidad(s.veces, "vez", "veces")}</span> }))} />
+        )}
+      </Bloque>
+      <Bloque id="cotizaciones" titulo="Cotizaciones" detalle={enviadas > 0 ? `${Math.round((aceptadas / enviadas) * 100)} % aceptadas` : undefined}>
+        {enviadas === 0 ? (
+          <p className="text-sm text-tinta-suave">Sin cotizaciones enviadas en {nombreMes(ctx.mes)}.</p>
+        ) : (
+          <>
+            <BarrasHorizontales
+              alta
+              filas={[
+                { nombre: "Enviadas", valor: enviadas },
+                { nombre: "Aceptadas", valor: aceptadas },
+                { nombre: "Reservadas", valor: reservadas },
+              ].map((f) => ({ ...f, clase: "bg-grafico-1", texto: <span className="font-semibold">{f.valor}</span> }))}
+            />
+            {motivos.length > 0 && (
+              <p className="text-[0.8125rem] text-tinta-media">
+                Por qué no aceptaron: {motivos.map((m) => `${NOMBRE_MOTIVO[m.motivo].toLowerCase()} (${m.veces})`).join(", ")}.
+              </p>
+            )}
+          </>
+        )}
+      </Bloque>
+      <Bloque id="clientes" titulo="Clientes, últimos 6 meses" detalle={`En ${nombreMesSolo(ctx.mes)}: ${cantidad(delMes.nuevos, "nuevo", "nuevos")} y ${delMes.volvieron} ${delMes.volvieron === 1 ? "volvió" : "volvieron"}`}>
+        <Leyenda
+          items={[
+            { nombre: "Nuevos", clase: "bg-grafico-1" },
+            { nombre: "Volvieron", clase: "bg-grafico-3" },
+          ]}
+        />
+        <LineasMeses
+          meses={meses}
+          elegido={ctx.mes}
+          series={[
+            { nombre: "Nuevos", clase: "stroke-grafico-1", claseRelleno: "fill-grafico-1", valores: porMes.map((m) => m.nuevos) },
+            { nombre: "Volvieron", clase: "stroke-grafico-3", claseRelleno: "fill-grafico-3", valores: porMes.map((m) => m.volvieron) },
+          ]}
+        />
+        <p className="text-[0.8125rem] text-tinta-media">
+          Mantenimientos: <strong>{taller.avisados}</strong> {taller.avisados === 1 ? "avisado" : "avisados"}, <strong>{taller.reservaron}</strong> ya {taller.reservaron === 1 ? "reservó" : "reservaron"}.
+        </p>
+      </Bloque>
     </div>
   );
 }

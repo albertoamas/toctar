@@ -49,23 +49,6 @@ export const primerDiaDeGastos = (hoy: string) => `${Number(hoy.slice(0, 4)) - 1
 /** Hasta cuántos caracteres llevan el detalle de un gasto y el motivo de su anulación. */
 export const LARGO_DETALLE = 200;
 
-/** Cuánto quedó: lo que entró menos lo que salió (puede ser negativo: un mes con más gastos que cobros). */
-export const quedo = (entro: number, salio: number) => Math.round((entro - salio) * 100) / 100;
-
-/**
- * Cuánto cambió lo que quedó frente al mes anterior, en por ciento redondeado: "18 % más", "5 % menos". Sin comparación
- * si el mes anterior no dejó nada (cero o pérdida): un porcentaje sobre eso no dice nada.
- */
-export function cambioFrenteAlAnterior(actual: number, anterior: number): { porcentaje: number; sentido: "más" | "menos" | "igual" } | null {
-  // Un mes con pérdida tampoco se compara: "120 % menos" junto a una pérdida confunde
-  if (anterior <= 0 || actual < 0) return null;
-  const porcentaje = Math.round(((actual - anterior) / anterior) * 100);
-  return { porcentaje: Math.abs(porcentaje), sentido: porcentaje > 0 ? "más" : porcentaje < 0 ? "menos" : "igual" };
-}
-
-/** Qué parte de lo que entró quedó, en por ciento redondeado; null si no entró nada. */
-export const parteQueQuedo = (entro: number, salio: number) => (entro > 0 ? Math.round((quedo(entro, salio) / entro) * 100) : null);
-
 /** "11.330 Bs": los montos grandes de los reportes, con punto de miles y sin decimales (se leen de un vistazo). */
 export function bsRedondo(monto: number): string {
   const redondo = Math.round(monto);
@@ -73,3 +56,54 @@ export function bsRedondo(monto: number): string {
   // El signo, del monto ya redondeado: una pérdida de 0,30 Bs no es "−0 Bs"
   return `${redondo < 0 ? "−" : ""}${texto} Bs`;
 }
+
+/**
+ * Los vehículos entregados y los clientes de cada mes, a partir de todas las entregas: entregados es cuántas hubo en el
+ * mes; de los clientes que se llevaron un vehículo en el mes, volvió el que ya se había llevado uno antes del mes o se
+ * llevó más de uno en él, y nuevo el resto.
+ */
+export function entregasPorMes(entregas: readonly { clienteId: number; dia: string }[], meses: readonly string[]) {
+  return meses.map((mes) => {
+    const delMes = entregas.filter((e) => mesDe(e.dia) === mes);
+    const veces = new Map<number, number>();
+    for (const e of delMes) veces.set(e.clienteId, (veces.get(e.clienteId) ?? 0) + 1);
+    let volvieron = 0;
+    for (const [clienteId, n] of veces) {
+      const antes = entregas.some((e) => e.clienteId === clienteId && e.dia < `${mes}-01`);
+      if (antes || n > 1) volvieron++;
+    }
+    return { mes, entregados: delMes.length, volvieron, nuevos: veces.size - volvieron };
+  });
+}
+
+/** Lo acumulado día a día de lo que entró: [lo del día 1, lo del 1 y el 2, …] hasta `dias`. */
+export function acumularPorDia(porDia: readonly { dia: number; total: number }[], dias: number): number[] {
+  const resultado: number[] = [];
+  let suma = 0;
+  for (let d = 1; d <= dias; d++) {
+    suma += porDia.find((x) => x.dia === d)?.total ?? 0;
+    resultado.push(Math.round(suma * 100) / 100);
+  }
+  return resultado;
+}
+
+/** Cuántos días tiene un mes ("2026-11" → 30). */
+export const diasDelMes = (mes: string) => Number(rangoDelMes(mes).fin.slice(8));
+
+/**
+ * Un eje con números redondos para el valor más alto: el tope y el paso entre líneas guía (1, 2 o 5 por una potencia
+ * de 10, con unas 4 líneas). 18.450 → tope 20.000 cada 5.000; 42 → 50 cada 10. Sin datos, de 0 a 4.
+ */
+export function escalaBonita(maximo: number, lineas = 4): { tope: number; paso: number } {
+  if (!(maximo > 0)) return { tope: 4, paso: 1 };
+  const bruto = maximo / lineas;
+  const potencia = 10 ** Math.floor(Math.log10(bruto));
+  const paso = [1, 2, 2.5, 5, 10].map((m) => m * potencia).find((p) => p >= bruto)!;
+  return { tope: Math.ceil(maximo / paso) * paso, paso };
+}
+
+/** "5 mil", "12,5 mil", "800": las etiquetas del eje de montos. */
+export const textoEje = (v: number) => (v >= 1000 ? `${String(v / 1000).replace(".", ",")} mil` : String(v));
+
+/** Cuánto cambió algo frente al mes anterior, en por ciento redondeado; null si el anterior fue cero o menos. */
+export const cambioPorcentual = (actual: number, anterior: number) => (anterior > 0 ? Math.round(((actual - anterior) / anterior) * 100) : null);
