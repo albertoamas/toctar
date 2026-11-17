@@ -145,6 +145,13 @@ ALTER TABLE trabajo ADD CONSTRAINT trabajo_sin_cruces
 |---|---|---|
 | `recordatorio_mantenimiento` | trabajo_origen_id (nulo si se cargó a mano), cliente_id, vehiculo_id, servicio_id (el servicio base), servicio_mantenimiento_id (el que se agenda), intervalo_meses, fecha_programada, estado (`pendiente`, `avisado`, `agendado`, `hecho`, `no_interesado`), avisado_at, trabajo_agendado_id, trabajo_hecho_id, nota | El plan de mantenimiento de un vehículo (D-11, RN-08): se crea al entregar un servicio con mantenimiento en el catálogo o desde la ficha del cliente; un solo abierto por vehículo y servicio base |
 
+### Gastos (pedido 16, con la Entrega 2)
+
+| Tabla | Campos | Notas |
+|---|---|---|
+| `categoria_gasto` | nombre (único sin importar mayúsculas), orden, activo | En qué se gasta. Se edita en Configuración, Parámetros; vienen cuatro (migración 0050). Desactivar no borra (D-6) |
+| `gasto` | sucursal_id, categoria_id, monto (numeric(10,2), > 0), metodo (como un pago), fecha (día en Bolivia), detalle, comprobante_archivo_id (bucket privado), anulado, motivo_anulacion, anulado_at, anulado_por, created_at, created_by | Un gasto del taller. No se borra: se anula con motivo (RN-14) y deja de contar. Con los pagos, da lo que quedó en el mes en Reportes (`etapas/P16-reportes-y-gastos.md`) |
+
 ### Futuro: Sistema completo y más allá
 
 No se crean ahora; se documentan para que lo de hoy no les cierre el paso.
