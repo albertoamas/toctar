@@ -2,14 +2,15 @@ import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { cn } from "cn";
-import { ChevronRightIcon } from "lucide-react";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { BanknoteIcon, ChevronRightIcon, PercentIcon, PiggyBankIcon, ReceiptTextIcon } from "lucide-react";
+import { CabeceraSeccion, Seccion } from "@/componentes/panel/cabecera-seccion";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { Filtros } from "@/componentes/panel/filtros";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { Pestanas } from "@/componentes/panel/pestanas";
+import { TarjetaNumero } from "@/componentes/panel/tarjeta-numero";
 import { cantidad } from "@/lib/cantidad";
 import { fechaEnBolivia } from "@/lib/fechas";
 import { exigirModulo } from "@/lib/sesion";
@@ -115,32 +116,54 @@ async function Resumen({ ctx }: { ctx: Contexto }) {
   const ganancia = entro - salio;
   const margen = entro > 0 ? Math.round((ganancia / entro) * 100) : null;
   const margenAntes = antes.entro > 0 ? Math.round(((antes.entro - antes.salio) / antes.entro) * 100) : null;
-  const delAnterior = `frente a ${nombreMesSolo(ctx.anterior)}`;
+  // Corto, así entra en una línea en el celular: "vs. oct."
+  const vsAnterior = `vs. ${nombreMesSolo(ctx.anterior).slice(0, 3)}.`;
   const conMontos: MesConMontos[] = meses.map((m, i) => ({ ...m, entro: movimientos[i].entro, salio: movimientos[i].salio }));
   return (
     <>
-      <ul aria-label="Resumen del mes" className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
-        <Tarjeta etiqueta="Ingresos" marca="bg-grafico-ingreso" valor={bsRedondo(entro)} cambio={cambioPorcentual(entro, antes.entro)} contra={delAnterior} />
-        <Tarjeta etiqueta="Gastos" marca="bg-grafico-gasto" valor={bsRedondo(salio)} cambio={cambioPorcentual(salio, antes.salio)} contra={delAnterior} subirEsMalo />
+      {/* Las tarjetas de número del panel (las del Inicio), sin enlace: aquí solo se leen */}
+      <section aria-label="Resumen del mes" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <TarjetaNumero icono={BanknoteIcon} titulo="Ingresos" valor={bsRedondo(entro)} nota={<Cambio cambio={cambioPorcentual(entro, antes.entro)} contra={vsAnterior} />} />
+        <TarjetaNumero icono={ReceiptTextIcon} titulo="Gastos" valor={bsRedondo(salio)} nota={<Cambio cambio={cambioPorcentual(salio, antes.salio)} contra={vsAnterior} subirEsMalo />} />
         {/* Con pérdida, sin %: "▼ 150 %" junto a una pérdida confunde */}
-        <Tarjeta etiqueta="Ganancia" valor={bsRedondo(ganancia)} cambio={ganancia < 0 ? null : cambioPorcentual(ganancia, antes.entro - antes.salio)} contra={delAnterior} />
-        <Tarjeta etiqueta="Margen" valor={margen === null ? "—" : `${margen} %`} cambio={margen !== null && margenAntes !== null ? margen - margenAntes : null} unidad="pts" contra={delAnterior} />
-      </ul>
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.75fr)]">
-        <Bloque id="neto" titulo="Lo neto del mes" detalle={`De los ${bsRedondo(entro)} que entraron`}>
-          <TortaNeto entro={entro} salio={salio} />
-        </Bloque>
-        <Bloque id="meses" titulo="Ingresos y gastos, últimos 6 meses">
-          <Leyenda
-            items={[
-              { nombre: "Ingresos", clase: "bg-grafico-ingreso" },
-              { nombre: "Gastos", clase: "bg-grafico-gasto" },
-              { nombre: "Ganancia", clase: "bg-tinta", linea: true },
-            ]}
-          />
-          <BarrasConLinea meses={conMontos} elegido={ctx.mes} />
-        </Bloque>
+        <TarjetaNumero icono={PiggyBankIcon} titulo="Ganancia" valor={bsRedondo(ganancia)} nota={<Cambio cambio={ganancia < 0 ? null : cambioPorcentual(ganancia, antes.entro - antes.salio)} contra={vsAnterior} />} />
+        <TarjetaNumero icono={PercentIcon} titulo="Margen" valor={margen === null ? "—" : `${margen} %`} nota={<Cambio cambio={margen !== null && margenAntes !== null ? margen - margenAntes : null} unidad="pts" contra={vsAnterior} />} />
+      </section>
+      {/* Las secciones como en todo el panel: el título afuera, arriba de su tarjeta (Seccion) */}
+      <div className="grid gap-x-4 gap-y-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.75fr)]">
+        <Seccion id="neto" titulo="Lo neto del mes">
+          <div className="flex h-full flex-col justify-center gap-3">
+            <p className="text-[0.8125rem] text-tinta-suave">De los {bsRedondo(entro)} que entraron</p>
+            <TortaNeto entro={entro} salio={salio} />
+          </div>
+        </Seccion>
+        <Seccion id="meses" titulo="Ingresos y gastos, últimos 6 meses">
+          <div className="flex flex-col gap-3">
+            <Leyenda
+              items={[
+                { nombre: "Ingresos", clase: "bg-grafico-ingreso" },
+                { nombre: "Gastos", clase: "bg-grafico-gasto" },
+                { nombre: "Ganancia", clase: "bg-tinta", linea: true },
+              ]}
+            />
+            <BarrasConLinea meses={conMontos} elegido={ctx.mes} />
+          </div>
+        </Seccion>
       </div>
+    </>
+  );
+}
+
+/** El cambio frente al mes anterior, para la nota de una tarjeta: "▲ 12 % vs. oct.", en verde si es bueno y rojo si es malo. */
+function Cambio({ cambio, contra, subirEsMalo, unidad = "%" }: { cambio: number | null; contra: string; subirEsMalo?: boolean; unidad?: string }) {
+  if (cambio === null) return <>Sin mes anterior para comparar</>;
+  const bueno = subirEsMalo ? cambio <= 0 : cambio >= 0;
+  return (
+    <>
+      <span className={cn("font-semibold", bueno ? "text-exito" : "text-peligro")}>
+        {cambio >= 0 ? "▲" : "▼"} {Math.abs(cambio)} {unidad}
+      </span>{" "}
+      {contra}
     </>
   );
 }

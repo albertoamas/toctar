@@ -35,7 +35,7 @@ function Guias({ e, x0, x1, formato = textoEje }: { e: Eje; x0: number; x1: numb
       {e.lineas.map((l) => (
         <g key={l.v}>
           <line x1={x0} x2={x1} y1={l.y} y2={l.y} className={l.v === 0 ? "stroke-grafico-eje" : "stroke-grafico-guia"} strokeWidth={1} />
-          <text x={x0 - 6} y={l.y + 4} textAnchor="end" fontSize={12} className="fill-tinta-suave" style={FUENTE}>
+          <text x={x0 - 6} y={l.y + 4} textAnchor="end" fontSize={11} className="fill-tinta-suave" style={FUENTE}>
             {formato(l.v)}
           </text>
         </g>
@@ -105,17 +105,34 @@ export function TortaNeto({ entro, salio }: { entro: number; salio: number }) {
 
 export type MesConMontos = { mes: string; corto: string; nombre: string; entro: number; salio: number };
 
-/** Ingresos y gastos de cada mes en barras, con la línea de la ganancia encima (todo en Bs, en un solo eje). */
-export function BarrasConLinea({ meses, elegido }: { meses: MesConMontos[]; elegido: string }) {
-  const x0 = 44, x1 = 416, y0 = 200, yTope = 14;
+/**
+ * Ingresos y gastos de cada mes en barras, con la línea de la ganancia encima (todo en Bs, en un solo eje). Dibujado en
+ * dos medidas (angosta en el celular, ancha desde la tableta): el SVG se escala con su caja, y así la letra del eje queda
+ * siempre en unos 11 a 13 px (Resumen, 17/11: en la tableta salía enorme y en el celular diminuta).
+ */
+export function BarrasConLinea(props: { meses: MesConMontos[]; elegido: string }) {
+  return (
+    <>
+      <div className="md:hidden">
+        <BarrasConLineaSvg {...props} ancho={340} alto={220} />
+      </div>
+      <div className="hidden md:block">
+        <BarrasConLineaSvg {...props} ancho={640} alto={260} />
+      </div>
+    </>
+  );
+}
+
+function BarrasConLineaSvg({ meses, elegido, ancho: w, alto: h }: { meses: MesConMontos[]; elegido: string; ancho: number; alto: number }) {
+  const x0 = 44, x1 = w - 4, y0 = h - 28, yTope = 14;
   const e = eje(Math.max(...meses.flatMap((m) => [m.entro, m.salio])), y0, yTope);
   const grupo = (x1 - x0) / meses.length;
-  const ancho = Math.min(20, grupo / 2 - 4);
+  const ancho = Math.min(22, grupo / 2 - 4);
   const xc = (i: number) => x0 + grupo * i + grupo / 2;
   // La ganancia; un mes con pérdida, en la línea de 0 y con su punto en rojo (el monto, en el detalle del mes)
   const ganancia = meses.map((m, i) => ({ x: xc(i), y: e.y(Math.max(0, m.entro - m.salio)), perdida: m.entro - m.salio < 0 }));
   return (
-    <svg viewBox="0 0 420 228" role="img" aria-label={`Ingresos, gastos y ganancia: ${meses.map((m) => `${m.nombre}, entró ${bsRedondo(m.entro)} y salió ${bsRedondo(m.salio)}`).join("; ")}`} className="block w-full">
+    <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label={`Ingresos, gastos y ganancia: ${meses.map((m) => `${m.nombre}, entró ${bsRedondo(m.entro)} y salió ${bsRedondo(m.salio)}`).join("; ")}`} className="block w-full">
       <Guias e={e} x0={x0} x1={x1} />
       {meses.map((m, i) => (
         <g key={m.mes}>
@@ -123,7 +140,7 @@ export function BarrasConLinea({ meses, elegido }: { meses: MesConMontos[]; eleg
           <rect x={x0 + grupo * i + 2} y={yTope - 6} width={grupo - 4} height={y0 - yTope + 6} rx={6} className={m.mes === elegido ? "fill-fondo-panel" : "fill-transparent"} />
           <path d={barra(xc(i) - ancho - 1, ancho, y0, e.y(m.entro))} className="fill-grafico-ingreso" />
           <path d={barra(xc(i) + 1, ancho, y0, e.y(m.salio))} className="fill-grafico-gasto" />
-          <text x={xc(i)} y={y0 + 18} textAnchor="middle" fontSize={13} fontWeight={m.mes === elegido ? 700 : 500} className={m.mes === elegido ? "fill-tinta" : "fill-tinta-suave"} style={FUENTE}>
+          <text x={xc(i)} y={y0 + 19} textAnchor="middle" fontSize={12} fontWeight={m.mes === elegido ? 700 : 500} className={m.mes === elegido ? "fill-tinta" : "fill-tinta-suave"} style={FUENTE}>
             {m.corto}
           </text>
         </g>

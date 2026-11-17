@@ -53,11 +53,11 @@ test("el mes pasado: lo que entró, salió y quedó salen de los pagos y gastos 
   await expect(page.getByRole("navigation", { name: "Mes" }).getByRole("link", { name: "Mes pasado" })).toHaveAttribute("aria-current", "page");
 
   // Resumen: las tarjetas dicen lo mismo que la base
-  const tarjetas = page.getByRole("list", { name: "Resumen del mes" });
-  await expect(tarjetas.getByRole("listitem").filter({ hasText: "Ingresos" })).toContainText(miles(Number(entro)));
-  await expect(tarjetas.getByRole("listitem").filter({ hasText: "Gastos" })).toContainText(miles(Number(salio)));
+  const tarjetas = page.getByRole("region", { name: "Resumen del mes" });
   const ganancia = Number(entro) - Number(salio);
-  await expect(tarjetas.getByRole("listitem").filter({ hasText: "Ganancia" })).toContainText(miles(ganancia));
+  await expect(tarjetas).toContainText(`Ingresos${miles(Number(entro))}`);
+  await expect(tarjetas).toContainText(`Gastos${miles(Number(salio))}`);
+  await expect(tarjetas).toContainText(`Ganancia${miles(ganancia)}`);
   // Lo neto: la torta y sus dos montos
   const neto = page.getByRole("region", { name: "Lo neto del mes" });
   await expect(neto.getByRole("img")).toHaveAccessibleName(new RegExp(`^De ${miles(Number(entro))} que entraron`));
