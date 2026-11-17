@@ -22,10 +22,7 @@ export function Campo(props: { id: string; etiqueta: string; opcional?: boolean;
   const id = `${props.id}-${useId()}`;
   const descripcion = props.error ? `${id}-error` : props.ayuda ? `${id}-ayuda` : undefined;
   return (
-    // El tope del campo (17/11): con la pantalla a todo el ancho, un campo no se estira; 28rem (448 px) para una línea,
-    // el estándar de un campo de texto, y 42rem si es un texto largo (un mensaje, una nota), para que se lea cómodo. Solo
-    // con el área de trabajo ancha (@3xl, del <main>): en el celular y en los modales (fuera del <main>) llena su lugar
-    <div className="flex flex-col gap-2 @3xl:max-w-md @3xl:has-[textarea]:max-w-2xl">
+    <div className="flex flex-col gap-2">
       <Label htmlFor={id}>
         {props.etiqueta}
         {/* El espacio, para el lector de pantalla (sin él diría "Marca(opcional)"); el margen lo descuenta del hueco de la etiqueta */}

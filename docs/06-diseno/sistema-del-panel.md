@@ -24,9 +24,8 @@ espacio, sin tope, también en un monitor grande. El tipo decide la forma y la s
   pantalla, la ficha la mitad, y el título y el botón principal cambiaban de lugar de una pantalla a otra.
 - **Con todo el ancho, el contenido se acomoda adentro**: las fichas en partes de a 2 o 3 (`PartesIguales`); un
   formulario con dos partes las pone lado a lado desde `@6xl` (Nuevo cliente: el cliente y su primer vehículo; Nuevo
-  usuario: la cuenta y sus permisos). Un campo nunca se estira a todo el ancho: `Campo` lleva su tope
-  (28rem, 448 px, el estándar de un campo de texto; 42rem si es un texto largo), solo con el área de trabajo ancha
-  (`@3xl`): en el celular y en los modales llena su lugar. El recuadro de la firma, 640 px.
+  usuario: la cuenta y sus permisos). Un campo nunca se estira a todo el ancho: un campo suelto lleva su propio tope
+  (`max-w-*` del campo, como el número de un monto) y el recuadro de la firma, 640 px.
 - En el celular todo va en una columna. Hasta una laptop de 1280 px no cambia nada: la diferencia se ve en monitores grandes.
 
 **Cómo se ve cada forma** (revisión de las 40 pantallas del 10/11, `08-desarrollo/inventario-pantallas.md`):
