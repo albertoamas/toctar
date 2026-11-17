@@ -169,7 +169,8 @@ jobs:
               sudo sed -i -E "s#mirror\+file:/etc/apt/apt-mirrors.txt/?#$espejo/#g; s#https?://[a-z0-9.-]+/ubuntu/?#$espejo/#g" /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list 2>/dev/null || true
               sudo dpkg --configure -a || true
             fi
-            if timeout 240 npx playwright install-deps chromium webkit; then exit 0; fi
+            limite=240; [ "$intento" = 1 ] && limite=20  # TEMPORAL: prueba del reintento
+            if timeout $limite npx playwright install-deps chromium webkit; then exit 0; fi
             echo "::warning::Las dependencias del navegador no se instalaron en el intento $intento: se prueba con otro servidor"
           done
           exit 1
