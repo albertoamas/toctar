@@ -17,7 +17,8 @@ type GrupoEnlaces = { titulo: string | null; enlaces: EnlaceModulo[] };
 
 export function NavegacionPanel({ grupos }: { grupos: GrupoEnlaces[] }) {
   return (
-    <nav aria-label="Panel" className="flex flex-col gap-4">
+    // Entre los grupos, 12 px (pedido 16: con "Reportes", a 16 px el menú ya no entraba entero en 768 px de alto)
+    <nav aria-label="Panel" className="flex flex-col gap-3">
       {grupos.map((g) => (
         <Grupo key={g.enlaces[0].href} {...g} />
       ))}
