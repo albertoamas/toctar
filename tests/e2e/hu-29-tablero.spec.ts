@@ -94,6 +94,8 @@ test("las reservas ocupan sus días en su espacio; un día libre lleva a reserva
 test("el tablero arranca en la semana de hoy y la marca", async ({ page }, info) => {
   await ingresarComoDueno(page);
   await page.goto("/panel/agenda");
+  // La guía de colores: los cinco estados, en el orden del trabajo, y el día cerrado (16/11)
+  await expect(page.getByRole("list", { name: "Colores de la agenda" }).getByRole("listitem")).toHaveText(["Reservada", "Recibida", "En proceso", "Lista", "Entregada", "Cerrado"]);
   if (info.project.name === "escritorio") await expect(page.getByText("Hoy", { exact: true })).toBeVisible();
   // En el celular, la pestaña de hoy es la elegida (pulido 10.1: ya no se repite el día debajo)
   else await expect(page.getByRole("navigation", { name: "Días de la semana" }).getByRole("link", { name: /, hoy(,|$)/ })).toHaveAttribute("aria-current", "date");

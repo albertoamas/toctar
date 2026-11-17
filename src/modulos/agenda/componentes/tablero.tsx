@@ -73,13 +73,14 @@ function textoTramo(r: Pick<ReservaTablero, "inicio" | "fin">, dia: string) {
 
 /**
  * El color de un bloque en la grilla: el de su estado (las clases tt-tono-* de globals.css, las mismas de las
- * insignias). La reservada, blanca con borde: no se confunde con un día libre, que no tiene recuadro. La entregada,
- * sólida en verde (pedido 28).
+ * insignias). La reservada, gris con borde (16/11: blanca, no se distinguía bien). La entregada, sólida en verde
+ * (pedido 28). La guía de colores (GuiaColores) usa estos mismos.
  */
 function colorBloque(estado: ReservaTablero["estado"]) {
   const tono = TONO_ESTADO_TRABAJO[estado] ?? "neutro";
   if (estado === "entregado") return { tono, clase: "tt-tono-exito border-transparent bg-exito text-fondo", texto: "text-fondo", punto: "bg-fondo" };
-  if (tono === "neutro") return { tono, clase: "tt-tono-neutro border-input bg-fondo", texto: "text-tinta-suave", punto: "bg-tinta-suave" };
+  // La reservada, en el gris de su insignia y con borde: no se confunde con un día libre (blanco) ni con uno cerrado (rayas)
+  if (tono === "neutro") return { tono, clase: "tt-tono-neutro border-input bg-neutro-fondo", texto: "text-tinta-suave", punto: "bg-tinta-suave" };
   return { tono, clase: `tt-tono-${tono} border-transparent bg-[var(--tono-fondo)]`, texto: "text-[var(--tono)]", punto: "bg-[var(--tono)]" };
 }
 
@@ -408,5 +409,30 @@ export function AgendaDelDia({ semana, dia, hoy, conOrdenes, desde }: { semana: 
         </ul>
       )}
     </section>
+  );
+}
+
+/** Los estados en el orden del trabajo, para la guía. */
+const ESTADOS_EN_LA_GUIA = ["agendado", "recibido", "en_proceso", "listo", "entregado"] as const;
+
+/**
+ * La guía de colores de la Agenda (pedido del desarrollador, 16/11): qué estado es cada color, y el día cerrado. Los
+ * mismos colores que las reservas del tablero y las insignias de la lista. Arriba, en una línea, en todos los tamaños.
+ */
+export function GuiaColores() {
+  return (
+    <ul aria-label="Colores de la agenda" className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-tinta-media">
+      {ESTADOS_EN_LA_GUIA.map((e) => (
+        <li key={e} className="flex items-center gap-1.5">
+          {/* El fondo de la reserva y el borde en el color fuerte del estado: un fondo pastel solo no se ve en chico */}
+          <span aria-hidden className={cn("h-3.5 w-5 shrink-0 rounded-sm border-2", colorBloque(e).clase, e === "entregado" ? "border-exito" : "border-[var(--tono)]")} />
+          {NOMBRE_ESTADO_TRABAJO[e]}
+        </li>
+      ))}
+      <li className="flex items-center gap-1.5">
+        <span aria-hidden style={RAYAS_CERRADO} className="h-3.5 w-5 shrink-0 rounded-sm border-2 border-tinta-suave/40" />
+        Cerrado
+      </li>
+    </ul>
   );
 }
