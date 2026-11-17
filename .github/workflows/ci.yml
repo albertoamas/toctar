@@ -152,7 +152,9 @@ jobs:
       # Las librerías del sistema que piden Chromium y WebKit (apt). Lo normal son 30 s, pero a veces un servidor de paquetes
       # de Ubuntu entrega a menos de 250 kB/s (llegó a tardar 44 min; el 17/11 falló 4 veces en una tarde). Cada intento se
       # corta a los 4 min y el siguiente baja de otro servidor oficial: apt verifica la firma de Ubuntu en cada paquete,
-      # venga de donde venga. Si un intento se cortó a mitad de instalar, dpkg --configure -a lo deja en orden.
+      # venga de donde venga. El apt-get de un intento cortado corre como root y sigue vivo: se detiene antes del siguiente
+      # (si no, el siguiente falla con "dpkg lock") y dpkg --configure -a deja en orden lo que quedó a medio instalar.
+      # En GitHub el servidor principal sale de una lista (mirror+file:/etc/apt/apt-mirrors.txt): se reemplaza también.
       - name: Dependencias del navegador
         timeout-minutes: 14
         run: |
@@ -161,7 +163,10 @@ jobs:
             espejo="${espejos[$((intento - 1))]}"
             if [ -n "$espejo" ]; then
               echo "Intento $intento, desde $espejo"
-              sudo sed -i -E "s#https?://[a-z0-9.-]+/ubuntu/?#$espejo/#g" /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list 2>/dev/null || true
+              sudo pkill -x apt-get || true
+              sudo pkill -x dpkg || true
+              sleep 3
+              sudo sed -i -E "s#mirror\+file:/etc/apt/apt-mirrors.txt/?#$espejo/#g; s#https?://[a-z0-9.-]+/ubuntu/?#$espejo/#g" /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list 2>/dev/null || true
               sudo dpkg --configure -a || true
             fi
             if timeout 240 npx playwright install-deps chromium webkit; then exit 0; fi
