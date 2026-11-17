@@ -22,7 +22,7 @@ import { leerValores, PREFIJO_VEHICULO } from "@/modulos/clientes/valores";
 import type { Tamano } from "@/modulos/configuracion/consultas";
 import { formatearWhatsApp, normalizarWhatsApp } from "@/lib/whatsapp";
 import { crearCotizacion } from "../acciones";
-import type { OpcionServicio } from "../consultas";
+import type { OpcionServicio } from "../consultas/servicios";
 import { erroresDelPaso, PASO_CLIENTE, PASO_SERVICIOS, PASO_VEHICULO, PASOS_NUEVA_COTIZACION, pasoDeCampo, primerPasoConError } from "../pasos";
 import { CLIENTE_NUEVO, VEHICULO_OTRO } from "../reglas";
 import { CamposPrecio, TotalEnPie, usePrecios } from "./campos-precio";

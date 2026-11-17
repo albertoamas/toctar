@@ -9,7 +9,7 @@ import { CancelarModal, ModalFormulario, PieModal, useFormularioEnModal } from "
 import { Button } from "@/componentes/ui/button";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { ElegirServicio } from "@/modulos/cotizaciones/componentes/elegir-servicio";
-import type { OpcionServicio } from "@/modulos/cotizaciones/consultas";
+import type { OpcionServicio } from "@/modulos/cotizaciones/consultas/servicios";
 import { serviciosConOpciones } from "@/modulos/cotizaciones/reglas";
 import { agregarAdicional } from "../acciones/estado";
 

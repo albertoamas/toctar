@@ -22,7 +22,7 @@ import type { MetodoPago } from "@/db/esquema/trabajos";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { leerMonto, mostrarMonto } from "@/modulos/catalogo/reglas";
 import { calcularTotales } from "@/modulos/cotizaciones/reglas";
-import type { OpcionServicio } from "@/modulos/cotizaciones/consultas";
+import type { OpcionServicio } from "@/modulos/cotizaciones/consultas/servicios";
 import { LineasServicio, type Linea } from "@/modulos/cotizaciones/componentes/lineas-servicio";
 import { useEnvioConComprobante } from "@/modulos/pagos/componentes/campo-comprobante";
 import { MetodoYComprobante } from "@/modulos/pagos/componentes/elegir-metodo";

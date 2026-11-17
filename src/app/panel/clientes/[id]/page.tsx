@@ -25,7 +25,7 @@ import { VehiculosCliente } from "@/modulos/clientes/componentes/vehiculos-clien
 import { obtenerCliente } from "@/modulos/clientes/consultas";
 import { obtenerParametros, tamanosActivos } from "@/modulos/configuracion/consultas";
 import { ListaCotizaciones } from "@/modulos/cotizaciones/componentes/lista-cotizaciones";
-import { cotizacionesDelCliente } from "@/modulos/cotizaciones/consultas";
+import { cotizacionesDelCliente } from "@/modulos/cotizaciones/consultas/lista";
 import { ListaMantenimientos } from "@/modulos/mantenimientos/componentes/lista-mantenimientos";
 import { AgregarMantenimiento } from "@/modulos/mantenimientos/componentes/planes";
 import { mantenimientosDelCliente, serviciosConMantenimiento } from "@/modulos/mantenimientos/consultas";

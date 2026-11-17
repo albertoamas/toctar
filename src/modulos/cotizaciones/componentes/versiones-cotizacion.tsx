@@ -4,7 +4,7 @@ import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
 import type { EstadoCotizacion } from "@/db/esquema/cotizaciones";
 import { formatearFecha, formatearFechaHora } from "@/lib/fechas";
-import type { FilaVersion } from "../consultas";
+import type { FilaVersion } from "../consultas/ficha";
 import { bs, nombreArchivoPdf, rutaPdf } from "../reglas";
 import { MasPdf } from "./compartir-pdf";
 import { GenerarPdf } from "./generar-pdf";

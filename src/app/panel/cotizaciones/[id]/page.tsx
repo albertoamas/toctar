@@ -26,7 +26,7 @@ import { pasoDelTrabajo } from "@/modulos/agenda/pasos";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { BotonAcepto, MasCotizacion } from "@/modulos/cotizaciones/componentes/estado-cotizacion";
 import { VersionesCotizacion } from "@/modulos/cotizaciones/componentes/versiones-cotizacion";
-import { obtenerCotizacion } from "@/modulos/cotizaciones/consultas";
+import { obtenerCotizacion } from "@/modulos/cotizaciones/consultas/ficha";
 import { estadoEnlace, NOMBRE_ESTADO, NOMBRE_MOTIVO, rutaEnlace, TONO_ESTADO } from "@/modulos/cotizaciones/reglas";
 import { rutaTrabajo } from "@/modulos/ordenes/reglas";
 import { aqui, conDesde, volverDesde } from "@/lib/volver";

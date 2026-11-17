@@ -8,7 +8,7 @@ import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { Button } from "@/componentes/ui/button";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { guardarVersion } from "../acciones";
-import type { DatosNuevaVersion } from "../consultas";
+import type { DatosNuevaVersion } from "../consultas/versiones";
 import { modoDe } from "../reglas";
 import { CamposPrecio, TotalEnPie, usePrecios } from "./campos-precio";
 

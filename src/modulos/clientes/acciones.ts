@@ -8,7 +8,7 @@ import { auditoria, cliente, consulta, cotizacion, recordatorioMantenimiento, tr
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { exigirModulo } from "@/lib/sesion";
 import { puedeVerModulo } from "@/lib/permisos";
-import { cotizacionAbierta } from "@/modulos/cotizaciones/consultas";
+import { cotizacionAbierta } from "@/modulos/cotizaciones/consultas/lista";
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
 import { ESTADOS_RESERVA_ACTIVA } from "@/modulos/ordenes/reglas";
 import { clienteConPlaca, clienteConTelefono } from "./consultas";

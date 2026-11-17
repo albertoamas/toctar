@@ -3,7 +3,7 @@ import { and, asc, count, desc, eq, inArray, like, ne, or, sql } from "drizzle-o
 import { db } from "@/db";
 import { cliente, consulta, recordatorioMantenimiento, tamanoVehiculo, trabajo, vehiculo } from "@/db/esquema";
 import type { EstadoTrabajo } from "@/db/esquema/trabajos";
-import { cotizacionAbierta } from "@/modulos/cotizaciones/consultas";
+import { cotizacionAbierta } from "@/modulos/cotizaciones/consultas/lista";
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
 import { ESTADOS_RESERVA_ACTIVA } from "@/modulos/ordenes/reglas";
 import { escaparLike, normalizarBusqueda, normalizarPlaca } from "./reglas";

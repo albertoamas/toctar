@@ -26,7 +26,7 @@ import { fichaVehiculo } from "@/modulos/clientes/consultas";
 import { detalleVehiculo, rutaVehiculo } from "@/modulos/clientes/reglas";
 import { obtenerParametros, tamanosActivos } from "@/modulos/configuracion/consultas";
 import { ListaCotizaciones } from "@/modulos/cotizaciones/componentes/lista-cotizaciones";
-import { cotizacionesDelVehiculo } from "@/modulos/cotizaciones/consultas";
+import { cotizacionesDelVehiculo } from "@/modulos/cotizaciones/consultas/lista";
 import { ListaMantenimientos } from "@/modulos/mantenimientos/componentes/lista-mantenimientos";
 import { mantenimientosDelVehiculo } from "@/modulos/mantenimientos/consultas";
 

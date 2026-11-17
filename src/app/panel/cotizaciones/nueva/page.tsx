@@ -12,7 +12,7 @@ import { obtenerCliente } from "@/modulos/clientes/consultas";
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { tamanosActivos } from "@/modulos/configuracion/consultas";
 import { FormularioNuevaCotizacion, type ClienteElegido } from "@/modulos/cotizaciones/componentes/formulario-nueva-cotizacion";
-import { inicioCotizacion, opcionesPorTamano } from "@/modulos/cotizaciones/consultas";
+import { inicioCotizacion, opcionesPorTamano } from "@/modulos/cotizaciones/consultas/servicios";
 import { PASO_CLIENTE, PASOS_NUEVA_COTIZACION } from "@/modulos/cotizaciones/pasos";
 import { conDesde, leerDesde, volverDesde } from "@/lib/volver";
 

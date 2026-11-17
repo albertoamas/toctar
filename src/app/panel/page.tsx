@@ -19,7 +19,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { primerNombre } from "@/modulos/clientes/reglas";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
-import { cotizacionesPorReservar, listarCotizaciones } from "@/modulos/cotizaciones/consultas";
+import { cotizacionesPorReservar, listarCotizaciones } from "@/modulos/cotizaciones/consultas/lista";
 import { bs, diasDesde, sinRespuesta, textoDias } from "@/modulos/cotizaciones/reglas";
 import { ParaAtender, type Pendiente } from "@/modulos/inicio/componentes/para-atender";
 import { ingresosDeHoy } from "@/modulos/inicio/consultas";
