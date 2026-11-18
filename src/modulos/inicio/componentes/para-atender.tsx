@@ -7,12 +7,13 @@ import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 // "Para atender" en el inicio (pedido 26): lo que espera una acción de la persona (un reclamo, una cotización sin
 // respuesta, un saldo, los mantenimientos vencidos), cada uno con su acción a la derecha. Toda la fila lleva a donde se
 // hace. Vacío, una línea. Pulido final (10/11): el título arriba y fuera de su tarjeta, como "Para hoy" y el resto.
+// 18/11: una fila por tipo (la arma Inicio) y, angosto, la acción debajo del texto.
 
 export type Pendiente = { href: Route; icono: LucideIcon; titulo: string; detalle: string; accion: string };
 
 export function ParaAtender({ pendientes }: { pendientes: Pendiente[] }) {
   return (
-    <section aria-labelledby="atender-titulo" className="flex min-w-0 flex-col gap-3">
+    <section aria-labelledby="atender-titulo" className="@container flex min-w-0 flex-col gap-3">
       <CabeceraSeccion id="atender" titulo="Para atender" />
       {/* Vacío, como "Para hoy" al lado (EstadoVacio); la lista la nombra el título de la sección */}
       {pendientes.length === 0 ? (
@@ -29,8 +30,13 @@ export function ParaAtender({ pendientes }: { pendientes: Pendiente[] }) {
                   <span className="flex min-w-0 flex-1 flex-col text-sm">
                     <span className="font-semibold">{p.titulo}</span>
                     <span className="text-tinta-suave">{p.detalle}</span>
+                    {/* Angosto (el celular, o la columna de al lado en pantalla grande): la acción abajo, sin apretar el texto */}
+                    <span className="mt-1 flex items-center gap-0.5 font-semibold @lg:hidden">
+                      {p.accion}
+                      <ChevronRightIcon className="size-4 text-tinta-suave" aria-hidden />
+                    </span>
                   </span>
-                  <span className="flex shrink-0 items-center gap-0.5 text-sm font-semibold">
+                  <span className="hidden shrink-0 items-center gap-0.5 text-sm font-semibold @lg:flex">
                     {p.accion}
                     <ChevronRightIcon className="size-4 text-tinta-suave" aria-hidden />
                   </span>

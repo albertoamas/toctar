@@ -104,15 +104,15 @@ test("«Aceptó» la deja en Por reservar de la Agenda; desde ahí se reserva y 
   // En Aceptadas, con "Sin fecha"; en Inicio, directo a la reserva
   await page.goto("/panel/cotizaciones?vista=aceptadas");
   await expect(page.getByRole("link").filter({ hasText: c.numero })).toContainText("Sin fecha");
-  // Inicio muestra las 3 que esperan hace más: las que dejan otras pruebas pueden ir antes que esta. Cada una lleva
-  // directo a reservar; esta, si entra, a la suya, y si no, una fila "más" lleva a la Agenda
+  // Inicio, una fila por tipo (18/11): con una sola aceptada sin fecha, la fila lleva directo a reservarla; con varias
+  // (las que dejan otras pruebas), dice cuántas y lleva a la Agenda, donde están en "Por reservar"
   await page.goto("/panel");
-  const aceptadas = page.getByRole("link").filter({ hasText: "Cotización aceptada de" });
-  await expect(aceptadas.first()).toContainText("Reservar");
-  await expect(aceptadas.first()).toHaveAttribute("href", /^\/panel\/agenda\/nueva\?cotizacion=\d+(?:&volver=[^&#]*)?$/);
-  const enInicio = aceptadas.filter({ hasText: c.cliente });
-  if ((await enInicio.count()) > 0) await expect(enInicio).toHaveAttribute("href", conVolver(`/panel/agenda/nueva?cotizacion=${c.cotizacionId}`));
-  else await expect(page.getByRole("link").filter({ hasText: "aceptadas sin fecha más" })).toHaveAttribute("href", "/panel/agenda");
+  const una = page.getByRole("link").filter({ hasText: "Cotización aceptada de" });
+  const varias = page.getByRole("link").filter({ hasText: /\d+ aceptadas sin fecha/ });
+  await expect(una.or(varias)).toHaveCount(1);
+  await expect(una.or(varias)).toContainText("Reservar");
+  if ((await una.count()) > 0) await expect(una).toHaveAttribute("href", conVolver(`/panel/agenda/nueva?cotizacion=${c.cotizacionId}`));
+  else await expect(varias).toHaveAttribute("href", "/panel/agenda");
 
   // En la Agenda, en "Por reservar", con el total para quien ve montos
   await page.goto("/panel/agenda");
