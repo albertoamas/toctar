@@ -58,7 +58,7 @@ Se toma de cada una lo que resuelve bien, no su apariencia:
 
 El inventario completo, una fila por pantalla, modal y componente, está en el checklist. Aquí, lo que cambia en general:
 
-- **Armazón.** Computadora: menú lateral claro (no negro), agrupado como hoy (Taller, Clientes, Administración), con el
+- **Armazón.** Computadora: el menú lateral negro de hoy (decisión del 18/11), agrupado como hoy (Taller, Clientes, Administración), con el
   módulo activo marcado y el usuario abajo. Celular: barra superior con el título y una **barra inferior** con los cuatro
   módulos de todos los días según los permisos (por ejemplo Inicio, Agenda, Órdenes, Cotizaciones) y "Más" para el
   resto. Reemplaza al menú desplegable de hoy, que esconde todo detrás de un botón.
@@ -168,7 +168,7 @@ a medias. El dueño ve el panel rediseñado en pruebas antes de la prueba a mano
 
 | Qué | De quién | Mientras tanto |
 |---|---|---|
-| La tipografía (Inter, Figtree o la Montserrat de hoy) | Desarrollador, con el visto bueno del dueño en el prototipo | El prototipo las muestra a las tres |
+| La tipografía | Decidido el 18/11: Montserrat, la de hoy | — |
 | Barra inferior en el celular: qué cuatro módulos (según los permisos de cada uno) | Desarrollador, en la fase 3 | Propuesta: Inicio, Agenda, Órdenes y Cotizaciones; el perfil Taller, Inicio, Agenda y Órdenes |
 | Búsqueda general (clientes, placas y cotizaciones desde el encabezado) | Es una función nueva: va a `registro-de-cambios.md` si se quiere | Cada lista mantiene su buscador |
 | Reportes y Gastos (`p16-gastos`, #257) | Desarrollador | Se rediseñan con el resto antes de unirlos |
