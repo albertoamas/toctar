@@ -128,10 +128,11 @@ test("cliente nuevo en tres pasos: sus datos completos, su vehículo, y los serv
   await expect(page.getByLabel("Monto del descuento")).toHaveValue("");
   await page.getByLabel("Monto del descuento").fill("50");
   await page.getByRole("radio", { name: /^Por fotos/ }).check();
-  const totales = page.locator("dl").filter({ hasText: "Subtotal" });
+  // El desglose, en el recuadro del descuento y, en la computadora, también en el resumen del costado (C7 §5.2)
+  const totales = page.locator("dl").filter({ hasText: "Subtotal" }).first();
   await expect(totales).toContainText("650,50 Bs");
-  // El total, arriba en "Total y condiciones" (pulido final del 10/11); el desglose, en el recuadro del descuento
-  await expect(page.getByRole("group", { name: "Total y condiciones" }).getByText("600,50 Bs", { exact: true })).toBeVisible();
+  // El total: arriba en "Total y condiciones" en el celular; al costado, en el resumen, en la computadora
+  await expect(page.getByRole("main").getByText("600,50 Bs", { exact: true }).locator("visible=true").first()).toBeVisible();
   await crear(page);
 
   await expect(page).toHaveURL(/\/panel\/cotizaciones\/\d+\?creada=1(?:[?&]volver=[^&#]*)?$/);
@@ -256,7 +257,7 @@ test("nueva versión: el mismo número, la anterior queda reemplazada y una viej
   await expect(page.getByRole("region", { name: "Cotización para" })).toContainText(`CV25${s}1`);
   await expect(page.getByText("Versión 1: 450 Bs")).toHaveCount(0);
   await precio(page, 1).fill("400");
-  await expect(page.getByText("Versión 1: 450 Bs")).toBeVisible();
+  await expect(page.getByText("Versión 1: 450 Bs").locator("visible=true")).toBeVisible();
   await page.getByRole("radio", { name: "En persona" }).check();
   await page.getByRole("button", { name: "Guardar versión 2" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/cotizaciones/${id}\\?version=\\d+(?:[?&]volver=[^&#]*)?$`));

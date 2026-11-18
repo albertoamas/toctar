@@ -66,21 +66,24 @@ análisis con capturas → propuesta → aprobación → programar → capturas 
 
 - [x] Descartado el 18/11: se programó y el desarrollador prefirió las fichas de Orden, Cotización y Reserva como estaban. Quedan como hoy, con sus barras de pasos y su paso siguiente. La pieza de dos columnas (`Columnas`) no se agrega.
 
-## Paso 4 — Formulario en pasos con resumen (rama `patrones-formulario-pasos`)
+## Paso 4 — Formulario en pasos con resumen (rama `patrones-anchos`)
+
+Decidido el 18/11, con capturas: en el celular queda como estaba (lo elegido arriba y el total en el pie fijo); el cambio
+es en la computadora.
 
 ### Piezas
 
-- [ ] `pasos-flujo.tsx`: la barra de pasos.
-- [ ] `resumen-paso.tsx`: cliente y vehículo elegidos, con "Cambiar".
-- [ ] `ResumenLateral` (nuevo): total y lo elegido, al costado en la computadora y arriba, plegable, en el celular.
-- [ ] `pie-formulario.tsx`: el botón del paso fijo abajo en el celular, con "Atrás".
+- [x] `pasos-flujo.tsx`, `resumen-paso.tsx` y `pie-formulario.tsx`: quedan como estaban.
+- [x] `ConResumen` (nuevo, `con-resumen.tsx`): el paso a la izquierda (2/3) y el resumen fijo a la derecha (1/3) desde `@4xl`; en lo angosto no se muestra. Sin nada que resumir, el paso a todo el ancho. `FilaResumen`, sus filas.
+- [x] `ResumenPrecios` (nuevo, en `campos-precio.tsx`): subtotal y descuento si hay, el total (que se anuncia al cambiar), el adelanto sugerido y, en una versión nueva, con cuánto se compara.
+- [x] "¿Cómo se cotizó?" en tarjetas (`OpcionesEnTarjetas`, que suma `tituloOculto`).
 
 ### Pantallas
 
-- [ ] Nueva cotización — `/panel/cotizaciones/nueva`
-- [ ] Nueva reserva — `/panel/agenda/nueva` (directa, desde una cotización y desde un mantenimiento)
-- [ ] Nueva versión — `/panel/cotizaciones/[id]/nueva-version`
-- [ ] E2E: el total del resumen cambia al cambiar el precio.
+- [x] Nueva cotización — `/panel/cotizaciones/nueva`: en el paso de servicios, "Cotización para" y el total al costado.
+- [x] Nueva reserva — `/panel/agenda/nueva`: en el paso de la fecha, al costado los servicios (en la directa), el total, el adelanto y lo que falta al entregar, si quien mira ve montos.
+- [x] Nueva versión — `/panel/cotizaciones/[id]/nueva-version`: el total y la versión anterior al costado.
+- [x] E2E: `hu-25` y `hu-30` buscan el total y los servicios donde se ven (al costado en la computadora, arriba en el celular).
 
 ## Paso 5 — Flujo de un paso (rama `patrones-flujo-un-paso`)
 

@@ -24,6 +24,7 @@ export function OpcionesEnTarjetas<V extends string>({
   opciones,
   error,
   className,
+  tituloOculto,
 }: {
   id: string;
   titulo: string;
@@ -35,10 +36,12 @@ export function OpcionesEnTarjetas<V extends string>({
   error?: string;
   /** Las columnas de la grilla, por ejemplo "grid-cols-3 sm:grid-cols-5". */
   className?: string;
+  /** El título solo para el lector de pantalla: cuando la sección que lo contiene ya lo dice. */
+  tituloOculto?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <p id={`${id}-titulo`} className="text-sm font-medium">
+      <p id={`${id}-titulo`} className={tituloOculto ? "sr-only" : "text-sm font-medium"}>
         {titulo}
       </p>
       <input type="hidden" name={nombre} value={valor} />

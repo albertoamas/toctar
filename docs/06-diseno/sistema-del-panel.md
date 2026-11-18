@@ -44,7 +44,7 @@ espacio, sin tope, también en un monitor grande. El tipo decide la forma y la s
 | **Lista de acciones** (cobrar, avisar) | Tabla con una columna de acciones (`TablaAcciones`) | Tarjetas con los botones abajo |
 | **Ficha de un trabajo** (cotización, reserva, orden) | Pasos del trabajo, el paso siguiente grande, secciones y "Más" | Lo mismo, apilado |
 | **Ficha editable** | Secciones en tarjetas, de a dos (`PartesIguales`); "Editar" abre un modal | Una columna; el modal sube desde abajo |
-| **Crear o un paso del taller** | Formulario a todo el ancho, con sus partes lado a lado si son dos; en pasos si hace falta, botón al pie (`PieFormulario`) | Igual, con el botón fijo abajo |
+| **Crear o un paso del taller** | Formulario a todo el ancho, con sus partes lado a lado si son dos; en pasos si hace falta, botón al pie (`PieFormulario`). En los formularios en pasos con montos (Nueva cotización, Nueva versión, Nueva reserva), lo elegido y el total al costado (`ConResumen`, C7 §5.2) | Igual, con el botón fijo abajo y el total al lado |
 | **Portada** | Tarjetas para elegir a dónde ir | Una debajo de la otra |
 
 Una pantalla nueva o cambiada toma una de estas formas; si ninguna sirve, se discute antes de inventar otra.

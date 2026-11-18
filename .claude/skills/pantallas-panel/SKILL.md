@@ -38,6 +38,7 @@ estilo: se arma con estas piezas (`src/componentes/panel/`), y si alguna no alca
 | El ancho de un dato corto (monto, fecha, año, placa, teléfono, cantidad) | `ANCHO_DATO` de `anchos.ts`, nunca un `max-w-*` suelto (sistema-del-panel.md §1) |
 | Las vistas de un módulo | `Pestanas` |
 | Un número del día | `TarjetaNumero` |
+| Un formulario en pasos con su total o lo elegido al costado (computadora) | `ConResumen` y `FilaResumen` (en el celular, el total en el pie) |
 | La portada de una sección con partes | `TarjetasSeccion` ("¿Qué quieres cambiar?") |
 | Una sección de ficha con "Editar" | `SeccionConEditar` (el formulario en `ModalFormulario`) |
 | Una parte de un formulario largo | `SeccionFormulario` (o `tt-seccion-formulario` en el fieldset) |

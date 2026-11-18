@@ -10,7 +10,8 @@ import type { EstadoFormulario } from "@/lib/formularios";
 import { guardarVersion } from "../acciones";
 import type { DatosNuevaVersion } from "../consultas/versiones";
 import { modoDe } from "../reglas";
-import { CamposPrecio, TotalEnPie, usePrecios } from "./campos-precio";
+import { CamposPrecio, ResumenPrecios, TotalEnPie, usePrecios } from "./campos-precio";
+import { ConResumen } from "@/componentes/panel/con-resumen";
 
 // Versión nueva de una cotización pendiente (RN-02): arranca con los servicios, precios y condiciones de la vigente, con
 // la validez de hoy. El cliente y el vehículo no cambian. Guardar es enviar: la anterior queda con su PDF.
@@ -27,6 +28,7 @@ export function FormularioNuevaVersion({ datos, hoy, volver }: Props) {
   const formulario = useRef<HTMLFormElement>(null);
   useFocoEnError(formulario, estado);
   const precios = usePrecios({ ...datos.inicial, modo: modoDe(datos.inicial.esEstimado) });
+  const anterior = { version: datos.desde.version, total: datos.desde.total, quitados: datos.quitados };
 
   return (
     <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate>
@@ -34,13 +36,9 @@ export function FormularioNuevaVersion({ datos, hoy, volver }: Props) {
       <input type="hidden" name="desde" value={datos.desde.id} />
       <input type="hidden" name="volver" value={volver} />
       {estado.mensaje && !estado.ok && <MensajeError id="cotizacion-error">{estado.mensaje}</MensajeError>}
-      <CamposPrecio
-        precios={precios}
-        opciones={datos.opciones}
-        errores={estado.errores ?? {}}
-        hoy={hoy}
-        anterior={{ version: datos.desde.version, total: datos.desde.total, quitados: datos.quitados }}
-      />
+      <ConResumen etiqueta="Resumen de la versión" resumen={<ResumenPrecios precios={precios} anterior={anterior} />}>
+        <CamposPrecio precios={precios} opciones={datos.opciones} errores={estado.errores ?? {}} hoy={hoy} anterior={anterior} />
+      </ConResumen>
       <AvisoAlSalir formulario={formulario} estado={estado} />
       <PieFormulario>
         <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:justify-start">
