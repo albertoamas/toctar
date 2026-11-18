@@ -1,7 +1,7 @@
 # C7 Rediseño del panel — especificación
 
 - **Fase y semana:** cierre de la Entrega 2 · del 18 al 20/11/2026 (1 a 3 días, §10)
-- **Estado:** aprobada (18/11): el rojo de la marca como principal, de 1 a 3 días
+- **Estado:** aprobada (18/11): el rojo de la marca como principal, de 1 a 3 días; la fase 0 con prototipo y el visto bueno del dueño
 - **Historias:** todas las del panel (HU-01 a HU-41 y los pedidos 12 a 51). No agrega funciones: cambia cómo se ven y se usan.
 - **Base:** `docs/06-diseno/sistema-del-panel.md` (estructura, que se mantiene y se amplía), la skill `pantallas-panel`, la
   reunión del dueño sobre el panel (fin de octubre: "un panel administrativo estándar y amigable, que un tonto pueda
@@ -79,7 +79,7 @@ No cambian. Si una pantalla rediseñada necesita un dato que hoy no se lee, se a
 
 ### 7.1 Fundamentos (fase 1)
 
-Se definen en la fase 0 sobre las pantallas reales y se fijan como tokens del panel en `globals.css` (el sitio no cambia):
+Se definen en la fase 0 con un prototipo y se fijan como tokens del panel en `globals.css` (el sitio no cambia):
 
 - **Paleta.** El rojo de la marca como principal, sobre neutros fríos y limpios (decisión del 18/11):
 
@@ -100,7 +100,7 @@ Se definen en la fase 0 sobre las pantallas reales y se fijan como tokens del pa
 - **Estados del trabajo.** Un color por estado, con palabra: agendado (ámbar suave), en el taller (principal), listo
   (verde), entregado (gris), cancelado (gris tachado), con saldo (ámbar). Se definen una vez (`TONO_ESTADO_TRABAJO`).
 - **Tipografía.** Una sola familia de interfaz con números tabulares, servida desde `public/fuentes/`. Candidatas para
-  la fase 0: Inter (la estándar de los paneles), Figtree (más amable) y Montserrat (la de hoy, para comparar). Escala:
+  el prototipo: Inter (la estándar de los paneles), Figtree (más amable) y Montserrat (la de hoy, para comparar). Escala:
   12 / 14 (cuerpo) / 16 / 20 / 24 px, pesos 400, 500 y 600.
 - **Espacios, radios y sombras.** Espaciado de a 4 px. Radios con jerarquía: 6 px controles, 10 px tarjetas, 16 px
   hojas y modales. Tarjetas con borde, sin sombra; sombra solo en lo que flota (menús, modales, avisos).
@@ -139,12 +139,11 @@ que invitan a actuar. Los nombres de los estados salen siempre de `NOMBRE_ESTADO
 
 ## 10. Orden de trabajo
 
-En 1 a 3 días (decisión del 18/11), en este orden. Las fases 1 a 3 cambian todo el panel a la vez, así que se aprueban
-con capturas de las pantallas clave, no con un prototipo aparte:
+En 1 a 3 días (decisión del 18/11), en este orden:
 
 | Fase | Qué | Cómo se aprueba |
 |---|---|---|
-| 0 | Tipografía, armazón y el diseño de cada tipo de pantalla, sobre las pantallas reales (Inicio, Clientes, una orden, Nueva cotización y Registrar pago) | Capturas en 390 y 1280 px; el desarrollador aprueba |
+| 0 | Decisiones: tipografía, armazón y el diseño de cada tipo de pantalla, en un prototipo con contenido real (Inicio, una lista, una ficha con el recorrido, un formulario y un modal, en celular y computadora), con el rojo de la marca como principal | El desarrollador elige; el dueño lo ve y da el visto bueno |
 | 1 | Fundamentos: tokens del panel en `globals.css`, contraste validado, fuentes | Con la fase 0 |
 | 2 | Componentes, por familia (§7.2) | Capturas por familia |
 | 3 | Armazón: menú lateral, barra superior, barra inferior del celular, PWA | Capturas y prueba en el celular |
@@ -168,7 +167,7 @@ a medias. El dueño ve el panel rediseñado en pruebas antes de la prueba a mano
 
 | Qué | De quién | Mientras tanto |
 |---|---|---|
-| La tipografía (Inter, Figtree o la Montserrat de hoy) | Desarrollador, en la fase 0 | Se comparan sobre las pantallas reales |
+| La tipografía (Inter, Figtree o la Montserrat de hoy) | Desarrollador, con el visto bueno del dueño en el prototipo | El prototipo las muestra a las tres |
 | Barra inferior en el celular: qué cuatro módulos (según los permisos de cada uno) | Desarrollador, en la fase 3 | Propuesta: Inicio, Agenda, Órdenes y Cotizaciones; el perfil Taller, Inicio, Agenda y Órdenes |
 | Búsqueda general (clientes, placas y cotizaciones desde el encabezado) | Es una función nueva: va a `registro-de-cambios.md` si se quiere | Cada lista mantiene su buscador |
 | Reportes y Gastos (`p16-gastos`, #257) | Desarrollador | Se rediseñan con el resto antes de unirlos |

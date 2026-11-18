@@ -17,13 +17,15 @@ aprobación → programar → capturas después → marcar. Sus modales y compon
 - [ ] Textos revisados (§8 de C7).
 - [ ] E2E que la tocan en verde; capturas antes y después en el PR.
 
-## Fase 0 — Decisiones
+## Fase 0 — Decisiones y prototipo
 
+- [ ] Prototipo con contenido real: Inicio, una lista (Clientes), una ficha con el recorrido (Orden), un formulario (Nueva cotización) y un modal (Registrar pago), en 390 y 1280 px.
 - [x] Paleta: el rojo de la marca como principal, con neutros fríos; contraste validado (18/11, §7.1 de C7).
-- [x] Plazo: 1 a 3 días, dentro del cierre del 1/12 (18/11).
-- [ ] Tipografía elegida (Inter, Figtree o Montserrat), sobre las pantallas reales.
+- [ ] Tipografía elegida (Inter, Figtree o Montserrat).
 - [ ] Armazón elegido: menú lateral y barra inferior del celular (qué cuatro módulos).
-- [ ] Diseño de cada tipo de pantalla (lista, ficha, crear, configuración, flujo de un paso y portada), con capturas de Inicio, Clientes, una orden, Nueva cotización y Registrar pago en 390 y 1280 px.
+- [ ] Diseño de cada tipo de pantalla: lista, ficha, crear, configuración, flujo de un paso y portada.
+- [ ] Visto bueno del dueño.
+- [x] Plazo: 1 a 3 días, dentro del cierre del 1/12 (18/11).
 
 ## Fase 1 — Fundamentos
 
