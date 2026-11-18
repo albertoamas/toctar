@@ -11,6 +11,8 @@ import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { exigirModulo } from "@/lib/sesion";
 import { InsigniaEstado } from "@/modulos/reclamos/componentes/estado-reclamo";
 import { listarReclamos } from "@/modulos/reclamos/consultas";
+import { Paginacion } from "@/componentes/panel/paginacion";
+import { conPagina, leerPagina } from "@/lib/paginacion";
 import { aqui } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Reclamos" };
@@ -31,13 +33,13 @@ export default function PaginaReclamos({ searchParams }: PageProps<"/panel/recla
 
 async function Lista({ searchParams }: Pick<PageProps<"/panel/reclamos">, "searchParams">) {
   await exigirModulo("reclamos");
-  const { ver } = await searchParams;
+  const parametros = await searchParams;
+  const { ver } = parametros;
   // Un enlace viejo con `?ver=pendientes` también abre los pendientes
   const soloPendientes = ver !== "todos";
-  const reclamos = await listarReclamos(soloPendientes);
+  const { reclamos, total, pendientes, pagina, paginas } = await listarReclamos({ soloPendientes, pagina: leerPagina(parametros.pagina) });
   const fecha = (d: Date) => formatearFecha(fechaEnBolivia(d));
-  // Cuántos hay por atender, a la vista en su pestaña (pulido 5.1). Sale de la misma lista.
-  const pendientes = soloPendientes ? reclamos.length : reclamos.filter((r) => r.estado === "pendiente").length;
+  // Cuántos hay por atender, a la vista en su pestaña (pulido 5.1): los cuenta la base, no la página que se ve
 
   return (
     <>
@@ -55,7 +57,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/reclamos">, "searc
         </EstadoVacio>
       ) : (
         <TablaLista
-          desde={aqui("/panel/reclamos", { ver })}
+          desde={aqui("/panel/reclamos", parametros)}
           etiqueta="Reclamos"
           columnas={[
             { titulo: "Nombre", ancho: "minmax(0,1.3fr)", movil: "titulo" },
@@ -95,6 +97,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/reclamos">, "searc
           }))}
         />
       )}
+      <Paginacion pagina={pagina} paginas={paginas} total={total} nombre={["reclamo", "reclamos"]} enlace={(p) => conPagina("/panel/reclamos", parametros, p)} />
     </>
   );
 }

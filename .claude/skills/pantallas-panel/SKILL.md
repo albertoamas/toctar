@@ -34,6 +34,7 @@ estilo: se arma con estas piezas (`src/componentes/panel/`), y si alguna no alca
 | Una lista que abre fichas | `TablaLista` (tabla en la computadora, filas en el celular; `movil` dice dónde va cada celda) y `CeldaDoble` |
 | Una lista simple de un toque | `ListaFilas` |
 | Filtros dentro de una lista | `Filtros` (píldoras con su cuenta, por la dirección) |
+| Una lista que crece con el uso | `Paginacion` (de a 25, la página en la dirección; ver sistema-del-panel.md §5) |
 | Las vistas de un módulo | `Pestanas` |
 | Un número del día | `TarjetaNumero` |
 | La portada de una sección con partes | `TarjetasSeccion` ("¿Qué quieres cambiar?") |
@@ -55,6 +56,7 @@ Toda pantalla del panel es uno de estos tipos. Identificarlo decide su forma; no
 - Cada fila es **un toque** que abre su ficha. Lo que identifica (placa, nombre) grande; lo que decide (estado, monto, fecha) a la vista, con palabras y no solo color; el resto, fuera de la fila.
 - Las filas no llevan formularios ni varios botones: las acciones viven en la ficha. Excepción: una acción que se hace desde la lista todos los días (como "Escribir por WhatsApp" en Saldos), una sola.
 - Vacía: una línea que dice qué falta y, si corresponde, cómo agregarlo.
+- Si crece con el uso (clientes, cotizaciones, reclamos), va de a páginas con `Paginacion`: nunca cortada con "busca para ver más".
 
 ### Ficha (cliente, servicio del catálogo, cotización, reserva, orden)
 - **Encabezado:** quién o qué es (placa, nombre), su estado y **el paso siguiente** como única acción principal (recibir, marcar lista, avisar, entregar). Las acciones que se usan poco (extender, cancelar, anular, desactivar) van en un menú **"Más"**.

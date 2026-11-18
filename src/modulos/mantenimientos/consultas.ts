@@ -1,9 +1,10 @@
 import "server-only";
-import { and, asc, desc, eq, gt, inArray, isNotNull, lte, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, isNotNull, lte, sql, type SQL } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { cliente, recordatorioMantenimiento as recordatorio, servicio, trabajo, usuario, vehiculo, type EstadoRecordatorio, type EstadoTrabajo } from "@/db/esquema";
-import { ESTADOS_PLAN_ABIERTO, ESTADOS_RECORDATORIO_ABIERTO, ESTADOS_RECORDATORIO_CERRADO, hastaProximos, MAXIMO_CERRADOS, type VistaMantenimientos } from "./reglas";
+import { ESTADOS_PLAN_ABIERTO, ESTADOS_RECORDATORIO_ABIERTO, ESTADOS_RECORDATORIO_CERRADO, hastaProximos, type VistaMantenimientos } from "./reglas";
+import { ajustarPagina, POR_PAGINA } from "@/lib/paginacion";
 
 // Lecturas de los recordatorios de mantenimiento (HU-38). Quien las llama ya pasó por exigirModulo("mantenimientos").
 // Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §6.
@@ -48,8 +49,18 @@ export async function mantenimientosMasAdelante(hoy: string): Promise<Mantenimie
   return listar(masAdelante(hoy), [asc(recordatorio.fechaProgramada), asc(recordatorio.id)]);
 }
 
-/** Pedido 20: los agendados, hechos y de "No le interesa", el que se cerró más recién primero (los últimos 50). */
-export async function mantenimientosCerrados(): Promise<MantenimientoCerrado[]> {
+/**
+ * Pedido 20: los agendados, hechos y de "No le interesa", el que se cerró más recién primero, de a páginas (17/11: antes,
+ * los últimos 50).
+ */
+export async function mantenimientosCerrados(pedida: number): Promise<{ cerrados: MantenimientoCerrado[]; total: number; pagina: number; paginas: number }> {
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(recordatorio)
+    .innerJoin(cliente, eq(recordatorio.clienteId, cliente.id))
+    .innerJoin(vehiculo, eq(recordatorio.vehiculoId, vehiculo.id))
+    .where(cerrados);
+  const { pagina, paginas } = ajustarPagina(pedida, total);
   const filas = await db
     .select({ ...CAMPOS, nota: recordatorio.nota, trabajoId: trabajo.id, trabajoEstado: trabajo.estado })
     .from(recordatorio)
@@ -61,8 +72,14 @@ export async function mantenimientosCerrados(): Promise<MantenimientoCerrado[]> 
     .leftJoin(trabajo, eq(trabajo.id, sql`coalesce(${recordatorio.trabajoAgendadoId}, ${recordatorio.trabajoHechoId})`))
     .where(cerrados)
     .orderBy(desc(recordatorio.updatedAt), desc(recordatorio.id))
-    .limit(MAXIMO_CERRADOS);
-  return filas.map(({ trabajoId, trabajoEstado, ...f }) => ({ ...f, trabajo: trabajoId && trabajoEstado ? { id: trabajoId, estado: trabajoEstado } : null }));
+    .limit(POR_PAGINA)
+    .offset((pagina - 1) * POR_PAGINA);
+  return {
+    cerrados: filas.map(({ trabajoId, trabajoEstado, ...f }) => ({ ...f, trabajo: trabajoId && trabajoEstado ? { id: trabajoId, estado: trabajoEstado } : null })),
+    total,
+    pagina,
+    paginas,
+  };
 }
 
 /** Cuántos hay en cada pestaña, con las mismas condiciones que sus listas: el número y la lista no se separan. */

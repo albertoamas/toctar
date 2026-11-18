@@ -2,6 +2,7 @@ import "server-only";
 
 import { and, asc, count, desc, eq, like, ne, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
+import { ajustarPagina, POR_PAGINA } from "@/lib/paginacion";
 import { cliente, consulta, cotizacion, cotizacionLinea, vehiculo } from "@/db/esquema";
 import type { EstadoConsulta } from "@/db/esquema/consultas";
 import { escaparLike, nombreVehiculo, normalizarBusqueda } from "@/modulos/clientes/reglas";
@@ -88,9 +89,6 @@ function filas(donde: SQL | undefined) {
     .where(donde);
 }
 
-/** Cuántas filas muestran Aceptadas y Rechazadas sin buscar: son historia, y crecen. */
-export const LIMITE_HISTORIA = 50;
-
 /** Lo buscado: por cliente, teléfono, placa o número (de la versión que vale). */
 function coincide(q: string): SQL | undefined {
   const busqueda = normalizarBusqueda(q);
@@ -103,20 +101,36 @@ function coincide(q: string): SQL | undefined {
   );
 }
 
+/** Pendientes, las que llevan más tiempo sin respuesta primero (RF-35); Aceptadas, primero las que esperan fecha (pedido 31); y la historia, las más nuevas primero. */
+function ordenDe(vista: Vista) {
+  if (vista === "pendientes") return [asc(consulta.ultimoMovimientoAt), asc(consulta.id)];
+  return [...(vista === "aceptadas" ? [desc(sinFecha)] : []), desc(consulta.ultimoMovimientoAt), desc(consulta.id)];
+}
+
+/** Todas las pendientes, las que llevan más tiempo sin respuesta primero: para Inicio. */
+export async function cotizacionesPendientes(): Promise<FilaCotizacion[]> {
+  return (await filas(eq(consulta.estado, VISTAS.pendientes)).orderBy(...ordenDe("pendientes"))).map(aFila);
+}
+
 /**
- * Las cotizaciones de una pestaña. Las pendientes, las que llevan más tiempo sin respuesta primero (RF-35); las
- * aceptadas y rechazadas, las más nuevas primero y hasta LIMITE_HISTORIA (buscando, se encuentran todas).
+ * Las cotizaciones de una pestaña, de a páginas (17/11): antes, Aceptadas y Rechazadas mostraban las 50 más recientes y
+ * pedían buscar. Cuenta las de la pestaña (con la búsqueda) y trae solo la página pedida.
  */
-export async function listarCotizaciones(vista: Vista, q: string): Promise<{ cotizaciones: FilaCotizacion[]; hayMas: boolean }> {
-  const donde = and(eq(consulta.estado, VISTAS[vista]), coincide(q));
-  if (vista === "pendientes") return { cotizaciones: (await filas(donde).orderBy(asc(consulta.ultimoMovimientoAt), asc(consulta.id))).map(aFila), hayMas: false };
-  const encontradas = (
-    await filas(donde)
-      // En Aceptadas, primero las que esperan fecha (pedido 31): no quedan detrás de la historia
-      .orderBy(...(vista === "aceptadas" ? [desc(sinFecha)] : []), desc(consulta.ultimoMovimientoAt), desc(consulta.id))
-      .limit(LIMITE_HISTORIA + 1)
-  ).map(aFila);
-  return { cotizaciones: encontradas.slice(0, LIMITE_HISTORIA), hayMas: encontradas.length > LIMITE_HISTORIA };
+export async function listarCotizaciones(datos: { vista: Vista; q: string; pagina: number }): Promise<{ cotizaciones: FilaCotizacion[]; total: number; pagina: number; paginas: number }> {
+  const donde = and(eq(consulta.estado, VISTAS[datos.vista]), coincide(datos.q));
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(consulta)
+    .innerJoin(cotizacion, versionActual)
+    .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
+    .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
+    .where(donde);
+  const { pagina, paginas } = ajustarPagina(datos.pagina, total);
+  const encontradas = await filas(donde)
+    .orderBy(...ordenDe(datos.vista))
+    .limit(POR_PAGINA)
+    .offset((pagina - 1) * POR_PAGINA);
+  return { cotizaciones: encontradas.map(aFila), total, pagina, paginas };
 }
 
 /**
