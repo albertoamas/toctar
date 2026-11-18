@@ -79,7 +79,7 @@ No cambian. Si una pantalla rediseñada necesita un dato que hoy no se lee, se a
 
 ### 7.1 Fundamentos (fase 1)
 
-Se definen en la fase 0 con un prototipo y se fijan como tokens del panel en `globals.css` (el sitio no cambia):
+Se definen en la fase 0 sobre las pantallas reales y se fijan como tokens del panel en `globals.css` (el sitio no cambia):
 
 - **Paleta.** El rojo de la marca como principal, sobre neutros fríos y limpios (decisión del 18/11):
 
@@ -100,7 +100,7 @@ Se definen en la fase 0 con un prototipo y se fijan como tokens del panel en `gl
 - **Estados del trabajo.** Un color por estado, con palabra: agendado (ámbar suave), en el taller (principal), listo
   (verde), entregado (gris), cancelado (gris tachado), con saldo (ámbar). Se definen una vez (`TONO_ESTADO_TRABAJO`).
 - **Tipografía.** Una sola familia de interfaz con números tabulares, servida desde `public/fuentes/`. Candidatas para
-  el prototipo: Inter (la estándar de los paneles), Figtree (más amable) y Montserrat (la de hoy, para comparar). Escala:
+  la fase 0: Inter (la estándar de los paneles), Figtree (más amable) y Montserrat (la de hoy, para comparar). Escala:
   12 / 14 (cuerpo) / 16 / 20 / 24 px, pesos 400, 500 y 600.
 - **Espacios, radios y sombras.** Espaciado de a 4 px. Radios con jerarquía: 6 px controles, 10 px tarjetas, 16 px
   hojas y modales. Tarjetas con borde, sin sombra; sombra solo en lo que flota (menús, modales, avisos).
