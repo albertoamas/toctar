@@ -19,7 +19,7 @@ aprobación → programar → capturas después → marcar. Sus modales y compon
 
 ## Fase 0 — Decisiones y prototipo
 
-- [ ] Prototipo con contenido real: Inicio, una lista (Clientes), una ficha con el recorrido (Orden), un formulario (Nueva cotización) y un modal (Registrar pago), en 390 y 1280 px.
+- [x] Prototipo con contenido real: Inicio, una lista (Clientes), una ficha con el recorrido (Orden), un formulario (Nueva cotización) y un modal (Registrar pago), en 390 y 1280 px (18/11: https://claude.ai/artifact/SJE6vhxguZyWteDE6XJLe6).
 - [x] Paleta: el rojo de la marca como principal, con neutros fríos; contraste validado (18/11, §7.1 de C7).
 - [ ] Tipografía elegida (Inter, Figtree o Montserrat).
 - [ ] Armazón elegido: menú lateral y barra inferior del celular (qué cuatro módulos).

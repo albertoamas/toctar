@@ -6,6 +6,7 @@
 - **Base:** `docs/06-diseno/sistema-del-panel.md` (estructura, que se mantiene y se amplía), la skill `pantallas-panel`, la
   reunión del dueño sobre el panel (fin de octubre: "un panel administrativo estándar y amigable, que un tonto pueda
   usarlo") y el checklist `docs/08-desarrollo/rediseno-panel-checklist.md`.
+- **Prototipo (fase 0):** https://claude.ai/artifact/SJE6vhxguZyWteDE6XJLe6 (privado: se comparte desde su menú).
 
 ## 1. Objetivo
 
