@@ -4,6 +4,7 @@ import { useActionState, useRef } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
+import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { Button } from "@/componentes/ui/button";
 import type { Tamano } from "@/modulos/configuracion/consultas";
 import { crearCliente, type EstadoCliente } from "../acciones";
@@ -11,6 +12,8 @@ import { CamposCliente, CamposVehiculo } from "./campos";
 
 // HU-21: alta de un cliente con, opcional, su primer vehículo (lo normal es registrarlo con su auto). Pulido 8.2: a la
 // vista, lo del caso común (nombre y WhatsApp; placa y tamaño); el resto, plegado detrás de "Agregar …".
+// 17/11: dos tarjetas con título, "Cliente" y "Vehículo", como las secciones de la reserva y la cotización. Con espacio,
+// lado a lado y con los títulos a la misma altura; adentro, una columna de campos.
 
 export function FormularioNuevoCliente({ tamanos }: { tamanos: Tamano[] }) {
   const [estado, accion, enviando] = useActionState<EstadoCliente, FormData>(crearCliente, {});
@@ -18,23 +21,14 @@ export function FormularioNuevoCliente({ tamanos }: { tamanos: Tamano[] }) {
   useFocoEnError(formulario, estado);
 
   return (
-    <form ref={formulario} action={accion} className="tt-formulario-panel flex flex-col gap-6" noValidate>
-      {/* Con espacio (pantalla grande, 17/11), el cliente y su primer vehículo lado a lado: el formulario ocupa todo el
-          ancho y los campos no quedan de 800 px. Más angosto, uno debajo del otro, con la línea entre los dos */}
-      <div className="grid gap-8 @6xl:grid-cols-2">
-        <div className="flex flex-col gap-6">
+    <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate>
+      <div className="grid items-start gap-6 @6xl:grid-cols-2">
+        <SeccionFormulario titulo="Cliente" claseContenido="gap-6">
           <CamposCliente estado={estado} plegar />
-        </div>
-        {/* La línea va afuera: en el borde de un fieldset, la legend lo corta */}
-        <div className="border-t border-border pt-8 @6xl:border-t-0 @6xl:border-l @6xl:pt-0 @6xl:pl-8">
-          <fieldset className="flex flex-col gap-6">
-            <legend className="mb-5 flex flex-col gap-1">
-              <span className="tt-titulo-seccion">Primer vehículo</span>
-              <span className="text-sm text-tinta-suave">Opcional. Más vehículos, desde su ficha.</span>
-            </legend>
-            <CamposVehiculo estado={estado} prefijo="vehiculo-" tamanos={tamanos} plegar />
-          </fieldset>
-        </div>
+        </SeccionFormulario>
+        <SeccionFormulario titulo="Vehículo (opcional)" claseContenido="gap-6">
+          <CamposVehiculo estado={estado} prefijo="vehiculo-" tamanos={tamanos} plegar />
+        </SeccionFormulario>
       </div>
       <AvisoAlSalir formulario={formulario} estado={estado} />
       <PieFormulario>

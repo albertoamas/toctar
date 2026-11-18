@@ -221,13 +221,6 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
       action={accion}
       className="flex flex-col gap-6"
       noValidate
-      // El tamaño del vehículo nuevo es un menú de CamposVehiculo, sin control propio: se escucha su cambio
-      onChange={(ev) => {
-        const campo = ev.target as EventTarget;
-        if (!(campo instanceof HTMLSelectElement) || campo.name !== CAMPO_TAMANO) return;
-        cambiarTamano(vehiculo, campo.value);
-        setTamanoNuevo(campo.value);
-      }}
       onKeyDown={(ev) => {
         // Enter en un campo de los primeros pasos sigue al próximo, no crea la cotización
         if (ev.key !== "Enter" || paso === PASO_SERVICIOS || !(ev.target instanceof HTMLInputElement)) return;
@@ -302,7 +295,17 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
             <>
               {!conVehiculos && <input type="hidden" name="vehiculo" value={VEHICULO_OTRO} />}
               {/* Completo: placa y tamaño, y marca, modelo, año y color a la vista (pedido 40) */}
-              <CamposVehiculo estado={vista} prefijo={PREFIJO_VEHICULO} tamanos={tamanos} enlaceExistente={usarExistente} />
+              <CamposVehiculo
+                estado={vista}
+                prefijo={PREFIJO_VEHICULO}
+                tamanos={tamanos}
+                enlaceExistente={usarExistente}
+                // Otro tamaño, otro precio sugerido
+                alCambiarTamano={(t) => {
+                  cambiarTamano(vehiculo, t);
+                  setTamanoNuevo(t);
+                }}
+              />
             </>
           )}
         </SeccionFormulario>

@@ -6,13 +6,14 @@ import { MensajeError } from "@/componentes/panel/campo";
 
 // Componente de cliente: se usa dentro de otros componentes de cliente (recibe funciones como props).
 // Elegir una opción entre pocas, con tarjetas que se tocan enteras: "¿Cómo pagó?" al registrar un pago y "Qué tiene" en
-// el detalle del checklist (revisión del 13/11). Cada tarjeta ES la opción de radio (no una etiqueta que le pasa el toque a
+// el detalle del checklist (revisión del 13/11), y el tamaño de un vehículo con sus modelos (17/11). Cada tarjeta ES la opción de radio (no una etiqueta que le pasa el toque a
 // un circulito adentro): se toca en cualquier parte. Sin el circulito: la elegida se marca con su borde, el fondo y un
 // check, sin rojo (el rojo del panel es solo el botón principal). Por dentro sigue siendo un grupo de radio: se recorre
 // con las flechas y el lector lo anuncia como opciones.
 // El valor va en un campo oculto propio: los radios de base-ui se vaciaban al reiniciarse el formulario tras un error.
 
-export type OpcionTarjeta<V extends string> = { valor: V; texto: string; icono?: LucideIcon };
+/** `detalle`: una línea chica debajo del texto (por ejemplo, los modelos de un tamaño de vehículo); la tarjeta se alinea a la izquierda. */
+export type OpcionTarjeta<V extends string> = { valor: V; texto: string; detalle?: string | null; icono?: LucideIcon };
 
 export function OpcionesEnTarjetas<V extends string>({
   id,
@@ -61,12 +62,14 @@ export function OpcionesEnTarjetas<V extends string>({
                 "hover:bg-superficie focus-visible:ring-3 focus-visible:ring-ring/50",
                 "data-checked:border-tinta data-checked:bg-neutro-fondo data-checked:ring-1 data-checked:ring-tinta",
                 Icono && "min-h-20",
+                o.detalle && "items-start gap-0.5 px-3 pr-8 text-left",
                 // En rojo mientras falta elegir: elegida una, ya no
                 error && !valor && "border-destructive",
               )}
             >
               {Icono && <Icono className="size-6" aria-hidden />}
               <span className="text-sm leading-tight font-semibold">{o.texto}</span>
+              {o.detalle && <span className="text-xs leading-snug text-tinta-suave">{o.detalle}</span>}
               <Radio.Indicator className="absolute top-1.5 right-1.5 grid size-5 place-items-center rounded-full bg-tinta text-fondo">
                 <CheckIcon className="size-3.5" strokeWidth={3} aria-hidden />
               </Radio.Indicator>

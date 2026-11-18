@@ -233,8 +233,25 @@ Las pantallas de C1 a C4, en el orden en que el taller las usa. Los mismos está
 | # | Pantalla | Ruta | Estado |
 |---|---|---|---|
 | 8.1 | Clientes y búsqueda | `/panel/clientes` | ✅ |
-| 8.2 | Agregar cliente | `/panel/clientes/nuevo` | ✅ |
+| 8.2 | Agregar cliente | `/panel/clientes/nuevo` | ✅ Rehecha el 17/11 (abajo) |
 | 8.3 | Ficha del cliente: datos, vehículos, consultas, reservas y mantenimientos | `/panel/clientes/[id]` | ✅ |
+
+**8.2, Nuevo cliente (17/11).** Al dueño no le gustaba: en pantalla grande el cliente no tenía título y el vehículo sí,
+así que "Nombre" y "Placa" quedaban a alturas distintas; las ayudas debajo de un campo de cada par empujaban lo de
+abajo; el +591 afuera del campo lo corría del borde; al abrir "Agregar…" los anchos eran un rompecabezas (NIT angosto,
+razón social ancha, año chico); y el tamaño era un menú. Ahora:
+
+| Qué | Antes | Ahora |
+|---|---|---|
+| Estructura | Una tarjeta con una línea en medio | Dos `SeccionFormulario`, "Cliente" y "Vehículo (opcional)", como la reserva y la cotización; lado a lado desde `@6xl`, con los títulos a la misma altura |
+| Campos | De a dos, con anchos distintos | Una columna; cada ayuda debajo de su campo. Solo el año queda corto |
+| WhatsApp | +591 al lado del campo | +591 dentro del campo, como prefijo |
+| Tamaño | Menú desplegable con la ayuda de modelos debajo | `OpcionesEnTarjetas` con el nombre y los modelos de cada tamaño (nuevo: `detalle`); la cotización recibe el cambio con `alCambiarTamano` |
+| Botón | Dentro de la tarjeta | "Crear cliente" abajo, fuera de las tarjetas |
+
+Los campos de cliente y de vehículo son los mismos en la ficha (agregar o editar un vehículo) y en el paso de vehículo
+de la cotización: allí también quedan en una columna y con el tamaño en tarjetas. Pruebas: las E2E de clientes, ficha,
+cotización y cambio de dueño eligen el tamaño en sus tarjetas.
 
 ### 9. Panel: consultas y cotizaciones
 
