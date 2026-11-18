@@ -118,7 +118,7 @@ test("el rótulo de la semana y de cada día", () => {
 
 // Pedido 28: las entregadas siguen en el tablero, sin tapar a la reserva que ocupa el espacio.
 
-test("una entregada se muestra en sus días pasados, salvo los que usa otra reserva u otra entregada del mismo espacio", () => {
+test("una entregada se muestra en sus días hasta hoy, salvo los que usa otra reserva u otra entregada del mismo espacio", () => {
   const hoy = "2026-10-30";
   const entregada = { id: 1, estado: "entregado" as const, inicio: "2026-10-20", fin: "2026-10-22" };
   const siguiente = { id: 2, estado: "agendado" as const, inicio: "2026-10-22", fin: "2026-10-24" };
@@ -137,7 +137,12 @@ test("una entregada se muestra en sus días pasados, salvo los que usa otra rese
   // Dos entregadas en los mismos días: la primera se queda con ellos
   const otraEntregada = { id: 4, estado: "entregado" as const, inicio: "2026-10-22", fin: "2026-10-23" };
   expect(entregadasALaVista([entregada, otraEntregada], hoy)).toEqual([entregada, { ...otraEntregada, inicio: "2026-10-23" }]);
-  // Hoy el espacio queda libre para agendar: la entregada de hoy no se ve todavía
-  expect(entregadasALaVista([{ ...entregada, fin: hoy, inicio: "2026-10-29" }], hoy)).toEqual([{ ...entregada, inicio: "2026-10-29", fin: "2026-10-29" }]);
-  expect(entregadasALaVista([{ ...entregada, inicio: hoy, fin: hoy }], hoy)).toEqual([]);
+  // Hoy también se ve (18/11: entregada el mismo día, antes desaparecía hasta el día siguiente)
+  expect(entregadasALaVista([{ ...entregada, fin: hoy, inicio: "2026-10-29" }], hoy)).toEqual([{ ...entregada, inicio: "2026-10-29", fin: hoy }]);
+  expect(entregadasALaVista([{ ...entregada, inicio: hoy, fin: hoy }], hoy)).toEqual([{ ...entregada, inicio: hoy, fin: hoy }]);
+  // Los días después de hoy no (entregada antes de su entrega aproximada)
+  expect(entregadasALaVista([{ ...entregada, inicio: hoy, fin: "2026-11-05" }], hoy)).toEqual([{ ...entregada, inicio: hoy, fin: hoy }]);
+  // Si hoy entra otra reserva en ese espacio, hoy es de ella
+  const entraHoy = { id: 5, estado: "agendado" as const, inicio: hoy, fin: hoy };
+  expect(entregadasALaVista([{ ...entregada, inicio: "2026-10-29", fin: hoy }, entraHoy], hoy)).toEqual([entraHoy, { ...entregada, inicio: "2026-10-29", fin: "2026-10-29" }]);
 });

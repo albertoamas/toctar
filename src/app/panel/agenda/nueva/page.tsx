@@ -4,7 +4,7 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
-import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
+import { fechaEnBolivia, fechaExiste } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { PASO_CLIENTE, pasosNuevaReserva } from "@/modulos/agenda/pasos-reserva";
@@ -58,8 +58,9 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   const origen = leerDesde(parametros.volver);
   const numero = (clave: string) => (/^\d+$/.test(texto(clave)) ? Number(texto(clave)) : null);
   const hoy = fechaEnBolivia();
-  // El día pedido (desde el tablero) si no es pasado; si no, mañana
-  const fechaInicial = fechaExiste(texto("fecha")) && texto("fecha") >= hoy ? texto("fecha") : sumarDias(hoy, 1);
+  // El día pedido (desde el tablero) si no es pasado; si no, hoy (18/11: antes, mañana; el dueño reserva y recibe muchas
+  // veces en el día, y quedaba con la fecha de mañana sin darse cuenta)
+  const fechaInicial = fechaExiste(texto("fecha")) && texto("fecha") >= hoy ? texto("fecha") : hoy;
   const pasos = pasosNuevaReserva(conPagos);
   const indicador = (actual: number) => <PasosFlujo pasos={pasos} actual={actual} etiqueta="Pasos de la reserva" />;
   // Cada paso es una dirección: se conservan el día y el espacio que llegaron del tablero
