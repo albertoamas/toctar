@@ -51,9 +51,20 @@ export function FormularioEntrega({ id, volver, conDeuda, saldo, puedeAutorizar,
   const [nombre, setNombre] = useState(cliente);
   const [motivo, setMotivo] = useState("");
   const alCambiarFirma = useCallback((f: Blob | null) => setFirma(f), []);
-  const e = estado.errores ?? {};
+  // El aviso de saldo de una entrega vale mientras el saldo no cambie (prueba con el dueño, 18/11): se intentó entregar sin
+  // la casilla, salió el aviso, se cobró todo ahí mismo y la casilla seguía, con su aviso, porque el error quedaba en el
+  // estado. Cada respuesta nueva del servidor trae su aviso; un cambio de `conDeuda` (la página se renueva al cobrar) lo
+  // descarta. Se ajusta al dibujar, como pide React para el estado que depende de una prop
+  const [visto, setVisto] = useState({ estado, conDeuda, avisoSaldo: false });
+  let avisoSaldo = visto.avisoSaldo;
+  if (visto.estado !== estado || visto.conDeuda !== conDeuda) {
+    avisoSaldo = visto.estado !== estado ? !!estado.errores?.conSaldo : false;
+    setVisto({ estado, conDeuda, avisoSaldo });
+  }
+  const errores = estado.errores ?? {};
+  const e = avisoSaldo ? errores : { ...errores, conSaldo: undefined };
   // Al abrir estaba pagada, pero al entregar el servidor encontró saldo (un pago anulado, un adicional): pide la casilla
-  const conCasilla = conDeuda || !!e.conSaldo;
+  const conCasilla = conDeuda || avisoSaldo;
 
   if (conDeuda && !puedeAutorizar) {
     return (

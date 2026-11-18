@@ -208,3 +208,33 @@ test("al cobrar todo en Entregar, ya no ofrece entregar con saldo pendiente", as
   await expect(casilla).toHaveCount(0);
   await expect(page.getByText("Pagado por completo.")).toBeVisible();
 });
+
+// Prueba con el dueño (18/11): intentó entregar con saldo sin marcar la casilla, salió el aviso en rojo, cobró lo que
+// faltaba ahí mismo y la casilla (con su aviso) seguía, con todo pagado: el error de la entrega anterior la mantenía
+test("tras el aviso de saldo, al cobrar todo ahí mismo se van la casilla y su aviso, y se entrega", async ({ page }, info) => {
+  const placa = `EN36${sufijo(info).toUpperCase()}8`;
+  await crearClienteEnBase({ nombre: `Paga tras el aviso ${sufijo(info)}`, telefono: telefono(info, 5), placa });
+  // Dos días después del de las demás pruebas del archivo: no se cruza con sus espacios
+  const id = await crearOrdenLista({ placa, espacio: 0, dias: dias(info) + 2, precio: 600, pagado: 0 });
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/ordenes/${id}/entregar`, { waitUntil: "networkidle" });
+  const entrega = page.getByRole("form", { name: "Entregar vehículo" });
+  await entregarSinFirma(page);
+  await entrega.getByRole("button", { name: "Entregar vehículo" }).click();
+  const aviso = entrega.getByText("Queda un saldo de 600 Bs: marca «Entregar con saldo pendiente» para confirmar.");
+  await expect(aviso).toBeVisible();
+
+  await page.getByRole("main").getByRole("button", { name: "Registrar pago" }).click();
+  const pago = page.getByRole("form", { name: "Registrar pago" });
+  await pago.getByRole("radio", { name: "Efectivo" }).check();
+  await pago.getByRole("button", { name: "Registrar pago" }).click();
+  await expect(page.getByText("Pago de 600 Bs registrado. Saldo: 0 Bs.")).toBeVisible();
+  await expect(page.getByText("Pagado por completo.")).toBeVisible();
+  await expect(entrega.getByText(/^Entregar con saldo pendiente/)).toHaveCount(0);
+  await expect(aviso).toHaveCount(0);
+
+  // Lo escrito sigue (sin firma, con su motivo) y se entrega sin la casilla
+  await expect(entrega.getByLabel("Motivo")).toHaveValue("Prueba: retira otra persona.");
+  await entrega.getByRole("button", { name: "Entregar vehículo" }).click();
+  await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?entregado=1(?:[?&]volver=[^&#]*)?$`));
+});
