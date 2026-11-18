@@ -34,7 +34,8 @@ test("pendientes por antigüedad, con su total y su número; las que esperan res
   await crearCotizacion({ cliente: `De hoy ${s}`, telefono: telefono(info, 3), placa: `SN28${s}1`, numero: `2040-${n}003`, dias: 0 });
   await crearCotizacion({ cliente: `Ya rechazada ${s}`, telefono: telefono(info, 4), placa: `SP28${s}1`, numero: `2040-${n}004`, dias: 2, estado: "perdido" });
   await ingresarComoEncargado(page, info, 1);
-  await page.goto("/panel/cotizaciones");
+  // Con su número: con la suite entera hay más de 25 pendientes y la lista va de a páginas (17/11)
+  await page.goto(`/panel/cotizaciones?q=2040-${n}`);
 
   await expect(pestanas(page).getByRole("link", { name: /^Pendientes \d+$/ })).toHaveAttribute("aria-current", "page");
   await expect(fila(page, `Sin respuesta ${s}`)).toContainText("Sin respuesta hace 9 días");
@@ -52,7 +53,7 @@ test("pendientes por antigüedad, con su total y su número; las que esperan res
   expect(posicion(`Reciente ${s}`)).toBeLessThan(posicion(`De hoy ${s}`));
 
   await pestanas(page).getByRole("link", { name: /^Rechazadas/ }).click();
-  await expect(page).toHaveURL(/\?vista=rechazadas$/);
+  await expect(page).toHaveURL(/\?vista=rechazadas&q=2040-/);
   await expect(pestanas(page).getByRole("link", { name: /^Rechazadas/ })).toHaveAttribute("aria-current", "page");
   // Una rechazada no se resalta, y la pestaña ya dice su estado: no se repite
   await expect(fila(page, `Ya rechazada ${s}`)).toContainText("hace 2 días");
@@ -126,7 +127,7 @@ test("rechazar desde «Más», con motivo, y volver a pendiente; «Otro» pide e
   const [c] = await consultar<{ estado: string; motivo: string | null }>("select estado, motivo_perdida as motivo from consulta where id = $1", [id]);
   expect(c).toEqual({ estado: "cotizado", motivo: null });
   // Volver a pendiente cuenta como movimiento: aparece como de hoy
-  await page.goto("/panel/cotizaciones");
+  await page.goto(`/panel/cotizaciones?q=2042-${n}`);
   await expect(fila(page, `Por rechazar ${s}`)).toContainText("hoy");
 });
 
