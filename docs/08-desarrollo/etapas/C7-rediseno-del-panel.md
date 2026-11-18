@@ -1,174 +1,268 @@
-# C7 Rediseño del panel — especificación
+# C7 Patrones comunes del panel — especificación
 
 - **Fase y semana:** cierre de la Entrega 2 · del 18 al 20/11/2026 (1 a 3 días, §10)
-- **Estado:** aprobada (18/11): el rojo de la marca como principal, de 1 a 3 días; la fase 0 con prototipo y el visto bueno del dueño
-- **Historias:** todas las del panel (HU-01 a HU-41 y los pedidos 12 a 51). No agrega funciones: cambia cómo se ven y se usan.
-- **Base:** `docs/06-diseno/sistema-del-panel.md` (estructura, que se mantiene y se amplía), la skill `pantallas-panel`, la
-  reunión del dueño sobre el panel (fin de octubre: "un panel administrativo estándar y amigable, que un tonto pueda
-  usarlo") y el checklist `docs/08-desarrollo/rediseno-panel-checklist.md`.
-- **Prototipo (fase 0):** https://claude.ai/artifact/SJE6vhxguZyWteDE6XJLe6 (privado: se comparte desde su menú).
+- **Estado:** aprobada (18/11). Alcance acotado el 18/11: se mejoran 6 patrones y la regla de anchos, no todo el panel.
+- **Historias:** las del panel que usan cada patrón (§5). No agrega funciones: cambia cómo se ven y se usan.
+- **Base:** `docs/06-diseno/sistema-del-panel.md` (estructura, que se amplía con estos patrones), la skill
+  `pantallas-panel`, la reunión del dueño sobre el panel (fin de octubre: "un panel administrativo estándar y amigable") y
+  el checklist `docs/08-desarrollo/rediseno-panel-checklist.md`.
+- **Prototipo (fase 0):** https://claude.ai/artifact/SJE6vhxguZyWteDE6XJLe6 (privado: se comparte desde su menú). La v2
+  mostró 15 pantallas; la v3 muestra solo las de este alcance, completas y también a 1600 px.
 
 ## 1. Objetivo
 
-Que el panel se vea y se use como un panel administrativo estándar y amigable, en el celular y en la computadora: una
-paleta agradable y con sentido, cada pantalla con solo lo necesario, todo hecho con las mismas piezas, y un camino claro
-desde la cotización hasta la entrega y el cobro, con la historia de cada cliente y vehículo a mano.
+Que las pantallas que más se usan en el recorrido de un trabajo (cotizar, reservar, recibir, trabajar, entregar y cobrar)
+se vean y se usen igual entre sí, con los patrones del prototipo que el desarrollador eligió, y que todo el panel siga
+una sola regla de anchos. La dirección de diseño de hoy se mantiene.
 
 ## 2. Alcance
 
-- **Incluye:** las 40 pantallas del panel (y las 2 de Reportes y Gastos, en la rama `p16-gastos`), sus modales, los
-  componentes del panel y de shadcn/ui, el armazón (menú, encabezado, navegación del celular), la PWA (ícono, colores,
-  pantalla de inicio, zonas seguras), los estados (vacío, cargando, error, sin conexión) y el Manual del panel (sus
-  capturas se regeneran al final).
-- **No incluye:** el sitio público y la pantalla de ingreso (siguen con la marca, en oscuro), el PDF de la cotización,
-  funciones nuevas (lo que lo sea va a `03-cierre-comercial/registro-de-cambios.md`), cambios de datos o de reglas de
-  negocio. Si al rediseñar aparece algo que solo se arregla cambiando una regla, se anota y se decide aparte.
+### Incluye
 
-## 3. Principios (lo que decide cada pantalla)
+- **6 patrones**, cada uno como un componente común, aplicados a sus pantallas (§5): ficha con el recorrido, formulario
+  en pasos con resumen, flujo de un paso, modales, lista con acción en la fila y ficha con historia. Unas 14 pantallas.
+- **La regla de anchos** (§4), para todo el panel a la vez, en `PaginaPanel` y en los campos de datos cortos.
+- Las pruebas E2E que tocan esas pantallas, y el Manual del panel con las capturas que cambien.
 
-1. **Menos es más.** Cada pantalla hace una cosa. Lo que no ayuda a esa tarea se quita, se pliega ("Más", "Ver más") o
-   se va a otra pantalla. Sin párrafos de introducción: el título y las etiquetas alcanzan.
-2. **Un color, un significado.** El rojo de la marca es el color principal (decisión del 18/11): solo la acción
-   principal y lo activo van en rojo sólido. Verde, ámbar y azul son estados (bien, atención, información) y nunca
-   decoran. Para que el rojo no se confunda con un error: lo que no se deshace (desactivar, anular, eliminar) va con un
-   botón de contorno o sin borde y texto rojo, siempre con confirmación; los errores, con ícono y texto sobre un fondo
-   rosado suave, nunca como un botón.
-3. **Siempre se sabe dónde se está y qué sigue.** Cada ficha dice en qué paso del trabajo está y ofrece el paso
-   siguiente como su única acción principal.
-4. **Las mismas piezas en todas partes.** Una pantalla nueva no inventa su estilo. Si una pieza no alcanza, se extiende
-   la pieza (y su prueba de consistencia), no se copia.
-5. **El celular primero.** Se diseña a 360–390 px y se amplía. Toques de 44 px, botones al alcance del pulgar, nada
-   debajo del teclado, y la computadora aprovecha el ancho (tablas, dos columnas) sin cambiar el orden.
-6. **Accesible por defecto.** Contraste AA (4,5:1 en texto, 3:1 en bordes de controles), foco visible, todo con teclado,
-   estados con palabra además de color, y movimiento reducido respetado.
+### Queda como hoy (decisión del 18/11)
 
-## 4. Referencias
+Estas pantallas no se rediseñan; solo heredan lo que cambie en los componentes que usan (por ejemplo, los modales y la
+regla de anchos):
 
-Se toma de cada una lo que resuelve bien, no su apariencia:
+- **Inicio**: la dirección de hoy le gusta más al desarrollador que la del prototipo.
+- **El menú**: el lateral negro en la computadora y el desplegable a la izquierda en el celular (sin barra inferior).
+- **El checklist de Recibir** (las tarjetas de "Qué tiene"): Recibir solo cambia su marco (§5.3).
+- **La letra**: Montserrat. **Los colores**: los de hoy (tarjetas blancas sobre `bg-fondo-panel`, el rojo solo en la
+  acción principal y el módulo activo).
+- **Las listas simples**: Clientes, Cotizaciones, Órdenes, Reclamos, Usuarios y Catálogo (ya tienen páginas y filtros).
+- **La Agenda** (rehecha el 16/11) y **Nuevo cliente** (rehecho el 17/11, #271).
+- **Configuración, Sitio web** y las pantallas del sistema (sin acceso, no existe, error).
 
-| Plataforma | Qué se toma |
-|---|---|
-| **Shopify Polaris** (admin de comercios, con app de celular) | Encabezado de página (título, volver, acción principal), tarjetas por sección, tono de los textos, "menos es más" |
-| **Tekmetric y Shopmonkey** (software de talleres) | El trabajo como un recorrido: cotización → aprobada → en el taller → listo → entregado, con su estado siempre visible y la historia del vehículo |
-| **Square Dashboard** | Inicio con lo del día y los números que importan; cobrar en un toque desde el celular |
-| **Linear y Stripe Dashboard** | Tablas limpias, insignias de estado discretas, listas con filtros y páginas, búsqueda rápida |
-| **Material 3 y Apple HIG** | Barra de navegación inferior en el celular, hojas desde abajo, zonas seguras, tamaños de toque |
+### No incluye
 
-## 5. Pantallas y rutas
+- **Reportes y Gastos** (`p16-gastos`, #257): se revisan aparte, al decidir unirlos.
+- El sitio público, el ingreso y el PDF de la cotización.
+- Funciones nuevas (van a `03-cierre-comercial/registro-de-cambios.md`), cambios de datos o de reglas de negocio.
+- Lo que tenía el plan amplio del 18/11 y salió al acotarlo: paleta nueva, tipografía nueva, barra inferior en el
+  celular, menú claro, rediseño de cada pantalla y de cada componente. Queda en el historial de git de este archivo.
 
-El inventario completo, una fila por pantalla, modal y componente, está en el checklist. Aquí, lo que cambia en general:
+## 3. Principios
 
-- **Armazón.** Computadora: el menú lateral negro de hoy (decisión del 18/11), agrupado como hoy (Taller, Clientes, Administración), con el
-  módulo activo marcado y el usuario abajo. Celular: barra superior con el título y una **barra inferior** con los cuatro
-  módulos de todos los días según los permisos (por ejemplo Inicio, Agenda, Órdenes, Cotizaciones) y "Más" para el
-  resto. Reemplaza al menú desplegable de hoy, que esconde todo detrás de un botón.
-- **El recorrido del trabajo.** Las fichas de cotización, reserva y orden muestran el mismo indicador de pasos
-  (Cotizado → Aceptado → Reservado → En el taller → Listo → Entregado, y el cobro al lado) con enlaces a lo anterior, y
-  el paso siguiente como botón principal en el encabezado. Desde Inicio, "Para hoy" lleva a ese paso.
-- **La historia.** La ficha del cliente y la del vehículo muestran sus trabajos en una línea de tiempo (la más reciente
-  arriba, plegada si es larga), y las listas que crecen van de a páginas (ya hecho el 17/11, #272).
-- **Tipos de pantalla.** Se mantienen los de `sistema-del-panel.md` (lista, ficha, crear, configuración, flujo de un
-  paso, portada), con un diseño nuevo para cada uno que se aplica igual a todas sus pantallas.
-- **Estados.** Vacío (qué falta y cómo agregarlo), cargando (esqueletos con la forma de la pantalla), error (qué pasó y
-  qué hacer) y sin conexión (aviso fijo y discreto), iguales en todo el panel.
+1. **Un patrón, un componente.** Cada patrón es una pieza común; una pantalla no arma el suyo a mano. Si una pantalla
+   necesita algo que la pieza no tiene, se extiende la pieza (y su prueba de consistencia).
+2. **Menos es más.** Cada pantalla muestra lo que decide primero, lo que se consulta después y lo poco usado en "Más".
+3. **Siempre se sabe dónde se está y qué sigue.** Las fichas del recorrido dicen en qué paso está el trabajo y ofrecen
+   el paso siguiente como su única acción roja.
+4. **El celular primero.** Toques de 44 px, botones al alcance del pulgar, nada debajo del teclado.
+
+## 4. La regla de anchos
+
+### 4.1 La decisión: todo el ancho, alineado a la izquierda, con columnas según el tipo
+
+En un panel con menú lateral, la práctica estándar (Shopify Polaris, Stripe, Linear y los paneles de Material) es que el
+contenido **use todo el ancho disponible, alineado a la izquierda con el título de la página**, y que el espacio de las
+pantallas grandes se aproveche con **columnas**, no con márgenes.
+
+- **Por qué no centrado:** junto al menú lateral, un bloque centrado deja dos franjas vacías de distinto tamaño, y el
+  título y los botones cambian de lugar según el ancho de la ventana. Alineado a la izquierda, el ojo siempre empieza en
+  el mismo lugar.
+- **Por qué no un tope general:** ya se probó dos veces. Con el tope de 1600 px sobraba espacio en pantallas grandes
+  (#258), y con un tope en los campos el formulario se veía angosto y raro (revertido el 17/11).
+- **Por qué columnas:** una tabla aprovecha el ancho; un formulario no (un campo de 900 px no se lee mejor). Para que un
+  formulario use el ancho sin estirarse, se pone al lado lo que acompaña: el resumen, el total o el estado.
+
+### 4.2 Por tipo de pantalla
+
+| Tipo | Ancho | Celular y tableta | Computadora (desde 1280 px) |
+|---|---|---|---|
+| Lista, tablero, Agenda, Inicio | Todo | Una columna; tablas en filas | Tablas a todo el ancho |
+| Ficha | Todo | Una columna: lo que decide, después lo que se consulta | Dos columnas: principal (unos 2/3) y lateral (1/3) |
+| Formulario largo o en pasos | Todo | Una columna; el resumen arriba, plegado | El formulario (2/3) y el resumen fijo al costado (1/3) |
+| Flujo de un paso | Todo | Una columna; el estado arriba | El paso (2/3) y el estado o resumen al costado (1/3) |
+| Formulario corto en su pantalla (Nuevo cliente, Nuevo usuario) | Todo | Una columna | Sus secciones lado a lado (como Nuevo cliente, #271) |
+| Modal | Fijo: chico 480 px, mediano 640 px, grande 800 px | A todo el ancho, desde abajo | Centrado sobre la pantalla (es lo único centrado) |
+
+### 4.3 Dos excepciones con medida
+
+- **Los datos cortos tienen el ancho de lo que llevan**, en cualquier pantalla: monto (10 rem), fecha (12 rem), año
+  (7 rem), placa (12 rem), teléfono (14 rem), cantidad (7 rem). Es la regla de los formularios bien hechos (GOV.UK y
+  Polaris usan anchos por tipo de dato) y no es un tope general: los demás campos siguen a todo el ancho de su columna.
+- **El texto de corrido** (notas, descripciones largas, mensajes) se corta en unos 70 caracteres por línea, porque más
+  largo se lee mal. Es solo el párrafo; su tarjeta sigue a todo el ancho.
+
+### 4.4 Dónde se programa
+
+`src/componentes/panel/pagina-panel.tsx` (el tipo de pantalla decide sus columnas: `PartesIguales` pasa a una grilla
+principal y lateral), `campo-monto.tsx` y un mapa de anchos por tipo de dato para `Input` en `campo.tsx`. La regla queda
+en `sistema-del-panel.md` §1 y en la skill `pantallas-panel`.
+
+## 5. Los patrones, uno por uno
+
+Cada patrón dice qué componente cambia, qué pantallas lo usan, qué se ve distinto, cómo se prueba y cuándo está hecho.
+
+### 5.1 Ficha con el recorrido y el paso siguiente
+
+- **Componentes:** `pasos-trabajo.tsx` (el indicador: Cotizado → Aceptado → Reservado → En el taller → Listo → Entregado),
+  `paso-siguiente.tsx` (la tarjeta con el texto del estado y el botón del paso) y `pagina-panel.tsx` (principal y lateral).
+- **Pantallas:** Orden (`/panel/ordenes/[id]`), Cotización (`/panel/cotizaciones/[id]`) y Reserva (`/panel/agenda/[id]`).
+- **Qué cambia:**
+  - Arriba, una sola tarjeta con el indicador de pasos y, debajo, el paso siguiente: un texto corto ("Atrasada 14 días.
+    La entrega aproximada era el 4/11.") y el botón rojo grande del paso ("Marcar listo", "Aceptada: reservar",
+    "Recibir vehículo").
+  - Los pasos ya hechos llevan a su pantalla (la cotización, la reserva) cuando quien mira puede abrirla.
+  - Columna principal: lo que decide (servicios y pagos, con "Registrar pago"; fotos en la orden). Lateral: datos y
+    historia.
+  - Las acciones poco usadas (extender, cancelar, rechazar, volver al paso anterior, nueva versión) en "Más".
+- **Pruebas:** las E2E de orden, cotización y reserva (`hu-34-trabajar-orden`, `hu-34-historial`, `hu-25-cotizar`, `hu-28-seguimiento`, `hu-30-agendar`, `hu-31-reprogramar-cancelar`, `p31-flujo-trabajo`) siguen
+  pasando; una E2E nueva comprueba que el indicador marca el paso actual (`aria-current="step"`) en las tres fichas.
+- **Hecho cuando:** las tres fichas usan las mismas piezas, en el mismo orden, en 390, 1280 y 1600 px.
+
+### 5.2 Formulario en pasos con resumen
+
+- **Componentes:** `pasos-flujo.tsx` (la barra de pasos), `resumen-paso.tsx` (el cliente y el vehículo elegidos, con
+  "Cambiar") y uno nuevo, `ResumenLateral` (el total y lo elegido, fijo al costado en la computadora y arriba, plegable,
+  en el celular).
+- **Pantallas:** Nueva cotización (`/panel/cotizaciones/nueva`), Nueva reserva (`/panel/agenda/nueva`, sus tres caminos)
+  y Nueva versión (`/panel/cotizaciones/[id]/nueva-version`).
+- **Qué cambia:**
+  - El paso actual en una columna; al costado, el resumen con el total siempre a la vista (subtotal, descuento, total,
+    adelanto sugerido).
+  - El precio del catálogo como ayuda en verde bajo el precio ("Precio del catálogo para una vagoneta mediana: 1.400 Bs").
+  - "Cómo se cotizó" en tarjetas (`opciones-en-tarjetas.tsx`).
+  - En el celular, el botón del paso fijo abajo (`pie-formulario.tsx`), con "Atrás" al lado.
+- **Pruebas:** `hu-25-cotizar`, `hu-30-agendar`, `p31`, `reserva-empieza-de-cero` y `hu-38` siguen pasando; el total del
+  resumen cambia al cambiar el precio (E2E).
+- **Hecho cuando:** las tres pantallas usan la misma barra, el mismo resumen y el mismo pie.
+
+### 5.3 Flujo de un paso
+
+- **Componentes:** uno nuevo, `AvisoEstado` (una franja con ícono y texto, en verde "Pagado por completo", en ámbar
+  "Falta cobrar 300 Bs", en azul para información), y `pie-formulario.tsx`.
+- **Pantallas:** Entregar (`/panel/ordenes/[id]/entregar`), Recibir (`/panel/ordenes/[id]/recibir`, solo el marco: el
+  checklist queda como hoy) y Publicar en la galería (`/panel/ordenes/[id]/publicar`).
+- **Qué cambia:**
+  - Arriba, el estado que decide (en Entregar, si está pagado o cuánto falta; en Recibir, qué reserva se recibe).
+  - Lo justo para el paso, y un solo botón grande al final ("Entregar vehículo", "Recibir vehículo", "Publicar").
+  - Lo que el paso va a hacer, dicho antes en una línea ("Al entregar se programa el mantenimiento del nano cerámico
+    para el 18 de febrero.").
+- **Pruebas:** `hu-33-recibir`, `hu-33-checklist`, `hu-36-entregar`, `hu-41-galeria-desde-orden` y `flujo-taller-completo` siguen pasando.
+- **Hecho cuando:** los tres pasos tienen el mismo marco: título con la placa, estado arriba, contenido, un botón.
+
+### 5.4 Modales
+
+- **Componentes:** `modal-formulario.tsx`, `modal-pie.tsx` (`PieModal`, `CancelarModal`) y uno nuevo, `DatoClave` (el
+  recuadro con el dato que decide: "Falta cobrar 300 Bs", "Entrega actual: 4/11").
+- **Pantallas:** todos los modales cambian a la vez, porque comparten la pieza (el título, el pie con "Cancelar" a la
+  izquierda y la acción a la derecha en la computadora, y a todo el ancho en el celular; la hoja desde abajo). Se revisan
+  uno por uno los 6 más usados:
+  - Registrar pago (`registrar-pago.tsx`): "Falta cobrar", el monto ya escrito, "Cómo pagó" en tarjetas, la fecha.
+  - Anular pago (`anular-pago.tsx`): el pago que se anula como dato clave; el botón de contorno rojo.
+  - Reprogramar (`acciones-reserva.tsx`): las fechas actuales como dato clave.
+  - Cancelar reserva (`acciones-reserva.tsx`): qué pasa con el adelanto, dicho antes; contorno rojo.
+  - Rechazar la cotización (`estado-cotizacion.tsx`): el motivo en tarjetas.
+  - Agregar servicio (`agregar-adicional.tsx`): el precio del catálogo como ayuda, como en Nueva cotización.
+- **Lo destructivo:** desactivar, anular, eliminar y cancelar usan el botón de contorno con texto rojo, nunca el rojo
+  sólido, y siempre piden confirmación (el rojo sólido es la acción principal).
+- **Pruebas:** las E2E de cada modal siguen pasando (buscan por rol y nombre); `consistencia-panel` comprueba que ningún
+  modal se arma a mano.
+- **Hecho cuando:** los 6 revisados con capturas, y los demás vistos en el recorrido de capturas.
+
+### 5.5 Lista con acción en la fila
+
+- **Componentes:** `fila-lista.tsx` (`FilaConAcciones`, `ListaEnTarjeta`) y `tabla-acciones.tsx`.
+- **Pantallas:** Saldos pendientes (`/panel/pagos`), Mantenimientos (`/panel/mantenimientos`, Por avisar y Más adelante)
+  y Por reservar (dentro de `/panel/agenda`).
+- **Qué cambia:**
+  - Cada fila con lo que identifica (cliente y placa), lo que decide (el monto o el vencimiento, con su insignia) y su
+    acción a la derecha ("Cobrar"; "Avisar" y "Reservar"; "Reservar").
+  - En el celular, los botones a todo el ancho debajo de la fila.
+  - Saldos dice el total arriba ("980 Bs por cobrar").
+- **Pruebas:** `hu-37-saldos`, `hu-38-mantenimientos` y `p31-flujo-trabajo` siguen pasando.
+- **Hecho cuando:** las tres listas usan la misma fila, con las acciones en el mismo lugar.
+
+### 5.6 Ficha con historia
+
+- **Componentes:** uno nuevo, `LineaDeTiempo` (cada trabajo con su insignia, la placa, el servicio, el monto si quien
+  mira ve montos y la fecha; el más reciente arriba; plegada desde el sexto con "Ver toda la historia"). Reemplaza las
+  listas sueltas de reservas y cotizaciones (`reservas-cliente.tsx` y la lista de cotizaciones del cliente).
+- **Pantallas:** Ficha del cliente (`/panel/clientes/[id]`) y ficha del vehículo
+  (`/panel/clientes/[id]/vehiculos/[vehiculo]`).
+- **Qué cambia:**
+  - Columna principal: la historia (cotizaciones, reservas y órdenes de todos sus vehículos, o del vehículo) con
+    "Cotizar" en su título.
+  - Lateral: los vehículos (en la del cliente) y los datos, con "Editar".
+  - Arriba, "Escribir por WhatsApp" y "Más" (desactivar, cambiar de dueño).
+- **Pruebas:** `hu-23-ficha-cliente` y `p37-cambio-de-dueno` siguen pasando; una E2E nueva comprueba el orden de la
+  historia (lo más reciente primero) y que el perfil Taller no ve montos (RN-12).
+- **Hecho cuando:** las dos fichas muestran la historia con la misma pieza.
 
 ## 6. Acciones del servidor
 
-No cambian. Si una pantalla rediseñada necesita un dato que hoy no se lee, se agrega a su consulta (sin cambiar reglas).
+No cambian. La historia de §5.6 lee lo que ya existe (cotizaciones, reservas y órdenes del cliente o del vehículo); si
+hace falta, una consulta nueva que las junte, sin cambiar reglas.
 
 ## 7. Componentes y diseño
 
-### 7.1 Fundamentos (fase 1)
+| Componente | Estado | Patrón |
+|---|---|---|
+| `pagina-panel.tsx` | Cambia: columnas por tipo de pantalla | Anchos |
+| `campo.tsx`, `campo-monto.tsx` | Cambian: ancho por tipo de dato | Anchos |
+| `pasos-trabajo.tsx`, `paso-siguiente.tsx` | Cambian | 5.1 |
+| `pasos-flujo.tsx`, `resumen-paso.tsx`, `pie-formulario.tsx` | Cambian | 5.2 y 5.3 |
+| `ResumenLateral` | Nuevo | 5.2 |
+| `AvisoEstado` | Nuevo | 5.3 |
+| `modal-formulario.tsx`, `modal-pie.tsx` | Cambian | 5.4 |
+| `DatoClave` | Nuevo | 5.4 |
+| `fila-lista.tsx`, `tabla-acciones.tsx` | Cambian | 5.5 |
+| `LineaDeTiempo` | Nuevo | 5.6 |
+| `opciones-en-tarjetas.tsx`, `insignia.tsx` | Se usan como están | Varios |
 
-Se definen en la fase 0 con un prototipo y se fijan como tokens del panel en `globals.css` (el sitio no cambia):
-
-- **Paleta.** El rojo de la marca como principal, sobre neutros fríos y limpios (decisión del 18/11):
-
-  | Token | Valor | Uso | Contraste |
-  |---|---|---|---|
-  | Principal | `#E30613` | Botón principal, módulo activo, foco de los campos | 4,9:1 con texto blanco |
-  | Principal presionado | `#C40511` | Al pasar el mouse o presionar; texto rojo chico | 6,2:1 sobre blanco |
-  | Fondo | `#F5F7FA` | Detrás de las tarjetas | — |
-  | Superficie | `#FFFFFF` | Tarjetas, modales, menú | — |
-  | Borde | `#E3E8EF` | Separadores | Decorativo |
-  | Borde de campos | `#8A94A6` | Campos, casillas | 3,1:1 |
-  | Texto | `#18212F` | Todo lo que se lee | 15:1 |
-  | Texto suave | `#5B6778` | Ayudas, detalles | 5,4:1 |
-
-  Estados, con su fondo suave: bien `#166534` sobre `#E8F5EC`, atención `#B45309` sobre `#FEF3E2`, información
-  `#1D4ED8` sobre `#EAF0FD`, peligro (errores) `#C40511` sobre `#FDECEC`. Todos pasan AA (4,5:1) como texto, sobre
-  blanco y sobre su fondo (medido el 18/11).
-- **Estados del trabajo.** Un color por estado, con palabra: agendado (ámbar suave), en el taller (principal), listo
-  (verde), entregado (gris), cancelado (gris tachado), con saldo (ámbar). Se definen una vez (`TONO_ESTADO_TRABAJO`).
-- **Tipografía.** Una sola familia de interfaz con números tabulares, servida desde `public/fuentes/`. Candidatas para
-  el prototipo: Inter (la estándar de los paneles), Figtree (más amable) y Montserrat (la de hoy, para comparar). Escala:
-  12 / 14 (cuerpo) / 16 / 20 / 24 px, pesos 400, 500 y 600.
-- **Espacios, radios y sombras.** Espaciado de a 4 px. Radios con jerarquía: 6 px controles, 10 px tarjetas, 16 px
-  hojas y modales. Tarjetas con borde, sin sombra; sombra solo en lo que flota (menús, modales, avisos).
-- **Íconos.** Lucide, 16 px en texto y 20 px en navegación, un solo trazo.
-- **Movimiento.** Solo como respuesta: abrir, cerrar, confirmar (150–200 ms). Nada se anima solo al cargar, salvo los
-  gráficos de Reportes.
-
-### 7.2 Componentes (fase 2)
-
-Primero los de `src/componentes/ui/` (botón, campo, selector, casillas, diálogo, hoja, menú, tabla, aviso), después
-los del panel por familia (encabezado, navegación, listas y tablas, fichas y secciones, formularios, modales, estados,
-fotos y firma, números e insignias). Cada componente rediseñado actualiza su uso en todas las pantallas a la vez: así el
-panel nunca queda mitad viejo y mitad nuevo dentro de una pantalla.
-
-### 7.3 PWA
-
-Ícono y colores del manifiesto con la paleta nueva (`theme_color`, pantalla de inicio), barra de estado del celular,
-zonas seguras (`env(safe-area-inset-*)`) para la barra inferior, y el aviso de versión nueva y de sin conexión con el
-estilo nuevo. Sigue sin modo sin conexión.
+Los colores, la letra y los tokens de `globals.css` no cambian.
 
 ## 8. Textos de la interfaz
 
-Se revisan con cada pantalla: verbos claros en los botones ("Registrar pago", no "Aceptar"), el mismo verbo en el
-botón y en su aviso ("Pago registrado."), sin mayúsculas sostenidas, errores que dicen qué pasó y cómo seguir, y vacíos
-que invitan a actuar. Los nombres de los estados salen siempre de `NOMBRE_ESTADO_TRABAJO`.
+Los del prototipo, revisados con cada pantalla: el botón dice el paso ("Marcar listo", "Aceptada: reservar", "Entregar
+vehículo"); el aviso usa el mismo verbo ("Pago registrado."); el estado con palabra y no solo color ("Atrasada 14 días.",
+"Pagado por completo."); los nombres de los estados de `NOMBRE_ESTADO_TRABAJO`.
 
 ## 9. Pruebas
 
-- **Unitarias:** `tests/unit/consistencia-panel.test.ts` se amplía con cada regla nueva (por ejemplo, ningún color suelto
-  en el panel, toda acción principal con el botón principal, todo modal con `ModalFormulario`).
-- **E2E:** las que existen siguen pasando (buscan por rol y nombre accesible, no por estilo). `recorrido-panel.spec.ts`
-  toma las capturas de cada pantalla a 390 y 1366 px con los tres roles, para revisarlas a ojo.
-- **Contraste:** cada combinación de la paleta se valida (AA) antes de fijarla.
-- **Celular real:** al cerrar, la prueba a mano de `09-pruebas/prueba-en-celulares.md` en Android e iPhone, también
-  instalada como app.
+- **Unitarias:** `consistencia-panel.test.ts` suma una regla por pieza nueva (ninguna ficha del recorrido sin
+  `PasosTrabajo`, ningún modal sin `ModalFormulario`, ningún flujo de un paso sin `AvisoEstado`).
+- **E2E:** las de cada patrón (§5) siguen pasando; dos nuevas: el indicador de pasos en las tres fichas y la historia del
+  cliente. `recorrido-panel.spec.ts` toma las capturas a 390 y 1366 px con los tres roles.
+- **Capturas:** antes y después de cada pantalla, a 390, 1280 y 1600 px, en su PR.
+- **Celular real:** al cerrar, el recorrido completo de un trabajo en Android e iPhone.
 
 ## 10. Orden de trabajo
 
-En 1 a 3 días (decisión del 18/11), en este orden:
+| Paso | Qué | Rama | Se aprueba con |
+|---|---|---|---|
+| 0 | Prototipo v3: las pantallas de este alcance, completas, con el menú desplegable y a 1600 px | — | Visto bueno del desarrollador y del dueño |
+| 1 | La regla de anchos (§4) | `patrones-anchos` | Capturas de una pantalla de cada tipo a 390, 1280 y 1600 px |
+| 2 | Modales (§5.4) | `patrones-modales` | Capturas de los 6 revisados |
+| 3 | Ficha con el recorrido (§5.1) | `patrones-ficha-recorrido` | Capturas de las tres fichas |
+| 4 | Formulario en pasos con resumen (§5.2) | `patrones-formulario-pasos` | Capturas de las tres pantallas |
+| 5 | Flujo de un paso (§5.3) | `patrones-flujo-un-paso` | Capturas de Entregar, Recibir y Publicar |
+| 6 | Lista con acción (§5.5) | `patrones-lista-accion` | Capturas de las tres listas |
+| 7 | Ficha con historia (§5.6) | `patrones-ficha-historia` | Capturas de las dos fichas |
+| 8 | Cierre: recorrido de capturas, Manual del panel, documentos, prueba en celulares | `patrones-cierre` | Checklist completo |
 
-| Fase | Qué | Cómo se aprueba |
-|---|---|---|
-| 0 | Decisiones: tipografía, armazón y el diseño de cada tipo de pantalla, en un prototipo con contenido real (Inicio, una lista, una ficha con el recorrido, un formulario y un modal, en celular y computadora), con el rojo de la marca como principal | El desarrollador elige; el dueño lo ve y da el visto bueno |
-| 1 | Fundamentos: tokens del panel en `globals.css`, contraste validado, fuentes | Con la fase 0 |
-| 2 | Componentes, por familia (§7.2) | Capturas por familia |
-| 3 | Armazón: menú lateral, barra superior, barra inferior del celular, PWA | Capturas y prueba en el celular |
-| 4 | El recorrido del trabajo: indicador de pasos, paso siguiente, Inicio, historia en fichas | Propuesta y aprobación |
-| 5 | Pantallas, una por una, con sus modales (orden del checklist) | Capturas antes y después, de a grupos chicos |
-| 6 | Cierre: QA completo, Manual del panel regenerado, documentos al día | Checklist completo |
-
-Ramas `rediseno-<fase>-<tema>`, cada una con su PR; las fases 1 a 3 en PR chicos y seguidos para que `develop` no quede
-a medias. El dueño ve el panel rediseñado en pruebas antes de la prueba a mano y la demo, dentro del plazo del 1/12.
+Cada paso, un PR revisado y en verde antes del siguiente. Los anchos y los modales van primero porque los heredan todas
+las pantallas de los pasos siguientes.
 
 ## 11. Criterio de salida
 
 - Cada fila del checklist marcada, con sus capturas en el PR.
-- Ningún color, tamaño o radio suelto en el panel: todo sale de los tokens (lo verifica la prueba de consistencia).
-- Las E2E en verde, el CI en verde y la prueba en celulares hecha.
-- El Manual del panel regenerado con las capturas nuevas.
-- En la demo: el recorrido completo de un trabajo (cotizar, reservar, recibir, trabajar, listo, entregar y cobrar) en el
-  celular, y la historia de un cliente.
+- Las 14 pantallas usan su patrón con la pieza común (lo verifica `consistencia-panel`).
+- Las E2E y el CI en verde, y la prueba en celulares hecha.
+- El Manual del panel con las capturas nuevas de las pantallas que cambiaron.
+- En la demo: el recorrido de un trabajo de la cotización al cobro en el celular, y la historia de un cliente.
 
 ## 12. Decisiones abiertas
 
 | Qué | De quién | Mientras tanto |
 |---|---|---|
-| La tipografía | Decidido el 18/11: Montserrat, la de hoy | — |
-| Barra inferior en el celular: qué cuatro módulos (según los permisos de cada uno) | Desarrollador, en la fase 3 | Propuesta: Inicio, Agenda, Órdenes y Cotizaciones; el perfil Taller, Inicio, Agenda y Órdenes |
-| Búsqueda general (clientes, placas y cotizaciones desde el encabezado) | Es una función nueva: va a `registro-de-cambios.md` si se quiere | Cada lista mantiene su buscador |
-| Reportes y Gastos (`p16-gastos`, #257) | Desarrollador | Se rediseñan con el resto antes de unirlos |
+| El visto bueno del dueño al prototipo v3 | Desarrollador con el dueño | Se avanza con la regla de anchos, que no cambia cómo se ve cada pantalla |
+| Reportes y Gastos (#257) con estos patrones | Desarrollador, al decidir unirlos | Quedan como están en su rama |
+| Búsqueda general desde el encabezado | Es una función nueva: va a `registro-de-cambios.md` si se quiere | Cada lista mantiene su buscador |

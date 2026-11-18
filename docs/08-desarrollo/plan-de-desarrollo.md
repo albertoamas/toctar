@@ -104,7 +104,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | P31 Un trabajo, de la cotización a la entrega | `etapas/P31-flujo-de-un-trabajo.md` | 🔵 Parte 1 hecha (04/11, PR #137 y #138); la parte 2 (cotizar sin registrar y placa opcional), a decidir con el dueño |
 | P37 Un vehículo cambia de dueño | `etapas/P37-cambio-de-dueno.md` | ✅ Hecha (04/11, PR #138) |
 | B6 Cierre de la Entrega 1 | Sin especificación aparte | Va junto con el cierre de la Entrega 2 (C5) |
-| C7 Rediseño del panel | `etapas/C7-rediseno-del-panel.md` y su checklist `rediseno-panel-checklist.md` | 🔵 Aprobada (18/11): el rojo de la marca como principal y de 1 a 3 días; paleta, componentes, armazón, recorrido del trabajo y cada pantalla |
+| C7 Patrones comunes del panel | `etapas/C7-rediseno-del-panel.md` y su checklist `rediseno-panel-checklist.md` | 🔵 Aprobada (18/11), acotada: 6 patrones (ficha con el recorrido, formulario en pasos, flujo de un paso, modales, lista con acción, ficha con historia) y la regla de anchos, en unas 14 pantallas; sigue el prototipo v3 |
 
 ## Cómo se trabaja cada historia
 

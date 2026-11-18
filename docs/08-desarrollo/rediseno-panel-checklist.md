@@ -1,265 +1,148 @@
-# Rediseño del panel — checklist
+# Patrones comunes del panel — checklist
 
-Para ir una por una con la especificación `etapas/C7-rediseno-del-panel.md`. Cada fila se marca `[x]` cuando cumple
-**todo** lo de "Hecho" (abajo), con su PR al lado. Una pantalla a la vez: análisis con capturas → propuesta →
-aprobación → programar → capturas después → marcar. Sus modales y componentes propios van con ella.
+Para ir una por una con la especificación `etapas/C7-rediseno-del-panel.md` (alcance acotado el 18/11: 6 patrones y la
+regla de anchos). Cada fila se marca `[x]` cuando cumple **todo** lo de "Hecho" (abajo), con su PR al lado. Cada paso:
+análisis con capturas → propuesta → aprobación → programar → capturas después → marcar.
 
 ## Hecho (vale para cada fila)
 
-- [ ] Solo tokens del panel: ningún color, tamaño, radio ni sombra suelto.
-- [ ] Hecha con las piezas comunes; si una no alcanzaba, se extendió la pieza (no se copió).
-- [ ] Menos es más: cada cosa que queda ayuda a la tarea de la pantalla; lo poco usado, plegado o en "Más".
-- [ ] Una sola acción principal a la vista, con un verbo que dice qué hace.
-- [ ] Estados: vacío, cargando (esqueleto), error y sin conexión.
-- [ ] Con cada rol: dueño; encargado con y sin el permiso; perfil Taller (sin precios, RN-12).
+- [ ] Usa la pieza común de su patrón; no arma la suya a mano.
+- [ ] Sigue la regla de anchos (§4 de C7): todo el ancho, alineado a la izquierda, columnas según el tipo.
+- [ ] Menos es más: lo que decide primero, lo que se consulta después, lo poco usado en "Más".
+- [ ] Una sola acción principal (roja) a la vista; lo destructivo con contorno y confirmación.
+- [ ] Estados: vacío, cargando, error y sin conexión.
+- [ ] Con cada rol: dueño; encargado con y sin el permiso; perfil Taller (sin montos, RN-12).
 - [ ] 360, 390, 768, 1280 y 1600 px sin desborde horizontal; nada debajo del teclado ni del pulgar.
-- [ ] Teclado y lector de pantalla: todo con Tab, foco visible, un `h1`, botones de ícono con nombre, contraste AA.
-- [ ] Textos revisados (§8 de C7).
-- [ ] E2E que la tocan en verde; capturas antes y después en el PR.
+- [ ] Teclado y lector de pantalla: todo con Tab, foco visible, un `h1`, botones de ícono con nombre.
+- [ ] E2E que la tocan en verde; capturas antes y después (390, 1280 y 1600 px) en el PR.
 
-## Fase 0 — Decisiones y prototipo
+## Paso 0 — Prototipo y decisiones
 
-- [x] Prototipo con contenido real: Inicio, una lista (Clientes), una ficha con el recorrido (Orden), un formulario (Nueva cotización) y un modal (Registrar pago), en 390 y 1280 px (18/11: https://claude.ai/artifact/SJE6vhxguZyWteDE6XJLe6).
-- [x] Paleta: el rojo de la marca como principal, con neutros fríos; contraste validado (18/11, §7.1 de C7).
-- [x] Tipografía: Montserrat, la de hoy (18/11).
-- [ ] Armazón: el menú lateral negro como hoy (18/11) y la barra superior negra del celular; falta aprobar la barra inferior (Inicio, Agenda, Órdenes, Cotizaciones y Más).
-- [ ] Diseño de cada tipo de pantalla: lista, ficha, crear, configuración, flujo de un paso y portada.
-- [ ] Visto bueno del dueño.
-- [x] Plazo: 1 a 3 días, dentro del cierre del 1/12 (18/11).
+- [x] Prototipo v1 y v2 (18/11): https://claude.ai/artifact/SJE6vhxguZyWteDE6XJLe6
+- [x] Decidido (18/11): se mantienen Inicio, el menú (lateral negro y desplegable en el celular), el checklist de Recibir, Montserrat y los colores de hoy.
+- [x] Decidido (18/11): de la v2 se toman Nueva cotización, Cotización, Orden, los modales, Entregar, Saldos, Ficha del cliente y Mantenimientos.
+- [x] Decidida la regla de anchos (§4 de C7).
+- [ ] Prototipo v3: solo las pantallas de este alcance, completas, con el menú desplegable, a 390, 1280 y 1600 px.
+- [ ] Visto bueno del desarrollador al v3.
+- [ ] Visto bueno del dueño al v3.
 
-## Fase 1 — Fundamentos
+## Paso 1 — La regla de anchos (rama `patrones-anchos`)
 
-- [ ] Tokens del panel en `globals.css`: neutros, principal, estados con su fondo, estados del trabajo.
-- [ ] Escala de tipografía y fuente servida desde `public/fuentes/`.
-- [ ] Espacios, radios (6 / 10 / 16 px) y sombras (solo lo que flota).
-- [ ] El rojo de la marca fuera de las acciones del panel (solo el logo).
-- [ ] Prueba de consistencia: ningún color suelto en `src/app/panel` ni en los componentes del panel.
+- [ ] `pagina-panel.tsx`: columnas por tipo de pantalla (principal y lateral desde 1280 px).
+- [ ] `campo.tsx`: ancho por tipo de dato (monto, fecha, año, placa, teléfono, cantidad).
+- [ ] `campo-monto.tsx` con su ancho.
+- [ ] Texto de corrido cortado en unos 70 caracteres.
+- [ ] Capturas de una pantalla de cada tipo (lista, ficha, formulario, flujo, modal) a 390, 1280 y 1600 px.
+- [ ] `sistema-del-panel.md` §1 y la skill `pantallas-panel` con la regla.
 
-## Fase 2 — Componentes
+## Paso 2 — Modales (rama `patrones-modales`)
 
-### Base (`src/componentes/ui/`)
+### Piezas
 
-- [ ] `button` (principal, secundario, sin borde, peligro; tamaños; cargando)
-- [ ] `input` y `textarea`
-- [ ] `checkbox` y `radio-group`
-- [ ] `dialog` y `sheet`
-- [ ] `dropdown-menu`
-- [ ] `table`
-- [ ] `sonner` (avisos)
-- [ ] `label`
+- [ ] `modal-formulario.tsx`: tamaños chico, mediano y grande; hoja desde abajo en el celular.
+- [ ] `modal-pie.tsx`: "Cancelar" a la izquierda y la acción a la derecha en la computadora; a todo el ancho en el celular.
+- [ ] `DatoClave` (nuevo): el recuadro con el dato que decide.
+- [ ] Botón destructivo de contorno con texto rojo.
 
-### Página y navegación
+### Los 6 que se revisan uno por uno
 
-- [ ] `encabezado-pagina` (título, volver, estado, acción principal)
-- [ ] `pagina-panel` (tipos de pantalla)
-- [ ] `boton-volver` y `enlace-texto`
-- [ ] `pestanas`, `filtros`, `pildora-vista` y `pildora`
-- [ ] `barra-lista` y `buscador`
-- [ ] `paginacion`
-- [ ] `navegacion-pendiente` (barra de carga y respuesta al instante)
+- [ ] Registrar pago (`registrar-pago.tsx`)
+- [ ] Anular pago (`anular-pago.tsx`)
+- [ ] Reprogramar (`acciones-reserva.tsx`)
+- [ ] Cancelar reserva (`acciones-reserva.tsx`)
+- [ ] Rechazar la cotización (`estado-cotizacion.tsx`)
+- [ ] Agregar servicio (`agregar-adicional.tsx`)
 
-### Listas y tablas
+### Los demás (heredan las piezas; se miran en el recorrido de capturas)
 
-- [ ] `tabla-lista` y su celda doble
-- [ ] `tabla-acciones`
-- [ ] `fila-lista` (`ListaFilas`)
-- [ ] `lista-editable`, `editor-lista`, `ordenar-lista` y `ordenar`
-- [ ] `lista-datos` y `datos-en-bloques`
-- [ ] `estado-vacio`
+- [ ] Agenda: no hay otros. Órdenes: Extender entrega, Volver al paso anterior, Detalle del checklist.
+- [ ] Cotizaciones: Volver a pendiente. Mantenimientos: Agregar mantenimiento, Mantenimiento de {servicio}, No le interesa.
+- [ ] Clientes: Datos, Agregar vehículo, editar vehículo, Desactivar cliente, ¿Desactivar {placa}?
+- [ ] Catálogo: Nuevo servicio, Datos, Precios, Historial de precios, Variantes, ¿Desactivar {servicio}?
+- [ ] Sitio web: Dirección de la página, Subir fotos, El trabajo de la portada, Editar trabajo, ¿Eliminar esta foto?, preguntas (agregar, editar, eliminar).
+- [ ] Usuarios: Datos, Cambiar mi contraseña, Nueva contraseña, ¿Desactivar a {nombre}? Configuración: espacios y tamaños, ¿Volver al texto original? Reclamos: Marcar como atendido.
 
-### Fichas y secciones
+## Paso 3 — Ficha con el recorrido (rama `patrones-ficha-recorrido`)
 
-- [ ] `seccion-con-editar` y `cabecera-seccion`
-- [ ] `tarjetas-seccion` ("¿Qué quieres cambiar?")
-- [ ] `tarjeta-numero`
-- [ ] `insignia`
-- [ ] `menu-mas`
-- [ ] `paso-siguiente`, `pasos-trabajo` y `pasos-flujo` (el recorrido del trabajo, fase 4)
-- [ ] `resumen-paso`
-- [ ] `texto-corto`
+### Piezas
 
-### Formularios
+- [ ] `pasos-trabajo.tsx`: el indicador de seis pasos, con enlaces a los hechos.
+- [ ] `paso-siguiente.tsx`: el texto del estado y el botón rojo del paso.
+- [ ] Dos columnas: principal (lo que decide) y lateral (datos e historia).
 
-- [ ] `campo` (etiqueta, opcional, ayuda, error)
-- [ ] `campo-monto` y `selector`
-- [ ] `opciones-en-tarjetas`
-- [ ] `seccion-formulario`, `formulario-paso` y `mas-datos`
-- [ ] `pie-formulario`
-- [ ] `cambios-sin-guardar` y `pregunta-salir`
-- [ ] `empieza-de-cero`
+### Pantallas
 
-### Modales
+- [ ] Orden — `/panel/ordenes/[id]`: servicios y pagos, fotos; datos e historia al costado; "Marcar listo", "Avisar", "Entregar" como paso.
+- [ ] Cotización — `/panel/cotizaciones/[id]`: servicios, PDF y versiones; "Aceptada: reservar" como paso; rechazar y nueva versión en "Más".
+- [ ] Reserva — `/panel/agenda/[id]`: fechas, espacio, adelanto; "Recibir vehículo" como paso; reprogramar y cancelar en "Más".
+- [ ] E2E nueva: el paso actual marcado en las tres fichas.
 
-- [ ] `modal-formulario`, `modal-pie` (`PieModal`, `CancelarModal`) y su versión de hoja en el celular
+## Paso 4 — Formulario en pasos con resumen (rama `patrones-formulario-pasos`)
 
-### Avisos y estados del sistema
+### Piezas
 
-- [ ] `aviso-flotante` y `avisos`
-- [ ] `aviso-conexion`
-- [ ] `aviso-version-nueva`
-- [ ] `cargando` (esqueletos)
+- [ ] `pasos-flujo.tsx`: la barra de pasos.
+- [ ] `resumen-paso.tsx`: cliente y vehículo elegidos, con "Cambiar".
+- [ ] `ResumenLateral` (nuevo): total y lo elegido, al costado en la computadora y arriba, plegable, en el celular.
+- [ ] `pie-formulario.tsx`: el botón del paso fijo abajo en el celular, con "Atrás".
 
-### Fotos, firma y WhatsApp
+### Pantallas
 
-- [ ] `elegir-foto`, `subida-foto`, `zona-foto` y `guia-foto`
-- [ ] `visor-fotos` y `abrir-foto`
-- [ ] `panel-firma`
-- [ ] `avisar-whatsapp`
+- [ ] Nueva cotización — `/panel/cotizaciones/nueva`
+- [ ] Nueva reserva — `/panel/agenda/nueva` (directa, desde una cotización y desde un mantenimiento)
+- [ ] Nueva versión — `/panel/cotizaciones/[id]/nueva-version`
+- [ ] E2E: el total del resumen cambia al cambiar el precio.
 
-## Fase 3 — Armazón y PWA
+## Paso 5 — Flujo de un paso (rama `patrones-flujo-un-paso`)
 
-- [ ] `menu-panel` y `navegacion` (menú lateral de la computadora)
-- [ ] Barra superior del celular (`menu-desplazable`, `menu-desplegable`)
-- [ ] Barra inferior del celular (nueva), según los permisos
-- [ ] `usuario-sesion` (usuario, manual y salir)
-- [ ] `src/app/panel/layout.tsx`, `error.tsx`, `not-found.tsx` y `[...resto]`
-- [ ] PWA: `manifest.ts` (`theme_color`, fondo), íconos, barra de estado y zonas seguras
-- [ ] `registrar-service-worker` y la pantalla sin conexión
-- [ ] Prueba instalada como app en Android e iPhone
+### Piezas
 
-## Fase 4 — El recorrido del trabajo
+- [ ] `AvisoEstado` (nuevo): verde, ámbar o azul, con ícono y texto.
+- [ ] El marco común: título con la placa, estado arriba, contenido, un botón grande.
 
-- [ ] Indicador de pasos común: Cotizado → Aceptado → Reservado → En el taller → Listo → Entregado, y el cobro
-- [ ] El paso siguiente como acción principal en el encabezado de cada ficha
-- [ ] Enlaces entre la cotización, la reserva y la orden del mismo trabajo
-- [ ] Historia del cliente y del vehículo: línea de tiempo de sus trabajos
+### Pantallas
 
-## Fase 5 — Pantallas, en el orden del recorrido
+- [ ] Entregar — `/panel/ordenes/[id]/entregar`: pagado o cuánto falta; la firma; lo que pasa con el mantenimiento.
+- [ ] Recibir — `/panel/ordenes/[id]/recibir`: solo el marco; el checklist queda como hoy.
+- [ ] Publicar en la galería — `/panel/ordenes/[id]/publicar`
 
-### Inicio
+## Paso 6 — Lista con acción en la fila (rama `patrones-lista-accion`)
 
-- [ ] `/panel` — Inicio: saludo y accesos, números del día, "Para hoy" y "Para atender" (`para-atender`)
+### Piezas
 
-### Cotizaciones
+- [ ] `fila-lista.tsx` (`FilaConAcciones`): identifica, decide y su acción a la derecha; en el celular, botones a todo el ancho debajo.
+- [ ] `tabla-acciones.tsx` con la misma fila en la computadora.
 
-- [ ] `/panel/cotizaciones` — Lista con pestañas, búsqueda y páginas (`lista-cotizaciones`)
-- [ ] `/panel/cotizaciones/nueva` — Nueva cotización en pasos (`formulario-nueva-cotizacion`, `elegir-servicio`, `lineas-servicio`, `campos-precio`, `formulario-cotizacion`)
-- [ ] `/panel/cotizaciones/[id]` — Ficha (`versiones-cotizacion`, `generar-pdf`, `compartir-pdf`, `estado-cotizacion`)
-  - [ ] Modal "Rechazar la cotización"
-  - [ ] Modal "Volver a pendiente"
-- [ ] `/panel/cotizaciones/[id]/nueva-version` — Nueva versión
+### Pantallas
 
-### Agenda
+- [ ] Saldos pendientes — `/panel/pagos`: el total arriba y "Cobrar" en cada fila.
+- [ ] Mantenimientos — `/panel/mantenimientos`: "Avisar" y "Reservar" en cada fila.
+- [ ] Por reservar — en `/panel/agenda`: "Reservar" en cada fila.
 
-- [ ] `/panel/agenda` — Tablero de la semana, día del celular, Por reservar y búsqueda (`tablero`)
-- [ ] `/panel/agenda/nueva` — Nueva reserva (directa, desde cotización, desde mantenimiento) (`formulario-reserva`, `seccion-fechas-reserva`, `seccion-adelanto`, `campo-espacio`)
-- [ ] `/panel/agenda/[id]` — Ficha de la reserva (`acciones-reserva`, `reservas-cliente`)
-  - [ ] Modal "Reprogramar"
-  - [ ] Modal "Cancelar reserva"
+## Paso 7 — Ficha con historia (rama `patrones-ficha-historia`)
 
-### Órdenes
+### Piezas
 
-- [ ] `/panel/ordenes` — En el taller y Entregadas, con búsqueda y páginas
-- [ ] `/panel/ordenes/[id]/recibir` — Recibir: cómo llegó, checklist y fotos (`formulario-recepcion`, `como-llego`, `checklist-recepcion`)
-  - [ ] Modal "Detalle: {parte}" del checklist
-- [ ] `/panel/ordenes/[id]` — Ficha de la orden (`estado-orden`, `fotos-orden`, `historial-orden`, `acciones-orden`)
-  - [ ] Modal "Agregar servicio" (`agregar-adicional`)
-  - [ ] Modal "Extender entrega" (`extender-entrega`)
-  - [ ] Modal "Volver al paso anterior"
-- [ ] `/panel/ordenes/[id]/entregar` — Entregar: montos, firma y con saldo (`formulario-entrega`, `firma-entrega`)
-- [ ] `/panel/ordenes/[id]/publicar` — Publicar en la galería (`formulario-publicar`)
+- [ ] `LineaDeTiempo` (nueva): cada trabajo con su insignia, placa, servicio, monto (si los ve) y fecha; plegada desde el sexto.
+- [ ] La consulta que junta cotizaciones, reservas y órdenes del cliente o del vehículo.
 
-### Pagos
+### Pantallas
 
-- [ ] `/panel/pagos` — Saldos pendientes, con búsqueda y orden
-- [ ] Montos del trabajo (`montos-trabajo`, `ver-comprobante`) en la reserva, la orden y entregar
-  - [ ] Modal "Registrar pago" (`registrar-pago`, `elegir-metodo`, `campo-comprobante`)
-  - [ ] Modal "Anular pago" (`anular-pago`)
+- [ ] Ficha del cliente — `/panel/clientes/[id]`: historia; vehículos y datos al costado; WhatsApp y "Más" arriba.
+- [ ] Ficha del vehículo — `/panel/clientes/[id]/vehiculos/[vehiculo]`: su historia; datos al costado.
+- [ ] E2E nueva: la historia en orden y sin montos para el perfil Taller.
 
-### Clientes
+## Paso 8 — Cierre (rama `patrones-cierre`)
 
-- [ ] `/panel/clientes` — Lista con búsqueda, desactivados y páginas (`tabla-clientes`)
-- [ ] `/panel/clientes/nuevo` — Nuevo cliente (`formulario-nuevo-cliente`, `campos`)
-- [ ] `/panel/clientes/[id]` — Ficha del cliente: datos, vehículos, historia (`formulario-datos-cliente`, `vehiculos-cliente`, `acceso-cliente`, `resumen-cliente-vehiculo`)
-  - [ ] Modal "Datos" (editar el cliente)
-  - [ ] Modal "Agregar vehículo"
-  - [ ] Modal "Desactivar cliente"
-- [ ] `/panel/clientes/[id]/vehiculos/[vehiculo]` — Ficha del vehículo con su historia (`datos-vehiculo`, `mas-vehiculo`)
-  - [ ] Modal editar vehículo
-  - [ ] Modal "¿Desactivar {placa}?"
-- [ ] `/panel/clientes/[id]/vehiculos/[vehiculo]/dueno` — Cambiar de dueño (`cambiar-dueno`, `elegir-cliente`)
+- [ ] `consistencia-panel.test.ts` con una regla por pieza nueva.
+- [ ] `recorrido-panel.spec.ts`: capturas a 390 y 1366 px con los tres roles, revisadas.
+- [ ] Toda la suite E2E y el CI en verde.
+- [ ] Manual del panel: capturas nuevas de las pantallas que cambiaron (`npm run manual:capturas`, `manual:armar`, `manual:pdf`).
+- [ ] `sistema-del-panel.md`, la skill `pantallas-panel`, `CLAUDE.md` y `plan-de-desarrollo.md` al día.
+- [ ] Prueba a mano en Android e iPhone: el recorrido completo de un trabajo, también instalada como app.
 
-### Mantenimientos
+## Queda como hoy (no se marca; solo hereda las piezas)
 
-- [ ] `/panel/mantenimientos` — Por avisar, Más adelante y Cerrados (`lista-mantenimientos`)
-- [ ] Planes del vehículo (`planes`)
-  - [ ] Modal "Agregar mantenimiento"
-  - [ ] Modal "Mantenimiento de {servicio}"
-  - [ ] Modal "No le interesa" (`no-le-interesa`)
-
-### Reclamos
-
-- [ ] `/panel/reclamos` — Pendientes y todos, con páginas
-- [ ] `/panel/reclamos/[id]` — Ficha del reclamo (`estado-reclamo`, `fotos-reclamo`)
-  - [ ] Modal "Marcar como atendido" (`atender-reclamo`)
-
-### Reportes y gastos (rama `p16-gastos`, #257)
-
-- [ ] `/panel/reportes` — Resumen, Ingresos, Reporte de gastos, y Taller y clientes (gráficos y elegir fechas)
-- [ ] `/panel/reportes/gastos` — Gastos (`registrar-gasto`, `anular-gasto`)
-  - [ ] Modal "Registrar gasto"
-  - [ ] Modal "Anular gasto"
-
-### Catálogo y precios
-
-- [ ] `/panel/catalogo` — Lista de servicios
-  - [ ] Modal "Nuevo servicio" (`agregar-servicio`)
-- [ ] `/panel/catalogo/[id]` — Ficha del servicio (`formulario-datos-catalogo`, `precios-servicio`, `precios-variante`, `formulario-precios`, `variantes-servicio`, `mas-servicio`)
-  - [ ] Modal "Datos"
-  - [ ] Modal "Precios de {variante}"
-  - [ ] Modal "Historial de precios"
-  - [ ] Modal "Variantes"
-  - [ ] Modal "¿Desactivar {servicio}?"
-
-### Sitio web
-
-- [ ] `/panel/sitio` — Portada de la sección ("¿Qué quieres cambiar?")
-- [ ] `/panel/sitio/textos` — Textos y fotos de las páginas (`formulario-contenido`, `foto-pagina`, `video-portada`)
-- [ ] `/panel/sitio/servicios` — Servicios del sitio (`ordenar-servicios`)
-- [ ] `/panel/sitio/servicios/[id]` — Página de un servicio (`formulario-servicio`, `foto-servicio`, `elegir-icono`)
-  - [ ] Modal "Dirección de la página"
-- [ ] `/panel/sitio/galeria` — Galería (`galeria-panel`, `galeria-portada`, `galeria-tarjeta`, `galeria-subir`, `galeria-comun`)
-  - [ ] Modal "Subir fotos"
-  - [ ] Modal "El trabajo de la portada"
-  - [ ] Modal "Editar trabajo"
-  - [ ] Modal "¿Eliminar esta foto?"
-- [ ] `/panel/sitio/preguntas` — Preguntas frecuentes (`lista-preguntas`)
-  - [ ] Modal "Agregar pregunta"
-  - [ ] Modal "Editar pregunta"
-  - [ ] Modal "¿Eliminar esta pregunta?"
-
-### Usuarios
-
-- [ ] `/panel/usuarios` — Lista
-- [ ] `/panel/usuarios/nuevo` — Nuevo usuario (`formulario-usuario`, `campos-permisos`)
-- [ ] `/panel/usuarios/[id]` — Ficha del usuario (`ficha-usuario`)
-  - [ ] Modal "Datos"
-  - [ ] Modal "Cambiar mi contraseña"
-  - [ ] Modal "Nueva contraseña para {nombre}"
-  - [ ] Modal "¿Desactivar a {nombre}?"
-
-### Configuración
-
-- [ ] `/panel/configuracion` — Portada de la sección
-- [ ] `/panel/configuracion/negocio` — Datos del negocio y logo (`formulario-negocio`, `logo-documentos`)
-- [ ] `/panel/configuracion/taller` — Horarios, espacios y tamaños (`editor-horarios`, `lista-editable` de configuración)
-  - [ ] Modales "Nuevo / Editar" de espacios y tamaños, y su orden
-- [ ] `/panel/configuracion/parametros` — Montos, días e intervalos (`formulario-parametros`)
-- [ ] `/panel/configuracion/mensajes` — Mensajes de WhatsApp (`editor-plantilla`, `burbuja-mensaje`)
-  - [ ] Modal "¿Volver al texto original?"
-
-### Del sistema
-
-- [ ] `/panel/sin-acceso` — Sin permiso
-- [ ] `/panel/[...resto]` y `not-found` — Página que no existe
-- [ ] `error.tsx` — Error inesperado
-- [ ] `/panel/manual` — Manual del panel (enlace y capturas)
-
-## Fase 6 — Cierre
-
-- [ ] `recorrido-panel.spec.ts`: capturas de todas las pantallas a 390 y 1366 px con los tres roles, revisadas
-- [ ] Toda la suite E2E y el CI en verde
-- [ ] Manual del panel regenerado (`npm run manual:capturas`, `manual:armar`, `manual:pdf`)
-- [ ] `sistema-del-panel.md`, la skill `pantallas-panel` y `identidad-visual.md` al día con el diseño nuevo
-- [ ] `CLAUDE.md` (identidad visual del panel) y `plan-de-desarrollo.md` al día
-- [ ] Prueba a mano en Android e iPhone, también instalada como app (`09-pruebas/prueba-en-celulares.md`)
+Inicio · el menú · el checklist de Recibir · Clientes, Cotizaciones, Órdenes, Reclamos, Usuarios y Catálogo (listas) ·
+Agenda (tablero) · Nuevo cliente · Configuración · Sitio web · sin acceso, no existe y error. Reportes y Gastos (#257),
+aparte.
