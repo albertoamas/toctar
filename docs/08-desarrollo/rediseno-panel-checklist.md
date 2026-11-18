@@ -22,7 +22,7 @@ análisis con capturas → propuesta → aprobación → programar → capturas 
 - [x] Decidido (18/11): se mantienen Inicio, el menú (lateral negro y desplegable en el celular), el checklist de Recibir, Montserrat y los colores de hoy.
 - [x] Decidido (18/11): de la v2 se toman Nueva cotización, Cotización, Orden, los modales, Entregar, Saldos, Ficha del cliente y Mantenimientos.
 - [x] Decidida la regla de anchos (§4 de C7).
-- [ ] Prototipo v3: solo las pantallas de este alcance, completas, con el menú desplegable, a 390, 1280 y 1600 px.
+- [x] Prototipo v3 (18/11): solo las pantallas de este alcance, completas, con el menú desplegable, a 390, 1280 y 1600 px (mismo enlace).
 - [ ] Visto bueno del desarrollador al v3.
 - [ ] Visto bueno del dueño al v3.
 
