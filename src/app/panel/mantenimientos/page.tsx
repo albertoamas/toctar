@@ -6,6 +6,8 @@ import { CalendarIcon, ChevronRightIcon } from "lucide-react";
 import { AvisarPorWhatsApp } from "@/componentes/panel/avisar-whatsapp";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import { Paginacion } from "@/componentes/panel/paginacion";
+import { conPagina, leerPagina } from "@/lib/paginacion";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { Pestanas } from "@/componentes/panel/pestanas";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -32,7 +34,6 @@ import {
   NOMBRE_ESTADO_RECORDATORIO,
   seccionMantenimiento,
   textoVencimiento,
-  MAXIMO_CERRADOS,
   VISTAS_MANTENIMIENTOS,
   type VistaMantenimientos,
 } from "@/modulos/mantenimientos/reglas";
@@ -78,14 +79,15 @@ const cantidad = (n: number) => (n === 1 ? "1 mantenimiento" : `${n} mantenimien
 
 async function Listas({ searchParams }: Pick<PageProps<"/panel/mantenimientos">, "searchParams">) {
   const usuario = await exigirModulo("mantenimientos");
-  const { vista: pedida } = await searchParams;
+  const parametros = await searchParams;
+  const pedida = parametros.vista;
   const vista = VISTAS_MANTENIMIENTOS.find((v) => v === pedida) ?? "por-avisar";
   const hoy = fechaEnBolivia();
   // Las cantidades y la lista a la vez, no una detrás de otra
   const [cantidades, contenido] = await Promise.all([
     contarPorVista(hoy),
     vista === "cerrados"
-      ? cerrados(hoy, { ordenes: puedeVerModulo(usuario, "ordenes"), agenda: puedeVerModulo(usuario, "agenda") })
+      ? cerrados(hoy, { ordenes: puedeVerModulo(usuario, "ordenes"), agenda: puedeVerModulo(usuario, "agenda") }, leerPagina(parametros.pagina), (p) => conPagina("/panel/mantenimientos", parametros, p))
       : abiertos(vista, hoy, puedeVerModulo(usuario, "agenda") && puedeVerModulo(usuario, "pagos"), puedeVerModulo(usuario, "clientes")),
   ]);
 
@@ -97,9 +99,6 @@ async function Listas({ searchParams }: Pick<PageProps<"/panel/mantenimientos">,
         pestanas={VISTAS_MANTENIMIENTOS.map((v) => ({ href: enlace(v), texto: TITULOS[v], cuenta: cantidades[v] }))}
       />
       {contenido}
-      {vista === "cerrados" && cantidades.cerrados > MAXIMO_CERRADOS && (
-        <p className="text-sm text-tinta-suave">Se muestran los {MAXIMO_CERRADOS} más recientes. Los demás están en la ficha de cada cliente.</p>
-      )}
     </>
   );
 }
@@ -177,8 +176,9 @@ async function abiertos(vista: "por-avisar" | "mas-adelante", hoy: string, puede
 }
 
 /** Agendados (con su reserva) y "No le interesa" (con su nota): para consultar, sin acciones. */
-async function cerrados(hoy: string, ve: { ordenes: boolean; agenda: boolean }) {
-  const lista = await mantenimientosCerrados();
+/** "Cerrados", de a páginas (17/11). Cada fila vuelve a esta misma página (pedido 43). */
+async function cerrados(hoy: string, ve: { ordenes: boolean; agenda: boolean }, pedida: number, enlacePagina: (p: number) => string) {
+  const { cerrados: lista, total, pagina, paginas } = await mantenimientosCerrados(pedida);
   if (lista.length === 0) return <EstadoVacio>Todavía no hay mantenimientos reservados ni cerrados.</EstadoVacio>;
   return (
     <>
@@ -211,6 +211,7 @@ async function cerrados(hoy: string, ve: { ordenes: boolean; agenda: boolean }) 
           ))}
         </ListaEnTarjeta>
       </div>
+      <Paginacion pagina={pagina} paginas={paginas} total={total} nombre={["mantenimiento", "mantenimientos"]} enlace={enlacePagina} />
     </>
   );
 }
