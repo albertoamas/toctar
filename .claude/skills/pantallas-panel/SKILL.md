@@ -81,11 +81,12 @@ Toda pantalla del panel es uno de estos tipos. Identificarlo decide su forma; no
 
 ## 3. Acciones y botones
 
-Los tipos de botón (rojo para guardar o crear, contorno para lo secundario, rosado para lo que no se deshace, sin fondo en las filas) y sus tamaños ya están en `pulido-visual.md`. Además:
+Los tipos de botón (rojo para guardar o crear, contorno para lo secundario, contorno rojo para lo que no se deshace (desde el 18/11, C7; antes, rosado), sin fondo en las filas) y sus tamaños ya están en `pulido-visual.md`. Además:
 
 - **Una acción principal (roja) a la vista por pantalla**, o por sección abierta. Si hay dos rojos compitiendo, uno no es principal.
 - **Cada botón dice qué hace y sobre qué:** "Guardar precios", "Registrar pago", "Entregar vehículo". Un "Guardar" solo vale si en ese momento hay un solo formulario abierto.
-- **Siempre en el mismo lugar:** al pie de su formulario o sección, alineado a la izquierda, el principal primero y "Cancelar" al lado. El paso siguiente de una ficha, en su encabezado.
+- **Siempre en el mismo lugar:** al pie de su formulario o sección, alineado a la izquierda, el principal primero y "Cancelar" al lado. En un **modal** (`PieModal`, C7 §5.4), como en los diálogos de Material y Apple: a la derecha en la computadora, con "Cancelar" a la izquierda de la acción, y a lo ancho en el celular; `PieModal` los ordena solo. El paso siguiente de una ficha, en su encabezado.
+- **El dato que decide, arriba del modal**, con `DatoClave` ("Falta cobrar 300 Bs", "Ahora: 10/11 al 11/11", "Adelanto recibido 200 Bs"), y el modal del tamaño de lo que lleva: `tamano="mediano"` si tiene una tabla o fotos.
 - **Menú "Más"** para lo poco frecuente: un solo componente, `MenuMas` (`src/componentes/panel/menu-mas.tsx`, sobre el `dropdown-menu` de shadcn; desde el pulido 8.3, en la ficha del cliente). No es `menu-desplegable.tsx`, que es la navegación del celular. Lo destructivo dentro de "Más" sigue pidiendo confirmación: un `ModalFormulario` con "Sí, {verbo}" y `CancelarModal focoInicial` (el foco en "Cancelar", así un Enter no lo confirma).
 - **Un componente, no copias:** el patrón "sección con Editar" es `SeccionConEditar` y lo usan todas las fichas; todo modal con formulario es `ModalFormulario`; su formulario se cierra al guardar con `useCerrarModal` y pone sus botones en `PieModal`, con `CancelarModal` ("Cancelar", o "Listo" si cada cambio ya se guardó al momento). Lo que se consulta (como un historial) va arriba en el modal, no en el pie. Si una pantalla necesita una variante, se extiende el componente.
 - **Alineación:** listas de datos con la etiqueta a la izquierda y el valor a la derecha (también los campos de un formulario de montos: una fila por campo, de ancho fijo), así los números quedan en columna aunque una etiqueta ocupe dos líneas. En una grilla, las etiquetas largas desalinean los valores.

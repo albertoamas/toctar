@@ -72,7 +72,7 @@ Una pantalla nueva o cambiada toma una de estas formas; si ninguna sirve, se dis
 | Cabecera de una sección | "Editar", "Agregar", "Registrar pago" | Sin borde, con ícono |
 | Fila de una lista | Toda la fila abre su ficha o su modal | Sin botones, con la flecha ›. Excepción: la acción de todos los días en Saldos y Mantenimientos (`FilaConAcciones`) |
 | Fila de una tarjeta que se lee (un pago) | Lo poco usado que no se deshace (anular) | En su "⋯" (`MenuMas icono`), a la derecha, con su confirmación en un modal |
-| Pie de un modal | Guardar y "Cancelar"; aparte, a la derecha, lo que se usa poco | Rojo y con borde; lo de la derecha, sin borde |
+| Pie de un modal | "Cancelar" y la acción, a la derecha (en el celular, a lo ancho): `PieModal` pone "Cancelar" primero (C7 §5.4, 18/11) | La acción en rojo; lo que no se deshace, con contorno rojo; "Cancelar", con borde |
 
 - En una pantalla con varias listas iguales (Taller), "Agregar" va con borde: varias acciones rojas competirían.
 - Lo que no se deshace pide confirmación, con el foco en "Cancelar".
@@ -95,7 +95,7 @@ En los dos casos, al crear se llega a la ficha de lo creado (o se ve en la secci
 
 ## 4. Editar y guardar
 
-- Todo modal de edición usa `ModalFormulario`, con sus botones en `PieModal`.
+- Todo modal de edición usa `ModalFormulario`, con sus botones en `PieModal`. Arriba, el dato que decide con `DatoClave`; su tamaño, `chico` (30 rem, casi todos) o `mediano` (40 rem: una tabla o fotos), y en el celular, la hoja de borde a borde (C7 §5.4).
 - El botón dice qué guarda: "Guardar horario", "Guardar pregunta".
 - **Ningún modal pierde lo escrito por un cierre sin querer** (pulido 13.48): con cambios, tocar afuera, Escape o el "atrás" de Android (Chrome se lo avisa al diálogo) no cierran; el **pie del mismo modal** pasa a "Tienes cambios sin guardar." con "Seguir editando" (con el foco) y "Descartar cambios". **Nunca otro modal encima.** "Cancelar" y la X también preguntan, como en iOS y Android (hallazgo 7 de la prueba en celulares, 15/11): cerrar con cambios nunca los descarta sin avisar. "Listo" no pregunta (cada cambio ya se guardó). Sin cambios, todo cierra directo. Al salir de una pantalla con cambios (un formulario de crear, Recibir, Entregar), la pregunta es un diálogo chico y centrado (`alertdialog`) con "Seguir editando" y "Salir sin guardar".
 - Al guardar, el modal se cierra y la ficha muestra el dato nuevo.

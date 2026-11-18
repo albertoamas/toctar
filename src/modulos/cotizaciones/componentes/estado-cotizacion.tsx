@@ -13,11 +13,12 @@ import { ModalFormulario } from "@/componentes/panel/modal-formulario";
 import { CancelarModal, PieModal } from "@/componentes/panel/modal-pie";
 import { FormularioPaso } from "@/componentes/panel/formulario-paso";
 import { Button } from "@/componentes/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { cambiarEstadoCotizacion } from "../acciones";
 import { MOTIVOS, NOMBRE_MOTIVO } from "../reglas";
+import { DatoClave } from "@/componentes/panel/dato-clave";
+import { OpcionesEnTarjetas } from "@/componentes/panel/opciones-en-tarjetas";
 
 // El menú "Más" de una cotización (pedido 23, como en las demás fichas): "Nueva versión" y "Rechazar" en una pendiente
 // (rechazar pide el motivo en un modal); "Volver a pendiente" en una rechazada; "Rechazar" y "Volver a pendiente" en
@@ -32,9 +33,11 @@ type Props = {
   cambios: ("rechazar" | "reabrir")[];
   /** El chat del cliente sin mensaje, cuando una versión ya lleva "Enviar por WhatsApp" (un solo WhatsApp a la vista, C6). */
   escribir: string | null;
+  /** Qué se rechaza, arriba del modal (C7 §5.4): "2026-0042 · Paola Torrez" y su total. */
+  resumen: { texto: string; total: string | null };
 };
 
-export function MasCotizacion({ id, nuevaVersion, cambios, escribir }: Props) {
+export function MasCotizacion({ id, nuevaVersion, cambios, escribir, resumen }: Props) {
   const router = useRouter();
   const [abierta, setAbierta] = useState<"rechazar" | "reabrir" | null>(null);
   const cerrar = (abierto: boolean) => !abierto && setAbierta(null);
@@ -48,7 +51,7 @@ export function MasCotizacion({ id, nuevaVersion, cambios, escribir }: Props) {
     <>
       <MenuMas acciones={acciones} />
       <ModalFormulario titulo="Rechazar la cotización" abierto={abierta === "rechazar"} alCambiar={cerrar}>
-        <FormularioRechazar id={id} />
+        <FormularioRechazar id={id} resumen={resumen} />
       </ModalFormulario>
       <ModalFormulario titulo="Volver a pendiente" abierto={abierta === "reabrir"} alCambiar={cerrar}>
         <FormularioReabrir id={id} />
@@ -57,7 +60,7 @@ export function MasCotizacion({ id, nuevaVersion, cambios, escribir }: Props) {
   );
 }
 
-function FormularioRechazar({ id }: { id: number }) {
+function FormularioRechazar({ id, resumen }: { id: number; resumen: Props["resumen"] }) {
   const cerrar = useCerrarModal();
   const [resultado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
     conAviso(cambiarEstadoCotizacion, (r) => r.ok && cerrar()),
@@ -75,25 +78,18 @@ function FormularioRechazar({ id }: { id: number }) {
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="accion" value="rechazar" />
       {resultado.mensaje && !resultado.ok && <MensajeError id="rechazar-error">{resultado.mensaje}</MensajeError>}
-      <div className="flex flex-col gap-3">
-        <p id="motivo-titulo" className="text-sm font-medium">Motivo</p>
-        <input type="hidden" name="motivo" value={elegido} />
-        <RadioGroup
-          value={elegido}
-          onValueChange={(valor) => setElegido(String(valor))}
-          aria-labelledby="motivo-titulo"
-          aria-describedby={e.motivo ? "motivo-error" : undefined}
-          className="flex flex-wrap gap-2"
-        >
-          {MOTIVOS.map((m, i) => (
-            <label key={m} htmlFor={`motivo-${m}`} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-border bg-fondo px-3 py-2 has-data-checked:border-tinta">
-              <RadioGroupItem id={`motivo-${m}`} value={m} data-invalido={(!!e.motivo && i === 0) || undefined} />
-              <span className="font-semibold">{NOMBRE_MOTIVO[m]}</span>
-            </label>
-          ))}
-        </RadioGroup>
-        {e.motivo && <MensajeError id="motivo-error">{e.motivo}</MensajeError>}
-      </div>
+      <DatoClave etiqueta={resumen.texto} valor={resumen.total} />
+      {/* El motivo en tarjetas que se tocan enteras, como "Cómo pagó" (C7 §5.4) */}
+      <OpcionesEnTarjetas
+        id="motivo"
+        titulo="Motivo"
+        nombre="motivo"
+        valor={elegido}
+        cambiar={setElegido}
+        opciones={MOTIVOS.map((m) => ({ valor: m, texto: NOMBRE_MOTIVO[m] }))}
+        error={e.motivo}
+        className="grid-cols-2"
+      />
       <Campo id="detalle" etiqueta="Detalle" opcional={elegido !== "otro"} error={e.detalle} ayuda={elegido === "otro" ? "Con «Otro», escribe qué pasó." : "Opcional."}>
         <Textarea id="detalle" name="detalle" rows={2} defaultValue={v.detalle} aria-invalid={!!e.detalle} aria-describedby={e.detalle ? "detalle-error" : "detalle-ayuda"} />
       </Campo>

@@ -39,19 +39,19 @@ análisis con capturas → propuesta → aprobación → programar → capturas 
 
 ### Piezas
 
-- [ ] `modal-formulario.tsx`: tamaños chico, mediano y grande; hoja desde abajo en el celular.
-- [ ] `modal-pie.tsx`: "Cancelar" a la izquierda y la acción a la derecha en la computadora; a todo el ancho en el celular.
-- [ ] `DatoClave` (nuevo): el recuadro con el dato que decide.
-- [ ] Botón destructivo de contorno con texto rojo.
+- [x] `modal-formulario.tsx`: tamaños chico (30 rem), mediano (40 rem) y grande (50 rem); la hoja desde abajo en el celular ya estaba. Mediano: precios, historial de precios, subir fotos, portada y editar trabajo.
+- [x] `modal-pie.tsx`: "Cancelar" a la izquierda y la acción a la derecha en la computadora; a todo el ancho en el celular. `PieModal` pone "Cancelar" primero también en el código (el orden de Tab es el que se ve).
+- [x] `DatoClave` (nuevo, `dato-clave.tsx`): el recuadro con el dato que decide, en tono neutro, aviso o peligro.
+- [x] Botón destructivo de contorno con texto rojo (la variante `destructive` de `button.tsx`: cambia en los 10 lugares que la usan).
 
 ### Los 6 que se revisan uno por uno
 
-- [ ] Registrar pago (`registrar-pago.tsx`)
-- [ ] Anular pago (`anular-pago.tsx`)
-- [ ] Reprogramar (`acciones-reserva.tsx`)
-- [ ] Cancelar reserva (`acciones-reserva.tsx`)
-- [ ] Rechazar la cotización (`estado-cotizacion.tsx`)
-- [ ] Agregar servicio (`agregar-adicional.tsx`)
+- [x] Registrar pago (`registrar-pago.tsx`): "Falta cobrar" arriba (antes, una ayuda bajo el monto).
+- [x] Anular pago (`anular-pago.tsx`): el pago que se anula como dato clave.
+- [x] Reprogramar (`acciones-reserva.tsx`): las fechas de ahora como dato clave.
+- [x] Cancelar reserva (`acciones-reserva.tsx`): el adelanto recibido en tono peligro, si hay.
+- [x] Rechazar la cotización (`estado-cotizacion.tsx`): qué se rechaza y su total arriba; el motivo en tarjetas.
+- [x] Agregar servicio (`agregar-adicional.tsx`): el precio del catálogo como ayuda; el botón dice "Agregar servicio".
 
 ### Los demás (heredan las piezas; se miran en el recorrido de capturas)
 

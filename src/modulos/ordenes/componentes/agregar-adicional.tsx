@@ -42,6 +42,8 @@ function Formulario({ id, opciones }: { id: number; opciones: OpcionServicio[] }
   const [servicioId, setServicioId] = useState(0);
   const [varianteId, setVarianteId] = useState(0);
   const [precio, setPrecio] = useState("");
+  // El precio del catálogo para el tamaño del vehículo, como ayuda (C7 §5.4, igual que en Nueva cotización)
+  const [delCatalogo, setDelCatalogo] = useState<string | null>(null);
   const grupos = serviciosConOpciones(opciones);
   // El error del servicio va al menú que falta: el servicio o su opción
   const marca = { "aria-invalid": !!e.varianteId, "aria-describedby": e.varianteId ? "servicioId-error" : undefined };
@@ -62,6 +64,7 @@ function Formulario({ id, opciones }: { id: number; opciones: OpcionServicio[] }
             setVarianteId(o?.varianteId ?? 0);
             // El precio vigente del tamaño, para cambiarlo si hace falta; "según evaluación" lo deja vacío
             setPrecio(o?.sugerencia.tipo === "monto" ? mostrarMonto(o.sugerencia.monto) : "");
+            setDelCatalogo(o?.sugerencia.tipo === "monto" ? mostrarMonto(o.sugerencia.monto) : null);
           }}
           idServicio="servicioId"
           etiquetaOpcion="Opción del servicio"
@@ -69,12 +72,12 @@ function Formulario({ id, opciones }: { id: number; opciones: OpcionServicio[] }
           marcaOpcion={servicioId ? marca : sinMarca}
         />
       </Campo>
-      <Campo id="precio" etiqueta="Precio" error={e.precio}>
+      <Campo id="precio" etiqueta="Precio" error={e.precio} ayuda={delCatalogo !== null ? `Precio del catálogo: ${delCatalogo} Bs.` : undefined}>
         <CampoMonto id="precio" name="precio" value={precio} onChange={(ev) => setPrecio(ev.target.value)} aria-invalid={!!e.precio} aria-describedby={e.precio ? "precio-error" : undefined} />
       </Campo>
       <PieModal>
         <Button type="submit" disabled={enviando}>
-          {enviando ? "Agregando…" : "Agregar"}
+          {enviando ? "Agregando…" : "Agregar servicio"}
         </Button>
         <CancelarModal />
       </PieModal>

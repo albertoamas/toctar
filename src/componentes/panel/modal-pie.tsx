@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef } from "react";
+import { Children, isValidElement, useContext, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { Button } from "@/componentes/ui/button";
 import { Modal } from "./modal-contexto";
@@ -8,6 +8,9 @@ import { Modal } from "./modal-contexto";
 
 /**
  * Los botones del formulario, al pie del modal: fijos abajo mientras el formulario se desplaza (en el celular, la hoja).
+ * Como en los diálogos de Material y de Apple (C7 §5.4, 18/11): en la computadora, a la derecha, con "Cancelar" a la
+ * izquierda de la acción; en el celular, los dos a lo ancho, "Cancelar" a la izquierda. Las pantallas los escriben en
+ * cualquier orden: "Cancelar" (CancelarModal) va primero también en el código, así el orden de Tab es el que se ve.
  * Si el modal está preguntando (un cierre sin querer con cambios), el pie pasa a "Tienes cambios sin guardar." con
  * "Seguir editando" (con el foco) y "Descartar cambios": la pregunta, en el mismo modal (pulido 13.48).
  */
@@ -50,12 +53,15 @@ export function PieModal({ children, respaldo = false }: { children: React.React
       </div>
     </div>
   );
+  const botones = Children.toArray(children);
+  const esCancelar = (b: React.ReactNode) => isValidElement(b) && b.type === CancelarModal;
   return (
     <>
       {pregunta}
       {/* Mientras pregunta, el pie de siempre queda montado pero oculto: su botón sigue diciendo si se está guardando */}
-      <div hidden={!!pregunta} className="sticky -bottom-4 -mx-4 -mb-4 flex flex-wrap gap-2 border-t border-border bg-popover p-4">
-        {children}
+      <div hidden={!!pregunta} className="sticky -bottom-4 -mx-4 -mb-4 flex flex-wrap gap-2 border-t border-border bg-popover p-4 max-sm:*:flex-1 sm:justify-end">
+        {botones.filter(esCancelar)}
+        {botones.filter((b) => !esCancelar(b))}
       </div>
     </>
   );

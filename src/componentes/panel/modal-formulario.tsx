@@ -46,8 +46,12 @@ const primerControl = (modal: HTMLElement | null, sinTeclado: boolean) =>
   modal?.querySelector<HTMLElement>(habilitado(["button"])) ??
   true;
 
+/** Chico (casi todos), mediano (una tabla o fotos) o grande: el ancho en la computadora; en el celular, la hoja de borde a borde (C7 §4.2). */
+const TAMANO = { chico: "sm:max-w-[30rem]", mediano: "sm:max-w-[40rem]", grande: "sm:max-w-[50rem]" } as const;
+
 type Props = {
   titulo: string;
+  tamano?: keyof typeof TAMANO;
   /** Con pantalla táctil, abrir sin poner el foco en un campo (no abre solo el teclado): ver `primerControl`. */
   sinTeclado?: boolean;
   abierto: boolean;
@@ -56,7 +60,7 @@ type Props = {
   children: React.ReactNode;
 };
 
-export function ModalFormulario({ titulo, abierto, alCambiar, sinTeclado = false, children }: Props) {
+export function ModalFormulario({ titulo, abierto, alCambiar, sinTeclado = false, tamano = "chico", children }: Props) {
   const modal = useRef<HTMLDivElement>(null);
   // Lo que tenía el formulario al abrirse. Sin formulario (una lista, una confirmación), null: nunca pregunta
   const base = useRef<string | null>(null);
@@ -148,7 +152,8 @@ export function ModalFormulario({ titulo, abierto, alCambiar, sinTeclado = false
           return primerControl(modal.current, sinTeclado);
         }}
         className={[
-          "max-h-[calc(100dvh-2rem)] gap-5 overflow-y-auto text-base sm:max-w-lg",
+          "max-h-[calc(100dvh-2rem)] gap-5 overflow-y-auto text-base",
+          TAMANO[tamano],
           // En el celular, la hoja: pegada abajo (sobre el teclado, si está abierto), de borde a borde y hasta donde se ve
           "max-sm:top-auto max-sm:bottom-[var(--tt-teclado,0px)] max-sm:max-h-[calc(var(--tt-alto-visible,100dvh)-1rem)] max-sm:max-w-full max-sm:translate-y-0 max-sm:rounded-b-none",
           // Sube deslizándose desde abajo y baja al cerrarse, sin agrandarse; con "reducir movimiento", solo aparece

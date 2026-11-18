@@ -91,7 +91,7 @@ export function Tarjeta({
           <MenuMas acciones={acciones} deshabilitado={pendiente} etiqueta={`Más: ${nombre}`} />
         </span>
       </div>
-      <ModalFormulario titulo="Editar trabajo" abierto={editando} alCambiar={setEditando}>
+      <ModalFormulario tamano="mediano" titulo="Editar trabajo" abierto={editando} alCambiar={setEditando}>
         <EditarItem item={item} servicios={servicios} />
       </ModalFormulario>
       <ModalFormulario titulo="¿Eliminar esta foto?" abierto={eliminando} alCambiar={setEliminando}>

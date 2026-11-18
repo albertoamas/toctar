@@ -39,7 +39,7 @@ export function GaleriaPanel({ items, servicios, portadaId }: { items: ItemGaler
       </div>
       {/* Pulido 13.61 (14/11): en un modal, que en el celular sube desde abajo. Antes, el formulario reemplazaba el botón
           en medio de la página y empujaba la portada elegida y la lista */}
-      <ModalFormulario titulo="Subir fotos" abierto={subiendo} alCambiar={setSubiendo}>
+      <ModalFormulario tamano="mediano" titulo="Subir fotos" abierto={subiendo} alCambiar={setSubiendo}>
         <SubirFotos servicios={servicios} />
       </ModalFormulario>
 

@@ -161,7 +161,7 @@ export function PreciosServicio({ servicio, variantes, tamanos, duracionServicio
         {cargar ? <p className="text-tinta-suave">Sin precios cargados.</p> : <PreciosVariante variante={variante} tamanos={tamanos} duracionServicio={duracionServicio} />}
       </section>
 
-      <ModalFormulario titulo={varianteEnModal ? `Precios de ${nombreDe(varianteEnModal)}` : "Precios"} abierto={!!varianteEnModal} alCambiar={(a) => !a && setAbierta(null)}>
+      <ModalFormulario tamano="mediano" titulo={varianteEnModal ? `Precios de ${nombreDe(varianteEnModal)}` : "Precios"} abierto={!!varianteEnModal} alCambiar={(a) => !a && setAbierta(null)}>
         {varianteEnModal && (
           <div className="flex flex-col gap-4">
             {varias && <VariantesEnModal variantes={variantes} elegida={varianteEnModal} alElegir={abrir} />}

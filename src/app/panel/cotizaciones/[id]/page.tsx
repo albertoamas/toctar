@@ -33,6 +33,7 @@ import { aqui, conDesde, volverDesde } from "@/lib/volver";
 import { urlSitio } from "@/lib/sitio";
 import { obtenerDatosPublicos, obtenerPlantillas } from "@/modulos/configuracion/consultas";
 import { mensajeCotizacion } from "@/modulos/ordenes/mensajes";
+import { mostrarMonto } from "@/modulos/catalogo/reglas";
 
 export const metadata: Metadata = { title: "Cotización" };
 
@@ -144,6 +145,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
               escribir={enviar.size > 0 ? escribir : null}
               nuevaVersion={pendiente && vigente && cotiza ? conDesde(`/panel/cotizaciones/${c.id}/nueva-version?desde=${vigente.id}`, desdeAqui) : null}
               cambios={pendiente ? ["rechazar"] : c.sinFecha ? ["rechazar", "reabrir"] : c.estado === "perdido" ? ["reabrir"] : []}
+              resumen={{ texto: `${c.numero} · ${c.cliente}`, total: vigente ? `${mostrarMonto(vigente.total)} Bs` : null }}
             />
           </div>
         }
