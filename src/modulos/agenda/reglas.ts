@@ -78,10 +78,11 @@ export function bloquesDeLaSemana<T extends Rango>(trabajos: readonly T[], lunes
 export const ocupaEspacio = (estado: EstadoTrabajo) => estado !== "cancelado" && estado !== "entregado";
 
 /**
- * Pedido 28: las entregadas siguen en el tablero, en los días que estuvieron, para ver qué se entregó y cuándo. Pero ya
- * no ocupan el espacio, así que se muestran solo en los días anteriores a `hoy` (hoy el espacio queda libre para
- * agendar) y que no usa otra reserva (la que entró el día en que salió) ni otra entregada. Cada tramo de días libres
- * seguidos es una cinta; sin días libres, no se muestra. Día por día: no depende de la semana que se mira.
+ * Pedido 28: las entregadas siguen en el tablero, en los días que estuvieron, para ver qué se entregó y cuándo, hasta
+ * `hoy` incluido (18/11: antes, solo los días anteriores, y una entregada el mismo día desaparecía hasta el día
+ * siguiente). Ya no ocupan el espacio: se muestran en los días que no usa otra reserva (la que entró el día en que
+ * salió, también hoy) ni otra entregada, y el espacio sigue libre para agendar. Cada tramo de días libres seguidos es
+ * una cinta; sin días libres, no se muestra. Día por día: no depende de la semana que se mira.
  */
 export function entregadasALaVista<T extends Rango & { estado: EstadoTrabajo }>(reservas: readonly T[], hoy: string): T[] {
   const ocupados: Rango[] = reservas.filter((r) => ocupaEspacio(r.estado));
@@ -96,7 +97,7 @@ export function entregadasALaVista<T extends Rango & { estado: EstadoTrabajo }>(
       }
       tramo = null;
     };
-    for (let dia = e.inicio; dia <= e.fin && dia < hoy; dia = sumarDias(dia, 1)) {
+    for (let dia = e.inicio; dia <= e.fin && dia <= hoy; dia = sumarDias(dia, 1)) {
       if (ocupados.some((o) => seCruzan(o, { inicio: dia, fin: dia }))) cerrar();
       else tramo = tramo ? { inicio: tramo.inicio, fin: dia } : { inicio: dia, fin: dia };
     }

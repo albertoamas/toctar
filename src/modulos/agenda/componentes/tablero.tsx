@@ -14,6 +14,7 @@ import {
   diaEnFrase,
   NOMBRE_ESTADO_TRABAJO,
   numeroDia,
+  ocupaEspacio,
   seCruzan,
   textoDia,
   textoServicio,
@@ -261,7 +262,8 @@ export function SemanaEnLista({ semana, dias, hoy, conOrdenes, desde }: Props) {
       {dias.map((fecha) => {
         const cerrado = semana.diasCerrados.includes(diaDeLaSemana(fecha));
         const del = delDia(semana, fecha);
-        const libres = fecha < hoy || cerrado ? [] : semana.espacios.filter((e) => e.activo && !del.some((d) => d.r.espacioId === e.id));
+        // Una entregada (hoy también se ve, 18/11) no ocupa: su espacio sigue libre para reservar
+        const libres = fecha < hoy || cerrado ? [] : semana.espacios.filter((e) => e.activo && !del.some((d) => d.r.espacioId === e.id && ocupaEspacio(d.r.estado)));
         return (
           <section key={fecha} aria-label={tituloDia(fecha, hoy)} className="flex flex-col gap-2">
             <CabeceraDia fecha={fecha} hoy={hoy} cuantas={del.length} cerrado={cerrado && del.length === 0} />
@@ -350,7 +352,8 @@ export function PestanasDias({ semana, dias, hoy, dia, enlace }: { semana: Seman
 export function AgendaDelDia({ semana, dia, hoy, conOrdenes, desde }: { semana: SemanaDeAgenda; dia: string; hoy: string; conOrdenes: boolean; desde: string }) {
   const cerrado = semana.diasCerrados.includes(diaDeLaSemana(dia));
   const del = delDia(semana, dia);
-  const libres = dia < hoy || cerrado ? [] : semana.espacios.filter((e) => e.activo && !del.some((d) => d.r.espacioId === e.id));
+  // Una entregada (hoy también se ve, 18/11) no ocupa: su espacio sigue libre para reservar
+  const libres = dia < hoy || cerrado ? [] : semana.espacios.filter((e) => e.activo && !del.some((d) => d.r.espacioId === e.id && ocupaEspacio(d.r.estado)));
   return (
     <section aria-label={tituloDia(dia, hoy)} className="flex flex-col gap-2 md:hidden">
       <CabeceraDia fecha={dia} hoy={hoy} cuantas={del.length} cerrado={cerrado && del.length === 0} />

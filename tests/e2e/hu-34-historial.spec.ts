@@ -88,3 +88,30 @@ test("el perfil Taller ve en «Entregadas» todas, sin precios (pedido 32)", asy
   // Sin Pagos, sin precios (RN-12)
   await expect(page.getByText(/Bs/)).toHaveCount(0);
 });
+
+test("entregada hoy, se ve hoy en la agenda en verde (18/11: antes desaparecía hasta el día siguiente)", async ({ page }, info) => {
+  const s = sufijo(info);
+  const placa = `HI34${s.toUpperCase()}5`;
+  await crearClienteEnBase({ nombre: `Historial 5 ${s}`, telefono: telefono(info, 5), placa });
+  // En un espacio sin nada hoy: si otra reserva entra hoy en el mismo, hoy es de ella; y de dos entregadas el mismo día,
+  // se dibuja una. Celular y escritorio corren a la vez: uno toma el primero libre y el otro el último
+  const [libre] = await consultar<{ n: number }>(
+    `select n from (select e.id, (row_number() over (order by e.orden) - 1)::int as n from espacio_taller e where e.activo) a
+     where not exists (select 1 from trabajo t where t.espacio_id = a.id and t.estado <> 'cancelado'
+       and (now() at time zone 'America/La_Paz')::date between t.fecha_inicio and t.fecha_fin)
+     order by n ${info.project.name === "celular" ? "asc" : "desc"} limit 1`,
+  );
+  test.skip(!libre, "Hoy todos los espacios tienen una reserva de otra prueba");
+  const id = await crearOrdenLista({ placa, espacio: libre.n, dias: dias(info), precio: 500, pagado: 500 });
+  // Recibida y entregada hoy: la entrega la acorta a hoy (como en la prueba con el dueño, del 17 al 21 → el 17)
+  await consultar(
+    `update trabajo set estado = 'entregado', fecha_inicio = (now() at time zone 'America/La_Paz')::date, fecha_fin = (now() at time zone 'America/La_Paz')::date,
+       entregado_at = now(), sin_firma_motivo = 'Prueba' where id = $1`,
+    [id],
+  );
+  await ingresarComoDueno(page);
+  await page.goto("/panel/agenda");
+  const cinta = page.getByRole("link", { name: new RegExp(`^${placa}`) }).locator("visible=true");
+  await expect(cinta).toContainText("Entregada");
+  await expect(cinta).toHaveAttribute("data-tono", "exito");
+});
