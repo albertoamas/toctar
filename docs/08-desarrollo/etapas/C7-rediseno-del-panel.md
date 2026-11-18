@@ -1,7 +1,7 @@
 # C7 Rediseño del panel — especificación
 
-- **Fase y semana:** cierre de la Entrega 2 · desde el 18/11/2026 (fechas en §10)
-- **Estado:** borrador (falta el visto bueno del desarrollador y, para la fase 0, del dueño)
+- **Fase y semana:** cierre de la Entrega 2 · del 18 al 20/11/2026 (1 a 3 días, §10)
+- **Estado:** aprobada (18/11): el rojo de la marca como principal, de 1 a 3 días
 - **Historias:** todas las del panel (HU-01 a HU-41 y los pedidos 12 a 51). No agrega funciones: cambia cómo se ven y se usan.
 - **Base:** `docs/06-diseno/sistema-del-panel.md` (estructura, que se mantiene y se amplía), la skill `pantallas-panel`, la
   reunión del dueño sobre el panel (fin de octubre: "un panel administrativo estándar y amigable, que un tonto pueda
@@ -27,9 +27,11 @@ desde la cotización hasta la entrega y el cobro, con la historia de cada client
 
 1. **Menos es más.** Cada pantalla hace una cosa. Lo que no ayuda a esa tarea se quita, se pliega ("Más", "Ver más") o
    se va a otra pantalla. Sin párrafos de introducción: el título y las etiquetas alcanzan.
-2. **Un color, un significado.** El color principal es solo para la acción principal y lo activo. Verde, ámbar, rojo y
-   azul son estados (bien, atención, peligro, información) y nunca decoran. Hoy el rojo de la marca es a la vez el botón
-   principal y el color de los errores: se separan.
+2. **Un color, un significado.** El rojo de la marca es el color principal (decisión del 18/11): solo la acción
+   principal y lo activo van en rojo sólido. Verde, ámbar y azul son estados (bien, atención, información) y nunca
+   decoran. Para que el rojo no se confunda con un error: lo que no se deshace (desactivar, anular, eliminar) va con un
+   botón de contorno o sin borde y texto rojo, siempre con confirmación; los errores, con ícono y texto sobre un fondo
+   rosado suave, nunca como un botón.
 3. **Siempre se sabe dónde se está y qué sigue.** Cada ficha dice en qué paso del trabajo está y ofrece el paso
    siguiente como su única acción principal.
 4. **Las mismas piezas en todas partes.** Una pantalla nueva no inventa su estilo. Si una pieza no alcanza, se extiende
@@ -79,20 +81,22 @@ No cambian. Si una pantalla rediseñada necesita un dato que hoy no se lee, se a
 
 Se definen en la fase 0 con un prototipo y se fijan como tokens del panel en `globals.css` (el sitio no cambia):
 
-- **Paleta.** Neutros fríos (fondo, superficie, bordes, tres tintas de texto), **un color principal** y cuatro de estado
-  con su fondo suave. El principal no puede ser rojo, verde ni ámbar (son estados). Propuestas para el prototipo:
+- **Paleta.** El rojo de la marca como principal, sobre neutros fríos y limpios (decisión del 18/11):
 
-  | Opción | Principal | Idea | Por qué |
+  | Token | Valor | Uso | Contraste |
   |---|---|---|---|
-  | A (recomendada) | Azul petróleo `#155E75` | El brillo del auto recién encerado: profundo y sereno | Se distingue de los estados, se lee bien sobre blanco (AA) y no es el azul violáceo de cualquier SaaS |
-  | B | Grafito `#1F2937` (botones oscuros) | Sobrio, como Linear o Vercel | Lo más neutro; el color queda solo para los estados |
-  | C | Azul cobalto `#1D4ED8` | El estándar de los paneles | El más conocido; se parece al resto |
+  | Principal | `#E30613` | Botón principal, módulo activo, foco de los campos | 4,9:1 con texto blanco |
+  | Principal presionado | `#C40511` | Al pasar el mouse o presionar; texto rojo chico | 6,2:1 sobre blanco |
+  | Fondo | `#F5F7FA` | Detrás de las tarjetas | — |
+  | Superficie | `#FFFFFF` | Tarjetas, modales, menú | — |
+  | Borde | `#E3E8EF` | Separadores | Decorativo |
+  | Borde de campos | `#8A94A6` | Campos, casillas | 3,1:1 |
+  | Texto | `#18212F` | Todo lo que se lee | 15:1 |
+  | Texto suave | `#5B6778` | Ayudas, detalles | 5,4:1 |
 
-  Neutros de partida: fondo `#F5F7FA`, superficie `#FFFFFF`, borde `#E3E8EF` (separadores), borde de campos `#8A94A6`
-  (3,1:1), texto `#18212F` (15:1), texto suave `#5B6778` (5,4:1). Estados, con su fondo suave: bien `#166534` sobre
-  `#E8F5EC`, atención `#B45309` sobre `#FEF3E2`, peligro `#C2262E` sobre `#FDECEC`, información (el principal sobre
-  `#E6F1F4`); todos pasan AA (4,5:1) como texto, sobre blanco y sobre su fondo (medido el 18/11). El rojo de la marca
-  queda solo en el logo.
+  Estados, con su fondo suave: bien `#166534` sobre `#E8F5EC`, atención `#B45309` sobre `#FEF3E2`, información
+  `#1D4ED8` sobre `#EAF0FD`, peligro (errores) `#C40511` sobre `#FDECEC`. Todos pasan AA (4,5:1) como texto, sobre
+  blanco y sobre su fondo (medido el 18/11).
 - **Estados del trabajo.** Un color por estado, con palabra: agendado (ámbar suave), en el taller (principal), listo
   (verde), entregado (gris), cancelado (gris tachado), con saldo (ámbar). Se definen una vez (`TONO_ESTADO_TRABAJO`).
 - **Tipografía.** Una sola familia de interfaz con números tabulares, servida desde `public/fuentes/`. Candidatas para
@@ -135,26 +139,21 @@ que invitan a actuar. Los nombres de los estados salen siempre de `NOMBRE_ESTADO
 
 ## 10. Orden de trabajo
 
-| Fase | Qué | Cómo se aprueba | Días aprox. |
-|---|---|---|---|
-| 0 | Decisiones: paleta, tipografía, armazón y el diseño de cada tipo de pantalla, en un prototipo con contenido real (Inicio, una lista, una ficha con el recorrido, un formulario y un modal, en celular y computadora) | El desarrollador elige; el dueño lo ve y da el visto bueno | 1–2 |
-| 1 | Fundamentos: tokens del panel en `globals.css`, contraste validado, fuentes | Capturas de antes y después | 1 |
-| 2 | Componentes, por familia (§7.2) | Capturas por familia | 2–3 |
-| 3 | Armazón: menú lateral, barra superior, barra inferior del celular, PWA | Capturas y prueba en el celular | 1 |
-| 4 | El recorrido del trabajo: indicador de pasos, paso siguiente, Inicio, historia en fichas | Propuesta y aprobación | 2 |
-| 5 | Pantallas, una por una, con sus modales (orden del checklist) | Propuesta, aprobación y capturas, una por vez | 5–7 |
-| 6 | Cierre: QA completo, Manual del panel regenerado, documentos al día, prueba en celulares | Checklist completo | 1–2 |
+En 1 a 3 días (decisión del 18/11), en este orden. Las fases 1 a 3 cambian todo el panel a la vez, así que se aprueban
+con capturas de las pantallas clave, no con un prototipo aparte:
 
-Total: entre 13 y 18 días de trabajo. Ramas `rediseno-<fase>-<tema>`, cada una con su PR; las fases 1 a 3 cambian todo
-el panel a la vez y van en PR chicos y seguidos para que `develop` no quede a medias más de un día.
+| Fase | Qué | Cómo se aprueba |
+|---|---|---|
+| 0 | Tipografía, armazón y el diseño de cada tipo de pantalla, sobre las pantallas reales (Inicio, Clientes, una orden, Nueva cotización y Registrar pago) | Capturas en 390 y 1280 px; el desarrollador aprueba |
+| 1 | Fundamentos: tokens del panel en `globals.css`, contraste validado, fuentes | Con la fase 0 |
+| 2 | Componentes, por familia (§7.2) | Capturas por familia |
+| 3 | Armazón: menú lateral, barra superior, barra inferior del celular, PWA | Capturas y prueba en el celular |
+| 4 | El recorrido del trabajo: indicador de pasos, paso siguiente, Inicio, historia en fichas | Propuesta y aprobación |
+| 5 | Pantallas, una por una, con sus modales (orden del checklist) | Capturas antes y después, de a grupos chicos |
+| 6 | Cierre: QA completo, Manual del panel regenerado, documentos al día | Checklist completo |
 
-**El plazo.** El acuerdo cierra la Entrega 2 el 1/12 (13 días). El rediseño completo no entra junto con la prueba a mano,
-la demo y las actas. Dos caminos, para decidir con el dueño (§12):
-
-1. **Mover la fecha de cierre** unas dos semanas y entregar el panel rediseñado completo (recomendado: el dueño prueba y
-   acepta el panel definitivo, y la capacitación y el manual se hacen una sola vez).
-2. **Mantener el 1/12** con las fases 0 a 4 (paleta, componentes, armazón y recorrido: lo que más se nota, porque cambia
-   todas las pantallas a la vez) y la fase 5 después, como mejora de la versión 2.0.x.
+Ramas `rediseno-<fase>-<tema>`, cada una con su PR; las fases 1 a 3 en PR chicos y seguidos para que `develop` no quede
+a medias. El dueño ve el panel rediseñado en pruebas antes de la prueba a mano y la demo, dentro del plazo del 1/12.
 
 ## 11. Criterio de salida
 
@@ -169,8 +168,7 @@ la demo y las actas. Dos caminos, para decidir con el dueño (§12):
 
 | Qué | De quién | Mientras tanto |
 |---|---|---|
-| La paleta (A, B o C) y la tipografía | Desarrollador, con el visto bueno del dueño en el prototipo | Se arma el prototipo con las tres |
-| Mover la fecha de cierre o dejar la fase 5 para después del 1/12 (§10) | Desarrollador con el dueño | Se avanza con las fases 0 a 4, que sirven en los dos caminos |
+| La tipografía (Inter, Figtree o la Montserrat de hoy) | Desarrollador, en la fase 0 | Se comparan sobre las pantallas reales |
 | Barra inferior en el celular: qué cuatro módulos (según los permisos de cada uno) | Desarrollador, en la fase 3 | Propuesta: Inicio, Agenda, Órdenes y Cotizaciones; el perfil Taller, Inicio, Agenda y Órdenes |
 | Búsqueda general (clientes, placas y cotizaciones desde el encabezado) | Es una función nueva: va a `registro-de-cambios.md` si se quiere | Cada lista mantiene su buscador |
 | Reportes y Gastos (`p16-gastos`, #257) | Desarrollador | Se rediseñan con el resto antes de unirlos |
