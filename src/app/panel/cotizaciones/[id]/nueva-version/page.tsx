@@ -11,7 +11,7 @@ import { exigirAccion } from "@/lib/sesion";
 import { formatearWhatsApp } from "@/lib/whatsapp";
 import { ResumenClienteVehiculo } from "@/modulos/clientes/componentes/resumen-cliente-vehiculo";
 import { FormularioNuevaVersion } from "@/modulos/cotizaciones/componentes/formulario-cotizacion";
-import { datosNuevaVersion } from "@/modulos/cotizaciones/consultas";
+import { datosNuevaVersion } from "@/modulos/cotizaciones/consultas/versiones";
 import { NOMBRE_ESTADO } from "@/modulos/cotizaciones/reglas";
 import { conDesde, leerDesde } from "@/lib/volver";
 

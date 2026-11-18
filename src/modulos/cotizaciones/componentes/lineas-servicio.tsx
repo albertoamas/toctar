@@ -1,7 +1,7 @@
 import { CampoMonto } from "@/componentes/panel/campo-monto";
 import { EditorLista } from "@/componentes/panel/editor-lista";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
-import type { OpcionServicio } from "../consultas";
+import type { OpcionServicio } from "../consultas/servicios";
 import { MAXIMO_LINEAS, serviciosConOpciones, SIN_SERVICIOS, type Sugerencia } from "../reglas";
 import { ElegirServicio } from "./elegir-servicio";
 

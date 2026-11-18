@@ -26,7 +26,7 @@ import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reg
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { obtenerDatosPublicos, obtenerPlantillas } from "@/modulos/configuracion/consultas";
-import { opcionesDeServicio } from "@/modulos/cotizaciones/consultas";
+import { opcionesDeServicio } from "@/modulos/cotizaciones/consultas/servicios";
 import { MasOrden } from "@/modulos/ordenes/componentes/acciones-orden";
 import { AgregarAdicional } from "@/modulos/ordenes/componentes/agregar-adicional";
 import { HistorialOrden } from "@/modulos/ordenes/componentes/historial-orden";

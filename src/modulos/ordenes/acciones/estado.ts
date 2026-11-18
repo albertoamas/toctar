@@ -11,7 +11,7 @@ import type { EstadoTrabajo } from "@/db/esquema/trabajos";
 import { bloquearEspacio, espaciosEnFechas, type EspacioDisponible } from "@/modulos/agenda/consultas/espacios";
 import { DIAS_MAXIMOS_TRABAJO, NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
-import { opcionesDeServicio } from "@/modulos/cotizaciones/consultas";
+import { opcionesDeServicio } from "@/modulos/cotizaciones/consultas/servicios";
 import { descripcionLinea } from "@/modulos/cotizaciones/reglas";
 import { precioCotizadoYFinal } from "@/modulos/pagos/reglas";
 import { esquemaAdicional, esquemaAvisoListo, esquemaEstadoOrden, esquemaExtender } from "../esquemas";
