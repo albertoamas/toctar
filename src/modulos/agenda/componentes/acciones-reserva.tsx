@@ -17,6 +17,7 @@ import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { cancelarReserva, reprogramarReserva } from "../acciones";
 import { espacioVigente, useEspaciosLibres } from "./espacios-libres";
 import { CampoEspacio } from "./campo-espacio";
+import { ANCHO_DATO } from "@/componentes/panel/anchos";
 
 // HU-31: reprogramar o cancelar una reserva agendada (RF-39). Pulido 10.3: se usan poco y van en el menú "Más" del
 // encabezado, cada una con su formulario en un modal (como "Marcar como perdida"). Reprogramar ofrece solo los espacios
@@ -89,10 +90,10 @@ function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espac
       {estado.mensaje && !estado.ok && <MensajeError id="reprogramar-error">{estado.mensaje}</MensajeError>}
       <div className="grid gap-5 sm:grid-cols-2">
         <Campo id="fechaInicio" etiqueta="Ingresa el" error={e.fechaInicio}>
-          <Input id="fechaInicio" name="fechaInicio" type="date" min={hoy} value={fechaInicio} onChange={(ev) => setFechaInicio(ev.target.value)} aria-invalid={!!e.fechaInicio} aria-describedby={e.fechaInicio ? "fechaInicio-error" : undefined} />
+          <Input className={ANCHO_DATO.fecha} id="fechaInicio" name="fechaInicio" type="date" min={hoy} value={fechaInicio} onChange={(ev) => setFechaInicio(ev.target.value)} aria-invalid={!!e.fechaInicio} aria-describedby={e.fechaInicio ? "fechaInicio-error" : undefined} />
         </Campo>
         <Campo id="fechaFin" etiqueta="Entrega aproximada" error={e.fechaFin}>
-          <Input id="fechaFin" name="fechaFin" type="date" min={fechaInicio} value={fechaFin} onChange={(ev) => setFechaFin(ev.target.value)} aria-invalid={!!e.fechaFin} aria-describedby={e.fechaFin ? "fechaFin-error" : undefined} />
+          <Input className={ANCHO_DATO.fecha} id="fechaFin" name="fechaFin" type="date" min={fechaInicio} value={fechaFin} onChange={(ev) => setFechaFin(ev.target.value)} aria-invalid={!!e.fechaFin} aria-describedby={e.fechaFin ? "fechaFin-error" : undefined} />
         </Campo>
       </div>
       <CampoEspacio valor={espacioId} alCambiar={setEspacioId} libres={libres} buscando={buscando} ayuda={ayuda} error={e.espacioId} />

@@ -11,6 +11,7 @@ import { leerMonto, mostrarMonto } from "@/modulos/catalogo/reglas";
 import type { OpcionServicio } from "../consultas/servicios";
 import { bs, calcularTotales, leerMontoOCero, MODOS, NOMBRE_MODO, type Modo } from "../reglas";
 import { LineasServicio, type Linea } from "./lineas-servicio";
+import { ANCHO_DATO } from "@/componentes/panel/anchos";
 
 // Lo que lleva cada versión de una cotización (pedido 23): los servicios con su precio, el total, cómo se cotizó y las
 // condiciones del PDF. Lo comparten la nueva cotización y la versión nueva. Todo controlado: React reinicia el
@@ -128,7 +129,7 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy, anterior }
             <CampoMonto id="adelanto" name="adelanto" value={p.adelanto} onChange={(ev) => p.setAdelanto(ev.target.value)} aria-invalid={!!e.adelanto} aria-describedby={e.adelanto ? "adelanto-error" : undefined} />
           </Campo>
           <Campo id="validaHasta" etiqueta="Válida hasta" error={e.validaHasta}>
-            <Input id="validaHasta" name="validaHasta" type="date" min={hoy} value={p.validaHasta} onChange={(ev) => p.setValidaHasta(ev.target.value)} aria-invalid={!!e.validaHasta} aria-describedby={e.validaHasta ? "validaHasta-error" : undefined} className="max-w-48" />
+            <Input id="validaHasta" name="validaHasta" type="date" min={hoy} value={p.validaHasta} onChange={(ev) => p.setValidaHasta(ev.target.value)} aria-invalid={!!e.validaHasta} aria-describedby={e.validaHasta ? "validaHasta-error" : undefined} className={ANCHO_DATO.fecha} />
           </Campo>
         </div>
       </SeccionFormulario>

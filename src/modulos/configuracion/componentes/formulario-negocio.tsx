@@ -10,6 +10,7 @@ import type { DiaHorario } from "@/lib/horarios";
 import { guardarParteNegocio } from "../acciones";
 import { NOMBRE_RED, REDES, type ParteNegocio } from "../esquemas";
 import { EditorHorarios } from "./editor-horarios";
+import { ANCHO_DATO } from "@/componentes/panel/anchos";
 
 // HU-04: los datos del negocio. Pulido 13.26: la ficha se lee (Configuración > Negocio) y cada parte se edita en su modal,
 // con su propio botón. Antes era un solo formulario con 43 campos abiertos (4,5 pantallas en el celular) y "Guardar
@@ -33,7 +34,7 @@ export function FormularioContacto({ valores }: { valores: Valores }) {
       <Campo id="whatsapp" etiqueta="WhatsApp" error={e.whatsapp} ayuda="El número al que escriben los clientes desde la página.">
         <div className="flex items-center gap-2">
           <span className="text-tinta-suave">+591</span>
-          <Input id="whatsapp" name="whatsapp" type="tel" inputMode="tel" autoComplete="off" placeholder="71234567" defaultValue={valor("whatsapp")} aria-invalid={!!e.whatsapp} className="max-w-48" />
+          <Input id="whatsapp" name="whatsapp" type="tel" inputMode="tel" autoComplete="off" placeholder="71234567" defaultValue={valor("whatsapp")} aria-invalid={!!e.whatsapp} className={ANCHO_DATO.telefono} />
         </div>
       </Campo>
       <Campo id="correo" etiqueta="Correo" opcional error={e.correo}>
@@ -129,7 +130,7 @@ export function FormularioFacturacion({ valores }: { valores: Valores }) {
       <Parte parte="facturacion" />
       <p className="text-sm text-tinta-suave">Salen en los documentos.</p>
       <Campo id="nit" etiqueta="NIT" opcional error={e.nit}>
-        <Input id="nit" name="nit" inputMode="numeric" defaultValue={valor("nit")} aria-invalid={!!e.nit} className="max-w-60" />
+        <Input id="nit" name="nit" inputMode="numeric" defaultValue={valor("nit")} aria-invalid={!!e.nit} className={ANCHO_DATO.placa} />
       </Campo>
       <Campo id="razonSocial" etiqueta="Razón social" opcional error={e.razonSocial}>
         <Input id="razonSocial" name="razonSocial" defaultValue={valor("razonSocial")} aria-invalid={!!e.razonSocial} />

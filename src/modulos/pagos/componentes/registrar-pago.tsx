@@ -19,6 +19,7 @@ import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { registrarPago } from "../acciones";
 import { useEnvioConComprobante } from "./campo-comprobante";
 import { MetodoYComprobante } from "./elegir-metodo";
+import { ANCHO_DATO } from "@/componentes/panel/anchos";
 
 // HU-32: registrar un pago (RF-45). Se cobra en el taller, con el celular en la mano: el monto viene con el saldo
 // (lo que más se cobra). La foto del comprobante es opcional y se achica antes de subirla. El servidor vuelve a mirar el saldo: dos pagos a la vez no lo pasan.
@@ -102,7 +103,7 @@ function Formulario({ trabajoId, saldo, hoy }: Props) {
       {/* Plegada, pero a la vista la que se va a guardar */}
       <MasDatos texto="Cambiar fecha" titulo="Fecha" detalle={`Ahora: ${fecha === hoy ? "hoy" : "otra fecha"}`} abierto={!!e.fecha} conError={!!e.fecha}>
         <Campo id="fecha" etiqueta="Fecha" error={e.fecha}>
-          <Input id="fecha" name="fecha" type="date" max={hoy} value={fecha} onChange={(ev) => setFecha(ev.target.value)} className="max-w-xs" aria-invalid={!!e.fecha} aria-describedby={e.fecha ? "fecha-error" : undefined} />
+          <Input id="fecha" name="fecha" type="date" max={hoy} value={fecha} onChange={(ev) => setFecha(ev.target.value)} className={ANCHO_DATO.fecha} aria-invalid={!!e.fecha} aria-describedby={e.fecha ? "fecha-error" : undefined} />
         </Campo>
       </MasDatos>
 

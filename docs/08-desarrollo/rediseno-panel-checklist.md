@@ -28,12 +28,12 @@ análisis con capturas → propuesta → aprobación → programar → capturas 
 
 ## Paso 1 — La regla de anchos (rama `patrones-anchos`)
 
-- [ ] `pagina-panel.tsx`: columnas por tipo de pantalla (principal y lateral desde 1280 px).
-- [ ] `campo.tsx`: ancho por tipo de dato (monto, fecha, año, placa, teléfono, cantidad).
-- [ ] `campo-monto.tsx` con su ancho.
-- [ ] Texto de corrido cortado en unos 70 caracteres.
-- [ ] Capturas de una pantalla de cada tipo (lista, ficha, formulario, flujo, modal) a 390, 1280 y 1600 px.
-- [ ] `sistema-del-panel.md` §1 y la skill `pantallas-panel` con la regla.
+- [ ] `pagina-panel.tsx`: la pieza de dos columnas (principal y lateral desde 1280 px). Pasa al paso 3, donde se usa por primera vez (sin uso, knip la marca como código muerto).
+- [x] Ancho por tipo de dato (monto, fecha, año, placa, teléfono, cantidad): un solo mapa, `ANCHO_DATO` en `anchos.ts`, aplicado a las 9 fechas, el monto, el año, la placa, el NIT, el WhatsApp y las cantidades del panel; `consistencia-panel` detecta una fecha sin su ancho.
+- [x] `campo-monto.tsx` con su ancho (de 8 a 10 rem).
+- [x] Texto de corrido cortado en unos 70 caracteres (`MEDIDA_TEXTO`, en los valores de `ListaDatos`).
+- [x] Capturas antes y después (Nuevo cliente, Parámetros, Registrar pago) a 390, 1280 y 1600 px.
+- [x] `sistema-del-panel.md` §1 y la skill `pantallas-panel` con la regla.
 
 ## Paso 2 — Modales (rama `patrones-modales`)
 

@@ -35,6 +35,7 @@ estilo: se arma con estas piezas (`src/componentes/panel/`), y si alguna no alca
 | Una lista simple de un toque | `ListaFilas` |
 | Filtros dentro de una lista | `Filtros` (píldoras con su cuenta, por la dirección) |
 | Una lista que crece con el uso | `Paginacion` (de a 25, la página en la dirección; ver sistema-del-panel.md §5) |
+| El ancho de un dato corto (monto, fecha, año, placa, teléfono, cantidad) | `ANCHO_DATO` de `anchos.ts`, nunca un `max-w-*` suelto (sistema-del-panel.md §1) |
 | Las vistas de un módulo | `Pestanas` |
 | Un número del día | `TarjetaNumero` |
 | La portada de una sección con partes | `TarjetasSeccion` ("¿Qué quieres cambiar?") |

@@ -25,8 +25,15 @@ espacio, sin tope, también en un monitor grande. El tipo decide la forma y la s
 - **Con todo el ancho, el contenido se acomoda adentro**: las fichas en partes de a 2 o 3 (`PartesIguales`); un
   formulario con dos partes las pone lado a lado desde `@6xl` (Nuevo cliente: el cliente y su primer vehículo; Nuevo
   usuario: la cuenta y sus permisos). Los campos ocupan su lugar en la grilla, sin tope general
-  (se probó uno de 28rem el 17/11 y no convenció al dueño); un campo puede llevar el suyo si lo necesita (`max-w-*`,
-  como el número de un monto). El recuadro de la firma, hasta 640 px.
+  (se probó uno de 28rem el 17/11 y no convenció al dueño). El recuadro de la firma, hasta 640 px.
+- **Todo alineado a la izquierda, nunca centrado** (C7 §4, 18/11): junto al menú lateral, un bloque centrado deja dos
+  franjas vacías desparejas y el título cambia de lugar según la ventana. Lo único centrado es un modal.
+- **Los datos cortos tienen el ancho de lo que llevan**, desde un solo mapa, `ANCHO_DATO` (`src/componentes/panel/anchos.ts`):
+  monto 10 rem (`CampoMonto` ya lo trae), fecha 12 rem, año 7 rem, placa o NIT 12 rem, teléfono 14 rem y cantidad
+  (días, meses, porcentaje) 7 rem. No es un tope general: los demás campos siguen a todo el ancho de su columna. Una fecha
+  sin su ancho la detecta `consistencia-panel.test.ts`.
+- **El texto de corrido** (notas, descripciones) se corta en unos 70 caracteres por línea (`MEDIDA_TEXTO`; `ListaDatos`
+  ya lo trae en sus valores). Solo el párrafo: su tarjeta sigue a todo el ancho.
 - En el celular todo va en una columna. Hasta una laptop de 1280 px no cambia nada: la diferencia se ve en monitores grandes.
 
 **Cómo se ve cada forma** (revisión de las 40 pantallas del 10/11, `08-desarrollo/inventario-pantallas.md`):

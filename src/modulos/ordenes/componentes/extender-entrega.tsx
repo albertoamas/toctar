@@ -14,6 +14,7 @@ import { useEspaciosLibres } from "@/modulos/agenda/componentes/espacios-libres"
 import { CampoEspacio } from "@/modulos/agenda/componentes/campo-espacio";
 import { DIAS_MAXIMOS_TRABAJO } from "@/modulos/agenda/reglas";
 import { espaciosParaExtender, extenderEntrega } from "../acciones/estado";
+import { ANCHO_DATO } from "@/componentes/panel/anchos";
 
 // HU-34: extender la entrega de una orden que se atrasa (decisión del 20/10). Se queda en su espacio si sigue libre en
 // los días nuevos; si no, se ofrecen los libres para todo el período, desde el ingreso. La base frena un cruce (D-5).
@@ -57,7 +58,7 @@ export function ExtenderEntrega({ id, fechaInicio, fechaFin: finActual, espacioI
           max={sumarDias(fechaInicio, DIAS_MAXIMOS_TRABAJO)}
           value={fechaFin}
           onChange={(ev) => setFechaFin(ev.target.value)}
-          className="max-w-xs"
+          className={ANCHO_DATO.fecha}
           aria-invalid={!!e.fechaFin}
           aria-describedby={e.fechaFin ? "fechaFin-error" : undefined}
         />
