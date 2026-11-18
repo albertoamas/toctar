@@ -69,11 +69,11 @@ test("los vehículos se agregan en la ficha del cliente y se editan, desactivan 
   const nuevo = page.getByRole("dialog", { name: "Agregar vehículo" });
   await expect(nuevo.getByLabel("Placa", { exact: true })).toBeFocused();
   await nuevo.getByLabel("Placa", { exact: true }).fill(`ocu-${s.toLowerCase()} 1`);
-  await nuevo.getByLabel("Tamaño").selectOption({ label: "Compactos" });
+  await nuevo.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio", { name: /^Compactos/ }).click();
   await nuevo.getByRole("button", { name: "Agregar vehículo" }).click();
   await expect(nuevo.getByText(`La placa OCU${s}1 ya está registrada a nombre de Dueño de la placa ${s}.`)).toBeVisible();
-  // Tras el error, el tamaño elegido se conserva: React reinicia el formulario y antes volvía a "Elige el tamaño"
-  await expect(nuevo.getByLabel("Tamaño")).not.toHaveValue("");
+  // Tras el error, el tamaño elegido se conserva: React reinicia el formulario y antes se perdía la elección
+  await expect(nuevo.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio", { checked: true })).toHaveCount(1);
   await nuevo.getByLabel("Placa", { exact: true }).fill(`FIC${s}1`);
   await nuevo.getByRole("button", { name: "Agregar vehículo" }).click();
   await expect(page.getByText(`Vehículo FIC${s}1 agregado.`)).toBeVisible();
