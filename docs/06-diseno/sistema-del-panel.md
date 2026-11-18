@@ -104,6 +104,14 @@ En los dos casos, al crear se llega a la ficha de lo creado (o se ve en la secci
 | Filas con su acción de todos los días | `ListaEnTarjeta` y `FilaConAcciones` |
 | Cambiar el orden | `OrdenarLista`, en un modal |
 | Lista vacía | `EstadoVacio` |
+| Lista que crece con el uso | `Paginacion`, de a 25 (`src/lib/paginacion.ts`) |
+
+**Listas largas (17/11):** una lista que crece con el uso del taller (clientes, cotizaciones, reclamos, lo cerrado) va de a
+páginas, nunca cortada con "busca para ver más". La base trae solo la página pedida y cuenta el total
+(`listarClientes` es el ejemplo: `leerPagina`, `ajustarPagina` y `POR_PAGINA`). La página va en la dirección
+(`?pagina=2`): Atrás vuelve a la misma y se combina con los filtros; el buscador y las píldoras la borran al cambiar.
+Una página después de la última muestra la última. Las listas cortas por naturaleza (saldos pendientes, usuarios,
+catálogo, la semana de la agenda) no llevan páginas.
 
 ## 5b. Navegar: respuesta al instante (17/11)
 
