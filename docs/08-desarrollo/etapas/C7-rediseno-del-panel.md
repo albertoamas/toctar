@@ -102,6 +102,10 @@ Cada patrón dice qué componente cambia, qué pantallas lo usan, qué se ve dis
 
 ### 5.1 Ficha con el recorrido y el paso siguiente
 
+> **Descartado el 18/11.** Se programó (la tarjeta del recorrido con puntos y las fichas en dos columnas de 2/3 y 1/3) y
+> el desarrollador prefirió las fichas como estaban: Orden, Cotización y Reserva quedan como hoy, con sus barras de pasos
+> y su paso siguiente. Lo de abajo queda como registro de lo que se probó.
+
 - **Componentes:** `pasos-trabajo.tsx` (el indicador: Cotizado → Aceptado → Reservado → En el taller → Listo → Entregado),
   `paso-siguiente.tsx` (la tarjeta con el texto del estado y el botón del paso) y `pagina-panel.tsx` (principal y lateral).
 - **Pantallas:** Orden (`/panel/ordenes/[id]`), Cotización (`/panel/cotizaciones/[id]`) y Reserva (`/panel/agenda/[id]`).
@@ -241,7 +245,7 @@ vehículo"); el aviso usa el mismo verbo ("Pago registrado."); el estado con pal
 | 0 | Prototipo v3: las pantallas de este alcance, completas, con el menú desplegable y a 1600 px | — | Visto bueno del desarrollador y del dueño |
 | 1 | La regla de anchos (§4) | `patrones-anchos` | Capturas de una pantalla de cada tipo a 390, 1280 y 1600 px |
 | 2 | Modales (§5.4) | `patrones-modales` | Capturas de los 6 revisados |
-| 3 | Ficha con el recorrido (§5.1) | `patrones-ficha-recorrido` | Capturas de las tres fichas |
+| 3 | ~~Ficha con el recorrido (§5.1)~~ Descartado el 18/11: las fichas quedan como estaban | — | — |
 | 4 | Formulario en pasos con resumen (§5.2) | `patrones-formulario-pasos` | Capturas de las tres pantallas |
 | 5 | Flujo de un paso (§5.3) | `patrones-flujo-un-paso` | Capturas de Entregar, Recibir y Publicar |
 | 6 | Lista con acción (§5.5) | `patrones-lista-accion` | Capturas de las tres listas |

@@ -28,7 +28,7 @@ análisis con capturas → propuesta → aprobación → programar → capturas 
 
 ## Paso 1 — La regla de anchos (rama `patrones-anchos`)
 
-- [ ] `pagina-panel.tsx`: la pieza de dos columnas (principal y lateral desde 1280 px). Pasa al paso 3, donde se usa por primera vez (sin uso, knip la marca como código muerto).
+- [x] `pagina-panel.tsx`: la pieza de dos columnas no se agrega (el paso 3, donde se iba a usar, se descartó el 18/11).
 - [x] Ancho por tipo de dato (monto, fecha, año, placa, teléfono, cantidad): un solo mapa, `ANCHO_DATO` en `anchos.ts`, aplicado a las 9 fechas, el monto, el año, la placa, el NIT, el WhatsApp y las cantidades del panel; `consistencia-panel` detecta una fecha sin su ancho.
 - [x] `campo-monto.tsx` con su ancho (de 8 a 10 rem).
 - [x] Texto de corrido cortado en unos 70 caracteres (`MEDIDA_TEXTO`, en los valores de `ListaDatos`).
@@ -62,20 +62,9 @@ análisis con capturas → propuesta → aprobación → programar → capturas 
 - [ ] Sitio web: Dirección de la página, Subir fotos, El trabajo de la portada, Editar trabajo, ¿Eliminar esta foto?, preguntas (agregar, editar, eliminar).
 - [ ] Usuarios: Datos, Cambiar mi contraseña, Nueva contraseña, ¿Desactivar a {nombre}? Configuración: espacios y tamaños, ¿Volver al texto original? Reclamos: Marcar como atendido.
 
-## Paso 3 — Ficha con el recorrido (rama `patrones-ficha-recorrido`)
+## Paso 3 — Ficha con el recorrido (descartado)
 
-### Piezas
-
-- [ ] `pasos-trabajo.tsx`: el indicador de seis pasos, con enlaces a los hechos.
-- [ ] `paso-siguiente.tsx`: el texto del estado y el botón rojo del paso.
-- [ ] Dos columnas: principal (lo que decide) y lateral (datos e historia).
-
-### Pantallas
-
-- [ ] Orden — `/panel/ordenes/[id]`: servicios y pagos, fotos; datos e historia al costado; "Marcar listo", "Avisar", "Entregar" como paso.
-- [ ] Cotización — `/panel/cotizaciones/[id]`: servicios, PDF y versiones; "Aceptada: reservar" como paso; rechazar y nueva versión en "Más".
-- [ ] Reserva — `/panel/agenda/[id]`: fechas, espacio, adelanto; "Recibir vehículo" como paso; reprogramar y cancelar en "Más".
-- [ ] E2E nueva: el paso actual marcado en las tres fichas.
+- [x] Descartado el 18/11: se programó y el desarrollador prefirió las fichas de Orden, Cotización y Reserva como estaban. Quedan como hoy, con sus barras de pasos y su paso siguiente. La pieza de dos columnas (`Columnas`) no se agrega.
 
 ## Paso 4 — Formulario en pasos con resumen (rama `patrones-formulario-pasos`)
 
