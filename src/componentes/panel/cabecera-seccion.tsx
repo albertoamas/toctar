@@ -58,15 +58,17 @@ export function Seccion(props: {
   id: string;
   titulo: string;
   accion?: React.ReactNode;
+  /** Una línea bajo el título: de qué es o en qué unidad está ("En bolivianos (Bs)."). */
+  descripcion?: string;
   sinRelleno?: boolean;
   /** Clases de la sección (su lugar en una grilla, `@container`). */
   className?: string;
   children: React.ReactNode;
 }) {
-  const { id, titulo, accion, sinRelleno, className, children } = props;
+  const { id, titulo, accion, descripcion, sinRelleno, className, children } = props;
     return (
     <section aria-labelledby={`${id}-titulo`} className={cn("tt-tarjeta-panel flex flex-col overflow-hidden", className)}>
-        <CabeceraTarjeta id={id} titulo={titulo} angosta={sinRelleno}>
+        <CabeceraTarjeta id={id} titulo={titulo} descripcion={descripcion} angosta={sinRelleno}>
           {accion}
         </CabeceraTarjeta>
       <div className={cn("flex flex-1 flex-col", SIN_MARCO_INTERNO, !sinRelleno && "p-4 sm:p-5")}>{children}</div>

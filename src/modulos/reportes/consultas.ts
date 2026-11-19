@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, count, countDistinct, desc, eq, gte, lte, sql, type AnyColumn, type SQL } from "drizzle-orm";
 import { db } from "@/db";
-import { archivo, categoriaGasto, consulta, cotizacion, gasto, pago, recordatorioMantenimiento, servicio, trabajo, trabajoLinea, variante } from "@/db/esquema";
+import { archivo, categoriaGasto, consulta, cotizacion, gasto, recordatorioMantenimiento, servicio, trabajo, trabajoLinea, variante } from "@/db/esquema";
 import type { MotivoPerdida } from "@/db/esquema/consultas";
 import type { MetodoPago } from "@/db/esquema/trabajos";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
@@ -145,100 +145,3 @@ export async function elTallerEntre(inicio: string, fin: string): Promise<ElTall
 // clientes, con sus tendencias.
 
 /** Cada entrega: de qué cliente y qué día (en Bolivia). Base de los entregados y los clientes de cada tramo. */
-export type Entrega = { clienteId: number; dia: string };
-
-/** Las entregas hasta un día (las de antes cuentan para saber quién volvió). */
-export async function entregasHasta(fin: string): Promise<Entrega[]> {
-  const s = await sucursalPrincipal();
-  const filas = await db
-    .select({ clienteId: trabajo.clienteId, dia: sql<string>`to_char(${enBolivia(trabajo.entregadoAt)}, 'YYYY-MM-DD')` })
-    .from(trabajo)
-    .where(and(eq(trabajo.sucursalId, s.id), eq(trabajo.estado, "entregado"), lte(enBolivia(trabajo.entregadoAt), fin)));
-  return filas;
-}
-
-/** Lo que entró y salió entre dos días (incluidos): los pagos y los gastos sin anular de cualquier período. */
-export async function totalesEntre(inicio: string, fin: string): Promise<{ entro: number; salio: number }> {
-  const s = await sucursalPrincipal();
-  const [[entro], [salio]] = await Promise.all([
-    db
-      .select({ total: sql<string>`coalesce(sum(${pago.monto}), 0)` })
-      .from(pago)
-      .innerJoin(trabajo, eq(pago.trabajoId, trabajo.id))
-      .where(and(eq(trabajo.sucursalId, s.id), eq(pago.anulado, false), gte(pago.fecha, inicio), lte(pago.fecha, fin))),
-    db
-      .select({ total: sql<string>`coalesce(sum(${gasto.monto}), 0)` })
-      .from(gasto)
-      .where(and(eq(gasto.sucursalId, s.id), eq(gasto.anulado, false), gte(gasto.fecha, inicio), lte(gasto.fecha, fin))),
-  ]);
-  return { entro: Number(entro?.total ?? 0), salio: Number(salio?.total ?? 0) };
-}
-
-export type IngresosEntre = { total: number; porMetodo: { metodo: MetodoPago; total: number }[]; porDia: { fecha: string; total: number }[] };
-
-/** Los pagos sin anular entre dos días (incluidos): el total, por forma de pago (de mayor a menor) y por día. */
-export async function ingresosEntre(inicio: string, fin: string): Promise<IngresosEntre> {
-  const s = await sucursalPrincipal();
-  const donde = and(eq(trabajo.sucursalId, s.id), eq(pago.anulado, false), gte(pago.fecha, inicio), lte(pago.fecha, fin));
-  const [porMetodo, porDia] = await Promise.all([
-    db
-      .select({ metodo: pago.metodo, total: sql<string>`sum(${pago.monto})` })
-      .from(pago)
-      .innerJoin(trabajo, eq(pago.trabajoId, trabajo.id))
-      .where(donde)
-      .groupBy(pago.metodo)
-      .orderBy(desc(sql`sum(${pago.monto})`)),
-    db
-      .select({ fecha: sql<string>`${pago.fecha}::text`, total: sql<string>`sum(${pago.monto})` })
-      .from(pago)
-      .innerJoin(trabajo, eq(pago.trabajoId, trabajo.id))
-      .where(donde)
-      .groupBy(pago.fecha),
-  ]);
-  const metodos = porMetodo.map((m) => ({ metodo: m.metodo, total: Number(m.total) }));
-  return { total: metodos.reduce((t, m) => t + m.total, 0), porMetodo: metodos, porDia: porDia.map((d) => ({ fecha: d.fecha, total: Number(d.total) })) };
-}
-
-/**
- * Los vehículos entregados entre dos días (en hora de Bolivia) y lo que suman sus trabajos (las líneas menos el
- * descuento, sin bajar de 0, como en Saldos): para el promedio por vehículo, sin que un adelanto suelto cuente como un
- * vehículo.
- */
-export async function entregadosEntre(inicio: string, fin: string): Promise<{ vehiculos: number; monto: number }> {
-  const s = await sucursalPrincipal();
-  const lineas = db
-    .select({ trabajoId: trabajoLinea.trabajoId, suma: sql<string>`sum(${trabajoLinea.precio})`.as("suma") })
-    .from(trabajoLinea)
-    .groupBy(trabajoLinea.trabajoId)
-    .as("lineas");
-  const [fila] = await db
-    .select({ vehiculos: count(), monto: sql<string>`coalesce(sum(greatest(coalesce(${lineas.suma}, 0) - ${trabajo.descuento}, 0)), 0)` })
-    .from(trabajo)
-    .leftJoin(lineas, eq(lineas.trabajoId, trabajo.id))
-    .where(and(eq(trabajo.sucursalId, s.id), eq(trabajo.estado, "entregado"), gte(enBolivia(trabajo.entregadoAt), inicio), lte(enBolivia(trabajo.entregadoAt), fin)));
-  return { vehiculos: fila?.vehiculos ?? 0, monto: Number(fila?.monto ?? 0) };
-}
-
-export type GastosEntre = { total: number; porCategoria: { nombre: string; total: number }[]; porDia: { fecha: string; total: number }[] };
-
-/** Los gastos sin anular entre dos días (incluidos): el total, por categoría (de mayor a menor) y por día. */
-export async function gastosEntre(inicio: string, fin: string): Promise<GastosEntre> {
-  const s = await sucursalPrincipal();
-  const donde = and(eq(gasto.sucursalId, s.id), eq(gasto.anulado, false), gte(gasto.fecha, inicio), lte(gasto.fecha, fin));
-  const [porCategoria, porDia] = await Promise.all([
-    db
-      .select({ nombre: categoriaGasto.nombre, total: sql<string>`sum(${gasto.monto})` })
-      .from(gasto)
-      .innerJoin(categoriaGasto, eq(gasto.categoriaId, categoriaGasto.id))
-      .where(donde)
-      .groupBy(categoriaGasto.nombre)
-      .orderBy(desc(sql`sum(${gasto.monto})`)),
-    db
-      .select({ fecha: sql<string>`${gasto.fecha}::text`, total: sql<string>`sum(${gasto.monto})` })
-      .from(gasto)
-      .where(donde)
-      .groupBy(gasto.fecha),
-  ]);
-  const categorias = porCategoria.map((c) => ({ nombre: c.nombre, total: Number(c.total) }));
-  return { total: categorias.reduce((t, c) => t + c.total, 0), porCategoria: categorias, porDia: porDia.map((d) => ({ fecha: d.fecha, total: Number(d.total) })) };
-}

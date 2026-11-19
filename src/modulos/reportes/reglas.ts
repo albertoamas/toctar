@@ -102,8 +102,9 @@ export const cambioPorcentual = (actual: number, anterior: number) => (anterior 
 // con el anterior del mismo largo, así la comparación es justa: "este mes" (del 1 a hoy) contra los mismos días del mes
 // pasado, no contra el mes pasado entero.
 
-// Sin "Hoy" (17/11): un día no tiene tendencia y lo del día ya está en el Inicio del panel
-const PERIODOS = ["semana", "mes", "mes-pasado", "6-meses", "rango"] as const;
+// "Hoy" volvió el 19/11 (Reportes v2, prototipo aprobado): por hora, contra el mismo día de la semana pasada hasta la
+// misma hora (contra ayer no sirve: un domingo cerrado da 0).
+const PERIODOS = ["hoy", "semana", "mes", "mes-pasado", "6-meses", "rango"] as const;
 export type ClavePeriodo = (typeof PERIODOS)[number];
 
 export type Periodo = {
@@ -118,6 +119,10 @@ export type Periodo = {
   vs: string;
   /** El mes en que termina el período: hasta él llegan las tendencias de 6 meses. */
   mes: string;
+  /** Solo "Hoy": la hora (HH:MM, Bolivia) hasta la que se mira el día anterior, para no comparar un día a medias con uno entero. */
+  hastaHora?: string;
+  /** "comparado con el 1 al 19 de octubre": la línea bajo el título. */
+  comparacion: string;
 };
 
 /** Días entre dos fechas, contando las dos ("2026-11-01" y "2026-11-17": 17). */
@@ -146,11 +151,23 @@ export function rangoValido(desde: unknown, hasta: unknown, hoy: string): desde 
  * El período elegido en la dirección (`?periodo=`, y `desde` y `hasta` para un rango). Sin período o con uno raro, este
  * mes; un rango que no sirve, los últimos 30 días.
  */
-export function periodoDe(parametros: { periodo?: unknown; desde?: unknown; hasta?: unknown }, hoy: string): Periodo {
+export function periodoDe(parametros: { periodo?: unknown; desde?: unknown; hasta?: unknown }, hoy: string, hora = "23:59"): Periodo {
+  const p = periodoSinComparacion(parametros, hoy, hora);
+  const antes = p.clave === "hoy" ? `el ${DIAS_LARGOS[new Date(`${p.antes.inicio}T12:00:00Z`).getUTCDay()]} ${diaYMes(p.antes.inicio)} hasta la misma hora` : textoRango(p.antes.inicio, p.antes.fin).replace(/^Del /, "el ");
+  return { ...p, comparacion: `comparado con ${antes}` };
+}
+
+const DIAS_LARGOS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+
+function periodoSinComparacion(parametros: { periodo?: unknown; desde?: unknown; hasta?: unknown }, hoy: string, hora: string): Omit<Periodo, "comparacion"> {
   const clave: ClavePeriodo = PERIODOS.includes(parametros.periodo as ClavePeriodo) ? (parametros.periodo as ClavePeriodo) : "mes";
   const mesHoy = mesDe(hoy);
   const corto = (mes: string) => `vs. ${nombreMesSolo(mes).slice(0, 3)}.`;
   switch (clave) {
+    case "hoy": {
+      const antes = sumarDias(hoy, -7);
+      return { clave, inicio: hoy, fin: hoy, antes: { inicio: antes, fin: antes }, titulo: `Hoy, ${diaYMes(hoy)}`, vs: `vs. el ${DIAS_LARGOS[new Date(`${antes}T12:00:00Z`).getUTCDay()]} pasado`, mes: mesDe(hoy), hastaHora: hora };
+    }
     case "semana": {
       const lunes = sumarDias(hoy, 1 - diaDeLaSemanaIso(hoy));
       return { clave, inicio: lunes, fin: hoy, antes: { inicio: sumarDias(lunes, -7), fin: sumarDias(hoy, -7) }, titulo: `Esta semana: ${textoRango(lunes, hoy).replace(/^Del /, "del ")}`, vs: "vs. semana pasada", mes: mesHoy };
@@ -190,8 +207,6 @@ function diaDeLaSemanaIso(fecha: string): number {
   return d === 0 ? 7 : d;
 }
 
-/** Días entre dos fechas, contando las dos ("2026-11-01" a "2026-11-17": 17). */
-export const diasEntre = largo;
 
 /**
  * Lo que se va juntando día a día desde `inicio`, por `dias` días: cada valor es la suma hasta ese día. Los días sin
@@ -222,7 +237,7 @@ export function comparacionDelAcumulado(periodo: Periodo): { inicio: string; fin
 // Los tramos de las tendencias (17/11): los gráficos siguen las fechas elegidas y agrupan solos, como Shopify o Stripe:
 // hasta un mes, por día; hasta 3 meses, por semana (de lunes a domingo, recortada a las fechas); más, por mes.
 
-export type UnidadTramo = "dia" | "semana" | "mes";
+export type UnidadTramo = "hora" | "dia" | "semana" | "mes";
 export type Tramo = { desde: string; hasta: string; corto: string; nombre: string };
 
 const DIAS_SEMANA = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
@@ -239,7 +254,7 @@ export function tramosDe(inicio: string, fin: string): { unidad: UnidadTramo; tr
     });
     return { unidad: "dia", tramos };
   }
-  if (dias <= 92) {
+  if (dias <= 90) {
     const tramos: Tramo[] = [];
     for (let desde = inicio; desde <= fin; ) {
       const domingo = sumarDias(desde, 7 - diaDeLaSemanaIso(desde));
@@ -267,7 +282,15 @@ export function sumarPorTramo(porDia: readonly { fecha: string; total: number }[
 }
 
 /** "por día", "por semana", "por mes": lo que va en el título del gráfico. */
-export const POR_UNIDAD: Record<UnidadTramo, string> = { dia: "por día", semana: "por semana", mes: "por mes" };
+export const POR_UNIDAD: Record<UnidadTramo, string> = { hora: "por hora", dia: "por día", semana: "por semana", mes: "por mes" };
+
+/** "Hoy", por hora: de `desde` a `hasta` (las dos incluidas, 0 a 23). */
+export function tramosPorHora(fecha: string, desde: number, hasta: number): Tramo[] {
+  return Array.from({ length: Math.max(0, hasta - desde + 1) }, (_, i) => {
+    const h = desde + i;
+    return { desde: fecha, hasta: fecha, corto: `${h}h`, nombre: `De ${h}:00 a ${h + 1}:00` };
+  });
+}
 
 /** Un monto exacto, como en todo el panel ("1180,50 Bs"): el de la lista de gastos. Reportes redondea (bsRedondo). */
 export const bsExacto = (monto: string) => `${mostrarMonto(monto)} Bs`;
