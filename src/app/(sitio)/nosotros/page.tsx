@@ -59,7 +59,7 @@ async function Contenido() {
       <section className="relative overflow-hidden">
         {/* Con la foto del equipo, desde la tableta baja a "Cómo trabajamos": detrás de la foto parecía pegada encima (pulido 13.14) */}
         <Monograma className={cn("pointer-events-none absolute -top-10 -right-24 w-[26rem] fill-superficie md:-right-12 md:w-[34rem]", equipo && "md:hidden")} />
-        <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 py-12 md:gap-20 md:py-20">
+        <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pt-6 pb-12 md:gap-20 md:pt-10 md:pb-20">
           <div className={cn("grid gap-10", equipo && "md:grid-cols-2 md:items-start md:gap-12")}>
             <div className="flex flex-col gap-8">
               <TituloPagina>Nosotros</TituloPagina>

@@ -52,7 +52,7 @@ async function Datos() {
   const hayRedes = REDES.some((r) => d.redes[r]);
 
   return (
-    <section className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-12 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] md:items-start md:gap-x-16 md:gap-y-10 md:py-20">
+    <section className="mx-auto grid w-full max-w-6xl gap-8 px-4 pt-6 pb-12 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] md:items-start md:gap-x-16 md:gap-y-10 md:pt-10 md:pb-20">
       <div className="flex flex-col items-start gap-4">
         <TituloPagina>Contacto</TituloPagina>
         <p className="max-w-prose text-lg text-tinta-suave">{contacto.bienvenida as string}</p>

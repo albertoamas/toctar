@@ -38,7 +38,7 @@ async function Contenido() {
   };
   const [presentacion, ...secciones] = PAGINAS.privacidad.campos;
   return (
-    <article className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-4 py-12 md:py-20">
+    <article className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-4 pt-6 pb-12 md:pt-10 md:pb-20">
       <header className="flex flex-col gap-3">
         <TituloPagina>{PAGINAS.privacidad.titulo}</TituloPagina>
         {actualizada && <p className="text-sm text-tinta-suave">Última actualización: {formatearFecha(fechaEnBolivia(new Date(actualizada)))}</p>}

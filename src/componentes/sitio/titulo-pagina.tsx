@@ -2,7 +2,7 @@
 // antes la misma lista de clases estaba copiada en 6 páginas (pulido 2.2). La portada y cada servicio tienen
 // su propio titular, más grande.
 export function TituloPagina({ children }: { children: React.ReactNode }) {
-  return <h1 className="font-heading text-[40px] leading-[44px] font-extrabold italic">{children}</h1>;
+  return <h1 className="font-heading text-[40px] leading-[44px] font-extrabold italic md:text-[56px] md:leading-[60px]">{children}</h1>;
 }
 
 /** Título de una sección dentro de una página del sitio (h2): el mismo estilo en todas. */
