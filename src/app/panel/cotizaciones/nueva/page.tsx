@@ -15,6 +15,7 @@ import { FormularioNuevaCotizacion, type ClienteElegido } from "@/modulos/cotiza
 import { inicioCotizacion, opcionesPorTamano } from "@/modulos/cotizaciones/consultas/servicios";
 import { PASO_CLIENTE, PASOS_NUEVA_COTIZACION } from "@/modulos/cotizaciones/pasos";
 import { conDesde, leerDesde, volverDesde } from "@/lib/volver";
+import { catalogoVehiculos } from "@/modulos/clientes/consultas";
 
 export const metadata: Metadata = { title: "Nueva cotización" };
 
@@ -90,7 +91,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/cotizaciones/n
 }
 
 async function Formulario({ cliente, volver }: { cliente: ClienteElegido | null; volver: string | null }) {
-  const tamanos = await tamanosActivos();
+  const [tamanos, catalogo] = await Promise.all([tamanosActivos(), catalogoVehiculos()]);
   // Los precios de cada tamaño activo y de los de sus vehículos (un tamaño desactivado sigue valiendo para un auto que ya lo tiene)
   const [opciones, inicio] = await Promise.all([opcionesPorTamano([...tamanos.map((t) => t.id), ...(cliente?.vehiculos.map((v) => v.tamanoId) ?? [])]), inicioCotizacion()]);
   if (Object.values(opciones).every((o) => o.length === 0)) {
@@ -98,5 +99,5 @@ async function Formulario({ cliente, volver }: { cliente: ClienteElegido | null;
     return <EstadoVacio>No hay servicios activos para cotizar: se activan en Catálogo y precios.</EstadoVacio>;
   }
   // La key lo rearma si cambia el cliente sin salir de la pantalla ("Usar a …", ya registrado)
-  return <FormularioNuevaCotizacion key={cliente?.id} cliente={cliente} tamanos={tamanos} opciones={opciones} inicio={inicio} hoy={fechaEnBolivia()} volver={volver} />;
+  return <FormularioNuevaCotizacion key={cliente?.id} cliente={cliente} tamanos={tamanos} catalogo={catalogo} opciones={opciones} inicio={inicio} hoy={fechaEnBolivia()} volver={volver} />;
 }

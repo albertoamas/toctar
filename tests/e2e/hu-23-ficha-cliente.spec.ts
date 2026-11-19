@@ -88,19 +88,20 @@ test("los vehículos se agregan en la ficha del cliente y se editan, desactivan 
   await page.getByRole("button", { name: `Editar FIC${s}1` }).click();
   const edicion = page.getByRole("dialog", { name: `Editar FIC${s}1` });
   await edicion.getByText("Agregar marca, modelo, año y color").click();
-  await edicion.getByLabel("Color").fill("Rojo");
+  // El color, en botones con los frecuentes (pedido 52)
+  await edicion.getByRole("radiogroup", { name: /^Color/ }).getByRole("radio", { name: "Rojo" }).click();
   await edicion.getByRole("button", { name: "Guardar vehículo" }).click();
   await expect(edicion).toBeHidden();
   await expect(datos).toContainText("Rojo");
   // Al volver a abrirlo trae lo guardado, ya desplegado
   await page.getByRole("button", { name: `Editar FIC${s}1` }).click();
-  await expect(edicion.getByLabel("Color")).toHaveValue("Rojo");
+  await expect(edicion.getByRole("radiogroup", { name: /^Color/ }).getByRole("radio", { name: "Rojo" })).toBeChecked();
   // Al editar, cerrarlo es "Listo" y no borra lo guardado (pulido final del 10/11: "Quitar" lo habría vaciado)
   await expect(edicion.getByRole("button", { name: /^Quitar/ })).toHaveCount(0);
   await edicion.getByRole("button", { name: "Listo Marca, modelo, año y color" }).click();
-  await expect(edicion.getByLabel("Color")).toBeHidden();
+  await expect(edicion.getByRole("radiogroup", { name: /^Color/ })).toBeHidden();
   await edicion.getByText("Agregar marca, modelo, año y color").click();
-  await expect(edicion.getByLabel("Color")).toHaveValue("Rojo");
+  await expect(edicion.getByRole("radiogroup", { name: /^Color/ }).getByRole("radio", { name: "Rojo" })).toBeChecked();
 
   await edicion.getByRole("button", { name: "Cancelar" }).click();
   await expect(edicion).toBeHidden();

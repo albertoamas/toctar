@@ -21,7 +21,7 @@ import { saldoPendiente } from "@/modulos/pagos/reglas";
 import { MasCliente, ReactivarCliente } from "@/modulos/clientes/componentes/acceso-cliente";
 import { FormularioDatosCliente } from "@/modulos/clientes/componentes/formulario-datos-cliente";
 import { VehiculosCliente } from "@/modulos/clientes/componentes/vehiculos-cliente";
-import { obtenerCliente } from "@/modulos/clientes/consultas";
+import { catalogoVehiculos, obtenerCliente } from "@/modulos/clientes/consultas";
 import { obtenerParametros, tamanosActivos } from "@/modulos/configuracion/consultas";
 import { cotizacionesDelCliente } from "@/modulos/cotizaciones/consultas/lista";
 import { ListaMantenimientos } from "@/modulos/mantenimientos/componentes/lista-mantenimientos";
@@ -65,9 +65,10 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
   const verMantenimientos = puedeVerModulo(usuario, "mantenimientos");
   // Una reserva ya recibida se abre en su orden, si quien mira ve órdenes
   const verOrdenes = puedeVerModulo(usuario, "ordenes");
-  const [c, tamanos, cotizaciones, parametros, reservas, mantenimientos, conMantenimiento] = await Promise.all([
+  const [c, tamanos, catalogo, cotizaciones, parametros, reservas, mantenimientos, conMantenimiento] = await Promise.all([
     obtenerCliente(numero),
     tamanosActivos(),
+    catalogoVehiculos(),
     verCotizaciones ? cotizacionesDelCliente(numero) : [],
     obtenerParametros(),
     // Con Pagos también sin Agenda: de ahí sale lo que debe (la lista de reservas es de Agenda)
@@ -178,7 +179,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
         )}
 
         <div className="flex min-w-0 flex-col gap-8 @4xl:col-start-2 @4xl:row-span-2 @4xl:row-start-1">
-          <VehiculosCliente clienteId={c.id} vehiculos={c.vehiculos} tamanos={tamanos} desde={desdeAqui} />
+          <VehiculosCliente clienteId={c.id} vehiculos={c.vehiculos} tamanos={tamanos} catalogo={catalogo} desde={desdeAqui} />
           <SeccionConEditar
             id="datos"
             titulo="Datos"

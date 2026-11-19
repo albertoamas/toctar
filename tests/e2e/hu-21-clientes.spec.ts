@@ -24,7 +24,9 @@ test("el personal registra un cliente con su primer vehículo; los obligatorios 
   await page.getByLabel("WhatsApp").fill(telefono(info, 1));
   // Un dato del vehículo sin placa ni tamaño: el vehículo queda a medias y se avisa. La marca está plegada
   await page.getByText("Agregar marca, modelo, año y color").click();
+  // La marca, de la lista con búsqueda (pedido 52): Tab la cierra
   await page.getByLabel("Marca").fill("Toyota");
+  await page.getByLabel("Marca").press("Tab");
   await page.getByRole("button", { name: "Crear cliente" }).click();
   await expect(page.getByText("Escribe la placa.")).toBeVisible();
   await expect(page.getByText("Elige el tamaño.")).toBeVisible();
@@ -32,7 +34,8 @@ test("el personal registra un cliente con su primer vehículo; los obligatorios 
   await page.getByLabel("Placa", { exact: true }).fill(`hu21 ${sufijo(info)}-01`);
   await page.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio", { name: /^Compactos/ }).click();
   await page.getByLabel("Modelo").fill("Yaris");
-  await page.getByLabel("Año (opcional)", { exact: true }).fill("2019");
+  // El año, en un selector (pedido 52)
+  await page.getByLabel("Año (opcional)", { exact: true }).selectOption("2019");
   await page.getByRole("button", { name: "Crear cliente" }).click();
 
   await expect(page).toHaveURL(/\/panel\/clientes\/\d+\?creado=1(?:[?&]volver=[^&#]*)?$/);

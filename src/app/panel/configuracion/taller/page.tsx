@@ -24,7 +24,7 @@ export default function PaginaTaller() {
 
 async function Contenido() {
   await exigirModulo("configuracion");
-  const [espacios, tamanos, partes] = await Promise.all([listarElementos("espacios"), listarElementos("tamanos"), listarElementos("partes")]);
+  const [espacios, tamanos, partes, marcas] = await Promise.all([listarElementos("espacios"), listarElementos("tamanos"), listarElementos("partes"), listarElementos("marcas")]);
   return (
     <div className="flex flex-col gap-10">
       <ListaEditable
@@ -38,6 +38,8 @@ async function Contenido() {
         descripcion="Los precios de cada servicio se cargan por tamaño. El orden es el de las listas al cotizar."
       />
       <ListaEditable lista="partes" elementos={partes} descripcion="Lo que se revisa al recibir un vehículo, en este orden." />
+      {/* Pedido 52: la marca de un vehículo se elige de esta lista; una escrita al registrar un vehículo se suma sola */}
+      <ListaEditable lista="marcas" elementos={marcas} descripcion="La marca de un vehículo se elige de esta lista. Una que no está se suma sola al registrarla." />
     </div>
   );
 }

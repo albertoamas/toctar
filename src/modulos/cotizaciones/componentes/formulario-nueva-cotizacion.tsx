@@ -29,6 +29,7 @@ import { CamposPrecio, ResumenPrecios, TotalEnPie, usePrecios } from "./campos-p
 import type { Linea } from "./lineas-servicio";
 import { conDesde } from "@/lib/volver";
 import { ConResumen } from "@/componentes/panel/con-resumen";
+import type { CatalogoVehiculos } from "@/modulos/clientes/catalogo-vehiculos";
 
 // Nueva cotización en pasos (pedido 40, etapas/P40-cotizacion-en-pasos.md): el cliente, su vehículo y los servicios con
 // su precio, un paso por pantalla. Un solo formulario: los pasos que no están a la vista se esconden y se envían igual,
@@ -49,6 +50,8 @@ type Props = {
   /** null: cliente nuevo, que se registra con la cotización. */
   cliente: ClienteElegido | null;
   tamanos: Tamano[];
+  /** Las marcas y los modelos ya registrados, para el vehículo nuevo (pedido 52). */
+  catalogo: CatalogoVehiculos;
   /** Las opciones del catálogo para cada tamaño (los activos y los de sus vehículos). */
   opciones: Record<number, OpcionServicio[]>;
   inicio: { validaHasta: string; adelanto: string };
@@ -70,7 +73,7 @@ function sugerido(opciones: OpcionServicio[] | null, varianteId: number): string
   return o?.sugerencia.tipo === "monto" ? mostrarMonto(o.sugerencia.monto) : "";
 }
 
-export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, hoy, volver }: Props) {
+export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones, inicio, hoy, volver }: Props) {
   const clienteNuevo = !cliente;
   const primerPaso = clienteNuevo ? PASO_CLIENTE : PASO_VEHICULO;
   const [paso, setPaso] = useState(primerPaso);
@@ -309,6 +312,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
                 estado={vista}
                 prefijo={PREFIJO_VEHICULO}
                 tamanos={tamanos}
+                catalogo={catalogo}
                 enlaceExistente={usarExistente}
                 // Otro tamaño, otro precio sugerido
                 alCambiarTamano={(t) => {

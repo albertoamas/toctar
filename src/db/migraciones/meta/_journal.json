@@ -351,6 +351,20 @@
       "when": 1794792030892,
       "tag": "0049_duracion_de_una_variante",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1795061990708,
+      "tag": "0050_marcas_vehiculo",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1795061996044,
+      "tag": "0051_datos_marcas",
+      "breakpoints": true
     }
   ]
 }
