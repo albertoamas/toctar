@@ -11,7 +11,7 @@ import { XIcon } from "lucide-react"
 // En el celular, sin el bloqueo de desplazamiento de Base UI (modal="trap-focus": el foco sigue atrapado). Para bloquear
 // la página, en Safari pasa su contenido a otro contenedor y al cerrar lo devuelve: se veía un parpadeo al cerrar un
 // modal o el menú (prueba en un iPhone 14, 19/11). La página no se desplaza mientras está abierto por una regla de
-// globals.css (overflow: hidden en <html>, que no mueve nada); además, el fondo oscuro no deja arrastrar (touch-none) y
+// globals.css (overflow: hidden en <html> con cualquier ventana modal abierta, que no mueve nada); además, el fondo oscuro no deja arrastrar (touch-none) y
 // el contenido del modal no arrastra a la página al llegar a su fin (overscroll-contain).
 function Dialog({ modal, ...props }: DialogPrimitive.Root.Props) {
   const enCelular = useCelular()

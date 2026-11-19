@@ -2,6 +2,12 @@ import { expect, test, type Page } from "@playwright/test";
 import { deflateSync } from "node:zlib";
 import { ingresarComoDueno } from "./apoyo";
 
+// Una detrás de otra (19/11): cada una empieza ingresando como el dueño, y el límite de ingreso anota el intento antes de
+// probar la contraseña (así frena a quien prueba muchas en paralelo). Con 7 a la vez, desde la misma conexión, la
+// séptima veía 6 intentos en curso y quedaba bloqueada ("Demasiados intentos"). "default" y no "serial": si una falla,
+// las demás corren igual
+test.describe.configure({ mode: "default" });
+
 /** Un logo de 2000 × 200 (mucho más ancho que la pantalla), en PNG armado a mano: rojo de punta a punta. */
 const PNG_ANCHO = (() => {
   const ancho = 2000;
@@ -183,6 +189,53 @@ test("con un modal abierto, la página de atrás no se desplaza, y al cerrarlo v
   await dialogo.getByRole("button", { name: "Cancelar" }).click();
   await expect(dialogo).toHaveCount(0);
   await expect.poll(desplazamiento).not.toBe("hidden");
+});
+
+/** Que la pantalla terminó de cargar (como en cambios-sin-guardar.spec.ts): antes, lo escrito no cuenta como cambio. */
+const hidratada = async (page: Page) => {
+  await page.waitForLoadState("networkidle");
+  await page.waitForTimeout(300);
+};
+
+test("la misma regla bloquea \"¿Salir sin guardar?\" y el menú, y no un buscador", async ({ page }) => {
+  // La regla reconoce cualquier ventana modal por su función (role), no por el nombre de un componente. "¿Salir sin
+  // guardar?" ya no usa el AlertDialog de Base UI, que siempre bloqueaba a su manera (parpadeaba en el iPhone)
+  const desplazamiento = () => page.evaluate(() => getComputedStyle(document.documentElement).overflowY);
+  const bloqueoDeBaseUI = () => page.evaluate(() => document.documentElement.hasAttribute("data-base-ui-scroll-locked"));
+  await ingresarComoDueno(page);
+
+  // "¿Salir sin guardar?"
+  await page.goto("/panel/usuarios/nuevo");
+  await hidratada(page);
+  await page.getByLabel("Nombre", { exact: true }).fill("A medio escribir");
+  await page.locator('main a[href="/panel/usuarios"]').first().click();
+  const pregunta = page.getByRole("alertdialog", { name: "¿Salir sin guardar?" });
+  await expect(pregunta).toBeVisible();
+  await expect.poll(desplazamiento).toBe("hidden");
+  expect(await bloqueoDeBaseUI()).toBe(false);
+  // Sigue siendo una alerta: un toque afuera no la cierra
+  await page.mouse.click(10, 10);
+  await expect(pregunta).toBeVisible();
+  await pregunta.getByRole("button", { name: "Seguir editando" }).click();
+  await expect(pregunta).toHaveCount(0);
+  await expect.poll(desplazamiento).not.toBe("hidden");
+
+  // El menú del celular (una hoja)
+  await page.getByRole("button", { name: "Abrir menú" }).click();
+  await expect(page.getByRole("dialog", { name: "Menú" })).toBeVisible();
+  await expect.poll(desplazamiento).toBe("hidden");
+  expect(await bloqueoDeBaseUI()).toBe(false);
+  await page.getByRole("button", { name: "Cerrar menú" }).click();
+  await expect.poll(desplazamiento).not.toBe("hidden");
+
+  // Un buscador con su lista (la marca de un vehículo) no es una ventana modal: la página sigue desplazándose
+  await page.goto("/panel/clientes/nuevo");
+  await hidratada(page);
+  // La marca está plegada
+  await page.getByText("Agregar marca, modelo, año y color").click();
+  await page.getByLabel("Marca").fill("To");
+  await expect(page.getByRole("listbox")).toBeVisible();
+  expect(await desplazamiento()).not.toBe("hidden");
 });
 
 test("al desplazar un formulario, el pie fijo no cambia el alto de la página", async ({ page }) => {

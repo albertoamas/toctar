@@ -294,12 +294,13 @@
   height: 1.125rem;
 }
 
-/* Con un modal o una hoja abierta en el celular, la página de atrás no se desplaza (19/11, prueba en un iPhone 14). El
-   bloqueo de Base UI está apagado en el celular (dialog.tsx y sheet.tsx): en Safari pasaba el contenido a otro
-   contenedor y al cerrar se veía un parpadeo. Este no mueve nada: solo le quita el desplazamiento a la página mientras
-   dure (Safari lo respeta desde iOS 16). */
+/* Con una ventana modal abierta en el celular (un modal, una hoja, el menú o "¿Salir sin guardar?"), la página de atrás no
+   se desplaza (19/11, prueba en un iPhone 14). El bloqueo de Base UI está apagado en el celular (dialog.tsx, sheet.tsx y
+   pregunta-salir.tsx): en Safari pasaba el contenido a otro contenedor y al cerrar se veía un parpadeo. Este no mueve
+   nada: solo le quita el desplazamiento a la página mientras dure (Safari lo respeta desde iOS 16; en uno más viejo el
+   fondo se movería, sin parpadear). Se reconoce la ventana por su función (role), así vale también para una nueva. */
 @media (max-width: 639px) {
-  html:has(:is([data-slot="dialog-content"], [data-slot="sheet-content"])[data-open]) {
+  html:has(:is([role="dialog"], [role="alertdialog"])[data-open]) {
     overflow: hidden;
   }
 }

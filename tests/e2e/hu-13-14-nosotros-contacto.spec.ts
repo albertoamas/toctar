@@ -9,7 +9,7 @@ test("Nosotros muestra la historia, cómo trabajan y por qué elegirlos", async 
   await expect(page).toHaveURL(/\/nosotros$/);
   await expect(page).toHaveTitle("Nosotros · TocTar Detailing");
   await expect(page.getByRole("main")).toContainText("TocTar Detailing empezó el 22 de junio de 2024");
-  await expect(page.getByRole("region", { name: "Cómo trabajamos" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Cómo trabajamos", exact: true })).toBeVisible();
   await expect(page.getByRole("region", { name: "Por qué elegirnos" })).toContainText("Revisamos tu vehículo antes de darte un precio.");
   // Termina con el cierre común: un solo WhatsApp a la vista y, al lado, las preguntas frecuentes (pulido 2.5)
   await expect(page.getByRole("heading", { name: "¿Hablamos de tu vehículo?" })).toBeAttached();
