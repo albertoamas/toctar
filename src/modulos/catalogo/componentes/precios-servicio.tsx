@@ -163,7 +163,7 @@ export function PreciosServicio({ servicio, variantes, tamanos, duracionServicio
             {cargar ? "Cargar precios" : "Editar"}
           </Button>
         </CabeceraSeccion>
-        {cargar ? <p className="px-4 py-3 text-tinta-suave">Sin precios cargados.</p> : <PreciosVariante variante={variante} tamanos={tamanos} duracionServicio={duracionServicio} />}
+        {cargar ? <p className="text-tinta-suave">Sin precios cargados.</p> : <PreciosVariante variante={variante} tamanos={tamanos} duracionServicio={duracionServicio} />}
       </section>
 
       <ModalFormulario tamano="mediano" titulo={varianteEnModal ? `Precios de ${nombreDe(varianteEnModal)}` : "Precios"} abierto={!!varianteEnModal} alCambiar={(a) => !a && setAbierta(null)}>

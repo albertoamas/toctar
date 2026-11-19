@@ -2,11 +2,12 @@ import "server-only";
 import { and, asc, count, desc, eq, inArray, like, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { ajustarPagina, POR_PAGINA } from "@/lib/paginacion";
-import { cliente, consulta, recordatorioMantenimiento, tamanoVehiculo, trabajo, vehiculo } from "@/db/esquema";
+import { cliente, consulta, marcaVehiculo, recordatorioMantenimiento, tamanoVehiculo, trabajo, vehiculo } from "@/db/esquema";
 import type { EstadoTrabajo } from "@/db/esquema/trabajos";
 import { cotizacionAbierta } from "@/modulos/cotizaciones/consultas/lista";
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
 import { ESTADOS_RESERVA_ACTIVA } from "@/modulos/ordenes/reglas";
+import type { CatalogoVehiculos } from "./catalogo-vehiculos";
 import { escaparLike, normalizarBusqueda, normalizarPlaca } from "./reglas";
 
 // Lecturas de clientes (C1). Quien las llama ya pasó por exigirModulo("clientes"): el dueño o un encargado con el
@@ -260,4 +261,10 @@ export async function datosCambioDueno(vehiculoId: number, clienteId: number): P
   ]);
   if (!v) return null;
   return { ...v, reservaActiva: reservaActiva ?? null };
+}
+
+/** Las marcas activas de la lista, en orden alfabético: de ellas se elige la marca de un vehículo (pedido 52). */
+export async function catalogoVehiculos(): Promise<CatalogoVehiculos> {
+  const marcas = await db.select({ nombre: marcaVehiculo.nombre }).from(marcaVehiculo).where(eq(marcaVehiculo.activo, true)).orderBy(sql`lower(${marcaVehiculo.nombre})`);
+  return { marcas: marcas.map((m) => m.nombre) };
 }

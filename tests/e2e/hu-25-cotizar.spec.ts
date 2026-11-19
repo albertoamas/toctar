@@ -86,7 +86,8 @@ test("cliente nuevo en tres pasos: sus datos completos, su vehículo, y los serv
   await page.getByLabel("Placa", { exact: true }).fill(`CN25${s}1`);
   await page.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio").nth(0).click();
   await page.getByLabel("Marca").fill("Nissan");
-  await page.getByLabel("Color").fill("Negro");
+  await page.getByLabel("Marca").press("Tab");
+  await page.getByRole("radiogroup", { name: /^Color/ }).getByRole("radio", { name: "Negro" }).click();
   await aServicios(page);
 
   // Paso 3: los servicios; arriba, el cliente y el vehículo

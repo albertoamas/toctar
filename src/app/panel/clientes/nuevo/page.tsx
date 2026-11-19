@@ -6,6 +6,7 @@ import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { exigirModulo } from "@/lib/sesion";
 import { FormularioNuevoCliente } from "@/modulos/clientes/componentes/formulario-nuevo-cliente";
 import { tamanosActivos } from "@/modulos/configuracion/consultas";
+import { catalogoVehiculos } from "@/modulos/clientes/consultas";
 
 export const metadata: Metadata = { title: "Nuevo cliente" };
 
@@ -23,5 +24,6 @@ export default function PaginaNuevoCliente() {
 
 async function Formulario() {
   await exigirModulo("clientes");
-  return <FormularioNuevoCliente tamanos={await tamanosActivos()} />;
+  const [tamanos, catalogo] = await Promise.all([tamanosActivos(), catalogoVehiculos()]);
+  return <FormularioNuevoCliente tamanos={tamanos} catalogo={catalogo} />;
 }

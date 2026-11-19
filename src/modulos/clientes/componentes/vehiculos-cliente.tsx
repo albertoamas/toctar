@@ -18,6 +18,7 @@ import { guardarVehiculo, type EstadoCliente } from "../acciones";
 import type { VehiculoCliente } from "../consultas";
 import { detalleVehiculo, prefijoVehiculo, rutaVehiculo } from "../reglas";
 import { CamposVehiculo } from "./campos";
+import type { CatalogoVehiculos } from "@/modulos/clientes/catalogo-vehiculos";
 
 // HU-23: los vehículos de un cliente, en su ficha. Desde el pedido 51, cada uno es una fila de un toque que abre SU ficha
 // (`/panel/clientes/{id}/vehiculos/{vehiculo}`), con sus datos, su historial y "Editar", "Cambiar de dueño" y
@@ -29,11 +30,13 @@ type Props = {
   clienteId: number;
   vehiculos: VehiculoCliente[];
   tamanos: Tamano[];
+  /** Las marcas de la lista, para elegir la del vehículo (pedido 52). */
+  catalogo: CatalogoVehiculos;
   /** La ficha del cliente: "Volver" desde la del vehículo lleva ahí (pedido 43). */
   desde: string;
 };
 
-export function VehiculosCliente({ clienteId, vehiculos, tamanos, desde }: Props) {
+export function VehiculosCliente({ clienteId, vehiculos, tamanos, catalogo, desde }: Props) {
   const hidratado = useHidratado();
   const [agregando, setAgregando] = useState(false);
   // Cada apertura empieza con el formulario limpio, sin los errores de la vez anterior
@@ -81,7 +84,7 @@ export function VehiculosCliente({ clienteId, vehiculos, tamanos, desde }: Props
       )}
 
       <ModalFormulario titulo="Agregar vehículo" abierto={agregando} alCambiar={setAgregando}>
-        <FormularioVehiculo key={aperturas} clienteId={clienteId} tamanos={tamanos} />
+        <FormularioVehiculo key={aperturas} clienteId={clienteId} tamanos={tamanos} catalogo={catalogo} />
       </ModalFormulario>
     </Seccion>
   );
@@ -91,7 +94,7 @@ export function VehiculosCliente({ clienteId, vehiculos, tamanos, desde }: Props
  * Agregar un vehículo (en la ficha del cliente) o editarlo (en la suya, pedido 51), en un modal: placa y tamaño a la vista
  * y lo demás plegado, como en el alta. Lo poco usado (cambiar de dueño, desactivar) va en "Más" de su ficha.
  */
-export function FormularioVehiculo({ clienteId, vehiculo, tamanos }: { clienteId: number; vehiculo?: VehiculoCliente; tamanos: Tamano[] }) {
+export function FormularioVehiculo({ clienteId, vehiculo, tamanos, catalogo }: { clienteId: number; vehiculo?: VehiculoCliente; tamanos: Tamano[]; catalogo: CatalogoVehiculos }) {
   const alTerminar = useCerrarModal();
   const [estado, accion, enviando] = useActionState<EstadoCliente, FormData>(
     conAviso(guardarVehiculo, (r) => r.ok && alTerminar()),
@@ -122,6 +125,7 @@ export function FormularioVehiculo({ clienteId, vehiculo, tamanos }: { clienteId
         iniciales={iniciales}
         prefijo={prefijo}
         tamanos={opciones}
+        catalogo={catalogo}
         plegar
         // Al agregar una placa que es de otro cliente: el auto cambió de dueño y se pasa a este (pedido 37)
         // (si la placa ya es de este mismo cliente, no hay a quién pasarla)

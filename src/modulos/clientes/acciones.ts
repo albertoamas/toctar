@@ -12,7 +12,7 @@ import { cotizacionAbierta } from "@/modulos/cotizaciones/consultas/lista";
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
 import { ESTADOS_RESERVA_ACTIVA } from "@/modulos/ordenes/reglas";
 import { clienteConPlaca, clienteConTelefono } from "./consultas";
-import { revisarVehiculo, type EstadoCliente, type Existentes } from "./servidor";
+import { conMarcaDeLaLista, revisarVehiculo, type EstadoCliente, type Existentes } from "./servidor";
 import { camposConPrefijo, erroresConPrefijo, leerValores, PREFIJO_VEHICULO } from "./valores";
 import { esquemaCambioDueno, esquemaCliente, esquemaEstado, esquemaEstadoVehiculo, esquemaVehiculo } from "./esquemas";
 import { prefijoVehiculo } from "./reglas";
@@ -57,7 +57,7 @@ export async function crearCliente(_previo: EstadoCliente, datos: FormData): Pro
   try {
     id = await db.transaction(async (tx) => {
       const [nuevo] = await tx.insert(cliente).values({ ...datosCliente, createdBy: creadoPor, updatedBy: creadoPor }).returning({ id: cliente.id });
-      if (datosVehiculo) await tx.insert(vehiculo).values({ ...datosVehiculo, clienteId: nuevo.id, createdBy: creadoPor });
+      if (datosVehiculo) await tx.insert(vehiculo).values({ ...(await conMarcaDeLaLista(tx, datosVehiculo)), clienteId: nuevo.id, createdBy: creadoPor });
       return nuevo.id;
     });
   } catch (error) {
@@ -145,8 +145,10 @@ export async function guardarVehiculo(_previo: EstadoCliente, datos: FormData): 
 
   try {
     await db.transaction(async (tx) => {
-      if (id) await tx.update(vehiculo).set({ ...entrada.data, updatedAt: new Date() }).where(eq(vehiculo.id, id));
-      else await tx.insert(vehiculo).values({ ...entrada.data, clienteId, createdBy: Number(autor.id) });
+      // La marca como está en la lista; una nueva se suma (pedido 52)
+      const datos = await conMarcaDeLaLista(tx, entrada.data);
+      if (id) await tx.update(vehiculo).set({ ...datos, updatedAt: new Date() }).where(eq(vehiculo.id, id));
+      else await tx.insert(vehiculo).values({ ...datos, clienteId, createdBy: Number(autor.id) });
       // Un cliente al que se le tocó un vehículo sube en la lista de recientes
       await tx.update(cliente).set({ updatedAt: sql`now()` }).where(eq(cliente.id, clienteId));
     });

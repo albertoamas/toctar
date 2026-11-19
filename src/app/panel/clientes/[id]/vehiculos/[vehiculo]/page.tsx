@@ -21,7 +21,7 @@ import { formatearWhatsApp } from "@/lib/whatsapp";
 import { reservasDelVehiculo } from "@/modulos/agenda/consultas/listas";
 import { MasVehiculo } from "@/modulos/clientes/componentes/mas-vehiculo";
 import { FormularioVehiculo } from "@/modulos/clientes/componentes/vehiculos-cliente";
-import { fichaVehiculo } from "@/modulos/clientes/consultas";
+import { catalogoVehiculos, fichaVehiculo } from "@/modulos/clientes/consultas";
 import { detalleVehiculo, rutaVehiculo } from "@/modulos/clientes/reglas";
 import { obtenerParametros, tamanosActivos } from "@/modulos/configuracion/consultas";
 import { cotizacionesDelVehiculo } from "@/modulos/cotizaciones/consultas/lista";
@@ -70,8 +70,9 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
   const verOrdenes = puedeVerModulo(usuario, "ordenes");
   const verCotizaciones = puedeVerModulo(usuario, "cotizaciones");
   const verMantenimientos = puedeVerModulo(usuario, "mantenimientos");
-  const [tamanos, reservas, cotizaciones, mantenimientos, parametros] = await Promise.all([
+  const [tamanos, catalogo, reservas, cotizaciones, mantenimientos, parametros] = await Promise.all([
     tamanosActivos(),
+    catalogoVehiculos(),
     verAgenda ? reservasDelVehiculo(v.id, verPagos) : [],
     verCotizaciones ? cotizacionesDelVehiculo(v.id) : [],
     verMantenimientos ? mantenimientosDelVehiculo(v.id) : [],
@@ -175,7 +176,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
               />
             }
           >
-            <FormularioVehiculo clienteId={v.dueno.id} vehiculo={v} tamanos={tamanos} />
+            <FormularioVehiculo clienteId={v.dueno.id} vehiculo={v} tamanos={tamanos} catalogo={catalogo} />
           </SeccionConEditar>
 
           <Seccion id="dueno" titulo="Dueño" sinRelleno>

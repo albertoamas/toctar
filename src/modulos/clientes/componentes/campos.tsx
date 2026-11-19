@@ -7,10 +7,21 @@ import { Campo } from "@/componentes/panel/campo";
 import { MasDatos } from "@/componentes/panel/mas-datos";
 import { useCerrarModal } from "@/componentes/panel/modal-contexto";
 import { OpcionesEnTarjetas } from "@/componentes/panel/opciones-en-tarjetas";
+import { CampoConBusqueda } from "@/componentes/panel/campo-con-busqueda";
+import { Selector } from "@/componentes/panel/selector";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { Tamano } from "@/modulos/configuracion/consultas";
 import type { EstadoCliente } from "../acciones";
+import {
+  aniosParaElegir,
+  type CatalogoVehiculos,
+  COLORES_FRECUENTES,
+  colorFrecuente,
+  filtrarMarcas,
+  marcaExacta,
+  marcasParaElegir,
+} from "../catalogo-vehiculos";
 import { ANCHO_DATO } from "@/componentes/panel/anchos";
 
 // Campos de cliente y de vehículo (HU-21): los usan el alta y la ficha (HU-23). Componentes de cliente: se usan
@@ -141,7 +152,8 @@ function MasDatosCliente({ estado, iniciales = {} }: PropsCampos) {
   );
 }
 
-export function CamposVehiculo({ estado, iniciales = {}, prefijo = "", compacto, plegar, enlaceExistente, cambioDeDueno, alCambiarTamano, tamanos }: PropsCampos & { tamanos: Tamano[] }) {
+export function CamposVehiculo(props: PropsCampos & { tamanos: Tamano[]; /** Las marcas de la lista (pedido 52). */ catalogo: CatalogoVehiculos }) {
+  const { estado, iniciales = {}, prefijo = "", compacto, plegar, enlaceExistente, cambioDeDueno, alCambiarTamano, tamanos, catalogo } = props;
   const v = estado.valores ?? iniciales;
   const e = estado.errores ?? {};
   const n = (campo: string) => prefijo + campo;
@@ -149,22 +161,59 @@ export function CamposVehiculo({ estado, iniciales = {}, prefijo = "", compacto,
   // El tamaño, en tarjetas que se tocan (Nuevo cliente, 17/11): son pocos y cada uno muestra sus modelos, que es lo que
   // ayuda a elegir. Controlado, con su valor en un campo oculto propio (OpcionesEnTarjetas): no se pierde tras un error.
   const [tamanoId, setTamanoId] = useState(v[n("tamanoId")] ?? "");
+  // Pedido 52: la marca de la lista (con búsqueda), el año en un selector y el color con los frecuentes. El modelo,
+  // un texto simple (decidido el 19/11)
+  const colorInicial = v[n("color")] ?? "";
+  const [color, setColor] = useState<string>(colorInicial ? (colorFrecuente(colorInicial) ?? "Otro") : "");
 
   // Marca, modelo, año y color: a la vista, o plegados detrás de "Agregar …" en el alta. Una columna, como el resto
   const opcionales = !compacto && (
     <>
       <Campo id={n("marca")} etiqueta="Marca" opcional error={e[n("marca")]}>
-        <Input id={n("marca")} name={n("marca")} autoComplete="off" defaultValue={v[n("marca")]} aria-invalid={!!e[n("marca")]} aria-describedby={describir("marca")} />
+        <CampoConBusqueda
+          id={n("marca")}
+          nombre={n("marca")}
+          opciones={marcasParaElegir(catalogo.marcas, v[n("marca")])}
+          filtrar={filtrarMarcas}
+          exacta={marcaExacta}
+          valorInicial={v[n("marca")] ?? ""}
+          agregar
+          placeholder="Elige la marca"
+          invalido={!!e[n("marca")]}
+          aria-describedby={describir("marca")}
+        />
       </Campo>
       <Campo id={n("modelo")} etiqueta="Modelo" opcional error={e[n("modelo")]}>
         <Input id={n("modelo")} name={n("modelo")} autoComplete="off" defaultValue={v[n("modelo")]} aria-invalid={!!e[n("modelo")]} aria-describedby={describir("modelo")} />
       </Campo>
       <Campo id={n("anio")} etiqueta="Año" opcional error={e[n("anio")]}>
-        <Input id={n("anio")} name={n("anio")} inputMode="numeric" autoComplete="off" defaultValue={v[n("anio")]} aria-invalid={!!e[n("anio")]} aria-describedby={describir("anio")} className={ANCHO_DATO.anio} />
+        <Selector id={n("anio")} name={n("anio")} defaultValue={v[n("anio")] ?? ""} aria-invalid={!!e[n("anio")]} aria-describedby={describir("anio")} className={ANCHO_DATO.placa}>
+          <option value="">Elige el año</option>
+          {aniosParaElegir().map((a) => (
+            <option key={a} value={a}>
+              {a}
+            </option>
+          ))}
+        </Selector>
       </Campo>
-      <Campo id={n("color")} etiqueta="Color" opcional error={e[n("color")]}>
-        <Input id={n("color")} name={n("color")} autoComplete="off" defaultValue={v[n("color")]} aria-invalid={!!e[n("color")]} aria-describedby={describir("color")} />
-      </Campo>
+      {/* El color: los frecuentes en botones; uno distinto, con "Otro" */}
+      <div className="flex flex-col gap-2">
+        <OpcionesEnTarjetas
+          id={n("color-tipo")}
+          titulo="Color (opcional)"
+          nombre={color === "Otro" ? n("color-tipo") : n("color")}
+          valor={color}
+          cambiar={setColor}
+          opciones={[...COLORES_FRECUENTES, "Otro"].map((c) => ({ valor: c, texto: c }))}
+          error={e[n("color")]}
+          className="grid-cols-4 sm:grid-cols-7"
+        />
+        {color === "Otro" && (
+          <Campo id={n("color")} etiqueta="Color" error={e[n("color")]}>
+            <Input id={n("color")} name={n("color")} autoComplete="off" defaultValue={colorFrecuente(colorInicial) ? "" : colorInicial} aria-invalid={!!e[n("color")]} aria-describedby={describir("color")} />
+          </Campo>
+        )}
+      </div>
     </>
   );
   const principales = (
