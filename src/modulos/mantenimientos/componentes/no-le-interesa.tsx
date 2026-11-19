@@ -1,8 +1,8 @@
 "use client";
 
+import { MenuMas } from "@/componentes/panel/menu-mas";
 import { useActionState, useRef, useState } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
-import { useHidratado } from "@/componentes/hidratado";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { useCerrarModal } from "@/componentes/panel/modal-contexto";
@@ -17,15 +17,12 @@ import { cerrarMantenimiento } from "../acciones";
 // fondo en la fila, y su confirmación en un modal (como "Cancelar reserva"), con el foco en "Volver" para no cerrarlo
 // sin querer; la nota es opcional.
 
-export function NoLeInteresa({ id }: { id: number }) {
+export function NoLeInteresa({ id, de }: { id: number; /** De quién, para el nombre del "⋯": "Carla Gutiérrez, 4116RPQ". */ de: string }) {
   const [abierto, setAbierto] = useState(false);
-  // Abre un modal (necesita JavaScript): se habilita al hidratar, así un toque temprano no se pierde
-  const listo = useHidratado();
+  // C7 (18/11): en el "⋯" de la fila, junto a las dos acciones que se usan a la vista (MenuMas se habilita al hidratar)
   return (
     <>
-      <Button type="button" variant="ghost" disabled={!listo} onClick={() => setAbierto(true)} className="self-start lg:self-end">
-        No le interesa
-      </Button>
+      <MenuMas icono etiqueta={`Más: ${de}`} acciones={[{ texto: "No le interesa", alElegir: () => setAbierto(true) }]} />
       <ModalFormulario titulo="No le interesa" abierto={abierto} alCambiar={setAbierto}>
         <FormularioNoLeInteresa id={id} />
       </ModalFormulario>

@@ -118,18 +118,20 @@ Decidido el 18/11, con capturas: el mismo marco en los tres; Publicar en una col
 - [x] Piezas: `CabeceraTarjeta` (la franja), `Seccion` (siempre adentro; `sinRelleno` para listas, que pierden su marco), `SeccionConEditar` y `SeccionFormulario` (la leyenda en la misma franja).
 - [x] Pasadas a mano las secciones de lista: fichas del cliente, del vehículo, de la cotización y del catálogo; Inicio (Para hoy, Para atender); Mantenimientos; Usuarios; Sitio web (textos, opciones); Nueva reserva (vehículo, sus cotizaciones); Elegir cliente.
 
-## Paso 6 — Lista con acción en la fila (rama `patrones-lista-accion`)
+## Paso 6 — Lista con acción en la fila (rama `patrones-anchos`)
+
+Decidido el 18/11, con capturas: Saldos ya seguía el patrón; el problema era Mantenimientos.
 
 ### Piezas
 
-- [ ] `fila-lista.tsx` (`FilaConAcciones`): identifica, decide y su acción a la derecha; en el celular, botones a todo el ancho debajo.
-- [ ] `tabla-acciones.tsx` con la misma fila en la computadora.
+- [x] `fila-lista.tsx`: `FilaConAcciones` como estaba; `ListaFilas` suma `accion` ("Reservar ›" a la derecha si la lista es ancha, debajo si es angosta, como "Para atender").
+- [x] `tabla-acciones.tsx`: como estaba.
 
 ### Pantallas
 
-- [ ] Saldos pendientes — `/panel/pagos`: el total arriba y "Cobrar" en cada fila.
-- [ ] Mantenimientos — `/panel/mantenimientos`: "Avisar" y "Reservar" en cada fila.
-- [ ] Por reservar — en `/panel/agenda`: "Reservar" en cada fila.
+- [x] Saldos pendientes — el total grande arriba ("980 Bs por cobrar en 2 órdenes"); las filas, como estaban.
+- [x] Mantenimientos — el servicio sin "Mantenimiento de" y el intervalo en gris; el vencimiento en una insignia (ámbar si venció); "Avisado el 03/06" (la hora y quién, al pasar el puntero y para el lector); "No le interesa" en el "⋯". Las filas bajan de 5 renglones a 3 en la computadora.
+- [x] Por reservar (Agenda) — cada fila dice "Reservar".
 
 ## Paso 7 — Ficha con historia (rama `patrones-ficha-historia`)
 
