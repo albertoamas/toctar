@@ -60,7 +60,7 @@ test("con un modal abierto el aviso va arriba y no tapa sus botones", async ({ p
   await expect(rol).toHaveCount(0);
 });
 
-test("al final de Recibir, el aviso de error va encima del pie aunque el pie ya no esté pegado abajo", async ({ page }, info) => {
+test("al final de Recibir, el pie sigue fijo abajo y el aviso va encima de él", async ({ page }, info) => {
   // 10/11 (lo vio hu-33-checklist en el CI): al bajar hasta el final, el pie queda al cierre de la tarjeta, más arriba que
   // el borde, y el aviso (a una altura fija) tapaba "Recibir vehículo" mientras duraba. Ahora el pie dice dónde está
   // (pie-formulario.tsx). Una reserva de hoy en un espacio propio y desactivado, como en hu-33-checklist
@@ -88,14 +88,16 @@ test("al final de Recibir, el aviso de error va encima del pie aunque el pie ya 
   await expect(techo).toBeHidden();
   const aviso = page.locator("[data-sonner-toast]").filter({ hasText: "Detalle guardado." });
   await expect(aviso).toBeVisible();
-  // Al final de la pantalla, el pie está en su lugar: más arriba que el borde
+  // Al final de la pantalla, el pie sigue fijo al borde de abajo (19/11, prueba en un iPhone 14: antes se detenía al
+  // cierre de la tarjeta, más arriba que el borde)
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  const pie = page.locator("[data-pie-movil]");
   await expect
     .poll(async () => {
-      const caja = (await recibir.boundingBox())!;
-      return page.viewportSize()!.height - (caja.y + caja.height);
+      const caja = (await pie.boundingBox())!;
+      return Math.abs(page.viewportSize()!.height - (caja.y + caja.height));
     })
-    .toBeGreaterThan(40);
+    .toBeLessThan(2);
   // Con el aviso todavía a la vista: abajo (el modal ya se cerró), encima del botón, y el botón se puede tocar
   await expect(aviso).toBeVisible();
   await expect.poll(async () => (await aviso.boundingBox())!.y).toBeGreaterThan(page.viewportSize()!.height / 2);
