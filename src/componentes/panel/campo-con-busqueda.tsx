@@ -66,7 +66,7 @@ export function CampoConBusqueda(props: {
           placeholder={placeholder}
           autoComplete="off"
           aria-invalid={invalido || undefined}
-          className="h-9 w-full min-w-0 rounded-lg border border-input bg-fondo py-1 pr-9 pl-2.5 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 pointer-coarse:h-11 md:text-sm"
+          className="h-9 w-full min-w-0 rounded-lg border border-input bg-fondo py-1 pr-9 pl-2.5 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 pointer-coarse:h-11"
         />
         <Combobox.Trigger aria-label="Ver la lista" className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-tinta-suave">
           <ChevronDownIcon className="size-4" aria-hidden />
@@ -82,7 +82,7 @@ export function CampoConBusqueda(props: {
                   key={`${o.nueva ? "+" : ""}${o.valor}`}
                   value={o}
                   className={cn(
-                    "flex min-h-9 cursor-default items-center gap-2 rounded-md px-2.5 text-base outline-none select-none data-highlighted:bg-superficie pointer-coarse:min-h-11 md:text-sm",
+                    "flex min-h-9 cursor-default items-center gap-2 rounded-md px-2.5 text-base outline-none select-none data-highlighted:bg-superficie pointer-coarse:min-h-11",
                     o.nueva && "font-semibold",
                   )}
                 >
