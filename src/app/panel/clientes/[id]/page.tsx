@@ -107,6 +107,8 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
       <EncabezadoPagina
         volver={volver}
         titulo={c.nombre}
+        // Su WhatsApp debajo del nombre (C7, 18/11): más útil que "Clientes"
+        subtitulo={<span className="tabular-nums">{formatearWhatsApp(c.telefono)}</span>}
         estado={
           (!c.activo || debe) && (
             <span className="flex flex-wrap gap-2">

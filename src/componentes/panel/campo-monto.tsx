@@ -6,7 +6,8 @@ import { ANCHO_DATO } from "@/componentes/panel/anchos";
 export function CampoMonto(props: React.ComponentProps<typeof Input>) {
   return (
     <div className="flex items-center gap-2">
-      <Input inputMode="decimal" autoComplete="off" {...props} className={ANCHO_DATO.monto} />
+      {/* "0,00" como ejemplo del formato, nunca como valor (C7, 18/11) */}
+      <Input inputMode="decimal" autoComplete="off" placeholder="0,00" {...props} className={ANCHO_DATO.monto} />
       <span className="text-tinta-suave">Bs</span>
     </div>
   );

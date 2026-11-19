@@ -51,15 +51,12 @@ Una pantalla nueva o cambiada toma una de estas formas; si ninguna sirve, se dis
 
 ## 2. Forma de una ficha
 
-> **Dónde va el título de una tarjeta (18/11): una sola regla en todo el panel, adentro.**
+> **Dónde va el título de una tarjeta (regla final, 18/11): fuera en las fichas, adentro en los formularios.**
 >
-> - Cada sección es una tarjeta con su **cabecera**: el título adentro, su acción al lado ("Editar", "Agregar", "Cambiar") y **una línea fina** que la separa del contenido, así el título no se mezcla con lo de abajo. La cabecera tiene siempre el alto de un botón: dos tarjetas lado a lado quedan parejas. Es el patrón de las tarjetas de Shopify (Polaris) y Material.
-> - Vale para fichas (`Seccion`, `SeccionConEditar`), formularios (`SeccionFormulario`, con `accion` si lleva un botón al lado) y lo que se lee en un paso del taller (`CabeceraTarjeta`). Una lista dentro de una sección (`ListaFilas`, `TablaLista`) pierde su propio marco: el de la sección alcanza (`Seccion sinRelleno`).
-> - **Una tarjeta de datos con sus etiquetas no lleva título** si la pantalla ya dice qué es (lo que se recibe o se entrega): el título va cuando la tarjeta sola no se entiende ("Firma del cliente", "Checklist").
-> - Quedan fuera de la regla el título de la página (`EncabezadoPagina`), las listas de página completa (Clientes, Órdenes) y las columnas del tablero de la Agenda.
-- **Se lee y se edita aparte:** cada parte tiene su "Editar", que abre un modal y guarda solo esa parte. No hay un "Guardar" general.
-- **Qué va en la ficha:** primero lo que decide (estado, montos, lo que falta), después lo que se consulta (datos, fotos) y al final la historia.
-- **Dos disposiciones en computadora.** Se elige una por ficha:
+> - **Fichas, listas y portadas** (cliente, vehículo, orden, cotización, reserva, catálogo, configuración, Inicio, Mantenimientos): el título **fuera**, arriba de la tarjeta, con su acción a la derecha ("Editar", "Agregar", "Nueva reserva"); 8 px entre el título y la tarjeta; la tarjeta con relleno de 16 px. `Seccion` y `SeccionConEditar`. Una lista dentro de una sección (`Seccion sinRelleno`) pierde su propio marco: no hay tarjeta dentro de tarjeta.
+> - **Formularios, modales y pasos del taller** (crear, en pasos, Recibir, Entregar, Publicar, Cambiar de dueño): el título **adentro**, en la cabecera de la tarjeta con una línea debajo, como la leyenda de los campos. `SeccionFormulario`, `CabeceraTarjeta` y `Seccion dentro`.
+> - **Una tarjeta de datos con sus etiquetas no lleva título** si la pantalla ya dice qué es (lo que se recibe o se entrega).
+> - **El encabezado de una ficha** dice debajo del título un dato útil (el WhatsApp del cliente; el vehículo y su dueño), no solo a dónde se vuelve (`EncabezadoPagina subtitulo`).
 
 | Disposición | Columnas | Cuándo |
 |---|---|---|

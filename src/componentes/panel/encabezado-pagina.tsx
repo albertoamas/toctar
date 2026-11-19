@@ -15,10 +15,15 @@ type Props = {
   accion?: React.ReactNode;
   /** La pantalla de la que se viene: "Clientes", "Orden". */
   volver?: { href: Route; texto: string };
+  /**
+   * Debajo del título, un dato que sirve más que a dónde se vuelve (C7, 18/11): el WhatsApp del cliente, el vehículo y
+   * su dueño. Sin él, la pantalla de la que se viene. El botón de volver lo sigue diciendo para el lector de pantalla.
+   */
+  subtitulo?: React.ReactNode;
   children?: React.ReactNode;
 };
 
-export function EncabezadoPagina({ titulo, estado, accion, volver, children }: Props) {
+export function EncabezadoPagina({ titulo, estado, accion, volver, subtitulo, children }: Props) {
   return (
     <div className="flex flex-col gap-1">
       {/* El botón principal, a la derecha del título, también en el celular (10/11: bajaba a otra fila cuando el título era
@@ -33,7 +38,7 @@ export function EncabezadoPagina({ titulo, estado, accion, volver, children }: P
               <h1 className="tt-titulo-pagina">{titulo}</h1>
               {estado}
             </div>
-            {volver && <p className="text-sm text-tinta-suave">{volver.texto}</p>}
+            {subtitulo ? <p className="text-sm text-tinta-suave">{subtitulo}</p> : volver && <p className="text-sm text-tinta-suave">{volver.texto}</p>}
           </div>
         </div>
         {accion && <div className="ml-auto max-w-full">{accion}</div>}

@@ -123,14 +123,17 @@ function MasDatosCliente({ estado, iniciales = {} }: PropsCampos) {
   return (
     <>
       <Campo id="correo" etiqueta="Correo" opcional error={e.correo}>
-        <Input id="correo" name="correo" type="email" autoCapitalize="none" spellCheck={false} defaultValue={v.correo} aria-invalid={!!e.correo} aria-describedby={describir("correo")} />
+        <Input id="correo" name="correo" type="email" autoCapitalize="none" spellCheck={false} placeholder="nombre@correo.com" defaultValue={v.correo} aria-invalid={!!e.correo} aria-describedby={describir("correo")} />
       </Campo>
-      <Campo id="nit" etiqueta="NIT" opcional error={e.nit}>
-        <Input className={ANCHO_DATO.placa} id="nit" name="nit" inputMode="numeric" autoComplete="off" defaultValue={v.nit} aria-invalid={!!e.nit} aria-describedby={describir("nit")} />
-      </Campo>
-      <Campo id="razonSocial" etiqueta="Razón social" opcional error={e.razonSocial}>
-        <Input id="razonSocial" name="razonSocial" autoComplete="off" defaultValue={v.razonSocial} aria-invalid={!!e.razonSocial} aria-describedby={describir("razonSocial")} />
-      </Campo>
+      {/* NIT y razón social juntos, en una fila si entran (C7, 18/11): van de la mano en la factura */}
+      <div className="grid gap-5 sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)]">
+        <Campo id="nit" etiqueta="NIT" opcional error={e.nit}>
+          <Input className={ANCHO_DATO.placa} id="nit" name="nit" inputMode="numeric" autoComplete="off" defaultValue={v.nit} aria-invalid={!!e.nit} aria-describedby={describir("nit")} />
+        </Campo>
+        <Campo id="razonSocial" etiqueta="Razón social" opcional error={e.razonSocial}>
+          <Input id="razonSocial" name="razonSocial" autoComplete="off" defaultValue={v.razonSocial} aria-invalid={!!e.razonSocial} aria-describedby={describir("razonSocial")} />
+        </Campo>
+      </div>
       <Campo id="notas" etiqueta="Notas" opcional error={e.notas} ayuda="Por ejemplo, cómo prefiere que lo contacten.">
         <Textarea id="notas" name="notas" rows={2} defaultValue={v.notas} aria-invalid={!!e.notas} aria-describedby={describir("notas", true)} />
       </Campo>
