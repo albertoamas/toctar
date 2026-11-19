@@ -51,11 +51,12 @@ Una pantalla nueva o cambiada toma una de estas formas; si ninguna sirve, se dis
 
 ## 2. Forma de una ficha
 
-> **Dónde va el título de una tarjeta (regla final, 18/11): fuera en las fichas, adentro en los formularios.**
+> **Dónde va el título de una tarjeta: adentro, en todo el panel (decisión final del 19/11, tras probarlo en el celular).**
 >
-> - **Fichas, listas y portadas** (cliente, vehículo, orden, cotización, reserva, catálogo, configuración, Inicio, Mantenimientos): el título **fuera**, arriba de la tarjeta, con su acción a la derecha ("Editar", "Agregar", "Nueva reserva"); 8 px entre el título y la tarjeta; la tarjeta con relleno de 16 px. `Seccion` y `SeccionConEditar`. Una lista dentro de una sección (`Seccion sinRelleno`) pierde su propio marco: no hay tarjeta dentro de tarjeta.
-> - **Formularios, modales y pasos del taller** (crear, en pasos, Recibir, Entregar, Publicar, Cambiar de dueño): el título **adentro**, en la cabecera de la tarjeta con una línea debajo, como la leyenda de los campos. `SeccionFormulario`, `CabeceraTarjeta` y `Seccion dentro`.
+> - Cada sección es una tarjeta con su cabecera: el título adentro, su acción a la derecha ("Editar", "Agregar", "Nueva reserva") y una línea fina que la separa del contenido. Vale para fichas, listas, portadas, formularios, modales y pasos del taller: `Seccion`, `SeccionConEditar`, `SeccionFormulario` y `CabeceraTarjeta`. En el celular cada sección queda como un bloque cerrado y se distingue al deslizar.
+> - Una lista dentro de una sección (`Seccion sinRelleno`) pierde su propio marco: no hay tarjeta dentro de tarjeta.
 > - **Una tarjeta de datos con sus etiquetas no lleva título** si la pantalla ya dice qué es (lo que se recibe o se entrega).
+> - Se probó también el título fuera en las fichas (18/11) y se descartó: en el celular el título quedaba suelto entre dos tarjetas. No se vuelve a cambiar.
 > - **El encabezado de una ficha** dice debajo del título un dato útil (el WhatsApp del cliente; el vehículo y su dueño), no solo a dónde se vuelve (`EncabezadoPagina subtitulo`).
 
 | Disposición | Columnas | Cuándo |

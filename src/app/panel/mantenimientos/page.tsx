@@ -42,7 +42,7 @@ import { mensajeMantenimiento } from "@/modulos/ordenes/mensajes";
 import { Insignia } from "@/componentes/panel/insignia";
 import { DatosDeFila, FilaConAcciones, ListaEnTarjeta } from "@/componentes/panel/fila-lista";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { CabeceraTarjeta, SIN_MARCO_INTERNO } from "@/componentes/panel/cabecera-seccion";
 import { TablaAcciones, type ColumnaAcciones } from "@/componentes/panel/tabla-acciones";
 import { CeldaDoble } from "@/componentes/panel/tabla-lista";
 import { conDesde } from "@/lib/volver";
@@ -267,9 +267,10 @@ function Estado({ m, hoy, conAviso }: { m: MantenimientoPorAvisar; hoy: string; 
 function Seccion({ titulo, cantidad: n, tabla, children }: { titulo: string; cantidad: number; tabla: React.ReactNode; children: React.ReactNode }) {
   return (
     // El lector oye la sección como "Vencidos, 2 mantenimientos"; a la vista, "Vencidos (2)"
-    // El título fuera, como en las listas y fichas (sistema-del-panel.md §2); la tabla y las tarjetas, con su marco
-    <section aria-label={`${titulo}, ${cantidad(n)}`} className="flex flex-col gap-2">
-      <CabeceraSeccion
+    // Con el título adentro, como las demás secciones del panel (C7, 18/11); la tabla y las tarjetas, sin su propio marco
+    <section aria-label={`${titulo}, ${cantidad(n)}`} className={cn("tt-tarjeta-panel flex flex-col overflow-hidden", SIN_MARCO_INTERNO)}>
+      <CabeceraTarjeta
+        angosta
         titulo={
           <>
             {titulo} <span className="tabular-nums text-tinta-suave">({n})</span>

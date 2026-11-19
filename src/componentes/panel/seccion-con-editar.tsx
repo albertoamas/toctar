@@ -4,7 +4,7 @@ import { useState } from "react";
 import { cn } from "cn";
 import { PencilIcon } from "lucide-react";
 import { useHidratado } from "@/componentes/hidratado";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { CabeceraSeccion, CabeceraTarjeta } from "@/componentes/panel/cabecera-seccion";
 import { ModalFormulario } from "@/componentes/panel/modal-formulario";
 import { Button } from "@/componentes/ui/button";
 
@@ -62,14 +62,14 @@ export function SeccionConEditar({ id, titulo, nivel = 2, etiquetaEditar, titulo
       </section>
     );
   }
-  // En la ficha, el título fuera de la tarjeta con "Editar" a la derecha (sistema-del-panel.md §2, regla final del 18/11).
-  // flex-1: en una grilla, las tarjetas de una misma fila quedan del mismo alto
+  // El título adentro, en la cabecera de la tarjeta, con "Editar" al lado (C7, 18/11). En una grilla, las tarjetas de una
+  // misma fila quedan del mismo alto
   return (
-    <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-2">
-      <CabeceraSeccion id={id} titulo={titulo}>
+    <section aria-labelledby={`${id}-titulo`} className="tt-tarjeta-panel flex flex-col overflow-hidden">
+      <CabeceraTarjeta id={id} titulo={titulo}>
         {editar}
-      </CabeceraSeccion>
-      <div className={cn("tt-tarjeta-panel flex flex-1 flex-col gap-3 p-4", claseRecuadro)}>{lectura}</div>
+      </CabeceraTarjeta>
+      <div className={cn("flex flex-1 flex-col gap-3 p-4 sm:p-5", claseRecuadro)}>{lectura}</div>
       {modal}
     </section>
   );
