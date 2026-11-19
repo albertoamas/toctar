@@ -30,6 +30,11 @@ Revisión de todas las rutas y flujos del panel (24 de octubre, aprobada por el 
    - **Clientes:** Clientes, Consultas, Saldos pendientes, Mantenimientos y Reclamos;
    - **Administración:** Sitio web, Catálogo y precios, Usuarios y Configuración (Sitio web iba en su propio grupo hasta el pulido 13.25, 08/11: solo, sin título, quedaba suelto).
 
+   Desde el 19/11: **Operaciones** (Agenda, Órdenes y Cotizaciones: el trabajo en el orden en que se hace), **Clientes**
+   (Clientes, Mantenimientos y Reclamos), **Finanzas** (Saldos pendientes; Gastos y Reportes se suman con el pedido 16) y
+   **Administración**. Un grupo que tiene un solo módulo (Finanzas, por ahora) lleva su título. En la computadora la barra
+   se comprime a solo íconos, con el monograma de la marca, y se recuerda en el navegador; en el celular no cambia.
+
    El grupo se define en `MODULOS` (`src/lib/permisos.ts`). Un grupo sin módulos para quien entra no se muestra. Los accesos del inicio siguen el mismo orden.
 3. **Configuración: Negocio · Taller · Parámetros.** La pestaña "Cotizaciones y mantenimiento" mezclaba temas. Pasa a "Parámetros" (`/panel/configuracion/parametros`), con secciones:
    - Consultas: consulta que se enfría;

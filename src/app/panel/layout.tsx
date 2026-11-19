@@ -7,6 +7,7 @@ import { ActualizarAlVolver } from "@/componentes/panel/actualizar-al-volver";
 import { AvisoConexion } from "@/componentes/panel/aviso-conexion";
 import { AvisoVersionNueva } from "@/componentes/panel/aviso-version-nueva";
 import { MenuDesplazable } from "@/componentes/panel/menu-desplazable";
+import { AlternarMenu, SCRIPT_MENU_COMPRIMIDO } from "@/componentes/panel/menu-comprimido";
 import { MenuPanel } from "@/componentes/panel/menu-panel";
 import { RegistrarServiceWorker } from "@/componentes/panel/registrar-service-worker";
 import { UsuarioSesion } from "@/componentes/panel/usuario-sesion";
@@ -46,10 +47,18 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
             el menú queda fijo, sujeto al borde de arriba y al de abajo de la ventana. No con un alto en unidades de pantalla
             (h-dvh): en la app instalada de Android, después de actualizar (deslizar o Ctrl + R), el navegador calcula ese alto
             más grande que la ventana y lo de abajo (quién entró, el manual, "Cerrar sesión") quedaba fuera, hasta cerrar la app */}
-        <div data-theme="oscuro" className="hidden w-62 shrink-0 bg-fondo lg:block">
-          <aside className="fixed inset-y-0 left-0 z-30 flex w-62 flex-col bg-fondo p-4 text-tinta [--radius:8px]">
-            <div className="mt-1 mb-6">
-              <Marca />
+        {/* Lo guardado (barra comprimida), antes de pintar */}
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_MENU_COMPRIMIDO }} />
+        {/* data-menu-lateral: la barra comprimida (19/11) solo cambia lo de aquí adentro, no el menú del celular */}
+        <div data-theme="oscuro" data-menu-lateral className="hidden w-62 shrink-0 bg-fondo lg:block comprimido:w-16">
+          <aside className="fixed inset-y-0 left-0 z-30 flex w-62 flex-col bg-fondo p-4 text-tinta [--radius:8px] comprimido:w-16 comprimido:px-2">
+            {/* El logo oficial y, comprimida, su monograma (manual de marca: no se reemplaza por otro); al lado, el botón */}
+            <div className="mt-1 mb-6 flex items-center justify-between gap-2 comprimido:flex-col comprimido:gap-3">
+              <span className="comprimido:hidden">
+                <Marca />
+              </span>
+              <Image src="/marca/toctar-monograma-sobre-oscuro.svg" alt="TocTar, panel" width={32} height={32} unoptimized className="hidden comprimido:block" />
+              <AlternarMenu />
             </div>
             {/* Si el menú no entra (pantalla baja), se desplaza solo él: la marca y "Cerrar sesión" quedan a la vista.
                 El margen negativo con su relleno deja ver el borde de foco de los enlaces */}
