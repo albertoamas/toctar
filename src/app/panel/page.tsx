@@ -1,32 +1,34 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { Suspense } from "react";
-import { CalendarClockIcon, CalendarPlusIcon, CarFrontIcon, ChevronRightIcon, FilePlusIcon, MessageSquareWarningIcon, type LucideIcon } from "lucide-react";
+import { CalendarClockIcon, CalendarPlusIcon, ChevronRightIcon, FilePlusIcon, MessageSquareWarningIcon, type LucideIcon } from "lucide-react";
 import { cn } from "cn";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { ICONO_MODULO } from "@/componentes/panel/iconos-modulo";
-import { Insignia } from "@/componentes/panel/insignia";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
-import { Seccion } from "@/componentes/panel/cabecera-seccion";
-import { CeldaDoble, TablaLista } from "@/componentes/panel/tabla-lista";
-import { TarjetaNumero } from "@/componentes/panel/tarjeta-numero";
 import { buttonVariants } from "@/componentes/ui/button";
 import { cantidad } from "@/lib/cantidad";
 import { fechaConDia, fechaEnBolivia } from "@/lib/fechas";
 import { MODULOS, modulosDelMenu, nombreEnMenu, puedeVerModulo, type Modulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
-import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { primerNombre } from "@/modulos/clientes/reglas";
-import { obtenerParametros } from "@/modulos/configuracion/consultas";
+import { obtenerDatosPublicos, obtenerParametros, obtenerPlantillas } from "@/modulos/configuracion/consultas";
 import { cotizacionesPendientes, cotizacionesPorReservar } from "@/modulos/cotizaciones/consultas/lista";
 import { bs, diasDesde, sinRespuesta, textoDias } from "@/modulos/cotizaciones/reglas";
-import { ParaAtender, type Pendiente } from "@/modulos/inicio/componentes/para-atender";
+import { ListaInicio, type FilaInicio } from "@/modulos/inicio/componentes/lista-inicio";
 import { ingresosDeHoy } from "@/modulos/inicio/consultas";
-import { paraHoy, type FilaDelDia } from "@/modulos/inicio/reglas";
+import { numerosDelDia, repartirDia, type FilaDelDia } from "@/modulos/inicio/reglas";
 import { contarSinAvisar } from "@/modulos/mantenimientos/consultas";
 import { ordenesAbiertas } from "@/modulos/ordenes/consultas";
-import { enlaceTrabajo, estaAtrasada, rutaTrabajo } from "@/modulos/ordenes/reglas";
+import { enlaceTrabajo, rutaTrabajo } from "@/modulos/ordenes/reglas";
+import { obtenerOrden } from "@/modulos/ordenes/consultas";
+import { registrarAvisoListo } from "@/modulos/ordenes/acciones/estado";
+import { mensajeListo } from "@/modulos/ordenes/mensajes";
+import { AvisarPorWhatsApp } from "@/componentes/panel/avisar-whatsapp";
+import { RegistrarPago } from "@/modulos/pagos/componentes/registrar-pago";
+import { enlaceWhatsApp } from "@/lib/whatsapp";
+import { puede } from "@/lib/permisos";
 import { saldosPendientes } from "@/modulos/pagos/consultas";
 import { reclamosPorAtender } from "@/modulos/reclamos/consultas";
 import { conDesde } from "@/lib/volver";
@@ -34,13 +36,14 @@ import { conDesde } from "@/lib/volver";
 /** Lo que se abre desde Inicio vuelve a Inicio (pedido 43). */
 const INICIO = "/panel";
 
-// Inicio del panel (HU-39, RF-52; pedido 26, etapas/P26-rediseno-panel.md). Para el dueño y el encargado: arriba sus dos
-// tareas de todos los días (nueva reserva, nueva cotización); los números del día en tarjetas que llevan a su lista;
-// "Para hoy" (lo que llega, lo que se entrega y lo que espera aviso) y "Para atender" (reclamos, cotizaciones sin
-// respuesta, saldos y mantenimientos vencidos). Cada parte, solo si quien entra ve ese módulo: los montos, solo con Pagos
+// Inicio del panel (HU-39, RF-52; pedido 26, etapas/P26-rediseno-panel.md; recorrido visual del 19/11). Para el dueño
+// y el encargado: arriba sus dos tareas de todos los días (nueva reserva, nueva cotización) y una línea con los números
+// del día; debajo, una sola lista por urgencia, sin repetir: "Urgente" (lo atrasado y los reclamos), "Hoy" (lo que llega,
+// lo que se entrega y las listas por avisar) y "Pendientes" (saldos, cotizaciones sin respuesta o sin fecha y
+// mantenimientos vencidos), cada fila con su acción directa. Cada parte, solo si quien entra ve ese módulo: los montos, solo con Pagos
 // o Cotizaciones (RN-12). Llega entera: el saludo lleva el nombre de la sesión.
-// Pedido 31 (P31-flujo-de-un-trabajo.md §2 C1): "Para atender" suma las cotizaciones aceptadas sin fecha, para
-// reservarlas; "Para hoy" dice el paso siguiente de cada vehículo, con el texto del botón de su pantalla.
+// Pedido 31 (P31-flujo-de-un-trabajo.md §2 C1): "Pendientes" suma las cotizaciones aceptadas sin fecha, para
+// reservarlas.
 export default function InicioPanel() {
   return (
     <PaginaPanel tipo="portada">
@@ -91,50 +94,119 @@ async function Contenido() {
   const sinResponder = parametros
     ? (pendientes ?? []).filter((c) => sinRespuesta(c.estado, diasDesde(c.ultimoMovimientoAt, ahora), parametros.dias_cotizacion_sin_respuesta))
     : [];
-  const delDia = paraHoy(ingresos ?? [], abiertas ?? [], hoy);
+  const dia = repartirDia(ingresos ?? [], abiertas ?? [], hoy);
+  const numeros = numerosDelDia(ingresos, abiertas, hoy);
 
-  // Una fila por tipo (18/11): antes, 3 de cada tipo y una fila "N más", hasta 17 filas mezcladas. Con un solo caso, la
-  // fila lo abre; con varios, dice cuántos son y cuál urge más, y lleva a su lista (que tiene páginas)
-  const unoOVarios = <T,>(lista: T[], total: number, uno: (e: T) => Pendiente, varios: (primero: T) => Pendiente): Pendiente[] =>
-    lista.length === 0 ? [] : total === 1 ? [uno(lista[0])] : [varios(lista[0])];
-  const saldosPorAntiguedad = [...(saldos ?? [])].sort((x, y) => x.entregadoAt.getTime() - y.entregadoAt.getTime());
-  const reservarDe = (c: { id: number; cotizacionId: number }) => (ve("agenda") ? `/panel/agenda/nueva?cotizacion=${c.cotizacionId}` : `/panel/cotizaciones/${c.id}`);
-  const cobrarDe = (s: { id: number }) => enlaceTrabajo(s.id, "entregado", { ordenes: ve("ordenes"), agenda: ve("agenda") })?.href ?? "/panel/pagos";
-  const atender: Pendiente[] = [
+  // Las acciones directas (recorrido visual del 19/11): recibir y entregar van a su pantalla; avisar abre WhatsApp con el
+  // mensaje de "Vehículo listo" y lo deja registrado, como en la ficha de la orden (con el saldo solo si quien avisa ve
+  // Pagos); cobrar abre "Registrar pago" ahí mismo
+  const recibe = ve("ordenes") && puede(usuario, "recibir_vehiculo");
+  const entrega = ve("ordenes") && puede(usuario, "entregar_vehiculo");
+  const porAvisar = ve("ordenes") && puede(usuario, "avisar_cliente") ? dia.hoy.filter((f) => f.paso === "avisar") : [];
+  const [negocio, plantillas, ordenesPorAvisar] = await Promise.all([
+    porAvisar.length > 0 ? obtenerDatosPublicos() : null,
+    porAvisar.length > 0 ? obtenerPlantillas() : null,
+    Promise.all(porAvisar.map((f) => obtenerOrden(f.id, ve("pagos")))),
+  ]);
+  const enlacesAviso = new Map<number, string>();
+  if (negocio && plantillas) {
+    for (const o of ordenesPorAvisar) {
+      if (!o) continue;
+      const mensaje = mensajeListo({ plantilla: plantillas.listo, negocio: negocio.nombre, cliente: o.cliente, vehiculo: o, saldo: o.montos?.saldo.saldo ?? null });
+      enlacesAviso.set(o.id, enlaceWhatsApp(o.telefono, mensaje));
+    }
+  }
+  const accionDe = (f: FilaDelDia) => {
+    if (f.paso === "recibir" && recibe)
+      return (
+        <Link href={conDesde(`/panel/ordenes/${f.id}/recibir` as Route, INICIO)} className={buttonVariants({ variant: "accion" })} aria-label={`Recibir ${f.placa}`}>
+          Recibir
+        </Link>
+      );
+    if (f.paso === "entregar" && entrega)
+      return (
+        <Link href={conDesde(`/panel/ordenes/${f.id}/entregar` as Route, INICIO)} className={buttonVariants({ variant: "accion" })} aria-label={`Entregar ${f.placa}`}>
+          Entregar
+        </Link>
+      );
+    const aviso = f.paso === "avisar" ? enlacesAviso.get(f.id) : undefined;
+    if (aviso) return <AvisarPorWhatsApp enlace={aviso} avisado={null} enLista registrarAction={registrarAvisoListo.bind(null, { id: f.id })} />;
+    return undefined;
+  };
+  const vehiculo = (f: FilaDelDia, tono: "peligro" | "aviso"): FilaInicio => ({
+    clave: `trabajo-${f.id}`,
+    href: conDesde(rutaTrabajo(f.id, f.estado, ve("ordenes")), INICIO),
+    titulo: f.placa,
+    cliente: f.cliente,
+    detalle: f.detalle,
+    insignia: f.aviso ? { texto: f.aviso, tono } : undefined,
+    accion: accionDe(f),
+  });
+
+  // Lo urgente: lo que se atrasó y los reclamos (un cliente que espera respuesta)
+  const urgentes: FilaInicio[] = [
+    ...dia.urgentes.map((f) => vehiculo(f, "peligro")),
     ...unoOVarios(
       reclamos?.primeros ?? [],
       reclamos?.total ?? 0,
       (r) => ({
+        clave: "reclamos",
         href: conDesde(`/panel/reclamos/${r.id}` as Route, INICIO),
         icono: MessageSquareWarningIcon,
         titulo: `Reclamo de ${r.nombre}`,
         detalle: [r.servicio ?? r.placa, `llegó ${textoDias(diasDesde(r.createdAt, ahora))}`].join(", "),
-        accion: "Responder",
       }),
       (r) => ({
+        clave: "reclamos",
         href: "/panel/reclamos",
         icono: MessageSquareWarningIcon,
         titulo: cantidad(reclamos?.total ?? 0, "reclamo pendiente", "reclamos pendientes"),
         detalle: `El más antiguo: ${r.nombre}, llegó ${textoDias(diasDesde(r.createdAt, ahora))}`,
-        accion: "Responder",
+      }),
+    ),
+  ];
+
+  // Lo que espera, sin apuro de hoy: una fila por tipo (18/11). Con un solo caso, la fila lo abre; con varios, dice
+  // cuántos son y cuál espera más, y lleva a su lista
+  const saldosPorAntiguedad = [...(saldos ?? [])].sort((x, y) => x.entregadoAt.getTime() - y.entregadoAt.getTime());
+  const reservarDe = (c: { id: number; cotizacionId: number }) => (ve("agenda") ? `/panel/agenda/nueva?cotizacion=${c.cotizacionId}` : `/panel/cotizaciones/${c.id}`);
+  const cobrarDe = (s: { id: number }) => enlaceTrabajo(s.id, "entregado", { ordenes: ve("ordenes"), agenda: ve("agenda") })?.href ?? "/panel/pagos";
+  const pendientesDeAtender: FilaInicio[] = [
+    ...unoOVarios(
+      saldosPorAntiguedad,
+      saldosPorAntiguedad.length,
+      (s) => ({
+        clave: "saldos",
+        href: conDesde(cobrarDe(s) as Route, INICIO),
+        icono: ICONO_MODULO.pagos,
+        titulo: `Saldo de ${s.cliente}`,
+        detalle: `${bs(s.saldo)}, entregada ${textoDias(diasDesde(s.entregadoAt, ahora))}`,
+        accion: <RegistrarPago trabajoId={s.id} saldo={s.saldo} hoy={hoy} variante="accion" />,
+      }),
+      (s) => ({
+        clave: "saldos",
+        href: "/panel/pagos",
+        icono: ICONO_MODULO.pagos,
+        titulo: `${saldosPorAntiguedad.length} saldos por cobrar`,
+        detalle: `${bs(saldosPorAntiguedad.reduce((suma, x) => suma + Number(x.saldo), 0).toFixed(2))} en total; el más antiguo, ${s.cliente}`,
       }),
     ),
     ...unoOVarios(
       sinResponder,
       sinResponder.length,
       (c) => ({
+        clave: "sin-respuesta",
         href: conDesde(`/panel/cotizaciones/${c.id}` as Route, INICIO),
         icono: ICONO_MODULO.cotizaciones,
         titulo: `Cotización de ${c.cliente}`,
         detalle: `${bs(c.total)}, sin respuesta hace ${cantidad(diasDesde(c.ultimoMovimientoAt, ahora), "día", "días")}`,
-        accion: "Ver",
       }),
       (c) => ({
+        clave: "sin-respuesta",
         href: "/panel/cotizaciones",
         icono: ICONO_MODULO.cotizaciones,
         titulo: `${sinResponder.length} cotizaciones sin respuesta`,
         detalle: `La más antigua: ${c.cliente}, hace ${cantidad(diasDesde(c.ultimoMovimientoAt, ahora), "día", "días")}`,
-        accion: "Ver",
       }),
     ),
     // Aceptadas sin fecha (pedido 31): falta reservarlas. Reservar lo hace quien ve la Agenda; si no, la abre para verla
@@ -142,65 +214,54 @@ async function Contenido() {
       aceptadas ?? [],
       aceptadas?.length ?? 0,
       (c) => ({
+        clave: "aceptadas",
         href: conDesde(reservarDe(c) as Route, INICIO),
         icono: CalendarClockIcon,
         titulo: `Cotización aceptada de ${c.cliente}`,
         detalle: `${bs(c.total)}, sin fecha`,
-        accion: ve("agenda") ? "Reservar" : "Ver",
+        accion: ve("agenda") ? (
+          <Link href={conDesde(reservarDe(c) as Route, INICIO)} className={buttonVariants({ variant: "accion" })} aria-label={`Reservar la cotización de ${c.cliente}`}>
+            Reservar
+          </Link>
+        ) : undefined,
       }),
       (c) => ({
+        clave: "aceptadas",
         href: ve("agenda") ? "/panel/agenda" : "/panel/cotizaciones?vista=aceptadas",
         icono: CalendarClockIcon,
         titulo: `${aceptadas?.length ?? 0} aceptadas sin fecha`,
         detalle: `La que más espera: ${c.cliente}`,
-        accion: ve("agenda") ? "Reservar" : "Ver",
-      }),
-    ),
-    // A la orden si quien mira puede abrirla; si no (Pagos sin Órdenes), a Saldos pendientes, donde se cobra
-    ...unoOVarios(
-      saldosPorAntiguedad,
-      saldosPorAntiguedad.length,
-      (s) => ({
-        href: conDesde(cobrarDe(s) as Route, INICIO),
-        icono: ICONO_MODULO.pagos,
-        titulo: `Saldo de ${s.cliente}`,
-        detalle: `${bs(s.saldo)}, entregada ${textoDias(diasDesde(s.entregadoAt, ahora))}`,
-        accion: "Cobrar",
-      }),
-      (s) => ({
-        href: "/panel/pagos",
-        icono: ICONO_MODULO.pagos,
-        titulo: `${saldosPorAntiguedad.length} saldos por cobrar`,
-        detalle: `${bs(saldosPorAntiguedad.reduce((suma, x) => suma + Number(x.saldo), 0).toFixed(2))} en total; el más antiguo, ${s.cliente}`,
-        accion: "Cobrar",
       }),
     ),
     ...(mantenimientos && mantenimientos.vencidos > 0
       ? [
           {
+            clave: "mantenimientos",
             href: "/panel/mantenimientos" as Route,
             icono: ICONO_MODULO.mantenimientos,
             titulo: cantidad(mantenimientos.vencidos, "mantenimiento vencido", "mantenimientos vencidos"),
             detalle: "Sin avisar todavía",
-            accion: "Avisar",
+            accion: (
+              <Link href="/panel/mantenimientos" className={buttonVariants({ variant: "accion" })} aria-label="Avisar los mantenimientos vencidos">
+                Avisar
+              </Link>
+            ),
           },
         ]
       : []),
   ];
 
-  const atrasadas = abiertas?.filter((o) => estaAtrasada(o, hoy)).length ?? 0;
-  const sinAvisar = abiertas?.filter((o) => o.sinAvisar).length ?? 0;
-  const porCobrar = saldos?.reduce((suma, s) => suma + Number(s.saldo), 0) ?? 0;
-  const notaTaller = [atrasadas > 0 && cantidad(atrasadas, "atrasada", "atrasadas"), sinAvisar > 0 && cantidad(sinAvisar, "lista sin avisar", "listas sin avisar")].filter(Boolean).join(", ");
-  const llegaHoy = ingresos?.filter((i) => i.fechaInicio === hoy).length ?? 0;
-  const debianLlegar = (ingresos?.length ?? 0) - llegaHoy;
-  // Cuántas tarjetas se ven: con un número impar, una va a todo el ancho en el celular
-  const tarjetasImpar = [abiertas, ingresos, saldos, pendientes, mantenimientos].filter(Boolean).length % 2 === 1;
-
+  const veDia = ingresos !== null || abiertas !== null;
+  // Los reclamos van en "Urgente": sin nada más que ver (un encargado solo con Reclamos), "Urgente" se muestra igual
+  const conPendientes = pendientes !== null || saldos !== null || mantenimientos !== null;
+  const conUrgente = urgentes.length > 0 || (!veDia && !conPendientes);
   return (
     <section className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 @xl:flex-row @xl:items-end @xl:justify-between">
-        <Saludo nombre={usuario.nombre} hoy={hoy} />
+        <div className="flex flex-col gap-1">
+          <Saludo nombre={usuario.nombre} hoy={hoy} />
+          <ResumenDelDia {...numeros} />
+        </div>
         {(ve("cotizaciones") || ve("agenda")) && (
           <div className="grid grid-cols-2 gap-2 @xl:flex">
             {ve("cotizaciones") && (
@@ -219,59 +280,50 @@ async function Contenido() {
         )}
       </div>
 
-      {/* En el celular, de a dos; con un número impar, una va a todo el ancho y no queda un hueco: "Por cobrar", la cifra más
-          larga, si se ve (con Pagos; pulido final, 10/11); si no, la última */}
-      <section aria-label="Resumen de hoy" className={cn("grid grid-cols-2 gap-3 @4xl:grid-cols-5", !saldos && "*:last:odd:col-span-2 @4xl:*:last:odd:col-span-1")}>
-        {saldos && (
-          <TarjetaNumero
-            href="/panel/pagos"
-            className={tarjetasImpar ? "col-span-2 @4xl:col-span-1" : undefined}
-            icono={ICONO_MODULO.pagos}
-            titulo="Por cobrar"
-            valor={bs(porCobrar.toFixed(2))}
-            nota={saldos.length > 0 ? cantidad(saldos.length, "entregada con saldo", "entregadas con saldo") : "Nadie debe"}
+      {/* El mismo orden en el celular y en la computadora: Urgente, Hoy y Pendientes. En pantalla grande, Hoy a la
+          derecha, a lo alto de las otras dos */}
+      <div className="grid items-start gap-6 @5xl:grid-cols-2">
+        {conUrgente && <ListaInicio id="urgente" titulo="Urgente" filas={urgentes} vacio="Nada urgente." urgente className="@5xl:col-start-1" />}
+        {veDia && (
+          <ListaInicio
+            id="hoy"
+            titulo="Hoy"
+            filas={dia.hoy.map((f) => vehiculo(f, "aviso"))}
+            vacio="Hoy no llega ni se entrega ningún vehículo."
+            className="@5xl:col-start-2 @5xl:row-span-2 @5xl:row-start-1"
           />
         )}
-        {abiertas && (
-          <TarjetaNumero href="/panel/ordenes" icono={ICONO_MODULO.ordenes} titulo="En el taller" valor={abiertas.length} nota={notaTaller || "Nada atrasado"} aviso={notaTaller !== ""} />
-        )}
-        {ingresos && (
-          <TarjetaNumero
-            href="/panel/agenda"
-            icono={CarFrontIcon}
-            titulo="Llegan hoy"
-            valor={llegaHoy}
-            nota={debianLlegar > 0 ? `${cantidad(debianLlegar, "debía", "debían")} llegar antes` : llegaHoy > 0 ? "Por recibir" : "Nada para hoy"}
-            aviso={debianLlegar > 0}
-          />
-        )}
-        {pendientes && (
-          <TarjetaNumero
-            href="/panel/cotizaciones"
-            icono={ICONO_MODULO.cotizaciones}
-            titulo="Cotizaciones"
-            valor={pendientes.length}
-            nota={sinResponder.length > 0 ? `${sinResponder.length} sin respuesta` : "Pendientes de respuesta"}
-            aviso={sinResponder.length > 0}
-          />
-        )}
-        {mantenimientos && (
-          <TarjetaNumero
-            href="/panel/mantenimientos"
-            icono={ICONO_MODULO.mantenimientos}
-            titulo="Mantenimientos"
-            valor={mantenimientos.vencidos + mantenimientos.proximos}
-            nota={mantenimientos.vencidos > 0 ? cantidad(mantenimientos.vencidos, "vencido sin avisar", "vencidos sin avisar") : "Por avisar"}
-            aviso={mantenimientos.vencidos > 0}
-          />
-        )}
-      </section>
-
-      <div className="grid items-start gap-6 @5xl:grid-cols-[minmax(0,1fr)_22rem]">
-        {(ingresos || abiertas) && <ParaHoy filas={delDia} verOrdenes={ve("ordenes")} />}
-        {(reclamos || pendientes || saldos || mantenimientos) && <ParaAtender pendientes={atender} />}
+        {conPendientes && <ListaInicio id="pendientes" titulo="Pendientes" filas={pendientesDeAtender} vacio="Nada pendiente." className="@5xl:col-start-1" />}
       </div>
     </section>
+  );
+}
+
+/** Con un solo caso, su fila; con varios, una fila que los resume (18/11). */
+function unoOVarios<T>(lista: T[], total: number, uno: (e: T) => FilaInicio, varios: (primero: T) => FilaInicio): FilaInicio[] {
+  return lista.length === 0 ? [] : total === 1 ? [uno(lista[0])] : [varios(lista[0])];
+}
+
+/** La línea bajo el saludo (19/11, en lugar de las tarjetas): cuántos hay en el taller, llegan y se entregan hoy. */
+function ResumenDelDia({ enTaller, lleganHoy, seEntreganHoy }: ReturnType<typeof numerosDelDia>) {
+  const partes: { href: Route; texto: string }[] = [];
+  if (enTaller !== null) partes.push({ href: "/panel/ordenes", texto: `${enTaller} en el taller` });
+  if (lleganHoy !== null) partes.push({ href: "/panel/agenda", texto: cantidad(lleganHoy, "llega hoy", "llegan hoy") });
+  if (seEntreganHoy !== null) partes.push({ href: "/panel/ordenes", texto: cantidad(seEntreganHoy, "se entrega hoy", "se entregan hoy") });
+  if (partes.length === 0) return null;
+  return (
+    <nav aria-label="Resumen de hoy">
+      <ul className="flex flex-wrap gap-x-2 text-sm text-tinta-suave">
+        {partes.map((p, n) => (
+          <li key={p.texto} className="flex gap-x-2">
+            {n > 0 && <span aria-hidden>·</span>}
+            <Link href={p.href} className="font-semibold text-foreground underline-offset-4 hover:underline">
+              {p.texto}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }
 
@@ -281,48 +333,6 @@ function Saludo({ nombre, hoy }: { nombre: string; hoy: string }) {
       <h1 className="tt-titulo-pagina">Hola, {primerNombre(nombre)}</h1>
       <p className="text-sm text-tinta-suave">{fechaConDia(hoy)}</p>
     </div>
-  );
-}
-
-/** Lo del día en una tabla: la placa y el cliente, el estado con lo que pide atención y cuándo. */
-function ParaHoy({ filas, verOrdenes }: { filas: FilaDelDia[]; verOrdenes: boolean }) {
-  return (
-    <Seccion id="hoy" titulo="Para hoy" sinRelleno className="min-w-0">
-      {filas.length === 0 ? (
-        <p className="px-4 py-6 text-tinta-suave">Nada para hoy: no llega ni se entrega ningún vehículo.</p>
-      ) : (
-        <TablaLista
-          etiqueta="Para hoy"
-          columnas={[
-            { titulo: "Vehículo", ancho: "minmax(0,1fr)", movil: "titulo" },
-            // En el celular, en su renglón debajo de la placa: dos insignias al lado partían el nombre del cliente
-            { titulo: "Estado", ancho: "minmax(0,1.3fr)", movil: "detalle" },
-            { titulo: "Cuándo", ancho: "minmax(0,1fr)", movil: "detalle" },
-            { titulo: "Siguiente paso", ancho: "minmax(0,1fr)", movil: "oculta" },
-          ]}
-          filas={filas.map((f) => ({
-            href: conDesde(rutaTrabajo(f.id, f.estado, verOrdenes), INICIO),
-            celdas: [
-              <CeldaDoble key="v" principal={f.placa} secundario={f.cliente} peso="placa" />,
-              <span key="e" className="flex flex-wrap gap-1.5">
-                <Insignia tono={TONO_ESTADO_TRABAJO[f.estado]}>{NOMBRE_ESTADO_TRABAJO[f.estado]}</Insignia>
-                {f.avisos.map((a) => (
-                  <Insignia key={a} tono="aviso">
-                    {a}
-                  </Insignia>
-                ))}
-              </span>,
-              <span key="c">
-                {f.cuando}
-                {/* En el celular, el paso siguiente en la misma línea: su columna no se muestra */}
-                {f.siguiente && <span className="@2xl:hidden">, {f.siguiente.charAt(0).toLowerCase() + f.siguiente.slice(1)}</span>}
-              </span>,
-              f.siguiente,
-            ],
-          }))}
-        />
-      )}
-    </Seccion>
   );
 }
 

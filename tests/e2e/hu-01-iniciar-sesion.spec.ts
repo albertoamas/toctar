@@ -18,7 +18,7 @@ test("con datos correctos entra al panel y ve su nombre", async ({ page }) => {
 // en el menú la agenda y las órdenes, sin lo que no le toca
 test("el dueño ve lo del día y llega a cada módulo por el menú; el perfil Taller ve la agenda y las órdenes", async ({ page }, info) => {
   await ingresarComoDueno(page);
-  await expect(page.getByRole("region", { name: "Resumen de hoy" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Resumen de hoy" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Ir a" })).toHaveCount(0);
   if (info.project.name === "celular") await page.getByRole("button", { name: "Abrir menú" }).click();
   await page.getByRole("navigation", { name: "Panel" }).getByRole("link", { name: "Usuarios" }).click();
