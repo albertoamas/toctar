@@ -33,21 +33,24 @@ export function FormularioRecepcion(props: {
   const [observaciones, setObservaciones] = useState("");
 
   return (
-    <form ref={formulario} action={accion} className="tt-formulario-panel flex flex-col gap-5" noValidate aria-label="Recibir vehículo">
+    <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate aria-label="Recibir vehículo">
       <input type="hidden" name="id" value={trabajoId} />
       {volver && <input type="hidden" name="volver" value={volver} />}
       {estado.mensaje && !estado.ok && <MensajeError id="recepcion-error">{estado.mensaje}</MensajeError>}
-      <Campo id="observaciones" etiqueta="Observaciones" opcional error={e.observaciones} ayuda="Lo que no está en el checklist: objetos que deja el cliente, lo que pidió…">
-        <Textarea
-          id="observaciones"
-          name="observaciones"
-          rows={4}
-          value={observaciones}
-          onChange={(ev) => setObservaciones(ev.target.value)}
-          aria-invalid={!!e.observaciones}
-          aria-describedby={e.observaciones ? "observaciones-error" : "observaciones-ayuda"}
-        />
-      </Campo>
+      {/* Las observaciones en su tarjeta y el botón fuera, al pie, como en los otros pasos (C7 §5.3, 18/11) */}
+      <div className="tt-formulario-panel">
+        <Campo id="observaciones" etiqueta="Observaciones" opcional error={e.observaciones} ayuda="Lo que no está en el checklist: objetos que deja el cliente, lo que pidió…">
+          <Textarea
+            id="observaciones"
+            name="observaciones"
+            rows={4}
+            value={observaciones}
+            onChange={(ev) => setObservaciones(ev.target.value)}
+            aria-invalid={!!e.observaciones}
+            aria-describedby={e.observaciones ? "observaciones-error" : "observaciones-ayuda"}
+          />
+        </Campo>
+      </div>
       {/* En el celular, fijo abajo: a mano aunque el teclado esté abierto en las observaciones (pulido 11.3) */}
       <AvisoAlSalir formulario={formulario} estado={estado} />
       <PieFormulario>

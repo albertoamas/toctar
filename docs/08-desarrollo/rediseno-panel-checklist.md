@@ -91,18 +91,21 @@ es en la computadora.
 - [x] `CabeceraTarjeta` (nueva) y `Seccion dentro`; `SeccionFormulario` con `accion`.
 - [x] Adentro: `ResumenClienteVehiculo` ("Cotización para", "Reserva para"), `ResumenPaso` (los servicios de la reserva), "Cliente nuevo" de Nueva cotización, el resumen del costado (una sola tarjeta con el total al pie), Servicios, Pagos, Mantenimiento y la firma de Entregar, el checklist de Recibir (sus filas como estaban) y el vehículo de Cambiar de dueño.
 
-## Paso 5 — Flujo de un paso (rama `patrones-flujo-un-paso`)
+## Paso 5 — Flujo de un paso (rama `patrones-anchos`)
+
+Decidido el 18/11, con capturas: el mismo marco en los tres; Publicar en una columna (elegir fotos necesita el ancho).
 
 ### Piezas
 
-- [ ] `AvisoEstado` (nuevo): verde, ámbar o azul, con ícono y texto.
-- [ ] El marco común: título con la placa, estado arriba, contenido, un botón grande.
+- [x] `AvisoEstado` (nuevo, `aviso-estado.tsx`): verde, ámbar o azul, con ícono y texto, y su acción en la misma franja.
+- [x] `PasoConCostado` (nuevo, en `con-resumen.tsx`): lo que se entrega o se recibe al costado (1/3) desde `@4xl`; en el celular, arriba del paso.
+- [x] El botón del paso siempre fuera de la tarjeta, al pie (`PieFormulario`, fijo abajo en el celular).
 
 ### Pantallas
 
-- [ ] Entregar — `/panel/ordenes/[id]/entregar`: pagado o cuánto falta; la firma; lo que pasa con el mantenimiento.
-- [ ] Recibir — `/panel/ordenes/[id]/recibir`: solo el marco; el checklist queda como hoy.
-- [ ] Publicar en la galería — `/panel/ordenes/[id]/publicar`
+- [x] Entregar — arriba "Pagado por completo." o "Falta cobrar 300 Bs" con "Registrar pago"; al costado "Se entrega", Servicios y Pagos; los mantenimientos que hace la entrega, en una línea antes del botón.
+- [x] Recibir — al costado "Se recibe"; el checklist como estaba; el botón fuera de la tarjeta de Observaciones.
+- [x] Publicar en la galería — el aviso azul arriba (era un texto gris bajo el título); el botón fuera de la tarjeta.
 
 ## Paso 6 — Lista con acción en la fila (rama `patrones-lista-accion`)
 

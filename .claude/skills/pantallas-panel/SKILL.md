@@ -79,6 +79,7 @@ Toda pantalla del panel es uno de estos tipos. Identificarlo decide su forma; no
 - Una pestaña es un formulario con **un** botón al final. Si la pestaña tiene partes que se guardan por separado (el logo, cada mensaje), cada una es una sección con su título y su botón al pie, nombrado por lo que guarda ("Guardar mensaje"), nunca dos botones iguales a la vista sin decir qué guardan.
 
 ### Flujo de un paso (recibir, entregar, cotizar, publicar)
+- El mismo marco en todos (C7 §5.3): arriba lo que decide en un `AvisoEstado` (pagado o cuánto falta, qué hace el paso); en la computadora, lo que se entrega o recibe al costado (`PasoConCostado`); lo que el paso va a hacer, en una línea antes del botón; el botón fuera de la tarjeta, al pie.
 - Pantalla propia, con el objeto en el título ("Entregar 1234ABC"). Los pasos en el orden en que se hacen, sin desvíos. Un botón grande al final con el verbo del paso. Lo que no se deshace pide confirmación, con el detalle de lo que pasa.
 
 ## 3. Acciones y botones

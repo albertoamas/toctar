@@ -33,9 +33,11 @@ type Props = {
   puedeAutorizar: boolean;
   /** El nombre del cliente: quien suele firmar. */
   cliente: string;
+  /** Lo que la entrega va a hacer (los mantenimientos), dicho justo antes del botón (C7 §5.3). */
+  alEntregar?: React.ReactNode;
 };
 
-export function FormularioEntrega({ id, volver, conDeuda, saldo, puedeAutorizar, cliente }: Props) {
+export function FormularioEntrega({ id, volver, conDeuda, saldo, puedeAutorizar, cliente, alEntregar }: Props) {
   // La firma vive en el estado (no es un campo del formulario): se suma al enviar, como archivo
   const [firma, setFirma] = useState<Blob | null>(null);
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(async (previo, datos) => {
@@ -148,6 +150,7 @@ export function FormularioEntrega({ id, volver, conDeuda, saldo, puedeAutorizar,
           {e.conSaldo && <MensajeError id="conSaldo-error">{e.conSaldo}</MensajeError>}
         </>
       )}
+      {alEntregar}
       <AvisoAlSalir formulario={formulario} estado={estado} ademas={!!firma} />
       <PieFormulario>
         <Button type="submit" size="paso" disabled={enviando} className={BOTON_PASO}>
