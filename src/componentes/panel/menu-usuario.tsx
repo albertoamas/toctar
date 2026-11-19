@@ -10,7 +10,7 @@ import { cerrarSesion } from "@/modulos/acceso/acciones";
 // un menú con el manual del panel y "Cerrar sesión". Comprimida la barra, solo el círculo.
 // "Cerrar sesión" es un botón de verdad asociado a su formulario (`form`): así, con cambios sin guardar, la pantalla
 // pregunta antes de salir (cambios-sin-guardar.tsx busca `button[data-preguntar-salir]` y su formulario). El formulario
-// queda fuera del menú, que se abre en otra capa.
+// queda fuera del menú, que se abre en otra capa. En rojo (rojo-texto, recorrido visual del 19/11): sale del panel.
 
 export function MenuUsuario({ nombre, rol }: { nombre: string; rol: string }) {
   const hidratado = useHidratado();
@@ -42,7 +42,7 @@ export function MenuUsuario({ nombre, rol }: { nombre: string; rol: string }) {
             Manual del panel
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem render={<button type="submit" form={idFormulario} data-preguntar-salir />} className="min-h-9 w-full gap-2 px-3 text-base pointer-coarse:min-h-11">
+          <DropdownMenuItem variant="destructive" render={<button type="submit" form={idFormulario} data-preguntar-salir />} className="min-h-9 w-full gap-2 px-3 text-base pointer-coarse:min-h-11">
             <LogOutIcon aria-hidden />
             Cerrar sesión
           </DropdownMenuItem>
