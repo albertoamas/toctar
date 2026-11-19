@@ -20,8 +20,8 @@ type GrupoEnlaces = { titulo: string | null; enlaces: EnlaceModulo[] };
 export function NavegacionPanel({ grupos }: { grupos: GrupoEnlaces[] }) {
   const todas = grupos.flatMap((g) => g.enlaces.map((e) => e.href));
   return (
-    // Entre los grupos, 10 px: con los grupos nuevos y Finanzas completo, a 16 px el menú no entraba en 768 px de alto
-    <nav aria-label="Panel" className="flex flex-col gap-2.5">
+    // Entre los grupos, 8 px: con los grupos nuevos y Finanzas completo, a 16 px el menú no entraba en 768 px de alto
+    <nav aria-label="Panel" className="flex flex-col gap-2">
       {grupos.map((g) => (
         <Grupo key={g.enlaces[0].href} {...g} todas={todas} />
       ))}

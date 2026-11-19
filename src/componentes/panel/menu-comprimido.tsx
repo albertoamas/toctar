@@ -54,18 +54,19 @@ export function AlternarMenu() {
     }
   }, []);
   const Icono = comprimido ? PanelLeftOpenIcon : PanelLeftCloseIcon;
+  const texto = comprimido ? "Abrir el menú" : "Comprimir el menú";
+  // Abierta, una fila como las del menú (ícono y texto); comprimida, solo el ícono, con su nombre al pasar el mouse
   return (
     <Button
       type="button"
       variant="ghost"
-      size="icon"
-      className="size-9 shrink-0 text-tinta-suave hover:text-tinta"
-      aria-label={comprimido ? "Abrir el menú" : "Comprimir el menú"}
-      title={comprimido ? "Abrir el menú" : "Comprimir el menú"}
+      className="h-8 w-full justify-start gap-3 px-3 text-sm font-medium text-tinta-suave hover:text-tinta comprimido:size-9 comprimido:justify-center comprimido:px-0"
+      title={comprimido ? texto : undefined}
       aria-pressed={comprimido}
       onClick={() => fijar(!comprimido)}
     >
-      <Icono />
+      <Icono className="size-[18px]" aria-hidden />
+      <span className="comprimido:sr-only">{texto}</span>
     </Button>
   );
 }
