@@ -13,6 +13,7 @@ import type { EstadoFormulario } from "@/lib/formularios";
 import { PERFILES, type Permiso } from "@/lib/permisos";
 import { crearUsuario } from "../acciones";
 import { CamposPermisos } from "./campos-permisos";
+import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 
 // HU-02: crear un usuario, siempre un encargado (pedido 50: un dueño se crea desde el servidor). Como toda pantalla de crear, "Crear usuario" al pie (PieFormulario: fijo abajo en el celular) y
 // pregunta antes de salir con algo escrito (inventario-pantallas.md, cambio 2: tenía su propia barra). La ficha de un
@@ -33,10 +34,11 @@ export function FormularioUsuario({ asignables }: { asignables: { permiso: Permi
   useFocoEnError(formulario, estado);
 
   return (
-    <form ref={formulario} action={accion} className="tt-formulario-panel flex flex-col gap-6" noValidate>
-      {/* Con espacio (pantalla grande, 17/11), la cuenta y sus permisos lado a lado: los campos no quedan de todo el ancho */}
-      <div className="grid gap-8 @6xl:grid-cols-2">
-        <div className="flex flex-col gap-6">
+    <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate>
+      {/* La cuenta y sus permisos, cada uno en su tarjeta con su título y lado a lado si hay lugar, como Nuevo cliente
+          (C7 fase 3: era una sola tarjeta con los campos de todo el ancho) */}
+      <div className="grid items-start gap-6 @4xl:grid-cols-2">
+        <SeccionFormulario titulo="Cuenta" claseContenido="gap-6">
           <Campo id="nombre" etiqueta="Nombre" error={e.nombre}>
             <Input id="nombre" name="nombre" autoComplete="off" defaultValue={valores?.nombre} aria-invalid={!!e.nombre} aria-describedby={e.nombre ? "nombre-error" : undefined} />
           </Campo>
@@ -55,11 +57,11 @@ export function FormularioUsuario({ asignables }: { asignables: { permiso: Permi
           <Campo id="repetir" etiqueta="Repite la contraseña" error={e.repetir}>
             <Input id="repetir" name="repetir" type={verContrasena ? "text" : "password"} autoComplete="new-password" value={repetida} onChange={(ev) => setRepetida(ev.target.value)} aria-invalid={!!e.repetir} aria-describedby={e.repetir ? "repetir-error" : undefined} />
           </Campo>
-        </div>
+        </SeccionFormulario>
         {/* Empieza con el perfil Taller, el más común (pedido 32: los que reciben y trabajan los vehículos) */}
-        <div className="@6xl:border-l @6xl:border-border @6xl:pl-8">
-          <CamposPermisos asignables={asignables} permisosIniciales={PERFILES[0].permisos} />
-        </div>
+        <SeccionFormulario titulo="Permisos">
+          <CamposPermisos asignables={asignables} permisosIniciales={PERFILES[0].permisos} leyendaOculta />
+        </SeccionFormulario>
       </div>
       <AvisoAlSalir formulario={formulario} estado={estado} anunciar />
       <PieFormulario>

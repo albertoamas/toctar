@@ -42,7 +42,7 @@ export function FormularioPermisos({ usuario, asignables }: { usuario: Usuario; 
   return (
     <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate>
       <input type="hidden" name="id" value={usuario.id} />
-      <CamposPermisos asignables={asignables} permisosIniciales={usuario.permisos} />
+      <CamposPermisos asignables={asignables} permisosIniciales={usuario.permisos} leyendaOculta />
       <PieGuardar texto="Guardar permisos" enviando={enviando} />
     </form>
   );

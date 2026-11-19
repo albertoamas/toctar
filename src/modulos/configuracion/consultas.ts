@@ -1,5 +1,5 @@
 import "server-only";
-import { asc, desc, eq } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/db";
 import { archivo, espacioTaller, marcaVehiculo, negocio, parametro, parteRevision, plantillaMensaje, sucursal, tamanoVehiculo, type Redes } from "@/db/esquema";
@@ -115,7 +115,8 @@ export async function listarElementos(lista: Lista): Promise<Elemento[]> {
     const marcas = await db
       .select({ id: marcaVehiculo.id, nombre: marcaVehiculo.nombre, orden: marcaVehiculo.orden, activo: marcaVehiculo.activo })
       .from(marcaVehiculo)
-      .orderBy(desc(marcaVehiculo.activo), asc(marcaVehiculo.orden), asc(marcaVehiculo.id));
+      // En orden alfabético, como se eligen en los formularios (C7 fase 3): una nueva no queda al final
+      .orderBy(desc(marcaVehiculo.activo), sql`lower(${marcaVehiculo.nombre})`);
     return marcas.map((m) => ({ ...m, descripcion: null }));
   }
   if (lista === "partes") {
