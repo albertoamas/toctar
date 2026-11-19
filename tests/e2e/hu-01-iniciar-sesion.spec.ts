@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { alertaDeIngreso, crearUsuario, DUENO, ingresar, ingresarComoDueno, PERFIL_TALLER } from "./apoyo";
+import { opcionDeCuenta, alertaDeIngreso, crearUsuario, DUENO, ingresar, ingresarComoDueno, PERFIL_TALLER } from "./apoyo";
 
 // HU-01 Iniciar sesión. Criterios en docs/05-analisis/historias-de-usuario/historias.md
 
@@ -58,10 +58,9 @@ test("un usuario desactivado no puede entrar y ve el mismo mensaje", async ({ pa
   await expect(alertaDeIngreso(page)).toHaveText("Usuario o contraseña incorrectos.");
 });
 
-test("cerrar sesión vuelve al ingreso y el panel queda cerrado", async ({ page, isMobile }) => {
+test("cerrar sesión vuelve al ingreso y el panel queda cerrado", async ({ page }) => {
   await ingresarComoDueno(page);
-  if (isMobile) await page.getByRole("button", { name: "Abrir menú" }).click();
-  await page.getByRole("button", { name: "Cerrar sesión" }).click();
+  await opcionDeCuenta(page, "Cerrar sesión");
   await expect(page).toHaveURL(/\/ingresar$/);
   await page.goto("/panel");
   await expect(page).toHaveURL(/\/ingresar$/);

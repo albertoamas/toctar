@@ -50,21 +50,22 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
         {/* Lo guardado (barra comprimida), antes de pintar */}
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_MENU_COMPRIMIDO }} />
         {/* data-menu-lateral: la barra comprimida (19/11) solo cambia lo de aquí adentro, no el menú del celular */}
-        <div data-theme="oscuro" data-menu-lateral className="hidden w-62 shrink-0 bg-fondo lg:block comprimido:w-16">
-          <aside className="fixed inset-y-0 left-0 z-30 flex w-62 flex-col bg-fondo px-4 py-3 text-tinta [--radius:8px] comprimido:w-16 comprimido:px-2">
-            {/* El logo oficial y, comprimida, su monograma (manual de marca: no se reemplaza por otro) */}
-            <div className="mt-1 mb-3 flex items-center comprimido:justify-center">
-              <span className="comprimido:hidden">
+        {/* Al comprimirla o abrirla, el ancho cambia con una transición (19/11); sin ella si el equipo pide menos movimiento */}
+        <div data-theme="oscuro" data-menu-lateral className="hidden w-62 shrink-0 bg-fondo transition-[width] duration-200 ease-out motion-reduce:transition-none lg:block comprimido:w-16">
+          <aside className="fixed inset-y-0 left-0 z-30 flex w-62 flex-col overflow-hidden bg-fondo px-3 py-3 text-tinta transition-[width] duration-200 ease-out [--radius:8px] motion-reduce:transition-none comprimido:w-16">
+            {/* El logo oficial y, comprimida, su monograma (manual de marca: no se reemplaza por otro), con un fundido */}
+            <div className="relative mt-1 mb-3 flex h-9 shrink-0 items-center px-1">
+              <span className="transition-opacity duration-200 comprimido:opacity-0">
                 <Marca />
               </span>
-              <Image src="/marca/toctar-monograma-sobre-oscuro.svg" alt="TocTar, panel" width={32} height={32} unoptimized className="hidden comprimido:block" />
+              <Image src="/marca/toctar-monograma-sobre-oscuro.svg" alt="" aria-hidden width={32} height={32} unoptimized className="absolute top-1/2 left-1 -translate-y-1/2 opacity-0 transition-opacity duration-200 comprimido:opacity-100" />
             </div>
             {/* Si el menú no entra (pantalla baja), se desplaza solo él: la marca y "Cerrar sesión" quedan a la vista.
                 El margen negativo con su relleno deja ver el borde de foco de los enlaces */}
             <MenuDesplazable className="-mx-1 px-1">{menu}</MenuDesplazable>
             {/* Abajo, encima de quién entró, el botón que comprime la barra (19/11, a pedido del dueño: junto al logo lo
                 apretaba y la barra parecía más ancha) */}
-            <div className="mt-3 flex flex-col gap-1 border-t border-border pt-3 comprimido:items-center">
+            <div className="mt-3 flex flex-col gap-1 border-t border-border pt-3">
               <AlternarMenu />
               {sesion}
             </div>

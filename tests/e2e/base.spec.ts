@@ -149,7 +149,8 @@ test("el panel no se sale de la pantalla en el celular y su menú queda a mano",
     await expect(abrir).toBeInViewport();
     await abrir.click();
   } else {
-    await expect(page.getByRole("button", { name: "Cerrar sesión" })).toBeInViewport();
+    // Quién entró (y, al tocarlo, "Cerrar sesión") queda a la vista
+    await expect(page.getByRole("button", { name: /^Tu cuenta:/ })).toBeInViewport();
   }
   const menu = page.getByRole("navigation", { name: "Panel" });
   await expect(menu.getByRole("link", { name: "Configuración" })).toHaveAttribute("aria-current", "page");
