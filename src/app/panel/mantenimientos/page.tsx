@@ -350,7 +350,7 @@ function Acciones({ m, mensaje, puedeAgendar, conAviso, enTabla = false }: { m: 
     );
   }
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {botones}
       {mas}
     </div>
