@@ -104,6 +104,8 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
       <EncabezadoPagina
         volver={volver}
         titulo={v.placa}
+        // Qué vehículo es y de quién (C7, 18/11), como en el prototipo
+        subtitulo={[detalle.join(" "), `de ${v.dueno.nombre}`].filter(Boolean).join(" · ")}
         estado={!v.activo && <Insignia>Desactivado</Insignia>}
         accion={
           <div className="flex flex-wrap gap-2">
