@@ -8,7 +8,8 @@ import { Button } from "@/componentes/ui/button";
 // Agenda, las tablas y los formularios con su resumen al costado. Se recuerda en el navegador (es una comodidad de cada
 // persona, no un dato del negocio) y se marca en <html data-menu="comprimido">: la variante `comprimido:` de globals.css
 // cambia solo lo que está dentro de la barra lateral ([data-menu-lateral]), no el menú del celular. El script del layout
-// la aplica antes de pintar: sin él, la barra se vería abierta un instante y se cerraría.
+// la aplica antes de pintar: sin él, la barra se vería abierta un instante y se cerraría. Al comprimirla o abrirla, el
+// ancho cambia con una transición y los textos se desvanecen (19/11): no de golpe.
 
 const CLAVE = "tt-menu";
 const ATRIBUTO = "data-menu";
@@ -60,13 +61,13 @@ export function AlternarMenu() {
     <Button
       type="button"
       variant="ghost"
-      className="h-8 w-full justify-start gap-3 px-3 text-sm font-medium text-tinta-suave hover:text-tinta comprimido:size-9 comprimido:justify-center comprimido:px-0"
+      className="h-8 w-full justify-start gap-3 overflow-hidden px-[11px] text-sm font-medium whitespace-nowrap text-tinta-suave hover:text-tinta"
       title={comprimido ? texto : undefined}
       aria-pressed={comprimido}
       onClick={() => fijar(!comprimido)}
     >
       <Icono className="size-[18px]" aria-hidden />
-      <span className="comprimido:sr-only">{texto}</span>
+      <span className="transition-opacity duration-200 comprimido:opacity-0">{texto}</span>
     </Button>
   );
 }

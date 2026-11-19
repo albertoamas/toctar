@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { ingresarComoDueno } from "./apoyo";
+import { opcionDeCuenta, ingresarComoDueno } from "./apoyo";
 
 // Pulido 13.15: salir con cambios pregunta, y el lector de pantalla oye "Hay cambios sin guardar." (AvisoAlSalir). En
 // Crear usuario, un formulario largo de crear; desde el 10/11 con el pie común (PieFormulario, fijo abajo en el celular),
@@ -103,12 +103,12 @@ test("cerrar sesión con cambios también pregunta", async ({ page }, info) => {
   await hidratada(page);
   await nombreDe(page).fill("A medio escribir");
   await expect(hayCambios(page)).toHaveText("Hay cambios sin guardar.");
-  await page.getByRole("button", { name: "Cerrar sesión" }).click();
+  await opcionDeCuenta(page, "Cerrar sesión");
   const pregunta = page.getByRole("alertdialog", { name: "¿Salir sin guardar?" });
   await expect(pregunta).toBeVisible();
   await pregunta.getByRole("button", { name: "Seguir editando" }).click();
   await expect(page).toHaveURL(/\/panel\/usuarios\/nuevo$/);
-  await page.getByRole("button", { name: "Cerrar sesión" }).click();
+  await opcionDeCuenta(page, "Cerrar sesión");
   await pregunta.getByRole("button", { name: "Salir sin guardar" }).click();
   await expect(page).toHaveURL(/\/ingresar/);
 });
