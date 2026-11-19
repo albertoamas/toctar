@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { cn } from "cn";
 import { CalendarIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { Insignia } from "@/componentes/panel/insignia";
@@ -136,8 +136,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
           <FormularioVehiculo clienteId={v.dueno.id} vehiculo={v} tamanos={tamanos} />
         </SeccionConEditar>
 
-        <section aria-labelledby="dueno-titulo" className="flex flex-col gap-3">
-          <CabeceraSeccion id="dueno" titulo="Dueño" />
+        <Seccion id="dueno" titulo="Dueño" sinRelleno>
           <ListaFilas
             etiqueta="Dueño"
             filas={[
@@ -149,14 +148,13 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
               },
             ]}
           />
-        </section>
+        </Seccion>
       </PartesIguales>
 
       {verMantenimientos && (
-        <section aria-labelledby="mantenimiento-titulo" className="flex flex-col gap-4">
-          <CabeceraSeccion id="mantenimiento" titulo="Mantenimiento" />
+        <Seccion id="mantenimiento" titulo="Mantenimiento" sinRelleno>
           {mantenimientos.length === 0 ? (
-            <p className="text-tinta-suave">No tiene mantenimiento programado.</p>
+            <p className="px-4 py-3 text-tinta-suave">No tiene mantenimiento programado.</p>
           ) : (
             <ListaMantenimientos
               mantenimientos={mantenimientos}
@@ -167,33 +165,31 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
               conPlaca={false}
             />
           )}
-        </section>
+        </Seccion>
       )}
 
       {verAgenda && (
-        <section aria-labelledby="historial-titulo" className="flex flex-col gap-4">
-          <CabeceraSeccion id="historial" titulo="Historial" />
+        <Seccion id="historial" titulo="Historial" sinRelleno>
           {reservas.length === 0 ? (
-            <p className="text-tinta-suave">Todavía no tiene trabajos.</p>
+            <p className="px-4 py-3 text-tinta-suave">Todavía no tiene trabajos.</p>
           ) : (
             <>
               {/* El dueño de cada trabajo en ese momento: lo de antes de un cambio de dueño sigue a nombre del anterior */}
               <ReservasCliente reservas={historial} verOrdenes={verOrdenes} conSaldo={verPagos} desde={desdeAqui} duenoActual={v.dueno.id} />
               {!todoElHistorial && reservas.length > HISTORIAL_CORTO && (
-                <Link href={conDesde(`${rutaVehiculo(v.dueno.id, v.id)}?historial=todo`, typeof busqueda.volver === "string" ? busqueda.volver : null)} className={cn(buttonVariants({ variant: "outline" }), "self-start")}>
+                <Link href={conDesde(`${rutaVehiculo(v.dueno.id, v.id)}?historial=todo`, typeof busqueda.volver === "string" ? busqueda.volver : null)} className={cn(buttonVariants({ variant: "outline" }), "m-4 self-start")}>
                   Ver todo el historial ({reservas.length})
                 </Link>
               )}
             </>
           )}
-        </section>
+        </Seccion>
       )}
 
       {parametros && cotizaciones.length > 0 && (
-        <section aria-labelledby="cotizaciones-titulo" className="flex flex-col gap-4">
-          <CabeceraSeccion id="cotizaciones" titulo="Cotizaciones" />
+        <Seccion id="cotizaciones" titulo="Cotizaciones" sinRelleno>
           <ListaCotizaciones cotizaciones={cotizaciones} umbral={parametros.dias_cotizacion_sin_respuesta} desde={desdeAqui} />
-        </section>
+        </Seccion>
       )}
     </>
   );

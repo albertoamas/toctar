@@ -42,7 +42,7 @@ estilo: se arma con estas piezas (`src/componentes/panel/`), y si alguna no alca
 | La portada de una sección con partes | `TarjetasSeccion` ("¿Qué quieres cambiar?") |
 | Una sección de ficha con "Editar" | `SeccionConEditar` (el formulario en `ModalFormulario`) |
 | Una parte de un formulario largo | `SeccionFormulario` (o `tt-seccion-formulario` en el fieldset), con `accion` si lleva un botón al lado del título |
-| Lo que se lee dentro de un formulario (lo elegido, los montos, la firma) | `CabeceraTarjeta` o `Seccion dentro`: en un formulario, el título va siempre adentro de la tarjeta (sistema-del-panel.md §2) |
+| Una sección (de ficha, formulario o paso del taller) | El título siempre adentro, en la cabecera con su línea: `Seccion` (con `sinRelleno` si lleva una lista), `SeccionConEditar`, `CabeceraTarjeta` (sistema-del-panel.md §2) |
 | Un estado | `Insignia` con su tono; los del trabajo, de `TONO_ESTADO_TRABAJO` |
 | Un bloque suelto | `tt-tarjeta-panel` |
 
@@ -63,7 +63,7 @@ Toda pantalla del panel es uno de estos tipos. Identificarlo decide su forma; no
 
 ### Ficha (cliente, servicio del catálogo, cotización, reserva, orden)
 - **Encabezado:** quién o qué es (placa, nombre), su estado y **el paso siguiente** como única acción principal (recibir, marcar lista, avisar, entregar). Las acciones que se usan poco (extender, cancelar, anular, desactivar) van en un menú **"Más"**.
-- **Secciones en lectura, y la edición en un modal.** Cada sección es un recuadro con sus datos como texto (no como campos) y su título con **"Editar"** (sin borde) en la misma fila. "Editar" abre el formulario en un **modal** ("Guardar {lo que es}" y "Cancelar" al pie); en el celular, una hoja desde abajo con los botones fijos. La página no salta ni cambia mientras se edita, el modal ya es "una edición a la vez" y el foco va al primer campo para escribir y vuelve a "Editar" al cerrar. Todas las secciones con el mismo sistema (título fuera del recuadro, o dentro en su cabecera si es una parte de otra sección) y alineadas entre sí. El componente es `SeccionConEditar` (`src/componentes/panel/seccion-con-editar.tsx`, desde el pulido 7.3), con el modal común `ModalFormulario` (`modal-formulario.tsx`). Editar dentro de la página queda para lo que se edita fila por fila (las listas de Configuración).
+- **Secciones en lectura, y la edición en un modal.** Cada sección es un recuadro con sus datos como texto (no como campos) y su título con **"Editar"** (sin borde) en la misma fila. "Editar" abre el formulario en un **modal** ("Guardar {lo que es}" y "Cancelar" al pie); en el celular, una hoja desde abajo con los botones fijos. La página no salta ni cambia mientras se edita, el modal ya es "una edición a la vez" y el foco va al primer campo para escribir y vuelve a "Editar" al cerrar. Todas las secciones con el mismo sistema (el título adentro, en la cabecera de la tarjeta con una línea debajo; desde el 18/11) y alineadas entre sí. El componente es `SeccionConEditar` (`src/componentes/panel/seccion-con-editar.tsx`, desde el pulido 7.3), con el modal común `ModalFormulario` (`modal-formulario.tsx`). Editar dentro de la página queda para lo que se edita fila por fila (las listas de Configuración).
 - **Orden de las secciones:** lo que decide primero (estado, montos, lo que falta), lo que se consulta después (datos, fotos), la historia al final y plegada si es larga ("Ver toda la historia").
 - Un dato vacío no ocupa una fila con un guion: no se muestra, o se ofrece cargarlo desde "Editar".
 

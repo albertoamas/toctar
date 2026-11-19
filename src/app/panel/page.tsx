@@ -8,7 +8,7 @@ import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { ICONO_MODULO } from "@/componentes/panel/iconos-modulo";
 import { Insignia } from "@/componentes/panel/insignia";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { CeldaDoble, TablaLista } from "@/componentes/panel/tabla-lista";
 import { TarjetaNumero } from "@/componentes/panel/tarjeta-numero";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -287,10 +287,9 @@ function Saludo({ nombre, hoy }: { nombre: string; hoy: string }) {
 /** Lo del día en una tabla: la placa y el cliente, el estado con lo que pide atención y cuándo. */
 function ParaHoy({ filas, verOrdenes }: { filas: FilaDelDia[]; verOrdenes: boolean }) {
   return (
-    <section aria-labelledby="hoy-titulo" className="flex min-w-0 flex-col gap-3">
-      <CabeceraSeccion id="hoy" titulo="Para hoy" />
+    <Seccion id="hoy" titulo="Para hoy" sinRelleno className="min-w-0">
       {filas.length === 0 ? (
-        <EstadoVacio>Nada para hoy: no llega ni se entrega ningún vehículo.</EstadoVacio>
+        <p className="px-4 py-6 text-tinta-suave">Nada para hoy: no llega ni se entrega ningún vehículo.</p>
       ) : (
         <TablaLista
           etiqueta="Para hoy"
@@ -323,7 +322,7 @@ function ParaHoy({ filas, verOrdenes }: { filas: FilaDelDia[]; verOrdenes: boole
           }))}
         />
       )}
-    </section>
+    </Seccion>
   );
 }
 

@@ -112,6 +112,12 @@ Decidido el 18/11, con capturas: el mismo marco en los tres; Publicar en una col
 - [x] Recibir y Entregar: lo que se recibe o se entrega en la tarjeta de "Cotización para", sin título (el cliente, la placa grande, los servicios con viñeta: `ServiciosResumen`).
 - [x] `ListaDatos`: una línea entre dato y dato; angosta (celular, costado), la etiqueta chica arriba y el valor abajo; con lugar, al lado (ficha del vehículo, reclamo, Negocio, Parámetros).
 
+### El título adentro en todo el panel (18/11)
+
+- [x] Decidido con capturas de muestra (ficha del vehículo, orden, Parámetros, Nueva cotización): una sola regla, el título adentro en la cabecera de la tarjeta, con una línea que lo separa del contenido.
+- [x] Piezas: `CabeceraTarjeta` (la franja), `Seccion` (siempre adentro; `sinRelleno` para listas, que pierden su marco), `SeccionConEditar` y `SeccionFormulario` (la leyenda en la misma franja).
+- [x] Pasadas a mano las secciones de lista: fichas del cliente, del vehículo, de la cotización y del catálogo; Inicio (Para hoy, Para atender); Mantenimientos; Usuarios; Sitio web (textos, opciones); Nueva reserva (vehículo, sus cotizaciones); Elegir cliente.
+
 ## Paso 6 — Lista con acción en la fila (rama `patrones-lista-accion`)
 
 ### Piezas

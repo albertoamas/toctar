@@ -51,14 +51,12 @@ Una pantalla nueva o cambiada toma una de estas formas; si ninguna sirve, se dis
 
 ## 2. Forma de una ficha
 
-> **Dónde va el título de una tarjeta (18/11): una sola regla por tipo de pantalla, nunca dos en la misma.**
+> **Dónde va el título de una tarjeta (18/11): una sola regla en todo el panel, adentro.**
 >
-> - **Fichas** (ver y editar): el título **fuera**, arriba de la tarjeta, con su "Editar" al lado (`Seccion`, `SeccionConEditar`).
-> - **Formularios** (crear, en pasos, un paso del taller: Nueva cotización, Nueva versión, Nueva reserva, Nuevo cliente, Nuevo usuario, Cambiar de dueño, Recibir, Entregar, Publicar): el título **adentro** de cada tarjeta, como la leyenda de un grupo de campos. Lo que se lee en un formulario (lo ya elegido, los montos, la firma, el checklist) también: `SeccionFormulario` para los campos, `CabeceraTarjeta` o `Seccion dentro` para lo demás. El resumen del costado es una sola tarjeta ("Cotización para" con el total al pie).
+> - Cada sección es una tarjeta con su **cabecera**: el título adentro, su acción al lado ("Editar", "Agregar", "Cambiar") y **una línea fina** que la separa del contenido, así el título no se mezcla con lo de abajo. La cabecera tiene siempre el alto de un botón: dos tarjetas lado a lado quedan parejas. Es el patrón de las tarjetas de Shopify (Polaris) y Material.
+> - Vale para fichas (`Seccion`, `SeccionConEditar`), formularios (`SeccionFormulario`, con `accion` si lleva un botón al lado) y lo que se lee en un paso del taller (`CabeceraTarjeta`). Una lista dentro de una sección (`ListaFilas`, `TablaLista`) pierde su propio marco: el de la sección alcanza (`Seccion sinRelleno`).
 > - **Una tarjeta de datos con sus etiquetas no lleva título** si la pantalla ya dice qué es (lo que se recibe o se entrega): el título va cuando la tarjeta sola no se entiende ("Firma del cliente", "Checklist").
-> - **Excepción:** una lista para elegir dentro de un formulario (buscar el cliente, elegir el vehículo, sus cotizaciones) sigue la forma de las listas: el título arriba y la lista en su tarjeta.
-
-- **Título arriba de la tarjeta**, con su acción en la misma fila. La lectura va dentro de la tarjeta. El título va adentro solo si la tarjeta es un bloque aparte que no sigue la lectura de la página: un panel lateral de una portada ("Para atender") o un formulario que se abre en la misma pantalla ("Subir fotos").
+> - Quedan fuera de la regla el título de la página (`EncabezadoPagina`), las listas de página completa (Clientes, Órdenes) y las columnas del tablero de la Agenda.
 - **Se lee y se edita aparte:** cada parte tiene su "Editar", que abre un modal y guarda solo esa parte. No hay un "Guardar" general.
 - **Qué va en la ficha:** primero lo que decide (estado, montos, lo que falta), después lo que se consulta (datos, fotos) y al final la historia.
 - **Dos disposiciones en computadora.** Se elige una por ficha:

@@ -6,7 +6,7 @@ import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { cantidad } from "@/lib/cantidad";
 import { exigirModulo } from "@/lib/sesion";
@@ -78,7 +78,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
         tituloModal="Datos del servicio"
         // En bloques, como los Datos de la orden (DatosEnBloques; pulido 13.57: era una lista con todo en una línea, "Él mismo,
         // cada 3 meses"). Lo que decide, en negrita
-        claseRecuadro="gap-0 p-0"
+        claseRecuadro="gap-0 p-0 sm:p-0"
         lectura={
           <div role="group" aria-label="Datos del servicio" className="flex flex-col divide-y divide-border">
             <dl className="px-4 py-3">
@@ -135,16 +135,21 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
           nota={desactivadas > 0 && <VariantesDesactivadas cuantas={desactivadas} />}
         />
       ) : (
-        <section aria-labelledby="precios-titulo" className="flex flex-col gap-3">
-          <CabeceraSeccion id="precios" titulo="Precios">
-            <EditarVariantes servicioId={s.id} variantes={s.listaVariantes} />
-          </CabeceraSeccion>
+        <Seccion
+          id="precios" titulo="Precios"
+          sinRelleno
+          accion={
+            <>
+              <EditarVariantes servicioId={s.id} variantes={s.listaVariantes} />
+            </>
+          }
+        >
           {s.variantes.length === 0 ? (
-            <p className="text-tinta-suave">
+            <p className="px-4 py-3 text-tinta-suave">
               {desactivadas > 0 ? "Sin variantes activas: reactiva una en «Editar variantes»." : "Sin variantes: agrega al menos una en «Editar variantes»."}
             </p>
           ) : (
-            <p className="text-tinta-suave">
+            <p className="px-4 py-3 text-tinta-suave">
               {/* Sin tamaños no hay precios: las variantes se nombran aquí */}
               {new Intl.ListFormat("es").format(s.variantes.map((v) => v.nombre))}.{" "}
               Faltan los tamaños de vehículo.{" "}
@@ -154,7 +159,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
               .
             </p>
           )}
-        </section>
+        </Seccion>
       )}
     </PaginaPanel>
   );
@@ -163,7 +168,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/catalogo
 /** Las desactivadas no tienen columna ni tarjeta: se dice cuántas hay, así no parece que se perdieron. */
 function VariantesDesactivadas({ cuantas }: { cuantas: number }) {
   return (
-    <p className="-mt-2 text-sm text-tinta-suave">
+    <p className="text-sm text-tinta-suave">
       {cantidad(cuantas, "variante desactivada", "variantes desactivadas")}: se reactiva{cuantas > 1 && "n"} en «Editar variantes».
     </p>
   );

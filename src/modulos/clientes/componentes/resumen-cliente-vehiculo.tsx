@@ -1,5 +1,4 @@
 import type { Route } from "next";
-import { cn } from "cn";
 import { CabeceraTarjeta } from "@/componentes/panel/cabecera-seccion";
 import { BotonCambiar } from "@/componentes/panel/resumen-paso";
 import { DatosVehiculo } from "./datos-vehiculo";
@@ -34,7 +33,7 @@ export function ResumenClienteVehiculo({ id = "para-quien", titulo = "Reserva pa
   return (
     <Raiz aria-labelledby={titulo ? `${id}-titulo` : undefined} className="tt-tarjeta-panel flex flex-col">
       {titulo && <CabeceraTarjeta id={id} titulo={titulo} />}
-      <div className={cn("flex flex-col divide-y divide-border", titulo && "mt-2")}>
+      <div className="flex flex-col divide-y divide-border">
         <div className="flex min-h-12 items-center justify-between gap-3 py-1 pr-2 pl-4 sm:pl-5">
           <span className="flex min-w-0 flex-col">
             <span className="font-semibold break-words">{cliente.nombre}</span>

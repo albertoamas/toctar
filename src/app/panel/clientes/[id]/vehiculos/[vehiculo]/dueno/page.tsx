@@ -60,7 +60,7 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/client
   const encabezado = (
     <>
       <EncabezadoPagina titulo={`Cambiar de dueño ${v.placa}`} volver={volver} />
-      <Seccion id="vehiculo" titulo="Vehículo" dentro>
+      <Seccion id="vehiculo" titulo="Vehículo">
         <span className="flex flex-col">
           <DatosVehiculo placa={v.placa} detalle={detalleVehiculo(v)} tamano={v.tamano} />
           {/* El dueño ya está debajo del título cuando se vuelve a su ficha; si se vino del comprador, aquí */}

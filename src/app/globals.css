@@ -449,22 +449,6 @@
   .tt-seccion-formulario > legend + * {
     clear: both;
   }
-  /* Con una acción al lado del título (SeccionFormulario con `accion`): la leyenda a la izquierda, la acción a la derecha
-     en la misma fila (o debajo, si no entran) y el contenido abajo de las dos */
-  .tt-seccion-formulario > legend.tt-leyenda-con-accion {
-    width: auto;
-    min-height: 2.75rem;
-    justify-content: center;
-    margin-block: -0.625rem 0.75rem;
-  }
-  .tt-seccion-formulario > legend + .tt-accion-leyenda {
-    float: right;
-    clear: none;
-    margin-block: -0.625rem 0.75rem;
-  }
-  .tt-seccion-formulario > .tt-accion-leyenda + * {
-    clear: both;
-  }
   @media (width >= 40rem) {
     .tt-seccion-formulario,
     .tt-formulario-panel {

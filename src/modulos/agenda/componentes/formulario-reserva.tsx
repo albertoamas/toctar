@@ -187,7 +187,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
     origen.tipo === "directa" || conTotal ? (
       <section aria-labelledby="resumen-reserva-titulo" className="tt-tarjeta-panel flex flex-col">
         <CabeceraTarjeta id="resumen-reserva" titulo="Resumen" />
-        <dl className="flex flex-col gap-2 px-4 pt-3 pb-4 sm:px-5 sm:pb-5">
+        <dl className="flex flex-col gap-2 p-4 sm:p-5">
           {origen.tipo === "directa" &&
             lineas.map((l, i) => <FilaResumen key={i} etiqueta={nombreLinea(l, i)} valor={conTotal ? `${mostrarMonto(leerMonto(l.precio) ?? "0")} Bs` : ""} />)}
           {conTotal && <FilaResumen etiqueta="Total" valor={`${mostrarMonto(total)} Bs`} fuerte separada={origen.tipo === "directa"} />}

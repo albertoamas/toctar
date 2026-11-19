@@ -30,7 +30,7 @@ export function ResumenPaso({ id, titulo, href, alCambiar, etiquetaCambiar, clas
       <CabeceraTarjeta id={id} titulo={titulo}>
         {(href || alCambiar) && <BotonCambiar href={href} alCambiar={alCambiar} etiqueta={etiquetaCambiar ?? `Cambiar ${titulo.toLowerCase()}`} />}
       </CabeceraTarjeta>
-      <div className={cn("flex flex-col px-4 pt-3 pb-4 sm:px-5 sm:pb-5", claseContenido)}>{children}</div>
+      <div className={cn("flex flex-col p-4 sm:p-5", claseContenido)}>{children}</div>
     </section>
   );
 }

@@ -7,7 +7,7 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Insignia } from "@/componentes/panel/insignia";
 import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { IconoBeneficio } from "@/componentes/sitio/icono-beneficio";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -174,13 +174,12 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/sitio/se
         </SeccionConEditar>
       ) : (
         fotos.opciones && (
-          <section aria-labelledby="opciones-titulo" className="flex flex-col gap-2">
-            <CabeceraSeccion id="opciones" titulo="Opciones" />
+          <Seccion id="opciones" titulo="Opciones" sinRelleno>
             <div className={cn("tt-tarjeta-panel p-4", CON_FOTO)}>
-              <p className="text-tinta-suave">No se ve: el servicio no tiene opciones en el catálogo. Su foto puedes quitarla.</p>
+              <p className="px-4 py-3 text-tinta-suave">No se ve: el servicio no tiene opciones en el catálogo. Su foto puedes quitarla.</p>
               <FotoDeSeccion servicioId={s.id} seccion="opciones" foto={fotos.opciones} />
             </div>
-          </section>
+          </Seccion>
         )
       )}
     </>

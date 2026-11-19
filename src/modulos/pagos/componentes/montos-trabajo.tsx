@@ -42,7 +42,7 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar, cobrar
   );
   return (
       <>
-        <Seccion id="servicios" titulo="Servicios" sinRelleno accion={agregar} dentro={cobrar}>
+        <Seccion id="servicios" titulo="Servicios" sinRelleno accion={agregar}>
           <ul className="flex flex-col divide-y divide-border">
             {montos.lineas.map((l, i) => {
               const { servicio, opcion } = l;
@@ -106,7 +106,7 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar, cobrar
         </Seccion>
         {/* "Registrar pago" sin fondo en la cabecera, como "Editar" (pulido 10.3): el rojo de la pantalla es su paso
             siguiente (recibir, entregar) */}
-        <Seccion id="pagos" titulo="Pagos" sinRelleno accion={porCobrar && !cobrar && registrar("ghost")} dentro={cobrar}>
+        <Seccion id="pagos" titulo="Pagos" sinRelleno accion={porCobrar && !cobrar && registrar("ghost")}>
           {montos.pagos.length === 0 ? (
             <p className="px-4 py-3 text-sm text-tinta-suave">Todavía no hay pagos.</p>
           ) : (

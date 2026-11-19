@@ -7,7 +7,7 @@ import { CalendarIcon, FileTextIcon } from "lucide-react";
 import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -162,57 +162,72 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
       </PartesIguales>
 
       {verAgenda && (
-        <section aria-labelledby="reservas-titulo" className="flex flex-col gap-4">
-          <CabeceraSeccion id="reservas" titulo="Reservas">
-            {/* La reserva directa lleva precios: la arma quien ve pagos (las demás salen de una cotización) */}
-            {c.activo && verPagos && (
-              <Link href={conDesde(`/panel/agenda/nueva?cliente=${c.id}`, desdeAqui)} className={cn(buttonVariants({ variant: "ghost" }))}>
-                <CalendarIcon />
-                Nueva reserva
-              </Link>
-            )}
-          </CabeceraSeccion>
+        <Seccion
+          id="reservas" titulo="Reservas"
+          sinRelleno
+          accion={
+            <>
+              {/* La reserva directa lleva precios: la arma quien ve pagos (las demás salen de una cotización) */}
+              {c.activo && verPagos && (
+                <Link href={conDesde(`/panel/agenda/nueva?cliente=${c.id}`, desdeAqui)} className={cn(buttonVariants({ variant: "ghost" }))}>
+                  <CalendarIcon />
+                  Nueva reserva
+                </Link>
+              )}
+            </>
+          }
+        >
           {reservas.length === 0 ? (
-            <p className="text-tinta-suave">Todavía no tiene reservas.</p>
+            <p className="px-4 py-3 text-tinta-suave">Todavía no tiene reservas.</p>
           ) : (
             <ReservasCliente reservas={reservas} verOrdenes={verOrdenes} conSaldo={verPagos} desde={desdeAqui} />
           )}
-        </section>
+        </Seccion>
       )}
 
       {verCotizaciones && (
-        <section aria-labelledby="cotizaciones-titulo" className="flex flex-col gap-4">
-          <CabeceraSeccion id="cotizaciones" titulo="Cotizaciones">
-            {/* A un cliente desactivado no se le cotiza: se reactiva primero */}
-            {c.activo && cotiza && (
-              <Link href={conDesde(`/panel/cotizaciones/nueva?cliente=${c.id}`, desdeAqui)} className={cn(buttonVariants({ variant: "ghost" }))}>
-                <FileTextIcon />
-                Nueva cotización
-              </Link>
-            )}
-          </CabeceraSeccion>
+        <Seccion
+          id="cotizaciones" titulo="Cotizaciones"
+          sinRelleno
+          accion={
+            <>
+              {/* A un cliente desactivado no se le cotiza: se reactiva primero */}
+              {c.activo && cotiza && (
+                <Link href={conDesde(`/panel/cotizaciones/nueva?cliente=${c.id}`, desdeAqui)} className={cn(buttonVariants({ variant: "ghost" }))}>
+                  <FileTextIcon />
+                  Nueva cotización
+                </Link>
+              )}
+            </>
+          }
+        >
           {cotizaciones.length > 0 ? (
             <ListaCotizaciones cotizaciones={cotizaciones} umbral={parametros.dias_cotizacion_sin_respuesta} sinCliente desde={desdeAqui} />
           ) : (
-            <p className="text-tinta-suave">Todavía no tiene cotizaciones.</p>
+            <p className="px-4 py-3 text-tinta-suave">Todavía no tiene cotizaciones.</p>
           )}
-        </section>
+        </Seccion>
       )}
 
       {verMantenimientos && (
-        <section aria-labelledby="mantenimientos-titulo" className="flex flex-col gap-4">
-          <CabeceraSeccion id="mantenimientos" titulo="Mantenimientos">
-            {/* Un servicio hecho antes del sistema: con un vehículo activo y algún servicio que programe mantenimiento */}
-            {c.activo && vehiculosActivos.length > 0 && conMantenimiento.length > 0 && (
-              <AgregarMantenimiento clienteId={c.id} vehiculos={vehiculosActivos} servicios={conMantenimiento} hoy={hoy} />
-            )}
-          </CabeceraSeccion>
+        <Seccion
+          id="mantenimientos" titulo="Mantenimientos"
+          sinRelleno
+          accion={
+            <>
+              {/* Un servicio hecho antes del sistema: con un vehículo activo y algún servicio que programe mantenimiento */}
+              {c.activo && vehiculosActivos.length > 0 && conMantenimiento.length > 0 && (
+                <AgregarMantenimiento clienteId={c.id} vehiculos={vehiculosActivos} servicios={conMantenimiento} hoy={hoy} />
+              )}
+            </>
+          }
+        >
           {mantenimientos.length === 0 ? (
-            <p className="text-tinta-suave">No tiene mantenimientos programados.</p>
+            <p className="px-4 py-3 text-tinta-suave">No tiene mantenimientos programados.</p>
           ) : (
             <ListaMantenimientos mantenimientos={mantenimientos} editables={c.activo} ve={{ ordenes: verOrdenes, agenda: verAgenda }} desde={desdeAqui} hoy={hoy} />
           )}
-        </section>
+        </Seccion>
       )}
     </>
   );

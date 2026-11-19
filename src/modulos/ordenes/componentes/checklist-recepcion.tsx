@@ -117,9 +117,9 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
     <section aria-labelledby="checklist-titulo" className="tt-tarjeta-panel flex flex-col overflow-hidden">
       <CabeceraTarjeta id="checklist" titulo="Checklist" descripcion="Revisa cada parte: bien, o con un detalle y su foto." />
       {filas.length === 0 ? (
-        <p className="px-4 pt-3 pb-4 text-tinta-suave sm:px-5">No hay partes en el checklist: se agregan en Configuración → Taller.</p>
+        <p className="p-4 text-tinta-suave sm:p-5">No hay partes en el checklist: se agregan en Configuración → Taller.</p>
       ) : (
-        <div className="mt-3 flex flex-col border-t border-border">
+        <div className="flex flex-col">
           {/* El avance: cuántas van, cuántas faltan y una barra que se llena (verde al completarse) */}
           <div className="flex flex-col gap-2 border-b border-border px-4 py-3 sm:px-5">
             <div className="flex items-baseline justify-between gap-3">

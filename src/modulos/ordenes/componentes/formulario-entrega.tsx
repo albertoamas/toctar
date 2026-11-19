@@ -86,7 +86,7 @@ export function FormularioEntrega({ id, volver, conDeuda, saldo, puedeAutorizar,
       {/* El título adentro de la tarjeta, como el resto del paso (sistema-del-panel.md §2, 18/11) */}
       <section aria-labelledby="firma-titulo" className="tt-tarjeta-panel flex flex-col">
         <CabeceraTarjeta id="firma" titulo="Firma del cliente" descripcion="El cliente firma con el dedo: recibe su vehículo conforme." />
-        <div className="flex flex-col gap-4 px-4 pt-4 pb-4 sm:px-5 sm:pb-5">
+        <div className="flex flex-col gap-4 p-4 sm:p-5">
           {sinFirma && <input type="hidden" name="sinFirma" value="on" />}
           {!sinFirma && (
             <>
