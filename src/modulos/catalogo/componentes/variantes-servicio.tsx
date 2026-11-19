@@ -20,7 +20,7 @@ export function EditarVariantes({ servicioId, variantes }: { servicioId: number;
   const [abierto, setAbierto] = useState(false);
   return (
     <>
-      <Button type="button" variant="ghost" disabled={!hidratado} onClick={() => setAbierto(true)}>
+      <Button type="button" variant="accion" disabled={!hidratado} onClick={() => setAbierto(true)}>
         <PencilIcon />
         Editar variantes
       </Button>

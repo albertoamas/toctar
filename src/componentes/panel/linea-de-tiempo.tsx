@@ -83,7 +83,7 @@ export function LineaDeTiempo(props: {
       </ol>
       {corta && verTodo && hitos.length > corta && (
         <div className="border-t border-border p-3">
-          <Link href={verTodo} className={buttonVariants({ variant: "ghost" })}>
+          <Link href={verTodo} className={buttonVariants({ variant: "accion" })}>
             Ver toda la historia ({hitos.length})
           </Link>
         </div>

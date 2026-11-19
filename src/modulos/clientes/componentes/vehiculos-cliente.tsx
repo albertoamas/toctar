@@ -61,7 +61,7 @@ export function VehiculosCliente({ clienteId, vehiculos, tamanos, catalogo, desd
         <>
           <Button
             type="button"
-            variant="ghost"
+            variant="accion"
             disabled={!hidratado}
             onClick={() => {
               setAperturas((n) => n + 1);

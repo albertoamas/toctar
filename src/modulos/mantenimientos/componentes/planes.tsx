@@ -33,7 +33,7 @@ export function AgregarMantenimiento(props: { clienteId: number; vehiculos: Vehi
   return (
     <>
       {/* "Agregar", como en Vehículos: a 360 px el texto entero no entra junto al título */}
-      <Button type="button" variant="ghost" disabled={!hidratado} aria-label="Agregar mantenimiento" onClick={() => setAbierto(true)}>
+      <Button type="button" variant="accion" disabled={!hidratado} aria-label="Agregar mantenimiento" onClick={() => setAbierto(true)}>
         <PlusIcon />
         Agregar
       </Button>

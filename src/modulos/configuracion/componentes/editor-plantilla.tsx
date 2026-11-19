@@ -154,7 +154,7 @@ export function EditorPlantilla({ clave, guardado: inicial, negocio }: Props) {
           <CancelarModal />
           <Button
             type="button"
-            variant="ghost"
+            variant="accion"
             className="ml-auto"
             disabled={enviando || (texto === original && guardado === original)}
             onClick={() => setConfirmar(true)}

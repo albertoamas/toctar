@@ -48,14 +48,14 @@ export function BotonCambiar({ href, alCambiar, etiqueta }: { href?: Route; alCa
   );
   if (href) {
     return (
-      <Link href={href} className={buttonVariants({ variant: "ghost" })} aria-label={etiqueta}>
+      <Link href={href} className={buttonVariants({ variant: "accion" })} aria-label={etiqueta}>
         {contenido}
       </Link>
     );
   }
   if (!alCambiar) return null;
   return (
-    <Button type="button" variant="ghost" onClick={alCambiar} aria-label={etiqueta}>
+    <Button type="button" variant="accion" onClick={alCambiar} aria-label={etiqueta}>
       {contenido}
     </Button>
   );

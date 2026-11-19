@@ -111,7 +111,7 @@ export function VideoDePortada({ video, hayTikTok }: { video: VideoPortada | nul
             {video && (
               <Button
                 type="button"
-                variant="ghost"
+                variant="accion"
                 disabled={ocupado}
                 onClick={() =>
                   iniciar(async () => {

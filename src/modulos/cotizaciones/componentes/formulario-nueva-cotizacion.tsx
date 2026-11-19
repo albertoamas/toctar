@@ -263,7 +263,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
             <SeccionFormulario
               titulo="Cliente nuevo"
               accion={
-                <Link href={conDesde("/panel/cotizaciones/nueva", volver)} className={buttonVariants({ variant: "ghost" })}>
+                <Link href={conDesde("/panel/cotizaciones/nueva", volver)} className={buttonVariants({ variant: "accion" })}>
                   <SearchIcon />
                   Buscar un cliente registrado
                 </Link>
