@@ -1,6 +1,6 @@
 import { describe, expect, test, vi, afterEach } from "vitest";
 import { esquemaAnularGasto, esquemaGasto } from "@/modulos/reportes/esquemas";
-import { parametrosDelPeriodo, textoEje, clientesPorTramo, sumarPorTramo, tramosDe, acumuladoDesde, comparacionDelAcumulado, periodoDe, rangoValido, textoRango, bsRedondo, cambioPorcentual, escalaBonita, esMes, mesDe, nombreMes, primerDiaDeGastos, rangoDelMes, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
+import { tramosPorHora, parametrosDelPeriodo, textoEje, clientesPorTramo, sumarPorTramo, tramosDe, acumuladoDesde, comparacionDelAcumulado, periodoDe, rangoValido, textoRango, bsRedondo, cambioPorcentual, escalaBonita, esMes, mesDe, nombreMes, primerDiaDeGastos, rangoDelMes, sumarMeses, tituloMes } from "@/modulos/reportes/reglas";
 
 // Pedido 16 (P16-reportes-y-gastos.md §9): los meses de los gastos y el esquema de un gasto.
 
@@ -132,9 +132,18 @@ describe("los períodos", () => {
     // Un 31 contra un mes de 30 días: hasta su último día
     expect(periodoDe({}, "2026-12-31").antes).toEqual({ inicio: "2026-11-01", fin: "2026-11-30" });
   });
-  test("esta semana contra la misma parte de la pasada; \"hoy\" ya no es un período (este mes)", () => {
-    expect(periodoDe({ periodo: "hoy" }, hoy).clave).toBe("mes");
+  test("esta semana contra la misma parte de la pasada", () => {
     expect(periodoDe({ periodo: "semana" }, hoy)).toMatchObject({ inicio: "2026-11-16", fin: hoy, antes: { inicio: "2026-11-09", fin: "2026-11-10" } });
+  });
+  test("hoy, contra el mismo día de la semana pasada hasta la misma hora (Reportes v2)", () => {
+    expect(periodoDe({ periodo: "hoy" }, hoy, "15:40")).toMatchObject({
+      clave: "hoy", inicio: hoy, fin: hoy, antes: { inicio: "2026-11-10", fin: "2026-11-10" }, hastaHora: "15:40",
+      titulo: "Hoy, 17 de noviembre", vs: "vs. el martes pasado", comparacion: "comparado con el martes 10 de noviembre hasta la misma hora",
+    });
+  });
+  test("la línea bajo el título dice contra qué se compara", () => {
+    expect(periodoDe({}, hoy).comparacion).toBe("comparado con el 1 al 17 de octubre");
+    expect(periodoDe({ periodo: "mes-pasado" }, hoy).comparacion).toBe("comparado con el 1 al 30 de septiembre");
   });
   test("el mes pasado entero contra el anterior", () => {
     expect(periodoDe({ periodo: "mes-pasado" }, hoy)).toMatchObject({ inicio: "2026-10-01", fin: "2026-10-31", antes: { inicio: "2026-09-01", fin: "2026-09-30" }, titulo: "Octubre de 2026", mes: "2026-10" });
@@ -182,12 +191,21 @@ describe("los tramos de las tendencias", () => {
     expect(mes.tramos).toHaveLength(31);
     expect(mes.tramos[9].corto).toBe("10");
   });
-  test("hasta 3 meses, por semana de lunes a domingo, recortada a las fechas", () => {
-    const { unidad, tramos } = tramosDe("2026-08-01", "2026-10-31");
+  test("de 32 a 90 días, por semana de lunes a domingo, recortada a las fechas", () => {
+    const { unidad, tramos } = tramosDe("2026-08-01", "2026-10-29");
     expect(unidad).toBe("semana");
     expect(tramos[0]).toEqual({ desde: "2026-08-01", hasta: "2026-08-02", corto: "1 ago", nombre: "Del 1 al 2 de agosto" });
     expect(tramos[1]).toMatchObject({ desde: "2026-08-03", hasta: "2026-08-09" });
-    expect(tramos.at(-1)).toMatchObject({ desde: "2026-10-26", hasta: "2026-10-31" });
+    expect(tramos.at(-1)).toMatchObject({ desde: "2026-10-26", hasta: "2026-10-29" });
+    // 91 días ya van por mes
+    expect(tramosDe("2026-08-01", "2026-10-30").unidad).toBe("mes");
+  });
+  test("hoy, por hora", () => {
+    expect(tramosPorHora("2026-11-17", 9, 11)).toEqual([
+      { desde: "2026-11-17", hasta: "2026-11-17", corto: "9h", nombre: "De 9:00 a 10:00" },
+      { desde: "2026-11-17", hasta: "2026-11-17", corto: "10h", nombre: "De 10:00 a 11:00" },
+      { desde: "2026-11-17", hasta: "2026-11-17", corto: "11h", nombre: "De 11:00 a 12:00" },
+    ]);
   });
   test("más, por mes, y el mes recortado lo dice", () => {
     const { unidad, tramos } = tramosDe("2026-06-01", "2026-11-17");

@@ -125,12 +125,24 @@
   /* Gráficos (pedido 16, prototipo aprobado el 16/11): esmeralda para lo que entra y rojo para lo que sale; para series,
      el orden fijo azul, ámbar, violeta y rosa. Pares revisados con el validador de la skill dataviz (también daltonismo):
      cada marca lleva su nombre o su número escrito al lado */
-  --grafico-ingreso: #059669;
-  --grafico-gasto: #e34948;
+  /* 19/11 (Reportes v2): verde y rojo un paso más separados para daltonismo (ΔE 8,6 contra 7,9; el validador pide 8) */
+  --grafico-ingreso: #15803d;
+  --grafico-gasto: #dc2626;
   --grafico-1: #2a78d6;
   --grafico-2: #eda100;
   --grafico-3: #6250d6;
   --grafico-4: #e87ba4;
+  /* Un color fijo por servicio, por su lugar en el catálogo (Reportes v2): la paleta categórica de la skill dataviz,
+     validada con los 8 a la vez. Cada barra o porción lleva su nombre y su monto escritos al lado */
+  --grafico-servicio-1: #2a78d6;
+  --grafico-servicio-2: #eb6834;
+  --grafico-servicio-3: #1baf7a;
+  --grafico-servicio-4: #eda100;
+  --grafico-servicio-5: #e87ba4;
+  --grafico-servicio-6: #008300;
+  --grafico-servicio-7: #6250d6;
+  --grafico-servicio-8: #e34948;
+  --grafico-otros: #9ca3af;
   --grafico-guia: #eceef1;
   --grafico-eje: #c4c9d0;
   --elevacion: 0 8px 24px rgba(26, 26, 26, 0.16);
