@@ -277,6 +277,9 @@ export async function abrirParteNegocio(page: Page, parte: string): Promise<Loca
   return modal;
 }
 
+/** Cuánto se espera a que un modal pregunte o se cierre con la máquina cargada (cancelarConCambios). */
+const ESPERA_MODAL = 15_000;
+
 /**
  * Cierra un modal con cambios sin guardar como un cierre sin querer (un toque afuera, sobre el fondo oscuro): el pie
  * pregunta y se descartan (C6, pulido 13.48). "Cancelar" pregunta igual (hallazgo 7). No con Escape: un campo de hora se lo
@@ -286,10 +289,12 @@ export async function cancelarConCambios(page: Page, modal: Locator): Promise<vo
   await page.mouse.click(8, 8);
   // Si la prueba escribió antes de que el modal tomara lo que tenía al abrirse (con la máquina cargada), no hay cambio
   // que preguntar y ya se cerró; si no, pregunta y se descarta
+  // Con la máquina cargada (la suite entera, o el CI) el modal puede tardar más de 5 s en preguntar o en cerrarse: falló
+  // así en hu-04, hu-05 y hu-40 (14/11 y 19/11), y solas pasaban. Más margen aquí, no en cada prueba
   const descartar = modal.getByRole("button", { name: "Descartar cambios" });
-  await expect(descartar.or(page.locator("body:not(:has([data-slot=dialog-content]:not([data-closed])))"))).toBeVisible();
+  await expect(descartar.or(page.locator("body:not(:has([data-slot=dialog-content]:not([data-closed])))"))).toBeVisible({ timeout: ESPERA_MODAL });
   if (await descartar.isVisible()) await descartar.click();
-  await expect(modal).toHaveCount(0);
+  await expect(modal).toHaveCount(0, { timeout: ESPERA_MODAL });
 }
 
 /**
