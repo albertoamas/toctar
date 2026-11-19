@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER } from "./apoyo";
+import { opcionDeCuenta, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER } from "./apoyo";
 
 // Pedido 44: el manual del panel, dentro del panel y con la sesión (src/app/panel/manual/[[...archivo]]/route.ts).
 
@@ -10,10 +10,9 @@ test("sin sesión, el manual lleva al ingreso", async ({ page }) => {
   expect(captura.status()).not.toBe(200);
 });
 
-test("el dueño lo abre desde el menú, con sus capturas y el PDF", async ({ page }, info) => {
+test("el dueño lo abre desde el menú, con sus capturas y el PDF", async ({ page }) => {
   await ingresarComoDueno(page);
-  if (info.project.name !== "escritorio") await page.getByRole("button", { name: /Abrir menú/ }).click();
-  await page.getByRole("link", { name: "Manual del panel" }).first().click();
+  await opcionDeCuenta(page, "Manual del panel");
   await expect(page).toHaveURL(/\/panel\/manual$/);
   await expect(page.getByRole("heading", { level: 1, name: "Manual del panel" })).toBeVisible();
   // Un libro: una página a la vez, con el índice y los botones para pasar (scripts/manual/libro.js)

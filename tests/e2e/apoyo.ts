@@ -119,6 +119,20 @@ export function alertaDeIngreso(page: Page) {
   return page.locator("form").getByRole("alert");
 }
 
+/**
+ * Una opción del menú de quien entró (19/11): abajo de la barra lateral o, en el celular, dentro del menú. El círculo
+ * con la inicial abre el manual del panel y "Cerrar sesión".
+ */
+export async function opcionDeCuenta(page: Page, opcion: "Cerrar sesión" | "Manual del panel") {
+  const cuenta = page.getByRole("button", { name: /^Tu cuenta:/ }).filter({ visible: true });
+  // En la computadora está a la vista; en el celular, dentro del menú. Se espera a que aparezca uno de los dos
+  const abrirMenu = page.getByRole("button", { name: "Abrir menú" }).filter({ visible: true });
+  await expect(cuenta.or(abrirMenu).first()).toBeVisible();
+  if ((await cuenta.count()) === 0) await abrirMenu.click();
+  await cuenta.first().click();
+  await page.getByRole("menuitem", { name: opcion }).click();
+}
+
 export async function ingresarComoDueno(page: Page) {
   await ingresar(page, DUENO.usuario, DUENO.contrasena);
   await expect(page).toHaveURL(/\/panel$/);
