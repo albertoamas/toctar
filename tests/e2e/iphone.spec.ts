@@ -163,3 +163,59 @@ test("con el teclado abierto, la hoja del modal se apoya sobre él y su botón s
   await page.evaluate(() => (window as unknown as { abrirTeclado: (px: number) => void }).abrirTeclado(0));
   await expect.poll(abajo).toBeGreaterThanOrEqual(alto - 2);
 });
+
+test("con un modal abierto, la página de atrás no se desplaza, y al cerrarlo vuelve a desplazarse", async ({ page }) => {
+  // 19/11, prueba en un iPhone 14: el bloqueo de Base UI está apagado en el celular (parpadeaba al cerrar) y el fondo se
+  // movía con el dedo. Lo bloquea una regla de globals.css (overflow: hidden en <html>, que Safari respeta desde iOS 16),
+  // sin mover el contenido de lugar. Playwright no desliza con el dedo en WebKit: se mira la regla
+  await ingresarComoDueno(page);
+  await page.goto("/panel/catalogo");
+  const desplazamiento = () => page.evaluate(() => getComputedStyle(document.documentElement).overflowY);
+  expect(await desplazamiento()).not.toBe("hidden");
+
+  await page.getByRole("main").getByRole("button", { name: "Nuevo servicio" }).click();
+  const dialogo = page.getByRole("dialog", { name: "Nuevo servicio" });
+  await expect(dialogo).toBeVisible();
+  await expect.poll(desplazamiento).toBe("hidden");
+  // Sin el bloqueo de Base UI, que en Safari movía el contenido a otro contenedor (el parpadeo al cerrar)
+  expect(await page.evaluate(() => document.documentElement.hasAttribute("data-base-ui-scroll-locked"))).toBe(false);
+
+  await dialogo.getByRole("button", { name: "Cancelar" }).click();
+  await expect(dialogo).toHaveCount(0);
+  await expect.poll(desplazamiento).not.toBe("hidden");
+});
+
+test("al desplazar un formulario, el pie fijo no cambia el alto de la página", async ({ page }) => {
+  // 19/11, prueba en un iPhone 14: el pie medía su posición en cada desplazamiento y, en el rebote del final de la página
+  // (el iPhone informa una posición distinta en cada cuadro), cambiaba el alto de la página: "tironeaba" contra el dedo.
+  // Ahora mide su alto, y solo cuando cambia de tamaño
+  await ingresarComoDueno(page);
+  await page.goto("/panel/clientes/nuevo");
+  const pie = page.locator("[data-pie-movil]");
+  await expect(pie).toBeVisible();
+  // Lo que reserva al final es su alto
+  const alto = Math.round((await pie.boundingBox())!.height);
+  await expect.poll(() => page.evaluate(() => document.documentElement.style.getPropertyValue("--alto-pie-movil"))).toBe(`${alto}px`);
+  const cambios = await page.evaluateHandle(() => {
+    const lista: string[] = [];
+    new MutationObserver(() => lista.push(document.documentElement.style.getPropertyValue("--alto-pie-movil"))).observe(document.documentElement, { attributes: true, attributeFilter: ["style"] });
+    // El rebote: el pie dice estar un poco más abajo en cada cuadro, con el mismo alto
+    const elemento = document.querySelector<HTMLElement>("[data-pie-movil]")!;
+    const original = elemento.getBoundingClientRect.bind(elemento);
+    let rebote = 0;
+    elemento.getBoundingClientRect = () => {
+      const r = original();
+      rebote += 7;
+      return new DOMRect(r.x, r.y + rebote, r.width, r.height);
+    };
+    return lista;
+  });
+  for (let i = 0; i < 12; i++) {
+    await page.evaluate((y) => {
+      window.scrollTo(0, y);
+      window.dispatchEvent(new Event("scroll"));
+    }, i * 60);
+    await page.waitForTimeout(40);
+  }
+  expect(await cambios.evaluate((l) => l)).toEqual([]);
+});

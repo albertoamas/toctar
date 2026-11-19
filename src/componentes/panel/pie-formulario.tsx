@@ -6,23 +6,13 @@ import { CELULAR } from "./celular";
 // El botón principal de un formulario de crear (skill pantallas-panel, §2 "Crear"): al pie, y en el celular fijo abajo
 // mientras el formulario se desplaza, así "Crear …" está siempre a mano del pulgar. Desde 640 px, al pie sin más.
 //
-// El pie dice cuánto ocupa desde el borde de abajo (`--alto-pie-movil`) cada vez que cambia: con eso se reserva su
-// espacio al final de la página (el formulario no queda tapado) y el desplazamiento hasta un campo con el teclado lo deja
-// a la vista. La regla de globals.css queda para antes de que cargue JavaScript. Los avisos del celular van arriba
-// (sonner.tsx, 19/11).
-
-
-/**
- * Cuánto ocupa el pie desde el borde de abajo de la pantalla, en px. Contra el alto del diseño (`clientHeight`, no
- * `innerHeight`, que cambia con el teclado y el zoom): es contra lo que se ubican el pie y el aviso. 0 si el pie no está
- * a la vista (más abajo o ya pasado arriba): el aviso va al borde.
- */
-function altoDesdeAbajo(pie: HTMLElement) {
-  const alto = document.documentElement.clientHeight;
-  const { top, bottom } = pie.getBoundingClientRect();
-  if (top >= alto || bottom <= 0) return 0;
-  return Math.round(Math.min(alto, alto - top));
-}
+// El pie dice cuánto ocupa (`--alto-pie-movil`): con eso se reserva su espacio al final de la página (el formulario no
+// queda tapado) y el desplazamiento hasta un campo con el teclado lo deja a la vista. La regla de globals.css queda para
+// antes de que cargue JavaScript. Los avisos del celular van arriba (sonner.tsx, 19/11).
+//
+// Mide su alto, no su posición, y solo cuando cambia de tamaño, nunca al desplazar (19/11, prueba en un iPhone 14): al
+// estirar al final de la página, el rebote del iPhone movía la posición cuadro a cuadro, el pie cambiaba el alto de la
+// página en pleno rebote y la página "tironeaba" contra el dedo. Desde que está siempre fijo abajo, lo que ocupa es su alto.
 
 export function PieFormulario({ children }: { children: React.ReactNode }) {
   const pie = useRef<HTMLDivElement>(null);
@@ -36,7 +26,7 @@ export function PieFormulario({ children }: { children: React.ReactNode }) {
       cuadro = requestAnimationFrame(() => {
         // El pie de ahora (no uno guardado al montar: React puede haberlo reemplazado)
         const elemento = pie.current;
-        const valor = celular.matches && elemento?.isConnected ? `${altoDesdeAbajo(elemento)}px` : null;
+        const valor = celular.matches && elemento?.isConnected ? `${Math.round(elemento.getBoundingClientRect().height)}px` : null;
         // Solo si cambió: escribir en <html> recalcula los estilos de toda la página
         if (valor === ultimo) return;
         ultimo = valor;
@@ -45,17 +35,14 @@ export function PieFormulario({ children }: { children: React.ReactNode }) {
       });
     };
     medir();
-    // El pie y la página: si algo de arriba crece o se achica (un error, una foto, un plegado), el pie se corre
+    // Si el pie cambia de alto (sus botones pasan a dos renglones) o la pantalla de ancho
     const tamano = new ResizeObserver(medir);
     if (pie.current) tamano.observe(pie.current);
-    tamano.observe(document.body);
-    window.addEventListener("scroll", medir, { passive: true });
     window.addEventListener("resize", medir);
     celular.addEventListener("change", medir);
     return () => {
       cancelAnimationFrame(cuadro);
       tamano.disconnect();
-      window.removeEventListener("scroll", medir);
       window.removeEventListener("resize", medir);
       celular.removeEventListener("change", medir);
       // Si en la pantalla queda otro pie (al cambiar de paso o de página), su medida sigue
