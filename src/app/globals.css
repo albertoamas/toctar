@@ -245,14 +245,31 @@
   width: 1.25rem;
   height: 1.25rem;
 }
-/* En el celular, los avisos de éxito y de error solo informan (no tienen botones): no atrapan el toque. Abajo caían sobre
-   lo que se quería tocar después ("Ver el comprobante" al registrar un pago) y el toque no llegaba mientras duraba el
-   aviso (10/11, lo vio hu-32; se volvió a ver el 19/11 al hacer tocables los de error). Se van solos. El de versión nueva
-   (info) sí tiene "Actualizar": ese se toca. */
-@media (max-width: 639px) {
-  [data-sonner-toaster] [data-sonner-toast]:is([data-type="success"], [data-type="error"]) {
-    pointer-events: none;
-  }
+/* La X para cerrarlo, a la derecha y del alto del aviso (sonner la pone en la esquina de arriba a la izquierda, chica):
+   del tamaño de un dedo. En el celular también se cierra deslizándolo hacia arriba, como una notificación del iPhone. */
+[data-sonner-toaster] [data-sonner-toast]:is([data-type="success"], [data-type="error"], [data-type="info"]) {
+  padding-right: 3rem;
+}
+/* Con [data-styled]: el CSS de sonner, que se carga después, usa el mismo peso y si no le ganaba */
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-close-button] {
+  left: auto;
+  right: 0.25rem;
+  top: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  opacity: 0.7;
+}
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-close-button]:hover {
+  background: transparent;
+  opacity: 1;
+}
+[data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-close-button] svg {
+  width: 1.125rem;
+  height: 1.125rem;
 }
 
 /* Recursos gráficos de la marca (componentes del Design System). */
