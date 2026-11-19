@@ -87,7 +87,7 @@ export function ElegirFoto({
         {quitable && vista && (
           <Button
             type="button"
-            variant="ghost"
+            variant="accion"
             onClick={() => {
               setNoEsFoto(false);
               setAviso(null);

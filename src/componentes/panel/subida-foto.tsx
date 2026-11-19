@@ -128,7 +128,7 @@ export function SubidaFoto({ id, accion, camposOcultos, actual, textoVacio, quit
       {quitar && (
         <Button
           type="button"
-          variant="ghost"
+          variant="accion"
           disabled={ocupado}
           aria-label={nombre ? `Quitar foto: ${nombre}` : undefined}
           onClick={() =>

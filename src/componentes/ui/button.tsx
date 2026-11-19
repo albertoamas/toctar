@@ -21,6 +21,10 @@ const buttonVariants = cva(
         destructive:
           "border-destructive bg-background text-destructive hover:bg-destructive/10 focus-visible:border-destructive focus-visible:ring-destructive/20 dark:hover:bg-destructive/20 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
+        // Una acción dentro de una tarjeta o de una fila (Editar, + Agregar, + Registrar pago, la X de quitar; 19/11, a
+        // pedido del dueño): sin borde se veía como texto suelto y en el celular no se notaba que se toca. Un solo lugar
+        // para su estilo, así se puede cambiar en todas a la vez
+        accion: "border-border bg-background text-foreground shadow-xs hover:bg-muted aria-expanded:bg-muted",
       },
       size: {
         default:

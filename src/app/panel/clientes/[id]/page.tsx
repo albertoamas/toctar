@@ -153,14 +153,14 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
               <div className="flex flex-wrap gap-1">
                 {/* La reserva directa lleva precios: la arma quien ve pagos (las demás salen de una cotización) */}
                 {verAgenda && c.activo && verPagos && (
-                  <Link href={conDesde(`/panel/agenda/nueva?cliente=${c.id}`, desdeAqui)} className={cn(buttonVariants({ variant: "ghost" }))}>
+                  <Link href={conDesde(`/panel/agenda/nueva?cliente=${c.id}`, desdeAqui)} className={cn(buttonVariants({ variant: "accion" }))}>
                     <CalendarIcon />
                     Nueva reserva
                   </Link>
                 )}
                 {/* A un cliente desactivado no se le cotiza: se reactiva primero */}
                 {c.activo && cotiza && (
-                  <Link href={conDesde(`/panel/cotizaciones/nueva?cliente=${c.id}`, desdeAqui)} className={cn(buttonVariants({ variant: "ghost" }))}>
+                  <Link href={conDesde(`/panel/cotizaciones/nueva?cliente=${c.id}`, desdeAqui)} className={cn(buttonVariants({ variant: "accion" }))}>
                     <FileTextIcon />
                     Nueva cotización
                   </Link>

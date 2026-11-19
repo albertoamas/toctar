@@ -41,7 +41,7 @@ type Props = {
 export function RegistrarPago({
   variante = "outline",
   ...props
-}: Props & { /** Con borde (en cada fila de Saldos y al entregar); sin fondo en la cabecera de una sección. */ variante?: "ghost" | "outline" }) {
+}: Props & { /** Con borde (en cada fila de Saldos y al entregar); sin fondo en la cabecera de una sección. */ variante?: "accion" | "outline" }) {
   const [abierto, setAbierto] = useState(false);
   const hidratado = useHidratado();
   return (

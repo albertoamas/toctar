@@ -83,7 +83,7 @@ export function Flecha({ nombre, direccion, tope, alTocar }: { nombre: string; d
   return (
     <Button
       type="button"
-      variant="ghost"
+      variant="accion"
       size="icon"
       aria-disabled={tope || undefined}
       aria-label={`${direccion === "subir" ? "Subir" : "Bajar"} ${nombre}`}

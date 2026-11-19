@@ -158,7 +158,7 @@ export function ListaEditable(props: Props) {
                 <span className="flex-1">{e.nombre}</span>
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="accion"
                   disabled={pendiente}
                   onClick={() => iniciar(async () => avisarResultado(await acciones.cambiarEstado(e.id, true)))}
                   aria-label={`Reactivar ${e.nombre}`}
@@ -243,7 +243,7 @@ function FormularioElemento(props: Props & { elemento?: ElementoLista; alTermina
         <CancelarModal enviando={desactivando} />
         {/* Se usa poco y no borra nada (D-6): al pie, aparte, sin rojo; lo desactivado se reactiva debajo de la lista */}
         {elemento && (
-          <Button type="button" variant="ghost" className="ml-auto" disabled={desactivando} onClick={() => desactivar(elemento)} aria-label={`Desactivar ${elemento.nombre}`}>
+          <Button type="button" variant="accion" className="ml-auto" disabled={desactivando} onClick={() => desactivar(elemento)} aria-label={`Desactivar ${elemento.nombre}`}>
             Desactivar
           </Button>
         )}

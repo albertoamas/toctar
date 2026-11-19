@@ -131,7 +131,7 @@ function Historial({ variante }: { variante: VarianteCatalogo }) {
       {/* -ml: el texto del botón sin fondo queda alineado con la línea de ayuda */}
       <Button
         type="button"
-        variant="ghost"
+        variant="accion"
         className="-ml-2.5"
         onClick={() => {
           setAbierto(true);
