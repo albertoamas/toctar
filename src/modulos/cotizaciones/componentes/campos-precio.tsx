@@ -69,7 +69,8 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy, anterior }
         {!opciones && e.lineas && <MensajeError id="lineas-error">{e.lineas}</MensajeError>}
       </SeccionFormulario>
 
-      {/* En tarjetas que se tocan enteras, como "¿Cómo pagó?" (C7 §5.2) */}
+      {/* En tarjetas que se tocan enteras, como "¿Cómo pagó?" (C7 §5.2). Solo su nombre (19/11, a pedido del dueño): que
+          "Por fotos" es un estimado ya lo dice el PDF */}
       <SeccionFormulario titulo="¿Cómo se cotizó?" claseContenido="gap-3">
         <OpcionesEnTarjetas
           id="modo"
@@ -78,9 +79,9 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy, anterior }
           nombre="modo"
           valor={p.modo}
           cambiar={p.setModo}
-          opciones={MODOS.map((m) => ({ valor: m, texto: NOMBRE_MODO[m], detalle: m === "fotos" ? "Precio estimado: el PDF dice que se confirma al ver el vehículo." : "Vio el vehículo" }))}
+          opciones={MODOS.map((m) => ({ valor: m, texto: NOMBRE_MODO[m] }))}
           error={e.modo}
-          className="grid-cols-1 sm:grid-cols-2"
+          className="grid-cols-2"
         />
       </SeccionFormulario>
 
