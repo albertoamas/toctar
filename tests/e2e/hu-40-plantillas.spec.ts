@@ -74,6 +74,13 @@ async function cambiarYVolver(page: Page, id: number, placa: string) {
   await expect(page.getByText("Volvió el texto original.")).toBeVisible();
   await expect(otraVez.getByLabel("Mensaje", { exact: true })).toHaveValue(ORIGINAL);
   expect(await consultar("select 1 from plantilla_mensaje")).toEqual([]);
+  // El foco vuelve al texto (el botón que lo pidió queda deshabilitado): sin esto se perdía fuera del modal y Escape a
+  // veces no lo cerraba
+  await expect(otraVez.getByLabel("Mensaje", { exact: true })).toBeFocused();
+  // Que termine la acción: mientras dice "Volviendo…" el modal no se deja cerrar (mientras se guarda, nada lo cierra), y
+  // la acción sigue en curso un momento después del aviso, mientras se actualiza la pantalla. Escape en ese momento no
+  // hacía nada y la prueba fallaba a veces
+  await expect(otraVez.getByRole("button", { name: "Volver al texto original" })).toBeVisible();
   // Ya quedó guardado: cerrarlo con Escape (que preguntaría con cambios) no pregunta nada
   await page.keyboard.press("Escape");
   await expect(otraVez).toHaveCount(0);

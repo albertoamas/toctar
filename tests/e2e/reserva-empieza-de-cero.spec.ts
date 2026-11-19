@@ -112,8 +112,11 @@ test("desde una cotización (Por reservar de la Agenda), también empieza de cer
     await expect(page.getByLabel("Espacio", { exact: true })).toBeEnabled();
   };
 
-  // A medio llenar: el espacio
+  // A medio llenar: la fecha (un día lejano: hoy, el día por defecto, otras pruebas ocupan espacios) y el espacio
   await reservar();
+  const [{ d }] = await consultar<{ d: string }>("select to_char($1::date + 30, 'YYYY-MM-DD') as d", [hoy()]);
+  await page.getByLabel("Ingresa el").fill(d);
+  await expect(page.getByLabel("Espacio", { exact: true })).toBeEnabled();
   await page.getByLabel("Espacio", { exact: true }).selectOption({ index: 1 });
   const elegido = await page.getByLabel("Espacio", { exact: true }).inputValue();
   expect(elegido).not.toBe("");
@@ -122,8 +125,11 @@ test("desde una cotización (Por reservar de la Agenda), también empieza de cer
   await page.getByRole("alertdialog", { name: "¿Salir sin guardar?" }).getByRole("button", { name: "Salir sin guardar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda$/);
 
-  // La misma cotización otra vez: sin el espacio elegido antes
+  // La misma cotización otra vez: de cero, con la fecha de hoy (no el día llenado) y sin el espacio elegido antes. Si hoy
+  // queda un solo espacio libre (otras pruebas ocupan los demás), la reserva lo elige sola (espacios-libres.ts)
   await (await verPorReservar(page)).getByRole("link").filter({ hasText: nombre }).click();
-  await expect(page.getByLabel("Espacio", { exact: true })).toBeEnabled();
-  await expect(page.getByLabel("Espacio", { exact: true })).toHaveValue("");
+  const espacio = page.getByLabel("Espacio", { exact: true });
+  await expect(espacio).toBeEnabled();
+  await expect(page.getByLabel("Ingresa el")).toHaveValue(hoy());
+  if ((await espacio.locator("option").count()) > 2) await expect(espacio).toHaveValue("");
 });

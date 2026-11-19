@@ -13,7 +13,7 @@ import { Button } from "@/componentes/ui/button";
 import type { EtapaFoto } from "@/db/esquema/trabajos";
 import { MENSAJE_NO_ES_FOTO, soloFotos } from "@/lib/formato-fotos";
 import type { UrlsFoto } from "@/lib/fotos";
-import { quitarFotoOrden, subirFotoOrden } from "../acciones";
+import { quitarFotoOrden, subirFotoOrden } from "../acciones/fotos";
 import { FRASE_ETAPA, MAXIMO_FOTOS_ETAPA, NOMBRE_ETAPA } from "../reglas";
 
 // HU-33 y HU-34: las fotos de una etapa de la orden (RF-40, RF-42). En el taller, con el celular: "Tomar foto" abre la

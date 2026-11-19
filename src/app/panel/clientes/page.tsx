@@ -11,17 +11,20 @@ import { buttonVariants } from "@/componentes/ui/button";
 import { exigirModulo } from "@/lib/sesion";
 import { Buscador } from "@/componentes/panel/buscador";
 import { TablaClientes } from "@/modulos/clientes/componentes/tabla-clientes";
-import { buscarClientes, vehiculoConPlacaExacta } from "@/modulos/clientes/consultas";
+import { listarClientes, vehiculoConPlacaExacta } from "@/modulos/clientes/consultas";
 import { normalizarBusqueda, rutaVehiculo } from "@/modulos/clientes/reglas";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { BarraLista } from "@/componentes/panel/barra-lista";
 import { PildoraVista } from "@/componentes/panel/pildora-vista";
 import { aqui, conDesde } from "@/lib/volver";
+import { Paginacion } from "@/componentes/panel/paginacion";
+import { conPagina, leerPagina } from "@/lib/paginacion";
 
 export const metadata: Metadata = { title: "Clientes" };
 
 // HU-21 y HU-22: lista y búsqueda de clientes. Dueño o encargado con el permiso "clientes".
 // Pulido 8.1: la fila de un toque compartida, con las placas (como el taller nombra los autos) en negrita.
+// 17/11: de a páginas (antes, los 30 más recientes y "escribe algo más preciso").
 export default function PaginaClientes({ searchParams }: PageProps<"/panel/clientes">) {
   return (
     <PaginaPanel tipo="lista">
@@ -53,8 +56,8 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/clientes">, "searc
   const desdeAqui = aqui("/panel/clientes", parametros);
   const q = typeof parametros.q === "string" ? parametros.q : "";
   const desactivados = parametros.ver === "desactivados";
-  const [{ clientes, hayMas }, delVehiculo] = await Promise.all([
-    buscarClientes(q, desactivados),
+  const [{ clientes, total, pagina, paginas }, delVehiculo] = await Promise.all([
+    listarClientes({ q, desactivados, pagina: leerPagina(parametros.pagina) }),
     // Pedido 51: una placa exacta lleva directo a la ficha de ese vehículo (la placa es única entre los activos)
     q && !desactivados ? vehiculoConPlacaExacta(q) : null,
   ]);
@@ -98,7 +101,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/clientes">, "searc
         href={(id) => conDesde(`/panel/clientes/${id}` as Route, desdeAqui)}
         atenuadas={desactivados}
       />
-      {hayMas && <p className="text-sm text-tinta-suave">Hay más clientes: escribe algo más preciso para encontrar el que buscas.</p>}
+      <Paginacion pagina={pagina} paginas={paginas} total={total} nombre={["cliente", "clientes"]} enlace={(p) => conPagina("/panel/clientes", parametros, p)} />
     </>
   );
 }

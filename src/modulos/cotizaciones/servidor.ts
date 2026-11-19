@@ -7,7 +7,7 @@ import { preciosVigentes } from "@/modulos/catalogo/consultas";
 import type { Monto } from "@/modulos/catalogo/reglas";
 import type { obtenerParametros } from "@/modulos/configuracion/consultas";
 import type { esquemaNuevaVersion } from "./esquemas";
-import { datosDocumento } from "./consultas";
+import { datosDocumento } from "./consultas/versiones";
 import { anioCotizacion, calcularTotales, claveCorrelativo, descripcionLinea, numeroCotizacion, precioSugerido } from "./reglas";
 
 // Lo que comparten la nueva cotización y la versión nueva (pedido 23, P23-cotizacion-directa.md §6): las líneas con su

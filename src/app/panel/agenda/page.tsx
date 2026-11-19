@@ -18,9 +18,9 @@ import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { AgendaDelDia, GuiaColores, PestanasDias, SemanaEnLista, TableroSemana } from "@/modulos/agenda/componentes/tablero";
-import { buscarReservas, semanaDeAgenda } from "@/modulos/agenda/consultas";
+import { buscarReservas, semanaDeAgenda } from "@/modulos/agenda/consultas/tablero";
 import { diasDeLaSemana, fechaCorta, lunesDeLaSemana, NOMBRE_ESTADO_TRABAJO, textoSemana, textoServicio, textoSemanaCorto, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
-import { cotizacionesPorReservar, type FilaCotizacion } from "@/modulos/cotizaciones/consultas";
+import { cotizacionesPorReservar, type FilaCotizacion } from "@/modulos/cotizaciones/consultas/lista";
 import { bs, diasDesde, textoDias } from "@/modulos/cotizaciones/reglas";
 import { rutaTrabajo } from "@/modulos/ordenes/reglas";
 import { aqui, conDesde } from "@/lib/volver";
@@ -124,6 +124,8 @@ async function Semana(props: { lunes: string; dias: string[]; dia: string; hoy: 
     href: conDesde(`/panel/agenda/nueva?cotizacion=${c.cotizacionId}`, desdeAqui),
     titulo: c.placa,
     tituloGrande: true,
+    // Lo que hace la fila, escrito (C7, 18/11): toda la fila sigue llevando a Nueva reserva
+    accion: "Reservar",
     detalles: [c.cliente, c.servicios, ...(conMontos ? [bs(c.total)] : []), `Aceptada ${textoDias(diasDesde(c.ultimoMovimientoAt, ahora))}`].filter(Boolean),
   });
 

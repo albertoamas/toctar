@@ -6,8 +6,10 @@ import { PlusIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { useHidratado } from "@/componentes/hidratado";
 import { conAviso } from "@/componentes/panel/avisos";
-import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { useCerrarModal } from "@/componentes/panel/modal-contexto";
+import { ModalFormulario } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, PieModal } from "@/componentes/panel/modal-pie";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { Button } from "@/componentes/ui/button";
 import type { Tamano } from "@/modulos/configuracion/consultas";
@@ -16,6 +18,7 @@ import { guardarVehiculo, type EstadoCliente } from "../acciones";
 import type { VehiculoCliente } from "../consultas";
 import { detalleVehiculo, prefijoVehiculo, rutaVehiculo } from "../reglas";
 import { CamposVehiculo } from "./campos";
+import type { CatalogoVehiculos } from "@/modulos/clientes/catalogo-vehiculos";
 
 // HU-23: los vehículos de un cliente, en su ficha. Desde el pedido 51, cada uno es una fila de un toque que abre SU ficha
 // (`/panel/clientes/{id}/vehiculos/{vehiculo}`), con sus datos, su historial y "Editar", "Cambiar de dueño" y
@@ -27,11 +30,13 @@ type Props = {
   clienteId: number;
   vehiculos: VehiculoCliente[];
   tamanos: Tamano[];
+  /** Las marcas de la lista, para elegir la del vehículo (pedido 52). */
+  catalogo: CatalogoVehiculos;
   /** La ficha del cliente: "Volver" desde la del vehículo lleva ahí (pedido 43). */
   desde: string;
 };
 
-export function VehiculosCliente({ clienteId, vehiculos, tamanos, desde }: Props) {
+export function VehiculosCliente({ clienteId, vehiculos, tamanos, catalogo, desde }: Props) {
   const hidratado = useHidratado();
   const [agregando, setAgregando] = useState(false);
   // Cada apertura empieza con el formulario limpio, sin los errores de la vez anterior
@@ -49,35 +54,39 @@ export function VehiculosCliente({ clienteId, vehiculos, tamanos, desde }: Props
   };
 
   return (
-    <section aria-labelledby="vehiculos-titulo" className="flex flex-col gap-3">
-      {/* La misma cabecera que SeccionConEditar: Datos, al lado, se ve igual */}
-      <CabeceraSeccion id="vehiculos" titulo="Vehículos">
-        <Button
-          type="button"
-          variant="ghost"
-          disabled={!hidratado}
-          onClick={() => {
-            setAperturas((n) => n + 1);
-            setAgregando(true);
-          }}
-        >
-          <PlusIcon />
-          Agregar vehículo
-        </Button>
-      </CabeceraSeccion>
+    <Seccion
+      id="vehiculos" titulo="Vehículos"
+      sinRelleno
+      accion={
+        <>
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={!hidratado}
+            onClick={() => {
+              setAperturas((n) => n + 1);
+              setAgregando(true);
+            }}
+          >
+            <PlusIcon />
+            Agregar vehículo
+          </Button>
+        </>
+      }
+    >
       {activos.length === 0 ? <p className="tt-tarjeta-panel p-4 text-tinta-suave">Todavía no tiene vehículos.</p> : <ListaFilas etiqueta="Vehículos" filas={activos.map(fila)} />}
 
       {inactivos.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <p className="text-sm font-semibold text-tinta-suave">Desactivados</p>
+        <div className="flex flex-col border-t border-border pt-3">
+          <p className="px-4 pb-1 text-sm font-semibold text-tinta-suave">Desactivados</p>
           <ListaFilas etiqueta="Vehículos desactivados" filas={inactivos.map((v) => ({ ...fila(v), atenuada: true, estado: "Desactivado" }))} />
         </div>
       )}
 
       <ModalFormulario titulo="Agregar vehículo" abierto={agregando} alCambiar={setAgregando}>
-        <FormularioVehiculo key={aperturas} clienteId={clienteId} tamanos={tamanos} />
+        <FormularioVehiculo key={aperturas} clienteId={clienteId} tamanos={tamanos} catalogo={catalogo} />
       </ModalFormulario>
-    </section>
+    </Seccion>
   );
 }
 
@@ -85,7 +94,7 @@ export function VehiculosCliente({ clienteId, vehiculos, tamanos, desde }: Props
  * Agregar un vehículo (en la ficha del cliente) o editarlo (en la suya, pedido 51), en un modal: placa y tamaño a la vista
  * y lo demás plegado, como en el alta. Lo poco usado (cambiar de dueño, desactivar) va en "Más" de su ficha.
  */
-export function FormularioVehiculo({ clienteId, vehiculo, tamanos }: { clienteId: number; vehiculo?: VehiculoCliente; tamanos: Tamano[] }) {
+export function FormularioVehiculo({ clienteId, vehiculo, tamanos, catalogo }: { clienteId: number; vehiculo?: VehiculoCliente; tamanos: Tamano[]; catalogo: CatalogoVehiculos }) {
   const alTerminar = useCerrarModal();
   const [estado, accion, enviando] = useActionState<EstadoCliente, FormData>(
     conAviso(guardarVehiculo, (r) => r.ok && alTerminar()),
@@ -116,6 +125,7 @@ export function FormularioVehiculo({ clienteId, vehiculo, tamanos }: { clienteId
         iniciales={iniciales}
         prefijo={prefijo}
         tamanos={opciones}
+        catalogo={catalogo}
         plegar
         // Al agregar una placa que es de otro cliente: el auto cambió de dueño y se pasa a este (pedido 37)
         // (si la placa ya es de este mismo cliente, no hay a quién pasarla)

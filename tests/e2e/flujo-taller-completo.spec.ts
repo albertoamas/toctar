@@ -92,7 +92,7 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
   await consultar("update recordatorio_mantenimiento set fecha_programada = $2::date - 1 where id = $1", [recordatorioId, hoy()]);
   await page.goto("/panel/mantenimientos");
   const fila = page.getByRole("list", { name: "Vencidos" }).getByRole("listitem").filter({ hasText: placa });
-  await expect(fila).toContainText("venció ayer");
+  await expect(fila).toContainText("venció ayer", { ignoreCase: true });
   await fila.getByRole("link", { name: "Reservar" }).click();
   // Llega con su servicio de mantenimiento ya elegido (pedido 21); es un servicio cobrado del catálogo (RN-09) y el
   // precio lo pone el dueño

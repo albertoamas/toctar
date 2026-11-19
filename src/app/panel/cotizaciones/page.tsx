@@ -13,7 +13,9 @@ import { exigirModulo } from "@/lib/sesion";
 import { Buscador } from "@/componentes/panel/buscador";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { ListaCotizaciones } from "@/modulos/cotizaciones/componentes/lista-cotizaciones";
-import { contarPorVista, LIMITE_HISTORIA, listarCotizaciones } from "@/modulos/cotizaciones/consultas";
+import { contarPorVista, listarCotizaciones } from "@/modulos/cotizaciones/consultas/lista";
+import { Paginacion } from "@/componentes/panel/paginacion";
+import { conPagina, leerPagina } from "@/lib/paginacion";
 import { VISTAS, type Vista } from "@/modulos/cotizaciones/reglas";
 import { BarraLista } from "@/componentes/panel/barra-lista";
 import { aqui } from "@/lib/volver";
@@ -86,7 +88,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/cotizaciones">, "s
   const parametros = await searchParams;
   const vista = vistaDe(parametros.vista);
   const q = typeof parametros.q === "string" ? parametros.q : "";
-  const [{ cotizaciones, hayMas }, parametrosNegocio] = await Promise.all([listarCotizaciones(vista, q), obtenerParametros()]);
+  const [{ cotizaciones, total, pagina, paginas }, parametrosNegocio] = await Promise.all([listarCotizaciones({ vista, q, pagina: leerPagina(parametros.pagina) }), obtenerParametros()]);
 
   return (
     <>
@@ -96,7 +98,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/cotizaciones">, "s
         <>
           {/* En cada pestaña el estado ya se sabe: no se repite en las filas */}
           <ListaCotizaciones cotizaciones={cotizaciones} umbral={parametrosNegocio.dias_cotizacion_sin_respuesta} conEstado={false} desde={aqui("/panel/cotizaciones", parametros)} />
-          {hayMas && <p className="text-sm text-tinta-suave">Se muestran las {LIMITE_HISTORIA} más recientes. Busca para encontrar otra.</p>}
+          <Paginacion pagina={pagina} paginas={paginas} total={total} nombre={["cotización", "cotizaciones"]} enlace={(p) => conPagina("/panel/cotizaciones", parametros, p)} />
         </>
       )}
     </>

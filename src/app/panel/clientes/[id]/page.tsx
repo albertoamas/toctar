@@ -7,7 +7,7 @@ import { CalendarIcon, FileTextIcon } from "lucide-react";
 import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -15,23 +15,23 @@ import { puede, puedeVerModulo } from "@/lib/permisos";
 import { fechaEnBolivia } from "@/lib/fechas";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp, formatearWhatsApp, whatsAppLocal } from "@/lib/whatsapp";
-import { reservasDelCliente } from "@/modulos/agenda/consultas";
-import { ReservasCliente } from "@/modulos/agenda/componentes/reservas-cliente";
+import { reservasDelCliente } from "@/modulos/agenda/consultas/listas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { saldoPendiente } from "@/modulos/pagos/reglas";
 import { MasCliente, ReactivarCliente } from "@/modulos/clientes/componentes/acceso-cliente";
 import { FormularioDatosCliente } from "@/modulos/clientes/componentes/formulario-datos-cliente";
 import { VehiculosCliente } from "@/modulos/clientes/componentes/vehiculos-cliente";
-import { obtenerCliente } from "@/modulos/clientes/consultas";
+import { catalogoVehiculos, obtenerCliente } from "@/modulos/clientes/consultas";
 import { obtenerParametros, tamanosActivos } from "@/modulos/configuracion/consultas";
-import { ListaCotizaciones } from "@/modulos/cotizaciones/componentes/lista-cotizaciones";
-import { cotizacionesDelCliente } from "@/modulos/cotizaciones/consultas";
+import { cotizacionesDelCliente } from "@/modulos/cotizaciones/consultas/lista";
 import { ListaMantenimientos } from "@/modulos/mantenimientos/componentes/lista-mantenimientos";
 import { AgregarMantenimiento } from "@/modulos/mantenimientos/componentes/planes";
 import { mantenimientosDelCliente, serviciosConMantenimiento } from "@/modulos/mantenimientos/consultas";
 import { Insignia } from "@/componentes/panel/insignia";
-import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { aqui, conDesde, volverDesde } from "@/lib/volver";
+import { LineaDeTiempo } from "@/componentes/panel/linea-de-tiempo";
+import { HISTORIA_CORTA, historia } from "@/modulos/clientes/componentes/historia";
 
 export const metadata: Metadata = { title: "Cliente" };
 
@@ -65,9 +65,10 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
   const verMantenimientos = puedeVerModulo(usuario, "mantenimientos");
   // Una reserva ya recibida se abre en su orden, si quien mira ve órdenes
   const verOrdenes = puedeVerModulo(usuario, "ordenes");
-  const [c, tamanos, cotizaciones, parametros, reservas, mantenimientos, conMantenimiento] = await Promise.all([
+  const [c, tamanos, catalogo, cotizaciones, parametros, reservas, mantenimientos, conMantenimiento] = await Promise.all([
     obtenerCliente(numero),
     tamanosActivos(),
+    catalogoVehiculos(),
     verCotizaciones ? cotizacionesDelCliente(numero) : [],
     obtenerParametros(),
     // Con Pagos también sin Agenda: de ahí sale lo que debe (la lista de reservas es de Agenda)
@@ -81,6 +82,17 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
   const desdeAqui = aqui(`/panel/clientes/${c.id}`, busqueda);
 
   const debe = saldoPendiente(reservas);
+  // La historia: las reservas con la Agenda, las cotizaciones con Cotizaciones (RN-12: los montos, a quien los ve)
+  const conHistoria = verAgenda || verCotizaciones;
+  const todaLaHistoria = busqueda.historia === "todo";
+  const hitos = historia({
+    reservas: verAgenda ? reservas : null,
+    cotizaciones: verCotizaciones ? cotizaciones : null,
+    verOrdenes,
+    conSaldo: verPagos,
+    umbral: parametros.dias_cotizacion_sin_respuesta,
+    desde: desdeAqui,
+  });
   const hoy = fechaEnBolivia();
   const vehiculosActivos = c.vehiculos.filter((v) => v.activo).map((v) => ({ id: v.id, placa: v.placa }));
   const datos: [string, string | null][] = [
@@ -96,6 +108,8 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
       <EncabezadoPagina
         volver={volver}
         titulo={c.nombre}
+        // Su WhatsApp debajo del nombre (C7, 18/11): más útil que "Clientes"
+        subtitulo={<span className="tabular-nums">{formatearWhatsApp(c.telefono)}</span>}
         estado={
           (!c.activo || debe) && (
             <span className="flex flex-wrap gap-2">
@@ -125,95 +139,103 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
         <AvisoFlotante mensaje={`${recibido} ahora es de ${c.nombre}, con su plan de mantenimiento.`} />
       )}
 
-      {/* Lado a lado y del mismo alto en la computadora (como en el catálogo); en el celular, primero los vehículos */}
-      <PartesIguales>
-        <VehiculosCliente clienteId={c.id} vehiculos={c.vehiculos} tamanos={tamanos} desde={desdeAqui} />
-        <SeccionConEditar
-          id="datos"
-          titulo="Datos"
-          etiquetaEditar="Editar datos del cliente"
-          tituloModal="Datos del cliente"
-          lectura={
-            // Solo lo que tiene valor: un dato vacío no ocupa una fila (se carga desde "Editar")
-            <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2">
-              {datos
-                .filter(([, valor]) => valor?.trim())
-                .map(([etiqueta, valor]) => (
-                  <Fragment key={etiqueta}>
-                    <dt className="text-tinta-suave">{etiqueta}</dt>
-                    <dd className="break-words whitespace-pre-line">{valor}</dd>
-                  </Fragment>
-                ))}
-            </dl>
-          }
-        >
-          <FormularioDatosCliente
-            id={c.id}
-            iniciales={{
-              nombre: c.nombre,
-              telefono: whatsAppLocal(c.telefono),
-              correo: c.correo ?? "",
-              nit: c.nit ?? "",
-              razonSocial: c.razonSocial ?? "",
-              notas: c.notas ?? "",
-            }}
-          />
-        </SeccionConEditar>
-      </PartesIguales>
+      {/* C7 §5.6 (18/11): la historia (reservas, órdenes y cotizaciones en una sola lista, lo más reciente arriba) y los
+          mantenimientos a la izquierda; los vehículos y los datos al costado. En el celular: la historia, los vehículos y
+          los datos, y los mantenimientos */}
+      <div className="grid items-start gap-8 gap-x-4 @4xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        {conHistoria && (
+          <Seccion
+            id="historia"
+            titulo="Historia"
+            sinRelleno
+            className="@4xl:col-start-1 @4xl:row-start-1"
+            accion={
+              <div className="flex flex-wrap gap-1">
+                {/* La reserva directa lleva precios: la arma quien ve pagos (las demás salen de una cotización) */}
+                {verAgenda && c.activo && verPagos && (
+                  <Link href={conDesde(`/panel/agenda/nueva?cliente=${c.id}`, desdeAqui)} className={cn(buttonVariants({ variant: "ghost" }))}>
+                    <CalendarIcon />
+                    Nueva reserva
+                  </Link>
+                )}
+                {/* A un cliente desactivado no se le cotiza: se reactiva primero */}
+                {c.activo && cotiza && (
+                  <Link href={conDesde(`/panel/cotizaciones/nueva?cliente=${c.id}`, desdeAqui)} className={cn(buttonVariants({ variant: "ghost" }))}>
+                    <FileTextIcon />
+                    Nueva cotización
+                  </Link>
+                )}
+              </div>
+            }
+          >
+            <LineaDeTiempo
+              hitos={hitos}
+              hoy={fechaEnBolivia()}
+              corta={todaLaHistoria ? undefined : HISTORIA_CORTA}
+              verTodo={conDesde(`/panel/clientes/${c.id}?historia=todo`, typeof busqueda.volver === "string" ? busqueda.volver : null)}
+              vacio="Todavía no tiene trabajos ni cotizaciones."
+            />
+          </Seccion>
+        )}
 
-      {verAgenda && (
-        <section aria-labelledby="reservas-titulo" className="flex flex-col gap-4">
-          <CabeceraSeccion id="reservas" titulo="Reservas">
-            {/* La reserva directa lleva precios: la arma quien ve pagos (las demás salen de una cotización) */}
-            {c.activo && verPagos && (
-              <Link href={conDesde(`/panel/agenda/nueva?cliente=${c.id}`, desdeAqui)} className={cn(buttonVariants({ variant: "ghost" }))}>
-                <CalendarIcon />
-                Nueva reserva
-              </Link>
-            )}
-          </CabeceraSeccion>
-          {reservas.length === 0 ? (
-            <p className="text-tinta-suave">Todavía no tiene reservas.</p>
-          ) : (
-            <ReservasCliente reservas={reservas} verOrdenes={verOrdenes} conSaldo={verPagos} desde={desdeAqui} />
-          )}
-        </section>
-      )}
+        <div className="flex min-w-0 flex-col gap-8 @4xl:col-start-2 @4xl:row-span-2 @4xl:row-start-1">
+          <VehiculosCliente clienteId={c.id} vehiculos={c.vehiculos} tamanos={tamanos} catalogo={catalogo} desde={desdeAqui} />
+          <SeccionConEditar
+            id="datos"
+            titulo="Datos"
+            etiquetaEditar="Editar datos del cliente"
+            tituloModal="Datos del cliente"
+            lectura={
+              // Solo lo que tiene valor: un dato vacío no ocupa una fila (se carga desde "Editar")
+              <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2">
+                {datos
+                  .filter(([, valor]) => valor?.trim())
+                  .map(([etiqueta, valor]) => (
+                    <Fragment key={etiqueta}>
+                      <dt className="text-tinta-suave">{etiqueta}</dt>
+                      <dd className="break-words whitespace-pre-line">{valor}</dd>
+                    </Fragment>
+                  ))}
+              </dl>
+            }
+          >
+            <FormularioDatosCliente
+              id={c.id}
+              iniciales={{
+                nombre: c.nombre,
+                telefono: whatsAppLocal(c.telefono),
+                correo: c.correo ?? "",
+                nit: c.nit ?? "",
+                razonSocial: c.razonSocial ?? "",
+                notas: c.notas ?? "",
+              }}
+            />
+          </SeccionConEditar>
+        </div>
 
-      {verCotizaciones && (
-        <section aria-labelledby="cotizaciones-titulo" className="flex flex-col gap-4">
-          <CabeceraSeccion id="cotizaciones" titulo="Cotizaciones">
-            {/* A un cliente desactivado no se le cotiza: se reactiva primero */}
-            {c.activo && cotiza && (
-              <Link href={conDesde(`/panel/cotizaciones/nueva?cliente=${c.id}`, desdeAqui)} className={cn(buttonVariants({ variant: "ghost" }))}>
-                <FileTextIcon />
-                Nueva cotización
-              </Link>
-            )}
-          </CabeceraSeccion>
-          {cotizaciones.length > 0 ? (
-            <ListaCotizaciones cotizaciones={cotizaciones} umbral={parametros.dias_cotizacion_sin_respuesta} sinCliente desde={desdeAqui} />
-          ) : (
-            <p className="text-tinta-suave">Todavía no tiene cotizaciones.</p>
+        <div className="flex min-w-0 flex-col gap-8 empty:hidden @4xl:col-start-1 @4xl:row-start-2">
+          {verMantenimientos && (
+            <Seccion
+              id="mantenimientos" titulo="Mantenimientos"
+              sinRelleno
+              accion={
+                <>
+                  {/* Un servicio hecho antes del sistema: con un vehículo activo y algún servicio que programe mantenimiento */}
+                  {c.activo && vehiculosActivos.length > 0 && conMantenimiento.length > 0 && (
+                    <AgregarMantenimiento clienteId={c.id} vehiculos={vehiculosActivos} servicios={conMantenimiento} hoy={hoy} />
+                  )}
+                </>
+              }
+            >
+              {mantenimientos.length === 0 ? (
+                <p className="px-4 py-3 text-tinta-suave">No tiene mantenimientos programados.</p>
+              ) : (
+                <ListaMantenimientos mantenimientos={mantenimientos} editables={c.activo} ve={{ ordenes: verOrdenes, agenda: verAgenda }} desde={desdeAqui} hoy={hoy} />
+              )}
+            </Seccion>
           )}
-        </section>
-      )}
-
-      {verMantenimientos && (
-        <section aria-labelledby="mantenimientos-titulo" className="flex flex-col gap-4">
-          <CabeceraSeccion id="mantenimientos" titulo="Mantenimientos">
-            {/* Un servicio hecho antes del sistema: con un vehículo activo y algún servicio que programe mantenimiento */}
-            {c.activo && vehiculosActivos.length > 0 && conMantenimiento.length > 0 && (
-              <AgregarMantenimiento clienteId={c.id} vehiculos={vehiculosActivos} servicios={conMantenimiento} hoy={hoy} />
-            )}
-          </CabeceraSeccion>
-          {mantenimientos.length === 0 ? (
-            <p className="text-tinta-suave">No tiene mantenimientos programados.</p>
-          ) : (
-            <ListaMantenimientos mantenimientos={mantenimientos} editables={c.activo} ve={{ ordenes: verOrdenes, agenda: verAgenda }} desde={desdeAqui} hoy={hoy} />
-          )}
-        </section>
-      )}
+        </div>
+      </div>
     </>
   );
 }

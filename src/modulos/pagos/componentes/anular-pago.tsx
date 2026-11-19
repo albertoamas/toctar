@@ -3,10 +3,13 @@
 import { useState } from "react";
 import { Campo } from "@/componentes/panel/campo";
 import { MenuMas } from "@/componentes/panel/menu-mas";
-import { CancelarModal, ModalFormulario, PieModal, useFormularioEnModal } from "@/componentes/panel/modal-formulario";
+import { useFormularioEnModal } from "@/componentes/panel/modal-contexto";
+import { ModalFormulario } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, PieModal } from "@/componentes/panel/modal-pie";
 import { Button } from "@/componentes/ui/button";
 import { Textarea } from "@/componentes/ui/textarea";
 import { anularPago } from "../acciones";
+import { DatoClave } from "@/componentes/panel/dato-clave";
 
 // HU-32: anular un pago (D-6). No se borra: queda tachado con su motivo y deja de contar para el saldo.
 // Pulido 13.49: se usa poco y no se deshace, así que va en el "⋯" de cada pago (no como texto suelto debajo) y pide el
@@ -34,7 +37,7 @@ function Formulario({ id, descripcion }: Props) {
   return (
     <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-label={`Anular ${descripcion}`}>
       <input type="hidden" name="id" value={id} />
-      <p className="font-semibold">{descripcion}</p>
+      <DatoClave etiqueta="Se anula" valor={descripcion} />
       <Campo id={`${base}-motivo`} etiqueta="Motivo" error={e.motivo} ayuda="El pago queda tachado con este motivo y deja de contar para el saldo.">
         <Textarea
           id={`${base}-motivo`}

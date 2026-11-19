@@ -1,5 +1,5 @@
 import type { Route } from "next";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { CabeceraTarjeta } from "@/componentes/panel/cabecera-seccion";
 import { BotonCambiar } from "@/componentes/panel/resumen-paso";
 import { DatosVehiculo } from "./datos-vehiculo";
 
@@ -15,21 +15,26 @@ type Cambio = { href?: Route; alCambiar?: () => void };
 type Props = {
   /** El título se llama `{id}-titulo` y nombra a la sección: uno distinto si van dos en la misma pantalla. */
   id?: string;
-  titulo?: string;
+  /** null: sin título, cuando la pantalla ya dice qué es (Recibir, Entregar: C7, 18/11). */
+  titulo?: string | null;
   /** `detalle`: una línea debajo del nombre (su WhatsApp). */
   cliente: { nombre: string; detalle?: string } & Cambio;
   /** Todavía sin elegir (el paso Vehículo): solo la fila del cliente. */
   vehiculo: ({ placa: string; detalle: (string | number)[]; tamano: string } & Cambio) | null;
   /** Una última fila de la misma tarjeta: el mantenimiento que se reserva (hallazgo 10, antes iba suelto entre tarjetas). */
   extra?: React.ReactNode;
+  /** Al pie de la tarjeta, con su relleno: el total, en el resumen del costado (ConResumen, C7 §5.2). */
+  pie?: React.ReactNode;
 };
 
-export function ResumenClienteVehiculo({ id = "para-quien", titulo = "Reserva para", cliente, vehiculo, extra }: Props) {
+export function ResumenClienteVehiculo({ id = "para-quien", titulo = "Reserva para", cliente, vehiculo, extra, pie }: Props) {
+  // El título adentro de la tarjeta, como el resto del formulario (sistema-del-panel.md §2, 18/11)
+  const Raiz = titulo ? "section" : "div";
   return (
-    <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-3">
-      <CabeceraSeccion id={id} titulo={titulo} />
-      <div className="tt-tarjeta-panel flex flex-col divide-y divide-border">
-        <div className="flex min-h-12 items-center justify-between gap-3 py-1 pr-2 pl-4">
+    <Raiz aria-labelledby={titulo ? `${id}-titulo` : undefined} className="tt-tarjeta-panel flex flex-col">
+      {titulo && <CabeceraTarjeta id={id} titulo={titulo} />}
+      <div className="flex flex-col divide-y divide-border">
+        <div className="flex min-h-12 items-center justify-between gap-3 py-1 pr-2 pl-4 sm:pl-5">
           <span className="flex min-w-0 flex-col">
             <span className="font-semibold break-words">{cliente.nombre}</span>
             {cliente.detalle && <span className="text-sm text-tinta-suave">{cliente.detalle}</span>}
@@ -37,15 +42,34 @@ export function ResumenClienteVehiculo({ id = "para-quien", titulo = "Reserva pa
           <BotonCambiar href={cliente.href} alCambiar={cliente.alCambiar} etiqueta="Cambiar cliente" />
         </div>
         {vehiculo && (
-          <div className="flex items-start justify-between gap-3 py-2 pr-2 pl-4">
+          <div className="flex items-start justify-between gap-3 py-2 pr-2 pl-4 sm:pl-5">
             <span className="flex min-w-0 flex-col">
               <DatosVehiculo placa={vehiculo.placa} detalle={vehiculo.detalle} tamano={vehiculo.tamano} />
             </span>
             <BotonCambiar href={vehiculo.href} alCambiar={vehiculo.alCambiar} etiqueta="Cambiar vehículo" />
           </div>
         )}
-        {extra && <div className="flex flex-col gap-2 py-2 pr-2 pl-4">{extra}</div>}
+        {extra && <div className="flex flex-col gap-2 py-2 pr-2 pl-4 sm:pl-5">{extra}</div>}
+        {pie && <div className="flex flex-col gap-2 p-4 sm:px-5">{pie}</div>}
       </div>
-    </section>
+    </Raiz>
+  );
+}
+
+/**
+ * Los servicios al pie de la tarjeta (Recibir, Entregar): la etiqueta chica arriba y uno por renglón, con su viñeta, así
+ * dos servicios largos no se leen como uno.
+ */
+export function ServiciosResumen({ servicios }: { servicios: string[] }) {
+  if (servicios.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-1">
+      <p className="text-sm text-tinta-suave">Servicios</p>
+      <ul aria-label="Servicios" className="flex list-disc flex-col gap-1 pl-5 marker:text-tinta-suave">
+        {servicios.map((s, i) => (
+          <li key={i}>{s}</li>
+        ))}
+      </ul>
+    </div>
   );
 }

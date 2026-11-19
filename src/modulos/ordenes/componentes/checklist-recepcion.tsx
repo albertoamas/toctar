@@ -10,15 +10,17 @@ import { avisarResultado, conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { ElegirFoto } from "@/componentes/panel/elegir-foto";
 import { OpcionesEnTarjetas } from "@/componentes/panel/opciones-en-tarjetas";
-import { CancelarModal, ModalFormulario, PieModal, useCambioFueraDelFormulario, useCerrarModal } from "@/componentes/panel/modal-formulario";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { useCambioFueraDelFormulario, useCerrarModal } from "@/componentes/panel/modal-contexto";
+import { ModalFormulario } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, PieModal } from "@/componentes/panel/modal-pie";
+import { CabeceraTarjeta } from "@/componentes/panel/cabecera-seccion";
 import { achicarFoto } from "@/componentes/panel/subida-foto";
 import { VisorFotos } from "@/componentes/panel/visor-fotos";
 import { BYTES_MAXIMOS_FOTO } from "@/lib/formato-fotos";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import type { EstadoFormulario } from "@/lib/formularios";
-import { desmarcarParte, guardarDetalle, marcarBien, marcarRestoBien } from "../acciones";
+import { desmarcarParte, guardarDetalle, marcarBien, marcarRestoBien } from "../acciones/recepcion";
 import type { DetalleRevision } from "../consultas";
 import type { EstadoRevision, TipoDetalle } from "@/db/esquema/trabajos";
 import { alTocarBien, NOMBRE_DETALLE, textoAvanceChecklist, TIPOS_DE_DETALLE } from "../reglas";
@@ -111,17 +113,15 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
   }
 
   return (
-    <section aria-labelledby="checklist-titulo" className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1">
-        <CabeceraSeccion id="checklist" titulo="Checklist" compacta />
-        <p className="text-sm text-tinta-suave">Revisa cada parte: bien, o con un detalle y su foto.</p>
-      </div>
+    // El título adentro de la tarjeta, como el resto del paso (sistema-del-panel.md §2, 18/11); las filas, como estaban
+    <section aria-labelledby="checklist-titulo" className="tt-tarjeta-panel flex flex-col overflow-hidden">
+      <CabeceraTarjeta id="checklist" titulo="Checklist" descripcion="Revisa cada parte: bien, o con un detalle y su foto." />
       {filas.length === 0 ? (
-        <p className="text-tinta-suave">No hay partes en el checklist: se agregan en Configuración → Taller.</p>
+        <p className="p-4 text-tinta-suave sm:p-5">No hay partes en el checklist: se agregan en Configuración → Taller.</p>
       ) : (
-        <div className="tt-tarjeta-panel overflow-hidden">
+        <div className="flex flex-col">
           {/* El avance: cuántas van, cuántas faltan y una barra que se llena (verde al completarse) */}
-          <div className="flex flex-col gap-2 border-b border-border px-4 py-3">
+          <div className="flex flex-col gap-2 border-b border-border px-4 py-3 sm:px-5">
             <div className="flex items-baseline justify-between gap-3">
               <p aria-live="polite" className="font-semibold tabular-nums">
                 Revisadas {revisadas} de {filas.length}
@@ -165,7 +165,7 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
               // El detalle guardado, solo si sigue siendo detalle (un "Bien" recién tocado ya lo reemplazó)
               const detalle = estado === "detalle" && d?.estado === "detalle" ? d : null;
               return (
-                <li key={p.id} className="flex flex-col gap-2 px-4 py-3">
+                <li key={p.id} className="flex flex-col gap-2 px-4 py-3 sm:px-5">
                   {/* El nombre a la izquierda (si es largo, en dos renglones) y el interruptor siempre a la derecha: la
                       lista queda pareja también en el celular */}
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3">

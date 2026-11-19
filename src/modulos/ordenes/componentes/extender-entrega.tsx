@@ -4,15 +4,17 @@ import { useActionState, useRef, useState } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
-import { CancelarModal, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
-import { Selector } from "@/componentes/panel/selector";
+import { useCerrarModal } from "@/componentes/panel/modal-contexto";
+import { CancelarModal, PieModal } from "@/componentes/panel/modal-pie";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import { sumarDias } from "@/lib/fechas";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { useEspaciosLibres } from "@/modulos/agenda/componentes/espacios-libres";
+import { CampoEspacio } from "@/modulos/agenda/componentes/campo-espacio";
 import { DIAS_MAXIMOS_TRABAJO } from "@/modulos/agenda/reglas";
-import { espaciosParaExtender, extenderEntrega } from "../acciones";
+import { espaciosParaExtender, extenderEntrega } from "../acciones/estado";
+import { ANCHO_DATO } from "@/componentes/panel/anchos";
 
 // HU-34: extender la entrega de una orden que se atrasa (decisión del 20/10). Se queda en su espacio si sigue libre en
 // los días nuevos; si no, se ofrecen los libres para todo el período, desde el ingreso. La base frena un cruce (D-5).
@@ -56,7 +58,7 @@ export function ExtenderEntrega({ id, fechaInicio, fechaFin: finActual, espacioI
           max={sumarDias(fechaInicio, DIAS_MAXIMOS_TRABAJO)}
           value={fechaFin}
           onChange={(ev) => setFechaFin(ev.target.value)}
-          className="max-w-xs"
+          className={ANCHO_DATO.fecha}
           aria-invalid={!!e.fechaFin}
           aria-describedby={e.fechaFin ? "fechaFin-error" : undefined}
         />
@@ -66,23 +68,7 @@ export function ExtenderEntrega({ id, fechaInicio, fechaFin: finActual, espacioI
           {nombreActual} está {suyo}: muévela a un espacio libre.
         </p>
       )}
-      <Campo id="espacioId" etiqueta="Espacio" error={e.espacioId} ayuda={ayuda}>
-        <Selector
-          id="espacioId"
-          name="espacioId"
-          value={espacioId}
-          onChange={(ev) => setEspacioId(ev.target.value)}
-          disabled={buscando}
-          aria-invalid={!!e.espacioId}
-          aria-describedby={e.espacioId ? "espacioId-error" : "espacioId-ayuda"}
-          className="max-w-xs"
-        >
-          <option value="">Elige el espacio</option>
-          {libres.map((x) => (
-            <option key={x.id} value={x.id}>{x.nombre}</option>
-          ))}
-        </Selector>
-      </Campo>
+      <CampoEspacio valor={espacioId} alCambiar={setEspacioId} libres={libres} buscando={buscando} ayuda={ayuda} error={e.espacioId} />
       <PieModal>
         <Button type="submit" disabled={enviando || buscando}>
           {enviando ? "Guardando…" : "Extender entrega"}

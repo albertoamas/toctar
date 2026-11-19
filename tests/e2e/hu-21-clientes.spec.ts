@@ -24,15 +24,18 @@ test("el personal registra un cliente con su primer vehículo; los obligatorios 
   await page.getByLabel("WhatsApp").fill(telefono(info, 1));
   // Un dato del vehículo sin placa ni tamaño: el vehículo queda a medias y se avisa. La marca está plegada
   await page.getByText("Agregar marca, modelo, año y color").click();
+  // La marca, de la lista con búsqueda (pedido 52): Tab la cierra
   await page.getByLabel("Marca").fill("Toyota");
+  await page.getByLabel("Marca").press("Tab");
   await page.getByRole("button", { name: "Crear cliente" }).click();
   await expect(page.getByText("Escribe la placa.")).toBeVisible();
   await expect(page.getByText("Elige el tamaño.")).toBeVisible();
 
   await page.getByLabel("Placa", { exact: true }).fill(`hu21 ${sufijo(info)}-01`);
-  await page.getByLabel("Tamaño").selectOption({ label: "Compactos" });
+  await page.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio", { name: /^Compactos/ }).click();
   await page.getByLabel("Modelo").fill("Yaris");
-  await page.getByLabel("Año (opcional)", { exact: true }).fill("2019");
+  // El año, en un selector (pedido 52)
+  await page.getByLabel("Año (opcional)", { exact: true }).selectOption("2019");
   await page.getByRole("button", { name: "Crear cliente" }).click();
 
   await expect(page).toHaveURL(/\/panel\/clientes\/\d+\?creado=1(?:[?&]volver=[^&#]*)?$/);
@@ -61,7 +64,7 @@ test("un teléfono o una placa repetidos avisan de quién son y llevan a su fich
   await page.getByLabel("Nombre", { exact: true }).fill(nombre);
   await page.getByLabel("WhatsApp").fill(telefono(info, 2));
   await page.getByLabel("Placa", { exact: true }).fill(`REP${sufijo(info)}1`);
-  await page.getByLabel("Tamaño").selectOption({ label: "Compactos" });
+  await page.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio", { name: /^Compactos/ }).click();
   await page.getByRole("button", { name: "Crear cliente" }).click();
   await expect(page).toHaveURL(/\/panel\/clientes\/\d+\?creado=1(?:[?&]volver=[^&#]*)?$/);
   const ficha = page.url().replace("?creado=1", "");
@@ -77,7 +80,7 @@ test("un teléfono o una placa repetidos avisan de quién son y llevan a su fich
   // Otro número, pero la misma placa escrita distinto
   await page.getByLabel("WhatsApp").fill(telefono(info, 3));
   await page.getByLabel("Placa", { exact: true }).fill(`rep-${sufijo(info).toLowerCase()} 1`);
-  await page.getByLabel("Tamaño").selectOption({ label: "Compactos" });
+  await page.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio", { name: /^Compactos/ }).click();
   await page.getByRole("button", { name: "Crear cliente" }).click();
   await expect(page.getByText(`La placa REP${sufijo(info)}1 ya está registrada a nombre de ${nombre}.`)).toBeVisible();
   await page.getByRole("link", { name: `Abrir la ficha de ${nombre}` }).click();

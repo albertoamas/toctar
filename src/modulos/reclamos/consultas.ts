@@ -1,6 +1,7 @@
 import "server-only";
 import { asc, count, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
+import { ajustarPagina, POR_PAGINA } from "@/lib/paginacion";
 import { archivo, reclamo, reclamoArchivo, servicio, usuario, type EstadoReclamo } from "@/db/esquema";
 import { urlsFoto, urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 
@@ -18,9 +19,18 @@ export type FilaReclamo = {
 
 const fotosDelReclamo = sql<number>`(select count(*)::int from ${reclamoArchivo} where ${reclamoArchivo.reclamoId} = ${reclamo.id})`;
 
-/** Los pendientes primero; dentro de cada grupo, los más nuevos arriba. */
-export async function listarReclamos(soloPendientes: boolean): Promise<FilaReclamo[]> {
-  return db
+/**
+ * Los pendientes primero; dentro de cada grupo, los más nuevos arriba. De a páginas (17/11: antes, todos de una vez): cuenta
+ * los de la pestaña y los pendientes (el número de su pestaña) y trae solo la página pedida.
+ */
+export async function listarReclamos(datos: { soloPendientes: boolean; pagina: number }): Promise<{ reclamos: FilaReclamo[]; total: number; pendientes: number; pagina: number; paginas: number }> {
+  const filtro = datos.soloPendientes ? eq(reclamo.estado, "pendiente") : undefined;
+  const [cuenta] = await db
+    .select({ todos: count(), pendientes: sql<number>`(count(*) filter (where ${reclamo.estado} = 'pendiente'))::int` })
+    .from(reclamo);
+  const total = datos.soloPendientes ? cuenta.pendientes : cuenta.todos;
+  const { pagina, paginas } = ajustarPagina(datos.pagina, total);
+  const reclamos = await db
     .select({
       id: reclamo.id,
       nombre: reclamo.nombre,
@@ -32,8 +42,11 @@ export async function listarReclamos(soloPendientes: boolean): Promise<FilaRecla
     })
     .from(reclamo)
     .leftJoin(servicio, eq(reclamo.servicioId, servicio.id))
-    .where(soloPendientes ? eq(reclamo.estado, "pendiente") : undefined)
-    .orderBy(sql`case when ${reclamo.estado} = 'pendiente' then 0 else 1 end`, desc(reclamo.createdAt));
+    .where(filtro)
+    .orderBy(sql`case when ${reclamo.estado} = 'pendiente' then 0 else 1 end`, desc(reclamo.createdAt), desc(reclamo.id))
+    .limit(POR_PAGINA)
+    .offset((pagina - 1) * POR_PAGINA);
+  return { reclamos, total, pendientes: cuenta.pendientes, pagina, paginas };
 }
 
 /**

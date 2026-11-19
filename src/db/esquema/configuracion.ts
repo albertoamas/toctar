@@ -93,6 +93,22 @@ export const tamanoVehiculo = pgTable(
   (t) => [uniqueIndex("tamano_vehiculo_nombre_unico").on(sql`lower(${t.nombre})`)],
 );
 
+/**
+ * Marcas de vehículo (pedido 52): la lista de la que se elige la marca de un vehículo, que el dueño administra en
+ * Configuración → Taller. El vehículo guarda el nombre (texto), así una marca renombrada o desactivada no cambia los ya
+ * registrados. Se desactivan, no se borran (D-6).
+ */
+export const marcaVehiculo = pgTable(
+  "marca_vehiculo",
+  {
+    id: integer("id").generatedByDefaultAsIdentity().primaryKey(),
+    nombre: text("nombre").notNull(),
+    orden: integer("orden").notNull(),
+    activo: boolean("activo").default(true).notNull(),
+  },
+  (t) => [uniqueIndex("marca_vehiculo_nombre_unico").on(sql`lower(${t.nombre})`)],
+);
+
 /** Espacios del taller donde se trabaja un vehículo por día (RN-06). Se desactivan, no se borran (D-6). */
 export const espacioTaller = pgTable(
   "espacio_taller",

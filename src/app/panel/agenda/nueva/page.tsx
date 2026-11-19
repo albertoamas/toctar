@@ -1,30 +1,18 @@
 import type { Metadata, Route } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
-import { cn } from "cn";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
-import { EstadoVacio } from "@/componentes/panel/estado-vacio";
-import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
-import { ResumenPaso } from "@/componentes/panel/resumen-paso";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
-import { fechaCorta, fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
+import { fechaEnBolivia, fechaExiste } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
-import { mostrarMonto } from "@/modulos/catalogo/reglas";
-import { bs } from "@/modulos/cotizaciones/reglas";
-import { FormularioReserva } from "@/modulos/agenda/componentes/formulario-reserva";
-import { cotizacionesParaReservar, datosDeCotizacion, datosDirecta, espaciosEnFechas, type CotizacionParaReservar, type VehiculoReserva } from "@/modulos/agenda/consultas";
-import { PASO_CLIENTE, PASO_FECHA, PASO_SERVICIOS, PASO_VEHICULO, pasoInicialReserva, pasosNuevaReserva } from "@/modulos/agenda/pasos-reserva";
-import { fechaEntregaSugerida } from "@/modulos/agenda/reglas";
+import { PASO_CLIENTE, pasosNuevaReserva } from "@/modulos/agenda/pasos-reserva";
 import { ElegirCliente } from "@/modulos/clientes/componentes/elegir-cliente";
-import { ResumenClienteVehiculo } from "@/modulos/clientes/componentes/resumen-cliente-vehiculo";
-import { obtenerParametros } from "@/modulos/configuracion/consultas";
-import { recordatorioParaAgendar } from "@/modulos/mantenimientos/consultas";
-import { lineaDelMantenimiento } from "@/modulos/mantenimientos/reglas";
-import { conDesde, leerDesde, PARAMETRO_VOLVER, volverDesde, type Volver } from "@/lib/volver";
+import { leerDesde, PARAMETRO_VOLVER, volverDesde } from "@/lib/volver";
+import { ReservaDesdeCotizacion } from "./desde-cotizacion";
+import { ReservaDirecta } from "./directa";
+import { Encabezado, type Contexto } from "./partes";
 
 export const metadata: Metadata = { title: "Nueva reserva" };
 
@@ -60,31 +48,6 @@ export default function PaginaNuevaReserva({ searchParams }: PageProps<"/panel/a
   );
 }
 
-/**
- * El encabezado. "Volver" lleva a la pantalla de la que se vino (pedido 43: la ficha del cliente, la cotización, Inicio,
- * Mantenimientos); sin ella, a la Agenda, donde vive la reserva (pedido 31).
- */
-function Encabezado({ volver }: { volver: Volver }) {
-  return <EncabezadoPagina titulo="Nueva reserva" volver={volver} />;
-}
-
-const enlace = "font-semibold underline";
-
-/**
- * El cliente y su vehículo, en lectura y en una sola tarjeta ("Reserva para", pulido final del 09/11), cada uno con
- * "Cambiar" si se puede volver a elegir (`cambiarCliente`, `cambiarVehiculo`: a dónde lleva, con el día y el espacio que
- * llegaron del tablero).
- */
-function ClienteYVehiculo(props: { nombre: string; vehiculo: VehiculoReserva | null; cambiarCliente?: Route; cambiarVehiculo?: Route; extra?: React.ReactNode }) {
-  return (
-    <ResumenClienteVehiculo
-      cliente={{ nombre: props.nombre, href: props.cambiarCliente }}
-      vehiculo={props.vehiculo && { ...props.vehiculo, href: props.cambiarVehiculo }}
-      extra={props.extra}
-    />
-  );
-}
-
 async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">, "searchParams">) {
   const usuario = await exigirModulo("agenda");
   const conPagos = puedeVerModulo(usuario, "pagos");
@@ -95,8 +58,9 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   const origen = leerDesde(parametros.volver);
   const numero = (clave: string) => (/^\d+$/.test(texto(clave)) ? Number(texto(clave)) : null);
   const hoy = fechaEnBolivia();
-  // El día pedido (desde el tablero) si no es pasado; si no, mañana
-  const fechaInicial = fechaExiste(texto("fecha")) && texto("fecha") >= hoy ? texto("fecha") : sumarDias(hoy, 1);
+  // El día pedido (desde el tablero) si no es pasado; si no, hoy (18/11: antes, mañana; el dueño reserva y recibe muchas
+  // veces en el día, y quedaba con la fecha de mañana sin darse cuenta)
+  const fechaInicial = fechaExiste(texto("fecha")) && texto("fecha") >= hoy ? texto("fecha") : hoy;
   const pasos = pasosNuevaReserva(conPagos);
   const indicador = (actual: number) => <PasosFlujo pasos={pasos} actual={actual} etiqueta="Pasos de la reserva" />;
   // Cada paso es una dirección: se conservan el día y el espacio que llegaron del tablero
@@ -113,92 +77,9 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   // cuando lo reservado cambia en la misma pantalla ("Usar la cotización" en una reserva directa)
   const clave = ["cotizacion", "cliente", "vehiculo", "recordatorio", "fecha", "espacio"].map(texto).join("|");
 
-  if (cotizacionId) {
-    const c = await datosDeCotizacion(cotizacionId);
-    if (!c) {
-      return (
-        <>
-          <Encabezado volver={volver} />
-          <EstadoVacio>Esa cotización ya no existe.</EstadoVacio>
-        </>
-      );
-    }
-    if (!c.agendable) {
-      return (
-        <>
-          <Encabezado volver={volver} />
-          <EstadoVacio>Esa cotización ya tiene una reserva o una versión nueva.</EstadoVacio>
-        </>
-      );
-    }
-    // Se dice antes de llenar el formulario, y no recién al guardar
-    if (!c.activos) {
-      return (
-        <>
-          <Encabezado volver={volver} />
-          <EstadoVacio>El cliente o el vehículo de esa cotización ya no está activo. Reactívalo en su ficha para reservarla.</EstadoVacio>
-        </>
-      );
-    }
-    const duraciones = c.lineas.map((l) => l.duracion);
-    // Los precios de la cotización, con Pagos o con Cotizaciones (RN-12), como en "Por reservar"
-    const verMontos = conPagos || puedeVerModulo(usuario, "cotizaciones");
-    // Elegida en el paso Servicios de la reserva (llega con su cliente y vehículo): es el último paso y se puede volver.
-    // Desde "Por reservar" o la cotización, arriba van los pasos del trabajo
-    const enLosPasos = numero("cliente") === c.cliente.id && numero("vehiculo") === c.vehiculo.id;
-    // Con varios vehículos, también se vuelve a elegir el vehículo, como en el paso Servicios
-    const conVarios = enLosPasos && ((await datosDirecta(c.cliente.id, c.vehiculo.id))?.vehiculos.length ?? 0) > 1;
-    return (
-      <>
-        <Encabezado volver={volver} />
-        {/* El mismo indicador que la directa y el mantenimiento (hallazgo 10): los pasos del trabajo se ven en la
-            cotización y en la reserva ya creada */}
-        {indicador(PASO_FECHA)}
-        <ClienteYVehiculo
-          nombre={c.cliente.nombre}
-          vehiculo={c.vehiculo}
-          cambiarCliente={enLosPasos ? direccion({}) : undefined}
-          cambiarVehiculo={conVarios ? direccion({ cliente: c.cliente.id }) : undefined}
-        />
-        {/* Los servicios de la cotización, en lectura: para cambiar precios se hace una versión nueva */}
-        <ResumenPaso
-          id="cotizacion"
-          titulo="Servicios"
-          href={enLosPasos ? direccion({ cliente: c.cliente.id, vehiculo: c.vehiculo.id }) : undefined}
-          etiquetaCambiar="Cambiar servicios"
-          claseContenido="gap-2"
-        >
-          {/* De dónde vienen: siempre "Servicios", como en los otros caminos (hallazgo 10) */}
-          <p className="text-sm text-tinta-suave">
-            De la cotización {c.numero}
-            {c.version > 1 ? `, versión ${c.version}` : ""}
-          </p>
-          <ul className="flex flex-col gap-1">
-            {c.lineas.map((l, i) => (
-              <li key={i} className="flex justify-between gap-4">
-                <span>{l.descripcion}</span>
-                {verMontos && <span className="shrink-0 tabular-nums">{mostrarMonto(l.precio)} Bs</span>}
-              </li>
-            ))}
-          </ul>
-          {/* El total va en la barra de abajo, como en los otros caminos (hallazgo 10): no dos veces */}
-          {!c.aceptada && <p className="text-sm text-tinta-suave">Al reservar, la cotización queda aceptada.</p>}
-        </ResumenPaso>
-        <Formulario
-          key={clave}
-          volver={origen}
-          // El total, en la barra de abajo como en los otros caminos (hallazgo 10); solo a quien ve montos (RN-12)
-          origen={{ tipo: "cotizacion", cotizacionId: c.cotizacionId, duraciones, total: verMontos ? c.saldo.total : null }}
-          conPagos={conPagos}
-          hoy={hoy}
-          fechaInicial={fechaInicial}
-          fechaFin={fechaEntregaSugerida(fechaInicial, duraciones)}
-          espacio={numero("espacio")}
-          atras={enLosPasos ? direccion({ cliente: c.cliente.id, vehiculo: c.vehiculo.id }) : undefined}
-        />
-      </>
-    );
-  }
+  const ctx: Contexto = { usuario, conPagos, volver, origen, hoy, fechaInicial, texto, numero, indicador, direccion, clave };
+
+  if (cotizacionId) return <ReservaDesdeCotizacion ctx={ctx} cotizacionId={cotizacionId} />;
 
   // Paso 1: el cliente. Sin Pagos (no arma reservas sin cotización) también lo elige, para reservar una de sus
   // cotizaciones
@@ -213,203 +94,5 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
     );
   }
 
-  // El mantenimiento que se agenda: abierto y de este cliente y vehículo (la acción lo vuelve a mirar al guardar)
-  const recordatorioId = numero("recordatorio");
-  if (recordatorioId && (!puedeVerModulo(usuario, "mantenimientos") || !conPagos)) {
-    return (
-      <>
-        <Encabezado volver={volver} />
-        <EstadoVacio>
-          {!puedeVerModulo(usuario, "mantenimientos")
-            ? "Los mantenimientos los reserva el dueño o quien tiene «Mantenimientos»."
-            : "La reserva del mantenimiento lleva precios: la arma el dueño o quien registra pagos."}
-        </EstadoVacio>
-      </>
-    );
-  }
-  const recordatorio = recordatorioId ? await recordatorioParaAgendar(recordatorioId) : null;
-  if (recordatorioId && (!recordatorio || recordatorio.clienteId !== clienteId || recordatorio.vehiculoId !== numero("vehiculo"))) {
-    return (
-      <>
-        <Encabezado volver={volver} />
-        <EstadoVacio>
-          Ese mantenimiento ya se reservó o se cerró. <Link href="/panel/mantenimientos" className={enlace}>Volver a Mantenimientos</Link>
-        </EstadoVacio>
-      </>
-    );
-  }
-
-  // Con un solo vehículo, ya va elegido (datosDirecta)
-  const d = await datosDirecta(clienteId, numero("vehiculo"));
-  if (!d) {
-    return (
-      <>
-        <Encabezado volver={volver} />
-        <EstadoVacio>Ese cliente ya no está activo. <Link href={conDesde("/panel/agenda/nueva", origen)} className={enlace}>Elegir otro</Link></EstadoVacio>
-      </>
-    );
-  }
-  if (d.vehiculos.length === 0) {
-    return (
-      <>
-        <Encabezado volver={volver} />
-        <EstadoVacio>
-          {d.cliente.nombre} no tiene vehículos activos. <Link href={`/panel/clientes/${d.cliente.id}`} className={enlace}>Agregar uno en su ficha</Link>
-        </EstadoVacio>
-      </>
-    );
-  }
-  // Desde un mantenimiento no se cambia el cliente ni el vehículo: el recordatorio es de ellos
-  const cambiarCliente = recordatorio ? undefined : direccion({});
-  const cambiarVehiculo = recordatorio || d.vehiculos.length < 2 ? undefined : direccion({ cliente: d.cliente.id });
-
-  // Paso 2: el vehículo, si tiene varios
-  if (!d.vehiculo) {
-    return (
-      <>
-        <Encabezado volver={volver} />
-        {indicador(PASO_VEHICULO)}
-        <ClienteYVehiculo nombre={d.cliente.nombre} vehiculo={null} cambiarCliente={cambiarCliente} />
-        <section aria-labelledby="vehiculo-titulo" className="flex flex-col gap-3">
-          <CabeceraSeccion id="vehiculo" titulo="Vehículo" />
-          {/* La fila de un toque, con la placa grande y el tamaño con su etiqueta, como en el resto del panel */}
-          <ListaFilas
-            etiqueta="Elegir vehículo"
-            filas={d.vehiculos.map((v) => ({
-              href: direccion({ cliente: d.cliente.id, vehiculo: v.id }),
-              titulo: v.placa,
-              tituloGrande: true,
-              detalles: [...(v.detalle.length > 0 ? [v.detalle.join(" ")] : []), `Tamaño: ${v.tamano}`],
-            }))}
-          />
-        </section>
-      </>
-    );
-  }
-
-  const vehiculo = d.vehiculo;
-  const arriba = (
-    <>
-      <ClienteYVehiculo
-        nombre={d.cliente.nombre}
-        vehiculo={vehiculo}
-        cambiarCliente={cambiarCliente}
-        cambiarVehiculo={cambiarVehiculo}
-        // El mantenimiento que se agenda, dentro de la tarjeta (hallazgo 10: iba suelto entre tarjetas); vencido, en aviso
-        extra={
-          recordatorio && (
-            <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span>Mantenimiento de {recordatorio.servicio}</span>
-              <span className={cn("tt-estado", recordatorio.fechaProgramada < hoy && "tt-estado--aviso")}>
-                {recordatorio.fechaProgramada < hoy ? "Venció" : "Vence"} el {fechaCorta(recordatorio.fechaProgramada, hoy)}
-              </span>
-            </p>
-          )
-        }
-      />
-      {/* Su servicio de mantenimiento ya no se ofrece (inactivo o sin precio para ese tamaño): se dice por qué falta la línea */}
-      {recordatorio && !lineaDelMantenimiento(d.opciones, recordatorio.servicioMantenimientoId) && (
-        // En ámbar, como los avisos de Entregar y de los montos (pulido final del 09/11)
-        <p role="status" className="rounded-sm border border-aviso bg-aviso-fondo p-3 text-sm font-medium text-aviso">
-          Su servicio de mantenimiento ya no se ofrece en el catálogo: elige el servicio que se hará.
-        </p>
-      )}
-    </>
-  );
-  // Paso 3: los servicios. Primero sus cotizaciones para reservar; un mantenimiento no las ofrece (se agenda su servicio)
-  const cotizaciones = recordatorio ? [] : await cotizacionesParaReservar(d.cliente.id, vehiculo.id);
-  const conMontos = conPagos || puedeVerModulo(usuario, "cotizaciones");
-  const deCotizacion = (cotizacion: number) => direccion({ cotizacion, cliente: d.cliente.id, vehiculo: vehiculo.id });
-  const suyas = cotizaciones.length > 0 ? <CotizacionesDelCliente cotizaciones={cotizaciones} conMontos={conMontos} enlace={deCotizacion} /> : null;
-  if (!conPagos) {
-    return (
-      <>
-        <Encabezado volver={volver} />
-        {indicador(PASO_SERVICIOS)}
-        {arriba}
-        {suyas ?? <EstadoVacio>Este vehículo no tiene cotizaciones para reservar. La reserva sin cotización lleva precios: la arma el dueño o quien registra pagos.</EstadoVacio>}
-      </>
-    );
-  }
-  // Un mantenimiento llega con su servicio de mantenimiento ya elegido (pedido 21): con su precio, directo a la fecha
-  const lineasIniciales = recordatorio ? [lineaDelMantenimiento(d.opciones, recordatorio.servicioMantenimientoId)].filter((l) => l !== null) : [];
-  return (
-    <>
-      <Encabezado volver={volver} />
-      <Formulario
-        key={clave}
-        volver={origen}
-        origen={{
-          tipo: "directa",
-          clienteId: d.cliente.id,
-          vehiculoId: vehiculo.id,
-          opciones: d.opciones,
-          recordatorioId: recordatorio?.id ?? null,
-          lineasIniciales,
-          pasoInicial: pasoInicialReserva(lineasIniciales),
-        }}
-        conPagos={conPagos}
-        hoy={hoy}
-        fechaInicial={fechaInicial}
-        fechaFin={fechaInicial}
-        espacio={numero("espacio")}
-        arriba={arriba}
-        cotizaciones={suyas}
-      />
-    </>
-  );
-}
-
-/**
- * Las cotizaciones del vehículo que se pueden reservar (pedido 31): cada una lleva al último paso de la reserva, con
- * sus servicios y precios ya puestos (`enlace`). El total, solo a quien ve montos (RN-12: Pagos o Cotizaciones).
- */
-function CotizacionesDelCliente({ cotizaciones, conMontos, enlace }: { cotizaciones: CotizacionParaReservar[]; conMontos: boolean; enlace: (cotizacionId: number) => Route }) {
-  return (
-    <section aria-labelledby="sus-cotizaciones-titulo" className="flex flex-col gap-3">
-      <CabeceraSeccion id="sus-cotizaciones" titulo="Sus cotizaciones" />
-      <ListaFilas
-        etiqueta="Sus cotizaciones"
-        filas={cotizaciones.map((c) => ({
-          href: enlace(c.cotizacionId),
-          titulo: `Cotización ${c.numero}${c.version > 1 ? `, versión ${c.version}` : ""}`,
-          detalles: [c.servicios, ...(conMontos ? [bs(c.total)] : [])].filter(Boolean),
-          estado: c.aceptada ? "Aceptada" : "Pendiente",
-          tonoEstado: c.aceptada ? "exito" : undefined,
-          aviso: c.aceptada ? "Sin fecha" : null,
-        }))}
-      />
-    </section>
-  );
-}
-
-async function Formulario(props: {
-  /** La pantalla de origen: la reserva creada vuelve ahí (pedido 43). */
-  volver: string | null;
-  origen: React.ComponentProps<typeof FormularioReserva>["origen"];
-  conPagos: boolean;
-  hoy: string;
-  fechaInicial: string;
-  fechaFin: string;
-  espacio: number | null;
-  arriba?: React.ReactNode;
-  cotizaciones?: React.ReactNode;
-  atras?: Route;
-}) {
-  const [parametros, espacios] = await Promise.all([obtenerParametros(), espaciosEnFechas(props.fechaInicial, props.fechaFin)]);
-  return (
-    <FormularioReserva
-      volver={props.volver}
-      origen={props.origen}
-      conPagos={props.conPagos}
-      adelantoSugerido={parametros.adelanto_sugerido.toFixed(2)}
-      hoy={props.hoy}
-      fechaInicial={props.fechaInicial}
-      espacioInicial={props.espacio}
-      espaciosIniciales={espacios}
-      arriba={props.arriba}
-      cotizaciones={props.cotizaciones}
-      atras={props.atras}
-    />
-  );
+  return <ReservaDirecta ctx={ctx} clienteId={clienteId} />;
 }

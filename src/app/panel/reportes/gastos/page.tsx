@@ -72,20 +72,22 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes/gasto
   return (
     <>
       <EncabezadoPagina titulo="Gastos" volver={{ href: volver, texto: "Reportes" }} accion={<RegistrarGasto categorias={categorias} hoy={hoy} />} />
-      {/* El mes, centrado y con sus dos flechas siempre en su lugar: la que no se puede usar queda apagada (antes
-          desaparecía y el mes quedaba corrido) */}
-      <nav aria-label="Meses" className="flex items-center justify-center gap-3">
-        <FlechaMes href={mes > primerMes ? enlace(sumarMeses(mes, -1), filtro) : null} etiqueta="Mes anterior">
-          <ChevronLeftIcon />
-        </FlechaMes>
-        <p className="w-52 text-center tt-titulo-seccion" aria-live="polite">
-          {tituloMes(mes)}
-        </p>
-        <FlechaMes href={mes < esteMes ? enlace(sumarMeses(mes, 1), filtro) : null} etiqueta="Mes siguiente">
-          <ChevronRightIcon />
-        </FlechaMes>
-      </nav>
       <BarraLista
+        // El mes entre sus flechas, a la derecha como la semana de la Agenda (C7 §4: nada centrado). Las dos flechas siempre
+        // en su lugar: la que no se puede usar queda apagada (antes desaparecía y el mes quedaba corrido)
+        derecha={
+          <nav aria-label="Meses" className="flex w-full items-center gap-2 sm:w-auto">
+            <FlechaMes href={mes > primerMes ? enlace(sumarMeses(mes, -1), filtro) : null} etiqueta="Mes anterior">
+              <ChevronLeftIcon />
+            </FlechaMes>
+            <p className="min-w-0 flex-1 text-center tt-titulo-seccion sm:min-w-52" aria-live="polite">
+              {tituloMes(mes)}
+            </p>
+            <FlechaMes href={mes < esteMes ? enlace(sumarMeses(mes, 1), filtro) : null} etiqueta="Mes siguiente">
+              <ChevronRightIcon />
+            </FlechaMes>
+          </nav>
+        }
         filtros={
           enElMes.length > 1 ? (
             <Filtros

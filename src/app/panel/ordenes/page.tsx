@@ -1,23 +1,22 @@
 import type { Metadata, Route } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
 import { cn } from "cn";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { Filtros } from "@/componentes/panel/filtros";
 import { Insignia } from "@/componentes/panel/insignia";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
+import { Paginacion } from "@/componentes/panel/paginacion";
+import { ajustarPagina, conPagina, leerPagina } from "@/lib/paginacion";
 import { Pestanas } from "@/componentes/panel/pestanas";
 import { CeldaDoble, TablaLista, type ColumnaTabla, type FilaTabla } from "@/componentes/panel/tabla-lista";
-import { buttonVariants } from "@/componentes/ui/button";
 import { diaYHora, fechaEnBolivia } from "@/lib/fechas";
 import { exigirModulo } from "@/lib/sesion";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { Buscador } from "@/componentes/panel/buscador";
 import { ordenesAbiertas, ordenesEntregadas, type OrdenEnLista, type OrdenEntregada } from "@/modulos/ordenes/consultas";
-import { ENTREGADAS_POR_PAGINA, ESTADOS_ORDEN_ABIERTA, estaAtrasada, estadoFiltrado, filtrarOrdenes, textoEntrega } from "@/modulos/ordenes/reglas";
+import { ESTADOS_ORDEN_ABIERTA, estaAtrasada, estadoFiltrado, filtrarOrdenes, textoEntrega } from "@/modulos/ordenes/reglas";
 import { BarraLista } from "@/componentes/panel/barra-lista";
 import { normalizarBusqueda } from "@/modulos/clientes/reglas";
 import { aqui } from "@/lib/volver";
@@ -62,7 +61,7 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/ordenes">, "search
           {/* Fuera de la lista: al buscar, el campo no se vuelve a montar y no pierde el foco */}
           <BarraLista buscador={<Buscador etiqueta="Buscar por placa, cliente o fecha de entrega" ejemplo="Placa, cliente o fecha (5/10)" />} />
           <Suspense fallback={<Cargando />}>
-            <Entregadas q={typeof parametros.q === "string" ? parametros.q : ""} pagina={Number(parametros.pagina)} desde={aqui("/panel/ordenes", parametros)} />
+            <Entregadas q={typeof parametros.q === "string" ? parametros.q : ""} pagina={leerPagina(parametros.pagina)} desde={aqui("/panel/ordenes", parametros)} />
           </Suspense>
         </>
       ) : (
@@ -147,21 +146,12 @@ function filaOrden(o: OrdenEnLista, hoy: string): FilaTabla {
 }
 
 /** El historial (pedido 28): la más reciente primero, con su búsqueda y de a páginas. */
-async function Entregadas({ q, pagina, desde }: { q: string; pagina: number; /** Esta lista, para "Volver" (pedido 43). */ desde: string }) {
-  // Una página rara (texto, 0, Infinity) es la primera; una después de la última, la última
-  let pedida = Number.isSafeInteger(pagina) && pagina > 1 ? pagina : 1;
+async function Entregadas({ q, pagina: pedida, desde }: { q: string; pagina: number; /** Esta lista, para "Volver" (pedido 43). */ desde: string }) {
   let { ordenes, total } = await ordenesEntregadas({ q, pagina: pedida });
-  const paginas = Math.max(1, Math.ceil(total / ENTREGADAS_POR_PAGINA));
-  if (pedida > paginas) {
-    pedida = paginas;
-    ({ ordenes, total } = await ordenesEntregadas({ q, pagina: pedida }));
-  }
-  const enlace = (p: number) => {
-    const datos = new URLSearchParams({ vista: "entregadas" });
-    if (q.trim()) datos.set("q", q);
-    if (p > 1) datos.set("pagina", String(p));
-    return `/panel/ordenes?${datos.toString()}` as Route;
-  };
+  // Una página después de la última es la última (17/11: con la paginación común de las listas, de a 25)
+  const { pagina, paginas } = ajustarPagina(pedida, total);
+  if (pagina !== pedida) ({ ordenes, total } = await ordenesEntregadas({ q, pagina }));
+  const enlace = (p: number) => conPagina("/panel/ordenes", q.trim() ? { vista: "entregadas", q } : { vista: "entregadas" }, p);
   return (
     <>
       {ordenes.length === 0 ? (
@@ -169,25 +159,7 @@ async function Entregadas({ q, pagina, desde }: { q: string; pagina: number; /**
       ) : (
         <>
           <TablaLista etiqueta="Órdenes entregadas" columnas={COLUMNAS_ENTREGADAS} filas={ordenes.map(filaEntregada)} desde={desde} />
-          {paginas > 1 && (
-            <nav aria-label="Páginas" className="flex flex-wrap items-center gap-3">
-              {pedida > 1 && (
-                <Link href={enlace(pedida - 1)} className={cn(buttonVariants({ variant: "outline" }))}>
-                  <ChevronLeftIcon />
-                  Más recientes
-                </Link>
-              )}
-              <span className="text-sm text-tinta-suave tabular-nums">
-                Página {pedida} de {paginas}
-              </span>
-              {pedida < paginas && (
-                <Link href={enlace(pedida + 1)} className={cn(buttonVariants({ variant: "outline" }))}>
-                  Anteriores
-                  <ChevronRightIcon />
-                </Link>
-              )}
-            </nav>
-          )}
+          <Paginacion pagina={pagina} paginas={paginas} total={total} nombre={["orden entregada", "órdenes entregadas"]} enlace={enlace} />
         </>
       )}
     </>

@@ -61,6 +61,7 @@ Para apagarlo (por ejemplo, durante un problema con Coolify): cambiar `COOLIFY_D
 ## Qué hacer si…
 
 - **El CI falla en un PR:** abrir el job en rojo en la pestaña **Actions**, corregir en la misma rama y subir. El CI vuelve a correr solo.
+- **Falla "Dependencias del navegador" (antes de correr ninguna prueba):** un servidor de paquetes de Ubuntu entregaba muy lento. El paso ya se reintenta solo hasta 3 veces, cada una desde otro servidor oficial (17/11); si igual falla, volver a correr el job (**Re-run failed jobs**). La mejora de fondo, si siguiera pasando: correr las E2E dentro de la imagen oficial de Playwright, que ya trae las librerías (hay que cambiar `localhost` por los nombres de los servicios).
 - **Una prueba E2E sale "flaky":** el PR se puede unir (pasó al reintentar), pero se abre una tarea para arreglarla.
 - **Un despliegue falla:** el job **Desplegar** queda en rojo y en línea sigue la versión anterior. Ver los logs del despliegue en Coolify. Para volver a una versión anterior: Coolify → la app → **Deployments** → **Rollback**.
 - **Una urgencia en producción:** rama `arreglo/...` desde `main`, PR y merge; el CI tarda unos 15 a 20 minutos (hasta unos 35 si tiene que instalar el navegador). Si Actions no estuviera disponible, se puede desplegar a mano desde Coolify (**Deploy**), sabiendo que ese despliegue no pasó por el CI.

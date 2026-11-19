@@ -5,10 +5,11 @@ import { cn } from "cn";
 import { PencilIcon, PlusIcon } from "lucide-react";
 import { useHidratado } from "@/componentes/hidratado";
 import { MensajeError } from "@/componentes/panel/campo";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
-import { CLASE_PILDORA, CLASE_PILDORA_ACTIVA } from "@/componentes/panel/filtros";
+import { CabeceraSeccion, Seccion } from "@/componentes/panel/cabecera-seccion";
+import { CLASE_PILDORA, CLASE_PILDORA_ACTIVA } from "@/componentes/panel/pildora";
 import { Insignia } from "@/componentes/panel/insignia";
-import { ModalFormulario, useHayCambiosModal, useRenovarBaseModal } from "@/componentes/panel/modal-formulario";
+import { useHayCambiosModal, useRenovarBaseModal } from "@/componentes/panel/modal-contexto";
+import { ModalFormulario } from "@/componentes/panel/modal-formulario";
 import { ESTILO_ENCABEZADO_TABLA } from "@/componentes/panel/tabla-lista";
 import { Button } from "@/componentes/ui/button";
 import type { Tamano } from "@/modulos/configuracion/consultas";
@@ -68,25 +69,30 @@ export function PreciosServicio({ servicio, variantes, tamanos, duracionServicio
   const cargar = vacias.has(variante.id);
 
   return (
-    <section aria-labelledby="precios-titulo" className="flex flex-col gap-3">
-      <CabeceraSeccion id="precios" titulo="Precios">
-        <div className="flex flex-wrap items-center gap-1">
-          {acciones}
-          {/* Con varias, en la computadora: uno solo para toda la tabla (en el celular, el de la tarjeta) */}
-          {varias && (
-            <Button type="button" variant="ghost" disabled={!hidratado} onClick={() => abrir(variante.id)} className="hidden md:inline-flex">
-              <PencilIcon />
-              Editar precios
-            </Button>
-          )}
-        </div>
-      </CabeceraSeccion>
-      {nota}
+    <Seccion
+      id="precios" titulo="Precios"
+      sinRelleno
+      accion={
+        <>
+          <div className="flex flex-wrap items-center gap-1">
+            {acciones}
+            {/* Con varias, en la computadora: uno solo para toda la tabla (en el celular, el de la tarjeta) */}
+            {varias && (
+              <Button type="button" variant="ghost" disabled={!hidratado} onClick={() => abrir(variante.id)} className="hidden md:inline-flex">
+                <PencilIcon />
+                Editar precios
+              </Button>
+            )}
+          </div>
+        </>
+      }
+    >
+      {nota && <div className="px-4 pt-3">{nota}</div>}
 
       {varias && (
         <>
           {/* Celular: qué variante se ve */}
-          <Pildoras variantes={variantes} elegida={variante.id} alElegir={setElegida} className="md:hidden" />
+          <Pildoras variantes={variantes} elegida={variante.id} alElegir={setElegida} className="px-4 pt-3 md:hidden" />
           {/* Computadora: todas juntas, para comparar, como las tablas del panel */}
           <div className="tt-tarjeta-panel hidden overflow-x-auto md:block">
             <table className="w-full text-left text-sm tabular-nums">
@@ -160,7 +166,7 @@ export function PreciosServicio({ servicio, variantes, tamanos, duracionServicio
         {cargar ? <p className="text-tinta-suave">Sin precios cargados.</p> : <PreciosVariante variante={variante} tamanos={tamanos} duracionServicio={duracionServicio} />}
       </section>
 
-      <ModalFormulario titulo={varianteEnModal ? `Precios de ${nombreDe(varianteEnModal)}` : "Precios"} abierto={!!varianteEnModal} alCambiar={(a) => !a && setAbierta(null)}>
+      <ModalFormulario tamano="mediano" titulo={varianteEnModal ? `Precios de ${nombreDe(varianteEnModal)}` : "Precios"} abierto={!!varianteEnModal} alCambiar={(a) => !a && setAbierta(null)}>
         {varianteEnModal && (
           <div className="flex flex-col gap-4">
             {varias && <VariantesEnModal variantes={variantes} elegida={varianteEnModal} alElegir={abrir} />}
@@ -175,7 +181,7 @@ export function PreciosServicio({ servicio, variantes, tamanos, duracionServicio
           </div>
         )}
       </ModalFormulario>
-    </section>
+    </Seccion>
   );
 }
 

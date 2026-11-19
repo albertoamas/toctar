@@ -1,13 +1,9 @@
-import { createContext, useActionState, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { useFormStatus } from "react-dom";
-import { useFocoEnError } from "@/componentes/foco-en-error";
-import { conAviso } from "@/componentes/panel/avisos";
+import { useCallback, useRef, useState } from "react";
 import { contenidoFormulario } from "@/componentes/panel/contenido-formulario";
-import { Button } from "@/componentes/ui/button";
-import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/componentes/ui/dialog";
-import { CELULAR } from "./celular";
-import type { EstadoFormulario } from "@/lib/formularios";
+import { Modal } from "./modal-contexto";
+import { PieModal } from "./modal-pie";
+import { useSobreElTeclado } from "./modal-teclado";
 
 // Componente de cliente: se usa dentro de otros componentes de cliente (recibe funciones como props).
 // Un formulario corto en un modal (skill pantallas-panel): editar una sección de una ficha (SeccionConEditar) o crear
@@ -27,93 +23,11 @@ import type { EstadoFormulario } from "@/lib/formularios";
 // de la prueba en celulares, 15/11: como en iOS y Android, cerrar con cambios nunca los descarta sin avisar; antes cerraban
 // directo y en el iPhone la pregunta se veía un instante mientras el modal se iba). Sin cambios, todo cierra directo.
 // "Listo" no pregunta: ahí cada cambio ya se guardó. Guardar no pregunta. Mientras se guarda no se puede cerrar.
-
-type ContextoModal = {
-  /** Cierra sin preguntar: ya se guardó, o la persona eligió "Descartar cambios". */
-  cerrar: () => void;
-  /** "Descartar cambios": cierra, salvo que sea el mismo toque que hizo aparecer la pregunta. */
-  descartar: (conToque: boolean, apoyadoEn: number | null) => void;
-  /** Un cierre que puede ser sin querer: con cambios, pregunta en el pie del modal. */
-  pedirCierre: () => void;
-  /** "Cancelar" o la X: con cambios, pregunta; y el toque "afuera" que lo repite no cuenta. */
-  pedirCierreConBoton: () => void;
-  /** Está preguntando: el pie muestra "Seguir editando" y "Descartar cambios" en lugar de sus botones. */
-  preguntando: boolean;
-  /** "Seguir editando": vuelve el pie de siempre. */
-  seguir: () => void;
-  /** Un pie (PieModal) está a la vista: la pregunta va en él; si no hay, al final del modal. */
-  conPie: (hay: boolean) => void;
-  /** Lo que tiene ahora el formulario pasa a ser lo guardado (una acción que guarda sin cerrar el modal). */
-  renovarBase: () => void;
-  /** El formulario tiene algo distinto de lo que tenía al abrirse (o de la última base). */
-  hayCambios: () => boolean;
-  /** Hay un cambio que no es un campo del formulario (una foto elegida). */
-  fijarAdemas: (hay: boolean) => void;
-  /** El formulario se está guardando. */
-  fijarEnviando: (enviando: boolean) => void;
-};
-
-const Modal = createContext<ContextoModal | null>(null);
+// Partido en archivos (17/11): el contexto y los hooks de los formularios en modal-contexto, el pie y sus
+// botones en modal-pie, el teclado del iPhone en modal-teclado y "¿Salir sin guardar?" en pregunta-salir.
 
 /** Lo que dura un toque repetido: el mismo dedo llega como dos eventos casi juntos (hallazgo 7, iPhone). */
 const TOQUE_REPETIDO_MS = 400;
-
-/**
- * Con el teclado abierto, la hoja se apoya sobre él. Safari (y todo navegador del iPhone) no achica la pantalla al
- * abrir el teclado: solo la parte visible (`visualViewport`). Se mide cuánto tapa el teclado contra el alto del diseño
- * (`clientHeight`, el que usa `position: fixed`; `innerHeight` puede cambiar con el teclado), y la hoja lo usa
- * (`--tt-teclado` y `--tt-alto-visible`, en sus clases). Solo con teclado: sin él quedan `bottom: 0` y `100dvh`. En
- * Android el navegador ya achica la pantalla y el teclado mide 0. Con la página ampliada con los dedos (`scale` distinto
- * de 1) no se toca: la parte visible chica es el zoom, no un teclado. Sin `visualViewport`, queda como siempre.
- */
-function useSobreElTeclado(modal: React.RefObject<HTMLDivElement | null>, abierto: boolean) {
-  useEffect(() => {
-    const vista = window.visualViewport;
-    if (!abierto || !vista) return;
-    const celular = window.matchMedia(CELULAR);
-    let cuadro = 0;
-    let intentos = 0;
-    let anterior = "";
-    // La hoja que se midió: al cerrar, la limpieza la usa (modal.current ya puede no estar)
-    let medida: HTMLElement | null = null;
-    const limpiar = (hoja: HTMLElement | null) => {
-      hoja?.style.removeProperty("--tt-teclado");
-      hoja?.style.removeProperty("--tt-alto-visible");
-      anterior = "";
-    };
-    const medir = () => {
-      cuadro = 0;
-      const hoja = modal.current;
-      // Todavía no se dibujó (se abre en un portal): se prueba en los próximos cuadros, unas pocas veces
-      if (!hoja) {
-        if (intentos++ < 10) cuadro = requestAnimationFrame(medir);
-        return;
-      }
-      medida = hoja;
-      const teclado = Math.max(0, Math.round(document.documentElement.clientHeight - vista.height - vista.offsetTop));
-      if (!celular.matches || Math.abs(vista.scale - 1) > 0.01 || teclado === 0) return limpiar(hoja);
-      const valor = `${teclado}/${Math.round(vista.height)}`;
-      if (valor === anterior) return;
-      anterior = valor;
-      hoja.style.setProperty("--tt-teclado", `${teclado}px`);
-      hoja.style.setProperty("--tt-alto-visible", `${Math.round(vista.height)}px`);
-    };
-    // Mientras el teclado entra llegan muchos avisos por cuadro: se mide una vez por cuadro
-    const pedir = () => {
-      if (!cuadro) cuadro = requestAnimationFrame(medir);
-    };
-    medir();
-    vista.addEventListener("resize", pedir);
-    vista.addEventListener("scroll", pedir);
-    return () => {
-      cancelAnimationFrame(cuadro);
-      vista.removeEventListener("resize", pedir);
-      vista.removeEventListener("scroll", pedir);
-      // Al cerrar, el teclado se va a la vez: la hoja baja desde el borde, no desde donde estaba sobre el teclado
-      limpiar(medida);
-    };
-  }, [modal, abierto]);
-}
 
 /**
  * Dónde va el foco al abrir: el primer campo para escribir; si no hay (una lista), el primer botón habilitado. Una
@@ -124,6 +38,7 @@ function useSobreElTeclado(modal: React.RefObject<HTMLDivElement | null>, abiert
  * escribir (un nombre, una placa), el teclado abierto ayuda: queda en el campo.
  */
 const habilitado = (selectores: string[]) => selectores.map((c) => `${c}:not(:disabled)`).join(", ");
+
 const primerControl = (modal: HTMLElement | null, sinTeclado: boolean) =>
   modal?.querySelector<HTMLElement>("[data-foco-inicial]") ??
   (sinTeclado && window.matchMedia("(pointer: coarse)").matches ? modal : null) ??
@@ -131,8 +46,12 @@ const primerControl = (modal: HTMLElement | null, sinTeclado: boolean) =>
   modal?.querySelector<HTMLElement>(habilitado(["button"])) ??
   true;
 
+/** Chico (casi todos), mediano (una tabla o fotos) o grande: el ancho en la computadora; en el celular, la hoja de borde a borde (C7 §4.2). */
+const TAMANO = { chico: "sm:max-w-[30rem]", mediano: "sm:max-w-[40rem]", grande: "sm:max-w-[50rem]" } as const;
+
 type Props = {
   titulo: string;
+  tamano?: keyof typeof TAMANO;
   /** Con pantalla táctil, abrir sin poner el foco en un campo (no abre solo el teclado): ver `primerControl`. */
   sinTeclado?: boolean;
   abierto: boolean;
@@ -141,7 +60,7 @@ type Props = {
   children: React.ReactNode;
 };
 
-export function ModalFormulario({ titulo, abierto, alCambiar, sinTeclado = false, children }: Props) {
+export function ModalFormulario({ titulo, abierto, alCambiar, sinTeclado = false, tamano = "chico", children }: Props) {
   const modal = useRef<HTMLDivElement>(null);
   // Lo que tenía el formulario al abrirse. Sin formulario (una lista, una confirmación), null: nunca pregunta
   const base = useRef<string | null>(null);
@@ -233,7 +152,8 @@ export function ModalFormulario({ titulo, abierto, alCambiar, sinTeclado = false
           return primerControl(modal.current, sinTeclado);
         }}
         className={[
-          "max-h-[calc(100dvh-2rem)] gap-5 overflow-y-auto text-base sm:max-w-lg",
+          "max-h-[calc(100dvh-2rem)] gap-5 overflow-y-auto text-base",
+          TAMANO[tamano],
           // En el celular, la hoja: pegada abajo (sobre el teclado, si está abierto), de borde a borde y hasta donde se ve
           "max-sm:top-auto max-sm:bottom-[var(--tt-teclado,0px)] max-sm:max-h-[calc(var(--tt-alto-visible,100dvh)-1rem)] max-sm:max-w-full max-sm:translate-y-0 max-sm:rounded-b-none",
           // Sube deslizándose desde abajo y baja al cerrarse, sin agrandarse; con "reducir movimiento", solo aparece
@@ -252,173 +172,5 @@ export function ModalFormulario({ titulo, abierto, alCambiar, sinTeclado = false
         </Modal.Provider>
       </DialogContent>
     </Dialog>
-  );
-}
-
-/**
- * "¿Salir sin guardar?" al dejar una pantalla con cambios (AvisoAlSalir: Nuevo cliente, Recibir, Entregar). Un diálogo
- * chico y centrado, también en el celular (no la hoja de los formularios): no hay otro modal abajo. El foco, en la opción
- * que no pierde nada; cerrarlo de cualquier forma es seguir editando.
- */
-export function PreguntaSalir({ abierta, texto, alSeguir, alSalir }: { abierta: boolean; texto: string; alSeguir: () => void; alSalir: () => void }) {
-  const seguir = useRef<HTMLButtonElement>(null);
-  return (
-    <AlertDialog.Root open={abierta} onOpenChange={(abrir) => !abrir && alSeguir()}>
-      <AlertDialog.Portal>
-        <AlertDialog.Backdrop className="fixed inset-0 isolate z-50 bg-black/10 supports-backdrop-filter:backdrop-blur-xs" />
-        {/* data-slot como el de los modales: los avisos flotantes lo ven abierto (sonner.tsx) */}
-        <AlertDialog.Popup
-          data-slot="dialog-content"
-          initialFocus={seguir}
-          className="fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-base text-popover-foreground ring-1 ring-foreground/10 outline-none sm:max-w-sm"
-        >
-          <AlertDialog.Title className="font-heading text-base leading-none font-medium">¿Salir sin guardar?</AlertDialog.Title>
-          <AlertDialog.Description>{texto}</AlertDialog.Description>
-          <div className="flex flex-wrap gap-2">
-            <Button ref={seguir} type="button" variant="outline" onClick={alSeguir}>
-              Seguir editando
-            </Button>
-            <Button type="button" variant="destructive" onClick={alSalir}>
-              Salir sin guardar
-            </Button>
-          </div>
-        </AlertDialog.Popup>
-      </AlertDialog.Portal>
-    </AlertDialog.Root>
-  );
-}
-
-/** Para el formulario de un modal: lo cierra (después de guardar). Fuera de un modal no hace nada. */
-export function useCerrarModal(): () => void {
-  return useContext(Modal)?.cerrar ?? sinModal;
-}
-
-/** Para lo que el modal no ve en el formulario (una foto que vive en el estado): elegirla también es un cambio. */
-export function useCambioFueraDelFormulario(hay: boolean) {
-  const fijarAdemas = useContext(Modal)?.fijarAdemas;
-  useEffect(() => fijarAdemas?.(hay), [fijarAdemas, hay]);
-}
-
-/**
- * Lo que tiene ahora el formulario ya no es un cambio. Para una acción que guarda sin cerrar el modal ("Volver al texto
- * original") y para lo que termina de cargar con el modal abierto (los espacios libres). Se llama desde un efecto, con los
- * valores nuevos ya dibujados. Siempre es la misma función.
- */
-export function useRenovarBaseModal(): () => void {
-  return useContext(Modal)?.renovarBase ?? sinModal;
-}
-const sinModal = () => {};
-
-/** Si el formulario del modal tiene cambios sin guardar, con la misma cuenta que usa el modal para preguntar al cerrar. */
-export function useHayCambiosModal(): () => boolean {
-  return useContext(Modal)?.hayCambios ?? sinCambios;
-}
-const sinCambios = () => false;
-
-/**
- * Un formulario dentro de un modal: envía la acción con su aviso, cierra el modal al guardar y lleva el foco al primer
- * error. `e` son los errores por campo y `v` lo escrito, que vuelve si el servidor rechaza el envío.
- */
-export function useFormularioEnModal(accion: (previo: EstadoFormulario, datos: FormData) => Promise<EstadoFormulario>) {
-  const cerrar = useCerrarModal();
-  const [estado, enviar, enviando] = useActionState<EstadoFormulario, FormData>(
-    conAviso(accion, (r) => r.ok && cerrar()),
-    {},
-  );
-  const formulario = useRef<HTMLFormElement>(null);
-  useFocoEnError(formulario, estado);
-  return { accion: enviar, enviando, formulario, e: estado.errores ?? {}, v: estado.valores };
-}
-
-/**
- * Los botones del formulario, al pie del modal: fijos abajo mientras el formulario se desplaza (en el celular, la hoja).
- * Si el modal está preguntando (un cierre sin querer con cambios), el pie pasa a "Tienes cambios sin guardar." con
- * "Seguir editando" (con el foco) y "Descartar cambios": la pregunta, en el mismo modal (pulido 13.48).
- */
-export function PieModal({ children, respaldo = false }: { children: React.ReactNode; /** El del modal sin pie propio: no se cuenta. */ respaldo?: boolean }) {
-  const modal = useContext(Modal);
-  const conPie = respaldo ? undefined : modal?.conPie;
-  useEffect(() => {
-    conPie?.(true);
-    return () => conPie?.(false);
-  }, [conPie]);
-  const seguir = useRef<HTMLButtonElement>(null);
-  // Cuándo se apoyó el dedo sobre "Descartar cambios" (hallazgo 7)
-  const apoyado = useRef<number | null>(null);
-  const preguntando = modal?.preguntando ?? false;
-  useEffect(() => {
-    if (preguntando) seguir.current?.focus();
-  }, [preguntando]);
-  const pregunta = modal && preguntando && (
-    // Un grupo con su título (no "alert": el foco ya va a "Seguir editando" y se oiría dos veces)
-    <div role="group" aria-labelledby="pregunta-salir-titulo" data-pregunta-salir className="sticky -bottom-4 -mx-4 -mb-4 flex flex-col gap-3 border-t border-aviso bg-aviso-fondo p-4">
-      <p id="pregunta-salir-titulo" className="font-semibold text-aviso">
-        Tienes cambios sin guardar.
-      </p>
-      <div className="flex flex-wrap gap-2">
-        <Button ref={seguir} type="button" variant="outline" className="bg-popover" onClick={modal.seguir}>
-          Seguir editando
-        </Button>
-        <Button
-          type="button"
-          variant="destructive"
-          onPointerDown={() => (apoyado.current = Date.now())}
-          onClick={(e) => {
-            // detail: cuántos toques o clics; 0 si lo activó el teclado
-            modal.descartar(e.detail > 0, apoyado.current);
-            apoyado.current = null;
-          }}
-        >
-          Descartar cambios
-        </Button>
-      </div>
-    </div>
-  );
-  return (
-    <>
-      {pregunta}
-      {/* Mientras pregunta, el pie de siempre queda montado pero oculto: su botón sigue diciendo si se está guardando */}
-      <div hidden={!!pregunta} className="sticky -bottom-4 -mx-4 -mb-4 flex flex-wrap gap-2 border-t border-border bg-popover p-4">
-        {children}
-      </div>
-    </>
-  );
-}
-
-/** El pie de un formulario de edición: guardar, que dice qué guarda, y "Cancelar". */
-export function PieGuardar({ texto, enviando }: { texto: string; enviando: boolean }) {
-  return (
-    <PieModal>
-      <Button type="submit" disabled={enviando}>
-        {enviando ? "Guardando…" : texto}
-      </Button>
-      <CancelarModal />
-    </PieModal>
-  );
-}
-
-/**
- * "Cancelar" al lado del botón principal: cierra sin guardar; con cambios, antes pregunta (hallazgo 7). "Listo"
- * donde cada cambio ya se guardó al momento (una lista que se edita fila por fila). "Volver" si el principal ya dice
- * "Cancelar…" ("Cancelar reserva"). Fuera de un modal no se muestra.
- */
-export function CancelarModal(props: {
-  texto?: "Cancelar" | "Listo" | "Volver";
-  focoInicial?: boolean;
-  /** Para un formulario que envía por su cuenta (con una foto que achicar): los demás lo avisan solos. */
-  enviando?: boolean;
-}) {
-  const { texto = "Cancelar", focoInicial, enviando = false } = props;
-  const modal = useContext(Modal);
-  const { pending } = useFormStatus();
-  const ocupado = enviando || pending;
-  const fijarEnviando = modal?.fijarEnviando;
-  useEffect(() => fijarEnviando?.(ocupado), [fijarEnviando, ocupado]);
-  if (!modal) return null;
-  // "Cancelar" y "Volver", con cambios, preguntan antes de descartarlos (hallazgo 7). "Listo": cada cambio ya se guardó
-  return (
-    <Button type="button" variant="outline" disabled={ocupado} onClick={texto === "Listo" ? modal.cerrar : modal.pedirCierreConBoton} data-foco-inicial={focoInicial || undefined}>
-      {texto}
-    </Button>
   );
 }

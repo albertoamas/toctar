@@ -34,11 +34,15 @@ estilo: se arma con estas piezas (`src/componentes/panel/`), y si alguna no alca
 | Una lista que abre fichas | `TablaLista` (tabla en la computadora, filas en el celular; `movil` dice dónde va cada celda) y `CeldaDoble` |
 | Una lista simple de un toque | `ListaFilas` |
 | Filtros dentro de una lista | `Filtros` (píldoras con su cuenta, por la dirección) |
+| Una lista que crece con el uso | `Paginacion` (de a 25, la página en la dirección; ver sistema-del-panel.md §5) |
+| El ancho de un dato corto (monto, fecha, año, placa, teléfono, cantidad) | `ANCHO_DATO` de `anchos.ts`, nunca un `max-w-*` suelto (sistema-del-panel.md §1) |
 | Las vistas de un módulo | `Pestanas` |
 | Un número del día | `TarjetaNumero` |
+| Un formulario en pasos con su total o lo elegido al costado (computadora) | `ConResumen` y `FilaResumen` (en el celular, el total en el pie) |
 | La portada de una sección con partes | `TarjetasSeccion` ("¿Qué quieres cambiar?") |
 | Una sección de ficha con "Editar" | `SeccionConEditar` (el formulario en `ModalFormulario`) |
-| Una parte de un formulario largo | `SeccionFormulario` (o `tt-seccion-formulario` en el fieldset) |
+| Una parte de un formulario largo | `SeccionFormulario` (o `tt-seccion-formulario` en el fieldset), con `accion` si lleva un botón al lado del título |
+| Una sección | El título siempre adentro, en la cabecera de la tarjeta con su línea y su acción a la derecha: `Seccion` (con `sinRelleno` si lleva una lista), `SeccionConEditar`, `SeccionFormulario`, `CabeceraTarjeta`. Decisión final del 19/11 (sistema-del-panel.md §2) |
 | Un estado | `Insignia` con su tono; los del trabajo, de `TONO_ESTADO_TRABAJO` |
 | Un bloque suelto | `tt-tarjeta-panel` |
 
@@ -55,10 +59,11 @@ Toda pantalla del panel es uno de estos tipos. Identificarlo decide su forma; no
 - Cada fila es **un toque** que abre su ficha. Lo que identifica (placa, nombre) grande; lo que decide (estado, monto, fecha) a la vista, con palabras y no solo color; el resto, fuera de la fila.
 - Las filas no llevan formularios ni varios botones: las acciones viven en la ficha. Excepción: una acción que se hace desde la lista todos los días (como "Escribir por WhatsApp" en Saldos), una sola.
 - Vacía: una línea que dice qué falta y, si corresponde, cómo agregarlo.
+- Si crece con el uso (clientes, cotizaciones, reclamos), va de a páginas con `Paginacion`: nunca cortada con "busca para ver más".
 
 ### Ficha (cliente, servicio del catálogo, cotización, reserva, orden)
 - **Encabezado:** quién o qué es (placa, nombre), su estado y **el paso siguiente** como única acción principal (recibir, marcar lista, avisar, entregar). Las acciones que se usan poco (extender, cancelar, anular, desactivar) van en un menú **"Más"**.
-- **Secciones en lectura, y la edición en un modal.** Cada sección es un recuadro con sus datos como texto (no como campos) y su título con **"Editar"** (sin borde) en la misma fila. "Editar" abre el formulario en un **modal** ("Guardar {lo que es}" y "Cancelar" al pie); en el celular, una hoja desde abajo con los botones fijos. La página no salta ni cambia mientras se edita, el modal ya es "una edición a la vez" y el foco va al primer campo para escribir y vuelve a "Editar" al cerrar. Todas las secciones con el mismo sistema (título fuera del recuadro, o dentro en su cabecera si es una parte de otra sección) y alineadas entre sí. El componente es `SeccionConEditar` (`src/componentes/panel/seccion-con-editar.tsx`, desde el pulido 7.3), con el modal común `ModalFormulario` (`modal-formulario.tsx`). Editar dentro de la página queda para lo que se edita fila por fila (las listas de Configuración).
+- **Secciones en lectura, y la edición en un modal.** Cada sección es un recuadro con sus datos como texto (no como campos) y su título con **"Editar"** (sin borde) en la misma fila. "Editar" abre el formulario en un **modal** ("Guardar {lo que es}" y "Cancelar" al pie); en el celular, una hoja desde abajo con los botones fijos. La página no salta ni cambia mientras se edita, el modal ya es "una edición a la vez" y el foco va al primer campo para escribir y vuelve a "Editar" al cerrar. Todas las secciones con el mismo sistema (el título adentro, en la cabecera de la tarjeta con una línea debajo; decisión final del 19/11) y alineadas entre sí. El componente es `SeccionConEditar` (`src/componentes/panel/seccion-con-editar.tsx`, desde el pulido 7.3), con el modal común `ModalFormulario` (`modal-formulario.tsx`). Editar dentro de la página queda para lo que se edita fila por fila (las listas de Configuración).
 - **Orden de las secciones:** lo que decide primero (estado, montos, lo que falta), lo que se consulta después (datos, fotos), la historia al final y plegada si es larga ("Ver toda la historia").
 - Un dato vacío no ocupa una fila con un guion: no se muestra, o se ofrece cargarlo desde "Editar".
 
@@ -74,15 +79,17 @@ Toda pantalla del panel es uno de estos tipos. Identificarlo decide su forma; no
 - Una pestaña es un formulario con **un** botón al final. Si la pestaña tiene partes que se guardan por separado (el logo, cada mensaje), cada una es una sección con su título y su botón al pie, nombrado por lo que guarda ("Guardar mensaje"), nunca dos botones iguales a la vista sin decir qué guardan.
 
 ### Flujo de un paso (recibir, entregar, cotizar, publicar)
+- El mismo marco en todos (C7 §5.3): arriba lo que decide en un `AvisoEstado` (pagado o cuánto falta, qué hace el paso); en la computadora, lo que se entrega o recibe al costado (`PasoConCostado`); lo que el paso va a hacer, en una línea antes del botón; el botón fuera de la tarjeta, al pie.
 - Pantalla propia, con el objeto en el título ("Entregar 1234ABC"). Los pasos en el orden en que se hacen, sin desvíos. Un botón grande al final con el verbo del paso. Lo que no se deshace pide confirmación, con el detalle de lo que pasa.
 
 ## 3. Acciones y botones
 
-Los tipos de botón (rojo para guardar o crear, contorno para lo secundario, rosado para lo que no se deshace, sin fondo en las filas) y sus tamaños ya están en `pulido-visual.md`. Además:
+Los tipos de botón (rojo para guardar o crear, contorno para lo secundario, contorno rojo para lo que no se deshace (desde el 18/11, C7; antes, rosado), sin fondo en las filas) y sus tamaños ya están en `pulido-visual.md`. Además:
 
 - **Una acción principal (roja) a la vista por pantalla**, o por sección abierta. Si hay dos rojos compitiendo, uno no es principal.
 - **Cada botón dice qué hace y sobre qué:** "Guardar precios", "Registrar pago", "Entregar vehículo". Un "Guardar" solo vale si en ese momento hay un solo formulario abierto.
-- **Siempre en el mismo lugar:** al pie de su formulario o sección, alineado a la izquierda, el principal primero y "Cancelar" al lado. El paso siguiente de una ficha, en su encabezado.
+- **Siempre en el mismo lugar:** al pie de su formulario o sección, alineado a la izquierda, el principal primero y "Cancelar" al lado. En un **modal** (`PieModal`, C7 §5.4), como en los diálogos de Material y Apple: a la derecha en la computadora, con "Cancelar" a la izquierda de la acción, y a lo ancho en el celular; `PieModal` los ordena solo. El paso siguiente de una ficha, en su encabezado.
+- **El dato que decide, arriba del modal**, con `DatoClave` ("Falta cobrar 300 Bs", "Ahora: 10/11 al 11/11", "Adelanto recibido 200 Bs"), y el modal del tamaño de lo que lleva: `tamano="mediano"` si tiene una tabla o fotos.
 - **Menú "Más"** para lo poco frecuente: un solo componente, `MenuMas` (`src/componentes/panel/menu-mas.tsx`, sobre el `dropdown-menu` de shadcn; desde el pulido 8.3, en la ficha del cliente). No es `menu-desplegable.tsx`, que es la navegación del celular. Lo destructivo dentro de "Más" sigue pidiendo confirmación: un `ModalFormulario` con "Sí, {verbo}" y `CancelarModal focoInicial` (el foco en "Cancelar", así un Enter no lo confirma).
 - **Un componente, no copias:** el patrón "sección con Editar" es `SeccionConEditar` y lo usan todas las fichas; todo modal con formulario es `ModalFormulario`; su formulario se cierra al guardar con `useCerrarModal` y pone sus botones en `PieModal`, con `CancelarModal` ("Cancelar", o "Listo" si cada cambio ya se guardó al momento). Lo que se consulta (como un historial) va arriba en el modal, no en el pie. Si una pantalla necesita una variante, se extiende el componente.
 - **Alineación:** listas de datos con la etiqueta a la izquierda y el valor a la derecha (también los campos de un formulario de montos: una fila por campo, de ancho fijo), así los números quedan en columna aunque una etiqueta ocupe dos líneas. En una grilla, las etiquetas largas desalinean los valores.

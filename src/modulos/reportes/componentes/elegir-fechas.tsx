@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useHidratado } from "@/componentes/hidratado";
 import { Input } from "@/componentes/ui/input";
+import { ANCHO_DATO } from "@/componentes/panel/anchos";
 import { rangoValido } from "../reglas";
 
 // Reportes, "Elegir fechas" (17/11): desde y hasta. Sin botón "Ver": al cambiar una fecha, si las dos sirven, el reporte
@@ -46,11 +47,11 @@ export function ElegirFechas({ vista, desde: desdeInicial, hasta: hastaInicial, 
       <div className="flex flex-wrap items-end gap-3" aria-busy={actualizando}>
         <label className="flex flex-col gap-1 text-sm font-medium">
           Desde
-          <Input type="date" value={desde} max={hoy} min="2000-01-01" disabled={!hidratado} onChange={(e) => cambiar(e.target.value, hasta)} aria-invalid={error ? true : undefined} aria-describedby="fechas-ayuda" className="w-44" />
+          <Input type="date" value={desde} max={hoy} min="2000-01-01" disabled={!hidratado} onChange={(e) => cambiar(e.target.value, hasta)} aria-invalid={error ? true : undefined} aria-describedby="fechas-ayuda" className={`w-48 ${ANCHO_DATO.fecha}`} />
         </label>
         <label className="flex flex-col gap-1 text-sm font-medium">
           Hasta
-          <Input type="date" value={hasta} max={hoy} min="2000-01-01" disabled={!hidratado} onChange={(e) => cambiar(desde, e.target.value)} aria-invalid={error ? true : undefined} aria-describedby="fechas-ayuda" className="w-44" />
+          <Input type="date" value={hasta} max={hoy} min="2000-01-01" disabled={!hidratado} onChange={(e) => cambiar(desde, e.target.value)} aria-invalid={error ? true : undefined} aria-describedby="fechas-ayuda" className={`w-48 ${ANCHO_DATO.fecha}`} />
         </label>
       </div>
       <p id="fechas-ayuda" role={error ? "alert" : undefined} className={error ? "text-xs font-semibold text-peligro" : "text-xs text-tinta-suave"}>

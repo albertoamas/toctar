@@ -5,7 +5,9 @@ import type { Route } from "next";
 import { useHidratado } from "@/componentes/hidratado";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { MenuMas } from "@/componentes/panel/menu-mas";
-import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
+import { useCerrarModal } from "@/componentes/panel/modal-contexto";
+import { ModalFormulario } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, PieModal } from "@/componentes/panel/modal-pie";
 import { Button } from "@/componentes/ui/button";
 import { cambiarEstadoVehiculo } from "../acciones";
 

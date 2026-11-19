@@ -134,8 +134,6 @@ export function textoSinRevisar(partes: readonly string[]): string {
 export const textoRestoBien = (marcadas: number) =>
   marcadas === 0 ? "Ya estaban todas revisadas." : `${marcadas === 1 ? "1 parte marcada" : `${marcadas} partes marcadas`} como bien.`;
 
-/** Cuántas entregadas muestra cada página del historial (pedido 28). */
-export const ENTREGADAS_POR_PAGINA = 20;
 
 /**
  * El checklist como interruptor (pedido 26): tocar "Bien" en una parte que ya está bien la desmarca (vuelve a "Sin

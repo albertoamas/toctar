@@ -4,7 +4,8 @@ import { useFocoEnError } from "@/componentes/foco-en-error";
 import { useHidratado } from "@/componentes/hidratado";
 import { avisarResultado } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
-import { CancelarModal, ModalFormulario, PieModal } from "@/componentes/panel/modal-formulario";
+import { ModalFormulario } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, PieModal } from "@/componentes/panel/modal-pie";
 import { Flecha, OrdenarLista } from "@/componentes/panel/ordenar-lista";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
@@ -45,6 +46,8 @@ type Props = {
   acciones: AccionesLista;
   /** Título de nivel 2 o 3, según dónde va la lista. */
   nivel?: 2 | 3;
+  /** Sin "Cambiar orden": la lista va en orden alfabético (las marcas de vehículo, C7 fase 3). */
+  sinOrden?: boolean;
   /** Avisa si hay un modal abierto para agregar o renombrar (la sección que la contiene no se cierra mientras tanto). */
   alEditar?: (editando: boolean) => void;
 } & (
@@ -100,7 +103,7 @@ export function ListaEditable(props: Props) {
             <p className="text-sm text-tinta-suave">{props.descripcion}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {activos.length > 1 && (
+            {activos.length > 1 && !props.sinOrden && (
               <OrdenarLista
                 elementos={activos.map((e) => ({ id: e.id, nombre: e.nombre }))}
                 mover={(d) => acciones.mover(d.id, d.direccion)}

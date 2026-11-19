@@ -4,7 +4,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { ArrowLeftRightIcon } from "lucide-react";
 import { cn } from "cn";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { CabeceraTarjeta } from "@/componentes/panel/cabecera-seccion";
 import { Button, buttonVariants } from "@/componentes/ui/button";
 
 // Lo ya elegido en un flujo en pasos (Nueva cotización, pedido 40; Nueva reserva, pedido 41), arriba del paso: la misma
@@ -24,12 +24,13 @@ type Props = {
 };
 
 export function ResumenPaso({ id, titulo, href, alCambiar, etiquetaCambiar, claseContenido, children }: Props) {
+  // El título adentro de la tarjeta, como el resto del formulario (sistema-del-panel.md §2, 18/11)
   return (
-    <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-3">
-      <CabeceraSeccion id={id} titulo={titulo}>
-        <BotonCambiar href={href} alCambiar={alCambiar} etiqueta={etiquetaCambiar ?? `Cambiar ${titulo.toLowerCase()}`} />
-      </CabeceraSeccion>
-      <div className={cn("flex flex-col tt-tarjeta-panel p-4", claseContenido)}>{children}</div>
+    <section aria-labelledby={`${id}-titulo`} className="tt-tarjeta-panel flex flex-col">
+      <CabeceraTarjeta id={id} titulo={titulo}>
+        {(href || alCambiar) && <BotonCambiar href={href} alCambiar={alCambiar} etiqueta={etiquetaCambiar ?? `Cambiar ${titulo.toLowerCase()}`} />}
+      </CabeceraTarjeta>
+      <div className={cn("flex flex-col p-4 sm:p-5", claseContenido)}>{children}</div>
     </section>
   );
 }

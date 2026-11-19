@@ -4,9 +4,10 @@ import { db } from "@/db";
 import { archivo, cliente, galeriaItem, parteRevision, servicio, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, trabajoRevision, usuario, variante, vehiculo } from "@/db/esquema";
 import type { EstadoRevision, EstadoTrabajo, EtapaFoto, TipoDetalle } from "@/db/esquema/trabajos";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
-import { obtenerReserva, type DetalleReserva } from "@/modulos/agenda/consultas";
+import { obtenerReserva, type DetalleReserva } from "@/modulos/agenda/consultas/reserva";
 import { escaparLike, nombreVehiculo, normalizarBusqueda } from "@/modulos/clientes/reglas";
-import { ENTREGADAS_POR_PAGINA, ESTADOS_ORDEN_ABIERTA, fechaBuscada } from "./reglas";
+import { ESTADOS_ORDEN_ABIERTA, fechaBuscada } from "./reglas";
+import { POR_PAGINA } from "@/lib/paginacion";
 
 // Lecturas de las órdenes (C4). Quien las llama ya pasó por exigirModulo("ordenes"). Los montos solo para quien ve
 // "Pagos" (RN-12). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md.
@@ -151,7 +152,7 @@ export async function ordenesAbiertas(): Promise<OrdenEnLista[]> {
 export type OrdenEntregada = { id: number; placa: string; vehiculo: string; cliente: string; entregadoAt: Date; servicios: string[] };
 
 /**
- * El historial (pedido 28): las órdenes entregadas, la más reciente primero, de a ENTREGADAS_POR_PAGINA. `q` busca por placa, cliente o fecha de entrega ("5/10" o "5/10/2026", en hora de Bolivia).
+ * El historial (pedido 28): las órdenes entregadas, la más reciente primero, de a POR_PAGINA (la paginación común de las listas). `q` busca por placa, cliente o fecha de entrega ("5/10" o "5/10/2026", en hora de Bolivia).
  */
 export async function ordenesEntregadas(datos: { q: string; pagina: number }): Promise<{ ordenes: OrdenEntregada[]; total: number }> {
   const busqueda = normalizarBusqueda(datos.q);
@@ -184,8 +185,8 @@ export async function ordenesEntregadas(datos: { q: string; pagina: number }): P
       .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
       .where(donde)
       .orderBy(desc(trabajo.entregadoAt), desc(trabajo.id))
-      .limit(ENTREGADAS_POR_PAGINA)
-      .offset((datos.pagina - 1) * ENTREGADAS_POR_PAGINA),
+      .limit(POR_PAGINA)
+      .offset((datos.pagina - 1) * POR_PAGINA),
   ]);
   if (ordenes.length === 0) return { ordenes: [], total };
   const lineas = await db

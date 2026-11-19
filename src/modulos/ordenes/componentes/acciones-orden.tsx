@@ -4,11 +4,13 @@ import { useActionState, useState } from "react";
 import { conAviso } from "@/componentes/panel/avisos";
 import { MensajeError } from "@/componentes/panel/campo";
 import { MenuMas, type AccionMas } from "@/componentes/panel/menu-mas";
-import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
+import { useCerrarModal } from "@/componentes/panel/modal-contexto";
+import { ModalFormulario } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, PieModal } from "@/componentes/panel/modal-pie";
 import { Button } from "@/componentes/ui/button";
 import type { EstadoTrabajo } from "@/db/esquema/trabajos";
 import type { EstadoFormulario } from "@/lib/formularios";
-import { cambiarEstadoOrden } from "../acciones";
+import { cambiarEstadoOrden } from "../acciones/estado";
 import { ExtenderEntrega } from "./extender-entrega";
 
 // Pulido 11.2: lo que se usa poco en una orden va en el menú "Más" del encabezado, cada cosa con su modal (como

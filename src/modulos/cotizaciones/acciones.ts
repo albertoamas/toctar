@@ -10,11 +10,12 @@ import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/form
 import { exigirAccion, exigirModulo } from "@/lib/sesion";
 import { clienteConTelefono } from "@/modulos/clientes/consultas";
 import { esquemaCliente, esquemaVehiculo } from "@/modulos/clientes/esquemas";
-import { revisarVehiculo, type EstadoCliente, type Existentes } from "@/modulos/clientes/servidor";
+import { conMarcaDeLaLista, type EstadoCliente, type Existentes, revisarVehiculo } from "@/modulos/clientes/servidor";
 import { camposConPrefijo, erroresConPrefijo, leerValores, PREFIJO_VEHICULO } from "@/modulos/clientes/valores";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { entradaPrecios, esquemaCambioEstado, esquemaClienteElegido, esquemaNuevaVersion, esquemaPreciosNuevos, esquemaVehiculoElegido } from "./esquemas";
-import { tieneReservaActiva, tieneVersiones } from "./consultas";
+import { tieneVersiones } from "./consultas/comun";
+import { tieneReservaActiva } from "./consultas/lista";
 import { generarPdf } from "./pdf/generar";
 import { CLIENTE_NUEVO, NOMBRE_ESTADO, transicionPermitida, VEHICULO_OTRO } from "./reglas";
 import { escribirVersion, numeroNuevo, prepararLineas } from "./servidor";
@@ -135,7 +136,7 @@ export async function crearCotizacion(_previo: EstadoCliente, datos: FormData): 
         clienteId = c.id;
       }
       if (nuevoVehiculo) {
-        const [v] = await tx.insert(vehiculo).values({ ...nuevoVehiculo, clienteId, createdBy: autorId }).returning({ id: vehiculo.id });
+        const [v] = await tx.insert(vehiculo).values({ ...(await conMarcaDeLaLista(tx, nuevoVehiculo)), clienteId, createdBy: autorId }).returning({ id: vehiculo.id });
         vehiculoId = v.id;
       } else {
         // Sigue siendo de ese cliente, con el vehículo bloqueado: un cambio de dueño a la vez no deja una cotización del

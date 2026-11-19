@@ -13,7 +13,7 @@ import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
 import type { EstadoFormulario } from "@/lib/formularios";
-import { publicarEnGaleria } from "../acciones";
+import { publicarEnGaleria } from "../acciones/galeria";
 import type { FotoOrden } from "../consultas";
 
 // HU-41: publicar en la galería las fotos de una orden entregada. Cada foto es una opción (un radio nativo: flechas,
@@ -39,41 +39,44 @@ export function FormularioPublicar({ id, volver, despues, antes, servicios }: Pr
   const v = estado.valores ?? {};
 
   return (
-    <form ref={formulario} action={accion} className="tt-formulario-panel flex flex-col gap-8" noValidate aria-label="Publicar en la galería">
+    <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate aria-label="Publicar en la galería">
       <input type="hidden" name="id" value={id} />
       {volver && <input type="hidden" name="volver" value={volver} />}
-      {estado.mensaje && <MensajeError id="publicar-error">{estado.mensaje}</MensajeError>}
+      {/* Lo que se elige en su tarjeta y el botón fuera, al pie, como en los otros pasos (C7 §5.3, 18/11) */}
+      <div className="tt-formulario-panel flex flex-col gap-8">
+        {estado.mensaje && <MensajeError id="publicar-error">{estado.mensaje}</MensajeError>}
 
-      <GrillaFotos nombre="fotoDespues" titulo="Foto de después" foto="Foto de después" fotos={despues} elegida={v.fotoDespues ?? String(despues[0].id)} error={e.fotoDespues} />
-      {antes.length > 0 && <GrillaFotos nombre="fotoAntes" titulo="Foto de antes (opcional)" foto="Foto de antes" fotos={antes} elegida={v.fotoAntes ?? ""} error={e.fotoAntes} conNinguna />}
+        <GrillaFotos nombre="fotoDespues" titulo="Foto de después" foto="Foto de después" fotos={despues} elegida={v.fotoDespues ?? String(despues[0].id)} error={e.fotoDespues} />
+        {antes.length > 0 && <GrillaFotos nombre="fotoAntes" titulo="Foto de antes (opcional)" foto="Foto de antes" fotos={antes} elegida={v.fotoAntes ?? ""} error={e.fotoAntes} conNinguna />}
 
-      <Campo id="servicioId" etiqueta="Servicio" error={e.servicioId}>
-        <Selector id="servicioId" name="servicioId" defaultValue={v.servicioId ?? String(servicios[0]?.id ?? "")} aria-invalid={!!e.servicioId} aria-describedby={e.servicioId ? "servicioId-error" : undefined}>
-          {servicios.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.nombre}
-            </option>
-          ))}
-        </Selector>
-      </Campo>
+        <Campo id="servicioId" etiqueta="Servicio" error={e.servicioId}>
+          <Selector id="servicioId" name="servicioId" defaultValue={v.servicioId ?? String(servicios[0]?.id ?? "")} aria-invalid={!!e.servicioId} aria-describedby={e.servicioId ? "servicioId-error" : undefined}>
+            {servicios.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.nombre}
+              </option>
+            ))}
+          </Selector>
+        </Campo>
 
-      <Campo id="descripcion" etiqueta="Descripción" opcional error={e.descripcion} ayuda='La leen Google y los lectores de pantalla. Ejemplo: "Pulido y nano cerámico 5 años en una Hilux".'>
-        <Input id="descripcion" name="descripcion" autoComplete="off" defaultValue={v.descripcion} aria-invalid={!!e.descripcion} aria-describedby={e.descripcion ? "descripcion-error" : "descripcion-ayuda"} />
-      </Campo>
+        <Campo id="descripcion" etiqueta="Descripción" opcional error={e.descripcion} ayuda='La leen Google y los lectores de pantalla. Ejemplo: "Pulido y nano cerámico 5 años en una Hilux".'>
+          <Input id="descripcion" name="descripcion" autoComplete="off" defaultValue={v.descripcion} aria-invalid={!!e.descripcion} aria-describedby={e.descripcion ? "descripcion-error" : "descripcion-ayuda"} />
+        </Campo>
 
-      <div className="flex flex-col gap-2">
-        {confirmado && <input type="hidden" name="sinPlacaNiCaras" value="on" />}
-        <label htmlFor="sinPlacaNiCaras" className="flex min-h-11 cursor-pointer items-center gap-3 rounded-sm border border-aviso p-3">
-          <Checkbox
-            id="sinPlacaNiCaras"
-            checked={confirmado}
-            onCheckedChange={(si) => setConfirmado(si === true)}
-            data-invalido={e.sinPlacaNiCaras ? true : undefined}
-            aria-describedby={e.sinPlacaNiCaras ? "sinPlacaNiCaras-error" : undefined}
-          />
-          <span className="font-medium">En las fotos no se lee la placa ni se ve a nadie</span>
-        </label>
-        {e.sinPlacaNiCaras && <MensajeError id="sinPlacaNiCaras-error">{e.sinPlacaNiCaras}</MensajeError>}
+        <div className="flex flex-col gap-2">
+          {confirmado && <input type="hidden" name="sinPlacaNiCaras" value="on" />}
+          <label htmlFor="sinPlacaNiCaras" className="flex min-h-11 cursor-pointer items-center gap-3 rounded-sm border border-aviso p-3">
+            <Checkbox
+              id="sinPlacaNiCaras"
+              checked={confirmado}
+              onCheckedChange={(si) => setConfirmado(si === true)}
+              data-invalido={e.sinPlacaNiCaras ? true : undefined}
+              aria-describedby={e.sinPlacaNiCaras ? "sinPlacaNiCaras-error" : undefined}
+            />
+            <span className="font-medium">En las fotos no se lee la placa ni se ve a nadie</span>
+          </label>
+          {e.sinPlacaNiCaras && <MensajeError id="sinPlacaNiCaras-error">{e.sinPlacaNiCaras}</MensajeError>}
+        </div>
       </div>
 
       {/* El pie común, fijo abajo en el celular, con el botón grande del taller, como Recibir y Entregar

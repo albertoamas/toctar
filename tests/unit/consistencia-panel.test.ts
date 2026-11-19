@@ -49,8 +49,6 @@ const MODALES_A_MANO: Record<string, number> = {};
 const TITULOS_A_MANO: Record<string, number> = {
   // La semana del tablero: no es un título de sección, solo usa su letra
   "src/app/panel/agenda/page.tsx": 1,
-  // La leyenda de un grupo de campos
-  "src/modulos/clientes/componentes/formulario-nuevo-cliente.tsx": 1,
   // El mes de los gastos, entre sus flechas: como la semana de la Agenda
   "src/app/panel/reportes/gastos/page.tsx": 1,
   // La leyenda de un grupo de fotos
@@ -74,5 +72,16 @@ describe("estructura del panel (C6)", () => {
 
   it("un título de sección lo pone Seccion, SeccionConEditar o CabeceraSeccion", () => {
     expect(apariciones(/\btt-titulo-seccion\b/)).toEqual(TITULOS_A_MANO);
+  });
+
+  // Regla de anchos (C7 §4.3, 18/11): los datos cortos tienen el ancho de lo que llevan, desde un solo mapa (ANCHO_DATO)
+  it("una fecha del panel tiene el ancho de ANCHO_DATO.fecha", () => {
+    const sinAncho = [...codigo].flatMap(([a, lineas]) => {
+      if (a.endsWith("formulario-reclamo.tsx")) return []; // es del sitio público
+      const texto = lineas.join("\n");
+      const fechas = texto.match(/<Input\b(?:[^/]|\/(?!>))*?type="date"(?:[^/]|\/(?!>))*?\/>/g) ?? [];
+      return fechas.filter((f) => !f.includes("ANCHO_DATO.fecha")).map(() => a);
+    });
+    expect(sinAncho).toEqual([]);
   });
 });

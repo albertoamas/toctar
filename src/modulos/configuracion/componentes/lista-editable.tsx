@@ -21,6 +21,8 @@ export function ListaEditable({ lista, elementos, descripcion }: { lista: Lista;
           : undefined
       }
       camposOcultos={{ lista }}
+      // Las marcas, en orden alfabético como en los formularios: ordenarlas a mano no sirve
+      sinOrden={lista === "marcas"}
       elementos={elementos}
       acciones={{
         guardar: guardarElemento,

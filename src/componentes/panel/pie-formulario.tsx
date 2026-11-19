@@ -6,11 +6,10 @@ import { CELULAR } from "./celular";
 // El botón principal de un formulario de crear (skill pantallas-panel, §2 "Crear"): al pie, y en el celular fijo abajo
 // mientras el formulario se desplaza, así "Crear …" está siempre a mano del pulgar. Desde 640 px, al pie sin más.
 //
-// Los avisos flotantes del celular se ponen encima del pie (`--alto-pie-movil`, sonner.tsx). El pie no siempre está
-// pegado abajo: al final de la pantalla queda en su lugar, al cierre de la tarjeta, más arriba. Con una medida fija, el
-// aviso caía sobre "Recibir vehículo" y no se podía tocar mientras duraba (10/11, lo vio hu-33-checklist en el CI). Por
-// eso el pie dice cuánto ocupa desde el borde de abajo cada vez que se mueve: al desplazar, al cambiar el tamaño de la
-// pantalla y cuando algo de la página lo corre. La regla de globals.css queda para antes de que cargue JavaScript.
+// El pie dice cuánto ocupa desde el borde de abajo (`--alto-pie-movil`) cada vez que cambia: con eso se reserva su
+// espacio al final de la página (el formulario no queda tapado) y el desplazamiento hasta un campo con el teclado lo deja
+// a la vista. La regla de globals.css queda para antes de que cargue JavaScript. Los avisos del celular van arriba
+// (sonner.tsx, 19/11).
 
 
 /**
@@ -64,13 +63,19 @@ export function PieFormulario({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // En el celular, fijo al borde de abajo siempre (prueba en un iPhone 14, 19/11): pegado solo "mientras se pudiera"
+  // (sticky), con un formulario corto quedaba a media pantalla y al final de la página se detenía sobre el margen. El
+  // espacio de abajo, del alto del pie, deja ver el final del formulario; la zona del gesto de inicio del iPhone, libre
   return (
-    <div
-      ref={pie}
-      data-pie-movil
-      className="flex flex-wrap gap-2 max-sm:sticky max-sm:bottom-0 max-sm:z-10 max-sm:-mx-4 max-sm:border-t max-sm:border-border max-sm:bg-background max-sm:px-4 max-sm:py-3"
-    >
-      {children}
-    </div>
+    <>
+      <div
+        ref={pie}
+        data-pie-movil
+        className="flex flex-wrap gap-2 max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:border-t max-sm:border-border max-sm:bg-background max-sm:px-4 max-sm:pt-3 max-sm:pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
+      >
+        {children}
+      </div>
+      <div aria-hidden className="h-(--alto-pie-movil) sm:hidden" />
+    </>
   );
 }

@@ -8,10 +8,13 @@ import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
 import { MasDatos } from "@/componentes/panel/mas-datos";
-import { CancelarModal, ModalFormulario, PieModal, useCambioFueraDelFormulario, useCerrarModal } from "@/componentes/panel/modal-formulario";
+import { useCambioFueraDelFormulario, useCerrarModal } from "@/componentes/panel/modal-contexto";
+import { ModalFormulario } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, PieModal } from "@/componentes/panel/modal-pie";
 import { OpcionesEnTarjetas } from "@/componentes/panel/opciones-en-tarjetas";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
+import { ANCHO_DATO } from "@/componentes/panel/anchos";
 import type { MetodoPago } from "@/db/esquema/trabajos";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { CampoComprobante, useEnvioConComprobante } from "@/modulos/pagos/componentes/campo-comprobante";
@@ -95,7 +98,7 @@ function Formulario({ categorias, hoy }: Props) {
       {/* Plegada, pero a la vista la que se va a guardar */}
       <MasDatos texto="Cambiar fecha" titulo="Fecha" detalle={`Ahora: ${fecha === hoy ? "hoy" : "otra fecha"}`} abierto={!!e.fecha} conError={!!e.fecha}>
         <Campo id="fecha" etiqueta="Fecha" error={e.fecha}>
-          <Input id="fecha" name="fecha" type="date" min={primerDiaDeGastos(hoy)} max={hoy} value={fecha} onChange={(ev) => setFecha(ev.target.value)} className="max-w-xs" aria-invalid={!!e.fecha} aria-describedby={e.fecha ? "fecha-error" : undefined} />
+          <Input id="fecha" name="fecha" type="date" min={primerDiaDeGastos(hoy)} max={hoy} value={fecha} onChange={(ev) => setFecha(ev.target.value)} className={ANCHO_DATO.fecha} aria-invalid={!!e.fecha} aria-describedby={e.fecha ? "fecha-error" : undefined} />
         </Campo>
       </MasDatos>
 

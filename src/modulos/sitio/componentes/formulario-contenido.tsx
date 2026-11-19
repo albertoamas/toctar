@@ -5,13 +5,14 @@ import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { EditorLista } from "@/componentes/panel/editor-lista";
-import { CancelarModal, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
+import { useCerrarModal } from "@/componentes/panel/modal-contexto";
+import { CancelarModal, PieModal } from "@/componentes/panel/modal-pie";
 import { TextoCorto } from "@/componentes/panel/texto-corto";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
-import { guardarContenido, guardarSeccionContenido } from "../acciones";
+import { guardarContenido, guardarSeccionContenido } from "../acciones/textos";
 import { PAGINAS, campoDeSeccion, type CampoContenido, type ContenidoPagina, type Pagina } from "../contenido";
 
 // HU-08: textos de una página del sitio. Los campos salen del registro (src/modulos/sitio/contenido.ts).

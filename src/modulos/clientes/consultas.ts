@@ -1,11 +1,13 @@
 import "server-only";
 import { and, asc, count, desc, eq, inArray, like, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { cliente, consulta, recordatorioMantenimiento, tamanoVehiculo, trabajo, vehiculo } from "@/db/esquema";
+import { ajustarPagina, POR_PAGINA } from "@/lib/paginacion";
+import { cliente, consulta, marcaVehiculo, recordatorioMantenimiento, tamanoVehiculo, trabajo, vehiculo } from "@/db/esquema";
 import type { EstadoTrabajo } from "@/db/esquema/trabajos";
-import { cotizacionAbierta } from "@/modulos/cotizaciones/consultas";
+import { cotizacionAbierta } from "@/modulos/cotizaciones/consultas/lista";
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
 import { ESTADOS_RESERVA_ACTIVA } from "@/modulos/ordenes/reglas";
+import type { CatalogoVehiculos } from "./catalogo-vehiculos";
 import { escaparLike, normalizarBusqueda, normalizarPlaca } from "./reglas";
 
 // Lecturas de clientes (C1). Quien las llama ya pasó por exigirModulo("clientes"): el dueño o un encargado con el
@@ -15,34 +17,55 @@ export type FilaCliente = { id: number; nombre: string; telefono: string; placas
 
 const LIMITE_RESULTADOS = 30;
 
+/** La búsqueda de clientes: nombre (sin importar tildes ni mayúsculas), parte del teléfono o placa (HU-22, RF-22). */
+function coincideBusqueda(q: string) {
+  const busqueda = normalizarBusqueda(q);
+  if (!busqueda) return undefined;
+  return or(
+    sql`unaccent(lower(${cliente.nombre})) like unaccent(lower(${`%${escaparLike(busqueda.texto)}%`}))`,
+    busqueda.digitos ? like(cliente.telefono, `%${escaparLike(busqueda.digitos)}%`) : undefined,
+    busqueda.placa
+      ? inArray(
+          cliente.id,
+          db
+            .select({ id: vehiculo.clienteId })
+            .from(vehiculo)
+            .where(and(eq(vehiculo.activo, true), like(vehiculo.placa, `%${escaparLike(busqueda.placa)}%`))),
+        )
+      : undefined,
+  );
+}
+
 /**
- * Clientes por nombre (sin importar tildes ni mayúsculas), parte del teléfono o placa (HU-22, RF-22). Sin búsqueda,
- * los más recientes. Trae uno más del límite para saber si hay más (`hayMas`).
+ * Clientes que coinciden con la búsqueda, para elegir uno (Nueva cotización). Sin búsqueda, los más recientes. Trae uno
+ * más del límite para saber si hay más (`hayMas`).
  */
 export async function buscarClientes(q: string, desactivados = false, excepto?: number): Promise<{ clientes: FilaCliente[]; hayMas: boolean }> {
-  const busqueda = normalizarBusqueda(q);
-  const coincide = busqueda
-    ? or(
-        sql`unaccent(lower(${cliente.nombre})) like unaccent(lower(${`%${escaparLike(busqueda.texto)}%`}))`,
-        busqueda.digitos ? like(cliente.telefono, `%${escaparLike(busqueda.digitos)}%`) : undefined,
-        busqueda.placa
-          ? inArray(
-              cliente.id,
-              db
-                .select({ id: vehiculo.clienteId })
-                .from(vehiculo)
-                .where(and(eq(vehiculo.activo, true), like(vehiculo.placa, `%${escaparLike(busqueda.placa)}%`))),
-            )
-          : undefined,
-      )
-    : undefined;
   const filas = await db
     .select({ id: cliente.id, nombre: cliente.nombre, telefono: cliente.telefono })
     .from(cliente)
-    .where(and(eq(cliente.activo, !desactivados), coincide, excepto ? ne(cliente.id, excepto) : undefined))
+    .where(and(eq(cliente.activo, !desactivados), coincideBusqueda(q), excepto ? ne(cliente.id, excepto) : undefined))
     .orderBy(desc(cliente.updatedAt), desc(cliente.id))
     .limit(LIMITE_RESULTADOS + 1);
   return { clientes: await conPlacas(filas.slice(0, LIMITE_RESULTADOS)), hayMas: filas.length > LIMITE_RESULTADOS };
+}
+
+/**
+ * La lista de Clientes, de a páginas (17/11): antes mostraba los 30 más recientes y pedía buscar para ver otros. Cuenta
+ * el total y trae solo la página pedida (una después de la última es la última). Los más recientes primero.
+ */
+export async function listarClientes(datos: { q: string; desactivados: boolean; pagina: number }): Promise<{ clientes: FilaCliente[]; total: number; pagina: number; paginas: number }> {
+  const filtro = and(eq(cliente.activo, !datos.desactivados), coincideBusqueda(datos.q));
+  const [{ total }] = await db.select({ total: count() }).from(cliente).where(filtro);
+  const { pagina, paginas } = ajustarPagina(datos.pagina, total);
+  const filas = await db
+    .select({ id: cliente.id, nombre: cliente.nombre, telefono: cliente.telefono })
+    .from(cliente)
+    .where(filtro)
+    .orderBy(desc(cliente.updatedAt), desc(cliente.id))
+    .limit(POR_PAGINA)
+    .offset((pagina - 1) * POR_PAGINA);
+  return { clientes: await conPlacas(filas), total, pagina, paginas };
 }
 
 async function conPlacas<T extends { id: number }>(clientes: T[]): Promise<(T & { placas: string[] })[]> {
@@ -238,4 +261,10 @@ export async function datosCambioDueno(vehiculoId: number, clienteId: number): P
   ]);
   if (!v) return null;
   return { ...v, reservaActiva: reservaActiva ?? null };
+}
+
+/** Las marcas activas de la lista, en orden alfabético: de ellas se elige la marca de un vehículo (pedido 52). */
+export async function catalogoVehiculos(): Promise<CatalogoVehiculos> {
+  const marcas = await db.select({ nombre: marcaVehiculo.nombre }).from(marcaVehiculo).where(eq(marcaVehiculo.activo, true)).orderBy(sql`lower(${marcaVehiculo.nombre})`);
+  return { marcas: marcas.map((m) => m.nombre) };
 }

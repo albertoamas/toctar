@@ -2,8 +2,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { cn } from "cn";
 import { UserPlusIcon } from "lucide-react";
-import { EstadoVacio } from "@/componentes/panel/estado-vacio";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { buttonVariants } from "@/componentes/ui/button";
 import { buscarClientes } from "../consultas";
 import { normalizarBusqueda } from "../reglas";
@@ -32,22 +31,31 @@ export async function ElegirCliente({ q, hrefCliente, hrefNuevo, titulo = "Clien
   const sugerencia = hrefNuevo ? " Regístralo con «Cliente nuevo»." : " Regístralo primero en Clientes.";
   const busqueda = normalizarBusqueda(q);
   return (
-    <div className="flex flex-col gap-4">
-      <CabeceraSeccion id="cliente" titulo={titulo}>
-        {hrefNuevo && (
+    // En su tarjeta con el título adentro, como las demás secciones (C7, 18/11): el buscador arriba y la tabla sin su marco
+    <Seccion
+      id="cliente"
+      titulo={titulo}
+      sinRelleno
+      accion={
+        hrefNuevo && (
           <Link href={hrefNuevo} className={cn(buttonVariants({ variant: "outline" }))}>
             <UserPlusIcon />
             Cliente nuevo
           </Link>
-        )}
-      </CabeceraSeccion>
-      <Buscador />
+        )
+      }
+    >
+      <div className="p-4 sm:px-4">
+        <Buscador />
+      </div>
       {clientes.length === 0 ? (
-        <EstadoVacio>{q ? `No hay ${otros} con «${q.trim()}».${sugerencia}` : `Todavía no hay ${otros}.${sugerencia}`}</EstadoVacio>
+        <p className="px-4 pb-4 text-tinta-suave">{q ? `No hay ${otros} con «${q.trim()}».${sugerencia}` : `Todavía no hay ${otros}.${sugerencia}`}</p>
       ) : (
-        <TablaClientes etiqueta="Elegir cliente" clientes={clientes} busqueda={busqueda} href={hrefCliente} />
+        <div className="border-t border-border">
+          <TablaClientes etiqueta="Elegir cliente" clientes={clientes} busqueda={busqueda} href={hrefCliente} />
+        </div>
       )}
-      {hayMas && <p className="text-sm text-tinta-suave">Hay más clientes: escribe algo más preciso para encontrar el que buscas.</p>}
-    </div>
+      {hayMas && <p className="border-t border-border px-4 py-3 text-sm text-tinta-suave">Hay más clientes: escribe algo más preciso para encontrar el que buscas.</p>}
+    </Seccion>
   );
 }

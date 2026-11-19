@@ -6,7 +6,9 @@ import { useHidratado } from "@/componentes/hidratado";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { MenuMas, type AccionMas } from "@/componentes/panel/menu-mas";
-import { CancelarModal, ModalFormulario, PieGuardar, PieModal, useFormularioEnModal } from "@/componentes/panel/modal-formulario";
+import { useFormularioEnModal } from "@/componentes/panel/modal-contexto";
+import { ModalFormulario } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, PieGuardar, PieModal } from "@/componentes/panel/modal-pie";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import type { EstadoFormulario } from "@/lib/formularios";
@@ -40,7 +42,7 @@ export function FormularioPermisos({ usuario, asignables }: { usuario: Usuario; 
   return (
     <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate>
       <input type="hidden" name="id" value={usuario.id} />
-      <CamposPermisos asignables={asignables} permisosIniciales={usuario.permisos} />
+      <CamposPermisos asignables={asignables} permisosIniciales={usuario.permisos} leyendaOculta />
       <PieGuardar texto="Guardar permisos" enviando={enviando} />
     </form>
   );

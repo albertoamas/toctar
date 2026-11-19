@@ -5,7 +5,7 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Insignia } from "@/componentes/panel/insignia";
 import { CheckIcon } from "lucide-react";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { FilaDato } from "@/componentes/panel/datos-en-bloques";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
@@ -75,6 +75,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/usuarios
     <>
       <EncabezadoPagina
         titulo={usuario.nombre}
+        // Debajo del título, el dato útil (sistema-del-panel.md §2, C7 fase 3): no solo a dónde se vuelve
+        subtitulo={`${usuario.usuario} · ${NOMBRE_ROL[usuario.rol]}`}
         // Solo lo que pide atención (pulido, como el catálogo 13.57)
         estado={usuario.desactivado ? <Insignia>Desactivado</Insignia> : undefined}
         volver={volver}
@@ -84,10 +86,9 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/usuarios
       </EncabezadoPagina>
 
       {soloLectura ? (
-        <section aria-labelledby="datos-titulo" className="flex flex-col gap-3">
-          <CabeceraSeccion id="datos" titulo="Datos" />
+        <Seccion id="datos" titulo="Datos" sinRelleno>
           <div className="tt-tarjeta-panel p-4">{datos}</div>
-        </section>
+        </Seccion>
       ) : (
         <SeccionConEditar id="datos" titulo="Datos" etiquetaEditar="Editar datos del usuario" tituloModal="Datos del usuario" lectura={datos}>
           <FormularioDatosUsuario usuario={usuario} />

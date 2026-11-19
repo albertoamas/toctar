@@ -157,7 +157,7 @@ async function Resumen({ ctx }: { ctx: Contexto }) {
         {/* Sin gastos el margen saldría 100 %: se muestra "—" hasta que se carguen */}
         <TarjetaNumero icono={PercentIcon} titulo="Margen" valor={margen === null || sinGastos ? "—" : `${margen} %`} nota={sinGastos ? "Faltan los gastos" : <Cambio cambio={margen !== null && margenAntes !== null ? margen - margenAntes : null} unidad="pts" contra={vs} sinCambio={sinGastosAntes ? sinGastosDeAntes : undefined} />} />
       </section>
-      {/* Las secciones como en todo el panel: el título afuera, arriba de su tarjeta (Seccion) */}
+      {/* Las secciones como en todo el panel: el título adentro de su tarjeta, en su cabecera (Seccion; decisión final del 19/11) */}
       <div className="grid gap-x-4 gap-y-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.75fr)]">
         <Seccion id="neto" titulo="Ganancia y gastos">
           <div className="flex h-full flex-col justify-center gap-3">

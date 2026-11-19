@@ -1,7 +1,7 @@
 "use client";
 
 import { SubidaFoto } from "@/componentes/panel/subida-foto";
-import { quitarFotoDeSeccion, quitarFotoServicio, subirFotoDeSeccion, subirFotoServicio } from "../acciones";
+import { quitarFotoDeSeccion, quitarFotoServicio, subirFotoDeSeccion, subirFotoServicio } from "../acciones/servicios";
 import { SECCIONES_FOTO, type SeccionFoto } from "../secciones-foto";
 
 // Las fotos de la página de un servicio, cada una dentro de su parte de la ficha (pulido 13.19): la principal arriba,

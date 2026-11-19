@@ -5,13 +5,15 @@ import { PlusIcon } from "lucide-react";
 import { useHidratado } from "@/componentes/hidratado";
 import { Campo } from "@/componentes/panel/campo";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
-import { CancelarModal, ModalFormulario, PieModal, useFormularioEnModal } from "@/componentes/panel/modal-formulario";
+import { useFormularioEnModal } from "@/componentes/panel/modal-contexto";
+import { ModalFormulario } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, PieModal } from "@/componentes/panel/modal-pie";
 import { Button } from "@/componentes/ui/button";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { ElegirServicio } from "@/modulos/cotizaciones/componentes/elegir-servicio";
-import type { OpcionServicio } from "@/modulos/cotizaciones/consultas";
+import type { OpcionServicio } from "@/modulos/cotizaciones/consultas/servicios";
 import { serviciosConOpciones } from "@/modulos/cotizaciones/reglas";
-import { agregarAdicional } from "../acciones";
+import { agregarAdicional } from "../acciones/estado";
 
 // HU-36: sumar un servicio a la orden (RF-43). Solo el dueño, que es quien pone precios (RN-01): del catálogo, con el
 // precio vigente para el tamaño del vehículo; si es "según evaluación", lo escribe él. Se elige el servicio y, si tiene
@@ -40,6 +42,8 @@ function Formulario({ id, opciones }: { id: number; opciones: OpcionServicio[] }
   const [servicioId, setServicioId] = useState(0);
   const [varianteId, setVarianteId] = useState(0);
   const [precio, setPrecio] = useState("");
+  // El precio del catálogo para el tamaño del vehículo, como ayuda (C7 §5.4, igual que en Nueva cotización)
+  const [delCatalogo, setDelCatalogo] = useState<string | null>(null);
   const grupos = serviciosConOpciones(opciones);
   // El error del servicio va al menú que falta: el servicio o su opción
   const marca = { "aria-invalid": !!e.varianteId, "aria-describedby": e.varianteId ? "servicioId-error" : undefined };
@@ -60,6 +64,7 @@ function Formulario({ id, opciones }: { id: number; opciones: OpcionServicio[] }
             setVarianteId(o?.varianteId ?? 0);
             // El precio vigente del tamaño, para cambiarlo si hace falta; "según evaluación" lo deja vacío
             setPrecio(o?.sugerencia.tipo === "monto" ? mostrarMonto(o.sugerencia.monto) : "");
+            setDelCatalogo(o?.sugerencia.tipo === "monto" ? mostrarMonto(o.sugerencia.monto) : null);
           }}
           idServicio="servicioId"
           etiquetaOpcion="Opción del servicio"
@@ -67,12 +72,12 @@ function Formulario({ id, opciones }: { id: number; opciones: OpcionServicio[] }
           marcaOpcion={servicioId ? marca : sinMarca}
         />
       </Campo>
-      <Campo id="precio" etiqueta="Precio" error={e.precio}>
+      <Campo id="precio" etiqueta="Precio" error={e.precio} ayuda={delCatalogo !== null ? `Precio del catálogo: ${delCatalogo} Bs.` : undefined}>
         <CampoMonto id="precio" name="precio" value={precio} onChange={(ev) => setPrecio(ev.target.value)} aria-invalid={!!e.precio} aria-describedby={e.precio ? "precio-error" : undefined} />
       </Campo>
       <PieModal>
         <Button type="submit" disabled={enviando}>
-          {enviando ? "Agregando…" : "Agregar"}
+          {enviando ? "Agregando…" : "Agregar servicio"}
         </Button>
         <CancelarModal />
       </PieModal>

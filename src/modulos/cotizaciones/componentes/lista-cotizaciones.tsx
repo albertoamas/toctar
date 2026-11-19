@@ -1,7 +1,7 @@
 import { Insignia } from "@/componentes/panel/insignia";
 import { CeldaDoble, TablaLista, type ColumnaTabla } from "@/componentes/panel/tabla-lista";
 import { cantidad } from "@/lib/cantidad";
-import type { FilaCotizacion } from "../consultas";
+import type { FilaCotizacion } from "../consultas/lista";
 import { bs, diasDesde, NOMBRE_ESTADO, sinRespuesta, textoDias, TONO_ESTADO } from "../reglas";
 import { conDesde } from "@/lib/volver";
 
@@ -28,12 +28,23 @@ export function ListaCotizaciones({ cotizaciones, umbral, sinCliente = false, co
   const hoy = new Date();
   const columnas: (Columna | false)[] = [
     // En la ficha del cliente, el número es lo que identifica a la fila, también en el celular
-    { titulo: "Número", ancho: "6.5rem", movil: sinCliente ? "titulo" : "detalle", celda: (c) => <span className="font-semibold tabular-nums">{c.numero}</span> },
+    // En el celular, con el cliente, el número va en el renglón de su vehículo (C7 fase 3: la fila tenía 5 renglones)
+    { titulo: "Número", ancho: "6.5rem", movil: sinCliente ? "titulo" : "oculta", celda: (c) => <span className="font-semibold tabular-nums">{c.numero}</span> },
     !sinCliente && {
       titulo: "Cliente",
       ancho: "minmax(0,1.3fr)",
       movil: "titulo",
-      celda: (c) => <CeldaDoble principal={c.cliente} secundario={[c.placa, c.vehiculo].filter(Boolean).join(", ")} />,
+      celda: (c) => (
+        <CeldaDoble
+          principal={c.cliente}
+          secundario={
+            <>
+              <span className="font-semibold text-tinta tabular-nums @2xl:hidden">{c.numero} · </span>
+              {[c.placa, c.vehiculo].filter(Boolean).join(", ")}
+            </>
+          }
+        />
+      ),
     },
     // De ancho fijo: la placa y el modelo entran, y el estado queda en una línea
     sinCliente && { titulo: "Vehículo", ancho: "8.5rem", movil: "detalle", celda: (c) => <CeldaDoble principal={c.placa} secundario={c.vehiculo} peso="placa" /> },

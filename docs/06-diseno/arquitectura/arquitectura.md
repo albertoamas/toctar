@@ -148,6 +148,7 @@ toctar/
 │   ├── modulos/              un directorio por módulo: acceso, usuarios, configuracion, sitio, reclamos, inicio,
 │   │                         catalogo, clientes, cotizaciones, agenda, ordenes, pagos, mantenimientos
 │   │   └── <modulo>/         acciones.ts (servidor), consultas.ts, esquemas.ts (zod), reglas.ts (puras), componentes/
+│   │                         (si uno crece de ~400 líneas, una carpeta por tema: ordenes/acciones/recepcion.ts, entrega.ts…; lo compartido en comun.ts)
 │   ├── db/                   esquema de Drizzle, migraciones y la conexión (src/db/index.ts)
 │   ├── lib/                  sesión y permisos, almacenamiento y fotos, fechas, WhatsApp, formularios
 │   ├── proxy.ts              redirección rápida al ingreso si no hay cookie de sesión (no protege: cada página valida)

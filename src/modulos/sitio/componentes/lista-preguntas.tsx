@@ -8,14 +8,16 @@ import { avisarResultado } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { Insignia } from "@/componentes/panel/insignia";
-import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
+import { useCerrarModal } from "@/componentes/panel/modal-contexto";
+import { ModalFormulario } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, PieModal } from "@/componentes/panel/modal-pie";
 import { OrdenarLista } from "@/componentes/panel/ordenar-lista";
 import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
-import { eliminarPregunta, guardarPregunta, moverPregunta } from "../acciones";
+import { eliminarPregunta, guardarPregunta, moverPregunta } from "../acciones/preguntas";
 
 // HU-08: preguntas frecuentes del sitio (RF-05). Se agregan, editan, ordenan, ocultan y eliminan.
 // Pulido 13.24: como la lista de servicios. Antes cada fila llevaba cinco botones de solo ícono (25 con cinco preguntas)

@@ -5,7 +5,8 @@ import { Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
-import { ListaDatos } from "@/componentes/panel/lista-datos";
+import { PasoConCostado } from "@/componentes/panel/con-resumen";
+import { ResumenClienteVehiculo, ServiciosResumen } from "@/modulos/clientes/componentes/resumen-cliente-vehiculo";
 import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
@@ -14,7 +15,6 @@ import { AvanceRecepcion, ChecklistRecepcion } from "@/modulos/ordenes/component
 import { FormularioRecepcion } from "@/modulos/ordenes/componentes/formulario-recepcion";
 import { obtenerOrden, partesDelChecklist, revisionDeTrabajo } from "@/modulos/ordenes/consultas";
 import { esOrden, puedeRecibirse } from "@/modulos/ordenes/reglas";
-import { filaVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 import { conDesde, leerDesde, sinElTrabajo, volverDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Recibir vehículo" };
@@ -68,29 +68,26 @@ async function Recepcion({ params, searchParams }: Pick<PageProps<"/panel/ordene
         </p>
       ) : (
         <>
-          {/* Lo que se recibe, como los datos de Reserva y Orden (pulido de Recibir, 09/11). Sin servicios, sin esa fila */}
-          <div className="tt-tarjeta-panel p-4">
-            <ListaDatos
-              nombre="Lo que se recibe"
-              filas={[
-                ["Cliente", <span key="cliente" className="font-semibold">{o.cliente}</span>],
-                filaVehiculo(detalle, o.tamano),
-                o.servicios.length > 0 && [
-                  "Servicios",
-                  <ul key="servicios" className="flex flex-col">
-                    {o.servicios.map((s, i) => (
-                      <li key={i}>{s}</li>
-                    ))}
-                  </ul>,
-                ],
-              ]}
-            />
-          </div>
-          <AvanceRecepcion>
-            <ChecklistRecepcion trabajoId={o.id} partes={partes} revision={revision} />
-            {/* Las que faltan: las activas sin revisar (una desactivada ya revisada no cuenta) */}
-            <FormularioRecepcion trabajoId={o.id} volver={leerDesde(busqueda.volver)} faltan={partes.filter((p) => !revision.some((r) => r.parteId === p.id)).length} />
-          </AvanceRecepcion>
+          {/* El marco de los pasos del taller (C7 §5.3, 18/11): lo que se recibe al costado en la computadora y arriba en el
+              celular; el checklist, como estaba */}
+          <PasoConCostado
+            etiqueta="Lo que se recibe"
+            costado={
+              // La misma tarjeta que "Cotización para": el cliente, la placa grande y los servicios, cada uno en su franja
+              <ResumenClienteVehiculo
+                titulo={null}
+                cliente={{ nombre: o.cliente }}
+                vehiculo={{ placa: o.placa, detalle, tamano: o.tamano }}
+                pie={<ServiciosResumen servicios={o.servicios} />}
+              />
+            }
+          >
+            <AvanceRecepcion>
+              <ChecklistRecepcion trabajoId={o.id} partes={partes} revision={revision} />
+              {/* Las que faltan: las activas sin revisar (una desactivada ya revisada no cuenta) */}
+              <FormularioRecepcion trabajoId={o.id} volver={leerDesde(busqueda.volver)} faltan={partes.filter((p) => !revision.some((r) => r.parteId === p.id)).length} />
+            </AvanceRecepcion>
+          </PasoConCostado>
         </>
       )}
     </>

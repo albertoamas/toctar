@@ -8,7 +8,7 @@ import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { ICONO_MODULO } from "@/componentes/panel/iconos-modulo";
 import { Insignia } from "@/componentes/panel/insignia";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { CeldaDoble, TablaLista } from "@/componentes/panel/tabla-lista";
 import { TarjetaNumero } from "@/componentes/panel/tarjeta-numero";
 import { buttonVariants } from "@/componentes/ui/button";
@@ -19,7 +19,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { primerNombre } from "@/modulos/clientes/reglas";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
-import { cotizacionesPorReservar, listarCotizaciones } from "@/modulos/cotizaciones/consultas";
+import { cotizacionesPendientes, cotizacionesPorReservar } from "@/modulos/cotizaciones/consultas/lista";
 import { bs, diasDesde, sinRespuesta, textoDias } from "@/modulos/cotizaciones/reglas";
 import { ParaAtender, type Pendiente } from "@/modulos/inicio/componentes/para-atender";
 import { ingresosDeHoy } from "@/modulos/inicio/consultas";
@@ -51,9 +51,6 @@ export default function InicioPanel() {
   );
 }
 
-/** Cuántos de cada tipo entran en "Para atender": lo demás está en su lista. */
-const POR_TIPO = 3;
-
 async function Contenido() {
   const usuario = await exigirModulo("inicio");
   const hoy = fechaEnBolivia();
@@ -64,10 +61,10 @@ async function Contenido() {
     ve("agenda") ? ingresosDeHoy(hoy) : null,
     ve("ordenes") ? ordenesAbiertas() : null,
     ve("pagos") ? saldosPendientes() : null,
-    ve("cotizaciones") ? listarCotizaciones("pendientes", "").then((r) => r.cotizaciones) : null,
+    ve("cotizaciones") ? cotizacionesPendientes() : null,
     ve("cotizaciones") ? cotizacionesPorReservar() : null,
     ve("mantenimientos") ? contarSinAvisar(hoy) : null,
-    ve("reclamos") ? reclamosPorAtender(POR_TIPO) : null,
+    ve("reclamos") ? reclamosPorAtender(1) : null,
     // Los días sin respuesta de una cotización: solo hacen falta con Cotizaciones
     ve("cotizaciones") ? obtenerParametros() : null,
   ]);
@@ -96,46 +93,88 @@ async function Contenido() {
     : [];
   const delDia = paraHoy(ingresos ?? [], abiertas ?? [], hoy);
 
-  // De cada tipo, los que más urgen (los más antiguos) y, si hay más, una fila a su lista: nada queda sin decirse
-  const masDe = (total: number, href: Route, icono: LucideIcon, que: string): Pendiente[] =>
-    total > POR_TIPO ? [{ href, icono, titulo: `${total - POR_TIPO} ${que} más`, detalle: `${total} en total`, accion: "Ver todos" }] : [];
+  // Una fila por tipo (18/11): antes, 3 de cada tipo y una fila "N más", hasta 17 filas mezcladas. Con un solo caso, la
+  // fila lo abre; con varios, dice cuántos son y cuál urge más, y lleva a su lista (que tiene páginas)
+  const unoOVarios = <T,>(lista: T[], total: number, uno: (e: T) => Pendiente, varios: (primero: T) => Pendiente): Pendiente[] =>
+    lista.length === 0 ? [] : total === 1 ? [uno(lista[0])] : [varios(lista[0])];
+  const saldosPorAntiguedad = [...(saldos ?? [])].sort((x, y) => x.entregadoAt.getTime() - y.entregadoAt.getTime());
+  const reservarDe = (c: { id: number; cotizacionId: number }) => (ve("agenda") ? `/panel/agenda/nueva?cotizacion=${c.cotizacionId}` : `/panel/cotizaciones/${c.id}`);
+  const cobrarDe = (s: { id: number }) => enlaceTrabajo(s.id, "entregado", { ordenes: ve("ordenes"), agenda: ve("agenda") })?.href ?? "/panel/pagos";
   const atender: Pendiente[] = [
-    ...(reclamos?.primeros ?? []).map((r) => ({
-      href: conDesde(`/panel/reclamos/${r.id}` as Route, INICIO),
-      icono: MessageSquareWarningIcon,
-      titulo: `Reclamo de ${r.nombre}`,
-      detalle: [r.servicio ?? r.placa, `llegó ${textoDias(diasDesde(r.createdAt, ahora))}`].join(", "),
-      accion: "Responder",
-    })),
-    ...masDe(reclamos?.total ?? 0, "/panel/reclamos", MessageSquareWarningIcon, "reclamos pendientes"),
-    ...sinResponder.slice(0, POR_TIPO).map((c) => ({
-      href: conDesde(`/panel/cotizaciones/${c.id}` as Route, INICIO),
-      icono: ICONO_MODULO.cotizaciones,
-      titulo: `Cotización de ${c.cliente}`,
-      detalle: `${bs(c.total)}, sin respuesta hace ${cantidad(diasDesde(c.ultimoMovimientoAt, ahora), "día", "días")}`,
-      accion: "Ver",
-    })),
-    ...masDe(sinResponder.length, "/panel/cotizaciones", ICONO_MODULO.cotizaciones, "cotizaciones sin respuesta"),
-    // Aceptadas sin fecha (pedido 31): falta reservarlas
-    ...(aceptadas ?? []).slice(0, POR_TIPO).map((c) => ({
-      // A la reserva, para quien ve la Agenda; si no, a la cotización
-      href: conDesde((ve("agenda") ? `/panel/agenda/nueva?cotizacion=${c.cotizacionId}` : `/panel/cotizaciones/${c.id}`) as Route, INICIO),
-      icono: CalendarClockIcon,
-      titulo: `Cotización aceptada de ${c.cliente}`,
-      detalle: `${bs(c.total)}, sin fecha`,
-      // Reservar lo hace quien ve la Agenda; si no, la abre para verla
-      accion: ve("agenda") ? "Reservar" : "Ver",
-    })),
-    ...masDe(aceptadas?.length ?? 0, ve("agenda") ? "/panel/agenda" : "/panel/cotizaciones?vista=aceptadas", CalendarClockIcon, "aceptadas sin fecha"),
-    ...(saldos ?? []).slice(0, POR_TIPO).map((s) => ({
-      // A la orden si quien mira puede abrirla; si no (Pagos sin Órdenes), a Saldos pendientes, donde se cobra
-      href: conDesde((enlaceTrabajo(s.id, "entregado", { ordenes: ve("ordenes"), agenda: ve("agenda") })?.href ?? "/panel/pagos") as Route, INICIO),
-      icono: ICONO_MODULO.pagos,
-      titulo: `Saldo de ${s.cliente}`,
-      detalle: `${bs(s.saldo)}, entregada ${textoDias(diasDesde(s.entregadoAt, ahora))}`,
-      accion: "Cobrar",
-    })),
-    ...masDe(saldos?.length ?? 0, "/panel/pagos", ICONO_MODULO.pagos, "saldos"),
+    ...unoOVarios(
+      reclamos?.primeros ?? [],
+      reclamos?.total ?? 0,
+      (r) => ({
+        href: conDesde(`/panel/reclamos/${r.id}` as Route, INICIO),
+        icono: MessageSquareWarningIcon,
+        titulo: `Reclamo de ${r.nombre}`,
+        detalle: [r.servicio ?? r.placa, `llegó ${textoDias(diasDesde(r.createdAt, ahora))}`].join(", "),
+        accion: "Responder",
+      }),
+      (r) => ({
+        href: "/panel/reclamos",
+        icono: MessageSquareWarningIcon,
+        titulo: cantidad(reclamos?.total ?? 0, "reclamo pendiente", "reclamos pendientes"),
+        detalle: `El más antiguo: ${r.nombre}, llegó ${textoDias(diasDesde(r.createdAt, ahora))}`,
+        accion: "Responder",
+      }),
+    ),
+    ...unoOVarios(
+      sinResponder,
+      sinResponder.length,
+      (c) => ({
+        href: conDesde(`/panel/cotizaciones/${c.id}` as Route, INICIO),
+        icono: ICONO_MODULO.cotizaciones,
+        titulo: `Cotización de ${c.cliente}`,
+        detalle: `${bs(c.total)}, sin respuesta hace ${cantidad(diasDesde(c.ultimoMovimientoAt, ahora), "día", "días")}`,
+        accion: "Ver",
+      }),
+      (c) => ({
+        href: "/panel/cotizaciones",
+        icono: ICONO_MODULO.cotizaciones,
+        titulo: `${sinResponder.length} cotizaciones sin respuesta`,
+        detalle: `La más antigua: ${c.cliente}, hace ${cantidad(diasDesde(c.ultimoMovimientoAt, ahora), "día", "días")}`,
+        accion: "Ver",
+      }),
+    ),
+    // Aceptadas sin fecha (pedido 31): falta reservarlas. Reservar lo hace quien ve la Agenda; si no, la abre para verla
+    ...unoOVarios(
+      aceptadas ?? [],
+      aceptadas?.length ?? 0,
+      (c) => ({
+        href: conDesde(reservarDe(c) as Route, INICIO),
+        icono: CalendarClockIcon,
+        titulo: `Cotización aceptada de ${c.cliente}`,
+        detalle: `${bs(c.total)}, sin fecha`,
+        accion: ve("agenda") ? "Reservar" : "Ver",
+      }),
+      (c) => ({
+        href: ve("agenda") ? "/panel/agenda" : "/panel/cotizaciones?vista=aceptadas",
+        icono: CalendarClockIcon,
+        titulo: `${aceptadas?.length ?? 0} aceptadas sin fecha`,
+        detalle: `La que más espera: ${c.cliente}`,
+        accion: ve("agenda") ? "Reservar" : "Ver",
+      }),
+    ),
+    // A la orden si quien mira puede abrirla; si no (Pagos sin Órdenes), a Saldos pendientes, donde se cobra
+    ...unoOVarios(
+      saldosPorAntiguedad,
+      saldosPorAntiguedad.length,
+      (s) => ({
+        href: conDesde(cobrarDe(s) as Route, INICIO),
+        icono: ICONO_MODULO.pagos,
+        titulo: `Saldo de ${s.cliente}`,
+        detalle: `${bs(s.saldo)}, entregada ${textoDias(diasDesde(s.entregadoAt, ahora))}`,
+        accion: "Cobrar",
+      }),
+      (s) => ({
+        href: "/panel/pagos",
+        icono: ICONO_MODULO.pagos,
+        titulo: `${saldosPorAntiguedad.length} saldos por cobrar`,
+        detalle: `${bs(saldosPorAntiguedad.reduce((suma, x) => suma + Number(x.saldo), 0).toFixed(2))} en total; el más antiguo, ${s.cliente}`,
+        accion: "Cobrar",
+      }),
+    ),
     ...(mantenimientos && mantenimientos.vencidos > 0
       ? [
           {
@@ -248,10 +287,9 @@ function Saludo({ nombre, hoy }: { nombre: string; hoy: string }) {
 /** Lo del día en una tabla: la placa y el cliente, el estado con lo que pide atención y cuándo. */
 function ParaHoy({ filas, verOrdenes }: { filas: FilaDelDia[]; verOrdenes: boolean }) {
   return (
-    <section aria-labelledby="hoy-titulo" className="flex min-w-0 flex-col gap-3">
-      <CabeceraSeccion id="hoy" titulo="Para hoy" />
+    <Seccion id="hoy" titulo="Para hoy" sinRelleno className="min-w-0">
       {filas.length === 0 ? (
-        <EstadoVacio>Nada para hoy: no llega ni se entrega ningún vehículo.</EstadoVacio>
+        <p className="px-4 py-6 text-tinta-suave">Nada para hoy: no llega ni se entrega ningún vehículo.</p>
       ) : (
         <TablaLista
           etiqueta="Para hoy"
@@ -284,7 +322,7 @@ function ParaHoy({ filas, verOrdenes }: { filas: FilaDelDia[]; verOrdenes: boole
           }))}
         />
       )}
-    </section>
+    </Seccion>
   );
 }
 

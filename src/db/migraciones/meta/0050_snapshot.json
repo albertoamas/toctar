@@ -1,5 +1,5 @@
 {
-  "id": "124105b3-4c60-4384-8476-c26437fefb99",
+  "id": "d863c9ee-ffa9-40de-a7f4-3e3070ab3eeb",
   "prevId": "9839c912-35f3-49cb-b1da-c3ece7df9f96",
   "version": "7",
   "dialect": "postgresql",
@@ -888,6 +888,71 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.marca_vehiculo": {
+      "name": "marca_vehiculo",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "byDefault",
+            "name": "marca_vehiculo_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "activo": {
+          "name": "activo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {
+        "marca_vehiculo_nombre_unico": {
+          "name": "marca_vehiculo_nombre_unico",
+          "columns": [
+            {
+              "expression": "lower(\"nombre\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -5400,282 +5465,6 @@
         "recordatorio_intervalo_valido": {
           "name": "recordatorio_intervalo_valido",
           "value": "\"recordatorio_mantenimiento\".\"intervalo_meses\" between 1 and 24"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.categoria_gasto": {
-      "name": "categoria_gasto",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "byDefault",
-            "name": "categoria_gasto_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "2147483647",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "nombre": {
-          "name": "nombre",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "orden": {
-          "name": "orden",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "activo": {
-          "name": "activo",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        }
-      },
-      "indexes": {
-        "categoria_gasto_nombre_unico": {
-          "name": "categoria_gasto_nombre_unico",
-          "columns": [
-            {
-              "expression": "lower(\"nombre\")",
-              "asc": true,
-              "isExpression": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.gasto": {
-      "name": "gasto",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "identity": {
-            "type": "byDefault",
-            "name": "gasto_id_seq",
-            "schema": "public",
-            "increment": "1",
-            "startWith": "1",
-            "minValue": "1",
-            "maxValue": "2147483647",
-            "cache": "1",
-            "cycle": false
-          }
-        },
-        "sucursal_id": {
-          "name": "sucursal_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "categoria_id": {
-          "name": "categoria_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "monto": {
-          "name": "monto",
-          "type": "numeric(10, 2)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "metodo": {
-          "name": "metodo",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "fecha": {
-          "name": "fecha",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "detalle": {
-          "name": "detalle",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "comprobante_archivo_id": {
-          "name": "comprobante_archivo_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "anulado": {
-          "name": "anulado",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "motivo_anulacion": {
-          "name": "motivo_anulacion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "anulado_at": {
-          "name": "anulado_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "anulado_por": {
-          "name": "anulado_por",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "gasto_por_fecha": {
-          "name": "gasto_por_fecha",
-          "columns": [
-            {
-              "expression": "sucursal_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "fecha",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "gasto_sucursal_id_sucursal_id_fk": {
-          "name": "gasto_sucursal_id_sucursal_id_fk",
-          "tableFrom": "gasto",
-          "tableTo": "sucursal",
-          "columnsFrom": [
-            "sucursal_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "gasto_categoria_id_categoria_gasto_id_fk": {
-          "name": "gasto_categoria_id_categoria_gasto_id_fk",
-          "tableFrom": "gasto",
-          "tableTo": "categoria_gasto",
-          "columnsFrom": [
-            "categoria_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "gasto_comprobante_archivo_id_archivo_id_fk": {
-          "name": "gasto_comprobante_archivo_id_archivo_id_fk",
-          "tableFrom": "gasto",
-          "tableTo": "archivo",
-          "columnsFrom": [
-            "comprobante_archivo_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "gasto_anulado_por_usuario_id_fk": {
-          "name": "gasto_anulado_por_usuario_id_fk",
-          "tableFrom": "gasto",
-          "tableTo": "usuario",
-          "columnsFrom": [
-            "anulado_por"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "gasto_created_by_usuario_id_fk": {
-          "name": "gasto_created_by_usuario_id_fk",
-          "tableFrom": "gasto",
-          "tableTo": "usuario",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "gasto_monto_positivo": {
-          "name": "gasto_monto_positivo",
-          "value": "\"gasto\".\"monto\" > 0"
-        },
-        "gasto_metodo_valido": {
-          "name": "gasto_metodo_valido",
-          "value": "\"gasto\".\"metodo\" in ('efectivo', 'qr', 'transferencia')"
-        },
-        "gasto_motivo_si_anulado": {
-          "name": "gasto_motivo_si_anulado",
-          "value": "\"gasto\".\"anulado\" = (\"gasto\".\"motivo_anulacion\" is not null)"
         }
       },
       "isRLSEnabled": false

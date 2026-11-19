@@ -197,7 +197,7 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel (44 px t
 - **Pedido 20 (27/10/2026):** todos los mantenimientos en tres pestañas (`?vista=`), con su cantidad:
   - **Por avisar** (la de siempre, por defecto): vencidos y próximos 15 días.
   - **Más adelante:** los abiertos (pendientes o avisados) que vencen después de los próximos 15 días, agrupados por mes ("Diciembre 2026 (3)"), el más cercano primero. Las mismas filas que "Por avisar", con "Agendar" y "No le interesa" pero **sin avisar**: el mensaje dice que ya le toca, y avisado antes de tiempo no figuraría "Sin avisar" cuando de verdad le toque. Vacío: "Ninguno vence después de los próximos 15 días."
-  - **Cerrados:** agendados (con "Ver la reserva" u "Ver la orden", para quien puede abrirla) y "No le interesa" (con su nota), el que se cerró más recién primero; los 50 más recientes ("Se muestran los 50 más recientes. Los demás están en la ficha de cada cliente."). Sin acciones: si se cancela la reserva, vuelve solo a "Por avisar". Vacío: "Todavía no hay mantenimientos agendados ni cerrados."
+  - **Cerrados:** agendados (con "Ver la reserva" u "Ver la orden", para quien puede abrirla) y "No le interesa" (con su nota), el que se cerró más recién primero; de a 25 por página (17/11, `Paginacion`; antes, los 50 más recientes). Sin acciones: si se cancela la reserva, vuelve solo a "Por avisar". Vacío: "Todavía no hay mantenimientos agendados ni cerrados."
   - Ninguna muestra los de un cliente o vehículo desactivado (siguen en la ficha del cliente). Las cantidades salen de las mismas condiciones que las listas (`contarPorVista`).
 
 ### En otras pantallas

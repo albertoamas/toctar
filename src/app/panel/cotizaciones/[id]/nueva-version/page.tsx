@@ -11,7 +11,7 @@ import { exigirAccion } from "@/lib/sesion";
 import { formatearWhatsApp } from "@/lib/whatsapp";
 import { ResumenClienteVehiculo } from "@/modulos/clientes/componentes/resumen-cliente-vehiculo";
 import { FormularioNuevaVersion } from "@/modulos/cotizaciones/componentes/formulario-cotizacion";
-import { datosNuevaVersion } from "@/modulos/cotizaciones/consultas";
+import { datosNuevaVersion } from "@/modulos/cotizaciones/consultas/versiones";
 import { NOMBRE_ESTADO } from "@/modulos/cotizaciones/reglas";
 import { conDesde, leerDesde } from "@/lib/volver";
 
@@ -57,12 +57,15 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/cotiza
 
       {/* Para quién, en su tarjeta como en Nueva cotización (pulido final, 10/11: era una línea suelta bajo el título), también
           cuando no se puede hacer la versión; sin "Cambiar": una versión es de la misma cotización */}
-      <ResumenClienteVehiculo
-        id="version-para"
-        titulo="Cotización para"
-        cliente={{ nombre: datos.cliente, detalle: formatearWhatsApp(datos.telefono) }}
-        vehiculo={{ placa: datos.placa, detalle: datos.detalle, tamano: datos.tamano }}
-      />
+      {/* Con el formulario, en la computadora va al costado con el total (FormularioNuevaVersion) */}
+      <div className={datos.estado === "cotizado" && datos.desde && datos.opciones.length > 0 ? "@4xl:hidden" : undefined}>
+        <ResumenClienteVehiculo
+          id="version-para"
+          titulo="Cotización para"
+          cliente={{ nombre: datos.cliente, detalle: formatearWhatsApp(datos.telefono) }}
+          vehiculo={{ placa: datos.placa, detalle: datos.detalle, tamano: datos.tamano }}
+        />
+      </div>
 
       {datos.estado !== "cotizado" ? (
         <EstadoVacio>

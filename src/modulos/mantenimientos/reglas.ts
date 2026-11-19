@@ -100,12 +100,6 @@ export function planesAlEntregar({
 export const VISTAS_MANTENIMIENTOS = ["por-avisar", "mas-adelante", "cerrados"] as const;
 export type VistaMantenimientos = (typeof VISTAS_MANTENIMIENTOS)[number];
 
-/**
- * Cuántos cerrados muestra "Cerrados", los más recientes: la lista crece con cada mantenimiento que se agenda o se
- * cierra. Los demás siguen en la ficha de cada cliente. Es cuánto entra en la pantalla, no un valor del negocio.
- */
-export const MAXIMO_CERRADOS = 50;
-
 /** Agrupa por el mes de la fecha, en el orden en que llegan (ya vienen por fecha): "Más adelante". */
 export function agruparPorMes<T>(elementos: T[], fecha: (e: T) => string): { mes: string; titulo: string; elementos: T[] }[] {
   const grupos: { mes: string; titulo: string; elementos: T[] }[] = [];

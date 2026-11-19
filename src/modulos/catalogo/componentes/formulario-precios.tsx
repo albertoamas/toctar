@@ -5,7 +5,9 @@ import { HistoryIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
-import { CancelarModal, ModalFormulario, PieModal, useCerrarModal } from "@/componentes/panel/modal-formulario";
+import { useCerrarModal } from "@/componentes/panel/modal-contexto";
+import { ModalFormulario } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, PieModal } from "@/componentes/panel/modal-pie";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
@@ -147,7 +149,7 @@ function Historial({ variante }: { variante: VarianteCatalogo }) {
         <HistoryIcon />
         Ver historial
       </Button>
-      <ModalFormulario titulo={`Historial de precios: ${variante.nombre}`} abierto={abierto} alCambiar={setAbierto}>
+      <ModalFormulario tamano="mediano" titulo={`Historial de precios: ${variante.nombre}`} abierto={abierto} alCambiar={setAbierto}>
         <p className="text-sm text-tinta-suave">Cada cambio queda guardado; los anteriores no se borran.</p>
         {fallo ? (
           <MensajeError id="historial-error">No se pudo cargar el historial. Revisa tu conexión y vuelve a intentar.</MensajeError>

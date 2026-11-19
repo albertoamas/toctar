@@ -4,7 +4,9 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
 import { useHidratado } from "@/componentes/hidratado";
 import { conAviso } from "@/componentes/panel/avisos";
-import { CancelarModal, ModalFormulario, PieModal, useCerrarModal, useRenovarBaseModal } from "@/componentes/panel/modal-formulario";
+import { useCerrarModal, useRenovarBaseModal } from "@/componentes/panel/modal-contexto";
+import { ModalFormulario } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, PieModal } from "@/componentes/panel/modal-pie";
 import { Campo } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
 import { Textarea } from "@/componentes/ui/textarea";
@@ -39,7 +41,19 @@ export function EditorPlantilla({ clave, guardado: inicial, negocio }: Props) {
     }),
     {},
   );
-  const [, restaurar, restaurando] = useActionState<EstadoFormulario, FormData>(conAviso(restaurarPlantilla, alTerminar), {});
+  // Al volver al original, el foco va al texto: el botón que lo pidió queda deshabilitado (ya es el original) y el foco se
+  // perdía fuera del modal, con lo que Escape a veces no lo cerraba (hu-40, intermitente; 17/11)
+  const [, restaurar, restaurando] = useActionState<EstadoFormulario, FormData>(
+    conAviso(restaurarPlantilla, (r) => {
+      alTerminar(r);
+      if (r.ok) setEnfocarTexto((n) => n + 1);
+    }),
+    {},
+  );
+  const [enfocarTexto, setEnfocarTexto] = useState(0);
+  useEffect(() => {
+    if (enfocarTexto > 0) area.current?.focus();
+  }, [enfocarTexto]);
   // Volver al original guarda sin cerrar el modal: lo que quedó ya no es un cambio. En un efecto, con el texto ya escrito
   const renovarBase = useRenovarBaseModal();
   useEffect(renovarBase, [guardado, renovarBase]);

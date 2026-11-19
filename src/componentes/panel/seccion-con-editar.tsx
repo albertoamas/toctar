@@ -4,7 +4,7 @@ import { useState } from "react";
 import { cn } from "cn";
 import { PencilIcon } from "lucide-react";
 import { useHidratado } from "@/componentes/hidratado";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { CabeceraSeccion, CabeceraTarjeta } from "@/componentes/panel/cabecera-seccion";
 import { ModalFormulario } from "@/componentes/panel/modal-formulario";
 import { Button } from "@/componentes/ui/button";
 
@@ -37,27 +37,40 @@ export function SeccionConEditar({ id, titulo, nivel = 2, etiquetaEditar, titulo
   // la página (hidratado) y no desde el servidor: el diálogo pone el foco en su primer campo cuando se abre
   const [elegido, setAbierto] = useState<boolean | null>(null);
   const abierto = elegido ?? (abierta && hidratado);
-  const cabecera = (
-    <CabeceraSeccion id={id} titulo={titulo} nivel={nivel}>
+  const editar = (
       <Button type="button" variant="ghost" disabled={!hidratado} aria-label={etiquetaEditar} onClick={() => setAbierto(true)}>
         <PencilIcon />
         Editar
       </Button>
-    </CabeceraSeccion>
   );
-
-  return (
-    <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-2">
-      {nivel === 2 && cabecera}
-      {/* flex-1: en una grilla, las tarjetas de una misma fila quedan del mismo alto. Una sección de nivel 3 va dentro de
-          otra tarjeta: un recuadro con borde, sin sombra; `claseRecuadro` lo ajusta donde va suelto */}
-      <div className={cn(nivel === 3 ? "flex flex-1 flex-col gap-3 rounded-lg border border-border p-4" : "tt-tarjeta-panel flex flex-1 flex-col gap-3 p-4", claseRecuadro)}>
-        {nivel === 3 && cabecera}
-        {lectura}
-      </div>
+  const modal = (
       <ModalFormulario titulo={tituloModal} abierto={abierto} alCambiar={setAbierto}>
         {children}
       </ModalFormulario>
+  );
+
+  // Una sección de nivel 3 va dentro de otra tarjeta: un recuadro con borde, sin sombra, con el título arriba de lo que
+  // dice; `claseRecuadro` lo ajusta donde va suelto
+  if (nivel === 3) {
+    return (
+      <section aria-labelledby={`${id}-titulo`} className={cn("flex flex-1 flex-col gap-3 rounded-lg border border-border p-4", claseRecuadro)}>
+        <CabeceraSeccion id={id} titulo={titulo} nivel={3}>
+          {editar}
+        </CabeceraSeccion>
+        {lectura}
+        {modal}
+      </section>
+    );
+  }
+  // El título adentro, en la cabecera de la tarjeta, con "Editar" al lado (C7, 18/11). En una grilla, las tarjetas de una
+  // misma fila quedan del mismo alto
+  return (
+    <section aria-labelledby={`${id}-titulo`} className="tt-tarjeta-panel flex flex-col overflow-hidden">
+      <CabeceraTarjeta id={id} titulo={titulo}>
+        {editar}
+      </CabeceraTarjeta>
+      <div className={cn("flex flex-1 flex-col gap-3 p-4 sm:p-5", claseRecuadro)}>{lectura}</div>
+      {modal}
     </section>
   );
 }

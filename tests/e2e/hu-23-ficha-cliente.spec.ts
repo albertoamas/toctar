@@ -69,11 +69,11 @@ test("los vehículos se agregan en la ficha del cliente y se editan, desactivan 
   const nuevo = page.getByRole("dialog", { name: "Agregar vehículo" });
   await expect(nuevo.getByLabel("Placa", { exact: true })).toBeFocused();
   await nuevo.getByLabel("Placa", { exact: true }).fill(`ocu-${s.toLowerCase()} 1`);
-  await nuevo.getByLabel("Tamaño").selectOption({ label: "Compactos" });
+  await nuevo.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio", { name: /^Compactos/ }).click();
   await nuevo.getByRole("button", { name: "Agregar vehículo" }).click();
   await expect(nuevo.getByText(`La placa OCU${s}1 ya está registrada a nombre de Dueño de la placa ${s}.`)).toBeVisible();
-  // Tras el error, el tamaño elegido se conserva: React reinicia el formulario y antes volvía a "Elige el tamaño"
-  await expect(nuevo.getByLabel("Tamaño")).not.toHaveValue("");
+  // Tras el error, el tamaño elegido se conserva: React reinicia el formulario y antes se perdía la elección
+  await expect(nuevo.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio", { checked: true })).toHaveCount(1);
   await nuevo.getByLabel("Placa", { exact: true }).fill(`FIC${s}1`);
   await nuevo.getByRole("button", { name: "Agregar vehículo" }).click();
   await expect(page.getByText(`Vehículo FIC${s}1 agregado.`)).toBeVisible();
@@ -88,19 +88,20 @@ test("los vehículos se agregan en la ficha del cliente y se editan, desactivan 
   await page.getByRole("button", { name: `Editar FIC${s}1` }).click();
   const edicion = page.getByRole("dialog", { name: `Editar FIC${s}1` });
   await edicion.getByText("Agregar marca, modelo, año y color").click();
-  await edicion.getByLabel("Color").fill("Rojo");
+  // El color, en botones con los frecuentes (pedido 52)
+  await edicion.getByRole("radiogroup", { name: /^Color/ }).getByRole("radio", { name: "Rojo" }).click();
   await edicion.getByRole("button", { name: "Guardar vehículo" }).click();
   await expect(edicion).toBeHidden();
   await expect(datos).toContainText("Rojo");
   // Al volver a abrirlo trae lo guardado, ya desplegado
   await page.getByRole("button", { name: `Editar FIC${s}1` }).click();
-  await expect(edicion.getByLabel("Color")).toHaveValue("Rojo");
+  await expect(edicion.getByRole("radiogroup", { name: /^Color/ }).getByRole("radio", { name: "Rojo" })).toBeChecked();
   // Al editar, cerrarlo es "Listo" y no borra lo guardado (pulido final del 10/11: "Quitar" lo habría vaciado)
   await expect(edicion.getByRole("button", { name: /^Quitar/ })).toHaveCount(0);
   await edicion.getByRole("button", { name: "Listo Marca, modelo, año y color" }).click();
-  await expect(edicion.getByLabel("Color")).toBeHidden();
+  await expect(edicion.getByRole("radiogroup", { name: /^Color/ })).toBeHidden();
   await edicion.getByText("Agregar marca, modelo, año y color").click();
-  await expect(edicion.getByLabel("Color")).toHaveValue("Rojo");
+  await expect(edicion.getByRole("radiogroup", { name: /^Color/ }).getByRole("radio", { name: "Rojo" })).toBeChecked();
 
   await edicion.getByRole("button", { name: "Cancelar" }).click();
   await expect(edicion).toBeHidden();
@@ -157,7 +158,7 @@ test("un cliente se desactiva desde «Más» con confirmación, deja de salir en
   await expect(page.getByRole("link", { name: nombre })).toBeVisible();
 });
 
-test("reservas y cotizaciones en tabla, cada fila con su placa aunque tenga un solo vehículo", async ({ page }, info) => {
+test("la historia junta reservas y cotizaciones, cada fila con su placa aunque tenga un solo vehículo", async ({ page }, info) => {
   const s = sufijo(info);
   // Días lejos de hoy y propios de cada proyecto y reintento: los espacios del taller no chocan con otras pruebas
   const dias = 1700 + (info.project.name === "celular" ? 0 : 10) + info.retry * 2;
@@ -166,13 +167,13 @@ test("reservas y cotizaciones en tabla, cada fila con su placa aunque tenga un s
   await crearOrdenLista({ placa: `DA23${s}1`, espacio: 0, dias, precio: 500, pagado: 100 });
   await ingresarComoDueno(page);
   await page.goto(`/panel/clientes/${id}`);
-  // La placa siempre: es como se reconoce un trabajo en el taller (inventario-pantallas.md, cambio 4)
-  const cotizaciones = page.getByRole("list", { name: "Cotizaciones" }).getByRole("link");
-  await expect(cotizaciones).toHaveCount(1);
-  await expect(cotizaciones).toContainText(`2023-${s}71`);
-  await expect(cotizaciones).toContainText(`DA23${s}1`);
-  const reservas = page.getByRole("list", { name: "Reservas" }).getByRole("link");
-  await expect(reservas).toHaveCount(1);
-  await expect(reservas).toContainText(`DA23${s}1`);
-  await expect(reservas).toContainText("Saldo: 400 Bs");
+  // Una sola historia (C7 §5.6): la cotización y la orden, cada una con la placa (es como se reconoce un trabajo en el
+  // taller, inventario-pantallas.md, cambio 4)
+  const historia = page.getByRole("list", { name: "Historia" }).getByRole("link");
+  await expect(historia).toHaveCount(2);
+  const cotizacion = historia.filter({ hasText: `2023-${s}71` });
+  await expect(cotizacion).toContainText(`DA23${s}1`);
+  const orden = historia.filter({ hasNotText: `2023-${s}71` });
+  await expect(orden).toContainText(`DA23${s}1`);
+  await expect(orden).toContainText("Debe 400 Bs");
 });

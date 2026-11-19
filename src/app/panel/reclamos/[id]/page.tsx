@@ -18,6 +18,7 @@ import { FotosReclamo } from "@/modulos/reclamos/componentes/fotos-reclamo";
 import { obtenerReclamo } from "@/modulos/reclamos/consultas";
 import { mensajeAlCliente } from "@/modulos/reclamos/reglas";
 import { volverDesde } from "@/lib/volver";
+import { PasoSiguiente } from "@/componentes/panel/paso-siguiente";
 
 export const metadata: Metadata = { title: "Reclamo" };
 
@@ -52,26 +53,34 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/reclamos
         titulo={r.nombre}
         estado={<InsigniaEstado estado={r.estado} />}
         volver={volver}
+        // Debajo del título, el dato útil (sistema-del-panel.md §2, C7 fase 3): no solo a dónde se vuelve
+        subtitulo={[r.placa, r.servicio].filter(Boolean).join(" · ") || undefined}
         accion={
-          <div className="flex flex-wrap gap-2">
-            {r.estado === "pendiente" && <AtenderReclamo id={r.id} />}
-            {/* Con cn: sin él, el borde transparente de la base le ganaba al del contorno y no se veía (revisión de botones) */}
-            <a href={enlaceWhatsApp(r.telefono, mensajeAlCliente(r.nombre, recibido))} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
-              <IconoWhatsApp />
-              Escribir por WhatsApp
-            </a>
-          </div>
+          // Con cn: sin él, el borde transparente de la base le ganaba al del contorno y no se veía (revisión de botones)
+          <a href={enlaceWhatsApp(r.telefono, mensajeAlCliente(r.nombre, recibido))} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
+            <IconoWhatsApp />
+            Escribir por WhatsApp
+          </a>
         }
       />
+      {/* El paso siguiente, grande y a todo el ancho en el celular, como en Reserva, Orden y Cotización (C7 fase 3) */}
+      {r.estado === "pendiente" && (
+        <PasoSiguiente>
+          <AtenderReclamo id={r.id} grande />
+        </PasoSiguiente>
+      )}
 
       <div className="grid items-start gap-8 @4xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="flex flex-col gap-8">
           <Seccion id="que-paso" titulo="Qué pasó">
             <p className="whitespace-pre-line">{r.descripcion}</p>
           </Seccion>
-          <Seccion id="fotos" titulo="Fotos">
-            {r.fotos.length > 0 ? <FotosReclamo fotos={r.fotos} /> : <p className="text-tinta-suave">No mandó fotos.</p>}
-          </Seccion>
+          {/* Sin fotos, no ocupa una sección para decirlo: lo dice una línea de los datos */}
+          {r.fotos.length > 0 && (
+            <Seccion id="fotos" titulo="Fotos">
+              <FotosReclamo fotos={r.fotos} />
+            </Seccion>
+          )}
         </div>
 
         <div className="flex flex-col gap-8">
@@ -79,6 +88,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/reclamos
             <ListaDatos
               filas={[
                 ["Recibido", formatearFechaHora(r.createdAt)],
+                r.fotos.length === 0 && ["Fotos", <span key="fotos" className="text-tinta-suave">No mandó fotos</span>],
                 ["WhatsApp", formatearWhatsApp(r.telefono)],
                 ["Placa", <span key="placa" className="font-semibold">{r.placa}</span>],
                 ["Servicio", r.servicio ?? <span key="servicio" className="text-tinta-suave">No indicó</span>],

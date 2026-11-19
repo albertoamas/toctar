@@ -11,13 +11,14 @@ import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { sucursalPrincipal } from "@/modulos/configuracion/consultas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
-import { tieneReservaActiva } from "@/modulos/cotizaciones/consultas";
+import { tieneReservaActiva } from "@/modulos/cotizaciones/consultas/lista";
 import { descripcionLinea, montoNoMayor } from "@/modulos/cotizaciones/reglas";
 import { borrarFotosSueltas, soltarFotosIngreso } from "@/modulos/ordenes/fotos";
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
 import { descartarComprobante, guardarComprobante } from "@/modulos/pagos/comprobante";
 import { calcularSaldo, tipoDePago } from "@/modulos/pagos/reglas";
-import { bloquearEspacio, datosDeCotizacion, espaciosEnFechas, type EspacioDisponible } from "./consultas";
+import { bloquearEspacio, espaciosEnFechas, type EspacioDisponible } from "./consultas/espacios";
+import { datosDeCotizacion } from "./consultas/reservar";
 import { entradaReserva, esquemaAdelanto, esquemaCancelar, esquemaConsultaEspacios, esquemaFechas, esquemaReprogramar, esquemaReserva } from "./esquemas";
 import { conDesde, leerDesde } from "@/lib/volver";
 

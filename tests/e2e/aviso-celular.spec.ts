@@ -1,8 +1,9 @@
 import { expect, test, type Locator } from "@playwright/test";
 import { consultar, crearClienteEnBase, crearUsuario, ingresarComoDueno } from "./apoyo";
 
-// Los avisos en el celular (09/11): arriba tapaban el botón de volver y, mientras duraba el aviso, no se podía tocar
-// (lo vio hu-07 de vez en cuando). Ahora van abajo, encima del pie fijo si la pantalla lo tiene (sonner.tsx).
+// Los avisos en el celular (19/11, prueba en un iPhone 14): arriba, sobre la barra negra, como una notificación del
+// iPhone, y se cierran con la X o deslizándolos (sonner.tsx). No tapan el botón de volver de la página (lo vio hu-07 el
+// 09/11, cuando iban arriba sin dejar lugar), ni el pie fijo, ni el de un modal.
 
 test.skip(({ isMobile }) => !isMobile, "En la computadora los avisos ya van abajo a la derecha (pulido 13.23)");
 
@@ -27,10 +28,13 @@ test("después de guardar, el aviso no tapa el botón de volver y se puede volve
 
   const volver = page.getByRole("link", { name: "Volver a Usuarios" });
   expect(await sePisan(aviso, volver)).toBe(false);
-  // Abajo, no arriba: el encabezado queda libre
+  // Arriba, sobre la barra negra
   const caja = (await aviso.boundingBox())!;
-  expect(caja.y).toBeGreaterThan(page.viewportSize()!.height / 2);
-  // Con el aviso todavía a la vista, volver funciona al primer toque
+  expect(caja.y).toBeLessThan(page.viewportSize()!.height / 4);
+  // Se cierra con su X
+  await aviso.getByRole("button", { name: "Cerrar el aviso" }).click();
+  await expect(page.locator("[data-sonner-toast]")).toHaveCount(0);
+  // Volver funciona al primer toque
   await volver.click();
   await expect(page).toHaveURL(/\/panel\/usuarios$/);
 });
@@ -60,7 +64,7 @@ test("con un modal abierto el aviso va arriba y no tapa sus botones", async ({ p
   await expect(rol).toHaveCount(0);
 });
 
-test("al final de Recibir, el aviso de error va encima del pie aunque el pie ya no esté pegado abajo", async ({ page }, info) => {
+test("al final de Recibir, el pie sigue fijo abajo y el aviso va encima de él", async ({ page }, info) => {
   // 10/11 (lo vio hu-33-checklist en el CI): al bajar hasta el final, el pie queda al cierre de la tarjeta, más arriba que
   // el borde, y el aviso (a una altura fija) tapaba "Recibir vehículo" mientras duraba. Ahora el pie dice dónde está
   // (pie-formulario.tsx). Una reserva de hoy en un espacio propio y desactivado, como en hu-33-checklist
@@ -88,17 +92,19 @@ test("al final de Recibir, el aviso de error va encima del pie aunque el pie ya 
   await expect(techo).toBeHidden();
   const aviso = page.locator("[data-sonner-toast]").filter({ hasText: "Detalle guardado." });
   await expect(aviso).toBeVisible();
-  // Al final de la pantalla, el pie está en su lugar: más arriba que el borde
+  // Al final de la pantalla, el pie sigue fijo al borde de abajo (19/11, prueba en un iPhone 14: antes se detenía al
+  // cierre de la tarjeta, más arriba que el borde)
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  const pie = page.locator("[data-pie-movil]");
   await expect
     .poll(async () => {
-      const caja = (await recibir.boundingBox())!;
-      return page.viewportSize()!.height - (caja.y + caja.height);
+      const caja = (await pie.boundingBox())!;
+      return Math.abs(page.viewportSize()!.height - (caja.y + caja.height));
     })
-    .toBeGreaterThan(40);
-  // Con el aviso todavía a la vista: abajo (el modal ya se cerró), encima del botón, y el botón se puede tocar
+    .toBeLessThan(2);
+  // Con el aviso todavía a la vista: arriba, lejos del pie, y el botón se puede tocar
   await expect(aviso).toBeVisible();
-  await expect.poll(async () => (await aviso.boundingBox())!.y).toBeGreaterThan(page.viewportSize()!.height / 2);
-  await expect.poll(async () => (await aviso.boundingBox())!.y + (await aviso.boundingBox())!.height).toBeLessThanOrEqual((await recibir.boundingBox())!.y);
+  await expect.poll(async () => (await aviso.boundingBox())!.y).toBeLessThan(page.viewportSize()!.height / 4);
+  expect(await sePisan(aviso, pie)).toBe(false);
   await recibir.click({ trial: true, timeout: 2000 });
 });

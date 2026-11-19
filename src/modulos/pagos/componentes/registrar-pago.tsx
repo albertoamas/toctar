@@ -8,7 +8,9 @@ import { conAviso } from "@/componentes/panel/avisos";
 import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
 import { MasDatos } from "@/componentes/panel/mas-datos";
-import { CancelarModal, ModalFormulario, PieModal, useCambioFueraDelFormulario, useCerrarModal, useRenovarBaseModal } from "@/componentes/panel/modal-formulario";
+import { useCambioFueraDelFormulario, useCerrarModal, useRenovarBaseModal } from "@/componentes/panel/modal-contexto";
+import { ModalFormulario } from "@/componentes/panel/modal-formulario";
+import { CancelarModal, PieModal } from "@/componentes/panel/modal-pie";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import type { MetodoPago } from "@/db/esquema/trabajos";
@@ -17,6 +19,8 @@ import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { registrarPago } from "../acciones";
 import { useEnvioConComprobante } from "./campo-comprobante";
 import { MetodoYComprobante } from "./elegir-metodo";
+import { ANCHO_DATO } from "@/componentes/panel/anchos";
+import { DatoClave } from "@/componentes/panel/dato-clave";
 
 // HU-32: registrar un pago (RF-45). Se cobra en el taller, con el celular en la mano: el monto viene con el saldo
 // (lo que más se cobra). La foto del comprobante es opcional y se achica antes de subirla. El servidor vuelve a mirar el saldo: dos pagos a la vez no lo pasan.
@@ -93,14 +97,16 @@ function Formulario({ trabajoId, saldo, hoy }: Props) {
     <form ref={formulario} action={accion} onSubmit={(ev) => enviar(ev)} className="flex flex-col gap-5" noValidate aria-label="Registrar pago">
       <input type="hidden" name="trabajoId" value={trabajoId} />
       {estado.mensaje && !estado.ok && <MensajeError id="registrar-pago-error">{estado.mensaje}</MensajeError>}
-      <Campo id="monto" etiqueta="Monto" error={e.monto} ayuda={`Saldo: ${mostrarMonto(saldo)} Bs.`}>
-        <CampoMonto id="monto" name="monto" value={monto} onChange={(ev) => setMonto(ev.target.value)} aria-invalid={!!e.monto} aria-describedby={e.monto ? "monto-error" : "monto-ayuda"} />
+      {/* Lo que decide, arriba (C7 §5.4): antes era una ayuda bajo el monto */}
+      <DatoClave etiqueta="Falta cobrar" valor={`${mostrarMonto(saldo)} Bs`} tono="aviso" />
+      <Campo id="monto" etiqueta="Monto" error={e.monto}>
+        <CampoMonto id="monto" name="monto" value={monto} onChange={(ev) => setMonto(ev.target.value)} aria-invalid={!!e.monto} aria-describedby={e.monto ? "monto-error" : undefined} />
       </Campo>
       <MetodoYComprobante metodo={metodo} alCambiarMetodo={setMetodo} alCambiarComprobante={setComprobante} errorMetodo={e.metodo} errorComprobante={errorFoto ?? e.comprobante} />
       {/* Plegada, pero a la vista la que se va a guardar */}
       <MasDatos texto="Cambiar fecha" titulo="Fecha" detalle={`Ahora: ${fecha === hoy ? "hoy" : "otra fecha"}`} abierto={!!e.fecha} conError={!!e.fecha}>
         <Campo id="fecha" etiqueta="Fecha" error={e.fecha}>
-          <Input id="fecha" name="fecha" type="date" max={hoy} value={fecha} onChange={(ev) => setFecha(ev.target.value)} className="max-w-xs" aria-invalid={!!e.fecha} aria-describedby={e.fecha ? "fecha-error" : undefined} />
+          <Input id="fecha" name="fecha" type="date" max={hoy} value={fecha} onChange={(ev) => setFecha(ev.target.value)} className={ANCHO_DATO.fecha} aria-invalid={!!e.fecha} aria-describedby={e.fecha ? "fecha-error" : undefined} />
         </Campo>
       </MasDatos>
 

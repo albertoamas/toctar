@@ -131,7 +131,7 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel y sin de
 ### `/panel/agenda/nueva` — Nueva reserva
 - `?cotizacion=<id>`: llega con el cliente, el vehículo y las líneas de la cotización vigente (solo lectura; para cambiar precios se corrige la cotización). La duración sugerida sale de esos servicios.
 - Directa: cliente y vehículo como en la nueva consulta (C2, `ElegirCliente`); servicios con `LineasCotizacion` (el editor de líneas de C2) y el precio vigente del tamaño. Quien no tiene "Pagos" ve los servicios sin precios y no puede elegir "según evaluación" sin precio: la reserva directa con precios la arma quien tiene "Pagos" o el dueño.
-- **Fechas:** "Ingresa el" (por defecto, mañana o `?fecha=`) y "Entrega aproximada" (sugerida: ingreso + la mayor duración de los servicios − 1; editable). Al cambiar las fechas, los espacios se vuelven a consultar.
+- **Fechas:** "Ingresa el" (por defecto, hoy o `?fecha=`; hasta el 18/11 era mañana, y el dueño quedaba con la fecha de mañana al reservar y recibir el mismo día) y "Entrega aproximada" (sugerida: ingreso + la mayor duración de los servicios − 1; editable). Al cambiar las fechas, los espacios se vuelven a consultar.
 - **Espacio:** solo los libres en esos días, como opciones; si no hay ninguno, "No hay espacio libre en esas fechas: elige otras." `?espacio=` lo deja elegido si está libre.
 - **Técnico** (opcional), **hora aproximada** y **nota**.
 - **Adelanto** (solo con "Pagos"): monto (sugerido), método, comprobante opcional; o la casilla "Sin adelanto".

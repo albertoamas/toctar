@@ -41,7 +41,7 @@ Que el dueño vea, en una pantalla, **cuánto entró, cuánto salió y cuánto l
 - **Todo configurable:** las categorías, desde el panel. Nada fijo en el código salvo las cuatro iniciales, que se cargan con la migración.
 
 ## 4. Datos
-Migración `0050_gastos`:
+Migración `0052_gastos` (era la 0050; pasó a 0052 al unirse con las marcas del pedido 52, 19/11):
 - **`categoria_gasto`:**
   - `id`, `nombre` (text, único entre las activas), `orden` (int) y `activo` (bool, true);
   - datos iniciales: las cuatro categorías.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import { usePasosEnHistorial } from "@/componentes/panel/pasos-en-historial";
 import { useFocoDePaso } from "@/componentes/panel/foco-de-paso";
 import Link from "next/link";
 import { SearchIcon } from "lucide-react";
@@ -8,7 +9,6 @@ import { MensajeError } from "@/componentes/panel/campo";
 import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
 import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
 import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { Button, buttonVariants } from "@/componentes/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
@@ -22,12 +22,14 @@ import { leerValores, PREFIJO_VEHICULO } from "@/modulos/clientes/valores";
 import type { Tamano } from "@/modulos/configuracion/consultas";
 import { formatearWhatsApp, normalizarWhatsApp } from "@/lib/whatsapp";
 import { crearCotizacion } from "../acciones";
-import type { OpcionServicio } from "../consultas";
+import type { OpcionServicio } from "../consultas/servicios";
 import { erroresDelPaso, PASO_CLIENTE, PASO_SERVICIOS, PASO_VEHICULO, PASOS_NUEVA_COTIZACION, pasoDeCampo, primerPasoConError } from "../pasos";
 import { CLIENTE_NUEVO, VEHICULO_OTRO } from "../reglas";
-import { CamposPrecio, TotalEnPie, usePrecios } from "./campos-precio";
+import { CamposPrecio, ResumenPrecios, TotalEnPie, usePrecios } from "./campos-precio";
 import type { Linea } from "./lineas-servicio";
 import { conDesde } from "@/lib/volver";
+import { ConResumen } from "@/componentes/panel/con-resumen";
+import type { CatalogoVehiculos } from "@/modulos/clientes/catalogo-vehiculos";
 
 // Nueva cotización en pasos (pedido 40, etapas/P40-cotizacion-en-pasos.md): el cliente, su vehículo y los servicios con
 // su precio, un paso por pantalla. Un solo formulario: los pasos que no están a la vista se esconden y se envían igual,
@@ -48,6 +50,8 @@ type Props = {
   /** null: cliente nuevo, que se registra con la cotización. */
   cliente: ClienteElegido | null;
   tamanos: Tamano[];
+  /** Las marcas de la lista, para el vehículo nuevo (pedido 52). */
+  catalogo: CatalogoVehiculos;
   /** Las opciones del catálogo para cada tamaño (los activos y los de sus vehículos). */
   opciones: Record<number, OpcionServicio[]>;
   inicio: { validaHasta: string; adelanto: string };
@@ -69,7 +73,7 @@ function sugerido(opciones: OpcionServicio[] | null, varianteId: number): string
   return o?.sugerencia.tipo === "monto" ? mostrarMonto(o.sugerencia.monto) : "";
 }
 
-export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, hoy, volver }: Props) {
+export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones, inicio, hoy, volver }: Props) {
   const clienteNuevo = !cliente;
   const primerPaso = clienteNuevo ? PASO_CLIENTE : PASO_VEHICULO;
   const [paso, setPaso] = useState(primerPaso);
@@ -172,31 +176,22 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
   }
 
   // El historial: Atrás y Adelante del navegador (o del celular) cambian de paso. Adelante revisa los pasos que salta
-  const alCambiarHistoria = useRef<() => void>(() => {});
-  useEffect(() => {
-    alCambiarHistoria.current = () => {
-      const i = ANCLAS.indexOf(window.location.hash.slice(1) as (typeof ANCLAS)[number]);
-      const destino = i >= primerPaso ? i : primerPaso;
-      if (destino > pasoActual.current && formulario.current) {
-        const valores = leerValores(new FormData(formulario.current));
-        for (let p = pasoActual.current; p < destino; p++) {
-          const errores = erroresDelPaso(p, valores, clienteNuevo);
-          if (Object.keys(errores).length === 0) continue;
-          setLocales({ en: estado, errores });
-          errorAlLlegar.current = true;
-          window.history.go(p - destino);
-          return;
-        }
+  usePasosEnHistorial(() => {
+    const i = ANCLAS.indexOf(window.location.hash.slice(1) as (typeof ANCLAS)[number]);
+    const destino = i >= primerPaso ? i : primerPaso;
+    if (destino > pasoActual.current && formulario.current) {
+      const valores = leerValores(new FormData(formulario.current));
+      for (let p = pasoActual.current; p < destino; p++) {
+        const errores = erroresDelPaso(p, valores, clienteNuevo);
+        if (Object.keys(errores).length === 0) continue;
+        setLocales({ en: estado, errores });
+        errorAlLlegar.current = true;
+        window.history.go(p - destino);
+        return;
       }
-      mostrar(destino);
-    };
+    }
+    mostrar(destino);
   });
-  useEffect(() => {
-    if (window.location.hash) window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
-    const escuchar = () => alCambiarHistoria.current();
-    window.addEventListener("popstate", escuchar);
-    return () => window.removeEventListener("popstate", escuchar);
-  }, []);
 
   function siguiente() {
     const valores = leerValores(new FormData(formulario.current!));
@@ -222,6 +217,22 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
   };
   const e = vista.errores ?? {};
   const datosCliente = cliente ? [cliente.nombre, formatearWhatsApp(cliente.telefono)] : resumen.cliente;
+  // Lo ya elegido (pulido final del 09/11, como Nueva reserva), con "Cambiar" para volver a su paso: arriba y, en el
+  // paso de servicios de la computadora, al costado. `id` distinto en cada lugar: los dos están en la página
+  const cotizacionPara = (id: string, pie?: React.ReactNode) =>
+    datosCliente && (
+      <ResumenClienteVehiculo
+        id={id}
+        pie={pie}
+        titulo="Cotización para"
+        cliente={{ nombre: datosCliente[0], detalle: datosCliente[1], href: clienteNuevo ? undefined : conDesde("/panel/cotizaciones/nueva", volver), alCambiar: () => volverA(PASO_CLIENTE) }}
+        vehiculo={
+          paso > PASO_VEHICULO && resumen.vehiculo
+            ? { ...resumen.vehiculo, tamano: tamanos.find((t) => t.id === tamanoId)?.nombre ?? "", alCambiar: () => volverA(PASO_VEHICULO) }
+            : null
+        }
+      />
+    );
 
   return (
     <form
@@ -229,13 +240,6 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
       action={accion}
       className="flex flex-col gap-6"
       noValidate
-      // El tamaño del vehículo nuevo es un menú de CamposVehiculo, sin control propio: se escucha su cambio
-      onChange={(ev) => {
-        const campo = ev.target as EventTarget;
-        if (!(campo instanceof HTMLSelectElement) || campo.name !== CAMPO_TAMANO) return;
-        cambiarTamano(vehiculo, campo.value);
-        setTamanoNuevo(campo.value);
-      }}
       onKeyDown={(ev) => {
         // Enter en un campo de los primeros pasos sigue al próximo, no crea la cotización
         if (ev.key !== "Enter" || paso === PASO_SERVICIOS || !(ev.target instanceof HTMLInputElement)) return;
@@ -250,29 +254,23 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
 
       {/* Lo ya elegido, arriba y en una sola tarjeta (pulido final del 09/11, como Nueva reserva), con "Cambiar" para
           volver a su paso: el cliente registrado, a buscar otro; el nuevo, a sus datos */}
-      {paso > PASO_CLIENTE && datosCliente && (
-        <ResumenClienteVehiculo
-          id="cotizacion-para"
-          titulo="Cotización para"
-          cliente={{ nombre: datosCliente[0], detalle: datosCliente[1], href: clienteNuevo ? undefined : conDesde("/panel/cotizaciones/nueva", volver), alCambiar: () => volverA(PASO_CLIENTE) }}
-          vehiculo={
-            paso > PASO_VEHICULO && resumen.vehiculo
-              ? { ...resumen.vehiculo, tamano: tamanos.find((t) => t.id === tamanoId)?.nombre ?? "", alCambiar: () => volverA(PASO_VEHICULO) }
-              : null
-          }
-        />
-      )}
+      {/* En el paso de servicios, en la computadora, va al costado con el total (ConResumen, C7 §5.2) */}
+      {paso > PASO_CLIENTE && datosCliente && <div className={paso === PASO_SERVICIOS ? "@4xl:hidden" : undefined}>{cotizacionPara("cotizacion-para")}</div>}
 
       <div data-paso={PASO_CLIENTE} hidden={paso !== PASO_CLIENTE} className="flex flex-col gap-3">
         {clienteNuevo && (
           <>
-            <CabeceraSeccion id="cliente" titulo="Cliente nuevo">
-              <Link href={conDesde("/panel/cotizaciones/nueva", volver)} className={buttonVariants({ variant: "ghost" })}>
-                <SearchIcon />
-                Buscar un cliente registrado
-              </Link>
-            </CabeceraSeccion>
-            <SeccionFormulario titulo="Cliente nuevo" tituloOculto claseContenido="gap-6">
+            {/* El título adentro, con "Buscar un cliente registrado" al lado (sistema-del-panel.md §2, 18/11) */}
+            <SeccionFormulario
+              titulo="Cliente nuevo"
+              accion={
+                <Link href={conDesde("/panel/cotizaciones/nueva", volver)} className={buttonVariants({ variant: "ghost" })}>
+                  <SearchIcon />
+                  Buscar un cliente registrado
+                </Link>
+              }
+              claseContenido="gap-6"
+            >
               <CamposCliente estado={vista} plegar enlaceExistente={usarExistente} />
             </SeccionFormulario>
           </>
@@ -310,14 +308,31 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
             <>
               {!conVehiculos && <input type="hidden" name="vehiculo" value={VEHICULO_OTRO} />}
               {/* Completo: placa y tamaño, y marca, modelo, año y color a la vista (pedido 40) */}
-              <CamposVehiculo estado={vista} prefijo={PREFIJO_VEHICULO} tamanos={tamanos} enlaceExistente={usarExistente} />
+              <CamposVehiculo
+                estado={vista}
+                prefijo={PREFIJO_VEHICULO}
+                tamanos={tamanos}
+                catalogo={catalogo}
+                enlaceExistente={usarExistente}
+                // Otro tamaño, otro precio sugerido
+                alCambiarTamano={(t) => {
+                  cambiarTamano(vehiculo, t);
+                  setTamanoNuevo(t);
+                }}
+              />
             </>
           )}
         </SeccionFormulario>
       </div>
 
       <div data-paso={PASO_SERVICIOS} hidden={paso !== PASO_SERVICIOS} className="flex flex-col gap-6">
-        <CamposPrecio precios={precios} opciones={delTamano(tamanoId)} errores={e} hoy={hoy} />
+        <ConResumen
+          etiqueta="Resumen de la cotización"
+          // Lo elegido y el total en una sola tarjeta, con su título adentro (sistema-del-panel.md §2, 18/11)
+          resumen={cotizacionPara("cotizacion-para-lateral", <ResumenPrecios precios={precios} />)}
+        >
+          <CamposPrecio precios={precios} opciones={delTamano(tamanoId)} errores={e} hoy={hoy} />
+        </ConResumen>
       </div>
 
       <AvisoAlSalir formulario={formulario} estado={estado} />

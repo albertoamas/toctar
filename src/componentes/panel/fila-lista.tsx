@@ -32,11 +32,16 @@ export type DatosFila = {
   atenuada?: boolean;
   /** Una foto a la izquierda (los servicios del sitio, pulido 13.21): null es "sin foto"; sin la clave, no va el lugar. */
   miniatura?: string | null;
+  /**
+   * Lo que hace tocar la fila, escrito ("Reservar"), como en "Para atender" (C7, 18/11): a la derecha si la lista es
+   * ancha; debajo del texto si es angosta. Toda la fila sigue siendo el enlace.
+   */
+  accion?: string;
 };
 
 export function ListaFilas({ etiqueta, filas }: { etiqueta: string; filas: DatosFila[] }) {
   return (
-    <ul aria-label={etiqueta} className="tt-tarjeta-panel flex flex-col divide-y divide-border overflow-hidden">
+    <ul aria-label={etiqueta} className="tt-tarjeta-panel @container flex flex-col divide-y divide-border overflow-hidden">
       {filas.map((f) => (
         <li key={f.href}>
           <FilaLista {...f} />
@@ -63,7 +68,7 @@ export function FilaConAcciones({ children }: { children: React.ReactNode }) {
   return <li className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:gap-6">{children}</li>;
 }
 
-function FilaLista({ href, titulo, tituloGrande, dato, detalles = [], aviso, estado, tonoEstado, atenuada, miniatura }: DatosFila) {
+function FilaLista({ href, titulo, tituloGrande, dato, detalles = [], aviso, estado, tonoEstado, atenuada, miniatura, accion }: DatosFila) {
   return (
     <Link href={href} className={cn("flex min-h-11 items-center gap-3 px-4 py-3 hover:bg-superficie/60 focus-visible:-outline-offset-2", atenuada && "text-tinta-suave")}>
       {miniatura !== undefined && (
@@ -90,8 +95,15 @@ function FilaLista({ href, titulo, tituloGrande, dato, detalles = [], aviso, est
             ))}
           </span>
         )}
+        {accion && (
+          <span className="mt-1 flex items-center gap-0.5 text-sm font-semibold @lg:hidden">
+            {accion}
+            <ChevronRightIcon className="size-4 text-tinta-suave" aria-hidden />
+          </span>
+        )}
       </span>
-      <ChevronRightIcon className="size-5 shrink-0 text-tinta-suave" aria-hidden />
+      {accion && <span className="hidden shrink-0 text-sm font-semibold @lg:inline">{accion}</span>}
+      <ChevronRightIcon className={cn("size-5 shrink-0 text-tinta-suave", accion && "hidden @lg:block")} aria-hidden />
     </Link>
   );
 }
