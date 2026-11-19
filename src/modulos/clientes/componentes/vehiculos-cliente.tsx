@@ -30,7 +30,7 @@ type Props = {
   clienteId: number;
   vehiculos: VehiculoCliente[];
   tamanos: Tamano[];
-  /** Las marcas y los modelos ya registrados, para escribir menos (pedido 52). */
+  /** Las marcas de la lista, para elegir la del vehículo (pedido 52). */
   catalogo: CatalogoVehiculos;
   /** La ficha del cliente: "Volver" desde la del vehículo lleva ahí (pedido 43). */
   desde: string;

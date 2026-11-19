@@ -21,8 +21,6 @@ import {
   filtrarMarcas,
   marcaExacta,
   marcasParaElegir,
-  modelosDeLaMarca,
-  tamanoSugerido,
 } from "../catalogo-vehiculos";
 import { ANCHO_DATO } from "@/componentes/panel/anchos";
 
@@ -154,7 +152,7 @@ function MasDatosCliente({ estado, iniciales = {} }: PropsCampos) {
   );
 }
 
-export function CamposVehiculo(props: PropsCampos & { tamanos: Tamano[]; /** Las marcas de la lista y los modelos ya registrados (pedido 52). */ catalogo: CatalogoVehiculos }) {
+export function CamposVehiculo(props: PropsCampos & { tamanos: Tamano[]; /** Las marcas de la lista (pedido 52). */ catalogo: CatalogoVehiculos }) {
   const { estado, iniciales = {}, prefijo = "", compacto, plegar, enlaceExistente, cambioDeDueno, alCambiarTamano, tamanos, catalogo } = props;
   const v = estado.valores ?? iniciales;
   const e = estado.errores ?? {};
@@ -163,28 +161,10 @@ export function CamposVehiculo(props: PropsCampos & { tamanos: Tamano[]; /** Las
   // El tamaño, en tarjetas que se tocan (Nuevo cliente, 17/11): son pocos y cada uno muestra sus modelos, que es lo que
   // ayuda a elegir. Controlado, con su valor en un campo oculto propio (OpcionesEnTarjetas): no se pierde tras un error.
   const [tamanoId, setTamanoId] = useState(v[n("tamanoId")] ?? "");
-  // El tamaño marcado por el modelo (se dice debajo del modelo: el tamaño queda arriba, fuera de la vista)
-  const [tamanoPorModelo, setTamanoPorModelo] = useState<string | null>(null);
-  const elegirTamano = (t: string, porModelo = false) => {
-    setTamanoId(t);
-    setTamanoPorModelo(porModelo ? (tamanos.find((x) => String(x.id) === t)?.nombre ?? null) : null);
-    alCambiarTamano?.(t);
-  };
-  // Pedido 52: la marca de la lista (con búsqueda), el modelo con los ya registrados de esa marca y su tamaño sugerido,
-  // el año en un selector y el color con los frecuentes
-  const [marca, setMarca] = useState(v[n("marca")] ?? "");
-  const [modelo, setModelo] = useState(v[n("modelo")] ?? "");
+  // Pedido 52: la marca de la lista (con búsqueda), el año en un selector y el color con los frecuentes. El modelo,
+  // un texto simple (decidido el 19/11)
   const colorInicial = v[n("color")] ?? "";
   const [color, setColor] = useState<string>(colorInicial ? (colorFrecuente(colorInicial) ?? "Otro") : "");
-  const modelos = modelosDeLaMarca(catalogo.modelos, marca);
-  const sugerido = tamanoSugerido(catalogo.modelos, marca, modelo);
-  const nombreSugerido = sugerido && String(sugerido) !== tamanoId ? tamanos.find((t) => t.id === sugerido)?.nombre : undefined;
-  const cambiarModelo = (valor: string) => {
-    setModelo(valor);
-    // El tamaño que suele tener ese modelo, si todavía no se eligió uno
-    const t = tamanoSugerido(catalogo.modelos, marca, valor);
-    if (t && !tamanoId && tamanos.some((x) => x.id === t)) elegirTamano(String(t), true);
-  };
 
   // Marca, modelo, año y color: a la vista, o plegados detrás de "Agregar …" en el alta. Una columna, como el resto
   const opcionales = !compacto && (
@@ -196,8 +176,7 @@ export function CamposVehiculo(props: PropsCampos & { tamanos: Tamano[]; /** Las
           opciones={marcasParaElegir(catalogo.marcas, v[n("marca")])}
           filtrar={filtrarMarcas}
           exacta={marcaExacta}
-          valorInicial={marca}
-          alCambiar={setMarca}
+          valorInicial={v[n("marca")] ?? ""}
           agregar
           placeholder="Elige la marca"
           invalido={!!e[n("marca")]}
@@ -205,33 +184,7 @@ export function CamposVehiculo(props: PropsCampos & { tamanos: Tamano[]; /** Las
         />
       </Campo>
       <Campo id={n("modelo")} etiqueta="Modelo" opcional error={e[n("modelo")]}>
-        {/* Se escribe; los ya registrados de esa marca, como sugerencias del navegador */}
-        <Input
-          id={n("modelo")}
-          name={n("modelo")}
-          autoComplete="off"
-          list={modelos.length > 0 ? `${n("modelo")}-sugerencias` : undefined}
-          value={modelo}
-          onChange={(ev) => cambiarModelo(ev.target.value)}
-          aria-invalid={!!e[n("modelo")]}
-          aria-describedby={describir("modelo")}
-        />
-        {modelos.length > 0 && (
-          <datalist id={`${n("modelo")}-sugerencias`}>
-            {modelos.map((m) => (
-              <option key={m.modelo} value={m.modelo} />
-            ))}
-          </datalist>
-        )}
-        {tamanoPorModelo ? (
-          <p className="text-sm text-tinta-suave">Tamaño marcado: «{tamanoPorModelo}», el que suelen tener los {modelo.trim()}.</p>
-        ) : (
-          nombreSugerido && (
-            <p className="text-sm text-tinta-suave">
-              Los {modelo.trim()} suelen ser «{nombreSugerido}».
-            </p>
-          )
-        )}
+        <Input id={n("modelo")} name={n("modelo")} autoComplete="off" defaultValue={v[n("modelo")]} aria-invalid={!!e[n("modelo")]} aria-describedby={describir("modelo")} />
       </Campo>
       <Campo id={n("anio")} etiqueta="Año" opcional error={e[n("anio")]}>
         <Selector id={n("anio")} name={n("anio")} defaultValue={v[n("anio")] ?? ""} aria-invalid={!!e[n("anio")]} aria-describedby={describir("anio")} className={ANCHO_DATO.placa}>
@@ -285,7 +238,10 @@ export function CamposVehiculo(props: PropsCampos & { tamanos: Tamano[]; /** Las
         titulo="Tamaño"
         nombre={n("tamanoId")}
         valor={tamanoId}
-        cambiar={(t) => elegirTamano(t)}
+        cambiar={(t) => {
+          setTamanoId(t);
+          alCambiarTamano?.(t);
+        }}
         opciones={tamanos.map((t) => ({ valor: String(t.id), texto: t.nombre, detalle: t.descripcion }))}
         error={e[n("tamanoId")]}
         className="grid-cols-1 sm:grid-cols-2"

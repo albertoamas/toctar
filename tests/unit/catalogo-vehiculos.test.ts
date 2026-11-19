@@ -1,14 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { aniosParaElegir, colorFrecuente, filtrarMarcas, marcaExacta, marcasParaElegir, modelosDeLaMarca, tamanoSugerido } from "@/modulos/clientes/catalogo-vehiculos";
+import { aniosParaElegir, colorFrecuente, filtrarMarcas, marcaExacta, marcasParaElegir } from "@/modulos/clientes/catalogo-vehiculos";
 
 // Pedido 52 (etapas/P52-catalogo-de-marcas.md): menos escritura al registrar un vehículo.
 
 const marcas = ["Hyundai", "Mitsubishi", "Toyota"];
-const modelos = [
-  { marca: "Toyota", modelo: "Hilux", tamanoId: 4 },
-  { marca: "Toyota", modelo: "Corolla", tamanoId: 2 },
-  { marca: "Nissan", modelo: "Sentra", tamanoId: 2 },
-];
 
 describe("marcas", () => {
   it("la escrita con otras mayúsculas es la de la lista", () => {
@@ -23,17 +18,6 @@ describe("marcas", () => {
   it("una marca vieja que ya no está en la lista se sigue ofreciendo en su vehículo", () => {
     expect(marcasParaElegir(marcas, "Lada")).toEqual(["Hyundai", "Lada", "Mitsubishi", "Toyota"]);
     expect(marcasParaElegir(marcas, "toyota")).toEqual(marcas);
-  });
-});
-
-describe("modelos y tamaño sugerido", () => {
-  it("sugiere los modelos de la marca, en orden", () => {
-    expect(modelosDeLaMarca(modelos, "toyota").map((m) => m.modelo)).toEqual(["Corolla", "Hilux"]);
-    expect(modelosDeLaMarca(modelos, "")).toEqual([]);
-  });
-  it("el tamaño que suele tener el modelo de esa marca", () => {
-    expect(tamanoSugerido(modelos, "Toyota", "hilux")).toBe(4);
-    expect(tamanoSugerido(modelos, "Nissan", "Hilux")).toBeNull();
   });
 });
 

@@ -1,14 +1,14 @@
 # P52 Marcas de vehículo y menos escritura al registrar un vehículo — especificación
 
 - **Fase y semana:** estandarización del panel (C7, fase 2) · 19/11/2026
-- **Estado:** aprobada (18/11/2026, por el desarrollador, con los cambios del 19/11)
+- **Estado:** aprobada (18/11/2026, por el desarrollador). El 19/11: el modelo queda como texto simple, sin sugerencias
 - **Historias:** pedido 52 (`03-cierre-comercial/registro-de-cambios.md`)
 - **Base:** RF de clientes y vehículos (HU-23), RN-07 (tamaños), D-6 (se desactiva, no se borra); `modelo-de-datos.md`
 
 ## 1. Objetivo
 
 Registrar un vehículo escribiendo menos y sin variantes de la misma marca ("Toyota", "toyota", "Toyta"): la marca se
-elige de una lista que el dueño administra; el modelo se escribe y lo ya escrito se sugiere; el año y el color se eligen.
+elige de una lista que el dueño administra; el año y el color se eligen. El modelo se escribe, como siempre.
 
 ## 2. Alcance
 
@@ -16,12 +16,11 @@ elige de una lista que el dueño administra; el modelo se escribe y lo ya escrit
   - Una lista de marcas en Configuración → Taller, como los espacios, los tamaños y las partes: agregar, renombrar, ordenar y desactivar.
   - En todo formulario de vehículo (Nuevo cliente, Agregar y editar vehículo, el vehículo nuevo de Nueva cotización):
     - **Marca:** se elige de la lista, con búsqueda. Si no está, "Agregar «X»": se guarda en el vehículo y se suma sola a la lista.
-    - **Modelo:** se escribe; se sugieren los modelos ya registrados de esa marca.
-    - **Tamaño sugerido:** al escribir un modelo ya registrado, si el tamaño todavía no se eligió, se marca el que suele tener ese modelo; si ya se eligió otro, una línea lo dice. Se puede cambiar siempre.
+    - **Modelo:** un texto simple, como estaba ("Hilux"), sin sugerencias.
     - **Año:** un selector, del año que viene hasta 1950 (la misma regla que hoy: `ANIO_MINIMO` y `anioMaximo`).
     - **Color:** los frecuentes en botones (Blanco, Negro, Gris, Plata, Rojo, Azul) y "Otro" para escribirlo.
 - **No incluye:**
-  - Una base de modelos: el modelo sigue siendo texto libre. Las sugerencias salen de los vehículos ya registrados; un modelo mal escrito se corrige editando ese vehículo.
+  - Modelos: ni base ni sugerencias (decidido el 19/11). El modelo sigue siendo texto libre.
   - Cambiar los vehículos que ya existen: guardan la marca y el modelo como texto, igual que hoy. Una marca vieja que no está en la lista se sigue mostrando en su vehículo.
   - El servicio con búsqueda al cotizar: es otra parte de la fase 2.
 
@@ -37,7 +36,6 @@ elige de una lista que el dueño administra; el modelo se escribe y lo ya escrit
 - **Tabla nueva `marca_vehiculo`:** `id` (identity), `nombre` (texto, no nulo), `orden` (entero, no nulo), `activo` (bool, por defecto true). Índice único `marca_vehiculo_nombre_unico` en `lower(nombre)`.
 - **Migraciones:** `0050_marcas_vehiculo` (la tabla) y `0051_datos_marcas` (datos iniciales).
 - **Datos iniciales:** las marcas que ya tienen los vehículos (sin repetir por mayúsculas) y las comunes en Bolivia: Toyota, Nissan, Suzuki, Hyundai, Kia, Mitsubishi, Mazda, Chevrolet, Volkswagen, Ford, Honda, Subaru, Jeep, Renault, BYD, Chery, JAC, Great Wall, Changan, Isuzu. En orden alfabético. El dueño las cambia en el panel.
-- **Sugerencias (sin tabla):** por cada marca, sus modelos ya registrados (sin repetir por mayúsculas) y el tamaño que más tiene cada uno.
 
 ## 5. Pantallas
 
@@ -51,19 +49,18 @@ elige de una lista que el dueño administra; el modelo se escribe y lo ya escrit
 
 ## 7. Componentes
 
-- `Combobox` de Base UI (ya instalado) para la marca; `datalist` nativo para las sugerencias del modelo; `Selector` para el año; `OpcionesEnTarjetas` (o píldoras) para el color.
+- `CampoConBusqueda` (nuevo, sobre el `Combobox` de Base UI, ya instalado) para la marca; `Selector` para el año; `OpcionesEnTarjetas` para el color.
 
 ## 8. Textos
 
 - Marca: "Elige la marca" · sin resultados: "No está en la lista." · "Agregar «X»".
 - Año: "Elige el año".
 - Color: "Otro" y su campo "Color".
-- Tamaño sugerido: "Los {modelo} suelen ser «{tamaño}»."
 
 ## 9. Pruebas
 
 - **Unitarias:** la marca escrita como en la lista (mayúsculas); los años del selector.
-- **E2E:** registrar un vehículo eligiendo la marca, con el modelo sugerido y su tamaño marcado; "Agregar «X»" suma la marca a la lista; la lista en Configuración.
+- **E2E:** registrar un vehículo eligiendo la marca; "Agregar «X»" suma la marca a la lista; la lista en Configuración.
 
 ## 10. Orden de trabajo
 

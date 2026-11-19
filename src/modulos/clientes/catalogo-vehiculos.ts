@@ -1,11 +1,10 @@
 import { ANIO_MINIMO, anioMaximo } from "./reglas";
 
 // Menos escritura al registrar un vehículo (pedido 52, etapas/P52-catalogo-de-marcas.md): las marcas de la lista que
-// administra el dueño y, por marca, los modelos ya registrados con el tamaño que más tienen. Reglas puras (las usan el
-// formulario y el servidor), probadas en tests/unit/catalogo-vehiculos.test.ts.
+// administra el dueño, el año y el color. El modelo es un texto simple. Reglas puras (las usa el formulario), probadas
+// en tests/unit/catalogo-vehiculos.test.ts.
 
-export type ModeloRegistrado = { marca: string; modelo: string; tamanoId: number | null };
-export type CatalogoVehiculos = { marcas: string[]; modelos: ModeloRegistrado[] };
+export type CatalogoVehiculos = { marcas: string[] };
 
 const clave = (texto: string) => texto.trim().toLocaleLowerCase("es");
 
@@ -26,18 +25,6 @@ export function filtrarMarcas(marcas: string[], texto: string): string[] {
 /** Si lo escrito ya es una marca de la lista (con otras mayúsculas): "toyota" es "Toyota". */
 export function marcaExacta(marcas: string[], texto: string): string | null {
   return marcas.find((m) => clave(m) === clave(texto)) ?? null;
-}
-
-/** Los modelos ya registrados de una marca, para sugerir al escribir el modelo. */
-export function modelosDeLaMarca(modelos: ModeloRegistrado[], marca: string): ModeloRegistrado[] {
-  if (!marca.trim()) return [];
-  return modelos.filter((m) => clave(m.marca) === clave(marca)).sort((a, b) => a.modelo.localeCompare(b.modelo, "es"));
-}
-
-/** El tamaño que suele tener ese modelo de esa marca, si ya hay alguno registrado. */
-export function tamanoSugerido(modelos: ModeloRegistrado[], marca: string, modelo: string): number | null {
-  if (!modelo.trim()) return null;
-  return modelosDeLaMarca(modelos, marca).find((m) => clave(m.modelo) === clave(modelo))?.tamanoId ?? null;
 }
 
 /** Los años para elegir: del año que viene (el modelo del año siguiente) hacia atrás hasta 1950, la regla de la base. */

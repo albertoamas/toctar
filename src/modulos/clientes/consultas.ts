@@ -7,7 +7,7 @@ import type { EstadoTrabajo } from "@/db/esquema/trabajos";
 import { cotizacionAbierta } from "@/modulos/cotizaciones/consultas/lista";
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
 import { ESTADOS_RESERVA_ACTIVA } from "@/modulos/ordenes/reglas";
-import type { CatalogoVehiculos, ModeloRegistrado } from "./catalogo-vehiculos";
+import type { CatalogoVehiculos } from "./catalogo-vehiculos";
 import { escaparLike, normalizarBusqueda, normalizarPlaca } from "./reglas";
 
 // Lecturas de clientes (C1). Quien las llama ya pasó por exigirModulo("clientes"): el dueño o un encargado con el
@@ -263,33 +263,8 @@ export async function datosCambioDueno(vehiculoId: number, clienteId: number): P
   return { ...v, reservaActiva: reservaActiva ?? null };
 }
 
-/**
- * Lo que necesita un formulario de vehículo para escribir menos (pedido 52): las marcas activas de la lista, en orden
- * alfabético, y los modelos ya registrados (sin repetir por mayúsculas ni espacios), cada uno con el tamaño que más
- * tienen sus vehículos. Lo ven quienes registran vehículos: no tiene montos ni datos del cliente.
- */
+/** Las marcas activas de la lista, en orden alfabético: de ellas se elige la marca de un vehículo (pedido 52). */
 export async function catalogoVehiculos(): Promise<CatalogoVehiculos> {
-  const marcaClave = sql`lower(btrim(${vehiculo.marca}))`;
-  const modeloClave = sql`lower(btrim(${vehiculo.modelo}))`;
-  const [marcas, conteos] = await Promise.all([
-    db.select({ nombre: marcaVehiculo.nombre }).from(marcaVehiculo).where(eq(marcaVehiculo.activo, true)).orderBy(sql`lower(${marcaVehiculo.nombre})`),
-    db
-      .select({
-        marca: sql<string>`min(btrim(${vehiculo.marca}))`,
-        modelo: sql<string>`min(btrim(${vehiculo.modelo}))`,
-        tamanoId: vehiculo.tamanoId,
-        cuantos: count(),
-      })
-      .from(vehiculo)
-      .where(and(sql`btrim(coalesce(${vehiculo.marca}, '')) <> ''`, sql`btrim(coalesce(${vehiculo.modelo}, '')) <> ''`))
-      .groupBy(marcaClave, modeloClave, vehiculo.tamanoId),
-  ]);
-  // Por marca y modelo, el tamaño con más vehículos
-  const mejores = new Map<string, ModeloRegistrado & { cuantos: number }>();
-  for (const c of conteos) {
-    const k = `${c.marca.toLowerCase()}|${c.modelo.toLowerCase()}`;
-    const antes = mejores.get(k);
-    if (!antes || c.cuantos > antes.cuantos) mejores.set(k, { marca: c.marca, modelo: c.modelo, tamanoId: c.tamanoId, cuantos: c.cuantos });
-  }
-  return { marcas: marcas.map((m) => m.nombre), modelos: [...mejores.values()].map((m) => ({ marca: m.marca, modelo: m.modelo, tamanoId: m.tamanoId })) };
+  const marcas = await db.select({ nombre: marcaVehiculo.nombre }).from(marcaVehiculo).where(eq(marcaVehiculo.activo, true)).orderBy(sql`lower(${marcaVehiculo.nombre})`);
+  return { marcas: marcas.map((m) => m.nombre) };
 }

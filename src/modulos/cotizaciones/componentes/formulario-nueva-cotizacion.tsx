@@ -50,7 +50,7 @@ type Props = {
   /** null: cliente nuevo, que se registra con la cotización. */
   cliente: ClienteElegido | null;
   tamanos: Tamano[];
-  /** Las marcas y los modelos ya registrados, para el vehículo nuevo (pedido 52). */
+  /** Las marcas de la lista, para el vehículo nuevo (pedido 52). */
   catalogo: CatalogoVehiculos;
   /** Las opciones del catálogo para cada tamaño (los activos y los de sus vehículos). */
   opciones: Record<number, OpcionServicio[]>;
