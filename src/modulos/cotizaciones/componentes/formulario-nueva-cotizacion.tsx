@@ -5,17 +5,16 @@ import { usePasosEnHistorial } from "@/componentes/panel/pasos-en-historial";
 import { useFocoDePaso } from "@/componentes/panel/foco-de-paso";
 import Link from "next/link";
 import { SearchIcon } from "lucide-react";
+import { OpcionesEnTarjetas } from "@/componentes/panel/opciones-en-tarjetas";
 import { MensajeError } from "@/componentes/panel/campo";
 import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
 import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { Button, buttonVariants } from "@/componentes/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import type { EstadoCliente } from "@/modulos/clientes/acciones";
 import { CamposCliente, CamposVehiculo } from "@/modulos/clientes/componentes/campos";
-import { DatosVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 import { ResumenClienteVehiculo } from "@/modulos/clientes/componentes/resumen-cliente-vehiculo";
 import { detalleVehiculo, normalizarPlaca } from "@/modulos/clientes/reglas";
 import { leerValores, PREFIJO_VEHICULO } from "@/modulos/clientes/valores";
@@ -279,30 +278,26 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
 
       <div data-paso={PASO_VEHICULO} hidden={paso !== PASO_VEHICULO}>
         <SeccionFormulario titulo={vehiculoNuevo ? (conVehiculos ? "Otro vehículo" : "Vehículo nuevo") : "Vehículo"} claseContenido="gap-4">
+          {/* En tarjetas apiladas que se tocan enteras, como los demás selectores del panel (19/11): la placa y, debajo,
+              sus datos y su tamaño. Con su propio campo oculto ("vehiculo") */}
           {conVehiculos && (
-            <>
-              <input type="hidden" name="vehiculo" value={vehiculo} />
-              <RadioGroup
-                value={vehiculo}
-                onValueChange={(valor) => {
-                  cambiarTamano(String(valor), tamanoNuevo);
-                  setVehiculo(String(valor));
-                }}
-                aria-label="Vehículo"
-                className="gap-2"
-                aria-describedby={e.vehiculo ? "vehiculo-error" : undefined}
-              >
-                {cliente.vehiculos.map((ve, i) => (
-                  <OpcionRadio key={ve.id} id={`vehiculo-${ve.id}`} valor={String(ve.id)} invalido={!!e.vehiculo && i === 0}>
-                    <DatosVehiculo placa={ve.placa} detalle={ve.detalle} tamano={ve.tamano} />
-                  </OpcionRadio>
-                ))}
-                <OpcionRadio id="vehiculo-otro" valor={VEHICULO_OTRO}>
-                  <span className="font-semibold">Otro vehículo</span>
-                </OpcionRadio>
-              </RadioGroup>
-              {e.vehiculo && <MensajeError id="vehiculo-error">{e.vehiculo}</MensajeError>}
-            </>
+            <OpcionesEnTarjetas
+              id="vehiculo"
+              titulo="Vehículo"
+              tituloOculto
+              nombre="vehiculo"
+              valor={vehiculo}
+              cambiar={(valor) => {
+                cambiarTamano(valor, tamanoNuevo);
+                setVehiculo(valor);
+              }}
+              opciones={[
+                ...cliente.vehiculos.map((ve) => ({ valor: String(ve.id), texto: ve.placa, detalle: [...ve.detalle, `Tamaño: ${ve.tamano}`].join(" · ") })),
+                { valor: VEHICULO_OTRO, texto: "Otro vehículo" },
+              ]}
+              error={e.vehiculo}
+              className="grid-cols-1"
+            />
           )}
           {vehiculoNuevo && (
             <>
@@ -370,12 +365,3 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
   );
 }
 
-/** Opción con su caja tocable entera (44 px con pantalla táctil). */
-function OpcionRadio({ id, valor, invalido, children }: { id: string; valor: string; invalido?: boolean; children: React.ReactNode }) {
-  return (
-    <label htmlFor={id} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-border bg-fondo px-3 py-2 has-data-checked:border-tinta">
-      <RadioGroupItem id={id} value={valor} data-invalido={invalido || undefined} />
-      <span className="flex min-w-0 flex-col">{children}</span>
-    </label>
-  );
-}
