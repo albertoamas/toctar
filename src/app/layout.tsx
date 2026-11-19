@@ -35,7 +35,8 @@ export const viewport: Viewport = { themeColor: "#000000" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es" className={`${texto.variable} ${titular.variable} h-full antialiased`}>
+    // suppressHydrationWarning: el script del panel marca <html data-menu> antes de que React la tome (menu-comprimido.tsx)
+    <html lang="es" className={`${texto.variable} ${titular.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="flex min-h-full flex-col">
         {children}
       </body>

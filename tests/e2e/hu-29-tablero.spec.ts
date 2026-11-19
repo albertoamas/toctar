@@ -68,7 +68,12 @@ test("las reservas ocupan sus días en su espacio; un día libre lleva a reserva
 
     // Un día libre: el jueves del primer espacio lleva a reservar ese día en ese espacio
     const [{ jueves }] = await consultar<{ jueves: string }>("select to_char($1::date + 3, 'YYYY-MM-DD') as jueves", [lunes]);
-    await espacio1.getByRole("link", { name: new RegExp(`^Reservar en ${primero} el Jueves.*, libre$`) }).click();
+    // Se ve sin pasar el mouse, como en la tableta (19/11): Playwright da por visible algo con opacidad 0, así que se mira
+    const libre = espacio1.getByRole("link", { name: new RegExp(`^Reservar en ${primero} el Jueves.*, libre$`) });
+    await page.mouse.move(0, 0);
+    await expect(libre).toHaveCSS("opacity", "1");
+    await expect(libre).toContainText("Reservar");
+    await libre.click();
     await expect(page).toHaveURL(new RegExp(`/panel/agenda/nueva\\?fecha=${jueves}&espacio=${espacios[0].id}(?:[?&]volver=[^&#]*)?$`));
   } else {
     // Celular: un día a la vez. El martes, la reserva en el primer espacio y los demás libres

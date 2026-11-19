@@ -11,6 +11,8 @@
 /* Pantalla ancha y en horizontal (el ingreso en dos columnas, pulido 3.2): una tableta grande en vertical se ve como el
    celular, porque en una columna angosta y alta la diagonal de 60° se come la franja. */
 @custom-variant apaisado (@media (min-width: 1024px) and (orientation: landscape));
+/* La barra lateral comprimida (menu-comprimido.tsx): solo ella y lo que tiene adentro, no el menú del celular */
+@custom-variant comprimido (&:where(html[data-menu="comprimido"] [data-menu-lateral], html[data-menu="comprimido"] [data-menu-lateral] *));
 
 @theme inline {
   --font-sans: var(--font-texto);

@@ -21,7 +21,9 @@ export type Permiso = (typeof PERMISOS)[number];
  * Grupos del menú, en su orden (C5 §0). Inicio va suelto, arriba. Sitio web va en Administración (pulido 13.25): solo en
  * su grupo, sin título (un grupo de uno no lo lleva), quedaba suelto entre Clientes y Administración.
  */
-const GRUPOS = { taller: "Taller", clientes: "Clientes", administracion: "Administración" } as const;
+// El menú en grupos (19/11): Operaciones es el trabajo en el orden en que se hace (se cotiza, se reserva, se trabaja);
+// Clientes, lo de cada cliente; Finanzas, el dinero (Saldos pendientes, Gastos y Reportes); Administración.
+const GRUPOS = { operaciones: "Operaciones", clientes: "Clientes", finanzas: "Finanzas", administracion: "Administración" } as const;
 type Grupo = keyof typeof GRUPOS;
 
 type DefinicionModulo = {
@@ -40,15 +42,15 @@ type DefinicionModulo = {
 // Dentro de cada grupo del menú, en este orden: de lo más usado a lo menos. El orden de los grupos es el de GRUPOS.
 export const MODULOS = {
   inicio: { ruta: "/panel", nombre: "Inicio", grupo: null, permisoEncargado: null },
-  agenda: { ruta: "/panel/agenda", nombre: "Agenda", grupo: "taller", permisoEncargado: "agenda" },
-  ordenes: { ruta: "/panel/ordenes", nombre: "Órdenes", grupo: "taller", permisoEncargado: "ordenes" },
+  agenda: { ruta: "/panel/agenda", nombre: "Agenda", grupo: "operaciones", permisoEncargado: "agenda" },
+  ordenes: { ruta: "/panel/ordenes", nombre: "Órdenes", grupo: "operaciones", permisoEncargado: "ordenes" },
   clientes: { ruta: "/panel/clientes", nombre: "Clientes", grupo: "clientes", permisoEncargado: "clientes" },
   // Pedido 23: la cotización directa, sin consulta antes. Pedido 24: el encargado con este permiso cotiza
   cotizaciones: {
     ruta: "/panel/cotizaciones",
     nombre: "Cotizaciones",
     nombrePermiso: "Cotizaciones (cotizar y ver precios)",
-    grupo: "clientes",
+    grupo: "operaciones",
     permisoEncargado: "cotizaciones",
   },
   // HU-37: su pantalla es la lista de saldos; en el menú se llama por lo que muestra. La casilla dice lo que da: cobrar
@@ -58,16 +60,18 @@ export const MODULOS = {
     nombre: "Pagos",
     nombreMenu: "Saldos pendientes",
     nombrePermiso: "Pagos (cobrar y ver saldos)",
-    grupo: "clientes",
+    grupo: "finanzas",
     permisoEncargado: "pagos",
   },
+  // Pedido 16: los gastos del taller y cuánto entró, salió y quedó. Solo el dueño (sin permiso de encargado). Gastos es una
+  // página de Reportes (/panel/reportes/gastos), con su propia entrada en el menú (19/11, a pedido del dueño)
+  gastos: { ruta: "/panel/reportes/gastos", nombre: "Gastos", grupo: "finanzas", permisoEncargado: null },
+  reportes: { ruta: "/panel/reportes", nombre: "Reportes", grupo: "finanzas", permisoEncargado: null },
   mantenimientos: { ruta: "/panel/mantenimientos", nombre: "Mantenimientos", grupo: "clientes", permisoEncargado: "mantenimientos" },
   // Llegan desde el sitio, pero atenderlos es tratar con un cliente
   reclamos: { ruta: "/panel/reclamos", nombre: "Reclamos", grupo: "clientes", permisoEncargado: "reclamos" },
   sitio: { ruta: "/panel/sitio", nombre: "Sitio web", grupo: "administracion", permisoEncargado: "sitio" },
   catalogo: { ruta: "/panel/catalogo", nombre: "Catálogo y precios", grupo: "administracion", permisoEncargado: null },
-  // Pedido 16: cuánto entró, cuánto salió y cuánto quedó, y los gastos que lo explican. Solo el dueño (sin permiso de encargado)
-  reportes: { ruta: "/panel/reportes", nombre: "Reportes", grupo: "administracion", permisoEncargado: null },
   usuarios: { ruta: "/panel/usuarios", nombre: "Usuarios", grupo: "administracion", permisoEncargado: null },
   configuracion: { ruta: "/panel/configuracion", nombre: "Configuración", grupo: "administracion", permisoEncargado: null },
 } as const satisfies Record<string, DefinicionModulo>;
@@ -83,7 +87,7 @@ export function puedeVerModulo(sujeto: SujetoPermisos, modulo: Modulo): boolean 
       return true;
     case "encargado":
       if (modulo === "inicio") return true;
-      // Usuarios, configuración, catálogo y reportes no tienen permiso de encargado: aunque la base tuviera algo raro guardado,
+      // Usuarios, configuración, catálogo, gastos y reportes no tienen permiso de encargado: aunque la base tuviera algo raro guardado,
       // se niegan (RN-01).
       return def.permisoEncargado !== null && sujeto.permisos.includes(def.permisoEncargado);
     default:
@@ -139,9 +143,10 @@ export type GrupoMenu = { titulo: string | null; modulos: Modulo[] };
 
 /**
  * El menú en grupos (C5 §0): primero los sueltos (Inicio) y después cada grupo en el orden de GRUPOS, con los módulos
- * que la persona ve. Un grupo sin módulos no aparece, y uno con un solo módulo va sin título (el título no ordena nada:
- * con solo Órdenes se ve "Inicio" y "Órdenes", sin "Taller").
+ * que la persona ve. Un grupo sin módulos no aparece, y uno del que ve un solo módulo va sin título (el título no ordena
+ * nada: con solo Órdenes se ve "Inicio" y "Órdenes", sin "Operaciones").
  */
+
 export function menuAgrupado(sujeto: SujetoPermisos): GrupoMenu[] {
   const visibles = modulosDelMenu(sujeto);
   const grupos: (Grupo | null)[] = [null, ...(Object.keys(GRUPOS) as Grupo[])];

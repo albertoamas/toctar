@@ -33,7 +33,7 @@ async function Contenido() {
   return (
     <>
       {/* El título arranca en el mismo borde que en las demás páginas; la lista conserva un ancho cómodo de lectura */}
-      <div className="mx-auto w-full max-w-6xl px-4 py-12 md:py-20">
+      <div className="mx-auto w-full max-w-6xl px-4 pt-6 pb-12 md:pt-10 md:pb-20">
         <TituloPagina>Preguntas frecuentes</TituloPagina>
         {preguntas.length === 0 ? (
           <p className="mt-8 text-tinta-suave">Pronto vas a ver aquí las preguntas más comunes.</p>

@@ -24,7 +24,7 @@ Que el dueño vea, en una pantalla, **cuánto entró, cuánto salió y cuánto l
     - **El taller en el mes:** vehículos entregados y servicios más pedidos.
     - **Cotizaciones:** cuántas se enviaron, cuántas se aceptaron y por qué no se aceptaron.
     - **Clientes y mantenimientos:** clientes que volvieron, los que vinieron por primera vez, mantenimientos avisados y cuántos reservaron después del aviso.
-  - **El menú:** "Reportes" en Administración, solo para el dueño.
+  - **El menú:** "Gastos" y "Reportes" en Finanzas, junto a Saldos pendientes, solo para el dueño (19/11; antes, "Reportes" en Administración).
 - **No incluye:**
   - Sueldos ni pagos al personal (pedido 15, Sistema completo).
   - Contabilidad, impuestos o facturación: "Quedó" es lo que entró menos lo que se registró como gasto, no un balance contable.
@@ -81,7 +81,7 @@ Los meses llegan como `AAAA-MM` y se convierten a rango de fechas en Bolivia.
 
   Al guardar: "Gasto registrado: {categoría}, Bs X." y la lista o el reporte se ponen al día.
 - **Configuración → Parámetros:** la sección "Categorías de gasto" (`ListaEditable`), para agregar, renombrar, ordenar y desactivar. Una categoría con gastos no se borra: se desactiva.
-- **El menú:** "Reportes", con un ícono de barras, en Administración, solo para el dueño.
+- **El menú:** "Gastos" (un recibo) y "Reportes" (barras), en Finanzas, solo para el dueño. En Gastos se marca solo Gastos, no también Reportes.
 
 - **Ajustes al programar los gastos (16/11):**
   - cada gasto va en una fila, como un pago en la orden (pulido 13.49): con su comprobante a la izquierda y "Anular gasto" en su "⋯". No hay un modal de detalle, porque la fila ya dice todo;
