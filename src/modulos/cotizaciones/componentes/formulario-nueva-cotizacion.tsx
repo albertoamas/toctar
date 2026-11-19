@@ -293,7 +293,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
               }}
               opciones={[
                 ...cliente.vehiculos.map((ve) => ({ valor: String(ve.id), texto: ve.placa, detalle: [...ve.detalle, `Tamaño: ${ve.tamano}`].join(" · ") })),
-                { valor: VEHICULO_OTRO, texto: "Otro vehículo" },
+                { valor: VEHICULO_OTRO, texto: "Otro vehículo", detalle: "Registrar uno nuevo" },
               ]}
               error={e.vehiculo}
               className="grid-cols-1"
