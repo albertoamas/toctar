@@ -76,7 +76,7 @@ export function EditorHorarios({ valor, onChange, errores }: Props) {
                       {k === 1 && (
                         <Button
                           type="button"
-                          variant="ghost"
+                          variant="accion"
                           size="icon"
                           onClick={() => cambiarDia(i, { ...d, turnos: d.turnos.slice(0, 1) })}
                           aria-label={`Quitar el segundo turno del ${nombre.toLowerCase()}`}
@@ -92,7 +92,7 @@ export function EditorHorarios({ valor, onChange, errores }: Props) {
                     <div>
                       <Button
                         type="button"
-                        variant="ghost"
+                        variant="accion"
                         onClick={() => cambiarDia(i, { ...d, turnos: [...d.turnos, { ...TURNO_NUEVO[1] }] })}
                       >
                         <PlusIcon />

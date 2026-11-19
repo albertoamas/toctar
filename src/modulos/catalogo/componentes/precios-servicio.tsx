@@ -78,7 +78,7 @@ export function PreciosServicio({ servicio, variantes, tamanos, duracionServicio
             {acciones}
             {/* Con varias, en la computadora: uno solo para toda la tabla (en el celular, el de la tarjeta) */}
             {varias && (
-              <Button type="button" variant="ghost" disabled={!hidratado} onClick={() => abrir(variante.id)} className="hidden md:inline-flex">
+              <Button type="button" variant="accion" disabled={!hidratado} onClick={() => abrir(variante.id)} className="hidden md:inline-flex">
                 <PencilIcon />
                 Editar precios
               </Button>
@@ -158,7 +158,7 @@ export function PreciosServicio({ servicio, variantes, tamanos, duracionServicio
       {/* La tarjeta de una variante: la única, o en el celular la elegida */}
       <section aria-labelledby={`precios-${variante.id}-titulo`} className={cn("tt-tarjeta-panel flex flex-col gap-2 p-4", varias && "md:hidden")}>
         <CabeceraSeccion id={`precios-${variante.id}`} titulo={varias ? variante.nombre : "Por tamaño de vehículo"} nivel={3}>
-          <Button type="button" variant="ghost" disabled={!hidratado} aria-label={`${cargar ? "Cargar" : "Editar"} precios de ${nombreDe(variante)}`} onClick={() => abrir(variante.id)}>
+          <Button type="button" variant="accion" disabled={!hidratado} aria-label={`${cargar ? "Cargar" : "Editar"} precios de ${nombreDe(variante)}`} onClick={() => abrir(variante.id)}>
             {cargar ? <PlusIcon /> : <PencilIcon />}
             {cargar ? "Cargar precios" : "Editar"}
           </Button>

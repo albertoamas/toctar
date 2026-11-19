@@ -38,7 +38,7 @@ export function SeccionConEditar({ id, titulo, nivel = 2, etiquetaEditar, titulo
   const [elegido, setAbierto] = useState<boolean | null>(null);
   const abierto = elegido ?? (abierta && hidratado);
   const editar = (
-      <Button type="button" variant="ghost" disabled={!hidratado} aria-label={etiquetaEditar} onClick={() => setAbierto(true)}>
+      <Button type="button" variant="accion" disabled={!hidratado} aria-label={etiquetaEditar} onClick={() => setAbierto(true)}>
         <PencilIcon />
         Editar
       </Button>

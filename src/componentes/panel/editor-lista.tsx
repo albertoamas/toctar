@@ -58,15 +58,15 @@ export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maxim
                   <div className="flex items-start">
                     {valor.length > 1 && (
                       <div className={cn("flex flex-col text-tinta-suave", flechasEnFila && "sm:flex-row")}>
-                        <Button type="button" variant="ghost" size="icon" disabled={i === 0} onClick={() => mover(i, i - 1)} aria-label={`Subir ${etiqueta.toLowerCase()} ${i + 1}`}>
+                        <Button type="button" variant="accion" size="icon" disabled={i === 0} onClick={() => mover(i, i - 1)} aria-label={`Subir ${etiqueta.toLowerCase()} ${i + 1}`}>
                           <ChevronUpIcon />
                         </Button>
-                        <Button type="button" variant="ghost" size="icon" disabled={i === valor.length - 1} onClick={() => mover(i, i + 1)} aria-label={`Bajar ${etiqueta.toLowerCase()} ${i + 1}`}>
+                        <Button type="button" variant="accion" size="icon" disabled={i === valor.length - 1} onClick={() => mover(i, i + 1)} aria-label={`Bajar ${etiqueta.toLowerCase()} ${i + 1}`}>
                           <ChevronDownIcon />
                         </Button>
                       </div>
                     )}
-                    <Button type="button" variant="ghost" size="icon" onClick={() => onChange(valor.filter((_, k) => k !== i))} aria-label={`Quitar ${etiqueta.toLowerCase()} ${i + 1}`}>
+                    <Button type="button" variant="accion" size="icon" onClick={() => onChange(valor.filter((_, k) => k !== i))} aria-label={`Quitar ${etiqueta.toLowerCase()} ${i + 1}`}>
                       <XIcon />
                     </Button>
                   </div>

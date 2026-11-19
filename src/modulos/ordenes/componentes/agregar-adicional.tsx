@@ -26,7 +26,7 @@ export function AgregarAdicional({ id, opciones }: { id: number; opciones: Opcio
   const hidratado = useHidratado();
   return (
     <>
-      <Button type="button" variant="ghost" disabled={!hidratado} onClick={() => setAbierto(true)}>
+      <Button type="button" variant="accion" disabled={!hidratado} onClick={() => setAbierto(true)}>
         <PlusIcon />
         Agregar servicio
       </Button>

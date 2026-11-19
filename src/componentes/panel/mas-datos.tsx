@@ -83,7 +83,7 @@ export function MasDatos({ texto, titulo, detalle, modo = detalle ? "cambiar" : 
   // siguiente envío devolvería el mismo error escondido. Lo nuevo sí se quita: al borrarlo, el error se va con el envío
   const fijoPorError = conError && modo === "cambiar";
   const botonCerrar = (
-    <Button type="button" variant="ghost" onClick={cerrar}>
+    <Button type="button" variant="accion" onClick={cerrar}>
       <cierre.Icono />
       {cierre.texto}
       {/* Qué cierra, para el lector de pantalla (en el contenido y no en aria-label: así no se confunde con un campo) */}

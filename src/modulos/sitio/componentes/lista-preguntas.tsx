@@ -173,7 +173,7 @@ function EliminarPregunta({ pregunta, alEliminar }: { pregunta: Pregunta; alElim
   const [pendiente, iniciar] = useTransition();
   return (
     <>
-      <Button type="button" variant="ghost" className="ml-auto" onClick={() => setAbierto(true)}>
+      <Button type="button" variant="accion" className="ml-auto" onClick={() => setAbierto(true)}>
         <TrashIcon />
         Eliminar
       </Button>
