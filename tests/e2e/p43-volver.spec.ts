@@ -18,7 +18,7 @@ test("una orden vuelve a la pantalla de la que se abrió, y sin origen (o con un
 
   // Desde la ficha del cliente: su fila abre la orden y "Volver" lleva al cliente
   await page.goto(`/panel/clientes/${clienteId}`);
-  await page.getByRole("list", { name: "Reservas" }).getByRole("link").first().click();
+  await page.getByRole("list", { name: "Historia" }).getByRole("link").first().click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?volver=`));
   await expect(volverA(page, "Cliente")).toHaveAttribute("href", `/panel/clientes/${clienteId}`);
   await volverA(page, "Cliente").click();

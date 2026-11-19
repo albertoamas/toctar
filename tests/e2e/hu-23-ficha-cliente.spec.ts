@@ -157,7 +157,7 @@ test("un cliente se desactiva desde «Más» con confirmación, deja de salir en
   await expect(page.getByRole("link", { name: nombre })).toBeVisible();
 });
 
-test("reservas y cotizaciones en tabla, cada fila con su placa aunque tenga un solo vehículo", async ({ page }, info) => {
+test("la historia junta reservas y cotizaciones, cada fila con su placa aunque tenga un solo vehículo", async ({ page }, info) => {
   const s = sufijo(info);
   // Días lejos de hoy y propios de cada proyecto y reintento: los espacios del taller no chocan con otras pruebas
   const dias = 1700 + (info.project.name === "celular" ? 0 : 10) + info.retry * 2;
@@ -166,13 +166,13 @@ test("reservas y cotizaciones en tabla, cada fila con su placa aunque tenga un s
   await crearOrdenLista({ placa: `DA23${s}1`, espacio: 0, dias, precio: 500, pagado: 100 });
   await ingresarComoDueno(page);
   await page.goto(`/panel/clientes/${id}`);
-  // La placa siempre: es como se reconoce un trabajo en el taller (inventario-pantallas.md, cambio 4)
-  const cotizaciones = page.getByRole("list", { name: "Cotizaciones" }).getByRole("link");
-  await expect(cotizaciones).toHaveCount(1);
-  await expect(cotizaciones).toContainText(`2023-${s}71`);
-  await expect(cotizaciones).toContainText(`DA23${s}1`);
-  const reservas = page.getByRole("list", { name: "Reservas" }).getByRole("link");
-  await expect(reservas).toHaveCount(1);
-  await expect(reservas).toContainText(`DA23${s}1`);
-  await expect(reservas).toContainText("Saldo: 400 Bs");
+  // Una sola historia (C7 §5.6): la cotización y la orden, cada una con la placa (es como se reconoce un trabajo en el
+  // taller, inventario-pantallas.md, cambio 4)
+  const historia = page.getByRole("list", { name: "Historia" }).getByRole("link");
+  await expect(historia).toHaveCount(2);
+  const cotizacion = historia.filter({ hasText: `2023-${s}71` });
+  await expect(cotizacion).toContainText(`DA23${s}1`);
+  const orden = historia.filter({ hasNotText: `2023-${s}71` });
+  await expect(orden).toContainText(`DA23${s}1`);
+  await expect(orden).toContainText("Debe 400 Bs");
 });

@@ -10,7 +10,7 @@ import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { Insignia } from "@/componentes/panel/insignia";
 import { ListaDatos } from "@/componentes/panel/lista-datos";
-import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
+import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
 import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia } from "@/lib/fechas";
@@ -19,16 +19,16 @@ import { exigirModulo } from "@/lib/sesion";
 import { aqui, conDesde, volverDesde } from "@/lib/volver";
 import { formatearWhatsApp } from "@/lib/whatsapp";
 import { reservasDelVehiculo } from "@/modulos/agenda/consultas/listas";
-import { ReservasCliente } from "@/modulos/agenda/componentes/reservas-cliente";
 import { MasVehiculo } from "@/modulos/clientes/componentes/mas-vehiculo";
 import { FormularioVehiculo } from "@/modulos/clientes/componentes/vehiculos-cliente";
 import { fichaVehiculo } from "@/modulos/clientes/consultas";
 import { detalleVehiculo, rutaVehiculo } from "@/modulos/clientes/reglas";
 import { obtenerParametros, tamanosActivos } from "@/modulos/configuracion/consultas";
-import { ListaCotizaciones } from "@/modulos/cotizaciones/componentes/lista-cotizaciones";
 import { cotizacionesDelVehiculo } from "@/modulos/cotizaciones/consultas/lista";
 import { ListaMantenimientos } from "@/modulos/mantenimientos/componentes/lista-mantenimientos";
 import { mantenimientosDelVehiculo } from "@/modulos/mantenimientos/consultas";
+import { LineaDeTiempo } from "@/componentes/panel/linea-de-tiempo";
+import { HISTORIA_CORTA, historia } from "@/modulos/clientes/componentes/historia";
 
 export const metadata: Metadata = { title: "Vehículo" };
 
@@ -40,9 +40,6 @@ export const metadata: Metadata = { title: "Vehículo" };
 
 /** Un id de la dirección: solo dígitos y dentro de lo que guarda la base (uno mayor, no existe), como en "Cambiar de dueño". */
 const numero = (texto: unknown) => (typeof texto === "string" && /^\d{1,10}$/.test(texto) && Number(texto) <= 2147483647 ? Number(texto) : null);
-
-/** Cuántos trabajos se ven antes de "Ver todo el historial". */
-const HISTORIAL_CORTO = 5;
 
 export default function PaginaVehiculo({ params, searchParams }: PageProps<"/panel/clientes/[id]/vehiculos/[vehiculo]">) {
   return (
@@ -86,8 +83,19 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
   const volver = volverDesde(busqueda.volver, { href: fichaCliente as Route, texto: v.dueno.nombre }, usuario);
   const desdeAqui = aqui(rutaVehiculo(v.dueno.id, v.id), busqueda);
   const detalle = detalleVehiculo(v);
-  const todoElHistorial = busqueda.historial === "todo";
-  const historial = todoElHistorial ? reservas : reservas.slice(0, HISTORIAL_CORTO);
+  // La historia: las reservas con la Agenda, las cotizaciones con Cotizaciones; cada una dice con qué dueño fue, si no
+  // es el de ahora (P37: lo de antes de un cambio de dueño sigue a nombre del anterior)
+  const conHistoria = verAgenda || verCotizaciones;
+  const todaLaHistoria = busqueda.historia === "todo";
+  const hitos = historia({
+    reservas: verAgenda ? reservas : null,
+    cotizaciones: verCotizaciones ? cotizaciones : null,
+    verOrdenes,
+    conSaldo: verPagos,
+    umbral: parametros?.dias_cotizacion_sin_respuesta ?? 0,
+    desde: desdeAqui,
+    duenoActual: v.dueno.id,
+  });
   // La reserva directa lleva precios: la arma quien ve pagos, con el cliente y el vehículo ya elegidos
   const reservar = v.activo && v.dueno.activo && verAgenda && verPagos;
 
@@ -119,7 +127,22 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
         {!v.activo && "No se ofrece para reservar ni cotizar."}
       </EncabezadoPagina>
 
-      <PartesIguales>
+      {/* C7 §5.6 (18/11): la historia del vehículo (reservas, órdenes y cotizaciones, también las de un dueño anterior) y
+          su mantenimiento a la izquierda; los datos y el dueño al costado. En el celular: la historia, los datos y el dueño,
+          y el mantenimiento */}
+      <div className="grid items-start gap-8 gap-x-4 @4xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        {conHistoria && (
+          <Seccion id="historia" titulo="Historia" sinRelleno className="@4xl:col-start-1 @4xl:row-start-1">
+            <LineaDeTiempo
+              hitos={hitos}
+              corta={todaLaHistoria ? undefined : HISTORIA_CORTA}
+              verTodo={conDesde(`${rutaVehiculo(v.dueno.id, v.id)}?historia=todo`, typeof busqueda.volver === "string" ? busqueda.volver : null)}
+              vacio="Todavía no tiene trabajos ni cotizaciones."
+            />
+          </Seccion>
+        )}
+
+        <div className="flex min-w-0 flex-col gap-8 @4xl:col-start-2 @4xl:row-span-2 @4xl:row-start-1">
         <SeccionConEditar
           id="datos"
           titulo="Datos"
@@ -149,48 +172,27 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
             ]}
           />
         </Seccion>
-      </PartesIguales>
+        </div>
 
-      {verMantenimientos && (
-        <Seccion id="mantenimiento" titulo="Mantenimiento" sinRelleno>
-          {mantenimientos.length === 0 ? (
-            <p className="px-4 py-3 text-tinta-suave">No tiene mantenimiento programado.</p>
-          ) : (
-            <ListaMantenimientos
-              mantenimientos={mantenimientos}
-              editables={v.dueno.activo}
-              ve={{ ordenes: verOrdenes, agenda: verAgenda }}
-              desde={desdeAqui}
-              hoy={fechaEnBolivia()}
-              conPlaca={false}
-            />
-          )}
-        </Seccion>
-      )}
-
-      {verAgenda && (
-        <Seccion id="historial" titulo="Historial" sinRelleno>
-          {reservas.length === 0 ? (
-            <p className="px-4 py-3 text-tinta-suave">Todavía no tiene trabajos.</p>
-          ) : (
-            <>
-              {/* El dueño de cada trabajo en ese momento: lo de antes de un cambio de dueño sigue a nombre del anterior */}
-              <ReservasCliente reservas={historial} verOrdenes={verOrdenes} conSaldo={verPagos} desde={desdeAqui} duenoActual={v.dueno.id} />
-              {!todoElHistorial && reservas.length > HISTORIAL_CORTO && (
-                <Link href={conDesde(`${rutaVehiculo(v.dueno.id, v.id)}?historial=todo`, typeof busqueda.volver === "string" ? busqueda.volver : null)} className={cn(buttonVariants({ variant: "outline" }), "m-4 self-start")}>
-                  Ver todo el historial ({reservas.length})
-                </Link>
+        <div className="flex min-w-0 flex-col gap-8 empty:hidden @4xl:col-start-1 @4xl:row-start-2">
+          {verMantenimientos && (
+            <Seccion id="mantenimiento" titulo="Mantenimiento" sinRelleno>
+              {mantenimientos.length === 0 ? (
+                <p className="px-4 py-3 text-tinta-suave">No tiene mantenimiento programado.</p>
+              ) : (
+                <ListaMantenimientos
+                  mantenimientos={mantenimientos}
+                  editables={v.dueno.activo}
+                  ve={{ ordenes: verOrdenes, agenda: verAgenda }}
+                  desde={desdeAqui}
+                  hoy={fechaEnBolivia()}
+                  conPlaca={false}
+                />
               )}
-            </>
+            </Seccion>
           )}
-        </Seccion>
-      )}
-
-      {parametros && cotizaciones.length > 0 && (
-        <Seccion id="cotizaciones" titulo="Cotizaciones" sinRelleno>
-          <ListaCotizaciones cotizaciones={cotizaciones} umbral={parametros.dias_cotizacion_sin_respuesta} desde={desdeAqui} />
-        </Seccion>
-      )}
+        </div>
+      </div>
     </>
   );
 }

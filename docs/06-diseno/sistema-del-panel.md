@@ -150,6 +150,7 @@ La etiqueta a la izquierda y el valor a la derecha, con `ListaDatos`, para que l
 | `PartesIguales` | Las partes de a dos (o de a tres) de una ficha | Existe desde C6 |
 | `Seccion` | Título arriba de la tarjeta, con su acción; con `dentro`, adentro (en un formulario) | Existe desde C6, sobre `CabeceraSeccion` |
 | `CabeceraTarjeta` | El título adentro de una tarjeta de formulario, con su acción y su línea de ayuda | Existe desde C7 (18/11) |
+| `LineaDeTiempo` | La historia de un cliente o un vehículo: reservas, órdenes y cotizaciones en una lista, lo más reciente arriba, plegada desde la sexta | Existe desde C7 (18/11) |
 | `AvisoEstado` | Lo que decide un paso del taller, arriba: verde, ámbar o azul, con ícono, texto y su acción | Existe desde C7 (18/11) |
 | `ConResumen`, `PasoConCostado` | El paso (2/3) y su resumen al costado (1/3) en la computadora: el resumen se oculta en el celular (`ConResumen`) o va arriba (`PasoConCostado`) | Existen desde C7 (18/11) |
 | `CabeceraSeccion` | Solo el título y su acción, si lo de abajo no es una tarjeta (una lista, un texto) | Existe |

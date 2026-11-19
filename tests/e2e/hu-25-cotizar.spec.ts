@@ -176,7 +176,7 @@ test("cliente nuevo en tres pasos: sus datos completos, su vehículo, y los serv
   // El cliente es una fila que lleva a su ficha (pulido 13.50)
   await page.getByRole("link", { name: /^Ver ficha del cliente: / }).click();
   await expect(page.getByRole("list", { name: "Vehículos", exact: true })).toContainText(`CN25${s}1`);
-  await expect(page.getByRole("list", { name: "Cotizaciones" })).toContainText("600,50 Bs");
+  await expect(page.getByRole("list", { name: "Historia" })).toContainText("600,50 Bs");
 });
 
 test("un WhatsApp repetido avisa y ofrece cotizarle a ese cliente; lo escrito se conserva", async ({ page }, info) => {
@@ -214,7 +214,7 @@ test("desde la ficha del cliente: llega elegido, con su vehículo marcado, y la 
   const id = await crearClienteEnBase({ nombre: `Desde ficha ${s}`, telefono: telefono(info, 3), placa: `CF25${s}1` });
   await ingresarComoDueno(page);
   await page.goto(`/panel/clientes/${id}`);
-  await expect(page.getByText("Todavía no tiene cotizaciones.")).toBeVisible();
+  await expect(page.getByText("Todavía no tiene trabajos ni cotizaciones.")).toBeVisible();
   await page.getByRole("link", { name: "Nueva cotización" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/cotizaciones/nueva\\?cliente=${id}(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByRole("region", { name: "Cotización para" })).toContainText(`Desde ficha ${s}`);
@@ -230,7 +230,7 @@ test("desde la ficha del cliente: llega elegido, con su vehículo marcado, y la 
   await expect(page.getByRole("list", { name: "Versiones" })).toContainText("En persona");
 
   await page.goto(`/panel/clientes/${id}`);
-  await expect(page.getByRole("list", { name: "Cotizaciones" }).getByRole("link", { name: new RegExp(`CF25${s}1`) })).toBeVisible();
+  await expect(page.getByRole("list", { name: "Historia" }).getByRole("link").filter({ hasText: `CF25${s}1` })).toBeVisible();
 });
 
 test("nueva versión: el mismo número, la anterior queda reemplazada y una vieja lleva a la vigente", async ({ page }, info) => {

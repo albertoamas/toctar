@@ -133,18 +133,20 @@ Decidido el 18/11, con capturas: Saldos ya seguía el patrón; el problema era M
 - [x] Mantenimientos — el servicio sin "Mantenimiento de" y el intervalo en gris; el vencimiento en una insignia (ámbar si venció); "Avisado el 03/06" (la hora y quién, al pasar el puntero y para el lector); "No le interesa" en el "⋯". Las filas bajan de 5 renglones a 3 en la computadora.
 - [x] Por reservar (Agenda) — cada fila dice "Reservar".
 
-## Paso 7 — Ficha con historia (rama `patrones-ficha-historia`)
+## Paso 7 — Ficha con historia (rama `patrones-anchos`)
+
+Decidido el 18/11, con capturas.
 
 ### Piezas
 
-- [ ] `LineaDeTiempo` (nueva): cada trabajo con su insignia, placa, servicio, monto (si los ve) y fecha; plegada desde el sexto.
-- [ ] La consulta que junta cotizaciones, reservas y órdenes del cliente o del vehículo.
+- [x] `LineaDeTiempo` (nueva, `linea-de-tiempo.tsx`): cada trabajo con su fecha, sus servicios, su insignia, la placa o el número y el monto si quien mira lo ve; lo más reciente arriba; las 5 primeras y "Ver toda la historia (N)".
+- [x] `historia()` (`clientes/componentes/historia.tsx`): junta reservas, órdenes y cotizaciones; una cotización aceptada con su reserva no se repite. La consulta de reservas suma sus servicios (solo lectura). `reservas-cliente.tsx` se borra.
 
 ### Pantallas
 
-- [ ] Ficha del cliente — `/panel/clientes/[id]`: historia; vehículos y datos al costado; WhatsApp y "Más" arriba.
-- [ ] Ficha del vehículo — `/panel/clientes/[id]/vehiculos/[vehiculo]`: su historia; datos al costado.
-- [ ] E2E nueva: la historia en orden y sin montos para el perfil Taller.
+- [x] Ficha del cliente — la historia con "Nueva reserva" y "Nueva cotización" y los mantenimientos a la izquierda; vehículos y datos al costado. En el celular: historia, vehículos, datos y mantenimientos.
+- [x] Ficha del vehículo — su historia (con "Con {dueño}" si fue con otro) y su mantenimiento; datos y dueño al costado.
+- [x] E2E nueva `c7-historia`: el orden de la historia y, sin Pagos ni Cotizaciones, sin montos ni cotizaciones (RN-12). Ajustadas las que buscaban las listas "Reservas" y "Cotizaciones" de la ficha.
 
 ## Paso 8 — Cierre (rama `patrones-cierre`)
 
