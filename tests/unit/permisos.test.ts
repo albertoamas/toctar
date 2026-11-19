@@ -114,8 +114,9 @@ describe("menú en grupos (C5 §0)", () => {
   test("el dueño ve todos los grupos, con su título, en orden", () => {
     expect(menuAgrupado(dueno).map((g) => [g.titulo, g.modulos])).toEqual([
       [null, ["inicio"]],
-      ["Taller", ["agenda", "ordenes"]],
-      ["Clientes", ["clientes", "cotizaciones", "pagos", "mantenimientos", "reclamos"]],
+      ["Operaciones", ["agenda", "ordenes", "cotizaciones"]],
+      ["Clientes", ["clientes", "mantenimientos", "reclamos"]],
+      ["Finanzas", ["pagos"]],
       ["Administración", ["sitio", "catalogo", "usuarios", "configuracion"]],
     ]);
   });
@@ -132,7 +133,8 @@ describe("menú en grupos (C5 §0)", () => {
       { titulo: null, modulos: ["inicio"] },
       { titulo: null, modulos: ["ordenes"] },
     ]);
-    expect(menuAgrupado(encargado(["agenda", "ordenes", "pagos"])).map((g) => g.titulo)).toEqual([null, "Taller", null]);
+    // Finanzas tiene un solo módulo (Saldos pendientes): lleva su título aunque se vea solo él
+    expect(menuAgrupado(encargado(["agenda", "ordenes", "pagos"])).map((g) => g.titulo)).toEqual([null, "Operaciones", "Finanzas"]);
   });
 });
 

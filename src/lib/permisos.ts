@@ -21,7 +21,9 @@ export type Permiso = (typeof PERMISOS)[number];
  * Grupos del menú, en su orden (C5 §0). Inicio va suelto, arriba. Sitio web va en Administración (pulido 13.25): solo en
  * su grupo, sin título (un grupo de uno no lo lleva), quedaba suelto entre Clientes y Administración.
  */
-const GRUPOS = { taller: "Taller", clientes: "Clientes", administracion: "Administración" } as const;
+// El menú en grupos (19/11): Operaciones es el trabajo en el orden en que se hace (se cotiza, se reserva, se trabaja);
+// Clientes, lo de cada cliente; Finanzas, el dinero (Gastos y Reportes se suman con el pedido 16); Administración.
+const GRUPOS = { operaciones: "Operaciones", clientes: "Clientes", finanzas: "Finanzas", administracion: "Administración" } as const;
 type Grupo = keyof typeof GRUPOS;
 
 type DefinicionModulo = {
@@ -40,15 +42,15 @@ type DefinicionModulo = {
 // Dentro de cada grupo del menú, en este orden: de lo más usado a lo menos. El orden de los grupos es el de GRUPOS.
 export const MODULOS = {
   inicio: { ruta: "/panel", nombre: "Inicio", grupo: null, permisoEncargado: null },
-  agenda: { ruta: "/panel/agenda", nombre: "Agenda", grupo: "taller", permisoEncargado: "agenda" },
-  ordenes: { ruta: "/panel/ordenes", nombre: "Órdenes", grupo: "taller", permisoEncargado: "ordenes" },
+  agenda: { ruta: "/panel/agenda", nombre: "Agenda", grupo: "operaciones", permisoEncargado: "agenda" },
+  ordenes: { ruta: "/panel/ordenes", nombre: "Órdenes", grupo: "operaciones", permisoEncargado: "ordenes" },
   clientes: { ruta: "/panel/clientes", nombre: "Clientes", grupo: "clientes", permisoEncargado: "clientes" },
   // Pedido 23: la cotización directa, sin consulta antes. Pedido 24: el encargado con este permiso cotiza
   cotizaciones: {
     ruta: "/panel/cotizaciones",
     nombre: "Cotizaciones",
     nombrePermiso: "Cotizaciones (cotizar y ver precios)",
-    grupo: "clientes",
+    grupo: "operaciones",
     permisoEncargado: "cotizaciones",
   },
   // HU-37: su pantalla es la lista de saldos; en el menú se llama por lo que muestra. La casilla dice lo que da: cobrar
@@ -58,7 +60,7 @@ export const MODULOS = {
     nombre: "Pagos",
     nombreMenu: "Saldos pendientes",
     nombrePermiso: "Pagos (cobrar y ver saldos)",
-    grupo: "clientes",
+    grupo: "finanzas",
     permisoEncargado: "pagos",
   },
   mantenimientos: { ruta: "/panel/mantenimientos", nombre: "Mantenimientos", grupo: "clientes", permisoEncargado: "mantenimientos" },
@@ -137,16 +139,20 @@ export type GrupoMenu = { titulo: string | null; modulos: Modulo[] };
 
 /**
  * El menú en grupos (C5 §0): primero los sueltos (Inicio) y después cada grupo en el orden de GRUPOS, con los módulos
- * que la persona ve. Un grupo sin módulos no aparece, y uno con un solo módulo va sin título (el título no ordena nada:
- * con solo Órdenes se ve "Inicio" y "Órdenes", sin "Taller").
+ * que la persona ve. Un grupo sin módulos no aparece, y uno del que ve un solo módulo va sin título (el título no ordena
+ * nada: con solo Órdenes se ve "Inicio" y "Órdenes", sin "Operaciones"). Un grupo que tiene un solo módulo (Finanzas, hasta
+ * que lleguen Gastos y Reportes) sí lleva su título: es su lugar en el menú.
  */
+/** Cuántos módulos tiene un grupo, vea quien vea. */
+const modulosDelGrupo = (grupo: Grupo) => (Object.values(MODULOS) as DefinicionModulo[]).filter((d) => d.grupo === grupo).length;
+
 export function menuAgrupado(sujeto: SujetoPermisos): GrupoMenu[] {
   const visibles = modulosDelMenu(sujeto);
   const grupos: (Grupo | null)[] = [null, ...(Object.keys(GRUPOS) as Grupo[])];
   return grupos
     .map((grupo) => ({ grupo, modulos: visibles.filter((m) => (MODULOS[m] as DefinicionModulo).grupo === grupo) }))
     .filter((b) => b.modulos.length > 0)
-    .map(({ grupo, modulos }) => ({ titulo: grupo && modulos.length > 1 ? GRUPOS[grupo] : null, modulos }));
+    .map(({ grupo, modulos }) => ({ titulo: grupo && (modulos.length > 1 || modulosDelGrupo(grupo) === 1) ? GRUPOS[grupo] : null, modulos }));
 }
 
 /**
