@@ -84,7 +84,7 @@ test("en Nueva cotización con un cliente nuevo los títulos van adentro de su t
   await ingresarComoDueno(page);
   await page.goto("/panel/cotizaciones/nueva");
   await page.getByRole("link", { name: "Cliente nuevo" }).click();
-  await expect(page.getByRole("heading", { name: "Cliente nuevo" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Cliente nuevo" })).toBeVisible();
   await titulosAdentro(page);
   expect(await anchoDePagina(page)).toBeLessThanOrEqual(page.viewportSize()!.width);
   // El paso del vehículo, en su propia pantalla (pedido 40)

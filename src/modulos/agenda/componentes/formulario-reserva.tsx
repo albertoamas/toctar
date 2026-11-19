@@ -29,6 +29,7 @@ import { espacioVigente, useEspaciosLibres } from "./espacios-libres";
 import { SeccionAdelanto } from "./seccion-adelanto";
 import { SeccionFechasReserva } from "./seccion-fechas-reserva";
 import { ConResumen, FilaResumen } from "@/componentes/panel/con-resumen";
+import { CabeceraTarjeta } from "@/componentes/panel/cabecera-seccion";
 
 // HU-30: agendar una reserva (RF-36, RF-37). Las fechas sugieren la entrega con la mayor duración de los servicios
 // (decisión del 20/10: es aproximada y se edita); al cambiarlas se vuelven a pedir los espacios libres (RN-06). El
@@ -184,11 +185,9 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
   const faltaAlEntregar = conTotal && montoAdelanto ? ((centavos(total) - centavos(montoAdelanto)) / 100).toFixed(2) : null;
   const resumenFecha =
     origen.tipo === "directa" || conTotal ? (
-      <section aria-labelledby="resumen-reserva-titulo" className="tt-tarjeta-panel flex flex-col gap-3 p-4">
-        <h2 id="resumen-reserva-titulo" className="tt-titulo-sub">
-          Resumen
-        </h2>
-        <dl className="flex flex-col gap-2">
+      <section aria-labelledby="resumen-reserva-titulo" className="tt-tarjeta-panel flex flex-col">
+        <CabeceraTarjeta id="resumen-reserva" titulo="Resumen" />
+        <dl className="flex flex-col gap-2 px-4 pt-3 pb-4 sm:px-5 sm:pb-5">
           {origen.tipo === "directa" &&
             lineas.map((l, i) => <FilaResumen key={i} etiqueta={nombreLinea(l, i)} valor={conTotal ? `${mostrarMonto(leerMonto(l.precio) ?? "0")} Bs` : ""} />)}
           {conTotal && <FilaResumen etiqueta="Total" valor={`${mostrarMonto(total)} Bs`} fuerte separada={origen.tipo === "directa"} />}

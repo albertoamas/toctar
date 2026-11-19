@@ -41,7 +41,8 @@ estilo: se arma con estas piezas (`src/componentes/panel/`), y si alguna no alca
 | Un formulario en pasos con su total o lo elegido al costado (computadora) | `ConResumen` y `FilaResumen` (en el celular, el total en el pie) |
 | La portada de una sección con partes | `TarjetasSeccion` ("¿Qué quieres cambiar?") |
 | Una sección de ficha con "Editar" | `SeccionConEditar` (el formulario en `ModalFormulario`) |
-| Una parte de un formulario largo | `SeccionFormulario` (o `tt-seccion-formulario` en el fieldset) |
+| Una parte de un formulario largo | `SeccionFormulario` (o `tt-seccion-formulario` en el fieldset), con `accion` si lleva un botón al lado del título |
+| Lo que se lee dentro de un formulario (lo elegido, los montos, la firma) | `CabeceraTarjeta` o `Seccion dentro`: en un formulario, el título va siempre adentro de la tarjeta (sistema-del-panel.md §2) |
 | Un estado | `Insignia` con su tono; los del trabajo, de `TONO_ESTADO_TRABAJO` |
 | Un bloque suelto | `tt-tarjeta-panel` |
 

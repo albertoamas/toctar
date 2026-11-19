@@ -61,7 +61,7 @@ test("cliente nuevo en tres pasos: sus datos completos, su vehículo, y los serv
   // Paso 1: el cliente; buscarlo o uno nuevo
   await expect(pasoActual(page)).toContainText("Cliente");
   await page.getByRole("link", { name: "Cliente nuevo" }).click();
-  await expect(page.getByRole("heading", { name: "Cliente nuevo" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Cliente nuevo" })).toBeVisible();
   await expect(pasoActual(page)).toContainText("Cliente");
 
   // Vacío: los errores del cliente, sin pasar al vehículo; el foco, al primero

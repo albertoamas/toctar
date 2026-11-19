@@ -9,7 +9,6 @@ import { MensajeError } from "@/componentes/panel/campo";
 import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
 import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
 import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { Button, buttonVariants } from "@/componentes/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
@@ -217,10 +216,11 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
   const datosCliente = cliente ? [cliente.nombre, formatearWhatsApp(cliente.telefono)] : resumen.cliente;
   // Lo ya elegido (pulido final del 09/11, como Nueva reserva), con "Cambiar" para volver a su paso: arriba y, en el
   // paso de servicios de la computadora, al costado. `id` distinto en cada lugar: los dos están en la página
-  const cotizacionPara = (id: string) =>
+  const cotizacionPara = (id: string, pie?: React.ReactNode) =>
     datosCliente && (
       <ResumenClienteVehiculo
         id={id}
+        pie={pie}
         titulo="Cotización para"
         cliente={{ nombre: datosCliente[0], detalle: datosCliente[1], href: clienteNuevo ? undefined : conDesde("/panel/cotizaciones/nueva", volver), alCambiar: () => volverA(PASO_CLIENTE) }}
         vehiculo={
@@ -257,13 +257,17 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
       <div data-paso={PASO_CLIENTE} hidden={paso !== PASO_CLIENTE} className="flex flex-col gap-3">
         {clienteNuevo && (
           <>
-            <CabeceraSeccion id="cliente" titulo="Cliente nuevo">
-              <Link href={conDesde("/panel/cotizaciones/nueva", volver)} className={buttonVariants({ variant: "ghost" })}>
-                <SearchIcon />
-                Buscar un cliente registrado
-              </Link>
-            </CabeceraSeccion>
-            <SeccionFormulario titulo="Cliente nuevo" tituloOculto claseContenido="gap-6">
+            {/* El título adentro, con "Buscar un cliente registrado" al lado (sistema-del-panel.md §2, 18/11) */}
+            <SeccionFormulario
+              titulo="Cliente nuevo"
+              accion={
+                <Link href={conDesde("/panel/cotizaciones/nueva", volver)} className={buttonVariants({ variant: "ghost" })}>
+                  <SearchIcon />
+                  Buscar un cliente registrado
+                </Link>
+              }
+              claseContenido="gap-6"
+            >
               <CamposCliente estado={vista} plegar enlaceExistente={usarExistente} />
             </SeccionFormulario>
           </>
@@ -320,12 +324,8 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, opciones, inicio, 
       <div data-paso={PASO_SERVICIOS} hidden={paso !== PASO_SERVICIOS} className="flex flex-col gap-6">
         <ConResumen
           etiqueta="Resumen de la cotización"
-          resumen={
-            <>
-              {datosCliente && cotizacionPara("cotizacion-para-lateral")}
-              <ResumenPrecios precios={precios} />
-            </>
-          }
+          // Lo elegido y el total en una sola tarjeta, con su título adentro (sistema-del-panel.md §2, 18/11)
+          resumen={cotizacionPara("cotizacion-para-lateral", <ResumenPrecios precios={precios} />)}
         >
           <CamposPrecio precios={precios} opciones={delTamano(tamanoId)} errores={e} hoy={hoy} />
         </ConResumen>

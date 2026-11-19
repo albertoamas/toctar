@@ -81,7 +81,7 @@ async function Entrega({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
 
       {/* Lo que la entrega hace con los planes de mantenimiento: una sección con su título, para que se vea */}
       {(planes.programa.length > 0 || planes.hechos.length > 0) && (
-        <Seccion id="mantenimiento" titulo="Mantenimiento">
+        <Seccion id="mantenimiento" titulo="Mantenimiento" dentro>
           <ul className="flex flex-col gap-1">
             {/* Por posición: dos planes pueden decir lo mismo (dos servicios con el mismo mantenimiento) */}
             {planes.hechos.map((servicio, i) => (

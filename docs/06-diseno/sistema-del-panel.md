@@ -51,6 +51,12 @@ Una pantalla nueva o cambiada toma una de estas formas; si ninguna sirve, se dis
 
 ## 2. Forma de una ficha
 
+> **Dónde va el título de una tarjeta (18/11): una sola regla por tipo de pantalla, nunca dos en la misma.**
+>
+> - **Fichas** (ver y editar): el título **fuera**, arriba de la tarjeta, con su "Editar" al lado (`Seccion`, `SeccionConEditar`).
+> - **Formularios** (crear, en pasos, un paso del taller: Nueva cotización, Nueva versión, Nueva reserva, Nuevo cliente, Nuevo usuario, Cambiar de dueño, Recibir, Entregar, Publicar): el título **adentro** de cada tarjeta, como la leyenda de un grupo de campos. Lo que se lee en un formulario (lo ya elegido, los montos, la firma, el checklist) también: `SeccionFormulario` para los campos, `CabeceraTarjeta` o `Seccion dentro` para lo demás. El resumen del costado es una sola tarjeta ("Cotización para" con el total al pie).
+> - **Excepción:** una lista para elegir dentro de un formulario (buscar el cliente, elegir el vehículo, sus cotizaciones) sigue la forma de las listas: el título arriba y la lista en su tarjeta.
+
 - **Título arriba de la tarjeta**, con su acción en la misma fila. La lectura va dentro de la tarjeta. El título va adentro solo si la tarjeta es un bloque aparte que no sigue la lectura de la página: un panel lateral de una portada ("Para atender") o un formulario que se abre en la misma pantalla ("Subir fotos").
 - **Se lee y se edita aparte:** cada parte tiene su "Editar", que abre un modal y guarda solo esa parte. No hay un "Guardar" general.
 - **Qué va en la ficha:** primero lo que decide (estado, montos, lo que falta), después lo que se consulta (datos, fotos) y al final la historia.
@@ -143,7 +149,8 @@ La etiqueta a la izquierda y el valor a la derecha, con `ListaDatos`, para que l
 |---|---|---|
 | `PaginaPanel` | El tipo de pantalla, su ancho y su separación | Existe desde C6 |
 | `PartesIguales` | Las partes de a dos (o de a tres) de una ficha | Existe desde C6 |
-| `Seccion` | Título arriba de la tarjeta, con su acción | Existe desde C6, sobre `CabeceraSeccion` |
+| `Seccion` | Título arriba de la tarjeta, con su acción; con `dentro`, adentro (en un formulario) | Existe desde C6, sobre `CabeceraSeccion` |
+| `CabeceraTarjeta` | El título adentro de una tarjeta de formulario, con su acción y su línea de ayuda | Existe desde C7 (18/11) |
 | `CabeceraSeccion` | Solo el título y su acción, si lo de abajo no es una tarjeta (una lista, un texto) | Existe |
 | `SeccionConEditar` | Sección que se lee, con su modal | Existe |
 | `EncabezadoPagina` | Volver, título, estado y acciones | Existe |

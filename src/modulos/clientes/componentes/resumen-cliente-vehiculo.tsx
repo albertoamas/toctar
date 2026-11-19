@@ -1,5 +1,5 @@
 import type { Route } from "next";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { CabeceraTarjeta } from "@/componentes/panel/cabecera-seccion";
 import { BotonCambiar } from "@/componentes/panel/resumen-paso";
 import { DatosVehiculo } from "./datos-vehiculo";
 
@@ -22,14 +22,17 @@ type Props = {
   vehiculo: ({ placa: string; detalle: (string | number)[]; tamano: string } & Cambio) | null;
   /** Una última fila de la misma tarjeta: el mantenimiento que se reserva (hallazgo 10, antes iba suelto entre tarjetas). */
   extra?: React.ReactNode;
+  /** Al pie de la tarjeta, con su relleno: el total, en el resumen del costado (ConResumen, C7 §5.2). */
+  pie?: React.ReactNode;
 };
 
-export function ResumenClienteVehiculo({ id = "para-quien", titulo = "Reserva para", cliente, vehiculo, extra }: Props) {
+export function ResumenClienteVehiculo({ id = "para-quien", titulo = "Reserva para", cliente, vehiculo, extra, pie }: Props) {
+  // El título adentro de la tarjeta, como el resto del formulario (sistema-del-panel.md §2, 18/11)
   return (
-    <section aria-labelledby={`${id}-titulo`} className="flex flex-col gap-3">
-      <CabeceraSeccion id={id} titulo={titulo} />
-      <div className="tt-tarjeta-panel flex flex-col divide-y divide-border">
-        <div className="flex min-h-12 items-center justify-between gap-3 py-1 pr-2 pl-4">
+    <section aria-labelledby={`${id}-titulo`} className="tt-tarjeta-panel flex flex-col">
+      <CabeceraTarjeta id={id} titulo={titulo} />
+      <div className="mt-2 flex flex-col divide-y divide-border">
+        <div className="flex min-h-12 items-center justify-between gap-3 py-1 pr-2 pl-4 sm:pl-5">
           <span className="flex min-w-0 flex-col">
             <span className="font-semibold break-words">{cliente.nombre}</span>
             {cliente.detalle && <span className="text-sm text-tinta-suave">{cliente.detalle}</span>}
@@ -37,14 +40,15 @@ export function ResumenClienteVehiculo({ id = "para-quien", titulo = "Reserva pa
           <BotonCambiar href={cliente.href} alCambiar={cliente.alCambiar} etiqueta="Cambiar cliente" />
         </div>
         {vehiculo && (
-          <div className="flex items-start justify-between gap-3 py-2 pr-2 pl-4">
+          <div className="flex items-start justify-between gap-3 py-2 pr-2 pl-4 sm:pl-5">
             <span className="flex min-w-0 flex-col">
               <DatosVehiculo placa={vehiculo.placa} detalle={vehiculo.detalle} tamano={vehiculo.tamano} />
             </span>
             <BotonCambiar href={vehiculo.href} alCambiar={vehiculo.alCambiar} etiqueta="Cambiar vehículo" />
           </div>
         )}
-        {extra && <div className="flex flex-col gap-2 py-2 pr-2 pl-4">{extra}</div>}
+        {extra && <div className="flex flex-col gap-2 py-2 pr-2 pl-4 sm:pl-5">{extra}</div>}
+        {pie && <div className="flex flex-col gap-2 p-4 sm:px-5">{pie}</div>}
       </div>
     </section>
   );

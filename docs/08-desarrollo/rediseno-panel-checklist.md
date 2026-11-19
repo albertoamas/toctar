@@ -85,6 +85,12 @@ es en la computadora.
 - [x] Nueva versión — `/panel/cotizaciones/[id]/nueva-version`: el total y la versión anterior al costado.
 - [x] E2E: `hu-25` y `hu-30` buscan el total y los servicios donde se ven (al costado en la computadora, arriba en el celular).
 
+### Títulos de las tarjetas (18/11)
+
+- [x] Regla: en los formularios, el título adentro de cada tarjeta; en las fichas, fuera (sistema-del-panel.md §2). Las listas para elegir, como las listas.
+- [x] `CabeceraTarjeta` (nueva) y `Seccion dentro`; `SeccionFormulario` con `accion`.
+- [x] Adentro: `ResumenClienteVehiculo` ("Cotización para", "Reserva para"), `ResumenPaso` (los servicios de la reserva), "Cliente nuevo" de Nueva cotización, el resumen del costado (una sola tarjeta con el total al pie), Servicios, Pagos, Mantenimiento y la firma de Entregar, el checklist de Recibir (sus filas como estaban) y el vehículo de Cambiar de dueño.
+
 ## Paso 5 — Flujo de un paso (rama `patrones-flujo-un-paso`)
 
 ### Piezas

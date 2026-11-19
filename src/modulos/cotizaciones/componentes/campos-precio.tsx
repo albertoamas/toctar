@@ -133,16 +133,14 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy, anterior }
 }
 
 /**
- * El resumen del costado en la computadora (ConResumen, C7 §5.2): el subtotal y el descuento si hay, el total (que se
- * anuncia al cambiar), el adelanto sugerido y, en una versión nueva, con cuánto se compara.
+ * Los montos del resumen del costado en la computadora (ConResumen, C7 §5.2), al pie de "Cotización para": el subtotal y
+ * el descuento si hay, el total (que se anuncia al cambiar), el adelanto sugerido y, en una versión nueva, con cuánto se
+ * compara.
  */
 export function ResumenPrecios({ precios: p, anterior }: { precios: Precios; anterior?: Props["anterior"] }) {
   const conDescuento = p.totales.descuento !== "0.00";
   return (
-    <section aria-labelledby="resumen-precios-titulo" className="tt-tarjeta-panel flex flex-col gap-2 p-4">
-      <h2 id="resumen-precios-titulo" className="sr-only">
-        Total
-      </h2>
+    <>
       <dl className="flex flex-col gap-2">
         {conDescuento && <FilaResumen etiqueta="Subtotal" valor={bs(p.totales.subtotal)} />}
         {conDescuento && <FilaResumen etiqueta="Descuento" valor={`− ${bs(p.totales.descuento)}`} />}
@@ -152,7 +150,7 @@ export function ResumenPrecios({ precios: p, anterior }: { precios: Precios; ant
         {p.adelanto && <FilaResumen etiqueta="Adelanto sugerido" valor={`${p.adelanto} Bs`} suave />}
       </dl>
       {anterior && anterior.total !== p.totales.total && <p className="text-sm text-tinta-suave tabular-nums">Versión {anterior.version}: {bs(anterior.total)}</p>}
-    </section>
+    </>
   );
 }
 
