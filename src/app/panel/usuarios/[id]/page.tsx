@@ -5,7 +5,7 @@ import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Insignia } from "@/componentes/panel/insignia";
 import { CheckIcon } from "lucide-react";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { FilaDato } from "@/componentes/panel/datos-en-bloques";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
@@ -84,10 +84,9 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/usuarios
       </EncabezadoPagina>
 
       {soloLectura ? (
-        <section aria-labelledby="datos-titulo" className="flex flex-col gap-3">
-          <CabeceraSeccion id="datos" titulo="Datos" />
+        <Seccion id="datos" titulo="Datos" sinRelleno>
           <div className="tt-tarjeta-panel p-4">{datos}</div>
-        </section>
+        </Seccion>
       ) : (
         <SeccionConEditar id="datos" titulo="Datos" etiquetaEditar="Editar datos del usuario" tituloModal="Datos del usuario" lectura={datos}>
           <FormularioDatosUsuario usuario={usuario} />

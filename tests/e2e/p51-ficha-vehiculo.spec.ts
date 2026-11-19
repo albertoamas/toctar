@@ -35,7 +35,7 @@ test("desde la ficha del cliente se abre la del vehículo, con su dueño y su hi
   await expect(page.getByRole("region", { name: "Datos" })).toContainText("Toyota Hilux");
   await expect(page.getByRole("list", { name: "Dueño" })).toContainText(a.actual);
   // La orden de cuando era del anterior, con su nombre
-  const historial = page.getByRole("list", { name: "Reservas" }).or(page.getByRole("table", { name: "Reservas" }));
+  const historial = page.getByRole("list", { name: "Historia" });
   await expect(historial).toContainText(`Con ${a.anterior}`);
   // "Nueva reserva" llega con el cliente y el vehículo elegidos
   await expect(page.getByRole("link", { name: "Nueva reserva" })).toHaveAttribute("href", new RegExp(`/panel/agenda/nueva\\?cliente=${a.actualId}&vehiculo=${a.vehiculoId}`));

@@ -247,7 +247,8 @@ test("reserva directa: cliente y vehículo registrados, servicio del catálogo c
   await siguiente(page).click();
   await expect(pasoActual(page)).toHaveText("Fecha y adelanto");
   await expect(page).toHaveURL(/#fecha$/);
-  await expect(page.getByRole("region", { name: "Servicios" })).toContainText("900 Bs");
+  // Los servicios elegidos: arriba en el celular ("Servicios"); al costado en la computadora ("Resumen", C7 §5.2)
+  await expect(page.getByRole("region", { name: /^(Servicios|Resumen)$/ }).locator("visible=true").first()).toContainText("900 Bs");
   const [{ reservas }] = await consultar<{ reservas: number }>("select count(*)::int as reservas from trabajo where cliente_id = $1", [clienteId]);
   expect(reservas).toBe(0);
   // Atrás, el del navegador y el de la pantalla, vuelve a los servicios sin perder lo elegido

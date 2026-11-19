@@ -11,6 +11,7 @@ import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { Tamano } from "@/modulos/configuracion/consultas";
 import type { EstadoCliente } from "../acciones";
+import { ANCHO_DATO } from "@/componentes/panel/anchos";
 
 // Campos de cliente y de vehículo (HU-21): los usan el alta y la ficha (HU-23). Componentes de cliente: se usan
 // dentro de formularios con useActionState.
@@ -85,7 +86,7 @@ export function CamposCliente({ estado, iniciales = {}, compacto, plegar, enlace
       </Campo>
       <Campo id="telefono" etiqueta="WhatsApp" error={e.telefono} ayuda="Celular de Bolivia, 8 dígitos.">
         {/* El +591 dentro del campo, como prefijo: el campo arranca en el borde, como los demás */}
-        <div className="relative">
+        <div className={`relative ${ANCHO_DATO.telefono}`}>
           <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-tinta-suave" aria-hidden>
             +591
           </span>
@@ -125,7 +126,7 @@ function MasDatosCliente({ estado, iniciales = {} }: PropsCampos) {
         <Input id="correo" name="correo" type="email" autoCapitalize="none" spellCheck={false} defaultValue={v.correo} aria-invalid={!!e.correo} aria-describedby={describir("correo")} />
       </Campo>
       <Campo id="nit" etiqueta="NIT" opcional error={e.nit}>
-        <Input id="nit" name="nit" inputMode="numeric" autoComplete="off" defaultValue={v.nit} aria-invalid={!!e.nit} aria-describedby={describir("nit")} />
+        <Input className={ANCHO_DATO.placa} id="nit" name="nit" inputMode="numeric" autoComplete="off" defaultValue={v.nit} aria-invalid={!!e.nit} aria-describedby={describir("nit")} />
       </Campo>
       <Campo id="razonSocial" etiqueta="Razón social" opcional error={e.razonSocial}>
         <Input id="razonSocial" name="razonSocial" autoComplete="off" defaultValue={v.razonSocial} aria-invalid={!!e.razonSocial} aria-describedby={describir("razonSocial")} />
@@ -156,7 +157,7 @@ export function CamposVehiculo({ estado, iniciales = {}, prefijo = "", compacto,
         <Input id={n("modelo")} name={n("modelo")} autoComplete="off" defaultValue={v[n("modelo")]} aria-invalid={!!e[n("modelo")]} aria-describedby={describir("modelo")} />
       </Campo>
       <Campo id={n("anio")} etiqueta="Año" opcional error={e[n("anio")]}>
-        <Input id={n("anio")} name={n("anio")} inputMode="numeric" autoComplete="off" defaultValue={v[n("anio")]} aria-invalid={!!e[n("anio")]} aria-describedby={describir("anio")} className="max-w-28" />
+        <Input id={n("anio")} name={n("anio")} inputMode="numeric" autoComplete="off" defaultValue={v[n("anio")]} aria-invalid={!!e[n("anio")]} aria-describedby={describir("anio")} className={ANCHO_DATO.anio} />
       </Campo>
       <Campo id={n("color")} etiqueta="Color" opcional error={e[n("color")]}>
         <Input id={n("color")} name={n("color")} autoComplete="off" defaultValue={v[n("color")]} aria-invalid={!!e[n("color")]} aria-describedby={describir("color")} />
@@ -175,7 +176,7 @@ export function CamposVehiculo({ estado, iniciales = {}, prefijo = "", compacto,
           defaultValue={v[n("placa")]}
           aria-invalid={!!e[n("placa")]}
           aria-describedby={describir("placa")}
-          className="uppercase"
+          className={ANCHO_DATO.placa}
         />
       </Campo>
       <Existente estado={estado} campo={n("placa")} enlace={enlaceExistente} />

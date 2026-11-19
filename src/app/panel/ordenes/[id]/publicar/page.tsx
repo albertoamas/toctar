@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
+import { AvisoEstado } from "@/componentes/panel/aviso-estado";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
@@ -41,9 +42,9 @@ async function Publicar({ params, searchParams }: Pick<PageProps<"/panel/ordenes
 
   return (
     <>
-      <EncabezadoPagina titulo={`Publicar ${o.placa}`} volver={volverDesde(busqueda.volver, { href: volver, texto: "Orden" }, usuario)}>
-        Las fotos que elijas se copian a la galería del sitio; las de la orden no cambian.
-      </EncabezadoPagina>
+      <EncabezadoPagina titulo={`Publicar ${o.placa}`} volver={volverDesde(busqueda.volver, { href: volver, texto: "Orden" }, usuario)} />
+      {/* Lo que hace el paso, arriba, en el aviso de los pasos del taller (C7 §5.3, 18/11) */}
+      <AvisoEstado tono="info">Las fotos que elijas se copian a la galería del sitio; las de la orden no cambian.</AvisoEstado>
       {servicios.length === 0 ? (
         <EstadoVacio>Los servicios de esta orden ya no están en el catálogo. Súbelas desde Sitio web &gt; Galería, con otro servicio.</EstadoVacio>
       ) : (

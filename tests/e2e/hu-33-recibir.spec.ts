@@ -73,7 +73,7 @@ test("recibir con observaciones: la reserva pasa a orden, sin fotos de ingreso s
 
   // En la ficha del cliente, ya recibida, lleva a la orden (C5 §0)
   await page.goto(`/panel/clientes/${clienteId}`);
-  await expect(page.getByRole("list", { name: "Reservas" }).getByRole("link")).toHaveAttribute("href", new RegExp(`^/panel/ordenes/${id}\\?volver=%2Fpanel%2Fclientes`));
+  await expect(page.getByRole("list", { name: "Historia" }).getByRole("link")).toHaveAttribute("href", new RegExp(`^/panel/ordenes/${id}\\?volver=%2Fpanel%2Fclientes`));
 
   // La reserva ya es una orden: una pantalla por trabajo, su dirección lleva a la orden (pulido 13.52)
   await page.goto(`/panel/agenda/${id}`);

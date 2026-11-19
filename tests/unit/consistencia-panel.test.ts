@@ -71,4 +71,15 @@ describe("estructura del panel (C6)", () => {
   it("un título de sección lo pone Seccion, SeccionConEditar o CabeceraSeccion", () => {
     expect(apariciones(/\btt-titulo-seccion\b/)).toEqual(TITULOS_A_MANO);
   });
+
+  // Regla de anchos (C7 §4.3, 18/11): los datos cortos tienen el ancho de lo que llevan, desde un solo mapa (ANCHO_DATO)
+  it("una fecha del panel tiene el ancho de ANCHO_DATO.fecha", () => {
+    const sinAncho = [...codigo].flatMap(([a, lineas]) => {
+      if (a.endsWith("formulario-reclamo.tsx")) return []; // es del sitio público
+      const texto = lineas.join("\n");
+      const fechas = texto.match(/<Input\b(?:[^/]|\/(?!>))*?type="date"(?:[^/]|\/(?!>))*?\/>/g) ?? [];
+      return fechas.filter((f) => !f.includes("ANCHO_DATO.fecha")).map(() => a);
+    });
+    expect(sinAncho).toEqual([]);
+  });
 });

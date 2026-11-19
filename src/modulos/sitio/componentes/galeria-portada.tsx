@@ -49,7 +49,7 @@ export function PortadaElegida({ items, portadaId, nombreDe }: { items: ItemGale
           Cambiar
         </Button>
       )}
-      <ModalFormulario titulo="El trabajo de la portada" abierto={abierto} alCambiar={setAbierto}>
+      <ModalFormulario tamano="mediano" titulo="El trabajo de la portada" abierto={abierto} alCambiar={setAbierto}>
         <ElegirPortada posibles={posibles} elegidaId={enSitio?.id ?? null} nombreDe={nombreDe} />
       </ModalFormulario>
     </section>

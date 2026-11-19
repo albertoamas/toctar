@@ -26,8 +26,8 @@ type Props = {
   /** En la cabecera de Servicios, sin fondo: "Agregar servicio" para el dueño en la orden. */
   agregar?: React.ReactNode;
   /**
-   * Al entregar (pulido 11.4): cobrar el saldo es lo primero, así que va destacado al pie de los pagos ("Falta cobrar")
-   * y no sin fondo en la cabecera.
+   * Al entregar: cobrar el saldo es lo primero, así que "Falta cobrar" y "Registrar pago" van en el aviso de arriba de la
+   * página (C7 §5.3) y no aquí; las tarjetas, con el título adentro.
    */
   cobrar?: boolean;
 };
@@ -99,7 +99,8 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar, cobrar
             >
               <dt className="font-semibold">Saldo</dt>
               <dd className="text-right text-lg font-bold tabular-nums">{bs(montos.saldo.saldo)}</dd>
-              {pagada && <dd className="col-span-2 text-sm font-semibold">Pagado por completo.</dd>}
+              {/* Al entregar ya lo dice el aviso de arriba (C7 §5.3) */}
+              {pagada && !cobrar && <dd className="col-span-2 text-sm font-semibold">Pagado por completo.</dd>}
             </div>
           </dl>
         </Seccion>
@@ -135,13 +136,6 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar, cobrar
                 );
               })}
             </ul>
-          )}
-          {/* Al entregar, cobrar es lo primero: al pie de los pagos, con su botón (el saldo ya va resaltado arriba) */}
-          {porCobrar && cobrar && (
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3">
-              <span className="font-semibold tabular-nums">Falta cobrar {bs(montos.saldo.saldo)}</span>
-              {registrar("outline")}
-            </div>
           )}
         </Seccion>
       </>

@@ -124,6 +124,8 @@ async function Semana(props: { lunes: string; dias: string[]; dia: string; hoy: 
     href: conDesde(`/panel/agenda/nueva?cotizacion=${c.cotizacionId}`, desdeAqui),
     titulo: c.placa,
     tituloGrande: true,
+    // Lo que hace la fila, escrito (C7, 18/11): toda la fila sigue llevando a Nueva reserva
+    accion: "Reservar",
     detalles: [c.cliente, c.servicios, ...(conMontos ? [bs(c.total)] : []), `Aceptada ${textoDias(diasDesde(c.ultimoMovimientoAt, ahora))}`].filter(Boolean),
   });
 

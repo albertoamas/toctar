@@ -5,6 +5,7 @@ import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { EspacioDisponible } from "../consultas/espacios";
 import { CampoEspacio } from "./campo-espacio";
+import { ANCHO_DATO } from "@/componentes/panel/anchos";
 
 // "Fechas y espacio" de una reserva (HU-30): el ingreso, la entrega aproximada (sugerida por la duración de los
 // servicios), el espacio libre en esas fechas y, plegadas, la hora y una nota. El estado es del formulario
@@ -29,7 +30,7 @@ export function SeccionFechasReserva({ hoy, fechaInicio, fechaFin, alCambiarIngr
     <SeccionFormulario titulo="Fechas y espacio">
       <div className="grid gap-5 sm:grid-cols-2">
         <Campo id="fechaInicio" etiqueta="Ingresa el" error={e.fechaInicio}>
-          <Input
+          <Input className={ANCHO_DATO.fecha}
             id="fechaInicio"
             name="fechaInicio"
             type="date"
@@ -41,7 +42,7 @@ export function SeccionFechasReserva({ hoy, fechaInicio, fechaFin, alCambiarIngr
           />
         </Campo>
         <Campo id="fechaFin" etiqueta="Entrega aproximada" error={e.fechaFin} ayuda="Se le da al cliente como aproximada.">
-          <Input
+          <Input className={ANCHO_DATO.fecha}
             id="fechaFin"
             name="fechaFin"
             type="date"

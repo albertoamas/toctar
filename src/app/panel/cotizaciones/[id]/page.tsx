@@ -10,7 +10,7 @@ import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { Insignia } from "@/componentes/panel/insignia";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
-import { CabeceraSeccion, Seccion } from "@/componentes/panel/cabecera-seccion";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { FilaCliente, FilaVehiculo } from "@/componentes/panel/datos-en-bloques";
 import { rutaVehiculo } from "@/modulos/clientes/reglas";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
@@ -33,6 +33,7 @@ import { aqui, conDesde, volverDesde } from "@/lib/volver";
 import { urlSitio } from "@/lib/sitio";
 import { obtenerDatosPublicos, obtenerPlantillas } from "@/modulos/configuracion/consultas";
 import { mensajeCotizacion } from "@/modulos/ordenes/mensajes";
+import { mostrarMonto } from "@/modulos/catalogo/reglas";
 
 export const metadata: Metadata = { title: "Cotización" };
 
@@ -144,6 +145,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
               escribir={enviar.size > 0 ? escribir : null}
               nuevaVersion={pendiente && vigente && cotiza ? conDesde(`/panel/cotizaciones/${c.id}/nueva-version?desde=${vigente.id}`, desdeAqui) : null}
               cambios={pendiente ? ["rechazar"] : c.sinFecha ? ["rechazar", "reabrir"] : c.estado === "perdido" ? ["reabrir"] : []}
+              resumen={{ texto: `${c.numero} · ${c.cliente}`, total: vigente ? `${mostrarMonto(vigente.total)} Bs` : null }}
             />
           </div>
         }
@@ -182,15 +184,13 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
           </div>
         </Seccion>
 
-        <section aria-labelledby="versiones-titulo" className="flex flex-col gap-2 @4xl:order-first">
-          <CabeceraSeccion id="versiones" titulo={c.versiones.length > 1 ? "Versiones" : "Precio"} />
+        <Seccion id="versiones" titulo={c.versiones.length > 1 ? "Versiones" : "Precio"} sinRelleno className="@4xl:order-first">
           <VersionesCotizacion consultaId={c.id} versiones={c.versiones} enviar={enviar} />
-        </section>
+        </Seccion>
       </div>
 
       {reservas.length > 0 && (
-        <section aria-labelledby="reservas-titulo" className="flex flex-col gap-2">
-          <CabeceraSeccion id="reservas" titulo="Reservas" />
+        <Seccion id="reservas" titulo="Reservas" sinRelleno>
           <ListaFilas
             etiqueta="Reservas"
             filas={reservas.map((r) => ({
@@ -200,7 +200,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
               tonoEstado: TONO_ESTADO_TRABAJO[r.estado],
             }))}
           />
-        </section>
+        </Seccion>
       )}
     </>
   );

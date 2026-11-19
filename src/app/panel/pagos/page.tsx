@@ -98,7 +98,8 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/pagos">, "searchPa
     <>
       {/* El resumen de la lista: el total es siempre el de todas; buscando, cuántas se ven */}
       <ResumenLista>
-        <strong className="font-semibold text-tinta tabular-nums">{mostrarMonto(total)} Bs</strong> por cobrar en{" "}
+        {/* El total, grande: es lo primero que se busca en la pantalla (C7, 18/11) */}
+        <strong className="mr-1 text-2xl font-bold text-tinta tabular-nums">{mostrarMonto(total)} Bs</strong> por cobrar en{" "}
         {todos.length === 1 ? "1 orden" : `${todos.length} órdenes`}
         {q.trim() && `; se ven ${saldos.length}`}
       </ResumenLista>

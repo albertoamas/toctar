@@ -42,7 +42,7 @@ import { mensajeMantenimiento } from "@/modulos/ordenes/mensajes";
 import { Insignia } from "@/componentes/panel/insignia";
 import { DatosDeFila, FilaConAcciones, ListaEnTarjeta } from "@/componentes/panel/fila-lista";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { CabeceraTarjeta, SIN_MARCO_INTERNO } from "@/componentes/panel/cabecera-seccion";
 import { TablaAcciones, type ColumnaAcciones } from "@/componentes/panel/tabla-acciones";
 import { CeldaDoble } from "@/componentes/panel/tabla-lista";
 import { conDesde } from "@/lib/volver";
@@ -128,9 +128,8 @@ async function abiertos(vista: "por-avisar" | "mas-adelante", hoy: string, puede
     <TablaAcciones
       etiqueta={titulo}
       columnas={COLUMNAS}
-      anchoAcciones={conAviso ? "27.5rem" : "15rem"}
+      anchoAcciones={conAviso ? "21rem" : "11rem"}
       filas={elementos.map((m) => {
-        const avisado = textoAvisado(m);
         return {
           clave: m.id,
           ...aCliente(m),
@@ -138,8 +137,9 @@ async function abiertos(vista: "por-avisar" | "mas-adelante", hoy: string, puede
             <CeldaDoble key="c" principal={m.cliente} secundario={vehiculoEnLista({ marca: m.marca, modelo: m.modelo, placa: m.placa })} peso="fuerte" />,
             <CeldaDoble key="m" principal={m.servicio} secundario={textoCadaMeses(m.intervaloMeses)} peso="normal" />,
             <span key="v" className="flex flex-col items-start gap-1">
-              <CeldaDoble principal={fechaCorta(m.fechaProgramada, hoy)} secundario={textoVencimiento(m.fechaProgramada, hoy)} peso="normal" />
-              {conAviso && !avisado ? <Insignia tono="aviso">Sin avisar</Insignia> : avisado && <span className="text-xs text-tinta-suave">{avisado}</span>}
+              <span className="font-semibold tabular-nums">{fechaCorta(m.fechaProgramada, hoy)}</span>
+              <Estado m={m} hoy={hoy} conAviso={conAviso} />
+              <Avisado m={m} />
             </span>,
           ],
           acciones: <Acciones m={m} mensaje={mensaje} puedeAgendar={puedeAgendar} conAviso={conAviso} enTabla />,
@@ -234,12 +234,43 @@ function textoAvisado(m: MantenimientoPorAvisar): string | null {
   return m.avisadoAt ? `Avisado el ${diaYHora(m.avisadoAt)}${m.avisadoPor ? ` por ${m.avisadoPor}` : ""}` : null;
 }
 
+/**
+ * En la fila, solo el día (C7, 18/11: la hora y quién, en una frase entera, alargaban cada fila a cinco renglones); lo
+ * demás, al pasar el puntero y para el lector de pantalla.
+ */
+function Avisado({ m }: { m: MantenimientoPorAvisar }) {
+  const completo = textoAvisado(m);
+  if (!completo || !m.avisadoAt) return null;
+  const dia = fechaEnBolivia(m.avisadoAt);
+  return (
+    <span className="text-sm text-tinta-suave" title={completo}>
+      <span aria-hidden>
+        Avisado el {dia.slice(8, 10)}/{dia.slice(5, 7)}
+      </span>
+      <span className="sr-only">{completo}</span>
+    </span>
+  );
+}
+
+/** Lo que decide la fila, en insignias: cuándo vence (en ámbar si ya venció) y si falta avisar. */
+function Estado({ m, hoy, conAviso }: { m: MantenimientoPorAvisar; hoy: string; conAviso: boolean }) {
+  const texto = textoVencimiento(m.fechaProgramada, hoy);
+  return (
+    <span className="flex flex-wrap gap-1.5">
+      <Insignia tono={seccionMantenimiento(m.fechaProgramada, hoy) === "vencido" ? "aviso" : undefined}>{texto.charAt(0).toUpperCase() + texto.slice(1)}</Insignia>
+      {conAviso && !m.avisadoAt && <Insignia tono="aviso">Sin avisar</Insignia>}
+    </span>
+  );
+}
+
 /** La tabla (`tabla`, desde @4xl) y, más angosto, las tarjetas (`children`). */
 function Seccion({ titulo, cantidad: n, tabla, children }: { titulo: string; cantidad: number; tabla: React.ReactNode; children: React.ReactNode }) {
   return (
     // El lector oye la sección como "Vencidos, 2 mantenimientos"; a la vista, "Vencidos (2)"
-    <section aria-label={`${titulo}, ${cantidad(n)}`} className="flex flex-col gap-3">
-      <CabeceraSeccion
+    // Con el título adentro, como las demás secciones del panel (C7, 18/11); la tabla y las tarjetas, sin su propio marco
+    <section aria-label={`${titulo}, ${cantidad(n)}`} className={cn("tt-tarjeta-panel flex flex-col overflow-hidden", SIN_MARCO_INTERNO)}>
+      <CabeceraTarjeta
+        angosta
         titulo={
           <>
             {titulo} <span className="tabular-nums text-tinta-suave">({n})</span>
@@ -257,34 +288,29 @@ function Seccion({ titulo, cantidad: n, tabla, children }: { titulo: string; can
 function Fila(props: { m: MantenimientoPorAvisar; hoy: string; mensaje: { plantilla: string; negocio: string }; puedeAgendar: boolean; conAviso: boolean; href?: string; etiqueta?: string }) {
   const { m, hoy, mensaje, puedeAgendar, conAviso, href, etiqueta } = props;
   const vehiculo = { marca: m.marca, modelo: m.modelo, placa: m.placa };
-  const avisado = textoAvisado(m);
   return (
     <FilaConAcciones>
       {/* Abre la ficha del cliente, como la fila de la tabla */}
       <DatosDeFila href={href} etiqueta={etiqueta}>
         <div className="flex min-w-0 flex-1 items-start justify-between gap-4">
           <div className="flex min-w-0 flex-col">
-            <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="font-semibold">{m.cliente}</span>
-              {conAviso && !avisado && <Insignia tono="aviso">Sin avisar</Insignia>}
-            </span>
+            <span className="font-semibold">{m.cliente}</span>
             <span className="text-sm text-tinta-suave">{vehiculoEnLista(vehiculo)}</span>
-            <span className="text-sm">
-              Mantenimiento de {m.servicio}, {textoCadaMeses(m.intervaloMeses)}
+            {/* El servicio solo ("Pulido y nano cerámico"), el intervalo en gris: C7, 18/11 */}
+            <span className="mt-1 text-sm">
+              {m.servicio} <span className="text-tinta-suave">· {textoCadaMeses(m.intervaloMeses)}</span>
             </span>
-            {avisado && <span className="text-sm text-tinta-suave">{avisado}</span>}
+            <span className="mt-1.5 flex flex-col items-start gap-1">
+              <Estado m={m} hoy={hoy} conAviso={conAviso} />
+              <Avisado m={m} />
+            </span>
           </div>
           {/* La fecha es lo que ordena la lista: se lee primero, como el monto en Saldos pendientes */}
-          <span className="flex shrink-0 flex-col items-end">
-            <span className="tt-placa text-xl whitespace-nowrap">{fechaCorta(m.fechaProgramada, hoy)}</span>
-            <span className="text-sm whitespace-nowrap text-tinta-suave">{textoVencimiento(m.fechaProgramada, hoy)}</span>
-          </span>
+          <span className="tt-placa shrink-0 text-xl whitespace-nowrap">{fechaCorta(m.fechaProgramada, hoy)}</span>
           {href && <ChevronRightIcon className="size-5 shrink-0 self-center text-tinta-suave" aria-hidden />}
         </div>
       </DatosDeFila>
-      <div className="flex flex-col gap-1 lg:items-end">
-        <Acciones m={m} mensaje={mensaje} puedeAgendar={puedeAgendar} conAviso={conAviso} />
-      </div>
+      <Acciones m={m} mensaje={mensaje} puedeAgendar={puedeAgendar} conAviso={conAviso} />
     </FilaConAcciones>
   );
 }
@@ -312,15 +338,22 @@ function Acciones({ m, mensaje, puedeAgendar, conAviso, enTabla = false }: { m: 
       )}
     </>
   );
-  // En la tabla, todo en una fila y centrado (NoLeInteresa se alinea solo en la tarjeta); en la tarjeta, los botones en su
-  // fila y "No le interesa" debajo
+  // Las dos que se usan, a la vista, y "No le interesa", que se usa poco, en el "⋯" (C7, 18/11): en la tabla, en su
+  // columna; en la tarjeta, las tres en un renglón
+  const mas = <NoLeInteresa id={m.id} de={`${m.cliente}, ${m.placa}`} />;
+  if (enTabla) {
+    return (
+      <>
+        {botones}
+        {mas}
+      </>
+    );
+  }
   return (
-    <>
-      <div className={enTabla ? "contents" : "flex flex-wrap gap-2"}>{botones}</div>
-      <span className={enTabla ? "flex items-center" : "contents"}>
-        <NoLeInteresa id={m.id} />
-      </span>
-    </>
+    <div className="flex flex-wrap items-center gap-2">
+      {botones}
+      {mas}
+    </div>
   );
 }
 

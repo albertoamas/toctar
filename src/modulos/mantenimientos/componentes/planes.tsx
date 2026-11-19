@@ -17,6 +17,7 @@ import { fechaExiste, formatearFecha, sumarMeses } from "@/lib/fechas";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { agregarMantenimiento, editarPlan } from "../acciones";
 import { FormularioNoLeInteresa } from "./no-le-interesa";
+import { ANCHO_DATO } from "@/componentes/panel/anchos";
 
 // Pedido 21: los planes de mantenimiento en la ficha del cliente (P21-planes-mantenimiento.md §5). "Agregar
 // mantenimiento" carga un servicio hecho antes del sistema (el pedido 17); cada plan sin agendar se edita (cada cuántos
@@ -94,7 +95,7 @@ function FormularioAgregar({ clienteId, vehiculos, servicios, hoy }: { clienteId
       </Campo>
       <div className="grid gap-5 sm:grid-cols-2">
         <Campo id="hecho" etiqueta="Cuándo se hizo" error={e.hecho}>
-          <Input id="hecho" name="hecho" type="date" max={hoy} value={hecho} onChange={(ev) => setHecho(ev.target.value)} aria-invalid={!!e.hecho} aria-describedby={e.hecho ? "hecho-error" : undefined} />
+          <Input className={ANCHO_DATO.fecha} id="hecho" name="hecho" type="date" max={hoy} value={hecho} onChange={(ev) => setHecho(ev.target.value)} aria-invalid={!!e.hecho} aria-describedby={e.hecho ? "hecho-error" : undefined} />
         </Campo>
         <CampoMeses valor={meses} onChange={setMeses} error={e.meses} />
       </div>
@@ -153,7 +154,7 @@ function FormularioEditar({ plan, hoy }: { plan: { id: number; intervaloMeses: n
       <div className="grid gap-5 sm:grid-cols-2">
         <CampoMeses valor={meses} onChange={setMeses} error={e.meses} />
         <Campo id="proximo" etiqueta="Próximo mantenimiento" error={e.proximo} ayuda="Si cambia la fecha, se vuelve a avisar.">
-          <Input
+          <Input className={ANCHO_DATO.fecha}
             id="proximo"
             name="proximo"
             type="date"
@@ -180,7 +181,7 @@ function CampoMeses({ valor, onChange, error }: { valor: string; onChange: (v: s
   return (
     <Campo id="meses" etiqueta="Cada" error={error}>
       <div className="flex items-center gap-2">
-        <Input id="meses" name="meses" inputMode="numeric" autoComplete="off" value={valor} onChange={(ev) => onChange(ev.target.value)} aria-invalid={!!error} aria-describedby={error ? "meses-error" : undefined} className="max-w-24" />
+        <Input id="meses" name="meses" inputMode="numeric" autoComplete="off" value={valor} onChange={(ev) => onChange(ev.target.value)} aria-invalid={!!error} aria-describedby={error ? "meses-error" : undefined} className={ANCHO_DATO.cantidad} />
         <span className="text-tinta-suave">meses</span>
       </div>
     </Campo>

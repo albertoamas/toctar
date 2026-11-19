@@ -7,7 +7,7 @@ import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { PanelFirma } from "@/componentes/panel/panel-firma";
 import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { CabeceraTarjeta } from "@/componentes/panel/cabecera-seccion";
 import { BOTON_PASO } from "@/componentes/panel/paso-siguiente";
 import { Button } from "@/componentes/ui/button";
 import { Checkbox } from "@/componentes/ui/checkbox";
@@ -33,9 +33,11 @@ type Props = {
   puedeAutorizar: boolean;
   /** El nombre del cliente: quien suele firmar. */
   cliente: string;
+  /** Lo que la entrega va a hacer (los mantenimientos), dicho justo antes del botón (C7 §5.3). */
+  alEntregar?: React.ReactNode;
 };
 
-export function FormularioEntrega({ id, volver, conDeuda, saldo, puedeAutorizar, cliente }: Props) {
+export function FormularioEntrega({ id, volver, conDeuda, saldo, puedeAutorizar, cliente, alEntregar }: Props) {
   // La firma vive en el estado (no es un campo del formulario): se suma al enviar, como archivo
   const [firma, setFirma] = useState<Blob | null>(null);
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(async (previo, datos) => {
@@ -81,12 +83,10 @@ export function FormularioEntrega({ id, volver, conDeuda, saldo, puedeAutorizar,
       {volver && <input type="hidden" name="volver" value={volver} />}
       {estado.mensaje && <MensajeError id="entrega-error">{estado.mensaje}</MensajeError>}
 
-      <section aria-labelledby="firma-titulo" className="flex flex-col gap-2">
-        <div className="flex flex-col gap-1">
-          <CabeceraSeccion id="firma" titulo="Firma del cliente" compacta />
-          <p className="text-sm text-tinta-suave">El cliente firma con el dedo: recibe su vehículo conforme.</p>
-        </div>
-        <div className="tt-tarjeta-panel flex flex-col gap-4 p-4">
+      {/* El título adentro de la tarjeta, como el resto del paso (sistema-del-panel.md §2, 18/11) */}
+      <section aria-labelledby="firma-titulo" className="tt-tarjeta-panel flex flex-col">
+        <CabeceraTarjeta id="firma" titulo="Firma del cliente" descripcion="El cliente firma con el dedo: recibe su vehículo conforme." />
+        <div className="flex flex-col gap-4 p-4 sm:p-5">
           {sinFirma && <input type="hidden" name="sinFirma" value="on" />}
           {!sinFirma && (
             <>
@@ -150,6 +150,7 @@ export function FormularioEntrega({ id, volver, conDeuda, saldo, puedeAutorizar,
           {e.conSaldo && <MensajeError id="conSaldo-error">{e.conSaldo}</MensajeError>}
         </>
       )}
+      {alEntregar}
       <AvisoAlSalir formulario={formulario} estado={estado} ademas={!!firma} />
       <PieFormulario>
         <Button type="submit" size="paso" disabled={enviando} className={BOTON_PASO}>

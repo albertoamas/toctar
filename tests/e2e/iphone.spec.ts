@@ -50,10 +50,16 @@ async function titulosAdentro(page: Page) {
     const leyenda = tarjeta.locator(":scope > legend");
     if (await leyenda.evaluate((l) => l.classList.contains("sr-only"))) continue;
     const nombre = await leyenda.innerText();
-    const [borde, titulo, contenido] = await Promise.all([tarjeta.boundingBox(), leyenda.boundingBox(), tarjeta.locator(":scope > div").first().boundingBox()]);
-    expect(borde && titulo && contenido, `${nombre}: la tarjeta, su título y su contenido se ven`).toBeTruthy();
+    // La leyenda es la franja de la cabecera (C7, 18/11): empieza en el borde de arriba; su texto, adentro
+    const [borde, franja, titulo, contenido] = await Promise.all([
+      tarjeta.boundingBox(),
+      leyenda.boundingBox(),
+      leyenda.locator(".tt-titulo-seccion").boundingBox(),
+      tarjeta.locator(":scope > div").first().boundingBox(),
+    ]);
+    expect(borde && franja && titulo && contenido, `${nombre}: la tarjeta, su título y su contenido se ven`).toBeTruthy();
     expect(titulo!.y, nombre).toBeGreaterThan(borde!.y + 4);
-    expect(contenido!.y, nombre).toBeGreaterThanOrEqual(titulo!.y + titulo!.height);
+    expect(contenido!.y, nombre).toBeGreaterThanOrEqual(franja!.y + franja!.height);
   }
 }
 
@@ -84,7 +90,7 @@ test("en Nueva cotización con un cliente nuevo los títulos van adentro de su t
   await ingresarComoDueno(page);
   await page.goto("/panel/cotizaciones/nueva");
   await page.getByRole("link", { name: "Cliente nuevo" }).click();
-  await expect(page.getByRole("heading", { name: "Cliente nuevo" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Cliente nuevo" })).toBeVisible();
   await titulosAdentro(page);
   expect(await anchoDePagina(page)).toBeLessThanOrEqual(page.viewportSize()!.width);
   // El paso del vehículo, en su propia pantalla (pedido 40)

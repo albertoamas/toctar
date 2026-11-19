@@ -9,7 +9,7 @@ import { conAviso } from "@/componentes/panel/avisos";
 import { useCerrarModal } from "@/componentes/panel/modal-contexto";
 import { ModalFormulario } from "@/componentes/panel/modal-formulario";
 import { CancelarModal, PieModal } from "@/componentes/panel/modal-pie";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { Button } from "@/componentes/ui/button";
 import type { Tamano } from "@/modulos/configuracion/consultas";
@@ -51,27 +51,31 @@ export function VehiculosCliente({ clienteId, vehiculos, tamanos, desde }: Props
   };
 
   return (
-    <section aria-labelledby="vehiculos-titulo" className="flex flex-col gap-3">
-      {/* La misma cabecera que SeccionConEditar: Datos, al lado, se ve igual */}
-      <CabeceraSeccion id="vehiculos" titulo="Vehículos">
-        <Button
-          type="button"
-          variant="ghost"
-          disabled={!hidratado}
-          onClick={() => {
-            setAperturas((n) => n + 1);
-            setAgregando(true);
-          }}
-        >
-          <PlusIcon />
-          Agregar vehículo
-        </Button>
-      </CabeceraSeccion>
+    <Seccion
+      id="vehiculos" titulo="Vehículos"
+      sinRelleno
+      accion={
+        <>
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={!hidratado}
+            onClick={() => {
+              setAperturas((n) => n + 1);
+              setAgregando(true);
+            }}
+          >
+            <PlusIcon />
+            Agregar vehículo
+          </Button>
+        </>
+      }
+    >
       {activos.length === 0 ? <p className="tt-tarjeta-panel p-4 text-tinta-suave">Todavía no tiene vehículos.</p> : <ListaFilas etiqueta="Vehículos" filas={activos.map(fila)} />}
 
       {inactivos.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <p className="text-sm font-semibold text-tinta-suave">Desactivados</p>
+        <div className="flex flex-col border-t border-border pt-3">
+          <p className="px-4 pb-1 text-sm font-semibold text-tinta-suave">Desactivados</p>
           <ListaFilas etiqueta="Vehículos desactivados" filas={inactivos.map((v) => ({ ...fila(v), atenuada: true, estado: "Desactivado" }))} />
         </div>
       )}
@@ -79,7 +83,7 @@ export function VehiculosCliente({ clienteId, vehiculos, tamanos, desde }: Props
       <ModalFormulario titulo="Agregar vehículo" abierto={agregando} alCambiar={setAgregando}>
         <FormularioVehiculo key={aperturas} clienteId={clienteId} tamanos={tamanos} />
       </ModalFormulario>
-    </section>
+    </Seccion>
   );
 }
 

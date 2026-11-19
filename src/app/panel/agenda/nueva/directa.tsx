@@ -2,7 +2,7 @@ import Link from "next/link";
 import { cn } from "cn";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { fechaCorta } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { cotizacionesParaReservar, datosDirecta } from "@/modulos/agenda/consultas/reservar";
@@ -77,8 +77,7 @@ export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; client
         <Encabezado volver={volver} />
         {indicador(PASO_VEHICULO)}
         <ClienteYVehiculo nombre={d.cliente.nombre} vehiculo={null} cambiarCliente={cambiarCliente} />
-        <section aria-labelledby="vehiculo-titulo" className="flex flex-col gap-3">
-          <CabeceraSeccion id="vehiculo" titulo="Vehículo" />
+        <Seccion id="vehiculo" titulo="Vehículo" sinRelleno>
           {/* La fila de un toque, con la placa grande y el tamaño con su etiqueta, como en el resto del panel */}
           <ListaFilas
             etiqueta="Elegir vehículo"
@@ -89,7 +88,7 @@ export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; client
               detalles: [...(v.detalle.length > 0 ? [v.detalle.join(" ")] : []), `Tamaño: ${v.tamano}`],
             }))}
           />
-        </section>
+        </Seccion>
       </>
     );
   }

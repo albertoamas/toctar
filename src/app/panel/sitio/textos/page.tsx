@@ -10,7 +10,7 @@ import { FotoDePagina } from "@/modulos/sitio/componentes/foto-pagina";
 import { VideoDePortada } from "@/modulos/sitio/componentes/video-portada";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
 import { CLAVES_PAGINA, editaPorSeccion, llevaFoto, PAGINAS, PORTADA, type CampoContenido, type ContenidoPagina, type Pagina } from "@/modulos/sitio/contenido";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { obtenerContenidos, obtenerFotosDePaginas, obtenerVideoDePortada } from "@/modulos/sitio/consultas";
 
 /** El título de la pestaña del navegador, el mismo que el de la pantalla: "Portada", o "Textos del sitio" si se ven todas. */
@@ -80,9 +80,8 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/sitio/textos">
  */
 function SeccionesDePagina({ pagina, contenido, conTitulo }: { pagina: Pagina; contenido: ContenidoPagina; conTitulo: boolean }) {
   const campos = PAGINAS[pagina].campos as readonly CampoContenido[];
-  return (
-    <section aria-labelledby={conTitulo ? `${pagina}-titulo` : undefined} aria-label={conTitulo ? undefined : PAGINAS[pagina].titulo} className="flex flex-col gap-6">
-      {conTitulo && <CabeceraSeccion id={pagina} titulo={PAGINAS[pagina].titulo} />}
+  const secciones = (
+    <>
       <p className="text-sm text-tinta-suave">{PAGINAS[pagina].descripcion} Cada sección se edita por separado.</p>
       {campos.map((c) => (
         <SeccionConEditar
@@ -99,6 +98,17 @@ function SeccionesDePagina({ pagina, contenido, conTitulo }: { pagina: Pagina; c
           <FormularioSeccion pagina={pagina} clave={c.clave} valor={contenido[c.clave] as string} />
         </SeccionConEditar>
       ))}
+    </>
+  );
+  // Con todas las páginas a la vista, cada una en su tarjeta con el título adentro (C7, 18/11) y sus textos en recuadros;
+  // con una sola, sus textos en tarjetas sueltas
+  return conTitulo ? (
+    <Seccion id={pagina} titulo={PAGINAS[pagina].titulo}>
+      <div className="flex flex-col gap-4">{secciones}</div>
+    </Seccion>
+  ) : (
+    <section aria-label={PAGINAS[pagina].titulo} className="flex flex-col gap-6">
+      {secciones}
     </section>
   );
 }

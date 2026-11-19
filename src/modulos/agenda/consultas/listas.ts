@@ -36,7 +36,11 @@ export async function reservasDeConsulta(consultaId: number): Promise<ReservaCor
     .orderBy(desc(trabajo.createdAt));
 }
 
-export type ReservaDelCliente = ReservaCorta & { saldo: Saldo | null };
+export type ReservaDelCliente = ReservaCorta & {
+  saldo: Saldo | null;
+  /** Sus servicios, en su orden: "Pulido y nano cerámico, Pulido de vidrios" (la historia de la ficha, C7 §5.6). */
+  servicios: string;
+};
 
 /**
  * Las reservas de un cliente para su ficha (HU-32): primero las que vienen (la más cercana arriba), después las pasadas
@@ -68,13 +72,20 @@ async function reservasDonde(donde: SQL, conMontos: boolean): Promise<ReservaDel
   const proximas = reservas.filter((r) => r.fechaFin >= hoy);
   const pasadas = reservas.filter((r) => r.fechaFin < hoy).reverse();
   const ids = reservas.map((r) => r.id);
+  // Las líneas siempre (sus servicios van en la historia); los precios y los pagos, solo para quien ve montos
   const [lineas, pagos] =
-    conMontos && ids.length > 0
+    ids.length > 0
       ? await Promise.all([
-          db.select({ trabajoId: trabajoLinea.trabajoId, precio: trabajoLinea.precio }).from(trabajoLinea).where(inArray(trabajoLinea.trabajoId, ids)),
-          db.select({ trabajoId: pago.trabajoId, monto: pago.monto, anulado: pago.anulado }).from(pago).where(inArray(pago.trabajoId, ids)),
+          db
+            .select({ trabajoId: trabajoLinea.trabajoId, precio: trabajoLinea.precio, descripcion: trabajoLinea.descripcion })
+            .from(trabajoLinea)
+            .where(inArray(trabajoLinea.trabajoId, ids))
+            .orderBy(asc(trabajoLinea.orden), asc(trabajoLinea.id)),
+          conMontos ? db.select({ trabajoId: pago.trabajoId, monto: pago.monto, anulado: pago.anulado }).from(pago).where(inArray(pago.trabajoId, ids)) : [],
         ])
       : [[], []];
+  const servicios = new Map<number, string[]>();
+  for (const l of lineas) servicios.set(l.trabajoId, [...(servicios.get(l.trabajoId) ?? []), l.descripcion]);
   const precios = new Map<number, string[]>();
   for (const l of lineas) precios.set(l.trabajoId, [...(precios.get(l.trabajoId) ?? []), l.precio]);
   const pagosPor = new Map<number, { monto: string; anulado: boolean }[]>();
@@ -82,5 +93,6 @@ async function reservasDonde(donde: SQL, conMontos: boolean): Promise<ReservaDel
   return [...proximas, ...pasadas].map(({ descuento, ...r }) => ({
     ...r,
     saldo: conMontos ? calcularSaldo(precios.get(r.id) ?? [], descuento, pagosPor.get(r.id) ?? []) : null,
+    servicios: (servicios.get(r.id) ?? []).join(", "),
   }));
 }

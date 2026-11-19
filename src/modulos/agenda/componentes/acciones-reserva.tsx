@@ -17,6 +17,9 @@ import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { cancelarReserva, reprogramarReserva } from "../acciones";
 import { espacioVigente, useEspaciosLibres } from "./espacios-libres";
 import { CampoEspacio } from "./campo-espacio";
+import { ANCHO_DATO } from "@/componentes/panel/anchos";
+import { DatoClave } from "@/componentes/panel/dato-clave";
+import { fechaCorta } from "@/lib/fechas";
 
 // HU-31: reprogramar o cancelar una reserva agendada (RF-39). Pulido 10.3: se usan poco y van en el menú "Más" del
 // encabezado, cada una con su formulario en un modal (como "Marcar como perdida"). Reprogramar ofrece solo los espacios
@@ -87,12 +90,13 @@ function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espac
     <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-label="Reprogramar">
       <input type="hidden" name="id" value={id} />
       {estado.mensaje && !estado.ok && <MensajeError id="reprogramar-error">{estado.mensaje}</MensajeError>}
+      <DatoClave etiqueta="Ahora" valor={inicioActual === finActual ? fechaCorta(inicioActual, hoy) : `${fechaCorta(inicioActual, hoy)} al ${fechaCorta(finActual, hoy)}`} />
       <div className="grid gap-5 sm:grid-cols-2">
         <Campo id="fechaInicio" etiqueta="Ingresa el" error={e.fechaInicio}>
-          <Input id="fechaInicio" name="fechaInicio" type="date" min={hoy} value={fechaInicio} onChange={(ev) => setFechaInicio(ev.target.value)} aria-invalid={!!e.fechaInicio} aria-describedby={e.fechaInicio ? "fechaInicio-error" : undefined} />
+          <Input className={ANCHO_DATO.fecha} id="fechaInicio" name="fechaInicio" type="date" min={hoy} value={fechaInicio} onChange={(ev) => setFechaInicio(ev.target.value)} aria-invalid={!!e.fechaInicio} aria-describedby={e.fechaInicio ? "fechaInicio-error" : undefined} />
         </Campo>
         <Campo id="fechaFin" etiqueta="Entrega aproximada" error={e.fechaFin}>
-          <Input id="fechaFin" name="fechaFin" type="date" min={fechaInicio} value={fechaFin} onChange={(ev) => setFechaFin(ev.target.value)} aria-invalid={!!e.fechaFin} aria-describedby={e.fechaFin ? "fechaFin-error" : undefined} />
+          <Input className={ANCHO_DATO.fecha} id="fechaFin" name="fechaFin" type="date" min={fechaInicio} value={fechaFin} onChange={(ev) => setFechaFin(ev.target.value)} aria-invalid={!!e.fechaFin} aria-describedby={e.fechaFin ? "fechaFin-error" : undefined} />
         </Campo>
       </div>
       <CampoEspacio valor={espacioId} alCambiar={setEspacioId} libres={libres} buscando={buscando} ayuda={ayuda} error={e.espacioId} />
@@ -127,13 +131,14 @@ function Cancelar({ id, pagado }: Props) {
     <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-label="Cancelar reserva">
       <input type="hidden" name="id" value={id} />
       {estado.mensaje && !estado.ok && <MensajeError id="cancelar-error">{estado.mensaje}</MensajeError>}
+      {pagado !== null && pagado !== "0.00" ? <DatoClave etiqueta="Adelanto recibido" valor={`${mostrarMonto(pagado)} Bs`} tono="peligro" /> : null}
       <p>{aviso}</p>
       <Campo id="motivo" etiqueta="Motivo" error={e.motivo} ayuda="Queda en la reserva y, si vino de una consulta, la consulta pasa a perdida.">
         <Textarea id="motivo" name="motivo" rows={2} value={motivo} onChange={(ev) => setMotivo(ev.target.value)} aria-invalid={!!e.motivo} aria-describedby={e.motivo ? "motivo-error" : "motivo-ayuda"} />
       </Campo>
       {/* El foco empieza en el motivo (obligatorio): ahí un Enter escribe, no confirma */}
       <PieModal>
-        {/* Rosado de "no se deshace": libera el espacio y deja la reserva cerrada */}
+        {/* Contorno rojo de "no se deshace": libera el espacio y deja la reserva cerrada */}
         <Button type="submit" variant="destructive" disabled={enviando}>
           {enviando ? "Cancelando…" : "Cancelar reserva"}
         </Button>

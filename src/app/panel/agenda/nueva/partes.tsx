@@ -1,7 +1,7 @@
 import type { Route } from "next";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { exigirModulo } from "@/lib/sesion";
 import { bs } from "@/modulos/cotizaciones/reglas";
 import { FormularioReserva } from "@/modulos/agenda/componentes/formulario-reserva";
@@ -65,8 +65,7 @@ export function ClienteYVehiculo(props: { nombre: string; vehiculo: VehiculoRese
  */
 export function CotizacionesDelCliente({ cotizaciones, conMontos, enlace }: { cotizaciones: CotizacionParaReservar[]; conMontos: boolean; enlace: (cotizacionId: number) => Route }) {
   return (
-    <section aria-labelledby="sus-cotizaciones-titulo" className="flex flex-col gap-3">
-      <CabeceraSeccion id="sus-cotizaciones" titulo="Sus cotizaciones" />
+    <Seccion id="sus-cotizaciones" titulo="Sus cotizaciones" sinRelleno>
       <ListaFilas
         etiqueta="Sus cotizaciones"
         filas={cotizaciones.map((c) => ({
@@ -78,7 +77,7 @@ export function CotizacionesDelCliente({ cotizaciones, conMontos, enlace }: { co
           aviso: c.aceptada ? "Sin fecha" : null,
         }))}
       />
-    </section>
+    </Seccion>
   );
 }
 

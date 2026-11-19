@@ -25,8 +25,15 @@ espacio, sin tope, también en un monitor grande. El tipo decide la forma y la s
 - **Con todo el ancho, el contenido se acomoda adentro**: las fichas en partes de a 2 o 3 (`PartesIguales`); un
   formulario con dos partes las pone lado a lado desde `@6xl` (Nuevo cliente: el cliente y su primer vehículo; Nuevo
   usuario: la cuenta y sus permisos). Los campos ocupan su lugar en la grilla, sin tope general
-  (se probó uno de 28rem el 17/11 y no convenció al dueño); un campo puede llevar el suyo si lo necesita (`max-w-*`,
-  como el número de un monto). El recuadro de la firma, hasta 640 px.
+  (se probó uno de 28rem el 17/11 y no convenció al dueño). El recuadro de la firma, hasta 640 px.
+- **Todo alineado a la izquierda, nunca centrado** (C7 §4, 18/11): junto al menú lateral, un bloque centrado deja dos
+  franjas vacías desparejas y el título cambia de lugar según la ventana. Lo único centrado es un modal.
+- **Los datos cortos tienen el ancho de lo que llevan**, desde un solo mapa, `ANCHO_DATO` (`src/componentes/panel/anchos.ts`):
+  monto 10 rem (`CampoMonto` ya lo trae), fecha 12 rem, año 7 rem, placa o NIT 12 rem, teléfono 14 rem y cantidad
+  (días, meses, porcentaje) 7 rem. No es un tope general: los demás campos siguen a todo el ancho de su columna. Una fecha
+  sin su ancho la detecta `consistencia-panel.test.ts`.
+- **El texto de corrido** (notas, descripciones) se corta en unos 70 caracteres por línea (`MEDIDA_TEXTO`; `ListaDatos`
+  ya lo trae en sus valores). Solo el párrafo: su tarjeta sigue a todo el ancho.
 - En el celular todo va en una columna. Hasta una laptop de 1280 px no cambia nada: la diferencia se ve en monitores grandes.
 
 **Cómo se ve cada forma** (revisión de las 40 pantallas del 10/11, `08-desarrollo/inventario-pantallas.md`):
@@ -37,14 +44,19 @@ espacio, sin tope, también en un monitor grande. El tipo decide la forma y la s
 | **Lista de acciones** (cobrar, avisar) | Tabla con una columna de acciones (`TablaAcciones`) | Tarjetas con los botones abajo |
 | **Ficha de un trabajo** (cotización, reserva, orden) | Pasos del trabajo, el paso siguiente grande, secciones y "Más" | Lo mismo, apilado |
 | **Ficha editable** | Secciones en tarjetas, de a dos (`PartesIguales`); "Editar" abre un modal | Una columna; el modal sube desde abajo |
-| **Crear o un paso del taller** | Formulario a todo el ancho, con sus partes lado a lado si son dos; en pasos si hace falta, botón al pie (`PieFormulario`) | Igual, con el botón fijo abajo |
+| **Crear o un paso del taller** | Formulario a todo el ancho, con sus partes lado a lado si son dos; en pasos si hace falta, botón al pie (`PieFormulario`). En los formularios en pasos con montos (Nueva cotización, Nueva versión, Nueva reserva), lo elegido y el total al costado (`ConResumen`, C7 §5.2) | Igual, con el botón fijo abajo y el total al lado |
 | **Portada** | Tarjetas para elegir a dónde ir | Una debajo de la otra |
 
 Una pantalla nueva o cambiada toma una de estas formas; si ninguna sirve, se discute antes de inventar otra.
 
 ## 2. Forma de una ficha
 
-- **Título arriba de la tarjeta**, con su acción en la misma fila. La lectura va dentro de la tarjeta. El título va adentro solo si la tarjeta es un bloque aparte que no sigue la lectura de la página: un panel lateral de una portada ("Para atender") o un formulario que se abre en la misma pantalla ("Subir fotos").
+> **Dónde va el título de una tarjeta (18/11): una sola regla en todo el panel, adentro.**
+>
+> - Cada sección es una tarjeta con su **cabecera**: el título adentro, su acción al lado ("Editar", "Agregar", "Cambiar") y **una línea fina** que la separa del contenido, así el título no se mezcla con lo de abajo. La cabecera tiene siempre el alto de un botón: dos tarjetas lado a lado quedan parejas. Es el patrón de las tarjetas de Shopify (Polaris) y Material.
+> - Vale para fichas (`Seccion`, `SeccionConEditar`), formularios (`SeccionFormulario`, con `accion` si lleva un botón al lado) y lo que se lee en un paso del taller (`CabeceraTarjeta`). Una lista dentro de una sección (`ListaFilas`, `TablaLista`) pierde su propio marco: el de la sección alcanza (`Seccion sinRelleno`).
+> - **Una tarjeta de datos con sus etiquetas no lleva título** si la pantalla ya dice qué es (lo que se recibe o se entrega): el título va cuando la tarjeta sola no se entiende ("Firma del cliente", "Checklist").
+> - Quedan fuera de la regla el título de la página (`EncabezadoPagina`), las listas de página completa (Clientes, Órdenes) y las columnas del tablero de la Agenda.
 - **Se lee y se edita aparte:** cada parte tiene su "Editar", que abre un modal y guarda solo esa parte. No hay un "Guardar" general.
 - **Qué va en la ficha:** primero lo que decide (estado, montos, lo que falta), después lo que se consulta (datos, fotos) y al final la historia.
 - **Dos disposiciones en computadora.** Se elige una por ficha:
@@ -65,7 +77,7 @@ Una pantalla nueva o cambiada toma una de estas formas; si ninguna sirve, se dis
 | Cabecera de una sección | "Editar", "Agregar", "Registrar pago" | Sin borde, con ícono |
 | Fila de una lista | Toda la fila abre su ficha o su modal | Sin botones, con la flecha ›. Excepción: la acción de todos los días en Saldos y Mantenimientos (`FilaConAcciones`) |
 | Fila de una tarjeta que se lee (un pago) | Lo poco usado que no se deshace (anular) | En su "⋯" (`MenuMas icono`), a la derecha, con su confirmación en un modal |
-| Pie de un modal | Guardar y "Cancelar"; aparte, a la derecha, lo que se usa poco | Rojo y con borde; lo de la derecha, sin borde |
+| Pie de un modal | "Cancelar" y la acción, a la derecha (en el celular, a lo ancho): `PieModal` pone "Cancelar" primero (C7 §5.4, 18/11) | La acción en rojo; lo que no se deshace, con contorno rojo; "Cancelar", con borde |
 
 - En una pantalla con varias listas iguales (Taller), "Agregar" va con borde: varias acciones rojas competirían.
 - Lo que no se deshace pide confirmación, con el foco en "Cancelar".
@@ -88,7 +100,7 @@ En los dos casos, al crear se llega a la ficha de lo creado (o se ve en la secci
 
 ## 4. Editar y guardar
 
-- Todo modal de edición usa `ModalFormulario`, con sus botones en `PieModal`.
+- Todo modal de edición usa `ModalFormulario`, con sus botones en `PieModal`. Arriba, el dato que decide con `DatoClave`; su tamaño, `chico` (30 rem, casi todos) o `mediano` (40 rem: una tabla o fotos), y en el celular, la hoja de borde a borde (C7 §5.4).
 - El botón dice qué guarda: "Guardar horario", "Guardar pregunta".
 - **Ningún modal pierde lo escrito por un cierre sin querer** (pulido 13.48): con cambios, tocar afuera, Escape o el "atrás" de Android (Chrome se lo avisa al diálogo) no cierran; el **pie del mismo modal** pasa a "Tienes cambios sin guardar." con "Seguir editando" (con el foco) y "Descartar cambios". **Nunca otro modal encima.** "Cancelar" y la X también preguntan, como en iOS y Android (hallazgo 7 de la prueba en celulares, 15/11): cerrar con cambios nunca los descarta sin avisar. "Listo" no pregunta (cada cambio ya se guardó). Sin cambios, todo cierra directo. Al salir de una pantalla con cambios (un formulario de crear, Recibir, Entregar), la pregunta es un diálogo chico y centrado (`alertdialog`) con "Seguir editando" y "Salir sin guardar".
 - Al guardar, el modal se cierra y la ficha muestra el dato nuevo.
@@ -136,7 +148,11 @@ La etiqueta a la izquierda y el valor a la derecha, con `ListaDatos`, para que l
 |---|---|---|
 | `PaginaPanel` | El tipo de pantalla, su ancho y su separación | Existe desde C6 |
 | `PartesIguales` | Las partes de a dos (o de a tres) de una ficha | Existe desde C6 |
-| `Seccion` | Título arriba de la tarjeta, con su acción | Existe desde C6, sobre `CabeceraSeccion` |
+| `Seccion` | Título arriba de la tarjeta, con su acción; con `dentro`, adentro (en un formulario) | Existe desde C6, sobre `CabeceraSeccion` |
+| `CabeceraTarjeta` | El título adentro de una tarjeta de formulario, con su acción y su línea de ayuda | Existe desde C7 (18/11) |
+| `LineaDeTiempo` | La historia de un cliente o un vehículo: reservas, órdenes y cotizaciones en una lista, lo más reciente arriba, plegada desde la sexta | Existe desde C7 (18/11) |
+| `AvisoEstado` | Lo que decide un paso del taller, arriba: verde, ámbar o azul, con ícono, texto y su acción | Existe desde C7 (18/11) |
+| `ConResumen`, `PasoConCostado` | El paso (2/3) y su resumen al costado (1/3) en la computadora: el resumen se oculta en el celular (`ConResumen`) o va arriba (`PasoConCostado`) | Existen desde C7 (18/11) |
 | `CabeceraSeccion` | Solo el título y su acción, si lo de abajo no es una tarjeta (una lista, un texto) | Existe |
 | `SeccionConEditar` | Sección que se lee, con su modal | Existe |
 | `EncabezadoPagina` | Volver, título, estado y acciones | Existe |

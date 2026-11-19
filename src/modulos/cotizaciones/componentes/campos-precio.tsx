@@ -6,11 +6,13 @@ import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
 import { MasDatos } from "@/componentes/panel/mas-datos";
 import { Input } from "@/componentes/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/componentes/ui/radio-group";
 import { leerMonto, mostrarMonto } from "@/modulos/catalogo/reglas";
 import type { OpcionServicio } from "../consultas/servicios";
 import { bs, calcularTotales, leerMontoOCero, MODOS, NOMBRE_MODO, type Modo } from "../reglas";
 import { LineasServicio, type Linea } from "./lineas-servicio";
+import { ANCHO_DATO } from "@/componentes/panel/anchos";
+import { OpcionesEnTarjetas } from "@/componentes/panel/opciones-en-tarjetas";
+import { FilaResumen } from "@/componentes/panel/con-resumen";
 
 // Lo que lleva cada versión de una cotización (pedido 23): los servicios con su precio, el total, cómo se cotizó y las
 // condiciones del PDF. Lo comparten la nueva cotización y la versión nueva. Todo controlado: React reinicia el
@@ -67,33 +69,27 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy, anterior }
         {!opciones && e.lineas && <MensajeError id="lineas-error">{e.lineas}</MensajeError>}
       </SeccionFormulario>
 
+      {/* En tarjetas que se tocan enteras, como "¿Cómo pagó?" (C7 §5.2) */}
       <SeccionFormulario titulo="¿Cómo se cotizó?" claseContenido="gap-3">
-        <input type="hidden" name="modo" value={p.modo} />
-        <RadioGroup
-          value={p.modo}
-          onValueChange={(valor) => p.setModo(String(valor))}
-          aria-label="¿Cómo se cotizó?"
-          aria-describedby={e.modo ? "modo-error" : undefined}
-          className="flex flex-col gap-2 sm:flex-row"
-        >
-          {MODOS.map((m, i) => (
-            <label key={m} htmlFor={`modo-${m}`} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-border bg-fondo px-3 py-2 has-data-checked:border-tinta">
-              <RadioGroupItem id={`modo-${m}`} value={m} data-invalido={(!!e.modo && i === 0) || undefined} />
-              <span className="flex flex-col">
-                <span className="font-semibold">{NOMBRE_MODO[m]}</span>
-                {m === "fotos" && <span className="text-sm text-tinta-suave">Precio estimado: el PDF dice que se confirma al ver el vehículo.</span>}
-              </span>
-            </label>
-          ))}
-        </RadioGroup>
-        {e.modo && <MensajeError id="modo-error">{e.modo}</MensajeError>}
+        <OpcionesEnTarjetas
+          id="modo"
+          titulo="¿Cómo se cotizó?"
+          tituloOculto
+          nombre="modo"
+          valor={p.modo}
+          cambiar={p.setModo}
+          opciones={MODOS.map((m) => ({ valor: m, texto: NOMBRE_MODO[m], detalle: m === "fotos" ? "Precio estimado: el PDF dice que se confirma al ver el vehículo." : "Vio el vehículo" }))}
+          error={e.modo}
+          className="grid-cols-1 sm:grid-cols-2"
+        />
       </SeccionFormulario>
 
       {/* El total y lo que va al PDF, juntos en su tarjeta (pulido final, 10/11: plegados sueltos debajo de la última
           tarjeta no se sabía a qué pertenecían). El descuento, que casi no se usa, y las condiciones, que vienen de
           Configuración, plegados */}
       <SeccionFormulario titulo="Total y condiciones" claseContenido="gap-4">
-        <div className="flex flex-col gap-0.5">
+        {/* En la computadora el total va en el resumen del costado (ResumenPrecios, C7 §5.2); aquí, en lo angosto */}
+        <div className="flex flex-col gap-0.5 @4xl:hidden">
           {/* Solo el total se anuncia al cambiar: la comparación aparece y se va */}
           <p className="flex items-baseline justify-between gap-4" aria-live="polite">
             <span className="font-semibold">Total</span>
@@ -128,10 +124,32 @@ export function CamposPrecio({ precios: p, opciones, errores: e, hoy, anterior }
             <CampoMonto id="adelanto" name="adelanto" value={p.adelanto} onChange={(ev) => p.setAdelanto(ev.target.value)} aria-invalid={!!e.adelanto} aria-describedby={e.adelanto ? "adelanto-error" : undefined} />
           </Campo>
           <Campo id="validaHasta" etiqueta="Válida hasta" error={e.validaHasta}>
-            <Input id="validaHasta" name="validaHasta" type="date" min={hoy} value={p.validaHasta} onChange={(ev) => p.setValidaHasta(ev.target.value)} aria-invalid={!!e.validaHasta} aria-describedby={e.validaHasta ? "validaHasta-error" : undefined} className="max-w-48" />
+            <Input id="validaHasta" name="validaHasta" type="date" min={hoy} value={p.validaHasta} onChange={(ev) => p.setValidaHasta(ev.target.value)} aria-invalid={!!e.validaHasta} aria-describedby={e.validaHasta ? "validaHasta-error" : undefined} className={ANCHO_DATO.fecha} />
           </Campo>
         </div>
       </SeccionFormulario>
+    </>
+  );
+}
+
+/**
+ * Los montos del resumen del costado en la computadora (ConResumen, C7 §5.2), al pie de "Cotización para": el subtotal y
+ * el descuento si hay, el total (que se anuncia al cambiar), el adelanto sugerido y, en una versión nueva, con cuánto se
+ * compara.
+ */
+export function ResumenPrecios({ precios: p, anterior }: { precios: Precios; anterior?: Props["anterior"] }) {
+  const conDescuento = p.totales.descuento !== "0.00";
+  return (
+    <>
+      <dl className="flex flex-col gap-2">
+        {conDescuento && <FilaResumen etiqueta="Subtotal" valor={bs(p.totales.subtotal)} />}
+        {conDescuento && <FilaResumen etiqueta="Descuento" valor={`− ${bs(p.totales.descuento)}`} />}
+        <div aria-live="polite">
+          <FilaResumen etiqueta="Total" valor={bs(p.totales.total)} fuerte separada={conDescuento} />
+        </div>
+        {p.adelanto && <FilaResumen etiqueta="Adelanto sugerido" valor={`${p.adelanto} Bs`} suave />}
+      </dl>
+      {anterior && anterior.total !== p.totales.total && <p className="text-sm text-tinta-suave tabular-nums">Versión {anterior.version}: {bs(anterior.total)}</p>}
     </>
   );
 }

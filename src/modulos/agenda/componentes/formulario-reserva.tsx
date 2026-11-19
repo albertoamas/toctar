@@ -28,6 +28,8 @@ import { fechaEntregaSugerida } from "../reglas";
 import { espacioVigente, useEspaciosLibres } from "./espacios-libres";
 import { SeccionAdelanto } from "./seccion-adelanto";
 import { SeccionFechasReserva } from "./seccion-fechas-reserva";
+import { ConResumen, FilaResumen } from "@/componentes/panel/con-resumen";
+import { CabeceraTarjeta } from "@/componentes/panel/cabecera-seccion";
 
 // HU-30: agendar una reserva (RF-36, RF-37). Las fechas sugieren la entrega con la mayor duración de los servicios
 // (decisión del 20/10: es aproximada y se edita); al cambiarlas se vuelven a pedir los espacios libres (RN-06). El
@@ -173,6 +175,28 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
         ).total
       : origen.total;
 
+  // El resumen del costado en el paso de la fecha, en la computadora (ConResumen, C7 §5.2): los servicios elegidos (en la
+  // directa), el total, el adelanto y lo que falta al entregar. Los montos, solo para quien los ve (el total es null si
+  // no). Sin nada que mostrar, no hay columna
+  const nombreLinea = (l: Linea, i: number) => (origen.tipo === "directa" ? (origen.opciones.find((o) => o.varianteId === l.varianteId)?.descripcion ?? `Servicio ${i + 1}`) : "");
+  const conTotal = total !== null && total !== "0.00";
+  const montoAdelanto = conPagos && !sinAdelanto ? leerMonto(adelanto) : null;
+  const centavos = (monto: string) => Math.round(Number(monto) * 100);
+  const faltaAlEntregar = conTotal && montoAdelanto ? ((centavos(total) - centavos(montoAdelanto)) / 100).toFixed(2) : null;
+  const resumenFecha =
+    origen.tipo === "directa" || conTotal ? (
+      <section aria-labelledby="resumen-reserva-titulo" className="tt-tarjeta-panel flex flex-col">
+        <CabeceraTarjeta id="resumen-reserva" titulo="Resumen" />
+        <dl className="flex flex-col gap-2 p-4 sm:p-5">
+          {origen.tipo === "directa" &&
+            lineas.map((l, i) => <FilaResumen key={i} etiqueta={nombreLinea(l, i)} valor={conTotal ? `${mostrarMonto(leerMonto(l.precio) ?? "0")} Bs` : ""} />)}
+          {conTotal && <FilaResumen etiqueta="Total" valor={`${mostrarMonto(total)} Bs`} fuerte separada={origen.tipo === "directa"} />}
+          {montoAdelanto && <FilaResumen etiqueta="Adelanto" valor={`${mostrarMonto(montoAdelanto)} Bs`} suave />}
+          {faltaAlEntregar && Number(faltaAlEntregar) > 0 && <FilaResumen etiqueta="Falta al entregar" valor={`${mostrarMonto(faltaAlEntregar)} Bs`} suave />}
+        </dl>
+      </section>
+    ) : null;
+
   // El historial: Atrás y Adelante del navegador (o del celular) cambian de paso (solo la directa tiene pasos). Adelante
   // a la fecha revisa los servicios
   usePasosEnHistorial(() => {
@@ -262,16 +286,18 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
 
       {/* Los servicios elegidos, arriba de la fecha, con "Cambiar" para volver a ellos */}
       {origen.tipo === "directa" && paso === PASO_FECHA && (
-        <ResumenPaso id="resumen-servicios" titulo="Servicios" alCambiar={volverAServicios} claseContenido="gap-2">
-          <ul className="flex flex-col gap-1">
-            {lineas.map((l, i) => (
-              <li key={i} className="flex justify-between gap-4">
-                <span>{origen.opciones.find((o) => o.varianteId === l.varianteId)?.descripcion ?? `Servicio ${i + 1}`}</span>
-                <span className="shrink-0 tabular-nums">{mostrarMonto(leerMonto(l.precio) ?? "0")} Bs</span>
-              </li>
-            ))}
-          </ul>
-        </ResumenPaso>
+        <div className="flex flex-col @4xl:hidden">
+          <ResumenPaso id="resumen-servicios" titulo="Servicios" alCambiar={volverAServicios} claseContenido="gap-2">
+            <ul className="flex flex-col gap-1">
+              {lineas.map((l, i) => (
+                <li key={i} className="flex justify-between gap-4">
+                  <span>{origen.opciones.find((o) => o.varianteId === l.varianteId)?.descripcion ?? `Servicio ${i + 1}`}</span>
+                  <span className="shrink-0 tabular-nums">{mostrarMonto(leerMonto(l.precio) ?? "0")} Bs</span>
+                </li>
+              ))}
+            </ul>
+          </ResumenPaso>
+        </div>
       )}
       {estado.mensaje && !estado.ok && <MensajeError id="reserva-error">{estado.mensaje}</MensajeError>}
 
@@ -301,33 +327,35 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
       )}
 
       <div data-paso={PASO_FECHA} hidden={paso !== PASO_FECHA} className="flex flex-col gap-6">
-        <SeccionFechasReserva
-          hoy={hoy}
-          fechaInicio={fechaInicio}
-          fechaFin={fechaFin}
-          alCambiarIngreso={(valor) => cambiarFechas(valor, fechaFinManual)}
-          alCambiarEntrega={(valor) => cambiarFechas(fechaInicio, valor)}
-          espacio={{ valor: espacioId, alCambiar: setEspacioId, libres, buscando, ayuda }}
-          horaIngreso={horaIngreso}
-          alCambiarHora={setHoraIngreso}
-          nota={nota}
-          alCambiarNota={setNota}
-          errores={e}
-        />
-
-        {conPagos && (
-          <SeccionAdelanto
-            sinAdelanto={sinAdelanto}
-            alCambiarSinAdelanto={setSinAdelanto}
-            adelanto={adelanto}
-            alCambiarAdelanto={setAdelanto}
-            metodo={metodo}
-            alCambiarMetodo={setMetodo}
-            alCambiarComprobante={setComprobante}
+        <ConResumen etiqueta="Resumen de la reserva" resumen={resumenFecha}>
+          <SeccionFechasReserva
+            hoy={hoy}
+            fechaInicio={fechaInicio}
+            fechaFin={fechaFin}
+            alCambiarIngreso={(valor) => cambiarFechas(valor, fechaFinManual)}
+            alCambiarEntrega={(valor) => cambiarFechas(fechaInicio, valor)}
+            espacio={{ valor: espacioId, alCambiar: setEspacioId, libres, buscando, ayuda }}
+            horaIngreso={horaIngreso}
+            alCambiarHora={setHoraIngreso}
+            nota={nota}
+            alCambiarNota={setNota}
             errores={e}
-            errorFoto={errorFoto}
           />
-        )}
+
+          {conPagos && (
+            <SeccionAdelanto
+              sinAdelanto={sinAdelanto}
+              alCambiarSinAdelanto={setSinAdelanto}
+              adelanto={adelanto}
+              alCambiarAdelanto={setAdelanto}
+              metodo={metodo}
+              alCambiarMetodo={setMetodo}
+              alCambiarComprobante={setComprobante}
+              errores={e}
+              errorFoto={errorFoto}
+            />
+          )}
+        </ConResumen>
       </div>
 
       {(paso === PASO_FECHA || conSiguiente) && (
@@ -335,7 +363,8 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
           <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:justify-start">
             {/* El total de la reserva directa, a la vista mientras se cargan los precios */}
             {total !== null && total !== "0.00" && (
-              <p className="flex items-baseline gap-2">
+              // En la fecha, con el resumen al costado (computadora), el total ya está ahí
+              <p className={`flex items-baseline gap-2 ${paso === PASO_FECHA && resumenFecha ? "@4xl:hidden" : ""}`}>
                 <span className="text-tinta-suave">Total</span>
                 <span className="text-lg font-bold tabular-nums">{mostrarMonto(total)} Bs</span>
               </p>

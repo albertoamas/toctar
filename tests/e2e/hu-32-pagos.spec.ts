@@ -121,9 +121,11 @@ test("registrar un pago con comprobante, no pasar el saldo y anular con motivo",
   );
   expect(auditoria.map((a) => a.accion)).toEqual(["crear", "anular"]);
 
-  // En la ficha del cliente, la reserva con su saldo
+  // En la ficha del cliente, la reserva con su total; "Debe" recién cuando ya se cobra (lista o entregada, C7 §5.6)
   await page.goto(`/panel/clientes/${clienteId}`);
-  await expect(page.getByRole("list", { name: "Reservas" }).getByRole("link")).toContainText("Saldo: 300 Bs");
+  const enLaHistoria = page.getByRole("list", { name: "Historia" }).getByRole("link");
+  await expect(enLaHistoria).toContainText("500 Bs");
+  await expect(enLaHistoria).not.toContainText("Debe");
   // Lo que debe, en el encabezado (pulido 8.3), como en Saldos pendientes: una reserva por venir todavía no se debe;
   // entregada con saldo, sí
   const encabezado = page.getByRole("heading", { level: 1 }).locator("..");
@@ -156,8 +158,8 @@ test("pagada por completo no ofrece más pagos; sin Pagos no se ven montos", asy
   await expect(page.getByRole("heading", { name: "Pagos" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Registrar pago" })).toHaveCount(0);
   await page.goto(`/panel/clientes/${clienteId}`);
-  await expect(page.getByRole("list", { name: "Reservas" })).toBeVisible();
-  await expect(page.getByText(/Saldo|Pagado/)).toHaveCount(0);
+  await expect(page.getByRole("list", { name: "Historia" })).toBeVisible();
+  await expect(page.getByText(/Saldo|Pagado|Debe /)).toHaveCount(0);
   // La reserva directa lleva precios: sin Pagos no se ofrece
   await expect(page.getByRole("link", { name: "Nueva reserva" })).toHaveCount(0);
 });

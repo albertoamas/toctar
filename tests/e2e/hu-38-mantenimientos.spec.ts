@@ -67,14 +67,14 @@ test("vencidos y próximos; avisar, no le interesa y reservar (y al cancelar la 
   await expect(filaV).toContainText(`Lucía Vencida ${s}`);
   // En la tarjeta "Mantenimiento de …"; en la tabla de la computadora, el servicio en su columna
   await expect(filaV).toContainText("Pulido y nano cerámico");
-  await expect(filaV).toContainText("venció hace 10 días");
+  await expect(filaV).toContainText("venció hace 10 días", { ignoreCase: true });
   await expect(filaV).toContainText("Sin avisar");
-  await expect(proximos(page).getByRole("listitem").filter({ hasText: placaP })).toContainText("vence en 5 días");
+  await expect(proximos(page).getByRole("listitem").filter({ hasText: placaP })).toContainText("vence en 5 días", { ignoreCase: true });
   // A 16 días todavía no se avisa: está en "Más adelante", bajo su mes (pedido 20)
   await expect(page.getByText(placaL)).toHaveCount(0);
   await page.getByRole("link", { name: /^Más adelante \d+$/ }).click();
   const lejano = page.getByRole("region", { name: new RegExp(`^${mes(await dia(16))}, \\d+ mantenimientos?$`) }).getByRole("listitem").filter({ hasText: placaL });
-  await expect(lejano).toContainText("vence en 16 días");
+  await expect(lejano).toContainText("vence en 16 días", { ignoreCase: true });
   // Todavía no le toca: no se avisa (se agenda o se cierra)
   await expect(lejano.getByRole("button", { name: "Avisar por WhatsApp" })).toHaveCount(0);
   await expect(lejano.getByRole("link", { name: "Reservar" })).toBeVisible();
@@ -93,7 +93,9 @@ test("vencidos y próximos; avisar, no le interesa y reservar (y al cancelar la 
 
   // No le interesa, con nota: se cierra y deja la lista
   const filaN = proximos(page).getByRole("listitem").filter({ hasText: placaN });
-  await filaN.getByRole("button", { name: "No le interesa" }).click();
+  // En el "⋯" de la fila (C7, 18/11): se usa poco
+  await filaN.getByRole("button", { name: /^Más: / }).click();
+  await page.getByRole("menuitem", { name: "No le interesa" }).click();
   // En un modal, con el foco en "Volver": un Enter no lo cierra sin querer (pulido 12.2)
   const cerrar = page.getByRole("dialog", { name: "No le interesa" });
   await expect(cerrar.getByRole("button", { name: "Volver" })).toBeFocused();
@@ -183,7 +185,7 @@ test("solo con Mantenimientos se entra; sin Agenda y Pagos no se agenda; el perf
   await page.getByRole("link", { name: "Mantenimientos" }).first().click();
   const fila = vencidos(page).getByRole("listitem").filter({ hasText: placa });
   await expect(fila.getByRole("button", { name: "Avisar por WhatsApp" })).toBeVisible();
-  await expect(fila.getByRole("button", { name: "No le interesa" })).toBeVisible();
+  await expect(fila.getByRole("button", { name: /^Más: / })).toBeVisible();
   // La reserva directa lleva precios: la arma quien ve agenda y pagos
   await expect(fila.getByRole("link", { name: "Reservar" })).toHaveCount(0);
 
