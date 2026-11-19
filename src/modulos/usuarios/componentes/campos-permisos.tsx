@@ -17,7 +17,7 @@ type Props = {
   permisosIniciales: readonly Permiso[];
 };
 
-export function CamposPermisos({ asignables, permisosIniciales }: Props) {
+export function CamposPermisos({ asignables, permisosIniciales, leyendaOculta }: Props & { /** Ya lo dice el título que la contiene (el modal, la tarjeta): la leyenda, solo para el lector. */ leyendaOculta?: boolean }) {
   const [permisos, setPermisos] = useState<readonly Permiso[]>(permisosIniciales);
   const perfil = perfilDe(permisos);
   const marcar = (permiso: Permiso, marcado: boolean) =>
@@ -25,7 +25,7 @@ export function CamposPermisos({ asignables, permisosIniciales }: Props) {
 
   return (
     <fieldset className="flex flex-col gap-3">
-      <legend className="mb-1 text-sm font-semibold">Permisos</legend>
+      <legend className={leyendaOculta ? "sr-only" : "mb-1 text-sm font-semibold"}>Permisos</legend>
       {permisos.map((p) => (
         <input key={p} type="hidden" name="permisos" value={p} />
       ))}

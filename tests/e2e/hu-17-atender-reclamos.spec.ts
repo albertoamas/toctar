@@ -46,7 +46,8 @@ test("el dueño ve el reclamo pendiente, le escribe por WhatsApp y lo marca aten
 
   await expect(page.getByRole("heading", { level: 1, name: nombre })).toBeVisible();
   await expect(page.getByText("Pendiente", { exact: true }).locator("visible=true")).toBeVisible();
-  await expect(page.getByText("3311ABC").locator("visible=true")).toBeVisible();
+  // En sus datos (el encabezado también la dice, C7 fase 3)
+  await expect(page.getByRole("region", { name: "Datos" }).getByText("3311ABC")).toBeVisible();
   const fotos = page.getByRole("list", { name: "Fotos del reclamo" }).getByRole("button");
   await expect(fotos).toHaveCount(2);
   await fotos.first().click();

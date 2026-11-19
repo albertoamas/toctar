@@ -47,44 +47,29 @@ export function CabeceraTarjeta(props: {
 }
 
 /** Una tarjeta dentro de otra (una lista en su sección) pierde su borde, su sombra y sus esquinas. */
-const SIN_MARCO_INTERNO = "[&_.tt-tarjeta-panel]:rounded-none [&_.tt-tarjeta-panel]:border-0 [&_.tt-tarjeta-panel]:shadow-none";
+export const SIN_MARCO_INTERNO = "[&_.tt-tarjeta-panel]:rounded-none [&_.tt-tarjeta-panel]:border-0 [&_.tt-tarjeta-panel]:shadow-none";
 
 /**
- * Una sección del panel (sistema-del-panel.md §2, regla final del 18/11): en las fichas, listas y portadas, el título
- * **fuera**, arriba de la tarjeta, con su acción a la derecha; con `dentro`, en la cabecera de la tarjeta, para los
- * formularios y los pasos del taller (Entregar, Cambiar de dueño). `sinRelleno`: la tarjeta lleva filas que llegan al
- * borde (los servicios y los pagos de un trabajo, una lista) y cada una pone su propio relleno; una lista con su propia
- * tarjeta adentro (`ListaFilas`, `TablaLista`) pierde el marco: el de la sección alcanza.
+ * Una sección del panel en su tarjeta, con el título adentro (`CabeceraTarjeta`) y su acción al lado. `sinRelleno`: la
+ * tarjeta lleva filas que llegan al borde (los servicios y los pagos de un trabajo, una lista) y cada una pone su propio
+ * relleno; una lista con su propia tarjeta adentro (`ListaFilas`, `TablaLista`) pierde el marco: el de la sección alcanza.
  */
 export function Seccion(props: {
   id: string;
   titulo: string;
   accion?: React.ReactNode;
   sinRelleno?: boolean;
-  /** El título en la cabecera de la tarjeta: en un formulario o un paso del taller. */
-  dentro?: boolean;
   /** Clases de la sección (su lugar en una grilla, `@container`). */
   className?: string;
   children: React.ReactNode;
 }) {
-  const { id, titulo, accion, sinRelleno, dentro, className, children } = props;
-  if (dentro) {
+  const { id, titulo, accion, sinRelleno, className, children } = props;
     return (
-      <section aria-labelledby={`${id}-titulo`} className={cn("tt-tarjeta-panel flex flex-col overflow-hidden", className)}>
+    <section aria-labelledby={`${id}-titulo`} className={cn("tt-tarjeta-panel flex flex-col overflow-hidden", className)}>
         <CabeceraTarjeta id={id} titulo={titulo} angosta={sinRelleno}>
           {accion}
         </CabeceraTarjeta>
-        <div className={cn("flex flex-1 flex-col", SIN_MARCO_INTERNO, !sinRelleno && "p-4 sm:p-5")}>{children}</div>
-      </section>
-    );
-  }
-  // flex-1: en una grilla, las tarjetas de una misma fila quedan del mismo alto
-  return (
-    <section aria-labelledby={`${id}-titulo`} className={cn("flex flex-col gap-2", className)}>
-      <CabeceraSeccion id={id} titulo={titulo}>
-        {accion}
-      </CabeceraSeccion>
-      <div className={cn("tt-tarjeta-panel flex flex-1 flex-col", SIN_MARCO_INTERNO, sinRelleno ? "overflow-hidden" : "p-4")}>{children}</div>
+      <div className={cn("flex flex-1 flex-col", SIN_MARCO_INTERNO, !sinRelleno && "p-4 sm:p-5")}>{children}</div>
     </section>
   );
 }

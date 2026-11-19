@@ -75,6 +75,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/usuarios
     <>
       <EncabezadoPagina
         titulo={usuario.nombre}
+        // Debajo del título, el dato útil (sistema-del-panel.md §2, C7 fase 3): no solo a dónde se vuelve
+        subtitulo={`${usuario.usuario} · ${NOMBRE_ROL[usuario.rol]}`}
         // Solo lo que pide atención (pulido, como el catálogo 13.57)
         estado={usuario.desactivado ? <Insignia>Desactivado</Insignia> : undefined}
         volver={volver}
