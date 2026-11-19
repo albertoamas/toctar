@@ -25,7 +25,7 @@ gastos, órdenes, clientes y cotizaciones), mejor organizados. Solo el dueño.
 |---|---|---|
 | Resumen | Ingresos cobrados · Gastos · Resultado · Órdenes completadas | Resultado del período (dona y desglose) · Ingresos por servicio (los 3 primeros) · Ingresos y gastos (líneas) |
 | Ingresos | Ingresos cobrados · Órdenes cobradas · Ticket promedio · Por cobrar hoy | Ingresos por tramo (área) · Órdenes cobradas por tramo (área) · Servicios que más generan (ranking) · Cómo se cobró |
-| Gastos | Total gastado · Movimientos · Sobre los ingresos | Gastos por tramo (área) · Gastos por categoría (con la lista de gastos). Aquí se registra un gasto |
+| Gastos | Total gastado · Movimientos · Sobre los ingresos | Gastos por tramo (área) · Gastos por categoría (con la lista de gastos). Los gastos se registran en Gastos, del menú |
 | Taller | Órdenes recibidas · Completadas · Días en el taller · En el taller ahora | Recibidas y completadas (barras) · Servicios más realizados (ranking) · Órdenes por estado (dona) · Días promedio por servicio |
 | Clientes | Clientes atendidos · Nuevos · Volvieron · Cotizaciones aceptadas | Clientes que más pagaron (ranking) · Nuevos y que volvieron (dona) · Clientes atendidos por tramo (área) |
 

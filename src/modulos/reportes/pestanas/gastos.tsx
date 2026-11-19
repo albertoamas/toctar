@@ -1,23 +1,16 @@
 import "server-only";
 import type { Route } from "next";
 import Link from "next/link";
-import { Suspense } from "react";
 import { HashIcon, PercentIcon, ReceiptTextIcon } from "lucide-react";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { gastadoPorCategoria } from "../calculos";
 import { GraficoSerie, ListaProgreso } from "../componentes/graficos";
-import { RegistrarGasto } from "../componentes/registrar-gasto";
-import { categoriasActivas } from "../consultas";
 import { bsRedondo, mesDe, parametrosDelPeriodo } from "../reglas";
 import { Cambio, cambioDe, Indicadores, porciento, puntosDe, SinDatos, type Cargado } from "./comun";
 
 // Gastos (Reportes v2, 19/11): lo gastado, cuántos gastos se registraron y qué parte de lo cobrado se fue en gastos.
-// Lo gastado por tramo (un día sin gastos queda en cero) y por categoría. Aquí se registra un gasto.
-
-/** "Registrar gasto", con sus categorías: espera solo, así lo demás de la pestaña no espera a las categorías. */
-async function BotonRegistrarGasto({ hoy }: { hoy: string }) {
-  return <RegistrarGasto categorias={await categoriasActivas()} hoy={hoy} />;
-}
+// Lo gastado por tramo (un día sin gastos queda en cero) y por categoría. Los gastos se registran en Gastos (el menú),
+// no aquí: Reportes solo se lee (19/11, a pedido del dueño).
 
 export function Gastos({ c }: { c: Cargado }) {
   const { act, ant, periodo } = c;
@@ -28,11 +21,6 @@ export function Gastos({ c }: { c: Cargado }) {
   const lista = `/panel/reportes/gastos?${new URLSearchParams([["mes", mesDe(periodo.fin)], ...parametrosDelPeriodo(periodo)]).toString()}` as Route;
   return (
     <>
-      <div className="flex justify-end">
-        <Suspense fallback={null}>
-          <BotonRegistrarGasto hoy={c.hoy} />
-        </Suspense>
-      </div>
       <Indicadores
         etiqueta="Gastos del período"
         items={[
