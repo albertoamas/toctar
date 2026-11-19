@@ -25,8 +25,8 @@ import {
 import { conDesde } from "@/lib/volver";
 
 // HU-29: el tablero de la agenda (RF-38), por día y sin horas (S-3). Lavado de cara del 16/11 (prototipo aprobado):
-// - Computadora (desde 1280 px; en una laptop de 1024, con el menú, cada día medía 80 px y no se leía): la semana en una grilla, una fila por espacio. Los días libres quedan limpios (el
-//   "Reservar" aparece al pasar el mouse o con el foco), hoy se marca en su encabezado y un día cerrado, una sola vez.
+// - Computadora (desde 1280 px; en una laptop de 1024, con el menú, cada día medía 80 px y no se leía): la semana en una grilla, una fila por espacio. Los días libres llevan su
+//   "+ Reservar" en gris, siempre a la vista (desde el 19/11; antes solo al pasar el mouse), hoy se marca en su encabezado y un día cerrado, una sola vez.
 //   Cada reserva dice placa, cliente, servicio y estado (con palabra, no solo color).
 // - Tableta y laptop chica (768 a 1279 px): la semana como lista por día ("Hoy", "Mañana", "Miércoles 18"), sin tocar pestañas.
 // - Celular: la tira de los siete días (un punto en los que tienen reservas), fija arriba, y el día elegido en una
@@ -129,16 +129,16 @@ function Cinta({ r, empiezaAntes, terminaDespues, conOrdenes, desde, style }: { 
 }
 
 /**
- * Computadora: un día libre. Sin recuadro a la vista (pulido del 16/11: 15 recuadros punteados tapaban las reservas):
- * el "+ Reservar" aparece al pasar el mouse, con el foco o con pantalla táctil (sin mouse no hay "pasar por encima").
- * El lector de pantalla oye "Reservar en …, libre".
+ * Computadora: un día libre, con su "+ Reservar" siempre a la vista, igual que en la tableta (19/11, a pedido del dueño):
+ * escondido hasta pasar el mouse (16/11), quien entraba no sabía que el día libre se toca para reservar. En gris, para
+ * que las reservas sigan mandando; al pasar el mouse se marca. El lector de pantalla oye "Reservar en …, libre".
  */
 function DiaLibre({ fecha, espacio, desde, style }: { fecha: string; espacio: { id: number; nombre: string }; desde: string; style: React.CSSProperties }) {
   return (
     <Link
       href={agendarEn(fecha, espacio.id, desde)}
       style={style}
-      className="mx-1.5 flex items-center justify-center gap-1 rounded-lg border border-dashed border-input text-[0.8125rem] font-semibold text-tinta opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)] pointer-coarse:opacity-100"
+      className="mx-1.5 flex items-center justify-center gap-1 rounded-lg border border-dashed border-input text-[0.8125rem] font-semibold text-tinta-suave transition-colors hover:border-tinta-suave hover:bg-superficie hover:text-tinta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]"
     >
       <PlusIcon className="size-4" aria-hidden />
       <span aria-hidden>Reservar</span>
