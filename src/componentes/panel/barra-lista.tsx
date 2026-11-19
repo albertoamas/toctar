@@ -10,7 +10,7 @@ export function BarraLista({ buscador, filtros, derecha }: { buscador?: React.Re
     <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
       {buscador && <div className="w-full sm:w-80">{buscador}</div>}
       {/* En el celular, a lo ancho de la pantalla y deslizable: los filtros no se parten en dos renglones */}
-      {filtros && <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">{filtros}</div>}
+      {filtros && <div className="-mx-4 -my-1 overflow-x-auto px-4 py-1 sm:mx-0 sm:overflow-visible sm:px-0">{filtros}</div>}
       {derecha && <div className="flex flex-wrap items-center gap-2 sm:ml-auto">{derecha}</div>}
     </div>
   );

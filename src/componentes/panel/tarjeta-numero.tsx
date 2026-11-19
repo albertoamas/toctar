@@ -8,12 +8,15 @@ import { cn } from "cn";
 // en orden: "En el taller 4, 1 atrasada".
 // Pulido final (10/11): en el celular, compacta (la cifra y su línea en un renglón, menos relleno): las cinco del inicio
 // ocupaban unos 430 px antes de "Para hoy". Desde @xl (la tableta), como antes.
+// Pedido 16 (Reportes): sin `href` es solo un número (no lleva a ninguna lista), y la nota puede llevar el cambio frente
+// al mes anterior con su color ("▲ 12 % vs. oct.").
 
-type Props = { href: Route; icono: LucideIcon; titulo: string; valor: React.ReactNode; nota: string; aviso?: boolean; className?: string };
+type Props = { href?: Route; icono: LucideIcon; titulo: string; valor: React.ReactNode; nota: React.ReactNode; aviso?: boolean; className?: string };
 
 export function TarjetaNumero({ href, icono: Icono, titulo, valor, nota, aviso = false, className }: Props) {
-  return (
-    <Link href={href} className={cn("tt-tarjeta-panel flex min-w-0 flex-col gap-1 p-3 transition-colors hover:border-tinta-suave/50 @xl:gap-1.5 @xl:p-4", className)}>
+  const clase = cn("tt-tarjeta-panel flex min-w-0 flex-col gap-1 p-3 @xl:gap-1.5 @xl:p-4", href && "transition-colors hover:border-tinta-suave/50", className);
+  const contenido = (
+    <>
       <span className="flex items-center gap-2 text-sm font-semibold text-tinta-suave">
         <span className="grid size-7 shrink-0 place-items-center rounded-md bg-neutro-fondo text-tinta">
           <Icono className="size-4" aria-hidden />
@@ -24,6 +27,13 @@ export function TarjetaNumero({ href, icono: Icono, titulo, valor, nota, aviso =
         <span className="text-xl leading-tight font-bold tracking-tight tabular-nums @xl:text-[1.75rem]">{valor}</span>
         <span className={cn("text-xs", aviso ? "font-semibold text-aviso" : "text-tinta-suave")}>{nota}</span>
       </span>
+    </>
+  );
+  return href ? (
+    <Link href={href} className={clase}>
+      {contenido}
     </Link>
+  ) : (
+    <div className={clase}>{contenido}</div>
   );
 }

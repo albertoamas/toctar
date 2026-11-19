@@ -53,7 +53,7 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
         <div data-theme="oscuro" data-menu-lateral className="hidden w-62 shrink-0 bg-fondo lg:block comprimido:w-16">
           <aside className="fixed inset-y-0 left-0 z-30 flex w-62 flex-col bg-fondo p-4 text-tinta [--radius:8px] comprimido:w-16 comprimido:px-2">
             {/* El logo oficial y, comprimida, su monograma (manual de marca: no se reemplaza por otro); al lado, el botón */}
-            <div className="mt-1 mb-6 flex items-center justify-between gap-2 comprimido:flex-col comprimido:gap-3">
+            <div className="mt-1 mb-4 flex items-center justify-between gap-2 comprimido:flex-col comprimido:gap-2">
               <span className="comprimido:hidden">
                 <Marca />
               </span>

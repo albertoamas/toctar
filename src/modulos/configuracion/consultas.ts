@@ -2,7 +2,7 @@ import "server-only";
 import { asc, desc, eq, sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/db";
-import { archivo, espacioTaller, marcaVehiculo, negocio, parametro, parteRevision, plantillaMensaje, sucursal, tamanoVehiculo, type Redes } from "@/db/esquema";
+import { archivo, categoriaGasto, espacioTaller, marcaVehiculo, negocio, parametro, parteRevision, plantillaMensaje, sucursal, tamanoVehiculo, type Redes } from "@/db/esquema";
 import { urlArchivo } from "@/lib/almacenamiento";
 import type { DiaHorario } from "@/lib/horarios";
 import type { Coordenadas } from "@/lib/ubicacion";
@@ -111,6 +111,13 @@ export async function obtenerPlantillas(): Promise<Plantillas> {
  * después los desactivados.
  */
 export async function listarElementos(lista: Lista): Promise<Elemento[]> {
+  if (lista === "categorias") {
+    const categorias = await db
+      .select({ id: categoriaGasto.id, nombre: categoriaGasto.nombre, orden: categoriaGasto.orden, activo: categoriaGasto.activo })
+      .from(categoriaGasto)
+      .orderBy(desc(categoriaGasto.activo), asc(categoriaGasto.orden), asc(categoriaGasto.id));
+    return categorias.map((c) => ({ ...c, descripcion: null }));
+  }
   if (lista === "marcas") {
     const marcas = await db
       .select({ id: marcaVehiculo.id, nombre: marcaVehiculo.nombre, orden: marcaVehiculo.orden, activo: marcaVehiculo.activo })

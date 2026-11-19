@@ -46,6 +46,15 @@
   --color-violeta: var(--violeta);
   --color-violeta-fondo: var(--violeta-fondo);
   --color-neutro-fondo: var(--neutro-fondo);
+  /* Los gráficos de Reportes (pedido 16): ingresos y gastos, y cuatro colores para series (validados para daltonismo) */
+  --color-grafico-ingreso: var(--grafico-ingreso);
+  --color-grafico-gasto: var(--grafico-gasto);
+  --color-grafico-1: var(--grafico-1);
+  --color-grafico-2: var(--grafico-2);
+  --color-grafico-3: var(--grafico-3);
+  --color-grafico-4: var(--grafico-4);
+  --color-grafico-guia: var(--grafico-guia);
+  --color-grafico-eje: var(--grafico-eje);
 
   /* shadcn/ui */
   --color-background: var(--background);
@@ -113,6 +122,17 @@
   --violeta: #6d28d9;
   --violeta-fondo: #f1ebfd;
   --neutro-fondo: #eceef1;
+  /* Gráficos (pedido 16, prototipo aprobado el 16/11): esmeralda para lo que entra y rojo para lo que sale; para series,
+     el orden fijo azul, ámbar, violeta y rosa. Pares revisados con el validador de la skill dataviz (también daltonismo):
+     cada marca lleva su nombre o su número escrito al lado */
+  --grafico-ingreso: #059669;
+  --grafico-gasto: #e34948;
+  --grafico-1: #2a78d6;
+  --grafico-2: #eda100;
+  --grafico-3: #6250d6;
+  --grafico-4: #e87ba4;
+  --grafico-guia: #eceef1;
+  --grafico-eje: #c4c9d0;
   --elevacion: 0 8px 24px rgba(26, 26, 26, 0.16);
   --sombra-tarjeta: 0 1px 2px rgb(22 24 29 / 6%), 0 1px 3px rgb(22 24 29 / 4%);
   --radius: 8px; /* El panel. El sitio y el ingreso, con las esquinas de la marca (ver [data-theme="oscuro"]). */

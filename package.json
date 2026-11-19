@@ -17,6 +17,7 @@
     "almacenamiento:preparar": "node --env-file=.env scripts/preparar-almacenamiento.mjs",
     "db:reiniciar-local": "node --env-file=.env scripts/reiniciar-base-local.mjs",
     "datos:demo": "node --env-file=.env scripts/datos-demo.mjs",
+    "datos:reportes": "node --env-file=.env scripts/datos-reportes.mjs",
     "datos:reiniciar": "npm run db:reiniciar-local && npm run db:migrate && npm run datos:demo",
     "manual:capturas": "node --env-file=.env scripts/manual-capturas.mjs",
     "manual:armar": "node scripts/manual-armar.mjs"
@@ -36,6 +37,7 @@
     "pg": "^8.23.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "recharts": "^3.8.0",
     "server-only": "^0.0.1",
     "sharp": "^0.35.5",
     "sonner": "^2.0.8",

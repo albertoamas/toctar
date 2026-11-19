@@ -49,6 +49,8 @@ const MODALES_A_MANO: Record<string, number> = {};
 const TITULOS_A_MANO: Record<string, number> = {
   // La semana del tablero: no es un título de sección, solo usa su letra
   "src/app/panel/agenda/page.tsx": 1,
+  // El mes de los gastos, entre sus flechas: como la semana de la Agenda
+  "src/app/panel/reportes/gastos/page.tsx": 1,
   // La leyenda de un grupo de fotos
   "src/modulos/ordenes/componentes/formulario-publicar.tsx": 1,
 };

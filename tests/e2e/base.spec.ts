@@ -153,14 +153,16 @@ test("el panel no se sale de la pantalla en el celular y su menú queda a mano",
   }
   const menu = page.getByRole("navigation", { name: "Panel" });
   await expect(menu.getByRole("link", { name: "Configuración" })).toHaveAttribute("aria-current", "page");
-  // 44 px con el dedo; con mouse, 36, como los botones del panel (pulido 13.25)
+  // 44 px con el dedo; con mouse, 32, la medida de shadcn/ui (36 hasta el 19/11, pulido 13.25: con Finanzas completo no
+  // entraba en 768 px de alto)
   for (const alto of await menu.getByRole("link").evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height))) {
-    expect(alto).toBeGreaterThanOrEqual(isMobile ? 44 : 36);
+    expect(alto).toBeGreaterThanOrEqual(isMobile ? 44 : 32);
   }
 });
 
 // Pulido 13.25: en una laptop común (768 px de alto) el menú entraba cortado y "Configuración" no se veía. Con mouse cada
-// opción mide 36 px y Sitio web va en Administración; si la pantalla es más baja, se desplaza y muestra la actual
+// opción mide 32 px (36 hasta el 19/11: con Gastos y Reportes en Finanzas no entraba; 32 es la medida de shadcn/ui) y
+// Sitio web va en Administración; si la pantalla es más baja, se desplaza y muestra la actual
 test("en la computadora el menú entra entero en 768 px de alto, con Sitio web en Administración", async ({ page }, info) => {
   test.skip(info.project.name !== "escritorio", "La barra lateral es de la computadora");
   await page.setViewportSize({ width: 1366, height: 768 });
@@ -170,7 +172,7 @@ test("en la computadora el menú entra entero en 768 px de alto, con Sitio web e
   await expect(menu.getByRole("link", { name: "Configuración" })).toBeInViewport();
   const caja = page.locator("[data-menu-desplazable]").filter({ has: menu });
   expect(await caja.evaluate((el) => el.scrollHeight <= el.clientHeight)).toBe(true);
-  expect(Math.round((await menu.getByRole("link", { name: "Órdenes" }).boundingBox())!.height)).toBe(36);
+  expect(Math.round((await menu.getByRole("link", { name: "Órdenes" }).boundingBox())!.height)).toBe(32);
   await expect(menu.getByRole("group", { name: "Administración" }).getByRole("link", { name: "Sitio web" })).toBeVisible();
 
   // Más baja: se desplaza y la opción actual queda a la vista

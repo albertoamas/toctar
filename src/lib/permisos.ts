@@ -22,7 +22,7 @@ export type Permiso = (typeof PERMISOS)[number];
  * su grupo, sin título (un grupo de uno no lo lleva), quedaba suelto entre Clientes y Administración.
  */
 // El menú en grupos (19/11): Operaciones es el trabajo en el orden en que se hace (se cotiza, se reserva, se trabaja);
-// Clientes, lo de cada cliente; Finanzas, el dinero (Gastos y Reportes se suman con el pedido 16); Administración.
+// Clientes, lo de cada cliente; Finanzas, el dinero (Saldos pendientes, Gastos y Reportes); Administración.
 const GRUPOS = { operaciones: "Operaciones", clientes: "Clientes", finanzas: "Finanzas", administracion: "Administración" } as const;
 type Grupo = keyof typeof GRUPOS;
 
@@ -63,6 +63,10 @@ export const MODULOS = {
     grupo: "finanzas",
     permisoEncargado: "pagos",
   },
+  // Pedido 16: los gastos del taller y cuánto entró, salió y quedó. Solo el dueño (sin permiso de encargado). Gastos es una
+  // página de Reportes (/panel/reportes/gastos), con su propia entrada en el menú (19/11, a pedido del dueño)
+  gastos: { ruta: "/panel/reportes/gastos", nombre: "Gastos", grupo: "finanzas", permisoEncargado: null },
+  reportes: { ruta: "/panel/reportes", nombre: "Reportes", grupo: "finanzas", permisoEncargado: null },
   mantenimientos: { ruta: "/panel/mantenimientos", nombre: "Mantenimientos", grupo: "clientes", permisoEncargado: "mantenimientos" },
   // Llegan desde el sitio, pero atenderlos es tratar con un cliente
   reclamos: { ruta: "/panel/reclamos", nombre: "Reclamos", grupo: "clientes", permisoEncargado: "reclamos" },
@@ -83,7 +87,7 @@ export function puedeVerModulo(sujeto: SujetoPermisos, modulo: Modulo): boolean 
       return true;
     case "encargado":
       if (modulo === "inicio") return true;
-      // Usuarios, configuración y catálogo no tienen permiso de encargado: aunque la base tuviera algo raro guardado,
+      // Usuarios, configuración, catálogo, gastos y reportes no tienen permiso de encargado: aunque la base tuviera algo raro guardado,
       // se niegan (RN-01).
       return def.permisoEncargado !== null && sujeto.permisos.includes(def.permisoEncargado);
     default:
@@ -140,11 +144,8 @@ export type GrupoMenu = { titulo: string | null; modulos: Modulo[] };
 /**
  * El menú en grupos (C5 §0): primero los sueltos (Inicio) y después cada grupo en el orden de GRUPOS, con los módulos
  * que la persona ve. Un grupo sin módulos no aparece, y uno del que ve un solo módulo va sin título (el título no ordena
- * nada: con solo Órdenes se ve "Inicio" y "Órdenes", sin "Operaciones"). Un grupo que tiene un solo módulo (Finanzas, hasta
- * que lleguen Gastos y Reportes) sí lleva su título: es su lugar en el menú.
+ * nada: con solo Órdenes se ve "Inicio" y "Órdenes", sin "Operaciones").
  */
-/** Cuántos módulos tiene un grupo, vea quien vea. */
-const modulosDelGrupo = (grupo: Grupo) => (Object.values(MODULOS) as DefinicionModulo[]).filter((d) => d.grupo === grupo).length;
 
 export function menuAgrupado(sujeto: SujetoPermisos): GrupoMenu[] {
   const visibles = modulosDelMenu(sujeto);
@@ -152,7 +153,7 @@ export function menuAgrupado(sujeto: SujetoPermisos): GrupoMenu[] {
   return grupos
     .map((grupo) => ({ grupo, modulos: visibles.filter((m) => (MODULOS[m] as DefinicionModulo).grupo === grupo) }))
     .filter((b) => b.modulos.length > 0)
-    .map(({ grupo, modulos }) => ({ titulo: grupo && (modulos.length > 1 || modulosDelGrupo(grupo) === 1) ? GRUPOS[grupo] : null, modulos }));
+    .map(({ grupo, modulos }) => ({ titulo: grupo && modulos.length > 1 ? GRUPOS[grupo] : null, modulos }));
 }
 
 /**

@@ -65,6 +65,9 @@ export function OpcionesEnTarjetas<V extends string>({
                 "hover:bg-superficie focus-visible:ring-3 focus-visible:ring-ring/50",
                 "data-checked:border-tinta data-checked:bg-neutro-fondo data-checked:ring-1 data-checked:ring-tinta",
                 Icono && "min-h-20",
+                // Sin ícono ni detalle, el texto ocupa el centro: con lugar a los lados para el tilde de la elegida (pedido 16:
+                // "Insumos y productos" quedaba tapado en el celular)
+                !Icono && !o.detalle && "px-6",
                 o.detalle && "items-start gap-0.5 px-3 pr-8 text-left",
                 // En rojo mientras falta elegir: elegida una, ya no
                 error && !valor && "border-destructive",
