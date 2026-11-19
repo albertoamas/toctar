@@ -128,13 +128,13 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
       </EncabezadoPagina>
 
       {/* C7 §5.6 (18/11): la historia del vehículo (reservas, órdenes y cotizaciones, también las de un dueño anterior) y
-          su mantenimiento a la izquierda; los datos y el dueño al costado. En el celular: la historia, los datos y el dueño,
-          y el mantenimiento */}
+          al costado su mantenimiento, los datos y el dueño (en el celular, en ese orden, debajo de la historia) */}
       <div className="grid items-start gap-8 gap-x-4 @4xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         {conHistoria && (
           <Seccion id="historia" titulo="Historia" sinRelleno className="@4xl:col-start-1 @4xl:row-start-1">
             <LineaDeTiempo
               hitos={hitos}
+              hoy={fechaEnBolivia()}
               corta={todaLaHistoria ? undefined : HISTORIA_CORTA}
               verTodo={conDesde(`${rutaVehiculo(v.dueno.id, v.id)}?historia=todo`, typeof busqueda.volver === "string" ? busqueda.volver : null)}
               vacio="Todavía no tiene trabajos ni cotizaciones."
@@ -142,39 +142,8 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
           </Seccion>
         )}
 
-        <div className="flex min-w-0 flex-col gap-8 @4xl:col-start-2 @4xl:row-span-2 @4xl:row-start-1">
-        <SeccionConEditar
-          id="datos"
-          titulo="Datos"
-          etiquetaEditar={`Editar ${v.placa}`}
-          tituloModal={`Editar ${v.placa}`}
-          lectura={
-            <ListaDatos
-              nombre="Datos del vehículo"
-              // La placa ya es el título
-              filas={[detalle.length > 0 && ["Vehículo", detalle.join(" ")], ["Tamaño", v.tamano]]}
-            />
-          }
-        >
-          <FormularioVehiculo clienteId={v.dueno.id} vehiculo={v} tamanos={tamanos} />
-        </SeccionConEditar>
-
-        <Seccion id="dueno" titulo="Dueño" sinRelleno>
-          <ListaFilas
-            etiqueta="Dueño"
-            filas={[
-              {
-                href: conDesde(fichaCliente, desdeAqui),
-                titulo: v.dueno.nombre,
-                detalles: [formatearWhatsApp(v.dueno.telefono)],
-                ...(v.dueno.activo ? {} : { estado: "Desactivado", atenuada: true }),
-              },
-            ]}
-          />
-        </Seccion>
-        </div>
-
-        <div className="flex min-w-0 flex-col gap-8 empty:hidden @4xl:col-start-1 @4xl:row-start-2">
+        {/* Al costado, como en el prototipo v3: el mantenimiento, los datos y el dueño */}
+        <div className="flex min-w-0 flex-col gap-8 @4xl:col-start-2 @4xl:row-start-1">
           {verMantenimientos && (
             <Seccion id="mantenimiento" titulo="Mantenimiento" sinRelleno>
               {mantenimientos.length === 0 ? (
@@ -191,6 +160,35 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
               )}
             </Seccion>
           )}
+          <SeccionConEditar
+            id="datos"
+            titulo="Datos"
+            etiquetaEditar={`Editar ${v.placa}`}
+            tituloModal={`Editar ${v.placa}`}
+            lectura={
+              <ListaDatos
+                nombre="Datos del vehículo"
+                // La placa ya es el título
+                filas={[detalle.length > 0 && ["Vehículo", detalle.join(" ")], ["Tamaño", v.tamano]]}
+              />
+            }
+          >
+            <FormularioVehiculo clienteId={v.dueno.id} vehiculo={v} tamanos={tamanos} />
+          </SeccionConEditar>
+
+          <Seccion id="dueno" titulo="Dueño" sinRelleno>
+            <ListaFilas
+              etiqueta="Dueño"
+              filas={[
+                {
+                  href: conDesde(fichaCliente, desdeAqui),
+                  titulo: v.dueno.nombre,
+                  detalles: [formatearWhatsApp(v.dueno.telefono)],
+                  ...(v.dueno.activo ? {} : { estado: "Desactivado", atenuada: true }),
+                },
+              ]}
+            />
+          </Seccion>
         </div>
       </div>
     </>

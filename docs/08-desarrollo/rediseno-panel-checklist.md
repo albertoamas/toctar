@@ -139,13 +139,13 @@ Decidido el 18/11, con capturas.
 
 ### Piezas
 
-- [x] `LineaDeTiempo` (nueva, `linea-de-tiempo.tsx`): cada trabajo con su fecha, sus servicios, su insignia, la placa o el número y el monto si quien mira lo ve; lo más reciente arriba; las 5 primeras y "Ver toda la historia (N)".
+- [x] `LineaDeTiempo` (nueva, `linea-de-tiempo.tsx`), como el prototipo v3: un punto por fila (rojo el más reciente), "Orden", "Reserva" o "Cotización 2026-0055" con su estado al lado; debajo la placa, los servicios y la fecha corta; a la derecha el monto si quien mira lo ve ("Debe" en insignia, solo lista o entregada); las 5 primeras y "Ver toda la historia (N)".
 - [x] `historia()` (`clientes/componentes/historia.tsx`): junta reservas, órdenes y cotizaciones; una cotización aceptada con su reserva no se repite. La consulta de reservas suma sus servicios (solo lectura). `reservas-cliente.tsx` se borra.
 
 ### Pantallas
 
 - [x] Ficha del cliente — la historia con "Nueva reserva" y "Nueva cotización" y los mantenimientos a la izquierda; vehículos y datos al costado. En el celular: historia, vehículos, datos y mantenimientos.
-- [x] Ficha del vehículo — su historia (con "Con {dueño}" si fue con otro) y su mantenimiento; datos y dueño al costado.
+- [x] Ficha del vehículo — su historia (con "Con {dueño}" si fue con otro); al costado el mantenimiento, los datos y el dueño, como el prototipo.
 - [x] E2E nueva `c7-historia`: el orden de la historia y, sin Pagos ni Cotizaciones, sin montos ni cotizaciones (RN-12). Ajustadas las que buscaban las listas "Reservas" y "Cotizaciones" de la ficha.
 
 ## Paso 8 — Cierre (rama `patrones-cierre`)

@@ -167,6 +167,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
           >
             <LineaDeTiempo
               hitos={hitos}
+              hoy={fechaEnBolivia()}
               corta={todaLaHistoria ? undefined : HISTORIA_CORTA}
               verTodo={conDesde(`/panel/clientes/${c.id}?historia=todo`, typeof busqueda.volver === "string" ? busqueda.volver : null)}
               vacio="Todavía no tiene trabajos ni cotizaciones."

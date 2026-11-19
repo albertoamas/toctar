@@ -8,7 +8,7 @@ import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reg
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import type { FilaCotizacion } from "@/modulos/cotizaciones/consultas/lista";
 import { bs, diasDesde, NOMBRE_ESTADO, sinRespuesta, TONO_ESTADO } from "@/modulos/cotizaciones/reglas";
-import { rutaTrabajo } from "@/modulos/ordenes/reglas";
+import { esOrden, rutaTrabajo } from "@/modulos/ordenes/reglas";
 import { estaPagada } from "@/modulos/pagos/reglas";
 
 // La historia de la ficha del cliente y de la del vehículo (C7 §5.6, 18/11): sus reservas y órdenes, y sus cotizaciones,
@@ -34,16 +34,28 @@ export function historia(props: {
 }): HitoHistoria[] {
   const { reservas, cotizaciones, verOrdenes, conSaldo, umbral, desde, duenoActual } = props;
   const hoy = new Date();
-  const deQuien = (clienteId: number, nombre: string, placa: string) => (duenoActual === undefined ? placa : clienteId === duenoActual ? undefined : `Con ${nombre}`);
-  const deReservas: HitoHistoria[] = (reservas ?? []).map((r) => ({
-    clave: `t${r.id}`,
-    href: conDesde(rutaTrabajo(r.id, r.estado, verOrdenes), desde),
-    fecha: r.fechaInicio,
-    titulo: r.servicios || "Reserva",
-    detalle: deQuien(r.clienteId, r.cliente, r.placa),
-    insignias: <Insignia tono={TONO_ESTADO_TRABAJO[r.estado]}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</Insignia>,
-    monto: conSaldo && r.saldo && r.estado !== "cancelado" ? (estaPagada(r.saldo.saldo) ? "Pagado" : `Debe ${mostrarMonto(r.saldo.saldo)} Bs`) : undefined,
-  }));
+  // En la del cliente, la placa; en la del vehículo, "Con {cliente}" si fue con un dueño anterior
+  const placaDe = (placa: string) => (duenoActual === undefined ? placa : undefined);
+  const conOtro = (clienteId: number, nombre: string) => (duenoActual !== undefined && clienteId !== duenoActual ? [`Con ${nombre}`] : []);
+  const deReservas: HitoHistoria[] = (reservas ?? []).map((r) => {
+    // Lo que debe, solo cuando ya se cobra (lista o entregada): antes, un saldo es lo normal (el adelanto)
+    const debe = conSaldo && r.saldo && (r.estado === "listo" || r.estado === "entregado") && !estaPagada(r.saldo.saldo) ? r.saldo.saldo : null;
+    return {
+      clave: `t${r.id}`,
+      href: conDesde(rutaTrabajo(r.id, r.estado, verOrdenes), desde),
+      fecha: r.fechaInicio,
+      titulo: esOrden(r.estado) ? "Orden" : "Reserva",
+      insignias: (
+        <>
+          <Insignia tono={TONO_ESTADO_TRABAJO[r.estado]}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</Insignia>
+          {debe && <Insignia tono="aviso">Debe {mostrarMonto(debe)} Bs</Insignia>}
+        </>
+      ),
+      placa: placaDe(r.placa),
+      partes: [r.servicios, ...conOtro(r.clienteId, r.cliente)].filter(Boolean),
+      monto: conSaldo && r.saldo && r.estado !== "cancelado" ? `${mostrarMonto(r.saldo.total)} Bs` : undefined,
+    };
+  });
   // Sin la Agenda no se ven las reservas: entonces las cotizaciones aceptadas tampoco se esconden
   const conReservas = reservas !== null;
   const deCotizaciones: HitoHistoria[] = (cotizaciones ?? [])
@@ -54,9 +66,7 @@ export function historia(props: {
         clave: `c${c.id}`,
         href: conDesde(`/panel/cotizaciones/${c.id}`, desde),
         fecha: fechaEnBolivia(c.ultimoMovimientoAt),
-        // Sin servicios (una cotización vieja), su número es el título: no se repite abajo
-        titulo: c.servicios || `Cotización ${c.numero}`,
-        detalle: [c.servicios && `Cotización ${c.numero}`, deQuien(c.clienteId, c.cliente, c.placa)].filter(Boolean).join(" · "),
+        titulo: `Cotización ${c.numero}`,
         insignias: (
           <>
             <Insignia tono={TONO_ESTADO[c.estado]}>{NOMBRE_ESTADO[c.estado]}</Insignia>
@@ -64,6 +74,8 @@ export function historia(props: {
             {sinRespuesta(c.estado, dias, umbral) && <Insignia tono="aviso">Sin respuesta hace {cantidad(dias, "día", "días")}</Insignia>}
           </>
         ),
+        placa: placaDe(c.placa),
+        partes: [c.servicios, ...conOtro(c.clienteId, c.cliente)].filter(Boolean),
         // Quien ve Cotizaciones ve sus precios (pedido 24)
         monto: bs(c.total),
       };
