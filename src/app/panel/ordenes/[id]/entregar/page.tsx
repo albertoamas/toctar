@@ -4,11 +4,10 @@ import { Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
-import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { AvisoEstado } from "@/componentes/panel/aviso-estado";
 import { PasoConCostado } from "@/componentes/panel/con-resumen";
 import { RegistrarPago } from "@/modulos/pagos/componentes/registrar-pago";
-import { ListaDatos } from "@/componentes/panel/lista-datos";
+import { ResumenClienteVehiculo } from "@/modulos/clientes/componentes/resumen-cliente-vehiculo";
 import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
@@ -19,7 +18,6 @@ import { vistaPreviaPlanes } from "@/modulos/mantenimientos/planes";
 import { obtenerOrden } from "@/modulos/ordenes/consultas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
 import { estaPagada } from "@/modulos/pagos/reglas";
-import { filaVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 import { conDesde, leerDesde, sinElTrabajo, volverDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Entregar vehículo" };
@@ -79,15 +77,8 @@ async function Entrega({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
         etiqueta="Lo que se entrega"
         costado={
           <>
-            <Seccion id="se-entrega" titulo="Se entrega" dentro>
-              <ListaDatos
-                nombre="Lo que se entrega"
-                filas={[
-                  ["Cliente", <span key="cliente" className="font-semibold">{o.cliente}</span>],
-                  filaVehiculo(detalle, o.tamano),
-                ]}
-              />
-            </Seccion>
+            {/* La misma tarjeta que "Cotización para": el cliente y la placa grande (los servicios van en su tarjeta, con los montos) */}
+            <ResumenClienteVehiculo titulo={null} cliente={{ nombre: o.cliente }} vehiculo={{ placa: o.placa, detalle, tamano: o.tamano }} />
             {conPagos && <MontosTrabajo trabajoId={o.id} montos={o.montos} cerrado={false} hoy={hoy} cobrar />}
           </>
         }

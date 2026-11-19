@@ -107,6 +107,11 @@ Decidido el 18/11, con capturas: el mismo marco en los tres; Publicar en una col
 - [x] Recibir — al costado "Se recibe"; el checklist como estaba; el botón fuera de la tarjeta de Observaciones.
 - [x] Publicar en la galería — el aviso azul arriba (era un texto gris bajo el título); el botón fuera de la tarjeta.
 
+### Tarjetas de datos (18/11)
+
+- [x] Recibir y Entregar: lo que se recibe o se entrega en la tarjeta de "Cotización para", sin título (el cliente, la placa grande, los servicios con viñeta: `ServiciosResumen`).
+- [x] `ListaDatos`: una línea entre dato y dato; angosta (celular, costado), la etiqueta chica arriba y el valor abajo; con lugar, al lado (ficha del vehículo, reclamo, Negocio, Parámetros).
+
 ## Paso 6 — Lista con acción en la fila (rama `patrones-lista-accion`)
 
 ### Piezas

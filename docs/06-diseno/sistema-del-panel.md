@@ -55,6 +55,7 @@ Una pantalla nueva o cambiada toma una de estas formas; si ninguna sirve, se dis
 >
 > - **Fichas** (ver y editar): el título **fuera**, arriba de la tarjeta, con su "Editar" al lado (`Seccion`, `SeccionConEditar`).
 > - **Formularios** (crear, en pasos, un paso del taller: Nueva cotización, Nueva versión, Nueva reserva, Nuevo cliente, Nuevo usuario, Cambiar de dueño, Recibir, Entregar, Publicar): el título **adentro** de cada tarjeta, como la leyenda de un grupo de campos. Lo que se lee en un formulario (lo ya elegido, los montos, la firma, el checklist) también: `SeccionFormulario` para los campos, `CabeceraTarjeta` o `Seccion dentro` para lo demás. El resumen del costado es una sola tarjeta ("Cotización para" con el total al pie).
+> - **Una tarjeta de datos con sus etiquetas no lleva título** si la pantalla ya dice qué es (lo que se recibe o se entrega): el título va cuando la tarjeta sola no se entiende ("Firma del cliente", "Checklist").
 > - **Excepción:** una lista para elegir dentro de un formulario (buscar el cliente, elegir el vehículo, sus cotizaciones) sigue la forma de las listas: el título arriba y la lista en su tarjeta.
 
 - **Título arriba de la tarjeta**, con su acción en la misma fila. La lectura va dentro de la tarjeta. El título va adentro solo si la tarjeta es un bloque aparte que no sigue la lectura de la página: un panel lateral de una portada ("Para atender") o un formulario que se abre en la misma pantalla ("Subir fotos").

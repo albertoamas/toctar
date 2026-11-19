@@ -5,9 +5,8 @@ import { Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
-import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { PasoConCostado } from "@/componentes/panel/con-resumen";
-import { ListaDatos } from "@/componentes/panel/lista-datos";
+import { ResumenClienteVehiculo, ServiciosResumen } from "@/modulos/clientes/componentes/resumen-cliente-vehiculo";
 import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
@@ -16,7 +15,6 @@ import { AvanceRecepcion, ChecklistRecepcion } from "@/modulos/ordenes/component
 import { FormularioRecepcion } from "@/modulos/ordenes/componentes/formulario-recepcion";
 import { obtenerOrden, partesDelChecklist, revisionDeTrabajo } from "@/modulos/ordenes/consultas";
 import { esOrden, puedeRecibirse } from "@/modulos/ordenes/reglas";
-import { filaVehiculo } from "@/modulos/clientes/componentes/datos-vehiculo";
 import { conDesde, leerDesde, sinElTrabajo, volverDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Recibir vehículo" };
@@ -75,23 +73,13 @@ async function Recepcion({ params, searchParams }: Pick<PageProps<"/panel/ordene
           <PasoConCostado
             etiqueta="Lo que se recibe"
             costado={
-              <Seccion id="se-recibe" titulo="Se recibe" dentro>
-                <ListaDatos
-                  nombre="Lo que se recibe"
-                  filas={[
-                    ["Cliente", <span key="cliente" className="font-semibold">{o.cliente}</span>],
-                    filaVehiculo(detalle, o.tamano),
-                    o.servicios.length > 0 && [
-                      "Servicios",
-                      <ul key="servicios" className="flex flex-col">
-                        {o.servicios.map((s, i) => (
-                          <li key={i}>{s}</li>
-                        ))}
-                      </ul>,
-                    ],
-                  ]}
-                />
-              </Seccion>
+              // La misma tarjeta que "Cotización para": el cliente, la placa grande y los servicios, cada uno en su franja
+              <ResumenClienteVehiculo
+                titulo={null}
+                cliente={{ nombre: o.cliente }}
+                vehiculo={{ placa: o.placa, detalle, tamano: o.tamano }}
+                pie={<ServiciosResumen servicios={o.servicios} />}
+              />
             }
           >
             <AvanceRecepcion>
