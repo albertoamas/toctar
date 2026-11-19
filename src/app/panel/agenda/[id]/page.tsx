@@ -135,6 +135,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
       <EncabezadoPagina
         volver={volver}
         titulo={r.placa}
+        // Debajo del título, el dato útil (sistema-del-panel.md §2, C7 fase 3): no solo a dónde se vuelve
+        subtitulo={[r.cliente, [r.marca, r.modelo].filter(Boolean).join(" ")].filter(Boolean).join(" · ")}
         estado={<Insignia tono={TONO_ESTADO_TRABAJO[r.estado]}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</Insignia>}
         accion={
           <div className="flex flex-wrap gap-2">

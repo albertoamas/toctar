@@ -168,6 +168,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
       <EncabezadoPagina
         volver={volver}
         titulo={o.placa}
+        // Debajo del título, el dato útil (sistema-del-panel.md §2, C7 fase 3): no solo a dónde se vuelve
+        subtitulo={[o.cliente, [o.marca, o.modelo].filter(Boolean).join(" ")].filter(Boolean).join(" · ")}
         estado={
           <>
             <Insignia tono={TONO_ESTADO_TRABAJO[o.estado]}>{NOMBRE_ESTADO_TRABAJO[o.estado]}</Insignia>
@@ -228,7 +230,9 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
           )}
         </div>
 
-        <div className="flex flex-col gap-8 @4xl:col-start-1 @4xl:row-span-2 @4xl:row-start-1">
+        {/* En el celular esta columna se abre (contents) y el historial, que se consulta poco, va al final, después de los
+            montos (C7 fase 3); en la computadora queda en su columna */}
+        <div className="flex flex-col gap-8 @max-4xl:contents @4xl:col-start-1 @4xl:row-span-2 @4xl:row-start-1">
           <ComoLlego revision={revision} observaciones={o.observacionesIngreso} />
           {firma && <FirmaDeEntrega firma={firma} />}
           {/* Con "Pagos", los servicios van con sus precios en el bloque de montos; si no, solo los nombres */}
@@ -257,12 +261,14 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
             )}
           </Seccion>
           {/* El historial empieza donde empieza el trabajo: cuando se reservó (lo más viejo, al final) */}
-          <HistorialOrden
-            avances={[
-              ...avances.map((a) => ({ id: a.id, nota: a.nota, autor: a.autor, cuando: formatearFechaHora(a.createdAt) })),
-              { id: 0, nota: "Reservada.", autor: o.agendadaPor, cuando: formatearFechaHora(o.createdAt) },
-            ]}
-          />
+          <div className="@max-4xl:order-last">
+            <HistorialOrden
+              avances={[
+                ...avances.map((a) => ({ id: a.id, nota: a.nota, autor: a.autor, cuando: formatearFechaHora(a.createdAt) })),
+                { id: 0, nota: "Reservada.", autor: o.agendadaPor, cuando: formatearFechaHora(o.createdAt) },
+              ]}
+            />
+          </div>
         </div>
 
         {/* Abierta también después de la entrega: una entregada con saldo se cobra aquí (RN-13, HU-37) */}

@@ -126,6 +126,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
       <EncabezadoPagina
         volver={volver}
         titulo={`Cotización ${c.numero}`}
+        // Debajo del título, el dato útil (sistema-del-panel.md §2, C7 fase 3): no solo a dónde se vuelve
+        subtitulo={`${c.cliente} · ${c.placa}`}
         estado={
           <span className="flex flex-wrap gap-1.5">
             <Insignia tono={TONO_ESTADO[c.estado]}>{NOMBRE_ESTADO[c.estado]}</Insignia>
