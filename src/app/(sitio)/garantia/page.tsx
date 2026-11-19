@@ -27,7 +27,7 @@ async function Contenido() {
   // Los servicios visibles del sitio, para elegir a cuál corresponde el reclamo.
   const servicios = (await serviciosPublicos()).map((s) => ({ id: s.id, nombre: s.nombre }));
   return (
-    <section className="mx-auto w-full max-w-6xl px-4 py-12 md:py-20">
+    <section className="mx-auto w-full max-w-6xl px-4 pt-6 pb-12 md:pt-10 md:pb-20">
       <TituloPagina>Garantía y reclamos</TituloPagina>
       <p className="mt-3 mb-10 max-w-2xl text-lg leading-7 text-tinta-suave">Respaldamos cada trabajo. Si necesitas que revisemos algo, cuéntanos y te respondemos por WhatsApp.</p>
       <FormularioReclamo servicios={servicios} />
