@@ -60,7 +60,7 @@ export default function LayoutPanel({ children }: LayoutProps<"/panel">) {
 
         {/* min-w-0: sin esto, lo ancho del contenido (como la tira de pestañas) estira la columna y la pantalla
             se sale por la derecha en el celular. */}
-        <div className="flex min-w-0 flex-1 flex-col bg-fondo-panel">
+        <div data-fondo="panel" className="flex min-w-0 flex-1 flex-col bg-fondo-panel">
           <RegistrarServiceWorker />
           {/* Los avisos ("Cambios guardados.") son solo del panel: en el diseño raíz, su código (sonner) se descargaba
               también en cada página del sitio, que no los usa (pulido 2, rendimiento). */}

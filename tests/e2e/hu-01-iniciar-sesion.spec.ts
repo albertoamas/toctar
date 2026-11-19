@@ -104,7 +104,8 @@ test("el fondo de la página es negro en el ingreso y en el sitio, y claro en el
   await expect.poll(fondo).toBe("rgb(0, 0, 0)");
   // Después de entrar, Next deja el ingreso oculto en la página: no cuenta
   await ingresarComoDueno(page);
-  await expect.poll(fondo).toBe("rgb(255, 255, 255)");
+  // El gris del panel (19/11): al estirar la página en el iPhone se veía el blanco
+  await expect.poll(fondo).toBe("rgb(243, 244, 246)");
 });
 
 test("en una pantalla ancha, el logo y el lema quedan dentro de la franja gris, también si es alta", async ({ page, isMobile }) => {

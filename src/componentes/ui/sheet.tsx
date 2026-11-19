@@ -6,9 +6,15 @@ import { cn } from "cn"
 
 import { Button } from "@/componentes/ui/button"
 import { XIcon } from "lucide-react"
+import { useCelular } from "@/componentes/panel/celular"
 
-function Sheet({ ...props }: SheetPrimitive.Root.Props) {
-  return <SheetPrimitive.Root data-slot="sheet" {...props} />
+// En el celular, sin el bloqueo de desplazamiento de Base UI (modal="trap-focus": el foco sigue atrapado). Para bloquear
+// la página, en Safari pasa su contenido a otro contenedor y al cerrar lo devuelve: se veía un parpadeo al cerrar un
+// modal o el menú (prueba en un iPhone 14, 19/11). El fondo oscuro no deja desplazar la página (touch-none) y el
+// contenido del modal no arrastra a la página al llegar a su fin (overscroll-contain).
+function Sheet({ modal, ...props }: SheetPrimitive.Root.Props) {
+  const enCelular = useCelular()
+  return <SheetPrimitive.Root data-slot="sheet" modal={modal ?? (enCelular ? "trap-focus" : true)} {...props} />
 }
 
 function SheetTrigger({ ...props }: SheetPrimitive.Trigger.Props) {
@@ -28,7 +34,7 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
     <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/10 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0 supports-backdrop-filter:backdrop-blur-xs",
+        "fixed inset-0 z-50 touch-none bg-black/10 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0 supports-backdrop-filter:backdrop-blur-xs max-sm:bg-black/30 max-sm:duration-200 max-sm:supports-backdrop-filter:backdrop-blur-none",
         className
       )}
       {...props}
