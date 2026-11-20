@@ -2,6 +2,7 @@ import Link from "next/link";
 import { buttonVariants } from "@/componentes/ui/button";
 import { cn } from "cn";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
+import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { fechaCorta } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
@@ -91,13 +92,14 @@ export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; client
             />
           )}
         </Seccion>
-        {/* "Atrás" en todos los pasos (20/11): aquí, a elegir otro cliente */}
+        {/* "Atrás" en todos los pasos (20/11): aquí, a elegir otro cliente. En el mismo pie que los demás pasos (fijo abajo
+            en el celular), no suelto bajo la tarjeta */}
         {cambiarCliente && (
-          <div>
+          <PieFormulario>
             <Link href={cambiarCliente} className={buttonVariants({ variant: "outline" })}>
               Atrás
             </Link>
-          </div>
+          </PieFormulario>
         )}
       </>
     );

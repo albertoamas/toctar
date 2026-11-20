@@ -557,12 +557,13 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
 
       {(paso !== PASO_SERVICIOS || conSiguiente) && (
         <PieFormulario>
-          <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:justify-start">
+          <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2">
             {/* El total de la reserva directa, a la vista mientras se cargan los precios */}
-            {total !== null && total !== "0.00" && (
+            {/* Desde los servicios, siempre (también en 0 Bs): que aparezca al elegir el primero corría los botones (20/11).
+                En el celular, en su propio renglón sobre los botones; desde 640 px, después de ellos, a la derecha */}
+            {total !== null && paso >= PASO_SERVICIOS && (
               // En la fecha, con el resumen al costado (computadora), el total ya está ahí
-              // A la derecha desde 640 px (20/11): al aparecer, no corre los botones, que quedan siempre en su lugar
-              <p className={cn("flex items-baseline gap-2 sm:order-last sm:ml-auto", paso >= PASO_FECHA && "@4xl:hidden")}>
+              <p className={cn("flex w-full items-baseline justify-between gap-2 sm:order-last sm:ml-auto sm:w-auto sm:justify-start", paso >= PASO_FECHA && "@4xl:hidden")}>
                 <span className="text-tinta-suave">Total</span>
                 <span className="text-lg font-bold tabular-nums">{mostrarMonto(total)} Bs</span>
               </p>

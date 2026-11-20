@@ -117,8 +117,8 @@ En el celular, una reserva sin cotización se arma paso a paso sin bajar por una
   `destinos`). En el último paso, el resumen completo (los servicios, el total, el adelanto, lo que falta y la fecha),
   también en el celular, para confirmar antes de reservar; en la computadora, al costado desde la fecha.
 - **Volver se ve**: "Atrás" en todos los pasos (en Vehículo, a elegir otro cliente; en Servicios, al vehículo; también en
-  el paso del vehículo de Nueva cotización con un cliente registrado) y, en el celular, el paso anterior escrito junto a
-  "Paso 3 de 5" ("‹ Vehículo"): las barras del indicador van sin nombre y no se notaba que se tocan. Al cambiar el
+  el paso del vehículo de Nueva cotización con un cliente registrado). Sin un "‹ Vehículo" escrito arriba en el celular:
+  se probó y el dueño lo quitó, repetía el "Atrás" del pie. Al cambiar el
   cliente o el vehículo, la reserva empieza de cero (los precios dependen del tamaño) y, con algo llenado, pregunta
   "¿Salir sin guardar?".
 - **"Cliente nuevo" y "Otro vehículo", como en Nueva cotización** (pedido 40; se compararon con una ventanita y se eligió
@@ -132,5 +132,7 @@ En el celular, una reserva sin cotización se arma paso a paso sin bajar por una
 - **Los servicios, a lo ancho** (también en Nueva cotización): en la computadora y la tableta, una fila por servicio (el
   servicio, su opción y el precio) con un basurero al final; en el celular, el bloque con "Servicio 1". El basurero en
   gris (rojo solo al pasar el mouse): quitar una fila sin guardar se deshace; no una X, que en el panel cierra.
-- **El total del pie, a la derecha** desde 640 px: al aparecer no corre "Atrás" ni "Siguiente".
+- **El total del pie no corre los botones**: se ve desde el paso Servicios, también en 0 Bs (antes aparecía al elegir el
+  primer servicio y empujaba "Atrás" y "Siguiente"). En el celular, en su propio renglón sobre los botones; desde
+  640 px, después de ellos, a la derecha. Lo mismo en Nueva cotización y en la versión nueva.
 

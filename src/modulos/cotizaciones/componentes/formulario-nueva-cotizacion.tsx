@@ -348,7 +348,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
 
       <AvisoAlSalir formulario={formulario} estado={estado} />
       <PieFormulario>
-        <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:justify-start">
+        <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2">
           {paso === PASO_SERVICIOS && <TotalEnPie total={precios.totales.total} />}
           <div className="flex gap-2">
             {paso > primerPaso && (
