@@ -5,6 +5,7 @@ import { CalendarClockIcon, CalendarPlusIcon, CarFrontIcon, ChevronRightIcon, Fi
 import { cn } from "cn";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
+import { MarcaEstado } from "@/componentes/panel/marca-estado";
 import { ICONO_MODULO } from "@/componentes/panel/iconos-modulo";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
@@ -29,7 +30,6 @@ import { enlaceTrabajo, estaAtrasada, rutaTrabajo } from "@/modulos/ordenes/regl
 import { saldosPendientes } from "@/modulos/pagos/consultas";
 import { reclamosPorAtender } from "@/modulos/reclamos/consultas";
 import { conDesde } from "@/lib/volver";
-import type { TonoEstado } from "@/lib/tonos";
 
 /** Lo que se abre desde Inicio vuelve a Inicio (pedido 43). */
 const INICIO = "/panel";
@@ -312,13 +312,13 @@ function ParaHoy({ filas, verOrdenes }: { filas: FilaDelDia[]; verOrdenes: boole
               <CeldaDoble key="v" principal={f.placa} secundario={f.cliente} peso="placa" />,
               // Una sola marca (19/11, sin píldoras): el problema en su color o, si no hay, el estado con el punto de su tono
               f.problema ? (
-                <Marca key="e" punto={f.problema.tono === "peligro" ? "bg-peligro" : "bg-aviso"} className={cn("font-semibold", f.problema.tono === "peligro" ? "text-peligro" : "text-aviso")}>
+                <MarcaEstado key="e" tono={f.problema.tono} problema>
                   {f.problema.texto}
-                </Marca>
+                </MarcaEstado>
               ) : (
-                <Marca key="e" punto={PUNTO_DEL_TONO[TONO_ESTADO_TRABAJO[f.estado] ?? "info"]}>
+                <MarcaEstado key="e" tono={TONO_ESTADO_TRABAJO[f.estado]}>
                   {NOMBRE_ESTADO_TRABAJO[f.estado]}
-                </Marca>
+                </MarcaEstado>
               ),
               <span key="c" className="text-tinta-suave">
                 {f.cuando}
@@ -328,19 +328,6 @@ function ParaHoy({ filas, verOrdenes }: { filas: FilaDelDia[]; verOrdenes: boole
         />
       )}
     </Seccion>
-  );
-}
-
-/** El color del punto de cada tono de estado. */
-const PUNTO_DEL_TONO: Record<TonoEstado, string> = { exito: "bg-exito", aviso: "bg-aviso", peligro: "bg-peligro", info: "bg-info", violeta: "bg-violeta" };
-
-/** Un estado escrito con un punto de color delante (19/11): sin píldora. */
-function Marca({ punto, className, children }: { punto: string; className?: string; children: React.ReactNode }) {
-  return (
-    <span className={cn("flex items-center gap-2", className)}>
-      <span className={cn("size-2 shrink-0 rounded-full", punto)} aria-hidden />
-      {children}
-    </span>
   );
 }
 
