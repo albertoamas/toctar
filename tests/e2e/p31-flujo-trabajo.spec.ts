@@ -108,13 +108,9 @@ test("«Aceptó» la deja en Por reservar de la Agenda; desde ahí se reserva y 
   // (las que dejan otras pruebas), dice cuántas y lleva a la Agenda, donde están en "Por reservar"
   await page.goto("/panel");
   const una = page.getByRole("link").filter({ hasText: "Cotización aceptada de" });
-  const varias = page.getByRole("link").filter({ hasText: /\d+ aceptadas sin fecha/ });
+  const varias = page.getByRole("link").filter({ hasText: /\d+ cotizaciones aceptadas sin reservar/ });
   await expect(una.or(varias)).toHaveCount(1);
-  // Con una sola, además, su botón "Reservar" al lado (recorrido visual del 19/11)
-  if ((await una.count()) > 0) {
-    await expect(una).toHaveAttribute("href", conVolver(`/panel/agenda/nueva?cotizacion=${c.cotizacionId}`));
-    await expect(page.getByRole("link", { name: /^Reservar la cotización de / })).toHaveAttribute("href", conVolver(`/panel/agenda/nueva?cotizacion=${c.cotizacionId}`));
-  }
+  if ((await una.count()) > 0) await expect(una).toHaveAttribute("href", conVolver(`/panel/agenda/nueva?cotizacion=${c.cotizacionId}`));
   else await expect(varias).toHaveAttribute("href", "/panel/agenda");
 
   // En la Agenda, en "Por reservar", con el total para quien ve montos

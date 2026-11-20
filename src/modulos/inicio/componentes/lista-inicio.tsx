@@ -1,15 +1,14 @@
 import Link from "next/link";
 import type { Route } from "next";
-import { ChevronRightIcon, type LucideIcon } from "lucide-react";
+import { ChevronRightIcon, CircleAlertIcon, ClockIcon } from "lucide-react";
 import { cn } from "cn";
-import { Seccion } from "@/componentes/panel/cabecera-seccion";
-import { Insignia } from "@/componentes/panel/insignia";
 
-// Las listas del inicio (recorrido visual del 19/11, a pedido del dueño): "Urgente", "Hoy" y "Pendientes", con el mismo
-// renglón. Toda la fila (menos su acción) lleva a la pantalla de lo que muestra; la acción, si la hay, hace la tarea ahí
-// mismo o va directo a hacerla (recibir, avisar por WhatsApp, cobrar). Sin acción, una flecha. El color, solo en lo
-// urgente: así lo que se atrasó no compite con lo que solo espera.
-// Angosta la fila (el celular), la acción baja debajo del texto en lugar de apretarlo.
+// Las listas del inicio (recorrido visual del 19/11, a pedido del dueño; prototipo 3 aprobado): "Urgente", "Hoy" y
+// "Pendientes", livianas: sin íconos ni cajas de color en las filas. Lo que pide atención va en texto con su ícono, en el
+// color de su estado (rojo lo atrasado, ámbar lo que falta avisar), sin píldora. Toda la fila (menos su botón) lleva a
+// la pantalla de lo que muestra; el botón, solo donde se hace algo (recibir, avisar, entregar, responder). Sin botón,
+// una flecha (Pendientes: cada fila abre su lista).
+// Angosta la fila (el celular), el botón baja debajo del texto en lugar de apretarlo.
 
 export type FilaInicio = {
   clave: string;
@@ -20,9 +19,8 @@ export type FilaInicio = {
   cliente?: string;
   detalle: string;
   /** Lo que pide atención: el atraso en rojo, "Sin avisar" en ámbar. */
-  insignia?: { texto: string; tono: "peligro" | "aviso" };
-  icono?: LucideIcon;
-  /** La acción de la fila (un botón o un enlace con estilo de botón). */
+  alerta?: { texto: string; tono: "peligro" | "aviso" };
+  /** El botón de la fila (un botón o un enlace con estilo de botón). Sin él, una flecha. */
   accion?: React.ReactNode;
 };
 
@@ -32,6 +30,7 @@ export function ListaInicio({
   filas,
   vacio,
   urgente,
+  conCuenta = true,
   className,
 }: {
   id: string;
@@ -39,33 +38,37 @@ export function ListaInicio({
   filas: FilaInicio[];
   /** Lo que dice la lista vacía. */
   vacio: string;
-  /** Lo atrasado: sus íconos en rojo. */
+  /** Lo atrasado: su título en rojo. */
   urgente?: boolean;
+  /** La cantidad junto al título (Pendientes no la lleva: cada fila ya resume varios). */
+  conCuenta?: boolean;
   className?: string;
 }) {
   return (
-    <Seccion id={id} titulo={titulo} sinRelleno className={cn("min-w-0", className)}>
+    <section aria-labelledby={`${id}-titulo`} className={cn("tt-tarjeta-panel min-w-0 overflow-hidden", className)}>
+      <div className="flex items-baseline gap-2 px-4 pt-4 pb-1.5 sm:px-5">
+        <h2 id={`${id}-titulo`} className={cn("tt-titulo-seccion", urgente && "text-peligro")}>
+          {titulo}
+        </h2>
+        {conCuenta && filas.length > 0 && <span className="text-sm text-tinta-suave tabular-nums">{filas.length}</span>}
+      </div>
       {filas.length === 0 ? (
-        <p className="px-4 py-5 text-tinta-suave">{vacio}</p>
+        <p className="px-4 pt-1 pb-5 text-tinta-suave sm:px-5">{vacio}</p>
       ) : (
-        <ul className="flex flex-col divide-y divide-border" aria-label={titulo}>
+        <ul className="flex flex-col pb-1.5" aria-label={titulo}>
           {filas.map((f) => (
-            <li key={f.clave} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
-              <Link href={f.href} className="flex min-w-[min(100%,14rem)] flex-1 items-center gap-3 rounded-md focus-visible:outline-offset-4">
-                {f.icono && (
-                  <span className={cn("grid size-9 shrink-0 place-items-center rounded-lg", urgente ? "bg-peligro-fondo text-peligro" : "bg-superficie text-tinta-suave")}>
-                    <f.icono className="size-4" aria-hidden />
-                  </span>
-                )}
-                <span className="flex min-w-0 flex-1 flex-col gap-1">
-                  <span className="flex flex-wrap items-baseline gap-x-2">
+            <li key={f.clave} className="flex items-center gap-x-3.5 gap-y-2 border-t border-border px-4 py-3 first:border-t-0 sm:px-5 [&:has(>div)]:flex-wrap">
+              <Link href={f.href} className="flex min-w-[min(100%,11rem)] flex-1 items-center gap-3 rounded-md focus-visible:outline-offset-4">
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="flex flex-wrap items-baseline gap-x-2.5">
                     <span className={f.cliente ? "tt-placa" : "font-semibold"}>{f.titulo}</span>
-                    {f.cliente && <span className="min-w-0 truncate text-tinta-suave">{f.cliente}</span>}
+                    {f.cliente && <span className="min-w-0 text-tinta-suave">{f.cliente}</span>}
                   </span>
-                  {f.insignia && (
-                    <Insignia tono={f.insignia.tono} className="self-start">
-                      {f.insignia.texto}
-                    </Insignia>
+                  {f.alerta && (
+                    <span className={cn("flex items-start gap-1.5 text-sm font-semibold", f.alerta.tono === "peligro" ? "text-peligro" : "text-aviso")}>
+                      {f.alerta.tono === "peligro" ? <CircleAlertIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden /> : <ClockIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />}
+                      {f.alerta.texto}
+                    </span>
                   )}
                   <span className="text-sm text-tinta-suave">{f.detalle}</span>
                 </span>
@@ -76,6 +79,6 @@ export function ListaInicio({
           ))}
         </ul>
       )}
-    </Seccion>
+    </section>
   );
 }

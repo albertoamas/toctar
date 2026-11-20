@@ -11,14 +11,14 @@ test("sin sesión, el panel lleva a la pantalla de ingreso", async ({ page }) =>
 test("con datos correctos entra al panel y ve su nombre", async ({ page }) => {
   await ingresarComoDueno(page);
   // El saludo es el título del inicio, con el primer nombre (pulido 4.1)
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Hola, ${DUENO.nombre.split(" ")[0]}`);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(new RegExp(`^(Buenos días|Buenas tardes|Buenas noches), ${DUENO.nombre.split(" ")[0]}$`));
 });
 
 // Pulido visual 4.1; pedido 26: el dueño entra a lo del día (los módulos, en el menú). Pedido 32: el perfil Taller ve
 // en el menú la agenda y las órdenes, sin lo que no le toca
 test("el dueño ve lo del día y llega a cada módulo por el menú; el perfil Taller ve la agenda y las órdenes", async ({ page }, info) => {
   await ingresarComoDueno(page);
-  await expect(page.getByRole("navigation", { name: "Resumen de hoy" })).toBeVisible();
+  await expect(page.getByRole("region", { name: /^(Buenos días|Buenas tardes|Buenas noches), / }).getByRole("link", { name: /^En el taller/ })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Ir a" })).toHaveCount(0);
   if (info.project.name === "celular") await page.getByRole("button", { name: "Abrir menú" }).click();
   await page.getByRole("navigation", { name: "Panel" }).getByRole("link", { name: "Usuarios" }).click();
@@ -28,7 +28,7 @@ test("el dueño ve lo del día y llega a cada módulo por el menú; el perfil Ta
   await crearUsuario({ usuario, nombre: "Chico del taller", contrasena: "taller-inicio-1", rol: "encargado", permisos: PERFIL_TALLER });
   await page.context().clearCookies();
   await ingresar(page, usuario, "taller-inicio-1");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Hola, Chico");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^(Buenos días|Buenas tardes|Buenas noches), Chico$/);
   // En el celular el menú se abre (en la computadora es la barra lateral)
   if (info.project.name === "celular") await page.getByRole("button", { name: "Abrir menú" }).click();
   const menu = page.getByRole("navigation", { name: "Panel" });

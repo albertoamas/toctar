@@ -61,7 +61,7 @@ test("el panel y el ingreso no se indexan en Google", async ({ page }) => {
   await page.goto("/ingresar");
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex, nofollow");
   await ingresarComoDueno(page);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Hola, /);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^(Buenos días|Buenas tardes|Buenas noches), /);
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex, nofollow");
 });
 
