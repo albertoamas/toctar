@@ -8,7 +8,7 @@ import { cliente, espacioTaller, trabajo, vehiculo } from "@/db/esquema";
 // de las órdenes abiertas (ordenesAbiertas, repartidas con ordenesDelDia) y los mantenimientos, de contarSinAvisar.
 // Especificación: docs/08-desarrollo/etapas/C5-cierre-entrega-2.md §5 y §6.
 
-export type IngresoDelDia = { id: number; placa: string; cliente: string; espacio: string; fechaInicio: string; horaIngreso: string | null };
+export type IngresoDelDia = { id: number; placa: string; cliente: string; espacio: string; fechaInicio: string };
 
 /** Las reservas que ingresan hoy y las de días pasados que todavía no se recibieron; la más atrasada primero. */
 export async function ingresosDeHoy(hoy: string): Promise<IngresoDelDia[]> {
@@ -19,7 +19,6 @@ export async function ingresosDeHoy(hoy: string): Promise<IngresoDelDia[]> {
       cliente: cliente.nombre,
       espacio: espacioTaller.nombre,
       fechaInicio: trabajo.fechaInicio,
-      horaIngreso: trabajo.horaIngreso,
     })
     .from(trabajo)
     .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))

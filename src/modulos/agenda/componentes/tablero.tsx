@@ -121,7 +121,6 @@ function Cinta({ r, empiezaAntes, terminaDespues, conOrdenes, desde, style }: { 
       <span aria-hidden className={cn("mt-0.5 flex items-center gap-1.5 text-xs font-semibold", color.texto)}>
         <span className={cn("size-[7px] shrink-0 rounded-full", color.punto)} />
         <span className="truncate">{NOMBRE_ESTADO_TRABAJO[r.estado]}</span>
-        {r.hora && <span className={cn("ml-auto shrink-0 font-normal tabular-nums", secundario)}>{r.hora}</span>}
       </span>
       <DetalleOculto r={r} empiezaAntes={empiezaAntes} terminaDespues={terminaDespues} />
     </Link>
@@ -285,7 +284,6 @@ export function SemanaEnLista({ semana, dias, hoy, conOrdenes, desde }: Props) {
                             <span className="flex min-w-0 flex-col gap-0.5">
                               <span className="truncate text-sm font-medium">
                                 {r.cliente}
-                                {r.hora && <span className="font-normal text-tinta-suave">, {r.hora}</span>}
                               </span>
                               {r.servicio && <span className="truncate text-[0.8125rem] text-tinta-media">{textoServicio(r)}</span>}
                               {tramo && <span className="text-xs text-tinta-suave">{tramo}</span>}
@@ -379,7 +377,6 @@ export function AgendaDelDia({ semana, dia, hoy, conOrdenes, desde }: { semana: 
                   </span>
                   <span className="text-xs text-tinta-suave">
                     {espacio}
-                    {r.hora && `, a las ${r.hora}`}
                     {tramo && `. ${tramo}`}
                   </span>
                 </Link>

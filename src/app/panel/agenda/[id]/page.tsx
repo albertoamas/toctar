@@ -94,7 +94,6 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
         <dl className="flex flex-col gap-2 px-4 py-3">
           <FilaDato etiqueta="Ingresa">
             <span className="font-semibold">{formatearFecha(r.fechaInicio)}</span>
-            {r.horaIngreso && <span className="text-sm text-tinta-suave">{r.horaIngreso}</span>}
           </FilaDato>
           {/* Entregada, la entrega aproximada ya no sirve (como en la orden) */}
           {r.estado !== "entregado" && (

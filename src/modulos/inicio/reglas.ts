@@ -51,7 +51,7 @@ export type FilaDelDia = {
   cuando: string;
 };
 
-type Ingreso = { id: number; placa: string; cliente: string; espacio: string; fechaInicio: string; horaIngreso: string | null };
+type Ingreso = { id: number; placa: string; cliente: string; espacio: string; fechaInicio: string };
 type OrdenDelDia = OrdenAbierta & { id: number; placa: string; cliente: string };
 
 /**
@@ -68,7 +68,7 @@ export function paraHoy(ingresos: Ingreso[], abiertas: OrdenDelDia[], hoy: strin
     const atraso = textoIngresoAtrasado(i.fechaInicio, hoy);
     const problema = atraso ? { texto: atraso, tono: "peligro" as const } : null;
     // La que debía llegar antes ya lo dice su problema: aquí, que sigue por recibir
-    const cuando = [i.fechaInicio < hoy ? "Por recibir" : i.horaIngreso ? `Llega ${i.horaIngreso}` : "Llega hoy", i.espacio].join(", ");
+    const cuando = [i.fechaInicio < hoy ? "Por recibir" : "Llega hoy", i.espacio].join(", ");
     return { id: i.id, placa: i.placa, cliente: i.cliente, estado: "agendado" as const, problema, cuando: conEstado("agendado", problema, cuando) };
   });
   const vistas = new Set<number>();

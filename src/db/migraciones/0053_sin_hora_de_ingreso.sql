@@ -1,0 +1,1 @@
+ALTER TABLE "trabajo" DROP COLUMN "hora_ingreso";

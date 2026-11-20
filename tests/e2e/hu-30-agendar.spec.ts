@@ -91,11 +91,12 @@ test("desde la cotización: la versión y la cotización quedan aceptadas, las l
 
   await espacio(page).selectOption({ index: 1 });
   await page.getByRole("radio", { name: "QR" }).check();
-  // La hora y la nota van plegadas (pulido 10.2): al abrirlas, el foco pasa a la hora
-  await expect(page.getByLabel("Hora aproximada")).toBeHidden();
-  await page.getByText("Agregar hora y nota").click();
-  await expect(page.getByLabel("Hora aproximada")).toBeFocused();
-  await page.getByLabel("Hora aproximada").fill("a las 9");
+  // La nota va plegada (pulido 10.2): al abrirla, el foco pasa a ella. Sin hora de llegada (19/11, pedido del dueño)
+  await expect(page.getByLabel("Nota")).toBeHidden();
+  await page.getByText("Agregar nota").click();
+  await expect(page.getByLabel("Nota")).toBeFocused();
+  await page.getByLabel("Nota").fill("Viene a las 9");
+  await expect(page.getByLabel("Hora aproximada")).toHaveCount(0);
   // El adelanto con la foto del comprobante (HU-32): queda privada y se ve en la reserva
   await page.locator("#comprobante").setInputFiles({ name: "comprobante.png", mimeType: "image/png", buffer: PNG });
   await expect(page.getByRole("img", { name: "Foto del comprobante" })).toBeVisible();

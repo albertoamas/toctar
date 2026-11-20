@@ -22,7 +22,6 @@ export type ReservaTablero = {
   placa: string;
   cliente: string;
   /** La hora de ingreso acordada ("09:00"), si se cargó. */
-  hora: string | null;
   /** El primer servicio y cuántos más lleva ("Pulido y nano cerámico — 5 años", 1). */
   servicio: string | null;
   masServicios: number;
@@ -58,7 +57,6 @@ export async function semanaDeAgenda(lunes: string, domingo: string): Promise<Se
         estado: trabajo.estado,
         placa: vehiculo.placa,
         cliente: cliente.nombre,
-        hora: trabajo.horaIngreso,
       })
       .from(trabajo)
       .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
@@ -121,7 +119,6 @@ export async function buscarReservas(q: string): Promise<{ reservas: ReservaEnco
       estado: trabajo.estado,
       placa: vehiculo.placa,
       cliente: cliente.nombre,
-      hora: trabajo.horaIngreso,
       espacio: espacioTaller.nombre,
     })
     .from(trabajo)

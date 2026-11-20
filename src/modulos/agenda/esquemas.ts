@@ -85,7 +85,6 @@ const adelanto = z.discriminatedUnion("sinAdelanto", [
 
 const base = {
   espacioId: z.coerce.number({ message: "Elige el espacio." }).int().positive("Elige el espacio."),
-  horaIngreso: textoOpcional(40),
   nota: textoOpcional(1000),
 };
 
@@ -112,7 +111,6 @@ export function entradaReserva(datos: FormData) {
       recordatorioId: texto("recordatorioId"),
       lineas: texto("lineas") || "[]",
       espacioId: texto("espacioId"),
-      horaIngreso: texto("horaIngreso"),
       nota: texto("nota"),
     },
     fechas: { fechaInicio: texto("fechaInicio"), fechaFin: texto("fechaFin") },

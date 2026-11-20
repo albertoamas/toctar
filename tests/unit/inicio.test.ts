@@ -46,8 +46,8 @@ test("la cantidad con su palabra", () => {
 
 test("Para hoy junta lo que llega, las entregas y las listas sin avisar, sin repetir órdenes (pedido 26)", () => {
   const ingresos = [
-    { id: 1, placa: "1111AAA", cliente: "Ana", espacio: "Espacio 1", fechaInicio: "2026-10-21", horaIngreso: null },
-    { id: 2, placa: "2222BBB", cliente: "Beto", espacio: "Espacio 2", fechaInicio: hoy, horaIngreso: "a las 8:30" },
+    { id: 1, placa: "1111AAA", cliente: "Ana", espacio: "Espacio 1", fechaInicio: "2026-10-21" },
+    { id: 2, placa: "2222BBB", cliente: "Beto", espacio: "Espacio 2", fechaInicio: hoy },
   ];
   const abiertas = [
     { id: 3, placa: "3333CCC", cliente: "Caro", estado: "en_proceso" as const, fechaFin: "2026-10-22", sinAvisar: false },
@@ -59,7 +59,7 @@ test("Para hoy junta lo que llega, las entregas y las listas sin avisar, sin rep
   expect(filas.map((f) => f.id)).toEqual([1, 2, 3, 4, 5]);
   // Una sola marca por fila: el problema, y el estado pasa a la línea de abajo (19/11)
   expect(filas[0]).toMatchObject({ estado: "agendado", problema: { texto: "Debía ingresar el 21 oct.", tono: "peligro" }, cuando: "Reservada, por recibir, Espacio 1" });
-  expect(filas[1]).toMatchObject({ problema: null, cuando: "Llega a las 8:30, Espacio 2" });
+  expect(filas[1]).toMatchObject({ problema: null, cuando: "Llega hoy, Espacio 2" });
   expect(filas[2]).toMatchObject({ estado: "en_proceso", problema: { texto: "Atrasada desde el 22 oct.", tono: "peligro" }, cuando: "En proceso, entrega ayer" });
   // Entrega de hoy y lista sin avisar: una vez, con "Sin avisar" en ámbar
   expect(filas[3]).toMatchObject({ estado: "listo", problema: { texto: "Sin avisar", tono: "aviso" }, cuando: "Lista, entrega hoy" });

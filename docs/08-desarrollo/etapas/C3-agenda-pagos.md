@@ -73,7 +73,7 @@ Migraciones por historia: `0026_trabajos` (HU-30: `btree_gist`, `trabajo`, `trab
 | `espacio_id` | `integer` | no | FK `espacio_taller` |
 | `fecha_inicio` | `date` | no | Día de ingreso |
 | `fecha_fin` | `date` | no | Entrega aproximada. CHECK `fecha_fin >= fecha_inicio` |
-| `hora_ingreso` | `text` | sí | Nota, hasta 40 ("a las 9", "en la tarde") (S-3) |
+| ~~`hora_ingreso`~~ | — | — | Quitada el 19/11/2026 (pedido 54, migración `0053_sin_hora_de_ingreso`): la agenda va por día y la hora de llegada queda al recibir |
 | `tecnico_id` | `integer` | sí | FK `usuario` con rol técnico (se valida en la acción) |
 | `descuento` | `numeric(10,2)` | no | Copiado de la cotización (D-4); 0 en una reserva directa. CHECK `>= 0` |
 | `estado` | `text` | no | CHECK `agendado`, `recibido`, `en_proceso`, `listo`, `entregado`, `cancelado`. En C3: `agendado` o `cancelado` |

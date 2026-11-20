@@ -153,7 +153,6 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
   const [espacioElegido, setEspacioId] = useState(espacioInicial ? String(espacioInicial) : "");
   // y, sin uno elegido, el único libre (espacioVigente)
   const espacioId = espacioVigente(libres, espacioElegido);
-  const [horaIngreso, setHoraIngreso] = useState("");
   const [nota, setNota] = useState("");
   const [sinAdelanto, setSinAdelanto] = useState(false);
   const [adelanto, setAdelanto] = useState(mostrarMonto(adelantoSugerido));
@@ -335,8 +334,6 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
             alCambiarIngreso={(valor) => cambiarFechas(valor, fechaFinManual)}
             alCambiarEntrega={(valor) => cambiarFechas(fechaInicio, valor)}
             espacio={{ valor: espacioId, alCambiar: setEspacioId, libres, buscando, ayuda }}
-            horaIngreso={horaIngreso}
-            alCambiarHora={setHoraIngreso}
             nota={nota}
             alCambiarNota={setNota}
             errores={e}

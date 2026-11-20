@@ -186,7 +186,7 @@ async function Resultados({ q, hoy, conOrdenes, desde }: { q: string; hoy: strin
           href: rutaTrabajo(r.id, r.estado, conOrdenes),
           celdas: [
             <CeldaDoble key="v" principal={r.placa} secundario={r.cliente} peso="placa" />,
-            `${r.inicio === r.fin ? fechaCorta(r.inicio, hoy) : `${fechaCorta(r.inicio, hoy)} al ${fechaCorta(r.fin, hoy)}`}${r.hora ? `, ${r.hora}` : ""}`,
+            `${r.inicio === r.fin ? fechaCorta(r.inicio, hoy) : `${fechaCorta(r.inicio, hoy)} al ${fechaCorta(r.fin, hoy)}`}`,
             textoServicio(r),
             r.espacio,
             <Insignia key="e" tono={TONO_ESTADO_TRABAJO[r.estado]}>

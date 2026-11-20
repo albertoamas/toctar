@@ -10,7 +10,7 @@
 |---|---|---|---|
 | S-1 | El técnico ve solo las órdenes asignadas a él y no ve precios ni pagos. | Cambió el 02/11/2026 (pedido 32): no hay técnico asignado ni rol Técnico; las órdenes las ve y trabaja quien tiene el permiso de Órdenes, y los precios, quien tiene Pagos | CU-16 |
 | S-2 | Un vehículo con saldo pendiente solo se entrega con autorización del dueño. | **Ajustado:** el dueño o "la persona a cargo del taller". Se implementa como permiso del encargado: "autorizar entrega con saldo" | CU-19 |
-| S-3 | La agenda se maneja por día (no por hora); la hora de ingreso es solo una nota. | Confirmado: por día y espacio | CU-13 |
+| S-3 | La agenda se maneja por día (no por hora). | Confirmado: por día y espacio. Desde el 19/11/2026 la reserva ya no pide una hora aproximada (pedido 54): la hora de llegada queda al recibir | CU-13 |
 | S-4 | Los reclamos llegan al panel; el dueño los ve en la pantalla de inicio. | **Ajustado:** también los ve el encargado que tenga el módulo de reclamos | CU-03, CU-05 |
 | S-5 | La validez por defecto de la cotización es 15 días, editable en la configuración. | **Ajustado:** la validez se define en cada cotización; la configuración solo da el valor sugerido | CU-11 |
 

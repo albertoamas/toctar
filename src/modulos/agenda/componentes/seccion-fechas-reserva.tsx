@@ -18,14 +18,12 @@ type Props = {
   alCambiarIngreso: (valor: string) => void;
   alCambiarEntrega: (valor: string) => void;
   espacio: { valor: string; alCambiar: (valor: string) => void; libres: EspacioDisponible[]; buscando: boolean; ayuda: string };
-  horaIngreso: string;
-  alCambiarHora: (valor: string) => void;
   nota: string;
   alCambiarNota: (valor: string) => void;
   errores: Partial<Record<string, string>>;
 };
 
-export function SeccionFechasReserva({ hoy, fechaInicio, fechaFin, alCambiarIngreso, alCambiarEntrega, espacio, horaIngreso, alCambiarHora, nota, alCambiarNota, errores: e }: Props) {
+export function SeccionFechasReserva({ hoy, fechaInicio, fechaFin, alCambiarIngreso, alCambiarEntrega, espacio, nota, alCambiarNota, errores: e }: Props) {
   return (
     <SeccionFormulario titulo="Fechas y espacio">
       <div className="grid gap-5 sm:grid-cols-2">
@@ -55,11 +53,9 @@ export function SeccionFechasReserva({ hoy, fechaInicio, fechaFin, alCambiarIngr
         </Campo>
       </div>
       <CampoEspacio valor={espacio.valor} alCambiar={espacio.alCambiar} libres={espacio.libres} buscando={espacio.buscando} ayuda={espacio.ayuda} error={e.espacioId} />
-      {/* Se usan a veces: plegadas; se abren solas si traen algo escrito o un error */}
-      <MasDatos texto="Agregar hora y nota" titulo="Hora y nota" abierto={!!horaIngreso || !!nota || !!e.horaIngreso || !!e.nota}>
-        <Campo id="horaIngreso" etiqueta="Hora aproximada" opcional error={e.horaIngreso} ayuda="Como lo dijo el cliente: «a las 9», «en la tarde».">
-          <Input id="horaIngreso" name="horaIngreso" autoComplete="off" value={horaIngreso} onChange={(ev) => alCambiarHora(ev.target.value)} className="max-w-xs" aria-invalid={!!e.horaIngreso} />
-        </Campo>
+      {/* Se usa a veces: plegada; se abre sola si trae algo escrito o un error. Sin hora (19/11, pedido del dueño): la
+          agenda va por día y la hora de llegada queda en el historial al recibir */}
+      <MasDatos texto="Agregar nota" titulo="Nota" abierto={!!nota || !!e.nota}>
         <Campo id="nota" etiqueta="Nota" opcional error={e.nota}>
           <Textarea id="nota" name="nota" rows={2} value={nota} onChange={(ev) => alCambiarNota(ev.target.value)} aria-invalid={!!e.nota} />
         </Campo>

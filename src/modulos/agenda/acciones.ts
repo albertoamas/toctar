@@ -182,7 +182,6 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
           espacioId: d.espacioId,
           fechaInicio,
           fechaFin,
-          horaIngreso: d.horaIngreso,
           descuento,
           nota: d.nota,
           createdBy: autorId,
