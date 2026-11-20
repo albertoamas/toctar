@@ -1,13 +1,14 @@
 import "server-only";
 import { and, asc, count, desc, eq, inArray, like, min, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { archivo, cliente, galeriaItem, parteRevision, servicio, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, trabajoRevision, usuario, variante, vehiculo } from "@/db/esquema";
+import { archivo, cliente, galeriaItem, pago, parteRevision, servicio, trabajo, trabajoAvance, trabajoFoto, trabajoLinea, trabajoRevision, usuario, variante, vehiculo } from "@/db/esquema";
 import type { EstadoRevision, EstadoTrabajo, EtapaFoto, TipoDetalle } from "@/db/esquema/trabajos";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { obtenerReserva, type DetalleReserva } from "@/modulos/agenda/consultas/reserva";
 import { escaparLike, nombreVehiculo, normalizarBusqueda } from "@/modulos/clientes/reglas";
 import { ESTADOS_ORDEN_ABIERTA, fechaBuscada } from "./reglas";
 import { POR_PAGINA } from "@/lib/paginacion";
+import { calcularSaldo } from "@/modulos/pagos/reglas";
 
 // Lecturas de las órdenes (C4). Quien las llama ya pasó por exigirModulo("ordenes"). Los montos solo para quien ve
 // "Pagos" (RN-12). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md.
@@ -102,13 +103,15 @@ export type OrdenEnLista = {
   /** Lista y todavía sin avisar al cliente (HU-35). */
   sinAvisar: boolean;
   servicios: string[];
+  /** Lo que falta cobrar ("650.00"); null para quien no ve montos (RN-12). */
+  saldo: string | null;
 };
 
 /**
  * Las órdenes abiertas. Primero las que se trabajan, la entrega más cercana arriba (así las atrasadas y las de hoy quedan
  * primero); al final, las listas que esperan al cliente.
  */
-export async function ordenesAbiertas(): Promise<OrdenEnLista[]> {
+export async function ordenesAbiertas(conMontos = false): Promise<OrdenEnLista[]> {
   const abiertas = inArray(trabajo.estado, [...ESTADOS_ORDEN_ABIERTA]);
   const ordenes = await db
     .select({
@@ -120,6 +123,7 @@ export async function ordenesAbiertas(): Promise<OrdenEnLista[]> {
       cliente: cliente.nombre,
       fechaFin: trabajo.fechaFin,
       avisadoListoAt: trabajo.avisadoListoAt,
+      descuento: trabajo.descuento,
     })
     .from(trabajo)
     .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
@@ -127,24 +131,33 @@ export async function ordenesAbiertas(): Promise<OrdenEnLista[]> {
     .where(abiertas)
     .orderBy(asc(trabajo.fechaFin), asc(trabajo.id));
   if (ordenes.length === 0) return [];
-  const lineas = await db
-    .select({ trabajoId: trabajoLinea.trabajoId, descripcion: trabajoLinea.descripcion })
-    .from(trabajoLinea)
-    .where(
-      inArray(
-        trabajoLinea.trabajoId,
-        ordenes.map((o) => o.id),
-      ),
-    )
-    .orderBy(asc(trabajoLinea.orden));
-  const porOrden = new Map<number, string[]>();
-  for (const l of lineas) porOrden.set(l.trabajoId, [...(porOrden.get(l.trabajoId) ?? []), l.descripcion]);
+  const ids = ordenes.map((o) => o.id);
+  // Los pagos, solo para quien ve montos: con ellos, lo que falta cobrar de cada una (en las tarjetas, 20/11)
+  const [lineas, pagos] = await Promise.all([
+    db
+      .select({ trabajoId: trabajoLinea.trabajoId, descripcion: trabajoLinea.descripcion, precio: trabajoLinea.precio })
+      .from(trabajoLinea)
+      .where(inArray(trabajoLinea.trabajoId, ids))
+      .orderBy(asc(trabajoLinea.orden)),
+    conMontos ? db.select({ trabajoId: pago.trabajoId, monto: pago.monto, anulado: pago.anulado }).from(pago).where(inArray(pago.trabajoId, ids)) : [],
+  ]);
+  const porOrden = new Map<number, { descripcion: string; precio: string }[]>();
+  for (const l of lineas) porOrden.set(l.trabajoId, [...(porOrden.get(l.trabajoId) ?? []), l]);
+  const pagosPor = new Map<number, { monto: string; anulado: boolean }[]>();
+  for (const p of pagos) pagosPor.set(p.trabajoId, [...(pagosPor.get(p.trabajoId) ?? []), p]);
   return ordenes
-    .map(({ avisadoListoAt, marca, modelo, ...o }) => ({
+    .map(({ avisadoListoAt, marca, modelo, descuento, ...o }) => ({
       ...o,
       vehiculo: nombreVehiculo({ marca, modelo }),
       sinAvisar: o.estado === "listo" && avisadoListoAt === null,
-      servicios: porOrden.get(o.id) ?? [],
+      servicios: (porOrden.get(o.id) ?? []).map((l) => l.descripcion),
+      saldo: conMontos
+        ? calcularSaldo(
+            (porOrden.get(o.id) ?? []).map((l) => l.precio),
+            descuento,
+            pagosPor.get(o.id) ?? [],
+          ).saldo
+        : null,
     }))
     .sort((a, b) => Number(a.estado === "listo") - Number(b.estado === "listo"));
 }
