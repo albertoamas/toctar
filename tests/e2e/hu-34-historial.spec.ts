@@ -62,8 +62,8 @@ test("en «Entregadas» se buscan por placa, cliente o fecha; la agenda las mues
   // Abre la orden de hace tiempo
   await lista.getByRole("link").filter({ hasText: a.placa }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${a.id}(?:[?&]volver=[^&#]*)?$`));
-  // Entregada: lo dice su insignia (cuándo y quién, en el historial; pedido 45)
-  await expect(page.getByRole("main").getByText("Entregada", { exact: true }).first()).toBeVisible();
+  // Entregada: lo dicen los pasos (la insignia repetía el paso; 20/11). Cuándo y quién, en el historial (pedido 45)
+  await expect(page.getByRole("navigation", { name: "Pasos del trabajo" }).locator('[aria-current="step"]')).toHaveText("Entregada");
 
   // En la agenda de esa semana, en verde y con "Entregada"
   await page.goto(`/panel/agenda?semana=${a.dia}&dia=${a.dia}`);

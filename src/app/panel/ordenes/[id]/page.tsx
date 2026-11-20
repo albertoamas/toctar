@@ -15,9 +15,8 @@ import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { BOTON_PASO, PasoSiguiente } from "@/componentes/panel/paso-siguiente";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
 import { Insignia } from "@/componentes/panel/insignia";
-import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
-import { diaYHora, fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/lib/fechas";
+import { diaLegible, diaYHora, fechaEnBolivia, fechaYHoraCorta } from "@/lib/fechas";
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { enlaceWhatsApp } from "@/lib/whatsapp";
@@ -128,7 +127,9 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
       {entregar && aviso && !avisada && <EnlaceEntregar id={o.id} desde={desdeAqui} />}
     </PasoSiguiente>
   );
-  // En el encabezado, lo demás: publicar ya entregada, escribirle al cliente y "Más"
+  // En el encabezado, lo demás: publicar ya entregada y "Más". Escribirle al cliente va en la fila del cliente, junto a su
+  // número (20/11, como en la reserva: en el encabezado bajaba a otro renglón en el celular); con "Avisar" a la vista, en
+  // "Más" (un solo WhatsApp a la vista, C6)
   const acciones = (
     <div className="flex flex-wrap gap-2">
       {sePuedePublicar && (
@@ -136,12 +137,6 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
           <ImageUpIcon />
           Publicar en la galería
         </Link>
-      )}
-      {!escribirEnMas && (
-        <a href={enlaceWhatsApp(o.telefono)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
-          <IconoWhatsApp />
-          Escribir por WhatsApp
-        </a>
       )}
       {conMas && <MasOrden id={o.id} anterior={anterior} extender={extender} avisada={avisada} escribir={escribirEnMas} />}
     </div>
@@ -170,11 +165,16 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
         titulo={o.placa}
         // Debajo del título, el dato útil (sistema-del-panel.md §2, C7 fase 3): no solo a dónde se vuelve
         subtitulo={[o.cliente, [o.marca, o.modelo].filter(Boolean).join(" ")].filter(Boolean).join(" · ")}
+        // El estado, solo si dice algo que los pasos no (20/11): "Recibida" o "En proceso" (los pasos los juntan en "En el
+        // taller") y una cancelada (sin pasos). Lista y Entregada ya son su paso: se leían dos veces. Atrasada, en rojo
+        // como en la lista y el inicio
         estado={
-          <>
-            <Insignia tono={TONO_ESTADO_TRABAJO[o.estado]}>{NOMBRE_ESTADO_TRABAJO[o.estado]}</Insignia>
-            {estaAtrasada(o, hoy) && <Insignia tono="aviso">Atrasada</Insignia>}
-          </>
+          o.estado !== "listo" && o.estado !== "entregado" ? (
+            <>
+              <Insignia tono={TONO_ESTADO_TRABAJO[o.estado]}>{NOMBRE_ESTADO_TRABAJO[o.estado]}</Insignia>
+              {estaAtrasada(o, hoy) && <Insignia tono="peligro">Atrasada</Insignia>}
+            </>
+          ) : undefined
         }
         accion={acciones}
       >
@@ -202,7 +202,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
                 {o.estado !== "entregado" && (
                   // La entrega aproximada sirve mientras está en el taller; entregada, el encabezado ya dice cuándo
                   <FilaDato etiqueta="Entrega">
-                    <span className="font-semibold">{o.fechaFin === hoy ? "Hoy" : formatearFecha(o.fechaFin)}</span>
+                    <span className="font-semibold">{diaLegible(o.fechaFin, hoy)}</span>
                     <span className="text-sm text-tinta-suave">aproximada</span>
                   </FilaDato>
                 )}
@@ -210,7 +210,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
                   <span className="font-semibold">{o.espacio}</span>
                 </FilaDato>
               </dl>
-              <FilaCliente href={verFicha ? conDesde(`/panel/clientes/${o.clienteId}`, desdeAqui) : null} nombre={o.cliente} telefono={o.telefono} />
+              <FilaCliente href={verFicha ? conDesde(`/panel/clientes/${o.clienteId}`, desdeAqui) : null} nombre={o.cliente} telefono={o.telefono} conWhatsApp={!escribirEnMas} />
               {/* La ficha del vehículo, para quien ve Clientes (pedido 51) */}
               <FilaVehiculo href={verFicha ? conDesde(rutaVehiculo(o.clienteId, o.vehiculoId), desdeAqui) : null}>{valorVehiculo(detalle, o.tamano)}</FilaVehiculo>
               {/* Una pantalla por trabajo: recibido, la reserva ya no se abre (lleva aquí); lo que solo ella tenía viene a la
@@ -264,8 +264,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
           <div className="@max-4xl:order-last">
             <HistorialOrden
               avances={[
-                ...avances.map((a) => ({ id: a.id, nota: a.nota, autor: a.autor, cuando: formatearFechaHora(a.createdAt) })),
-                { id: 0, nota: "Reservada.", autor: o.agendadaPor, cuando: formatearFechaHora(o.createdAt) },
+                ...avances.map((a) => ({ id: a.id, nota: a.nota, autor: a.autor, cuando: fechaYHoraCorta(a.createdAt, hoy) })),
+                { id: 0, nota: "Reservada.", autor: o.agendadaPor, cuando: fechaYHoraCorta(o.createdAt, hoy) },
               ]}
             />
           </div>

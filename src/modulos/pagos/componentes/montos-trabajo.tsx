@@ -1,6 +1,6 @@
 import { cn } from "cn";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
-import { formatearFecha } from "@/lib/fechas";
+import { fechaConMes, formatearFecha } from "@/lib/fechas";
 import type { DetalleReserva } from "@/modulos/agenda/consultas/reserva";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { AnularPago } from "./anular-pago";
@@ -125,7 +125,7 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar, cobrar
                           <span className={cn("shrink-0 whitespace-nowrap tabular-nums", p.anulado && "line-through")}>{bs(p.monto)}</span>
                         </span>
                         <span className="text-sm text-tinta-suave">
-                          {formatearFecha(p.fecha)}, registrado por {p.registradoPor}
+                          {fechaConMes(p.fecha, hoy)} · {p.registradoPor}
                         </span>
                         {p.anulado && <span className="text-sm text-tinta">Anulado: {p.motivoAnulacion}</span>}
                       </div>

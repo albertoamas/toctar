@@ -15,7 +15,7 @@ import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
 import { BOTON_PASO, PasoSiguiente } from "@/componentes/panel/paso-siguiente";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
 import { buttonVariants } from "@/componentes/ui/button";
-import { fechaConDia, fechaConMes, fechaEnBolivia, sumarDias } from "@/lib/fechas";
+import { diaLegible, fechaConDia, fechaConMes, fechaEnBolivia } from "@/lib/fechas";
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { MasReserva } from "@/modulos/agenda/componentes/acciones-reserva";
@@ -69,7 +69,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
 
   const detalle = detalleVehiculo(r);
   // Los días con su nombre (recorrido visual del 20/11): "11/12/2026" obligaba a pensar qué día era
-  const dia = (fecha: string) => (fecha === hoy ? "Hoy" : fecha === sumarDias(hoy, 1) ? "Mañana" : fechaConDia(fecha) + (fecha.slice(0, 4) === hoy.slice(0, 4) ? "" : ` de ${fecha.slice(0, 4)}`));
+  const dia = (fecha: string) => diaLegible(fecha, hoy);
   // Una pantalla por trabajo: recibido, quien ve las órdenes trabaja en la orden (lo que solo tenía la reserva, también
   // está ahí). Quien no las ve (agenda y cobra) sigue aquí, para ver su saldo y cobrarlo
   if (orden && verOrdenes) redirect(conDesde(`/panel/ordenes/${r.id}`, sinElTrabajo(String(parametros.volver ?? ""), r.id)));

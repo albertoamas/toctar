@@ -119,3 +119,22 @@ export function mesYAnio(fecha: string): string {
   );
   return `${partes.month.charAt(0).toUpperCase()}${partes.month.slice(1)} ${partes.year}`;
 }
+
+/**
+ * Un día para leer en una ficha (recorrido visual del 20/11): "Hoy", "Mañana", "Ayer" o "Viernes 11 de diciembre" (con
+ * el año si es de otro: "Miércoles 20 de enero de 2027"). "11/12/2026" obligaba a pensar qué día era.
+ */
+export function diaLegible(fecha: string, hoy: string): string {
+  if (fecha === hoy) return "Hoy";
+  if (fecha === sumarDias(hoy, 1)) return "Mañana";
+  if (fecha === sumarDias(hoy, -1)) return "Ayer";
+  return fechaConDia(fecha) + (fecha.slice(0, 4) === hoy.slice(0, 4) ? "" : ` de ${fecha.slice(0, 4)}`);
+}
+
+/** Un momento corto, en hora de Bolivia, para un historial: "20 nov., 15:10" (con el año si es de otro). */
+export function fechaYHoraCorta(instante: Date, hoy: string): string {
+  const { minutos } = momentoEnBolivia(instante);
+  const hora = `${String(Math.floor(minutos / 60)).padStart(2, "0")}:${String(minutos % 60).padStart(2, "0")}`;
+  return `${fechaConMes(fechaEnBolivia(instante), hoy)}, ${hora}`;
+}
+
