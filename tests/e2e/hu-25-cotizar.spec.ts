@@ -84,10 +84,10 @@ test("cliente nuevo en tres pasos: sus datos completos, su vehículo, y los serv
   await expect(page.getByText("Escribe la placa.")).toBeVisible();
   await expect(page.getByLabel("Placa", { exact: true })).toBeFocused();
   await page.getByLabel("Placa", { exact: true }).fill(`CN25${s}1`);
-  await page.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio").nth(0).click();
+  await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
   await page.getByLabel("Marca").fill("Nissan");
   await page.getByLabel("Marca").press("Tab");
-  await page.getByRole("radiogroup", { name: /^Color/ }).getByRole("radio", { name: "Negro" }).click();
+  await page.getByLabel("Color").fill("Negro");
   await aServicios(page);
 
   // Paso 3: los servicios; arriba, el cliente y el vehículo
@@ -107,12 +107,12 @@ test("cliente nuevo en tres pasos: sus datos completos, su vehículo, y los serv
   await expect(page.getByText("Precio sugerido: 450 Bs")).toBeVisible();
   // Otro tamaño, otro precio sugerido: este no tiene, y vuelve al cambiar de nuevo (tocando "Vehículo" en el indicador, 20/11)
   await page.getByRole("navigation", { name: "Pasos de la cotización" }).getByRole("button", { name: "Ir al paso Vehículo" }).click();
-  await page.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio").nth(1).click();
+  await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 2 });
   await aServicios(page);
   await expect(precio(page, 1)).toHaveValue("");
   await expect(page.getByText("Sin precio en el catálogo para este tamaño: escribe el precio")).toBeVisible();
   await page.getByRole("navigation", { name: "Pasos de la cotización" }).getByRole("button", { name: "Ir al paso Vehículo" }).click();
-  await page.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio").nth(0).click();
+  await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
   await aServicios(page);
   await expect(precio(page, 1)).toHaveValue("450");
 
@@ -190,7 +190,7 @@ test("un WhatsApp repetido avisa y ofrece cotizarle a ese cliente; lo escrito se
   await page.getByRole("textbox", { name: "WhatsApp" }).fill(local(info, 2));
   await aVehiculo(page);
   await page.getByLabel("Placa", { exact: true }).fill(`CR25${s}1`);
-  await page.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio").nth(0).click();
+  await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
   await aServicios(page);
   await elegir(page, 1, nombre, "Con precio");
   await page.getByRole("radio", { name: "En persona" }).check();
@@ -202,7 +202,7 @@ test("un WhatsApp repetido avisa y ofrece cotizarle a ese cliente; lo escrito se
   await expect(page.getByRole("link", { name: `Usar a Ya registrado ${s}` })).toHaveAttribute("href", `/panel/cotizaciones/nueva?cliente=${existente}`);
   // Lo escrito se conserva tras el error: el vehículo, los servicios y cómo se cotizó
   await aVehiculo(page);
-  await expect(page.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio", { checked: true })).toHaveCount(1);
+  await expect(page.getByLabel("Tamaño", { exact: true })).not.toHaveValue("");
   await aServicios(page);
   await expect(precio(page, 1)).toHaveValue("450");
   await expect(page.getByRole("radio", { name: "En persona" })).toBeChecked();
@@ -374,7 +374,7 @@ test("Atrás vuelve al paso anterior sin perder lo escrito; nada se registra has
   await page.getByRole("textbox", { name: "WhatsApp" }).fill(local(info, 7));
   await aVehiculo(page);
   await page.getByLabel("Placa", { exact: true }).fill(`CA25${s}1`);
-  await page.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio").nth(0).click();
+  await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
   await aServicios(page);
   await expect(pasoActual(page)).toContainText("Servicios y precio");
   // "Cambiar" vuelve en el historial: después, Atrás lleva al paso anterior y no de nuevo a Servicios

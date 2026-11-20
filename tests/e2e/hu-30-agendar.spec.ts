@@ -375,7 +375,7 @@ test("otro vehículo se escribe en su paso y se registra con la reserva, no ante
   await page.getByRole("button", { name: "Siguiente: servicios" }).click();
   await expect(page.getByText("Escribe la placa.")).toBeVisible();
   await page.getByLabel("Placa", { exact: true }).fill(`NV30${s}8`);
-  await page.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio").first().click();
+  await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
   await page.getByRole("button", { name: "Siguiente: servicios" }).click();
   await expect(pasoActual(page)).toHaveText("Servicios");
   await expect(page.getByRole("region", { name: "Reserva para" })).toContainText(`NV30${s}8`);
@@ -422,7 +422,7 @@ test("«Cliente nuevo» se escribe en los pasos de la reserva y se registra con 
   await expect(pasoActual(page)).toHaveText("Vehículo");
   await expect(page.getByRole("region", { name: "Reserva para" })).toContainText(`Llamó y reservó ${s}`);
   await page.getByLabel("Placa", { exact: true }).fill(`CN30${s}7`);
-  await page.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio").first().click();
+  await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
   await page.getByRole("button", { name: "Siguiente: servicios" }).click();
   await expect(pasoActual(page)).toHaveText("Servicios");
   await page.getByLabel("Servicio 1", { exact: true }).selectOption({ label: nombre });

@@ -104,7 +104,7 @@ test("desde la placa repetida al agregar un vehículo en la ficha del comprador"
   await page.getByRole("button", { name: "Agregar vehículo" }).click();
   const dialogo = page.getByRole("dialog");
   await dialogo.getByLabel("Placa").fill(d.placa);
-  await dialogo.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio").nth(0).click();
+  await dialogo.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
   await dialogo.getByRole("button", { name: "Agregar vehículo" }).click();
   await expect(dialogo.getByText(`La placa ${d.placa} ya está registrada a nombre de ${d.anterior}.`)).toBeVisible();
   await dialogo.getByRole("link", { name: "Cambiar de dueño a este cliente" }).click();

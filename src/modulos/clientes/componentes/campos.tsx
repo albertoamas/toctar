@@ -2,11 +2,10 @@
 
 import type { Route } from "next";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Campo } from "@/componentes/panel/campo";
 import { MasDatos } from "@/componentes/panel/mas-datos";
 import { useCerrarModal } from "@/componentes/panel/modal-contexto";
-import { OpcionesEnTarjetas } from "@/componentes/panel/opciones-en-tarjetas";
 import { CampoConBusqueda } from "@/componentes/panel/campo-con-busqueda";
 import { Selector } from "@/componentes/panel/selector";
 import { Input } from "@/componentes/ui/input";
@@ -16,8 +15,6 @@ import type { EstadoCliente } from "../acciones";
 import {
   aniosParaElegir,
   type CatalogoVehiculos,
-  COLORES_FRECUENTES,
-  colorFrecuente,
   filtrarMarcas,
   marcaExacta,
   marcasParaElegir,
@@ -158,13 +155,19 @@ export function CamposVehiculo(props: PropsCampos & { tamanos: Tamano[]; /** Las
   const e = estado.errores ?? {};
   const n = (campo: string) => prefijo + campo;
   const describir = (campo: string) => (e[n(campo)] ? `${n(campo)}-error` : undefined);
-  // El tamaño, en tarjetas que se tocan (Nuevo cliente, 17/11): son pocos y cada uno muestra sus modelos, que es lo que
-  // ayuda a elegir. Controlado, con su valor en un campo oculto propio (OpcionesEnTarjetas): no se pierde tras un error.
+  // El tamaño, en un menú desplegable como la marca y el año (20/11, a pedido del dueño: las tarjetas ocupaban casi una
+  // pantalla del celular). Debajo, los modelos del elegido: es lo que ayuda a elegirlo bien, y el tamaño decide el
+  // precio. Controlado: no se pierde tras un error.
   const [tamanoId, setTamanoId] = useState(v[n("tamanoId")] ?? "");
-  // Pedido 52: la marca de la lista (con búsqueda), el año en un selector y el color con los frecuentes. El modelo,
-  // un texto simple (decidido el 19/11)
-  const colorInicial = v[n("color")] ?? "";
-  const [color, setColor] = useState<string>(colorInicial ? (colorFrecuente(colorInicial) ?? "Otro") : "");
+  const ejemplosTamano = tamanos.find((t) => String(t.id) === tamanoId)?.descripcion;
+  // React reinicia el formulario al terminar la acción y el menú volvía a "Elige el tamaño" aunque el estado siguiera
+  // con el elegido: después de cada envío se vuelve a poner (el reinicio pasa antes que los efectos)
+  const menuTamano = useRef<HTMLSelectElement>(null);
+  useEffect(() => {
+    if (menuTamano.current && menuTamano.current.value !== tamanoId) menuTamano.current.value = tamanoId;
+  }, [estado, tamanoId]);
+  // Pedido 52: la marca de la lista (con búsqueda) y el año en un selector. El modelo y el color, texto simple (el color
+  // con botones de los frecuentes se quitó el 20/11, a pedido del dueño)
 
   // Marca, modelo, año y color: a la vista, o plegados detrás de "Agregar …" en el alta. Una columna, como el resto
   const opcionales = !compacto && (
@@ -196,24 +199,9 @@ export function CamposVehiculo(props: PropsCampos & { tamanos: Tamano[]; /** Las
           ))}
         </Selector>
       </Campo>
-      {/* El color: los frecuentes en botones; uno distinto, con "Otro" */}
-      <div className="flex flex-col gap-2">
-        <OpcionesEnTarjetas
-          id={n("color-tipo")}
-          titulo="Color (opcional)"
-          nombre={color === "Otro" ? n("color-tipo") : n("color")}
-          valor={color}
-          cambiar={setColor}
-          opciones={[...COLORES_FRECUENTES, "Otro"].map((c) => ({ valor: c, texto: c }))}
-          error={e[n("color")]}
-          className="grid-cols-4 sm:grid-cols-7"
-        />
-        {color === "Otro" && (
-          <Campo id={n("color")} etiqueta="Color" error={e[n("color")]}>
-            <Input id={n("color")} name={n("color")} autoComplete="off" defaultValue={colorFrecuente(colorInicial) ? "" : colorInicial} aria-invalid={!!e[n("color")]} aria-describedby={describir("color")} />
-          </Campo>
-        )}
-      </div>
+      <Campo id={n("color")} etiqueta="Color" opcional error={e[n("color")]}>
+        <Input id={n("color")} name={n("color")} autoComplete="off" defaultValue={v[n("color")]} aria-invalid={!!e[n("color")]} aria-describedby={describir("color")} />
+      </Campo>
     </>
   );
   const principales = (
@@ -233,19 +221,27 @@ export function CamposVehiculo(props: PropsCampos & { tamanos: Tamano[]; /** Las
       </Campo>
       <Existente estado={estado} campo={n("placa")} enlace={enlaceExistente} />
       <CambioDeDueno estado={estado} campo={n("placa")} href={cambioDeDueno} />
-      <OpcionesEnTarjetas
-        id={n("tamanoId")}
-        titulo="Tamaño"
-        nombre={n("tamanoId")}
-        valor={tamanoId}
-        cambiar={(t) => {
-          setTamanoId(t);
-          alCambiarTamano?.(t);
-        }}
-        opciones={tamanos.map((t) => ({ valor: String(t.id), texto: t.nombre, detalle: t.descripcion }))}
-        error={e[n("tamanoId")]}
-        className="grid-cols-1 sm:grid-cols-2"
-      />
+      <Campo id={n("tamanoId")} etiqueta="Tamaño" error={e[n("tamanoId")]} ayuda={ejemplosTamano || undefined}>
+        <Selector
+          ref={menuTamano}
+          id={n("tamanoId")}
+          name={n("tamanoId")}
+          value={tamanoId}
+          onChange={(ev) => {
+            setTamanoId(ev.target.value);
+            alCambiarTamano?.(ev.target.value);
+          }}
+          aria-invalid={!!e[n("tamanoId")]}
+          className="sm:max-w-sm"
+        >
+          <option value="">Elige el tamaño</option>
+          {tamanos.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.nombre}
+            </option>
+          ))}
+        </Selector>
+      </Campo>
     </>
   );
   if (!plegar || !opcionales) return (

@@ -65,3 +65,11 @@ elige de una lista que el dueño administra; el año y el color se eligen. El mo
 ## 10. Orden de trabajo
 
 Rama `p52-marcas-vehiculo` (sale de la fase 1), un commit por parte.
+
+## Cambio del 20/11/2026 (recorrido visual, a pedido del dueño)
+
+- **Color:** un campo de texto simple y opcional, sin botones de los frecuentes ni nada elegido de antemano. Se guardaba
+  y se sigue guardando como texto en el vehículo: los ya cargados conservan su color y se ve escrito al editarlo.
+- **Tamaño:** un menú desplegable ("Elige el tamaño"), como la marca y el año, en lugar de las tarjetas (ocupaban casi
+  una pantalla del celular). Debajo, en gris, los modelos del tamaño elegido: el tamaño decide el precio y los ejemplos
+  ayudan a elegirlo bien. Es el mismo formulario de vehículo en Nuevo cliente, la ficha, Nueva cotización y Nueva reserva.

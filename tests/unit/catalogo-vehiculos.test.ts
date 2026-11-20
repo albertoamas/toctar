@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aniosParaElegir, colorFrecuente, filtrarMarcas, marcaExacta, marcasParaElegir } from "@/modulos/clientes/catalogo-vehiculos";
+import { aniosParaElegir, filtrarMarcas, marcaExacta, marcasParaElegir } from "@/modulos/clientes/catalogo-vehiculos";
 
 // Pedido 52 (etapas/P52-catalogo-de-marcas.md): menos escritura al registrar un vehículo.
 
@@ -26,9 +26,5 @@ describe("año y color", () => {
     const anios = aniosParaElegir(new Date("2026-11-19T15:00:00Z"));
     expect(anios[0]).toBe(2027);
     expect(anios.at(-1)).toBe(1950);
-  });
-  it("un color frecuente se reconoce sin mayúsculas; uno distinto es «Otro»", () => {
-    expect(colorFrecuente("rojo")).toBe("Rojo");
-    expect(colorFrecuente("Vino")).toBeNull();
   });
 });
