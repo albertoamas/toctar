@@ -10,12 +10,13 @@ import { Button } from "@/componentes/ui/button";
 // Ordenar es poco frecuente (pulido 13.19): subir y bajar van en gris al costado de la fila, junto a "Quitar", también en
 // el celular; apilados, para dejarle el ancho al campo. Con `flechasEnFila`, desde 640 px van una al lado de la otra: una
 // fila de un renglón (los beneficios, pulido 13.22) no se estira. Con una sola fila no se muestran.
-// Con `enBloques` (los servicios de una cotización o una reserva, 20/11): en el celular, cada fila es un bloque con su
-// título ("Servicio 1") y, arriba a la derecha, un basurero para quitarla; en pantalla ancha, una fila por servicio con
-// el basurero al final (en bloques se desaprovechaba el ancho). Sin borde propio: va dentro de su tarjeta y una línea
-// separa cada fila. El basurero en gris (rojo solo al pasar el mouse): quitar una fila sin guardar se deshace
-// agregándola, no es algo que no se deshace (eso va en rojo). No una X: en el panel la X cierra. Sin subir ni
-// bajar: el orden de los servicios casi no se toca y en el celular eran dos cajas más por servicio.
+// Con `enBloques` (los servicios de una cotización o una reserva, 20/11): una fila por servicio con un basurero al final,
+// arriba a la derecha, en el celular y en pantalla ancha (en el celular, los campos del servicio se apilan a su
+// izquierda; el título "Servicio 1" se quitó: los campos ya dicen qué son). Sin borde propio: va dentro de su tarjeta y
+// una línea separa cada fila. El basurero, sin cuadro y en gris (rojo solo al pasar el mouse): el ícono ya dice que se
+// toca, con el cuadro pesaba más que el servicio; quitar una fila sin guardar se deshace agregándola. No una X: en el
+// panel la X cierra. Sin subir ni bajar: el orden de los servicios casi no se toca y en el celular eran dos cajas más
+// por servicio.
 
 type MarcaError = { "aria-invalid": boolean; "aria-describedby": string | undefined };
 
@@ -62,23 +63,19 @@ export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maxim
             if (enBloques)
               return (
                 // Sin caja propia (20/11): ya va dentro de una tarjeta; una línea fina separa un servicio del otro
-                <li key={i} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-3 py-4 first:pt-0 @2xl:items-start @2xl:py-3">
-                  {/* El título, solo en el celular: en la fila ancha, los campos ya dicen qué son */}
-                  <span className="text-sm font-semibold @2xl:hidden">
-                    {etiqueta} {i + 1}
-                  </span>
+                <li key={i} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-1 gap-y-3 py-4 first:pt-0 @2xl:gap-x-3 @2xl:py-3">
                   <Button
                     type="button"
-                    variant="accion"
+                    variant="ghost"
                     size="icon"
                     onClick={quitar}
                     aria-label={`Quitar ${etiqueta.toLowerCase()} ${i + 1}`}
                     title={`Quitar ${etiqueta.toLowerCase()}`}
-                    className="justify-self-end text-tinta-suave hover:text-peligro @2xl:col-start-2 @2xl:row-start-1"
+                    className="col-start-2 row-start-1 justify-self-end text-tinta-suave hover:text-peligro"
                   >
                     <Trash2Icon />
                   </Button>
-                  <div className="col-span-2 min-w-0 @2xl:col-span-1 @2xl:col-start-1 @2xl:row-start-1">{fila(elemento, cambiar, i, marca)}</div>
+                  <div className="col-start-1 row-start-1 min-w-0">{fila(elemento, cambiar, i, marca)}</div>
                   {error && (
                     <div className="col-span-2">
                       <MensajeError id={`${nombre}-${i}-error`}>{error}</MensajeError>

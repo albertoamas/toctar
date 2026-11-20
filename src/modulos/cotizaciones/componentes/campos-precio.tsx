@@ -158,9 +158,9 @@ export function ResumenPrecios({ precios: p, anterior }: { precios: Precios; ant
 /** El total a la vista en el pie fijo del celular, junto al botón. "Total y condiciones" ya lo anuncia (aria-live). */
 export function TotalEnPie({ total }: { total: string }) {
   return (
-    // En su propio renglón sobre los botones (20/11): a su lado, un total largo los corría o los bajaba
-    <p className="flex w-full items-baseline justify-between gap-2 sm:hidden" aria-hidden>
-      <span className="text-tinta-suave">Total</span>
+    // Después de los botones, a la derecha, sin la palabra "Total" para que entre en el renglón (20/11)
+    <p className="order-last ml-auto flex items-baseline gap-2 sm:hidden" aria-hidden>
+      <span className="sr-only">Total</span>
       <span className="text-lg font-bold tabular-nums">{bs(total)}</span>
     </p>
   );

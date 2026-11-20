@@ -63,8 +63,8 @@ export function LineasServicio({ opciones, lineas, onChange, errores: todos, con
         const sinMarca = { "aria-invalid": false, "aria-describedby": undefined };
         const falta = !servicioId ? "servicio" : !elegida ? "opcion" : "precio";
         return (
-          // En el celular, en su bloque: el servicio y su opción, y debajo el precio con su etiqueta. En pantalla ancha, todo
-          // en una fila (20/11). De dónde sale el precio, debajo
+          // En el celular, apilados: el servicio, su opción y el precio con su etiqueta a la izquierda y el campo a la derecha
+          // (los montos en columna). En pantalla ancha, todo en una fila (20/11). De dónde sale el precio, debajo
           <div className="flex flex-col gap-2">
             <div className="flex flex-col gap-3 @2xl:flex-row @2xl:items-start">
             <div className="min-w-0 @2xl:flex-1">
@@ -81,7 +81,7 @@ export function LineasServicio({ opciones, lineas, onChange, errores: todos, con
               marcaOpcion={falta === "opcion" ? marca : sinMarca}
             />
             </div>
-            <div className="flex shrink-0 items-center gap-x-3">
+            <div className="flex shrink-0 items-center justify-between gap-x-3 @2xl:justify-start">
               <span aria-hidden className="text-sm font-medium @2xl:hidden">
                 Precio
               </span>
