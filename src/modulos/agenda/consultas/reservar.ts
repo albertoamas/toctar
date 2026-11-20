@@ -172,8 +172,8 @@ export async function datosDirecta(clienteId: number, vehiculoId: number | null)
       .where(and(eq(vehiculo.clienteId, clienteId), eq(vehiculo.activo, true)))
       .orderBy(asc(vehiculo.id))
   ).map((v) => ({ id: v.id, placa: v.placa, tamanoId: v.tamanoId, tamano: v.tamano, detalle: detalleVehiculo(v) }));
-  // Con un solo vehículo, no hace falta elegirlo
-  const elegido = vehiculos.find((v) => v.id === vehiculoId) ?? (vehiculos.length === 1 ? vehiculos[0] : undefined);
+  // El vehículo, siempre elegido (20/11): con uno solo también se ve el paso, para saber con qué auto se reserva
+  const elegido = vehiculos.find((v) => v.id === vehiculoId);
   return {
     cliente: c,
     vehiculos,

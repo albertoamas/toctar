@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { cn } from "cn";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
-import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { fechaCorta } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { cotizacionesParaReservar, datosDirecta } from "@/modulos/agenda/consultas/reservar";
+import { ElegirVehiculoReserva } from "@/modulos/agenda/componentes/elegir-vehiculo-reserva";
+import { catalogoVehiculos } from "@/modulos/clientes/consultas";
+import { tamanosActivos } from "@/modulos/configuracion/consultas";
 import { PASO_SERVICIOS, PASO_VEHICULO, pasoInicialReserva } from "@/modulos/agenda/pasos-reserva";
 import { recordatorioParaAgendar } from "@/modulos/mantenimientos/consultas";
 import { lineaDelMantenimiento } from "@/modulos/mantenimientos/reglas";
@@ -46,7 +48,6 @@ export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; client
     );
   }
 
-  // Con un solo vehículo, ya va elegido (datosDirecta)
   const d = await datosDirecta(clienteId, numero("vehiculo"));
   if (!d) {
     return (
@@ -56,38 +57,37 @@ export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; client
       </>
     );
   }
-  if (d.vehiculos.length === 0) {
-    return (
-      <>
-        <Encabezado volver={volver} />
-        <EstadoVacio>
-          {d.cliente.nombre} no tiene vehículos activos. <Link href={`/panel/clientes/${d.cliente.id}`} className={enlace}>Agregar uno en su ficha</Link>
-        </EstadoVacio>
-      </>
-    );
-  }
   // Desde un mantenimiento no se cambia el cliente ni el vehículo: el recordatorio es de ellos
   const cambiarCliente = recordatorio ? undefined : direccion({});
-  const cambiarVehiculo = recordatorio || d.vehiculos.length < 2 ? undefined : direccion({ cliente: d.cliente.id });
+  const cambiarVehiculo = recordatorio ? undefined : direccion({ cliente: d.cliente.id });
 
-  // Paso 2: el vehículo, si tiene varios
+  // Paso 2: el vehículo, siempre (20/11): en tarjetas, como en Nueva cotización, con "Otro vehículo" para registrarlo
+  // ahí mismo (quien ve Clientes). Sin vehículos, solo esa tarjeta
   if (!d.vehiculo) {
+    const veClientes = puedeVerModulo(usuario, "clientes");
+    const [tamanos, catalogo] = veClientes ? await Promise.all([tamanosActivos(), catalogoVehiculos()]) : [null, null];
     return (
       <>
         <Encabezado volver={volver} />
         {indicador(PASO_VEHICULO)}
         <ClienteYVehiculo nombre={d.cliente.nombre} vehiculo={null} cambiarCliente={cambiarCliente} />
         <Seccion id="vehiculo" titulo="Vehículo" sinRelleno>
-          {/* La fila de un toque, con la placa grande y el tamaño con su etiqueta, como en el resto del panel */}
-          <ListaFilas
-            etiqueta="Elegir vehículo"
-            filas={d.vehiculos.map((v) => ({
-              href: direccion({ cliente: d.cliente.id, vehiculo: v.id }),
-              titulo: v.placa,
-              tituloGrande: true,
-              detalles: [...(v.detalle.length > 0 ? [v.detalle.join(" ")] : []), `Tamaño: ${v.tamano}`],
-            }))}
-          />
+          {d.vehiculos.length === 0 && !veClientes ? (
+            <EstadoVacio>
+              {d.cliente.nombre} no tiene vehículos activos. Pídele al dueño que le agregue uno en su ficha.
+            </EstadoVacio>
+          ) : (
+            <ElegirVehiculoReserva
+              clienteId={d.cliente.id}
+              vehiculos={d.vehiculos.map((v) => ({
+                id: v.id,
+                placa: v.placa,
+                detalle: [...v.detalle, `Tamaño: ${v.tamano}`].join(" · "),
+                href: direccion({ cliente: d.cliente.id, vehiculo: v.id }),
+              }))}
+              agregar={tamanos && catalogo ? { tamanos, catalogo } : null}
+            />
+          )}
         </Seccion>
       </>
     );

@@ -73,7 +73,9 @@ test("Nueva reserva desde la ficha del cliente vuelve a ella y lleva el origen e
   await page.goto(`/panel/clientes/${clienteId}`);
   await page.getByRole("link", { name: "Nueva reserva" }).click();
   await expect(volverA(page, "Cliente")).toHaveAttribute("href", `/panel/clientes/${clienteId}`);
-  // Con un solo vehículo pasa directo a Servicios: ahí está el formulario, con el origen para la reserva creada
+  // Elegido el vehículo (siempre se elige, 20/11), en Servicios está el formulario, con el origen para la reserva creada
+  await page.getByRole("list", { name: "Elegir vehículo" }).getByRole("link", { name: new RegExp(`^${placa}`) }).click();
+  await expect(volverA(page, "Cliente")).toHaveAttribute("href", `/panel/clientes/${clienteId}`);
   await expect(page.locator('form input[name="volver"]')).toHaveValue(`/panel/clientes/${clienteId}`);
 });
 

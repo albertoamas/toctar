@@ -80,3 +80,16 @@ En el celular, una reserva sin cotización se arma paso a paso sin bajar por una
 
 ## 12. Decisiones abiertas
 - Si se aprueba el pedido 31, parte 2 (cotizar sin registrar), el paso Cliente suma "Cliente nuevo", como en Nueva cotización.
+
+## Recorrido visual (20/11/2026, aprobado por el dueño)
+
+- **El paso "Vehículo" se ve siempre**, también con un solo vehículo (antes se elegía solo y no se veía con qué auto se
+  reservaba). Las mismas tarjetas apiladas de Nueva cotización; tocar una pasa directo a los servicios. Al final, "Otro
+  vehículo · Registrar uno nuevo" abre el mismo "Agregar vehículo" de la ficha del cliente (quien ve Clientes) y el nuevo
+  aparece en la lista. Un cliente sin vehículos ya no es un callejón sin salida: muestra solo esa tarjeta
+  (`ElegirVehiculoReserva`).
+- **El indicador de pasos sin azul**: los hechos en gris oscuro, el actual en negro y los que faltan en gris claro (el
+  mismo en Nueva cotización).
+- **Elegir cliente en el celular**: el nombre, las placas y el teléfono uno debajo del otro.
+- **El resumen**: el monto siempre en un renglón.
+

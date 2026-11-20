@@ -226,7 +226,11 @@ test("reserva directa: cliente y vehículo registrados, servicio del catálogo c
   await expect(elegir.getByRole("link")).toHaveCount(1);
   await elegir.getByRole("link", { name: new RegExp(`Directa ${s}`) }).click();
   await expect(page).toHaveURL(new RegExp(`cliente=${clienteId}`));
-  // Con un solo vehículo, no hace falta elegirlo: pasa directo a los servicios (pedido 41)
+  // El vehículo siempre se elige, también con uno solo (20/11): en tarjetas, con "Otro vehículo" para registrar uno
+  await expect(pasoActual(page)).toHaveText("Vehículo");
+  const vehiculos = page.getByRole("list", { name: "Elegir vehículo" });
+  await expect(vehiculos.getByRole("button", { name: /^Otro vehículo/ })).toBeVisible();
+  await vehiculos.getByRole("link", { name: new RegExp(`^DI30${s}6`) }).click();
   await expect(pasoActual(page)).toHaveText("Servicios");
   // El cliente y su vehículo, en una sola tarjeta (pulido final del 09/11)
   await expect(page.getByRole("region", { name: "Reserva para" })).toContainText(`Directa ${s}`);
@@ -337,3 +341,24 @@ test("con varios vehículos se elige uno en su paso, y «Cambiar vehículo» vue
   await expect(page.getByRole("link", { name: "Cambiar vehículo" })).toHaveAttribute("href", conVolver(`/panel/agenda/nueva?cliente=${clienteId}`));
 });
 
+
+test("un vehículo que no está registrado se agrega desde la reserva y se sigue con él (20/11)", async ({ page }, info) => {
+  const s = sufijo(info);
+  const clienteId = await crearClienteEnBase({ nombre: `Sin auto ${s}`, telefono: telefono(info, 8) });
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/agenda/nueva?cliente=${clienteId}`);
+  await expect(pasoActual(page)).toHaveText("Vehículo");
+  const vehiculos = page.getByRole("list", { name: "Elegir vehículo" });
+  // Sin vehículos, solo "Otro vehículo": abre el mismo "Agregar vehículo" de la ficha del cliente
+  await expect(vehiculos.getByRole("link")).toHaveCount(0);
+  await vehiculos.getByRole("button", { name: /^Otro vehículo/ }).click();
+  const modal = page.getByRole("dialog", { name: "Agregar vehículo" });
+  await modal.getByLabel("Placa").fill(`NV30${s}8`);
+  await modal.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio").first().click();
+  await modal.getByRole("button", { name: "Agregar vehículo" }).click();
+  await expect(modal).toBeHidden();
+  // Aparece en la lista para elegirlo, y con él se pasa a los servicios
+  await vehiculos.getByRole("link", { name: new RegExp(`^NV30${s}8`) }).click();
+  await expect(pasoActual(page)).toHaveText("Servicios");
+  await expect(page.getByRole("region", { name: "Reserva para" })).toContainText(`NV30${s}8`);
+});

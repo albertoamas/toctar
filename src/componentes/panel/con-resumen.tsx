@@ -24,8 +24,9 @@ export function ConResumen({ etiqueta, resumen, children }: { /** Cómo lo nombr
 export function FilaResumen({ etiqueta, valor, fuerte, suave, separada }: { etiqueta: React.ReactNode; valor: React.ReactNode; fuerte?: boolean; suave?: boolean; separada?: boolean }) {
   return (
     <div className={`flex items-baseline justify-between gap-4 ${fuerte ? "text-lg font-bold" : suave ? "text-tinta-suave" : ""} ${separada ? "border-t border-border pt-2" : ""}`}>
-      <dt>{etiqueta}</dt>
-      <dd className="tabular-nums">{valor}</dd>
+      <dt className="min-w-0">{etiqueta}</dt>
+      {/* El monto, siempre en un renglón (20/11: "850 / Bs" se partía con un servicio de nombre largo) */}
+      <dd className="shrink-0 whitespace-nowrap tabular-nums">{valor}</dd>
     </div>
   );
 }
