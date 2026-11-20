@@ -98,4 +98,7 @@ En el celular, una reserva sin cotización se arma paso a paso sin bajar por una
 - **Los servicios en bloques** (también en Nueva cotización): cada uno con su título ("Servicio 1") y "Quitar" escrito
   arriba a la derecha, el servicio y su opción, y el precio con su etiqueta y de dónde sale ("Precio sugerido: 850 Bs").
   Antes, un número, la X suelta al costado y el precio sin etiqueta. Sin subir ni bajar (`EditorLista` con `enBloques`).
+- **Con cotizaciones del vehículo**: "Reserva sin cotización" es un botón; al tocarlo, la lista "Sus cotizaciones" se va
+  y queda solo el formulario de servicios, con "Usar una de sus cotizaciones" para volver (antes seguía arriba y
+  confundía).
 

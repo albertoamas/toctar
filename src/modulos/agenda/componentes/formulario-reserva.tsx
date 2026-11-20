@@ -8,7 +8,7 @@ import { usePasosEnHistorial } from "@/componentes/panel/pasos-en-historial";
 import { useFocoDePaso } from "@/componentes/panel/foco-de-paso";
 import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { MensajeError } from "@/componentes/panel/campo";
-import { MasDatos } from "@/componentes/panel/mas-datos";
+import { ArrowLeftIcon, PlusIcon } from "lucide-react";
 import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
 import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
@@ -302,25 +302,50 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
 
       {origen.tipo === "directa" && (
         <div data-paso={PASO_SERVICIOS} hidden={paso !== PASO_SERVICIOS} className="flex flex-col gap-6">
-          {cotizaciones}
-          {cotizaciones ? (
-            <MasDatos
-              texto="Reserva sin cotización"
-              abierto={armando || conErrorEnServicios}
-              alAbrir={() => setArmando(true)}
-              // Quitarla vuelve a la fila lista, sin tocar (no cuenta como servicio)
-              alQuitar={() => {
-                setLineas([{ varianteId: 0, precio: "" }]);
-                setArmando(false);
-                // Sus errores, ya sin nada que corregir: los de "Siguiente" y los de la acción
-                setLocales({ en: null, errores: {} });
-                setRevisadosEn(estado);
-              }}
-            >
-              {servicios}
-            </MasDatos>
-          ) : (
+          {/* Con cotizaciones del vehículo: o se usa una, o se arma sin cotización. Al elegir "Reserva sin cotización", la
+              lista de cotizaciones se va (20/11, a pedido del dueño: seguía arriba y confundía) y queda solo el formulario,
+              con "Usar una de sus cotizaciones" para volver */}
+          {!cotizaciones ? (
             servicios
+          ) : armando || conErrorEnServicios ? (
+            <>
+              <div>
+                <Button
+                  type="button"
+                  variant="accion"
+                  onClick={() => {
+                    // Vuelve a la fila lista, sin tocar (no cuenta como servicio), y a la lista de cotizaciones
+                    setLineas([{ varianteId: 0, precio: "" }]);
+                    setArmando(false);
+                    // Sus errores, ya sin nada que corregir: los de "Siguiente" y los de la acción
+                    setLocales({ en: null, errores: {} });
+                    setRevisadosEn(estado);
+                  }}
+                >
+                  <ArrowLeftIcon />
+                  Usar una de sus cotizaciones
+                </Button>
+              </div>
+              {servicios}
+            </>
+          ) : (
+            <>
+              {cotizaciones}
+              <div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setArmando(true);
+                    // El foco, al primer servicio: es lo que sigue
+                    requestAnimationFrame(() => formulario.current?.querySelector<HTMLSelectElement>(`[data-paso="${PASO_SERVICIOS}"] select`)?.focus());
+                  }}
+                >
+                  <PlusIcon />
+                  Reserva sin cotización
+                </Button>
+              </div>
+            </>
           )}
         </div>
       )}
