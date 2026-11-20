@@ -63,8 +63,11 @@ export function LineasServicio({ opciones, lineas, onChange, errores: todos, con
         const sinMarca = { "aria-invalid": false, "aria-describedby": undefined };
         const falta = !servicioId ? "servicio" : !elegida ? "opcion" : "precio";
         return (
-          // En su bloque (20/11): el servicio y su opción, y debajo el precio con su etiqueta y de dónde sale
-          <div className="flex flex-col gap-3">
+          // En el celular, en su bloque: el servicio y su opción, y debajo el precio con su etiqueta. En pantalla ancha, todo
+          // en una fila (20/11). De dónde sale el precio, debajo
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3 @2xl:flex-row @2xl:items-start">
+            <div className="min-w-0 @2xl:flex-1">
             <ElegirServicio
               grupos={grupos}
               servicioId={servicioId}
@@ -77,13 +80,15 @@ export function LineasServicio({ opciones, lineas, onChange, errores: todos, con
               marcaServicio={falta === "servicio" ? marca : sinMarca}
               marcaOpcion={falta === "opcion" ? marca : sinMarca}
             />
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span aria-hidden className="text-sm font-medium">
+            </div>
+            <div className="flex shrink-0 items-center gap-x-3">
+              <span aria-hidden className="text-sm font-medium @2xl:hidden">
                 Precio
               </span>
               <CampoMonto aria-label={`Precio del servicio ${i + 1}`} value={l.precio} onChange={(ev) => cambiar({ ...l, precio: ev.target.value })} {...(falta === "precio" ? marca : sinMarca)} />
-              {elegida && <p className="text-sm text-tinta-suave">{textoSugerencia(elegida.sugerencia)}</p>}
             </div>
+            </div>
+            {elegida && <p className="text-sm text-tinta-suave">{textoSugerencia(elegida.sugerencia)}</p>}
           </div>
         );
       }}

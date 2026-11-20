@@ -1,4 +1,4 @@
-import { ChevronDownIcon, ChevronUpIcon, PlusIcon, XIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { cn } from "cn";
 import { MensajeError } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
@@ -10,9 +10,11 @@ import { Button } from "@/componentes/ui/button";
 // Ordenar es poco frecuente (pulido 13.19): subir y bajar van en gris al costado de la fila, junto a "Quitar", también en
 // el celular; apilados, para dejarle el ancho al campo. Con `flechasEnFila`, desde 640 px van una al lado de la otra: una
 // fila de un renglón (los beneficios, pulido 13.22) no se estira. Con una sola fila no se muestran.
-// Con `enBloques` (los servicios de una cotización o una reserva, 20/11): cada fila es un bloque con su título
-// ("Servicio 1") y "Quitar" escrito arriba a la derecha, en lugar del número y la X sueltos al costado. Sin borde
-// propio: va dentro de su tarjeta y una línea separa cada fila (una tarjeta dentro de otra se veía cargada). Sin subir ni
+// Con `enBloques` (los servicios de una cotización o una reserva, 20/11): en el celular, cada fila es un bloque con su
+// título ("Servicio 1") y, arriba a la derecha, un basurero para quitarla; en pantalla ancha, una fila por servicio con
+// el basurero al final (en bloques se desaprovechaba el ancho). Sin borde propio: va dentro de su tarjeta y una línea
+// separa cada fila. El basurero en gris (rojo solo al pasar el mouse): quitar una fila sin guardar se deshace
+// agregándola, no es algo que no se deshace (eso va en rojo). No una X: en el panel la X cierra. Sin subir ni
 // bajar: el orden de los servicios casi no se toca y en el celular eran dos cajas más por servicio.
 
 type MarcaError = { "aria-invalid": boolean; "aria-describedby": string | undefined };
@@ -60,19 +62,28 @@ export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maxim
             if (enBloques)
               return (
                 // Sin caja propia (20/11): ya va dentro de una tarjeta; una línea fina separa un servicio del otro
-                <li key={i} className="flex flex-col gap-3 py-4 first:pt-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold">
-                      {etiqueta} {i + 1}
-                    </span>
-                    <div className="ml-auto flex items-center gap-1">
-                      <Button type="button" variant="accion" onClick={quitar} aria-label={`Quitar ${etiqueta.toLowerCase()} ${i + 1}`}>
-                        Quitar
-                      </Button>
+                <li key={i} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-3 py-4 first:pt-0 @2xl:items-start @2xl:py-3">
+                  {/* El título, solo en el celular: en la fila ancha, los campos ya dicen qué son */}
+                  <span className="text-sm font-semibold @2xl:hidden">
+                    {etiqueta} {i + 1}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="accion"
+                    size="icon"
+                    onClick={quitar}
+                    aria-label={`Quitar ${etiqueta.toLowerCase()} ${i + 1}`}
+                    title={`Quitar ${etiqueta.toLowerCase()}`}
+                    className="justify-self-end text-tinta-suave hover:text-peligro @2xl:col-start-2 @2xl:row-start-1"
+                  >
+                    <Trash2Icon />
+                  </Button>
+                  <div className="col-span-2 min-w-0 @2xl:col-span-1 @2xl:col-start-1 @2xl:row-start-1">{fila(elemento, cambiar, i, marca)}</div>
+                  {error && (
+                    <div className="col-span-2">
+                      <MensajeError id={`${nombre}-${i}-error`}>{error}</MensajeError>
                     </div>
-                  </div>
-                  {fila(elemento, cambiar, i, marca)}
-                  {error && <MensajeError id={`${nombre}-${i}-error`}>{error}</MensajeError>}
+                  )}
                 </li>
               );
             return (

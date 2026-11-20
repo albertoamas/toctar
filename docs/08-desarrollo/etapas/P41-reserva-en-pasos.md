@@ -124,4 +124,8 @@ En el celular, una reserva sin cotización se arma paso a paso sin bajar por una
 - **"Cliente nuevo"** en el paso Cliente (quien ve Clientes): abre Nuevo cliente con `?volver=` a la reserva; "Volver"
   lleva a ella y, al crear, la reserva sigue con el cliente elegido, en el paso del vehículo, con el día y el espacio que
   llegaron del tablero. La acción vuelve a validar la dirección (`leerDesde`, solo `/panel/agenda/nueva`).
+- **Los servicios, a lo ancho** (también en Nueva cotización): en la computadora y la tableta, una fila por servicio (el
+  servicio, su opción y el precio) con un basurero al final; en el celular, el bloque con "Servicio 1". El basurero en
+  gris (rojo solo al pasar el mouse): quitar una fila sin guardar se deshace; no una X, que en el panel cierra.
+- **El total del pie, a la derecha** desde 640 px: al aparecer no corre "Atrás" ni "Siguiente".
 

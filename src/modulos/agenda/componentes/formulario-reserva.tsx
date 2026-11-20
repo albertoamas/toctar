@@ -477,7 +477,8 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
             {/* El total de la reserva directa, a la vista mientras se cargan los precios */}
             {total !== null && total !== "0.00" && (
               // En la fecha, con el resumen al costado (computadora), el total ya está ahí
-              <p className={cn("flex items-baseline gap-2", paso >= PASO_FECHA && "@4xl:hidden")}>
+              // A la derecha desde 640 px (20/11): al aparecer, no corre los botones, que quedan siempre en su lugar
+              <p className={cn("flex items-baseline gap-2 sm:order-last sm:ml-auto", paso >= PASO_FECHA && "@4xl:hidden")}>
                 <span className="text-tinta-suave">Total</span>
                 <span className="text-lg font-bold tabular-nums">{mostrarMonto(total)} Bs</span>
               </p>
