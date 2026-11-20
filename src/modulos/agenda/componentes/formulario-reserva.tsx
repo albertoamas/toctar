@@ -8,13 +8,19 @@ import { usePasosEnHistorial } from "@/componentes/panel/pasos-en-historial";
 import { useFocoDePaso } from "@/componentes/panel/foco-de-paso";
 import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { MensajeError } from "@/componentes/panel/campo";
-import { ArrowLeftIcon, PlusIcon } from "lucide-react";
+import { ArrowLeftIcon, PlusIcon, SearchIcon } from "lucide-react";
+import { ParaQuien } from "@/componentes/panel/para-quien";
+import type { EstadoCliente } from "@/modulos/clientes/acciones";
+import type { CatalogoVehiculos } from "@/modulos/clientes/catalogo-vehiculos";
+import { CamposCliente, CamposVehiculo } from "@/modulos/clientes/componentes/campos";
+import { normalizarPlaca } from "@/modulos/clientes/reglas";
+import { leerValores, PREFIJO_VEHICULO } from "@/modulos/clientes/valores";
+import type { Tamano } from "@/modulos/configuracion/consultas";
 import { PasosFlujo, type DestinoPaso } from "@/componentes/panel/pasos-flujo";
 import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { Button, buttonVariants } from "@/componentes/ui/button";
 import type { MetodoPago } from "@/db/esquema/trabajos";
-import type { EstadoFormulario } from "@/lib/formularios";
 import { leerMonto, mostrarMonto } from "@/modulos/catalogo/reglas";
 import { calcularTotales } from "@/modulos/cotizaciones/reglas";
 import type { OpcionServicio } from "@/modulos/cotizaciones/consultas/servicios";
@@ -22,7 +28,19 @@ import { LineasServicio, type Linea } from "@/modulos/cotizaciones/componentes/l
 import { useEnvioConComprobante } from "@/modulos/pagos/componentes/campo-comprobante";
 import { agendarReserva } from "../acciones";
 import type { EspacioDisponible } from "../consultas/espacios";
-import { erroresFecha, erroresServicios, PASO_ADELANTO, PASO_FECHA, PASO_SERVICIOS, pasoDeCampoReserva, pasosNuevaReserva } from "../pasos-reserva";
+import {
+  erroresClienteNuevo,
+  erroresFecha,
+  erroresServicios,
+  erroresVehiculoNuevo,
+  PASO_ADELANTO,
+  PASO_CLIENTE,
+  PASO_FECHA,
+  PASO_SERVICIOS,
+  PASO_VEHICULO,
+  pasoDeCampoReserva,
+  pasosNuevaReserva,
+} from "../pasos-reserva";
 import { fechaEntregaSugerida, textoDia } from "../reglas";
 import { espacioVigente, useEspaciosLibres } from "./espacios-libres";
 import { SeccionAdelanto, type DejoAdelanto } from "./seccion-adelanto";
@@ -42,6 +60,8 @@ import { CabeceraTarjeta } from "@/componentes/panel/cabecera-seccion";
 // Recorrido visual del 20/11 (a pedido del dueño): el adelanto, en su propio paso después de la fecha (#adelanto), para
 // quien ve pagos. La fecha llega vacía salvo desde un día libre de la Agenda, y el adelanto pregunta "¿Dejó adelanto?"
 // sin respuesta elegida: "Reservar" va solo en el último paso. El indicador de pasos va aquí, en los dos caminos.
+// Cliente o vehículo nuevos (20/11, como en Nueva cotización, pedido 40): sus campos son los primeros pasos de este mismo
+// formulario (#cliente, #vehiculo) y se registran recién con "Reservar", junto con la reserva: nada queda a medias.
 
 type Origen =
   | {
@@ -58,15 +78,39 @@ type Origen =
     }
   | {
       tipo: "directa";
-      clienteId: number;
-      vehiculoId: number;
+      /** null cuando se registra ahí mismo (`nuevo`). */
+      clienteId: number | null;
+      vehiculoId: number | null;
       opciones: OpcionServicio[];
+      /** Cliente o vehículo nuevos, escritos en sus pasos (20/11). */
+      nuevo?: Nuevo;
       recordatorioId?: number | null;
       /** Las líneas con que llega (un mantenimiento, con su servicio ya elegido: pedido 21). */
       lineasIniciales?: Linea[];
-      /** Servicios o, si ya llega con servicios con precio, la fecha (`pasoInicialReserva`). */
-      pasoInicial: typeof PASO_SERVICIOS | typeof PASO_FECHA;
+      /** El cliente o el vehículo si son nuevos; si no, servicios o, si ya llega con servicios con precio, la fecha (`pasoInicialReserva`). */
+      pasoInicial: number;
     };
+
+type Nuevo = {
+  /** El cliente también es nuevo; si no, solo el vehículo, de un cliente registrado. */
+  clienteNuevo: boolean;
+  /** El cliente registrado al que se le agrega el vehículo. */
+  nombreCliente?: string;
+  tamanos: Tamano[];
+  catalogo: CatalogoVehiculos;
+  /** Los servicios para cada tamaño: los del vehículo nuevo, según el tamaño elegido. */
+  opcionesPorTamano: Record<number, OpcionServicio[]>;
+  /** "Buscar un cliente registrado" o, con un cliente registrado, "Atrás" a sus vehículos. */
+  volverAElegir: Route;
+  /** La reserva con un cliente ya registrado, con `cliente=0` en lugar de su id: el aviso de repetido ofrece usarlo. */
+  conCliente: string;
+};
+
+/** El precio que sugiere el catálogo para esa variante, como se escribe en el campo; vacío si no hay. */
+function sugerido(opciones: OpcionServicio[] | undefined, varianteId: number): string {
+  const o = opciones?.find((x) => x.varianteId === varianteId);
+  return o?.sugerencia.tipo === "monto" ? mostrarMonto(o.sugerencia.monto) : "";
+}
 
 type Props = {
   /** La pantalla de origen (pedido 43): va en el formulario y la reserva creada vuelve ahí. */
@@ -93,10 +137,20 @@ type Props = {
 const minuscula = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice(1);
 
 /** El paso en la dirección: el botón Atrás del celular vuelve al anterior sin salir de la pantalla. */
-const ANCLA: Record<number, string> = { [PASO_SERVICIOS]: "servicios", [PASO_FECHA]: "fecha", [PASO_ADELANTO]: "adelanto" };
+const ANCLA: Record<number, string> = { [PASO_CLIENTE]: "cliente", [PASO_VEHICULO]: "vehiculo", [PASO_SERVICIOS]: "servicios", [PASO_FECHA]: "fecha", [PASO_ADELANTO]: "adelanto" };
+
+/** El paso de un ancla de la dirección, o null si no es de un paso. */
+const pasoDeAncla = (ancla: string) => {
+  const p = Object.entries(ANCLA).find(([, a]) => a === ancla)?.[0];
+  return p === undefined ? null : Number(p);
+};
+
+/** Para los pasos del cliente y el vehículo nuevos: el foco va al primer campo, no a "Buscar un cliente registrado". */
+const PRIMER_CAMPO_NUEVO = 'input:not([type="hidden"]), select, textarea, button[role="radio"]';
 
 export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, hoy, fechaInicial, espacioInicial, espaciosIniciales, arriba, cotizaciones, atras, pasosHechos }: Props) {
   const directa = origen.tipo === "directa";
+  const nuevo = origen.tipo === "directa" ? origen.nuevo : undefined;
   const inicial = origen.tipo === "directa" ? origen.pasoInicial : PASO_FECHA;
   // Con el adelanto (quien ve pagos), el último paso es el suyo; si no, la fecha
   const ultimo = conPagos ? PASO_ADELANTO : PASO_FECHA;
@@ -107,69 +161,66 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
   const pasoActual = useRef<number>(inicial);
   // Los errores de "Siguiente" y la revisión de los servicios, atados al resultado de la acción con que se hicieron: con
   // un envío nuevo dejan de valer solos (sin reiniciarlos tras el await, que se dibujaba antes que el resultado)
-  const [locales, setLocales] = useState<{ en: EstadoFormulario | null; errores: Record<string, string> }>({ en: null, errores: {} });
-  const [revisadosEn, setRevisadosEn] = useState<EstadoFormulario | null>(null);
+  const [locales, setLocales] = useState<{ en: EstadoCliente | null; errores: Record<string, string> }>({ en: null, errores: {} });
+  // Los pasos ya revisados con "Siguiente" desde el último envío: sus errores de la acción ya no valen
+  const [revisados, setRevisados] = useState<{ en: EstadoCliente | null; pasos: Set<number> }>({ en: null, pasos: new Set() });
+  // El cliente y el vehículo nuevos, para la línea "Para …" de los pasos siguientes: se leen del formulario al cambiar de paso
+  const [resumen, setResumen] = useState<{ nombre: string; placa: string }>({ nombre: "", placa: "" });
   const errorAlLlegar = useRef(false);
   const formulario = useRef<HTMLFormElement>(null);
 
   // Lo que devuelve la acción: los errores de nuevo y, si son de los servicios, la pantalla vuelve a ellos (como
   // conAviso: al terminar la acción, no en un efecto). Lo que hace al terminar está más abajo (`alTerminar`): usa el
   // foco, que necesita el resultado de la acción
-  const alTerminar = useRef<(r: EstadoFormulario) => void>(() => {});
-  const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(async (previo, datos) => {
+  const alTerminar = useRef<(r: EstadoCliente) => void>(() => {});
+  const [estado, accion, enviando] = useActionState<EstadoCliente, FormData>(async (previo, datos) => {
     const r = await agendarReserva(previo, datos);
     alTerminar.current(r);
     return r;
   }, {});
-  const foco = useFocoDePaso(formulario, paso, estado);
+  const foco = useFocoDePaso(formulario, paso, estado, paso < PASO_SERVICIOS ? PRIMER_CAMPO_NUEVO : undefined);
 
   /** Muestra un paso: lo que hace cada cambio de paso, venga de un botón o del historial. */
-  function mostrar(nuevo: number) {
-    pasoActual.current = nuevo;
-    setPaso(nuevo);
+  function mostrar(destino: number) {
+    pasoActual.current = destino;
+    setPaso(destino);
+    if (nuevo && formulario.current) {
+      const valores = leerValores(new FormData(formulario.current));
+      const placa = valores[`${PREFIJO_VEHICULO}placa`] ?? "";
+      // Como los guarda el servidor
+      setResumen({ nombre: (valores.nombre ?? "").trim(), placa: normalizarPlaca(placa) ?? placa.trim().toUpperCase() });
+    }
     window.scrollTo({ top: 0 });
     foco.pedir(errorAlLlegar.current);
     errorAlLlegar.current = false;
   }
 
   /**
-   * Volver a los servicios. Si se empezó en ellos, la fecha es la entrada siguiente del historial y se retrocede; si se
-   * empezó en la fecha (un mantenimiento), los servicios son una entrada nueva.
+   * Volver a un paso anterior. Cada paso desde el primero es una entrada del historial, así que se retrocede (el botón
+   * Atrás del celular hace lo mismo). Los servicios de un mantenimiento que empezó en la fecha son una entrada nueva.
    */
-  function volverAServicios() {
-    if (pasoActual.current === PASO_ADELANTO) {
-      // Del adelanto, dos pasos atrás: la fecha y los servicios
-      if (inicial === PASO_SERVICIOS) window.history.go(-2);
-      else {
-        window.history.pushState(window.history.state, "", `#${ANCLA[PASO_SERVICIOS]}`);
-        mostrar(PASO_SERVICIOS);
-      }
+  function volverA(destino: number) {
+    if (destino >= inicial) {
+      const pasos = pasoActual.current - destino;
+      if (pasos > 0) window.history.go(-pasos);
       return;
     }
-    if (inicial === PASO_SERVICIOS) window.history.back();
-    else {
-      window.history.pushState(window.history.state, "", `#${ANCLA[PASO_SERVICIOS]}`);
-      mostrar(PASO_SERVICIOS);
-    }
+    window.history.pushState(window.history.state, "", `#${ANCLA[destino]}`);
+    mostrar(destino);
   }
-
-  /** Del adelanto a la fecha: siempre se llegó al adelanto desde la fecha, así que es la entrada anterior del historial. */
-  function volverAFecha() {
-    window.history.back();
-  }
+  const volverAServicios = () => volverA(PASO_SERVICIOS);
+  const volverAFecha = () => volverA(PASO_FECHA);
 
   useEffect(() => {
     alTerminar.current = (r) => {
-      const errores = Object.keys(r.errores ?? {});
+      const errores = Object.keys(r.errores ?? {}).filter((c) => r.errores?.[c]);
       if (errores.length === 0) return;
       foco.esperar(r);
-      // Al paso que tiene el error, el más temprano: los servicios, si no la fecha
-      if (directa && pasoActual.current > PASO_SERVICIOS && errores.some((c) => pasoDeCampoReserva(c) === PASO_SERVICIOS)) {
+      // Al paso que tiene el error, el más temprano: el cliente, el vehículo, los servicios o la fecha
+      const destino = Math.min(...errores.map(pasoDeCampoReserva));
+      if (destino < pasoActual.current && (destino >= inicial || (directa && destino === PASO_SERVICIOS))) {
         errorAlLlegar.current = true;
-        volverAServicios();
-      } else if (pasoActual.current === PASO_ADELANTO && errores.some((c) => pasoDeCampoReserva(c) === PASO_FECHA)) {
-        errorAlLlegar.current = true;
-        volverAFecha();
+        volverA(destino);
       } else foco.pedir(true);
     };
   });
@@ -179,10 +230,17 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
   const [lineas, setLineas] = useState<Linea[]>(
     origen.tipo === "directa" ? (origen.lineasIniciales?.length ? origen.lineasIniciales : [{ varianteId: 0, precio: "" }]) : [],
   );
-  const duraciones =
-    origen.tipo === "cotizacion"
-      ? origen.duraciones
-      : lineas.map((l) => origen.opciones.find((o) => o.varianteId === l.varianteId)?.duracion ?? 1);
+  // Los servicios que se ofrecen: los del tamaño del vehículo; el nuevo, según el tamaño que se elija en su paso
+  const [tamanoNuevo, setTamanoNuevo] = useState("");
+  const opciones = origen.tipo === "cotizacion" ? [] : nuevo ? (nuevo.opcionesPorTamano[Number(tamanoNuevo)] ?? []) : origen.opciones;
+  /** Otro tamaño, otro precio sugerido: cambia el de las líneas que todavía tienen el sugerido del tamaño anterior. */
+  function cambiarTamano(t: string) {
+    const antes = nuevo?.opcionesPorTamano[Number(tamanoNuevo)];
+    const despues = nuevo?.opcionesPorTamano[Number(t)];
+    setLineas((ls) => ls.map((l) => (l.varianteId > 0 && l.precio === sugerido(antes, l.varianteId) ? { ...l, precio: sugerido(despues, l.varianteId) } : l)));
+    setTamanoNuevo(t);
+  }
+  const duraciones = origen.tipo === "cotizacion" ? origen.duraciones : lineas.map((l) => opciones.find((o) => o.varianteId === l.varianteId)?.duracion ?? 1);
   const [fechaInicio, setFechaInicio] = useState(fechaInicial);
   // La entrega sigue a la sugerida mientras no se toque a mano. Con el ingreso borrado (el campo de fecha queda
   // vacío mientras se escribe) no hay sugerencia: sumar días a "" fallaría
@@ -219,7 +277,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
   // El resumen del costado en el paso de la fecha, en la computadora (ConResumen, C7 §5.2): los servicios elegidos (en la
   // directa), el total, el adelanto y lo que falta al entregar. Los montos, solo para quien los ve (el total es null si
   // no). Sin nada que mostrar, no hay columna
-  const nombreLinea = (l: Linea, i: number) => (origen.tipo === "directa" ? (origen.opciones.find((o) => o.varianteId === l.varianteId)?.descripcion ?? `Servicio ${i + 1}`) : "");
+  const nombreLinea = (l: Linea, i: number) => opciones.find((o) => o.varianteId === l.varianteId)?.descripcion ?? `Servicio ${i + 1}`;
   const conTotal = total !== null && total !== "0.00";
   const montoAdelanto = conPagos && dejo === "si" ? leerMonto(adelanto) : null;
   const centavos = (monto: string) => Math.round(Number(monto) * 100);
@@ -258,61 +316,55 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
 
   // El historial: Atrás y Adelante del navegador (o del celular) cambian de paso (solo la directa tiene pasos). Adelante
   // a la fecha revisa los servicios
+  /** Los errores de un paso, con lo que tiene el formulario ahora: lo que se revisa al dejarlo con "Siguiente". */
+  function erroresDelPaso(p: number): Record<string, string> {
+    if (!formulario.current) return {};
+    const valores = leerValores(new FormData(formulario.current));
+    if (p === PASO_CLIENTE) return erroresClienteNuevo(valores);
+    if (p === PASO_VEHICULO) return erroresVehiculoNuevo(valores);
+    if (p === PASO_SERVICIOS) return erroresServicios(valores.lineas ?? "[]");
+    if (p === PASO_FECHA) return erroresFecha({ fechaInicio, fechaFin, espacioId });
+    return {};
+  }
+
+  // El historial: Atrás y Adelante del navegador (o del celular) cambian de paso. Adelante revisa los pasos que salta
   usePasosEnHistorial(() => {
-    const ancla = window.location.hash.slice(1);
-    const destino = ancla === ANCLA[PASO_ADELANTO] ? PASO_ADELANTO : ancla === ANCLA[PASO_FECHA] ? PASO_FECHA : ancla === ANCLA[PASO_SERVICIOS] ? PASO_SERVICIOS : inicial;
-    // Adelante al adelanto revisa la fecha
-    if (destino === PASO_ADELANTO && pasoActual.current === PASO_FECHA) {
-      const errores = erroresFecha({ fechaInicio, fechaFin, espacioId });
-      if (Object.keys(errores).length > 0) {
-        setLocales({ en: estado, errores });
-        errorAlLlegar.current = true;
-        window.history.back();
-        return;
-      }
-    }
-    if (ancla === ANCLA[PASO_FECHA] && pasoActual.current === PASO_SERVICIOS && formulario.current) {
-      const errores = erroresServicios(String(new FormData(formulario.current).get("lineas") ?? "[]"));
-      if (Object.keys(errores).length > 0) {
-        setLocales({ en: estado, errores });
-        errorAlLlegar.current = true;
-        window.history.back();
-        return;
-      }
+    const destino = pasoDeAncla(window.location.hash.slice(1)) ?? inicial;
+    for (let p = pasoActual.current; p < destino; p++) {
+      const errores = erroresDelPaso(p);
+      if (Object.keys(errores).length === 0) continue;
+      setLocales({ en: estado, errores });
+      errorAlLlegar.current = true;
+      window.history.back();
+      return;
     }
     mostrar(destino);
   }, conPasos);
 
   function siguiente() {
-    if (paso === PASO_FECHA) {
-      // De la fecha al adelanto: con las fechas y el espacio elegidos
-      const errores = erroresFecha({ fechaInicio, fechaFin, espacioId });
-      setLocales({ en: estado, errores });
-      if (Object.keys(errores).length > 0) {
-        foco.pedir(true);
-        return;
-      }
-      window.history.pushState(window.history.state, "", `#${ANCLA[PASO_ADELANTO]}`);
-      mostrar(PASO_ADELANTO);
-      return;
-    }
-    const errores = erroresServicios(String(new FormData(formulario.current!).get("lineas") ?? "[]"));
+    const errores = erroresDelPaso(paso);
     setLocales({ en: estado, errores });
     if (Object.keys(errores).length > 0) {
       foco.pedir(true);
       return;
     }
-    setRevisadosEn(estado);
-    window.history.pushState(window.history.state, "", `#${ANCLA[PASO_FECHA]}`);
-    mostrar(PASO_FECHA);
+    setRevisados((r) => ({ en: estado, pasos: new Set(r.en === estado ? r.pasos : []).add(paso) }));
+    window.history.pushState(window.history.state, "", `#${ANCLA[paso + 1]}`);
+    mostrar(paso + 1);
   }
 
-  // Los errores que se ven: los de la acción (salvo los de los servicios si ya se revisaron de nuevo) y los de "Siguiente"
-  const vigente = ([campo]: [string, unknown]) => !(revisadosEn === estado && pasoDeCampoReserva(campo) === PASO_SERVICIOS);
+  // Los errores que se ven: los de la acción (salvo los de pasos ya revisados de nuevo) y los de "Siguiente". Lo mismo
+  // con los datos repetidos: corregido el WhatsApp o la placa, ya no se ofrece "Usar a …"
+  const yaRevisados = revisados.en === estado ? revisados.pasos : new Set<number>();
+  const vigente = ([campo]: [string, unknown]) => !yaRevisados.has(pasoDeCampoReserva(campo));
   const e: Partial<Record<string, string>> = {
     ...Object.fromEntries(Object.entries(estado.errores ?? {}).filter(vigente)),
     ...(locales.en === estado ? locales.errores : {}),
   };
+  const vista: EstadoCliente = { ...estado, errores: e as Record<string, string>, existentes: Object.fromEntries(Object.entries(estado.existentes ?? {}).filter(vigente)) };
+  // El aviso de repetido lleva a reservarle a ese cliente, no a su ficha
+  const usarExistente = (x: { id: number; nombre: string }) => ({ href: (nuevo?.conCliente ?? "").replace("cliente=0", `cliente=${x.id}`) as Route, texto: `Usar a ${x.nombre}` });
+  const nombreCliente = nuevo ? (nuevo.clienteNuevo ? (paso > PASO_CLIENTE ? resumen.nombre : "") : (nuevo.nombreCliente ?? "")) : "";
   const conErrorEnServicios = Object.keys(e).some((c) => pasoDeCampoReserva(c) === PASO_SERVICIOS && e[c]);
   // Con cotizaciones del vehículo, lo común es usar una: "Siguiente" aparece al empezar una sin cotización, y queda
   // aunque se quite el último servicio (así dice qué falta)
@@ -323,7 +375,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
   const servicios = origen.tipo === "directa" && (
     <SeccionFormulario titulo="Servicios" claseContenido="gap-4">
       <LineasServicio
-        opciones={origen.opciones}
+        opciones={opciones}
         lineas={lineas}
         onChange={(nuevas) => {
           setLineas(nuevas);
@@ -363,14 +415,19 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
         pasos={pasosNuevaReserva(conPagos)}
         actual={paso}
         etiqueta="Pasos de la reserva"
-        destinos={[
-          pasosHechos?.[0],
-          pasosHechos?.[1],
-          directa ? { alTocar: volverAServicios } : pasosHechos?.[2],
-          { alTocar: volverAFecha },
-        ]}
+        // Los pasos de este formulario se tocan para volver; los de antes (el cliente y el vehículo elegidos), por la dirección
+        destinos={pasosNuevaReserva(conPagos).map((_, i) => (i >= inicial || (directa && i === PASO_SERVICIOS) ? { alTocar: () => volverA(i) } : pasosHechos?.[i]))}
       />
       {arriba}
+      {/* Para quién es, con lo escrito en los pasos del cliente y el vehículo nuevos */}
+      {nombreCliente && (
+        <ParaQuien
+          etiqueta="Reserva para"
+          nombre={nombreCliente}
+          placa={paso > PASO_VEHICULO ? resumen.placa : null}
+          tamano={paso > PASO_VEHICULO ? nuevo?.tamanos.find((t) => String(t.id) === tamanoNuevo)?.nombre : null}
+        />
+      )}
       <AvisoAlSalir formulario={formulario} estado={estado} ademas={!!comprobante} />
       <input type="hidden" name="origen" value={origen.tipo} />
       {volver && <input type="hidden" name="volver" value={volver} />}
@@ -378,13 +435,40 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
         <input type="hidden" name="cotizacionId" value={origen.cotizacionId} />
       ) : (
         <>
-          <input type="hidden" name="clienteId" value={origen.clienteId} />
-          <input type="hidden" name="vehiculoId" value={origen.vehiculoId} />
+          {origen.clienteId && <input type="hidden" name="clienteId" value={origen.clienteId} />}
+          {origen.vehiculoId && <input type="hidden" name="vehiculoId" value={origen.vehiculoId} />}
+          {nuevo && <input type="hidden" name={nuevo.clienteNuevo ? "clienteNuevo" : "vehiculoNuevo"} value="1" />}
           {origen.recordatorioId && <input type="hidden" name="recordatorioId" value={origen.recordatorioId} />}
         </>
       )}
 
       {estado.mensaje && !estado.ok && <MensajeError id="reserva-error">{estado.mensaje}</MensajeError>}
+
+      {nuevo?.clienteNuevo && (
+        <div data-paso={PASO_CLIENTE} hidden={paso !== PASO_CLIENTE}>
+          {/* Como en Nueva cotización: el título adentro, con "Buscar un cliente registrado" al lado */}
+          <SeccionFormulario
+            titulo="Cliente nuevo"
+            accion={
+              <Link href={nuevo.volverAElegir} className={buttonVariants({ variant: "accion" })}>
+                <SearchIcon />
+                Buscar un cliente registrado
+              </Link>
+            }
+            claseContenido="gap-6"
+          >
+            <CamposCliente estado={vista} plegar enlaceExistente={usarExistente} />
+          </SeccionFormulario>
+        </div>
+      )}
+      {nuevo && (
+        <div data-paso={PASO_VEHICULO} hidden={paso !== PASO_VEHICULO}>
+          <SeccionFormulario titulo={nuevo.clienteNuevo ? "Vehículo" : "Otro vehículo"} claseContenido="gap-4">
+            {/* Completo, como en Nueva cotización: placa y tamaño, y marca, modelo, año y color a la vista */}
+            <CamposVehiculo estado={vista} prefijo={PREFIJO_VEHICULO} tamanos={nuevo.tamanos} catalogo={nuevo.catalogo} enlaceExistente={usarExistente} alCambiarTamano={cambiarTamano} />
+          </SeccionFormulario>
+        </div>
+      )}
 
       {origen.tipo === "directa" && (
         <div data-paso={PASO_SERVICIOS} hidden={paso !== PASO_SERVICIOS} className="flex flex-col gap-6">
@@ -405,7 +489,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
                     setArmando(false);
                     // Sus errores, ya sin nada que corregir: los de "Siguiente" y los de la acción
                     setLocales({ en: null, errores: {} });
-                    setRevisadosEn(estado);
+                    setRevisados((r) => ({ en: estado, pasos: new Set(r.en === estado ? r.pasos : []).add(PASO_SERVICIOS) }));
                   }}
                 >
                   <ArrowLeftIcon />
@@ -471,7 +555,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
         </div>
       )}
 
-      {(paso >= PASO_FECHA || conSiguiente) && (
+      {(paso !== PASO_SERVICIOS || conSiguiente) && (
         <PieFormulario>
           <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:justify-start">
             {/* El total de la reserva directa, a la vista mientras se cargan los precios */}
@@ -493,13 +577,29 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
                   Atrás
                 </Button>
               )}
+              {/* El vehículo nuevo: al cliente nuevo o, con un cliente registrado, a elegir otro de sus vehículos */}
+              {paso === PASO_VEHICULO && nuevo?.clienteNuevo && (
+                <Button type="button" variant="outline" disabled={enviando} onClick={() => volverA(PASO_CLIENTE)}>
+                  Atrás
+                </Button>
+              )}
+              {paso === PASO_VEHICULO && nuevo && !nuevo.clienteNuevo && (
+                <Link href={nuevo.volverAElegir} className={buttonVariants({ variant: "outline" })}>
+                  Atrás
+                </Link>
+              )}
+              {paso === PASO_SERVICIOS && nuevo && (
+                <Button type="button" variant="outline" disabled={enviando} onClick={() => volverA(PASO_VEHICULO)}>
+                  Atrás
+                </Button>
+              )}
               {/* En los servicios, al vehículo (20/11): "Atrás" en todos los pasos, para que volver no sea adivinar */}
-              {paso === PASO_SERVICIOS && pasosHechos?.[1] && "href" in pasosHechos[1] && (
+              {paso === PASO_SERVICIOS && !nuevo && pasosHechos?.[1] && "href" in pasosHechos[1] && (
                 <Link href={pasosHechos[1].href} className={buttonVariants({ variant: "outline" })}>
                   Atrás
                 </Link>
               )}
-              {directa && paso === PASO_FECHA && inicial === PASO_SERVICIOS && (
+              {directa && paso === PASO_FECHA && inicial <= PASO_SERVICIOS && (
                 <Button type="button" variant="outline" disabled={enviando} onClick={volverAServicios}>
                   Atrás
                 </Button>
@@ -516,7 +616,18 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
               )}
               {/* Una key distinta en cada uno: si React reusara el botón, "Siguiente" se volvía "Reservar" durante el
                   mismo toque y el navegador enviaba la reserva a medias (lo mismo que en Nueva cotización, pedido 40) */}
-              {paso === PASO_SERVICIOS ? (
+              {paso < PASO_SERVICIOS ? (
+                <Button
+                  key={`siguiente-${paso}`}
+                  type="button"
+                  onClick={(ev) => {
+                    ev.preventDefault();
+                    siguiente();
+                  }}
+                >
+                  {paso === PASO_CLIENTE ? "Siguiente: vehículo" : "Siguiente: servicios"}
+                </Button>
+              ) : paso === PASO_SERVICIOS ? (
                 <Button
                   key="siguiente"
                   type="button"

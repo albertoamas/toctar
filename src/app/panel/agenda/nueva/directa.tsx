@@ -6,10 +6,11 @@ import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { fechaCorta } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { cotizacionesParaReservar, datosDirecta } from "@/modulos/agenda/consultas/reservar";
+import { opcionesPorTamano } from "@/modulos/cotizaciones/consultas/servicios";
 import { ElegirVehiculoReserva } from "@/modulos/agenda/componentes/elegir-vehiculo-reserva";
 import { catalogoVehiculos } from "@/modulos/clientes/consultas";
 import { tamanosActivos } from "@/modulos/configuracion/consultas";
-import { PASO_SERVICIOS, PASO_VEHICULO, pasoInicialReserva } from "@/modulos/agenda/pasos-reserva";
+import { PASO_CLIENTE, PASO_SERVICIOS, PASO_VEHICULO, pasoInicialReserva } from "@/modulos/agenda/pasos-reserva";
 import { recordatorioParaAgendar } from "@/modulos/mantenimientos/consultas";
 import { lineaDelMantenimiento } from "@/modulos/mantenimientos/reglas";
 import { conDesde } from "@/lib/volver";
@@ -22,7 +23,7 @@ import { CotizacionesDelCliente, Encabezado, enlace, Formulario, ParaQuien, type
  * vehículo si tiene varios, sus cotizaciones para reservar y el formulario de servicios, fecha y adelanto.
  */
 export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; clienteId: number }) {
-  const { usuario, conPagos, volver, origen, hoy, fechaInicial, numero, direccion, indicador, clave } = ctx;
+  const { usuario, conPagos, volver, origen, hoy, fechaInicial, texto, numero, direccion, indicador, clave } = ctx;
   // El mantenimiento que se agenda: abierto y de este cliente y vehículo (la acción lo vuelve a mirar al guardar)
   const recordatorioId = numero("recordatorio");
   if (recordatorioId && (!puedeVerModulo(usuario, "mantenimientos") || !conPagos)) {
@@ -61,32 +62,32 @@ export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; client
   // Desde un mantenimiento no se cambia el cliente ni el vehículo: el recordatorio es de ellos
   const cambiarCliente = recordatorio ? undefined : direccion({});
   const cambiarVehiculo = recordatorio ? undefined : direccion({ cliente: d.cliente.id });
+  // "Otro vehículo": quien ve Clientes y arma reservas sin cotización (uno nuevo no tiene cotizaciones para reservar)
+  const registra = conPagos && puedeVerModulo(usuario, "clientes") && !recordatorio;
+  if (!d.vehiculo && registra && texto("vehiculo") === "nuevo") return <ReservaConNuevos ctx={ctx} clienteId={d.cliente.id} nombreCliente={d.cliente.nombre} />;
 
   // Paso 2: el vehículo, siempre (20/11): en tarjetas, como en Nueva cotización, con "Otro vehículo" para registrarlo
-  // ahí mismo (quien ve Clientes). Sin vehículos, solo esa tarjeta
+  // en el paso siguiente (quien ve Clientes). Sin vehículos, solo esa tarjeta
   if (!d.vehiculo) {
-    const veClientes = puedeVerModulo(usuario, "clientes");
-    const [tamanos, catalogo] = veClientes ? await Promise.all([tamanosActivos(), catalogoVehiculos()]) : [null, null];
     return (
       <>
         <Encabezado volver={volver} />
         {indicador(PASO_VEHICULO, [cambiarCliente && { href: cambiarCliente }])}
         <ParaQuien nombre={d.cliente.nombre} vehiculo={null} />
         <Seccion id="vehiculo" titulo="Vehículo" sinRelleno>
-          {d.vehiculos.length === 0 && !veClientes ? (
+          {d.vehiculos.length === 0 && !registra ? (
             <EstadoVacio>
-              {d.cliente.nombre} no tiene vehículos activos. Pídele al dueño que le agregue uno en su ficha.
+              {d.cliente.nombre} no tiene vehículos activos. Pídele al dueño que le agregue uno en su ficha o que arme la reserva.
             </EstadoVacio>
           ) : (
             <ElegirVehiculoReserva
-              clienteId={d.cliente.id}
               vehiculos={d.vehiculos.map((v) => ({
                 id: v.id,
                 placa: v.placa,
                 detalle: [...v.detalle, `Tamaño: ${v.tamano}`].join(" · "),
                 href: direccion({ cliente: d.cliente.id, vehiculo: v.id }),
               }))}
-              agregar={tamanos && catalogo ? { tamanos, catalogo } : null}
+              otro={registra ? direccion({ cliente: d.cliente.id, vehiculo: "nuevo" }) : null}
             />
           )}
         </Seccion>
@@ -175,3 +176,47 @@ export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; client
     </>
   );
 }
+
+/**
+ * La reserva con un cliente nuevo (`clienteId` null, desde "Cliente nuevo") o con otro vehículo de un cliente registrado
+ * (20/11, como en Nueva cotización): sus datos son los primeros pasos del formulario y se registran con la reserva.
+ */
+export async function ReservaConNuevos({ ctx, clienteId, nombreCliente }: { ctx: Contexto; clienteId: number | null; nombreCliente?: string }) {
+  const { conPagos, volver, origen, hoy, fechaInicial, numero, direccion, clave } = ctx;
+  const [tamanos, catalogo] = await Promise.all([tamanosActivos(), catalogoVehiculos()]);
+  const opcionesPor = await opcionesPorTamano(tamanos.map((t) => t.id));
+  return (
+    <>
+      <Encabezado volver={volver} />
+      <Formulario
+        key={clave}
+        volver={origen}
+        origen={{
+          tipo: "directa",
+          clienteId,
+          vehiculoId: null,
+          opciones: [],
+          nuevo: {
+            clienteNuevo: clienteId === null,
+            nombreCliente,
+            tamanos,
+            catalogo,
+            opcionesPorTamano: opcionesPor,
+            // "Buscar un cliente registrado" o, con un cliente registrado, "Atrás" a sus vehículos
+            volverAElegir: clienteId === null ? direccion({}) : direccion({ cliente: clienteId }),
+            conCliente: direccion({ cliente: 0 }),
+          },
+          pasoInicial: clienteId === null ? PASO_CLIENTE : PASO_VEHICULO,
+        }}
+        conPagos={conPagos}
+        hoy={hoy}
+        fechaInicial={fechaInicial}
+        fechaFin={fechaInicial}
+        espacio={numero("espacio")}
+        // Tocar el cliente en el indicador vuelve a elegirlo (con otro vehículo de un cliente registrado)
+        pasosHechos={clienteId === null ? [] : [{ href: direccion({}) }]}
+      />
+    </>
+  );
+}
+

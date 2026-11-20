@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { erroresFecha, erroresServicios, PASO_ADELANTO, PASO_FECHA, PASO_SERVICIOS, pasoDeCampoReserva, pasoInicialReserva, pasosNuevaReserva } from "@/modulos/agenda/pasos-reserva";
+import { erroresClienteNuevo, erroresVehiculoNuevo, erroresFecha, erroresServicios, PASO_ADELANTO, PASO_CLIENTE, PASO_FECHA, PASO_SERVICIOS, PASO_VEHICULO, pasoDeCampoReserva, pasoInicialReserva, pasosNuevaReserva } from "@/modulos/agenda/pasos-reserva";
 
 // Pedido 41: la nueva reserva en pasos. Especificación: docs/08-desarrollo/etapas/P41-reserva-en-pasos.md §9.
 
@@ -65,4 +65,18 @@ test("para pasar al adelanto hace falta la fecha de ingreso y el espacio", () =>
   expect(erroresFecha({ fechaInicio: "", fechaFin: "", espacioId: "" })).toMatchObject({ fechaInicio: "Elige el día de ingreso.", espacioId: "Elige el espacio." });
   const manana = new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 10);
   expect(erroresFecha({ fechaInicio: manana, fechaFin: manana, espacioId: "3" })).toEqual({});
+});
+
+test("los errores de un cliente o un vehículo nuevos vuelven a su paso (20/11)", () => {
+  expect(pasoDeCampoReserva("nombre")).toBe(PASO_CLIENTE);
+  expect(pasoDeCampoReserva("telefono")).toBe(PASO_CLIENTE);
+  expect(pasoDeCampoReserva("vehiculo-placa")).toBe(PASO_VEHICULO);
+});
+
+test("el cliente y el vehículo nuevos se revisan con los esquemas de Clientes (20/11)", () => {
+  expect(erroresClienteNuevo({ nombre: "", telefono: "" })).toHaveProperty("nombre");
+  expect(erroresClienteNuevo({ nombre: "Ana Pérez", telefono: "71234567", correo: "", nit: "", razonSocial: "", notas: "" })).toEqual({});
+  const vehiculo = erroresVehiculoNuevo({});
+  expect(Object.keys(vehiculo).every((c) => c.startsWith("vehiculo-"))).toBe(true);
+  expect(vehiculo).toHaveProperty("vehiculo-placa");
 });

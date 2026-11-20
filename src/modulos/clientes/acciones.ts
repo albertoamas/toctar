@@ -3,8 +3,6 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
-import type { Route } from "next";
-import { leerDesde } from "@/lib/volver";
 import { db } from "@/db";
 import { auditoria, cliente, consulta, cotizacion, recordatorioMantenimiento, trabajo, vehiculo } from "@/db/esquema";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
@@ -71,14 +69,6 @@ export async function crearCliente(_previo: EstadoCliente, datos: FormData): Pro
   }
 
   revalidatePath("/panel/clientes");
-  // Desde "Cliente nuevo" de Nueva reserva (20/11): de vuelta a ella con el cliente creado, en el paso del vehículo. La
-  // dirección se vuelve a validar aquí (cualquiera puede llamar a la acción): solo una del panel, y solo Nueva reserva
-  const reserva = leerDesde(datos.get("reserva"));
-  if (reserva && new URL(reserva, "http://panel.local").pathname === "/panel/agenda/nueva") {
-    const url = new URL(reserva, "http://panel.local");
-    url.searchParams.set("cliente", String(id));
-    redirect(`${url.pathname}${url.search}` as Route, RedirectType.replace);
-  }
   // Reemplaza al formulario en el historial: "atrás" no vuelve a él (pedido 43)
   redirect(`/panel/clientes/${id}?creado=1`, RedirectType.replace);
 }

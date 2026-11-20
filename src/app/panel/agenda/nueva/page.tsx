@@ -9,9 +9,9 @@ import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { PASO_CLIENTE, pasosNuevaReserva } from "@/modulos/agenda/pasos-reserva";
 import { ElegirCliente } from "@/modulos/clientes/componentes/elegir-cliente";
-import { conDesde, leerDesde, PARAMETRO_VOLVER, volverDesde } from "@/lib/volver";
+import { leerDesde, PARAMETRO_VOLVER, volverDesde } from "@/lib/volver";
 import { ReservaDesdeCotizacion } from "./desde-cotizacion";
-import { ReservaDirecta } from "./directa";
+import { ReservaConNuevos, ReservaDirecta } from "./directa";
 import { Encabezado, type Contexto } from "./partes";
 
 export const metadata: Metadata = { title: "Nueva reserva" };
@@ -77,11 +77,17 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   // Lo que se reserva (hallazgo 9 de la prueba en celulares, 15/11). La misma pantalla sirve a los tres caminos y solo
   // cambia la dirección: al salir y volver, PaginaPanel lo rearma (EmpiezaDeCero); esta clave lo rearma también sin salir,
   // cuando lo reservado cambia en la misma pantalla ("Usar la cotización" en una reserva directa)
-  const clave = ["cotizacion", "cliente", "vehiculo", "recordatorio", "fecha", "espacio"].map(texto).join("|");
+  const clave = ["cotizacion", "nuevo", "cliente", "vehiculo", "recordatorio", "fecha", "espacio"].map(texto).join("|");
 
   const ctx: Contexto = { usuario, conPagos, volver, origen, hoy, fechaInicial, texto, numero, indicador, direccion, clave };
 
   if (cotizacionId) return <ReservaDesdeCotizacion ctx={ctx} cotizacionId={cotizacionId} />;
+
+  // Registrar un cliente o un vehículo ahí mismo (20/11): quien ve Clientes y arma reservas sin cotización (uno nuevo no
+  // tiene cotizaciones para reservar)
+  const registra = conPagos && puedeVerModulo(usuario, "clientes");
+  // "Cliente nuevo": sus datos y los de su vehículo son los primeros pasos del formulario
+  if (texto("nuevo") === "1" && registra) return <ReservaConNuevos ctx={ctx} clienteId={null} />;
 
   // Paso 1: el cliente. Sin Pagos (no arma reservas sin cotización) también lo elige, para reservar una de sus
   // cotizaciones
@@ -91,13 +97,9 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
       <>
         <Encabezado volver={volver} />
         {indicador(PASO_CLIENTE)}
-        {/* "Cliente nuevo" (20/11): quien llama y reserva directo, sin cotizar antes. Se registra con su vehículo y la
-            reserva sigue con él (vuelve aquí, con el día y el espacio que llegaron del tablero) */}
-        <ElegirCliente
-          q={texto("q")}
-          hrefCliente={(id) => direccion({ cliente: id })}
-          hrefNuevo={puedeVerModulo(usuario, "clientes") ? conDesde("/panel/clientes/nuevo", direccion({})) : undefined}
-        />
+        {/* "Cliente nuevo" (20/11): quien llama y reserva directo, sin cotizar antes. Se escribe en los pasos de la
+            reserva y se registra con ella, como en Nueva cotización */}
+        <ElegirCliente q={texto("q")} hrefCliente={(id) => direccion({ cliente: id })} hrefNuevo={registra ? direccion({ nuevo: 1 }) : undefined} />
       </>
     );
   }

@@ -79,15 +79,15 @@ Rama `pedido-41-reserva-en-pasos`, un PR (después del pedido 40, que trae `Paso
 En el celular, una reserva sin cotización se arma paso a paso sin bajar por una columna larga, y con una cotización o un mantenimiento se llega directo a la fecha.
 
 ## 12. Decisiones abiertas
-- Si se aprueba el pedido 31, parte 2 (cotizar sin registrar), el paso Cliente suma "Cliente nuevo", como en Nueva cotización.
+- Resuelta el 20/11: "Cliente nuevo" y "Otro vehículo" se escriben en los pasos de la reserva, como en Nueva cotización
+  (ver "Recorrido visual").
 
 ## Recorrido visual (20/11/2026, aprobado por el dueño)
 
 - **El paso "Vehículo" se ve siempre**, también con un solo vehículo (antes se elegía solo y no se veía con qué auto se
   reservaba). Las mismas tarjetas apiladas de Nueva cotización; tocar una pasa directo a los servicios. Al final, "Otro
-  vehículo · Registrar uno nuevo" abre el mismo "Agregar vehículo" de la ficha del cliente (quien ve Clientes) y el nuevo
-  aparece en la lista. Un cliente sin vehículos ya no es un callejón sin salida: muestra solo esa tarjeta
-  (`ElegirVehiculoReserva`).
+  vehículo · Registrar uno nuevo" lleva a su paso (ver "Cliente nuevo"). Un cliente sin vehículos ya no es un callejón
+  sin salida: muestra solo esa tarjeta (`ElegirVehiculoReserva`).
 - **El indicador de pasos sin azul**: los hechos en gris oscuro, el actual en negro y los que faltan en gris claro (el
   mismo en Nueva cotización).
 - **Elegir cliente** (también en Nueva cotización y al cambiar de dueño): en las mismas tarjetas que el vehículo, con
@@ -121,9 +121,14 @@ En el celular, una reserva sin cotización se arma paso a paso sin bajar por una
   "Paso 3 de 5" ("‹ Vehículo"): las barras del indicador van sin nombre y no se notaba que se tocan. Al cambiar el
   cliente o el vehículo, la reserva empieza de cero (los precios dependen del tamaño) y, con algo llenado, pregunta
   "¿Salir sin guardar?".
-- **"Cliente nuevo"** en el paso Cliente (quien ve Clientes): abre Nuevo cliente con `?volver=` a la reserva; "Volver"
-  lleva a ella y, al crear, la reserva sigue con el cliente elegido, en el paso del vehículo, con el día y el espacio que
-  llegaron del tablero. La acción vuelve a validar la dirección (`leerDesde`, solo `/panel/agenda/nueva`).
+- **"Cliente nuevo" y "Otro vehículo", como en Nueva cotización** (pedido 40; se compararon con una ventanita y se eligió
+  esto: es lo que el dueño ya aprobó en la cotización y no deja clientes a medias). Quien ve Clientes y arma reservas sin
+  cotización (Pagos) los escribe en los primeros pasos del mismo formulario (`?nuevo=1` para el cliente con su vehículo;
+  `?cliente=N&vehiculo=nuevo` para otro vehículo de uno registrado), con los campos y las validaciones del alta de
+  Clientes (`CamposCliente`, `CamposVehiculo`; un WhatsApp o una placa repetidos ofrecen "Usar a …"). Los servicios se
+  ofrecen con el precio del tamaño elegido, y cambiar el tamaño cambia los precios que seguían sugeridos. "Reservar" crea
+  el cliente, el vehículo y la reserva en una sola transacción: si se abandona o falla, no queda nada registrado. El día y
+  el espacio que llegaron del tablero se conservan.
 - **Los servicios, a lo ancho** (también en Nueva cotización): en la computadora y la tableta, una fila por servicio (el
   servicio, su opción y el precio) con un basurero al final; en el celular, el bloque con "Servicio 1". El basurero en
   gris (rojo solo al pasar el mouse): quitar una fila sin guardar se deshace; no una X, que en el panel cierra.
