@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ChevronRightIcon } from "lucide-react";
-import { formatearWhatsApp } from "@/lib/whatsapp";
+import { enlaceWhatsApp, formatearWhatsApp } from "@/lib/whatsapp";
+import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
+import { buttonVariants } from "@/componentes/ui/button";
 
 // La tarjeta "Datos" de una ficha de trabajo, en bloques separados por una línea (pulido 13.49, en la orden; 13.50, en la
 // cotización): cada bloque con sus filas de etiqueta y valor, y lo que lleva a otra pantalla (la ficha del cliente, la
@@ -51,14 +53,32 @@ function FilaEnlace({ href, oculto, children }: { href: string | null; /** Lo qu
  * El cliente de una ficha de trabajo: su nombre y su WhatsApp, como una fila que lleva a su ficha. `href` null: quien mira
  * no tiene Clientes, y la fila se ve pero no lleva a ningún lado.
  */
-export function FilaCliente({ href, nombre, telefono }: { href: string | null; nombre: string; telefono: string }) {
-  return (
+export function FilaCliente({ href, nombre, telefono, conWhatsApp }: { href: string | null; nombre: string; telefono: string; /** El botón para escribirle, junto a su número (la reserva, 20/11). */ conWhatsApp?: boolean }) {
+  const fila = (
     <FilaEnlace href={href} oculto="Ver ficha del cliente: ">
       <FilaDato etiqueta="Cliente" como="span" enEnlace={href !== null}>
         <span className="font-semibold">{nombre}</span>
         <span className="text-sm text-tinta-suave">{formatearWhatsApp(telefono)}</span>
       </FilaDato>
     </FilaEnlace>
+  );
+  if (!conWhatsApp) return fila;
+  // Al lado de su número, que es donde se lo busca (recorrido visual del 20/11: en el encabezado bajaba a otro renglón en
+  // el celular). Fuera del enlace a la ficha: un enlace no va dentro de otro
+  return (
+    <div className="flex items-center">
+      <div className="min-w-0 flex-1">{fila}</div>
+      <a
+        href={enlaceWhatsApp(telefono)}
+        target="_blank"
+        rel="noreferrer"
+        aria-label={`Escribir por WhatsApp a ${nombre}`}
+        title="Escribir por WhatsApp"
+        className={`${buttonVariants({ variant: "accion", size: "icon" })} mr-4 shrink-0`}
+      >
+        <IconoWhatsApp />
+      </a>
+    </div>
   );
 }
 

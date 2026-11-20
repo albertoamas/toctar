@@ -99,7 +99,7 @@ test("cancelar pide motivo, deja los pagos, libera el espacio y la consulta pasa
   await page.getByRole("button", { name: "Más" }).click();
   await page.getByRole("menuitem", { name: "Cancelar reserva" }).click();
   const form = page.getByRole("form", { name: "Cancelar reserva" });
-  await expect(form.getByText("El adelanto no se devuelve: 150 Bs quedan como ingreso.")).toBeVisible();
+  await expect(form.getByText("El adelanto de 150 Bs no se devuelve: queda como ingreso.")).toBeVisible();
   await form.getByRole("button", { name: "Cancelar reserva" }).click();
   await expect(form.getByText("Escribe el motivo.")).toBeVisible();
   await expect(form.getByLabel("Motivo")).toBeFocused();

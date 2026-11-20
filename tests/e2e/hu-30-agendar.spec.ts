@@ -122,7 +122,7 @@ test("desde la cotización: la versión y la cotización quedan aceptadas, las l
   const datos = page.getByRole("group", { name: "Datos de la reserva" });
   await expect(datos.getByRole("link", { name: /^Ver ficha del cliente: / })).toHaveAttribute("href", /^\/panel\/clientes\/\d+\?volver=/);
   await expect(datos.getByRole("link", { name: /^Ver la cotización \d{4}-\d{4}/ })).toHaveAttribute("href", new RegExp(`^/panel/cotizaciones/${consultaId}\\?volver=`));
-  await expect(datos).toContainText(/Reservada por .+ el /);
+  await expect(datos).toContainText(/Reservada el .+ por /);
 
   const [r] = await consultar<{ trabajo: number; descuento: string; cot: string; con: string; lineas: number; adelanto: string; metodo: string; privado: boolean }>(
     `select t.id as trabajo, t.descuento, c.estado as cot, q.estado as con,
