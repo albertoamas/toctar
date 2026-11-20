@@ -114,7 +114,12 @@ export function entradaReserva(datos: FormData) {
       nota: texto("nota"),
     },
     fechas: { fechaInicio: texto("fechaInicio"), fechaFin: texto("fechaFin") },
-    adelanto: datos.get("sinAdelanto") === "on" ? { sinAdelanto: true as const } : { sinAdelanto: false as const, monto: texto("adelanto"), metodo: texto("metodo") },
+    // "¿Dejó adelanto?" (20/11): "no" (o el "Sin adelanto" de antes) no registra pago
+    dejoAdelanto: texto("dejoAdelanto"),
+    adelanto:
+      datos.get("sinAdelanto") === "on" || texto("dejoAdelanto") === "no"
+        ? { sinAdelanto: true as const }
+        : { sinAdelanto: false as const, monto: texto("adelanto"), metodo: texto("metodo") },
   };
 }
 

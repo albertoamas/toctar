@@ -23,10 +23,10 @@ import { LineasServicio, type Linea } from "@/modulos/cotizaciones/componentes/l
 import { useEnvioConComprobante } from "@/modulos/pagos/componentes/campo-comprobante";
 import { agendarReserva } from "../acciones";
 import type { EspacioDisponible } from "../consultas/espacios";
-import { erroresServicios, PASO_FECHA, PASO_SERVICIOS, pasoDeCampoReserva, pasosNuevaReserva } from "../pasos-reserva";
-import { fechaEntregaSugerida } from "../reglas";
+import { erroresFecha, erroresServicios, PASO_ADELANTO, PASO_FECHA, PASO_SERVICIOS, pasoDeCampoReserva, pasosNuevaReserva } from "../pasos-reserva";
+import { fechaEntregaSugerida, textoDia } from "../reglas";
 import { espacioVigente, useEspaciosLibres } from "./espacios-libres";
-import { SeccionAdelanto } from "./seccion-adelanto";
+import { SeccionAdelanto, type DejoAdelanto } from "./seccion-adelanto";
 import { SeccionFechasReserva } from "./seccion-fechas-reserva";
 import { ConResumen, FilaResumen } from "@/componentes/panel/con-resumen";
 import { CabeceraTarjeta } from "@/componentes/panel/cabecera-seccion";
@@ -39,7 +39,10 @@ import { CabeceraTarjeta } from "@/componentes/panel/cabecera-seccion";
 // Pedido 41 (etapas/P41-reserva-en-pasos.md): la reserva sin cotización son dos pasos de un mismo formulario, Servicios
 // y Fecha y adelanto, con el indicador de los cuatro pasos y lo ya elegido arriba. Como en Nueva cotización, el paso va
 // en la dirección (#servicios, #fecha), así el botón Atrás del celular vuelve al anterior, y un error de la acción
-// vuelve al paso que lo tiene. Desde una cotización hay un solo paso: la fecha.
+// vuelve al paso que lo tiene. Desde una cotización empieza en la fecha.
+// Recorrido visual del 20/11 (a pedido del dueño): el adelanto, en su propio paso después de la fecha (#adelanto), para
+// quien ve pagos. La fecha llega vacía salvo desde un día libre de la Agenda, y el adelanto pregunta "¿Dejó adelanto?"
+// sin respuesta elegida: "Reservar" va solo en el último paso. El indicador de pasos va aquí, en los dos caminos.
 
 type Origen =
   | { tipo: "cotizacion"; cotizacionId: number; duraciones: number[]; /** Para la barra de abajo; null sin permiso de ver montos. */ total: string | null }
@@ -74,12 +77,19 @@ type Props = {
   atras?: Route;
 };
 
+/** "miércoles 30 de diciembre": el día en medio de una frase. */
+const minuscula = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice(1);
+
 /** El paso en la dirección: el botón Atrás del celular vuelve al anterior sin salir de la pantalla. */
-const ANCLA: Record<number, string> = { [PASO_SERVICIOS]: "servicios", [PASO_FECHA]: "fecha" };
+const ANCLA: Record<number, string> = { [PASO_SERVICIOS]: "servicios", [PASO_FECHA]: "fecha", [PASO_ADELANTO]: "adelanto" };
 
 export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, hoy, fechaInicial, espacioInicial, espaciosIniciales, arriba, cotizaciones, atras }: Props) {
   const directa = origen.tipo === "directa";
   const inicial = origen.tipo === "directa" ? origen.pasoInicial : PASO_FECHA;
+  // Con el adelanto (quien ve pagos), el último paso es el suyo; si no, la fecha
+  const ultimo = conPagos ? PASO_ADELANTO : PASO_FECHA;
+  // Hay pasos que cambiar (y historial que escuchar) en la directa o si se sigue al adelanto
+  const conPasos = directa || conPagos;
   const [paso, setPaso] = useState<number>(inicial);
   // El paso a la vista, para los que escuchan el historial (sin esperar al próximo dibujo)
   const pasoActual = useRef<number>(inicial);
@@ -115,6 +125,15 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
    * empezó en la fecha (un mantenimiento), los servicios son una entrada nueva.
    */
   function volverAServicios() {
+    if (pasoActual.current === PASO_ADELANTO) {
+      // Del adelanto, dos pasos atrás: la fecha y los servicios
+      if (inicial === PASO_SERVICIOS) window.history.go(-2);
+      else {
+        window.history.pushState(window.history.state, "", `#${ANCLA[PASO_SERVICIOS]}`);
+        mostrar(PASO_SERVICIOS);
+      }
+      return;
+    }
     if (inicial === PASO_SERVICIOS) window.history.back();
     else {
       window.history.pushState(window.history.state, "", `#${ANCLA[PASO_SERVICIOS]}`);
@@ -122,14 +141,23 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
     }
   }
 
+  /** Del adelanto a la fecha: siempre se llegó al adelanto desde la fecha, así que es la entrada anterior del historial. */
+  function volverAFecha() {
+    window.history.back();
+  }
+
   useEffect(() => {
     alTerminar.current = (r) => {
       const errores = Object.keys(r.errores ?? {});
       if (errores.length === 0) return;
       foco.esperar(r);
-      if (directa && pasoActual.current === PASO_FECHA && errores.some((c) => pasoDeCampoReserva(c) === PASO_SERVICIOS)) {
+      // Al paso que tiene el error, el más temprano: los servicios, si no la fecha
+      if (directa && pasoActual.current > PASO_SERVICIOS && errores.some((c) => pasoDeCampoReserva(c) === PASO_SERVICIOS)) {
         errorAlLlegar.current = true;
         volverAServicios();
+      } else if (pasoActual.current === PASO_ADELANTO && errores.some((c) => pasoDeCampoReserva(c) === PASO_FECHA)) {
+        errorAlLlegar.current = true;
+        volverAFecha();
       } else foco.pedir(true);
     };
   });
@@ -153,8 +181,10 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
   const [espacioElegido, setEspacioId] = useState(espacioInicial ? String(espacioInicial) : "");
   // y, sin uno elegido, el único libre (espacioVigente)
   const espacioId = espacioVigente(libres, espacioElegido);
+  const nombreEspacio = libres.find((x) => String(x.id) === espacioId)?.nombre ?? null;
   const [nota, setNota] = useState("");
-  const [sinAdelanto, setSinAdelanto] = useState(false);
+  // "¿Dejó adelanto?" sin respuesta elegida (20/11): un pago no se registra por un toque apurado
+  const [dejo, setDejo] = useState<DejoAdelanto | "">("");
   const [adelanto, setAdelanto] = useState(mostrarMonto(adelantoSugerido));
   const [metodo, setMetodo] = useState<MetodoPago | "">("");
   // El comprobante del adelanto va achicado; con "Sin adelanto" no va
@@ -179,7 +209,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
   // no). Sin nada que mostrar, no hay columna
   const nombreLinea = (l: Linea, i: number) => (origen.tipo === "directa" ? (origen.opciones.find((o) => o.varianteId === l.varianteId)?.descripcion ?? `Servicio ${i + 1}`) : "");
   const conTotal = total !== null && total !== "0.00";
-  const montoAdelanto = conPagos && !sinAdelanto ? leerMonto(adelanto) : null;
+  const montoAdelanto = conPagos && dejo === "si" ? leerMonto(adelanto) : null;
   const centavos = (monto: string) => Math.round(Number(monto) * 100);
   const faltaAlEntregar = conTotal && montoAdelanto ? ((centavos(total) - centavos(montoAdelanto)) / 100).toFixed(2) : null;
   const resumenFecha =
@@ -200,7 +230,17 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
   // a la fecha revisa los servicios
   usePasosEnHistorial(() => {
     const ancla = window.location.hash.slice(1);
-    const destino = ancla === ANCLA[PASO_FECHA] ? PASO_FECHA : ancla === ANCLA[PASO_SERVICIOS] ? PASO_SERVICIOS : inicial;
+    const destino = ancla === ANCLA[PASO_ADELANTO] ? PASO_ADELANTO : ancla === ANCLA[PASO_FECHA] ? PASO_FECHA : ancla === ANCLA[PASO_SERVICIOS] ? PASO_SERVICIOS : inicial;
+    // Adelante al adelanto revisa la fecha
+    if (destino === PASO_ADELANTO && pasoActual.current === PASO_FECHA) {
+      const errores = erroresFecha({ fechaInicio, fechaFin, espacioId });
+      if (Object.keys(errores).length > 0) {
+        setLocales({ en: estado, errores });
+        errorAlLlegar.current = true;
+        window.history.back();
+        return;
+      }
+    }
     if (ancla === ANCLA[PASO_FECHA] && pasoActual.current === PASO_SERVICIOS && formulario.current) {
       const errores = erroresServicios(String(new FormData(formulario.current).get("lineas") ?? "[]"));
       if (Object.keys(errores).length > 0) {
@@ -211,9 +251,21 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
       }
     }
     mostrar(destino);
-  }, directa);
+  }, conPasos);
 
   function siguiente() {
+    if (paso === PASO_FECHA) {
+      // De la fecha al adelanto: con las fechas y el espacio elegidos
+      const errores = erroresFecha({ fechaInicio, fechaFin, espacioId });
+      setLocales({ en: estado, errores });
+      if (Object.keys(errores).length > 0) {
+        foco.pedir(true);
+        return;
+      }
+      window.history.pushState(window.history.state, "", `#${ANCLA[PASO_ADELANTO]}`);
+      mostrar(PASO_ADELANTO);
+      return;
+    }
     const errores = erroresServicios(String(new FormData(formulario.current!).get("lineas") ?? "[]"));
     setLocales({ en: estado, errores });
     if (Object.keys(errores).length > 0) {
@@ -258,17 +310,24 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
     <form
       ref={formulario}
       action={accion}
-      onSubmit={(ev) => enviar(ev, conPagos && !sinAdelanto)}
+      onSubmit={(ev) => {
+        // Reservar solo desde el último paso (un Enter en la fecha sigue al adelanto)
+        if (paso !== ultimo) {
+          ev.preventDefault();
+          return;
+        }
+        enviar(ev, conPagos && dejo === "si");
+      }}
       onKeyDown={(ev) => {
-        // Enter en un campo de los servicios sigue a la fecha, no reserva
-        if (ev.key !== "Enter" || paso !== PASO_SERVICIOS || !(ev.target instanceof HTMLInputElement)) return;
+        // Enter en un campo de los servicios o de la fecha (sin ser el último paso) sigue al paso siguiente, no reserva
+        if (ev.key !== "Enter" || paso === ultimo || !(ev.target instanceof HTMLInputElement)) return;
         ev.preventDefault();
         siguiente();
       }}
       className="flex flex-col gap-6"
       noValidate
     >
-      {directa && <PasosFlujo pasos={pasosNuevaReserva(conPagos)} actual={paso} etiqueta="Pasos de la reserva" />}
+      <PasosFlujo pasos={pasosNuevaReserva(conPagos)} actual={paso} etiqueta="Pasos de la reserva" />
       {arriba}
       <AvisoAlSalir formulario={formulario} estado={estado} ademas={!!comprobante} />
       <input type="hidden" name="origen" value={origen.tipo} />
@@ -351,7 +410,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
       )}
 
       <div data-paso={PASO_FECHA} hidden={paso !== PASO_FECHA} className="flex flex-col gap-6">
-        <ConResumen etiqueta="Resumen de la reserva" resumen={resumenFecha}>
+        <ConResumen etiqueta="Resumen de la reserva" resumen={paso === PASO_FECHA ? resumenFecha : null}>
           <SeccionFechasReserva
             hoy={hoy}
             fechaInicio={fechaInicio}
@@ -364,10 +423,22 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
             errores={e}
           />
 
-          {conPagos && (
+        </ConResumen>
+      </div>
+
+      {conPagos && (
+        <div data-paso={PASO_ADELANTO} hidden={paso !== PASO_ADELANTO} className="flex flex-col gap-6">
+          <ConResumen etiqueta="Resumen de la reserva" resumen={paso === PASO_ADELANTO ? resumenFecha : null}>
+            {/* Lo elegido en la fecha, con "Cambiar" para volver a ese paso */}
+            <ResumenPaso id="resumen-fecha" titulo="Fecha" alCambiar={volverAFecha}>
+              <p>
+                {fechaInicio && fechaFin && (fechaInicio === fechaFin ? `El ${minuscula(textoDia(fechaInicio))}` : `Del ${minuscula(textoDia(fechaInicio))} al ${minuscula(textoDia(fechaFin))}`)}
+                {nombreEspacio && `, ${nombreEspacio}`}
+              </p>
+            </ResumenPaso>
             <SeccionAdelanto
-              sinAdelanto={sinAdelanto}
-              alCambiarSinAdelanto={setSinAdelanto}
+              dejo={dejo}
+              alCambiarDejo={setDejo}
               adelanto={adelanto}
               alCambiarAdelanto={setAdelanto}
               metodo={metodo}
@@ -376,17 +447,17 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
               errores={e}
               errorFoto={errorFoto}
             />
-          )}
-        </ConResumen>
-      </div>
+          </ConResumen>
+        </div>
+      )}
 
-      {(paso === PASO_FECHA || conSiguiente) && (
+      {(paso >= PASO_FECHA || conSiguiente) && (
         <PieFormulario>
           <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:justify-start">
             {/* El total de la reserva directa, a la vista mientras se cargan los precios */}
             {total !== null && total !== "0.00" && (
               // En la fecha, con el resumen al costado (computadora), el total ya está ahí
-              <p className={`flex items-baseline gap-2 ${paso === PASO_FECHA && resumenFecha ? "@4xl:hidden" : ""}`}>
+              <p className={`flex items-baseline gap-2 ${paso >= PASO_FECHA && resumenFecha ? "@4xl:hidden" : ""}`}>
                 <span className="text-tinta-suave">Total</span>
                 <span className="text-lg font-bold tabular-nums">{mostrarMonto(total)} Bs</span>
               </p>
@@ -396,12 +467,17 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
                   empezó en ellos, vuelve atrás en el historial; desde una cotización elegida en Servicios, a ese paso
                   (atras). Un mantenimiento que ya empieza en la fecha no lo lleva: su Atrás agregaba pasos falsos al
                   historial del celular; vuelve con "Cambiar" en Servicios */}
+              {paso === PASO_ADELANTO && (
+                <Button type="button" variant="outline" disabled={enviando} onClick={volverAFecha}>
+                  Atrás
+                </Button>
+              )}
               {directa && paso === PASO_FECHA && inicial === PASO_SERVICIOS && (
                 <Button type="button" variant="outline" disabled={enviando} onClick={volverAServicios}>
                   Atrás
                 </Button>
               )}
-              {!directa && atras && (
+              {!directa && atras && paso === PASO_FECHA && (
                 // Mientras se reserva no se sale: la reserva se crearía sin que la persona lo vea
                 <Link
                   href={atras}
@@ -422,8 +498,18 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
                     siguiente();
                   }}
                 >
-                  {/* La reserva sin cotización la arma quien ve pagos: el último paso siempre lleva el adelanto */}
-                  Siguiente: fecha y adelanto
+                  Siguiente: fecha
+                </Button>
+              ) : paso !== ultimo ? (
+                <Button
+                  key="siguiente-adelanto"
+                  type="button"
+                  onClick={(ev) => {
+                    ev.preventDefault();
+                    siguiente();
+                  }}
+                >
+                  Siguiente: adelanto
                 </Button>
               ) : (
                 <Button key="reservar" type="submit" disabled={enviando || buscando || preparando}>

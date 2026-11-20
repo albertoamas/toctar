@@ -60,7 +60,9 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   const hoy = fechaEnBolivia();
   // El día pedido (desde el tablero) si no es pasado; si no, hoy (18/11: antes, mañana; el dueño reserva y recibe muchas
   // veces en el día, y quedaba con la fecha de mañana sin darse cuenta)
-  const fechaInicial = fechaExiste(texto("fecha")) && texto("fecha") >= hoy ? texto("fecha") : hoy;
+  // Vacía salvo desde un día libre de la Agenda (20/11): con hoy puesto, un "Reservar" apurado reservaba un día que no
+  // se eligió
+  const fechaInicial = fechaExiste(texto("fecha")) && texto("fecha") >= hoy ? texto("fecha") : "";
   const pasos = pasosNuevaReserva(conPagos);
   const indicador = (actual: number) => <PasosFlujo pasos={pasos} actual={actual} etiqueta="Pasos de la reserva" />;
   // Cada paso es una dirección: se conservan el día y el espacio que llegaron del tablero

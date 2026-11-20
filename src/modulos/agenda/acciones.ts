@@ -56,10 +56,13 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
   const entrada = entradaReserva(datos);
   const r = esquemaReserva.safeParse(entrada.reserva);
   const f = esquemaFechas.safeParse(entrada.fechas);
-  // Sin "Pagos" no se registra adelanto: la reserva queda "sin adelanto" y lo carga quien cobra
-  const a = conPagos ? esquemaAdelanto.safeParse(entrada.adelanto) : ({ success: true, data: { sinAdelanto: true } } as const);
+  // Sin "Pagos" no se registra adelanto: la reserva queda "sin adelanto" y lo carga quien cobra. Con "Pagos", la
+  // respuesta a "¿Dejó adelanto?" es obligatoria (20/11): un pago no se registra sin que se haya dicho que lo hubo
+  const sinRespuesta = conPagos && entrada.dejoAdelanto !== "si" && entrada.dejoAdelanto !== "no";
+  const a = conPagos && !sinRespuesta ? esquemaAdelanto.safeParse(entrada.adelanto) : ({ success: true, data: { sinAdelanto: true } } as const);
 
   const errores: Record<string, string> = {};
+  if (sinRespuesta) errores.dejoAdelanto = "Elige si dejó adelanto.";
   if (!r.success) Object.assign(errores, erroresDe(r.error));
   if (!f.success) Object.assign(errores, erroresDe(f.error));
   if (!a.success) {
@@ -67,7 +70,7 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
     if (deAdelanto.monto) errores.adelanto = deAdelanto.monto;
     if (deAdelanto.metodo) errores.metodo = deAdelanto.metodo;
   }
-  if (!r.success || !f.success || !a.success) {
+  if (!r.success || !f.success || !a.success || sinRespuesta) {
     if (errores.origen || errores.cotizacionId || errores.clienteId || errores.vehiculoId) return { mensaje: "No se pudo leer el pedido. Recarga la página." };
     return { errores };
   }

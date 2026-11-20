@@ -3,7 +3,6 @@ import { ResumenPaso } from "@/componentes/panel/resumen-paso";
 import { puedeVerModulo } from "@/lib/permisos";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { datosDeCotizacion, datosDirecta } from "@/modulos/agenda/consultas/reservar";
-import { PASO_FECHA } from "@/modulos/agenda/pasos-reserva";
 import { fechaEntregaSugerida } from "@/modulos/agenda/reglas";
 import { ClienteYVehiculo, Encabezado, Formulario, type Contexto } from "./partes";
 
@@ -15,7 +14,7 @@ import { ClienteYVehiculo, Encabezado, Formulario, type Contexto } from "./parte
  * reserva directa, es su último paso y se puede volver.
  */
 export async function ReservaDesdeCotizacion({ ctx, cotizacionId }: { ctx: Contexto; cotizacionId: number }) {
-  const { usuario, conPagos, volver, origen, hoy, fechaInicial, numero, indicador, direccion, clave } = ctx;
+  const { usuario, conPagos, volver, origen, hoy, fechaInicial, numero, direccion, clave } = ctx;
     const c = await datosDeCotizacion(cotizacionId);
     if (!c) {
       return (
@@ -53,9 +52,21 @@ export async function ReservaDesdeCotizacion({ ctx, cotizacionId }: { ctx: Conte
     return (
       <>
         <Encabezado volver={volver} />
-        {/* El mismo indicador que la directa y el mantenimiento (hallazgo 10): los pasos del trabajo se ven en la
-            cotización y en la reserva ya creada */}
-        {indicador(PASO_FECHA)}
+        {/* El indicador de pasos lo dibuja el formulario (20/11: sigue al paso del adelanto); arriba de él, el cliente, el
+            vehículo y los servicios de la cotización */}
+        <Formulario
+          key={clave}
+          volver={origen}
+          // El total, en la barra de abajo como en los otros caminos (hallazgo 10); solo a quien ve montos (RN-12)
+          origen={{ tipo: "cotizacion", cotizacionId: c.cotizacionId, duraciones, total: verMontos ? c.saldo.total : null }}
+          conPagos={conPagos}
+          hoy={hoy}
+          fechaInicial={fechaInicial}
+          fechaFin={fechaInicial ? fechaEntregaSugerida(fechaInicial, duraciones) : ""}
+          espacio={numero("espacio")}
+          atras={enLosPasos ? direccion({ cliente: c.cliente.id, vehiculo: c.vehiculo.id }) : undefined}
+          arriba={
+            <>
         <ClienteYVehiculo
           nombre={c.cliente.nombre}
           vehiculo={c.vehiculo}
@@ -86,17 +97,8 @@ export async function ReservaDesdeCotizacion({ ctx, cotizacionId }: { ctx: Conte
           {/* El total va en la barra de abajo, como en los otros caminos (hallazgo 10): no dos veces */}
           {!c.aceptada && <p className="text-sm text-tinta-suave">Al reservar, la cotización queda aceptada.</p>}
         </ResumenPaso>
-        <Formulario
-          key={clave}
-          volver={origen}
-          // El total, en la barra de abajo como en los otros caminos (hallazgo 10); solo a quien ve montos (RN-12)
-          origen={{ tipo: "cotizacion", cotizacionId: c.cotizacionId, duraciones, total: verMontos ? c.saldo.total : null }}
-          conPagos={conPagos}
-          hoy={hoy}
-          fechaInicial={fechaInicial}
-          fechaFin={fechaEntregaSugerida(fechaInicial, duraciones)}
-          espacio={numero("espacio")}
-          atras={enLosPasos ? direccion({ cliente: c.cliente.id, vehiculo: c.vehiculo.id }) : undefined}
+            </>
+          }
         />
       </>
     );

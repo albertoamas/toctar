@@ -66,7 +66,10 @@ export function useEspaciosLibres(
   const ayuda =
     completas && (buscando || espacios === null)
       ? "Buscando espacios libres…"
-      : !completas || !fechasValidas
+      : !fechaInicio
+        ? // Sin fecha todavía (la reserva llega vacía, 20/11): no es un error, falta elegirla
+          "Elige primero el día de ingreso."
+        : !completas || !fechasValidas
         ? (ayudaFechas ?? `Revisa las fechas: el ingreso desde hoy y hasta un año adelante; la entrega no antes del ingreso ni más de ${DIAS_MAXIMOS_TRABAJO} días después.`)
         : libres.length === 0
           ? "No hay espacio libre en esas fechas: elige otras."

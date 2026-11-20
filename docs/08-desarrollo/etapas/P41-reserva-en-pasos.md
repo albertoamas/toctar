@@ -101,4 +101,14 @@ En el celular, una reserva sin cotización se arma paso a paso sin bajar por una
 - **Con cotizaciones del vehículo**: "Reserva sin cotización" es un botón; al tocarlo, la lista "Sus cotizaciones" se va
   y queda solo el formulario de servicios, con "Usar una de sus cotizaciones" para volver (antes seguía arriba y
   confundía).
+- **La fecha y el adelanto, en pasos separados** (cinco pasos para quien ve pagos; cuatro para quien no): antes iban
+  juntos, con la fecha de hoy y el adelanto sugerido ya puestos, y un "Reservar" apurado registraba un día que no se
+  eligió o un adelanto que el cliente no dejó. Ahora:
+  - **Fecha**: vacía, salvo desde un día libre de la Agenda; "Siguiente: adelanto" pide el día de ingreso y el espacio
+    (`erroresFecha`, el mismo esquema que la acción).
+  - **Adelanto** (`#adelanto`): "¿Dejó adelanto?" con "Sí, dejó adelanto" y "No, sin adelanto", ninguna elegida; la
+    acción la exige ("Elige si dejó adelanto.", campo `dejoAdelanto`). Con "Sí", el monto (el sugerido), cómo pagó y el
+    comprobante. Arriba, la fecha elegida con "Cambiar".
+  - "Reservar" va solo en el último paso; un Enter en la fecha sigue al adelanto. Un error de la acción vuelve al paso que
+    lo tiene. Desde una cotización empieza en la fecha, con el mismo indicador (lo dibuja el formulario).
 

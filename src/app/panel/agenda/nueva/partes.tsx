@@ -94,7 +94,7 @@ export async function Formulario(props: {
   cotizaciones?: React.ReactNode;
   atras?: Route;
 }) {
-  const [parametros, espacios] = await Promise.all([obtenerParametros(), espaciosEnFechas(props.fechaInicial, props.fechaFin)]);
+  const [parametros, espacios] = await Promise.all([obtenerParametros(), props.fechaInicial ? espaciosEnFechas(props.fechaInicial, props.fechaFin) : []]);
   return (
     <FormularioReserva
       volver={props.volver}

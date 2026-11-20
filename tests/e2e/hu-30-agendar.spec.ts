@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PNG, conVolver } from "./apoyo";
+import { alAdelanto, consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PNG, conVolver, sinAdelantoEnReserva } from "./apoyo";
 
 // HU-30 Agendar reserva (flujo crítico 2). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §9.
 // Cada prueba usa sus propios días (lejos de hoy y distintos por proyecto) para no chocar con las demás en los
@@ -61,7 +61,7 @@ async function consultaCotizada(info: TestInfo, n: number): Promise<{ consultaId
 const espacio = (page: Page) => page.getByLabel("Espacio", { exact: true });
 /** El paso a la vista de Nueva reserva (pedido 41): el marcado en el indicador. */
 const pasoActual = (page: Page) => page.getByRole("navigation", { name: "Pasos de la reserva" }).locator('[aria-current="step"]');
-const siguiente = (page: Page) => page.getByRole("button", { name: "Siguiente: fecha y adelanto" });
+const siguiente = (page: Page) => page.getByRole("button", { name: "Siguiente: fecha" });
 
 test("desde la cotización: la versión y la cotización quedan aceptadas, las líneas copiadas y el adelanto registrado", async ({ page }, info) => {
   const { consultaId, cotizacionId } = await consultaCotizada(info, 1);
@@ -79,24 +79,30 @@ test("desde la cotización: la versión y la cotización quedan aceptadas, las l
   // de dónde vienen; el mismo indicador de la reserva (hallazgo 10)
   const cotizada = page.getByRole("region", { name: "Servicios" });
   await expect(cotizada).toContainText(/De la cotización \d{4}-\d{4}/);
-  await expect(page.getByRole("navigation", { name: "Pasos de la reserva" }).locator('[aria-current="step"]')).toHaveText("Fecha y adelanto");
+  await expect(page.getByRole("navigation", { name: "Pasos de la reserva" }).locator('[aria-current="step"]')).toHaveText("Fecha");
   // El total (con el descuento de la cotización), en la barra de abajo como en los otros caminos, y no también en la tarjeta
   await expect(page.getByText("800 Bs", { exact: true }).filter({ visible: true }).first()).toBeVisible();
   await expect(cotizada.getByText("Total", { exact: true })).toHaveCount(0);
 
-  // Sin elegir espacio ni método: los errores
-  await page.getByRole("button", { name: "Reservar" }).click();
+  // Sin elegir espacio no se pasa al adelanto (20/11: la fecha y el adelanto, en pasos separados)
+  await page.getByRole("button", { name: "Siguiente: adelanto" }).click();
   await expect(page.getByText("Elige el espacio.")).toBeVisible();
-  await expect(page.getByText("Elige cómo pagó.")).toBeVisible();
-
   await espacio(page).selectOption({ index: 1 });
-  await page.getByRole("radio", { name: "QR" }).check();
   // La nota va plegada (pulido 10.2): al abrirla, el foco pasa a ella. Sin hora de llegada (19/11, pedido del dueño)
   await expect(page.getByLabel("Nota")).toBeHidden();
   await page.getByText("Agregar nota").click();
   await expect(page.getByLabel("Nota")).toBeFocused();
   await page.getByLabel("Nota").fill("Viene a las 9");
   await expect(page.getByLabel("Hora aproximada")).toHaveCount(0);
+  // El adelanto, en su paso: "¿Dejó adelanto?" sin respuesta elegida; sin responder ni elegir cómo pagó, no reserva
+  await alAdelanto(page);
+  await expect(page.getByRole("radio", { checked: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Reservar" }).click();
+  await expect(page.getByText("Elige si dejó adelanto.")).toBeVisible();
+  await page.getByRole("radio", { name: "Sí, dejó adelanto" }).click();
+  await page.getByRole("button", { name: "Reservar" }).click();
+  await expect(page.getByText("Elige cómo pagó.")).toBeVisible();
+  await page.getByRole("radio", { name: "QR" }).check();
   // El adelanto con la foto del comprobante (HU-32): queda privada y se ve en la reserva
   await page.locator("#comprobante").setInputFiles({ name: "comprobante.png", mimeType: "image/png", buffer: PNG });
   await expect(page.getByRole("img", { name: "Foto del comprobante" })).toBeVisible();
@@ -184,7 +190,7 @@ test("solo se ofrecen los espacios libres; si dos personas agendan el mismo a la
     // Con uno solo libre, ya va elegido (pulido final del 09/11)
     await expect(espacio(p)).toHaveValue(String(espacios.at(-1)!.id));
     await espacio(p).selectOption({ label: espacios.at(-1)!.nombre });
-    await p.getByRole("checkbox", { name: "Sin adelanto" }).check();
+    await sinAdelantoEnReserva(p);
   };
   await abrir(page, a.cotizacionId);
   await abrir(otra.page, b.cotizacionId);
@@ -250,8 +256,10 @@ test("reserva directa: cliente y vehículo registrados, servicio del catálogo c
   await expect(page.getByLabel("Precio del servicio 1")).toHaveValue("900");
   // "Siguiente" no reserva: con el botón reusado, se volvía "Reservar" en el mismo toque (como en la cotización)
   await siguiente(page).click();
-  await expect(pasoActual(page)).toHaveText("Fecha y adelanto");
+  await expect(pasoActual(page)).toHaveText("Fecha");
   await expect(page).toHaveURL(/#fecha$/);
+  // La fecha llega vacía (20/11): no se reserva un día que no se eligió
+  await expect(page.getByLabel("Ingresa el")).toHaveValue("");
   // Los servicios elegidos: arriba en el celular ("Servicios"); al costado en la computadora ("Resumen", C7 §5.2)
   await expect(page.getByRole("region", { name: /^(Servicios|Resumen)$/ }).locator("visible=true").first()).toContainText("900 Bs");
   const [{ reservas }] = await consultar<{ reservas: number }>("select count(*)::int as reservas from trabajo where cliente_id = $1", [clienteId]);
@@ -261,15 +269,16 @@ test("reserva directa: cliente y vehículo registrados, servicio del catálogo c
   await expect(pasoActual(page)).toHaveText("Servicios");
   await expect(page.getByLabel("Precio del servicio 1")).toHaveValue("900");
   await page.goForward();
-  await expect(pasoActual(page)).toHaveText("Fecha y adelanto");
+  await expect(pasoActual(page)).toHaveText("Fecha");
   await page.getByRole("button", { name: "Atrás" }).click();
   await expect(pasoActual(page)).toHaveText("Servicios");
   await siguiente(page).click();
-  await expect(pasoActual(page)).toHaveText("Fecha y adelanto");
+  await expect(pasoActual(page)).toHaveText("Fecha");
   await page.getByLabel("Ingresa el").fill(dia);
   await expect(espacio(page)).toBeEnabled();
   await espacio(page).selectOption({ index: 1 });
-  await page.getByRole("checkbox", { name: "Sin adelanto" }).check();
+  await sinAdelantoEnReserva(page);
+  await expect(pasoActual(page)).toHaveText("Adelanto");
   await page.getByRole("button", { name: "Reservar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1(?:[?&]volver=[^&#]*)?$/);
   await expect(page.getByRole("heading", { level: 1, name: `DI30${s}6` })).toBeVisible();
@@ -288,7 +297,8 @@ test("el encargado con Agenda sin Pagos agenda sin montos ni adelanto; sin Agend
   await page.getByRole("button", { name: "Aceptó", exact: true }).click();
   await page.getByRole("link", { name: "Reservar en Agenda" }).click();
   await expect(page.getByText(/Total:/)).toHaveCount(0);
-  await expect(page.getByRole("checkbox", { name: "Sin adelanto" })).toHaveCount(0);
+  // Sin Pagos, sin paso de adelanto: se reserva desde la fecha
+  await expect(page.getByRole("button", { name: "Siguiente: adelanto" })).toHaveCount(0);
   await page.getByLabel("Ingresa el").fill(dia);
   await expect(espacio(page)).toBeEnabled();
   await espacio(page).selectOption({ index: 1 });

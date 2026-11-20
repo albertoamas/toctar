@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, conVolver, enPorReservar, verPorReservar } from "./apoyo";
+import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, conVolver, enPorReservar, verPorReservar, sinAdelantoEnReserva } from "./apoyo";
 
 // Pedido 31: un trabajo, de la cotización a la entrega (etapas/P31-flujo-de-un-trabajo.md §9). Cotizaciones cotiza y la
 // Agenda reserva: "Aceptó", "Por reservar", la Nueva reserva que ofrece las cotizaciones del cliente y los pasos.
@@ -64,8 +64,8 @@ async function reservar(page: Page, dia: string) {
   const espacio = page.getByLabel("Espacio", { exact: true });
   await expect(espacio).toBeEnabled();
   await espacio.selectOption({ index: 1 });
-  const sinAdelanto = page.getByRole("checkbox", { name: "Sin adelanto" });
-  if (await sinAdelanto.count()) await sinAdelanto.check();
+  // Con Pagos, el adelanto va en su paso (20/11): "No, sin adelanto"
+  if (await page.getByRole("button", { name: "Siguiente: adelanto" }).count()) await sinAdelantoEnReserva(page);
   await page.getByRole("button", { name: "Reservar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1(?:[?&]volver=[^&#]*)?$/);
 }
@@ -180,14 +180,14 @@ test("Nueva reserva ofrece las cotizaciones del vehículo: los precios llegan si
   // Armando una sin cotización, la lista de cotizaciones se va (20/11)
   await expect(suyas).toBeHidden();
   await page.getByRole("button", { name: "Quitar servicio 1" }).click();
-  await page.getByRole("button", { name: "Siguiente: fecha y adelanto" }).click();
+  await page.getByRole("button", { name: "Siguiente: fecha" }).click();
   await expect(page.getByText("Agrega al menos un servicio.")).toBeVisible();
   // "Usar una de sus cotizaciones" vuelve a la lista
   await page.getByRole("button", { name: "Usar una de sus cotizaciones" }).click();
   await suyas.getByRole("link").click();
   // Va al último paso de la reserva, con "Cambiar servicios" para volver a elegir (pedido 41)
   await expect(page).toHaveURL(new RegExp(`cotizacion=${c.cotizacionId}&cliente=${c.clienteId}&vehiculo=${c.vehiculoId}(?:&volver=[^&#]*)?$`));
-  await expect(page.getByRole("navigation", { name: "Pasos de la reserva" }).locator('[aria-current="step"]')).toHaveText("Fecha y adelanto");
+  await expect(page.getByRole("navigation", { name: "Pasos de la reserva" }).locator('[aria-current="step"]')).toHaveText("Fecha");
   await expect(page.getByRole("link", { name: "Cambiar servicios" })).toHaveAttribute("href", conVolver(`/panel/agenda/nueva?cliente=${c.clienteId}&vehiculo=${c.vehiculoId}`));
   const servicios = page.getByRole("region", { name: "Servicios" });
   await expect(servicios).toContainText(`De la cotización ${c.numero}`);

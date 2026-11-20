@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { abrirWhatsApp, consultar, crearClienteEnBase, crearUsuario, firmarEnRecuadro, ingresar, ingresarComoDueno, PERFIL_TALLER, PNG, revisarChecklistEnBase } from "./apoyo";
+import { abrirWhatsApp, consultar, crearClienteEnBase, crearUsuario, firmarEnRecuadro, ingresar, ingresarComoDueno, PERFIL_TALLER, PNG, revisarChecklistEnBase, sinAdelantoEnReserva } from "./apoyo";
 
 // Flujos críticos 3, 4 y 5 de punta a punta (C4): reserva → recibir → un chico del taller la trabaja → lista → aviso por
 // WhatsApp → cobro del saldo → entrega → recordatorio de mantenimiento → agendarlo. Especificación:
@@ -98,13 +98,13 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
   // precio lo pone el dueño
   await expect(page.getByLabel("Servicio 1", { exact: true }).locator("option:checked")).toHaveText("Mantenimiento del nano cerámico");
   await page.getByLabel("Precio del servicio 1").fill("350");
-  await page.getByRole("button", { name: "Siguiente: fecha y adelanto" }).click();
+  await page.getByRole("button", { name: "Siguiente: fecha" }).click();
   const [{ d }] = await consultar<{ d: string }>("select to_char($1::date + $2::int, 'YYYY-MM-DD') as d", [hoy(), info.project.name === "celular" ? 360 : 363]);
   await page.getByLabel("Ingresa el").fill(d);
   const espacioReserva = page.getByLabel("Espacio", { exact: true });
   await expect(espacioReserva).toBeEnabled();
   await espacioReserva.selectOption({ index: 1 });
-  await page.getByRole("checkbox", { name: "Sin adelanto" }).check();
+  await sinAdelantoEnReserva(page);
   await page.getByRole("button", { name: "Reservar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1(?:[?&]volver=[^&#]*)?$/);
   const reservaId = Number(new URL(page.url()).pathname.split("/").at(-1));

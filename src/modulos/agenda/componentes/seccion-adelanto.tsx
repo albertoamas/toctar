@@ -1,17 +1,20 @@
 import { Campo } from "@/componentes/panel/campo";
 import { CampoMonto } from "@/componentes/panel/campo-monto";
+import { OpcionesEnTarjetas } from "@/componentes/panel/opciones-en-tarjetas";
 import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
-import { Checkbox } from "@/componentes/ui/checkbox";
 import type { MetodoPago } from "@/db/esquema/trabajos";
 import { MetodoYComprobante } from "@/modulos/pagos/componentes/elegir-metodo";
 
-// "Adelanto" de una reserva (RN-04): solo para quien ve pagos. "Sin adelanto", o el monto, cómo se pagó y, con QR o
-// transferencia, el comprobante (como "Registrar pago"). El estado es del formulario (FormularioReserva): aquí solo se
-// muestra y se avisa cada cambio (17/11, al partir el formulario).
+// "Adelanto" de una reserva (RN-04): solo para quien ve pagos, en su propio paso (20/11). Primero, "¿Dejó adelanto?",
+// sin respuesta elegida: antes venía "con adelanto" y el sugerido puesto, y un "Reservar" apurado registraba un pago que
+// el cliente no hizo. Con "Sí", el monto (el sugerido), cómo pagó y, con QR o transferencia, el comprobante (como
+// "Registrar pago"). El estado es del formulario (FormularioReserva): aquí solo se muestra y se avisa cada cambio.
+
+export type DejoAdelanto = "si" | "no";
 
 type Props = {
-  sinAdelanto: boolean;
-  alCambiarSinAdelanto: (sin: boolean) => void;
+  dejo: DejoAdelanto | "";
+  alCambiarDejo: (dejo: DejoAdelanto) => void;
   adelanto: string;
   alCambiarAdelanto: (valor: string) => void;
   metodo: MetodoPago | "";
@@ -22,23 +25,28 @@ type Props = {
   errorFoto: string | null | undefined;
 };
 
-export function SeccionAdelanto({ sinAdelanto, alCambiarSinAdelanto, adelanto, alCambiarAdelanto, metodo, alCambiarMetodo, alCambiarComprobante, errores: e, errorFoto }: Props) {
+export function SeccionAdelanto({ dejo, alCambiarDejo, adelanto, alCambiarAdelanto, metodo, alCambiarMetodo, alCambiarComprobante, errores: e, errorFoto }: Props) {
   return (
     <SeccionFormulario titulo="Adelanto">
-      {sinAdelanto && <input type="hidden" name="sinAdelanto" value="on" />}
-      <label htmlFor="sinAdelanto" className="flex min-h-11 cursor-pointer items-center gap-3">
-        <Checkbox
-          id="sinAdelanto"
-          checked={sinAdelanto}
-          onCheckedChange={(si) => {
-            alCambiarSinAdelanto(si === true);
-            // El campo de la foto se va y vuelve vacío: la elegida no queda escondida para subirse igual
-            if (si === true) alCambiarComprobante(null);
-          }}
-        />
-        <span className="font-medium">Sin adelanto</span>
-      </label>
-      {!sinAdelanto && (
+      {dejo === "no" && <input type="hidden" name="sinAdelanto" value="on" />}
+      <OpcionesEnTarjetas<DejoAdelanto>
+        id="dejoAdelanto"
+        titulo="¿Dejó adelanto?"
+        nombre="dejoAdelanto"
+        valor={dejo}
+        cambiar={(nuevo) => {
+          alCambiarDejo(nuevo);
+          // El campo de la foto se va y vuelve vacío: la elegida no queda escondida para subirse igual
+          if (nuevo === "no") alCambiarComprobante(null);
+        }}
+        opciones={[
+          { valor: "si", texto: "Sí, dejó adelanto" },
+          { valor: "no", texto: "No, sin adelanto" },
+        ]}
+        error={e.dejoAdelanto}
+        className="grid-cols-2"
+      />
+      {dejo === "si" && (
         <>
           <Campo id="adelanto" etiqueta="Monto" error={e.adelanto}>
             <CampoMonto id="adelanto" name="adelanto" value={adelanto} onChange={(ev) => alCambiarAdelanto(ev.target.value)} aria-invalid={!!e.adelanto} />
