@@ -7,6 +7,11 @@ import { db } from "@/db";
 import { auditoria, cliente, consulta, cotizacion, pago, recordatorioMantenimiento, servicio, trabajo, trabajoLinea, variante, vehiculo } from "@/db/esquema";
 import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { erroresDe, exclusionViolada, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
+import type { z } from "zod";
+import { clienteConTelefono } from "@/modulos/clientes/consultas";
+import { esquemaCliente, esquemaVehiculo } from "@/modulos/clientes/esquemas";
+import { conMarcaDeLaLista, type EstadoCliente, type Existentes, revisarVehiculo } from "@/modulos/clientes/servidor";
+import { camposConPrefijo, erroresConPrefijo, leerValores, PREFIJO_VEHICULO } from "@/modulos/clientes/valores";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { sucursalPrincipal } from "@/modulos/configuracion/consultas";
@@ -50,16 +55,38 @@ type Linea = { varianteId: number; descripcion: string; precio: string };
  * consulta a "confirmado") o directa, con servicios del catálogo. Con el adelanto, si lo hay (RN-04). La directa que
  * viene de un mantenimiento (HU-38) deja el recordatorio "agendado" con la reserva. Todo o nada.
  */
-export async function agendarReserva(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
+export async function agendarReserva(_previo: EstadoCliente, datos: FormData): Promise<EstadoCliente> {
   const usuario = await exigirModulo("agenda");
   const conPagos = puedeVerModulo(usuario, "pagos");
   const entrada = entradaReserva(datos);
   const r = esquemaReserva.safeParse(entrada.reserva);
   const f = esquemaFechas.safeParse(entrada.fechas);
-  // Sin "Pagos" no se registra adelanto: la reserva queda "sin adelanto" y lo carga quien cobra
-  const a = conPagos ? esquemaAdelanto.safeParse(entrada.adelanto) : ({ success: true, data: { sinAdelanto: true } } as const);
+  // Sin "Pagos" no se registra adelanto: la reserva queda "sin adelanto" y lo carga quien cobra. Con "Pagos", la
+  // respuesta a "¿Dejó adelanto?" es obligatoria (20/11): un pago no se registra sin que se haya dicho que lo hubo
+  const sinRespuesta = conPagos && entrada.dejoAdelanto !== "si" && entrada.dejoAdelanto !== "no";
+  const a = conPagos && !sinRespuesta ? esquemaAdelanto.safeParse(entrada.adelanto) : ({ success: true, data: { sinAdelanto: true } } as const);
 
   const errores: Record<string, string> = {};
+  if (sinRespuesta) errores.dejoAdelanto = "Elige si dejó adelanto.";
+
+  // Cliente o vehículo nuevos, escritos en sus pasos (20/11, como en Nueva cotización): los mismos esquemas que el alta
+  // de Clientes. Se crean con la reserva, en la misma transacción: si la reserva no se guarda, no queda nada a medias
+  const valores = leerValores(datos);
+  const clienteNuevo = datos.get("origen") === "directa" && datos.get("clienteNuevo") === "1";
+  const vehiculoNuevo = clienteNuevo || (datos.get("origen") === "directa" && datos.get("vehiculoNuevo") === "1");
+  let nuevoCliente: z.output<typeof esquemaCliente> | null = null;
+  let nuevoVehiculo: z.output<typeof esquemaVehiculo> | null = null;
+  if (clienteNuevo) {
+    const c = esquemaCliente.safeParse(valores);
+    if (c.success) nuevoCliente = c.data;
+    else Object.assign(errores, erroresDe(c.error));
+  }
+  if (vehiculoNuevo) {
+    const n = esquemaVehiculo.safeParse(camposConPrefijo(valores, PREFIJO_VEHICULO));
+    if (n.success) nuevoVehiculo = n.data;
+    else Object.assign(errores, erroresConPrefijo(erroresDe(n.error), PREFIJO_VEHICULO));
+  }
+  const conNuevos = clienteNuevo || vehiculoNuevo;
   if (!r.success) Object.assign(errores, erroresDe(r.error));
   if (!f.success) Object.assign(errores, erroresDe(f.error));
   if (!a.success) {
@@ -67,16 +94,16 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
     if (deAdelanto.monto) errores.adelanto = deAdelanto.monto;
     if (deAdelanto.metodo) errores.metodo = deAdelanto.metodo;
   }
-  if (!r.success || !f.success || !a.success) {
+  if (!r.success || !f.success || !a.success || sinRespuesta || (conNuevos && Object.keys(errores).length > 0)) {
     if (errores.origen || errores.cotizacionId || errores.clienteId || errores.vehiculoId) return { mensaje: "No se pudo leer el pedido. Recarga la página." };
-    return { errores };
+    return { errores, valores };
   }
   const d = r.data;
   const { fechaInicio, fechaFin } = f.data;
 
   // Cliente, vehículo y servicios: de la cotización o de la reserva directa
-  let clienteId: number;
-  let vehiculoId: number;
+  let clienteId: number | null;
+  let vehiculoId: number | null;
   let consultaId: number | null = null;
   let cotizacionId: number | null = null;
   let descuento = "0.00";
@@ -94,14 +121,34 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
   } else {
     // Una reserva directa lleva precios: la arma el dueño o quien registra pagos
     if (!conPagos) return { mensaje: "La reserva directa la arma el dueño o quien registra pagos: lleva precios." };
-    const [suyo] = await db
-      .select({ id: vehiculo.id })
-      .from(vehiculo)
-      .innerJoin(cliente, eq(vehiculo.clienteId, cliente.id))
-      .where(and(eq(vehiculo.id, d.vehiculoId), eq(vehiculo.clienteId, d.clienteId), eq(vehiculo.activo, true), eq(cliente.activo, true)));
-    if (!suyo) return { mensaje: "Ese cliente o vehículo ya no está activo. Vuelve a elegirlo." };
-    clienteId = d.clienteId;
-    vehiculoId = d.vehiculoId;
+    // Registrar un cliente o un vehículo es de Clientes
+    if (conNuevos && !puedeVerModulo(usuario, "clientes")) return { mensaje: "Registrar un cliente o un vehículo es de quien tiene «Clientes»." };
+    if (!clienteNuevo && !d.clienteId) return { mensaje: "No se pudo leer el pedido. Recarga la página." };
+    if (!vehiculoNuevo && !d.vehiculoId) return { mensaje: "No se pudo leer el pedido. Recarga la página." };
+    if (!clienteNuevo && !vehiculoNuevo) {
+      const [suyo] = await db
+        .select({ id: vehiculo.id })
+        .from(vehiculo)
+        .innerJoin(cliente, eq(vehiculo.clienteId, cliente.id))
+        .where(and(eq(vehiculo.id, d.vehiculoId!), eq(vehiculo.clienteId, d.clienteId!), eq(vehiculo.activo, true), eq(cliente.activo, true)));
+      if (!suyo) return { mensaje: "Ese cliente o vehículo ya no está activo. Vuelve a elegirlo." };
+    } else if (!clienteNuevo) {
+      const [c] = await db.select({ id: cliente.id }).from(cliente).where(and(eq(cliente.id, d.clienteId!), eq(cliente.activo, true)));
+      if (!c) return { mensaje: "Ese cliente ya no está activo. Vuelve a elegirlo." };
+    }
+    // Los repetidos (RF-23): el error dice de quién es y la pantalla ofrece usarlo, como en Nueva cotización
+    const existentes: Existentes = {};
+    if (nuevoCliente) {
+      const conTelefono = await clienteConTelefono(nuevoCliente.telefono);
+      if (conTelefono) {
+        errores.telefono = `Ese número ya es de ${conTelefono.nombre}.`;
+        existentes.telefono = conTelefono;
+      }
+    }
+    if (nuevoVehiculo) await revisarVehiculo(nuevoVehiculo, PREFIJO_VEHICULO, errores, existentes);
+    if (Object.keys(errores).length > 0) return { errores, valores, existentes };
+    clienteId = clienteNuevo ? null : d.clienteId!;
+    vehiculoId = vehiculoNuevo ? null : d.vehiculoId!;
     recordatorioId = d.recordatorioId;
     if (recordatorioId && !puedeVerModulo(usuario, "mantenimientos")) return { mensaje: "Los mantenimientos los reserva el dueño o quien tiene «Mantenimientos»." };
     const opciones = await db
@@ -130,7 +177,7 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
   );
   const adelanto = a.data.sinAdelanto ? null : a.data;
   if (adelanto && !montoNoMayor(adelanto.monto, total)) errores.adelanto = `El adelanto no puede ser mayor que el total (${mostrarMonto(total)} Bs).`;
-  if (Object.keys(errores).length > 0) return { errores };
+  if (Object.keys(errores).length > 0) return { errores, valores };
 
   const { id: sucursalId } = await sucursalPrincipal();
   const autorId = Number(usuario.id);
@@ -138,7 +185,7 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
   const foto = await guardarComprobante(adelanto ? datos.get("comprobante") : null, autorId);
   if (!foto.ok) return { errores: { comprobante: foto.error } };
   const comprobanteId = foto.archivoId;
-  let resultado: { id: number };
+  let resultado: { id: number; clienteId: number };
   try {
     resultado = await db.transaction(async (tx) => {
       if (cotizacionId && consultaId) {
@@ -160,29 +207,38 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
         // Lanzar (y no devolver) deshace la transacción: si no, la cotización quedaría aceptada sin reserva
         if (!aceptada) throw new Conflicto(COTIZACION_CAMBIO);
       }
-      // El vehículo, bloqueado (después de la consulta, el orden del cambio de dueño) y todavía de ese cliente: una
-      // reserva y un cambio de dueño a la vez no dejan una reserva del anterior con un auto del nuevo (pedido 37)
-      const [suyo] = await tx
-        .select({ id: vehiculo.id })
-        .from(vehiculo)
-        .where(and(eq(vehiculo.id, vehiculoId), eq(vehiculo.clienteId, clienteId), eq(vehiculo.activo, true)))
-        // "no key update": choca con el FOR UPDATE del cambio de dueño, pero no con las claves foráneas de otra acción
-        // (crear una cotización de ese vehículo), que formarían un ciclo con el cliente
-        .for("no key update");
-      if (!suyo) throw new Conflicto("Ese vehículo cambió de dueño o se desactivó recién. Vuelve a elegirlo.");
+      // El cliente y el vehículo nuevos, primero (20/11)
+      if (nuevoCliente) {
+        const [c] = await tx.insert(cliente).values({ ...nuevoCliente, createdBy: autorId, updatedBy: autorId }).returning({ id: cliente.id });
+        clienteId = c.id;
+      }
+      if (nuevoVehiculo) {
+        const [v] = await tx.insert(vehiculo).values({ ...(await conMarcaDeLaLista(tx, nuevoVehiculo)), clienteId: clienteId!, createdBy: autorId }).returning({ id: vehiculo.id });
+        vehiculoId = v.id;
+      } else {
+        // El vehículo, bloqueado (después de la consulta, el orden del cambio de dueño) y todavía de ese cliente: una
+        // reserva y un cambio de dueño a la vez no dejan una reserva del anterior con un auto del nuevo (pedido 37)
+        const [suyo] = await tx
+          .select({ id: vehiculo.id })
+          .from(vehiculo)
+          .where(and(eq(vehiculo.id, vehiculoId!), eq(vehiculo.clienteId, clienteId!), eq(vehiculo.activo, true)))
+          // "no key update": choca con el FOR UPDATE del cambio de dueño, pero no con las claves foráneas de otra acción
+          // (crear una cotización de ese vehículo), que formarían un ciclo con el cliente
+          .for("no key update");
+        if (!suyo) throw new Conflicto("Ese vehículo cambió de dueño o se desactivó recién. Vuelve a elegirlo.");
+      }
       await bloquearEspacio(tx, d.espacioId);
       const [nuevo] = await tx
         .insert(trabajo)
         .values({
           sucursalId,
-          clienteId,
-          vehiculoId,
+          clienteId: clienteId!,
+          vehiculoId: vehiculoId!,
           consultaId,
           cotizacionId,
           espacioId: d.espacioId,
           fechaInicio,
           fechaFin,
-          horaIngreso: d.horaIngreso,
           descuento,
           nota: d.nota,
           createdBy: autorId,
@@ -211,8 +267,8 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
           .where(
             and(
               eq(recordatorioMantenimiento.id, recordatorioId),
-              eq(recordatorioMantenimiento.clienteId, clienteId),
-              eq(recordatorioMantenimiento.vehiculoId, vehiculoId),
+              eq(recordatorioMantenimiento.clienteId, clienteId!),
+              eq(recordatorioMantenimiento.vehiculoId, vehiculoId!),
               inArray(recordatorioMantenimiento.estado, [...ESTADOS_RECORDATORIO_ABIERTO]),
             ),
           )
@@ -221,8 +277,8 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
         await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "recordatorio_mantenimiento", entidadId: recordatorioId, accion: "agendar", datos: { trabajoId: nuevo.id } });
       }
       // Un cliente que reserva sube en la lista de recientes de Clientes
-      await tx.update(cliente).set({ updatedAt: sql`now()` }).where(eq(cliente.id, clienteId));
-      return { id: nuevo.id };
+      await tx.update(cliente).set({ updatedAt: sql`now()` }).where(eq(cliente.id, clienteId!));
+      return { id: nuevo.id, clienteId: clienteId! };
     });
   } catch (error) {
     await descartarComprobante(comprobanteId);
@@ -230,10 +286,14 @@ export async function agendarReserva(_previo: EstadoFormulario, datos: FormData)
     // Dos personas reservaron el mismo espacio a la vez: la base frenó la segunda (D-5)
     if (exclusionViolada(error) === "trabajo_sin_cruces") return { errores: { espacioId: ESPACIO_OCUPADO } };
     if (indiceUnicoViolado(error) === "trabajo_cotizacion_unica") return { mensaje: "Esa cotización ya fue reservada." };
+    // Dos personas registrando el mismo cliente o la misma placa a la vez: lo frena el índice único
+    if (indiceUnicoViolado(error) === "cliente_telefono_unico") return { errores: { telefono: "Ese número ya está registrado. Busca al cliente." }, valores };
+    if (indiceUnicoViolado(error) === "vehiculo_placa_unica") return { errores: { [`${PREFIJO_VEHICULO}placa`]: "Esa placa ya está registrada. Busca al cliente." }, valores };
     throw error;
   }
 
-  despuesDeCambiar(resultado.id, clienteId, consultaId);
+  despuesDeCambiar(resultado.id, resultado.clienteId, consultaId);
+  if (conNuevos) revalidatePath("/panel/clientes");
   if (recordatorioId) revalidatePath("/panel/mantenimientos");
   // La reserva vuelve a donde se empezó (pedido 43) y reemplaza al formulario en el historial: "atrás" no vuelve a él
   redirect(conDesde(`/panel/agenda/${resultado.id}?agendada=1`, leerDesde(datos.get("volver"))), RedirectType.replace);

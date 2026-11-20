@@ -14,12 +14,10 @@ import { rutaVehiculo } from "@/modulos/clientes/reglas";
 import { PaginaPanel, PartesIguales } from "@/componentes/panel/pagina-panel";
 import { BOTON_PASO, PasoSiguiente } from "@/componentes/panel/paso-siguiente";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
-import { IconoWhatsApp } from "@/componentes/sitio/iconos-marca";
 import { buttonVariants } from "@/componentes/ui/button";
-import { fechaConDia, fechaEnBolivia, formatearFecha, formatearFechaHora } from "@/lib/fechas";
+import { diaLegible, fechaConDia, fechaConMes, fechaEnBolivia } from "@/lib/fechas";
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
-import { enlaceWhatsApp } from "@/lib/whatsapp";
 import { MasReserva } from "@/modulos/agenda/componentes/acciones-reserva";
 import { obtenerReserva } from "@/modulos/agenda/consultas/reserva";
 import { pasoDelTrabajo } from "@/modulos/agenda/pasos";
@@ -70,6 +68,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
   const desdeAqui = aqui(`/panel/agenda/${r.id}`, parametros);
 
   const detalle = detalleVehiculo(r);
+  // Los días con su nombre (recorrido visual del 20/11): "11/12/2026" obligaba a pensar qué día era
+  const dia = (fecha: string) => diaLegible(fecha, hoy);
   // Una pantalla por trabajo: recibido, quien ve las órdenes trabaja en la orden (lo que solo tenía la reserva, también
   // está ahí). Quien no las ve (agenda y cobra) sigue aquí, para ver su saldo y cobrarlo
   if (orden && verOrdenes) redirect(conDesde(`/panel/ordenes/${r.id}`, sinElTrabajo(String(parametros.volver ?? ""), r.id)));
@@ -93,8 +93,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
       <div role="group" aria-label="Datos de la reserva" className="flex flex-col divide-y divide-border">
         <dl className="flex flex-col gap-2 px-4 py-3">
           <FilaDato etiqueta="Ingresa">
-            <span className="font-semibold">{formatearFecha(r.fechaInicio)}</span>
-            {r.horaIngreso && <span className="text-sm text-tinta-suave">{r.horaIngreso}</span>}
+            <span className="font-semibold">{dia(r.fechaInicio)}</span>
           </FilaDato>
           {/* Entregada, la entrega aproximada ya no sirve (como en la orden) */}
           {r.estado !== "entregado" && (
@@ -103,7 +102,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
                 <span className="font-semibold">El mismo día</span>
               ) : (
                 <>
-                  <span className="font-semibold">{formatearFecha(r.fechaFin)}</span>
+                  <span className="font-semibold">{dia(r.fechaFin)}</span>
                   <span className="text-sm text-tinta-suave">aproximada</span>
                 </>
               )}
@@ -113,12 +112,14 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
             <span className="font-semibold">{r.espacio}</span>
           </FilaDato>
         </dl>
-        <FilaCliente href={verFicha ? conDesde(`/panel/clientes/${r.clienteId}`, desdeAqui) : null} nombre={r.cliente} telefono={r.telefono} />
+        {/* Con su WhatsApp al lado del número (20/11): en el encabezado bajaba a otro renglón en el celular */}
+        <FilaCliente href={verFicha ? conDesde(`/panel/clientes/${r.clienteId}`, desdeAqui) : null} nombre={r.cliente} telefono={r.telefono} conWhatsApp />
         {/* La placa ya está en el título: el vehículo dice su modelo y su tamaño */}
         {/* La ficha del vehículo, para quien ve Clientes (pedido 51) */}
         <FilaVehiculo href={verFicha ? conDesde(rutaVehiculo(r.clienteId, r.vehiculoId), desdeAqui) : null}>{valorVehiculo(detalle, r.tamano)}</FilaVehiculo>
         <p className="px-4 py-3 text-sm text-tinta-suave">
-          Reservada por {r.agendadaPor} el {formatearFechaHora(r.createdAt)}
+          {/* Sin la hora: no aporta (20/11) */}
+          Reservada el {fechaConMes(fechaEnBolivia(r.createdAt), hoy)} por {r.agendadaPor}
         </p>
         {cotizacion && <FilaCotizacion href={conDesde(`/panel/cotizaciones/${r.consultaId}`, desdeAqui)} numero={cotizacion.numero} version={cotizacion.version} />}
       </div>
@@ -137,17 +138,13 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
         titulo={r.placa}
         // Debajo del título, el dato útil (sistema-del-panel.md §2, C7 fase 3): no solo a dónde se vuelve
         subtitulo={[r.cliente, [r.marca, r.modelo].filter(Boolean).join(" ")].filter(Boolean).join(" · ")}
-        estado={<Insignia tono={TONO_ESTADO_TRABAJO[r.estado]}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</Insignia>}
+        // El estado, solo cuando no están los pasos (una cancelada): con ellos, "Reservada" se leía dos veces (20/11)
+        estado={cancelada ? <Insignia tono={TONO_ESTADO_TRABAJO[r.estado]}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</Insignia> : undefined}
+        // Arriba, solo "Más": escribirle por WhatsApp va en la fila del cliente (20/11)
         accion={
-          <div className="flex flex-wrap gap-2">
-            <a href={enlaceWhatsApp(r.telefono)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
-              <IconoWhatsApp />
-              Escribir por WhatsApp
-            </a>
-            {r.estado === "agendado" && (
-              <MasReserva id={r.id} fechaInicio={r.fechaInicio} fechaFin={r.fechaFin} espacioId={r.espacioId} hoy={hoy} pagado={r.montos?.saldo.pagado ?? null} />
-            )}
-          </div>
+          r.estado === "agendado" && (
+            <MasReserva id={r.id} fechaInicio={r.fechaInicio} fechaFin={r.fechaFin} espacioId={r.espacioId} espacio={r.espacio} hoy={hoy} pagado={r.montos?.saldo.pagado ?? null} />
+          )
         }
       >
         {cancelada && r.motivoCancelacion ? `Cancelada: ${r.motivoCancelacion}` : orden && !verOrdenes ? "Ya se recibió: es una orden del taller." : null}

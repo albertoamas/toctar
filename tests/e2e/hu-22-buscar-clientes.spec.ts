@@ -86,3 +86,21 @@ test("un cliente con cinco vehículos muestra tres placas y cuántas más; la bu
   const enLaLista = page.getByRole("table", { name: "Clientes" }).or(page.getByRole("list", { name: "Clientes", exact: true }));
   await expect(enLaLista.getByRole("link", { name: nombre })).toContainText(`FL${s}5, FL${s}1, FL${s}2 y 2 más`);
 });
+
+test("al volver a la lista desde el menú, el buscador queda vacío como la lista (20/11)", async ({ page }, info) => {
+  // El menú lateral es el de la computadora; en el celular es el mismo buscador
+  test.skip(info.project.name !== "escritorio");
+  const s = sufijo(info);
+  await crearCliente({ nombre: `Vuelve limpio ${s}`, telefono: telefono(info, 9) });
+  await ingresarComoDueno(page);
+  await page.goto("/panel/clientes");
+  const buscar = page.getByLabel("Buscar por nombre, teléfono o placa");
+  await buscar.fill(`Vuelve limpio ${s}`);
+  await expect(page).toHaveURL(/q=Vuelve/);
+  await page.getByRole("link", { name: new RegExp(`Vuelve limpio ${s}`) }).first().click();
+  await expect(page).toHaveURL(/\/panel\/clientes\/\d+/);
+  // Next guarda el estado de las pantallas visitadas: antes el campo seguía con lo buscado aunque la lista mostraba todo
+  await page.getByRole("navigation").getByRole("link", { name: "Clientes", exact: true }).first().click();
+  await expect(page).toHaveURL(/\/panel\/clientes$/);
+  await expect(buscar).toHaveValue("");
+});

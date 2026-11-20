@@ -17,7 +17,7 @@ import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
-import { AgendaDelDia, GuiaColores, PestanasDias, SemanaEnLista, TableroSemana } from "@/modulos/agenda/componentes/tablero";
+import { AgendaDelDia, PestanasDias, SemanaEnLista, TableroSemana } from "@/modulos/agenda/componentes/tablero";
 import { buscarReservas, semanaDeAgenda } from "@/modulos/agenda/consultas/tablero";
 import { diasDeLaSemana, fechaCorta, lunesDeLaSemana, NOMBRE_ESTADO_TRABAJO, textoSemana, textoServicio, textoSemanaCorto, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { cotizacionesPorReservar, type FilaCotizacion } from "@/modulos/cotizaciones/consultas/lista";
@@ -150,7 +150,6 @@ async function Semana(props: { lunes: string; dias: string[]; dia: string; hoy: 
         <p className="text-tinta-suave">No hay espacios activos. Agrégalos en Configuración, «Taller».</p>
       ) : (
         <>
-          <GuiaColores />
           <TableroSemana semana={semana} dias={dias} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
           <SemanaEnLista semana={semana} dias={dias} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
           <PestanasDias semana={semana} dias={dias} hoy={hoy} dia={dia} enlace={(d) => enlaceSemana(lunes, d)} />
@@ -186,7 +185,7 @@ async function Resultados({ q, hoy, conOrdenes, desde }: { q: string; hoy: strin
           href: rutaTrabajo(r.id, r.estado, conOrdenes),
           celdas: [
             <CeldaDoble key="v" principal={r.placa} secundario={r.cliente} peso="placa" />,
-            `${r.inicio === r.fin ? fechaCorta(r.inicio, hoy) : `${fechaCorta(r.inicio, hoy)} al ${fechaCorta(r.fin, hoy)}`}${r.hora ? `, ${r.hora}` : ""}`,
+            `${r.inicio === r.fin ? fechaCorta(r.inicio, hoy) : `${fechaCorta(r.inicio, hoy)} al ${fechaCorta(r.fin, hoy)}`}`,
             textoServicio(r),
             r.espacio,
             <Insignia key="e" tono={TONO_ESTADO_TRABAJO[r.estado]}>

@@ -85,7 +85,6 @@ const adelanto = z.discriminatedUnion("sinAdelanto", [
 
 const base = {
   espacioId: z.coerce.number({ message: "Elige el espacio." }).int().positive("Elige el espacio."),
-  horaIngreso: textoOpcional(40),
   nota: textoOpcional(1000),
 };
 
@@ -96,7 +95,15 @@ const esquemaReservaDeCotizacion = z.object({ origen: z.literal("cotizacion"), c
  * Reserva directa (RF-37): cliente y vehículo registrados y servicios del catálogo. Con `recordatorioId` si viene de
  * "Reservar" en Mantenimientos (HU-38): el recordatorio queda agendado con la reserva.
  */
-const esquemaReservaDirecta = z.object({ origen: z.literal("directa"), clienteId: id, vehiculoId: id, lineas, recordatorioId: idOpcional, ...base });
+const esquemaReservaDirecta = z.object({
+  origen: z.literal("directa"),
+  // Vacíos cuando son nuevos (20/11, como en Nueva cotización): sus datos llegan en los campos del cliente y del vehículo
+  clienteId: idOpcional,
+  vehiculoId: idOpcional,
+  lineas,
+  recordatorioId: idOpcional,
+  ...base,
+});
 
 export const esquemaReserva = z.discriminatedUnion("origen", [esquemaReservaDeCotizacion, esquemaReservaDirecta]);
 
@@ -112,11 +119,15 @@ export function entradaReserva(datos: FormData) {
       recordatorioId: texto("recordatorioId"),
       lineas: texto("lineas") || "[]",
       espacioId: texto("espacioId"),
-      horaIngreso: texto("horaIngreso"),
       nota: texto("nota"),
     },
     fechas: { fechaInicio: texto("fechaInicio"), fechaFin: texto("fechaFin") },
-    adelanto: datos.get("sinAdelanto") === "on" ? { sinAdelanto: true as const } : { sinAdelanto: false as const, monto: texto("adelanto"), metodo: texto("metodo") },
+    // "¿Dejó adelanto?" (20/11): "no" (o el "Sin adelanto" de antes) no registra pago
+    dejoAdelanto: texto("dejoAdelanto"),
+    adelanto:
+      datos.get("sinAdelanto") === "on" || texto("dejoAdelanto") === "no"
+        ? { sinAdelanto: true as const }
+        : { sinAdelanto: false as const, monto: texto("adelanto"), metodo: texto("metodo") },
   };
 }
 

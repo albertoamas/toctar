@@ -8,12 +8,14 @@ import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDuen
 
 const sufijo = (info: TestInfo) => `${info.project.name === "celular" ? "C" : "E"}${info.retry}`;
 const hoy = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/La_Paz" }).format(new Date());
-/** La fecha a `n` días de hoy (AAAA-MM-DD) y cómo se muestra ("21/10"). */
+/** La fecha a `n` días de hoy (AAAA-MM-DD) y cómo se muestra ("21 oct."). */
 function dia(n: number) {
   const fecha = new Date(`${hoy()}T12:00:00Z`);
   fecha.setUTCDate(fecha.getUTCDate() + n);
   const iso = fecha.toISOString().slice(0, 10);
-  return { iso, corta: `${iso.slice(8, 10)}/${iso.slice(5, 7)}` };
+  const mes = ["ene.", "feb.", "mar.", "abr.", "may.", "jun.", "jul.", "ago.", "sep.", "oct.", "nov.", "dic."][Number(iso.slice(5, 7)) - 1];
+  // "7 nov." (19/11); de otro año, con el año al final
+  return { iso, corta: `${Number(iso.slice(8, 10))} ${mes}${iso.slice(0, 4) === hoy().slice(0, 4) ? "" : ` ${iso.slice(0, 4)}`}` };
 }
 
 /** Un trabajo del vehículo, en el espacio y los días dados, con el estado dado. Devuelve su id. */

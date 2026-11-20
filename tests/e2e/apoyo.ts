@@ -346,3 +346,16 @@ export async function enPorReservar(page: Page, texto: string): Promise<Locator>
   if (hay > 0) await verPorReservar(page);
   return page.getByRole("list", { name: "Por reservar" }).getByRole("link").filter({ hasText: texto });
 }
+
+/** Nueva reserva (20/11): de la fecha al paso del adelanto. */
+export async function alAdelanto(page: Page) {
+  await page.getByRole("button", { name: "Siguiente: adelanto" }).click();
+  await expect(page.getByRole("radiogroup", { name: "¿Dejó adelanto?" })).toBeVisible();
+}
+
+/** Nueva reserva (20/11): pasa al adelanto y responde "No, sin adelanto". */
+export async function sinAdelantoEnReserva(page: Page) {
+  await alAdelanto(page);
+  await page.getByRole("radio", { name: "No, sin adelanto" }).click();
+}
+

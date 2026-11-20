@@ -1,29 +1,28 @@
 import type { Metadata, Route } from "next";
 import { Suspense } from "react";
-import { cn } from "cn";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { Filtros } from "@/componentes/panel/filtros";
-import { Insignia } from "@/componentes/panel/insignia";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { Paginacion } from "@/componentes/panel/paginacion";
 import { ajustarPagina, conPagina, leerPagina } from "@/lib/paginacion";
 import { Pestanas } from "@/componentes/panel/pestanas";
 import { CeldaDoble, TablaLista, type ColumnaTabla, type FilaTabla } from "@/componentes/panel/tabla-lista";
-import { diaYHora, fechaEnBolivia } from "@/lib/fechas";
+import { fechaConMes, fechaEnBolivia } from "@/lib/fechas";
+import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
-import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { Buscador } from "@/componentes/panel/buscador";
-import { ordenesAbiertas, ordenesEntregadas, type OrdenEnLista, type OrdenEntregada } from "@/modulos/ordenes/consultas";
-import { ESTADOS_ORDEN_ABIERTA, estaAtrasada, estadoFiltrado, filtrarOrdenes, textoEntrega } from "@/modulos/ordenes/reglas";
+import { ordenesAbiertas, ordenesEntregadas, type OrdenEntregada } from "@/modulos/ordenes/consultas";
+import { TarjetasOrdenes } from "@/modulos/ordenes/componentes/tarjetas-ordenes";
+import { ESTADOS_ORDEN_ABIERTA, estadoFiltrado, filtrarOrdenes, resumenServicios } from "@/modulos/ordenes/reglas";
 import { BarraLista } from "@/componentes/panel/barra-lista";
 import { normalizarBusqueda } from "@/modulos/clientes/reglas";
 import { aqui } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Órdenes" };
 
-// HU-33 y HU-34: las órdenes abiertas en una tabla (pedido 26), la entrega más cercana primero (así las atrasadas y las de
+// HU-33 y HU-34: las órdenes abiertas (en tarjetas con sus pasos desde el 20/11; antes, una tabla del pedido 26), la entrega más cercana primero (así las atrasadas y las de
 // hoy quedan arriba) y las listas al final; con filtros por estado (?estado=) que dicen cuántas hay en cada uno. Son
 // pocas a la vez (las que caben en los espacios), así que se ven todas. Pedido 28: la pestaña "Entregadas", el
 // historial, con búsqueda por placa, cliente o fecha y de a páginas. Pedido 32: sin técnico asignado, todos los que
@@ -41,7 +40,7 @@ export default function PaginaOrdenes({ searchParams }: PageProps<"/panel/ordene
 const NOMBRE_FILTRO: Record<(typeof ESTADOS_ORDEN_ABIERTA)[number], string> = { recibido: "Recibidas", en_proceso: "En proceso", listo: "Listas" };
 
 async function Lista({ searchParams }: Pick<PageProps<"/panel/ordenes">, "searchParams">) {
-  await exigirModulo("ordenes");
+  const usuario = await exigirModulo("ordenes");
   const parametros = await searchParams;
   const entregadas = parametros.vista === "entregadas";
 
@@ -65,14 +64,19 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/ordenes">, "search
           </Suspense>
         </>
       ) : (
-        <EnElTaller filtro={estadoFiltrado(parametros.estado)} q={typeof parametros.q === "string" ? parametros.q : ""} desde={aqui("/panel/ordenes", parametros)} />
+        <EnElTaller
+          filtro={estadoFiltrado(parametros.estado)}
+          q={typeof parametros.q === "string" ? parametros.q : ""}
+          desde={aqui("/panel/ordenes", parametros)}
+          conMontos={puedeVerModulo(usuario, "pagos")}
+        />
       )}
     </>
   );
 }
 
-async function EnElTaller({ filtro, q, desde }: { filtro: (typeof ESTADOS_ORDEN_ABIERTA)[number] | null; q: string; /** Esta lista, para "Volver" (pedido 43). */ desde: string }) {
-  const todas = await ordenesAbiertas();
+async function EnElTaller({ filtro, q, desde, conMontos }: { filtro: (typeof ESTADOS_ORDEN_ABIERTA)[number] | null; q: string; /** Esta lista, para "Volver" (pedido 43). */ desde: string; /** Lo que falta cobrar, solo con Pagos (RN-12). */ conMontos: boolean }) {
+  const todas = await ordenesAbiertas(conMontos);
   const hoy = fechaEnBolivia();
   if (todas.length === 0) {
     return <EstadoVacio>No hay órdenes abiertas. Se abren al recibir un vehículo desde la agenda.</EstadoVacio>;
@@ -109,40 +113,11 @@ async function EnElTaller({ filtro, q, desde }: { filtro: (typeof ESTADOS_ORDEN_
             : `Ninguna orden ${NOMBRE_FILTRO[filtro!].toLowerCase()} ahora.`}
         </EstadoVacio>
       ) : (
-        <TablaLista etiqueta="Órdenes en el taller" columnas={COLUMNAS_TALLER} filas={visibles.map((o) => filaOrden(o, hoy))} desde={desde} />
+        // En tarjetas, con sus pasos (20/11): son pocas y lo que importa es en qué paso va cada auto
+        <TarjetasOrdenes ordenes={visibles} hoy={hoy} desde={desde} />
       )}
     </>
   );
-}
-
-const COLUMNAS_TALLER: ColumnaTabla[] = [
-  { titulo: "Vehículo", ancho: "minmax(0,1.1fr)", movil: "titulo" },
-  { titulo: "Cliente", movil: "detalle" },
-  { titulo: "Servicio", ancho: "minmax(0,1.3fr)", movil: "detalle" },
-  { titulo: "Estado", ancho: "minmax(0,1.1fr)", movil: "estado" },
-  { titulo: "Entrega", ancho: "6.5rem", movil: "detalle" },
-];
-
-/** Una orden en la tabla: la placa y el vehículo, quién, qué, el estado con lo que pide atención y cuándo se entrega. */
-function filaOrden(o: OrdenEnLista, hoy: string): FilaTabla {
-  const atrasada = estaAtrasada(o, hoy);
-  return {
-    href: `/panel/ordenes/${o.id}`,
-    celdas: [
-      <CeldaDoble key="v" principal={o.placa} secundario={o.vehiculo} peso="placa" />,
-      o.cliente,
-      o.servicios.join(", "),
-      <span key="e" className="flex flex-wrap justify-end gap-1.5 @2xl:justify-start">
-        <Insignia tono={TONO_ESTADO_TRABAJO[o.estado]}>{NOMBRE_ESTADO_TRABAJO[o.estado]}</Insignia>
-        {atrasada && <Insignia tono="aviso">Atrasada</Insignia>}
-        {o.sinAvisar && <Insignia tono="aviso">Sin avisar</Insignia>}
-      </span>,
-      <span key="f" className={cn(atrasada && "font-semibold text-aviso")}>
-        <span className="@2xl:hidden">Entrega: </span>
-        {textoEntrega(o.fechaFin, hoy)}
-      </span>,
-    ],
-  };
 }
 
 /** El historial (pedido 28): la más reciente primero, con su búsqueda y de a páginas. */
@@ -158,7 +133,7 @@ async function Entregadas({ q, pagina: pedida, desde }: { q: string; pagina: num
         <EstadoVacio>{q.trim() ? `Ninguna entregada coincide con «${q.trim()}».` : "Todavía no se entregó ninguna orden."}</EstadoVacio>
       ) : (
         <>
-          <TablaLista etiqueta="Órdenes entregadas" columnas={COLUMNAS_ENTREGADAS} filas={ordenes.map(filaEntregada)} desde={desde} />
+          <TablaLista etiqueta="Órdenes entregadas" columnas={COLUMNAS_ENTREGADAS} filas={ordenes.map((o) => filaEntregada(o, fechaEnBolivia()))} desde={desde} />
           <Paginacion pagina={pagina} paginas={paginas} total={total} nombre={["orden entregada", "órdenes entregadas"]} enlace={enlace} />
         </>
       )}
@@ -170,20 +145,23 @@ const COLUMNAS_ENTREGADAS: ColumnaTabla[] = [
   { titulo: "Vehículo", ancho: "minmax(0,1.1fr)", movil: "titulo" },
   { titulo: "Cliente", movil: "detalle" },
   { titulo: "Servicio", ancho: "minmax(0,1.3fr)", movil: "detalle" },
-  { titulo: "Entregada", ancho: "8.5rem", movil: "detalle" },
+  { titulo: "Entregada", ancho: "7rem", movil: "detalle" },
 ];
 
-/** Una entregada: la placa y el vehículo, quién, qué se hizo y cuándo se entregó. */
-function filaEntregada(o: OrdenEntregada): FilaTabla {
+/** Una entregada: la placa y el vehículo, quién, qué se hizo y cuándo se entregó (el día, sin la hora: 20/11). */
+function filaEntregada(o: OrdenEntregada, hoy: string): FilaTabla {
   return {
     href: `/panel/ordenes/${o.id}`,
     celdas: [
       <CeldaDoble key="v" principal={o.placa} secundario={o.vehiculo} peso="placa" />,
       o.cliente,
-      o.servicios.join(", "),
+      // Con varios, el primero y cuántos más (20/11); todos, al pasar el mouse y en la ficha
+      <span key="s" title={o.servicios.length > 1 ? o.servicios.join(", ") : undefined}>
+        {resumenServicios(o.servicios)}
+      </span>,
       <span key="f">
         <span className="@2xl:hidden">Entregada el </span>
-        {diaYHora(o.entregadoAt)}
+        {fechaConMes(fechaEnBolivia(o.entregadoAt), hoy)}
       </span>,
     ],
   };

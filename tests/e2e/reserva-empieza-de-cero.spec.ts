@@ -35,7 +35,7 @@ const fila = (page: Page, placa: string) => page.getByRole("list", { name: "Venc
 async function llenar(page: Page) {
   await expect(precio(page)).toBeEnabled();
   await precio(page).fill("350");
-  await page.getByRole("button", { name: "Siguiente: fecha y adelanto" }).click();
+  await page.getByRole("button", { name: "Siguiente: fecha" }).click();
   const [{ d }] = await consultar<{ d: string }>("select to_char($1::date + 30, 'YYYY-MM-DD') as d", [hoy()]);
   await page.getByLabel("Ingresa el").fill(d);
   const espacio = page.getByLabel("Espacio", { exact: true });
@@ -48,7 +48,7 @@ async function empiezaDeCero(page: Page, nombre: string) {
   await expect(page.getByText(nombre).filter({ visible: true }).first()).toBeVisible();
   await expect(precio(page)).toBeVisible();
   await expect(precio(page)).toHaveValue("");
-  await expect(page.getByRole("button", { name: "Siguiente: fecha y adelanto" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Siguiente: fecha" })).toBeVisible();
 }
 
 test("al pasar de un mantenimiento a otro, la reserva empieza de cero (con Atrás y con Volver)", async ({ page }, info) => {
@@ -125,11 +125,9 @@ test("desde una cotización (Por reservar de la Agenda), también empieza de cer
   await page.getByRole("alertdialog", { name: "¿Salir sin guardar?" }).getByRole("button", { name: "Salir sin guardar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda$/);
 
-  // La misma cotización otra vez: de cero, con la fecha de hoy (no el día llenado) y sin el espacio elegido antes. Si hoy
-  // queda un solo espacio libre (otras pruebas ocupan los demás), la reserva lo elige sola (espacios-libres.ts)
+  // La misma cotización otra vez: de cero, sin la fecha llenada (vacía desde el 20/11: no se reserva un día que no se
+  // eligió) y sin el espacio elegido antes
   await (await verPorReservar(page)).getByRole("link").filter({ hasText: nombre }).click();
-  const espacio = page.getByLabel("Espacio", { exact: true });
-  await expect(espacio).toBeEnabled();
-  await expect(page.getByLabel("Ingresa el")).toHaveValue(hoy());
-  if ((await espacio.locator("option").count()) > 2) await expect(espacio).toHaveValue("");
+  await expect(page.getByLabel("Ingresa el")).toHaveValue("");
+  await expect(page.getByLabel("Espacio", { exact: true })).toHaveValue("");
 });

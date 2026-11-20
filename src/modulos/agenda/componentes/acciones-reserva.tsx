@@ -19,7 +19,7 @@ import { espacioVigente, useEspaciosLibres } from "./espacios-libres";
 import { CampoEspacio } from "./campo-espacio";
 import { ANCHO_DATO } from "@/componentes/panel/anchos";
 import { DatoClave } from "@/componentes/panel/dato-clave";
-import { fechaCorta } from "@/lib/fechas";
+import { fechaConDia, fechaConMes } from "@/lib/fechas";
 
 // HU-31: reprogramar o cancelar una reserva agendada (RF-39). Pulido 10.3: se usan poco y van en el menú "Más" del
 // encabezado, cada una con su formulario en un modal (como "Marcar como perdida"). Reprogramar ofrece solo los espacios
@@ -31,6 +31,8 @@ type Props = {
   fechaInicio: string;
   fechaFin: string;
   espacioId: number;
+  /** El nombre del espacio de ahora, para "Ahora" en Reprogramar. */
+  espacio: string;
   hoy: string;
   /** Lo pagado, si quien mira ve pagos: para avisar cuánto queda como ingreso al cancelar. */
   pagado: string | null;
@@ -69,7 +71,7 @@ function useAlTerminar() {
   };
 }
 
-function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espacioId: espacioActual, hoy }: Props) {
+function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espacioId: espacioActual, espacio, hoy }: Props) {
   const alTerminar = useAlTerminar();
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
     conAviso(reprogramarReserva, (r) => r.ok && alTerminar()),
@@ -90,7 +92,11 @@ function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espac
     <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-label="Reprogramar">
       <input type="hidden" name="id" value={id} />
       {estado.mensaje && !estado.ok && <MensajeError id="reprogramar-error">{estado.mensaje}</MensajeError>}
-      <DatoClave etiqueta="Ahora" valor={inicioActual === finActual ? fechaCorta(inicioActual, hoy) : `${fechaCorta(inicioActual, hoy)} al ${fechaCorta(finActual, hoy)}`} />
+      {/* El día y el espacio de ahora (20/11: "11/12" solo no decía ni el día ni dónde) */}
+      <DatoClave
+        etiqueta="Ahora"
+        valor={`${inicioActual === finActual ? diaCorto(inicioActual, hoy) : `${diaCorto(inicioActual, hoy)} al ${diaCorto(finActual, hoy)}`} · ${espacio}`}
+      />
       <div className="grid gap-5 sm:grid-cols-2">
         <Campo id="fechaInicio" etiqueta="Ingresa el" error={e.fechaInicio}>
           <Input className={ANCHO_DATO.fecha} id="fechaInicio" name="fechaInicio" type="date" min={hoy} value={fechaInicio} onChange={(ev) => setFechaInicio(ev.target.value)} aria-invalid={!!e.fechaInicio} aria-describedby={e.fechaInicio ? "fechaInicio-error" : undefined} />
@@ -120,20 +126,21 @@ function Cancelar({ id, pagado }: Props) {
   useFocoEnError(formulario, estado);
   const e = estado.errores ?? {};
   const [motivo, setMotivo] = useState("");
+  // Un solo aviso del adelanto (20/11: el monto se repetía en un recuadro y en la frase de abajo)
+  const conAdelanto = pagado !== null && pagado !== "0.00";
   const aviso =
     pagado === null
       ? "Si dejó adelanto, no se devuelve: queda como ingreso."
       : pagado === "0.00"
         ? "No dejó adelanto."
-        : `El adelanto no se devuelve: ${mostrarMonto(pagado)} Bs quedan como ingreso.`;
+        : `El adelanto de ${mostrarMonto(pagado)} Bs no se devuelve: queda como ingreso.`;
 
   return (
     <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-label="Cancelar reserva">
       <input type="hidden" name="id" value={id} />
       {estado.mensaje && !estado.ok && <MensajeError id="cancelar-error">{estado.mensaje}</MensajeError>}
-      {pagado !== null && pagado !== "0.00" ? <DatoClave etiqueta="Adelanto recibido" valor={`${mostrarMonto(pagado)} Bs`} tono="peligro" /> : null}
-      <p>{aviso}</p>
-      <Campo id="motivo" etiqueta="Motivo" error={e.motivo} ayuda="Queda en la reserva y, si vino de una consulta, la consulta pasa a perdida.">
+      {conAdelanto ? <p className="rounded-lg bg-peligro-fondo px-3 py-2.5 font-medium text-peligro">{aviso}</p> : <p>{aviso}</p>}
+      <Campo id="motivo" etiqueta="Motivo" error={e.motivo} ayuda="Queda en la reserva. Si vino de una cotización, pasa a perdida.">
         <Textarea id="motivo" name="motivo" rows={2} value={motivo} onChange={(ev) => setMotivo(ev.target.value)} aria-invalid={!!e.motivo} aria-describedby={e.motivo ? "motivo-error" : "motivo-ayuda"} />
       </Campo>
       {/* El foco empieza en el motivo (obligatorio): ahí un Enter escribe, no confirma */}
@@ -147,3 +154,9 @@ function Cancelar({ id, pagado }: Props) {
     </form>
   );
 }
+
+/** "Vie 11 dic.": el día corto, con el nombre de la semana. */
+function diaCorto(fecha: string, hoy: string): string {
+  return fecha === hoy ? "Hoy" : `${fechaConDia(fecha).slice(0, 3)} ${fechaConMes(fecha, hoy)}`;
+}
+

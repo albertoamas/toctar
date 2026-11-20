@@ -1,5 +1,5 @@
-import { describe, expect, test } from "vitest";
-import { diasEntre, fechaEnBolivia, sumarDias } from "@/lib/fechas";
+import { describe, expect, it, test } from "vitest";
+import { diaLegible, diasEntre, fechaEnBolivia, fechaYHoraCorta, sumarDias } from "@/lib/fechas";
 
 describe("fechaEnBolivia", () => {
   test("a las 23:30 de Bolivia ya es el día siguiente en UTC, pero la fecha es la de Bolivia", () => {
@@ -30,5 +30,21 @@ describe("diasEntre", () => {
   test("cuenta días calendario", () => {
     expect(diasEntre("2026-10-10", "2026-10-25")).toBe(15);
     expect(diasEntre("2026-10-25", "2026-10-10")).toBe(-15);
+  });
+});
+
+describe("los días para leer en una ficha (20/11)", () => {
+  it("hoy, mañana, ayer o el día con su nombre; el año solo si es de otro", () => {
+    expect(diaLegible("2026-11-20", "2026-11-20")).toBe("Hoy");
+    expect(diaLegible("2026-11-21", "2026-11-20")).toBe("Mañana");
+    expect(diaLegible("2026-11-19", "2026-11-20")).toBe("Ayer");
+    expect(diaLegible("2026-12-11", "2026-11-20")).toBe("Viernes 11 de diciembre");
+    expect(diaLegible("2027-01-20", "2026-11-20")).toBe("Miércoles 20 de enero de 2027");
+  });
+  it("un momento corto para el historial, en hora de Bolivia", () => {
+    // 19:10 UTC son las 15:10 en Bolivia
+    expect(fechaYHoraCorta(new Date("2026-11-20T19:10:00Z"), "2026-11-20")).toBe("20 nov., 15:10");
+    // 02:00 UTC del 21 todavía es el 20 en Bolivia
+    expect(fechaYHoraCorta(new Date("2026-11-21T02:00:00Z"), "2026-11-20")).toBe("20 nov., 22:00");
   });
 });

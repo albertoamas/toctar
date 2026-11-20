@@ -33,14 +33,6 @@ export function aniosParaElegir(hoy: Date = new Date()): number[] {
   return Array.from({ length: desde - ANIO_MINIMO + 1 }, (_, i) => desde - i);
 }
 
-/** Los colores frecuentes, en botones; uno distinto se escribe con "Otro". */
-export const COLORES_FRECUENTES = ["Blanco", "Negro", "Gris", "Plata", "Rojo", "Azul"] as const;
-
-/** Si el color guardado es uno de los frecuentes (sin importar mayúsculas), cuál; si no, null ("Otro"). */
-export function colorFrecuente(color: string): string | null {
-  return COLORES_FRECUENTES.find((c) => clave(c) === clave(color)) ?? null;
-}
-
 function sinTildes(texto: string): string {
   return texto.normalize("NFD").replace(/[̀-ͯ]/g, "");
 }

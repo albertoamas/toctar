@@ -172,9 +172,9 @@ export const CAPITULOS = [
         },
         pasos: [
           "Desde una cotización aceptada, <span class='boton rojo'>Reservar en Agenda</span>. O <span class='boton rojo'>Nueva reserva</span> desde Agenda, Inicio o la ficha del cliente.",
-          "Son cuatro pasos: cliente, vehículo, servicios (una de sus cotizaciones o <b>Reserva sin cotización</b>) y fecha y adelanto.",
+          "Son cinco pasos: cliente, vehículo, servicios (una de sus cotizaciones o <b>Reserva sin cotización</b>), fecha y adelanto.",
           "El sistema solo ofrece los espacios libres en esas fechas: no hay dos reservas en el mismo espacio a la vez.",
-          "El adelanto: el monto que trae el cliente (el sugerido, más o el total), cómo pagó y la foto del comprobante. O <b>Sin adelanto</b>.",
+          "El adelanto, en su paso: <b>¿Dejó adelanto?</b> Con <b>Sí</b>, el monto que trae el cliente (el sugerido, más o el total), cómo pagó y la foto del comprobante; con <b>No</b>, no se registra nada.",
         ],
       },
       {

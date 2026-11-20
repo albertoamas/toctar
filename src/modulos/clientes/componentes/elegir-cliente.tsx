@@ -5,13 +5,15 @@ import { UserPlusIcon } from "lucide-react";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { buttonVariants } from "@/componentes/ui/button";
 import { buscarClientes } from "../consultas";
-import { normalizarBusqueda } from "../reglas";
+import { coincidenciaDeCliente, normalizarBusqueda } from "../reglas";
 import { Buscador } from "@/componentes/panel/buscador";
-import { TablaClientes } from "./tabla-clientes";
+import { TarjetasParaElegir } from "@/componentes/panel/tarjetas-para-elegir";
 
 // Elegir al cliente con el buscador de Clientes (HU-22): la nueva cotización (pedido 23) y la reserva directa (HU-30). La
 // elección va en la dirección (`hrefCliente`); "Cliente nuevo" es opcional (la reserva pide un cliente ya registrado).
-// Pulido 9.2: la misma tabla que la lista de Clientes (TablaClientes, pedido 26).
+// Recorrido visual del 20/11 (a pedido del dueño): en tarjetas, como el vehículo en el paso siguiente, con solo el
+// nombre. Sin las placas ni el WhatsApp de la tabla de Clientes: el vehículo se elige después y el teléfono no ayuda a
+// elegir. Si se buscó por placa o por teléfono, la tarjeta dice con qué coincidió ("Placa 1234ABC").
 
 type Props = {
   q: string;
@@ -45,15 +47,16 @@ export async function ElegirCliente({ q, hrefCliente, hrefNuevo, titulo = "Clien
         )
       }
     >
-      <div className="p-4 sm:px-4">
+      <div className="px-4 pt-4 sm:px-5">
         <Buscador />
       </div>
       {clientes.length === 0 ? (
-        <p className="px-4 pb-4 text-tinta-suave">{q ? `No hay ${otros} con «${q.trim()}».${sugerencia}` : `Todavía no hay ${otros}.${sugerencia}`}</p>
+        <p className="px-4 py-4 text-tinta-suave sm:px-5">{q ? `No hay ${otros} con «${q.trim()}».${sugerencia}` : `Todavía no hay ${otros}.${sugerencia}`}</p>
       ) : (
-        <div className="border-t border-border">
-          <TablaClientes etiqueta="Elegir cliente" clientes={clientes} busqueda={busqueda} href={hrefCliente} />
-        </div>
+        <TarjetasParaElegir
+          etiqueta="Elegir cliente"
+          tarjetas={clientes.map((c) => ({ clave: c.id, href: hrefCliente(c.id), titulo: c.nombre, detalle: coincidenciaDeCliente(c, busqueda) }))}
+        />
       )}
       {hayMas && <p className="border-t border-border px-4 py-3 text-sm text-tinta-suave">Hay más clientes: escribe algo más preciso para encontrar el que buscas.</p>}
     </Seccion>

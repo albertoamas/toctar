@@ -17,7 +17,20 @@ export function Buscador({ etiqueta = "Buscar por nombre, teléfono o placa", ej
   const router = useRouter();
   const ruta = usePathname();
   const parametros = useSearchParams();
-  const [texto, setTexto] = useState(parametros.get("q") ?? "");
+  const q = parametros.get("q") ?? "";
+  const [texto, setTexto] = useState(q);
+  // Lo que este buscador mandó a la dirección y la búsqueda de la dirección que ya se vio. Si la dirección cambia por otra
+  // cosa (el menú, una pestaña, "Volver"), el campo la sigue: Next guarda el estado de las pantallas visitadas y, al volver
+  // a la lista desde el menú, el campo seguía con lo buscado aunque la lista mostraba todo (recorrido visual del 20/11)
+  const [enviado, setEnviado] = useState(q);
+  const [qVisto, setQVisto] = useState(q);
+  if (q !== qVisto) {
+    setQVisto(q);
+    if (q !== enviado) {
+      setEnviado(q);
+      setTexto(q);
+    }
+  }
   const [buscando, iniciar] = useTransition();
   const espera = useRef<ReturnType<typeof setTimeout>>(undefined);
   const campo = useRef<HTMLInputElement>(null);
@@ -33,6 +46,7 @@ export function Buscador({ etiqueta = "Buscar por nombre, teléfono o placa", ej
       nuevos.delete("pagina");
       if (valor.trim()) nuevos.set("q", valor);
       else nuevos.delete("q");
+      setEnviado(valor.trim() ? valor : "");
       const consulta = nuevos.toString();
       // replace: la búsqueda no llena el historial del botón Atrás
       iniciar(() => router.replace(consulta ? `${ruta}?${consulta}` : ruta, { scroll: false }));

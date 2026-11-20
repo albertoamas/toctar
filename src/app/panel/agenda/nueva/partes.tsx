@@ -1,5 +1,7 @@
 import type { Route } from "next";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
+import type { DestinoPaso } from "@/componentes/panel/pasos-flujo";
+import { ParaQuien as LineaParaQuien } from "@/componentes/panel/para-quien";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { exigirModulo } from "@/lib/sesion";
@@ -7,7 +9,6 @@ import { bs } from "@/modulos/cotizaciones/reglas";
 import { FormularioReserva } from "@/modulos/agenda/componentes/formulario-reserva";
 import { espaciosEnFechas } from "@/modulos/agenda/consultas/espacios";
 import { type CotizacionParaReservar, type VehiculoReserva } from "@/modulos/agenda/consultas/reservar";
-import { ResumenClienteVehiculo } from "@/modulos/clientes/componentes/resumen-cliente-vehiculo";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { type Volver } from "@/lib/volver";
 
@@ -27,7 +28,8 @@ export type Contexto = {
   fechaInicial: string;
   texto: (clave: string) => string;
   numero: (clave: string) => number | null;
-  indicador: (actual: number) => React.ReactNode;
+  /** El indicador de pasos; `destinos`: a dónde lleva tocar cada paso hecho (20/11). */
+  indicador: (actual: number, destinos?: (DestinoPaso | undefined)[]) => React.ReactNode;
   direccion: (datos: Record<string, string | number>) => Route;
   /** Lo que se reserva: rearma el formulario cuando cambia en la misma pantalla (hallazgo 9). */
   clave: string;
@@ -44,20 +46,13 @@ export function Encabezado({ volver }: { volver: Volver }) {
 export const enlace = "font-semibold underline";
 
 /**
- * El cliente y su vehículo, en lectura y en una sola tarjeta ("Reserva para", pulido final del 09/11), cada uno con
- * "Cambiar" si se puede volver a elegir (`cambiarCliente`, `cambiarVehiculo`: a dónde lleva, con el día y el espacio que
- * llegaron del tablero).
+ * Para quién es la reserva, en una línea bajo el indicador de pasos (recorrido visual del 20/11): "Para Carla Rodríguez ·
+ * 1234ABC, Compactos". Antes, una tarjeta con "Cambiar" en cada paso; ahora se vuelve a un paso tocándolo en el
+ * indicador, y la pantalla muestra solo el paso que se hace. `extra`: el mantenimiento que se agenda.
  */
-export function ClienteYVehiculo(props: { nombre: string; vehiculo: VehiculoReserva | null; cambiarCliente?: Route; cambiarVehiculo?: Route; extra?: React.ReactNode }) {
-  return (
-    <ResumenClienteVehiculo
-      cliente={{ nombre: props.nombre, href: props.cambiarCliente }}
-      vehiculo={props.vehiculo && { ...props.vehiculo, href: props.cambiarVehiculo }}
-      extra={props.extra}
-    />
-  );
+export function ParaQuien(props: { nombre: string; vehiculo: VehiculoReserva | null; extra?: React.ReactNode }) {
+  return <LineaParaQuien etiqueta="Reserva para" nombre={props.nombre} placa={props.vehiculo?.placa} tamano={props.vehiculo?.tamano} extra={props.extra} />;
 }
-
 
 /**
  * Las cotizaciones del vehículo que se pueden reservar (pedido 31): cada una lleva al último paso de la reserva, con
@@ -93,8 +88,10 @@ export async function Formulario(props: {
   arriba?: React.ReactNode;
   cotizaciones?: React.ReactNode;
   atras?: Route;
+  /** A dónde lleva tocar el cliente y el vehículo en el indicador (los pasos que se eligen por la dirección). */
+  pasosHechos?: (DestinoPaso | undefined)[];
 }) {
-  const [parametros, espacios] = await Promise.all([obtenerParametros(), espaciosEnFechas(props.fechaInicial, props.fechaFin)]);
+  const [parametros, espacios] = await Promise.all([obtenerParametros(), props.fechaInicial ? espaciosEnFechas(props.fechaInicial, props.fechaFin) : []]);
   return (
     <FormularioReserva
       volver={props.volver}
@@ -108,6 +105,7 @@ export async function Formulario(props: {
       arriba={props.arriba}
       cotizaciones={props.cotizaciones}
       atras={props.atras}
+      pasosHechos={props.pasosHechos}
     />
   );
 }

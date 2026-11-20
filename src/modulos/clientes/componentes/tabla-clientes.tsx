@@ -24,8 +24,9 @@ export function TablaClientes({ etiqueta, clientes, busqueda, href, atenuadas = 
       etiqueta={etiqueta}
       columnas={[
         { titulo: "Cliente", ancho: "minmax(0,1.3fr)", movil: "titulo" },
-        { titulo: "Vehículos", ancho: "minmax(0,1.2fr)", movil: "par" },
-        { titulo: "WhatsApp", ancho: "10rem", movil: "par" },
+        // En el celular, uno debajo del otro (20/11): lado a lado partían el nombre y el teléfono en dos renglones
+        { titulo: "Vehículos", ancho: "minmax(0,1.2fr)", movil: "detalle" },
+        { titulo: "WhatsApp", ancho: "10rem", movil: "detalle" },
       ]}
       filas={clientes.map((c) => {
         const placas = placasEnFila(c.placas, busqueda);

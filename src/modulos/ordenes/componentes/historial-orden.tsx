@@ -17,7 +17,7 @@ export function HistorialOrden({ avances }: { avances: Avance[] }) {
             <li key={a.id} className="flex flex-col gap-0.5 py-2 pl-4">
               <span className="whitespace-pre-line">{a.nota}</span>
               <span className="text-sm text-tinta-suave">
-                {a.cuando}, {a.autor}
+                {a.cuando} · {a.autor}
               </span>
             </li>
           ))}

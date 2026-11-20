@@ -50,7 +50,6 @@ export const trabajo = pgTable(
     /** Entrega aproximada: la sugiere la duración del catálogo y se edita en cada reserva. */
     fechaFin: date("fecha_fin").notNull(),
     /** "a las 9", "en la tarde": solo una nota (S-3). */
-    horaIngreso: text("hora_ingreso"),
     /** Copiado de la cotización (D-4); 0 en una reserva directa. Total = suma de las líneas − descuento. */
     descuento: monto("descuento").default("0").notNull(),
     estado: text("estado").$type<EstadoTrabajo>().default("agendado").notNull(),
