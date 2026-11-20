@@ -11,7 +11,8 @@ import { Button } from "@/componentes/ui/button";
 // el celular; apilados, para dejarle el ancho al campo. Con `flechasEnFila`, desde 640 px van una al lado de la otra: una
 // fila de un renglón (los beneficios, pulido 13.22) no se estira. Con una sola fila no se muestran.
 // Con `enBloques` (los servicios de una cotización o una reserva, 20/11): cada fila es un bloque con su título
-// ("Servicio 1") y "Quitar" escrito arriba a la derecha, en lugar del número y la X sueltos al costado. Sin subir ni
+// ("Servicio 1") y "Quitar" escrito arriba a la derecha, en lugar del número y la X sueltos al costado. Sin borde
+// propio: va dentro de su tarjeta y una línea separa cada fila (una tarjeta dentro de otra se veía cargada). Sin subir ni
 // bajar: el orden de los servicios casi no se toca y en el celular eran dos cajas más por servicio.
 
 type MarcaError = { "aria-invalid": boolean; "aria-describedby": string | undefined };
@@ -50,7 +51,7 @@ export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maxim
     <div className="flex flex-col gap-3">
       <input type="hidden" name={nombre} value={JSON.stringify(vacia && valor.every(vacia) ? [] : valor)} />
       {valor.length > 0 && (
-        <ol className="flex flex-col gap-3" aria-label={etiqueta}>
+        <ol className={cn("flex flex-col", enBloques ? "divide-y divide-border" : "gap-3")} aria-label={etiqueta}>
           {valor.map((elemento, i) => {
             const error = errores[`${nombre}.${i}`];
             const marca = { "aria-invalid": !!error, "aria-describedby": error ? `${nombre}-${i}-error` : undefined };
@@ -58,7 +59,8 @@ export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maxim
             const quitar = () => onChange(valor.filter((_, k) => k !== i));
             if (enBloques)
               return (
-                <li key={i} className="flex flex-col gap-3 rounded-lg border border-border p-3 sm:p-4">
+                // Sin caja propia (20/11): ya va dentro de una tarjeta; una línea fina separa un servicio del otro
+                <li key={i} className="flex flex-col gap-3 py-4 first:pt-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold">
                       {etiqueta} {i + 1}
