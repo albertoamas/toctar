@@ -15,6 +15,9 @@ import { estaPagada, METODO_EN_FRASE, NOMBRE_TIPO_PAGO, precioCotizadoYFinal } f
 // verde y "Pagado por completo" si está pagado). C6: el título de cada una arriba de su tarjeta, como en las fichas.
 // Pulido 13.49: las dos tarjetas con su acción sin fondo en la cabecera ("Agregar servicio", "Registrar pago"); la opción
 // del servicio en gris debajo de su nombre; "Anular", en el "⋯" de cada pago.
+// Recorrido visual del 20/11 (a pedido del dueño): la cuenta (total, pagado y saldo) pasa de Servicios a Pagos, junto a
+// "Registrar pago" y a cada pago, como la tarjeta de pago de un pedido en Shopify: cuánto falta y cómo cobrarlo, en el
+// mismo lugar. Servicios queda con lo que se hace.
 
 const bs = (monto: string) => `${mostrarMonto(monto)} Bs`;
 
@@ -63,8 +66,12 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar, cobrar
               );
             })}
           </ul>
-          {/* Una sola lista: los totales y, al pie, el saldo resaltado (cada grupo de pares, en un div) */}
-          <dl className="flex flex-col border-t border-border">
+        </Seccion>
+        {/* "Registrar pago" sin fondo en la cabecera, como "Editar" (pulido 10.3): el rojo de la pantalla es su paso
+            siguiente (recibir, entregar) */}
+        <Seccion id="pagos" titulo="Pagos" sinRelleno accion={porCobrar && !cobrar && registrar("accion")}>
+          {/* La cuenta: los totales y el saldo resaltado (cada grupo de pares, en un div) */}
+          <dl className="flex flex-col">
             <div className="grid grid-cols-[1fr_auto] gap-x-6 gap-y-1 px-4 py-3">
               {montos.descuento !== "0.00" && (
                 <>
@@ -103,14 +110,9 @@ export function MontosTrabajo({ trabajoId, montos, cerrado, hoy, agregar, cobrar
               {pagada && !cobrar && <dd className="col-span-2 text-sm font-semibold">Pagado por completo.</dd>}
             </div>
           </dl>
-        </Seccion>
-        {/* "Registrar pago" sin fondo en la cabecera, como "Editar" (pulido 10.3): el rojo de la pantalla es su paso
-            siguiente (recibir, entregar) */}
-        <Seccion id="pagos" titulo="Pagos" sinRelleno accion={porCobrar && !cobrar && registrar("accion")}>
-          {montos.pagos.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-tinta-suave">Todavía no hay pagos.</p>
-          ) : (
-            <ul aria-label="Pagos" className="flex flex-col divide-y divide-border">
+          {/* Sin pagos, ya lo dice "Pagado 0 Bs" */}
+          {montos.pagos.length > 0 && (
+            <ul aria-label="Pagos" className="flex flex-col divide-y divide-border border-t border-border">
               {montos.pagos.map((p) => {
                 const descripcion = `${NOMBRE_TIPO_PAGO[p.tipo]} ${METODO_EN_FRASE[p.metodo]} de ${bs(p.monto)}, ${formatearFecha(p.fecha)}`;
                 return (
