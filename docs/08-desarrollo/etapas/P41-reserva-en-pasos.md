@@ -90,6 +90,9 @@ En el celular, una reserva sin cotización se arma paso a paso sin bajar por una
   (`ElegirVehiculoReserva`).
 - **El indicador de pasos sin azul**: los hechos en gris oscuro, el actual en negro y los que faltan en gris claro (el
   mismo en Nueva cotización).
-- **Elegir cliente en el celular**: el nombre, las placas y el teléfono uno debajo del otro.
+- **Elegir cliente** (también en Nueva cotización y al cambiar de dueño): en las mismas tarjetas que el vehículo, con
+  solo el nombre; sin las placas ni el WhatsApp (el vehículo se elige después y el teléfono no ayuda a elegir). Si se
+  buscó por placa o teléfono, la tarjeta dice con qué coincidió ("Placa 1234ABC"; `coincidenciaDeCliente`). La lista es
+  `TarjetasParaElegir`, la misma del vehículo.
 - **El resumen**: el monto siempre en un renglón.
 

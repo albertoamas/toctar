@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { ChevronRightIcon, PlusIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { cn } from "cn";
 import { useHidratado } from "@/componentes/hidratado";
+import { CLASE_TARJETA_PARA_ELEGIR, TarjetasParaElegir } from "@/componentes/panel/tarjetas-para-elegir";
 import { ModalFormulario } from "@/componentes/panel/modal-formulario";
 import { FormularioVehiculo } from "@/modulos/clientes/componentes/vehiculos-cliente";
 import type { CatalogoVehiculos } from "@/modulos/clientes/catalogo-vehiculos";
@@ -18,8 +18,6 @@ import type { Tamano } from "@/modulos/configuracion/consultas";
 // vehículo": abre el mismo "Agregar vehículo" de la ficha del cliente y, al guardarlo, aparece en la lista.
 
 type VehiculoParaElegir = { id: number; placa: string; detalle: string; href: Route };
-
-const TARJETA = "flex min-h-16 items-center gap-3 rounded-lg border border-border bg-fondo px-4 py-3 text-left transition-colors hover:border-tinta-suave/60 hover:bg-superficie/50";
 
 export function ElegirVehiculoReserva({
   clienteId,
@@ -38,18 +36,7 @@ export function ElegirVehiculoReserva({
   const [aperturas, setAperturas] = useState(0);
   return (
     <>
-      <ul aria-label="Elegir vehículo" className="flex flex-col gap-2 p-4 sm:p-5">
-        {vehiculos.map((v) => (
-          <li key={v.id}>
-            <Link href={v.href} className={TARJETA}>
-              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="tt-placa text-base">{v.placa}</span>
-                <span className="text-sm text-tinta-suave">{v.detalle}</span>
-              </span>
-              <ChevronRightIcon className="size-5 shrink-0 text-tinta-suave" aria-hidden />
-            </Link>
-          </li>
-        ))}
+      <TarjetasParaElegir etiqueta="Elegir vehículo" tarjetas={vehiculos.map((v) => ({ clave: v.id, href: v.href, titulo: v.placa, esPlaca: true, detalle: v.detalle }))}>
         {agregar && (
           <li>
             <button
@@ -59,7 +46,7 @@ export function ElegirVehiculoReserva({
                 setAperturas((n) => n + 1);
                 setAgregando(true);
               }}
-              className={cn(TARJETA, "w-full border-dashed border-input")}
+              className={cn(CLASE_TARJETA_PARA_ELEGIR, "border-dashed border-input")}
             >
               <PlusIcon className="size-5 shrink-0 text-tinta-suave" aria-hidden />
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -69,7 +56,7 @@ export function ElegirVehiculoReserva({
             </button>
           </li>
         )}
-      </ul>
+      </TarjetasParaElegir>
       {agregar && (
         <ModalFormulario
           titulo="Agregar vehículo"
