@@ -10,6 +10,9 @@ import { Button } from "@/componentes/ui/button";
 // Ordenar es poco frecuente (pulido 13.19): subir y bajar van en gris al costado de la fila, junto a "Quitar", también en
 // el celular; apilados, para dejarle el ancho al campo. Con `flechasEnFila`, desde 640 px van una al lado de la otra: una
 // fila de un renglón (los beneficios, pulido 13.22) no se estira. Con una sola fila no se muestran.
+// Con `enBloques` (los servicios de una cotización o una reserva, 20/11): cada fila es un bloque con su título
+// ("Servicio 1") y "Quitar" escrito arriba a la derecha, en lugar del número y la X sueltos al costado. Sin subir ni
+// bajar: el orden de los servicios casi no se toca y en el celular eran dos cajas más por servicio.
 
 type MarcaError = { "aria-invalid": boolean; "aria-describedby": string | undefined };
 
@@ -32,9 +35,11 @@ type Props<T> = {
    * lista para elegir (Nueva reserva) no es un cambio sin guardar y el servidor dice "Agrega al menos …".
    */
   vacia?: (elemento: T) => boolean;
+  /** Cada fila en un bloque con su título ("Servicio 1") y "Quitar" con su palabra. */
+  enBloques?: boolean;
 };
 
-export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maximo, textoAgregar, errores, fila, flechasEnFila = false, vacia }: Props<T>) {
+export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maximo, textoAgregar, errores, fila, flechasEnFila = false, vacia, enBloques = false }: Props<T>) {
   const mover = (i: number, j: number) => {
     const copia = [...valor];
     [copia[i], copia[j]] = [copia[j], copia[i]];
@@ -49,12 +54,31 @@ export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maxim
           {valor.map((elemento, i) => {
             const error = errores[`${nombre}.${i}`];
             const marca = { "aria-invalid": !!error, "aria-describedby": error ? `${nombre}-${i}-error` : undefined };
+            const cambiar = (nuevo: T) => onChange(valor.map((e, k) => (k === i ? nuevo : e)));
+            const quitar = () => onChange(valor.filter((_, k) => k !== i));
+            if (enBloques)
+              return (
+                <li key={i} className="flex flex-col gap-3 rounded-lg border border-border p-3 sm:p-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold">
+                      {etiqueta} {i + 1}
+                    </span>
+                    <div className="ml-auto flex items-center gap-1">
+                      <Button type="button" variant="accion" onClick={quitar} aria-label={`Quitar ${etiqueta.toLowerCase()} ${i + 1}`}>
+                        Quitar
+                      </Button>
+                    </div>
+                  </div>
+                  {fila(elemento, cambiar, i, marca)}
+                  {error && <MensajeError id={`${nombre}-${i}-error`}>{error}</MensajeError>}
+                </li>
+              );
             return (
               <li key={i} className="flex flex-col gap-1">
                 <div className="grid grid-cols-[1.25rem_minmax(0,1fr)_auto] gap-x-2">
                   {/* El número, a la altura del primer campo */}
                   <span aria-hidden className="flex h-9 items-center justify-end text-sm text-tinta-suave pointer-coarse:h-11">{i + 1}.</span>
-                  <div className="flex flex-col gap-2">{fila(elemento, (nuevo) => onChange(valor.map((e, k) => (k === i ? nuevo : e))), i, marca)}</div>
+                  <div className="flex flex-col gap-2">{fila(elemento, cambiar, i, marca)}</div>
                   <div className="flex items-start">
                     {valor.length > 1 && (
                       <div className={cn("flex flex-col text-tinta-suave", flechasEnFila && "sm:flex-row")}>
@@ -66,7 +90,7 @@ export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maxim
                         </Button>
                       </div>
                     )}
-                    <Button type="button" variant="accion" size="icon" onClick={() => onChange(valor.filter((_, k) => k !== i))} aria-label={`Quitar ${etiqueta.toLowerCase()} ${i + 1}`}>
+                    <Button type="button" variant="accion" size="icon" onClick={quitar} aria-label={`Quitar ${etiqueta.toLowerCase()} ${i + 1}`}>
                       <XIcon />
                     </Button>
                   </div>

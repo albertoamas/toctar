@@ -54,6 +54,7 @@ export function LineasServicio({ opciones, lineas, onChange, errores: todos, con
       maximo={MAXIMO_LINEAS}
       textoAgregar="Agregar servicio"
       errores={errores}
+      enBloques
       vacia={conFilaLista ? sinTocar : undefined}
       fila={(l, cambiar, i, marca) => {
         const elegida = opcion(l.varianteId);
@@ -62,7 +63,8 @@ export function LineasServicio({ opciones, lineas, onChange, errores: todos, con
         const sinMarca = { "aria-invalid": false, "aria-describedby": undefined };
         const falta = !servicioId ? "servicio" : !elegida ? "opcion" : "precio";
         return (
-          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+          // En su bloque (20/11): el servicio y su opción, y debajo el precio con su etiqueta y de dónde sale
+          <div className="flex flex-col gap-3">
             <ElegirServicio
               grupos={grupos}
               servicioId={servicioId}
@@ -75,8 +77,13 @@ export function LineasServicio({ opciones, lineas, onChange, errores: todos, con
               marcaServicio={falta === "servicio" ? marca : sinMarca}
               marcaOpcion={falta === "opcion" ? marca : sinMarca}
             />
-            <CampoMonto aria-label={`Precio del servicio ${i + 1}`} value={l.precio} onChange={(ev) => cambiar({ ...l, precio: ev.target.value })} {...(falta === "precio" ? marca : sinMarca)} />
-            {elegida && <p className="text-sm text-tinta-suave sm:col-span-2">{textoSugerencia(elegida.sugerencia)}</p>}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span aria-hidden className="text-sm font-medium">
+                Precio
+              </span>
+              <CampoMonto aria-label={`Precio del servicio ${i + 1}`} value={l.precio} onChange={(ev) => cambiar({ ...l, precio: ev.target.value })} {...(falta === "precio" ? marca : sinMarca)} />
+              {elegida && <p className="text-sm text-tinta-suave">{textoSugerencia(elegida.sugerencia)}</p>}
+            </div>
           </div>
         );
       }}
