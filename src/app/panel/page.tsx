@@ -6,7 +6,6 @@ import { cn } from "cn";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { ICONO_MODULO } from "@/componentes/panel/iconos-modulo";
-import { Insignia } from "@/componentes/panel/insignia";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { CeldaDoble, TablaLista } from "@/componentes/panel/tabla-lista";
@@ -30,6 +29,7 @@ import { enlaceTrabajo, estaAtrasada, rutaTrabajo } from "@/modulos/ordenes/regl
 import { saldosPendientes } from "@/modulos/pagos/consultas";
 import { reclamosPorAtender } from "@/modulos/reclamos/consultas";
 import { conDesde } from "@/lib/volver";
+import type { TonoEstado } from "@/lib/tonos";
 
 /** Lo que se abre desde Inicio vuelve a Inicio (pedido 43). */
 const INICIO = "/panel";
@@ -191,7 +191,8 @@ async function Contenido() {
   const atrasadas = abiertas?.filter((o) => estaAtrasada(o, hoy)).length ?? 0;
   const sinAvisar = abiertas?.filter((o) => o.sinAvisar).length ?? 0;
   const porCobrar = saldos?.reduce((suma, s) => suma + Number(s.saldo), 0) ?? 0;
-  const notaTaller = [atrasadas > 0 && cantidad(atrasadas, "atrasada", "atrasadas"), sinAvisar > 0 && cantidad(sinAvisar, "lista sin avisar", "listas sin avisar")].filter(Boolean).join(", ");
+  // Una sola línea por tarjeta (19/11): lo que más pesa. Las listas sin avisar ya se ven en "Para hoy"
+  const notaTaller = atrasadas > 0 ? cantidad(atrasadas, "atrasada", "atrasadas") : sinAvisar > 0 ? cantidad(sinAvisar, "lista sin avisar", "listas sin avisar") : "";
   const llegaHoy = ingresos?.filter((i) => i.fechaInicio === hoy).length ?? 0;
   const debianLlegar = (ingresos?.length ?? 0) - llegaHoy;
   // Cuántas tarjetas se ven: con un número impar, una va a todo el ancho en el celular
@@ -233,7 +234,14 @@ async function Contenido() {
           />
         )}
         {abiertas && (
-          <TarjetaNumero href="/panel/ordenes" icono={ICONO_MODULO.ordenes} titulo="En el taller" valor={abiertas.length} nota={notaTaller || "Nada atrasado"} aviso={notaTaller !== ""} />
+          <TarjetaNumero
+            href="/panel/ordenes"
+            icono={ICONO_MODULO.ordenes}
+            titulo="En el taller"
+            valor={abiertas.length}
+            nota={notaTaller || "Nada atrasado"}
+            aviso={atrasadas > 0 ? "peligro" : sinAvisar > 0}
+          />
         )}
         {ingresos && (
           <TarjetaNumero
@@ -242,7 +250,7 @@ async function Contenido() {
             titulo="Llegan hoy"
             valor={llegaHoy}
             nota={debianLlegar > 0 ? `${cantidad(debianLlegar, "debía", "debían")} llegar antes` : llegaHoy > 0 ? "Por recibir" : "Nada para hoy"}
-            aviso={debianLlegar > 0}
+            aviso={debianLlegar > 0 && "peligro"}
           />
         )}
         {pendientes && (
@@ -295,34 +303,44 @@ function ParaHoy({ filas, verOrdenes }: { filas: FilaDelDia[]; verOrdenes: boole
           etiqueta="Para hoy"
           columnas={[
             { titulo: "Vehículo", ancho: "minmax(0,1fr)", movil: "titulo" },
-            // En el celular, en su renglón debajo de la placa: dos insignias al lado partían el nombre del cliente
-            { titulo: "Estado", ancho: "minmax(0,1.3fr)", movil: "detalle" },
-            { titulo: "Cuándo", ancho: "minmax(0,1fr)", movil: "detalle" },
-            { titulo: "Siguiente paso", ancho: "minmax(0,1fr)", movil: "oculta" },
+            { titulo: "Estado", ancho: "minmax(0,1.1fr)", movil: "detalle" },
+            { titulo: "Cuándo", ancho: "minmax(0,1.1fr)", movil: "detalle" },
           ]}
           filas={filas.map((f) => ({
             href: conDesde(rutaTrabajo(f.id, f.estado, verOrdenes), INICIO),
             celdas: [
               <CeldaDoble key="v" principal={f.placa} secundario={f.cliente} peso="placa" />,
-              <span key="e" className="flex flex-wrap gap-1.5">
-                <Insignia tono={TONO_ESTADO_TRABAJO[f.estado]}>{NOMBRE_ESTADO_TRABAJO[f.estado]}</Insignia>
-                {f.avisos.map((a) => (
-                  <Insignia key={a} tono="aviso">
-                    {a}
-                  </Insignia>
-                ))}
-              </span>,
-              <span key="c">
+              // Una sola marca (19/11, sin píldoras): el problema en su color o, si no hay, el estado con el punto de su tono
+              f.problema ? (
+                <Marca key="e" punto={f.problema.tono === "peligro" ? "bg-peligro" : "bg-aviso"} className={cn("font-semibold", f.problema.tono === "peligro" ? "text-peligro" : "text-aviso")}>
+                  {f.problema.texto}
+                </Marca>
+              ) : (
+                <Marca key="e" punto={PUNTO_DEL_TONO[TONO_ESTADO_TRABAJO[f.estado] ?? "info"]}>
+                  {NOMBRE_ESTADO_TRABAJO[f.estado]}
+                </Marca>
+              ),
+              <span key="c" className="text-tinta-suave">
                 {f.cuando}
-                {/* En el celular, el paso siguiente en la misma línea: su columna no se muestra */}
-                {f.siguiente && <span className="@2xl:hidden">, {f.siguiente.charAt(0).toLowerCase() + f.siguiente.slice(1)}</span>}
               </span>,
-              f.siguiente,
             ],
           }))}
         />
       )}
     </Seccion>
+  );
+}
+
+/** El color del punto de cada tono de estado. */
+const PUNTO_DEL_TONO: Record<TonoEstado, string> = { exito: "bg-exito", aviso: "bg-aviso", peligro: "bg-peligro", info: "bg-info", violeta: "bg-violeta" };
+
+/** Un estado escrito con un punto de color delante (19/11): sin píldora. */
+function Marca({ punto, className, children }: { punto: string; className?: string; children: React.ReactNode }) {
+  return (
+    <span className={cn("flex items-center gap-2", className)}>
+      <span className={cn("size-2 shrink-0 rounded-full", punto)} aria-hidden />
+      {children}
+    </span>
   );
 }
 

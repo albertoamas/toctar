@@ -6,7 +6,8 @@ import { Seccion } from "@/componentes/panel/cabecera-seccion";
 // "Para atender" en el inicio (pedido 26): lo que espera una acción de la persona (un reclamo, una cotización sin
 // respuesta, un saldo, los mantenimientos vencidos), cada uno con su acción a la derecha. Toda la fila lleva a donde se
 // hace. Vacío, una línea. Pulido final (10/11): el título arriba y fuera de su tarjeta, como "Para hoy" y el resto.
-// 18/11: una fila por tipo (la arma Inicio) y, angosto, la acción debajo del texto.
+// 18/11: una fila por tipo (la arma Inicio). 19/11 (prototipo 4): el ícono en gris (el ámbar en cada fila no decía
+// nada) y la acción siempre a la derecha.
 
 export type Pendiente = { href: Route; icono: LucideIcon; titulo: string; detalle: string; accion: string };
 
@@ -22,19 +23,15 @@ export function ParaAtender({ pendientes }: { pendientes: Pendiente[] }) {
             {pendientes.map((p) => (
               <li key={p.href}>
                 <Link href={p.href} className="flex min-h-11 items-center gap-3 px-4 py-3 hover:bg-superficie/60 focus-visible:-outline-offset-2">
-                  <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-aviso-fondo text-aviso">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-superficie text-tinta-suave">
                     <p.icono className="size-4" aria-hidden />
                   </span>
-                  <span className="flex min-w-0 flex-1 flex-col text-sm">
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5 text-sm">
                     <span className="font-semibold">{p.titulo}</span>
                     <span className="text-tinta-suave">{p.detalle}</span>
-                    {/* Angosto (el celular, o la columna de al lado en pantalla grande): la acción abajo, sin apretar el texto */}
-                    <span className="mt-1 flex items-center gap-0.5 font-semibold @lg:hidden">
-                      {p.accion}
-                      <ChevronRightIcon className="size-4 text-tinta-suave" aria-hidden />
-                    </span>
                   </span>
-                  <span className="hidden shrink-0 items-center gap-0.5 text-sm font-semibold @lg:flex">
+                  {/* La acción, siempre a la derecha (19/11): es una palabra, no aprieta el texto */}
+                  <span className="flex shrink-0 items-center gap-0.5 text-sm font-semibold">
                     {p.accion}
                     <ChevronRightIcon className="size-4 text-tinta-suave" aria-hidden />
                   </span>

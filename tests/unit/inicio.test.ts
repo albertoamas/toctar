@@ -13,13 +13,13 @@ test("la fecha del título lleva el día de la semana", () => {
 });
 
 test("un ingreso de un día pasado dice desde cuándo se lo espera; uno de hoy, nada", () => {
-  expect(textoIngresoAtrasado("2026-10-21", hoy)).toBe("Debía ingresar el 21/10");
-  expect(textoIngresoAtrasado("2025-12-30", hoy)).toBe("Debía ingresar el 30/12/2025");
+  expect(textoIngresoAtrasado("2026-10-21", hoy)).toBe("Debía ingresar el 21 oct.");
+  expect(textoIngresoAtrasado("2025-12-30", hoy)).toBe("Debía ingresar el 30 dic. 2025");
   expect(textoIngresoAtrasado(hoy, hoy)).toBeNull();
 });
 
 test("una orden que se debía entregar antes de hoy está atrasada; una lista que espera al cliente, no", () => {
-  expect(textoEntregaAtrasada({ estado: "en_proceso", fechaFin: "2026-10-22" }, hoy)).toBe("Atrasada desde el 22/10");
+  expect(textoEntregaAtrasada({ estado: "en_proceso", fechaFin: "2026-10-22" }, hoy)).toBe("Atrasada desde el 22 oct.");
   expect(textoEntregaAtrasada({ estado: "recibido", fechaFin: hoy }, hoy)).toBeNull();
   expect(textoEntregaAtrasada({ estado: "listo", fechaFin: "2026-10-20" }, hoy)).toBeNull();
 });
@@ -57,13 +57,14 @@ test("Para hoy junta lo que llega, las entregas y las listas sin avisar, sin rep
   ];
   const filas = paraHoy(ingresos, abiertas, hoy);
   expect(filas.map((f) => f.id)).toEqual([1, 2, 3, 4, 5]);
-  expect(filas[0]).toMatchObject({ estado: "agendado", avisos: ["Debía ingresar el 21/10"], cuando: "Por recibir, Espacio 1", siguiente: "Recibir vehículo" });
-  expect(filas[1]).toMatchObject({ avisos: [], cuando: "Llega a las 8:30, Espacio 2" });
-  expect(filas[2]).toMatchObject({ estado: "en_proceso", avisos: ["Atrasada desde el 22/10"], cuando: "Entrega ayer" });
-  // Entrega de hoy y lista sin avisar: una vez, con su aviso
-  expect(filas[3]).toMatchObject({ estado: "listo", avisos: ["Sin avisar"], cuando: "Entrega hoy", siguiente: "Avisar por WhatsApp" });
+  // Una sola marca por fila: el problema, y el estado pasa a la línea de abajo (19/11)
+  expect(filas[0]).toMatchObject({ estado: "agendado", problema: { texto: "Debía ingresar el 21 oct.", tono: "peligro" }, cuando: "Reservada, por recibir, Espacio 1" });
+  expect(filas[1]).toMatchObject({ problema: null, cuando: "Llega a las 8:30, Espacio 2" });
+  expect(filas[2]).toMatchObject({ estado: "en_proceso", problema: { texto: "Atrasada desde el 22 oct.", tono: "peligro" }, cuando: "En proceso, entrega ayer" });
+  // Entrega de hoy y lista sin avisar: una vez, con "Sin avisar" en ámbar
+  expect(filas[3]).toMatchObject({ estado: "listo", problema: { texto: "Sin avisar", tono: "aviso" }, cuando: "Lista, entrega hoy" });
   // Lista desde antes, sin avisar: no está atrasada (el trabajo ya se hizo)
-  expect(filas[4]).toMatchObject({ avisos: ["Sin avisar"] });
+  expect(filas[4]).toMatchObject({ problema: { texto: "Sin avisar", tono: "aviso" }, cuando: "Lista, entrega 20 oct." });
   // La que se entrega más adelante no es de hoy
   expect(paraHoy([], [abiertas[3]], hoy)).toEqual([]);
 });

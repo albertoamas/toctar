@@ -137,6 +137,17 @@ Migraciones:
 - **En el celular**, una sola columna; en la computadora, dos.
 - **El técnico** sigue con su inicio de hoy.
 
+> **Recorrido visual del 19/11** (a pedido del dueño, prototipo 4 aprobado, "menos es más"; se probaron antes dos
+> rediseños y se volvió a esta estructura):
+> - **Una sola marca por fila en "Para hoy", sin píldoras:** si algo falla, un punto y el problema en su color ("Debía
+>   ingresar el 7 nov.", "Atrasada desde el 16 nov." en rojo; "Sin avisar" en ámbar) y el estado pasa a la línea de
+>   cuándo ("Reservada, por recibir, Espacio 2"); si no, el estado con el punto de su tono. Sin la columna "Siguiente
+>   paso". Las fechas como "7 nov.".
+> - **Tarjetas de números:** la etiqueta chica con su ícono suelto, que baja de renglón si no cabe (en un iPhone,
+>   "Mantenimientos" se salía); una línea por tarjeta y, si pide atención, con un punto: rojo lo atrasado, ámbar lo que
+>   espera.
+> - **"Para atender":** el ícono en gris y la acción siempre a la derecha.
+
 ### `/panel/configuracion/mensajes` — Mensajes (dueño; HU-40)
 - Una tarjeta por mensaje: "Vehículo listo", "Saldo pendiente" y "Mantenimiento".
 - **En cada una:**
