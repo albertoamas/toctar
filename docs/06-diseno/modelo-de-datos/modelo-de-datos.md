@@ -14,9 +14,9 @@ El modelo cubre el **Sistema completo**, aunque hoy se programa solo Web + Gesti
 | D-2 | **Todo servicio tiene al menos una variante** (si no tiene opciones, una llamada "Única"). | Precios, cotizaciones y trabajos siempre apuntan a una variante: una sola regla, sin casos especiales. |
 | D-3 | **Los precios no se sobrescriben:** cada cambio es una fila nueva con fecha (`precio`). | Historial de precios (RF-28) gratis. |
 | D-4 | **Las líneas de cotización y de trabajo copian descripción y precio.** | Una cotización enviada no cambia si después cambia el catálogo (RN-02). |
-| D-5 | **Cruces de agenda imposibles en la base de datos:** restricción de exclusión sobre `(espacio_id, rango de fechas)` para trabajos activos. | RN-06 se cumple aunque dos personas reserven al mismo tiempo. |
+| D-5 | **Lugares por día (pedido 55):** cada día, los trabajos que ocupan lugar no pasan de `sucursal.lugares`. Lo cuida el servidor: reservar y reprogramar bloquean la fila de la sucursal y vuelven a contar dentro de la transacción. Antes, una restricción de exclusión por espacio (`trabajo_sin_cruces`, quitada en la migración 0054). | RN-06 se cumple aunque dos personas reserven al mismo tiempo. |
 | D-6 | **Nada se borra si tiene historial:** campo `activo` o estado `anulado`. | RN-14 y auditoría. |
-| D-7 | **`sucursal_id` desde el inicio** en espacios, trabajos y (futuro) caja e inventario. Hoy hay una sola sucursal. | Segunda sucursal sin migración grande. |
+| D-7 | **`sucursal_id` desde el inicio** en trabajos y (futuro) caja e inventario. Hoy hay una sola sucursal. | Segunda sucursal sin migración grande. |
 | D-8 | **Parámetros como tabla clave-valor validada en código** (`parametro`). | Agregar un parámetro no requiere migración (RNF-11). |
 | D-9 | **Montos en `numeric(10,2)`**, fechas de agenda en `date`, marcas de tiempo en `timestamptz` (America/La_Paz al mostrar). | Sin errores de redondeo ni de zona horaria. |
 | D-10 | **Archivos en una tabla común (`archivo`)**; el binario va al almacenamiento de fotos, la base guarda solo la referencia. | La base queda liviana y los respaldos son rápidos. |
@@ -70,11 +70,10 @@ Convenciones: `id` es `bigint` autoincremental; todas las tablas tienen `created
 | Tabla | Campos | Notas |
 |---|---|---|
 | `negocio` | nombre, logo_archivo_id, correo, redes (json), nit, razon_social | Una sola fila |
-| `sucursal` | nombre, direccion, lat, lng, horarios (json), telefono_whatsapp, activo | Hoy una fila |
+| `sucursal` | nombre, direccion, lat, lng, horarios (json), telefono_whatsapp, lugares (pedido 55: cuántos autos entran a la vez), activo | Hoy una fila |
 | `parametro` | clave (pk), valor (jsonb) | Adelanto sugerido, validez de cotización, intervalo de mantenimiento, condiciones del PDF, etc. |
 | `tamano_vehiculo` | nombre, descripcion, orden, activo | Hoy 5, de compactos a extra grandes; `descripcion` lleva modelos de ejemplo para clasificar el vehículo |
 | `marca_vehiculo` | nombre (único sin mayúsculas), orden, activo | Pedido 52: la lista de la que se elige la marca de un vehículo, en Configuración → Taller. El vehículo guarda el nombre como texto; una marca nueva escrita al registrar un vehículo se suma sola. El modelo es texto libre, sin tabla ni sugerencias |
-| `espacio_taller` | sucursal_id, nombre, orden, activo | Hoy 3 |
 | `usuario` | nombre, nombre_usuario (único), correo (interno), rol (`dueno`, `encargado`, con CHECK; D-13), desactivado | Tabla de Better Auth. La contraseña (hash) va en `cuenta`; `correo` es interno (`<usuario>@usuarios.toctar.local`) porque la librería lo exige; "desactivar" usa el bloqueo de la librería, que cierra las sesiones. Tablas propias de la librería: `sesion`, `cuenta`, `verificacion` (HU-01) |
 | `usuario_permiso` | usuario_id, permiso | Solo para encargado (RF-16): un módulo (`sitio`, `reclamos`, `clientes`, `cotizaciones`, `agenda`, `ordenes`, `pagos`, `mantenimientos`) o el permiso `entrega_con_saldo` (RN-13) |
 | `plantilla_mensaje` | clave (pk), texto | Los mensajes de WhatsApp que el dueño cambió: "listo", "saldo" y "mantenimiento" (HU-40). Sin fila vale el original, que está en el código |
@@ -121,7 +120,7 @@ Convenciones: `id` es `bigint` autoincremental; todas las tablas tienen `created
 
 | Tabla | Campos | Notas |
 |---|---|---|
-| `trabajo` | sucursal_id, cliente_id, vehiculo_id, cotizacion_id (opcional), espacio_id, fecha_inicio, fecha_fin, estado (`agendado`, `recibido`, `en_proceso`, `listo`, `entregado`, `cancelado`), observaciones_ingreso, recibido_at, listo_at, avisado_listo_at, entregado_at, entrega_con_saldo_autorizada_por, motivo_cancelacion, firma_archivo_id (privado), firma_nombre, sin_firma_motivo (pedido 13: la firma del cliente al entregar, o el motivo) | D-1 y D-5. Al entregar antes de tiempo, `fecha_fin` se ajusta y libera el espacio |
+| `trabajo` | sucursal_id, cliente_id, vehiculo_id, cotizacion_id (opcional), fecha_inicio, fecha_fin, estado (`agendado`, `recibido`, `en_proceso`, `listo`, `entregado`, `cancelado`), observaciones_ingreso, recibido_at, listo_at, avisado_listo_at, entregado_at, entrega_con_saldo_autorizada_por, motivo_cancelacion, firma_archivo_id (privado), firma_nombre, sin_firma_motivo (pedido 13: la firma del cliente al entregar, o el motivo) | D-1 y D-5. Al entregar antes de tiempo, `fecha_fin` se ajusta y libera su lugar |
 | `trabajo_linea` | trabajo_id, variante_id, descripcion, precio, es_adicional | Total = suma de líneas |
 | `trabajo_foto` | trabajo_id, archivo_id, etapa (`ingreso`, `antes`, `durante`, `despues`), subido_por | |
 | `parte_revision` | nombre (único), orden, activo | Las partes del checklist de recepción, en Configuración → Taller (pedido 12) |
@@ -129,16 +128,7 @@ Convenciones: `id` es `bigint` autoincremental; todas las tablas tienen `created
 | `trabajo_avance` | trabajo_id, usuario_id, nota | |
 | `pago` | trabajo_id, monto, metodo (`efectivo`, `qr`, `transferencia`), tipo (`adelanto`, `saldo`), fecha, comprobante_archivo_id, anulado, motivo_anulacion, anulado_por | Saldo = total − pagos no anulados. Si el trabajo se cancela, el adelanto queda como ingreso (RN-05) |
 
-**Restricción de agenda (D-5):**
-
-```sql
-CREATE EXTENSION IF NOT EXISTS btree_gist;
-ALTER TABLE trabajo ADD CONSTRAINT trabajo_sin_cruces
-  EXCLUDE USING gist (
-    espacio_id WITH =,
-    daterange(fecha_inicio, fecha_fin, '[]') WITH &&
-  ) WHERE (estado NOT IN ('cancelado', 'entregado'));
-```
+**Lugares por día (D-5, pedido 55):** `sucursal.lugares` (entero, de 1 a 50). Ocupan lugar las reservas (`agendado`) en sus días y las órdenes en el taller (`recibido`, `en_proceso`, `listo`) desde su ingreso hasta su entrega o, si se atrasan, hasta hoy.
 
 ### Mantenimiento (entrega 2)
 

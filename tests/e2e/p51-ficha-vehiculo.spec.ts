@@ -18,7 +18,7 @@ async function autoQueCambioDeDueno(info: TestInfo, n: number) {
   const actualId = await crearClienteEnBase({ nombre: actual, telefono: telefono(info, n * 2) });
   // Un espacio y un día propios por proyecto y por prueba: las dos corren a la vez y no se pisan en el tablero
   const celular = info.project.name === "celular";
-  const ordenId = await crearOrdenLista({ placa, espacio: celular ? 1 : 0, dias: -(40 + n * 3 + info.retry + (celular ? 20 : 0)), precio: 450, pagado: 0 });
+  const ordenId = await crearOrdenLista({ placa, dias: -(40 + n * 3 + info.retry + (celular ? 20 : 0)), precio: 450, pagado: 0 });
   await consultar("update trabajo set estado = 'entregado', entregado_at = now() where id = $1", [ordenId]);
   await consultar("update vehiculo set cliente_id = $1, marca = 'Toyota', modelo = 'Hilux' where placa = $2", [actualId, placa]);
   const [{ id }] = await consultar<{ id: number }>("select id from vehiculo where placa = $1", [placa]);

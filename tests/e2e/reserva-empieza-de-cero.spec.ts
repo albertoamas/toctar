@@ -16,9 +16,9 @@ const hoy = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/La_Paz" 
 async function recordatorio(placa: string): Promise<number> {
   const [{ id }] = await consultar<{ id: number }>(
     `with t as (
-       insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, entregado_at, created_by)
-       select e.sucursal_id, v.cliente_id, v.id, e.id, (now() at time zone 'America/La_Paz')::date - 100, (now() at time zone 'America/La_Paz')::date - 100, 'entregado', now(), now(), now() - interval '100 days', v.created_by
-       from vehiculo v, (select * from espacio_taller where activo order by orden limit 1) e where v.placa = $1 returning id, cliente_id, vehiculo_id
+       insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, entregado_at, created_by)
+       select e.sucursal_id, v.cliente_id, v.id, (now() at time zone 'America/La_Paz')::date - 100, (now() at time zone 'America/La_Paz')::date - 100, 'entregado', now(), now(), now() - interval '100 days', v.created_by
+       from vehiculo v, (select id as sucursal_id from sucursal order by id limit 1) e where v.placa = $1 returning id, cliente_id, vehiculo_id
      )
      insert into recordatorio_mantenimiento (trabajo_origen_id, cliente_id, vehiculo_id, servicio_id, servicio_mantenimiento_id, intervalo_meses, fecha_programada)
      select t.id, t.cliente_id, t.vehiculo_id, (select id from servicio where slug = 'pulido-y-nano-ceramico'),
@@ -31,16 +31,14 @@ async function recordatorio(placa: string): Promise<number> {
 const precio = (page: Page) => page.getByLabel("Precio del servicio 1");
 const fila = (page: Page, placa: string) => page.getByRole("list", { name: "Vencidos" }).getByRole("listitem").filter({ hasText: placa });
 
-/** Llena el mantenimiento hasta la fecha y el espacio, sin reservar. */
+/** Llena el mantenimiento hasta la fecha, sin reservar. */
 async function llenar(page: Page) {
   await expect(precio(page)).toBeEnabled();
   await precio(page).fill("350");
   await page.getByRole("button", { name: "Siguiente: fecha" }).click();
   const [{ d }] = await consultar<{ d: string }>("select to_char($1::date + 30, 'YYYY-MM-DD') as d", [hoy()]);
   await page.getByLabel("Ingresa el").fill(d);
-  const espacio = page.getByLabel("Espacio", { exact: true });
-  await expect(espacio).toBeEnabled();
-  await espacio.selectOption({ index: 1 });
+  await expect(page.getByLabel("Ingresa el")).toHaveValue(d);
 }
 
 /** Lo de un mantenimiento recién abierto: en Servicios, sin precio, para el cliente de esa placa. */
@@ -109,25 +107,21 @@ test("desde una cotización (Por reservar de la Agenda), también empieza de cer
   const reservar = async () => {
     await page.goto("/panel/agenda");
     await (await verPorReservar(page)).getByRole("link").filter({ hasText: nombre }).click();
-    await expect(page.getByLabel("Espacio", { exact: true })).toBeEnabled();
+    await expect(page.getByLabel("Ingresa el")).toBeEnabled();
   };
 
-  // A medio llenar: la fecha (un día lejano: hoy, el día por defecto, otras pruebas ocupan espacios) y el espacio
+  // A medio llenar: la fecha (un día lejano)
   await reservar();
   const [{ d }] = await consultar<{ d: string }>("select to_char($1::date + 30, 'YYYY-MM-DD') as d", [hoy()]);
   await page.getByLabel("Ingresa el").fill(d);
-  await expect(page.getByLabel("Espacio", { exact: true })).toBeEnabled();
-  await page.getByLabel("Espacio", { exact: true }).selectOption({ index: 1 });
-  const elegido = await page.getByLabel("Espacio", { exact: true }).inputValue();
-  expect(elegido).not.toBe("");
+  await expect(page.getByLabel("Ingresa el")).toHaveValue(d);
   // "Volver a Agenda", sin guardar
   await page.getByRole("main").getByRole("link", { name: "Volver a Agenda" }).click();
   await page.getByRole("alertdialog", { name: "¿Salir sin guardar?" }).getByRole("button", { name: "Salir sin guardar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda$/);
 
   // La misma cotización otra vez: de cero, sin la fecha llenada (vacía desde el 20/11: no se reserva un día que no se
-  // eligió) y sin el espacio elegido antes
+  // eligió)
   await (await verPorReservar(page)).getByRole("link").filter({ hasText: nombre }).click();
   await expect(page.getByLabel("Ingresa el")).toHaveValue("");
-  await expect(page.getByLabel("Espacio", { exact: true })).toHaveValue("");
 });

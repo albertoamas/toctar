@@ -13,7 +13,7 @@ test("una orden vuelve a la pantalla de la que se abrió, y sin origen (o con un
   const s = sufijo(info);
   const placa = `VO43${s}1`;
   const clienteId = await crearClienteEnBase({ nombre: `Volver orden ${s}`, telefono: telefono(info, 1), placa });
-  const id = await crearOrdenLista({ placa, espacio: 0, dias: dias(info, 1), precio: 500, pagado: 0 });
+  const id = await crearOrdenLista({ placa, dias: dias(info, 1), precio: 500, pagado: 0 });
   await ingresarComoDueno(page);
 
   // Desde la ficha del cliente: su fila abre la orden y "Volver" lleva al cliente
@@ -39,7 +39,7 @@ test("una lista vuelve con su filtro y su búsqueda", async ({ page }, info) => 
   const s = sufijo(info);
   const placa = `VL43${s}1`;
   await crearClienteEnBase({ nombre: `Volver lista ${s}`, telefono: telefono(info, 2), placa });
-  const id = await crearOrdenLista({ placa, espacio: 0, dias: dias(info, 2), precio: 300, pagado: 0 });
+  const id = await crearOrdenLista({ placa, dias: dias(info, 2), precio: 300, pagado: 0 });
   await ingresarComoDueno(page);
   await page.goto(`/panel/ordenes?estado=listo&q=${placa}`);
   await page.getByRole("list", { name: "Órdenes en el taller" }).getByRole("link", { name: new RegExp(placa) }).click();
@@ -55,7 +55,7 @@ test("sin el permiso del módulo de origen, vuelve a la de siempre", async ({ pa
   const s = sufijo(info);
   const placa = `VP43${s}1`;
   await crearClienteEnBase({ nombre: `Volver permiso ${s}`, telefono: telefono(info, 3), placa });
-  const id = await crearOrdenLista({ placa, espacio: 0, dias: dias(info, 3), precio: 300, pagado: 0 });
+  const id = await crearOrdenLista({ placa, dias: dias(info, 3), precio: 300, pagado: 0 });
   const usuario = `volver-ordenes-${s.toLowerCase()}`;
   await crearUsuario({ usuario, nombre: "Solo órdenes", contrasena: "encargado-123", rol: "encargado", permisos: ["ordenes"] });
   await ingresar(page, usuario, "encargado-123");
@@ -83,13 +83,12 @@ test("al recibir, la orden vuelve a donde se estaba antes de abrir la reserva y 
   const s = sufijo(info);
   const placa = `VE43${s}1`;
   await crearClienteEnBase({ nombre: `Volver recibir ${s}`, telefono: telefono(info, 5), placa });
-  // Una reserva de hoy en un espacio propio y desactivado, como en hu-33-checklist
+  // Una reserva de hoy, directo en la base (como en hu-33-checklist)
   const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: "America/La_Paz" }).format(new Date());
   const [{ id }] = await consultar<{ id: number }>(
-    `with e as (insert into espacio_taller (sucursal_id, nombre, orden, activo) select sucursal_id, $2, 94, false from espacio_taller limit 1 returning id, sucursal_id)
-     insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, created_by)
-     select e.sucursal_id, v.cliente_id, v.id, e.id, $3::date, $3::date, v.created_by from vehiculo v, e where v.placa = $1 returning id`,
-    [placa, `Espacio volver ${s}`, hoy],
+    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, created_by)
+     select e.sucursal_id, v.cliente_id, v.id, $2::date, $2::date, v.created_by from vehiculo v, (select id as sucursal_id from sucursal order by id limit 1) e where v.placa = $1 returning id`,
+    [placa, hoy],
   );
   await ingresarComoDueno(page);
   await page.goto("/panel/agenda");

@@ -14,7 +14,7 @@ test("pagada: el dueño suma un adicional, se cobra y se entrega; queda programa
   const s = sufijo(info);
   const placa = `EN36${s.toUpperCase()}1`;
   await crearClienteEnBase({ nombre: `Entrega ${s}`, telefono: telefono(info, 1), placa });
-  const id = await crearOrdenLista({ placa, espacio: 0, dias: dias(info), precio: 1000, pagado: 1000 });
+  const id = await crearOrdenLista({ placa, dias: dias(info), precio: 1000, pagado: 1000 });
 
   await ingresarComoDueno(page);
   await page.goto(`/panel/ordenes/${id}`);
@@ -55,7 +55,7 @@ test("pagada: el dueño suma un adicional, se cobra y se entrega; queda programa
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?entregado=1(?:[?&]volver=[^&#]*)?$`));
   // Entregada, el encabezado dice cuándo: la entrega "aproximada" ya no se muestra (recorrido de la Entrega 2)
   const datos = page.getByLabel("Datos de la orden");
-  await expect(datos).toContainText("Espacio");
+  await expect(datos).toContainText("Cliente");
   await expect(datos.getByText("Entrega", { exact: true })).toHaveCount(0);
   await expect(datos).not.toContainText("aproximada");
   // El aviso flotante (la historia de la orden dice lo mismo)
@@ -105,7 +105,7 @@ test("con saldo: el encargado sin el permiso no entrega; con el permiso sí, y q
   const s = sufijo(info);
   const placa = `EN36${s.toUpperCase()}2`;
   await crearClienteEnBase({ nombre: `Debe ${s}`, telefono: telefono(info, 2), placa });
-  const id = await crearOrdenLista({ placa, espacio: 1, dias: dias(info), precio: 500, pagado: 200 });
+  const id = await crearOrdenLista({ placa, dias: dias(info), precio: 500, pagado: 200 });
   await crearUsuario({ usuario: `sinperm-hu36-${s}`, nombre: "Encargado sin permiso", contrasena: "encargado-123", rol: "encargado", permisos: ["ordenes", "pagos"] });
   await crearUsuario({ usuario: `conperm-hu36-${s}`, nombre: "Encargada con permiso", contrasena: "encargado-123", rol: "encargado", permisos: ["ordenes", "pagos", "entrega_con_saldo"] });
 
@@ -159,7 +159,7 @@ test("sin firma ni «Entregar sin firma» no se entrega; sin firma pide el motiv
   const s = sufijo(info);
   const placa = `EN36${s.toUpperCase()}3`;
   await crearClienteEnBase({ nombre: `Sin firma ${s}`, telefono: telefono(info, 3), placa });
-  const id = await crearOrdenLista({ placa, espacio: 2, dias: dias(info), precio: 500, pagado: 500 });
+  const id = await crearOrdenLista({ placa, dias: dias(info), precio: 500, pagado: 500 });
   await ingresarComoDueno(page);
   await page.goto(`/panel/ordenes/${id}/entregar`, { waitUntil: "networkidle" });
   const entrega = page.getByRole("form", { name: "Entregar vehículo" });
@@ -195,7 +195,7 @@ test("al cobrar todo en Entregar, ya no ofrece entregar con saldo pendiente", as
   const placa = `EN36${sufijo(info).toUpperCase()}9`;
   await crearClienteEnBase({ nombre: `Paga al entregar ${sufijo(info)}`, telefono: telefono(info, 4), placa });
   // El día siguiente al de las demás pruebas del archivo: no se cruza con sus espacios
-  const id = await crearOrdenLista({ placa, espacio: 0, dias: dias(info) + 1, precio: 800, pagado: 0 });
+  const id = await crearOrdenLista({ placa, dias: dias(info) + 1, precio: 800, pagado: 0 });
   await ingresarComoDueno(page);
   await page.goto(`/panel/ordenes/${id}/entregar`);
   const casilla = page.getByText(/^Entregar con saldo pendiente/);
@@ -215,7 +215,7 @@ test("tras el aviso de saldo, al cobrar todo ahí mismo se van la casilla y su a
   const placa = `EN36${sufijo(info).toUpperCase()}8`;
   await crearClienteEnBase({ nombre: `Paga tras el aviso ${sufijo(info)}`, telefono: telefono(info, 5), placa });
   // Dos días después del de las demás pruebas del archivo: no se cruza con sus espacios
-  const id = await crearOrdenLista({ placa, espacio: 0, dias: dias(info) + 2, precio: 600, pagado: 0 });
+  const id = await crearOrdenLista({ placa, dias: dias(info) + 2, precio: 600, pagado: 0 });
   await ingresarComoDueno(page);
   await page.goto(`/panel/ordenes/${id}/entregar`, { waitUntil: "networkidle" });
   const entrega = page.getByRole("form", { name: "Entregar vehículo" });

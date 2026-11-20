@@ -26,11 +26,10 @@ export const esquemaEstadoOrden = z.object({ id, estado: z.enum(["recibido", "en
 
 /** Un avance de la orden (RF-42). */
 
-/** Extender la entrega: la nueva fecha y el espacio (el mismo, si sigue libre). El resto lo mira la acción. */
+/** Extender la entrega: la nueva fecha (pedido 55: sin espacio). El resto lo mira la acción. */
 export const esquemaExtender = z.object({
   id,
   fechaFin: z.string().refine(fechaExiste, "Elige la nueva fecha de entrega."),
-  espacioId: z.coerce.number({ message: "Elige el espacio." }).int().positive("Elige el espacio."),
 });
 
 /** Un servicio adicional (RF-43): del catálogo, con su precio (el vigente del tamaño o el que ponga el dueño). */

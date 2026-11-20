@@ -2,8 +2,7 @@ import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER } from "./apoyo";
 
 // HU-39 Pantalla del día. Especificación: docs/08-desarrollo/etapas/C5-cierre-entrega-2.md §9.
-// Los trabajos van directo a la base, en días cercanos a hoy (es lo que muestra el inicio). Para no chocar con las
-// reservas de otras pruebas, en un espacio propio y desactivado, uno por proyecto y por intento. Otras pruebas también
+// Los trabajos van directo a la base, en días cercanos a hoy (es lo que muestra el inicio). Otras pruebas también
 // dejan trabajos de hoy: se buscan las filas propias por su placa, no se cuentan.
 
 const sufijo = (info: TestInfo) => `${info.project.name === "celular" ? "C" : "E"}${info.retry}`;
@@ -18,34 +17,29 @@ function dia(n: number) {
   return { iso, corta: `${Number(iso.slice(8, 10))} ${mes}${iso.slice(0, 4) === hoy().slice(0, 4) ? "" : ` ${iso.slice(0, 4)}`}` };
 }
 
-/** Un trabajo del vehículo, en el espacio y los días dados, con el estado dado. Devuelve su id. */
-async function trabajo(placa: string, espacio: number, desde: number, hasta: number, estado: string): Promise<number> {
+/** Un trabajo del vehículo, en los días dados, con el estado dado. Devuelve su id. */
+async function trabajo(placa: string, desde: number, hasta: number, estado: string): Promise<number> {
   const [{ id }] = await consultar<{ id: number }>(
-    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, created_by)
-     select e.sucursal_id, v.cliente_id, v.id, e.id, $3::date, $4::date, $5,
-       case when $5 = 'agendado' then null else now() end, case when $5 = 'listo' then now() end, v.created_by
-     from vehiculo v, espacio_taller e where v.placa = $1 and e.id = $2 returning id`,
-    [placa, espacio, dia(desde).iso, dia(hasta).iso, estado],
+    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, created_by)
+     select e.sucursal_id, v.cliente_id, v.id, $2::date, $3::date, $4,
+       case when $4 = 'agendado' then null else now() end, case when $4 = 'listo' then now() end, v.created_by
+     from vehiculo v, (select id as sucursal_id from sucursal order by id limit 1) e where v.placa = $1 returning id`,
+    [placa, dia(desde).iso, dia(hasta).iso, estado],
   );
   return id;
 }
 
 async function prepararDia(info: TestInfo) {
   const s = sufijo(info);
-  const [{ id: espacio }] = await consultar<{ id: number }>(
-    `insert into espacio_taller (sucursal_id, nombre, orden, activo) select sucursal_id, $1, 91, false from espacio_taller limit 1 returning id`,
-    [`Espacio HU-39 ${s}`],
-  );
   const placas = { hoy: `DI39${s}A`, atrasado: `DI39${s}B`, entrega: `DI39${s}C`, lista: `DI39${s}D` };
   for (const [n, placa] of Object.values(placas).entries()) {
     await crearClienteEnBase({ nombre: `Cliente del día ${s} ${n}`, telefono: `5917${info.project.name === "celular" ? 5 : 6}39${info.retry}0${n}0`, placa });
   }
-  // Días separados en el mismo espacio: un espacio no tiene dos trabajos el mismo día (RN-06)
   const ids = {
-    hoy: await trabajo(placas.hoy, espacio, 0, 1, "agendado"),
-    atrasado: await trabajo(placas.atrasado, espacio, -2, -2, "agendado"),
-    entrega: await trabajo(placas.entrega, espacio, -5, -4, "en_proceso"),
-    lista: await trabajo(placas.lista, espacio, -7, -6, "listo"),
+    hoy: await trabajo(placas.hoy, 0, 1, "agendado"),
+    atrasado: await trabajo(placas.atrasado, -2, -2, "agendado"),
+    entrega: await trabajo(placas.entrega, -5, -4, "en_proceso"),
+    lista: await trabajo(placas.lista, -7, -6, "listo"),
   };
   // Un mantenimiento vencido, del vehículo de la entrega
   await consultar(

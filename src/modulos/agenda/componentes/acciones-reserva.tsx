@@ -15,24 +15,20 @@ import { Textarea } from "@/componentes/ui/textarea";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { cancelarReserva, reprogramarReserva } from "../acciones";
-import { espacioVigente, useEspaciosLibres } from "./espacios-libres";
-import { CampoEspacio } from "./campo-espacio";
+import { useLugaresLibres } from "./lugares-libres";
 import { ANCHO_DATO } from "@/componentes/panel/anchos";
 import { DatoClave } from "@/componentes/panel/dato-clave";
 import { fechaConDia, fechaConMes } from "@/lib/fechas";
 
 // HU-31: reprogramar o cancelar una reserva agendada (RF-39). Pulido 10.3: se usan poco y van en el menú "Más" del
-// encabezado, cada una con su formulario en un modal (como "Marcar como perdida"). Reprogramar ofrece solo los espacios
-// libres en las nuevas fechas (sin contar la propia reserva); cancelar pide el motivo y avisa que el adelanto no se
+// encabezado, cada una con su formulario en un modal (como "Marcar como perdida"). Reprogramar avisa si algún día de las
+// nuevas fechas está lleno (sin contar la propia reserva; pedido 55, sin espacio); cancelar pide el motivo y avisa que el adelanto no se
 // devuelve (RN-05).
 
 type Props = {
   id: number;
   fechaInicio: string;
   fechaFin: string;
-  espacioId: number;
-  /** El nombre del espacio de ahora, para "Ahora" en Reprogramar. */
-  espacio: string;
   hoy: string;
   /** Lo pagado, si quien mira ve pagos: para avisar cuánto queda como ingreso al cancelar. */
   pagado: string | null;
@@ -71,7 +67,7 @@ function useAlTerminar() {
   };
 }
 
-function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espacioId: espacioActual, espacio, hoy }: Props) {
+function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, hoy }: Props) {
   const alTerminar = useAlTerminar();
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
     conAviso(reprogramarReserva, (r) => r.ok && alTerminar()),
@@ -83,31 +79,27 @@ function Reprogramar({ id, fechaInicio: inicioActual, fechaFin: finActual, espac
   // Controlados: React reinicia el formulario al terminar la acción y así nada se pierde tras un error
   const [fechaInicio, setFechaInicio] = useState(inicioActual < hoy ? hoy : inicioActual);
   const [fechaFin, setFechaFin] = useState(finActual < hoy ? hoy : finActual);
-  const { libres, buscando, ayuda } = useEspaciosLibres(fechaInicio, fechaFin, { excepto: id });
-  // El elegido vale mientras siga libre en las fechas de ahora (el actual lo está: no se cuenta la propia reserva)
-  const [espacioElegido, setEspacioId] = useState(String(espacioActual));
-  const espacioId = espacioVigente(libres, espacioElegido);
+  const { buscando, lleno } = useLugaresLibres(fechaInicio, fechaFin, { excepto: id });
 
   return (
     <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-label="Reprogramar">
       <input type="hidden" name="id" value={id} />
       {estado.mensaje && !estado.ok && <MensajeError id="reprogramar-error">{estado.mensaje}</MensajeError>}
-      {/* El día y el espacio de ahora (20/11: "11/12" solo no decía ni el día ni dónde) */}
+      {/* El día de ahora (20/11: "11/12" solo no decía qué día era) */}
       <DatoClave
         etiqueta="Ahora"
-        valor={`${inicioActual === finActual ? diaCorto(inicioActual, hoy) : `${diaCorto(inicioActual, hoy)} al ${diaCorto(finActual, hoy)}`} · ${espacio}`}
+        valor={`${inicioActual === finActual ? diaCorto(inicioActual, hoy) : `${diaCorto(inicioActual, hoy)} al ${diaCorto(finActual, hoy)}`}`}
       />
       <div className="grid gap-5 sm:grid-cols-2">
-        <Campo id="fechaInicio" etiqueta="Ingresa el" error={e.fechaInicio}>
-          <Input className={ANCHO_DATO.fecha} id="fechaInicio" name="fechaInicio" type="date" min={hoy} value={fechaInicio} onChange={(ev) => setFechaInicio(ev.target.value)} aria-invalid={!!e.fechaInicio} aria-describedby={e.fechaInicio ? "fechaInicio-error" : undefined} />
+        <Campo id="fechaInicio" etiqueta="Ingresa el" error={e.fechaInicio ?? lleno ?? undefined}>
+          <Input className={ANCHO_DATO.fecha} id="fechaInicio" name="fechaInicio" type="date" min={hoy} value={fechaInicio} onChange={(ev) => setFechaInicio(ev.target.value)} aria-invalid={!!(e.fechaInicio ?? lleno)} aria-describedby={e.fechaInicio ?? lleno ? "fechaInicio-error" : undefined} />
         </Campo>
         <Campo id="fechaFin" etiqueta="Entrega aproximada" error={e.fechaFin}>
           <Input className={ANCHO_DATO.fecha} id="fechaFin" name="fechaFin" type="date" min={fechaInicio} value={fechaFin} onChange={(ev) => setFechaFin(ev.target.value)} aria-invalid={!!e.fechaFin} aria-describedby={e.fechaFin ? "fechaFin-error" : undefined} />
         </Campo>
       </div>
-      <CampoEspacio valor={espacioId} alCambiar={setEspacioId} libres={libres} buscando={buscando} ayuda={ayuda} error={e.espacioId} />
       <PieModal>
-        <Button type="submit" disabled={enviando || buscando}>
+        <Button type="submit" disabled={enviando || buscando || !!lleno}>
           {enviando ? "Moviendo…" : "Mover reserva"}
         </Button>
         <CancelarModal />
@@ -145,7 +137,7 @@ function Cancelar({ id, pagado }: Props) {
       </Campo>
       {/* El foco empieza en el motivo (obligatorio): ahí un Enter escribe, no confirma */}
       <PieModal>
-        {/* Contorno rojo de "no se deshace": libera el espacio y deja la reserva cerrada */}
+        {/* Contorno rojo de "no se deshace": libera su lugar y deja la reserva cerrada */}
         <Button type="submit" variant="destructive" disabled={enviando}>
           {enviando ? "Cancelando…" : "Cancelar reserva"}
         </Button>

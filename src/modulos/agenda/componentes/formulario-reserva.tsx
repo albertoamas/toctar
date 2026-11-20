@@ -27,7 +27,7 @@ import type { OpcionServicio } from "@/modulos/cotizaciones/consultas/servicios"
 import { LineasServicio, type Linea } from "@/modulos/cotizaciones/componentes/lineas-servicio";
 import { useEnvioConComprobante } from "@/modulos/pagos/componentes/campo-comprobante";
 import { agendarReserva } from "../acciones";
-import type { EspacioDisponible } from "../consultas/espacios";
+import type { Disponibilidad } from "../consultas/lugares";
 import {
   erroresClienteNuevo,
   erroresFecha,
@@ -42,14 +42,14 @@ import {
   pasosNuevaReserva,
 } from "../pasos-reserva";
 import { fechaEntregaSugerida, textoDia } from "../reglas";
-import { espacioVigente, useEspaciosLibres } from "./espacios-libres";
+import { useLugaresLibres } from "./lugares-libres";
 import { SeccionAdelanto, type DejoAdelanto } from "./seccion-adelanto";
 import { SeccionFechasReserva } from "./seccion-fechas-reserva";
 import { ConResumen, FilaResumen } from "@/componentes/panel/con-resumen";
 import { CabeceraTarjeta } from "@/componentes/panel/cabecera-seccion";
 
 // HU-30: agendar una reserva (RF-36, RF-37). Las fechas sugieren la entrega con la mayor duración de los servicios
-// (decisión del 20/10: es aproximada y se edita); al cambiarlas se vuelven a pedir los espacios libres (RN-06). El
+// (decisión del 20/10: es aproximada y se edita); al cambiarlas se vuelve a preguntar si hay lugar (RN-06; pedido 55, sin espacio). El
 // servidor vuelve a mirar todo y la base rechaza un cruce aunque dos personas reserven a la vez.
 // Pulido 10.2: la hora y la nota plegadas (se usan a veces), sin las ayudas que repetían Configuración, y "Reservar" en
 // PieFormulario: fijo abajo en el celular, con el total al lado en la reserva directa (como en Cotizar).
@@ -121,8 +121,8 @@ type Props = {
   adelantoSugerido: string;
   hoy: string;
   fechaInicial: string;
-  espacioInicial: number | null;
-  espaciosIniciales: EspacioDisponible[];
+  /** Si hay lugar en la fecha con que llega (desde un día libre de la Agenda), para no preguntar de nuevo al abrir. */
+  lugaresIniciales: Disponibilidad | null;
   /** Lo ya elegido (el cliente y su vehículo) y sus avisos: en la reserva directa, debajo del indicador de pasos. */
   arriba?: React.ReactNode;
   /** Las cotizaciones del vehículo para reservar, en el paso Servicios: con ellas, la reserva sin cotización va plegada. */
@@ -148,7 +148,7 @@ const pasoDeAncla = (ancla: string) => {
 /** Para los pasos del cliente y el vehículo nuevos: el foco va al primer campo, no a "Buscar un cliente registrado". */
 const PRIMER_CAMPO_NUEVO = 'input:not([type="hidden"]), select, textarea, button[role="radio"]';
 
-export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, hoy, fechaInicial, espacioInicial, espaciosIniciales, arriba, cotizaciones, atras, pasosHechos }: Props) {
+export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, hoy, fechaInicial, lugaresIniciales, arriba, cotizaciones, atras, pasosHechos }: Props) {
   const directa = origen.tipo === "directa";
   const nuevo = origen.tipo === "directa" ? origen.nuevo : undefined;
   const inicial = origen.tipo === "directa" ? origen.pasoInicial : PASO_FECHA;
@@ -246,12 +246,8 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
   // vacío mientras se escribe) no hay sugerencia: sumar días a "" fallaría
   const [fechaFinManual, setFechaFinManual] = useState<string | null>(null);
   const fechaFin = fechaFinManual ?? (fechaInicio ? fechaEntregaSugerida(fechaInicio, duraciones) : "");
-  const { libres, buscando, ayuda } = useEspaciosLibres(fechaInicio, fechaFin, { iniciales: espaciosIniciales });
+  const { buscando, lleno } = useLugaresLibres(fechaInicio, fechaFin, { inicial: lugaresIniciales });
   // El elegido vale mientras siga libre en las fechas de ahora
-  const [espacioElegido, setEspacioId] = useState(espacioInicial ? String(espacioInicial) : "");
-  // y, sin uno elegido, el único libre (espacioVigente)
-  const espacioId = espacioVigente(libres, espacioElegido);
-  const nombreEspacio = libres.find((x) => String(x.id) === espacioId)?.nombre ?? null;
   const [nota, setNota] = useState("");
   // "¿Dejó adelanto?" sin respuesta elegida (20/11): un pago no se registra por un toque apurado
   const [dejo, setDejo] = useState<DejoAdelanto | "">("");
@@ -284,7 +280,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
   const faltaAlEntregar = conTotal && montoAdelanto ? ((centavos(total) - centavos(montoAdelanto)) / 100).toFixed(2) : null;
   // Lo elegido en la fecha, en una línea: en el resumen del último paso (20/11, en lugar de la tarjeta "Fecha")
   const textoFecha =
-    fechaInicio && fechaFin ? `${fechaInicio === fechaFin ? `El ${minuscula(textoDia(fechaInicio))}` : `Del ${minuscula(textoDia(fechaInicio))} al ${minuscula(textoDia(fechaFin))}`}${nombreEspacio ? `, ${nombreEspacio}` : ""}` : null;
+    fechaInicio && fechaFin ? `${fechaInicio === fechaFin ? `El ${minuscula(textoDia(fechaInicio))}` : `Del ${minuscula(textoDia(fechaInicio))} al ${minuscula(textoDia(fechaFin))}`}` : null;
   const resumenFecha = (
       <section aria-labelledby="resumen-reserva-titulo" className="tt-tarjeta-panel flex flex-col">
         <CabeceraTarjeta id="resumen-reserva" titulo="Resumen" />
@@ -303,7 +299,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
           {montoAdelanto && <FilaResumen etiqueta="Adelanto" valor={`${mostrarMonto(montoAdelanto)} Bs`} suave />}
           {faltaAlEntregar && Number(faltaAlEntregar) > 0 && <FilaResumen etiqueta="Falta al entregar" valor={`${mostrarMonto(faltaAlEntregar)} Bs`} suave />}
           {paso > PASO_FECHA && textoFecha && (
-            // En su renglón: puede ser larga ("Del miércoles 30 de diciembre al jueves 31 de diciembre, Espacio 1")
+            // En su renglón: puede ser larga ("Del miércoles 30 de diciembre al jueves 31 de diciembre")
             <div className="flex flex-col gap-0.5 border-t border-border pt-2 text-sm">
               <dt className="text-tinta-suave">Fecha</dt>
               <dd>{textoFecha}</dd>
@@ -323,7 +319,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
     if (p === PASO_CLIENTE) return erroresClienteNuevo(valores);
     if (p === PASO_VEHICULO) return erroresVehiculoNuevo(valores);
     if (p === PASO_SERVICIOS) return erroresServicios(valores.lineas ?? "[]");
-    if (p === PASO_FECHA) return erroresFecha({ fechaInicio, fechaFin, espacioId });
+    if (p === PASO_FECHA) return erroresFecha({ fechaInicio, fechaFin, lleno });
     return {};
   }
 
@@ -528,7 +524,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
             fechaFin={fechaFin}
             alCambiarIngreso={(valor) => cambiarFechas(valor, fechaFinManual)}
             alCambiarEntrega={(valor) => cambiarFechas(fechaInicio, valor)}
-            espacio={{ valor: espacioId, alCambiar: setEspacioId, libres, buscando, ayuda }}
+            lleno={lleno}
             nota={nota}
             alCambiarNota={setNota}
             errores={e}

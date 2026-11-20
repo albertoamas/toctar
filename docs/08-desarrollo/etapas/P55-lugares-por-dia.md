@@ -1,7 +1,7 @@
 # P55 Lugares por día en vez de espacios fijos — especificación
 
 - **Fase y semana:** Cierre de la Entrega 2 · desde el 20/11/2026
-- **Estado:** borrador (para revisar con el desarrollador)
+- **Estado:** en curso (programado el 20/11/2026)
 - **Historias:** HU-05 (configuración del taller), HU-30 (agendar), HU-31 (reprogramar), HU-34 (extender la entrega), HU-39 (pantalla del día)
 - **Base:** RN-06, D-5 (`modelo-de-datos.md`), C3 (`C3-agenda-pagos.md`), P41 (reserva en pasos), registro de cambios, pedido 55
 

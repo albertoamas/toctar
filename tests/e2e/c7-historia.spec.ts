@@ -16,7 +16,7 @@ test("la historia junta reservas, órdenes y cotizaciones, de lo más reciente a
   // Una cotización perdida hace 30 días, una pendiente de hoy y una orden en el futuro lejano
   await crearCotizacionEnBase({ placa, numero: `2077-${s}1`, estado: "perdido", dias: 30 });
   await crearCotizacionEnBase({ placa, numero: `2077-${s}2` });
-  await crearOrdenLista({ placa, espacio: 0, dias: dias(info), precio: 500, pagado: 100 });
+  await crearOrdenLista({ placa, dias: dias(info), precio: 500, pagado: 100 });
   await ingresarComoDueno(page);
   await page.goto(`/panel/clientes/${id}`);
 
@@ -34,7 +34,7 @@ test("sin Pagos ni Cotizaciones la historia no muestra montos ni cotizaciones (R
   const placa = `HI7${s}2`;
   const id = await crearClienteEnBase({ nombre: `Sin montos ${s}`, telefono: telefono(info, 2), placa });
   await crearCotizacionEnBase({ placa, numero: `2077-${s}3` });
-  await crearOrdenLista({ placa, espacio: 1, dias: dias(info) + 1, precio: 800, pagado: 0 });
+  await crearOrdenLista({ placa, dias: dias(info) + 1, precio: 800, pagado: 0 });
   // El perfil Taller, con Clientes para poder abrir la ficha
   await crearUsuario({ usuario: `historia-${s.toLowerCase()}`, nombre: "Del taller", contrasena: "taller-123", rol: "encargado", permisos: [...PERFIL_TALLER, "clientes"] });
   await ingresar(page, `historia-${s.toLowerCase()}`, "taller-123");

@@ -25,9 +25,9 @@ async function dosClientes(info: TestInfo, n: number) {
 async function mantenimientoAbierto(placa: string): Promise<number> {
   const [{ id }] = await consultar<{ id: number }>(
     `with t as (
-       insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, entregado_at, created_by)
-       select e.sucursal_id, v.cliente_id, v.id, e.id, (now() at time zone 'America/La_Paz')::date - 90, (now() at time zone 'America/La_Paz')::date - 90, 'entregado', now(), now(), now() - interval '90 days', v.created_by
-       from vehiculo v, (select * from espacio_taller where activo order by orden limit 1) e where v.placa = $1 and v.activo returning id, cliente_id, vehiculo_id
+       insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, entregado_at, created_by)
+       select e.sucursal_id, v.cliente_id, v.id, (now() at time zone 'America/La_Paz')::date - 90, (now() at time zone 'America/La_Paz')::date - 90, 'entregado', now(), now(), now() - interval '90 days', v.created_by
+       from vehiculo v, (select id as sucursal_id from sucursal order by id limit 1) e where v.placa = $1 and v.activo returning id, cliente_id, vehiculo_id
      )
      insert into recordatorio_mantenimiento (trabajo_origen_id, cliente_id, vehiculo_id, servicio_id, servicio_mantenimiento_id, intervalo_meses, fecha_programada)
      select t.id, t.cliente_id, t.vehiculo_id, (select id from servicio where slug = 'pulido-y-nano-ceramico'),
@@ -122,9 +122,9 @@ test("con una reserva activa no se pasa: primero se entrega o se cancela", async
   const d = await dosClientes(info, 3);
   // Una reserva agendada en un día propio (las de otras pruebas llegan hasta los 363 días): no choca en los espacios
   await consultar(
-    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, created_by)
-     select e.sucursal_id, v.cliente_id, v.id, e.id, (now() at time zone 'America/La_Paz')::date + $2::int, (now() at time zone 'America/La_Paz')::date + $2::int, 'agendado', v.created_by
-     from vehiculo v, (select * from espacio_taller where activo order by orden limit 1) e where v.id = $1`,
+    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, estado, created_by)
+     select e.sucursal_id, v.cliente_id, v.id, (now() at time zone 'America/La_Paz')::date + $2::int, (now() at time zone 'America/La_Paz')::date + $2::int, 'agendado', v.created_by
+     from vehiculo v, (select id as sucursal_id from sucursal order by id limit 1) e where v.id = $1`,
     [d.vehiculoId, (info.project.name === "celular" ? 358 : 364) - info.retry],
   );
   await ingresarComoDueno(page);
@@ -143,9 +143,9 @@ test("lo entregado al anterior no se toca, y su cotización cerrada no vuelve a 
   // Una cotización aceptada con su trabajo ya entregado (historia) y otra pendiente (abierta)
   const entregada = await crearCotizacionEnBase({ placa: d.placa, numero: `2037-${sufijo(info)}4a`, estado: "confirmado" });
   await consultar(
-    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, consulta_id, espacio_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, entregado_at, created_by)
-     select e.sucursal_id, q.cliente_id, q.vehiculo_id, q.id, e.id, (now() at time zone 'America/La_Paz')::date - 30, (now() at time zone 'America/La_Paz')::date - 30, 'entregado', now(), now(), now(), q.created_by
-     from consulta q, (select * from espacio_taller where activo order by orden limit 1) e where q.id = $1`,
+    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, consulta_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, entregado_at, created_by)
+     select e.sucursal_id, q.cliente_id, q.vehiculo_id, q.id, (now() at time zone 'America/La_Paz')::date - 30, (now() at time zone 'America/La_Paz')::date - 30, 'entregado', now(), now(), now(), q.created_by
+     from consulta q, (select id as sucursal_id from sucursal order by id limit 1) e where q.id = $1`,
     [entregada],
   );
   const abierta = await crearCotizacionEnBase({ placa: d.placa, numero: `2037-${sufijo(info)}4b` });

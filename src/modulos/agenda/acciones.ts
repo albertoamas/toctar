@@ -5,8 +5,8 @@ import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
 import { db } from "@/db";
 import { auditoria, cliente, consulta, cotizacion, pago, recordatorioMantenimiento, servicio, trabajo, trabajoLinea, variante, vehiculo } from "@/db/esquema";
-import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
-import { erroresDe, exclusionViolada, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
+import { diaLegible, fechaEnBolivia } from "@/lib/fechas";
+import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import type { z } from "zod";
 import { clienteConTelefono } from "@/modulos/clientes/consultas";
 import { esquemaCliente, esquemaVehiculo } from "@/modulos/clientes/esquemas";
@@ -22,30 +22,45 @@ import { borrarFotosSueltas, soltarFotosIngreso } from "@/modulos/ordenes/fotos"
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
 import { descartarComprobante, guardarComprobante } from "@/modulos/pagos/comprobante";
 import { calcularSaldo, tipoDePago } from "@/modulos/pagos/reglas";
-import { bloquearEspacio, espaciosEnFechas, type EspacioDisponible } from "./consultas/espacios";
+import { bloquearSucursal, disponibilidad, type Disponibilidad } from "./consultas/lugares";
+import { textoDiasLlenos } from "./reglas";
 import { datosDeCotizacion } from "./consultas/reservar";
-import { entradaReserva, esquemaAdelanto, esquemaCancelar, esquemaConsultaEspacios, esquemaFechas, esquemaReprogramar, esquemaReserva } from "./esquemas";
+import { entradaReserva, esquemaAdelanto, esquemaCancelar, esquemaConsultaLugares, esquemaFechas, esquemaReprogramar, esquemaReserva } from "./esquemas";
 import { conDesde, leerDesde } from "@/lib/volver";
 
 // Agenda (HU-30). Entra el dueño o un encargado con "Agenda"; el adelanto, solo con "Pagos" (o el dueño, RN-12). Un
 // espacio no tiene dos vehículos el mismo día (RN-06): la pantalla solo ofrece los libres y la base
 // rechaza un cruce aunque dos personas reserven a la vez (D-5). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md.
 
-const ESPACIO_OCUPADO = "Ese espacio se ocupó recién: elige otro.";
+/** Dos personas reservaron el último lugar a la vez: la segunda, ya con la sucursal bloqueada, ve el día lleno. */
+const LLENO_RECIEN = "Ese día se llenó recién. Elige otra fecha.";
 const COTIZACION_CAMBIO = "Esa cotización ya fue reservada o tiene una versión nueva. Vuelve a la cotización.";
 
 /** Algo cambió entre la revisión y la escritura: se lanza dentro de la transacción para deshacerla entera. */
 class Conflicto extends Error {}
 
-/** Los espacios y si están libres en esas fechas, para el formulario (datos sueltos: se validan). */
-export async function consultarEspacios(datos: { fechaInicio: string; fechaFin: string; excepto?: number }): Promise<EspacioDisponible[] | null> {
+/** Un día del rango se llenó entre la revisión y la escritura (otra reserva a la vez). */
+class DiaLleno extends Error {}
+
+/**
+ * Con la sucursal ya bloqueada, vuelve a contar: si otra reserva tomó el último lugar recién, se deshace todo (pedido
+ * 55; antes lo cuidaba la restricción de exclusión por espacio).
+ */
+async function revisarLugaresEn(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], fechaInicio: string, fechaFin: string, excepto?: number) {
+  await bloquearSucursal(tx);
+  const { llenos } = await disponibilidad(fechaInicio, fechaFin, excepto, tx);
+  if (llenos.length > 0) throw new DiaLleno(LLENO_RECIEN);
+}
+
+/** Los días llenos de unas fechas, para el formulario (datos sueltos: se validan). Pedido 55. */
+export async function consultarLugares(datos: { fechaInicio: string; fechaFin: string; excepto?: number }): Promise<Disponibilidad | null> {
   await exigirModulo("agenda");
-  const entrada = esquemaConsultaEspacios.safeParse(datos);
+  const entrada = esquemaConsultaLugares.safeParse(datos);
   if (!entrada.success) return null;
   const fechas = esquemaFechas.safeParse(entrada.data);
-  // Con fechas que no valen no hay nada que ofrecer: el formulario muestra su error al enviar
+  // Con fechas que no valen no hay nada que decir: el formulario muestra su error al enviar
   if (!fechas.success) return null;
-  return espaciosEnFechas(fechas.data.fechaInicio, fechas.data.fechaFin, entrada.data.excepto);
+  return disponibilidad(fechas.data.fechaInicio, fechas.data.fechaFin, entrada.data.excepto);
 }
 
 type Linea = { varianteId: number; descripcion: string; precio: string };
@@ -165,11 +180,9 @@ export async function agendarReserva(_previo: EstadoCliente, datos: FormData): P
     if (Object.keys(errLineas).length > 0) return { errores: errLineas };
   }
 
-  // Lo que el esquema no sabe: el espacio y el tope del adelanto
-  const espacios = await espaciosEnFechas(fechaInicio, fechaFin);
-  const espacio = espacios.find((e) => e.id === d.espacioId);
-  if (!espacio) errores.espacioId = "Elige el espacio.";
-  else if (!espacio.libre) errores.espacioId = ESPACIO_OCUPADO;
+  // Lo que el esquema no sabe: que haya lugar todos los días (RN-06, pedido 55) y el tope del adelanto
+  const lugares = await disponibilidad(fechaInicio, fechaFin);
+  if (lugares.llenos.length > 0) errores.fechaInicio = textoDiasLlenos(lugares.llenos, lugares.lugares);
   const { total } = calcularSaldo(
     lineas.map((l) => l.precio),
     descuento,
@@ -227,7 +240,7 @@ export async function agendarReserva(_previo: EstadoCliente, datos: FormData): P
           .for("no key update");
         if (!suyo) throw new Conflicto("Ese vehículo cambió de dueño o se desactivó recién. Vuelve a elegirlo.");
       }
-      await bloquearEspacio(tx, d.espacioId);
+      await revisarLugaresEn(tx, fechaInicio, fechaFin);
       const [nuevo] = await tx
         .insert(trabajo)
         .values({
@@ -236,7 +249,6 @@ export async function agendarReserva(_previo: EstadoCliente, datos: FormData): P
           vehiculoId: vehiculoId!,
           consultaId,
           cotizacionId,
-          espacioId: d.espacioId,
           fechaInicio,
           fechaFin,
           descuento,
@@ -250,7 +262,7 @@ export async function agendarReserva(_previo: EstadoCliente, datos: FormData): P
         entidad: "trabajo",
         entidadId: nuevo.id,
         accion: "agendar",
-        datos: { espacioId: d.espacioId, fechaInicio, fechaFin, cotizacionId },
+        datos: { fechaInicio, fechaFin, cotizacionId },
       });
       if (adelanto) {
         const [p] = await tx
@@ -284,7 +296,7 @@ export async function agendarReserva(_previo: EstadoCliente, datos: FormData): P
     await descartarComprobante(comprobanteId);
     if (error instanceof Conflicto) return { mensaje: error.message };
     // Dos personas reservaron el mismo espacio a la vez: la base frenó la segunda (D-5)
-    if (exclusionViolada(error) === "trabajo_sin_cruces") return { errores: { espacioId: ESPACIO_OCUPADO } };
+    if (error instanceof DiaLleno) return { errores: { fechaInicio: error.message }, valores };
     if (indiceUnicoViolado(error) === "trabajo_cotizacion_unica") return { mensaje: "Esa cotización ya fue reservada." };
     // Dos personas registrando el mismo cliente o la misma placa a la vez: lo frena el índice único
     if (indiceUnicoViolado(error) === "cliente_telefono_unico") return { errores: { telefono: "Ese número ya está registrado. Busca al cliente." }, valores };
@@ -311,39 +323,38 @@ function despuesDeCambiar(id: number, clienteId: number, consultaId: number | nu
 }
 
 /**
- * Mueve una reserva agendada a otras fechas o a otro espacio (HU-31, RF-39), con la misma validación que al agendar:
- * solo un espacio libre en esos días (sin contar la propia reserva), y la base rechaza un cruce (D-5).
+ * Mueve una reserva agendada a otras fechas (HU-31, RF-39), con la misma validación que al agendar: lugar todos los días
+ * (sin contar la propia reserva), revisado otra vez con la sucursal bloqueada (pedido 55).
  */
 export async function reprogramarReserva(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const usuario = await exigirModulo("agenda");
-  const r = esquemaReprogramar.safeParse({ id: datos.get("id"), espacioId: datos.get("espacioId") });
+  const r = esquemaReprogramar.safeParse({ id: datos.get("id") });
   const f = esquemaFechas.safeParse({ fechaInicio: String(datos.get("fechaInicio") ?? ""), fechaFin: String(datos.get("fechaFin") ?? "") });
   const errores: Record<string, string> = {};
   if (!r.success) Object.assign(errores, erroresDe(r.error));
   if (!f.success) Object.assign(errores, erroresDe(f.error));
   if (!r.success || !f.success) return errores.id ? { mensaje: "No se pudo leer el pedido. Recarga la página." } : { errores };
-  const { id, espacioId } = r.data;
+  const { id } = r.data;
   const { fechaInicio, fechaFin } = f.data;
 
   const [actual] = await db
-    .select({ estado: trabajo.estado, clienteId: trabajo.clienteId, consultaId: trabajo.consultaId, espacioId: trabajo.espacioId, fechaInicio: trabajo.fechaInicio, fechaFin: trabajo.fechaFin })
+    .select({ estado: trabajo.estado, clienteId: trabajo.clienteId, consultaId: trabajo.consultaId, fechaInicio: trabajo.fechaInicio, fechaFin: trabajo.fechaFin })
     .from(trabajo)
     .where(eq(trabajo.id, id));
   if (!actual) return { mensaje: "Esa reserva ya no existe." };
   if (actual.estado !== "agendado") return { mensaje: "Solo se reprograma una reserva agendada." };
 
-  const espacio = (await espaciosEnFechas(fechaInicio, fechaFin, id)).find((e) => e.id === espacioId);
-  if (!espacio) return { errores: { espacioId: "Elige el espacio." } };
-  if (!espacio.libre) return { errores: { espacioId: ESPACIO_OCUPADO } };
+  const lugares = await disponibilidad(fechaInicio, fechaFin, id);
+  if (lugares.llenos.length > 0) return { errores: { fechaInicio: textoDiasLlenos(lugares.llenos, lugares.lugares) } };
 
   let sueltas: number[];
   try {
     sueltas = await db.transaction(async (tx) => {
-      await bloquearEspacio(tx, espacioId);
+      await revisarLugaresEn(tx, fechaInicio, fechaFin, id);
       // Solo si sigue agendada: si otra persona la canceló recién, no se mueve
       const [movida] = await tx
         .update(trabajo)
-        .set({ espacioId, fechaInicio, fechaFin, updatedAt: sql`now()` })
+        .set({ fechaInicio, fechaFin, updatedAt: sql`now()` })
         .where(and(eq(trabajo.id, id), eq(trabajo.estado, "agendado")))
         .returning({ id: trabajo.id });
       if (!movida) throw new Conflicto("Esa reserva cambió recién. Recarga la página.");
@@ -352,20 +363,20 @@ export async function reprogramarReserva(_previo: EstadoFormulario, datos: FormD
         entidad: "trabajo",
         entidadId: id,
         accion: "reprogramar",
-        datos: { antes: { espacioId: actual.espacioId, fechaInicio: actual.fechaInicio, fechaFin: actual.fechaFin }, despues: { espacioId, fechaInicio, fechaFin } },
+        datos: { antes: { fechaInicio: actual.fechaInicio, fechaFin: actual.fechaFin }, despues: { fechaInicio, fechaFin } },
       });
       // Las fotos de ingreso que se alcanzaron a tomar no prueban cómo llega otro día
       return soltarFotosIngreso(tx, id);
     });
   } catch (error) {
     if (error instanceof Conflicto) return { mensaje: error.message };
-    if (exclusionViolada(error) === "trabajo_sin_cruces") return { errores: { espacioId: ESPACIO_OCUPADO } };
+    if (error instanceof DiaLleno) return { errores: { fechaInicio: error.message } };
     throw error;
   }
 
   await borrarFotosSueltas(sueltas);
   despuesDeCambiar(id, actual.clienteId, actual.consultaId);
-  return { ok: true, mensaje: `Reserva movida al ${formatearFecha(fechaInicio).slice(0, 5)} en ${espacio.nombre}.` };
+  return { ok: true, mensaje: `Reserva movida al ${diaLegible(fechaInicio, fechaEnBolivia()).toLowerCase()}.` };
 }
 
 /**

@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
 import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
 import { esquemaAdelanto, esquemaFechas, esquemaReserva } from "@/modulos/agenda/esquemas";
-import { entregadasALaVista, bloquesDeLaSemana, diaDeLaSemana, diasDeLaSemana, fechaEntregaSugerida, lunesDeLaSemana, numeroDia, ocupaEspacio, seCruzan, textoDia, textoSemana, textoSemanaCorto } from "@/modulos/agenda/reglas";
+import { bloquesDeLaSemana, diaDeLaSemana, diasDeLaSemana, diasLlenos, fechaEntregaSugerida, filasDelTablero, lunesDeLaSemana, numeroDia, ocupadosEnDia, ocupaLugar, seCruzan, textoDia, textoDiasLlenos, textoSemana, textoSemanaCorto, ultimoDiaOcupado } from "@/modulos/agenda/reglas";
 import { calcularSaldo } from "@/modulos/pagos/reglas";
 
 // C3 Agenda y pagos (HU-30): semanas, entrega sugerida, cruces (RN-06), saldo (RF-46) y validación de la reserva.
@@ -27,9 +27,9 @@ test("dos reservas se cruzan si comparten algún día, bordes incluidos (como la
   expect(seCruzan({ inicio: "2026-10-20", fin: "2026-10-24" }, { inicio: "2026-10-24", fin: "2026-10-25" })).toBe(true);
   expect(seCruzan({ inicio: "2026-10-20", fin: "2026-10-23" }, { inicio: "2026-10-24", fin: "2026-10-25" })).toBe(false);
   expect(seCruzan({ inicio: "2026-10-22", fin: "2026-10-22" }, { inicio: "2026-10-20", fin: "2026-10-25" })).toBe(true);
-  expect(["agendado", "recibido", "en_proceso", "listo"].every((e) => ocupaEspacio(e as never))).toBe(true);
-  expect(ocupaEspacio("cancelado")).toBe(false);
-  expect(ocupaEspacio("entregado")).toBe(false);
+  expect(["agendado", "recibido", "en_proceso", "listo"].every((e) => ocupaLugar(e as never))).toBe(true);
+  expect(ocupaLugar("cancelado")).toBe(false);
+  expect(ocupaLugar("entregado")).toBe(false);
 });
 
 test("los bloques del tablero se recortan a la semana", () => {
@@ -77,16 +77,15 @@ test("fechas: desde hoy, la entrega no antes del ingreso, y que existan", () => 
   expect(fechas({ fechaFin: sumarDias(hoy, 62) })).toEqual({ fechaFin: "Una reserva dura hasta 60 días." });
 });
 
-test("una reserva directa lleva cliente, vehículo, servicios y espacio; desde una cotización, solo la cotización", () => {
-  const directa = { origen: "directa", clienteId: "3", vehiculoId: "4", lineas: JSON.stringify([{ varianteId: 7, precio: "450" }]), espacioId: "1", nota: "" };
+test("una reserva directa lleva cliente, vehículo y servicios; desde una cotización, solo la cotización (sin espacio: pedido 55)", () => {
+  const directa = { origen: "directa", clienteId: "3", vehiculoId: "4", lineas: JSON.stringify([{ varianteId: 7, precio: "450" }]), nota: "" };
   expect(esquemaReserva.parse(directa)).toMatchObject({ origen: "directa", clienteId: 3, lineas: [{ varianteId: 7, precio: "450.00" }], nota: null });
   // Desde "Agendar" en Mantenimientos (HU-38), con el recordatorio; si no, sin él
   expect(esquemaReserva.parse(directa)).toMatchObject({ recordatorioId: null });
   expect(esquemaReserva.parse({ ...directa, recordatorioId: "12" })).toMatchObject({ recordatorioId: 12 });
   expect(esquemaReserva.safeParse({ ...directa, recordatorioId: "abc" }).success).toBe(false);
-  expect(erroresDe(esquemaReserva.safeParse({ ...directa, espacioId: "" }).error!)).toEqual({ espacioId: "Elige el espacio." });
   expect(erroresDe(esquemaReserva.safeParse({ ...directa, lineas: "[]" }).error!)).toEqual({ lineas: "Agrega al menos un servicio." });
-  expect(esquemaReserva.parse({ origen: "cotizacion", cotizacionId: "9", espacioId: "2", nota: "" })).toMatchObject({ cotizacionId: 9 });
+  expect(esquemaReserva.parse({ origen: "cotizacion", cotizacionId: "9", nota: "" })).toMatchObject({ cotizacionId: 9 });
   // Pedido 32: la reserva no lleva técnico; si llega uno, no pasa
   expect(esquemaReserva.parse({ ...directa, tecnicoId: "5" })).not.toHaveProperty("tecnicoId");
 });
@@ -116,33 +115,43 @@ test("el rótulo de la semana y de cada día", () => {
   expect(numeroDia("2026-10-05")).toBe("5");
 });
 
-// Pedido 28: las entregadas siguen en el tablero, sin tapar a la reserva que ocupa el espacio.
+// Pedido 55: lugares por día en vez de espacios fijos.
 
-test("una entregada se muestra en sus días hasta hoy, salvo los que usa otra reserva u otra entregada del mismo espacio", () => {
-  const hoy = "2026-10-30";
-  const entregada = { id: 1, estado: "entregado" as const, inicio: "2026-10-20", fin: "2026-10-22" };
-  const siguiente = { id: 2, estado: "agendado" as const, inicio: "2026-10-22", fin: "2026-10-24" };
-  // Salió el 22 y ese día entró otra: la entregada se ve el 20 y el 21
-  expect(entregadasALaVista([entregada, siguiente], hoy)).toEqual([siguiente, { ...entregada, fin: "2026-10-21" }]);
-  // Sin otra reserva, todos sus días; una cancelada no cuenta
-  expect(entregadasALaVista([entregada], hoy)).toEqual([entregada]);
-  expect(entregadasALaVista([entregada, { ...siguiente, estado: "cancelado" as const }], hoy)).toEqual([entregada]);
-  // Si otra ocupa todos sus días, no se muestra
-  const deUnDia = { ...entregada, fin: "2026-10-20" };
-  const mismoDia = { ...siguiente, inicio: "2026-10-20" };
-  expect(entregadasALaVista([deUnDia, mismoDia], hoy)).toEqual([mismoDia]);
-  // Otra reserva en el medio: dos tramos
-  const medio = { id: 3, estado: "en_proceso" as const, inicio: "2026-10-21", fin: "2026-10-21" };
-  expect(entregadasALaVista([entregada, medio], hoy)).toEqual([medio, { ...entregada, fin: "2026-10-20" }, { ...entregada, inicio: "2026-10-22" }]);
-  // Dos entregadas en los mismos días: la primera se queda con ellos
-  const otraEntregada = { id: 4, estado: "entregado" as const, inicio: "2026-10-22", fin: "2026-10-23" };
-  expect(entregadasALaVista([entregada, otraEntregada], hoy)).toEqual([entregada, { ...otraEntregada, inicio: "2026-10-23" }]);
-  // Hoy también se ve (18/11: entregada el mismo día, antes desaparecía hasta el día siguiente)
-  expect(entregadasALaVista([{ ...entregada, fin: hoy, inicio: "2026-10-29" }], hoy)).toEqual([{ ...entregada, inicio: "2026-10-29", fin: hoy }]);
-  expect(entregadasALaVista([{ ...entregada, inicio: hoy, fin: hoy }], hoy)).toEqual([{ ...entregada, inicio: hoy, fin: hoy }]);
-  // Los días después de hoy no (entregada antes de su entrega aproximada)
-  expect(entregadasALaVista([{ ...entregada, inicio: hoy, fin: "2026-11-05" }], hoy)).toEqual([{ ...entregada, inicio: hoy, fin: hoy }]);
-  // Si hoy entra otra reserva en ese espacio, hoy es de ella
-  const entraHoy = { id: 5, estado: "agendado" as const, inicio: hoy, fin: hoy };
-  expect(entregadasALaVista([{ ...entregada, inicio: "2026-10-29", fin: hoy }, entraHoy], hoy)).toEqual([entraHoy, { ...entregada, inicio: "2026-10-29", fin: "2026-10-29" }]);
+test("una orden que sigue en el taller ocupa su lugar hasta hoy, aunque esté atrasada; una reserva, sus días", () => {
+  const hoy = "2026-11-20";
+  expect(ultimoDiaOcupado({ estado: "en_proceso", fin: "2026-11-04" }, hoy)).toBe(hoy);
+  expect(ultimoDiaOcupado({ estado: "listo", fin: "2026-11-04" }, hoy)).toBe(hoy);
+  expect(ultimoDiaOcupado({ estado: "recibido", fin: "2026-11-24" }, hoy)).toBe("2026-11-24");
+  expect(ultimoDiaOcupado({ estado: "agendado", fin: "2026-11-04" }, hoy)).toBe("2026-11-04");
+  expect(ultimoDiaOcupado({ estado: "entregado", fin: "2026-11-24" }, hoy)).toBeNull();
+  expect(ultimoDiaOcupado({ estado: "cancelado", fin: "2026-11-24" }, hoy)).toBeNull();
+});
+
+test("los días llenos de un rango: cuenta lo que ocupa cada día, sin la propia reserva", () => {
+  const hoy = "2026-11-20";
+  const trabajos = [
+    { id: 1, estado: "en_proceso" as const, inicio: "2026-11-02", fin: "2026-11-04" }, // atrasada: ocupa hasta hoy
+    { id: 2, estado: "agendado" as const, inicio: "2026-11-20", fin: "2026-11-21" },
+    { id: 3, estado: "entregado" as const, inicio: "2026-11-20", fin: "2026-11-20" }, // no ocupa
+    { id: 4, estado: "agendado" as const, inicio: "2026-11-21", fin: "2026-11-22" },
+  ];
+  expect(ocupadosEnDia(trabajos, "2026-11-20", hoy)).toBe(2);
+  expect(ocupadosEnDia(trabajos, "2026-11-21", hoy)).toBe(2);
+  expect(diasLlenos(trabajos, { inicio: "2026-11-20", fin: "2026-11-23" }, 2, hoy)).toEqual(["2026-11-20", "2026-11-21"]);
+  // Reprogramar la 2 no choca consigo misma
+  expect(diasLlenos(trabajos, { inicio: "2026-11-20", fin: "2026-11-21" }, 2, hoy, 2)).toEqual([]);
+  expect(diasLlenos(trabajos, { inicio: "2026-11-20", fin: "2026-11-23" }, 3, hoy)).toEqual([]);
+  expect(textoDiasLlenos(["2026-11-20"], 3)).toBe("El viernes 20 ya tiene los 3 lugares ocupados.");
+  expect(textoDiasLlenos(["2026-11-20", "2026-11-21"], 3)).toBe("Sin lugar el viernes 20 y el sábado 21.");
+});
+
+test("las filas del tablero: cada reserva donde no se encime, primero las que ocupan", () => {
+  const filas = filasDelTablero([
+    { id: 1, estado: "entregado" as const, inicio: "2026-11-16", fin: "2026-11-16" },
+    { id: 2, estado: "agendado" as const, inicio: "2026-11-16", fin: "2026-11-18" },
+    { id: 3, estado: "agendado" as const, inicio: "2026-11-17", fin: "2026-11-17" },
+    { id: 4, estado: "agendado" as const, inicio: "2026-11-19", fin: "2026-11-19" },
+  ]);
+  const fila = (id: number) => filas.find((f) => f.id === id)?.fila;
+  expect([fila(2), fila(3), fila(4), fila(1)]).toEqual([0, 1, 0, 1]);
 });

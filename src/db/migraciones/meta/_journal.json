@@ -379,6 +379,13 @@
       "when": 1795146220911,
       "tag": "0053_sin_hora_de_ingreso",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1795207647104,
+      "tag": "0054_lugares_por_dia",
+      "breakpoints": true
     }
   ]
 }

@@ -4,8 +4,8 @@ import { abrirWhatsApp, consultar, crearClienteEnBase, crearUsuario, firmarEnRec
 // Flujos críticos 3, 4 y 5 de punta a punta (C4): reserva → recibir → un chico del taller la trabaja → lista → aviso por
 // WhatsApp → cobro del saldo → entrega → recordatorio de mantenimiento → agendarlo. Especificación:
 // docs/08-desarrollo/etapas/C4-taller-entrega.md §9. Cada paso tiene su prueba propia (HU-30 a HU-38); aquí se prueba
-// que encajan. La reserva de hoy va directo a la base, en un espacio propio y desactivado (ninguna otra prueba lo usa;
-// agendarla desde la pantalla, HU-30, ofrecería solo los activos). El mantenimiento se agenda en días propios (360 o 363:
+// que encajan. La reserva de hoy va directo a la base (agendarla desde la pantalla, HU-30, podría encontrar el día lleno
+// por las reservas de hoy de otras pruebas). El mantenimiento se agenda en días propios (360 o 363:
 // se agenda hasta un año adelante).
 test.describe.configure({ mode: "serial" });
 
@@ -17,16 +17,12 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
   const placa = `FL00${s.toUpperCase()}1`;
   const clienteId = await crearClienteEnBase({ nombre: `Rosa Flujo ${s}`, telefono: `5917${info.project.name === "celular" ? 5 : 6}39000`, placa });
   await crearUsuario({ usuario: `taller-flujo-${s}`, nombre: `Chico del taller ${s}`, contrasena: "taller-123", rol: "encargado", permisos: PERFIL_TALLER });
-  const [{ espacio }] = await consultar<{ espacio: number }>(
-    `insert into espacio_taller (sucursal_id, nombre, orden, activo) select sucursal_id, $1, 91, false from espacio_taller limit 1 returning id as espacio`,
-    [`Espacio flujo ${s}`],
-  );
   // Reserva de hoy: pulido y nano cerámico (genera mantenimiento) de 800 Bs, con 300 de adelanto
   const [{ id }] = await consultar<{ id: number }>(
-    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, created_by)
-     select e.sucursal_id, v.cliente_id, v.id, e.id, $3::date, $3::date, v.created_by from vehiculo v, espacio_taller e
-     where v.placa = $1 and e.id = $2 returning id`,
-    [placa, espacio, hoy()],
+    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, created_by)
+     select e.sucursal_id, v.cliente_id, v.id, $2::date, $2::date, v.created_by from vehiculo v, (select id as sucursal_id from sucursal order by id limit 1) e
+     where v.placa = $1 returning id`,
+    [placa, hoy()],
   );
   await consultar(
     `insert into trabajo_linea (trabajo_id, variante_id, descripcion, precio, orden)
@@ -101,9 +97,6 @@ test("del día de ingreso al próximo mantenimiento agendado", async ({ page }, 
   await page.getByRole("button", { name: "Siguiente: fecha" }).click();
   const [{ d }] = await consultar<{ d: string }>("select to_char($1::date + $2::int, 'YYYY-MM-DD') as d", [hoy(), info.project.name === "celular" ? 360 : 363]);
   await page.getByLabel("Ingresa el").fill(d);
-  const espacioReserva = page.getByLabel("Espacio", { exact: true });
-  await expect(espacioReserva).toBeEnabled();
-  await espacioReserva.selectOption({ index: 1 });
   await sinAdelantoEnReserva(page);
   await page.getByRole("button", { name: "Reservar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1(?:[?&]volver=[^&#]*)?$/);

@@ -12,11 +12,11 @@ const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "ce
 /** Una orden entregada hace `dias` días, con un servicio de 600 Bs, el descuento y lo pagado. Devuelve su id. */
 async function ordenEntregada(placa: string, dias: number, pagado: number, descuento = 0): Promise<number> {
   const [{ id }] = await consultar<{ id: number }>(
-    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at,
+    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at,
        entregado_at, descuento, created_by)
-     select e.sucursal_id, v.cliente_id, v.id, e.id, (now() at time zone 'America/La_Paz')::date - $2::int, (now() at time zone 'America/La_Paz')::date - $2::int, 'entregado', now(), now(),
+     select e.sucursal_id, v.cliente_id, v.id, (now() at time zone 'America/La_Paz')::date - $2::int, (now() at time zone 'America/La_Paz')::date - $2::int, 'entregado', now(), now(),
        now() - make_interval(days => $2), $3, v.created_by
-     from vehiculo v, (select * from espacio_taller where activo order by orden limit 1) e where v.placa = $1 returning id`,
+     from vehiculo v, (select id as sucursal_id from sucursal order by id limit 1) e where v.placa = $1 returning id`,
     [placa, dias, descuento],
   );
   await consultar("insert into trabajo_linea (trabajo_id, variante_id, descripcion, precio, orden) select $1, (select id from variante order by id limit 1), 'Lavado completo', 600, 0", [id]);

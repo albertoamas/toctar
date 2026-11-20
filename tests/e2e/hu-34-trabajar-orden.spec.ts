@@ -2,9 +2,8 @@ import { expect, test, type TestInfo } from "@playwright/test";
 import { archivosArrastrados, consultar, crearClienteEnBase, crearUsuario, ingresar, PERFIL_TALLER, PNG } from "./apoyo";
 
 // HU-34 Trabajar una orden (flujo crítico 3). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §9 y,
-// desde el pedido 32 (sin técnico asignado), P32-roles-sin-tecnico.md. Las órdenes van directo a la base. Para no chocar
-// con las reservas de otras pruebas: la que se trabaja, en un espacio
-// propio y desactivado (ninguna otra prueba lo usa); la de extender, en días propios lejos de hoy (600 o 700).
+// desde el pedido 32 (sin técnico asignado), P32-roles-sin-tecnico.md. Las órdenes van directo a la base; la de extender,
+// en días propios lejos de hoy (600 o 700).
 test.describe.configure({ mode: "serial" });
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "c" : "e");
@@ -14,13 +13,13 @@ const hoy = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/La_Paz" 
 const dia = async (desplazamiento: number) => (await consultar<{ d: string }>("select to_char($1::date + $2::int, 'YYYY-MM-DD') as d", [hoy(), desplazamiento]))[0].d;
 const idDeUsuario = async (usuario: string) => (await consultar<{ id: number }>("select id from usuario where nombre_usuario = $1", [usuario]))[0].id;
 
-/** Una orden ya recibida, con un servicio, en el espacio y los días indicados. Devuelve su id. */
-async function orden(placa: string, espacioId: number, desde: string, hasta: string): Promise<number> {
+/** Una orden ya recibida, con un servicio, en los días indicados. Devuelve su id. */
+async function orden(placa: string, desde: string, hasta: string): Promise<number> {
   const [{ id }] = await consultar<{ id: number }>(
-    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, recibido_at, created_by)
-     select e.sucursal_id, v.cliente_id, v.id, e.id, $3::date, $4::date, 'recibido', now(), v.created_by
-     from vehiculo v, espacio_taller e where v.placa = $1 and e.id = $2 returning id`,
-    [placa, espacioId, desde, hasta],
+    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, estado, recibido_at, created_by)
+     select e.sucursal_id, v.cliente_id, v.id, $2::date, $3::date, 'recibido', now(), v.created_by
+     from vehiculo v, (select id as sucursal_id from sucursal order by id limit 1) e where v.placa = $1 returning id`,
+    [placa, desde, hasta],
   );
   await consultar("insert into trabajo_linea (trabajo_id, variante_id, descripcion, precio, orden) select $1, (select id from variante order by id limit 1), 'Lavado completo', 500, 0", [id]);
   return id;
@@ -32,13 +31,8 @@ test("el perfil Taller trabaja cualquier orden, sin asignarla y sin ver precios:
   await crearClienteEnBase({ nombre: `Trabajo ${s}`, telefono: telefono(info, 1), placa });
   await crearUsuario({ usuario: `taller-tr34-${s}`, nombre: `Chico del taller ${s}`, contrasena: "taller-123", rol: "encargado", permisos: PERFIL_TALLER });
   const quienTrabaja = await idDeUsuario(`taller-tr34-${s}`);
-  const [{ espacio }] = await consultar<{ espacio: number }>(
-    `insert into espacio_taller (sucursal_id, nombre, orden, activo) select sucursal_id, $1, 90, false from espacio_taller limit 1
-     on conflict do nothing returning id as espacio`,
-    [`Espacio HU-34 ${s}`],
-  );
   // Entró hace tres días y la entrega aproximada era dentro de tres
-  const id = await orden(placa, espacio, await dia(-3), await dia(3));
+  const id = await orden(placa, await dia(-3), await dia(3));
 
   await ingresar(page, `taller-tr34-${s}`, "taller-123");
   await expect(page).toHaveURL(/\/panel$/);
@@ -92,7 +86,7 @@ test("el perfil Taller trabaja cualquier orden, sin asignarla y sin ver precios:
   await expect(page.getByRole("menuitem", { name: "Volver a en proceso" })).toBeVisible();
   await page.keyboard.press("Escape");
 
-  // Terminó antes: la entrega pasa a hoy y el espacio queda libre desde mañana
+  // Terminó antes: la entrega pasa a hoy y su lugar queda libre desde mañana
   const [t] = await consultar<{ estado: string; fin: string; listo: boolean; avances: number; fotos: number }>(
     `select estado, to_char(fecha_fin, 'YYYY-MM-DD') as fin, listo_at is not null as listo,
        (select count(*)::int from trabajo_avance where trabajo_id = t.id) as avances,
@@ -120,21 +114,22 @@ test("el perfil Taller trabaja cualquier orden, sin asignarla y sin ver precios:
   expect(vuelta).toEqual({ fin: await dia(3), avisada: false });
 });
 
-test("extender la entrega: con el espacio ocupado se elige otro libre; las listas del dueño por estado", async ({ page }, info) => {
+test("extender la entrega solo cambia la fecha, aunque ese día quede lleno (pedido 55); las listas del dueño por estado", async ({ page }, info) => {
   const s = sufijo(info);
   const placa = `OT34${s.toUpperCase()}2`;
   const otra = `OT34${s.toUpperCase()}3`;
   await crearClienteEnBase({ nombre: `Se atrasa ${s}`, telefono: telefono(info, 2), placa });
   await crearClienteEnBase({ nombre: `Viene después ${s}`, telefono: telefono(info, 3), placa: otra });
-  const espacios = await consultar<{ id: number; nombre: string }>("select id, nombre from espacio_taller where activo order by orden");
   const base = info.project.name === "celular" ? 600 : 700;
   const [d0, d1, d3] = [await dia(base), await dia(base + 1), await dia(base + 3)];
-  const id = await orden(placa, espacios[0].id, d0, d1);
-  // En el mismo espacio, otra reserva desde el día 3
+  const id = await orden(placa, d0, d1);
+  // El día 3, lleno con otras reservas
+  const [{ lugares }] = await consultar<{ lugares: number }>("select lugares from sucursal order by id limit 1");
   await consultar(
-    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, created_by)
-     select e.sucursal_id, v.cliente_id, v.id, e.id, $3::date, $3::date, v.created_by from vehiculo v, espacio_taller e where v.placa = $1 and e.id = $2`,
-    [otra, espacios[0].id, d3],
+    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, created_by)
+     select e.sucursal_id, v.cliente_id, v.id, $2::date, $2::date, v.created_by
+     from vehiculo v, (select id as sucursal_id from sucursal order by id limit 1) e, generate_series(1, $3::int) where v.placa = $1`,
+    [otra, d3, lugares],
   );
   await crearUsuario({ usuario: `taller-hu34-${s}`, nombre: "Encargado del taller", contrasena: "encargado-123", rol: "encargado", permisos: PERFIL_TALLER });
   await ingresar(page, `taller-hu34-${s}`, "encargado-123");
@@ -144,14 +139,13 @@ test("extender la entrega: con el espacio ocupado se elige otro libre; las lista
   await page.getByRole("button", { name: "Más" }).click();
   await page.getByRole("menuitem", { name: "Extender entrega" }).click();
   const form = page.getByRole("form", { name: "Extender entrega" });
+  // Sin espacio que elegir: el auto ya está en el taller
+  await expect(form.getByLabel("Espacio", { exact: true })).toHaveCount(0);
   await form.getByLabel("Nueva entrega").fill(d3);
-  await expect(form.getByText(`${espacios[0].nombre} está ocupado en esas fechas: muévela a un espacio libre.`)).toBeVisible();
-  await expect(form.getByLabel("Espacio", { exact: true }).locator("option")).toHaveText(["Elige el espacio", ...espacios.slice(1).map((e) => e.nombre)]);
-  await form.getByLabel("Espacio", { exact: true }).selectOption({ label: espacios[1].nombre });
   await form.getByRole("button", { name: "Extender entrega" }).click();
-  await expect(page.getByText(new RegExp(`^Entrega movida al .* en ${espacios[1].nombre}\\.$`))).toBeVisible();
-  const [t] = await consultar<{ fin: string; espacio: number }>("select to_char(fecha_fin, 'YYYY-MM-DD') as fin, espacio_id as espacio from trabajo where id = $1", [id]);
-  expect(t).toEqual({ fin: d3, espacio: espacios[1].id });
+  await expect(page.getByText(/^Entrega movida al \d{2}\/\d{2}\.$/)).toBeVisible();
+  const [t] = await consultar<{ fin: string }>("select to_char(fecha_fin, 'YYYY-MM-DD') as fin from trabajo where id = $1", [id]);
+  expect(t).toEqual({ fin: d3 });
   await expect(page.getByRole("list", { name: "Historial de la orden" }).getByText(/^Entrega extendida al/)).toBeVisible();
 
   // La lista del encargado: una tabla con filtros por estado y su conteo (pedido 26)

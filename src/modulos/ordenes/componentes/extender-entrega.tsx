@@ -10,19 +10,17 @@ import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import { sumarDias } from "@/lib/fechas";
 import type { EstadoFormulario } from "@/lib/formularios";
-import { useEspaciosLibres } from "@/modulos/agenda/componentes/espacios-libres";
-import { CampoEspacio } from "@/modulos/agenda/componentes/campo-espacio";
 import { DIAS_MAXIMOS_TRABAJO } from "@/modulos/agenda/reglas";
-import { espaciosParaExtender, extenderEntrega } from "../acciones/estado";
+import { extenderEntrega } from "../acciones/estado";
 import { ANCHO_DATO } from "@/componentes/panel/anchos";
 
-// HU-34: extender la entrega de una orden que se atrasa (decisión del 20/10). Se queda en su espacio si sigue libre en
-// los días nuevos; si no, se ofrecen los libres para todo el período, desde el ingreso. La base frena un cruce (D-5).
+// HU-34: extender la entrega de una orden que se atrasa (decisión del 20/10). Pedido 55: solo la nueva fecha, sin espacio
+// ni lugares que contar: el auto ya está en el taller. Si un día queda con más autos que lugares, la Agenda lo marca.
 
-type Props = { id: number; fechaInicio: string; fechaFin: string; espacioId: number; espacio: string; hoy: string };
+type Props = { id: number; fechaInicio: string; fechaFin: string; hoy: string };
 
 /** El formulario, dentro del modal de "Más" (pulido 11.2): al extender, se cierra. */
-export function ExtenderEntrega({ id, fechaInicio, fechaFin: finActual, espacioId: espacioActual, espacio: nombreActual, hoy }: Props) {
+export function ExtenderEntrega({ id, fechaInicio, fechaFin: finActual, hoy }: Props) {
   const cerrar = useCerrarModal();
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(
     conAviso(extenderEntrega, (r) => r.ok && cerrar()),
@@ -34,16 +32,6 @@ export function ExtenderEntrega({ id, fechaInicio, fechaFin: finActual, espacioI
   // Después de la actual y, si ya está atrasada, desde hoy: una fecha que ya pasó no sirve
   const minima = sumarDias(finActual, 1) > hoy ? sumarDias(finActual, 1) : hoy;
   const [fechaFin, setFechaFin] = useState(minima);
-  const { libres, activos, buscando, ayuda } = useEspaciosLibres(fechaInicio, fechaFin, {
-    excepto: id,
-    consultar: espaciosParaExtender,
-    ayudaFechas: `Revisa la fecha: después de la entrega actual, desde hoy y hasta ${DIAS_MAXIMOS_TRABAJO} días desde el ingreso.`,
-  });
-  // Se queda en su espacio mientras siga libre; si no, hay que elegir otro
-  const [espacioElegido, setEspacioId] = useState(String(espacioActual));
-  const espacioId = libres.some((x) => String(x.id) === espacioElegido) ? espacioElegido : "";
-  // Su espacio, si ya no sirve: ocupado esos días, o desactivado (los activos no lo traen)
-  const suyo = buscando || activos.length === 0 || libres.some((x) => x.id === espacioActual) ? null : activos.some((x) => x.id === espacioActual) ? "ocupado en esas fechas" : "desactivado";
 
   return (
     <form ref={formulario} action={accion} className="flex flex-col gap-5" noValidate aria-label="Extender entrega">
@@ -63,14 +51,8 @@ export function ExtenderEntrega({ id, fechaInicio, fechaFin: finActual, espacioI
           aria-describedby={e.fechaFin ? "fechaFin-error" : undefined}
         />
       </Campo>
-      {suyo && (
-        <p role="status" className="rounded-sm border border-aviso p-3 text-sm">
-          {nombreActual} está {suyo}: muévela a un espacio libre.
-        </p>
-      )}
-      <CampoEspacio valor={espacioId} alCambiar={setEspacioId} libres={libres} buscando={buscando} ayuda={ayuda} error={e.espacioId} />
       <PieModal>
-        <Button type="submit" disabled={enviando || buscando}>
+        <Button type="submit" disabled={enviando}>
           {enviando ? "Guardando…" : "Extender entrega"}
         </Button>
         <CancelarModal />

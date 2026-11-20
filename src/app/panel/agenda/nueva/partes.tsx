@@ -7,7 +7,7 @@ import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { exigirModulo } from "@/lib/sesion";
 import { bs } from "@/modulos/cotizaciones/reglas";
 import { FormularioReserva } from "@/modulos/agenda/componentes/formulario-reserva";
-import { espaciosEnFechas } from "@/modulos/agenda/consultas/espacios";
+import { disponibilidad } from "@/modulos/agenda/consultas/lugares";
 import { type CotizacionParaReservar, type VehiculoReserva } from "@/modulos/agenda/consultas/reservar";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { type Volver } from "@/lib/volver";
@@ -16,7 +16,7 @@ import { type Volver } from "@/lib/volver";
 
 /**
  * Lo que comparten los caminos de una reserva nueva, sacado una vez de la dirección (17/11, al partir la página): quién
- * entra, el día y a dónde volver, y cómo armar la dirección de cada paso (con el día y el espacio del tablero).
+ * entra, el día y a dónde volver, y cómo armar la dirección de cada paso (con el día del tablero).
  */
 export type Contexto = {
   usuario: Awaited<ReturnType<typeof exigirModulo>>;
@@ -84,14 +84,13 @@ export async function Formulario(props: {
   hoy: string;
   fechaInicial: string;
   fechaFin: string;
-  espacio: number | null;
   arriba?: React.ReactNode;
   cotizaciones?: React.ReactNode;
   atras?: Route;
   /** A dónde lleva tocar el cliente y el vehículo en el indicador (los pasos que se eligen por la dirección). */
   pasosHechos?: (DestinoPaso | undefined)[];
 }) {
-  const [parametros, espacios] = await Promise.all([obtenerParametros(), props.fechaInicial ? espaciosEnFechas(props.fechaInicial, props.fechaFin) : []]);
+  const [parametros, lugares] = await Promise.all([obtenerParametros(), props.fechaInicial ? disponibilidad(props.fechaInicial, props.fechaFin) : null]);
   return (
     <FormularioReserva
       volver={props.volver}
@@ -100,8 +99,7 @@ export async function Formulario(props: {
       adelantoSugerido={parametros.adelanto_sugerido.toFixed(2)}
       hoy={props.hoy}
       fechaInicial={props.fechaInicial}
-      espacioInicial={props.espacio}
-      espaciosIniciales={espacios}
+      lugaresIniciales={lugares}
       arriba={props.arriba}
       cotizaciones={props.cotizaciones}
       atras={props.atras}

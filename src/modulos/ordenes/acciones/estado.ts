@@ -4,11 +4,10 @@ import { and, eq, inArray, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { auditoria, trabajo, trabajoAvance, trabajoLinea, vehiculo as tablaVehiculo } from "@/db/esquema";
 import { fechaEnBolivia, formatearFecha, sumarDias } from "@/lib/fechas";
-import { erroresDe, exclusionViolada, type EstadoFormulario } from "@/lib/formularios";
+import { erroresDe, type EstadoFormulario } from "@/lib/formularios";
 import { puede } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import type { EstadoTrabajo } from "@/db/esquema/trabajos";
-import { bloquearEspacio, espaciosEnFechas, type EspacioDisponible } from "@/modulos/agenda/consultas/espacios";
 import { DIAS_MAXIMOS_TRABAJO, NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { opcionesDeServicio } from "@/modulos/cotizaciones/consultas/servicios";
@@ -30,9 +29,9 @@ const MENSAJE_ESTADO: Partial<Record<EstadoTrabajo, string>> = {
 
 /**
  * Cambia el estado de la orden un paso adelante o atrás (HU-34, RF-41). Al pasar a
- * listo, si la entrega aproximada es después de hoy, pasa a hoy: el espacio queda libre desde mañana (decisión del 20/10).
- * Si se marcó lista por error y vuelve a en proceso, recupera esa entrega, salvo que el espacio ya se haya tomado; y el
- * aviso al cliente se borra, porque ya no es cierto.
+ * listo, si la entrega aproximada es después de hoy, pasa a hoy: su lugar queda libre desde mañana (decisión del 20/10).
+ * Si se marcó lista por error y vuelve a en proceso, recupera esa entrega (pedido 55: el auto sigue en el taller, sin
+ * contar lugares, como al extender); y el aviso al cliente se borra, porque ya no es cierto.
  */
 export async function cambiarEstadoOrden(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const usuario = await exigirModulo("ordenes");
@@ -42,17 +41,15 @@ export async function cambiarEstadoOrden(_previo: EstadoFormulario, datos: FormD
   const autorId = Number(usuario.id);
   const hoy = fechaEnBolivia();
 
-  const cambiar = (recuperarEntrega: boolean) =>
+  const cambiar = () =>
     db.transaction(async (tx) => {
       const [actual] = await tx
-        .select({ estado: trabajo.estado, clienteId: trabajo.clienteId, fechaFin: trabajo.fechaFin, fechaFinPrevista: trabajo.fechaFinPrevista, espacioId: trabajo.espacioId })
+        .select({ estado: trabajo.estado, clienteId: trabajo.clienteId, fechaFin: trabajo.fechaFin, fechaFinPrevista: trabajo.fechaFinPrevista })
         .from(trabajo)
         .where(eq(trabajo.id, id))
         .for("update");
       if (!actual) throw new Conflicto("Esa orden ya no existe.");
       if (!transicionOrden(actual.estado, estado)) throw new Conflicto(CAMBIO);
-      // Al volver de lista recupera días del espacio que había liberado: de a uno, como una reserva
-      if (actual.estado === "listo") await bloquearEspacio(tx, actual.espacioId);
       const antesDeTiempo = actual.fechaFin > hoy;
       const vuelveDeLista = actual.estado === "listo";
       // La que tenía, si todavía no pasó
@@ -63,37 +60,30 @@ export async function cambiarEstadoOrden(_previo: EstadoFormulario, datos: FormD
           estado,
           updatedAt: sql`now()`,
           ...(estado === "listo" && { listoAt: sql`now()`, ...(antesDeTiempo && { fechaFin: hoy, fechaFinPrevista: actual.fechaFin }) }),
-          ...(vuelveDeLista && { avisadoListoAt: null, avisadoListoPor: null, fechaFinPrevista: null, ...(recuperarEntrega && prevista && { fechaFin: prevista }) }),
+          ...(vuelveDeLista && { avisadoListoAt: null, avisadoListoPor: null, fechaFinPrevista: null, ...(prevista && { fechaFin: prevista }) }),
         })
         .where(eq(trabajo.id, id));
       await tx.insert(trabajoAvance).values({ trabajoId: id, usuarioId: autorId, nota: `Pasó a ${NOMBRE_ESTADO_TRABAJO[estado].toLowerCase()}.` });
       await tx.insert(auditoria).values({ usuarioId: autorId, entidad: "trabajo", entidadId: id, accion: "estado", datos: { de: actual.estado, a: estado } });
-      return { clienteId: actual.clienteId, sinEntrega: vuelveDeLista && !recuperarEntrega && !!prevista };
+      return { clienteId: actual.clienteId };
     });
 
-  let resultado: { clienteId: number; sinEntrega: boolean };
+  let resultado: { clienteId: number };
   try {
-    try {
-      resultado = await cambiar(true);
-    } catch (error) {
-      // El espacio que liberó al marcarla lista ya se tomó: vuelve a en proceso con la entrega de hoy
-      if (exclusionViolada(error) !== "trabajo_sin_cruces") throw error;
-      resultado = await cambiar(false);
-    }
+    resultado = await cambiar();
   } catch (error) {
     if (error instanceof Conflicto) return { mensaje: error.message };
     throw error;
   }
 
   despuesDeCambiar(id, resultado.clienteId);
-  if (resultado.sinEntrega) return { ok: true, mensaje: "La orden está en proceso, pero su espacio ya se tomó desde mañana: extiende la entrega." };
   return { ok: true, mensaje: MENSAJE_ESTADO[estado] };
 }
 
 /** Las fechas para extender una orden: desde su ingreso (ya pasó) hasta la nueva entrega; null si no valen. */
-async function rangoParaExtender(id: number, fechaFin: string): Promise<{ fechaInicio: string; fechaFin: string; clienteId: number; espacioId: number } | string> {
+async function rangoParaExtender(id: number, fechaFin: string): Promise<{ fechaInicio: string; fechaFin: string; antes: string; clienteId: number } | string> {
   const [t] = await db
-    .select({ estado: trabajo.estado, fechaInicio: trabajo.fechaInicio, fechaFin: trabajo.fechaFin, clienteId: trabajo.clienteId, espacioId: trabajo.espacioId })
+    .select({ estado: trabajo.estado, fechaInicio: trabajo.fechaInicio, fechaFin: trabajo.fechaFin, clienteId: trabajo.clienteId })
     .from(trabajo)
     .where(eq(trabajo.id, id));
   if (!t || !puedeExtenderse(t.estado)) return "Solo se extiende una orden recibida o en proceso.";
@@ -101,54 +91,36 @@ async function rangoParaExtender(id: number, fechaFin: string): Promise<{ fechaI
   // Una atrasada se extiende desde hoy: una fecha que ya pasó no sirve de nada
   if (fechaFin < fechaEnBolivia()) return "La nueva entrega no puede ser antes de hoy.";
   if (fechaFin > sumarDias(t.fechaInicio, DIAS_MAXIMOS_TRABAJO)) return `Una orden dura hasta ${DIAS_MAXIMOS_TRABAJO} días desde el ingreso.`;
-  return { fechaInicio: t.fechaInicio, fechaFin, clienteId: t.clienteId, espacioId: t.espacioId };
+  return { fechaInicio: t.fechaInicio, fechaFin, antes: t.fechaFin, clienteId: t.clienteId };
 }
 
 /**
- * Los espacios y si están libres para extender la orden hasta la nueva fecha (sin contar la propia orden). Datos sueltos:
- * se validan. El ingreso lo pone el servidor (el de la orden); la firma es la del formulario de agendar, para reusarlo.
- */
-export async function espaciosParaExtender(datos: { fechaInicio: string; fechaFin: string; excepto?: number }): Promise<EspacioDisponible[] | null> {
-  const usuario = await exigirModulo("ordenes");
-  if (!puede(usuario, "extender_entrega")) return null;
-  const r = esquemaExtender.pick({ id: true, fechaFin: true }).safeParse({ id: datos.excepto, fechaFin: datos.fechaFin });
-  if (!r.success) return null;
-  const rango = await rangoParaExtender(r.data.id, r.data.fechaFin);
-  if (typeof rango === "string") return null;
-  return espaciosEnFechas(rango.fechaInicio, rango.fechaFin, r.data.id);
-}
-
-/**
- * Extiende la entrega de una orden que se atrasa (HU-34; decisión del 20/10). Si su espacio está ocupado en los días
- * nuevos, se la mueve a otro libre. La base frena un cruce aunque dos personas cambien la agenda a la vez (D-5).
+ * Extiende la entrega de una orden que se atrasa (HU-34; decisión del 20/10). Pedido 55: solo cambia la fecha, sin contar
+ * lugares: el auto ya está en el taller y no se lo puede rechazar. Si un día queda con más autos que lugares, la Agenda lo
+ * marca.
  */
 export async function extenderEntrega(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const usuario = await exigirModulo("ordenes");
   if (!puede(usuario, "extender_entrega")) return { mensaje: "La entrega la extiende el dueño o el encargado." };
-  const valores = { fechaFin: String(datos.get("fechaFin") ?? ""), espacioId: String(datos.get("espacioId") ?? "") };
+  const valores = { fechaFin: String(datos.get("fechaFin") ?? "") };
   const r = esquemaExtender.safeParse({ id: datos.get("id"), ...valores });
   if (!r.success) {
     const errores = erroresDe(r.error);
     return errores.id ? { mensaje: RECARGA } : { errores, valores };
   }
-  const { id, fechaFin, espacioId } = r.data;
+  const { id, fechaFin } = r.data;
   const rango = await rangoParaExtender(id, fechaFin);
   if (typeof rango === "string") return { errores: { fechaFin: rango }, valores };
-  const espacio = (await espaciosEnFechas(rango.fechaInicio, fechaFin, id)).find((e) => e.id === espacioId);
-  // Solo se ofrecen los activos: si es el suyo y no está, lo desactivaron
-  if (!espacio) return { errores: { espacioId: espacioId === rango.espacioId ? "Ese espacio está desactivado: elige otro." : "Elige el espacio." }, valores };
-  if (!espacio.libre) return { errores: { espacioId: `${espacio.nombre} está ocupado en esas fechas: elige otro espacio.` }, valores };
 
   const autorId = Number(usuario.id);
-  // "al 2/11" o "al 2/11 en Espacio 1": lo mismo en la historia y en el aviso
-  const destino = `al ${formatearFecha(fechaFin).slice(0, 5)}${espacioId !== rango.espacioId ? ` en ${espacio.nombre}` : ""}`;
+  // "al 2/11": lo mismo en la historia y en el aviso
+  const destino = `al ${formatearFecha(fechaFin).slice(0, 5)}`;
   try {
     await db.transaction(async (tx) => {
-      await bloquearEspacio(tx, espacioId);
       // Solo si se sigue trabajando y nadie la cambió en el medio
       const [movida] = await tx
         .update(trabajo)
-        .set({ fechaFin, espacioId, updatedAt: sql`now()` })
+        .set({ fechaFin, updatedAt: sql`now()` })
         .where(and(eq(trabajo.id, id), inArray(trabajo.estado, ["recibido", "en_proceso"]), lte(trabajo.fechaFin, sumarDias(fechaFin, -1))))
         .returning({ id: trabajo.id });
       if (!movida) throw new Conflicto(CAMBIO);
@@ -158,12 +130,11 @@ export async function extenderEntrega(_previo: EstadoFormulario, datos: FormData
         entidad: "trabajo",
         entidadId: id,
         accion: "extender",
-        datos: { antes: { espacioId: rango.espacioId }, despues: { espacioId, fechaFin } },
+        datos: { antes: { fechaFin: rango.antes }, despues: { fechaFin } },
       });
     });
   } catch (error) {
     if (error instanceof Conflicto) return { mensaje: error.message, valores };
-    if (exclusionViolada(error) === "trabajo_sin_cruces") return { errores: { espacioId: `${espacio.nombre} se ocupó recién: elige otro espacio.` }, valores };
     throw error;
   }
 

@@ -2,7 +2,7 @@ import "server-only";
 import { asc, desc, eq, sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/db";
-import { archivo, categoriaGasto, espacioTaller, marcaVehiculo, negocio, parametro, parteRevision, plantillaMensaje, sucursal, tamanoVehiculo, type Redes } from "@/db/esquema";
+import { archivo, categoriaGasto, marcaVehiculo, negocio, parametro, parteRevision, plantillaMensaje, sucursal, tamanoVehiculo, type Redes } from "@/db/esquema";
 import { urlArchivo } from "@/lib/almacenamiento";
 import type { DiaHorario } from "@/lib/horarios";
 import type { Coordenadas } from "@/lib/ubicacion";
@@ -107,7 +107,7 @@ export async function obtenerPlantillas(): Promise<Plantillas> {
 }
 
 /**
- * Espacios del taller, tamaños de vehículo, partes del checklist o marcas de vehículo: activos primero, en su orden;
+ * Tamaños de vehículo, partes del checklist, marcas de vehículo o categorías de gasto: activos primero, en su orden;
  * después los desactivados.
  */
 export async function listarElementos(lista: Lista): Promise<Elemento[]> {
@@ -133,19 +133,11 @@ export async function listarElementos(lista: Lista): Promise<Elemento[]> {
       .orderBy(desc(parteRevision.activo), asc(parteRevision.orden), asc(parteRevision.id));
     return partes.map((p) => ({ ...p, descripcion: null }));
   }
-  if (lista === "tamanos") {
-    return db
-      .select({ id: tamanoVehiculo.id, nombre: tamanoVehiculo.nombre, descripcion: tamanoVehiculo.descripcion, orden: tamanoVehiculo.orden, activo: tamanoVehiculo.activo })
-      .from(tamanoVehiculo)
-      .orderBy(desc(tamanoVehiculo.activo), asc(tamanoVehiculo.orden), asc(tamanoVehiculo.id));
-  }
-  const { id: sucursalId } = await sucursalPrincipal();
-  const filas = await db
-    .select({ id: espacioTaller.id, nombre: espacioTaller.nombre, orden: espacioTaller.orden, activo: espacioTaller.activo })
-    .from(espacioTaller)
-    .where(eq(espacioTaller.sucursalId, sucursalId))
-    .orderBy(desc(espacioTaller.activo), asc(espacioTaller.orden), asc(espacioTaller.id));
-  return filas.map((f) => ({ ...f, descripcion: null }));
+  const tamanos = await db
+    .select({ id: tamanoVehiculo.id, nombre: tamanoVehiculo.nombre, descripcion: tamanoVehiculo.descripcion, orden: tamanoVehiculo.orden, activo: tamanoVehiculo.activo })
+    .from(tamanoVehiculo)
+    .orderBy(desc(tamanoVehiculo.activo), asc(tamanoVehiculo.orden), asc(tamanoVehiculo.id));
+  return tamanos;
 }
 
 export type Tamano = { id: number; nombre: string; descripcion: string | null };

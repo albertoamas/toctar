@@ -2,12 +2,12 @@ import "server-only";
 
 import { and, asc, desc, eq, gte, inArray, like, lte, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { cliente, espacioTaller, trabajo, trabajoLinea, vehiculo } from "@/db/esquema";
+import { cliente, trabajo, trabajoLinea, vehiculo } from "@/db/esquema";
 import { type EstadoTrabajo } from "@/db/esquema/trabajos";
 import { fechaEnBolivia } from "@/lib/fechas";
 import { escaparLike, normalizarBusqueda } from "@/modulos/clientes/reglas";
 import { sucursalPrincipal } from "@/modulos/configuracion/consultas";
-import { entregadasALaVista, seCruzan } from "../reglas";
+import { diasDeLaSemana, filasDelTablero, ocupadosEnDia, seCruzan, ultimoDiaOcupado } from "../reglas";
 
 // Lecturas de la agenda (C3). Quien las llama ya pasó por exigirModulo("agenda"); los montos y pagos solo se piden
 // para quien además ve "pagos" (o el dueño). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md.
@@ -15,7 +15,8 @@ import { entregadasALaVista, seCruzan } from "../reglas";
 
 export type ReservaTablero = {
   id: number;
-  espacioId: number;
+  /** La fila del tablero donde va (un lugar a la vista, sin nombre; pedido 55): no se guarda, se arma con la semana. */
+  fila: number;
   inicio: string;
   fin: string;
   estado: EstadoTrabajo;
@@ -28,30 +29,36 @@ export type ReservaTablero = {
 };
 
 export type SemanaDeAgenda = {
-  /** Los activos y, si tienen reservas esa semana, también los desactivados (`activo: false`): no se pierden de vista. */
-  espacios: { id: number; nombre: string; activo: boolean }[];
+  /** Cuántos autos entran a la vez (RN-06, pedido 55). */
+  lugares: number;
+  /** Cuántos ocupan un lugar cada día de la semana ("AAAA-MM-DD" → n): puede pasar de `lugares` (una extensión). */
+  ocupados: Record<string, number>;
+  /** Cuántas filas tiene el tablero: los lugares o, si un día tiene más autos, las que hagan falta. */
+  filas: number;
   reservas: ReservaTablero[];
   /** Días de la semana (1 = lunes … 7 = domingo) que el taller no atiende, según el horario de Configuración. */
   diasCerrados: number[];
 };
 
 /**
- * La semana del tablero (HU-29): los espacios y las reservas que caen en alguno de esos días. Pedido 28: también las
- * entregadas, en los días que no usa otra reserva (`entregadasALaVista`); las canceladas no.
+ * La semana del tablero (HU-29): las reservas que caen en alguno de esos días, cada una en una fila donde no se encime
+ * con otra (pedido 55: sin espacios). Una orden que sigue en el taller con la entrega pasada (atrasada) llega hasta hoy:
+ * ocupa su lugar. Pedido 28: también las entregadas, en los días que estuvieron (historia); las canceladas no.
  */
 export async function semanaDeAgenda(lunes: string, domingo: string): Promise<SemanaDeAgenda> {
   const s = await sucursalPrincipal();
-  const enLaSemana = and(eq(trabajo.sucursalId, s.id), ne(trabajo.estado, "cancelado"), lte(trabajo.fechaInicio, domingo), gte(trabajo.fechaFin, lunes));
-  const [espacios, reservas, lineas] = await Promise.all([
-    db
-      .select({ id: espacioTaller.id, nombre: espacioTaller.nombre, activo: espacioTaller.activo })
-      .from(espacioTaller)
-      .where(eq(espacioTaller.sucursalId, s.id))
-      .orderBy(asc(espacioTaller.orden), asc(espacioTaller.id)),
+  const hoy = fechaEnBolivia();
+  const enLaSemana = and(
+    eq(trabajo.sucursalId, s.id),
+    ne(trabajo.estado, "cancelado"),
+    lte(trabajo.fechaInicio, domingo),
+    // Las que siguen en el taller llegan hasta hoy aunque su entrega haya pasado
+    or(gte(trabajo.fechaFin, lunes), inArray(trabajo.estado, ["recibido", "en_proceso", "listo"])),
+  );
+  const [reservas, lineas] = await Promise.all([
     db
       .select({
         id: trabajo.id,
-        espacioId: trabajo.espacioId,
         inicio: trabajo.fechaInicio,
         fin: trabajo.fechaFin,
         estado: trabajo.estado,
@@ -62,7 +69,7 @@ export async function semanaDeAgenda(lunes: string, domingo: string): Promise<Se
       .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
       .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
       .where(enLaSemana)
-      .orderBy(asc(trabajo.fechaInicio)),
+      .orderBy(asc(trabajo.fechaInicio), asc(trabajo.id)),
     db
       .select({ trabajoId: trabajoLinea.trabajoId, descripcion: trabajoLinea.descripcion })
       .from(trabajoLinea)
@@ -72,16 +79,17 @@ export async function semanaDeAgenda(lunes: string, domingo: string): Promise<Se
   ]);
   const porTrabajo = new Map<number, string[]>();
   for (const l of lineas) porTrabajo.set(l.trabajoId, [...(porTrabajo.get(l.trabajoId) ?? []), l.descripcion]);
-  const hoy = fechaEnBolivia();
-  // Los tramos de entregadas que caen en la semana (un tramo puede quedar antes del lunes)
-  const aLaVista = [...new Set(reservas.map((r) => r.espacioId))]
-    .flatMap((espacioId) => entregadasALaVista(reservas.filter((r) => r.espacioId === espacioId), hoy))
-    .filter((r) => seCruzan(r, { inicio: lunes, fin: domingo }));
-  const conReservas = new Set(aLaVista.map((r) => r.espacioId));
+  // Hasta dónde se ve cada una: una atrasada, hasta hoy; una entregada, hasta el día que salió (y no después de hoy)
+  const aLaVista = reservas
+    .map((r) => ({ ...r, fin: ultimoDiaOcupado(r, hoy) ?? (r.fin > hoy ? hoy : r.fin) }))
+    .filter((r) => r.inicio <= r.fin && seCruzan(r, { inicio: lunes, fin: domingo }));
+  const conFila = filasDelTablero(aLaVista);
+  const ocupados = Object.fromEntries(diasDeLaSemana(lunes).map((dia) => [dia, ocupadosEnDia(reservas, dia, hoy)]));
   return {
-    espacios: espacios.filter((e) => e.activo || conReservas.has(e.id)),
-    // Por espacio, las que ocupan primero: en el día del celular gana la reserva que ocupa sobre la entregada
-    reservas: aLaVista.map((r) => {
+    lugares: s.lugares,
+    ocupados,
+    filas: Math.max(s.lugares, ...conFila.map((r) => r.fila + 1)),
+    reservas: conFila.map((r) => {
       const suyas = porTrabajo.get(r.id) ?? [];
       return { ...r, servicio: suyas[0] ?? null, masServicios: Math.max(0, suyas.length - 1) };
     }),
@@ -89,7 +97,7 @@ export async function semanaDeAgenda(lunes: string, domingo: string): Promise<Se
   };
 }
 
-export type ReservaEncontrada = Omit<ReservaTablero, "espacioId"> & { espacio: string };
+export type ReservaEncontrada = Omit<ReservaTablero, "fila">;
 
 /** Cuántas reservas muestra la búsqueda de la Agenda: si hay más, se pide escribir más. */
 const RESERVAS_POR_BUSQUEDA = 30;
@@ -119,12 +127,10 @@ export async function buscarReservas(q: string): Promise<{ reservas: ReservaEnco
       estado: trabajo.estado,
       placa: vehiculo.placa,
       cliente: cliente.nombre,
-      espacio: espacioTaller.nombre,
     })
     .from(trabajo)
     .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
     .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
-    .innerJoin(espacioTaller, eq(trabajo.espacioId, espacioTaller.id))
     .where(and(eq(trabajo.sucursalId, s.id), ne(trabajo.estado, "cancelado"), coincide))
     .orderBy(sql`case when ${viene} then 0 else 1 end`, sql`case when ${viene} then ${trabajo.fechaInicio} end asc`, desc(trabajo.fechaInicio), desc(trabajo.id))
     .limit(RESERVAS_POR_BUSQUEDA + 1);

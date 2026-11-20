@@ -23,7 +23,7 @@ test("el dueño cambia el mensaje de listo, lo ve como le llega y el aviso de la
   // Datos propios de cada intento: si el CI la reintenta, no choca con lo que dejó el anterior
   const placa = `PL40E${info.retry}`;
   await crearClienteEnBase({ nombre: "Marta Vaca", telefono: `5917640001${info.retry}`, placa });
-  const id = await crearOrdenLista({ placa, espacio: 0, dias: 1200 + info.retry, precio: 500, pagado: 100 });
+  const id = await crearOrdenLista({ placa, dias: 1200 + info.retry, precio: 500, pagado: 100 });
   // Empieza y termina con el original, aunque falle a mitad: las otras pruebas leen el mismo mensaje
   await consultar("delete from plantilla_mensaje where clave = 'listo'");
   try {

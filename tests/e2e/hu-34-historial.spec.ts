@@ -15,8 +15,7 @@ async function entregada(info: TestInfo, n: number): Promise<{ id: number; dia: 
   const s = sufijo(info);
   const placa = `HI34${s.toUpperCase()}${n}`;
   await crearClienteEnBase({ nombre: `Historial ${n} ${s}`, telefono: telefono(info, n), placa });
-  // Hay tres espacios: la cuarta usa el de la primera, ya entregada (no ocupa)
-  const id = await crearOrdenLista({ placa, espacio: (n - 1) % 3, dias: dias(info), precio: 500, pagado: 500 });
+  const id = await crearOrdenLista({ placa, dias: dias(info), precio: 500, pagado: 500 });
   const [{ dia }] = await consultar<{ dia: string }>(
     // En el pasado (como en la vida real): la agenda muestra las entregadas en días ya pasados
     `update trabajo set estado = 'entregado', fecha_inicio = (now() at time zone 'America/La_Paz')::date - (fecha_fin - (now() at time zone 'America/La_Paz')::date), fecha_fin = (now() at time zone 'America/La_Paz')::date - (fecha_fin - (now() at time zone 'America/La_Paz')::date),
@@ -93,16 +92,8 @@ test("entregada hoy, se ve hoy en la agenda en verde (18/11: antes desaparecía 
   const s = sufijo(info);
   const placa = `HI34${s.toUpperCase()}5`;
   await crearClienteEnBase({ nombre: `Historial 5 ${s}`, telefono: telefono(info, 5), placa });
-  // En un espacio sin nada hoy: si otra reserva entra hoy en el mismo, hoy es de ella; y de dos entregadas el mismo día,
-  // se dibuja una. Celular y escritorio corren a la vez: uno toma el primero libre y el otro el último
-  const [libre] = await consultar<{ n: number }>(
-    `select n from (select e.id, (row_number() over (order by e.orden) - 1)::int as n from espacio_taller e where e.activo) a
-     where not exists (select 1 from trabajo t where t.espacio_id = a.id and t.estado <> 'cancelado'
-       and (now() at time zone 'America/La_Paz')::date between t.fecha_inicio and t.fecha_fin)
-     order by n ${info.project.name === "celular" ? "asc" : "desc"} limit 1`,
-  );
-  test.skip(!libre, "Hoy todos los espacios tienen una reserva de otra prueba");
-  const id = await crearOrdenLista({ placa, espacio: libre.n, dias: dias(info), precio: 500, pagado: 500 });
+  // Sin espacios (pedido 55): cada reserva va en su fila del tablero, así que la entregada se ve aunque hoy haya otras
+  const id = await crearOrdenLista({ placa, dias: dias(info), precio: 500, pagado: 500 });
   // Recibida y entregada hoy: la entrega la acorta a hoy (como en la prueba con el dueño, del 17 al 21 → el 17)
   await consultar(
     `update trabajo set estado = 'entregado', fecha_inicio = (now() at time zone 'America/La_Paz')::date, fecha_fin = (now() at time zone 'America/La_Paz')::date,

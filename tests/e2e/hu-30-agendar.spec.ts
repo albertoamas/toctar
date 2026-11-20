@@ -3,7 +3,7 @@ import { alAdelanto, consultar, crearClienteEnBase, crearUsuario, ingresar, ingr
 
 // HU-30 Agendar reserva (flujo crítico 2). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §9.
 // Cada prueba usa sus propios días (lejos de hoy y distintos por proyecto) para no chocar con las demás en los
-// espacios. En serie: las del dueño entran con el mismo usuario y, a la vez, chocaban con el límite de intentos.
+// lugares de cada día. En serie: las del dueño entran con el mismo usuario y, a la vez, chocaban con el límite de intentos.
 test.describe.configure({ mode: "serial" });
 
 // Datos propios de cada proyecto y de cada intento: si el CI reintenta una prueba, no choca con lo que dejó la anterior
@@ -58,7 +58,6 @@ async function consultaCotizada(info: TestInfo, n: number): Promise<{ consultaId
   return { consultaId: c.consulta, cotizacionId: c.cotizacion };
 }
 
-const espacio = (page: Page) => page.getByLabel("Espacio", { exact: true });
 /** El paso a la vista de Nueva reserva (pedido 41): el marcado en el indicador. */
 const pasoActual = (page: Page) => page.getByRole("navigation", { name: "Pasos de la reserva" }).locator('[aria-current="step"]');
 const siguiente = (page: Page) => page.getByRole("button", { name: "Siguiente: fecha" });
@@ -83,10 +82,6 @@ test("desde la cotización: la versión y la cotización quedan aceptadas, las l
   // El total (con el descuento de la cotización)
   await expect(page.getByText("800 Bs", { exact: true }).filter({ visible: true }).first()).toBeVisible();
 
-  // Sin elegir espacio no se pasa al adelanto (20/11: la fecha y el adelanto, en pasos separados)
-  await page.getByRole("button", { name: "Siguiente: adelanto" }).click();
-  await expect(page.getByText("Elige el espacio.")).toBeVisible();
-  await espacio(page).selectOption({ index: 1 });
   // La nota va plegada (pulido 10.2): al abrirla, el foco pasa a ella. Sin hora de llegada (19/11, pedido del dueño)
   await expect(page.getByLabel("Nota")).toBeHidden();
   await page.getByText("Agregar nota").click();
@@ -148,39 +143,23 @@ test("desde la cotización: la versión y la cotización quedan aceptadas, las l
   await expect(page.getByText("Esa cotización ya tiene una reserva o una versión nueva.")).toBeVisible();
 });
 
-test("la base rechaza un cruce en el mismo espacio aunque el código fallara; una cancelada no ocupa", async ({}, info) => {
-  const dia = await diaPropio(info, 2);
-  await crearClienteEnBase({ nombre: `Cruce ${sufijo(info)}`, telefono: telefono(info, 2), placa: `CR30${sufijo(info)}2` });
-  const insertar = (inicio: string, fin: string, estado = "agendado") =>
-    consultar(
-      `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, motivo_cancelacion, created_by)
-       select e.sucursal_id, v.cliente_id, v.id, e.id, $2::date, $3::date, $4, case when $4 = 'cancelado' then 'prueba' end, v.created_by
-       from vehiculo v, (select * from espacio_taller order by orden limit 1) e where v.placa = $1`,
-      [`CR30${sufijo(info)}2`, inicio, fin, estado],
-    );
-  const [{ masUno, masTres }] = await consultar<{ masUno: string; masTres: string }>(
-    `select to_char($1::date + 1, 'YYYY-MM-DD') as "masUno", to_char($1::date + 3, 'YYYY-MM-DD') as "masTres"`,
-    [dia],
-  );
-  await insertar(dia, masUno);
-  // Empieza el mismo día en que termina la otra: se cruzan (bordes incluidos)
-  await expect(insertar(masUno, masTres)).rejects.toMatchObject({ code: "23P01", constraint: "trabajo_sin_cruces" });
-  // Una cancelada en esos días no ocupa
-  await insertar(masUno, masTres, "cancelado");
-});
-
-test("solo se ofrecen los espacios libres; si dos personas agendan el mismo a la vez, una recibe un aviso", async ({ page, browser }, info) => {
+test("un día lleno no se reserva; si dos personas toman el último lugar a la vez, una recibe un aviso (pedido 55)", async ({ page, browser }, info) => {
   const dia = await diaPropio(info, 3);
-  const espacios = await consultar<{ id: number; nombre: string }>("select id, nombre from espacio_taller where activo order by orden");
-  // Todos ocupados menos el último
+  const [{ lugares }] = await consultar<{ lugares: number }>("select lugares from sucursal order by id limit 1");
+  // Todos los lugares ocupados menos uno; una cancelada y una entregada ese día no ocupan
   await crearClienteEnBase({ nombre: `Ocupa ${sufijo(info)}`, telefono: telefono(info, 3), placa: `OC30${sufijo(info)}3` });
-  for (const e of espacios.slice(0, -1)) {
-    await consultar(
-      `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, created_by)
-       select $2, v.cliente_id, v.id, $3, $4::date, $4::date, v.created_by from vehiculo v where v.placa = $1`,
-      [`OC30${sufijo(info)}3`, 1, e.id, dia],
+  const insertar = (estado: string, veces: number) =>
+    consultar(
+      `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, estado, motivo_cancelacion, recibido_at, listo_at, entregado_at, sin_firma_motivo, created_by)
+       select e.sucursal_id, v.cliente_id, v.id, $2::date, $2::date, $3, case when $3 = 'cancelado' then 'prueba' end,
+         case when $3 = 'entregado' then now() end, case when $3 = 'entregado' then now() end, case when $3 = 'entregado' then now() end,
+         case when $3 = 'entregado' then 'Prueba' end, v.created_by
+       from vehiculo v, (select id as sucursal_id from sucursal order by id limit 1) e, generate_series(1, $4::int) where v.placa = $1`,
+      [`OC30${sufijo(info)}3`, dia, estado, veces],
     );
-  }
+  await insertar("agendado", lugares - 1);
+  await insertar("cancelado", 1);
+  await insertar("entregado", 1);
   const a = await consultaCotizada(info, 4);
   const b = await consultaCotizada(info, 5);
   await ingresarComoDueno(page);
@@ -189,10 +168,8 @@ test("solo se ofrecen los espacios libres; si dos personas agendan el mismo a la
   const abrir = async (p: Page, cotizacionId: number) => {
     await p.goto(`/panel/agenda/nueva?cotizacion=${cotizacionId}&fecha=${dia}`);
     await p.getByLabel("Entrega aproximada").fill(dia);
-    await expect(espacio(p).locator("option")).toHaveText(["Elige el espacio", espacios.at(-1)!.nombre]);
-    // Con uno solo libre, ya va elegido (pulido final del 09/11)
-    await expect(espacio(p)).toHaveValue(String(espacios.at(-1)!.id));
-    await espacio(p).selectOption({ label: espacios.at(-1)!.nombre });
+    // Queda un lugar: sin error junto a las fechas
+    await expect(p.getByText(/lugares? ocupados?/)).toHaveCount(0);
     await sinAdelantoEnReserva(p);
   };
   await abrir(page, a.cotizacionId);
@@ -200,14 +177,20 @@ test("solo se ofrecen los espacios libres; si dos personas agendan el mismo a la
   // A la vez
   await Promise.all([page.getByRole("button", { name: "Reservar" }).click(), otra.page.getByRole("button", { name: "Reservar" }).click()]);
   // Lo que ve cada persona: la redirección de la acción es una navegación interna (sin evento "load"), y esperar la
-  // dirección con waitForURL a veces no terminaba aunque la reserva ya se mostraba (CI, 25/10)
+  // dirección con waitForURL a veces no terminaba aunque la reserva ya se mostraba (CI, 25/10). La segunda ve el día
+  // lleno: con la sucursal ya bloqueada ("se llenó recién") o, si llegó después, al revisar las fechas
   const resultado = async (p: Page) =>
     Promise.race([
       p.getByText(/^Reservada para el /).waitFor().then(() => "agendada"),
-      p.getByText("Ese espacio se ocupó recién: elige otro.").waitFor().then(() => "ocupado"),
+      p.getByText(/Ese día se llenó recién|ya tiene los \d+ lugares ocupados/).first().waitFor().then(() => "lleno"),
     ]);
-  expect((await Promise.all([resultado(page), resultado(otra.page)])).sort()).toEqual(["agendada", "ocupado"]);
+  expect((await Promise.all([resultado(page), resultado(otra.page)])).sort()).toEqual(["agendada", "lleno"]);
   await otra.ctx.close();
+  // Ya lleno, la reserva lo dice junto a las fechas antes de seguir
+  const c = await consultaCotizada(info, 11);
+  await page.goto(`/panel/agenda/nueva?cotizacion=${c.cotizacionId}&fecha=${dia}`);
+  await page.getByLabel("Entrega aproximada").fill(dia);
+  await expect(page.getByText(/ya tiene los \d+ lugares ocupados\./)).toBeVisible();
 });
 
 async function otraPersona(browser: Browser, info: TestInfo) {
@@ -278,8 +261,6 @@ test("reserva directa: cliente y vehículo registrados, servicio del catálogo c
   await siguiente(page).click();
   await expect(pasoActual(page)).toHaveText("Fecha");
   await page.getByLabel("Ingresa el").fill(dia);
-  await expect(espacio(page)).toBeEnabled();
-  await espacio(page).selectOption({ index: 1 });
   await sinAdelantoEnReserva(page);
   await expect(pasoActual(page)).toHaveText("Adelanto");
   await page.getByRole("button", { name: "Reservar" }).click();
@@ -303,8 +284,6 @@ test("el encargado con Agenda sin Pagos agenda sin montos ni adelanto; sin Agend
   // Sin Pagos, sin paso de adelanto: se reserva desde la fecha
   await expect(page.getByRole("button", { name: "Siguiente: adelanto" })).toHaveCount(0);
   await page.getByLabel("Ingresa el").fill(dia);
-  await expect(espacio(page)).toBeEnabled();
-  await espacio(page).selectOption({ index: 1 });
   await page.getByRole("button", { name: "Reservar" }).click();
   await expect(page).toHaveURL(/\?agendada=1(?:[?&]volver=[^&#]*)?$/);
   await expect(page.getByRole("heading", { name: "Saldo" })).toHaveCount(0);
@@ -327,13 +306,13 @@ test("el encargado con Agenda sin Pagos agenda sin montos ni adelanto; sin Agend
   await expect(page).toHaveURL(/\/panel\/sin-acceso$/);
 });
 
-test("«Cambiar» vuelve a elegir el cliente sin perder el día y el espacio que llegaron del tablero", async ({ page }, info) => {
+test("«Cambiar» vuelve a elegir el cliente sin perder el día que llegó del tablero", async ({ page }, info) => {
   const s = sufijo(info);
   const clienteId = await crearClienteEnBase({ nombre: `Cambia cliente ${s}`, telefono: telefono(info, 9), placa: `CC30${s}9` });
   await ingresarComoDueno(page);
-  await page.goto(`/panel/agenda/nueva?fecha=2030-01-02&espacio=1&cliente=${clienteId}`);
+  await page.goto(`/panel/agenda/nueva?fecha=2030-01-02&cliente=${clienteId}`);
   // Tocando "Cliente" en el indicador (20/11)
-  await expect(page.getByRole("navigation", { name: "Pasos de la reserva" }).getByRole("link", { name: "Ir al paso Cliente" })).toHaveAttribute("href", conVolver("/panel/agenda/nueva?fecha=2030-01-02&espacio=1"));
+  await expect(page.getByRole("navigation", { name: "Pasos de la reserva" }).getByRole("link", { name: "Ir al paso Cliente" })).toHaveAttribute("href", conVolver("/panel/agenda/nueva?fecha=2030-01-02"));
 });
 
 test("con varios vehículos se elige uno en su paso, y «Cambiar vehículo» vuelve a él (pedido 41)", async ({ page }, info) => {
@@ -389,8 +368,6 @@ test("otro vehículo se escribe en su paso y se registra con la reserva, no ante
   await page.getByRole("button", { name: "Siguiente: servicios" }).click();
   await siguiente(page).click();
   await page.getByLabel("Ingresa el").fill(dia);
-  await expect(espacio(page)).toBeEnabled();
-  await espacio(page).selectOption({ index: 1 });
   // Hasta reservar, el vehículo no existe: si se abandona, no queda nada a medias
   const [{ antes }] = await consultar<{ antes: number }>("select count(*)::int as antes from vehiculo where cliente_id = $1", [clienteId]);
   expect(antes).toBe(0);
@@ -429,8 +406,6 @@ test("«Cliente nuevo» se escribe en los pasos de la reserva y se registra con 
   await siguiente(page).click();
   // El día que llegó del tablero
   await expect(page.getByLabel("Ingresa el")).toHaveValue(dia);
-  await expect(espacio(page)).toBeEnabled();
-  await espacio(page).selectOption({ index: 1 });
   // El indicador vuelve al cliente sin perder lo escrito
   await page.getByRole("navigation", { name: "Pasos de la reserva" }).getByRole("button", { name: "Ir al paso Cliente" }).click();
   await expect(pasoActual(page)).toHaveText("Cliente");

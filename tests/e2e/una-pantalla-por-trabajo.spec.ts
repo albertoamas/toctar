@@ -12,7 +12,7 @@ async function ordenConNota(info: TestInfo, n: number) {
   const s = sufijo(info);
   const placa = `UP52${s.toUpperCase()}${n}${info.retry}`;
   await crearClienteEnBase({ nombre: `Una pantalla ${s}`, telefono: `5917${s === "c" ? 7 : 8}5200${n}${info.retry}0`, placa });
-  const id = await crearOrdenLista({ placa, espacio: 2, dias: (info.project.name === "celular" ? 360 : 370) + n * 2 + info.retry, precio: 900, pagado: 300 });
+  const id = await crearOrdenLista({ placa, dias: (info.project.name === "celular" ? 360 : 370) + n * 2 + info.retry, precio: 900, pagado: 300 });
   await consultar("update trabajo set nota = 'Trae las llaves de repuesto' where id = $1", [id]);
   return id;
 }

@@ -74,36 +74,67 @@ export function bloquesDeLaSemana<T extends Rango>(trabajos: readonly T[], lunes
     });
 }
 
-/** Una reserva ocupa espacio en la agenda mientras no se cancela ni se entrega (como la restricción de la base). */
-export const ocupaEspacio = (estado: EstadoTrabajo) => estado !== "cancelado" && estado !== "entregado";
+// Pedido 55 (etapas/P55-lugares-por-dia.md): lugares por día en vez de espacios fijos. El taller tiene N lugares y cada
+// día cuenta los trabajos que ocupan uno. Puro: se prueba en tests/unit/agenda.test.ts.
+
+/** Los estados de una orden que sigue en el taller: ocupa su lugar hasta entregarse, aunque esté atrasada. */
+const EN_EL_TALLER: readonly EstadoTrabajo[] = ["recibido", "en_proceso", "listo"];
+
+/** Si un trabajo ocupa un lugar en la agenda (una reserva o una orden abierta); las canceladas y las entregadas no. */
+export const ocupaLugar = (estado: EstadoTrabajo) => estado === "agendado" || EN_EL_TALLER.includes(estado);
 
 /**
- * Pedido 28: las entregadas siguen en el tablero, en los días que estuvieron, para ver qué se entregó y cuándo, hasta
- * `hoy` incluido (18/11: antes, solo los días anteriores, y una entregada el mismo día desaparecía hasta el día
- * siguiente). Ya no ocupan el espacio: se muestran en los días que no usa otra reserva (la que entró el día en que
- * salió, también hoy) ni otra entregada, y el espacio sigue libre para agendar. Cada tramo de días libres seguidos es
- * una cinta; sin días libres, no se muestra. Día por día: no depende de la semana que se mira.
+ * El último día que un trabajo ocupa un lugar: el de su entrega o, si sigue en el taller con la entrega ya pasada (una
+ * atrasada), hoy. null si no ocupa (cancelado o entregado).
  */
-export function entregadasALaVista<T extends Rango & { estado: EstadoTrabajo }>(reservas: readonly T[], hoy: string): T[] {
-  const ocupados: Rango[] = reservas.filter((r) => ocupaEspacio(r.estado));
-  const tramos: T[] = [];
-  const entregadas = reservas.filter((r) => r.estado === "entregado").sort((a, b) => (a.inicio < b.inicio ? -1 : a.inicio > b.inicio ? 1 : 0));
-  for (const e of entregadas) {
-    let tramo: Rango | null = null;
-    const cerrar = () => {
-      if (tramo) {
-        tramos.push({ ...e, ...tramo });
-        ocupados.push(tramo);
-      }
-      tramo = null;
-    };
-    for (let dia = e.inicio; dia <= e.fin && dia <= hoy; dia = sumarDias(dia, 1)) {
-      if (ocupados.some((o) => seCruzan(o, { inicio: dia, fin: dia }))) cerrar();
-      else tramo = tramo ? { inicio: tramo.inicio, fin: dia } : { inicio: dia, fin: dia };
-    }
-    cerrar();
+export function ultimoDiaOcupado(t: { estado: EstadoTrabajo; fin: string }, hoy: string): string | null {
+  if (!ocupaLugar(t.estado)) return null;
+  return EN_EL_TALLER.includes(t.estado) && t.fin < hoy ? hoy : t.fin;
+}
+
+/** Cuántos trabajos ocupan un lugar en un día. `excepto`: la reserva que se reprograma, que no choca consigo misma. */
+export function ocupadosEnDia(trabajos: readonly { id: number; estado: EstadoTrabajo; inicio: string; fin: string }[], dia: string, hoy: string, excepto?: number): number {
+  return trabajos.filter((t) => {
+    if (t.id === excepto) return false;
+    const ultimo = ultimoDiaOcupado(t, hoy);
+    return ultimo !== null && t.inicio <= dia && dia <= ultimo;
+  }).length;
+}
+
+/** Los días de un rango que ya tienen todos los lugares ocupados (sin contar `excepto`): ahí no se reserva. */
+export function diasLlenos(
+  trabajos: readonly { id: number; estado: EstadoTrabajo; inicio: string; fin: string }[],
+  rango: Rango,
+  lugares: number,
+  hoy: string,
+  excepto?: number,
+): string[] {
+  const llenos: string[] = [];
+  for (let dia = rango.inicio; dia <= rango.fin; dia = sumarDias(dia, 1)) {
+    if (ocupadosEnDia(trabajos, dia, hoy, excepto) >= lugares) llenos.push(dia);
   }
-  return [...reservas.filter((r) => ocupaEspacio(r.estado)), ...tramos];
+  return llenos;
+}
+
+/** El error de unas fechas con días llenos: "El viernes 21 ya tiene los 3 lugares ocupados." o "Sin lugar el …". */
+export function textoDiasLlenos(llenos: readonly string[], lugares: number): string {
+  if (llenos.length === 1) return `El ${diaEnFrase(llenos[0])} ya tiene ${lugares === 1 ? "su lugar ocupado" : `los ${lugares} lugares ocupados`}.`;
+  return `Sin lugar ${unirConY(llenos.map((d) => `el ${diaEnFrase(d)}`))}.`;
+}
+
+/**
+ * Las filas del tablero: cada reserva va en una fila (un lugar a la vista, sin nombre) donde no se encime con otra. Las que
+ * ocupan, primero y por fecha; las entregadas (historia, pedido 28), después. No se guarda: se arma al dibujar.
+ */
+export function filasDelTablero<T extends Rango & { estado: EstadoTrabajo }>(reservas: readonly T[]): (T & { fila: number })[] {
+  const orden = [...reservas].sort((a, b) => Number(ocupaLugar(b.estado)) - Number(ocupaLugar(a.estado)) || (a.inicio < b.inicio ? -1 : a.inicio > b.inicio ? 1 : 0));
+  const filas: Rango[][] = [];
+  return orden.map((r) => {
+    let fila = filas.findIndex((enFila) => !enFila.some((o) => seCruzan(o, r)));
+    if (fila === -1) fila = filas.push([]) - 1;
+    filas[fila].push(r);
+    return { ...r, fila };
+  });
 }
 
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
@@ -157,7 +188,7 @@ export function tituloDia(fecha: string, hoy: string): string {
 }
 
 /** "Espacio 1", "Espacio 1 y Espacio 3", "Espacio 1, Espacio 2 y Espacio 3". */
-export function unirConY(nombres: readonly string[]): string {
+function unirConY(nombres: readonly string[]): string {
   return nombres.length <= 1 ? (nombres[0] ?? "") : `${nombres.slice(0, -1).join(", ")} y ${nombres[nombres.length - 1]}`;
 }
 

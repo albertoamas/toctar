@@ -18,7 +18,7 @@ export const metadata: Metadata = { title: "Nueva reserva" };
 
 // HU-30: nueva reserva. Desde la versión vigente de una cotización (`?cotizacion=`), o directa: se elige el cliente con
 // el buscador de Clientes (`?cliente=`) y su vehículo (`?vehiculo=`). Dueño o encargado con "Agenda"; la directa lleva
-// precios y la arma el dueño o quien tiene "Pagos". `?fecha=` y `?espacio=` llegan desde un día libre del tablero.
+// precios y la arma el dueño o quien tiene "Pagos". `?fecha=` llega desde un día libre del tablero.
 // HU-38: `?recordatorio=` llega desde "Reservar" en Mantenimientos, con el cliente y el vehículo: al agendar, el
 // recordatorio queda "agendado". Pedido 21: la línea llega con su servicio de mantenimiento.
 // Pulido 10.2: el cliente y su vehículo en un recuadro de lectura (como en Nueva cotización), con "Cambiar" en su
@@ -65,11 +65,10 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   const fechaInicial = fechaExiste(texto("fecha")) && texto("fecha") >= hoy ? texto("fecha") : "";
   const pasos = pasosNuevaReserva(conPagos);
   const indicador = (actual: number, destinos?: (DestinoPaso | undefined)[]) => <PasosFlujo pasos={pasos} actual={actual} etiqueta="Pasos de la reserva" destinos={destinos} />;
-  // Cada paso es una dirección: se conservan el día y el espacio que llegaron del tablero
+  // Cada paso es una dirección: se conserva el día que llegó del tablero
   const direccion = (datos: Record<string, string | number>) => {
     const p = new URLSearchParams(Object.entries(datos).map(([k, v]) => [k, String(v)]));
     if (texto("fecha")) p.set("fecha", texto("fecha"));
-    if (texto("espacio")) p.set("espacio", texto("espacio"));
     if (origen) p.set(PARAMETRO_VOLVER, origen);
     return `/panel/agenda/nueva${p.size ? `?${p.toString()}` : ""}` as Route;
   };
@@ -77,7 +76,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   // Lo que se reserva (hallazgo 9 de la prueba en celulares, 15/11). La misma pantalla sirve a los tres caminos y solo
   // cambia la dirección: al salir y volver, PaginaPanel lo rearma (EmpiezaDeCero); esta clave lo rearma también sin salir,
   // cuando lo reservado cambia en la misma pantalla ("Usar la cotización" en una reserva directa)
-  const clave = ["cotizacion", "nuevo", "cliente", "vehiculo", "recordatorio", "fecha", "espacio"].map(texto).join("|");
+  const clave = ["cotizacion", "nuevo", "cliente", "vehiculo", "recordatorio", "fecha"].map(texto).join("|");
 
   const ctx: Contexto = { usuario, conPagos, volver, origen, hoy, fechaInicial, texto, numero, indicador, direccion, clave };
 

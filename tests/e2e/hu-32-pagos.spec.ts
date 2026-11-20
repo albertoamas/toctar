@@ -10,9 +10,9 @@ const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "c" : "e")
 /** Una reserva agendada en la base, con un servicio de 500 Bs y, si se pide, un adelanto de 150 en efectivo. `dia`: cada prueba, el suyo. */
 async function reserva(info: TestInfo, placa: string, conAdelanto: boolean, dia = conAdelanto ? 0 : 5): Promise<number> {
   const [{ id }] = await consultar<{ id: number }>(
-    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, created_by)
-     select e.sucursal_id, v.cliente_id, v.id, e.id, (now() at time zone 'America/La_Paz')::date + $2::int, (now() at time zone 'America/La_Paz')::date + $2::int, v.created_by
-     from vehiculo v, (select * from espacio_taller where activo order by orden limit 1) e where v.placa = $1 returning id`,
+    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, created_by)
+     select e.sucursal_id, v.cliente_id, v.id, (now() at time zone 'America/La_Paz')::date + $2::int, (now() at time zone 'America/La_Paz')::date + $2::int, v.created_by
+     from vehiculo v, (select id as sucursal_id from sucursal order by id limit 1) e where v.placa = $1 returning id`,
     [placa, (info.project.name === "celular" ? 320 : 340) + dia],
   );
   await consultar(
@@ -172,7 +172,7 @@ test("se cobra el total de una vez: antes de llegar es adelanto; al retirar, sal
   await crearClienteEnBase({ nombre: `Paga todo ${s}`, telefono: `5917${s === "c" ? 7 : 8}3200030`, placa: placaReserva });
   await crearClienteEnBase({ nombre: `Paga al retirar ${s}`, telefono: `5917${s === "c" ? 7 : 8}3200040`, placa: placaOrden });
   const reservaId = await reserva(info, placaReserva, false, 8);
-  const ordenId = await crearOrdenLista({ placa: placaOrden, espacio: 1, dias: info.project.name === "celular" ? 330 : 350, precio: 1000, pagado: 0 });
+  const ordenId = await crearOrdenLista({ placa: placaOrden, dias: info.project.name === "celular" ? 330 : 350, precio: 1000, pagado: 0 });
   await crearUsuario({ usuario: `caja3-hu32-${s}`, nombre: "Encargado de caja", contrasena: "encargado-123", rol: "encargado", permisos: ["agenda", "ordenes", "pagos"] });
   await ingresar(page, `caja3-hu32-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);

@@ -84,7 +84,6 @@ const adelanto = z.discriminatedUnion("sinAdelanto", [
 ]);
 
 const base = {
-  espacioId: z.coerce.number({ message: "Elige el espacio." }).int().positive("Elige el espacio."),
   nota: textoOpcional(1000),
 };
 
@@ -118,7 +117,6 @@ export function entradaReserva(datos: FormData) {
       vehiculoId: texto("vehiculoId"),
       recordatorioId: texto("recordatorioId"),
       lineas: texto("lineas") || "[]",
-      espacioId: texto("espacioId"),
       nota: texto("nota"),
     },
     fechas: { fechaInicio: texto("fechaInicio"), fechaFin: texto("fechaFin") },
@@ -133,11 +131,11 @@ export function entradaReserva(datos: FormData) {
 
 export const esquemaAdelanto = adelanto;
 
-/** Para consultar los espacios libres desde el formulario (datos sueltos: se validan). */
-export const esquemaConsultaEspacios = z.object({ fechaInicio: z.string(), fechaFin: z.string(), excepto: id.optional() });
+/** Para consultar los días llenos desde el formulario (datos sueltos: se validan). */
+export const esquemaConsultaLugares = z.object({ fechaInicio: z.string(), fechaFin: z.string(), excepto: id.optional() });
 
-/** Reprogramar (HU-31): la reserva, sus nuevas fechas (las mismas reglas que al agendar) y el espacio. */
-export const esquemaReprogramar = z.object({ id, espacioId: base.espacioId });
+/** Reprogramar (HU-31): la reserva y sus nuevas fechas (las mismas reglas que al agendar). Sin espacio (pedido 55). */
+export const esquemaReprogramar = z.object({ id });
 
 /** Cancelar (HU-31, RF-39): con motivo. */
 export const esquemaCancelar = z.object({

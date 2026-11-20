@@ -2,7 +2,7 @@ import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PERFIL_TALLER, PNG, revisarChecklistEnBase } from "./apoyo";
 
 // Checklist de recepción (pedido 12). Especificación: docs/08-desarrollo/etapas/P12-checklist-recepcion.md §8.
-// La reserva de hoy va en un espacio propio de cada proyecto, desactivado: así no se cruza con las de otras pruebas.
+// La reserva de hoy va directo a la base: recibir no cuenta lugares (pedido 55).
 // Las partes son las de la lista base: ninguna prueba agrega partes (la lista es de todos y las pruebas corren a la vez).
 // En serie: el dueño entra con el mismo usuario en las dos (límite de intentos de ingreso, RNF-04).
 test.describe.configure({ mode: "serial" });
@@ -11,17 +11,13 @@ const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "c" : "e")
 const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "celular" ? 5 : 6}3310${n}0`;
 const hoy = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/La_Paz" }).format(new Date());
 
-/** Una reserva de hoy con un servicio, en un espacio propio y desactivado. Devuelve su id. */
-async function reservaDeHoy(info: TestInfo, placa: string, n: number): Promise<number> {
-  const [{ espacio }] = await consultar<{ espacio: number }>(
-    `insert into espacio_taller (sucursal_id, nombre, orden, activo) select sucursal_id, $1, 92, false from espacio_taller limit 1 returning id as espacio`,
-    [`Espacio checklist ${sufijo(info)}${n}`],
-  );
+/** Una reserva de hoy con un servicio. Devuelve su id. */
+async function reservaDeHoy(placa: string): Promise<number> {
   const [{ id }] = await consultar<{ id: number }>(
-    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, created_by)
-     select e.sucursal_id, v.cliente_id, v.id, e.id, $3::date, $3::date, v.created_by from vehiculo v, espacio_taller e
-     where v.placa = $1 and e.id = $2 returning id`,
-    [placa, espacio, hoy()],
+    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, created_by)
+     select e.sucursal_id, v.cliente_id, v.id, $2::date, $2::date, v.created_by from vehiculo v, (select id as sucursal_id from sucursal order by id limit 1) e
+     where v.placa = $1 returning id`,
+    [placa, hoy()],
   );
   await consultar(
     `insert into trabajo_linea (trabajo_id, variante_id, descripcion, precio, orden) select $1, (select id from variante order by id limit 1), 'Lavado completo', 500, 0`,
@@ -36,7 +32,7 @@ test("se revisa parte por parte: bien o con un detalle y su foto; sin revisar to
   const s = sufijo(info);
   const placa = `CK33${s.toUpperCase()}1`;
   await crearClienteEnBase({ nombre: `Checklist ${s}`, telefono: telefono(info, 1), placa });
-  const id = await reservaDeHoy(info, placa, 1);
+  const id = await reservaDeHoy(placa);
   await crearUsuario({ usuario: `taller-ck33-${s}`, nombre: `Chico del taller ${s}`, contrasena: "taller-123", rol: "encargado", permisos: PERFIL_TALLER });
   const [{ total }] = await consultar<{ total: number }>("select count(*)::int as total from parte_revision where activo");
 
@@ -152,7 +148,7 @@ test("todas bien se recibe al primer toque; después de recibir el checklist no 
   const s = sufijo(info);
   const placa = `CK33${s.toUpperCase()}2`;
   await crearClienteEnBase({ nombre: `Checklist sin fotos ${s}`, telefono: telefono(info, 2), placa });
-  const id = await reservaDeHoy(info, placa, 2);
+  const id = await reservaDeHoy(placa);
   await ingresarComoDueno(page);
   await page.goto(`/panel/ordenes/${id}/recibir`, { waitUntil: "networkidle" });
 

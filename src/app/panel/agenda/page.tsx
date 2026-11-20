@@ -146,16 +146,10 @@ async function Semana(props: { lunes: string; dias: string[]; dia: string; hoy: 
         </details>
       )}
 
-      {semana.espacios.length === 0 ? (
-        <p className="text-tinta-suave">No hay espacios activos. Agrégalos en Configuración, «Taller».</p>
-      ) : (
-        <>
-          <TableroSemana semana={semana} dias={dias} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
-          <SemanaEnLista semana={semana} dias={dias} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
-          <PestanasDias semana={semana} dias={dias} hoy={hoy} dia={dia} enlace={(d) => enlaceSemana(lunes, d)} />
-          <AgendaDelDia semana={semana} dia={dia} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
-        </>
-      )}
+      <TableroSemana semana={semana} dias={dias} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
+      <SemanaEnLista semana={semana} dias={dias} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
+      <PestanasDias semana={semana} dias={dias} hoy={hoy} dia={dia} enlace={(d) => enlaceSemana(lunes, d)} />
+      <AgendaDelDia semana={semana} dia={dia} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
     </>
   );
 }
@@ -164,7 +158,6 @@ const COLUMNAS_RESULTADOS: ColumnaTabla[] = [
   { titulo: "Vehículo", ancho: "minmax(0,1fr)", movil: "titulo" },
   { titulo: "Fecha", ancho: "minmax(0,1.2fr)", movil: "detalle" },
   { titulo: "Servicio", ancho: "minmax(0,1.3fr)", movil: "detalle" },
-  { titulo: "Espacio", ancho: "6.5rem", movil: "detalle" },
   { titulo: "Estado", ancho: "7.5rem", movil: "estado" },
 ];
 
@@ -187,7 +180,6 @@ async function Resultados({ q, hoy, conOrdenes, desde }: { q: string; hoy: strin
             <CeldaDoble key="v" principal={r.placa} secundario={r.cliente} peso="placa" />,
             `${r.inicio === r.fin ? fechaCorta(r.inicio, hoy) : `${fechaCorta(r.inicio, hoy)} al ${fechaCorta(r.fin, hoy)}`}`,
             textoServicio(r),
-            r.espacio,
             <Insignia key="e" tono={TONO_ESTADO_TRABAJO[r.estado]}>
               {NOMBRE_ESTADO_TRABAJO[r.estado]}
             </Insignia>,

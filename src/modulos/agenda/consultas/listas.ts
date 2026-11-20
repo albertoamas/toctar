@@ -2,7 +2,7 @@ import "server-only";
 
 import { asc, desc, eq, inArray, type SQL } from "drizzle-orm";
 import { db } from "@/db";
-import { cliente, espacioTaller, pago, trabajo, trabajoLinea, vehiculo } from "@/db/esquema";
+import { cliente, pago, trabajo, trabajoLinea, vehiculo } from "@/db/esquema";
 import { type EstadoTrabajo } from "@/db/esquema/trabajos";
 import { fechaEnBolivia } from "@/lib/fechas";
 import { calcularSaldo, type Saldo } from "@/modulos/pagos/reglas";
@@ -11,14 +11,13 @@ import { calcularSaldo, type Saldo } from "@/modulos/pagos/reglas";
 // para quien además ve "pagos" (o el dueño). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md.
 // Aquí: las reservas de una consulta, de un cliente o de un vehículo.
 
-export type ReservaCorta = { id: number; estado: EstadoTrabajo; fechaInicio: string; fechaFin: string; espacio: string; placa: string; clienteId: number; cliente: string };
+export type ReservaCorta = { id: number; estado: EstadoTrabajo; fechaInicio: string; fechaFin: string; placa: string; clienteId: number; cliente: string };
 
 const columnasCortas = {
   id: trabajo.id,
   estado: trabajo.estado,
   fechaInicio: trabajo.fechaInicio,
   fechaFin: trabajo.fechaFin,
-  espacio: espacioTaller.nombre,
   placa: vehiculo.placa,
   clienteId: cliente.id,
   cliente: cliente.nombre,
@@ -29,7 +28,6 @@ export async function reservasDeConsulta(consultaId: number): Promise<ReservaCor
   return db
     .select(columnasCortas)
     .from(trabajo)
-    .innerJoin(espacioTaller, eq(trabajo.espacioId, espacioTaller.id))
     .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
     .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
     .where(eq(trabajo.consultaId, consultaId))
@@ -64,7 +62,6 @@ async function reservasDonde(donde: SQL, conMontos: boolean): Promise<ReservaDel
   const reservas = await db
     .select({ ...columnasCortas, descuento: trabajo.descuento })
     .from(trabajo)
-    .innerJoin(espacioTaller, eq(trabajo.espacioId, espacioTaller.id))
     .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
     .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
     .where(donde)

@@ -80,7 +80,7 @@ describe("listas del taller", () => {
     expect(reordenar(lista, 4, "subir")).toBeNull();
   });
 
-  test("el último activo no se puede desactivar (RN-06: sin espacios no hay agenda)", () => {
+  test("el último activo no se puede desactivar (sin tamaños no se registra un vehículo)", () => {
     expect(puedeDesactivar(lista, 1)).toBe(true);
     expect(puedeDesactivar([e(1, 1), e(2, 2, false)], 1)).toBe(false);
   });
@@ -93,7 +93,7 @@ describe("listas del taller", () => {
   });
 
   test("el nombre es obligatorio", () => {
-    const r = esquemaElemento.safeParse({ lista: "espacios", nombre: "  " });
+    const r = esquemaElemento.safeParse({ lista: "tamanos", nombre: "  " });
     expect(erroresDe(r.error!)).toEqual({ nombre: "Escribe un nombre." });
   });
 });
