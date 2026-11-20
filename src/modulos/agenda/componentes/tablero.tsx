@@ -177,11 +177,13 @@ export function TableroSemana({ semana, dias, hoy, conOrdenes, desde }: Props) {
             <div
               key={fecha}
               style={{ gridRow: 1, gridColumn: i + 2 }}
-              className={cn("mx-1.5 my-1 flex items-baseline gap-1.5 rounded-lg px-2 py-1.5", esHoy && "bg-info-fondo text-info", (cerrado(i) || fecha < hoy) && !esHoy && "text-tinta-suave")}
+              // Hoy, en negro (19/11): el número en un círculo y "Hoy" en gris. El azul era el de "En proceso" y, encima de
+              // una reserva en proceso, parecía que el día lo estaba
+              className={cn("mx-1.5 my-1 flex items-center gap-1.5 px-2 py-1.5", (cerrado(i) || fecha < hoy) && !esHoy && "text-tinta-suave")}
             >
               <span className="text-sm">{DIA_CORTO[i]}</span>
-              <span className="text-lg font-bold tabular-nums">{numeroDia(fecha)}</span>
-              {esHoy && <span className="ml-auto text-xs font-bold">Hoy</span>}
+              <span className={cn("font-bold tabular-nums", esHoy ? "grid size-8 place-items-center rounded-full bg-tinta text-base text-fondo" : "text-lg")}>{numeroDia(fecha)}</span>
+              {esHoy && <span className="ml-auto text-xs font-semibold text-tinta-suave">Hoy</span>}
             </div>
           );
         })}
@@ -226,7 +228,7 @@ export function TableroSemana({ semana, dias, hoy, conOrdenes, desde }: Props) {
 /** El título de un día en la tableta y el celular, con cuántas reservas tiene. */
 function CabeceraDia({ fecha, hoy, cuantas, cerrado }: { fecha: string; hoy: string; cuantas: number; cerrado: boolean }) {
   return (
-    <CabeceraSeccion compacta titulo={<span className={cn(fecha === hoy && "text-info", cerrado && fecha !== hoy && "text-tinta-suave")}>{tituloDia(fecha, hoy)}</span>}>
+    <CabeceraSeccion compacta titulo={<span className={cn(cerrado && fecha !== hoy && "text-tinta-suave")}>{tituloDia(fecha, hoy)}</span>}>
       {!cerrado && <span className="text-sm text-tinta-suave">{cuantas === 0 ? "Sin reservas" : cantidad(cuantas, "reserva", "reservas")}</span>}
     </CabeceraSeccion>
   );
@@ -348,7 +350,7 @@ function DiaEnLista({ fecha, primero, semana, hoy, conOrdenes, desde }: { fecha:
 
 /**
  * Celular: la tira de los siete días (prototipo aprobado el 16/11): el día de la semana en chico, el número y un punto en
- * los días con reservas. Hoy, en azul; el elegido, en negro. Queda fija arriba al bajar. Cada día es un enlace (el día va
+ * los días con reservas. El elegido, en negro; hoy, con su número subrayado (19/11; antes en azul). Queda fija arriba al bajar. Cada día es un enlace (el día va
  * en la dirección).
  */
 export function PestanasDias({ semana, dias, hoy, dia, enlace }: { semana: SemanaDeAgenda; dias: string[]; hoy: string; dia: string; enlace: (dia: string) => Route }) {
@@ -368,11 +370,12 @@ export function PestanasDias({ semana, dias, hoy, dia, enlace }: { semana: Seman
                 aria-label={`${textoDia(d)}${esHoy ? ", hoy" : ""}${n > 0 ? `, ${cantidad(n, "reserva", "reservas")}` : cerrado ? ", cerrado" : ", sin reservas"}`}
                 className={cn(
                   "flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-lg",
-                  elegido ? "bg-tinta text-fondo" : esHoy ? "bg-info-fondo text-info" : cerrado ? "text-tinta-suave" : "text-tinta",
+                  elegido ? "bg-tinta text-fondo" : cerrado && !esHoy ? "text-tinta-suave" : "text-tinta",
                 )}
               >
                 <span className="text-[0.6875rem]">{DIA_CORTO[i]}</span>
-                <span className={cn("text-base tabular-nums", esHoy || elegido ? "font-bold" : "font-medium")}>{numeroDia(d)}</span>
+                {/* Hoy, sin elegir: su número subrayado en negro (19/11, en lugar del celeste de "En proceso") */}
+                <span className={cn("text-base tabular-nums", esHoy || elegido ? "font-bold" : "font-medium", esHoy && !elegido && "underline decoration-2 underline-offset-4")}>{numeroDia(d)}</span>
                 <span aria-hidden className={cn("size-[5px] rounded-full", n > 0 ? (elegido ? "bg-fondo" : "bg-tinta-media") : "bg-transparent")} />
               </Link>
             </li>
