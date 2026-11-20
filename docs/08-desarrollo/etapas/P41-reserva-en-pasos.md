@@ -116,4 +116,12 @@ En el celular, una reserva sin cotización se arma paso a paso sin bajar por una
   (`ParaQuien`). Los pasos hechos del indicador se tocan para volver ("Ir al paso Servicios"; `PasosFlujo` con
   `destinos`). En el último paso, el resumen completo (los servicios, el total, el adelanto, lo que falta y la fecha),
   también en el celular, para confirmar antes de reservar; en la computadora, al costado desde la fecha.
+- **Volver se ve**: "Atrás" en todos los pasos (en Vehículo, a elegir otro cliente; en Servicios, al vehículo; también en
+  el paso del vehículo de Nueva cotización con un cliente registrado) y, en el celular, el paso anterior escrito junto a
+  "Paso 3 de 5" ("‹ Vehículo"): las barras del indicador van sin nombre y no se notaba que se tocan. Al cambiar el
+  cliente o el vehículo, la reserva empieza de cero (los precios dependen del tamaño) y, con algo llenado, pregunta
+  "¿Salir sin guardar?".
+- **"Cliente nuevo"** en el paso Cliente (quien ve Clientes): abre Nuevo cliente con `?volver=` a la reserva; "Volver"
+  lleva a ella y, al crear, la reserva sigue con el cliente elegido, en el paso del vehículo, con el día y el espacio que
+  llegaron del tablero. La acción vuelve a validar la dirección (`leerDesde`, solo `/panel/agenda/nueva`).
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buttonVariants } from "@/componentes/ui/button";
 import { cn } from "cn";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
@@ -89,6 +90,14 @@ export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; client
             />
           )}
         </Seccion>
+        {/* "Atrás" en todos los pasos (20/11): aquí, a elegir otro cliente */}
+        {cambiarCliente && (
+          <div>
+            <Link href={cambiarCliente} className={buttonVariants({ variant: "outline" })}>
+              Atrás
+            </Link>
+          </div>
+        )}
       </>
     );
   }

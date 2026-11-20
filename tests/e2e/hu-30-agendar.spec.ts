@@ -376,3 +376,24 @@ test("un vehículo que no está registrado se agrega desde la reserva y se sigue
   await expect(pasoActual(page)).toHaveText("Servicios");
   await expect(page.getByRole("region", { name: "Reserva para" })).toContainText(`NV30${s}8`);
 });
+
+test("«Cliente nuevo» registra al cliente con su vehículo y la reserva sigue con él, con el día del tablero (20/11)", async ({ page }, info) => {
+  const s = sufijo(info);
+  await ingresarComoDueno(page);
+  await page.goto("/panel/agenda/nueva?fecha=2030-01-03&espacio=1");
+  await page.getByRole("link", { name: "Cliente nuevo" }).click();
+  await expect(page).toHaveURL(/\/panel\/clientes\/nuevo\?volver=/);
+  // "Volver" lleva a la reserva, no a Clientes
+  await expect(page.getByRole("main").getByRole("link", { name: "Volver a Nueva reserva" })).toBeVisible();
+  await page.getByLabel("Nombre", { exact: true }).fill(`Llamó y reservó ${s}`);
+  await page.getByLabel("WhatsApp").fill(`5917${info.project.name === "celular" ? 1 : 2}31${info.retry}070`);
+  await page.getByLabel("Placa", { exact: true }).fill(`CN30${s}7`);
+  await page.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio").first().click();
+  await page.getByRole("button", { name: "Crear cliente" }).click();
+  // De vuelta en la reserva, con el cliente elegido y el día y el espacio que llegaron del tablero
+  await expect(page).toHaveURL(/\/panel\/agenda\/nueva\?.*cliente=\d+/);
+  await expect(page).toHaveURL(/fecha=2030-01-03/);
+  await expect(pasoActual(page)).toHaveText("Vehículo");
+  await expect(page.getByRole("region", { name: "Reserva para" })).toContainText(`Llamó y reservó ${s}`);
+  await expect(page.getByRole("list", { name: "Elegir vehículo" }).getByRole("link", { name: new RegExp(`^CN30${s}7`) })).toBeVisible();
+});

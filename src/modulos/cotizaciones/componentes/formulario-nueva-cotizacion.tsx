@@ -356,6 +356,12 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
                 Atrás
               </Button>
             )}
+            {/* Con un cliente registrado, el vehículo es el primer paso de aquí: "Atrás" vuelve a buscar el cliente (20/11) */}
+            {paso === primerPaso && !clienteNuevo && (
+              <Link href={conDesde("/panel/cotizaciones/nueva", volver)} className={buttonVariants({ variant: "outline" })}>
+                Atrás
+              </Link>
+            )}
             {/* Una key distinta en cada uno: si React reusara el botón, "Siguiente" se volvía "Crear cotización" durante
                 el mismo toque y el navegador enviaba la cotización a medias */}
             {paso < PASO_SERVICIOS ? (

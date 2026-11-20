@@ -9,7 +9,7 @@ import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { PASO_CLIENTE, pasosNuevaReserva } from "@/modulos/agenda/pasos-reserva";
 import { ElegirCliente } from "@/modulos/clientes/componentes/elegir-cliente";
-import { leerDesde, PARAMETRO_VOLVER, volverDesde } from "@/lib/volver";
+import { conDesde, leerDesde, PARAMETRO_VOLVER, volverDesde } from "@/lib/volver";
 import { ReservaDesdeCotizacion } from "./desde-cotizacion";
 import { ReservaDirecta } from "./directa";
 import { Encabezado, type Contexto } from "./partes";
@@ -91,7 +91,13 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
       <>
         <Encabezado volver={volver} />
         {indicador(PASO_CLIENTE)}
-        <ElegirCliente q={texto("q")} hrefCliente={(id) => direccion({ cliente: id })} />
+        {/* "Cliente nuevo" (20/11): quien llama y reserva directo, sin cotizar antes. Se registra con su vehículo y la
+            reserva sigue con él (vuelve aquí, con el día y el espacio que llegaron del tablero) */}
+        <ElegirCliente
+          q={texto("q")}
+          hrefCliente={(id) => direccion({ cliente: id })}
+          hrefNuevo={puedeVerModulo(usuario, "clientes") ? conDesde("/panel/clientes/nuevo", direccion({})) : undefined}
+        />
       </>
     );
   }

@@ -492,6 +492,12 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
                   Atrás
                 </Button>
               )}
+              {/* En los servicios, al vehículo (20/11): "Atrás" en todos los pasos, para que volver no sea adivinar */}
+              {paso === PASO_SERVICIOS && pasosHechos?.[1] && "href" in pasosHechos[1] && (
+                <Link href={pasosHechos[1].href} className={buttonVariants({ variant: "outline" })}>
+                  Atrás
+                </Link>
+              )}
               {directa && paso === PASO_FECHA && inicial === PASO_SERVICIOS && (
                 <Button type="button" variant="outline" disabled={enviando} onClick={volverAServicios}>
                   Atrás

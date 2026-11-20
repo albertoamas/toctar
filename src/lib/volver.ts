@@ -20,6 +20,8 @@ const PANTALLAS: { ruta: RegExp; texto: string; modulo: Modulo }[] = [
   { ruta: /^\/panel$/, texto: "Inicio", modulo: "inicio" },
   { ruta: /^\/panel\/agenda$/, texto: "Agenda", modulo: "agenda" },
   { ruta: /^\/panel\/agenda\/\d+$/, texto: "Reserva", modulo: "agenda" },
+  // Nueva reserva (20/11): "Cliente nuevo" en su primer paso vuelve a ella, con el cliente creado ya elegido
+  { ruta: /^\/panel\/agenda\/nueva$/, texto: "Nueva reserva", modulo: "agenda" },
   { ruta: /^\/panel\/ordenes$/, texto: "Órdenes", modulo: "ordenes" },
   { ruta: /^\/panel\/ordenes\/\d+$/, texto: "Orden", modulo: "ordenes" },
   { ruta: /^\/panel\/cotizaciones$/, texto: "Cotizaciones", modulo: "cotizaciones" },
