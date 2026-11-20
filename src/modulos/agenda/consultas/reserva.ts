@@ -38,7 +38,6 @@ export type DetalleReserva = {
   espacioId: number;
   fechaInicio: string;
   fechaFin: string;
-  horaIngreso: string | null;
   nota: string | null;
   motivoCancelacion: string | null;
   consultaId: number | null;
@@ -93,7 +92,6 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
       espacioId: trabajo.espacioId,
       fechaInicio: trabajo.fechaInicio,
       fechaFin: trabajo.fechaFin,
-      horaIngreso: trabajo.horaIngreso,
       nota: trabajo.nota,
       motivoCancelacion: trabajo.motivoCancelacion,
       consultaId: trabajo.consultaId,

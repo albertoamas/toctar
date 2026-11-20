@@ -1,5 +1,5 @@
 import type { EstadoRevision, EstadoTrabajo, EtapaFoto, TipoDetalle } from "@/db/esquema/trabajos";
-import { fechaCorta, sumarDias } from "@/lib/fechas";
+import { fechaConMes, sumarDias } from "@/lib/fechas";
 import { sinTildes, type Busqueda } from "@/modulos/clientes/reglas";
 
 // Reglas puras de las órdenes (C4). Una orden es una reserva ya recibida (D-1): el mismo `trabajo`.
@@ -80,14 +80,14 @@ export function transicionOrden(actual: EstadoTrabajo, nuevo: EstadoTrabajo): bo
 export const estaAtrasada = (o: { estado: EstadoTrabajo; fechaFin: string }, hoy: string) => (o.estado === "recibido" || o.estado === "en_proceso") && o.fechaFin < hoy;
 
 /**
- * Cuándo se entrega, como lo dice el taller (pedido 26): "Hoy", "Mañana", "Ayer" o la fecha corta ("21/10"; con el año
- * si es de otro). Lo atrasado lo marca la insignia, no el texto.
+ * Cuándo se entrega, como lo dice el taller (pedido 26): "Hoy", "Mañana", "Ayer" o la fecha con el mes en letras ("21
+ * oct."; con el año si es de otro), como en el inicio (recorrido visual del 20/11).
  */
 export function textoEntrega(fechaFin: string, hoy: string): string {
   if (fechaFin === hoy) return "Hoy";
   if (fechaFin === sumarDias(hoy, 1)) return "Mañana";
   if (fechaFin === sumarDias(hoy, -1)) return "Ayer";
-  return fechaCorta(fechaFin, hoy);
+  return fechaConMes(fechaFin, hoy);
 }
 
 /** El filtro por estado de la lista En el taller (?estado=): uno de los abiertos, o todas si no es ninguno. */
@@ -170,3 +170,13 @@ export function filtrarOrdenes<T extends { placa: string; cliente: string; vehic
     (o) => sinTildes(o.cliente).includes(texto) || sinTildes(o.vehiculo).includes(texto) || (!!busqueda.placa && busqueda.placa.length >= 3 && o.placa.includes(busqueda.placa)),
   );
 }
+
+/**
+ * Los servicios de una orden en una lista, cortos: el primero y cuántos más hay ("Pulido y nano cerámico + 2 más";
+ * recorrido visual del 20/11: con varios, la línea se hacía larga). La lista completa está en la ficha.
+ */
+export function resumenServicios(servicios: readonly string[]): string {
+  if (servicios.length <= 1) return servicios[0] ?? "";
+  return `${servicios[0]} + ${servicios.length - 1} más`;
+}
+

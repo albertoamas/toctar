@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { abrirWhatsApp, consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, entregarSinFirma, ingresar, ingresarComoDueno, PERFIL_TALLER, conVolver } from "./apoyo";
+import { abrirWhatsApp, consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, entregarSinFirma, ingresar, ingresarComoDueno, PERFIL_TALLER, conVolver, sinAdelantoEnReserva } from "./apoyo";
 
 // HU-38 Recordatorios de mantenimiento (flujo crítico 5). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §9.
 // Los recordatorios van directo a la base, colgados de una orden entregada en el pasado (no ocupa espacio). Las reservas
@@ -132,14 +132,14 @@ test("vencidos y próximos; avisar, no le interesa y reservar (y al cancelar la 
   await expect(page.getByLabel("Servicio 1", { exact: true }).locator("option:checked")).toHaveText("Mantenimiento del nano cerámico");
   // Según evaluación, sin precio: empieza en Servicios para escribirlo (pedido 41)
   await page.getByLabel("Precio del servicio 1").fill("350");
-  await page.getByRole("button", { name: "Siguiente: fecha y adelanto" }).click();
+  await page.getByRole("button", { name: "Siguiente: fecha" }).click();
   // Empezó en los servicios (sin precio): "Atrás" vuelve a ellos (hallazgo 10)
   await expect(page.getByRole("button", { name: "Atrás" })).toBeVisible();
   await page.getByLabel("Ingresa el").fill(await diaPropio(info));
   const espacio = page.getByLabel("Espacio", { exact: true });
   await expect(espacio).toBeEnabled();
   await espacio.selectOption({ index: 1 });
-  await page.getByRole("checkbox", { name: "Sin adelanto" }).check();
+  await sinAdelantoEnReserva(page);
   await page.getByRole("button", { name: "Reservar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1(?:[?&]volver=[^&#]*)?$/);
   const reservaId = Number(new URL(page.url()).pathname.split("/").at(-1));

@@ -79,4 +79,60 @@ Rama `pedido-41-reserva-en-pasos`, un PR (después del pedido 40, que trae `Paso
 En el celular, una reserva sin cotización se arma paso a paso sin bajar por una columna larga, y con una cotización o un mantenimiento se llega directo a la fecha.
 
 ## 12. Decisiones abiertas
-- Si se aprueba el pedido 31, parte 2 (cotizar sin registrar), el paso Cliente suma "Cliente nuevo", como en Nueva cotización.
+- Resuelta el 20/11: "Cliente nuevo" y "Otro vehículo" se escriben en los pasos de la reserva, como en Nueva cotización
+  (ver "Recorrido visual").
+
+## Recorrido visual (20/11/2026, aprobado por el dueño)
+
+- **El paso "Vehículo" se ve siempre**, también con un solo vehículo (antes se elegía solo y no se veía con qué auto se
+  reservaba). Las mismas tarjetas apiladas de Nueva cotización; tocar una pasa directo a los servicios. Al final, "Otro
+  vehículo · Registrar uno nuevo" lleva a su paso (ver "Cliente nuevo"). Un cliente sin vehículos ya no es un callejón
+  sin salida: muestra solo esa tarjeta (`ElegirVehiculoReserva`).
+- **El indicador de pasos sin azul**: los hechos en gris oscuro, el actual en negro y los que faltan en gris claro (el
+  mismo en Nueva cotización).
+- **Elegir cliente** (también en Nueva cotización y al cambiar de dueño): en las mismas tarjetas que el vehículo, con
+  solo el nombre; sin las placas ni el WhatsApp (el vehículo se elige después y el teléfono no ayuda a elegir). Si se
+  buscó por placa o teléfono, la tarjeta dice con qué coincidió ("Placa 1234ABC"; `coincidenciaDeCliente`). La lista es
+  `TarjetasParaElegir`, la misma del vehículo.
+- **El resumen**: el monto siempre en un renglón.
+- **Los servicios en bloques** (también en Nueva cotización): cada uno con su título ("Servicio 1") y "Quitar" escrito
+  arriba a la derecha, el servicio y su opción, y el precio con su etiqueta y de dónde sale ("Precio sugerido: 850 Bs").
+  Antes, un número, la X suelta al costado y el precio sin etiqueta. Sin subir ni bajar (`EditorLista` con `enBloques`).
+- **Con cotizaciones del vehículo**: "Reserva sin cotización" es un botón; al tocarlo, la lista "Sus cotizaciones" se va
+  y queda solo el formulario de servicios, con "Usar una de sus cotizaciones" para volver (antes seguía arriba y
+  confundía).
+- **La fecha y el adelanto, en pasos separados** (cinco pasos para quien ve pagos; cuatro para quien no): antes iban
+  juntos, con la fecha de hoy y el adelanto sugerido ya puestos, y un "Reservar" apurado registraba un día que no se
+  eligió o un adelanto que el cliente no dejó. Ahora:
+  - **Fecha**: vacía, salvo desde un día libre de la Agenda; "Siguiente: adelanto" pide el día de ingreso y el espacio
+    (`erroresFecha`, el mismo esquema que la acción).
+  - **Adelanto** (`#adelanto`): "¿Dejó adelanto?" con "Sí, dejó adelanto" y "No, sin adelanto", ninguna elegida; la
+    acción la exige ("Elige si dejó adelanto.", campo `dejoAdelanto`). Con "Sí", el monto (el sugerido), cómo pagó y el
+    comprobante. Arriba, la fecha elegida con "Cambiar".
+  - "Reservar" va solo en el último paso; un Enter en la fecha sigue al adelanto. Un error de la acción vuelve al paso que
+    lo tiene. Desde una cotización empieza en la fecha, con el mismo indicador (lo dibuja el formulario).
+- **Solo el paso que se hace** (también en Nueva cotización): sin las tarjetas de lo ya elegido ("Reserva para",
+  "Servicios", "Fecha") arriba de cada paso. Debajo del indicador, una línea: "Para Carla Rodríguez · 1234ABC, Compactos"
+  (`ParaQuien`). Los pasos hechos del indicador se tocan para volver ("Ir al paso Servicios"; `PasosFlujo` con
+  `destinos`). En el último paso, el resumen completo (los servicios, el total, el adelanto, lo que falta y la fecha),
+  también en el celular, para confirmar antes de reservar; en la computadora, al costado desde la fecha.
+- **Volver se ve**: "Atrás" en todos los pasos (en Vehículo, a elegir otro cliente; en Servicios, al vehículo; también en
+  el paso del vehículo de Nueva cotización con un cliente registrado). Sin un "‹ Vehículo" escrito arriba en el celular:
+  se probó y el dueño lo quitó, repetía el "Atrás" del pie. Al cambiar el
+  cliente o el vehículo, la reserva empieza de cero (los precios dependen del tamaño) y, con algo llenado, pregunta
+  "¿Salir sin guardar?".
+- **"Cliente nuevo" y "Otro vehículo", como en Nueva cotización** (pedido 40; se compararon con una ventanita y se eligió
+  esto: es lo que el dueño ya aprobó en la cotización y no deja clientes a medias). Quien ve Clientes y arma reservas sin
+  cotización (Pagos) los escribe en los primeros pasos del mismo formulario (`?nuevo=1` para el cliente con su vehículo;
+  `?cliente=N&vehiculo=nuevo` para otro vehículo de uno registrado), con los campos y las validaciones del alta de
+  Clientes (`CamposCliente`, `CamposVehiculo`; un WhatsApp o una placa repetidos ofrecen "Usar a …"). Los servicios se
+  ofrecen con el precio del tamaño elegido, y cambiar el tamaño cambia los precios que seguían sugeridos. "Reservar" crea
+  el cliente, el vehículo y la reserva en una sola transacción: si se abandona o falla, no queda nada registrado. El día y
+  el espacio que llegaron del tablero se conservan.
+- **Los servicios, a lo ancho** (también en Nueva cotización): en la computadora y la tableta, una fila por servicio (el
+  servicio, su opción y el precio) con un basurero al final; en el celular, el bloque con "Servicio 1". El basurero en
+  gris (rojo solo al pasar el mouse): quitar una fila sin guardar se deshace; no una X, que en el panel cierra.
+- **El total del pie no corre los botones**: se ve desde el paso Servicios, también en 0 Bs (antes aparecía al elegir el
+  primer servicio y empujaba "Atrás" y "Siguiente"). En el celular, en su propio renglón sobre los botones; desde
+  640 px, después de ellos, a la derecha. Lo mismo en Nueva cotización y en la versión nueva.
+

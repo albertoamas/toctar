@@ -56,7 +56,7 @@ export function FormularioNuevaVersion({ datos, hoy, volver }: Props) {
       </ConResumen>
       <AvisoAlSalir formulario={formulario} estado={estado} />
       <PieFormulario>
-        <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:justify-start">
+        <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2">
           <TotalEnPie total={precios.totales.total} />
           <Button type="submit" disabled={enviando}>
             {enviando ? "Guardando y generando el PDF…" : `Guardar versión ${datos.desde.version + 1}`}

@@ -1,20 +1,24 @@
 import type { EstadoTrabajo } from "@/db/esquema/trabajos";
-import { fechaCorta } from "@/lib/fechas";
-import { pasoSiguiente } from "@/modulos/agenda/pasos";
-import { estaAtrasada, textoEntrega } from "@/modulos/ordenes/reglas";
+import { fechaConMes, sumarDias } from "@/lib/fechas";
+import { NOMBRE_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
+import { estaAtrasada } from "@/modulos/ordenes/reglas";
 
 // Reglas de la pantalla del día (HU-39). Puras: las prueba tests/unit/inicio.test.ts.
 // Especificación: docs/08-desarrollo/etapas/C5-cierre-entrega-2.md §5 y §8.
 
-/** Un ingreso de un día pasado que todavía no llegó: "Debía ingresar el 21/10". Si es de hoy, nada. */
-export const textoIngresoAtrasado = (fechaInicio: string, hoy: string) => (fechaInicio < hoy ? `Debía ingresar el ${fechaCorta(fechaInicio, hoy)}` : null);
+/** Un ingreso de un día pasado que todavía no llegó: "Debía ingresar el 21 oct.". Si es de hoy, nada. */
+export const textoIngresoAtrasado = (fechaInicio: string, hoy: string) => (fechaInicio < hoy ? `Debía ingresar el ${fechaConMes(fechaInicio, hoy)}` : null);
 
 /**
- * Una orden que se debía entregar antes de hoy y sigue en el taller: "Atrasada desde el 22/10". Una lista que espera
+ * Una orden que se debía entregar antes de hoy y sigue en el taller: "Atrasada desde el 22 oct.". Una lista que espera
  * al cliente no está atrasada: el trabajo ya se hizo.
  */
 export const textoEntregaAtrasada = (o: { estado: EstadoTrabajo; fechaFin: string }, hoy: string) =>
-  estaAtrasada(o, hoy) ? `Atrasada desde el ${fechaCorta(o.fechaFin, hoy)}` : null;
+  estaAtrasada(o, hoy) ? `Atrasada desde el ${fechaConMes(o.fechaFin, hoy)}` : null;
+
+/** Cuándo se entrega: "hoy", "mañana", "ayer" o "16 nov.". */
+const diaDeEntrega = (fechaFin: string, hoy: string) =>
+  fechaFin === hoy ? "hoy" : fechaFin === sumarDias(hoy, 1) ? "mañana" : fechaFin === sumarDias(hoy, -1) ? "ayer" : fechaConMes(fechaFin, hoy);
 
 type OrdenAbierta = { estado: EstadoTrabajo; fechaFin: string; sinAvisar: boolean };
 
@@ -32,21 +36,22 @@ export function ordenesDelDia<O extends OrdenAbierta>(abiertas: O[], hoy: string
   };
 }
 
-/** Una fila de "Para hoy" (pedido 26): una reserva que ingresa o una orden que se entrega o espera aviso. */
+/**
+ * Una fila de "Para hoy" (pedido 26): una reserva que ingresa o una orden que se entrega o espera aviso. Una sola marca
+ * por fila (recorrido visual del 19/11, prototipo 4): si algo falla, el problema; si no, el estado.
+ */
 export type FilaDelDia = {
   id: number;
   placa: string;
   cliente: string;
   estado: EstadoTrabajo;
-  /** Lo que pide atención, en insignias de aviso: "Debía ingresar el 21/10", "Atrasada desde el 22/10", "Sin avisar". */
-  avisos: string[];
-  /** Cuándo: "Llega a las 8:30, Espacio 2" o "Entrega hoy". */
+  /** Lo que falla, en su color: "Debía ingresar el 21 oct." o "Atrasada desde el 22 oct." (rojo), "Sin avisar" (ámbar). */
+  problema: { texto: string; tono: "peligro" | "aviso" } | null;
+  /** La línea de abajo: cuándo y, si hay un problema, también el estado ("Reservada, por recibir, Espacio 2"). */
   cuando: string;
-  /** El paso siguiente, con el texto del botón de su pantalla (pedido 31): "Recibir vehículo", "Marcar listo"… */
-  siguiente: string | null;
 };
 
-type Ingreso = { id: number; placa: string; cliente: string; espacio: string; fechaInicio: string; horaIngreso: string | null };
+type Ingreso = { id: number; placa: string; cliente: string; espacio: string; fechaInicio: string };
 type OrdenDelDia = OrdenAbierta & { id: number; placa: string; cliente: string };
 
 /**
@@ -56,27 +61,23 @@ type OrdenDelDia = OrdenAbierta & { id: number; placa: string; cliente: string }
  */
 export function paraHoy(ingresos: Ingreso[], abiertas: OrdenDelDia[], hoy: string): FilaDelDia[] {
   const { entregas, listas } = ordenesDelDia(abiertas, hoy);
-  const llegan = ingresos.map((i) => ({
-    id: i.id,
-    placa: i.placa,
-    cliente: i.cliente,
-    estado: "agendado" as const,
-    avisos: [textoIngresoAtrasado(i.fechaInicio, hoy)].filter((a): a is string => a !== null),
-    // La que debía llegar antes ya lo dice su aviso: aquí, que sigue por recibir
-    cuando: [i.fechaInicio < hoy ? "Por recibir" : i.horaIngreso ? `Llega ${i.horaIngreso}` : "Llega hoy", i.espacio].join(", "),
-    siguiente: pasoSiguiente("agendado", false),
-  }));
+  // Con un problema, el estado va en la línea de abajo, delante de cuándo
+  const conEstado = (estado: EstadoTrabajo, problema: FilaDelDia["problema"], cuando: string) =>
+    problema ? `${NOMBRE_ESTADO_TRABAJO[estado]}, ${cuando.charAt(0).toLowerCase()}${cuando.slice(1)}` : cuando;
+  const llegan = ingresos.map((i) => {
+    const atraso = textoIngresoAtrasado(i.fechaInicio, hoy);
+    const problema = atraso ? { texto: atraso, tono: "peligro" as const } : null;
+    // La que debía llegar antes ya lo dice su problema: aquí, que sigue por recibir
+    const cuando = [i.fechaInicio < hoy ? "Por recibir" : "Llega hoy", i.espacio].join(", ");
+    return { id: i.id, placa: i.placa, cliente: i.cliente, estado: "agendado" as const, problema, cuando: conEstado("agendado", problema, cuando) };
+  });
   const vistas = new Set<number>();
   const ordenes = [...entregas, ...listas]
     .filter((o) => !vistas.has(o.id) && vistas.add(o.id))
-    .map((o) => ({
-      id: o.id,
-      placa: o.placa,
-      cliente: o.cliente,
-      estado: o.estado,
-      avisos: [textoEntregaAtrasada(o, hoy), o.sinAvisar ? "Sin avisar" : null].filter((a): a is string => a !== null),
-      cuando: `Entrega ${textoEntrega(o.fechaFin, hoy).toLowerCase()}`,
-      siguiente: pasoSiguiente(o.estado, o.sinAvisar),
-    }));
+    .map((o) => {
+      const atraso = textoEntregaAtrasada(o, hoy);
+      const problema = atraso ? { texto: atraso, tono: "peligro" as const } : o.sinAvisar ? { texto: "Sin avisar", tono: "aviso" as const } : null;
+      return { id: o.id, placa: o.placa, cliente: o.cliente, estado: o.estado, problema, cuando: conEstado(o.estado, problema, `Entrega ${diaDeEntrega(o.fechaFin, hoy)}`) };
+    });
   return [...llegan, ...ordenes];
 }

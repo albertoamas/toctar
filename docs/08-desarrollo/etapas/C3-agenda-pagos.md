@@ -73,7 +73,7 @@ Migraciones por historia: `0026_trabajos` (HU-30: `btree_gist`, `trabajo`, `trab
 | `espacio_id` | `integer` | no | FK `espacio_taller` |
 | `fecha_inicio` | `date` | no | Día de ingreso |
 | `fecha_fin` | `date` | no | Entrega aproximada. CHECK `fecha_fin >= fecha_inicio` |
-| `hora_ingreso` | `text` | sí | Nota, hasta 40 ("a las 9", "en la tarde") (S-3) |
+| ~~`hora_ingreso`~~ | — | — | Quitada el 19/11/2026 (pedido 54, migración `0053_sin_hora_de_ingreso`): la agenda va por día y la hora de llegada queda al recibir |
 | `tecnico_id` | `integer` | sí | FK `usuario` con rol técnico (se valida en la acción) |
 | `descuento` | `numeric(10,2)` | no | Copiado de la cotización (D-4); 0 en una reserva directa. CHECK `>= 0` |
 | `estado` | `text` | no | CHECK `agendado`, `recibido`, `en_proceso`, `listo`, `entregado`, `cancelado`. En C3: `agendado` o `cancelado` |
@@ -136,6 +136,11 @@ Todas con `exigirModulo` dentro de `<Suspense>`, el estándar del panel y sin de
 - **Técnico** (opcional), **hora aproximada** y **nota**.
 - **Adelanto** (solo con "Pagos"): monto (sugerido), método, comprobante opcional; o la casilla "Sin adelanto".
 - "Agendar". Al guardar, va a la reserva.
+- **Recorrido visual (19/11/2026, aprobado por el dueño):** sin la guía de colores (cada reserva dice su estado escrito);
+  en la computadora, los días que ya pasaron un poco más apagados; en la tableta, la lista empieza en hoy (los días
+  anteriores, plegados en "Ver los N días anteriores") y una reserva de varios días va una sola vez, el día que empieza
+  (los días siguientes la nombran en "Siguen en el taller"); en la tableta y el celular, el estado con un punto y su
+  palabra, sin píldora (`MarcaEstado`, como en el inicio). Sin hora aproximada (pedido 54).
 - **Pulido 10.2 (27/10):** el cliente y su vehículo en un recuadro de lectura, como en Nueva consulta (`DatosVehiculo`: la placa grande, marca y modelo, año y color, y "Tamaño: …" aparte), con "Cambiar" sin borde en la directa. Desde una cotización, sus servicios en su propio recuadro (servicio y precio, el total) y "Al agendar, la cotización queda aceptada.". "Elegir vehículo" con la fila de un toque. El mantenimiento que se agenda, con su vencimiento en una insignia (de aviso si venció). La hora aproximada y la nota plegadas ("＋ Agregar hora y nota", `MasDatos`). Sin la ayuda del adelanto; la de la entrega, "Se le da al cliente como aproximada.". "Agendar" en `PieFormulario`, fijo abajo en el celular, con el total al lado en la directa.
 
 ### `/panel/agenda/[id]` — Reserva

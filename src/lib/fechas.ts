@@ -54,6 +54,14 @@ export function fechaCorta(fecha: string, hoy: string): string {
   return fecha.slice(0, 4) === hoy.slice(0, 4) ? completa.slice(0, completa.lastIndexOf("/")) : completa;
 }
 
+const MES_CORTO = ["ene.", "feb.", "mar.", "abr.", "may.", "jun.", "jul.", "ago.", "sep.", "oct.", "nov.", "dic."];
+
+/** "7 nov." si es de este año (el de `hoy`); "30 dic. 2025" si es de otro (recorrido visual del 19/11, en el inicio). */
+export function fechaConMes(fecha: string, hoy: string): string {
+  const texto = `${Number(fecha.slice(8, 10))} ${MES_CORTO[Number(fecha.slice(5, 7)) - 1]}`;
+  return fecha.slice(0, 4) === hoy.slice(0, 4) ? texto : `${texto} ${fecha.slice(0, 4)}`;
+}
+
 /** "hoy", "ayer" o "hace 5 días": cuánto pasó desde una fecha calendario hasta hoy. */
 export function textoHace(fecha: string, hoy: string): string {
   const dias = diasEntre(fecha, hoy);
@@ -111,3 +119,22 @@ export function mesYAnio(fecha: string): string {
   );
   return `${partes.month.charAt(0).toUpperCase()}${partes.month.slice(1)} ${partes.year}`;
 }
+
+/**
+ * Un día para leer en una ficha (recorrido visual del 20/11): "Hoy", "Mañana", "Ayer" o "Viernes 11 de diciembre" (con
+ * el año si es de otro: "Miércoles 20 de enero de 2027"). "11/12/2026" obligaba a pensar qué día era.
+ */
+export function diaLegible(fecha: string, hoy: string): string {
+  if (fecha === hoy) return "Hoy";
+  if (fecha === sumarDias(hoy, 1)) return "Mañana";
+  if (fecha === sumarDias(hoy, -1)) return "Ayer";
+  return fechaConDia(fecha) + (fecha.slice(0, 4) === hoy.slice(0, 4) ? "" : ` de ${fecha.slice(0, 4)}`);
+}
+
+/** Un momento corto, en hora de Bolivia, para un historial: "20 nov., 15:10" (con el año si es de otro). */
+export function fechaYHoraCorta(instante: Date, hoy: string): string {
+  const { minutos } = momentoEnBolivia(instante);
+  const hora = `${String(Math.floor(minutos / 60)).padStart(2, "0")}:${String(minutos % 60).padStart(2, "0")}`;
+  return `${fechaConMes(fechaEnBolivia(instante), hoy)}, ${hora}`;
+}
+

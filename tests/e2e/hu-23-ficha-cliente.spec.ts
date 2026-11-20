@@ -69,11 +69,11 @@ test("los vehículos se agregan en la ficha del cliente y se editan, desactivan 
   const nuevo = page.getByRole("dialog", { name: "Agregar vehículo" });
   await expect(nuevo.getByLabel("Placa", { exact: true })).toBeFocused();
   await nuevo.getByLabel("Placa", { exact: true }).fill(`ocu-${s.toLowerCase()} 1`);
-  await nuevo.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio", { name: /^Compactos/ }).click();
+  await nuevo.getByLabel("Tamaño", { exact: true }).selectOption({ label: "Compactos" });
   await nuevo.getByRole("button", { name: "Agregar vehículo" }).click();
   await expect(nuevo.getByText(`La placa OCU${s}1 ya está registrada a nombre de Dueño de la placa ${s}.`)).toBeVisible();
   // Tras el error, el tamaño elegido se conserva: React reinicia el formulario y antes se perdía la elección
-  await expect(nuevo.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio", { checked: true })).toHaveCount(1);
+  await expect(nuevo.getByLabel("Tamaño", { exact: true })).not.toHaveValue("");
   await nuevo.getByLabel("Placa", { exact: true }).fill(`FIC${s}1`);
   await nuevo.getByRole("button", { name: "Agregar vehículo" }).click();
   await expect(page.getByText(`Vehículo FIC${s}1 agregado.`)).toBeVisible();
@@ -88,20 +88,20 @@ test("los vehículos se agregan en la ficha del cliente y se editan, desactivan 
   await page.getByRole("button", { name: `Editar FIC${s}1` }).click();
   const edicion = page.getByRole("dialog", { name: `Editar FIC${s}1` });
   await edicion.getByText("Agregar marca, modelo, año y color").click();
-  // El color, en botones con los frecuentes (pedido 52)
-  await edicion.getByRole("radiogroup", { name: /^Color/ }).getByRole("radio", { name: "Rojo" }).click();
+  // El color, escrito (20/11)
+  await edicion.getByLabel("Color").fill("Rojo");
   await edicion.getByRole("button", { name: "Guardar vehículo" }).click();
   await expect(edicion).toBeHidden();
   await expect(datos).toContainText("Rojo");
   // Al volver a abrirlo trae lo guardado, ya desplegado
   await page.getByRole("button", { name: `Editar FIC${s}1` }).click();
-  await expect(edicion.getByRole("radiogroup", { name: /^Color/ }).getByRole("radio", { name: "Rojo" })).toBeChecked();
+  await expect(edicion.getByLabel("Color")).toHaveValue("Rojo");
   // Al editar, cerrarlo es "Listo" y no borra lo guardado (pulido final del 10/11: "Quitar" lo habría vaciado)
   await expect(edicion.getByRole("button", { name: /^Quitar/ })).toHaveCount(0);
   await edicion.getByRole("button", { name: "Listo Marca, modelo, año y color" }).click();
-  await expect(edicion.getByRole("radiogroup", { name: /^Color/ })).toBeHidden();
+  await expect(edicion.getByLabel("Color")).toBeHidden();
   await edicion.getByText("Agregar marca, modelo, año y color").click();
-  await expect(edicion.getByRole("radiogroup", { name: /^Color/ }).getByRole("radio", { name: "Rojo" })).toBeChecked();
+  await expect(edicion.getByLabel("Color")).toHaveValue("Rojo");
 
   await edicion.getByRole("button", { name: "Cancelar" }).click();
   await expect(edicion).toBeHidden();

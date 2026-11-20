@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { anioMaximo, detalleVehiculo, escaparLike, normalizarBusqueda, normalizarPlaca, placasEnFila } from "@/modulos/clientes/reglas";
+import { anioMaximo, coincidenciaDeCliente, detalleVehiculo, escaparLike, normalizarBusqueda, normalizarPlaca, placasEnFila } from "@/modulos/clientes/reglas";
 
 // C1 Clientes: la placa se guarda normalizada para detectar duplicados (RF-23).
 
@@ -49,4 +49,12 @@ test("lo que se sabe del vehículo: marca y modelo, año y color, en ese orden y
   expect(detalleVehiculo({ marca: "Toyota", modelo: "Corolla", anio: 2019, color: "Blanco" })).toEqual(["Toyota Corolla", 2019, "Blanco"]);
   expect(detalleVehiculo({ marca: null, modelo: "  ", anio: null, color: " " })).toEqual([]);
   expect(detalleVehiculo({ marca: "Mazda", modelo: null, anio: null, color: "Rojo" })).toEqual(["Mazda", "Rojo"]);
+});
+
+test("al elegir un cliente, la tarjeta dice con qué coincidió la búsqueda si no fue el nombre (20/11)", () => {
+  const c = { nombre: "Carla Rodríguez", telefono: "59171234567", placas: ["1234ABC", "5678XYZ"] };
+  expect(coincidenciaDeCliente(c, normalizarBusqueda("carla"))).toBeNull();
+  expect(coincidenciaDeCliente(c, normalizarBusqueda("5678-xyz"))).toBe("Placa 5678XYZ");
+  expect(coincidenciaDeCliente(c, normalizarBusqueda("7123"))).toMatch(/^WhatsApp /);
+  expect(coincidenciaDeCliente(c, null)).toBeNull();
 });

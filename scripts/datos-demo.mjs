@@ -426,10 +426,10 @@ try {
     const saldoAlEntregar = datos.conSaldo ? total - pagos.reduce((suma, p) => suma + p.monto, 0) : null;
 
     const t = await uno(
-      `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, hora_ingreso, estado, nota,
+      `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, nota,
          observaciones_ingreso, recibido_at, recibido_por, listo_at, entregado_at, entregado_por, entrega_con_saldo_autorizada_por, saldo_al_entregar,
          created_at, created_by)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) returning id`,
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) returning id`,
       [
         sucursal.id,
         c.cliente,
@@ -437,7 +437,6 @@ try {
         espacios[datos.espacio - 1].id,
         dia(habil(datos.desde)),
         dia(habil(datos.hasta)),
-        datos.hora ?? null,
         datos.estado,
         datos.nota ?? null,
         datos.observaciones ?? null,
@@ -488,17 +487,17 @@ try {
   }
   // Reservas que vienen: Carlos llega hoy (para probar «Recibir» con el checklist) y María en unos días
   await trabajoDe(carlos, {
-    espacio: 2, desde: 0, hasta: 1, hora: "a las 8:30", estado: "agendado", creado: momentoHabil(-2, "17:10"),
+    espacio: 2, desde: 0, hasta: 1, estado: "agendado", creado: momentoHabil(-2, "17:10"),
     lineas: [["pulido-y-nano-ceramico", "3 años"]],
     pagos: () => [{ monto: 300, metodo: "qr", tipo: "adelanto", dia: -2 }],
   });
   await trabajoDe(maria, {
-    espacio: 2, desde: 4, hasta: 4, hora: "en la mañana", estado: "agendado", creado: momentoHabil(-1, "12:30"),
+    espacio: 2, desde: 4, hasta: 4, estado: "agendado", creado: momentoHabil(-1, "12:30"),
     lineas: [["lavado-de-interior", "Premium"], ["limpieza-de-asientos-por-inyeccion-y-succion", "Única"]],
   });
   // En el taller: una en proceso y una lista sin avisar
   await trabajoDe(jorge, {
-    espacio: 3, desde: -1, hasta: 1, hora: "a las 9", estado: "en_proceso", creado: momentoHabil(-6, "15:00"),
+    espacio: 3, desde: -1, hasta: 1, estado: "en_proceso", creado: momentoHabil(-6, "15:00"),
     observaciones: "Rayón leve en la puerta trasera derecha. Deja una caja de herramientas en la tolva.",
     recibido: momentoHabil(-1, "09:05"),
     revision: { "Puertas del lado derecho": ["rayon", "Rayón leve en la puerta trasera."], "Aros y llantas": ["raspon", "Aro delantero izquierdo raspado."] },

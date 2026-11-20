@@ -14,7 +14,7 @@ test("la marca se elige de la lista y una marca nueva se suma a la lista", async
   await page.getByLabel("Nombre", { exact: true }).fill(`Marca nueva ${s}`);
   await page.getByLabel("WhatsApp").fill(telefono(info, 2).slice(3));
   await page.getByLabel("Placa", { exact: true }).fill(`MA52${s}2`);
-  await page.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio").first().click();
+  await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
   await page.getByText("Agregar marca, modelo, año y color").click();
 
   // "toy" encuentra Toyota (y no ofrece agregar "toy")

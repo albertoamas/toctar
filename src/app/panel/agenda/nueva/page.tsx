@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
-import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
+import { PasosFlujo, type DestinoPaso } from "@/componentes/panel/pasos-flujo";
 import { fechaEnBolivia, fechaExiste } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
@@ -11,7 +11,7 @@ import { PASO_CLIENTE, pasosNuevaReserva } from "@/modulos/agenda/pasos-reserva"
 import { ElegirCliente } from "@/modulos/clientes/componentes/elegir-cliente";
 import { leerDesde, PARAMETRO_VOLVER, volverDesde } from "@/lib/volver";
 import { ReservaDesdeCotizacion } from "./desde-cotizacion";
-import { ReservaDirecta } from "./directa";
+import { ReservaConNuevos, ReservaDirecta } from "./directa";
 import { Encabezado, type Contexto } from "./partes";
 
 export const metadata: Metadata = { title: "Nueva reserva" };
@@ -60,9 +60,11 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   const hoy = fechaEnBolivia();
   // El día pedido (desde el tablero) si no es pasado; si no, hoy (18/11: antes, mañana; el dueño reserva y recibe muchas
   // veces en el día, y quedaba con la fecha de mañana sin darse cuenta)
-  const fechaInicial = fechaExiste(texto("fecha")) && texto("fecha") >= hoy ? texto("fecha") : hoy;
+  // Vacía salvo desde un día libre de la Agenda (20/11): con hoy puesto, un "Reservar" apurado reservaba un día que no
+  // se eligió
+  const fechaInicial = fechaExiste(texto("fecha")) && texto("fecha") >= hoy ? texto("fecha") : "";
   const pasos = pasosNuevaReserva(conPagos);
-  const indicador = (actual: number) => <PasosFlujo pasos={pasos} actual={actual} etiqueta="Pasos de la reserva" />;
+  const indicador = (actual: number, destinos?: (DestinoPaso | undefined)[]) => <PasosFlujo pasos={pasos} actual={actual} etiqueta="Pasos de la reserva" destinos={destinos} />;
   // Cada paso es una dirección: se conservan el día y el espacio que llegaron del tablero
   const direccion = (datos: Record<string, string | number>) => {
     const p = new URLSearchParams(Object.entries(datos).map(([k, v]) => [k, String(v)]));
@@ -75,11 +77,17 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   // Lo que se reserva (hallazgo 9 de la prueba en celulares, 15/11). La misma pantalla sirve a los tres caminos y solo
   // cambia la dirección: al salir y volver, PaginaPanel lo rearma (EmpiezaDeCero); esta clave lo rearma también sin salir,
   // cuando lo reservado cambia en la misma pantalla ("Usar la cotización" en una reserva directa)
-  const clave = ["cotizacion", "cliente", "vehiculo", "recordatorio", "fecha", "espacio"].map(texto).join("|");
+  const clave = ["cotizacion", "nuevo", "cliente", "vehiculo", "recordatorio", "fecha", "espacio"].map(texto).join("|");
 
   const ctx: Contexto = { usuario, conPagos, volver, origen, hoy, fechaInicial, texto, numero, indicador, direccion, clave };
 
   if (cotizacionId) return <ReservaDesdeCotizacion ctx={ctx} cotizacionId={cotizacionId} />;
+
+  // Registrar un cliente o un vehículo ahí mismo (20/11): quien ve Clientes y arma reservas sin cotización (uno nuevo no
+  // tiene cotizaciones para reservar)
+  const registra = conPagos && puedeVerModulo(usuario, "clientes");
+  // "Cliente nuevo": sus datos y los de su vehículo son los primeros pasos del formulario
+  if (texto("nuevo") === "1" && registra) return <ReservaConNuevos ctx={ctx} clienteId={null} />;
 
   // Paso 1: el cliente. Sin Pagos (no arma reservas sin cotización) también lo elige, para reservar una de sus
   // cotizaciones
@@ -89,7 +97,9 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
       <>
         <Encabezado volver={volver} />
         {indicador(PASO_CLIENTE)}
-        <ElegirCliente q={texto("q")} hrefCliente={(id) => direccion({ cliente: id })} />
+        {/* "Cliente nuevo" (20/11): quien llama y reserva directo, sin cotizar antes. Se escribe en los pasos de la
+            reserva y se registra con ella, como en Nueva cotización */}
+        <ElegirCliente q={texto("q")} hrefCliente={(id) => direccion({ cliente: id })} hrefNuevo={registra ? direccion({ nuevo: 1 }) : undefined} />
       </>
     );
   }

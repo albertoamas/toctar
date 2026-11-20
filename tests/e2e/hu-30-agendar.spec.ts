@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PNG, conVolver } from "./apoyo";
+import { alAdelanto, consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PNG, conVolver, sinAdelantoEnReserva } from "./apoyo";
 
 // HU-30 Agendar reserva (flujo crítico 2). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §9.
 // Cada prueba usa sus propios días (lejos de hoy y distintos por proyecto) para no chocar con las demás en los
@@ -61,7 +61,7 @@ async function consultaCotizada(info: TestInfo, n: number): Promise<{ consultaId
 const espacio = (page: Page) => page.getByLabel("Espacio", { exact: true });
 /** El paso a la vista de Nueva reserva (pedido 41): el marcado en el indicador. */
 const pasoActual = (page: Page) => page.getByRole("navigation", { name: "Pasos de la reserva" }).locator('[aria-current="step"]');
-const siguiente = (page: Page) => page.getByRole("button", { name: "Siguiente: fecha y adelanto" });
+const siguiente = (page: Page) => page.getByRole("button", { name: "Siguiente: fecha" });
 
 test("desde la cotización: la versión y la cotización quedan aceptadas, las líneas copiadas y el adelanto registrado", async ({ page }, info) => {
   const { consultaId, cotizacionId } = await consultaCotizada(info, 1);
@@ -75,27 +75,37 @@ test("desde la cotización: la versión y la cotización quedan aceptadas, las l
   await expect(page.getByLabel("Ingresa el")).toHaveValue(dia);
   const [{ fin }] = await consultar<{ fin: string }>("select to_char($1::date + 1, 'YYYY-MM-DD') as fin", [dia]);
   await expect(page.getByLabel("Entrega aproximada")).toHaveValue(fin);
-  // Los servicios de la cotización con su total, en su recuadro (pulido 10.2). "Servicios", como en los otros caminos, con
-  // de dónde vienen; el mismo indicador de la reserva (hallazgo 10)
-  const cotizada = page.getByRole("region", { name: "Servicios" });
-  await expect(cotizada).toContainText(/De la cotización \d{4}-\d{4}/);
-  await expect(page.getByRole("navigation", { name: "Pasos de la reserva" }).locator('[aria-current="step"]')).toHaveText("Fecha y adelanto");
-  // El total (con el descuento de la cotización), en la barra de abajo como en los otros caminos, y no también en la tarjeta
+  // Solo el paso que se hace (20/11): los servicios de la cotización, con de dónde vienen, van en el resumen (al costado
+  // en la computadora; en el último paso, también en el celular)
+  const resumen = page.getByRole("region", { name: "Resumen" });
+  await expect(page.getByRole("navigation", { name: "Pasos de la reserva" }).locator('[aria-current="step"]')).toHaveText("Fecha");
+  if (info.project.name === "escritorio") await expect(resumen).toContainText(/De la cotización \d{4}-\d{4}/);
+  // El total (con el descuento de la cotización)
   await expect(page.getByText("800 Bs", { exact: true }).filter({ visible: true }).first()).toBeVisible();
-  await expect(cotizada.getByText("Total", { exact: true })).toHaveCount(0);
 
-  // Sin elegir espacio ni método: los errores
-  await page.getByRole("button", { name: "Reservar" }).click();
+  // Sin elegir espacio no se pasa al adelanto (20/11: la fecha y el adelanto, en pasos separados)
+  await page.getByRole("button", { name: "Siguiente: adelanto" }).click();
   await expect(page.getByText("Elige el espacio.")).toBeVisible();
-  await expect(page.getByText("Elige cómo pagó.")).toBeVisible();
-
   await espacio(page).selectOption({ index: 1 });
+  // La nota va plegada (pulido 10.2): al abrirla, el foco pasa a ella. Sin hora de llegada (19/11, pedido del dueño)
+  await expect(page.getByLabel("Nota")).toBeHidden();
+  await page.getByText("Agregar nota").click();
+  await expect(page.getByLabel("Nota")).toBeFocused();
+  await page.getByLabel("Nota").fill("Viene a las 9");
+  await expect(page.getByLabel("Hora aproximada")).toHaveCount(0);
+  // El adelanto, en su paso: "¿Dejó adelanto?" sin respuesta elegida; sin responder ni elegir cómo pagó, no reserva
+  await alAdelanto(page);
+  await expect(page.getByRole("radio", { checked: true })).toHaveCount(0);
+  // El último paso: el resumen, también en el celular, con los servicios de la cotización y la fecha elegida
+  await expect(resumen).toBeVisible();
+  await expect(resumen).toContainText(/De la cotización \d{4}-\d{4}/);
+  await expect(resumen).toContainText("Fecha");
+  await page.getByRole("button", { name: "Reservar" }).click();
+  await expect(page.getByText("Elige si dejó adelanto.")).toBeVisible();
+  await page.getByRole("radio", { name: "Sí, dejó adelanto" }).click();
+  await page.getByRole("button", { name: "Reservar" }).click();
+  await expect(page.getByText("Elige cómo pagó.")).toBeVisible();
   await page.getByRole("radio", { name: "QR" }).check();
-  // La hora y la nota van plegadas (pulido 10.2): al abrirlas, el foco pasa a la hora
-  await expect(page.getByLabel("Hora aproximada")).toBeHidden();
-  await page.getByText("Agregar hora y nota").click();
-  await expect(page.getByLabel("Hora aproximada")).toBeFocused();
-  await page.getByLabel("Hora aproximada").fill("a las 9");
   // El adelanto con la foto del comprobante (HU-32): queda privada y se ve en la reserva
   await page.locator("#comprobante").setInputFiles({ name: "comprobante.png", mimeType: "image/png", buffer: PNG });
   await expect(page.getByRole("img", { name: "Foto del comprobante" })).toBeVisible();
@@ -112,7 +122,7 @@ test("desde la cotización: la versión y la cotización quedan aceptadas, las l
   const datos = page.getByRole("group", { name: "Datos de la reserva" });
   await expect(datos.getByRole("link", { name: /^Ver ficha del cliente: / })).toHaveAttribute("href", /^\/panel\/clientes\/\d+\?volver=/);
   await expect(datos.getByRole("link", { name: /^Ver la cotización \d{4}-\d{4}/ })).toHaveAttribute("href", new RegExp(`^/panel/cotizaciones/${consultaId}\\?volver=`));
-  await expect(datos).toContainText(/Reservada por .+ el /);
+  await expect(datos).toContainText(/Reservada el .+ por /);
 
   const [r] = await consultar<{ trabajo: number; descuento: string; cot: string; con: string; lineas: number; adelanto: string; metodo: string; privado: boolean }>(
     `select t.id as trabajo, t.descuento, c.estado as cot, q.estado as con,
@@ -183,7 +193,7 @@ test("solo se ofrecen los espacios libres; si dos personas agendan el mismo a la
     // Con uno solo libre, ya va elegido (pulido final del 09/11)
     await expect(espacio(p)).toHaveValue(String(espacios.at(-1)!.id));
     await espacio(p).selectOption({ label: espacios.at(-1)!.nombre });
-    await p.getByRole("checkbox", { name: "Sin adelanto" }).check();
+    await sinAdelantoEnReserva(p);
   };
   await abrir(page, a.cotizacionId);
   await abrir(otra.page, b.cotizacionId);
@@ -225,7 +235,11 @@ test("reserva directa: cliente y vehículo registrados, servicio del catálogo c
   await expect(elegir.getByRole("link")).toHaveCount(1);
   await elegir.getByRole("link", { name: new RegExp(`Directa ${s}`) }).click();
   await expect(page).toHaveURL(new RegExp(`cliente=${clienteId}`));
-  // Con un solo vehículo, no hace falta elegirlo: pasa directo a los servicios (pedido 41)
+  // El vehículo siempre se elige, también con uno solo (20/11): en tarjetas, con "Otro vehículo" para registrar uno
+  await expect(pasoActual(page)).toHaveText("Vehículo");
+  const vehiculos = page.getByRole("list", { name: "Elegir vehículo" });
+  await expect(vehiculos.getByRole("link", { name: /^Otro vehículo/ })).toBeVisible();
+  await vehiculos.getByRole("link", { name: new RegExp(`^DI30${s}6`) }).click();
   await expect(pasoActual(page)).toHaveText("Servicios");
   // El cliente y su vehículo, en una sola tarjeta (pulido final del 09/11)
   await expect(page.getByRole("region", { name: "Reserva para" })).toContainText(`Directa ${s}`);
@@ -245,10 +259,12 @@ test("reserva directa: cliente y vehículo registrados, servicio del catálogo c
   await expect(page.getByLabel("Precio del servicio 1")).toHaveValue("900");
   // "Siguiente" no reserva: con el botón reusado, se volvía "Reservar" en el mismo toque (como en la cotización)
   await siguiente(page).click();
-  await expect(pasoActual(page)).toHaveText("Fecha y adelanto");
+  await expect(pasoActual(page)).toHaveText("Fecha");
   await expect(page).toHaveURL(/#fecha$/);
-  // Los servicios elegidos: arriba en el celular ("Servicios"); al costado en la computadora ("Resumen", C7 §5.2)
-  await expect(page.getByRole("region", { name: /^(Servicios|Resumen)$/ }).locator("visible=true").first()).toContainText("900 Bs");
+  // La fecha llega vacía (20/11): no se reserva un día que no se eligió
+  await expect(page.getByLabel("Ingresa el")).toHaveValue("");
+  // Los servicios elegidos, en el resumen: al costado en la computadora (C7 §5.2); en el celular, en el último paso (20/11)
+  if (info.project.name === "escritorio") await expect(page.getByRole("region", { name: "Resumen" })).toContainText("900 Bs");
   const [{ reservas }] = await consultar<{ reservas: number }>("select count(*)::int as reservas from trabajo where cliente_id = $1", [clienteId]);
   expect(reservas).toBe(0);
   // Atrás, el del navegador y el de la pantalla, vuelve a los servicios sin perder lo elegido
@@ -256,19 +272,20 @@ test("reserva directa: cliente y vehículo registrados, servicio del catálogo c
   await expect(pasoActual(page)).toHaveText("Servicios");
   await expect(page.getByLabel("Precio del servicio 1")).toHaveValue("900");
   await page.goForward();
-  await expect(pasoActual(page)).toHaveText("Fecha y adelanto");
+  await expect(pasoActual(page)).toHaveText("Fecha");
   await page.getByRole("button", { name: "Atrás" }).click();
   await expect(pasoActual(page)).toHaveText("Servicios");
   await siguiente(page).click();
-  await expect(pasoActual(page)).toHaveText("Fecha y adelanto");
+  await expect(pasoActual(page)).toHaveText("Fecha");
   await page.getByLabel("Ingresa el").fill(dia);
   await expect(espacio(page)).toBeEnabled();
   await espacio(page).selectOption({ index: 1 });
-  await page.getByRole("checkbox", { name: "Sin adelanto" }).check();
+  await sinAdelantoEnReserva(page);
+  await expect(pasoActual(page)).toHaveText("Adelanto");
   await page.getByRole("button", { name: "Reservar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1(?:[?&]volver=[^&#]*)?$/);
   await expect(page.getByRole("heading", { level: 1, name: `DI30${s}6` })).toBeVisible();
-  await expect(page.getByText("Todavía no hay pagos.")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Pagos" })).toContainText("Pagado0 Bs");
   await expect(page.locator("dl").filter({ hasText: "Saldo" })).toContainText("900 Bs");
 });
 
@@ -283,7 +300,8 @@ test("el encargado con Agenda sin Pagos agenda sin montos ni adelanto; sin Agend
   await page.getByRole("button", { name: "Aceptó", exact: true }).click();
   await page.getByRole("link", { name: "Reservar en Agenda" }).click();
   await expect(page.getByText(/Total:/)).toHaveCount(0);
-  await expect(page.getByRole("checkbox", { name: "Sin adelanto" })).toHaveCount(0);
+  // Sin Pagos, sin paso de adelanto: se reserva desde la fecha
+  await expect(page.getByRole("button", { name: "Siguiente: adelanto" })).toHaveCount(0);
   await page.getByLabel("Ingresa el").fill(dia);
   await expect(espacio(page)).toBeEnabled();
   await espacio(page).selectOption({ index: 1 });
@@ -314,7 +332,8 @@ test("«Cambiar» vuelve a elegir el cliente sin perder el día y el espacio que
   const clienteId = await crearClienteEnBase({ nombre: `Cambia cliente ${s}`, telefono: telefono(info, 9), placa: `CC30${s}9` });
   await ingresarComoDueno(page);
   await page.goto(`/panel/agenda/nueva?fecha=2030-01-02&espacio=1&cliente=${clienteId}`);
-  await expect(page.getByRole("link", { name: "Cambiar cliente" })).toHaveAttribute("href", conVolver("/panel/agenda/nueva?fecha=2030-01-02&espacio=1"));
+  // Tocando "Cliente" en el indicador (20/11)
+  await expect(page.getByRole("navigation", { name: "Pasos de la reserva" }).getByRole("link", { name: "Ir al paso Cliente" })).toHaveAttribute("href", conVolver("/panel/agenda/nueva?fecha=2030-01-02&espacio=1"));
 });
 
 test("con varios vehículos se elige uno en su paso, y «Cambiar vehículo» vuelve a él (pedido 41)", async ({ page }, info) => {
@@ -333,6 +352,98 @@ test("con varios vehículos se elige uno en su paso, y «Cambiar vehículo» vue
   await expect(page).toHaveURL(new RegExp(`vehiculo=${segundo}$`));
   await expect(pasoActual(page)).toHaveText("Servicios");
   await expect(page.getByRole("region", { name: "Reserva para" })).toContainText(`DB30${s}0`);
-  await expect(page.getByRole("link", { name: "Cambiar vehículo" })).toHaveAttribute("href", conVolver(`/panel/agenda/nueva?cliente=${clienteId}`));
+  await expect(page.getByRole("navigation", { name: "Pasos de la reserva" }).getByRole("link", { name: "Ir al paso Vehículo" })).toHaveAttribute("href", conVolver(`/panel/agenda/nueva?cliente=${clienteId}`));
 });
 
+
+test("otro vehículo se escribe en su paso y se registra con la reserva, no antes (20/11)", async ({ page }, info) => {
+  const s = sufijo(info);
+  const { nombre } = await servicioDeDosDias(info);
+  const dia = await diaPropio(info, 11);
+  const clienteId = await crearClienteEnBase({ nombre: `Sin auto ${s}`, telefono: telefono(info, 8) });
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/agenda/nueva?cliente=${clienteId}`);
+  await expect(pasoActual(page)).toHaveText("Vehículo");
+  const vehiculos = page.getByRole("list", { name: "Elegir vehículo" });
+  // Sin vehículos, solo "Otro vehículo": sus datos van en el paso siguiente, como en Nueva cotización
+  await expect(vehiculos.getByRole("link")).toHaveCount(1);
+  await vehiculos.getByRole("link", { name: /^Otro vehículo/ }).click();
+  await expect(page.getByRole("group", { name: "Otro vehículo" })).toBeVisible();
+  await expect(pasoActual(page)).toHaveText("Vehículo");
+  await expect(page.getByRole("region", { name: "Reserva para" })).toContainText(`Sin auto ${s}`);
+  // Vacío no pasa: dice qué falta
+  await page.getByRole("button", { name: "Siguiente: servicios" }).click();
+  await expect(page.getByText("Escribe la placa.")).toBeVisible();
+  await page.getByLabel("Placa", { exact: true }).fill(`NV30${s}8`);
+  await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
+  await page.getByRole("button", { name: "Siguiente: servicios" }).click();
+  await expect(pasoActual(page)).toHaveText("Servicios");
+  await expect(page.getByRole("region", { name: "Reserva para" })).toContainText(`NV30${s}8`);
+  // Los servicios con el precio del tamaño elegido
+  await page.getByLabel("Servicio 1", { exact: true }).selectOption({ label: nombre });
+  await expect(page.getByLabel("Precio del servicio 1")).toHaveValue("900");
+  // Atrás vuelve al vehículo sin perder lo escrito
+  await page.getByRole("button", { name: "Atrás" }).click();
+  await expect(pasoActual(page)).toHaveText("Vehículo");
+  await expect(page.getByLabel("Placa", { exact: true })).toHaveValue(`NV30${s}8`);
+  await page.getByRole("button", { name: "Siguiente: servicios" }).click();
+  await siguiente(page).click();
+  await page.getByLabel("Ingresa el").fill(dia);
+  await expect(espacio(page)).toBeEnabled();
+  await espacio(page).selectOption({ index: 1 });
+  // Hasta reservar, el vehículo no existe: si se abandona, no queda nada a medias
+  const [{ antes }] = await consultar<{ antes: number }>("select count(*)::int as antes from vehiculo where cliente_id = $1", [clienteId]);
+  expect(antes).toBe(0);
+  await sinAdelantoEnReserva(page);
+  await page.getByRole("button", { name: "Reservar" }).click();
+  await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1/);
+  await expect(page.getByRole("heading", { level: 1, name: `NV30${s}8` })).toBeVisible();
+  const [{ despues }] = await consultar<{ despues: number }>("select count(*)::int as despues from vehiculo where cliente_id = $1", [clienteId]);
+  expect(despues).toBe(1);
+});
+
+test("«Cliente nuevo» se escribe en los pasos de la reserva y se registra con ella, con el día del tablero (20/11)", async ({ page }, info) => {
+  const s = sufijo(info);
+  const { nombre } = await servicioDeDosDias(info);
+  const dia = await diaPropio(info, 12);
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/agenda/nueva?fecha=${dia}`);
+  await page.getByRole("link", { name: "Cliente nuevo" }).click();
+  // En la misma pantalla, como en Nueva cotización
+  await expect(page).toHaveURL(/\/panel\/agenda\/nueva\?.*nuevo=1/);
+  await expect(page.getByRole("group", { name: "Cliente nuevo" })).toBeVisible();
+  await expect(pasoActual(page)).toHaveText("Cliente");
+  await page.getByRole("button", { name: "Siguiente: vehículo" }).click();
+  await expect(page.getByText("Escribe el nombre.")).toBeVisible();
+  await expect(page.getByLabel("Nombre", { exact: true })).toBeFocused();
+  await page.getByLabel("Nombre", { exact: true }).fill(`Llamó y reservó ${s}`);
+  await page.getByRole("textbox", { name: "WhatsApp" }).fill(`5917${info.project.name === "celular" ? 1 : 2}31${info.retry}070`);
+  await page.getByRole("button", { name: "Siguiente: vehículo" }).click();
+  await expect(pasoActual(page)).toHaveText("Vehículo");
+  await expect(page.getByRole("region", { name: "Reserva para" })).toContainText(`Llamó y reservó ${s}`);
+  await page.getByLabel("Placa", { exact: true }).fill(`CN30${s}7`);
+  await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
+  await page.getByRole("button", { name: "Siguiente: servicios" }).click();
+  await expect(pasoActual(page)).toHaveText("Servicios");
+  await page.getByLabel("Servicio 1", { exact: true }).selectOption({ label: nombre });
+  await siguiente(page).click();
+  // El día que llegó del tablero
+  await expect(page.getByLabel("Ingresa el")).toHaveValue(dia);
+  await expect(espacio(page)).toBeEnabled();
+  await espacio(page).selectOption({ index: 1 });
+  // El indicador vuelve al cliente sin perder lo escrito
+  await page.getByRole("navigation", { name: "Pasos de la reserva" }).getByRole("button", { name: "Ir al paso Cliente" }).click();
+  await expect(pasoActual(page)).toHaveText("Cliente");
+  await expect(page.getByLabel("Nombre", { exact: true })).toHaveValue(`Llamó y reservó ${s}`);
+  await page.goForward();
+  await page.goForward();
+  await page.goForward();
+  await expect(pasoActual(page)).toHaveText("Fecha");
+  const [{ antes }] = await consultar<{ antes: number }>("select count(*)::int as antes from cliente where nombre = $1", [`Llamó y reservó ${s}`]);
+  expect(antes).toBe(0);
+  await sinAdelantoEnReserva(page);
+  await page.getByRole("button", { name: "Reservar" }).click();
+  await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1/);
+  await expect(page.getByRole("heading", { level: 1, name: `CN30${s}7` })).toBeVisible();
+  await expect(page.getByRole("main")).toContainText(`Llamó y reservó ${s}`);
+});

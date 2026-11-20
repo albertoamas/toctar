@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, conVolver, enPorReservar, verPorReservar } from "./apoyo";
+import { consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, conVolver, enPorReservar, verPorReservar, sinAdelantoEnReserva } from "./apoyo";
 
 // Pedido 31: un trabajo, de la cotización a la entrega (etapas/P31-flujo-de-un-trabajo.md §9). Cotizaciones cotiza y la
 // Agenda reserva: "Aceptó", "Por reservar", la Nueva reserva que ofrece las cotizaciones del cliente y los pasos.
@@ -64,8 +64,8 @@ async function reservar(page: Page, dia: string) {
   const espacio = page.getByLabel("Espacio", { exact: true });
   await expect(espacio).toBeEnabled();
   await espacio.selectOption({ index: 1 });
-  const sinAdelanto = page.getByRole("checkbox", { name: "Sin adelanto" });
-  if (await sinAdelanto.count()) await sinAdelanto.check();
+  // Con Pagos, el adelanto va en su paso (20/11): "No, sin adelanto"
+  if (await page.getByRole("button", { name: "Siguiente: adelanto" }).count()) await sinAdelantoEnReserva(page);
   await page.getByRole("button", { name: "Reservar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1(?:[?&]volver=[^&#]*)?$/);
 }
@@ -169,25 +169,26 @@ test("Nueva reserva ofrece las cotizaciones del vehículo: los precios llegan si
   await expect(suyas.getByRole("link")).toHaveCount(1);
   await expect(suyas).toContainText("700 Bs");
   // También se puede armar una sin cotización
-  await expect(page.locator("summary", { hasText: "Reserva sin cotización" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Reserva sin cotización" })).toBeVisible();
   // Plegada: lo común es usar la cotización, y no se ofrece seguir sin elegir los servicios
   await expect(page.getByRole("button", { name: "Reservar" })).toBeHidden();
   await expect(page.getByRole("button", { name: /^Siguiente/ })).toBeHidden();
   // Empezada una sin cotización, "Siguiente" queda aunque se quite el último servicio, y dice qué falta
   // Se abre con la primera fila lista para elegir (pulido final del 09/11)
-  await page.locator("summary", { hasText: "Reserva sin cotización" }).click();
+  await page.getByRole("button", { name: "Reserva sin cotización" }).click();
   await expect(page.getByLabel("Servicio 1", { exact: true })).toBeFocused();
+  // Armando una sin cotización, la lista de cotizaciones se va (20/11)
+  await expect(suyas).toBeHidden();
   await page.getByRole("button", { name: "Quitar servicio 1" }).click();
-  await page.getByRole("button", { name: "Siguiente: fecha y adelanto" }).click();
+  await page.getByRole("button", { name: "Siguiente: fecha" }).click();
   await expect(page.getByText("Agrega al menos un servicio.")).toBeVisible();
+  // "Usar una de sus cotizaciones" vuelve a la lista
+  await page.getByRole("button", { name: "Usar una de sus cotizaciones" }).click();
   await suyas.getByRole("link").click();
-  // Va al último paso de la reserva, con "Cambiar servicios" para volver a elegir (pedido 41)
+  // Va a la fecha, con "Servicios" en el indicador para volver a elegir (pedido 41; 20/11)
   await expect(page).toHaveURL(new RegExp(`cotizacion=${c.cotizacionId}&cliente=${c.clienteId}&vehiculo=${c.vehiculoId}(?:&volver=[^&#]*)?$`));
-  await expect(page.getByRole("navigation", { name: "Pasos de la reserva" }).locator('[aria-current="step"]')).toHaveText("Fecha y adelanto");
-  await expect(page.getByRole("link", { name: "Cambiar servicios" })).toHaveAttribute("href", conVolver(`/panel/agenda/nueva?cliente=${c.clienteId}&vehiculo=${c.vehiculoId}`));
-  const servicios = page.getByRole("region", { name: "Servicios" });
-  await expect(servicios).toContainText(`De la cotización ${c.numero}`);
-  await expect(servicios).toContainText("700 Bs");
+  await expect(page.getByRole("navigation", { name: "Pasos de la reserva" }).locator('[aria-current="step"]')).toHaveText("Fecha");
+  await expect(page.getByRole("navigation", { name: "Pasos de la reserva" }).getByRole("link", { name: "Ir al paso Servicios" })).toHaveAttribute("href", conVolver(`/panel/agenda/nueva?cliente=${c.clienteId}&vehiculo=${c.vehiculoId}`));
   // "Atrás" vuelve a ese paso, como en los otros caminos (hallazgo 10)
   await expect(page.getByRole("link", { name: "Atrás" })).toHaveAttribute("href", conVolver(`/panel/agenda/nueva?cliente=${c.clienteId}&vehiculo=${c.vehiculoId}`));
   await reservar(page, dia);
@@ -213,7 +214,7 @@ test("el encargado sin Pagos elige al cliente y reserva su cotización, sin ver 
   await expect(suyas.getByRole("link")).toHaveCount(1);
   await expect(suyas).not.toContainText("Bs");
   // Sin Pagos no arma una sin cotización
-  await expect(page.locator("summary", { hasText: "Reserva sin cotización" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Reserva sin cotización" })).toHaveCount(0);
   await suyas.getByRole("link").click();
   // Sin Cotizaciones, "Volver" lleva a la Agenda
   await expect(page.getByRole("main").getByRole("link", { name: "Volver a Agenda" })).toBeVisible();

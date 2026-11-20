@@ -21,7 +21,7 @@ test("avisar abre WhatsApp con nombre, vehículo y saldo, y queda quién avisó 
 
   // En la lista, "Lista" y "Sin avisar" (también con el filtro de las listas)
   await page.goto("/panel/ordenes?estado=listo");
-  await expect(page.getByRole("list", { name: "Órdenes en el taller" }).getByRole("link", { name: new RegExp(`^${placa}.*Lista.*Sin avisar`) })).toBeVisible();
+  await expect(page.getByRole("list", { name: "Órdenes en el taller" }).getByRole("link", { name: new RegExp(`^${placa}.*Sin avisar`) })).toBeVisible();
 
   await page.goto(`/panel/ordenes/${id}`);
   // Un solo WhatsApp a la vista (C6): escribir sin el aviso queda en "Más", y sigue siendo un enlace

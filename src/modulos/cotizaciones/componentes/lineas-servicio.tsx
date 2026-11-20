@@ -54,6 +54,7 @@ export function LineasServicio({ opciones, lineas, onChange, errores: todos, con
       maximo={MAXIMO_LINEAS}
       textoAgregar="Agregar servicio"
       errores={errores}
+      enBloques
       vacia={conFilaLista ? sinTocar : undefined}
       fila={(l, cambiar, i, marca) => {
         const elegida = opcion(l.varianteId);
@@ -62,7 +63,11 @@ export function LineasServicio({ opciones, lineas, onChange, errores: todos, con
         const sinMarca = { "aria-invalid": false, "aria-describedby": undefined };
         const falta = !servicioId ? "servicio" : !elegida ? "opcion" : "precio";
         return (
-          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+          // En el celular, apilados: el servicio, su opción y el precio con su etiqueta a la izquierda y el campo a la derecha
+          // (los montos en columna). En pantalla ancha, todo en una fila (20/11). De dónde sale el precio, debajo
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3 @2xl:flex-row @2xl:items-start">
+            <div className="min-w-0 @2xl:flex-1">
             <ElegirServicio
               grupos={grupos}
               servicioId={servicioId}
@@ -75,8 +80,15 @@ export function LineasServicio({ opciones, lineas, onChange, errores: todos, con
               marcaServicio={falta === "servicio" ? marca : sinMarca}
               marcaOpcion={falta === "opcion" ? marca : sinMarca}
             />
-            <CampoMonto aria-label={`Precio del servicio ${i + 1}`} value={l.precio} onChange={(ev) => cambiar({ ...l, precio: ev.target.value })} {...(falta === "precio" ? marca : sinMarca)} />
-            {elegida && <p className="text-sm text-tinta-suave sm:col-span-2">{textoSugerencia(elegida.sugerencia)}</p>}
+            </div>
+            <div className="flex shrink-0 items-center justify-between gap-x-3 @2xl:justify-start">
+              <span aria-hidden className="text-sm font-medium @2xl:hidden">
+                Precio
+              </span>
+              <CampoMonto aria-label={`Precio del servicio ${i + 1}`} value={l.precio} onChange={(ev) => cambiar({ ...l, precio: ev.target.value })} {...(falta === "precio" ? marca : sinMarca)} />
+            </div>
+            </div>
+            {elegida && <p className="text-sm text-tinta-suave">{textoSugerencia(elegida.sugerencia)}</p>}
           </div>
         );
       }}

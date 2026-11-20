@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, ingresarComoDueno } from "./apoyo";
+import { consultar, crearClienteEnBase, ingresarComoDueno, sinAdelantoEnReserva } from "./apoyo";
 
 // HU-31 Reprogramar o cancelar. Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §9.
 // Cada proyecto usa sus propios días, lejos de hoy. En serie: las del dueño entran con el mismo usuario y, a la vez,
@@ -99,7 +99,7 @@ test("cancelar pide motivo, deja los pagos, libera el espacio y la consulta pasa
   await page.getByRole("button", { name: "Más" }).click();
   await page.getByRole("menuitem", { name: "Cancelar reserva" }).click();
   const form = page.getByRole("form", { name: "Cancelar reserva" });
-  await expect(form.getByText("El adelanto no se devuelve: 150 Bs quedan como ingreso.")).toBeVisible();
+  await expect(form.getByText("El adelanto de 150 Bs no se devuelve: queda como ingreso.")).toBeVisible();
   await form.getByRole("button", { name: "Cancelar reserva" }).click();
   await expect(form.getByText("Escribe el motivo.")).toBeVisible();
   await expect(form.getByLabel("Motivo")).toBeFocused();
@@ -135,7 +135,7 @@ test("cancelar pide motivo, deja los pagos, libera el espacio y la consulta pasa
   const espacio = page.getByLabel("Espacio", { exact: true });
   await expect(espacio.locator("option")).not.toHaveCount(1);
   await espacio.selectOption({ index: 1 });
-  await page.getByText("Sin adelanto", { exact: true }).click();
+  await sinAdelantoEnReserva(page);
   await page.getByRole("button", { name: "Reservar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1(?:[?&]volver=[^&#]*)?$/);
   const [otra] = await consultar<{ reservas: number; cotizacion: string }>(

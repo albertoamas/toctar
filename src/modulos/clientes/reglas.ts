@@ -1,6 +1,7 @@
 // Reglas puras de clientes y vehículos (C1). Sin base ni servidor: las prueba tests/unit/clientes.test.ts.
 
 import { fechaEnBolivia } from "@/lib/fechas";
+import { formatearWhatsApp } from "@/lib/whatsapp";
 
 /**
  * Placa como se guarda: mayúsculas, sin espacios, guiones ni puntos ("1234 abc" → "1234ABC"). Así una placa escrita
@@ -56,6 +57,20 @@ export function placasEnFila(placas: string[], busqueda: Busqueda | null): strin
   const vistas = orden.slice(0, PLACAS_EN_FILA).join(", ");
   const resto = orden.length - PLACAS_EN_FILA;
   return resto > 0 ? `${vistas} y ${resto} más` : vistas;
+}
+
+/**
+ * Con qué coincidió la búsqueda, cuando no fue el nombre (recorrido visual del 20/11): "Placa 1234ABC" o el teléfono.
+ * Al elegir un cliente solo se ve su nombre; esta línea dice por qué apareció. Null si coincidió el nombre o no se buscó.
+ */
+export function coincidenciaDeCliente(c: { nombre: string; telefono: string; placas: string[] }, busqueda: Busqueda | null): string | null {
+  if (!busqueda) return null;
+  const nombre = c.nombre.toLocaleLowerCase("es");
+  if (nombre.includes(busqueda.texto.toLocaleLowerCase("es"))) return null;
+  const placa = busqueda.placa && busqueda.placa.length >= 3 ? c.placas.find((p) => p.includes(busqueda.placa!)) : undefined;
+  if (placa) return `Placa ${placa}`;
+  if (busqueda.digitos && c.telefono.replace(/\D/g, "").includes(busqueda.digitos)) return `WhatsApp ${formatearWhatsApp(c.telefono)}`;
+  return null;
 }
 
 /** Escapa los comodines de LIKE (% y _) para que se busquen como texto. */

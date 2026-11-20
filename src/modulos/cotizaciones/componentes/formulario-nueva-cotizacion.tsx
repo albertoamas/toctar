@@ -8,6 +8,7 @@ import { SearchIcon } from "lucide-react";
 import { OpcionesEnTarjetas } from "@/componentes/panel/opciones-en-tarjetas";
 import { MensajeError } from "@/componentes/panel/campo";
 import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
+import { ParaQuien } from "@/componentes/panel/para-quien";
 import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
 import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
@@ -246,15 +247,30 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
         siguiente();
       }}
     >
-      <PasosFlujo pasos={PASOS_NUEVA_COTIZACION} actual={paso} etiqueta="Pasos de la cotización" />
+      {/* Los pasos hechos se tocan para volver (20/11): el cliente registrado, a buscar otro; el nuevo, a sus datos */}
+      <PasosFlujo
+        pasos={PASOS_NUEVA_COTIZACION}
+        actual={paso}
+        etiqueta="Pasos de la cotización"
+        destinos={[clienteNuevo ? { alTocar: () => volverA(PASO_CLIENTE) } : { href: conDesde("/panel/cotizaciones/nueva", volver) }, { alTocar: () => volverA(PASO_VEHICULO) }]}
+      />
       <input type="hidden" name="cliente" value={cliente ? cliente.id : CLIENTE_NUEVO} />
       {volver && <input type="hidden" name="volver" value={volver} />}
       {estado.mensaje && !estado.ok && <MensajeError id="cotizacion-error">{estado.mensaje}</MensajeError>}
 
-      {/* Lo ya elegido, arriba y en una sola tarjeta (pulido final del 09/11, como Nueva reserva), con "Cambiar" para
-          volver a su paso: el cliente registrado, a buscar otro; el nuevo, a sus datos */}
-      {/* En el paso de servicios, en la computadora, va al costado con el total (ConResumen, C7 §5.2) */}
-      {paso > PASO_CLIENTE && datosCliente && <div className={paso === PASO_SERVICIOS ? "@4xl:hidden" : undefined}>{cotizacionPara("cotizacion-para")}</div>}
+      {/* Para quién es, en una línea (20/11, como Nueva reserva): se vuelve a un paso tocándolo en el indicador. En el
+          paso de servicios, en la computadora, el resumen con el cliente y el total va al costado (ConResumen, C7 §5.2) */}
+      {paso > PASO_CLIENTE && datosCliente && (
+        // En el paso de servicios de la computadora, ya lo dice el resumen del costado
+        <div className={paso === PASO_SERVICIOS ? "@4xl:hidden" : undefined}>
+        <ParaQuien
+          etiqueta="Cotización para"
+          nombre={datosCliente[0]}
+          placa={paso > PASO_VEHICULO ? resumen.vehiculo?.placa : null}
+          tamano={paso > PASO_VEHICULO ? tamanos.find((t) => t.id === tamanoId)?.nombre : null}
+        />
+        </div>
+      )}
 
       <div data-paso={PASO_CLIENTE} hidden={paso !== PASO_CLIENTE} className="flex flex-col gap-3">
         {clienteNuevo && (
@@ -332,13 +348,19 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
 
       <AvisoAlSalir formulario={formulario} estado={estado} />
       <PieFormulario>
-        <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:justify-start">
+        <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2">
           {paso === PASO_SERVICIOS && <TotalEnPie total={precios.totales.total} />}
           <div className="flex gap-2">
             {paso > primerPaso && (
               <Button type="button" variant="outline" disabled={enviando} onClick={() => volverA(paso - 1)}>
                 Atrás
               </Button>
+            )}
+            {/* Con un cliente registrado, el vehículo es el primer paso de aquí: "Atrás" vuelve a buscar el cliente (20/11) */}
+            {paso === primerPaso && !clienteNuevo && (
+              <Link href={conDesde("/panel/cotizaciones/nueva", volver)} className={buttonVariants({ variant: "outline" })}>
+                Atrás
+              </Link>
             )}
             {/* Una key distinta en cada uno: si React reusara el botón, "Siguiente" se volvía "Crear cotización" durante
                 el mismo toque y el navegador enviaba la cotización a medias */}

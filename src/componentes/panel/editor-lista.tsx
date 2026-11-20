@@ -1,4 +1,4 @@
-import { ChevronDownIcon, ChevronUpIcon, PlusIcon, XIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { cn } from "cn";
 import { MensajeError } from "@/componentes/panel/campo";
 import { Button } from "@/componentes/ui/button";
@@ -10,6 +10,13 @@ import { Button } from "@/componentes/ui/button";
 // Ordenar es poco frecuente (pulido 13.19): subir y bajar van en gris al costado de la fila, junto a "Quitar", también en
 // el celular; apilados, para dejarle el ancho al campo. Con `flechasEnFila`, desde 640 px van una al lado de la otra: una
 // fila de un renglón (los beneficios, pulido 13.22) no se estira. Con una sola fila no se muestran.
+// Con `enBloques` (los servicios de una cotización o una reserva, 20/11): una fila por servicio con un basurero al final,
+// arriba a la derecha, en el celular y en pantalla ancha (en el celular, los campos del servicio se apilan a su
+// izquierda; el título "Servicio 1" se quitó: los campos ya dicen qué son). Sin borde propio: va dentro de su tarjeta y
+// una línea separa cada fila. El basurero, sin cuadro y en gris (rojo solo al pasar el mouse): el ícono ya dice que se
+// toca, con el cuadro pesaba más que el servicio; quitar una fila sin guardar se deshace agregándola. No una X: en el
+// panel la X cierra. Sin subir ni bajar: el orden de los servicios casi no se toca y en el celular eran dos cajas más
+// por servicio.
 
 type MarcaError = { "aria-invalid": boolean; "aria-describedby": string | undefined };
 
@@ -32,9 +39,11 @@ type Props<T> = {
    * lista para elegir (Nueva reserva) no es un cambio sin guardar y el servidor dice "Agrega al menos …".
    */
   vacia?: (elemento: T) => boolean;
+  /** Cada fila en un bloque con su título ("Servicio 1") y "Quitar" con su palabra. */
+  enBloques?: boolean;
 };
 
-export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maximo, textoAgregar, errores, fila, flechasEnFila = false, vacia }: Props<T>) {
+export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maximo, textoAgregar, errores, fila, flechasEnFila = false, vacia, enBloques = false }: Props<T>) {
   const mover = (i: number, j: number) => {
     const copia = [...valor];
     [copia[i], copia[j]] = [copia[j], copia[i]];
@@ -45,16 +54,41 @@ export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maxim
     <div className="flex flex-col gap-3">
       <input type="hidden" name={nombre} value={JSON.stringify(vacia && valor.every(vacia) ? [] : valor)} />
       {valor.length > 0 && (
-        <ol className="flex flex-col gap-3" aria-label={etiqueta}>
+        <ol className={cn("flex flex-col", enBloques ? "divide-y divide-border" : "gap-3")} aria-label={etiqueta}>
           {valor.map((elemento, i) => {
             const error = errores[`${nombre}.${i}`];
             const marca = { "aria-invalid": !!error, "aria-describedby": error ? `${nombre}-${i}-error` : undefined };
+            const cambiar = (nuevo: T) => onChange(valor.map((e, k) => (k === i ? nuevo : e)));
+            const quitar = () => onChange(valor.filter((_, k) => k !== i));
+            if (enBloques)
+              return (
+                // Sin caja propia (20/11): ya va dentro de una tarjeta; una línea fina separa un servicio del otro
+                <li key={i} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-1 gap-y-3 py-4 first:pt-0 @2xl:gap-x-3 @2xl:py-3">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={quitar}
+                    aria-label={`Quitar ${etiqueta.toLowerCase()} ${i + 1}`}
+                    title={`Quitar ${etiqueta.toLowerCase()}`}
+                    className="col-start-2 row-start-1 justify-self-end text-tinta-suave hover:text-peligro"
+                  >
+                    <Trash2Icon />
+                  </Button>
+                  <div className="col-start-1 row-start-1 min-w-0">{fila(elemento, cambiar, i, marca)}</div>
+                  {error && (
+                    <div className="col-span-2">
+                      <MensajeError id={`${nombre}-${i}-error`}>{error}</MensajeError>
+                    </div>
+                  )}
+                </li>
+              );
             return (
               <li key={i} className="flex flex-col gap-1">
                 <div className="grid grid-cols-[1.25rem_minmax(0,1fr)_auto] gap-x-2">
                   {/* El número, a la altura del primer campo */}
                   <span aria-hidden className="flex h-9 items-center justify-end text-sm text-tinta-suave pointer-coarse:h-11">{i + 1}.</span>
-                  <div className="flex flex-col gap-2">{fila(elemento, (nuevo) => onChange(valor.map((e, k) => (k === i ? nuevo : e))), i, marca)}</div>
+                  <div className="flex flex-col gap-2">{fila(elemento, cambiar, i, marca)}</div>
                   <div className="flex items-start">
                     {valor.length > 1 && (
                       <div className={cn("flex flex-col text-tinta-suave", flechasEnFila && "sm:flex-row")}>
@@ -66,7 +100,7 @@ export function EditorLista<T>({ nombre, etiqueta, valor, onChange, nueva, maxim
                         </Button>
                       </div>
                     )}
-                    <Button type="button" variant="accion" size="icon" onClick={() => onChange(valor.filter((_, k) => k !== i))} aria-label={`Quitar ${etiqueta.toLowerCase()} ${i + 1}`}>
+                    <Button type="button" variant="accion" size="icon" onClick={quitar} aria-label={`Quitar ${etiqueta.toLowerCase()} ${i + 1}`}>
                       <XIcon />
                     </Button>
                   </div>
