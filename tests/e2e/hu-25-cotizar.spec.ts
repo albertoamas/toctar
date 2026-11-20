@@ -105,13 +105,13 @@ test("cliente nuevo en tres pasos: sus datos completos, su vehículo, y los serv
   await expect(page.getByText("Agrega al menos un servicio.")).toHaveCount(0);
   await expect(precio(page, 1)).toHaveValue("450");
   await expect(page.getByText("Precio sugerido: 450 Bs")).toBeVisible();
-  // Otro tamaño, otro precio sugerido: este no tiene, y vuelve al cambiar de nuevo (desde "Cambiar" del vehículo)
-  await page.getByRole("button", { name: "Cambiar vehículo" }).click();
+  // Otro tamaño, otro precio sugerido: este no tiene, y vuelve al cambiar de nuevo (tocando "Vehículo" en el indicador, 20/11)
+  await page.getByRole("navigation", { name: "Pasos de la cotización" }).getByRole("button", { name: "Ir al paso Vehículo" }).click();
   await page.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio").nth(1).click();
   await aServicios(page);
   await expect(precio(page, 1)).toHaveValue("");
   await expect(page.getByText("Sin precio en el catálogo para este tamaño: escribe el precio")).toBeVisible();
-  await page.getByRole("button", { name: "Cambiar vehículo" }).click();
+  await page.getByRole("navigation", { name: "Pasos de la cotización" }).getByRole("button", { name: "Ir al paso Vehículo" }).click();
   await page.getByRole("radiogroup", { name: "Tamaño" }).getByRole("radio").nth(0).click();
   await aServicios(page);
   await expect(precio(page, 1)).toHaveValue("450");
@@ -378,7 +378,7 @@ test("Atrás vuelve al paso anterior sin perder lo escrito; nada se registra has
   await aServicios(page);
   await expect(pasoActual(page)).toContainText("Servicios y precio");
   // "Cambiar" vuelve en el historial: después, Atrás lleva al paso anterior y no de nuevo a Servicios
-  await page.getByRole("button", { name: "Cambiar vehículo" }).click();
+  await page.getByRole("navigation", { name: "Pasos de la cotización" }).getByRole("button", { name: "Ir al paso Vehículo" }).click();
   await expect(pasoActual(page)).toContainText("Vehículo");
   await expect(page.getByLabel("Placa", { exact: true })).toHaveValue(`CA25${s}1`);
   await page.getByRole("button", { name: "Atrás" }).click();

@@ -185,13 +185,10 @@ test("Nueva reserva ofrece las cotizaciones del vehículo: los precios llegan si
   // "Usar una de sus cotizaciones" vuelve a la lista
   await page.getByRole("button", { name: "Usar una de sus cotizaciones" }).click();
   await suyas.getByRole("link").click();
-  // Va al último paso de la reserva, con "Cambiar servicios" para volver a elegir (pedido 41)
+  // Va a la fecha, con "Servicios" en el indicador para volver a elegir (pedido 41; 20/11)
   await expect(page).toHaveURL(new RegExp(`cotizacion=${c.cotizacionId}&cliente=${c.clienteId}&vehiculo=${c.vehiculoId}(?:&volver=[^&#]*)?$`));
   await expect(page.getByRole("navigation", { name: "Pasos de la reserva" }).locator('[aria-current="step"]')).toHaveText("Fecha");
-  await expect(page.getByRole("link", { name: "Cambiar servicios" })).toHaveAttribute("href", conVolver(`/panel/agenda/nueva?cliente=${c.clienteId}&vehiculo=${c.vehiculoId}`));
-  const servicios = page.getByRole("region", { name: "Servicios" });
-  await expect(servicios).toContainText(`De la cotización ${c.numero}`);
-  await expect(servicios).toContainText("700 Bs");
+  await expect(page.getByRole("navigation", { name: "Pasos de la reserva" }).getByRole("link", { name: "Ir al paso Servicios" })).toHaveAttribute("href", conVolver(`/panel/agenda/nueva?cliente=${c.clienteId}&vehiculo=${c.vehiculoId}`));
   // "Atrás" vuelve a ese paso, como en los otros caminos (hallazgo 10)
   await expect(page.getByRole("link", { name: "Atrás" })).toHaveAttribute("href", conVolver(`/panel/agenda/nueva?cliente=${c.clienteId}&vehiculo=${c.vehiculoId}`));
   await reservar(page, dia);

@@ -9,10 +9,9 @@ import { useFocoDePaso } from "@/componentes/panel/foco-de-paso";
 import { SeccionFormulario } from "@/componentes/panel/seccion-formulario";
 import { MensajeError } from "@/componentes/panel/campo";
 import { ArrowLeftIcon, PlusIcon } from "lucide-react";
-import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
+import { PasosFlujo, type DestinoPaso } from "@/componentes/panel/pasos-flujo";
 import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
-import { ResumenPaso } from "@/componentes/panel/resumen-paso";
 import { Button, buttonVariants } from "@/componentes/ui/button";
 import type { MetodoPago } from "@/db/esquema/trabajos";
 import type { EstadoFormulario } from "@/lib/formularios";
@@ -45,7 +44,18 @@ import { CabeceraTarjeta } from "@/componentes/panel/cabecera-seccion";
 // sin respuesta elegida: "Reservar" va solo en el último paso. El indicador de pasos va aquí, en los dos caminos.
 
 type Origen =
-  | { tipo: "cotizacion"; cotizacionId: number; duraciones: number[]; /** Para la barra de abajo; null sin permiso de ver montos. */ total: string | null }
+  | {
+      tipo: "cotizacion";
+      cotizacionId: number;
+      duraciones: number[];
+      /** Para la barra de abajo; null sin permiso de ver montos. */
+      total: string | null;
+      /** "2026-0101" o "2026-0101, versión 2": de dónde vienen los servicios, en el resumen. */
+      numero: string;
+      aceptada: boolean;
+      /** Sus servicios, para el resumen; el precio es null sin permiso de ver montos. */
+      lineas: { descripcion: string; precio: string | null }[];
+    }
   | {
       tipo: "directa";
       clienteId: number;
@@ -75,6 +85,8 @@ type Props = {
   cotizaciones?: React.ReactNode;
   /** Desde una cotización elegida en el paso Servicios: a dónde vuelve "Atrás" (ese paso). */
   atras?: Route;
+  /** A dónde lleva tocar en el indicador los pasos que se eligen por la dirección: el cliente, el vehículo y, desde una cotización, los servicios. */
+  pasosHechos?: (DestinoPaso | undefined)[];
 };
 
 /** "miércoles 30 de diciembre": el día en medio de una frase. */
@@ -83,7 +95,7 @@ const minuscula = (texto: string) => texto.charAt(0).toLowerCase() + texto.slice
 /** El paso en la dirección: el botón Atrás del celular vuelve al anterior sin salir de la pantalla. */
 const ANCLA: Record<number, string> = { [PASO_SERVICIOS]: "servicios", [PASO_FECHA]: "fecha", [PASO_ADELANTO]: "adelanto" };
 
-export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, hoy, fechaInicial, espacioInicial, espaciosIniciales, arriba, cotizaciones, atras }: Props) {
+export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, hoy, fechaInicial, espacioInicial, espaciosIniciales, arriba, cotizaciones, atras, pasosHechos }: Props) {
   const directa = origen.tipo === "directa";
   const inicial = origen.tipo === "directa" ? origen.pasoInicial : PASO_FECHA;
   // Con el adelanto (quien ve pagos), el último paso es el suyo; si no, la fecha
@@ -212,19 +224,37 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
   const montoAdelanto = conPagos && dejo === "si" ? leerMonto(adelanto) : null;
   const centavos = (monto: string) => Math.round(Number(monto) * 100);
   const faltaAlEntregar = conTotal && montoAdelanto ? ((centavos(total) - centavos(montoAdelanto)) / 100).toFixed(2) : null;
-  const resumenFecha =
-    origen.tipo === "directa" || conTotal ? (
+  // Lo elegido en la fecha, en una línea: en el resumen del último paso (20/11, en lugar de la tarjeta "Fecha")
+  const textoFecha =
+    fechaInicio && fechaFin ? `${fechaInicio === fechaFin ? `El ${minuscula(textoDia(fechaInicio))}` : `Del ${minuscula(textoDia(fechaInicio))} al ${minuscula(textoDia(fechaFin))}`}${nombreEspacio ? `, ${nombreEspacio}` : ""}` : null;
+  const resumenFecha = (
       <section aria-labelledby="resumen-reserva-titulo" className="tt-tarjeta-panel flex flex-col">
         <CabeceraTarjeta id="resumen-reserva" titulo="Resumen" />
         <dl className="flex flex-col gap-2 p-4 sm:p-5">
+          {origen.tipo === "cotizacion" && (
+            <>
+              <p className="text-sm text-tinta-suave">De la cotización {origen.numero}</p>
+              {origen.lineas.map((l, i) => (
+                <FilaResumen key={i} etiqueta={l.descripcion} valor={l.precio ? `${mostrarMonto(l.precio)} Bs` : ""} />
+              ))}
+            </>
+          )}
           {origen.tipo === "directa" &&
             lineas.map((l, i) => <FilaResumen key={i} etiqueta={nombreLinea(l, i)} valor={conTotal ? `${mostrarMonto(leerMonto(l.precio) ?? "0")} Bs` : ""} />)}
           {conTotal && <FilaResumen etiqueta="Total" valor={`${mostrarMonto(total)} Bs`} fuerte separada={origen.tipo === "directa"} />}
           {montoAdelanto && <FilaResumen etiqueta="Adelanto" valor={`${mostrarMonto(montoAdelanto)} Bs`} suave />}
           {faltaAlEntregar && Number(faltaAlEntregar) > 0 && <FilaResumen etiqueta="Falta al entregar" valor={`${mostrarMonto(faltaAlEntregar)} Bs`} suave />}
+          {paso > PASO_FECHA && textoFecha && (
+            // En su renglón: puede ser larga ("Del miércoles 30 de diciembre al jueves 31 de diciembre, Espacio 1")
+            <div className="flex flex-col gap-0.5 border-t border-border pt-2 text-sm">
+              <dt className="text-tinta-suave">Fecha</dt>
+              <dd>{textoFecha}</dd>
+            </div>
+          )}
+          {origen.tipo === "cotizacion" && !origen.aceptada && <p className="text-sm text-tinta-suave">Al reservar, la cotización queda aceptada.</p>}
         </dl>
       </section>
-    ) : null;
+    );
 
   // El historial: Atrás y Adelante del navegador (o del celular) cambian de paso (solo la directa tiene pasos). Adelante
   // a la fecha revisa los servicios
@@ -327,7 +357,19 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
       className="flex flex-col gap-6"
       noValidate
     >
-      <PasosFlujo pasos={pasosNuevaReserva(conPagos)} actual={paso} etiqueta="Pasos de la reserva" />
+      {/* Los pasos hechos se tocan para volver (20/11): el cliente y el vehículo por la dirección; los servicios y la fecha,
+          en esta misma pantalla */}
+      <PasosFlujo
+        pasos={pasosNuevaReserva(conPagos)}
+        actual={paso}
+        etiqueta="Pasos de la reserva"
+        destinos={[
+          pasosHechos?.[0],
+          pasosHechos?.[1],
+          directa ? { alTocar: volverAServicios } : pasosHechos?.[2],
+          { alTocar: volverAFecha },
+        ]}
+      />
       {arriba}
       <AvisoAlSalir formulario={formulario} estado={estado} ademas={!!comprobante} />
       <input type="hidden" name="origen" value={origen.tipo} />
@@ -342,21 +384,6 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
         </>
       )}
 
-      {/* Los servicios elegidos, arriba de la fecha, con "Cambiar" para volver a ellos */}
-      {origen.tipo === "directa" && paso === PASO_FECHA && (
-        <div className="flex flex-col @4xl:hidden">
-          <ResumenPaso id="resumen-servicios" titulo="Servicios" alCambiar={volverAServicios} claseContenido="gap-2">
-            <ul className="flex flex-col gap-1">
-              {lineas.map((l, i) => (
-                <li key={i} className="flex justify-between gap-4">
-                  <span>{origen.opciones.find((o) => o.varianteId === l.varianteId)?.descripcion ?? `Servicio ${i + 1}`}</span>
-                  <span className="shrink-0 tabular-nums">{mostrarMonto(leerMonto(l.precio) ?? "0")} Bs</span>
-                </li>
-              ))}
-            </ul>
-          </ResumenPaso>
-        </div>
-      )}
       {estado.mensaje && !estado.ok && <MensajeError id="reserva-error">{estado.mensaje}</MensajeError>}
 
       {origen.tipo === "directa" && (
@@ -410,7 +437,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
       )}
 
       <div data-paso={PASO_FECHA} hidden={paso !== PASO_FECHA} className="flex flex-col gap-6">
-        <ConResumen etiqueta="Resumen de la reserva" resumen={paso === PASO_FECHA ? resumenFecha : null}>
+        <ConResumen etiqueta="Resumen de la reserva" resumen={paso === PASO_FECHA ? resumenFecha : null} tambienAngosto={ultimo === PASO_FECHA}>
           <SeccionFechasReserva
             hoy={hoy}
             fechaInicio={fechaInicio}
@@ -428,14 +455,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
 
       {conPagos && (
         <div data-paso={PASO_ADELANTO} hidden={paso !== PASO_ADELANTO} className="flex flex-col gap-6">
-          <ConResumen etiqueta="Resumen de la reserva" resumen={paso === PASO_ADELANTO ? resumenFecha : null}>
-            {/* Lo elegido en la fecha, con "Cambiar" para volver a ese paso */}
-            <ResumenPaso id="resumen-fecha" titulo="Fecha" alCambiar={volverAFecha}>
-              <p>
-                {fechaInicio && fechaFin && (fechaInicio === fechaFin ? `El ${minuscula(textoDia(fechaInicio))}` : `Del ${minuscula(textoDia(fechaInicio))} al ${minuscula(textoDia(fechaFin))}`)}
-                {nombreEspacio && `, ${nombreEspacio}`}
-              </p>
-            </ResumenPaso>
+          <ConResumen etiqueta="Resumen de la reserva" resumen={paso === PASO_ADELANTO ? resumenFecha : null} tambienAngosto>
             <SeccionAdelanto
               dejo={dejo}
               alCambiarDejo={setDejo}
@@ -457,7 +477,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
             {/* El total de la reserva directa, a la vista mientras se cargan los precios */}
             {total !== null && total !== "0.00" && (
               // En la fecha, con el resumen al costado (computadora), el total ya está ahí
-              <p className={`flex items-baseline gap-2 ${paso >= PASO_FECHA && resumenFecha ? "@4xl:hidden" : ""}`}>
+              <p className={cn("flex items-baseline gap-2", paso >= PASO_FECHA && "@4xl:hidden")}>
                 <span className="text-tinta-suave">Total</span>
                 <span className="text-lg font-bold tabular-nums">{mostrarMonto(total)} Bs</span>
               </p>

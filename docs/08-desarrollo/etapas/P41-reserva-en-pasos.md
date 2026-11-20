@@ -111,4 +111,9 @@ En el celular, una reserva sin cotización se arma paso a paso sin bajar por una
     comprobante. Arriba, la fecha elegida con "Cambiar".
   - "Reservar" va solo en el último paso; un Enter en la fecha sigue al adelanto. Un error de la acción vuelve al paso que
     lo tiene. Desde una cotización empieza en la fecha, con el mismo indicador (lo dibuja el formulario).
+- **Solo el paso que se hace** (también en Nueva cotización): sin las tarjetas de lo ya elegido ("Reserva para",
+  "Servicios", "Fecha") arriba de cada paso. Debajo del indicador, una línea: "Para Carla Rodríguez · 1234ABC, Compactos"
+  (`ParaQuien`). Los pasos hechos del indicador se tocan para volver ("Ir al paso Servicios"; `PasosFlujo` con
+  `destinos`). En el último paso, el resumen completo (los servicios, el total, el adelanto, lo que falta y la fecha),
+  también en el celular, para confirmar antes de reservar; en la computadora, al costado desde la fecha.
 

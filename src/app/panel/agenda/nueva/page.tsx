@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
-import { PasosFlujo } from "@/componentes/panel/pasos-flujo";
+import { PasosFlujo, type DestinoPaso } from "@/componentes/panel/pasos-flujo";
 import { fechaEnBolivia, fechaExiste } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
@@ -64,7 +64,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/agenda/nueva">
   // se eligió
   const fechaInicial = fechaExiste(texto("fecha")) && texto("fecha") >= hoy ? texto("fecha") : "";
   const pasos = pasosNuevaReserva(conPagos);
-  const indicador = (actual: number) => <PasosFlujo pasos={pasos} actual={actual} etiqueta="Pasos de la reserva" />;
+  const indicador = (actual: number, destinos?: (DestinoPaso | undefined)[]) => <PasosFlujo pasos={pasos} actual={actual} etiqueta="Pasos de la reserva" destinos={destinos} />;
   // Cada paso es una dirección: se conservan el día y el espacio que llegaron del tablero
   const direccion = (datos: Record<string, string | number>) => {
     const p = new URLSearchParams(Object.entries(datos).map(([k, v]) => [k, String(v)]));

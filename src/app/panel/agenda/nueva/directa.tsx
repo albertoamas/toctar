@@ -12,7 +12,7 @@ import { PASO_SERVICIOS, PASO_VEHICULO, pasoInicialReserva } from "@/modulos/age
 import { recordatorioParaAgendar } from "@/modulos/mantenimientos/consultas";
 import { lineaDelMantenimiento } from "@/modulos/mantenimientos/reglas";
 import { conDesde } from "@/lib/volver";
-import { ClienteYVehiculo, CotizacionesDelCliente, Encabezado, enlace, Formulario, type Contexto } from "./partes";
+import { CotizacionesDelCliente, Encabezado, enlace, Formulario, ParaQuien, type Contexto } from "./partes";
 
 // La reserva nueva directa o desde un mantenimiento (HU-30, HU-38; pedidos 21 y 41).
 
@@ -69,8 +69,8 @@ export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; client
     return (
       <>
         <Encabezado volver={volver} />
-        {indicador(PASO_VEHICULO)}
-        <ClienteYVehiculo nombre={d.cliente.nombre} vehiculo={null} cambiarCliente={cambiarCliente} />
+        {indicador(PASO_VEHICULO, [cambiarCliente && { href: cambiarCliente }])}
+        <ParaQuien nombre={d.cliente.nombre} vehiculo={null} />
         <Seccion id="vehiculo" titulo="Vehículo" sinRelleno>
           {d.vehiculos.length === 0 && !veClientes ? (
             <EstadoVacio>
@@ -96,12 +96,10 @@ export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; client
   const vehiculo = d.vehiculo;
   const arriba = (
     <>
-      <ClienteYVehiculo
+      <ParaQuien
         nombre={d.cliente.nombre}
         vehiculo={vehiculo}
-        cambiarCliente={cambiarCliente}
-        cambiarVehiculo={cambiarVehiculo}
-        // El mantenimiento que se agenda, dentro de la tarjeta (hallazgo 10: iba suelto entre tarjetas); vencido, en aviso
+        // El mantenimiento que se agenda, junto a para quién es (hallazgo 10: iba suelto entre tarjetas); vencido, en aviso
         extra={
           recordatorio && (
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -122,6 +120,8 @@ export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; client
       )}
     </>
   );
+  // Tocar el cliente o el vehículo en el indicador vuelve a elegirlos (20/11)
+  const pasosHechos = [cambiarCliente && { href: cambiarCliente }, cambiarVehiculo && { href: cambiarVehiculo }];
   // Paso 3: los servicios. Primero sus cotizaciones para reservar; un mantenimiento no las ofrece (se agenda su servicio)
   const cotizaciones = recordatorio ? [] : await cotizacionesParaReservar(d.cliente.id, vehiculo.id);
   const conMontos = conPagos || puedeVerModulo(usuario, "cotizaciones");
@@ -131,7 +131,7 @@ export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; client
     return (
       <>
         <Encabezado volver={volver} />
-        {indicador(PASO_SERVICIOS)}
+        {indicador(PASO_SERVICIOS, pasosHechos)}
         {arriba}
         {suyas ?? <EstadoVacio>Este vehículo no tiene cotizaciones para reservar. La reserva sin cotización lleva precios: la arma el dueño o quien registra pagos.</EstadoVacio>}
       </>
@@ -161,6 +161,7 @@ export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; client
         espacio={numero("espacio")}
         arriba={arriba}
         cotizaciones={suyas}
+        pasosHechos={pasosHechos}
       />
     </>
   );

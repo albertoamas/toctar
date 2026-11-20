@@ -1,16 +1,30 @@
+import { cn } from "cn";
+
 // Un formulario en pasos con su resumen al costado (C7 §5.2, 18/11): Nueva cotización, Nueva versión y Nueva reserva.
 // Según el ancho del área de trabajo, el paso a la izquierda en dos tercios y, a la derecha, lo elegido y el total, fijos
 // mientras se baja: así los precios y el total que forman están a la vista a la vez, y los campos no se estiran. Más
 // angosto (el celular, una tableta), el resumen no se muestra: arriba queda lo elegido y abajo el total, en el pie fijo,
 // como hasta ahora.
 
-export function ConResumen({ etiqueta, resumen, children }: { /** Cómo lo nombra el lector de pantalla: "Resumen de la cotización". */ etiqueta: string; resumen: React.ReactNode; children: React.ReactNode }) {
+export function ConResumen({
+  etiqueta,
+  resumen,
+  tambienAngosto = false,
+  children,
+}: {
+  /** Cómo lo nombra el lector de pantalla: "Resumen de la cotización". */
+  etiqueta: string;
+  resumen: React.ReactNode;
+  /** También en lo angosto, debajo del paso: el último de la reserva, para confirmar antes de reservar (20/11). */
+  tambienAngosto?: boolean;
+  children: React.ReactNode;
+}) {
   // Sin nada que resumir (una reserva desde una cotización para quien no ve montos), el paso a todo el ancho, como antes
   if (!resumen) return <div className="flex flex-col gap-6">{children}</div>;
   return (
     <div className="grid items-start gap-6 @4xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <div className="flex min-w-0 flex-col gap-6">{children}</div>
-      <aside aria-label={etiqueta} className="hidden min-w-0 flex-col gap-6 @4xl:sticky @4xl:top-4 @4xl:flex">
+      <aside aria-label={etiqueta} className={cn("min-w-0 flex-col gap-6 @4xl:sticky @4xl:top-4 @4xl:flex", tambienAngosto ? "flex" : "hidden")}>
         {resumen}
       </aside>
     </div>
