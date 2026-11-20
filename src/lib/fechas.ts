@@ -54,14 +54,6 @@ export function fechaCorta(fecha: string, hoy: string): string {
   return fecha.slice(0, 4) === hoy.slice(0, 4) ? completa.slice(0, completa.lastIndexOf("/")) : completa;
 }
 
-const MES_CORTO = ["ene.", "feb.", "mar.", "abr.", "may.", "jun.", "jul.", "ago.", "sep.", "oct.", "nov.", "dic."];
-
-/** "7 nov." si es de este año (el de `hoy`); "30 dic. 2025" si es de otro (recorrido visual del 19/11, en el inicio). */
-export function fechaConMes(fecha: string, hoy: string): string {
-  const texto = `${Number(fecha.slice(8, 10))} ${MES_CORTO[Number(fecha.slice(5, 7)) - 1]}`;
-  return fecha.slice(0, 4) === hoy.slice(0, 4) ? texto : `${texto} ${fecha.slice(0, 4)}`;
-}
-
 /** "hoy", "ayer" o "hace 5 días": cuánto pasó desde una fecha calendario hasta hoy. */
 export function textoHace(fecha: string, hoy: string): string {
   const dias = diasEntre(fecha, hoy);

@@ -55,7 +55,7 @@ export const CAPITULOS = [
           marcas: [
             { en: { css: "nav" }, texto: "El menú: cada persona ve solo lo que le toca." },
             { en: enlace("Nueva cotización", true), texto: "Lo que más se hace, a un toque: cotizar y reservar." },
-            { en: { css: "#bienvenida-titulo" }, texto: "La bienvenida: el día en una frase, y los números que importan (en el taller, por cobrar, lo cobrado en el mes)." },
+            { en: { rol: "navigation", nombre: "Resumen de hoy" }, texto: "Los números del día: en el taller, los que llegan y los que se entregan hoy." },
             { en: titulo("Hoy"), texto: "Hoy: lo que llega y se entrega, con su acción a un toque (recibir, avisar, entregar). Lo atrasado sube a Urgente." },
             { en: { css: 'a[href="/panel/manual"]' }, texto: "Este manual, siempre a mano.", lado: "arriba" },
             { en: boton("Cerrar sesión"), texto: "Cerrar sesión, al terminar en un equipo compartido.", lado: "arriba" },

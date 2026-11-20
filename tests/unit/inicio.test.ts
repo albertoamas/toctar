@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import { fechaConDia } from "@/lib/fechas";
 import { cantidad } from "@/lib/cantidad";
-import { fraseDelDia, numerosDelDia, repartirDia, saludoDeLaHora, textoEntregaAtrasada, textoIngresoAtrasado } from "@/modulos/inicio/reglas";
+import { numerosDelDia, repartirDia, textoEntregaAtrasada, textoIngresoAtrasado } from "@/modulos/inicio/reglas";
 
 // HU-39 Pantalla del día (RF-52). Especificación: docs/08-desarrollo/etapas/C5-cierre-entrega-2.md §5 y §8.
 
@@ -13,13 +13,13 @@ test("la fecha del título lleva el día de la semana", () => {
 });
 
 test("un ingreso de un día pasado dice desde cuándo se lo espera; uno de hoy, nada", () => {
-  expect(textoIngresoAtrasado("2026-10-21", hoy)).toBe("Atrasada 2 días: debía ingresar el 21 oct.");
-  expect(textoIngresoAtrasado("2025-12-30", hoy)).toBe("Atrasada 297 días: debía ingresar el 30 dic. 2025");
+  expect(textoIngresoAtrasado("2026-10-21", hoy)).toBe("Atrasada: debía ingresar el 21/10");
+  expect(textoIngresoAtrasado("2025-12-30", hoy)).toBe("Atrasada: debía ingresar el 30/12/2025");
   expect(textoIngresoAtrasado(hoy, hoy)).toBeNull();
 });
 
 test("una orden que se debía entregar antes de hoy está atrasada; una lista que espera al cliente, no", () => {
-  expect(textoEntregaAtrasada({ estado: "en_proceso", fechaFin: "2026-10-22" }, hoy)).toBe("Atrasada 1 día: debía entregarse el 22 oct.");
+  expect(textoEntregaAtrasada({ estado: "en_proceso", fechaFin: "2026-10-22" }, hoy)).toBe("Atrasada: debía entregarse el 22/10");
   expect(textoEntregaAtrasada({ estado: "recibido", fechaFin: hoy }, hoy)).toBeNull();
   expect(textoEntregaAtrasada({ estado: "listo", fechaFin: "2026-10-20" }, hoy)).toBeNull();
 });
@@ -47,14 +47,14 @@ test("Urgente es lo atrasado; Hoy, solo lo de hoy y las listas por avisar, sin r
   const { urgentes, hoy: deHoy } = repartirDia(ingresos, abiertas, hoy);
   // La reserva que no llegó y la orden atrasada, con su atraso; una lista que espera al cliente no está atrasada
   expect(urgentes.map((f) => f.id)).toEqual([1, 3]);
-  expect(urgentes[0]).toMatchObject({ estado: "agendado", aviso: "Atrasada 2 días: debía ingresar el 21 oct.", detalle: "Reservada, por recibir, Espacio 1", paso: "recibir" });
-  expect(urgentes[1]).toMatchObject({ aviso: "Atrasada 1 día: debía entregarse el 22 oct.", detalle: "En proceso", paso: "ver" });
+  expect(urgentes[0]).toMatchObject({ estado: "agendado", aviso: "Atrasada: debía ingresar el 21/10", detalle: "Reservada, por recibir, Espacio 1", paso: "recibir" });
+  expect(urgentes[1]).toMatchObject({ aviso: "Atrasada: debía entregarse el 22/10", detalle: "En proceso", paso: null });
   // Hoy: lo que llega, las listas sin avisar (aunque sean de antes), lo que se entrega hoy; la avisada que se entrega hoy, a entregar
   expect(deHoy.map((f) => f.id)).toEqual([2, 4, 5, 7, 8]);
   expect(deHoy[0]).toMatchObject({ aviso: null, detalle: "Reservada, llega a las 8:30, Espacio 2", paso: "recibir" });
   expect(deHoy[1]).toMatchObject({ aviso: "Sin avisar", detalle: "Lista, se entrega hoy", paso: "avisar" });
-  expect(deHoy[2]).toMatchObject({ aviso: "Sin avisar", detalle: "Lista, falta avisar al cliente para que la retire", paso: "avisar" });
-  expect(deHoy[3]).toMatchObject({ aviso: null, detalle: "Recibida, se entrega hoy", paso: "ver" });
+  expect(deHoy[2]).toMatchObject({ aviso: "Sin avisar", detalle: "Lista", paso: "avisar" });
+  expect(deHoy[3]).toMatchObject({ aviso: null, detalle: "Recibida, se entrega hoy", paso: null });
   expect(deHoy[4]).toMatchObject({ aviso: null, detalle: "Lista, se entrega hoy", paso: "entregar" });
 });
 
@@ -63,20 +63,4 @@ test("los números del día: en el taller, llegan hoy y se entregan hoy; sin el 
   const abiertas = [{ fechaFin: hoy }, { fechaFin: "2026-10-25" }, { fechaFin: hoy }];
   expect(numerosDelDia(ingresos, abiertas, hoy)).toEqual({ enTaller: 3, lleganHoy: 1, seEntreganHoy: 2 });
   expect(numerosDelDia(null, null, hoy)).toEqual({ enTaller: null, lleganHoy: null, seEntreganHoy: null });
-});
-
-test("el saludo va con la hora de Bolivia", () => {
-  expect(saludoDeLaHora(7)).toBe("Buenos días");
-  expect(saludoDeLaHora(12)).toBe("Buenas tardes");
-  expect(saludoDeLaHora(19)).toBe("Buenas noches");
-});
-
-test("el día en una frase: lo que llega y se entrega, y si hay atrasos", () => {
-  expect(fraseDelDia({ lleganHoy: 1, seEntreganHoy: 1, atrasados: 2 })).toEqual({ dia: "Hoy llega 1 vehículo y se entrega 1.", atrasos: "Hay 2 atrasados que conviene mirar primero." });
-  expect(fraseDelDia({ lleganHoy: 3, seEntreganHoy: 0, atrasados: 1 })).toEqual({ dia: "Hoy llegan 3 vehículos.", atrasos: "Hay 1 atrasado que conviene mirar primero." });
-  expect(fraseDelDia({ lleganHoy: 0, seEntreganHoy: 2, atrasados: 0 })).toEqual({ dia: "Hoy se entregan 2; no llega ninguno.", atrasos: "Todo al día." });
-  expect(fraseDelDia({ lleganHoy: 0, seEntreganHoy: 0, atrasados: 0 }).dia).toBe("Hoy no llega ni se entrega ningún vehículo.");
-  // Solo con la Agenda: no se dice nada de las entregas
-  expect(fraseDelDia({ lleganHoy: 0, seEntreganHoy: null, atrasados: 0 }).dia).toBe("Hoy no llega ningún vehículo.");
-  expect(fraseDelDia({ lleganHoy: null, seEntreganHoy: null, atrasados: 0 }).dia).toBeNull();
 });
