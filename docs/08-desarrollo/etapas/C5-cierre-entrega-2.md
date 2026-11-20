@@ -137,23 +137,6 @@ Migraciones:
 - **En el celular**, una sola columna; en la computadora, dos.
 - **El técnico** sigue con su inicio de hoy.
 
-> **Recorrido visual del 19/11** (a pedido del dueño; reemplaza las tarjetas, "Para hoy" y "Para atender"). Lo de
-> arriba repetía lo mismo tres veces y todo iba en ámbar. Ahora:
-> - Bajo el saludo, **una línea con los números del día** ("3 en el taller · 2 llegan hoy · 1 se entrega hoy"), cada
->   uno a su lista (`numerosDelDia`).
-> - **Urgente** (en rojo, lo único con color): las reservas que debían ingresar antes ("Atrasada: debía ingresar el
->   07/11"), las órdenes atrasadas ("Atrasada: debía entregarse el 22/10") y los reclamos. Con una sola insignia: el
->   atraso, sin "Reservada" al lado.
-> - **Hoy**: solo lo de hoy (lo que llega, lo que se entrega) y las listas sin avisar.
-> - **Pendientes**: saldos, cotizaciones sin respuesta o aceptadas sin fecha y mantenimientos vencidos, una fila por
->   tipo.
-> - **Acciones directas** en cada fila: "Recibir" y "Entregar" van a su pantalla; "Avisar por WhatsApp" abre el mensaje
->   y lo registra ahí mismo; "Registrar pago" abre su modal; "Reservar" y "Avisar" (mantenimientos) van a hacerlo. El
->   resto de la fila abre la ficha.
-> - El mismo orden en el celular y en la computadora (Urgente, Hoy, Pendientes); en la computadora, Hoy a la derecha.
-> - Reglas: `repartirDia` y `numerosDelDia` en `src/modulos/inicio/reglas.ts`; la lista, `ListaInicio`
->   (`src/modulos/inicio/componentes/lista-inicio.tsx`).
-
 ### `/panel/configuracion/mensajes` — Mensajes (dueño; HU-40)
 - Una tarjeta por mensaje: "Vehículo listo", "Saldo pendiente" y "Mantenimiento".
 - **En cada una:**

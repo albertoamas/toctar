@@ -55,41 +55,35 @@ async function prepararDia(info: TestInfo) {
   return { placas, ids };
 }
 
-/** Las listas del inicio (19/11): "Urgente", "Hoy" y "Pendientes"; y la línea con los números del día. */
-const lista = (page: Page, nombre: "Urgente" | "Hoy" | "Pendientes") => page.getByRole("region", { name: nombre }).getByRole("list", { name: nombre });
-const resumen = (page: Page) => page.getByRole("navigation", { name: "Resumen de hoy" });
+/** "Para hoy" (pedido 26): lo que llega, lo que se entrega y lo que espera aviso, en una tabla. */
+const delDia = (page: Page) => page.getByRole("region", { name: "Para hoy" }).getByRole("list", { name: "Para hoy" });
+const resumen = (page: Page) => page.getByRole("region", { name: "Resumen de hoy" });
 
-test("el dueño ve lo atrasado en Urgente, lo de hoy en Hoy con su acción directa y lo que espera en Pendientes", async ({ page }, info) => {
+test("el dueño ve los números del día, lo que llega (y el atrasado), las entregas y las listas sin avisar; cada fila lleva a su pantalla", async ({ page }, info) => {
   const { placas, ids } = await prepararDia(info);
   await ingresarComoDueno(page);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Hola, /);
 
-  const fila = (nombre: "Urgente" | "Hoy", placa: string) => lista(page, nombre).getByRole("listitem").filter({ hasText: placa });
-  // Hoy: la reserva de hoy, sin atraso, y su acción va directo a recibirla
-  await expect(fila("Hoy", placas.hoy)).toContainText("Reservada");
-  await expect(fila("Hoy", placas.hoy)).not.toContainText("Atrasada");
-  await expect(fila("Hoy", placas.hoy).getByRole("link", { name: `Recibir ${placas.hoy}` })).toHaveAttribute("href", `/panel/ordenes/${ids.hoy}/recibir?volver=%2Fpanel`);
-  // Urgente: la reserva que no llegó y la orden atrasada, con una sola insignia que dice el atraso
-  await expect(fila("Urgente", placas.atrasado)).toContainText(`Atrasada: debía ingresar el ${dia(-2).corta}`);
-  await expect(fila("Urgente", placas.entrega)).toContainText(`Atrasada: debía entregarse el ${dia(-4).corta}`);
-  await expect(fila("Urgente", placas.entrega)).toContainText("En proceso");
-  await expect(lista(page, "Hoy").getByRole("listitem").filter({ hasText: placas.atrasado })).toHaveCount(0);
-  // La lista sin avisar, en Hoy, con "Avisar por WhatsApp" ahí mismo
-  await expect(fila("Hoy", placas.lista)).toContainText("Sin avisar");
-  await expect(fila("Hoy", placas.lista).getByRole("button", { name: "Avisar por WhatsApp" })).toBeVisible();
-  // Los números del día, cada uno a su lista; los mantenimientos vencidos, en Pendientes
-  await expect(resumen(page).getByRole("link", { name: /^\d+ en el taller$/ })).toHaveAttribute("href", "/panel/ordenes");
-  await expect(resumen(page).getByRole("link", { name: /^\d+ llegan? hoy$/ })).toHaveAttribute("href", "/panel/agenda");
-  await expect(lista(page, "Pendientes").getByRole("link", { name: /^\d+ mantenimientos? vencidos?/ })).toBeVisible();
+  const fila = (placa: string) => delDia(page).getByRole("link", { name: new RegExp(`^${placa}`) });
+  await expect(fila(placas.hoy)).toContainText("Reservada");
+  await expect(fila(placas.hoy)).not.toContainText("Debía ingresar");
+  await expect(fila(placas.atrasado)).toContainText(`Debía ingresar el ${dia(-2).corta}`);
+  await expect(fila(placas.entrega)).toContainText(`Atrasada desde el ${dia(-4).corta}`);
+  await expect(fila(placas.entrega)).toContainText("En proceso");
+  await expect(fila(placas.lista)).toContainText("Sin avisar");
+  // Los números del día, cada uno a su lista; el dueño ve lo que hay por cobrar
+  await expect(resumen(page).getByRole("link", { name: /^En el taller \d+/ })).toHaveAttribute("href", "/panel/ordenes");
+  await expect(resumen(page).getByRole("link", { name: /^Mantenimientos \d+/ })).toHaveAttribute("href", "/panel/mantenimientos");
+  await expect(resumen(page).getByRole("link", { name: /^Por cobrar [\d.,]+ Bs/ })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Para atender" }).getByRole("link", { name: /mantenimientos? vencidos?/ })).toBeVisible();
   // Sus dos tareas de todos los días
   await expect(page.getByRole("link", { name: "Nueva reserva" })).toHaveAttribute("href", "/panel/agenda/nueva?volver=%2Fpanel");
   await expect(page.getByRole("link", { name: "Nueva cotización" })).toHaveAttribute("href", "/panel/cotizaciones/nueva?volver=%2Fpanel");
 
-  // Toda la fila (menos su acción) lleva a la pantalla del trabajo
-  await fila("Hoy", placas.hoy).getByRole("link", { name: new RegExp(`^${placas.hoy}`) }).click();
+  await fila(placas.hoy).click();
   await expect(page).toHaveURL(new RegExp(`/panel/agenda/${ids.hoy}(?:[?&]volver=[^&#]*)?$`));
   await page.goto("/panel");
-  await fila("Urgente", placas.entrega).getByRole("link", { name: new RegExp(`^${placas.entrega}`) }).click();
+  await fila(placas.entrega).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${ids.entrega}(?:[?&]volver=[^&#]*)?$`));
 });
 
@@ -98,9 +92,9 @@ test("un encargado solo con Agenda ve solo lo que llega, sin montos; el perfil T
   await crearUsuario({ usuario: `enc-hu39-${s}`, nombre: "Encargada de agenda", contrasena: "encargado-123", rol: "encargado", permisos: ["agenda"] });
   await ingresar(page, `enc-hu39-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
-  await expect(page.getByRole("heading", { level: 2, name: "Hoy", exact: true })).toBeVisible();
-  await expect(resumen(page).getByRole("link")).toHaveText([/llegan? hoy$/]);
-  await expect(page.getByRole("heading", { name: "Pendientes" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { level: 2, name: "Para hoy" })).toBeVisible();
+  await expect(resumen(page).getByRole("link")).toHaveText([/^Llegan hoy/]);
+  await expect(page.getByRole("heading", { name: "Para atender" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Nueva cotización" })).toHaveCount(0);
   await expect(page.getByRole("main")).not.toContainText(/\bBs\b|\+591/);
 
@@ -109,14 +103,14 @@ test("un encargado solo con Agenda ve solo lo que llega, sin montos; el perfil T
   await ingresar(page, `taller-hu39-${s}`, "taller-123");
   await expect(page).toHaveURL(/\/panel$/);
   // Pedido 32: el mismo inicio que el encargado, con lo de su taller y sin montos (no tiene Pagos ni Cotizaciones)
-  await expect(resumen(page).getByRole("link")).toHaveText([/en el taller$/, /llegan? hoy$/, /se entregan? hoy$/]);
-  await expect(page.getByRole("heading", { name: "Pendientes" })).toHaveCount(0);
+  await expect(resumen(page).getByRole("link")).toHaveText([/^En el taller/, /^Llegan hoy/]);
+  await expect(page.getByRole("heading", { name: "Para atender" })).toHaveCount(0);
   await expect(page.getByRole("main")).not.toContainText(/\bBs\b/);
 });
 
 test("a 360 px no se sale nada", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await ingresarComoDueno(page);
-  await expect(page.getByRole("heading", { name: "Hoy", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Para hoy" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360);
 });

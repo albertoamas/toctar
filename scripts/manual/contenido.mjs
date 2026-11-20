@@ -55,8 +55,8 @@ export const CAPITULOS = [
           marcas: [
             { en: { css: "nav" }, texto: "El menú: cada persona ve solo lo que le toca." },
             { en: enlace("Nueva cotización", true), texto: "Lo que más se hace, a un toque: cotizar y reservar." },
-            { en: { rol: "navigation", nombre: "Resumen de hoy" }, texto: "Los números del día: en el taller, los que llegan y los que se entregan hoy." },
-            { en: titulo("Hoy"), texto: "Hoy: lo que llega y se entrega, con su acción a un toque (recibir, avisar, entregar). Lo atrasado sube a Urgente." },
+            { en: { rol: "region", nombre: "Resumen de hoy" }, texto: "El resumen: por cobrar, en el taller, los que llegan hoy, cotizaciones y mantenimientos." },
+            { en: titulo("Para hoy"), texto: "Para hoy: cada vehículo con lo que le toca (recibir, marcar listo, avisar)." },
             { en: { css: 'a[href="/panel/manual"]' }, texto: "Este manual, siempre a mano.", lado: "arriba" },
             { en: boton("Cerrar sesión"), texto: "Cerrar sesión, al terminar en un equipo compartido.", lado: "arriba" },
           ],
@@ -494,8 +494,8 @@ export const ESTADOS = [
 
 /** Un día cualquiera, por perfil. */
 export const DIA = [
-  { quien: "taller", titulo: "En el taller", pasos: ["Abre Inicio: “Urgente” y “Hoy” dicen qué llega y qué toca.", "Recibe los vehículos del día con el checklist.", "Trabaja cada orden: empieza, toma las fotos, márcala lista.", "Avisa al cliente y, cuando viene, entrega."] },
-  { quien: "atencion", titulo: "En atención", pasos: ["Revisa “Urgente” y “Pendientes” en Inicio: reclamos, saldos y cotizaciones sin respuesta o sin fecha.", "Cotiza y envía por WhatsApp.", "Reserva las aceptadas y cobra los adelantos.", "Cobra al entregar y avisa los mantenimientos."] },
+  { quien: "taller", titulo: "En el taller", pasos: ["Abre Inicio: “Para hoy” dice qué llega y qué toca.", "Recibe los vehículos del día con el checklist.", "Trabaja cada orden: empieza, toma las fotos, márcala lista.", "Avisa al cliente y, cuando viene, entrega."] },
+  { quien: "atencion", titulo: "En atención", pasos: ["Revisa “Para atender” en Inicio: cotizaciones aceptadas sin fecha, saldos, reclamos.", "Cotiza y envía por WhatsApp.", "Reserva las aceptadas y cobra los adelantos.", "Cobra al entregar y avisa los mantenimientos."] },
   { quien: "dueno", titulo: "El dueño", pasos: ["Mira el resumen de Inicio: por cobrar, en el taller, atrasadas.", "Responde los reclamos.", "Ajusta precios, servicios o mensajes cuando hace falta.", "Revisa Saldos pendientes."] },
 ];
 
