@@ -49,10 +49,10 @@ de demostración (`datos-demo.mjs`) le suman beneficios, pasos y precios de ejem
   la lista (agregar, quitar y ordenar): un selector de color, el nombre y el acabado por fila (en el celular, el acabado
   abajo); "Guardar colores". Si se quitan todos, la sección vuelve a esconderse.
 - **Sitio, página del servicio:** una sección más, sin caja (21/11: en un recuadro gris con la franja parecía pegada
-  encima). El aro con una luz suave detrás, que lo hace legible aunque sea negro; en la computadora a la izquierda, en el
+  encima). El aro con una luz detrás y el canto del neumático más claro, que lo recortan del fondo negro aunque sea negro; en la computadora a la izquierda, en el
   celular arriba. Al lado o debajo: "Elige el color" con el estilo de "Cómo lo hacemos", "Toca un color y mira cómo
-  quedan tus aros.", el elegido en una línea ("BRONCE · Satinado"), las muestras en círculos con su nombre y acabado (en
-  el celular, deslizables) y "Quiero este color" de contorno (el rojo principal es el de arriba). Debajo, "El tono final
+  quedan tus aros.", las muestras en círculos con su nombre y acabado (el elegido, con un anillo blanco; todas a la vista,
+  cuatro por fila en el celular) y "Quiero este color" de contorno (el rojo principal es el de arriba). Debajo, "El tono final
   se confirma en el taller con una muestra.". Arranca con el primer color.
 
 ## 6. Acciones del servidor

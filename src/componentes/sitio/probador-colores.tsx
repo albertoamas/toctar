@@ -47,7 +47,7 @@ export function ProbadorColores({ servicio, colores, whatsapp }: Props) {
     <section aria-labelledby={`${id}-titulo`} className="grid items-center gap-8 md:grid-cols-[1.1fr_1fr] md:gap-12">
       <div className="relative mx-auto aspect-square w-full max-w-[340px] md:max-w-[500px]" style={{ "--aro": color.hex } as React.CSSProperties}>
         {/* La luz detrás: el aro se lee aunque sea negro */}
-        <div aria-hidden className="pointer-events-none absolute -inset-[12%] rounded-full bg-[radial-gradient(circle,rgb(255_255_255/0.11)_0%,rgb(255_255_255/0.04)_45%,transparent_70%)]" />
+        <div aria-hidden className="pointer-events-none absolute -inset-[12%] rounded-full bg-[radial-gradient(circle,rgb(255_255_255/0.2)_0%,rgb(255_255_255/0.07)_42%,transparent_68%)]" />
         <div className="relative size-full">
           <Aro id={id} luz={luz.luz} reflejo={luz.reflejo} />
           <div ref={pasada} aria-hidden className="tt-pasada pointer-events-none absolute inset-0 overflow-hidden rounded-full" />
@@ -61,19 +61,20 @@ export function ProbadorColores({ servicio, colores, whatsapp }: Props) {
           </h2>
           <p className="text-tinta-suave">Toca un color y mira cómo quedan tus aros.</p>
         </div>
-        <p aria-live="polite" className="flex flex-wrap items-baseline gap-x-2">
-          <span className="font-heading text-[32px] leading-none font-extrabold uppercase italic">{color.nombre}</span>
-          <span className="text-tinta-suave">· {acabado}</span>
+        {/* El elegido se ve en su anillo (21/11: en grande, sobraba); el lector de pantalla lo oye al cambiar */}
+        <p aria-live="polite" className="sr-only">
+          {color.nombre}, {acabado}
         </p>
-        {/* Círculos con su nombre, como los configuradores de autos; en el celular, en una fila que se desliza */}
-        <ul aria-label="Colores" className="-mx-4 flex snap-x gap-1 overflow-x-auto px-4 pt-1 pb-2 md:mx-0 md:flex-wrap md:overflow-visible md:px-0">
+        {/* Círculos con su nombre, como los configuradores de autos; todos a la vista, cuatro por fila en el celular (21/11:
+            en una fila que se deslizaba, los últimos quedaban escondidos) */}
+        <ul aria-label="Colores" className="grid grid-cols-4 gap-x-1 gap-y-4 pt-1 sm:flex sm:flex-wrap sm:gap-x-2">
           {colores.map((c, i) => (
-            <li key={i} className="shrink-0 snap-start">
+            <li key={i} className="flex justify-center sm:block">
               <button
                 type="button"
                 onClick={() => elegir(i)}
                 aria-pressed={i === elegido}
-                className="group flex w-[76px] flex-col items-center gap-2 py-1 text-center focus-visible:outline-none"
+                className="group flex w-full max-w-[84px] flex-col items-center gap-2 py-1 text-center focus-visible:outline-none sm:w-[76px]"
               >
                 <span
                   aria-hidden
@@ -143,9 +144,9 @@ function Aro({ id, luz, reflejo }: { id: string; luz: number; reflejo: number })
     <svg viewBox="0 0 400 400" aria-hidden className="size-full overflow-visible drop-shadow-[0_24px_30px_rgb(0_0_0/0.6)]">
       <defs>
         <radialGradient id={g("neumatico")} cx="50%" cy="50%" r="50%">
-          <stop offset="80%" stopColor="#1d1d1d" />
-          <stop offset="94%" stopColor="#111" />
-          <stop offset="100%" stopColor="#060606" />
+          <stop offset="78%" stopColor="#232323" />
+          <stop offset="94%" stopColor="#1a1a1a" />
+          <stop offset="100%" stopColor="#2a2a2a" />
         </radialGradient>
         <radialGradient id={g("disco")} cx="45%" cy="40%" r="60%">
           <stop offset="0%" stopColor="#6c6c6c" />
@@ -178,6 +179,8 @@ function Aro({ id, luz, reflejo }: { id: string; luz: number; reflejo: number })
       </defs>
       {/* Neumático de perfil bajo */}
       <circle cx="200" cy="200" r="197" fill={`url(#${g("neumatico")})`} />
+      {/* El canto del neumático, un poco más claro: lo recorta del fondo negro del sitio */}
+      <circle cx="200" cy="200" r="196" fill="none" stroke="#4a4a4a" strokeWidth="2" />
       <circle cx="200" cy="200" r="186" fill="none" stroke="#2a2a2a" strokeWidth="1.5" />
       <circle cx="200" cy="200" r="168" fill="none" stroke="#0a0a0a" strokeWidth="6" />
       {/* Lo de adentro: el fondo del aro, el disco perforado y la pinza */}
