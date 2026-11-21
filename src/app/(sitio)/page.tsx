@@ -242,11 +242,11 @@ function Servicios({ servicios }: { servicios: ServicioPublico[] }) {
   return (
     <>
       {/* Los dos primeros, destacados (el orden lo pone el dueño en Sitio web > Servicios); en el celular, todos iguales
-          en dos columnas (pulido 13.53) */}
+          en dos columnas (pulido 13.53). La misma tarjeta que la lista de Servicios (pulido de Servicios, 21/11) */}
       <ul className="tt-servicios-portada mt-8">
         {servicios.slice(0, SERVICIOS_EN_PORTADA).map((s, i) => (
           <li key={s.slug} className="grid">
-            <TarjetaServicio servicio={s} variante={i < SERVICIOS_DESTACADOS ? "destacada" : "mosaico"} />
+            <TarjetaServicio servicio={s} principal={i < SERVICIOS_DESTACADOS} />
           </li>
         ))}
       </ul>

@@ -48,7 +48,6 @@ async function Contenido({ searchParams }: Pick<PageProps<"/galeria">, "searchPa
     <>
       <div className="mx-auto w-full max-w-6xl px-4 pt-6 pb-12 md:pt-10 md:pb-20">
         <TituloPagina>Galería</TituloPagina>
-        <p className="mt-3 max-w-2xl text-tinta-suave">Trabajos reales del taller.</p>
         {todas.length === 0 ? (
           <p className="mt-8 text-tinta-suave">Pronto vas a ver aquí nuestros trabajos.</p>
         ) : (

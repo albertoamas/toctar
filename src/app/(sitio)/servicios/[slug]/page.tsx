@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { ArrowRightIcon } from "lucide-react";
-import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { TITULO_SECCION } from "@/componentes/sitio/titulo-pagina";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { FotoOReemplazo } from "@/componentes/sitio/foto-o-reemplazo";
@@ -54,15 +53,13 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
   return (
     // Una columna que llena la pantalla: así el cierre queda pegado al pie aunque el servicio tenga poco contenido
     <article className="flex flex-1 flex-col">
+      {/* Sin "‹ Servicios" arriba (pulido de Servicios, 21/11; lo había puesto el pulido 2.3): en el celular ocupaba una fila
+          arriba de la foto, y ya están el menú con "Servicios" marcado, el botón atrás del navegador y "Otros servicios" */}
       <header>
-        {/* Lo primero de la página: en el celular va antes de la foto, para saber dónde se está (pulido 2.3) */}
-        <div className="mx-auto w-full max-w-6xl px-4 pt-2 md:pt-6">
-          <EnlaceVolver href="/servicios">Servicios</EnlaceVolver>
-        </div>
         {/* Pulido de Servicios (21/11): la foto llega al borde de la pantalla. En la computadora ocupa la mitad derecha, cortada
             a 60° del lado del texto (el ángulo de la marca) con una línea roja en el corte; en el celular va a todo el ancho
             y se funde con el negro de abajo, donde sube el título */}
-        <div className="relative md:mt-4 md:min-h-[540px]">
+        <div className="relative md:mt-8 md:min-h-[540px]">
           <div className="relative aspect-[4/3] overflow-hidden bg-superficie md:absolute md:inset-y-0 md:right-0 md:aspect-auto md:w-[52vw]">
             <FotoOReemplazo foto={s.foto} alt={s.nombre} prioridad />
             <div aria-hidden className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-fondo to-transparent md:hidden" />
@@ -274,7 +271,7 @@ async function OtrosServicios({ slug }: { slug: string }) {
       <ul className="tt-servicios-otros">
         {otros.map((x) => (
           <li key={x.slug}>
-            <TarjetaServicio servicio={x} variante="foto" />
+            <TarjetaServicio servicio={x} />
           </li>
         ))}
       </ul>

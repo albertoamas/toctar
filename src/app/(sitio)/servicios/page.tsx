@@ -33,8 +33,9 @@ async function Contenido() {
   return (
     <>
       <div className="mx-auto w-full max-w-6xl px-4 pt-6 pb-12 md:pt-10 md:pb-20">
+        {/* Sin la línea de debajo (pulido de Servicios, 21/11): "Elige uno para ver qué incluye" no decía nada que las
+            tarjetas no digan, y lo del precio va en el cierre, cuando ya se eligió */}
         <TituloPagina>Servicios</TituloPagina>
-        <p className="mt-3 max-w-2xl text-tinta-suave">Elige uno para ver qué incluye. El precio depende de tu vehículo: escríbenos y te cotizamos.</p>
         {servicios.length === 0 ? (
           <p className="mt-8 text-tinta-suave">Pronto vas a ver aquí nuestros servicios.</p>
         ) : (
@@ -42,13 +43,13 @@ async function Contenido() {
           <ul className="tt-servicios-lista mt-10">
             {servicios.map((s, i) => (
               <li key={s.slug}>
-                <TarjetaServicio servicio={s} nivel={2} variante="foto" principal={i === 0} />
+                <TarjetaServicio servicio={s} nivel={2} principal={i === 0} />
               </li>
             ))}
           </ul>
         )}
       </div>
-      <CierreWhatsApp titulo="¿No sabes cuál elegir?" texto="Mándanos fotos de tu vehículo y te decimos qué conviene hacer." />
+      <CierreWhatsApp titulo="¿No sabes cuál elegir?" texto="El precio depende de tu vehículo: mándanos fotos y te decimos qué conviene y cuánto sale." />
     </>
   );
 }
