@@ -156,12 +156,11 @@ function Proceso({ pasos, foto, lado }: { pasos: DetalleServicioPublico["pasos"]
       <ConFoto foto={foto} lado={lado}>
         <h2 id="proceso-titulo" className={TITULO_SECCION}>Cómo lo hacemos</h2>
         {/* Con foto al lado, los pasos van en una sola columna */}
-        {/* Más compactos (pulido de Servicios, 21/11): en el celular, el número junto al título y sin raya entre pasos; en la
-            computadora, en una sola fila cuando no hay foto al lado */}
-        <ol className={foto ? "grid gap-y-5" : "grid gap-x-8 gap-y-5 md:grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] md:gap-y-8"}>
+        {/* Con foto al lado, los pasos van en una sola columna */}
+        <ol className={foto ? "grid gap-y-6" : "grid gap-x-10 gap-y-8 md:grid-cols-2 lg:grid-cols-3"}>
           {pasos.map((p, i) => (
-            <li key={i} className="flex gap-3 md:gap-4 md:border-t md:border-border md:pt-4">
-              <span aria-hidden className="font-heading text-[28px] leading-none font-extrabold text-rojo italic md:text-[40px]">{i + 1}</span>
+            <li key={i} className="flex gap-4 border-t border-border pt-4">
+              <span aria-hidden className="font-heading text-[40px] leading-none font-extrabold text-rojo italic">{i + 1}</span>
               <div className="flex flex-col gap-1">
                 <h3 className="font-semibold">{p.titulo}</h3>
                 {p.detalle && <p className="text-sm leading-[22px] text-tinta-suave">{p.detalle}</p>}
