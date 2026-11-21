@@ -48,9 +48,12 @@ de demostración (`datos-demo.mjs`) le suman beneficios, pasos y precios de ejem
   "Cómo lo hacemos" y antes de "Opciones": cada color con su muestra, nombre y acabado, y "Editar colores". El modal tiene
   la lista (agregar, quitar y ordenar): un selector de color, el nombre y el acabado por fila (en el celular, el acabado
   abajo); "Guardar colores". Si se quitan todos, la sección vuelve a esconderse.
-- **Sitio, página del servicio:** un recuadro con la franja de 60°. A la izquierda, el aro; a la derecha, "Elige el color",
-  el color elegido en grande con su acabado, las muestras (en el celular, deslizables) y "Quiero este color". Debajo, "El
-  tono final se confirma en el taller con una muestra.". Arranca con el primer color.
+- **Sitio, página del servicio:** una sección más, sin caja (21/11: en un recuadro gris con la franja parecía pegada
+  encima). El aro con una luz suave detrás, que lo hace legible aunque sea negro; en la computadora a la izquierda, en el
+  celular arriba. Al lado o debajo: "Elige el color" con el estilo de "Cómo lo hacemos", "Toca un color y mira cómo
+  quedan tus aros.", el elegido en una línea ("BRONCE · Satinado"), las muestras en círculos con su nombre y acabado (en
+  el celular, deslizables) y "Quiero este color" de contorno (el rojo principal es el de arriba). Debajo, "El tono final
+  se confirma en el taller con una muestra.". Arranca con el primer color.
 
 ## 6. Acciones del servidor
 `guardarParteServicio` con la parte `colores` (el mismo esquema en el formulario y en el servidor); renueva la página del
