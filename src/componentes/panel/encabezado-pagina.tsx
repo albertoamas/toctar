@@ -6,8 +6,8 @@ import { BotonVolver } from "@/componentes/panel/boton-volver";
 // insignia: "En el sitio", "Agendada"…), su acción a la derecha (debajo en el celular) y, si hace falta, una
 // línea de contexto. El mismo en todas las pantallas, así el título, el botón y el espacio hasta el contenido no cambian
 // de una a otra. Va dentro del mismo ancho que el contenido.
-// `volver` (pulido 13.18): el botón de volver a la izquierda del título y, debajo en chico, de dónde se viene. Todas las
-// pantallas que vuelven a otra lo hacen desde aquí, así queda siempre en el mismo lugar.
+// `volver` (pulido 13.18): el botón de volver a la izquierda del título. Todas las pantallas que vuelven a otra lo hacen
+// desde aquí, así queda siempre en el mismo lugar.
 
 type Props = {
   titulo: string;
@@ -16,8 +16,7 @@ type Props = {
   /** La pantalla de la que se viene: "Clientes", "Orden". */
   volver?: { href: Route; texto: string };
   /**
-   * Debajo del título, un dato que sirve más que a dónde se vuelve (C7, 18/11): el WhatsApp del cliente, el vehículo y
-   * su dueño. Sin él, la pantalla de la que se viene. El botón de volver lo sigue diciendo para el lector de pantalla.
+   * Debajo del título, un dato que sirve (C7, 18/11): el WhatsApp del cliente, el vehículo y su dueño.
    */
   subtitulo?: React.ReactNode;
   children?: React.ReactNode;
@@ -38,13 +37,15 @@ export function EncabezadoPagina({ titulo, estado, accion, volver, subtitulo, ch
               <h1 className="tt-titulo-pagina">{titulo}</h1>
               {estado}
             </div>
-            {subtitulo ? <p className="text-sm text-tinta-suave">{subtitulo}</p> : volver && <p className="text-sm text-tinta-suave">{volver.texto}</p>}
+            {/* 21/11: sin repetir de dónde se viene ("Clientes") cuando no hay otro dato: no decía nada nuevo y sumaba una línea.
+                El botón de volver lo sigue diciendo para el lector de pantalla */}
+            {subtitulo && <p className="text-sm text-tinta-suave">{subtitulo}</p>}
           </div>
         </div>
         {accion && <div className="ml-auto max-w-full">{accion}</div>}
       </div>
       {/* Con el botón de volver, alineada con el título (no debajo del botón) */}
-      {children && <p className={cn("text-sm text-tinta-suave", volver && "pl-14")}>{children}</p>}
+      {children && <p className={cn("text-sm text-tinta-suave", volver && "pl-[2.875rem]")}>{children}</p>}
     </div>
   );
 }
