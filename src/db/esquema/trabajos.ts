@@ -7,9 +7,9 @@ import { consulta } from "./consultas";
 import { cotizacion } from "./cotizaciones";
 import { variante } from "./sitio";
 
-// Trabajos: la reserva y, desde C4, la orden son una sola tabla (D-1). Agenda por día (S-3). Pedido 55: sin espacio
-// fijo; cada día, los trabajos que ocupan lugar no pasan de los lugares del taller (`sucursal.lugares`, RN-06), y eso lo
-// cuida el servidor con la sucursal bloqueada (D-5; antes, la restricción de exclusión `trabajo_sin_cruces`). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §4 y,
+// Trabajos: la reserva y, desde C4, la orden son una sola tabla (D-1). Agenda por día (S-3). Pedido 55: sin espacio ni
+// límite por día: la Agenda muestra cuántos autos hay y el dueño decide (antes, espacios fijos con la restricción de
+// exclusión `trabajo_sin_cruces`). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §4 y,
 // para la orden (recepción, fotos, avances y entrega), C4-taller-entrega.md §4.
 
 const momento = (nombre: string) => timestamp(nombre, { withTimezone: true });

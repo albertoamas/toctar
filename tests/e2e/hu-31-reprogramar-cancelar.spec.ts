@@ -30,15 +30,14 @@ async function reserva(placa: string, desde: string, hasta: string, extra: { con
   return id;
 }
 
-test("reprogramar no deja mover a un día lleno y mueve la reserva a uno con lugar (pedido 55)", async ({ page }, info) => {
+test("reprogramar mueve la reserva a otras fechas (sin espacio ni límite por día: pedido 55)", async ({ page }, info) => {
   const s = sufijo(info);
   await crearClienteEnBase({ nombre: `Mover ${s}`, telefono: telefono(info, 1), placa: `MV31${s}1` });
   await crearClienteEnBase({ nombre: `Ocupa ${s}`, telefono: telefono(info, 2), placa: `MV31${s}2` });
-  const [d0, d5, d10] = [await dia(info, 0), await dia(info, 5), await dia(info, 10)];
+  const [d0, d10] = [await dia(info, 0), await dia(info, 10)];
   const id = await reserva(`MV31${s}1`, d0, d0);
-  // El d5, lleno
-  const [{ lugares }] = await consultar<{ lugares: number }>("select lugares from sucursal order by id limit 1");
-  await reserva(`MV31${s}2`, d5, d5, { veces: lugares });
+  // Otra el mismo día de destino: no impide moverla
+  await reserva(`MV31${s}2`, d10, d10);
 
   await ingresarComoDueno(page);
   await page.goto(`/panel/agenda/${id}`);
@@ -55,14 +54,8 @@ test("reprogramar no deja mover a un día lleno y mueve la reserva a uno con lug
 
   await page.getByRole("button", { name: "Más" }).click();
   await page.getByRole("menuitem", { name: "Reprogramar" }).click();
-  // Un día lleno: lo dice junto a las fechas y no deja mover
-  await form.getByLabel("Ingresa el").fill(d5);
-  await form.getByLabel("Entrega aproximada").fill(d5);
-  await expect(form.getByText(/ya tiene los \d+ lugares ocupados\./)).toBeVisible();
-  await expect(form.getByRole("button", { name: "Mover reserva" })).toBeDisabled();
   await form.getByLabel("Ingresa el").fill(d10);
   await form.getByLabel("Entrega aproximada").fill(d10);
-  await expect(form.getByText(/lugares ocupados/)).toHaveCount(0);
   await form.getByRole("button", { name: "Mover reserva" }).click();
   await expect(page.getByText(/^Reserva movida al/)).toBeVisible();
 

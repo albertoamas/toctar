@@ -30,7 +30,7 @@ async function Contenido() {
         etiqueta="Partes de la configuración"
         tarjetas={[
           { href: "/panel/configuracion/negocio", icono: StoreIcon, titulo: "Negocio", descripcion: "Nombre, WhatsApp, dirección, horario, redes y logo." },
-          { href: "/panel/configuracion/taller", icono: WarehouseIcon, titulo: "Taller", descripcion: "Los lugares, los tamaños de vehículo y el checklist." },
+          { href: "/panel/configuracion/taller", icono: WarehouseIcon, titulo: "Taller", descripcion: "Los tamaños de vehículo, el checklist y las marcas." },
           { href: "/panel/configuracion/parametros", icono: SlidersHorizontalIcon, titulo: "Parámetros", descripcion: "Las cotizaciones (adelanto, validez, condiciones del PDF) y la agenda." },
           { href: "/panel/configuracion/mensajes", icono: MessageCircleIcon, titulo: "Mensajes", descripcion: "Los mensajes de WhatsApp: listo, saldo y mantenimiento." },
         ]}

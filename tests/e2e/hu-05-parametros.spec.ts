@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { cancelarConCambios, consultar, ingresarComoDueno } from "./apoyo";
+import { cancelarConCambios, ingresarComoDueno } from "./apoyo";
 
 // HU-05 Parámetros del sistema. Criterios: docs/09-pruebas/criterios-entrega-1.md (5.1 a 5.5).
 // Los parámetros y las listas son únicos: las pruebas que guardan corren solo en escritorio.
@@ -80,25 +80,3 @@ test("el dueño cambia el adelanto y los textos del PDF, y quedan guardados", as
   await expect(page.getByText("Aviso de mantenimiento")).toHaveCount(0);
 });
 
-test("los lugares del taller: un número de 1 a 50 (pedido 55)", async ({ page }, info) => {
-  soloEscritorio(info);
-  await ingresarComoDueno(page);
-  await page.goto("/panel/configuracion/taller");
-  const [{ lugares }] = await consultar<{ lugares: number }>("select lugares from sucursal order by id limit 1");
-  const seccion = page.getByRole("region", { name: "Lugares en el taller" });
-  await expect(seccion).toContainText(String(lugares));
-  // Sin lista de espacios
-  await expect(page.getByRole("list", { name: /^Espacios del taller/ })).toHaveCount(0);
-  await expect(page.getByRole("list", { name: "Tamaños de vehículo activos" }).getByRole("listitem")).toHaveCount(5);
-
-  await page.getByRole("button", { name: "Editar lugares en el taller" }).click();
-  const modal = page.getByRole("dialog", { name: "Lugares en el taller" });
-  await modal.getByLabel("Lugares en el taller").fill("0");
-  await modal.getByRole("button", { name: "Guardar lugares" }).click();
-  await expect(modal.getByText("Al menos 1 lugar.")).toBeVisible();
-  // El mismo valor que tenía: las demás pruebas corren a la vez y cuentan con él
-  await modal.getByLabel("Lugares en el taller").fill(String(lugares));
-  await modal.getByRole("button", { name: "Guardar lugares" }).click();
-  await expect(page.getByText("Lugares guardados.")).toBeVisible();
-  await expect(modal).toHaveCount(0);
-});

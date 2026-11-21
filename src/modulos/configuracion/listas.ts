@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { DIRECCIONES } from "@/lib/orden";
 
-// Listas editables de Configuración (HU-05): tamaños de vehículo (RN-07; los espacios del taller pasaron a un número de
-// lugares, pedido 55) y, desde el
+// Listas editables de Configuración (HU-05): tamaños de vehículo (RN-07; los espacios del taller se quitaron en el
+// pedido 55) y, desde el
 // pedido 12, las partes del checklist de recepción; desde el pedido 16, las categorías de gasto (en Parámetros), y desde
 // el pedido 52, las marcas de vehículo.
 // Reglas puras, probadas en tests/unit/configuracion-parametros.test.ts.

@@ -66,12 +66,10 @@ export const sucursal = pgTable("sucursal", {
   horarios: jsonb("horarios").$type<DiaHorario[]>().notNull(),
   /** Formato internacional sin "+": 591 y los 8 dígitos del celular. */
   telefonoWhatsapp: text("telefono_whatsapp"),
-  /** Pedido 55: cuántos autos entran a la vez (RN-06). La agenda no deja reservar un día con todos ocupados. */
-  lugares: integer("lugares").default(3).notNull(),
   activo: boolean("activo").default(true).notNull(),
   updatedAt: momento("updated_at").defaultNow().notNull(),
   updatedBy: integer("updated_by").references(() => usuario.id),
-}, (t) => [check("sucursal_lugares_validos", sql`${t.lugares} between 1 and 50`)]);
+});
 
 /** Parámetros del negocio (D-8): clave y valor, validados en código (src/modulos/configuracion/parametros.ts). */
 export const parametro = pgTable("parametro", {

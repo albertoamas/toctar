@@ -64,8 +64,8 @@ test("en «Entregadas» se buscan por placa, cliente o fecha; la agenda las mues
   // Entregada: lo dicen los pasos (la insignia repetía el paso; 20/11). Cuándo y quién, en el historial (pedido 45)
   await expect(page.getByRole("navigation", { name: "Pasos del trabajo" }).locator('[aria-current="step"]')).toHaveText("Entregada");
 
-  // En la agenda de esa semana, en verde y con "Entregada"
-  await page.goto(`/panel/agenda?semana=${a.dia}&dia=${a.dia}`);
+  // En la agenda de esa semana, con "Ver entregadas" (escondidas por defecto desde el 20/11), con su estado
+  await page.goto(`/panel/agenda?semana=${a.dia}&entregadas=1`);
   const cinta = page.getByRole("link", { name: new RegExp(`^${a.placa}`) }).locator("visible=true");
   await expect(cinta).toContainText("Entregada");
   await expect(cinta).toHaveAttribute("data-tono", "exito");
@@ -92,7 +92,6 @@ test("entregada hoy, se ve hoy en la agenda en verde (18/11: antes desaparecía 
   const s = sufijo(info);
   const placa = `HI34${s.toUpperCase()}5`;
   await crearClienteEnBase({ nombre: `Historial 5 ${s}`, telefono: telefono(info, 5), placa });
-  // Sin espacios (pedido 55): cada reserva va en su fila del tablero, así que la entregada se ve aunque hoy haya otras
   const id = await crearOrdenLista({ placa, dias: dias(info), precio: 500, pagado: 500 });
   // Recibida y entregada hoy: la entrega la acorta a hoy (como en la prueba con el dueño, del 17 al 21 → el 17)
   await consultar(
@@ -102,6 +101,9 @@ test("entregada hoy, se ve hoy en la agenda en verde (18/11: antes desaparecía 
   );
   await ingresarComoDueno(page);
   await page.goto("/panel/agenda");
+  // Escondidas por defecto (20/11: llenaban la semana); con "Ver entregadas", aparecen
+  await expect(page.getByRole("link", { name: new RegExp(`^${placa}`) }).locator("visible=true")).toHaveCount(0);
+  await page.getByRole("link", { name: "Ver entregadas" }).click();
   const cinta = page.getByRole("link", { name: new RegExp(`^${placa}`) }).locator("visible=true");
   await expect(cinta).toContainText("Entregada");
   await expect(cinta).toHaveAttribute("data-tono", "exito");

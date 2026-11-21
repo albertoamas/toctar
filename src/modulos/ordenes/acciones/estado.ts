@@ -30,8 +30,8 @@ const MENSAJE_ESTADO: Partial<Record<EstadoTrabajo, string>> = {
 /**
  * Cambia el estado de la orden un paso adelante o atrás (HU-34, RF-41). Al pasar a
  * listo, si la entrega aproximada es después de hoy, pasa a hoy: su lugar queda libre desde mañana (decisión del 20/10).
- * Si se marcó lista por error y vuelve a en proceso, recupera esa entrega (pedido 55: el auto sigue en el taller, sin
- * contar lugares, como al extender); y el aviso al cliente se borra, porque ya no es cierto.
+ * Si se marcó lista por error y vuelve a en proceso, recupera esa entrega (pedido 55: sin espacio que recuperar); y el
+ * aviso al cliente se borra, porque ya no es cierto.
  */
 export async function cambiarEstadoOrden(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const usuario = await exigirModulo("ordenes");
@@ -95,9 +95,8 @@ async function rangoParaExtender(id: number, fechaFin: string): Promise<{ fechaI
 }
 
 /**
- * Extiende la entrega de una orden que se atrasa (HU-34; decisión del 20/10). Pedido 55: solo cambia la fecha, sin contar
- * lugares: el auto ya está en el taller y no se lo puede rechazar. Si un día queda con más autos que lugares, la Agenda lo
- * marca.
+ * Extiende la entrega de una orden que se atrasa (HU-34; decisión del 20/10). Pedido 55: solo cambia la fecha, sin
+ * espacio que elegir.
  */
 export async function extenderEntrega(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const usuario = await exigirModulo("ordenes");

@@ -1,9 +1,9 @@
-import { expect, test, type Browser, type Page, type TestInfo } from "@playwright/test";
+import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { alAdelanto, consultar, crearClienteEnBase, crearUsuario, ingresar, ingresarComoDueno, PNG, conVolver, sinAdelantoEnReserva } from "./apoyo";
 
 // HU-30 Agendar reserva (flujo crítico 2). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §9.
 // Cada prueba usa sus propios días (lejos de hoy y distintos por proyecto) para no chocar con las demás en los
-// lugares de cada día. En serie: las del dueño entran con el mismo usuario y, a la vez, chocaban con el límite de intentos.
+// días de cada una en la Agenda. En serie: las del dueño entran con el mismo usuario y, a la vez, chocaban con el límite de intentos.
 test.describe.configure({ mode: "serial" });
 
 // Datos propios de cada proyecto y de cada intento: si el CI reintenta una prueba, no choca con lo que dejó la anterior
@@ -142,65 +142,6 @@ test("desde la cotización: la versión y la cotización quedan aceptadas, las l
   await page.goto(`/panel/agenda/nueva?cotizacion=${cotizacionId}`);
   await expect(page.getByText("Esa cotización ya tiene una reserva o una versión nueva.")).toBeVisible();
 });
-
-test("un día lleno no se reserva; si dos personas toman el último lugar a la vez, una recibe un aviso (pedido 55)", async ({ page, browser }, info) => {
-  const dia = await diaPropio(info, 3);
-  const [{ lugares }] = await consultar<{ lugares: number }>("select lugares from sucursal order by id limit 1");
-  // Todos los lugares ocupados menos uno; una cancelada y una entregada ese día no ocupan
-  await crearClienteEnBase({ nombre: `Ocupa ${sufijo(info)}`, telefono: telefono(info, 3), placa: `OC30${sufijo(info)}3` });
-  const insertar = (estado: string, veces: number) =>
-    consultar(
-      `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, estado, motivo_cancelacion, recibido_at, listo_at, entregado_at, sin_firma_motivo, created_by)
-       select e.sucursal_id, v.cliente_id, v.id, $2::date, $2::date, $3, case when $3 = 'cancelado' then 'prueba' end,
-         case when $3 = 'entregado' then now() end, case when $3 = 'entregado' then now() end, case when $3 = 'entregado' then now() end,
-         case when $3 = 'entregado' then 'Prueba' end, v.created_by
-       from vehiculo v, (select id as sucursal_id from sucursal order by id limit 1) e, generate_series(1, $4::int) where v.placa = $1`,
-      [`OC30${sufijo(info)}3`, dia, estado, veces],
-    );
-  await insertar("agendado", lugares - 1);
-  await insertar("cancelado", 1);
-  await insertar("entregado", 1);
-  const a = await consultaCotizada(info, 4);
-  const b = await consultaCotizada(info, 5);
-  await ingresarComoDueno(page);
-  const otra = await otraPersona(browser, info);
-
-  const abrir = async (p: Page, cotizacionId: number) => {
-    await p.goto(`/panel/agenda/nueva?cotizacion=${cotizacionId}&fecha=${dia}`);
-    await p.getByLabel("Entrega aproximada").fill(dia);
-    // Queda un lugar: sin error junto a las fechas
-    await expect(p.getByText(/lugares? ocupados?/)).toHaveCount(0);
-    await sinAdelantoEnReserva(p);
-  };
-  await abrir(page, a.cotizacionId);
-  await abrir(otra.page, b.cotizacionId);
-  // A la vez
-  await Promise.all([page.getByRole("button", { name: "Reservar" }).click(), otra.page.getByRole("button", { name: "Reservar" }).click()]);
-  // Lo que ve cada persona: la redirección de la acción es una navegación interna (sin evento "load"), y esperar la
-  // dirección con waitForURL a veces no terminaba aunque la reserva ya se mostraba (CI, 25/10). La segunda ve el día
-  // lleno: con la sucursal ya bloqueada ("se llenó recién") o, si llegó después, al revisar las fechas
-  const resultado = async (p: Page) =>
-    Promise.race([
-      p.getByText(/^Reservada para el /).waitFor().then(() => "agendada"),
-      p.getByText(/Ese día se llenó recién|ya tiene los \d+ lugares ocupados/).first().waitFor().then(() => "lleno"),
-    ]);
-  expect((await Promise.all([resultado(page), resultado(otra.page)])).sort()).toEqual(["agendada", "lleno"]);
-  await otra.ctx.close();
-  // Ya lleno, la reserva lo dice junto a las fechas antes de seguir
-  const c = await consultaCotizada(info, 11);
-  await page.goto(`/panel/agenda/nueva?cotizacion=${c.cotizacionId}&fecha=${dia}`);
-  await page.getByLabel("Entrega aproximada").fill(dia);
-  await expect(page.getByText(/ya tiene los \d+ lugares ocupados\./)).toBeVisible();
-});
-
-async function otraPersona(browser: Browser, info: TestInfo) {
-  const ctx = await browser.newContext(info.project.use);
-  const page = await ctx.newPage();
-  await crearUsuario({ usuario: `dueno2-hu30-${sufijo(info).toLowerCase()}`, nombre: "Otro dueño", contrasena: "dueno-hu30-123", rol: "encargado", permisos: ["agenda", "cotizaciones", "pagos"] });
-  await ingresar(page, `dueno2-hu30-${sufijo(info).toLowerCase()}`, "dueno-hu30-123");
-  await expect(page).toHaveURL(/\/panel$/);
-  return { ctx, page };
-}
 
 test("reserva directa: cliente y vehículo registrados, servicio del catálogo con su precio, sin adelanto", async ({ page }, info) => {
   const s = sufijo(info);

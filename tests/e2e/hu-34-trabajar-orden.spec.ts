@@ -114,7 +114,7 @@ test("el perfil Taller trabaja cualquier orden, sin asignarla y sin ver precios:
   expect(vuelta).toEqual({ fin: await dia(3), avisada: false });
 });
 
-test("extender la entrega solo cambia la fecha, aunque ese día quede lleno (pedido 55); las listas del dueño por estado", async ({ page }, info) => {
+test("extender la entrega solo cambia la fecha, sin espacio (pedido 55); las listas del dueño por estado", async ({ page }, info) => {
   const s = sufijo(info);
   const placa = `OT34${s.toUpperCase()}2`;
   const otra = `OT34${s.toUpperCase()}3`;
@@ -123,13 +123,12 @@ test("extender la entrega solo cambia la fecha, aunque ese día quede lleno (ped
   const base = info.project.name === "celular" ? 600 : 700;
   const [d0, d1, d3] = [await dia(base), await dia(base + 1), await dia(base + 3)];
   const id = await orden(placa, d0, d1);
-  // El día 3, lleno con otras reservas
-  const [{ lugares }] = await consultar<{ lugares: number }>("select lugares from sucursal order by id limit 1");
+  // Otra reserva el día 3: no impide extender
   await consultar(
     `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, created_by)
      select e.sucursal_id, v.cliente_id, v.id, $2::date, $2::date, v.created_by
-     from vehiculo v, (select id as sucursal_id from sucursal order by id limit 1) e, generate_series(1, $3::int) where v.placa = $1`,
-    [otra, d3, lugares],
+     from vehiculo v, (select id as sucursal_id from sucursal order by id limit 1) e where v.placa = $1`,
+    [otra, d3],
   );
   await crearUsuario({ usuario: `taller-hu34-${s}`, nombre: "Encargado del taller", contrasena: "encargado-123", rol: "encargado", permisos: PERFIL_TALLER });
   await ingresar(page, `taller-hu34-${s}`, "encargado-123");

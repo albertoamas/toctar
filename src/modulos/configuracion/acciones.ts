@@ -9,7 +9,7 @@ import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/form
 import { eliminarFotosSinFallar, guardarFoto } from "@/lib/fotos";
 import { nombreRepetido, puedeDesactivar, reordenar, type Direccion } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
-import { ETIQUETA_NEGOCIO, ETIQUETA_PARAMETROS, ETIQUETA_PLANTILLAS, listarElementos, obtenerConfiguracionNegocio, sucursalPrincipal } from "./consultas";
+import { ETIQUETA_NEGOCIO, ETIQUETA_PARAMETROS, ETIQUETA_PLANTILLAS, listarElementos, obtenerConfiguracionNegocio } from "./consultas";
 import { CAMPOS_NEGOCIO, esquemaParteNegocio, type ParteNegocio } from "./esquemas";
 import { esquemaElemento, esquemaEstado, esquemaMover, type Lista, LISTAS, mensajeRepetido, mensajeUltimoActivo } from "./listas";
 import { CLAVES_SECCION_PARAMETROS, clavesDeSeccion, esquemaSeccionParametros, SECCIONES_PARAMETROS, type ClaveParametro } from "./parametros";
@@ -155,21 +155,6 @@ export async function guardarParametros(_previo: EstadoFormulario, datos: FormDa
   updateTag(ETIQUETA_PARAMETROS);
   revalidatePath(`${RUTA}/parametros`);
   return { ok: true, mensaje: SECCIONES_PARAMETROS[seccion.data].guardado };
-}
-
-/** Pedido 55: cuántos autos entran a la vez en el taller (RN-06). Bajarlos no toca lo reservado: la Agenda marca los días con más autos. */
-export async function guardarLugares(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
-  const autor = await exigirModulo("configuracion");
-  const valores = { lugares: String(datos.get("lugares") ?? "") };
-  const entrada = z
-    .object({ lugares: z.coerce.number({ message: "Escribe cuántos lugares hay." }).int("Escribe un número entero.").min(1, "Al menos 1 lugar.").max(50, "Hasta 50 lugares.") })
-    .safeParse(valores);
-  if (!entrada.success) return { errores: erroresDe(entrada.error), valores };
-  const { id } = await sucursalPrincipal();
-  await db.update(sucursal).set({ lugares: entrada.data.lugares, updatedAt: new Date(), updatedBy: Number(autor.id) }).where(eq(sucursal.id, id));
-  revalidatePath(`${RUTA}/taller`);
-  revalidatePath("/panel/agenda");
-  return { ok: true, mensaje: "Lugares guardados." };
 }
 
 function despuesDeCambiarLista() {

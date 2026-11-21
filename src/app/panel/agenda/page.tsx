@@ -17,7 +17,7 @@ import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
-import { AgendaDelDia, PestanasDias, SemanaEnLista, TableroSemana } from "@/modulos/agenda/componentes/tablero";
+import { SemanaEnColumnas, SemanaEnLista } from "@/modulos/agenda/componentes/tablero";
 import { buscarReservas, semanaDeAgenda } from "@/modulos/agenda/consultas/tablero";
 import { diasDeLaSemana, fechaCorta, lunesDeLaSemana, NOMBRE_ESTADO_TRABAJO, textoSemana, textoServicio, textoSemanaCorto, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { cotizacionesPorReservar, type FilaCotizacion } from "@/modulos/cotizaciones/consultas/lista";
@@ -27,11 +27,12 @@ import { aqui, conDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Agenda" };
 
-// HU-29: el tablero de la agenda (RF-38). `?semana=` (cualquier día de la semana; se toma su lunes) y, en el celular,
-// `?dia=` (el día que se ve). Dueño o encargado con "Agenda".
+// HU-29: la agenda (RF-38). `?semana=` (cualquier día de la semana; se toma su lunes) y `?entregadas=1` (también las
+// entregadas, pedido 28; escondidas por defecto desde el 20/11). Dueño o encargado con "Agenda".
 // Pulido 10.1: el tablero de la semana solo con espacio (desde 1280 px desde el 16/11). Lavado de cara (16/11,
 // prototipo aprobado): un buscador de reservas de cualquier semana (?q=), "Por reservar" plegado
-// y, en la tableta, la semana como lista por día; en el celular, un día a la vez.
+// y, en la tableta, la semana como lista por día. Rehecha el 20/11 (pedido 55): columnas en la computadora y lista desde hoy
+// en la tableta y el celular (componentes/tablero.tsx).
 export default function PaginaAgenda({ searchParams }: PageProps<"/panel/agenda">) {
   return (
     <PaginaPanel tipo="lista">
@@ -52,13 +53,14 @@ export default function PaginaAgenda({ searchParams }: PageProps<"/panel/agenda"
   );
 }
 
-const enlaceSemana = (lunes: string, dia?: string) => `/panel/agenda?semana=${lunes}${dia ? `&dia=${dia}` : ""}` as Route;
+const enlaceSemana = (lunes: string, entregadas?: boolean) => `/panel/agenda?semana=${lunes}${entregadas ? "&entregadas=1" : ""}` as Route;
 
 async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searchParams">) {
   const usuario = await exigirModulo("agenda");
   const conOrdenes = puedeVerModulo(usuario, "ordenes");
   const parametros = await searchParams;
-  const { semana: pedida, dia: diaPedido } = parametros;
+  const { semana: pedida } = parametros;
+  const conEntregadas = parametros.entregadas === "1";
   const q = typeof parametros.q === "string" ? parametros.q.trim() : "";
   // Pedido 43: lo que se abre desde la Agenda vuelve a esta semana y este día (o a esta búsqueda)
   const desdeAqui = aqui("/panel/agenda", parametros);
@@ -67,8 +69,6 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
   const valida = typeof pedida === "string" && fechaExiste(pedida) && pedida >= "2000-01-01" && pedida <= "2100-12-31";
   const lunes = lunesDeLaSemana(valida ? pedida : hoy);
   const dias = diasDeLaSemana(lunes);
-  // En el celular: el día pedido si es de esta semana; si no, hoy (si cae en ella) o el lunes
-  const dia = typeof diaPedido === "string" && dias.includes(diaPedido) ? diaPedido : dias.includes(hoy) ? hoy : lunes;
   const estaSemana = dias.includes(hoy);
 
   const barra = (
@@ -78,14 +78,14 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
         q ? undefined : (
           // Un renglón: la semana entre las flechas; en el celular, corta ("16 al 22 nov") para que entre
           <nav aria-label="Semanas" className="flex w-full items-center gap-2 sm:w-auto">
-            <Link href={enlaceSemana(sumarDias(lunes, -7))} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Semana anterior">
+            <Link href={enlaceSemana(sumarDias(lunes, -7), conEntregadas)} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Semana anterior">
               <ChevronLeftIcon />
             </Link>
             <p className="min-w-0 flex-1 text-center tt-titulo-seccion sm:min-w-56" aria-live="polite">
               <span className="sm:hidden">{textoSemanaCorto(lunes)}</span>
               <span className="hidden sm:inline">{textoSemana(lunes)}</span>
             </p>
-            <Link href={enlaceSemana(sumarDias(lunes, 7))} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Semana siguiente">
+            <Link href={enlaceSemana(sumarDias(lunes, 7), conEntregadas)} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Semana siguiente">
               <ChevronRightIcon />
             </Link>
             {!estaSemana && (
@@ -108,17 +108,17 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
         {q ? (
           <Resultados q={q} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
         ) : (
-          <Semana lunes={lunes} dias={dias} dia={dia} hoy={hoy} conOrdenes={conOrdenes} conMontos={conMontos} desde={desdeAqui} />
+          <Semana lunes={lunes} dias={dias} hoy={hoy} conEntregadas={conEntregadas} conOrdenes={conOrdenes} conMontos={conMontos} desde={desdeAqui} />
         )}
       </Suspense>
     </>
   );
 }
 
-/** Lo de hoy, "Por reservar" y la semana en sus tres vistas (computadora, tableta y celular). */
-async function Semana(props: { lunes: string; dias: string[]; dia: string; hoy: string; conOrdenes: boolean; conMontos: boolean; desde: string }) {
-  const { lunes, dias, dia, hoy, conOrdenes, conMontos, desde: desdeAqui } = props;
-  const [semana, porReservar] = await Promise.all([semanaDeAgenda(lunes, dias[6]), cotizacionesPorReservar()]);
+/** "Por reservar" y la semana en sus dos vistas (computadora; tableta y celular). */
+async function Semana(props: { lunes: string; dias: string[]; hoy: string; conEntregadas: boolean; conOrdenes: boolean; conMontos: boolean; desde: string }) {
+  const { lunes, dias, hoy, conEntregadas, conOrdenes, conMontos, desde: desdeAqui } = props;
+  const [semana, porReservar] = await Promise.all([semanaDeAgenda(lunes, dias[6], conEntregadas), cotizacionesPorReservar()]);
   const ahora = new Date();
   const fila = (c: FilaCotizacion) => ({
     href: conDesde(`/panel/agenda/nueva?cotizacion=${c.cotizacionId}`, desdeAqui),
@@ -146,10 +146,14 @@ async function Semana(props: { lunes: string; dias: string[]; dia: string; hoy: 
         </details>
       )}
 
-      <TableroSemana semana={semana} dias={dias} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
+      {/* Las entregadas, escondidas (20/11: llenaban la semana); se ven al pedirlas (pedido 28) */}
+      <div className="flex justify-end">
+        <Link href={enlaceSemana(lunes, !conEntregadas)} className={cn(buttonVariants({ variant: "accion" }))} aria-pressed={conEntregadas}>
+          {conEntregadas ? "Ocultar entregadas" : "Ver entregadas"}
+        </Link>
+      </div>
+      <SemanaEnColumnas semana={semana} dias={dias} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
       <SemanaEnLista semana={semana} dias={dias} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
-      <PestanasDias semana={semana} dias={dias} hoy={hoy} dia={dia} enlace={(d) => enlaceSemana(lunes, d)} />
-      <AgendaDelDia semana={semana} dia={dia} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
     </>
   );
 }

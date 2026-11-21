@@ -14,8 +14,7 @@ import { DIAS_MAXIMOS_TRABAJO } from "@/modulos/agenda/reglas";
 import { extenderEntrega } from "../acciones/estado";
 import { ANCHO_DATO } from "@/componentes/panel/anchos";
 
-// HU-34: extender la entrega de una orden que se atrasa (decisión del 20/10). Pedido 55: solo la nueva fecha, sin espacio
-// ni lugares que contar: el auto ya está en el taller. Si un día queda con más autos que lugares, la Agenda lo marca.
+// HU-34: extender la entrega de una orden que se atrasa (decisión del 20/10). Pedido 55: solo la nueva fecha, sin espacio.
 
 type Props = { id: number; fechaInicio: string; fechaFin: string; hoy: string };
 

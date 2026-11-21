@@ -37,14 +37,11 @@ export function pasoDeCampoReserva(campo: string): number {
   return CAMPOS_ADELANTO.has(campo) ? PASO_ADELANTO : PASO_FECHA;
 }
 
-/**
- * Los errores del paso de la fecha antes de pasar al adelanto: las fechas con el mismo esquema que la acción y, si algún
- * día está lleno (pedido 55), ese error. Que siga habiendo lugar lo vuelve a mirar el servidor al reservar.
- */
-export function erroresFecha(datos: { fechaInicio: string; fechaFin: string; lleno: string | null }): Record<string, string> {
+/** Los errores del paso de la fecha antes de pasar al adelanto: las fechas, con el mismo esquema que la acción. */
+export function erroresFecha(datos: { fechaInicio: string; fechaFin: string }): Record<string, string> {
   const r = esquemaFechas.safeParse({ fechaInicio: datos.fechaInicio, fechaFin: datos.fechaFin });
   const errores = r.success ? {} : erroresDe(r.error);
-  return datos.lleno && !errores.fechaInicio ? { ...errores, fechaInicio: datos.lleno } : errores;
+  return errores;
 }
 
 /** Los errores de los servicios (el JSON del editor de líneas), con las mismas claves que devuelve la acción. */

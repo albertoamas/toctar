@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
 import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
 import { esquemaAdelanto, esquemaFechas, esquemaReserva } from "@/modulos/agenda/esquemas";
-import { bloquesDeLaSemana, diaDeLaSemana, diasDeLaSemana, diasLlenos, fechaEntregaSugerida, filasDelTablero, lunesDeLaSemana, numeroDia, ocupadosEnDia, ocupaLugar, seCruzan, textoDia, textoDiasLlenos, textoSemana, textoSemanaCorto, ultimoDiaOcupado } from "@/modulos/agenda/reglas";
+import { bloquesDeLaSemana, diaDeLaSemana, diasDeLaSemana, fechaEntregaSugerida, lunesDeLaSemana, numeroDia, ocupadosEnDia, ocupaLugar, seCruzan, textoDia, textoSemana, textoSemanaCorto, ultimoDiaOcupado } from "@/modulos/agenda/reglas";
 import { calcularSaldo } from "@/modulos/pagos/reglas";
 
 // C3 Agenda y pagos (HU-30): semanas, entrega sugerida, cruces (RN-06), saldo (RF-46) y validación de la reserva.
@@ -127,31 +127,16 @@ test("una orden que sigue en el taller ocupa su lugar hasta hoy, aunque esté at
   expect(ultimoDiaOcupado({ estado: "cancelado", fin: "2026-11-24" }, hoy)).toBeNull();
 });
 
-test("los días llenos de un rango: cuenta lo que ocupa cada día, sin la propia reserva", () => {
+test("los autos de cada día: una orden atrasada cuenta hasta hoy; entregadas y la propia reserva no (pedido 55)", () => {
   const hoy = "2026-11-20";
   const trabajos = [
-    { id: 1, estado: "en_proceso" as const, inicio: "2026-11-02", fin: "2026-11-04" }, // atrasada: ocupa hasta hoy
+    { id: 1, estado: "en_proceso" as const, inicio: "2026-11-02", fin: "2026-11-04" }, // atrasada: hasta hoy
     { id: 2, estado: "agendado" as const, inicio: "2026-11-20", fin: "2026-11-21" },
-    { id: 3, estado: "entregado" as const, inicio: "2026-11-20", fin: "2026-11-20" }, // no ocupa
+    { id: 3, estado: "entregado" as const, inicio: "2026-11-20", fin: "2026-11-20" },
     { id: 4, estado: "agendado" as const, inicio: "2026-11-21", fin: "2026-11-22" },
   ];
   expect(ocupadosEnDia(trabajos, "2026-11-20", hoy)).toBe(2);
   expect(ocupadosEnDia(trabajos, "2026-11-21", hoy)).toBe(2);
-  expect(diasLlenos(trabajos, { inicio: "2026-11-20", fin: "2026-11-23" }, 2, hoy)).toEqual(["2026-11-20", "2026-11-21"]);
-  // Reprogramar la 2 no choca consigo misma
-  expect(diasLlenos(trabajos, { inicio: "2026-11-20", fin: "2026-11-21" }, 2, hoy, 2)).toEqual([]);
-  expect(diasLlenos(trabajos, { inicio: "2026-11-20", fin: "2026-11-23" }, 3, hoy)).toEqual([]);
-  expect(textoDiasLlenos(["2026-11-20"], 3)).toBe("El viernes 20 ya tiene los 3 lugares ocupados.");
-  expect(textoDiasLlenos(["2026-11-20", "2026-11-21"], 3)).toBe("Sin lugar el viernes 20 y el sábado 21.");
+  expect(ocupadosEnDia(trabajos, "2026-11-21", hoy, 2)).toBe(1);
 });
 
-test("las filas del tablero: cada reserva donde no se encime, primero las que ocupan", () => {
-  const filas = filasDelTablero([
-    { id: 1, estado: "entregado" as const, inicio: "2026-11-16", fin: "2026-11-16" },
-    { id: 2, estado: "agendado" as const, inicio: "2026-11-16", fin: "2026-11-18" },
-    { id: 3, estado: "agendado" as const, inicio: "2026-11-17", fin: "2026-11-17" },
-    { id: 4, estado: "agendado" as const, inicio: "2026-11-19", fin: "2026-11-19" },
-  ]);
-  const fila = (id: number) => filas.find((f) => f.id === id)?.fila;
-  expect([fila(2), fila(3), fila(4), fila(1)]).toEqual([0, 1, 0, 1]);
-});

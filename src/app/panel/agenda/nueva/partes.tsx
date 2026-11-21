@@ -7,7 +7,6 @@ import { Seccion } from "@/componentes/panel/cabecera-seccion";
 import { exigirModulo } from "@/lib/sesion";
 import { bs } from "@/modulos/cotizaciones/reglas";
 import { FormularioReserva } from "@/modulos/agenda/componentes/formulario-reserva";
-import { disponibilidad } from "@/modulos/agenda/consultas/lugares";
 import { type CotizacionParaReservar, type VehiculoReserva } from "@/modulos/agenda/consultas/reservar";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { type Volver } from "@/lib/volver";
@@ -90,7 +89,7 @@ export async function Formulario(props: {
   /** A dónde lleva tocar el cliente y el vehículo en el indicador (los pasos que se eligen por la dirección). */
   pasosHechos?: (DestinoPaso | undefined)[];
 }) {
-  const [parametros, lugares] = await Promise.all([obtenerParametros(), props.fechaInicial ? disponibilidad(props.fechaInicial, props.fechaFin) : null]);
+  const parametros = await obtenerParametros();
   return (
     <FormularioReserva
       volver={props.volver}
@@ -99,7 +98,6 @@ export async function Formulario(props: {
       adelantoSugerido={parametros.adelanto_sugerido.toFixed(2)}
       hoy={props.hoy}
       fechaInicial={props.fechaInicial}
-      lugaresIniciales={lugares}
       arriba={props.arriba}
       cotizaciones={props.cotizaciones}
       atras={props.atras}

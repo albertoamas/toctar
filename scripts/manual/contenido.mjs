@@ -159,7 +159,7 @@ export const CAPITULOS = [
         paso: 2,
         titulo: "Reservar",
         quien: ["atencion", "dueno"],
-        intro: "La reserva aparta un lugar del taller en unas fechas. Sale de una cotización aceptada, o directa, sin cotización.",
+        intro: "La reserva aparta unas fechas para un vehículo. Sale de una cotización aceptada, o directa, sin cotización.",
         captura: {
           id: "12-agenda",
           ruta: "/panel/agenda?semana=2026-11-09&dia=2026-11-11",
@@ -167,13 +167,13 @@ export const CAPITULOS = [
             { en: enlace("Nueva reserva", true), texto: "Una reserva nueva." },
             { en: titulo("Por reservar (2)"), texto: "Por reservar: las cotizaciones aceptadas que todavía no tienen día." },
             { en: { texto: "Hoy", exacto: true }, lado: "arriba", texto: "Los días de la semana: se toca uno para verlo. Las flechas pasan de semana." },
-            { en: { css: "main .tt-tarjeta-panel" }, texto: "Cada día dice cuántos lugares están ocupados. Un día con lugar se toca para reservar." },
+            { en: { css: "main .tt-tarjeta-panel" }, texto: "Cada día dice cuántos autos tiene y sus reservas. «+ Reservar» abre una reserva para ese día." },
           ],
         },
         pasos: [
           "Desde una cotización aceptada, <span class='boton rojo'>Reservar en Agenda</span>. O <span class='boton rojo'>Nueva reserva</span> desde Agenda, Inicio o la ficha del cliente.",
           "Son cinco pasos: cliente, vehículo, servicios (una de sus cotizaciones o <b>Reserva sin cotización</b>), fecha y adelanto.",
-          "El sistema no deja reservar un día con todos los lugares ocupados.",
+          "Las entregadas no se ven en la Agenda: «Ver entregadas» las muestra.",
           "El adelanto, en su paso: <b>¿Dejó adelanto?</b> Con <b>Sí</b>, el monto que trae el cliente (el sugerido, más o el total), cómo pagó y la foto del comprobante; con <b>No</b>, no se registra nada.",
         ],
       },
@@ -433,7 +433,7 @@ export const CAPITULOS = [
       {
         titulo: "Configuración: los mensajes",
         quien: ["dueno"],
-        intro: "Negocio (datos y logo), Taller (lugares, tamaños y checklist), Parámetros (adelanto, validez) y los mensajes de WhatsApp.",
+        intro: "Negocio (datos y logo), Taller (tamaños, checklist y marcas), Parámetros (adelanto, validez) y los mensajes de WhatsApp.",
         captura: {
           id: "43-mensajes",
           ruta: "/panel/configuracion/mensajes",
@@ -504,7 +504,6 @@ export const PROBLEMAS = [
   ["No veo un módulo en el menú", "No tienes ese permiso. El dueño lo da en Usuarios."],
   ["No veo los precios", "Ver precios va con el permiso de Cotizaciones o de Pagos."],
   ["“Recibir vehículo” no aparece", "Aparece desde el día de ingreso de la reserva. Si llegó antes, reprograma la reserva."],
-  ["No me deja reservar un día", "Ese día ya tiene todos los lugares ocupados: elige otro."],
   ["Me equivoqué en un pago", "Toca los tres puntos del pago y elige Anular pago, con el motivo. Después regístralo bien."],
   ["Hay que cambiar una cotización ya enviada", "En “Más”, elige Nueva versión. La anterior queda como se mandó."],
   ["El cliente no puede abrir el enlace", "Puede que haya vencido o tenga una versión nueva: mándale la vigente con “Enviar por WhatsApp”."],

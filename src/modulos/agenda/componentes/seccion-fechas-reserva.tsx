@@ -6,7 +6,7 @@ import { Textarea } from "@/componentes/ui/textarea";
 import { ANCHO_DATO } from "@/componentes/panel/anchos";
 
 // Las fechas de una reserva (HU-30): el ingreso, la entrega aproximada (sugerida por la duración de los servicios) y,
-// plegada, una nota. Pedido 55: sin espacio; si algún día de esas fechas está lleno, lo dice junto al ingreso. El estado es del formulario
+// plegada, una nota. Pedido 55: sin espacio ni límite por día. El estado es del formulario
 // (FormularioReserva): aquí solo se muestra y se avisa cada cambio (17/11, al partir el formulario).
 
 type Props = {
@@ -15,18 +15,16 @@ type Props = {
   fechaFin: string;
   alCambiarIngreso: (valor: string) => void;
   alCambiarEntrega: (valor: string) => void;
-  /** "El viernes 21 ya tiene los 3 lugares ocupados.", o null si hay lugar. */
-  lleno: string | null;
   nota: string;
   alCambiarNota: (valor: string) => void;
   errores: Partial<Record<string, string>>;
 };
 
-export function SeccionFechasReserva({ hoy, fechaInicio, fechaFin, alCambiarIngreso, alCambiarEntrega, lleno, nota, alCambiarNota, errores: e }: Props) {
+export function SeccionFechasReserva({ hoy, fechaInicio, fechaFin, alCambiarIngreso, alCambiarEntrega, nota, alCambiarNota, errores: e }: Props) {
   return (
     <SeccionFormulario titulo="Fechas">
       <div className="grid gap-5 sm:grid-cols-2">
-        <Campo id="fechaInicio" etiqueta="Ingresa el" error={e.fechaInicio ?? lleno ?? undefined}>
+        <Campo id="fechaInicio" etiqueta="Ingresa el" error={e.fechaInicio}>
           <Input className={ANCHO_DATO.fecha}
             id="fechaInicio"
             name="fechaInicio"
@@ -34,8 +32,8 @@ export function SeccionFechasReserva({ hoy, fechaInicio, fechaFin, alCambiarIngr
             min={hoy}
             value={fechaInicio}
             onChange={(ev) => alCambiarIngreso(ev.target.value)}
-            aria-invalid={!!(e.fechaInicio ?? lleno)}
-            aria-describedby={e.fechaInicio ?? lleno ? "fechaInicio-error" : undefined}
+            aria-invalid={!!e.fechaInicio}
+            aria-describedby={e.fechaInicio ? "fechaInicio-error" : undefined}
           />
         </Campo>
         <Campo id="fechaFin" etiqueta="Entrega aproximada" error={e.fechaFin} ayuda="Se le da al cliente como aproximada.">

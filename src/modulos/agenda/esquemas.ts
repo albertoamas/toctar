@@ -131,9 +131,6 @@ export function entradaReserva(datos: FormData) {
 
 export const esquemaAdelanto = adelanto;
 
-/** Para consultar los días llenos desde el formulario (datos sueltos: se validan). */
-export const esquemaConsultaLugares = z.object({ fechaInicio: z.string(), fechaFin: z.string(), excepto: id.optional() });
-
 /** Reprogramar (HU-31): la reserva y sus nuevas fechas (las mismas reglas que al agendar). Sin espacio (pedido 55). */
 export const esquemaReprogramar = z.object({ id });
 

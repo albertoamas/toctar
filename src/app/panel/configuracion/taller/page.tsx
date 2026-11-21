@@ -3,17 +3,14 @@ import { Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { exigirModulo } from "@/lib/sesion";
 import { ListaEditable } from "@/modulos/configuracion/componentes/lista-editable";
-import { listarElementos, sucursalPrincipal } from "@/modulos/configuracion/consultas";
-import { SeccionConEditar } from "@/componentes/panel/seccion-con-editar";
-import { ListaDatos } from "@/componentes/panel/lista-datos";
-import { FormularioLugares } from "@/modulos/configuracion/componentes/formulario-lugares";
+import { listarElementos } from "@/modulos/configuracion/consultas";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 
 export const metadata: Metadata = { title: "Configuración del taller" };
 
-// HU-05: los lugares del taller (RN-06; pedido 55: un número, ya no una lista de espacios) y los tamaños de vehículo
-// (RN-07); pedido 12: las partes del checklist de recepción.
+// HU-05: los tamaños de vehículo (RN-07; los espacios del taller se quitaron en el pedido 55); pedido 12: las partes del
+// checklist de recepción.
 // Solo el dueño. Pulido 13.27: una lista debajo de la otra (en dos columnas, el checklist quedaba solo con un hueco al lado).
 export default function PaginaTaller() {
   return (
@@ -28,19 +25,9 @@ export default function PaginaTaller() {
 
 async function Contenido() {
   await exigirModulo("configuracion");
-  const [s, tamanos, partes, marcas] = await Promise.all([sucursalPrincipal(), listarElementos("tamanos"), listarElementos("partes"), listarElementos("marcas")]);
+  const [tamanos, partes, marcas] = await Promise.all([listarElementos("tamanos"), listarElementos("partes"), listarElementos("marcas")]);
   return (
     <div className="flex flex-col gap-10">
-      {/* Pedido 55: cuántos autos entran a la vez; la agenda no deja reservar un día lleno */}
-      <SeccionConEditar
-        id="taller-lugares"
-        titulo="Lugares en el taller"
-        etiquetaEditar="Editar lugares en el taller"
-        tituloModal="Lugares en el taller"
-        lectura={<ListaDatos filas={[["Lugares", <span key="l" className="tabular-nums">{s.lugares}</span>]]} />}
-      >
-        <FormularioLugares lugares={s.lugares} />
-      </SeccionConEditar>
       <ListaEditable
         lista="tamanos"
         elementos={tamanos}

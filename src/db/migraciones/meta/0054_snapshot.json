@@ -1,5 +1,5 @@
 {
-  "id": "9fb5ce20-cfaf-41d1-94b7-9364906b41d4",
+  "id": "47ef579c-ecc6-4778-86c7-7c2a01d226a3",
   "prevId": "3a8be220-5bb9-4d89-b589-bf5ca409128c",
   "version": "7",
   "dialect": "postgresql",
@@ -1152,13 +1152,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "lugares": {
-          "name": "lugares",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 3
-        },
         "activo": {
           "name": "activo",
           "type": "boolean",
@@ -1199,12 +1192,7 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {
-        "sucursal_lugares_validos": {
-          "name": "sucursal_lugares_validos",
-          "value": "\"sucursal\".\"lugares\" between 1 and 50"
-        }
-      },
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.tamano_vehiculo": {

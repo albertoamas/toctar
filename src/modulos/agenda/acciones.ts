@@ -22,46 +22,18 @@ import { borrarFotosSueltas, soltarFotosIngreso } from "@/modulos/ordenes/fotos"
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
 import { descartarComprobante, guardarComprobante } from "@/modulos/pagos/comprobante";
 import { calcularSaldo, tipoDePago } from "@/modulos/pagos/reglas";
-import { bloquearSucursal, disponibilidad, type Disponibilidad } from "./consultas/lugares";
-import { textoDiasLlenos } from "./reglas";
 import { datosDeCotizacion } from "./consultas/reservar";
-import { entradaReserva, esquemaAdelanto, esquemaCancelar, esquemaConsultaLugares, esquemaFechas, esquemaReprogramar, esquemaReserva } from "./esquemas";
+import { entradaReserva, esquemaAdelanto, esquemaCancelar, esquemaFechas, esquemaReprogramar, esquemaReserva } from "./esquemas";
 import { conDesde, leerDesde } from "@/lib/volver";
 
 // Agenda (HU-30). Entra el dueño o un encargado con "Agenda"; el adelanto, solo con "Pagos" (o el dueño, RN-12). Un
 // espacio no tiene dos vehículos el mismo día (RN-06): la pantalla solo ofrece los libres y la base
 // rechaza un cruce aunque dos personas reserven a la vez (D-5). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md.
 
-/** Dos personas reservaron el último lugar a la vez: la segunda, ya con la sucursal bloqueada, ve el día lleno. */
-const LLENO_RECIEN = "Ese día se llenó recién. Elige otra fecha.";
 const COTIZACION_CAMBIO = "Esa cotización ya fue reservada o tiene una versión nueva. Vuelve a la cotización.";
 
 /** Algo cambió entre la revisión y la escritura: se lanza dentro de la transacción para deshacerla entera. */
 class Conflicto extends Error {}
-
-/** Un día del rango se llenó entre la revisión y la escritura (otra reserva a la vez). */
-class DiaLleno extends Error {}
-
-/**
- * Con la sucursal ya bloqueada, vuelve a contar: si otra reserva tomó el último lugar recién, se deshace todo (pedido
- * 55; antes lo cuidaba la restricción de exclusión por espacio).
- */
-async function revisarLugaresEn(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], fechaInicio: string, fechaFin: string, excepto?: number) {
-  await bloquearSucursal(tx);
-  const { llenos } = await disponibilidad(fechaInicio, fechaFin, excepto, tx);
-  if (llenos.length > 0) throw new DiaLleno(LLENO_RECIEN);
-}
-
-/** Los días llenos de unas fechas, para el formulario (datos sueltos: se validan). Pedido 55. */
-export async function consultarLugares(datos: { fechaInicio: string; fechaFin: string; excepto?: number }): Promise<Disponibilidad | null> {
-  await exigirModulo("agenda");
-  const entrada = esquemaConsultaLugares.safeParse(datos);
-  if (!entrada.success) return null;
-  const fechas = esquemaFechas.safeParse(entrada.data);
-  // Con fechas que no valen no hay nada que decir: el formulario muestra su error al enviar
-  if (!fechas.success) return null;
-  return disponibilidad(fechas.data.fechaInicio, fechas.data.fechaFin, entrada.data.excepto);
-}
 
 type Linea = { varianteId: number; descripcion: string; precio: string };
 
@@ -180,9 +152,7 @@ export async function agendarReserva(_previo: EstadoCliente, datos: FormData): P
     if (Object.keys(errLineas).length > 0) return { errores: errLineas };
   }
 
-  // Lo que el esquema no sabe: que haya lugar todos los días (RN-06, pedido 55) y el tope del adelanto
-  const lugares = await disponibilidad(fechaInicio, fechaFin);
-  if (lugares.llenos.length > 0) errores.fechaInicio = textoDiasLlenos(lugares.llenos, lugares.lugares);
+  // Lo que el esquema no sabe: el tope del adelanto (pedido 55: sin espacio ni límite por día)
   const { total } = calcularSaldo(
     lineas.map((l) => l.precio),
     descuento,
@@ -240,7 +210,6 @@ export async function agendarReserva(_previo: EstadoCliente, datos: FormData): P
           .for("no key update");
         if (!suyo) throw new Conflicto("Ese vehículo cambió de dueño o se desactivó recién. Vuelve a elegirlo.");
       }
-      await revisarLugaresEn(tx, fechaInicio, fechaFin);
       const [nuevo] = await tx
         .insert(trabajo)
         .values({
@@ -296,7 +265,6 @@ export async function agendarReserva(_previo: EstadoCliente, datos: FormData): P
     await descartarComprobante(comprobanteId);
     if (error instanceof Conflicto) return { mensaje: error.message };
     // Dos personas reservaron el mismo espacio a la vez: la base frenó la segunda (D-5)
-    if (error instanceof DiaLleno) return { errores: { fechaInicio: error.message }, valores };
     if (indiceUnicoViolado(error) === "trabajo_cotizacion_unica") return { mensaje: "Esa cotización ya fue reservada." };
     // Dos personas registrando el mismo cliente o la misma placa a la vez: lo frena el índice único
     if (indiceUnicoViolado(error) === "cliente_telefono_unico") return { errores: { telefono: "Ese número ya está registrado. Busca al cliente." }, valores };
@@ -322,10 +290,7 @@ function despuesDeCambiar(id: number, clienteId: number, consultaId: number | nu
   }
 }
 
-/**
- * Mueve una reserva agendada a otras fechas (HU-31, RF-39), con la misma validación que al agendar: lugar todos los días
- * (sin contar la propia reserva), revisado otra vez con la sucursal bloqueada (pedido 55).
- */
+/** Mueve una reserva agendada a otras fechas (HU-31, RF-39), con las mismas reglas de fechas que al agendar. */
 export async function reprogramarReserva(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const usuario = await exigirModulo("agenda");
   const r = esquemaReprogramar.safeParse({ id: datos.get("id") });
@@ -344,13 +309,10 @@ export async function reprogramarReserva(_previo: EstadoFormulario, datos: FormD
   if (!actual) return { mensaje: "Esa reserva ya no existe." };
   if (actual.estado !== "agendado") return { mensaje: "Solo se reprograma una reserva agendada." };
 
-  const lugares = await disponibilidad(fechaInicio, fechaFin, id);
-  if (lugares.llenos.length > 0) return { errores: { fechaInicio: textoDiasLlenos(lugares.llenos, lugares.lugares) } };
 
   let sueltas: number[];
   try {
     sueltas = await db.transaction(async (tx) => {
-      await revisarLugaresEn(tx, fechaInicio, fechaFin, id);
       // Solo si sigue agendada: si otra persona la canceló recién, no se mueve
       const [movida] = await tx
         .update(trabajo)
@@ -370,7 +332,6 @@ export async function reprogramarReserva(_previo: EstadoFormulario, datos: FormD
     });
   } catch (error) {
     if (error instanceof Conflicto) return { mensaje: error.message };
-    if (error instanceof DiaLleno) return { errores: { fechaInicio: error.message } };
     throw error;
   }
 

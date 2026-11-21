@@ -74,8 +74,8 @@ export function bloquesDeLaSemana<T extends Rango>(trabajos: readonly T[], lunes
     });
 }
 
-// Pedido 55 (etapas/P55-lugares-por-dia.md): lugares por día en vez de espacios fijos. El taller tiene N lugares y cada
-// día cuenta los trabajos que ocupan uno. Puro: se prueba en tests/unit/agenda.test.ts.
+// Pedido 55 (etapas/P55-lugares-por-dia.md): sin espacios ni límite por día. Cada día cuenta los autos que hay; una orden
+// en el taller cuenta hasta entregarse. Puro: se prueba en tests/unit/agenda.test.ts.
 
 /** Los estados de una orden que sigue en el taller: ocupa su lugar hasta entregarse, aunque esté atrasada. */
 const EN_EL_TALLER: readonly EstadoTrabajo[] = ["recibido", "en_proceso", "listo"];
@@ -99,42 +99,6 @@ export function ocupadosEnDia(trabajos: readonly { id: number; estado: EstadoTra
     const ultimo = ultimoDiaOcupado(t, hoy);
     return ultimo !== null && t.inicio <= dia && dia <= ultimo;
   }).length;
-}
-
-/** Los días de un rango que ya tienen todos los lugares ocupados (sin contar `excepto`): ahí no se reserva. */
-export function diasLlenos(
-  trabajos: readonly { id: number; estado: EstadoTrabajo; inicio: string; fin: string }[],
-  rango: Rango,
-  lugares: number,
-  hoy: string,
-  excepto?: number,
-): string[] {
-  const llenos: string[] = [];
-  for (let dia = rango.inicio; dia <= rango.fin; dia = sumarDias(dia, 1)) {
-    if (ocupadosEnDia(trabajos, dia, hoy, excepto) >= lugares) llenos.push(dia);
-  }
-  return llenos;
-}
-
-/** El error de unas fechas con días llenos: "El viernes 21 ya tiene los 3 lugares ocupados." o "Sin lugar el …". */
-export function textoDiasLlenos(llenos: readonly string[], lugares: number): string {
-  if (llenos.length === 1) return `El ${diaEnFrase(llenos[0])} ya tiene ${lugares === 1 ? "su lugar ocupado" : `los ${lugares} lugares ocupados`}.`;
-  return `Sin lugar ${unirConY(llenos.map((d) => `el ${diaEnFrase(d)}`))}.`;
-}
-
-/**
- * Las filas del tablero: cada reserva va en una fila (un lugar a la vista, sin nombre) donde no se encime con otra. Las que
- * ocupan, primero y por fecha; las entregadas (historia, pedido 28), después. No se guarda: se arma al dibujar.
- */
-export function filasDelTablero<T extends Rango & { estado: EstadoTrabajo }>(reservas: readonly T[]): (T & { fila: number })[] {
-  const orden = [...reservas].sort((a, b) => Number(ocupaLugar(b.estado)) - Number(ocupaLugar(a.estado)) || (a.inicio < b.inicio ? -1 : a.inicio > b.inicio ? 1 : 0));
-  const filas: Rango[][] = [];
-  return orden.map((r) => {
-    let fila = filas.findIndex((enFila) => !enFila.some((o) => seCruzan(o, r)));
-    if (fila === -1) fila = filas.push([]) - 1;
-    filas[fila].push(r);
-    return { ...r, fila };
-  });
 }
 
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
@@ -185,11 +149,6 @@ export function tituloDia(fecha: string, hoy: string): string {
   if (fecha === hoy) return `Hoy, ${nombre.toLowerCase()}`;
   if (fecha === sumarDias(hoy, 1)) return `Mañana, ${nombre.toLowerCase()}`;
   return nombre;
-}
-
-/** "Espacio 1", "Espacio 1 y Espacio 3", "Espacio 1, Espacio 2 y Espacio 3". */
-function unirConY(nombres: readonly string[]): string {
-  return nombres.length <= 1 ? (nombres[0] ?? "") : `${nombres.slice(0, -1).join(", ")} y ${nombres[nombres.length - 1]}`;
 }
 
 /** "martes 17": el día dentro de una frase ("Hasta el martes 17"). */

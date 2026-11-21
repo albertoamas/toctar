@@ -7,7 +7,7 @@ import { type EstadoTrabajo } from "@/db/esquema/trabajos";
 import { fechaEnBolivia } from "@/lib/fechas";
 import { escaparLike, normalizarBusqueda } from "@/modulos/clientes/reglas";
 import { sucursalPrincipal } from "@/modulos/configuracion/consultas";
-import { diasDeLaSemana, filasDelTablero, ocupadosEnDia, seCruzan, ultimoDiaOcupado } from "../reglas";
+import { diasDeLaSemana, ocupadosEnDia, seCruzan, ultimoDiaOcupado } from "../reglas";
 
 // Lecturas de la agenda (C3). Quien las llama ya pasó por exigirModulo("agenda"); los montos y pagos solo se piden
 // para quien además ve "pagos" (o el dueño). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md.
@@ -15,8 +15,8 @@ import { diasDeLaSemana, filasDelTablero, ocupadosEnDia, seCruzan, ultimoDiaOcup
 
 export type ReservaTablero = {
   id: number;
-  /** La fila del tablero donde va (un lugar a la vista, sin nombre; pedido 55): no se guarda, se arma con la semana. */
-  fila: number;
+  /** La entrega aproximada que tiene: una orden atrasada se ve hasta hoy (`fin`), pero se atrasó desde esta. */
+  entrega: string;
   inicio: string;
   fin: string;
   estado: EstadoTrabajo;
@@ -29,28 +29,24 @@ export type ReservaTablero = {
 };
 
 export type SemanaDeAgenda = {
-  /** Cuántos autos entran a la vez (RN-06, pedido 55). */
-  lugares: number;
-  /** Cuántos ocupan un lugar cada día de la semana ("AAAA-MM-DD" → n): puede pasar de `lugares` (una extensión). */
-  ocupados: Record<string, number>;
-  /** Cuántas filas tiene el tablero: los lugares o, si un día tiene más autos, las que hagan falta. */
-  filas: number;
+  /** Cuántos autos hay cada día de la semana ("AAAA-MM-DD" → n): las reservas y las órdenes en el taller. */
+  autos: Record<string, number>;
   reservas: ReservaTablero[];
   /** Días de la semana (1 = lunes … 7 = domingo) que el taller no atiende, según el horario de Configuración. */
   diasCerrados: number[];
 };
 
 /**
- * La semana del tablero (HU-29): las reservas que caen en alguno de esos días, cada una en una fila donde no se encime
- * con otra (pedido 55: sin espacios). Una orden que sigue en el taller con la entrega pasada (atrasada) llega hasta hoy:
- * ocupa su lugar. Pedido 28: también las entregadas, en los días que estuvieron (historia); las canceladas no.
+ * La semana de la Agenda (HU-29): las reservas que caen en alguno de esos días (pedido 55: sin espacios ni límite). Una
+ * orden que sigue en el taller con la entrega pasada (atrasada) llega hasta hoy. Pedido 28: las entregadas, en los días
+ * que estuvieron, solo con `conEntregadas` (20/11: llenaban la semana; ahora se ven al pedirlas). Las canceladas, nunca.
  */
-export async function semanaDeAgenda(lunes: string, domingo: string): Promise<SemanaDeAgenda> {
+export async function semanaDeAgenda(lunes: string, domingo: string, conEntregadas = false): Promise<SemanaDeAgenda> {
   const s = await sucursalPrincipal();
   const hoy = fechaEnBolivia();
   const enLaSemana = and(
     eq(trabajo.sucursalId, s.id),
-    ne(trabajo.estado, "cancelado"),
+    conEntregadas ? ne(trabajo.estado, "cancelado") : inArray(trabajo.estado, ["agendado", "recibido", "en_proceso", "listo"]),
     lte(trabajo.fechaInicio, domingo),
     // Las que siguen en el taller llegan hasta hoy aunque su entrega haya pasado
     or(gte(trabajo.fechaFin, lunes), inArray(trabajo.estado, ["recibido", "en_proceso", "listo"])),
@@ -81,15 +77,12 @@ export async function semanaDeAgenda(lunes: string, domingo: string): Promise<Se
   for (const l of lineas) porTrabajo.set(l.trabajoId, [...(porTrabajo.get(l.trabajoId) ?? []), l.descripcion]);
   // Hasta dónde se ve cada una: una atrasada, hasta hoy; una entregada, hasta el día que salió (y no después de hoy)
   const aLaVista = reservas
-    .map((r) => ({ ...r, fin: ultimoDiaOcupado(r, hoy) ?? (r.fin > hoy ? hoy : r.fin) }))
+    .map((r) => ({ ...r, entrega: r.fin, fin: ultimoDiaOcupado(r, hoy) ?? (r.fin > hoy ? hoy : r.fin) }))
     .filter((r) => r.inicio <= r.fin && seCruzan(r, { inicio: lunes, fin: domingo }));
-  const conFila = filasDelTablero(aLaVista);
-  const ocupados = Object.fromEntries(diasDeLaSemana(lunes).map((dia) => [dia, ocupadosEnDia(reservas, dia, hoy)]));
+  const autos = Object.fromEntries(diasDeLaSemana(lunes).map((dia) => [dia, ocupadosEnDia(reservas, dia, hoy)]));
   return {
-    lugares: s.lugares,
-    ocupados,
-    filas: Math.max(s.lugares, ...conFila.map((r) => r.fila + 1)),
-    reservas: conFila.map((r) => {
+    autos,
+    reservas: aLaVista.map((r) => {
       const suyas = porTrabajo.get(r.id) ?? [];
       return { ...r, servicio: suyas[0] ?? null, masServicios: Math.max(0, suyas.length - 1) };
     }),
@@ -97,7 +90,7 @@ export async function semanaDeAgenda(lunes: string, domingo: string): Promise<Se
   };
 }
 
-export type ReservaEncontrada = Omit<ReservaTablero, "fila">;
+export type ReservaEncontrada = Omit<ReservaTablero, "entrega">;
 
 /** Cuántas reservas muestra la búsqueda de la Agenda: si hay más, se pide escribir más. */
 const RESERVAS_POR_BUSQUEDA = 30;

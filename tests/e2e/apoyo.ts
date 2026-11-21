@@ -61,7 +61,7 @@ export async function consultar<T extends pg.QueryResultRow>(sql: string, valore
 /**
  * Una orden lista, directo en la base, con un pulido y nano cerámico (genera mantenimiento al entregarse) del precio
  * dado y, si se pagó algo, el adelanto. `dias` la pone lejos de hoy, en días propios de cada prueba y proyecto, para
- * que los lugares del taller no se llenen con otras pruebas. Devuelve su id.
+ * que no se mezcle con las de otras pruebas en la Agenda. Devuelve su id.
  */
 export async function crearOrdenLista(datos: { placa: string; dias: number; precio: number; pagado: number; servicio?: string }): Promise<number> {
   const [{ id }] = await consultar<{ id: number }>(

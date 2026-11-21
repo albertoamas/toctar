@@ -33,7 +33,7 @@ async function limpiar(placas: string[]) {
   await consultar("delete from cliente where id = any($1)", [clientes.map((c) => c.id)]);
 }
 
-test("las reservas ocupan sus días; cada día dice sus lugares y uno con lugar lleva a reservar (pedido 55)", async ({ page }, info) => {
+test("cada día dice cuántos autos tiene, con sus reservas; un día que viene lleva a reservar (pedido 55)", async ({ page }, info) => {
   const s = sufijo(info);
   const lunes = await lunesPropio(info);
   await limpiar([`TB29${s}1`, `TB29${s}2`]);
@@ -42,57 +42,30 @@ test("las reservas ocupan sus días; cada día dice sus lugares y uno con lugar 
   // Martes y miércoles; desde el sábado hasta el martes siguiente
   await reserva(`TB29${s}1`, lunes, 1, 2);
   await reserva(`TB29${s}2`, lunes, 5, 8);
-  const [{ lugares }] = await consultar<{ lugares: number }>("select lugares from sucursal order by id limit 1");
+  const [{ martes, miercoles, jueves }] = await consultar<{ martes: string; miercoles: string; jueves: string }>(
+    "select to_char($1::date + 1, 'YYYY-MM-DD') as martes, to_char($1::date + 2, 'YYYY-MM-DD') as miercoles, to_char($1::date + 3, 'YYYY-MM-DD') as jueves",
+    [lunes],
+  );
+  const nombreDia = (fecha: string) => new RegExp(`^${["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"][new Date(`${fecha}T12:00:00Z`).getUTCDay() === 0 ? 6 : new Date(`${fecha}T12:00:00Z`).getUTCDay() - 1]} ${Number(fecha.slice(8))}$`);
   await ingresarComoDueno(page);
   await page.goto(`/panel/agenda?semana=${lunes}`);
+  const dia = (fecha: string) => page.getByRole("region", { name: nombreDia(fecha) }).locator("visible=true");
 
+  // El martes: su reserva y cuántos autos hay
+  await expect(dia(martes).getByRole("link", { name: new RegExp(`^TB29${s}1`) })).toBeVisible();
+  await expect(dia(martes)).toContainText("1 auto");
   if (info.project.name === "escritorio") {
-    const cinta = page.getByRole("link", { name: new RegExp(`^TB29${s}1`) });
-    await expect(cinta).toBeVisible();
-    // Abarca dos columnas: el martes y el miércoles
-    await expect(cinta).toHaveCSS("grid-column-start", "2");
-    await expect(cinta).toHaveCSS("grid-column-end", "span 2");
-    // La que sigue la semana siguiente lo dice
-    await expect(page.getByRole("link", { name: new RegExp(`^TB29${s}2.*sigue la semana siguiente`) })).toBeVisible();
-
-    // La semana siguiente: la misma reserva, que viene de la anterior
-    await page.getByRole("link", { name: "Semana siguiente", exact: true }).click();
-    await expect(page).toHaveURL(/\?semana=\d{4}-\d{2}-\d{2}$/);
-    await expect(page.getByRole("link", { name: new RegExp(`^TB29${s}2.*sigue desde la semana anterior`) })).toBeVisible();
-    await page.getByRole("link", { name: "Semana anterior", exact: true }).click();
-    await expect(page).toHaveURL(new RegExp(`\\?semana=${lunes}$`));
-
-    // El martes dice cuántos lugares ocupa (pedido 55)
-    await expect(page.getByText(`1 de ${lugares} lugares`).first()).toBeVisible();
-    // Un día con lugar: el jueves lleva a reservar ese día
-    const [{ jueves }] = await consultar<{ jueves: string }>("select to_char($1::date + 3, 'YYYY-MM-DD') as jueves", [lunes]);
-    // Se ve sin pasar el mouse, como en la tableta (19/11): Playwright da por visible algo con opacidad 0, así que se mira
-    const libre = page.getByRole("link", { name: new RegExp(`^Reservar el Jueves.*, quedan ${lugares} lugares$`) });
-    await page.mouse.move(0, 0);
-    await expect(libre).toHaveCSS("opacity", "1");
-    await expect(libre).toContainText("Reservar");
-    await libre.click();
-    await expect(page).toHaveURL(new RegExp(`/panel/agenda/nueva\\?fecha=${jueves}(?:[?&]volver=[^&#]*)?$`));
+    // En la computadora, la de dos días va en los dos, con "Día 1 de 2" y "Día 2 de 2"
+    await expect(dia(martes)).toContainText("Día 1 de 2");
+    await expect(dia(miercoles).getByRole("link", { name: new RegExp(`^TB29${s}1`) })).toContainText("Día 2 de 2");
   } else {
-    // Celular: un día a la vez. El martes, la reserva y los lugares que quedan
-    // El martes tiene una reserva: su día lo dice (en la tira, un punto debajo del número)
-    const pestanas = page.getByRole("navigation", { name: "Días de la semana" }).getByRole("link");
-    await expect(pestanas.nth(1)).toHaveAccessibleName(/, 1 reserva$/);
-    // Y no todas: un día sin reservas lo dice
-    const nombres = await pestanas.evaluateAll((ps) => ps.map((p) => p.getAttribute("aria-label") ?? ""));
-    expect(nombres.some((n) => n.endsWith(", sin reservas") || n.endsWith(", cerrado"))).toBe(true);
-    await page.getByRole("navigation", { name: "Días de la semana" }).getByRole("link").nth(1).click();
-    await expect(page).toHaveURL(/&dia=\d{4}-\d{2}-\d{2}$/);
-    const dia = page.getByRole("list", { name: /^Reservas el Martes/ });
-    await expect(dia.getByRole("link", { name: new RegExp(`^TB29${s}1`) })).toBeVisible();
-    // Los lugares que quedan, en una sola fila con "Reservar"
-    await expect(dia.getByRole("link", { name: /Reservar/ })).toHaveCount(1);
-    await expect(dia).toContainText(`Quedan ${lugares - 1} lugares`);
-    // Tocar la reserva la abre
-    await dia.getByRole("link", { name: new RegExp(`^TB29${s}1`) }).click();
-    await expect(page).toHaveURL(/\/panel\/agenda\/\d+(?:[?&]volver=[^&#]*)?$/);
-    await expect(page.getByRole("heading", { level: 1, name: `TB29${s}1` })).toBeVisible();
+    // En la lista, entera el primer día y nombrada los siguientes
+    await expect(dia(miercoles)).toContainText("Siguen en el taller:");
   }
+  // Un día sin reservas lo dice y lleva a reservar ese día
+  await expect(dia(jueves)).toContainText("Sin reservas");
+  await dia(jueves).getByRole("link", { name: /Reservar el Jueves/ }).click();
+  await expect(page).toHaveURL(new RegExp(`/panel/agenda/nueva\\?fecha=${jueves}(?:[?&]volver=[^&#]*)?$`));
 });
 
 test("el tablero arranca en la semana de hoy y la marca", async ({ page }, info) => {
@@ -100,9 +73,9 @@ test("el tablero arranca en la semana de hoy y la marca", async ({ page }, info)
   await page.goto("/panel/agenda");
   // Sin la guía de colores (19/11): cada reserva ya dice su estado escrito
   await expect(page.getByRole("list", { name: "Colores de la agenda" })).toHaveCount(0);
-  if (info.project.name === "escritorio") await expect(page.getByText("Hoy", { exact: true })).toBeVisible();
-  // En el celular, la pestaña de hoy es la elegida (pulido 10.1: ya no se repite el día debajo)
-  else await expect(page.getByRole("navigation", { name: "Días de la semana" }).getByRole("link", { name: /, hoy(,|$)/ })).toHaveAttribute("aria-current", "date");
+  if (info.project.name === "escritorio") await expect(page.getByText("Hoy", { exact: true }).locator("visible=true")).toBeVisible();
+  // En el celular, la lista empieza hoy (20/11)
+  else await expect(page.getByRole("heading", { level: 2, name: /^Hoy, / })).toBeVisible();
   // Lejos de hoy aparece el atajo para volver
   await page.getByRole("link", { name: "Semana siguiente", exact: true }).click();
   await page.getByRole("link", { name: "Hoy", exact: true }).click();
