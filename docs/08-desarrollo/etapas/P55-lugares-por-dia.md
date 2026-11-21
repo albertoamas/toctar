@@ -1,7 +1,7 @@
 # P55 Sin espacios fijos ni límite por día, y la Agenda rehecha — especificación
 
 - **Fase y semana:** Cierre de la Entrega 2 · desde el 20/11/2026
-- **Estado:** en curso (programado el 20/11/2026)
+- **Estado:** hecho (20/11/2026, PR #294)
 - **Historias:** HU-05 (configuración del taller), HU-29 (tablero de la agenda), HU-30 (agendar), HU-31 (reprogramar), HU-34 (extender la entrega)
 - **Base:** RN-06, D-5 (`modelo-de-datos.md`), C3 (`C3-agenda-pagos.md`), P41 (reserva en pasos), pedido 28 (entregadas en la agenda), registro de cambios, pedido 55
 

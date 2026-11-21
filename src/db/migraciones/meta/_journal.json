@@ -393,6 +393,13 @@
       "when": 1795229902279,
       "tag": "0055_probador_de_colores",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1795238537325,
+      "tag": "0056_datos_repintado_de_aros",
+      "breakpoints": true
     }
   ]
 }

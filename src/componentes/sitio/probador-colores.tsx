@@ -6,11 +6,12 @@ import type { ColorServicio } from "@/db/esquema/sitio";
 import { enlaceWhatsApp, mensajeColor } from "@/lib/whatsapp";
 import { LUZ_ACABADO, NOMBRE_ACABADO } from "@/modulos/sitio/colores";
 import { IconoWhatsApp } from "./iconos-marca";
+import { TITULO_SECCION } from "./titulo-pagina";
 
 // Pedido 56 (P56-probador-de-colores.md): en la página de un servicio con colores (el repintado de aros), se elige un
 // color y se ve en un aro dibujado; "Quiero este color" abre WhatsApp con el color ya escrito. Sin precios (RN-10).
 // El dibujo es original, sin marcas. Al cambiar de color, una pasada de luz en 60°, el único ángulo de la marca; con
-// "menos movimiento", sin animación.
+// "menos movimiento", sin animación. Va como una sección más de la página, sin caja (21/11).
 
 type Props = {
   servicio: string;
@@ -41,39 +42,46 @@ export function ProbadorColores({ servicio, colores, whatsapp }: Props) {
   };
 
   return (
-    <section aria-labelledby={`${id}-titulo`} className="relative grid items-center gap-6 overflow-hidden bg-superficie p-5 md:grid-cols-[1.1fr_1fr] md:gap-10 md:p-12">
-      {/* La franja de 60° de la marca, detrás */}
-      <div aria-hidden className="pointer-events-none absolute inset-y-[-20%] left-[30%] w-1/2 -skew-x-[30deg] bg-superficie-alta md:left-[38%] md:w-1/3" />
-
-      <div className="relative mx-auto aspect-square w-full max-w-[340px] md:max-w-[520px]" style={{ "--aro": color.hex } as React.CSSProperties}>
-        <Aro id={id} luz={luz.luz} reflejo={luz.reflejo} />
-        <div ref={pasada} aria-hidden className="tt-pasada pointer-events-none absolute inset-0 overflow-hidden rounded-full" />
+    // Una sección más de la página (21/11: en una caja gris parecía pegada encima): sobre el negro, con el título como
+    // "Cómo lo hacemos" y el aro con una luz suave detrás
+    <section aria-labelledby={`${id}-titulo`} className="grid items-center gap-8 md:grid-cols-[1.1fr_1fr] md:gap-12">
+      <div className="relative mx-auto aspect-square w-full max-w-[340px] md:max-w-[500px]" style={{ "--aro": color.hex } as React.CSSProperties}>
+        {/* La luz detrás: el aro se lee aunque sea negro */}
+        <div aria-hidden className="pointer-events-none absolute -inset-[12%] rounded-full bg-[radial-gradient(circle,rgb(255_255_255/0.2)_0%,rgb(255_255_255/0.07)_42%,transparent_68%)]" />
+        <div className="relative size-full">
+          <Aro id={id} luz={luz.luz} reflejo={luz.reflejo} />
+          <div ref={pasada} aria-hidden className="tt-pasada pointer-events-none absolute inset-0 overflow-hidden rounded-full" />
+        </div>
       </div>
 
-      <div className="relative flex min-w-0 flex-col gap-6">
-        <h2 id={`${id}-titulo`} className="font-heading text-[32px] leading-[32px] font-extrabold text-balance uppercase italic md:text-[48px] md:leading-[46px]">
-          Elige el color
-        </h2>
-        <div aria-live="polite">
-          <p className="text-sm text-tinta-suave">Color elegido</p>
-          <p className="font-heading text-[40px] leading-[40px] font-extrabold uppercase italic md:text-[56px] md:leading-[54px]">{color.nombre}</p>
-          <p className="mt-1 text-tinta-media">{acabado}</p>
+      <div className="flex min-w-0 flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <h2 id={`${id}-titulo`} className={TITULO_SECCION}>
+            Elige el color
+          </h2>
+          <p className="text-tinta-suave">Toca un color y mira cómo quedan tus aros.</p>
         </div>
-        <ul aria-label="Colores" className="-mx-1 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pt-0.5 pb-2 md:mx-0 md:grid md:grid-cols-[repeat(auto-fill,minmax(92px,1fr))] md:overflow-visible md:px-0">
+        {/* El elegido se ve en su anillo (21/11: en grande, sobraba); el lector de pantalla lo oye al cambiar */}
+        <p aria-live="polite" className="sr-only">
+          {color.nombre}, {acabado}
+        </p>
+        {/* Círculos con su nombre, como los configuradores de autos; todos a la vista, cuatro por fila en el celular (21/11:
+            en una fila que se deslizaba, los últimos quedaban escondidos) */}
+        <ul aria-label="Colores" className="grid grid-cols-4 gap-x-1 gap-y-4 pt-1 sm:flex sm:flex-wrap sm:gap-x-2">
           {colores.map((c, i) => (
-            <li key={i} className="w-[92px] shrink-0 snap-start md:w-auto">
+            <li key={i} className="flex justify-center sm:block">
               <button
                 type="button"
                 onClick={() => elegir(i)}
                 aria-pressed={i === elegido}
-                className={cn(
-                  "flex w-full flex-col items-center gap-2 border-2 bg-fondo px-1.5 pt-3 pb-2.5 text-center text-[13px] leading-tight font-semibold hover:border-superficie-alta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rojo-texto",
-                  i === elegido ? "border-tinta" : "border-transparent",
-                )}
+                className="group flex w-full max-w-[84px] flex-col items-center gap-2 py-1 text-center focus-visible:outline-none sm:w-[76px]"
               >
                 <span
                   aria-hidden
-                  className="size-[38px] rounded-full shadow-[inset_0_0_0_1px_rgb(255_255_255/0.15)]"
+                  className={cn(
+                    "size-11 rounded-full shadow-[inset_0_0_0_1px_rgb(255_255_255/0.18)] ring-offset-4 ring-offset-fondo transition-shadow group-focus-visible:ring-2 group-focus-visible:ring-rojo-texto motion-reduce:transition-none",
+                    i === elegido ? "ring-2 ring-tinta" : "group-hover:ring-1 group-hover:ring-tinta-suave",
+                  )}
                   style={{
                     background:
                       c.acabado === "mate"
@@ -81,18 +89,23 @@ export function ProbadorColores({ servicio, colores, whatsapp }: Props) {
                         : `radial-gradient(circle at 32% 28%, rgb(255 255 255 / ${c.acabado === "brillante" ? 0.75 : 0.35}), transparent ${c.acabado === "brillante" ? 38 : 45}%), ${c.hex}`,
                   }}
                 />
-                <span>{c.nombre}</span>
-                <span className="text-xs font-medium text-tinta-suave">{NOMBRE_ACABADO[c.acabado]}</span>
+                <span className={cn("text-[13px] leading-tight font-semibold", i === elegido ? "text-tinta" : "text-tinta-media")}>
+                  {c.nombre}
+                  <span className="block text-xs font-normal text-tinta-suave">{NOMBRE_ACABADO[c.acabado]}</span>
+                </span>
               </button>
             </li>
           ))}
         </ul>
-        <a href={href} target={whatsapp ? "_blank" : undefined} rel={whatsapp ? "noopener" : undefined} className="tt-boton tt-boton--principal self-stretch md:self-start">
-          <IconoWhatsApp />
-          Quiero este color
-          <span className="sr-only"> por WhatsApp</span>
-        </a>
-        <p className="-mt-2 text-sm text-tinta-suave">El tono final se confirma en el taller con una muestra.</p>
+        <div className="flex flex-col gap-3">
+          {/* De contorno: el rojo principal es el de arriba ("Consultar por este servicio"), como en el resto del sitio */}
+          <a href={href} target={whatsapp ? "_blank" : undefined} rel={whatsapp ? "noopener" : undefined} className="tt-boton tt-boton--contorno self-stretch md:self-start">
+            <IconoWhatsApp />
+            Quiero este color
+            <span className="sr-only"> por WhatsApp</span>
+          </a>
+          <p className="text-sm text-tinta-suave">El tono final se confirma en el taller con una muestra.</p>
+        </div>
       </div>
     </section>
   );
@@ -131,9 +144,9 @@ function Aro({ id, luz, reflejo }: { id: string; luz: number; reflejo: number })
     <svg viewBox="0 0 400 400" aria-hidden className="size-full overflow-visible drop-shadow-[0_24px_30px_rgb(0_0_0/0.6)]">
       <defs>
         <radialGradient id={g("neumatico")} cx="50%" cy="50%" r="50%">
-          <stop offset="80%" stopColor="#1d1d1d" />
-          <stop offset="94%" stopColor="#111" />
-          <stop offset="100%" stopColor="#060606" />
+          <stop offset="78%" stopColor="#232323" />
+          <stop offset="94%" stopColor="#1a1a1a" />
+          <stop offset="100%" stopColor="#2a2a2a" />
         </radialGradient>
         <radialGradient id={g("disco")} cx="45%" cy="40%" r="60%">
           <stop offset="0%" stopColor="#6c6c6c" />
@@ -166,6 +179,8 @@ function Aro({ id, luz, reflejo }: { id: string; luz: number; reflejo: number })
       </defs>
       {/* Neumático de perfil bajo */}
       <circle cx="200" cy="200" r="197" fill={`url(#${g("neumatico")})`} />
+      {/* El canto del neumático, un poco más claro: lo recorta del fondo negro del sitio */}
+      <circle cx="200" cy="200" r="196" fill="none" stroke="#4a4a4a" strokeWidth="2" />
       <circle cx="200" cy="200" r="186" fill="none" stroke="#2a2a2a" strokeWidth="1.5" />
       <circle cx="200" cy="200" r="168" fill="none" stroke="#0a0a0a" strokeWidth="6" />
       {/* Lo de adentro: el fondo del aro, el disco perforado y la pinza */}

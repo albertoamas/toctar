@@ -1,7 +1,7 @@
 # P56 Probador de colores en la página de un servicio — especificación
 
 - **Fase y semana:** Cierre de la Entrega 2 · desde el 20/11/2026
-- **Estado:** en curso (programado el 20/11/2026)
+- **Estado:** hecho (21/11/2026, PR #295 y #296)
 - **Historias:** HU-07 (página del servicio en el sitio)
 - **Base:** B3 (`B3-contenido.md`), B4 (`B4-sitio-publico.md`), registro de cambios, pedido 56
 
@@ -37,15 +37,23 @@ El dueño lo pidió dentro del precio: **Incluido** (se le olvidó mencionarlo a
 `servicio.colores` (`jsonb`, `[]` por defecto): `{ nombre, hex, acabado }[]`, como los beneficios y los pasos. Migración
 `0055_probador_de_colores`. Se actualiza `modelo-de-datos.md`.
 
+**Datos de inicio (21/11):** la migración `0056_datos_repintado_de_aros` agrega el servicio "Repintado de aros" a los
+iniciales (como `0007_datos_servicios`): su resumen, la variante "Única" (D-2) y siete colores de partida (negro mate y
+brillante, grafito, plata, bronce, dorado y blanco). Solo si no existe por su dirección o su nombre; sin precios. Los datos
+de demostración (`datos-demo.mjs`) le suman beneficios, pasos y precios de ejemplo.
+
 ## 5. Pantallas
 - **Panel, ficha del servicio (Sitio web → Servicios):** sin colores, la sección no está; "Más" ofrece "Agregar probador
   de colores", que abre el modal con un color para llenar. Con colores, la sección "Probador de colores" va después de
   "Cómo lo hacemos" y antes de "Opciones": cada color con su muestra, nombre y acabado, y "Editar colores". El modal tiene
   la lista (agregar, quitar y ordenar): un selector de color, el nombre y el acabado por fila (en el celular, el acabado
   abajo); "Guardar colores". Si se quitan todos, la sección vuelve a esconderse.
-- **Sitio, página del servicio:** un recuadro con la franja de 60°. A la izquierda, el aro; a la derecha, "Elige el color",
-  el color elegido en grande con su acabado, las muestras (en el celular, deslizables) y "Quiero este color". Debajo, "El
-  tono final se confirma en el taller con una muestra.". Arranca con el primer color.
+- **Sitio, página del servicio:** una sección más, sin caja (21/11: en un recuadro gris con la franja parecía pegada
+  encima). El aro con una luz detrás y el canto del neumático más claro, que lo recortan del fondo negro aunque sea negro; en la computadora a la izquierda, en el
+  celular arriba. Al lado o debajo: "Elige el color" con el estilo de "Cómo lo hacemos", "Toca un color y mira cómo
+  quedan tus aros.", las muestras en círculos con su nombre y acabado (el elegido, con un anillo blanco; todas a la vista,
+  cuatro por fila en el celular) y "Quiero este color" de contorno (el rojo principal es el de arriba). Debajo, "El tono final
+  se confirma en el taller con una muestra.". Arranca con el primer color.
 
 ## 6. Acciones del servidor
 `guardarParteServicio` con la parte `colores` (el mismo esquema en el formulario y en el servidor); renueva la página del

@@ -176,6 +176,16 @@ const SERVICIOS = {
     beneficios: [["La capa dura más", "duracion"], ["El brillo se mantiene", "brillo"], ["Revisamos el recubrimiento", "listo"]],
     // Sus pasos ya vienen de las migraciones
   },
+  // Pedido 56: su página tiene el probador de colores (los colores vienen de las migraciones)
+  "repintado-de-aros": {
+    beneficios: [["Aguanta el calor del freno", "calor"], ["El color que elijas", "brillo"], ["Más fáciles de lavar", "limpieza"], ["Se ve como nuevo", "vehiculo"]],
+    pasos: [
+      ["Desmontaje y lavado", "Sacamos los aros y quitamos el polvo de freno y la grasa."],
+      ["Preparación", "Lijamos, reparamos los raspones y protegemos el neumático y la válvula."],
+      ["Pintura", "Base, el color que elegiste y barniz, en capas finas."],
+      ["Curado y montaje", "La pintura se endurece antes de volver a montarlos y balancearlos."],
+    ],
+  },
 };
 
 /** Precios de demostración (Bs) por tamaño, en el orden de los tamaños; null es "según evaluación". */
@@ -194,6 +204,7 @@ const PRECIOS = {
   "polarizado-de-vidrios": { Única: [450, 500, 600, 700, 850] },
   "instalacion-de-ppf": { Única: [null, null, null, null, null] },
   "mantenimiento-del-nano-ceramico": { Única: [null, null, null, null, null] },
+  "repintado-de-aros": { Única: [500, 550, 600, 700, 850] },
 };
 
 /** Trabajos terminados para la galería: la foto y de qué servicio es. */
