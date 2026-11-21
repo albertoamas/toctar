@@ -13,7 +13,6 @@ import { filtrarOrdenes, textoRestoBien,
   estaAtrasada,
   estadoFiltrado,
   alTocarBien,
-  textoAvanceChecklist,
   textoEntrega, resumenServicios,
   etapaAbierta,
   fechaBuscada,
@@ -270,13 +269,6 @@ test("el checklist es un interruptor: tocar Bien en una parte bien la desmarca; 
   expect(alTocarBien(null)).toBe("marcar");
   // Con un detalle, "Bien" la pasa a bien (y el servidor borra la nota y la foto)
   expect(alTocarBien("detalle")).toBe("marcar");
-});
-
-test("el avance del checklist dice cuántas faltan, en singular o plural, o que están todas (pedido 26)", () => {
-  expect(textoAvanceChecklist(8, 13)).toBe("Faltan 5");
-  expect(textoAvanceChecklist(12, 13)).toBe("Falta 1");
-  expect(textoAvanceChecklist(13, 13)).toBe("Todas revisadas");
-  expect(textoAvanceChecklist(0, 0)).toBe("Todas revisadas");
 });
 
 // Pulido de Recibir (09/11): "Marcar el resto como bien" valida su trabajo y dice cuántas marcó

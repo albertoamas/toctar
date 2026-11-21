@@ -141,9 +141,6 @@ export const textoRestoBien = (marcadas: number) =>
  */
 export const alTocarBien = (estado: EstadoRevision | null): "marcar" | "desmarcar" => (estado === "bien" ? "desmarcar" : "marcar");
 
-/** El avance del checklist, en palabras: "Faltan 5" o, con todas revisadas, "Todas revisadas". */
-export const textoAvanceChecklist = (revisadas: number, total: number) =>
-  revisadas >= total ? "Todas revisadas" : `${total - revisadas === 1 ? "Falta" : "Faltan"} ${total - revisadas}`;
 
 /**
  * Lo que se escribe en la búsqueda de entregadas (pedido 28), como fecha: "5/10" (día y mes, de cualquier año) o

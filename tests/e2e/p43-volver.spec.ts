@@ -96,7 +96,7 @@ test("al recibir, la orden vuelve a donde se estaba antes de abrir la reserva y 
   await page.getByRole("link", { name: "Recibir vehículo" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}/recibir\\?volver=`));
   await expect(volverA(page, "Reserva")).toBeVisible();
-  await page.getByRole("button", { name: /Marcar (todas|el resto) como bien/ }).click();
+  await page.getByRole("button", { name: /^(Todo bien|El resto, bien)$/ }).click();
   await expect(page.getByText(/Faltan? \d+ partes? del checklist/)).toHaveCount(0);
   await page.getByRole("button", { name: "Recibir vehículo" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?recibido=1&volver=%2Fpanel%2Fagenda$`));

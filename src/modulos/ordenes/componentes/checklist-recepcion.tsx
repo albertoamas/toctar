@@ -23,7 +23,7 @@ import type { EstadoFormulario } from "@/lib/formularios";
 import { desmarcarParte, guardarDetalle, marcarBien, marcarRestoBien } from "../acciones/recepcion";
 import type { DetalleRevision } from "../consultas";
 import type { EstadoRevision, TipoDetalle } from "@/db/esquema/trabajos";
-import { alTocarBien, NOMBRE_DETALLE, textoAvanceChecklist, TIPOS_DE_DETALLE } from "../reglas";
+import { alTocarBien, NOMBRE_DETALLE, TIPOS_DE_DETALLE } from "../reglas";
 
 // Checklist de recepción (pedido 12, P12-checklist-recepcion.md §5; pedido 26): quien recibe revisa parte por parte. Cada
 // parte tiene un interruptor de dos opciones que se ve prendido o apagado: "Bien" (un toque: se prende en verde al
@@ -115,18 +115,27 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
   return (
     // El título adentro de la tarjeta, como el resto del paso (sistema-del-panel.md §2, 18/11); las filas, como estaban
     <section aria-labelledby="checklist-titulo" className="tt-tarjeta-panel flex flex-col overflow-hidden">
-      <CabeceraTarjeta id="checklist" titulo="Checklist" descripcion="Revisa cada parte: bien, o con un detalle y su foto." />
+      {/* Sin la frase de ayuda (recorrido visual, 21/11): "Bien" y "Detalle" en cada parte ya dicen qué hacer */}
+      <CabeceraTarjeta id="checklist" titulo="Checklist" />
       {filas.length === 0 ? (
         <p className="p-4 text-tinta-suave sm:p-5">No hay partes en el checklist: se agregan en Configuración → Taller.</p>
       ) : (
         <div className="flex flex-col">
-          {/* El avance: cuántas van, cuántas faltan y una barra que se llena (verde al completarse) */}
-          <div className="flex flex-col gap-2 border-b border-border px-4 py-3 sm:px-5">
-            <div className="flex items-baseline justify-between gap-3">
-              <p aria-live="polite" className="font-semibold tabular-nums">
-                Revisadas {revisadas} de {filas.length}
+          {/* El avance, en una línea, con "Todo bien" a la derecha (recorrido visual, 21/11): casi siempre el vehículo llega bien
+              y solo una o dos partes tienen algo, así que el atajo va primero y a la vista. Cuántas faltan lo dice el pie, junto
+              a "Recibir vehículo"; aquí repetía lo mismo */}
+          <div className="flex flex-col gap-2.5 border-b border-border px-4 py-3 sm:px-5">
+            <div className="flex min-h-10 items-center justify-between gap-3">
+              <p aria-live="polite" className={cn("font-semibold tabular-nums", completo && "text-exito")}>
+                {completo ? "Todas revisadas" : `Revisadas ${revisadas} de ${filas.length}`}
               </p>
-              <p className={cn("text-sm font-semibold", completo ? "text-exito" : "text-tinta-suave")}>{textoAvanceChecklist(revisadas, filas.length)}</p>
+              {/* Un vehículo que llega sin nada: lo que falta, bien de un toque. Lo ya revisado (un detalle) no cambia */}
+              {!completo && (
+                <Button type="button" variant="outline" className="shrink-0" disabled={!hidratado || marcandoResto || guardando.length > 0} onClick={marcarResto}>
+                  <CheckCheckIcon />
+                  {marcandoResto ? "Marcando…" : revisadas === 0 ? "Todo bien" : "El resto, bien"}
+                </Button>
+              )}
             </div>
             <div
               role="progressbar"
@@ -141,13 +150,6 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
                 style={{ width: `${(revisadas / filas.length) * 100}%` }}
               />
             </div>
-            {/* Un vehículo que llega sin nada: lo que falta, bien de un toque. Lo ya revisado (un detalle) no cambia */}
-            {!completo && (
-              <Button type="button" variant="outline" className="self-start" disabled={!hidratado || marcandoResto || guardando.length > 0} onClick={marcarResto}>
-                <CheckCheckIcon />
-                {marcandoResto ? "Marcando…" : revisadas === 0 ? "Marcar todas como bien" : "Marcar el resto como bien"}
-              </Button>
-            )}
           </div>
           {/* Las fotos de los detalles en el visor del panel, sin salir a otra pestaña (pulido 13.16) */}
           <VisorFotos
@@ -165,7 +167,7 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
               // El detalle guardado, solo si sigue siendo detalle (un "Bien" recién tocado ya lo reemplazó)
               const detalle = estado === "detalle" && d?.estado === "detalle" ? d : null;
               return (
-                <li key={p.id} className="flex flex-col gap-2 px-4 py-3 sm:px-5">
+                <li key={p.id} className="flex flex-col gap-2 px-4 py-1.5 sm:px-5 sm:py-2">
                   {/* El nombre a la izquierda (si es largo, en dos renglones) y el interruptor siempre a la derecha: la
                       lista queda pareja también en el celular */}
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3">
