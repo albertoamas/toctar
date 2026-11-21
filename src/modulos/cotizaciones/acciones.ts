@@ -5,16 +5,17 @@ import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { cliente, consulta, cotizacion, vehiculo } from "@/db/esquema";
+import { cliente, consulta, consultaArchivo, cotizacion, vehiculo } from "@/db/esquema";
+import { eliminarFoto, guardarFoto } from "@/lib/fotos";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { exigirAccion, exigirModulo } from "@/lib/sesion";
 import { clienteConTelefono } from "@/modulos/clientes/consultas";
-import { esquemaCliente, esquemaVehiculo } from "@/modulos/clientes/esquemas";
+import { esquemaVehiculo } from "@/modulos/clientes/esquemas";
 import { conMarcaDeLaLista, type EstadoCliente, type Existentes, revisarVehiculo } from "@/modulos/clientes/servidor";
 import { camposConPrefijo, erroresConPrefijo, leerValores, PREFIJO_VEHICULO } from "@/modulos/clientes/valores";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
-import { entradaPrecios, esquemaCambioEstado, esquemaClienteElegido, esquemaNuevaVersion, esquemaPreciosNuevos, esquemaVehiculoElegido } from "./esquemas";
-import { tieneVersiones } from "./consultas/comun";
+import { entradaPrecios, ERROR_FOTO_INTERESADO, esquemaCambioEstado, esquemaClienteElegido, esquemaInteresado, esquemaNuevaVersion, esquemaPreciosNuevos, esquemaVehiculoElegido } from "./esquemas";
+import { tamanoDeLaConsulta, tieneVersiones } from "./consultas/comun";
 import { tieneReservaActiva } from "./consultas/lista";
 import { generarPdf } from "./pdf/generar";
 import { CLIENTE_NUEVO, NOMBRE_ESTADO, transicionPermitida, VEHICULO_OTRO } from "./reglas";
@@ -27,7 +28,7 @@ import { conDesde, leerDesde, sinLaCotizacion } from "@/lib/volver";
 
 const PEDIDO_ILEGIBLE = "No se pudo leer el pedido. Recarga la página.";
 
-function despuesDeCambiar(id: number, clienteId?: number) {
+function despuesDeCambiar(id: number, clienteId?: number | null) {
   revalidatePath("/panel/cotizaciones");
   revalidatePath(`/panel/cotizaciones/${id}`);
   if (clienteId) revalidatePath(`/panel/clientes/${clienteId}`, "layout"); // también las fichas de sus vehículos (pedido 51)
@@ -48,9 +49,10 @@ async function conPdf(cotizacionId: number, autorId: number): Promise<boolean> {
 }
 
 /**
- * Nueva cotización (pedido 23): el cliente se elige o se registra ahí mismo (nombre y WhatsApp, con el aviso de
- * repetidos de C1, RF-23), el vehículo se elige entre los suyos o se agrega, y la versión 1 con sus precios. Todo en una
- * transacción: o queda todo, o nada.
+ * Nueva cotización (pedido 23): a un cliente registrado, con uno de sus vehículos o uno que se agrega; a alguien nuevo,
+ * como interesado (pedido 31, parte 2, P31b-cotizacion-rapida.md): su nombre, su WhatsApp, el tamaño del vehículo y,
+ * si se quiere, qué vehículo es y una foto, sin registrarlo en Clientes (se registra al reservar). Con un WhatsApp que ya
+ * es de un cliente, se ofrece usarlo (RF-23). Y la versión 1 con sus precios. Todo en una transacción: o queda todo, o nada.
  */
 export async function crearCotizacion(_previo: EstadoCliente, datos: FormData): Promise<EstadoCliente> {
   const autor = await exigirAccion("cotizar");
@@ -65,19 +67,18 @@ export async function crearCotizacion(_previo: EstadoCliente, datos: FormData): 
   const entrada = esquemaPreciosNuevos.safeParse(entradaPrecios(datos));
   if (!entrada.success) Object.assign(errores, erroresDe(entrada.error));
 
-  // Cliente nuevo, con todo lo que se cargó en el paso del cliente (pedido 40): nombre y WhatsApp, y si se escribieron,
-  // correo, NIT, razón social y notas. El mismo esquema que el alta de Clientes
-  let nuevoCliente: z.output<typeof esquemaCliente> | null = null;
+  // Alguien nuevo, como interesado (P31b): nombre, WhatsApp y el tamaño; qué vehículo es, si se escribió
+  let interesado: z.output<typeof esquemaInteresado> | null = null;
   if (elegido === CLIENTE_NUEVO) {
-    const c = esquemaCliente.safeParse(valores);
-    if (c.success) nuevoCliente = c.data;
+    const c = esquemaInteresado.safeParse(valores);
+    if (c.success) interesado = c.data;
     else Object.assign(errores, erroresDe(c.error));
   }
 
-  // Vehículo: con un cliente nuevo siempre es nuevo; con uno registrado, uno suyo u "otro"
+  // Vehículo de un cliente registrado: uno suyo u "otro"
   let vehiculoId: number | null = null;
   let nuevoVehiculo: z.output<typeof esquemaVehiculo> | null = null;
-  let eleccionVehiculo: number | typeof VEHICULO_OTRO | null = elegido === CLIENTE_NUEVO ? VEHICULO_OTRO : null;
+  let eleccionVehiculo: number | typeof VEHICULO_OTRO | null = null;
   if (elegido !== CLIENTE_NUEVO) {
     const v = esquemaVehiculoElegido.safeParse(valores.vehiculo ?? "");
     if (v.success) eleccionVehiculo = v.data;
@@ -94,7 +95,7 @@ export async function crearCotizacion(_previo: EstadoCliente, datos: FormData): 
   // Lo que el esquema no sabe: que el cliente y su vehículo existan y estén activos, y los repetidos (RF-23). El tamaño
   // del vehículo da los precios sugeridos que se copian en cada línea
   const existentes: Existentes = {};
-  let tamanoId = nuevoVehiculo?.tamanoId ?? 0;
+  let tamanoId = nuevoVehiculo?.tamanoId ?? interesado?.interesadoTamanoId ?? 0;
   if (typeof elegido === "number") {
     const [c] = await db.select({ id: cliente.id }).from(cliente).where(and(eq(cliente.id, elegido), eq(cliente.activo, true)));
     if (!c) return { mensaje: "Ese cliente ya no está activo. Elige otro.", valores };
@@ -106,8 +107,8 @@ export async function crearCotizacion(_previo: EstadoCliente, datos: FormData): 
       if (suyo) tamanoId = suyo.tamanoId;
       else errores.vehiculo = "Elige el vehículo.";
     }
-  } else if (nuevoCliente) {
-    const conTelefono = await clienteConTelefono(nuevoCliente.telefono);
+  } else if (interesado) {
+    const conTelefono = await clienteConTelefono(interesado.telefono);
     if (conTelefono) {
       errores.telefono = `Ese número ya es de ${conTelefono.nombre}.`;
       existentes.telefono = conTelefono;
@@ -120,21 +121,49 @@ export async function crearCotizacion(_previo: EstadoCliente, datos: FormData): 
   if ("errores" in preparadas) return { errores: preparadas.errores, valores };
 
   const autorId = Number(autor.id);
-  let ids: { consulta: number; cliente: number; version: number };
+  // La foto del vehículo del interesado (P31b), privada: se sube antes de la transacción y se borra si no se guarda
+  let fotoId: number | null = null;
+  if (interesado) {
+    try {
+      const foto = await guardarFoto(datos.get("foto"), { carpeta: "consultas", miniatura: true, autorId, privado: true });
+      if (foto.ok) fotoId = foto.archivoId;
+      else if (foto.motivo === "invalida") return { errores: { foto: ERROR_FOTO_INTERESADO }, valores };
+    } catch (error) {
+      console.error("No se pudo guardar la foto de la cotización", error);
+      return { errores: { foto: "No se pudo subir la foto. Vuelve a intentar o sigue sin ella." }, valores };
+    }
+  }
+  let ids: { consulta: number; cliente: number | null; version: number };
   try {
     ids = await db.transaction(async (tx) => {
-      let clienteId: number;
-      if (typeof elegido === "number") {
-        clienteId = elegido;
-        // Un cliente al que se le cotiza sube en la lista de recientes de Clientes
-        await tx.update(cliente).set({ updatedAt: sql`now()` }).where(eq(cliente.id, clienteId));
-      } else {
-        const [c] = await tx
-          .insert(cliente)
-          .values({ ...nuevoCliente!, createdBy: autorId, updatedBy: autorId })
-          .returning({ id: cliente.id });
-        clienteId = c.id;
+      // Al interesado no se lo registra (P31b): la consulta guarda lo suyo y la cotización sale igual
+      if (interesado) {
+        const [encabezado] = await tx
+          .insert(consulta)
+          .values({
+            estado: "cotizado",
+            interesadoNombre: interesado.nombre,
+            interesadoTelefono: interesado.telefono,
+            interesadoVehiculo: interesado.interesadoVehiculo,
+            interesadoTamanoId: interesado.interesadoTamanoId,
+            createdBy: autorId,
+          })
+          .returning({ id: consulta.id });
+        if (fotoId) await tx.insert(consultaArchivo).values({ consultaId: encabezado.id, archivoId: fotoId, orden: 0 });
+        const version = await escribirVersion(tx, {
+          consultaId: encabezado.id,
+          numero: await numeroNuevo(tx),
+          version: 1,
+          precios,
+          lineas: preparadas.lineas,
+          parametros,
+          autorId,
+        });
+        return { consulta: encabezado.id, cliente: null, version };
       }
+      const clienteId = elegido as number;
+      // Un cliente al que se le cotiza sube en la lista de recientes de Clientes
+      await tx.update(cliente).set({ updatedAt: sql`now()` }).where(eq(cliente.id, clienteId));
       if (nuevoVehiculo) {
         const [v] = await tx.insert(vehiculo).values({ ...(await conMarcaDeLaLista(tx, nuevoVehiculo)), clienteId, createdBy: autorId }).returning({ id: vehiculo.id });
         vehiculoId = v.id;
@@ -165,6 +194,7 @@ export async function crearCotizacion(_previo: EstadoCliente, datos: FormData): 
       return { consulta: encabezado.id, cliente: clienteId, version };
     });
   } catch (error) {
+    if (fotoId) await eliminarFoto(fotoId).catch((e) => console.error("No se pudo borrar la foto de la cotización", e));
     if (error instanceof VehiculoCambio) return { errores: { vehiculo: "Elige el vehículo." }, valores };
     // Dos personas registrando lo mismo a la vez: lo frena el índice único
     const indice = indiceUnicoViolado(error);
@@ -175,7 +205,7 @@ export async function crearCotizacion(_previo: EstadoCliente, datos: FormData): 
 
   const pdf = await conPdf(ids.version, autorId);
   despuesDeCambiar(ids.consulta, ids.cliente);
-  revalidatePath("/panel/clientes");
+  if (ids.cliente) revalidatePath("/panel/clientes");
   // Vuelve a donde se empezó (pedido 43) y reemplaza al formulario en el historial: "atrás" no vuelve a él
   redirect(conDesde(`/panel/cotizaciones/${ids.consulta}?creada=1${pdf ? "" : "&sinpdf=1"}`, leerDesde(datos.get("volver"))), RedirectType.replace);
 }
@@ -197,9 +227,10 @@ export async function guardarVersion(_previo: EstadoFormulario, datos: FormData)
   const d = r.data;
 
   const [c] = await db
-    .select({ estado: consulta.estado, clienteId: consulta.clienteId, tamanoId: vehiculo.tamanoId })
+    // El tamaño del vehículo o, de un interesado (P31b), el que se eligió al cotizar
+    .select({ estado: consulta.estado, clienteId: consulta.clienteId, tamanoId: tamanoDeLaConsulta })
     .from(consulta)
-    .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
+    .leftJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
     .where(eq(consulta.id, d.consultaId));
   if (!c) return { mensaje: "Esa cotización ya no existe." };
   // Solo una pendiente recibe versiones: una rechazada vuelve a pendiente primero y una aceptada ya no cambia
@@ -277,17 +308,20 @@ export async function cambiarEstadoCotizacion(_previo: EstadoFormulario, datos: 
     if (!actual) return { mensaje: "Esa cotización ya no existe. Recarga la página." };
     // El vehículo pasó a otro cliente (pedido 37): su cotización no vuelve a abrirse ni se acepta; rechazarla, sí. Se lee
     // después del bloqueo, en otra consulta: la misma que bloquea vería al dueño de antes si esperó a un cambio de dueño
-    const [delVehiculo] = await tx
-      .select({ clienteId: vehiculo.clienteId, activo: vehiculo.activo, clienteActivo: cliente.activo })
-      .from(vehiculo)
-      .innerJoin(cliente, eq(cliente.id, actual.clienteId))
-      .where(eq(vehiculo.id, actual.vehiculoId));
-    if (d.accion !== "rechazar" && delVehiculo?.clienteId !== actual.clienteId) {
-      return { mensaje: "El vehículo de esta cotización ya es de otro cliente: cotízale a él." };
-    }
-    // Aceptada queda en "Por reservar": no se puede prometer con el cliente o el vehículo desactivados
-    if (d.accion === "aceptar" && !(delVehiculo?.activo && delVehiculo.clienteActivo)) {
-      return { mensaje: "El cliente o el vehículo de esta cotización está desactivado: reactívalo en su ficha." };
+    // La de un interesado (P31b) no tiene vehículo que revisar: se registra al reservarla
+    if (actual.clienteId !== null && actual.vehiculoId !== null) {
+      const [delVehiculo] = await tx
+        .select({ clienteId: vehiculo.clienteId, activo: vehiculo.activo, clienteActivo: cliente.activo })
+        .from(vehiculo)
+        .innerJoin(cliente, eq(cliente.id, actual.clienteId))
+        .where(eq(vehiculo.id, actual.vehiculoId));
+      if (d.accion !== "rechazar" && delVehiculo?.clienteId !== actual.clienteId) {
+        return { mensaje: "El vehículo de esta cotización ya es de otro cliente: cotízale a él." };
+      }
+      // Aceptada queda en "Por reservar": no se puede prometer con el cliente o el vehículo desactivados
+      if (d.accion === "aceptar" && !(delVehiculo?.activo && delVehiculo.clienteActivo)) {
+        return { mensaje: "El cliente o el vehículo de esta cotización está desactivado: reactívalo en su ficha." };
+      }
     }
     const reserva = await tieneReservaActiva(d.id, tx);
     // Volver a pendiente no es una versión nueva: desde una pendiente no se "vuelve"

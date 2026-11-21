@@ -63,7 +63,7 @@ async function Contenido({ params, searchParams }: Pick<PageProps<"/panel/cotiza
           id="version-para"
           titulo="Cotización para"
           cliente={{ nombre: datos.cliente, detalle: formatearWhatsApp(datos.telefono) }}
-          vehiculo={{ placa: datos.placa, detalle: datos.detalle, tamano: datos.tamano }}
+          vehiculo={{ placa: datos.placa ?? "Sin registrar", detalle: datos.detalle, tamano: datos.tamano }}
         />
       </div>
 

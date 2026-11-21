@@ -16,6 +16,9 @@ test("saluda por el primer nombre y nombra el vehículo", () => {
   expect(nombreVehiculo({ marca: " Toyota ", modelo: "  " })).toBe("Toyota");
   expect(textoVehiculo({ marca: "Toyota", modelo: "Corolla", placa: "1234ABC" })).toBe("Toyota Corolla (placa 1234ABC)");
   expect(textoVehiculo({ marca: null, modelo: null, placa: "1234ABC" })).toBe("vehículo (placa 1234ABC)");
+  // De un interesado (P31b), sin placa todavía: lo que se escribió del vehículo
+  expect(textoVehiculo({ marca: "Hilux blanca", modelo: null, placa: null })).toBe("Hilux blanca");
+  expect(textoVehiculo({ marca: null, modelo: null, placa: null })).toBe("vehículo");
 });
 
 test("con saldo pendiente, lo dice; sin saldo, a favor o sin permiso, no", () => {

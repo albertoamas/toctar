@@ -400,6 +400,13 @@
       "when": 1795238537325,
       "tag": "0056_datos_repintado_de_aros",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1795297092971,
+      "tag": "0057_cotizacion_rapida",
+      "breakpoints": true
     }
   ]
 }

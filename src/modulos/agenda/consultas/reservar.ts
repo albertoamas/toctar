@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq, not, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, not, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { cliente, consulta, cotizacion, cotizacionLinea, servicio, tamanoVehiculo, variante, vehiculo } from "@/db/esquema";
 import { duracionEfectiva } from "@/modulos/catalogo/reglas";
@@ -104,6 +104,58 @@ export async function datosDeCotizacion(cotizacionId: number): Promise<DatosDeCo
       c.descuento,
       [],
     ),
+  };
+}
+
+/** La cotización de un interesado (P31b-cotizacion-rapida.md), que se registra antes de reservarla. */
+export type InteresadoDeCotizacion = {
+  cotizacionId: number;
+  numero: string;
+  consultaId: number;
+  /** Se puede reservar (pendiente, o aceptada sin fecha): si no, no hay nada que registrar. */
+  agendable: boolean;
+  nombre: string;
+  telefono: string;
+  /** Lo que se escribió del vehículo ("Hilux blanca"), o null. */
+  vehiculo: string | null;
+  tamanoId: number;
+  /** Si su WhatsApp ya es de un cliente (se registró por otro lado): la cotización queda con él. */
+  clienteExistente: { id: number; nombre: string; activo: boolean } | null;
+};
+
+/** La cotización de un interesado todavía sin registrar, o null (no existe o ya es de un cliente). */
+export async function interesadoDeCotizacion(cotizacionId: number): Promise<InteresadoDeCotizacion | null> {
+  const [c] = await db
+    .select({
+      cotizacionId: cotizacion.id,
+      numero: cotizacion.numero,
+      estado: cotizacion.estado,
+      consultaId: consulta.id,
+      estadoConsulta: consulta.estado,
+      conReserva: conReservaActiva,
+      nombre: consulta.interesadoNombre,
+      telefono: consulta.interesadoTelefono,
+      vehiculo: consulta.interesadoVehiculo,
+      tamanoId: consulta.interesadoTamanoId,
+      existenteId: cliente.id,
+      existenteNombre: cliente.nombre,
+      existenteActivo: cliente.activo,
+    })
+    .from(cotizacion)
+    .innerJoin(consulta, eq(cotizacion.consultaId, consulta.id))
+    .leftJoin(cliente, eq(cliente.telefono, consulta.interesadoTelefono))
+    .where(and(eq(cotizacion.id, cotizacionId), isNull(consulta.clienteId)));
+  if (!c || !c.nombre || !c.telefono || !c.tamanoId) return null;
+  return {
+    cotizacionId: c.cotizacionId,
+    numero: c.numero,
+    consultaId: c.consultaId,
+    agendable: sePuedeReservar({ version: c.estado, encabezado: c.estadoConsulta, conReserva: c.conReserva }),
+    nombre: c.nombre,
+    telefono: c.telefono,
+    vehiculo: c.vehiculo,
+    tamanoId: c.tamanoId,
+    clienteExistente: c.existenteId !== null ? { id: c.existenteId, nombre: c.existenteNombre!, activo: c.existenteActivo! } : null,
   };
 }
 

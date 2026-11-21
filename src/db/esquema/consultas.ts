@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { check, index, integer, jsonb, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
 import { usuario } from "./acceso";
 import { cliente, vehiculo } from "./clientes";
-import { archivo } from "./configuracion";
+import { archivo, tamanoVehiculo } from "./configuracion";
 import { servicio } from "./sitio";
 
 // Consultas (C2, HU-24 y HU-28) y auditoría (RNF-10). Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md §4.
@@ -26,12 +26,18 @@ export const consulta = pgTable(
   "consulta",
   {
     id: integer("id").generatedByDefaultAsIdentity().primaryKey(),
-    clienteId: integer("cliente_id")
-      .notNull()
-      .references(() => cliente.id),
-    vehiculoId: integer("vehiculo_id")
-      .notNull()
-      .references(() => vehiculo.id),
+    /** El cliente y su vehículo; vacíos en la cotización de un interesado (P31b), hasta que se registra al reservar. */
+    clienteId: integer("cliente_id").references(() => cliente.id),
+    vehiculoId: integer("vehiculo_id").references(() => vehiculo.id),
+    /**
+     * Pedido 31, parte 2 (P31b-cotizacion-rapida.md): quien cotiza y nunca vuelve no se registra como cliente. La
+     * cotización guarda su nombre, su WhatsApp (formato internacional, como el del cliente), qué vehículo es (opcional)
+     * y su tamaño, que da el precio. Al registrarse, la consulta pasa a tener cliente y vehículo, y esto queda como estaba.
+     */
+    interesadoNombre: text("interesado_nombre"),
+    interesadoTelefono: text("interesado_telefono"),
+    interesadoVehiculo: text("interesado_vehiculo"),
+    interesadoTamanoId: integer("interesado_tamano_id").references(() => tamanoVehiculo.id),
     /** Vacío: el cliente todavía no sabe qué servicio quiere. */
     servicioId: integer("servicio_id").references(() => servicio.id),
     /** Solo en las consultas de antes del pedido 23. */
@@ -54,6 +60,11 @@ export const consulta = pgTable(
     check("consulta_motivo_si_perdida", sql`(${t.estado} = 'perdido') = (${t.motivoPerdida} is not null)`),
     index("consulta_por_estado").on(t.estado, t.ultimoMovimientoAt),
     index("consulta_por_cliente").on(t.clienteId),
+    // De un cliente con su vehículo, o de un interesado con lo que da el precio; nunca de ninguno
+    check(
+      "consulta_cliente_o_interesado",
+      sql`(${t.clienteId} is not null and ${t.vehiculoId} is not null) or (${t.interesadoNombre} is not null and ${t.interesadoTelefono} is not null and ${t.interesadoTamanoId} is not null)`,
+    ),
   ],
 );
 

@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { cn } from "cn";
 import { CalendarIcon } from "lucide-react";
+import Image from "next/image";
+import { AbrirFoto } from "@/componentes/panel/abrir-foto";
 import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
@@ -99,7 +101,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
               plantilla: plantillas.cotizacion,
               negocio: negocio.nombre,
               cliente: c.cliente,
-              vehiculo: { marca: c.marca, modelo: c.modelo, placa: c.placa },
+              // De un interesado (P31b): lo que se escribió del vehículo, sin placa
+              vehiculo: c.interesado ? { marca: c.detalle[0] ? String(c.detalle[0]) : null, modelo: null, placa: null } : { marca: c.marca, modelo: c.modelo, placa: c.placa },
               numero: v.numero,
               enlace: `${urlSitio()}${rutaEnlace(v.enlace)}`,
             }),
@@ -175,14 +178,24 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
         <Seccion id="datos" titulo="Datos" sinRelleno>
           <div role="group" aria-label="Datos de la cotización" className="flex flex-col divide-y divide-border">
             {/* El encargado puede tener Cotizaciones sin Clientes: entonces no enlaza a una ficha que no puede abrir */}
-            <FilaCliente href={verFicha ? conDesde(`/panel/clientes/${c.clienteId}`, desdeAqui) : null} nombre={c.cliente} telefono={c.telefono} />
+            {/* De un interesado (P31b), sin ficha a la que ir: se registra al reservar */}
+            <FilaCliente href={verFicha && c.clienteId ? conDesde(`/panel/clientes/${c.clienteId}`, desdeAqui) : null} nombre={c.cliente} telefono={c.telefono} />
             {/* Como en Reserva y Orden, con la placa: aquí el título es el número de la cotización */}
             {/* La ficha del vehículo, para quien ve Clientes (pedido 51) */}
-            <FilaVehiculo href={verFicha ? conDesde(rutaVehiculo(c.clienteId, c.vehiculoId), desdeAqui) : null}>
-              <span className="font-semibold">{c.placa}</span>
+            <FilaVehiculo href={verFicha && c.clienteId && c.vehiculoId ? conDesde(rutaVehiculo(c.clienteId, c.vehiculoId), desdeAqui) : null}>
+              {c.placa ? <span className="font-semibold">{c.placa}</span> : <span className="font-semibold">Sin registrar</span>}
               {c.detalle.length > 0 && <span>{c.detalle.join(" ")}</span>}
               <span className="text-sm text-tinta-suave">Tamaño: {c.tamano}</span>
             </FilaVehiculo>
+            {/* La foto que se tomó al cotizar (P31b), para saber qué vehículo vino */}
+            {c.foto && (
+              <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-x-3 px-4 py-3">
+                <span className="text-tinta-suave">Foto</span>
+                <AbrirFoto fotos={[{ ...c.foto, alt: "Foto del vehículo al cotizar" }]} indice={0} titulo="Foto del vehículo" etiqueta="Ver la foto del vehículo" className="justify-self-start rounded-sm">
+                  <Image src={c.foto.miniatura} alt="" width={128} height={96} unoptimized className="h-24 w-32 rounded-sm object-cover" />
+                </AbrirFoto>
+              </div>
+            )}
           </div>
         </Seccion>
 

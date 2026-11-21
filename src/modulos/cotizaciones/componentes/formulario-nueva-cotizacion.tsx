@@ -25,6 +25,7 @@ import { crearCotizacion } from "../acciones";
 import type { OpcionServicio } from "../consultas/servicios";
 import { erroresDelPaso, PASO_CLIENTE, PASO_SERVICIOS, PASO_VEHICULO, PASOS_NUEVA_COTIZACION, pasoDeCampo, primerPasoConError } from "../pasos";
 import { CLIENTE_NUEVO, VEHICULO_OTRO } from "../reglas";
+import { CamposVehiculoInteresado, useFotoInteresado } from "./campos-interesado";
 import { CamposPrecio, ResumenPrecios, TotalEnPie, usePrecios } from "./campos-precio";
 import type { Linea } from "./lineas-servicio";
 import { conDesde } from "@/lib/volver";
@@ -85,7 +86,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
   const [locales, setLocales] = useState<{ en: EstadoCliente | null; errores: Record<string, string> }>({ en: null, errores: {} });
   const [revisados, setRevisados] = useState<{ en: EstadoCliente | null; pasos: Set<number> }>({ en: null, pasos: new Set() });
   // Lo elegido o escrito, para el resumen de arriba: se lee del formulario cada vez que se muestra un paso
-  const [resumen, setResumen] = useState<{ cliente?: [string, string]; vehiculo?: { placa: string; detalle: (string | number)[] } }>({});
+  const [resumen, setResumen] = useState<{ cliente?: [string, string]; vehiculo?: { placa: string | null; detalle: (string | number)[] } }>({});
   const errorAlLlegar = useRef(false);
   const formulario = useRef<HTMLFormElement>(null);
 
@@ -98,6 +99,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
     alTerminar.current(r);
     return r;
   }, {});
+  const foto = useFotoInteresado(accion);
   // Al cambiar de paso, a su primer campo (no a "Buscar un cliente registrado")
   const foco = useFocoDePaso(formulario, paso, estado, 'input:not([type="hidden"]), select, textarea, button[role="radio"]');
 
@@ -108,9 +110,13 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
     const elegido = cliente?.vehiculos.find((x) => String(x.id) === valores.vehiculo);
     const nuevo = (c: string) => valores[PREFIJO_VEHICULO + c]?.trim() || null;
     const placa = valores[`${PREFIJO_VEHICULO}placa`] ?? "";
+    const delInteresado = valores.interesadoVehiculo?.trim();
     setResumen({
       cliente: clienteNuevo ? [valores.nombre?.trim() ?? "", formatearWhatsApp(normalizarWhatsApp(valores.telefono ?? "") ?? valores.telefono ?? "")] : undefined,
-      vehiculo: elegido
+      // Alguien nuevo (P31b): sin placa, con lo que se escribió del vehículo
+      vehiculo: clienteNuevo
+        ? { placa: null, detalle: delInteresado ? [delInteresado] : [] }
+        : elegido
         ? { placa: elegido.placa, detalle: elegido.detalle }
         : {
             // Como la guarda el servidor
@@ -228,7 +234,12 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
         cliente={{ nombre: datosCliente[0], detalle: datosCliente[1], href: clienteNuevo ? undefined : conDesde("/panel/cotizaciones/nueva", volver), alCambiar: () => volverA(PASO_CLIENTE) }}
         vehiculo={
           paso > PASO_VEHICULO && resumen.vehiculo
-            ? { ...resumen.vehiculo, tamano: tamanos.find((t) => t.id === tamanoId)?.nombre ?? "", alCambiar: () => volverA(PASO_VEHICULO) }
+            ? {
+                ...resumen.vehiculo,
+                placa: resumen.vehiculo.placa ?? (resumen.vehiculo.detalle.length > 0 ? "" : "Sin registrar"),
+                tamano: tamanos.find((t) => t.id === tamanoId)?.nombre ?? "",
+                alCambiar: () => volverA(PASO_VEHICULO),
+              }
             : null
         }
       />
@@ -240,6 +251,8 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
       action={accion}
       className="flex flex-col gap-6"
       noValidate
+      // Con la foto del vehículo del interesado, va achicada (P31b); sin ella, el formulario sigue solo
+      onSubmit={(ev) => void foto.enviar(ev, clienteNuevo)}
       onKeyDown={(ev) => {
         // Enter en un campo de los primeros pasos sigue al próximo, no crea la cotización
         if (ev.key !== "Enter" || paso === PASO_SERVICIOS || !(ev.target instanceof HTMLInputElement)) return;
@@ -266,7 +279,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
         <ParaQuien
           etiqueta="Cotización para"
           nombre={datosCliente[0]}
-          placa={paso > PASO_VEHICULO ? resumen.vehiculo?.placa : null}
+          placa={paso > PASO_VEHICULO ? (resumen.vehiculo?.placa ?? (resumen.vehiculo?.detalle[0] as string | undefined)) : null}
           tamano={paso > PASO_VEHICULO ? tamanos.find((t) => t.id === tamanoId)?.nombre : null}
         />
         </div>
@@ -286,14 +299,27 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
               }
               claseContenido="gap-6"
             >
-              <CamposCliente estado={vista} plegar enlaceExistente={usarExistente} />
+              {/* Sin registrarlo (P31b): solo nombre y WhatsApp; el resto, si vuelve a reservar */}
+              <CamposCliente estado={vista} compacto enlaceExistente={usarExistente} />
             </SeccionFormulario>
           </>
         )}
       </div>
 
       <div data-paso={PASO_VEHICULO} hidden={paso !== PASO_VEHICULO}>
-        <SeccionFormulario titulo={vehiculoNuevo ? (conVehiculos ? "Otro vehículo" : "Vehículo nuevo") : "Vehículo"} claseContenido="gap-4">
+        <SeccionFormulario titulo={clienteNuevo ? "Vehículo" : vehiculoNuevo ? (conVehiculos ? "Otro vehículo" : "Vehículo nuevo") : "Vehículo"} claseContenido="gap-4">
+          {clienteNuevo && (
+            <CamposVehiculoInteresado
+              tamanos={tamanos}
+              valores={v}
+              errores={{ ...e, ...(foto.error ? { foto: foto.error } : {}) }}
+              alCambiarTamano={(t) => {
+                cambiarTamano(VEHICULO_OTRO, t);
+                setTamanoNuevo(t);
+              }}
+              foto={foto}
+            />
+          )}
           {/* En tarjetas apiladas que se tocan enteras, como los demás selectores del panel (19/11): la placa y, debajo,
               sus datos y su tamaño. Con su propio campo oculto ("vehiculo") */}
           {conVehiculos && (
@@ -315,7 +341,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
               className="grid-cols-1"
             />
           )}
-          {vehiculoNuevo && (
+          {vehiculoNuevo && !clienteNuevo && (
             <>
               {!conVehiculos && <input type="hidden" name="vehiculo" value={VEHICULO_OTRO} />}
               {/* Completo: placa y tamaño, y marca, modelo, año y color a la vista (pedido 40) */}
@@ -346,7 +372,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
         </ConResumen>
       </div>
 
-      <AvisoAlSalir formulario={formulario} estado={estado} />
+      <AvisoAlSalir formulario={formulario} estado={estado} ademas={!!foto.vista} />
       <PieFormulario>
         <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2">
           {paso === PASO_SERVICIOS && <TotalEnPie total={precios.totales.total} />}
@@ -376,8 +402,8 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
                 {paso === PASO_CLIENTE ? "Siguiente: vehículo" : "Siguiente: servicios"}
               </Button>
             ) : (
-              <Button key="crear" type="submit" disabled={enviando}>
-                {enviando ? "Creando y generando el PDF…" : "Crear cotización"}
+              <Button key="crear" type="submit" disabled={enviando || foto.preparando}>
+                {foto.preparando ? "Preparando la foto…" : enviando ? "Creando y generando el PDF…" : "Crear cotización"}
               </Button>
             )}
           </div>

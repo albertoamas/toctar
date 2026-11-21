@@ -1,6 +1,11 @@
+import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { puedeVerModulo } from "@/lib/permisos";
-import { datosDeCotizacion } from "@/modulos/agenda/consultas/reservar";
+import { datosDeCotizacion, interesadoDeCotizacion } from "@/modulos/agenda/consultas/reservar";
+import { RegistrarInteresado } from "@/modulos/agenda/componentes/registrar-interesado";
+import { catalogoVehiculos } from "@/modulos/clientes/consultas";
+import { tamanosActivos } from "@/modulos/configuracion/consultas";
+import { fotoDeConsulta } from "@/modulos/cotizaciones/consultas/ficha";
 import { fechaEntregaSugerida } from "@/modulos/agenda/reglas";
 import { ParaQuien, Encabezado, Formulario, type Contexto } from "./partes";
 
@@ -14,6 +19,11 @@ import { ParaQuien, Encabezado, Formulario, type Contexto } from "./partes";
 export async function ReservaDesdeCotizacion({ ctx, cotizacionId }: { ctx: Contexto; cotizacionId: number }) {
   const { usuario, conPagos, volver, origen, hoy, fechaInicial, numero, direccion, clave } = ctx;
     const c = await datosDeCotizacion(cotizacionId);
+    // La de un interesado (P31b): antes de la reserva, se lo registra con su vehículo
+    if (!c) {
+      const i = await interesadoDeCotizacion(cotizacionId);
+      if (i) return <Registrar ctx={ctx} interesado={i} />;
+    }
     if (!c) {
       return (
         <>
@@ -78,4 +88,46 @@ export async function ReservaDesdeCotizacion({ ctx, cotizacionId }: { ctx: Conte
         />
       </>
     );
+}
+
+/** "Registrar al cliente": la cotización de un interesado, antes de reservarla (P31b-cotizacion-rapida.md §5). */
+async function Registrar({ ctx, interesado: i }: { ctx: Contexto; interesado: NonNullable<Awaited<ReturnType<typeof interesadoDeCotizacion>>> }) {
+  const { usuario, volver, origen } = ctx;
+  if (!i.agendable) {
+    return (
+      <>
+        <Encabezado volver={volver} />
+        <EstadoVacio>Esa cotización ya tiene una reserva o una versión nueva.</EstadoVacio>
+      </>
+    );
+  }
+  // Registrar un cliente es de Clientes, como en una reserva directa
+  if (!puedeVerModulo(usuario, "clientes")) {
+    return (
+      <>
+        <Encabezado volver={volver} />
+        <EstadoVacio>{`${i.nombre} todavía no está registrado como cliente. Para reservar, lo registra el dueño o quien tiene «Clientes».`}</EstadoVacio>
+      </>
+    );
+  }
+  const [tamanos, catalogo, foto] = await Promise.all([tamanosActivos(), catalogoVehiculos(), fotoDeConsulta(i.consultaId)]);
+  return (
+    <>
+      <EncabezadoPagina titulo="Registrar al cliente" volver={volver}>
+        {`Para reservar la cotización ${i.numero}`}
+      </EncabezadoPagina>
+      <RegistrarInteresado
+        cotizacionId={i.cotizacionId}
+        nombre={i.nombre}
+        telefono={i.telefono}
+        vehiculo={i.vehiculo}
+        tamanoId={i.tamanoId}
+        clienteExistente={i.clienteExistente}
+        foto={foto}
+        tamanos={tamanos}
+        catalogo={catalogo}
+        volver={origen}
+      />
+    </>
+  );
 }

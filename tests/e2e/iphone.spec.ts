@@ -103,7 +103,8 @@ test("en Nueva cotización con un cliente nuevo los títulos van adentro de su t
   await page.getByLabel("Nombre", { exact: true }).fill("Cliente iPhone");
   await page.getByRole("textbox", { name: "WhatsApp" }).fill("71234567");
   await page.getByRole("button", { name: "Siguiente: vehículo" }).click();
-  await expect(page.getByRole("group", { name: "Vehículo nuevo" })).toBeVisible();
+  // Alguien nuevo se cotiza sin registrarlo (P31b): el vehículo, sin placa
+  await expect(page.getByRole("group", { name: "Vehículo", exact: true })).toBeVisible();
   await titulosAdentro(page);
   expect(await anchoDePagina(page)).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
