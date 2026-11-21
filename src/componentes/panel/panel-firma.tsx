@@ -28,6 +28,8 @@ export function PanelFirma({ alCambiar, etiqueta, invalido, describedBy }: Props
   const puntero = useRef<number | null>(null);
   const montado = useRef(true);
   const [vacia, setVacia] = useState(true);
+  /** Ya se empezó a firmar: "Firme aquí" se va con el primer trazo, sin esperar a la imagen, y vuelve al borrar. */
+  const [firmando, setFirmando] = useState(false);
 
   // El tamaño real del lienzo, en píxeles del dispositivo: así el trazo no sale borroso en el celular
   useEffect(() => {
@@ -82,6 +84,7 @@ export function PanelFirma({ alCambiar, etiqueta, invalido, describedBy }: Props
     if (!ctx) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     puntero.current = e.pointerId;
+    setFirmando(true);
     const { x, y } = punto(e);
     ctx.beginPath();
     ctx.moveTo(x, y);
@@ -122,6 +125,7 @@ export function PanelFirma({ alCambiar, etiqueta, invalido, describedBy }: Props
       ctx.restore();
     }
     setVacia(true);
+    setFirmando(false);
     alCambiar(null);
   }
 
@@ -129,6 +133,7 @@ export function PanelFirma({ alCambiar, etiqueta, invalido, describedBy }: Props
     // Hasta 640 px de ancho (17/11): con la pantalla a todo el ancho, el recuadro se estiraba a 1500 px; la firma se guarda
     // con la forma del recuadro, así queda como en una tablet o un celular
     <div className="flex max-w-2xl flex-col gap-2">
+      <div className="relative">
       <canvas
         ref={lienzo}
         role="img"
@@ -144,6 +149,14 @@ export function PanelFirma({ alCambiar, etiqueta, invalido, describedBy }: Props
         onPointerUp={terminar}
         onPointerCancel={terminar}
       />
+        {/* "Firme aquí" con su línea, mientras está vacío (21/11): un cliente que lo ve por primera vez no sabía dónde firmar */}
+        {vacia && !firmando && (
+          <div aria-hidden className="pointer-events-none absolute inset-x-6 bottom-9 flex flex-col gap-2 text-tinta-suave">
+            <span className="text-sm">Firme aquí</span>
+            <span className="h-px bg-border" />
+          </div>
+        )}
+      </div>
       <Button type="button" variant="outline" className="self-start" disabled={vacia} onClick={borrar}>
         <EraserIcon />
         Borrar firma

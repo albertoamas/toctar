@@ -11,7 +11,14 @@ const TONO = {
   info: { clase: "border-info/30 bg-info-fondo text-info", Icono: InfoIcon },
 } as const;
 
-export function AvisoEstado({ tono, accion, children }: { tono: keyof typeof TONO; accion?: React.ReactNode; children: React.ReactNode }) {
+export function AvisoEstado(props: {
+  tono: keyof typeof TONO;
+  accion?: React.ReactNode;
+  /** Debajo, a todo el ancho, lo que decide lo mismo: "Entregar con saldo pendiente" junto a "Falta cobrar" (21/11). */
+  debajo?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const { tono, accion, debajo, children } = props;
   const { clase, Icono } = TONO[tono];
   return (
     <div className={cn("flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border px-3 py-2.5 sm:px-4", clase)}>
@@ -20,6 +27,7 @@ export function AvisoEstado({ tono, accion, children }: { tono: keyof typeof TON
         {children}
       </p>
       {accion}
+      {debajo && <div className="basis-full border-t border-current/20 pt-2">{debajo}</div>}
     </div>
   );
 }

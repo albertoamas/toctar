@@ -7,6 +7,7 @@ import { Campo, MensajeError } from "@/componentes/panel/campo";
 import { PanelFirma } from "@/componentes/panel/panel-firma";
 import { AvisoAlSalir } from "@/componentes/panel/cambios-sin-guardar";
 import { PieFormulario } from "@/componentes/panel/pie-formulario";
+import { AvisoEstado } from "@/componentes/panel/aviso-estado";
 import { CabeceraTarjeta } from "@/componentes/panel/cabecera-seccion";
 import { BOTON_PASO } from "@/componentes/panel/paso-siguiente";
 import { Button } from "@/componentes/ui/button";
@@ -35,9 +36,11 @@ type Props = {
   cliente: string;
   /** Lo que la entrega va a hacer (los mantenimientos), dicho justo antes del botón (C7 §5.3). */
   alEntregar?: React.ReactNode;
+  /** "Registrar pago", junto a "Falta cobrar", si quien entrega ve pagos y queda saldo. */
+  cobro?: React.ReactNode;
 };
 
-export function FormularioEntrega({ id, volver, conDeuda, saldo, puedeAutorizar, cliente, alEntregar }: Props) {
+export function FormularioEntrega({ id, volver, conDeuda, saldo, puedeAutorizar, cliente, alEntregar, cobro }: Props) {
   // La firma vive en el estado (no es un campo del formulario): se suma al enviar, como archivo
   const [firma, setFirma] = useState<Blob | null>(null);
   const [estado, accion, enviando] = useActionState<EstadoFormulario, FormData>(async (previo, datos) => {
@@ -68,11 +71,15 @@ export function FormularioEntrega({ id, volver, conDeuda, saldo, puedeAutorizar,
   // Al abrir estaba pagada, pero al entregar el servidor encontró saldo (un pago anulado, un adicional): pide la casilla
   const conCasilla = conDeuda || avisoSaldo;
 
+  // Lo que decide el paso, arriba (C7 §5.3; 21/11, en un solo lugar): pagado, o cuánto falta con "Registrar pago" y, en el
+  // mismo aviso, la casilla para entregar con el saldo (antes iba abajo de la firma y el saldo se decía tres veces)
+  const faltaCobrar = saldo ? `Falta cobrar ${saldo}` : "Queda saldo pendiente.";
+
   if (conDeuda && !puedeAutorizar) {
     return (
-      <p role="status" className="rounded-sm border border-aviso p-3">
-        Queda saldo pendiente. La entrega con saldo la autoriza el dueño o quien tenga el permiso.
-      </p>
+      <AvisoEstado tono="aviso" accion={cobro} debajo={<p role="status">La entrega con saldo la autoriza el dueño o quien tenga el permiso.</p>}>
+        {faltaCobrar}
+      </AvisoEstado>
     );
   }
 
@@ -82,10 +89,37 @@ export function FormularioEntrega({ id, volver, conDeuda, saldo, puedeAutorizar,
       <input type="hidden" name="id" value={id} />
       {volver && <input type="hidden" name="volver" value={volver} />}
       {estado.mensaje && <MensajeError id="entrega-error">{estado.mensaje}</MensajeError>}
+      {conCasilla ? (
+        <div className="flex flex-col gap-2">
+          {conSaldo && <input type="hidden" name="conSaldo" value="on" />}
+          <AvisoEstado
+            tono="aviso"
+            accion={cobro}
+            debajo={
+              <label htmlFor="conSaldo" className="flex min-h-11 cursor-pointer items-center gap-3 font-medium text-tinta">
+                <Checkbox
+                  id="conSaldo"
+                  checked={conSaldo}
+                  onCheckedChange={(si) => setConSaldo(si === true)}
+                  data-invalido={e.conSaldo ? true : undefined}
+                  aria-describedby={e.conSaldo ? "conSaldo-error" : undefined}
+                />
+                Entregar con saldo pendiente
+              </label>
+            }
+          >
+            {faltaCobrar}
+          </AvisoEstado>
+          {e.conSaldo && <MensajeError id="conSaldo-error">{e.conSaldo}</MensajeError>}
+        </div>
+      ) : (
+        <AvisoEstado tono="exito">Pagado por completo.</AvisoEstado>
+      )}
 
       {/* El título adentro de la tarjeta, como el resto del paso (sistema-del-panel.md §2, 18/11) */}
       <section aria-labelledby="firma-titulo" className="tt-tarjeta-panel flex flex-col">
-        <CabeceraTarjeta id="firma" titulo="Firma del cliente" descripcion="El cliente firma con el dedo: recibe su vehículo conforme." />
+        {/* Sin la frase de ayuda (21/11): "Firme aquí" ya va dentro del recuadro */}
+        <CabeceraTarjeta id="firma" titulo="Firma del cliente" />
         <div className="flex flex-col gap-4 p-4 sm:p-5">
           {sinFirma && <input type="hidden" name="sinFirma" value="on" />}
           {!sinFirma && (
@@ -106,7 +140,8 @@ export function FormularioEntrega({ id, volver, conDeuda, saldo, puedeAutorizar,
               </Campo>
             </>
           )}
-          <label htmlFor="sinFirma" className="flex min-h-11 cursor-pointer items-center gap-3 self-start">
+          {/* La excepción, en chico (21/11): antes pesaba lo mismo que la firma */}
+          <label htmlFor="sinFirma" className="flex min-h-11 cursor-pointer items-center gap-3 self-start text-sm text-tinta-suave">
             <Checkbox
               id="sinFirma"
               checked={sinFirma}
@@ -116,7 +151,7 @@ export function FormularioEntrega({ id, volver, conDeuda, saldo, puedeAutorizar,
                 if (si) setFirma(null);
               }}
             />
-            <span className="font-medium">Entregar sin firma</span>
+            <span>El cliente no puede firmar</span>
           </label>
           {sinFirma && (
             <Campo id="sinFirmaMotivo" etiqueta="Motivo" error={e.sinFirmaMotivo} ayuda="Por ejemplo: retiró otra persona.">
@@ -134,22 +169,6 @@ export function FormularioEntrega({ id, volver, conDeuda, saldo, puedeAutorizar,
         </div>
       </section>
 
-      {conCasilla && (
-        <>
-          {conSaldo && <input type="hidden" name="conSaldo" value="on" />}
-          <label htmlFor="conSaldo" className="flex min-h-11 cursor-pointer items-center gap-3 rounded-sm border border-aviso p-3">
-            <Checkbox
-              id="conSaldo"
-              checked={conSaldo}
-              onCheckedChange={(si) => setConSaldo(si === true)}
-              data-invalido={e.conSaldo ? true : undefined}
-              aria-describedby={e.conSaldo ? "conSaldo-error" : undefined}
-            />
-            <span className="font-medium">Entregar con saldo pendiente{conDeuda && saldo && ` (${saldo})`}</span>
-          </label>
-          {e.conSaldo && <MensajeError id="conSaldo-error">{e.conSaldo}</MensajeError>}
-        </>
-      )}
       {alEntregar}
       <AvisoAlSalir formulario={formulario} estado={estado} ademas={!!firma} />
       <PieFormulario>
