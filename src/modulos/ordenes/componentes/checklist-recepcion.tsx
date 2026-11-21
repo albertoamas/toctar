@@ -173,7 +173,13 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3">
                     {/* Sin revisar no lleva texto (pulido de Recibir, 09/11): lo dicen el avance y el interruptor apagado, que
                         el lector oye como "Bien, no presionado"; revisada, el interruptor prendido y, si es un detalle, debajo */}
-                    <span className="min-w-0 font-semibold">{p.nombre}</span>
+                    {/* En el celular, los botones son solo su ícono (21/11: en un iPhone 14, "Parachoques" o "Guardabarros" no
+                        entraban y quedaban debajo de los botones); el tipo de detalle, que el botón ya no dice, va debajo del
+                        nombre. Una palabra que igual no entra se corta con guion */}
+                    <span className="flex min-w-0 flex-col">
+                      <span className="font-semibold break-words hyphens-auto">{p.nombre}</span>
+                      {detalle?.tipo && <span className="text-sm font-semibold text-aviso sm:hidden">{NOMBRE_DETALLE[detalle.tipo]}</span>}
+                    </span>
                     <span role="group" aria-label={p.nombre} className="flex shrink-0 overflow-hidden rounded-lg border border-border">
                       <button
                         type="button"
@@ -182,12 +188,12 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
                         aria-label={`Bien: ${p.nombre}`}
                         onClick={() => tocarBien(p.id)}
                         className={cn(
-                          "inline-flex min-h-11 items-center gap-1.5 px-3 text-sm font-semibold transition-colors sm:px-3.5 focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--foco)] disabled:opacity-50",
+                          "inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-2.5 text-sm font-semibold transition-colors sm:px-3.5 focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--foco)] disabled:opacity-50",
                           estado === "bien" ? "bg-exito text-fondo" : "bg-fondo text-tinta-suave hover:bg-superficie hover:text-tinta",
                         )}
                       >
-                        <CheckIcon className="size-4" aria-hidden />
-                        Bien
+                        <CheckIcon className="size-5 sm:size-4" aria-hidden />
+                        <span className="hidden sm:inline">Bien</span>
                       </button>
                       <button
                         type="button"
@@ -196,12 +202,12 @@ export function ChecklistRecepcion({ trabajoId, partes, revision }: Props) {
                         aria-label={`Detalle: ${p.nombre}`}
                         onClick={() => setAbierta(p)}
                         className={cn(
-                          "inline-flex min-h-11 items-center gap-1.5 border-l border-border px-3 text-sm font-semibold transition-colors sm:px-3.5 focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--foco)] disabled:opacity-50",
+                          "inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 border-l border-border px-2.5 text-sm font-semibold transition-colors sm:px-3.5 focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--foco)] disabled:opacity-50",
                           estado === "detalle" ? "bg-aviso-fondo text-aviso" : "bg-fondo text-tinta-suave hover:bg-superficie hover:text-tinta",
                         )}
                       >
-                        <TriangleAlertIcon className="size-4" aria-hidden />
-                        {detalle?.tipo ? NOMBRE_DETALLE[detalle.tipo] : "Detalle"}
+                        <TriangleAlertIcon className="size-5 sm:size-4" aria-hidden />
+                        <span className="hidden sm:inline">{detalle?.tipo ? NOMBRE_DETALLE[detalle.tipo] : "Detalle"}</span>
                       </button>
                     </span>
                   </div>

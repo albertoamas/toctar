@@ -57,9 +57,11 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes/gasto
   const total = vigentes.reduce((suma, g) => suma + Number(g.monto), 0);
   const deQue = filtro ? `${enElMes.find(([id]) => id === filtro)![1]} en ${nombreMes(mes)}` : nombreMes(mes);
 
-  // Las fechas del reporte del que se vino (Reportes › Gastos): "Volver" regresa a ellas, también al cambiar de mes aquí
-  const delReporte = parametros.periodo ? parametrosDelPeriodo(periodoDe(parametros, hoy)) : [];
-  const volver = `/panel/reportes?${new URLSearchParams([["vista", "gastos"], ...delReporte]).toString()}` as Route;
+  // Se vino de Reportes (`de=reportes`): "Volver" regresa a sus fechas, también al cambiar de mes aquí. Desde el menú,
+  // Gastos es un módulo propio (19/11): sin flecha de volver, como las demás pantallas principales
+  const deReportes = parametros.de === "reportes";
+  const delReporte: [string, string][] = deReportes ? [["de", "reportes"], ...(parametros.periodo ? parametrosDelPeriodo(periodoDe(parametros, hoy)) : [])] : [];
+  const volver = `/panel/reportes?${new URLSearchParams([["vista", "gastos"], ...delReporte.filter(([clave]) => clave !== "de")]).toString()}` as Route;
   const enlace = (m: string, categoria?: number | null) => {
     const p = new URLSearchParams();
     if (m !== esteMes) p.set("mes", m);
@@ -71,7 +73,7 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/reportes/gasto
 
   return (
     <>
-      <EncabezadoPagina titulo="Gastos" volver={{ href: volver, texto: "Reportes" }} accion={<RegistrarGasto categorias={categorias} hoy={hoy} />} />
+      <EncabezadoPagina titulo="Gastos" volver={deReportes ? { href: volver, texto: "Reportes" } : undefined} accion={<RegistrarGasto categorias={categorias} hoy={hoy} />} />
       <BarraLista
         // El mes entre sus flechas, a la derecha como la semana de la Agenda (C7 §4: nada centrado). Las dos flechas siempre
         // en su lugar: la que no se puede usar queda apagada (antes desaparecía y el mes quedaba corrido)
