@@ -63,11 +63,13 @@ async function quitar() {
 async function cargar() {
   const autor = (await uno("select id from usuario where rol = 'dueno' order by id limit 1"))?.id;
   if (!autor) throw new Error("La base no tiene un dueño: corre la app una vez antes.");
-  const sucursal = await uno("select id, lugares from sucursal order by id limit 1");
-  // Pedido 55: cada día, no más trabajos que lugares (la historia inventada no cruza más autos de los que entran)
+  const sucursal = await uno("select id from sucursal order by id limit 1");
+  // La historia inventada no cruza más de tres autos por día, para que se parezca a un taller chico (el sistema no tiene
+  // límite desde el pedido 55: es solo para los datos de ejemplo)
+  const AUTOS_POR_DIA = 3;
   const porDia = new Map();
   const hayLugar = (anio, mes, desde, hasta) => {
-    for (let d = desde; d <= hasta; d++) if ((porDia.get(`${anio}-${mes}-${d}`) ?? 0) >= sucursal.lugares) return false;
+    for (let d = desde; d <= hasta; d++) if ((porDia.get(`${anio}-${mes}-${d}`) ?? 0) >= AUTOS_POR_DIA) return false;
     return true;
   };
   const tamanos = await q("select id, orden from tamano_vehiculo where activo order by orden");

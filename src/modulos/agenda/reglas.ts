@@ -74,33 +74,6 @@ export function bloquesDeLaSemana<T extends Rango>(trabajos: readonly T[], lunes
     });
 }
 
-// Pedido 55 (etapas/P55-lugares-por-dia.md): sin espacios ni límite por día. Cada día cuenta los autos que hay; una orden
-// en el taller cuenta hasta entregarse. Puro: se prueba en tests/unit/agenda.test.ts.
-
-/** Los estados de una orden que sigue en el taller: ocupa su lugar hasta entregarse, aunque esté atrasada. */
-const EN_EL_TALLER: readonly EstadoTrabajo[] = ["recibido", "en_proceso", "listo"];
-
-/** Si un trabajo ocupa un lugar en la agenda (una reserva o una orden abierta); las canceladas y las entregadas no. */
-export const ocupaLugar = (estado: EstadoTrabajo) => estado === "agendado" || EN_EL_TALLER.includes(estado);
-
-/**
- * El último día que un trabajo ocupa un lugar: el de su entrega o, si sigue en el taller con la entrega ya pasada (una
- * atrasada), hoy. null si no ocupa (cancelado o entregado).
- */
-export function ultimoDiaOcupado(t: { estado: EstadoTrabajo; fin: string }, hoy: string): string | null {
-  if (!ocupaLugar(t.estado)) return null;
-  return EN_EL_TALLER.includes(t.estado) && t.fin < hoy ? hoy : t.fin;
-}
-
-/** Cuántos trabajos ocupan un lugar en un día. `excepto`: la reserva que se reprograma, que no choca consigo misma. */
-export function ocupadosEnDia(trabajos: readonly { id: number; estado: EstadoTrabajo; inicio: string; fin: string }[], dia: string, hoy: string, excepto?: number): number {
-  return trabajos.filter((t) => {
-    if (t.id === excepto) return false;
-    const ultimo = ultimoDiaOcupado(t, hoy);
-    return ultimo !== null && t.inicio <= dia && dia <= ultimo;
-  }).length;
-}
-
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 export const DIA_CORTO = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"] as const;
 
@@ -139,17 +112,6 @@ export function textoDia(fecha: string): string {
 
 /** El número del día ("24") para la cabecera del tablero. */
 export const numeroDia = (fecha: string) => String(partes(fecha).dia);
-
-/**
- * El título de un día en la lista de la Agenda (lavado de cara, 16/11): "Hoy, lunes 16", "Mañana, martes 17" o
- * "Miércoles 18". Así se sabe de un vistazo qué es hoy sin buscar la fecha.
- */
-export function tituloDia(fecha: string, hoy: string): string {
-  const nombre = `${NOMBRE_DIA[diaDeLaSemana(fecha) - 1]} ${numeroDia(fecha)}`;
-  if (fecha === hoy) return `Hoy, ${nombre.toLowerCase()}`;
-  if (fecha === sumarDias(hoy, 1)) return `Mañana, ${nombre.toLowerCase()}`;
-  return nombre;
-}
 
 /** "martes 17": el día dentro de una frase ("Hasta el martes 17"). */
 export const diaEnFrase = (fecha: string) => `${NOMBRE_DIA[diaDeLaSemana(fecha) - 1].toLowerCase()} ${numeroDia(fecha)}`;

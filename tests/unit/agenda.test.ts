@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { erroresDe } from "@/lib/formularios";
 import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
 import { esquemaAdelanto, esquemaFechas, esquemaReserva } from "@/modulos/agenda/esquemas";
-import { bloquesDeLaSemana, diaDeLaSemana, diasDeLaSemana, fechaEntregaSugerida, lunesDeLaSemana, numeroDia, ocupadosEnDia, ocupaLugar, seCruzan, textoDia, textoSemana, textoSemanaCorto, ultimoDiaOcupado } from "@/modulos/agenda/reglas";
+import { bloquesDeLaSemana, diaDeLaSemana, diasDeLaSemana, fechaEntregaSugerida, lunesDeLaSemana, numeroDia, seCruzan, textoDia, textoSemana, textoSemanaCorto } from "@/modulos/agenda/reglas";
 import { calcularSaldo } from "@/modulos/pagos/reglas";
 
 // C3 Agenda y pagos (HU-30): semanas, entrega sugerida, cruces (RN-06), saldo (RF-46) y validación de la reserva.
@@ -27,9 +27,6 @@ test("dos reservas se cruzan si comparten algún día, bordes incluidos (como la
   expect(seCruzan({ inicio: "2026-10-20", fin: "2026-10-24" }, { inicio: "2026-10-24", fin: "2026-10-25" })).toBe(true);
   expect(seCruzan({ inicio: "2026-10-20", fin: "2026-10-23" }, { inicio: "2026-10-24", fin: "2026-10-25" })).toBe(false);
   expect(seCruzan({ inicio: "2026-10-22", fin: "2026-10-22" }, { inicio: "2026-10-20", fin: "2026-10-25" })).toBe(true);
-  expect(["agendado", "recibido", "en_proceso", "listo"].every((e) => ocupaLugar(e as never))).toBe(true);
-  expect(ocupaLugar("cancelado")).toBe(false);
-  expect(ocupaLugar("entregado")).toBe(false);
 });
 
 test("los bloques del tablero se recortan a la semana", () => {
@@ -115,28 +112,5 @@ test("el rótulo de la semana y de cada día", () => {
   expect(numeroDia("2026-10-05")).toBe("5");
 });
 
-// Pedido 55: lugares por día en vez de espacios fijos.
 
-test("una orden que sigue en el taller ocupa su lugar hasta hoy, aunque esté atrasada; una reserva, sus días", () => {
-  const hoy = "2026-11-20";
-  expect(ultimoDiaOcupado({ estado: "en_proceso", fin: "2026-11-04" }, hoy)).toBe(hoy);
-  expect(ultimoDiaOcupado({ estado: "listo", fin: "2026-11-04" }, hoy)).toBe(hoy);
-  expect(ultimoDiaOcupado({ estado: "recibido", fin: "2026-11-24" }, hoy)).toBe("2026-11-24");
-  expect(ultimoDiaOcupado({ estado: "agendado", fin: "2026-11-04" }, hoy)).toBe("2026-11-04");
-  expect(ultimoDiaOcupado({ estado: "entregado", fin: "2026-11-24" }, hoy)).toBeNull();
-  expect(ultimoDiaOcupado({ estado: "cancelado", fin: "2026-11-24" }, hoy)).toBeNull();
-});
-
-test("los autos de cada día: una orden atrasada cuenta hasta hoy; entregadas y la propia reserva no (pedido 55)", () => {
-  const hoy = "2026-11-20";
-  const trabajos = [
-    { id: 1, estado: "en_proceso" as const, inicio: "2026-11-02", fin: "2026-11-04" }, // atrasada: hasta hoy
-    { id: 2, estado: "agendado" as const, inicio: "2026-11-20", fin: "2026-11-21" },
-    { id: 3, estado: "entregado" as const, inicio: "2026-11-20", fin: "2026-11-20" },
-    { id: 4, estado: "agendado" as const, inicio: "2026-11-21", fin: "2026-11-22" },
-  ];
-  expect(ocupadosEnDia(trabajos, "2026-11-20", hoy)).toBe(2);
-  expect(ocupadosEnDia(trabajos, "2026-11-21", hoy)).toBe(2);
-  expect(ocupadosEnDia(trabajos, "2026-11-21", hoy, 2)).toBe(1);
-});
 

@@ -17,9 +17,9 @@ import { buttonVariants } from "@/componentes/ui/button";
 import { fechaEnBolivia, fechaExiste, sumarDias } from "@/lib/fechas";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
-import { SemanaEnColumnas, SemanaEnLista } from "@/modulos/agenda/componentes/tablero";
-import { buscarReservas, semanaDeAgenda } from "@/modulos/agenda/consultas/tablero";
-import { diasDeLaSemana, fechaCorta, lunesDeLaSemana, NOMBRE_ESTADO_TRABAJO, textoSemana, textoServicio, textoSemanaCorto, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
+import { EnElTaller, ListaDesdeHoy, SemanaEnColumnas } from "@/modulos/agenda/componentes/tablero";
+import { buscarReservas, datosAgenda } from "@/modulos/agenda/consultas/tablero";
+import { diasDeLaSemana, fechaCorta, lunesDeLaSemana, NOMBRE_ESTADO_TRABAJO, textoSemana, textoServicio, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { cotizacionesPorReservar, type FilaCotizacion } from "@/modulos/cotizaciones/consultas/lista";
 import { bs, diasDesde, textoDias } from "@/modulos/cotizaciones/reglas";
 import { rutaTrabajo } from "@/modulos/ordenes/reglas";
@@ -27,8 +27,9 @@ import { aqui, conDesde } from "@/lib/volver";
 
 export const metadata: Metadata = { title: "Agenda" };
 
-// HU-29: la agenda (RF-38). `?semana=` (cualquier día de la semana; se toma su lunes) y `?entregadas=1` (también las
-// entregadas, pedido 28; escondidas por defecto desde el 20/11). Dueño o encargado con "Agenda".
+// HU-29: la agenda (RF-38), el calendario de citas: las reservas por recibir (pedido 55, 20/11; lo que está en el taller,
+// en Órdenes). `?semana=` (cualquier día de la semana; se toma su lunes) en la computadora y `?hasta=` (hasta qué día
+// llega la lista desde hoy) en la tableta y el celular. Dueño o encargado con "Agenda".
 // Pulido 10.1: el tablero de la semana solo con espacio (desde 1280 px desde el 16/11). Lavado de cara (16/11,
 // prototipo aprobado): un buscador de reservas de cualquier semana (?q=), "Por reservar" plegado
 // y, en la tableta, la semana como lista por día. Rehecha el 20/11 (pedido 55): columnas en la computadora y lista desde hoy
@@ -53,14 +54,15 @@ export default function PaginaAgenda({ searchParams }: PageProps<"/panel/agenda"
   );
 }
 
-const enlaceSemana = (lunes: string, entregadas?: boolean) => `/panel/agenda?semana=${lunes}${entregadas ? "&entregadas=1" : ""}` as Route;
+const enlaceSemana = (lunes: string) => `/panel/agenda?semana=${lunes}` as Route;
+/** Cuántos días muestra la lista desde hoy, y cuántos suma "Ver más días". */
+const DIAS_LISTA = 28;
 
 async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searchParams">) {
   const usuario = await exigirModulo("agenda");
   const conOrdenes = puedeVerModulo(usuario, "ordenes");
   const parametros = await searchParams;
-  const { semana: pedida } = parametros;
-  const conEntregadas = parametros.entregadas === "1";
+  const { semana: pedida, hasta: hastaPedido } = parametros;
   const q = typeof parametros.q === "string" ? parametros.q.trim() : "";
   // Pedido 43: lo que se abre desde la Agenda vuelve a esta semana y este día (o a esta búsqueda)
   const desdeAqui = aqui("/panel/agenda", parametros);
@@ -70,22 +72,24 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
   const lunes = lunesDeLaSemana(valida ? pedida : hoy);
   const dias = diasDeLaSemana(lunes);
   const estaSemana = dias.includes(hoy);
+  // La lista del celular: desde hoy hasta el día pedido (con "Ver más días") o cuatro semanas, y no más de un año
+  const hasta =
+    typeof hastaPedido === "string" && fechaExiste(hastaPedido) && hastaPedido > hoy && hastaPedido <= sumarDias(hoy, 366) ? hastaPedido : sumarDias(hoy, DIAS_LISTA - 1);
 
   const barra = (
     <BarraLista
       buscador={<Buscador etiqueta="Buscar reservas por placa, cliente o teléfono" ejemplo="Placa o cliente" />}
       derecha={
         q ? undefined : (
-          // Un renglón: la semana entre las flechas; en el celular, corta ("16 al 22 nov") para que entre
-          <nav aria-label="Semanas" className="flex w-full items-center gap-2 sm:w-auto">
-            <Link href={enlaceSemana(sumarDias(lunes, -7), conEntregadas)} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Semana anterior">
+          // Solo en la computadora: en la tableta y el celular, la lista empieza hoy y sigue con "Ver más días"
+          <nav aria-label="Semanas" className="hidden items-center gap-2 xl:flex">
+            <Link href={enlaceSemana(sumarDias(lunes, -7))} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Semana anterior">
               <ChevronLeftIcon />
             </Link>
-            <p className="min-w-0 flex-1 text-center tt-titulo-seccion sm:min-w-56" aria-live="polite">
-              <span className="sm:hidden">{textoSemanaCorto(lunes)}</span>
-              <span className="hidden sm:inline">{textoSemana(lunes)}</span>
+            <p className="min-w-56 flex-1 text-center tt-titulo-seccion" aria-live="polite">
+              {textoSemana(lunes)}
             </p>
-            <Link href={enlaceSemana(sumarDias(lunes, 7), conEntregadas)} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Semana siguiente">
+            <Link href={enlaceSemana(sumarDias(lunes, 7))} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "shrink-0")} aria-label="Semana siguiente">
               <ChevronRightIcon />
             </Link>
             {!estaSemana && (
@@ -108,17 +112,20 @@ async function Tablero({ searchParams }: Pick<PageProps<"/panel/agenda">, "searc
         {q ? (
           <Resultados q={q} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
         ) : (
-          <Semana lunes={lunes} dias={dias} hoy={hoy} conEntregadas={conEntregadas} conOrdenes={conOrdenes} conMontos={conMontos} desde={desdeAqui} />
+          <Semana lunes={lunes} dias={dias} hoy={hoy} hasta={hasta} conOrdenes={conOrdenes} conMontos={conMontos} desde={desdeAqui} />
         )}
       </Suspense>
     </>
   );
 }
 
-/** "Por reservar" y la semana en sus dos vistas (computadora; tableta y celular). */
-async function Semana(props: { lunes: string; dias: string[]; hoy: string; conEntregadas: boolean; conOrdenes: boolean; conMontos: boolean; desde: string }) {
-  const { lunes, dias, hoy, conEntregadas, conOrdenes, conMontos, desde: desdeAqui } = props;
-  const [semana, porReservar] = await Promise.all([semanaDeAgenda(lunes, dias[6], conEntregadas), cotizacionesPorReservar()]);
+/** Lo que está en el taller, "Por reservar" y las reservas en sus dos vistas (computadora; tableta y celular). */
+async function Semana(props: { lunes: string; dias: string[]; hoy: string; hasta: string; conOrdenes: boolean; conMontos: boolean; desde: string }) {
+  const { lunes, dias, hoy, hasta, conOrdenes, conMontos, desde: desdeAqui } = props;
+  // Una sola consulta para las dos vistas: la semana de la computadora y la lista desde hoy
+  const desdeDia = lunes < hoy ? lunes : hoy;
+  const hastaDia = dias[6] > hasta ? dias[6] : hasta;
+  const [datos, porReservar] = await Promise.all([datosAgenda(desdeDia, hastaDia), cotizacionesPorReservar()]);
   const ahora = new Date();
   const fila = (c: FilaCotizacion) => ({
     href: conDesde(`/panel/agenda/nueva?cotizacion=${c.cotizacionId}`, desdeAqui),
@@ -133,6 +140,8 @@ async function Semana(props: { lunes: string; dias: string[]; hoy: string; conEn
     <>
       {/* Pedido 31: las cotizaciones aceptadas que esperan fecha. Lavado de cara (16/11): plegadas en una fila, así el
           tablero, que es lo principal de la Agenda, no queda abajo de una lista larga; sin ninguna, no ocupa lugar */}
+      {/* Lo que ya está en el taller se trabaja en Órdenes: aquí, una línea que lleva allá (pedido 55) */}
+      <EnElTaller datos={datos} conOrdenes={conOrdenes} />
       {porReservar.length > 0 && (
         <details className="group">
           <summary className="tt-tarjeta-panel flex min-h-12 cursor-pointer list-none items-center gap-3 px-4 py-3 hover:bg-superficie/50 [&::-webkit-details-marker]:hidden">
@@ -146,14 +155,8 @@ async function Semana(props: { lunes: string; dias: string[]; hoy: string; conEn
         </details>
       )}
 
-      {/* Las entregadas, escondidas (20/11: llenaban la semana); se ven al pedirlas (pedido 28) */}
-      <div className="flex justify-end">
-        <Link href={enlaceSemana(lunes, !conEntregadas)} className={cn(buttonVariants({ variant: "accion" }))} aria-pressed={conEntregadas}>
-          {conEntregadas ? "Ocultar entregadas" : "Ver entregadas"}
-        </Link>
-      </div>
-      <SemanaEnColumnas semana={semana} dias={dias} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
-      <SemanaEnLista semana={semana} dias={dias} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
+      <SemanaEnColumnas datos={datos} dias={dias} hoy={hoy} conOrdenes={conOrdenes} desde={desdeAqui} />
+      <ListaDesdeHoy datos={datos} hoy={hoy} hasta={hasta} conOrdenes={conOrdenes} desde={desdeAqui} verMas={`/panel/agenda?hasta=${sumarDias(hasta, DIAS_LISTA)}` as Route} />
     </>
   );
 }

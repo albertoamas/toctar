@@ -14,7 +14,7 @@ El modelo cubre el **Sistema completo**, aunque hoy se programa solo Web + Gesti
 | D-2 | **Todo servicio tiene al menos una variante** (si no tiene opciones, una llamada "Única"). | Precios, cotizaciones y trabajos siempre apuntan a una variante: una sola regla, sin casos especiales. |
 | D-3 | **Los precios no se sobrescriben:** cada cambio es una fila nueva con fecha (`precio`). | Historial de precios (RF-28) gratis. |
 | D-4 | **Las líneas de cotización y de trabajo copian descripción y precio.** | Una cotización enviada no cambia si después cambia el catálogo (RN-02). |
-| D-5 | **Sin espacios ni límite por día (pedido 55):** los trabajos solo tienen sus fechas; la Agenda cuenta los autos de cada día. Antes, una restricción de exclusión por espacio (`trabajo_sin_cruces`, quitada en la migración 0054). | RN-06 se cumple aunque dos personas reserven al mismo tiempo. |
+| D-5 | **Sin espacios ni límite por día (pedido 55):** los trabajos solo tienen sus fechas; la Agenda muestra las reservas de cada día. Antes, una restricción de exclusión por espacio (`trabajo_sin_cruces`, quitada en la migración 0054). | RN-06 se cumple aunque dos personas reserven al mismo tiempo. |
 | D-6 | **Nada se borra si tiene historial:** campo `activo` o estado `anulado`. | RN-14 y auditoría. |
 | D-7 | **`sucursal_id` desde el inicio** en trabajos y (futuro) caja e inventario. Hoy hay una sola sucursal. | Segunda sucursal sin migración grande. |
 | D-8 | **Parámetros como tabla clave-valor validada en código** (`parametro`). | Agregar un parámetro no requiere migración (RNF-11). |
@@ -128,7 +128,7 @@ Convenciones: `id` es `bigint` autoincremental; todas las tablas tienen `created
 | `trabajo_avance` | trabajo_id, usuario_id, nota | |
 | `pago` | trabajo_id, monto, metodo (`efectivo`, `qr`, `transferencia`), tipo (`adelanto`, `saldo`), fecha, comprobante_archivo_id, anulado, motivo_anulacion, anulado_por | Saldo = total − pagos no anulados. Si el trabajo se cancela, el adelanto queda como ingreso (RN-05) |
 
-**Autos por día (D-5, pedido 55):** cuentan las reservas (`agendado`) en sus días y las órdenes en el taller (`recibido`, `en_proceso`, `listo`) desde su ingreso hasta su entrega o, si se atrasan, hasta hoy. No hay límite: quien reserva decide.
+**Agenda (D-5, pedido 55):** muestra las reservas (`agendado`) el día que llegan; las órdenes en el taller (`recibido`, `en_proceso`, `listo`) solo se cuentan y se trabajan en Órdenes. No hay límite por día: quien reserva decide.
 
 ### Mantenimiento (entrega 2)
 
