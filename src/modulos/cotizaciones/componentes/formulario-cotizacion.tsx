@@ -47,7 +47,7 @@ export function FormularioNuevaVersion({ datos, hoy, volver }: Props) {
             id="version-para-lateral"
             titulo="Cotización para"
             cliente={{ nombre: datos.cliente, detalle: formatearWhatsApp(datos.telefono) }}
-            vehiculo={{ placa: datos.placa, detalle: datos.detalle, tamano: datos.tamano }}
+            vehiculo={{ placa: datos.placa ?? "Sin registrar", detalle: datos.detalle, tamano: datos.tamano }}
             pie={<ResumenPrecios precios={precios} anterior={anterior} />}
           />
         }

@@ -35,8 +35,8 @@ export function historia(props: {
   const { reservas, cotizaciones, verOrdenes, conSaldo, umbral, desde, duenoActual } = props;
   const hoy = new Date();
   // En la del cliente, la placa; en la del vehículo, "Con {cliente}" si fue con un dueño anterior
-  const placaDe = (placa: string) => (duenoActual === undefined ? placa : undefined);
-  const conOtro = (clienteId: number, nombre: string) => (duenoActual !== undefined && clienteId !== duenoActual ? [`Con ${nombre}`] : []);
+  const placaDe = (placa: string | null) => (duenoActual === undefined ? (placa ?? undefined) : undefined);
+  const conOtro = (clienteId: number | null, nombre: string) => (duenoActual !== undefined && clienteId !== duenoActual ? [`Con ${nombre}`] : []);
   const deReservas: HitoHistoria[] = (reservas ?? []).map((r) => {
     // Lo que debe, solo cuando ya se cobra (lista o entregada): antes, un saldo es lo normal (el adelanto)
     const debe = conSaldo && r.saldo && (r.estado === "listo" || r.estado === "entregado") && !estaPagada(r.saldo.saldo) ? r.saldo.saldo : null;

@@ -192,8 +192,9 @@ export function PdfCotizacion({ d }: { d: DatosPdf }) {
           </View>
           <View style={e.parte}>
             <Text style={e.etiqueta}>Vehículo</Text>
-            <Text style={e.fuerte}>{d.vehiculo.placa}</Text>
-            {d.vehiculo.descripcion && <Text>{d.vehiculo.descripcion}</Text>}
+            {/* Sin placa: el de un interesado (P31b), con lo que se escribió del vehículo en negrita */}
+            {d.vehiculo.placa ? <Text style={e.fuerte}>{d.vehiculo.placa}</Text> : d.vehiculo.descripcion && <Text style={e.fuerte}>{d.vehiculo.descripcion}</Text>}
+            {d.vehiculo.placa && d.vehiculo.descripcion && <Text>{d.vehiculo.descripcion}</Text>}
             {/* Con su etiqueta: junto al modelo, sin ella, se leía como otro modelo */}
             <Text style={e.suave}>Tamaño: {d.vehiculo.tamano}</Text>
           </View>

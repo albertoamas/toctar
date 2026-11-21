@@ -7,11 +7,12 @@ import { estaPagada } from "@/modulos/pagos/reglas";
 // texto es la plantilla que guardó el dueño en Configuración > Mensajes (HU-40); aquí se calculan los valores de sus
 // campos. Especificación: C4-taller-entrega.md §8 y C5-cierre-entrega-2.md §6.
 
-type Vehiculo = { marca: string | null; modelo: string | null; placa: string };
+/** Sin placa: el vehículo de un interesado (P31b), que todavía no se registró. */
+type Vehiculo = { marca: string | null; modelo: string | null; placa: string | null };
 type Datos = { plantilla: string; negocio: string; cliente: string; vehiculo: Vehiculo };
 
-/** "Toyota Corolla (placa 1234ABC)", o "vehículo (placa 1234ABC)" si no se cargó la marca. */
-export const textoVehiculo = (v: Vehiculo) => `${nombreVehiculo(v) || "vehículo"} (placa ${v.placa})`;
+/** "Toyota Corolla (placa 1234ABC)", o "vehículo (placa 1234ABC)" si no se cargó la marca; sin placa, solo el nombre. */
+export const textoVehiculo = (v: Vehiculo) => (v.placa ? `${nombreVehiculo(v) || "vehículo"} (placa ${v.placa})` : nombreVehiculo(v) || "vehículo");
 
 const comunes = ({ negocio, cliente, vehiculo }: Datos) => ({ nombre: primerNombre(cliente), vehiculo: textoVehiculo(vehiculo), negocio });
 

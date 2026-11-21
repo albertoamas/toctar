@@ -6,7 +6,7 @@ import { cliente, consulta, cotizacion, cotizacionLinea, negocio, sucursal, tama
 import type { EstadoConsulta } from "@/db/esquema/consultas";
 import type { DatosDocumento } from "@/db/esquema/cotizaciones";
 import { detalleVehiculo, nombreVehiculo } from "@/modulos/clientes/reglas";
-import { tieneVersiones } from "./comun";
+import { esInteresado, nombreDeQuien, tamanoDeLaConsulta, telefonoDeQuien, tieneVersiones } from "./comun";
 import { OpcionServicio, inicioCotizacion, opcionesDeServicio } from "./servicios";
 
 // Lecturas de las cotizaciones (C2, P23, P39, P40, P47). Quien las llama ya pasó por su permiso (Cotizaciones;
@@ -29,7 +29,8 @@ export type DatosNuevaVersion = {
   estado: EstadoConsulta;
   cliente: string;
   telefono: string;
-  placa: string;
+  /** Null en la de un interesado (P31b): `detalle` dice lo que se escribió del vehículo. */
+  placa: string | null;
   /** Marca y modelo, año, color: lo que se sepa. */
   detalle: (string | number)[];
   tamano: string;
@@ -52,20 +53,22 @@ export async function datosNuevaVersion(consultaId: number, desdeId: number | nu
     .select({
       consultaId: consulta.id,
       estado: consulta.estado,
-      cliente: cliente.nombre,
-      telefono: cliente.telefono,
+      cliente: nombreDeQuien,
+      telefono: telefonoDeQuien,
       placa: vehiculo.placa,
       marca: vehiculo.marca,
       modelo: vehiculo.modelo,
       anio: vehiculo.anio,
       color: vehiculo.color,
-      tamanoId: vehiculo.tamanoId,
+      interesado: esInteresado,
+      delInteresado: consulta.interesadoVehiculo,
+      tamanoId: tamanoDeLaConsulta,
       tamano: tamanoVehiculo.nombre,
     })
     .from(consulta)
-    .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
-    .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
-    .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
+    .leftJoin(cliente, eq(consulta.clienteId, cliente.id))
+    .leftJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
+    .innerJoin(tamanoVehiculo, eq(tamanoVehiculo.id, tamanoDeLaConsulta))
     .where(and(eq(consulta.id, consultaId), tieneVersiones));
   if (!c) return null;
 
@@ -91,7 +94,7 @@ export async function datosNuevaVersion(consultaId: number, desdeId: number | nu
     cliente: c.cliente,
     telefono: c.telefono,
     placa: c.placa,
-    detalle: detalleVehiculo(c),
+    detalle: c.interesado ? (c.delInteresado ? [c.delInteresado] : []) : detalleVehiculo(c),
     tamano: c.tamano,
     opciones,
     quitados: desde ? desde.lineas.filter((l) => !opciones.some((o) => o.varianteId === l.varianteId)).length : 0,
@@ -141,18 +144,20 @@ async function baseDeVersion(consultaId: number, id: number): Promise<BaseVersio
 export async function datosDocumento(consultaId: number, base: Pick<typeof db, "select"> = db): Promise<DatosDocumento> {
   const [c] = await base
     .select({
-      nombre: cliente.nombre,
-      telefono: cliente.telefono,
+      nombre: nombreDeQuien,
+      telefono: telefonoDeQuien,
       placa: vehiculo.placa,
       marca: vehiculo.marca,
       modelo: vehiculo.modelo,
       color: vehiculo.color,
+      interesado: esInteresado,
+      delInteresado: consulta.interesadoVehiculo,
       tamano: tamanoVehiculo.nombre,
     })
     .from(consulta)
-    .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
-    .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
-    .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
+    .leftJoin(cliente, eq(consulta.clienteId, cliente.id))
+    .leftJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
+    .innerJoin(tamanoVehiculo, eq(tamanoVehiculo.id, tamanoDeLaConsulta))
     .where(eq(consulta.id, consultaId));
   const [n] = await base.select({ nombre: negocio.nombre, razonSocial: negocio.razonSocial, nit: negocio.nit }).from(negocio).where(eq(negocio.id, 1));
   const [s] = await base
@@ -165,9 +170,10 @@ export async function datosDocumento(consultaId: number, base: Pick<typeof db, "
   if (!n) throw new Error("Faltan los datos del negocio: falta aplicar la migración 0003_datos_negocio.");
   return {
     cliente: { nombre: c.nombre, telefono: c.telefono },
+    // De un interesado (P31b): sin placa, con lo que se escribió del vehículo
     vehiculo: {
-      placa: c.placa,
-      descripcion: [nombreVehiculo(c), c.color].filter(Boolean).join(", ") || null,
+      placa: c.placa ?? "",
+      descripcion: c.interesado ? c.delInteresado || null : [nombreVehiculo(c), c.color].filter(Boolean).join(", ") || null,
       tamano: c.tamano,
     },
     negocio: { ...n, whatsapp: s?.whatsapp ?? null, direccion: s?.direccion ?? null },

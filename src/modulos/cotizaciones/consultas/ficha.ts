@@ -1,13 +1,14 @@
 import "server-only";
 
 import { asc, desc, eq, inArray } from "drizzle-orm";
+import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { db } from "@/db";
-import { cliente, consulta, cotizacion, cotizacionLinea, tamanoVehiculo, usuario, variante, vehiculo } from "@/db/esquema";
+import { archivo, cliente, consulta, consultaArchivo, cotizacion, cotizacionLinea, tamanoVehiculo, usuario, variante, vehiculo } from "@/db/esquema";
 import type { EstadoConsulta, MotivoPerdida } from "@/db/esquema/consultas";
 import type { EstadoCotizacion } from "@/db/esquema/cotizaciones";
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { partirDescripcion } from "../reglas";
-import { sinFecha } from "./comun";
+import { esInteresado, nombreDeQuien, sinFecha, tamanoDeLaConsulta, telefonoDeQuien } from "./comun";
 
 // Lecturas de las cotizaciones (C2, P23, P39, P40, P47). Quien las llama ya pasó por su permiso (Cotizaciones;
 // los precios, solo con él). Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md.
@@ -77,14 +78,19 @@ async function versionesDeCotizacion(consultaId: number): Promise<FilaVersion[]>
 export type DetalleCotizacion = {
   id: number;
   numero: string;
-  clienteId: number;
+  /** Sin registrar (P31b): null, y el nombre y el WhatsApp son los del interesado. */
+  clienteId: number | null;
   cliente: string;
   telefono: string;
-  /** Para enlazar a su ficha (pedido 51). */
-  vehiculoId: number;
-  placa: string;
-  /** Marca y modelo, año y color: lo que se sepa (DatosVehiculo). */
+  /** Para enlazar a su ficha (pedido 51); null en la de un interesado. */
+  vehiculoId: number | null;
+  placa: string | null;
+  /** Marca y modelo, año y color: lo que se sepa (DatosVehiculo). Del interesado, lo que se escribió ("Hilux blanca"). */
   detalle: (string | number)[];
+  /** De un interesado (P31b): todavía no está en Clientes; se registra al reservar. */
+  interesado: boolean;
+  /** La foto del vehículo que se tomó al cotizar (P31b), privada. */
+  foto: UrlsFoto | null;
   tamano: string;
   estado: EstadoConsulta;
   /** Aceptada sin una reserva activa (pedido 31). */
@@ -104,9 +110,11 @@ export async function obtenerCotizacion(id: number): Promise<DetalleCotizacion |
       .select({
         id: consulta.id,
         clienteId: consulta.clienteId,
-        cliente: cliente.nombre,
-        telefono: cliente.telefono,
-        vehiculoId: vehiculo.id,
+        cliente: nombreDeQuien,
+        telefono: telefonoDeQuien,
+        vehiculoId: consulta.vehiculoId,
+        interesado: esInteresado,
+        delInteresado: consulta.interesadoVehiculo,
         placa: vehiculo.placa,
         marca: vehiculo.marca,
         modelo: vehiculo.modelo,
@@ -119,20 +127,33 @@ export async function obtenerCotizacion(id: number): Promise<DetalleCotizacion |
         detallePerdida: consulta.detallePerdida,
       })
       .from(consulta)
-      .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
-      .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
-      .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
+      .leftJoin(cliente, eq(consulta.clienteId, cliente.id))
+      .leftJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
+      .innerJoin(tamanoVehiculo, eq(tamanoVehiculo.id, tamanoDeLaConsulta))
       .where(eq(consulta.id, id)),
     versionesDeCotizacion(id),
   ]);
   if (!c || versiones.length === 0) return null;
-  const { marca, modelo, anio, color, ...datos } = c;
+  const { marca, modelo, anio, color, delInteresado, ...datos } = c;
   return {
     ...datos,
     marca,
     modelo,
     numero: versiones[0].numero,
-    detalle: detalleVehiculo({ marca, modelo, anio, color }),
+    detalle: c.interesado ? (delInteresado ? [delInteresado] : []) : detalleVehiculo({ marca, modelo, anio, color }),
+    foto: await fotoDeConsulta(id),
     versiones,
   };
+}
+
+/** La primera foto de la consulta (P31b: la del vehículo del interesado), con sus enlaces firmados; null si no tiene. */
+export async function fotoDeConsulta(consultaId: number): Promise<UrlsFoto | null> {
+  const [f] = await db
+    .select({ clave: archivo.clave, miniaturaClave: archivo.miniaturaClave, ancho: archivo.ancho, alto: archivo.alto })
+    .from(consultaArchivo)
+    .innerJoin(archivo, eq(consultaArchivo.archivoId, archivo.id))
+    .where(eq(consultaArchivo.consultaId, consultaId))
+    .orderBy(asc(consultaArchivo.orden))
+    .limit(1);
+  return f ? urlsFotoPrivada(f) : null;
 }

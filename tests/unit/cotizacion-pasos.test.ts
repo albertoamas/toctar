@@ -12,6 +12,9 @@ describe("en qué paso está cada error", () => {
     ["vehiculo", PASO_VEHICULO],
     ["vehiculo-placa", PASO_VEHICULO],
     ["vehiculo-tamanoId", PASO_VEHICULO],
+    ["interesadoTamanoId", PASO_VEHICULO],
+    ["interesadoVehiculo", PASO_VEHICULO],
+    ["foto", PASO_VEHICULO],
     ["modo", PASO_SERVICIOS],
     ["lineas", PASO_SERVICIOS],
     ["descuento", PASO_SERVICIOS],
@@ -31,25 +34,27 @@ describe("cada paso se revisa al seguir", () => {
   const cliente = { nombre: "Marta Vaca", telefono: "71234567", correo: "", nit: "", razonSocial: "", notas: "" };
   const vehiculo = { "vehiculo-placa": "4321bcd", "vehiculo-tamanoId": "2", "vehiculo-marca": "", "vehiculo-modelo": "", "vehiculo-anio": "", "vehiculo-color": "" };
 
-  test("el cliente nuevo, con el esquema de Clientes", () => {
+  // Pedido 31, parte 2 (P31b): alguien nuevo es un interesado, sin registrarlo: solo su nombre y su WhatsApp
+  test("alguien nuevo: su nombre y su WhatsApp, con las reglas de Clientes", () => {
     expect(erroresDelPaso(PASO_CLIENTE, cliente, true)).toEqual({});
     expect(erroresDelPaso(PASO_CLIENTE, { ...cliente, nombre: "", telefono: "712" }, true)).toEqual({
       nombre: expect.any(String),
       telefono: "Escribe los 8 dígitos del celular.",
     });
-    expect(erroresDelPaso(PASO_CLIENTE, { ...cliente, correo: "no-es-correo" }, true)).toEqual({ correo: "Escribe un correo válido." });
+    // El correo ya no se pide: no frena el paso
+    expect(erroresDelPaso(PASO_CLIENTE, { ...cliente, correo: "no-es-correo" }, true)).toEqual({});
   });
 
   test("con un cliente registrado, el paso del cliente ya está", () => {
     expect(erroresDelPaso(PASO_CLIENTE, {}, false)).toEqual({});
   });
 
-  test("el vehículo nuevo, con el esquema del vehículo y sus campos con prefijo", () => {
-    expect(erroresDelPaso(PASO_VEHICULO, vehiculo, true)).toEqual({});
-    expect(erroresDelPaso(PASO_VEHICULO, { ...vehiculo, "vehiculo-placa": "", "vehiculo-tamanoId": "" }, true)).toEqual({
-      "vehiculo-placa": "Escribe la placa.",
-      "vehiculo-tamanoId": expect.any(String),
-    });
+  test("el vehículo de alguien nuevo: el tamaño, sin placa; qué vehículo es, opcional", () => {
+    const delInteresado = { ...cliente, interesadoTamanoId: "2", interesadoVehiculo: "" };
+    expect(erroresDelPaso(PASO_VEHICULO, delInteresado, true)).toEqual({});
+    expect(erroresDelPaso(PASO_VEHICULO, { ...delInteresado, interesadoVehiculo: "Hilux blanca" }, true)).toEqual({});
+    expect(erroresDelPaso(PASO_VEHICULO, { ...delInteresado, interesadoTamanoId: "" }, true)).toEqual({ interesadoTamanoId: "Elige el tamaño." });
+    expect(erroresDelPaso(PASO_VEHICULO, { ...delInteresado, interesadoVehiculo: "x".repeat(81) }, true)).toEqual({ interesadoVehiculo: "Hasta 80 caracteres." });
   });
 
   test("con un cliente registrado: uno de sus vehículos, u otro con sus datos", () => {

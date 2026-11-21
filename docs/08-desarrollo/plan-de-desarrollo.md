@@ -49,7 +49,6 @@ Con la Entrega 2 se acepta también la Entrega 1. Lo que falta, en orden.
 
 | Qué | Dónde |
 |---|---|
-| Pedido 29 y pedido 31, parte 2: vehículos sin placa y cotizar sin registrar al cliente (van juntos; el dueño lo volvió a pedir el 20/11, falta decidir si va incluido o se cotiza aparte) | `etapas/P31-flujo-de-un-trabajo.md`, parte 2 |
 | Pedidos 14 (Bs 200), 19 y 22 (avisos automáticos, por cotizar); la constancia en PDF de la entrega (pedido 13, +2 h) | `registro-de-cambios.md` |
 | Pedido 15 (sueldos): va en el Sistema completo. El 16 ya está aprobado (punto 8 de arriba) | `registro-de-cambios.md` |
 | Decisiones abiertas de C5 (permiso del cliente para publicar fotos, qué ve el encargado en Inicio, más mensajes editables) | `etapas/C5-cierre-entrega-2.md`, §12 |
@@ -102,7 +101,7 @@ Este plan es el mapa: fases, fechas y criterios de salida. **El detalle para pro
 | P28 Órdenes con historial | `etapas/P28-ordenes-historial.md` | ✅ Programada (01/11, PR #117) |
 | P30 Saldos: buscar y ordenar | `etapas/P30-saldos-buscar-ordenar.md` | ✅ Programada (01/11, PR #118) |
 | P32 Dos roles, sin técnico | `etapas/P32-roles-sin-tecnico.md` | ✅ Programada (03/11, PR #129) |
-| P31 Un trabajo, de la cotización a la entrega | `etapas/P31-flujo-de-un-trabajo.md` | 🔵 Parte 1 hecha (04/11, PR #137 y #138); la parte 2 (cotizar sin registrar y placa opcional), a decidir con el dueño |
+| P31 Un trabajo, de la cotización a la entrega | `etapas/P31-flujo-de-un-trabajo.md` | ✅ Parte 1 (04/11, PR #137 y #138); parte 2, cotizar sin registrar al interesado, incluida sin costo (21/11, `etapas/P31b-cotizacion-rapida.md`) |
 | P37 Un vehículo cambia de dueño | `etapas/P37-cambio-de-dueno.md` | ✅ Hecha (04/11, PR #138) |
 | B6 Cierre de la Entrega 1 | Sin especificación aparte | Va junto con el cierre de la Entrega 2 (C5) |
 | C7 Patrones comunes del panel | `etapas/C7-rediseno-del-panel.md` y su checklist `rediseno-panel-checklist.md` | 🔵 Aprobada (18/11), acotada: 6 patrones (ficha con el recorrido, formulario en pasos, flujo de un paso, modales, lista con acción, ficha con historia) y la regla de anchos, en unas 14 pantallas; sigue el prototipo v3 |

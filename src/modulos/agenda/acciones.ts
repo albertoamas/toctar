@@ -22,7 +22,7 @@ import { borrarFotosSueltas, soltarFotosIngreso } from "@/modulos/ordenes/fotos"
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
 import { descartarComprobante, guardarComprobante } from "@/modulos/pagos/comprobante";
 import { calcularSaldo, tipoDePago } from "@/modulos/pagos/reglas";
-import { datosDeCotizacion } from "./consultas/reservar";
+import { datosDeCotizacion, interesadoDeCotizacion } from "./consultas/reservar";
 import { entradaReserva, esquemaAdelanto, esquemaCancelar, esquemaFechas, esquemaReprogramar, esquemaReserva } from "./esquemas";
 import { conDesde, leerDesde } from "@/lib/volver";
 
@@ -98,6 +98,8 @@ export async function agendarReserva(_previo: EstadoCliente, datos: FormData): P
   let recordatorioId: number | null = null;
   if (d.origen === "cotizacion") {
     const c = await datosDeCotizacion(d.cotizacionId);
+    // La de un interesado (P31b) se reserva después de registrarlo: la pantalla lo pide antes
+    if (!c && (await interesadoDeCotizacion(d.cotizacionId))) return { mensaje: "Registra al cliente antes de reservar: recarga la página." };
     if (!c) return { mensaje: "Esa cotización ya no existe." };
     if (!c.agendable) return { mensaje: COTIZACION_CAMBIO };
     if (!c.activos) return { mensaje: "El cliente o el vehículo de esa cotización ya no está activo. Reactívalo en su ficha." };

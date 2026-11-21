@@ -1,7 +1,7 @@
 import { erroresDe } from "@/lib/formularios";
 import { esquemaCliente, esquemaVehiculo } from "@/modulos/clientes/esquemas";
 import { camposConPrefijo, erroresConPrefijo, PREFIJO_VEHICULO } from "@/modulos/clientes/valores";
-import { esquemaVehiculoElegido } from "./esquemas";
+import { esquemaInteresado, esquemaVehiculoElegido } from "./esquemas";
 import { VEHICULO_OTRO } from "./reglas";
 
 // Nueva cotización en pasos (pedido 40, etapas/P40-cotizacion-en-pasos.md): el cliente, su vehículo y los servicios con
@@ -20,7 +20,8 @@ const CAMPOS_CLIENTE = new Set(Object.keys(esquemaCliente.shape));
 /** En qué paso está el campo de un error que devolvió la acción: ahí vuelve la pantalla. */
 export function pasoDeCampo(campo: string): number {
   if (CAMPOS_CLIENTE.has(campo)) return PASO_CLIENTE;
-  if (campo === "vehiculo" || campo.startsWith(PREFIJO_VEHICULO)) return PASO_VEHICULO;
+  // El vehículo y la foto del interesado (P31b), en el paso del vehículo
+  if (campo === "vehiculo" || campo.startsWith(PREFIJO_VEHICULO) || campo.startsWith("interesado") || campo === "foto") return PASO_VEHICULO;
   return PASO_SERVICIOS;
 }
 
@@ -33,17 +34,19 @@ export function primerPasoConError(errores: Partial<Record<string, string>>): nu
 }
 
 /**
- * Los errores del paso que se quiere dejar, con lo escrito en el formulario. El cliente nuevo, con el esquema de
- * Clientes; el vehículo: uno del cliente o, si es otro (o el cliente es nuevo), el esquema del vehículo.
+ * Los errores del paso que se quiere dejar, con lo escrito en el formulario. Alguien nuevo (P31b), como interesado: su
+ * nombre y WhatsApp, y del vehículo, el tamaño. Con un cliente: uno de sus vehículos o, si es otro, el esquema del
+ * vehículo de Clientes.
  */
 export function erroresDelPaso(paso: number, valores: Record<string, string>, clienteNuevo: boolean): Record<string, string> {
-  if (paso === PASO_CLIENTE) {
-    if (!clienteNuevo) return {};
-    const r = esquemaCliente.safeParse(valores);
-    return r.success ? {} : erroresDe(r.error);
-  }
+  const delInteresado = (campos: string[]) => {
+    const r = esquemaInteresado.safeParse(valores);
+    return r.success ? {} : Object.fromEntries(Object.entries(erroresDe(r.error)).filter(([c]) => campos.includes(c)));
+  };
+  if (paso === PASO_CLIENTE) return clienteNuevo ? delInteresado(["nombre", "telefono"]) : {};
   if (paso === PASO_VEHICULO) {
-    const eleccion = clienteNuevo ? VEHICULO_OTRO : (valores.vehiculo ?? "");
+    if (clienteNuevo) return delInteresado(["interesadoTamanoId", "interesadoVehiculo"]);
+    const eleccion = valores.vehiculo ?? "";
     if (eleccion !== VEHICULO_OTRO) {
       const r = esquemaVehiculoElegido.safeParse(eleccion);
       return r.success ? {} : { vehiculo: r.error.issues[0].message };

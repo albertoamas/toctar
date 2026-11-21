@@ -40,7 +40,8 @@ export function ListaCotizaciones({ cotizaciones, umbral, sinCliente = false, co
           secundario={
             <>
               <span className="font-semibold text-tinta tabular-nums @2xl:hidden">{c.numero} · </span>
-              {[c.placa, c.vehiculo].filter(Boolean).join(", ")}
+              {/* De un interesado (P31b): sin placa, con lo que se escribió del vehículo */}
+              {[c.placa, c.vehiculo, c.interesado && "Sin registrar"].filter(Boolean).join(", ")}
             </>
           }
         />

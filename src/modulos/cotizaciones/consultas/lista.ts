@@ -1,13 +1,13 @@
 import "server-only";
 
-import { and, asc, count, desc, eq, like, ne, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, isNull, like, ne, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { ajustarPagina, POR_PAGINA } from "@/lib/paginacion";
 import { cliente, consulta, cotizacion, cotizacionLinea, vehiculo } from "@/db/esquema";
 import type { EstadoConsulta } from "@/db/esquema/consultas";
 import { escaparLike, nombreVehiculo, normalizarBusqueda } from "@/modulos/clientes/reglas";
 import { VISTAS, type Vista } from "../reglas";
-import { conReservaActiva, sinFecha, tieneVersiones } from "./comun";
+import { conReservaActiva, esInteresado, nombreDeQuien, sinFecha, telefonoDeQuien, tieneVersiones } from "./comun";
 
 // Lecturas de las cotizaciones (C2, P23, P39, P40, P47). Quien las llama ya pasó por su permiso (Cotizaciones;
 // los precios, solo con él). Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md.
@@ -17,11 +17,14 @@ export type FilaCotizacion = {
   id: number;
   /** La versión que vale: la que se reserva. */
   cotizacionId: number;
-  clienteId: number;
+  /** Sin registrar todavía (P31b): null, y el nombre y el vehículo son los que se escribieron del interesado. */
+  clienteId: number | null;
   cliente: string;
-  placa: string;
-  /** Marca y modelo ("Toyota Hilux"); vacío si no se cargaron. */
+  placa: string | null;
+  /** Marca y modelo ("Toyota Hilux"), o lo que se escribió del interesado ("Hilux blanca"); vacío si no hay. */
   vehiculo: string;
+  /** La cotización es de un interesado (P31b): no está en Clientes. */
+  interesado: boolean;
   /** Los servicios de la versión que vale, en su orden: "Instalación de PPF, Pulido de vidrios". */
   servicios: string;
   numero: string;
@@ -44,7 +47,8 @@ export async function tieneReservaActiva(consultaId: number, base: Pick<typeof d
  * los muestra solo quien los ve (RN-12): lo decide la pantalla.
  */
 export async function cotizacionesPorReservar(): Promise<FilaCotizacion[]> {
-  const donde = and(sinFecha, eq(cliente.activo, true), eq(vehiculo.activo, true), eq(vehiculo.clienteId, consulta.clienteId));
+  // La de un interesado también: se registra al reservarla (P31b)
+  const donde = and(sinFecha, or(isNull(consulta.clienteId), and(eq(cliente.activo, true), eq(vehiculo.activo, true), eq(vehiculo.clienteId, consulta.clienteId))));
   return (await filas(donde).orderBy(asc(consulta.ultimoMovimientoAt), asc(consulta.id))).map(aFila);
 }
 
@@ -61,10 +65,12 @@ const columnasFila = {
   id: consulta.id,
   cotizacionId: cotizacion.id,
   clienteId: consulta.clienteId,
-  cliente: cliente.nombre,
+  cliente: nombreDeQuien,
   placa: vehiculo.placa,
   marca: vehiculo.marca,
   modelo: vehiculo.modelo,
+  delInteresado: consulta.interesadoVehiculo,
+  interesado: esInteresado,
   servicios: sql<string>`coalesce((select string_agg(${cotizacionLinea.descripcion}, ', ' order by ${cotizacionLinea.orden}) from ${cotizacionLinea} where ${cotizacionLinea.cotizacionId} = ${cotizacion.id}), '')`,
   numero: cotizacion.numero,
   total: cotizacion.total,
@@ -73,10 +79,10 @@ const columnasFila = {
   ultimoMovimientoAt: consulta.ultimoMovimientoAt,
 };
 
-/** La fila de la consulta, con el vehículo nombrado como en el resto del panel. */
-const aFila = ({ marca, modelo, ...f }: { marca: string | null; modelo: string | null } & Omit<FilaCotizacion, "vehiculo">): FilaCotizacion => ({
+/** La fila de la consulta, con el vehículo nombrado como en el resto del panel (o como se escribió del interesado). */
+const aFila = ({ marca, modelo, delInteresado, ...f }: { marca: string | null; modelo: string | null; delInteresado: string | null } & Omit<FilaCotizacion, "vehiculo">): FilaCotizacion => ({
   ...f,
-  vehiculo: nombreVehiculo({ marca, modelo }),
+  vehiculo: f.interesado ? (delInteresado ?? "") : nombreVehiculo({ marca, modelo }),
 });
 
 function filas(donde: SQL | undefined) {
@@ -84,8 +90,8 @@ function filas(donde: SQL | undefined) {
     .select(columnasFila)
     .from(consulta)
     .innerJoin(cotizacion, versionActual)
-    .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
-    .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
+    .leftJoin(cliente, eq(consulta.clienteId, cliente.id))
+    .leftJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
     .where(donde);
 }
 
@@ -94,8 +100,8 @@ function coincide(q: string): SQL | undefined {
   const busqueda = normalizarBusqueda(q);
   if (!busqueda) return undefined;
   return or(
-    sql`unaccent(lower(${cliente.nombre})) like unaccent(lower(${`%${escaparLike(busqueda.texto)}%`}))`,
-    busqueda.digitos ? like(cliente.telefono, `%${escaparLike(busqueda.digitos)}%`) : undefined,
+    sql`unaccent(lower(${nombreDeQuien})) like unaccent(lower(${`%${escaparLike(busqueda.texto)}%`}))`,
+    busqueda.digitos ? sql`${telefonoDeQuien} like ${`%${escaparLike(busqueda.digitos)}%`}` : undefined,
     busqueda.placa ? like(vehiculo.placa, `%${escaparLike(busqueda.placa)}%`) : undefined,
     like(cotizacion.numero, `%${escaparLike(busqueda.texto)}%`),
   );
@@ -122,8 +128,8 @@ export async function listarCotizaciones(datos: { vista: Vista; q: string; pagin
     .select({ total: count() })
     .from(consulta)
     .innerJoin(cotizacion, versionActual)
-    .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
-    .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
+    .leftJoin(cliente, eq(consulta.clienteId, cliente.id))
+    .leftJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
     .where(donde);
   const { pagina, paginas } = ajustarPagina(datos.pagina, total);
   const encontradas = await filas(donde)
@@ -142,8 +148,8 @@ export async function contarPorVista(q: string): Promise<Record<Vista, number>> 
     .select({ estado: consulta.estado, total: count() })
     .from(consulta)
     .innerJoin(cotizacion, versionActual)
-    .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
-    .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
+    .leftJoin(cliente, eq(consulta.clienteId, cliente.id))
+    .leftJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
     .where(coincide(q))
     .groupBy(consulta.estado);
   const de = (estado: EstadoConsulta) => porEstado.find((f) => f.estado === estado)?.total ?? 0;

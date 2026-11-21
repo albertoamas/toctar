@@ -129,11 +129,12 @@ async function Semana(props: { lunes: string; dias: string[]; hoy: string; hasta
   const ahora = new Date();
   const fila = (c: FilaCotizacion) => ({
     href: conDesde(`/panel/agenda/nueva?cotizacion=${c.cotizacionId}`, desdeAqui),
-    titulo: c.placa,
+    // La de un interesado (P31b), sin placa todavía: su nombre
+    titulo: c.placa ?? c.cliente,
     tituloGrande: true,
     // Lo que hace la fila, escrito (C7, 18/11): toda la fila sigue llevando a Nueva reserva
     accion: "Reservar",
-    detalles: [c.cliente, c.servicios, ...(conMontos ? [bs(c.total)] : []), `Aceptada ${textoDias(diasDesde(c.ultimoMovimientoAt, ahora))}`].filter(Boolean),
+    detalles: [c.placa ? c.cliente : [c.vehiculo, "Sin registrar"].filter(Boolean).join(" · "), c.servicios, ...(conMontos ? [bs(c.total)] : []), `Aceptada ${textoDias(diasDesde(c.ultimoMovimientoAt, ahora))}`].filter(Boolean),
   });
 
   return (
