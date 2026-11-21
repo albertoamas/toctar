@@ -37,6 +37,11 @@ El dueño lo pidió dentro del precio: **Incluido** (se le olvidó mencionarlo a
 `servicio.colores` (`jsonb`, `[]` por defecto): `{ nombre, hex, acabado }[]`, como los beneficios y los pasos. Migración
 `0055_probador_de_colores`. Se actualiza `modelo-de-datos.md`.
 
+**Datos de inicio (21/11):** la migración `0056_datos_repintado_de_aros` agrega el servicio "Repintado de aros" a los
+iniciales (como `0007_datos_servicios`): su resumen, la variante "Única" (D-2) y siete colores de partida (negro mate y
+brillante, grafito, plata, bronce, dorado y blanco). Solo si no existe por su dirección o su nombre; sin precios. Los datos
+de demostración (`datos-demo.mjs`) le suman beneficios, pasos y precios de ejemplo.
+
 ## 5. Pantallas
 - **Panel, ficha del servicio (Sitio web → Servicios):** sin colores, la sección no está; "Más" ofrece "Agregar probador
   de colores", que abre el modal con un color para llenar. Con colores, la sección "Probador de colores" va después de
