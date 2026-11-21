@@ -156,7 +156,6 @@ function Proceso({ pasos, foto, lado }: { pasos: DetalleServicioPublico["pasos"]
       <ConFoto foto={foto} lado={lado}>
         <h2 id="proceso-titulo" className={TITULO_SECCION}>Cómo lo hacemos</h2>
         {/* Con foto al lado, los pasos van en una sola columna */}
-        {/* Con foto al lado, los pasos van en una sola columna */}
         <ol className={foto ? "grid gap-y-6" : "grid gap-x-10 gap-y-8 md:grid-cols-2 lg:grid-cols-3"}>
           {pasos.map((p, i) => (
             <li key={i} className="flex gap-4 border-t border-border pt-4">
