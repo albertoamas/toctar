@@ -73,9 +73,12 @@ export type DetalleServicioPublico = ServicioPublico & {
   variantes: { nombre: string; descripcion: string | null }[];
   /** La foto al lado de cada sección, si tiene. */
   fotosSecciones: FotosDeSecciones;
-  /** Pulido de Servicios (21/11): hasta tres de sus trabajos de la galería, los antes y después primero. */
+  /**
+   * Pulido de Servicios (21/11): sus trabajos de la galería, el mejor primero (el elegido para la portada, después los
+   * antes y después). La página muestra el primero.
+   */
   trabajos: FotoGaleria[];
-  /** Si tiene más trabajos que los que se muestran: la página enlaza a la galería. */
+  /** Si tiene más de un trabajo: la página enlaza a la galería. */
   masTrabajos: boolean;
 };
 
@@ -96,7 +99,8 @@ export async function servicioPublico(slug: string): Promise<DetalleServicioPubl
     galeriaPublica().then((g) => g.filter((f) => f.servicio.slug === s.slug)),
     fotosDeSecciones(s.id),
   ]);
-  const ordenados = [...suyos.filter((f) => f.antes), ...suyos.filter((f) => !f.antes)];
+  const puntaje = (f: FotoGaleria) => (f.enPortada && f.antes ? 2 : f.antes ? 1 : 0);
+  const ordenados = [...suyos].sort((a, b) => puntaje(b) - puntaje(a));
   return {
     id: s.id,
     nombre: s.nombre,
@@ -109,8 +113,8 @@ export async function servicioPublico(slug: string): Promise<DetalleServicioPubl
     opcionesEnEscalera: s.opcionesEnEscalera,
     variantes,
     fotosSecciones,
-    trabajos: ordenados.slice(0, 3),
-    masTrabajos: ordenados.length > 3,
+    trabajos: ordenados.slice(0, 1),
+    masTrabajos: ordenados.length > 1,
   };
 }
 

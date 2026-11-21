@@ -7,16 +7,17 @@ import { ArrowRightIcon } from "lucide-react";
 import { TITULO_SECCION } from "@/componentes/sitio/titulo-pagina";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { FotoOReemplazo } from "@/componentes/sitio/foto-o-reemplazo";
-import { FotoResponsiva } from "@/componentes/sitio/foto-responsiva";
 import { IconoBeneficio } from "@/componentes/sitio/icono-beneficio";
 import { ProbadorColores } from "@/componentes/sitio/probador-colores";
 import { TarjetaServicio } from "@/componentes/sitio/tarjeta-servicio";
-import { TrabajoGaleria } from "@/componentes/sitio/trabajo-galeria";
+import { ComparadorAntesDespues } from "@/componentes/sitio/comparador-antes-despues";
+import { FotoResponsiva } from "@/componentes/sitio/foto-responsiva";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import type { ColorServicio } from "@/db/esquema/sitio";
 import type { UrlsFoto } from "@/lib/fotos";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
 import { servicioPublico, serviciosPublicos, type DetalleServicioPublico } from "@/modulos/sitio/publico";
+import { nombreDelTrabajo } from "@/modulos/sitio/galeria";
 import { ladosDeFotos } from "@/modulos/sitio/secciones-foto";
 import { metadatosPagina } from "@/lib/sitio";
 
@@ -70,30 +71,35 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
             <div className="flex flex-col items-start gap-5 md:w-1/2 md:pr-8">
               <h1 className="font-heading text-[40px] leading-[38px] md:leading-[60px] font-extrabold tracking-[-0.01em] text-balance uppercase italic md:text-[64px]">{s.nombre}</h1>
               <p className="max-w-xl text-lg leading-7 text-tinta-suave">{s.resumen}</p>
+              {s.beneficios.length > 0 && <Beneficios beneficios={s.beneficios} />}
               <BotonWhatsApp texto="Consultar por este servicio" servicio={s.nombre} />
             </div>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pt-4 pb-12 md:gap-24 md:pt-24 md:pb-24">
-        {s.beneficios.length > 0 && <Beneficios beneficios={s.beneficios} />}
-        {/* Pedido 56: el probador de colores, si el servicio tiene colores (el repintado de aros) */}
+      {/* Pulido de Servicios (21/11): menos secciones. Los beneficios subieron a la portada; los trabajos son una franja de
+          antes y después a todo el ancho, el segundo momento visual de la página, en vez de tres cajas */}
+      <div className="flex flex-col gap-12 pt-8 pb-12 md:gap-24 md:pt-24 md:pb-24">
         {s.colores.length > 0 && (
-          <Suspense fallback={<ProbadorColores servicio={s.nombre} colores={s.colores} whatsapp={null} />}>
-            <Probador servicio={s.nombre} colores={s.colores} />
+          <div className="mx-auto w-full max-w-6xl px-4">
+            {/* Pedido 56: el probador de colores, si el servicio tiene colores (el repintado de aros) */}
+            <Suspense fallback={<ProbadorColores servicio={s.nombre} colores={s.colores} whatsapp={null} />}>
+              <Probador servicio={s.nombre} colores={s.colores} />
+            </Suspense>
+          </div>
+        )}
+        {s.trabajos[0] && <AntesYDespues trabajo={s.trabajos[0]} mas={s.masTrabajos} slug={s.slug} />}
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 md:gap-24">
+          {/* Cada sección con su foto al lado, si tiene (pedido de la demo del 24/10), alternando de lado */}
+          {s.pasos.length > 0 && <Proceso pasos={s.pasos} foto={s.fotosSecciones.proceso} lado={lados.proceso} />}
+          {s.variantes.length > 0 && (
+            <Variantes variantes={s.variantes} escalera={s.opcionesEnEscalera} foto={s.fotosSecciones.opciones} lado={lados.opciones} />
+          )}
+          <Suspense fallback={null}>
+            <OtrosServicios slug={s.slug} />
           </Suspense>
-        )}
-        {/* Cada sección con su foto al lado, si tiene (pedido de la demo del 24/10), alternando de lado */}
-        {s.pasos.length > 0 && <Proceso pasos={s.pasos} foto={s.fotosSecciones.proceso} lado={lados.proceso} />}
-        {s.variantes.length > 0 && (
-          <Variantes variantes={s.variantes} escalera={s.opcionesEnEscalera} foto={s.fotosSecciones.opciones} lado={lados.opciones} />
-        )}
-        {/* Sus trabajos, a la vista (pulido de Servicios, 21/11: antes, un botón suelto a la galería) */}
-        {s.trabajos.length > 0 && <Trabajos trabajos={s.trabajos} mas={s.masTrabajos} slug={s.slug} />}
-        <Suspense fallback={null}>
-          <OtrosServicios slug={s.slug} />
-        </Suspense>
+        </div>
       </div>
 
       <CierreWhatsApp
@@ -108,19 +114,20 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
 }
 
 /**
- * Lo que gana el vehículo, de un vistazo: ícono y frase corta, separados por líneas finas (la fila del afiche del
- * dueño). Sin título a la vista: los íconos lo dicen; el título queda para el lector de pantalla.
+ * Lo que gana el vehículo, en la portada, debajo del resumen (pulido de Servicios, 21/11: era una franja aparte, con
+ * líneas, para cinco frases de dos palabras). El título queda para el lector de pantalla.
  */
 function Beneficios({ beneficios }: { beneficios: DetalleServicioPublico["beneficios"] }) {
   return (
     <section aria-labelledby="beneficios-titulo">
-      <h2 id="beneficios-titulo" className="sr-only">Qué gana tu vehículo</h2>
-      {/* En una fila con líneas entre cada uno desde 1024 px; más angosto, en grilla y solo con el borde de arriba y de abajo */}
-      <ul className="grid grid-cols-2 border-y border-border sm:grid-cols-3 lg:grid-flow-col lg:grid-cols-none lg:auto-cols-fr">
+      <h2 id="beneficios-titulo" className="sr-only">
+        Qué gana tu vehículo
+      </h2>
+      <ul className="grid gap-x-6 gap-y-2.5 sm:grid-cols-2">
         {beneficios.map((b, i) => (
-          <li key={i} className="flex flex-col items-center gap-2 border-border px-3 py-5 text-center md:gap-3 md:py-6 lg:not-first:border-l">
-            <IconoBeneficio icono={b.icono} className="size-8 text-rojo md:size-9" />
-            <span className="max-w-48 text-sm leading-5 font-semibold text-balance">{b.texto}</span>
+          <li key={i} className="flex items-center gap-3 text-[15px] leading-5 font-semibold">
+            <IconoBeneficio icono={b.icono} className="size-6 shrink-0 text-rojo" />
+            {b.texto}
           </li>
         ))}
       </ul>
@@ -154,10 +161,12 @@ function Proceso({ pasos, foto, lado }: { pasos: DetalleServicioPublico["pasos"]
       <ConFoto foto={foto} lado={lado}>
         <h2 id="proceso-titulo" className={TITULO_SECCION}>Cómo lo hacemos</h2>
         {/* Con foto al lado, los pasos van en una sola columna */}
-        <ol className={foto ? "grid gap-y-6" : "grid gap-x-10 gap-y-8 md:grid-cols-2 lg:grid-cols-3"}>
+        {/* Más compactos (pulido de Servicios, 21/11): en el celular, el número junto al título y sin raya entre pasos; en la
+            computadora, en una sola fila cuando no hay foto al lado */}
+        <ol className={foto ? "grid gap-y-5" : "grid gap-x-8 gap-y-5 md:grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] md:gap-y-8"}>
           {pasos.map((p, i) => (
-            <li key={i} className="flex gap-4 border-t border-border pt-4">
-              <span aria-hidden className="font-heading text-[40px] leading-none font-extrabold text-rojo italic">{i + 1}</span>
+            <li key={i} className="flex gap-3 md:gap-4 md:border-t md:border-border md:pt-4">
+              <span aria-hidden className="font-heading text-[28px] leading-none font-extrabold text-rojo italic md:text-[40px]">{i + 1}</span>
               <div className="flex flex-col gap-1">
                 <h3 className="font-semibold">{p.titulo}</h3>
                 {p.detalle && <p className="text-sm leading-[22px] text-tinta-suave">{p.detalle}</p>}
@@ -229,30 +238,39 @@ async function Probador({ servicio, colores }: { servicio: string; colores: Colo
   return <ProbadorColores servicio={servicio} colores={colores} whatsapp={whatsapp} />;
 }
 
-/** Lo que ocupa un trabajo: 3 columnas desde 1024 px, 2 desde 640 y 1 en el celular (como la grilla de la Galería). */
-const ANCHO_TRABAJO = "(min-width: 1152px) 368px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw";
-
-/** Hasta tres de sus trabajos de la galería, los antes y después primero; si hay más, "Ver todos" lleva a la galería. */
-function Trabajos({ trabajos, mas, slug }: { trabajos: DetalleServicioPublico["trabajos"]; mas: boolean; slug: string }) {
+/**
+ * El mejor trabajo del servicio, a todo el ancho (pulido de Servicios, 21/11: tres cajas grises con un rótulo debajo se
+ * veían pegadas). El antes y después ocupa la mitad izquierda hasta el borde de la pantalla, sin caja, con la línea que se
+ * mueve sola; al lado, qué trabajo es y, si hay más, la galería. Sin un par, la mejor foto sola.
+ */
+function AntesYDespues({ trabajo, mas, slug }: { trabajo: DetalleServicioPublico["trabajos"][number]; mas: boolean; slug: string }) {
+  const nombre = nombreDelTrabajo(trabajo.descripcion, trabajo.servicio.nombre);
+  const conDescripcion = !!trabajo.descripcion.trim();
   return (
-    <section aria-labelledby="trabajos-titulo" className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+    <section aria-labelledby="trabajos-titulo" className="grid gap-6 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] md:items-center md:gap-0">
+      <div className="relative">
+        {trabajo.antes ? (
+          <ComparadorAntesDespues antes={trabajo.antes} despues={trabajo.despues} descripcion={nombre} alFrente={false} sizes="(min-width: 768px) 57vw, 100vw" marco sola sinAyuda />
+        ) : (
+          <div className="aspect-[4/3] overflow-hidden bg-superficie">
+            <FotoResponsiva foto={trabajo.despues} alt={nombre} sizes="(min-width: 768px) 57vw, 100vw" cargaDiferida className="size-full object-cover" />
+          </div>
+        )}
+        {/* La franja roja a 60° de la marca, abajo a la derecha de la foto */}
+        <span aria-hidden className="pointer-events-none absolute right-6 -bottom-2 z-10 h-4 w-24 -skew-x-[30deg] bg-rojo md:right-10" />
+      </div>
+      <div className="flex flex-col items-start gap-3 px-4 md:pr-[max(1rem,calc((100vw-72rem)/2+1rem))] md:pl-14">
         <h2 id="trabajos-titulo" className={TITULO_SECCION}>
-          Nuestros trabajos
+          {trabajo.antes ? "Antes y después" : "Así queda"}
         </h2>
+        {conDescripcion && <p className="text-lg leading-7 text-tinta-media">{nombre}</p>}
+        {trabajo.antes && <p className="text-sm text-tinta-suave">Arrastra la línea para comparar.</p>}
         {mas && (
-          <Link href={`/galeria?servicio=${slug}`} className="font-bold text-rojo-texto underline-offset-[6px] hover:underline">
-            Ver todos en la galería
+          <Link href={`/galeria?servicio=${slug}`} className="tt-boton tt-boton--contorno mt-3">
+            Ver más trabajos
           </Link>
         )}
       </div>
-      <ul aria-label="Nuestros trabajos" className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {trabajos.map((f, i) => (
-          <li key={f.id} className="grid">
-            <TrabajoGaleria foto={f} alFrente={false} sizes={ANCHO_TRABAJO} mostrarLinea={i === 0 && !!f.antes} sinEnlace />
-          </li>
-        ))}
-      </ul>
     </section>
   );
 }
