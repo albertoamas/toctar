@@ -74,11 +74,11 @@ export type DetalleServicioPublico = ServicioPublico & {
   /** La foto al lado de cada sección, si tiene. */
   fotosSecciones: FotosDeSecciones;
   /**
-   * Pulido de Servicios (21/11): sus trabajos de la galería, el mejor primero (el elegido para la portada, después los
-   * antes y después). La página muestra el primero.
+   * Pulido de Servicios (21/11): hasta tres de sus trabajos de la galería, los mejores primero (el elegido para la
+   * portada, después los antes y después).
    */
   trabajos: FotoGaleria[];
-  /** Si tiene más de un trabajo: la página enlaza a la galería. */
+  /** Si tiene más trabajos que los que se muestran: la página enlaza a la galería. */
   masTrabajos: boolean;
 };
 
@@ -113,8 +113,8 @@ export async function servicioPublico(slug: string): Promise<DetalleServicioPubl
     opcionesEnEscalera: s.opcionesEnEscalera,
     variantes,
     fotosSecciones,
-    trabajos: ordenados.slice(0, 1),
-    masTrabajos: ordenados.length > 1,
+    trabajos: ordenados.slice(0, 3),
+    masTrabajos: ordenados.length > 3,
   };
 }
 
