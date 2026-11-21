@@ -44,7 +44,7 @@ test("el dueño publica antes y después de una orden entregada: copias pública
   // Sin la casilla no se publica
   await page.getByRole("button", { name: "Publicar" }).click();
   await expect(page.getByText("Marca que en las fotos no se lee la placa ni se ve a nadie.")).toBeVisible();
-  await page.getByRole("checkbox", { name: "En las fotos no se lee la placa ni se ve a nadie" }).click();
+  await page.getByRole("checkbox", { name: "Revisé las fotos: no se lee la placa ni se ve a nadie" }).click();
   await page.getByRole("button", { name: "Publicar" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?publicado=1(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByText("Publicado en la galería. Lo ordenas u ocultas en Sitio web > Galería.")).toBeVisible();
@@ -123,4 +123,32 @@ test("a 360 px la pantalla de publicar no se sale", async ({ page }, info) => {
   await page.goto(`/panel/ordenes/${id}/publicar`);
   await expect(page.getByRole("heading", { level: 1, name: `Publicar ${placa}` })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360);
+});
+
+// 21/11: con un solo servicio en la orden, ya viene elegido; con varios, ninguno, así no se publica con el primero por olvido
+test("con varios servicios en la orden, el servicio empieza sin elegir y hay que elegirlo para publicar", async ({ page }, info) => {
+  const s = sufijo(info);
+  const placa = `GA41${s}9`;
+  await crearClienteEnBase({ nombre: `Galería varios ${s}`, telefono: `5917${info.project.name === "celular" ? 5 : 6}41${info.retry}090`, placa });
+  const id = await crearOrdenLista({ placa, dias: dias(info, 9), precio: 500, pagado: 500 });
+  await consultar(
+    `insert into trabajo_linea (trabajo_id, variante_id, descripcion, precio, orden)
+     select $1, v.id, sv.nombre, 200, 1 from variante v join servicio sv on sv.id = v.servicio_id where sv.slug = 'lavado-de-interior' order by v.id limit 1`,
+    [id],
+  );
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/ordenes/${id}`, { waitUntil: "networkidle" });
+  await expect(page.getByRole("button", { name: "Tomar foto" }).first()).toBeEnabled();
+  await page.getByLabel("Cámara para fotos del final").setInputFiles(foto("despues.png"));
+  await expect(page.getByRole("button", { name: "Ver la foto 1 del final" })).toBeVisible();
+  await consultar("update trabajo set estado = 'entregado', entregado_at = now() where id = $1", [id]);
+
+  await page.goto(`/panel/ordenes/${id}/publicar`, { waitUntil: "networkidle" });
+  const servicio = page.getByLabel("Servicio");
+  await expect(servicio).toHaveValue("");
+  await page.getByRole("checkbox", { name: "Revisé las fotos: no se lee la placa ni se ve a nadie" }).click();
+  await page.getByRole("button", { name: "Publicar" }).click();
+  await expect(page.getByText("Elige el servicio.")).toBeVisible();
+  await servicio.selectOption({ label: "Lavado de interior" });
+  await expect(servicio).not.toHaveValue("");
 });
