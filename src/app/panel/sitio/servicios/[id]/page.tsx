@@ -78,7 +78,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/sitio/se
                 Ver en el sitio
               </a>
             )}
-            <MasServicio id={s.id} slug={s.slug} visible={s.visible} activo={s.activo} catalogo={puedeVerModulo(usuario, "catalogo")} desde={desdeAqui} />
+            <MasServicio id={s.id} slug={s.slug} visible={s.visible} activo={s.activo} catalogo={puedeVerModulo(usuario, "catalogo")} conProbador={s.colores.length > 0} desde={desdeAqui} />
           </div>
         }
       >
@@ -155,14 +155,15 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/sitio/se
         <FormularioPasos id={s.id} pasos={s.pasos} />
       </SeccionConEditar>
 
-      {/* Pedido 56: el probador de colores (el repintado de aros). Sin colores, no sale en el sitio */}
-      <SeccionConEditar
-        id="colores"
-        titulo="Probador de colores"
-        etiquetaEditar="Editar colores"
-        tituloModal="Probador de colores"
-        lectura={
-          s.colores.length > 0 ? (
+      {/* Pedido 56: el probador de colores, solo en los servicios que lo usan (el repintado de aros). Se agrega desde
+          "Más"; sin colores, la sección no está y el probador no sale en el sitio */}
+      {s.colores.length > 0 && (
+        <SeccionConEditar
+          id="colores"
+          titulo="Probador de colores"
+          etiquetaEditar="Editar colores"
+          tituloModal="Probador de colores"
+          lectura={
             <ul className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
               {s.colores.map((c, i) => (
                 <li key={i} className="flex items-center gap-3">
@@ -172,13 +173,11 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/sitio/se
                 </li>
               ))}
             </ul>
-          ) : (
-            <p className="text-tinta-suave">Sin colores: el probador no sale en el sitio.</p>
-          )
-        }
-      >
-        <FormularioColores id={s.id} colores={s.colores} />
-      </SeccionConEditar>
+          }
+        >
+          <FormularioColores id={s.id} colores={s.colores} />
+        </SeccionConEditar>
+      )}
 
       {conOpciones ? (
         <SeccionConEditar

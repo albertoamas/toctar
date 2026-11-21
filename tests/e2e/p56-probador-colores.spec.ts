@@ -4,22 +4,23 @@ import { crearServicioPublicado, ingresarComoDueno } from "./apoyo";
 // Pedido 56: el probador de colores en la página de un servicio. Especificación:
 // docs/08-desarrollo/etapas/P56-probador-de-colores.md §9.
 
-test("el dueño carga los colores y la página del servicio los muestra en el probador; sin colores no aparece", async ({ page }, info) => {
+test("el dueño agrega el probador desde «Más», carga los colores y la página del servicio los muestra; sin colores no aparece", async ({ page }, info) => {
   const nombre = `Repintado de aros ${info.project.name} ${Date.now()}`;
   await ingresarComoDueno(page);
   const { slug } = await crearServicioPublicado(page, nombre, "Devolvemos el color a tus aros.");
 
-  // Sin colores, la ficha lo dice y el sitio no muestra el probador
-  await expect(page.getByRole("region", { name: "Probador de colores" })).toContainText("Sin colores: el probador no sale en el sitio.");
+  // Sin colores, la ficha no muestra la sección (pedido 56: solo en los servicios que la usan) y el sitio no muestra el
+  // probador
+  await expect(page.getByRole("region", { name: "Probador de colores" })).toHaveCount(0);
   await page.goto(`/servicios/${slug}`);
   await expect(page.getByRole("heading", { level: 1, name: nombre })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Elige el color" })).toHaveCount(0);
   await page.goBack();
 
-  // Dos colores: negro mate y bronce satinado
-  await page.getByRole("button", { name: "Editar colores" }).click();
+  // Se agrega desde "Más", con el primer color ya abierto: negro mate y bronce satinado
+  await page.getByRole("button", { name: "Más" }).click();
+  await page.getByRole("menuitem", { name: "Agregar probador de colores" }).click();
   const modal = page.getByRole("dialog", { name: "Probador de colores" });
-  await modal.getByRole("button", { name: "Agregar color" }).click();
   await modal.getByLabel("Color 1, nombre").fill("Negro");
   await modal.getByRole("button", { name: "Agregar color" }).click();
   await modal.getByLabel("Color 2, tono").fill("#7a5530");
@@ -32,6 +33,10 @@ test("el dueño carga los colores y la página del servicio los muestra en el pr
   await expect(seccion).toContainText("Negro");
   await expect(seccion).toContainText("Bronce");
   await expect(seccion).toContainText("Satinado");
+  // Ya tiene probador: "Más" no lo ofrece de nuevo
+  await page.getByRole("button", { name: "Más" }).click();
+  await expect(page.getByRole("menuitem", { name: "Agregar probador de colores" })).toHaveCount(0);
+  await page.keyboard.press("Escape");
 
   // En el sitio (se renueva en segundo plano): arranca con el primero; elegir otro lo marca y lo pide por WhatsApp
   await expect(async () => {

@@ -120,6 +120,8 @@ export function FormularioPasos({ id, pasos: iniciales }: { id: number; pasos: P
   );
 }
 
+const COLOR_NUEVO: ColorServicio = { nombre: "", hex: "#141414", acabado: "mate" };
+
 /** Pedido 56: los colores del probador de la página del servicio, en el orden en que se muestran. */
 export function FormularioColores({ id, colores: iniciales }: { id: number; colores: ColorServicio[] }) {
   const { accion, enviando, formulario, e } = useParte();
@@ -133,7 +135,7 @@ export function FormularioColores({ id, colores: iniciales }: { id: number; colo
         etiqueta="Color"
         valor={colores}
         onChange={setColores}
-        nueva={(): ColorServicio => ({ nombre: "", hex: "#141414", acabado: "mate" })}
+        nueva={() => COLOR_NUEVO}
         maximo={LIMITES.colores}
         textoAgregar="Agregar color"
         errores={e}
@@ -214,11 +216,22 @@ function FormularioDireccion({ id, slug }: { id: number; slug: string }) {
  * "Más" del encabezado: lo que se usa poco. Mostrar u ocultar se hace al momento (se deshace con la misma opción); la
  * dirección se cambia en un modal, con su advertencia; el catálogo, si la persona lo ve.
  */
-export function MasServicio(props: { id: number; slug: string; visible: boolean; activo: boolean; catalogo: boolean; /** Esta pantalla: el catálogo vuelve aquí (pedido 43). */ desde: string }) {
-  const { id, slug, visible, activo, catalogo, desde } = props;
+export function MasServicio(props: {
+  id: number;
+  slug: string;
+  visible: boolean;
+  activo: boolean;
+  catalogo: boolean;
+  /** Pedido 56: si ya tiene colores, su sección está en la ficha; si no, se agrega desde aquí. */
+  conProbador: boolean;
+  /** Esta pantalla: el catálogo vuelve aquí (pedido 43). */
+  desde: string;
+}) {
+  const { id, slug, visible, activo, catalogo, conProbador, desde } = props;
   const router = useRouter();
   const [enviando, iniciar] = useTransition();
   const [direccion, setDireccion] = useState(false);
+  const [probador, setProbador] = useState(false);
   // Inactivo en el catálogo no sale en el sitio: mostrarlo no cambiaría nada a la vista
   const acciones = [
     ...(activo
@@ -230,6 +243,8 @@ export function MasServicio(props: { id: number; slug: string; visible: boolean;
         ]
       : []),
     { texto: "Cambiar dirección de la página", alElegir: () => setDireccion(true) },
+    // Pedido 56: el probador solo en los servicios que lo usan (el repintado de aros); la ficha de los demás no lo muestra
+    ...(conProbador ? [] : [{ texto: "Agregar probador de colores", alElegir: () => setProbador(true) }]),
     ...(catalogo ? [{ texto: "Abrir en el catálogo", alElegir: () => router.push(conDesde(`/panel/catalogo/${id}`, desde)) }] : []),
   ];
   return (
@@ -238,6 +253,11 @@ export function MasServicio(props: { id: number; slug: string; visible: boolean;
       <ModalFormulario titulo="Dirección de la página" abierto={direccion} alCambiar={setDireccion}>
         <FormularioDireccion id={id} slug={slug} />
       </ModalFormulario>
+      {!conProbador && (
+        <ModalFormulario titulo="Probador de colores" abierto={probador} alCambiar={setProbador}>
+          <FormularioColores id={id} colores={[COLOR_NUEVO]} />
+        </ModalFormulario>
+      )}
     </>
   );
 }

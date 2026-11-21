@@ -98,10 +98,32 @@ export function ProbadorColores({ servicio, colores, whatsapp }: Props) {
   );
 }
 
-/**
- * El aro dibujado (original): neumático, disco y pinza detrás, y el aro de cinco rayos dobles del color elegido. Los
- * grises son del dibujo (goma, disco y tuercas), no de la interfaz: no cambian con el tema.
- */
+// El aro deportivo (aprobado el 21/11): cinco pares de rayos rectos que nacen juntos en el centro y se separan hacia el
+// borde, cada rayo partido en una mitad con luz y otra con sombra (da volumen); borde con canto, neumático de perfil bajo
+// y disco perforado detrás. Las formas se calculan una vez, al cargar el módulo.
+const C = 200;
+const P = (r: number, grados: number): [number, number] => [C + r * Math.sin((grados * Math.PI) / 180), C - r * Math.cos((grados * Math.PI) / 180)];
+const n1 = (v: number) => Math.round(v * 10) / 10;
+const camino = (puntos: [number, number][]) => "M" + puntos.map(([x, y]) => `${n1(x)} ${n1(y)}`).join(" L") + " Z";
+
+/** Un rayo recto de A a B, más angosto en A: sus dos mitades (luz a un lado del eje, sombra al otro). */
+function rayoRecto(a: [number, number], b: [number, number], medioA: number, medioB: number) {
+  const largo = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const [nx, ny] = [-(b[1] - a[1]) / largo, (b[0] - a[0]) / largo];
+  const lado = (p: [number, number], m: number, signo: number): [number, number] => [p[0] + nx * m * signo, p[1] + ny * m * signo];
+  return {
+    luz: camino([lado(a, medioA, -1), lado(b, medioB, -1), b, a]),
+    sombra: camino([a, b, lado(b, medioB, 1), lado(a, medioA, 1)]),
+  };
+}
+
+const RAYOS = [0, 1, 2, 3, 4].flatMap((k) => [-1, 1].map((lado) => rayoRecto(P(40, k * 72 + lado * 9), P(148, k * 72 + lado * 8.5), 6.5, 11)));
+const AGUJEROS = Array.from({ length: 36 }, (_, k) => [P(100, k * 10), P(113, k * 10 + 5)]).flat();
+const TUERCAS = [0, 1, 2, 3, 4].map((k) => P(27, 36 + k * 72));
+const PINZA = `M${P(136, 28).map(n1).join(" ")} A136 136 0 0 1 ${P(136, 82).map(n1).join(" ")} L${P(96, 80).map(n1).join(" ")} A96 96 0 0 0 ${P(96, 30).map(n1).join(" ")} Z`;
+const PINZA_FILO = `M${P(128, 36).map(n1).join(" ")} A128 128 0 0 1 ${P(128, 74).map(n1).join(" ")}`;
+
+/** El aro dibujado (original, sin marcas). Los grises son del dibujo (goma, disco, pinza y tuercas), no del tema. */
 function Aro({ id, luz, reflejo }: { id: string; luz: number; reflejo: number }) {
   const g = (nombre: string) => `${id}-${nombre}`;
   const pintura = "transition-[fill,opacity] duration-500 motion-reduce:transition-none";
@@ -109,12 +131,12 @@ function Aro({ id, luz, reflejo }: { id: string; luz: number; reflejo: number })
     <svg viewBox="0 0 400 400" aria-hidden className="size-full overflow-visible drop-shadow-[0_24px_30px_rgb(0_0_0/0.6)]">
       <defs>
         <radialGradient id={g("neumatico")} cx="50%" cy="50%" r="50%">
-          <stop offset="70%" stopColor="#1c1c1c" />
-          <stop offset="92%" stopColor="#0d0d0d" />
-          <stop offset="100%" stopColor="#050505" />
+          <stop offset="80%" stopColor="#1d1d1d" />
+          <stop offset="94%" stopColor="#111" />
+          <stop offset="100%" stopColor="#060606" />
         </radialGradient>
-        <radialGradient id={g("disco")} cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#5c5c5c" />
+        <radialGradient id={g("disco")} cx="45%" cy="40%" r="60%">
+          <stop offset="0%" stopColor="#6c6c6c" />
           <stop offset="100%" stopColor="#3a3a3a" />
         </radialGradient>
         {/* La luz sobre la pintura: clara arriba a la izquierda, oscura abajo a la derecha */}
@@ -125,41 +147,69 @@ function Aro({ id, luz, reflejo }: { id: string; luz: number; reflejo: number })
           <stop offset="100%" stopColor="#000" stopOpacity=".85" />
         </linearGradient>
         <linearGradient id={g("destello")} x1="0" y1="0" x2="1" y2="0" gradientTransform="rotate(60 .5 .5)">
-          <stop offset="38%" stopColor="#fff" stopOpacity="0" />
-          <stop offset="48%" stopColor="#fff" stopOpacity=".85" />
-          <stop offset="52%" stopColor="#fff" stopOpacity=".85" />
-          <stop offset="62%" stopColor="#fff" stopOpacity="0" />
+          <stop offset="36%" stopColor="#fff" stopOpacity="0" />
+          <stop offset="47%" stopColor="#fff" stopOpacity=".9" />
+          <stop offset="53%" stopColor="#fff" stopOpacity=".9" />
+          <stop offset="64%" stopColor="#fff" stopOpacity="0" />
         </linearGradient>
-        {/* Un rayo doble: angosto en el centro y ancho donde se une al borde */}
-        <g id={g("rayo")}>
-          <path d="M187 162 Q182 120 170 80 Q184 72 197 74 L198 162 Z" />
-          <path d="M213 162 Q218 120 230 80 Q216 72 203 74 L202 162 Z" />
-        </g>
+        {/* Lo que se pinta: el borde, los rayos y el centro */}
         <g id={g("pieza")}>
-          <path fillRule="evenodd" d="M200 48 A152 152 0 1 1 199.9 48 Z M200 72 A128 128 0 1 0 200.1 72 Z" />
-          {[0, 72, 144, 216, 288].map((grados) => (
-            <use key={grados} href={`#${g("rayo")}`} transform={`rotate(${grados} 200 200)`} />
+          <path fillRule="evenodd" d="M200 38 A162 162 0 1 1 199.9 38 Z M200 54 A146 146 0 1 0 200.1 54 Z" />
+          {RAYOS.map((r, i) => (
+            <g key={i}>
+              <path d={r.luz} />
+              <path d={r.sombra} />
+            </g>
           ))}
-          <circle cx="200" cy="200" r="44" />
+          <circle cx="200" cy="200" r="46" />
         </g>
       </defs>
-      <circle cx="200" cy="200" r="196" fill={`url(#${g("neumatico")})`} />
-      <circle cx="200" cy="200" r="176" fill="none" stroke="#262626" strokeWidth="2" />
-      <circle cx="200" cy="200" r="112" fill={`url(#${g("disco")})`} />
-      <circle cx="200" cy="200" r="112" fill="none" stroke="#2c2c2c" strokeWidth="10" strokeDasharray="2 9" />
-      <path d="M268 120 A96 96 0 0 1 300 178 L280 182 A76 76 0 0 0 254 136 Z" fill="#2a2a2a" />
+      {/* Neumático de perfil bajo */}
+      <circle cx="200" cy="200" r="197" fill={`url(#${g("neumatico")})`} />
+      <circle cx="200" cy="200" r="186" fill="none" stroke="#2a2a2a" strokeWidth="1.5" />
+      <circle cx="200" cy="200" r="168" fill="none" stroke="#0a0a0a" strokeWidth="6" />
+      {/* Lo de adentro: el fondo del aro, el disco perforado y la pinza */}
+      <circle cx="200" cy="200" r="146" fill="#0b0b0b" />
+      <circle cx="200" cy="200" r="126" fill={`url(#${g("disco")})`} />
+      <circle cx="200" cy="200" r="126" fill="none" stroke="#333" strokeWidth="2" />
+      <circle cx="200" cy="200" r="88" fill="#2b2b2b" />
+      <g fill="#1a1a1a">
+        {AGUJEROS.map(([x, y], i) => (
+          <circle key={i} cx={n1(x)} cy={n1(y)} r="2.6" />
+        ))}
+      </g>
+      <path d={PINZA} fill="#3b3e42" />
+      <path d={PINZA_FILO} fill="none" stroke="#5a5e63" strokeWidth="3" strokeLinecap="round" />
+      {/* El aro, del color elegido */}
       <use href={`#${g("pieza")}`} className={pintura} style={{ fill: "var(--aro)" }} />
+      {/* El volumen de los rayos: una mitad con luz, la otra con sombra */}
+      <g fill="#fff" opacity=".16">
+        {RAYOS.map((r, i) => (
+          <path key={i} d={r.luz} />
+        ))}
+      </g>
+      <g fill="#000" opacity=".34">
+        {RAYOS.map((r, i) => (
+          <path key={i} d={r.sombra} />
+        ))}
+      </g>
+      {/* El fondo del borde, más oscuro (da profundidad), y el canto que brilla */}
+      <circle cx="200" cy="200" r="147.5" fill="none" stroke="#000" strokeOpacity=".45" strokeWidth="3" />
+      <circle cx="200" cy="200" r="160.5" fill="none" stroke="#fff" strokeOpacity=".28" strokeWidth="1.5" />
+      <circle cx="200" cy="200" r="155" fill="none" stroke="#000" strokeOpacity=".2" strokeWidth="1" />
+      {/* La luz del acabado: mate apagado, brillante con destello */}
       <use href={`#${g("pieza")}`} fill={`url(#${g("luz")})`} className={pintura} style={{ opacity: luz, mixBlendMode: "soft-light" }} />
       <use href={`#${g("pieza")}`} fill={`url(#${g("destello")})`} className={pintura} style={{ opacity: reflejo, mixBlendMode: "screen" }} />
-      <circle cx="200" cy="200" r="22" fill="#151515" />
-      <circle cx="200" cy="200" r="150" fill="none" stroke="#000" strokeOpacity=".35" strokeWidth="1.5" />
-      <g fill="#8a8a8a">
-        <circle cx="200" cy="174" r="4.5" />
-        <circle cx="224.7" cy="192" r="4.5" />
-        <circle cx="215.3" cy="221" r="4.5" />
-        <circle cx="184.7" cy="221" r="4.5" />
-        <circle cx="175.3" cy="192" r="4.5" />
-      </g>
+      {/* El centro: alrededor de las tuercas, las tuercas y la tapa lisa */}
+      <circle cx="200" cy="200" r="38" fill="none" stroke="#000" strokeOpacity=".3" strokeWidth="2" />
+      {TUERCAS.map(([x, y], i) => (
+        <g key={i}>
+          <circle cx={n1(x)} cy={n1(y)} r="5.2" fill="#8c8f94" />
+          <circle cx={n1(x)} cy={n1(y)} r="2.4" fill="#2a2a2a" />
+        </g>
+      ))}
+      <circle cx="200" cy="200" r="15" fill="#151515" />
+      <circle cx="200" cy="200" r="15" fill="none" stroke="#3a3a3a" strokeWidth="1.5" />
     </svg>
   );
 }
