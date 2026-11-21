@@ -232,10 +232,10 @@ export async function firmarEnRecuadro(page: Page) {
   await expect(page.getByRole("button", { name: "Borrar firma" })).toBeEnabled();
 }
 
-/** Marca "Entregar sin firma" con un motivo (pedido 13): para las pruebas que entregan sin probar la firma. */
+/** Marca "El cliente no puede firmar" con un motivo (pedido 13): para las pruebas que entregan sin probar la firma. */
 export async function entregarSinFirma(page: Page, motivo = "Prueba: retira otra persona.") {
   const form = page.getByRole("form", { name: "Entregar vehículo" });
-  await form.getByText("Entregar sin firma", { exact: true }).click();
+  await form.getByText("El cliente no puede firmar", { exact: true }).click();
   await form.getByLabel("Motivo").fill(motivo);
   await expect(form.getByLabel("Motivo")).toHaveValue(motivo);
 }

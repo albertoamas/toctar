@@ -230,7 +230,7 @@ test("se entrega con la firma y el nombre de quien recibe, o sin firma con el mo
     const r = esquemaEntregar.safeParse({ ...base, ...d });
     return r.success ? {} : erroresDe(r.error);
   };
-  expect(errores({ conFirma: false })).toEqual({ firma: "Falta la firma del cliente, o marca «Entregar sin firma»." });
+  expect(errores({ conFirma: false })).toEqual({ firma: "Falta la firma del cliente, o marca «El cliente no puede firmar»." });
   expect(errores({ firmaNombre: "  " })).toEqual({ firmaNombre: "Escribe el nombre de quien recibe." });
   // Sin firma, ni la imagen ni el nombre: el motivo, de al menos 3 letras
   expect(errores({ conFirma: false, firmaNombre: "", sinFirma: "on" })).toEqual({ sinFirmaMotivo: "Cuenta por qué no firma." });

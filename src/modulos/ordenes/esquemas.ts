@@ -56,7 +56,7 @@ export const esquemaAdicional = z.object({
 
 /**
  * Entregar el vehículo (HU-36): con saldo pendiente, la casilla que lo confirma (RN-13). Pedido 13: la firma del cliente
- * (`conFirma`: llegó la imagen) con el nombre de quien recibe, o "Entregar sin firma" con el motivo.
+ * (`conFirma`: llegó la imagen) con el nombre de quien recibe, o "El cliente no puede firmar" con el motivo.
  */
 export const esquemaEntregar = z
   .object({
@@ -80,7 +80,7 @@ export const esquemaEntregar = z
       if (!d.sinFirmaMotivo || d.sinFirmaMotivo.length < 3) ctx.addIssue({ code: "custom", path: ["sinFirmaMotivo"], message: "Cuenta por qué no firma." });
       return;
     }
-    if (!d.conFirma) ctx.addIssue({ code: "custom", path: ["firma"], message: "Falta la firma del cliente, o marca «Entregar sin firma»." });
+    if (!d.conFirma) ctx.addIssue({ code: "custom", path: ["firma"], message: "Falta la firma del cliente, o marca «El cliente no puede firmar»." });
     if (!d.firmaNombre) ctx.addIssue({ code: "custom", path: ["firmaNombre"], message: "Escribe el nombre de quien recibe." });
   });
 

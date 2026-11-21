@@ -115,7 +115,9 @@ test("con saldo: el encargado sin el permiso no entrega; con el permiso sí, y q
   // El encargado no suma adicionales: pone precio
   await expect(page.getByRole("button", { name: "Agregar servicio" })).toHaveCount(0);
   await page.goto(`/panel/ordenes/${id}/entregar`);
-  await expect(page.getByText("Queda saldo pendiente. La entrega con saldo la autoriza el dueño o quien tenga el permiso.")).toBeVisible();
+  // En el mismo aviso: cuánto falta y quién autoriza la entrega con saldo (recorrido visual, 21/11)
+  await expect(page.getByText("Falta cobrar 300 Bs")).toBeVisible();
+  await expect(page.getByText("La entrega con saldo la autoriza el dueño o quien tenga el permiso.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Entregar vehículo" })).toHaveCount(0);
 
   // Puede autorizar pero no ve pagos: el aviso no dice el monto (RN-12)
@@ -138,7 +140,7 @@ test("con saldo: el encargado sin el permiso no entrega; con el permiso sí, y q
   await entregarSinFirma(page, "Se lo lleva el chofer de la empresa.");
   await entrega.getByRole("button", { name: "Entregar vehículo" }).click();
   await expect(entrega.getByText("Queda un saldo de 300 Bs: marca «Entregar con saldo pendiente» para confirmar.")).toBeVisible();
-  await entrega.getByText("Entregar con saldo pendiente (300 Bs)").click();
+  await entrega.getByText("Entregar con saldo pendiente", { exact: true }).click();
   await entrega.getByRole("button", { name: "Entregar vehículo" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?entregado=1(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByText("Vehículo entregado con saldo de 300 Bs.")).toBeVisible();
@@ -165,7 +167,7 @@ test("sin firma ni «Entregar sin firma» no se entrega; sin firma pide el motiv
   const entrega = page.getByRole("form", { name: "Entregar vehículo" });
 
   await entrega.getByRole("button", { name: "Entregar vehículo" }).click();
-  await expect(entrega.getByText("Falta la firma del cliente, o marca «Entregar sin firma».")).toBeVisible();
+  await expect(entrega.getByText("Falta la firma del cliente, o marca «El cliente no puede firmar».")).toBeVisible();
   // Borrar el nombre también se avisa
   await firmarEnRecuadro(page);
   await entrega.getByLabel("Nombre de quien recibe").fill("");
@@ -173,7 +175,7 @@ test("sin firma ni «Entregar sin firma» no se entrega; sin firma pide el motiv
   await expect(entrega.getByText("Escribe el nombre de quien recibe.")).toBeVisible();
 
   // Sin firma: el motivo, obligatorio
-  await entrega.getByText("Entregar sin firma", { exact: true }).click();
+  await entrega.getByText("El cliente no puede firmar", { exact: true }).click();
   await expect(page.getByRole("img", { name: "Recuadro para la firma del cliente" })).toHaveCount(0);
   await entrega.getByRole("button", { name: "Entregar vehículo" }).click();
   await expect(entrega.getByText("Cuenta por qué no firma.")).toBeVisible();

@@ -4,16 +4,16 @@ import { Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
-import { AvisoEstado } from "@/componentes/panel/aviso-estado";
 import { PasoConCostado } from "@/componentes/panel/con-resumen";
 import { RegistrarPago } from "@/modulos/pagos/componentes/registrar-pago";
-import { ResumenClienteVehiculo } from "@/modulos/clientes/componentes/resumen-cliente-vehiculo";
 import { fechaEnBolivia, formatearFecha } from "@/lib/fechas";
 import { puede, puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
+import { CuentaPlegable } from "@/modulos/ordenes/componentes/cuenta-plegable";
 import { FormularioEntrega } from "@/modulos/ordenes/componentes/formulario-entrega";
+import { ResumenDelTrabajo } from "@/modulos/ordenes/componentes/resumen-del-trabajo";
 import { vistaPreviaPlanes } from "@/modulos/mantenimientos/planes";
 import { obtenerOrden } from "@/modulos/ordenes/consultas";
 import { MontosTrabajo } from "@/modulos/pagos/componentes/montos-trabajo";
@@ -58,28 +58,18 @@ async function Entrega({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   return (
     <>
       <EncabezadoPagina titulo={`Entregar ${o.placa}`} volver={volverDesde(busqueda.volver, { href: `/panel/ordenes/${o.id}`, texto: "Orden" }, usuario)} />
-      {/* El marco de los pasos del taller (C7 §5.3, 18/11): arriba lo que decide, si está pagado o cuánto falta (sin Pagos,
-          solo si queda saldo; si además no puede entregar con saldo, lo dice una vez el formulario, con por qué) */}
-      {conPagos ? (
-        conDeuda ? (
-          <AvisoEstado tono="aviso" accion={<RegistrarPago trabajoId={o.id} saldo={saldo} hoy={hoy} variante="outline" />}>
-            Falta cobrar {mostrarMonto(saldo)} Bs
-          </AvisoEstado>
-        ) : (
-          <AvisoEstado tono="exito">Pagado por completo.</AvisoEstado>
-        )
-      ) : conDeuda && !puede(usuario, "entrega_con_saldo") ? null : (
-        <AvisoEstado tono={conDeuda ? "aviso" : "exito"}>{conDeuda ? "Queda saldo pendiente." : "Pagado por completo."}</AvisoEstado>
-      )}
-
       {/* Lo que se entrega al costado en la computadora; en el celular, arriba de la firma */}
       <PasoConCostado
         etiqueta="Lo que se entrega"
         costado={
           <>
-            {/* La misma tarjeta que "Cotización para": el cliente y la placa grande (los servicios van en su tarjeta, con los montos) */}
-            <ResumenClienteVehiculo titulo={null} cliente={{ nombre: o.cliente }} vehiculo={{ placa: o.placa, detalle, tamano: o.tamano }} />
-            {conPagos && <MontosTrabajo trabajoId={o.id} montos={o.montos} cerrado={false} hoy={hoy} cobrar />}
+            {/* Compacto, como en Recibir (21/11). Con Pagos, los servicios van en la cuenta, con sus montos */}
+            <ResumenDelTrabajo cliente={o.cliente} vehiculo={[...detalle, o.tamano]} servicios={conPagos ? [] : o.servicios} />
+            {conPagos && (
+              <CuentaPlegable total={`${mostrarMonto(o.montos.saldo.total)} Bs`}>
+                <MontosTrabajo trabajoId={o.id} montos={o.montos} cerrado={false} hoy={hoy} cobrar />
+              </CuentaPlegable>
+            )}
           </>
         }
       >
@@ -89,6 +79,9 @@ async function Entrega({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
           conDeuda={conDeuda}
           saldo={conPagos ? `${mostrarMonto(saldo)} Bs` : null}
           puedeAutorizar={puede(usuario, "entrega_con_saldo")}
+          // Lo que decide el paso, arriba y en un solo lugar (21/11): cuánto falta, "Registrar pago" y, en el mismo aviso,
+          // la casilla para entregar con el saldo
+          cobro={conPagos && conDeuda ? <RegistrarPago trabajoId={o.id} saldo={saldo} hoy={hoy} variante="outline" /> : null}
           cliente={o.cliente}
           alEntregar={
             // Lo que la entrega hace con los planes de mantenimiento, dicho antes del botón
