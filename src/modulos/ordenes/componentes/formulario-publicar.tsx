@@ -21,8 +21,8 @@ import type { FotoOrden } from "../consultas";
 // foco y lector de pantalla sin nada propio) que se toca en la grilla; la elegida lleva marco y la palabra "Elegida".
 // La foto de antes es opcional: "Sin foto de antes" es una opción más, la primera.
 // Recorrido visual (21/11): "Así se verá", en vivo, con el comparador de la galería y las fotos elegidas (al costado en la
-// computadora, debajo de las fotos en el celular); la casilla de privacidad, junto a las fotos de las que habla; el
-// servicio, en una línea con "Cambiar"; y lo que hace el paso, en chico junto al botón (era un aviso azul arriba de todo).
+// computadora, debajo de las fotos en el celular); la casilla de privacidad, junto a las fotos de las que habla; y lo que
+// hace el paso, en chico junto al botón (era un aviso azul arriba de todo).
 
 type Props = {
   /** De dónde se vino: la orden vuelve ahí al publicar (pedido 43). */
@@ -46,10 +46,9 @@ export function FormularioPublicar({ id, volver, despues, antes, servicios }: Pr
   const [antesId, setAntesId] = useState(v.fotoAntes ?? "");
   const fotoDespues = despues.find((f) => String(f.id) === despuesId) ?? despues[0];
   const fotoAntes = antes.find((f) => String(f.id) === antesId) ?? null;
-  // El servicio casi nunca cambia: en una línea, con "Cambiar" si la orden tiene más de uno (o si el servidor lo marca)
-  const [cambiandoServicio, setCambiandoServicio] = useState(!!e.servicioId);
-  const servicioElegido = v.servicioId ?? String(servicios[0]?.id ?? "");
-  const nombreServicio = servicios.find((s) => String(s.id) === servicioElegido)?.nombre ?? servicios[0]?.nombre;
+  // El servicio, en su lista (21/11, a pedido del desarrollador): con uno solo, ya elegido; con varios, ninguno por
+  // defecto, así no se publica con el primero por olvido
+  const servicioElegido = v.servicioId ?? (servicios.length === 1 ? String(servicios[0].id) : "");
 
   return (
     <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate aria-label="Publicar en la galería">
@@ -85,28 +84,28 @@ export function FormularioPublicar({ id, volver, despues, antes, servicios }: Pr
             {e.sinPlacaNiCaras && <MensajeError id="sinPlacaNiCaras-error">{e.sinPlacaNiCaras}</MensajeError>}
           </div>
 
-          {cambiandoServicio || servicios.length === 0 ? (
-            <Campo id="servicioId" etiqueta="Servicio" error={e.servicioId}>
-              <Selector id="servicioId" name="servicioId" defaultValue={servicioElegido} aria-invalid={!!e.servicioId} aria-describedby={e.servicioId ? "servicioId-error" : undefined} className="max-w-md">
-                {servicios.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.nombre}
-                  </option>
-                ))}
-              </Selector>
-            </Campo>
-          ) : (
-            <p className="flex flex-wrap items-center gap-x-2">
-              <input type="hidden" name="servicioId" value={servicioElegido} />
-              <span className="text-tinta-suave">Servicio:</span>
-              <span className="font-semibold">{nombreServicio}</span>
+          <Campo id="servicioId" etiqueta="Servicio" error={e.servicioId}>
+            <Selector
+              id="servicioId"
+              name="servicioId"
+              defaultValue={servicioElegido}
+              aria-invalid={!!e.servicioId}
+              aria-describedby={e.servicioId ? "servicioId-error" : undefined}
+              data-invalido={e.servicioId ? true : undefined}
+              className="max-w-md"
+            >
               {servicios.length > 1 && (
-                <Button type="button" variant="accion" onClick={() => setCambiandoServicio(true)}>
-                  Cambiar
-                </Button>
+                <option value="" disabled>
+                  Elige el servicio
+                </option>
               )}
-            </p>
-          )}
+              {servicios.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.nombre}
+                </option>
+              ))}
+            </Selector>
+          </Campo>
 
           <Campo id="descripcion" etiqueta="Descripción" opcional error={e.descripcion} ayuda='La leen Google y los lectores de pantalla. Ejemplo: "Pulido y nano cerámico 5 años en una Hilux".'>
             <Input id="descripcion" name="descripcion" autoComplete="off" defaultValue={v.descripcion} aria-invalid={!!e.descripcion} aria-describedby={e.descripcion ? "descripcion-error" : "descripcion-ayuda"} className="max-w-xl" />
