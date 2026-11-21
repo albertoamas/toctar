@@ -6,6 +6,7 @@ import { avisarResultado } from "@/componentes/panel/avisos";
 import { Campo } from "@/componentes/panel/campo";
 import { EditorLista } from "@/componentes/panel/editor-lista";
 import { MenuMas } from "@/componentes/panel/menu-mas";
+import { Selector } from "@/componentes/panel/selector";
 import { useFormularioEnModal } from "@/componentes/panel/modal-contexto";
 import { ModalFormulario } from "@/componentes/panel/modal-formulario";
 import { PieGuardar } from "@/componentes/panel/modal-pie";
@@ -13,9 +14,11 @@ import { TextoCorto } from "@/componentes/panel/texto-corto";
 import { Checkbox } from "@/componentes/ui/checkbox";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
-import type { Beneficio, Paso } from "@/db/esquema";
+import type { Beneficio, ColorServicio, Paso } from "@/db/esquema";
+import { ACABADOS_COLOR } from "@/db/esquema/sitio";
 import { cambiarVisibilidadServicio, guardarParteServicio } from "../acciones/servicios";
 import { iconoDe } from "../beneficios";
+import { NOMBRE_ACABADO } from "../colores";
 import { LIMITES, type ParteServicio } from "../esquemas";
 import { ElegirIcono } from "./elegir-icono";
 import { conDesde } from "@/lib/volver";
@@ -113,6 +116,53 @@ export function FormularioPasos({ id, pasos: iniciales }: { id: number; pasos: P
         )}
       />
       <PieGuardar texto="Guardar pasos" enviando={enviando} />
+    </form>
+  );
+}
+
+/** Pedido 56: los colores del probador de la página del servicio, en el orden en que se muestran. */
+export function FormularioColores({ id, colores: iniciales }: { id: number; colores: ColorServicio[] }) {
+  const { accion, enviando, formulario, e } = useParte();
+  const [colores, setColores] = useState(iniciales);
+  return (
+    <form ref={formulario} action={accion} className="flex flex-col gap-6" noValidate>
+      <Ocultos id={id} parte="colores" />
+      <p className="text-sm text-tinta-suave">Los que se pueden elegir en el sitio, en este orden. El primero es el que se ve al entrar. Hasta {LIMITES.colores}.</p>
+      <EditorLista
+        nombre="colores"
+        etiqueta="Color"
+        valor={colores}
+        onChange={setColores}
+        nueva={(): ColorServicio => ({ nombre: "", hex: "#141414", acabado: "mate" })}
+        maximo={LIMITES.colores}
+        textoAgregar="Agregar color"
+        errores={e}
+        flechasEnFila
+        fila={(c, cambiar, i, marca) => (
+          // En el celular, dos renglones (el color y el nombre; el acabado abajo): en uno, el nombre quedaba de cuatro letras
+          <span className="flex flex-wrap items-start gap-2">
+            {/* El selector del navegador: en el celular abre el del teléfono */}
+            <input
+              type="color"
+              value={c.hex}
+              onChange={(ev) => cambiar({ ...c, hex: ev.target.value })}
+              aria-label={`Color ${i + 1}, tono`}
+              className="h-9 w-11 shrink-0 cursor-pointer rounded-lg border border-input bg-fondo p-1 pointer-coarse:h-11"
+            />
+            <span className="min-w-32 flex-1">
+              <TextoCorto value={c.nombre} onChange={(ev) => cambiar({ ...c, nombre: ev.target.value })} aria-label={`Color ${i + 1}, nombre`} placeholder="Bronce" {...marca} />
+            </span>
+            <Selector value={c.acabado} onChange={(ev) => cambiar({ ...c, acabado: ev.target.value as ColorServicio["acabado"] })} aria-label={`Color ${i + 1}, acabado`} className="basis-full sm:w-32 sm:shrink-0 sm:basis-auto">
+              {ACABADOS_COLOR.map((a) => (
+                <option key={a} value={a}>
+                  {NOMBRE_ACABADO[a]}
+                </option>
+              ))}
+            </Selector>
+          </span>
+        )}
+      />
+      <PieGuardar texto="Guardar colores" enviando={enviando} />
     </form>
   );
 }

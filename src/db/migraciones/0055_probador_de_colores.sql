@@ -1,0 +1,1 @@
+ALTER TABLE "servicio" ADD COLUMN "colores" jsonb DEFAULT '[]'::jsonb NOT NULL;

@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import { iconoDe } from "@/modulos/sitio/beneficios";
 import { erroresDe } from "@/lib/formularios";
 import { PATRON_SLUG, crearSlug } from "@/lib/slug";
+import { mensajeColor } from "@/lib/whatsapp";
 import { esquemaId, esquemaIdFormulario, esquemaParteServicio, esquemaServicio, esquemaVisibilidad, loQueFaltaEnPagina, motivoParaNoMostrar } from "@/modulos/sitio/esquemas";
 
 // HU-07 Servicios del sitio: la página de cada servicio. Criterios: docs/09-pruebas/criterios-entrega-1.md (7.x). El
@@ -40,6 +41,7 @@ describe("esquema del servicio", () => {
       { texto: "Protección", icono: "proteccion" },
     ]),
     pasos: JSON.stringify([{ titulo: "Lavado", detalle: "" }]),
+    colores: "[]",
     visible: true,
     opcionesEnEscalera: false,
   };
@@ -137,5 +139,37 @@ describe("íconos de los beneficios", () => {
     expect(iconoDe("cohete")).toBe("listo");
     // Ni las claves que todo objeto hereda
     expect(iconoDe("constructor")).toBe("listo");
+  });
+});
+
+// Pedido 56: los colores del probador de la página del servicio (P56-probador-de-colores.md)
+describe("colores del probador", () => {
+  const colores = (lista: unknown[]) => ({ id: "3", parte: "colores", colores: JSON.stringify(lista) });
+
+  test("guarda nombre, color en minúsculas y acabado", () => {
+    const r = esquemaParteServicio.parse(colores([{ nombre: " Bronce ", hex: "#7A5530", acabado: "satinado" }]));
+    expect(r).toEqual({ id: 3, parte: "colores", colores: [{ nombre: "Bronce", hex: "#7a5530", acabado: "satinado" }] });
+  });
+
+  test("sin colores es válido: el probador no sale", () => {
+    expect(esquemaParteServicio.parse(colores([]))).toEqual({ id: 3, parte: "colores", colores: [] });
+  });
+
+  test.each([
+    ["sin nombre", { nombre: " ", hex: "#000000", acabado: "mate" }],
+    ["un color que no es #rrggbb", { nombre: "Rojo", hex: "rojo", acabado: "mate" }],
+    ["un acabado que no existe", { nombre: "Rojo", hex: "#ff0000", acabado: "cromado" }],
+  ])("rechaza %s", (_, color) => {
+    expect(esquemaParteServicio.safeParse(colores([color])).success).toBe(false);
+  });
+
+  test("hasta 12 colores", () => {
+    const uno = { nombre: "Negro", hex: "#000000", acabado: "mate" };
+    expect(esquemaParteServicio.safeParse(colores(Array(12).fill(uno))).success).toBe(true);
+    expect(esquemaParteServicio.safeParse(colores(Array(13).fill(uno))).success).toBe(false);
+  });
+
+  test("el mensaje de WhatsApp lleva el servicio y el color elegido", () => {
+    expect(mensajeColor("Repintado de aros", "Bronce", "Satinado")).toBe("Hola, quiero consultar por Repintado de aros en bronce satinado.");
   });
 });

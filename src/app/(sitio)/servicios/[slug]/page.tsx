@@ -9,8 +9,11 @@ import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
 import { FotoOReemplazo } from "@/componentes/sitio/foto-o-reemplazo";
 import { FotoResponsiva } from "@/componentes/sitio/foto-responsiva";
 import { IconoBeneficio } from "@/componentes/sitio/icono-beneficio";
+import { ProbadorColores } from "@/componentes/sitio/probador-colores";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
+import type { ColorServicio } from "@/db/esquema/sitio";
 import type { UrlsFoto } from "@/lib/fotos";
+import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
 import { servicioPublico, type DetalleServicioPublico } from "@/modulos/sitio/publico";
 import { ladosDeFotos } from "@/modulos/sitio/secciones-foto";
 import { metadatosPagina } from "@/lib/sitio";
@@ -65,6 +68,12 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
 
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pb-12 md:gap-24 md:pb-24">
         {s.beneficios.length > 0 && <Beneficios beneficios={s.beneficios} />}
+        {/* Pedido 56: el probador de colores, si el servicio tiene colores (el repintado de aros) */}
+        {s.colores.length > 0 && (
+          <Suspense fallback={<ProbadorColores servicio={s.nombre} colores={s.colores} whatsapp={null} />}>
+            <Probador servicio={s.nombre} colores={s.colores} />
+          </Suspense>
+        )}
         {/* Cada sección con su foto al lado, si tiene (pedido de la demo del 24/10), alternando de lado */}
         {s.pasos.length > 0 && <Proceso pasos={s.pasos} foto={s.fotosSecciones.proceso} lado={lados.proceso} />}
         {s.variantes.length > 0 && (
@@ -195,4 +204,10 @@ function Variantes(props: { variantes: DetalleServicioPublico["variantes"]; esca
       </ConFoto>
     </section>
   );
+}
+
+/** El probador con el WhatsApp del negocio (HU-04), que sale de la configuración, nunca del código. */
+async function Probador({ servicio, colores }: { servicio: string; colores: ColorServicio[] }) {
+  const { whatsapp } = await obtenerDatosPublicos();
+  return <ProbadorColores servicio={servicio} colores={colores} whatsapp={whatsapp} />;
 }

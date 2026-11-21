@@ -31,6 +31,11 @@ export function enlaceWhatsApp(numero: string, mensaje?: string): string {
   return mensaje ? `${base}?text=${encodeURIComponent(mensaje)}` : base;
 }
 
+/** Pedido 56: el mensaje del probador de colores, con el color elegido ("en bronce satinado"). */
+export function mensajeColor(servicio: string, color: string, acabado: string): string {
+  return `Hola, quiero consultar por ${servicio} en ${color.toLowerCase()} ${acabado.toLowerCase()}.`;
+}
+
 /** Mensaje inicial del chat: general o con el servicio ya escrito (HU-15). */
 export function mensajeWhatsApp(servicio?: string): string {
   return servicio ? `Hola, quiero consultar por ${servicio}.` : "Hola, quiero consultar por un servicio.";

@@ -2,7 +2,7 @@ import "server-only";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
-import { archivo, contenidoPagina, faq, galeriaItem, servicio, servicioFoto, variante, type Beneficio, type Paso } from "@/db/esquema";
+import { archivo, contenidoPagina, faq, galeriaItem, servicio, servicioFoto, variante, type Beneficio, type ColorServicio, type Paso } from "@/db/esquema";
 import { urlArchivo } from "@/lib/almacenamiento";
 import { urlsFoto, type UrlsFoto } from "@/lib/fotos";
 import { CLAVES_PAGINA, PORTADA, leerContenido, type ContenidoPagina, type Pagina, type PaginaConFoto } from "./contenido";
@@ -50,6 +50,7 @@ export type DetalleServicio = FilaServicio & {
   activo: boolean;
   beneficios: Beneficio[];
   pasos: Paso[];
+  colores: ColorServicio[];
   opcionesEnEscalera: boolean;
 };
 
@@ -72,6 +73,7 @@ export async function obtenerServicio(id: number): Promise<DetalleServicio | nul
     activo: s.activo,
     beneficios: s.beneficios,
     pasos: s.pasos,
+    colores: s.colores,
     opcionesEnEscalera: s.opcionesEnEscalera,
   };
 }

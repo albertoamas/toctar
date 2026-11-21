@@ -14,6 +14,11 @@ const momento = (nombre: string) => timestamp(nombre, { withTimezone: true });
 export type Paso = { titulo: string; detalle: string };
 /** Un beneficio con su ícono, elegido de una lista fija (`ICONOS_BENEFICIO`, pedido de la demo del 24/10). */
 export type Beneficio = { texto: string; icono: string };
+/** Cómo queda la pintura de un color del probador (pedido 56). */
+export const ACABADOS_COLOR = ["mate", "satinado", "brillante"] as const;
+export type AcabadoColor = (typeof ACABADOS_COLOR)[number];
+/** Un color del probador de la página del servicio (pedido 56): "Bronce", "#7a5530", satinado. */
+export type ColorServicio = { nombre: string; hex: string; acabado: AcabadoColor };
 
 export const servicio = pgTable(
   "servicio",
@@ -27,6 +32,8 @@ export const servicio = pgTable(
     descripcion: text("descripcion").notNull().default(""),
     beneficios: jsonb("beneficios").$type<Beneficio[]>().notNull().default([]),
     pasos: jsonb("pasos").$type<Paso[]>().notNull().default([]),
+    /** Pedido 56: los colores del probador de su página (el repintado de aros). Sin colores, el probador no sale. */
+    colores: jsonb("colores").$type<ColorServicio[]>().notNull().default([]),
     /** Las opciones (variantes) van de menor a mayor: el sitio las muestra como escalones (pedido de la demo del 24/10). */
     opcionesEnEscalera: boolean("opciones_en_escalera").default(false).notNull(),
     fotoArchivoId: integer("foto_archivo_id").references(() => archivo.id),

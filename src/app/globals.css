@@ -1311,3 +1311,28 @@
     }
   }
 }
+
+/* Pedido 56: la pasada de luz del probador de colores al elegir un color, en 60° (el ángulo de la marca) */
+.tt-pasada::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: -40%;
+  width: 22%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.28), transparent);
+  transform: skewX(-30deg);
+}
+.tt-pasada--ver::after {
+  animation: tt-pasada 0.7s ease-out;
+}
+@keyframes tt-pasada {
+  to {
+    left: 130%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tt-pasada--ver::after {
+    animation: none;
+  }
+}
