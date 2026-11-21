@@ -1,7 +1,7 @@
 # P56 Probador de colores en la página de un servicio — especificación
 
 - **Fase y semana:** Cierre de la Entrega 2 · desde el 20/11/2026
-- **Estado:** en curso (programado el 20/11/2026)
+- **Estado:** hecho (21/11/2026, PR #295 y #296)
 - **Historias:** HU-07 (página del servicio en el sitio)
 - **Base:** B3 (`B3-contenido.md`), B4 (`B4-sitio-publico.md`), registro de cambios, pedido 56
 

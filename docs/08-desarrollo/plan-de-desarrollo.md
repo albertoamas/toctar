@@ -43,12 +43,13 @@ Con la Entrega 2 se acepta también la Entrega 1. Lo que falta, en orden.
 7. **El proxy de Cloudflare:** ✅ encendido en pruebas el 14/11 (`07-preparacion/guia-de-despliegue.md`, paso 3b, con su estado): protección contra ataques masivos, la conexión segura cerca de Bolivia y el firewall de Hetzner solo para Cloudflare. Gratis. Producción quedó preparada el mismo día (`@` y `www` en naranja con su propio secreto): al publicar, solo desplegar.
 8. **Reportes y gastos (pedido 16, opción B):** aprobada el 16/11 (Bs 720, la mitad ya pagada) y programada el 16/11 (gastos, categorías en Parámetros y la pantalla de Reportes, solo para el dueño; migración 0050). Se entrega con la Entrega 2. Especificación: `etapas/P16-reportes-y-gastos.md`. El 19/11 se rediseñó la pantalla de Reportes (cinco pestañas, con Clientes nueva; "Hoy" y "Últimos 6 meses"), sobre el prototipo aprobado ese día: `etapas/P53-reportes-v2.md`.
 9. **Lo que salió de la prueba en celulares** (14 al 16/11): ✅ los 10 hallazgos (`hallazgos-prueba-celulares.md`, PR #242 a #248), la ficha del vehículo (pedido 51, #249), el lavado de cara de la Agenda (#251) y Next.js 16.4.6 por un aviso de seguridad (#253).
+10. **Recorrido visual del panel** (19 al 21/11): ✅ la primera parte (Inicio, Agenda, Nueva reserva, fichas y Órdenes, #293); sin espacios fijos ni límite por día y la Agenda como calendario de citas (pedido 55, #294, `etapas/P55-lugares-por-dia.md`); el probador de colores y el repintado de aros en los servicios iniciales (pedido 56, #295 y #296, `etapas/P56-probador-de-colores.md`). Sigue con Recibir, Entregar, Publicar en la galería, Cotizaciones, Clientes, Finanzas y Administración.
 
 **Lo decide o lo carga el dueño** (sin apuro: se avanza con lo de arriba mientras tanto):
 
 | Qué | Dónde |
 |---|---|
-| Pedido 29 y pedido 31, parte 2: vehículos sin placa y cotizar sin registrar al cliente (van juntos) | `etapas/P31-flujo-de-un-trabajo.md`, parte 2 |
+| Pedido 29 y pedido 31, parte 2: vehículos sin placa y cotizar sin registrar al cliente (van juntos; el dueño lo volvió a pedir el 20/11, falta decidir si va incluido o se cotiza aparte) | `etapas/P31-flujo-de-un-trabajo.md`, parte 2 |
 | Pedidos 14 (Bs 200), 19 y 22 (avisos automáticos, por cotizar); la constancia en PDF de la entrega (pedido 13, +2 h) | `registro-de-cambios.md` |
 | Pedido 15 (sueldos): va en el Sistema completo. El 16 ya está aprobado (punto 8 de arriba) | `registro-de-cambios.md` |
 | Decisiones abiertas de C5 (permiso del cliente para publicar fotos, qué ve el encargado en Inicio, más mensajes editables) | `etapas/C5-cierre-entrega-2.md`, §12 |
