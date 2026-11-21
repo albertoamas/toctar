@@ -23,18 +23,19 @@ const GUARDADO: Record<ParteServicio, string> = {
   resumen: "Resumen guardado.",
   beneficios: "Beneficios guardados.",
   pasos: "Pasos guardados.",
+  colores: "Colores guardados.",
   opciones: "Opciones guardadas.",
   direccion: "Dirección guardada.",
 };
 
 /**
- * Una parte de la página del servicio en el sitio (HU-07): el resumen, los beneficios con ícono, los pasos, cómo se ven
- * las opciones o la dirección. Cada modal de la ficha guarda la suya (pulido 13.19).
+ * Una parte de la página del servicio en el sitio (HU-07): el resumen, los beneficios con ícono, los pasos, los colores
+ * del probador (pedido 56), cómo se ven las opciones o la dirección. Cada modal de la ficha guarda la suya (pulido 13.19).
  */
 export async function guardarParteServicio(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   const autor = await exigirModulo("sitio");
   const valores: Record<string, string> = {};
-  for (const c of ["id", "parte", "slug", "resumen", "beneficios", "pasos"]) {
+  for (const c of ["id", "parte", "slug", "resumen", "beneficios", "pasos", "colores"]) {
     const valor = datos.get(c);
     if (typeof valor === "string") valores[c] = valor;
   }
@@ -63,9 +64,11 @@ export async function guardarParteServicio(_previo: EstadoFormulario, datos: For
         ? { beneficios: d.beneficios }
         : d.parte === "pasos"
           ? { pasos: d.pasos }
-          : d.parte === "opciones"
-            ? { opcionesEnEscalera: d.opcionesEnEscalera }
-            : { slug: d.slug };
+          : d.parte === "colores"
+            ? { colores: d.colores }
+            : d.parte === "opciones"
+              ? { opcionesEnEscalera: d.opcionesEnEscalera }
+              : { slug: d.slug };
 
   try {
     await db

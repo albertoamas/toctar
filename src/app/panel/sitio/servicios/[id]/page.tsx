@@ -14,8 +14,9 @@ import { buttonVariants } from "@/componentes/ui/button";
 import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { FotoDeSeccion, FotoServicio } from "@/modulos/sitio/componentes/foto-servicio";
-import { FormularioBeneficios, FormularioOpciones, FormularioPasos, FormularioResumen, MasServicio } from "@/modulos/sitio/componentes/formulario-servicio";
+import { FormularioBeneficios, FormularioColores, FormularioOpciones, FormularioPasos, FormularioResumen, MasServicio } from "@/modulos/sitio/componentes/formulario-servicio";
 import { iconoDe } from "@/modulos/sitio/beneficios";
+import { NOMBRE_ACABADO } from "@/modulos/sitio/colores";
 import { fotosDeSecciones, obtenerServicio, opcionesDelSitio } from "@/modulos/sitio/consultas";
 import { aqui, volverDesde } from "@/lib/volver";
 
@@ -77,7 +78,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/sitio/se
                 Ver en el sitio
               </a>
             )}
-            <MasServicio id={s.id} slug={s.slug} visible={s.visible} activo={s.activo} catalogo={puedeVerModulo(usuario, "catalogo")} desde={desdeAqui} />
+            <MasServicio id={s.id} slug={s.slug} visible={s.visible} activo={s.activo} catalogo={puedeVerModulo(usuario, "catalogo")} conProbador={s.colores.length > 0} desde={desdeAqui} />
           </div>
         }
       >
@@ -153,6 +154,30 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/sitio/se
       >
         <FormularioPasos id={s.id} pasos={s.pasos} />
       </SeccionConEditar>
+
+      {/* Pedido 56: el probador de colores, solo en los servicios que lo usan (el repintado de aros). Se agrega desde
+          "Más"; sin colores, la sección no está y el probador no sale en el sitio */}
+      {s.colores.length > 0 && (
+        <SeccionConEditar
+          id="colores"
+          titulo="Probador de colores"
+          etiquetaEditar="Editar colores"
+          tituloModal="Probador de colores"
+          lectura={
+            <ul className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+              {s.colores.map((c, i) => (
+                <li key={i} className="flex items-center gap-3">
+                  <span aria-hidden className="size-6 shrink-0 rounded-full border border-border" style={{ backgroundColor: c.hex }} />
+                  <span className="min-w-0 flex-1 truncate">{c.nombre}</span>
+                  <span className="text-sm text-tinta-suave">{NOMBRE_ACABADO[c.acabado]}</span>
+                </li>
+              ))}
+            </ul>
+          }
+        >
+          <FormularioColores id={s.id} colores={s.colores} />
+        </SeccionConEditar>
+      )}
 
       {conOpciones ? (
         <SeccionConEditar

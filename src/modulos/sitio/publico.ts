@@ -3,7 +3,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/db";
-import { archivo, contenidoPagina, faq, galeriaItem, servicio, type Beneficio, type Paso } from "@/db/esquema";
+import { archivo, contenidoPagina, faq, galeriaItem, servicio, type Beneficio, type ColorServicio, type Paso } from "@/db/esquema";
 import { urlsFoto, type UrlsFoto } from "@/lib/fotos";
 import { leerContenido, type ContenidoPagina, type Pagina, type PaginaConFoto } from "./contenido";
 import { ETIQUETA_CONTENIDO, ETIQUETA_GALERIA, ETIQUETA_SERVICIOS, fotosDeSecciones, obtenerFotoDePagina, obtenerVideoDePortada, opcionesDelSitio, type FotosDeSecciones, type VideoPortada } from "./consultas";
@@ -66,6 +66,8 @@ export async function galeriaPublica(): Promise<FotoGaleria[]> {
 export type DetalleServicioPublico = ServicioPublico & {
   beneficios: Beneficio[];
   pasos: Paso[];
+  /** Pedido 56: los colores del probador; sin colores, no sale. */
+  colores: ColorServicio[];
   /** Las opciones van de menor a mayor: se ven como escalones. */
   opcionesEnEscalera: boolean;
   variantes: { nombre: string; descripcion: string | null }[];
@@ -100,6 +102,7 @@ export async function servicioPublico(slug: string): Promise<DetalleServicioPubl
     foto: fila.foto ? urlsFoto(fila.foto) : null,
     beneficios: s.beneficios,
     pasos: s.pasos,
+    colores: s.colores,
     opcionesEnEscalera: s.opcionesEnEscalera,
     variantes,
     fotosSecciones,

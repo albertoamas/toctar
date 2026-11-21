@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ACABADOS_COLOR } from "@/db/esquema/sitio";
 import { DIRECCIONES } from "@/lib/orden";
 import { PATRON_SLUG } from "@/lib/slug";
 import { CLAVES_ICONO } from "./beneficios";
@@ -6,7 +7,7 @@ import { CLAVES_SECCION } from "./secciones-foto";
 
 // Validación del contenido del sitio (B3): el mismo esquema en el formulario y en el servidor.
 
-export const LIMITES = { resumen: 160, beneficios: 8, beneficio: 120, pasos: 10, tituloPaso: 60, detallePaso: 300 } as const;
+export const LIMITES = { resumen: 160, beneficios: 8, beneficio: 120, pasos: 10, tituloPaso: 60, detallePaso: 300, colores: 12, nombreColor: 30 } as const;
 
 const resumen = z
   .string()
@@ -47,6 +48,21 @@ const esquemaPasos = z
   )
   .max(LIMITES.pasos, `Hasta ${LIMITES.pasos} pasos.`);
 
+/** Los colores del probador (pedido 56): nombre, color en #rrggbb y acabado. */
+const esquemaColores = z
+  .array(
+    z.object({
+      nombre: z.string().trim().min(1, "Escribe el nombre del color o quita la fila.").max(LIMITES.nombreColor, `Hasta ${LIMITES.nombreColor} caracteres.`),
+      hex: z
+        .string()
+        .trim()
+        .regex(/^#[0-9a-fA-F]{6}$/, "Elige el color.")
+        .transform((v) => v.toLowerCase()),
+      acabado: z.enum(ACABADOS_COLOR, "Elige el acabado."),
+    }),
+  )
+  .max(LIMITES.colores, `Hasta ${LIMITES.colores} colores.`);
+
 /** La página de un servicio en el sitio. El nombre y las variantes son del catálogo (catalogo/esquemas.ts). */
 export const esquemaServicio = z.object({
   id: z.coerce.number().int().positive(),
@@ -59,6 +75,7 @@ export const esquemaServicio = z.object({
   resumen,
   beneficios: listaJson(esquemaBeneficios),
   pasos: listaJson(esquemaPasos),
+  colores: listaJson(esquemaColores),
   visible: z.boolean(),
   opcionesEnEscalera: z.boolean(),
 });
@@ -71,6 +88,7 @@ export const esquemaParteServicio = z.discriminatedUnion("parte", [
   esquemaServicio.pick({ id: true, resumen: true }).extend({ parte: z.literal("resumen") }),
   esquemaServicio.pick({ id: true, beneficios: true }).extend({ parte: z.literal("beneficios") }),
   esquemaServicio.pick({ id: true, pasos: true }).extend({ parte: z.literal("pasos") }),
+  esquemaServicio.pick({ id: true, colores: true }).extend({ parte: z.literal("colores") }),
   esquemaServicio.pick({ id: true, opcionesEnEscalera: true }).extend({ parte: z.literal("opciones") }),
   esquemaServicio.pick({ id: true, slug: true }).extend({ parte: z.literal("direccion") }),
 ]);
