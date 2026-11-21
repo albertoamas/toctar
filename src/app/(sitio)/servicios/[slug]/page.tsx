@@ -55,35 +55,37 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
     <article className="flex flex-1 flex-col">
       {/* Sin "‹ Servicios" arriba (pulido de Servicios, 21/11; lo había puesto el pulido 2.3): en el celular ocupaba una fila
           arriba de la foto, y ya están el menú con "Servicios" marcado, el botón atrás del navegador y "Otros servicios" */}
-      <header>
-        {/* Pulido de Servicios (21/11): la foto llega al borde de la pantalla. En la computadora ocupa la mitad derecha, cortada
-            a 60° del lado del texto (el ángulo de la marca) con una línea roja en el corte; en el celular va a todo el ancho
-            y se funde con el negro de abajo, donde sube el título */}
-        <div className="relative md:mt-8 md:min-h-[540px]">
-          <div className="relative aspect-[4/3] overflow-hidden bg-superficie md:absolute md:inset-y-0 md:right-0 md:aspect-auto md:w-[52vw]">
+      {/* Pulido de Servicios (21/11): en la computadora, la foto a la derecha dentro de la misma columna que el texto, en 4:3
+          y cortada a 60° del lado del texto (el ángulo de la marca) con una línea roja en el corte. Al borde de la pantalla
+          quedaba descentrada en un monitor ancho y cada foto se cortaba distinto. En el celular, a todo el ancho, fundida
+          con el negro de abajo, donde sube el título */}
+      <header className="mx-auto w-full max-w-6xl pb-12 md:px-4 md:pt-10 md:pb-20">
+        <div className="grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:items-center md:gap-6">
+          <div className="relative aspect-[4/3] overflow-hidden bg-superficie md:order-last">
             <FotoOReemplazo foto={s.foto} alt={s.nombre} prioridad />
             <div aria-hidden className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-fondo to-transparent md:hidden" />
-            <div aria-hidden className="absolute inset-y-0 left-0 hidden w-[372px] origin-top-left -skew-x-[30deg] bg-fondo md:block" />
-            <div aria-hidden className="absolute inset-y-0 left-[372px] hidden w-1.5 origin-top-left -skew-x-[30deg] bg-rojo md:block" />
+            {/* En 4:3, la línea a 60° de toda la altura corre el 43,3 % del ancho (0,75 × tan 30°) */}
+            <div aria-hidden className="absolute inset-y-0 left-0 hidden w-[43.3%] origin-top-left -skew-x-[30deg] bg-fondo md:block" />
+            <div aria-hidden className="absolute inset-y-0 left-[43.3%] hidden w-1.5 origin-top-left -skew-x-[30deg] bg-rojo md:block" />
           </div>
-          <div className="relative mx-auto -mt-16 flex w-full max-w-6xl px-4 pb-12 md:mt-0 md:min-h-[540px] md:items-center md:pb-0">
-            <div className="flex flex-col items-start gap-5 md:w-1/2 md:pr-8">
-              <h1 className="font-heading text-[40px] leading-[38px] md:leading-[60px] font-extrabold tracking-[-0.01em] text-balance uppercase italic md:text-[64px]">{s.nombre}</h1>
-              <p className="max-w-xl text-lg leading-7 text-tinta-suave">{s.resumen}</p>
-              {s.beneficios.length > 0 && <Beneficios beneficios={s.beneficios} />}
-              <BotonWhatsApp texto="Consultar por este servicio" servicio={s.nombre} />
-            </div>
+          <div className="relative -mt-16 flex flex-col items-start gap-5 px-4 md:mt-0 md:px-0">
+            <h1 className="font-heading text-[40px] leading-[38px] md:leading-[60px] font-extrabold tracking-[-0.01em] text-balance uppercase italic md:text-[64px]">{s.nombre}</h1>
+            <p className="max-w-xl text-lg leading-7 text-tinta-suave">{s.resumen}</p>
+            {s.beneficios.length > 0 && <Beneficios beneficios={s.beneficios} />}
+            <BotonWhatsApp texto="Consultar por este servicio" servicio={s.nombre} />
           </div>
         </div>
       </header>
 
       {/* Pulido de Servicios (21/11): los beneficios subieron a la portada */}
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pt-8 pb-12 md:gap-24 md:pt-24 md:pb-24">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pb-12 md:gap-20 md:pb-24">
         {/* Pedido 56: el probador de colores, si el servicio tiene colores (el repintado de aros) */}
         {s.colores.length > 0 && (
-          <Suspense fallback={<ProbadorColores servicio={s.nombre} colores={s.colores} whatsapp={null} />}>
-            <Probador servicio={s.nombre} colores={s.colores} />
-          </Suspense>
+          <div className="tt-divisor">
+            <Suspense fallback={<ProbadorColores servicio={s.nombre} colores={s.colores} whatsapp={null} />}>
+              <Probador servicio={s.nombre} colores={s.colores} />
+            </Suspense>
+          </div>
         )}
         {/* Cada sección con su foto al lado, si tiene (pedido de la demo del 24/10), alternando de lado */}
         {s.pasos.length > 0 && <Proceso pasos={s.pasos} foto={s.fotosSecciones.proceso} lado={lados.proceso} />}
@@ -152,7 +154,7 @@ function ConFoto({ foto, lado, children }: { foto?: UrlsFoto; lado: Lado; childr
 
 function Proceso({ pasos, foto, lado }: { pasos: DetalleServicioPublico["pasos"]; foto?: UrlsFoto; lado: Lado }) {
   return (
-    <section aria-labelledby="proceso-titulo" className="flex flex-col gap-8">
+    <section aria-labelledby="proceso-titulo" className="tt-divisor flex flex-col gap-8">
       <ConFoto foto={foto} lado={lado}>
         <h2 id="proceso-titulo" className={TITULO_SECCION}>Cómo lo hacemos</h2>
         {/* Con foto al lado, los pasos van en una sola columna */}
@@ -184,7 +186,7 @@ function Variantes(props: { variantes: DetalleServicioPublico["variantes"]; esca
   const conDescripcion = variantes.some((v) => v.descripcion);
   const ultimo = Math.max(variantes.length - 1, 1);
   return (
-    <section aria-labelledby="variantes-titulo" className="flex flex-col gap-6">
+    <section aria-labelledby="variantes-titulo" className="tt-divisor flex flex-col gap-6">
       <ConFoto foto={foto} lado={lado}>
         <div className="flex flex-col gap-2">
           <h2 id="variantes-titulo" className={TITULO_SECCION}>Opciones</h2>
@@ -237,7 +239,7 @@ const ANCHO_TRABAJO = "(min-width: 1152px) 368px, (min-width: 1024px) 33vw, (min
 /** Hasta tres de sus trabajos de la galería, los antes y después primero; si hay más, "Ver todos" lleva a la galería. */
 function Trabajos({ trabajos, mas, slug }: { trabajos: DetalleServicioPublico["trabajos"]; mas: boolean; slug: string }) {
   return (
-    <section aria-labelledby="trabajos-titulo" className="flex flex-col gap-6">
+    <section aria-labelledby="trabajos-titulo" className="tt-divisor flex flex-col gap-6">
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
         <h2 id="trabajos-titulo" className={TITULO_SECCION}>
           Nuestros trabajos
@@ -266,7 +268,7 @@ async function OtrosServicios({ slug }: { slug: string }) {
   const otros = [...todos.slice(aqui + 1), ...todos.slice(0, Math.max(aqui, 0))].slice(0, 3);
   if (otros.length === 0) return null;
   return (
-    <section aria-labelledby="otros-titulo" className="flex flex-col gap-6">
+    <section aria-labelledby="otros-titulo" className="tt-divisor flex flex-col gap-6">
       <h2 id="otros-titulo" className={TITULO_SECCION}>
         Otros servicios
       </h2>
