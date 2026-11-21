@@ -25,12 +25,6 @@ function restriccionViolada(error: unknown, codigo: string): string | null {
 }
 
 /**
- * Nombre de la restricción de exclusión que rechazó la escritura (código 23P01), o null. La de la agenda impide que un
- * espacio tenga dos trabajos el mismo día aunque dos personas reserven a la vez (D-5).
- */
-export const exclusionViolada = (error: unknown) => restriccionViolada(error, "23P01");
-
-/**
  * Errores por campo: el primero de cada uno. En los campos que son listas (beneficios, pasos)
  * el error va a la fila: "pasos.2" es el tercer paso.
  */

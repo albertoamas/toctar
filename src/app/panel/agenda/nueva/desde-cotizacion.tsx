@@ -67,7 +67,6 @@ export async function ReservaDesdeCotizacion({ ctx, cotizacionId }: { ctx: Conte
           hoy={hoy}
           fechaInicial={fechaInicial}
           fechaFin={fechaInicial ? fechaEntregaSugerida(fechaInicial, duraciones) : ""}
-          espacio={numero("espacio")}
           atras={enLosPasos ? direccion({ cliente: c.cliente.id, vehiculo: c.vehiculo.id }) : undefined}
           // Elegida en los pasos: tocar el cliente, el vehículo o los servicios en el indicador vuelve a ellos (20/11)
           pasosHechos={

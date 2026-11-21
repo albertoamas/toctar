@@ -61,14 +61,14 @@ export async function consultar<T extends pg.QueryResultRow>(sql: string, valore
 /**
  * Una orden lista, directo en la base, con un pulido y nano cerámico (genera mantenimiento al entregarse) del precio
  * dado y, si se pagó algo, el adelanto. `dias` la pone lejos de hoy, en días propios de cada prueba y proyecto, para
- * que los espacios del taller no choquen con otras pruebas. Devuelve su id.
+ * que no se mezcle con las de otras pruebas en la Agenda. Devuelve su id.
  */
-export async function crearOrdenLista(datos: { placa: string; espacio: number; dias: number; precio: number; pagado: number; servicio?: string }): Promise<number> {
+export async function crearOrdenLista(datos: { placa: string; dias: number; precio: number; pagado: number; servicio?: string }): Promise<number> {
   const [{ id }] = await consultar<{ id: number }>(
-    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, created_by)
-     select e.sucursal_id, v.cliente_id, v.id, e.id, (now() at time zone 'America/La_Paz')::date + $3::int, (now() at time zone 'America/La_Paz')::date + $3::int, 'listo', now(), now(), v.created_by
-     from vehiculo v, (select * from espacio_taller where activo order by orden offset $2 limit 1) e where v.placa = $1 returning id`,
-    [datos.placa, datos.espacio, datos.dias],
+    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, created_by)
+     select s.id, v.cliente_id, v.id, (now() at time zone 'America/La_Paz')::date + $2::int, (now() at time zone 'America/La_Paz')::date + $2::int, 'listo', now(), now(), v.created_by
+     from vehiculo v, (select id from sucursal order by id limit 1) s where v.placa = $1 returning id`,
+    [datos.placa, datos.dias],
   );
   await consultar(
     `insert into trabajo_linea (trabajo_id, variante_id, descripcion, precio, orden)

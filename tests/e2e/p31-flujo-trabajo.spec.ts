@@ -58,12 +58,9 @@ async function cotizacionPendiente(info: TestInfo, n: number): Promise<{ consult
 
 const pasoActual = (page: Page) => page.getByRole("navigation", { name: "Pasos del trabajo" }).locator('[aria-current="step"]');
 
-/** Elige un espacio libre y reserva sin adelanto (o con efectivo, si hay que elegir el método). */
+/** Elige el día y reserva sin adelanto. */
 async function reservar(page: Page, dia: string) {
   await page.getByLabel("Ingresa el").fill(dia);
-  const espacio = page.getByLabel("Espacio", { exact: true });
-  await expect(espacio).toBeEnabled();
-  await espacio.selectOption({ index: 1 });
   // Con Pagos, el adelanto va en su paso (20/11): "No, sin adelanto"
   if (await page.getByRole("button", { name: "Siguiente: adelanto" }).count()) await sinAdelantoEnReserva(page);
   await page.getByRole("button", { name: "Reservar" }).click();

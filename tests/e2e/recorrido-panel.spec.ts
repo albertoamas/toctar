@@ -23,18 +23,13 @@ async function prepararDatos(info: TestInfo, rol: string): Promise<Ids> {
   const cliente = await crearClienteEnBase({ nombre: `Recorrido ${n}`, telefono: `5917${Math.floor(1e6 + Math.random() * 8e6)}`, placa });
   const [{ vehiculo }] = await consultar<{ vehiculo: number }>("select id as vehiculo from vehiculo where placa = $1", [placa]);
   const cotizacion = await crearCotizacionEnBase({ placa, numero: `REC-${n}` });
-  // Un espacio propio y desactivado: las tres pruebas corren a la vez con trabajos de hoy, y las demás cuentan los activos
-  const [{ espacio }] = await consultar<{ espacio: number }>(
-    "insert into espacio_taller (sucursal_id, nombre, orden, activo) select id, $1, 999, false from sucursal order by id limit 1 returning id as espacio",
-    [`Recorrido ${n}`],
-  );
   const trabajo = async (estado: "agendado" | "listo", dia: string) => {
     const [{ id }] = await consultar<{ id: number }>(
-      `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, created_by)
-       select e.sucursal_id, v.cliente_id, v.id, e.id, ${dia}, ${dia}, $3,
-         case when $3 = 'listo' then now() end, case when $3 = 'listo' then now() end, v.created_by
-       from vehiculo v, espacio_taller e where v.placa = $1 and e.id = $2 returning id`,
-      [placa, espacio, estado],
+      `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, created_by)
+       select e.sucursal_id, v.cliente_id, v.id, ${dia}, ${dia}, $2,
+         case when $2 = 'listo' then now() end, case when $2 = 'listo' then now() end, v.created_by
+       from vehiculo v, (select id as sucursal_id from sucursal order by id limit 1) e where v.placa = $1 returning id`,
+      [placa, estado],
     );
     return id;
   };

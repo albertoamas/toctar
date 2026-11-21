@@ -14,7 +14,7 @@ test("avisar abre WhatsApp con nombre, vehículo y saldo, y queda quién avisó 
   const s = sufijo(info);
   const placa = `AV35${s.toUpperCase()}1`;
   await crearClienteEnBase({ nombre: `Lucía Rojas ${s}`, telefono: telefono(info, 1), placa });
-  const id = await crearOrdenLista({ placa, espacio: 0, dias: dias(info), precio: 500, pagado: 150 });
+  const id = await crearOrdenLista({ placa, dias: dias(info), precio: 500, pagado: 150 });
   await crearUsuario({ usuario: `aviso-hu35-${s}`, nombre: "Ana del taller", contrasena: "encargado-123", rol: "encargado", permisos: ["ordenes", "pagos"] });
   await ingresar(page, `aviso-hu35-${s}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
@@ -48,7 +48,7 @@ test("sin Pagos el mensaje no lleva el saldo", async ({ page }, info) => {
   const s = sufijo(info);
   const placa = `AV35${s.toUpperCase()}2`;
   await crearClienteEnBase({ nombre: `Marco ${s}`, telefono: telefono(info, 2), placa });
-  const id = await crearOrdenLista({ placa, espacio: 1, dias: dias(info), precio: 500, pagado: 150 });
+  const id = await crearOrdenLista({ placa, dias: dias(info), precio: 500, pagado: 150 });
   await crearUsuario({ usuario: `aviso2-hu35-${s}`, nombre: "Encargado sin pagos", contrasena: "encargado-123", rol: "encargado", permisos: ["ordenes"] });
 
   await ingresar(page, `aviso2-hu35-${s}`, "encargado-123");

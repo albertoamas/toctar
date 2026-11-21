@@ -64,7 +64,14 @@ async function cargar() {
   const autor = (await uno("select id from usuario where rol = 'dueno' order by id limit 1"))?.id;
   if (!autor) throw new Error("La base no tiene un dueño: corre la app una vez antes.");
   const sucursal = await uno("select id from sucursal order by id limit 1");
-  const espacios = await q("select id from espacio_taller where activo order by orden");
+  // La historia inventada no cruza más de tres autos por día, para que se parezca a un taller chico (el sistema no tiene
+  // límite desde el pedido 55: es solo para los datos de ejemplo)
+  const AUTOS_POR_DIA = 3;
+  const porDia = new Map();
+  const hayLugar = (anio, mes, desde, hasta) => {
+    for (let d = desde; d <= hasta; d++) if ((porDia.get(`${anio}-${mes}-${d}`) ?? 0) >= AUTOS_POR_DIA) return false;
+    return true;
+  };
   const tamanos = await q("select id, orden from tamano_vehiculo where activo order by orden");
   const categorias = Object.fromEntries((await q("select id, nombre from categoria_gasto where activo")).map((c) => [c.nombre, c.id]));
   const categoria = (nombre) => categorias[nombre] ?? Object.values(categorias)[0];
@@ -131,19 +138,26 @@ async function cargar() {
     const delMes = [];
     for (let n = 0; n < entregados; n++) {
       const c = clientes[entre(0, clientes.length - 1)];
-      const dia = entre(1, ultimoDia);
+      let dia = entre(1, ultimoDia);
       const servicios = [elegir(PEDIDOS)];
       if (azar() < 0.25) servicios.push(elegir(PEDIDOS.filter(([s]) => s !== servicios[0])));
       const lineas = servicios.map((s) => lineaDe(s, c.tamano)).filter(Boolean);
       if (!lineas.length) continue;
       const largo = servicios.includes("pulido-y-nano-ceramico") ? 1 : 0;
-      const fin = Math.min(dia + largo, ultimoDia);
+      let fin = Math.min(dia + largo, ultimoDia);
+      // Un día lleno: se busca otro del mes; si no hay, ese trabajo no se carga
+      for (let intento = 0; intento < 20 && !hayLugar(anio, mes, dia, fin); intento++) {
+        dia = entre(1, ultimoDia);
+        fin = Math.min(dia + largo, ultimoDia);
+      }
+      if (!hayLugar(anio, mes, dia, fin)) continue;
+      for (let d = dia; d <= fin; d++) porDia.set(`${anio}-${mes}-${d}`, (porDia.get(`${anio}-${mes}-${d}`) ?? 0) + 1);
       const t = await uno(
-        `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, recibido_at, recibido_por, listo_at,
+        `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, estado, recibido_at, recibido_por, listo_at,
            entregado_at, entregado_por, created_at, created_by)
-         values ($1, $2, $3, $4, $5, $6, 'entregado', $7, $8, $9, $10, $8, $11, $8) returning id`,
+         values ($1, $2, $3, $4, $5, 'entregado', $6, $7, $8, $9, $7, $10, $7) returning id`,
         [
-          sucursal.id, c.id, c.vehiculo, espacios[n % espacios.length].id, fecha(anio, mes, dia), fecha(anio, mes, fin),
+          sucursal.id, c.id, c.vehiculo, fecha(anio, mes, dia), fecha(anio, mes, fin),
           momento(fecha(anio, mes, dia), "09:00:00"), autor, momento(fecha(anio, mes, fin), "15:00:00"), momento(fecha(anio, mes, fin), "17:30:00"),
           momento(fecha(anio, mes, Math.max(1, dia - 2)), "11:00:00"),
         ],

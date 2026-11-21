@@ -2,8 +2,8 @@ import { expect, test, type TestInfo } from "@playwright/test";
 import { consultar, crearClienteEnBase, crearUsuario, ingresar, PERFIL_TALLER, PNG, revisarChecklistEnBase } from "./apoyo";
 
 // HU-33 Recibir vehículo (flujo crítico 3, primera parte). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §9.
-// Se recibe desde el día de ingreso: las reservas de hoy van en un espacio propio de cada proyecto (celular: el
-// primero; escritorio: el segundo), así no se cruzan. Encargados por prueba (límite de ingreso, RNF-04).
+// Se recibe desde el día de ingreso: las reservas de hoy van directo a la base (recibir no cuenta lugares, pedido 55).
+// Encargados por prueba (límite de ingreso, RNF-04).
 test.describe.configure({ mode: "serial" });
 
 const sufijo = (info: TestInfo) => (info.project.name === "celular" ? "c" : "e");
@@ -11,13 +11,13 @@ const telefono = (info: TestInfo, n: number) => `5917${info.project.name === "ce
 /** Hoy en Bolivia (la base corre en UTC: de noche ya sería mañana). */
 const hoy = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/La_Paz" }).format(new Date());
 
-/** Una reserva agendada con un servicio, en el espacio del proyecto, del día indicado (hoy, si no se dice). Devuelve su id. */
+/** Una reserva agendada con un servicio, del día indicado (hoy, si no se dice). Devuelve su id. */
 async function reserva(info: TestInfo, placa: string, dia = hoy()): Promise<number> {
   const [{ id }] = await consultar<{ id: number }>(
-    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, created_by)
-     select e.sucursal_id, v.cliente_id, v.id, e.id, $3::date, $3::date, v.created_by
-     from vehiculo v, (select * from espacio_taller where activo order by orden offset $2 limit 1) e where v.placa = $1 returning id`,
-    [placa, info.project.name === "celular" ? 0 : 1, dia],
+    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, created_by)
+     select e.sucursal_id, v.cliente_id, v.id, $2::date, $2::date, v.created_by
+     from vehiculo v, (select id as sucursal_id from sucursal order by id limit 1) e where v.placa = $1 returning id`,
+    [placa, dia],
   );
   await consultar(
     `insert into trabajo_linea (trabajo_id, variante_id, descripcion, precio, orden)

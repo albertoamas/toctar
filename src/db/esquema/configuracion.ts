@@ -109,21 +109,6 @@ export const marcaVehiculo = pgTable(
   (t) => [uniqueIndex("marca_vehiculo_nombre_unico").on(sql`lower(${t.nombre})`)],
 );
 
-/** Espacios del taller donde se trabaja un vehículo por día (RN-06). Se desactivan, no se borran (D-6). */
-export const espacioTaller = pgTable(
-  "espacio_taller",
-  {
-    id: integer("id").generatedByDefaultAsIdentity().primaryKey(),
-    sucursalId: integer("sucursal_id")
-      .notNull()
-      .references(() => sucursal.id),
-    nombre: text("nombre").notNull(),
-    orden: integer("orden").notNull(),
-    activo: boolean("activo").default(true).notNull(),
-  },
-  (t) => [uniqueIndex("espacio_taller_nombre_unico").on(t.sucursalId, sql`lower(${t.nombre})`)],
-);
-
 /**
  * Mensajes de WhatsApp que el dueño cambió (HU-40). Sin fila, vale el texto original, que vive en el código
  * (src/modulos/configuracion/plantillas.ts): volver al original borra la fila.

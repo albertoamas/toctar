@@ -19,26 +19,25 @@ async function dia(info: TestInfo, mas: number): Promise<string> {
   return d;
 }
 
-/** Una reserva agendada en la base, en el espacio de ese orden (0 = el primero). Devuelve su id. */
-async function reserva(placa: string, espacio: number, desde: string, hasta: string, extra: { consultaId?: number; cotizacionId?: number } = {}): Promise<number> {
+/** Una reserva agendada en la base (`veces`: cuántas iguales, para llenar un día). Devuelve el id de la primera. */
+async function reserva(placa: string, desde: string, hasta: string, extra: { consultaId?: number; cotizacionId?: number; veces?: number } = {}): Promise<number> {
   const [{ id }] = await consultar<{ id: number }>(
-    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, consulta_id, cotizacion_id, created_by)
-     select e.sucursal_id, v.cliente_id, v.id, e.id, $3::date, $4::date, $5, $6, v.created_by
-     from vehiculo v, (select * from espacio_taller where activo order by orden offset $2 limit 1) e where v.placa = $1 returning id`,
-    [placa, espacio, desde, hasta, extra.consultaId ?? null, extra.cotizacionId ?? null],
+    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, consulta_id, cotizacion_id, created_by)
+     select e.sucursal_id, v.cliente_id, v.id, $2::date, $3::date, $4, $5, v.created_by
+     from vehiculo v, (select id as sucursal_id from sucursal order by id limit 1) e, generate_series(1, $6::int) where v.placa = $1 returning id`,
+    [placa, desde, hasta, extra.consultaId ?? null, extra.cotizacionId ?? null, extra.veces ?? 1],
   );
   return id;
 }
 
-test("reprogramar solo ofrece espacios libres en las nuevas fechas y mueve la reserva", async ({ page }, info) => {
+test("reprogramar mueve la reserva a otras fechas (sin espacio ni límite por día: pedido 55)", async ({ page }, info) => {
   const s = sufijo(info);
   await crearClienteEnBase({ nombre: `Mover ${s}`, telefono: telefono(info, 1), placa: `MV31${s}1` });
   await crearClienteEnBase({ nombre: `Ocupa ${s}`, telefono: telefono(info, 2), placa: `MV31${s}2` });
   const [d0, d10] = [await dia(info, 0), await dia(info, 10)];
-  const id = await reserva(`MV31${s}1`, 0, d0, d0);
-  // En la nueva fecha, el segundo espacio está ocupado
-  await reserva(`MV31${s}2`, 1, d10, d10);
-  const espacios = await consultar<{ id: number; nombre: string }>("select id, nombre from espacio_taller where activo order by orden");
+  const id = await reserva(`MV31${s}1`, d0, d0);
+  // Otra el mismo día de destino: no impide moverla
+  await reserva(`MV31${s}2`, d10, d10);
 
   await ingresarComoDueno(page);
   await page.goto(`/panel/agenda/${id}`);
@@ -46,9 +45,8 @@ test("reprogramar solo ofrece espacios libres en las nuevas fechas y mueve la re
   await page.getByRole("button", { name: "Más" }).click();
   await page.getByRole("menuitem", { name: "Reprogramar" }).click();
   const form = page.getByRole("form", { name: "Reprogramar" });
-  // Los espacios libres llegan con el modal abierto: eso no es un cambio de la persona (C6, sistema-del-panel.md §4)
-  await expect(form.getByLabel("Espacio", { exact: true })).toBeEnabled();
-  // Escape (un cierre que preguntaría con cambios) cierra sin preguntar: los espacios que llegan no son un cambio
+  await expect(form.getByLabel("Ingresa el")).toBeVisible();
+  // Escape (un cierre que preguntaría con cambios) cierra sin preguntar: abrirlo no es un cambio
   await page.keyboard.press("Escape");
   await expect(form).toHaveCount(0);
   await expect(page.locator("[data-pregunta-salir]")).toHaveCount(0);
@@ -58,19 +56,16 @@ test("reprogramar solo ofrece espacios libres en las nuevas fechas y mueve la re
   await page.getByRole("menuitem", { name: "Reprogramar" }).click();
   await form.getByLabel("Ingresa el").fill(d10);
   await form.getByLabel("Entrega aproximada").fill(d10);
-  const espacio = form.getByLabel("Espacio", { exact: true });
-  await expect(espacio.locator("option")).toHaveText(["Elige el espacio", ...espacios.filter((_, i) => i !== 1).map((e) => e.nombre)]);
-  await espacio.selectOption({ label: espacios[2]?.nombre ?? espacios[0].nombre });
   await form.getByRole("button", { name: "Mover reserva" }).click();
   await expect(page.getByText(/^Reserva movida al/)).toBeVisible();
 
-  const [movida] = await consultar<{ inicio: string; espacio: number }>("select to_char(fecha_inicio, 'YYYY-MM-DD') as inicio, espacio_id as espacio from trabajo where id = $1", [id]);
-  expect(movida).toEqual({ inicio: d10, espacio: (espacios[2] ?? espacios[0]).id });
+  const [movida] = await consultar<{ inicio: string }>("select to_char(fecha_inicio, 'YYYY-MM-DD') as inicio from trabajo where id = $1", [id]);
+  expect(movida).toEqual({ inicio: d10 });
   const [auditoria] = await consultar<{ accion: string }>("select accion from auditoria where entidad = 'trabajo' and entidad_id = $1", [id]);
   expect(auditoria.accion).toBe("reprogramar");
 });
 
-test("cancelar pide motivo, deja los pagos, libera el espacio y la consulta pasa a perdida con la cotización vigente", async ({ page }, info) => {
+test("cancelar pide motivo, deja los pagos, libera su lugar y la consulta pasa a perdida con la cotización vigente", async ({ page }, info) => {
   const s = sufijo(info);
   await crearClienteEnBase({ nombre: `Cancela ${s}`, telefono: telefono(info, 3), placa: `CA31${s}3` });
   const d20 = await dia(info, 20);
@@ -90,7 +85,7 @@ test("cancelar pide motivo, deja los pagos, libera el espacio y la consulta pasa
      select (select id from q) as consulta, (select id from c) as cotizacion`,
     [`CA31${s}3`, `${info.project.name === "celular" ? 1 : 2}${info.retry}00`],
   );
-  const id = await reserva(`CA31${s}3`, 0, d20, d20, { consultaId: c.consulta, cotizacionId: c.cotizacion });
+  const id = await reserva(`CA31${s}3`, d20, d20, { consultaId: c.consulta, cotizacionId: c.cotizacion });
   await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, 150, 'efectivo', 'adelanto', (now() at time zone 'America/La_Paz')::date, created_by from trabajo where id = $1", [id]);
 
   await ingresarComoDueno(page);
@@ -117,9 +112,9 @@ test("cancelar pide motivo, deja los pagos, libera el espacio y la consulta pasa
     [id],
   );
   expect(r).toEqual({ estado: "cancelado", pagos: 1, consulta: "perdido", detalle: "Reserva cancelada: El cliente viajó", cotizacion: "enviada" });
-  // El espacio quedó libre esos días: otra reserva entra
+  // Su lugar quedó libre esos días: otra reserva entra
   await crearClienteEnBase({ nombre: `Toma el lugar ${s}`, telefono: telefono(info, 4), placa: `CA31${s}4` });
-  await reserva(`CA31${s}4`, 0, d20, d20);
+  await reserva(`CA31${s}4`, d20, d20);
 
   // Si el cliente vuelve: la cotización vuelve a pendiente y se agenda otra vez (la cancelada no cuenta)
   await page.goto(`/panel/cotizaciones/${c.consulta}`);
@@ -132,9 +127,6 @@ test("cancelar pide motivo, deja los pagos, libera el espacio y la consulta pasa
   const d30 = await dia(info, 30);
   await page.getByLabel("Ingresa el").fill(d30);
   await page.getByLabel("Entrega aproximada").fill(d30);
-  const espacio = page.getByLabel("Espacio", { exact: true });
-  await expect(espacio.locator("option")).not.toHaveCount(1);
-  await espacio.selectOption({ index: 1 });
   await sinAdelantoEnReserva(page);
   await page.getByRole("button", { name: "Reservar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1(?:[?&]volver=[^&#]*)?$/);

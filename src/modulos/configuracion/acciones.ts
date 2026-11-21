@@ -4,12 +4,12 @@ import { eq, max } from "drizzle-orm";
 import { z } from "zod";
 import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/db";
-import { categoriaGasto, espacioTaller, marcaVehiculo, negocio, parametro, parteRevision, plantillaMensaje, sucursal, tamanoVehiculo } from "@/db/esquema";
+import { categoriaGasto, marcaVehiculo, negocio, parametro, parteRevision, plantillaMensaje, sucursal, tamanoVehiculo } from "@/db/esquema";
 import { erroresDe, indiceUnicoViolado, type EstadoFormulario } from "@/lib/formularios";
 import { eliminarFotosSinFallar, guardarFoto } from "@/lib/fotos";
 import { nombreRepetido, puedeDesactivar, reordenar, type Direccion } from "@/lib/orden";
 import { exigirModulo } from "@/lib/sesion";
-import { ETIQUETA_NEGOCIO, ETIQUETA_PARAMETROS, ETIQUETA_PLANTILLAS, listarElementos, obtenerConfiguracionNegocio, sucursalPrincipal } from "./consultas";
+import { ETIQUETA_NEGOCIO, ETIQUETA_PARAMETROS, ETIQUETA_PLANTILLAS, listarElementos, obtenerConfiguracionNegocio } from "./consultas";
 import { CAMPOS_NEGOCIO, esquemaParteNegocio, type ParteNegocio } from "./esquemas";
 import { esquemaElemento, esquemaEstado, esquemaMover, type Lista, LISTAS, mensajeRepetido, mensajeUltimoActivo } from "./listas";
 import { CLAVES_SECCION_PARAMETROS, clavesDeSeccion, esquemaSeccionParametros, SECCIONES_PARAMETROS, type ClaveParametro } from "./parametros";
@@ -165,7 +165,7 @@ function despuesDeCambiarLista() {
   revalidatePath("/panel/reportes", "layout");
 }
 
-/** Agrega (sin id) o renombra (con id) un espacio del taller, un tamaño de vehículo o una parte del checklist. */
+/** Agrega (sin id) o renombra (con id) un tamaño de vehículo, una parte del checklist, una marca o una categoría. */
 export async function guardarElemento(_previo: EstadoFormulario, datos: FormData): Promise<EstadoFormulario> {
   await exigirModulo("configuracion");
   const valores = { nombre: String(datos.get("nombre") ?? ""), descripcion: String(datos.get("descripcion") ?? "") };
@@ -201,21 +201,11 @@ export async function guardarElemento(_previo: EstadoFormulario, datos: FormData
         const [{ ultimo }] = await db.select({ ultimo: max(parteRevision.orden) }).from(parteRevision);
         await db.insert(parteRevision).values({ nombre, orden: (ultimo ?? 0) + 1 });
       }
-    } else if (lista === "tamanos") {
+    } else {
       if (id) await db.update(tamanoVehiculo).set({ nombre, descripcion }).where(eq(tamanoVehiculo.id, id));
       else {
         const [{ ultimo }] = await db.select({ ultimo: max(tamanoVehiculo.orden) }).from(tamanoVehiculo);
         await db.insert(tamanoVehiculo).values({ nombre, descripcion, orden: (ultimo ?? 0) + 1 });
-      }
-    } else {
-      if (id) await db.update(espacioTaller).set({ nombre }).where(eq(espacioTaller.id, id));
-      else {
-        const { id: sucursalId } = await sucursalPrincipal();
-        const [{ ultimo }] = await db
-          .select({ ultimo: max(espacioTaller.orden) })
-          .from(espacioTaller)
-          .where(eq(espacioTaller.sucursalId, sucursalId));
-        await db.insert(espacioTaller).values({ sucursalId, nombre, orden: (ultimo ?? 0) + 1 });
       }
     }
   } catch (error) {
@@ -233,8 +223,7 @@ async function actualizarOrden(lista: Lista, orden: { id: number; orden: number 
       if (lista === "categorias") await tx.update(categoriaGasto).set({ orden: o.orden }).where(eq(categoriaGasto.id, o.id));
       else if (lista === "marcas") await tx.update(marcaVehiculo).set({ orden: o.orden }).where(eq(marcaVehiculo.id, o.id));
       else if (lista === "partes") await tx.update(parteRevision).set({ orden: o.orden }).where(eq(parteRevision.id, o.id));
-      else if (lista === "tamanos") await tx.update(tamanoVehiculo).set({ orden: o.orden }).where(eq(tamanoVehiculo.id, o.id));
-      else await tx.update(espacioTaller).set({ orden: o.orden }).where(eq(espacioTaller.id, o.id));
+      else await tx.update(tamanoVehiculo).set({ orden: o.orden }).where(eq(tamanoVehiculo.id, o.id));
     }
   });
 }
@@ -252,7 +241,7 @@ export async function moverElemento(datos: { lista: Lista; id: number; direccion
   return { ok: true };
 }
 
-/** Desactivar no borra (D-6): lo ya registrado con ese espacio, tamaño o parte lo sigue mostrando. */
+/** Desactivar no borra (D-6): lo ya registrado con ese tamaño, parte, marca o categoría lo sigue mostrando. */
 export async function cambiarEstadoElemento(datos: { lista: Lista; id: number; activo: boolean }): Promise<EstadoFormulario> {
   await exigirModulo("configuracion");
   const entrada = esquemaEstado.safeParse(datos);
@@ -269,8 +258,7 @@ export async function cambiarEstadoElemento(datos: { lista: Lista; id: number; a
   if (lista === "categorias") await db.update(categoriaGasto).set({ activo, orden }).where(eq(categoriaGasto.id, id));
   else if (lista === "marcas") await db.update(marcaVehiculo).set({ activo, orden }).where(eq(marcaVehiculo.id, id));
   else if (lista === "partes") await db.update(parteRevision).set({ activo, orden }).where(eq(parteRevision.id, id));
-  else if (lista === "tamanos") await db.update(tamanoVehiculo).set({ activo, orden }).where(eq(tamanoVehiculo.id, id));
-  else await db.update(espacioTaller).set({ activo, orden }).where(eq(espacioTaller.id, id));
+  else await db.update(tamanoVehiculo).set({ activo, orden }).where(eq(tamanoVehiculo.id, id));
 
   despuesDeCambiarLista();
   const a = "femenino" in LISTAS[lista] ? "a" : "o";

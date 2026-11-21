@@ -1,13 +1,13 @@
 import { z } from "zod";
 import { DIRECCIONES } from "@/lib/orden";
 
-// Listas editables de Configuración (HU-05): espacios del taller (RN-06), tamaños de vehículo (RN-07) y, desde el
+// Listas editables de Configuración (HU-05): tamaños de vehículo (RN-07; los espacios del taller se quitaron en el
+// pedido 55) y, desde el
 // pedido 12, las partes del checklist de recepción; desde el pedido 16, las categorías de gasto (en Parámetros), y desde
 // el pedido 52, las marcas de vehículo.
 // Reglas puras, probadas en tests/unit/configuracion-parametros.test.ts.
 
 export const LISTAS = {
-  espacios: { singular: "espacio", titulo: "Espacios del taller", conDescripcion: false },
   tamanos: { singular: "tamaño", titulo: "Tamaños de vehículo", conDescripcion: true },
   partes: { singular: "parte", titulo: "Partes del checklist", conDescripcion: false, femenino: true },
   marcas: { singular: "marca", titulo: "Marcas de vehículo", conDescripcion: false, femenino: true },
@@ -43,9 +43,9 @@ export const esquemaEstado = z.object({
 export type Elemento = { id: number; nombre: string; descripcion: string | null; orden: number; activo: boolean };
 
 export function mensajeUltimoActivo(lista: Lista): string {
-  return `Debe quedar al menos ${{ espacios: "un espacio activo", tamanos: "un tamaño activo", partes: "una parte activa", marcas: "una marca activa", categorias: "una categoría activa" }[lista]}.`;
+  return `Debe quedar al menos ${{ tamanos: "un tamaño activo", partes: "una parte activa", marcas: "una marca activa", categorias: "una categoría activa" }[lista]}.`;
 }
 
 export function mensajeRepetido(lista: Lista): string {
-  return `Ya existe ${{ espacios: "un espacio", tamanos: "un tamaño", partes: "una parte", marcas: "una marca", categorias: "una categoría" }[lista]} con ese nombre.`;
+  return `Ya existe ${{ tamanos: "un tamaño", partes: "una parte", marcas: "una marca", categorias: "una categoría" }[lista]} con ese nombre.`;
 }

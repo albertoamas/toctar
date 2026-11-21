@@ -108,9 +108,6 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
               )}
             </FilaDato>
           )}
-          <FilaDato etiqueta="Espacio">
-            <span className="font-semibold">{r.espacio}</span>
-          </FilaDato>
         </dl>
         {/* Con su WhatsApp al lado del número (20/11): en el encabezado bajaba a otro renglón en el celular */}
         <FilaCliente href={verFicha ? conDesde(`/panel/clientes/${r.clienteId}`, desdeAqui) : null} nombre={r.cliente} telefono={r.telefono} conWhatsApp />
@@ -143,7 +140,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
         // Arriba, solo "Más": escribirle por WhatsApp va en la fila del cliente (20/11)
         accion={
           r.estado === "agendado" && (
-            <MasReserva id={r.id} fechaInicio={r.fechaInicio} fechaFin={r.fechaFin} espacioId={r.espacioId} espacio={r.espacio} hoy={hoy} pagado={r.montos?.saldo.pagado ?? null} />
+            <MasReserva id={r.id} fechaInicio={r.fechaInicio} fechaFin={r.fechaFin} hoy={hoy} pagado={r.montos?.saldo.pagado ?? null} />
           )
         }
       >
@@ -155,7 +152,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/agenda/[
       {principal && <PasoSiguiente>{principal}</PasoSiguiente>}
       {/* Solo mientras siga agendada: tras cancelarla (o en un enlace viejo) ya no corresponde */}
       {agendada && r.estado === "agendado" && (
-        <AvisoFlotante mensaje={`Reservada para el ${fechaConDia(r.fechaInicio).toLowerCase()} en el ${r.espacio}.`} />
+        <AvisoFlotante mensaje={`Reservada para el ${fechaConDia(r.fechaInicio).toLowerCase()}.`} />
       )}
 
       {r.montos ? (

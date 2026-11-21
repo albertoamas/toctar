@@ -170,7 +170,6 @@ export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; client
         hoy={hoy}
         fechaInicial={fechaInicial}
         fechaFin={fechaInicial}
-        espacio={numero("espacio")}
         arriba={arriba}
         cotizaciones={suyas}
         pasosHechos={pasosHechos}
@@ -184,7 +183,7 @@ export async function ReservaDirecta({ ctx, clienteId }: { ctx: Contexto; client
  * (20/11, como en Nueva cotización): sus datos son los primeros pasos del formulario y se registran con la reserva.
  */
 export async function ReservaConNuevos({ ctx, clienteId, nombreCliente }: { ctx: Contexto; clienteId: number | null; nombreCliente?: string }) {
-  const { conPagos, volver, origen, hoy, fechaInicial, numero, direccion, clave } = ctx;
+  const { conPagos, volver, origen, hoy, fechaInicial, direccion, clave } = ctx;
   const [tamanos, catalogo] = await Promise.all([tamanosActivos(), catalogoVehiculos()]);
   const opcionesPor = await opcionesPorTamano(tamanos.map((t) => t.id));
   return (
@@ -214,7 +213,6 @@ export async function ReservaConNuevos({ ctx, clienteId, nombreCliente }: { ctx:
         hoy={hoy}
         fechaInicial={fechaInicial}
         fechaFin={fechaInicial}
-        espacio={numero("espacio")}
         // Tocar el cliente en el indicador vuelve a elegirlo (con otro vehículo de un cliente registrado)
         pasosHechos={clienteId === null ? [] : [{ href: direccion({}) }]}
       />

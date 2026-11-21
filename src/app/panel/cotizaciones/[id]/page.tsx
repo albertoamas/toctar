@@ -197,7 +197,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
             etiqueta="Reservas"
             filas={reservas.map((r) => ({
               href: conDesde(rutaTrabajo(r.id, r.estado, puedeVerModulo(usuario, "ordenes")), desdeAqui),
-              titulo: `Reserva del ${formatearFecha(r.fechaInicio).slice(0, 5)} en ${r.espacio}`,
+              titulo: `Reserva del ${formatearFecha(r.fechaInicio).slice(0, 5)}`,
               estado: NOMBRE_ESTADO_TRABAJO[r.estado],
               tonoEstado: TONO_ESTADO_TRABAJO[r.estado],
             }))}

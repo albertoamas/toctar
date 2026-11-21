@@ -2,14 +2,14 @@ import { sql } from "drizzle-orm";
 import { boolean, check, date, index, integer, numeric, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { usuario } from "./acceso";
 import { cliente, vehiculo } from "./clientes";
-import { archivo, espacioTaller, sucursal } from "./configuracion";
+import { archivo, sucursal } from "./configuracion";
 import { consulta } from "./consultas";
 import { cotizacion } from "./cotizaciones";
 import { variante } from "./sitio";
 
-// Trabajos: la reserva y, desde C4, la orden son una sola tabla (D-1). Agenda por día y espacio (S-3); un espacio no
-// tiene dos vehículos el mismo día (RN-06): lo garantiza la restricción de exclusión `trabajo_sin_cruces`, que se crea
-// en la migración 0026 (Drizzle no la describe). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §4 y,
+// Trabajos: la reserva y, desde C4, la orden son una sola tabla (D-1). Agenda por día (S-3). Pedido 55: sin espacio ni
+// límite por día: la Agenda muestra cuántos autos hay y el dueño decide (antes, espacios fijos con la restricción de
+// exclusión `trabajo_sin_cruces`). Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §4 y,
 // para la orden (recepción, fotos, avances y entrega), C4-taller-entrega.md §4.
 
 const momento = (nombre: string) => timestamp(nombre, { withTimezone: true });
@@ -43,9 +43,6 @@ export const trabajo = pgTable(
     consultaId: integer("consulta_id").references(() => consulta.id),
     /** Una cotización tiene a lo sumo una reserva que no esté cancelada (índice único parcial). */
     cotizacionId: integer("cotizacion_id").references(() => cotizacion.id),
-    espacioId: integer("espacio_id")
-      .notNull()
-      .references(() => espacioTaller.id),
     fechaInicio: date("fecha_inicio").notNull(),
     /** Entrega aproximada: la sugiere la duración del catálogo y se edita en cada reserva. */
     fechaFin: date("fecha_fin").notNull(),

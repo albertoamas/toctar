@@ -74,38 +74,6 @@ export function bloquesDeLaSemana<T extends Rango>(trabajos: readonly T[], lunes
     });
 }
 
-/** Una reserva ocupa espacio en la agenda mientras no se cancela ni se entrega (como la restricción de la base). */
-export const ocupaEspacio = (estado: EstadoTrabajo) => estado !== "cancelado" && estado !== "entregado";
-
-/**
- * Pedido 28: las entregadas siguen en el tablero, en los días que estuvieron, para ver qué se entregó y cuándo, hasta
- * `hoy` incluido (18/11: antes, solo los días anteriores, y una entregada el mismo día desaparecía hasta el día
- * siguiente). Ya no ocupan el espacio: se muestran en los días que no usa otra reserva (la que entró el día en que
- * salió, también hoy) ni otra entregada, y el espacio sigue libre para agendar. Cada tramo de días libres seguidos es
- * una cinta; sin días libres, no se muestra. Día por día: no depende de la semana que se mira.
- */
-export function entregadasALaVista<T extends Rango & { estado: EstadoTrabajo }>(reservas: readonly T[], hoy: string): T[] {
-  const ocupados: Rango[] = reservas.filter((r) => ocupaEspacio(r.estado));
-  const tramos: T[] = [];
-  const entregadas = reservas.filter((r) => r.estado === "entregado").sort((a, b) => (a.inicio < b.inicio ? -1 : a.inicio > b.inicio ? 1 : 0));
-  for (const e of entregadas) {
-    let tramo: Rango | null = null;
-    const cerrar = () => {
-      if (tramo) {
-        tramos.push({ ...e, ...tramo });
-        ocupados.push(tramo);
-      }
-      tramo = null;
-    };
-    for (let dia = e.inicio; dia <= e.fin && dia <= hoy; dia = sumarDias(dia, 1)) {
-      if (ocupados.some((o) => seCruzan(o, { inicio: dia, fin: dia }))) cerrar();
-      else tramo = tramo ? { inicio: tramo.inicio, fin: dia } : { inicio: dia, fin: dia };
-    }
-    cerrar();
-  }
-  return [...reservas.filter((r) => ocupaEspacio(r.estado)), ...tramos];
-}
-
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 export const DIA_CORTO = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"] as const;
 
@@ -144,22 +112,6 @@ export function textoDia(fecha: string): string {
 
 /** El número del día ("24") para la cabecera del tablero. */
 export const numeroDia = (fecha: string) => String(partes(fecha).dia);
-
-/**
- * El título de un día en la lista de la Agenda (lavado de cara, 16/11): "Hoy, lunes 16", "Mañana, martes 17" o
- * "Miércoles 18". Así se sabe de un vistazo qué es hoy sin buscar la fecha.
- */
-export function tituloDia(fecha: string, hoy: string): string {
-  const nombre = `${NOMBRE_DIA[diaDeLaSemana(fecha) - 1]} ${numeroDia(fecha)}`;
-  if (fecha === hoy) return `Hoy, ${nombre.toLowerCase()}`;
-  if (fecha === sumarDias(hoy, 1)) return `Mañana, ${nombre.toLowerCase()}`;
-  return nombre;
-}
-
-/** "Espacio 1", "Espacio 1 y Espacio 3", "Espacio 1, Espacio 2 y Espacio 3". */
-export function unirConY(nombres: readonly string[]): string {
-  return nombres.length <= 1 ? (nombres[0] ?? "") : `${nombres.slice(0, -1).join(", ")} y ${nombres[nombres.length - 1]}`;
-}
 
 /** "martes 17": el día dentro de una frase ("Hasta el martes 17"). */
 export const diaEnFrase = (fecha: string) => `${NOMBRE_DIA[diaDeLaSemana(fecha) - 1].toLowerCase()} ${numeroDia(fecha)}`;

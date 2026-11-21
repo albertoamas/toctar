@@ -20,9 +20,9 @@ test("con mantenimientos pendientes de ese servicio, no se desactiva; cerrados, 
   // Un vehículo con su mantenimiento de este servicio pendiente
   const [{ r }] = await consultar<{ r: number }>(
     `with t as (
-       insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, entregado_at, created_by)
-       select e.sucursal_id, v.cliente_id, v.id, e.id, current_date - 100, current_date - 100, 'entregado', now(), now(), now() - interval '100 days', v.created_by
-       from vehiculo v, (select * from espacio_taller where activo order by orden limit 1) e where v.placa = $1 returning id, cliente_id, vehiculo_id
+       insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, entregado_at, created_by)
+       select e.sucursal_id, v.cliente_id, v.id, current_date - 100, current_date - 100, 'entregado', now(), now(), now() - interval '100 days', v.created_by
+       from vehiculo v, (select id as sucursal_id from sucursal order by id limit 1) e where v.placa = $1 returning id, cliente_id, vehiculo_id
      )
      insert into recordatorio_mantenimiento (trabajo_origen_id, cliente_id, vehiculo_id, servicio_id, servicio_mantenimiento_id, intervalo_meses, fecha_programada)
      select t.id, t.cliente_id, t.vehiculo_id, $2, $2, 3, current_date + 10 from t returning id as r`,

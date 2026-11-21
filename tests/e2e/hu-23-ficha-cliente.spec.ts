@@ -160,11 +160,11 @@ test("un cliente se desactiva desde «Más» con confirmación, deja de salir en
 
 test("la historia junta reservas y cotizaciones, cada fila con su placa aunque tenga un solo vehículo", async ({ page }, info) => {
   const s = sufijo(info);
-  // Días lejos de hoy y propios de cada proyecto y reintento: los espacios del taller no chocan con otras pruebas
+  // Días lejos de hoy y propios de cada proyecto y reintento: no se mezclan con otras pruebas
   const dias = 1700 + (info.project.name === "celular" ? 0 : 10) + info.retry * 2;
   const id = await crearClienteEnBase({ nombre: `Un auto ${s}`, telefono: telefono(info, 7), placa: `DA23${s}1` });
   await crearCotizacionEnBase({ placa: `DA23${s}1`, numero: `2023-${s}71` });
-  await crearOrdenLista({ placa: `DA23${s}1`, espacio: 0, dias, precio: 500, pagado: 100 });
+  await crearOrdenLista({ placa: `DA23${s}1`, dias, precio: 500, pagado: 100 });
   await ingresarComoDueno(page);
   await page.goto(`/panel/clientes/${id}`);
   // Una sola historia (C7 §5.6): la cotización y la orden, cada una con la placa (es como se reconoce un trabajo en el

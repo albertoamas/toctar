@@ -1,441 +1,268 @@
 import type { Route } from "next";
 import Link from "next/link";
 import { cn } from "cn";
-import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
-import type { ReservaTablero, SemanaDeAgenda } from "../consultas/tablero";
-import { CabeceraSeccion } from "@/componentes/panel/cabecera-seccion";
+import { ChevronRightIcon, PlusIcon } from "lucide-react";
+import type { DatosAgenda, ReservaTablero } from "../consultas/tablero";
 import { MarcaEstado } from "@/componentes/panel/marca-estado";
-import { cantidad } from "@/lib/cantidad";
-import { rutaTrabajo } from "@/modulos/ordenes/reglas";
-import {
-  bloquesDeLaSemana,
-  DIA_CORTO,
-  diaDeLaSemana,
-  diaEnFrase,
-  NOMBRE_ESTADO_TRABAJO,
-  numeroDia,
-  ocupaEspacio,
-  seCruzan,
-  textoDia,
-  textoServicio,
-  tituloDia,
-  TONO_ESTADO_TRABAJO,
-  unirConY,
-} from "../reglas";
+import { fechaConMes, sumarDias } from "@/lib/fechas";
 import { conDesde } from "@/lib/volver";
+import { textoIngresoAtrasado } from "@/modulos/inicio/reglas";
+import { rutaTrabajo } from "@/modulos/ordenes/reglas";
+import { DIA_CORTO, diaDeLaSemana, diaEnFrase, lunesDeLaSemana, NOMBRE_ESTADO_TRABAJO, numeroDia, textoDia, textoServicio, TONO_ESTADO_TRABAJO } from "../reglas";
 
-// HU-29: el tablero de la agenda (RF-38), por día y sin horas (S-3). Lavado de cara del 16/11 (prototipo aprobado):
-// - Computadora (desde 1280 px; en una laptop de 1024, con el menú, cada día medía 80 px y no se leía): la semana en una grilla, una fila por espacio. Los días libres llevan su
-//   "+ Reservar" en gris, siempre a la vista (desde el 19/11; antes solo al pasar el mouse), hoy se marca en su encabezado y un día cerrado, una sola vez.
-//   Cada reserva dice placa, cliente, servicio y estado (con palabra, no solo color).
-// - Tableta y laptop chica (768 a 1279 px): la semana como lista por día ("Hoy", "Mañana", "Miércoles 18"), sin tocar
-//   pestañas. Recorrido visual del 19/11: empieza en hoy (los días anteriores, plegados) y una reserva de varios días va
-//   una sola vez, el día que empieza; los días siguientes la nombran en una línea ("Siguen en el taller").
-// Los estados, con un punto y su palabra, sin píldora (MarcaEstado, como en el inicio). Sin la guía de colores (19/11):
-// cada reserva ya dice su estado escrito.
-// - Celular: la tira de los siete días (un punto en los que tienen reservas), fija arriba, y el día elegido en una
-//   tarjeta, con los espacios libres juntos en una fila.
-// Todo es texto y enlaces: se lee igual con lector de pantalla.
+// HU-29: la Agenda (RF-38), por día y sin horas (S-3). Rehecha el 20/11 (pedido 55, prototipo aprobado por el dueño) como
+// el calendario de citas de los sistemas de talleres: solo las reservas por recibir. Lo que ya está en el taller se
+// trabaja en Órdenes (su tablero) y aquí va resumido en una línea que lleva allá.
+// - Celular y tableta: una sola lista desde hoy hacia adelante, sin botones de semana ni días anteriores. Cada día con su
+//   fecha a la izquierda y las reservas que llegan; los días sin reservas, juntos en una línea; entre semanas, un
+//   separador. Al final, "Ver más días".
+// - Computadora (desde 1280 px): la semana en siete columnas con tarjetas compactas. Una reserva de varios días va el día
+//   que llega, con cuántos días dura; los días siguientes la nombran en gris ("7788PQR sigue").
+// Una reserva que no llegó en su día va hoy, en rojo ("Debía ingresar el 18 nov."), como en el inicio.
 
-type Props = {
-  semana: SemanaDeAgenda;
-  dias: string[];
+type Comun = {
+  datos: DatosAgenda;
   hoy: string;
   /** Quien mira ve las órdenes: una reserva ya recibida lleva directo a su orden (C4). */
   conOrdenes: boolean;
-  /** La Agenda con su semana y día: lo que se abre desde aquí vuelve ahí (pedido 43). */
+  /** La Agenda: lo que se abre desde aquí vuelve ahí (pedido 43). */
   desde: string;
 };
 
-const agendarEn = (fecha: string, espacioId: number, desde: string) => conDesde(`/panel/agenda/nueva?fecha=${fecha}&espacio=${espacioId}` as Route, desde);
+const agendarEn = (fecha: string, desde: string) => conDesde(`/panel/agenda/nueva?fecha=${fecha}` as Route, desde);
+const noLlego = (r: ReservaTablero, hoy: string) => r.inicio < hoy;
+/** El día en que se muestra: el de su ingreso o, si no llegó, hoy. */
+const diaDe = (r: ReservaTablero, hoy: string) => (noLlego(r, hoy) ? hoy : r.inicio);
+const llegan = (datos: DatosAgenda, dia: string, hoy: string) => datos.reservas.filter((r) => diaDe(r, hoy) === dia);
+const siguen = (datos: DatosAgenda, dia: string, hoy: string) => datos.reservas.filter((r) => !noLlego(r, hoy) && r.inicio < dia && dia <= r.fin);
+const cerradoEl = (datos: DatosAgenda, dia: string) => datos.diasCerrados.includes(diaDeLaSemana(dia));
+const diasQueDura = (r: ReservaTablero) => Math.round((Date.parse(r.fin) - Date.parse(r.inicio)) / 86_400_000) + 1;
+const cuantasLlegan = (n: number) => (n === 1 ? "1 llega" : `${n} llegan`);
 
-function textoFechas(r: Pick<ReservaTablero, "inicio" | "fin">) {
-  return r.inicio === r.fin ? textoDia(r.inicio) : `${textoDia(r.inicio)} al ${textoDia(r.fin)}`;
-}
-
-/** El día cerrado: rayas a 60° (el único ángulo de la marca), igual en las tres vistas. */
-const RAYAS_CERRADO: React.CSSProperties = { backgroundImage: "repeating-linear-gradient(60deg, var(--neutro-fondo) 0 6px, var(--fondo-panel) 6px 12px)" };
-
-/** La reserva de un espacio en un día: gana la que ocupa sobre la entregada (vienen en ese orden). */
-const reservaDelDia = (semana: SemanaDeAgenda, espacioId: number, dia: string) => semana.reservas.find((x) => x.espacioId === espacioId && seCruzan(x, { inicio: dia, fin: dia }));
-
-/**
- * Las reservas que se ven en un día, una por espacio (también una entregada, como historia, pedido 28): las mismas que
- * cuentan la cabecera y la pestaña de ese día, así nunca dice "Sin reservas" arriba de un vehículo.
- */
-const delDia = (semana: SemanaDeAgenda, dia: string) =>
-  semana.espacios.flatMap((e) => {
-    const r = reservaDelDia(semana, e.id, dia);
-    return r ? [{ r, espacio: e.nombre }] : [];
-  });
-
-
-/** Hasta o desde cuándo sigue una reserva de varios días, mirada desde un día. */
-function textoTramo(r: Pick<ReservaTablero, "inicio" | "fin">, dia: string) {
-  if (r.inicio === r.fin) return null;
-  if (dia < r.fin) return `Hasta el ${diaEnFrase(r.fin)}`;
-  return `Desde el ${diaEnFrase(r.inicio)}`;
-}
-
-/**
- * El color de un bloque en la grilla: el de su estado (las clases tt-tono-* de globals.css, las mismas de las
- * insignias). La reservada, en ámbar (16/11: blanca no se distinguía de un día libre; gris, de uno cerrado). La
- * entregada, sólida en verde (pedido 28). La guía de colores (GuiaColores) usa estos mismos.
- */
-function colorBloque(estado: ReservaTablero["estado"]) {
-  const tono = TONO_ESTADO_TRABAJO[estado] ?? "neutro";
-  if (estado === "entregado") return { tono, clase: "tt-tono-exito border-transparent bg-exito text-fondo", texto: "text-fondo", punto: "bg-fondo" };
-  if (tono === "neutro") return { tono, clase: "tt-tono-neutro border-input bg-neutro-fondo", texto: "text-tinta-suave", punto: "bg-tinta-suave" };
-  return { tono, clase: `tt-tono-${tono} border-transparent bg-[var(--tono-fondo)]`, texto: "text-[var(--tono)]", punto: "bg-[var(--tono)]" };
-}
-
-/** Lo que el lector de pantalla oye después de lo visible: el estado, las fechas y si sigue de otra semana. */
-function DetalleOculto({ r, empiezaAntes, terminaDespues }: { r: ReservaTablero; empiezaAntes?: boolean; terminaDespues?: boolean }) {
+/** La marca de una reserva: "Debía ingresar el 18 nov." en rojo si no llegó; si no, su estado. */
+function Marca({ r, hoy, className }: { r: ReservaTablero; hoy: string; className?: string }) {
+  const problema = textoIngresoAtrasado(r.inicio, hoy);
+  if (problema)
+    return (
+      <MarcaEstado tono="peligro" problema className={className}>
+        {problema}
+      </MarcaEstado>
+    );
   return (
-    <span className="sr-only">
-      , {NOMBRE_ESTADO_TRABAJO[r.estado].toLowerCase()}, {textoFechas(r)}
-      {empiezaAntes && ", sigue desde la semana anterior"}
-      {terminaDespues && ", sigue la semana siguiente"}
-    </span>
+    <MarcaEstado tono={TONO_ESTADO_TRABAJO[r.estado]} className={className}>
+      {NOMBRE_ESTADO_TRABAJO[r.estado]}
+    </MarcaEstado>
   );
 }
 
-/** Computadora: una reserva en la grilla, con placa, hora (si se acordó), cliente, servicio y estado. */
-function Cinta({ r, empiezaAntes, terminaDespues, conOrdenes, desde, style }: { r: ReservaTablero; empiezaAntes: boolean; terminaDespues: boolean; conOrdenes: boolean; desde: string; style: React.CSSProperties }) {
-  const color = colorBloque(r.estado);
-  const servicio = textoServicio(r);
-  const secundario = r.estado === "entregado" ? "text-fondo" : "text-tinta-media";
-  return (
-    <Link
-      href={conDesde(rutaTrabajo(r.id, r.estado, conOrdenes), desde)}
-      style={style}
-      data-tono={color.tono}
-      className={cn(
-        "relative z-10 mx-1.5 flex min-w-0 flex-col justify-center gap-0.5 overflow-hidden rounded-lg border px-3 py-2 text-tinta transition-[filter] hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]",
-        color.clase,
-      )}
-    >
-      <span className="flex items-baseline gap-1.5">
-        {empiezaAntes && <ChevronLeftIcon className="size-3.5 shrink-0 self-center" aria-hidden />}
-        <span className="truncate tt-placa text-[0.9375rem]">{r.placa}</span>
-        {terminaDespues && <ChevronRightIcon className="ml-auto size-3.5 shrink-0 self-center" aria-hidden />}
+/** Lo que ya está en el taller, en una línea que lleva a Órdenes (su tablero). */
+export function EnElTaller({ datos, conOrdenes }: { datos: DatosAgenda; conOrdenes: boolean }) {
+  if (datos.enTaller.length === 0) return null;
+  const n = datos.enTaller.length;
+  const contenido = (
+    <>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="text-sm font-semibold">En el taller: {n === 1 ? "1 auto" : `${n} autos`}</span>
+        <span className="truncate text-xs text-tinta-suave">
+          {datos.enTaller.map((t) => t.placa).join(", ")}
+          {conOrdenes && " · se trabajan en Órdenes"}
+        </span>
       </span>
-      <span className="truncate text-[0.8125rem] font-medium">{r.cliente}</span>
-      {servicio && <span className={cn("truncate text-xs", secundario)}>{servicio}</span>}
-      <span aria-hidden className={cn("mt-0.5 flex items-center gap-1.5 text-xs font-semibold", color.texto)}>
-        <span className={cn("size-[7px] shrink-0 rounded-full", color.punto)} />
-        <span className="truncate">{NOMBRE_ESTADO_TRABAJO[r.estado]}</span>
-      </span>
-      <DetalleOculto r={r} empiezaAntes={empiezaAntes} terminaDespues={terminaDespues} />
-    </Link>
-  );
-}
-
-/**
- * Computadora: un día libre, con su "+ Reservar" siempre a la vista, igual que en la tableta (19/11, a pedido del dueño):
- * escondido hasta pasar el mouse (16/11), quien entraba no sabía que el día libre se toca para reservar. En gris, para
- * que las reservas sigan mandando; al pasar el mouse se marca. El lector de pantalla oye "Reservar en …, libre".
- */
-function DiaLibre({ fecha, espacio, desde, style }: { fecha: string; espacio: { id: number; nombre: string }; desde: string; style: React.CSSProperties }) {
-  return (
-    <Link
-      href={agendarEn(fecha, espacio.id, desde)}
-      style={style}
-      className="mx-1.5 flex items-center justify-center gap-1 rounded-lg border border-dashed border-input text-[0.8125rem] font-semibold text-tinta-suave transition-colors hover:border-tinta-suave hover:bg-superficie hover:text-tinta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--foco)]"
-    >
-      <PlusIcon className="size-4" aria-hidden />
-      <span aria-hidden>Reservar</span>
-      <span className="sr-only">
-        Reservar en {espacio.nombre} el {textoDia(fecha)}, libre
-      </span>
-    </Link>
-  );
-}
-
-/** Computadora: la semana entera. */
-export function TableroSemana({ semana, dias, hoy, conOrdenes, desde }: Props) {
-  const lunes = dias[0];
-  const filas = semana.espacios.length;
-  const cerrado = (i: number) => semana.diasCerrados.includes(i + 1);
-  return (
-    <div className="tt-tarjeta-panel hidden p-3 xl:block">
-      <div className="grid grid-cols-[8rem_repeat(7,minmax(0,1fr))] gap-y-1.5" style={{ gridTemplateRows: `3rem repeat(${filas}, minmax(6.75rem, auto))` }}>
-        {/* Debajo de todo, las columnas de los días: una línea fina entre ellos. Hoy se marca solo en su encabezado (16/11:
-            el marco de toda la columna quedaba debajo de las reservas y se cortaba donde una cruzaba al día siguiente) */}
-        {dias.map((fecha, i) => (
-          <div
-            key={`columna-${fecha}`}
-            aria-hidden
-            style={{ gridRow: `1 / span ${filas + 1}`, gridColumn: i + 2 }}
-            // Los días que ya pasaron, un poco más apagados (19/11): la vista va a hoy y lo que sigue
-            className={cn("border-l border-border", fecha < hoy && "bg-fondo-panel/60")}
-          />
+      <span aria-hidden className="flex shrink-0 gap-1">
+        {datos.enTaller.slice(0, 6).map((t) => (
+          <MarcaEstado key={t.id} tono={TONO_ESTADO_TRABAJO[t.estado]}>
+            <span className="sr-only">{NOMBRE_ESTADO_TRABAJO[t.estado]}</span>
+          </MarcaEstado>
         ))}
-        {dias.map((fecha, i) => {
-          const esHoy = fecha === hoy;
-          return (
-            <div
-              key={fecha}
-              style={{ gridRow: 1, gridColumn: i + 2 }}
-              // Hoy, en negro (19/11): el número en un círculo y "Hoy" en gris. El azul era el de "En proceso" y, encima de
-              // una reserva en proceso, parecía que el día lo estaba
-              className={cn("mx-1.5 my-1 flex items-center gap-1.5 px-2 py-1.5", (cerrado(i) || fecha < hoy) && !esHoy && "text-tinta-suave")}
-            >
-              <span className="text-sm">{DIA_CORTO[i]}</span>
-              <span className={cn("font-bold tabular-nums", esHoy ? "grid size-8 place-items-center rounded-full bg-tinta text-base text-fondo" : "text-lg")}>{numeroDia(fecha)}</span>
-              {esHoy && <span className="ml-auto text-xs font-semibold text-tinta-suave">Hoy</span>}
-            </div>
-          );
-        })}
-        {/* Un día cerrado, una sola vez para todos los espacios */}
-        {dias.map((fecha, i) =>
-          cerrado(i) ? (
-            <div key={`cerrado-${fecha}`} style={{ gridRow: `2 / span ${filas}`, gridColumn: i + 2, ...RAYAS_CERRADO }} className="mx-1.5 flex items-center justify-center rounded-lg text-sm font-semibold text-tinta-suave">
-              Cerrado
-            </div>
-          ) : null,
-        )}
-
-        {semana.espacios.map((espacio, fila) => {
-          const deEspacio = bloquesDeLaSemana(
-            semana.reservas.filter((r) => r.espacioId === espacio.id),
-            lunes,
-          );
-          const ocupado = (fecha: string) => deEspacio.some((b) => seCruzan(b, { inicio: fecha, fin: fecha }));
-          const gridRow = fila + 2;
-          return (
-            <section key={espacio.id} aria-label={espacio.nombre} className="contents">
-              <h2 style={{ gridRow, gridColumn: 1 }} className="flex flex-col justify-center tt-titulo-sub">
-                {espacio.nombre}
-                {!espacio.activo && <span className="text-xs font-normal text-tinta-suave">Desactivado</span>}
-              </h2>
-              {dias.map((fecha, i) =>
-                ocupado(fecha) || !espacio.activo || cerrado(i) || fecha < hoy ? null : (
-                  <DiaLibre key={fecha} desde={desde} fecha={fecha} espacio={espacio} style={{ gridRow, gridColumn: i + 2 }} />
-                ),
-              )}
-              {deEspacio.map((b) => (
-                <Cinta key={`${b.id}-${b.inicio}`} r={b} empiezaAntes={b.empiezaAntes} terminaDespues={b.terminaDespues} conOrdenes={conOrdenes} desde={desde} style={{ gridRow, gridColumn: `${b.columna + 2} / span ${b.dias}` }} />
-              ))}
-            </section>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/** El título de un día en la tableta y el celular, con cuántas reservas tiene. */
-function CabeceraDia({ fecha, hoy, cuantas, cerrado }: { fecha: string; hoy: string; cuantas: number; cerrado: boolean }) {
-  return (
-    <CabeceraSeccion compacta titulo={<span className={cn(cerrado && fecha !== hoy && "text-tinta-suave")}>{tituloDia(fecha, hoy)}</span>}>
-      {!cerrado && <span className="text-sm text-tinta-suave">{cuantas === 0 ? "Sin reservas" : cantidad(cuantas, "reserva", "reservas")}</span>}
-    </CabeceraSeccion>
-  );
-}
-
-/** Un día cerrado en la tableta y el celular. */
-function DiaCerrado({ texto = "Cerrado" }: { texto?: string }) {
-  return (
-    <p style={RAYAS_CERRADO} className="rounded-xl px-4 py-3.5 text-sm font-semibold text-tinta-suave">
-      {texto}
-    </p>
-  );
-}
-
-/** Los espacios libres de un día, en una sola fila baja con "Reservar" (en el primero libre; se cambia en la reserva). */
-function FilaLibres({ libres, total, fecha, desde, conBorde }: { libres: { id: number; nombre: string }[]; total: number; fecha: string; desde: string; conBorde: boolean }) {
-  const texto = libres.length === total && total > 1 ? `Libres los ${total} espacios` : `${libres.length === 1 ? "Libre" : "Libres"}: ${unirConY(libres.map((e) => e.nombre))}`;
-  return (
-    <Link
-      href={agendarEn(fecha, libres[0].id, desde)}
-      className={cn("flex min-h-12 items-center justify-between gap-3 bg-superficie/50 px-4 text-sm hover:bg-superficie", conBorde && "border-t border-border")}
-    >
-      <span className="text-tinta-media">{texto}</span>
-      <span className="inline-flex shrink-0 items-center gap-1 font-semibold">
-        <PlusIcon className="size-4" aria-hidden />
-        Reservar
-        <span className="sr-only"> el {textoDia(fecha)}</span>
       </span>
+      {conOrdenes && <ChevronRightIcon className="size-4 shrink-0 text-tinta-suave" aria-hidden />}
+    </>
+  );
+  const clase = "tt-tarjeta-panel flex min-h-12 items-center gap-3 px-4 py-3";
+  return conOrdenes ? (
+    <Link href="/panel/ordenes" className={cn(clase, "hover:bg-superficie/50")}>
+      {contenido}
     </Link>
+  ) : (
+    <div className={clase}>{contenido}</div>
   );
 }
 
-/** Tableta: la semana como lista por día, sin pestañas. */
-export function SemanaEnLista({ semana, dias, hoy, conOrdenes, desde }: Props) {
-  // Si la semana es la de hoy, empieza en hoy: los días que ya pasaron van plegados arriba (19/11)
-  const pasados = dias.filter((d) => d < hoy);
-  const desdeHoy = dias.filter((d) => d >= hoy);
-  const dia = (fecha: string, primero: boolean) => <DiaEnLista key={fecha} fecha={fecha} primero={primero} semana={semana} hoy={hoy} conOrdenes={conOrdenes} desde={desde} />;
+/** Computadora: la semana en siete columnas, solo con las reservas por recibir. */
+export function SemanaEnColumnas({ datos, dias, hoy, conOrdenes, desde }: Comun & { dias: string[] }) {
   return (
-    <div className="hidden flex-col gap-6 md:flex xl:hidden">
-      {pasados.length > 0 && desdeHoy.length > 0 && (
-        <details className="group">
-          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1.5 text-sm font-semibold text-tinta-suave hover:text-tinta [&::-webkit-details-marker]:hidden">
-            <ChevronRightIcon className="size-4 transition-transform group-open:rotate-90" aria-hidden />
-            {pasados.length === 1 ? "Ver el día anterior" : `Ver los ${pasados.length} días anteriores`}
-          </summary>
-          <div className="mt-3 flex flex-col gap-6">{pasados.map((d, n) => dia(d, n === 0))}</div>
-        </details>
-      )}
-      {(desdeHoy.length > 0 && pasados.length > 0 ? desdeHoy : dias).map((d, n) => dia(d, n === 0))}
-    </div>
-  );
-}
-
-/**
- * Un día de la lista de la tableta. Una reserva que viene de un día anterior (de varios días) va completa solo en el
- * primer día que se ve; en los demás, la nombra una línea "Siguen en el taller: 4567BDF y 2468KLM" (19/11: se repetía
- * entera cada día, 13 filas para 6 vehículos).
- */
-function DiaEnLista({ fecha, primero, semana, hoy, conOrdenes, desde }: { fecha: string; primero: boolean; semana: SemanaDeAgenda; hoy: string; conOrdenes: boolean; desde: string }) {
-  const cerrado = semana.diasCerrados.includes(diaDeLaSemana(fecha));
-  const del = delDia(semana, fecha);
-  const siguen = primero ? [] : del.filter(({ r }) => r.inicio < fecha);
-  const nuevas = primero ? del : del.filter(({ r }) => r.inicio >= fecha);
-  // Una entregada (hoy también se ve, 18/11) no ocupa: su espacio sigue libre para reservar
-  const libres = fecha < hoy || cerrado ? [] : semana.espacios.filter((e) => e.activo && !del.some((d) => d.r.espacioId === e.id && ocupaEspacio(d.r.estado)));
-  const hayAlgo = nuevas.length > 0 || siguen.length > 0 || libres.length > 0;
-  return (
-    <section aria-label={tituloDia(fecha, hoy)} className="flex flex-col gap-2">
-      <CabeceraDia fecha={fecha} hoy={hoy} cuantas={del.length} cerrado={cerrado && del.length === 0} />
-      {cerrado && del.length === 0 ? (
-        <DiaCerrado />
-      ) : !hayAlgo ? null : (
-        <div className="tt-tarjeta-panel overflow-hidden">
-          {nuevas.length > 0 && (
-            <ul aria-label={`Reservas el ${textoDia(fecha)}`}>
-              {nuevas.map(({ r, espacio }, n) => {
-                const tramo = textoTramo(r, fecha);
-                return (
-                  <li key={r.id} className={cn(n > 0 && "border-t border-border")}>
-                    <Link href={conDesde(rutaTrabajo(r.id, r.estado, conOrdenes), desde)} data-tono={TONO_ESTADO_TRABAJO[r.estado] ?? "neutro"} className="grid min-h-16 grid-cols-[6.5rem_minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5 hover:bg-superficie/50">
-                      <span className="flex flex-col">
-                        <span className="tt-placa">{r.placa}</span>
-                        <span className="text-xs text-tinta-suave">{espacio}</span>
-                      </span>
-                      <span className="flex min-w-0 flex-col gap-0.5">
-                        <span className="truncate text-sm font-medium">{r.cliente}</span>
-                        {r.servicio && <span className="truncate text-[0.8125rem] text-tinta-media">{textoServicio(r)}</span>}
-                        {tramo && <span className="text-xs text-tinta-suave">{tramo}</span>}
-                      </span>
-                      <MarcaEstado tono={TONO_ESTADO_TRABAJO[r.estado]} className="text-sm">
-                        {NOMBRE_ESTADO_TRABAJO[r.estado]}
-                      </MarcaEstado>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          {siguen.length > 0 && (
-            <p className={cn("flex flex-wrap items-baseline gap-x-1.5 px-4 py-3 text-sm text-tinta-suave", nuevas.length > 0 && "border-t border-border")}>
-              <span>Siguen en el taller:</span>
-              {siguen.map(({ r }, n) => (
-                <span key={r.id}>
-                  <Link href={conDesde(rutaTrabajo(r.id, r.estado, conOrdenes), desde)} className="tt-placa text-tinta underline-offset-4 hover:underline">
-                    {r.placa}
-                  </Link>
-                  {n < siguen.length - 2 ? "," : n === siguen.length - 2 ? " y" : ""}
-                </span>
-              ))}
-            </p>
-          )}
-          {libres.length > 0 && <FilaLibres libres={libres} total={semana.espacios.filter((e) => e.activo).length} fecha={fecha} desde={desde} conBorde={nuevas.length > 0 || siguen.length > 0} />}
-        </div>
-      )}
-    </section>
-  );
-}
-
-/**
- * Celular: la tira de los siete días (prototipo aprobado el 16/11): el día de la semana en chico, el número y un punto en
- * los días con reservas. El elegido, en negro; hoy, con su número subrayado (19/11; antes en azul). Queda fija arriba al bajar. Cada día es un enlace (el día va
- * en la dirección).
- */
-export function PestanasDias({ semana, dias, hoy, dia, enlace }: { semana: SemanaDeAgenda; dias: string[]; hoy: string; dia: string; enlace: (dia: string) => Route }) {
-  return (
-    <nav aria-label="Días de la semana" className="sticky top-0 z-20 -mx-4 border-b border-border bg-fondo-panel px-4 py-2 md:hidden">
-      <ul className="grid grid-cols-7">
-        {dias.map((d, i) => {
-          const cerrado = semana.diasCerrados.includes(diaDeLaSemana(d));
-          const n = delDia(semana, d).length;
-          const elegido = d === dia;
-          const esHoy = d === hoy;
-          return (
-            <li key={d}>
+    <div className="hidden grid-cols-7 gap-2 xl:grid">
+      {dias.map((dia, i) => {
+        const del = llegan(datos, dia, hoy);
+        const sig = siguen(datos, dia, hoy);
+        const esHoy = dia === hoy;
+        const pasado = dia < hoy;
+        const cerrado = cerradoEl(datos, dia);
+        return (
+          <section
+            key={dia}
+            aria-label={textoDia(dia)}
+            className={cn("tt-tarjeta-panel flex min-h-64 min-w-0 flex-col gap-1.5 p-2", pasado && "bg-fondo-panel")}
+          >
+            <header className={cn("mb-1 flex flex-col gap-0.5 border-b border-border px-1.5 pb-2", (pasado || cerrado) && !esHoy && "text-tinta-suave")}>
+              <span className="flex items-center gap-1.5">
+                <span className="text-sm">{DIA_CORTO[i]}</span>
+                {/* Hoy, en negro (19/11): el azul es el de "En proceso" */}
+                <span className={cn("font-bold tabular-nums", esHoy ? "grid size-8 place-items-center rounded-full bg-tinta text-base text-fondo" : "text-lg")}>{numeroDia(dia)}</span>
+                {esHoy && <span className="ml-auto text-xs font-semibold text-tinta-suave">Hoy</span>}
+              </span>
+              {!pasado && <span className="text-xs text-tinta-suave">{cerrado ? "Cerrado" : del.length ? cuantasLlegan(del.length) : "Sin reservas"}</span>}
+            </header>
+            {del.map((r) => (
               <Link
-                href={enlace(d)}
-                aria-current={elegido ? "date" : undefined}
-                aria-label={`${textoDia(d)}${esHoy ? ", hoy" : ""}${n > 0 ? `, ${cantidad(n, "reserva", "reservas")}` : cerrado ? ", cerrado" : ", sin reservas"}`}
+                key={r.id}
+                href={conDesde(rutaTrabajo(r.id, r.estado, conOrdenes), desde)}
                 className={cn(
-                  "flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-lg",
-                  elegido ? "bg-tinta text-fondo" : cerrado && !esHoy ? "text-tinta-suave" : "text-tinta",
+                  "flex min-w-0 flex-col gap-0.5 rounded-lg border border-l-[3px] border-border px-2.5 py-2 hover:bg-fondo-panel focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                  noLlego(r, hoy) ? "border-l-peligro" : "border-l-aviso",
                 )}
               >
-                <span className="text-[0.6875rem]">{DIA_CORTO[i]}</span>
-                {/* Hoy, sin elegir: su número subrayado en negro (19/11, en lugar del celeste de "En proceso") */}
-                <span className={cn("text-base tabular-nums", esHoy || elegido ? "font-bold" : "font-medium", esHoy && !elegido && "underline decoration-2 underline-offset-4")}>{numeroDia(d)}</span>
-                <span aria-hidden className={cn("size-[5px] rounded-full", n > 0 ? (elegido ? "bg-fondo" : "bg-tinta-media") : "bg-transparent")} />
+                <span className="truncate tt-placa text-[0.9375rem]">{r.placa}</span>
+                <span className="truncate text-[0.8125rem]">{r.cliente}</span>
+                <Marca r={r} hoy={hoy} className="text-xs" />
+                {diasQueDura(r) > 1 && <span className="text-xs text-tinta-suave">{diasQueDura(r)} días</span>}
+                <span className="sr-only">{r.servicio ? `, ${textoServicio(r)}` : ""}</span>
               </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+            ))}
+            {sig.map((r) => (
+              <Link
+                key={`sigue-${r.id}`}
+                href={conDesde(rutaTrabajo(r.id, r.estado, conOrdenes), desde)}
+                className="truncate rounded-md border border-dashed border-border px-2 py-1 text-xs text-tinta-suave hover:text-tinta"
+              >
+                <span className="tt-placa">{r.placa}</span> sigue
+              </Link>
+            ))}
+            {cerrado ? (
+              <p className="m-auto text-xs text-tinta-suave">El taller no abre</p>
+            ) : (
+              !pasado && (
+                <Link
+                  href={agendarEn(dia, desde)}
+                  className="mt-auto flex min-h-10 items-center justify-center gap-1 rounded-lg border border-dashed border-input text-sm font-semibold text-tinta-suave hover:border-tinta-suave hover:text-tinta"
+                >
+                  <PlusIcon className="size-4" aria-hidden />
+                  Reservar<span className="sr-only"> el {textoDia(dia)}</span>
+                </Link>
+              )
+            )}
+          </section>
+        );
+      })}
+    </div>
   );
 }
 
-/**
- * Celular: el día elegido en una tarjeta (prototipo del 16/11): las reservas por espacio (placa y estado; cliente y
- * servicio; el espacio, la hora y hasta cuándo sigue) y, al final, los espacios libres juntos en una sola fila con
- * "Reservar". Las pestañas de los días van arriba (PestanasDias).
- */
-export function AgendaDelDia({ semana, dia, hoy, conOrdenes, desde }: { semana: SemanaDeAgenda; dia: string; hoy: string; conOrdenes: boolean; desde: string }) {
-  const cerrado = semana.diasCerrados.includes(diaDeLaSemana(dia));
-  const del = delDia(semana, dia);
-  // Una entregada (hoy también se ve, 18/11) no ocupa: su espacio sigue libre para reservar
-  const libres = dia < hoy || cerrado ? [] : semana.espacios.filter((e) => e.activo && !del.some((d) => d.r.espacioId === e.id && ocupaEspacio(d.r.estado)));
-  return (
-    <section aria-label={tituloDia(dia, hoy)} className="flex flex-col gap-2 md:hidden">
-      <CabeceraDia fecha={dia} hoy={hoy} cuantas={del.length} cerrado={cerrado && del.length === 0} />
-      {cerrado && del.length === 0 ? (
-        <DiaCerrado texto="Cerrado ese día" />
-      ) : del.length === 0 && libres.length === 0 ? (
-        <p className="tt-tarjeta-panel px-3.5 py-3 text-sm text-tinta-suave">Sin reservas.</p>
-      ) : (
-        <ul aria-label={`Espacios el ${textoDia(dia)}`} className="tt-tarjeta-panel overflow-hidden">
-          {del.map(({ r, espacio }, n) => {
-            const tramo = textoTramo(r, dia);
-            const servicio = textoServicio(r);
-            return (
-              <li key={r.id} className={cn(n > 0 && "border-t border-border")}>
-                <Link href={conDesde(rutaTrabajo(r.id, r.estado, conOrdenes), desde)} data-tono={TONO_ESTADO_TRABAJO[r.estado] ?? "neutro"} className="flex flex-col gap-0.5 px-3.5 py-3 hover:bg-superficie/50">
-                  <span className="flex items-center justify-between gap-2">
-                    <span className="tt-placa text-base">{r.placa}</span>
-                    <MarcaEstado tono={TONO_ESTADO_TRABAJO[r.estado]} className="text-sm">
-                      {NOMBRE_ESTADO_TRABAJO[r.estado]}
-                    </MarcaEstado>
-                  </span>
-                  <span className="truncate text-sm">
-                    <span className="font-medium">{r.cliente}</span>
-                    {servicio && <span className="text-tinta-media">, {servicio}</span>}
-                  </span>
-                  <span className="text-xs text-tinta-suave">
-                    {espacio}
-                    {tramo && `. ${tramo}`}
+/** Tableta y celular: una sola lista desde hoy hasta `hasta`; al final, "Ver más días". */
+export function ListaDesdeHoy({ datos, hoy, hasta, conOrdenes, desde, verMas }: Comun & { hasta: string; verMas: Route }) {
+  const partes: React.ReactNode[] = [];
+  let vacios: string[] = [];
+  let semana: string | null = null;
+  const cerrarVacios = () => {
+    if (vacios.length === 0) return;
+    const [primero, ultimo] = [vacios[0], vacios[vacios.length - 1]];
+    const texto =
+      vacios.length === 1 ? `${DIA_CORTO[diaDeLaSemana(primero) - 1]} ${numeroDia(primero)}` : `${DIA_CORTO[diaDeLaSemana(primero) - 1]} ${numeroDia(primero)} al ${DIA_CORTO[diaDeLaSemana(ultimo) - 1]} ${numeroDia(ultimo)}`;
+    partes.push(
+      <li key={`vacios-${primero}`} className="flex items-center justify-between gap-3 border-t border-border bg-fondo-panel py-2.5 pr-4 pl-[4.75rem] text-sm text-tinta-suave first:border-t-0">
+        <span>{texto} · sin reservas</span>
+        <Link href={agendarEn(primero, desde)} className="flex shrink-0 items-center gap-1 font-semibold hover:text-tinta">
+          <PlusIcon className="size-4" aria-hidden />
+          Reservar<span className="sr-only"> el {textoDia(primero)}</span>
+        </Link>
+      </li>,
+    );
+    vacios = [];
+  };
+  for (let dia = hoy; dia <= hasta; dia = sumarDias(dia, 1)) {
+    const lunes = lunesDeLaSemana(dia);
+    if (semana && lunes !== semana) {
+      cerrarVacios();
+      partes.push(
+        <li key={`semana-${lunes}`} className="border-t border-border bg-fondo-panel px-4 py-2 text-xs font-semibold text-tinta-suave">
+          Semana del {fechaConMes(lunes, hoy)}
+        </li>,
+      );
+    }
+    semana = lunes;
+    if (cerradoEl(datos, dia)) {
+      cerrarVacios();
+      partes.push(
+        <li key={dia} className="border-t border-border bg-fondo-panel py-2.5 pr-4 pl-[4.75rem] text-sm text-tinta-suave first:border-t-0">
+          {DIA_CORTO[diaDeLaSemana(dia) - 1]} {numeroDia(dia)} · cerrado
+        </li>,
+      );
+      continue;
+    }
+    const del = llegan(datos, dia, hoy);
+    // Hoy va siempre en su renglón, aunque no llegue nadie: es desde donde se lee la lista
+    if (del.length === 0 && dia !== hoy) {
+      vacios.push(dia);
+      continue;
+    }
+    cerrarVacios();
+    const esHoy = dia === hoy;
+    partes.push(
+      <li key={dia} className="grid grid-cols-[3.25rem_minmax(0,1fr)] gap-3 border-t border-border px-4 py-3 first:border-t-0">
+        <span className="flex flex-col items-center gap-0.5 pt-0.5" aria-hidden>
+          <span className="text-[0.6875rem] font-semibold tracking-wide text-tinta-suave uppercase">{esHoy ? "Hoy" : DIA_CORTO[diaDeLaSemana(dia) - 1]}</span>
+          <span className={cn("grid size-9 place-items-center rounded-full text-xl font-bold tabular-nums", esHoy && "bg-tinta text-fondo")}>{numeroDia(dia)}</span>
+        </span>
+        <section aria-labelledby={`dia-${dia}`} className="flex min-w-0 flex-col">
+          <h2 id={`dia-${dia}`} className="sr-only">
+            {esHoy ? `Hoy, ${textoDia(dia)}` : textoDia(dia)}
+          </h2>
+          {del.length === 0 && <p className="py-2 text-sm text-tinta-suave">Sin reservas</p>}
+          <ul className="flex flex-col divide-y divide-dashed divide-border empty:hidden">
+            {del.map((r) => (
+              <li key={r.id}>
+                <Link
+                  href={conDesde(rutaTrabajo(r.id, r.estado, conOrdenes), desde)}
+                  className="grid grid-cols-[4px_minmax(0,1fr)] gap-2.5 py-2 hover:bg-fondo-panel"
+                >
+                  <span aria-hidden className={cn("rounded-full", noLlego(r, hoy) ? "bg-peligro" : "bg-aviso")} />
+                  <span className="flex min-w-0 flex-col gap-0.5">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="tt-placa">{r.placa}</span>
+                      <Marca r={r} hoy={hoy} className="text-sm" />
+                    </span>
+                    <span className="truncate text-sm text-tinta-media">
+                      {r.cliente}
+                      {r.servicio && ` · ${textoServicio(r)}`}
+                    </span>
+                    {diasQueDura(r) > 1 && (
+                      <span className="text-xs text-tinta-suave">
+                        {diasQueDura(r)} días, hasta el {diaEnFrase(r.fin)}
+                      </span>
+                    )}
                   </span>
                 </Link>
               </li>
-            );
-          })}
-          {libres.length > 0 && (
-            <li>
-              <FilaLibres libres={libres} total={semana.espacios.filter((e) => e.activo).length} fecha={dia} desde={desde} conBorde={del.length > 0} />
-            </li>
-          )}
-        </ul>
-      )}
-    </section>
+            ))}
+          </ul>
+          <Link href={agendarEn(dia, desde)} className="flex items-center gap-1 pt-1.5 text-sm font-semibold text-tinta-suave hover:text-tinta">
+            <PlusIcon className="size-4" aria-hidden />
+            Reservar {esHoy ? "hoy" : "este día"}
+            <span className="sr-only"> ({textoDia(dia)})</span>
+          </Link>
+        </section>
+      </li>,
+    );
+  }
+  cerrarVacios();
+  return (
+    <div className="flex flex-col gap-3 xl:hidden">
+      <ol aria-label="Reservas desde hoy" className="tt-tarjeta-panel overflow-hidden">
+        {partes}
+      </ol>
+      <Link href={verMas} className="flex min-h-11 items-center justify-center text-sm font-semibold text-tinta-suave hover:text-tinta">
+        Ver más días
+      </Link>
+    </div>
   );
 }

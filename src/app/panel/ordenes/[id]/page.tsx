@@ -111,7 +111,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   const avisada = o.avisadoListoAt !== null;
   const { anterior } = pasosDeOrden(o.estado);
   const extender =
-    puedeExtenderse(o.estado) && puede(usuario, "extender_entrega") ? { fechaInicio: o.fechaInicio, fechaFin: o.fechaFin, espacioId: o.espacioId, espacio: o.espacio, hoy } : undefined;
+    puedeExtenderse(o.estado) && puede(usuario, "extender_entrega") ? { fechaInicio: o.fechaInicio, fechaFin: o.fechaFin, hoy } : undefined;
   const entregar = o.estado === "listo" && puede(usuario, "entregar_vehiculo");
   // Con "Avisar" en el encabezado, escribir sin el mensaje de aviso queda en "Más": un solo WhatsApp a la vista
   const escribirEnMas = abierta && aviso ? enlaceWhatsApp(o.telefono) : undefined;
@@ -206,9 +206,6 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
                     <span className="text-sm text-tinta-suave">aproximada</span>
                   </FilaDato>
                 )}
-                <FilaDato etiqueta="Espacio">
-                  <span className="font-semibold">{o.espacio}</span>
-                </FilaDato>
               </dl>
               <FilaCliente href={verFicha ? conDesde(`/panel/clientes/${o.clienteId}`, desdeAqui) : null} nombre={o.cliente} telefono={o.telefono} conWhatsApp={!escribirEnMas} />
               {/* La ficha del vehículo, para quien ve Clientes (pedido 51) */}

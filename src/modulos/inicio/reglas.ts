@@ -47,11 +47,11 @@ export type FilaDelDia = {
   estado: EstadoTrabajo;
   /** Lo que falla, en su color: "Debía ingresar el 21 oct." o "Atrasada desde el 22 oct." (rojo), "Sin avisar" (ámbar). */
   problema: { texto: string; tono: "peligro" | "aviso" } | null;
-  /** La línea de abajo: cuándo y, si hay un problema, también el estado ("Reservada, por recibir, Espacio 2"). */
+  /** La línea de abajo: cuándo y, si hay un problema, también el estado ("Reservada, por recibir"). */
   cuando: string;
 };
 
-type Ingreso = { id: number; placa: string; cliente: string; espacio: string; fechaInicio: string };
+type Ingreso = { id: number; placa: string; cliente: string; fechaInicio: string };
 type OrdenDelDia = OrdenAbierta & { id: number; placa: string; cliente: string };
 
 /**
@@ -68,7 +68,7 @@ export function paraHoy(ingresos: Ingreso[], abiertas: OrdenDelDia[], hoy: strin
     const atraso = textoIngresoAtrasado(i.fechaInicio, hoy);
     const problema = atraso ? { texto: atraso, tono: "peligro" as const } : null;
     // La que debía llegar antes ya lo dice su problema: aquí, que sigue por recibir
-    const cuando = [i.fechaInicio < hoy ? "Por recibir" : "Llega hoy", i.espacio].join(", ");
+    const cuando = i.fechaInicio < hoy ? "Por recibir" : "Llega hoy";
     return { id: i.id, placa: i.placa, cliente: i.cliente, estado: "agendado" as const, problema, cuando: conEstado("agendado", problema, cuando) };
   });
   const vistas = new Set<number>();

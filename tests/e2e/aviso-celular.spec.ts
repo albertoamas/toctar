@@ -67,15 +67,14 @@ test("con un modal abierto el aviso va arriba y no tapa sus botones", async ({ p
 test("al final de Recibir, el pie sigue fijo abajo y el aviso va encima de él", async ({ page }, info) => {
   // 10/11 (lo vio hu-33-checklist en el CI): al bajar hasta el final, el pie queda al cierre de la tarjeta, más arriba que
   // el borde, y el aviso (a una altura fija) tapaba "Recibir vehículo" mientras duraba. Ahora el pie dice dónde está
-  // (pie-formulario.tsx). Una reserva de hoy en un espacio propio y desactivado, como en hu-33-checklist
+  // (pie-formulario.tsx). Una reserva de hoy, directo en la base (como en hu-33-checklist)
   const placa = `AV33${info.retry}`;
   await crearClienteEnBase({ nombre: `Aviso recibir ${info.retry}`, telefono: `5917533990${info.retry}`, placa });
   const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: "America/La_Paz" }).format(new Date());
   const [{ id }] = await consultar<{ id: number }>(
-    `with e as (insert into espacio_taller (sucursal_id, nombre, orden, activo) select sucursal_id, $2, 93, false from espacio_taller limit 1 returning id, sucursal_id)
-     insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, created_by)
-     select e.sucursal_id, v.cliente_id, v.id, e.id, $3::date, $3::date, v.created_by from vehiculo v, e where v.placa = $1 returning id`,
-    [placa, `Espacio aviso ${info.retry}`, hoy],
+    `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, created_by)
+     select e.sucursal_id, v.cliente_id, v.id, $2::date, $2::date, v.created_by from vehiculo v, (select id as sucursal_id from sucursal order by id limit 1) e where v.placa = $1 returning id`,
+    [placa, hoy],
   );
   await ingresarComoDueno(page);
   await page.goto(`/panel/ordenes/${id}/recibir`, { waitUntil: "networkidle" });

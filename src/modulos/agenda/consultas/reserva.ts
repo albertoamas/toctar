@@ -3,7 +3,7 @@ import "server-only";
 import { asc, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
-import { archivo, cliente, cotizacion, espacioTaller, pago, tamanoVehiculo, trabajo, trabajoLinea, usuario, variante, vehiculo } from "@/db/esquema";
+import { archivo, cliente, cotizacion, pago, tamanoVehiculo, trabajo, trabajoLinea, usuario, variante, vehiculo } from "@/db/esquema";
 import { type EstadoTrabajo, type MetodoPago, type TipoPago } from "@/db/esquema/trabajos";
 import { urlsFotoPrivada, type UrlsFoto } from "@/lib/fotos";
 import { partirDescripcion } from "@/modulos/cotizaciones/reglas";
@@ -34,8 +34,6 @@ export type DetalleReserva = {
   telefono: string;
   placa: string;
   tamano: string;
-  espacio: string;
-  espacioId: number;
   fechaInicio: string;
   fechaFin: string;
   nota: string | null;
@@ -88,8 +86,6 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
       telefono: cliente.telefono,
       placa: vehiculo.placa,
       tamano: tamanoVehiculo.nombre,
-      espacio: espacioTaller.nombre,
-      espacioId: trabajo.espacioId,
       fechaInicio: trabajo.fechaInicio,
       fechaFin: trabajo.fechaFin,
       nota: trabajo.nota,
@@ -120,7 +116,6 @@ export async function obtenerReserva(id: number, conMontos: boolean): Promise<De
     .innerJoin(cliente, eq(trabajo.clienteId, cliente.id))
     .innerJoin(vehiculo, eq(trabajo.vehiculoId, vehiculo.id))
     .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
-    .innerJoin(espacioTaller, eq(trabajo.espacioId, espacioTaller.id))
     .innerJoin(registrador, eq(trabajo.createdBy, registrador.id))
     .leftJoin(recibio, eq(trabajo.recibidoPor, recibio.id))
     .leftJoin(aviso, eq(trabajo.avisadoListoPor, aviso.id))

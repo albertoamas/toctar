@@ -21,7 +21,7 @@ test("el mes pasado: lo que entró, salió y quedó salen de los pagos y gastos 
   if ((await consultar("select 1 from vehiculo where placa = $1", [placa])).length === 0) {
     await crearClienteEnBase({ nombre: "Cliente del reporte", telefono: "59176160001", placa });
   }
-  const trabajoId = await crearOrdenLista({ placa, espacio: 0, dias: 777, precio: 2000, pagado: 0 });
+  const trabajoId = await crearOrdenLista({ placa, dias: 777, precio: 2000, pagado: 0 });
   const [{ dia, mes }] = await consultar<{ dia: string; mes: string }>(
     "select to_char(d, 'YYYY-MM-DD') as dia, to_char(d, 'YYYY-MM') as mes from (select (date_trunc('month', (now() at time zone 'America/La_Paz')::date) - interval '1 month' + interval '9 days')::date as d) x",
   );

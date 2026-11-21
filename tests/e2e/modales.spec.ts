@@ -68,7 +68,7 @@ test("en el celular, Registrar pago se abre sin el teclado; Nuevo servicio, en s
   test.skip(!isMobile, "Solo con pantalla táctil");
   const placa = `MDP${sufijo(info).toUpperCase()}1`;
   await crearClienteEnBase({ nombre: `Cobro sin teclado ${sufijo(info)}`, telefono: "59171880010", placa });
-  const id = await crearOrdenLista({ placa, espacio: 1, dias: 681, precio: 500, pagado: 0 });
+  const id = await crearOrdenLista({ placa, dias: 681, precio: 500, pagado: 0 });
   await ingresarComoDueno(page);
   await page.goto(`/panel/ordenes/${id}`);
   await page.getByRole("main").getByRole("button", { name: "Registrar pago" }).click();

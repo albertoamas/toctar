@@ -210,7 +210,6 @@ try {
   if (clientes > 0) throw new Error("La base ya tiene clientes o trabajos: los datos de demostración solo se cargan en una base nueva.");
   const servicio = Object.fromEntries((await q("select id, slug, nombre from servicio")).map((s) => [s.slug, s]));
   const tamanos = await q("select id from tamano_vehiculo where activo order by orden");
-  const espacios = await q("select id from espacio_taller where activo order by orden");
   const sucursal = await uno("select id, horarios from sucursal order by id limit 1");
   // Los días sin turnos el taller está cerrado (1 = lunes … 7 = domingo): ningún trabajo empieza, termina ni se cobra ese día
   const cerrados = new Set(sucursal.horarios.filter((h) => h.turnos.length === 0).map((h) => h.dia));
@@ -426,15 +425,14 @@ try {
     const saldoAlEntregar = datos.conSaldo ? total - pagos.reduce((suma, p) => suma + p.monto, 0) : null;
 
     const t = await uno(
-      `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, nota,
+      `insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, estado, nota,
          observaciones_ingreso, recibido_at, recibido_por, listo_at, entregado_at, entregado_por, entrega_con_saldo_autorizada_por, saldo_al_entregar,
          created_at, created_by)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) returning id`,
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) returning id`,
       [
         sucursal.id,
         c.cliente,
         c.vehiculo,
-        espacios[datos.espacio - 1].id,
         dia(habil(datos.desde)),
         dia(habil(datos.hasta)),
         datos.estado,
@@ -487,17 +485,17 @@ try {
   }
   // Reservas que vienen: Carlos llega hoy (para probar «Recibir» con el checklist) y María en unos días
   await trabajoDe(carlos, {
-    espacio: 2, desde: 0, hasta: 1, estado: "agendado", creado: momentoHabil(-2, "17:10"),
+    desde: 0, hasta: 1, estado: "agendado", creado: momentoHabil(-2, "17:10"),
     lineas: [["pulido-y-nano-ceramico", "3 años"]],
     pagos: () => [{ monto: 300, metodo: "qr", tipo: "adelanto", dia: -2 }],
   });
   await trabajoDe(maria, {
-    espacio: 2, desde: 4, hasta: 4, estado: "agendado", creado: momentoHabil(-1, "12:30"),
+    desde: 4, hasta: 4, estado: "agendado", creado: momentoHabil(-1, "12:30"),
     lineas: [["lavado-de-interior", "Premium"], ["limpieza-de-asientos-por-inyeccion-y-succion", "Única"]],
   });
   // En el taller: una en proceso y una lista sin avisar
   await trabajoDe(jorge, {
-    espacio: 3, desde: -1, hasta: 1, estado: "en_proceso", creado: momentoHabil(-6, "15:00"),
+    desde: -1, hasta: 1, estado: "en_proceso", creado: momentoHabil(-6, "15:00"),
     observaciones: "Rayón leve en la puerta trasera derecha. Deja una caja de herramientas en la tolva.",
     recibido: momentoHabil(-1, "09:05"),
     revision: { "Puertas del lado derecho": ["rayon", "Rayón leve en la puerta trasera."], "Aros y llantas": ["raspon", "Aro delantero izquierdo raspado."] },
@@ -510,7 +508,7 @@ try {
     ],
   });
   await trabajoDe(rodrigo, {
-    espacio: 1, desde: -1, hasta: 0, estado: "listo", creado: momentoHabil(-4, "09:40"),
+    desde: -1, hasta: 0, estado: "listo", creado: momentoHabil(-4, "09:40"),
     recibido: momentoHabil(-1, "15:00"), listo: momentoHabil(0, "11:00"),
     revision: { "Faros y luces": ["otro", "Faroles opacos y amarillentos (es lo que se va a restaurar)."] },
     lineas: [["restauracion-de-faroles-con-polimero", "Única"]],
@@ -522,7 +520,7 @@ try {
   });
   // Entregada hace 20 días con saldo: aparece en Saldos pendientes
   await trabajoDe(valeria, {
-    espacio: 2, desde: -21, hasta: -20, estado: "entregado", creado: momentoHabil(-25, "10:00"),
+    desde: -21, hasta: -20, estado: "entregado", creado: momentoHabil(-25, "10:00"),
     recibido: momentoHabil(-21, "09:00"), listo: momentoHabil(-20, "12:00"), entregado: momentoHabil(-20, "17:30"), conSaldo: true,
     revision: { "Tapizado e interior": ["otro", "Mancha en el asiento trasero."] },
     firma: "Valeria Gutiérrez",
@@ -538,7 +536,7 @@ try {
   ]) {
     const entregado = dia(habil(-hace));
     const id = await trabajoDe(c, {
-      espacio: 3, desde: -hace - 1, hasta: -hace, estado: "entregado", creado: momentoHabil(-hace - 7, "10:00"),
+      desde: -hace - 1, hasta: -hace, estado: "entregado", creado: momentoHabil(-hace - 7, "10:00"),
       recibido: momentoHabil(-hace - 1, "09:00"), listo: momentoHabil(-hace, "12:00"), entregado: momentoHabil(-hace, "17:00"),
       revision: {}, firma,
       lineas: [["pulido-y-nano-ceramico", capa]],

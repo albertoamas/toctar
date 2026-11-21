@@ -14,7 +14,7 @@ test("el dueño publica antes y después de una orden entregada: copias pública
   const placa = `GA41${s}1`;
   const descripcion = `Pulido publicado desde la orden ${s}`;
   await crearClienteEnBase({ nombre: `Galería ${s}`, telefono: `5917${info.project.name === "celular" ? 5 : 6}41${info.retry}010`, placa });
-  const id = await crearOrdenLista({ placa, espacio: 0, dias: dias(info, 0), precio: 500, pagado: 500 });
+  const id = await crearOrdenLista({ placa, dias: dias(info, 0), precio: 500, pagado: 500 });
   await ingresarComoDueno(page);
 
   // Las fotos se suben mientras la orden está abierta
@@ -88,7 +88,7 @@ test("un encargado con Órdenes no publica: no ve el botón ni entra por la dire
   const s = sufijo(info);
   const placa = `GA41${s}2`;
   await crearClienteEnBase({ nombre: `Galería encargado ${s}`, telefono: `5917${info.project.name === "celular" ? 5 : 6}41${info.retry}020`, placa });
-  const id = await crearOrdenLista({ placa, espacio: 0, dias: dias(info, 1), precio: 500, pagado: 500 });
+  const id = await crearOrdenLista({ placa, dias: dias(info, 1), precio: 500, pagado: 500 });
   // Entregada y con una foto de después (la fila basta: el encargado no llega a copiarla)
   await consultar(
     `with a as (insert into archivo (clave, tipo_mime, bytes, privado) values ($2, 'image/webp', 1, true) returning id)
@@ -112,7 +112,7 @@ test("a 360 px la pantalla de publicar no se sale", async ({ page }, info) => {
   const s = sufijo(info);
   const placa = `GA41${s}3`;
   await crearClienteEnBase({ nombre: `Galería 360 ${s}`, telefono: `5917${info.project.name === "celular" ? 5 : 6}41${info.retry}030`, placa });
-  const id = await crearOrdenLista({ placa, espacio: 0, dias: dias(info, 2), precio: 500, pagado: 500 });
+  const id = await crearOrdenLista({ placa, dias: dias(info, 2), precio: 500, pagado: 500 });
   await page.setViewportSize({ width: 360, height: 740 });
   await ingresarComoDueno(page);
   await page.goto(`/panel/ordenes/${id}`, { waitUntil: "networkidle" });

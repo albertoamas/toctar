@@ -62,9 +62,9 @@ test("la fecha y el adelanto van en pasos separados; el adelanto, solo para quie
 });
 
 test("para pasar al adelanto hace falta la fecha de ingreso y el espacio", () => {
-  expect(erroresFecha({ fechaInicio: "", fechaFin: "", espacioId: "" })).toMatchObject({ fechaInicio: "Elige el día de ingreso.", espacioId: "Elige el espacio." });
+  expect(erroresFecha({ fechaInicio: "", fechaFin: "" })).toMatchObject({ fechaInicio: "Elige el día de ingreso." });
   const manana = new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 10);
-  expect(erroresFecha({ fechaInicio: manana, fechaFin: manana, espacioId: "3" })).toEqual({});
+  expect(erroresFecha({ fechaInicio: manana, fechaFin: manana })).toEqual({});
 });
 
 test("los errores de un cliente o un vehículo nuevos vuelven a su paso (20/11)", () => {

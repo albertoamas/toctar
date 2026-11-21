@@ -19,9 +19,9 @@ const diaPropio = (info: TestInfo) => dia(info.project.name === "celular" ? 352 
 async function recordatorio(placa: string, dias: number): Promise<number> {
   const [{ id }] = await consultar<{ id: number }>(
     `with t as (
-       insert into trabajo (sucursal_id, cliente_id, vehiculo_id, espacio_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, entregado_at, created_by)
-       select e.sucursal_id, v.cliente_id, v.id, e.id, (now() at time zone 'America/La_Paz')::date - 100, (now() at time zone 'America/La_Paz')::date - 100, 'entregado', now(), now(), now() - interval '100 days', v.created_by
-       from vehiculo v, (select * from espacio_taller where activo order by orden limit 1) e where v.placa = $1 returning id, cliente_id, vehiculo_id
+       insert into trabajo (sucursal_id, cliente_id, vehiculo_id, fecha_inicio, fecha_fin, estado, recibido_at, listo_at, entregado_at, created_by)
+       select e.sucursal_id, v.cliente_id, v.id, (now() at time zone 'America/La_Paz')::date - 100, (now() at time zone 'America/La_Paz')::date - 100, 'entregado', now(), now(), now() - interval '100 days', v.created_by
+       from vehiculo v, (select id as sucursal_id from sucursal order by id limit 1) e where v.placa = $1 returning id, cliente_id, vehiculo_id
      )
      insert into recordatorio_mantenimiento (trabajo_origen_id, cliente_id, vehiculo_id, servicio_id, servicio_mantenimiento_id, intervalo_meses, fecha_programada)
      select t.id, t.cliente_id, t.vehiculo_id, (select id from servicio where slug = 'pulido-y-nano-ceramico'),
@@ -136,9 +136,6 @@ test("vencidos y próximos; avisar, no le interesa y reservar (y al cancelar la 
   // Empezó en los servicios (sin precio): "Atrás" vuelve a ellos (hallazgo 10)
   await expect(page.getByRole("button", { name: "Atrás" })).toBeVisible();
   await page.getByLabel("Ingresa el").fill(await diaPropio(info));
-  const espacio = page.getByLabel("Espacio", { exact: true });
-  await expect(espacio).toBeEnabled();
-  await espacio.selectOption({ index: 1 });
   await sinAdelantoEnReserva(page);
   await page.getByRole("button", { name: "Reservar" }).click();
   await expect(page).toHaveURL(/\/panel\/agenda\/\d+\?agendada=1(?:[?&]volver=[^&#]*)?$/);
@@ -218,7 +215,7 @@ test("entregar el mantenimiento lo deja hecho y programa el siguiente con la fre
   // Este vehículo, cada 2 meses (editado en su ficha)
   await consultar("update recordatorio_mantenimiento set intervalo_meses = 2 where id = $1", [plan]);
   // Vino por su cuenta: una orden del mantenimiento que no se agendó desde Mantenimientos
-  const orden = await crearOrdenLista({ placa, espacio: 0, dias: info.project.name === "celular" ? 370 : 372, precio: 300, pagado: 300, servicio: "mantenimiento-del-nano-ceramico" });
+  const orden = await crearOrdenLista({ placa, dias: info.project.name === "celular" ? 370 : 372, precio: 300, pagado: 300, servicio: "mantenimiento-del-nano-ceramico" });
   const [{ proximo, iso }] = await consultar<{ proximo: string; iso: string }>(
     "select to_char(($1::date + interval '2 months')::date, 'DD/MM/YYYY') as proximo, to_char(($1::date + interval '2 months')::date, 'YYYY-MM-DD') as iso",
     [hoy()],
