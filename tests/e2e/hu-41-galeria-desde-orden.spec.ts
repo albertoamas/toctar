@@ -44,7 +44,7 @@ test("el dueño publica antes y después de una orden entregada: copias pública
   // Sin la casilla no se publica
   await page.getByRole("button", { name: "Publicar" }).click();
   await expect(page.getByText("Marca que en las fotos no se lee la placa ni se ve a nadie.")).toBeVisible();
-  await page.getByRole("checkbox", { name: "En las fotos no se lee la placa ni se ve a nadie" }).click();
+  await page.getByRole("checkbox", { name: "Revisé las fotos: no se lee la placa ni se ve a nadie" }).click();
   await page.getByRole("button", { name: "Publicar" }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?publicado=1(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByText("Publicado en la galería. Lo ordenas u ocultas en Sitio web > Galería.")).toBeVisible();
