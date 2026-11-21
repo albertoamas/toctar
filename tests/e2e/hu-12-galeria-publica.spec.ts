@@ -98,8 +98,10 @@ test("la galería muestra los trabajos en una vitrina pareja, se filtra y los pa
   await expect(page.getByRole("link", { name: "Mandar fotos de mi vehículo por WhatsApp" })).toBeInViewport();
   await expect(page.getByRole("link", { name: "Escribir a TocTar por WhatsApp" })).toBeHidden();
 
-  // En la página del servicio, sus trabajos se ven en la galería: un enlace, sin repetir las fotos (revisión del 24/10)
+  // En la página del servicio, sus trabajos a la vista (pulido de Servicios, 21/11: antes, un botón suelto a la galería),
+  // sin "Ver el servicio": ya se está ahí
   await page.goto("/servicios/restauracion-de-faroles-con-polimero");
-  await expect(page.getByRole("main").getByRole("link", { name: "Ver la galería" })).toHaveAttribute("href", "/galeria?servicio=restauracion-de-faroles-con-polimero");
-  await expect(page.getByRole("heading", { name: /^Trabajos de/ })).toHaveCount(0);
+  const suyos = page.getByRole("list", { name: "Nuestros trabajos" });
+  await expect(suyos.getByRole("listitem").first()).toBeVisible();
+  await expect(suyos.getByRole("link", { name: /^Ver el servicio/ })).toHaveCount(0);
 });
