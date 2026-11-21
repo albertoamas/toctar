@@ -17,8 +17,9 @@ export function Gastos({ c }: { c: Cargado }) {
   const vs = periodo.vs;
   const esHoy = periodo.clave === "hoy";
   const categorias = gastadoPorCategoria(c.datos.gastos);
-  // La lista de gastos del mes en que terminan las fechas, que vuelve a Reportes con las mismas fechas
-  const lista = `/panel/reportes/gastos?${new URLSearchParams([["mes", mesDe(periodo.fin)], ...parametrosDelPeriodo(periodo)]).toString()}` as Route;
+  // La lista de gastos del mes en que terminan las fechas, que vuelve a Reportes con las mismas fechas. `de=reportes`: así
+  // la lista sabe que se vino de aquí y ofrece volver (desde el menú, Gastos es un módulo propio y no lo ofrece)
+  const lista = `/panel/reportes/gastos?${new URLSearchParams([["mes", mesDe(periodo.fin)], ["de", "reportes"], ...parametrosDelPeriodo(periodo)]).toString()}` as Route;
   return (
     <>
       <Indicadores

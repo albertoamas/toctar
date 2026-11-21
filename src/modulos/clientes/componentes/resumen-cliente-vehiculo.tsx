@@ -55,21 +55,3 @@ export function ResumenClienteVehiculo({ id = "para-quien", titulo = "Reserva pa
     </Raiz>
   );
 }
-
-/**
- * Los servicios al pie de la tarjeta (Recibir, Entregar): la etiqueta chica arriba y uno por renglón, con su viñeta, así
- * dos servicios largos no se leen como uno.
- */
-export function ServiciosResumen({ servicios }: { servicios: string[] }) {
-  if (servicios.length === 0) return null;
-  return (
-    <div className="flex flex-col gap-1">
-      <p className="text-sm text-tinta-suave">Servicios</p>
-      <ul aria-label="Servicios" className="flex list-disc flex-col gap-1 pl-5 marker:text-tinta-suave">
-        {servicios.map((s, i) => (
-          <li key={i}>{s}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}

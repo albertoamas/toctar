@@ -89,6 +89,12 @@ test("el mes pasado: lo que entró, salió y quedó salen de los pagos y gastos 
   await expect(page.getByRole("heading", { level: 1, name: "Reportes" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Gastos por categoría" })).toBeVisible();
   await expect(page).toHaveURL(/vista=gastos&periodo=mes-pasado$/);
+  // Desde el menú, Gastos es un módulo propio: sin flecha de volver (recorrido visual, 21/11)
+  await page.goto("/panel/reportes/gastos");
+  await expect(page.getByRole("heading", { level: 1, name: "Gastos" })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("link", { name: "Volver a Reportes" })).toHaveCount(0);
+  await page.goBack();
+  await expect(page.getByRole("region", { name: "Gastos por categoría" })).toBeVisible();
 
   // Taller: las tarjetas y sus secciones; por día en un mes y por mes en "Últimos 6 meses"
   await pestanas.getByRole("link", { name: "Taller" }).click();

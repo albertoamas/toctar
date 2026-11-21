@@ -106,10 +106,11 @@ test("se revisa parte por parte: bien o con un detalle y su foto; sin revisar to
   await expect(form.getByText(`Faltan revisar ${total - 2} partes del checklist: Maletero,`)).toBeVisible();
 
   // El resto, bien de un toque (pulido de Recibir, 09/11): lo ya revisado (el detalle del capó) no cambia
-  await page.getByRole("button", { name: "Marcar el resto como bien" }).click();
+  await page.getByRole("button", { name: "El resto, bien" }).click();
   await expect(page.getByText(`${total - 2} partes marcadas como bien.`)).toBeVisible();
-  await expect(page.getByText(`Revisadas ${total} de ${total}`)).toBeVisible();
-  await expect(page.getByRole("button", { name: "Marcar el resto como bien" })).toHaveCount(0);
+  // Con todas revisadas, el avance lo dice en palabras (recorrido visual, 21/11)
+  await expect(page.getByText("Todas revisadas")).toBeVisible();
+  await expect(page.getByRole("button", { name: "El resto, bien" })).toHaveCount(0);
   await expect(form.getByText(/partes? del checklist$/)).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Bien: Maletero" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("button", { name: "Bien: Capó" })).toHaveAttribute("aria-pressed", "false");
