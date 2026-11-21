@@ -38,10 +38,11 @@ async function Contenido() {
         {servicios.length === 0 ? (
           <p className="mt-8 text-tinta-suave">Pronto vas a ver aquí nuestros servicios.</p>
         ) : (
-          <ul className="mt-10 grid gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
-            {servicios.map((s) => (
-              <li key={s.slug} className="grid">
-                <TarjetaServicio servicio={s} nivel={2} />
+          // Las fotos como protagonistas (pulido de Servicios, 21/11): el primero, el que el dueño pone primero, más grande
+          <ul className="tt-servicios-lista mt-10">
+            {servicios.map((s, i) => (
+              <li key={s.slug}>
+                <TarjetaServicio servicio={s} nivel={2} variante="foto" principal={i === 0} />
               </li>
             ))}
           </ul>

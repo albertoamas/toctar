@@ -1051,6 +1051,214 @@
     }
   }
 
+  /* La lista de Servicios y "Otros servicios" (pulido de Servicios, 21/11): la foto entera con el nombre encima, sobre un
+     degradado oscuro (en una caja gris, la foto chica no lucía). La flecha de la esquina es el enlace, que cubre toda la
+     tarjeta; la franja roja a 60° queda abajo a la izquierda. Pisa la fila del celular de la tarjeta de siempre. */
+  .tt-tarjeta.tt-tarjeta--foto {
+    display: block;
+    position: relative;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--fondo);
+    border-top: 0;
+  }
+  .tt-tarjeta--foto::before {
+    display: none;
+  }
+  .tt-tarjeta--foto .tt-tarjeta__media {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    aspect-ratio: auto;
+  }
+  .tt-tarjeta--foto .tt-tarjeta__media::after {
+    display: block;
+  }
+  .tt-tarjeta--foto .tt-tarjeta__cuerpo {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 72px 72px 22px 22px;
+    background: linear-gradient(to top, rgb(0 0 0 / 0.9), rgb(0 0 0 / 0.6) 55%, transparent);
+  }
+  .tt-tarjeta--foto .tt-tarjeta__titulo {
+    font-size: 28px;
+    line-height: 31px;
+    text-wrap: balance;
+  }
+  /* Solo la principal lleva su resumen: en las chicas, el nombre basta */
+  .tt-tarjeta--foto .tt-tarjeta__resumen {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .tt-tarjeta--principal .tt-tarjeta__resumen {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+    max-width: 46ch;
+    color: var(--tinta-media);
+  }
+  /* El enlace no se ve: él mismo cubre la tarjeta, encima del cuerpo (con un ::after, quedaba de 0 × 0 y no se podía
+     tocar). La flecha de la esquina es solo un dibujo */
+  .tt-tarjeta--foto .tt-tarjeta__enlace {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    margin: 0;
+    /* El enlace de siempre va a la izquierda (justify-self: start): en uno con posición absoluta, eso lo encoge a su
+       contenido, que está vacío */
+    justify-self: stretch;
+  }
+  .tt-tarjeta--foto .tt-tarjeta__enlace::after {
+    content: none;
+  }
+  .tt-tarjeta__flecha {
+    position: absolute;
+    right: 18px;
+    bottom: 18px;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    color: var(--tinta);
+    border: 1px solid rgb(255 255 255 / 0.35);
+    transition:
+      background-color 200ms ease,
+      border-color 200ms ease;
+  }
+  @media (hover: hover) {
+    .tt-tarjeta--foto:hover .tt-tarjeta__flecha {
+      background: var(--rojo);
+      border-color: var(--rojo);
+    }
+  }
+  .tt-tarjeta--foto:has(.tt-tarjeta__enlace:focus-visible) .tt-tarjeta__flecha {
+    background: var(--rojo);
+    border-color: var(--rojo);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tt-tarjeta__flecha {
+      transition: none;
+    }
+  }
+  /* La grilla: en el celular, dos columnas de fotos cuadradas y la principal a lo ancho; desde la tableta, la principal
+     ocupa dos columnas; en la computadora, dos columnas y dos filas, con dos servicios a su lado */
+  .tt-servicios-lista {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .tt-servicios-lista > li {
+    display: grid;
+  }
+  .tt-servicios-lista > li:first-child {
+    grid-column: span 2;
+  }
+  .tt-servicios-otros {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .tt-servicios-otros > li {
+    display: grid;
+  }
+  /* En el celular, el tercero no entra en las dos columnas: se queda en dos */
+  @media (width < 64rem) {
+    .tt-servicios-otros > li:nth-child(3) {
+      display: none;
+    }
+  }
+  @media (width >= 64rem) {
+    .tt-servicios-otros {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+    }
+  }
+  @media (width < 40rem) {
+    .tt-servicios-otros .tt-tarjeta--foto .tt-tarjeta__cuerpo,
+    .tt-servicios-lista .tt-tarjeta--foto:not(.tt-tarjeta--principal) .tt-tarjeta__cuerpo {
+      padding: 48px 12px 14px;
+    }
+    .tt-servicios-otros .tt-tarjeta--foto .tt-tarjeta__titulo {
+      font-size: 19px;
+      line-height: 21px;
+    }
+    .tt-servicios-otros .tt-tarjeta--foto,
+    .tt-servicios-lista .tt-tarjeta--foto:not(.tt-tarjeta--principal) {
+      aspect-ratio: 1 / 1;
+    }
+    .tt-servicios-otros .tt-tarjeta--foto .tt-tarjeta__flecha {
+      display: none;
+    }
+  }
+  @media (width < 40rem) {
+    .tt-servicios-lista .tt-tarjeta--foto:not(.tt-tarjeta--principal) {
+      aspect-ratio: 1 / 1;
+    }
+    .tt-servicios-lista .tt-tarjeta--foto:not(.tt-tarjeta--principal) .tt-tarjeta__cuerpo {
+      padding: 48px 12px 14px;
+    }
+    .tt-servicios-lista .tt-tarjeta--foto:not(.tt-tarjeta--principal) .tt-tarjeta__titulo {
+      font-size: 19px;
+      line-height: 21px;
+    }
+    /* En las chicas del celular, sin la flecha: la tarjeta entera se toca y la flecha tapaba el nombre */
+    .tt-servicios-lista .tt-tarjeta--foto:not(.tt-tarjeta--principal) .tt-tarjeta__flecha {
+      display: none;
+    }
+    .tt-tarjeta--principal .tt-tarjeta__titulo {
+      font-size: 26px;
+      line-height: 29px;
+    }
+    /* En el celular, la principal tampoco lleva el resumen: tapaba media foto */
+    .tt-tarjeta--principal .tt-tarjeta__resumen {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+  @media (width >= 40rem) {
+    .tt-servicios-lista {
+      gap: 16px;
+    }
+  }
+  @media (width >= 64rem) {
+    .tt-servicios-lista {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+    }
+    .tt-servicios-lista > li:first-child {
+      grid-row: span 2;
+    }
+    /* La principal llena sus dos filas: el alto lo ponen las de al lado */
+    .tt-servicios-lista > li:first-child .tt-tarjeta--foto {
+      aspect-ratio: auto;
+      height: 100%;
+    }
+    .tt-tarjeta--principal .tt-tarjeta__cuerpo {
+      padding: 120px 88px 32px 32px;
+      gap: 10px;
+    }
+    .tt-tarjeta--principal .tt-tarjeta__titulo {
+      font-size: 44px;
+      line-height: 46px;
+    }
+  }
+
   /* Los servicios de la portada (pulido 13.53). En el celular, los seis del mismo tamaño en dos columnas, con su foto y su
      nombre (en filas eran casi tres pantallas); desde la tableta, cuatro columnas y los dos primeros ocupan dos cada uno,
      más grandes y con su resumen. La lista de Servicios no cambia: sigue en filas en el celular. */

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { ArrowRightIcon } from "lucide-react";
 import { EnlaceVolver } from "@/componentes/enlace-volver";
 import { TITULO_SECCION } from "@/componentes/sitio/titulo-pagina";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
@@ -10,11 +11,13 @@ import { FotoOReemplazo } from "@/componentes/sitio/foto-o-reemplazo";
 import { FotoResponsiva } from "@/componentes/sitio/foto-responsiva";
 import { IconoBeneficio } from "@/componentes/sitio/icono-beneficio";
 import { ProbadorColores } from "@/componentes/sitio/probador-colores";
+import { TarjetaServicio } from "@/componentes/sitio/tarjeta-servicio";
+import { TrabajoGaleria } from "@/componentes/sitio/trabajo-galeria";
 import { BotonWhatsApp, WhatsAppFijo } from "@/componentes/sitio/whatsapp";
 import type { ColorServicio } from "@/db/esquema/sitio";
 import type { UrlsFoto } from "@/lib/fotos";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
-import { servicioPublico, type DetalleServicioPublico } from "@/modulos/sitio/publico";
+import { servicioPublico, serviciosPublicos, type DetalleServicioPublico } from "@/modulos/sitio/publico";
 import { ladosDeFotos } from "@/modulos/sitio/secciones-foto";
 import { metadatosPagina } from "@/lib/sitio";
 
@@ -51,22 +54,32 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
   return (
     // Una columna que llena la pantalla: así el cierre queda pegado al pie aunque el servicio tenga poco contenido
     <article className="flex flex-1 flex-col">
-      <header className="mx-auto w-full max-w-6xl px-4 pt-2 pb-12 md:pt-6 md:pb-20">
+      <header>
         {/* Lo primero de la página: en el celular va antes de la foto, para saber dónde se está (pulido 2.3) */}
-        <EnlaceVolver href="/servicios">Servicios</EnlaceVolver>
-        <div className="mt-2 grid gap-8 md:mt-4 md:grid-cols-2 md:items-center">
-          <div className="flex flex-col items-start gap-5">
-            <h1 className="font-heading text-[40px] leading-[38px] md:leading-[60px] font-extrabold tracking-[-0.01em] text-balance uppercase italic md:text-[64px]">{s.nombre}</h1>
-            <p className="max-w-xl text-lg leading-7 text-tinta-suave">{s.resumen}</p>
-            <BotonWhatsApp texto="Consultar por este servicio" servicio={s.nombre} />
-          </div>
-          <div className="relative order-first aspect-[4/3] overflow-hidden bg-superficie md:order-last">
+        <div className="mx-auto w-full max-w-6xl px-4 pt-2 md:pt-6">
+          <EnlaceVolver href="/servicios">Servicios</EnlaceVolver>
+        </div>
+        {/* Pulido de Servicios (21/11): la foto llega al borde de la pantalla. En la computadora ocupa la mitad derecha, cortada
+            a 60° del lado del texto (el ángulo de la marca) con una línea roja en el corte; en el celular va a todo el ancho
+            y se funde con el negro de abajo, donde sube el título */}
+        <div className="relative md:mt-4 md:min-h-[540px]">
+          <div className="relative aspect-[4/3] overflow-hidden bg-superficie md:absolute md:inset-y-0 md:right-0 md:aspect-auto md:w-[52vw]">
             <FotoOReemplazo foto={s.foto} alt={s.nombre} prioridad />
+            <div aria-hidden className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-fondo to-transparent md:hidden" />
+            <div aria-hidden className="absolute inset-y-0 left-0 hidden w-[372px] origin-top-left -skew-x-[30deg] bg-fondo md:block" />
+            <div aria-hidden className="absolute inset-y-0 left-[372px] hidden w-1.5 origin-top-left -skew-x-[30deg] bg-rojo md:block" />
+          </div>
+          <div className="relative mx-auto -mt-16 flex w-full max-w-6xl px-4 pb-12 md:mt-0 md:min-h-[540px] md:items-center md:pb-0">
+            <div className="flex flex-col items-start gap-5 md:w-1/2 md:pr-8">
+              <h1 className="font-heading text-[40px] leading-[38px] md:leading-[60px] font-extrabold tracking-[-0.01em] text-balance uppercase italic md:text-[64px]">{s.nombre}</h1>
+              <p className="max-w-xl text-lg leading-7 text-tinta-suave">{s.resumen}</p>
+              <BotonWhatsApp texto="Consultar por este servicio" servicio={s.nombre} />
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pb-12 md:gap-24 md:pb-24">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pt-4 pb-12 md:gap-24 md:pt-24 md:pb-24">
         {s.beneficios.length > 0 && <Beneficios beneficios={s.beneficios} />}
         {/* Pedido 56: el probador de colores, si el servicio tiene colores (el repintado de aros) */}
         {s.colores.length > 0 && (
@@ -79,12 +92,11 @@ async function Contenido({ params }: Pick<PageProps<"/servicios/[slug]">, "param
         {s.variantes.length > 0 && (
           <Variantes variantes={s.variantes} escalera={s.opcionesEnEscalera} foto={s.fotosSecciones.opciones} lado={lados.opciones} />
         )}
-        {/* Sus trabajos, en la galería: las fotos ya están en la página (revisión de YankoSoft, 24/10) */}
-        {s.tieneFotos && (
-          <Link href={`/galeria?servicio=${s.slug}`} className="tt-boton tt-boton--contorno self-start">
-            Ver la galería
-          </Link>
-        )}
+        {/* Sus trabajos, a la vista (pulido de Servicios, 21/11: antes, un botón suelto a la galería) */}
+        {s.trabajos.length > 0 && <Trabajos trabajos={s.trabajos} mas={s.masTrabajos} slug={s.slug} />}
+        <Suspense fallback={null}>
+          <OtrosServicios slug={s.slug} />
+        </Suspense>
       </div>
 
       <CierreWhatsApp
@@ -177,20 +189,28 @@ function Variantes(props: { variantes: DetalleServicioPublico["variantes"]; esca
       <ConFoto foto={foto} lado={lado}>
         <div className="flex flex-col gap-2">
           <h2 id="variantes-titulo" className={TITULO_SECCION}>Opciones</h2>
-          <p className="max-w-xl text-tinta-suave">{escalera && "De menor a mayor. "}Te ayudamos a elegir la que conviene a tu vehículo.</p>
+          <p className="max-w-xl text-tinta-suave">Te ayudamos a elegir la que conviene a tu vehículo.</p>
         </div>
         {escalera ? (
-          <ol className="grid gap-4 md:grid-flow-col md:auto-cols-fr md:items-end md:gap-3">
-            {variantes.map((v, i) => (
-              <li key={i} className="tt-escalon" style={{ "--paso": i / ultimo } as React.CSSProperties}>
-                <span className="flex flex-col gap-1">
-                  <span className="font-heading text-2xl leading-7 font-bold italic">{v.nombre}</span>
-                  {v.descripcion && <span className="text-sm text-tinta-suave">{v.descripcion}</span>}
-                </span>
-                <span aria-hidden className="tt-escalon__capa" />
-              </li>
-            ))}
-          </ol>
+          <div className="flex flex-col gap-3">
+            <ol className="grid gap-4 md:grid-flow-col md:auto-cols-fr md:items-end md:gap-3">
+              {variantes.map((v, i) => (
+                <li key={i} className="tt-escalon" style={{ "--paso": i / ultimo } as React.CSSProperties}>
+                  <span className="flex flex-col gap-1">
+                    <span className="font-heading text-2xl leading-7 font-bold italic">{v.nombre}</span>
+                    {v.descripcion && <span className="text-sm text-tinta-suave">{v.descripcion}</span>}
+                  </span>
+                  <span aria-hidden className="tt-escalon__capa" />
+                </li>
+              ))}
+            </ol>
+            {/* Qué quieren decir los escalones (pulido de Servicios, 21/11: solos parecían una barra de carga) */}
+            <p className="flex items-center gap-3 text-sm text-tinta-suave">
+              <span aria-hidden className="h-px flex-1 bg-border" />
+              De menor a mayor
+              <ArrowRightIcon aria-hidden className="size-4" />
+            </p>
+          </div>
         ) : (
           <ul className={conDescripcion && !foto ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3" : "flex flex-wrap gap-3"}>
             {variantes.map((v, i) => (
@@ -210,4 +230,54 @@ function Variantes(props: { variantes: DetalleServicioPublico["variantes"]; esca
 async function Probador({ servicio, colores }: { servicio: string; colores: ColorServicio[] }) {
   const { whatsapp } = await obtenerDatosPublicos();
   return <ProbadorColores servicio={servicio} colores={colores} whatsapp={whatsapp} />;
+}
+
+/** Lo que ocupa un trabajo: 3 columnas desde 1024 px, 2 desde 640 y 1 en el celular (como la grilla de la Galería). */
+const ANCHO_TRABAJO = "(min-width: 1152px) 368px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw";
+
+/** Hasta tres de sus trabajos de la galería, los antes y después primero; si hay más, "Ver todos" lleva a la galería. */
+function Trabajos({ trabajos, mas, slug }: { trabajos: DetalleServicioPublico["trabajos"]; mas: boolean; slug: string }) {
+  return (
+    <section aria-labelledby="trabajos-titulo" className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+        <h2 id="trabajos-titulo" className={TITULO_SECCION}>
+          Nuestros trabajos
+        </h2>
+        {mas && (
+          <Link href={`/galeria?servicio=${slug}`} className="font-bold text-rojo-texto underline-offset-[6px] hover:underline">
+            Ver todos en la galería
+          </Link>
+        )}
+      </div>
+      <ul aria-label="Nuestros trabajos" className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {trabajos.map((f, i) => (
+          <li key={f.id} className="grid">
+            <TrabajoGaleria foto={f} alFrente={false} sizes={ANCHO_TRABAJO} mostrarLinea={i === 0 && !!f.antes} sinEnlace />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** Tres servicios más, los que siguen a este en el orden del sitio (al final, vuelve al principio). */
+async function OtrosServicios({ slug }: { slug: string }) {
+  const todos = await serviciosPublicos();
+  const aqui = todos.findIndex((x) => x.slug === slug);
+  const otros = [...todos.slice(aqui + 1), ...todos.slice(0, Math.max(aqui, 0))].slice(0, 3);
+  if (otros.length === 0) return null;
+  return (
+    <section aria-labelledby="otros-titulo" className="flex flex-col gap-6">
+      <h2 id="otros-titulo" className={TITULO_SECCION}>
+        Otros servicios
+      </h2>
+      <ul className="tt-servicios-otros">
+        {otros.map((x) => (
+          <li key={x.slug}>
+            <TarjetaServicio servicio={x} variante="foto" />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }

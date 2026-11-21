@@ -188,6 +188,18 @@ const SERVICIOS = {
   },
 };
 
+/** Lo que incluye cada opción (pulido de Servicios, 21/11): una línea, como la cargaría el dueño en el catálogo. */
+const DESCRIPCIONES = {
+  "pulido-y-nano-ceramico": {
+    "1 año": "Una capa. Para empezar a proteger.",
+    "2 años": "Una capa más resistente.",
+    "3 años": "Dos capas. La más pedida.",
+    "5 años": "Dos capas y una de acabado.",
+    "10 años": "Tres capas: la máxima protección.",
+  },
+  "lavado-de-interior": { Básico: "Aspirado, plásticos y vidrios por dentro.", Premium: "Todo lo básico, más tapiz y alfombras a fondo." },
+};
+
 /** Precios de demostración (Bs) por tamaño, en el orden de los tamaños; null es "según evaluación". */
 const PRECIOS = {
   "pulido-y-nano-ceramico": {
@@ -320,6 +332,9 @@ try {
 
   // 4. Precios de demostración por variante y tamaño
   console.log("Precios…");
+  for (const [slug, porVariante] of Object.entries(DESCRIPCIONES))
+    for (const [nombre, descripcion] of Object.entries(porVariante))
+      await q("update variante set descripcion = $3 where servicio_id = $1 and nombre = $2", [servicio[slug].id, nombre, descripcion]);
   for (const [slug, porVariante] of Object.entries(PRECIOS)) {
     for (const [nombre, montos] of Object.entries(porVariante)) {
       const v = await variante(slug, nombre);

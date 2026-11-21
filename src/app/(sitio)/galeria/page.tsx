@@ -5,13 +5,11 @@ import { Suspense } from "react";
 import { cn } from "cn";
 import { TITULO_SECCION, TituloPagina } from "@/componentes/sitio/titulo-pagina";
 import { CierreWhatsApp } from "@/componentes/sitio/cierre-whatsapp";
-import { ComparadorAntesDespues } from "@/componentes/sitio/comparador-antes-despues";
 import { EnlaceTikTok } from "@/componentes/sitio/enlace-tiktok";
-import { FotoResponsiva } from "@/componentes/sitio/foto-responsiva";
+import { TrabajoGaleria as Trabajo } from "@/componentes/sitio/trabajo-galeria";
 import { WhatsAppFijo } from "@/componentes/sitio/whatsapp";
-import { proporcionDe } from "@/lib/formato-fotos";
 import { obtenerDatosPublicos } from "@/modulos/configuracion/consultas";
-import { filtrarPorServicio, formaDelPar, nombreDelTrabajo, separarPares, serviciosConFotos } from "@/modulos/sitio/galeria";
+import { filtrarPorServicio, separarPares, serviciosConFotos } from "@/modulos/sitio/galeria";
 import { galeriaPublica, type FotoGaleria } from "@/modulos/sitio/publico";
 import { metadatosPagina } from "@/lib/sitio";
 
@@ -145,42 +143,3 @@ function Fotos({ todas, elegido }: { todas: FotoGaleria[]; elegido?: string }) {
 const ANCHO_EN_GRILLA = "(min-width: 1152px) 368px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw";
 /** Lo que ocupa un antes y después: 2 columnas desde 768 px y 1 en el celular; desde 1152 px, siempre 564 px. */
 const ANCHO_PAR = "(min-width: 1152px) 564px, (min-width: 768px) 50vw, 100vw";
-
-/**
- * Un trabajo, en su tarjeta (como las de servicios): el par se compara en su recuadro (cuadrado si las fotos son
- * verticales, para que no queden franjas; de 4:3 si son horizontales, para no recortarles los costados), y en el
- * primero la línea se mueve sola un momento; la foto sola llena su recuadro de 4:3. Debajo, su servicio y "Ver el servicio", que lleva a su
- * página. La tarjeta no es un enlace entero: en un par, el toque es para la línea.
- */
-function Trabajo({ foto: f, alFrente, sizes, mostrarLinea = false }: { foto: FotoGaleria; alFrente: boolean; sizes: string; mostrarLinea?: boolean }) {
-  const nombre = nombreDelTrabajo(f.descripcion, f.servicio.nombre);
-  return (
-    <figure className="tt-trabajo">
-      <div className="tt-trabajo__media">
-        {f.antes ? (
-          <ComparadorAntesDespues
-            antes={f.antes}
-            despues={f.despues}
-            descripcion={nombre}
-            alFrente={alFrente}
-            sizes={sizes}
-            marco
-            formaMarco={formaDelPar(proporcionDe(f.despues))}
-            sinAyuda
-            sola={mostrarLinea}
-          />
-        ) : (
-          <div className="tt-trabajo__foto">
-            <FotoResponsiva foto={f.despues} alt={nombre} sizes={sizes} cargaDiferida={!alFrente} className="size-full object-cover" />
-          </div>
-        )}
-      </div>
-      <figcaption className="tt-trabajo__cuerpo">
-        <span className="tt-trabajo__titulo">{f.servicio.nombre}</span>
-        <Link href={`/servicios/${f.servicio.slug}`} className="tt-trabajo__enlace" aria-label={`Ver el servicio: ${f.servicio.nombre}`}>
-          Ver el servicio
-        </Link>
-      </figcaption>
-    </figure>
-  );
-}
