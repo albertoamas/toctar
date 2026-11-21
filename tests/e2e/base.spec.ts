@@ -121,17 +121,23 @@ test("el botón fijo de WhatsApp muestra una nubecita en cada página hasta que 
   await expect(nube).toHaveCount(0);
 });
 
-// Revisión de YankoSoft del 24/10: en la computadora, "Ver el servicio" queda a la misma altura en toda la fila de
-// tarjetas, aunque los resúmenes tengan distinto largo
-test("en la computadora, Ver el servicio queda al pie de cada tarjeta, a la misma altura en la fila", async ({ page, isMobile }) => {
-  test.skip(isMobile, "En el celular cada servicio es una fila propia");
+// Pulido de Servicios (21/11): la foto entera es la tarjeta y toda la tarjeta se toca. En la computadora, la primera es
+// más grande (dos columnas y dos filas) y lleva su resumen; las demás, solo el nombre
+test("en la computadora, el primer servicio va más grande y con su resumen, y cada tarjeta se toca entera", async ({ page, isMobile }) => {
+  test.skip(isMobile, "En el celular la grilla es de dos columnas");
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/servicios");
-  // La lista llega con el resto de la página: se espera a la tercera tarjeta antes de medir
-  const enlaces = page.locator("main .tt-tarjeta__enlace");
-  await expect(enlaces.nth(2)).toBeVisible();
-  const alturas = await enlaces.evaluateAll((es) => es.slice(0, 3).map((e) => Math.round(e.getBoundingClientRect().top)));
-  expect(new Set(alturas).size).toBe(1);
+  const tarjetas = page.locator("main .tt-tarjeta");
+  await expect(tarjetas.nth(2)).toBeVisible();
+  const [principal, segunda] = await tarjetas.evaluateAll((es) => es.slice(0, 2).map((e) => e.getBoundingClientRect().width));
+  expect(principal).toBeGreaterThan(segunda * 1.8);
+  await expect(tarjetas.first().locator(".tt-tarjeta__resumen")).toBeVisible();
+  // Las demás, sin el resumen a la vista (queda para el lector de pantalla)
+  expect((await tarjetas.nth(1).locator(".tt-tarjeta__resumen").boundingBox())!.width).toBeLessThanOrEqual(1);
+  // Un toque en la foto, lejos del nombre, abre el servicio
+  const caja = (await tarjetas.nth(1).boundingBox())!;
+  await page.mouse.click(caja.x + 20, caja.y + 20);
+  await expect(page).toHaveURL(/\/servicios\/[\w-]+$/);
 });
 
 // Pulido visual 1.4

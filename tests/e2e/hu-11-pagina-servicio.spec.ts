@@ -130,15 +130,15 @@ test("con el teclado se enmarca toda la tarjeta del servicio", async ({ page, is
   await expect(page.locator(".tt-tarjeta").first()).toHaveCSS("outline-style", "solid");
 });
 
-test("en la página de un servicio, volver a Servicios es lo primero y se toca con el dedo", async ({ page }) => {
+// Pulido de Servicios (21/11): sin "‹ Servicios" arriba (en el celular ocupaba una fila arriba de la foto): el menú marca
+// "Servicios" y la foto es lo primero
+test("en la página de un servicio no hay un enlace de volver: el menú marca Servicios y la foto va primero", async ({ page, isMobile }) => {
   await page.goto("/servicios/pulido-y-nano-ceramico");
-  const volver = page.getByRole("main").getByRole("link", { name: "Servicios", exact: true });
-  const caja = (await volver.boundingBox())!;
-  expect(caja.height).toBeGreaterThanOrEqual(44);
-  // Antes que la foto y el título: en el celular la foto va arriba del título y el enlace, antes que los dos
+  await expect(page.getByRole("main").getByRole("link", { name: "Servicios", exact: true })).toHaveCount(0);
+  if (!isMobile) await expect(page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Servicios" })).toHaveAttribute("aria-current", "page");
   const foto = (await page.locator('main header [class*="aspect-[4/3]"]').boundingBox())!;
   const titulo = (await page.getByRole("heading", { level: 1 }).boundingBox())!;
-  expect(caja.y + caja.height).toBeLessThanOrEqual(Math.min(foto.y, titulo.y));
+  if (isMobile) expect(foto.y).toBeLessThan(titulo.y);
 });
 
 // Pedido de la demo del 24/10: una foto al lado de "Cómo lo hacemos" y de "Opciones", subida en su lugar del panel.

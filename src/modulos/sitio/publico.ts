@@ -73,8 +73,13 @@ export type DetalleServicioPublico = ServicioPublico & {
   variantes: { nombre: string; descripcion: string | null }[];
   /** La foto al lado de cada sección, si tiene. */
   fotosSecciones: FotosDeSecciones;
-  /** Si tiene trabajos en la galería: la página enlaza a ella. */
-  tieneFotos: boolean;
+  /**
+   * Pulido de Servicios (21/11): hasta tres de sus trabajos de la galería, los mejores primero (el elegido para la
+   * portada, después los antes y después).
+   */
+  trabajos: FotoGaleria[];
+  /** Si tiene más trabajos que los que se muestran: la página enlaza a la galería. */
+  masTrabajos: boolean;
 };
 
 /** Un servicio visible con todo lo que muestra su página, o null (oculto o inexistente). */
@@ -89,11 +94,13 @@ export async function servicioPublico(slug: string): Promise<DetalleServicioPubl
     .where(and(eq(servicio.slug, slug), eq(servicio.activo, true), eq(servicio.visibleSitio, true)));
   if (!fila) return null;
   const s = fila.servicio;
-  const [variantes, tieneFotos, fotosSecciones] = await Promise.all([
+  const [variantes, suyos, fotosSecciones] = await Promise.all([
     opcionesDelSitio(s.id),
-    galeriaPublica().then((g) => g.some((f) => f.servicio.slug === s.slug)),
+    galeriaPublica().then((g) => g.filter((f) => f.servicio.slug === s.slug)),
     fotosDeSecciones(s.id),
   ]);
+  const puntaje = (f: FotoGaleria) => (f.enPortada && f.antes ? 2 : f.antes ? 1 : 0);
+  const ordenados = [...suyos].sort((a, b) => puntaje(b) - puntaje(a));
   return {
     id: s.id,
     nombre: s.nombre,
@@ -106,7 +113,8 @@ export async function servicioPublico(slug: string): Promise<DetalleServicioPubl
     opcionesEnEscalera: s.opcionesEnEscalera,
     variantes,
     fotosSecciones,
-    tieneFotos,
+    trabajos: ordenados.slice(0, 3),
+    masTrabajos: ordenados.length > 3,
   };
 }
 
