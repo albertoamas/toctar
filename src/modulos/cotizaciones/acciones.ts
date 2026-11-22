@@ -50,9 +50,9 @@ async function conPdf(cotizacionId: number, autorId: number): Promise<boolean> {
 
 /**
  * Nueva cotización (pedido 23): a un cliente registrado, con uno de sus vehículos o uno que se agrega; a alguien nuevo,
- * como interesado (pedido 31, parte 2, P31b-cotizacion-rapida.md): su nombre, su WhatsApp, el tamaño del vehículo y,
- * si se quiere, qué vehículo es y una foto, sin registrarlo en Clientes (se registra al reservar). Con un WhatsApp que ya
- * es de un cliente, se ofrece usarlo (RF-23). Y la versión 1 con sus precios. Todo en una transacción: o queda todo, o nada.
+ * como interesado (pedido 31, parte 2, P31b-cotizacion-rapida.md): su nombre, su WhatsApp, la placa, el tamaño y, si se
+ * quiere, una foto, sin registrarlo en Clientes (se registra al reservar). Con un WhatsApp o una placa que ya son de un
+ * cliente, se ofrece usarlo (RF-23). Y la versión 1 con sus precios. Todo en una transacción: o queda todo, o nada.
  */
 export async function crearCotizacion(_previo: EstadoCliente, datos: FormData): Promise<EstadoCliente> {
   const autor = await exigirAccion("cotizar");
@@ -67,7 +67,7 @@ export async function crearCotizacion(_previo: EstadoCliente, datos: FormData): 
   const entrada = esquemaPreciosNuevos.safeParse(entradaPrecios(datos));
   if (!entrada.success) Object.assign(errores, erroresDe(entrada.error));
 
-  // Alguien nuevo, como interesado (P31b): nombre, WhatsApp y el tamaño; qué vehículo es, si se escribió
+  // Alguien nuevo, como interesado (P31b): nombre, WhatsApp, la placa y el tamaño
   let interesado: z.output<typeof esquemaInteresado> | null = null;
   if (elegido === CLIENTE_NUEVO) {
     const c = esquemaInteresado.safeParse(valores);
@@ -113,6 +113,13 @@ export async function crearCotizacion(_previo: EstadoCliente, datos: FormData): 
       errores.telefono = `Ese número ya es de ${conTelefono.nombre}.`;
       existentes.telefono = conTelefono;
     }
+    // Su placa ya es de un cliente (P31b): se ofrece cotizarle a él. Con los nombres de campo del interesado
+    const deVehiculo: Record<string, string> = {};
+    const existenteVehiculo: Existentes = {};
+    await revisarVehiculo({ placa: interesado.interesadoPlaca, tamanoId: interesado.interesadoTamanoId }, "", deVehiculo, existenteVehiculo);
+    if (deVehiculo.placa) errores.interesadoPlaca = deVehiculo.placa;
+    if (existenteVehiculo.placa) existentes.interesadoPlaca = existenteVehiculo.placa;
+    if (deVehiculo.tamanoId) errores.interesadoTamanoId = deVehiculo.tamanoId;
   }
   if (nuevoVehiculo) await revisarVehiculo(nuevoVehiculo, PREFIJO_VEHICULO, errores, existentes);
   if (Object.keys(errores).length > 0) return { errores, valores, existentes };
@@ -144,7 +151,7 @@ export async function crearCotizacion(_previo: EstadoCliente, datos: FormData): 
             estado: "cotizado",
             interesadoNombre: interesado.nombre,
             interesadoTelefono: interesado.telefono,
-            interesadoVehiculo: interesado.interesadoVehiculo,
+            interesadoPlaca: interesado.interesadoPlaca,
             interesadoTamanoId: interesado.interesadoTamanoId,
             createdBy: autorId,
           })

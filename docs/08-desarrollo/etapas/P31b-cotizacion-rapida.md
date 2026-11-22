@@ -10,62 +10,69 @@ El dueño (21/11): "Hay personas que vienen a cotizar y nunca vuelven: no los qu
 la lista de basura. Una cotización es algo rápido: no me puedo poner a anotar todos los detalles del vehículo. Algo
 interesante podría ser una foto para saber qué vehículo vino a cotizar."
 
-Cotizar a alguien nuevo pide su **nombre, su WhatsApp y el tamaño del vehículo** (lo que da el precio); qué vehículo es,
-en una línea, y **una foto**, opcionales. **No se registra nada en Clientes ni en Vehículos.** El cliente y su vehículo se
-registran recién **al reservar**, con lo que la cotización ya tiene escrito.
+Cotizar a alguien nuevo pide su **nombre, su WhatsApp, la placa y el tamaño del vehículo** (lo que da el precio), y
+**una foto** opcional. **No se registra nada en Clientes ni en Vehículos.** El cliente y su vehículo se registran recién
+**al reservar**, con lo que la cotización ya tiene escrito.
 
-Incluido, sin costo (decisión del 21/11).
+Incluido, sin costo (decisión del 21/11). Ajuste del 22/11, a pedido del desarrollador tras hablar con el dueño: del auto,
+lo que el dueño quiere es la placa (antes era "¿Qué vehículo es?", opcional), y reservar usa los pasos de siempre de la
+reserva (antes, una pantalla aparte "Registrar al cliente" que se sentía fuera del flujo).
 
 ## 2. Alcance
 - **Incluye:**
-  - Nueva cotización con alguien nuevo: nombre y WhatsApp (sin correo, NIT ni notas); el tamaño, "¿Qué vehículo es?"
-    (opcional) y una foto (opcional). Si el WhatsApp ya es de un cliente, se ofrece usarlo (como hoy).
+  - Nueva cotización con alguien nuevo: nombre y WhatsApp (sin correo, NIT ni notas); la placa, el tamaño y una foto
+    (opcional). Si el WhatsApp o la placa ya son de un cliente, se ofrece cotizarle a él.
   - Con un cliente registrado, como hoy: se elige su vehículo o se registra otro.
-  - Las cotizaciones de un interesado en la lista, la ficha, las versiones, el PDF, el enlace del cliente, el seguimiento
-    por WhatsApp, "Por reservar" y los reportes.
-  - Reservar la de un interesado: antes, "Registrar al cliente", con lo de la cotización ya escrito (nombre, WhatsApp,
-    tamaño; la placa y los datos del vehículo se completan ahí). Con un WhatsApp que ya es de un cliente, se usa ese.
-    Registrado, la cotización queda con él y la reserva sigue como siempre.
-- **No incluye:** la placa opcional (pedido 29: ya no hace falta, la placa se pide al reservar); borrar interesados
-  viejos; varias fotos.
+  - Las cotizaciones de un interesado en la lista (también se buscan por su placa), la ficha, las versiones, el PDF, el
+    enlace del cliente, el seguimiento por WhatsApp, "Por reservar" y los reportes.
+  - Reservar la de un interesado: los pasos de siempre, **Cliente → Vehículo → Fecha → Adelanto**, ya escritos con lo de la
+    cotización (sin Servicios: son los de la cotización). El cliente y el vehículo se registran **con la reserva**, en la
+    misma transacción: si no se termina, no queda nadie en Clientes. Con un WhatsApp que ya es de un cliente, la reserva
+    queda con él (empieza en el vehículo; si la placa ya es de un vehículo suyo, se usa ese).
+- **No incluye:** borrar interesados viejos; varias fotos.
 
 ## 3. Reglas que se cumplen
 - **La consulta es de un cliente con su vehículo, o de un interesado** (nombre, WhatsApp y tamaño), nunca de ninguno: lo
-  exige la base (`consulta_cliente_o_interesado`).
-- Un interesado **no aparece en Clientes**. Al registrarse, pasa a ser cliente con su historia (la cotización queda con él).
-- **Sin duplicados:** el WhatsApp es único entre los clientes; al cotizar y al registrar se busca por él.
+  exige la base (`consulta_cliente_o_interesado`). La placa la pide la pantalla (las de antes del 22/11 no la tienen).
+- Un interesado **no aparece en Clientes**. Al reservar, pasa a ser cliente con su historia (la cotización queda con él).
+- **Sin duplicados:** el WhatsApp y la placa son únicos entre los clientes; al cotizar y al reservar se busca por ellos.
 - La foto, privada (datos del cliente), en `consulta_archivo`.
 - RN-02 sin cambios: el PDF sale de la copia de los datos al cotizar (`datos_documento`).
 
 ## 4. Datos
-Migración `0057_cotizacion_rapida`:
+Migraciones `0057_cotizacion_rapida`, `0058_sin_vehiculo_del_interesado` y `0059_placa_del_interesado` (D-14):
 - `consulta.cliente_id` y `consulta.vehiculo_id`, opcionales.
-- `consulta.interesado_nombre`, `interesado_telefono`, `interesado_vehiculo` (texto, opcional) y `interesado_tamano_id`.
+- `consulta.interesado_nombre`, `interesado_telefono`, `interesado_placa` (normalizada como la del vehículo) e
+  `interesado_tamano_id`.
 - Restricción: `(cliente_id y vehiculo_id) o (interesado_nombre, interesado_telefono e interesado_tamano_id)`.
 - Las cotizaciones que existen tienen cliente: no cambian.
 
-Las lecturas toman el nombre, el WhatsApp y el tamaño del cliente y su vehículo o, si no hay, del interesado, en un solo
-lugar (`cotizaciones/consultas/comun.ts`).
+Las lecturas toman el nombre, el WhatsApp, la placa y el tamaño del cliente y su vehículo o, si no hay, del interesado, en
+un solo lugar (`cotizaciones/consultas/comun.ts`).
 
 ## 5. Pantallas
-- **Nueva cotización, alguien nuevo:** paso Cliente con nombre y WhatsApp; paso Vehículo con el tamaño, "¿Qué vehículo
-  es?" (opcional, "Hilux blanca") y "Foto del vehículo" (opcional); paso Servicios como hoy.
-- **Lista y ficha:** el interesado con su nombre y, en vez de la placa, lo que se escribió del vehículo ("Sin registrar");
-  la ficha muestra la foto. Sin enlace a la ficha del cliente hasta que se registre.
-- **Reservar:** "Registrar al cliente" (nombre y WhatsApp; el vehículo con su placa y tamaño) y después la reserva.
+- **Nueva cotización, alguien nuevo:** paso Cliente con nombre y WhatsApp; paso Vehículo con la placa, el tamaño y "Foto
+  del vehículo" (opcional); paso Servicios como hoy.
+- **Lista y ficha:** el interesado con su nombre, su placa y "Sin registrar"; la ficha muestra la foto. Sin enlace a la
+  ficha del cliente hasta que se registre.
+- **Reservar:** Nueva reserva con los pasos Cliente y Vehículo escritos (en el del vehículo, la foto), y la fecha y el
+  adelanto como siempre.
 
 ## 6. Acciones del servidor
-- `crearCotizacion`: con alguien nuevo, guarda al interesado y la foto; no crea cliente ni vehículo.
-- `registrarInteresado` (nueva): crea el cliente (o usa el del WhatsApp) y el vehículo, y los pone en la consulta.
-- `guardarVersion`, `cambiarEstadoCotizacion` y `agendarReserva`: con un interesado (sin cliente), lo que corresponde
-  (el tamaño del interesado; aceptar sin revisar el vehículo; reservar pide registrarlo antes).
+- `crearCotizacion`: con alguien nuevo, guarda al interesado y la foto; no crea cliente ni vehículo. Revisa el WhatsApp y
+  la placa repetidos.
+- `agendarReserva`: desde la cotización de un interesado, crea el cliente (o usa el del WhatsApp) y el vehículo con la
+  reserva, y los pone en la consulta (solo si sigue sin cliente). Es de quien tiene «Clientes».
+- `guardarVersion` y `cambiarEstadoCotizacion`: con un interesado, el tamaño del interesado; aceptar sin revisar el vehículo.
 
 ## 7. Pruebas
-- **Unitarias:** la restricción de la consulta y el esquema del interesado.
-- **De punta a punta:** cotizar a alguien nuevo no lo pone en Clientes y se ve en Cotizaciones con lo que se escribió y la
-  foto; reservarla pide registrarlo y, registrado, queda en Clientes con la cotización; un WhatsApp que ya es de un cliente
-  se usa.
+- **Unitarias:** el paso del vehículo del interesado (placa y tamaño) y el mensaje de WhatsApp.
+- **De punta a punta (`hu-25`):** cotizar a alguien nuevo no lo pone en Clientes y se ve en Cotizaciones con su placa y la
+  foto; una placa registrada ofrece cotizarle a su dueño; reservarla llega con sus pasos escritos y, al reservar, queda
+  en Clientes con la cotización; un WhatsApp que ya es de un cliente se usa.
 
 ## 8. Decisiones
-Opción A (21/11): la cotización guarda al interesado, en vez de un "interesado" como estado del cliente (B), porque B
-seguía pidiendo los datos del vehículo al cotizar.
+- Opción A (21/11): la cotización guarda al interesado, en vez de un "interesado" como estado del cliente (B), porque B
+  seguía pidiendo los datos del vehículo al cotizar.
+- 22/11: la placa en vez de "¿Qué vehículo es?"; reservar con los pasos de siempre en vez de la pantalla "Registrar al
+  cliente": todo lo que se crea dentro de otra tarea va en sus pasos (Cliente → Vehículo), y se guarda junto con ella.

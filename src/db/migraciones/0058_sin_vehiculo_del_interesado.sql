@@ -1,0 +1,1 @@
+ALTER TABLE "consulta" DROP COLUMN "interesado_vehiculo";

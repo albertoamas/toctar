@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { fechaEnBolivia, sumarDias } from "@/lib/fechas";
 import { leerMonto } from "@/modulos/catalogo/reglas";
-import { esquemaCliente } from "@/modulos/clientes/esquemas";
+import { esquemaCliente, esquemaVehiculo } from "@/modulos/clientes/esquemas";
 import { calcularTotales, CLIENTE_NUEVO, leerMontoOCero, MAXIMO_LINEAS, MODOS, montoNoMayor, MOTIVOS, SIN_SERVICIOS, VEHICULO_OTRO } from "./reglas";
 
 // Validación de la cotización. Especificación: docs/08-desarrollo/etapas/P23-cotizacion-directa.md §6.
@@ -133,18 +133,12 @@ export const esquemaCambioEstado = z.discriminatedUnion("accion", [
 ]);
 
 /**
- * Pedido 31, parte 2 (P31b-cotizacion-rapida.md): a alguien nuevo se le cotiza sin registrarlo. Su nombre y su WhatsApp
- * (las mismas reglas que un cliente, para que al registrarse no haya que corregirlos) y, del vehículo, lo que da el
- * precio: el tamaño. Qué vehículo es, en una línea, es opcional ("Hilux blanca").
+ * Pedido 31, parte 2 (P31b-cotizacion-rapida.md): a alguien nuevo se le cotiza sin registrarlo. Su nombre, su WhatsApp
+ * y la placa, con las mismas reglas que un cliente y un vehículo (al reservar se registran tal cual), y el tamaño, que
+ * da el precio. La foto, opcional, va aparte (es un archivo).
  */
-export const LIMITE_VEHICULO_INTERESADO = 80;
 export const ERROR_FOTO_INTERESADO = "La foto debe ser JPG, PNG o WebP de hasta 5 MB. Prueba con otra o sigue sin ella.";
 export const esquemaInteresado = esquemaCliente.pick({ nombre: true, telefono: true }).extend({
-  interesadoTamanoId: z.coerce.number({ error: "Elige el tamaño." }).int().positive("Elige el tamaño."),
-  interesadoVehiculo: z
-    .string()
-    .trim()
-    .max(LIMITE_VEHICULO_INTERESADO, `Hasta ${LIMITE_VEHICULO_INTERESADO} caracteres.`)
-    .optional()
-    .transform((v) => v || null),
+  interesadoPlaca: esquemaVehiculo.shape.placa,
+  interesadoTamanoId: esquemaVehiculo.shape.tamanoId,
 });

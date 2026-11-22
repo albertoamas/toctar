@@ -35,7 +35,7 @@ export function primerPasoConError(errores: Partial<Record<string, string>>): nu
 
 /**
  * Los errores del paso que se quiere dejar, con lo escrito en el formulario. Alguien nuevo (P31b), como interesado: su
- * nombre y WhatsApp, y del vehículo, el tamaño. Con un cliente: uno de sus vehículos o, si es otro, el esquema del
+ * nombre y WhatsApp, y del vehículo, la placa y el tamaño. Con un cliente: uno de sus vehículos o, si es otro, el esquema del
  * vehículo de Clientes.
  */
 export function erroresDelPaso(paso: number, valores: Record<string, string>, clienteNuevo: boolean): Record<string, string> {
@@ -45,7 +45,7 @@ export function erroresDelPaso(paso: number, valores: Record<string, string>, cl
   };
   if (paso === PASO_CLIENTE) return clienteNuevo ? delInteresado(["nombre", "telefono"]) : {};
   if (paso === PASO_VEHICULO) {
-    if (clienteNuevo) return delInteresado(["interesadoTamanoId", "interesadoVehiculo"]);
+    if (clienteNuevo) return delInteresado(["interesadoPlaca", "interesadoTamanoId"]);
     const eleccion = valores.vehiculo ?? "";
     if (eleccion !== VEHICULO_OTRO) {
       const r = esquemaVehiculoElegido.safeParse(eleccion);

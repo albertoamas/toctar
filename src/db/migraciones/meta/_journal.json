@@ -407,6 +407,20 @@
       "when": 1795297092971,
       "tag": "0057_cotizacion_rapida",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1795324338217,
+      "tag": "0058_sin_vehiculo_del_interesado",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1795324345082,
+      "tag": "0059_placa_del_interesado",
+      "breakpoints": true
     }
   ]
 }

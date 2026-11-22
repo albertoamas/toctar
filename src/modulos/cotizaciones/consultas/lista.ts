@@ -7,7 +7,7 @@ import { cliente, consulta, cotizacion, cotizacionLinea, vehiculo } from "@/db/e
 import type { EstadoConsulta } from "@/db/esquema/consultas";
 import { escaparLike, nombreVehiculo, normalizarBusqueda } from "@/modulos/clientes/reglas";
 import { VISTAS, type Vista } from "../reglas";
-import { conReservaActiva, esInteresado, nombreDeQuien, sinFecha, telefonoDeQuien, tieneVersiones } from "./comun";
+import { conReservaActiva, esInteresado, nombreDeQuien, placaDeQuien, sinFecha, telefonoDeQuien, tieneVersiones } from "./comun";
 
 // Lecturas de las cotizaciones (C2, P23, P39, P40, P47). Quien las llama ya pasó por su permiso (Cotizaciones;
 // los precios, solo con él). Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md.
@@ -17,11 +17,11 @@ export type FilaCotizacion = {
   id: number;
   /** La versión que vale: la que se reserva. */
   cotizacionId: number;
-  /** Sin registrar todavía (P31b): null, y el nombre y el vehículo son los que se escribieron del interesado. */
+  /** Sin registrar todavía (P31b): null, y el nombre y la placa son los que se anotaron del interesado. */
   clienteId: number | null;
   cliente: string;
   placa: string | null;
-  /** Marca y modelo ("Toyota Hilux"), o lo que se escribió del interesado ("Hilux blanca"); vacío si no hay. */
+  /** Marca y modelo ("Toyota Hilux"); vacío si no se cargaron (del interesado, siempre). */
   vehiculo: string;
   /** La cotización es de un interesado (P31b): no está en Clientes. */
   interesado: boolean;
@@ -66,10 +66,9 @@ const columnasFila = {
   cotizacionId: cotizacion.id,
   clienteId: consulta.clienteId,
   cliente: nombreDeQuien,
-  placa: vehiculo.placa,
+  placa: placaDeQuien,
   marca: vehiculo.marca,
   modelo: vehiculo.modelo,
-  delInteresado: consulta.interesadoVehiculo,
   interesado: esInteresado,
   servicios: sql<string>`coalesce((select string_agg(${cotizacionLinea.descripcion}, ', ' order by ${cotizacionLinea.orden}) from ${cotizacionLinea} where ${cotizacionLinea.cotizacionId} = ${cotizacion.id}), '')`,
   numero: cotizacion.numero,
@@ -79,10 +78,10 @@ const columnasFila = {
   ultimoMovimientoAt: consulta.ultimoMovimientoAt,
 };
 
-/** La fila de la consulta, con el vehículo nombrado como en el resto del panel (o como se escribió del interesado). */
-const aFila = ({ marca, modelo, delInteresado, ...f }: { marca: string | null; modelo: string | null; delInteresado: string | null } & Omit<FilaCotizacion, "vehiculo">): FilaCotizacion => ({
+/** La fila de la consulta, con el vehículo nombrado como en el resto del panel. */
+const aFila = ({ marca, modelo, ...f }: { marca: string | null; modelo: string | null } & Omit<FilaCotizacion, "vehiculo">): FilaCotizacion => ({
   ...f,
-  vehiculo: f.interesado ? (delInteresado ?? "") : nombreVehiculo({ marca, modelo }),
+  vehiculo: nombreVehiculo({ marca, modelo }),
 });
 
 function filas(donde: SQL | undefined) {
@@ -102,7 +101,7 @@ function coincide(q: string): SQL | undefined {
   return or(
     sql`unaccent(lower(${nombreDeQuien})) like unaccent(lower(${`%${escaparLike(busqueda.texto)}%`}))`,
     busqueda.digitos ? sql`${telefonoDeQuien} like ${`%${escaparLike(busqueda.digitos)}%`}` : undefined,
-    busqueda.placa ? like(vehiculo.placa, `%${escaparLike(busqueda.placa)}%`) : undefined,
+    busqueda.placa ? sql`${placaDeQuien} like ${`%${escaparLike(busqueda.placa)}%`}` : undefined,
     like(cotizacion.numero, `%${escaparLike(busqueda.texto)}%`),
   );
 }

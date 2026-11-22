@@ -1,0 +1,1 @@
+ALTER TABLE "consulta" ADD COLUMN "interesado_placa" text;
