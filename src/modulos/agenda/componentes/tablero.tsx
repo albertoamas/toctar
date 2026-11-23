@@ -194,7 +194,17 @@ export function ListaDesdeHoy({ datos, hoy, hasta, conOrdenes, desde, verMas }: 
       cerrarVacios();
       partes.push(
         <li key={dia} className="border-t border-border bg-fondo-panel py-2.5 pr-4 pl-[4.75rem] text-sm text-tinta-suave first:border-t-0">
-          {DIA_CORTO[diaDeLaSemana(dia) - 1]} {numeroDia(dia)} · cerrado
+          {/* Hoy, aunque esté cerrado, se nombra: es desde donde se lee la lista (un domingo empezaba sin "Hoy") */}
+          {dia === hoy ? (
+            <h2 className="font-semibold text-tinta">
+              <span className="sr-only">Hoy, {textoDia(dia)}: cerrado</span>
+              <span aria-hidden>Hoy, {DIA_CORTO[diaDeLaSemana(dia) - 1]} {numeroDia(dia)} · cerrado</span>
+            </h2>
+          ) : (
+            <>
+              {DIA_CORTO[diaDeLaSemana(dia) - 1]} {numeroDia(dia)} · cerrado
+            </>
+          )}
         </li>,
       );
       continue;
