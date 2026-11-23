@@ -22,9 +22,11 @@ type Props = {
   enviar: Map<number, string>;
   /** La versión cuyo «Enviar por WhatsApp» ya está arriba, junto a «Aceptó»: aquí no se repite. */
   enviarArriba?: number | null;
+  /** Quien cotiza genera el PDF que falte (el de la que vale, solo al abrir la ficha). */
+  conGenerar: boolean;
 };
 
-export function VersionesCotizacion({ consultaId, versiones, enviar, enviarArriba }: Props) {
+export function VersionesCotizacion({ consultaId, versiones, enviar, enviarArriba, conGenerar }: Props) {
   const hoy = fechaEnBolivia();
   // La que vale: la vigente o la aceptada; las demás, las anteriores (reemplazadas)
   const actual = versiones.find((v) => v.estado !== "reemplazada") ?? versiones[0];
@@ -95,8 +97,8 @@ export function VersionesCotizacion({ consultaId, versiones, enviar, enviarArrib
               </span>
             </>
           ) : (
-            // Sin PDF, se genera: sale de lo copiado al cotizarla
-            <GenerarPdf cotizacionId={actual.id} />
+            // Sin PDF, se genera solo al abrir: sale de lo copiado al cotizarla
+            conGenerar && <GenerarPdf cotizacionId={actual.id} automatico />
           )}
         </span>
         <p className="text-xs text-tinta-suave">
@@ -129,7 +131,7 @@ export function VersionesCotizacion({ consultaId, versiones, enviar, enviarArrib
                       <MasPdf ruta={rutaV} nombre={nombreArchivoPdf(v.numero, v.version)} titulo={titulo(v)} conCompartir={false} etiqueta={`Opciones del PDF de la versión ${v.version}`} />
                     </span>
                   ) : (
-                    <GenerarPdf cotizacionId={v.id} />
+                    conGenerar && <GenerarPdf cotizacionId={v.id} />
                   )}
                 </li>
               );

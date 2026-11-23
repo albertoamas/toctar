@@ -225,7 +225,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
         </Seccion>
 
         <Seccion id="versiones" titulo="Precio" sinRelleno className="@4xl:order-first">
-          <VersionesCotizacion consultaId={c.id} versiones={c.versiones} enviar={enviar} enviarArriba={enviarArriba} />
+          <VersionesCotizacion consultaId={c.id} versiones={c.versiones} enviar={enviar} enviarArriba={enviarArriba} conGenerar={cotiza} />
         </Seccion>
       </div>
 
