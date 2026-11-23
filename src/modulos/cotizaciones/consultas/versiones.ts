@@ -6,7 +6,7 @@ import { cliente, consulta, cotizacion, cotizacionLinea, negocio, sucursal, tama
 import type { EstadoConsulta } from "@/db/esquema/consultas";
 import type { DatosDocumento } from "@/db/esquema/cotizaciones";
 import { detalleVehiculo, nombreVehiculo } from "@/modulos/clientes/reglas";
-import { esInteresado, nombreDeQuien, tamanoDeLaConsulta, telefonoDeQuien, tieneVersiones } from "./comun";
+import { nombreDeQuien, placaDeQuien, tamanoDeLaConsulta, telefonoDeQuien, tieneVersiones } from "./comun";
 import { OpcionServicio, inicioCotizacion, opcionesDeServicio } from "./servicios";
 
 // Lecturas de las cotizaciones (C2, P23, P39, P40, P47). Quien las llama ya pasó por su permiso (Cotizaciones;
@@ -29,7 +29,7 @@ export type DatosNuevaVersion = {
   estado: EstadoConsulta;
   cliente: string;
   telefono: string;
-  /** Null en la de un interesado (P31b): `detalle` dice lo que se escribió del vehículo. */
+  /** La del vehículo o la que se anotó del interesado (P31b); null en las de un interesado de antes del 22/11. */
   placa: string | null;
   /** Marca y modelo, año, color: lo que se sepa. */
   detalle: (string | number)[];
@@ -55,13 +55,11 @@ export async function datosNuevaVersion(consultaId: number, desdeId: number | nu
       estado: consulta.estado,
       cliente: nombreDeQuien,
       telefono: telefonoDeQuien,
-      placa: vehiculo.placa,
+      placa: placaDeQuien,
       marca: vehiculo.marca,
       modelo: vehiculo.modelo,
       anio: vehiculo.anio,
       color: vehiculo.color,
-      interesado: esInteresado,
-      delInteresado: consulta.interesadoVehiculo,
       tamanoId: tamanoDeLaConsulta,
       tamano: tamanoVehiculo.nombre,
     })
@@ -94,7 +92,7 @@ export async function datosNuevaVersion(consultaId: number, desdeId: number | nu
     cliente: c.cliente,
     telefono: c.telefono,
     placa: c.placa,
-    detalle: c.interesado ? (c.delInteresado ? [c.delInteresado] : []) : detalleVehiculo(c),
+    detalle: detalleVehiculo(c),
     tamano: c.tamano,
     opciones,
     quitados: desde ? desde.lineas.filter((l) => !opciones.some((o) => o.varianteId === l.varianteId)).length : 0,
@@ -146,12 +144,10 @@ export async function datosDocumento(consultaId: number, base: Pick<typeof db, "
     .select({
       nombre: nombreDeQuien,
       telefono: telefonoDeQuien,
-      placa: vehiculo.placa,
+      placa: placaDeQuien,
       marca: vehiculo.marca,
       modelo: vehiculo.modelo,
       color: vehiculo.color,
-      interesado: esInteresado,
-      delInteresado: consulta.interesadoVehiculo,
       tamano: tamanoVehiculo.nombre,
     })
     .from(consulta)
@@ -170,10 +166,10 @@ export async function datosDocumento(consultaId: number, base: Pick<typeof db, "
   if (!n) throw new Error("Faltan los datos del negocio: falta aplicar la migración 0003_datos_negocio.");
   return {
     cliente: { nombre: c.nombre, telefono: c.telefono },
-    // De un interesado (P31b): sin placa, con lo que se escribió del vehículo
+    // De un interesado (P31b): la placa que se anotó, sin marca ni modelo
     vehiculo: {
       placa: c.placa ?? "",
-      descripcion: c.interesado ? c.delInteresado || null : [nombreVehiculo(c), c.color].filter(Boolean).join(", ") || null,
+      descripcion: [nombreVehiculo(c), c.color].filter(Boolean).join(", ") || null,
       tamano: c.tamano,
     },
     negocio: { ...n, whatsapp: s?.whatsapp ?? null, direccion: s?.direccion ?? null },

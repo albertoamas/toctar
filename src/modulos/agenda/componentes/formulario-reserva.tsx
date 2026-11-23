@@ -60,6 +60,8 @@ import { CabeceraTarjeta } from "@/componentes/panel/cabecera-seccion";
 // sin respuesta elegida: "Reservar" va solo en el último paso. El indicador de pasos va aquí, en los dos caminos.
 // Cliente o vehículo nuevos (20/11, como en Nueva cotización, pedido 40): sus campos son los primeros pasos de este mismo
 // formulario (#cliente, #vehiculo) y se registran recién con "Reservar", junto con la reserva: nada queda a medias.
+// Pedido 31, parte 2 (P31b, 22/11): la cotización de un interesado empieza por esos mismos pasos, escritos con lo que se
+// anotó al cotizar, y salta Servicios (son los de la cotización).
 
 type Origen =
   | {
@@ -73,6 +75,8 @@ type Origen =
       aceptada: boolean;
       /** Sus servicios, para el resumen; el precio es null sin permiso de ver montos. */
       lineas: { descripcion: string; precio: string | null }[];
+      /** La de un interesado (P31b): su cliente y su vehículo se registran en los primeros pasos. */
+      nuevo?: Nuevo;
     }
   | {
       tipo: "directa";
@@ -98,10 +102,15 @@ type Nuevo = {
   catalogo: CatalogoVehiculos;
   /** Los servicios para cada tamaño: los del vehículo nuevo, según el tamaño elegido. */
   opcionesPorTamano: Record<number, OpcionServicio[]>;
-  /** "Buscar un cliente registrado" o, con un cliente registrado, "Atrás" a sus vehículos. */
-  volverAElegir: Route;
-  /** La reserva con un cliente ya registrado, con `cliente=0` en lugar de su id: el aviso de repetido ofrece usarlo. */
-  conCliente: string;
+  /** "Buscar un cliente registrado" o, con un cliente registrado, "Atrás" a sus vehículos. Sin él (un interesado), no hay. */
+  volverAElegir?: Route;
+  /** La reserva con un cliente ya registrado, con `cliente=0` en lugar de su id: el aviso de repetido ofrece usarlo. Sin
+   * él (un interesado: su cotización no se reserva con otro), el aviso lleva a la ficha de ese cliente. */
+  conCliente?: string;
+  /** Lo que llega escrito en los pasos del cliente y el vehículo (lo anotado de un interesado). */
+  iniciales?: Record<string, string>;
+  /** Arriba del paso del vehículo (la foto de cuando cotizó el interesado). */
+  ayuda?: React.ReactNode;
 };
 
 /** El precio que sugiere el catálogo para esa variante, como se escribe en el campo; vacío si no hay. */
@@ -146,12 +155,17 @@ const PRIMER_CAMPO_NUEVO = 'input:not([type="hidden"]), select, textarea, button
 
 export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, hoy, fechaInicial, arriba, cotizaciones, atras, pasosHechos }: Props) {
   const directa = origen.tipo === "directa";
-  const nuevo = origen.tipo === "directa" ? origen.nuevo : undefined;
-  const inicial = origen.tipo === "directa" ? origen.pasoInicial : PASO_FECHA;
+  const nuevo = origen.nuevo;
+  // Desde una cotización: en la fecha o, la de un interesado, en su cliente (o su vehículo, si ya es de un cliente)
+  const inicial = origen.tipo === "directa" ? origen.pasoInicial : nuevo ? (nuevo.clienteNuevo ? PASO_CLIENTE : PASO_VEHICULO) : PASO_FECHA;
+  /** La entrada del historial de cada paso: desde una cotización no hay Servicios (sus pasos se saltan uno). */
+  const entrada = (p: number) => p - (!directa && p > PASO_SERVICIOS ? 1 : 0);
+  /** El paso que sigue: desde una cotización, después del vehículo va la fecha. */
+  const despuesDe = (p: number) => (!directa && p + 1 === PASO_SERVICIOS ? PASO_FECHA : p + 1);
   // Con el adelanto (quien ve pagos), el último paso es el suyo; si no, la fecha
   const ultimo = conPagos ? PASO_ADELANTO : PASO_FECHA;
   // Hay pasos que cambiar (y historial que escuchar) en la directa o si se sigue al adelanto
-  const conPasos = directa || conPagos;
+  const conPasos = directa || conPagos || !!nuevo;
   const [paso, setPaso] = useState<number>(inicial);
   // El paso a la vista, para los que escuchan el historial (sin esperar al próximo dibujo)
   const pasoActual = useRef<number>(inicial);
@@ -197,7 +211,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
    */
   function volverA(destino: number) {
     if (destino >= inicial) {
-      const pasos = pasoActual.current - destino;
+      const pasos = entrada(pasoActual.current) - entrada(destino);
       if (pasos > 0) window.history.go(-pasos);
       return;
     }
@@ -227,7 +241,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
     origen.tipo === "directa" ? (origen.lineasIniciales?.length ? origen.lineasIniciales : [{ varianteId: 0, precio: "" }]) : [],
   );
   // Los servicios que se ofrecen: los del tamaño del vehículo; el nuevo, según el tamaño que se elija en su paso
-  const [tamanoNuevo, setTamanoNuevo] = useState("");
+  const [tamanoNuevo, setTamanoNuevo] = useState(nuevo?.iniciales?.[`${PREFIJO_VEHICULO}tamanoId`] ?? "");
   const opciones = origen.tipo === "cotizacion" ? [] : nuevo ? (nuevo.opcionesPorTamano[Number(tamanoNuevo)] ?? []) : origen.opciones;
   /** Otro tamaño, otro precio sugerido: cambia el de las líneas que todavía tienen el sugerido del tamaño anterior. */
   function cambiarTamano(t: string) {
@@ -321,7 +335,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
   // El historial: Atrás y Adelante del navegador (o del celular) cambian de paso. Adelante revisa los pasos que salta
   usePasosEnHistorial(() => {
     const destino = pasoDeAncla(window.location.hash.slice(1)) ?? inicial;
-    for (let p = pasoActual.current; p < destino; p++) {
+    for (let p = pasoActual.current; p < destino; p = despuesDe(p)) {
       const errores = erroresDelPaso(p);
       if (Object.keys(errores).length === 0) continue;
       setLocales({ en: estado, errores });
@@ -340,8 +354,9 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
       return;
     }
     setRevisados((r) => ({ en: estado, pasos: new Set(r.en === estado ? r.pasos : []).add(paso) }));
-    window.history.pushState(window.history.state, "", `#${ANCLA[paso + 1]}`);
-    mostrar(paso + 1);
+    const proximo = despuesDe(paso);
+    window.history.pushState(window.history.state, "", `#${ANCLA[proximo]}`);
+    mostrar(proximo);
   }
 
   // Los errores que se ven: los de la acción (salvo los de pasos ya revisados de nuevo) y los de "Siguiente". Lo mismo
@@ -354,7 +369,8 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
   };
   const vista: EstadoCliente = { ...estado, errores: e as Record<string, string>, existentes: Object.fromEntries(Object.entries(estado.existentes ?? {}).filter(vigente)) };
   // El aviso de repetido lleva a reservarle a ese cliente, no a su ficha
-  const usarExistente = (x: { id: number; nombre: string }) => ({ href: (nuevo?.conCliente ?? "").replace("cliente=0", `cliente=${x.id}`) as Route, texto: `Usar a ${x.nombre}` });
+  const conCliente = nuevo?.conCliente;
+  const usarExistente = conCliente ? (x: { id: number; nombre: string }) => ({ href: conCliente.replace("cliente=0", `cliente=${x.id}`) as Route, texto: `Usar a ${x.nombre}` }) : undefined;
   const nombreCliente = nuevo ? (nuevo.clienteNuevo ? (paso > PASO_CLIENTE ? resumen.nombre : "") : (nuevo.nombreCliente ?? "")) : "";
   const conErrorEnServicios = Object.keys(e).some((c) => pasoDeCampoReserva(c) === PASO_SERVICIOS && e[c]);
   // Con cotizaciones del vehículo, lo común es usar una: "Siguiente" aparece al empezar una sin cotización, y queda
@@ -407,7 +423,9 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
         actual={paso}
         etiqueta="Pasos de la reserva"
         // Los pasos de este formulario se tocan para volver; los de antes (el cliente y el vehículo elegidos), por la dirección
-        destinos={pasosNuevaReserva(conPagos).map((_, i) => (i >= inicial || (directa && i === PASO_SERVICIOS) ? { alTocar: () => volverA(i) } : pasosHechos?.[i]))}
+        destinos={pasosNuevaReserva(conPagos).map((_, i) =>
+          (i >= inicial && (directa || i !== PASO_SERVICIOS)) || (directa && i === PASO_SERVICIOS) ? { alTocar: () => volverA(i) } : pasosHechos?.[i],
+        )}
       />
       {arriba}
       {/* Para quién es, con lo escrito en los pasos del cliente y el vehículo nuevos */}
@@ -428,10 +446,10 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
         <>
           {origen.clienteId && <input type="hidden" name="clienteId" value={origen.clienteId} />}
           {origen.vehiculoId && <input type="hidden" name="vehiculoId" value={origen.vehiculoId} />}
-          {nuevo && <input type="hidden" name={nuevo.clienteNuevo ? "clienteNuevo" : "vehiculoNuevo"} value="1" />}
           {origen.recordatorioId && <input type="hidden" name="recordatorioId" value={origen.recordatorioId} />}
         </>
       )}
+      {nuevo && <input type="hidden" name={nuevo.clienteNuevo ? "clienteNuevo" : "vehiculoNuevo"} value="1" />}
 
       {estado.mensaje && !estado.ok && <MensajeError id="reserva-error">{estado.mensaje}</MensajeError>}
 
@@ -439,24 +457,35 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
         <div data-paso={PASO_CLIENTE} hidden={paso !== PASO_CLIENTE}>
           {/* Como en Nueva cotización: el título adentro, con "Buscar un cliente registrado" al lado */}
           <SeccionFormulario
-            titulo="Cliente nuevo"
+            titulo={directa ? "Cliente nuevo" : "Cliente"}
             accion={
-              <Link href={nuevo.volverAElegir} className={buttonVariants({ variant: "accion" })}>
-                <SearchIcon />
-                Buscar un cliente registrado
-              </Link>
+              nuevo.volverAElegir && (
+                <Link href={nuevo.volverAElegir} className={buttonVariants({ variant: "accion" })}>
+                  <SearchIcon />
+                  Buscar un cliente registrado
+                </Link>
+              )
             }
             claseContenido="gap-6"
           >
-            <CamposCliente estado={vista} plegar enlaceExistente={usarExistente} />
+            <CamposCliente estado={vista} iniciales={nuevo.iniciales} plegar enlaceExistente={usarExistente} />
           </SeccionFormulario>
         </div>
       )}
       {nuevo && (
         <div data-paso={PASO_VEHICULO} hidden={paso !== PASO_VEHICULO}>
-          <SeccionFormulario titulo={nuevo.clienteNuevo ? "Vehículo" : "Otro vehículo"} claseContenido="gap-4">
+          <SeccionFormulario titulo={nuevo.clienteNuevo || !directa ? "Vehículo" : "Otro vehículo"} claseContenido="gap-4">
+            {nuevo.ayuda}
             {/* Completo, como en Nueva cotización: placa y tamaño, y marca, modelo, año y color a la vista */}
-            <CamposVehiculo estado={vista} prefijo={PREFIJO_VEHICULO} tamanos={nuevo.tamanos} catalogo={nuevo.catalogo} enlaceExistente={usarExistente} alCambiarTamano={cambiarTamano} />
+            <CamposVehiculo
+              estado={vista}
+              iniciales={nuevo.iniciales}
+              prefijo={PREFIJO_VEHICULO}
+              tamanos={nuevo.tamanos}
+              catalogo={nuevo.catalogo}
+              enlaceExistente={usarExistente}
+              alCambiarTamano={cambiarTamano}
+            />
           </SeccionFormulario>
         </div>
       )}
@@ -575,7 +604,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
                   Atrás
                 </Button>
               )}
-              {paso === PASO_VEHICULO && nuevo && !nuevo.clienteNuevo && (
+              {paso === PASO_VEHICULO && nuevo && !nuevo.clienteNuevo && nuevo.volverAElegir && (
                 <Link href={nuevo.volverAElegir} className={buttonVariants({ variant: "outline" })}>
                   Atrás
                 </Link>
@@ -590,6 +619,12 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
                 <Link href={pasosHechos[1].href} className={buttonVariants({ variant: "outline" })}>
                   Atrás
                 </Link>
+              )}
+              {/* La de un interesado (P31b): de la fecha, al vehículo (no hay Servicios) */}
+              {!directa && nuevo && paso === PASO_FECHA && (
+                <Button type="button" variant="outline" disabled={enviando} onClick={() => volverA(PASO_VEHICULO)}>
+                  Atrás
+                </Button>
               )}
               {directa && paso === PASO_FECHA && inicial <= PASO_SERVICIOS && (
                 <Button type="button" variant="outline" disabled={enviando} onClick={volverAServicios}>
@@ -617,7 +652,7 @@ export function FormularioReserva({ volver, origen, conPagos, adelantoSugerido, 
                     siguiente();
                   }}
                 >
-                  {paso === PASO_CLIENTE ? "Siguiente: vehículo" : "Siguiente: servicios"}
+                  {paso === PASO_CLIENTE ? "Siguiente: vehículo" : directa ? "Siguiente: servicios" : "Siguiente: fecha"}
                 </Button>
               ) : paso === PASO_SERVICIOS ? (
                 <Button

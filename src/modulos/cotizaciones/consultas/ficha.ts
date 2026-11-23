@@ -8,7 +8,7 @@ import type { EstadoConsulta, MotivoPerdida } from "@/db/esquema/consultas";
 import type { EstadoCotizacion } from "@/db/esquema/cotizaciones";
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { partirDescripcion } from "../reglas";
-import { esInteresado, nombreDeQuien, sinFecha, tamanoDeLaConsulta, telefonoDeQuien } from "./comun";
+import { esInteresado, nombreDeQuien, placaDeQuien, sinFecha, tamanoDeLaConsulta, telefonoDeQuien } from "./comun";
 
 // Lecturas de las cotizaciones (C2, P23, P39, P40, P47). Quien las llama ya pasó por su permiso (Cotizaciones;
 // los precios, solo con él). Especificación: docs/08-desarrollo/etapas/C2-consultas-cotizaciones.md.
@@ -85,7 +85,7 @@ export type DetalleCotizacion = {
   /** Para enlazar a su ficha (pedido 51); null en la de un interesado. */
   vehiculoId: number | null;
   placa: string | null;
-  /** Marca y modelo, año y color: lo que se sepa (DatosVehiculo). Del interesado, lo que se escribió ("Hilux blanca"). */
+  /** Marca y modelo, año y color: lo que se sepa (DatosVehiculo). Del interesado, nada: su placa y su tamaño. */
   detalle: (string | number)[];
   /** De un interesado (P31b): todavía no está en Clientes; se registra al reservar. */
   interesado: boolean;
@@ -114,8 +114,7 @@ export async function obtenerCotizacion(id: number): Promise<DetalleCotizacion |
         telefono: telefonoDeQuien,
         vehiculoId: consulta.vehiculoId,
         interesado: esInteresado,
-        delInteresado: consulta.interesadoVehiculo,
-        placa: vehiculo.placa,
+        placa: placaDeQuien,
         marca: vehiculo.marca,
         modelo: vehiculo.modelo,
         anio: vehiculo.anio,
@@ -134,13 +133,13 @@ export async function obtenerCotizacion(id: number): Promise<DetalleCotizacion |
     versionesDeCotizacion(id),
   ]);
   if (!c || versiones.length === 0) return null;
-  const { marca, modelo, anio, color, delInteresado, ...datos } = c;
+  const { marca, modelo, anio, color, ...datos } = c;
   return {
     ...datos,
     marca,
     modelo,
     numero: versiones[0].numero,
-    detalle: c.interesado ? (delInteresado ? [delInteresado] : []) : detalleVehiculo({ marca, modelo, anio, color }),
+    detalle: detalleVehiculo({ marca, modelo, anio, color }),
     foto: await fotoDeConsulta(id),
     versiones,
   };

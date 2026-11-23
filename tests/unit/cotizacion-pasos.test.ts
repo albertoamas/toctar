@@ -13,7 +13,7 @@ describe("en qué paso está cada error", () => {
     ["vehiculo-placa", PASO_VEHICULO],
     ["vehiculo-tamanoId", PASO_VEHICULO],
     ["interesadoTamanoId", PASO_VEHICULO],
-    ["interesadoVehiculo", PASO_VEHICULO],
+    ["interesadoPlaca", PASO_VEHICULO],
     ["foto", PASO_VEHICULO],
     ["modo", PASO_SERVICIOS],
     ["lineas", PASO_SERVICIOS],
@@ -49,12 +49,14 @@ describe("cada paso se revisa al seguir", () => {
     expect(erroresDelPaso(PASO_CLIENTE, {}, false)).toEqual({});
   });
 
-  test("el vehículo de alguien nuevo: el tamaño, sin placa; qué vehículo es, opcional", () => {
-    const delInteresado = { ...cliente, interesadoTamanoId: "2", interesadoVehiculo: "" };
+  test("el vehículo de alguien nuevo: la placa y el tamaño (22/11)", () => {
+    const delInteresado = { ...cliente, interesadoPlaca: "4321 bcd", interesadoTamanoId: "2" };
     expect(erroresDelPaso(PASO_VEHICULO, delInteresado, true)).toEqual({});
-    expect(erroresDelPaso(PASO_VEHICULO, { ...delInteresado, interesadoVehiculo: "Hilux blanca" }, true)).toEqual({});
-    expect(erroresDelPaso(PASO_VEHICULO, { ...delInteresado, interesadoTamanoId: "" }, true)).toEqual({ interesadoTamanoId: "Elige el tamaño." });
-    expect(erroresDelPaso(PASO_VEHICULO, { ...delInteresado, interesadoVehiculo: "x".repeat(81) }, true)).toEqual({ interesadoVehiculo: "Hasta 80 caracteres." });
+    expect(erroresDelPaso(PASO_VEHICULO, { ...delInteresado, interesadoPlaca: "", interesadoTamanoId: "" }, true)).toEqual({
+      interesadoPlaca: "Escribe la placa.",
+      interesadoTamanoId: "Elige el tamaño.",
+    });
+    expect(erroresDelPaso(PASO_VEHICULO, { ...delInteresado, interesadoPlaca: "12-*" }, true)).toEqual({ interesadoPlaca: "La placa lleva solo letras y números." });
   });
 
   test("con un cliente registrado: uno de sus vehículos, u otro con sus datos", () => {

@@ -86,7 +86,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
   const [locales, setLocales] = useState<{ en: EstadoCliente | null; errores: Record<string, string> }>({ en: null, errores: {} });
   const [revisados, setRevisados] = useState<{ en: EstadoCliente | null; pasos: Set<number> }>({ en: null, pasos: new Set() });
   // Lo elegido o escrito, para el resumen de arriba: se lee del formulario cada vez que se muestra un paso
-  const [resumen, setResumen] = useState<{ cliente?: [string, string]; vehiculo?: { placa: string | null; detalle: (string | number)[] } }>({});
+  const [resumen, setResumen] = useState<{ cliente?: [string, string]; vehiculo?: { placa: string; detalle: (string | number)[] } }>({});
   const errorAlLlegar = useRef(false);
   const formulario = useRef<HTMLFormElement>(null);
 
@@ -110,12 +110,11 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
     const elegido = cliente?.vehiculos.find((x) => String(x.id) === valores.vehiculo);
     const nuevo = (c: string) => valores[PREFIJO_VEHICULO + c]?.trim() || null;
     const placa = valores[`${PREFIJO_VEHICULO}placa`] ?? "";
-    const delInteresado = valores.interesadoVehiculo?.trim();
     setResumen({
       cliente: clienteNuevo ? [valores.nombre?.trim() ?? "", formatearWhatsApp(normalizarWhatsApp(valores.telefono ?? "") ?? valores.telefono ?? "")] : undefined,
-      // Alguien nuevo (P31b): sin placa, con lo que se escribió del vehículo
+      // Alguien nuevo (P31b): su placa, como la guarda el servidor
       vehiculo: clienteNuevo
-        ? { placa: null, detalle: delInteresado ? [delInteresado] : [] }
+        ? { placa: normalizarPlaca(valores.interesadoPlaca ?? "") ?? (valores.interesadoPlaca ?? "").trim().toUpperCase(), detalle: [] }
         : elegido
         ? { placa: elegido.placa, detalle: elegido.detalle }
         : {
@@ -234,12 +233,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
         cliente={{ nombre: datosCliente[0], detalle: datosCliente[1], href: clienteNuevo ? undefined : conDesde("/panel/cotizaciones/nueva", volver), alCambiar: () => volverA(PASO_CLIENTE) }}
         vehiculo={
           paso > PASO_VEHICULO && resumen.vehiculo
-            ? {
-                ...resumen.vehiculo,
-                placa: resumen.vehiculo.placa ?? (resumen.vehiculo.detalle.length > 0 ? "" : "Sin registrar"),
-                tamano: tamanos.find((t) => t.id === tamanoId)?.nombre ?? "",
-                alCambiar: () => volverA(PASO_VEHICULO),
-              }
+            ? { ...resumen.vehiculo, tamano: tamanos.find((t) => t.id === tamanoId)?.nombre ?? "", alCambiar: () => volverA(PASO_VEHICULO) }
             : null
         }
       />
@@ -279,7 +273,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
         <ParaQuien
           etiqueta="Cotización para"
           nombre={datosCliente[0]}
-          placa={paso > PASO_VEHICULO ? (resumen.vehiculo?.placa ?? (resumen.vehiculo?.detalle[0] as string | undefined)) : null}
+          placa={paso > PASO_VEHICULO ? resumen.vehiculo?.placa : null}
           tamano={paso > PASO_VEHICULO ? tamanos.find((t) => t.id === tamanoId)?.nombre : null}
         />
         </div>
@@ -310,6 +304,8 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
         <SeccionFormulario titulo={clienteNuevo ? "Vehículo" : vehiculoNuevo ? (conVehiculos ? "Otro vehículo" : "Vehículo nuevo") : "Vehículo"} claseContenido="gap-4">
           {clienteNuevo && (
             <CamposVehiculoInteresado
+              estado={vista}
+              enlaceExistente={usarExistente}
               tamanos={tamanos}
               valores={v}
               errores={{ ...e, ...(foto.error ? { foto: foto.error } : {}) }}

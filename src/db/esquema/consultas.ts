@@ -31,12 +31,13 @@ export const consulta = pgTable(
     vehiculoId: integer("vehiculo_id").references(() => vehiculo.id),
     /**
      * Pedido 31, parte 2 (P31b-cotizacion-rapida.md): quien cotiza y nunca vuelve no se registra como cliente. La
-     * cotización guarda su nombre, su WhatsApp (formato internacional, como el del cliente), qué vehículo es (opcional)
-     * y su tamaño, que da el precio. Al registrarse, la consulta pasa a tener cliente y vehículo, y esto queda como estaba.
+     * cotización guarda su nombre, su WhatsApp (formato internacional, como el del cliente), la placa (normalizada, como
+     * la del vehículo; la pide la pantalla, la base no: las de antes del 22/11 no la tienen), su tamaño, que da el precio,
+     * y una foto opcional (consulta_archivo). Al reservar se registran el cliente y el vehículo con esto, y queda como estaba.
      */
     interesadoNombre: text("interesado_nombre"),
     interesadoTelefono: text("interesado_telefono"),
-    interesadoVehiculo: text("interesado_vehiculo"),
+    interesadoPlaca: text("interesado_placa"),
     interesadoTamanoId: integer("interesado_tamano_id").references(() => tamanoVehiculo.id),
     /** Vacío: el cliente todavía no sabe qué servicio quiere. */
     servicioId: integer("servicio_id").references(() => servicio.id),

@@ -45,12 +45,12 @@ type PropsCampos = {
   alCambiarTamano?: (tamanoId: string) => void;
 };
 
-type EnlaceExistente = (existente: { id: number; nombre: string }) => { href: Route; texto: string };
+export type EnlaceExistente = (existente: { id: number; nombre: string }) => { href: Route; texto: string };
 
 const aLaFicha: EnlaceExistente = (e) => ({ href: `/panel/clientes/${e.id}`, texto: `Abrir la ficha de ${e.nombre}` });
 
 /** Si el dato ya es de otro cliente, el enlace a su ficha (RF-23). */
-function Existente({ estado, campo, enlace = aLaFicha }: { estado: EstadoCliente; campo: string; enlace?: EnlaceExistente }) {
+export function Existente({ estado, campo, enlace = aLaFicha }: { estado: EstadoCliente; campo: string; enlace?: EnlaceExistente }) {
   const existente = estado.existentes?.[campo];
   if (!existente) return null;
   const { href, texto } = enlace(existente);

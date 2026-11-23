@@ -1,11 +1,12 @@
 import "server-only";
 
-import { and, asc, desc, eq, isNull, not, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, not, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { cliente, consulta, cotizacion, cotizacionLinea, servicio, tamanoVehiculo, variante, vehiculo } from "@/db/esquema";
 import { duracionEfectiva } from "@/modulos/catalogo/reglas";
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
-import { conReservaActiva } from "@/modulos/cotizaciones/consultas/comun";
+import { conReservaActiva, tamanoDeLaConsulta } from "@/modulos/cotizaciones/consultas/comun";
 import { opcionesDeServicio, type OpcionServicio } from "@/modulos/cotizaciones/consultas/servicios";
 import { sePuedeReservar } from "@/modulos/cotizaciones/reglas";
 import { calcularSaldo, type Saldo } from "@/modulos/pagos/reglas";
@@ -25,14 +26,32 @@ export type DatosDeCotizacion = {
   agendable: boolean;
   /** Ya aceptada (sin fecha, si es agendable): los pasos del trabajo la muestran en "Aceptada" y no en "Cotizada". */
   aceptada: boolean;
-  /** El cliente y el vehículo siguen activos. */
+  /** El cliente y el vehículo siguen activos (la de un interesado no tiene todavía). */
   activos: boolean;
-  cliente: { id: number; nombre: string };
-  vehiculo: VehiculoReserva;
+  /** Null en la de un interesado (P31b): se registran en los primeros pasos de la reserva, con `interesado`. */
+  cliente: { id: number; nombre: string } | null;
+  vehiculo: VehiculoReserva | null;
+  interesado: InteresadoDeCotizacion | null;
   lineas: LineaReserva[];
   descuento: string;
   saldo: Saldo;
 };
+
+/**
+ * Lo que se anotó del interesado al cotizar (pedido 31, parte 2, P31b-cotizacion-rapida.md): con esto se llenan los pasos
+ * del cliente y el vehículo de la reserva. Si su WhatsApp ya es de un cliente, la reserva y la cotización quedan con él.
+ */
+export type InteresadoDeCotizacion = {
+  nombre: string;
+  telefono: string;
+  /** Null en las de antes del 22/11: se escribe en el paso del vehículo. */
+  placa: string | null;
+  tamanoId: number;
+  clienteExistente: { id: number; nombre: string; activo: boolean } | null;
+};
+
+/** El cliente que ya tiene el WhatsApp del interesado. */
+const existente = alias(cliente, "existente");
 
 /** El vehículo de una reserva, como lo muestra el panel (DatosVehiculo): la placa, lo que se sepa y el tamaño. */
 export type VehiculoReserva = { id: number; placa: string; tamano: string; detalle: (string | number)[] };
@@ -60,12 +79,21 @@ export async function datosDeCotizacion(cotizacionId: number): Promise<DatosDeCo
       placa: vehiculo.placa,
       tamano: tamanoVehiculo.nombre,
       ...columnasVehiculo,
+      interesadoNombre: consulta.interesadoNombre,
+      interesadoTelefono: consulta.interesadoTelefono,
+      interesadoPlaca: consulta.interesadoPlaca,
+      interesadoTamanoId: consulta.interesadoTamanoId,
+      existenteId: existente.id,
+      existenteNombre: existente.nombre,
+      existenteActivo: existente.activo,
     })
     .from(cotizacion)
     .innerJoin(consulta, eq(cotizacion.consultaId, consulta.id))
-    .innerJoin(cliente, eq(consulta.clienteId, cliente.id))
-    .innerJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
-    .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
+    // La de un interesado no tiene cliente ni vehículo todavía (P31b)
+    .leftJoin(cliente, eq(consulta.clienteId, cliente.id))
+    .leftJoin(vehiculo, eq(consulta.vehiculoId, vehiculo.id))
+    .leftJoin(existente, and(sql`${consulta.clienteId} is null`, eq(existente.telefono, consulta.interesadoTelefono)))
+    .innerJoin(tamanoVehiculo, eq(tamanoVehiculo.id, tamanoDeLaConsulta))
     .where(eq(cotizacion.id, cotizacionId));
   if (!c) return null;
   const lineas = await db
@@ -81,17 +109,29 @@ export async function datosDeCotizacion(cotizacionId: number): Promise<DatosDeCo
     .innerJoin(servicio, eq(variante.servicioId, servicio.id))
     .where(eq(cotizacionLinea.cotizacionId, cotizacionId))
     .orderBy(asc(cotizacionLinea.orden));
+  const conCliente = c.clienteId !== null && c.vehiculoId !== null;
+  const interesado: InteresadoDeCotizacion | null =
+    !conCliente && c.interesadoNombre && c.interesadoTelefono && c.interesadoTamanoId
+      ? {
+          nombre: c.interesadoNombre,
+          telefono: c.interesadoTelefono,
+          placa: c.interesadoPlaca,
+          tamanoId: c.interesadoTamanoId,
+          clienteExistente: c.existenteId !== null ? { id: c.existenteId, nombre: c.existenteNombre!, activo: c.existenteActivo! } : null,
+        }
+      : null;
   return {
     cotizacionId: c.cotizacionId,
     numero: c.numero,
     version: c.version,
     consultaId: c.consultaId,
     // El vehículo tiene que seguir siendo de ese cliente: si cambió de dueño (pedido 37), su cotización ya no se reserva
-    agendable: sePuedeReservar({ version: c.estado, encabezado: c.estadoConsulta, conReserva: c.conReserva }) && c.vehiculoCliente === c.clienteId,
+    agendable: sePuedeReservar({ version: c.estado, encabezado: c.estadoConsulta, conReserva: c.conReserva }) && (interesado !== null || c.vehiculoCliente === c.clienteId),
     aceptada: c.estadoConsulta === "confirmado",
-    activos: c.clienteActivo && c.vehiculoActivo,
-    cliente: { id: c.clienteId, nombre: c.cliente },
-    vehiculo: { id: c.vehiculoId, placa: c.placa, tamano: c.tamano, detalle: detalleVehiculo(c) },
+    activos: interesado !== null || (!!c.clienteActivo && !!c.vehiculoActivo),
+    cliente: conCliente ? { id: c.clienteId!, nombre: c.cliente! } : null,
+    vehiculo: conCliente ? { id: c.vehiculoId!, placa: c.placa!, tamano: c.tamano, detalle: detalleVehiculo(c) } : null,
+    interesado,
     lineas: lineas.map((l) => ({
       varianteId: l.varianteId,
       descripcion: l.descripcion,
@@ -104,58 +144,6 @@ export async function datosDeCotizacion(cotizacionId: number): Promise<DatosDeCo
       c.descuento,
       [],
     ),
-  };
-}
-
-/** La cotización de un interesado (P31b-cotizacion-rapida.md), que se registra antes de reservarla. */
-export type InteresadoDeCotizacion = {
-  cotizacionId: number;
-  numero: string;
-  consultaId: number;
-  /** Se puede reservar (pendiente, o aceptada sin fecha): si no, no hay nada que registrar. */
-  agendable: boolean;
-  nombre: string;
-  telefono: string;
-  /** Lo que se escribió del vehículo ("Hilux blanca"), o null. */
-  vehiculo: string | null;
-  tamanoId: number;
-  /** Si su WhatsApp ya es de un cliente (se registró por otro lado): la cotización queda con él. */
-  clienteExistente: { id: number; nombre: string; activo: boolean } | null;
-};
-
-/** La cotización de un interesado todavía sin registrar, o null (no existe o ya es de un cliente). */
-export async function interesadoDeCotizacion(cotizacionId: number): Promise<InteresadoDeCotizacion | null> {
-  const [c] = await db
-    .select({
-      cotizacionId: cotizacion.id,
-      numero: cotizacion.numero,
-      estado: cotizacion.estado,
-      consultaId: consulta.id,
-      estadoConsulta: consulta.estado,
-      conReserva: conReservaActiva,
-      nombre: consulta.interesadoNombre,
-      telefono: consulta.interesadoTelefono,
-      vehiculo: consulta.interesadoVehiculo,
-      tamanoId: consulta.interesadoTamanoId,
-      existenteId: cliente.id,
-      existenteNombre: cliente.nombre,
-      existenteActivo: cliente.activo,
-    })
-    .from(cotizacion)
-    .innerJoin(consulta, eq(cotizacion.consultaId, consulta.id))
-    .leftJoin(cliente, eq(cliente.telefono, consulta.interesadoTelefono))
-    .where(and(eq(cotizacion.id, cotizacionId), isNull(consulta.clienteId)));
-  if (!c || !c.nombre || !c.telefono || !c.tamanoId) return null;
-  return {
-    cotizacionId: c.cotizacionId,
-    numero: c.numero,
-    consultaId: c.consultaId,
-    agendable: sePuedeReservar({ version: c.estado, encabezado: c.estadoConsulta, conReserva: c.conReserva }),
-    nombre: c.nombre,
-    telefono: c.telefono,
-    vehiculo: c.vehiculo,
-    tamanoId: c.tamanoId,
-    clienteExistente: c.existenteId !== null ? { id: c.existenteId, nombre: c.existenteNombre!, activo: c.existenteActivo! } : null,
   };
 }
 

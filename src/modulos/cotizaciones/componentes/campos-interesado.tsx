@@ -3,16 +3,22 @@ import { Campo } from "@/componentes/panel/campo";
 import { ElegirFoto } from "@/componentes/panel/elegir-foto";
 import { Selector } from "@/componentes/panel/selector";
 import { achicarFoto } from "@/componentes/panel/subida-foto";
+import { ANCHO_DATO } from "@/componentes/panel/anchos";
 import { Input } from "@/componentes/ui/input";
 import { BYTES_MAXIMOS_FOTO } from "@/lib/formato-fotos";
+import type { EstadoCliente } from "@/modulos/clientes/acciones";
+import { type EnlaceExistente, Existente } from "@/modulos/clientes/componentes/campos";
 import type { Tamano } from "@/modulos/configuracion/consultas";
-import { ERROR_FOTO_INTERESADO, LIMITE_VEHICULO_INTERESADO } from "../esquemas";
+import { ERROR_FOTO_INTERESADO } from "../esquemas";
 
 // Componente de cliente: se usa dentro del formulario de Nueva cotización (recibe funciones como props).
-// Pedido 31, parte 2 (P31b-cotizacion-rapida.md): el vehículo de alguien nuevo, sin registrarlo. Lo que da el precio (el
-// tamaño) y, si se quiere, qué vehículo es en una línea y una foto, para saber después cuál vino a cotizar.
+// Pedido 31, parte 2 (P31b-cotizacion-rapida.md): el vehículo de alguien nuevo, sin registrarlo. La placa (lo que el
+// dueño quiere saber del auto, 22/11), el tamaño, que da el precio, y una foto opcional. Al reservar se registra con esto.
 
 type Props = {
+  /** Para el aviso de placa repetida, con su enlace (como en el vehículo de un cliente). */
+  estado: EstadoCliente;
+  enlaceExistente: EnlaceExistente;
   tamanos: Tamano[];
   valores: Record<string, string>;
   errores: Record<string, string>;
@@ -21,11 +27,25 @@ type Props = {
   foto: { vista: string | null; elegir: (archivo: File | null) => void };
 };
 
-export function CamposVehiculoInteresado({ tamanos, valores, errores: e, alCambiarTamano, foto }: Props) {
+export function CamposVehiculoInteresado({ estado, enlaceExistente, tamanos, valores, errores: e, alCambiarTamano, foto }: Props) {
   const [tamanoId, setTamanoId] = useState(valores.interesadoTamanoId ?? "");
   const ejemplos = tamanos.find((t) => String(t.id) === tamanoId)?.descripcion;
   return (
     <>
+      <Campo id="interesadoPlaca" etiqueta="Placa" error={e.interesadoPlaca}>
+        <Input
+          id="interesadoPlaca"
+          name="interesadoPlaca"
+          autoComplete="off"
+          autoCapitalize="characters"
+          spellCheck={false}
+          defaultValue={valores.interesadoPlaca}
+          aria-invalid={!!e.interesadoPlaca}
+          aria-describedby={e.interesadoPlaca ? "interesadoPlaca-error" : undefined}
+          className={ANCHO_DATO.placa}
+        />
+      </Campo>
+      <Existente estado={estado} campo="interesadoPlaca" enlace={enlaceExistente} />
       <Campo id="interesadoTamanoId" etiqueta="Tamaño" error={e.interesadoTamanoId} ayuda={ejemplos || undefined}>
         <Selector
           id="interesadoTamanoId"
@@ -45,18 +65,6 @@ export function CamposVehiculoInteresado({ tamanos, valores, errores: e, alCambi
             </option>
           ))}
         </Selector>
-      </Campo>
-      <Campo id="interesadoVehiculo" etiqueta="¿Qué vehículo es?" opcional error={e.interesadoVehiculo} ayuda='Por ejemplo, "Hilux blanca". La placa se pide al reservar.'>
-        <Input
-          id="interesadoVehiculo"
-          name="interesadoVehiculo"
-          autoComplete="off"
-          maxLength={LIMITE_VEHICULO_INTERESADO}
-          defaultValue={valores.interesadoVehiculo}
-          aria-invalid={!!e.interesadoVehiculo}
-          aria-describedby={e.interesadoVehiculo ? "interesadoVehiculo-error" : "interesadoVehiculo-ayuda"}
-          className="sm:max-w-sm"
-        />
       </Campo>
       <div className="flex flex-col gap-3">
         <p className="text-sm font-medium">

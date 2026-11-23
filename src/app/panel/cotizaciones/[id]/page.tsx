@@ -101,8 +101,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
               plantilla: plantillas.cotizacion,
               negocio: negocio.nombre,
               cliente: c.cliente,
-              // De un interesado (P31b): lo que se escribió del vehículo, sin placa
-              vehiculo: c.interesado ? { marca: c.detalle[0] ? String(c.detalle[0]) : null, modelo: null, placa: null } : { marca: c.marca, modelo: c.modelo, placa: c.placa },
+              vehiculo: { marca: c.marca, modelo: c.modelo, placa: c.placa },
               numero: v.numero,
               enlace: `${urlSitio()}${rutaEnlace(v.enlace)}`,
             }),
@@ -183,7 +182,9 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
             {/* Como en Reserva y Orden, con la placa: aquí el título es el número de la cotización */}
             {/* La ficha del vehículo, para quien ve Clientes (pedido 51) */}
             <FilaVehiculo href={verFicha && c.clienteId && c.vehiculoId ? conDesde(rutaVehiculo(c.clienteId, c.vehiculoId), desdeAqui) : null}>
-              {c.placa ? <span className="font-semibold">{c.placa}</span> : <span className="font-semibold">Sin registrar</span>}
+              {c.placa && <span className="font-semibold">{c.placa}</span>}
+              {/* De un interesado (P31b): se registra al reservar */}
+              {c.interesado && <span className="text-sm text-tinta-suave">Sin registrar</span>}
               {c.detalle.length > 0 && <span>{c.detalle.join(" ")}</span>}
               <span className="text-sm text-tinta-suave">Tamaño: {c.tamano}</span>
             </FilaVehiculo>

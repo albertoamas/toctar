@@ -134,7 +134,7 @@ async function Semana(props: { lunes: string; dias: string[]; hoy: string; hasta
     tituloGrande: true,
     // Lo que hace la fila, escrito (C7, 18/11): toda la fila sigue llevando a Nueva reserva
     accion: "Reservar",
-    detalles: [c.placa ? c.cliente : [c.vehiculo, "Sin registrar"].filter(Boolean).join(" · "), c.servicios, ...(conMontos ? [bs(c.total)] : []), `Aceptada ${textoDias(diasDesde(c.ultimoMovimientoAt, ahora))}`].filter(Boolean),
+    detalles: [c.interesado ? `${c.cliente}, sin registrar` : c.cliente, c.servicios, ...(conMontos ? [bs(c.total)] : []), `Aceptada ${textoDias(diasDesde(c.ultimoMovimientoAt, ahora))}`].filter(Boolean),
   });
 
   return (

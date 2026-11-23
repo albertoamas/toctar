@@ -23,6 +23,8 @@ export const conReservaActiva = sql<boolean>`${exists(
  */
 export const nombreDeQuien = sql<string>`coalesce(${cliente.nombre}, ${consulta.interesadoNombre})`;
 export const telefonoDeQuien = sql<string>`coalesce(${cliente.telefono}, ${consulta.interesadoTelefono})`;
+/** La placa del vehículo o la que se anotó del interesado (las de antes del 22/11 no la tienen: null). */
+export const placaDeQuien = sql<string | null>`coalesce(${vehiculo.placa}, ${consulta.interesadoPlaca})`;
 /** El tamaño que da el precio: el del vehículo registrado o el que se eligió para el interesado. */
 export const tamanoDeLaConsulta = sql<number>`coalesce(${vehiculo.tamanoId}, ${consulta.interesadoTamanoId})`;
 /** Todavía sin registrar: la cotización es de un interesado. */

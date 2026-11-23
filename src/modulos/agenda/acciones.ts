@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
 import { db } from "@/db";
@@ -22,7 +22,7 @@ import { borrarFotosSueltas, soltarFotosIngreso } from "@/modulos/ordenes/fotos"
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
 import { descartarComprobante, guardarComprobante } from "@/modulos/pagos/comprobante";
 import { calcularSaldo, tipoDePago } from "@/modulos/pagos/reglas";
-import { datosDeCotizacion, interesadoDeCotizacion } from "./consultas/reservar";
+import { datosDeCotizacion } from "./consultas/reservar";
 import { entradaReserva, esquemaAdelanto, esquemaCancelar, esquemaFechas, esquemaReprogramar, esquemaReserva } from "./esquemas";
 import { conDesde, leerDesde } from "@/lib/volver";
 
@@ -57,10 +57,11 @@ export async function agendarReserva(_previo: EstadoCliente, datos: FormData): P
   if (sinRespuesta) errores.dejoAdelanto = "Elige si dejó adelanto.";
 
   // Cliente o vehículo nuevos, escritos en sus pasos (20/11, como en Nueva cotización): los mismos esquemas que el alta
-  // de Clientes. Se crean con la reserva, en la misma transacción: si la reserva no se guarda, no queda nada a medias
+  // de Clientes. Se crean con la reserva, en la misma transacción: si la reserva no se guarda, no queda nada a medias.
+  // También los de una cotización de un interesado (P31b), que llegan escritos con lo que se anotó al cotizar
   const valores = leerValores(datos);
-  const clienteNuevo = datos.get("origen") === "directa" && datos.get("clienteNuevo") === "1";
-  const vehiculoNuevo = clienteNuevo || (datos.get("origen") === "directa" && datos.get("vehiculoNuevo") === "1");
+  const clienteNuevo = datos.get("clienteNuevo") === "1";
+  const vehiculoNuevo = clienteNuevo || datos.get("vehiculoNuevo") === "1";
   let nuevoCliente: z.output<typeof esquemaCliente> | null = null;
   let nuevoVehiculo: z.output<typeof esquemaVehiculo> | null = null;
   if (clienteNuevo) {
@@ -96,17 +97,56 @@ export async function agendarReserva(_previo: EstadoCliente, datos: FormData): P
   let descuento = "0.00";
   let lineas: Linea[];
   let recordatorioId: number | null = null;
+  // La consulta de un interesado (P31b): con la reserva pasa a tener el cliente y el vehículo
+  let deInteresado = false;
   if (d.origen === "cotizacion") {
     const c = await datosDeCotizacion(d.cotizacionId);
-    // La de un interesado (P31b) se reserva después de registrarlo: la pantalla lo pide antes
-    if (!c && (await interesadoDeCotizacion(d.cotizacionId))) return { mensaje: "Registra al cliente antes de reservar: recarga la página." };
     if (!c) return { mensaje: "Esa cotización ya no existe." };
     if (!c.agendable) return { mensaje: COTIZACION_CAMBIO };
     if (!c.activos) return { mensaje: "El cliente o el vehículo de esa cotización ya no está activo. Reactívalo en su ficha." };
     ({ consultaId, cotizacionId, descuento } = c);
-    clienteId = c.cliente.id;
-    vehiculoId = c.vehiculo.id;
     lineas = c.lineas;
+    if (c.cliente && c.vehiculo) {
+      // Con su cliente: no se registra nada (lo que llegue de más no cuenta)
+      nuevoCliente = null;
+      nuevoVehiculo = null;
+      clienteId = c.cliente.id;
+      vehiculoId = c.vehiculo.id;
+    } else {
+      const i = c.interesado;
+      if (!i) return { mensaje: "Esa cotización ya no existe." };
+      if (!puedeVerModulo(usuario, "clientes")) return { mensaje: "Registrar un cliente es de quien tiene «Clientes»." };
+      if (!nuevoVehiculo) return { mensaje: "No se pudo leer el pedido. Recarga la página." };
+      deInteresado = true;
+      // Si su WhatsApp ya es de un cliente, la reserva queda con él: no se escriben sus datos
+      if (i.clienteExistente) {
+        if (!i.clienteExistente.activo) return { mensaje: `Ese WhatsApp es de ${i.clienteExistente.nombre}, que está desactivado: reactívalo en su ficha.` };
+        nuevoCliente = null;
+        clienteId = i.clienteExistente.id;
+      } else {
+        if (!nuevoCliente) return { mensaje: "No se pudo leer el pedido. Recarga la página." };
+        clienteId = null;
+      }
+      const existentes: Existentes = {};
+      if (nuevoCliente) {
+        const conTelefono = await clienteConTelefono(nuevoCliente.telefono);
+        if (conTelefono) {
+          errores.telefono = `Ese número ya es de ${conTelefono.nombre}.`;
+          existentes.telefono = conTelefono;
+        }
+      }
+      await revisarVehiculo(nuevoVehiculo, PREFIJO_VEHICULO, errores, existentes);
+      // La placa ya es de un vehículo de ese mismo cliente: se usa ese
+      const suya = existentes[`${PREFIJO_VEHICULO}placa`];
+      vehiculoId = null;
+      if (suya && i.clienteExistente && suya.id === i.clienteExistente.id && suya.vehiculoId) {
+        delete errores[`${PREFIJO_VEHICULO}placa`];
+        delete existentes[`${PREFIJO_VEHICULO}placa`];
+        vehiculoId = suya.vehiculoId;
+        nuevoVehiculo = null;
+      }
+      if (Object.keys(errores).length > 0) return { errores, valores, existentes };
+    }
   } else {
     // Una reserva directa lleva precios: la arma el dueño o quien registra pagos
     if (!conPagos) return { mensaje: "La reserva directa la arma el dueño o quien registra pagos: lleva precios." };
@@ -200,7 +240,18 @@ export async function agendarReserva(_previo: EstadoCliente, datos: FormData): P
       if (nuevoVehiculo) {
         const [v] = await tx.insert(vehiculo).values({ ...(await conMarcaDeLaLista(tx, nuevoVehiculo)), clienteId: clienteId!, createdBy: autorId }).returning({ id: vehiculo.id });
         vehiculoId = v.id;
-      } else {
+      }
+      // La cotización del interesado queda con su cliente y su vehículo (P31b). Solo si sigue sin cliente: si otra persona
+      // la reservó a la vez, no se pisa
+      if (deInteresado) {
+        const hecho = await tx
+          .update(consulta)
+          .set({ clienteId: clienteId!, vehiculoId: vehiculoId! })
+          .where(and(eq(consulta.id, consultaId!), isNull(consulta.clienteId)))
+          .returning({ id: consulta.id });
+        if (hecho.length === 0) throw new Conflicto(COTIZACION_CAMBIO);
+      }
+      if (!nuevoVehiculo) {
         // El vehículo, bloqueado (después de la consulta, el orden del cambio de dueño) y todavía de ese cliente: una
         // reserva y un cambio de dueño a la vez no dejan una reserva del anterior con un auto del nuevo (pedido 37)
         const [suyo] = await tx
@@ -275,7 +326,7 @@ export async function agendarReserva(_previo: EstadoCliente, datos: FormData): P
   }
 
   despuesDeCambiar(resultado.id, resultado.clienteId, consultaId);
-  if (conNuevos) revalidatePath("/panel/clientes");
+  if (conNuevos || deInteresado) revalidatePath("/panel/clientes");
   if (recordatorioId) revalidatePath("/panel/mantenimientos");
   // La reserva vuelve a donde se empezó (pedido 43) y reemplaza al formulario en el historial: "atrás" no vuelve a él
   redirect(conDesde(`/panel/agenda/${resultado.id}?agendada=1`, leerDesde(datos.get("volver"))), RedirectType.replace);
