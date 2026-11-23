@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { BarraPasos } from "@/componentes/panel/barra-pasos";
-import { MarcaEstado } from "@/componentes/panel/marca-estado";
+import { Alerta } from "@/componentes/panel/alerta";
+import { Insignia } from "@/componentes/panel/insignia";
 import { conDesde } from "@/lib/volver";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
@@ -39,17 +40,15 @@ export function TarjetasOrdenes({ ordenes, hoy, desde }: { ordenes: OrdenEnLista
 
 function Tarjeta({ orden: o, hoy, href }: { orden: OrdenEnLista; hoy: string; href: Route }) {
   const atrasada = textoEntregaAtrasada(o, hoy);
-  // Una sola marca: el problema en su color (como en el inicio) o, si no hay, el estado
+  // Una sola marca, en píldora (paleta del 23/11): la alerta con su ícono o, si no hay, el estado
   const marca = atrasada ? (
-    <MarcaEstado tono="peligro" problema>
+    <Alerta tipo="atraso" grave>
       {atrasada}
-    </MarcaEstado>
+    </Alerta>
   ) : o.sinAvisar ? (
-    <MarcaEstado tono="aviso" problema>
-      Sin avisar
-    </MarcaEstado>
+    <Alerta tipo="avisar">Sin avisar</Alerta>
   ) : (
-    <MarcaEstado tono={TONO_ESTADO_TRABAJO[o.estado]}>{NOMBRE_ESTADO_TRABAJO[o.estado]}</MarcaEstado>
+    <Insignia tono={TONO_ESTADO_TRABAJO[o.estado]}>{NOMBRE_ESTADO_TRABAJO[o.estado]}</Insignia>
   );
   const actual = PASOS.findIndex((p) => p.estado === o.estado);
   const conSaldo = o.saldo !== null && Number(o.saldo) > 0;

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Alerta } from "@/componentes/panel/alerta";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Fragment, Suspense } from "react";
@@ -115,7 +116,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
             <span className="flex flex-wrap gap-2">
               {!c.activo && <Insignia>Desactivado</Insignia>}
               {/* Solo para quien ve pagos: sin el permiso, reservas no trae saldos */}
-              {debe && <Insignia tono="aviso">Debe {mostrarMonto(debe)} Bs</Insignia>}
+              {debe && <Alerta tipo="dinero">Debe {mostrarMonto(debe)} Bs</Alerta>}
             </span>
           )
         }

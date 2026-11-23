@@ -514,6 +514,10 @@
     border-radius: 9999px;
     background: currentColor;
   }
+  /* Una alerta (Alerta, 23/11): el ícono va en lugar del punto */
+  .tt-estado--icono::before {
+    display: none;
+  }
 
   /* Una parte de un formulario largo, como tarjeta (SeccionFormulario, pedido 26). La leyenda de un fieldset se dibuja
      sobre su borde: flotando deja de serlo y pasa a ser un elemento más de la columna, dentro de la tarjeta. */

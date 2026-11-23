@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { CalendarIcon } from "lucide-react";
-import { MarcaEstado } from "@/componentes/panel/marca-estado";
+import { Alerta } from "@/componentes/panel/alerta";
+import { Insignia } from "@/componentes/panel/insignia";
 import { buttonVariants } from "@/componentes/ui/button";
 import { cantidad } from "@/lib/cantidad";
 import { fechaConMes, fechaEnBolivia } from "@/lib/fechas";
@@ -53,23 +54,21 @@ export function TarjetasCotizaciones({ cotizaciones, umbral, desde, conReservar 
 function Tarjeta({ c, umbral, hoy, ahora, href, reservar }: { c: FilaCotizacion; umbral: number; hoy: string; ahora: Date; href: Route; reservar: Route | null }) {
   const dias = diasDesde(c.ultimoMovimientoAt, ahora);
   const aceptada = c.estado === "confirmado";
-  // Una sola marca: lo que hay que mirar de esta cotización
+  // Lo que hay que mirar (paleta del 23/11): la pestaña ya dice el estado, así que va la alerta si la hay (con su ícono)
+  // o, con su reserva, para cuándo; si no, hace cuánto, en gris
+  const cuando = <span className="text-tinta-suave first-letter:uppercase">{aceptada ? `Aceptada ${textoDias(dias)}` : dias === 0 ? "Enviada hoy" : `Enviada ${textoDias(dias)}`}</span>;
   const marca =
     aceptada && c.fechaReserva ? (
-      <MarcaEstado tono="exito">{`Reservada para el ${fechaConMes(c.fechaReserva, hoy)}`}</MarcaEstado>
+      <Insignia tono="info">{`Reservada para el ${fechaConMes(c.fechaReserva, hoy)}`}</Insignia>
     ) : aceptada ? (
-      <MarcaEstado tono="aviso">
-        <span>
-          <span className="font-semibold text-aviso">Sin fecha</span>
-          <span className="text-tinta-suave"> · aceptada {textoDias(dias)}</span>
-        </span>
-      </MarcaEstado>
+      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <Alerta tipo="fecha">Sin fecha</Alerta>
+        {cuando}
+      </span>
     ) : sinRespuesta(c.estado, dias, umbral) ? (
-      <MarcaEstado tono="aviso" problema>
-        Sin respuesta hace {cantidad(dias, "día", "días")}
-      </MarcaEstado>
+      <Alerta tipo="tiempo">Sin respuesta hace {cantidad(dias, "día", "días")}</Alerta>
     ) : (
-      <MarcaEstado>{dias === 0 ? "Enviada hoy" : `Enviada ${textoDias(dias)}`}</MarcaEstado>
+      cuando
     );
   const vencida = c.validaHasta < hoy;
   return (

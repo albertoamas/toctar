@@ -9,7 +9,8 @@ import { AbrirFoto } from "@/componentes/panel/abrir-foto";
 import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
-import { MarcaEstado } from "@/componentes/panel/marca-estado";
+import { Alerta } from "@/componentes/panel/alerta";
+import { Insignia } from "@/componentes/panel/insignia";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
@@ -135,15 +136,12 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
         )}
       </>
     ) : null;
-  // El estado, con un punto (sin píldora, como en la lista)
-  const marca = c.sinFecha ? (
-    <MarcaEstado tono="aviso">
-      <span>
-        Aceptada · <span className="font-semibold text-aviso">sin fecha</span>
-      </span>
-    </MarcaEstado>
-  ) : (
-    <MarcaEstado tono={TONO_ESTADO[c.estado]}>{NOMBRE_ESTADO[c.estado]}</MarcaEstado>
+  // El estado en su píldora y, si falta darle fecha, la alerta (paleta del 23/11)
+  const marca = (
+    <span className="flex flex-wrap items-center gap-1.5">
+      <Insignia tono={TONO_ESTADO[c.estado]}>{NOMBRE_ESTADO[c.estado]}</Insignia>
+      {c.sinFecha && <Alerta tipo="fecha">Sin fecha</Alerta>}
+    </span>
   );
 
   return (

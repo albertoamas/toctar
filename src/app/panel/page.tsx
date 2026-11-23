@@ -5,7 +5,8 @@ import { CalendarClockIcon, CalendarPlusIcon, CarFrontIcon, ChevronRightIcon, Fi
 import { cn } from "cn";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EstadoVacio } from "@/componentes/panel/estado-vacio";
-import { MarcaEstado } from "@/componentes/panel/marca-estado";
+import { Alerta } from "@/componentes/panel/alerta";
+import { Insignia } from "@/componentes/panel/insignia";
 import { ICONO_MODULO } from "@/componentes/panel/iconos-modulo";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
@@ -310,15 +311,15 @@ function ParaHoy({ filas, verOrdenes }: { filas: FilaDelDia[]; verOrdenes: boole
             href: conDesde(rutaTrabajo(f.id, f.estado, verOrdenes), INICIO),
             celdas: [
               <CeldaDoble key="v" principal={f.placa} secundario={f.cliente} peso="placa" />,
-              // Una sola marca (19/11, sin píldoras): el problema en su color o, si no hay, el estado con el punto de su tono
+              // Una sola marca, en píldora (paleta del 23/11): el problema como alerta con su ícono o, si no hay, el estado
               f.problema ? (
-                <MarcaEstado key="e" tono={f.problema.tono} problema>
+                <Alerta key="e" tipo={f.problema.tono === "peligro" ? "atraso" : "avisar"} grave={f.problema.tono === "peligro"}>
                   {f.problema.texto}
-                </MarcaEstado>
+                </Alerta>
               ) : (
-                <MarcaEstado key="e" tono={TONO_ESTADO_TRABAJO[f.estado]}>
+                <Insignia key="e" tono={TONO_ESTADO_TRABAJO[f.estado]}>
                   {NOMBRE_ESTADO_TRABAJO[f.estado]}
-                </MarcaEstado>
+                </Insignia>
               ),
               <span key="c" className="text-tinta-suave">
                 {f.cuando}

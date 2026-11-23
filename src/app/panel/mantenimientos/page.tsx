@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Alerta } from "@/componentes/panel/alerta";
 import Link from "next/link";
 import { Suspense } from "react";
 import { cn } from "cn";
@@ -258,7 +259,7 @@ function Estado({ m, hoy, conAviso }: { m: MantenimientoPorAvisar; hoy: string; 
   return (
     <span className="flex flex-wrap gap-1.5">
       <Insignia tono={seccionMantenimiento(m.fechaProgramada, hoy) === "vencido" ? "aviso" : undefined}>{texto.charAt(0).toUpperCase() + texto.slice(1)}</Insignia>
-      {conAviso && !m.avisadoAt && <Insignia tono="aviso">Sin avisar</Insignia>}
+      {conAviso && !m.avisadoAt && <Alerta tipo="avisar">Sin avisar</Alerta>}
     </span>
   );
 }
