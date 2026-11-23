@@ -41,7 +41,7 @@ test("el dueño crea un encargado (usuario con guion), con el perfil Taller de e
   await expect(otra).toHaveURL(/\/panel$/);
   if (info.project.name === "celular") await otra.getByRole("button", { name: "Abrir menú" }).click();
   const menu = otra.getByRole("navigation", { name: "Panel" });
-  await expect(menu.getByRole("link", { name: "Órdenes" })).toBeVisible();
+  await expect(menu.getByRole("link", { name: "Taller" })).toBeVisible();
   await expect(menu.getByRole("link", { name: "Usuarios" })).toHaveCount(0);
 
   await otra.goto("/panel/usuarios");

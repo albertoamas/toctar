@@ -5,7 +5,7 @@ import { aqui, conDesde, leerDesde, sinElTrabajo, sinLaCotizacion, textoVolver, 
 
 const dueno = { rol: "dueno" as const, permisos: [] };
 const encargadoSinPagos = { rol: "encargado" as const, permisos: ["ordenes", "agenda"] };
-const ORDENES = { href: "/panel/ordenes" as const, texto: "Órdenes" };
+const ORDENES = { href: "/panel/ordenes" as const, texto: "Taller" };
 
 test("leerDesde acepta las pantallas del panel, con sus parámetros", () => {
   expect(leerDesde("/panel")).toBe("/panel");

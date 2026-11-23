@@ -39,12 +39,11 @@ type DefinicionModulo = {
   nombrePermiso?: string;
 };
 
-// Dentro de cada grupo del menú, en este orden: de lo más usado a lo menos. El orden de los grupos es el de GRUPOS.
+// Dentro de cada grupo del menú, en este orden. Operaciones, en el orden del trabajo (23/11, a pedido del desarrollador):
+// se cotiza, se reserva en la Agenda y se trabaja en el Taller. Los demás grupos, de lo más usado a lo menos. El orden de
+// los grupos es el de GRUPOS.
 export const MODULOS = {
   inicio: { ruta: "/panel", nombre: "Inicio", grupo: null, permisoEncargado: null },
-  agenda: { ruta: "/panel/agenda", nombre: "Agenda", grupo: "operaciones", permisoEncargado: "agenda" },
-  ordenes: { ruta: "/panel/ordenes", nombre: "Órdenes", grupo: "operaciones", permisoEncargado: "ordenes" },
-  clientes: { ruta: "/panel/clientes", nombre: "Clientes", grupo: "clientes", permisoEncargado: "clientes" },
   // Pedido 23: la cotización directa, sin consulta antes. Pedido 24: el encargado con este permiso cotiza
   cotizaciones: {
     ruta: "/panel/cotizaciones",
@@ -53,6 +52,10 @@ export const MODULOS = {
     grupo: "operaciones",
     permisoEncargado: "cotizaciones",
   },
+  agenda: { ruta: "/panel/agenda", nombre: "Agenda", grupo: "operaciones", permisoEncargado: "agenda" },
+  // "Taller" (23/11, antes "Órdenes"): los autos en el taller y los entregados. Cada trabajo sigue siendo una orden
+  ordenes: { ruta: "/panel/ordenes", nombre: "Taller", grupo: "operaciones", permisoEncargado: "ordenes" },
+  clientes: { ruta: "/panel/clientes", nombre: "Clientes", grupo: "clientes", permisoEncargado: "clientes" },
   // HU-37: su pantalla es la lista de saldos; en el menú se llama por lo que muestra. La casilla dice lo que da: cobrar
   // (en la reserva, la orden y la lista) y ver montos y saldos
   pagos: {

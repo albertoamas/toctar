@@ -32,7 +32,7 @@ test("el dueño ve lo del día y llega a cada módulo por el menú; el perfil Ta
   // En el celular el menú se abre (en la computadora es la barra lateral)
   if (info.project.name === "celular") await page.getByRole("button", { name: "Abrir menú" }).click();
   const menu = page.getByRole("navigation", { name: "Panel" });
-  await expect(menu.getByRole("link")).toHaveText([/^Inicio/, /^Agenda/, /^Órdenes/]);
+  await expect(menu.getByRole("link")).toHaveText([/^Inicio/, /^Agenda/, /^Taller/]);
 });
 
 test("el usuario se acepta sin importar mayúsculas", async ({ page }) => {

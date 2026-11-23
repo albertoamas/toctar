@@ -24,7 +24,7 @@ test("los permisos del encargado: el perfil marca sus casillas, se ajustan y se 
   // El perfil Taller marca la agenda y las órdenes; Todo, todas; ajustar una casilla deja de ser un perfil
   const perfil = (nombre: string) => page.getByRole("button", { name: new RegExp(`^${nombre}`) });
   await expect(perfil("Taller")).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByRole("checkbox", { name: /^Órdenes/ })).toBeChecked();
+  await expect(page.getByRole("checkbox", { name: /^Taller/ })).toBeChecked();
   await expect(casilla()).not.toBeChecked();
   await perfil("Todo").click();
   await expect(casilla()).toBeChecked();
@@ -40,12 +40,12 @@ test("los permisos del encargado: el perfil marca sus casillas, se ajustan y se 
   await page.getByRole("button", { name: "Editar permisos" }).click();
   const modal = page.getByRole("dialog", { name: "Permisos" });
   await expect(modal.getByRole("checkbox", { name: /^Agenda/ })).toBeChecked();
-  await expect(modal.getByRole("checkbox", { name: /^Órdenes/ })).toBeChecked();
+  await expect(modal.getByRole("checkbox", { name: /^Taller/ })).toBeChecked();
 
   // Se quitan todos: queda sin permisos (solo el inicio)
   await modal.getByRole("button", { name: /^Taller/ }).click();
   await modal.getByRole("checkbox", { name: /^Agenda/ }).uncheck();
-  await modal.getByRole("checkbox", { name: /^Órdenes/ }).uncheck();
+  await modal.getByRole("checkbox", { name: /^Taller/ }).uncheck();
   await modal.getByRole("button", { name: "Guardar permisos" }).click();
   await expect(page.getByText("Permisos guardados.")).toBeVisible();
   await page.reload();
@@ -64,7 +64,7 @@ test("el encargado sin permisos solo ve el inicio y no entra a Usuarios", async 
   await page.getByLabel("Repite la contraseña").fill("encargado-123");
   // Empieza con el perfil Taller: se desmarca para dejarlo sin permisos
   await page.getByRole("checkbox", { name: /^Agenda/ }).uncheck();
-  await page.getByRole("checkbox", { name: /^Órdenes/ }).uncheck();
+  await page.getByRole("checkbox", { name: /^Taller/ }).uncheck();
   await page.getByRole("button", { name: "Crear usuario" }).click();
   await expect(page.getByText(`Usuario ${nombre} creado`)).toBeVisible();
 

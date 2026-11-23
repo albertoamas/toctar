@@ -90,7 +90,7 @@ test("recibir con observaciones: la reserva pasa a orden, sin fotos de ingreso s
   await ingresar(page, `otro-hu33-${s}`, "taller-123");
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto("/panel/ordenes");
-  await expect(page.getByRole("heading", { level: 1, name: "Órdenes" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Taller" })).toBeVisible();
   await page.getByRole("link", { name: new RegExp(`^${placa}`) }).click();
   await expect(page.getByRole("heading", { level: 1, name: placa })).toBeVisible();
   await expect(page.getByRole("region", { name: "Servicios" }).getByText("Lavado completo")).toBeVisible();

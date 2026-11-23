@@ -31,7 +31,7 @@ test("una orden vuelve a la pantalla de la que se abrió, y sin origen (o con un
   // Sin origen, o con uno que no es del panel: a Órdenes
   for (const ruta of [`/panel/ordenes/${id}`, `/panel/ordenes/${id}?volver=https%3A%2F%2Fotro.com`, `/panel/ordenes/${id}?volver=%2F%2Fotro.com`]) {
     await page.goto(ruta);
-    await expect(volverA(page, "Órdenes")).toHaveAttribute("href", "/panel/ordenes");
+    await expect(volverA(page, "Taller")).toHaveAttribute("href", "/panel/ordenes");
   }
 });
 
@@ -45,8 +45,8 @@ test("una lista vuelve con su filtro y su búsqueda", async ({ page }, info) => 
   await page.getByRole("list", { name: "Órdenes en el taller" }).getByRole("link", { name: new RegExp(placa) }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?volver=`));
   // Ya cargada: el esqueleto de carga tiene su propio "Volver", sin el origen
-  await expect(volverA(page, "Órdenes")).toHaveAttribute("href", `/panel/ordenes?estado=listo&q=${placa}`);
-  await volverA(page, "Órdenes").click();
+  await expect(volverA(page, "Taller")).toHaveAttribute("href", `/panel/ordenes?estado=listo&q=${placa}`);
+  await volverA(page, "Taller").click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes\\?estado=listo&q=${placa}(?:[?&]volver=[^&#]*)?$`));
   await expect(page.getByRole("searchbox")).toHaveValue(placa);
 });
@@ -62,7 +62,7 @@ test("sin el permiso del módulo de origen, vuelve a la de siempre", async ({ pa
   await expect(page).toHaveURL(/\/panel$/);
   // Saldos es de Pagos: un botón ahí llevaría a "Sin acceso"
   await page.goto(`/panel/ordenes/${id}?volver=%2Fpanel%2Fpagos`);
-  await expect(volverA(page, "Órdenes")).toHaveAttribute("href", "/panel/ordenes");
+  await expect(volverA(page, "Taller")).toHaveAttribute("href", "/panel/ordenes");
 });
 
 test("Nueva reserva desde la ficha del cliente vuelve a ella y lleva el origen en el formulario", async ({ page }, info) => {
