@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
+import { Alerta } from "@/componentes/panel/alerta";
 import { Suspense } from "react";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
-import { Insignia } from "@/componentes/panel/insignia";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { CeldaDoble, TablaLista } from "@/componentes/panel/tabla-lista";
 import { cantidad } from "@/lib/cantidad";
@@ -80,9 +80,9 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/catalogo">, "searc
           textoDias(s.duracionDias),
           // Solo lo que pide atención: lo que falta cargar; completo, no dice nada (pulido 7.1). Inactivo ya lo dice la píldora
           s.preciosFaltantes > 0 ? (
-            <Insignia key="e" tono="aviso">
+            <Alerta key="e" tipo="falta">
               {s.preciosFaltantes === 1 ? "Falta" : "Faltan"} {cantidad(s.preciosFaltantes, "precio", "precios")}
-            </Insignia>
+            </Alerta>
           ) : null,
         ],
       }))}

@@ -79,7 +79,7 @@ test("«Aceptó» la deja en Por reservar de la Agenda; desde ahí se reserva y 
 
   await page.getByRole("button", { name: "Aceptó", exact: true }).click();
   await expect(page.getByText("Cotización aceptada. Queda en Por reservar hasta que tenga fecha.")).toBeVisible();
-  await expect(page.getByRole("main").getByText("sin fecha", { exact: true })).toBeVisible();
+  await expect(page.getByRole("main").getByText("Sin fecha", { exact: true })).toBeVisible();
   await expect(pasoActual(page)).toContainText("Aceptada");
   // El atajo, a la reserva de la Agenda
   await expect(page.getByRole("link", { name: "Reservar en Agenda" })).toHaveAttribute("href", new RegExp(`^/panel/agenda/nueva\\?cotizacion=${c.cotizacionId}&volver=`));
@@ -137,7 +137,7 @@ test("«Aceptó» la deja en Por reservar de la Agenda; desde ahí se reserva y 
   await expect(await enPorReservar(page, c.cliente)).toHaveCount(0);
   await page.goto(`/panel/cotizaciones/${c.consultaId}`);
   await expect(page.getByRole("link", { name: /reservar/i })).toHaveCount(0);
-  await expect(page.getByRole("main").getByText("sin fecha", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("main").getByText("Sin fecha", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Más" })).toHaveCount(0);
 });
 
@@ -146,7 +146,7 @@ test("una aceptada sin fecha vuelve a pendiente desde «Más», con su versión 
   await ingresarComoDueno(page);
   await page.goto(`/panel/cotizaciones/${c.consultaId}`);
   await page.getByRole("button", { name: "Aceptó", exact: true }).click();
-  await expect(page.getByRole("main").getByText("sin fecha", { exact: true })).toBeVisible();
+  await expect(page.getByRole("main").getByText("Sin fecha", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Más" }).click();
   await page.getByRole("menuitem", { name: "Volver a pendiente" }).click();
   await page.getByRole("button", { name: "Sí, volver a pendiente" }).click();

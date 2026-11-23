@@ -1,4 +1,5 @@
 import type { Route } from "next";
+import { Alerta, type TipoAlerta } from "@/componentes/panel/alerta";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "cn";
@@ -21,8 +22,12 @@ export type DatosFila = {
   dato?: string | null;
   /** Datos secundarios, en una línea que se parte si no cabe: ["5 variantes", "1 día"]. */
   detalles?: string[];
-  /** Lo que pide atención ("Faltan 3 precios", "Debía ingresar el 21/10"): insignia de aviso junto al título. */
+  /** Lo que pide atención ("Faltan 3 precios", "Debía ingresar el 21/10"): una alerta junto al título (23/11, con ícono). */
   aviso?: string | null;
+  /** De qué es el aviso, para su ícono (por defecto, algo que falta cargar). */
+  tipoAviso?: TipoAlerta;
+  /** El aviso ya es un problema: en rojo ("Venció el 20 nov."). */
+  avisoGrave?: boolean;
   /** El estado escrito ("En proceso", "Inactivo"), en una insignia antes del aviso: primero qué es, después lo que pide
    * atención ("En proceso", "Atrasada"; pedido 26). Los dos se ven (pulido 9.1). */
   estado?: string;
@@ -68,7 +73,7 @@ export function FilaConAcciones({ children }: { children: React.ReactNode }) {
   return <li className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:gap-6">{children}</li>;
 }
 
-function FilaLista({ href, titulo, tituloGrande, dato, detalles = [], aviso, estado, tonoEstado, atenuada, miniatura, accion }: DatosFila) {
+function FilaLista({ href, titulo, tituloGrande, dato, detalles = [], aviso, tipoAviso, avisoGrave, estado, tonoEstado, atenuada, miniatura, accion }: DatosFila) {
   return (
     <Link href={href} className={cn("flex min-h-11 items-center gap-3 px-4 py-3 hover:bg-superficie/60 focus-visible:-outline-offset-2", atenuada && "text-tinta-suave")}>
       {miniatura !== undefined && (
@@ -84,7 +89,11 @@ function FilaLista({ href, titulo, tituloGrande, dato, detalles = [], aviso, est
         <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span className={tituloGrande ? "tt-placa text-base" : "font-semibold"}>{titulo}</span>
           {estado && <Insignia tono={tonoEstado}>{estado}</Insignia>}
-          {aviso && <Insignia tono="aviso">{aviso}</Insignia>}
+          {aviso && (
+            <Alerta tipo={tipoAviso ?? "falta"} grave={avisoGrave}>
+              {aviso}
+            </Alerta>
+          )}
         </span>
         {dato && <span className="text-sm font-semibold tabular-nums">{dato}</span>}
         {detalles.length > 0 && (

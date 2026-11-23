@@ -166,6 +166,8 @@ export type CotizacionParaReservar = {
   total: string;
   /** Aceptada sin fecha; si no, pendiente. */
   aceptada: boolean;
+  /** Hasta cuándo vale la versión: vencida, se avisa antes de reservarla (23/11). */
+  validaHasta: string;
 };
 
 /**
@@ -181,6 +183,7 @@ export async function cotizacionesParaReservar(clienteId: number, vehiculoId: nu
       numero: cotizacion.numero,
       version: cotizacion.version,
       total: cotizacion.total,
+      validaHasta: cotizacion.validaHasta,
       estado: consulta.estado,
       servicios: sql<string>`coalesce((select string_agg(${cotizacionLinea.descripcion}, ', ' order by ${cotizacionLinea.orden}) from ${cotizacionLinea} where ${cotizacionLinea.cotizacionId} = ${cotizacion.id}), '')`,
     })

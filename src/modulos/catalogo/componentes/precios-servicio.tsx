@@ -1,5 +1,6 @@
 "use client";
 
+import { Alerta } from "@/componentes/panel/alerta";
 import { useEffect, useState } from "react";
 import { cn } from "cn";
 import { PencilIcon, PlusIcon } from "lucide-react";
@@ -7,7 +8,6 @@ import { useHidratado } from "@/componentes/hidratado";
 import { MensajeError } from "@/componentes/panel/campo";
 import { CabeceraSeccion, Seccion } from "@/componentes/panel/cabecera-seccion";
 import { CLASE_PILDORA, CLASE_PILDORA_ACTIVA } from "@/componentes/panel/pildora";
-import { Insignia } from "@/componentes/panel/insignia";
 import { useHayCambiosModal, useRenovarBaseModal } from "@/componentes/panel/modal-contexto";
 import { ModalFormulario } from "@/componentes/panel/modal-formulario";
 import { ESTILO_ENCABEZADO_TABLA } from "@/componentes/panel/tabla-lista";
@@ -129,7 +129,7 @@ export function PreciosServicio({ servicio, variantes, tamanos, duracionServicio
                       return (
                         // "Según evaluación" se parte en dos renglones solo si no entra
                         <td key={v.id} className={cn("px-4 py-3 text-right", monto !== null && "whitespace-nowrap")}>
-                          {monto === undefined ? <Insignia tono="aviso">Sin cargar</Insignia> : monto === null ? <SegunEvaluacion /> : <span className="font-semibold">{mostrarMonto(monto)} Bs</span>}
+                          {monto === undefined ? <Alerta tipo="falta">Sin cargar</Alerta> : monto === null ? <SegunEvaluacion /> : <span className="font-semibold">{mostrarMonto(monto)} Bs</span>}
                         </td>
                       );
                     })}

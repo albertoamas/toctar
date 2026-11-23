@@ -1,6 +1,6 @@
 import { cn } from "cn";
 import { Insignia } from "@/componentes/panel/insignia";
-import { MarcaEstado } from "@/componentes/panel/marca-estado";
+import { Alerta } from "@/componentes/panel/alerta";
 import { CeldaDoble, TablaLista, type ColumnaTabla } from "@/componentes/panel/tabla-lista";
 import { cantidad } from "@/lib/cantidad";
 import { fechaConMes, fechaEnBolivia } from "@/lib/fechas";
@@ -69,7 +69,7 @@ export function ListaCotizaciones({ cotizaciones, umbral, sinCliente = false, co
           <span className="flex flex-wrap items-center gap-1.5">
             {conEstado && <Insignia tono={TONO_ESTADO[c.estado]}>{NOMBRE_ESTADO[c.estado]}</Insignia>}
             {/* Aceptada sin reserva (pedido 31): falta darle fecha; con reserva, para cuándo */}
-            {c.sinFecha && <Insignia tono="aviso">Sin fecha</Insignia>}
+            {c.sinFecha && <Alerta tipo="fecha">Sin fecha</Alerta>}
             {c.estado === "confirmado" && c.fechaReserva && (
               <span className="font-medium">
                 {c.fechaReserva >= hoyBolivia ? "Reservada para el" : "Reservada el"} {fechaConMes(c.fechaReserva, hoyBolivia)}
@@ -77,16 +77,14 @@ export function ListaCotizaciones({ cotizaciones, umbral, sinCliente = false, co
             )}
             {/* Rechazada: por qué se perdió, y después hace cuánto */}
             {c.estado === "perdido" && c.motivo && (
-              <MarcaEstado tono="peligro">
-                <span className="whitespace-nowrap">
-                  <span className="font-medium">{NOMBRE_MOTIVO[c.motivo]}</span>
-                  <span className="text-tinta-suave"> · {textoDias(dias)}</span>
-                </span>
-              </MarcaEstado>
+              <span className="flex flex-wrap items-center gap-x-2 whitespace-nowrap">
+                <Insignia tono="peligro">{NOMBRE_MOTIVO[c.motivo]}</Insignia>
+                <span className="text-tinta-suave">{textoDias(dias)}</span>
+              </span>
             )}
             {/* Esperando respuesta, los días van en el aviso: no se repiten. Con su reserva, la fecha alcanza */}
             {sinRespuesta(c.estado, dias, umbral) ? (
-              <Insignia tono="aviso">Sin respuesta hace {cantidad(dias, "día", "días")}</Insignia>
+              <Alerta tipo="tiempo">Sin respuesta hace {cantidad(dias, "día", "días")}</Alerta>
             ) : (
               !(c.estado === "confirmado" && c.fechaReserva) &&
               !(c.estado === "perdido" && c.motivo) && (

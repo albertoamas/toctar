@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Alerta } from "@/componentes/panel/alerta";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -172,7 +173,11 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
           o.estado !== "listo" && o.estado !== "entregado" ? (
             <>
               <Insignia tono={TONO_ESTADO_TRABAJO[o.estado]}>{NOMBRE_ESTADO_TRABAJO[o.estado]}</Insignia>
-              {estaAtrasada(o, hoy) && <Insignia tono="peligro">Atrasada</Insignia>}
+              {estaAtrasada(o, hoy) && (
+                <Alerta tipo="atraso" grave>
+                  Atrasada
+                </Alerta>
+              )}
             </>
           ) : undefined
         }

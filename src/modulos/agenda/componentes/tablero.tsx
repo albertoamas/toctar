@@ -3,6 +3,8 @@ import Link from "next/link";
 import { cn } from "cn";
 import { ChevronRightIcon, PlusIcon } from "lucide-react";
 import type { DatosAgenda, ReservaTablero } from "../consultas/tablero";
+import { Alerta } from "@/componentes/panel/alerta";
+import { Insignia } from "@/componentes/panel/insignia";
 import { MarcaEstado } from "@/componentes/panel/marca-estado";
 import { fechaConMes, sumarDias } from "@/lib/fechas";
 import { conDesde } from "@/lib/volver";
@@ -42,16 +44,17 @@ const cuantasLlegan = (n: number) => (n === 1 ? "1 llega" : `${n} llegan`);
 /** La marca de una reserva: "Debía ingresar el 18 nov." en rojo si no llegó; si no, su estado. */
 function Marca({ r, hoy, className }: { r: ReservaTablero; hoy: string; className?: string }) {
   const problema = textoIngresoAtrasado(r.inicio, hoy);
+  // En píldora (paleta del 23/11): el problema, como alerta con su ícono; si no, el estado
   if (problema)
     return (
-      <MarcaEstado tono="peligro" problema className={className}>
+      <Alerta tipo="atraso" grave className={className}>
         {problema}
-      </MarcaEstado>
+      </Alerta>
     );
   return (
-    <MarcaEstado tono={TONO_ESTADO_TRABAJO[r.estado]} className={className}>
+    <Insignia tono={TONO_ESTADO_TRABAJO[r.estado]} className={className}>
       {NOMBRE_ESTADO_TRABAJO[r.estado]}
-    </MarcaEstado>
+    </Insignia>
   );
 }
 

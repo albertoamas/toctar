@@ -1,3 +1,4 @@
+import { Alerta } from "@/componentes/panel/alerta";
 import { Insignia } from "@/componentes/panel/insignia";
 import { ordenarHistoria, type HitoHistoria } from "@/componentes/panel/linea-de-tiempo";
 import { cantidad } from "@/lib/cantidad";
@@ -48,7 +49,7 @@ export function historia(props: {
       insignias: (
         <>
           <Insignia tono={TONO_ESTADO_TRABAJO[r.estado]}>{NOMBRE_ESTADO_TRABAJO[r.estado]}</Insignia>
-          {debe && <Insignia tono="aviso">Debe {mostrarMonto(debe)} Bs</Insignia>}
+          {debe && <Alerta tipo="dinero">Debe {mostrarMonto(debe)} Bs</Alerta>}
         </>
       ),
       placa: placaDe(r.placa),
@@ -70,8 +71,8 @@ export function historia(props: {
         insignias: (
           <>
             <Insignia tono={TONO_ESTADO[c.estado]}>{NOMBRE_ESTADO[c.estado]}</Insignia>
-            {c.sinFecha && <Insignia tono="aviso">Sin fecha</Insignia>}
-            {sinRespuesta(c.estado, dias, umbral) && <Insignia tono="aviso">Sin respuesta hace {cantidad(dias, "día", "días")}</Insignia>}
+            {c.sinFecha && <Alerta tipo="fecha">Sin fecha</Alerta>}
+            {sinRespuesta(c.estado, dias, umbral) && <Alerta tipo="tiempo">Sin respuesta hace {cantidad(dias, "día", "días")}</Alerta>}
           </>
         ),
         placa: placaDe(c.placa),

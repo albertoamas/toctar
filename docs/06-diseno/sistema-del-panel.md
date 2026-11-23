@@ -158,6 +158,26 @@ La etiqueta a la izquierda y el valor a la derecha, con `ListaDatos`, para que l
 | `ListaDatos`, `ListaFilas`, `TablaLista`, `ListaEditable`, `OrdenarLista` | Datos y listas | Existen |
 | `ListaEnTarjeta`, `FilaConAcciones` | Filas con su acción de todos los días | Existen desde C6 |
 | `MenuMas`, `Insignia`, `EstadoVacio` | Acciones poco usadas, estados y vacíos | Existen |
+| `Alerta` | Lo que pide hacer algo: la insignia ámbar (o roja) con su ícono | Existe desde el 23/11 |
+
+## 7b. Estados y alertas: un color, un significado (23/11)
+
+Todo estado va en una **insignia** (`Insignia`, la píldora con fondo) y todo lo que pide hacer algo, en una **alerta**
+(`Alerta`: la misma píldora con un ícono en lugar del punto, para no depender del color). Cada cosa lleva **un solo
+estado y, como mucho, una alerta**; donde la pestaña ya dice el estado (Pendientes, Aceptadas), va solo la alerta. Los
+colores, como las insignias de Atlassian y Shopify Polaris (el detalle, en `src/lib/tonos.ts`):
+
+| Color | Significa | Ejemplos |
+|---|---|---|
+| Gris | Esperando a otro, o ya no cuenta | Cotización pendiente (espera al cliente), reemplazada, desactivado |
+| Azul | En curso o programado | Reservada, en proceso |
+| Violeta | Recién llegado al taller | Recibida |
+| Verde | Bien o terminado | Aceptada, lista, entregada, pagado, atendido |
+| Ámbar (alerta) | Falta hacer algo de nuestro lado | Sin fecha, sin respuesta hace 9 días, sin avisar, debe 300 Bs, faltan precios, reclamo pendiente |
+| Rojo | Perdido o problema | Rechazada, cancelada, atrasada, venció |
+
+La barra de pasos (`BarraPasos`) es solo para lo que siempre avanza igual: las órdenes en el taller y las fichas de
+reserva y orden.
 
 ## 8. Cómo se hace cumplir
 
