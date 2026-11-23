@@ -100,7 +100,10 @@ test("«Aceptó» la deja en Por reservar de la Agenda; desde ahí se reserva y 
 
   // En Aceptadas, con "Sin fecha"; en Inicio, directo a la reserva
   await page.goto("/panel/cotizaciones?vista=aceptadas");
-  await expect(page.getByRole("link").filter({ hasText: c.numero })).toContainText("Sin fecha");
+  const tarjeta = page.getByRole("list", { name: "Cotizaciones" }).getByRole("listitem").filter({ hasText: c.numero });
+  await expect(tarjeta).toContainText("Sin fecha");
+  // Sin fecha, se reserva desde la misma tarjeta (23/11)
+  await expect(tarjeta.getByRole("link", { name: "Reservar" })).toHaveAttribute("href", new RegExp(`/panel/agenda/nueva\\?cotizacion=${c.cotizacionId}`));
   // Inicio, una fila por tipo (18/11): con una sola aceptada sin fecha, la fila lleva directo a reservarla; con varias
   // (las que dejan otras pruebas), dice cuántas y lleva a la Agenda, donde están en "Por reservar"
   await page.goto("/panel");

@@ -17,7 +17,7 @@ import { resumenServicios, textoEntrega } from "../reglas";
 
 /**
  * Los pasos de una orden en el taller. Los hechos y el actual, en el color de su estado (Recibida violeta, En proceso azul,
- * Lista verde; 20/11, a pedido del dueño): la barra es el estado de la orden (`BarraPasos`, común con Cotizaciones).
+ * Lista verde; 20/11, a pedido del dueño): la barra es el estado de la orden (`BarraPasos`).
  */
 const PASOS = [
   { estado: "recibido", texto: "Recibida" },

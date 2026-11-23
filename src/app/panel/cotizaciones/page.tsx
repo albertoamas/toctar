@@ -10,6 +10,7 @@ import { EstadoVacio } from "@/componentes/panel/estado-vacio";
 import { PaginaPanel } from "@/componentes/panel/pagina-panel";
 import { Pestanas } from "@/componentes/panel/pestanas";
 import { buttonVariants } from "@/componentes/ui/button";
+import { puedeVerModulo } from "@/lib/permisos";
 import { exigirModulo } from "@/lib/sesion";
 import { Buscador } from "@/componentes/panel/buscador";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
@@ -86,7 +87,7 @@ async function PestanasConCuentas({ searchParams }: Pick<PageProps<"/panel/cotiz
 }
 
 async function Lista({ searchParams }: Pick<PageProps<"/panel/cotizaciones">, "searchParams">) {
-  await exigirModulo("cotizaciones");
+  const usuario = await exigirModulo("cotizaciones");
   const parametros = await searchParams;
   const vista = vistaDe(parametros.vista);
   const q = typeof parametros.q === "string" ? parametros.q : "";
@@ -98,12 +99,18 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/cotizaciones">, "s
         <EstadoVacio>{q.trim() ? `Ninguna cotización ${TITULOS[vista].toLowerCase().slice(0, -1)} coincide con «${q.trim()}».` : VACIOS[vista]}</EstadoVacio>
       ) : (
         <>
-          {/* Pendientes y Aceptadas, en tarjetas con sus pasos (recorrido visual del 22/11, como Órdenes); las rechazadas, el
+          {/* Pendientes y Aceptadas, en tarjetas (recorrido visual del 22/11, como Órdenes); las rechazadas, el
               historial, en tabla. En cada pestaña el estado ya se sabe: no se repite */}
           {vista === "rechazadas" ? (
             <ListaCotizaciones cotizaciones={cotizaciones} umbral={parametrosNegocio.dias_cotizacion_sin_respuesta} conEstado={false} vista={vista} desde={aqui("/panel/cotizaciones", parametros)} />
           ) : (
-            <TarjetasCotizaciones cotizaciones={cotizaciones} umbral={parametrosNegocio.dias_cotizacion_sin_respuesta} desde={aqui("/panel/cotizaciones", parametros)} />
+            <TarjetasCotizaciones
+              cotizaciones={cotizaciones}
+              umbral={parametrosNegocio.dias_cotizacion_sin_respuesta}
+              desde={aqui("/panel/cotizaciones", parametros)}
+              // «Reservar» en la tarjeta, para quien reserva (Agenda)
+              conReservar={puedeVerModulo(usuario, "agenda")}
+            />
           )}
           <Paginacion pagina={pagina} paginas={paginas} total={total} nombre={["cotización", "cotizaciones"]} enlace={(p) => conPagina("/panel/cotizaciones", parametros, p)} />
         </>

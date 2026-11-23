@@ -1,7 +1,7 @@
 import { cn } from "cn";
 import type { TonoEstado } from "@/lib/tonos";
 
-// Los pasos de un trabajo en una tarjeta de lista (recorrido visual del 20/11 en Órdenes; del 22/11 en Cotizaciones): una
+// Los pasos de un trabajo en una tarjeta de lista (recorrido visual del 20/11, en Órdenes; Cotizaciones la usó del 22 al 23/11): una
 // barra por paso, los hechos y el actual en el color del estado, los que faltan en gris, y el nombre debajo. Se lee de un
 // vistazo en qué paso va. La marca de la tarjeta ya dice el estado en palabras: para el lector de pantalla no se repite.
 // Los pasos de un formulario (PasosFlujo) son otra cosa: se tocan para volver y van en negro.
