@@ -21,8 +21,8 @@ async function crearCotizacion(datos: { cliente: string; telefono: string; placa
   return crearCotizacionEnBase(datos);
 }
 
-/** La fila de un cliente en la lista (la fila de un toque compartida). */
-const filas = (page: Page) => page.getByRole("list", { name: "Cotizaciones" }).getByRole("link");
+/** La fila (o la tarjeta, 23/11) de un cliente en la lista. */
+const filas = (page: Page) => page.getByRole("list", { name: "Cotizaciones" }).getByRole("listitem");
 const fila = (page: Page, cliente: string) => filas(page).filter({ hasText: cliente });
 const pestanas = (page: Page) => page.getByRole("navigation", { name: "Cotizaciones por estado" });
 

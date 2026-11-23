@@ -187,7 +187,7 @@ test("alguien nuevo en tres pasos: nombre y WhatsApp, la placa, el tamaño y la 
   await expect(page.getByRole("button", { name: "Ver la foto del vehículo" })).toBeVisible();
   // En la lista, con su nombre, su placa y "Sin registrar"; también se la encuentra por la placa
   await page.goto(`/panel/cotizaciones?q=CN25${s}1`);
-  const tarjeta = page.getByRole("list", { name: "Cotizaciones" }).getByRole("link").filter({ hasText: `CN25${s}1` });
+  const tarjeta = page.getByRole("list", { name: "Cotizaciones" }).getByRole("listitem").filter({ hasText: `CN25${s}1` });
   await expect(tarjeta).toContainText("Sin registrar");
 });
 
