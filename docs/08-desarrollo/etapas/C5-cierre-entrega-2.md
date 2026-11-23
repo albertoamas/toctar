@@ -278,11 +278,13 @@ Cada PR pasa por lint, typecheck, unitarias, E2E completo y knip; `code-review` 
   - el merge a `main` y `v2.0.0`;
   - el pago de Bs 2.000.
 
-## 12. Decisiones abiertas
+## 12. Decisiones (cerradas el 23/11/2026)
 
-| Qué | De quién | Mientras tanto |
+El dueño respondió el 23/11 que todo queda como está hoy.
+
+| Qué | De quién | Decisión |
 |---|---|---|
-| ¿Hace falta el permiso del cliente para publicar fotos de su vehículo? | Dueño | Se publican solo fotos donde no se lee la placa ni se ve a nadie, y el dueño lo confirma con la casilla. Si el dueño quiere pedir permiso, se suma una casilla "El cliente está de acuerdo" |
-| ¿El encargado con "Sitio web" también publica desde la orden? | Dueño | No: solo el dueño (RF-44). Se cambia si lo pide |
-| ¿Qué ve el encargado en la pantalla del día? | Dueño | Los bloques de sus módulos, sin montos |
-| ¿Más mensajes editables (cotización, reclamos)? | Dueño | Quedan fijos; se suman si lo pide (registro de cambios) |
+| ¿Hace falta el permiso del cliente para publicar fotos de su vehículo? | Dueño | Como está hoy (el dueño, 23/11): Se publican solo fotos donde no se lee la placa ni se ve a nadie, y el dueño lo confirma con la casilla. Si el dueño quiere pedir permiso, se suma una casilla "El cliente está de acuerdo" |
+| ¿El encargado con "Sitio web" también publica desde la orden? | Dueño | Como está hoy (el dueño, 23/11): No: solo el dueño (RF-44). Se cambia si lo pide |
+| ¿Qué ve el encargado en la pantalla del día? | Dueño | Como está hoy (el dueño, 23/11): Los bloques de sus módulos, sin montos |
+| ¿Más mensajes editables (cotización, reclamos)? | Dueño | Como está hoy (el dueño, 23/11): Quedan fijos; se suman si lo pide (registro de cambios) |
