@@ -157,9 +157,11 @@ test("alguien nuevo en tres pasos: nombre y WhatsApp, la placa, el tamaño y la 
     fotos: 1,
   });
   await expect(page.getByText(/^Cotización creada\./)).toBeVisible();
-  await expect(page.getByRole("heading", { level: 1, name: `Cotización ${c.numero}` })).toBeVisible();
+  // Recorrido visual del 23/11: la placa como título; el número y el estado, debajo
+  await expect(page.getByRole("heading", { level: 1, name: `CN25${s}1` })).toBeVisible();
+  await expect(page.getByRole("main").getByText(`Cotización ${c.numero}`)).toBeVisible();
   await expect(page.getByRole("main").getByText("Pendiente", { exact: true })).toBeVisible();
-  const versiones = page.getByRole("list", { name: "Versiones" });
+  const versiones = page.getByRole("region", { name: "Precio" });
   await expect(versiones).toContainText("600,50 Bs");
   await expect(versiones).toContainText("Por fotos (estimado)");
   await expect(versiones.getByRole("link", { name: "Ver PDF" })).toBeVisible();
@@ -312,7 +314,7 @@ test("desde la ficha del cliente: llega elegido, con su vehículo marcado, y la 
   await page.getByRole("radio", { name: "En persona" }).check();
   await crear(page);
   await expect(page).toHaveURL(/\/panel\/cotizaciones\/\d+\?creada=1(?:[?&]volver=[^&#]*)?$/);
-  await expect(page.getByRole("list", { name: "Versiones" })).toContainText("En persona");
+  await expect(page.getByRole("region", { name: "Precio" })).toContainText("En persona");
 
   await page.goto(`/panel/clientes/${id}`);
   await expect(page.getByRole("list", { name: "Historia" }).getByRole("link").filter({ hasText: `CF25${s}1` })).toBeVisible();
@@ -357,9 +359,12 @@ test("nueva versión: el mismo número, la anterior queda reemplazada y una viej
     [2, "enviada", "400.00", false],
   ]);
   expect(versiones[0].numero).toBe(versiones[1].numero);
-  const lista = page.getByRole("list", { name: "Versiones" });
-  await expect(lista.getByRole("listitem")).toHaveCount(2);
-  await expect(lista.getByRole("listitem").first()).toContainText("Vigente");
+  // La que vale, a la vista; la anterior, plegada (23/11)
+  const seccionPrecio = page.getByRole("region", { name: "Precio" });
+  await expect(seccionPrecio).toContainText("Versión 2");
+  await seccionPrecio.getByText("Ver la versión anterior").click();
+  await expect(seccionPrecio.getByRole("list", { name: "Versiones anteriores" }).getByRole("listitem")).toHaveCount(1);
+  await expect(seccionPrecio.getByRole("list", { name: "Versiones anteriores" })).toContainText("Versión 1");
 
   // Una versión vieja ya no se reemplaza; sin `desde` o con uno de otra cotización, a la vigente
   await page.goto(`/panel/cotizaciones/${id}/nueva-version?desde=${versiones[0].id}`);
@@ -412,7 +417,7 @@ test("pedido 24: el encargado con Cotizaciones cotiza y ve los montos; sin el pe
   await ingresar(page, `enc-hu25-${s.toLowerCase()}`, "encargado-123");
   await expect(page).toHaveURL(/\/panel$/);
   await page.goto(`/panel/cotizaciones/${otra}`);
-  await expect(page.getByRole("list", { name: "Versiones" })).toContainText("300 Bs");
+  await expect(page.getByRole("region", { name: "Precio" })).toContainText("300 Bs");
   // Sin Clientes no se enlaza a la ficha
   await expect(page.getByRole("link", { name: /^Ver ficha del cliente/ })).toHaveCount(0);
   await expect(page.getByRole("group", { name: "Datos de la cotización" })).toContainText("Cliente");

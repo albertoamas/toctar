@@ -9,7 +9,7 @@ import { AbrirFoto } from "@/componentes/panel/abrir-foto";
 import { AvisoFlotante } from "@/componentes/panel/aviso-flotante";
 import { Cargando } from "@/componentes/panel/cargando";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
-import { Insignia } from "@/componentes/panel/insignia";
+import { MarcaEstado } from "@/componentes/panel/marca-estado";
 import { PasosTrabajo } from "@/componentes/panel/pasos-trabajo";
 import { ListaFilas } from "@/componentes/panel/fila-lista";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
@@ -45,6 +45,9 @@ export const metadata: Metadata = { title: "Cotización" };
 // Agenda reserva; el botón es un atajo a su formulario, solo para quien ve la Agenda). "Nueva versión", "Rechazar" y
 // "Volver a pendiente" van en "Más". C6: una ficha de 1024 px; el paso siguiente, grande debajo de los pasos (como en
 // Reserva y Orden, PasoSiguiente) y los datos en bloques (`datos-en-bloques.tsx`), como en la orden.
+// Recorrido visual del 23/11: la placa como título (como en Reserva y Orden) y el número debajo; el estado con un punto,
+// sin píldora; los pasos del trabajo recién desde que se acepta (pendiente, el cliente todavía decide: puede rechazarla);
+// y, en una pendiente, «Enviar por WhatsApp» junto a «Aceptó», lo que se hace después de cotizar.
 export default function PaginaCotizacion({ params, searchParams }: PageProps<"/panel/cotizaciones/[id]">) {
   return (
     <PaginaPanel tipo="ficha">
@@ -112,7 +115,9 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
   // Un solo WhatsApp a la vista (C6): con "Enviar por WhatsApp" en una versión, escribir sin el mensaje queda en "Más"
   const escribir = enlaceWhatsApp(c.telefono);
 
-  // El paso siguiente, uno solo: en una pendiente, "Aceptó"; en una aceptada sin fecha, el atajo a la Agenda
+  // En una pendiente, mandarla por WhatsApp va arriba, junto a «Aceptó»: es lo que se hace después de cotizar
+  const enviarArriba = pendiente && vigente && enviar.has(vigente.id) ? vigente.id : null;
+  // El paso siguiente, uno solo: en una pendiente, "Aceptó" (y al lado, enviarla); en una aceptada sin fecha, el atajo a la Agenda
   const paso =
     aReservar && puedeAgendar ? (
       <Link href={conDesde(`/panel/agenda/nueva?cotizacion=${aReservar.id}`, desdeAqui)} className={cn(buttonVariants({ size: "paso" }), BOTON_PASO)}>
@@ -120,20 +125,38 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
         Reservar en Agenda
       </Link>
     ) : pendiente && vigente ? (
-      <BotonAcepto id={c.id} />
+      <>
+        <BotonAcepto id={c.id} />
+        {enviarArriba && (
+          <a href={enviar.get(enviarArriba)} target="_blank" rel="noreferrer" className={cn(buttonVariants({ variant: "outline" }))}>
+            <IconoWhatsApp />
+            Enviar por WhatsApp
+          </a>
+        )}
+      </>
     ) : null;
+  // El estado, con un punto (sin píldora, como en la lista)
+  const marca = c.sinFecha ? (
+    <MarcaEstado tono="aviso">
+      <span>
+        Aceptada · <span className="font-semibold text-aviso">sin fecha</span>
+      </span>
+    </MarcaEstado>
+  ) : (
+    <MarcaEstado tono={TONO_ESTADO[c.estado]}>{NOMBRE_ESTADO[c.estado]}</MarcaEstado>
+  );
 
   return (
     <>
       <EncabezadoPagina
         volver={volver}
-        titulo={`Cotización ${c.numero}`}
-        // Debajo del título, el dato útil (sistema-del-panel.md §2, C7 fase 3): no solo a dónde se vuelve
-        subtitulo={`${c.cliente} · ${c.placa}`}
-        estado={
-          <span className="flex flex-wrap gap-1.5">
-            <Insignia tono={TONO_ESTADO[c.estado]}>{NOMBRE_ESTADO[c.estado]}</Insignia>
-            {c.sinFecha && <Insignia tono="aviso">Sin fecha</Insignia>}
+        // La placa, como en Reserva y Orden (sin placa, una de antes del 22/11 de un interesado: el número)
+        titulo={c.placa ?? `Cotización ${c.numero}`}
+        // Debajo, el número y el estado; el cliente ya está en Datos
+        subtitulo={
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {c.placa && <span className="tabular-nums">Cotización {c.numero}</span>}
+            <span className="text-tinta">{marca}</span>
           </span>
         }
         accion={
@@ -157,7 +180,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
         {/* "Rechazada: Precio. Le pareció caro." */}
         {c.estado === "perdido" && c.motivoPerdida && `Rechazada: ${NOMBRE_MOTIVO[c.motivoPerdida]}.${c.detallePerdida ? ` ${c.detallePerdida}` : ""}`}
       </EncabezadoPagina>
-      {pasoActual !== null && <PasosTrabajo paso={pasoActual} />}
+      {/* Los pasos del trabajo, desde que se acepta: pendiente, el cliente todavía decide */}
+      {pasoActual !== null && !pendiente && <PasosTrabajo paso={pasoActual} />}
       {paso && <PasoSiguiente>{paso}</PasoSiguiente>}
       {(creada || recienGuardada) && (
         <AvisoFlotante mensaje={`${creada ? "Cotización creada." : `Versión ${recienGuardada!.version} guardada.`}${sinPdf ? "" : " Envíasela al cliente por WhatsApp."}`} />
@@ -200,8 +224,8 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/cotizaci
           </div>
         </Seccion>
 
-        <Seccion id="versiones" titulo={c.versiones.length > 1 ? "Versiones" : "Precio"} sinRelleno className="@4xl:order-first">
-          <VersionesCotizacion consultaId={c.id} versiones={c.versiones} enviar={enviar} />
+        <Seccion id="versiones" titulo="Precio" sinRelleno className="@4xl:order-first">
+          <VersionesCotizacion consultaId={c.id} versiones={c.versiones} enviar={enviar} enviarArriba={enviarArriba} conGenerar={cotiza} />
         </Seccion>
       </div>
 

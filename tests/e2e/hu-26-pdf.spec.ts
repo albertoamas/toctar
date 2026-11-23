@@ -71,8 +71,10 @@ test("al guardar se genera el PDF; se ve, se descarga con su nombre y una versi�
   expect(nuevo.r.headers()["content-disposition"]).toBe(`inline; filename="Cotizacion-${v1.numero}-v2.pdf"`);
   expect(huella(nuevo.cuerpo)).not.toBe(antes);
   expect(huella((await bajarPdf(page.request, consultaId, v1.id)).cuerpo)).toBe(antes);
-  // Las dos versiones muestran su PDF en la ficha y se descargan desde su "⋯"; enviar y compartir, solo la que vale
-  // (pulido 13.50, pedido 47)
+  // Las dos versiones muestran su PDF en la ficha (la anterior, plegada: 23/11) y se descargan desde su "⋯"; enviar y
+  // compartir, solo la que vale (pulido 13.50, pedido 47)
+  await expect(page.getByRole("link", { name: "Ver PDF" })).toHaveCount(1);
+  await page.getByText("Ver la versión anterior").click();
   await expect(page.getByRole("link", { name: "Ver PDF" })).toHaveCount(2);
   await expect(page.getByRole("link", { name: "Enviar por WhatsApp" })).toHaveCount(1);
   await page.getByRole("button", { name: "Opciones del PDF de la versión 2" }).click();
@@ -89,18 +91,18 @@ test("al guardar se genera el PDF; se ve, se descarga con su nombre y una versi�
   expect((await page.request.get(`/panel/cotizaciones/${consultaId + 100000}/pdf/${v1.id}`)).status()).toBe(404);
 });
 
-test("si una cotización quedó sin PDF, su ficha lo genera", async ({ page }, info) => {
+test("si una cotización quedó sin PDF, su ficha lo genera sola al abrirla", async ({ page }, info) => {
   const { clienteId, servicio } = await prepararCliente(info, 2);
   await ingresarComoDueno(page);
   const consultaId = await cotizarEnPantalla(page, clienteId, servicio);
   // Como si hubiera fallado al guardar; y después le cambian el nombre al cliente
   await consultar("update cotizacion set pdf_archivo_id = null where consulta_id = $1", [consultaId]);
   await consultar("update cliente set nombre = nombre || ' (editado)' from consulta q where q.cliente_id = cliente.id and q.id = $1", [consultaId]);
+  // Al abrirla se genera solo (23/11), sin tocar nada; al terminar, se puede enviar y ver
   await page.goto(`/panel/cotizaciones/${consultaId}`);
-  await expect(page.getByRole("link", { name: "Ver PDF" })).toHaveCount(0);
-  await page.getByRole("button", { name: "Generar PDF" }).click();
-  await expect(page.getByText("PDF listo.")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Ver PDF" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Ver PDF" })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("link", { name: "Enviar por WhatsApp" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Generar PDF" })).toHaveCount(0);
   // El PDF sale de lo copiado al cotizar (D-4): el nombre editado después no entra
   const [{ nombre }] = await consultar<{ nombre: string }>("select datos_documento->'cliente'->>'nombre' as nombre from cotizacion where consulta_id = $1", [consultaId]);
   expect(nombre).toBe(`Cliente PDF 2 ${sufijo(info)}`);
