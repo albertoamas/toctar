@@ -3,8 +3,8 @@ import "server-only";
 import { and, asc, count, desc, eq, isNull, like, ne, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { ajustarPagina, POR_PAGINA } from "@/lib/paginacion";
-import { cliente, consulta, cotizacion, cotizacionLinea, vehiculo } from "@/db/esquema";
-import type { EstadoConsulta } from "@/db/esquema/consultas";
+import { cliente, consulta, cotizacion, cotizacionLinea, trabajo, vehiculo } from "@/db/esquema";
+import type { EstadoConsulta, MotivoPerdida } from "@/db/esquema/consultas";
 import { escaparLike, nombreVehiculo, normalizarBusqueda } from "@/modulos/clientes/reglas";
 import { VISTAS, type Vista } from "../reglas";
 import { conReservaActiva, esInteresado, nombreDeQuien, placaDeQuien, sinFecha, telefonoDeQuien, tieneVersiones } from "./comun";
@@ -27,11 +27,19 @@ export type FilaCotizacion = {
   interesado: boolean;
   /** Los servicios de la versión que vale, en su orden: "Instalación de PPF, Pulido de vidrios". */
   servicios: string;
+  /** Los mismos, uno por uno (las tarjetas muestran el primero y cuántos más). */
+  listaServicios: string[];
+  /** Hasta cuándo vale la versión ("2026-11-30"). */
+  validaHasta: string;
   numero: string;
   total: string;
   estado: EstadoConsulta;
   /** Aceptada sin una reserva activa (pedido 31): se reserva después. */
   sinFecha: boolean;
+  /** El día que ingresa su reserva activa ("2026-11-30"), si tiene (recorrido visual del 22/11, en Aceptadas). */
+  fechaReserva: string | null;
+  /** Por qué se perdió, en las rechazadas (recorrido visual del 22/11). */
+  motivo: MotivoPerdida | null;
   ultimoMovimientoAt: Date;
 };
 
@@ -71,10 +79,14 @@ const columnasFila = {
   modelo: vehiculo.modelo,
   interesado: esInteresado,
   servicios: sql<string>`coalesce((select string_agg(${cotizacionLinea.descripcion}, ', ' order by ${cotizacionLinea.orden}) from ${cotizacionLinea} where ${cotizacionLinea.cotizacionId} = ${cotizacion.id}), '')`,
+  listaServicios: sql<string[]>`coalesce((select array_agg(${cotizacionLinea.descripcion} order by ${cotizacionLinea.orden}) from ${cotizacionLinea} where ${cotizacionLinea.cotizacionId} = ${cotizacion.id}), '{}')`,
+  validaHasta: cotizacion.validaHasta,
   numero: cotizacion.numero,
   total: cotizacion.total,
   estado: consulta.estado,
   sinFecha,
+  fechaReserva: sql<string | null>`(select to_char(min(${trabajo.fechaInicio}), 'YYYY-MM-DD') from ${trabajo} where ${trabajo.consultaId} = ${consulta.id} and ${trabajo.estado} <> 'cancelado')`,
+  motivo: consulta.motivoPerdida,
   ultimoMovimientoAt: consulta.ultimoMovimientoAt,
 };
 

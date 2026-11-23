@@ -1,4 +1,5 @@
 import type { Metadata, Route } from "next";
+import { TextoAccion } from "@/componentes/panel/texto-accion";
 import Link from "next/link";
 import { Suspense } from "react";
 import { cn } from "cn";
@@ -34,7 +35,7 @@ export default function PaginaClientes({ searchParams }: PageProps<"/panel/clien
           // Enlace con forma de botón: lleva a otra pantalla (cliente y vehículo: un formulario largo)
           <Link href="/panel/clientes/nuevo" className={cn(buttonVariants())}>
             <PlusIcon />
-            Nuevo cliente
+            <TextoAccion corto="Nuevo">Nuevo cliente</TextoAccion>
           </Link>
         }
       />

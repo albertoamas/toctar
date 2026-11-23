@@ -187,7 +187,8 @@ test("alguien nuevo en tres pasos: nombre y WhatsApp, la placa, el tamaño y la 
   await expect(page.getByRole("button", { name: "Ver la foto del vehículo" })).toBeVisible();
   // En la lista, con su nombre, su placa y "Sin registrar"; también se la encuentra por la placa
   await page.goto(`/panel/cotizaciones?q=CN25${s}1`);
-  await expect(page.getByRole("main")).toContainText(`CN25${s}1, Sin registrar`);
+  const tarjeta = page.getByRole("list", { name: "Cotizaciones" }).getByRole("link").filter({ hasText: `CN25${s}1` });
+  await expect(tarjeta).toContainText("Sin registrar");
 });
 
 test("una placa ya registrada avisa y ofrece cotizarle a su dueño", async ({ page }, info) => {
@@ -481,4 +482,18 @@ test("Atrás vuelve al paso anterior sin perder lo escrito; nada se registra has
   await expect(pasoActual(page)).toContainText("Cliente");
   // Hasta "Crear cotización" no se registró nada
   expect(await consultar("select 1 from cliente where nombre = $1", [`Con atrás ${s}`])).toEqual([]);
+});
+
+// Recorrido visual del 22/11: la columna del tiempo dice qué mide según la pestaña, y las rechazadas, su motivo
+test("la lista dice cuándo se envió, aceptó o rechazó, y por qué se perdió", async ({ page }, info) => {
+  const s = sufijo(info);
+  await crearClienteEnBase({ nombre: `Perdida ${s}`, telefono: `5917${info.project.name === "celular" ? 3 : 4}2509${info.retry}0`, placa: `LR25${s}1` });
+  await crearCotizacionEnBase({ placa: `LR25${s}1`, numero: `2026-95${info.project.name === "celular" ? 1 : 2}${info.retry}`, estado: "perdido", dias: 4 });
+  await ingresarComoDueno(page);
+  await page.goto(`/panel/cotizaciones?vista=rechazadas&q=LR25${s}1`);
+  const fila = page.getByRole("list", { name: "Cotizaciones" }).or(page.getByRole("table", { name: "Cotizaciones" })).getByRole("link").filter({ hasText: `Perdida ${s}` });
+  await expect(fila).toContainText("Precio");
+  await expect(fila).toContainText("hace 4 días");
+  // La tabla de la computadora titula la columna con lo que mide
+  if (info.project.name === "escritorio") await expect(page.getByRole("main").getByText("Rechazada", { exact: true })).toBeVisible();
 });

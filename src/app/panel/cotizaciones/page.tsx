@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TextoAccion } from "@/componentes/panel/texto-accion";
 import Link from "next/link";
 import { Suspense } from "react";
 import { cn } from "cn";
@@ -13,6 +14,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { Buscador } from "@/componentes/panel/buscador";
 import { obtenerParametros } from "@/modulos/configuracion/consultas";
 import { ListaCotizaciones } from "@/modulos/cotizaciones/componentes/lista-cotizaciones";
+import { TarjetasCotizaciones } from "@/modulos/cotizaciones/componentes/tarjetas-cotizaciones";
 import { contarPorVista, listarCotizaciones } from "@/modulos/cotizaciones/consultas/lista";
 import { Paginacion } from "@/componentes/panel/paginacion";
 import { conPagina, leerPagina } from "@/lib/paginacion";
@@ -34,7 +36,7 @@ export default function PaginaCotizaciones({ searchParams }: PageProps<"/panel/c
           // Enlace con forma de botón: lleva a otra pantalla
           <Link href="/panel/cotizaciones/nueva" className={cn(buttonVariants())}>
             <PlusIcon />
-            Nueva cotización
+            <TextoAccion corto="Nueva">Nueva cotización</TextoAccion>
           </Link>
         }
       />
@@ -96,8 +98,13 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/cotizaciones">, "s
         <EstadoVacio>{q.trim() ? `Ninguna cotización ${TITULOS[vista].toLowerCase().slice(0, -1)} coincide con «${q.trim()}».` : VACIOS[vista]}</EstadoVacio>
       ) : (
         <>
-          {/* En cada pestaña el estado ya se sabe: no se repite en las filas */}
-          <ListaCotizaciones cotizaciones={cotizaciones} umbral={parametrosNegocio.dias_cotizacion_sin_respuesta} conEstado={false} desde={aqui("/panel/cotizaciones", parametros)} />
+          {/* Pendientes y Aceptadas, en tarjetas con sus pasos (recorrido visual del 22/11, como Órdenes); las rechazadas, el
+              historial, en tabla. En cada pestaña el estado ya se sabe: no se repite */}
+          {vista === "rechazadas" ? (
+            <ListaCotizaciones cotizaciones={cotizaciones} umbral={parametrosNegocio.dias_cotizacion_sin_respuesta} conEstado={false} vista={vista} desde={aqui("/panel/cotizaciones", parametros)} />
+          ) : (
+            <TarjetasCotizaciones cotizaciones={cotizaciones} umbral={parametrosNegocio.dias_cotizacion_sin_respuesta} desde={aqui("/panel/cotizaciones", parametros)} />
+          )}
           <Paginacion pagina={pagina} paginas={paginas} total={total} nombre={["cotización", "cotizaciones"]} enlace={(p) => conPagina("/panel/cotizaciones", parametros, p)} />
         </>
       )}
