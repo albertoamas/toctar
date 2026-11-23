@@ -1,7 +1,7 @@
 import type { Tamano } from "@/modulos/configuracion/consultas";
+import { Alerta } from "@/componentes/panel/alerta";
 import type { VarianteCatalogo } from "../consultas";
 import { mostrarMonto, textoDias } from "../reglas";
-import { Insignia } from "@/componentes/panel/insignia";
 
 // HU-20: los precios de una variante en lectura, como se consultan casi siempre: una lista de precios en todos los
 // tamaños de pantalla (el tamaño a la izquierda y el monto alineado a la derecha, un renglón cada uno), así los montos
@@ -20,7 +20,7 @@ export function PreciosVariante({ variante: v, tamanos, duracionServicio }: { va
             <div key={t.id} className="flex min-w-0 items-baseline justify-between gap-4 py-2">
               <dt className="text-sm text-tinta-suave">{t.nombre}</dt>
               <dd className="shrink-0 whitespace-nowrap tabular-nums">
-                {monto === undefined ? <Insignia tono="aviso">Sin cargar</Insignia> : monto === null ? <SegunEvaluacion /> : <span className="font-semibold">{mostrarMonto(monto)} Bs</span>}
+                {monto === undefined ? <Alerta tipo="falta">Sin cargar</Alerta> : monto === null ? <SegunEvaluacion /> : <span className="font-semibold">{mostrarMonto(monto)} Bs</span>}
               </dd>
             </div>
           );

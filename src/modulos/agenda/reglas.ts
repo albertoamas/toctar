@@ -19,11 +19,12 @@ export const NOMBRE_ESTADO_TRABAJO: Record<EstadoTrabajo, string> = {
 };
 
 /**
- * El color de la insignia de cada estado (pedido 26), igual en todo el panel: reservada en ámbar (pendiente, por llegar;
- * 16/11), recibida en violeta, en proceso en azul, lista y entregada en verde, cancelada en rojo suave.
+ * El color de la insignia de cada estado (pedido 26), igual en todo el panel (paleta del 23/11, src/lib/tonos.ts):
+ * reservada en azul (programada; era ámbar desde el 16/11, pero el ámbar queda para lo que falta hacer), recibida en
+ * violeta, en proceso en azul, lista y entregada en verde, cancelada en rojo.
  */
 export const TONO_ESTADO_TRABAJO: Record<EstadoTrabajo, TonoEstado | undefined> = {
-  agendado: "aviso",
+  agendado: "info",
   recibido: "violeta",
   en_proceso: "info",
   listo: "exito",

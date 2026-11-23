@@ -1,4 +1,5 @@
 import type { Route } from "next";
+import { fechaConMes, fechaEnBolivia } from "@/lib/fechas";
 import { EncabezadoPagina } from "@/componentes/panel/encabezado-pagina";
 import type { DestinoPaso } from "@/componentes/panel/pasos-flujo";
 import { ParaQuien as LineaParaQuien } from "@/componentes/panel/para-quien";
@@ -58,6 +59,7 @@ export function ParaQuien(props: { nombre: string; vehiculo: VehiculoReserva | n
  * sus servicios y precios ya puestos (`enlace`). El total, solo a quien ve montos (RN-12: Pagos o Cotizaciones).
  */
 export function CotizacionesDelCliente({ cotizaciones, conMontos, enlace }: { cotizaciones: CotizacionParaReservar[]; conMontos: boolean; enlace: (cotizacionId: number) => Route }) {
+  const hoy = fechaEnBolivia();
   return (
     <Seccion id="sus-cotizaciones" titulo="Sus cotizaciones" sinRelleno>
       <ListaFilas
@@ -66,9 +68,13 @@ export function CotizacionesDelCliente({ cotizaciones, conMontos, enlace }: { co
           href: enlace(c.cotizacionId),
           titulo: `Cotización ${c.numero}${c.version > 1 ? `, versión ${c.version}` : ""}`,
           detalles: [c.servicios, ...(conMontos ? [bs(c.total)] : [])].filter(Boolean),
+          // Paleta del 23/11: pendiente en gris (espera al cliente), aceptada en verde; la alerta, con su ícono: sin fecha o,
+          // pendiente y vencida, en rojo (su precio ya no vale: se reserva igual, pero se ve antes)
           estado: c.aceptada ? "Aceptada" : "Pendiente",
           tonoEstado: c.aceptada ? "exito" : undefined,
-          aviso: c.aceptada ? "Sin fecha" : null,
+          aviso: c.aceptada ? "Sin fecha" : c.validaHasta < hoy ? `Venció el ${fechaConMes(c.validaHasta, hoy)}` : null,
+          tipoAviso: c.aceptada ? "fecha" : "atraso",
+          avisoGrave: !c.aceptada,
         }))}
       />
     </Seccion>
