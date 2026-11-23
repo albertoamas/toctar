@@ -20,7 +20,7 @@ const PANTALLAS: { ruta: RegExp; texto: string; modulo: Modulo }[] = [
   { ruta: /^\/panel$/, texto: "Inicio", modulo: "inicio" },
   { ruta: /^\/panel\/agenda$/, texto: "Agenda", modulo: "agenda" },
   { ruta: /^\/panel\/agenda\/\d+$/, texto: "Reserva", modulo: "agenda" },
-  { ruta: /^\/panel\/ordenes$/, texto: "Órdenes", modulo: "ordenes" },
+  { ruta: /^\/panel\/ordenes$/, texto: "Taller", modulo: "ordenes" },
   { ruta: /^\/panel\/ordenes\/\d+$/, texto: "Orden", modulo: "ordenes" },
   { ruta: /^\/panel\/cotizaciones$/, texto: "Cotizaciones", modulo: "cotizaciones" },
   { ruta: /^\/panel\/cotizaciones\/\d+$/, texto: "Cotización", modulo: "cotizaciones" },

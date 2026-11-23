@@ -20,7 +20,7 @@ import { BarraLista } from "@/componentes/panel/barra-lista";
 import { normalizarBusqueda } from "@/modulos/clientes/reglas";
 import { aqui } from "@/lib/volver";
 
-export const metadata: Metadata = { title: "Órdenes" };
+export const metadata: Metadata = { title: "Taller" };
 
 // HU-33 y HU-34: las órdenes abiertas (en tarjetas con sus pasos desde el 20/11; antes, una tabla del pedido 26), la entrega más cercana primero (así las atrasadas y las de
 // hoy quedan arriba) y las listas al final; con filtros por estado (?estado=) que dicen cuántas hay en cada uno. Son
@@ -46,9 +46,9 @@ async function Lista({ searchParams }: Pick<PageProps<"/panel/ordenes">, "search
 
   return (
     <>
-      <EncabezadoPagina titulo="Órdenes" />
+      <EncabezadoPagina titulo="Taller" />
       <Pestanas
-        etiqueta="Órdenes"
+        etiqueta="Taller"
         activa={entregadas ? "/panel/ordenes?vista=entregadas" : "/panel/ordenes"}
         pestanas={[
           { href: "/panel/ordenes", texto: "En el taller" },

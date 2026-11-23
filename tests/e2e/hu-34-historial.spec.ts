@@ -34,7 +34,7 @@ test("en «Entregadas» se buscan por placa, cliente o fecha; la agenda las mues
   await ingresarComoDueno(page);
 
   await page.goto("/panel/ordenes");
-  await page.getByRole("navigation", { name: "Órdenes" }).getByRole("link", { name: "Entregadas" }).click();
+  await page.getByRole("navigation", { name: "Taller" }).getByRole("link", { name: "Entregadas" }).click();
   await expect(page).toHaveURL(/\?vista=entregadas$/);
   const buscador = page.getByLabel("Buscar por placa, cliente o fecha de entrega");
 

@@ -51,7 +51,7 @@ export const metadata: Metadata = { title: "Orden" };
 export default function PaginaOrden({ params, searchParams }: PageProps<"/panel/ordenes/[id]">) {
   return (
     <PaginaPanel tipo="ficha">
-      <Suspense fallback={<Cargando volver={{ href: "/panel/ordenes", texto: "Órdenes" }} />}>
+      <Suspense fallback={<Cargando volver={{ href: "/panel/ordenes", texto: "Taller" }} />}>
         <Detalle params={params} searchParams={searchParams} />
       </Suspense>
     </PaginaPanel>
@@ -74,7 +74,7 @@ async function Detalle({ params, searchParams }: Pick<PageProps<"/panel/ordenes/
   }
   const verFicha = puedeVerModulo(usuario, "clientes");
   // Pedido 43: "Volver" a la pantalla de la que se vino; los enlaces que salen de aquí dicen que vienen de esta orden
-  const volver = volverDesde(parametros.volver, { href: "/panel/ordenes", texto: "Órdenes" }, usuario);
+  const volver = volverDesde(parametros.volver, { href: "/panel/ordenes", texto: "Taller" }, usuario);
   const desdeAqui = aqui(`/panel/ordenes/${o.id}`, parametros);
   const abierta = estaAbierta(o.estado);
   const hoy = fechaEnBolivia();

@@ -20,7 +20,7 @@ test("una pestaña: se marca y aparece la barra antes de que llegue la pantalla;
   await ingresarComoDueno(page);
   await page.goto("/panel/ordenes", { waitUntil: "networkidle" });
   await demorarServidor(page);
-  const pestanas = page.getByRole("navigation", { name: "Órdenes" }).filter({ visible: true });
+  const pestanas = page.getByRole("navigation", { name: "Taller" }).filter({ visible: true });
   const entregadas = pestanas.getByRole("link", { name: "Entregadas" });
   await entregadas.click();
   // Antes de la respuesta (que tarda 1,5 s): la barra está y la pestaña tocada ya se ve elegida

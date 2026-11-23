@@ -65,7 +65,7 @@ export function EnElTaller({ datos, conOrdenes }: { datos: DatosAgenda; conOrden
         <span className="text-sm font-semibold">En el taller: {n === 1 ? "1 auto" : `${n} autos`}</span>
         <span className="truncate text-xs text-tinta-suave">
           {datos.enTaller.map((t) => t.placa).join(", ")}
-          {conOrdenes && " · se trabajan en Órdenes"}
+          {conOrdenes && " · se trabajan en el Taller"}
         </span>
       </span>
       <span aria-hidden className="flex shrink-0 gap-1">

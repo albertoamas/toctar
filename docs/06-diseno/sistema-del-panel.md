@@ -14,7 +14,7 @@ espacio, sin tope, también en un monitor grande. El tipo decide la forma y la s
 
 | Tipo | Para qué | Ejemplos |
 |---|---|---|
-| `lista` | Una tabla con columnas, o un tablero | Clientes, Órdenes, Cotizaciones, Agenda |
+| `lista` | Una tabla con columnas, o un tablero | Clientes, Taller, Cotizaciones, Agenda |
 | `ficha` | Ver y editar una cosa, o una lista de filas sin columnas | Cliente, Orden, Negocio, Preguntas frecuentes |
 | `formulario` | Crear algo, o un paso que se hace de arriba abajo | Nueva reserva, Recibir, Entregar, Nuevo cliente |
 | `portada` | Elegir a dónde ir o ver el día | Inicio, Sitio web, Configuración |

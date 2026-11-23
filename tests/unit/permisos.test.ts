@@ -111,10 +111,10 @@ describe("encargado", () => {
 });
 
 describe("menú en grupos (C5 §0)", () => {
-  test("el dueño ve todos los grupos, con su título, en orden", () => {
+  test("el dueño ve todos los grupos, con su título, en orden (Operaciones, en el orden del trabajo: 23/11)", () => {
     expect(menuAgrupado(dueno).map((g) => [g.titulo, g.modulos])).toEqual([
       [null, ["inicio"]],
-      ["Operaciones", ["agenda", "ordenes", "cotizaciones"]],
+      ["Operaciones", ["cotizaciones", "agenda", "ordenes"]],
       ["Clientes", ["clientes", "mantenimientos", "reclamos"]],
       ["Finanzas", ["pagos", "gastos", "reportes"]],
       ["Administración", ["sitio", "catalogo", "usuarios", "configuracion"]],
@@ -159,7 +159,7 @@ test("Pagos se llama «Saldos pendientes» en el menú y su casilla dice lo que 
   expect(permisosAsignables().find((p) => p.permiso === "pagos")?.nombre).toBe("Pagos (cobrar y ver saldos)");
   expect(permisosAsignables().find((p) => p.permiso === "agenda")?.nombre).toBe("Agenda");
   expect(nombreEnMenu("agenda")).toBe("Agenda");
-  expect(nombreEnMenu("ordenes")).toBe("Órdenes");
+  expect(nombreEnMenu("ordenes")).toBe("Taller");
   expect(modulosDelMenu({ rol: "encargado", permisos: ["pagos"] })).toEqual(["inicio", "pagos"]);
 });
 
