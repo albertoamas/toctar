@@ -1,5 +1,6 @@
 "use client";
 
+import { TextoAccion } from "@/componentes/panel/texto-accion";
 import { useActionState, useRef, useState } from "react";
 import { PlusIcon } from "lucide-react";
 import { useFocoEnError } from "@/componentes/foco-en-error";
@@ -23,7 +24,7 @@ export function AgregarServicio() {
     <>
       <Button type="button" disabled={!hidratado} onClick={() => setAbierto(true)}>
         <PlusIcon />
-        Nuevo servicio
+        <TextoAccion corto="Nuevo">Nuevo servicio</TextoAccion>
       </Button>
       <ModalFormulario titulo="Nuevo servicio" abierto={abierto} alCambiar={setAbierto}>
         <FormularioNuevoServicio />

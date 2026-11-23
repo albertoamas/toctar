@@ -1,4 +1,5 @@
 import type { Metadata, Route } from "next";
+import { TextoAccion } from "@/componentes/panel/texto-accion";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -113,7 +114,7 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
             {reservar && (
               <Link href={conDesde(`/panel/agenda/nueva?cliente=${v.dueno.id}&vehiculo=${v.id}`, desdeAqui)} className={cn(buttonVariants())}>
                 <CalendarIcon />
-                Nueva reserva
+                <TextoAccion corto="Reservar">Nueva reserva</TextoAccion>
               </Link>
             )}
             {/* También con el dueño desactivado: el vehículo se reactiva o se pasa a otro */}

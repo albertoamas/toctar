@@ -1,12 +1,11 @@
 import Link from "next/link";
 import type { Route } from "next";
-import { cn } from "cn";
+import { BarraPasos } from "@/componentes/panel/barra-pasos";
 import { MarcaEstado } from "@/componentes/panel/marca-estado";
 import { conDesde } from "@/lib/volver";
 import { mostrarMonto } from "@/modulos/catalogo/reglas";
 import { NOMBRE_ESTADO_TRABAJO, TONO_ESTADO_TRABAJO } from "@/modulos/agenda/reglas";
 import { textoEntregaAtrasada } from "@/modulos/inicio/reglas";
-import type { TonoEstado } from "@/lib/tonos";
 import type { OrdenEnLista } from "../consultas";
 import { resumenServicios, textoEntrega } from "../reglas";
 
@@ -18,11 +17,8 @@ import { resumenServicios, textoEntrega } from "../reglas";
 
 /**
  * Los pasos de una orden en el taller. Los hechos y el actual, en el color de su estado (Recibida violeta, En proceso azul,
- * Lista verde; 20/11, a pedido del dueño): la barra es el estado de la orden, así que lleva su color y la pantalla se lee
- * de un vistazo. Los que faltan, en gris. Los pasos de un formulario (Nueva reserva) siguen en negro: no son un estado.
+ * Lista verde; 20/11, a pedido del dueño): la barra es el estado de la orden (`BarraPasos`, común con Cotizaciones).
  */
-const BARRA: Record<TonoEstado, string> = { exito: "bg-exito", aviso: "bg-aviso", peligro: "bg-peligro", info: "bg-info", violeta: "bg-violeta" };
-
 const PASOS = [
   { estado: "recibido", texto: "Recibida" },
   { estado: "en_proceso", texto: "En proceso" },
@@ -56,8 +52,6 @@ function Tarjeta({ orden: o, hoy, href }: { orden: OrdenEnLista; hoy: string; hr
     <MarcaEstado tono={TONO_ESTADO_TRABAJO[o.estado]}>{NOMBRE_ESTADO_TRABAJO[o.estado]}</MarcaEstado>
   );
   const actual = PASOS.findIndex((p) => p.estado === o.estado);
-  const tono = TONO_ESTADO_TRABAJO[o.estado];
-  const barra = tono ? BARRA[tono] : "bg-tinta";
   const conSaldo = o.saldo !== null && Number(o.saldo) > 0;
   return (
     <Link
@@ -76,15 +70,7 @@ function Tarjeta({ orden: o, hoy, href }: { orden: OrdenEnLista; hoy: string; hr
         <span className="font-medium text-tinta">{o.cliente}</span>
         {o.servicios.length > 0 && ` · ${resumenServicios(o.servicios)}`}
       </p>
-      {/* Los pasos: la marca ya los dice en palabras, así que para el lector de pantalla no se repiten */}
-      <ol aria-hidden className="grid grid-cols-3 gap-1.5">
-        {PASOS.map((p, i) => (
-          <li key={p.estado} className="flex min-w-0 flex-col gap-1">
-            <span className={cn("h-1.5 rounded-full", i <= actual ? barra : "bg-border")} />
-            <span className={cn("truncate text-xs", i === actual ? "font-semibold text-tinta" : "text-tinta-suave")}>{p.texto}</span>
-          </li>
-        ))}
-      </ol>
+      <BarraPasos pasos={PASOS.map((p) => p.texto)} actual={actual} tono={TONO_ESTADO_TRABAJO[o.estado]} />
       {/* Atrasada, la entrega ya la dice la marca de arriba */}
       {(!atrasada || conSaldo) && (
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t border-border pt-3 text-sm">

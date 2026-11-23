@@ -3,7 +3,7 @@ import { cn } from "cn";
 import { BotonVolver } from "@/componentes/panel/boton-volver";
 
 // El encabezado de una pantalla del panel (skill pantallas-panel): el título, junto a él su estado si es una ficha (una
-// insignia: "En el sitio", "Agendada"…), su acción a la derecha (debajo en el celular) y, si hace falta, una
+// insignia: "En el sitio", "Agendada"…), su acción a la derecha (con texto corto en el celular, `TextoAccion`) y, si hace falta, una
 // línea de contexto. El mismo en todas las pantallas, así el título, el botón y el espacio hasta el contenido no cambian
 // de una a otra. Va dentro del mismo ancho que el contenido.
 // `volver` (pulido 13.18): el botón de volver a la izquierda del título. Todas las pantallas que vuelven a otra lo hacen
@@ -42,7 +42,9 @@ export function EncabezadoPagina({ titulo, estado, accion, volver, subtitulo, ch
             {subtitulo && <p className="text-sm text-tinta-suave">{subtitulo}</p>}
           </div>
         </div>
-        {accion && <div className="ml-auto max-w-full">{accion}</div>}
+        {/* Sin ml-auto: en el mismo renglón queda a la derecha (el título ocupa el resto) y, si baja al suyo, a la izquierda,
+            debajo del título, y no suelto a la derecha (22/11) */}
+        {accion && <div className="max-w-full">{accion}</div>}
       </div>
       {/* Con el botón de volver, alineada con el título (no debajo del botón) */}
       {children && <p className={cn("text-sm text-tinta-suave", volver && "pl-[2.875rem]")}>{children}</p>}

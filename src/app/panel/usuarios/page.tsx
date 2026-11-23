@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TextoAccion } from "@/componentes/panel/texto-accion";
 import Link from "next/link";
 import { Suspense } from "react";
 import { cn } from "cn";
@@ -31,7 +32,7 @@ export default function PaginaUsuarios({ searchParams }: PageProps<"/panel/usuar
           // Enlace con forma de botón: lleva a otra pantalla, así que se anuncia como enlace
           <Link href="/panel/usuarios/nuevo" className={cn(buttonVariants())}>
             <PlusIcon />
-            Nuevo usuario
+            <TextoAccion corto="Nuevo">Nuevo usuario</TextoAccion>
           </Link>
         }
       />

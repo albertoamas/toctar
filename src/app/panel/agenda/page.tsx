@@ -1,4 +1,5 @@
 import type { Metadata, Route } from "next";
+import { TextoAccion } from "@/componentes/panel/texto-accion";
 import Link from "next/link";
 import { Suspense } from "react";
 import { cn } from "cn";
@@ -43,7 +44,7 @@ export default function PaginaAgenda({ searchParams }: PageProps<"/panel/agenda"
           // Enlace con forma de botón: lleva a otra pantalla
           <Link href="/panel/agenda/nueva" className={cn(buttonVariants())}>
             <PlusIcon />
-            Nueva reserva
+            <TextoAccion corto="Nueva">Nueva reserva</TextoAccion>
           </Link>
         }
       />
