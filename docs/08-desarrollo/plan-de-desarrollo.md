@@ -49,12 +49,12 @@ Con la Entrega 2 se acepta también la Entrega 1. Lo que falta, en orden.
 
 | Qué | Dónde |
 |---|---|
-| Pedidos 14 (Bs 200), 19 y 22 (avisos automáticos, por cotizar); la constancia en PDF de la entrega (pedido 13, +2 h) | `registro-de-cambios.md` |
 | Pedido 15 (sueldos): va en el Sistema completo. El 16 ya está aprobado (punto 8 de arriba) | `registro-de-cambios.md` |
-| Decisiones abiertas de C5 (permiso del cliente para publicar fotos, qué ve el encargado en Inicio, más mensajes editables) | `etapas/C5-cierre-entrega-2.md`, §12 |
 | Revisar el texto de la política de privacidad (pedido 49) y saber que un dueño nuevo o recuperado se pide a YankoSoft (pedido 50) | Panel, Sitio web > Privacidad; `etapas/P50-cuenta-del-dueno-protegida.md` |
 | Sus datos: lista de precios real (20.4), servicios con mantenimiento y su frecuencia, textos del PDF (formas de pago, condiciones, garantía; 26.6), contenido del sitio (fotos que faltan, como la de "Instalación de PPF"; TikTok; WhatsApp real) y una contraseña larga para su usuario | Panel, en producción al publicar |
 | Reunión de accesos: sus dos pasos en Cloudflare y Hetzner, su tarjeta y el equipo en Coolify | `07-preparacion/servidor.md` |
+
+**Decidido por el dueño el 23/11:** las decisiones de C5 (§12) y los pedidos 13 (constancia en PDF), 14, 19 y 22 quedan como están hoy, sin cambios.
 
 **Al aceptar:** demo, capacitación, actas confirmadas, merge de `develop` a `main`, etiquetas `v1.0.0` y `v2.0.0`, publicación en producción y cobro (Bs 700 + Bs 2.000, y el 50 % que falta del pedido 16, Bs 360).
 
