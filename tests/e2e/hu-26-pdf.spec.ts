@@ -71,8 +71,10 @@ test("al guardar se genera el PDF; se ve, se descarga con su nombre y una versi�
   expect(nuevo.r.headers()["content-disposition"]).toBe(`inline; filename="Cotizacion-${v1.numero}-v2.pdf"`);
   expect(huella(nuevo.cuerpo)).not.toBe(antes);
   expect(huella((await bajarPdf(page.request, consultaId, v1.id)).cuerpo)).toBe(antes);
-  // Las dos versiones muestran su PDF en la ficha y se descargan desde su "⋯"; enviar y compartir, solo la que vale
-  // (pulido 13.50, pedido 47)
+  // Las dos versiones muestran su PDF en la ficha (la anterior, plegada: 23/11) y se descargan desde su "⋯"; enviar y
+  // compartir, solo la que vale (pulido 13.50, pedido 47)
+  await expect(page.getByRole("link", { name: "Ver PDF" })).toHaveCount(1);
+  await page.getByText("Ver la versión anterior").click();
   await expect(page.getByRole("link", { name: "Ver PDF" })).toHaveCount(2);
   await expect(page.getByRole("link", { name: "Enviar por WhatsApp" })).toHaveCount(1);
   await page.getByRole("button", { name: "Opciones del PDF de la versión 2" }).click();
