@@ -64,7 +64,8 @@ async function Contenido({ searchParams }: Pick<PageProps<"/panel/cotizaciones/n
       return (
         <>
           {encabezado}
-          <Formulario cliente={elegido} volver={origen} />
+          {/* Desde la ficha de un vehículo (26/11): ese, ya marcado */}
+          <Formulario cliente={elegido} volver={origen} vehiculoElegido={Number(texto("vehiculo")) || undefined} />
         </>
       );
     }
@@ -85,11 +86,13 @@ async function Formulario({
   volver,
   clientes,
   nuevoMarcado,
+  vehiculoElegido,
 }: {
   cliente: ClienteElegido | null;
   volver: string | null;
   clientes?: Awaited<ReturnType<typeof clientesParaElegir>>;
   nuevoMarcado?: boolean;
+  vehiculoElegido?: number;
 }) {
   const [tamanos, catalogo] = await Promise.all([tamanosActivos(), catalogoVehiculos()]);
   // Los precios de cada tamaño activo y de los de sus vehículos (un tamaño desactivado sigue valiendo para un auto que ya lo tiene)
@@ -99,5 +102,5 @@ async function Formulario({
     return <EstadoVacio>No hay servicios activos para cotizar: se activan en Catálogo y precios.</EstadoVacio>;
   }
   // La key lo rearma si cambia el cliente sin salir de la pantalla ("Usar a …", ya registrado)
-  return <FormularioNuevaCotizacion key={cliente?.id} cliente={cliente} tamanos={tamanos} catalogo={catalogo} opciones={opciones} inicio={inicio} hoy={fechaEnBolivia()} volver={volver} clientes={clientes} nuevoMarcado={nuevoMarcado} />;
+  return <FormularioNuevaCotizacion key={cliente?.id} cliente={cliente} tamanos={tamanos} catalogo={catalogo} opciones={opciones} inicio={inicio} hoy={fechaEnBolivia()} volver={volver} clientes={clientes} nuevoMarcado={nuevoMarcado} vehiculoElegido={vehiculoElegido} />;
 }
