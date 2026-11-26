@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, ingresar, ingresarComoDueno, elegirEnLista } from "./apoyo";
+import { consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, ingresar, ingresarComoDueno, elegirEnLista, rutaDeVehiculo } from "./apoyo";
 
 // Pedido 43: "Volver" lleva a la pantalla de la que se vino. Especificación: docs/08-desarrollo/etapas/P43-volver-al-origen.md §9.
 
@@ -12,17 +12,18 @@ const volverA = (page: Page, texto: string) => page.getByRole("link", { name: `V
 test("una orden vuelve a la pantalla de la que se abrió, y sin origen (o con uno de otro sitio) a Órdenes", async ({ page }, info) => {
   const s = sufijo(info);
   const placa = `VO43${s}1`;
-  const clienteId = await crearClienteEnBase({ nombre: `Volver orden ${s}`, telefono: telefono(info, 1), placa });
+  await crearClienteEnBase({ nombre: `Volver orden ${s}`, telefono: telefono(info, 1), placa });
   const id = await crearOrdenLista({ placa, dias: dias(info, 1), precio: 500, pagado: 0 });
   await ingresarComoDueno(page);
 
-  // Desde la ficha del cliente: su fila abre la orden y "Volver" lleva al cliente
-  await page.goto(`/panel/clientes/${clienteId}`);
+  // Desde la ficha del vehículo (su historia, 26/11): su fila abre la orden y "Volver" lleva al vehículo
+  const vehiculo = await rutaDeVehiculo(placa);
+  await page.goto(vehiculo);
   await page.getByRole("list", { name: "Historia" }).getByRole("link").first().click();
   await expect(page).toHaveURL(new RegExp(`/panel/ordenes/${id}\\?volver=`));
-  await expect(volverA(page, "Cliente")).toHaveAttribute("href", `/panel/clientes/${clienteId}`);
-  await volverA(page, "Cliente").click();
-  await expect(page).toHaveURL(new RegExp(`/panel/clientes/${clienteId}(?:[?&]volver=[^&#]*)?$`));
+  await expect(volverA(page, "Vehículo")).toHaveAttribute("href", vehiculo);
+  await volverA(page, "Vehículo").click();
+  await expect(page).toHaveURL(new RegExp(`${vehiculo}(?:[?&]volver=[^&#]*)?$`));
 
   // Desde Inicio
   await page.goto(`/panel/ordenes/${id}?volver=%2Fpanel`);

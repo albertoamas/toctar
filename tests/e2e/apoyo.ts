@@ -389,3 +389,21 @@ export async function elegirEnLista(page: Page, etiqueta: "Elegir cliente" | "El
 export async function marcarNuevo(page: Page, etiqueta: "Elegir cliente" | "Elegir vehículo") {
   await page.getByRole("radiogroup", { name: etiqueta }).getByRole("radio", { name: etiqueta === "Elegir cliente" ? /^Cliente nuevo/ : /^Otro vehículo/ }).click();
 }
+
+/**
+ * La ficha de un vehículo, por su placa (26/11: la historia y los mantenimientos viven ahí, ya no en la del cliente).
+ */
+export async function rutaDeVehiculo(placa: string): Promise<string> {
+  const [v] = await consultar<{ id: number; cliente: number }>("select id, cliente_id as cliente from vehiculo where placa = $1 and activo order by id desc limit 1", [placa]);
+  return `/panel/clientes/${v.cliente}/vehiculos/${v.id}`;
+}
+
+/** "Editar vehículo" desde "Más" de su ficha (26/11: antes, "Editar" de una tarjeta "Datos"). Devuelve el modal. */
+export async function editarVehiculo(page: Page, placa: string): Promise<Locator> {
+  // El del encabezado: el primero (los mantenimientos tienen el suyo)
+  await page.getByRole("main").getByRole("button", { name: "Más" }).first().click();
+  await page.getByRole("menuitem", { name: "Editar vehículo" }).click();
+  const modal = page.getByRole("dialog", { name: `Editar ${placa}` });
+  await expect(modal).toBeVisible();
+  return modal;
+}

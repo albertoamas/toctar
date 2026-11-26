@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearOrdenLista, ingresarComoDueno, PNG } from "./apoyo";
+import { consultar, crearClienteEnBase, crearOrdenLista, editarVehiculo, ingresarComoDueno, PNG } from "./apoyo";
 
 // Pedido 58 (etapas/P58-foto-del-vehiculo.md): la foto de cada vehículo, para saber cuál es de un vistazo. Se toma al
 // registrarlo o editarlo y se llena sola con la primera foto de inicio de su orden. Cada proyecto y reintento, sus datos.
@@ -44,8 +44,7 @@ test("una foto que no es una foto no se guarda y el vehículo queda sin ella", a
   await page.goto(`/panel/clientes/${id}/vehiculos/${vehiculo}`, { waitUntil: "networkidle" });
   // Sin foto: el recuadro
   await expect(page.getByRole("img", { name: "Sin foto" })).toBeVisible();
-  await page.getByRole("button", { name: `Editar ${placa}` }).click();
-  const modal = page.getByRole("dialog", { name: `Editar ${placa}` });
+  const modal = await editarVehiculo(page, placa);
   // La cambia por una buena: queda
   await modal.getByLabel("Galería para la foto del vehículo").setInputFiles({ name: "auto.png", mimeType: "image/png", buffer: PNG });
   await modal.getByRole("button", { name: "Guardar vehículo" }).click();
@@ -54,7 +53,7 @@ test("una foto que no es una foto no se guarda y el vehículo queda sin ella", a
   const primera = await fotoDe(placa);
   expect(primera).not.toBeNull();
   // Otra la reemplaza, y la anterior (subida para el vehículo) se borra
-  await page.getByRole("button", { name: `Editar ${placa}` }).click();
+  await editarVehiculo(page, placa);
   await modal.getByLabel("Galería para la foto del vehículo").setInputFiles({ name: "otra.png", mimeType: "image/png", buffer: PNG });
   await modal.getByRole("button", { name: "Guardar vehículo" }).click();
   await expect(modal).toHaveCount(0);

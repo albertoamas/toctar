@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { archivosArrastrados, consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, ingresar, PNG } from "./apoyo";
+import { archivosArrastrados, consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, ingresar, PNG, rutaDeVehiculo } from "./apoyo";
 
 // HU-32 Registrar pagos y saldo. Especificación: docs/08-desarrollo/etapas/C3-agenda-pagos.md §9.
 // Encargados por prueba (no el dueño: el límite de intentos de ingreso es por usuario). Días propios, a 320 (celular)
@@ -121,11 +121,13 @@ test("registrar un pago con comprobante, no pasar el saldo y anular con motivo",
   );
   expect(auditoria.map((a) => a.accion)).toEqual(["crear", "anular"]);
 
-  // En la ficha del cliente, la reserva con su total; "Debe" recién cuando ya se cobra (lista o entregada, C7 §5.6)
-  await page.goto(`/panel/clientes/${clienteId}`);
+  // En la historia de su vehículo (26/11), la reserva con su total; "Debe" recién cuando ya se cobra (lista o
+  // entregada, C7 §5.6)
+  await page.goto(await rutaDeVehiculo(placa));
   const enLaHistoria = page.getByRole("list", { name: "Historia" }).getByRole("link");
   await expect(enLaHistoria).toContainText("500 Bs");
   await expect(enLaHistoria).not.toContainText("Debe");
+  await page.goto(`/panel/clientes/${clienteId}`);
   // Lo que debe, en el encabezado (pulido 8.3), como en Saldos pendientes: una reserva por venir todavía no se debe;
   // entregada con saldo, sí
   const encabezado = page.getByRole("heading", { level: 1 }).locator("..");
@@ -138,7 +140,7 @@ test("registrar un pago con comprobante, no pasar el saldo y anular con motivo",
 test("pagada por completo no ofrece más pagos; sin Pagos no se ven montos", async ({ page }, info) => {
   const s = sufijo(info);
   const placa = `PG32${s.toUpperCase()}2`;
-  const clienteId = await crearClienteEnBase({ nombre: `Sin deuda ${s}`, telefono: `5917${s === "c" ? 7 : 8}3200020`, placa });
+  await crearClienteEnBase({ nombre: `Sin deuda ${s}`, telefono: `5917${s === "c" ? 7 : 8}3200020`, placa });
   const id = await reserva(info, placa, false);
   await consultar("insert into pago (trabajo_id, monto, metodo, tipo, fecha, created_by) select $1, 500, 'qr', 'saldo', (now() at time zone 'America/La_Paz')::date, created_by from trabajo where id = $1", [id]);
   await crearUsuario({ usuario: `caja2-hu32-${s}`, nombre: "Encargado de caja", contrasena: "encargado-123", rol: "encargado", permisos: ["agenda", "pagos"] });
@@ -157,7 +159,7 @@ test("pagada por completo no ofrece más pagos; sin Pagos no se ven montos", asy
   await expect(page.getByRole("heading", { name: placa })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Pagos" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Registrar pago" })).toHaveCount(0);
-  await page.goto(`/panel/clientes/${clienteId}`);
+  await page.goto(await rutaDeVehiculo(placa));
   await expect(page.getByRole("list", { name: "Historia" })).toBeVisible();
   await expect(page.getByText(/Saldo|Pagado|Debe /)).toHaveCount(0);
   // La reserva directa lleva precios: sin Pagos no se ofrece

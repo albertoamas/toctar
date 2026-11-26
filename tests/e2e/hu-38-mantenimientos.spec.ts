@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { abrirWhatsApp, consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, entregarSinFirma, ingresar, ingresarComoDueno, PERFIL_TALLER, conVolver, sinAdelantoEnReserva } from "./apoyo";
+import { abrirWhatsApp, consultar, crearClienteEnBase, crearOrdenLista, crearUsuario, entregarSinFirma, ingresar, ingresarComoDueno, PERFIL_TALLER, conVolver, sinAdelantoEnReserva, rutaDeVehiculo } from "./apoyo";
 
 // HU-38 Recordatorios de mantenimiento (flujo crítico 5). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §9.
 // Los recordatorios van directo a la base, colgados de una orden entregada en el pasado (no ocupa espacio). Las reservas
@@ -151,7 +151,8 @@ test("vencidos y próximos; avisar, no le interesa y reservar (y al cancelar la 
   const cerradoV = page.getByRole("list", { name: "Cerrados" }).getByRole("listitem").filter({ hasText: placaV });
   await expect(cerradoV).toContainText("Reservado");
   await expect(cerradoV.getByRole("link", { name: "Ver la reserva" })).toHaveAttribute("href", conVolver(`/panel/agenda/${reservaId}`));
-  await page.goto(`/panel/clientes/${clienteV}`);
+  // En la ficha de su vehículo (26/11: ya no en la del cliente)
+  await page.goto(await rutaDeVehiculo(placaV));
   const delCliente = page.getByRole("list", { name: "Mantenimientos" }).getByRole("listitem");
   await expect(delCliente).toContainText("Pulido y nano cerámico");
   await expect(delCliente).toContainText("Reservado");
@@ -247,12 +248,12 @@ test("entregar el mantenimiento lo deja hecho y programa el siguiente con la fre
   await expect(cerrado.getByRole("link", { name: "Ver la orden" })).toHaveAttribute("href", conVolver(`/panel/ordenes/${orden}`));
 });
 
-test("en la ficha del cliente: agregar un mantenimiento anterior al sistema, editar el plan y terminarlo", async ({ page }, info) => {
+test("en la ficha del vehículo: agregar un mantenimiento anterior al sistema, editar el plan y terminarlo", async ({ page }, info) => {
   const s = sufijo(info);
   const placa = `MT38${s.toUpperCase()}7`;
-  const clienteId = await crearClienteEnBase({ nombre: `Anterior ${s}`, telefono: telefono(info, 7), placa });
+  await crearClienteEnBase({ nombre: `Anterior ${s}`, telefono: telefono(info, 7), placa });
   await ingresarComoDueno(page);
-  await page.goto(`/panel/clientes/${clienteId}`);
+  await page.goto(await rutaDeVehiculo(placa));
 
   // Se hizo el cerámico hace 100 días: con 3 meses, ya venció y queda por avisar
   const agregar = page.getByRole("dialog", { name: "Agregar mantenimiento" });
@@ -280,7 +281,7 @@ test("en la ficha del cliente: agregar un mantenimiento anterior al sistema, edi
   await expect(vencidos(page).getByRole("listitem").filter({ hasText: placa })).toContainText("cada 3 meses");
 
   // Editar: cada 2 meses y otra fecha
-  await page.goto(`/panel/clientes/${clienteId}`);
+  await page.goto(await rutaDeVehiculo(placa));
   await fila.getByRole("button", { name: "Más" }).click();
   await page.getByRole("menuitem", { name: "Editar" }).click();
   const editar = page.getByRole("dialog", { name: "Mantenimiento de Pulido y nano cerámico" });

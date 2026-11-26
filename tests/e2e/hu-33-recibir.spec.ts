@@ -1,5 +1,5 @@
 import { expect, test, type TestInfo } from "@playwright/test";
-import { consultar, crearClienteEnBase, crearUsuario, ingresar, PERFIL_TALLER, PNG, revisarChecklistEnBase } from "./apoyo";
+import { consultar, crearClienteEnBase, crearUsuario, ingresar, PERFIL_TALLER, PNG, revisarChecklistEnBase, rutaDeVehiculo } from "./apoyo";
 
 // HU-33 Recibir vehículo (flujo crítico 3, primera parte). Especificación: docs/08-desarrollo/etapas/C4-taller-entrega.md §9.
 // Se recibe desde el día de ingreso: las reservas de hoy van directo a la base (recibir no cuenta lugares, pedido 55).
@@ -30,7 +30,7 @@ async function reserva(info: TestInfo, placa: string, dia = hoy()): Promise<numb
 test("recibir con observaciones: la reserva pasa a orden, sin fotos de ingreso sueltas (pedido 27) ni técnico (pedido 32), y el perfil Taller la ve sin precios", async ({ page }, info) => {
   const s = sufijo(info);
   const placa = `RC33${s.toUpperCase()}1`;
-  const clienteId = await crearClienteEnBase({ nombre: `Recibe ${s}`, telefono: telefono(info, 1), placa });
+  await crearClienteEnBase({ nombre: `Recibe ${s}`, telefono: telefono(info, 1), placa });
   const id = await reserva(info, placa);
   // Con "Clientes": desde la ficha se comprueba a dónde lleva la reserva ya recibida
   await crearUsuario({ usuario: `taller-hu33-${s}`, nombre: "Encargado del taller", contrasena: "encargado-123", rol: "encargado", permisos: ["agenda", "ordenes", "pagos", "clientes"] });
@@ -71,8 +71,8 @@ test("recibir con observaciones: la reserva pasa a orden, sin fotos de ingreso s
   const [{ accion }] = await consultar<{ accion: string }>("select accion from auditoria where entidad = 'trabajo' and entidad_id = $1", [id]);
   expect(accion).toBe("recibir");
 
-  // En la ficha del cliente, ya recibida, lleva a la orden (C5 §0)
-  await page.goto(`/panel/clientes/${clienteId}`);
+  // En la historia de su vehículo (26/11), ya recibida, lleva a la orden (C5 §0)
+  await page.goto(await rutaDeVehiculo(placa));
   await expect(page.getByRole("list", { name: "Historia" }).getByRole("link")).toHaveAttribute("href", new RegExp(`^/panel/ordenes/${id}\\?volver=%2Fpanel%2Fclientes`));
 
   // La reserva ya es una orden: una pantalla por trabajo, su dirección lleva a la orden (pulido 13.52)

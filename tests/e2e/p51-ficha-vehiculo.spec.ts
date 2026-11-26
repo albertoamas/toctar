@@ -32,7 +32,8 @@ test("desde la ficha del cliente se abre la del vehículo, con su dueño y su hi
   await page.getByRole("list", { name: "Vehículos", exact: true }).getByRole("link", { name: new RegExp(a.placa) }).click();
   await expect(page).toHaveURL(new RegExp(`/panel/clientes/${a.actualId}/vehiculos/${a.vehiculoId}(?:\\?|$)`));
   await expect(page.getByRole("heading", { level: 1, name: a.placa })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Datos" })).toContainText("Toyota Hilux");
+  // Todo el auto debajo de la placa (26/11: ya sin la tarjeta "Datos")
+  await expect(page.getByRole("main").getByText(/Toyota Hilux/).first()).toBeVisible();
   await expect(page.getByRole("list", { name: "Dueño" })).toContainText(a.actual);
   // La orden de cuando era del anterior, con su nombre
   const historial = page.getByRole("list", { name: "Historia" });
