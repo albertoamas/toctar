@@ -14,15 +14,7 @@ export function marcasParaElegir(marcas: string[], actual?: string | null): stri
   return enLista ? [...marcas, actual.trim()].sort((a, b) => a.localeCompare(b, "es")) : marcas;
 }
 
-/** Las marcas que coinciden con lo escrito (sin importar mayúsculas ni tildes), las que empiezan así primero. */
-export function filtrarMarcas(marcas: string[], texto: string): string[] {
-  const t = sinTildes(clave(texto));
-  if (!t) return marcas;
-  const coinciden = marcas.filter((m) => sinTildes(clave(m)).includes(t));
-  return [...coinciden.filter((m) => sinTildes(clave(m)).startsWith(t)), ...coinciden.filter((m) => !sinTildes(clave(m)).startsWith(t))];
-}
-
-/** Si lo escrito ya es una marca de la lista (con otras mayúsculas): "toyota" es "Toyota". */
+/** Si una marca ya está en la lista (con otras mayúsculas): "toyota" es "Toyota". Para marcar la de un vehículo viejo. */
 export function marcaExacta(marcas: string[], texto: string): string | null {
   return marcas.find((m) => clave(m) === clave(texto)) ?? null;
 }
@@ -31,8 +23,4 @@ export function marcaExacta(marcas: string[], texto: string): string | null {
 export function aniosParaElegir(hoy: Date = new Date()): number[] {
   const desde = anioMaximo(hoy);
   return Array.from({ length: desde - ANIO_MINIMO + 1 }, (_, i) => desde - i);
-}
-
-function sinTildes(texto: string): string {
-  return texto.normalize("NFD").replace(/[̀-ͯ]/g, "");
 }

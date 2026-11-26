@@ -1,7 +1,9 @@
 # P52 Marcas de vehículo y menos escritura al registrar un vehículo — especificación
 
 - **Fase y semana:** estandarización del panel (C7, fase 2) · 19/11/2026
-- **Estado:** aprobada (18/11/2026, por el desarrollador). El 19/11: el modelo queda como texto simple, sin sugerencias
+- **Estado:** aprobada (18/11/2026, por el desarrollador). El 19/11: el modelo queda como texto simple, sin sugerencias.
+  **El 26/11 (recorrido visual, a pedido del desarrollador): la marca es un menú y no se agregan marcas desde el
+  formulario**; las suma solo el dueño en Configuración → Taller (§2, §6, §7 y §8 al día)
 - **Historias:** pedido 52 (`03-cierre-comercial/registro-de-cambios.md`)
 - **Base:** RF de clientes y vehículos (HU-23), RN-07 (tamaños), D-6 (se desactiva, no se borra); `modelo-de-datos.md`
 
@@ -15,7 +17,7 @@ elige de una lista que el dueño administra; el año y el color se eligen. El mo
 - **Incluye:**
   - Una lista de marcas en Configuración → Taller, como los espacios, los tamaños y las partes: agregar, renombrar, ordenar y desactivar.
   - En todo formulario de vehículo (Nuevo cliente, Agregar y editar vehículo, el vehículo nuevo de Nueva cotización):
-    - **Marca:** se elige de la lista, con búsqueda. Si no está, "Agregar «X»": se guarda en el vehículo y se suma sola a la lista.
+    - **Marca:** se elige de la lista, en un menú como el tamaño y el año (26/11; antes, con búsqueda y "Agregar «X»", que sumaba marcas mal escritas a la lista). Si no está, se deja vacía y el dueño la suma en Configuración → Taller. La que ya tenía un vehículo (vieja o desactivada) se ofrece en su menú.
     - **Modelo:** un texto simple, como estaba ("Hilux"), sin sugerencias.
     - **Año:** un selector, del año que viene hasta 1950 (la misma regla que hoy: `ANIO_MINIMO` y `anioMaximo`).
     - **Color:** los frecuentes en botones (Blanco, Negro, Gris, Plata, Rojo, Azul) y "Otro" para escribirlo.
@@ -45,15 +47,15 @@ elige de una lista que el dueño administra; el año y el color se eligen. El mo
 ## 6. Acciones del servidor
 
 - Las de las listas de Configuración (`guardarElemento`, `moverElemento`, `cambiarEstadoElemento`) suman `marcas`.
-- Al guardar un vehículo (crear cliente con vehículo, agregar o editar vehículo, vehículo nuevo al cotizar): si la marca no está en la lista, se agrega; si está con otras mayúsculas, se guarda como en la lista. En la misma transacción.
+- Al guardar un vehículo (crear cliente con vehículo, agregar o editar vehículo, vehículo nuevo al cotizar o reservar): la marca tiene que estar en la lista activa, salvo que sea la que el vehículo ya tenía; si no, "Elige una marca de la lista." (`revisarVehiculo`, 26/11). Si está con otras mayúsculas, se guarda como en la lista. Ya no se suman marcas desde aquí.
 
 ## 7. Componentes
 
-- `CampoConBusqueda` (nuevo, sobre el `Combobox` de Base UI, ya instalado) para la marca; `Selector` para el año; `OpcionesEnTarjetas` para el color.
+- `Selector` para la marca y el año (26/11: `CampoConBusqueda` se borró); el color, un texto simple (20/11).
 
 ## 8. Textos
 
-- Marca: "Elige la marca" · sin resultados: "No está en la lista." · "Agregar «X»".
+- Marca: "Elige la marca" · error: "Elige una marca de la lista.".
 - Año: "Elige el año".
 - Color: "Otro" y su campo "Color".
 

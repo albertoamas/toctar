@@ -245,8 +245,7 @@ test("reservar la de un interesado: sus pasos llegan escritos y se registra con 
   await page.getByRole("button", { name: "Siguiente: vehículo" }).click();
   await expect(pasoReserva).toHaveText("Vehículo");
   await expect(page.getByLabel("Placa", { exact: true })).toHaveValue(`RI25${s}1`);
-  await page.getByLabel("Marca").fill("Toyota");
-  await page.getByLabel("Marca").press("Tab");
+  await page.getByLabel("Marca (opcional)", { exact: true }).selectOption("Toyota");
   await page.getByRole("button", { name: "Siguiente: fecha" }).click();
   await expect(pasoReserva).toHaveText("Fecha");
   // Atrás vuelve al vehículo (no hay Servicios)

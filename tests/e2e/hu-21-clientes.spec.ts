@@ -22,14 +22,14 @@ test("el personal registra un cliente con su primer vehículo; los obligatorios 
 
   await page.getByLabel("Nombre", { exact: true }).fill(nombre);
   await page.getByLabel("WhatsApp").fill(telefono(info, 1));
-  // Un dato del vehículo sin placa ni tamaño: el vehículo queda a medias y se avisa. La marca está plegada
-  await page.getByText("Agregar marca, modelo, año y color").click();
-  // La marca, de la lista con búsqueda (pedido 52): Tab la cierra
-  await page.getByLabel("Marca").fill("Toyota");
-  await page.getByLabel("Marca").press("Tab");
+  // Un dato del vehículo sin placa ni tamaño: el vehículo queda a medias y se avisa. La marca, a la vista (26/11)
+  // La marca, de un menú con las de la lista (pedido 52; menú desde el 26/11)
+  await page.getByLabel("Marca (opcional)", { exact: true }).selectOption("Toyota");
   await page.getByRole("button", { name: "Crear cliente" }).click();
   await expect(page.getByText("Escribe la placa.")).toBeVisible();
   await expect(page.getByText("Elige el tamaño.")).toBeVisible();
+  // Lo elegido en un menú queda después del error (26/11: la marca volvía a "Elige la marca")
+  await expect(page.getByLabel("Marca (opcional)", { exact: true })).toHaveValue("Toyota");
 
   await page.getByLabel("Placa", { exact: true }).fill(`hu21 ${sufijo(info)}-01`);
   await page.getByLabel("Tamaño", { exact: true }).selectOption({ label: "Compactos" });
@@ -90,9 +90,9 @@ test("un teléfono o una placa repetidos avisan de quién son y llevan a su fich
 test("lo opcional está plegado: se abre con un toque, el foco va a su primer campo y su error queda a la vista", async ({ page }, info) => {
   await ingresarComoDueno(page);
   await page.goto("/panel/clientes/nuevo", { waitUntil: "networkidle" });
-  // A la vista, solo nombre, WhatsApp, placa y tamaño
+  // Plegados, solo correo, NIT y notas; el vehículo, completo a la vista (26/11), como en Nueva cotización y Nueva reserva
   await expect(page.getByLabel("Correo")).toBeHidden();
-  await expect(page.getByLabel("Marca")).toBeHidden();
+  await expect(page.getByLabel("Marca")).toBeVisible();
   // El botón entero (pulido final del 10/11: con borde; el texto va adentro)
   const agregar = page.locator("summary", { hasText: "Agregar correo, NIT y notas" });
   expect(Math.round((await agregar.boundingBox())!.height)).toBeGreaterThanOrEqual(44);
@@ -117,6 +117,27 @@ test("un cliente se registra sin vehículo", async ({ page }, info) => {
   await page.getByRole("button", { name: "Crear cliente" }).click();
   await expect(page).toHaveURL(/\/panel\/clientes\/\d+\?creado=1(?:[?&]volver=[^&#]*)?$/);
   await expect(page.getByText("Todavía no tiene vehículos.")).toBeVisible();
+});
+
+test("«Así queda» se llena mientras se escribe y el tamaño elegido con el teclado queda", async ({ page }, info) => {
+  test.skip(info.project.name !== "escritorio", "«Así queda» se ve en la computadora");
+  await ingresarComoDueno(page);
+  await page.goto("/panel/clientes/nuevo", { waitUntil: "networkidle" });
+  const asiQueda = page.getByRole("complementary", { name: "Así queda el cliente" });
+  await expect(asiQueda.getByText("Sin nombre todavía")).toBeVisible();
+  await page.getByLabel("Nombre", { exact: true }).fill("Ana Quispe");
+  await page.getByLabel("WhatsApp").fill("71234567");
+  await page.getByLabel("Placa", { exact: true }).fill("1234abc");
+  // Con el teclado, como al tocar el menú: antes, "Así queda" se redibujaba antes de tiempo y el tamaño volvía a vacío (26/11)
+  const tamano = page.getByLabel("Tamaño", { exact: true });
+  await tamano.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(tamano).not.toHaveValue("");
+  const elegido = await tamano.evaluate((s: HTMLSelectElement) => s.options[s.selectedIndex].text);
+  await expect(asiQueda).toContainText("Ana Quispe");
+  await expect(asiQueda).toContainText("+591 7123 4567");
+  await expect(asiQueda).toContainText("1234ABC");
+  await expect(asiQueda).toContainText(`Tamaño: ${elegido}`);
 });
 
 test("el encargado entra a Clientes solo con el permiso; el perfil Taller no", async ({ page }, info) => {

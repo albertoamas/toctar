@@ -18,7 +18,7 @@ type Props = {
   /** null: sin título, cuando la pantalla ya dice qué es (Recibir, Entregar: C7, 18/11). */
   titulo?: string | null;
   /** `detalle`: una línea debajo del nombre (su WhatsApp). */
-  cliente: { nombre: string; detalle?: string } & Cambio;
+  cliente: { nombre: React.ReactNode; detalle?: string } & Cambio;
   /** Todavía sin elegir (el paso Vehículo): solo la fila del cliente. */
   vehiculo: ({ placa: string; detalle: (string | number)[]; tamano: string } & Cambio) | null;
   /** Una última fila de la misma tarjeta: el mantenimiento que se reserva (hallazgo 10, antes iba suelto entre tarjetas). */

@@ -130,10 +130,10 @@ export async function guardarVehiculo(_previo: EstadoCliente, datos: FormData): 
 
   const [suyo] = await db.select({ id: cliente.id }).from(cliente).where(eq(cliente.id, clienteId));
   if (!suyo) return { mensaje: "Ese cliente ya no existe. Recarga la página." };
-  let actual: { id: number; tamanoId: number } | undefined;
+  let actual: { id: number; tamanoId: number; marca: string | null } | undefined;
   if (id) {
     [actual] = await db
-      .select({ id: vehiculo.id, tamanoId: vehiculo.tamanoId })
+      .select({ id: vehiculo.id, tamanoId: vehiculo.tamanoId, marca: vehiculo.marca })
       .from(vehiculo)
       .where(and(eq(vehiculo.id, id), eq(vehiculo.clienteId, clienteId)));
     if (!actual) return { mensaje: "Ese vehículo ya no existe. Recarga la página." };
