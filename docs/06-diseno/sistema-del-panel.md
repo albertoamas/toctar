@@ -23,8 +23,8 @@ espacio, sin tope, también en un monitor grande. El tipo decide la forma y la s
 - Antes (10/11) eran cuatro anchos (1280, 1024 y 768 px): en un monitor grande el formulario usaba un tercio de la
   pantalla, la ficha la mitad, y el título y el botón principal cambiaban de lugar de una pantalla a otra.
 - **Con todo el ancho, el contenido se acomoda adentro**: las fichas en partes de a 2 o 3 (`PartesIguales`); un
-  formulario con dos partes las pone lado a lado desde `@6xl` (Nuevo cliente: el cliente y su primer vehículo; Nuevo
-  usuario: la cuenta y sus permisos). Los campos ocupan su lugar en la grilla, sin tope general
+  formulario con dos partes las pone lado a lado desde `@6xl` (Nuevo usuario: la cuenta y sus permisos). Nuevo
+  cliente no (26/11): sus tarjetas una debajo de la otra y «Así queda» al costado, como Nueva cotización. Los campos ocupan su lugar en la grilla, sin tope general
   (se probó uno de 28rem el 17/11 y no convenció al dueño). El recuadro de la firma, hasta 640 px.
 - **Todo alineado a la izquierda, nunca centrado** (C7 §4, 18/11): junto al menú lateral, un bloque centrado deja dos
   franjas vacías desparejas y el título cambia de lugar según la ventana. Lo único centrado es un modal.
@@ -44,7 +44,7 @@ espacio, sin tope, también en un monitor grande. El tipo decide la forma y la s
 | **Lista de acciones** (cobrar, avisar) | Tabla con una columna de acciones (`TablaAcciones`) | Tarjetas con los botones abajo |
 | **Ficha de un trabajo** (cotización, reserva, orden) | Pasos del trabajo, el paso siguiente grande, secciones y "Más" | Lo mismo, apilado |
 | **Ficha editable** | Secciones en tarjetas, de a dos (`PartesIguales`); "Editar" abre un modal | Una columna; el modal sube desde abajo |
-| **Crear o un paso del taller** | Formulario a todo el ancho, con sus partes lado a lado si son dos; en pasos si hace falta, botón al pie (`PieFormulario`). En los formularios en pasos con montos (Nueva cotización, Nueva versión, Nueva reserva), lo elegido y el total al costado (`ConResumen`, C7 §5.2) | Igual, con el botón fijo abajo y el total al lado |
+| **Crear o un paso del taller** | Formulario a todo el ancho, con sus partes lado a lado si son dos; en pasos si hace falta, botón al pie (`PieFormulario`). En los formularios en pasos con montos (Nueva cotización, Nueva versión, Nueva reserva), lo elegido y el total al costado (`ConResumen`, C7 §5.2); en Nuevo cliente, «Así queda», que se llena mientras se escribe (26/11) | Igual, con el botón fijo abajo y el total al lado |
 | **Portada** | Tarjetas para elegir a dónde ir | Una debajo de la otra |
 
 Una pantalla nueva o cambiada toma una de estas formas; si ninguna sirve, se discute antes de inventar otra.

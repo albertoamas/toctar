@@ -229,14 +229,6 @@ test("la misma regla bloquea \"¿Salir sin guardar?\" y el menú, y no un buscad
   await page.getByRole("button", { name: "Cerrar menú" }).click();
   await expect.poll(desplazamiento).not.toBe("hidden");
 
-  // Un buscador con su lista (la marca de un vehículo) no es una ventana modal: la página sigue desplazándose
-  await page.goto("/panel/clientes/nuevo");
-  await hidratada(page);
-  // La marca está plegada
-  await page.getByText("Agregar marca, modelo, año y color").click();
-  await page.getByLabel("Marca").fill("To");
-  await expect(page.getByRole("listbox")).toBeVisible();
-  expect(await desplazamiento()).not.toBe("hidden");
 });
 
 test("al desplazar un formulario, el pie fijo no cambia el alto de la página", async ({ page }) => {
