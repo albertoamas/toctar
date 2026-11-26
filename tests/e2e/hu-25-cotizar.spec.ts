@@ -225,6 +225,8 @@ test("reservar la de un interesado: sus pasos llegan escritos y se registra con 
   await aVehiculo(page);
   await page.getByLabel("Placa", { exact: true }).fill(`RI25${s}1`);
   await page.getByLabel("Tamaño", { exact: true }).selectOption({ index: 1 });
+  // Con su foto: al reservar pasa a su vehículo (pedido 58)
+  await page.getByLabel("Galería para la foto del vehículo").setInputFiles({ name: "auto.png", mimeType: "image/png", buffer: PNG });
   await aServicios(page);
   await elegir(page, 1, nombre, "Con precio");
   await page.getByRole("radio", { name: "En persona" }).check();
@@ -264,6 +266,12 @@ test("reservar la de un interesado: sus pasos llegan escritos y se registra con 
     [id],
   );
   expect(q).toEqual({ cliente: `Interesado ${s}`, placa: `RI25${s}1`, marca: "Toyota", estado: "confirmado" });
+  // La foto de cuando cotizó es la de su vehículo (pedido 58)
+  const [f] = await consultar<{ delVehiculo: number | null; deLaConsulta: number }>(
+    "select v.foto_archivo_id as \"delVehiculo\", ca.archivo_id as \"deLaConsulta\" from consulta q join vehiculo v on v.id = q.vehiculo_id join consulta_archivo ca on ca.consulta_id = q.id where q.id = $1",
+    [id],
+  );
+  expect(f.delVehiculo).toBe(f.deLaConsulta);
 });
 
 test("un WhatsApp repetido avisa y ofrece cotizarle a ese cliente; lo escrito se conserva", async ({ page }, info) => {

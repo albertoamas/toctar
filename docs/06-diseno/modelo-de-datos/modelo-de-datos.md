@@ -105,7 +105,7 @@ Convenciones: `id` es `bigint` autoincremental; todas las tablas tienen `created
 | Tabla | Campos | Notas |
 |---|---|---|
 | `cliente` | nombre, telefono (único), correo, nit, razon_social, notas, activo | NIT para SIAT futura |
-| `vehiculo` | cliente_id, placa (única), marca, modelo, anio, color, tamano_id, activo | |
+| `vehiculo` | cliente_id, placa (única), marca, modelo, anio, color, tamano_id, foto_archivo_id, activo | `foto_archivo_id` (pedido 58): su foto, privada, opcional; `on delete set null` (puede ser la de su orden o la del interesado) |
 
 ### Cotizaciones (entrega 2; pedido 23)
 

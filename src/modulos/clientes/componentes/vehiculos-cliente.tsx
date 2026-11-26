@@ -50,6 +50,8 @@ export function VehiculosCliente({ clienteId, vehiculos, tamanos, catalogo, desd
       titulo: v.placa,
       tituloGrande: true,
       detalles: [...(detalle.length > 0 ? [detalle.join(" ")] : []), `Tamaño: ${v.tamano}`],
+      // Su foto (pedido 58), como las miniaturas de los servicios del sitio; sin foto, el recuadro con su ícono
+      miniatura: v.foto?.miniatura ?? null,
     };
   };
 
@@ -127,6 +129,7 @@ export function FormularioVehiculo({ clienteId, vehiculo, tamanos, catalogo }: {
         tamanos={opciones}
         catalogo={catalogo}
         plegar
+        fotoActual={vehiculo?.foto?.miniatura}
         // Al agregar una placa que es de otro cliente: el auto cambió de dueño y se pasa a este (pedido 37)
         // (si la placa ya es de este mismo cliente, no hay a quién pasarla)
         cambioDeDueno={vehiculo ? undefined : (e) => (e.id === clienteId ? null : (`/panel/clientes/${e.id}/vehiculos/${e.vehiculoId}/dueno?nuevo=${clienteId}&desde=comprador` as Route))}

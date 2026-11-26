@@ -12,7 +12,7 @@ import { cotizacionAbierta } from "@/modulos/cotizaciones/consultas/lista";
 import { ESTADOS_RECORDATORIO_ABIERTO } from "@/modulos/mantenimientos/reglas";
 import { ESTADOS_RESERVA_ACTIVA } from "@/modulos/ordenes/reglas";
 import { clienteConPlaca, clienteConTelefono } from "./consultas";
-import { conMarcaDeLaLista, revisarVehiculo, type EstadoCliente, type Existentes } from "./servidor";
+import { conMarcaDeLaLista, descartarFotoVehiculo, revisarVehiculo, soltarFotoAnterior, subirFotoVehiculo, type EstadoCliente, type Existentes } from "./servidor";
 import { camposConPrefijo, erroresConPrefijo, leerValores, PREFIJO_VEHICULO } from "./valores";
 import { esquemaCambioDueno, esquemaCliente, esquemaEstado, esquemaEstadoVehiculo, esquemaVehiculo } from "./esquemas";
 import { prefijoVehiculo } from "./reglas";
@@ -53,14 +53,18 @@ export async function crearCliente(_previo: EstadoCliente, datos: FormData): Pro
   if (Object.keys(errores).length > 0) return { errores, valores, existentes };
 
   const creadoPor = Number(autor.id);
+  // La foto del vehículo (pedido 58), si vino
+  const foto = datosVehiculo ? await subirFotoVehiculo(datos, PREFIJO_VEHICULO, creadoPor) : { archivoId: null };
+  if ("error" in foto) return { errores: { [`${PREFIJO_VEHICULO}foto`]: foto.error }, valores };
   let id: number;
   try {
     id = await db.transaction(async (tx) => {
       const [nuevo] = await tx.insert(cliente).values({ ...datosCliente, createdBy: creadoPor, updatedBy: creadoPor }).returning({ id: cliente.id });
-      if (datosVehiculo) await tx.insert(vehiculo).values({ ...(await conMarcaDeLaLista(tx, datosVehiculo)), clienteId: nuevo.id, createdBy: creadoPor });
+      if (datosVehiculo) await tx.insert(vehiculo).values({ ...(await conMarcaDeLaLista(tx, datosVehiculo)), fotoArchivoId: foto.archivoId, clienteId: nuevo.id, createdBy: creadoPor });
       return nuevo.id;
     });
   } catch (error) {
+    await descartarFotoVehiculo(foto.archivoId);
     // Dos personas registrando lo mismo a la vez: lo frena el índice único
     const indice = indiceUnicoViolado(error);
     if (indice === "cliente_telefono_unico") return { errores: { telefono: "Ese número ya está registrado. Búscalo en Clientes." }, valores };
@@ -130,10 +134,10 @@ export async function guardarVehiculo(_previo: EstadoCliente, datos: FormData): 
 
   const [suyo] = await db.select({ id: cliente.id }).from(cliente).where(eq(cliente.id, clienteId));
   if (!suyo) return { mensaje: "Ese cliente ya no existe. Recarga la página." };
-  let actual: { id: number; tamanoId: number; marca: string | null } | undefined;
+  let actual: { id: number; tamanoId: number; marca: string | null; fotoArchivoId: number | null } | undefined;
   if (id) {
     [actual] = await db
-      .select({ id: vehiculo.id, tamanoId: vehiculo.tamanoId, marca: vehiculo.marca })
+      .select({ id: vehiculo.id, tamanoId: vehiculo.tamanoId, marca: vehiculo.marca, fotoArchivoId: vehiculo.fotoArchivoId })
       .from(vehiculo)
       .where(and(eq(vehiculo.id, id), eq(vehiculo.clienteId, clienteId)));
     if (!actual) return { mensaje: "Ese vehículo ya no existe. Recarga la página." };
@@ -143,19 +147,25 @@ export async function guardarVehiculo(_previo: EstadoCliente, datos: FormData): 
   await revisarVehiculo(entrada.data, prefijo, errores, existentes, actual);
   if (Object.keys(errores).length > 0) return { errores, valores, existentes };
 
+  // La foto (pedido 58): una nueva reemplaza a la anterior; sin foto nueva, queda la que tenía
+  const foto = await subirFotoVehiculo(datos, prefijo, Number(autor.id));
+  if ("error" in foto) return { errores: { [`${prefijo}foto`]: foto.error }, valores };
+  const conFoto = foto.archivoId ? { fotoArchivoId: foto.archivoId } : {};
   try {
     await db.transaction(async (tx) => {
-      // La marca como está en la lista; una nueva se suma (pedido 52)
+      // La marca como está en la lista (pedido 52)
       const datos = await conMarcaDeLaLista(tx, entrada.data);
-      if (id) await tx.update(vehiculo).set({ ...datos, updatedAt: new Date() }).where(eq(vehiculo.id, id));
-      else await tx.insert(vehiculo).values({ ...datos, clienteId, createdBy: Number(autor.id) });
+      if (id) await tx.update(vehiculo).set({ ...datos, ...conFoto, updatedAt: new Date() }).where(eq(vehiculo.id, id));
+      else await tx.insert(vehiculo).values({ ...datos, ...conFoto, clienteId, createdBy: Number(autor.id) });
       // Un cliente al que se le tocó un vehículo sube en la lista de recientes
       await tx.update(cliente).set({ updatedAt: sql`now()` }).where(eq(cliente.id, clienteId));
     });
   } catch (error) {
+    await descartarFotoVehiculo(foto.archivoId);
     if (indiceUnicoViolado(error) === "vehiculo_placa_unica") return { errores: { [`${prefijo}placa`]: "Esa placa ya está registrada. Búscala en Clientes." }, valores };
     throw error;
   }
+  if (foto.archivoId) await soltarFotoAnterior(actual?.fotoArchivoId ?? null);
   despuesDeCambiar(clienteId);
   return { ok: true, mensaje: id ? "Cambios guardados." : `Vehículo ${entrada.data.placa} agregado.` };
 }

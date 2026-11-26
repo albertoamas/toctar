@@ -421,6 +421,13 @@
       "when": 1795324345082,
       "tag": "0059_placa_del_interesado",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1795731826053,
+      "tag": "0060_foto_del_vehiculo",
+      "breakpoints": true
     }
   ]
 }

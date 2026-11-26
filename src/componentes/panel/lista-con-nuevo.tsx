@@ -1,4 +1,5 @@
-import { CheckIcon, PlusIcon } from "lucide-react";
+import Image from "next/image";
+import { CheckIcon, ImageOffIcon, PlusIcon } from "lucide-react";
 import { cn } from "cn";
 import { Seccion } from "@/componentes/panel/cabecera-seccion";
 
@@ -17,6 +18,8 @@ type OpcionLista = {
   /** El título es una placa: con su letra. */
   esPlaca?: boolean;
   detalle?: string | null;
+  /** Una foto a la izquierda (el vehículo, pedido 58): null es "sin foto"; sin la clave, no va el lugar. */
+  miniatura?: string | null;
 };
 
 type Props = {
@@ -82,6 +85,7 @@ export function ListaConNuevo({ id, titulo, encima, debajo, etiqueta, opciones, 
           return (
             <li key={o.clave} className={tarjeta(esta)}>
               <button type="button" role="radio" aria-checked={esta} onClick={() => alElegir(o.clave)} className={cn(fila, esta && "bg-neutro-fondo")}>
+                {o.miniatura !== undefined && <Miniatura url={o.miniatura} />}
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className={o.esPlaca ? "tt-placa text-base" : "font-semibold"}>{o.titulo}</span>
                   {o.detalle && <span className="text-sm text-tinta-suave">{o.detalle}</span>}
@@ -94,6 +98,15 @@ export function ListaConNuevo({ id, titulo, encima, debajo, etiqueta, opciones, 
       </ul>
       {debajo}
     </Seccion>
+  );
+}
+
+/** La foto de una opción, como las miniaturas de `ListaFilas`: 4:3, y sin foto el recuadro con su ícono. */
+function Miniatura({ url }: { url: string | null }) {
+  return (
+    <span className="flex aspect-[4/3] w-16 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-superficie">
+      {url ? <Image src={url} alt="" width={64} height={48} unoptimized className="size-full object-cover" /> : <ImageOffIcon className="size-5 text-tinta-suave" aria-hidden />}
+    </span>
   );
 }
 

@@ -370,6 +370,9 @@ try {
   const daniela = await cliente("Daniela Ortiz", "59170010006", { placa: "1890PLM", tamano: 1, marca: "Suzuki", modelo: "Swift", anio: 2018, color: "Plata" });
   const fernando = await cliente("Fernando Rocha", "59170010007", { placa: "6789TRS", tamano: 4, marca: "Toyota", modelo: "Land Cruiser Prado", anio: 2023, color: "Blanco" });
   const gabriela = await cliente("Gabriela Soliz", "59170010008", { placa: "3901MZD", tamano: 2, marca: "Mazda", modelo: "3", anio: 2020, color: "Rojo" });
+  // La foto de su vehículo (pedido 58), privada: la del Corolla de la galería. Los demás, sin foto (se ven con el recuadro)
+  const fotoCorolla = await subirFoto("galeria-corolla", "vehiculos", autor, { privado: true });
+  if (fotoCorolla) await q("update vehiculo set foto_archivo_id = $1 where id = $2", [fotoCorolla, carlos.vehiculo]);
 
   // 6. Cotizaciones (pedido 23): una de ayer por fotos, una que espera respuesta (más de 7 días) y una rechazada. Sin
   // PDF: la ficha ofrece «Generar PDF», que lo arma con lo copiado al cotizar

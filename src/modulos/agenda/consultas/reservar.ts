@@ -3,7 +3,8 @@ import "server-only";
 import { and, asc, desc, eq, not, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
-import { cliente, consulta, cotizacion, cotizacionLinea, servicio, tamanoVehiculo, variante, vehiculo } from "@/db/esquema";
+import { archivo, cliente, consulta, cotizacion, cotizacionLinea, servicio, tamanoVehiculo, variante, vehiculo } from "@/db/esquema";
+import { type UrlsFoto, urlsFotoPrivada } from "@/lib/fotos";
 import { duracionEfectiva } from "@/modulos/catalogo/reglas";
 import { detalleVehiculo } from "@/modulos/clientes/reglas";
 import { conReservaActiva, tamanoDeLaConsulta } from "@/modulos/cotizaciones/consultas/comun";
@@ -54,7 +55,7 @@ export type InteresadoDeCotizacion = {
 const existente = alias(cliente, "existente");
 
 /** El vehículo de una reserva, como lo muestra el panel (DatosVehiculo): la placa, lo que se sepa y el tamaño. */
-export type VehiculoReserva = { id: number; placa: string; tamano: string; detalle: (string | number)[] };
+export type VehiculoReserva = { id: number; placa: string; tamano: string; detalle: (string | number)[]; /** Su foto, para elegirlo (pedido 58). */ foto?: UrlsFoto | null };
 
 const columnasVehiculo = { marca: vehiculo.marca, modelo: vehiculo.modelo, anio: vehiculo.anio, color: vehiculo.color };
 
@@ -209,17 +210,34 @@ export async function datosDirecta(clienteId: number, vehiculoId: number | null)
   if (!c) return null;
   const vehiculos = (
     await db
-      .select({ id: vehiculo.id, placa: vehiculo.placa, tamanoId: vehiculo.tamanoId, tamano: tamanoVehiculo.nombre, ...columnasVehiculo })
+      .select({
+        id: vehiculo.id,
+        placa: vehiculo.placa,
+        tamanoId: vehiculo.tamanoId,
+        tamano: tamanoVehiculo.nombre,
+        ...columnasVehiculo,
+        fotoClave: archivo.clave,
+        fotoMiniatura: archivo.miniaturaClave,
+      })
       .from(vehiculo)
       .innerJoin(tamanoVehiculo, eq(vehiculo.tamanoId, tamanoVehiculo.id))
+      .leftJoin(archivo, eq(vehiculo.fotoArchivoId, archivo.id))
       .where(and(eq(vehiculo.clienteId, clienteId), eq(vehiculo.activo, true)))
       .orderBy(asc(vehiculo.id))
-  ).map((v) => ({ id: v.id, placa: v.placa, tamanoId: v.tamanoId, tamano: v.tamano, detalle: detalleVehiculo(v) }));
+  ).map(async (v) => ({
+    id: v.id,
+    placa: v.placa,
+    tamanoId: v.tamanoId,
+    tamano: v.tamano,
+    detalle: detalleVehiculo(v),
+    foto: v.fotoClave ? await urlsFotoPrivada({ clave: v.fotoClave, miniaturaClave: v.fotoMiniatura, ancho: null, alto: null }) : null,
+  }));
   // El vehículo, siempre elegido (20/11): con uno solo también se ve el paso, para saber con qué auto se reserva
-  const elegido = vehiculos.find((v) => v.id === vehiculoId);
+  const vehiculosConFoto = await Promise.all(vehiculos);
+  const elegido = vehiculosConFoto.find((v) => v.id === vehiculoId);
   return {
     cliente: c,
-    vehiculos,
+    vehiculos: vehiculosConFoto,
     vehiculo: elegido ?? null,
     opciones: elegido ? await opcionesDeServicio(elegido.tamanoId) : [],
   };

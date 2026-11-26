@@ -13,7 +13,7 @@ import { Button, buttonVariants } from "@/componentes/ui/button";
 // Tocar marca; "Siguiente", en gris hasta elegir, lleva a la dirección de la marcada. Si hay "Nuevo…", también lleva a la
 // suya.
 
-type Tarjeta = { clave: string | number; href: Route; titulo: string; esPlaca?: boolean; detalle?: string | null };
+type Tarjeta = { clave: string | number; href: Route; titulo: string; esPlaca?: boolean; detalle?: string | null; /** Una foto (pedido 58). */ miniatura?: string | null };
 
 type Props = {
   id: string;
@@ -45,7 +45,7 @@ export function TarjetasParaElegir({ id, titulo, encima, debajo, etiqueta, tarje
         encima={encima}
         debajo={debajo}
         etiqueta={etiqueta}
-        opciones={tarjetas.map((t) => ({ clave: String(t.clave), titulo: t.titulo, esPlaca: t.esPlaca, detalle: t.detalle }))}
+        opciones={tarjetas.map((t) => ({ clave: String(t.clave), titulo: t.titulo, esPlaca: t.esPlaca, detalle: t.detalle, miniatura: t.miniatura }))}
         nuevo={nuevo}
         elegida={elegida}
         alElegir={setElegida}

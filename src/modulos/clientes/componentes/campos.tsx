@@ -7,6 +7,9 @@ import { Campo } from "@/componentes/panel/campo";
 import { MasDatos } from "@/componentes/panel/mas-datos";
 import { useCerrarModal } from "@/componentes/panel/modal-contexto";
 import { Selector } from "@/componentes/panel/selector";
+import { ElegirFoto } from "@/componentes/panel/elegir-foto";
+import { achicarFoto } from "@/componentes/panel/subida-foto";
+import { BYTES_MAXIMOS_FOTO } from "@/lib/formato-fotos";
 import { Input } from "@/componentes/ui/input";
 import { Textarea } from "@/componentes/ui/textarea";
 import type { Tamano } from "@/modulos/configuracion/consultas";
@@ -18,6 +21,7 @@ import {
   marcasParaElegir,
 } from "../catalogo-vehiculos";
 import { ANCHO_DATO } from "@/componentes/panel/anchos";
+import { ERROR_FOTO_VEHICULO } from "../reglas";
 
 // Campos de cliente y de vehículo (HU-21): los usan el alta y la ficha (HU-23). Componentes de cliente: se usan
 // dentro de formularios con useActionState.
@@ -41,6 +45,8 @@ type PropsCampos = {
   cambioDeDueno?: (existente: { id: number; vehiculoId: number }) => Route | null;
   /** Avisa el tamaño elegido (la cotización recalcula el precio sugerido). */
   alCambiarTamano?: (tamanoId: string) => void;
+  /** La foto que ya tiene el vehículo (al editarlo, pedido 58): su miniatura. */
+  fotoActual?: string | null;
 };
 
 export type EnlaceExistente = (existente: { id: number; nombre: string }) => { href: Route; texto: string };
@@ -261,15 +267,19 @@ export function CamposVehiculo(props: PropsCampos & { tamanos: Tamano[]; /** Las
       </Campo>
     </>
   );
+  // La foto (pedido 58): a la vista, también en el alta plegada (es lo que sirve para reconocer el auto)
+  const foto = !compacto && <CampoFotoVehiculo nombre={n("foto")} actual={props.fotoActual ?? null} error={e[n("foto")]} enviados={estado.valores} />;
   if (!plegar || !opcionales) return (
     <>
       {principales}
       {opcionales}
+      {foto}
     </>
   );
   return (
     <>
       {principales}
+      {foto}
       {/* Al editar un vehículo, lo guardado no se borra al cerrar: "Listo" en lugar de "Quitar" */}
       <MasDatos
         texto="Agregar marca, modelo, año y color"
@@ -281,5 +291,61 @@ export function CamposVehiculo(props: PropsCampos & { tamanos: Tamano[]; /** Las
         {opcionales}
       </MasDatos>
     </>
+  );
+}
+
+/**
+ * La foto del vehículo (pedido 58), con "Sacar foto" y "Elegir de la galería" (`ElegirFoto`). Se achica al elegirla y va
+ * en un campo de archivo oculto del formulario: así sirve igual en Nuevo cliente, el vehículo de la ficha y "Otro
+ * vehículo" de Nueva cotización y Nueva reserva, sin tocar cómo envía cada uno. React vacía ese campo al terminar un
+ * envío con error: después de cada envío se vuelve a poner. Sin JavaScript, el formulario va sin foto.
+ */
+function CampoFotoVehiculo({ nombre, actual, error, enviados }: { nombre: string; actual: string | null; error?: string; enviados: unknown }) {
+  const campo = useRef<HTMLInputElement>(null);
+  const [archivo, setArchivo] = useState<File | null>(null);
+  const [vista, setVista] = useState<string | null>(null);
+  const [errorLocal, setErrorLocal] = useState<string>();
+  // La vista previa ocupa memoria mientras exista: se libera al cambiarla y al cerrar el formulario
+  useEffect(() => () => void (vista && URL.revokeObjectURL(vista)), [vista]);
+  const poner = (f: File | null) => {
+    if (!campo.current) return;
+    const datos = new DataTransfer();
+    if (f) datos.items.add(f);
+    campo.current.files = datos.files;
+  };
+  useEffect(() => {
+    poner(archivo);
+    // Solo cuando llega lo enviado (un envío): elegir otra ya la pone
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enviados]);
+
+  async function elegir(nuevo: File | null) {
+    setErrorLocal(undefined);
+    if (!nuevo) {
+      setArchivo(null);
+      setVista(null);
+      return poner(null);
+    }
+    setVista(URL.createObjectURL(nuevo));
+    // Una de celular pesa 4 a 12 MB: va achicada
+    const achicada = await achicarFoto(nuevo);
+    if (achicada.size > BYTES_MAXIMOS_FOTO) {
+      setErrorLocal(ERROR_FOTO_VEHICULO);
+      setArchivo(null);
+      setVista(null);
+      return poner(null);
+    }
+    setArchivo(achicada);
+    poner(achicada);
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-sm font-medium">
+        Foto del vehículo <span className="font-normal text-tinta-suave">(opcional)</span>
+      </p>
+      <ElegirFoto id={nombre} de="del vehículo" vista={vista ?? actual} alElegir={elegir} quitable={!!archivo} error={error ?? errorLocal} />
+      <input ref={campo} type="file" name={nombre} accept="image/*" hidden tabIndex={-1} aria-hidden />
+    </div>
   );
 }

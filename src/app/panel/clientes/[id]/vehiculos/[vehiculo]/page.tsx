@@ -20,6 +20,7 @@ import { exigirModulo } from "@/lib/sesion";
 import { aqui, conDesde, volverDesde } from "@/lib/volver";
 import { formatearWhatsApp } from "@/lib/whatsapp";
 import { reservasDelVehiculo } from "@/modulos/agenda/consultas/listas";
+import { FotoVehiculo } from "@/modulos/clientes/componentes/foto-vehiculo";
 import { MasVehiculo } from "@/modulos/clientes/componentes/mas-vehiculo";
 import { FormularioVehiculo } from "@/modulos/clientes/componentes/vehiculos-cliente";
 import { catalogoVehiculos, fichaVehiculo } from "@/modulos/clientes/consultas";
@@ -108,6 +109,8 @@ async function Ficha({ params, searchParams }: Pick<PageProps<"/panel/clientes/[
       <EncabezadoPagina
         volver={volver}
         titulo={v.placa}
+        // Su foto, para saber cuál es (pedido 58)
+        imagen={<FotoVehiculo foto={v.foto} placa={v.placa} />}
         // Qué vehículo es y de quién (C7, 18/11), como en el prototipo
         subtitulo={[detalle.join(" "), `de ${v.dueno.nombre}`].filter(Boolean).join(" · ")}
         estado={!v.activo && <Insignia>Desactivado</Insignia>}

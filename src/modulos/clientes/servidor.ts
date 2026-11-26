@@ -1,9 +1,11 @@
 import "server-only";
 import { and, eq, sql } from "drizzle-orm";
 import { db, type Transaccion } from "@/db";
-import { marcaVehiculo, tamanoVehiculo } from "@/db/esquema";
+import { archivo, marcaVehiculo, tamanoVehiculo } from "@/db/esquema";
+import { eliminarFotosSinFallar, guardarFoto } from "@/lib/fotos";
 import type { EstadoFormulario } from "@/lib/formularios";
 import { clienteConPlaca } from "./consultas";
+import { ERROR_FOTO_VEHICULO } from "./reglas";
 
 // Ayudas del servidor para registrar clientes y vehículos: las usan las acciones de Clientes (C1) y la nueva consulta
 // (C2), que registra al cliente ahí mismo. No es un archivo "use server": no expone nada al navegador.
@@ -14,6 +16,37 @@ import { clienteConPlaca } from "./consultas";
  */
 export type EstadoCliente = EstadoFormulario & { existentes?: Record<string, { id: number; nombre: string; vehiculoId?: number }> };
 export type Existentes = NonNullable<EstadoCliente["existentes"]>;
+
+/** Donde se guardan las fotos subidas para un vehículo: solo esas se borran al reemplazarlas. */
+const CARPETA_FOTOS = "vehiculos";
+
+/**
+ * La foto del vehículo que llegó en el formulario (`{prefijo}foto`, pedido 58), privada: es un dato del cliente. Se sube
+ * antes de la transacción; si el guardado falla, quien la llamó la descarta (`descartarFotoVehiculo`). null si no vino.
+ */
+export async function subirFotoVehiculo(datos: FormData, prefijo: string, autorId: number): Promise<{ archivoId: number | null } | { error: string }> {
+  try {
+    const foto = await guardarFoto(datos.get(`${prefijo}foto`), { carpeta: CARPETA_FOTOS, miniatura: true, autorId, privado: true });
+    if (foto.ok) return { archivoId: foto.archivoId };
+    return foto.motivo === "invalida" ? { error: ERROR_FOTO_VEHICULO } : { archivoId: null };
+  } catch (error) {
+    console.error("No se pudo guardar la foto del vehículo", error);
+    return { error: "No se pudo subir la foto. Vuelve a intentar o sigue sin ella." };
+  }
+}
+
+/** Una foto subida que no quedó en ningún vehículo (el guardado falló). */
+export const descartarFotoVehiculo = (archivoId: number | null) => eliminarFotosSinFallar([archivoId], "No se pudo borrar la foto que no se usó:");
+
+/**
+ * La foto anterior de un vehículo, al reemplazarla: se borra solo si se subió para él. Una que vino de una orden o de la
+ * cotización de un interesado sigue siendo de ellas.
+ */
+export async function soltarFotoAnterior(archivoId: number | null) {
+  if (!archivoId) return;
+  const [fila] = await db.select({ clave: archivo.clave }).from(archivo).where(eq(archivo.id, archivoId));
+  if (fila?.clave.startsWith(`${CARPETA_FOTOS}/`)) await descartarFotoVehiculo(archivoId);
+}
 
 
 /**

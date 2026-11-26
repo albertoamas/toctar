@@ -45,7 +45,7 @@ export type ClienteElegido = {
   nombre: string;
   telefono: string;
   /** `detalle`: marca y modelo, año, color… lo que se sepa. */
-  vehiculos: { id: number; placa: string; tamanoId: number; tamano: string; detalle: (string | number)[] }[];
+  vehiculos: { id: number; placa: string; tamanoId: number; tamano: string; detalle: (string | number)[]; /** Su foto (pedido 58): null, sin foto. */ miniatura: string | null }[];
 };
 
 type Props = {
@@ -345,7 +345,7 @@ export function FormularioNuevaCotizacion({ cliente, tamanos, catalogo, opciones
             id="vehiculo"
             titulo="Vehículo"
             etiqueta="Elegir vehículo"
-            opciones={cliente.vehiculos.map((ve) => ({ clave: String(ve.id), titulo: ve.placa, esPlaca: true, detalle: [...ve.detalle, `Tamaño: ${ve.tamano}`].join(" · ") }))}
+            opciones={cliente.vehiculos.map((ve) => ({ clave: String(ve.id), titulo: ve.placa, esPlaca: true, detalle: [...ve.detalle, `Tamaño: ${ve.tamano}`].join(" · "), miniatura: ve.miniatura }))}
             nuevo={{ titulo: "Otro vehículo", detalle: "Registrar uno nuevo" }}
             elegida={vehiculo === VEHICULO_OTRO ? NUEVO : vehiculo || null}
             alElegir={(clave) => {
